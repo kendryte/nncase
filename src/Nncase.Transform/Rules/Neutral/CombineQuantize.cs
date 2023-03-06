@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -35,7 +35,9 @@ public sealed partial class CombineQuantizeConcat : RewriteRule<Pattern>, IRewri
     public IUsedByResult UsedByResult { get => _usedByResult!; set => _usedByResult = value; }
 
     /// <inheritdoc/>
-    public override Pattern Pattern { get; } = IsQuantize("quantize", _ => true,
+    public override Pattern Pattern { get; } = IsQuantize(
+      "quantize",
+      _ => true,
       IsConcat(
         IsTuple(IsVArgsRepeat("tupleInputs", () => IsWildcard())),
         IsWildcard("axis")),
@@ -43,7 +45,7 @@ public sealed partial class CombineQuantizeConcat : RewriteRule<Pattern>, IRewri
 
     private Expr? GetReplace(Quantize quantize, IReadOnlyList<Expr> tupleInputs, Expr axis, Expr quantParam)
     {
-        /// <see cref="UnitTestCombineQuantize.TestCombineQuantizeConcatNegative"/>
+        // see UnitTestCombineQuantize.TestCombineQuantizeConcatNegative
         foreach (var e in tupleInputs)
         {
             if (UsedByResult.Get(e).Count > 1)

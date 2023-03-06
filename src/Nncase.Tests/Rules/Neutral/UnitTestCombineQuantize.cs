@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -28,10 +28,10 @@ namespace Nncase.Tests.Rules.NeutralTest;
 [AutoSetupTestMethod(InitSession = true)]
 public class UnitTestCombineQuantize : TestClassBase
 {
-    public static TheoryData<int[][], int, DataType, QuantParam> CombineQuantizeConcatPositiveData = new()
+    public static TheoryData<int[][], int, DataType, QuantParam> CombineQuantizeConcatPositiveData => new()
     {
-      { new int[][] { new int[] { 1, 32, 160, 160 }, new int[] { 1, 32, 160, 160 } }, 1, DataTypes.UInt8, new(2, 0.25185302f) },
-      { new int[][] { new int[] { 1, 64, 80, 80 }, new int[] { 1, 64, 80, 80 } }, 1, DataTypes.UInt8, new(20, 0.042551044f) },
+        { new int[][] { new int[] { 1, 32, 160, 160 }, new int[] { 1, 32, 160, 160 } }, 1, DataTypes.UInt8, new(2, 0.25185302f) },
+        { new int[][] { new int[] { 1, 64, 80, 80 }, new int[] { 1, 64, 80, 80 } }, 1, DataTypes.UInt8, new(20, 0.042551044f) },
     };
 
     [Theory]
