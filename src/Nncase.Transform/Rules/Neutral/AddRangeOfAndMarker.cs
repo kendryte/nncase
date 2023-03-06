@@ -116,7 +116,9 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
             if (callParams[i] is not Marker)
             {
                 if (!pairs.ContainsKey(callParams[i]))
+                {
                     pairs.Add(callParams[i], IR.F.Math.RangeOfMarker(callParams[i], IR.F.Math.RangeOf(callParams[i])));
+                }
             }
         }
 
