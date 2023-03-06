@@ -104,7 +104,7 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
             return null;
         }
 
-        var pairs = new List<(Expr, Expr)>();
+        var pairs = new Dictionary<Expr, Expr>();
         if (list is null)
         {
             list = Enumerable.Range(0, length).ToArray();
@@ -114,14 +114,15 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
         {
             if (callParams[i] is not Marker)
             {
-                pairs.Add((callParams[i], IR.F.Math.RangeOfMarker(callParams[i], IR.F.Math.RangeOf(callParams[i]))));
+                if (!pairs.ContainsKey(callParams[i]))
+                    pairs.Add(callParams[i], IR.F.Math.RangeOfMarker(callParams[i], IR.F.Math.RangeOf(callParams[i])));
             }
         }
 
         Call newCall;
         if (pairs.Count != 0)
         {
-            newCall = ReplaceCallParams(op, callParams, pairs.ToArray());
+            newCall = ReplaceCallParams(op, callParams, list.Select(i => (call: callParams[i], pairs[callParams[i]])).ToArray());
         }
         else
         {
