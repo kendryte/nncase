@@ -21,12 +21,10 @@ using static Nncase.PatternMatch.F.Tensors;
 using static Nncase.PatternMatch.Utility;
 using Tuple = System.Tuple;
 
-
 namespace Nncase.Transform.Rules.Neutral;
 
-
 /// <summary>
-/// quantize(concat(a,b,c)) => concat(quantize(a),quantize(b),quantize(c))
+/// quantize(concat(a,b,c)) => concat(quantize(a),quantize(b),quantize(c)).
 /// </summary>
 [RuleGenerator]
 public sealed partial class CombineQuantizeConcat : RewriteRule<Pattern>, IRewriteRuleWithUsdBy
@@ -43,7 +41,7 @@ public sealed partial class CombineQuantizeConcat : RewriteRule<Pattern>, IRewri
         IsWildcard("axis")),
       IsWildcard("quantParam"));
 
-    Expr? GetReplace(Quantize quantize, IReadOnlyList<Expr> tupleInputs, Expr axis, Expr quantParam)
+    private Expr? GetReplace(Quantize quantize, IReadOnlyList<Expr> tupleInputs, Expr axis, Expr quantParam)
     {
         /// <see cref="UnitTestCombineQuantize.TestCombineQuantizeConcatNegative"/>
         foreach (var e in tupleInputs)
@@ -53,6 +51,7 @@ public sealed partial class CombineQuantizeConcat : RewriteRule<Pattern>, IRewri
                 return null;
             }
         }
+
         return Concat(new IR.Tuple(tupleInputs.Select(e => IR.F.Math.Quantize(e, quantParam, quantize.TargetType))), axis);
     }
 }

@@ -62,7 +62,7 @@ public sealed class UnitTestUsedByAnalysis : TestClassBase
 
         var usedbyReslut = Analyser.AnalysisUsedBy(main);
 
-        Assert.Equal(1, usedbyReslut.Get(input1).Count);
+        Assert.Single(usedbyReslut.Get(input1));
         Assert.Equal(2, usedbyReslut.Get(input2).Count);
     }
 }

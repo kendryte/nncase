@@ -28,7 +28,7 @@ namespace Nncase.IR.Imaging
 
         /// <summary>
         /// Gets roi.
-        /// [axis 0 start,axis 1 end, ... ,axis n start, axis n end]
+        /// [axis 0 start,axis 1 end, ... ,axis n start, axis n end].
         /// </summary>
         public static readonly ParameterInfo Roi = new(typeof(ResizeImage), 1, "roi", IsNoneType() | (IsFloat() & HasRank(1)));
 
