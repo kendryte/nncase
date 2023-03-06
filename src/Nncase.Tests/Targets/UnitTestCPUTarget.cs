@@ -94,6 +94,15 @@ public class UnitTestCPUTarget : TestClassBase
     }
 
     [Fact]
+    public void TestCodeGenVisitLeafVar()
+    {
+        var main = new Function(new Var(), Array.Empty<Var>());
+        var module = new IRModule(main);
+        var modelBuilder = CompileSession.GetRequiredService<IModelBuilder>();
+        Assert.Throws<InvalidOperationException>(() => modelBuilder.Build(module));
+    }
+
+    [Fact]
     public void TestSimpleBinary()
     {
         var x = new Var("x", new TensorType(DataTypes.Float32, new[] { 1 }));

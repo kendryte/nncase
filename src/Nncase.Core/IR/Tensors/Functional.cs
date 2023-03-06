@@ -66,8 +66,8 @@ public static class Tensors
     public static Call Reduce(ReduceOp reduceOp, Expr input, Expr axis, Expr initValue, Expr keepDims) =>
         new Call(new Reduce(reduceOp), input, axis, initValue, keepDims);
 
-    public static Call ReduceArg(ReduceArgOp reduceArgOp, Expr input, Expr axis, Expr keepDims, Expr selectLastIndex) =>
-        new Call(new ReduceArg(reduceArgOp), input, axis, keepDims, selectLastIndex);
+    public static Call ReduceArg(ReduceArgOp reduceArgOp, PrimType destType, Expr input, Expr axis, Expr keepDims, Expr selectLastIndex) =>
+        new Call(new ReduceArg(reduceArgOp, destType), input, axis, keepDims, selectLastIndex);
 
     public static Call ReduceMean(Expr input, Expr axis, Expr initValue, Expr keepDims) =>
         Reduce(ReduceOp.Mean, input, axis, initValue, keepDims);
@@ -123,7 +123,7 @@ public static class Tensors
 
     public static Call Tile(Expr input, Expr repeats) => new Call(new Tile(), input, repeats);
 
-    public static Call Where(Expr cond, Expr x, Expr y) => new Call(new Where(), cond, x, y);
+    public static Call Where(Expr cond, Expr x, Expr y, bool isTfWhere = false) => new Call(new Where(isTfWhere), cond, x, y);
 
     /// <summary>
     /// get item from the input.

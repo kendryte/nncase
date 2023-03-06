@@ -31,7 +31,10 @@ public sealed partial class FoldNopReshape : IRewriteRule
 
     private Expr? GetReplace(Expr input, TensorConst newShape)
     {
-        if (input.CheckedShape.Equals(newShape.Value.ToArray<int>()))
+        var newShapeArray = newShape.Value.ToArray<int>();
+        if ((newShapeArray.Count(x => x == -1) == 1 && newShapeArray.Length == input.CheckedShape.Count
+             && input.CheckedShape.Zip(newShapeArray).Count(t => t.Second != -1 && t.First.FixedValue == t.Second) == newShapeArray.Length - 1)
+            || input.CheckedShape.Equals(newShapeArray))
         {
             return input;
         }

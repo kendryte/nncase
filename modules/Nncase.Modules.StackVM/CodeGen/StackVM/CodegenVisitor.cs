@@ -120,7 +120,13 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
     public override TextSnippet VisitLeaf(Var expr)
     {
         var snippet = BeginTextSnippet(expr);
-        Emitter.Ldarg((ushort)((Function)_function).Parameters.IndexOf(expr));
+        var varIndex = ((Function)_function).Parameters.IndexOf(expr);
+        if (varIndex < 0)
+        {
+            throw new InvalidOperationException($"Can't find var {expr.Name} in CodeGen");
+        }
+
+        Emitter.Ldarg((ushort)varIndex);
         return snippet;
     }
 

@@ -262,12 +262,12 @@ public sealed partial class CombineTransposeReduce : IRewriteRule
     public IPattern Pattern { get; } = IsReduce(
         "reduce",
         x => true,
-        IsTranspose(IsWildcard("input"), IsTensorConst("perm")),
+        IsTranspose("tp", "tpCall", _ => true, IsWildcard("input"), IsTensorConst("perm")),
         IsTensorConst("axis"),
         IsWildcard("initValue"),
         IsTensorConst("keepDims", IsBoolScalar()));
 
-    private Expr? GetReplace(Reduce reduce, Expr input, int[] perm, int[] axis, Expr initValue, bool keepDims)
+    private Expr? GetReplace(Reduce reduce, Expr input, Call tpCall, int[] perm, int[] axis, Expr initValue, bool keepDims)
     {
         // var newAxis = Gather(perm, 0, axis);
         // var tp = Transpose(Reduce(reduce.ReduceOp, input, newAxis, initValue, true), perm);
@@ -275,7 +275,7 @@ public sealed partial class CombineTransposeReduce : IRewriteRule
         var newAxis = new List<int>();
         for (int i = 0; i < axis.Length; i++)
         {
-            newAxis.Add(perm[axis[i]]);
+            newAxis.Add(perm[axis[i] >= 0 ? axis[i] : axis[i] + tpCall.CheckedShape.Rank]);
         }
 
         var newPerm = new List<int>();

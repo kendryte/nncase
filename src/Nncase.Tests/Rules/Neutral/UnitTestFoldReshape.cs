@@ -24,6 +24,7 @@ public class UnitTestFoldReshape : TestClassBase
         {
             new object[] { new[] { 4 }, new[] { 4 } },
             new object[] { new[] { 2, 3 }, new[] { 2, 3 } },
+            new object[] { new[] { 2, 4 }, new[] { -1, 4 } },
         };
 
     public static IEnumerable<object[]> TestFoldNopReshapeNegativeData =>
