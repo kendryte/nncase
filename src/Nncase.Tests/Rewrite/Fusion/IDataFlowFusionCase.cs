@@ -24,6 +24,11 @@ public interface IDataFlowFusionCase
     Expr BuildBody(Var input);
 }
 
+public interface IDataFlowFusionCaseTwoStage : IDataFlowFusionCase
+{
+    int MidFusionCount { get; }
+}
+
 internal static class FusionBuilder
 {
     private static int _count;
@@ -757,5 +762,52 @@ internal class DataFlowType14FusionCaseRight : IDataFlowFusionCase
     public Expr BuildBody(Var input)
     {
         return DataFlowType14FusionCaseLeft.BuildBodyCore(input, false);
+    }
+}
+
+/// <summary>
+///         x
+///         |
+///       conv2d_t
+///       /  \
+///       |    |
+///       |   conv2d_t
+///       |    |
+///       |   conv2d_t
+///        \ /
+///       add_t.
+/// </summary>
+internal class DataFlowType15FusionCaseLeft : IDataFlowFusionCaseTwoStage
+{
+    public int FinalFusionCount => 1;
+
+    public int MidFusionCount => 2;
+
+    public static Expr BuildBodyCore(Expr input, bool left)
+    {
+        var v0 = new Call(FusionBuilder.MakeConv2DFusion(true), input);
+
+        var v1 = new Call(FusionBuilder.MakeConv2DFusion(true), v0);
+        var v2 = new Call(FusionBuilder.MakeConv2DFusion(true), v1);
+
+        var v3 = new Call(FusionBuilder.MakeBinaryFusion(BinaryOp.Sub, true), left ? new[] { v0, v2 } : new[] { v2, v0 });
+        return v3;
+    }
+
+    public Expr BuildBody(Var input)
+    {
+        return BuildBodyCore(input, true);
+    }
+}
+
+internal class DataFlowType15FusionCaseRight : IDataFlowFusionCaseTwoStage
+{
+    public int FinalFusionCount => 1;
+
+    public int MidFusionCount => 2;
+
+    public Expr BuildBody(Var input)
+    {
+        return DataFlowType15FusionCaseLeft.BuildBodyCore(input, false);
     }
 }
