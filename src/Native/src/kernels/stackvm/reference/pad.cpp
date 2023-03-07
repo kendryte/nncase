@@ -145,6 +145,12 @@ result<void> nncase::kernels::stackvm::reference::pad(
                             reinterpret_cast<uint32_t *>(output), in_shape,
                             out_shape, in_strides, out_strides, paddings, mode,
                             *IN_CAST(uint32_t, pad_value), context);
+
+        case 8:
+            return pad_impl(reinterpret_cast<const uint64_t *>(input),
+                            reinterpret_cast<uint64_t *>(output), in_shape,
+                            out_shape, in_strides, out_strides, paddings, mode,
+                            *IN_CAST(uint64_t, pad_value), context);
         default:
             return err(std::errc::not_supported);
         }
@@ -186,6 +192,14 @@ result<void> nncase::kernels::stackvm::reference::pad(
                 reinterpret_cast<const uint32_t *>(input),
                 reinterpret_cast<uint32_t *>(v.data()), in_shape, out_shape,
                 in_strides, strides, padding_cfg, *IN_CAST(uint32_t, pad_value),
+                context);
+            break;
+        }
+        case 8: {
+            NNCASE_UNUSED auto ret = interior_pad_impl(
+                reinterpret_cast<const uint64_t *>(input),
+                reinterpret_cast<uint64_t *>(v.data()), in_shape, out_shape,
+                in_strides, strides, padding_cfg, *IN_CAST(uint64_t, pad_value),
                 context);
             break;
         }
