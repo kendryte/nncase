@@ -22,7 +22,7 @@ from onnx_test_runner import OnnxTestRunner
 import numpy as np
 
 
-def _make_module(in_shape, kernel_output_channel, bias_shape, auto_pad_mode, dilation, group, kernel_shape, pad, stride):
+def _make_module(in_shape, kernel_output_channel, bias_shape, auto_pad_mode, dilation, group, kernel_shape, output_padding, pad, stride):
     inputs = []
     initializers = []
 
@@ -30,10 +30,12 @@ def _make_module(in_shape, kernel_output_channel, bias_shape, auto_pad_mode, dil
     input = helper.make_tensor_value_info('input', TensorProto.FLOAT, in_shape)
     inputs.append('input')
 
+    group = 1 if group is None else group
+
     # weight
     w_shape = []
-    w_shape.append(kernel_output_channel)
     w_shape.append(in_shape[1])
+    w_shape.append(kernel_output_channel // group)
     w_shape.extend(kernel_shape)
     weight = helper.make_tensor(
         'weight',
@@ -56,44 +58,30 @@ def _make_module(in_shape, kernel_output_channel, bias_shape, auto_pad_mode, dil
         initializers.append(bias)
 
     # dilation
-    d = [1, 1] if dilation is None else dilation
+    d = [1] if dilation is None else dilation
+
+    # output_padding
+    out_padding = [0] if output_padding is None else output_padding
 
     # stride
-    s = [1, 1] if stride is None else stride
-
-    # pad
-    padding = [0, 0, 0, 0]
-    if (auto_pad_mode is None or auto_pad_mode == 'NOTSET') and pad is not None:
-        padding = pad
-    elif auto_pad_mode == 'SAME_UPPER':
-        output_h = math.floor((in_shape[2] + s[0] - 1) / s[0])
-        pad_nums = max(0, (output_h - 1) * s[0] + (w_shape[2] - 1) * d[0] + 1 - in_shape[2])
-        padding[0] = math.floor(pad_nums / 2)
-        padding[2] = pad_nums - padding[0]
-
-        output_w = math.floor((in_shape[3] + s[1] - 1) / s[1])
-        pad_nums = max(0, (output_w - 1) * s[1] + (w_shape[3] - 1) * d[1] + 1 - in_shape[3])
-        padding[1] = math.floor(pad_nums / 2)
-        padding[3] = pad_nums - padding[1]
-    elif auto_pad_mode == 'SAME_LOWER':
-        output_h = math.floor((in_shape[2] + s[0] - 1) / s[0])
-        pad_nums = max(0, (output_h - 1) * s[0] + (w_shape[2] - 1) * d[0] + 1 - in_shape[2])
-        padding[0] = math.ceil(pad_nums / 2)
-        padding[2] = pad_nums - padding[0]
-
-        output_w = math.floor((in_shape[3] + s[1] - 1) / s[1])
-        pad_nums = max(0, (output_w - 1) * s[1] + (w_shape[3] - 1) * d[1] + 1 - in_shape[3])
-        padding[1] = math.ceil(pad_nums / 2)
-        padding[3] = pad_nums - padding[1]
+    s = [1] if stride is None else stride
 
     # output
     out_shape = []
     out_shape.append(in_shape[0])
-    out_shape.append(w_shape[0])
-    out_shape.append(math.floor(
-        (in_shape[2] + padding[0] + padding[2] - ((w_shape[2] - 1) * d[0] + 1) + s[0]) / s[0]))
-    out_shape.append(math.floor(
-        (in_shape[3] + padding[1] + padding[3] - ((w_shape[3] - 1) * d[1] + 1) + s[1]) / s[1]))
+    out_shape.append(w_shape[1] * group)
+
+    # pad
+    padding = [0, 0]
+    if auto_pad_mode in [None, 'NOTSET'] and pad is not None:
+        padding = pad
+        out_shape.append(s[0] * (in_shape[2] - 1) + out_padding[0] +
+                         (w_shape[2] - 1) * d[0] + 1 - padding[0] - padding[1])
+    elif auto_pad_mode in ['SAME_UPPER', 'SAME_LOWER']:
+        out_shape.append(in_shape[2] * s[0])
+    else:
+        out_shape.append(in_shape[2] + (in_shape[2] - 1) * (s[0] - 1) - w_shape[2] + 1)
+
     output = helper.make_tensor_value_info('output', TensorProto.FLOAT, out_shape)
 
     attributes_dict = {}
@@ -110,6 +98,9 @@ def _make_module(in_shape, kernel_output_channel, bias_shape, auto_pad_mode, dil
     if kernel_shape is not None:
         attributes_dict['kernel_shape'] = kernel_shape
 
+    if output_padding is not None:
+        attributes_dict['output_padding'] = output_padding
+
     if pad is not None:
         attributes_dict['pads'] = padding
 
@@ -117,7 +108,7 @@ def _make_module(in_shape, kernel_output_channel, bias_shape, auto_pad_mode, dil
         attributes_dict['strides'] = stride
 
     node = onnx.helper.make_node(
-        'Conv',
+        'ConvTranspose',
         inputs=inputs,
         outputs=['output'],
         **attributes_dict
@@ -139,11 +130,11 @@ def _make_module(in_shape, kernel_output_channel, bias_shape, auto_pad_mode, dil
 
 
 in_shapes = [
-    [1, 3, 16, 16]
+    [1, 3, 16]
 ]
 
 kernel_output_channels = [
-    2
+    3
 ]
 
 bias_shapes = [
@@ -161,27 +152,30 @@ auto_pad_modes = [
 
 dilations = [
     None,
-    [2, 2]
 ]
 
 groups = [
     None,
-    1
+    3
 ]
 
 kernel_shapes = [
-    [1, 1],
-    [3, 3],
+    [3],
+]
+
+output_paddings = [
+    None,
 ]
 
 pads = [
-    None,
-    [0, 0, 1, 0],
+    # None,
+    [1, 1],
 ]
 
 strides = [
     None,
-    [2, 2]
+    [2],
+    [3],
 ]
 
 
@@ -192,17 +186,18 @@ strides = [
 @pytest.mark.parametrize('dilation', dilations)
 @pytest.mark.parametrize('group', groups)
 @pytest.mark.parametrize('kernel_shape', kernel_shapes)
+@pytest.mark.parametrize('output_padding', output_paddings)
 @pytest.mark.parametrize('pad', pads)
 @pytest.mark.parametrize('stride', strides)
-def test_conv(in_shape, kernel_output_channel, bias_shape, auto_pad_mode, dilation, group, kernel_shape, pad, stride, request):
-    if (bias_shape is None or (bias_shape is not None and bias_shape[0] == kernel_output_channel)) and ((auto_pad_mode is not None and pad is None) or (auto_pad_mode is None and pad is not None)) and (dilation is None or auto_pad_mode is None or auto_pad_mode == 'NOTSET'):
+def test_conv_transpose1d(in_shape, kernel_output_channel, bias_shape, auto_pad_mode, dilation, group, kernel_shape, output_padding, pad, stride, request):
+    if (bias_shape is None or (bias_shape is not None and bias_shape[0] == kernel_output_channel)) and ((auto_pad_mode in [None, 'NOTSET'] and pad is not None) or (auto_pad_mode in ['SAME_UPPER', 'SAME_LOWER', 'VALID'] and pad is None)) and (dilation is None or (auto_pad_modes in [None, 'NOTSET'])) and ((output_padding is None) or (output_padding is not None and stride is not None)):
         model_def = _make_module(in_shape, kernel_output_channel, bias_shape,
-                                 auto_pad_mode, dilation, group, kernel_shape, pad, stride)
+                                 auto_pad_mode, dilation, group, kernel_shape, output_padding, pad, stride)
 
-        runner = OnnxTestRunner(request.node.name)
+        runner = OnnxTestRunner(request.node.name, ['k510'])
         model_file = runner.from_onnx_helper(model_def)
         runner.run(model_file)
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_conv.py'])
+    pytest.main(['-vv', 'test_conv_transpose1d.py'])

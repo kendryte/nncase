@@ -244,7 +244,8 @@ template <typename T>
 result<void> kernels::reduce(reduce_op_t op, T init_value, const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &axis,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, bool keep_dims, kernel_context &context) noexcept
 {
-    return cpu::reference::reduce(op, init_value, input, output, in_shape, axis, in_strides, out_strides, keep_dims, context);
+    // return cpu::reference::reduce(op, init_value, input, output, in_shape, axis, in_strides, out_strides, keep_dims, context);
+    return cpu::optimized::reduce(op, init_value, input, output, in_shape, axis, in_strides, out_strides, keep_dims, context);
 }
 
 template result<void> kernels::reduce_arg<int32_t>(reduce_arg_op_t op, const float *input, int32_t *output, const runtime_shape_t &in_shape,
@@ -444,7 +445,7 @@ result<void> kernels::ternary(const float *input_a, const T *input_b, const T *i
     const runtime_shape_t &in_b_strides, const runtime_shape_t &in_c_shape, const runtime_shape_t &in_c_strides,
     const runtime_shape_t &out_strides) noexcept
 {
-    return cpu::reference::ternary(input_a, input_b, input_c, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides,
+    return cpu::optimized::ternary(input_a, input_b, input_c, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides,
         in_c_shape, in_c_strides, out_strides);
 }
 
@@ -473,12 +474,12 @@ result<void> kernels::trilu(const T *input, T *output, const runtime_shape_t &in
     return cpu::reference::trilu(input, output, in_shape, upper, k);
 }
 
-template result<void> kernels::gru<float>(const float *input, const float *w, const float *r, const float *b, float *initial_h, float *output, float *output_h, const runtime_shape_t &input_shape, const runtime_shape_t &w_shape, int mode) noexcept;
+template result<void> kernels::gru<float>(const float *input, const float *w, const float *r, const float *b, float *initial_h, float *output, float *output_h, const runtime_shape_t &input_shape, const runtime_shape_t &w_shape, int mode, bool linear_before_reset) noexcept;
 
 template <typename T>
-result<void> kernels::gru(const T *input, const T *w, const T *r, const T *b, T *initial_h, T *output, T *output_h, const runtime_shape_t &input_shape, const runtime_shape_t &w_shape, int mode) noexcept
+result<void> kernels::gru(const T *input, const T *w, const T *r, const T *b, T *initial_h, T *output, T *output_h, const runtime_shape_t &input_shape, const runtime_shape_t &w_shape, int mode, bool linear_before_reset) noexcept
 {
-    return cpu::reference::gru(input, w, r, b, initial_h, output, output_h, input_shape, w_shape, mode);
+    return cpu::reference::gru(input, w, r, b, initial_h, output, output_h, input_shape, w_shape, mode, linear_before_reset);
 }
 
 template result<void> kernels::tflite_detection_postprocess<float>(const float *boxes, const float *scores, const float *anchors, float *output_locations, float *output_classes, float *output_scores, float *output_num_detections,

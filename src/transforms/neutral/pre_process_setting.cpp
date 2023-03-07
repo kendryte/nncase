@@ -54,23 +54,6 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
 
             mid_ptr = &new_input->output();
 
-            //dequantize: input_range_
-            if (mid_ptr->type() != dt_float32)
-            {
-                std::cout << " |Dequantize:" << std::endl;
-                value_range<float> range = { input_range_[0], input_range_[1] };
-
-                auto Q_max = 255;
-                auto Q_min = 0;
-                auto scale = (range.max - range.min) / (Q_max - Q_min);
-                auto bias = std::round((range.max * Q_min - range.min * Q_max) / (range.max - range.min));
-                quant_param_t deq_params { static_cast<int32_t>(bias), scale };
-                auto deq_input = graph.emplace<dequantize>(mid_ptr->type(), mid_ptr->shape(), dt_float32, deq_params);
-                deq_input->name("dequantize_input");
-                deq_input->input().connect(*mid_ptr);
-                mid_ptr = &deq_input->output();
-            }
-
             if (input_layout_ == "NHWC")
             {
                 auto transpose_pre = graph.emplace<transpose>(mid_ptr->type(), mid_ptr->shape(), axis_t { 0, 3, 1, 2 });
@@ -97,6 +80,23 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
                 }
 
                 mid_ptr = &concat_slice->output();
+            }
+
+            //dequantize: input_range_
+            if (mid_ptr->type() != dt_float32)
+            {
+                std::cout << " |Dequantize:" << std::endl;
+                value_range<float> range = { input_range_[0], input_range_[1] };
+
+                auto Q_max = 255;
+                auto Q_min = 0;
+                auto scale = (range.max - range.min) / (Q_max - Q_min);
+                auto bias = std::round((range.max * Q_min - range.min * Q_max) / (range.max - range.min));
+                quant_param_t deq_params { static_cast<int32_t>(bias), scale };
+                auto deq_input = graph.emplace<dequantize>(mid_ptr->type(), mid_ptr->shape(), dt_float32, deq_params);
+                deq_input->name("dequantize_input");
+                deq_input->input().connect(*mid_ptr);
+                mid_ptr = &deq_input->output();
             }
 
             // letterbox :

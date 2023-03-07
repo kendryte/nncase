@@ -37,6 +37,8 @@
 #include <nncase/transforms/neutral/fold_quantize.h>
 #include <nncase/transforms/neutral/fold_transpose.h>
 #include <nncase/transforms/neutral/fuse_pad.h>
+#include <nncase/transforms/neutral/fuse_unary.h>
+#include <nncase/transforms/neutral/fused_unary_to_lookup1d.h>
 #include <nncase/transforms/neutral/lstm_transform.h>
 #include <nncase/transforms/neutral/matmul_to_conv2d.h>
 #include <nncase/transforms/neutral/pad_conv.h>
@@ -138,7 +140,7 @@ void k210_target::register_target_dependent_passes([[maybe_unused]] const module
     }
 }
 
-void k210_target::register_quantize_annotation_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr)
+void k210_target::register_quantize_annotation_passes(NNCASE_UNUSED const module_type_t &type, ir::transforms::pass_manager &pass_mgr)
 {
     {
         transform_pass p("annotate_kpu1");
@@ -150,7 +152,15 @@ void k210_target::register_quantize_annotation_passes(const module_type_t &type,
         pass_mgr.add_pass(std::move(p));
     }
 
-    neutral_target::register_quantize_annotation_passes(type, pass_mgr);
+    {
+        transform_pass p("fuse_unary");
+        p.emplace<fuse_one_unary_transform>();
+        p.emplace<fuse_one_binary_transform>();
+        p.emplace<fuse_two_fused_unary_transform>();
+        p.emplace<fuse_one_fused_unary_with_binary_transform>();
+        p.emplace<fuse_two_fused_unary_with_binary_transform>();
+        pass_mgr.add_pass(std::move(p));
+    }
 
     {
         transform_pass p("annotate_kpu2");
@@ -172,7 +182,7 @@ void k210_target::register_quantize_annotation_passes(const module_type_t &type,
 
     {
         transform_pass p("annotate_kpu_quantize");
-        p.emplace<add_quant_checkpoints_transform>(std::in_place, ir::op_fused_unary, ir::k210::op_k210_fake_kpu_conv2d, ir::op_bitcast, ir::op_dequantize, ir::op_binary);
+        p.emplace<add_quant_checkpoints_transform>(std::in_place, ir::op_fused_unary, ir::k210::op_k210_fake_kpu_conv2d, ir::op_bitcast, ir::op_dequantize, ir::op_binary, ir::op_slice);
         pass_mgr.add_pass(std::move(p));
     }
 }

@@ -116,10 +116,10 @@ class OnnxTestRunner(TestRunner):
             input_dict = {}
             input_dict['name'] = e.name
             input_dict['dtype'] = onnx.mapping.TENSOR_TYPE_TO_NP_TYPE[onnx_type.elem_type]
-            input_dict['shape'] = [(i.dim_value if i.dim_value != 0 else d) for i, d in zip(
-                onnx_type.shape.dim, [1, 3, 224, 224])]
-            input_dict['model_shape'] = [(i.dim_value if i.dim_value != 0 else d) for i, d in zip(
-                onnx_type.shape.dim, [1, 3, 224, 224])]
+            input_dict['shape'] = [(i.dim_value if i.dim_value != 0 else 10) for i in
+                                   onnx_type.shape.dim]
+            input_dict['model_shape'] = [(i.dim_value if i.dim_value != 0 else 10) for i in
+                                         onnx_type.shape.dim]
             self.inputs.append(input_dict)
             self.calibs.append(copy.deepcopy(input_dict))
             self.dump_range_data.append(copy.deepcopy(input_dict))

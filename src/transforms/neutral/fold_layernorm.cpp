@@ -146,3 +146,67 @@ void fold_layernorm_pattern2_transform::process(transform_context &context)
     for (auto &in : dup(inputs))
         in->connect(ln->output());
 }
+
+bool fold_layernorm_pattern3_transform::on_try_match(node &node, transform_context &context)
+{
+    reduce *rd_mu = nullptr, *rd_var = nullptr;
+    binary *sub_mu = nullptr, *add_eps = nullptr, *mul_gamma = nullptr, *mul_x = nullptr, *mul_mu = nullptr, *sub_beta = nullptr, *add_all = nullptr;
+    unary *rsqrt = nullptr, *square = nullptr;
+
+    if ((add_all = node_cast<binary>(node)) and add_all->binary_op() == binary_op_t::binary_add
+        and (mul_x = try_get_direct_parent<binary>(*add_all, 0)) and mul_x->binary_op() == binary_op_t::binary_mul
+        and (sub_beta = try_get_direct_parent<binary>(*add_all, 1)) and sub_beta->binary_op() == binary_op_t::binary_sub
+        and (mul_gamma = try_get_direct_parent<binary>(*mul_x, 1)) and mul_gamma->binary_op() == binary_op_t::binary_mul
+        and (rsqrt = try_get_direct_parent<unary>(*mul_gamma, 0)) and rsqrt->unary_op() == unary_op_t::unary_rsqrt
+        and (add_eps = try_get_direct_parent<binary>(*rsqrt)) and add_eps->binary_op() == binary_op_t::binary_add
+        and (rd_var = try_get_direct_parent<reduce>(*add_eps, 0)) and rd_var->reduce_op() == reduce_op_t::reduce_mean
+        and (square = try_get_direct_parent<unary>(*rd_var)) and square->unary_op() == unary_op_t::unary_square
+        and (sub_mu = try_get_direct_parent<binary>(*square)) and sub_mu->binary_op() == binary_op_t::binary_sub
+        and (rd_mu = try_get_direct_parent<reduce>(*sub_mu, 1)) and rd_mu->reduce_op() == reduce_op_t::reduce_mean
+        and (mul_mu = try_get_direct_parent<binary>(*sub_beta, 1)) and mul_mu->binary_op() == binary_op_t::binary_mul
+        and (mul_mu->input_a().connection() == sub_mu->input_b().connection())
+        and (mul_mu->input_b().connection() == mul_x->input_b().connection())
+        and (mul_x->input_a().connection() == sub_mu->input_a().connection())
+        and (mul_x->input_a().connection() == rd_mu->input().connection()))
+    {
+        context.inputs.emplace_back(&rd_mu->input());
+        context.outputs.emplace_back(&add_all->output());
+
+        context.matched_nodes.emplace_back(rd_mu);
+        context.matched_nodes.emplace_back(sub_mu);
+        context.matched_nodes.emplace_back(square);
+        context.matched_nodes.emplace_back(rd_var);
+        context.matched_nodes.emplace_back(add_eps);
+        context.matched_nodes.emplace_back(rsqrt);
+        context.matched_nodes.emplace_back(mul_gamma);
+        context.matched_nodes.emplace_back(mul_x);
+        context.matched_nodes.emplace_back(mul_mu);
+        context.matched_nodes.emplace_back(sub_beta);
+        context.matched_nodes.emplace_back(add_all);
+
+        return true;
+    }
+
+    return false;
+}
+
+void fold_layernorm_pattern3_transform::process(transform_context &context)
+{
+    auto &output = *context.inputs[0]->connection();
+    auto inputs = context.outputs[0]->connections();
+
+    auto eps = node_cast<constant>(context.matched_nodes[4]->input_at(1).connection()->owner());
+    auto gamma = node_cast<constant>(context.matched_nodes[6]->input_at(1).connection()->owner());
+    auto beta = node_cast<constant>(context.matched_nodes[9]->input_at(0).connection()->owner());
+
+    auto axis = output.shape().size() - gamma->output().shape().size();
+    auto ln = context.graph.emplace<layernorm>(output.type(), output.shape(), axis, *reinterpret_cast<const float *>(eps->data().data()));
+    ln->name(output.name() + "/layernorm");
+
+    ln->input().connect(output);
+    ln->scale().connect(gamma->output());
+    ln->bias().connect(beta->output());
+
+    for (auto &in : dup(inputs))
+        in->connect(ln->output());
+}

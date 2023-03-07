@@ -192,8 +192,10 @@ void remove_exclusive_copy_to_output_transform::process(transform_context &conte
 {
     auto &output = *context.inputs[0]->connection();
     auto &old_out = static_cast<output_node &>(*context.matched_nodes[1]);
-
-    output.memory_location(mem_output);
+    if (output.connections().size() == 1)
+        output.memory_location(mem_output);
+    else
+        output.memory_location(mem_shared_data);
     output.attributes(output.attributes() | cnctr_attr_no_layout_strides);
     old_out.input().connect(output);
 }
@@ -207,7 +209,7 @@ void remove_exclusive_copy_to_output_transform::process(transform_context &conte
 bool remove_exclusive_copy_to_concat_transform::on_try_match(node &node, transform_context &context)
 {
     copy *cp;
-    concat *c;
+    concat *c, *pre_c;
 
     if ((cp = node_cast<copy>(node))
         && (c = try_get_direct_child<concat>(*cp)))
@@ -220,6 +222,8 @@ bool remove_exclusive_copy_to_concat_transform::on_try_match(node &node, transfo
             && ((input->attributes() & (cnctr_attr_no_buffer_fusion | cnctr_attr_buffer_slice)) == 0)
             && (is_simple_concat || (input->attributes() & (cnctr_attr_no_layout_strides)) == 0))
         {
+            if ((pre_c = try_get_direct_parent<concat>(*cp)) && pre_c->axis() != c->axis())
+                return false;
             context.inputs.emplace_back(&cp->input());
             context.outputs.emplace_back(&cp->output());
 

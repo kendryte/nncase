@@ -72,7 +72,7 @@ public:
     void dce();
     void cse();
     void merge_module_regions();
-    split_graph_result split_subgraph(std::span<node *const> nodes);
+    split_graph_result split_subgraph(std::span<node *const> nodes, bool reorder_input = false);
     graph &add_subgraph(std::unique_ptr<graph> subgraph);
 
 private:

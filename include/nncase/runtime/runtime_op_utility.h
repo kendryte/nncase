@@ -71,7 +71,7 @@ inline void adapt_strides(const shape_type &shape, strides_type &strides,
 
 template <class shape_type, class strides_type, class bs_ptr>
 inline std::size_t compute_strides(const shape_type &shape,
-    strides_type &strides, bs_ptr bs)
+    strides_type &strides, NNCASE_UNUSED bs_ptr bs)
 {
     using strides_value_type = typename std::decay_t<strides_type>::value_type;
     strides_value_type data_size = 1;
@@ -79,7 +79,7 @@ inline std::size_t compute_strides(const shape_type &shape,
     {
         strides[i - 1] = data_size;
         data_size = strides[i - 1] * static_cast<strides_value_type>(shape[i - 1]);
-        adapt_strides(shape, strides, bs, i - 1);
+        // adapt_strides(shape, strides, bs, i - 1);
     }
     return static_cast<std::size_t>(data_size);
 }

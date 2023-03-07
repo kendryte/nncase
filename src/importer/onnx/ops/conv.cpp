@@ -16,6 +16,7 @@
 #include "../onnx_importer.h"
 #include <cassert>
 #include <nncase/ir/graph.h>
+#include <nncase/ir/ir_types.h>
 #include <nncase/ir/op_utils.h>
 #include <nncase/ir/ops/bitcast.h>
 #include <nncase/ir/ops/constant.h>
@@ -176,19 +177,38 @@ void onnx_importer::convert_op_ConvTranspose(const NodeProto &node)
 
     auto input_shape = get_shape(input);
     auto weight_shape = get_shape(weight);
-    auto weight_type = get_datatype(weight).value();
     auto output_shape = get_shape(output);
+    auto input_type = get_datatype(input).value();
+    auto weight_type = get_datatype(weight).value();
+    auto output_type = get_datatype(output).value();
+
+    bool model_3d = input_shape.size() == 3;
 
     // group
     const auto &group_attr = get_attribute<int>(node, "group");
     size_t group = group_attr ? group_attr.value() : 1;
 
-    auto tp = graph_.emplace<transpose>(weight_type, weight_shape, axis_t { 1, 0, 2, 3 });
-    tp->name(op_name + "(Transpose)");
-    auto tp_shape = tp->output().shape();
-    auto bc = graph_.emplace<bitcast>(weight_type, tp_shape, shape_t { tp_shape[0] * group, tp_shape[1] / group, tp_shape[2], tp_shape[3] });
-    bc->name(op_name + "(Bitcast)");
-    auto bc_shape = bc->output().shape();
+    transpose *tp;
+    bitcast *bc;
+    shape_t bc_shape, tp_shape;
+    if (model_3d)
+    {
+        tp = graph_.emplace<transpose>(weight_type, weight_shape, axis_t { 1, 0, 2 });
+        tp->name(op_name + "(Transpose)");
+        tp_shape = tp->output().shape();
+        bc = graph_.emplace<bitcast>(weight_type, tp_shape, shape_t { tp_shape[0] * group, tp_shape[1] / group, tp_shape[2], 1 });
+        bc->name(op_name + "(Bitcast)");
+        bc_shape = bc->output().shape();
+    }
+    else
+    {
+        tp = graph_.emplace<transpose>(weight_type, weight_shape, axis_t { 1, 0, 2, 3 });
+        tp->name(op_name + "(Transpose)");
+        tp_shape = tp->output().shape();
+        bc = graph_.emplace<bitcast>(weight_type, tp_shape, shape_t { tp_shape[0] * group, tp_shape[1] / group, tp_shape[2], tp_shape[3] });
+        bc->name(op_name + "(Bitcast)");
+        bc_shape = bc->output().shape();
+    }
 
     // stride
     std::array<size_t, 2> strides = { 1, 1 };
@@ -244,7 +264,8 @@ void onnx_importer::convert_op_ConvTranspose(const NodeProto &node)
     {
         std::array<int, 2> total_paddings { { 0, 0 } };
         total_paddings[0] = strides[0] * (input_shape[2] - 1) + output_paddings[0] + ((tp_shape[2] - 1) * dilations[0] + 1) - output_shape[2];
-        total_paddings[1] = strides[1] * (input_shape[3] - 1) + output_paddings[1] + ((tp_shape[3] - 1) * dilations[1] + 1) - output_shape[3];
+        if (!model_3d)
+            total_paddings[1] = strides[1] * (input_shape[3] - 1) + output_paddings[1] + ((tp_shape[3] - 1) * dilations[1] + 1) - output_shape[3];
 
         if (pad_mode == "SAME_UPPER")
         {
@@ -269,23 +290,35 @@ void onnx_importer::convert_op_ConvTranspose(const NodeProto &node)
             if (paddings_attr)
             {
                 const auto &paddings_values = paddings_attr.value();
-                if (paddings_values.size() > 1)
+                if (model_3d)
                 {
-                    paddings[0].before = paddings_values[0];
-                    paddings[1].before = paddings_values[1];
+                    if (paddings_values.size() > 1)
+                    {
+                        paddings[0].before = paddings_values[0];
+                        paddings[0].after = paddings_values[1];
+                    }
                 }
-
-                if (paddings_values.size() > 3)
+                else
                 {
-                    paddings[0].after = paddings_values[2];
-                    paddings[1].after = paddings_values[3];
+                    if (paddings_values.size() > 1)
+                    {
+                        paddings[0].before = paddings_values[0];
+                        paddings[1].before = paddings_values[1];
+                    }
+
+                    if (paddings_values.size() > 3)
+                    {
+                        paddings[0].after = paddings_values[2];
+                        paddings[1].after = paddings_values[3];
+                    }
                 }
             }
         }
         else if (pad_mode == "SAME_UPPER")
         {
             paddings[0] = get_windowed_padding(input_shape[2], tp_shape[2], strides[0], dilations[0], true);
-            paddings[1] = get_windowed_padding(input_shape[3], tp_shape[3], strides[1], dilations[1], true);
+            if (!model_3d)
+                paddings[1] = get_windowed_padding(input_shape[3], tp_shape[3], strides[1], dilations[1], true);
         }
         else if (pad_mode == "SAME_LOWER")
         {
@@ -293,10 +326,25 @@ void onnx_importer::convert_op_ConvTranspose(const NodeProto &node)
             if (paddings[0].before < paddings[0].after)
                 std::swap(paddings[0].before, paddings[0].after);
 
-            paddings[1] = get_windowed_padding(input_shape[3], tp_shape[3], strides[1], dilations[1], true);
-            if (paddings[1].before < paddings[1].after)
-                std::swap(paddings[1].before, paddings[1].after);
+            if (!model_3d)
+            {
+                paddings[1] = get_windowed_padding(input_shape[3], tp_shape[3], strides[1], dilations[1], true);
+                if (paddings[1].before < paddings[1].after)
+                    std::swap(paddings[1].before, paddings[1].after);
+            }
         }
+    }
+
+    // fit 3D input
+    auto data_shape = input_shape;
+    if (model_3d)
+    {
+        paddings[1] = padding::zero();
+        strides[1] = 1;
+        dilations[1] = 1;
+        input_shape.push_back(1);
+
+        output_shape.push_back(1);
     }
 
     // ConvTranspose
@@ -304,8 +352,20 @@ void onnx_importer::convert_op_ConvTranspose(const NodeProto &node)
         output_paddings[0], output_paddings[1], strides[0], strides[1], dilations[0], dilations[1], value_range<float>::full());
     conv_transpose->name(op_name + "(ConvTranspose)");
 
-    input_tensors_.emplace(&conv_transpose->input(), input);
-    input_tensors_.emplace(&tp->input(), weight);
+    if (model_3d)
+    {
+        auto bitc_data = graph_.emplace<bitcast>(input_type, data_shape, input_shape);
+        conv_transpose->input().connect(bitc_data->output());
+        input_tensors_.emplace(&bitc_data->input(), input);
+
+        input_tensors_.emplace(&tp->input(), weight);
+    }
+    else
+    {
+        input_tensors_.emplace(&conv_transpose->input(), input);
+        input_tensors_.emplace(&tp->input(), weight);
+    }
+
     bc->input().connect(tp->output());
     conv_transpose->weights().connect(bc->output());
     if (node.input().size() > 2)
@@ -319,5 +379,15 @@ void onnx_importer::convert_op_ConvTranspose(const NodeProto &node)
         auto bias = graph_.emplace<constant>(dt_float32, shape, zeros);
         conv_transpose->bias().connect(bias->output());
     }
-    output_tensors_.emplace(output, &conv_transpose->output());
+
+    if (model_3d)
+    {
+        auto bitc_out = graph_.emplace<bitcast>(output_type, conv_transpose->output().shape(), shape_t { conv_transpose->output().shape()[0], conv_transpose->output().shape()[1], conv_transpose->output().shape()[2] });
+        bitc_out->input().connect(conv_transpose->output());
+        output_tensors_.emplace(output, &bitc_out->output());
+    }
+    else
+    {
+        output_tensors_.emplace(output, &conv_transpose->output());
+    }
 }
