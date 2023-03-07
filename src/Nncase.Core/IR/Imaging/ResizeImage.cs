@@ -28,8 +28,9 @@ namespace Nncase.IR.Imaging
 
         /// <summary>
         /// Gets roi.
+        /// [axis 0 start,axis 1 end, ... ,axis n start, axis n end].
         /// </summary>
-        public static readonly ParameterInfo Roi = new(typeof(ResizeImage), 1, "roi", IsNoneType() | IsFloatScalar());
+        public static readonly ParameterInfo Roi = new(typeof(ResizeImage), 1, "roi", IsNoneType() | (IsFloat() & HasRank(1)));
 
         /// <summary>
         /// Gets new_size.
@@ -52,6 +53,6 @@ namespace Nncase.IR.Imaging
         public static readonly ParameterInfo ExtrapolationValue = new(typeof(ResizeImage), 5, "extrapolation_value", IsNoneType() | IsFloatScalar());
 
         /// <inheritdoc/>
-        public override string DisplayProperty() => $"ImageResizeMode.{ResizeMode}, ImageResizeTransformationMode.{TransformationMode}, ImageResizeNearestMode. {NearestMode}, {IsTFResize}";
+        public override string DisplayProperty() => $"ImageResizeMode.{ResizeMode}, ImageResizeTransformationMode.{TransformationMode}, ImageResizeNearestMode.{NearestMode}, {IsTFResize}";
     }
 }

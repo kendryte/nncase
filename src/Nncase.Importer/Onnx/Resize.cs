@@ -29,7 +29,7 @@ namespace Nncase.Importer
 
         private Expr GetRoi(NodeProto op)
         {
-            return GetOptionInputExpr(op, 1).Or(Tensor.From<float>(Array.Empty<float>(), new[] { 0 }));
+            return GetOptionInputExpr(op, 1).Or(None.Default);
         }
 
         private Expr ResizeV10(in NodeProto op)
