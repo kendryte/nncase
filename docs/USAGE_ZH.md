@@ -2,7 +2,7 @@
 
 nncase目前提供了python wheel包和ncc客户端两种方法编译模型.
 
-- nncase wheel包需要去[nncase release](https://github.com/kendryte/nncase/releases)获取,  target wheel包除cpu/K210不需要安装外, 其它target需要从nncase sdk离线获取
+- nncase wheel包需要去[nncase release](https://github.com/kendryte/nncase/releases)获取
 - ncc客户端需要用户下载并编译nncase
 
 # nncase python APIs
@@ -11,21 +11,61 @@ nncase提供了Python APIs, 用于在PC上编译/推理深度学习模型.
 
 ## 安装
 
-用户若没有Ubuntu环境, 可使用[nncase docker image](https://github.com/kendryte/nncase/blob/master/docs/build.md)(Ubuntu 20.04 + Python 3.8)
+nncase工具链compiler部分包括nncase和插件包
+
+- nncase 和插件包均在[nncase github](https://github.com/kendryte/nncase/releases)发布
+- nncase wheel包支持Python 3.6/3.7/3.8/3.9/3.10, 用户可根据操作系统和Python选择相应版本下载 .
+- 插件包不依赖Python版本, 可直接安装
+
+用户若没有Ubuntu环境, 可使用[nncase docker](https://github.com/kendryte/nncase/blob/master/docs/build.md#docker)(Ubuntu 20.04 + Python 3.8)
 
 ```shell
+$ cd /path/to/nncase_sdk
 $ docker pull registry.cn-hangzhou.aliyuncs.com/kendryte/nncase:latest
 $ docker run -it --rm -v `pwd`:/mnt -w /mnt registry.cn-hangzhou.aliyuncs.com/kendryte/nncase:latest /bin/bash -c "/bin/bash"
 ```
 
-下面以Ubuntu 20.04 + Python 3.8平台安装nncase为例
 
-```shell
-root@f74598de4a02:/mnt# pip3 install nncase_github/nncase-1.0.0.20211029-cp38-cp38-manylinux_2_24_x86_64.whl
+
+### cpu/K210
+
+- 下载nncase wheel包, 直接安装即可.
 
 ```
+root@2b11cc15c7f8:/mnt# wget -P x86_64 https://github.com/kendryte/nncase/releases/download/v1.8.0/nncase-1.8.0.20220929-cp38-cp38-manylinux_2_24_x86_64.whl
 
-> 若不使用cpu/K210作为target, 需要从相应target的nncase sdk中获取wheel包并进行安装
+root@2b11cc15c7f8:/mnt# pip3 install x86_64/*.whl
+```
+
+
+
+### K510
+
+- 分别下载nncase和nncase_k510插件包，再一起安装
+
+```shell
+root@2b11cc15c7f8:/mnt# wget -P x86_64 https://github.com/kendryte/nncase/releases/download/v1.8.0/nncase-1.8.0.20220929-cp38-cp38-manylinux_2_24_x86_64.whl
+
+root@2b11cc15c7f8:/mnt# wget -P x86_64 https://github.com/kendryte/nncase/releases/download/v1.8.0/nncase_k510-1.8.0.20220930-py2.py3-none-manylinux_2_24_x86_64.whl
+
+root@2b11cc15c7f8:/mnt# pip3 install x86_64/*.whl
+```
+
+
+
+### 查看版本信息
+
+```python
+root@469e6a4a9e71:/mnt# python3
+Python 3.8.10 (default, Jun  2 2021, 10:49:15)
+[GCC 9.4.0] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import _nncase
+>>> print(_nncase.__version__)
+1.8.0-55be52f
+```
+
+
 
 ## nncase 编译模型APIs
 
