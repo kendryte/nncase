@@ -112,7 +112,7 @@ public class MultiInputFusionMergeRule : IMergeRewriteRule
         var callee_fusion = (Fusion)result["callee_fusion"];
         var callee_inputs = (IReadOnlyList<Expr>)result["callee_inputs"];
 
-        if (usedByReslut[callee].Any())
+        if (usedByReslut[callee].Count() > 1)
         {
             return null;
         }
@@ -474,7 +474,7 @@ v2 =f2(v0)      v1 = f1(v0)
 */
 
             // todo. now can't find the mini case.
-            if (usedByReslut[caller_inputs[0]].Any())
+            if (usedByReslut[caller_inputs[0]].Count() > 1)
             {
                 return false;
             }
