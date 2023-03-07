@@ -14,6 +14,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{E11A07F5
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nncase.Core", "src\Nncase.Core\Nncase.Core.csproj", "{2978CFB1-1530-4EC3-BB5F-130B6F606F85}"
+	ProjectSection(ProjectDependencies) = postProject
+		{24DF3895-9473-4C98-A494-8275456D02CC} = {24DF3895-9473-4C98-A494-8275456D02CC}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nncase.Importer", "src\Nncase.Importer\Nncase.Importer.csproj", "{37410602-6F3A-46F4-8CFD-9B8742BB98F4}"
 EndProject

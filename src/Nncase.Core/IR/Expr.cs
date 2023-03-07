@@ -9,6 +9,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Toolkit.HighPerformance;
 using Microsoft.Toolkit.HighPerformance.Helpers;
 
 namespace Nncase.IR;
@@ -32,9 +33,9 @@ public abstract partial class Expr
         }
     }
 
-    internal Expr(ReadOnlySpan<Expr> operands)
+    internal Expr(Expr[] operands)
     {
-        _operands = operands.ToArray();
+        _operands = operands;
         foreach (var operand in _operands)
         {
             operand.AddUser(this);

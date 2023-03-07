@@ -47,6 +47,15 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     }
 
     /// <inheritdoc />
+    protected internal override TExprResult VisitIf(If expr, TContext context)
+    {
+        Visit(expr.Condition, context);
+        Visit(expr.Then, context);
+        Visit(expr.Else, context);
+        return VisitLeafIf(expr, context);
+    }
+
+    /// <inheritdoc />
     protected internal override TExprResult VisitMarker(Marker expr, TContext context)
     {
         Visit(expr.Target, context);
@@ -243,6 +252,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected virtual TExprResult VisitLeafFusion(Fusion expr, TContext context) => VisitLeafBaseFunction(expr, context);
 
     /// <summary>
+    /// Visit leaf <see cref="If"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafIf(If expr, TContext context) => DefaultVisitLeaf(expr, context);
+
+    /// <summary>
     /// Visit leaf <see cref="Marker"/>.
     /// </summary>
     protected virtual TExprResult VisitLeafMarker(Marker expr, TContext context) => DefaultVisitLeaf(expr, context);
@@ -377,6 +391,13 @@ public partial class ExprVisitor<TExprResult, TTypeResult>
     
     /// <inheritdoc/>
     internal protected sealed override TExprResult VisitFusion(Fusion expr, Unit context) => VisitFusion(expr);
+    /// <summary>
+    /// Visit <see cref="If"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitIf(If expr) => base.VisitIf(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitIf(If expr, Unit context) => VisitIf(expr);
     /// <summary>
     /// Visit <see cref="Marker"/>.
     /// </summary>
@@ -563,6 +584,14 @@ public partial class ExprVisitor<TExprResult, TTypeResult>
     
     /// <inheritdoc/>
     protected sealed override TExprResult VisitLeafFusion(Fusion expr, Unit context) => VisitLeafFusion(expr);
+
+    /// <summary>
+    /// Visit leaf <see cref="If"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafIf(If expr) => base.VisitLeafIf(expr, default);
+    
+    /// <inheritdoc/>
+    protected sealed override TExprResult VisitLeafIf(If expr, Unit context) => VisitLeafIf(expr);
 
     /// <summary>
     /// Visit leaf <see cref="Marker"/>.

@@ -28,6 +28,7 @@ public sealed partial class Binary : Op
     public static readonly ParameterInfo Rhs = new(typeof(Binary), 1, "rhs");
 
     public BinaryOp BinaryOp { get; }
+
     /// <inheritdoc/>
     public override string DisplayProperty()
     {

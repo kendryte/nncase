@@ -52,6 +52,16 @@ public partial class ExprCloner<TContext>
     }
 
     /// <inheritdoc />
+    protected override Expr VisitLeafIf(If expr, TContext context)
+    {
+        return expr.With(
+            condition: Clone(expr.Condition, context),
+            then: Clone(expr.Then, context),
+            @else: Clone(expr.Else, context)
+        );
+    }
+
+    /// <inheritdoc />
     protected override Expr VisitLeafMarker(Marker expr, TContext context)
     {
         return expr.With(

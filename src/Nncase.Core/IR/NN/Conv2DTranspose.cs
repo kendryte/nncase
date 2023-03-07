@@ -71,7 +71,6 @@ public sealed partial class Conv2DTranspose : Op
 
     public PadMode PadMode { get; }
 
-        /// <inheritdoc/>
-        public override string DisplayProperty() => $"PadMode.{PadMode}";
-    }
+    /// <inheritdoc/>
+    public override string DisplayProperty() => $"PadMode.{PadMode}";
 }

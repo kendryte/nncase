@@ -16,7 +16,7 @@ namespace Nncase.TIR;
 public sealed class Let : Expr
 {
     public Let(Var var, Expr expression, Sequential body)
-        : base(new Expr[] { var, expression, body }.AsSpan())
+        : base(new Expr[] { var, expression, body })
     {
     }
 

@@ -40,7 +40,7 @@ public sealed class BufferRegion : Expr
 #endif
 
     public BufferRegion(Buffer buffer, ReadOnlySpan<Range> region)
-        : base(ArrayUtility.Concat(buffer, SpanUtility.UnsafeCast<Range, Expr>(region)).AsSpan())
+        : base(ArrayUtility.Concat(buffer, SpanUtility.UnsafeCast<Range, Expr>(region)))
     {
     }
 

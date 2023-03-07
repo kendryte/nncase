@@ -18,7 +18,7 @@ using static Nncase.Utilities.ReplaceUtility;
 using ParameterInfo = Nncase.IR.ParameterInfo;
 using Tuple = System.Tuple;
 
-namespace Nncase.Transform.Rules.Neutral;
+namespace Nncase.Passes.Rules.Neutral;
 
 public abstract class FusionMaker : RewriteRule<Pattern>
 {
@@ -103,7 +103,7 @@ public partial class ComplexFusion<TMid, TBegin, TEnd> : FusionMaker
             endName,
             IsVArgsRepeat("outputParams", (fields) =>
             {
-                return fields.Select((_, i) =>
+                return fields.AsValueEnumerable().Select((_, i) =>
                         IsCallWildcard(
                             endName + $"_{i}",
                             IsOp<TEnd>(endName + $"Op_{i}"),
@@ -130,10 +130,10 @@ public partial class ComplexFusion<TMid, TBegin, TEnd> : FusionMaker
 
         // 1. update all input call (replace first input by var)
         var midPairs = InputPatterns
-            .Where(p => ((Call)midCallParams[p.Item1.Index]).Parameters[0] is not Const)
+            .Where(p => ((Call)midCallParams[p.Item1.Index]).Arguments[0] is not Const)
             .Select((p, i) =>
             {
-                var beginCallParams = (IReadOnlyList<Expr>)result[p.Item2.Parameters];
+                var beginCallParams = (IReadOnlyList<Expr>)result[p.Item2.Arguments];
                 var newVar = new Var($"input_{i}", beginCallParams[0].CheckedType!);
                 var newParam = beginCallParams[0];
                 newInputs.Add(newVar);
@@ -157,23 +157,23 @@ public partial class ComplexFusion<TMid, TBegin, TEnd> : FusionMaker
         };
 
         var fusion = new Call(
-            new Fusion(FullName, ModuleKind, newOutput, ImmutableArray.CreateRange(newInputs)),
-            ImmutableArray.CreateRange(newParams));
+            new Fusion(FullName, ModuleKind, newOutput, newInputs.ToArray()),
+            newParams.ToArray());
         return fusion;
     }
 
     private Expr ReplaceTupleFields(IR.Tuple tuple, Call midCall, Call newMidCall, IMatchResult result)
     {
         // Deq + GetItem + LSTM
-        return new IR.Tuple(ImmutableArray.CreateRange(
-            tuple.Fields.Select((end, i) =>
+        return new IR.Tuple(
+            tuple.Fields.AsValueEnumerable().Select((end, i) =>
                 ReplaceCallFirstParam(
                     (Expr)result[$"{_endName}Op_{i}"],
                     (IReadOnlyList<Expr>)result[$"output_{i}Params"],
                     ReplaceCallParams(
                         (Expr)result[$"getItemOp_{i}"],
                         (IReadOnlyList<Expr>)result[$"getItem_{i}Params"],
-                        (midCall, newMidCall))))));
+                        (midCall, newMidCall)))).ToArray());
     }
 }
 

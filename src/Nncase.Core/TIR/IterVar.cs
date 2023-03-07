@@ -12,7 +12,7 @@ namespace Nncase.TIR;
 public sealed class IterVar : Expr
 {
     public IterVar(Range dom, IterationMode mode, Var value)
-        : base(new Expr[] { dom, value }.AsSpan())
+        : base(new Expr[] { dom, value })
     {
         Mode = mode;
     }

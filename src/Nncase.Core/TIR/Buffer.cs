@@ -270,7 +270,7 @@ public record SelectedRange(int Start, int End, Padding Padding)
 public abstract class Buffer : Expr
 {
     public Buffer(string name, DataType elemType, Schedule.MemoryLocation memoryLocation, Expr[] operands)
-        : base(operands.AsSpan())
+        : base(operands.ToArray())
     {
         Name = name;
         ElemType = elemType;

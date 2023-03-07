@@ -121,7 +121,7 @@ public class UnitTestAddMarker : TestClassBase
         var passManager = CompileSession.CreatePassManager("manager");
         passManager.AddWithName<DataflowPass>("AddRangeOfMarker").Configure(p =>
         {
-            p.Add<Transform.Rules.Neutral.AddRangeOfAndMarker>();
+            p.Add<Passes.Rules.Neutral.AddRangeOfAndMarker>();
         });
         await passManager.RunAsync(module);
     }

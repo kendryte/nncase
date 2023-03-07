@@ -17,7 +17,7 @@ namespace Nncase.TIR;
 public sealed class BufferLoad : Expr
 {
     public BufferLoad(PhysicalBuffer buffer, ReadOnlySpan<Expr> indices)
-        : base(ArrayUtility.Concat(buffer, indices).AsSpan())
+        : base(ArrayUtility.Concat(buffer, indices))
     {
     }
 

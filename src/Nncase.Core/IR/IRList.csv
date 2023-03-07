@@ -3,6 +3,7 @@ Call,true,false,Default,,Target;@Arguments
 Const,false,false,Default,,
 Function,true,true,BaseFunction,,@Parameters;Body
 Fusion,true,true,BaseFunction,,@Parameters;Body
+If,true,false,Default,,Condition;Then;Else
 Marker,true,false,Default,,Target;Attribute
 None,true,false,Default,,
 Op,true,false,Default,,

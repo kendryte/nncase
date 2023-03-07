@@ -50,6 +50,13 @@ public partial class ExprRewriter<TContext>
     }
 
     /// <inheritdoc/>
+    protected sealed override Expr VisitLeafIf(If expr, TContext context)
+    {
+        var replace = RewriteLeafIf(expr, context);
+        return ProcessRewrite(expr, replace);
+    }
+
+    /// <inheritdoc/>
     protected sealed override Expr VisitLeafMarker(Marker expr, TContext context)
     {
         var replace = RewriteLeafMarker(expr, context);
@@ -85,7 +92,7 @@ public partial class ExprRewriter<TContext>
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafTuple(Tuple expr, TContext context)
+    protected sealed override Expr VisitLeafTuple(IR.Tuple expr, TContext context)
     {
         var replace = RewriteLeafTuple(expr, context);
         return ProcessRewrite(expr, replace);
@@ -229,6 +236,11 @@ public partial class ExprRewriter<TContext>
     protected virtual Expr RewriteLeafFusion(Fusion expr, TContext context) => RewriteLeafBaseFunction(expr, context);
 
     /// <summary>
+    /// Rewrite leaf <see cref="If"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafIf(If expr, TContext context) => DefaultRewriteLeaf(expr, context);
+
+    /// <summary>
     /// Rewrite leaf <see cref="Marker"/>.
     /// </summary>
     protected virtual Expr RewriteLeafMarker(Marker expr, TContext context) => DefaultRewriteLeaf(expr, context);
@@ -254,9 +266,9 @@ public partial class ExprRewriter<TContext>
     protected virtual Expr RewriteLeafTensorConst(TensorConst expr, TContext context) => RewriteLeafConst(expr, context);
 
     /// <summary>
-    /// Rewrite leaf <see cref="Tuple"/>.
+    /// Rewrite leaf <see cref="IR.Tuple"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafTuple(Tuple expr, TContext context) => DefaultRewriteLeaf(expr, context);
+    protected virtual Expr RewriteLeafTuple(IR.Tuple expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="TupleConst"/>.
@@ -383,6 +395,14 @@ public partial class ExprRewriter
     protected sealed override Expr RewriteLeafFusion(Fusion expr, Unit context) => RewriteLeafFusion(expr);
 
     /// <summary>
+    /// Rewrite leaf <see cref="If"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafIf(If expr) => DefaultRewriteLeaf(expr);
+
+    /// <inheritdoc />
+    protected sealed override Expr RewriteLeafIf(If expr, Unit context) => RewriteLeafIf(expr);
+
+    /// <summary>
     /// Rewrite leaf <see cref="Marker"/>.
     /// </summary>
     protected virtual Expr RewriteLeafMarker(Marker expr) => DefaultRewriteLeaf(expr);
@@ -423,12 +443,12 @@ public partial class ExprRewriter
     protected sealed override Expr RewriteLeafTensorConst(TensorConst expr, Unit context) => RewriteLeafTensorConst(expr);
 
     /// <summary>
-    /// Rewrite leaf <see cref="Tuple"/>.
+    /// Rewrite leaf <see cref="IR.Tuple"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafTuple(Tuple expr) => DefaultRewriteLeaf(expr);
+    protected virtual Expr RewriteLeafTuple(IR.Tuple expr) => DefaultRewriteLeaf(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafTuple(Tuple expr, Unit context) => RewriteLeafTuple(expr);
+    protected sealed override Expr RewriteLeafTuple(IR.Tuple expr, Unit context) => RewriteLeafTuple(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="TupleConst"/>.

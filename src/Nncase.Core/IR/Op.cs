@@ -83,7 +83,7 @@ public abstract class Op : Expr
     private ParameterInfo[]? _parameters;
 
     public Op()
-        : base(ReadOnlySpan<Expr>.Empty)
+        : base(Array.Empty<Expr>())
     {
     }
 

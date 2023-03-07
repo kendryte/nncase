@@ -212,9 +212,9 @@ public static class DetailComparator
     public static void DumpCompareDetailAnalysis(CompareResultByChannel[] resultByChannels, string path, int i)
     {
         var shape = resultByChannels.Length != 0
-            ? SerializeShape(resultByChannels.Head().Shape)
+            ? SerializeShape(resultByChannels.First().Shape)
             : "data all ok and not shape info";
-        var fileName = resultByChannels.Length != 0 ? resultByChannels[0].Losses.Head().V1Tensor.FileName : "AllOK";
+        var fileName = resultByChannels.Length != 0 ? resultByChannels[0].Losses.First().V1Tensor.FileName : "AllOK";
         WriteResult(Path.Join(path, $"{i}_{fileName}"), resultByChannels, $"{shape}\n");
     }
 
@@ -277,7 +277,7 @@ public static class DetailComparator
     public static void DumpCompareDetail(DetailCompareResult compareResult, string resultRoot, int count)
     {
         // todo: fix this
-        var (cosByChannel, lossInfo) = compareResult.Infos.Head();
+        var (cosByChannel, lossInfo) = compareResult.Infos.First();
 
         // todo: insert separator for channel or other
         WriteResult(Path.Join(resultRoot, $"cos_{count}"), cosByChannel);
@@ -341,7 +341,7 @@ public static class DetailComparator
 public class LazyCompartor
 {
     // count => Either<ErrorReason, CosSim>
-    private readonly Dictionary<int, LanguageExt.Either<string, float>> _error = new();
+    private readonly Dictionary<int, Either<string, float>> _error = new();
 
     public static Option<float> Compare(TensorValue pre, TensorValue post, float thresh)
     {
@@ -410,7 +410,7 @@ public class LazyCompartor
 
 public record DetailCompareResultInfo(float[] CosList, AccuracyLossInfo[] AccuracyLossInfos)
 {
-    public int[] Shape => AccuracyLossInfos.Head().Shape;
+    public int[] Shape => AccuracyLossInfos.First().Shape;
 
     public IEnumerable<CompareResultByChannel> Enumerable()
     {
@@ -434,7 +434,7 @@ public record DetailCompareResult(DetailCompareResultInfo[] Infos)
 
 public record CompareResultByChannel(float Cos, AccuracyLossInfo[] LossInfo)
 {
-    public int[] Shape => LossInfo.Head().Shape;
+    public int[] Shape => LossInfo.First().Shape;
 
     // todo: more analysis strategy
     public AccuracyLossInfo[] Losses => LossInfo.Where(deviation =>

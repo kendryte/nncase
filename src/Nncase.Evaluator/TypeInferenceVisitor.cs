@@ -38,18 +38,7 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
     }
 
     /// <inheritdoc/>
-    public override IRType VisitLeaf(If expr)
-    {
-        Visit(expr.Condition);
-        _ = Visit(expr.Then);
-        _ = Visit(expr.Else);
-        var type = AnyType.Default;
-        SetCheckedType(expr, type);
-        return type;
-    }
-
-    /// <inheritdoc/>
-    public override IRType VisitLeaf(Const expr)
+    protected override IRType VisitLeafBlock(Block expr)
     {
         for (int i = 0; i < expr.IterVars.Length; i++)
         {
@@ -187,6 +176,13 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
 
         var paramTypes = expr.Parameters.AsValueEnumerable().Select(x => x.CheckedType).ToArray();
         var type = new CallableType(expr.Body.CheckedType, ImmutableArray.Create(paramTypes));
+        return type;
+    }
+
+    /// <inheritdoc/>
+    protected override IRType VisitLeafIf(If expr)
+    {
+        var type = AnyType.Default;
         return type;
     }
 

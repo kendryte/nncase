@@ -25,12 +25,12 @@ public sealed class Sequential : Expr
     public static readonly Sequential Empty = new Sequential(ReadOnlySpan<Expr>.Empty);
 
     public Sequential(ReadOnlySpan<Expr> fields)
-        : base(fields)
+        : base(fields.ToArray())
     {
     }
 
     public Sequential(params Expr[] fields)
-        : base(fields.AsSpan())
+        : base(fields.ToArray())
     {
     }
 

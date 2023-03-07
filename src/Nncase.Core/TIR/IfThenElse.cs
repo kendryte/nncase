@@ -19,7 +19,7 @@ public sealed class IfThenElse : Expr
     /// Initializes a new instance of the <see cref="IfThenElse"/> class.
     /// </summary>
     public IfThenElse(Expr condition, Sequential then, Sequential @else)
-        : base(new[] { condition, then, @else }.AsSpan())
+        : base(new[] { condition, then, @else })
     {
     }
 

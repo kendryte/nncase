@@ -9,10 +9,12 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using NetFabric.Hyperlinq;
+using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.TIR;
+using Nncase.Utilities;
 
-namespace Nncase.IR;
+namespace Nncase.Diagnostics;
 
 internal sealed class CSharpPrintVisitor : ExprFunctor<string, string>
 {
@@ -60,167 +62,6 @@ internal sealed class CSharpPrintVisitor : ExprFunctor<string, string>
     }
 
     /// <inheritdoc/>
-    public override string Visit(Call expr)
-    {
-        if (_names.TryGetValue(expr, out var name))
-        {
-            return name;
-        }
-
-        var target = Visit(expr.Target);
-        var args = expr.Parameters.Select(Visit).ToArray();
-        name = AllocateTempVar(expr);
-        _scope.IndWrite($"var {name} = new Call({target}, new Expr[] {{{string.Join(", ", args)}}})");
-        AppendCheckedType(expr.CheckedType);
-        return name;
-    }
-
-    /// <inheritdoc/>
-    public override string Visit(Const expr)
-    {
-        if (_names.TryGetValue(expr, out var name))
-        {
-            return name;
-        }
-
-        name = GetCSharpConst(expr);
-        _names.Add(expr, name);
-        return name;
-    }
-
-    /// <inheritdoc/>
-    public override string Visit(Function expr)
-    {
-        if (_names.TryGetValue(expr, out var name))
-        {
-            return name;
-        }
-
-        name = AllocateTempVar(expr);
-        _scope.Push();
-
-        // 1. functionv var
-        _scope.IndWrite($"Function {name}");
-        AppendCheckedType(expr.CheckedType);
-
-        // 2. Function body
-        _scope.IndWriteLine("{");
-        using (_scope.IndentUp())
-        {
-            var body = Visit(expr.Body);
-            _scope.IndWriteLine($"{name} = new Function(\"{expr.Name}\", {body}, new Var[] {{{string.Join(", ", expr.Parameters.Select(Visit))}}});");
-        }
-
-        // 3. Function signature
-        _scope.IndWriteLine("}");
-        _scope.Append(_scope.Pop());
-        return name;
-    }
-
-    public override string Visit(Fusion expr)
-    {
-        if (_names.TryGetValue(expr, out var name))
-        {
-            return name;
-        }
-
-        name = AllocateTempVar(expr);
-
-        _scope.IndWrite($"Fusion {name}");
-        AppendCheckedType(expr.CheckedType);
-        _scope.Push();
-        _scope.IndWriteLine("{");
-        using (_scope.IndentUp())
-        {
-            var body_builder = new StringBuilder();
-            string body;
-            using (var body_writer = new StringWriter(body_builder))
-            {
-                var visitor = new CSharpPrintVisitor(body_writer, _constWriter, _scope.IndentLevel, _randConst, false) { _localId = _localId };
-                body = visitor.Visit(expr.Body);
-                _scope.Append(body_writer.ToString());
-            }
-
-            _scope.IndWriteLine($"{name} = new Fusion(\"{expr.Name}\", \"{expr.ModuleKind}\", {body}, new Var[] {{{string.Join(", ", expr.Parameters.Select(Visit))}}});");
-        }
-
-        _scope.IndWriteLine("}");
-        _scope.Append(_scope.Pop());
-        return name;
-    }
-
-    /// <inheritdoc/>
-    public override string Visit(Op expr)
-    {
-        if (_names.TryGetValue(expr, out var name))
-        {
-            return name;
-        }
-
-        name = $"new {expr.GetType().Name}({expr.DisplayProperty()})";
-        _names.Add(expr, name);
-        return name;
-    }
-
-    /// <inheritdoc/>
-    public override string Visit(Tuple expr)
-    {
-        if (_names.TryGetValue(expr, out var name))
-        {
-            return name;
-        }
-
-        var fields = expr.Fields.Select(Visit).ToArray();
-        name = AllocateTempVar(expr);
-        _scope.IndWrite($"var {name} = new IR.Tuple(new Expr[]{{{string.Join(", ", fields)}}})");
-        AppendCheckedType(expr.CheckedType);
-        _scope.IndWriteLine();
-        return name;
-    }
-
-    /// <inheritdoc/>
-    public override string Visit(Var expr)
-    {
-        if (_names.TryGetValue(expr, out var name))
-        {
-            return name;
-        }
-
-        name = AllocateTempVar(expr);
-        _scope.IndWriteLine($"var {name} = new Var(\"{expr.Name}\", {GetCSharpIRType(expr.TypeAnnotation)});");
-        return name;
-    }
-
-    /// <inheritdoc/>
-    public override string Visit(None expr)
-    {
-        if (_names.TryGetValue(expr, out var name))
-        {
-            return name;
-        }
-
-        name = $"None.Default";
-        _names.Add(expr, name);
-        return name;
-    }
-
-    /// <inheritdoc/>
-    public override string Visit(Marker expr)
-    {
-        if (_names.TryGetValue(expr, out var name))
-        {
-            return name;
-        }
-
-        var target = Visit(expr.Target);
-        var attr = Visit(expr.Attribute);
-        name = AllocateTempVar(expr);
-        _scope.IndWrite($"var {name} = new Marker(\"{expr.Name}\",{target},{attr})");
-        AppendCheckedType(expr.CheckedType);
-        return name;
-    }
-
-    /// <inheritdoc/>
     public override string VisitType(AnyType type) => "any";
 
     /// <inheritdoc/>
@@ -245,6 +86,167 @@ internal sealed class CSharpPrintVisitor : ExprFunctor<string, string>
     /// <inheritdoc/>
     public override string VisitType(TupleType type) =>
         $"({string.Join(", ", type.Fields.Select(VisitType))})";
+
+    /// <inheritdoc/>
+    protected override string VisitCall(Call expr)
+    {
+        if (_names.TryGetValue(expr, out var name))
+        {
+            return name;
+        }
+
+        var target = Visit(expr.Target);
+        var args = expr.Arguments.AsValueEnumerable().Select(Visit).ToArray();
+        name = AllocateTempVar(expr);
+        _scope.IndWrite($"var {name} = new Call({target}, new Expr[] {{{string.Join(", ", args)}}})");
+        AppendCheckedType(expr.CheckedType);
+        return name;
+    }
+
+    /// <inheritdoc/>
+    protected override string VisitConst(Const expr)
+    {
+        if (_names.TryGetValue(expr, out var name))
+        {
+            return name;
+        }
+
+        name = GetCSharpConst(expr);
+        _names.Add(expr, name);
+        return name;
+    }
+
+    /// <inheritdoc/>
+    protected override string VisitFunction(Function expr)
+    {
+        if (_names.TryGetValue(expr, out var name))
+        {
+            return name;
+        }
+
+        name = AllocateTempVar(expr);
+        _scope.Push();
+
+        // 1. functionv var
+        _scope.IndWrite($"Function {name}");
+        AppendCheckedType(expr.CheckedType);
+
+        // 2. Function body
+        _scope.IndWriteLine("{");
+        using (_scope.IndentUp())
+        {
+            var body = Visit(expr.Body);
+            _scope.IndWriteLine($"{name} = new Function(\"{expr.Name}\", {body}, new Var[] {{{StringUtility.Join(", ", expr.Parameters.AsValueEnumerable().Select(Visit))}}});");
+        }
+
+        // 3. Function signature
+        _scope.IndWriteLine("}");
+        _scope.Append(_scope.Pop());
+        return name;
+    }
+
+    protected override string VisitFusion(Fusion expr)
+    {
+        if (_names.TryGetValue(expr, out var name))
+        {
+            return name;
+        }
+
+        name = AllocateTempVar(expr);
+
+        _scope.IndWrite($"Fusion {name}");
+        AppendCheckedType(expr.CheckedType);
+        _scope.Push();
+        _scope.IndWriteLine("{");
+        using (_scope.IndentUp())
+        {
+            var body_builder = new StringBuilder();
+            string body;
+            using (var body_writer = new StringWriter(body_builder))
+            {
+                var visitor = new CSharpPrintVisitor(body_writer, _constWriter, _scope.IndentLevel, _randConst, false) { _localId = _localId };
+                body = visitor.Visit(expr.Body);
+                _scope.Append(body_writer.ToString());
+            }
+
+            _scope.IndWriteLine($"{name} = new Fusion(\"{expr.Name}\", \"{expr.ModuleKind}\", {body}, new Var[] {{{StringUtility.Join(", ", expr.Parameters.AsValueEnumerable().Select(Visit))}}});");
+        }
+
+        _scope.IndWriteLine("}");
+        _scope.Append(_scope.Pop());
+        return name;
+    }
+
+    /// <inheritdoc/>
+    protected override string VisitOp(Op expr)
+    {
+        if (_names.TryGetValue(expr, out var name))
+        {
+            return name;
+        }
+
+        name = $"new {expr.GetType().Name}({expr.DisplayProperty()})";
+        _names.Add(expr, name);
+        return name;
+    }
+
+    /// <inheritdoc/>
+    protected override string VisitTuple(IR.Tuple expr)
+    {
+        if (_names.TryGetValue(expr, out var name))
+        {
+            return name;
+        }
+
+        var fields = expr.Fields.AsValueEnumerable().Select(Visit).ToArray();
+        name = AllocateTempVar(expr);
+        _scope.IndWrite($"var {name} = new IR.Tuple(new Expr[]{{{string.Join(", ", fields)}}})");
+        AppendCheckedType(expr.CheckedType);
+        _scope.IndWriteLine();
+        return name;
+    }
+
+    /// <inheritdoc/>
+    protected override string VisitVar(Var expr)
+    {
+        if (_names.TryGetValue(expr, out var name))
+        {
+            return name;
+        }
+
+        name = AllocateTempVar(expr);
+        _scope.IndWriteLine($"var {name} = new Var(\"{expr.Name}\", {GetCSharpIRType(expr.TypeAnnotation)});");
+        return name;
+    }
+
+    /// <inheritdoc/>
+    protected override string VisitNone(None expr)
+    {
+        if (_names.TryGetValue(expr, out var name))
+        {
+            return name;
+        }
+
+        name = $"None.Default";
+        _names.Add(expr, name);
+        return name;
+    }
+
+    /// <inheritdoc/>
+    protected override string VisitMarker(Marker expr)
+    {
+        if (_names.TryGetValue(expr, out var name))
+        {
+            return name;
+        }
+
+        var target = Visit(expr.Target);
+        var attr = Visit(expr.Attribute);
+        name = AllocateTempVar(expr);
+        _scope.IndWrite($"var {name} = new Marker(\"{expr.Name}\",{target},{attr})");
+        AppendCheckedType(expr.CheckedType);
+        return name;
+    }
 
     private string AllocateTempVar(Expr expr)
     {
@@ -306,7 +308,7 @@ internal sealed class CSharpPrintVisitor : ExprFunctor<string, string>
             ValueType valueType => GetCSharpConstFromFile(tc),
             _ => "NotSupport",
         },
-        TupleConst tc => $"new TupleConst(new Const[] {{{string.Join(",", tc.Fields.Select(GetCSharpConst))}}})",
+        TupleConst tc => $"new TupleConst(new Const[] {{{string.Join(",", tc.Value.Select(x => GetCSharpConst(Const.FromValue(x))))}}})",
         _ => throw new ArgumentOutOfRangeException(@const.GetType().Name),
     };
 }

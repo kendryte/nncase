@@ -221,15 +221,9 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         return snippet;
     }
 
-    public override TextSnippet Visit(If expr)
+    protected override TextSnippet VisitIf(If expr)
     {
-        if (!ExpressionMemo.TryGetValue(expr, out var result))
-        {
-            result = VisitLeaf(expr);
-            ExpressionMemo.Add(expr, result);
-        }
-
-        return result;
+        return VisitLeafIf(expr);
     }
 
     /// <summary>
@@ -247,7 +241,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
     /// </summary>
     /// <param name="if">If expr.</param>
     /// <returns>TextSnippet.</returns>
-    public override TextSnippet VisitLeaf(If @if)
+    protected override TextSnippet VisitLeafIf(If @if)
     {
         var condSnippet = Visit(@if.Condition);
         condSnippet.Emitter.LdScalar();

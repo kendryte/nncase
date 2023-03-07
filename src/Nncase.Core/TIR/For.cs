@@ -30,7 +30,7 @@ public sealed class For : Expr
     /// <param name="mode">The kind of the for loop.</param>
     /// <param name="body">The body sequence.</param>
     public For(Var loopVar, Range domain, LoopMode mode, Sequential body)
-        : base(new Expr[] { loopVar, domain, body }.AsSpan())
+        : base(new Expr[] { loopVar, domain, body })
     {
         Mode = mode;
     }

@@ -60,7 +60,7 @@ public sealed class Marker : Expr, IEquatable<Marker?>
     /// <param name="target">expr target.</param>
     /// <param name="attribute">expr attribute.</param>
     public Marker(string name, Expr target, Expr attribute)
-        : base(new[] { target, attribute }.AsSpan())
+        : base(new[] { target, attribute })
     {
         _name = name;
     }

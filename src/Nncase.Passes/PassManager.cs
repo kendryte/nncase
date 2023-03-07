@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using LanguageExt;
 using Microsoft.Extensions.DependencyInjection;
 using Nncase.Diagnostics;
 using Nncase.IR;

@@ -114,7 +114,7 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
         }
         else
         {
-            newCall = new Call(op, ImmutableArray.CreateRange(callParams));
+            newCall = new Call(op, callParams.ToArray());
         }
 
         context.RewriteOnce = true;

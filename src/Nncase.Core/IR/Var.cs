@@ -21,7 +21,7 @@ public sealed class Var : Expr, IEquatable<Var?>
     /// ctor.
     /// </summary>
     public Var(string name, IRType typeAnnotation)
-        : base(ReadOnlySpan<Expr>.Empty)
+        : base(Array.Empty<Expr>())
     {
         TypeAnnotation = typeAnnotation;
         CheckedType = TypeAnnotation;
@@ -34,7 +34,7 @@ public sealed class Var : Expr, IEquatable<Var?>
     /// </summary>
     /// <param name="typeAnnotation">Type annotation.</param>
     public Var(IRType typeAnnotation)
-        : base(ReadOnlySpan<Expr>.Empty)
+        : base(Array.Empty<Expr>())
     {
         TypeAnnotation = typeAnnotation;
         CheckedType = TypeAnnotation;

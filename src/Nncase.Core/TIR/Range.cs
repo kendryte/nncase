@@ -21,7 +21,7 @@ public sealed partial class Range : Expr
     public static readonly Range All = new Range(int.MinValue, int.MaxValue, 1);
 
     public Range(Expr start, Expr stop, Expr step)
-        : base(new[] { start, stop, step }.AsSpan())
+        : base(new[] { start, stop, step })
     {
     }
 

@@ -26,7 +26,7 @@ public static class ReplaceUtility
     {
         if (pairs.Length == 0)
         {
-            return list.ToList();
+            return list.ToArray();
         }
 
         var new_args = new List<Expr>(list);

@@ -71,4 +71,10 @@ public struct Either<T1, T2>
 
         return false;
     }
+
+    public T Match<T>(Func<T1, T> t1Selector, Func<T2, T> t2Selector)
+        => Is<T1>() ? t1Selector(_t1) : t2Selector(_t2);
+
+    public object Match(Func<T1, object> t1Selector, Func<T2, object> t2Selector)
+        => Is<T1>() ? t1Selector(_t1) : t2Selector(_t2);
 }

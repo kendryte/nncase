@@ -183,7 +183,7 @@ public sealed partial class HardSigmoid : ActivationOp
 /// Erf expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Erf() : ActivationOp
+public sealed partial class Erf : ActivationOp
 {
     /// <summary>
     /// Gets input.

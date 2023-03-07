@@ -33,7 +33,7 @@ public sealed class Call : Expr, IParameterList<Expr>
     /// <param name="target">Call target.</param>
     /// <param name="arguments">Arguments.</param>
     public Call(Expr target, ReadOnlySpan<Expr> arguments)
-        : base(ArrayUtility.Concat(target, arguments).AsSpan())
+        : base(ArrayUtility.Concat(target, arguments))
     {
     }
 

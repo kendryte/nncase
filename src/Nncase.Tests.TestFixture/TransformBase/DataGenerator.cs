@@ -2,7 +2,6 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Diagnostics;
-using LanguageExt.UnsafeValueAccess;
 using Microsoft.Toolkit.HighPerformance;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
@@ -129,7 +128,7 @@ public static class DataGenerator
             else
             {
                 Assert.Equal(data.Length, 1);
-                return Value.FromTensor(ParseTensor(data.Head()));
+                return Value.FromTensor(ParseTensor(data.First()));
             }
         }
     }
@@ -137,12 +136,12 @@ public static class DataGenerator
     public static Call AutoConstructor(string root, string opNameInFile, int num)
     {
         var opTy = new IR.Tensors.Broadcast().GetType().Assembly.DefinedTypes
-            .Find(ty => ty.Name.Contains(opNameInFile, StringComparison.OrdinalIgnoreCase)).ValueUnsafe();
+            .First(ty => ty.Name.Contains(opNameInFile, StringComparison.OrdinalIgnoreCase));
         var op = (Op)Activator.CreateInstance(opTy)!;
         var data = new TextDataExtractor().GetFilesByOrderNum(root);
         var opdata = data[$"{num}${opNameInFile}"];
         var parameters = op.Parameters
-            .Select((param, i) => opdata.Find(dataPath => dataPath.Contains(param.Name, StringComparison.OrdinalIgnoreCase)).ValueUnsafe())
+            .Select((param, i) => opdata.First(dataPath => dataPath.Contains(param.Name, StringComparison.OrdinalIgnoreCase)))
             .Select(path => (Expr)FromTextFile(path).AsTensor()).ToArray();
         return new Call(op, parameters);
     }
@@ -215,9 +214,10 @@ public static class DataGenerator
         var dtIndex = baseIndex;
         var shapeIndex = baseIndex + 1;
         var data = content[(shapeIndex + 1)..];
-        var end = data.Find(d => d.StartsWith("type")).Match(x => data.ToList().IndexOf(x), () => data.Length);
-        var endIndexInContent = end + shapeIndex + 1;
-        return (ParseDataType(content[dtIndex]), ParseShape(content[shapeIndex]), data[..end], endIndexInContent);
+        var end = data.FirstOrDefault(d => d.StartsWith("type"));
+        var endIndex = end is null ? data.Length : Array.IndexOf(data, end);
+        var endIndexInContent = endIndex + shapeIndex + 1;
+        return (ParseDataType(content[dtIndex]), ParseShape(content[shapeIndex]), data[..endIndex], endIndexInContent);
     }
 
     private static DumpData[] ParseDumpFile(string[] content)

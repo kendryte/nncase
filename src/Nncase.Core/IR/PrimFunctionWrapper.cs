@@ -26,7 +26,7 @@ public sealed class PrimFunctionWrapper : BaseFunction
     /// <param name="target">Target.</param>
     /// <param name="parametersCount">Arguments count.</param>
     public PrimFunctionWrapper(string name, PrimFunction target, int parametersCount)
-        : base(name, StackVMModuleKind, new[] { target })
+        : base(name, StackVMModuleKind, new Expr[] { target })
     {
         ParametersCount = parametersCount;
     }

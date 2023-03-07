@@ -20,7 +20,7 @@ public abstract class Callable : Expr
     public static readonly string StackVMModuleKind = "stackvm";
 
     public Callable(string name, string moduleKind, Expr[] operands)
-        : base((ReadOnlySpan<Expr>)operands)
+        : base(operands)
     {
         Name = name;
         ModuleKind = moduleKind;

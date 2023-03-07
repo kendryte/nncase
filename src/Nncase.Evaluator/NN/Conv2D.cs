@@ -61,17 +61,14 @@ public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICos
         var outputType = context.GetReturnType<TensorType>();
 
         var weightsShape = weightsType.Shape;
-
-        if (weightsShape.IsFixed)
+        var macPerElement = (2 * weightsShape[1] * weightsShape[2] * weightsShape[3]) - 1;
+        return new()
         {
-            var macPerElement = (2 * weightsShape[1] * weightsShape[2] * weightsShape[3]) - 1;
-            return new()
-            {
-                [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(weightsType) + CostUtility.GetMemoryAccess(biasType),
-                [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
-                [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, macPerElement.FixedValue),
-            };
-        }
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(weightsType) + CostUtility.GetMemoryAccess(biasType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, macPerElement.FixedValue),
+        };
+    }
 
     private IRType Visit(ITypeInferenceContext context, Conv2D target, TensorType input, TensorType weights)
     {

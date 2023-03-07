@@ -42,7 +42,7 @@ public sealed class Block : Expr
     public Block(string name, Sequential body, Sequential initBody, ReadOnlySpan<IterVar> iterVars, ReadOnlySpan<BufferRegion> reads, ReadOnlySpan<BufferRegion> writes, ReadOnlySpan<Buffer> allocBuffers, Expr predicate)
 
         // TODO: Optimize allocates
-        : base(new Expr[] { body, initBody }.Concat(iterVars.ToArray()).Concat(reads.ToArray()).Concat(writes.ToArray()).Concat(allocBuffers.ToArray()).Append(predicate).ToArray().AsSpan())
+        : base(new Expr[] { body, initBody }.Concat(iterVars.ToArray()).Concat(reads.ToArray()).Concat(writes.ToArray()).Concat(allocBuffers.ToArray()).Append(predicate).ToArray())
     {
         Name = name;
         _iterVarsCount = iterVars.Length;

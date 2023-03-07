@@ -40,6 +40,11 @@ public partial class ExprFunctor<TExprResult, TTypeResult, TContext>
     internal protected virtual TExprResult VisitFusion(Fusion expr, TContext context) => VisitBaseFunction(expr, context);
 
     /// <summary>
+    /// Visit <see cref="If"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitIf(If expr, TContext context) => DefaultVisit(expr, context);
+
+    /// <summary>
     /// Visit <see cref="Marker"/>.
     /// </summary>
     internal protected virtual TExprResult VisitMarker(Marker expr, TContext context) => DefaultVisit(expr, context);
@@ -188,6 +193,13 @@ public partial class ExprFunctor<TExprResult, TTypeResult>
     
     /// <inheritdoc/>
     internal protected sealed override TExprResult VisitFusion(Fusion expr, Unit context) => VisitFusion(expr);
+    /// <summary>
+    /// Visit <see cref="If"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitIf(If expr) => base.VisitIf(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitIf(If expr, Unit context) => VisitIf(expr);
     /// <summary>
     /// Visit <see cref="Marker"/>.
     /// </summary>

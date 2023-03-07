@@ -23,7 +23,7 @@ public sealed class UnFoldBlock : ExprRewriter
         {
             if (predicate)
             {
-                return T.Sequential(Visit(expr.InitBody), Visit(expr.Body));
+                return T.Sequential(expr.InitBody, expr.Body);
             }
             else
             {

@@ -23,7 +23,7 @@ public sealed class None : Expr, IEquatable<None?>
     public static readonly None Default = new();
 
     private None()
-        : base(ReadOnlySpan<Expr>.Empty)
+        : base(Array.Empty<Expr>())
     {
     }
 

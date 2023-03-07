@@ -18,12 +18,12 @@ namespace Nncase.IR;
 public sealed class Tuple : Expr, ITuple, IEquatable<Tuple?>
 {
     public Tuple(ReadOnlySpan<Expr> fields)
-        : base(fields)
+        : base(fields.ToArray())
     {
     }
 
     public Tuple(params Expr[] fields)
-        : base((ReadOnlySpan<Expr>)fields)
+        : base(fields.ToArray())
     {
     }
 

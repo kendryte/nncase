@@ -381,7 +381,7 @@ public class ErfEvaluator : IEvaluator<Erf>, ITypeInferencer<Erf>, ICostEvaluato
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, Erf target)
+    public Cost Visit(ICostEvaluateContext context, Erf target)
     {
         var outputType = context.GetReturnType<TensorType>();
         return new()

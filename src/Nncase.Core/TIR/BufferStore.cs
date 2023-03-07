@@ -18,7 +18,7 @@ public sealed class BufferStore : Expr
     private readonly int _indicesCount;
 
     public BufferStore(PhysicalBuffer buffer, ReadOnlySpan<Expr> indices, Expr value)
-        : base(new Expr[] { buffer }.Concat(indices.ToArray()).Append(value).ToArray().AsSpan())
+        : base(new Expr[] { buffer }.Concat(indices.ToArray()).Append(value).ToArray())
     {
         _indicesCount = indices.Length;
     }

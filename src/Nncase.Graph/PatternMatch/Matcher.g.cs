@@ -64,6 +64,7 @@ internal partial class Matcher
         {
             return exprPattern.MatchLeaf(expr)
                 && Visit(expr.Target, exprPattern.Target)
+                && Visit(expr.Attribute, exprPattern.Attribute)
             ;
         }
 

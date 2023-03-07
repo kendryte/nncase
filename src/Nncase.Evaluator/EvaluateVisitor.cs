@@ -34,20 +34,17 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, Unit>, IDisposable
 
     private event Action<Expr>? BeforeCallAction;
 
-    public override IValue VisitLeaf(If @if)
-    {
-        bool cond = @if.Condition.Evaluate(_varsValues, _evaluator_cache).AsTensor().ToScalar<bool>();
-        return (cond ? @if.Then : @if.Else).Evaluate(_varsValues, _evaluator_cache);
-    }
-
-    public override IValue VisitLeaf(Const expr)
-    {
-        return Value.FromConst(expr);
-    }
+    private event Action<Expr>? AfterCallAction;
 
     public void Dispose()
     {
         _dumpManager.Dispose();
+    }
+
+    protected override IValue VisitIf(If @if)
+    {
+        bool cond = Visit(@if.Condition).AsTensor().ToScalar<bool>();
+        return cond ? Visit(@if.Then) : Visit(@if.Else);
     }
 
     /// <inheritdoc/>

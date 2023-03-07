@@ -167,7 +167,7 @@ public class UnitTestEGraphRewrite : TestClassBase
 #endif
         var module = new IRModule(func);
         var passes = CompileSession.CreatePassManager("passes");
-        passes.AddWithName<EGraphPass>("CSE").Configure(p =>
+        passes.AddWithName<EGraphRulesPass>("CSE").Configure(p =>
         {
         });
 
