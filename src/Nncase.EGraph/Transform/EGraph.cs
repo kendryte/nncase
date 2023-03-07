@@ -4,6 +4,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using NetFabric.Hyperlinq;
@@ -272,6 +273,12 @@ public sealed partial class EGraph : IEGraph
         public override EClass VisitLeaf(IR.Tuple expr)
         {
             var children = (from p in expr.Fields select ExpressionMemo[p]).ToArray();
+            return _graph.AddENode(expr, children);
+        }
+
+        public override EClass VisitLeaf(IR.If expr)
+        {
+            var children = ImmutableArray.Create(ExpressionMemo[expr.Condition], ExpressionMemo[expr.Then], ExpressionMemo[expr.Else]);
             return _graph.AddENode(expr, children);
         }
 

@@ -108,6 +108,7 @@ internal class Compiler : ICompiler
     public async Task CompileAsync()
     {
         var target = _compileSession.Target;
+
         await RunPassAsync(p => TargetIndependentPass(p), "TargetIndependentPass");
         await RunPassAsync(p => target.RegisterTargetDependentPass(p, _compileSession.CompileOptions), "TargetDependentPass");
 
@@ -125,7 +126,7 @@ internal class Compiler : ICompiler
         }
 
         // fold constant
-        await RunPassAsync(p => p.Add<ShapeInferPass>(), "ShapeInferAfterCompile");
+        // await RunPassAsync(p => p.Add<ShapeInferPass>(), "ShapeInferAfterCompile");
     }
 
     public void Gencode(Stream output)

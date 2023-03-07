@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Nncase.IR;
@@ -17,48 +19,61 @@ namespace Nncase.Importer
             var (input, weights) = GetInputExprs(op, 0, 1);
             var bias = GetBias(op, weights);
             var autoPad = GetStringAttribute(op, "auto_pad", "NOTSET");
-
-            var dilation = GetDilationsAttribute(op);
+            var dilation = GetDilationsAttribute(op).ToList();
             var group = GetIntAttribute(op, "group", 1);
 
             // if not present, should be inferred from input W
-            var strides = GetStrideAttribute(op);
+            var strides = GetStrideAttribute(op).ToArray<long>().ToList();
 
-            int? stridesValueLen = ((TensorConst)strides).ValueType.Shape[0].Value;
-            for (var i = 0; i < stridesValueLen; i++)
+            var isConv1D = IsConv1D(weights);
+            if (isConv1D)
             {
-                System.Diagnostics.Trace.Assert(((TensorConst)strides).Value.Cast<long>()[i] <= (long)int.MaxValue);
+                dilation.Add(1);
+                strides.Add(1);
+                input = To4D(input);
+                weights = To4D(weights);
             }
 
-            int? dilationValueLen = ((TensorConst)dilation).ValueType.Shape[0].Value;
-            for (var i = 0; i < dilationValueLen; i++)
+            var pads = AutoPad(op, autoPad, input, weights, strides.ToArray<long>(), dilation.ToArray(), isConv1D);
+            pads.InferenceType();
+            var conv = F.NN.Conv2D(input, weights, bias, strides.ToArray(), pads, dilation.ToArray(), PadMode.Constant, group);
+            if (isConv1D)
             {
-                System.Diagnostics.Trace.Assert(((TensorConst)dilation).Value.Cast<long>()[i] <= (long)int.MaxValue);
+                conv = Squeeze(conv, new[] { 3 });
             }
 
-            var pads = AutoPad(op, autoPad, input, weights, strides.ToArray<long>(), dilation);
-            int[] strideArr = new int[stridesValueLen == null ? default : stridesValueLen.Value];
-            for (var i = 0; i < stridesValueLen; i++)
-            {
-                strideArr[i] = ((TensorConst)strides).Value.Cast<int>()[i];
-            }
-
-            var strideConst = new TensorConst(Tensor.From<int>(strideArr));
-
-            int[] dilationArr = new int[dilationValueLen == null ? default : dilationValueLen.Value];
-            for (var i = 0; i < dilationValueLen; i++)
-            {
-                dilationArr[i] = ((TensorConst)dilation).Value.Cast<int>()[i];
-            }
-
-            var dilationConst = new TensorConst(Tensor.From<int>(dilationArr));
-
-            return F.NN.Conv2D(input, weights, bias, strideConst, pads, dilationConst, PadMode.Constant, group);
+            return conv;
         }
 
-        private Expr GetPadsAttribute(NodeProto op)
+        private Call To4D(Expr input) => Reshape(input, Concat(new IR.Tuple(ShapeOf(input), new[] { 1L }), 0));
+
+        private bool IsConv1D(Expr weights)
+        {
+            bool conv1d = false;
+            weights.InferenceType();
+            var weightsRank = weights.CheckedShape.Rank;
+            switch (weightsRank)
+            {
+                case 3:
+                    conv1d = true;
+                    break;
+                case 4:
+                    break;
+                default:
+                    throw new NotSupportedException($"only support 1d and 2d, but get weights rank {weightsRank}");
+            }
+
+            return conv1d;
+        }
+
+        private Expr GetPadsAttribute(NodeProto op, bool isConv1D = false)
         {
             var paddings = GetIntsAttribute(op, "pads", 0, 4);
+            if (isConv1D)
+            {
+                paddings = new[] { paddings[0], 0, paddings[1], 0 };
+            }
+
             return ToNncasePadFormat(paddings);
         }
 
@@ -80,12 +95,12 @@ namespace Nncase.Importer
                 : F.Tensors.Expand(0f, Util.ShapeIndex(weights, biasSizeIndex));
         }
 
-        private Expr AutoPad(NodeProto op, string autoPad, Expr input, Expr weights, long[] strides, long[] dilation) => autoPad switch
+        private Expr AutoPad(NodeProto op, string autoPad, Expr input, Expr weights, long[] strides, long[] dilation, bool isConv1D = false) => autoPad switch
         {
-            "NOTSET" => GetPadsAttribute(op),
+            "NOTSET" => GetPadsAttribute(op, isConv1D),
             "SAME_UPPER" => Util.GetPaddings(input, weights, strides, dilation, true),
             "SAME_LOWER" => Util.GetPaddings(input, weights, strides, dilation, true, true),
-            "VALID" => GetPadsAttribute(op),
+            "VALID" => GetPadsAttribute(op, isConv1D),
 
             // when VALID, I'm not sure this is correct
             // in onnx doc, not spec when VALID value

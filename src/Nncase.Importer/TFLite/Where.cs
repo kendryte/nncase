@@ -16,8 +16,8 @@ namespace Nncase.Importer.TFLite
             var cond = GetInputExprs(op, 0);
             return op.InputsLength switch
             {
-                1 => Where(cond, Array.Empty<float>(), Array.Empty<float>()),
-                3 => Where(cond, GetInputExprs(op, 1), GetInputExprs(op, 2)),
+                1 => Where(cond, Array.Empty<float>(), Array.Empty<float>(), true),
+                3 => Where(cond, GetInputExprs(op, 1), GetInputExprs(op, 2), true),
                 _ => throw new NotImplementedException("Not Impl for where which has 2 input"),
             };
         }
