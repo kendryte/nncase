@@ -30,4 +30,7 @@ public sealed record Require(string Message) : Op
 
     /// <inheritdoc/>
     public override string DisplayProperty() => "\"\"";
+
+    /// <inheritdoc/>
+    public override bool CanFoldConstCall => false;
 }

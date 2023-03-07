@@ -59,7 +59,7 @@ public static class Tensors
     public static Call MatMul(Expr input, Expr other) => new Call(new MatMul(), input, other);
 
     // todo:remove prod
-    public static Call Prod(Expr input) => new Call(new Prod(), input);
+    public static Call Prod(Expr input) => Reduce(ReduceOp.Prod, input, new[] { 0 }, 0, false);
 
     public static Call Range(Expr begin, Expr end, Expr step) => new Call(new Range(), begin, end, step);
 
@@ -108,7 +108,14 @@ public static class Tensors
 
     public static Expr SizeOf(Expr input) => new Call(new SizeOf(), input);
 
-    public static Call Stack(Expr inputs, Expr axis) => new Call(new Stack(), inputs, axis);
+    public static Call Stack(Expr inputs, Expr axis)
+    {
+        if (inputs is not Tuple)
+        {
+            Console.WriteLine("Error");
+        }
+        return new Call(new Stack(), inputs, axis);
+    }
 
     // squeeze input by give dims
     public static Call Squeeze(Expr input, Expr dims) => new Call(new Squeeze(), input, dims);
