@@ -21,15 +21,15 @@ public sealed record LayerNorm(int Axis, float Epsilon) : Op
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Hardmax), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(LayerNorm), 0, "input");
 
     /// <summary>
     /// Gets scale.
     /// </summary>
-    public static readonly ParameterInfo Scale = new(typeof(Hardmax), 1, "scale");
+    public static readonly ParameterInfo Scale = new(typeof(LayerNorm), 1, "scale");
 
     /// <summary>
     /// Gets bias.
     /// </summary>
-    public static readonly ParameterInfo Bias = new(typeof(Hardmax), 2, "bias");
+    public static readonly ParameterInfo Bias = new(typeof(LayerNorm), 2, "bias");
 }

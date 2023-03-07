@@ -11,8 +11,8 @@ using Nncase.IR.F;
 using Nncase.IR.Tensors;
 using Nncase.Utilities;
 using OrtKISharp;
+using TorchSharp;
 using Xunit;
-
 using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Tensors;
 using static Nncase.Utilities.DumpUtility;
@@ -267,17 +267,19 @@ public class UnitTestEvaluatorNN : TestClassBase
         DoHardmax(ortTensor, nncaseTensor, 1L);
     }
 
-    // [Fact]
     [Fact]
     public void TestLayerNorm()
     {
-        var a = new float[] { 0F, 2F, 3F, 2F, 2F, 2F };
-        var b = new float[] { 0F, 0.4F, 0.6F, 0.4F, 0.4F, 0.4F };
-        {
-            var expect = Tensor.From(b, new[] { 6 });
-            var input = Tensor.From(a, new[] { 6 });
-            DoLayerNorm(expect, 0, 0f, input, 0, 0);
-        }
+        var shape = new long[] { 1, 1 };
+        var x = OrtKI.Random(shape);
+        var scale = OrtKI.Random(new[] { shape[^1] });
+        var b = OrtKI.Random(new[] { shape[^1] });
+        var axis = -1L;
+        var epsilon = 1e-05f;
+        var expect = OrtKI.LayerNormalization(x, scale, b, axis, epsilon, 1L);
+        var expr = IR.F.NN.LayerNorm((int)axis, epsilon, x.ToTensor(), scale.ToTensor(), b.ToTensor());
+        CompilerServices.InferenceType(expr);
+        Assert.Equal(expect, expr.Evaluate().AsTensor());
     }
 
     [Fact]
@@ -311,7 +313,8 @@ public class UnitTestEvaluatorNN : TestClassBase
         var momentum = 0.5F;
 
         var expect = OrtKI.BatchNormalization(x, scale, b, mean, var, epsilon, momentum);
-        var expr = IR.F.NN.BatchNormalization(x.ToTensor(), scale.ToTensor(), b.ToTensor(), mean.ToTensor(), var.ToTensor(), epsilon, momentum);
+        var expr = IR.F.NN.BatchNormalization(x.ToTensor(), scale.ToTensor(), b.ToTensor(), mean.ToTensor(),
+            var.ToTensor(), epsilon, momentum);
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }
@@ -507,11 +510,7 @@ public class UnitTestEvaluatorNN : TestClassBase
             0.0f,
             filter,
             stride,
-            new[,]
-            {
-                { 1, 1 },
-                { 1, 1 },
-            },
+            new[,] { { 1, 1 }, { 1, 1 }, },
             dilations,
             false,
             false);
@@ -545,11 +544,7 @@ public class UnitTestEvaluatorNN : TestClassBase
             0.0f,
             filter,
             stride,
-            new[,]
-            {
-                { 1, 1 },
-                { 1, 1 },
-            },
+            new[,] { { 1, 1 }, { 1, 1 }, },
             dilations,
             false,
             false);
@@ -616,10 +611,6 @@ public class UnitTestEvaluatorNN : TestClassBase
     {
         var expr = IR.F.NN.LayerNorm(axis, epsilon, input, scale, bias);
         CompilerServices.InferenceType(expr);
-
-        // fix precision issue on Macos
-        var cos = Comparator.CosSimilarity(expect, expr.Evaluate().AsTensor());
-        Assert.True(cos > 0.999F);
     }
 
     private void DoLogSoftmax(OrtKISharp.Tensor ortTensor, Tensor nncaseTensor, long axis)

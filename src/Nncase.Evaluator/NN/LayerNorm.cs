@@ -4,6 +4,7 @@
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.NN;
+using OrtKISharp;
 
 namespace Nncase.Evaluator.NN;
 
@@ -15,25 +16,23 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, LayerNorm layerNorm)
     {
-        var input = context.GetOrtArgumentValue(layerNorm, IR.NN.LayerNorm.Input).ToTensor();
-        var scale = context.GetOrtArgumentValue(layerNorm, IR.NN.LayerNorm.Scale).ToTensor();
-        var bias = context.GetOrtArgumentValue(layerNorm, IR.NN.LayerNorm.Bias).ToTensor();
-        var output = new Tensor<float>(context.CurrentCall.CheckedShape.ToValueArray());
-        var result = LayerNorm(input, scale, bias, layerNorm.Axis, layerNorm.Epsilon, output);
-        return Value.FromTensor(result);
+        var input = context.GetOrtArgumentValue(layerNorm, LayerNorm.Input);
+        var scale = context.GetOrtArgumentValue(layerNorm, LayerNorm.Scale);
+        var bias = context.GetOrtArgumentValue(layerNorm, LayerNorm.Bias);
+        return Value.FromTensor(OrtKI.LayerNormalization(input, scale, bias, layerNorm.Axis, layerNorm.Epsilon, 1));
     }
 
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, LayerNorm target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, IR.NN.LayerNorm.Input);
+        var input = context.CheckArgumentType<TensorType>(target, LayerNorm.Input);
         return Visit(input);
     }
 
     /// <inheritdoc/>
     public Cost? Visit(ICostEvaluateContext context, LayerNorm target)
     {
-        var inputType = context.GetArgumentType<TensorType>(target, IR.NN.LayerNorm.Input);
+        var inputType = context.GetArgumentType<TensorType>(target, LayerNorm.Input);
         var returnType = context.GetReturnType<TensorType>();
         return new()
         {
@@ -47,6 +46,7 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
         return input;
     }
 
+#if false
     private Tensor LayerNorm(Tensor input, Tensor scale, Tensor bias, int axis, float epsilon, Tensor output)
     {
         int outputSize = 1;
@@ -107,4 +107,5 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
 
         return new Tensor<float>(outputArray, output.Shape);
     }
+#endif
 }
