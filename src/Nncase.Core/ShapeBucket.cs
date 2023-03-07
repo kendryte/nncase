@@ -14,7 +14,7 @@ namespace Nncase
 {
     public record SegmentInfo(int InputIndex, int DimIndex, int[] Segments);
 
-    public class ShapeSplitSegment
+    public class ShapeBucket
     {
         private static int Count = 0;
 
@@ -42,6 +42,7 @@ namespace Nncase
                         var dim = MakeGetDimCall(currVars, info);
                         return IR.F.Math.LogicalAnd(cond, dim <= seg);
                     });
+
                     // get all input fixed shape info
                     var newSegments = infos.Select(info => new SingleSegment(info.InputIndex, info.DimIndex, seg)).ToImmutableArray();
 
