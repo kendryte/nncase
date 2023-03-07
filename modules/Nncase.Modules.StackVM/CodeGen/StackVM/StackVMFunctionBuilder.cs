@@ -41,6 +41,17 @@ internal class StackVMFunctionBuilder : FunctionBuilder
 
     protected override void WriteText()
     {
+
+        // 1. Assign ref counts
+        foreach (var basicBlock in _context.BasicBlocks)
+        {
+            foreach (var snippet in basicBlock.TextSnippets)
+            {
+                snippet.RefCount = snippet.UseCount;
+            }
+        }
+
+        var localSet = new HashSet<int>();
         foreach (var basicBlock in _context.BasicBlocks)
         {
             foreach (var snippet in basicBlock.TextSnippets)
@@ -68,8 +79,12 @@ internal class StackVMFunctionBuilder : FunctionBuilder
                         var localId = _snippetLocals[inputSnippet];
                         _textEmitter.Ldlocal(localId);
 
-                        if (!InputInThenElse(inputSnippet, snippet))
+                        if (NormalReduceCount(inputSnippet, snippet))
                         {
+                            if (inputSnippet.RefCount - 1 == 0)
+                            {
+                                localSet.Remove(localId);
+                            }
                             RefCountReduce(inputSnippet, localId);
                         }
                     }
@@ -95,6 +110,7 @@ internal class StackVMFunctionBuilder : FunctionBuilder
                 if (snippet.OutputInLocal)
                 {
                     var localId = _localsAllocator.Allocate();
+                    localSet.Add(localId);
                     _snippetLocals.Add(snippet, localId);
                     _textEmitter.Stlocal(localId);
                 }
@@ -102,25 +118,35 @@ internal class StackVMFunctionBuilder : FunctionBuilder
                 SymbolAddrs.Add(snippet.EndSymbol, _textEmitter.Position);
             }
         }
+
+        Debug.Assert(localSet.Count == 0);
     }
 
-    private bool InputInThenElse(TextSnippet snippet, TextSnippet input)
+
+
+    private bool NormalReduceCount(TextSnippet snippet, TextSnippet input)
     {
         // todo: but maybe error when expr is too complex and be not wrapped by function
+        if (snippet.BasicBlock == input.BasicBlock)
+        {
+            return true;
+        }
+
         var prevBasicBlock = snippet.BasicBlock.Prev;
         if (prevBasicBlock != null)
         {
-            // if has two next, then and else has only one prev
+            // if has two next, then and else has only one prev.
             var snippetInIf = prevBasicBlock.Nexts.Count > 1;
+
+            // snippetInIf and snippet and input are in different BasicBlock.
+            // it means input is out of if.
             if (snippetInIf)
             {
-                if (snippet.BasicBlock == input.BasicBlock)
-                {
-                    return true;
-                }
+                return false;
             }
         }
-        return false;
+
+        return true;
     }
 
     private void RefCountReduce(TextSnippet inputSnippet, ushort localId)
