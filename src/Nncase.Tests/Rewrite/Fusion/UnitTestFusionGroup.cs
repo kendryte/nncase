@@ -52,6 +52,12 @@ public class UnitTestFusionGroup : TestClassBase
         new DataFlowType13FusionCaseRight(),
     };
 
+    public static readonly TheoryData<IDataFlowFusionCaseTwoStage> DataTwoStage = new() {
+        new DataFlowType15FusionCaseLeft(),
+        new DataFlowType15FusionCaseRight()
+    };
+
+
     [Theory]
     [MemberData(nameof(DataOne))]
     public void RunOne(IDataFlowFusionCase fusionCase) => RunCore(fusionCase);
@@ -95,6 +101,64 @@ public class UnitTestFusionGroup : TestClassBase
 
         var pre_result = CompilerServices.Evaluate(main.Body, feed_dict);
         var visitor = new FusionCounterVisitor();
+        visitor.Visit(post.Body);
+        Assert.Equal(fusionCase.FinalFusionCount, visitor.Count);
+        var post_result = CompilerServices.Evaluate(post.Body, feed_dict);
+        Assert.True(Comparator.AllEqual(pre_result, post_result));
+    }
+
+    [Theory]
+    [MemberData(nameof(DataTwoStage))]
+    public void TestTwoStage(IDataFlowFusionCaseTwoStage fusionCase)
+    {
+        var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 3, 224, 224 }));
+        var main = new Function(fusionCase.BuildBody(input), input);
+
+        IRModule module = new(main);
+        CompilerServices.InferenceType(main);
+#if DEBUG
+        Dumpper.DumpDotIR(main, "pre");
+#endif
+
+        var preRewriter = new DataFlowMergeRewriter();
+        var post = (Function)preRewriter.Rewrite(
+            main,
+            new IMergeRewriteRule[]
+            {
+                new ShortCutFusionMergeRuleLeft(),
+                new ShortCutFusionMergeRuleRight(),
+            },
+            (usedby, rule, option) => new TestFusionGroupMutator(usedby, rule, option),
+            new());
+#if DEBUG
+        Dumpper.DumpDotIR(post, "post1");
+#endif
+        var visitor = new FusionCounterVisitor();
+        visitor.Visit(post.Body);
+        Assert.Equal(fusionCase.MidFusionCount, visitor.Count);
+
+        var postRewriter = new DataFlowMergeRewriter();
+        post = (Function)postRewriter.Rewrite(
+            post,
+            new IMergeRewriteRule[]
+            {
+                new SameInputFusionMergeRule(),
+                new MultiInputFusionMergeRule(),
+            },
+            (usedby, rule, option) => new TestFusionGroupMutator(usedby, rule, option),
+            new());
+#if DEBUG
+        Dumpper.DumpDotIR(post, "post2");
+#endif
+
+        var input_tensor = Testing.Rand<float>(1, 3, 224, 224);
+        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        {
+          { input, Value.FromTensor(input_tensor) },
+        };
+
+        var pre_result = CompilerServices.Evaluate(main.Body, feed_dict);
+        visitor = new FusionCounterVisitor();
         visitor.Visit(post.Body);
         Assert.Equal(fusionCase.FinalFusionCount, visitor.Count);
         var post_result = CompilerServices.Evaluate(post.Body, feed_dict);
