@@ -52,11 +52,11 @@ public class UnitTestFusionGroup : TestClassBase
         new DataFlowType13FusionCaseRight(),
     };
 
-    public static readonly TheoryData<IDataFlowFusionCaseTwoStage> DataTwoStage = new() {
+    public static readonly TheoryData<IDataFlowFusionCaseTwoStage> DataTwoStage = new()
+    {
         new DataFlowType15FusionCaseLeft(),
-        new DataFlowType15FusionCaseRight()
+        new DataFlowType15FusionCaseRight(),
     };
-
 
     [Theory]
     [MemberData(nameof(DataOne))]
@@ -65,47 +65,6 @@ public class UnitTestFusionGroup : TestClassBase
     [Theory]
     [MemberData(nameof(DataAll))]
     public void RunAll(IDataFlowFusionCase fusionCase) => RunCore(fusionCase);
-
-    private void RunCore(IDataFlowFusionCase fusionCase)
-    {
-        var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 3, 224, 224 }));
-        var main = new Function(fusionCase.BuildBody(input), input);
-
-        IRModule module = new(main);
-        CompilerServices.InferenceType(main);
-#if DEBUG
-        Dumpper.DumpDotIR(main, "pre");
-#endif
-
-        var rewriter = new DataFlowMergeRewriter();
-        var post = (Function)rewriter.Rewrite(
-            main,
-            new IMergeRewriteRule[]
-            {
-                new SameInputFusionMergeRule(),
-                new MultiInputFusionMergeRule(),
-                new ShortCutFusionMergeRuleLeft(),
-                new ShortCutFusionMergeRuleRight(),
-            },
-            (usedby, rule, option) => new TestFusionGroupMutator(usedby, rule, option),
-            new());
-#if DEBUG
-        Dumpper.DumpDotIR(post, "post");
-#endif
-
-        var input_tensor = Testing.Rand<float>(1, 3, 224, 224);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
-        {
-          { input, Value.FromTensor(input_tensor) },
-        };
-
-        var pre_result = CompilerServices.Evaluate(main.Body, feed_dict);
-        var visitor = new FusionCounterVisitor();
-        visitor.Visit(post.Body);
-        Assert.Equal(fusionCase.FinalFusionCount, visitor.Count);
-        var post_result = CompilerServices.Evaluate(post.Body, feed_dict);
-        Assert.True(Comparator.AllEqual(pre_result, post_result));
-    }
 
     [Theory]
     [MemberData(nameof(DataTwoStage))]
@@ -159,6 +118,47 @@ public class UnitTestFusionGroup : TestClassBase
 
         var pre_result = CompilerServices.Evaluate(main.Body, feed_dict);
         visitor = new FusionCounterVisitor();
+        visitor.Visit(post.Body);
+        Assert.Equal(fusionCase.FinalFusionCount, visitor.Count);
+        var post_result = CompilerServices.Evaluate(post.Body, feed_dict);
+        Assert.True(Comparator.AllEqual(pre_result, post_result));
+    }
+
+    private void RunCore(IDataFlowFusionCase fusionCase)
+    {
+        var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 3, 224, 224 }));
+        var main = new Function(fusionCase.BuildBody(input), input);
+
+        IRModule module = new(main);
+        CompilerServices.InferenceType(main);
+#if DEBUG
+        Dumpper.DumpDotIR(main, "pre");
+#endif
+
+        var rewriter = new DataFlowMergeRewriter();
+        var post = (Function)rewriter.Rewrite(
+            main,
+            new IMergeRewriteRule[]
+            {
+                new SameInputFusionMergeRule(),
+                new MultiInputFusionMergeRule(),
+                new ShortCutFusionMergeRuleLeft(),
+                new ShortCutFusionMergeRuleRight(),
+            },
+            (usedby, rule, option) => new TestFusionGroupMutator(usedby, rule, option),
+            new());
+#if DEBUG
+        Dumpper.DumpDotIR(post, "post");
+#endif
+
+        var input_tensor = Testing.Rand<float>(1, 3, 224, 224);
+        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        {
+          { input, Value.FromTensor(input_tensor) },
+        };
+
+        var pre_result = CompilerServices.Evaluate(main.Body, feed_dict);
+        var visitor = new FusionCounterVisitor();
         visitor.Visit(post.Body);
         Assert.Equal(fusionCase.FinalFusionCount, visitor.Count);
         var post_result = CompilerServices.Evaluate(post.Body, feed_dict);

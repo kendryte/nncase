@@ -765,7 +765,6 @@ internal class DataFlowType14FusionCaseRight : IDataFlowFusionCase
     }
 }
 
-
 /// <summary>
 ///         x
 ///         |
@@ -781,6 +780,7 @@ internal class DataFlowType14FusionCaseRight : IDataFlowFusionCase
 internal class DataFlowType15FusionCaseLeft : IDataFlowFusionCaseTwoStage
 {
     public int FinalFusionCount => 1;
+
     public int MidFusionCount => 2;
 
     public static Expr BuildBodyCore(Expr input, bool left)
@@ -803,6 +803,7 @@ internal class DataFlowType15FusionCaseLeft : IDataFlowFusionCaseTwoStage
 internal class DataFlowType15FusionCaseRight : IDataFlowFusionCaseTwoStage
 {
     public int FinalFusionCount => 1;
+
     public int MidFusionCount => 2;
 
     public Expr BuildBody(Var input)
