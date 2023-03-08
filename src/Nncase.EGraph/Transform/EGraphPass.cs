@@ -101,11 +101,13 @@ public class EGraphPass : RulesPass
 
     public class FunctionCollector : ExprVisitor<int, IRType>
     {
-        public HashSet<Function> Functions = new(ReferenceEqualityComparer.Instance);
+        private readonly HashSet<Function> _functions = new(ReferenceEqualityComparer.Instance);
+
+        public HashSet<Function> Functions => _functions;
 
         public override int VisitLeaf(Function expr)
         {
-            Functions.Add(expr);
+            _functions.Add(expr);
             return 0;
         }
 
