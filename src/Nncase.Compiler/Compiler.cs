@@ -79,6 +79,9 @@ internal class Compiler : ICompiler
                 p.Add<Transform.Rules.Neutral.FoldNopPad>();
                 p.Add<Transform.Rules.Neutral.FoldConv2DPads>();
                 p.Add<Transform.Rules.Neutral.FoldReduceWindow2DPads>();
+                p.Add<Transform.Rules.Neutral.SqueezeToReshape>();
+                p.Add<Transform.Rules.Neutral.UnSqueezeToReshape>();
+                p.Add<Transform.Rules.Neutral.FoldTwoReshapes>();
             });
 
             // passManager.AddWithName<EGraphPass>("NeutralOptimizeClamp").Configure(p =>

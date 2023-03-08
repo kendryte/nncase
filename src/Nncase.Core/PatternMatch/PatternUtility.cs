@@ -89,6 +89,24 @@ public static partial class Utility
             IsCallWildcard(callName, targetPattern, rhsPattern, lhsPattern));
 
     /// <summary>
+    /// wrapped lstm pattern.
+    /// </summary>
+    /// <param name="lstmPattern">lstm pattern.</param>
+    /// <param name="wrapFunc"> wrap pattern func.</param>
+    /// <returns>pattern.</returns>
+    public static Pattern IsWrappedLSTM(CallPattern lstmPattern, Func<Pattern, int, Pattern> wrapFunc) =>
+        IsTuple("tuple", IsVArgsRepeat("xx", tp =>
+        {
+            var patterns = new Pattern[tp.Count];
+            for (var i = 0; i < tp.Count; i++)
+            {
+                patterns[i] = wrapFunc(F.Tensors.IsGetItem(lstmPattern, IsWildcard()), i);
+            }
+
+            return patterns;
+        }));
+
+    /// <summary>
     /// Call pattern with spec multi input pattern.
     /// </summary>
     /// <param name="callName">call name.</param>
