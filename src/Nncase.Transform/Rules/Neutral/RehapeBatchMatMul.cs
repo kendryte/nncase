@@ -24,7 +24,10 @@ namespace Nncase.Transform.Rules.Neutral;
 public sealed partial class ReshapeBatchMatmul : IRewriteRule
 {
     /// <inheritdoc/>
-    public IPattern Pattern { get; } = IsMatMul("mm", "call", _ => true,
+    public IPattern Pattern { get; } = IsMatMul(
+        "mm",
+        "call",
+        _ => true,
         IsWildcard("a") with { TypePattern = (HasRank(3) | HasRank(4)) & HasFixedShape() },
         IsWildcard("b") with { TypePattern = HasFixedShape() });
 
