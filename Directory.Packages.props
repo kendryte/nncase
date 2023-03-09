@@ -5,7 +5,6 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Nullable>enable</Nullable>
     <NoWarn>$(NoWarn);MSB3270</NoWarn>
-    <LocalPackageDirectory>$(MSBuildThisFileDirectory)tools/design-packages</LocalPackageDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
@@ -50,7 +49,6 @@
     <PackageVersion Include="Microsoft.Toolkit.HighPerformance" Version="7.1.1" />
     <PackageVersion Include="NetFabric.Hyperlinq" Version="3.0.0-beta48" />
     <PackageVersion Include="Nncase.FlatBuffers" Version="2.0.0" />
-    <PackageVersion Include="Nncase.SourceGenerator" Version="1.0.0" />
     <PackageVersion Include="OrtKISharp" Version="0.0.2" />
     <PackageVersion Include="RazorLight" Version="2.3.0" />
     <PackageVersion Include="Singulink.Collections.Weak" Version="1.0.2" />

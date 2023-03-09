@@ -11,14 +11,11 @@
     <PackageReference Include="MagicalTensorflowLib" />
     <PackageReference Include="MagicalTensorflowLibOSX-ARM64" />
     <PackageReference Include="AnyTensorFlow.NET" />
-    <PackageReference Include="Nncase.SourceGenerator">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Nncase.Core\Nncase.Core.csproj" />
+    <ProjectReference Include="../../tools/Nncase.SourceGenerator/Nncase.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
 </Project>

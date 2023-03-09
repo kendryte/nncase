@@ -30,13 +30,13 @@
     <PackageReference Include="Microsoft.Extensions.Options" />
     <PackageReference Include="Microsoft.Toolkit.HighPerformance" />
     <PackageReference Include="NetFabric.Hyperlinq" />
-    <PackageReference Include="Nncase.SourceGenerator">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
     <PackageReference Include="System.Reactive" />
     <PackageReference Include="TorchSharp" />
     <PackageReference Include="GiGraph.Dot" />
+  </ItemGroup>
+
+  <ItemGroup>
+      <ProjectReference Include="../../tools/Nncase.SourceGenerator/Nncase.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>
