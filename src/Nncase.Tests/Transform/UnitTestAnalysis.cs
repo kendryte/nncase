@@ -49,4 +49,20 @@ public sealed class UnitTestAnalysis : TestClassBase
 
         Assert.Equal(2, userAnalysis[input].Count());
     }
+
+    [Fact]
+    public void TestMultInputWithTuple()
+    {
+        var input1 = new Var("input1", new TensorType(DataTypes.Float32, new int[] { 1, 3, 224, 224 }));
+        var input2 = new Var("input2", new TensorType(DataTypes.Float32, new int[] { 1, 3, 224, 224 }));
+        var v0 = IR.F.Tensors.Concat(new IR.Tuple(new[] { input1, input2 }), 1) + input2;
+        var v1 = IR.F.Math.Quantize(v0, new QuantParam(1, 2.0f), DataTypes.UInt8);
+        var main = new Function(v1, new[] { input1, input2 });
+        CompilerServices.InferenceType(main);
+
+        var usedbyReslut = Analyser.AnalysisUsedBy(main);
+
+        Assert.Single(usedbyReslut.Get(input1));
+        Assert.Equal(2, usedbyReslut.Get(input2).Count);
+    }
 }

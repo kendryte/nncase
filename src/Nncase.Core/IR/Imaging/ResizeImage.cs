@@ -23,10 +23,11 @@ public sealed partial class ResizeImage : Op
     /// </summary>
     public static readonly ParameterInfo Input = new(typeof(ResizeImage), 0, "input", HasRank(r => r >= 2, "RanK >= 2"));
 
-    /// <summary>
-    /// Gets roi.
-    /// </summary>
-    public static readonly ParameterInfo Roi = new(typeof(ResizeImage), 1, "roi", IsNoneType() | IsFloatScalar());
+        /// <summary>
+        /// Gets roi.
+        /// [axis 0 start,axis 1 end, ... ,axis n start, axis n end].
+        /// </summary>
+        public static readonly ParameterInfo Roi = new(typeof(ResizeImage), 1, "roi", IsNoneType() | (IsFloat() & HasRank(1)));
 
     /// <summary>
     /// Gets new_size.
@@ -48,14 +49,7 @@ public sealed partial class ResizeImage : Op
     /// </summary>
     public static readonly ParameterInfo ExtrapolationValue = new(typeof(ResizeImage), 5, "extrapolation_value", IsNoneType() | IsFloatScalar());
 
-    public ImageResizeMode ResizeMode { get; }
-
-    public ImageResizeTransformationMode TransformationMode { get; }
-
-    public ImageResizeNearestMode NearestMode { get; }
-
-    public bool IsTFResize { get; }
-
-    /// <inheritdoc/>
-    public override string DisplayProperty() => $"ImageResizeMode.{ResizeMode}, ImageResizeTransformationMode.{TransformationMode}, ImageResizeNearestMode. {NearestMode}, {IsTFResize}";
+        /// <inheritdoc/>
+        public override string DisplayProperty() => $"ImageResizeMode.{ResizeMode}, ImageResizeTransformationMode.{TransformationMode}, ImageResizeNearestMode.{NearestMode}, {IsTFResize}";
+    }
 }

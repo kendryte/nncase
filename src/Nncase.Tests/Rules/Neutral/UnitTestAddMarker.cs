@@ -13,7 +13,9 @@ using Nncase.Passes;
 using Nncase.Passes.Rules.Neutral;
 using Xunit;
 using static Nncase.IR.F.NN;
+using static Nncase.PatternMatch.Utility;
 using Random = Nncase.IR.F.Random;
+using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
@@ -66,6 +68,66 @@ public class UnitTestAddMarker : TestClassBase
         var e = new IR.Tuple(d, d, d, d);
         var pre = IR.F.Math.RangeOfMarker(new[] { 4, 5, 6, 7 }, e);
         CompilerServices.InferenceType(pre);
+    }
+
+    [Fact]
+    public async Task TestAddMarkerWithLstm()
+    {
+#if DEBUG
+        CompileOptions.DumpFlags = DumpFlags.Rewrite | DumpFlags.PassIR;
+#endif
+        var inputSize = 2;
+        var hiddenSize = 1;
+        var lSTM_direction = LSTMDirection.Forward;
+        var numberDirections = lSTM_direction == LSTMDirection.Forward ? 1 : 2;
+        var batchSize = 1;
+        var seqLength = 3;
+        var x = Random.Normal(DataTypes.Float32, new[] { seqLength, batchSize, inputSize });
+        var initC = Random.Normal(DataTypes.Float32, new[] { numberDirections, batchSize, hiddenSize });
+        var initH = Random.Normal(DataTypes.Float32, new[] { numberDirections, batchSize, hiddenSize });
+        var b = DataGenerator.DefaultRandom(new[] { numberDirections, 8 * hiddenSize });
+        var w = DataGenerator.DefaultRandom(new[] { numberDirections, 4 * hiddenSize, inputSize });
+        var r = DataGenerator.DefaultRandom(new[] { numberDirections, 4 * hiddenSize, hiddenSize });
+        var p = new float[numberDirections, 3 * hiddenSize];
+        var lstm = IR.F.RNN.LSTM(LSTMDirection.Forward, LSTMLayout.Zero, new[] { "Sigmoid", "Tanh", "Tanh" }, x, w, r, b, new[] { seqLength }, initH, initC, p, 0, 0, float.NaN, hiddenSize, 0, 3);
+        var main = new Function(lstm);
+
+        var module = new IRModule(main);
+        await TestAddMarkerPasses(module);
+        Assert.True(((Function)module.Entry!).Body is Tuple t
+                    && CompilerServices.TryMatchRoot(t, IsWrappedLSTM(PatternMatch.F.Tensors.IsLSTM("lstm", "lstmCall", _ => true), (x, _) => IsRangeOfMarker(x, IsWildcard())), out var result)
+                    && result["lstmCall"] is Call call
+                    && new[] { 0, 1, 2, 5, 6 }.All(i => call.Parameters[i] is Marker));
+    }
+
+    [Fact]
+    public async Task TestAddMarkerWithLstmInitHEqualsInitC()
+    {
+#if DEBUG
+        CompileOptions.DumpFlags = DumpFlags.Rewrite | DumpFlags.PassIR;
+#endif
+        var inputSize = 2;
+        var hiddenSize = 2;
+        var lSTM_direction = LSTMDirection.Forward;
+        var numberDirections = lSTM_direction == LSTMDirection.Forward ? 1 : 2;
+        var batchSize = 1;
+        var seqLength = 5;
+        var x = Random.Normal(DataTypes.Float32, new[] { seqLength, batchSize, inputSize });
+        var initC = Random.Normal(DataTypes.Float32, new[] { numberDirections, batchSize, hiddenSize });
+        var initH = initC;
+        var b = DataGenerator.DefaultRandom(new[] { numberDirections, 8 * hiddenSize });
+        var w = DataGenerator.DefaultRandom(new[] { numberDirections, 4 * hiddenSize, inputSize });
+        var r = DataGenerator.DefaultRandom(new[] { numberDirections, 4 * hiddenSize, hiddenSize });
+        var p = new float[numberDirections, 3 * hiddenSize];
+        var lstm = IR.F.RNN.LSTM(LSTMDirection.Forward, LSTMLayout.Zero, new[] { "Sigmoid", "Tanh", "Tanh" }, x, w, r, b, new[] { seqLength }, initH, initC, p, 0, 0, float.NaN, hiddenSize, 0, 2);
+        var main = new Function(lstm);
+
+        var module = new IRModule(main);
+        await TestAddMarkerPasses(module);
+        Assert.True(((Function)module.Entry!).Body is Tuple t
+                    && CompilerServices.TryMatchRoot(t, IsWrappedLSTM(PatternMatch.F.Tensors.IsLSTM("lstm", "lstmCall", _ => true), (x, _) => IsRangeOfMarker(x, IsWildcard())), out var result)
+                    && result["lstmCall"] is Call call
+                    && new[] { 0, 1, 2, 5, 6 }.All(i => call.Parameters[i] is Marker));
     }
 
     [Fact]
