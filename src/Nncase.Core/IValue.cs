@@ -103,10 +103,10 @@ public sealed class NoneValue : IValue, IEquatable<NoneValue?>
     public IRType Type => NoneType.Default;
 
     /// <inheritdoc/>
-    public int Count => throw new InvalidOperationException("This Is None Value!");
+    public int Count => 1;
 
     /// <inheritdoc/>
-    public IValue this[int index] => throw new InvalidOperationException("This Is None Value!");
+    public IValue this[int index] => index == 0 ? this : throw new ArgumentOutOfRangeException(nameof(index));
 
     public static bool operator ==(NoneValue? left, NoneValue? right) => true;
 

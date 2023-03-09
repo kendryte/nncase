@@ -38,16 +38,26 @@ public sealed class UnitTestIValue
     }
 
     [Fact]
+    public void TestNoneValueCount()
+    {
+        var a = Value.None;
+        Assert.True(a.Count == 1);
+    }
+
+    [Fact]
+    public void TestNoneValueIndex()
+    {
+        var a = Value.None;
+        Assert.Equal(a, a[0]);
+        Assert.Throws<ArgumentOutOfRangeException>(() => a[1]);
+    }
+
+    [Fact]
     public void TestNoneValueException()
     {
         var a = Value.None;
-        var b = (IEnumerable)a;
-        Assert.Throws<InvalidOperationException>(() => a.Count);
-        Assert.Throws<InvalidOperationException>(() => a[0]);
         Assert.Throws<InvalidOperationException>(() => a.AsTensor());
         Assert.Throws<InvalidOperationException>(() => a.AsTensors());
-        Assert.Throws<InvalidOperationException>(() => a.GetEnumerator());
-        Assert.Throws<InvalidOperationException>(() => b.GetEnumerator());
     }
 
     [Fact]
