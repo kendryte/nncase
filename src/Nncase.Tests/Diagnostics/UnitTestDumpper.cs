@@ -170,7 +170,7 @@ public sealed class UnitTestDumpper : TestClassBase
 
         using (_ = new DumpScope("DisableEvaluator", DumpFlags.ImportOps | DumpFlags.EGraphCost | DumpFlags.Calibration | DumpFlags.Compile | DumpFlags.PassIR | DumpFlags.Rewrite))
         {
-            var post = (Function)await pass.RunAsync(main, new());
+            var post = (Function)await pass.RunAsync(main.Clone(), new());
         }
 
         Assert.False(Directory.Exists(Path.Join(Dumpper.Directory, "DisableEvaluator", "0_ShapeInfer", "main", "Run_0", "Evaluate")));
@@ -178,7 +178,7 @@ public sealed class UnitTestDumpper : TestClassBase
 
         using (_ = new DumpScope("DisableRewrite", DumpFlags.ImportOps | DumpFlags.EGraphCost | DumpFlags.Evaluator | DumpFlags.Calibration | DumpFlags.Compile | DumpFlags.PassIR))
         {
-            var post = (Function)await pass.RunAsync(main, new());
+            var post = (Function)await pass.RunAsync(main.Clone(), new());
         }
 
         Assert.True(Directory.Exists(Path.Join(Dumpper.Directory, "DisableRewrite", "0_ShapeInfer", "main", "Run_0", "Evaluate")));
