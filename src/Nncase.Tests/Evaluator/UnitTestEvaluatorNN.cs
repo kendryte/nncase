@@ -313,8 +313,7 @@ public class UnitTestEvaluatorNN : TestClassBase
         var momentum = 0.5F;
 
         var expect = OrtKI.BatchNormalization(x, scale, b, mean, var, epsilon, momentum);
-        var expr = IR.F.NN.BatchNormalization(x.ToTensor(), scale.ToTensor(), b.ToTensor(), mean.ToTensor(),
-            var.ToTensor(), epsilon, momentum);
+        var expr = BatchNormalization(x.ToTensor(), scale.ToTensor(), b.ToTensor(), mean.ToTensor(), var.ToTensor(), epsilon, momentum);
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }
