@@ -16,7 +16,7 @@ using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.F.Tensors;
 using static Nncase.PatternMatch.Utility;
 
-namespace Nncase.Transform.Rules.Neutral;
+namespace Nncase.Passes.Rules.Neutral;
 
 /// <summary>
 /// squeeze to reshape.

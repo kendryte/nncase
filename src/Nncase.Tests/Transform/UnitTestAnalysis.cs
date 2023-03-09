@@ -60,9 +60,9 @@ public sealed class UnitTestAnalysis : TestClassBase
         var main = new Function(v1, new[] { input1, input2 });
         CompilerServices.InferenceType(main);
 
-        var usedbyReslut = Analyser.AnalysisUsedBy(main);
+        var userAnalysis = AnalyzerMananger.GetAnaylsis<IExprUserAnalysisResult>(main);
 
-        Assert.Single(usedbyReslut.Get(input1));
-        Assert.Equal(2, usedbyReslut.Get(input2).Count);
+        Assert.Single(userAnalysis[input1]);
+        Assert.Equal(2, userAnalysis[input2].Count());
     }
 }

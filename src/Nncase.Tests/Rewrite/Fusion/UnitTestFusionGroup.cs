@@ -85,6 +85,18 @@ public class UnitTestFusionGroup : TestClassBase
         Dumpper.DumpDotIR(main, "pre");
 #endif
 
+        var input_tensor = Testing.Rand<float>(1, 3, 224, 224);
+        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        {
+          { input, Value.FromTensor(input_tensor) },
+        };
+        var pre_result = CompilerServices.Evaluate(main.Body, feed_dict);
+
+        var analysis = new Dictionary<Type, IAnalysisResult>
+        {
+            [typeof(IExprUserAnalysisResult)] = AnalyzerMananger.GetAnaylsis<IExprUserAnalysisResult>(main),
+        };
+
         var preRewriter = new DataFlowMergeRewriter();
         var post = (Function)preRewriter.Rewrite(
             main,
@@ -93,8 +105,8 @@ public class UnitTestFusionGroup : TestClassBase
                 new ShortCutFusionMergeRuleLeft(),
                 new ShortCutFusionMergeRuleRight(),
             },
-            (usedby, rule, option) => new TestFusionGroupMutator(usedby, rule, option),
-            new());
+            (rule, option) => new TestFusionGroupMutator(rule, option),
+            new() { AnalysisResults = analysis });
 #if DEBUG
         Dumpper.DumpDotIR(post, "post1");
 #endif
@@ -110,19 +122,12 @@ public class UnitTestFusionGroup : TestClassBase
                 new SameInputFusionMergeRule(),
                 new MultiInputFusionMergeRule(),
             },
-            (usedby, rule, option) => new TestFusionGroupMutator(usedby, rule, option),
-            new());
+            (rule, option) => new TestFusionGroupMutator(rule, option),
+            new() { AnalysisResults = analysis });
 #if DEBUG
         Dumpper.DumpDotIR(post, "post2");
 #endif
 
-        var input_tensor = Testing.Rand<float>(1, 3, 224, 224);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
-        {
-          { input, Value.FromTensor(input_tensor) },
-        };
-
-        var pre_result = CompilerServices.Evaluate(main.Body, feed_dict);
         visitor = new FusionCounterVisitor();
         visitor.Visit(post.Body);
         Assert.Equal(fusionCase.FinalFusionCount, visitor.Count);

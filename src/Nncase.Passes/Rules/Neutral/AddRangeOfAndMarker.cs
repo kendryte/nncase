@@ -144,7 +144,7 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
     private IR.Tuple WrapLSTMOutput(Call call, int outputSize)
     {
         var outputs = Enumerable.Range(0, outputSize).Select(i => IR.F.Tensors.GetItem(call, i)).ToArray();
-        var exprs = outputs.Select(item => IR.F.Math.RangeOfMarker(item, IR.F.Math.RangeOf(item)));
+        var exprs = outputs.Select(item => IR.F.Math.RangeOfMarker(item, IR.F.Math.RangeOf(item))).ToArray();
         return new IR.Tuple(exprs);
     }
 }

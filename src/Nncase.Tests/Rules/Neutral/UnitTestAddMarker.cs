@@ -8,6 +8,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.Passes;
 using Nncase.Passes.Rules.Neutral;
@@ -97,7 +98,7 @@ public class UnitTestAddMarker : TestClassBase
         Assert.True(((Function)module.Entry!).Body is Tuple t
                     && CompilerServices.TryMatchRoot(t, IsWrappedLSTM(PatternMatch.F.Tensors.IsLSTM("lstm", "lstmCall", _ => true), (x, _) => IsRangeOfMarker(x, IsWildcard())), out var result)
                     && result["lstmCall"] is Call call
-                    && new[] { 0, 1, 2, 5, 6 }.All(i => call.Parameters[i] is Marker));
+                    && new[] { 0, 1, 2, 5, 6 }.All(i => call.Arguments[i] is Marker));
     }
 
     [Fact]
@@ -127,7 +128,7 @@ public class UnitTestAddMarker : TestClassBase
         Assert.True(((Function)module.Entry!).Body is Tuple t
                     && CompilerServices.TryMatchRoot(t, IsWrappedLSTM(PatternMatch.F.Tensors.IsLSTM("lstm", "lstmCall", _ => true), (x, _) => IsRangeOfMarker(x, IsWildcard())), out var result)
                     && result["lstmCall"] is Call call
-                    && new[] { 0, 1, 2, 5, 6 }.All(i => call.Parameters[i] is Marker));
+                    && new[] { 0, 1, 2, 5, 6 }.All(i => call.Arguments[i] is Marker));
     }
 
     [Fact]

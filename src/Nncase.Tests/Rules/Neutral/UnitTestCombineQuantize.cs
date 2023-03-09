@@ -7,14 +7,16 @@ using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Nncase.IR;
 using Nncase.IR.F;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
+using Nncase.Passes;
+using Nncase.Passes.Analysis;
+using Nncase.Passes.Rules.Neutral;
 using Nncase.PatternMatch;
 using Nncase.Tests.TestFixture;
-using Nncase.Transform;
-using Nncase.Transform.Rules.Neutral;
 using Xunit;
 using static Nncase.IR.F.NN;
 using ITuple = Nncase.IR.ITuple;
@@ -34,6 +36,8 @@ public class UnitTestCombineQuantize : TestClassBase
         { new int[][] { new int[] { 1, 64, 80, 80 }, new int[] { 1, 64, 80, 80 } }, 1, DataTypes.UInt8, new(20, 0.042551044f) },
     };
 
+    public IAnalyzerManager AnalyzerMananger => CompileSession.GetRequiredService<IAnalyzerManager>();
+
     [Theory]
     [MemberData(nameof(CombineQuantizeConcatPositiveData))]
     public async Task TestCombineQuantizeConcatPositive(int[][] inShapes, int axis, DataType destType, QuantParam quantParam)
@@ -47,14 +51,22 @@ public class UnitTestCombineQuantize : TestClassBase
             feedDict.Add(v, IR.F.Random.Uniform(DataTypes.Float32, 1.0f, -1.0f, i, inShapes[i]).Evaluate());
         }
 
-        var rootPre = new IR.Function(IR.F.Math.Quantize(Tensors.Concat(new IR.Tuple(parameters), axis), quantParam, destType), ImmutableArray.CreateRange(parameters));
+        var rootPre = new IR.Function(IR.F.Math.Quantize(Tensors.Concat(new IR.Tuple(parameters.ToArray()), axis), quantParam, destType), parameters.ToArray());
         Assert.True(CompilerServices.InferenceType(rootPre));
-        var pass = new DataflowWithUsdByPass();
-        pass.Add<CombineQuantizeConcat>();
-        var rootPost = (Function)await pass.RunAsync(rootPre, new());
-        Assert.NotEqual(rootPre, rootPost);
+        var preHashCode = rootPre.GetHashCode();
+        var preValue = CompilerServices.Evaluate(rootPre, feedDict);
 
-        Assert.Equal(CompilerServices.Evaluate(rootPre, feedDict), CompilerServices.Evaluate(rootPost, feedDict));
+        var analysis = new Dictionary<Type, IAnalysisResult>
+        {
+            [typeof(IExprUserAnalysisResult)] = AnalyzerMananger.GetAnaylsis<IExprUserAnalysisResult>(rootPre),
+        };
+
+        var pass = new DataflowPass();
+        pass.Add<CombineQuantizeConcat>();
+        var rootPost = (Function)await pass.RunAsync(rootPre, new() { AnalysisResults = analysis });
+        Assert.NotEqual(preHashCode, rootPost.GetHashCode());
+
+        Assert.Equal(preValue, CompilerServices.Evaluate(rootPost, feedDict));
     }
 
     [Fact]
@@ -72,9 +84,14 @@ public class UnitTestCombineQuantize : TestClassBase
         var rootPre = new Function(body, input);
         Assert.True(CompilerServices.InferenceType(rootPre));
 
-        var pass = new DataflowWithUsdByPass();
+        var analysis = new Dictionary<Type, IAnalysisResult>
+        {
+            [typeof(IExprUserAnalysisResult)] = AnalyzerMananger.GetAnaylsis<IExprUserAnalysisResult>(rootPre),
+        };
+
+        var pass = new DataflowPass();
         pass.Add<CombineQuantizeConcat>();
-        var rootPost = (Function)await pass.RunAsync(rootPre, new());
+        var rootPost = (Function)await pass.RunAsync(rootPre, new() { AnalysisResults = analysis });
         Assert.Equal(rootPre, rootPost);
     }
 }

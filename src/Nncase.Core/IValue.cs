@@ -127,13 +127,13 @@ public sealed class NoneValue : IValue, IEquatable<NoneValue?>
     /// <inheritdoc/>
     public IEnumerator<IValue> GetEnumerator()
     {
-        throw new InvalidOperationException("This Is None Value!");
+        yield break;
     }
 
     /// <inheritdoc/>
     IEnumerator IEnumerable.GetEnumerator()
     {
-        throw new InvalidOperationException("This Is None Value!");
+        yield break;
     }
 
     public override bool Equals(object? obj) => Equals(obj as NoneValue);

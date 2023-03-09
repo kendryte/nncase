@@ -8,6 +8,7 @@ using System.Linq;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
+using Nncase.Passes;
 using Nncase.PatternMatch;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.Tensors;
@@ -16,7 +17,7 @@ using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.F.Tensors;
 using static Nncase.PatternMatch.Utility;
 
-namespace Nncase.Transform.Rules.Neutral;
+namespace Nncase.Passes.Rules.Neutral;
 
 /// <summary>
 /// squeeze to reshape.

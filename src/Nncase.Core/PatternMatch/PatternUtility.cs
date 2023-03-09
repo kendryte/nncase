@@ -97,8 +97,8 @@ public static partial class Utility
     public static Pattern IsWrappedLSTM(CallPattern lstmPattern, Func<Pattern, int, Pattern> wrapFunc) =>
         IsTuple("tuple", IsVArgsRepeat("xx", tp =>
         {
-            var patterns = new Pattern[tp.Count];
-            for (var i = 0; i < tp.Count; i++)
+            var patterns = new Pattern[tp.Length];
+            for (var i = 0; i < tp.Length; i++)
             {
                 patterns[i] = wrapFunc(F.Tensors.IsGetItem(lstmPattern, IsWildcard()), i);
             }
