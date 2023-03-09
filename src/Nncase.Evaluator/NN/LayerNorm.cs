@@ -19,7 +19,8 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
         var input = context.GetOrtArgumentValue(layerNorm, LayerNorm.Input);
         var scale = context.GetOrtArgumentValue(layerNorm, LayerNorm.Scale);
         var bias = context.GetOrtArgumentValue(layerNorm, LayerNorm.Bias);
-        return Value.FromTensor(OrtKI.LayerNormalization(input, scale, bias, layerNorm.Axis, layerNorm.Epsilon, 1));
+        // return Value.FromTensor(OrtKI.LayerNormalization(input, scale, bias, layerNorm.Axis, layerNorm.Epsilon, 1));
+        return Value.FromTensor(LayerNormImpl(input.ToTensor(), scale.ToTensor(), bias.ToTensor(), layerNorm.Axis, layerNorm.Epsilon));
     }
 
     /// <inheritdoc/>
@@ -46,13 +47,13 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
         return input;
     }
 
-#if false
-    private Tensor LayerNorm(Tensor input, Tensor scale, Tensor bias, int axis, float epsilon, Tensor output)
+#if true
+    private Tensor LayerNormImpl(Tensor input, Tensor scale, Tensor bias, int axis, float epsilon)
     {
         int outputSize = 1;
         int innerSize = 1;
         float[] inputArray = input.ToArray<float>();
-        float[] outputArray = output.ToArray<float>();
+        float[] outputArray = new float[inputArray.Length];
         int[] inShape = input.Shape.ToValueArray();
         for (int i = 0; i < axis; i++)
         {
@@ -105,7 +106,7 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
             }
         }
 
-        return new Tensor<float>(outputArray, output.Shape);
+        return new Tensor<float>(outputArray, input.Shape);
     }
 #endif
 }
