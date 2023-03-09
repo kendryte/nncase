@@ -116,10 +116,10 @@ public sealed partial class SplitBatchMatMul : IRewriteRule
             return null;
         }
 
-        Expr[] ifSlices = new Expr[aShape[0].FixedValue];
-        Expr[] wSlices = new Expr[aShape[0].FixedValue];
-        Expr[] mmSlices = new Expr[aShape[0].FixedValue];
-        Expr[] ofSlices = new Expr[aShape[0].FixedValue];
+        var ifSlices = new Expr[aShape[0].FixedValue];
+        var wSlices = new Expr[aShape[0].FixedValue];
+        var mmSlices = new Expr[aShape[0].FixedValue];
+        var ofSlices = new Expr[aShape[0].FixedValue];
 
         var if_shape = new Shape(new[] { aShape[1].FixedValue, aShape[2].FixedValue });
         var w_shape = new Shape(new[] { bShape[1].FixedValue, bShape[2].FixedValue });

@@ -80,11 +80,12 @@ public class UnitTestSplitBatchMatMul : TestClassBase
     public static IEnumerable<object[]> SplitBatchMatMulPositiveData =>
         new[]
         {
-            new object[] {0, new[] {3, 5, 4 }, new[] { 3, 4, 6 } },
-            new object[] {1, new[] {6, 1, 7 }, new[] { 6, 7, 12 } },
+            new object[] { 0, new[] { 3, 5, 4 }, new[] { 3, 4, 6 } },
+            new object[] { 1, new[] { 6, 1, 7 }, new[] { 6, 7, 12 } },
         };
 
     // [Theory]
+    [Theory]
     [MemberData(nameof(SplitBatchMatMulPositiveData))]
     public void TestSplitBatchMatMulPositive(int count, int[] aShape, int[] bShape)
     {
