@@ -9,24 +9,6 @@
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Remove="IR\ExprVisitor - 复制.g.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="IR\ExprFunctor.g.cs">
-      <DependentUpon>ExprFunctor.g.tt</DependentUpon>
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-    </None>
-    <None Include="IR\ExprCloner.g.cs">
-      <DependentUpon>ExprCloner.g.tt</DependentUpon>
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-    </None>
-    <None Include="IR\ExprVisitor.g.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>ExprVisitor.g.tt</DependentUpon>
-    </None>
     <None Include="TIR\Range.Conversions.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>

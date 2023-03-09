@@ -137,7 +137,7 @@ public static class Testing
         // int offset = 0;
         foreach (var p in a.Cast<float>().Zip(b.Cast<float>()))
         {
-            if (Math.Abs(p.Item1 - p.Item2) > tol)
+            if (Math.Abs(p.First - p.Second) > tol)
             {
                 err_count++;
             }

@@ -75,12 +75,12 @@ public static class Comparator
 
     public static float[][] CosSimilarity(IValue[] a, IValue[] b)
     {
-        return a.Zip(b).Select(tuple => CosSimilarity(tuple.Item1, tuple.Item2)).ToArray();
+        return a.Zip(b).Select(tuple => CosSimilarity(tuple.First, tuple.Second)).ToArray();
     }
 
     public static float[][] CosSimilarity(OriginValue[] a, OriginValue[] b)
     {
-        return a.Zip(b).Select(tuple => CosSimilarity(tuple.Item1.Value, tuple.Item2.Value)).ToArray();
+        return a.Zip(b).Select(tuple => CosSimilarity(tuple.First.Value, tuple.Second.Value)).ToArray();
     }
 
     public static float CosSimilarity(OriginTensor a, OriginTensor b) => CosSimilarity(a.Tensor, b.Tensor);
@@ -101,10 +101,10 @@ public static class Comparator
     {
         var va = a.ToArray<float>();
         var vb = b.ToArray<float>();
-        return va.Zip(vb).All(p => (p.Item1, p.Item2) switch
+        return va.Zip(vb).All(p => (p.First, p.Second) switch
         {
             (float.NaN, float.NaN) => 0.0f,
-            _ => MathF.Abs(p.Item1 - p.Item2),
+            _ => MathF.Abs(p.First - p.Second),
         }
 
         <= thresh);
@@ -163,19 +163,19 @@ public static class Comparator
         var v2 = SliceByChannel(post);
 
         // Assert.Equal(v1.Length, v2.Length);
-        return v1.Zip(v2).Select(data => CosSimilarity(data.Item1, data.Item2)).ToArray();
+        return v1.Zip(v2).Select(data => CosSimilarity(data.First, data.Second)).ToArray();
     }
 
     public static float[][] TensorsCompareByChannel(Tensor[] pre, Tensor[] post, int channelAxis = 1, float thresh = 0.99f)
     {
         return pre.Zip(post).Select(tuple =>
-                TensorCompareByChannel(tuple.Item1, tuple.Item2, channelAxis, thresh))
+                TensorCompareByChannel(tuple.First, tuple.Second, channelAxis, thresh))
             .ToArray();
     }
 
     private static float Prod(float[] data1, float[] data2)
     {
-        return data1.Zip(data2).Aggregate(0f, (f, tuple) => f + (tuple.Item1 * tuple.Item2));
+        return data1.Zip(data2).Aggregate(0f, (f, tuple) => f + (tuple.First * tuple.Second));
     }
 
     private static bool TupleValueAllEqual(TupleValue a, TupleValue b, float thresh)
@@ -233,7 +233,7 @@ public static class DetailComparator
     {
         Assert.Equal(a.Length, b.Length);
         return a.Zip(b).Select((t) =>
-            CompareDetail(new OriginTensor(t.Item1, string.Empty), new OriginTensor(t.Item2, string.Empty), GetChannelAxis(t.Item1.Shape)));
+            CompareDetail(new OriginTensor(t.First, string.Empty), new OriginTensor(t.Second, string.Empty), GetChannelAxis(t.First.Shape)));
     }
 
     public static DetailCompareResult CompareDetail(OriginValue a, OriginValue b, int channelAxis = 1)
@@ -249,7 +249,7 @@ public static class DetailComparator
         TensorsCompareForAccuracyLoss(pre.AsTensors(), post.AsTensors());
 
     public static AccuracyLossInfo[][] TensorsCompareForAccuracyLoss(OriginTensor[] pre, OriginTensor[] post) =>
-        pre.Zip(post).Select(tuple => TensorCompareForAccuracyLoss(tuple.Item1, tuple.Item2)).ToArray();
+        pre.Zip(post).Select(tuple => TensorCompareForAccuracyLoss(tuple.First, tuple.Second)).ToArray();
 
     public static AccuracyLossInfo[] TensorCompareForAccuracyLoss(OriginTensor pre, OriginTensor post)
     {
@@ -270,7 +270,7 @@ public static class DetailComparator
             }
 
             Console.WriteLine(string.Join(",", index.Select(x => x.ToString())));
-            return new AccuracyLossInfo(data.Item1, data.Item2, index.ToArray(), pre, post);
+            return new AccuracyLossInfo(data.First, data.Second, index.ToArray(), pre, post);
         }).ToArray();
     }
 
@@ -482,14 +482,14 @@ public static class ComparatorInstance
         var resultRoot = PathJoinByCreate(cosRoot, "result");
         DetailComparator.GenerateFullCompareInfo(originData, runtimeData, resultRoot);
         var failedValues = originData.Zip(runtimeData).Where(tuple =>
-            Comparator.CosSimilarity(tuple.Item1.Value, tuple.Item2.Value)
+            Comparator.CosSimilarity(tuple.First.Value, tuple.Second.Value)
                 .All(cos => cos < threshold));
         var cosData = originData.Zip(runtimeData).Select(tuple =>
         {
-            var cos = Comparator.CosSimilarity(tuple.Item1.Value.AsTensor(), tuple.Item2.Value.AsTensor());
-            return (cos, tuple.Item1.FileName, tuple.Item2.FileName);
+            var cos = Comparator.CosSimilarity(tuple.First.Value.AsTensor(), tuple.Second.Value.AsTensor());
+            return (cos, tuple.First.FileName, tuple.Second.FileName);
         });
-        WriteResult(Path.Join(cosRoot, "ErrorPath"), failedValues.Select(tuple => tuple.Item1.Path).ToArray());
+        WriteResult(Path.Join(cosRoot, "ErrorPath"), failedValues.Select(tuple => tuple.First.Path).ToArray());
 
         // var cosByTensor = Comparator.CosSimilarity(originData.Select(x => x.AsTensor()).ToArray(), runtimeData.Select(x => x.AsTensor()).ToArray());
         WriteResult(Path.Join(cosRoot, $"!cos"), cosData.ToArray());

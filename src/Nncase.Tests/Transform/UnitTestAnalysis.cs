@@ -48,13 +48,5 @@ public sealed class UnitTestAnalysis : TestClassBase
         var userAnalysis = AnalyzerMananger.GetAnaylsis<IExprUserAnalysisResult>(main);
 
         Assert.Equal(2, userAnalysis[input].Count());
-
-        //foreach (var k in usedbyReslut.MeMo.Keys)
-        //{
-        //    if (k is Call { Target: Fusion { Name: "fusion_4_True" } })
-        //    {
-        //        Assert.Equal(2, usedbyReslut.Get(k).Count);
-        //    }
-        //}
     }
 }
