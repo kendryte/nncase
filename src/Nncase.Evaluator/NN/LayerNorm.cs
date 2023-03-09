@@ -19,6 +19,7 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
         var input = context.GetOrtArgumentValue(layerNorm, LayerNorm.Input);
         var scale = context.GetOrtArgumentValue(layerNorm, LayerNorm.Scale);
         var bias = context.GetOrtArgumentValue(layerNorm, LayerNorm.Bias);
+
         // return Value.FromTensor(OrtKI.LayerNormalization(input, scale, bias, layerNorm.Axis, layerNorm.Epsilon, 1));
         return Value.FromTensor(LayerNormImpl(input.ToTensor(), scale.ToTensor(), bias.ToTensor(), layerNorm.Axis, layerNorm.Epsilon));
     }
