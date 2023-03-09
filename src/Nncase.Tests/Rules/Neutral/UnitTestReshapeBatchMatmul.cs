@@ -11,10 +11,10 @@ using System.Threading.Tasks;
 using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.F;
+using Nncase.Tests.TestFixture;
 using Nncase.Transform;
 using Nncase.Transform.Rules.Neutral;
 using Xunit;
-using Nncase.Tests.TestFixture;
 using Math = Nncase.IR.F.Math;
 using Random = Nncase.IR.F.Random;
 
@@ -35,7 +35,6 @@ public class UnitTestReshapeBatchMatmul : TestClassBase
         {
             new object[] { new[] { 2, 1, 4 }, new[] { 4, Dimension.Unknown } },
         };
-
 
     [Theory]
     [MemberData(nameof(TestReshapeBatchMatmulPositiveData))]
