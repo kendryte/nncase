@@ -48,6 +48,8 @@ public sealed class TupleConst : Const, ITuple, IEquatable<TupleConst?>
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
         => functor.VisitTupleConst(this, context);
 
+    public TupleConst With(TupleValue? value = null) => new TupleConst(value ?? Value);
+
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as TupleConst);
 

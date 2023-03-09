@@ -312,6 +312,7 @@ public sealed class UnitTestFusionMaker : TestClassBase
         Assert.True(oldBody.InferenceType());
         var f = new Function("main", oldBody, new[] { x, initC, initH });
 
+        using var exprPin1 = new ExprPinner(lstm);
         var pass = new DataflowPass { Name = "TestComplexFusion" };
         pass.Add<LSTMFusion>();
         var afterCall = (Call)((Function)await pass.RunAsync(f, new())).Body;

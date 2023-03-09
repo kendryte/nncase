@@ -134,6 +134,8 @@ public sealed class TensorConst : Const, IEquatable<TensorConst?>
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
         => functor.VisitTensorConst(this, context);
 
+    public TensorConst With(Tensor? value = null) => new TensorConst(value ?? Value);
+
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as TensorConst);
 

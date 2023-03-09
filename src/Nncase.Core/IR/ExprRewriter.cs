@@ -50,7 +50,7 @@ public abstract partial class ExprRewriter<TContext> : ExprVisitor<Expr, IRType,
     /// <returns>Rewritten expression.</returns>
     public Expr ScopedRewrite(Expr expr, TContext context, IReadOnlySet<Expr>? scope = null)
     {
-        _rewriteScope = scope ?? new HashSet<Expr>(ExprCollector.Collect(expr));
+        _rewriteScope = scope ?? new HashSet<Expr>(ExprCollector.Collect(expr), ReferenceEqualityComparer.Instance);
         return Rewrite(expr, context);
     }
 

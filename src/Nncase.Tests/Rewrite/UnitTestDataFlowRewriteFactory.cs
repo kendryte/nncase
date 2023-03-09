@@ -49,23 +49,25 @@ public class UnitTestDataFlowRewriteFactory : TestClassBase
 #if DEBUG
         DumpScope.Current.DumpIR(pre, "pre");
 #endif
+        var feed_dict = @case.FeedDict;
+        IValue preValue, postValue;
+        var preHashCode = pre.GetHashCode();
+        using (var preScope = new DumpScope("Pre", DumpFlags.None))
+        {
+            preValue = pre.Body.Evaluate(feed_dict);
+        }
+
         var pass = new DataflowPass { Name = "DataFlowOptimize" };
         foreach (var rule in @case.Rules)
         {
             pass.Add(rule);
         }
 
-        var post = (Function)await pass.RunAsync(pre.Clone(), new());
+        var post = (Function)await pass.RunAsync(pre, new());
 #if DEBUG
         DumpScope.Current.DumpIR(post, "post");
 #endif
-        Assert.NotEqual(pre, post);
-        var feed_dict = @case.FeedDict;
-        IValue preValue, postValue;
-        using (var preScope = new DumpScope("Pre", DumpFlags.None))
-        {
-            preValue = pre.Body.Evaluate(feed_dict);
-        }
+        Assert.NotEqual(preHashCode, post.GetHashCode());
 
         using (var postScope = new DumpScope("Post", DumpFlags.None))
         {

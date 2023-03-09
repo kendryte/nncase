@@ -77,6 +77,13 @@ public class UnitTestFusionGroup : TestClassBase
         Dumpper.DumpDotIR(main, "pre");
 #endif
 
+        var input_tensor = Testing.Rand<float>(1, 3, 224, 224);
+        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        {
+          { input, Value.FromTensor(input_tensor) },
+        };
+        var pre_result = CompilerServices.Evaluate(main.Body, feed_dict);
+
         var analysis = new Dictionary<Type, IAnalysisResult>
         {
             [typeof(IExprUserAnalysisResult)] = AnalyzerMananger.GetAnaylsis<IExprUserAnalysisResult>(main),
@@ -98,13 +105,6 @@ public class UnitTestFusionGroup : TestClassBase
         Dumpper.DumpDotIR(post, "post");
 #endif
 
-        var input_tensor = Testing.Rand<float>(1, 3, 224, 224);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
-        {
-          { input, Value.FromTensor(input_tensor) },
-        };
-
-        var pre_result = CompilerServices.Evaluate(main.Body, feed_dict);
         var visitor = new FusionCounterVisitor();
         visitor.Visit(post.Body);
         Assert.Equal(fusionCase.FinalFusionCount, visitor.Count);

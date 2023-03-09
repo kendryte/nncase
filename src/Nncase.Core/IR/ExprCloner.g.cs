@@ -73,13 +73,15 @@ public partial class ExprCloner<TContext>
     /// <inheritdoc />
     protected override Expr VisitLeafNone(None expr, TContext context)
     {
-        return expr;
+        return expr.With(
+        );
     }
 
     /// <inheritdoc />
     protected override Expr VisitLeafOp(Op expr, TContext context)
     {
-        return expr;
+        return expr.With(
+        );
     }
 
     /// <inheritdoc />
@@ -98,7 +100,8 @@ public partial class ExprCloner<TContext>
     /// <inheritdoc />
     protected override Expr VisitLeafTensorConst(TensorConst expr, TContext context)
     {
-        return expr;
+        return expr.With(
+        );
     }
 
     /// <inheritdoc />
@@ -112,13 +115,15 @@ public partial class ExprCloner<TContext>
     /// <inheritdoc />
     protected override Expr VisitLeafTupleConst(TupleConst expr, TContext context)
     {
-        return expr;
+        return expr.With(
+        );
     }
 
     /// <inheritdoc />
     protected override Expr VisitLeafVar(Var expr, TContext context)
     {
-        return expr;
+        return expr.With(
+        );
     }
 
     /// <inheritdoc />
@@ -147,7 +152,8 @@ public partial class ExprCloner<TContext>
     /// <inheritdoc />
     protected override Expr VisitLeafPhysicalBuffer(TIR.PhysicalBuffer expr, TContext context)
     {
-        return expr;
+        return expr.With(
+        );
     }
 
     /// <inheritdoc />

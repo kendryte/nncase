@@ -114,6 +114,8 @@ public abstract class Op : Expr
     /// <inheritdoc/>
     public sealed override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
         => functor.VisitOp(this, context);
+
+    public Op With() => this;
 }
 
 /// <summary>

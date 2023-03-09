@@ -6,10 +6,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Toolkit.HighPerformance;
 using Microsoft.Toolkit.HighPerformance.Helpers;
 
 namespace Nncase.IR;
@@ -17,12 +15,13 @@ namespace Nncase.IR;
 /// <summary>
 /// Expression.
 /// </summary>
-public abstract partial class Expr
+public abstract partial class Expr : IDisposable
 {
-    private readonly ConditionalWeakTable<Expr, object?> _users = new();
     private readonly Expr[] _operands;
+    private readonly HashSet<Expr> _users = new(ReferenceEqualityComparer.Instance);
 
     private IRType? _checkedType;
+    private bool _disposedValue;
 
     internal Expr(IEnumerable<Expr> operands)
     {
@@ -89,12 +88,12 @@ public abstract partial class Expr
     /// <summary>
     /// Gets users.
     /// </summary>
-    public IEnumerable<Expr> Users => _users.Select(x => x.Key);
+    public IReadOnlyCollection<Expr> Users => EnsureAlive()._users;
 
     /// <summary>
     /// Gets operands.
     /// </summary>
-    public ReadOnlySpan<Expr> Operands => _operands;
+    public ReadOnlySpan<Expr> Operands => EnsureAlive()._operands;
 
     /// <summary>
     /// Gets or sets raw checked type.
@@ -133,16 +132,24 @@ public abstract partial class Expr
     /// <inheritdoc/>
     public override int GetHashCode() => HashCode.Combine(GetType(), HashCode<Expr>.Combine(Operands));
 
+    public void Dispose()
+    {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
+    }
+
     internal void ReplaceAllUsesWith(Expr newOperand)
         => ReplaceScopedUsesWith(newOperand, null);
 
     internal void ReplaceScopedUsesWith(Expr newOperand, IReadOnlySet<Expr>? scope)
     {
+        EnsureAlive();
         if (!ReferenceEquals(this, newOperand))
         {
             foreach (var user in Users.ToArray())
             {
-                if ((scope is null || scope.Contains(user))
+                if (user is not ExprPinner
+                    && (scope is null || scope.Contains(user))
                     && !newOperand.IsDescendantOf(this))
                 {
                     newOperand.AddUser(user);
@@ -160,6 +167,19 @@ public abstract partial class Expr
                     RemoveUser(user);
                 }
             }
+        }
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!_disposedValue)
+        {
+            foreach (var operand in _operands)
+            {
+                operand.RemoveUser(this);
+            }
+
+            _disposedValue = true;
         }
     }
 
@@ -208,12 +228,27 @@ public abstract partial class Expr
 
     private void AddUser(Expr user)
     {
+        EnsureAlive();
         Trace.Assert(!ReferenceEquals(this, user));
-        _users.AddOrUpdate(user, null);
+        _users.Add(user.EnsureAlive());
     }
 
     private void RemoveUser(Expr user)
     {
         _users.Remove(user);
+        if (_users.Count == 0)
+        {
+            Dispose();
+        }
+    }
+
+    private Expr EnsureAlive()
+    {
+        if (_disposedValue)
+        {
+            throw new ObjectDisposedException(null);
+        }
+
+        return this;
     }
 }

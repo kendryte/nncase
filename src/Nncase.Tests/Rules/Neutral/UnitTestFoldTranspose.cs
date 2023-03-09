@@ -13,6 +13,7 @@ using Nncase.IR.F;
 using Nncase.Passes;
 using Nncase.Passes.Rules.Neutral;
 using Nncase.Tests.TestFixture;
+using Tensorflow.Sessions;
 using Xunit;
 using Math = Nncase.IR.F.Math;
 using Random = Nncase.IR.F.Random;
@@ -89,6 +90,8 @@ public class UnitTestFoldTranspose : TestClassBase
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Transpose(a, perm);
+        var preHashCode = rootPre.GetHashCode();
+        var preValue = CompilerServices.Evaluate(rootPre);
         var rootPost = CompilerServices.Rewrite(
             rootPre,
             new IRewriteRule[]
@@ -98,8 +101,8 @@ public class UnitTestFoldTranspose : TestClassBase
             },
             new());
 
-        Assert.NotEqual(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
+        Assert.NotEqual(preHashCode, rootPost.GetHashCode());
+        Assert.Equal(preValue, CompilerServices.Evaluate(rootPost));
     }
 
     [Theory]
@@ -108,6 +111,8 @@ public class UnitTestFoldTranspose : TestClassBase
     {
         using var dumpScope = new DumpScope($"{param.Count}");
         var rootPre = Tensors.Transpose(param.Act, param.Perm);
+        var preHashCode = rootPre.GetHashCode();
+        var preValue = CompilerServices.Evaluate(rootPre);
         var rootPost = CompilerServices.Rewrite(
             rootPre,
             new IRewriteRule[]
@@ -116,8 +121,8 @@ public class UnitTestFoldTranspose : TestClassBase
             },
             new());
 
-        Assert.NotEqual(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
+        Assert.NotEqual(preHashCode, rootPost.GetHashCode());
+        Assert.Equal(preValue, CompilerServices.Evaluate(rootPost));
     }
 
     [Theory]
@@ -126,6 +131,7 @@ public class UnitTestFoldTranspose : TestClassBase
     {
         using var dumpScope = new DumpScope($"{param.Count}");
         var rootPre = Tensors.Transpose(param.Act, param.Perm);
+        var preHashCode = rootPre.GetHashCode();
         var rootPost = CompilerServices.Rewrite(
             rootPre,
             new IRewriteRule[]
@@ -134,6 +140,6 @@ public class UnitTestFoldTranspose : TestClassBase
             },
             new());
 
-        Assert.Equal(rootPre, rootPost);
+        Assert.Equal(preHashCode, rootPost.GetHashCode());
     }
 }

@@ -35,6 +35,8 @@ public sealed class None : Expr, IEquatable<None?>
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
         => functor.VisitNone(this, context);
 
+    public None With() => Default;
+
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as None);
 

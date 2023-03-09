@@ -133,7 +133,7 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, Unit>, IDisposable
 
     private IReadOnlyDictionary<Var, IValue> CreateFunctionEvaluateArguments(ReadOnlySpan<Var> parameters, ReadOnlySpan<Expr> arguments)
     {
-        var values = new Dictionary<Var, IValue>();
+        var values = new Dictionary<Var, IValue>(_varsValues);
         for (int i = 0; i < parameters.Length; i++)
         {
             values.Add(parameters[i], ExprMemo[arguments[i]]);

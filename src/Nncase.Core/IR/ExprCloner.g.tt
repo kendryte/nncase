@@ -29,16 +29,7 @@ foreach (var ir in irs.Where(x => x.IsDerived))
     protected override Expr VisitLeaf<#=ir.Name#>(<#=ir.Namespace#><#=ir.Name#> expr, TContext context)
     {
 <#
-    if (ir.Fields.Length == 0)
-    {
-#>
-        return expr;
-    }
-
-<#
-        continue;
-    }
-    else if (ir.IsFunction)
+    if (ir.IsFunction)
     {
 #>
         if (!CanVisitFunctionBody(expr))

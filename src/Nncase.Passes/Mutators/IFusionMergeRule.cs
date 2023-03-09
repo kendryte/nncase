@@ -7,6 +7,8 @@ using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Reactive;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.Passes.Analysis;
 using Nncase.PatternMatch;
@@ -140,10 +142,8 @@ public class MultiInputFusionMergeRule : IMergeRewriteRule
     private Fusion ProcessMergeSingleInputFusion(Func<Expr, Expr> mergedFusionRewriteCallBack, Call caller, Call callee, Fusion caller_fusion, Fusion callee_fusion)
     {
         // 1. replace the caller_fusion input_var with the callee_fusion body
-        var merged_fusion_body = Mutator.Substitute(
-          e => object.ReferenceEquals(e, caller_fusion.Parameters[0]) ?
-           callee_fusion.Body :
-           null)().ScopedRewrite(caller_fusion.Body);
+        var merger = new FusionMerger(caller_fusion.Parameters[0], callee_fusion.Body);
+        var merged_fusion_body = merger.Clone(caller_fusion.Body, default);
 
         // 2. run call back.
         merged_fusion_body = mergedFusionRewriteCallBack(merged_fusion_body);
@@ -152,7 +152,30 @@ public class MultiInputFusionMergeRule : IMergeRewriteRule
             throw new InvalidOperationException("Merged Fusion Type Infer Error!");
         }
 
-        return new Fusion($"{caller_fusion.Name}_{callee_fusion.Name}", ModuleKind, merged_fusion_body, callee_fusion.Parameters);
+        var fusionParams = callee_fusion.Parameters.AsValueEnumerable().Select(x => (Var)merger.ExprMemo[x]).ToArray();
+        return new Fusion($"{caller_fusion.Name}_{callee_fusion.Name}", ModuleKind, merged_fusion_body, fusionParams);
+    }
+
+    private sealed class FusionMerger : ExprCloner<Unit>
+    {
+        private readonly Var _callerParam;
+        private readonly Expr _calleeBody;
+
+        public FusionMerger(Var callerParam, Expr calleeBody)
+        {
+            _callerParam = callerParam;
+            _calleeBody = calleeBody;
+        }
+
+        protected override Expr VisitLeafVar(Var expr, Unit context)
+        {
+            if (ReferenceEquals(expr, _callerParam))
+            {
+                return Visit(_calleeBody, context);
+            }
+
+            return base.VisitLeafVar(expr, context);
+        }
     }
 }
 
@@ -309,32 +332,14 @@ public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
 
     private (Fusion Fusion, List<Expr> Inputs) ProcessMergeFusion(Func<Expr, Expr> mergedFusionRewriteCallBack, Expr calleeInput, Expr callerOtherInput, Call caller, Call callee, Fusion callerFusion, Fusion calleeFusion, bool calleeInLeft)
     {
+        bool calleeInputIsCallerOtherInput = ReferenceEquals(calleeInput, callerOtherInput);
+        var calleeParam = calleeFusion.Parameters[0];
+        var callerParam = calleeInLeft ? callerFusion.Parameters[0] : callerFusion.Parameters[1];
+        var callerOtherParam = calleeInLeft ? callerFusion.Parameters[1] : callerFusion.Parameters[0];
+
         // 1. replace the caller_fusion input_var with the callee_fusion body
-        var merged_fusion_body = Mutator.Substitute(
-          e =>
-          {
-              if (object.ReferenceEquals(e, calleeInLeft ? callerFusion.Parameters[0] : callerFusion.Parameters[1]))
-              {
-                  return calleeFusion.Body;
-              }
-
-              return null;
-          })().ScopedRewrite(callerFusion.Body);
-
-        if (object.ReferenceEquals(calleeInput, callerOtherInput))
-        {
-            // when call(fusion(x),x) only preserve one var as parmeters
-            merged_fusion_body = Mutator.Substitute(
-              e =>
-              {
-                  if (object.ReferenceEquals(e, calleeInLeft ? callerFusion.Parameters[1] : callerFusion.Parameters[0]))
-                  {
-                      return calleeFusion.Parameters[0];
-                  }
-
-                  return null;
-              })().ScopedRewrite(merged_fusion_body);
-        }
+        var merger = new FusionMerger(calleeInputIsCallerOtherInput, callerParam, callerOtherParam, calleeParam, calleeFusion.Body);
+        var merged_fusion_body = merger.Clone(callerFusion.Body, default);
 
         // 2. run call back.
         merged_fusion_body = mergedFusionRewriteCallBack(merged_fusion_body);
@@ -343,19 +348,19 @@ public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
             throw new InvalidOperationException("Merged Fusion Type Infer Error!");
         }
 
-        var callerOtherParam = calleeInLeft ? callerFusion.Parameters[1] : callerFusion.Parameters[0];
         var callParams = new List<Expr>() { calleeInput };
-        var fusionParams = new List<Var>() { calleeFusion.Parameters[0] };
-        if (!object.ReferenceEquals(calleeInput, callerOtherInput))
+        var fusionParams = new List<Var>() { (Var)merger.ExprMemo[calleeParam] };
+        if (!calleeInputIsCallerOtherInput)
         {
+            var callerOtherParamClone = (Var)merger.ExprMemo[callerOtherParam];
             if (calleeInLeft)
             {
-                fusionParams.Add(callerFusion.Parameters[1]);
+                fusionParams.Add(callerOtherParamClone);
                 callParams.Add(callerOtherInput);
             }
             else
             {
-                fusionParams.Insert(0, callerFusion.Parameters[0]);
+                fusionParams.Insert(0, callerOtherParamClone);
                 callParams.Insert(0, callerOtherInput);
             }
         }
@@ -366,6 +371,41 @@ public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
             merged_fusion_body,
             fusionParams.ToArray()),
             callParams);
+    }
+
+    private sealed class FusionMerger : ExprCloner<Unit>
+    {
+        private readonly bool _calleeInputIsCallerOtherInput;
+        private readonly Var _callerParam;
+        private readonly Var _callerOtherParam;
+        private readonly Var _calleeParam;
+        private readonly Expr _calleeBody;
+
+        public FusionMerger(bool calleeInputIsCallerOtherInput, Var callerParam, Var callerOtherParam, Var calleeParam, Expr calleeBody)
+        {
+            _calleeInputIsCallerOtherInput = calleeInputIsCallerOtherInput;
+            _callerParam = callerParam;
+            _callerOtherParam = callerOtherParam;
+            _calleeParam = calleeParam;
+            _calleeBody = calleeBody;
+        }
+
+        protected override Expr VisitLeafVar(Var expr, Unit context)
+        {
+            if (ReferenceEquals(expr, _callerParam))
+            {
+                return Visit(_calleeBody, context);
+            }
+
+            // when call(fusion(x),x) only preserve one var as parmeters
+            if (_calleeInputIsCallerOtherInput
+                && ReferenceEquals(expr, _callerOtherParam))
+            {
+                return Visit(_calleeParam, context);
+            }
+
+            return base.VisitLeafVar(expr, context);
+        }
     }
 }
 
@@ -630,30 +670,8 @@ v2 =f2(v0)      v1 = f1(v0)
         }
 
         // 1. replace the caller_fusion input_var with the callee_fusion_i body
-        Expr merged_fusion_body = caller_fusion.Body;
-        if (calleeBodyMap.Count > 0)
-        {
-            merged_fusion_body = Mutator.Substitute(e =>
-            {
-                if (e is Var ve && calleeBodyMap.TryGetValue(ve, out var new_e))
-                {
-                    return new_e;
-                }
-
-                return null;
-            })().ScopedRewrite(merged_fusion_body);
-        }
-
-        // 2. replace the all input var to new input var
-        merged_fusion_body = Mutator.Substitute(e =>
-        {
-            if (e is Var ve && multiVarMap.TryGetValue(ve, out var new_e))
-            {
-                return new_e;
-            }
-
-            return null;
-        })().ScopedRewrite(merged_fusion_body);
+        var merger = new FusionMerger(calleeBodyMap, multiVarMap);
+        var merged_fusion_body = merger.Clone(caller_fusion.Body, default);
 
         // 2. run call back.
         merged_fusion_body = mergedFusionRewriteCallBack(merged_fusion_body);
@@ -665,5 +683,32 @@ v2 =f2(v0)      v1 = f1(v0)
         merged_fusion = new Fusion(new_fusion_name, ModuleKind, merged_fusion_body, new[] { new_fusion_input_var });
 
         return true;
+    }
+
+    private sealed class FusionMerger : ExprCloner<Unit>
+    {
+        private readonly IReadOnlyDictionary<Var, Expr> _calleeBodyMap;
+        private readonly IReadOnlyDictionary<Var, Var> _multiVarMap;
+
+        public FusionMerger(IReadOnlyDictionary<Var, Expr> calleeBodyMap, IReadOnlyDictionary<Var, Var> multiVarMap)
+        {
+            _calleeBodyMap = calleeBodyMap;
+            _multiVarMap = multiVarMap;
+        }
+
+        protected override Expr VisitLeafVar(Var expr, Unit context)
+        {
+            if (_calleeBodyMap.TryGetValue(expr, out var callee))
+            {
+                return Visit(callee, context);
+            }
+
+            if (_multiVarMap.TryGetValue(expr, out var newVar))
+            {
+                return newVar;
+            }
+
+            throw new InvalidOperationException();
+        }
     }
 }

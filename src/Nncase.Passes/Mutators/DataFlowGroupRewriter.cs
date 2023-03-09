@@ -28,12 +28,12 @@ public sealed class DataFlowMergeRewriter
     {
         var post = expr;
         int count = 0;
-        OnRewriteStart(expr, count);
         do
         {
             bool isMutated = false;
             foreach (var rule in rules)
             {
+                OnRewriteStart(post, count++);
                 var last = post;
 
                 // todo reduce the mutator and rules dependence.
@@ -42,12 +42,12 @@ public sealed class DataFlowMergeRewriter
                 if (visitor.IsMutated)
                 {
                     isMutated = true;
+                    OnRewriteEnd(post, count);
                     break;
                 }
             }
 
             var inferSuccess = CompilerServices.InferenceType(post);
-            OnRewriteEnd(post, count++);
             if (isMutated && !inferSuccess)
             {
                 if (DumpScope.Current.IsEnabled(DumpFlags.Rewrite))

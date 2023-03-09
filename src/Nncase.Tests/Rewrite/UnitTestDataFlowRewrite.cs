@@ -138,6 +138,8 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
         var weights = Tensor.From<int>(Enumerable.Range(0, 3 * 3 * 3 * 16).ToArray(), new Shape(new[] { 16, 3, 3, 3 }));
         var (inH, inW) = Util.GetHW(input);
         var (fH, fW) = Util.GetHW(weights);
+        using var exprPin1 = new ExprPinner(input, inH, inW, fH, fW);
+
         var inHPost = await RunShapeInferPass("inH", inH);
         var inWPost = await RunShapeInferPass("inW", inW);
         Assert.Equal(33, ((TensorConst)inHPost).Value.ToScalar<int>());
@@ -222,23 +224,30 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
         var input = new Var(new TensorType(DataTypes.Float32, new Shape(1, 3, 224, 224)));
         var axis = -1;
         var inShape = ShapeOf(input);
+        using var inShapePin = new ExprPinner(inShape);
         Expr axisExprBefore = axis < 0
             ? axis + Rank(input)
             : Tensor.From<int>(new[] { axis });
         axisExprBefore.InferenceType();
         var axisExpr = await RunShapeInferPass("Axis", axisExprBefore, input);
+        using var axisPin = new ExprPinner(axisExpr);
         Assert.Equal(3, ((TensorConst)axisExpr).Value.Cast<int>()[0]);
+
         var firstSliceBefore = Slice(inShape, new[] { 0 }, axisExpr, 1);
         firstSliceBefore.InferenceType();
         var firstSlice = await RunShapeInferPass("firstSlice", firstSliceBefore, input);
+        using var firstSlicePin = new ExprPinner(firstSlice);
         Assert.Equal(new[] { 1, 3, 224 }, ((TensorConst)firstSlice).Value.ToArray<int>());
+
         var firstSizeBefore = Prod(firstSlice);
         firstSizeBefore.InferenceType();
         var firstSize = await RunShapeInferPass("firstSize", firstSizeBefore, input);
         Assert.Equal(1 * 3 * 224, ((TensorConst)firstSize).Value.ToScalar<int>());
+
         var secondBefore = Prod(Slice(inShape, axisExpr, Rank(input), 1));
         var secondSize = await RunShapeInferPass("secondSize", secondBefore, input);
         Assert.Equal(224, ((TensorConst)secondSize).Value.ToScalar<int>());
+
         var beforeShape = Concat(new Tuple(firstSize, secondSize), 0);
         var afterShape = ShapeOf(input);
         var softMax = Reshape(
