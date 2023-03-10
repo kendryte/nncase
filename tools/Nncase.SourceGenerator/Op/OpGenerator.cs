@@ -73,7 +73,10 @@ public class OpGenerator : IIncrementalGenerator
                             select ExpressionStatement(
                                 AssignmentExpression(
                                     SyntaxKind.SimpleAssignmentExpression,
-                                    IdentifierName(p.Name).WithTrailingTrivia(ElasticSpace),
+                                    MemberAccessExpression(
+                                        SyntaxKind.SimpleMemberAccessExpression,
+                                        ThisExpression(),
+                                        IdentifierName(p.Name)).WithTrailingTrivia(ElasticSpace),
                                     IdentifierName(p.Name.Camelize()).WithLeadingTrivia(ElasticSpace)))))
                     .WithTrailingTrivia(ElasticLineFeed),
 
@@ -274,13 +277,18 @@ public class OpGenerator : IIncrementalGenerator
             var inner = BinaryExpression(
                 SyntaxKind.LogicalAndExpression,
                 left.WithTrailingTrivia(ElasticSpace),
-                BinaryExpression(
-                    SyntaxKind.EqualsExpression,
-                    IdentifierName(prop.Name).WithTrailingTrivia(ElasticSpace),
+                InvocationExpression(
                     MemberAccessExpression(
                         SyntaxKind.SimpleMemberAccessExpression,
-                        IdentifierName("other"),
-                        IdentifierName(prop.Name))).WithLeadingTrivia(ElasticSpace));
+                        IdentifierName(prop.Name),
+                        IdentifierName("Equals")),
+                    ArgumentList(SeparatedList(new[] {
+                        Argument(
+                            MemberAccessExpression(
+                            SyntaxKind.SimpleMemberAccessExpression,
+                            IdentifierName("other"),
+                            IdentifierName(prop.Name))),
+                    }))));
             return ChainLogicalAnd(inner, properties.Skip(1));
         }
 
