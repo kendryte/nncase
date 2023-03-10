@@ -52,6 +52,7 @@ public class UnitTestTypeInfer : UnitTypeInferBase
         {
             new object[] { new[] { 3, 10, 128 }, new[] { 128, 128 }, new[] { 3, 10, 128 } },
             new object[] { new[] { 10, 128 }, new[] { 2, 128, 128 }, new[] { 2, 10, 128 } },
+            new object[] { new[] { 4, 10, 128 }, new[] { 1, 128, 128 }, new[] { 4, 10, 128 } },
         };
 
     [Fact]
