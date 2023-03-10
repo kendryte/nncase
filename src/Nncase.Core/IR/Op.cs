@@ -123,12 +123,7 @@ public abstract class Op : Expr
 /// </summary>
 public abstract class CustomOp : Op
 {
-    public CustomOp(string registeredName)
-    {
-        RegisteredName = registeredName;
-    }
-
-    public string RegisteredName { get; }
+    public abstract string RegisteredName { get; }
 
     /// <summary>
     /// Gets get the Current Custom module type.

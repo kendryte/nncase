@@ -103,7 +103,10 @@ public class OpGenerator : IIncrementalGenerator
                                         BinaryExpression(
                                             SyntaxKind.CoalesceExpression,
                                             IdentifierName(p.Name.Camelize()).WithTrailingTrivia(ElasticSpace),
-                                            IdentifierName(p.Name).WithLeadingTrivia(ElasticSpace))))),
+                                            MemberAccessExpression(
+                                                SyntaxKind.SimpleMemberAccessExpression,
+                                                ThisExpression(),
+                                                IdentifierName(p.Name)).WithLeadingTrivia(ElasticSpace))))),
                                 initializer: default)),
                         semicolonToken: Token(SyntaxKind.SemicolonToken))
                     .WithTrailingTrivia(ElasticLineFeed),
@@ -210,8 +213,7 @@ public class OpGenerator : IIncrementalGenerator
                                                 SyntaxKind.SimpleMemberAccessExpression,
                                                 BaseExpression(),
                                                 IdentifierName("GetHashCode")))),
-                                }.Concat(from p in cand.AttrParams
-                                         select Argument(IdentifierName(p.Name))))))),
+                                }.Concat(MakeHashCombineExpression(cand.AttrParams)))))),
                         semicolonToken: Token(SyntaxKind.SemicolonToken))
                     .WithTrailingTrivia(ElasticLineFeed),
                 };
@@ -239,6 +241,29 @@ public class OpGenerator : IIncrementalGenerator
             .WithTrailingTrivia(GeneratorUtil.MakeWarningTrivid(SyntaxKind.RestoreKeyword));
 
         context.AddSource("Ops", SyntaxTree(compilationUnit, encoding: Encoding.UTF8).GetText());
+    }
+
+    private static IEnumerable<ArgumentSyntax> MakeHashCombineExpression(IEnumerable<IPropertySymbol> attrParams)
+    {
+        var arguments = new List<ArgumentSyntax>();
+
+        var remain = attrParams.AsEnumerable();
+        while (remain.Any())
+        {
+            var current = remain.Take(7);
+            remain = remain.Skip(7);
+
+            arguments.Add(Argument(InvocationExpression(
+                MemberAccessExpression(
+                    SyntaxKind.SimpleMemberAccessExpression,
+                    IdentifierName("HashCode"),
+                    IdentifierName("Combine")),
+                ArgumentList(SeparatedList(
+                    from p in current
+                    select Argument(IdentifierName(p.Name)))))));
+        }
+
+        return arguments;
     }
 
     private static BinaryExpressionSyntax ChainLogicalAnd(BinaryExpressionSyntax left, IEnumerable<IPropertySymbol> properties)

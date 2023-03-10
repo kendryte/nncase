@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="LanguageExt.Core" PrivateAssets="all" />
+    <PackageReference Include="LanguageExt.Core" PrivateAssets="compile" />
   </ItemGroup>
 
   <ItemGroup>

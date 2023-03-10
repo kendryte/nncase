@@ -194,9 +194,9 @@ internal sealed class RuleGenerator : IIncrementalGenerator
             statements.Add(
               ParseStatement($"return {cand.MethodSymbol.Name}({string.Join(",", cand.MethodSymbol.Parameters.Select(p => p.Name))});"));
 
-            var modifiers = cand.ClassSymobl.Interfaces is var interfaces && interfaces.Length == 1 && SymbolEqualityComparer.Default.Equals(interfaces[0], IRewriteRuleSymbol)
-                ? TokenList(Token(SyntaxKind.PublicKeyword).WithTrailingTrivia(ElasticSpace))
-                : TokenList(Token(SyntaxKind.PublicKeyword).WithTrailingTrivia(ElasticSpace), Token(SyntaxKind.OverrideKeyword).WithTrailingTrivia(ElasticSpace));
+            var modifiers = cand.ClassSymobl.BaseType is INamedTypeSymbol baseType && baseType.SpecialType != SpecialType.System_Object
+                ? TokenList(Token(SyntaxKind.PublicKeyword).WithTrailingTrivia(ElasticSpace), Token(SyntaxKind.OverrideKeyword).WithTrailingTrivia(ElasticSpace))
+                : TokenList(Token(SyntaxKind.PublicKeyword).WithTrailingTrivia(ElasticSpace));
 
             // 2. consturct wrapper method.
             var method = MethodDeclaration(ParseTypeName("Nncase.IR.Expr?"), Identifier("GetReplace").WithLeadingTrivia(ElasticSpace))

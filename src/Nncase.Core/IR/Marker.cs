@@ -98,6 +98,10 @@ public sealed class Marker : Expr, IEquatable<Marker?>
     /// <inheritdoc/>
     public override int GetHashCode() => HashCode.Combine(base.GetHashCode(), Name);
 
-    public Marker With(string? name = null, Expr? target = null, Expr? attribute = null)
-        => new Marker(name ?? Name, target ?? Target, attribute ?? Attribute);
+    public Marker With(string? name = null, Expr? target = null, Expr? attribute = null, MixQuantInfo? mixQuantInfo = null, AdaQuantInfo? adaQuantInfo = null)
+        => new Marker(name ?? Name, target ?? Target, attribute ?? Attribute)
+        {
+            MixQuantInfo = mixQuantInfo ?? MixQuantInfo,
+            AdaQuantInfo = adaQuantInfo ?? AdaQuantInfo,
+        };
 }

@@ -86,13 +86,13 @@ internal class Compiler : ICompiler
 
             // passManager.AddWithName<EGraphPass>("NeutralOptimizeClamp").Configure(p =>
             // {
-            //     p.Add<Transform.Rules.Neutral.FoldConstCall>();
-            //     p.Add<Transform.Rules.Neutral.FoldConv2DAddMul>();
-            //     p.Add<Transform.Rules.Neutral.ReluToClamp>();
-            //     p.Add<Transform.Rules.Neutral.Relu6ToClamp>();
-            //     p.Add<Transform.Rules.Neutral.CombineClampAdd>();
-            //     p.Add<Transform.Rules.Neutral.CombineClampMul>();
-            //     p.Add<Transform.Rules.Neutral.FoldNopClamp>();
+            //     p.Add<Passes.Rules.Neutral.FoldConstCall>();
+            //     p.Add<Passes.Rules.Neutral.FoldConv2DAddMul>();
+            //     p.Add<Passes.Rules.Neutral.ReluToClamp>();
+            //     p.Add<Passes.Rules.Neutral.Relu6ToClamp>();
+            //     p.Add<Passes.Rules.Neutral.CombineClampAdd>();
+            //     p.Add<Passes.Rules.Neutral.CombineClampMul>();
+            //     p.Add<Passes.Rules.Neutral.FoldNopClamp>();
             // });
         }
 
