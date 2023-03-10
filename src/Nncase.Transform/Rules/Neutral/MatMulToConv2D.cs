@@ -126,11 +126,11 @@ public sealed partial class SplitBatchMatMul : IRewriteRule
 
         for (var i = 0; i < aShape[0].FixedValue; i++)
         {
-            var begin = new[] { i, 0, 0 };
-            var ifEnd = new[] { i + 1, aShape[1].FixedValue, aShape[2].FixedValue };
-            var wEnd = new[] { i + 1, bShape[1].FixedValue, bShape[2].FixedValue };
-            ifSlices[i] = Reshape(Slice(a, begin, ifEnd, new[] { 0 }, new[] { 1, 1, 1 }), if_shape);
-            wSlices[i] = Reshape(Slice(b, begin, wEnd, new[] { 0 }, new[] { 1, 1, 1 }), w_shape);
+            var begin = new[] { i };
+            var ifEnd = new[] { i + 1 };
+            var wEnd = new[] { i + 1 };
+            ifSlices[i] = Reshape(Slice(a, begin, ifEnd, new[] { 0 }, new[] { 1 }), if_shape);
+            wSlices[i] = Reshape(Slice(b, begin, wEnd, new[] { 0 }, new[] { 1 }), w_shape);
             mmSlices[i] = MatMul(ifSlices[i], wSlices[i]);
             ofSlices[i] = Reshape(mmSlices[i], new Shape(1, aShape[1].FixedValue, bShape[2].FixedValue));
         }

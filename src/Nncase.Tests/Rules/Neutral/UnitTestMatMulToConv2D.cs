@@ -84,7 +84,6 @@ public class UnitTestSplitBatchMatMul : TestClassBase
             new object[] { 1, new[] { 6, 1, 7 }, new[] { 6, 7, 12 } },
         };
 
-    // [Theory]
     [Theory]
     [MemberData(nameof(SplitBatchMatMulPositiveData))]
     public void TestSplitBatchMatMulPositive(int count, int[] aShape, int[] bShape)
