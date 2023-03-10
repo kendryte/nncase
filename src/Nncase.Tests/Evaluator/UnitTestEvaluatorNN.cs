@@ -270,19 +270,18 @@ public class UnitTestEvaluatorNN : TestClassBase
     [Fact]
     public void TestLayerNorm()
     {
-        var shape = new long[] { 1, 1, 1, 1 };
+        var shape = new long[] { 1, 3, 16, 16 };
         var x = OrtKI.Random(shape);
         var scale = OrtKI.Random(new[] { shape[^1] });
         var b = OrtKI.Random(new[] { shape[^1] });
-        var axis = 1L;
+        var axis = -1L;
         var epsilon = 1e-05f;
 
         // var expect = OrtKI.LayerNormalization(x, scale, b, axis, epsilon, 1L);
-        var expr = IR.F.NN.LayerNorm((int)axis, epsilon, x.ToTensor(), scale.ToTensor(), b.ToTensor());
+        var expect = IR.F.NN.LayerNorm((int)axis, epsilon, x.ToTensor(), scale.ToTensor(), b.ToTensor()).Evaluate().AsTensor();
+        var expr = IR.F.NN.LayerNorm((int)axis, epsilon, x.ToTensor(), scale.ToTensor(), b.ToTensor()).Evaluate().AsTensor();
         CompilerServices.InferenceType(expr);
-        expr.Evaluate().AsTensor();
-
-        // Assert.Equal(expect, expr.Evaluate().AsTensor());
+        Assert.Equal(expect, expr);
     }
 
     [Fact]

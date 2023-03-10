@@ -17,61 +17,61 @@ public sealed partial class FoldLayerNormPattern1 : RewriteRule<CallPattern>
     /// <inheritdoc/>
     public override CallPattern Pattern { get; } =
         IsBinary(
-            "add_beta",
-            "add_beta_call",
+            "addBeta",
+            "addBetaCall",
             BinaryOp.Add,
             IsBinary(
                 "mul",
-                "mul_call",
+                "mulCall",
                 BinaryOp.Mul,
                 IsReshape(
                     "rshape2",
-                    "rshape2_call",
+                    "rshape2Call",
                     _ => true,
                     IsBinary(
                         "div",
-                        "div_call",
+                        "divCall",
                         BinaryOp.Div,
                         IsWildcard(),
                         IsUnary(
                             "sqrt",
-                            "sqrt_call",
+                            "sqrtCall",
                             UnaryOp.Sqrt,
                             IsBinary(
-                                "add_eps",
-                                "add_eps_call",
+                                "addEps",
+                                "addEpsCall",
                                 BinaryOp.Add,
                                 IsReduce(
                                     "rd2",
-                                    "rd2_call",
+                                    "rd2Call",
                                     ReduceOp.Mean,
                                     IsBinary(
                                         "pow",
-                                        "pow_call",
+                                        "powCall",
                                         BinaryOp.Pow,
                                         IsBinary(
                                             "sub",
-                                            "sub_call",
+                                            "subCall",
                                             BinaryOp.Sub,
                                             IsWildcard(),
                                             IsReduce(
                                                 "rd1",
-                                                "rd1_call",
+                                                "rd1Call",
                                                 ReduceOp.Mean,
                                                 IsReshape(
                                                     "reshape1",
-                                                    "reshape1_call",
+                                                    "reshape1Call",
                                                     _ => true,
                                                     IsWildcard("input")))))),
                                 IsTensorConst("eps"))))),
                 IsTensorConst("gamma")),
             IsTensorConst("beta"));
 
-    private Expr? GetReplace(Call add_beta_call, Call sub_call, Call rd1_call, Call div_call, TensorConst eps, TensorConst gamma, TensorConst beta, TensorConst input)
+    private Expr? GetReplace(Call addBetaCall, Call subCall, Call rd1Call, Call divCall, TensorConst eps, TensorConst gamma, TensorConst beta, Expr input)
     {
-        if (sub_call[Binary.Rhs] == rd1_call[Reduce.Input] && div_call[Binary.Rhs] == sub_call)
+        if (subCall[Binary.Lhs] == rd1Call[Reduce.Input] && divCall[Binary.Lhs] == subCall)
         {
-            var axis = add_beta_call.CheckedShape.Count - gamma.CheckedShape.Count;
+            var axis = addBetaCall.CheckedShape.Count - gamma.CheckedShape.Count;
             return LayerNorm(axis, eps.Value.Cast<float>()[0], input, gamma, beta);
         }
 
@@ -85,54 +85,54 @@ public sealed partial class FoldLayerNormPattern2 : RewriteRule<CallPattern>
     /// <inheritdoc/>
     public override CallPattern Pattern { get; } =
         IsBinary(
-            "add_beta",
-            "add_beta_call",
+            "addBeta",
+            "addBetaCall",
             BinaryOp.Add,
             IsBinary(
             "mul",
-            "mul_call",
+            "mulCall",
             BinaryOp.Mul,
             IsBinary(
                 "div",
-                "div_call",
+                "divCall",
                 BinaryOp.Div,
                 IsWildcard(),
                 IsUnary(
                     "sqrt",
-                    "sqrt_call",
+                    "sqrtCall",
                     UnaryOp.Sqrt,
                     IsBinary(
-                        "add_eps",
-                        "add_eps_call",
+                        "addEps",
+                        "addEpsCall",
                         BinaryOp.Add,
                         IsReduce(
                             "rd2",
-                            "rd2_call",
+                            "rd2Call",
                             ReduceOp.Mean,
                             IsBinary(
                                 "pow",
-                                "pow_call",
+                                "powCall",
                                 BinaryOp.Pow,
                                 IsBinary(
                                     "sub",
-                                    "sub_call",
+                                    "subCall",
                                     BinaryOp.Sub,
                                     IsWildcard(),
                                     IsReduce(
                                         "rd1",
-                                        "rd1_call",
+                                        "rd1Call",
                                         ReduceOp.Mean,
                                         IsWildcard("input"))))),
                         IsTensorConst("eps")))),
             IsTensorConst("gamma")),
             IsTensorConst("beta"));
 
-    private Expr? GetReplace(Expr add_beta_call, Call sub_call, Call rd1_call, Call div_call, TensorConst eps, TensorConst gamma, TensorConst beta, Expr input)
+    private Expr? GetReplace(Expr addBetaCall, Call subCall, Call rd1Call, Call divCall, TensorConst eps, TensorConst gamma, TensorConst beta, Expr input)
     {
-        if ((sub_call[Binary.Lhs] == rd1_call[Reduce.Input] || sub_call[Binary.Rhs] == rd1_call[Reduce.Input]) &&
-            div_call[Binary.Lhs] == sub_call)
+        if ((subCall[Binary.Lhs] == rd1Call[Reduce.Input] || subCall[Binary.Rhs] == rd1Call[Reduce.Input]) &&
+            divCall[Binary.Lhs] == subCall)
         {
-            var axis = add_beta_call.CheckedShape.Count - gamma.CheckedShape.Count;
+            var axis = addBetaCall.CheckedShape.Count - gamma.CheckedShape.Count;
             return LayerNorm(axis, eps.Value.Cast<float>()[0], input, gamma, beta);
         }
 
@@ -146,62 +146,62 @@ public sealed partial class FoldLayerNormPattern3 : RewriteRule<CallPattern>
     /// <inheritdoc/>
     public override CallPattern Pattern { get; } =
         IsBinary(
-            "add_all",
-            "add_all_call",
+            "addAll",
+            "addAllCall",
             BinaryOp.Add,
             IsBinary(
-                "mul_x",
-                "mul_x_call",
+                "mulX",
+                "mulXCall",
                 BinaryOp.Mul,
-                IsWildcard(),
+                IsWildcard("input"),
                 IsBinary(
-                    "mul_gamma",
-                    "mul_gamma_call",
+                    "mulGamma",
+                    "mulGammaCall",
                     BinaryOp.Mul,
                     IsUnary(
                         "rsqrt",
-                        "rsqrt_call",
+                        "rsqrtCall",
                         UnaryOp.Rsqrt,
                         IsBinary(
-                            "add_eps",
-                            "add_eps_call",
+                            "addEps",
+                            "addEpsCall",
                             BinaryOp.Add,
                             IsReduce(
-                                "rd_var",
-                                "rd_var_call",
+                                "rdVar",
+                                "rdVarCall",
                                 ReduceOp.Mean,
                                 IsUnary(
                                     "square",
-                                    "sqare_call",
+                                    "sqareCall",
                                     UnaryOp.Square,
                                     IsBinary(
-                                        "sub_mu",
-                                        "sub_mu_call",
+                                        "subMu",
+                                        "subMuCall",
                                         BinaryOp.Sub,
-                                        IsTensorConst(),
+                                        IsWildcard("input"),
                                         IsReduce(
-                                            "rd_mu",
-                                            "rd_mu_call",
+                                            "rdMu",
+                                            "rdMuCall",
                                             ReduceOp.Mean,
                                             IsWildcard("input"))))),
                             IsTensorConst("eps"))),
                     IsTensorConst("gamma"))),
             IsBinary(
-                "sub_beta",
-                "sub_beta_call",
+                "subBeta",
+                "subBetaCall",
                 BinaryOp.Sub,
                 IsTensorConst("beta"),
                 IsBinary(
-                    "mul_mu",
-                    "mul_mu_call",
+                    "mulMu",
+                    "mulMuCall",
                     BinaryOp.Mul)));
 
-    private Expr? GetReplace(Call add_all_call, Call mul_mu_call, Call sub_mu_call, Call mul_x_call, Call rd_mu_call, TensorConst eps, TensorConst gamma, TensorConst beta, TensorConst input)
+    private Expr? GetReplace(Call addAllCall, Call mulMuCall, Call subMuCall, Call mulXCall, Call rdMuCall, TensorConst eps, TensorConst gamma, TensorConst beta, Expr input)
     {
-        if (mul_mu_call[Binary.Lhs] == sub_mu_call[Binary.Rhs] && mul_mu_call[Binary.Rhs] == mul_x_call[Binary.Rhs] &&
-            mul_x_call[Binary.Lhs] == sub_mu_call[Binary.Lhs] && mul_x_call[Binary.Lhs] == rd_mu_call[Reduce.Input])
+        if (mulMuCall[Binary.Lhs] == subMuCall[Binary.Rhs] && mulMuCall[Binary.Rhs] == mulXCall[Binary.Rhs] &&
+            mulXCall[Binary.Lhs] == subMuCall[Binary.Lhs] && mulXCall[Binary.Lhs] == rdMuCall[Reduce.Input])
         {
-            var axis = add_all_call.CheckedShape.Count - gamma.CheckedShape.Count;
+            var axis = addAllCall.CheckedShape.Count - gamma.CheckedShape.Count;
             return LayerNorm(axis, eps.Value.Cast<float>()[0], input, gamma, beta);
         }
 

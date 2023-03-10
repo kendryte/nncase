@@ -63,7 +63,14 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
 
         for (int i = axis; i < inShape.Length; i++)
         {
-            innerSize *= inShape[i];
+            if (i < 0)
+            {
+                innerSize *= inShape[^System.Math.Abs(i)];
+            }
+            else
+            {
+                innerSize *= inShape[i];
+            }
         }
 
         for (int batch = 0; batch < outputSize; batch++)
@@ -71,13 +78,13 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
             float mean1 = 0f;
             for (int i = 0; i < innerSize; i++)
             {
-                mean1 += inputArray[i + (batch * innerSize)] / innerSize;
+                mean1 += inputArray[(i + (batch * innerSize)) % inputArray.Length] / innerSize;
             }
 
             float[] sub = new float[innerSize];
             for (int i = 0; i < innerSize; i++)
             {
-                sub[i] = inputArray[i + (batch * innerSize)] - mean1;
+                sub[i] = inputArray[(i + (batch * innerSize)) % inputArray.Length] - mean1;
             }
 
             float[] pow = new float[innerSize];
@@ -103,7 +110,7 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
 
             for (int i = 0; i < innerSize; i++)
             {
-                outputArray[i + (batch * innerSize)] = (div[i] * scale.ToArray<float>()[i]) + bias.ToArray<float>()[i];
+                outputArray[(i + (batch * innerSize)) % outputArray.Length] = (div[i] * scale.ToArray<float>()[i % scale.Length]) + bias.ToArray<float>()[i % bias.Length];
             }
         }
 
