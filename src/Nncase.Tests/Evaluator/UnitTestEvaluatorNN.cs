@@ -287,6 +287,21 @@ public class UnitTestEvaluatorNN : TestClassBase
         }
 
         {
+            var shape = new long[] { 1, 3, 16, 16 };
+            var x = OrtKI.Random(shape);
+            for (int i = -shape.Length + 1; i != 0; i++)
+            {
+                var axis = i;
+                var scale = OrtKI.Random(new[] { shape[^System.Math.Abs(i)] });
+                var b = OrtKI.Random(new[] { shape[^System.Math.Abs(i)] });
+
+                // var expect = OrtKI.LayerNormalization(x, scale, b, axis, epsilon, 1L);
+                var expect = IR.F.NN.LayerNorm((int)axis, epsilon, x.ToTensor(), scale.ToTensor(), b.ToTensor()).Evaluate().AsTensor();
+                DoLayerNorm(expect, (int)axis, epsilon, x.ToTensor(), scale.ToTensor(), b.ToTensor());
+            }
+        }
+
+        {
             var shape = new long[] { 1, 16 };
             var x = OrtKI.Random(shape);
             for (int i = 0; i < shape.Length; i++)
