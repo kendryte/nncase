@@ -42,13 +42,13 @@ internal partial class Quantizer
         // 1.0 Get ranges
         var ranges = await GetRangesAsync(_quantizeOptions.CalibrationDataset);
 
+        for (int i = 0; i < ranges.Count; i++)
+        {
+            ranges[ranges.ToArray()[i].Key] = FixUpRange(ranges.ToArray()[i].Value);
+        }
+
         if (_quantizeOptions.CalibrationMethod is CalibMethod.Kld)
         {
-            for (int i = 0; i < ranges.Count; i++)
-            {
-                ranges[ranges.ToArray()[i].Key] = FixUpRange(ranges.ToArray()[i].Value);
-            }
-
             // 1.1. Get histograms
             var histograms = await GetHistogramsAsync(_quantizeOptions.CalibrationDataset, ranges, srcBinSize, dstBinSize);
 
