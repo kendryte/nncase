@@ -47,7 +47,7 @@ public sealed partial class MatMulToConv2D : IRewriteRule
         var conv2d = Conv2D(
             if_reshape,
             w_reshape,
-            Tensor.FromScalar(0.0f, aShape[1].FixedValue),
+            Tensor.FromScalar(0.0f, w_shape[0].FixedValue),
             Tensor.FromScalar(1, new[] { 2 }),
             Tensor.FromScalar(0, new[] { 2, 2 }),
             new int[] { 1, 1 },
