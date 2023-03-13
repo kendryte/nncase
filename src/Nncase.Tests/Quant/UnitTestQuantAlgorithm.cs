@@ -42,6 +42,28 @@ public class UnitTestKLQuant : TestClassBase
     }
 
     [Fact]
+    public void TestGetWeightsRangesByChannel()
+    {
+        Span<float> weightsValue = stackalloc float[16 * 3 * 3 * 3];
+        for (int i = 0; i < 16 * 3 * 3 * 3; i++)
+        {
+            weightsValue[i] = 1.0f;
+        }
+        List<float> byChannelRanges = QuantUtility.GetWeightsRangesByChannel(weightsValue, 16);
+        for (int i = 0; i < 16 * 2; i++)
+        {
+            if (i % 2 == 0)
+            {
+                Assert.Equal(0.0f, byChannelRanges[i]);
+            }
+            else
+            {
+                Assert.Equal(1.0f, byChannelRanges[i]);
+            }
+        }
+    }
+
+    [Fact]
     public async Task TestKLQuant()
     {
         CompileOptions.QuantizeOptions.ModelQuantMode = ModelQuantMode.UsePTQ;
