@@ -19,7 +19,7 @@ using Random = Nncase.IR.F.Random;
 namespace Nncase.Tests.Rules.NeutralTest;
 
 [AutoSetupTestMethod(InitSession = true)]
-public class UnitTestFoldLayerNorm : TestClassBase
+public class UnitTestFoldLayerNorm : TransformTestBase
 {
     public static TheoryData<int[]> FoldLayerNormData => new()
     {
@@ -33,7 +33,7 @@ public class UnitTestFoldLayerNorm : TestClassBase
     public void TestFoldLayerNormPositive1(int[] shape)
     {
         // note shape is nchw
-        var input = new Var("input", new TensorType(DataTypes.Float32, shape));
+        var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape);
         long[] axes = { 0 };
         float initValue = 0F;
         long keepDims = 1;
@@ -43,29 +43,18 @@ public class UnitTestFoldLayerNorm : TestClassBase
             var v1 = IR.F.Tensors.Reshape(v0, shape);
             var v2 = IR.F.Tensors.Reduce(ReduceOp.Mean, v1, axes, initValue, keepDims);
             var v3 = IR.F.Math.Binary(BinaryOp.Sub, v1, v2);
-            var v4 = IR.F.Math.Binary(BinaryOp.Pow, v3, 2f);
+            var v4 = IR.F.Math.Binary(BinaryOp.Pow, v3, 1f);
             var v5 = IR.F.Tensors.Reduce(ReduceOp.Mean, v4, axes, initValue, keepDims);
             var v6 = IR.F.Math.Binary(BinaryOp.Add, v5, 1e-05f);
             var v7 = IR.F.Math.Unary(UnaryOp.Sqrt, v6);
             var v8 = IR.F.Math.Binary(BinaryOp.Div, v3, v7);
             var v9 = IR.F.Tensors.Reshape(v8, shape);
-            var v10 = IR.F.Math.Binary(BinaryOp.Mul, v9, new[] { -0.1f });
-            var v11 = IR.F.Math.Binary(BinaryOp.Add, v10, new[] { 0.5f });
+            var v10 = IR.F.Math.Binary(BinaryOp.Mul, v9, 1f);
+            var v11 = IR.F.Math.Binary(BinaryOp.Add, v10, 1f);
             rootPre = v11;
         }
 
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[] { new FoldLayerNormPattern1(), new FoldConstCall() }, new());
-
-#if DEBUG
-        Dumpper.DumpIR(rootPost, "post");
-#endif
-
-        var feedDict = new Dictionary<Var, IValue>()
-        {
-          { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape).Evaluate() },
-        };
-        Assert.NotEqual(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre, feedDict), CompilerServices.Evaluate(rootPost, feedDict));
+        TestMatched<FoldLayerNormPattern1>(rootPre);
     }
 
     [Theory]
@@ -96,12 +85,7 @@ public class UnitTestFoldLayerNorm : TestClassBase
 
         var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[] { new FoldLayerNormPattern1(), new FoldConstCall() }, new());
 
-        var feedDict = new Dictionary<Var, IValue>()
-        {
-            { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape).Evaluate() },
-        };
         Assert.Equal(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre, feedDict), CompilerServices.Evaluate(rootPost, feedDict));
     }
 
     [Theory]
@@ -109,7 +93,7 @@ public class UnitTestFoldLayerNorm : TestClassBase
     public void TestFoldLayerNormPositive2(int[] shape)
     {
         // note shape is nchw
-        var input = new Var("input", new TensorType(DataTypes.Float32, shape));
+        var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape);
         long[] axes = { 0 };
         float initValue = 0F;
         long keepDims = 1;
@@ -128,18 +112,7 @@ public class UnitTestFoldLayerNorm : TestClassBase
             rootPre = v11;
         }
 
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[] { new FoldLayerNormPattern2(), new FoldConstCall() }, new());
-
-#if DEBUG
-        Dumpper.DumpIR(rootPost, "post");
-#endif
-
-        var feedDict = new Dictionary<Var, IValue>()
-        {
-          { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape).Evaluate() },
-        };
-        Assert.NotEqual(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre, feedDict), CompilerServices.Evaluate(rootPost, feedDict));
+        TestMatched<FoldLayerNormPattern2>(rootPre);
     }
 
     [Theory]
@@ -168,16 +141,7 @@ public class UnitTestFoldLayerNorm : TestClassBase
 
         var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[] { new FoldLayerNormPattern2(), new FoldConstCall() }, new());
 
-#if DEBUG
-        Dumpper.DumpIR(rootPost, "post");
-#endif
-
-        var feedDict = new Dictionary<Var, IValue>()
-        {
-            { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape).Evaluate() },
-        };
         Assert.Equal(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre, feedDict), CompilerServices.Evaluate(rootPost, feedDict));
     }
 
     [Theory]
@@ -185,7 +149,7 @@ public class UnitTestFoldLayerNorm : TestClassBase
     public void TestFoldLayerNormPositive3(int[] shape)
     {
         // note shape is nchw
-        var input = new Var("input", new TensorType(DataTypes.Float32, shape));
+        var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape);
         long[] axes = { 0 };
         float initValue = 0F;
         long keepDims = 1;
@@ -206,18 +170,7 @@ public class UnitTestFoldLayerNorm : TestClassBase
             rootPre = v11;
         }
 
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[] { new FoldLayerNormPattern3() }, new());
-
-#if DEBUG
-        Dumpper.DumpIR(rootPost, "post");
-#endif
-
-        var feedDict = new Dictionary<Var, IValue>()
-        {
-          { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape).Evaluate() },
-        };
-        Assert.NotEqual(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre, feedDict), CompilerServices.Evaluate(rootPost, feedDict));
+        TestMatched<FoldLayerNormPattern3>(rootPre);
     }
 
     [Theory]
@@ -252,11 +205,6 @@ public class UnitTestFoldLayerNorm : TestClassBase
         Dumpper.DumpIR(rootPost, "post");
 #endif
 
-        var feedDict = new Dictionary<Var, IValue>()
-        {
-            { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape).Evaluate() },
-        };
         Assert.Equal(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre, feedDict), CompilerServices.Evaluate(rootPost, feedDict));
     }
 }

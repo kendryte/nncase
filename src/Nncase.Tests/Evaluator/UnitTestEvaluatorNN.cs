@@ -274,25 +274,31 @@ public class UnitTestEvaluatorNN : TestClassBase
         {
             var shape = new long[] { 1, 3, 16, 16 };
             var x = OrtKI.Random(shape);
-            var scale = OrtKI.Random(new[] { shape[^1] });
-            var b = OrtKI.Random(new[] { shape[^1] });
-            var axis = -1L;
+            for (int i = 0; i < shape.Length; i++)
+            {
+                var scale = OrtKI.Random(new[] { shape[i] });
+                var b = OrtKI.Random(new[] { shape[i] });
+                var axis = i;
 
-            // var expect = OrtKI.LayerNormalization(x, scale, b, axis, epsilon, 1L);
-            var expect = IR.F.NN.LayerNorm((int)axis, epsilon, x.ToTensor(), scale.ToTensor(), b.ToTensor()).Evaluate().AsTensor();
-            DoLayerNorm(expect, (int)axis, epsilon, x.ToTensor(), scale.ToTensor(), b.ToTensor());
+                // var expect = OrtKI.LayerNormalization(x, scale, b, axis, epsilon, 1L);
+                var expect = IR.F.NN.LayerNorm((int)axis, epsilon, x.ToTensor(), scale.ToTensor(), b.ToTensor()).Evaluate().AsTensor();
+                DoLayerNorm(expect, (int)axis, epsilon, x.ToTensor(), scale.ToTensor(), b.ToTensor());
+            }
         }
 
         {
             var shape = new long[] { 1, 16 };
             var x = OrtKI.Random(shape);
-            var scale = OrtKI.Random(new[] { shape[1] });
-            var b = OrtKI.Random(new[] { shape[1] });
-            var axis = 1L;
+            for (int i = 0; i < shape.Length; i++)
+            {
+                var scale = OrtKI.Random(new[] { shape[i] });
+                var b = OrtKI.Random(new[] { shape[i] });
+                var axis = i;
 
-            // var expect = OrtKI.LayerNormalization(x, scale, b, axis, epsilon, 1L);
-            var expect = IR.F.NN.LayerNorm((int)axis, epsilon, x.ToTensor(), scale.ToTensor(), b.ToTensor()).Evaluate().AsTensor();
-            DoLayerNorm(expect, (int)axis, epsilon, x.ToTensor(), scale.ToTensor(), b.ToTensor());
+                // var expect = OrtKI.LayerNormalization(x, scale, b, axis, epsilon, 1L);
+                var expect = IR.F.NN.LayerNorm((int)axis, epsilon, x.ToTensor(), scale.ToTensor(), b.ToTensor()).Evaluate().AsTensor();
+                DoLayerNorm(expect, (int)axis, epsilon, x.ToTensor(), scale.ToTensor(), b.ToTensor());
+            }
         }
     }
 
