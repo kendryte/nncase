@@ -134,7 +134,7 @@ public static class QuantUtility
             {
                 tmpMax = Math.Max(0, minMaxArr[i + 1]);
                 tmpMin = Math.Min(0, minMaxArr[i]);
-                var r =tmpMax - tmpMin;
+                var r = tmpMax - tmpMin;
                 if (r == 0)
                 {
                     r = 0.1f;
