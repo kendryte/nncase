@@ -84,6 +84,9 @@ internal class Compiler : ICompiler
                 p.Add<Transform.Rules.Neutral.TransposeToReshape>();
                 p.Add<Transform.Rules.Neutral.FoldNopReshape>();
                 p.Add<Transform.Rules.Neutral.FoldTwoReshapes>();
+                p.Add<Transform.Rules.Neutral.FoldLayerNormPattern1>();
+                p.Add<Transform.Rules.Neutral.FoldLayerNormPattern2>();
+                p.Add<Transform.Rules.Neutral.FoldLayerNormPattern3>();
             });
 
             // passManager.AddWithName<EGraphPass>("NeutralOptimizeClamp").Configure(p =>
