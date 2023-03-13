@@ -143,6 +143,7 @@ public static class QuantUtility
                 {
                     r = 0.01f;
                 }
+
                 tmpMax = tmpMin + r;
 
                 minMaxArr.Add(tmpMin);
