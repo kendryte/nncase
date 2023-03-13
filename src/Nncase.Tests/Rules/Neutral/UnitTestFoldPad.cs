@@ -17,7 +17,7 @@ using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestFoldPad : TestClassBase
+public class UnitTestFoldPad : TransformTestBase
 {
     public static IEnumerable<object[]> TestFoldNopPadPositiveData =>
         new[]
@@ -89,10 +89,7 @@ public class UnitTestFoldPad : TestClassBase
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = NN.Pad(a, pads, PadMode.Constant, 0.0f);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopPad() }, new());
-
-        Assert.NotEqual(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
+        TestMatched<FoldNopPad>(rootPre);
     }
 
     [Theory]
@@ -101,10 +98,7 @@ public class UnitTestFoldPad : TestClassBase
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = NN.Pad(a, pads, PadMode.Constant, 0.0f);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopPad() }, new());
-
-        Assert.Equal(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
+        TestNotMatch<FoldNopPad>(rootPre);
     }
 
     [Theory]
@@ -113,10 +107,7 @@ public class UnitTestFoldPad : TestClassBase
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = NN.Pad(NN.Pad(a, pads1, PadMode.Constant, 0.0f), pads2, PadMode.Constant, 0.0f);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldTwoPads() }, new());
-
-        Assert.NotEqual(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
+        TestMatched<FoldTwoPads>(rootPre);
     }
 
     [Theory]
@@ -125,9 +116,6 @@ public class UnitTestFoldPad : TestClassBase
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = NN.Pad(NN.Pad(a, pads1, PadMode.Constant, padValue1), pads2, PadMode.Constant, padValue2);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldTwoPads() }, new());
-
-        Assert.Equal(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
+        TestNotMatch<FoldTwoPads>(rootPre);
     }
 }

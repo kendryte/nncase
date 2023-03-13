@@ -17,8 +17,7 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     /// <inheritdoc />
     protected internal override TExprResult VisitCall(Call expr, TContext context)
     {
-        Visit(expr.Target, context);
-        VisitArray(expr.Arguments, context);
+        VisitOperands(expr, context);
         return VisitLeafCall(expr, context);
     }
 
@@ -27,8 +26,7 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     {
         if (CanVisitFunctionBody(expr))
         {
-            VisitArray(expr.Parameters, context);
-            Visit(expr.Body, context);
+            VisitOperands(expr, context);
         }
 
         return VisitLeafFunction(expr, context);
@@ -39,8 +37,7 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     {
         if (CanVisitFunctionBody(expr))
         {
-            VisitArray(expr.Parameters, context);
-            Visit(expr.Body, context);
+            VisitOperands(expr, context);
         }
 
         return VisitLeafFusion(expr, context);
@@ -49,29 +46,28 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     /// <inheritdoc />
     protected internal override TExprResult VisitIf(If expr, TContext context)
     {
-        Visit(expr.Condition, context);
-        Visit(expr.Then, context);
-        Visit(expr.Else, context);
+        VisitOperands(expr, context);
         return VisitLeafIf(expr, context);
     }
 
     /// <inheritdoc />
     protected internal override TExprResult VisitMarker(Marker expr, TContext context)
     {
-        Visit(expr.Target, context);
-        Visit(expr.Attribute, context);
+        VisitOperands(expr, context);
         return VisitLeafMarker(expr, context);
     }
 
     /// <inheritdoc />
     protected internal override TExprResult VisitNone(None expr, TContext context)
     {
+        VisitOperands(expr, context);
         return VisitLeafNone(expr, context);
     }
 
     /// <inheritdoc />
     protected internal override TExprResult VisitOp(Op expr, TContext context)
     {
+        VisitOperands(expr, context);
         return VisitLeafOp(expr, context);
     }
 
@@ -80,7 +76,7 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     {
         if (CanVisitFunctionBody(expr))
         {
-            Visit(expr.Target, context);
+            VisitOperands(expr, context);
         }
 
         return VisitLeafPrimFunctionWrapper(expr, context);
@@ -89,104 +85,91 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     /// <inheritdoc />
     protected internal override TExprResult VisitTensorConst(TensorConst expr, TContext context)
     {
+        VisitOperands(expr, context);
         return VisitLeafTensorConst(expr, context);
     }
 
     /// <inheritdoc />
     protected internal override TExprResult VisitTuple(IR.Tuple expr, TContext context)
     {
-        VisitArray(expr.Fields, context);
+        VisitOperands(expr, context);
         return VisitLeafTuple(expr, context);
     }
 
     /// <inheritdoc />
     protected internal override TExprResult VisitTupleConst(TupleConst expr, TContext context)
     {
+        VisitOperands(expr, context);
         return VisitLeafTupleConst(expr, context);
     }
 
     /// <inheritdoc />
     protected internal override TExprResult VisitVar(Var expr, TContext context)
     {
+        VisitOperands(expr, context);
         return VisitLeafVar(expr, context);
     }
 
     /// <inheritdoc />
     protected internal override TExprResult VisitBlock(TIR.Block expr, TContext context)
     {
-        Visit(expr.Body, context);
-        Visit(expr.InitBody, context);
-        VisitArray(expr.IterVars, context);
-        VisitArray(expr.Reads, context);
-        VisitArray(expr.Writes, context);
-        VisitArray(expr.AllocBuffers, context);
-        Visit(expr.Predicate, context);
+        VisitOperands(expr, context);
         return VisitLeafBlock(expr, context);
     }
 
     /// <inheritdoc />
     protected internal override TExprResult VisitLogicalBuffer(TIR.LogicalBuffer expr, TContext context)
     {
-        VisitArray(expr.Dimensions, context);
-        VisitArray(expr.Strides, context);
+        VisitOperands(expr, context);
         return VisitLeafLogicalBuffer(expr, context);
     }
 
     /// <inheritdoc />
     protected internal override TExprResult VisitPhysicalBuffer(TIR.PhysicalBuffer expr, TContext context)
     {
+        VisitOperands(expr, context);
         return VisitLeafPhysicalBuffer(expr, context);
     }
 
     /// <inheritdoc />
     protected internal override TExprResult VisitBufferLoad(TIR.BufferLoad expr, TContext context)
     {
-        Visit(expr.Buffer, context);
-        VisitArray(expr.Indices, context);
+        VisitOperands(expr, context);
         return VisitLeafBufferLoad(expr, context);
     }
 
     /// <inheritdoc />
     protected internal override TExprResult VisitBufferRegion(TIR.BufferRegion expr, TContext context)
     {
-        Visit(expr.Buffer, context);
-        VisitArray(expr.Region, context);
+        VisitOperands(expr, context);
         return VisitLeafBufferRegion(expr, context);
     }
 
     /// <inheritdoc />
     protected internal override TExprResult VisitBufferStore(TIR.BufferStore expr, TContext context)
     {
-        Visit(expr.Buffer, context);
-        VisitArray(expr.Indices, context);
-        Visit(expr.Value, context);
+        VisitOperands(expr, context);
         return VisitLeafBufferStore(expr, context);
     }
 
     /// <inheritdoc />
     protected internal override TExprResult VisitFor(TIR.For expr, TContext context)
     {
-        Visit(expr.LoopVar, context);
-        Visit(expr.Domain, context);
-        Visit(expr.Body, context);
+        VisitOperands(expr, context);
         return VisitLeafFor(expr, context);
     }
 
     /// <inheritdoc />
     protected internal override TExprResult VisitIfThenElse(TIR.IfThenElse expr, TContext context)
     {
-        Visit(expr.Condition, context);
-        Visit(expr.Then, context);
-        Visit(expr.Else, context);
+        VisitOperands(expr, context);
         return VisitLeafIfThenElse(expr, context);
     }
 
     /// <inheritdoc />
     protected internal override TExprResult VisitLet(TIR.Let expr, TContext context)
     {
-        Visit(expr.Var, context);
-        Visit(expr.Expression, context);
-        Visit(expr.Body, context);
+        VisitOperands(expr, context);
         return VisitLeafLet(expr, context);
     }
 
@@ -195,8 +178,7 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     {
         if (CanVisitFunctionBody(expr))
         {
-            VisitArray(expr.Parameters, context);
-            Visit(expr.Body, context);
+            VisitOperands(expr, context);
         }
 
         return VisitLeafPrimFunction(expr, context);
@@ -205,24 +187,21 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     /// <inheritdoc />
     protected internal override TExprResult VisitSequential(TIR.Sequential expr, TContext context)
     {
-        VisitArray(expr.Fields, context);
+        VisitOperands(expr, context);
         return VisitLeafSequential(expr, context);
     }
 
     /// <inheritdoc />
     protected internal override TExprResult VisitRange(TIR.Range expr, TContext context)
     {
-        Visit(expr.Start, context);
-        Visit(expr.Stop, context);
-        Visit(expr.Step, context);
+        VisitOperands(expr, context);
         return VisitLeafRange(expr, context);
     }
 
     /// <inheritdoc />
     protected internal override TExprResult VisitIterVar(TIR.IterVar expr, TContext context)
     {
-        Visit(expr.Value, context);
-        Visit(expr.Dom, context);
+        VisitOperands(expr, context);
         return VisitLeafIterVar(expr, context);
     }
 

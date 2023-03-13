@@ -37,14 +37,9 @@ foreach (var ir in irs.Where(x => x.IsDerived))
         {
 <#
     }
-
-    foreach (var field in ir.Fields)
-    {
-        var func = field.StartsWith("@") ? "VisitArray" : "Visit";
 #>
-        <#=fieldIdent#><#=func#>(expr.<#=field.TrimStart('@')#>, context);
+        <#=fieldIdent#>VisitOperands(expr, context);
 <#
-    }
 
     if (ir.IsFunction)
     {

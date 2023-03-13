@@ -50,7 +50,7 @@ def _initialize():
 
 
 _initialize()
-# _nncase.launch_debugger()
+_nncase.launch_debugger()
 
 
 class ImportOptions:

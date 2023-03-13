@@ -138,6 +138,38 @@ public abstract partial class Expr : IDisposable
         GC.SuppressFinalize(this);
     }
 
+    public void DisposeIfNoUsers()
+    {
+        if (_users.Count == 0)
+        {
+            Dispose();
+        }
+    }
+
+    internal void AddUser(Expr user)
+    {
+        EnsureAlive();
+        Trace.Assert(!ReferenceEquals(this, user));
+        _users.Add(user.EnsureAlive());
+    }
+
+    internal void RemoveUser(Expr user)
+    {
+        _users.Remove(user);
+    }
+
+    internal void ReplaceOperand(int index, Expr newOperand)
+    {
+        ref var operand = ref _operands[index];
+        if (!ReferenceEquals(operand, newOperand))
+        {
+            newOperand.AddUser(this);
+            operand.RemoveUser(this);
+            operand = newOperand;
+            OnOperandsReplaced();
+        }
+    }
+
     internal void ReplaceAllUsesWith(Expr newOperand)
         => ReplaceScopedUsesWith(newOperand, null);
 
@@ -148,8 +180,7 @@ public abstract partial class Expr : IDisposable
         {
             foreach (var user in Users.ToArray())
             {
-                if (user is not ExprPinner
-                    && (scope is null || scope.Contains(user))
+                if ((scope is null || scope.Contains(user))
                     && !newOperand.IsDescendantOf(this))
                 {
                     newOperand.AddUser(user);
@@ -177,6 +208,7 @@ public abstract partial class Expr : IDisposable
             foreach (var operand in _operands)
             {
                 operand.RemoveUser(this);
+                operand.DisposeIfNoUsers();
             }
 
             _disposedValue = true;
@@ -223,22 +255,6 @@ public abstract partial class Expr : IDisposable
         foreach (var user in Users)
         {
             user.InvalidateTypeInference();
-        }
-    }
-
-    private void AddUser(Expr user)
-    {
-        EnsureAlive();
-        Trace.Assert(!ReferenceEquals(this, user));
-        _users.Add(user.EnsureAlive());
-    }
-
-    private void RemoveUser(Expr user)
-    {
-        _users.Remove(user);
-        if (_users.Count == 0)
-        {
-            Dispose();
         }
     }
 

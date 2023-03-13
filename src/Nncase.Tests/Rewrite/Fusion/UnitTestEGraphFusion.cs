@@ -268,7 +268,7 @@ internal sealed class SingleInputFusionMergeRule : IRewriteRule
         }
 
         // 1. replace the caller_fusion input_var with the callee_fusion body
-        var new_fusion_body = Mutator.Substitute(e => object.ReferenceEquals(e, caller_fusion.Parameters[0]) ? callee_fusion.Body : null)().ScopedRewrite(caller_fusion.Body);
+        var new_fusion_body = Mutator.Substitute(e => object.ReferenceEquals(e, caller_fusion.Parameters[0]) ? callee_fusion.Body : null)().Rewrite(caller_fusion.Body);
 
         // 2. fold the store load
         // new_fusion_body = CompilerServices.Rewrite(new_fusion_body, new[] { new Passes.Rules.K510.FoldStoreLoad() }, passOptions.IndentDir("MergeSingleInputFusion"));
@@ -350,7 +350,7 @@ internal sealed class TwoInputFusionMergeRule : IRewriteRule
             }
 
             return null;
-        })().ScopedRewrite(caller_fusion.Body);
+        })().Rewrite(caller_fusion.Body);
 
         // 2. fold the store load
         // new_fusion_body = CompilerServices.Rewrite(new_fusion_body, new[] { new Passes.Rules.K510.FoldStoreLoad() }, passOptions.IndentDir("MergeSingleInputFusion"));

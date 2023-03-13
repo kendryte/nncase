@@ -17,197 +17,169 @@ public partial class ExprRewriter<TContext>
     /// <inheritdoc/>
     protected sealed override Expr VisitLeafBaseFunction(BaseFunction expr, TContext context)
     {
-        var replace = RewriteLeafBaseFunction(expr, context);
-        return ProcessRewrite(expr, replace);
+        return RewriteLeafBaseFunction(expr, context);
     }
 
     /// <inheritdoc/>
     protected sealed override Expr VisitLeafCall(Call expr, TContext context)
     {
-        var replace = RewriteLeafCall(expr, context);
-        return ProcessRewrite(expr, replace);
+        return RewriteLeafCall(expr, context);
     }
 
     /// <inheritdoc/>
     protected sealed override Expr VisitLeafConst(Const expr, TContext context)
     {
-        var replace = RewriteLeafConst(expr, context);
-        return ProcessRewrite(expr, replace);
+        return RewriteLeafConst(expr, context);
     }
 
     /// <inheritdoc/>
     protected sealed override Expr VisitLeafFunction(Function expr, TContext context)
     {
-        var replace = RewriteLeafFunction(expr, context);
-        return ProcessRewrite(expr, replace);
+        return RewriteLeafFunction(expr, context);
     }
 
     /// <inheritdoc/>
     protected sealed override Expr VisitLeafFusion(Fusion expr, TContext context)
     {
-        var replace = RewriteLeafFusion(expr, context);
-        return ProcessRewrite(expr, replace);
+        return RewriteLeafFusion(expr, context);
     }
 
     /// <inheritdoc/>
     protected sealed override Expr VisitLeafIf(If expr, TContext context)
     {
-        var replace = RewriteLeafIf(expr, context);
-        return ProcessRewrite(expr, replace);
+        return RewriteLeafIf(expr, context);
     }
 
     /// <inheritdoc/>
     protected sealed override Expr VisitLeafMarker(Marker expr, TContext context)
     {
-        var replace = RewriteLeafMarker(expr, context);
-        return ProcessRewrite(expr, replace);
+        return RewriteLeafMarker(expr, context);
     }
 
     /// <inheritdoc/>
     protected sealed override Expr VisitLeafNone(None expr, TContext context)
     {
-        var replace = RewriteLeafNone(expr, context);
-        return ProcessRewrite(expr, replace);
+        return RewriteLeafNone(expr, context);
     }
 
     /// <inheritdoc/>
     protected sealed override Expr VisitLeafOp(Op expr, TContext context)
     {
-        var replace = RewriteLeafOp(expr, context);
-        return ProcessRewrite(expr, replace);
+        return RewriteLeafOp(expr, context);
     }
 
     /// <inheritdoc/>
     protected sealed override Expr VisitLeafPrimFunctionWrapper(PrimFunctionWrapper expr, TContext context)
     {
-        var replace = RewriteLeafPrimFunctionWrapper(expr, context);
-        return ProcessRewrite(expr, replace);
+        return RewriteLeafPrimFunctionWrapper(expr, context);
     }
 
     /// <inheritdoc/>
     protected sealed override Expr VisitLeafTensorConst(TensorConst expr, TContext context)
     {
-        var replace = RewriteLeafTensorConst(expr, context);
-        return ProcessRewrite(expr, replace);
+        return RewriteLeafTensorConst(expr, context);
     }
 
     /// <inheritdoc/>
     protected sealed override Expr VisitLeafTuple(IR.Tuple expr, TContext context)
     {
-        var replace = RewriteLeafTuple(expr, context);
-        return ProcessRewrite(expr, replace);
+        return RewriteLeafTuple(expr, context);
     }
 
     /// <inheritdoc/>
     protected sealed override Expr VisitLeafTupleConst(TupleConst expr, TContext context)
     {
-        var replace = RewriteLeafTupleConst(expr, context);
-        return ProcessRewrite(expr, replace);
+        return RewriteLeafTupleConst(expr, context);
     }
 
     /// <inheritdoc/>
     protected sealed override Expr VisitLeafVar(Var expr, TContext context)
     {
-        var replace = RewriteLeafVar(expr, context);
-        return ProcessRewrite(expr, replace);
+        return RewriteLeafVar(expr, context);
     }
 
     /// <inheritdoc/>
     protected sealed override Expr VisitLeafBlock(TIR.Block expr, TContext context)
     {
-        var replace = RewriteLeafBlock(expr, context);
-        return ProcessRewrite(expr, replace);
+        return RewriteLeafBlock(expr, context);
     }
 
     /// <inheritdoc/>
     protected sealed override Expr VisitLeafBuffer(TIR.Buffer expr, TContext context)
     {
-        var replace = RewriteLeafBuffer(expr, context);
-        return ProcessRewrite(expr, replace);
+        return RewriteLeafBuffer(expr, context);
     }
 
     /// <inheritdoc/>
     protected sealed override Expr VisitLeafLogicalBuffer(TIR.LogicalBuffer expr, TContext context)
     {
-        var replace = RewriteLeafLogicalBuffer(expr, context);
-        return ProcessRewrite(expr, replace);
+        return RewriteLeafLogicalBuffer(expr, context);
     }
 
     /// <inheritdoc/>
     protected sealed override Expr VisitLeafPhysicalBuffer(TIR.PhysicalBuffer expr, TContext context)
     {
-        var replace = RewriteLeafPhysicalBuffer(expr, context);
-        return ProcessRewrite(expr, replace);
+        return RewriteLeafPhysicalBuffer(expr, context);
     }
 
     /// <inheritdoc/>
     protected sealed override Expr VisitLeafBufferLoad(TIR.BufferLoad expr, TContext context)
     {
-        var replace = RewriteLeafBufferLoad(expr, context);
-        return ProcessRewrite(expr, replace);
+        return RewriteLeafBufferLoad(expr, context);
     }
 
     /// <inheritdoc/>
     protected sealed override Expr VisitLeafBufferRegion(TIR.BufferRegion expr, TContext context)
     {
-        var replace = RewriteLeafBufferRegion(expr, context);
-        return ProcessRewrite(expr, replace);
+        return RewriteLeafBufferRegion(expr, context);
     }
 
     /// <inheritdoc/>
     protected sealed override Expr VisitLeafBufferStore(TIR.BufferStore expr, TContext context)
     {
-        var replace = RewriteLeafBufferStore(expr, context);
-        return ProcessRewrite(expr, replace);
+        return RewriteLeafBufferStore(expr, context);
     }
 
     /// <inheritdoc/>
     protected sealed override Expr VisitLeafFor(TIR.For expr, TContext context)
     {
-        var replace = RewriteLeafFor(expr, context);
-        return ProcessRewrite(expr, replace);
+        return RewriteLeafFor(expr, context);
     }
 
     /// <inheritdoc/>
     protected sealed override Expr VisitLeafIfThenElse(TIR.IfThenElse expr, TContext context)
     {
-        var replace = RewriteLeafIfThenElse(expr, context);
-        return ProcessRewrite(expr, replace);
+        return RewriteLeafIfThenElse(expr, context);
     }
 
     /// <inheritdoc/>
     protected sealed override Expr VisitLeafLet(TIR.Let expr, TContext context)
     {
-        var replace = RewriteLeafLet(expr, context);
-        return ProcessRewrite(expr, replace);
+        return RewriteLeafLet(expr, context);
     }
 
     /// <inheritdoc/>
     protected sealed override Expr VisitLeafPrimFunction(TIR.PrimFunction expr, TContext context)
     {
-        var replace = RewriteLeafPrimFunction(expr, context);
-        return ProcessRewrite(expr, replace);
+        return RewriteLeafPrimFunction(expr, context);
     }
 
     /// <inheritdoc/>
     protected sealed override Expr VisitLeafSequential(TIR.Sequential expr, TContext context)
     {
-        var replace = RewriteLeafSequential(expr, context);
-        return ProcessRewrite(expr, replace);
+        return RewriteLeafSequential(expr, context);
     }
 
     /// <inheritdoc/>
     protected sealed override Expr VisitLeafRange(TIR.Range expr, TContext context)
     {
-        var replace = RewriteLeafRange(expr, context);
-        return ProcessRewrite(expr, replace);
+        return RewriteLeafRange(expr, context);
     }
 
     /// <inheritdoc/>
     protected sealed override Expr VisitLeafIterVar(TIR.IterVar expr, TContext context)
     {
-        var replace = RewriteLeafIterVar(expr, context);
-        return ProcessRewrite(expr, replace);
+        return RewriteLeafIterVar(expr, context);
     }
 
     /// <summary>

@@ -21,8 +21,7 @@ public sealed class FlattenSequential : ExprRewriter
     {
         if (expr.Fields.AsValueEnumerable().Any(x => x is Sequential))
         {
-            var replace = new Sequential(Sequential.Flatten(expr.Fields));
-            return ProcessRewrite(expr, replace);
+            return new Sequential(Sequential.Flatten(expr.Fields));
         }
 
         return expr;

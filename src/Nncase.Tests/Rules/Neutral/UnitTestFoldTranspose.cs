@@ -21,7 +21,7 @@ using Random = Nncase.IR.F.Random;
 namespace Nncase.Tests.Rules.NeutralTest;
 
 [AutoSetupTestMethod(InitSession = true)]
-public class UnitTestFoldTranspose : TestClassBase
+public class UnitTestFoldTranspose : TransformTestBase
 {
     public static IEnumerable<object[]> TestFoldNopTransposePositiveData =>
         new[]
@@ -66,10 +66,7 @@ public class UnitTestFoldTranspose : TestClassBase
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Transpose(a, perm);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopTranspose() }, new());
-
-        Assert.NotEqual(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
+        TestMatched<FoldNopTranspose>(rootPre);
     }
 
     [Theory]
@@ -78,10 +75,7 @@ public class UnitTestFoldTranspose : TestClassBase
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Transpose(Tensors.Transpose(a, perm1), perm2);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldTwoTransposes() }, new());
-
-        Assert.NotEqual(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
+        TestMatched<FoldTwoTransposes>(rootPre);
     }
 
     [Theory]
@@ -90,19 +84,13 @@ public class UnitTestFoldTranspose : TestClassBase
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Transpose(a, perm);
-        var preHashCode = rootPre.GetHashCode();
-        var preValue = CompilerServices.Evaluate(rootPre);
-        var rootPost = CompilerServices.Rewrite(
+        TestMatchedCore(
             rootPre,
-            new IRewriteRule[]
+            rules: new IRewriteRule[]
             {
                 new FoldShapeOf(),
                 new TransposeToReshape(),
-            },
-            new());
-
-        Assert.NotEqual(preHashCode, rootPost.GetHashCode());
-        Assert.Equal(preValue, CompilerServices.Evaluate(rootPost));
+            });
     }
 
     [Theory]
@@ -111,18 +99,7 @@ public class UnitTestFoldTranspose : TestClassBase
     {
         using var dumpScope = new DumpScope($"{param.Count}");
         var rootPre = Tensors.Transpose(param.Act, param.Perm);
-        var preHashCode = rootPre.GetHashCode();
-        var preValue = CompilerServices.Evaluate(rootPre);
-        var rootPost = CompilerServices.Rewrite(
-            rootPre,
-            new IRewriteRule[]
-            {
-                new CombineTransposeActivations(),
-            },
-            new());
-
-        Assert.NotEqual(preHashCode, rootPost.GetHashCode());
-        Assert.Equal(preValue, CompilerServices.Evaluate(rootPost));
+        TestMatched<CombineTransposeActivations>(rootPre);
     }
 
     [Theory]
@@ -131,15 +108,6 @@ public class UnitTestFoldTranspose : TestClassBase
     {
         using var dumpScope = new DumpScope($"{param.Count}");
         var rootPre = Tensors.Transpose(param.Act, param.Perm);
-        var preHashCode = rootPre.GetHashCode();
-        var rootPost = CompilerServices.Rewrite(
-            rootPre,
-            new IRewriteRule[]
-            {
-                new CombineTransposeActivations(),
-            },
-            new());
-
-        Assert.Equal(preHashCode, rootPost.GetHashCode());
+        TestNotMatch<CombineTransposeActivations>(rootPre);
     }
 }

@@ -57,6 +57,7 @@ public class UnitTestDataFlowRewrite : RewriteFixtrue
         var a = (Const)1;
         var b = (Const)2;
         var expr = (a * b) + 3;
+        using var exprPin = new ExprPinner(expr);
         var post = ApplyFoldConstCallRewrite(expr);
         Assert.True(CompilerServices.InferenceType(expr));
         Assert.True(CompilerServices.InferenceType(post));

@@ -18,7 +18,7 @@ using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestMatMulToConv2D : TestClassBase
+public class UnitTestMatMulToConv2D : TransformTestBase
 {
     public static IEnumerable<object[]> TestMatMulToConv2DPositiveData =>
         new[]
@@ -34,15 +34,6 @@ public class UnitTestMatMulToConv2D : TestClassBase
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, aShape);
         var b = Random.Normal(DataTypes.Float32, 0, 1, 0, bShape);
         var rootPre = Math.MatMul(a, b);
-        var rootPost = CompilerServices.Rewrite(
-            rootPre,
-            new IRewriteRule[]
-            {
-                new MatMulToConv2D(),
-            },
-            new());
-
-        Assert.NotEqual(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
+        TestMatched<MatMulToConv2D>(rootPre);
     }
 }

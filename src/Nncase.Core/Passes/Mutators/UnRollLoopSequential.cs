@@ -27,7 +27,7 @@ public sealed class UnRollLoopSequential : ExprRewriter
         if (!ReferenceEquals(expr, replace))
         {
             // only unroll one for loop
-            return ProcessRewrite(expr, replace);
+            return replace;
         }
         else
         {

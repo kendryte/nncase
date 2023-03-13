@@ -38,7 +38,7 @@ public sealed class DataFlowMergeRewriter
 
                 // todo reduce the mutator and rules dependence.
                 var visitor = mutator_creator(rule, options);
-                post = visitor.ScopedRewrite(last);
+                post = visitor.Rewrite(last);
                 if (visitor.IsMutated)
                 {
                     isMutated = true;

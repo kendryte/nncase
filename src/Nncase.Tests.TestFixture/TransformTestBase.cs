@@ -27,10 +27,10 @@ public partial class TransformTestBase : TestClassBase
         CompileOptions.QuantizeOptions.WQuantType = DataTypes.UInt8;
     }
 
-    public virtual Expr TestMatched<T>(Expr pre)
+    public virtual Expr TestMatched<T>(Expr pre, IReadOnlyDictionary<Var, IValue>? feeds = null)
         where T : IRewriteRule, new()
     {
-        return TestMatchedCore(pre, new T());
+        return TestMatchedCore(pre, feeds, new T());
     }
 
     public void CondMatch<T>(bool cond, Expr expr)
@@ -46,7 +46,7 @@ public partial class TransformTestBase : TestClassBase
         }
     }
 
-    public Expr TestMatchedCore(Expr pre, params IRewriteRule[] rules)
+    public Expr TestMatchedCore(Expr pre, IReadOnlyDictionary<Var, IValue>? feeds = null, params IRewriteRule[] rules)
     {
         Assert.True(pre.InferenceType(), "TestInferFailed:" + pre.CheckedType);
         if (rules.Length == 0)
@@ -54,20 +54,25 @@ public partial class TransformTestBase : TestClassBase
             throw new InvalidOperationException("Rules should not be empty");
         }
 
+        var preHashCode = pre.GetHashCode();
+        var v1 = pre.Evaluate(feeds);
         var post = CompilerServices.Rewrite(pre, rules, new());
-        Assert.NotEqual(pre, post);
-        var v1 = pre.Evaluate();
-        var v2 = post.Evaluate();
+        Assert.NotEqual(preHashCode, post.GetHashCode());
+        var v2 = post.Evaluate(feeds);
+        if (!Comparator.AllEqual(v1, v2))
+        {
+            Comparator.Compare(v1, v2);
+        }
 
-        Comparator.Compare(v1, v2);
         return post;
     }
 
     public void TestNotMatch(Expr pre, params IRewriteRule[] rules)
     {
         pre.InferenceType();
+        var preHashCode = pre.GetHashCode();
         var post = CompilerServices.Rewrite(pre, rules, new());
-        Assert.Equal(pre, post);
+        Assert.Equal(preHashCode, post.GetHashCode());
     }
 
     public void TestNotMatch<T>(Expr pre)

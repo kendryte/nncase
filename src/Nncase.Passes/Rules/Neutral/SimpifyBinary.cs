@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using Nncase.IR;
+using Nncase.IR.F;
 using Nncase.PatternMatch;
 using static Nncase.IR.TypePatternUtility;
 using static Nncase.PatternMatch.Utility;
@@ -43,14 +44,18 @@ public sealed partial class XDivX : IRewriteRule
     /// </summary>
     public XDivX()
     {
-        var x = IsWildcard("x");
+        var x = IsWildcard("x") with { TypePattern = IsTensor() };
         Pattern = x / x;
     }
 
     /// <inheritdoc/>
     public IPattern Pattern { get; }
 
-    private Expr? GetReplace() => 1;
+    private Expr? GetReplace(Expr x)
+    {
+        var value = ((Tensor)1).CastTo(x.CheckedDataType);
+        return Tensors.ConstantOfShape(Tensors.ShapeOf(x), value);
+    }
 }
 
 /// <summary>

@@ -19,17 +19,12 @@ public sealed class FoldLet : ExprRewriter
     /// <inheritdoc/>
     protected internal override Expr VisitLet(Let expr, Unit context)
     {
-        if (HasVisited(expr, out var result))
+        if (expr.Expression is Const @const)
         {
-            return result;
+            ExprMemo.Add(expr.Var, @const);
+            Visit(expr.Body, context);
         }
 
-        var replace = (Let)base.VisitLet(expr, context);
-        if (replace.Expression is Const @const)
-        {
-            ProcessScopedRewrite(replace.Var, @const, new HashSet<Expr>(ExprCollector.Collect(expr.Body)));
-        }
-
-        return replace;
+        return expr;
     }
 }

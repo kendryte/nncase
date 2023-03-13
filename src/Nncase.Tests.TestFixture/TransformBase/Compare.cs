@@ -89,6 +89,11 @@ public static class Comparator
 
     public static float CosSimilarity(Tensor a, Tensor b)
     {
+        if (a.Length == 0 && b.Length == 0)
+        {
+            return 1f;
+        }
+
         var va = a.ToArray<float>();
         var vb = b.ToArray<float>();
         var v1 = Math.Sqrt(Prod(va, va));
@@ -200,10 +205,17 @@ public static class Comparator
     {
         var v1 = pre.AsTensor();
         var v2 = post.AsTensor();
-        Assert.Equal(v1.Shape, v2.Shape);
-        Assert.Equal(v1.ElementType, v2.ElementType);
-        Assert.True(AllEqual(v1, v2, thresh));
-        return true;
+        if (v1.Shape != v2.Shape)
+        {
+            return false;
+        }
+
+        if (v1.ElementType != v2.ElementType)
+        {
+            return false;
+        }
+
+        return AllEqual(v1, v2, thresh);
     }
 }
 

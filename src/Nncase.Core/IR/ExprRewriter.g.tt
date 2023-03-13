@@ -28,8 +28,7 @@ foreach (var ir in irs)
     /// <inheritdoc/>
     protected sealed override Expr VisitLeaf<#=ir.Name#>(<#=ir.Namespace#><#=ir.Name#> expr, TContext context)
     {
-        var replace = RewriteLeaf<#=ir.Name#>(expr, context);
-        return ProcessRewrite(expr, replace);
+        return RewriteLeaf<#=ir.Name#>(expr, context);
     }
 
 <#

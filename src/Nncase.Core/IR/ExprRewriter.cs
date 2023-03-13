@@ -8,6 +8,7 @@ using System.Linq;
 using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
+using TorchSharp.Modules;
 
 namespace Nncase.IR;
 
@@ -17,8 +18,6 @@ namespace Nncase.IR;
 /// <typeparam name="TContext">Rewrite context.</typeparam>
 public abstract partial class ExprRewriter<TContext> : ExprVisitor<Expr, IRType, TContext>
 {
-    private IReadOnlySet<Expr>? _rewriteScope;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="ExprRewriter{TContext}"/> class.
     /// </summary>
@@ -39,19 +38,11 @@ public abstract partial class ExprRewriter<TContext> : ExprVisitor<Expr, IRType,
     /// <param name="expr">Expression to rewrite.</param>
     /// <param name="context">Context.</param>
     /// <returns>Rewritten expression.</returns>
-    public Expr Rewrite(Expr expr, TContext context) => Visit(expr, context);
-
-    /// <summary>
-    /// Rewrite expression in a scope.
-    /// </summary>
-    /// <param name="expr">Expression to rewrite.</param>
-    /// <param name="context">Context.</param>
-    /// <param name="scope">Rewrite scope.</param>
-    /// <returns>Rewritten expression.</returns>
-    public Expr ScopedRewrite(Expr expr, TContext context, IReadOnlySet<Expr>? scope = null)
+    public Expr Rewrite(Expr expr, TContext context)
     {
-        _rewriteScope = scope ?? new HashSet<Expr>(ExprCollector.Collect(expr), ReferenceEqualityComparer.Instance);
-        return Rewrite(expr, context);
+        var newExpr = Visit(expr, context);
+        DCE(newExpr);
+        return newExpr;
     }
 
     /// <summary>
@@ -61,30 +52,28 @@ public abstract partial class ExprRewriter<TContext> : ExprVisitor<Expr, IRType,
 
     protected void SetMutated() => IsMutated = true;
 
-    protected Expr ProcessRewrite(Expr original, Expr replace)
+    protected override void VisitOperands(Expr expr, TContext context)
     {
-        if (!ReferenceEquals(original, replace))
+        var operands = expr.Operands;
+        for (int i = 0; i < operands.Length; i++)
         {
-            if (_rewriteScope == null)
+            var operand = operands[i];
+            var newOperand = Visit(operand, context);
+            if (!ReferenceEquals(operand, newOperand))
             {
-                original.ReplaceAllUsesWith(replace);
+                expr.ReplaceOperand(i, newOperand);
                 SetMutated();
             }
-            else
-            {
-                ProcessScopedRewrite(original, replace, _rewriteScope);
-            }
         }
-
-        return replace;
     }
 
-    protected void ProcessScopedRewrite(Expr original, Expr replace, IReadOnlySet<Expr> scope)
+    private void DCE(Expr root)
     {
-        if (!ReferenceEquals(original, replace))
+        using var exprPin = new ExprPinner(root);
+        foreach (var expr in ExprMemo)
         {
-            original.ReplaceScopedUsesWith(replace, scope);
-            SetMutated();
+            expr.Key.DisposeIfNoUsers();
+            expr.Value.DisposeIfNoUsers();
         }
     }
 }
@@ -109,14 +98,6 @@ public abstract partial class ExprRewriter : ExprRewriter<Unit>
     /// <param name="expr">Expression to rewrite.</param>
     /// <returns>Rewritten expression.</returns>
     public Expr Rewrite(Expr expr) => Rewrite(expr, default);
-
-    /// <summary>
-    /// Rewrite expression in a scope.
-    /// </summary>
-    /// <param name="expr">Expression to rewrite.</param>
-    /// <param name="scope">Rewrite scope.</param>
-    /// <returns>Rewritten expression.</returns>
-    public Expr ScopedRewrite(Expr expr, IReadOnlySet<Expr>? scope = null) => ScopedRewrite(expr, default, scope);
 
     /// <summary>
     /// Default rewrite leaf routine.

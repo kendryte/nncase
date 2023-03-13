@@ -137,7 +137,7 @@ internal partial class Quantizer
 
     private async Task<IDictionary<ENode, ValueRange<float>>> GetRangesAsync(ICalibrationDatasetProvider calibrationDataset)
     {
-        var ranges = new Dictionary<ENode, ValueRange<float>>();
+        var ranges = new Dictionary<ENode, ValueRange<float>>(ReferenceEqualityComparer.Instance);
         await RunPassAsync(calibrationDataset, (values) =>
         {
             foreach (var value in values)
@@ -159,7 +159,7 @@ internal partial class Quantizer
 
     private async Task<IDictionary<ENode, QuantizeHistogram<float>>> GetHistogramsAsync(ICalibrationDatasetProvider calibrationDataset, IDictionary<ENode, ValueRange<float>> ranges, int srcBinSize, int dstBinSize)
     {
-        var histograms = new Dictionary<ENode, QuantizeHistogram<float>>();
+        var histograms = new Dictionary<ENode, QuantizeHistogram<float>>(ReferenceEqualityComparer.Instance);
         await RunPassAsync(calibrationDataset, (values, childrenValues) =>
         {
             var valuesList = values.ToList();
@@ -192,7 +192,7 @@ internal partial class Quantizer
 
     private IDictionary<ENode, ValueRange<float>> GetOptRanges(IDictionary<ENode, QuantizeHistogram<float>> histograms, IDictionary<ENode, ValueRange<float>> ranges, int srcBinSize, int dstBinSize, CalibMethod calibrationMethod)
     {
-        var optRanges = new Dictionary<ENode, ValueRange<float>>();
+        var optRanges = new Dictionary<ENode, ValueRange<float>>(ReferenceEqualityComparer.Instance);
         if (calibrationMethod == CalibMethod.Kld)
         {
             foreach (KeyValuePair<ENode, QuantizeHistogram<float>> histogram in histograms)

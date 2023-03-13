@@ -101,7 +101,7 @@ public class Scheduler
 
         // Step 3. create new for loop.
         var nFor = new For[factors.Length];
-        nbody = (Sequential)new Passes.Mutators.SubstituteVarAndCollectOpaqueBlock(v => v == loop.LoopVar ? substitute : v, opaque_block_reuse).ScopedRewrite(nbody);
+        nbody = (Sequential)new Passes.Mutators.SubstituteVarAndCollectOpaqueBlock(v => v == loop.LoopVar ? substitute : v, opaque_block_reuse).Rewrite(nbody);
         for (int i = factors.Length - 1; i >= 0; i--)
         {
             var @for = new For(newloopVars[i], (0, factors[i]), LoopMode.Serial, nbody);

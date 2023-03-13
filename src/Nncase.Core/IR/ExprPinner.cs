@@ -9,12 +9,43 @@ using System.Threading.Tasks;
 
 namespace Nncase.IR;
 
-public sealed class ExprPinner : Expr
+public sealed class ExprPinner : IDisposable
 {
+    private static readonly ExprUser _user = new();
+
+    private readonly Expr[] _exprs;
+    private bool _disposed;
+
     public ExprPinner(params Expr[] exprs)
-        : base(exprs)
     {
+        _exprs = exprs;
+
+        foreach (var expr in _exprs)
+        {
+            expr.AddUser(_user);
+        }
     }
 
-    public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) => throw new NotSupportedException();
+    public void Dispose()
+    {
+        if (!_disposed)
+        {
+            foreach (var expr in _exprs)
+            {
+                expr.RemoveUser(_user);
+            }
+
+            _disposed = true;
+        }
+    }
+
+    private sealed class ExprUser : Expr
+    {
+        public ExprUser()
+            : base(Array.Empty<Expr>())
+        {
+        }
+
+        public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) => throw new NotSupportedException();
+    }
 }

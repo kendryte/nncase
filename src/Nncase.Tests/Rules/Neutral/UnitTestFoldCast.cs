@@ -16,24 +16,24 @@ using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestFoldCast : TestClassBase
+public class UnitTestFoldCast : TransformTestBase
 {
     public static IEnumerable<object[]> TestFoldTwoCastsPositiveData =>
         new[]
         {
             new[] { DataTypes.Int8, DataTypes.Int16, DataTypes.UInt32 },
             new[] { DataTypes.Int8, DataTypes.Int16, DataTypes.Float32 },
+            new[] { DataTypes.UInt8, DataTypes.Int16, DataTypes.Int8 },
+            new[] { DataTypes.UInt8, DataTypes.Float32, DataTypes.BFloat16 },
             new[] { DataTypes.UInt8, DataTypes.Float32, DataTypes.UInt64 },
-            new[] { DataTypes.BFloat16, DataTypes.UInt32, DataTypes.Int64 },
         };
 
     public static IEnumerable<object[]> TestFoldTwoCastsNegativeData =>
         new[]
         {
             new[] { DataTypes.Int8, DataTypes.UInt8, DataTypes.UInt32 },
-            new[] { DataTypes.UInt8, DataTypes.Int16, DataTypes.Int8 },
-            new[] { DataTypes.UInt8, DataTypes.Float32, DataTypes.BFloat16 },
             new[] { DataTypes.BFloat16, DataTypes.UInt32, DataTypes.UInt8 },
+            new[] { DataTypes.BFloat16, DataTypes.UInt32, DataTypes.Int64 },
         };
 
     public static IEnumerable<object[]> TestFoldNopCastPositiveData =>
@@ -70,10 +70,7 @@ public class UnitTestFoldCast : TestClassBase
     {
         var a = Random.Normal(preType, 0, 1, 0, new[] { 1, 3, 8, 8 });
         var rootPre = Tensors.Cast(Tensors.Cast(a, middleType), postType);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldTwoCasts() }, new());
-
-        Assert.NotEqual(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
+        TestMatched<FoldTwoCasts>(rootPre);
     }
 
     [Theory]
@@ -82,10 +79,7 @@ public class UnitTestFoldCast : TestClassBase
     {
         var a = Random.Normal(preType, 0, 1, 0, new[] { 1, 3, 8, 8 });
         var rootPre = Tensors.Cast(Tensors.Cast(a, middleType), postType);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldTwoCasts() }, new());
-
-        Assert.Equal(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
+        TestNotMatch<FoldTwoCasts>(rootPre);
     }
 
     [Theory]
@@ -94,10 +88,7 @@ public class UnitTestFoldCast : TestClassBase
     {
         var a = Random.Normal(preType, 0, 1, 0, new[] { 1, 3, 8, 8 });
         var rootPre = Tensors.Cast(a, postType);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopCast() }, new());
-
-        Assert.NotEqual(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
+        TestMatched<FoldNopCast>(rootPre);
     }
 
     [Theory]
@@ -106,9 +97,6 @@ public class UnitTestFoldCast : TestClassBase
     {
         var a = Random.Normal(preType, 0, 1, 0, new[] { 1, 3, 8, 8 });
         var rootPre = Tensors.Cast(a, postType);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopCast() }, new());
-
-        Assert.Equal(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
+        TestNotMatch<FoldNopCast>(rootPre);
     }
 }

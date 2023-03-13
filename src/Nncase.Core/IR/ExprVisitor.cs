@@ -210,12 +210,11 @@ public abstract partial class ExprVisitor<TExprResult, TTypeResult, TContext> : 
         return MarkVisited(expr, base.DispatchVisit(expr, context));
     }
 
-    protected virtual void VisitArray<T>(ReadOnlySpan<T> exprs, TContext context)
-        where T : Expr
+    protected virtual void VisitOperands(Expr expr, TContext context)
     {
-        foreach (var expr in exprs)
+        foreach (var operand in expr.Operands)
         {
-            Visit(expr, context);
+            Visit(operand, context);
         }
     }
 }

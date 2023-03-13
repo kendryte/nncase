@@ -34,7 +34,7 @@ public class CalibrationEvaluator : IDisposable
     public IReadOnlyDictionary<ENode, Tensor> Evaluate()
     {
         bool completed;
-        var awareTensors = new Dictionary<ENode, Tensor>();
+        var awareTensors = new Dictionary<ENode, Tensor>(ReferenceEqualityComparer.Instance);
 
         do
         {

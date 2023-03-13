@@ -20,7 +20,7 @@ public class RangeOfEvaluator : IEvaluator<RangeOf>, ITypeInferencer<RangeOf>, I
         var input = context.GetArgumentValueAsTensor<float>(target, RangeOf.Input);
         var min = float.MaxValue;
         var max = float.MinValue;
-        foreach (var f in input)
+        foreach (var f in input.Buffer.Span)
         {
             if (!float.IsNaN(f) && !float.IsInfinity(f))
             {
