@@ -153,7 +153,7 @@ public sealed partial class FoldLayerNormPattern3 : RewriteRule<CallPattern>
                 "mulX",
                 "mulXCall",
                 BinaryOp.Mul,
-                IsWildcard("input"),
+                IsWildcard(),
                 IsBinary(
                     "mulGamma",
                     "mulGammaCall",
@@ -178,7 +178,7 @@ public sealed partial class FoldLayerNormPattern3 : RewriteRule<CallPattern>
                                         "subMu",
                                         "subMuCall",
                                         BinaryOp.Sub,
-                                        IsWildcard("input"),
+                                        IsWildcard(),
                                         IsReduce(
                                             "rdMu",
                                             "rdMuCall",

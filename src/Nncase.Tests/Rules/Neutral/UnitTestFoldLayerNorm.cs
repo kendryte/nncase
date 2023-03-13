@@ -21,7 +21,7 @@ namespace Nncase.Tests.Rules.NeutralTest;
 [AutoSetupTestMethod(InitSession = true)]
 public class UnitTestFoldLayerNorm : TestClassBase
 {
-    public static readonly TheoryData<int[]> FoldLayerNormPositiveData = new()
+    public static TheoryData<int[]> FoldLayerNormData => new()
     {
          new[] { 1, 3, 16, 16 },
          new[] { 1, 2, 4, 8 },
@@ -29,8 +29,8 @@ public class UnitTestFoldLayerNorm : TestClassBase
     };
 
     [Theory]
-    [MemberData(nameof(FoldLayerNormPositiveData))]
-    public void TestPositive1(int[] shape)
+    [MemberData(nameof(FoldLayerNormData))]
+    public void TestFoldLayerNormPositive1(int[] shape)
     {
         // note shape is nchw
         var input = new Var("input", new TensorType(DataTypes.Float32, shape));
@@ -69,8 +69,44 @@ public class UnitTestFoldLayerNorm : TestClassBase
     }
 
     [Theory]
-    [MemberData(nameof(FoldLayerNormPositiveData))]
-    public void TestPositive2(int[] shape)
+    [MemberData(nameof(FoldLayerNormData))]
+    public void TestFoldLayerNormNegative1(int[] shape)
+    {
+        // note shape is nchw
+        var input = new Var("input", new TensorType(DataTypes.Float32, shape));
+        long[] axes = { 0 };
+        float initValue = 0F;
+        long keepDims = 1;
+        Expr rootPre;
+        {
+            var v0 = input;
+            var v1 = IR.F.Tensors.Reshape(v0, shape);
+            var v2 = IR.F.Tensors.Reduce(ReduceOp.Mean, v1, axes, initValue, keepDims);
+            var v3 = IR.F.Math.Binary(BinaryOp.Sub, v0, v2);
+            var v4 = IR.F.Math.Binary(BinaryOp.Pow, v3, 2f);
+            var v5 = IR.F.Tensors.Reduce(ReduceOp.Mean, v4, axes, initValue, keepDims);
+            var v6 = IR.F.Math.Binary(BinaryOp.Add, v5, 1e-05f);
+            var v7 = IR.F.Math.Unary(UnaryOp.Sqrt, v6);
+            var v8 = IR.F.Math.Binary(BinaryOp.Div, v3, v7);
+            var v9 = IR.F.Tensors.Reshape(v8, shape);
+            var v10 = IR.F.Math.Binary(BinaryOp.Mul, v9, new[] { -0.1f });
+            var v11 = IR.F.Math.Binary(BinaryOp.Add, v10, new[] { 0.5f });
+            rootPre = v11;
+        }
+
+        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[] { new FoldLayerNormPattern1(), new FoldConstCall() }, new());
+
+        var feedDict = new Dictionary<Var, IValue>()
+        {
+            { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape).Evaluate() },
+        };
+        Assert.Equal(rootPre, rootPost);
+        Assert.Equal(CompilerServices.Evaluate(rootPre, feedDict), CompilerServices.Evaluate(rootPost, feedDict));
+    }
+
+    [Theory]
+    [MemberData(nameof(FoldLayerNormData))]
+    public void TestFoldLayerNormPositive2(int[] shape)
     {
         // note shape is nchw
         var input = new Var("input", new TensorType(DataTypes.Float32, shape));
@@ -107,8 +143,86 @@ public class UnitTestFoldLayerNorm : TestClassBase
     }
 
     [Theory]
-    [MemberData(nameof(FoldLayerNormPositiveData))]
-    public void TestPositive3(int[] shape)
+    [MemberData(nameof(FoldLayerNormData))]
+    public void TestFoldLayerNormNegative2(int[] shape)
+    {
+        // note shape is nchw
+        var input = new Var("input", new TensorType(DataTypes.Float32, shape));
+        long[] axes = { 0 };
+        float initValue = 0F;
+        long keepDims = 1;
+        Expr rootPre;
+        {
+            var v0 = input;
+            var v2 = IR.F.Tensors.Reduce(ReduceOp.Mean, v0, axes, initValue, keepDims);
+            var v3 = IR.F.Math.Binary(BinaryOp.Sub, v0, v2);
+            var v4 = IR.F.Math.Binary(BinaryOp.Pow, v3, 2f);
+            var v5 = IR.F.Tensors.Reduce(ReduceOp.Mean, v4, Tensor.From(axes, new[] { 1 }), initValue, keepDims);
+            var v6 = IR.F.Math.Binary(BinaryOp.Add, v5, 1e-05f);
+            var v7 = IR.F.Math.Unary(UnaryOp.Sqrt, v6);
+            var v8 = IR.F.Math.Binary(BinaryOp.Div, v4, v7);
+            var v10 = IR.F.Math.Binary(BinaryOp.Mul, v8, -0.1f);
+            var v11 = IR.F.Math.Binary(BinaryOp.Add, v10, 0.5f);
+            rootPre = v11;
+        }
+
+        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[] { new FoldLayerNormPattern2(), new FoldConstCall() }, new());
+
+#if DEBUG
+        Dumpper.DumpIR(rootPost, "post");
+#endif
+
+        var feedDict = new Dictionary<Var, IValue>()
+        {
+            { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape).Evaluate() },
+        };
+        Assert.Equal(rootPre, rootPost);
+        Assert.Equal(CompilerServices.Evaluate(rootPre, feedDict), CompilerServices.Evaluate(rootPost, feedDict));
+    }
+
+    [Theory]
+    [MemberData(nameof(FoldLayerNormData))]
+    public void TestFoldLayerNormPositive3(int[] shape)
+    {
+        // note shape is nchw
+        var input = new Var("input", new TensorType(DataTypes.Float32, shape));
+        long[] axes = { 0 };
+        float initValue = 0F;
+        long keepDims = 1;
+        Expr rootPre;
+        {
+            var v0 = input;
+            var v3 = IR.F.Tensors.Reduce(ReduceOp.Mean, v0, axes, initValue, keepDims);
+            var v4 = IR.F.Math.Binary(BinaryOp.Sub, v0, v3);
+            var v5 = IR.F.Math.Unary(UnaryOp.Square, v4);
+            var v6 = IR.F.Tensors.Reduce(ReduceOp.Mean, v5, Tensor.From(axes, new[] { 1 }), initValue, keepDims);
+            var v7 = IR.F.Math.Binary(BinaryOp.Add, v6, 1e-05f);
+            var v8 = IR.F.Math.Unary(UnaryOp.Rsqrt, v7);
+            var v9 = IR.F.Math.Binary(BinaryOp.Mul, v8, 0.5f);
+            var v10 = IR.F.Math.Binary(BinaryOp.Mul, v0, v9);
+            var v2 = IR.F.Math.Binary(BinaryOp.Mul, v3, v9);
+            var v1 = IR.F.Math.Binary(BinaryOp.Sub, 0.5f, v2);
+            var v11 = IR.F.Math.Binary(BinaryOp.Add, v10, v1);
+            rootPre = v11;
+        }
+
+        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[] { new FoldLayerNormPattern3() }, new());
+
+#if DEBUG
+        Dumpper.DumpIR(rootPost, "post");
+#endif
+
+        var feedDict = new Dictionary<Var, IValue>()
+        {
+          { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape).Evaluate() },
+        };
+        Assert.NotEqual(rootPre, rootPost);
+        Assert.Equal(CompilerServices.Evaluate(rootPre, feedDict), CompilerServices.Evaluate(rootPost, feedDict));
+    }
+
+    [Theory]
+    [MemberData(nameof(FoldLayerNormData))]
+    public void TestFoldLayerNormNegative3(int[] shape)
     {
         // note shape is nchw
         var input = new Var("input", new TensorType(DataTypes.Float32, shape));
@@ -140,7 +254,7 @@ public class UnitTestFoldLayerNorm : TestClassBase
 
         var feedDict = new Dictionary<Var, IValue>()
         {
-          { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape).Evaluate() },
+            { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape).Evaluate() },
         };
         Assert.Equal(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre, feedDict), CompilerServices.Evaluate(rootPost, feedDict));

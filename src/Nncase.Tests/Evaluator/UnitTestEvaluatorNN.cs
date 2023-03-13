@@ -270,18 +270,30 @@ public class UnitTestEvaluatorNN : TestClassBase
     [Fact]
     public void TestLayerNorm()
     {
-        var shape = new long[] { 1, 3, 16, 16 };
-        var x = OrtKI.Random(shape);
-        var scale = OrtKI.Random(new[] { shape[^1] });
-        var b = OrtKI.Random(new[] { shape[^1] });
-        var axis = -1L;
         var epsilon = 1e-05f;
+        {
+            var shape = new long[] { 1, 3, 16, 16 };
+            var x = OrtKI.Random(shape);
+            var scale = OrtKI.Random(new[] { shape[^1] });
+            var b = OrtKI.Random(new[] { shape[^1] });
+            var axis = -1L;
 
-        // var expect = OrtKI.LayerNormalization(x, scale, b, axis, epsilon, 1L);
-        var expect = IR.F.NN.LayerNorm((int)axis, epsilon, x.ToTensor(), scale.ToTensor(), b.ToTensor()).Evaluate().AsTensor();
-        var expr = IR.F.NN.LayerNorm((int)axis, epsilon, x.ToTensor(), scale.ToTensor(), b.ToTensor()).Evaluate().AsTensor();
-        CompilerServices.InferenceType(expr);
-        Assert.Equal(expect, expr);
+            // var expect = OrtKI.LayerNormalization(x, scale, b, axis, epsilon, 1L);
+            var expect = IR.F.NN.LayerNorm((int)axis, epsilon, x.ToTensor(), scale.ToTensor(), b.ToTensor()).Evaluate().AsTensor();
+            DoLayerNorm(expect, (int)axis, epsilon, x.ToTensor(), scale.ToTensor(), b.ToTensor());
+        }
+
+        {
+            var shape = new long[] { 1, 16 };
+            var x = OrtKI.Random(shape);
+            var scale = OrtKI.Random(new[] { shape[1] });
+            var b = OrtKI.Random(new[] { shape[1] });
+            var axis = 1L;
+
+            // var expect = OrtKI.LayerNormalization(x, scale, b, axis, epsilon, 1L);
+            var expect = IR.F.NN.LayerNorm((int)axis, epsilon, x.ToTensor(), scale.ToTensor(), b.ToTensor()).Evaluate().AsTensor();
+            DoLayerNorm(expect, (int)axis, epsilon, x.ToTensor(), scale.ToTensor(), b.ToTensor());
+        }
     }
 
     [Fact]
@@ -612,6 +624,7 @@ public class UnitTestEvaluatorNN : TestClassBase
     {
         var expr = IR.F.NN.LayerNorm(axis, epsilon, input, scale, bias);
         CompilerServices.InferenceType(expr);
+        Assert.Equal(expect, expr.Evaluate().AsTensor());
     }
 
     private void DoLogSoftmax(OrtKISharp.Tensor ortTensor, Tensor nncaseTensor, long axis)
