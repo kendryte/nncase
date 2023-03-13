@@ -49,6 +49,7 @@ public class UnitTestKLQuant : TestClassBase
         {
             weightsValue[i] = 1.0f;
         }
+
         List<float> byChannelRanges = QuantUtility.GetWeightsRangesByChannel(weightsValue, 16);
         for (int i = 0; i < 16 * 2; i++)
         {
