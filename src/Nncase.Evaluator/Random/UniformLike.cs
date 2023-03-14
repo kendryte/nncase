@@ -35,7 +35,7 @@ public class UniformLikeEvaluator : IEvaluator<UniformLike>, ITypeInferencer<Uni
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, UniformLike target)
+    public Cost Visit(ICostEvaluateContext context, UniformLike target)
     {
         var returnType = context.GetReturnType<TensorType>();
         return new()

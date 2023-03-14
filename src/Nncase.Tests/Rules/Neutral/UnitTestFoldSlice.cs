@@ -9,15 +9,15 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR.F;
-using Nncase.Transform;
-using Nncase.Transform.Rules.Neutral;
+using Nncase.Passes;
+using Nncase.Passes.Rules.Neutral;
 using Xunit;
 using Math = Nncase.IR.F.Math;
 using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestFoldSlice : TestClassBase
+public class UnitTestFoldSlice : TransformTestBase
 {
     public static IEnumerable<object[]> TestFoldNopSlicePositiveData =>
         new[]
@@ -75,10 +75,7 @@ public class UnitTestFoldSlice : TestClassBase
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Slice(a, begins, ends, axes, strides);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopSlice() }, new());
-
-        Assert.NotEqual(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
+        TestMatched<FoldNopSlice>(rootPre);
     }
 
     [Theory]
@@ -87,10 +84,7 @@ public class UnitTestFoldSlice : TestClassBase
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Slice(a, begins, ends, axes, strides);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopSlice() }, new());
-
-        Assert.Equal(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
+        TestNotMatch<FoldNopSlice>(rootPre);
     }
 
     [Theory]
@@ -100,9 +94,6 @@ public class UnitTestFoldSlice : TestClassBase
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var first_slice = Tensors.Slice(a, begins1, ends1, axes1, strides1);
         var rootPre = Tensors.Slice(first_slice, begins2, ends2, axes2, strides2);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldTwoSlices() }, new());
-
-        Assert.NotEqual(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
+        TestMatched<FoldTwoSlices>(rootPre);
     }
 }

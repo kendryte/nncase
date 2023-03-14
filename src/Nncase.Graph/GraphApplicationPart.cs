@@ -9,8 +9,8 @@ using System.Text;
 using System.Threading.Tasks;
 using DryIoc;
 using Nncase.Hosting;
+using Nncase.Passes;
 using Nncase.PatternMatch;
-using Nncase.Transform;
 
 namespace Nncase;
 

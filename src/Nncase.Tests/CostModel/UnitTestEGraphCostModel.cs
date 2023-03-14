@@ -5,7 +5,7 @@ using System.Linq;
 using Nncase;
 using Nncase.CostModel;
 using Nncase.IR;
-using Nncase.Transform;
+using Nncase.Passes;
 using Xunit;
 
 namespace Nncase.Tests.CostModelTest;

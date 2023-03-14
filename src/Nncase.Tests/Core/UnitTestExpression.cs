@@ -9,6 +9,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Xunit;
 
@@ -20,9 +21,9 @@ public class UnitTestExpression
     public void TestVarEqual()
     {
         var a = new Var("a", TensorType.Scalar(DataTypes.Float32));
-        var a1 = a with { };
-        Assert.Equal(a, a1);
-        Assert.Equal(a.GetHashCode(), a1.GetHashCode());
+        var a1 = a.With();
+        Assert.NotEqual(a, a1);
+        Assert.NotEqual(a.GetHashCode(), a1.GetHashCode());
     }
 
     [Fact]
@@ -121,14 +122,14 @@ public class UnitTestExpression
         var b = a - 1;
         var f = new Function("main", b, new[] { a });
 
-        var a1 = a with { };
+        var a1 = a.With();
         var b1 = a1 - 1;
         var f1 = new Function("main", b1, new[] { a1 });
 
-        Assert.Equal(f, f1); // todo structual equal for function.
-        Assert.Equal(f.SchedResult, f1.SchedResult); // todo structual equal for function.
-        Assert.Equal(f.Body, f1.Body);
-        Assert.Equal(f.Parameters, f1.Parameters);
+        Assert.NotEqual(f, f1);
+        Assert.Equal(f.SchedResult, f1.SchedResult);
+        Assert.NotEqual(f.Body, f1.Body);
+        Assert.NotEqual(f.Parameters.ToArray(), f1.Parameters.ToArray());
         Assert.Equal(f.ParameterTypes, f1.ParameterTypes);
     }
 
@@ -427,7 +428,7 @@ public class UnitTestExpression
 
     private sealed class ExpressionTreeBuilder : ExprVisitor<Expression, Type>
     {
-        public override Expression VisitLeaf(Const expr)
+        protected override Expression VisitLeafConst(Const expr)
         {
             if (expr is TensorConst tc && tc.Value.Shape.IsScalar)
             {
@@ -437,7 +438,7 @@ public class UnitTestExpression
             throw new ArgumentOutOfRangeException(nameof(expr));
         }
 
-        public override Expression VisitLeaf(Var expr)
+        protected override Expression VisitLeafVar(Var expr)
         {
             if (expr.CheckedShape.IsScalar)
             {
@@ -447,7 +448,7 @@ public class UnitTestExpression
             throw new ArgumentOutOfRangeException(nameof(expr));
         }
 
-        public override Expression VisitLeaf(Call expr)
+        protected override Expression VisitLeafCall(Call expr)
         {
             switch (expr.Target)
             {
@@ -455,7 +456,7 @@ public class UnitTestExpression
 
                     return binary.BinaryOp switch
                     {
-                        BinaryOp.Add => Expression.Add(Visit(expr.Parameters[0]), Visit(expr.Parameters[1])),
+                        BinaryOp.Add => Expression.Add(Visit(expr.Arguments[0]), Visit(expr.Arguments[1])),
                         _ => throw new ArgumentOutOfRangeException(nameof(expr)),
                     };
                 default:
@@ -465,12 +466,12 @@ public class UnitTestExpression
             throw new ArgumentOutOfRangeException(nameof(expr));
         }
 
-        public override Expression VisitLeaf(Function expr)
+        protected override Expression VisitLeafFunction(Function expr)
         {
-            return Expression.Lambda(Visit(expr.Body), expr.Name, expr.Parameters.Select(v => (ParameterExpression)Visit(v)).ToArray());
+            return Expression.Lambda(Visit(expr.Body), expr.Name, expr.Parameters.AsValueEnumerable().Select(v => (ParameterExpression)Visit(v)).ToArray());
         }
 
-        public override Expression VisitLeaf(Op expr)
+        protected override Expression VisitLeafOp(Op expr)
         {
             return null!;
         }

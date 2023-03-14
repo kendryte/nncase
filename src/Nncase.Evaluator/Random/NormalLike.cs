@@ -35,7 +35,7 @@ public class NormalLikeEvaluator : IEvaluator<NormalLike>, ITypeInferencer<Norma
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, NormalLike target)
+    public Cost Visit(ICostEvaluateContext context, NormalLike target)
     {
         var returnType = context.GetReturnType<TensorType>();
         return new()

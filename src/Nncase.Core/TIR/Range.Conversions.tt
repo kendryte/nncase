@@ -16,7 +16,7 @@ using Nncase.IR;
 
 namespace Nncase.TIR;
 
-public partial record Range
+public partial class Range
 {
 <#
 var types = new[] {"Expr", "int"};

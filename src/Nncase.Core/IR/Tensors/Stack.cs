@@ -16,7 +16,7 @@ namespace Nncase.IR.Tensors;
 /// Stack expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Stack() : Op
+public sealed partial class Stack : Op
 {
     /// <summary>
     /// Gets inputs.

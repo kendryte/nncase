@@ -13,7 +13,7 @@ using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
 using static Nncase.PatternMatch.Utility;
 
-namespace Nncase.Transform;
+namespace Nncase.Passes;
 
 /// <summary>
 /// Rules Factory.
@@ -86,7 +86,7 @@ internal sealed class ExprGeneratorVisitor : PatternVisitor<Expr, IRType>
     /// <inheritdoc/>
     public override Expr VisitLeaf(CallPattern pattern)
     {
-        return new Call(PatternMemo[pattern.Target], pattern.Parameters.Select(p => PatternMemo[p]).ToArray());
+        return new Call(PatternMemo[pattern.Target], pattern.Arguments.Select(p => PatternMemo[p]).ToArray());
     }
 
     /// <inheritdoc/>

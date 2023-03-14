@@ -8,9 +8,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
+using Nncase.Passes.Transforms;
 using Nncase.Tests.TestFixture;
-using Nncase.Transform;
-using Nncase.Transform.Passes;
 using Xunit;
 
 namespace Nncase.Tests.ImporterTest;

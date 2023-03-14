@@ -178,7 +178,7 @@ public sealed class UnitTestTensorUtilities
         Assert.Equal(expect1, actual1);
 
         // reverseStride == true
-        var expect2 = new int[] { 1, 4, 12, 24 };
+        var expect2 = new int[] { 1, 1, 2, 6 };
         var actual2 = TensorUtilities.GetStrides(a, true).Select(x => x.Evaluate().AsTensor().ToScalar<int>()).ToArray<int>();
         Assert.Equal(expect2, actual2);
     }

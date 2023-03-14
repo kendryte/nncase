@@ -11,15 +11,17 @@ using System.Threading.Tasks;
 using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.F;
-using Nncase.Transform;
-using Nncase.Transform.Rules.Neutral;
+using Nncase.Passes;
+using Nncase.Passes.Rules.Neutral;
+using Nncase.Tests.TestFixture;
 using Xunit;
 using Math = Nncase.IR.F.Math;
 using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestMatMulToConv2D : TestClassBase
+[AutoSetupTestMethod(InitSession = true)]
+public class UnitTestMatMulToConv2D : TransformTestBase
 {
     public static IEnumerable<object[]> TestMatMulToConv2DPositiveData =>
         new[]
@@ -32,24 +34,15 @@ public class UnitTestMatMulToConv2D : TestClassBase
     [MemberData(nameof(TestMatMulToConv2DPositiveData))]
     public void TestMatMulToConv2DPositive(int count, int[] aShape, int[] bShape)
     {
-        SetupTestMethod(true);
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, aShape);
         var b = Random.Normal(DataTypes.Float32, 0, 1, 0, bShape).Evaluate();
         var rootPre = Math.MatMul(a, b.AsTensor());
-        var rootPost = CompilerServices.Rewrite(
-            rootPre,
-            new IRewriteRule[] { new MatMulToConv2D(), },
-            new());
-
-#if DEBUG
-        CompilerServices.DumpIR(rootPost, "post", Path.Join(Dumpper.Directory, count.ToString()));
-#endif
-        Assert.NotEqual(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
+        TestMatched<MatMulToConv2D>(rootPre);
     }
 }
 
-public class UnitTestBroadcastMatMulToConv2D : TestClassBase
+[AutoSetupTestMethod(InitSession = true)]
+public class UnitTestBroadcastMatMulToConv2D : TransformTestBase
 {
     public static IEnumerable<object[]> TestBroadcastMatMulToConv2DPositiveData =>
         new[]
@@ -65,17 +58,12 @@ public class UnitTestBroadcastMatMulToConv2D : TestClassBase
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, aShape);
         var b = Random.Normal(DataTypes.Float32, 0, 1, 0, bShape).Evaluate().AsTensor();
         var rootPre = Math.MatMul(a, b);
-        var rootPost = CompilerServices.Rewrite(
-            rootPre,
-            new IRewriteRule[] { new BroadcastMatMulToConv2D(), },
-            new());
-
-        Assert.NotEqual(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
+        TestMatched<BroadcastMatMulToConv2D>(rootPre);
     }
 }
 
-public class UnitTestSplitBatchMatMul : TestClassBase
+[AutoSetupTestMethod(InitSession = true)]
+public class UnitTestSplitBatchMatMul : TransformTestBase
 {
     public static IEnumerable<object[]> SplitBatchMatMulPositiveData =>
         new[]
@@ -92,15 +80,6 @@ public class UnitTestSplitBatchMatMul : TestClassBase
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, aShape);
         var b = Random.Normal(DataTypes.Float32, 0, 1, 0, bShape).Evaluate().AsTensor();
         var rootPre = Math.MatMul(a, b);
-        var rootPost = CompilerServices.Rewrite(
-            rootPre,
-            new IRewriteRule[] { new SplitBatchMatMul(), },
-            new());
-
-#if DEBUG
-        CompilerServices.DumpIR(rootPost, "post", Path.Join(Dumpper.Directory, count.ToString()));
-#endif
-        Assert.NotEqual(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
+        TestMatched<SplitBatchMatMul>(rootPre);
     }
 }

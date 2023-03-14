@@ -9,9 +9,8 @@ namespace Nncase.IR.NN;
 /// <summary>
 /// Pad tensor, a little difference with pytorch pad.
 /// </summary>
-/// <param name="PadMode">Pad mode.</param>
 [PatternFunctionalGenerator]
-public sealed record Pad(PadMode PadMode) : Op
+public sealed partial class Pad : Op
 {
     /// <summary>
     /// input.
@@ -27,6 +26,11 @@ public sealed record Pad(PadMode PadMode) : Op
     /// float pad value.
     /// </summary>
     public static readonly ParameterInfo Value = new(typeof(Pad), 2, "value", IsScalar());
+
+    /// <summary>
+    /// Gets pad mode.
+    /// </summary>
+    public PadMode PadMode { get; }
 
     /// <inheritdoc/>
     public override string DisplayProperty() => $"PadMode.{PadMode}";

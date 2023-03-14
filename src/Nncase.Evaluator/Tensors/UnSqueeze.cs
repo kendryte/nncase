@@ -31,7 +31,7 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, Unsqueeze target)
+    public Cost Visit(ICostEvaluateContext context, Unsqueeze target)
     {
         return new()
         {

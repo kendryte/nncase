@@ -176,8 +176,8 @@ public class UnitTestTypeInfer : UnitTypeInferBase
         Assert.IsType<AnyType>(f.Body.CheckedType);
 
         // 2. after the  transfrom the dag is valid type
-        var y = x with { TypeAnnotation = TensorType.Scalar(DataTypes.Int32) };
-        var new_f = f with { Body = y + b, Parameters = new[] { y } };
+        var y = x.With(typeAnnotation: TensorType.Scalar(DataTypes.Int32));
+        var new_f = f.With(body: y + b, parameters: new[] { y });
         Assert.True(CompilerServices.InferenceType(new_f));
     }
 

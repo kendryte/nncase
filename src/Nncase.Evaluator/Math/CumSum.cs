@@ -33,7 +33,7 @@ public class CumSumEvaluator : IEvaluator<CumSum>, ITypeInferencer<CumSum>, ICos
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, CumSum target)
+    public Cost Visit(ICostEvaluateContext context, CumSum target)
     {
         var inputType = context.GetArgumentType<TensorType>(target, CumSum.Input);
         var returnType = context.GetReturnType<TensorType>();

@@ -22,7 +22,7 @@ using static Nncase.PatternMatch.F.NN;
 using static Nncase.PatternMatch.Utility;
 using Math = System.Math;
 
-namespace Nncase.Transform.Rules.K210;
+namespace Nncase.Passes.Rules.K210;
 
 /// <summary>
 /// Lower <see cref="IR.K210.FakeKPUConv2D"/> to <see cref="IR.K210.KPUConv2D"/>.

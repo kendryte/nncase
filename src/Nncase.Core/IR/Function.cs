@@ -3,56 +3,35 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using NetFabric.Hyperlinq;
+using Nncase.Utilities;
 
 namespace Nncase.IR;
 
 /// <summary>
-/// the Callable Expr.
-/// </summary>
-public abstract record Callable(string Name, string ModuleKind) : Expr
-{
-    /// <summary>
-    /// StackVM module kind.
-    /// </summary>
-    public static readonly string StackVMModuleKind = "stackvm";
-}
-
-/// <summary>
-/// Base function.
-/// </summary>
-public abstract record BaseFunction(string Name, string ModuleKind) : Callable(Name, ModuleKind)
-{
-    /// <summary>
-    /// Gets sched result.
-    /// </summary>
-    public Schedule.SchedFunctionResult SchedResult { get; } = new();
-
-    /// <summary>
-    /// Gets parameter types.
-    /// </summary>
-    public abstract IEnumerable<IRType?> ParameterTypes { get; }
-
-    /// <inheritdoc/>
-    public override int GetHashCode() => base.GetHashCode();
-}
-
-/// <summary>
 /// Function expression.
 /// </summary>
-public sealed record Function(string Name, Expr Body, IRArray<Var> Parameters) : BaseFunction(Name, StackVMModuleKind)
+public sealed class Function : BaseFunction
 {
     private static int _globalFuncIndex;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Function"/> class.
+    /// build function.
     /// </summary>
-    /// <param name="parameters">Parameters.</param>
-    /// <param name="body">Body.</param>
-    public Function(Expr body, IRArray<Var> parameters)
+    public Function(string name, Expr body, ReadOnlySpan<Var> parameters)
+        : base(name, StackVMModuleKind, ArrayUtility.Concat(body, SpanUtility.UnsafeCast<Var, Expr>(parameters)))
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Function"/> class.
+    /// build function.
+    /// </summary>
+    public Function(Expr body, ReadOnlySpan<Var> parameters)
         : this($"func_{_globalFuncIndex++}", body, parameters)
     {
     }
@@ -61,13 +40,33 @@ public sealed record Function(string Name, Expr Body, IRArray<Var> Parameters) :
     /// Initializes a new instance of the <see cref="Function"/> class.
     /// build function.
     /// </summary>
-    public Function(Expr body, params Var[] parameters)
-        : this($"func_{_globalFuncIndex++}", body, new(parameters))
+    public Function(string name, Expr body, params Var[] parameters)
+        : this(name, body, parameters.AsSpan())
     {
     }
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="Function"/> class.
+    /// build function.
+    /// </summary>
+    public Function(Expr body, params Var[] parameters)
+        : this(body, parameters.AsSpan())
+    {
+    }
+
+    public Expr Body => Operands[0];
+
+    public ReadOnlySpan<Var> Parameters => SpanUtility.UnsafeCast<Expr, Var>(Operands[1..]);
+
+    /// <summary>
     /// Gets get all parameter checked types.
     /// </summary>
-    public override IEnumerable<IRType?> ParameterTypes => Parameters.Select(x => x.CheckedType);
+    public override IEnumerable<IRType?> ParameterTypes => Parameters.AsValueEnumerable().Select(x => x.CheckedType).ToArray();
+
+    /// <inheritdoc/>
+    public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
+        => functor.VisitFunction(this, context);
+
+    public Function With(string? name = null, Expr? body = null, Var[]? parameters = null)
+        => new Function(name ?? Name, body ?? Body, parameters ?? Parameters);
 }

@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Toolkit.HighPerformance;
 using Nncase.IR;
-using Nncase.Transform;
+using Nncase.Passes;
 using Xunit;
 
 namespace Nncase.Tests.Rules.NeutralTest;
@@ -77,16 +77,18 @@ public class UnitTestCombineBinary
         };
 
         CompilerServices.InferenceType(rootPre);
+        var preHashCode = rootPre.GetHashCode();
+        var preValue = CompilerServices.Evaluate(rootPre, feedDict);
         var rootPost = CompilerServices.Rewrite(
             rootPre,
             new IRewriteRule[]
             {
-                new Transform.Rules.Neutral.CombineClampAdd(),
+                new Passes.Rules.Neutral.CombineClampAdd(),
             },
             new());
 
-        Assert.NotEqual(rootPre, rootPost);
-        Assert.True(Comparator.Compare(CompilerServices.Evaluate(rootPre, feedDict), CompilerServices.Evaluate(rootPost, feedDict)));
+        Assert.NotEqual(preHashCode, rootPost.GetHashCode());
+        Assert.True(Comparator.Compare(preValue, CompilerServices.Evaluate(rootPost, feedDict)));
     }
 
     [Theory]
@@ -102,16 +104,18 @@ public class UnitTestCombineBinary
         };
 
         CompilerServices.InferenceType(rootPre);
+        var preHashCode = rootPre.GetHashCode();
+        var preValue = CompilerServices.Evaluate(rootPre, feedDict);
         var rootPost = CompilerServices.Rewrite(
             rootPre,
             new IRewriteRule[]
             {
-                new Transform.Rules.Neutral.CombineClampMul(),
+                new Passes.Rules.Neutral.CombineClampMul(),
             },
             new());
 
-        Assert.NotEqual(rootPre, rootPost);
-        Assert.True(Comparator.Compare(CompilerServices.Evaluate(rootPre, feedDict), CompilerServices.Evaluate(rootPost, feedDict)));
+        Assert.NotEqual(preHashCode, rootPost.GetHashCode());
+        Assert.True(Comparator.Compare(preValue, CompilerServices.Evaluate(rootPost, feedDict)));
     }
 
     [Theory]
@@ -126,15 +130,16 @@ public class UnitTestCombineBinary
         };
 
         CompilerServices.InferenceType(rootPre);
+        var preHashCode = rootPre.GetHashCode();
         var rootPost = CompilerServices.Rewrite(
             rootPre,
             new IRewriteRule[]
             {
-                new Transform.Rules.Neutral.CombineClampAdd(),
+                new Passes.Rules.Neutral.CombineClampAdd(),
             },
             new());
 
-        Assert.Equal(rootPre, rootPost);
+        Assert.Equal(preHashCode, rootPost.GetHashCode());
     }
 
     [Theory]
@@ -149,15 +154,16 @@ public class UnitTestCombineBinary
         };
 
         CompilerServices.InferenceType(rootPre);
+        var preHashCode = rootPre.GetHashCode();
         var rootPost = CompilerServices.Rewrite(
             rootPre,
             new IRewriteRule[]
             {
-                new Transform.Rules.Neutral.CombineClampMul(),
+                new Passes.Rules.Neutral.CombineClampMul(),
             },
             new());
 
-        Assert.Equal(rootPre, rootPost);
+        Assert.Equal(preHashCode, rootPost.GetHashCode());
     }
 
     private (Var Input, Expr Root) GetCombineClampBinaryCase(BinaryOp op, int[] inputShape, Tensor<float> constTensor, Tensor<float> min, Tensor<float> max)

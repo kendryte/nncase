@@ -60,7 +60,6 @@ public abstract partial record Pattern
         Var var => new VarPattern(var),
         TensorConst con => new TensorConstPattern(con, null),
         Const con => new ConstPattern(con, null),
-        Function function => new FunctionPattern(function, null),
         Call call => new CallPattern(call, null),
         IR.Tuple tuple => new TuplePattern(tuple, null),
         Op op => (Pattern)Activator.CreateInstance(typeof(OpPattern<>).MakeGenericType(op.GetType()), op)!,

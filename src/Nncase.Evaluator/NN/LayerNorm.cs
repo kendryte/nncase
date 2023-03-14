@@ -32,7 +32,7 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, LayerNorm target)
+    public Cost Visit(ICostEvaluateContext context, LayerNorm target)
     {
         var inputType = context.GetArgumentType<TensorType>(target, LayerNorm.Input);
         var returnType = context.GetReturnType<TensorType>();

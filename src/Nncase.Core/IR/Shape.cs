@@ -8,6 +8,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using NetFabric.Hyperlinq;
 
 namespace Nncase.IR
 {
@@ -50,38 +51,10 @@ namespace Nncase.IR
         /// Initializes a new instance of the <see cref="Shape"/> class.
         /// </summary>
         /// <param name="dimensions">Dimensions.</param>
-        public Shape(IEnumerable<Dimension> dimensions)
+        public Shape(ReadOnlySpan<Dimension> dimensions)
         {
             Kind = KindOf(dimensions);
-            _dimensions = dimensions.ToImmutableArray();
-            _hashcode = StructuralComparisons.StructuralEqualityComparer.GetHashCode(_dimensions);
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Shape"/> class.
-        /// </summary>
-        /// <param name="dimensions">Dimensions.</param>
-        public Shape(IEnumerable<long> dimensions)
-            : this(dimensions.Select(i => (int)i))
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Shape"/> class.
-        /// </summary>
-        /// <param name="dimensions">Dimensions.</param>
-        public Shape(IEnumerable<int> dimensions)
-        {
-            Kind = ShapeKind.Fixed;
-            if (dimensions.Any())
-            {
-                _dimensions = ImmutableArray.CreateRange(dimensions.Select(x => new Dimension(x)));
-            }
-            else
-            {
-                _dimensions = ImmutableArray.Create<Dimension>();
-            }
-
+            _dimensions = ImmutableArray.Create(dimensions.ToArray());
             _hashcode = StructuralComparisons.StructuralEqualityComparer.GetHashCode(_dimensions);
         }
 
@@ -91,8 +64,17 @@ namespace Nncase.IR
         /// Initializes a new instance of the <see cref="Shape"/> class.
         /// </summary>
         /// <param name="dimensions">Dimensions.</param>
-        public Shape(int[] dimensions)
-            : this((IEnumerable<int>)dimensions)
+        public Shape(ReadOnlySpan<int> dimensions)
+            : this(dimensions.AsValueEnumerable().Select(x => new Dimension(x)).ToArray())
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Shape"/> class.
+        /// </summary>
+        /// <param name="dimensions">Dimensions.</param>
+        public Shape(ReadOnlySpan<long> dimensions)
+            : this(dimensions.AsValueEnumerable().Select(i => (int)i).ToArray())
         {
         }
 
@@ -101,7 +83,34 @@ namespace Nncase.IR
         /// </summary>
         /// <param name="dimensions">Dimensions.</param>
         public Shape(params Dimension[] dimensions)
-            : this((IEnumerable<Dimension>)dimensions)
+            : this(dimensions.AsSpan())
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Shape"/> class.
+        /// </summary>
+        /// <param name="dimensions">Dimensions.</param>
+        public Shape(params int[] dimensions)
+            : this(dimensions.AsSpan())
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Shape"/> class.
+        /// </summary>
+        /// <param name="dimensions">Dimensions.</param>
+        public Shape(IEnumerable<Dimension> dimensions)
+            : this(dimensions.ToArray())
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Shape"/> class.
+        /// </summary>
+        /// <param name="dimensions">Dimensions.</param>
+        public Shape(IEnumerable<int> dimensions)
+            : this(dimensions.ToArray())
         {
         }
 
@@ -225,7 +234,7 @@ namespace Nncase.IR
         {
             var l = _dimensions.ToList();
             l.Insert(index, dim);
-            return new Shape(l);
+            return new Shape(l.ToArray());
         }
 
         /// <summary>
@@ -239,7 +248,7 @@ namespace Nncase.IR
                 l.Insert(index++, d);
             }
 
-            return new Shape(l);
+            return new Shape(l.ToArray());
         }
 
         /// <summary>
@@ -307,9 +316,9 @@ namespace Nncase.IR
             return other is Shape shape && Equals(shape);
         }
 
-        private static ShapeKind KindOf(IEnumerable<Dimension> dimensions)
+        private static ShapeKind KindOf(ReadOnlySpan<Dimension> dimensions)
         {
-            return dimensions.Any(x => x.IsUnknown) ? ShapeKind.HasUnknownDimension : ShapeKind.Fixed;
+            return dimensions.AsValueEnumerable().Any(x => x.IsUnknown) ? ShapeKind.HasUnknownDimension : ShapeKind.Fixed;
         }
     }
 }

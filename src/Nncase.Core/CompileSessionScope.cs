@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Nncase;
 
-internal struct CompileSessionScope : IDisposable
+public struct CompileSessionScope : IDisposable
 {
     private static readonly AsyncLocal<CompileSession?> _compileSession = new AsyncLocal<CompileSession?>();
 

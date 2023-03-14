@@ -223,7 +223,7 @@ public sealed class UnitTestTensorOfT
         var t4 = new Tensor<int>(memory, new int[] { 1, 1, 2, 4 });
         Assert.True(t1.Equals((object)t4));
 
-        Assert.Throws<ArgumentException>(() => t1.Equals((object)a));
+        Assert.False(t1.Equals(a));
     }
 
     // bool Equals(Tensor<T>? other)

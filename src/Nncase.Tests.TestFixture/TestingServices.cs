@@ -11,7 +11,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Nncase.CodeGen;
 using Nncase.Diagnostics;
-using Nncase.Transform;
+using Nncase.Passes;
 
 namespace Nncase.Tests;
 
@@ -135,9 +135,9 @@ public static class Testing
         int err_count = 0;
 
         // int offset = 0;
-        foreach (var p in a.Cast<float>().Zip(b.Cast<float>()))
+        foreach (var (first, second) in a.Cast<float>().Zip(b.Cast<float>()))
         {
-            if (Math.Abs(p.Item1 - p.Item2) > tol)
+            if (Math.Abs(first - second) > tol)
             {
                 err_count++;
             }

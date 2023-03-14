@@ -1,17 +1,20 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using NetFabric.Hyperlinq;
 using Nncase.Evaluator;
 using Nncase.Importer;
 using Nncase.IR;
 using Nncase.IR.F;
+using Nncase.Passes;
+using Nncase.Passes.Analysis;
 using Nncase.PatternMatch;
 using Nncase.Tests.TestFixture;
-using Nncase.Transform;
 using OrtKISharp;
 using Xunit;
 using static Nncase.IR.F.Math;
@@ -54,8 +57,9 @@ public class UnitTestDataFlowRewrite : RewriteFixtrue
         var a = (Const)1;
         var b = (Const)2;
         var expr = (a * b) + 3;
-        Assert.True(CompilerServices.InferenceType(expr));
+        using var exprPin = new ExprPinner(expr);
         var post = ApplyFoldConstCallRewrite(expr);
+        Assert.True(CompilerServices.InferenceType(expr));
         Assert.True(CompilerServices.InferenceType(post));
         Assert.Equal(expr.CheckedType, post.CheckedType);
         var res = (1 * 2) + 3;
@@ -122,6 +126,8 @@ public class UnitTestDataFlowRewrite : RewriteFixtrue
 [AutoSetupTestMethod(InitSession = true)]
 public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
 {
+    public IAnalyzerManager AnalyzerMananger => CompileSession.GetRequiredService<IAnalyzerManager>();
+
     public T Dim1ExprToScalar<T>(Expr expr)
         where T : unmanaged, System.IEquatable<T>
         => ((TensorConst)expr).Value.Cast<T>()[0];
@@ -133,6 +139,8 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
         var weights = Tensor.From<int>(Enumerable.Range(0, 3 * 3 * 3 * 16).ToArray(), new Shape(new[] { 16, 3, 3, 3 }));
         var (inH, inW) = Util.GetHW(input);
         var (fH, fW) = Util.GetHW(weights);
+        using var exprPin1 = new ExprPinner(input, inH, inW, fH, fW);
+
         var inHPost = await RunShapeInferPass("inH", inH);
         var inWPost = await RunShapeInferPass("inW", inW);
         Assert.Equal(33, ((TensorConst)inHPost).Value.ToScalar<int>());
@@ -217,23 +225,30 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
         var input = new Var(new TensorType(DataTypes.Float32, new Shape(1, 3, 224, 224)));
         var axis = -1;
         var inShape = ShapeOf(input);
+        using var inShapePin = new ExprPinner(inShape);
         Expr axisExprBefore = axis < 0
             ? axis + Rank(input)
             : Tensor.From<int>(new[] { axis });
         axisExprBefore.InferenceType();
         var axisExpr = await RunShapeInferPass("Axis", axisExprBefore, input);
+        using var axisPin = new ExprPinner(axisExpr);
         Assert.Equal(3, ((TensorConst)axisExpr).Value.Cast<int>()[0]);
+
         var firstSliceBefore = Slice(inShape, new[] { 0 }, axisExpr, 1);
         firstSliceBefore.InferenceType();
         var firstSlice = await RunShapeInferPass("firstSlice", firstSliceBefore, input);
+        using var firstSlicePin = new ExprPinner(firstSlice);
         Assert.Equal(new[] { 1, 3, 224 }, ((TensorConst)firstSlice).Value.ToArray<int>());
+
         var firstSizeBefore = Prod(firstSlice);
         firstSizeBefore.InferenceType();
         var firstSize = await RunShapeInferPass("firstSize", firstSizeBefore, input);
         Assert.Equal(1 * 3 * 224, ((TensorConst)firstSize).Value.ToScalar<int>());
+
         var secondBefore = Prod(Slice(inShape, axisExpr, Rank(input), 1));
         var secondSize = await RunShapeInferPass("secondSize", secondBefore, input);
         Assert.Equal(224, ((TensorConst)secondSize).Value.ToScalar<int>());
+
         var beforeShape = Concat(new Tuple(firstSize, secondSize), 0);
         var afterShape = ShapeOf(input);
         var softMax = Reshape(
@@ -268,7 +283,7 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
     }
 
     [Fact]
-    public async Task TestWithAnalysisInfoRewriteOnce()
+    public void TestWithAnalysisInfoRewriteOnce()
     {
         var x = new Var(TensorType.Scalar(DataTypes.Int32));
         var y = new Var(TensorType.Scalar(DataTypes.Int32));
@@ -277,19 +292,24 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
         var pre = new Function(m + (x + (z + (x + (y / y)))), new[] { x, y, z, m });
         CompilerServices.InferenceType(pre);
 
-        var pass = new DataflowWithUsdByPass() { Name = "DataflowWithUsdByPass" };
+        var analysis = new Dictionary<Type, IAnalysisResult>
+        {
+            [typeof(IExprUserAnalysisResult)] = AnalyzerMananger.GetAnaylsis<IExprUserAnalysisResult>(pre),
+        };
+
+        var pass = new DataflowPass() { Name = "DataflowWithUsdByPass" };
         pass.Add<AnalysisReassociateAdd>();
         pass.Add<DivToConst>();
-        var post = (Function)await pass.RunAsync(pre, new());
+        var post = (Function)pass.RunAsync(pre, new() { AnalysisResults = analysis }).Result;
 
-        Assert.True(post.Body is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Sub }, Parameters: var param0 } && // m - (x + (z - (x + (1))))
-                    param0[1] is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Add }, Parameters: var param1 } && // x + (z - (x + (1)))
-                    param1[1] is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Sub }, Parameters: var param2 } && // z - (x + (1))
-                    param2[1] is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Add }, Parameters: var param3 } && // x + (1)
+        Assert.True(post.Body is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Sub }, Arguments: var param0 } && // m - (x + (z - (x + (1))))
+                    param0[1] is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Add }, Arguments: var param1 } && // x + (z - (x + (1)))
+                    param1[1] is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Sub }, Arguments: var param2 } && // z - (x + (1))
+                    param2[1] is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Add }, Arguments: var param3 } && // x + (1)
                     param3[1] is TensorConst);
     }
 
-    private sealed class DivToConst : Transform.IRewriteRule
+    private sealed class DivToConst : IRewriteRule
     {
         private static readonly Pattern SInputPattern = IsWildcard("x");
 
@@ -303,21 +323,17 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
         }
     }
 
-    private sealed class AnalysisReassociateAdd : Transform.IRewriteRule, Transform.IRewriteRuleWithUsdBy
+    private sealed class AnalysisReassociateAdd : IRewriteRule
     {
-        private Transform.IUsedByResult? _usedByResult;
-
         /// <inheritdoc/>
         public IPattern Pattern { get; } = IsWildcard("x") + IsWildcard("y");
 
-        /// <inheritdoc/>
-        public IUsedByResult UsedByResult { get => _usedByResult!; set => _usedByResult = value; }
-
         public Expr? GetReplace(IMatchResult result, RunPassContext options)
         {
+            var userAnalysis = options.GetAnalysis<IExprUserAnalysisResult>();
             var x = (Expr)result["x"];
             var y = (Expr)result["y"];
-            if (UsedByResult.Get(x).Count == 1 && UsedByResult.Get(y).Count == 1)
+            if (userAnalysis[x].Count() == 1 && userAnalysis[y].Count() == 1)
             {
                 return x - y;
             }

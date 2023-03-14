@@ -6,17 +6,24 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
+using DryIoc.ImTools;
+using Microsoft.Extensions.DependencyInjection;
 using Nncase.IR;
+using Nncase.Passes;
+using Nncase.Passes.Analysis;
+using Nncase.Tests.TestFixture;
 using Nncase.TIR;
-using Nncase.Transform;
 using Xunit;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.Tensors;
 
 namespace Nncase.Tests.TransformTest;
 
-public sealed class UnitTestUsedByAnalysis : TestClassBase
+[AutoSetupTestMethod(InitSession = true)]
+public sealed class UnitTestAnalysis : TestClassBase
 {
+    public IAnalyzerManager AnalyzerMananger => CompileSession.GetRequiredService<IAnalyzerManager>();
+
     [Fact]
     public void TestMultiInput()
     {
@@ -24,9 +31,10 @@ public sealed class UnitTestUsedByAnalysis : TestClassBase
         var v0 = IR.F.Math.Unary(UnaryOp.Abs, input);
         var v1 = v0 + input;
         var v2 = IR.F.Math.Unary(UnaryOp.Abs, v1);
+        var func = new Function(v2, input);
 
-        var result = Analyser.AnalysisUsedBy(v2);
-        Assert.Equal(2, result.Get(input).Count);
+        var userAnalysis = AnalyzerMananger.GetAnaylsis<IExprUserAnalysisResult>(func);
+        Assert.Equal(2, userAnalysis[input].Count());
     }
 
     [Fact]
@@ -37,17 +45,9 @@ public sealed class UnitTestUsedByAnalysis : TestClassBase
         var main = new Function(fusionCase.BuildBody(input), input);
         CompilerServices.InferenceType(main);
 
-        var usedbyReslut = Analyser.AnalysisUsedBy(main);
+        var userAnalysis = AnalyzerMananger.GetAnaylsis<IExprUserAnalysisResult>(main);
 
-        Assert.Equal(2, usedbyReslut.Get(input).Count);
-
-        foreach (var k in usedbyReslut.MeMo.Keys)
-        {
-            if (k is Call { Target: Fusion { Name: "fusion_4_True" } })
-            {
-                Assert.Equal(2, usedbyReslut.Get(k).Count);
-            }
-        }
+        Assert.Equal(2, userAnalysis[input].Count());
     }
 
     [Fact]
@@ -60,9 +60,9 @@ public sealed class UnitTestUsedByAnalysis : TestClassBase
         var main = new Function(v1, new[] { input1, input2 });
         CompilerServices.InferenceType(main);
 
-        var usedbyReslut = Analyser.AnalysisUsedBy(main);
+        var userAnalysis = AnalyzerMananger.GetAnaylsis<IExprUserAnalysisResult>(main);
 
-        Assert.Single(usedbyReslut.Get(input1));
-        Assert.Equal(2, usedbyReslut.Get(input2).Count);
+        Assert.Single(userAnalysis[input1]);
+        Assert.Equal(2, userAnalysis[input2].Count());
     }
 }

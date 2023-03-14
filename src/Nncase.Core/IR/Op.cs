@@ -78,9 +78,14 @@ public sealed class ParameterInfo
 /// so your need impl the method as follows:
 /// 1. Visit(ITypeInferenceContext context, IRType arg1, IRType arg2, ...)
 /// </summary>
-public abstract record Op() : Expr
+public abstract class Op : Expr
 {
     private ParameterInfo[]? _parameters;
+
+    public Op()
+        : base(Array.Empty<Expr>())
+    {
+    }
 
     /// <summary>
     /// Gets get the parameters.
@@ -97,18 +102,6 @@ public abstract record Op() : Expr
     /// </summary>
     public virtual bool CanFoldConstCall => true;
 
-    /// <inheritdoc/>
-    public virtual bool Equals(Op? other)
-    {
-        return !(other is null) && EqualityContract == other.EqualityContract;
-    }
-
-    /// <inheritdoc/>
-    public override int GetHashCode()
-    {
-        return HashCodeCache ??= EqualityComparer<Type>.Default.GetHashCode(EqualityContract);
-    }
-
     /// <summary>
     /// display the Op property for dump ir.
     /// </summary>
@@ -117,13 +110,21 @@ public abstract record Op() : Expr
     {
         return string.Empty;
     }
+
+    /// <inheritdoc/>
+    public sealed override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
+        => functor.VisitOp(this, context);
+
+    public Op With() => this;
 }
 
 /// <summary>
 /// Custom Op.
 /// </summary>
-public abstract record CustomOp(string RegisteredName) : Op
+public abstract class CustomOp : Op
 {
+    public abstract string RegisteredName { get; }
+
     /// <summary>
     /// Gets get the Current Custom module type.
     /// </summary>

@@ -11,9 +11,9 @@ namespace Nncase.PatternMatch;
 /// Pattern for <see cref="Call"/>.
 /// </summary>
 /// <param name="Target">Target pattern.</param>
-/// <param name="Parameters">Parameters pattern.</param>
+/// <param name="Arguments">Arguments pattern.</param>
 /// <param name="Name"> name. </param>
-public sealed record CallPattern(Pattern Target, VArgsPattern Parameters, string? Name) : Pattern<Call>(Name)
+public sealed record CallPattern(Pattern Target, VArgsPattern Arguments, string? Name) : Pattern<Call>(Name)
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="CallPattern"/> class.
@@ -21,7 +21,7 @@ public sealed record CallPattern(Pattern Target, VArgsPattern Parameters, string
     /// <param name="call"><see cref="Call"/> expression.</param>
     /// <param name="name">name.</param>
     public CallPattern(Call call, string? name)
-        : this(call.Target, new VArgsPattern(call.Parameters, null), name)
+        : this(call.Target, new VArgsPattern(call.Arguments.ToArray(), null), name)
     {
     }
 
@@ -32,7 +32,7 @@ public sealed record CallPattern(Pattern Target, VArgsPattern Parameters, string
     /// <returns>Parameter pattern.</returns>
     public Pattern this[ParameterInfo parameter]
     {
-        get => Parameters[parameter.Index];
+        get => Arguments.Fields[parameter.Index];
     }
 }
 

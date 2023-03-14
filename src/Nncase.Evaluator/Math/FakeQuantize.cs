@@ -30,7 +30,7 @@ public class FakeQuantizeEvaluator : IEvaluator<FakeQuantize>, ITypeInferencer<F
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, FakeQuantize target)
+    public Cost Visit(ICostEvaluateContext context, FakeQuantize target)
     {
         var inputType = context.GetArgumentType<TensorType>(target, FakeQuantize.Input);
         var outputType = context.GetReturnType<TensorType>();

@@ -36,7 +36,7 @@ public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>, ICostEv
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, Split target)
+    public Cost Visit(ICostEvaluateContext context, Split target)
     {
         _ = context.GetReturnType<TupleType>();
         return new()

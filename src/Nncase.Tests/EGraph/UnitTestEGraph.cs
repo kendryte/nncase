@@ -8,8 +8,8 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using Nncase.IR;
 using Nncase.IR.Math;
+using Nncase.Passes;
 using Nncase.Tests.TestFixture;
-using Nncase.Transform;
 using Xunit;
 using static Nncase.IR.F.Math;
 

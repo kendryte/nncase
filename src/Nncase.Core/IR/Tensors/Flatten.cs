@@ -10,7 +10,7 @@ namespace Nncase.IR.Tensors;
 /// Flatten expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Flatten() : Op
+public sealed partial class Flatten : Op
 {
     /// <summary>
     /// Gets input.

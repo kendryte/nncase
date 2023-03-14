@@ -32,7 +32,7 @@ public class ShapeOfEvaluator : IEvaluator<ShapeOf>, ITypeInferencer<ShapeOf>, I
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, ShapeOf target)
+    public Cost Visit(ICostEvaluateContext context, ShapeOf target)
     {
         var outputType = context.GetReturnType<TensorType>();
 

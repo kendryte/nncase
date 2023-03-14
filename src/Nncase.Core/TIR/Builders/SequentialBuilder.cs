@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
@@ -55,7 +56,7 @@ internal class SequentialBuilder<T> : ISequentialBuilder<T>
 
     public T Build()
     {
-        return _creator(Sequential.Flatten(_body));
+        return _creator(Sequential.Flatten(CollectionsMarshal.AsSpan(_body)));
     }
 
     public ISequentialBuilder<T> InsertBody(int index, params object[] exprOrBuilders)

@@ -30,7 +30,7 @@ public class HardmaxEvaluator : IEvaluator<Hardmax>, ITypeInferencer<Hardmax>, I
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, Hardmax target)
+    public Cost Visit(ICostEvaluateContext context, Hardmax target)
     {
         var inputType = context.GetArgumentType<TensorType>(target, Hardmax.Input);
         return new()

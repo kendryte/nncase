@@ -91,7 +91,7 @@ namespace Nncase.Importer
         private Expr ExpandToType(Expr input, DataType t, params Expr[] dims)
         {
             return Cast(
-                Expand(input, Stack(new Tuple(dims.Select(x => Cast(x, DataTypes.Int64))), 0)),
+                Expand(input, Stack(new Tuple(dims.Select(x => Cast(x, DataTypes.Int64)).ToArray()), 0)),
                 t);
         }
     }

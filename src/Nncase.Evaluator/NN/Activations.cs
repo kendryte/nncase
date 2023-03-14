@@ -16,7 +16,7 @@ namespace Nncase.Evaluator.NN;
 public partial class CeluEvaluator : IEvaluator<Celu>, ITypeInferencer<Celu>, ICostEvaluator<Celu>
 {
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, Celu target)
+    public Cost Visit(ICostEvaluateContext context, Celu target)
     {
         var outputType = context.GetReturnType<TensorType>();
         return new()
@@ -53,7 +53,7 @@ public partial class CeluEvaluator : IEvaluator<Celu>, ITypeInferencer<Celu>, IC
 public partial class EluEvaluator : IEvaluator<Elu>, ITypeInferencer<Elu>, ICostEvaluator<Elu>
 {
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, Elu target)
+    public Cost Visit(ICostEvaluateContext context, Elu target)
     {
         var outputType = context.GetReturnType<TensorType>();
         return new()
@@ -96,7 +96,7 @@ public class HardSwishEvaluator : IEvaluator<HardSwish>, ITypeInferencer<HardSwi
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, HardSwish target)
+    public Cost Visit(ICostEvaluateContext context, HardSwish target)
     {
         var outputType = context.GetReturnType<TensorType>();
         return new()
@@ -133,7 +133,7 @@ public class LeakyReluEvaluator : IEvaluator<LeakyRelu>, ITypeInferencer<LeakyRe
         return Visit(input);
     }
 
-    public Cost? Visit(ICostEvaluateContext context, LeakyRelu target)
+    public Cost Visit(ICostEvaluateContext context, LeakyRelu target)
     {
         var outputType = context.GetReturnType<TensorType>();
         return new()
@@ -169,7 +169,7 @@ public class ReluEvaluator : IEvaluator<Relu>, ITypeInferencer<Relu>, ICostEvalu
         return Visit(input);
     }
 
-    public Cost? Visit(ICostEvaluateContext context, Relu target)
+    public Cost Visit(ICostEvaluateContext context, Relu target)
     {
         var inputType = context.GetArgumentType<TensorType>(target, Relu.Input);
         return CostUtility.GetActivationCost(inputType, CostUtility.GetCPUCyclesOfMax());
@@ -200,7 +200,7 @@ public class Relu6Evaluator : IEvaluator<Relu6>, ITypeInferencer<Relu6>, ICostEv
         return Visit(input);
     }
 
-    public Cost? Visit(ICostEvaluateContext context, Relu6 target)
+    public Cost Visit(ICostEvaluateContext context, Relu6 target)
     {
         var inputType = context.GetArgumentType<TensorType>(target, Relu6.Input);
         return CostUtility.GetActivationCost(inputType, CostUtility.GetCPUCyclesOfMax());
@@ -234,7 +234,7 @@ public class SeluEvaluator : IEvaluator<Selu>, ITypeInferencer<Selu>, ICostEvalu
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, Selu target)
+    public Cost Visit(ICostEvaluateContext context, Selu target)
     {
         var outputType = context.GetReturnType<TensorType>();
         return new()
@@ -271,7 +271,7 @@ public class SigmoidEvaluator : IEvaluator<Sigmoid>, ITypeInferencer<Sigmoid>, I
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, Sigmoid target)
+    public Cost Visit(ICostEvaluateContext context, Sigmoid target)
     {
         var ret = context.GetReturnType<TensorType>();
         var macPerElement = 3;
@@ -306,7 +306,7 @@ public class HardSigmoidEvaluator : IEvaluator<HardSigmoid>, ITypeInferencer<Har
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, HardSigmoid target)
+    public Cost Visit(ICostEvaluateContext context, HardSigmoid target)
     {
         var outputType = context.GetReturnType<TensorType>();
         return new()
@@ -344,7 +344,7 @@ public class PReluEvaluator : IEvaluator<PRelu>, ITypeInferencer<PRelu>, ICostEv
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, PRelu target)
+    public Cost Visit(ICostEvaluateContext context, PRelu target)
     {
         var outputType = context.GetReturnType<TensorType>();
         return new()
@@ -381,7 +381,7 @@ public class ErfEvaluator : IEvaluator<Erf>, ITypeInferencer<Erf>, ICostEvaluato
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, Erf target)
+    public Cost Visit(ICostEvaluateContext context, Erf target)
     {
         var outputType = context.GetReturnType<TensorType>();
         return new()

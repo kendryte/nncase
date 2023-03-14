@@ -31,7 +31,7 @@ public class ReverseSequenceEvaluator : IEvaluator<ReverseSequence>, ITypeInfere
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, ReverseSequence target)
+    public Cost Visit(ICostEvaluateContext context, ReverseSequence target)
     {
         var inputType = context.GetArgumentType<TensorType>(target, ReverseSequence.Input);
         var returnType = context.GetReturnType<TensorType>();

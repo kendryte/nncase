@@ -10,10 +10,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Nncase.Diagnostics;
 using Nncase.IR;
-using Nncase.IR.Tensors;
-using Nncase.Transform;
-using Nncase.Transform.Rules.Neutral;
-using TorchSharp;
+using Nncase.Passes;
+using Nncase.Passes.Rules.Neutral;
 using Xunit;
 using static Nncase.IR.F.NN;
 using static Nncase.PatternMatch.Utility;
@@ -30,7 +28,7 @@ public class UnitTestAddMarker : TestClassBase
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 8, 8 });
         var rootPre = Relu(a);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new AddRangeOfAndMarker() }, new());
+        var rootPost = CompilerServices.Rewrite(rootPre.Clone(), new[] { new AddRangeOfAndMarker() }, new());
 
         Assert.NotEqual(rootPre, rootPost);
         Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
@@ -100,7 +98,7 @@ public class UnitTestAddMarker : TestClassBase
         Assert.True(((Function)module.Entry!).Body is Tuple t
                     && CompilerServices.TryMatchRoot(t, IsWrappedLSTM(PatternMatch.F.Tensors.IsLSTM("lstm", "lstmCall", _ => true), (x, _) => IsRangeOfMarker(x, IsWildcard())), out var result)
                     && result["lstmCall"] is Call call
-                    && new[] { 0, 1, 2, 5, 6 }.All(i => call.Parameters[i] is Marker));
+                    && new[] { 0, 1, 2, 5, 6 }.All(i => call.Arguments[i] is Marker));
     }
 
     [Fact]
@@ -130,7 +128,7 @@ public class UnitTestAddMarker : TestClassBase
         Assert.True(((Function)module.Entry!).Body is Tuple t
                     && CompilerServices.TryMatchRoot(t, IsWrappedLSTM(PatternMatch.F.Tensors.IsLSTM("lstm", "lstmCall", _ => true), (x, _) => IsRangeOfMarker(x, IsWildcard())), out var result)
                     && result["lstmCall"] is Call call
-                    && new[] { 0, 1, 2, 5, 6 }.All(i => call.Parameters[i] is Marker));
+                    && new[] { 0, 1, 2, 5, 6 }.All(i => call.Arguments[i] is Marker));
     }
 
     [Fact]
@@ -186,7 +184,7 @@ public class UnitTestAddMarker : TestClassBase
         var passManager = CompileSession.CreatePassManager("manager");
         passManager.AddWithName<DataflowPass>("AddRangeOfMarker").Configure(p =>
         {
-            p.Add<Transform.Rules.Neutral.AddRangeOfAndMarker>();
+            p.Add<Passes.Rules.Neutral.AddRangeOfAndMarker>();
         });
         await passManager.RunAsync(module);
     }
