@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -69,11 +70,27 @@ internal class TextSnippet
 
 internal class BasicBlock
 {
-    public BasicBlock(BasicBlock? prev, Expr parent)
+    private static int _count = 0;
+
+    public BasicBlock()
     {
-        Prev = prev;
-        Parent = parent;
-        Prev?.Nexts.Add(this);
+        _id = _count++;
+    }
+
+    public BasicBlock(BasicBlock[] prevs)
+    {
+        _id = _count++;
+        Prev = Prev.Concat(prevs).ToList();
+        foreach (var prev in prevs)
+        {
+            prev.Nexts.Add(this);
+        }
+    }
+
+    public void AddNext(BasicBlock next)
+    {
+        next.Prev.Add(this);
+        this.Nexts.Add(next);
     }
 
     public void AddTextSnippet(TextSnippet textSnippet)
@@ -85,11 +102,13 @@ internal class BasicBlock
 
     public IReadOnlyList<TextSnippet> TextSnippets => _textSnippets;
 
-    public BasicBlock? Prev;
+    public List<BasicBlock> Prev = new();
 
     public List<BasicBlock> Nexts = new();
 
-    public Expr Parent;
+    private int _id;
+
+    public int Id => _id;
 }
 
 internal class CodeGenContext
@@ -102,7 +121,6 @@ internal class CodeGenContext
     public CodeGenContext(BinaryWriter rdataWriter)
     {
         RdataWriter = rdataWriter;
-        _basicBlocks.Add(new BasicBlock(null, null));
     }
 
     public BinaryWriter RdataWriter { get; }
@@ -113,18 +131,9 @@ internal class CodeGenContext
 
     public IReadOnlySet<ModuleType> CustomCallModules => _custom_call_modules;
 
-    public BasicBlock? CurrentBasicBlock => _basicBlocks.Count > 0
-        ? _basicBlocks.Last()
-        : null;
-
-    public void AddTextSnippet(TextSnippet textSnippet)
+    public void AddBasicBlock(BasicBlock basicBlock)
     {
-        CurrentBasicBlock?.AddTextSnippet(textSnippet);
-    }
-
-    public void AddBasicBlock(Expr parent)
-    {
-        _basicBlocks.Add(new BasicBlock(CurrentBasicBlock, parent));
+        _basicBlocks.Add(basicBlock);
     }
 
     public void AddCustomCallModule(ModuleType moduleType)
@@ -143,15 +152,20 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
     private readonly HashSet<TextSnippet> _refTextSnippets = new();
 
     private TextSnippet? _currentTextSnippet;
+    private BasicBlock? _currentBasicBlock;
 
     public CodeGenVisitor(BaseFunction function, CodeGenContext context)
     {
         _function = function;
         _context = context;
-        _context.AddBasicBlock(function);
+        var basicBlock = new BasicBlock();
+        _context.AddBasicBlock(basicBlock);
+        _currentBasicBlock = basicBlock;
     }
 
     private TextSnippet CurrentTextSnippet => _currentTextSnippet!;
+
+    private BasicBlock CurrentBasicBlock => _currentBasicBlock!;
 
     private StackVMEmitter Emitter => CurrentTextSnippet.Emitter;
 
@@ -310,13 +324,19 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         var brFalse = BeginTextSnippet(@if);
         brFalse.Emitter.BrFalse(0);
 
-        var (_, thenSet) = SubBlock(@if.Then);
+        var (thenBlock, thenSet) = SubBlock(@if.Then);
+        var oldCurrentBlock = _currentBasicBlock;
+        _currentBasicBlock = thenBlock;
         var br = BeginTextSnippet(@if);
         br.Emitter.Br(0);
-        var (_, elseSet) = SubBlock(@if.Else);
+        _currentBasicBlock = oldCurrentBlock;
+
+        var (elseBlock, elseSet) = SubBlock(@if.Else);
 
 
-        _context.AddBasicBlock(@if);
+        var endIf = new BasicBlock(new[] { thenBlock, elseBlock });
+        _currentBasicBlock = endIf;
+        _context.AddBasicBlock(endIf);
         // because visit param is before VisitLeaf, we can't use ref of elseSnippet.Symbol to jump.
         // snippet structure: | ... | else param1 | else param2 | ... | elseSnippet |
         AddSymbolRef(brFalse, br.EndSymbol, -4, 4, true, 1);
@@ -338,17 +358,19 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         _context.AllocInfo[endSnippet] = useSnippetSet;
     }
 
-    public (TextSnippet, HashSet<TextSnippet>) SubBlock(Expr expr)
+    public (BasicBlock, HashSet<TextSnippet>) SubBlock(Expr expr)
     {
         var visitor = new CodeGenVisitor(_function, _context);
+        var subBlockFirst = visitor.CurrentBasicBlock;
+        CurrentBasicBlock.AddNext(subBlockFirst);
         foreach (var (key, value) in ExpressionMemo)
         {
             visitor.ExpressionMemo[key] = value;
         }
 
-        var result = visitor.Visit(expr);
+        visitor.Visit(expr);
         var refTextSnippets = visitor._refTextSnippets;
-        return (result, refTextSnippets);
+        return (subBlockFirst, refTextSnippets);
     }
 
     private TextSnippet Visit(TensorConst expr, Tensor tensor)
@@ -460,9 +482,9 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
             expr,
             AddSymbol(WellknownSectionNames.Text),
             AddSymbol(WellknownSectionNames.Text),
-            _context.CurrentBasicBlock!);
+            CurrentBasicBlock);
         _currentTextSnippet = snippet;
-        _context.AddTextSnippet(snippet);
+        CurrentBasicBlock.AddTextSnippet(snippet);
         return snippet;
     }
 }

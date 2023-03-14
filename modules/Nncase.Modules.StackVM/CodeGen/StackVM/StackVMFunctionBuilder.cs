@@ -41,7 +41,6 @@ internal class StackVMFunctionBuilder : FunctionBuilder
 
     protected override void WriteText()
     {
-
         // 1. Assign ref counts
         foreach (var basicBlock in _context.BasicBlocks)
         {
@@ -59,12 +58,18 @@ internal class StackVMFunctionBuilder : FunctionBuilder
                 SymbolAddrs.Add(snippet.BeginSymbol, _textEmitter.Position);
 
                 // end of if
-                if (_context.AllocInfo.TryGetValue(snippet, out var uses))
+                if (basicBlock.Prev.Count > 1 && _context.AllocInfo.TryGetValue(snippet, out var uses))
                 {
                     foreach (var inputSnippet in uses)
                     {
                         var localId = _snippetLocals[inputSnippet];
                         RefCountReduce(inputSnippet, localId);
+
+                        if (inputSnippet.RefCount == 0)
+                        {
+                            _snippetLocals.Remove(inputSnippet);
+                            localSet.Remove(localId);
+                        }
                     }
 
                     Debug.Assert(snippet.InputSnippets.Count == 0, "snippet end of if is should be 0 input");
@@ -79,13 +84,14 @@ internal class StackVMFunctionBuilder : FunctionBuilder
                         var localId = _snippetLocals[inputSnippet];
                         _textEmitter.Ldlocal(localId);
 
-                        if (NormalReduceCount(inputSnippet, snippet))
+                        if (NormalReduceCount(snippet, inputSnippet))
                         {
-                            if (inputSnippet.RefCount - 1 == 0)
+                            RefCountReduce(inputSnippet, localId);
+                            if (inputSnippet.RefCount == 0)
                             {
+                                _snippetLocals.Remove(inputSnippet);
                                 localSet.Remove(localId);
                             }
-                            RefCountReduce(inputSnippet, localId);
                         }
                     }
                 }
@@ -122,8 +128,6 @@ internal class StackVMFunctionBuilder : FunctionBuilder
         Debug.Assert(localSet.Count == 0);
     }
 
-
-
     private bool NormalReduceCount(TextSnippet snippet, TextSnippet input)
     {
         // todo: but maybe error when expr is too complex and be not wrapped by function
@@ -133,10 +137,10 @@ internal class StackVMFunctionBuilder : FunctionBuilder
         }
 
         var prevBasicBlock = snippet.BasicBlock.Prev;
-        if (prevBasicBlock != null)
+        if (prevBasicBlock.Count == 1)
         {
             // if has two next, then and else has only one prev.
-            var snippetInIf = prevBasicBlock.Nexts.Count > 1;
+            var snippetInIf = prevBasicBlock[0].Nexts.Count > 1;
 
             // snippetInIf and snippet and input are in different BasicBlock.
             // it means input is out of if.
