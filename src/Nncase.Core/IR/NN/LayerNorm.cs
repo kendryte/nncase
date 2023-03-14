@@ -16,7 +16,7 @@ namespace Nncase.IR.NN;
 /// Hardmax expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record LayerNorm(int Axis, float Epsilon) : Op
+public sealed partial class LayerNorm : Op
 {
     /// <summary>
     /// Gets input.
@@ -32,4 +32,8 @@ public sealed record LayerNorm(int Axis, float Epsilon) : Op
     /// Gets bias.
     /// </summary>
     public static readonly ParameterInfo Bias = new(typeof(LayerNorm), 2, "bias");
+
+    public int Axis { get; }
+
+    public float Epsilon { get; }
 }

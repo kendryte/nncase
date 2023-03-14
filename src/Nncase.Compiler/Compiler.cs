@@ -63,30 +63,30 @@ internal class Compiler : ICompiler
         {
             passManager.AddWithName<EGraphRulesPass>("NeutralOptimizeTranspose").Configure(p =>
             {
-                p.Add<Transform.Rules.Neutral.FoldConstCall>();
-                p.Add<Transform.Rules.Neutral.FoldNopTranspose>();
-                p.Add<Transform.Rules.Neutral.FoldTwoTransposes>();
-                p.Add<Transform.Rules.Neutral.CombineTransposeUnary>();
-                p.Add<Transform.Rules.Neutral.CombineTransposePad>();
-                p.Add<Transform.Rules.Neutral.CombinePadTranspose>();
-                p.Add<Transform.Rules.Neutral.CombineBinaryTranspose>();
-                p.Add<Transform.Rules.Neutral.CombineConstBinaryTranspose>();
-                p.Add<Transform.Rules.Neutral.CombineTransposeConstBinary>();
-                p.Add<Transform.Rules.Neutral.CombineTransposeReduce>();
-                p.Add<Transform.Rules.Neutral.CombineTransposeActivations>();
-                p.Add<Transform.Rules.Neutral.CombineActivationsTranspose>();
-                p.Add<Transform.Rules.Neutral.CombineTransposeConcat>();
-                p.Add<Transform.Rules.Neutral.FoldNopPad>();
-                p.Add<Transform.Rules.Neutral.FoldConv2DPads>();
-                p.Add<Transform.Rules.Neutral.FoldReduceWindow2DPads>();
-                p.Add<Transform.Rules.Neutral.SqueezeToReshape>();
-                p.Add<Transform.Rules.Neutral.UnSqueezeToReshape>();
-                p.Add<Transform.Rules.Neutral.TransposeToReshape>();
-                p.Add<Transform.Rules.Neutral.FoldNopReshape>();
-                p.Add<Transform.Rules.Neutral.FoldTwoReshapes>();
-                p.Add<Transform.Rules.Neutral.FoldLayerNormPattern1>();
-                p.Add<Transform.Rules.Neutral.FoldLayerNormPattern2>();
-                p.Add<Transform.Rules.Neutral.FoldLayerNormPattern3>();
+                p.Add<Passes.Rules.Neutral.FoldConstCall>();
+                p.Add<Passes.Rules.Neutral.FoldNopTranspose>();
+                p.Add<Passes.Rules.Neutral.FoldTwoTransposes>();
+                p.Add<Passes.Rules.Neutral.CombineTransposeUnary>();
+                p.Add<Passes.Rules.Neutral.CombineTransposePad>();
+                p.Add<Passes.Rules.Neutral.CombinePadTranspose>();
+                p.Add<Passes.Rules.Neutral.CombineBinaryTranspose>();
+                p.Add<Passes.Rules.Neutral.CombineConstBinaryTranspose>();
+                p.Add<Passes.Rules.Neutral.CombineTransposeConstBinary>();
+                p.Add<Passes.Rules.Neutral.CombineTransposeReduce>();
+                p.Add<Passes.Rules.Neutral.CombineTransposeActivations>();
+                p.Add<Passes.Rules.Neutral.CombineActivationsTranspose>();
+                p.Add<Passes.Rules.Neutral.CombineTransposeConcat>();
+                p.Add<Passes.Rules.Neutral.FoldNopPad>();
+                p.Add<Passes.Rules.Neutral.FoldConv2DPads>();
+                p.Add<Passes.Rules.Neutral.FoldReduceWindow2DPads>();
+                p.Add<Passes.Rules.Neutral.SqueezeToReshape>();
+                p.Add<Passes.Rules.Neutral.UnSqueezeToReshape>();
+                p.Add<Passes.Rules.Neutral.TransposeToReshape>();
+                p.Add<Passes.Rules.Neutral.FoldNopReshape>();
+                p.Add<Passes.Rules.Neutral.FoldTwoReshapes>();
+                p.Add<Passes.Rules.Neutral.FoldLayerNormPattern1>();
+                p.Add<Passes.Rules.Neutral.FoldLayerNormPattern2>();
+                p.Add<Passes.Rules.Neutral.FoldLayerNormPattern3>();
             });
 
             // passManager.AddWithName<EGraphPass>("NeutralOptimizeClamp").Configure(p =>

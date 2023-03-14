@@ -15,7 +15,7 @@ using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.Utility;
 using Shape = Nncase.IR.Shape;
 
-namespace Nncase.Transform.Rules.Neutral;
+namespace Nncase.Passes.Rules.Neutral;
 
 /// <summary>
 /// Transform <see cref="IR.Math.MatMul"/> to <see cref="IR.NN.Conv2D"/>.

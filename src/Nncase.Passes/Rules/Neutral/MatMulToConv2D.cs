@@ -80,20 +80,22 @@ public sealed partial class BroadcastMatMulToConv2D : IRewriteRule
 
         var if_shape = new Shape(new[] { aShape[0].FixedValue * aShape[1].FixedValue, aShape[2].FixedValue, 1, 1 });
         var w_shape = new Shape(new[] { bShape[1].FixedValue, bShape[0].FixedValue, 1, 1 });
+        var of_shape = new Shape(new[] { aShape[0].FixedValue, aShape[1].FixedValue, bShape[1].FixedValue });
 
         var if_reshape = Reshape(a, if_shape);
         var w_tp = Transpose(b, Tensor.From<int>(new[] { 1, 0 }));
         var w_reshape = Reshape(w_tp, w_shape);
 
-        return Conv2D(
+        var conv2d = Conv2D(
             if_reshape,
             w_reshape,
-            Tensor.FromScalar(0.0f, aShape[1].FixedValue),
+            Tensor.FromScalar(0.0f, w_shape[0].FixedValue),
             Tensor.FromScalar(1, new[] { 2 }),
             Tensor.FromScalar(0, new[] { 2, 2 }),
             new int[] { 1, 1 },
             PadMode.Constant,
             1);
+        return Reshape(conv2d, of_shape);
     }
 }
 
