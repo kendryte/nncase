@@ -44,5 +44,5 @@ public sealed class None : Expr, IEquatable<None?>
     public bool Equals(None? other) => other is not null;
 
     /// <inheritdoc/>
-    public override int GetHashCode() => 0;
+    protected override int GetHashCodeCore() => 0;
 }

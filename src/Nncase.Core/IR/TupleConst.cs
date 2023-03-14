@@ -54,8 +54,16 @@ public sealed class TupleConst : Const, ITuple, IEquatable<TupleConst?>
     public override bool Equals(object? obj) => Equals(obj as TupleConst);
 
     /// <inheritdoc/>
-    public bool Equals(TupleConst? other) => other is not null && base.Equals(other) && EqualityComparer<TupleValue>.Default.Equals(Value, other.Value);
+    public bool Equals(TupleConst? other)
+    {
+        if (ReferenceEquals(this, other))
+        {
+            return true;
+        }
+
+        return other is not null && base.Equals(other) && EqualityComparer<TupleValue>.Default.Equals(Value, other.Value);
+    }
 
     /// <inheritdoc/>
-    public override int GetHashCode() => HashCode.Combine(base.GetHashCode(), Value);
+    protected override int GetHashCodeCore() => HashCode.Combine(Value);
 }

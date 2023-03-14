@@ -21,6 +21,7 @@ public abstract partial class Expr : IDisposable
     private readonly HashSet<Expr> _users = new(ReferenceEqualityComparer.Instance);
 
     private IRType? _checkedType;
+    private int? _hashCodeCache;
     private bool _disposedValue;
 
     internal Expr(IEnumerable<Expr> operands)
@@ -127,10 +128,17 @@ public abstract partial class Expr : IDisposable
 
     /// <inheritdoc/>
     public override bool Equals(object? obj)
-        => obj is Expr other && Operands.SequenceEqual(other.Operands);
+    {
+        if (ReferenceEquals(this, obj))
+        {
+            return true;
+        }
+
+        return obj is Expr other && GetHashCode() == other.GetHashCode() && Operands.SequenceEqual(other.Operands);
+    }
 
     /// <inheritdoc/>
-    public override int GetHashCode() => HashCode.Combine(GetType(), HashCode<Expr>.Combine(Operands));
+    public sealed override int GetHashCode() => _hashCodeCache ??= GetHashCodeCore();
 
     public void Dispose()
     {
@@ -201,6 +209,11 @@ public abstract partial class Expr : IDisposable
         }
     }
 
+    protected virtual int GetHashCodeCore()
+    {
+        return HashCode.Combine(GetType(), HashCode<Expr>.Combine(Operands));
+    }
+
     protected virtual void Dispose(bool disposing)
     {
         if (!_disposedValue)
@@ -239,6 +252,7 @@ public abstract partial class Expr : IDisposable
     private void OnOperandsReplaced()
     {
         InvalidateTypeInference();
+        InvalidateHashCodeCache();
     }
 
     private void InvalidateTypeInference()
@@ -255,6 +269,23 @@ public abstract partial class Expr : IDisposable
         foreach (var user in Users)
         {
             user.InvalidateTypeInference();
+        }
+    }
+
+    private void InvalidateHashCodeCache()
+    {
+        if (_hashCodeCache != null)
+        {
+            _hashCodeCache = null;
+            InvalidateUsersHashCodeCache();
+        }
+    }
+
+    private void InvalidateUsersHashCodeCache()
+    {
+        foreach (var user in Users)
+        {
+            user.InvalidateUsersHashCodeCache();
         }
     }
 

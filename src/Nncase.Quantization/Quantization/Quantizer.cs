@@ -168,11 +168,11 @@ internal partial class Quantizer
             {
                 var r = ranges[valuesList[i].Key].Max - ranges[valuesList[i].Key].Min;
                 var srcBinInterval = r / srcBinSize;
-                if (!histograms.TryGetValue(valuesList[i].Key, out var oldHistogram))
+                if (!histograms.TryGetValue(valuesList[i].Key, out var histogram))
                 {
                     var initSrcBin = new List<float>(new float[srcBinSize]);
                     var initDstBin = new List<float>(new float[dstBinSize]);
-                    var histogram = new QuantizeHistogram<float>(initSrcBin, initDstBin);
+                    histogram = new QuantizeHistogram<float>(initSrcBin, initDstBin);
                     histograms.Add(valuesList[i].Key, histogram);
                 }
 
@@ -183,7 +183,7 @@ internal partial class Quantizer
                 {
                     var r_index = (buf - ranges[valuesList[i].Key].Min) / srcBinInterval;
                     var index = (int)Math.Clamp((float)r_index, 0F, (float)srcBinSize - 1);
-                    histograms[valuesList[i].Key].SrcBin[index]++;
+                    histogram.SrcBin[index]++;
                 }
             }
         });

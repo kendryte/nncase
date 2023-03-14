@@ -93,10 +93,15 @@ public sealed class Marker : Expr, IEquatable<Marker?>
     public override bool Equals(object? obj) => Equals(obj as Marker);
 
     /// <inheritdoc/>
-    public bool Equals(Marker? other) => other is not null && base.Equals(other) && Name == other.Name;
+    public bool Equals(Marker? other)
+    {
+        if (ReferenceEquals(this, other))
+        {
+            return true;
+        }
 
-    /// <inheritdoc/>
-    public override int GetHashCode() => HashCode.Combine(base.GetHashCode(), Name);
+        return other is not null && base.Equals(other) && Name == other.Name;
+    }
 
     public Marker With(string? name = null, Expr? target = null, Expr? attribute = null, MixQuantInfo? mixQuantInfo = null, AdaQuantInfo? adaQuantInfo = null)
         => new Marker(name ?? Name, target ?? Target, attribute ?? Attribute)
@@ -104,4 +109,7 @@ public sealed class Marker : Expr, IEquatable<Marker?>
             MixQuantInfo = mixQuantInfo ?? MixQuantInfo,
             AdaQuantInfo = adaQuantInfo ?? AdaQuantInfo,
         };
+
+    /// <inheritdoc/>
+    protected override int GetHashCodeCore() => HashCode.Combine(base.GetHashCodeCore(), Name);
 }

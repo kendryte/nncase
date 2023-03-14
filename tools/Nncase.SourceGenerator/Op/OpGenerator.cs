@@ -165,13 +165,24 @@ public class OpGenerator : IIncrementalGenerator
                                 @default: null),
                         })),
                         constraintClauses: default,
-                        body: default,
-                        expressionBody: ArrowExpressionClause(
-                            ChainLogicalAnd(
+                        body: Block(
+                            IfStatement(
+                                InvocationExpression(
+                                    IdentifierName("ReferenceEquals"),
+                                    ArgumentList(SeparatedList(new[] {
+                                        Argument(ThisExpression()),
+                                        Argument(IdentifierName("other")),
+                                    }))),
+                                ReturnStatement(
+                                    LiteralExpression(SyntaxKind.TrueLiteralExpression)
+                                    .WithLeadingTrivia(ElasticSpace))),
+                            ReturnStatement(ChainLogicalAnd(
                                 BinaryExpression(
                                     SyntaxKind.LogicalAndExpression,
                                     IsPatternExpression(
-                                        IdentifierName("other").WithTrailingTrivia(ElasticSpace),
+                                        IdentifierName("other")
+                                            .WithLeadingTrivia(ElasticSpace)
+                                            .WithTrailingTrivia(ElasticSpace),
                                         Token(SyntaxKind.IsKeyword).WithTrailingTrivia(ElasticSpace),
                                         UnaryPattern(
                                             Token(SyntaxKind.NotKeyword).WithTrailingTrivia(ElasticSpace),
@@ -186,19 +197,19 @@ public class OpGenerator : IIncrementalGenerator
                                         ArgumentList(SeparatedList(new[] {
                                             Argument(IdentifierName("other")),
                                         })))),
-                                cand.AttrParams)),
-                        semicolonToken: Token(SyntaxKind.SemicolonToken))
+                                cand.AttrParams))),
+                        semicolonToken: default)
                     .WithTrailingTrivia(ElasticLineFeed),
 
-                    // 3. build GetHashCode
+                    // 3. build GetHashCodeCore
                     MethodDeclaration(
                         attributeLists: default,
                         modifiers: TokenList(
-                            Token(SyntaxKind.PublicKeyword).WithTrailingTrivia(ElasticSpace),
+                            Token(SyntaxKind.ProtectedKeyword).WithTrailingTrivia(ElasticSpace),
                             Token(SyntaxKind.OverrideKeyword).WithTrailingTrivia(ElasticSpace)),
                         returnType: PredefinedType(Token(SyntaxKind.IntKeyword)).WithTrailingTrivia(ElasticSpace),
                         explicitInterfaceSpecifier: default,
-                        identifier: Identifier("GetHashCode"),
+                        identifier: Identifier("GetHashCodeCore"),
                         typeParameterList: default,
                         parameterList: ParameterList(),
                         constraintClauses: default,
@@ -215,7 +226,7 @@ public class OpGenerator : IIncrementalGenerator
                                             MemberAccessExpression(
                                                 SyntaxKind.SimpleMemberAccessExpression,
                                                 BaseExpression(),
-                                                IdentifierName("GetHashCode")))),
+                                                IdentifierName("GetHashCodeCore")))),
                                 }.Concat(MakeHashCombineExpression(cand.AttrParams)))))),
                         semicolonToken: Token(SyntaxKind.SemicolonToken))
                     .WithTrailingTrivia(ElasticLineFeed),

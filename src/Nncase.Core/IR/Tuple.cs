@@ -78,7 +78,4 @@ public sealed class Tuple : Expr, ITuple, IEquatable<Tuple?>
 
     /// <inheritdoc/>
     public bool Equals(Tuple? other) => other is not null && base.Equals(other);
-
-    /// <inheritdoc/>
-    public override int GetHashCode() => HashCode.Combine(base.GetHashCode());
 }

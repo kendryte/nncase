@@ -109,10 +109,18 @@ public sealed class Var : Expr, IEquatable<Var?>
     public override bool Equals(object? obj) => Equals(obj as Var);
 
     /// <inheritdoc/>
-    public bool Equals(Var? other) => other is not null && GlobalVarIndex == other.GlobalVarIndex;
+    public bool Equals(Var? other)
+    {
+        if (ReferenceEquals(this, other))
+        {
+            return true;
+        }
+
+        return other is not null && GlobalVarIndex == other.GlobalVarIndex;
+    }
 
     /// <inheritdoc/>
-    public override int GetHashCode() => HashCode.Combine(GlobalVarIndex);
+    protected override int GetHashCodeCore() => HashCode.Combine(GlobalVarIndex);
 
     private static int GetNextId()
     {
