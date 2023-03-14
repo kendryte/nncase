@@ -11,7 +11,6 @@ using Microsoft.Extensions.Hosting;
 using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.Passes;
-using Nncase.Passes.Passes;
 using Nncase.Passes.Transforms;
 using Nncase.PatternMatch;
 using Nncase.Tests.ReWriteTest;

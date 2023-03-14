@@ -97,6 +97,11 @@ public sealed partial class FoldConv2DAddMul : RewriteRule<CallPattern>
             return null;
         }
 
+        if (weights.Shape[2].FixedValue != 1 && weights.Shape[3].FixedValue != 1)
+        {
+            return null;
+        }
+
         var newWeights = IR.F.Math.Mul(weights, Reshape(mulConst, new[] { 1, ic, 1, 1 }));
 
         var addConv = Conv2D(Reshape(addConst, new[] { 1, ic, 1, 1 }), weights, Tensor.FromScalar<float>(0.0f, weights.Shape[0].FixedValue), strides, paddings, dilation, conv2d.PadMode, groups, new float[]
