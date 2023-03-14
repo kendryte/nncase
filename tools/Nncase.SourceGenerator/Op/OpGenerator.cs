@@ -153,9 +153,9 @@ public class OpGenerator : IIncrementalGenerator
                         modifiers: TokenList(
                             Token(SyntaxKind.PublicKeyword).WithTrailingTrivia(ElasticSpace)),
                         returnType: PredefinedType(Token(SyntaxKind.BoolKeyword)).WithTrailingTrivia(ElasticSpace),
-                        explicitInterfaceSpecifier: default,
+                        explicitInterfaceSpecifier: default!,
                         identifier: Identifier("Equals"),
-                        typeParameterList: default,
+                        typeParameterList: default!,
                         parameterList: ParameterList(SeparatedList(new[] {
                             Parameter(
                                 attributeLists: default,
