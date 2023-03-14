@@ -15,6 +15,7 @@ internal class BufferModule : IApplicationPart
     public void ConfigureServices(IRegistrator registrator)
     {
         registrator.RegisterManyInterface<DDrOfEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<BufferIndexOfEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<BaseMentOfEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<StrideOfEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<AllocateEvaluator>(reuse: Reuse.Singleton);

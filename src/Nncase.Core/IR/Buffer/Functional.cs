@@ -22,6 +22,12 @@ public static class Buffer
         new Call(new DDrOf(), input);
 
     /// <summary>
+    /// the placeholder for this expr's index.
+    /// </summary>
+    public static Call BufferIndexOf(Expr input) =>
+        new Call(new BufferIndexOf(), input);
+
+    /// <summary>
     /// the placeholder for the expr's basement value.
     /// </summary>
     public static Call BaseMentOf(Expr input) =>
