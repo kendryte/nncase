@@ -178,10 +178,11 @@ internal partial class Quantizer
 
                 var childrenTensor = childrenValuesList[i].Value.Cast<float>();
                 var childrenBuffer = childrenTensor.Buffer.Span;
+                var valueRange = ranges[valuesList[i].Key];
 
                 foreach (var buf in childrenBuffer)
                 {
-                    var r_index = (buf - ranges[valuesList[i].Key].Min) / srcBinInterval;
+                    var r_index = (buf - valueRange.Min) / srcBinInterval;
                     var index = (int)Math.Clamp((float)r_index, 0F, (float)srcBinSize - 1);
                     histogram.SrcBin[index]++;
                 }

@@ -285,7 +285,7 @@ public abstract partial class Expr : IDisposable
     {
         foreach (var user in Users)
         {
-            user.InvalidateUsersHashCodeCache();
+            user.InvalidateHashCodeCache();
         }
     }
 
