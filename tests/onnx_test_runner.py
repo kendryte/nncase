@@ -138,6 +138,7 @@ class OnnxTestRunner(TestRunner):
             input_dict['name'] = e.name
             input_dict['dtype'] = onnx.mapping.TENSOR_TYPE_TO_NP_TYPE[onnx_type.elem_type]
             shape = translate_shape(onnx_type.shape.dim, self.default_shape)
+            input_dict['shape'] = shape
             input_dict['model_shape'] = shape
             self.inputs.append(input_dict)
             self.calibs.append(copy.deepcopy(input_dict))
