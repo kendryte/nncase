@@ -171,8 +171,8 @@ public static unsafe class CApi
         var samples = (dataset.Length == 0 ?
             Array.Empty<Dictionary<Var, IValue>>() :
             dataset.Chunk(dataset.Length / (int)samplesCount).Select(inputs => inputs.Zip(fnParams).ToDictionary(
-            item => item.Item2,
-            item => item.Item1.ToValue()))).ToAsyncEnumerable();
+            item => item.Second,
+            item => item.First.ToValue()))).ToAsyncEnumerable();
         return GCHandle.ToIntPtr(GCHandle.Alloc(new CCalibrationDatasetProvider(samples, (int)samplesCount)));
     }
 
@@ -288,8 +288,8 @@ public static unsafe class CApi
         var fnParams = Get<Var[]>(fnParamsHandle);
         var inputs = Get<RTValue[]>(inputsHandle);
         var result = CompilerServices.Evaluate(expr, fnParams.Zip(inputs).ToDictionary(
-            x => x.Item1,
-            x => x.Item2.ToValue()));
+            x => x.First,
+            x => x.Second.ToValue()));
         var rtValue = RTValue.FromValue(result);
         return GCHandle.ToIntPtr(GCHandle.Alloc(rtValue));
     }

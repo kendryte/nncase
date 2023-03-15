@@ -29,9 +29,9 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICos
         if (context.CurrentCall.EnodeBestQuantConfigWithCosine != null)
         {
             var pattern = IsRangeOfMarker(IsWildcard(), IsWildcard());
-            if (pattern.MatchLeaf(context.CurrentCall.Parameters.ToArray()[0]) && ((Nncase.IR.Marker)context.CurrentCall.Parameters.ToArray()[0]).MixQuantInfo?.HasBindedMixQuantInfo == true)
+            if (pattern.MatchLeaf(context.CurrentCall.Arguments.ToArray()[0]) && ((Nncase.IR.Marker)context.CurrentCall.Arguments.ToArray()[0]).MixQuantInfo?.HasBindedMixQuantInfo == true)
             {
-                var quantParam = ((Nncase.IR.Marker)context.CurrentCall.Parameters.ToArray()[0]).MixQuantInfo!.QuantParameter;
+                var quantParam = ((Nncase.IR.Marker)context.CurrentCall.Arguments.ToArray()[0]).MixQuantInfo!.QuantParameter;
 
                 // input feature map quantParam count should be 1 since input feature map quant is by tensor.
                 Trace.Assert(quantParam.Count == 1);
@@ -76,7 +76,7 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICos
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, Reduce target)
+    public Cost Visit(ICostEvaluateContext context, Reduce target)
     {
         var input = context.GetArgumentType<TensorType>(target, Reduce.Input);
         var ret = context.GetReturnType<TensorType>();

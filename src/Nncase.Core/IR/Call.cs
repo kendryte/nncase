@@ -7,6 +7,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.Utilities;
 
 namespace Nncase.IR;
 
@@ -24,17 +25,31 @@ public interface IParameterList<T>
 /// <summary>
 /// Call expression.
 /// </summary>
-public sealed record Call(Expr Target, IRArray<Expr> Parameters) : Expr, IParameterList<Expr>
+public sealed class Call : Expr, IParameterList<Expr>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="Call"/> class.
     /// </summary>
     /// <param name="target">Call target.</param>
-    /// <param name="parameters">Parameters.</param>
-    public Call(Expr target, params Expr[] parameters)
-        : this(target, new IRArray<Expr>(parameters.ToImmutableArray()))
+    /// <param name="arguments">Arguments.</param>
+    public Call(Expr target, ReadOnlySpan<Expr> arguments)
+        : base(ArrayUtility.Concat(target, arguments))
     {
     }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Call"/> class.
+    /// </summary>
+    /// <param name="target">Call target.</param>
+    /// <param name="arguments">Arguments.</param>
+    public Call(Expr target, params Expr[] arguments)
+        : this(target, (ReadOnlySpan<Expr>)arguments)
+    {
+    }
+
+    public Expr Target => Operands[0];
+
+    public ReadOnlySpan<Expr> Arguments => Operands[1..];
 
     // /// <summary>
     // /// used by fake ir, represents that whether this op permit int 16 quant.
@@ -62,7 +77,7 @@ public sealed record Call(Expr Target, IRArray<Expr> Parameters) : Expr, IParame
             var type = Target.GetType();
             if (type == parameter.OwnerType)
             {
-                return Parameters[parameter.Index];
+                return Arguments[parameter.Index];
             }
             else
             {
@@ -74,9 +89,16 @@ public sealed record Call(Expr Target, IRArray<Expr> Parameters) : Expr, IParame
     public void ParametersForeach(Action<Expr, ParameterInfo> f)
     {
         var parameterInfos = ((Op)Target).Parameters.ToArray();
-        for (int i = 0; i < Parameters.Count; i++)
+        for (int i = 0; i < Arguments.Length; i++)
         {
-            f(Parameters[i], parameterInfos[i]);
+            f(Arguments[i], parameterInfos[i]);
         }
     }
+
+    /// <inheritdoc/>
+    public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
+        => functor.VisitCall(this, context);
+
+    public Call With(Expr? target = null, Expr[]? arguments = null)
+        => new Call(target ?? Target, arguments ?? Arguments);
 }

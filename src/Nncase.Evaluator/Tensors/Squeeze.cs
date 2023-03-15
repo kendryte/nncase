@@ -30,7 +30,7 @@ public class SqueezeEvaluator : IEvaluator<Squeeze>, ITypeInferencer<Squeeze>, I
         return Visit(context, target, input);
     }
 
-    public Cost? Visit(ICostEvaluateContext context, Squeeze target)
+    public Cost Visit(ICostEvaluateContext context, Squeeze target)
     {
         return CostUtility.GetReshapeCost();
     }

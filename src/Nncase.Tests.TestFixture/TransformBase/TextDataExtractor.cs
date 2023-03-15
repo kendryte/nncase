@@ -29,7 +29,7 @@ public static class DumpPathExtractor
 {
     public static char Separator => '$';
 
-    public static int GetCount(string file) => int.Parse(file.Split(Separator).Head());
+    public static int GetCount(string file) => int.Parse(file.Split(Separator).First());
 
     public static string GetOpName(string file) => file.Split(Separator)[1];
 
@@ -104,7 +104,7 @@ public class TextDataExtractor
     {
         var fs = GetFilesByOrdered(dir);
         return fs
-            .Filter(filePath => extractor(Path.GetFileName(filePath)))
+            .Where(filePath => extractor(Path.GetFileName(filePath)))
             .Select(path => new OriginValue(DataGenerator.FromTextFile(path), path))
             .ToArray();
     }
@@ -115,7 +115,7 @@ public class TextDataExtractor
     {
         var results = ExtractValues(dir, f => IsResultFile(f) && GetDumpFileNum(f) == i);
         Assert.NotEqual(results.Length, 0);
-        return results.Head();
+        return results.First();
     }
 
     public OriginValue[] GetParams(string dir, int count) => ExtractValues(

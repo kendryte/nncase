@@ -32,7 +32,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, MatMul target)
+    public Cost Visit(ICostEvaluateContext context, MatMul target)
     {
         var lhs = context.GetArgumentType<TensorType>(target, MatMul.Lhs);
         var rhs = context.GetArgumentType<TensorType>(target, MatMul.Rhs);

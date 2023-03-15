@@ -8,8 +8,8 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
-using Nncase.Transform;
-using Nncase.Transform.Rules.Neutral;
+using Nncase.Passes;
+using Nncase.Passes.Rules.Neutral;
 using Tensorflow;
 using TorchSharp;
 using Xunit;
@@ -19,7 +19,7 @@ using Tensors = Nncase.IR.F.Tensors;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestUnSqueezeToReshape : TestClassBase
+public class UnitTestUnSqueezeToReshape : TransformTestBase
 {
     public static IEnumerable<object[]> TestUnSqueezeToReshapePositiveData =>
         new[]
@@ -38,10 +38,7 @@ public class UnitTestUnSqueezeToReshape : TestClassBase
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Unsqueeze(a, axes);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new UnSqueezeToReshape() }, new());
-
-        Assert.NotEqual(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
+        TestMatched<UnSqueezeToReshape>(rootPre);
     }
 
     [Theory]
@@ -50,8 +47,6 @@ public class UnitTestUnSqueezeToReshape : TestClassBase
     {
         var a = new IR.Var(new IR.TensorType(DataTypes.Float32, shape));
         var rootPre = Tensors.Unsqueeze(a, axes);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new UnSqueezeToReshape() }, new());
-
-        Assert.Equal(rootPre, rootPost);
+        TestNotMatch<UnSqueezeToReshape>(rootPre);
     }
 }

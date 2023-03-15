@@ -45,6 +45,18 @@ result<value_t> nncase::kernels::stackvm::batch_normalization(
     KERNEL_FINISH;
 }
 
+result<value_t> nncase::kernels::stackvm::layer_norm(
+    int32_t axis, float epsilon, value_t input, value_t scale, value_t bias,
+    value_t output, [[maybe_unused]] kernel_context &context) {
+    try_f32_input(input_mem, input);
+    try_f32_input(scale_mem, scale);
+    try_f32_input(bias_mem, bias);
+    try_f32_output(output_mem, output, input_tensor->shape());
+    try_(reference::layer_norm(input_mem, output_mem, scale_mem, bias_mem,
+                               input_tensor->shape(), axis, epsilon));
+    KERNEL_FINISH;
+}
+
 result<value_t> kernels::stackvm::binary(binary_op_t binary_op, value_t lhs,
                                          value_t rhs, value_t output,
                                          kernel_context &context) {

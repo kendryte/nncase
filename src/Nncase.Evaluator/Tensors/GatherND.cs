@@ -33,7 +33,7 @@ public class GatherNDEvaluator : IEvaluator<GatherND>, ITypeInferencer<GatherND>
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, GatherND target)
+    public Cost Visit(ICostEvaluateContext context, GatherND target)
     {
         var returnType = context.GetReturnType<IRType>();
 

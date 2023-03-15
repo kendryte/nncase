@@ -69,5 +69,5 @@ public static partial class Utility
     /// <summary>
     /// fast utitlty for build optional none pattern.
     /// </summary>
-    public static ExprPattern IsNone() => new ExprPattern(e => e == None.Default, null);
+    public static ExprPattern IsNone() => new ExprPattern(e => e is None, null);
 }

@@ -174,7 +174,7 @@ public static class T
 
     public static Sequential Sequential(params Expr[] fields)
     {
-        return new Sequential(new IRArray<Expr>(fields));
+        return new Sequential(fields);
     }
 
     public static Sequential Sequential(params object[] fields)
@@ -204,7 +204,7 @@ public static class T
     /// </summary>
     public static ISequentialBuilder<PrimFunction> PrimFunc(string name, string module_kind, params PhysicalBuffer[] parameters)
     {
-        return new SequentialBuilder<PrimFunction>(body => new PrimFunction(name, module_kind, body, new IRArray<PhysicalBuffer>(parameters)));
+        return new SequentialBuilder<PrimFunction>(body => new PrimFunction(name, module_kind, body, parameters));
     }
 
     /// <summary>
@@ -226,21 +226,21 @@ public static class T
     /// <summary>
     /// create the memRef by tensortype.
     /// </summary>
-    public static LogicalBuffer Buffer(DataType elem_type, Schedule.MemoryLocation location, IEnumerable<Expr> dimensions, out LogicalBuffer buffer, [CallerArgumentExpression("buffer")] string name = "")
+    public static LogicalBuffer Buffer(DataType elem_type, Schedule.MemoryLocation location, ReadOnlySpan<Expr> dimensions, out LogicalBuffer buffer, [CallerArgumentExpression("buffer")] string name = "")
     {
         if (name.StartsWith("var "))
         {
             name = name[4..];
         }
 
-        buffer = new LogicalBuffer(name, elem_type, location, new(dimensions));
+        buffer = new LogicalBuffer(name, elem_type, location, dimensions);
         return buffer;
     }
 
     /// <summary>
     /// ctor for physical buffer.
     /// </summary>
-    public static PhysicalBuffer PhysicalBuffer(DataType elem_type, Schedule.MemoryLocation location, IEnumerable<int> dimensions, out PhysicalBuffer buffer, [CallerArgumentExpression("buffer")] string name = "")
+    public static PhysicalBuffer PhysicalBuffer(DataType elem_type, Schedule.MemoryLocation location, ReadOnlySpan<int> dimensions, out PhysicalBuffer buffer, [CallerArgumentExpression("buffer")] string name = "")
     {
         if (name.StartsWith("var "))
         {

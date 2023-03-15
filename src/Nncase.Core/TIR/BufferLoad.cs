@@ -7,14 +7,34 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
+using Nncase.Utilities;
 
 namespace Nncase.TIR;
 
 /// <summary>
 /// Buffer load node.
 /// </summary>
-/// <param name="Buffer">The buffer to be loaded.</param>
-/// <param name="Indices">The buffer indices.</param>
-public sealed record BufferLoad(PhysicalBuffer Buffer, IRArray<Expr> Indices) : Expr
+public sealed class BufferLoad : Expr
 {
+    public BufferLoad(PhysicalBuffer buffer, ReadOnlySpan<Expr> indices)
+        : base(ArrayUtility.Concat(buffer, indices))
+    {
+    }
+
+    /// <summary>
+    /// Gets the buffer to be loaded.
+    /// </summary>
+    public PhysicalBuffer Buffer => (PhysicalBuffer)Operands[0];
+
+    /// <summary>
+    /// Gets the buffer indices.
+    /// </summary>
+    public ReadOnlySpan<Expr> Indices => Operands.Slice(1);
+
+    /// <inheritdoc/>
+    public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
+        => functor.VisitBufferLoad(this, context);
+
+    public BufferLoad With(PhysicalBuffer? buffer = null, Expr[]? indices = null)
+        => new BufferLoad(buffer ?? Buffer, indices ?? Indices);
 }

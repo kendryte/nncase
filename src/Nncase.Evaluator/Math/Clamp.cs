@@ -42,7 +42,7 @@ public class ClampEvaluator : IEvaluator<Clamp>, ITypeInferencer<Clamp>, ICostEv
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, Clamp target)
+    public Cost Visit(ICostEvaluateContext context, Clamp target)
     {
         var inputType = context.GetArgumentType<TensorType>(target, Clamp.Input);
         var minType = context.GetArgumentType<TensorType>(target, Clamp.Min);

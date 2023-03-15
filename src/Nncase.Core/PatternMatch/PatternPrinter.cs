@@ -72,7 +72,7 @@ public static class PatternPrinter
             }
 
             var target = Visit(pattern.Target);
-            var args = pattern.Parameters.Select(Visit).ToArray();
+            var args = pattern.Arguments.Select(Visit).ToArray();
             name = AllocateTempVar(pattern);
             Ident().Write($"{name} = {target}({string.Join(", ", args)})");
             AppendType(pattern.TypePattern);

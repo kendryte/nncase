@@ -35,6 +35,11 @@ NNCASE_API result<void> batchnorm(const float *input, const float *scale,
                                   const strides_t &in_strides,
                                   const strides_t &out_strides, float epsilon);
 
+NNCASE_API result<void> layer_norm(const float *input, float *output,
+                                   const float *scale, const float *bias,
+                                   const dims_t &in_shape, int32_t axis,
+                                   float epsilon);
+
 NNCASE_API result<void>
 batch_to_space(tensor input, tensor block_shape, tensor crops,
                tensor output = nullptr,

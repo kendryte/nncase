@@ -33,22 +33,17 @@ public class DequantizeEvaluator : IEvaluator<Dequantize>, ITypeInferencer<Dequa
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, Dequantize target)
+    public Cost Visit(ICostEvaluateContext context, Dequantize target)
     {
         var inputType = context.GetArgumentType<TensorType>(target, Dequantize.Input);
         var outputType = context.GetReturnType<TensorType>();
 
-        if (inputType.Shape.IsFixed)
+        return new()
         {
-            return new()
-            {
-                [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
-                [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
-                [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, 2),
-            };
-        }
-
-        return null;
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, 2),
+        };
     }
 
     private IRType Visit(Dequantize target, TensorType input, TensorType deqParam)

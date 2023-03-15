@@ -4,10 +4,10 @@
 using System.IO;
 using System.Threading.Tasks;
 using Nncase.IR;
+using Nncase.Passes;
+using Nncase.Passes.Mutators;
 using Nncase.Tests.TestFixture;
 using Nncase.TIR;
-using Nncase.Transform;
-using Nncase.Transform.Mutators;
 using Xunit;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.Tensors;

@@ -12,8 +12,16 @@ namespace Nncase.IR;
 /// <summary>
 /// Constant of tensor.
 /// </summary>
-public sealed record TensorConst(Tensor Value) : Const(new TensorType(Value.ElementType, Value.Shape))
+public sealed class TensorConst : Const, IEquatable<TensorConst?>
 {
+    public TensorConst(Tensor tensor)
+        : base(new TensorType(tensor.ElementType, tensor.Shape))
+    {
+        Value = tensor;
+    }
+
+    public Tensor Value { get; }
+
     /// <summary>
     /// Gets value type.
     /// </summary>
@@ -103,6 +111,10 @@ public sealed record TensorConst(Tensor Value) : Const(new TensorType(Value.Elem
     /// <param name="value">Value.</param>
     public static implicit operator TensorConst(string value) => new(Tensor.From<char>(value.ToCharArray()));
 
+    public static bool operator ==(TensorConst? left, TensorConst? right) => EqualityComparer<TensorConst>.Default.Equals(left, right);
+
+    public static bool operator !=(TensorConst? left, TensorConst? right) => !(left == right);
+
     /// <inheritdoc/>
     public override string ToString() => ValueType switch
     {
@@ -119,10 +131,17 @@ public sealed record TensorConst(Tensor Value) : Const(new TensorType(Value.Elem
     };
 
     /// <inheritdoc/>
-    public override int GetHashCode()
-    {
-        return HashCodeCache ??= HashCode.Combine(
-            EqualityComparer<Type>.Default.GetHashCode(EqualityContract),
-            Value.GetHashCode());
-    }
+    public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
+        => functor.VisitTensorConst(this, context);
+
+    public TensorConst With(Tensor? value = null) => new TensorConst(value ?? Value);
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj) => Equals(obj as TensorConst);
+
+    /// <inheritdoc/>
+    public bool Equals(TensorConst? other) => other is not null && base.Equals(other) && EqualityComparer<Tensor>.Default.Equals(Value, other.Value);
+
+    /// <inheritdoc/>
+    protected override int GetHashCodeCore() => HashCode.Combine(Value);
 }

@@ -9,15 +9,15 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
+using Nncase.Passes;
+using Nncase.Passes.Rules.Neutral;
 using Nncase.Tests.TestFixture;
-using Nncase.Transform;
-using Nncase.Transform.Rules.Neutral;
 using Xunit;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
 [AutoSetupTestMethod(InitSession = true)]
-public class UnitTestReluToClamp : TestClassBase
+public class UnitTestReluToClamp : TransformTestBase
 {
     public static readonly TheoryData<Nncase.IR.NN.ActivationOp, int[]> ReluToClampPositiveData = new()
     {
@@ -37,20 +37,19 @@ public class UnitTestReluToClamp : TestClassBase
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, shape));
         var rootPre = new Call(op, input);
-        var rootPost = CompilerServices.Rewrite(
-            rootPre,
-            new IRewriteRule[]
-            {
-               new ReluToClamp(),
-               new Relu6ToClamp(),
-            },
-            new());
+
         var feedDict = new Dictionary<Var, IValue>()
         {
           { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape).Evaluate() },
         };
-        Assert.NotEqual(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre, feedDict), CompilerServices.Evaluate(rootPost, feedDict));
+        TestMatchedCore(
+            rootPre,
+            feedDict,
+            new IRewriteRule[]
+            {
+               new ReluToClamp(),
+               new Relu6ToClamp(),
+            });
     }
 
     [Theory]
@@ -59,14 +58,12 @@ public class UnitTestReluToClamp : TestClassBase
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, shape));
         var rootPre = new Call(op, input);
-        var rootPost = CompilerServices.Rewrite(
+        TestNotMatch(
             rootPre,
             new IRewriteRule[]
             {
                new ReluToClamp(),
                new Relu6ToClamp(),
-            },
-            new());
-        Assert.Equal(rootPre, rootPost);
+            });
     }
 }

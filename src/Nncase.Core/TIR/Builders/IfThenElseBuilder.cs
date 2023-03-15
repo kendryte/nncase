@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
@@ -55,6 +56,6 @@ internal class IfThenElseBuilder : IIfThenElseBuilder
 
     public IfThenElse Build()
     {
-        return new(_condition, Sequential.Flatten(_then), Sequential.Flatten(_else));
+        return new(_condition, Sequential.Flatten(CollectionsMarshal.AsSpan(_then)), Sequential.Flatten(CollectionsMarshal.AsSpan(_else)));
     }
 }

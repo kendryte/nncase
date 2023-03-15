@@ -4,6 +4,7 @@
 using DryIoc;
 using Nncase.Diagnostics;
 using Nncase.Hosting;
+using Nncase.IR;
 
 namespace Nncase.Diagnostics;
 
@@ -14,6 +15,8 @@ internal class DiagnosticsModule : IApplicationPart
 {
     public void ConfigureServices(IRegistrator registrator)
     {
+        registrator.Register<IIRPrinterProvider, IRPrinterProvider>(reuse: Reuse.Singleton);
+
         registrator.Register<IDumpperFactory, DumpperFactory>(reuse: Reuse.Scoped);
     }
 }

@@ -12,6 +12,23 @@ namespace Nncase.IR;
 /// <summary>
 /// if(Condition) then { Then } else { Else }.
 /// </summary>
-public sealed record If(Expr Condition, Expr Then, Expr Else) : Expr
+public sealed class If : Expr
 {
+    public If(Expr condition, Expr then, Expr @else)
+        : base(new[] { condition, then, @else })
+    {
+    }
+
+    public Expr Condition => Operands[0];
+
+    public Expr Then => Operands[1];
+
+    public Expr Else => Operands[2];
+
+    /// <inheritdoc/>
+    public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
+        => functor.VisitIf(this, context);
+
+    public If With(Expr? condition = null, Expr? then = null, Expr? @else = null)
+        => new If(condition ?? Condition, then ?? Then, @else ?? Else);
 }

@@ -78,7 +78,7 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
         return Visit(context, target, input, blockShape, crops);
     }
 
-    public Cost? Visit(ICostEvaluateContext context, BatchToSpace target)
+    public Cost Visit(ICostEvaluateContext context, BatchToSpace target)
     {
         var inputType = context.GetArgumentType<TensorType>(target, BatchToSpace.Input);
         var returnType = context.GetReturnType<TensorType>();

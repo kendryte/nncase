@@ -11,9 +11,9 @@ using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
 using Nncase.IR.F;
+using Nncase.Passes;
+using Nncase.Passes.Rules.Neutral;
 using Nncase.Tests.TestFixture;
-using Nncase.Transform;
-using Nncase.Transform.Rules.Neutral;
 using Xunit;
 using Math = Nncase.IR.F.Math;
 using Random = Nncase.IR.F.Random;
@@ -124,6 +124,9 @@ public class UnitTestFusePadConv2D : TestClassBase
                 // new FoldNopPad(),
             },
             new());
+
+        var midHashCode = rootMid.GetHashCode();
+        var midValue = CompilerServices.Evaluate(rootMid, aNormal);
         var rootPost = CompilerServices.Rewrite(
             rootMid,
             new IRewriteRule[]
@@ -135,8 +138,8 @@ public class UnitTestFusePadConv2D : TestClassBase
             },
             new());
 
-        Assert.NotEqual(rootMid, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootMid, aNormal), CompilerServices.Evaluate(rootPost, aNormal));
+        Assert.NotEqual(midHashCode, rootPost.GetHashCode());
+        Assert.Equal(midValue, CompilerServices.Evaluate(rootPost, aNormal));
     }
 
     [Theory]
@@ -147,8 +150,10 @@ public class UnitTestFusePadConv2D : TestClassBase
         var w = Random.Normal(DataTypes.Float32, 0, 1, 0, wShape);
         var b = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { wShape[0] });
 
-        var aNormal = new Dictionary<Var, IValue>();
-        aNormal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, shape).Evaluate());
+        var aNormal = new Dictionary<Var, IValue>
+        {
+            { a, Random.Normal(DataTypes.Float32, 0, 1, 0, shape).Evaluate() },
+        };
         var rootPre = NN.Conv2D(NN.Pad(a, pads1, PadMode.Constant, 0f), w, b, new[] { 1, 1 }, pads2, new[] { 1, 1 }, PadMode.Constant, 1);
 
         var rootMid = CompilerServices.Rewrite(
@@ -159,6 +164,8 @@ public class UnitTestFusePadConv2D : TestClassBase
             },
             new());
 
+        var midHashCode = rootMid.GetHashCode();
+        var midValue = CompilerServices.Evaluate(rootMid, aNormal);
         var rootPost = CompilerServices.Rewrite(
             rootMid,
             new IRewriteRule[]
@@ -168,7 +175,7 @@ public class UnitTestFusePadConv2D : TestClassBase
             },
             new());
 
-        Assert.Equal(rootMid, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootMid, aNormal), CompilerServices.Evaluate(rootPost, aNormal));
+        Assert.Equal(midHashCode, rootPost.GetHashCode());
+        Assert.Equal(midValue, CompilerServices.Evaluate(rootPost, aNormal));
     }
 }

@@ -8,7 +8,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
-using LanguageExt.Pipes;
 using Microsoft.Extensions.DependencyInjection;
 using Nncase.CodeGen;
 using Nncase.IR;
