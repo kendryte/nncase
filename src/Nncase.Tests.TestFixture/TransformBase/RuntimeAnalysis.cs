@@ -28,7 +28,7 @@ public static class RuntimeDumpAnalysis
     {
         foreach (var valueTuples in data)
         {
-            Console.WriteLine($"op:{valueTuples.Key} count:{valueTuples.Length()}");
+            Console.WriteLine($"op:{valueTuples.Key} count:{valueTuples.Count()}");
             foreach ((string x, int i) in valueTuples)
             {
                 Console.WriteLine($"index:{i} shape:{x.Split(":")[1]}");
@@ -58,7 +58,7 @@ public static class RuntimeResultAnalysis
     {
         var e = new TextDataExtractor();
         var data = e.MatmulExtract(dir);
-        var cosList = data.Select(d => RuntimeResultAnalysis.Run(d.FileName, dir, ctor).Head()).ToArray();
+        var cosList = data.Select(d => RuntimeResultAnalysis.Run(d.FileName, dir, ctor).First()).ToArray();
         DumpUtility.WriteResult(resultPath, cosList);
     }
 

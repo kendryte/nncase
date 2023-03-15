@@ -16,7 +16,7 @@ namespace Nncase.IR.Tensors;
 /// Stack expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record TopK() : Op
+public sealed partial class TopK : Op
 {
     /// <summary>
     /// Gets x.

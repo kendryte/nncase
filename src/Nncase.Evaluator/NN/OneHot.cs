@@ -36,7 +36,7 @@ public class OneHotEvaluator : IEvaluator<OneHot>, ITypeInferencer<OneHot>, ICos
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, OneHot target)
+    public Cost Visit(ICostEvaluateContext context, OneHot target)
     {
         var returnType = context.GetReturnType<TensorType>();
         return new()

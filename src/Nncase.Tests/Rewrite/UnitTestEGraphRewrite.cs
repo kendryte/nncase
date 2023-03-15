@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 using Nncase.CostModel;
 using Nncase.Evaluator;
 using Nncase.IR;
+using Nncase.Passes;
 using Nncase.PatternMatch;
 using Nncase.Tests.TestFixture;
-using Nncase.Transform;
 using Xunit;
 using static Nncase.IR.F.Tensors;
 using static Nncase.PatternMatch.F.Math;
@@ -33,7 +33,7 @@ public class UnitTestEGraphRewrite : TestClassBase
 
         Assert.True(CompilerServices.TryMatchRoot(root.Nodes, pattern, out var eResults));
         Assert.Single(eResults);
-        var wcxv = (Expr)eResults[0][pattern.Parameters[0]];
+        var wcxv = (Expr)eResults[0][pattern.Arguments[0]];
         Assert.Equal(wcxv, lhs);
         var to_eid = egraph.Add(wcxv);
         /*
@@ -47,7 +47,7 @@ public class UnitTestEGraphRewrite : TestClassBase
     public void TestReassociate()
     {
         Expr pre = (Const)10 * 11 * 12;
-        var rule = new Transform.Rules.Neutral.ReassociateMul();
+        var rule = new Passes.Rules.Neutral.ReassociateMul();
         CompilerServices.ERewrite(pre, new[] { rule }, new());
 
         // Assert.Equal(newExpr, 10 * ((Const)11 * 12));
@@ -70,13 +70,13 @@ public class UnitTestEGraphRewrite : TestClassBase
     {
         var c0 = (Call)NHWCToNCHW(Tensor.FromScalar(1, new[] { 2, 2, 3, 4 }));
         var c1 = (Call)NHWCToNCHW(Tensor.FromScalar(1, new[] { 2, 2, 1, 1 }));
-        Assert.Equal(c0.Parameters[1].GetHashCode(), c1.Parameters[1].GetHashCode());
+        Assert.Equal(c0.Arguments[1].GetHashCode(), c1.Arguments[1].GetHashCode());
 
         Expr pre = c0 + c1;
 
         Assert.True(pre.InferenceType());
 
-        var post = CompilerServices.ERewrite(pre, new[] { new Transform.Rules.Neutral.CombineBinaryTranspose() }, new());
+        var post = CompilerServices.ERewrite(pre, new[] { new Passes.Rules.Neutral.CombineBinaryTranspose() }, new());
 
         Assert.True(post.InferenceType());
         Assert.Equal(pre.Evaluate(), post.Evaluate());
@@ -103,7 +103,7 @@ public class UnitTestEGraphRewrite : TestClassBase
             pre,
             new IRewriteRule[]
             {
-                  new Transform.Rules.Lower.RemoveMarker(),
+                  new Passes.Rules.Lower.RemoveMarker(),
                   new TestMulToAdd(),
             },
             new());
@@ -111,8 +111,8 @@ public class UnitTestEGraphRewrite : TestClassBase
         Assert.True(post.InferenceType());
 
         Assert.True(
-          post is Marker { Target: Call { Parameters: IRArray<Expr> param } } &&
-          param.Count == 2 &&
+          post is Marker { Target: Call { Arguments: var param } } &&
+          param.Length == 2 &&
           param[1] is Marker);
     }
 
@@ -132,11 +132,11 @@ public class UnitTestEGraphRewrite : TestClassBase
         var module = new IRModule(func);
 
         var passes = CompileSession.CreatePassManager("passes");
-        passes.AddWithName<EGraphPass>("Opt").Configure(p =>
+        passes.AddWithName<EGraphRulesPass>("Opt").Configure(p =>
         {
-            p.Add<Transform.Rules.Lower.RemoveMarker>();
-            p.Add<Transform.Rules.Neutral.ReluToClamp>();
-            p.Add<Transform.Rules.Neutral.FuseClampConv2D>();
+            p.Add<Passes.Rules.Lower.RemoveMarker>();
+            p.Add<Passes.Rules.Neutral.ReluToClamp>();
+            p.Add<Passes.Rules.Neutral.FuseClampConv2D>();
         });
 
         await passes.RunAsync(module);
@@ -167,7 +167,7 @@ public class UnitTestEGraphRewrite : TestClassBase
 #endif
         var module = new IRModule(func);
         var passes = CompileSession.CreatePassManager("passes");
-        passes.AddWithName<EGraphPass>("CSE").Configure(p =>
+        passes.AddWithName<EGraphRulesPass>("CSE").Configure(p =>
         {
         });
 

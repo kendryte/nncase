@@ -11,9 +11,6 @@ namespace Nncase.Tests;
 /// </summary>
 public sealed class TestVisitor : ExprVisitor<bool, IRType>
 {
-    /// <inheritdoc/>
-    public override bool DefaultVisitLeaf(Expr expr) => true;
-
     /// <summary>
     /// check Contains expr with type.
     /// </summary>
@@ -22,7 +19,7 @@ public sealed class TestVisitor : ExprVisitor<bool, IRType>
     public bool Contains<T>()
       where T : Expr
     {
-        return ExpressionMemo.Keys.OfType<T>().Any();
+        return ExprMemo.Keys.OfType<T>().Any();
     }
 
     /// <summary>
@@ -33,6 +30,9 @@ public sealed class TestVisitor : ExprVisitor<bool, IRType>
     public int CountCallOp<T>()
       where T : Op
     {
-        return ExpressionMemo.Keys.OfType<Call>().Where(call => call is { Target: T }).Count();
+        return ExprMemo.Keys.OfType<Call>().Where(call => call is { Target: T }).Count();
     }
+
+    /// <inheritdoc/>
+    protected override bool DefaultVisitLeaf(Expr expr) => true;
 }

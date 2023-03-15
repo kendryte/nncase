@@ -16,7 +16,7 @@ namespace Nncase.IR.Tensors;
 /// Shape expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record GetItem() : Op
+public sealed partial class GetItem : Op
 {
     /// <summary>
     /// Gets input.

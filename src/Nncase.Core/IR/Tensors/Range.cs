@@ -10,7 +10,7 @@ namespace Nncase.IR.Tensors;
 /// Range expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Range() : Op
+public sealed partial class Range : Op
 {
     /// <summary>
     /// Gets begin.

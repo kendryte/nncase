@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 
 namespace Nncase.PatternMatch;
@@ -23,7 +24,7 @@ public sealed record FunctionPattern(Pattern Body, VArgsPattern Parameters, stri
     /// <param name="function"><see cref="Function"/> expression.</param>
     /// <param name="name">name.</param>
     public FunctionPattern(Function function, string? name)
-        : this(function.Body, new VArgsPattern(function.Parameters.Select(x => (Pattern)x).ToArray(), null), name)
+        : this(function.Body, new VArgsPattern(function.Parameters.AsValueEnumerable().Select(x => (Pattern)x).ToArray(), null), name)
     {
     }
 

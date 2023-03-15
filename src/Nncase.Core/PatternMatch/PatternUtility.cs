@@ -38,7 +38,7 @@ public static partial class Utility
       => IsVArgsRepeat(
           (prefix is not null && prefix != string.Empty) ? prefix + "Params" : null,
           list => patterns.Concat(
-            Enumerable.Range(0, list.Count - patterns.Length).
+            Enumerable.Range(0, list.Length - patterns.Length).
             Select(_ => (Pattern)IsWildcard(null)))
           .ToArray());
 
@@ -53,7 +53,7 @@ public static partial class Utility
           (prefix is not null && prefix != string.Empty) ? prefix + "Params" : null,
           list =>
           {
-              var patterns = Enumerable.Range(0, list.Count).Select(_ => (Pattern)IsWildcard()).ToArray();
+              var patterns = Enumerable.Range(0, list.Length).Select(_ => (Pattern)IsWildcard()).ToArray();
               foreach (var (info, pattern) in inputPatterns)
               {
                   patterns[info.Index] = pattern;
@@ -87,6 +87,24 @@ public static partial class Utility
         IsAlt(
             IsCallWildcard(callName, targetPattern, lhsPattern, rhsPattern),
             IsCallWildcard(callName, targetPattern, rhsPattern, lhsPattern));
+
+    /// <summary>
+    /// wrapped lstm pattern.
+    /// </summary>
+    /// <param name="lstmPattern">lstm pattern.</param>
+    /// <param name="wrapFunc"> wrap pattern func.</param>
+    /// <returns>pattern.</returns>
+    public static Pattern IsWrappedLSTM(CallPattern lstmPattern, Func<Pattern, int, Pattern> wrapFunc) =>
+        IsTuple("tuple", IsVArgsRepeat("xx", tp =>
+        {
+            var patterns = new Pattern[tp.Length];
+            for (var i = 0; i < tp.Length; i++)
+            {
+                patterns[i] = wrapFunc(F.Tensors.IsGetItem(lstmPattern, IsWildcard()), i);
+            }
+
+            return patterns;
+        }));
 
     /// <summary>
     /// Call pattern with spec multi input pattern.

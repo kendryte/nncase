@@ -30,7 +30,7 @@ public class FakeDequantizeEvaluator : IEvaluator<FakeDequantize>, ITypeInferenc
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, FakeDequantize target)
+    public Cost Visit(ICostEvaluateContext context, FakeDequantize target)
     {
         var inputType = context.GetArgumentType<TensorType>(target, FakeDequantize.Input);
         var outputType = context.GetReturnType<TensorType>();

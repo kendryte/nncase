@@ -24,7 +24,7 @@ public sealed partial class BroadcastEvaluator : IEvaluator<Broadcast>, ITypeInf
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, Broadcast target)
+    public Cost Visit(ICostEvaluateContext context, Broadcast target)
     {
         var input = context.GetArgumentType<TensorType>(target, Broadcast.Input);
         var ret = context.GetReturnType<TensorType>();

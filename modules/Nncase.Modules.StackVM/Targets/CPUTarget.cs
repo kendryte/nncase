@@ -11,8 +11,8 @@ using Microsoft.Extensions.Options;
 using Nncase.CodeGen;
 using Nncase.CodeGen.StackVM;
 using Nncase.IR;
+using Nncase.Passes;
 using Nncase.Quantization;
-using Nncase.Transform;
 
 namespace Nncase.Targets;
 

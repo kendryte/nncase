@@ -7,19 +7,21 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.Evaluator;
-using Nncase.Transform;
+using Nncase.Passes;
+using Tensorflow;
 
 namespace Nncase.Quantization;
 
 /// <summary>
 /// the quantization egraph pass.
 /// </summary>
-public class EGraphPassWithAdaRound : EGraphPass
+public class EGraphPassWithAdaRound : EGraphRulesPass
 {
     /// <inheritdoc/>
-    protected override async Task OnPostRewriteAsync(EGraph graph, RunPassContext options)
+    protected override async Task<IEGraph> RunCoreAsync(IEGraph input, RunPassContext context)
     {
-        var quantizerAdaRound = new QuantizerAdaRound(graph, CompileSession);
+        var quantizerAdaRound = new QuantizerAdaRound(input, CompileSession);
         await quantizerAdaRound.RunAsync();
+        return input;
     }
 }

@@ -22,7 +22,7 @@ public sealed record TuplePattern(VArgsPattern Fields, string? Name) : Pattern<I
     /// <param name="tuple"><see cref="IR.Tuple"/> expression.</param>
     /// <param name="name">name.</param>
     public TuplePattern(IR.Tuple tuple, string? name)
-        : this(new VArgsPattern(tuple.Fields, null), name)
+        : this(new VArgsPattern(tuple.Fields.ToArray(), null), name)
     {
     }
 }

@@ -16,7 +16,7 @@ namespace Nncase.IR.Tensors;
 /// Expand expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Expand() : Op
+public sealed partial class Expand : Op
 {
     /// <summary>
     /// Gets input.

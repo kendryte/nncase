@@ -5,15 +5,17 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
+using Nncase.Passes;
+using Nncase.Passes.Analysis;
+using Nncase.Passes.Mutators;
+using Nncase.Passes.Rules.Neutral;
 using Nncase.PatternMatch;
 using Nncase.Tests.TestFixture;
-using Nncase.Transform;
-using Nncase.Transform.Mutators;
-using Nncase.Transform.Rules.Neutral;
 using Nncase.Utilities;
 using Xunit;
 using Xunit.Abstractions;
@@ -36,6 +38,8 @@ public sealed class UnitTestFusionMaker : TestClassBase
     {
         _testOutputHelper = testOutputHelper;
     }
+
+    public IAnalyzerManager AnalyzerManager => CompileSession.GetRequiredService<IAnalyzerManager>();
 
     [Fact]
     public async Task TestMultiFusion()
@@ -94,6 +98,11 @@ public sealed class UnitTestFusionMaker : TestClassBase
 
         var post = await pass.RunAsync(pre, new());
 
+        var analysis = new Dictionary<Type, IAnalysisResult>
+        {
+            [typeof(IExprUserAnalysisResult)] = AnalyzerManager.GetAnaylsis<IExprUserAnalysisResult>(post),
+        };
+
         var rewriter = new DataFlowMergeRewriter();
         var post2 = (Function)rewriter.Rewrite(
             post,
@@ -102,8 +111,8 @@ public sealed class UnitTestFusionMaker : TestClassBase
                 new SameInputFusionMergeRule(), new MultiInputFusionMergeRule(), new ShortCutFusionMergeRuleLeft(),
                 new ShortCutFusionMergeRuleRight(),
             },
-            (usedby, rule, option) => new FusionGroupMutator(usedby, rule, option),
-            new());
+            (rule, option) => new FusionGroupMutator(rule, option),
+            new() { AnalysisResults = analysis });
 
         var isMatch = CompilerServices.TryMatch(
             post2,
@@ -208,7 +217,7 @@ public sealed class UnitTestFusionMaker : TestClassBase
         pass.Add<TestTransposeComplexFusion>();
         var post = (Function)await pass.RunAsync(pre, new());
         var newFusion = (Fusion)((Call)post.Body).Target;
-        Assert.Single(newFusion.Parameters);
+        Assert.True(newFusion.Parameters.Length == 1);
         var newVar = newFusion.Parameters[0];
         Assert.Equal("input_0", newVar.Name);
         Assert.Equal(input.TypeAnnotation, newVar.TypeAnnotation);
@@ -227,7 +236,7 @@ public sealed class UnitTestFusionMaker : TestClassBase
         pass.Add<TestTransposeComplexFusion>();
         var post = (Function)await pass.RunAsync(pre, new());
         var newFusion = (Fusion)((Call)post.Body).Target;
-        Assert.Empty(newFusion.Parameters);
+        Assert.True(newFusion.Parameters.IsEmpty);
         var expectBody = WrapperWith(x => Transpose(x[0], new[] { 0, 3, 1, 2 }), input);
         Assert.Equal(newFusion.Body, expectBody);
     }
@@ -239,16 +248,16 @@ public sealed class UnitTestFusionMaker : TestClassBase
         void Compare(Tuple expectBody, Tuple oldBody, int i)
         {
             var oldDeq = oldBody[0];
-            var oldGetItem = ((Call)oldDeq).Parameters[0];
-            var oldLSTM = ((Call)oldGetItem).Parameters[0];
-            var oldQuant = ((Call)oldLSTM).Parameters[i];
-            var oldVar = (Var)((Call)oldQuant).Parameters[0];
+            var oldGetItem = ((Call)oldDeq).Arguments[0];
+            var oldLSTM = ((Call)oldGetItem).Arguments[0];
+            var oldQuant = ((Call)oldLSTM).Arguments[i];
+            var oldVar = (Var)((Call)oldQuant).Arguments[0];
 
             var expectDeq = expectBody.Fields[0];
-            var expectGetItem = ((Call)expectDeq).Parameters[0];
-            var expectLSTM = ((Call)expectGetItem).Parameters[0];
-            var expectQuant = ((Call)expectLSTM).Parameters[i];
-            var expectVar = (Var)((Call)expectQuant).Parameters[0];
+            var expectGetItem = ((Call)expectDeq).Arguments[0];
+            var expectLSTM = ((Call)expectGetItem).Arguments[0];
+            var expectQuant = ((Call)expectLSTM).Arguments[i];
+            var expectVar = (Var)((Call)expectQuant).Arguments[0];
             Assert.Equal(oldVar, expectVar);
             Assert.Equal(oldQuant, expectQuant);
             Assert.Equal(oldLSTM, expectLSTM);
@@ -303,11 +312,12 @@ public sealed class UnitTestFusionMaker : TestClassBase
         Assert.True(oldBody.InferenceType());
         var f = new Function("main", oldBody, new[] { x, initC, initH });
 
+        using var exprPin1 = new ExprPinner(lstm);
         var pass = new DataflowPass { Name = "TestComplexFusion" };
         pass.Add<LSTMFusion>();
         var afterCall = (Call)((Function)await pass.RunAsync(f, new())).Body;
 
-        var newVars = ((Fusion)afterCall.Target).Parameters;
+        var newVars = ((Fusion)afterCall.Target).Parameters.ToArray();
         var newVarNames = newVars.Select(v => v.Name).ToArray();
 
         // check var name
@@ -324,7 +334,7 @@ public sealed class UnitTestFusionMaker : TestClassBase
             (LSTM.InitialC, WrapInput(newVar1)),
             (LSTM.InitialH, WrapInput(newVar2)),
         };
-        var expectLSTM = ReplaceUtility.ReplaceCallParams(lstm.Target, lstm.Parameters, pairs);
+        var expectLSTM = ReplaceUtility.ReplaceCallParams(lstm.Target, lstm.Arguments.ToArray(), pairs);
         var expectBody = WrapOutput(expectLSTM);
         var expectCall =
             new Call(new Fusion("FusionMaker_0", "StackVM", expectBody, new[] { newVar0, newVar1, newVar2 }), x, initC, initH);

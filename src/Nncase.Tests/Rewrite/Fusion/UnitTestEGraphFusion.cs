@@ -7,11 +7,12 @@ using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using NetFabric.Hyperlinq;
 using Nncase.CostModel;
 using Nncase.IR;
+using Nncase.Passes;
 using Nncase.PatternMatch;
 using Nncase.Tests.TestFixture;
-using Nncase.Transform;
 using Xunit;
 using static Nncase.IR.F.Tensors;
 using static Nncase.PatternMatch.Utility;
@@ -28,13 +29,16 @@ public class UnitTestEGraphFusion : TestClassBase
         var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 3, 224, 224 }));
         var model = new ResNet(typeof(BasicBlock), new[] { 2, 2, 2, 2 });
         var body = model.Forward(input);
-        var main = new Function("main", body, ImmutableArray.Create(input));
+        var main = new Function("main", body, input);
 
         Assert.True(CompilerServices.InferenceType(main));
 
-        var pass = new EGraphPass(new FusionCostEvaluator()) { Name = "AutoMergeFusion" };
+        var pass = new EGraphRulesPass { Name = "AutoMergeFusion" };
         pass.Add<SingleInputFusionMergeRule>();
-        await pass.RunAsync(main, new());
+
+        var graph = new EGraph(main);
+        await pass.RunAsync(graph, new());
+        graph.Extract(graph.Root!, new FusionCostEvaluator());
     }
 
     [Fact]
@@ -44,14 +48,17 @@ public class UnitTestEGraphFusion : TestClassBase
         var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 3, 224, 224 }));
         var model = new ResNet(typeof(BasicBlock), new[] { 2, 2, 2, 2 });
         var body = model.Forward(input);
-        var main = new Function("main", body, ImmutableArray.Create(input));
+        var main = new Function("main", body, input);
 
         Assert.True(CompilerServices.InferenceType(main));
 
-        var pass = new EGraphPass(new FusionCostEvaluator()) { Name = "AutoMergeFusion" };
+        var pass = new EGraphRulesPass { Name = "AutoMergeFusion" };
         pass.Add<SingleInputFusionMergeRule>();
         pass.Add<TwoInputFusionMergeRule>();
-        await pass.RunAsync(main, new());
+
+        var graph = new EGraph(main);
+        await pass.RunAsync(graph, new());
+        graph.Extract(graph.Root!, new FusionCostEvaluator());
     }
 
     /// <summary>
@@ -121,7 +128,7 @@ public class UnitTestEGraphFusion : TestClassBase
             var fusion_4_input = new Var[] { new("fusion_4_input_0", new TensorType(DataTypes.Float32, new int[] { 1, 3, 112, 112 })), new("fusion_4_input_1", new TensorType(DataTypes.Float32, new int[] { 1, 3, 112, 112 })) };
             var fusion_4 = new Fusion("fusion_4", Callable.StackVMModuleKind, IR.F.Math.Add(fusion_4_input[0], fusion_4_input[1]), fusion_4_input);
             var v_3 = new Call(fusion_4, new[] { v_1, v_2 }); // 1,3,112,112
-            main = new Function("main", v_3, ImmutableArray.Create(input));
+            main = new Function("main", v_3, input);
         }
 
         Assert.True(CompilerServices.InferenceType(main));
@@ -130,9 +137,12 @@ public class UnitTestEGraphFusion : TestClassBase
         pass.Add<SingleInputFusionMergeRule>();
         var post = (Function)await pass.RunAsync(main, new());
 
-        var pass2 = new EGraphPass(new FusionCostEvaluator()) { Name = "EGraphAutoMergeFusion" };
+        var pass2 = new EGraphRulesPass { Name = "EGraphAutoMergeFusion" };
         pass2.Add<SingleInputFusionMergeRule>();
-        var post2 = (Function)await pass2.RunAsync(main, new());
+
+        var graph = new EGraph(main);
+        await pass2.RunAsync(graph, new());
+        var post2 = (Function)graph.Extract(graph.Root!, new FusionCostEvaluator());
 
         var input_tensor = Testing.Rand<float>(1, 224, 224, 3);
         var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
@@ -196,7 +206,7 @@ internal sealed class FusionCostEvaluator : Evaluator.IBaseFuncCostEvaluator
 
     private sealed class FusionGraphCostVisitor : ExprVisitor<Cost, IRType>
     {
-        public override Cost VisitLeaf(Var var)
+        protected override Cost VisitLeafVar(Var var)
         {
             return new Cost()
             {
@@ -204,17 +214,17 @@ internal sealed class FusionCostEvaluator : Evaluator.IBaseFuncCostEvaluator
             };
         }
 
-        public override Cost DefaultVisitLeaf(Expr expr)
+        protected override Cost DefaultVisitLeaf(Expr expr)
         {
             return Cost.Zero;
         }
 
-        public override Cost VisitLeaf(Call call)
+        protected override Cost VisitLeafCall(Call call)
         {
             Cost cost;
             if (call.Target is Op op)
             {
-                var context = new GraphOpCostEvaluateContext(call.CheckedType, call.Parameters.Select(p => p.CheckedType).ToArray());
+                var context = new GraphOpCostEvaluateContext(call.CheckedType, call.Arguments.AsValueEnumerable().Select(p => p.CheckedType).ToArray());
                 cost = CompilerServices.EvaluateOpCost(op, context) ?? Cost.Zero;
             }
             else
@@ -225,13 +235,13 @@ internal sealed class FusionCostEvaluator : Evaluator.IBaseFuncCostEvaluator
             return cost;
         }
 
-        public override Cost VisitLeaf(Fusion fusion)
+        protected override Cost VisitLeafFusion(Fusion fusion)
         {
             var cost = new Cost()
             {
                 [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess((TensorType)fusion.Body.CheckedType!),
             };
-            cost += fusion.Parameters.Select(Visit).Sum() ?? Cost.Zero;
+            cost += fusion.Parameters.AsValueEnumerable().Select(Visit).Sum() ?? Cost.Zero;
             return cost;
         }
     }
@@ -252,16 +262,16 @@ internal sealed class SingleInputFusionMergeRule : IRewriteRule
 
     public static Fusion MergeSingleInputFusion(Call caller, Call callee, Fusion caller_fusion, Fusion callee_fusion, RunPassContext passOptions)
     {
-        if (callee_fusion.Parameters.Count != 1 || caller_fusion.Parameters.Count != 1)
+        if (callee_fusion.Parameters.Length != 1 || caller_fusion.Parameters.Length != 1)
         {
             throw new NotSupportedException("Not Support Multi Inputs Fusion Merge");
         }
 
         // 1. replace the caller_fusion input_var with the callee_fusion body
-        var new_fusion_body = Transform.Mutator.Substitute(e => object.ReferenceEquals(e, caller_fusion.Parameters[0]) ? callee_fusion.Body : null)().Visit(caller_fusion.Body);
+        var new_fusion_body = Mutator.Substitute(e => object.ReferenceEquals(e, caller_fusion.Parameters[0]) ? callee_fusion.Body : null)().Rewrite(caller_fusion.Body);
 
         // 2. fold the store load
-        // new_fusion_body = CompilerServices.Rewrite(new_fusion_body, new[] { new Transform.Rules.K510.FoldStoreLoad() }, passOptions.IndentDir("MergeSingleInputFusion"));
+        // new_fusion_body = CompilerServices.Rewrite(new_fusion_body, new[] { new Passes.Rules.K510.FoldStoreLoad() }, passOptions.IndentDir("MergeSingleInputFusion"));
         var new_fusion = new Fusion($"{caller_fusion.Name}_{callee_fusion.Name}", Callable.StackVMModuleKind, new_fusion_body, callee_fusion.Parameters);
 
         return new_fusion;
@@ -290,7 +300,7 @@ internal sealed class SingleInputFusionMergeRule : IRewriteRule
 
             // if (true)
             // {
-            new_call = new Call(merged_fusion, ImmutableArray.Create((Expr)result["callee_input"]));
+            new_call = new Call(merged_fusion, (Expr)result["callee_input"]);
             _mergedCache.Add(hashcode, new_call);
         }
         else
@@ -327,7 +337,7 @@ internal sealed class TwoInputFusionMergeRule : IRewriteRule
     public static Fusion MergeTwoInputFusion(Call caller, Call lhs_callee, Call rhs_callee, Fusion caller_fusion, Fusion lhs_callee_fusion, Fusion rhs_callee_fusion, RunPassContext passOptions)
     {
         // 1. replace the caller_fusion input_var with the callee_fusion body
-        var new_fusion_body = Transform.Mutator.Substitute(e =>
+        var new_fusion_body = Mutator.Substitute(e =>
         {
             if (object.ReferenceEquals(e, caller_fusion.Parameters[0]))
             {
@@ -340,10 +350,10 @@ internal sealed class TwoInputFusionMergeRule : IRewriteRule
             }
 
             return null;
-        })().Visit(caller_fusion.Body);
+        })().Rewrite(caller_fusion.Body);
 
         // 2. fold the store load
-        // new_fusion_body = CompilerServices.Rewrite(new_fusion_body, new[] { new Transform.Rules.K510.FoldStoreLoad() }, passOptions.IndentDir("MergeSingleInputFusion"));
+        // new_fusion_body = CompilerServices.Rewrite(new_fusion_body, new[] { new Passes.Rules.K510.FoldStoreLoad() }, passOptions.IndentDir("MergeSingleInputFusion"));
         var new_fusion = new Fusion($"{caller_fusion.Name}_{lhs_callee_fusion.Name}_{rhs_callee_fusion.Name}", Callable.StackVMModuleKind, new_fusion_body, lhs_callee_fusion.Parameters);
 
         return new_fusion;
@@ -374,7 +384,7 @@ internal sealed class TwoInputFusionMergeRule : IRewriteRule
         {
             // 1. merge new fusion
             var merged_fusion = MergeTwoInputFusion(caller, lhs_callee, rhs_callee, caller_fusion, lhs_callee_fusion, rhs_callee_fusion, passOptions);
-            new_call = new Call(merged_fusion, ImmutableArray.Create(input));
+            new_call = new Call(merged_fusion, input);
             _mergedCache.Add(hashcode, new_call);
         }
         else

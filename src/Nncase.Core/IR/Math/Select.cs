@@ -16,7 +16,7 @@ namespace Nncase.IR.Math;
 /// Unary expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Select() : Op
+public sealed partial class Select : Op
 {
     /// <summary>
     /// Gets Condition.

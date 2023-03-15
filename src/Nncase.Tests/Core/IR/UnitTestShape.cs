@@ -35,7 +35,7 @@ public sealed class UnitTestShape
     public void TestIEnumerableLong()
     {
         var a = new long[] { 1, 3, 2, 2 };
-        var s = new Shape((IEnumerable<long>)a);
+        var s = new Shape(a);
         Assert.Equal(ShapeKind.Fixed, s.Kind);
         Assert.True(s.IsReadOnly);
         Assert.True(s.IsFixed);

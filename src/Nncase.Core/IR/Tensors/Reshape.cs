@@ -17,7 +17,7 @@ namespace Nncase.IR.Tensors;
 /// Reshape expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Reshape() : Op
+public sealed partial class Reshape : Op
 {
     /// <summary>
     /// Gets input.

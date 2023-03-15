@@ -18,7 +18,7 @@ public sealed class UnitTestTuple
     public void TestVoid()
     {
         var v = Tuple.Void;
-        Assert.Empty(v);
+        Assert.Empty(v.Value);
     }
 
     [Fact]
@@ -45,7 +45,7 @@ public sealed class UnitTestTuple
         var list = new List<Expr>();
         list.Add(tc1);
         list.Add(tc2);
-        var tp = new Tuple(list);
+        var tp = new Tuple(list.ToArray());
         Assert.Equal(list.Count, tp.Count);
     }
 
@@ -61,8 +61,8 @@ public sealed class UnitTestTuple
         var tp = new Tuple(a);
 
         var itp = (ITuple)tp;
-        var fields = itp.Fields;
-        Assert.Equal(a.Length, fields.Count);
+        var fields = tp.Fields;
+        Assert.Equal(a.Length, itp.Count);
         Assert.Equal(tc1, fields[0]);
         Assert.Equal(tc2, fields[1]);
     }

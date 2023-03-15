@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using DryIoc;
 using Nncase.Evaluator;
-using Nncase.Evaluator.Buffer;
+using Nncase.Evaluator.Buffers;
 using Nncase.Evaluator.Imaging;
 using Nncase.Evaluator.Math;
 using Nncase.Evaluator.NN;

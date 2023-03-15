@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using Nncase.Diagnostics;
 using Nncase.Evaluator;
 using Nncase.IR;
-using Nncase.Transform;
+using Nncase.Passes;
 
 namespace Nncase.Quantization;
 
@@ -34,7 +34,7 @@ public class CalibrationEvaluator : IDisposable
     public IReadOnlyDictionary<ENode, Tensor> Evaluate()
     {
         bool completed;
-        var awareTensors = new Dictionary<ENode, Tensor>();
+        var awareTensors = new Dictionary<ENode, Tensor>(ReferenceEqualityComparer.Instance);
 
         do
         {
@@ -119,13 +119,13 @@ public class CalibrationEvaluator : IDisposable
             return false;
         }
 
-        return current.Zip(target).All(p => p.Item2.IsUnknown ? true : p.Item2.FixedValue == p.Item1.FixedValue);
+        return current.Zip(target).All(p => p.Second.IsUnknown ? true : p.Second.FixedValue == p.First.FixedValue);
     }
 
     private bool TypeChecker(IRType cur_type, IRType target_type) => (cur_type, target_type) switch
     {
         (TensorType a, TensorType b) => a.DType == b.DType && ShapeChecker(a.Shape, b.Shape),
-        (TupleType a, TupleType b) => a.Zip(b).All(p => TypeChecker(p.Item1, p.Item2)),
+        (TupleType a, TupleType b) => a.Zip(b).All(p => TypeChecker(p.First, p.Second)),
         (_, _) => true,
     };
 

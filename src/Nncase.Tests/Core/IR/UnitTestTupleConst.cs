@@ -17,22 +17,22 @@ public sealed class UnitTestTupleConst
     public void TestVoid()
     {
         var v = TupleConst.Void;
-        Assert.Empty(v);
+        Assert.Empty(v.Value);
     }
 
     [Fact]
     public void TestNonVoid()
     {
-        Const c1 = 1F;
-        Const c2 = 2F;
-        var tc = new TupleConst(new Const[] { c1, c2 });
+        var c1 = Value.FromConst(1F);
+        var c2 = Value.FromConst(2F);
+        var tc = new TupleConst(new TupleValue(new[] { c1, c2 }));
         Assert.Equal(2, tc.Count);
         Assert.Equal(c1, tc[0]);
 
         var t = (ITuple)tc;
-        Assert.Equal(2, t.Fields.Count);
+        Assert.Equal(2, t.Count);
 
-        var list = (IReadOnlyList<Expr>)tc;
+        var list = (IReadOnlyList<IValue>)tc.Value;
         Assert.Equal(c1, list[0]);
     }
 }

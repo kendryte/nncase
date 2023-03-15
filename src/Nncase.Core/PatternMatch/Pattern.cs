@@ -31,7 +31,7 @@ public abstract partial record Pattern(string? Name) : IPattern
       System.HashCode.Combine(EqualityComparer<Type>.Default.GetHashCode(EqualityContract));
 
     /// <inheritdoc/>
-    public abstract bool MatchLeaf(object input);
+    public abstract bool MatchLeaf(Expr input);
 
     /// <summary>
     /// Print members.
@@ -65,7 +65,7 @@ public record Pattern<TExpr>(string? Name) : Pattern(Name), IPattern<TExpr>
     }
 
     /// <inheritdoc/>
-    public sealed override bool MatchLeaf(object input) => input is TExpr expr && MatchLeaf(expr);
+    public sealed override bool MatchLeaf(Expr input) => input is TExpr expr && MatchLeaf(expr);
 
     /// <summary>
     /// Match leaf impl.
