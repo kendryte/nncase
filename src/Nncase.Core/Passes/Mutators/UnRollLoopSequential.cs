@@ -41,14 +41,9 @@ public sealed class UnRollLoopSequential : ExprRewriter
     /// <inheritdoc/>
     protected override Expr RewriteLeafSequential(TIR.Sequential expr)
     {
-        var flattened = Sequential.Flatten(expr.Fields);
-        if (flattened.Count != expr.Count)
+        if (expr.Fields.AsValueEnumerable().Any(f => f is Sequential))
         {
-            return new Sequential(flattened.Fields);
-        }
-        else if (!flattened.Fields.SequenceEqual(expr.Fields))
-        {
-            return new Sequential(flattened.Fields);
+            return Sequential.Flatten(expr.Fields);
         }
 
         return expr;
@@ -107,7 +102,7 @@ public sealed class UnRollLoopSequential : ExprRewriter
                      select grid.ToArray()).
           Select(grid =>
             {
-                var vmap = new Dictionary<Var, TensorConst>(ReferenceEqualityComparer.Instance);
+                var vmap = new Dictionary<Var, TensorConst>();
                 for (int i = 0; i < grid.Length; i++)
                 {
                     vmap.Add(nested_loops[i].LoopVar, grid[i]);
@@ -117,27 +112,28 @@ public sealed class UnRollLoopSequential : ExprRewriter
             });
 
         // warming up
-        var unrolled_first = new OptimizedSubstitutor(vmaps.First(), _evaluator_cache).Rewrite(nested_loops[^1].Body);
-        var unrolled = new[] { unrolled_first }.
+        var unrolled_first = new LoopBodyCloner(vmaps.First(), _evaluator_cache).Clone(nested_loops[^1].Body, default);
+        var unrolled = new Expr[] { unrolled_first }.
             Concat(vmaps.
                 Skip(1).
-                AsParallel().
-                AsOrdered().
-                Select(vmap => new OptimizedSubstitutor(vmap, _evaluator_cache).Rewrite(nested_loops[^1].Body)));
+
+                // AsParallel().
+                // AsOrdered().
+                Select(vmap => new LoopBodyCloner(vmap, _evaluator_cache).Clone(nested_loops[^1].Body, default)));
 
         return Sequential.Flatten(unrolled.ToArray());
     }
 
     /// <summary>
-    /// fold the math operations, avoid too much call.
+    /// clone loop body and fold the math call.
     /// </summary>
-    private sealed class OptimizedSubstitutor : ExprRewriter
+    private sealed class LoopBodyCloner : ExprCloner<Unit>
     {
         private readonly IReadOnlyDictionary<Var, TensorConst> _vmap;
         private readonly Dictionary<Var, IValue> _cmap;
         private readonly Dictionary<Type, Evaluator.IEvaluator> _evaluator_cache;
 
-        public OptimizedSubstitutor(IReadOnlyDictionary<Var, TensorConst> vmap, Dictionary<Type, Evaluator.IEvaluator> evaluator_cache)
+        public LoopBodyCloner(IReadOnlyDictionary<Var, TensorConst> vmap, Dictionary<Type, Evaluator.IEvaluator> evaluator_cache)
         {
             _vmap = vmap;
             _cmap = new(ReferenceEqualityComparer.Instance);
@@ -148,42 +144,44 @@ public sealed class UnRollLoopSequential : ExprRewriter
             }
         }
 
-        protected override Expr RewriteLeafVar(Var expr)
+        protected override Expr VisitLeafPhysicalBuffer(PhysicalBuffer expr, Unit context) => expr;
+
+        protected override Expr VisitLeafVar(Var expr, Unit context)
         {
             if (_vmap.TryGetValue(expr, out var result))
             {
                 return result;
             }
 
-            return expr;
+            return base.VisitLeafVar(expr, context);
         }
 
-        protected override Expr RewriteLeafCall(Call expr)
+        protected override Expr VisitLeafCall(Call expr, Unit context)
         {
-            if (expr.Target is Op op && op.GetType().Namespace is string @namespace
-              && (@namespace.StartsWith("Nncase.IR.Math") || @namespace.StartsWith("Nncase.IR.Tensors"))
-              && expr.Arguments.AsValueEnumerable().All(e => e is Const))
+            var target = Clone(expr.Target, context);
+            var arguments = CloneArray(expr.Arguments, context);
+            if (target is Op op && op.CanFoldConstCall && arguments.AsValueEnumerable().All(e => e is Const))
             {
-                return Const.FromValue(CompilerServices.Evaluate(expr, _cmap, _evaluator_cache));
+                return Const.FromValue(CompilerServices.Evaluate(expr.With(target, arguments), _cmap, _evaluator_cache));
             }
 
-            if (expr.Target is Function fn)
+            if (target is Function fn)
             {
-                var arg_map = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance);
-                foreach (var (v, arg) in fn.Parameters.ToArray().Zip(expr.Arguments.ToArray()))
+                var feedDict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance);
+                foreach (var (v, arg) in fn.Parameters.ToArray().Zip(arguments.ToArray()))
                 {
-                    if (arg is not Const const_arg)
+                    if (arg is not Const constArg)
                     {
-                        return expr;
+                        return expr.With(target, arguments);
                     }
 
-                    arg_map.Add(v, Value.FromConst(const_arg));
+                    feedDict.Add(v, Value.FromConst(constArg));
                 }
 
-                return Const.FromValue(CompilerServices.Evaluate(fn.Body, arg_map, _evaluator_cache));
+                return Const.FromValue(CompilerServices.Evaluate(fn.Body, feedDict, _evaluator_cache));
             }
 
-            return expr;
+            return expr.With(target, arguments);
         }
     }
 }

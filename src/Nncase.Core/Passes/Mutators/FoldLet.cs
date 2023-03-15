@@ -22,9 +22,9 @@ public sealed class FoldLet : ExprRewriter
         if (expr.Expression is Const @const)
         {
             ExprMemo.Add(expr.Var, @const);
-            Visit(expr.Body, context);
+            return VisitSequential(expr.Body, context);
         }
 
-        return expr;
+        return base.VisitLet(expr, context);
     }
 }

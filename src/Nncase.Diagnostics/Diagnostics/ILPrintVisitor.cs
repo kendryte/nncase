@@ -174,12 +174,12 @@ public sealed class ScopeWriter
     /// <param name="prefix">prefix name.</param>
     public IPrintSymbol GetUniqueVarSymbol(Var @var, string prefix = "")
     {
-        if (!_globalVarCountMap.TryGetValue(prefix + @var.Name, out var count))
+        if (!_globalVarCountMap.TryGetValue(prefix + @var.Name + "_" + @var.GlobalVarIndex.ToString(), out var count))
         {
             count = 0;
         }
 
-        var symbol = new ScriptSymobl(new(prefix + @var.Name + (count == 0 ? string.Empty : $"_{count}")), @var.Name, false);
+        var symbol = new ScriptSymobl(new(prefix + @var.Name + "_" + @var.GlobalVarIndex.ToString() + (count == 0 ? string.Empty : $"_{count}")), @var.Name, false);
         count++;
         _globalVarCountMap[@var.Name] = count;
         return symbol;
