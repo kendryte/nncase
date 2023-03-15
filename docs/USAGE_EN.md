@@ -4,7 +4,7 @@
 
 nncase provides both python wheel package and ncc client to compile your neural models.
 
-- nncase wheel package can be  downloaded at [nncase release](https://github.com/kendryte/nncase/releases),  target wheel package except for both cpu and K210 can be got from nncase sdk for your target.
+- nncase wheel package can be downloaded at [nncase release](https://github.com/kendryte/nncase/releases)
 - For ncc client, you should git clone nncase repository and then build it by yourself.
 
 # nncase python APIs
@@ -13,21 +13,61 @@ nncase provides Python APIs to compile neural network model and inference on you
 
 ## Installation
 
+The nncase toolchain compiler consists of nncase and plug-in wheel packages.
+
+- Both nncase and plug-in wheel packages are released at [nncase github](https://github.com/kendryte/nncase/releases)
+- Nncase wheel package supports Python 3.6/3.7/3.8/3.9/3.10, You can download it according to your operating system and Python version.
+- The plug-in wheel package does not depend on Python version, you can install it directly.
+
 You can make use of [nncase docker image](https://github.com/kendryte/nncase/blob/master/docs/build.md)(Ubuntu 20.04 + Python 3.8) if you do not have Ubuntu development.
 
 ```shell
+$ cd /path/to/nncase_sdk
 $ docker pull registry.cn-hangzhou.aliyuncs.com/kendryte/nncase:latest
 $ docker run -it --rm -v `pwd`:/mnt -w /mnt registry.cn-hangzhou.aliyuncs.com/kendryte/nncase:latest /bin/bash -c "/bin/bash"
 ```
 
-Take Ubuntu 20.04 + Python 3.8 for example
 
-```shell
-root@f74598de4a02:/mnt# pip3 install nncase_github/nncase-1.0.0.20211029-cp38-cp38-manylinux_2_24_x86_64.whl
+
+### cpu/K210
+
+- Download nncase wheel package and then install it.
 
 ```
+root@2b11cc15c7f8:/mnt# wget -P x86_64 https://github.com/kendryte/nncase/releases/download/v1.8.0/nncase-1.8.0.20220929-cp38-cp38-manylinux_2_24_x86_64.whl
 
-> You should get and install target wheel package from your nncase sdk if you do not take cpu/K210 as your target
+root@2b11cc15c7f8:/mnt# pip3 install x86_64/*.whl
+```
+
+
+
+### K510
+
+- Download both nncase and nncase_k510 wheel packages and then install them.
+
+```shell
+root@2b11cc15c7f8:/mnt# wget -P x86_64 https://github.com/kendryte/nncase/releases/download/v1.8.0/nncase-1.8.0.20220929-cp38-cp38-manylinux_2_24_x86_64.whl
+
+root@2b11cc15c7f8:/mnt# wget -P x86_64 https://github.com/kendryte/nncase/releases/download/v1.8.0/nncase_k510-1.8.0.20220930-py2.py3-none-manylinux_2_24_x86_64.whl
+
+root@2b11cc15c7f8:/mnt# pip3 install x86_64/*.whl
+```
+
+
+
+### Check nncase version
+
+```python
+root@469e6a4a9e71:/mnt# python3
+Python 3.8.10 (default, Jun  2 2021, 10:49:15)
+[GCC 9.4.0] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import _nncase
+>>> print(_nncase.__version__)
+1.8.0-55be52f
+```
+
+
 
 ## nncase compile model APIs
 
