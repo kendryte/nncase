@@ -73,7 +73,11 @@ public sealed class IRModule
     {
         CompilerServices.InferenceType(function);
         ref var old = ref CollectionsMarshal.AsSpan(_functions)[index];
-        old.ReplaceAllUsesWith(function);
+        if (old.IsAlive)
+        {
+            old.ReplaceAllUsesWith(function);
+        }
+
         old = function;
     }
 }
