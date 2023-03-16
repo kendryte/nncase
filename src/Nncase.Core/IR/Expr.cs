@@ -97,6 +97,11 @@ public abstract partial class Expr : IDisposable
     public ReadOnlySpan<Expr> Operands => EnsureAlive()._operands;
 
     /// <summary>
+    /// Gets a value indicating whether the expr is alive.
+    /// </summary>
+    public bool IsAlive => !_disposedValue;
+
+    /// <summary>
     /// Gets or sets raw checked type.
     /// </summary>
     internal IRType? RawCheckedType
