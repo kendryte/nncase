@@ -17,12 +17,13 @@ public abstract class BaseFunction : Callable
     public BaseFunction(string name, string moduleKind, Expr[] operands)
         : base(name, moduleKind, operands)
     {
+        SchedResult = new();
     }
 
     /// <summary>
-    /// Gets sched result.
+    /// Gets or sets sched result.
     /// </summary>
-    public Schedule.SchedFunctionResult SchedResult { get; } = new();
+    public Schedule.SchedFunctionResult SchedResult { get; set; }
 
     /// <summary>
     /// Gets parameter types.

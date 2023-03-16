@@ -12,19 +12,40 @@ using Nncase.TIR;
 namespace Nncase.Passes.Mutators;
 
 /// <summary>
-/// unroll loop.
+/// fold let.
 /// </summary>
 public sealed class FoldLet : ExprRewriter
 {
     /// <inheritdoc/>
-    protected internal override Expr VisitLet(Let expr, Unit context)
+    protected override Expr RewriteLeafLet(Let expr)
     {
         if (expr.Expression is Const @const)
         {
-            ExprMemo.Add(expr.Var, @const);
-            return VisitSequential(expr.Body, context);
+            return new SubFieldRewriter(expr.Var, @const).Rewrite(expr.Body);
         }
 
-        return base.VisitLet(expr, context);
+        return expr;
+    }
+
+    private sealed class SubFieldRewriter : ExprRewriter
+    {
+        private readonly Var _var;
+        private readonly Const _const;
+
+        public SubFieldRewriter(Var @var, Const @const)
+        {
+            _var = @var;
+            _const = @const;
+        }
+
+        protected override Expr RewriteLeafVar(Var expr)
+        {
+            if (ReferenceEquals(expr, _var))
+            {
+                return _const;
+            }
+
+            return expr;
+        }
     }
 }

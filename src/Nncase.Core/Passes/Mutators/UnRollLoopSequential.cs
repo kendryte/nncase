@@ -153,7 +153,7 @@ public sealed class UnRollLoopSequential : ExprRewriter
                 return result;
             }
 
-            return base.VisitLeafVar(expr, context);
+            return expr;
         }
 
         protected override Expr VisitLeafCall(Call expr, Unit context)

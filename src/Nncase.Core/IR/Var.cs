@@ -21,8 +21,12 @@ public sealed class Var : Expr, IEquatable<Var?>
     /// ctor.
     /// </summary>
     public Var(string name, IRType typeAnnotation)
-        : this(name, typeAnnotation, GetNextId())
+        : base(Array.Empty<Expr>())
     {
+        TypeAnnotation = typeAnnotation;
+        CheckedType = TypeAnnotation;
+        GlobalVarIndex = GetNextId();
+        Name = name;
     }
 
     /// <summary>
@@ -30,8 +34,12 @@ public sealed class Var : Expr, IEquatable<Var?>
     /// </summary>
     /// <param name="typeAnnotation">Type annotation.</param>
     public Var(IRType typeAnnotation)
-        : this(typeAnnotation, GetNextId())
+        : base(Array.Empty<Expr>())
     {
+        TypeAnnotation = typeAnnotation;
+        CheckedType = TypeAnnotation;
+        GlobalVarIndex = GetNextId();
+        Name = $"var_{GlobalVarIndex}";
     }
 
     /// <summary>
@@ -52,35 +60,9 @@ public sealed class Var : Expr, IEquatable<Var?>
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Var"/> class.
-    /// private ctor.
-    /// </summary>
-    private Var(string name, IRType typeAnnotation, int globalVarIndex)
-        : base(Array.Empty<Expr>())
-    {
-        TypeAnnotation = typeAnnotation;
-        CheckedType = TypeAnnotation;
-        GlobalVarIndex = globalVarIndex;
-        Name = name;
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="Var"/> class.
-    /// private ctor without name.
-    /// </summary>
-    private Var(IRType typeAnnotation, int globalVarIndex)
-        : base(Array.Empty<Expr>())
-    {
-        TypeAnnotation = typeAnnotation;
-        CheckedType = TypeAnnotation;
-        GlobalVarIndex = globalVarIndex;
-        Name = $"var_{GlobalVarIndex}";
-    }
-
-    /// <summary>
     /// Gets the global var index.
     /// </summary>
-    public int GlobalVarIndex { get; init; }
+    public int GlobalVarIndex { get; }
 
     /// <summary>
     /// Gets name.
@@ -121,9 +103,7 @@ public sealed class Var : Expr, IEquatable<Var?>
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
         => functor.VisitVar(this, context);
 
-    public Var With(string? name = null, IRType? typeAnnotation = null, int? globalVarIndex = null) => new Var(name ?? Name, typeAnnotation ?? TypeAnnotation, globalVarIndex ?? GlobalVarIndex)
-    {
-    };
+    public Var With(string? name = null, IRType? typeAnnotation = null) => new Var(name ?? Name, typeAnnotation ?? TypeAnnotation);
 
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as Var);

@@ -66,6 +66,10 @@ public sealed class PrimFunction : BaseFunction
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
         => functor.VisitPrimFunction(this, context);
 
-    public PrimFunction With(string? name = null, string? moduleKind = null, Sequential? body = null, PhysicalBuffer[]? parameters = null)
-        => new PrimFunction(name ?? Name, moduleKind ?? ModuleKind, body ?? Body, parameters ?? Parameters);
+    public PrimFunction With(string? name = null, string? moduleKind = null, Sequential? body = null, PhysicalBuffer[]? parameters = null, Schedule.SchedFunctionResult? sched = null)
+        => new PrimFunction(name ?? Name, moduleKind ?? ModuleKind, body ?? Body, parameters ?? Parameters)
+        {
+            // note maybe add SchedResult into ctor.
+            SchedResult = sched ?? SchedResult,
+        };
 }
