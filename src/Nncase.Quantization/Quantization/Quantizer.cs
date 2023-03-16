@@ -42,7 +42,7 @@ internal partial class Quantizer
         // 1.0 Get ranges
         var ranges = await GetRangesAsync(_quantizeOptions.CalibrationDataset);
 
-        ranges.Select(x => FixUpRange(x.Value));
+        var ret = ranges.Select(x => FixUpRange(x.Value));
 
         if (_quantizeOptions.CalibrationMethod is CalibMethod.Kld)
         {
