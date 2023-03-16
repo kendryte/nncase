@@ -55,7 +55,15 @@ class stackvm_runtime_function : public runtime_function, private op_visitor {
 
     result<tensor> pop_tensor() noexcept { return pop_object<tensor>(); }
 
-    result<value_t> pop_value() noexcept { return pop_object<value_t>(); }
+    result<value_t> pop_value() noexcept {
+        try_var(var, stack_.pop());
+        if (var.is_object())
+            return var.as_object().as<value_t>();
+        else if (var.is_i()) {
+            return ok((value_t) nullptr);
+        }
+        return err(std::errc::invalid_argument);
+    }
 
     template <class T> result<T> pop_addr() noexcept {
         try_var(addr, pop_addr());
