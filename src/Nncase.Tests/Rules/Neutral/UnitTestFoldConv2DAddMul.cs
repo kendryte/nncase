@@ -23,10 +23,14 @@ public class UnitTestFoldConv2DAddMul : TransformTestBase
     {
         { new[] { 1, 256, 56, 56 }, (1, 1), (0, 0) },
         { new[] { 1, 32, 64, 64 }, (1, 1), (0, 0) },
+    };
+
+    public static readonly TheoryData<int[], (int, int), (int, int)> FoldConv2DAddMulNegativeData = new()
+    {
         { new[] { 1, 32, 56, 56 }, (3, 3), (1, 1) },
     };
 
-    [Theory(Skip = "Bug")]
+    [Theory]
     [MemberData(nameof(FoldConv2DAddMulPositiveData))]
     public void TestPositive(int[] shape, (int KernelH, int KernelW) kernel, (int PadH, int PadW) pad)
     {
@@ -133,7 +137,7 @@ public class UnitTestFoldConv2DAddMul : TransformTestBase
     }
 
     [Theory]
-    [MemberData(nameof(FoldConv2DAddMulPositiveData))]
+    [MemberData(nameof(FoldConv2DAddMulNegativeData))]
     public void TestNegative(int[] shape, (int KernelH, int KernelW) kernel, (int PadH, int PadW) pad)
     {
         // note shape is nchw

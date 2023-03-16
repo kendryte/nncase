@@ -42,16 +42,17 @@ public class UnitTestCombineUnary : TransformTestBase
                 { 3, 3 },
             }, PadMode.Symmetric, 0f,
             },
-            new object[]
-            {
-                UnaryOp.Abs, new[] { 1, 3, 4, 5 },  new[,]
-            {
-                { 1, 1 },
-                { -1, -1 },
-                { 1, 1 },
-                { 3, 3 },
-            }, PadMode.Reflect, 0f,
-            },
+
+            // new object[]
+            // {
+            //     UnaryOp.Abs, new[] { 1, 3, 4, 5 },  new[,]
+            // {
+            //     { 1, 1 },
+            //     { -1, -1 },
+            //     { 1, 1 },
+            //     { 3, 3 },
+            // }, PadMode.Reflect, 0f,
+            // },
             new object[]
             {
                 UnaryOp.Floor, new[] { 1, 3, 4, 5 },  new[,]
@@ -93,7 +94,7 @@ public class UnitTestCombineUnary : TransformTestBase
             new object[] { UnaryOp.Square, new[] { 3, 2, 4, 5 }, new[] { 3, 4, 1, 10 } },
         };
 
-    [Theory(Skip = "Bug")]
+    [Theory]
     [MemberData(nameof(TestCombinePadUnaryPositiveData))]
     public void TestCombinePadUnaryPositive(UnaryOp opType, int[] inShape, int[,] paddings, PadMode padM, float padValue)
     {
@@ -102,6 +103,31 @@ public class UnitTestCombineUnary : TransformTestBase
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
         var rootPre = IR.F.Math.Unary(opType, Pad(a, paddings, padM, padValue));
         TestMatched<CombinePadUnary>(rootPre, normal);
+    }
+
+    [Fact(Skip = "Bug")]
+    public void TestCombinePadAbs()
+    {
+        var a = new Var();
+        var feeds = new Dictionary<Var, IValue>();
+        feeds.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 4, 5 }).Evaluate());
+        var pre = IR.F.Math.Unary(UnaryOp.Abs, Pad(a, new int[,] { { 1, 1 }, { -1, -1 }, { 1, 1 }, { 3, 3 } }, PadMode.Reflect, 0.0f));
+        var rules = new[] { new CombinePadUnary() };
+        Assert.True(pre.InferenceType(), "TestInferFailed:" + pre.CheckedType);
+        if (rules.Length == 0)
+        {
+            throw new InvalidOperationException("Rules should not be empty");
+        }
+
+        var preHashCode = pre.GetHashCode();
+        var v1 = pre.Evaluate(feeds);
+        var post = CompilerServices.Rewrite(pre, rules, new());
+        Assert.NotEqual(preHashCode, post.GetHashCode());
+        var v2 = post.Evaluate(feeds);
+        if (!Comparator.AllEqual(v1, v2))
+        {
+            Comparator.Compare(v1, v2);
+        }
     }
 
     [Theory]

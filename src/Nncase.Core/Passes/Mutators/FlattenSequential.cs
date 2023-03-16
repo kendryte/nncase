@@ -17,11 +17,12 @@ namespace Nncase.Passes.Mutators;
 /// </summary>
 public sealed class FlattenSequential : ExprRewriter
 {
-    protected internal override Expr VisitSequential(Sequential expr, Unit context)
+    /// <inheritdoc/>
+    protected override Expr RewriteLeafSequential(Sequential expr)
     {
         if (expr.Fields.AsValueEnumerable().Any(x => x is Sequential))
         {
-            return new Sequential(Sequential.Flatten(expr.Fields));
+            return Sequential.Flatten(expr.Fields);
         }
 
         return expr;

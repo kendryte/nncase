@@ -543,6 +543,11 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
 
         _scope.Push();
         _scope.Append($"T.Buffer({expr.Name}, {expr.MemLocation}, {VisitType(expr.ElemType)})");
+        if (expr is TIR.PhysicalBuffer phy)
+        {
+            _scope.Append($"@({phy.Start}, {phy.Size})");
+        }
+
         doc = new(_scope.Pop(), expr.Name, true);
         _exprMemo.Add(expr, doc);
         return doc;

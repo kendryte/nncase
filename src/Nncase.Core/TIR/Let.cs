@@ -33,7 +33,7 @@ public sealed class Let : Expr
     /// <summary>
     /// Gets the Let body.
     /// </summary>
-    public Sequential Body => (Sequential)Operands[1];
+    public Sequential Body => (Sequential)Operands[2];
 
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
         => functor.VisitLet(this, context);

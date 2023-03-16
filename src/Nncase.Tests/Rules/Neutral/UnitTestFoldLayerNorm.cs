@@ -23,9 +23,9 @@ public class UnitTestFoldLayerNorm : TransformTestBase
 {
     public static TheoryData<int[]> FoldLayerNormData => new()
     {
-         new[] { 1, 3, 16, 16 },
-         new[] { 1, 2, 4, 8 },
-         new[] { 1, 1, 5, 5 },
+        new[] { 1, 3, 16, 16 },
+        new[] { 1, 2, 4, 8 },
+        new[] { 1, 1, 5, 5 },
     };
 
     [Theory]
