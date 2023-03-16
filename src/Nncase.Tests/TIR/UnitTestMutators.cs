@@ -390,6 +390,7 @@ public sealed class UnitTestMutators : TestClassBase
             {
                 return index;
             }
+
             return null;
         });
         pass.Add<FlattenSequential>();
