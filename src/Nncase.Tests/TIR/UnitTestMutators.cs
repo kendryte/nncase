@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -356,5 +357,64 @@ public sealed class UnitTestMutators : TestClassBase
         pass.Add<FoldIfThen>();
         var new_func = await pass.RunAsync(main, new());
         Assert.True(new_func.Body[0] is Call { Target: ExtraW } call && call.Arguments[0].Evaluate().AsTensor().ToScalar<int>() == 456);
+    }
+
+    [Fact]
+    public async Task TestFoldBufferIndex()
+    {
+        T.PhysicalBuffer(DataTypes.BFloat16, Schedule.MemoryLocation.Input, new[] { 3, 16, 24, 24 }, out var ddr_if);
+        T.PhysicalBuffer(DataTypes.BFloat16, Schedule.MemoryLocation.Output, new[] { 3, 16, 24, 24 }, out var ddr_of);
+        T.PhysicalBuffer(DataTypes.BFloat16, Schedule.MemoryLocation.Data, new[] { 3, 10, 5, 9 }, out var glb_if);
+        var bufferIndexMap = new Dictionary<TIR.PhysicalBuffer, int>() {
+          { ddr_if, 2 },
+          { ddr_of, 4 },
+        };
+
+        PrimFunction main;
+        {
+            main = T.PrimFunc("main", Callable.StackVMModuleKind, ddr_if, ddr_of).Body(
+             T.Unrolled(out var n, (0, 3, 3)).Body(
+               T.Unrolled(out var c, (0, 16, 10)).Body(
+                 T.Unrolled(out var h, (0, 24, 5)).Body(
+                   T.Unrolled(out var w, (0, 24, 9)).Body(
+                     new Call(new ExtraW(), IR.F.Buffer.BufferIndexOf(ddr_if)),
+                     new Call(new ExtraW(), IR.F.Buffer.BufferIndexOf(ddr_of)))))))
+           .Build();
+        }
+
+        var pass = new PrimFuncPass { Name = "AssginBuffer" };
+        pass.Add<UnRollLoopSequential>();
+        pass.Add<Substitutor>(Expr? (Expr e) =>
+        {
+            if (e is Call { } call && call.Arguments[0] is PhysicalBuffer physicalBuffer && bufferIndexMap.TryGetValue(physicalBuffer, out var index))
+            {
+                return index;
+            }
+            return null;
+        });
+        pass.Add<FlattenSequential>();
+        var post = await pass.RunAsync(main, new());
+        {
+            var getIndex = (int i, ParameterInfo info) =>
+            {
+                var index = (TensorConst)((Call)post.Body.Fields[i])[info];
+                return index.Value.ToScalar<int>();
+            };
+            int count = 0;
+            for (int n = 0; n < 3; n += 3)
+            {
+                for (int c = 0; c < 16; c += 10)
+                {
+                    for (int h = 0; h < 24; h += 5)
+                    {
+                        for (int w = 0; w < 24; w += 9)
+                        {
+                            Assert.Equal(2, getIndex(count++, ExtraW.Input));
+                            Assert.Equal(4, getIndex(count++, ExtraW.Input));
+                        }
+                    }
+                }
+            }
+        }
     }
 }
