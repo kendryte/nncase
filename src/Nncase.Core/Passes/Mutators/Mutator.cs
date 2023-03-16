@@ -31,11 +31,6 @@ public static class Mutator
     public static Func<ExprRewriter> UnFoldBlock() => () => new Mutators.UnFoldBlock();
 
     /// <summary>
-    /// fold const tuple to tupleconst.
-    /// </summary>
-    public static Func<ExprRewriter> FoldConstTuple() => () => new Mutators.FoldConstTuple();
-
-    /// <summary>
     /// flatten the sequential.
     /// </summary>
     public static Func<ExprRewriter> FlattenSequential() => () => new Mutators.FlattenSequential();

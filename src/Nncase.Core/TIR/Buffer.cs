@@ -305,6 +305,26 @@ public abstract class Buffer : Expr
     /// Gets the shape.
     /// </summary>
     public abstract ReadOnlySpan<Expr> Dimensions { get; }
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj)
+    {
+        if (obj is not Buffer other)
+        {
+            return false;
+        }
+
+        if (Const is not null && !Const.Equals(other.Const))
+        {
+            return false;
+        }
+
+        return string.Equals(Name, other.Name, StringComparison.Ordinal) &&
+                ElemType.Equals(other.ElemType) &&
+                MemLocation.Equals(other.MemLocation) &&
+                Rank.Equals(other.Rank) &&
+                base.Equals(obj);
+    }
 }
 
 /// <summary>
@@ -460,6 +480,14 @@ public sealed class PhysicalBuffer : Buffer
     public override string ToString()
     {
         return $"PhysicalBuffer({Name}, {ElemType}, {nameof(MemLocation)})";
+    }
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj)
+    {
+        return base.Equals(obj) && obj is PhysicalBuffer other &&
+          FixedDimensions.SequenceEqual(other.FixedDimensions) &&
+          FixedStrides.SequenceEqual(other.FixedStrides);
     }
 
     /// <inheritdoc/>

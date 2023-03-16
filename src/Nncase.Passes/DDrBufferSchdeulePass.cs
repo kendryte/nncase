@@ -10,7 +10,7 @@ using Nncase.IR;
 using Nncase.Passes.Rules;
 using Nncase.TIR;
 
-namespace Nncase.Passes.Passes;
+namespace Nncase.Passes;
 
 /// <summary>
 /// merge call/ assgin ddr buffer start/layout.

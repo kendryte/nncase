@@ -35,7 +35,8 @@ public class OpGenerator : IIncrementalGenerator
     {
         if (node is ClassDeclarationSyntax { BaseList: { Types.Count: > 0 } } classDeclaration)
         {
-            return classDeclaration.Modifiers.Any(tok => tok.IsKind(SyntaxKind.PartialKeyword));
+            return classDeclaration.Modifiers.Any(tok => tok.IsKind(SyntaxKind.PartialKeyword)) &&
+                   !classDeclaration.Modifiers.Any(tok => tok.IsKind(SyntaxKind.AbstractKeyword));
         }
 
         return false;
