@@ -12,10 +12,10 @@ using System.Text;
 using System.Threading.Tasks;
 using Nncase;
 using Nncase.IR;
+using Nncase.Passes;
+using Nncase.Passes.Rules.Neutral;
 using Nncase.Quantization;
 using Nncase.Tests.TestFixture;
-using Nncase.Transform;
-using Nncase.Transform.Rules.Neutral;
 using Nncase.Utilities;
 using Xunit;
 using static Nncase.IR.F.NN;
@@ -114,27 +114,25 @@ public class UnitTestKLQuant : TestClassBase
         var dumpVisitor = new DumpVisitor();
         dumpVisitor.Visit(module.Functions[0]);
 
-        Assert.Equal(-1.0001221f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[2]).Value.ToArray<float>()[0]);
-        Assert.Equal(1.0001087f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[2]).Value.ToArray<float>()[1]);
-        Assert.Equal(-1.0001218f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[5]).Value.ToArray<float>()[0]);
-        Assert.Equal(0.9954922f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[5]).Value.ToArray<float>()[1]);
-        Assert.Equal(-8.882528f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[13]).Value.ToArray<float>()[0]);
-        Assert.Equal(9.717726f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[13]).Value.ToArray<float>()[1]);
+        Assert.Equal(-1.0001221f, ((TensorConst)dumpVisitor.ExprMemo.Keys.ToList()[2]).Value.ToArray<float>()[0]);
+        Assert.Equal(1.0001087f, ((TensorConst)dumpVisitor.ExprMemo.Keys.ToList()[2]).Value.ToArray<float>()[1]);
+        Assert.Equal(-1.0001218f, ((TensorConst)dumpVisitor.ExprMemo.Keys.ToList()[5]).Value.ToArray<float>()[0]);
+        Assert.Equal(0.9954922f, ((TensorConst)dumpVisitor.ExprMemo.Keys.ToList()[5]).Value.ToArray<float>()[1]);
+        Assert.Equal(-8.882528f, ((TensorConst)dumpVisitor.ExprMemo.Keys.ToList()[13]).Value.ToArray<float>()[0]);
+        Assert.Equal(9.717726f, ((TensorConst)dumpVisitor.ExprMemo.Keys.ToList()[13]).Value.ToArray<float>()[1]);
     }
 
     private Expr Pad(int[][] p) => Const.FromTensor(Tensor.From<int>(p.SelectMany(i => i).ToArray(), new[] { 2, 2 }));
 
     public sealed class DumpVisitor : ExprVisitor<int, IRType>
     {
-        public override int DefaultVisitLeaf(Expr expr) => 0;
-
-        public override object DefaultVisitLeaf(IVisitable visitable) => 0;
-
         public int FoundOpCount<T>()
           where T : Op
         {
-            return ExpressionMemo.Keys.OfType<T>().Count();
+            return ExprMemo.Keys.OfType<T>().Count();
         }
+
+        protected override int DefaultVisitLeaf(Expr expr) => 0;
     }
 
     internal sealed class RandCalibrationDatasetProvider : ICalibrationDatasetProvider

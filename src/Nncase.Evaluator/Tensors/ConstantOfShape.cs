@@ -41,7 +41,7 @@ public class ConstantOfShapeEvaluator : IEvaluator<ConstantOfShape>, ITypeInfere
         }
     }
 
-    public Cost? Visit(ICostEvaluateContext context, ConstantOfShape target)
+    public Cost Visit(ICostEvaluateContext context, ConstantOfShape target)
     {
         _ = context.GetArgumentType<TensorType>(target, ConstantOfShape.Shape);
         var ret = context.GetReturnType<TensorType>();

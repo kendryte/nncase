@@ -25,7 +25,7 @@ public interface IPattern
     /// </summary>
     /// <param name="input">Input.</param>
     /// <returns>Is match.</returns>
-    bool MatchLeaf(object input);
+    bool MatchLeaf(Expr input);
 }
 
 /// <summary>

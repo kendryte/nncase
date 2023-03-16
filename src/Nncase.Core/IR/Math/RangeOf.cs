@@ -9,7 +9,7 @@ namespace Nncase.IR.Math;
 /// RangeOf expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record RangeOf() : Op
+public sealed partial class RangeOf : Op
 {
     /// <summary>
     /// Gets input.

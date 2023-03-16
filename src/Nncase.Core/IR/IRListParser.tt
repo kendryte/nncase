@@ -1,0 +1,32 @@
+﻿<#@ assembly name="System.Core" #>
+<#@ import namespace="System.IO" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.Diagnostics" #>
+<#
+var irs = (from l in File.ReadAllLines("src/Nncase.Core/IR/IRList.csv")
+          where !string.IsNullOrWhiteSpace(l)
+          let columns = l.Split(',')
+          let isDerived = bool.Parse(columns[1])
+          select new IRDef
+          {
+              Name = columns[0],
+              IsDerived = isDerived,
+              IsFunction = bool.Parse(columns[2]),
+              VisitBase = columns[3],
+              Namespace = columns[4],
+              Fields = isDerived ? columns[5].Split(new[]{';'}, StringSplitOptions.RemoveEmptyEntries) : Array.Empty<string>()
+          }).ToArray();
+#>
+<#+
+struct IRDef
+{
+    public string Name;
+    public bool IsDerived;
+    public bool IsFunction;
+    public string VisitBase;
+    public string Namespace;
+    public string[] Fields;
+}
+#>

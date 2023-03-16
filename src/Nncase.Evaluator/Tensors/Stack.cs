@@ -42,7 +42,7 @@ public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>, ICostEv
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, Stack target)
+    public Cost Visit(ICostEvaluateContext context, Stack target)
     {
         var input = context.GetArgumentType<TupleType>(target, Stack.Inputs);
         var ret = context.GetReturnType<TensorType>();

@@ -34,7 +34,7 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, Cast target)
+    public Cost Visit(ICostEvaluateContext context, Cast target)
     {
         var input = context.GetArgumentType<TensorType>(target, Cast.Input);
         return new()

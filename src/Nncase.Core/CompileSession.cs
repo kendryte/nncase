@@ -11,7 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Nncase.CodeGen;
 using Nncase.Diagnostics;
 using Nncase.IR;
-using Nncase.Transform;
+using Nncase.Passes;
 
 namespace Nncase;
 
@@ -79,9 +79,7 @@ public sealed class CompileSession : IServiceProvider, IDisposable
     /// <param name="name">Name.</param>
     /// <returns>Created pass manager.</returns>
     public IPassManager CreatePassManager(string name)
-    {
-        return new PassManager(name, this);
-    }
+        => _serviceProvider.GetRequiredService<IPassManagerFactory>().Create(name, this);
 
     /// <inheritdoc/>
     public void Dispose()

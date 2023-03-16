@@ -31,7 +31,7 @@ public class FlattenEvaluator : IEvaluator<Flatten>, ITypeInferencer<Flatten>, I
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, Flatten target)
+    public Cost Visit(ICostEvaluateContext context, Flatten target)
     {
         return new()
         {

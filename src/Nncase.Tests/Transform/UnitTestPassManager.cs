@@ -7,9 +7,9 @@ using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using Nncase.IR;
+using Nncase.Passes;
 using Nncase.Tests.TestFixture;
 using Nncase.TIR;
-using Nncase.Transform;
 using Xunit;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.Tensors;
@@ -27,7 +27,7 @@ public sealed class UnitTestPassManager : TestClassBase
         var prim_wrapper = new PrimFunctionWrapper(prim_func_1, 1);
 
         var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 2, 3, 4 }));
-        var main_func = new Function("main", new Call(prim_wrapper, ImmutableArray.Create<Expr>(input)), ImmutableArray.Create<Var>(input));
+        var main_func = new Function("main", new Call(prim_wrapper, input), input);
 
         // prim_func_2 for update
         var prim_func_2 = T.PrimFunc("prim_func_2", "k?", T.PhysicalBuffer(DataTypes.Float32, Schedule.MemoryLocation.Input, new[] { 1, 2, 3, 4 }, out _), T.PhysicalBuffer(DataTypes.Float32, Schedule.MemoryLocation.Output, new[] { 1, 2, 3, 4 }, out _)).Body(
@@ -69,8 +69,8 @@ public sealed class UnitTestPassManager : TestClassBase
         var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 24, 32, 3 }));
         var main_func = new Function(
             "main",
-            new Call(func_2, new Call(func_1, new Call(func_0, ImmutableArray.Create<Expr>(input)))),
-            ImmutableArray.Create<Var>(input));
+            new Call(func_2, new Call(func_1, new Call(func_0, input))),
+            input);
         Assert.True(CompilerServices.InferenceType(main_func));
 
         // prim_func_2 for update

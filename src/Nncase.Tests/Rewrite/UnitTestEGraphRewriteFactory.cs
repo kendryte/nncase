@@ -4,10 +4,11 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using NetFabric.Hyperlinq;
 using Nncase.Diagnostics;
 using Nncase.IR;
+using Nncase.Passes;
 using Nncase.Tests.TestFixture;
-using Nncase.Transform;
 using Xunit;
 using static Nncase.IR.F.Tensors;
 using static Nncase.PatternMatch.Utility;
@@ -78,14 +79,15 @@ public sealed class UnitTestEGraphRewriteFactory : TestClassBase
         var infered = pre.InferenceType();
         Assert.True(infered);
 
-        var pass = new EGraphPass { Name = "EGraphOptimize" };
+        var pass = new EGraphRulesPass { Name = "EGraphOptimize" };
         foreach (var rule in @case.Rules)
         {
             pass.Add(rule);
         }
 
-        Function post;
-        post = (Function)await pass.RunAsync(pre, new());
+        var graph = new EGraph(pre);
+        await pass.RunAsync(graph, new());
+        var post = (Function)graph.Extract(graph.Root!, null);
         Assert.True(post.InferenceType());
 
 #if DEBUG

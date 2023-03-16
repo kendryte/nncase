@@ -8,8 +8,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
 using Nncase.IR.Math;
+using Nncase.Passes;
 using Nncase.PatternMatch;
-using Nncase.Transform;
 using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.Utility;
 
@@ -17,12 +17,12 @@ namespace Nncase.Quantization;
 
 internal partial class QuantizerAdaRound
 {
-    private readonly EGraph _graph;
+    private readonly IEGraph _graph;
     private readonly List<ENode> _rangeOfs = new List<ENode>();
     private readonly List<ENode> _childrenOfRangeOfs = new List<ENode>();
     private readonly CompileSession _compileSession;
 
-    public QuantizerAdaRound(EGraph graph, CompileSession compileSession)
+    public QuantizerAdaRound(IEGraph graph, CompileSession compileSession)
     {
         _graph = graph;
         _compileSession = compileSession;

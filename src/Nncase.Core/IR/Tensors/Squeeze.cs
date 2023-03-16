@@ -16,7 +16,7 @@ namespace Nncase.IR.Tensors;
 /// Squeeze expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Squeeze() : Op
+public sealed partial class Squeeze : Op
 {
     /// <summary>
     /// Gets input.

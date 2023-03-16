@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+#if false
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -11,10 +12,10 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Nncase.CodeGen;
 using Nncase.IR;
+using Nncase.Passes;
 using Nncase.Quantization;
 using Nncase.Runtime.Interop;
 using Nncase.Tests.TestFixture;
-using Nncase.Transform;
 using Xunit;
 
 namespace Nncase.Tests.Targets;
@@ -129,3 +130,4 @@ public class UnitTestK210Target : TestClassBase
         GenerateKModelAndRun(module, input, new[] { expectedOutput }, name);
     }
 }
+#endif

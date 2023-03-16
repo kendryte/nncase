@@ -12,16 +12,10 @@ namespace Nncase.IR;
 /// <summary>
 /// Tuple interface.
 /// </summary>
-public interface ITuple : IReadOnlyList<Expr>
+public interface ITuple
 {
     /// <summary>
-    /// Gets fields.
+    /// Gets fields count.
     /// </summary>
-    IReadOnlyList<Expr> Fields { get; }
-
-    /// <summary>
-    /// Cast to expression.
-    /// </summary>
-    /// <returns>The expression.</returns>
-    public Expr AsExpr() => (Expr)this;
+    int Count { get; }
 }

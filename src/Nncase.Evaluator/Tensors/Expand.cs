@@ -28,7 +28,7 @@ public sealed partial class ExpandEvaluator : IEvaluator<Expand>, ITypeInference
         return OrtKI.Expand(input, shape).ToValue();
     }
 
-    public Cost? Visit(ICostEvaluateContext context, Expand target)
+    public Cost Visit(ICostEvaluateContext context, Expand target)
     {
         var input = context.GetArgumentType<TensorType>(target, Expand.Input);
         var ret = context.GetReturnType<TensorType>();

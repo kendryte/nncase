@@ -22,7 +22,7 @@ public interface ICostEvaluator
     /// <param name="context">Context.</param>
     /// <param name="target">Target operator.</param>
     /// <returns>Result.</returns>
-    Cost? Visit(ICostEvaluateContext context, Op target);
+    Cost Visit(ICostEvaluateContext context, Op target);
 }
 
 /// <summary>
@@ -50,9 +50,9 @@ public interface ICostEvaluator<T> : ICostEvaluator
     /// <param name="context">Context.</param>
     /// <param name="target">Target operator.</param>
     /// <returns>Result.</returns>
-    Cost? Visit(ICostEvaluateContext context, T target);
+    Cost Visit(ICostEvaluateContext context, T target);
 
-    Cost? ICostEvaluator.Visit(ICostEvaluateContext context, Op target)
+    Cost ICostEvaluator.Visit(ICostEvaluateContext context, Op target)
     {
         return Visit(context, (T)target);
     }

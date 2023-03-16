@@ -11,16 +11,16 @@ using System.Threading.Tasks;
 using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.F;
+using Nncase.Passes;
+using Nncase.Passes.Rules.Neutral;
 using Nncase.Tests.TestFixture;
-using Nncase.Transform;
-using Nncase.Transform.Rules.Neutral;
 using Xunit;
 using Math = Nncase.IR.F.Math;
 using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestReshapeBatchMatmul : TestClassBase
+public class UnitTestReshapeBatchMatmul : TransformTestBase
 {
     public static IEnumerable<object[]> TestReshapeBatchMatmulPositiveData =>
         new[]
@@ -43,13 +43,7 @@ public class UnitTestReshapeBatchMatmul : TestClassBase
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, aShape);
         var b = Random.Normal(DataTypes.Float32, 0, 1, 0, bShape);
         var rootPre = Math.MatMul(a, b);
-        var rootPost = CompilerServices.Rewrite(
-            rootPre,
-            new IRewriteRule[] { new ReshapeBatchMatmul(), },
-            new());
-
-        Assert.NotEqual(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
+        TestMatched<ReshapeBatchMatmul>(rootPre);
     }
 
     [Theory]
@@ -59,11 +53,6 @@ public class UnitTestReshapeBatchMatmul : TestClassBase
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, aShape);
         var b = new IR.Var(new IR.TensorType(DataTypes.Float32, bShape));
         var rootPre = Math.MatMul(a, b);
-        var rootPost = CompilerServices.Rewrite(
-            rootPre,
-            new IRewriteRule[] { new ReshapeBatchMatmul(), },
-            new());
-
-        Assert.Equal(rootPre, rootPost);
+        TestNotMatch<ReshapeBatchMatmul>(rootPre);
     }
 }

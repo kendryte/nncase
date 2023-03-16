@@ -7,8 +7,8 @@ using System.IO;
 using System.Linq;
 using Microsoft.Extensions.Hosting;
 using Nncase.IR;
+using Nncase.Passes;
 using Nncase.PatternMatch;
-using Nncase.Transform;
 using Xunit;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.Tensors;
@@ -159,9 +159,9 @@ public sealed class UnitTestEGraphMatch
         Assert.Single(results);
         var result = results[0];
         var wcvargs = (IReadOnlyList<Expr>)result["wcvargs"];
-        Assert.Equal(((Call)wcvargs[0]).Parameters[0], x);
-        Assert.Equal(((Call)wcvargs[1]).Parameters[0], y);
-        Assert.Equal(((Call)wcvargs[2]).Parameters[0], z);
+        Assert.Equal(((Call)wcvargs[0]).Arguments[0], x);
+        Assert.Equal(((Call)wcvargs[1]).Arguments[0], y);
+        Assert.Equal(((Call)wcvargs[2]).Arguments[0], z);
         Assert.Equal(result[wcperm], perm);
         Assert.Equal(result[wcaxis], (Const)0);
     }

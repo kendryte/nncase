@@ -14,8 +14,8 @@ using Nncase.CodeGen;
 using Nncase.Compiler;
 using Nncase.Diagnostics;
 using Nncase.IR;
+using Nncase.Passes;
 using Nncase.Quantization;
-using Nncase.Transform;
 
 namespace Nncase.Cli.Commands;
 

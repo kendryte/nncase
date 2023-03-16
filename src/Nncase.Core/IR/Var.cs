@@ -6,51 +6,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace Nncase.IR;
-
-internal static partial class NameAlloc
-{
-    private static readonly Dictionary<string, int> VarMaps = new();
-
-    /// <summary>
-    /// get unique var name, avoid the confilct name.
-    /// </summary>
-    public static string GetUniqueVarName(string name)
-    {
-        if (!VarMaps.TryGetValue(name, out var count))
-        {
-            count = 0;
-            VarMaps.Add(name, count);
-            return name;
-        }
-
-        while (VarMaps.ContainsKey(name + ++count))
-        {
-        }
-
-        name = name + count;
-        VarMaps[name] = 0;
-        return name;
-    }
-
-    /// <summary>
-    /// add the exits name into dict.
-    /// </summary>
-    public static void AddName(string name)
-    {
-        if (!VarMaps.ContainsKey(name))
-        {
-            VarMaps[name] = 0;
-        }
-    }
-}
 
 /// <summary>
 /// Variable expression.
 /// </summary>
-public record Var : Expr, IEquatable<Var>
+public sealed class Var : Expr, IEquatable<Var?>
 {
     private static int _globalVarIndex;
 
@@ -59,6 +21,7 @@ public record Var : Expr, IEquatable<Var>
     /// ctor.
     /// </summary>
     public Var(string name, IRType typeAnnotation)
+        : base(Array.Empty<Expr>())
     {
         TypeAnnotation = typeAnnotation;
         CheckedType = TypeAnnotation;
@@ -71,6 +34,7 @@ public record Var : Expr, IEquatable<Var>
     /// </summary>
     /// <param name="typeAnnotation">Type annotation.</param>
     public Var(IRType typeAnnotation)
+        : base(Array.Empty<Expr>())
     {
         TypeAnnotation = typeAnnotation;
         CheckedType = TypeAnnotation;
@@ -115,6 +79,10 @@ public record Var : Expr, IEquatable<Var>
     /// </summary>
     public static implicit operator Var(string name) => new Var(name, AnyType.Default);
 
+    public static bool operator ==(Var? left, Var? right) => EqualityComparer<Var>.Default.Equals(left, right);
+
+    public static bool operator !=(Var? left, Var? right) => !(left == right);
+
     /// <summary>
     /// get scalar var.
     /// </summary>
@@ -132,18 +100,27 @@ public record Var : Expr, IEquatable<Var>
     public static Var SizeVar(string name) => Scalar(name, DataTypes.Int32);
 
     /// <inheritdoc/>
-    public virtual bool Equals(Var? other)
+    public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
+        => functor.VisitVar(this, context);
+
+    public Var With(string? name = null, IRType? typeAnnotation = null) => new Var(name ?? Name, typeAnnotation ?? TypeAnnotation);
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj) => Equals(obj as Var);
+
+    /// <inheritdoc/>
+    public bool Equals(Var? other)
     {
-        if (other == null)
+        if (ReferenceEquals(this, other))
         {
-            return false;
+            return true;
         }
 
-        return GlobalVarIndex == other.GlobalVarIndex;
+        return other is not null && GlobalVarIndex == other.GlobalVarIndex;
     }
 
     /// <inheritdoc/>
-    public override int GetHashCode() => GlobalVarIndex.GetHashCode();
+    protected override int GetHashCodeCore() => HashCode.Combine(GlobalVarIndex);
 
     private static int GetNextId()
     {

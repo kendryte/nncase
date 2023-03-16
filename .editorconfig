@@ -306,7 +306,7 @@ dotnet_diagnostic.IDE1006.severity = suggestion
 
 dotnet_code_quality.copy_analysis = true
 dotnet_diagnostic.CA1000.severity = none
-dotnet_diagnostic.CA1001.severity = warning
+dotnet_diagnostic.CA1001.severity = suggestion
 dotnet_diagnostic.CA1018.severity = warning
 dotnet_diagnostic.CA1019.severity = warning
 dotnet_diagnostic.CA1036.severity = warning

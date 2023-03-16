@@ -48,7 +48,7 @@ public class L2NormalizationEvaluator : IEvaluator<L2Normalization>, ITypeInfere
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, L2Normalization target)
+    public Cost Visit(ICostEvaluateContext context, L2Normalization target)
     {
         var inputType = context.GetArgumentType<TensorType>(target, L2Normalization.Input);
         var returnType = context.GetReturnType<TensorType>();
@@ -91,7 +91,7 @@ public class BatchNormalizationEvaluator : IEvaluator<BatchNormalization>, IType
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, BatchNormalization target)
+    public Cost Visit(ICostEvaluateContext context, BatchNormalization target)
     {
         var inputType = context.GetArgumentType<TensorType>(target, BatchNormalization.Input);
         var returnType = context.GetReturnType<TensorType>();
@@ -131,7 +131,7 @@ public class InstanceNormalizationEvaluator : IEvaluator<InstanceNormalization>,
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, InstanceNormalization target)
+    public Cost Visit(ICostEvaluateContext context, InstanceNormalization target)
     {
         var inputType = context.GetArgumentType<TensorType>(target, InstanceNormalization.Input);
         var returnType = context.GetReturnType<TensorType>();
@@ -171,7 +171,7 @@ public class LpNormalizationEvaluator : IEvaluator<LpNormalization>, ITypeInfere
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, LpNormalization target)
+    public Cost Visit(ICostEvaluateContext context, LpNormalization target)
     {
         var inputType = context.GetArgumentType<TensorType>(target, LpNormalization.Input);
         var returnType = context.GetReturnType<TensorType>();
@@ -212,7 +212,7 @@ public class LRNEvaluator : IEvaluator<LRN>, ITypeInferencer<LRN>, ICostEvaluato
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, LRN target)
+    public Cost Visit(ICostEvaluateContext context, LRN target)
     {
         var inputType = context.GetArgumentType<TensorType>(target, LRN.Input);
         var returnType = context.GetReturnType<TensorType>();
