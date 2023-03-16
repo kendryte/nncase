@@ -32,6 +32,7 @@ internal class NNModule : IApplicationPart
 
         // Normalization
         registrator.RegisterManyInterface<L2NormalizationEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<LayerNormEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<BatchNormalizationEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<InstanceNormalizationEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<LpNormalizationEvaluator>(reuse: Reuse.Singleton);
