@@ -437,4 +437,3 @@ public class GeluEvaluator : IEvaluator<Gelu>, ITypeInferencer<Gelu>, ICostEvalu
         return input;
     }
 }
-

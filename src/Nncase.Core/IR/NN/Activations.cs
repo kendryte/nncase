@@ -191,7 +191,6 @@ public sealed partial class Erf : ActivationOp
     public static readonly ParameterInfo Input = new(typeof(Erf), 0, "input");
 }
 
-
 /// <summary>
 /// Gelu expression.
 /// </summary>

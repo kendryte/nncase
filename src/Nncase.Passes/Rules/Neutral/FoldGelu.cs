@@ -51,10 +51,10 @@ public sealed partial class FoldGeluWithScale : RewriteRule<CallPattern>
 
     private Expr? GetReplace(Expr input, Call mul3Call, Tensor<float> mul3Const, Call divCall, Tensor<float> divConst, Tensor<float> addConst, Tensor<float> mul1Const)
     {
-        if (divCall[Binary.Lhs] == mul3Call 
-        && Math.Abs(mul3Const[0] - 0.5773502588272095) < 1e-6 
-        && Math.Abs(mul1Const[0] - 0.5f) < 1e-6f 
-        && Math.Abs(addConst[0] - 1f) < 1e-6f 
+        if (divCall[Binary.Lhs] == mul3Call
+        && Math.Abs(mul3Const[0] - 0.5773502588272095) < 1e-6
+        && Math.Abs(mul1Const[0] - 0.5f) < 1e-6f
+        && Math.Abs(addConst[0] - 1f) < 1e-6f
         && Math.Abs(divConst[0] - 1.4142135381698608f) < 1e-6f)
         {
             return Gelu(input, mul3Const);
