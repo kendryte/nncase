@@ -89,7 +89,7 @@ public abstract partial class Expr : IDisposable
     /// <summary>
     /// Gets or sets outputs names.
     /// </summary>
-    public List<String> OutputsNames { get; set; } = new();
+    public List<string> OutputsNames { get; set; } = new();
 
     /// <summary>
     /// Gets users.
