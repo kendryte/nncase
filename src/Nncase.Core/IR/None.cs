@@ -17,15 +17,15 @@ namespace Nncase.IR;
 /// </summary>
 public sealed class None : Expr, IEquatable<None?>
 {
-    /// <summary>
-    /// The default None expression instance.
-    /// </summary>
-    public static readonly None Default = new();
-
     private None()
         : base(Array.Empty<Expr>())
     {
     }
+
+    /// <summary>
+    /// Gets The default None expression instance.
+    /// </summary>
+    public static None Default => new();
 
     public static bool operator ==(None? left, None? right) => true;
 
