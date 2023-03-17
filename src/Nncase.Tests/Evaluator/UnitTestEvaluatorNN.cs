@@ -143,6 +143,17 @@ public class UnitTestEvaluatorNN : TestClassBase
     }
 
     [Fact]
+    public void TestActivationGelu()
+    {
+        var input = OrtKI.Random(new long[] { 1, 3, 16, 16 });
+        var scaledInput = OrtKI.Mul(0.5f, input);
+        var expect = OrtKI.Mul(0.5f, OrtKI.Mul(scaledInput, OrtKI.Add(OrtKI.Erf(OrtKI.Div(scaledInput, OrtKI.Sqrt(2f))), 1f)));
+        var expr = IR.F.NN.Gelu(input.ToTensor(), 0.5);
+        CompilerServices.InferenceType(expr);
+        Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
+    }
+
+    [Fact]
     public void TestBatchToSpace()
     {
         var a = new float[] { 1, 3, 9, 11, 2, 4, 10, 12, 5, 7, 13, 15, 6, 8, 14, 16 };

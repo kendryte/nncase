@@ -402,3 +402,24 @@ public sealed partial class CombineActivationsTranspose : IRewriteRule
           perm);
     }
 }
+
+/// <summary>
+/// transpose(layernorm(x), perm) => layernorm(transpose(x, perm)).
+/// </summary>
+[RuleGenerator]
+public sealed partial class CombineTransposeLayernorm : IRewriteRule
+{
+    /// <inheritdoc/>
+    public IPattern Pattern { get; } =
+        IsTranspose(
+            IsCall(IsOp<LayerNorm>("layernorm", op => true), IsVArgsRepeat("parameters", () => IsWildcard())),
+            IsWildcard("perm"));
+
+    private Expr GetReplace(LayerNorm layernorm, IReadOnlyList<Expr> parameters, Expr perm)
+    {
+        return new Call(
+            layernorm,
+            new Expr[] { Transpose(parameters[0], perm) }
+                .Concat(parameters.Skip(1)).ToArray());
+    }
+}

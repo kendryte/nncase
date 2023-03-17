@@ -76,6 +76,7 @@ internal class Compiler : ICompiler
                 p.Add<Passes.Rules.Neutral.CombineTransposeActivations>();
                 p.Add<Passes.Rules.Neutral.CombineActivationsTranspose>();
                 p.Add<Passes.Rules.Neutral.CombineTransposeConcat>();
+                p.Add<Passes.Rules.Neutral.CombineTransposeLayernorm>();
                 p.Add<Passes.Rules.Neutral.FoldNopPad>();
                 p.Add<Passes.Rules.Neutral.FoldConv2DPads>();
                 p.Add<Passes.Rules.Neutral.FoldReduceWindow2DPads>();
@@ -87,6 +88,8 @@ internal class Compiler : ICompiler
                 p.Add<Passes.Rules.Neutral.FoldLayerNormPattern1>();
                 p.Add<Passes.Rules.Neutral.FoldLayerNormPattern2>();
                 p.Add<Passes.Rules.Neutral.FoldLayerNormPattern3>();
+                p.Add<Passes.Rules.Neutral.FoldGeluWithScale>();
+                p.Add<Passes.Rules.Neutral.FoldGeneralGelu>();
             });
 
             // passManager.AddWithName<EGraphPass>("NeutralOptimizeClamp").Configure(p =>
