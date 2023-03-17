@@ -189,7 +189,7 @@ public:
         for (auto it : leaves_)
         {
             auto condition_ptr = it->parent;
-            if(condition_ptr->node == start_region_)
+            if (condition_ptr->node == start_region_)
                 continue;
             while (condition_ptr != nullptr)
             {
