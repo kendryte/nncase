@@ -14,8 +14,8 @@ namespace Nncase.Importer
         private Expr VisitPad(in NodeProto op)
         {
             return GetOpSet(op) < 11
-                ? PadV2(op)
-                : PadV11(op);
+                ? SetOutputsNames(PadV2(op), op)
+                : SetOutputsNames(PadV11(op), op);
         }
 
         private Expr PadV2(in NodeProto op)

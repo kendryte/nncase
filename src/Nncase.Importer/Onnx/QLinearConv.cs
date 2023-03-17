@@ -66,13 +66,13 @@ namespace Nncase.Importer
                 int? ocNumber = ((TensorConst)weights).ValueType.Shape[0].Value;
                 var zeroBias = new TensorConst(new int[ocNumber == null ? default(int) : ocNumber.Value]);
                 var conv = F.NN.Conv2D(inputDeq, weightsDeq, zeroBias, strideConst, pads, dilationConst, PadMode.Constant, group);
-                return Quantize(conv, new QuantParam(((TensorConst)yZeroPoint).Value.ToScalar<int>(), ((TensorConst)yScale).Value.ToScalar<float>()), ((TensorConst)yZeroPoint).ValueType.DType);
+                return SetOutputsNames(Quantize(conv, new QuantParam(((TensorConst)yZeroPoint).Value.ToScalar<int>(), ((TensorConst)yScale).Value.ToScalar<float>()), ((TensorConst)yZeroPoint).ValueType.DType), op);
             }
             else
             {
                 var biasDeq = Dequantize(bias, new QuantParam(0, ((TensorConst)xScale).Value.ToScalar<float>() * ((TensorConst)wScale).Value.ToScalar<float>()), DataTypes.Float32);
                 var conv = F.NN.Conv2D(inputDeq, weightsDeq, biasDeq, strideConst, pads, dilationConst, PadMode.Constant, group);
-                return Quantize(conv, new QuantParam(((TensorConst)yZeroPoint).Value.ToScalar<int>(), ((TensorConst)yScale).Value.ToScalar<float>()), ((TensorConst)yZeroPoint).ValueType.DType);
+                return SetOutputsNames(Quantize(conv, new QuantParam(((TensorConst)yZeroPoint).Value.ToScalar<int>(), ((TensorConst)yScale).Value.ToScalar<float>()), ((TensorConst)yZeroPoint).ValueType.DType), op);
             }
         }
     }

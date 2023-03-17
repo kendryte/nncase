@@ -27,11 +27,13 @@ namespace Nncase.Importer
             var perm = mode == "DCR"
                 ? new[] { 0, 3, 4, 1, 5, 2 }
                 : new[] { 0, 1, 4, 2, 5, 3 };
-            return F.Tensors.Reshape(
+            return SetOutputsNames(
+                F.Tensors.Reshape(
                 F.Tensors.Transpose(
                     F.Tensors.Reshape(input, beforeNewShape),
                     perm),
-                afterNewShape);
+                afterNewShape),
+                op);
         }
     }
 }

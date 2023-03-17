@@ -42,7 +42,7 @@ namespace Nncase.Importer
                 conv = Squeeze(conv, new[] { 3 });
             }
 
-            return conv;
+            return SetOutputsNames(conv, op);
         }
 
         private Call To4D(Expr input) => Reshape(input, Concat(new IR.Tuple(ShapeOf(input), new[] { 1L }), 0));

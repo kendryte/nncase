@@ -18,12 +18,14 @@ namespace Nncase.Importer
             var bias = GetOptionInputExpr(op, 2, 0);
             if (scale is TensorConst scaleConst && bias is TensorConst biasConst)
             {
-                return Quantize(
+                return SetOutputsNames(
+                    Quantize(
                     input,
                     new QuantParam(
                         biasConst.Value.ToScalar<int>(),
                         scaleConst.Value.ToScalar<float>()),
-                    ((TensorConst)bias).ValueType.DType);
+                    ((TensorConst)bias).ValueType.DType),
+                    op);
             }
 
             throw new NotImplementedException("Onnx importer not impl for dynamic scale and bias");
@@ -37,10 +39,12 @@ namespace Nncase.Importer
             {
                 var scaleV = scaleConst.Value.ToScalar<float>();
                 var biasV = biasConst.Value.ToScalar<int>();
-                return Dequantize(
+                return SetOutputsNames(
+                    Dequantize(
                     input,
                     new QuantParam(biasV, scaleV),
-                    DataTypes.Float32);
+                    DataTypes.Float32),
+                    op);
             }
 
             throw new NotImplementedException("Onnx importer not impl for dynamic scale and bias");

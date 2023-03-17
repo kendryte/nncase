@@ -19,11 +19,11 @@ namespace Nncase.Importer
             var opSet = GetOpSet(op);
             if (opSet <= 10)
             {
-                return ResizeV10(op);
+                return SetOutputsNames(ResizeV10(op), op);
             }
             else
             {
-                return ResizeV11(op);
+                return SetOutputsNames(ResizeV11(op), op);
             }
         }
 

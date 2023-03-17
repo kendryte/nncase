@@ -13,7 +13,8 @@ namespace Nncase.Importer.TFLite
         {
             var (input1, input2) = GetInputExprs(op, 0, 1);
             var val = input1 - input2;
-            return val * val;
+            var ret = val * val;
+            return SetOutputsNames(ret, 1, op);
         }
     }
 }

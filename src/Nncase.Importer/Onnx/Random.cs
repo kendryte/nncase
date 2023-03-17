@@ -17,7 +17,7 @@ namespace Nncase.Importer
             var scale = GetFloatAttribute(op, "scale", 1.0f);
             var seed = GetFloatAttribute(op, "seed", float.NaN);
             var shape = Tensor.From<long>(GetIntsAttribute(op, "shape"));
-            return F.Random.Normal(GetDataType(dtype), mean, scale, seed, shape);
+            return SetOutputsNames(F.Random.Normal(GetDataType(dtype), mean, scale, seed, shape), op);
         }
 
         private Expr VisitRandomNormalLike(NodeProto op)
@@ -30,7 +30,7 @@ namespace Nncase.Importer
             var mean = GetFloatAttribute(op, "mean", 0.0f);
             var scale = GetFloatAttribute(op, "scale", 1.0f);
             var seed = GetFloatAttribute(op, "seed", float.NaN);
-            return F.Random.NormalLike(dtype, input, mean, scale, seed);
+            return SetOutputsNames(F.Random.NormalLike(dtype, input, mean, scale, seed), op);
         }
 
         private Expr VisitRandomUniform(in NodeProto op)
@@ -40,7 +40,7 @@ namespace Nncase.Importer
             var low = GetFloatAttribute(op, "low", 0.0f);
             var seed = GetFloatAttribute(op, "seed", float.NaN);
             var shape = Tensor.From<long>(GetIntsAttribute(op, "shape"));
-            return F.Random.Uniform(GetDataType(dtype), high, low, seed, shape);
+            return SetOutputsNames(F.Random.Uniform(GetDataType(dtype), high, low, seed, shape), op);
         }
 
         private Expr VisitRandomUniformLike(NodeProto op)
@@ -53,7 +53,7 @@ namespace Nncase.Importer
             var high = GetFloatAttribute(op, "high", 1.0f);
             var low = GetFloatAttribute(op, "low", 0.0f);
             var seed = GetFloatAttribute(op, "seed", float.NaN);
-            return F.Random.UniformLike(dtype, input, high, low, seed);
+            return SetOutputsNames(F.Random.UniformLike(dtype, input, high, low, seed), op);
         }
     }
 }

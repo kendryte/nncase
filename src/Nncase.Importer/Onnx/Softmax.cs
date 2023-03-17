@@ -16,8 +16,8 @@ namespace Nncase.Importer
         private Expr VisitSoftmax(in NodeProto op)
         {
             return GetOpSet(op) < 13
-                ? SoftmaxV1(op)
-                : SoftmaxV13(op);
+                ? SetOutputsNames(SoftmaxV1(op), op)
+                : SetOutputsNames(SoftmaxV13(op), op);
         }
 
         private Expr SoftmaxV1Process(in NodeProto op, Func<Expr, Expr, Expr> f)

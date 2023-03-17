@@ -36,7 +36,8 @@ namespace Nncase.Importer.TFLite
             var nearestMode = tranMode == ImageResizeTransformationMode.Asymmetric
                 ? ImageResizeNearestMode.Floor
                 : ImageResizeNearestMode.RoundPreferCeil;
-            return NCHWToNHWC(
+            return SetOutputsNames(
+                NCHWToNHWC(
                 ResizeImage(
                     resizeMode,
                     input,
@@ -44,7 +45,9 @@ namespace Nncase.Importer.TFLite
                     MakeResizeSizes(input, newSize),
                     tranMode,
                     nearestMode,
-                    true));
+                    true)),
+                1,
+                op);
         }
 
         private ImageResizeTransformationMode GetResizeOptions(in tflite.Operator op)

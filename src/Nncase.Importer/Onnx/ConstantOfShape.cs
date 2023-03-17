@@ -23,11 +23,11 @@ namespace Nncase.Importer
                 var tensor = tensorValue.ValueUnsafe();
                 var tensorConst = GetTensor(tensor);
                 var type = GetDataType(tensor);
-                return ConstantOfShape(shape, GetTensor(tensor));
+                return SetOutputsNames(ConstantOfShape(shape, GetTensor(tensor)), op);
             }
             else
             {
-                return F.Tensors.ConstantOfShape(shape, Tensor.From<float>(new[] { 0f }));
+                return SetOutputsNames(F.Tensors.ConstantOfShape(shape, Tensor.From<float>(new[] { 0f })), op);
             }
         }
     }

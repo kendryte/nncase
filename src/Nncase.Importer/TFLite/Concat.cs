@@ -16,7 +16,10 @@ namespace Nncase.Importer.TFLite
         {
             var @operator = op;
             var inputs = Enumerable.Range(0, op.InputsLength).Select(i => GetInputExprs(@operator, i)).ToArray();
-            return F.Tensors.Concat(new Tuple(inputs), op.BuiltinOptionsAsConcatenationOptions().Axis);
+            return SetOutputsNames(
+                F.Tensors.Concat(new Tuple(inputs), op.BuiltinOptionsAsConcatenationOptions().Axis),
+                1,
+                op);
         }
 
         private Expr VisitPack(in tflite.Operator op)
@@ -24,7 +27,10 @@ namespace Nncase.Importer.TFLite
             var @operator = op;
             var axis = op.BuiltinOptionsAsPackOptions().Axis;
             var inputs = Enumerable.Range(0, op.InputsLength).Select(i => GetInputExprs(@operator, i)).ToArray();
-            return F.Tensors.Stack(new Tuple(inputs), axis);
+            return SetOutputsNames(
+                F.Tensors.Stack(new Tuple(inputs), axis),
+                1,
+                op);
         }
     }
 }

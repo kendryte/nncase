@@ -26,14 +26,14 @@ namespace Nncase.Importer.TFLite
                 _ => throw new NotSupportedException("Unsupported Constant Pad Value"),
             };
 
-            return F.NN.Pad(input, paddings, PadMode.Constant, padValue);
+            return SetOutputsNames(F.NN.Pad(input, paddings, PadMode.Constant, padValue), 1, op);
         }
 
         private Expr VisitPadV2(in tflite.Operator op)
         {
             var (input, paddings) = GetInputExprs(op, 0, 1);
             var padValue = GetInputExprs(op, 2);
-            return F.NN.Pad(input, paddings, PadMode.Constant, padValue);
+            return SetOutputsNames(F.NN.Pad(input, paddings, PadMode.Constant, padValue), 1, op);
         }
 
         private Expr VisitMirrorPad(in tflite.Operator op)
@@ -47,7 +47,7 @@ namespace Nncase.Importer.TFLite
                 _ => throw new NotSupportedException("Unsupported Mirror Pad Mode"),
             };
 
-            return F.NN.Pad(input, paddings, padMode, 0.0f);
+            return SetOutputsNames(F.NN.Pad(input, paddings, padMode, 0.0f), 1, op);
         }
     }
 }

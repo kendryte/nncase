@@ -16,7 +16,7 @@ namespace Nncase.Importer.TFLite
             // DType of ShapeOf in TF is int32
             // but in onnx it's int64
             // TF op expect a int32 result and compute with other i32 data
-            return Cast(ShapeOf(input), DataTypes.Int32);
+            return SetOutputsNames(Cast(ShapeOf(input), DataTypes.Int32), 1, op);
         }
     }
 }

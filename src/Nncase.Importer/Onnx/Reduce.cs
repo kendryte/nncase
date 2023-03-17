@@ -12,7 +12,7 @@ namespace Nncase.Importer
     {
         private Expr VisitReduce(in NodeProto op, ReduceOp reduceOp, float initValue)
         {
-            return ReduceCore(op, reduceOp, initValue, expr => expr);
+            return SetOutputsNames(ReduceCore(op, reduceOp, initValue, expr => expr), op);
         }
 
         private Expr ReduceCore(in NodeProto op, ReduceOp reduceOp, float initValue, Func<Expr, Expr> f)
@@ -30,33 +30,39 @@ namespace Nncase.Importer
 
         private Expr VisitReduceL1(in NodeProto op)
         {
-            return ReduceSumZero(op, F.Math.Abs);
+            return SetOutputsNames(ReduceSumZero(op, F.Math.Abs), op);
         }
 
         private Expr VisitReduceL2(in NodeProto op)
         {
-            return F.Math.Sqrt(
-                ReduceSumZero(op, F.Math.Square));
+            return SetOutputsNames(
+                F.Math.Sqrt(
+                ReduceSumZero(op, F.Math.Square)),
+                op);
         }
 
         // ReduceLogSum(x) = Log(ReduceSum(x))
         private Expr VisitReduceLogSum(in NodeProto op)
         {
-            return F.Math.Log(
-                ReduceSumZero(op, expr => expr));
+            return SetOutputsNames(
+                F.Math.Log(
+                ReduceSumZero(op, expr => expr)),
+                op);
         }
 
         // ReduceLogSumExp(x) = Log(Sum(Exp(x)))
         private Expr VisitReduceLogSumExp(in NodeProto op)
         {
-            return F.Math.Log(
-                ReduceSumZero(op, F.Math.Exp));
+            return SetOutputsNames(
+                F.Math.Log(
+                ReduceSumZero(op, F.Math.Exp)),
+                op);
         }
 
         // ReduceSumSquare(x) = Sum(Square(x))
         private Expr VisitReduceSumSquare(in NodeProto op)
         {
-            return ReduceSumZero(op, F.Math.Square);
+            return SetOutputsNames(ReduceSumZero(op, F.Math.Square), op);
         }
     }
 }

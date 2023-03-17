@@ -13,7 +13,7 @@ namespace Nncase.Importer
         private Expr VisitExpand(in NodeProto op)
         {
             var (input, shape) = GetInputExprs(op, 0, 1);
-            return F.Tensors.Expand(input, shape);
+            return SetOutputsNames(F.Tensors.Expand(input, shape), op);
         }
     }
 }

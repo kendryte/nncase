@@ -19,7 +19,7 @@ namespace Nncase.Importer.TFLite
             var (begin, size) = GetInputExprs(op, 1, 2);
             var end = begin + size;
             var count = GetInputTensor(op, 1).Shape(0);
-            return F.Tensors.Slice(input, begin, end, count);
+            return SetOutputsNames(F.Tensors.Slice(input, begin, end, count), 1, op);
         }
 
         private Expr VisitStrideSlice(in tflite.Operator op)
@@ -39,7 +39,7 @@ namespace Nncase.Importer.TFLite
             var shrinkMask = options.ShrinkAxisMask;
             if ((beginMask + endMask + shrinkMask) == 0)
             {
-                return F.Tensors.Slice(input, beginExpr, endExpr, axes, strides);
+                return SetOutputsNames(F.Tensors.Slice(input, beginExpr, endExpr, axes, strides), 1, op);
             }
 
             if (beginExpr is TensorConst beginConst && endExpr is TensorConst endConst)
@@ -72,7 +72,7 @@ namespace Nncase.Importer.TFLite
                     result = F.Tensors.Squeeze(result, needSqueeze.ToArray());
                 }
 
-                return result;
+                return SetOutputsNames(result, 1, op);
             }
             else
             {

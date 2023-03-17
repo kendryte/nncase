@@ -12,7 +12,7 @@ namespace Nncase.Importer
         private Expr VisitDropout(in NodeProto op)
         {
             var input = GetInputExpr(op, 0);
-            return input;
+            return SetOutputsNames(input, op);
         }
     }
 }

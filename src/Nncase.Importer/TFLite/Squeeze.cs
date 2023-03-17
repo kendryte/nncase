@@ -16,13 +16,13 @@ namespace Nncase.Importer.TFLite
             var input = GetInputExprs(op, 0);
             var options = op.BuiltinOptionsAsSqueezeOptions();
             var dims = options.GetSqueezeDimsArray();
-            return Squeeze(input, dims);
+            return SetOutputsNames(Squeeze(input, dims), 1, op);
         }
 
         private Expr VisitExpandDims(in tflite.Operator op)
         {
             var (input, dim) = GetInputExprs(op, 0, 1);
-            return Unsqueeze(input, Unsqueeze(dim, new[] { 0 }));
+            return SetOutputsNames(Unsqueeze(input, Unsqueeze(dim, new[] { 0 })), 1, op);
         }
     }
 }

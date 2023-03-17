@@ -14,7 +14,7 @@ namespace Nncase.Importer
         {
             var (input, indices) = GetInputExprs(op, 0, 1);
             var batchDims = GetIntAttribute(op, "batch_dims", 0);
-            return F.Tensors.GatherND(input, batchDims, indices);
+            return SetOutputsNames(F.Tensors.GatherND(input, batchDims, indices), op);
         }
     }
 }

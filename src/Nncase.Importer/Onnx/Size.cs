@@ -15,7 +15,7 @@ namespace Nncase.Importer
         private Expr VisitSize(in NodeProto op)
         {
             var input = GetSingleInputExpr(op);
-            return F.Tensors.SizeOf(input);
+            return SetOutputsNames(F.Tensors.SizeOf(input), op);
         }
     }
 }

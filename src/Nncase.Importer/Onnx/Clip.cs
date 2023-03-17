@@ -12,7 +12,7 @@ namespace Nncase.Importer
     {
         private Expr VisitClip(in NodeProto op)
         {
-            return GetOpSet(op) < 11 ? ClipV1(op) : ClipV11(op);
+            return GetOpSet(op) < 11 ? SetOutputsNames(ClipV1(op), op) : SetOutputsNames(ClipV11(op), op);
         }
 
         private Expr ClipV1(in NodeProto op)

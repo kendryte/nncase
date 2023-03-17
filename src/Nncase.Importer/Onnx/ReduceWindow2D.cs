@@ -27,7 +27,8 @@ namespace Nncase.Importer
                 ? Util.GetHW(input).Map((h, w) => (Expr)F.Tensors.Stack(new Tuple(h, w), 0))
                 : Tensor.From<long>(GetIntsAttribute(op, "kernel_shape"));
             var strides = GetStrideAttribute(op);
-            return F.NN.ReduceWindow2D(
+            return SetOutputsNames(
+                F.NN.ReduceWindow2D(
                 reduceOp,
                 input,
                 initValue,
@@ -36,7 +37,8 @@ namespace Nncase.Importer
                 pads,
                 Tensor.From<long>(dilation),
                 ceilMode,
-                countIncludePad);
+                countIncludePad),
+                op);
         }
     }
 }

@@ -22,7 +22,7 @@ namespace Nncase.Importer.TFLite
             var a = ((TensorConst)axis).Value.ToScalar<int>();
             var s = ComputeSplit(input, splits, a);
             _ = GetOutputTensor(op, 0);
-            return F.Tensors.Split(input, axis, s);
+            return SetOutputsNames(F.Tensors.Split(input, axis, s), splits, op);
         }
     }
 }

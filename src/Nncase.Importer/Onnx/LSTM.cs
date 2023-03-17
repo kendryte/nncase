@@ -68,7 +68,8 @@ namespace Nncase.Importer
                 ExpandToType(0, t, numBirections, 3L * hiddenSize));
 
             var outputCount = op.Output.Count;
-            return LSTM(
+            return SetOutputsNames(
+                LSTM(
                 ToLSTMDirection(direction),
                 ToLSTMLayout(layout),
                 acts,
@@ -85,7 +86,8 @@ namespace Nncase.Importer
                 clip,
                 hiddenSize,
                 inputForget,
-                outputCount);
+                outputCount),
+                op);
         }
 
         private Expr ExpandToType(Expr input, DataType t, params Expr[] dims)

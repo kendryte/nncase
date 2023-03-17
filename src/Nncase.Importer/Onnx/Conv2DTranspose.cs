@@ -41,7 +41,8 @@ namespace Nncase.Importer
                         autoPad,
                         group));
 
-            return F.NN.Conv2DTranspose(
+            return SetOutputsNames(
+                F.NN.Conv2DTranspose(
                 input,
                 weights,
                 bias,
@@ -51,7 +52,8 @@ namespace Nncase.Importer
                 Tensor.From<long>(outputPadding),
                 Tensor.From<long>(dilation),
                 PadMode.Constant,
-                group);
+                group),
+                op);
         }
 
         private Expr ComputeOutSize(Expr inputSize, Expr weightSize, long[] strides, long[] outPaddings, Expr paddings, long[] dilations, int offset)

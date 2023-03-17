@@ -13,8 +13,8 @@ namespace Nncase.Importer
         private Expr VisitUnsqueeze(in NodeProto op)
         {
             return GetOpSet(op) < 13
-                ? UnsqueezeV1(op)
-                : UnsqueezeV13(op);
+                ? SetOutputsNames(UnsqueezeV1(op), op)
+                : SetOutputsNames(UnsqueezeV13(op), op);
         }
 
         private Expr UnsqueezeV1(in NodeProto op)

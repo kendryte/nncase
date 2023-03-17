@@ -12,7 +12,7 @@ namespace Nncase.Importer.TFLite
         private Expr VisitReduce(in tflite.Operator op, ReduceOp reduceOp, float initValue)
         {
             var (input, axis) = GetInputExprs(op, 0, 1);
-            return Reduce(reduceOp, input, ProcAxis(axis), initValue, op.BuiltinOptionsAsReducerOptions().KeepDims);
+            return SetOutputsNames(Reduce(reduceOp, input, ProcAxis(axis), initValue, op.BuiltinOptionsAsReducerOptions().KeepDims), 1, op);
         }
 
         private Expr VisitReduceArg(in tflite.Operator op, ReduceArgOp reduceArgOp)
@@ -25,7 +25,7 @@ namespace Nncase.Importer.TFLite
                 _ => throw new ArgumentOutOfRangeException(nameof(reduceArgOp), reduceArgOp, null),
             };
 
-            return ReduceArg(reduceArgOp, (PrimType)GetDataType(outType), input, ProcAxis(axis), false, false);
+            return SetOutputsNames(ReduceArg(reduceArgOp, (PrimType)GetDataType(outType), input, ProcAxis(axis), false, false), 1, op);
         }
 
         private Expr ProcAxis(Expr axis)

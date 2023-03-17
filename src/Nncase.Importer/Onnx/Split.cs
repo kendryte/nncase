@@ -15,8 +15,8 @@ namespace Nncase.Importer
         private Expr VisitSplit(in NodeProto op)
         {
             return GetOpSet(op) < 13
-                ? SplitV11(op)
-                : SplitV13(op);
+                ? SetOutputsNames(SplitV11(op), op)
+                : SetOutputsNames(SplitV13(op), op);
         }
 
         private Expr SplitV11(in NodeProto op)

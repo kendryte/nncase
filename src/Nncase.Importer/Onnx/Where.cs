@@ -13,7 +13,7 @@ namespace Nncase.Importer
         {
             var input = GetInputExpr(op, 0);
             var (x, y) = GetInputExprs(op, 1, 2);
-            return Where(input, x, y);
+            return SetOutputsNames(Where(input, x, y), op);
         }
     }
 }

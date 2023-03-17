@@ -14,7 +14,7 @@ namespace Nncase.Importer
             var (input, axis) = GetInputExprs(op, 0, 1);
             var exclusive = GetBoolAttribute(op, "exclusive", false);
             var reverse = GetBoolAttribute(op, "reverse", false);
-            return F.Tensors.CumSum(input, axis, exclusive, reverse);
+            return SetOutputsNames(F.Tensors.CumSum(input, axis, exclusive, reverse), op);
         }
     }
 }

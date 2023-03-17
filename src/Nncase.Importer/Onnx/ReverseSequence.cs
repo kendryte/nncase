@@ -14,7 +14,7 @@ namespace Nncase.Importer
             var (input, seqLens) = GetInputExprs(op, 0, 1);
             var batchAxis = GetBoolAttribute(op, "batch_axis", true);
             var timeAxis = GetBoolAttribute(op, "time_axis", false);
-            return F.Tensors.ReverseSequence(input, seqLens, batchAxis, timeAxis);
+            return SetOutputsNames(F.Tensors.ReverseSequence(input, seqLens, batchAxis, timeAxis), op);
         }
     }
 }

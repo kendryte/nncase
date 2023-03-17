@@ -40,30 +40,45 @@ public partial class TFLiteImporter
     private Expr VisitLogistic(in tflite.Operator op)
     {
         var input = GetInputExprs(op, 0);
-        return F.NN.Sigmoid(input);
+        return SetOutputsNames(
+            F.NN.Sigmoid(input),
+            1,
+            op);
     }
 
     private Expr VisitRelu(in tflite.Operator op)
     {
         var input = GetInputExprs(op, 0);
-        return F.NN.Relu(input);
+        return SetOutputsNames(
+            F.NN.Relu(input),
+            1,
+            op);
     }
 
     private Expr VisitRelu6(in tflite.Operator op)
     {
         var input = GetInputExprs(op, 0);
-        return F.NN.Relu6(input);
+        return SetOutputsNames(
+            F.NN.Relu6(input),
+            1,
+            op);
     }
 
     private Expr VisitPRelu(in tflite.Operator op)
     {
         var (input, slope) = GetInputExprs(op, 0, 1);
-        return F.NN.PRelu(input, slope);
+        return SetOutputsNames(
+            F.NN.PRelu(input, slope),
+            1,
+            op);
     }
 
     private Expr VisitLeakyRelu(in tflite.Operator op)
     {
         var input = GetInputExprs(op, 0);
-        return F.NN.LeakyRelu(input, op.BuiltinOptionsAsLeakyReluOptions().Alpha);
+        return SetOutputsNames(
+            F.NN.LeakyRelu(input, op.BuiltinOptionsAsLeakyReluOptions().Alpha),
+            1,
+            op);
     }
 }

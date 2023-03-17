@@ -19,27 +19,27 @@ namespace Nncase.Importer
             var tensorValue = GetAttr(op, "value", AttributeType.Tensor, x => x.T);
             if (tensorValue)
             {
-                return GetTensor(tensorValue.ValueUnsafe());
+                return SetOutputsNames(GetTensor(tensorValue.ValueUnsafe()), op);
             }
 
             var floatValue = GetAttr(op, "value_float", AttributeType.Float, x => x.F);
             if (floatValue)
             {
-                return Tensor.FromScalar(floatValue.Value());
+                return SetOutputsNames(Tensor.FromScalar(floatValue.Value()), op);
             }
 
             var floatsValue = GetAttr(op, "value_floats", AttributeType.Floats, x => x.Floats);
             if (floatsValue)
             {
                 var floats = floatsValue.ValueUnsafe();
-                return Tensor.From<float>(floats.ToArray(), new Shape(floats.Count));
+                return SetOutputsNames(Tensor.From<float>(floats.ToArray(), new Shape(floats.Count)), op);
             }
 
             var intValue = GetAttr(op, "value_int", AttributeType.Int, x => x.I);
 
             if (intValue)
             {
-                return Tensor.FromScalar(intValue.Value());
+                return SetOutputsNames(Tensor.FromScalar(intValue.Value()), op);
             }
 
             var intsValue = GetAttr(op, "value_ints", AttributeType.Ints, x => x.Ints);
@@ -47,7 +47,7 @@ namespace Nncase.Importer
             if (intsValue)
             {
                 var ints = intsValue.ValueUnsafe();
-                return Tensor.From<long>(ints.ToArray(), new Shape(ints.Count));
+                return SetOutputsNames(Tensor.From<long>(ints.ToArray(), new Shape(ints.Count)), op);
             }
 
             throw new NotSupportedException("Constant field format is not supported.");

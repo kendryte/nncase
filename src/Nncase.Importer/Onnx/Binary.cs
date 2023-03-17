@@ -13,7 +13,7 @@ namespace Nncase.Importer
         private Expr VisitBinary(NodeProto op, BinaryOp binaryOp)
         {
             var (lhs, rhs) = GetInputExprs(op, 0, 1);
-            return F.Math.Binary(binaryOp, lhs, rhs);
+            return SetOutputsNames(F.Math.Binary(binaryOp, lhs, rhs), op);
         }
     }
 }

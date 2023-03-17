@@ -13,7 +13,10 @@ namespace Nncase.Importer.TFLite
         {
             var input = GetInputExprs(op, 0);
             var output = GetOutputTensor(op, 0);
-            return Cast(input, GetDataType(output.Type));
+            return SetOutputsNames(
+                Cast(input, GetDataType(output.Type)),
+                1,
+                op);
         }
     }
 }

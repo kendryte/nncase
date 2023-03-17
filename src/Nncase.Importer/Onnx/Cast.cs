@@ -15,7 +15,7 @@ namespace Nncase.Importer
 
             // op set v1 to is string
             var typeIndex = GetIntAttribute(op, "to");
-            return F.Tensors.Cast(input, GetDataType((int)typeIndex));
+            return SetOutputsNames(F.Tensors.Cast(input, GetDataType((int)typeIndex)), op);
         }
     }
 }

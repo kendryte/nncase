@@ -31,11 +31,12 @@ namespace Nncase.Importer
             {
                 var c = GetInputExpr(op, 2);
                 var beta = GetFloatAttribute(op, "beta", 1.0f);
-                return gemm + (beta * c);
+                var ret = gemm + (beta * c);
+                return SetOutputsNames(ret, op);
             }
             else
             {
-                return gemm;
+                return SetOutputsNames(gemm, op);
             }
         }
     }

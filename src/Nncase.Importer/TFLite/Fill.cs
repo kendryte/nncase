@@ -12,7 +12,10 @@ namespace Nncase.Importer.TFLite
         private Expr VisitFill(in tflite.Operator op)
         {
             var (shape, value) = GetInputExprs(op, 0, 1);
-            return F.Tensors.ConstantOfShape(shape, value);
+            return SetOutputsNames(
+                F.Tensors.ConstantOfShape(shape, value),
+                1,
+                op);
         }
     }
 }

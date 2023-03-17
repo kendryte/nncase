@@ -13,7 +13,7 @@ namespace Nncase.Importer
         private Expr VisitUnary(NodeProto op, UnaryOp unaryOp)
         {
             var input = GetInputExpr(op, 0);
-            return F.Math.Unary(unaryOp, input);
+            return SetOutputsNames(F.Math.Unary(unaryOp, input), op);
         }
     }
 }

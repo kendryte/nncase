@@ -27,7 +27,7 @@ namespace Nncase.Importer
             var (mean, var) = GetInputExprs(op, 3, 4);
             var eps = GetFloatAttribute(op, "epsilon", 1e-05f);
             var mom = GetFloatAttribute(op, "momentum", 0.9f);
-            return F.NN.BatchNormalization(x, scale, bias, mean, var, eps, mom);
+            return SetOutputsNames(F.NN.BatchNormalization(x, scale, bias, mean, var, eps, mom), op);
         }
 
         private Expr VisitInstanceNormalization(in NodeProto op)
@@ -35,7 +35,7 @@ namespace Nncase.Importer
             var input = GetInputExpr(op, 0);
             var (scale, bias) = GetInputExprs(op, 1, 2);
             var eps = GetFloatAttribute(op, "epsilon", 1e-05f);
-            return F.NN.InstanceNormalization(input, scale, bias, eps);
+            return SetOutputsNames(F.NN.InstanceNormalization(input, scale, bias, eps), op);
         }
 
         private Expr VisitLpNormalization(in NodeProto op)
@@ -43,7 +43,7 @@ namespace Nncase.Importer
             var input = GetInputExpr(op, 0);
             var axis = GetIntAttribute(op, "axis", -1);
             var p = GetIntAttribute(op, "p", 2);
-            return F.NN.LpNormalization(input, axis, p);
+            return SetOutputsNames(F.NN.LpNormalization(input, axis, p), op);
         }
 
         private Expr VisitLRN(in NodeProto op)
@@ -53,7 +53,7 @@ namespace Nncase.Importer
             var beta = GetFloatAttribute(op, "beta", 0.75f);
             var bias = GetFloatAttribute(op, "bias", 1.0f);
             var size = GetIntAttribute(op, "size");
-            return F.NN.LRN(input, alpha, beta, bias, size);
+            return SetOutputsNames(F.NN.LRN(input, alpha, beta, bias, size), op);
         }
     }
 }

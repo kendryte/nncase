@@ -17,19 +17,28 @@ namespace Nncase.Importer.TFLite
         {
             (var lhs, var rhs) = GetInputExprs(op, 0, 1);
             var node = F.Math.Binary(binaryOp, lhs, rhs);
-            return Activate(node, activation);
+            return SetOutputsNames(
+                Activate(node, activation),
+                1,
+                op);
         }
 
         private Expr VisitFloorDiv(in tflite.Operator op)
         {
             (var lhs, var rhs) = GetInputExprs(op, 0, 1);
-            return F.Math.FloorDiv(lhs, rhs);
+            return SetOutputsNames(
+                F.Math.FloorDiv(lhs, rhs),
+                1,
+                op);
         }
 
         private Expr VisitFloorMod(in tflite.Operator op)
         {
             (var lhs, var rhs) = GetInputExprs(op, 0, 1);
-            return F.Math.FloorMod(lhs, rhs);
+            return SetOutputsNames(
+                F.Math.FloorMod(lhs, rhs),
+                1,
+                op);
         }
     }
 }

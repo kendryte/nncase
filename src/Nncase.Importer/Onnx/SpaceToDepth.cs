@@ -30,11 +30,13 @@ namespace Nncase.Importer
             F.Tensors.Stack(
             new Tuple(shape0, shape1 * blockSize * blockSize, shape2 / blockSize, shape3 / blockSize), 0);
             var perm = new[] { 0, 3, 5, 1, 2, 4 };
-            return F.Tensors.Reshape(
+            return SetOutputsNames(
+                F.Tensors.Reshape(
                 F.Tensors.Transpose(
                     F.Tensors.Reshape(input, beforeNewShape),
                     perm),
-                afterNewShape);
+                afterNewShape),
+                op);
         }
     }
 }

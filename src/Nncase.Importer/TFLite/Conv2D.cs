@@ -65,7 +65,8 @@ namespace Nncase.Importer.TFLite
             {
                 if (GetOutputTensor(op, 0).Type == tflite.TensorType.INT8)
                 {
-                    return F.Tensors.NCHWToNHWC(Quantize(
+                    return SetOutputsNames(
+                        F.Tensors.NCHWToNHWC(Quantize(
                         F.NN.Conv2D(
                             input,
                             weights,
@@ -77,11 +78,14 @@ namespace Nncase.Importer.TFLite
                             1,
                             new[] { clamp.Min, clamp.Max }),
                         new QuantParam(outputQuantParams[0].ZeroPoint, outputQuantParams[0].Scale),
-                        DataTypes.Int8));
+                        DataTypes.Int8)),
+                        1,
+                        op);
                 }
                 else if (GetOutputTensor(op, 0).Type == tflite.TensorType.UINT8)
                 {
-                    return F.Tensors.NCHWToNHWC(Quantize(
+                    return SetOutputsNames(
+                        F.Tensors.NCHWToNHWC(Quantize(
                         F.NN.Conv2D(
                             input,
                             weights,
@@ -93,7 +97,9 @@ namespace Nncase.Importer.TFLite
                             1,
                             new[] { clamp.Min, clamp.Max }),
                         new QuantParam(outputQuantParams[0].ZeroPoint, outputQuantParams[0].Scale),
-                        DataTypes.UInt8));
+                        DataTypes.UInt8)),
+                        1,
+                        op);
                 }
                 else
                 {
@@ -102,7 +108,8 @@ namespace Nncase.Importer.TFLite
             }
             else
             {
-                return F.Tensors.NCHWToNHWC(
+                return SetOutputsNames(
+                    F.Tensors.NCHWToNHWC(
                     F.NN.Conv2D(
                         input,
                         weights,
@@ -112,7 +119,9 @@ namespace Nncase.Importer.TFLite
                         dilation,
                         PadMode.Constant,
                         1,
-                        new[] { clamp.Min, clamp.Max }));
+                        new[] { clamp.Min, clamp.Max })),
+                    1,
+                    op);
             }
         }
 
@@ -143,7 +152,8 @@ namespace Nncase.Importer.TFLite
             }
 
             var clamp = ToFloatClampRange(options.FusedActivationFunction);
-            return F.Tensors.NCHWToNHWC(
+            return SetOutputsNames(
+                F.Tensors.NCHWToNHWC(
                 F.NN.Conv2D(
                     input,
                     weights,
@@ -153,7 +163,9 @@ namespace Nncase.Importer.TFLite
                     dilation,
                     PadMode.Constant,
                     Util.ShapeIndex(weights, 0),
-                    new[] { clamp.Min, clamp.Max }));
+                    new[] { clamp.Min, clamp.Max })),
+                1,
+                op);
         }
     }
 }

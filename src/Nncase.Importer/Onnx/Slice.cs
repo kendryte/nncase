@@ -17,8 +17,8 @@ namespace Nncase.Importer
         private Expr VisitSlice(in NodeProto op)
         {
             return GetOpSet(op) < 10
-                ? SliceV1(op)
-                : SliceV10(op);
+                ? SetOutputsNames(SliceV1(op), op)
+                : SetOutputsNames(SliceV10(op), op);
         }
 
         private Expr SliceV1(in NodeProto op)

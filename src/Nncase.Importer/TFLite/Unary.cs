@@ -16,7 +16,7 @@ namespace Nncase.Importer.TFLite
         private Expr VisitUnary(in tflite.Operator op, UnaryOp unaryOp)
         {
             var input = GetInputExprs(op, 0);
-            return F.Math.Unary(unaryOp, input);
+            return SetOutputsNames(F.Math.Unary(unaryOp, input), 1, op);
         }
     }
 }

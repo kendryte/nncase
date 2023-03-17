@@ -16,7 +16,7 @@ namespace Nncase.Importer
             var axis = GetOptionIntAttribute(op, "axis").Or(-1);
             var largest = GetOptionIntAttribute(op, "largest").Or(1);
             var sorted = GetOptionIntAttribute(op, "sorted").Or(1);
-            return TopK(x, k, axis, largest, sorted);
+            return SetOutputsNames(TopK(x, k, axis, largest, sorted), op);
         }
     }
 }

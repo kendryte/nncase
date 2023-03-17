@@ -15,7 +15,7 @@ namespace Nncase.Importer
             var delta = GetInputExpr(op, 2);
 
             // todo:for float?
-            return F.Tensors.Range(start, limit, delta);
+            return SetOutputsNames(F.Tensors.Range(start, limit, delta), op);
         }
     }
 }

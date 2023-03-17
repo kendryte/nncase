@@ -14,33 +14,33 @@ namespace Nncase.Importer
         {
             var input = GetInputExpr(op, 0);
             var alpha = GetFloatAttribute(op, "alpha", 1.0f);
-            return Elu(input, alpha);
+            return SetOutputsNames(Elu(input, alpha), op);
         }
 
         private Expr VisitCelu(NodeProto op)
         {
             var input = GetInputExpr(op, 0);
             var alpha = GetFloatAttribute(op, "alpha", 1.0f);
-            return Celu(input, alpha);
+            return SetOutputsNames(Celu(input, alpha), op);
         }
 
         private Expr VisitRelu(NodeProto op)
         {
             var input = GetInputExpr(op, 0);
-            return Relu(input);
+            return SetOutputsNames(Relu(input), op);
         }
 
         private Expr VisitLeakyRelu(NodeProto op)
         {
             var input = GetInputExpr(op, 0);
             var alpha = GetFloatAttribute(op, "alpha", 0.01f);
-            return LeakyRelu(input, alpha);
+            return SetOutputsNames(LeakyRelu(input, alpha), op);
         }
 
         private Expr VisitPRelu(NodeProto op)
         {
             var (input, slope) = GetInputExprs(op, 0, 1);
-            return PRelu(input, slope);
+            return SetOutputsNames(PRelu(input, slope), op);
         }
 
         private Expr VisitSelu(NodeProto op)
@@ -48,13 +48,13 @@ namespace Nncase.Importer
             var x = GetInputExpr(op, 0);
             var alpha = GetFloatAttribute(op, "alpha", 1.67326319217681884765625F);
             var gamma = GetFloatAttribute(op, "gamma", 1.05070102214813232421875F);
-            return Selu(x, alpha, gamma);
+            return SetOutputsNames(Selu(x, alpha, gamma), op);
         }
 
         private Expr VisitSigmoid(NodeProto op)
         {
             var input = GetInputExpr(op, 0);
-            return Sigmoid(input);
+            return SetOutputsNames(Sigmoid(input), op);
         }
 
         private Expr VisitHardSigmoid(NodeProto op)
@@ -62,19 +62,19 @@ namespace Nncase.Importer
             var x = GetInputExpr(op, 0);
             var alpha = GetFloatAttribute(op, "alpha", 0.2f);
             var beta = GetFloatAttribute(op, "beta", 0.5f);
-            return HardSigmoid(x, alpha, beta);
+            return SetOutputsNames(HardSigmoid(x, alpha, beta), op);
         }
 
         private Expr VisitHardSwish(NodeProto op)
         {
             var input = GetInputExpr(op, 0);
-            return HardSwish(input);
+            return SetOutputsNames(HardSwish(input), op);
         }
 
         private Expr VisitErf(NodeProto op)
         {
             var input = GetInputExpr(op, 0);
-            return Erf(input);
+            return SetOutputsNames(Erf(input), op);
         }
     }
 }

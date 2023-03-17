@@ -12,7 +12,7 @@ namespace Nncase.Importer.TFLite
         private Expr VisitTranspose(in tflite.Operator op)
         {
             var (input, perm) = GetInputExprs(op, 0, 1);
-            return F.Tensors.Transpose(input, perm);
+            return SetOutputsNames(F.Tensors.Transpose(input, perm), 1, op);
         }
     }
 }

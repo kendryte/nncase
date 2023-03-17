@@ -31,7 +31,8 @@ namespace Nncase.Importer.TFLite
             var dilation = Tensor.From<int>(new[] { dilationH, dilationW }, new[] { 2 });
             var padding = Util.ConcatPadding(padH, padW);
             var clamp = ValueRange<float>.Full;
-            return F.Tensors.NCHWToNHWC(F.Math.Clamp(
+            return SetOutputsNames(
+                F.Tensors.NCHWToNHWC(F.Math.Clamp(
                 F.NN.Conv2DTranspose(
                     F.Tensors.NHWCToNCHW(input),
                     F.Tensors.NHWCToNCHW(weights),
@@ -44,7 +45,9 @@ namespace Nncase.Importer.TFLite
                     PadMode.Constant,
                     1),
                 clamp.Min,
-                clamp.Max));
+                clamp.Max)),
+                1,
+                op);
         }
     }
 }

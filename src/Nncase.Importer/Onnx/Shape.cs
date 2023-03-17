@@ -17,11 +17,11 @@ namespace Nncase.Importer
             var opSet = GetOpSet(op);
             if (opSet < 15)
             {
-                return ShapeV13(op);
+                return SetOutputsNames(ShapeV13(op), op);
             }
             else
             {
-                return ShapeV15(op);
+                return SetOutputsNames(ShapeV15(op), op);
             }
         }
 

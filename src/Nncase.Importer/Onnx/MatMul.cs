@@ -13,7 +13,7 @@ namespace Nncase.Importer
         private Expr VisitMatMul(in NodeProto op)
         {
             var (a, b) = GetInputExprs(op, 0, 1);
-            return F.Tensors.MatMul(a, b);
+            return SetOutputsNames(F.Tensors.MatMul(a, b), op);
         }
     }
 }

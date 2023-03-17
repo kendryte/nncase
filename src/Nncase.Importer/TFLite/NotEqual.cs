@@ -18,7 +18,7 @@ namespace Nncase.Importer.TFLite
         private Expr VisitNotEqual(in tflite.Operator op)
         {
             var (lhs, rhs) = GetInputExprs(op, 0, 1);
-            return Compare(CompareOp.NotEqual, lhs, rhs);
+            return SetOutputsNames(Compare(CompareOp.NotEqual, lhs, rhs), 1, op);
         }
     }
 }
