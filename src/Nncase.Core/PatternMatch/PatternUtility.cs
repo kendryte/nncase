@@ -198,7 +198,7 @@ public static partial class Utility
     /// <param name="body">fusion body pattern.</param>
     /// <returns>pattern.</returns>
     public static Pattern IsFusion(string moduleKind, Pattern body)
-        => IsFusion(null, moduleKind, body, IsVArgsRepeat(null, () => IsVar()));
+        => IsFusion("fusion", moduleKind, body, IsVArgsRepeat(null, () => IsVar()));
 
     /// <summary>
     /// Fusion: TBegin -> FirstOp -> SecondOp -> TEnd.

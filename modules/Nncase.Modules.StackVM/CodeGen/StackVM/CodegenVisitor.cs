@@ -119,6 +119,13 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         }
     }
 
+    protected override TextSnippet VisitLeafNone(None expr)
+    {
+        var snippet = BeginTextSnippet(expr);
+        Emitter.LdNull();
+        return snippet;
+    }
+
     protected override TextSnippet VisitLeafVar(Var expr)
     {
         var snippet = BeginTextSnippet(expr);

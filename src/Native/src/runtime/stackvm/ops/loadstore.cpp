@@ -382,7 +382,7 @@ result<void> stackvm_runtime_function::visit(
 result<void> stackvm_runtime_function::visit(const ldlocal_op_t &op) noexcept {
     try_var(frame, frames_.top());
     try_var(field, frame->field(op.index));
-    return stack_.push(field.as_object());
+    return stack_.push(field);
 }
 
 result<void> stackvm_runtime_function::visit(const stlocal_op_t &op) noexcept {

@@ -5,6 +5,7 @@ using System;
 using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -55,6 +56,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     public Tensor(Memory<T> buffer, ReadOnlySpan<int> dimensions)
         : base(DataType.FromType<T>(), dimensions)
     {
+        Trace.Assert(Length == buffer.Length);
         Buffer = buffer;
     }
 
