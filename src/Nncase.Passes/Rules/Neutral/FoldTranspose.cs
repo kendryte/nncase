@@ -98,7 +98,7 @@ public sealed partial class TransposeToReshape : IRewriteRule
         IsWildcard("input") with { TypePattern = HasRank() },
         IsTensorConst("perm", IsIntegral()));
 
-    private Expr? GetReplace(Expr input, Expr tp, Tensor<int> perm)
+    private Expr? GetReplace(Expr input, Expr tp, Tensor<int> perm, RunPassContext context)
     {
         // If all significant dims remains ascending order, it can be converted to a reshape.
         var inShape = input.CheckedShape;
@@ -128,6 +128,7 @@ public sealed partial class TransposeToReshape : IRewriteRule
             }
         }
 
+        context.MatchOptions.SuppressPattern(tp, Pattern);
         return Reshape(input, ShapeOf(tp));
     }
 }
