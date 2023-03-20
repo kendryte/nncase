@@ -9,7 +9,7 @@ namespace Nncase.Importer
 {
     public partial class OnnxImporter
     {
-        private Expr SetOutputsNames(Expr expr, in NodeProto op)
+        public Expr SetOutputsNames(Expr expr, in NodeProto op)
         {
             for (int i = 0; i < op.Output.Count; i++)
             {

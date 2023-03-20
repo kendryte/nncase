@@ -14,7 +14,7 @@ using F = Nncase.IR.F;
 namespace Nncase.Importer.TFLite;
 public partial class TFLiteImporter
 {
-    private Expr SetOutputsNames(Expr expr, int outputsNumber, in tflite.Operator op)
+    public Expr SetOutputsNames(Expr expr, int outputsNumber, in tflite.Operator op)
     {
         for (int i = 0; i < outputsNumber; i++)
         {
