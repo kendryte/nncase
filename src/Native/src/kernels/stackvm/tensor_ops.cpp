@@ -1024,7 +1024,8 @@ result<value_t> nncase::kernels::stackvm::fake_quantize(
     return err(std::errc::not_supported);
 }
 //
-//result<value_t> nncase::kernels::stackvm::swish(value_t input, value_t output, kernel_context &context) {
+// result<value_t> nncase::kernels::stackvm::swish(value_t input, value_t
+// output, kernel_context &context) {
 //
 //}
 
