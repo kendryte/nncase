@@ -289,7 +289,7 @@ internal sealed class CSharpPrintVisitor : ExprFunctor<string, string>
     {
         var start = _constWriter.BaseStream.Position;
         _constWriter.Write(tc.Value.BytesBuffer);
-        var end = _constWriter.BaseStream.Position;
+        var end = _randConst ? tc.Value.BytesBuffer.Length : _constWriter.BaseStream.Position;
         var size = end - start;
         var shape = tc.Value.Shape.IsScalar ? string.Empty : $", {string.Join(",", tc.Value.Shape.ToValueArray())}";
         return $"GetD<{tc.Value.ElementType.GetBuiltInName()}>(vD, {start}, {size}{shape})";
@@ -302,7 +302,7 @@ internal sealed class CSharpPrintVisitor : ExprFunctor<string, string>
             PrimType primType => tc.Value.Shape switch
             {
                 Shape { IsScalar: true } => tc.Value.GetArrayString(false),
-                Shape x when x.Size < 8 => $"new {primType.GetBuiltInName()}[{GetArrayComma(x)}]{tc.Value.GetArrayString(false)}",
+                Shape x when x.Size <= 8 => $"new {primType.GetBuiltInName()}[{GetArrayComma(x)}]{tc.Value.GetArrayString(false)}",
                 _ => GetCSharpConstFromFile(tc),
             },
             ValueType valueType => GetCSharpConstFromFile(tc),
