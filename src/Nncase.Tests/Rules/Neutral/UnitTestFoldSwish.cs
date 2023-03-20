@@ -23,7 +23,7 @@ namespace Nncase.Tests.Rules.NeutralTest;
 
 /// <inheritdoc />
 [AutoSetupTestMethod(InitSession = true)]
-public class UnitTestFoldGelu : TransformTestBase
+public class UnitTestFoldSwish : TransformTestBase
 {
     public static TheoryData<int[]> FoldSwishData => new()
     {
@@ -32,7 +32,7 @@ public class UnitTestFoldGelu : TransformTestBase
 
     [Theory]
     [MemberData(nameof(FoldSwishData))]
-    public void TestFoldGeluWithScalePositive(int[] shape)
+    public void TestFoldSwishPattern1Positive1(int[] shape)
     {
         // note shape is nchw
         var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape);
@@ -44,12 +44,12 @@ public class UnitTestFoldGelu : TransformTestBase
             rootPre = v2;
         }
 
-        TestMatched<FoldSwish>(rootPre);
+        TestMatched<FoldSwishPattern1>(rootPre);
     }
 
     [Theory]
     [MemberData(nameof(FoldSwishData))]
-    public void TestFoldGeluWithScaleNegative(int[] shape)
+    public void TestFoldSwishPattern1Negative1(int[] shape)
     {
         // note shape is nchw
         var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape);
@@ -61,6 +61,40 @@ public class UnitTestFoldGelu : TransformTestBase
             rootPre = v2;
         }
 
-        TestNotMatch<FoldSwish>(rootPre);
+        TestNotMatch<FoldSwishPattern1>(rootPre);
+    }
+
+    [Theory]
+    [MemberData(nameof(FoldSwishData))]
+    public void TestFoldSwishPattern2Positive2(int[] shape)
+    {
+        // note shape is nchw
+        var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape);
+        Expr rootPre;
+        {
+            var v0 = input;
+            var v1 = IR.F.NN.Sigmoid(v0);
+            var v2 = IR.F.Math.Binary(BinaryOp.Mul, v0, v1);
+            rootPre = v2;
+        }
+
+        TestMatched<FoldSwishPattern2>(rootPre);
+    }
+
+    [Theory]
+    [MemberData(nameof(FoldSwishData))]
+    public void TestFoldSwishPattern2Negative2(int[] shape)
+    {
+        // note shape is nchw
+        var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape);
+        Expr rootPre;
+        {
+            var v0 = input;
+            var v1 = IR.F.NN.Sigmoid(v0);
+            var v2 = IR.F.Math.Binary(BinaryOp.Add, v0, v1);
+            rootPre = v2;
+        }
+
+        TestNotMatch<FoldSwishPattern2>(rootPre);
     }
 }

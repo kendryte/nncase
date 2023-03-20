@@ -12,7 +12,7 @@ using static Nncase.PatternMatch.Utility;
 namespace Nncase.Passes.Rules.Neutral;
 
 [RuleGenerator]
-public sealed partial class FoldSwish : RewriteRule<CallPattern>
+public sealed partial class FoldSwishPattern1 : RewriteRule<CallPattern>
 {
     /// <inheritdoc/>
     public override CallPattern Pattern { get; } =
@@ -21,6 +21,24 @@ public sealed partial class FoldSwish : RewriteRule<CallPattern>
     private Expr? GetReplace(Call binaryCall, Call sigmoidCall, Expr input)
     {
         if (binaryCall[Binary.Rhs] == input)
+        {
+            return IR.F.NN.Swish(input);
+        }
+
+        return null;
+    }
+}
+
+[RuleGenerator]
+public sealed partial class FoldSwishPattern2 : RewriteRule<CallPattern>
+{
+    /// <inheritdoc/>
+    public override CallPattern Pattern { get; } =
+        IsBinary(null, "binaryCall", BinaryOp.Mul, IsWildcard(), IsSigmoid(null, "sigmoidCall", IsWildcard("input")));
+
+    private Expr? GetReplace(Call binaryCall, Call sigmoidCall, Expr input)
+    {
+        if (binaryCall[Binary.Lhs] == input)
         {
             return IR.F.NN.Swish(input);
         }
