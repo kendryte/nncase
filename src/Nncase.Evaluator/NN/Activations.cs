@@ -427,7 +427,7 @@ public class GeluEvaluator : IEvaluator<Gelu>, ITypeInferencer<Gelu>, ICostEvalu
         return new()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(outputType),
-            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, CostUtility.GetCPUCyclesOfBinary(BinaryOp.Mul) * 3 + CostUtility.GetCPUCyclesOfBinary(BinaryOp.Div) * 2 + CostUtility.GetCPUCyclesOfBinary(BinaryOp.Add)),
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
         };
     }
