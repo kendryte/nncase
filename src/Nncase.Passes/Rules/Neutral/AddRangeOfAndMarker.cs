@@ -41,6 +41,7 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
         { typeof(Selu).TypeHandle, 1 },
         { typeof(Elu).TypeHandle, 1 },
         { typeof(HardSwish).TypeHandle, 1 },
+        { typeof(Swish).TypeHandle, 1 },
         { typeof(HardSigmoid).TypeHandle, 1 },
         { typeof(Erf).TypeHandle, 1 },
         { typeof(ResizeImage).TypeHandle, 1 },

@@ -87,6 +87,7 @@ internal class Compiler : ICompiler
                 p.Add<Passes.Rules.Neutral.FoldLayerNormPattern1>();
                 p.Add<Passes.Rules.Neutral.FoldLayerNormPattern2>();
                 p.Add<Passes.Rules.Neutral.FoldLayerNormPattern3>();
+                p.Add<Passes.Rules.Neutral.FoldSwish>();
             });
 
             // passManager.AddWithName<EGraphPass>("NeutralOptimizeClamp").Configure(p =>
