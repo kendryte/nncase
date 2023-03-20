@@ -52,6 +52,7 @@ public class UnitTestFoldTranspose : TransformTestBase
         (2, IR.F.NN.Celu(IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 4, 2, 1 }), 0.6f), new int[] { 1, 0, 2 }),
         (3, IR.F.NN.HardSigmoid(IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 4, 2, 1 }), 0.6f, 0.3f), new int[] { 1, 0, 2 }),
         (3, IR.F.NN.Erf(IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 4, 2, 1 })), new int[] { 1, 0, 2 }),
+        (3, IR.F.NN.Gelu(IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 4, 2, 1 }), 1f), new int[] { 1, 0, 2 }),
     };
 
     public static TheoryData<(int Count, IR.Expr Act, int[] Perm)> TestCombineTransposeActivationsNegativeData => new()
