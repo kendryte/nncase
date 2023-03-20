@@ -27,6 +27,17 @@ public class UnitTestExpression
     }
 
     [Fact]
+    public void TestNoneEqual()
+    {
+        var a = None.Default;
+        var b = a.With();
+        Assert.Equal(a, b);
+        Assert.Equal(a.GetHashCode(), b.GetHashCode());
+        Assert.False(object.ReferenceEquals(a, b));
+        Assert.False(object.ReferenceEquals(a, None.Default));
+    }
+
+    [Fact]
     public void TestConstEqual()
     {
         var a = (Const)1.1f == (Const)1.1f;
