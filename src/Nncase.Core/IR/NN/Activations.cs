@@ -202,3 +202,20 @@ public sealed partial class Erf : ActivationOp
     /// </summary>
     public static readonly ParameterInfo Input = new(typeof(Erf), 0, "input");
 }
+
+/// <summary>
+/// Gelu expression.
+/// </summary>
+[PatternFunctionalGenerator]
+public sealed partial class Gelu : ActivationOp
+{
+    /// <summary>
+    /// Gets input.
+    /// </summary>
+    public static readonly ParameterInfo Input = new(typeof(Gelu), 0, "input");
+
+    /// <summary>
+    /// Gets alpha.
+    /// </summary>
+    public static readonly ParameterInfo Alpha = new(typeof(Gelu), 1, "alpha", IsFloatScalar());
+}

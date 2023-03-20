@@ -367,9 +367,9 @@ public class PReluEvaluator : IEvaluator<PRelu>, ITypeInferencer<PRelu>, ICostEv
 public class ErfEvaluator : IEvaluator<Erf>, ITypeInferencer<Erf>, ICostEvaluator<Erf>
 {
     /// <inheritdoc/>
-    public IValue Visit(IEvaluateContext context, Erf sigmoid)
+    public IValue Visit(IEvaluateContext context, Erf erf)
     {
-        var input = context.GetOrtArgumentValue(sigmoid, Erf.Input);
+        var input = context.GetOrtArgumentValue(erf, Erf.Input);
         return OrtKI.Erf(input).ToValue();
     }
 
@@ -399,32 +399,35 @@ public class ErfEvaluator : IEvaluator<Erf>, ITypeInferencer<Erf>, ICostEvaluato
 }
 
 /// <summary>
-/// Evaluator for <see cref="Sigmoid"/>.
+/// Evaluator for <see cref="Gelu"/>.
 /// </summary>
-public class SwishEvaluator : IEvaluator<Swish>, ITypeInferencer<Swish>, ICostEvaluator<Swish>
+public class GeluEvaluator : IEvaluator<Gelu>, ITypeInferencer<Gelu>, ICostEvaluator<Gelu>
 {
     /// <inheritdoc/>
-    public IValue Visit(IEvaluateContext context, Swish swish)
+    public IValue Visit(IEvaluateContext context, Gelu gelu)
     {
-        var input = context.GetOrtArgumentValue(swish, Swish.Input);
-        return OrtKI.Mul(OrtKI.Sigmoid(input), input).ToValue();
+        var input = context.GetOrtArgumentValue(gelu, Gelu.Input);
+        var alpha = context.GetArgumentValueAsScalar<float>(gelu, Gelu.Alpha);
+
+        var scaledInput = OrtKI.Mul(alpha, input);
+        return OrtKI.Mul(0.5f, OrtKI.Mul(scaledInput, OrtKI.Add(OrtKI.Erf(OrtKI.Div(scaledInput, OrtKI.Sqrt(2f))), 1f))).ToValue();
     }
 
     /// <inheritdoc/>
-    public IRType Visit(ITypeInferenceContext context, Swish target)
+    public IRType Visit(ITypeInferenceContext context, Gelu target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, Swish.Input);
+        var input = context.CheckArgumentType<TensorType>(target, Gelu.Input);
         return Visit(input);
     }
 
     /// <inheritdoc/>
-    public Cost Visit(ICostEvaluateContext context, Swish target)
+    public Cost Visit(ICostEvaluateContext context, Gelu target)
     {
         var outputType = context.GetReturnType<TensorType>();
         return new()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(outputType),
-            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, (CostUtility.GetCPUCyclesOfBinary(BinaryOp.Mul) * 3) + (CostUtility.GetCPUCyclesOfBinary(BinaryOp.Div) * 2) + CostUtility.GetCPUCyclesOfBinary(BinaryOp.Add)),
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
         };
     }
