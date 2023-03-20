@@ -17,6 +17,7 @@ internal class NNModule : IApplicationPart
         registrator.RegisterManyInterface<CeluEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<EluEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<HardSwishEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<SwishEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<LeakyReluEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<PReluEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<ReluEvaluator>(reuse: Reuse.Singleton);

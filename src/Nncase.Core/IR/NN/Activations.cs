@@ -146,6 +146,18 @@ public sealed partial class Elu : ActivationOp
 }
 
 /// <summary>
+/// Swish expression.
+/// </summary>
+[PatternFunctionalGenerator]
+public sealed partial class Swish : ActivationOp
+{
+    /// <summary>
+    /// Gets input.
+    /// </summary>
+    public static readonly ParameterInfo Input = new(typeof(Swish), 0, "input");
+}
+
+/// <summary>
 /// HardSwish expression.
 /// </summary>
 [PatternFunctionalGenerator]
