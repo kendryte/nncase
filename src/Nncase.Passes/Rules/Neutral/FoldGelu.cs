@@ -11,6 +11,7 @@ using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.F.NN;
 using static Nncase.PatternMatch.F.Tensors;
 using static Nncase.PatternMatch.Utility;
+using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.Passes.Rules.Neutral;
 
@@ -32,7 +33,7 @@ public sealed partial class FoldGeluWithScale : RewriteRule<CallPattern>
                     "mul3Call",
                     BinaryOp.Mul,
                     IsWildcard("input"),
-                    IsTensorConst("mul3Const")),
+                    IsTensorConst("mul3Const") with {TypePattern = HasRank(0) | HasShape(new []{1})}),
                 IsBinary(
                     "add",
                     "addCall",
@@ -45,9 +46,9 @@ public sealed partial class FoldGeluWithScale : RewriteRule<CallPattern>
                             "divCall",
                             BinaryOp.Div,
                             IsWildcard(),
-                            IsTensorConst("divConst"))),
-                    IsTensorConst("addConst"))),
-            IsTensorConst("mul1Const"));
+                            IsTensorConst("divConst") with {TypePattern = HasRank(0) | HasShape(new []{1})})),
+                    IsTensorConst("addConst") with {TypePattern = HasRank(0) | HasShape(new []{1})})),
+            IsTensorConst("mul1Const") with {TypePattern = HasRank(0) | HasShape(new []{1})});
 
     private Expr? GetReplace(Expr input, Call mul3Call, Tensor<float> mul3Const, Call divCall, Tensor<float> divConst, Tensor<float> addConst, Tensor<float> mul1Const)
     {
@@ -90,9 +91,9 @@ public sealed partial class FoldGeneralGelu : RewriteRule<CallPattern>
                             "divCall",
                             BinaryOp.Div,
                             IsWildcard(),
-                            IsTensorConst("divConst"))),
-                    IsTensorConst("addConst"))),
-            IsTensorConst("mul1Const"));
+                            IsTensorConst("divConst") with {TypePattern = HasRank(0) | HasShape(new []{1})})),
+                    IsTensorConst("addConst") with {TypePattern = HasRank(0) | HasShape(new []{1})})),
+            IsTensorConst("mul1Const") with {TypePattern = HasRank(0) | HasShape(new []{1})});
 
     private Expr? GetReplace(Expr input, Call divCall, Tensor<float> divConst, Tensor<float> addConst, Tensor<float> mul1Const)
     {
