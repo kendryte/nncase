@@ -1609,7 +1609,7 @@ struct op_reader<tensor_lstm_op_t>
         op.tensor_funct = static_cast<tensor_function_t>(reader.read_unaligned<uint16_t>());
         op.direction = static_cast<lstmdirection_t>(reader.read_unaligned<uint32_t>());
         op.layout = static_cast<lstmlayout_t>(reader.read_unaligned<uint32_t>());
-        op.activations = reader.read_unaligned<immutable_array`1_t>();
+        op.activations = reader.read_string_array();
         return op;
     }
 };

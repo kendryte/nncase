@@ -979,7 +979,7 @@ struct tensor_lstm_op_t : public tensor_op_base_t
     tensor_function_t tensor_funct;
     lstmdirection_t direction;
     lstmlayout_t layout;
-    immutable_array`1_t activations;
+    std::vector<std::string> activations;
 };
 
 struct tensor_mat_mul_op_t : public tensor_op_base_t

@@ -95,7 +95,7 @@ NNCASE_API result<value_t> lp_normalization(value_t input, value_t axis, value_t
 
 NNCASE_API result<value_t> lrn(value_t input, value_t alpha, value_t beta, value_t bias, value_t size, value_t output = nullptr, kernel_context &context = default_kernel_context());
 
-NNCASE_API result<value_t> lstm(runtime::stackvm::lstmdirection_t direction, runtime::stackvm::lstmlayout_t layout, immutable_array`1_t activations, value_t x, value_t w, value_t r, value_t b, value_t sequence_lens, value_t initial_h, value_t initial_c, value_t p, value_t activation_alpha, value_t activation_beta, value_t clip, value_t hidden_size, value_t input_forget, value_t output_size, value_t output = nullptr, kernel_context &context = default_kernel_context());
+NNCASE_API result<value_t>lstm(runtime::stackvm::lstmdirection_t direction,runtime::stackvm::lstmlayout_t layout,std::vector<std::string> activations, value_t x, value_t w, value_t r,value_t b, value_t sequence_lens, value_t initial_h, value_t initial_c,value_t p, value_t activation_alpha, value_t activation_beta, value_t clip,value_t hidden_size, value_t input_forget, value_t output_size,value_t output = nullptr,kernel_context &context = default_kernel_context());
 
 NNCASE_API result<value_t> mat_mul(value_t lhs, value_t rhs, value_t output = nullptr, kernel_context &context = default_kernel_context());
 
