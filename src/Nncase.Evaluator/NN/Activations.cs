@@ -399,6 +399,43 @@ public class ErfEvaluator : IEvaluator<Erf>, ITypeInferencer<Erf>, ICostEvaluato
 }
 
 /// <summary>
+/// Evaluator for <see cref="Sigmoid"/>.
+/// </summary>
+public class SwishEvaluator : IEvaluator<Swish>, ITypeInferencer<Swish>, ICostEvaluator<Swish>
+{
+    /// <inheritdoc/>
+    public IValue Visit(IEvaluateContext context, Swish swish)
+    {
+        var input = context.GetOrtArgumentValue(swish, Swish.Input);
+        return OrtKI.Mul(OrtKI.Sigmoid(input), input).ToValue();
+    }
+
+    /// <inheritdoc/>
+    public IRType Visit(ITypeInferenceContext context, Swish target)
+    {
+        var input = context.CheckArgumentType<TensorType>(target, Swish.Input);
+        return Visit(input);
+    }
+
+    /// <inheritdoc/>
+    public Cost Visit(ICostEvaluateContext context, Swish target)
+    {
+        var outputType = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(outputType),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
+        };
+    }
+
+    private IRType Visit(TensorType input)
+    {
+        return input;
+    }
+}
+
+/// <summary>
 /// Evaluator for <see cref="Gelu"/>.
 /// </summary>
 public class GeluEvaluator : IEvaluator<Gelu>, ITypeInferencer<Gelu>, ICostEvaluator<Gelu>
