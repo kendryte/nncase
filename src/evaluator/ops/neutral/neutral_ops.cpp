@@ -354,6 +354,11 @@ void register_neutral_evaluators()
                 output.buffer().as_span<int32_t>().data(), input.shape(), to(rnode.axis()), input.strides(), output.strides(), rnode.keep_dims())
                 .unwrap_or_throw();
             break;
+        case dt_int64:
+            kernels::reduce(rnode.reduce_op(), static_cast<int64_t>(rnode.init_value()), input.buffer().as_span<int64_t>().data(),
+                            output.buffer().as_span<int64_t>().data(), input.shape(), to(rnode.axis()), input.strides(), output.strides(), rnode.keep_dims())
+                    .unwrap_or_throw();
+            break;
         default:
             std::cerr << "unsupported dtype for reduce: " + std::string(datatype_names(input_type));
         } });
