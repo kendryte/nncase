@@ -9,6 +9,9 @@ if (BUILDING_RUNTIME)
         add_compile_options(-march=rv64imafdcv)
     endif()
 
+    if(CMAKE_SYSTEM_PROCESSOR STREQUAL riscv64 AND NNCASE_RISCV_CPU_NAME STREQUAL k510) # k510 toolchain 
+        add_compile_options(-Wno-variadic-macros)
+    endif()
     add_library(kernels OBJECT ${SRCS})
     target_include_directories(kernels PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
     target_link_libraries(kernels PUBLIC gsl::gsl-lite mpark_variant::mpark_variant)
