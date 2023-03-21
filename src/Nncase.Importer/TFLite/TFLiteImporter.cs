@@ -337,6 +337,15 @@ public sealed partial class TFLiteImporter : BaseImporter
             // tflite.BuiltinOperator.ZEROS_LIKE,
             _ => UnSupportedOp(builtinCode.ToString()),
         };
+
+        List<string> outputsNames = new();
+
+        for (int i = 0; i < op.GetOutputsArray().Length; i++)
+        {
+            outputsNames.Add(GetOutputTensor(op, i).Name);
+        }
+
+        ((Expr)output).GetMetadata().SetOutPutsNames(outputsNames);
         AddToOutputs(_outputTensors, op.GetOutputsArray(), output);
     }
 

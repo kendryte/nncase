@@ -13,10 +13,44 @@ using Microsoft.Toolkit.HighPerformance.Helpers;
 namespace Nncase.IR;
 
 /// <summary>
+/// Expression's metadata.
+/// </summary>
+public class IRMetadata
+{
+    private IReadOnlyList<string>? _outputsNames;
+
+    internal IRMetadata()
+    {
+    }
+
+    internal IRMetadata(List<string> outputsNames)
+    {
+        _outputsNames = outputsNames;
+    }
+
+    /// <summary>
+    /// Get outputs names.
+    /// </summary>
+    public IReadOnlyList<string>? GetOutPutsNames()
+    {
+        return _outputsNames;
+    }
+
+    /// <summary>
+    /// Set outputs names.
+    /// </summary>
+    public void SetOutPutsNames(List<string> outputsNames)
+    {
+        _outputsNames = outputsNames;
+    }
+}
+
+/// <summary>
 /// Expression.
 /// </summary>
 public abstract partial class Expr : IDisposable
 {
+    private readonly IRMetadata _iRMetadata;
     private readonly Expr[] _operands;
     private readonly HashSet<Expr> _users = new(ReferenceEqualityComparer.Instance);
 
@@ -31,6 +65,8 @@ public abstract partial class Expr : IDisposable
         {
             operand.AddUser(this);
         }
+
+        _iRMetadata = new IRMetadata();
     }
 
     internal Expr(Expr[] operands)
@@ -40,6 +76,8 @@ public abstract partial class Expr : IDisposable
         {
             operand.AddUser(this);
         }
+
+        _iRMetadata = new IRMetadata();
     }
 
     /// <summary>
@@ -157,6 +195,14 @@ public abstract partial class Expr : IDisposable
         {
             Dispose();
         }
+    }
+
+    /// <summary>
+    /// Get metadata.
+    /// </summary>
+    public IRMetadata GetMetadata()
+    {
+        return _iRMetadata;
     }
 
     internal void AddUser(Expr user)

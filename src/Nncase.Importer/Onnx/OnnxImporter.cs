@@ -194,6 +194,15 @@ public sealed partial class OnnxImporter : BaseImporter
             "Where" => VisitWhere(op),
             _ => UnSupportedOp(op.OpType),
         };
+
+        List<string> outputsNames = new();
+
+        for (int i = 0; i < op.Output.Count; i++)
+        {
+            outputsNames.Add(op.Output[i]);
+        }
+
+        ((Expr)output).GetMetadata().SetOutPutsNames(outputsNames);
         AddToOutputs(_outputTensors!, op.Output.ToArray(), output);
     }
 
