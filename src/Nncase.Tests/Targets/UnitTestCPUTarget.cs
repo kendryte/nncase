@@ -15,6 +15,7 @@ using Nncase.IR.Tensors;
 using Nncase.Runtime.Interop;
 using Nncase.Targets;
 using Nncase.Tests.TestFixture;
+using Nncase.Utilities;
 using Xunit;
 using static Nncase.IR.F.Tensors;
 using GetItem = Nncase.IR.Tensors.GetItem;
@@ -34,6 +35,13 @@ public class UnitTestCPUTarget : TestClassBase
         {
             new object[] { new[] { 0, 1 } },
             new object[] { new[] { 0, -1 } },
+        };
+
+    public static IEnumerable<object[]> TestIfData =>
+        new[]
+        {
+            new object[] { true },
+            new object[] { false },
         };
 
     [Fact]
@@ -82,6 +90,15 @@ public class UnitTestCPUTarget : TestClassBase
         var y = x + 1.0f + x;
         var z = y * 2.0f;
         TestCodeGen(new IR.Tuple(y, z), new[] { x });
+    }
+
+    [Fact]
+    public void TestCodeGenVisitLeafVar()
+    {
+        var main = new Function(new Var(), Array.Empty<Var>());
+        var module = new IRModule(main);
+        var modelBuilder = CompileSession.GetRequiredService<IModelBuilder>();
+        Assert.Throws<InvalidOperationException>(() => modelBuilder.Build(module));
     }
 
     [Fact]
@@ -147,6 +164,38 @@ public class UnitTestCPUTarget : TestClassBase
         var module = new IRModule(main);
         module.Add(funcA);
         GenerateKModelAndRun(module, new[] { 1.0f }, new[] { 3.0f });
+    }
+
+    [Theory]
+    [MemberData(nameof(TestIfData))]
+    public void TestIf(bool input)
+    {
+        var condVar = new Var(new TensorType(DataTypes.Boolean, Shape.Scalar));
+        var then = IR.F.Math.Abs(3f);
+        var @else = IR.F.NN.Relu(Cast(3, DataTypes.Float32));
+        var @if = IR.F.Math.Abs(new If(condVar, then, @else));
+
+        Assert.True(@if.InferenceType());
+        var main = new Function("main", @if, new[] { condVar });
+
+        var output = @if.Evaluate(new Dictionary<Var, IValue> { { condVar, Value.FromTensor(input) } }).AsTensor();
+        GenerateKModelAndRunFromFn(main, input, output);
+    }
+
+    [Fact]
+    public void TestStackVMNestIf()
+    {
+        var condVar = new Var(new TensorType(DataTypes.Boolean, Shape.Scalar));
+        _ = (Expr)3 - 1;
+        var @else = (Expr)3 + 1;
+        var elseThen = (Expr)8 * 8;
+        var elsif = new If(condVar, elseThen, @else);
+
+        var main = new Function("main", 2 * elsif, new[] { condVar });
+
+        var input = (Tensor)true;
+        var output = (Tensor)128;
+        GenerateKModelAndRunFromFn(main, input, output);
     }
 
     private void TestCodeGen(Expr body, Var[] vars, [CallerMemberName] string? name = null)

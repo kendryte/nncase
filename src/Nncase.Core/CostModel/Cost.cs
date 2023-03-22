@@ -4,6 +4,7 @@
 using System;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
+using static NetFabric.Hyperlinq.ArrayExtensions;
 
 namespace Nncase.CostModel;
 
@@ -112,7 +113,7 @@ public sealed record Cost : IComparable<Cost>, IEquatable<Cost>
     /// <inheritdoc/>
     public int CompareTo(Cost? other)
     {
-        return (int)(Score - other?.Score ?? 0);
+        return Comparer<double>.Default.Compare(Score, other?.Score ?? 0.0);
     }
 
     /// <inheritdoc/>
@@ -162,9 +163,26 @@ public static class CostExtensions
     /// </summary>
     /// <param name="costs">Source.</param>
     /// <returns>Result.</returns>
-    public static Cost Sum(this IEnumerable<Cost?> costs)
+    public static Cost Sum(this IEnumerable<Cost> costs)
     {
-        return costs.Aggregate((Cost?)Cost.Zero, (x, y) => y == null ? null : x! + y)!;
+        return costs.Aggregate(Cost.Zero, (x, y) => x + y)!;
+    }
+
+    /// <summary>
+    /// Sum all costs.
+    /// </summary>
+    /// <param name="costs">Source.</param>
+    /// <returns>Result.</returns>
+    public static Cost Sum<TSource, TSelector>(this in SpanSelectEnumerable<TSource, Cost, TSelector> costs)
+            where TSelector : struct, IFunction<TSource, Cost>
+    {
+        var sum = Cost.Zero;
+        foreach (var cost in costs)
+        {
+            sum += cost;
+        }
+
+        return sum;
     }
 }
 

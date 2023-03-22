@@ -10,7 +10,7 @@ namespace Nncase.IR.Math;
 /// Quantize expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Quantize(DataType TargetType) : Op
+public sealed partial class Quantize : Op
 {
     /// <summary>
     /// Gets input.
@@ -21,4 +21,9 @@ public sealed record Quantize(DataType TargetType) : Op
     /// Gets QuantParam.
     /// </summary>
     public static readonly ParameterInfo QuantParam = new(typeof(Quantize), 1, "quantParam", IsQuantParamType());
+
+    public DataType TargetType { get; }
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => $"{TargetType.GetCSharpName()}";
 }

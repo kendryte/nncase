@@ -21,7 +21,7 @@ using static Nncase.PatternMatch.F.NN;
 using static Nncase.PatternMatch.Utility;
 using Math = Nncase.IR.F.Math;
 
-namespace Nncase.Transform.Rules.K210;
+namespace Nncase.Passes.Rules.K210;
 
 /// <summary>
 /// Lower <see cref="IR.K210.FakeKPUUpload"/> to <see cref="IR.K210.KPUUpload"/>.

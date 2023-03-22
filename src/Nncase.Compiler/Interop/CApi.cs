@@ -45,6 +45,7 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr, byte*, nuint, void> CompileOptionsSetInputFilePtr;
     public delegate* unmanaged<IntPtr, byte*, nuint, void> CompileOptionsSetInputFormatPtr;
     public delegate* unmanaged<IntPtr, byte*, nuint, void> CompileOptionsSetDumpDirPtr;
+    public delegate* unmanaged<IntPtr, DumpFlags> CompileOptionsGetDumpFlagsPtr;
     public delegate* unmanaged<IntPtr, DumpFlags, void> CompileOptionsSetDumpFlagsPtr;
     public delegate* unmanaged<IntPtr, IntPtr, void> CompileOptionsSetQuantizeOptionsPtr;
     public delegate* unmanaged<IntPtr, IntPtr, IntPtr> CompileSessionCreatePtr;
@@ -63,7 +64,10 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr, IntPtr, void> QuantizeOptionsSetCalibrationDatasetPtr;
     public delegate* unmanaged<IntPtr, CalibMethod, void> QuantizeOptionsSetCalibrationMethodPtr;
     public delegate* unmanaged<IntPtr, ModelQuantMode, void> QuantizeOptionsSetModelQuantModePtr;
-    public delegate* unmanaged<IntPtr, IntPtr, void> QuantizeOptionsSetQuantTypePtr;
+    public delegate* unmanaged<IntPtr, QuantType, void> QuantizeOptionsSetQuantTypePtr;
+    public delegate* unmanaged<IntPtr, QuantType, void> QuantizeOptionsSetWQuantTypePtr;
+    public delegate* unmanaged<IntPtr, FineTuneWeightsMethod, void> QuantOptionsSetFineTuneWeightsMethodPtr;
+    public delegate* unmanaged<IntPtr, byte, void> QuantOptionsSetUseMixQuantPtr;
     public delegate* unmanaged<IntPtr, IntPtr> RTValueFromHandlePtr;
     public delegate* unmanaged<IntPtr, IntPtr> RTValueGetHandlePtr;
     public delegate* unmanaged<CStreamMT*, IntPtr, IntPtr> StreamCreatePtr;
@@ -89,6 +93,7 @@ public static unsafe class CApi
         mt->CompileOptionsSetInputFormatPtr = &CompileOptionsSetInputFormat;
         mt->CompileOptionsSetDumpDirPtr = &CompileOptionsSetDumpDir;
         mt->CompileOptionsSetDumpFlagsPtr = &CompileOptionsSetDumpFlags;
+        mt->CompileOptionsGetDumpFlagsPtr = &CompileOptionsGetDumpFlags;
         mt->CompileOptionsSetQuantizeOptionsPtr = &CompileOptionsSetQuantizeOptions;
         mt->CompileSessionCreatePtr = &CompileSessionCreate;
         mt->CompileSessionGetCompilerPtr = &CompileSessionGetCompiler;
@@ -107,6 +112,9 @@ public static unsafe class CApi
         mt->QuantizeOptionsSetCalibrationMethodPtr = &QuantizeOptionsSetCalibrationMethod;
         mt->QuantizeOptionsSetModelQuantModePtr = &QuantizeOptionsSetModelQuantMode;
         mt->QuantizeOptionsSetQuantTypePtr = &QuantizeOptionsSetQuantType;
+        mt->QuantizeOptionsSetWQuantTypePtr = &QuantizeOptionsSetWQuantType;
+        mt->QuantOptionsSetFineTuneWeightsMethodPtr = &QuantizeOptionsSetFineTuneWeightsMethod;
+        mt->QuantOptionsSetUseMixQuantPtr = &QuantOptionsSetUseMixQuant;
         mt->RTValueFromHandlePtr = &RTValueFromHandle;
         mt->RTValueGetHandlePtr = &RTValueGetHandle;
         mt->StreamCreatePtr = &StreamCreate;
@@ -162,9 +170,9 @@ public static unsafe class CApi
 
         var samples = (dataset.Length == 0 ?
             Array.Empty<Dictionary<Var, IValue>>() :
-            dataset.Chunk(dataset.Length).Select(inputs => inputs.Zip(fnParams).ToDictionary(
-            item => item.Item2,
-            item => item.Item1.ToValue()))).ToAsyncEnumerable();
+            dataset.Chunk(dataset.Length / (int)samplesCount).Select(inputs => inputs.Zip(fnParams).ToDictionary(
+            item => item.Second,
+            item => item.First.ToValue()))).ToAsyncEnumerable();
         return GCHandle.ToIntPtr(GCHandle.Alloc(new CCalibrationDatasetProvider(samples, (int)samplesCount)));
     }
 
@@ -193,6 +201,12 @@ public static unsafe class CApi
     private static void CompileOptionsSetInputFormat(IntPtr compileOptionsHandle, byte* inputFormatPtr, nuint inputFormatLength)
     {
         Get<CompileOptions>(compileOptionsHandle).InputFormat = ToString(inputFormatPtr, inputFormatLength);
+    }
+
+    [UnmanagedCallersOnly]
+    private static DumpFlags CompileOptionsGetDumpFlags(IntPtr compileOptionsHandle)
+    {
+        return Get<CompileOptions>(compileOptionsHandle).DumpFlags;
     }
 
     [UnmanagedCallersOnly]
@@ -274,8 +288,8 @@ public static unsafe class CApi
         var fnParams = Get<Var[]>(fnParamsHandle);
         var inputs = Get<RTValue[]>(inputsHandle);
         var result = CompilerServices.Evaluate(expr, fnParams.Zip(inputs).ToDictionary(
-            x => x.Item1,
-            x => x.Item2.ToValue()));
+            x => x.First,
+            x => x.Second.ToValue()));
         var rtValue = RTValue.FromValue(result);
         return GCHandle.ToIntPtr(GCHandle.Alloc(rtValue));
     }
@@ -336,9 +350,79 @@ public static unsafe class CApi
     }
 
     [UnmanagedCallersOnly]
-    private static void QuantizeOptionsSetQuantType(IntPtr quantizeOptionsHandle, IntPtr quantTypeHandle)
+    private static void QuantizeOptionsSetQuantType(IntPtr quantizeOptionsHandle, QuantType quantType)
     {
-        Get<QuantizeOptions>(quantizeOptionsHandle).QuantType = Get<DataType>(quantTypeHandle);
+        switch (quantType)
+        {
+            case QuantType.Uint8:
+                Get<QuantizeOptions>(quantizeOptionsHandle).QuantType = DataTypes.UInt8;
+                break;
+            case QuantType.Int8:
+                Get<QuantizeOptions>(quantizeOptionsHandle).QuantType = DataTypes.Int8;
+                break;
+            case QuantType.Int16:
+                Get<QuantizeOptions>(quantizeOptionsHandle).QuantType = DataTypes.Int16;
+                break;
+            default:
+                throw new ArgumentException("Not Supported Quant Type");
+        }
+    }
+
+    [UnmanagedCallersOnly]
+    private static void QuantizeOptionsSetWQuantType(IntPtr quantizeOptionsHandle, QuantType wQuantType)
+    {
+        switch (wQuantType)
+        {
+            case QuantType.Uint8:
+                Get<QuantizeOptions>(quantizeOptionsHandle).WQuantType = DataTypes.UInt8;
+                break;
+            case QuantType.Int8:
+                Get<QuantizeOptions>(quantizeOptionsHandle).WQuantType = DataTypes.Int8;
+                break;
+            case QuantType.Int16:
+                Get<QuantizeOptions>(quantizeOptionsHandle).WQuantType = DataTypes.Int16;
+                break;
+            default:
+                throw new ArgumentException("Not Supported Weights Quant Type");
+        }
+    }
+
+    [UnmanagedCallersOnly]
+    private static void QuantizeOptionsSetFineTuneWeightsMethod(IntPtr quantizeOptionsHandle, FineTuneWeightsMethod fineTuneWeightsMethod)
+    {
+        switch (fineTuneWeightsMethod)
+        {
+            case FineTuneWeightsMethod.NoFineTuneWeights:
+                Get<QuantizeOptions>(quantizeOptionsHandle).UseSquant = false;
+                Get<QuantizeOptions>(quantizeOptionsHandle).UseAdaRound = false;
+                break;
+            case FineTuneWeightsMethod.UseSquant:
+                Get<QuantizeOptions>(quantizeOptionsHandle).UseSquant = true;
+                Get<QuantizeOptions>(quantizeOptionsHandle).UseAdaRound = false;
+                break;
+            case FineTuneWeightsMethod.UseAdaRound:
+                Get<QuantizeOptions>(quantizeOptionsHandle).UseSquant = false;
+                Get<QuantizeOptions>(quantizeOptionsHandle).UseAdaRound = true;
+                break;
+            default:
+                throw new ArgumentException("Not Supported Finetune Weights Method");
+        }
+    }
+
+    [UnmanagedCallersOnly]
+    private static void QuantOptionsSetUseMixQuant(IntPtr quantizeOptionsHandle, byte useMixQuant)
+    {
+        switch (useMixQuant)
+        {
+            case 0:
+                Get<QuantizeOptions>(quantizeOptionsHandle).BindQuantMethod = false;
+                break;
+            case 1:
+                Get<QuantizeOptions>(quantizeOptionsHandle).BindQuantMethod = true;
+                break;
+            default:
+                throw new ArgumentException("Invalid useMixQuant Flag");
+        }
     }
 
     [UnmanagedCallersOnly]

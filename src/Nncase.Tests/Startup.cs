@@ -18,6 +18,7 @@ public class Startup
             {
                 builder.ConfigureModules(c =>
                 {
+                    c.AddTests();
                     c.AddTestFixture();
                 });
             });

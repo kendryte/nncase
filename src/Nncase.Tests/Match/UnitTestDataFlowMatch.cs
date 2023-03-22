@@ -8,11 +8,11 @@ using Nncase;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
+using Nncase.Passes;
+using Nncase.Passes.Mutators;
+using Nncase.Passes.Rules.Neutral;
 using Nncase.PatternMatch;
 using Nncase.Tests.TestFixture;
-using Nncase.Transform;
-using Nncase.Transform.Mutators;
-using Nncase.Transform.Rules.Neutral;
 using Xunit;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.Tensors;
@@ -84,7 +84,7 @@ public class UnitTestDataFlowMatch : TestClassBase
         Var x = "x", y = "y";
         var z = x + y;
         var tuple = new IR.Tuple(x, y, z);
-        var tuplepat = PatternMatch.Utility.IsTuple(new Pattern[] { IsVar(), IsWildcard(), IsBinary(BinaryOp.Add, IsWildcard(), IsWildcard()) }, "tp");
+        var tuplepat = PatternMatch.Utility.IsTuple("tp", new Pattern[] { IsVar(), IsWildcard(), IsBinary(BinaryOp.Add, IsWildcard(), IsWildcard()) });
 
         Assert.True(CompilerServices.TryMatchRoot(tuple, tuplepat, out var _));
 
@@ -96,7 +96,7 @@ public class UnitTestDataFlowMatch : TestClassBase
     [AutoSetupTestMethod(InitSession = true)]
     public void TestNotMatchFoldConstCall()
     {
-        var rule = new Transform.Rules.Neutral.FoldConstCall();
+        var rule = new Passes.Rules.Neutral.FoldConstCall();
         Var x = "x";
         var z = x + 1;
         Assert.False(CompilerServices.TryMatchRoot(z, rule.Pattern, out var _));
@@ -106,7 +106,7 @@ public class UnitTestDataFlowMatch : TestClassBase
     [AutoSetupTestMethod(InitSession = true)]
     public void TestMatchFoldConstCallTupleWithConst()
     {
-        var rule = new Transform.Rules.Neutral.FoldConstCall();
+        var rule = new Passes.Rules.Neutral.FoldConstCall();
 
         var z = Concat(new IR.Tuple((Const)2, (Const)1, (Const)2), 0);
         CompilerServices.InferenceType(z);
@@ -117,7 +117,7 @@ public class UnitTestDataFlowMatch : TestClassBase
     [AutoSetupTestMethod(InitSession = true)]
     public void TestMatchFoldConstCallTwiceFalse()
     {
-        var rule = new Transform.Rules.Neutral.FoldConstCall();
+        var rule = new Passes.Rules.Neutral.FoldConstCall();
 
         var z = Concat(new IR.Tuple(new Var("x", TensorType.Scalar(DataTypes.Int32)), 1, 2), 0);
         CompilerServices.InferenceType(z);
@@ -156,8 +156,8 @@ public class UnitTestDataFlowMatch : TestClassBase
         var pre = a - (b + c) + (c * d);
         CompilerServices.InferenceType(pre);
 
-        var visitor = new DataFlowRewriteVisitor(new SimpleRule(), new());
-        var post = visitor.Visit(pre);
+        var visitor = new DataFlowRewriter(new SimpleRule(), new());
+        var post = visitor.Rewrite(pre);
         Assert.True(visitor.IsMutated);
 
         if (post is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Sub } } root_call)
@@ -186,10 +186,6 @@ public class UnitTestDataFlowMatch : TestClassBase
         // update the lhs_unary
         var updated_lhs_unary = Unary(UnaryOp.Tanh, input);
         CompilerServices.InferenceType(updated_lhs_unary);
-        var dict = new Dictionary<Expr, Expr>(ReferenceEqualityComparer.Instance)
-        {
-          { lhs_unary, updated_lhs_unary },
-        };
 
         // start match
         var pattern = IsCall("root", IsWildcard(), IsVArgs(
@@ -200,7 +196,8 @@ public class UnitTestDataFlowMatch : TestClassBase
                 IsUnary(null, "rhs", _ => true, IsWildcard()),
             }));
 
-        Assert.True(CompilerServices.TryMatchRoot(pre, pattern, new() { RewriteMemo = dict }, out var result));
+        lhs_unary.ReplaceAllUsesWith(updated_lhs_unary);
+        Assert.True(CompilerServices.TryMatchRoot(pre, pattern, new(), out var result));
         var root_inputs = (IReadOnlyList<Expr>)result!["root_inputs"];
         var lhs = (Call)result["lhs"];
         Assert.True(object.ReferenceEquals(root_inputs[0], lhs));

@@ -17,14 +17,14 @@ using GiGraph.Dot.Types.Nodes;
 using GiGraph.Dot.Types.Records;
 using GiGraph.Dot.Types.Styling;
 using Nncase.IR;
+using Nncase.Passes;
 using Nncase.PatternMatch;
-using Nncase.Transform;
 
-namespace Nncase.Transform;
+namespace Nncase.Passes;
 
 public partial class EGraphPrinter
 {
-    internal static DotGraph DumpEgraphAsDot(EGraph eGraph, CostModel.EGraphCostModel costModel, EClass entry, Stream file)
+    internal static DotGraph DumpEgraphAsDot(IEGraph eGraph, CostModel.EGraphCostModel costModel, EClass entry, Stream file)
     {
         var printer = new EGraphPrinter(eGraph);
         printer.ConvertEGraphAsDot();
@@ -37,7 +37,7 @@ public partial class EGraphPrinter
         // 1. display each enode costs.
         foreach (var (enode, (dotnode, table)) in NodesMap)
         {
-            if (enode.Expr is IR.Var or IR.Op or IR.Marker or IR.None)
+            if (enode.Expr is IR.Var or IR.Op or IR.None)
             {
                 continue;
             }

@@ -18,7 +18,7 @@ namespace Nncase.IR.Tensors;
 /// </summary>
 /// <remarks>"http://www.xavierdupre.fr/app/mlprodict/helpsphinx/onnxops/onnx__Unsqueeze.html#unsqueeze-13".</remarks>
 [PatternFunctionalGenerator]
-public sealed record Unsqueeze() : Op
+public sealed partial class Unsqueeze : Op
 {
     /// <summary>
     /// Gets input.

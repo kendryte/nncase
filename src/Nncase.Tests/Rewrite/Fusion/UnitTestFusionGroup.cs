@@ -1,10 +1,14 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System;
 using System.Collections.Generic;
+using System.Reactive;
+using Microsoft.Extensions.DependencyInjection;
 using Nncase.IR;
-using Nncase.Transform;
-using Nncase.Transform.Mutators;
+using Nncase.Passes;
+using Nncase.Passes.Analysis;
+using Nncase.Passes.Mutators;
 using Xunit;
 
 namespace Nncase.Tests.ReWrite.FusionTest;
@@ -14,8 +18,8 @@ public class UnitTestFusionGroup : TestClassBase
 {
     public static readonly TheoryData<IDataFlowFusionCase> DataOne = new()
     {
-        new DataFlowType13FusionCaseLeft(),
-        new DataFlowType13FusionCaseRight(),
+        new DataFlowType14FusionCaseLeft(),
+        new DataFlowType14FusionCaseRight(),
     };
 
     public static readonly TheoryData<IDataFlowFusionCase> DataAll = new()
@@ -34,6 +38,7 @@ public class UnitTestFusionGroup : TestClassBase
         new DataFlowType10FusionCaseLeft(),
         new DataFlowType11FusionCaseLeft(),
         new DataFlowType12FusionCaseLeft(),
+        new DataFlowType13FusionCaseLeft(),
 
         new DataFlowType1FusionCaseRight(),
         new DataFlowType2FusionCaseRight(),
@@ -48,7 +53,16 @@ public class UnitTestFusionGroup : TestClassBase
         new DataFlowType10FusionCaseRight(),
         new DataFlowType11FusionCaseRight(),
         new DataFlowType12FusionCaseRight(),
+        new DataFlowType13FusionCaseRight(),
     };
+
+    public static readonly TheoryData<IDataFlowFusionCaseTwoStage> DataTwoStage = new()
+    {
+        new DataFlowType15FusionCaseLeft(),
+        new DataFlowType15FusionCaseRight(),
+    };
+
+    public IAnalyzerManager AnalyzerMananger => CompileSession.GetRequiredService<IAnalyzerManager>();
 
     [Theory]
     [MemberData(nameof(DataOne))]
@@ -57,6 +71,69 @@ public class UnitTestFusionGroup : TestClassBase
     [Theory]
     [MemberData(nameof(DataAll))]
     public void RunAll(IDataFlowFusionCase fusionCase) => RunCore(fusionCase);
+
+    [Theory]
+    [MemberData(nameof(DataTwoStage))]
+    public void TestTwoStage(IDataFlowFusionCaseTwoStage fusionCase)
+    {
+        var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 3, 224, 224 }));
+        var main = new Function(fusionCase.BuildBody(input), input);
+
+        IRModule module = new(main);
+        CompilerServices.InferenceType(main);
+#if DEBUG
+        Dumpper.DumpDotIR(main, "pre");
+#endif
+
+        var input_tensor = Testing.Rand<float>(1, 3, 224, 224);
+        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        {
+          { input, Value.FromTensor(input_tensor) },
+        };
+        var pre_result = CompilerServices.Evaluate(main.Body, feed_dict);
+
+        var analysis = new Dictionary<Type, IAnalysisResult>
+        {
+            [typeof(IExprUserAnalysisResult)] = AnalyzerMananger.GetAnaylsis<IExprUserAnalysisResult>(main),
+        };
+
+        var preRewriter = new DataFlowMergeRewriter();
+        var post = (Function)preRewriter.Rewrite(
+            main,
+            new IMergeRewriteRule[]
+            {
+                new ShortCutFusionMergeRuleLeft(),
+                new ShortCutFusionMergeRuleRight(),
+            },
+            (rule, option) => new TestFusionGroupMutator(rule, option),
+            new() { AnalysisResults = analysis });
+#if DEBUG
+        Dumpper.DumpDotIR(post, "post1");
+#endif
+        var visitor = new FusionCounterVisitor();
+        visitor.Visit(post.Body);
+        Assert.Equal(fusionCase.MidFusionCount, visitor.Count);
+
+        var postRewriter = new DataFlowMergeRewriter();
+        post = (Function)postRewriter.Rewrite(
+            post,
+            new IMergeRewriteRule[]
+            {
+                new SameInputFusionMergeRule(),
+                new MultiInputFusionMergeRule(),
+            },
+            (rule, option) => new TestFusionGroupMutator(rule, option),
+            new() { AnalysisResults = analysis });
+#if DEBUG
+        Dumpper.DumpDotIR(post, "post2");
+#endif
+
+        visitor = new FusionCounterVisitor();
+        visitor.Visit(post.Body);
+        Assert.Equal(fusionCase.FinalFusionCount, visitor.Count);
+        var post_result = CompilerServices.Evaluate(post.Body, feed_dict);
+        Assert.True(Comparator.AllEqual(pre_result, post_result));
+    }
 
     private void RunCore(IDataFlowFusionCase fusionCase)
     {
@@ -69,6 +146,18 @@ public class UnitTestFusionGroup : TestClassBase
         Dumpper.DumpDotIR(main, "pre");
 #endif
 
+        var input_tensor = Testing.Rand<float>(1, 3, 224, 224);
+        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        {
+          { input, Value.FromTensor(input_tensor) },
+        };
+        var pre_result = CompilerServices.Evaluate(main.Body, feed_dict);
+
+        var analysis = new Dictionary<Type, IAnalysisResult>
+        {
+            [typeof(IExprUserAnalysisResult)] = AnalyzerMananger.GetAnaylsis<IExprUserAnalysisResult>(main),
+        };
+
         var rewriter = new DataFlowMergeRewriter();
         var post = (Function)rewriter.Rewrite(
             main,
@@ -79,19 +168,12 @@ public class UnitTestFusionGroup : TestClassBase
                 new ShortCutFusionMergeRuleLeft(),
                 new ShortCutFusionMergeRuleRight(),
             },
-            (usedby, rule, option) => new TestFusionGroupMutator(usedby, rule, option),
-            new());
+            (rule, option) => new TestFusionGroupMutator(rule, option),
+            new() { AnalysisResults = analysis });
 #if DEBUG
         Dumpper.DumpDotIR(post, "post");
 #endif
 
-        var input_tensor = Testing.Rand<float>(1, 3, 224, 224);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
-        {
-          { input, Value.FromTensor(input_tensor) },
-        };
-
-        var pre_result = CompilerServices.Evaluate(main.Body, feed_dict);
         var visitor = new FusionCounterVisitor();
         visitor.Visit(post.Body);
         Assert.Equal(fusionCase.FinalFusionCount, visitor.Count);
@@ -100,10 +182,10 @@ public class UnitTestFusionGroup : TestClassBase
     }
 }
 
-internal sealed class TestFusionGroupMutator : Transform.Mutators.FusionGroupMutator
+internal sealed class TestFusionGroupMutator : Passes.Mutators.FusionGroupMutator
 {
-    public TestFusionGroupMutator(IUsedByResult usedByAnalysisReslut, IMergeRewriteRule preOrderfusionRule, RunPassContext passOptions)
-        : base(usedByAnalysisReslut, preOrderfusionRule, passOptions)
+    public TestFusionGroupMutator(IMergeRewriteRule preOrderfusionRule, RunPassContext passOptions)
+        : base(preOrderfusionRule, passOptions)
     {
     }
 
@@ -118,15 +200,13 @@ internal sealed class TestFusionGroupMutator : Transform.Mutators.FusionGroupMut
     }
 }
 
-internal sealed class FusionCounterVisitor : ExprVisitor<int, IRType>
+internal sealed class FusionCounterVisitor : ExprWalker
 {
     public int Count { get; private set; }
 
-    public override int DefaultVisitLeaf(Expr expr) => 0;
-
-    public override int VisitLeaf(Fusion expr)
+    protected override Unit VisitLeafFusion(Fusion expr)
     {
         Count++;
-        return 0;
+        return default;
     }
 }

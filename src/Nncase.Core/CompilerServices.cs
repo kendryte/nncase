@@ -14,9 +14,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Nncase.CostModel;
 using Nncase.Evaluator;
 using Nncase.IR;
+using Nncase.Passes;
 using Nncase.PatternMatch;
 using Nncase.Targets;
-using Nncase.Transform;
 
 namespace Nncase;
 
@@ -65,6 +65,15 @@ public interface ICompilerServicesProvider
     void DumpDotIR(Expr expr, string prefix, string dumpPath, bool display_callable);
 
     /// <summary>
+    /// dump the expr as csharp code.
+    /// </summary>
+    /// <param name="expr">expression.</param>
+    /// <param name="prefix">file prefix.</param>
+    /// <param name="dumpDir">file dump ir.</param>
+    /// <param name="randConst">false for save const into bin.</param>
+    public void DumpCSharpIR(Expr expr, string prefix, string dumpDir, bool randConst);
+
+    /// <summary>
     /// print ir type.
     /// </summary>
     string Print(IRType type);
@@ -99,9 +108,8 @@ public interface ICompilerServicesProvider
     /// Evaluate cost of the expression tree.
     /// </summary>
     /// <param name="expr">Expression.</param>
-    /// <param name="varsValues">Optional vars' values.</param>
     /// <returns>Evaluate result.</returns>
-    Cost? EvaluateCost(Expr expr, IReadOnlyDictionary<Var, Cost>? varsValues = null);
+    Cost EvaluateCost(Expr expr);
 
     /// <summary>
     /// Evaluate cost of operator.
@@ -109,7 +117,7 @@ public interface ICompilerServicesProvider
     /// <param name="op">Target operator.</param>
     /// <param name="context">Evaluate context.</param>
     /// <returns>Evaluate result.</returns>
-    Cost? EvaluateOpCost(Op op, ICostEvaluateContext context);
+    Cost EvaluateOpCost(Op op, ICostEvaluateContext context);
 
     /// <summary>
     /// Match expression.
@@ -258,11 +266,10 @@ public static class CompilerServices
     /// Evaluate cost of the expression tree.
     /// </summary>
     /// <param name="expr">Expression.</param>
-    /// <param name="varsValues">Optional vars' values.</param>
     /// <returns>Evaluate result.</returns>
-    public static Cost? EvaluateCost(Expr expr, IReadOnlyDictionary<Var, Cost>? varsValues = null)
+    public static Cost EvaluateCost(Expr expr)
     {
-        return Provider.EvaluateCost(expr, varsValues);
+        return Provider.EvaluateCost(expr);
     }
 
     /// <summary>
@@ -271,7 +278,7 @@ public static class CompilerServices
     /// <param name="op">Target operator.</param>
     /// <param name="context">Evaluate context.</param>
     /// <returns>Evaluate result.</returns>
-    public static Cost? EvaluateOpCost(Op op, ICostEvaluateContext context)
+    public static Cost EvaluateOpCost(Op op, ICostEvaluateContext context)
     {
         return Provider.EvaluateOpCost(op, context);
     }
@@ -407,6 +414,16 @@ public static class CompilerServices
     public static void DumpDotIR(Expr expr, string prefix, string dumpPath, bool display_callable = true) =>
       Provider.DumpDotIR(expr, prefix, dumpPath, display_callable);
 
+    /// <summary>
+    /// dump the expr as csharp code.
+    /// </summary>
+    /// <param name="expr">expression.</param>
+    /// <param name="prefix">file prefix.</param>
+    /// <param name="dumpDir">file dump ir.</param>
+    /// <param name="randConst">randConst = false will save the const into bin.</param>
+    public static void DumpCSharpIR(Expr expr, string prefix, string dumpDir, bool randConst = true) =>
+      Provider.DumpCSharpIR(expr, prefix, dumpDir, randConst);
+
     public static string Print(IRType type) => Provider.Print(type);
 
     public static string Print(Expr expr, bool useScript = false) => Provider.Print(expr, useScript);
@@ -513,6 +530,10 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     _irprinterProvider.DumpDotIR(expr, prefix, dumpPath, display_callable);
 
     /// <inheritdoc/>
+    public void DumpCSharpIR(Expr expr, string prefix, string dumpDir, bool randConst) =>
+    _irprinterProvider.DumpCSharpIR(expr, prefix, dumpDir, randConst);
+
+    /// <inheritdoc/>
     public string Print(IRType type) => _irprinterProvider.Print(type);
 
     /// <inheritdoc/>
@@ -537,13 +558,13 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     }
 
     /// <inheritdoc/>
-    public Cost? EvaluateCost(Expr expr, IReadOnlyDictionary<Var, Cost>? varsValues = null)
+    public Cost EvaluateCost(Expr expr)
     {
-        return _costEvaluateProvider.EvaluateCost(expr, varsValues);
+        return _costEvaluateProvider.EvaluateCost(expr);
     }
 
     /// <inheritdoc/>
-    public Cost? EvaluateOpCost(Op op, ICostEvaluateContext context)
+    public Cost EvaluateOpCost(Op op, ICostEvaluateContext context)
     {
         return _costEvaluateProvider.EvaluateOpCost(op, context);
     }

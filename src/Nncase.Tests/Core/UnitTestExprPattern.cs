@@ -6,8 +6,8 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using Nncase.IR;
 using Nncase.IR.Math;
+using Nncase.Passes;
 using Nncase.PatternMatch;
-using Nncase.Transform;
 using Xunit;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.Tensors;
@@ -105,8 +105,8 @@ public class UnitTestExprPattern
         var c = wc1 + wc2;
         Assert.IsType<CallPattern>(c);
         Assert.IsType<OpPattern<Binary>>(c.Target);
-        Assert.IsType<ExprPattern>(c.Parameters[0]);
-        Assert.IsType<ExprPattern>(c.Parameters[1]);
+        Assert.IsType<ExprPattern>(c.Arguments[0]);
+        Assert.IsType<ExprPattern>(c.Arguments[1]);
 
         CallPattern c2 = IsBinary(BinaryOp.Add, wc1, wc2);
 
@@ -128,8 +128,8 @@ public class UnitTestExprPattern
         Assert.IsType<ExprPattern>(fp.Parameters[0]);
         Assert.IsType<ExprPattern>(fp.Parameters[1]);
         Assert.IsType<CallPattern>(fp.Body);
-        Assert.IsType<ExprPattern>(((CallPattern)fp.Body).Parameters[0]);
-        Assert.IsType<ExprPattern>(((CallPattern)fp.Body).Parameters[1]);
+        Assert.IsType<ExprPattern>(((CallPattern)fp.Body).Arguments[0]);
+        Assert.IsType<ExprPattern>(((CallPattern)fp.Body).Arguments[1]);
         _ = new FunctionPattern(c, IsVArgs(new[] { wc1, wc2 }), null);
         Assert.IsType<ExprPattern>(fp.Parameters[0]);
         Assert.IsType<ExprPattern>(fp.Parameters[1]);
@@ -140,12 +140,12 @@ public class UnitTestExprPattern
     {
         var wc1 = IsWildcard();
         var wc2 = IsWildcard();
-        var t = IsTuple(new[] { wc1, wc2 });
+        var t = PatternMatch.Utility.IsTuple(null, new[] { wc1, wc2 });
         Assert.IsType<TuplePattern>(t);
         Assert.IsType<ExprPattern>(t.Fields[0]);
         Assert.IsType<ExprPattern>(t.Fields[1]);
 
-        var t2 = IsTuple(IsVArgs(new[] { wc1, wc2 }));
+        var t2 = PatternMatch.Utility.IsTuple(IsVArgs(new[] { wc1, wc2 }));
         Assert.IsType<TuplePattern>(t2);
         Assert.IsType<ExprPattern>(t2.Fields[0]);
         Assert.IsType<ExprPattern>(t2.Fields[1]);
@@ -192,9 +192,9 @@ public class UnitTestExprPattern
         var expr2 = new IR.Tuple(new Var("x"), 2, 3, 4, 5, 6);
 
         Assert.True(CompilerServices.TryMatchRoot(expr1, pat, out _));
-        Assert.Equal(pat.Fields.Count, expr1.Fields.Count);
+        Assert.Equal(pat.Fields.Count, expr1.Fields.Length);
         Assert.False(CompilerServices.TryMatchRoot(expr2, pat, out _));
-        Assert.Equal(pat.Fields.Count, expr2.Fields.Count);
+        Assert.Equal(pat.Fields.Count, expr2.Fields.Length);
     }
 
     [Fact]
@@ -214,8 +214,8 @@ public class UnitTestExprPattern
 
         var is_op_call2 = IsCall(IsWildcard(), IsVArgs(new[] { lhs, rhs }));
 
-        Assert.IsType<ExprPattern>(is_op_call2.Parameters[0]);
-        Assert.IsType<ExprPattern>(is_op_call2.Parameters[1]);
+        Assert.IsType<ExprPattern>(is_op_call2.Arguments[0]);
+        Assert.IsType<ExprPattern>(is_op_call2.Arguments[1]);
     }
 
     [Fact]

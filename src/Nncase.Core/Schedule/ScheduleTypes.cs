@@ -1,10 +1,12 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Runtime.InteropServices;
 using Nncase.Runtime;
+using Nncase.TIR;
 
 namespace Nncase.Schedule;
 
@@ -243,7 +245,7 @@ public class BufferAllocation
 /// <summary>
 /// SchedFunctionResult.
 /// </summary>
-public class SchedFunctionResult
+public sealed class SchedFunctionResult
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="SchedFunctionResult"/> class.
@@ -264,4 +266,33 @@ public class SchedFunctionResult
     /// Gets or sets a value indicating whether the Scheduled status.
     /// </summary>
     public bool IsScheduled { get; set; }
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj)
+    {
+        if (obj is not SchedFunctionResult result)
+        {
+            return false;
+        }
+
+        if (IsScheduled != result.IsScheduled)
+        {
+            return false;
+        }
+
+        if (Rdatas.Count != result.Rdatas.Count)
+        {
+            return false;
+        }
+
+        if (Rdatas.Count == 0)
+        {
+            return true;
+        }
+
+        return EqualityComparer<HashSet<TIR.PhysicalBuffer>>.Default.Equals(Rdatas, result.Rdatas);
+    }
+
+    /// <inheritdoc/>
+    public override int GetHashCode() => base.GetHashCode();
 }

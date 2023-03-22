@@ -15,7 +15,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\modules\Nncase.Modules.K210\Nncase.Modules.K210.csproj" />
         <ProjectReference Include="..\Nncase.CodeGen\Nncase.CodeGen.csproj" />
         <ProjectReference Include="..\Nncase.Core\Nncase.Core.csproj" />
         <ProjectReference Include="..\Nncase.Diagnostics\Nncase.Diagnostics.csproj" />
@@ -25,7 +24,7 @@
         <ProjectReference Include="..\Nncase.Importer\Nncase.Importer.csproj" />
         <ProjectReference Include="..\Nncase.Simulator\Nncase.Simulator.csproj" />
         <ProjectReference Include="..\Nncase.Quantization\Nncase.Quantization.csproj" />
-        <ProjectReference Include="..\Nncase.Transform\Nncase.Transform.csproj" />
+        <ProjectReference Include="..\Nncase.Passes\Nncase.Passes.csproj" />
         <ProjectReference Include="..\..\modules\Nncase.Modules.StackVM\Nncase.Modules.StackVM.csproj" />
     </ItemGroup>
 </Project>

@@ -10,12 +10,12 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Nncase.Diagnostics;
 using Nncase.IR;
+using Nncase.Passes;
+using Nncase.Passes.Transforms;
 using Nncase.PatternMatch;
 using Nncase.Tests.ReWriteTest;
 using Nncase.Tests.TestFixture;
 using Nncase.TIR;
-using Nncase.Transform;
-using Nncase.Transform.Passes;
 using Tensorboard;
 using Xunit;
 using static Nncase.IR.F.Math;
@@ -94,7 +94,7 @@ public sealed class UnitTestDumpper : TestClassBase
         Expr a = (Const)1 + 2;
         Expr b = (Const)1 << 2;
         Expr c = a * b;
-        var graph = new EGraph();
+        var graph = new EGraph(c);
         graph.Add(c);
         using var fs = Dumpper.OpenFile("example.dot");
         EGraphPrinter.DumpEgraphAsDot(graph, fs);
@@ -131,7 +131,7 @@ public sealed class UnitTestDumpper : TestClassBase
             pre,
             new IRewriteRule[]
             {
-                  new Transform.Rules.Lower.RemoveMarker(),
+                  new Passes.Rules.Lower.RemoveMarker(),
                   new TestMulToAdd(),
             },
             new());
@@ -162,14 +162,14 @@ public sealed class UnitTestDumpper : TestClassBase
                 Stack(new IR.Tuple(padW), 0)),
               0);
             var body = IR.F.NN.Pad(input, padding, PadMode.Constant, 0.0f);
-            main = new Function("main", body, ImmutableArray.Create(input));
+            main = new Function("main", body, input);
         }
 
         var pass = new ShapeInferPass { Name = $"ShapeInfer" };
 
         using (_ = new DumpScope("DisableEvaluator", DumpFlags.ImportOps | DumpFlags.EGraphCost | DumpFlags.Calibration | DumpFlags.Compile | DumpFlags.PassIR | DumpFlags.Rewrite))
         {
-            var post = (Function)await pass.RunAsync(main, new());
+            var post = (Function)await pass.RunAsync(main.Clone(), new());
         }
 
         Assert.False(Directory.Exists(Path.Join(Dumpper.Directory, "DisableEvaluator", "0_ShapeInfer", "main", "Run_0", "Evaluate")));
@@ -177,11 +177,39 @@ public sealed class UnitTestDumpper : TestClassBase
 
         using (_ = new DumpScope("DisableRewrite", DumpFlags.ImportOps | DumpFlags.EGraphCost | DumpFlags.Evaluator | DumpFlags.Calibration | DumpFlags.Compile | DumpFlags.PassIR))
         {
-            var post = (Function)await pass.RunAsync(main, new());
+            var post = (Function)await pass.RunAsync(main.Clone(), new());
         }
 
         Assert.True(Directory.Exists(Path.Join(Dumpper.Directory, "DisableRewrite", "0_ShapeInfer", "main", "Run_0", "Evaluate")));
         Assert.False(Directory.Exists(Path.Join(Dumpper.Directory, "DisableRewrite", "0_ShapeInfer", "main", "Run_0", "Rewrite")));
+    }
+
+    [Fact]
+    public void TestDumperCSharpIRFunction()
+    {
+        var x = IR.F.Math.Quantize(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 2, 2, 2 }), Tensor.From<QuantParam>(new QuantParam[] { new(1, 2.0f), new(2, 3.0f) }, new[] { 2 }), DataTypes.UInt8);
+        var y = new Var("y", new TensorType(DataTypes.UInt8, new int[] { 1, 2, 2, 2 }));
+        var z = IR.F.Random.Normal(DataTypes.UInt8, 0, 1, 0, new[] { 1, 2, 2, 2 });
+        var m = IR.F.Random.Normal(DataTypes.UInt8, 0, 1, 0, new[] { 1, 20, 2, 2 });
+        var main = new Function("main", IR.F.Tensors.Concat(new IR.Tuple(new Expr[] { x, y, z, m }), 1), new[] { y });
+        CompilerServices.DumpCSharpIR(main, string.Empty, Dumpper.Directory);
+    }
+
+    [Fact]
+    public void TestDumperCSharpIRFusion()
+    {
+        var x = IR.F.Math.RangeOfMarker(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 2, 2, 2 }), new Half[] { (Half)1, (Half)3 });
+        var z = IR.F.Math.RangeOfMarker(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 2, 2, 2 }), new BFloat16[] { (BFloat16)1.0, (BFloat16)2.0 });
+        var y = IR.F.Math.RangeOfMarker(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 2, 2, 2 }), new float[] { 1.0f, 2.0f });
+        var m = IR.F.Math.RangeOfMarker(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 2, 2, 2 }), new double[] { 1.0, 2.0 });
+        var n = IR.F.Math.RangeOfMarker(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 2, 2, 2 }), new long[] { 1L, 2L });
+        var k = IR.F.Math.RangeOfMarker(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 2, 2, 2 }), new uint[] { 1u, 2u });
+        var j = IR.F.Math.RangeOfMarker(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 2, 2, 2 }), new ulong[] { 1UL, 2UL });
+        var xx = IR.F.Math.RangeOfMarker(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 8, 2, 2 }), new ulong[] { 1UL, 2UL });
+        var xy = IR.F.Math.RangeOfMarker(IR.F.Tensors.Cast(IR.F.Random.Normal(DataTypes.BFloat16, 0, 1, 0, new[] { 1, 9, 2, 2 }), DataTypes.Float32), new ulong[] { 1UL, 2UL });
+        var fusion = new Fusion("fusion", "stackvm", new IR.Tuple(new Expr[] { x, y, z, m, n, k, j, xx, xy }), Array.Empty<Var>());
+        var main = new Function("main", IR.F.Tensors.Concat(new Call(fusion, Array.Empty<Expr>()), 1), Array.Empty<Var>());
+        CompilerServices.DumpCSharpIR(main, string.Empty, Dumpper.Directory, false);
     }
 
     private async Task<Expr> RunShapeInferPass(string name, Expr expr, params Var[] parameters)

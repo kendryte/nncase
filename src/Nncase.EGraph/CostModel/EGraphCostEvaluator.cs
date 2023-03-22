@@ -8,7 +8,7 @@ using System.Linq;
 using Nncase.CostModel;
 using Nncase.Evaluator;
 using Nncase.IR;
-using Nncase.Transform;
+using Nncase.Passes;
 
 namespace Nncase.CostModel;
 
@@ -98,6 +98,7 @@ internal sealed class EGraphCostEvaluator
             Call call => Visit(enode, call, returnType),
             IR.Tuple tuple => Visit(enode, tuple),
             Op op => Visit(enode, op),
+            If @if => Visit(enode, @if),
             Marker marker => Visit(enode, marker),
             None none => Visit(enode, none),
             BaseFunction baseFunction => Visit(enode, baseFunction),
@@ -135,12 +136,17 @@ internal sealed class EGraphCostEvaluator
         return Visit(enode, costs => costs.Sum());
     }
 
-    private Cost? Visit(ENode enode, Marker marker)
+    private Cost? Visit(ENode enode, If @if)
     {
-        return Visit(enode, costs => Cost.Zero);
+        return Visit(enode, cost => cost[1] + cost[2]);
     }
 
-    private Cost? Visit(ENode enode, None marker)
+    private Cost? Visit(ENode enode, Marker marker)
+    {
+        return Visit(enode, costs => costs[0]);
+    }
+
+    private Cost? Visit(ENode enode, None none)
     {
         return Visit(enode, costs => Cost.Zero);
     }
@@ -176,7 +182,7 @@ internal sealed class EGraphCostEvaluator
 
     private Cost? Visit(ENode enode, BaseFunction baseFunction)
     {
-        return VisitLeaf(enode, () => _baseFuncCostEvaluator!.VisitLeaf(baseFunction));
+        return VisitLeaf(enode, () => _baseFuncCostEvaluator?.VisitLeaf(baseFunction) ?? Cost.Zero);
     }
 
     private Cost? UpdateCost(ENode enode, Cost? cost)

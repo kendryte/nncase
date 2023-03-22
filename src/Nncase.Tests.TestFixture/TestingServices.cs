@@ -11,7 +11,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Nncase.CodeGen;
 using Nncase.Diagnostics;
-using Nncase.Transform;
+using Nncase.Passes;
 
 namespace Nncase.Tests;
 
@@ -135,9 +135,9 @@ public static class Testing
         int err_count = 0;
 
         // int offset = 0;
-        foreach (var p in a.Cast<float>().Zip(b.Cast<float>()))
+        foreach (var (first, second) in a.Cast<float>().Zip(b.Cast<float>()))
         {
-            if (Math.Abs(p.Item1 - p.Item2) > tol)
+            if (Math.Abs(first - second) > tol)
             {
                 err_count++;
             }
@@ -204,11 +204,16 @@ public static class Testing
     /// <summary>
     /// dump kmodel args and bin for cli interp.
     /// </summary>
-    public static void DumpInterpModel(string kmodel_path, Tensor[] input_tensors, IDumpper dumpper)
+    public static void DumpInterpModel(string kmodel_path, Tensor[] input_tensors, string dumpDir)
     {
-        string input_pool_path = Path.Join(dumpper.Directory, "input_pool.bin");
-        var output_pool_path = Path.Join(dumpper.Directory, "output_pool.bin");
-        using var args_writer = new StreamWriter(dumpper.OpenFile("args.txt"));
+        if (!Directory.Exists(dumpDir))
+        {
+            Directory.CreateDirectory(dumpDir);
+        }
+
+        string input_pool_path = Path.Join(dumpDir, "input_pool.bin");
+        string output_pool_path = Path.Join(dumpDir, "output_pool.bin");
+        using var args_writer = new StreamWriter(File.OpenWrite(Path.Join(dumpDir, "args.txt")));
         args_writer.WriteLine(kmodel_path);
         args_writer.WriteLine(input_pool_path);
         args_writer.WriteLine(output_pool_path);

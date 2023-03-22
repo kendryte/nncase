@@ -11,10 +11,10 @@ using Nncase.CodeGen;
 using Nncase.CodeGen.K210;
 using Nncase.CodeGen.StackVM;
 using Nncase.IR;
+using Nncase.Passes;
+using Nncase.Passes.Rules.K210;
 using Nncase.Quantization;
 using Nncase.Runtime.K210;
-using Nncase.Transform;
-using Nncase.Transform.Rules.K210;
 
 namespace Nncase.Targets;
 
@@ -28,6 +28,11 @@ public class K210Target : ITarget
 
     /// <inheritdoc/>
     public void ParseTargetDependentOptions(IConfigurationSection configure)
+    {
+    }
+
+    /// <inheritdoc/>
+    public void RegisterTargetInDependentPass(IPassManager passManager, CompileOptions options)
     {
     }
 

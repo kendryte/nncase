@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using Microsoft.Toolkit.HighPerformance.Helpers;
 using Nncase;
 using Nncase.IR;
 using Xunit;
@@ -37,16 +38,26 @@ public sealed class UnitTestIValue
     }
 
     [Fact]
+    public void TestNoneValueCount()
+    {
+        var a = Value.None;
+        Assert.True(a.Count == 1);
+    }
+
+    [Fact]
+    public void TestNoneValueIndex()
+    {
+        var a = Value.None;
+        Assert.Equal(a, a[0]);
+        Assert.Throws<ArgumentOutOfRangeException>(() => a[1]);
+    }
+
+    [Fact]
     public void TestNoneValueException()
     {
         var a = Value.None;
-        var b = (IEnumerable)a;
-        Assert.Throws<InvalidOperationException>(() => a.Count);
-        Assert.Throws<InvalidOperationException>(() => a[0]);
         Assert.Throws<InvalidOperationException>(() => a.AsTensor());
         Assert.Throws<InvalidOperationException>(() => a.AsTensors());
-        Assert.Throws<InvalidOperationException>(() => a.GetEnumerator());
-        Assert.Throws<InvalidOperationException>(() => b.GetEnumerator());
     }
 
     [Fact]
@@ -184,9 +195,9 @@ public sealed class UnitTestIValue
         var b = a;
         var c = Value.FromTensors(new Tensor[] { ones, zeros });
         Assert.Equal(a, b);
-        Assert.NotEqual(a, c);
+        Assert.Equal(a, c);
         Assert.True(a.Equals((object)b));
-        Assert.False(a.Equals((object)c));
+        Assert.True(a.Equals((object)c));
     }
 
     [Fact]
@@ -196,6 +207,6 @@ public sealed class UnitTestIValue
         var tensors = new Tensor[] { ones, ones };
         var values = tensors.Select(x => new TensorValue(x)).ToArray();
         var a = new TupleValue(values);
-        Assert.Equal(HashCode.Combine(values), a.GetHashCode());
+        Assert.Equal(HashCode<TensorValue>.Combine(values), a.GetHashCode());
     }
 }

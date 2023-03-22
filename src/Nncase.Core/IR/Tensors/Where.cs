@@ -16,7 +16,7 @@ namespace Nncase.IR.Tensors;
 /// Where expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Where() : Op
+public sealed partial class Where : Op
 {
     /// <summary>
     /// Gets condition.
@@ -32,4 +32,6 @@ public sealed record Where() : Op
     /// Gets y.
     /// </summary>
     public static readonly ParameterInfo Y = new(typeof(Where), 2, "y");
+
+    public bool IsTfWhere { get; }
 }

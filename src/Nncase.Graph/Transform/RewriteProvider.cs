@@ -11,16 +11,13 @@ using System.Threading.Tasks;
 using Nncase.Diagnostics;
 using Nncase.IR;
 
-namespace Nncase.Transform;
+namespace Nncase.Passes;
 
 internal class RewriteProvider : IRewriteProvider
 {
     public Expr Rewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassContext context)
     {
-        if (expr.CheckedType == null)
-        {
-            CompilerServices.InferenceType(expr);
-        }
+        CompilerServices.InferenceType(expr);
 
         var post = expr;
         int count = 0;
@@ -30,9 +27,9 @@ internal class RewriteProvider : IRewriteProvider
             bool isMutated = false;
             foreach (var rule in rules)
             {
-                var visitor = new DataFlowRewriteVisitor(rule, context);
+                var visitor = new DataFlowRewriter(rule, context);
                 var last = post;
-                post = visitor.Visit(last);
+                post = visitor.Rewrite(last);
                 if (visitor.IsMutated)
                 {
                     isMutated = true;
@@ -42,6 +39,11 @@ internal class RewriteProvider : IRewriteProvider
 
             var inferSuccess = CompilerServices.InferenceType(post);
             OnRewriteEnd(post, context, count++);
+            if (!inferSuccess && DumpScope.Current.IsEnabled(DumpFlags.Rewrite))
+            {
+                DumpScope.Current.DumpIR(post, $"{count}_End_InferFailed", "Rewrite");
+            }
+
             Trace.Assert(inferSuccess);
 
             if (!isMutated || context.RewriteOnce)

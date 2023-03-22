@@ -121,7 +121,7 @@ internal class BFloat16Converters :
         {
             for (int i = 0; i < source.Length; i++)
             {
-                dest[i] = (byte)source[i];
+                dest[i] = (short)source[i];
             }
         }
     }

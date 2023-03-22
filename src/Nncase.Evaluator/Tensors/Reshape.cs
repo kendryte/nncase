@@ -33,12 +33,12 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
         return Visit(context, target, input);
     }
 
-    public Cost? Visit(ICostEvaluateContext context, Reshape target)
+    public Cost Visit(ICostEvaluateContext context, Reshape target)
     {
         return CostUtility.GetReshapeCost();
     }
 
-    Cost? ICostEvaluator<Reshape>.Visit(ICostEvaluateContext context, Reshape target)
+    Cost ICostEvaluator<Reshape>.Visit(ICostEvaluateContext context, Reshape target)
     {
         return new()
         {

@@ -25,9 +25,7 @@ namespace Nncase.Importer.TFLite
                 _ => throw new ArgumentOutOfRangeException(nameof(reduceArgOp), reduceArgOp, null),
             };
 
-            return Cast(
-                ReduceArg(reduceArgOp, input, ProcAxis(axis), false, false),
-                GetDataType(outType));
+            return ReduceArg(reduceArgOp, (PrimType)GetDataType(outType), input, ProcAxis(axis), false, false);
         }
 
         private Expr ProcAxis(Expr axis)

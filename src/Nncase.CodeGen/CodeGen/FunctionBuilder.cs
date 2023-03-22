@@ -72,7 +72,11 @@ public abstract class FunctionBuilder : IDisposable
                 symbolAddr += SymbolAddrs[refer.Symbol];
             }
 
-            TextWriter.WriteByLength(symbolAddr + refer.Offset, refer.Length);
+            long originValue = symbolAddr + refer.Offset;
+            long value = refer.Relative ? originValue - refer.Position : originValue;
+
+            // todo: neg addr is error
+            TextWriter.WriteByLength(value, refer.Length);
         }
     }
 }

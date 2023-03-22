@@ -473,6 +473,11 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
             ptq_options.set_tensor_data([self.transform_input(
                 sample['data'], preprocess['input_type'], "infer") for sample in self.calibs])
             ptq_options.samples_count = cfg.generate_calibs.numbers
+            ptq_options.calibrate_method = cfg.compile_opt.calibrate_method
+            ptq_options.quant_type = cfg.compile_opt.quant_type
+            ptq_options.w_quant_type = cfg.compile_opt.w_quant_type
+            ptq_options.finetune_weights_method = cfg.compile_opt.finetune_weights_method
+            ptq_options.use_mix_quant = cfg.compile_opt.use_mix_quant
             compiler.use_ptq(ptq_options)
 
     def write_preprocess_opt(self, dict_args):
@@ -594,6 +599,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                     break
 
         i = 0
+        judges = []
         for ref_file, test_file in zip(ref_ouputs, test_outputs):
 
             judge, simarity_info = compare(test_file, ref_file,
@@ -611,9 +617,8 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
             with open(os.path.join(self.case_dir, 'test_result.txt'), 'a+') as f:
                 f.write(result)
             i = i + 1
-            if not judge:
-                return False, result
-        return True, result
+            judges.append(judge)
+        return sum(judges) == len(judges), result
 
     def totxtfile(self, save_path, ndarray: np.array, bit_16_represent=False):
         if self.cfg.setup.log_txt:

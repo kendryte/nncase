@@ -17,6 +17,7 @@ internal class NNModule : IApplicationPart
         registrator.RegisterManyInterface<CeluEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<EluEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<HardSwishEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<SwishEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<LeakyReluEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<PReluEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<ReluEvaluator>(reuse: Reuse.Singleton);
@@ -24,6 +25,8 @@ internal class NNModule : IApplicationPart
         registrator.RegisterManyInterface<SeluEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<SigmoidEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<HardSigmoidEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<ErfEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<GeluEvaluator>(reuse: Reuse.Singleton);
 
         // Convolution
         registrator.RegisterManyInterface<Conv2DEvaluator>(reuse: Reuse.Singleton);
@@ -31,6 +34,7 @@ internal class NNModule : IApplicationPart
 
         // Normalization
         registrator.RegisterManyInterface<L2NormalizationEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<LayerNormEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<BatchNormalizationEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<InstanceNormalizationEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<LpNormalizationEvaluator>(reuse: Reuse.Singleton);

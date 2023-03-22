@@ -8,8 +8,8 @@ using System.Linq;
 using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Nncase.CodeGen;
+using Nncase.Passes;
 using Nncase.Quantization;
-using Nncase.Transform;
 
 namespace Nncase;
 
@@ -47,6 +47,13 @@ public interface ITarget
     /// Parse Target Dependent Options.
     /// </summary>
     void ParseTargetDependentOptions(IConfigurationSection configure);
+
+    /// <summary>
+    /// Register Target InDependent Pass.
+    /// </summary>
+    /// <param name="passManager">pass manager.</param>
+    /// <param name="options">compile options.</param>
+    void RegisterTargetInDependentPass(IPassManager passManager, CompileOptions options);
 
     /// <summary>
     /// Register Target Dependent Pass.

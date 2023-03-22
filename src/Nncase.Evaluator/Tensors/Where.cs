@@ -23,7 +23,7 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
     {
         var xt = context.GetArgumentValueAsTensor(where, Where.X);
         var yt = context.GetArgumentValueAsTensor(where, Where.Y);
-        if (xt.Dimensions[0] == 0 && yt.Dimensions[0] == 0 && xt.ElementType == DataTypes.Float32)
+        if (where.IsTfWhere)
         {
             var condTensor = context.GetArgumentValueAsTensor<bool>(where, Where.Cond);
             if (condTensor.Rank > 1)
@@ -47,16 +47,15 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
         var cond = context.CheckArgumentType<TensorType>(target, Where.Cond);
         var x = context.CheckArgumentType<TensorType>(target, Where.X);
         var y = context.CheckArgumentType<TensorType>(target, Where.Y);
-        if (IsTFWhere(x, y))
+        if (target.IsTfWhere)
         {
-            // dim[0] = count_nonzero(cond)
             return new TensorType(DataTypes.Int64, new Shape(Dimension.Unknown, cond.Shape.Rank));
         }
 
         return TypeInference.BroadcastType(x.DType, cond, x, y);
     }
 
-    public Cost? Visit(ICostEvaluateContext context, Where target)
+    public Cost Visit(ICostEvaluateContext context, Where target)
     {
         var cond = context.GetArgumentType<TensorType>(target, Where.Cond);
         var x = context.GetArgumentType<TensorType>(target, Where.X);

@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
 using NetFabric.Hyperlinq;
@@ -16,10 +17,11 @@ internal class TextSnippet
 {
     private readonly List<TextSnippet> _inputSnippets = new List<TextSnippet>();
 
-    public TextSnippet(Expr expr, Symbol symbol)
+    public TextSnippet(Expr expr, Symbol beginSymbol, Symbol endSymbol)
     {
         Expr = expr;
-        Symbol = symbol;
+        BeginSymbol = beginSymbol;
+        EndSymbol = endSymbol;
         Writer = new BinaryWriter(Text, Encoding.UTF8, leaveOpen: true);
         Emitter = new StackVMEmitter(Writer);
     }
@@ -38,7 +40,9 @@ internal class TextSnippet
 
     public IReadOnlyList<TextSnippet> InputSnippets => _inputSnippets;
 
-    public Symbol Symbol { get; }
+    public Symbol BeginSymbol { get; }
+
+    public Symbol EndSymbol { get; }
 
     public int UseCount { get; private set; }
 
@@ -104,7 +108,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
 
     private StackVMEmitter Emitter => CurrentTextSnippet.Emitter;
 
-    public override TextSnippet VisitLeaf(Const expr)
+    protected override TextSnippet VisitLeafConst(Const expr)
     {
         if (expr is TensorConst tc)
         {
@@ -112,24 +116,37 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         }
         else
         {
-            return Visit(new IR.Tuple(((TupleConst)expr).Fields));
+            return Visit(new IR.Tuple(((TupleConst)expr).Value.Select(x => Const.FromValue(x)).ToArray()));
         }
     }
 
-    public override TextSnippet VisitLeaf(Var expr)
+    protected override TextSnippet VisitLeafNone(None expr)
     {
         var snippet = BeginTextSnippet(expr);
-        Emitter.Ldarg((ushort)((Function)_function).Parameters.IndexOf(expr));
+        Emitter.LdNull();
         return snippet;
     }
 
-    public override TextSnippet VisitLeaf(IR.Tuple expr)
+    protected override TextSnippet VisitLeafVar(Var expr)
     {
         var snippet = BeginTextSnippet(expr);
-        foreach (var field in expr.Fields.Reverse())
+        var varIndex = ((Function)_function).Parameters.IndexOf(expr);
+        if (varIndex < 0)
+        {
+            throw new InvalidOperationException($"Can't find var {expr.Name} in CodeGen");
+        }
+
+        Emitter.Ldarg((ushort)varIndex);
+        return snippet;
+    }
+
+    protected override TextSnippet VisitLeafTuple(IR.Tuple expr)
+    {
+        var snippet = BeginTextSnippet(expr);
+        foreach (var field in expr.Fields.ToArray().Reverse())
         {
             var inputSnippet = Visit(field);
-            inputSnippet.MaxUserParameters = Math.Max(inputSnippet.MaxUserParameters, expr.Fields.Count);
+            inputSnippet.MaxUserParameters = Math.Max(inputSnippet.MaxUserParameters, expr.Fields.Length);
             snippet.AddInput(inputSnippet);
         }
 
@@ -138,7 +155,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         return snippet;
     }
 
-    public override TextSnippet Visit(Function expr)
+    protected override TextSnippet VisitFunction(Function expr)
     {
         if (ReferenceEquals(expr, _function))
         {
@@ -150,7 +167,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         }
     }
 
-    public override TextSnippet Visit(PrimFunctionWrapper expr)
+    protected override TextSnippet VisitPrimFunctionWrapper(PrimFunctionWrapper expr)
     {
         if (ReferenceEquals(expr, _function))
         {
@@ -170,25 +187,25 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         }
     }
 
-    public override TextSnippet VisitLeaf(Op expr)
+    protected override TextSnippet VisitLeafOp(Op expr)
     {
         return null!;
     }
 
-    public override TextSnippet VisitLeaf(Call expr)
+    protected override TextSnippet VisitLeafCall(Call expr)
     {
         var snippet = BeginTextSnippet(expr);
-        foreach (var param in expr.Parameters.Reverse())
+        foreach (var param in expr.Arguments.ToArray().Reverse())
         {
             var paramSnippet = Visit(param);
-            paramSnippet.MaxUserParameters = Math.Max(paramSnippet.MaxUserParameters, expr.Parameters.Count);
+            paramSnippet.MaxUserParameters = Math.Max(paramSnippet.MaxUserParameters, expr.Arguments.Length);
             snippet.AddInput(paramSnippet);
         }
 
         if (expr.Target is CustomOp custom_op)
         {
             _context.AddCustomCallModule(custom_op.ModuleType);
-            Emitter.CusCall(custom_op.RegisteredName, custom_op.SerializeFields(), checked((ushort)expr.Parameters.Count));
+            Emitter.CusCall(custom_op.RegisteredName, custom_op.SerializeFields(), checked((ushort)expr.Arguments.Length));
         }
         else if (expr.Target is Op op)
         {
@@ -202,7 +219,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         else if (expr.Target is Function func)
         {
             LdFunctionId(func);
-            Emitter.ExtCall(checked((ushort)func.Parameters.Count), false);
+            Emitter.ExtCall(checked((ushort)func.Parameters.Length), false);
         }
         else
         {
@@ -210,6 +227,47 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         }
 
         return snippet;
+    }
+
+    protected override TextSnippet VisitIf(If expr)
+    {
+        return VisitLeafIf(expr);
+    }
+
+    /// <summary>
+    /// Composition of if:
+    /// 1. (Condition)
+    /// 2. BrFalse
+    /// {
+    ///     3. Then
+    ///     4. Br(AfterElse)
+    /// }
+    /// {
+    ///     5. Else
+    /// }
+    /// 6. EndSnippet.
+    /// </summary>
+    /// <param name="if">If expr.</param>
+    /// <returns>TextSnippet.</returns>
+    protected override TextSnippet VisitLeafIf(If @if)
+    {
+        var condSnippet = Visit(@if.Condition);
+        condSnippet.Emitter.LdScalar();
+        var brFalse = BeginTextSnippet(@if);
+        brFalse.Emitter.BrFalse(0);
+
+        Visit(@if.Then);
+        var br = BeginTextSnippet(@if);
+        br.Emitter.Br(0);
+
+        Visit(@if.Else);
+
+        // because visit param is before VisitLeaf, we can't use ref of elseSnippet.Symbol to jump.
+        // snippet structure: | ... | else param1 | else param2 | ... | elseSnippet |
+        AddSymbolRef(brFalse, br.EndSymbol, -4, 4, true, 1);
+        var endSnippet = BeginTextSnippet(@if);
+        AddSymbolRef(br, endSnippet.BeginSymbol, -4, 4, true, 1);
+        return endSnippet;
     }
 
     private TextSnippet Visit(TensorConst expr, Tensor tensor)
@@ -253,10 +311,15 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         return new Symbol(sectionName, position);
     }
 
-    private SymbolRef AddSymbolRef(Symbol symbol, int positionOffset, int length, int offset = 0)
+    private SymbolRef AddSymbolRef(Symbol symbol, int positionOffset, int length, bool relative = false, int offset = 0)
     {
-        var symbolRef = new SymbolRef(Emitter.Position + positionOffset, length, symbol, offset);
-        CurrentTextSnippet.SymbolRefs.Add(symbolRef);
+        return AddSymbolRef(CurrentTextSnippet, symbol, positionOffset, length, relative, offset);
+    }
+
+    private SymbolRef AddSymbolRef(TextSnippet snippet, Symbol symbol, int positionOffset, int length, bool relative = false, int offset = 0)
+    {
+        var symbolRef = new SymbolRef(snippet.Emitter.Position + positionOffset, length, symbol, relative, offset);
+        snippet.SymbolRefs.Add(symbolRef);
         return symbolRef;
     }
 
@@ -269,7 +332,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
 
     private void LeaGp(byte gpid, Symbol symbol, int offset = 0)
     {
-        AddSymbolRef(symbol, 2, 4, offset);
+        AddSymbolRef(symbol, 2, 4, false, offset);
         Emitter.LeaGP(gpid, 0);
     }
 
@@ -310,7 +373,10 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
 
     private TextSnippet BeginTextSnippet(Expr expr)
     {
-        var snippet = new TextSnippet(expr, AddSymbol(WellknownSectionNames.Text));
+        var snippet = new TextSnippet(
+            expr,
+            AddSymbol(WellknownSectionNames.Text),
+            AddSymbol(WellknownSectionNames.Text));
         _currentTextSnippet = snippet;
         _context.AddTextSnippet(snippet);
         return snippet;

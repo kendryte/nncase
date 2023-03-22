@@ -95,7 +95,7 @@ namespace Nncase.IR
             return !(left == right);
         }
 
-        public static Dimension operator +(Dimension lhs, Dimension rhs) => (lhs.IsFixed, lhs.IsFixed) switch
+        public static Dimension operator +(Dimension lhs, Dimension rhs) => (lhs.IsFixed, rhs.IsFixed) switch
         {
             (true, true) => lhs.FixedValue + rhs.FixedValue,
             (_, _) => Dimension.Unknown,
@@ -103,19 +103,19 @@ namespace Nncase.IR
 
         public static Dimension operator +(Dimension lhs, int rhs) => lhs.IsFixed ? lhs.FixedValue + rhs : Unknown;
 
-        public static Dimension operator -(Dimension lhs, Dimension rhs) => (lhs.IsFixed, lhs.IsFixed) switch
+        public static Dimension operator -(Dimension lhs, Dimension rhs) => (lhs.IsFixed, rhs.IsFixed) switch
         {
             (true, true) => lhs.FixedValue - rhs.FixedValue,
             (_, _) => Dimension.Unknown,
         };
 
-        public static Dimension operator *(Dimension lhs, Dimension rhs) => (lhs.IsFixed, lhs.IsFixed) switch
+        public static Dimension operator *(Dimension lhs, Dimension rhs) => (lhs.IsFixed, rhs.IsFixed) switch
         {
             (true, true) => lhs.FixedValue * rhs.FixedValue,
             (_, _) => Dimension.Unknown,
         };
 
-        public static Dimension operator /(Dimension lhs, Dimension rhs) => (lhs.IsFixed, lhs.IsFixed) switch
+        public static Dimension operator /(Dimension lhs, Dimension rhs) => (lhs.IsFixed, rhs.IsFixed) switch
         {
             (true, true) => lhs.FixedValue / rhs.FixedValue,
             (_, _) => Dimension.Unknown,

@@ -21,7 +21,7 @@ internal sealed class TypeInferenceContext : ITypeInferenceContext
     {
         if (op.GetType() == parameter.OwnerType)
         {
-            return GetCurrentCall().Parameters[parameter.Index];
+            return GetCurrentCall().Arguments[parameter.Index];
         }
         else
         {

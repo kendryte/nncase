@@ -34,6 +34,8 @@ public static class NN
 
     public static Call BatchNormalization(Expr input, Expr scale, Expr bias, Expr input_mean, Expr input_var, Expr epsilon, Expr momentum) => new Call(new BatchNormalization(), input, scale, bias, input_mean, input_var, epsilon, momentum);
 
+    public static Call LayerNorm(int axis, float epsilon, Expr input, Expr scale, Expr bias) => new Call(new LayerNorm(axis, epsilon), input, scale, bias);
+
     public static Call BatchToSpace(Expr input, Expr blockShape, Expr crops) => new Call(new BatchToSpace(), input, blockShape, crops);
 
     public static Call InstanceNormalization(Expr input, Expr scale, Expr bias, Expr eps) => new Call(new InstanceNormalization(), input, scale, bias, eps);
@@ -85,4 +87,19 @@ public static class NN
     /// create custom call.
     /// </summary>
     public static Call CustomCall(CustomOp op, params Expr[] args) => new Call(op, args);
+
+    /// <summary>
+    /// create Erf call.
+    /// </summary>
+    public static Call Erf(Expr expr) => new Call(new Erf(), expr);
+
+    /// <summary>
+    /// create Gelu call.
+    /// </summary>
+    public static Call Gelu(Expr expr, Expr alpha) => new Call(new Gelu(), expr, alpha);
+
+    /// <summary>
+    /// create Swish call.
+    /// </summary>
+    public static Call Swish(Expr input) => new Call(new Swish(), input);
 }

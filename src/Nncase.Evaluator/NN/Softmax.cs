@@ -29,7 +29,7 @@ public class LogSoftmaxEvaluator : IEvaluator<LogSoftmax>, ITypeInferencer<LogSo
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, LogSoftmax target)
+    public Cost Visit(ICostEvaluateContext context, LogSoftmax target)
     {
         var ret = context.GetReturnType<TensorType>();
         var macPerElement = 4;
@@ -68,7 +68,7 @@ public class SoftmaxEvaluator : IEvaluator<Softmax>, ITypeInferencer<Softmax>, I
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, Softmax target)
+    public Cost Visit(ICostEvaluateContext context, Softmax target)
     {
         var ret = context.GetReturnType<TensorType>();
         return new()
@@ -104,7 +104,7 @@ public class SoftplusEvaluator : IEvaluator<Softplus>, ITypeInferencer<Softplus>
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, Softplus target)
+    public Cost Visit(ICostEvaluateContext context, Softplus target)
     {
         var ret = context.GetReturnType<TensorType>();
         return new()
@@ -140,7 +140,7 @@ public class SoftsignEvaluator : IEvaluator<Softsign>, ITypeInferencer<Softsign>
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, Softsign target)
+    public Cost Visit(ICostEvaluateContext context, Softsign target)
     {
         var ret = context.GetReturnType<TensorType>();
         return new()

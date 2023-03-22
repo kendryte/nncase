@@ -62,7 +62,7 @@ public class Conv2DTransposeEvaluator : IEvaluator<Conv2DTranspose>, ITypeInfere
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, Conv2DTranspose target)
+    public Cost Visit(ICostEvaluateContext context, Conv2DTranspose target)
     {
         var inputType = context.GetArgumentType<TensorType>(target, Conv2DTranspose.Input);
         var weightsType = context.GetArgumentType<TensorType>(target, Conv2DTranspose.Weights);
@@ -70,17 +70,12 @@ public class Conv2DTransposeEvaluator : IEvaluator<Conv2DTranspose>, ITypeInfere
         var weightsShape = context.GetArgumentType<TensorType>(target, Conv2DTranspose.Weights).Shape;
         var outputType = context.GetReturnType<TensorType>();
 
-        if (weightsShape.IsFixed)
+        var macPerElement = weightsShape[1] * weightsShape[2] * weightsShape[3];
+        return new()
         {
-            var macPerElement = weightsShape[1] * weightsShape[2] * weightsShape[3];
-            return new()
-            {
-                [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(weightsType) + CostUtility.GetMemoryAccess(biasType),
-                [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
-                [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, macPerElement.FixedValue * 2),
-            };
-        }
-
-        return null;
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(weightsType) + CostUtility.GetMemoryAccess(biasType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, macPerElement.FixedValue * 2),
+        };
     }
 }

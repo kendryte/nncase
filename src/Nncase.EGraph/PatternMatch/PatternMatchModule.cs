@@ -3,7 +3,7 @@
 
 using DryIoc;
 using Nncase.Hosting;
-using Nncase.Transform;
+using Nncase.Passes;
 
 namespace Nncase.PatternMatch;
 

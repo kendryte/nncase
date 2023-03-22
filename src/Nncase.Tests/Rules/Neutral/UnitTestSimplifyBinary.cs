@@ -12,8 +12,8 @@ using Nncase.IR;
 using Nncase.IR.F;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
-using Nncase.Transform;
-using Nncase.Transform.Rules.Neutral;
+using Nncase.Passes;
+using Nncase.Passes.Rules.Neutral;
 using Tensorflow.Operations.Initializers;
 using Xunit;
 using Math = Nncase.IR.F.Math;
@@ -21,7 +21,7 @@ using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestSimplifyBinary : TestClassBase
+public class UnitTestSimplifyBinary : TransformTestBase
 {
     public static IEnumerable<object[]> TestReassociateMulPositiveData =>
         new[]
@@ -60,17 +60,7 @@ public class UnitTestSimplifyBinary : TestClassBase
         normal.Add(c, Random.Normal(DataTypes.Float32, 0, 1, 0, aShape).Evaluate());
 
         var rootPre = a * b * c; // Math.Binary(binaryOp, Math.Binary(binaryOp, a, bValue), bValue);
-        var rootPost = CompilerServices.Rewrite(
-            rootPre,
-            new IRewriteRule[]
-            {
-                new ReassociateMul(),
-            },
-            new());
-
-        // rootPre.InferenceType();
-        Assert.NotEqual(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre, normal), CompilerServices.Evaluate(rootPost, normal));
+        TestMatched<ReassociateMul>(rootPre, normal);
     }
 
     [Theory]
@@ -85,35 +75,19 @@ public class UnitTestSimplifyBinary : TestClassBase
         normal.Add(b, Random.Normal(DataTypes.Float32, 0, 1, 0, aShape).Evaluate());
 
         var rootPre = a * b / c;
-        var rootPost = CompilerServices.Rewrite(
-            rootPre,
-            new IRewriteRule[]
-            {
-                new ReassociateDiv(),
-            },
-            new());
-        Assert.NotEqual(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre, normal), CompilerServices.Evaluate(rootPost, normal));
+        TestMatched<ReassociateDiv>(rootPre, normal);
     }
 
     [Theory]
     [MemberData(nameof(TestXDivXPositiveData))]
     public void TestXDivXPositive(int[] aShape, int index)
     {
-        var a = new Var();
+        var a = new Var(new TensorType(DataTypes.Float32, aShape));
         var normal = new Dictionary<Var, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, aShape).Evaluate());
 
         var rootPre = a / a;
-        var rootPost = CompilerServices.Rewrite(
-            rootPre,
-            new IRewriteRule[]
-            {
-                new XDivX(),
-            },
-            new());
-        Assert.NotEqual(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre, normal), CompilerServices.Evaluate(rootPost, normal));
+        TestMatched<XDivX>(rootPre, normal);
     }
 
     [Theory]
@@ -126,14 +100,6 @@ public class UnitTestSimplifyBinary : TestClassBase
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, aShape).Evaluate());
         normal.Add(b, Random.Normal(DataTypes.Float32, 0, 1, 0, aShape).Evaluate());
         var rootPre = a * b;
-        var rootPost = CompilerServices.Rewrite(
-            rootPre,
-            new IRewriteRule[]
-            {
-                new CommutateMul(),
-            },
-            new() { RewriteOnce = true });
-        Assert.NotEqual(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre, normal), CompilerServices.Evaluate(rootPost, normal));
+        TestMatched<CommutateMul>(rootPre, normal);
     }
 }

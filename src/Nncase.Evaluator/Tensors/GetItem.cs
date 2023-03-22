@@ -25,7 +25,7 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, GetItem target)
+    public Cost Visit(ICostEvaluateContext context, GetItem target)
     {
         return new()
         {

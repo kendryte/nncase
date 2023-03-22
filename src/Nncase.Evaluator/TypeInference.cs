@@ -114,7 +114,8 @@ public static class TypeInference
             // 1. multi same rank
             // 2. can broadcast rank -> biggest shape
             // 3. invalid rank
-            return inputs.OrderByDescending(x => x.Shape.Rank).First();
+            var rank = inputs.OrderByDescending(x => x.Shape.Rank).First().Shape.Rank;
+            return new TensorType(dataType, Shape.Unknown(rank));
         }
 
         var outputRank = inputs.Select(x => x.Shape.Rank).Max();
@@ -190,6 +191,11 @@ public static class TypeInference
                 return new InvalidType($"The Input Channel / Groups Error ({input.Shape[1].FixedValue}/{groups_v})");
             }
 
+            if ((input.Shape[1] / groups_v) != weights.Shape[1])
+            {
+                return new InvalidType($"The input channel {input.Shape[1]} / {groups_v} != {weights.Shape[1]}");
+            }
+
             outShape[2] = GetWindowedOutputSize(
                 input.Shape[2].FixedValue + ts_padding[0, 0] + ts_padding[0, 1],
                 weights.Shape[2].FixedValue,
@@ -216,6 +222,11 @@ public static class TypeInference
     /// </summary>
     public static IRType PadType(TensorType input, Expr pads, Expr pad)
     {
+        if (input.Shape.IsUnranked)
+        {
+            return input;
+        }
+
         if (pad.CheckedType is TensorType padValueType)
         {
             if (padValueType.DType != input.DType)
@@ -408,5 +419,43 @@ public static class TypeInference
         {
             return Shape.Unranked;
         }
+    }
+
+    /// <summary>
+    /// Infer CommonType for inputs.
+    /// </summary>
+    /// <param name="thenType">Then type.</param>
+    /// <param name="elseType">Else type.</param>
+    /// <returns>IRType.</returns>
+    public static IRType CommonType(IRType thenType, IRType elseType)
+    {
+        IRType CommonTypeImpl(TensorType a, TensorType b)
+        {
+            if (a == b)
+            {
+                return a;
+            }
+
+            if (a.DType != b.DType)
+            {
+                return new InvalidType($"Inputs DType of if should be same, then: {a.DType}, else: {b.DType}");
+            }
+
+            if (a.Shape.Rank != b.Shape.Rank)
+            {
+                return new InvalidType($"Inputs Shape of if should be same Rank, then: {a.Shape.Rank}, else: {b.Shape.Rank}");
+            }
+
+            return new TensorType(a.DType, Shape.Unknown(a.Shape.Rank));
+        }
+
+        return (thenType, elseType) switch
+        {
+            (TensorType then, TensorType @else) => CommonTypeImpl(then, @else),
+            (TupleType then, TupleType @else) => then.Count != @else.Count
+                ? new InvalidType($"tuple Inputs of if should be same count, then: {then.Count}, else: {@else.Count}")
+                : new TupleType(then.Zip(@else).Select(tuple => CommonType(tuple.First, tuple.Second))),
+            _ => new InvalidType($"Inputs of if should be same IRType Kind, but then:{thenType}, else: {elseType}"),
+        };
     }
 }

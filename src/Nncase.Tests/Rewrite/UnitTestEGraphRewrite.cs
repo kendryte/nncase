@@ -2,12 +2,13 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.IO;
+using System.Threading.Tasks;
 using Nncase.CostModel;
 using Nncase.Evaluator;
 using Nncase.IR;
+using Nncase.Passes;
 using Nncase.PatternMatch;
 using Nncase.Tests.TestFixture;
-using Nncase.Transform;
 using Xunit;
 using static Nncase.IR.F.Tensors;
 using static Nncase.PatternMatch.F.Math;
@@ -15,6 +16,7 @@ using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Tests.ReWriteTest;
 
+[AutoSetupTestMethod(InitSession = true)]
 public class UnitTestEGraphRewrite : TestClassBase
 {
     [Fact]
@@ -31,7 +33,7 @@ public class UnitTestEGraphRewrite : TestClassBase
 
         Assert.True(CompilerServices.TryMatchRoot(root.Nodes, pattern, out var eResults));
         Assert.Single(eResults);
-        var wcxv = (Expr)eResults[0][pattern.Parameters[0]];
+        var wcxv = (Expr)eResults[0][pattern.Arguments[0]];
         Assert.Equal(wcxv, lhs);
         var to_eid = egraph.Add(wcxv);
         /*
@@ -45,7 +47,7 @@ public class UnitTestEGraphRewrite : TestClassBase
     public void TestReassociate()
     {
         Expr pre = (Const)10 * 11 * 12;
-        var rule = new Transform.Rules.Neutral.ReassociateMul();
+        var rule = new Passes.Rules.Neutral.ReassociateMul();
         CompilerServices.ERewrite(pre, new[] { rule }, new());
 
         // Assert.Equal(newExpr, 10 * ((Const)11 * 12));
@@ -68,13 +70,13 @@ public class UnitTestEGraphRewrite : TestClassBase
     {
         var c0 = (Call)NHWCToNCHW(Tensor.FromScalar(1, new[] { 2, 2, 3, 4 }));
         var c1 = (Call)NHWCToNCHW(Tensor.FromScalar(1, new[] { 2, 2, 1, 1 }));
-        Assert.Equal(c0.Parameters[1].GetHashCode(), c1.Parameters[1].GetHashCode());
+        Assert.Equal(c0.Arguments[1].GetHashCode(), c1.Arguments[1].GetHashCode());
 
         Expr pre = c0 + c1;
 
         Assert.True(pre.InferenceType());
 
-        var post = CompilerServices.ERewrite(pre, new[] { new Transform.Rules.Neutral.CombineBinaryTranspose() }, new());
+        var post = CompilerServices.ERewrite(pre, new[] { new Passes.Rules.Neutral.CombineBinaryTranspose() }, new());
 
         Assert.True(post.InferenceType());
         Assert.Equal(pre.Evaluate(), post.Evaluate());
@@ -101,7 +103,7 @@ public class UnitTestEGraphRewrite : TestClassBase
             pre,
             new IRewriteRule[]
             {
-                  new Transform.Rules.Lower.RemoveMarker(),
+                  new Passes.Rules.Lower.RemoveMarker(),
                   new TestMulToAdd(),
             },
             new());
@@ -109,9 +111,74 @@ public class UnitTestEGraphRewrite : TestClassBase
         Assert.True(post.InferenceType());
 
         Assert.True(
-          post is Marker { Target: Call { Parameters: IRArray<Expr> param } } &&
-          param.Count == 2 &&
+          post is Marker { Target: Call { Arguments: var param } } &&
+          param.Length == 2 &&
           param[1] is Marker);
+    }
+
+    [Fact]
+    public async Task TestEgraphRemoveMarkerPreserveCosts()
+    {
+#if DEBUG
+        CompileOptions.DumpFlags = Diagnostics.DumpFlags.Rewrite | Diagnostics.DumpFlags.EGraphCost;
+#endif
+        var v8 = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 64, 56, 56 }));
+        var v9 = IR.F.NN.Conv2D(v8, Testing.Rand<float>(64, 64, 1, 1), Testing.Rand<float>(64), new[] { 1, 1 }, new[,] { { 0, 0 }, { 0, 0 } }, new[] { 1, 1 }, PadMode.Constant, 1, new[] { float.NegativeInfinity, float.PositiveInfinity });
+        var v10 = IR.F.Math.RangeOfMarker(v9, new[] { -9.914007, 38.64287 }); // f32[1,56,56,64]
+        var v11 = IR.F.NN.Conv2D(v10, Testing.Rand<float>(64, 64, 1, 1), Testing.Rand<float>(64), new[] { 1, 1 }, new[,] { { 0, 0 }, { 0, 0 } }, new[] { 1, 1 }, PadMode.Constant, 1, new[] { float.NegativeInfinity, float.PositiveInfinity });
+        var v12 = IR.F.Math.RangeOfMarker(v11, new[] { -14.803145, 40.543793 }); // f32[1,64,56,56]
+        var v13 = IR.F.NN.Relu(v12); // f32[1,64,56,56]
+        var func = new Function("main", v13, new[] { v8 });
+        var module = new IRModule(func);
+
+        var passes = CompileSession.CreatePassManager("passes");
+        passes.AddWithName<EGraphRulesPass>("Opt").Configure(p =>
+        {
+            p.Add<Passes.Rules.Lower.RemoveMarker>();
+            p.Add<Passes.Rules.Neutral.ReluToClamp>();
+            p.Add<Passes.Rules.Neutral.FuseClampConv2D>();
+        });
+
+        await passes.RunAsync(module);
+        var post = (Function)module.Entry!;
+        Assert.True(post.Body is Call { Target: IR.NN.Conv2D });
+    }
+
+    [Fact]
+    public async Task TestTwoBranchQuantizeCSE()
+    {
+#if DEBUG
+        CompileOptions.DumpFlags = Diagnostics.DumpFlags.Rewrite | Diagnostics.DumpFlags.EGraphCost;
+#endif
+        var v8 = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 64, 56, 56 }));
+        var v9 = IR.F.NN.Conv2D(v8, Testing.Rand<float>(64, 64, 1, 1), Testing.Rand<float>(64), new[] { 1, 1 }, new[,] { { 0, 0 }, { 0, 0 } }, new[] { 1, 1 }, PadMode.Constant, 1, new[] { float.NegativeInfinity, float.PositiveInfinity });
+        var v10_1 = IR.F.Math.Quantize(v9, Const.FromTensor(Tensor.FromScalar<QuantParam>(new(10, 5.5f))), DataTypes.Int8);
+        var v10_2 = IR.F.Math.Quantize(v9, Const.FromTensor(Tensor.FromScalar<QuantParam>(new(10, 5.5f))), DataTypes.Int8); // int8[1,56,56,64]
+        var v10_11 = IR.F.Math.Dequantize(v10_1 + IR.F.Random.Normal(DataTypes.Int8, 0, 1, 3, new[] { 1, 64, 56, 56 }), Const.FromTensor(Tensor.FromScalar<QuantParam>(new(10, 5.5f))), DataTypes.Float32);
+        v10_11 = v10_11 * IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, new[] { 1, 64, 56, 56 });
+        var v10_22 = IR.F.Math.Dequantize(v10_2, Const.FromTensor(Tensor.FromScalar<QuantParam>(new(10, 5.5f))), DataTypes.Float32);
+        var v11 = IR.F.NN.Conv2D(v10_11 + v10_22, Testing.Rand<float>(64, 64, 1, 1), Testing.Rand<float>(64), new[] { 1, 1 }, new[,] { { 0, 0 }, { 0, 0 } }, new[] { 1, 1 }, PadMode.Constant, 1, new[] { float.NegativeInfinity, float.PositiveInfinity });
+        var v12 = IR.F.Math.RangeOfMarker(v11, new[] { -14.803145, 40.543793 }); // f32[1,64,56,56]
+        var v13 = IR.F.NN.Relu(v12); // f32[1,64,56,56]
+        var func = new Function("main", v13, new[] { v8 });
+        Assert.True(func.InferenceType());
+#if DEBUG
+        CompilerServices.DumpDotIR(func, "pre", Dumpper.Directory);
+#endif
+        var module = new IRModule(func);
+        var passes = CompileSession.CreatePassManager("passes");
+        passes.AddWithName<EGraphRulesPass>("CSE").Configure(p =>
+        {
+        });
+
+        await passes.RunAsync(module);
+        var post = (Function)module.Entry!;
+#if DEBUG
+        CompilerServices.DumpDotIR(post, "post", Dumpper.Directory);
+#endif
+        var v = new TestVisitor();
+        v.Visit(post);
+        Assert.Equal(1, v.CountCallOp<IR.Math.Quantize>());
     }
 }
 

@@ -9,8 +9,8 @@ using System.Threading.Tasks;
 using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.Math;
+using Nncase.Passes;
 using Nncase.PatternMatch;
-using Nncase.Transform;
 using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.Utility;
 
@@ -18,12 +18,12 @@ namespace Nncase.Quantization;
 
 internal partial class Quantizer
 {
-    private readonly EGraph _graph;
+    private readonly IEGraph _graph;
     private readonly QuantizeOptions _quantizeOptions;
     private readonly List<ENode> _rangeOfs = new List<ENode>();
     private readonly List<ENode> _childrenOfRangeOfs = new List<ENode>();
 
-    public Quantizer(EGraph graph, QuantizeOptions quantizeOptions)
+    public Quantizer(IEGraph graph, QuantizeOptions quantizeOptions)
     {
         _graph = graph;
         _quantizeOptions = quantizeOptions;
@@ -41,6 +41,8 @@ internal partial class Quantizer
 
         // 1.0 Get ranges
         var ranges = await GetRangesAsync(_quantizeOptions.CalibrationDataset);
+
+        ranges = ranges.ToDictionary(item => item.Key, item => FixUpRange(item.Value));
 
         if (_quantizeOptions.CalibrationMethod is CalibMethod.Kld)
         {
@@ -99,9 +101,40 @@ internal partial class Quantizer
         }
     }
 
+    private ValueRange<float> FixUpRange(ValueRange<float> range, bool symmetric = false)
+    {
+        if (symmetric)
+        {
+            var r = Math.Max(0.01f, Math.Max(Math.Abs(range.Min), Math.Abs(range.Max)));
+            return new ValueRange<float>(-r, r);
+        }
+        else
+        {
+            if (range.Max < 0)
+            {
+                range.Max = 0;
+            }
+
+            if (range.Min > 0)
+            {
+                range.Min = 0;
+            }
+
+            var r = range.Max - range.Min;
+            if (r == 0)
+            {
+                r = 0.1f;
+            }
+
+            range.Max = range.Min + r;
+        }
+
+        return range;
+    }
+
     private async Task<IDictionary<ENode, ValueRange<float>>> GetRangesAsync(ICalibrationDatasetProvider calibrationDataset)
     {
-        var ranges = new Dictionary<ENode, ValueRange<float>>();
+        var ranges = new Dictionary<ENode, ValueRange<float>>(ReferenceEqualityComparer.Instance);
         await RunPassAsync(calibrationDataset, (values) =>
         {
             foreach (var value in values)
@@ -123,7 +156,7 @@ internal partial class Quantizer
 
     private async Task<IDictionary<ENode, QuantizeHistogram<float>>> GetHistogramsAsync(ICalibrationDatasetProvider calibrationDataset, IDictionary<ENode, ValueRange<float>> ranges, int srcBinSize, int dstBinSize)
     {
-        var histograms = new Dictionary<ENode, QuantizeHistogram<float>>();
+        var histograms = new Dictionary<ENode, QuantizeHistogram<float>>(ReferenceEqualityComparer.Instance);
         await RunPassAsync(calibrationDataset, (values, childrenValues) =>
         {
             var valuesList = values.ToList();
@@ -132,22 +165,23 @@ internal partial class Quantizer
             {
                 var r = ranges[valuesList[i].Key].Max - ranges[valuesList[i].Key].Min;
                 var srcBinInterval = r / srcBinSize;
-                if (!histograms.TryGetValue(valuesList[i].Key, out var oldHistogram))
+                if (!histograms.TryGetValue(valuesList[i].Key, out var histogram))
                 {
                     var initSrcBin = new List<float>(new float[srcBinSize]);
                     var initDstBin = new List<float>(new float[dstBinSize]);
-                    var histogram = new QuantizeHistogram<float>(initSrcBin, initDstBin);
+                    histogram = new QuantizeHistogram<float>(initSrcBin, initDstBin);
                     histograms.Add(valuesList[i].Key, histogram);
                 }
 
                 var childrenTensor = childrenValuesList[i].Value.Cast<float>();
                 var childrenBuffer = childrenTensor.Buffer.Span;
+                var valueRange = ranges[valuesList[i].Key];
 
                 foreach (var buf in childrenBuffer)
                 {
-                    var r_index = (buf - ranges[valuesList[i].Key].Min) / srcBinInterval;
+                    var r_index = (buf - valueRange.Min) / srcBinInterval;
                     var index = (int)Math.Clamp((float)r_index, 0F, (float)srcBinSize - 1);
-                    histograms[valuesList[i].Key].SrcBin[index]++;
+                    histogram.SrcBin[index]++;
                 }
             }
         });
@@ -156,7 +190,7 @@ internal partial class Quantizer
 
     private IDictionary<ENode, ValueRange<float>> GetOptRanges(IDictionary<ENode, QuantizeHistogram<float>> histograms, IDictionary<ENode, ValueRange<float>> ranges, int srcBinSize, int dstBinSize, CalibMethod calibrationMethod)
     {
-        var optRanges = new Dictionary<ENode, ValueRange<float>>();
+        var optRanges = new Dictionary<ENode, ValueRange<float>>(ReferenceEqualityComparer.Instance);
         if (calibrationMethod == CalibMethod.Kld)
         {
             foreach (KeyValuePair<ENode, QuantizeHistogram<float>> histogram in histograms)

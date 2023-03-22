@@ -16,7 +16,7 @@ namespace Nncase.IR.Tensors;
 /// Slice expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Slice() : Op
+public sealed partial class Slice : Op
 {
     /// <summary>
     /// Gets input.

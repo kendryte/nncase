@@ -8,9 +8,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using LanguageExt;
 using Nncase.IR;
-using Nncase.Transform;
+using Nncase.Passes;
 
 namespace Nncase.PatternMatch;
 
@@ -148,12 +147,13 @@ public sealed class EGraphMatcher
 
         if (context.HasCandidates
             && pattern.MatchLeaf(expr)
-            && pattern.Parameters.MatchLeaf(expr.Parameters))
+            && pattern.Target.MatchLeaf(expr.Target)
+            && pattern.Arguments.MatchLeaf(expr.Arguments))
         {
             var newScopes = Visit(context.Candidates, pattern.Target, enode.Children[0]);
             if (newScopes.Count > 0)
             {
-                newScopes = Visit(newScopes, pattern.Parameters, enode.Children.Skip(1));
+                newScopes = Visit(newScopes, pattern.Arguments, enode.Children.Skip(1));
                 if (newScopes.Count > 0)
                 {
                     context.NewScopes.AddRange(newScopes);
@@ -237,7 +237,7 @@ public sealed class EGraphMatcher
 
     private IReadOnlyList<MatchScope> Visit(IReadOnlyList<MatchScope> matchScopes, VArgsPattern pattern, IReadOnlyList<ENode> enodes)
     {
-        var exprs = enodes.Select(x => x.Expr).ToList();
+        var exprs = enodes.Select(x => x.Expr).ToArray();
         var context = new MatchContext(matchScopes, pattern, exprs);
 
         if (context.HasCandidates
@@ -265,7 +265,7 @@ public sealed class EGraphMatcher
 
     private IReadOnlyList<MatchScope> Visit(IReadOnlyList<MatchScope> matchScopes, VArgsPattern pattern, IEnumerable<EClass> eClasses)
     {
-        if (pattern.IsDefaultOrEmpty || eClasses.Count() != pattern.Count)
+        if (pattern.Count == 0 || eClasses.Count() != pattern.Count)
         {
             return Array.Empty<MatchScope>();
         }

@@ -5,7 +5,7 @@ using DryIoc;
 using Nncase.Hosting;
 using Nncase.PatternMatch;
 
-namespace Nncase.Transform;
+namespace Nncase.Passes;
 
 /// <summary>
 /// Transform module.

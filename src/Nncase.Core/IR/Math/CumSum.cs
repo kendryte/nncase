@@ -16,7 +16,7 @@ namespace Nncase.IR.Math;
 /// CumSum expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record CumSum() : Op
+public sealed partial class CumSum : Op
 {
     /// <summary>
     /// Gets input.

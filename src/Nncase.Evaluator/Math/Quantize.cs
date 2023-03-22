@@ -40,7 +40,7 @@ public class QuantizeEvaluator : IEvaluator<Quantize>, ITypeInferencer<Quantize>
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, Quantize target)
+    public Cost Visit(ICostEvaluateContext context, Quantize target)
     {
         var input = context.GetArgumentType<TensorType>(target, Quantize.Input);
         var quant_param = context.GetArgumentType<TensorType>(target, Quantize.QuantParam);
