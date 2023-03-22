@@ -45,9 +45,9 @@ FLOAT_UNARY_WITH_MUL_TEMPLATE(
     std::max((float)0, x) +
         std::min((float)0, (float)(alpha *(exp(x / alpha) - 1))))
 FLOAT_UNARY_WITH_MUL_TEMPLATE(leaky_relu, alpha, x < 0 ? alpha * x : x)
-
-FLOAT_ACTIVATION_TEMPLATE(
-    gelu, 0.5f * (alpha * x) * (1.f + erff(alpha * x / sqrtf(2.f))), alpha)
+FLOAT_UNARY_WITH_MUL_TEMPLATE(gelu, alpha,
+                              0.5f * (alpha * x) *
+                                  (1.f + erff(alpha * x / sqrtf(2.f))))
 FLOAT_ACTIVATION_TEMPLATE(selu,
                           x <= 0 ? gamma * (alpha * std::exp(x) - alpha)
                                  : x * gamma,
