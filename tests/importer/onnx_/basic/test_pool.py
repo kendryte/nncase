@@ -25,7 +25,7 @@ def _make_module(kernel_size, stride, padding, count_include_pad, ceil_mode):
             super(PoolModule, self).__init__()
             # self.avgpool2d = torch.nn.AvgPool2d(kernel_size, stride=stride, padding=padding) # dsp pad
             self.avgpool2d = torch.nn.AvgPool2d(
-                kernel_size, stride=stride, padding=padding, count_include_pad=count_include_pad, ceil_mode=ceil_mode)
+                kernel_size, stride=stride, padding=padding, count_include_pad=count_include_pad)
             self.global_avgpool = torch.nn.AdaptiveAvgPool2d(1)
             self.maxpool2d = torch.nn.MaxPool2d(kernel_size, stride=stride, padding=padding, ceil_mode=ceil_mode)
             self.global_maxpool = torch.nn.AdaptiveMaxPool2d(1)

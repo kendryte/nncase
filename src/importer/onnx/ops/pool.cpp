@@ -90,8 +90,6 @@ void onnx_importer::convert_pool(const NodeProto &node, const reduce_op_t reduce
         ceil_mode = static_cast<int>(ceil_mode_attr.value());
     }
 
-    std::cout << "=======" << ceil_mode << std::endl;
-
     bool count_include_pad = false;
     const auto &count_include_pad_attr = get_attribute<int>(node, "count_include_pad");
     if (count_include_pad_attr)
