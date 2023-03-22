@@ -19,6 +19,7 @@ namespace Nncase.IR;
 public sealed class IRModule
 {
     private readonly List<BaseFunction> _functions;
+    private readonly ExprUser _exprUser = new();
     private int? _entryIndex;
 
     /// <summary>
@@ -29,6 +30,7 @@ public sealed class IRModule
     {
         _functions = new() { main };
         _entryIndex = 0;
+        main.AddUser(_exprUser);
     }
 
     /// <summary>
@@ -62,6 +64,7 @@ public sealed class IRModule
     {
         CompilerServices.InferenceType(function);
         _functions.Add(function);
+        function.AddUser(_exprUser);
     }
 
     /// <summary>
@@ -76,6 +79,7 @@ public sealed class IRModule
         if (old.IsAlive)
         {
             old.ReplaceAllUsesWith(function);
+            old.DisposeIfNoUsers();
         }
 
         old = function;
