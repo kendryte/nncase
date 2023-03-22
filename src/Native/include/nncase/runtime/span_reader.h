@@ -28,8 +28,11 @@ class span_reader {
     span_reader(gsl::span<const gsl::byte> span)
         : begin_(span.begin()), end_(span.end()) {}
 
+    const gsl::byte *tell() const noexcept { return begin_; }
     bool empty() const noexcept { return begin_ == end_; }
     size_t avail() const noexcept { return end_ - begin_; }
+
+    void seek(const gsl::byte *pos) noexcept { begin_ = pos; }
 
     template <class T> T read() {
         auto value = *reinterpret_cast<const T *>(begin_);

@@ -36,7 +36,7 @@ result<void> tensor_op_visitor::visit(tensor_function_t tensor_funct, span_reade
 {
     var name = "tensor_" + inst.CppName.ToLowerInvariant().Replace('.', '_');
 @:    case tensor_function_t::@inst.CppName:
-@:        return visit(op_reader<@(name)_op_t>()(reader));
+@:        return visit(tensor_op_reader<tensor_function_t::@(inst.CppName)>()(reader));
 }
     default:
         break;

@@ -13,36 +13,54 @@
  * limitations under the License.
  */
 
-#define NNCASE_STACKVM_DISPATCH_OP_NOP
+NNCASE_STACKVM_DISPATCH_BEGIN(NOP)
+NNCASE_STACKVM_DISPATCH_END()
 
-#define NNCASE_STACKVM_DISPATCH_OP_BR try_(pc_relative(op.target));
+NNCASE_STACKVM_DISPATCH_BEGIN(BR)
+try_(pc_relative(op.target));
+NNCASE_STACKVM_DISPATCH_END()
 
-#define NNCASE_STACKVM_DISPATCH_OP_BR_TRUE                                     \
-    auto value = stack_.pop();                                                 \
-    if (value.as_i())                                                          \
-        try_(pc_relative(op.target));
+NNCASE_STACKVM_DISPATCH_BEGIN(BR_TRUE)
+auto value = stack_.pop();
+if (value.as_i())
+    try_(pc_relative(op.target));
+NNCASE_STACKVM_DISPATCH_END()
 
-#define NNCASE_STACKVM_DISPATCH_OP_BR_FALSE                                    \
-    auto value = stack_.pop();                                                 \
-    if (!value.as_i())                                                         \
-        try_(pc_relative(op.target));
+NNCASE_STACKVM_DISPATCH_BEGIN(BR_FALSE)
+auto value = stack_.pop();
+if (!value.as_i())
+    try_(pc_relative(op.target));
+NNCASE_STACKVM_DISPATCH_END()
 
-#define NNCASE_STACKVM_DISPATCH_OP_RET                                         \
-    try_var(ret_addr, frames_.pop());                                          \
-    if (frames_.empty()) {                                                     \
-        return ok();                                                           \
-    } else {                                                                   \
-        try_(pc(ret_addr));                                                    \
-    }
+NNCASE_STACKVM_DISPATCH_BEGIN(RET)
+try_var(ret_addr, frames_.pop());
+if (frames_.empty()) {
+    return ok();
+} else {
+    try_(pc(ret_addr));
+}
+NNCASE_STACKVM_DISPATCH_END()
 
-#define NNCASE_STACKVM_DISPATCH_OP_CALL return err(std::errc::not_supported);
+NNCASE_STACKVM_DISPATCH_BEGIN(CALL)
+return err(std::errc::not_supported);
+NNCASE_STACKVM_DISPATCH_END()
 
-#define NNCASE_STACKVM_DISPATCH_OP_ECALL return err(std::errc::not_supported);
+NNCASE_STACKVM_DISPATCH_BEGIN(ECALL)
+return err(std::errc::not_supported);
+NNCASE_STACKVM_DISPATCH_END()
 
-#define NNCASE_STACKVM_DISPATCH_OP_EXTCALL try_(visit(op));
+NNCASE_STACKVM_DISPATCH_BEGIN(EXTCALL)
+try_(visit(op));
+NNCASE_STACKVM_DISPATCH_END()
 
-#define NNCASE_STACKVM_DISPATCH_OP_CUSCALL try_(visit(op));
+NNCASE_STACKVM_DISPATCH_BEGIN(CUSCALL)
+try_(visit(op));
+NNCASE_STACKVM_DISPATCH_END()
 
-#define NNCASE_STACKVM_DISPATCH_OP_THROW return err(std::errc::not_supported);
+NNCASE_STACKVM_DISPATCH_BEGIN(THROW)
+return err(std::errc::not_supported);
+NNCASE_STACKVM_DISPATCH_END()
 
-#define NNCASE_STACKVM_DISPATCH_OP_BREAK return err(std::errc::not_supported);
+NNCASE_STACKVM_DISPATCH_BEGIN(BREAK)
+return err(std::errc::not_supported);
+NNCASE_STACKVM_DISPATCH_END()

@@ -12,11 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "ops/control.inl"
-#include "ops/conversion.inl"
-#include "ops/loadstore.inl"
-#include "ops/scalar.inl"
-#include "ops/stack.inl"
 #include "runtime_function.h"
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/interpreter.h>
@@ -28,17 +23,35 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 
+#define NNCASE_STACKVM_DISPATCH_BEGIN(opcode)                                  \
+    case opcode_t::opcode: {                                                   \
+        auto op = op_reader<opcode_t::opcode>()(reader_);
+
+#define NNCASE_STACKVM_DISPATCH_END()                                          \
+    break;                                                                     \
+    }
+
 result<void>
 stackvm_runtime_function::run(gsl::span<const gsl::byte> text) noexcept {
     reader_ = {text};
 
     while (!reader_.empty()) {
+        pc_ = reader_.tell();
         auto opcode = reader_.read<opcode_t>();
         if (opcode != opcode_t::TENSOR) {
 #ifdef ENABLE_OP_PROFILE
             op_profile p(to_string(opcode));
 #endif
-            NNCASE_STACKVM_DISPATCH_OP(opcode, reader_)
+            switch (opcode) {
+#include "ops/control.inl"
+#include "ops/conversion.inl"
+#include "ops/loadstore.inl"
+#include "ops/scalar.inl"
+#include "ops/stack.inl"
+            default:
+                return err(nncase_errc::stackvm_illegal_target);
+                break;
+            }
         } else {
             auto tensor_func = reader_.read_unaligned<tensor_function_t>();
 #ifdef ENABLE_OP_PROFILE
@@ -54,19 +67,26 @@ stackvm_runtime_function::run(gsl::span<const gsl::byte> text) noexcept {
     return ok();
 }
 
+#undef NNCASE_STACKVM_DISPATCH_BEGIN
+#undef NNCASE_STACKVM_DISPATCH_END
+
 uintptr_t stackvm_runtime_function::pc() const noexcept {
-    return (uintptr_t)(text_.size_bytes() - reader_.avail());
+    return pc_ - text_.begin();
 }
 
 result<void> stackvm_runtime_function::pc(uintptr_t value) noexcept {
-    if (value >= text_.size_bytes())
-        return err(nncase_errc::stackvm_illegal_target);
-    reader_ = span_reader(text_.subspan(value));
+    CHECK_WITH_ERR(value >= text_.size_bytes(),
+                   nncase_errc::stackvm_illegal_target);
+    reader_.seek(text_.begin() + value);
     return ok();
 }
 
 result<void> stackvm_runtime_function::pc_relative(intptr_t offset) noexcept {
-    return pc((uintptr_t)((intptr_t)pc() + offset));
+    auto pc = pc_ + offset;
+    CHECK_WITH_ERR(pc >= text_.begin() && pc <= text_.end(),
+                   nncase_errc::stackvm_illegal_target);
+    reader_.seek(pc);
+    return ok();
 }
 
 uintptr_t stackvm_runtime_function::pop_addr() noexcept {

@@ -62,7 +62,7 @@ class stackvm_runtime_function final : public runtime_function,
     result<tensor> pop_tensor() noexcept { return pop_object<tensor>(); }
 
     result<value_t> pop_value() noexcept {
-        try_var(var, stack_.pop());
+        auto var = stack_.pop();
         if (var.is_object())
             return var.as_object().as<value_t>();
         else if (var.is_i()) {
@@ -78,6 +78,7 @@ class stackvm_runtime_function final : public runtime_function,
 
   private:
     gsl::span<const gsl::byte> text_;
+    const gsl::byte *pc_;
     evaluate_stack stack_;
     call_frames frames_;
     span_reader reader_;

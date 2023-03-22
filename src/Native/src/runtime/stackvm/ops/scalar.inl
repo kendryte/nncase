@@ -13,12 +13,13 @@
  * limitations under the License.
  */
 
-#define NNCASE_STACKVM_DISPATCH_OP_NEG                                         \
-    auto value = stack_.pop();                                                 \
-    if (!value.is_r())                                                         \
-        stack_.push(-value.as_i());                                            \
-    else                                                                       \
-        stack_.push(-value.as_r());
+NNCASE_STACKVM_DISPATCH_BEGIN(NEG)
+auto value = stack_.pop();
+if (!value.is_r())
+    stack_.push(-value.as_i());
+else
+    stack_.push(-value.as_r());
+NNCASE_STACKVM_DISPATCH_END()
 
 #define BINARY_IMPL(op)                                                        \
     auto b = stack_.pop();                                                     \
@@ -62,15 +63,25 @@
     else                                                                       \
         stack_.push(a.as_r() op b.as_r() ? 1 : 0)
 
-#define NNCASE_STACKVM_DISPATCH_OP_ADD BINARY_IMPL(+);
+NNCASE_STACKVM_DISPATCH_BEGIN(ADD)
+BINARY_IMPL(+);
+NNCASE_STACKVM_DISPATCH_END()
 
-#define NNCASE_STACKVM_DISPATCH_OP_SUB BINARY_IMPL(-);
+NNCASE_STACKVM_DISPATCH_BEGIN(SUB)
+BINARY_IMPL(-);
+NNCASE_STACKVM_DISPATCH_END()
 
-#define NNCASE_STACKVM_DISPATCH_OP_MUL BINARY_IMPL(*);
+NNCASE_STACKVM_DISPATCH_BEGIN(MUL)
+BINARY_IMPL(*);
+NNCASE_STACKVM_DISPATCH_END()
 
-#define NNCASE_STACKVM_DISPATCH_OP_DIV BINARY_IMPL(/);
+NNCASE_STACKVM_DISPATCH_BEGIN(DIV)
+BINARY_IMPL(/);
+NNCASE_STACKVM_DISPATCH_END()
 
-#define NNCASE_STACKVM_DISPATCH_OP_DIV_U BINARY_U_IMPL(-);
+NNCASE_STACKVM_DISPATCH_BEGIN(DIV_U)
+BINARY_U_IMPL(/);
+NNCASE_STACKVM_DISPATCH_END()
 
 #define NNCASE_STACKVM_DISPATCH_OP_REM                                         \
     auto b = stack_.pop();                                                     \
@@ -88,38 +99,71 @@
     else                                                                       \
         stack_.push(fmodf(a.as_r(), b.as_r()));
 
-#define NNCASE_STACKVM_DISPATCH_OP_AND BINARY_BIT_U_IMPL(&);
+NNCASE_STACKVM_DISPATCH_BEGIN(AND)
+BINARY_BIT_U_IMPL(&);
+NNCASE_STACKVM_DISPATCH_END()
 
-#define NNCASE_STACKVM_DISPATCH_OP_OR BINARY_BIT_U_IMPL(|);
+NNCASE_STACKVM_DISPATCH_BEGIN(OR)
+BINARY_BIT_U_IMPL(|);
+NNCASE_STACKVM_DISPATCH_END()
 
-#define NNCASE_STACKVM_DISPATCH_OP_XOR BINARY_BIT_U_IMPL(^);
+NNCASE_STACKVM_DISPATCH_BEGIN(XOR)
+BINARY_BIT_U_IMPL(^);
+NNCASE_STACKVM_DISPATCH_END()
 
-#define NNCASE_STACKVM_DISPATCH_OP_NOT                                         \
-    auto value = stack_.pop();                                                 \
-    stack_.push(~value.as_u());
+NNCASE_STACKVM_DISPATCH_BEGIN(NOT)
+auto value = stack_.pop();
+stack_.push(~value.as_u());
+NNCASE_STACKVM_DISPATCH_END()
 
-#define NNCASE_STACKVM_DISPATCH_OP_SHL BINARY_BIT_U_IMPL(<<);
+NNCASE_STACKVM_DISPATCH_BEGIN(SHL)
+BINARY_BIT_U_IMPL(<<);
+NNCASE_STACKVM_DISPATCH_END()
 
-#define NNCASE_STACKVM_DISPATCH_OP_SHR BINARY_BIT_IMPL(>>);
+NNCASE_STACKVM_DISPATCH_BEGIN(SHR)
+BINARY_BIT_IMPL(>>);
+NNCASE_STACKVM_DISPATCH_END()
 
-#define NNCASE_STACKVM_DISPATCH_OP_SHR_U BINARY_BIT_U_IMPL(>>);
+NNCASE_STACKVM_DISPATCH_BEGIN(SHR_U)
+BINARY_BIT_U_IMPL(>>);
+NNCASE_STACKVM_DISPATCH_END()
 
-#define NNCASE_STACKVM_DISPATCH_OP_CLT COMPARE_IMPL(<);
+NNCASE_STACKVM_DISPATCH_BEGIN(CLT)
+COMPARE_IMPL(<);
+NNCASE_STACKVM_DISPATCH_END()
 
-#define NNCASE_STACKVM_DISPATCH_OP_CLT_U COMPARE_U_IMPL(<);
+NNCASE_STACKVM_DISPATCH_BEGIN(CLT_U)
+COMPARE_U_IMPL(<);
+NNCASE_STACKVM_DISPATCH_END()
 
-#define NNCASE_STACKVM_DISPATCH_OP_CLE COMPARE_IMPL(<=);
+NNCASE_STACKVM_DISPATCH_BEGIN(CLE)
+COMPARE_IMPL(<=);
+NNCASE_STACKVM_DISPATCH_END()
 
-#define NNCASE_STACKVM_DISPATCH_OP_CLE_U COMPARE_U_IMPL(<=);
+NNCASE_STACKVM_DISPATCH_BEGIN(CLE_U)
+COMPARE_U_IMPL(<=);
+NNCASE_STACKVM_DISPATCH_END()
 
-#define NNCASE_STACKVM_DISPATCH_OP_CEQ COMPARE_U_IMPL(==);
+NNCASE_STACKVM_DISPATCH_BEGIN(CEQ)
+COMPARE_U_IMPL(==);
+NNCASE_STACKVM_DISPATCH_END()
 
-#define NNCASE_STACKVM_DISPATCH_OP_CGE COMPARE_IMPL(>=);
+NNCASE_STACKVM_DISPATCH_BEGIN(CGE)
+COMPARE_IMPL(>=);
+NNCASE_STACKVM_DISPATCH_END()
 
-#define NNCASE_STACKVM_DISPATCH_OP_CGE_U COMPARE_U_IMPL(>=);
+NNCASE_STACKVM_DISPATCH_BEGIN(CGE_U)
+COMPARE_U_IMPL(>=);
+NNCASE_STACKVM_DISPATCH_END()
 
-#define NNCASE_STACKVM_DISPATCH_OP_CGT COMPARE_IMPL(>);
+NNCASE_STACKVM_DISPATCH_BEGIN(CGT)
+COMPARE_IMPL(>);
+NNCASE_STACKVM_DISPATCH_END()
 
-#define NNCASE_STACKVM_DISPATCH_OP_CGT_U COMPARE_U_IMPL(>);
+NNCASE_STACKVM_DISPATCH_BEGIN(CGT_U)
+COMPARE_U_IMPL(>);
+NNCASE_STACKVM_DISPATCH_END()
 
-#define NNCASE_STACKVM_DISPATCH_OP_CNE COMPARE_U_IMPL(!=);
+NNCASE_STACKVM_DISPATCH_BEGIN(CNE)
+COMPARE_U_IMPL(!=);
+NNCASE_STACKVM_DISPATCH_END()

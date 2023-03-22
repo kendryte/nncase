@@ -13,8 +13,11 @@
  * limitations under the License.
  */
 
-#define NNCASE_STACKVM_DISPATCH_OP_DUP                                         \
-    auto entry = stack_.peek();                                                \
-    stack_.push(std::move(entry));
+NNCASE_STACKVM_DISPATCH_BEGIN(DUP)
+auto entry = stack_.peek();
+stack_.push(std::move(entry));
+NNCASE_STACKVM_DISPATCH_END()
 
-#define NNCASE_STACKVM_DISPATCH_OP_POP stack_.pop();
+NNCASE_STACKVM_DISPATCH_BEGIN(POP)
+stack_.pop();
+NNCASE_STACKVM_DISPATCH_END()
