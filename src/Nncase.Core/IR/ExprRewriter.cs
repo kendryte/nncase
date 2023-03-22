@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reactive;
@@ -40,8 +41,9 @@ public abstract partial class ExprRewriter<TContext> : ExprVisitor<Expr, IRType,
     /// <returns>Rewritten expression.</returns>
     public Expr Rewrite(Expr expr, TContext context)
     {
+        using var exprScope = new ExprScope();
         var newExpr = Visit(expr, context);
-        DCE(newExpr);
+        DCE(newExpr, exprScope);
         return newExpr;
     }
 
@@ -67,13 +69,21 @@ public abstract partial class ExprRewriter<TContext> : ExprVisitor<Expr, IRType,
         }
     }
 
-    private void DCE(Expr root)
+    private void DCE(Expr root, ExprScope exprScope)
     {
         using var exprPin = new ExprPinner(root);
         foreach (var expr in ExprMemo)
         {
             expr.Key.DisposeIfNoUsers();
             expr.Value.DisposeIfNoUsers();
+        }
+
+        foreach (var expr in exprScope.Exprs)
+        {
+            if (expr is not ExprUser)
+            {
+                expr.DisposeIfNoUsers();
+            }
         }
     }
 }

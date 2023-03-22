@@ -60,6 +60,7 @@ public abstract partial class Expr : IDisposable
 
     internal Expr(IEnumerable<Expr> operands)
     {
+        ExprScope.Current?.Add(this);
         _operands = operands.ToArray();
         foreach (var operand in _operands)
         {
@@ -71,6 +72,7 @@ public abstract partial class Expr : IDisposable
 
     internal Expr(Expr[] operands)
     {
+        ExprScope.Current?.Add(this);
         _operands = operands;
         foreach (var operand in _operands)
         {
