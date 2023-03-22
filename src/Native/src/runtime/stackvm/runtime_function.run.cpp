@@ -25,7 +25,7 @@ using namespace nncase::runtime::stackvm;
 
 #define NNCASE_STACKVM_DISPATCH_BEGIN(opcode)                                  \
     case opcode_t::opcode: {                                                   \
-        auto op = op_reader<opcode_t::opcode>()(reader_);
+        [[maybe_unused]] auto op = op_reader<opcode_t::opcode>()(reader_);
 
 #define NNCASE_STACKVM_DISPATCH_END()                                          \
     break;                                                                     \
