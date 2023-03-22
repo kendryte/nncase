@@ -240,6 +240,9 @@ template result<void> kernels::reduce<float>(reduce_op_t op, float init_value, c
 template result<void> kernels::reduce<int32_t>(reduce_op_t op, int32_t init_value, const int32_t *input, int32_t *output, const runtime_shape_t &in_shape, const runtime_shape_t &axis,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, bool keep_dims, kernel_context &context) noexcept;
 
+template result<void> kernels::reduce<int64_t>(reduce_op_t op, int64_t init_value, const int64_t *input, int64_t *output, const runtime_shape_t &in_shape, const runtime_shape_t &axis,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, bool keep_dims, kernel_context &context) noexcept;
+
 template <typename T>
 result<void> kernels::reduce(reduce_op_t op, T init_value, const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &axis,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, bool keep_dims, kernel_context &context) noexcept
