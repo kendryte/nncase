@@ -33,6 +33,7 @@ struct region
     std::unordered_set<node *> nodes_set;
     std::unordered_set<input_connector *> region_inputs;
     std::unordered_set<output_connector *> outputs;
+    std::unordered_map<output_connector *, int> need_remove_outputs;
 
     region(module_type_t module_type)
         : module_type(module_type)
@@ -49,25 +50,30 @@ struct region
             for (auto out : n.outputs())
                 outputs.emplace(out);
 
-            std::unordered_map<output_connector *, int> need_remove_outputs;
             for (auto it = region_inputs.begin(); it != region_inputs.end();)
             {
                 if (outputs.contains((*it)->connection()))
                 {
                     if (need_remove_outputs.find((*it)->connection()) != need_remove_outputs.end())
-                        need_remove_outputs.at((*it)->connection()) += 1;
+                        need_remove_outputs.at((*it)->connection()) -= 1;
                     else
-                        need_remove_outputs.emplace((*it)->connection(), 1);
+                        need_remove_outputs.emplace((*it)->connection(),
+                            (*it)->connection()->connections().size() - 1);
                     it = region_inputs.erase(it);
                 }
                 else
                     ++it;
             }
 
-            for (auto it : need_remove_outputs)
+            for (auto it = need_remove_outputs.begin(); it != need_remove_outputs.end();)
             {
-                if (it.first->connections().size() == it.second)
-                    outputs.erase(it.first);
+                if (it->second == 0)
+                {
+                    outputs.erase(it->first);
+                    it = need_remove_outputs.erase(it);
+                }
+                else
+                    it++;
             }
 
             if (is_all_noaction && n.attributes() & node_attr_action)
@@ -127,12 +133,13 @@ typedef struct Region_node
 class Region_tree
 {
 public:
-    Region_node *create_tree(std::list<region>::iterator new_node, std::list<region> &regions, int depth)
+    Region_tree(std::list<region> &rg)
+        : regions_(rg) { }
+    Region_node *create_tree(std::list<region>::iterator new_node, int depth)
     {
 
         Region_node *root = create_node();
         root->node = new_node;
-        auto bro = root->bro;
 
         // find a path from itb--> ita
         if (new_node == target_region_)
@@ -150,20 +157,20 @@ public:
 
         for (auto it : new_node->region_inputs)
         {
-            for (auto itb = regions.begin(); itb != regions.end(); itb++)
+            for (auto itb = regions_.begin(); itb != regions_.end(); itb++)
             {
                 if (itb->outputs.contains(it->connection()))
                 {
                     if (root->child == nullptr)
                     {
-                        root->child = create_tree(itb, regions, depth + 1);
+                        root->child = create_tree(itb, depth + 1);
                         root->child->parent = root;
                     }
                     else
                     {
-                        bro = create_tree(itb, regions, depth);
-                        bro->parent = root;
-                        bro = bro->bro;
+                        root->bro = create_tree(itb, depth);
+                        root->bro->parent = root;
+                        root->bro = root->bro->bro;
                     }
                 }
             }
@@ -174,15 +181,16 @@ public:
 
     bool not_have_circle()
     {
-        // if tree depth > 20, ignore merge itb--> ita
+        // if tree depth > 10, ignore merge itb--> ita
         if (skip_)
             return false;
-
         // each leaf has only one path to root.
         // if all the paths of leaves to root don't have CPU op ,itb can merge to ita.
         for (auto it : leaves_)
         {
             auto condition_ptr = it->parent;
+            if (condition_ptr->node == start_region_)
+                continue;
             while (condition_ptr != nullptr)
             {
                 if (condition_ptr->node->module_type == runtime::stackvm::stackvm_module_type && !condition_ptr->node->is_all_noaction)
@@ -203,20 +211,9 @@ public:
     {
         if (root != nullptr)
         {
-            if (root->child != nullptr)
-            {
-                free_tree(root->child);
-            }
-            else if (root->bro != nullptr)
-            {
-                free_tree(root->bro);
-            }
-
+            free_tree(root->child);
+            free_tree(root->bro);
             delete root;
-            root->child = nullptr;
-            root->bro = nullptr;
-            root->parent = nullptr;
-            root = nullptr;
         }
     }
 
@@ -231,6 +228,7 @@ private:
     std::list<region>::iterator target_region_;
     std::vector<Region_node *> leaves_;
     bool skip_;
+    std::list<region> &regions_;
 };
 
 class graph_merger
@@ -333,22 +331,28 @@ private:
     bool check_circle(std::list<region>::iterator ita, std::list<region>::iterator itb)
     {
         // merge directly
-        if (ita->outputs.size() == 1)
+        bool merge_directly = true;
+        for (auto it : ita->outputs)
         {
-            for (auto it : ita->outputs)
-            {
-                if (it->connections().size() == 1)
-                    return true;
-            }
+            if (std::all_of(it->connections().begin(), it->connections().end(),
+                    [&](input_connector *out) {
+                        return itb->region_inputs.contains(out);
+                    }))
+                continue;
+            else
+                merge_directly = false;
         }
+        if (merge_directly)
+            return true;
+
         if (itb->region_inputs.size() == 1)
         {
             return true;
         }
 
-        auto check = std::make_shared<Region_tree>();
+        auto check = std::make_shared<Region_tree>(regions_);
         check->set_label_region(ita, itb);
-        auto root = check->create_tree(itb, regions_, 0);
+        auto root = check->create_tree(itb, 0);
         auto flag = check->not_have_circle();
         check->free_tree(root);
         return flag;
