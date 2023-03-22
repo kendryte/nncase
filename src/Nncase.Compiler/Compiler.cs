@@ -82,6 +82,7 @@ internal class Compiler : ICompiler
                 p.Add<Passes.Rules.Neutral.SqueezeToReshape>();
                 p.Add<Passes.Rules.Neutral.UnSqueezeToReshape>();
                 p.Add<Passes.Rules.Neutral.TransposeToReshape>();
+                p.Add<Passes.Rules.Neutral.FlattenToReshape>();
                 p.Add<Passes.Rules.Neutral.FoldNopReshape>();
                 p.Add<Passes.Rules.Neutral.FoldTwoReshapes>();
                 p.Add<Passes.Rules.Neutral.FoldLayerNormPattern1>();
