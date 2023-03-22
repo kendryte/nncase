@@ -29,7 +29,7 @@ def _make_module(input_shape, unit, activation, use_bias):
         @tf.function(input_signature=[tf.TensorSpec(input_shape, dtype=tf.float32)])
         def __call__(self, x):
             return self.out(x)
-        
+
     return FullyConnectedModule()
 
 
@@ -44,7 +44,7 @@ units = [
 ]
 
 activations = [
-	None,
+    None,
     'relu',
 ]
 
@@ -53,16 +53,17 @@ use_biases = [
     False
 ]
 
+
 @pytest.mark.parametrize('input_shape', input_shapes)
 @pytest.mark.parametrize('unit', units)
 @pytest.mark.parametrize('activation', activations)
 @pytest.mark.parametrize('use_bias', use_biases)
 def test_fully_connected(input_shape, unit: int, activation: None, use_bias: bool, request):
-	module = _make_module(input_shape, unit, activation, use_bias)
+    module = _make_module(input_shape, unit, activation, use_bias)
 
-	runner = TfliteTestRunner(request.node.name)
-	model_file = runner.from_tensorflow(module)
-	runner.run(model_file)
+    runner = TfliteTestRunner(request.node.name)
+    model_file = runner.from_tensorflow(module)
+    runner.run(model_file)
 
 
 if __name__ == "__main__":
