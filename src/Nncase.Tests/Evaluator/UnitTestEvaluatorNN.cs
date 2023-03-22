@@ -57,6 +57,16 @@ public class UnitTestEvaluatorNN : TestClassBase
     }
 
     [Fact]
+    public void TestActivationSwish()
+    {
+        var input = OrtKI.Random(new long[] { 1, 3, 16, 16 });
+        var expect = input * OrtKI.Sigmoid(input);
+        var expr = IR.F.NN.Swish(input.ToTensor());
+        CompilerServices.InferenceType(expr);
+        Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
+    }
+
+    [Fact]
     public void TestActivationLeakyRelu()
     {
         var input = OrtKI.Random(new long[] { 1, 3, 16, 16 });

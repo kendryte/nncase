@@ -33,6 +33,7 @@ FLOAT_UNARY_TEMPLATE(relu, std::max((float)0, x))
 FLOAT_UNARY_TEMPLATE(softsign, x / (1 + std::abs(x)))
 FLOAT_UNARY_TEMPLATE(softplus, std::log(1 + std::exp(x)))
 FLOAT_UNARY_TEMPLATE(sigmoid, 1 / (1 + exp(-x)))
+FLOAT_UNARY_TEMPLATE(swish, x / (1 + exp(-x)))
 FLOAT_UNARY_TEMPLATE(hard_swish,
                      x *std::max(0.f, std::min((float)1.f,
                                                (float)(1.f / 6 * x + 0.5))))
