@@ -5,6 +5,7 @@ using System;
 using System.IO;
 using System.Linq;
 using Nncase.IR;
+using Nncase.IR.NN;
 using Nncase.IR.Tensors;
 using tflite;
 using static Nncase.IR.F.Tensors;
@@ -28,6 +29,7 @@ namespace Nncase.Importer.TFLite
 
             var lhs = input;
             var rhs = other;
+            var fusedActivationFunction = ActivationFunctionType.NONE;
             if (isFullyConnected)
             {
                 var options = op.BuiltinOptionsAsFullyConnectedOptions();
@@ -37,10 +39,7 @@ namespace Nncase.Importer.TFLite
                     throw new NotSupportedException();
                 }
 
-                if (options.FusedActivationFunction != ActivationFunctionType.NONE)
-                {
-                    throw new NotImplementedException();
-                }
+                fusedActivationFunction = options.FusedActivationFunction;
 
                 var perm = GetPerm(op, 1);
                 rhs = Transpose(rhs, perm);
@@ -64,9 +63,15 @@ namespace Nncase.Importer.TFLite
             var bias = op.InputsLength == 3 && op.Inputs(2) != -1
                 ? GetInputExprs(op, 2)
                 : Expand(Cast(0, GetDataType(GetInputTensor(op, 0).Type)), new[] { otherTensor.Shape(0) }).Evaluate().AsTensor();
-            return MatMul(
-                lhs,
-                rhs) + bias;
+            var mm =  MatMul(lhs, rhs) + bias;
+            return fusedActivationFunction switch
+            {
+                ActivationFunctionType.NONE => mm,
+                ActivationFunctionType.RELU => F.NN.Relu(mm),
+                ActivationFunctionType.RELU6 => F.NN.Relu6(mm),
+                ActivationFunctionType.TANH => F.Math.Tanh(mm),
+                _ => throw new NotImplementedException("Not supported FusedActivationFunction"),
+            };
         }
 
         private int[] GetPerm(tflite.Operator op, int index)
