@@ -211,6 +211,7 @@ public sealed partial class TFLiteImporter : BaseImporter
             tflite.BuiltinOperator.GREATER_EQUAL => VisitCompare(op, CompareOp.GreaterOrEqual),
 
             tflite.BuiltinOperator.HARD_SWISH => VisitHardSwish(op),
+
             // tflite.BuiltinOperator.HASHTABLE,
             // tflite.BuiltinOperator.HASHTABLE_FIND,
             // tflite.BuiltinOperator.HASHTABLE_IMPORT,
