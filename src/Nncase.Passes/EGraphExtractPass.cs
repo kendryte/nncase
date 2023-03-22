@@ -25,6 +25,7 @@ public sealed class EGraphExtractPass : Pass<IEGraph, BaseFunction>
     protected override Task<BaseFunction> RunCoreAsync(IEGraph input, RunPassContext context)
     {
         var post = (BaseFunction)input.Extract(input.Root!, _costEvaluator);
+        IRHelpers.DCE(post);
         return Task.FromResult(post);
     }
 
