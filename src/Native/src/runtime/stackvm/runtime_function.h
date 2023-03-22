@@ -63,11 +63,11 @@ class stackvm_runtime_function final : public runtime_function,
 
     result<value_t> pop_value() noexcept {
         auto var = stack_.pop();
-        if (var.is_object())
-            return var.as_object().as<value_t>();
-        else if (var.is_i()) {
-            return ok((value_t) nullptr);
+        if (var.is_object()) {
+            auto o = var.as_object();
+            return !o.empty() ? o.as<value_t>() : ok<value_t>(nullptr);
         }
+
         return err(std::errc::invalid_argument);
     }
 
