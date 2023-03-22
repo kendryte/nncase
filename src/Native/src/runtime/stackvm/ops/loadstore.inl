@@ -279,7 +279,7 @@ auto input = input_map.buffer().data();
     case _typecode: {                                                          \
         _in_type scalar = *reinterpret_cast<const _in_type *>(input);          \
         stack_.push(stack_entry(scalar));                                      \
-        return ok();                                                           \
+        break;                                                                 \
     }
 
 switch (tensor->dtype()->typecode()) {
