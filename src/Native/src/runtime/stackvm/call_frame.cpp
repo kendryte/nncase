@@ -19,9 +19,9 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 
-result<stack_entry> call_frame::arg(size_t index) const noexcept {
-    CHECK_WITH_ERR(index < args_.size(), std::errc::result_out_of_range);
-    return ok(args_[index]);
+stack_entry call_frame::arg(size_t index) const noexcept {
+    dbg_check(index < args_.size());
+    return args_[index];
 }
 
 result<void> call_frame::push_back_arg(stack_entry arg) noexcept {
@@ -33,22 +33,15 @@ result<void> call_frame::push_back_arg(stack_entry arg) noexcept {
     }
 }
 
-result<stack_entry> call_frame::field(size_t index) const noexcept {
-    CHECK_WITH_ERR(index < fields_.size(), std::errc::result_out_of_range);
-    return ok(fields_[index]);
+stack_entry call_frame::field(size_t index) const noexcept {
+    dbg_check(index < fields_.size());
+    return fields_[index];
 }
 
-result<void> call_frame::field(size_t index, stack_entry value) noexcept {
-    if (fields_.size() <= index) {
-        try {
-            fields_.resize(index + 1);
-        } catch (...) {
-            return err(std::errc::not_enough_memory);
-        }
-    }
-
+void call_frame::field(size_t index, stack_entry value) noexcept {
+    if (fields_.size() <= index)
+        fields_.resize(index + 1);
     fields_[index] = value;
-    return ok();
 }
 
 bool call_frames::empty() const noexcept { return frames_.empty(); }
