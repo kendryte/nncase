@@ -38,7 +38,7 @@ public static partial class Utility
       => IsVArgsRepeat(
           (prefix is not null && prefix != string.Empty) ? prefix + "Params" : null,
           list => patterns.Concat(
-            Enumerable.Range(0, list.Count - patterns.Length).
+            Enumerable.Range(0, list.Length - patterns.Length).
             Select(_ => (Pattern)IsWildcard(null)))
           .ToArray());
 
@@ -53,7 +53,7 @@ public static partial class Utility
           (prefix is not null && prefix != string.Empty) ? prefix + "Params" : null,
           list =>
           {
-              var patterns = Enumerable.Range(0, list.Count).Select(_ => (Pattern)IsWildcard()).ToArray();
+              var patterns = Enumerable.Range(0, list.Length).Select(_ => (Pattern)IsWildcard()).ToArray();
               foreach (var (info, pattern) in inputPatterns)
               {
                   patterns[info.Index] = pattern;
@@ -97,8 +97,8 @@ public static partial class Utility
     public static Pattern IsWrappedLSTM(CallPattern lstmPattern, Func<Pattern, int, Pattern> wrapFunc) =>
         IsTuple("tuple", IsVArgsRepeat("xx", tp =>
         {
-            var patterns = new Pattern[tp.Count];
-            for (var i = 0; i < tp.Count; i++)
+            var patterns = new Pattern[tp.Length];
+            for (var i = 0; i < tp.Length; i++)
             {
                 patterns[i] = wrapFunc(F.Tensors.IsGetItem(lstmPattern, IsWildcard()), i);
             }
@@ -198,7 +198,7 @@ public static partial class Utility
     /// <param name="body">fusion body pattern.</param>
     /// <returns>pattern.</returns>
     public static Pattern IsFusion(string moduleKind, Pattern body)
-        => IsFusion(null, moduleKind, body, IsVArgsRepeat(null, () => IsVar()));
+        => IsFusion("fusion", moduleKind, body, IsVArgsRepeat(null, () => IsVar()));
 
     /// <summary>
     /// Fusion: TBegin -> FirstOp -> SecondOp -> TEnd.

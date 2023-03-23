@@ -75,12 +75,12 @@ public static class Comparator
 
     public static float[][] CosSimilarity(IValue[] a, IValue[] b)
     {
-        return a.Zip(b).Select(tuple => CosSimilarity(tuple.Item1, tuple.Item2)).ToArray();
+        return a.Zip(b).Select(tuple => CosSimilarity(tuple.First, tuple.Second)).ToArray();
     }
 
     public static float[][] CosSimilarity(OriginValue[] a, OriginValue[] b)
     {
-        return a.Zip(b).Select(tuple => CosSimilarity(tuple.Item1.Value, tuple.Item2.Value)).ToArray();
+        return a.Zip(b).Select(tuple => CosSimilarity(tuple.First.Value, tuple.Second.Value)).ToArray();
     }
 
     public static float CosSimilarity(OriginTensor a, OriginTensor b) => CosSimilarity(a.Tensor, b.Tensor);
@@ -89,6 +89,11 @@ public static class Comparator
 
     public static float CosSimilarity(Tensor a, Tensor b)
     {
+        if (a.Length == 0 && b.Length == 0)
+        {
+            return 1f;
+        }
+
         var va = a.ToArray<float>();
         var vb = b.ToArray<float>();
         var v1 = Math.Sqrt(Prod(va, va));
@@ -101,10 +106,10 @@ public static class Comparator
     {
         var va = a.ToArray<float>();
         var vb = b.ToArray<float>();
-        return va.Zip(vb).All(p => (p.Item1, p.Item2) switch
+        return va.Zip(vb).All(p => (p.First, p.Second) switch
         {
             (float.NaN, float.NaN) => 0.0f,
-            _ => MathF.Abs(p.Item1 - p.Item2),
+            _ => MathF.Abs(p.First - p.Second),
         }
 
         <= thresh);
@@ -163,19 +168,19 @@ public static class Comparator
         var v2 = SliceByChannel(post);
 
         // Assert.Equal(v1.Length, v2.Length);
-        return v1.Zip(v2).Select(data => CosSimilarity(data.Item1, data.Item2)).ToArray();
+        return v1.Zip(v2).Select(data => CosSimilarity(data.First, data.Second)).ToArray();
     }
 
     public static float[][] TensorsCompareByChannel(Tensor[] pre, Tensor[] post, int channelAxis = 1, float thresh = 0.99f)
     {
         return pre.Zip(post).Select(tuple =>
-                TensorCompareByChannel(tuple.Item1, tuple.Item2, channelAxis, thresh))
+                TensorCompareByChannel(tuple.First, tuple.Second, channelAxis, thresh))
             .ToArray();
     }
 
     private static float Prod(float[] data1, float[] data2)
     {
-        return data1.Zip(data2).Aggregate(0f, (f, tuple) => f + (tuple.Item1 * tuple.Item2));
+        return data1.Zip(data2).Aggregate(0f, (f, tuple) => f + (tuple.First * tuple.Second));
     }
 
     private static bool TupleValueAllEqual(TupleValue a, TupleValue b, float thresh)
@@ -200,10 +205,17 @@ public static class Comparator
     {
         var v1 = pre.AsTensor();
         var v2 = post.AsTensor();
-        Assert.Equal(v1.Shape, v2.Shape);
-        Assert.Equal(v1.ElementType, v2.ElementType);
-        Assert.True(AllEqual(v1, v2, thresh));
-        return true;
+        if (v1.Shape != v2.Shape)
+        {
+            return false;
+        }
+
+        if (v1.ElementType != v2.ElementType)
+        {
+            return false;
+        }
+
+        return AllEqual(v1, v2, thresh);
     }
 }
 
@@ -212,9 +224,9 @@ public static class DetailComparator
     public static void DumpCompareDetailAnalysis(CompareResultByChannel[] resultByChannels, string path, int i)
     {
         var shape = resultByChannels.Length != 0
-            ? SerializeShape(resultByChannels.Head().Shape)
+            ? SerializeShape(resultByChannels.First().Shape)
             : "data all ok and not shape info";
-        var fileName = resultByChannels.Length != 0 ? resultByChannels[0].Losses.Head().V1Tensor.FileName : "AllOK";
+        var fileName = resultByChannels.Length != 0 ? resultByChannels[0].Losses.First().V1Tensor.FileName : "AllOK";
         WriteResult(Path.Join(path, $"{i}_{fileName}"), resultByChannels, $"{shape}\n");
     }
 
@@ -233,7 +245,7 @@ public static class DetailComparator
     {
         Assert.Equal(a.Length, b.Length);
         return a.Zip(b).Select((t) =>
-            CompareDetail(new OriginTensor(t.Item1, string.Empty), new OriginTensor(t.Item2, string.Empty), GetChannelAxis(t.Item1.Shape)));
+            CompareDetail(new OriginTensor(t.First, string.Empty), new OriginTensor(t.Second, string.Empty), GetChannelAxis(t.First.Shape)));
     }
 
     public static DetailCompareResult CompareDetail(OriginValue a, OriginValue b, int channelAxis = 1)
@@ -249,7 +261,7 @@ public static class DetailComparator
         TensorsCompareForAccuracyLoss(pre.AsTensors(), post.AsTensors());
 
     public static AccuracyLossInfo[][] TensorsCompareForAccuracyLoss(OriginTensor[] pre, OriginTensor[] post) =>
-        pre.Zip(post).Select(tuple => TensorCompareForAccuracyLoss(tuple.Item1, tuple.Item2)).ToArray();
+        pre.Zip(post).Select(tuple => TensorCompareForAccuracyLoss(tuple.First, tuple.Second)).ToArray();
 
     public static AccuracyLossInfo[] TensorCompareForAccuracyLoss(OriginTensor pre, OriginTensor post)
     {
@@ -270,14 +282,14 @@ public static class DetailComparator
             }
 
             Console.WriteLine(string.Join(",", index.Select(x => x.ToString())));
-            return new AccuracyLossInfo(data.Item1, data.Item2, index.ToArray(), pre, post);
+            return new AccuracyLossInfo(data.First, data.Second, index.ToArray(), pre, post);
         }).ToArray();
     }
 
     public static void DumpCompareDetail(DetailCompareResult compareResult, string resultRoot, int count)
     {
         // todo: fix this
-        var (cosByChannel, lossInfo) = compareResult.Infos.Head();
+        var (cosByChannel, lossInfo) = compareResult.Infos.First();
 
         // todo: insert separator for channel or other
         WriteResult(Path.Join(resultRoot, $"cos_{count}"), cosByChannel);
@@ -341,7 +353,7 @@ public static class DetailComparator
 public class LazyCompartor
 {
     // count => Either<ErrorReason, CosSim>
-    private readonly Dictionary<int, LanguageExt.Either<string, float>> _error = new();
+    private readonly Dictionary<int, Either<string, float>> _error = new();
 
     public static Option<float> Compare(TensorValue pre, TensorValue post, float thresh)
     {
@@ -410,7 +422,7 @@ public class LazyCompartor
 
 public record DetailCompareResultInfo(float[] CosList, AccuracyLossInfo[] AccuracyLossInfos)
 {
-    public int[] Shape => AccuracyLossInfos.Head().Shape;
+    public int[] Shape => AccuracyLossInfos.First().Shape;
 
     public IEnumerable<CompareResultByChannel> Enumerable()
     {
@@ -434,7 +446,7 @@ public record DetailCompareResult(DetailCompareResultInfo[] Infos)
 
 public record CompareResultByChannel(float Cos, AccuracyLossInfo[] LossInfo)
 {
-    public int[] Shape => LossInfo.Head().Shape;
+    public int[] Shape => LossInfo.First().Shape;
 
     // todo: more analysis strategy
     public AccuracyLossInfo[] Losses => LossInfo.Where(deviation =>
@@ -482,14 +494,14 @@ public static class ComparatorInstance
         var resultRoot = PathJoinByCreate(cosRoot, "result");
         DetailComparator.GenerateFullCompareInfo(originData, runtimeData, resultRoot);
         var failedValues = originData.Zip(runtimeData).Where(tuple =>
-            Comparator.CosSimilarity(tuple.Item1.Value, tuple.Item2.Value)
+            Comparator.CosSimilarity(tuple.First.Value, tuple.Second.Value)
                 .All(cos => cos < threshold));
         var cosData = originData.Zip(runtimeData).Select(tuple =>
         {
-            var cos = Comparator.CosSimilarity(tuple.Item1.Value.AsTensor(), tuple.Item2.Value.AsTensor());
-            return (cos, tuple.Item1.FileName, tuple.Item2.FileName);
+            var cos = Comparator.CosSimilarity(tuple.First.Value.AsTensor(), tuple.Second.Value.AsTensor());
+            return (cos, tuple.First.FileName, tuple.Second.FileName);
         });
-        WriteResult(Path.Join(cosRoot, "ErrorPath"), failedValues.Select(tuple => tuple.Item1.Path).ToArray());
+        WriteResult(Path.Join(cosRoot, "ErrorPath"), failedValues.Select(tuple => tuple.First.Path).ToArray());
 
         // var cosByTensor = Comparator.CosSimilarity(originData.Select(x => x.AsTensor()).ToArray(), runtimeData.Select(x => x.AsTensor()).ToArray());
         WriteResult(Path.Join(cosRoot, $"!cos"), cosData.ToArray());

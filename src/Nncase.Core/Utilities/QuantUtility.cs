@@ -132,6 +132,20 @@ public static class QuantUtility
 
             if ((i + 1) % (weights.Length / channels) == 0)
             {
+                tmpMax = Math.Max(0, tmpMax);
+                tmpMin = Math.Min(0, tmpMin);
+                var r = tmpMax - tmpMin;
+                if (r == 0)
+                {
+                    r = 0.1f;
+                }
+                else if (r < 0.01f)
+                {
+                    r = 0.01f;
+                }
+
+                tmpMax = tmpMin + r;
+
                 minMaxArr.Add(tmpMin);
                 minMaxArr.Add(tmpMax);
             }

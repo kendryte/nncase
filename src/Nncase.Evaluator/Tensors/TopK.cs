@@ -38,7 +38,7 @@ public class TopKEvaluator : IEvaluator<TopK>, ITypeInferencer<TopK>, ICostEvalu
         return Visit(context, target, input, repeat);
     }
 
-    public Cost? Visit(ICostEvaluateContext context, TopK target)
+    public Cost Visit(ICostEvaluateContext context, TopK target)
     {
         var x = context.GetArgumentType<TensorType>(target, TopK.X);
         var k = context.GetArgumentType<TensorType>(target, TopK.K);
@@ -69,7 +69,6 @@ public class TopKEvaluator : IEvaluator<TopK>, ITypeInferencer<TopK>, ICostEvalu
         }
 
         // x: [a_1, a_2, ..., a_n, r]
-        _ = new Shape();
         Shape? shape;
 
         // [a_1, a_2, ..., a_{axis-1}, k, a_{axis+1}, ... a_n]

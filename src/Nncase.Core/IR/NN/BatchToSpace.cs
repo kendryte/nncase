@@ -15,7 +15,7 @@ namespace Nncase.IR.NN;
 /// BatchToSpace expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record BatchToSpace() : Op
+public sealed partial class BatchToSpace : Op
 {
     /// <summary>
     /// Gets input.

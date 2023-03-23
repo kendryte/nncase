@@ -5,11 +5,13 @@ using System;
 using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Toolkit.HighPerformance.Helpers;
 using NetFabric.Hyperlinq;
 using Nncase.Buffers;
 using Nncase.IR;
@@ -54,6 +56,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     public Tensor(Memory<T> buffer, ReadOnlySpan<int> dimensions)
         : base(DataType.FromType<T>(), dimensions)
     {
+        Trace.Assert(Length == buffer.Length);
         Buffer = buffer;
     }
 
@@ -364,7 +367,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
             return Equals(other);
         }
 
-        throw new ArgumentException("Cannot compare.");
+        return false;
     }
 
     /// <inheritdoc/>
@@ -391,9 +394,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     /// <inheritdoc/>
     public override int GetHashCode()
     {
-        HashCode hashcode = default;
-        hashcode.AddBytes(BytesBuffer);
-        return hashcode.ToHashCode();
+        return HashCode<T>.Combine(Buffer.Span);
     }
 
     IEnumerator<T> IEnumerable<T>.GetEnumerator()
@@ -488,14 +489,14 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     /// <inheritdoc/>
     private protected override int GetHashCode(IEqualityComparer comparer)
     {
-        int hashcode = 0;
-        var buffer = Buffer;
+        HashCode hashCode = default;
+        var buffer = Buffer.Span;
         for (int i = 0; i < buffer.Length; i++)
         {
-            hashcode ^= comparer.GetHashCode(buffer.Span[i]);
+            hashCode.Add(comparer.GetHashCode(buffer[i]));
         }
 
-        return hashcode;
+        return hashCode.ToHashCode();
     }
 
     private protected override IEnumerator GetEnumeratorCore()

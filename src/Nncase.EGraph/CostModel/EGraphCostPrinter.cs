@@ -17,14 +17,14 @@ using GiGraph.Dot.Types.Nodes;
 using GiGraph.Dot.Types.Records;
 using GiGraph.Dot.Types.Styling;
 using Nncase.IR;
+using Nncase.Passes;
 using Nncase.PatternMatch;
-using Nncase.Transform;
 
-namespace Nncase.Transform;
+namespace Nncase.Passes;
 
 public partial class EGraphPrinter
 {
-    internal static DotGraph DumpEgraphAsDot(EGraph eGraph, CostModel.EGraphCostModel costModel, EClass entry, Stream file)
+    internal static DotGraph DumpEgraphAsDot(IEGraph eGraph, CostModel.EGraphCostModel costModel, EClass entry, Stream file)
     {
         var printer = new EGraphPrinter(eGraph);
         printer.ConvertEGraphAsDot();

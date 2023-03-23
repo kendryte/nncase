@@ -55,7 +55,7 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
         return TypeInference.BroadcastType(x.DType, cond, x, y);
     }
 
-    public Cost? Visit(ICostEvaluateContext context, Where target)
+    public Cost Visit(ICostEvaluateContext context, Where target)
     {
         var cond = context.GetArgumentType<TensorType>(target, Where.Cond);
         var x = context.GetArgumentType<TensorType>(target, Where.X);

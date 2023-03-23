@@ -21,7 +21,7 @@ public static class TIRExtensions
     /// </summary>
     /// <param name="enumerable"> instance.</param>
     /// <returns> Sequential. </returns>
-    public static Sequential ToSequential(this IEnumerable<Expr> enumerable) => new Sequential(new IRArray<Expr>(enumerable));
+    public static Sequential ToSequential(this IEnumerable<Expr> enumerable) => new Sequential(enumerable.ToArray());
 
 #if false
     /// <summary>

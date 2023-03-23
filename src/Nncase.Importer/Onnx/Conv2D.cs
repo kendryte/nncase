@@ -89,7 +89,7 @@ namespace Nncase.Importer
 
         private Expr GetBias(NodeProto op, Expr weights, bool isConvTranspose = false)
         {
-            var biasSizeIndex = isConvTranspose ? 0 : 1;
+            var biasSizeIndex = isConvTranspose ? 1 : 0;
             return op.Input.Count > 2
                 ? GetInputExpr(op, 2)
                 : F.Tensors.Expand(0f, Util.ShapeIndex(weights, biasSizeIndex));

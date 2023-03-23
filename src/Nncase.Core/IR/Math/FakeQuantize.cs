@@ -9,7 +9,7 @@ namespace Nncase.IR.Math;
 /// Fake quantize expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record FakeQuantize(DataType TargetType) : Op
+public sealed partial class FakeQuantize : Op
 {
     /// <summary>
     /// Gets input.
@@ -20,6 +20,8 @@ public sealed record FakeQuantize(DataType TargetType) : Op
     /// Gets QuantParam.
     /// </summary>
     public static readonly ParameterInfo QuantParam = new(typeof(FakeQuantize), 1, "quantParam");
+
+    public DataType TargetType { get; }
 
     /// <inheritdoc/>
     public override string DisplayProperty() => $"{TargetType.GetCSharpName()}";

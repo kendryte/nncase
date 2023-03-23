@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System.Collections.Immutable;
 using Nncase.PatternMatch;
 using static Nncase.IR.TypePatternUtility;
 
@@ -10,7 +11,7 @@ namespace Nncase.IR.Tensors;
 /// LSTM expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record LSTM(LSTMDirection Direction, LSTMLayout Layout, string[] Activations) : Op
+public sealed partial class LSTM : Op
 {
     /// <summary>
     /// Gets x.
@@ -81,6 +82,12 @@ public sealed record LSTM(LSTMDirection Direction, LSTMLayout Layout, string[] A
     /// Gets output_size.
     /// </summary>
     public static readonly ParameterInfo OutputSize = new(typeof(LSTM), 13, "output_size");
+
+    public LSTMDirection Direction { get; }
+
+    public LSTMLayout Layout { get; }
+
+    public string[] Activations { get; }
 
     /// <inheritdoc/>
     public override string DisplayProperty() => $"LSTMDirection.{Direction}, LSTMLayout.{Layout}, {string.Join(", ", Activations.Select(s => "\"" + s + "\""))}";

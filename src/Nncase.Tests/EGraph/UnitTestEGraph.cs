@@ -8,8 +8,8 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using Nncase.IR;
 using Nncase.IR.Math;
+using Nncase.Passes;
 using Nncase.Tests.TestFixture;
-using Nncase.Transform;
 using Xunit;
 using static Nncase.IR.F.Math;
 
@@ -209,5 +209,19 @@ public class UnitTestEGraph : TestClassBase
                 Assert.Contains(enode, child.UsedBy);
             }
         }
+    }
+
+    [Fact]
+    public void TestLeafExprEqualityComparerFusion()
+    {
+        var lhs = new Var("lhs");
+        var rhs = new Var("rhs");
+        var f1 = new Fusion("MeshFunc", Callable.StackVMModuleKind, lhs + rhs, new[] { lhs, rhs });
+        var f2 = new Fusion("MeshFunc", Callable.StackVMModuleKind, lhs + rhs, new[] { lhs, rhs });
+        var f3 = new Fusion("MeshFunc", Callable.StackVMModuleKind, lhs - rhs, new[] { lhs, rhs });
+        Assert.True(LeafExprEqualityComparer.Instance.Equals(f1, f2));
+        Assert.Equal(LeafExprEqualityComparer.Instance.GetHashCode(f1), LeafExprEqualityComparer.Instance.GetHashCode(f2));
+        Assert.False(LeafExprEqualityComparer.Instance.Equals(f1, f3));
+        Assert.NotEqual(LeafExprEqualityComparer.Instance.GetHashCode(f1), LeafExprEqualityComparer.Instance.GetHashCode(f3));
     }
 }

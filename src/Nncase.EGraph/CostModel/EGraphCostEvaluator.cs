@@ -8,7 +8,7 @@ using System.Linq;
 using Nncase.CostModel;
 using Nncase.Evaluator;
 using Nncase.IR;
-using Nncase.Transform;
+using Nncase.Passes;
 
 namespace Nncase.CostModel;
 
@@ -161,7 +161,7 @@ internal sealed class EGraphCostEvaluator
                 Cost? newCost;
                 if (targetEnode.Expr is Op op)
                 {
-                    var context = new EGraphOpCostEvaluateContext(returnType, enode.Children.Skip(1).Select(x => x.CheckedType).ToArray());
+                    var context = new EGraphOpCostEvaluateContext(returnType, enode.Children.Skip(1).Select(x => x.CheckedType).ToArray(), enode.Children.Skip(1).ToArray());
                     newCost = CompilerServices.EvaluateOpCost(op, context);
                 }
                 else
@@ -280,11 +280,20 @@ internal sealed class EGraphCostEvaluator
     {
         private readonly IRType? _returnType;
         private readonly IRType?[] _argumentTypes;
+        private readonly EClass[] _arguments;
 
-        public EGraphOpCostEvaluateContext(IRType? returnType, IRType?[] argumentTypes)
+        public EGraphOpCostEvaluateContext(IRType? returnType, IRType?[] argumentTypes, EClass[] arguments)
         {
             _returnType = returnType;
             _argumentTypes = argumentTypes;
+            _arguments = arguments;
+        }
+
+        public T GetArgument<T>(Op op, ParameterInfo parameter)
+          where T : BaseFunction
+        {
+            System.Diagnostics.Trace.Assert(_arguments[parameter.Index].Nodes.Count == 1);
+            return (T)_arguments[parameter.Index].Nodes[0].Expr;
         }
 
         public T GetArgumentType<T>(Op op, ParameterInfo parameter)

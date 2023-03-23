@@ -31,7 +31,7 @@ public abstract class PatternVisitor<TExprPatternResult, TTypeResult> : PatternF
         if (!_patternMemo.TryGetValue(pattern, out var result))
         {
             Visit(pattern.Target);
-            foreach (var param in pattern.Parameters)
+            foreach (var param in pattern.Arguments)
             {
                 Visit(param);
             }
@@ -84,12 +84,6 @@ public abstract class PatternVisitor<TExprPatternResult, TTypeResult> : PatternF
     {
         if (!_patternMemo.TryGetValue(pattern, out var result))
         {
-            foreach (var param in pattern.Parameters)
-            {
-                Visit(param);
-            }
-
-            Visit(pattern.Body);
             result = VisitLeaf(pattern);
             _patternMemo.Add(pattern, result);
         }

@@ -5,10 +5,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
+using Nncase.Passes;
+using Nncase.Passes.Rules.Neutral;
 using Nncase.Quantization;
 using Nncase.Tests.TestFixture;
-using Nncase.Transform;
-using Nncase.Transform.Rules.Neutral;
 using Xunit;
 using static Nncase.IR.F.NN;
 
@@ -25,10 +25,10 @@ public class UnitTestAddRangeOfMarker : TestClassBase
         var output = leaky;
         var dumpVisitor = await TestAddRangeOfMarkerMainPassesAsync(input, output);
 
-        Assert.Equal(-1.0001221f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[2]).Value.ToArray<float>()[0]);
-        Assert.Equal(1.0001087f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[2]).Value.ToArray<float>()[1]);
-        Assert.Equal(-0.100067139f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[6]).Value.ToArray<float>()[0]);
-        Assert.Equal(1.00005388f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[6]).Value.ToArray<float>()[1]);
+        Assert.Equal(-1.0001221f, ((TensorConst)dumpVisitor.ExprMemo.Keys.ToList()[2]).Value.ToArray<float>()[0]);
+        Assert.Equal(1.0001087f, ((TensorConst)dumpVisitor.ExprMemo.Keys.ToList()[2]).Value.ToArray<float>()[1]);
+        Assert.Equal(-0.100067139f, ((TensorConst)dumpVisitor.ExprMemo.Keys.ToList()[6]).Value.ToArray<float>()[0]);
+        Assert.Equal(1.00005388f, ((TensorConst)dumpVisitor.ExprMemo.Keys.ToList()[6]).Value.ToArray<float>()[1]);
     }
 
     [Fact]
@@ -39,10 +39,10 @@ public class UnitTestAddRangeOfMarker : TestClassBase
         var output = relu6;
         var dumpVisitor = await TestAddRangeOfMarkerMainPassesAsync(input, output);
 
-        Assert.Equal(-1.0001221f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[2]).Value.ToArray<float>()[0]);
-        Assert.Equal(1.0001087f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[2]).Value.ToArray<float>()[1]);
-        Assert.Equal(-6.103435E-05f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[5]).Value.ToArray<float>()[0]);
-        Assert.Equal(1.0000478f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[5]).Value.ToArray<float>()[1]);
+        Assert.Equal(-1.0001221f, ((TensorConst)dumpVisitor.ExprMemo.Keys.ToList()[2]).Value.ToArray<float>()[0]);
+        Assert.Equal(1.0001087f, ((TensorConst)dumpVisitor.ExprMemo.Keys.ToList()[2]).Value.ToArray<float>()[1]);
+        Assert.Equal(-6.103435E-05f, ((TensorConst)dumpVisitor.ExprMemo.Keys.ToList()[5]).Value.ToArray<float>()[0]);
+        Assert.Equal(1.0000478f, ((TensorConst)dumpVisitor.ExprMemo.Keys.ToList()[5]).Value.ToArray<float>()[1]);
     }
 
     [Fact]
@@ -86,9 +86,7 @@ public class UnitTestAddRangeOfMarker : TestClassBase
 
     public sealed class DumpVisitor : ExprVisitor<int, IRType>
     {
-        public override int DefaultVisitLeaf(Expr expr) => 0;
-
-        public override object DefaultVisitLeaf(IVisitable visitable) => 0;
+        protected override int DefaultVisitLeaf(Expr expr) => 0;
     }
 
     internal sealed class SolidCalibrationDatasetProvider : ICalibrationDatasetProvider

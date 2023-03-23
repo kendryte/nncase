@@ -9,6 +9,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Xunit;
 
@@ -20,9 +21,20 @@ public class UnitTestExpression
     public void TestVarEqual()
     {
         var a = new Var("a", TensorType.Scalar(DataTypes.Float32));
-        var a1 = a with { };
-        Assert.Equal(a, a1);
-        Assert.Equal(a.GetHashCode(), a1.GetHashCode());
+        var a1 = a.With();
+        Assert.NotEqual(a, a1);
+        Assert.NotEqual(a.GetHashCode(), a1.GetHashCode());
+    }
+
+    [Fact]
+    public void TestNoneEqual()
+    {
+        var a = None.Default;
+        var b = a.With();
+        Assert.Equal(a, b);
+        Assert.Equal(a.GetHashCode(), b.GetHashCode());
+        Assert.False(object.ReferenceEquals(a, b));
+        Assert.False(object.ReferenceEquals(a, None.Default));
     }
 
     [Fact]
@@ -121,14 +133,14 @@ public class UnitTestExpression
         var b = a - 1;
         var f = new Function("main", b, new[] { a });
 
-        var a1 = a with { };
+        var a1 = a.With();
         var b1 = a1 - 1;
         var f1 = new Function("main", b1, new[] { a1 });
 
-        Assert.Equal(f, f1); // todo structual equal for function.
-        Assert.Equal(f.SchedResult, f1.SchedResult); // todo structual equal for function.
-        Assert.Equal(f.Body, f1.Body);
-        Assert.Equal(f.Parameters, f1.Parameters);
+        Assert.NotEqual(f, f1);
+        Assert.Equal(f.SchedResult, f1.SchedResult);
+        Assert.NotEqual(f.Body, f1.Body);
+        Assert.NotEqual(f.Parameters.ToArray(), f1.Parameters.ToArray());
         Assert.Equal(f.ParameterTypes, f1.ParameterTypes);
     }
 
@@ -222,6 +234,34 @@ public class UnitTestExpression
         var t = new Tensor<int>(new[] { 1, 2, 3, 4 }, new[] { 2, 2 });
         Assert.Equal(4, t.Length);
         Assert.Equal(2, t.Dimensions[0]);
+    }
+
+    [Fact]
+    public void TestConstBufferNotEqual()
+    {
+        var c = IR.F.Random.Normal(DataTypes.Float32, 1, 0, 0, new[] { 1, 16, 64, 400 }).Evaluate().AsTensor();
+        var ddr_ld_input = new TIR.BufferRegion(Nncase.TIR.T.ConstBuffer(Const.FromTensor(c), out _, "ddr_ld_input"), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
+        var ddr_ld_output = new TIR.BufferRegion(new TIR.PhysicalBuffer("ddr_ld_input", DataTypes.Float32, Schedule.MemoryLocation.Input, new[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new[] { 1, 16, 64, 400 }), 0, 0), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
+        Assert.NotEqual(ddr_ld_input.Buffer, ddr_ld_output.Buffer);
+        Assert.NotEqual(ddr_ld_input, ddr_ld_output);
+    }
+
+    [Fact]
+    public void TestBufferEqual()
+    {
+        var ddr_ld_input = new TIR.BufferRegion(new TIR.PhysicalBuffer("ddr_ld_input", DataTypes.Float32, Schedule.MemoryLocation.Input, new[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new[] { 1, 16, 64, 400 }), 0, 0), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
+        var ddr_ld_output = new TIR.BufferRegion(new TIR.PhysicalBuffer("ddr_ld_input", DataTypes.Float32, Schedule.MemoryLocation.Input, new[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new[] { 1, 16, 64, 400 }), 0, 0), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
+        Assert.Equal(ddr_ld_input.Buffer, ddr_ld_output.Buffer);
+        Assert.Equal(ddr_ld_input, ddr_ld_output);
+    }
+
+    [Fact]
+    public void TestBufferNotEqual()
+    {
+        var ddr_ld_input = new TIR.BufferRegion(new TIR.PhysicalBuffer("ddr_ld_input", DataTypes.Float32, Schedule.MemoryLocation.Input, new[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new[] { 1, 16, 64, 400 }), 0, 0), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
+        var glb_ld_output = new TIR.BufferRegion(new TIR.PhysicalBuffer("glb_ld_output", DataTypes.BFloat16, Schedule.MemoryLocation.Data, new[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new[] { 1, 16, 64, 400 }), 0, 0), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
+        Assert.False(ddr_ld_input.Buffer.Equals(glb_ld_output.Buffer));
+        Assert.False(ddr_ld_input.Equals(glb_ld_output));
     }
 
     [Fact]
@@ -427,7 +467,7 @@ public class UnitTestExpression
 
     private sealed class ExpressionTreeBuilder : ExprVisitor<Expression, Type>
     {
-        public override Expression VisitLeaf(Const expr)
+        protected override Expression VisitLeafConst(Const expr)
         {
             if (expr is TensorConst tc && tc.Value.Shape.IsScalar)
             {
@@ -437,7 +477,7 @@ public class UnitTestExpression
             throw new ArgumentOutOfRangeException(nameof(expr));
         }
 
-        public override Expression VisitLeaf(Var expr)
+        protected override Expression VisitLeafVar(Var expr)
         {
             if (expr.CheckedShape.IsScalar)
             {
@@ -447,7 +487,7 @@ public class UnitTestExpression
             throw new ArgumentOutOfRangeException(nameof(expr));
         }
 
-        public override Expression VisitLeaf(Call expr)
+        protected override Expression VisitLeafCall(Call expr)
         {
             switch (expr.Target)
             {
@@ -455,7 +495,7 @@ public class UnitTestExpression
 
                     return binary.BinaryOp switch
                     {
-                        BinaryOp.Add => Expression.Add(Visit(expr.Parameters[0]), Visit(expr.Parameters[1])),
+                        BinaryOp.Add => Expression.Add(Visit(expr.Arguments[0]), Visit(expr.Arguments[1])),
                         _ => throw new ArgumentOutOfRangeException(nameof(expr)),
                     };
                 default:
@@ -465,12 +505,12 @@ public class UnitTestExpression
             throw new ArgumentOutOfRangeException(nameof(expr));
         }
 
-        public override Expression VisitLeaf(Function expr)
+        protected override Expression VisitLeafFunction(Function expr)
         {
-            return Expression.Lambda(Visit(expr.Body), expr.Name, expr.Parameters.Select(v => (ParameterExpression)Visit(v)).ToArray());
+            return Expression.Lambda(Visit(expr.Body), expr.Name, expr.Parameters.AsValueEnumerable().Select(v => (ParameterExpression)Visit(v)).ToArray());
         }
 
-        public override Expression VisitLeaf(Op expr)
+        protected override Expression VisitLeafOp(Op expr)
         {
             return null!;
         }

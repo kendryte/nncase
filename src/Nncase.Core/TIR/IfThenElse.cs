@@ -13,14 +13,33 @@ namespace Nncase.TIR;
 /// <summary>
 /// if(xxx) then { zzz } else { yyy }.
 /// </summary>
-public sealed record IfThenElse(Expr Condition, Sequential Then, Sequential Else) : Expr
+public sealed class IfThenElse : Expr
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="IfThenElse"/> class.
-    /// ctor.
     /// </summary>
-    public IfThenElse(Expr condition, Sequential then)
-        : this(condition, then, new Sequential())
+    public IfThenElse(Expr condition, Sequential then, Sequential @else)
+        : base(new[] { condition, then, @else })
     {
     }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="IfThenElse"/> class.
+    /// </summary>
+    public IfThenElse(Expr condition, Sequential then)
+        : this(condition, then, new())
+    {
+    }
+
+    public Expr Condition => Operands[0];
+
+    public Sequential Then => (Sequential)Operands[1];
+
+    public Sequential Else => (Sequential)Operands[2];
+
+    public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
+        => functor.VisitIfThenElse(this, context);
+
+    public IfThenElse With(Expr? condition = null, Sequential? then = null, Sequential? @else = null)
+        => new IfThenElse(condition ?? Condition, then ?? Then, @else ?? Else);
 }

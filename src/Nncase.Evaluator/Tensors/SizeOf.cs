@@ -27,7 +27,7 @@ public class SizeOfEvaluator : IEvaluator<SizeOf>, ITypeInferencer<SizeOf>, ICos
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, SizeOf target)
+    public Cost Visit(ICostEvaluateContext context, SizeOf target)
     {
         return new()
         {

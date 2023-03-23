@@ -12,10 +12,10 @@ using System.Text;
 using System.Threading.Tasks;
 using Nncase;
 using Nncase.IR;
+using Nncase.Passes;
+using Nncase.Passes.Rules.Neutral;
 using Nncase.Quantization;
 using Nncase.Tests.TestFixture;
-using Nncase.Transform;
-using Nncase.Transform.Rules.Neutral;
 using Nncase.Utilities;
 using Xunit;
 using static Nncase.IR.F.NN;
@@ -39,6 +39,29 @@ public class UnitTestKLQuant : TestClassBase
         var qp = QuantUtility.GetQuantParam(range, 8, QuantMode.UnsignedMode);
         Assert.Equal(0.014035294f, qp.Scale);
         Assert.Equal(88, qp.ZeroPoint);
+    }
+
+    [Fact]
+    public void TestGetWeightsRangesByChannel()
+    {
+        Span<float> weightsValue = stackalloc float[16 * 3 * 3 * 3];
+        for (int i = 0; i < 16 * 3 * 3 * 3; i++)
+        {
+            weightsValue[i] = 1.0f;
+        }
+
+        List<float> byChannelRanges = QuantUtility.GetWeightsRangesByChannel(weightsValue, 16);
+        for (int i = 0; i < 16 * 2; i++)
+        {
+            if (i % 2 == 0)
+            {
+                Assert.Equal(0.0f, byChannelRanges[i]);
+            }
+            else
+            {
+                Assert.Equal(1.0f, byChannelRanges[i]);
+            }
+        }
     }
 
     [Fact]
@@ -91,27 +114,25 @@ public class UnitTestKLQuant : TestClassBase
         var dumpVisitor = new DumpVisitor();
         dumpVisitor.Visit(module.Functions[0]);
 
-        Assert.Equal(-1.0001221f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[2]).Value.ToArray<float>()[0]);
-        Assert.Equal(1.0001087f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[2]).Value.ToArray<float>()[1]);
-        Assert.Equal(-1.0001218f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[5]).Value.ToArray<float>()[0]);
-        Assert.Equal(0.9954922f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[5]).Value.ToArray<float>()[1]);
-        Assert.Equal(-8.882528f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[13]).Value.ToArray<float>()[0]);
-        Assert.Equal(9.717726f, ((TensorConst)dumpVisitor.ExpressionMemo.Keys.ToList()[13]).Value.ToArray<float>()[1]);
+        Assert.Equal(-1.0001221f, ((TensorConst)dumpVisitor.ExprMemo.Keys.ToList()[2]).Value.ToArray<float>()[0]);
+        Assert.Equal(1.0001087f, ((TensorConst)dumpVisitor.ExprMemo.Keys.ToList()[2]).Value.ToArray<float>()[1]);
+        Assert.Equal(-1.0001218f, ((TensorConst)dumpVisitor.ExprMemo.Keys.ToList()[5]).Value.ToArray<float>()[0]);
+        Assert.Equal(0.9954922f, ((TensorConst)dumpVisitor.ExprMemo.Keys.ToList()[5]).Value.ToArray<float>()[1]);
+        Assert.Equal(-8.882528f, ((TensorConst)dumpVisitor.ExprMemo.Keys.ToList()[13]).Value.ToArray<float>()[0]);
+        Assert.Equal(9.717726f, ((TensorConst)dumpVisitor.ExprMemo.Keys.ToList()[13]).Value.ToArray<float>()[1]);
     }
 
     private Expr Pad(int[][] p) => Const.FromTensor(Tensor.From<int>(p.SelectMany(i => i).ToArray(), new[] { 2, 2 }));
 
     public sealed class DumpVisitor : ExprVisitor<int, IRType>
     {
-        public override int DefaultVisitLeaf(Expr expr) => 0;
-
-        public override object DefaultVisitLeaf(IVisitable visitable) => 0;
-
         public int FoundOpCount<T>()
           where T : Op
         {
-            return ExpressionMemo.Keys.OfType<T>().Count();
+            return ExprMemo.Keys.OfType<T>().Count();
         }
+
+        protected override int DefaultVisitLeaf(Expr expr) => 0;
     }
 
     internal sealed class RandCalibrationDatasetProvider : ICalibrationDatasetProvider

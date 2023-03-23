@@ -5,13 +5,18 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reactive;
+using DryIoc.ImTools;
 using Microsoft.Extensions.DependencyInjection;
+using NetFabric.Hyperlinq;
 using Nncase.Diagnostics;
 using Nncase.IR;
+using Nncase.TIR;
+using Tensorflow.Contexts;
 
 namespace Nncase.Evaluator;
 
-internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>, IDisposable
+internal sealed class EvaluateVisitor : ExprVisitor<IValue, Unit>, IDisposable
 {
     private readonly EvaluateContext _context;
     private readonly IReadOnlyDictionary<Var, IValue> _varsValues;
@@ -20,12 +25,29 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>, IDisposable
 
     public EvaluateVisitor(IReadOnlyDictionary<Var, IValue> varsValues, Dictionary<Type, IEvaluator> evaluator_cache)
     {
-        _context = new EvaluateContext(ExpressionMemo);
+        _context = new EvaluateContext(ExprMemo);
         _evaluator_cache = evaluator_cache;
         _varsValues = varsValues;
         _dumpManager = new EvaluatorDumpManager(DumpScope.Current.CreateSubDummper("Evaluate", null), expr => _context.GetValue(expr).AsTensors());
         _dumpManager.RegisterDumpCallbacks(RegisterBeforeCallback, RegisterAfterCallback);
     }
+
+    private event Action<Expr>? BeforeCallAction;
+
+    private event Action<Expr>? AfterCallAction;
+
+    public void Dispose()
+    {
+        _dumpManager.Dispose();
+    }
+
+    protected override IValue VisitIf(If @if)
+    {
+        bool cond = Visit(@if.Condition).AsTensor().ToScalar<bool>();
+        return cond ? Visit(@if.Then) : Visit(@if.Else);
+    }
+
+    protected override IValue VisitLeafBaseFunction(BaseFunction expr) => NoneValue.Default;
 
     /// <inheritdoc/>
     public override IValue VisitLeaf(Call expr)
@@ -72,70 +94,105 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, IRType>, IDisposable
         return Visit(expr.Target);
     }
 
-    public override IValue VisitLeaf(Op expr)
+    /// <inheritdoc/>
+    protected override IValue VisitLeafConst(Const expr) => Value.FromConst(expr);
+
+    /// <inheritdoc/>
+    protected override IValue VisitLeafMarker(Marker expr) => ExprMemo[expr.Target];
+
+    /// <inheritdoc/>
+    protected override IValue VisitLeafNone(None expr) => NoneValue.Default;
+
+    /// <inheritdoc/>
+    protected override IValue VisitLeafTuple(IR.Tuple expr)
     {
-        // Value of Op is not needed in evaluate context.
-        return null!;
+        var fields = expr.Fields.AsValueEnumerable().Select(x => ExprMemo[x]);
+        var value = new TupleValue(fields.ToArray());
+        return value;
     }
 
-    public override IValue Visit(Function expr)
+    /// <inheritdoc/>
+    protected override IValue VisitLeafVar(Var expr)
     {
-        // Value of Function is not needed in evaluate context.
-        return null!;
-    }
-
-    public override IValue Visit(Fusion expr)
-    {
-        return null!;
-    }
-
-    public override IValue VisitLeaf(IR.Tuple expr)
-    {
-        var fields = expr.Fields.Select(x => Visit(x));
-        return new TupleValue(fields.ToArray());
-    }
-
-    public override IValue VisitLeaf(Var expr)
-    {
-        if (!_varsValues.TryGetValue(expr, out var result))
-        {
-            throw new ArgumentException($"Must Set Input For Var {expr.Name}!");
-        }
-
-        if (result is null)
+        if (!_varsValues.TryGetValue(expr, out var value))
         {
             throw new ArgumentException($"Must Set Input For Var {expr.Name}!");
         }
 
         if (expr.CheckedType is not AnyType)
         {
-            if (result.Type is TensorType resultType)
+            if (value.Type is TensorType resultType)
             {
-                if (expr.CheckedShape.IsUnranked)
+                if (expr.CheckedShape.IsRanked)
                 {
-                    return result;
-                }
+                    if (expr.CheckedDataType != resultType.DType)
+                    {
+                        throw new ArgumentException($"DataType mismatch. The Var {expr.Name} Require {expr.CheckedDataType} But Give {resultType.DType}");
+                    }
 
-                if (expr.CheckedDataType != resultType.DType)
-                {
-                    throw new ArgumentException($"DataType mismatch. The Var {expr.Name} Require {expr.CheckedDataType} But Give {resultType.DType}");
-                }
-
-                var s = expr.CheckedShape.Zip(resultType.Shape).ToArray();
-                var matchedShape = s.Aggregate(true, (b, dims) => b && (dims.First.IsUnknown || dims.Second.IsUnknown || dims.First == dims.Second));
-                if (!matchedShape)
-                {
-                    throw new ArgumentException(
-                        $"Shape mismatch. The Var {expr.Name} Require {expr.CheckedShape} But Give {resultType.Shape}");
+                    var s = expr.CheckedShape.Zip(resultType.Shape).ToArray();
+                    var matchedShape = s.Aggregate(true, (b, dims) => b && (dims.First.IsUnknown || dims.Second.IsUnknown || dims.First == dims.Second));
+                    if (!matchedShape)
+                    {
+                        throw new ArgumentException(
+                            $"Shape mismatch. The Var {expr.Name} Require {expr.CheckedShape} But Give {resultType.Shape}");
+                    }
                 }
             }
         }
 
-        return result;
+        return value;
     }
 
-    public void Dispose()
+    /// <inheritdoc/>
+    protected override IValue VisitCall(Call expr)
     {
-        _dumpManager.Dispose();
+        if (HasVisited(expr, out var result))
+        {
+            return result;
+        }
+
+        foreach (var param in expr.Arguments)
+        {
+            Visit(param);
+        }
+
+        _context.CurrentCall = expr;
+        BeforeCallAction?.Invoke(expr);
+        var value = MarkVisited(expr, VisitLeafCall(expr));
+        AfterCallAction?.Invoke(expr);
+        return value;
+    }
+
+    protected override IValue VisitLeafCall(Call expr)
+    {
+        return expr.Target switch
+        {
+            Op op => CompilerServices.EvaluateOp(op, _context, _evaluator_cache),
+            Function func => CompilerServices.Evaluate(func.Body, CreateFunctionEvaluateArguments(func.Parameters, expr.Arguments), _evaluator_cache),
+            Fusion { ModuleKind: "stackvm" } fusion => CompilerServices.Evaluate(fusion.Body, CreateFunctionEvaluateArguments(fusion.Parameters, expr.Arguments), _evaluator_cache),
+            _ => throw new NotImplementedException(expr.Target.ToString()),
+        };
+    }
+
+    private IReadOnlyDictionary<Var, IValue> CreateFunctionEvaluateArguments(ReadOnlySpan<Var> parameters, ReadOnlySpan<Expr> arguments)
+    {
+        var values = new Dictionary<Var, IValue>(_varsValues);
+        for (int i = 0; i < parameters.Length; i++)
+        {
+            values.Add(parameters[i], ExprMemo[arguments[i]]);
+        }
+
+        return values;
+    }
+
+    private void RegisterBeforeCallback(string name, Action<Expr> action)
+    {
+        BeforeCallAction += action;
+    }
+
+    private void RegisterAfterCallback(string name, Action<Expr> action)
+    {
+        AfterCallAction += action;
     }
 }

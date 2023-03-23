@@ -17,7 +17,7 @@ namespace Nncase.IR.Tensors;
 /// Broadcast expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Broadcast() : Op
+public sealed partial class Broadcast : Op
 {
     /// <summary>
     /// Gets input.

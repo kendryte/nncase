@@ -92,4 +92,14 @@ public static class NN
     /// create Erf call.
     /// </summary>
     public static Call Erf(Expr expr) => new Call(new Erf(), expr);
+
+    /// <summary>
+    /// create Gelu call.
+    /// </summary>
+    public static Call Gelu(Expr expr, Expr alpha) => new Call(new Gelu(), expr, alpha);
+
+    /// <summary>
+    /// create Swish call.
+    /// </summary>
+    public static Call Swish(Expr input) => new Call(new Swish(), input);
 }

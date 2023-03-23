@@ -33,7 +33,7 @@ public class QuantParamOfEvaluator : IEvaluator<QuantParamOf>, ITypeInferencer<Q
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, QuantParamOf target)
+    public Cost Visit(ICostEvaluateContext context, QuantParamOf target)
     {
         var inputType = context.GetArgumentType<TensorType>(target, QuantParamOf.Range);
         var outputType = context.GetReturnType<TensorType>();

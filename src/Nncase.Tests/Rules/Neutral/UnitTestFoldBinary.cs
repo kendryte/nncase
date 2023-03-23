@@ -12,8 +12,8 @@ using Nncase.IR;
 using Nncase.IR.F;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
-using Nncase.Transform;
-using Nncase.Transform.Rules.Neutral;
+using Nncase.Passes;
+using Nncase.Passes.Rules.Neutral;
 using Tensorflow.Operations.Initializers;
 using Xunit;
 using Math = Nncase.IR.F.Math;
@@ -21,7 +21,7 @@ using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestFoldBinary : TestClassBase
+public class UnitTestFoldBinary : TransformTestBase
 {
     public static IEnumerable<object[]> TestFoldNopBinaryNegativeData =>
       new[]
@@ -52,21 +52,8 @@ public class UnitTestFoldBinary : TestClassBase
     public void TestFoldNopBinaryNegative(BinaryOp binaryOp, int[] aShape, float bValue, int index)
     {
         var a = new Var();
-        var normal = new Dictionary<Var, IValue>();
-        normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, aShape).Evaluate());
-
         var rootPre = Math.Binary(binaryOp, Math.Binary(binaryOp, a, bValue), bValue);
-        var rootPost = CompilerServices.Rewrite(
-            rootPre,
-            new IRewriteRule[]
-            {
-                new FoldNopBinary(),
-            },
-            new());
-
-        // rootPre.InferenceType();
-        Assert.Equal(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre, normal), CompilerServices.Evaluate(rootPost, normal));
+        TestNotMatch<FoldNopBinary>(rootPre);
     }
 
     [Theory]
@@ -77,16 +64,6 @@ public class UnitTestFoldBinary : TestClassBase
         var normal = new Dictionary<Var, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, aShape).Evaluate());
         var rootPre = Math.Binary(binaryOp, Math.Binary(binaryOp, a, bValue), bValue);
-        var rootPost = CompilerServices.Rewrite(
-            rootPre,
-            new IRewriteRule[]
-            {
-                new FoldNopBinary(),
-            },
-            new());
-
-        // rootPre.InferenceType();
-        Assert.NotEqual(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre, normal), CompilerServices.Evaluate(rootPost, normal));
+        TestMatched<FoldNopBinary>(rootPre, normal);
     }
 }

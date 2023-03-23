@@ -57,6 +57,16 @@ public class UnitTestEvaluatorNN : TestClassBase
     }
 
     [Fact]
+    public void TestActivationSwish()
+    {
+        var input = OrtKI.Random(new long[] { 1, 3, 16, 16 });
+        var expect = input * OrtKI.Sigmoid(input);
+        var expr = IR.F.NN.Swish(input.ToTensor());
+        CompilerServices.InferenceType(expr);
+        Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
+    }
+
+    [Fact]
     public void TestActivationLeakyRelu()
     {
         var input = OrtKI.Random(new long[] { 1, 3, 16, 16 });
@@ -138,6 +148,17 @@ public class UnitTestEvaluatorNN : TestClassBase
         var input = OrtKI.Random(new long[] { 1, 3, 16, 16 });
         var expect = OrtKI.Erf(input);
         var expr = IR.F.NN.Erf(input.ToTensor());
+        CompilerServices.InferenceType(expr);
+        Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
+    }
+
+    [Fact]
+    public void TestActivationGelu()
+    {
+        var input = OrtKI.Random(new long[] { 1, 3, 16, 16 });
+        var scaledInput = OrtKI.Mul(0.5f, input);
+        var expect = OrtKI.Mul(0.5f, OrtKI.Mul(scaledInput, OrtKI.Add(OrtKI.Erf(OrtKI.Div(scaledInput, OrtKI.Sqrt(2f))), 1f)));
+        var expr = IR.F.NN.Gelu(input.ToTensor(), 0.5);
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }
@@ -479,6 +500,19 @@ public class UnitTestEvaluatorNN : TestClassBase
         var expr = NN.Pad(input.ToTensor(), nncasePads, Nncase.PadMode.Reflect, constant.ToTensor());
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
+    }
+
+    [Fact]
+    public void TestPadReflect2()
+    {
+        var input = new Var();
+        var feed = new Dictionary<Var, IValue>() {
+          { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 12, new long[] { 1, 3, 4, 5 }).Evaluate() },
+        };
+        var output = NN.Pad(IR.F.Math.Abs(input), Tensor.FromArray(new long[,] { { 1, 1 }, { -1, -1 }, { 1, 1 }, { 3, 3 } }), PadMode.Reflect, 0.0f);
+        CompilerServices.InferenceType(output);
+        var outputArray = output.Evaluate(feed).AsTensor().ToArray<float>();
+        Assert.Contains(outputArray, f => f > 0.0f);
     }
 
     [Fact]

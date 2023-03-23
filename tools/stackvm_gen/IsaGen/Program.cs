@@ -40,7 +40,7 @@ public class IsaExtractor
         _tensorInsts = (from t in typeof(Nncase.CoreApplicationPart).Assembly.ExportedTypes
                         where !t.IsAbstract && t.IsAssignableTo(typeof(Nncase.IR.Op))
                         where t.Namespace!.StartsWith("Nncase.IR.")
-                        where t.Namespace != "Nncase.IR.Buffer"
+                        where t.Namespace != "Nncase.IR.Buffers"
                         select t).OrderBy(x => x.Name).ToList();
     }
 
@@ -282,7 +282,7 @@ public class IsaExtractor
                 CppValueText: null,
                 Description: null,
                 IsEnum: true,
-                IsOpCode: false));
+                IsOpCode: true));
 
         foreach (var (m, f) in props)
         {

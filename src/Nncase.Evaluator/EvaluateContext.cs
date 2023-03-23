@@ -61,7 +61,7 @@ internal sealed class EvaluateContext : IEvaluateContext
     public IValue GetArgumentValue(Op op, ParameterInfo parameter)
     {
         var expr = op.GetType() == parameter.OwnerType
-            ? CurrentCall.Parameters[parameter.Index]
+            ? CurrentCall.Arguments[parameter.Index]
             : throw new ArgumentOutOfRangeException($"Operator {op} doesn't have parameter: {parameter.Name}.");
         return _exprMemo[expr];
     }

@@ -4,9 +4,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
+using TorchSharp.Modules;
 
 namespace Nncase.IR;
 
@@ -16,6 +19,7 @@ namespace Nncase.IR;
 public sealed class IRModule
 {
     private readonly List<BaseFunction> _functions;
+    private readonly ExprUser _exprUser = new();
     private int? _entryIndex;
 
     /// <summary>
@@ -26,6 +30,7 @@ public sealed class IRModule
     {
         _functions = new() { main };
         _entryIndex = 0;
+        main.AddUser(_exprUser);
     }
 
     /// <summary>
@@ -57,7 +62,9 @@ public sealed class IRModule
     /// <param name="function">Callable to add.</param>
     public void Add(BaseFunction function)
     {
+        CompilerServices.InferenceType(function);
         _functions.Add(function);
+        function.AddUser(_exprUser);
     }
 
     /// <summary>
@@ -67,47 +74,14 @@ public sealed class IRModule
     /// <param name="function">the entry function defination.</param>
     public void Replace(int index, BaseFunction function)
     {
-        var old = _functions[index];
-
-        var replacer = new FunctionReplacer(old, function);
-        for (int i = 0; i < _functions.Count; i++)
+        CompilerServices.InferenceType(function);
+        ref var old = ref CollectionsMarshal.AsSpan(_functions)[index];
+        if (old.IsAlive)
         {
-            replacer.Visit(_functions[i]);
+            old.ReplaceAllUsesWith(function);
+            old.DisposeIfNoUsers();
         }
 
-        for (int i = 0; i < _functions.Count; i++)
-        {
-            var originFunc = _functions[i];
-            if (replacer.ExpressionMemo.TryGetValue(originFunc, out var replace))
-            {
-                _functions[i] = (BaseFunction)replace;
-            }
-        }
-    }
-
-    /// <summary>
-    /// Replace the function call dependencer.
-    /// </summary>
-    private sealed class FunctionReplacer : DeepExprMutator
-    {
-        private readonly BaseFunction _original;
-        private readonly BaseFunction _replace;
-
-        public FunctionReplacer(BaseFunction original, BaseFunction replace)
-        {
-            _original = original;
-            _replace = replace;
-        }
-
-        public override Expr DefaultMutateLeaf(Expr expr)
-        {
-            if (expr is BaseFunction baseFunction
-                && object.ReferenceEquals(baseFunction, _original))
-            {
-                return _replace;
-            }
-
-            return expr;
-        }
+        old = function;
     }
 }

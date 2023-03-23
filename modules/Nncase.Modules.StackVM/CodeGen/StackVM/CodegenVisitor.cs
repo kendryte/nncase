@@ -5,9 +5,12 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
+using static Tensorboard.TensorShapeProto.Types;
 
 namespace Nncase.CodeGen.StackVM;
 
@@ -169,7 +172,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
 
     private StackVMEmitter Emitter => CurrentTextSnippet.Emitter;
 
-    public override TextSnippet VisitLeaf(Const expr)
+    protected override TextSnippet VisitLeafConst(Const expr)
     {
         if (expr is TensorConst tc)
         {
@@ -177,11 +180,18 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         }
         else
         {
-            return Visit(new IR.Tuple(((TupleConst)expr).Fields));
+            return Visit(new IR.Tuple(((TupleConst)expr).Value.Select(x => Const.FromValue(x)).ToArray()));
         }
     }
 
-    public override TextSnippet VisitLeaf(Var expr)
+    protected override TextSnippet VisitLeafNone(None expr)
+    {
+        var snippet = BeginTextSnippet(expr);
+        Emitter.LdNull();
+        return snippet;
+    }
+
+    protected override TextSnippet VisitLeafVar(Var expr)
     {
         var snippet = BeginTextSnippet(expr);
         var varIndex = ((Function)_function).Parameters.IndexOf(expr);
@@ -194,10 +204,10 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         return snippet;
     }
 
-    public override TextSnippet VisitLeaf(IR.Tuple expr)
+    protected override TextSnippet VisitLeafTuple(IR.Tuple expr)
     {
         var snippet = BeginTextSnippet(expr);
-        foreach (var field in expr.Fields.Reverse())
+        foreach (var field in expr.Fields.ToArray().Reverse())
         {
             var inputSnippet = Visit(field);
             inputSnippet.MaxUserParameters = Math.Max(inputSnippet.MaxUserParameters, expr.Fields.Count);
@@ -209,7 +219,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         return snippet;
     }
 
-    public override TextSnippet Visit(Function expr)
+    protected override TextSnippet VisitFunction(Function expr)
     {
         if (ReferenceEquals(expr, _function))
         {
@@ -221,7 +231,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         }
     }
 
-    public override TextSnippet Visit(PrimFunctionWrapper expr)
+    protected override TextSnippet VisitPrimFunctionWrapper(PrimFunctionWrapper expr)
     {
         if (ReferenceEquals(expr, _function))
         {
@@ -241,15 +251,15 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         }
     }
 
-    public override TextSnippet VisitLeaf(Op expr)
+    protected override TextSnippet VisitLeafOp(Op expr)
     {
         return null!;
     }
 
-    public override TextSnippet VisitLeaf(Call expr)
+    protected override TextSnippet VisitLeafCall(Call expr)
     {
         var snippet = BeginTextSnippet(expr);
-        foreach (var param in expr.Parameters.Reverse())
+        foreach (var param in expr.Arguments.ToArray().Reverse())
         {
             var paramSnippet = Visit(param);
             if (paramSnippet.BasicBlock == snippet.BasicBlock)
@@ -267,7 +277,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         if (expr.Target is CustomOp custom_op)
         {
             _context.AddCustomCallModule(custom_op.ModuleType);
-            Emitter.CusCall(custom_op.RegisteredName, custom_op.SerializeFields(), checked((ushort)expr.Parameters.Count));
+            Emitter.CusCall(custom_op.RegisteredName, custom_op.SerializeFields(), checked((ushort)expr.Arguments.Length));
         }
         else if (expr.Target is Op op)
         {
@@ -281,7 +291,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         else if (expr.Target is Function func)
         {
             LdFunctionId(func);
-            Emitter.ExtCall(checked((ushort)func.Parameters.Count), false);
+            Emitter.ExtCall(checked((ushort)func.Parameters.Length), false);
         }
         else
         {
@@ -291,7 +301,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         return snippet;
     }
 
-    public override TextSnippet Visit(If expr)
+    protected override TextSnippet VisitIf(If expr)
     {
         if (!ExpressionMemo.TryGetValue(expr, out var result))
         {
@@ -317,7 +327,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
     /// </summary>
     /// <param name="if">If expr.</param>
     /// <returns>TextSnippet.</returns>
-    public override TextSnippet VisitLeaf(If @if)
+    protected override TextSnippet VisitLeafIf(If @if)
     {
         var condSnippet = Visit(@if.Condition);
         condSnippet.Emitter.LdScalar();
@@ -449,24 +459,22 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
 
     private void LdShape(ReadOnlySpan<int> shape)
     {
-        foreach (var dim in shape)
+        for (int i = shape.Length - 1; i >= 0; i--)
         {
-            Emitter.LdcI4(dim);
+            Emitter.LdcI4(shape[i]);
         }
 
         Emitter.LdcI4(shape.Length);
-        Emitter.LdShape();
     }
 
     private void LdStrides(ReadOnlySpan<int> strides)
     {
-        foreach (var dim in strides)
+        for (int i = strides.Length - 1; i >= 0; i--)
         {
-            Emitter.LdcI4(dim);
+            Emitter.LdcI4(strides[i]);
         }
 
         Emitter.LdcI4(strides.Length);
-        Emitter.LdStrides();
     }
 
     private void LdDataType(DataType dataType)

@@ -10,14 +10,12 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Nncase.Diagnostics;
 using Nncase.IR;
-using Nncase.IR.Random;
-using Nncase.IR.Tensors;
+using Nncase.Passes;
+using Nncase.Passes.Transforms;
 using Nncase.PatternMatch;
 using Nncase.Tests.ReWriteTest;
 using Nncase.Tests.TestFixture;
 using Nncase.TIR;
-using Nncase.Transform;
-using Nncase.Transform.Passes;
 using Tensorboard;
 using Xunit;
 using static Nncase.IR.F.Math;
@@ -96,7 +94,7 @@ public sealed class UnitTestDumpper : TestClassBase
         Expr a = (Const)1 + 2;
         Expr b = (Const)1 << 2;
         Expr c = a * b;
-        var graph = new EGraph();
+        var graph = new EGraph(c);
         graph.Add(c);
         using var fs = Dumpper.OpenFile("example.dot");
         EGraphPrinter.DumpEgraphAsDot(graph, fs);
@@ -133,7 +131,7 @@ public sealed class UnitTestDumpper : TestClassBase
             pre,
             new IRewriteRule[]
             {
-                  new Transform.Rules.Lower.RemoveMarker(),
+                  new Passes.Rules.Lower.RemoveMarker(),
                   new TestMulToAdd(),
             },
             new());
@@ -164,14 +162,14 @@ public sealed class UnitTestDumpper : TestClassBase
                 Stack(new IR.Tuple(padW), 0)),
               0);
             var body = IR.F.NN.Pad(input, padding, PadMode.Constant, 0.0f);
-            main = new Function("main", body, ImmutableArray.Create(input));
+            main = new Function("main", body, input);
         }
 
         var pass = new ShapeInferPass { Name = $"ShapeInfer" };
 
         using (_ = new DumpScope("DisableEvaluator", DumpFlags.ImportOps | DumpFlags.EGraphCost | DumpFlags.Calibration | DumpFlags.Compile | DumpFlags.PassIR | DumpFlags.Rewrite))
         {
-            var post = (Function)await pass.RunAsync(main, new());
+            var post = (Function)await pass.RunAsync(main.Clone(), new());
         }
 
         Assert.False(Directory.Exists(Path.Join(Dumpper.Directory, "DisableEvaluator", "0_ShapeInfer", "main", "Run_0", "Evaluate")));
@@ -179,7 +177,7 @@ public sealed class UnitTestDumpper : TestClassBase
 
         using (_ = new DumpScope("DisableRewrite", DumpFlags.ImportOps | DumpFlags.EGraphCost | DumpFlags.Evaluator | DumpFlags.Calibration | DumpFlags.Compile | DumpFlags.PassIR))
         {
-            var post = (Function)await pass.RunAsync(main, new());
+            var post = (Function)await pass.RunAsync(main.Clone(), new());
         }
 
         Assert.True(Directory.Exists(Path.Join(Dumpper.Directory, "DisableRewrite", "0_ShapeInfer", "main", "Run_0", "Evaluate")));
@@ -214,11 +212,21 @@ public sealed class UnitTestDumpper : TestClassBase
         CompilerServices.DumpCSharpIR(main, string.Empty, Dumpper.Directory, false);
     }
 
+    [Fact]
+    public void TestDumpTIRFusion()
+    {
+        var lhs = new Var("lhs");
+        var main = T.PrimFunc("main", Callable.StackVMModuleKind).Body(
+          new Call(new TIRTest.MeshNet(), new Fusion("MeshFunc", lhs + 100, lhs), IR.F.Random.Normal(DataTypes.Float32, 0, 1, 123, new[] { 100 }))).Build();
+        Assert.True(CompilerServices.InferenceType(main));
+        CompilerServices.DumpIR(main, string.Empty, Dumpper.Directory);
+    }
+
     private async Task<Expr> RunShapeInferPass(string name, Expr expr, params Var[] parameters)
     {
         var f = new Function(name, expr, parameters);
         var result = ((Function)await new ShapeInferPass { Name = $"ShapeInfer_{name}" }.RunAsync(f, new())).Body;
-        Assert.True(CompilerServices.InferenceType(CompilerServices.InferenceType(f)));
+        Assert.True(CompilerServices.InferenceType(f));
         return result;
     }
 }

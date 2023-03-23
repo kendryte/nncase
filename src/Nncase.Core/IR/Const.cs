@@ -12,8 +12,20 @@ namespace Nncase.IR;
 /// <summary>
 /// Constant expression.
 /// </summary>
-public abstract record Const(IRType ValueType) : Expr
+public abstract class Const : Expr
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Const"/> class.
+    /// </summary>
+    /// <param name="valueType">Type of value.</param>
+    public Const(IRType valueType)
+        : base(Array.Empty<Expr>())
+    {
+        ValueType = valueType;
+    }
+
+    public IRType ValueType { get; }
+
     /// <summary>
     /// Create constant from a <see cref="byte"/>.
     /// </summary>
@@ -93,6 +105,12 @@ public abstract record Const(IRType ValueType) : Expr
     public static implicit operator Const(bool value) => FromTensor(Tensor.FromScalar(value));
 
     /// <summary>
+    /// Create constant from a <see cref="Utf8Char"/>.
+    /// </summary>
+    /// <param name="value">Value.</param>
+    public static implicit operator Const(Utf8Char value) => FromTensor(Tensor.FromScalar(value));
+
+    /// <summary>
     /// Create constant from <see cref="string"/>.
     /// </summary>
     /// <param name="value">Value.</param>
@@ -125,7 +143,7 @@ public abstract record Const(IRType ValueType) : Expr
         else
         {
             var tpv = (TupleValue)value;
-            return new TupleConst(tpv.Select(x => FromValue(x)).ToArray());
+            return new TupleConst(tpv);
         }
     }
 }

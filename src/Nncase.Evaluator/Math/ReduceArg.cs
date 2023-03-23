@@ -44,7 +44,7 @@ public class ReduceArgEvaluator : IEvaluator<ReduceArg>, ITypeInferencer<ReduceA
         return Visit(context, target, input);
     }
 
-    public Cost? Visit(ICostEvaluateContext context, ReduceArg target)
+    public Cost Visit(ICostEvaluateContext context, ReduceArg target)
     {
         var input = context.GetArgumentType<TensorType>(target, ReduceArg.Input);
         var ret = context.GetReturnType<TensorType>();

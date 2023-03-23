@@ -41,7 +41,7 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, Slice target)
+    public Cost Visit(ICostEvaluateContext context, Slice target)
     {
         var outputType = context.GetReturnType<TensorType>();
 

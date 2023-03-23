@@ -16,7 +16,7 @@ namespace Nncase.Evaluator.NN;
 public partial class CeluEvaluator : IEvaluator<Celu>, ITypeInferencer<Celu>, ICostEvaluator<Celu>
 {
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, Celu target)
+    public Cost Visit(ICostEvaluateContext context, Celu target)
     {
         var outputType = context.GetReturnType<TensorType>();
         return new()
@@ -53,7 +53,7 @@ public partial class CeluEvaluator : IEvaluator<Celu>, ITypeInferencer<Celu>, IC
 public partial class EluEvaluator : IEvaluator<Elu>, ITypeInferencer<Elu>, ICostEvaluator<Elu>
 {
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, Elu target)
+    public Cost Visit(ICostEvaluateContext context, Elu target)
     {
         var outputType = context.GetReturnType<TensorType>();
         return new()
@@ -96,7 +96,7 @@ public class HardSwishEvaluator : IEvaluator<HardSwish>, ITypeInferencer<HardSwi
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, HardSwish target)
+    public Cost Visit(ICostEvaluateContext context, HardSwish target)
     {
         var outputType = context.GetReturnType<TensorType>();
         return new()
@@ -133,7 +133,7 @@ public class LeakyReluEvaluator : IEvaluator<LeakyRelu>, ITypeInferencer<LeakyRe
         return Visit(input);
     }
 
-    public Cost? Visit(ICostEvaluateContext context, LeakyRelu target)
+    public Cost Visit(ICostEvaluateContext context, LeakyRelu target)
     {
         var outputType = context.GetReturnType<TensorType>();
         return new()
@@ -169,7 +169,7 @@ public class ReluEvaluator : IEvaluator<Relu>, ITypeInferencer<Relu>, ICostEvalu
         return Visit(input);
     }
 
-    public Cost? Visit(ICostEvaluateContext context, Relu target)
+    public Cost Visit(ICostEvaluateContext context, Relu target)
     {
         var inputType = context.GetArgumentType<TensorType>(target, Relu.Input);
         return CostUtility.GetActivationCost(inputType, CostUtility.GetCPUCyclesOfMax());
@@ -200,7 +200,7 @@ public class Relu6Evaluator : IEvaluator<Relu6>, ITypeInferencer<Relu6>, ICostEv
         return Visit(input);
     }
 
-    public Cost? Visit(ICostEvaluateContext context, Relu6 target)
+    public Cost Visit(ICostEvaluateContext context, Relu6 target)
     {
         var inputType = context.GetArgumentType<TensorType>(target, Relu6.Input);
         return CostUtility.GetActivationCost(inputType, CostUtility.GetCPUCyclesOfMax());
@@ -234,7 +234,7 @@ public class SeluEvaluator : IEvaluator<Selu>, ITypeInferencer<Selu>, ICostEvalu
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, Selu target)
+    public Cost Visit(ICostEvaluateContext context, Selu target)
     {
         var outputType = context.GetReturnType<TensorType>();
         return new()
@@ -271,7 +271,7 @@ public class SigmoidEvaluator : IEvaluator<Sigmoid>, ITypeInferencer<Sigmoid>, I
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, Sigmoid target)
+    public Cost Visit(ICostEvaluateContext context, Sigmoid target)
     {
         var ret = context.GetReturnType<TensorType>();
         var macPerElement = 3;
@@ -306,7 +306,7 @@ public class HardSigmoidEvaluator : IEvaluator<HardSigmoid>, ITypeInferencer<Har
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, HardSigmoid target)
+    public Cost Visit(ICostEvaluateContext context, HardSigmoid target)
     {
         var outputType = context.GetReturnType<TensorType>();
         return new()
@@ -344,7 +344,7 @@ public class PReluEvaluator : IEvaluator<PRelu>, ITypeInferencer<PRelu>, ICostEv
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, PRelu target)
+    public Cost Visit(ICostEvaluateContext context, PRelu target)
     {
         var outputType = context.GetReturnType<TensorType>();
         return new()
@@ -367,9 +367,9 @@ public class PReluEvaluator : IEvaluator<PRelu>, ITypeInferencer<PRelu>, ICostEv
 public class ErfEvaluator : IEvaluator<Erf>, ITypeInferencer<Erf>, ICostEvaluator<Erf>
 {
     /// <inheritdoc/>
-    public IValue Visit(IEvaluateContext context, Erf sigmoid)
+    public IValue Visit(IEvaluateContext context, Erf erf)
     {
-        var input = context.GetOrtArgumentValue(sigmoid, Erf.Input);
+        var input = context.GetOrtArgumentValue(erf, Erf.Input);
         return OrtKI.Erf(input).ToValue();
     }
 
@@ -381,13 +381,90 @@ public class ErfEvaluator : IEvaluator<Erf>, ITypeInferencer<Erf>, ICostEvaluato
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, Erf target)
+    public Cost Visit(ICostEvaluateContext context, Erf target)
     {
         var outputType = context.GetReturnType<TensorType>();
         return new()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(outputType),
             [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
+        };
+    }
+
+    private IRType Visit(TensorType input)
+    {
+        return input;
+    }
+}
+
+/// <summary>
+/// Evaluator for <see cref="Sigmoid"/>.
+/// </summary>
+public class SwishEvaluator : IEvaluator<Swish>, ITypeInferencer<Swish>, ICostEvaluator<Swish>
+{
+    /// <inheritdoc/>
+    public IValue Visit(IEvaluateContext context, Swish swish)
+    {
+        var input = context.GetOrtArgumentValue(swish, Swish.Input);
+        return OrtKI.Mul(OrtKI.Sigmoid(input), input).ToValue();
+    }
+
+    /// <inheritdoc/>
+    public IRType Visit(ITypeInferenceContext context, Swish target)
+    {
+        var input = context.CheckArgumentType<TensorType>(target, Swish.Input);
+        return Visit(input);
+    }
+
+    /// <inheritdoc/>
+    public Cost Visit(ICostEvaluateContext context, Swish target)
+    {
+        var outputType = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(outputType),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
+        };
+    }
+
+    private IRType Visit(TensorType input)
+    {
+        return input;
+    }
+}
+
+/// <summary>
+/// Evaluator for <see cref="Gelu"/>.
+/// </summary>
+public class GeluEvaluator : IEvaluator<Gelu>, ITypeInferencer<Gelu>, ICostEvaluator<Gelu>
+{
+    /// <inheritdoc/>
+    public IValue Visit(IEvaluateContext context, Gelu gelu)
+    {
+        var input = context.GetOrtArgumentValue(gelu, Gelu.Input);
+        var alpha = context.GetArgumentValueAsScalar<float>(gelu, Gelu.Alpha);
+
+        var scaledInput = OrtKI.Mul(alpha, input);
+        return OrtKI.Mul(0.5f, OrtKI.Mul(scaledInput, OrtKI.Add(OrtKI.Erf(OrtKI.Div(scaledInput, OrtKI.Sqrt(2f))), 1f))).ToValue();
+    }
+
+    /// <inheritdoc/>
+    public IRType Visit(ITypeInferenceContext context, Gelu target)
+    {
+        var input = context.CheckArgumentType<TensorType>(target, Gelu.Input);
+        return Visit(input);
+    }
+
+    /// <inheritdoc/>
+    public Cost Visit(ICostEvaluateContext context, Gelu target)
+    {
+        var outputType = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(outputType),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, (CostUtility.GetCPUCyclesOfBinary(BinaryOp.Mul) * 3) + (CostUtility.GetCPUCyclesOfBinary(BinaryOp.Div) * 2) + CostUtility.GetCPUCyclesOfBinary(BinaryOp.Add)),
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
         };
     }

@@ -98,14 +98,14 @@ public class UnitTestEvaluatorTensors : TestClassBase
     [Fact]
     public void TestConcat2()
     {
-        var a = Const.FromTensor(Tensor.From<int>(Enumerable.Range(0, 12).ToArray(), new Shape(new[] { 1, 3, 4 })));
-        var b = Const.FromTensor(Tensor.From<int>(new int[12], new Shape(new[] { 1, 3, 4 })));
-        var inputList = new TupleConst(ImmutableArray.Create<Const>(a, b));
+        var a = Tensor.From<int>(Enumerable.Range(0, 12).ToArray(), new Shape(new[] { 1, 3, 4 }));
+        var b = Tensor.From<int>(new int[12], new Shape(new[] { 1, 3, 4 }));
+        var inputList = new TupleConst(Value.FromTensors(a, b));
         var expr = Tensors.Concat(inputList, 0);
         CompilerServices.InferenceType(expr);
 
-        var tA = a.Value.ToOrtTensor();
-        var tB = b.Value.ToOrtTensor();
+        var tA = a.ToOrtTensor();
+        var tB = b.ToOrtTensor();
 
         Assert.Equal(
             OrtKI.Concat(new[] { tA, tB }, 0),

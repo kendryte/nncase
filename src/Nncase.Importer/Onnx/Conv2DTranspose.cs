@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using LanguageExt.UnsafeValueAccess;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
@@ -84,7 +85,7 @@ namespace Nncase.Importer
                 outShape.Add(ComputeOutSize(iW, wW, strides, outPadding, paddings, dilations, 1));
             }
 
-            return F.Tensors.Stack(new IR.Tuple(outShape), 0);
+            return F.Tensors.Stack(new IR.Tuple(CollectionsMarshal.AsSpan(outShape)), 0);
         }
     }
 }

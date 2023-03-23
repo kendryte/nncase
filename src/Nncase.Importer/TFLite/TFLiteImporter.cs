@@ -92,7 +92,7 @@ public sealed partial class TFLiteImporter : BaseImporter
     {
         var outputs = (from o in _subGraph.GetOutputsBytes().AsValueEnumerable()
                        select _outputTensors[o]).ToArray();
-        var outputTuple = new IR.Tuple(ImmutableArray.Create(outputs));
+        var outputTuple = new IR.Tuple(outputs);
         return outputTuple;
     }
 

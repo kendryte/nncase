@@ -34,7 +34,7 @@ public class PatternGenerator : IIncrementalGenerator
 
     private static bool IsSyntaxTargetForGeneration(SyntaxNode node)
     {
-        return node is RecordDeclarationSyntax { BaseList: BaseListSyntax baseList } record && record.AttributeLists.Count == 1 && baseList.Types.Count == 1;
+        return node is ClassDeclarationSyntax { BaseList: BaseListSyntax baseList } @class && @class.AttributeLists.Count >= 1 && baseList.Types.Count == 1;
     }
 
     private static void Execute(SourceProductionContext context, ImmutableArray<GenerateCandidate> receiveCandidates)
@@ -182,16 +182,19 @@ new VArgsPattern( new [] {{ {inputs} }}, null ),
     {
         _opSymobl ??= context.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.IR.Op");
 
-        var recordDeclaration = (RecordDeclarationSyntax)context.Node;
-        var op = context.SemanticModel.GetDeclaredSymbol(recordDeclaration);
+        var classDeclaration = (ClassDeclarationSyntax)context.Node;
+        var op = context.SemanticModel.GetDeclaredSymbol(classDeclaration);
 
         if (op!.BaseType.IsInheritFrom(_opSymobl) &&
             op!.GetAttributes().Any(attr => attr!.AttributeClass!.Name == "PatternFunctionalGeneratorAttribute"))
         {
-            IParameterSymbol[] attrParams = recordDeclaration.ParameterList is null ?
-                    new IParameterSymbol[] { } :
-                    (from p in recordDeclaration.ParameterList.Parameters
-                     select context.SemanticModel.GetDeclaredSymbol(p)!).ToArray();
+            IPropertySymbol[] attrParams =
+                (from m in classDeclaration.Members.OfType<PropertyDeclarationSyntax>()
+                 where m.Modifiers.Any(SyntaxKind.PublicKeyword)
+                 && m.AccessorList is { Accessors: { Count: 1 } accessors }
+                 && accessors[0].IsKind(SyntaxKind.GetAccessorDeclaration)
+                 && accessors[0].SemicolonToken.IsKind(SyntaxKind.SemicolonToken)
+                 select context.SemanticModel.GetDeclaredSymbol(m)!).ToArray();
             var exprParams = op.GetMembers()
                 .OfType<IFieldSymbol>()
                 .Where(f => f.Type.Name == "ParameterInfo")
@@ -221,7 +224,7 @@ internal class UsingComparer : IEqualityComparer<UsingDirectiveSyntax>
 
 internal class GenerateCandidate
 {
-    public GenerateCandidate(INamedTypeSymbol syb, IParameterSymbol[] attrParams, ISymbol[] exprParams, UsingDirectiveSyntax[] usings)
+    public GenerateCandidate(INamedTypeSymbol syb, IPropertySymbol[] attrParams, ISymbol[] exprParams, UsingDirectiveSyntax[] usings)
     {
         Op = syb;
         AttrParams = attrParams;
@@ -231,7 +234,7 @@ internal class GenerateCandidate
 
     public INamedTypeSymbol Op { get; }
 
-    public IParameterSymbol[] AttrParams { get; }
+    public IPropertySymbol[] AttrParams { get; }
 
     public ISymbol[] ExprParams { get; }
 

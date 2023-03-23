@@ -16,7 +16,7 @@ namespace Nncase.IR.Math;
 /// Condition operation.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Condition() : Op
+public sealed partial class Condition : Op
 {
     /// <summary>
     /// Gets Condition.

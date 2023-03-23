@@ -2,6 +2,8 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Numerics;
+using System.Runtime.Intrinsics.X86;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
@@ -20,9 +22,9 @@ public class RangeOfEvaluator : IEvaluator<RangeOf>, ITypeInferencer<RangeOf>, I
         var input = context.GetArgumentValueAsTensor<float>(target, RangeOf.Input);
         var min = float.MaxValue;
         var max = float.MinValue;
-        foreach (var f in input)
+        foreach (var f in input.Buffer.Span)
         {
-            if (!float.IsNaN(f) && !float.IsInfinity(f))
+            if (float.IsFinite(f))
             {
                 min = System.Math.Min(min, f);
                 max = System.Math.Max(max, f);

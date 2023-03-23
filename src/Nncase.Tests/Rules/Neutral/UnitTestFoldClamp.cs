@@ -9,15 +9,15 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR.F;
-using Nncase.Transform;
-using Nncase.Transform.Rules.Neutral;
+using Nncase.Passes;
+using Nncase.Passes.Rules.Neutral;
 using Xunit;
 using Math = Nncase.IR.F.Math;
 using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestFoldClamp : TestClassBase
+public class UnitTestFoldClamp : TransformTestBase
 {
     public static IEnumerable<object[]> TestFoldNopClampPositiveData =>
         new[]
@@ -41,9 +41,7 @@ public class UnitTestFoldClamp : TestClassBase
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 8, 8 });
         var rootPre = Math.Clamp(a, min, max);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopClamp() }, new());
-        Assert.NotEqual(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
+        TestMatched<FoldNopClamp>(rootPre);
     }
 
     [Theory]
@@ -52,9 +50,6 @@ public class UnitTestFoldClamp : TestClassBase
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 8, 8 });
         var rootPre = Math.Clamp(a, min, max);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopClamp() }, new());
-
-        Assert.Equal(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
+        TestNotMatch<FoldNopClamp>(rootPre);
     }
 }

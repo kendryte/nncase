@@ -9,15 +9,15 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR.F;
-using Nncase.Transform;
-using Nncase.Transform.Rules.Neutral;
+using Nncase.Passes;
+using Nncase.Passes.Rules.Neutral;
 using Xunit;
 using Math = Nncase.IR.F.Math;
 using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestFoldReshape : TestClassBase
+public class UnitTestFoldReshape : TransformTestBase
 {
     public static IEnumerable<object[]> TestFoldNopReshapePositiveData =>
         new[]
@@ -47,10 +47,7 @@ public class UnitTestFoldReshape : TestClassBase
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Reshape(a, newShape);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopReshape() }, new());
-
-        Assert.NotEqual(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
+        TestMatched<FoldNopReshape>(rootPre);
     }
 
     [Theory]
@@ -59,10 +56,7 @@ public class UnitTestFoldReshape : TestClassBase
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Reshape(a, newShape);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldNopReshape() }, new());
-
-        Assert.Equal(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
+        TestNotMatch<FoldNopReshape>(rootPre);
     }
 
     [Theory]
@@ -71,9 +65,6 @@ public class UnitTestFoldReshape : TestClassBase
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Reshape(Tensors.Reshape(a, newShape1), newShape2);
-        var rootPost = CompilerServices.Rewrite(rootPre, new[] { new FoldTwoReshapes() }, new());
-
-        Assert.NotEqual(rootPre, rootPost);
-        Assert.Equal(CompilerServices.Evaluate(rootPre), CompilerServices.Evaluate(rootPost));
+        TestMatched<FoldTwoReshapes>(rootPre);
     }
 }

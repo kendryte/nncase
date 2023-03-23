@@ -65,12 +65,12 @@ internal sealed class RuleGenerator : IIncrementalGenerator
 
     private RuleCandidate? GetSemanticTargetForGeneration(GeneratorSyntaxContext ctx)
     {
-        IRewriteRuleSymbol ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Transform.IRewriteRule")!;
-        QuantRuleSymbol ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Transform.QuantRule")!;
+        IRewriteRuleSymbol ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Passes.IRewriteRule")!;
+        QuantRuleSymbol ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Passes.QuantRule")!;
         ExprSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.IR.Expr");
         TensorSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Tensor");
         IMatchResultSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.PatternMatch.IMatchResult");
-        RunPassContextSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Transform.RunPassContext");
+        RunPassContextSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Passes.RunPassContext");
 
         var classDeclaration = (ClassDeclarationSyntax)ctx.Node;
         var classSymbol = ctx.SemanticModel.GetDeclaredSymbol(classDeclaration);
@@ -194,9 +194,9 @@ internal sealed class RuleGenerator : IIncrementalGenerator
             statements.Add(
               ParseStatement($"return {cand.MethodSymbol.Name}({string.Join(",", cand.MethodSymbol.Parameters.Select(p => p.Name))});"));
 
-            var modifiers = cand.ClassSymobl.Interfaces is var interfaces && interfaces.Length == 1 && SymbolEqualityComparer.Default.Equals(interfaces[0], IRewriteRuleSymbol)
-                ? TokenList(Token(SyntaxKind.PublicKeyword).WithTrailingTrivia(ElasticSpace))
-                : TokenList(Token(SyntaxKind.PublicKeyword).WithTrailingTrivia(ElasticSpace), Token(SyntaxKind.OverrideKeyword).WithTrailingTrivia(ElasticSpace));
+            var modifiers = cand.ClassSymobl.BaseType is INamedTypeSymbol baseType && baseType.SpecialType != SpecialType.System_Object
+                ? TokenList(Token(SyntaxKind.PublicKeyword).WithTrailingTrivia(ElasticSpace), Token(SyntaxKind.OverrideKeyword).WithTrailingTrivia(ElasticSpace))
+                : TokenList(Token(SyntaxKind.PublicKeyword).WithTrailingTrivia(ElasticSpace));
 
             // 2. consturct wrapper method.
             var method = MethodDeclaration(ParseTypeName("Nncase.IR.Expr?"), Identifier("GetReplace").WithLeadingTrivia(ElasticSpace))

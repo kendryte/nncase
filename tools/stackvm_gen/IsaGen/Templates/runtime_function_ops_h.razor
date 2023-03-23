@@ -23,12 +23,6 @@
  * limitations under the License.
  */
 
-@foreach (var inst in Model.Instructions.SelectMany(x => x.Value))
-{
-    var name = inst.CppName.ToLowerInvariant().Replace('.', '_');
-@:result<void> visit(const @(name)_op_t &op) noexcept override;
-}
-
 @foreach (var inst in Model.TensorInstructions.SelectMany(x => x.Value).OrderBy(x => x.CppName))
 {
     var name = "tensor_" + inst.CppName.ToLowerInvariant().Replace('.', '_');

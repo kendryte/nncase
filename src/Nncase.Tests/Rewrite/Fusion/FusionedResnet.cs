@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Nncase.IR;
-using Nncase.Transform;
+using Nncase.Passes;
 using Xunit;
 using static Nncase.IR.F.Tensors;
 using static Nncase.PatternMatch.Utility;

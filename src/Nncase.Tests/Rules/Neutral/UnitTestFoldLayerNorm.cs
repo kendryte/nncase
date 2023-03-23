@@ -10,9 +10,9 @@ using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
 using Nncase.IR.Random;
+using Nncase.Passes;
+using Nncase.Passes.Rules.Neutral;
 using Nncase.Tests.TestFixture;
-using Nncase.Transform;
-using Nncase.Transform.Rules.Neutral;
 using Xunit;
 using Random = Nncase.IR.F.Random;
 
@@ -23,9 +23,9 @@ public class UnitTestFoldLayerNorm : TransformTestBase
 {
     public static TheoryData<int[]> FoldLayerNormData => new()
     {
-         new[] { 1, 3, 16, 16 },
-         new[] { 1, 2, 4, 8 },
-         new[] { 1, 1, 5, 5 },
+        new[] { 1, 3, 16, 16 },
+        new[] { 1, 2, 4, 8 },
+        new[] { 1, 1, 5, 5 },
     };
 
     [Theory]
@@ -83,9 +83,13 @@ public class UnitTestFoldLayerNorm : TransformTestBase
             rootPre = v11;
         }
 
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[] { new FoldLayerNormPattern1(), new FoldConstCall() }, new());
-
-        Assert.Equal(rootPre, rootPost);
+        TestNotMatch(
+            rootPre,
+            new IRewriteRule[]
+            {
+                new FoldLayerNormPattern1(),
+                new FoldConstCall(),
+            });
     }
 
     [Theory]
@@ -139,9 +143,13 @@ public class UnitTestFoldLayerNorm : TransformTestBase
             rootPre = v11;
         }
 
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[] { new FoldLayerNormPattern2(), new FoldConstCall() }, new());
-
-        Assert.Equal(rootPre, rootPost);
+        TestNotMatch(
+            rootPre,
+            new IRewriteRule[]
+            {
+                new FoldLayerNormPattern2(),
+                new FoldConstCall(),
+            });
     }
 
     [Theory]
@@ -199,12 +207,12 @@ public class UnitTestFoldLayerNorm : TransformTestBase
             rootPre = v11;
         }
 
-        var rootPost = CompilerServices.Rewrite(rootPre, new IRewriteRule[] { new FoldLayerNormPattern3() }, new());
-
-#if DEBUG
-        Dumpper.DumpIR(rootPost, "post");
-#endif
-
-        Assert.Equal(rootPre, rootPost);
+        TestNotMatch(
+            rootPre,
+            new IRewriteRule[]
+            {
+                new FoldLayerNormPattern3(),
+                new FoldConstCall(),
+            });
     }
 }

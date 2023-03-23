@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
@@ -105,7 +106,7 @@ internal class BlockBuilder : IBlockBuilder
 
     public Block Build()
     {
-        return new(_name, Sequential.Flatten(_body), Sequential.Flatten(_init), new(_iterVars), new(_reads), new(_writes), new(_allocations), _predicate ?? true);
+        return new(_name, Sequential.Flatten(CollectionsMarshal.AsSpan(_body)), Sequential.Flatten(CollectionsMarshal.AsSpan(_init)), CollectionsMarshal.AsSpan(_iterVars), CollectionsMarshal.AsSpan(_reads), CollectionsMarshal.AsSpan(_writes), CollectionsMarshal.AsSpan(_allocations), _predicate ?? true);
     }
 
     public IBlockBuilder Alloc(params object[] buffers)
