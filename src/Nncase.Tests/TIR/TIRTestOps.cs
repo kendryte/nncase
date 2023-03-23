@@ -34,3 +34,22 @@ public sealed class LoadTEvaluator : Evaluator.ITypeInferencer<LoadT>
 {
     public IRType Visit(ITypeInferenceContext context, LoadT target) => TupleType.Void;
 }
+
+public sealed class MeshNet : Op
+{
+    public static readonly ParameterInfo MeshFunc = new(typeof(MeshNet), 0, "meshFunc");
+
+    public static readonly ParameterInfo Input = new(typeof(MeshNet), 1, "input", TypePatternUtility.IsTensor());
+
+    public override bool CanFoldConstCall => false;
+}
+
+public sealed class MeshNetEvaluator : Evaluator.ITypeInferencer<MeshNet>, IOpPrinter<MeshNet>
+{
+    public IRType Visit(ITypeInferenceContext context, MeshNet target) => TupleType.Void;
+
+    public string Visit(IIRPrinterContext context, MeshNet target, bool iLmode)
+    {
+        return $"I.MeshNet({context.GetArgument(target, MeshNet.MeshFunc).Name}, {context.GetArgument(target, MeshNet.Input)})";
+    }
+}

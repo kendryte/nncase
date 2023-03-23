@@ -15,5 +15,6 @@ internal sealed class TestsModule : IApplicationPart
     {
         registrator.RegisterManyInterface<TIRTest.ExtraWEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<TIRTest.LoadTEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<TIRTest.MeshNetEvaluator>(reuse: Reuse.Singleton);
     }
 }

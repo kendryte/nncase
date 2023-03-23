@@ -33,4 +33,14 @@ public interface ICostEvaluateContext
     /// <returns>Casted argument type.</returns>
     public T GetArgumentType<T>(Op op, ParameterInfo parameter)
      where T : IRType;
+
+    /// <summary>
+    /// Get base function argument.
+    /// </summary>
+    /// <typeparam name="T">Argument type.</typeparam>
+    /// <param name="op">Operator.</param>
+    /// <param name="parameter">Parameter.</param>
+    /// <returns>Casted argument type.</returns>
+    public T GetArgument<T>(Op op, ParameterInfo parameter)
+      where T : BaseFunction;
 }
