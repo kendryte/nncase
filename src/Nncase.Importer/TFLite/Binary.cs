@@ -27,20 +27,12 @@ namespace Nncase.Importer.TFLite
         private Expr VisitFloorDiv(in tflite.Operator op)
         {
             (var lhs, var rhs) = GetInputExprs(op, 0, 1);
-
-            lhs.GetMetadata().SetOutPutsNames(new List<string> { GetInputTensor(op, 0).Name });
-            rhs.GetMetadata().SetOutPutsNames(new List<string> { GetInputTensor(op, 1).Name });
-
             return F.Math.FloorDiv(lhs, rhs);
         }
 
         private Expr VisitFloorMod(in tflite.Operator op)
         {
             (var lhs, var rhs) = GetInputExprs(op, 0, 1);
-
-            lhs.GetMetadata().SetOutPutsNames(new List<string> { GetInputTensor(op, 0).Name });
-            rhs.GetMetadata().SetOutPutsNames(new List<string> { GetInputTensor(op, 1).Name });
-
             return F.Math.FloorMod(lhs, rhs);
         }
     }

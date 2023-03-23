@@ -19,15 +19,6 @@ public class IRMetadata
 {
     private IReadOnlyList<string>? _outputsNames;
 
-    internal IRMetadata()
-    {
-    }
-
-    internal IRMetadata(List<string> outputsNames)
-    {
-        _outputsNames = outputsNames;
-    }
-
     /// <summary>
     /// Get outputs names.
     /// </summary>
