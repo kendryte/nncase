@@ -13,7 +13,7 @@ namespace Nncase.IR;
 /// <summary>
 /// Leaf expression equality comparer.
 /// </summary>
-public class LeafExprEqualityComparer : IEqualityComparer<Expr>
+public sealed class LeafExprEqualityComparer : IEqualityComparer<Expr>
 {
     /// <summary>
     /// Gets instance.
@@ -42,9 +42,9 @@ public class LeafExprEqualityComparer : IEqualityComparer<Expr>
         {
             (Var tx, Var ty) => tx.Equals(ty),
             (Const tx, Const ty) => tx.Equals(ty),
+            (Fusion tx, Fusion ty) => tx.Equals(ty),
 
-            // note think of fusion/primfunc/primfunc wrapper as a black box.
-            (Fusion tx, Fusion ty) => ReferenceEquals(tx, ty),
+            // note think of primfunc/primfunc wrapper as a black box.
             (TIR.PrimFunction tx, TIR.PrimFunction ty) => ReferenceEquals(tx, ty),
             (PrimFunctionWrapper tx, PrimFunctionWrapper ty) => ReferenceEquals(tx, ty),
             (Function tx, Function ty) => tx.Parameters.Length == ty.Parameters.Length,
@@ -66,7 +66,7 @@ public class LeafExprEqualityComparer : IEqualityComparer<Expr>
             Var x => x.GetHashCode(),
             Const x => x.GetHashCode(),
             Function x => ReferenceEqualityComparer.Instance.GetHashCode(x),
-            Fusion x => ReferenceEqualityComparer.Instance.GetHashCode(x),
+            Fusion x => x.GetHashCode(),
             TIR.PrimFunction x => ReferenceEqualityComparer.Instance.GetHashCode(x),
             PrimFunctionWrapper x => ReferenceEqualityComparer.Instance.GetHashCode(x),
             Tuple x => x.Count.GetHashCode(),

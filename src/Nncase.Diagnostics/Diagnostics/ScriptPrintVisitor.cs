@@ -113,7 +113,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
     private readonly ScopeWriter _scope;
     private readonly ScriptPrintContext _context;
     private readonly Dictionary<Expr, ScriptSymobl> _exprMemo = new(ReferenceEqualityComparer.Instance);
-    private readonly Dictionary<Function, ScriptSymobl> _extFuncMemo = new(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<BaseFunction, ScriptSymobl> _extFuncMemo = new(ReferenceEqualityComparer.Instance);
     private readonly bool _displayCallable;
 
     public ScriptPrintVisitor(TextWriter textWriter, bool display_callable)
@@ -165,6 +165,31 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         else
         {
             il_sb.Append($"{expr.Name} = Function({VisitType(expr.CheckedType)})");
+        }
+
+        doc = new(il_sb, expr.Name, true);
+        _extFuncMemo[expr] = doc;
+
+        _exprMemo.Add(expr, doc);
+        return doc;
+    }
+
+    protected override IPrintSymbol VisitFusion(Fusion expr)
+    {
+        if (_exprMemo.TryGetValue(expr, out var doc))
+        {
+            return doc;
+        }
+
+        var il_sb = new StringBuilder();
+        if (_displayCallable)
+        {
+            var il_visitor = new ILPrintVisitor(new StringWriter(il_sb), false, 0);
+            il_visitor.Visit(expr);
+        }
+        else
+        {
+            il_sb.Append($"{expr.Name} = Fusion<{expr.ModuleKind}>({VisitType(expr.CheckedType)})");
         }
 
         doc = new(il_sb, expr.Name, true);

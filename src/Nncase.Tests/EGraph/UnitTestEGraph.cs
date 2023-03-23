@@ -210,4 +210,18 @@ public class UnitTestEGraph : TestClassBase
             }
         }
     }
+
+    [Fact]
+    public void TestLeafExprEqualityComparerFusion()
+    {
+        var lhs = new Var("lhs");
+        var rhs = new Var("rhs");
+        var f1 = new Fusion("MeshFunc", Callable.StackVMModuleKind, lhs + rhs, new[] { lhs, rhs });
+        var f2 = new Fusion("MeshFunc", Callable.StackVMModuleKind, lhs + rhs, new[] { lhs, rhs });
+        var f3 = new Fusion("MeshFunc", Callable.StackVMModuleKind, lhs - rhs, new[] { lhs, rhs });
+        Assert.True(LeafExprEqualityComparer.Instance.Equals(f1, f2));
+        Assert.Equal(LeafExprEqualityComparer.Instance.GetHashCode(f1), LeafExprEqualityComparer.Instance.GetHashCode(f2));
+        Assert.False(LeafExprEqualityComparer.Instance.Equals(f1, f3));
+        Assert.NotEqual(LeafExprEqualityComparer.Instance.GetHashCode(f1), LeafExprEqualityComparer.Instance.GetHashCode(f3));
+    }
 }
