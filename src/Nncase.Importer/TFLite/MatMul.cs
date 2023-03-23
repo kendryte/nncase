@@ -67,7 +67,16 @@ namespace Nncase.Importer.TFLite
                 : Expand(Cast(0, GetDataType(GetInputTensor(op, 0).Type)), new[] { otherTensor.Shape(0) }).Evaluate().AsTensor();
 
             lhs.GetMetadata().SetOutPutsNames(new List<string> { GetInputTensor(op, 0).Name });
+            if (lhs is Call)
+            {
+                ((Call)lhs).Target.GetMetadata().SetOutPutsNames(new List<string> { GetInputTensor(op, 0).Name });
+            }
+
             rhs.GetMetadata().SetOutPutsNames(new List<string> { GetInputTensor(op, 1).Name });
+            if (rhs is Call)
+            {
+                ((Call)rhs).Target.GetMetadata().SetOutPutsNames(new List<string> { GetInputTensor(op, 1).Name });
+            }
 
             return MatMul(
                 lhs,
