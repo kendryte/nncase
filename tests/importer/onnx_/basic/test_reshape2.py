@@ -31,7 +31,7 @@ def _make_module(in_shape, out_shape):
     # input
     input = helper.make_tensor_value_info('input', TensorProto.FLOAT, in_shape)
     inputs.append('input')
-    
+
     shape = helper.make_tensor(
         'shape',
         TensorProto.INT64,
@@ -72,12 +72,12 @@ in_shapes = [
 ]
 
 out_shapes = [
-	[[3, 256], [3, 256]],
-	[[-1, 16], [48, 16]],
-	[[3, 16, 16], [3, 16, 16]],
-	[[0, 0, -1], [1, 3, 256]],
-	[[0, 3, -1], [1, 3, 256]],
-	[[0, 3, 256], [13, 256]]
+    [[3, 256], [3, 256]],
+    [[-1, 16], [48, 16]],
+    [[3, 16, 16], [3, 16, 16]],
+    [[0, 0, -1], [1, 3, 256]],
+    [[0, 3, -1], [1, 3, 256]],
+    [[0, 3, 256], [13, 256]]
 ]
 
 
