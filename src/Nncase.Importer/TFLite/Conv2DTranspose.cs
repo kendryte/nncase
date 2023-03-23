@@ -24,6 +24,7 @@ namespace Nncase.Importer.TFLite
             {
                 bias = GetInputExprs(op, 3);
             }
+
             var options = op.BuiltinOptionsAsTransposeConvOptions();
             var (inH, inW) = Util.GetHW(input);
             var (fH, fW) = Util.GetHW(weights);
