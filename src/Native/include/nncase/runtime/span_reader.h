@@ -17,6 +17,7 @@
 #include <gsl/gsl-lite.hpp>
 #include <iterator>
 #include <nncase/compiler_defs.h>
+#include <nncase/runtime/dbg.h>
 #include <string>
 #include <vector>
 
@@ -24,37 +25,40 @@ BEGIN_NS_NNCASE_RUNTIME
 
 class span_reader {
   public:
-    span_reader(gsl::span<const gsl::byte> span) : span_(span) {}
+    span_reader(gsl::span<const gsl::byte> span)
+        : begin_(span.begin()), end_(span.end()) {}
 
-    bool empty() const noexcept { return span_.empty(); }
-    size_t avail() const noexcept { return span_.size_bytes(); }
+    const gsl::byte *tell() const noexcept { return begin_; }
+    bool empty() const noexcept { return begin_ == end_; }
+    size_t avail() const noexcept { return end_ - begin_; }
+
+    void seek(const gsl::byte *pos) noexcept { begin_ = pos; }
 
     template <class T> T read() {
-        auto value = *reinterpret_cast<const T *>(span_.data());
+        auto value = *reinterpret_cast<const T *>(begin_);
         advance(sizeof(T));
         return value;
     }
 
     template <class T> T read_unaligned() {
         alignas(T) uint8_t storage[sizeof(T)];
-        std::memcpy(storage, span_.data(), sizeof(T));
+        std::memcpy(storage, begin_, sizeof(T));
         advance(sizeof(T));
         return *reinterpret_cast<const T *>(storage);
     }
 
     template <class T> void read(T &value) {
-        value = *reinterpret_cast<const T *>(span_.data());
+        value = *reinterpret_cast<const T *>(begin_);
         advance(sizeof(T));
     }
 
     template <class T> void read_span(gsl::span<const T> &span, size_t size) {
-        span = {reinterpret_cast<const T *>(span_.data()), size};
+        span = {reinterpret_cast<const T *>(begin_), size};
         advance(sizeof(T) * size);
     }
 
     template <class T = gsl::byte> gsl::span<const T> read_span(size_t size) {
-        gsl::span<const T> span(reinterpret_cast<const T *>(span_.data()),
-                                size);
+        gsl::span<const T> span(reinterpret_cast<const T *>(begin_), size);
         advance(sizeof(T) * size);
         return span;
     }
@@ -78,25 +82,25 @@ class span_reader {
     }
 
     void read_avail(gsl::span<const gsl::byte> &span) {
-        span = span_;
-        span_ = {};
+        span = {begin_, end_};
+        begin_ = end_;
     }
 
     gsl::span<const gsl::byte> read_until(gsl::byte value) {
-        auto it = std::find(span_.begin(), span_.end(), value);
-        return read_span((size_t)std::distance(span_.begin(), it));
+        auto it = std::find(begin_, end_, value);
+        return read_span((size_t)std::distance(begin_, it));
     }
 
     gsl::span<const gsl::byte> read_avail() {
-        auto span = span_;
-        span_ = {};
+        gsl::span<const gsl::byte> span;
+        read_avail(span);
         return span;
     }
 
-    gsl::span<const gsl::byte> peek_avail() { return span_; }
+    gsl::span<const gsl::byte> peek_avail() { return {begin_, end_}; }
 
     template <class T> T peek_with_offset(size_t offset) {
-        auto value = *reinterpret_cast<const T *>(span_.data() + offset);
+        auto value = *reinterpret_cast<const T *>(begin_ + offset);
         return value;
     }
 
@@ -104,7 +108,7 @@ class span_reader {
 
     template <class T> T peek_unaligned_with_offset(size_t offset) {
         T value;
-        std::memcpy(&value, span_.data() + offset, sizeof(T));
+        std::memcpy(&value, begin_ + offset, sizeof(T));
         return value;
     }
 
@@ -113,7 +117,7 @@ class span_reader {
     }
 
     template <class T> const T *peek_ref() {
-        auto ptr = reinterpret_cast<const T *>(span_.data());
+        auto ptr = reinterpret_cast<const T *>(begin_);
         return ptr;
     }
 
@@ -128,10 +132,14 @@ class span_reader {
     void skip(size_t count) { advance(count); }
 
   private:
-    void advance(size_t count) { span_ = span_.subspan(count); }
+    void advance(size_t count) {
+        begin_ += count;
+        dbg_check(begin_ <= end_);
+    }
 
   private:
-    gsl::span<const gsl::byte> span_;
+    const gsl::byte *begin_;
+    const gsl::byte *end_;
 };
 
 END_NS_NNCASE_RUNTIME
