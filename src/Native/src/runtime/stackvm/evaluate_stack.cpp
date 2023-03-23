@@ -43,7 +43,7 @@ void evaluate_stack::enlarge() noexcept {
     auto top_offset = top_ - entries_;
 #if defined(__GNUC__)
 #pragma GCC diagnostic push
-#if !defined(__clang__)
+#if !defined(__clang__) and !defined(__nds_v5)
 #pragma GCC diagnostic ignored "-Wclass-memaccess"
 #endif
 #endif
