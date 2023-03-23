@@ -28,20 +28,21 @@ def _make_module(in_channel, out_channel, kernel_size, stride, dilation, pad, gr
         def __init__(self):
             super(ConvTransposeModule, self).__init__()
             self.conv_transpose = torch.nn.ConvTranspose2d(
-                in_channel, out_channel, kernel_size, stride, pad, [0,0], group, bias, dilation)
+                in_channel, out_channel, kernel_size, stride, pad, [0, 0], group, bias, dilation)
 
         def forward(self, x):
             return self.conv_transpose(x)
-            
+
     return ConvTransposeModule()
+
 
 in_sizes = [
     [16, 16],
-    [33 ,65],
+    [33, 65],
 ]
 
 in_channels = [
-	1,
+    1,
     3,
     16
 ]
@@ -75,9 +76,10 @@ groups = [
 ]
 
 biases = [
-	True,
+    True,
     False
 ]
+
 
 @pytest.mark.parametrize('in_size', in_sizes)
 @pytest.mark.parametrize('in_channel', in_channels)
@@ -89,11 +91,12 @@ biases = [
 @pytest.mark.parametrize('group', groups)
 @pytest.mark.parametrize('bias', biases)
 def test_conv_transpose(in_size, in_channel, out_channel, kernel_size, stride, dilation, pad, group, bias, request):
-	model_file = _make_module(in_channel, out_channel, kernel_size, stride, dilation, pad, group, bias)
+    model_file = _make_module(in_channel, out_channel, kernel_size,
+                              stride, dilation, pad, group, bias)
 
-	runner = OnnxTestRunner(request.node.name)
-	model_file = runner.from_torch(model_file, [1, in_channel, *in_size])
-	runner.run(model_file)
+    runner = OnnxTestRunner(request.node.name)
+    model_file = runner.from_torch(model_file, [1, in_channel, *in_size])
+    runner.run(model_file)
 
 
 if __name__ == "__main__":
