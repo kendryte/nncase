@@ -45,11 +45,7 @@ namespace Nncase.Importer
                     }
                 }
 
-                Expr productIn = 1L;
-                for (int i = 0; i < input.CheckedShape.Rank; i++)
-                {
-                    productIn *= inputShape[i];
-                }
+                Expr productIn = F.Tensors.Prod(inputShape);
 
                 actualShape[negAxis] = productIn / productOut;
             }
