@@ -17,15 +17,8 @@ namespace Nncase.Importer.TFLite
         {
             (var lhs, var rhs) = GetInputExprs(op, 0, 1);
 
-            if (lhs is Const)
-            {
-                lhs.GetMetadata().SetOutPutsNames(new List<string> { GetInputTensor(op, 0).Name });
-            }
-
-            if (rhs is Const)
-            {
-                rhs.GetMetadata().SetOutPutsNames(new List<string> { GetInputTensor(op, 1).Name });
-            }
+            lhs.GetMetadata().SetOutPutsNames(new List<string> { GetInputTensor(op, 0).Name });
+            rhs.GetMetadata().SetOutPutsNames(new List<string> { GetInputTensor(op, 1).Name });
 
             var node = F.Math.Binary(binaryOp, lhs, rhs);
             return Activate(node, activation);
@@ -35,15 +28,8 @@ namespace Nncase.Importer.TFLite
         {
             (var lhs, var rhs) = GetInputExprs(op, 0, 1);
 
-            if (lhs is Const)
-            {
-                lhs.GetMetadata().SetOutPutsNames(new List<string> { GetInputTensor(op, 0).Name });
-            }
-
-            if (rhs is Const)
-            {
-                rhs.GetMetadata().SetOutPutsNames(new List<string> { GetInputTensor(op, 1).Name });
-            }
+            lhs.GetMetadata().SetOutPutsNames(new List<string> { GetInputTensor(op, 0).Name });
+            rhs.GetMetadata().SetOutPutsNames(new List<string> { GetInputTensor(op, 1).Name });
 
             return F.Math.FloorDiv(lhs, rhs);
         }
@@ -52,15 +38,8 @@ namespace Nncase.Importer.TFLite
         {
             (var lhs, var rhs) = GetInputExprs(op, 0, 1);
 
-            if (lhs is Const)
-            {
-                lhs.GetMetadata().SetOutPutsNames(new List<string> { GetInputTensor(op, 0).Name });
-            }
-
-            if (rhs is Const)
-            {
-                rhs.GetMetadata().SetOutPutsNames(new List<string> { GetInputTensor(op, 1).Name });
-            }
+            lhs.GetMetadata().SetOutPutsNames(new List<string> { GetInputTensor(op, 0).Name });
+            rhs.GetMetadata().SetOutPutsNames(new List<string> { GetInputTensor(op, 1).Name });
 
             return F.Math.FloorMod(lhs, rhs);
         }

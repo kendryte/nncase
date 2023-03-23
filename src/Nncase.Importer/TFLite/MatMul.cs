@@ -66,15 +66,8 @@ namespace Nncase.Importer.TFLite
                 ? GetInputExprs(op, 2)
                 : Expand(Cast(0, GetDataType(GetInputTensor(op, 0).Type)), new[] { otherTensor.Shape(0) }).Evaluate().AsTensor();
 
-            if (lhs is Const)
-            {
-                lhs.GetMetadata().SetOutPutsNames(new List<string> { GetInputTensor(op, 0).Name });
-            }
-
-            if (rhs is Const)
-            {
-                rhs.GetMetadata().SetOutPutsNames(new List<string> { GetInputTensor(op, 1).Name });
-            }
+            lhs.GetMetadata().SetOutPutsNames(new List<string> { GetInputTensor(op, 0).Name });
+            rhs.GetMetadata().SetOutPutsNames(new List<string> { GetInputTensor(op, 1).Name });
 
             return MatMul(
                 lhs,
