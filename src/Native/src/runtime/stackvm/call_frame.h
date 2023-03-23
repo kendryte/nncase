@@ -24,10 +24,10 @@ class call_frame {
     call_frame(uintptr_t ret_addr) noexcept : ret_addr_(ret_addr) {}
 
     uintptr_t ret_addr() const noexcept { return ret_addr_; }
-    result<stack_entry> arg(size_t index) const noexcept;
+    stack_entry arg(size_t index) const noexcept;
 
-    result<stack_entry> field(size_t index) const noexcept;
-    result<void> field(size_t index, stack_entry value) noexcept;
+    stack_entry field(size_t index) const noexcept;
+    void field(size_t index, stack_entry value) noexcept;
 
     result<void> push_back_arg(stack_entry arg) noexcept;
 

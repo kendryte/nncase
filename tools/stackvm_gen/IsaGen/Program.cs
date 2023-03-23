@@ -282,7 +282,7 @@ public class IsaExtractor
                 CppValueText: null,
                 Description: null,
                 IsEnum: true,
-                IsOpCode: false));
+                IsOpCode: true));
 
         foreach (var (m, f) in props)
         {

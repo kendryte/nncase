@@ -169,6 +169,8 @@ template <class T> class object_t {
         return &object_;
     }
 
+    void dangerous_add_ref() noexcept { return add_ref(); }
+
   private:
     void add_ref() noexcept {
         if (object_) {
