@@ -212,11 +212,22 @@ public sealed class UnitTestDumpper : TestClassBase
         CompilerServices.DumpCSharpIR(main, string.Empty, Dumpper.Directory, false);
     }
 
+    [Fact]
+    public void TestDumpTIRFusion()
+    {
+        var lhs = new Var("lhs");
+        var main = T.PrimFunc("main", Callable.StackVMModuleKind).Body(
+          new Call(new TIRTest.MeshNet(), new Fusion("MeshFunc", lhs + 100, lhs), IR.F.Random.Normal(DataTypes.Float32, 0, 1, 123, new[] { 100 }))
+        ).Build();
+        Assert.True(CompilerServices.InferenceType(main));
+        CompilerServices.DumpIR(main, string.Empty, Dumpper.Directory);
+    }
+
     private async Task<Expr> RunShapeInferPass(string name, Expr expr, params Var[] parameters)
     {
         var f = new Function(name, expr, parameters);
         var result = ((Function)await new ShapeInferPass { Name = $"ShapeInfer_{name}" }.RunAsync(f, new())).Body;
-        Assert.True(CompilerServices.InferenceType(CompilerServices.InferenceType(f)));
+        Assert.True(CompilerServices.InferenceType(f));
         return result;
     }
 }
