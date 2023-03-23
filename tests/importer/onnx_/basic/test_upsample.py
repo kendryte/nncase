@@ -44,7 +44,8 @@ def _make_module(in_shape, scale):
     inputs.append('scales')
 
     # output
-    output = helper.make_tensor_value_info('output', TensorProto.FLOAT, list([math.floor(in_shape[i] * scale[i]) for i in range(len(in_shape))]))
+    output = helper.make_tensor_value_info('output', TensorProto.FLOAT, list(
+        [math.floor(in_shape[i] * scale[i]) for i in range(len(in_shape))]))
     outputs.append('output')
 
     # upsample
@@ -79,6 +80,7 @@ scales = [
     [1, 1, 2, 2],
     [1, 1, 3, 4]
 ]
+
 
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('scale', scales)

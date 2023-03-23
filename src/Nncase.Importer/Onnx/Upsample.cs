@@ -22,7 +22,10 @@ namespace Nncase.Importer
             var inputShape = F.Tensors.ShapeOf(input);
             var roi = Enumerable.Repeat((Expr)0f, input.CheckedShape.Rank).ToList();
             for (var i = 0; i < input.CheckedShape.Rank; i++)
+            {
                 roi.Add(IR.F.Tensors.Cast(inputShape[i], DataTypes.Float32));
+            }
+
             var mode = ImageResizeMode.NearestNeighbor;
             return F.Imaging.ResizeImage(mode, input, Stack(new IR.Tuple(roi.ToArray()), 0), ComputeNewSizes(input, scales));
         }
