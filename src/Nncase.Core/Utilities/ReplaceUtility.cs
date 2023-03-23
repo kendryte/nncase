@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Collections.Immutable;
+using System.Reactive;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Fx = System.Func<Nncase.IR.Expr, Nncase.IR.Expr>;
@@ -116,7 +117,7 @@ public static class ReplaceUtility
     /// <returns>New Body.</returns>
     public static Expr ReplaceExpr(Expr body, Expr target, Expr expr)
     {
-        var mutator = new Transform.Mutators.Substitutor(e =>
+        var mutator = new Passes.Mutators.Substitutor(e =>
         {
             if (ReferenceEquals(e, target))
             {
@@ -125,6 +126,6 @@ public static class ReplaceUtility
 
             return null;
         });
-        return mutator.Visit(body);
+        return mutator.Visit(body, Unit.Default);
     }
 }

@@ -11,12 +11,12 @@ namespace Nncase
 
         public HashSet<Function> Functions => _functions;
 
-        public override int VisitLeaf(Function expr)
+        protected internal override int VisitFunction(Function expr)
         {
             _functions.Add(expr);
             return 0;
         }
 
-        public override int DefaultVisitLeaf(Expr expr) => 1;
+        protected override int DefaultVisitLeaf(Expr expr) => 1;
     }
 }

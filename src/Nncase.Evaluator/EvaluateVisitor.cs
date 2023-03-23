@@ -50,46 +50,46 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, Unit>, IDisposable
     protected override IValue VisitLeafBaseFunction(BaseFunction expr) => NoneValue.Default;
 
     /// <inheritdoc/>
-    public override IValue VisitLeaf(Call expr)
+    protected override IValue VisitCall(Call expr)
     {
         _context.CurrentCall = expr;
         return expr.Target switch
         {
             Op op => CompilerServices.EvaluateOp(op, _context, _evaluator_cache),
-            Function func => CompilerServices.Evaluate(func.Body, func.Parameters.Zip(expr.Parameters).ToDictionary(kv => kv.First, kv => Visit(kv.Second), (IEqualityComparer<Var>)ReferenceEqualityComparer.Instance), _evaluator_cache),
+            Function func => CompilerServices.Evaluate(func.Body, func.Parameters.ToArray().Zip(expr.Parameters).ToDictionary(kv => kv.First, kv => Visit(kv.Second), (IEqualityComparer<Var>)ReferenceEqualityComparer.Instance), _evaluator_cache),
             Fusion { ModuleKind: "stackvm" } fusion => CompilerServices.Evaluate(fusion.Body, fusion.Parameters.Zip(expr.Parameters).ToDictionary(kv => kv.First, kv => Visit(kv.Second), (IEqualityComparer<Var>)ReferenceEqualityComparer.Instance), _evaluator_cache),
             _ => throw new NotImplementedException(expr.Target.ToString()),
         };
     }
 
-    public override IValue Visit(If @if)
+    protected override IValue VisitIf(If @if)
     {
-        if (!ExpressionMemo.TryGetValue(@if, out var result))
+        if (!ExprMemo.TryGetValue(@if, out var result))
         {
             result = VisitLeaf(@if);
-            ExpressionMemo.Add(@if, result);
+            ExprMemo.Add(@if, result);
         }
 
         return result;
     }
 
-    public override IValue VisitLeaf(If @if)
+    protected override IValue VisitIf(If @if)
     {
         bool cond = @if.Condition.Evaluate(_varsValues, _evaluator_cache).AsTensor().ToScalar<bool>();
         return (cond ? @if.Then : @if.Else).Evaluate(_varsValues, _evaluator_cache);
     }
 
-    public override IValue VisitLeaf(Const expr)
+    protected override IValue VisitConst(Const expr, Unit context)
     {
         return Value.FromConst(expr);
     }
 
-    public override IValue VisitLeaf(None expr)
+    protected override IValue VisitNone(None expr)
     {
         return Value.None;
     }
 
-    public override IValue VisitLeaf(Marker expr)
+    protected override IValue VisitMarker(Marker expr)
     {
         return Visit(expr.Target);
     }

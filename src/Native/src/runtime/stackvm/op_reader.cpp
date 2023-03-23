@@ -23,6 +23,7 @@ using namespace nncase::runtime::stackvm;
 
 result<void> tensor_op_visitor::visit(tensor_function_t tensor_funct,
                                       span_reader &reader) noexcept {
+    std::cout << to_string(tensor_funct) << std::endl;
     switch (tensor_funct) {
     case tensor_function_t::batch_normalization:
         return visit(

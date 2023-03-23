@@ -52,7 +52,7 @@ namespace Nncase
 
                     var elseF = (Function)(((Call)sum).Target);
                     var elseIfVar = currVars.Select(v => new Var($"hash_else_{v.GetHashCode()}", v.TypeAnnotation)).ToArray();
-                    var elseBody = ReplaceVarInFunction(elseF, elseF.Parameters.Zip(elseIfVar).ToArray(), out var elseNewParams);
+                    var elseBody = ReplaceVarInFunction(elseF, elseF.Parameters.ToArray().Zip(elseIfVar).ToArray(), out var elseNewParams);
                     var elseFn = new Function(elseF.Name, elseBody, elseNewParams);
                     var elseCall = new Call(elseFn, currVars);
                     var body = new If(
@@ -76,7 +76,7 @@ namespace Nncase
 
         public IRModule Run(Function preFn, SegmentInfo[] infos)
         {
-            var vars = preFn.Parameters.Select((x, i) => new Var($"main_{i}", x.TypeAnnotation)).ToArray();
+            var vars = preFn.Parameters.ToArray().Select((x, i) => new Var($"main_{i}", x.TypeAnnotation)).ToArray();
             var body = SplitImpl(preFn, infos, vars);
             var newFn = new Function("main", body, vars);
             return CollectFunctionToNewModule(newFn);
@@ -97,7 +97,7 @@ namespace Nncase
         private static void Check(Function f, SegmentInfo info)
         {
             Debug.Assert(info.Segments.Length >= 2, "Segments.Length >= 2");
-            Debug.Assert(f.Parameters.Count >= info.InputIndex, "f.Parameters.Count <= info.InputIndex");
+            Debug.Assert(f.Parameters.Length >= info.InputIndex, "f.Parameters.Count <= info.InputIndex");
         }
 
         private static IRModule CollectFunctionToNewModule(Function splitMain)
@@ -163,7 +163,7 @@ namespace Nncase
                 });
 
             newParams = ReplaceUtility.ReplaceItems(
-                    preFunc.Parameters,
+                    preFunc.Parameters.ToArray(),
                     innerFixedShapeVarList
                         .Select(x => ((Expr)x.Item1, (Expr)x.Item2))
                         .ToArray())
