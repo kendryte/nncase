@@ -35,7 +35,7 @@ public class Conv2DTransposeEvaluator : IEvaluator<Conv2DTranspose>, ITypeInfere
         var kernelShape = weights.Shape;
         return OrtKI.ConvTranspose(
             input,
-            weights,
+            OrtKI.Transpose(weights, new long[] { 1, 0, 2, 3 }),
             bias,
             "NOTSET",
             dilation,
@@ -71,11 +71,6 @@ public class Conv2DTransposeEvaluator : IEvaluator<Conv2DTranspose>, ITypeInfere
         var outputType = context.GetReturnType<TensorType>();
 
         var macPerElement = weightsShape[1] * weightsShape[2] * weightsShape[3];
-        return new()
-        {
-            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(weightsType) + CostUtility.GetMemoryAccess(biasType),
-            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
-            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, macPerElement.FixedValue * 2),
-        };
+        return new() { [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(weightsType) + CostUtility.GetMemoryAccess(biasType), [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType), [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, macPerElement.FixedValue * 2), };
     }
 }
