@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Nncase.IR;
@@ -64,6 +65,17 @@ namespace Nncase.Importer.TFLite
             var bias = op.InputsLength == 3 && op.Inputs(2) != -1
                 ? GetInputExprs(op, 2)
                 : Expand(Cast(0, GetDataType(GetInputTensor(op, 0).Type)), new[] { otherTensor.Shape(0) }).Evaluate().AsTensor();
+
+            if (lhs is Const)
+            {
+                lhs.GetMetadata().SetOutPutsNames(new List<string> { GetInputTensor(op, 0).Name });
+            }
+
+            if (rhs is Const)
+            {
+                rhs.GetMetadata().SetOutPutsNames(new List<string> { GetInputTensor(op, 1).Name });
+            }
+
             return MatMul(
                 lhs,
                 rhs) + bias;
