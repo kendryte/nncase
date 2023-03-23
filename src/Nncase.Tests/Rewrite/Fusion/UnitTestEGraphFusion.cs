@@ -177,11 +177,19 @@ internal sealed class FusionCostEvaluator : Evaluator.IBaseFuncCostEvaluator
     {
         private readonly IRType? _returnType;
         private readonly IRType?[] _argumentTypes;
+        private readonly Expr[] _arguments;
 
-        public GraphOpCostEvaluateContext(IRType? returnType, IRType?[] argumentTypes)
+        public GraphOpCostEvaluateContext(IRType? returnType, IRType?[] argumentTypes, ReadOnlySpan<Expr> arguments)
         {
             _returnType = returnType;
             _argumentTypes = argumentTypes;
+            _arguments = arguments.ToArray();
+        }
+
+        public T GetArgument<T>(Op op, ParameterInfo parameter)
+          where T : BaseFunction
+        {
+            return (T)_arguments[parameter.Index];
         }
 
         public T GetArgumentType<T>(Op op, ParameterInfo parameter)
@@ -224,7 +232,7 @@ internal sealed class FusionCostEvaluator : Evaluator.IBaseFuncCostEvaluator
             Cost cost;
             if (call.Target is Op op)
             {
-                var context = new GraphOpCostEvaluateContext(call.CheckedType, call.Arguments.AsValueEnumerable().Select(p => p.CheckedType).ToArray());
+                var context = new GraphOpCostEvaluateContext(call.CheckedType, call.Arguments.AsValueEnumerable().Select(p => p.CheckedType).ToArray(), call.Arguments);
                 cost = CompilerServices.EvaluateOpCost(op, context) ?? Cost.Zero;
             }
             else
