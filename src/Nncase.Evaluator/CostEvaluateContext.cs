@@ -28,6 +28,12 @@ internal sealed class CostEvaluateContext : ICostEvaluateContext
         set => _currentCall = value;
     }
 
+    public T GetArgument<T>(Op op, ParameterInfo parameter)
+      where T : BaseFunction
+    {
+        return (T)CurrentCall[parameter];
+    }
+
     public Cost GetArgumentCost(Op op, ParameterInfo parameter)
     {
         return GetCost(GetArgumentExpr(op, parameter));
