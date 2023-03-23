@@ -69,9 +69,6 @@ namespace IsaGen
         LDLOCAL,
         STLOCAL,
 
-        LDSHAPE,
-        LDSTRIDES,
-
         LDTUPLE_ELEM,
         LDTUPLE,
 
@@ -524,22 +521,6 @@ namespace IsaGen
     public class Ldarg5Instruction : Instruction
     {
         public override OpCode OpCode => OpCode.LDARG_5;
-    }
-
-    [DisplayName("LDSHAPE")]
-    [Category("Load Store Instructions")]
-    [Description("Load a shape to stack")]
-    public class LdShapeInstruction : Instruction
-    {
-        public override OpCode OpCode => OpCode.LDSHAPE;
-    }
-
-    [DisplayName("LDSTRIDES")]
-    [Category("Load Store Instructions")]
-    [Description("Load a strides to stack")]
-    public class LdStridesInstruction : Instruction
-    {
-        public override OpCode OpCode => OpCode.LDSTRIDES;
     }
 
     [DisplayName("LDTUPLE_ELEM")]

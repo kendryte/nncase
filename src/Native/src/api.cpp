@@ -30,7 +30,7 @@ namespace {
     }
 
 #define c_try_var(name, x)                                                     \
-    typename decltype((x))::traits::ok_type name;                              \
+    typename decltype((x))::value_type name;                                   \
     {                                                                          \
         auto v = (x);                                                          \
         if (v.is_ok())                                                         \
