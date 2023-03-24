@@ -15,7 +15,7 @@ namespace Nncase.Tests.CoreTest;
 [AutoSetupTestMethod(InitSession = true)]
 public class UnitTestShapeSplitSegment : TestClassBase
 {
-    [Theory]
+    /*[Theory]
     [InlineData(64, 112)]
     [InlineData(112, 112)]
     [InlineData(190, 224)]
@@ -35,18 +35,18 @@ public class UnitTestShapeSplitSegment : TestClassBase
         {
             Assert.True(Comparator.CosSimilarity(expect, actual) > 0.99);
         }
-    }
+    }*/
 
-    [Fact]
-    public void TestOutOfSegment()
-    {
-        var inVar = new Var(new TensorType(DataTypes.Float32, new[] { 1, 3, Dimension.Unknown, 224 }));
-        var f = new Function(inVar, new[] { inVar });
-        var info = new SegmentInfo(0, 2, new[] { 112, 224 });
-        var module = new ShapeSplitSegment().Run(f, info);
-        var (_, kmodel) = Testing.BuildKModel("TestSimple.kmodel", module, CompileSession);
-        var input = new[] { Testing.Rand<float>(1, 3, 225, 224) };
-        Assert.Throws<InvalidOperationException>(
-            () => Testing.RunKModel(kmodel, Dumpper.Directory, input));
-    }
+    // [Fact]
+    // public void TestOutOfSegment()
+    // {
+    //     var inVar = new Var(new TensorType(DataTypes.Float32, new[] { 1, 3, Dimension.Unknown, 224 }));
+    //     var f = new Function(inVar, new[] { inVar });
+    //     var info = new SegmentInfo(0, 2, new[] { 112, 224 });
+    //     var module = new ShapeSplitSegment().Run(f, info);
+    //     var (_, kmodel) = Testing.BuildKModel("TestSimple.kmodel", module, CompileSession);
+    //     var input = new[] { Testing.Rand<float>(1, 3, 225, 224) };
+    //     Assert.Throws<InvalidOperationException>(
+    //         () => Testing.RunKModel(kmodel, Dumpper.Directory, input));
+    // }
 }

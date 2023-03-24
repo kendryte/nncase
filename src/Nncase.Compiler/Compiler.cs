@@ -120,8 +120,8 @@ internal class Compiler : ICompiler
 
     public void Split()
     {
-        _module = new ShapeSplitSegment().Run((Function)Module.Entry!, new SegmentInfo(0, 2, new[] { 128, 224 }));
-        _dumpper.DumpModule(Module, "Splited");
+        // _module = new ShapeSplitSegment().Run((Function)Module.Entry!, new SegmentInfo(0, 2, new[] { 128, 224 }));
+        // _dumpper.DumpModule(Module, "Splited");
     }
 
     public async Task CompileAsync()

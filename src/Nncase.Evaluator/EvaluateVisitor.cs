@@ -41,39 +41,22 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, Unit>, IDisposable
         _dumpManager.Dispose();
     }
 
-    protected override IValue VisitIf(If @if)
-    {
-        bool cond = Visit(@if.Condition).AsTensor().ToScalar<bool>();
-        return cond ? Visit(@if.Then) : Visit(@if.Else);
-    }
-
     protected override IValue VisitLeafBaseFunction(BaseFunction expr) => NoneValue.Default;
 
     /// <inheritdoc/>
-    protected override IValue VisitCall(Call expr)
-    {
-        _context.CurrentCall = expr;
-        return expr.Target switch
-        {
-            Op op => CompilerServices.EvaluateOp(op, _context, _evaluator_cache),
-            Function func => CompilerServices.Evaluate(func.Body, func.Parameters.ToArray().Zip(expr.Parameters).ToDictionary(kv => kv.First, kv => Visit(kv.Second), (IEqualityComparer<Var>)ReferenceEqualityComparer.Instance), _evaluator_cache),
-            Fusion { ModuleKind: "stackvm" } fusion => CompilerServices.Evaluate(fusion.Body, fusion.Parameters.Zip(expr.Parameters).ToDictionary(kv => kv.First, kv => Visit(kv.Second), (IEqualityComparer<Var>)ReferenceEqualityComparer.Instance), _evaluator_cache),
-            _ => throw new NotImplementedException(expr.Target.ToString()),
-        };
-    }
 
     protected override IValue VisitIf(If @if)
     {
         if (!ExprMemo.TryGetValue(@if, out var result))
         {
-            result = VisitLeaf(@if);
+            result = VisitLeafIf(@if);
             ExprMemo.Add(@if, result);
         }
 
         return result;
     }
 
-    protected override IValue VisitIf(If @if)
+    protected override IValue VisitLeafIf(If @if)
     {
         bool cond = @if.Condition.Evaluate(_varsValues, _evaluator_cache).AsTensor().ToScalar<bool>();
         return (cond ? @if.Then : @if.Else).Evaluate(_varsValues, _evaluator_cache);

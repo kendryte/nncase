@@ -210,7 +210,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         foreach (var field in expr.Fields.ToArray().Reverse())
         {
             var inputSnippet = Visit(field);
-            inputSnippet.MaxUserParameters = Math.Max(inputSnippet.MaxUserParameters, expr.Fields.Count);
+            inputSnippet.MaxUserParameters = Math.Max(inputSnippet.MaxUserParameters, expr.Fields.Length);
             snippet.AddInput(inputSnippet, true);
         }
 
@@ -271,7 +271,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
                 snippet.AddInput(paramSnippet, false);
                 _refTextSnippets.Add(paramSnippet);
             }
-            paramSnippet.MaxUserParameters = Math.Max(paramSnippet.MaxUserParameters, expr.Parameters.Count);
+            paramSnippet.MaxUserParameters = Math.Max(paramSnippet.MaxUserParameters, expr.Arguments.Length);
         }
 
         if (expr.Target is CustomOp custom_op)
@@ -303,10 +303,10 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
 
     protected override TextSnippet VisitIf(If expr)
     {
-        if (!ExpressionMemo.TryGetValue(expr, out var result))
+        if (!ExprMemo.TryGetValue(expr, out var result))
         {
-            result = VisitLeaf(expr);
-            ExpressionMemo.Add(expr, result);
+            result = VisitLeafIf(expr);
+            ExprMemo.Add(expr, result);
         }
 
         return result;
@@ -373,9 +373,9 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         var visitor = new CodeGenVisitor(_function, _context);
         var subBlockFirst = visitor.CurrentBasicBlock;
         CurrentBasicBlock.AddNext(subBlockFirst);
-        foreach (var (key, value) in ExpressionMemo)
+        foreach (var (key, value) in ExprMemo)
         {
-            visitor.ExpressionMemo[key] = value;
+            visitor.ExprMemo[key] = value;
         }
 
         visitor.Visit(expr);
