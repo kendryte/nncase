@@ -202,7 +202,7 @@ public sealed partial class OnnxImporter : BaseImporter
             outputsNames.Add(op.Output[i]);
         }
 
-        ((Expr)output).GetMetadata().SetOutPutsNames(outputsNames);
+        output.GetMetadata().SetOutPutsNames(outputsNames);
 
         AddToOutputs(_outputTensors!, op.Output.ToArray(), output);
     }
