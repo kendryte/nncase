@@ -17,18 +17,6 @@ namespace Nncase.Importer.TFLite
         {
             (var lhs, var rhs) = GetInputExprs(op, 0, 1);
 
-            lhs.GetMetadata().SetOutPutsNames(new List<string> { GetInputTensor(op, 0).Name });
-            if (lhs is Call)
-            {
-                ((Call)lhs).Target.GetMetadata().SetOutPutsNames(new List<string> { GetInputTensor(op, 0).Name });
-            }
-
-            rhs.GetMetadata().SetOutPutsNames(new List<string> { GetInputTensor(op, 1).Name });
-            if (rhs is Call)
-            {
-                ((Call)rhs).Target.GetMetadata().SetOutPutsNames(new List<string> { GetInputTensor(op, 1).Name });
-            }
-
             var node = F.Math.Binary(binaryOp, lhs, rhs);
             return Activate(node, activation);
         }

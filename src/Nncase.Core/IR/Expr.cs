@@ -17,14 +17,17 @@ namespace Nncase.IR;
 /// </summary>
 public class IRMetadata
 {
-    private IReadOnlyList<string>? _outputsNames;
+    /// <summary>
+    /// outputs names.
+    /// </summary>
+    public IReadOnlyList<string>? OutputsNames { get; set; }
 
     /// <summary>
     /// Get outputs names.
     /// </summary>
     public IReadOnlyList<string>? GetOutPutsNames()
     {
-        return _outputsNames;
+        return OutputsNames;
     }
 
     /// <summary>
@@ -32,7 +35,7 @@ public class IRMetadata
     /// </summary>
     public void SetOutPutsNames(List<string> outputsNames)
     {
-        _outputsNames = outputsNames;
+        OutputsNames = outputsNames;
     }
 }
 
@@ -41,10 +44,8 @@ public class IRMetadata
 /// </summary>
 public abstract partial class Expr : IDisposable
 {
-    private readonly IRMetadata _iRMetadata;
     private readonly Expr[] _operands;
     private readonly HashSet<Expr> _users = new(ReferenceEqualityComparer.Instance);
-
     private IRType? _checkedType;
     private int? _hashCodeCache;
     private bool _disposedValue;
@@ -58,7 +59,7 @@ public abstract partial class Expr : IDisposable
             operand.AddUser(this);
         }
 
-        _iRMetadata = new IRMetadata();
+        Metadata = new IRMetadata();
     }
 
     internal Expr(Expr[] operands)
@@ -70,7 +71,7 @@ public abstract partial class Expr : IDisposable
             operand.AddUser(this);
         }
 
-        _iRMetadata = new IRMetadata();
+        Metadata = new IRMetadata();
     }
 
     /// <summary>
@@ -141,6 +142,8 @@ public abstract partial class Expr : IDisposable
         set => _checkedType = value;
     }
 
+    private IRMetadata Metadata { get; set; }
+
     public static bool operator ==(Expr? left, Expr? right) => EqualityComparer<Expr>.Default.Equals(left, right);
 
     public static bool operator !=(Expr? left, Expr? right) => !(left == right);
@@ -195,7 +198,7 @@ public abstract partial class Expr : IDisposable
     /// </summary>
     public IRMetadata GetMetadata()
     {
-        return _iRMetadata;
+        return Metadata;
     }
 
     internal void AddUser(Expr user)

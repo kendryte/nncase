@@ -348,11 +348,6 @@ public sealed partial class TFLiteImporter : BaseImporter
 
         ((Expr)output).GetMetadata().SetOutPutsNames(outputsNames);
 
-        if (output is Call)
-        {
-            ((Call)output).Target.GetMetadata().SetOutPutsNames(outputsNames);
-        }
-
         AddToOutputs(_outputTensors, op.GetOutputsArray(), output);
     }
 
@@ -425,6 +420,7 @@ public sealed partial class TFLiteImporter : BaseImporter
 
         if (_outputTensors.TryGetValue(id, out var expr))
         {
+            expr.GetMetadata().SetOutPutsNames(new List<string> { GetInputTensor(op, index).Name });
             return expr;
         }
         else
@@ -441,6 +437,7 @@ public sealed partial class TFLiteImporter : BaseImporter
             if (!data.IsEmpty)
             {
                 var con = Tensor.FromBytes(GetIRType(tensor), data.ToArray());
+                ((Expr)con).GetMetadata().SetOutPutsNames(new List<string> { GetInputTensor(op, index).Name });
                 _outputTensors.Add(id, con);
                 return con;
             }

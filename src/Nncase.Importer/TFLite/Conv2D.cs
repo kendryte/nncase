@@ -62,7 +62,6 @@ namespace Nncase.Importer.TFLite
                 bias = Dequantize(bias, new QuantParam(biasQuantParams[0].ZeroPoint, biasQuantParams[0].Scale), DataTypes.Float32);
             }
 
-            weights.GetMetadata().SetOutPutsNames(new List<string> { GetInputTensor(op, 1).Name });
             if (outputQuantParams != null)
             {
                 if (GetOutputTensor(op, 0).Type == tflite.TensorType.INT8)
@@ -145,7 +144,6 @@ namespace Nncase.Importer.TFLite
             }
 
             var clamp = ToFloatClampRange(options.FusedActivationFunction);
-            weights.GetMetadata().SetOutPutsNames(new List<string> { GetInputTensor(op, 1).Name });
 
             return F.Tensors.NCHWToNHWC(
                 F.NN.Conv2D(
