@@ -18,7 +18,7 @@ namespace Nncase.IR;
 public class IRMetadata
 {
     /// <summary>
-    /// outputs names.
+    /// Gets or sets outputs names.
     /// </summary>
     public IReadOnlyList<string>? OutputsNames { get; set; }
 
