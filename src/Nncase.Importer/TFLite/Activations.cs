@@ -66,4 +66,10 @@ public partial class TFLiteImporter
         var input = GetInputExprs(op, 0);
         return F.NN.LeakyRelu(input, op.BuiltinOptionsAsLeakyReluOptions().Alpha);
     }
+
+    private Expr VisitHardSwish(in tflite.Operator op)
+    {
+        var input = GetInputExprs(op, 0);
+        return F.NN.HardSwish(input);
+    }
 }
