@@ -41,6 +41,7 @@ namespace Nncase.Importer
                         autoPad,
                         group));
 
+            weights = IR.F.Tensors.Transpose(weights, new[] { 1, 0, 2, 3 });
             return F.NN.Conv2DTranspose(
                 input,
                 weights,

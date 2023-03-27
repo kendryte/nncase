@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 using F = Nncase.IR.F;
 using TensorType = tflite.TensorType;
@@ -16,9 +17,15 @@ namespace Nncase.Importer.TFLite
     {
         private Expr VisitConv2DTranspose(in tflite.Operator op)
         {
-            var outShape = GetInputExprs(op, 0);
-            var (input, weights) = GetInputExprs(op, 1, 2);
-            var bias = GetInputExprs(op, 2);
+            var outShape = ((TensorConst)GetInputExprs(op, 0)).Value.ToArray<int>();
+            var newOutShape = new[] { outShape[0], outShape[3], outShape[1], outShape[2] };
+            var (input, weights) = GetInputExprs(op, 2, 1);
+            Expr bias = Enumerable.Repeat(0f, outShape[0]).ToArray();
+            if (op.InputsLength > 3)
+            {
+                bias = GetInputExprs(op, 3);
+            }
+
             var options = op.BuiltinOptionsAsTransposeConvOptions();
             var (inH, inW) = Util.GetHW(input);
             var (fH, fW) = Util.GetHW(weights);
@@ -38,7 +45,7 @@ namespace Nncase.Importer.TFLite
                     F.Tensors.NHWCToNCHW(input),
                     F.Tensors.NHWCToNCHW(weights),
                     bias,
-                    F.Tensors.NHWCToNCHW(outShape),
+                    newOutShape,
                     stride,
                     padding,
                     Tensor.From<long>(new long[] { 0, 0, 0, 0 }),

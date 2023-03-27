@@ -67,7 +67,7 @@ public sealed partial class Conv2DTranspose : Op
     /// <summary>
     /// Gets FusedClamp.
     /// </summary>
-    public static readonly ParameterInfo FusedClamp = new(typeof(Conv2D), 9, "fused_clamp", HasShape(new Shape(2)) & HasDataType(DataTypes.Float32));
+    public static readonly ParameterInfo FusedClamp = new(typeof(Conv2DTranspose), 9, "fused_clamp", HasShape(new Shape(2)) & HasDataType(DataTypes.Float32));
 
     public PadMode PadMode { get; }
 
