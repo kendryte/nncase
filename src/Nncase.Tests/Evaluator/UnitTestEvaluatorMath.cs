@@ -737,6 +737,14 @@ public class UnitTestEvaluatorMath : TestClassBase
         }
 
         {
+            var f = 123;
+            foreach (var op in new UnaryOp[] { UnaryOp.Neg, UnaryOp.Abs, UnaryOp.Square })
+            {
+                TestUnaryNormal(op, OrtKISharp.Tensor.FromScalar(f), Tensor.FromScalar(f));
+            }
+        }
+
+        {
             var f = new float[] { 1F, 1.1F, 1.2F, 1.3F };
             foreach (var op in ops)
             {
