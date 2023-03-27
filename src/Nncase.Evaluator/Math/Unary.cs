@@ -104,6 +104,8 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
         UnaryOp.Ceil => input,
         UnaryOp.Floor => input,
         UnaryOp.Neg => -input,
+        UnaryOp.Abs => System.Math.Abs(input),
+        UnaryOp.Square => input * input,
         _ => throw new ArgumentOutOfRangeException(nameof(op), $"NotSupported {nameof(op)} For Int"),
     };
 
