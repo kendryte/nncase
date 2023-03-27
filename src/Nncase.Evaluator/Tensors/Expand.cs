@@ -30,9 +30,15 @@ public sealed partial class ExpandEvaluator : IEvaluator<Expand>, ITypeInference
 
     public Cost Visit(ICostEvaluateContext context, Expand target)
     {
-        var input = context.GetArgumentType<TensorType>(target, Expand.Input);
-        var ret = context.GetReturnType<TensorType>();
-        return CostUtility.GetBroadcastCost(input, ret);
+        // expand is implemented as input * ones
+        var outputType = context.GetReturnType<TensorType>();
+
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(outputType) + CostUtility.GetMemoryAccess(outputType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, CostUtility.GetCPUCyclesOfBinary(BinaryOp.Mul)),
+        };
     }
 
     private IRType Visit(ITypeInferenceContext context, Expand target, TensorType input, TensorType shape)
