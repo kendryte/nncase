@@ -436,7 +436,7 @@ public sealed partial class TFLiteImporter : BaseImporter
             var data = buffer.GetDataBytes();
             if (!data.IsEmpty)
             {
-                var con = Tensor.FromBytes(GetIRType(tensor), data.ToArray());
+                var con = Const.FromValue(((Expr)Tensor.FromBytes(GetIRType(tensor), data.ToArray())).Evaluate());
                 ((Expr)con).GetMetadata().SetOutPutsNames(new List<string> { GetInputTensor(op, index).Name });
                 _outputTensors.Add(id, con);
                 return con;
