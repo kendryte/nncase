@@ -21,9 +21,9 @@ using Tensors = Nncase.IR.F.Tensors;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
-public class UnitTestExpandToBinary : TransformTestBase
+public class UnitTestExpandToBroadcast : TransformTestBase
 {
-    public static IEnumerable<object[]> TestExpandToBinaryPositiveData =>
+    public static IEnumerable<object[]> TestExpandToBroadcastPositiveData =>
         new[]
         {
             new object[] { new[] { 3, 1 }, new[] { 2, 1, 6 } },
@@ -31,27 +31,27 @@ public class UnitTestExpandToBinary : TransformTestBase
             new object[] { new[] { 1, 256, 1, 1 }, new[] { 1, 256, 56, 56 } },
         };
 
-    public static IEnumerable<object[]> TestExpandToBinaryNegativeData =>
+    public static IEnumerable<object[]> TestExpandToBroadcastNegativeData =>
         new[]
         {
             new object[] { new[] { 2, 4, 8 }, new Var(new TensorType(DataTypes.Int32,  new IR.Shape(3))) },
         };
 
     [Theory]
-    [MemberData(nameof(TestExpandToBinaryPositiveData))]
-    public void TestExpandToBinaryPositive(int[] inputShape, int[] shape)
+    [MemberData(nameof(TestExpandToBroadcastPositiveData))]
+    public void TestExpandToBroadcastPositive(int[] inputShape, int[] shape)
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, inputShape);
         var rootPre = Tensors.Expand(a, shape);
-        TestMatched<ExpandToBinary>(rootPre);
+        TestMatched<ExpandToBroadcast>(rootPre);
     }
 
     [Theory]
-    [MemberData(nameof(TestExpandToBinaryNegativeData))]
-    public void TestExpandToBinaryNegative(int[] inputShape, Expr shape)
+    [MemberData(nameof(TestExpandToBroadcastNegativeData))]
+    public void TestExpandToBroadcastNegative(int[] inputShape, Expr shape)
     {
         var a = new IR.Var(new IR.TensorType(DataTypes.Float32, inputShape));
         var rootPre = Tensors.Squeeze(a, shape);
-        TestNotMatch<ExpandToBinary>(rootPre);
+        TestNotMatch<ExpandToBroadcast>(rootPre);
     }
 }
