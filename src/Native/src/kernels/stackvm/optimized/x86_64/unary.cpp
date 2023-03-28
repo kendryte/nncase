@@ -32,7 +32,7 @@ struct unary_op_abs {
         const ALIGN32_BEG int32_t remove_sign_bit_data[8] ALIGN32_END = {
             0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF,
             0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF};
-        __m256i remove_sign_bit_flag =
+        remove_sign_bit_flag =
             _mm256_load_si256((__m256i const *)remove_sign_bit_data);
     }
 
