@@ -196,7 +196,7 @@ result<void> optimized_unary_impl(const float *CXX_RESTRICT input,
 #if defined(X86_64_SIMD_ON)
     size_t n8 = (n >> 3);
     size_t n8_left = n & (8 - 1);
-    for (size_t i = 0; i < n; i += 8) {
+    for (size_t i = 0; i < n8; i++) {
         op.pack(input, output);
         input += 8;
         output += 8;
