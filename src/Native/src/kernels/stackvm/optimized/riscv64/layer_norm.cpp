@@ -135,8 +135,9 @@ static void layer_norm_update1(const float *data, float *out, int len,
         : "t0", "t1", "a0", "a1", "a2", "v0", "v16", "a3", "a4", "v8");
 }
 
-result<void> layernorm_impl(const float *input, float *output, const float *scale,
-                            const float *bias, const dims_t &in_shape, int32_t axis,
+result<void> layernorm_impl(const float *input, float *output,
+                            const float *scale, const float *bias,
+                            const dims_t &in_shape, int32_t axis,
                             float epsilon) {
     if (axis < 0) {
         axis = (int)in_shape.size() + axis;
