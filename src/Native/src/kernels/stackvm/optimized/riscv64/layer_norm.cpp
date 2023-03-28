@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../reference/ref_ops.h"
-#include "opt_ops.h"
+#include "../../reference/ref_ops.h"
+#include "../opt_ops.h"
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/util.h>
@@ -100,8 +100,8 @@ static float get_var(const float *data, int n, float mean) {
 }
 
 static void layer_norm_update1(const float *data, float *out, int len,
-                               float mean, float var, float *r1, float e,
-                               float *b) {
+                               float mean, float var, const float *r1, float e,
+                               const float *b) {
     float r_sqrt = 1.0f / sqrtf(var + e);
     __asm volatile(
         "mv a0, %[avl];"
@@ -135,8 +135,8 @@ static void layer_norm_update1(const float *data, float *out, int len,
         : "t0", "t1", "a0", "a1", "a2", "v0", "v16", "a3", "a4", "v8");
 }
 
-result<void> layernorm_impl(const float *input, float *output, float *scale,
-                            float *bias, const dims_t &in_shape, int32_t axis,
+result<void> layernorm_impl(const float *input, float *output, const float *scale,
+                            const float *bias, const dims_t &in_shape, int32_t axis,
                             float epsilon) {
     if (axis < 0) {
         axis = (int)in_shape.size() + axis;

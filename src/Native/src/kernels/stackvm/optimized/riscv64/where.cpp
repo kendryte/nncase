@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../reference/ref_ops.h"
-#include "opt_ops.h"
+#include "../../reference/ref_ops.h"
+#include "../opt_ops.h"
 #include <iostream>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/runtime/runtime_op_utility.h>
