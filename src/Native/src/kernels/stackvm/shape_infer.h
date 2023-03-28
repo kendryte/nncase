@@ -21,6 +21,7 @@
 #include <nncase/runtime/datatypes.h>
 #include <nncase/runtime/error.h>
 #include <nncase/runtime/result.h>
+#include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/stackvm/opcode.h>
 #include <nncase/tensor.h>
 #include <nncase/value.h>
@@ -247,7 +248,7 @@ inline dims_t pad_infer_shape(const dims_t &in_shape, const paddings_t &pads) {
 inline dims_t space_to_batch_shape_infer(const dims_t &in_shape,
                                          const dims_t &block_shape,
                                          const paddings_t &paddings) {
-    auto batch = in_shape[0] * detail::compute_size(block_shape);
+    auto batch = in_shape[0] * runtime::compute_size(block_shape);
     auto out_shape = dims_t{batch};
     auto m = block_shape.size();
     for (size_t i = 0; i < m; ++i) {

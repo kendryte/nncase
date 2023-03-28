@@ -12,11 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "optimized/opt_ops.h"
+#include "reference/ref_ops.h"
 #include "shape_infer.h"
 #include <cstring>
 #include <nncase/kernels/kernel_utils.h>
-#include <nncase/kernels/stackvm/opt_ops.h>
-#include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/kernels/stackvm/tensor_ops.h>
 #include <nncase/runtime/runtime_tensor.h>
 #include <nncase/runtime/util.h>
