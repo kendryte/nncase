@@ -25,7 +25,7 @@ function(_TARGET_ARCH_FILES)
     cmake_parse_arguments(ARGS "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
     foreach(FILE ${ARGS_FILES})
-        set(ARCH_FILE "${ARCH}/${FILE}")
+        set(ARCH_FILE "${CMAKE_CURRENT_SOURCE_DIR}/${ARCH}/${FILE}")
         if(EXISTS ${ARCH_FILE})
             target_sources(${ARGS_TARGET} PRIVATE ${ARCH_FILE})
         else()
@@ -39,10 +39,12 @@ target_sources(kernels PRIVATE ${SRCS})
 _TARGET_ARCH_FILES(TARGET kernels
                    FILES
                    binary.cpp
+                   layer_norm.cpp
                    #matmul.cpp
                    sigmoid.cpp
                    softmax.cpp
                    unary.cpp
+                   where.cpp
 )
 
 if(NOT MSVC)
