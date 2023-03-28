@@ -69,7 +69,8 @@ result<void> nncase::kernels::stackvm::reference::lrn(
         auto strides = axes_t{1, 1, 1, 1};
         auto tmp_out_shape = slice_infer_shape(in_shape, begins, ends, strides);
         auto tmp_out_strides = runtime::get_default_strides(tmp_out_shape);
-        auto slice_out = std::make_unique<float[]>(runtime::compute_size(tmp_out_shape));
+        auto slice_out =
+            std::make_unique<float[]>(runtime::compute_size(tmp_out_shape));
         try_(slice(dt_float32, IN_BYTE_CAST(square_data.get()),
                    OUT_CAST(gsl::byte, slice_out.get()), in_shape, in_strides,
                    out_strides, begins, ends, strides,

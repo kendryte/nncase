@@ -68,41 +68,45 @@
 #endif
 
 #ifndef __FMA__
-static CAN_FORCEINLINE __m256 _mm256_comp_fmadd_ps(const __m256 &_a, const __m256 &_b, const __m256 &_c)
-{
+static CAN_FORCEINLINE __m256 _mm256_comp_fmadd_ps(const __m256 &_a,
+                                                   const __m256 &_b,
+                                                   const __m256 &_c) {
     return _mm256_add_ps(_mm256_mul_ps(_a, _b), _c);
 }
-static CAN_FORCEINLINE __m256 _mm256_comp_fnmadd_ps(const __m256 &_a, const __m256 &_b, const __m256 &_c)
-{
+static CAN_FORCEINLINE __m256 _mm256_comp_fnmadd_ps(const __m256 &_a,
+                                                    const __m256 &_b,
+                                                    const __m256 &_c) {
     return _mm256_sub_ps(_c, _mm256_mul_ps(_a, _b));
 }
 #else
-static CAN_FORCEINLINE __m256 _mm256_comp_fmadd_ps(const __m256 &_a, const __m256 &_b, const __m256 &_c)
-{
+static CAN_FORCEINLINE __m256 _mm256_comp_fmadd_ps(const __m256 &_a,
+                                                   const __m256 &_b,
+                                                   const __m256 &_c) {
     return _mm256_fmadd_ps(_a, _b, _c);
 }
-static CAN_FORCEINLINE __m256 _mm256_comp_fnmadd_ps(const __m256 &_a, const __m256 &_b, const __m256 &_c)
-{
+static CAN_FORCEINLINE __m256 _mm256_comp_fnmadd_ps(const __m256 &_a,
+                                                    const __m256 &_b,
+                                                    const __m256 &_c) {
     // return -a * b + c
     return _mm256_fnmadd_ps(_a, _b, _c);
 }
 #endif
 
-static CAN_FORCEINLINE __m256 _mm256_fmadd_1_ps(const __m256 &a, const __m256 &b, float c)
-{
+static CAN_FORCEINLINE __m256 _mm256_fmadd_1_ps(const __m256 &a,
+                                                const __m256 &b, float c) {
     return _mm256_comp_fmadd_ps(b, _mm256_set1_ps(c), a);
 }
 
-static CAN_FORCEINLINE __m256 _mm256_fmrsub_1_ps(const __m256 &a, const __m256 &b, float c)
-{
+static CAN_FORCEINLINE __m256 _mm256_fmrsub_1_ps(const __m256 &a,
+                                                 const __m256 &b, float c) {
     // return a - b * c
     return _mm256_comp_fnmadd_ps(b, _mm256_set1_ps(c), a);
 }
 
-static CAN_FORCEINLINE float _mm256_reduce_add_ps(__m256 x)
-{
+static CAN_FORCEINLINE float _mm256_reduce_add_ps(__m256 x) {
     /* ( x3+x7, x2+x6, x1+x5, x0+x4 ) */
-    const __m128 x128 = _mm_add_ps(_mm256_extractf128_ps(x, 1), _mm256_castps256_ps128(x));
+    const __m128 x128 =
+        _mm_add_ps(_mm256_extractf128_ps(x, 1), _mm256_castps256_ps128(x));
     /* ( -, -, x1+x3+x5+x7, x0+x2+x4+x6 ) */
     const __m128 x64 = _mm_add_ps(x128, _mm_movehl_ps(x128, x128));
     /* ( -, -, -, x0+x1+x2+x3+x4+x5+x6+x7 ) */
@@ -111,16 +115,17 @@ static CAN_FORCEINLINE float _mm256_reduce_add_ps(__m256 x)
     return _mm_cvtss_f32(x32);
 }
 
-static CAN_FORCEINLINE float _mm256_reduce_max_ps(__m256 x)
-{
-    const __m128 x128 = _mm_max_ps(_mm256_extractf128_ps(x, 1), _mm256_castps256_ps128(x));
+static CAN_FORCEINLINE float _mm256_reduce_max_ps(__m256 x) {
+    const __m128 x128 =
+        _mm_max_ps(_mm256_extractf128_ps(x, 1), _mm256_castps256_ps128(x));
     const __m128 x64 = _mm_max_ps(x128, _mm_movehl_ps(x128, x128));
     const __m128 x32 = _mm_max_ss(x64, _mm_shuffle_ps(x64, x64, 0x55));
     return _mm_cvtss_f32(x32);
 }
 
-#define _PI32AVX_CONST(Name, Val) \
-    static const ALIGN32_BEG int _pi32avx_##Name[4] ALIGN32_END = { Val, Val, Val, Val }
+#define _PI32AVX_CONST(Name, Val)                                              \
+    static const ALIGN32_BEG int _pi32avx_##Name[4] ALIGN32_END = {Val, Val,   \
+                                                                   Val, Val}
 
 _PI32AVX_CONST(1, 1);
 _PI32AVX_CONST(inv1, ~1);
@@ -128,12 +133,15 @@ _PI32AVX_CONST(2, 2);
 _PI32AVX_CONST(4, 4);
 
 /* declare some AVX constants -- why can't I figure a better way to do that? */
-#define _PS256_CONST(Name, Val) \
-    static const ALIGN32_BEG float _ps256_##Name[8] ALIGN32_END = { Val, Val, Val, Val, Val, Val, Val, Val }
-#define _PI32_CONST256(Name, Val) \
-    static const ALIGN32_BEG int _pi32_256_##Name[8] ALIGN32_END = { Val, Val, Val, Val, Val, Val, Val, Val }
-#define _PS256_CONST_TYPE(Name, Type, Val) \
-    static const ALIGN32_BEG Type _ps256_##Name[8] ALIGN32_END = { Val, Val, Val, Val, Val, Val, Val, Val }
+#define _PS256_CONST(Name, Val)                                                \
+    static const ALIGN32_BEG float _ps256_##Name[8] ALIGN32_END = {            \
+        Val, Val, Val, Val, Val, Val, Val, Val}
+#define _PI32_CONST256(Name, Val)                                              \
+    static const ALIGN32_BEG int _pi32_256_##Name[8] ALIGN32_END = {           \
+        Val, Val, Val, Val, Val, Val, Val, Val}
+#define _PS256_CONST_TYPE(Name, Type, Val)                                     \
+    static const ALIGN32_BEG Type _ps256_##Name[8] ALIGN32_END = {             \
+        Val, Val, Val, Val, Val, Val, Val, Val}
 
 _PS256_CONST(1, 1.0f);
 _PS256_CONST(0p5, 0.5f);
@@ -166,64 +174,59 @@ _PS256_CONST(cephes_log_q1, -2.12194440e-4f);
 _PS256_CONST(cephes_log_q2, 0.693359375f);
 
 #ifndef __AVX2__
-typedef union imm_xmm_union
-{
+typedef union imm_xmm_union {
     __m256i imm;
     __m128i xmm[2];
 } imm_xmm_union;
 
-#define COPY_IMM_TO_XMM(imm_, xmm0_, xmm1_)      \
-    {                                            \
-        ALIGN32_BEG imm_xmm_union u ALIGN32_END; \
-        u.imm = imm_;                            \
-        xmm0_ = u.xmm[0];                        \
-        xmm1_ = u.xmm[1];                        \
+#define COPY_IMM_TO_XMM(imm_, xmm0_, xmm1_)                                    \
+    {                                                                          \
+        ALIGN32_BEG imm_xmm_union u ALIGN32_END;                               \
+        u.imm = imm_;                                                          \
+        xmm0_ = u.xmm[0];                                                      \
+        xmm1_ = u.xmm[1];                                                      \
     }
 
-#define COPY_XMM_TO_IMM(xmm0_, xmm1_, imm_)      \
-    {                                            \
-        ALIGN32_BEG imm_xmm_union u ALIGN32_END; \
-        u.xmm[0] = xmm0_;                        \
-        u.xmm[1] = xmm1_;                        \
-        imm_ = u.imm;                            \
+#define COPY_XMM_TO_IMM(xmm0_, xmm1_, imm_)                                    \
+    {                                                                          \
+        ALIGN32_BEG imm_xmm_union u ALIGN32_END;                               \
+        u.xmm[0] = xmm0_;                                                      \
+        u.xmm[1] = xmm1_;                                                      \
+        imm_ = u.imm;                                                          \
     }
 
-#define AVX2_BITOP_USING_SSE2(fn)                                     \
-    static CAN_FORCEINLINE __m256i _mm256_comp_##fn(__m256i x, int a) \
-    {                                                                 \
-        /* use SSE2 instruction to perform the bitop AVX2 */          \
-        __m128i x1, x2;                                               \
-        __m256i ret;                                                  \
-        COPY_IMM_TO_XMM(x, x1, x2);                                   \
-        x1 = _mm_##fn(x1, a);                                         \
-        x2 = _mm_##fn(x2, a);                                         \
-        COPY_XMM_TO_IMM(x1, x2, ret);                                 \
-        return (ret);                                                 \
+#define AVX2_BITOP_USING_SSE2(fn)                                              \
+    static CAN_FORCEINLINE __m256i _mm256_comp_##fn(__m256i x, int a) {        \
+        /* use SSE2 instruction to perform the bitop AVX2 */                   \
+        __m128i x1, x2;                                                        \
+        __m256i ret;                                                           \
+        COPY_IMM_TO_XMM(x, x1, x2);                                            \
+        x1 = _mm_##fn(x1, a);                                                  \
+        x2 = _mm_##fn(x2, a);                                                  \
+        COPY_XMM_TO_IMM(x1, x2, ret);                                          \
+        return (ret);                                                          \
     }
-#define AVX2_INTOP_USING_SSE2(fn)                                         \
-    static CAN_FORCEINLINE __m256i _mm256_comp_##fn(__m256i x, __m256i y) \
-    {                                                                     \
-        /* use SSE2 instructions to perform the AVX2 integer operation */ \
-        __m128i x1, x2;                                                   \
-        __m128i y1, y2;                                                   \
-        __m256i ret;                                                      \
-        COPY_IMM_TO_XMM(x, x1, x2);                                       \
-        COPY_IMM_TO_XMM(y, y1, y2);                                       \
-        x1 = _mm_##fn(x1, y1);                                            \
-        x2 = _mm_##fn(x2, y2);                                            \
-        COPY_XMM_TO_IMM(x1, x2, ret);                                     \
-        return (ret);                                                     \
+#define AVX2_INTOP_USING_SSE2(fn)                                              \
+    static CAN_FORCEINLINE __m256i _mm256_comp_##fn(__m256i x, __m256i y) {    \
+        /* use SSE2 instructions to perform the AVX2 integer operation */      \
+        __m128i x1, x2;                                                        \
+        __m128i y1, y2;                                                        \
+        __m256i ret;                                                           \
+        COPY_IMM_TO_XMM(x, x1, x2);                                            \
+        COPY_IMM_TO_XMM(y, y1, y2);                                            \
+        x1 = _mm_##fn(x1, y1);                                                 \
+        x2 = _mm_##fn(x2, y2);                                                 \
+        COPY_XMM_TO_IMM(x1, x2, ret);                                          \
+        return (ret);                                                          \
     }
 #else
-#define AVX2_BITOP_USING_SSE2(fn)                                     \
-    static CAN_FORCEINLINE __m256i _mm256_comp_##fn(__m256i x, int a) \
-    {                                                                 \
-        return _mm256_##fn(x, a);                                     \
+#define AVX2_BITOP_USING_SSE2(fn)                                              \
+    static CAN_FORCEINLINE __m256i _mm256_comp_##fn(__m256i x, int a) {        \
+        return _mm256_##fn(x, a);                                              \
     }
-#define AVX2_INTOP_USING_SSE2(fn)                                         \
-    static CAN_FORCEINLINE __m256i _mm256_comp_##fn(__m256i x, __m256i y) \
-    {                                                                     \
-        return _mm256_##fn(x, y);                                         \
+#define AVX2_INTOP_USING_SSE2(fn)                                              \
+    static CAN_FORCEINLINE __m256i _mm256_comp_##fn(__m256i x, __m256i y) {    \
+        return _mm256_##fn(x, y);                                              \
     }
 #endif
 
@@ -242,15 +245,15 @@ AVX2_INTOP_USING_SSE2(andnot_si128)
 /* natural logarithm computed for 8 simultaneous float
    return NaN for x <= 0
 */
-static CAN_FORCEINLINE __m256 log256_ps(__m256 x)
-{
+static CAN_FORCEINLINE __m256 log256_ps(__m256 x) {
     __m256i imm0;
     __m256 one = *(__m256 *)_ps256_1;
 
     //__m256 invalid_mask = _mm256_cmple_ps(x, _mm256_setzero_ps());
     __m256 invalid_mask = _mm256_cmp_ps(x, _mm256_setzero_ps(), _CMP_LE_OS);
 
-    x = _mm256_max_ps(x, *(__m256 *)_ps256_min_norm_pos); /* cut off denormalized stuff */
+    x = _mm256_max_ps(
+        x, *(__m256 *)_ps256_min_norm_pos); /* cut off denormalized stuff */
 
     // can be done with AVX2
     imm0 = _mm256_comp_srli_epi32(_mm256_castps_si256(x), 23);
@@ -295,7 +298,7 @@ static CAN_FORCEINLINE __m256 log256_ps(__m256 x)
 
     y = _mm256_comp_fmadd_ps(e, *(__m256 *)_ps256_cephes_log_q1, y);
 
-    //y = -z * 0.5 + y
+    // y = -z * 0.5 + y
     y = _mm256_comp_fnmadd_ps(z, *(__m256 *)_ps256_0p5, y);
 
     x = _mm256_add_ps(x, y);
@@ -318,8 +321,7 @@ _PS256_CONST(cephes_exp_p3, 4.1665795894E-2f);
 _PS256_CONST(cephes_exp_p4, 1.6666665459E-1f);
 _PS256_CONST(cephes_exp_p5, 5.0000001201E-1f);
 
-static CAN_FORCEINLINE __m256 exp256_ps(__m256 x)
-{
+static CAN_FORCEINLINE __m256 exp256_ps(__m256 x) {
     __m256 tmp = _mm256_setzero_ps(), fx;
     __m256i imm0;
     __m256 one = *(__m256 *)_ps256_1;
@@ -328,11 +330,12 @@ static CAN_FORCEINLINE __m256 exp256_ps(__m256 x)
     x = _mm256_max_ps(x, *(__m256 *)_ps256_exp_lo);
 
     /* express exp(x) as exp(g + n*log(2)) */
-    fx = _mm256_comp_fmadd_ps(x, *(__m256 *)_ps256_cephes_LOG2EF, *(__m256 *)_ps256_0p5);
+    fx = _mm256_comp_fmadd_ps(x, *(__m256 *)_ps256_cephes_LOG2EF,
+                              *(__m256 *)_ps256_0p5);
 
     /* how to perform a floorf with SSE: just below */
-    //imm0 = _mm256_cvttps_epi32(fx);
-    //tmp  = _mm256_cvtepi32_ps(imm0);
+    // imm0 = _mm256_cvttps_epi32(fx);
+    // tmp  = _mm256_cvtepi32_ps(imm0);
 
     tmp = _mm256_floor_ps(fx);
 
@@ -384,8 +387,7 @@ _PS256_CONST(cephes_tanh_p8, 1.18534705686654e-04f);
 _PS256_CONST(cephes_tanh_p9, 2.26843463243900e-03f);
 
 // an approximation of tanh
-static inline __m256 tanh256_ps(const __m256 x)
-{
+static inline __m256 tanh256_ps(const __m256 x) {
     __m256 value = x;
     value = _mm256_max_ps(*(__m256 *)_ps256_tanh_lo, value);
     value = _mm256_min_ps(*(__m256 *)_ps256_tanh_hi, value);
@@ -393,18 +395,27 @@ static inline __m256 tanh256_ps(const __m256 x)
     __m256 value_squared = _mm256_mul_ps(value, value);
 
     __m256 p;
-    p = _mm256_comp_fmadd_ps(value_squared, *(__m256 *)_ps256_cephes_tanh_p0, *(__m256 *)_ps256_cephes_tanh_p1);
-    p = _mm256_comp_fmadd_ps(p, value_squared, *(__m256 *)_ps256_cephes_tanh_p2);
-    p = _mm256_comp_fmadd_ps(p, value_squared, *(__m256 *)_ps256_cephes_tanh_p3);
-    p = _mm256_comp_fmadd_ps(p, value_squared, *(__m256 *)_ps256_cephes_tanh_p4);
-    p = _mm256_comp_fmadd_ps(p, value_squared, *(__m256 *)_ps256_cephes_tanh_p5);
-    p = _mm256_comp_fmadd_ps(p, value_squared, *(__m256 *)_ps256_cephes_tanh_p6);
+    p = _mm256_comp_fmadd_ps(value_squared, *(__m256 *)_ps256_cephes_tanh_p0,
+                             *(__m256 *)_ps256_cephes_tanh_p1);
+    p = _mm256_comp_fmadd_ps(p, value_squared,
+                             *(__m256 *)_ps256_cephes_tanh_p2);
+    p = _mm256_comp_fmadd_ps(p, value_squared,
+                             *(__m256 *)_ps256_cephes_tanh_p3);
+    p = _mm256_comp_fmadd_ps(p, value_squared,
+                             *(__m256 *)_ps256_cephes_tanh_p4);
+    p = _mm256_comp_fmadd_ps(p, value_squared,
+                             *(__m256 *)_ps256_cephes_tanh_p5);
+    p = _mm256_comp_fmadd_ps(p, value_squared,
+                             *(__m256 *)_ps256_cephes_tanh_p6);
     p = _mm256_mul_ps(p, value);
 
     __m256 q;
-    q = _mm256_comp_fmadd_ps(value_squared, *(__m256 *)_ps256_cephes_tanh_p7, *(__m256 *)_ps256_cephes_tanh_p8);
-    q = _mm256_comp_fmadd_ps(q, value_squared, *(__m256 *)_ps256_cephes_tanh_p9);
-    q = _mm256_comp_fmadd_ps(q, value_squared, *(__m256 *)_ps256_cephes_tanh_p6);
+    q = _mm256_comp_fmadd_ps(value_squared, *(__m256 *)_ps256_cephes_tanh_p7,
+                             *(__m256 *)_ps256_cephes_tanh_p8);
+    q = _mm256_comp_fmadd_ps(q, value_squared,
+                             *(__m256 *)_ps256_cephes_tanh_p9);
+    q = _mm256_comp_fmadd_ps(q, value_squared,
+                             *(__m256 *)_ps256_cephes_tanh_p6);
 
     __m256 dst = _mm256_div_ps(p, q);
     return dst;
@@ -433,8 +444,7 @@ _PS256_CONST(cephes_FOPI, 1.27323954473516f); // 4 / M_PI
    surprising but correct result.
 
 */
-static CAN_FORCEINLINE __m256 sin256_ps(__m256 x)
-{ // any x
+static CAN_FORCEINLINE __m256 sin256_ps(__m256 x) { // any x
     __m256 xmm1, xmm2 = _mm256_setzero_ps(), xmm3, sign_bit, y;
     __m256i imm0, imm2;
 
@@ -553,8 +563,7 @@ static CAN_FORCEINLINE __m256 sin256_ps(__m256 x)
 }
 
 /* almost the same as sin_ps */
-static CAN_FORCEINLINE __m256 cos256_ps(__m256 x)
-{ // any x
+static CAN_FORCEINLINE __m256 cos256_ps(__m256 x) { // any x
     __m256 xmm1, xmm2 = _mm256_setzero_ps(), xmm3, y;
     __m256i imm0, imm2;
 
@@ -664,10 +673,10 @@ static CAN_FORCEINLINE __m256 cos256_ps(__m256 x)
     return y;
 }
 
-/* since sin256_ps and cos256_ps are almost identical, sincos256_ps could replace both of them..
+/* since sin256_ps and cos256_ps are almost identical, sincos256_ps could
+   replace both of them..
    it is almost as fast, and gives you a free cosine with your sine */
-static CAN_FORCEINLINE void sincos256_ps(__m256 x, __m256 *s, __m256 *c)
-{
+static CAN_FORCEINLINE void sincos256_ps(__m256 x, __m256 *s, __m256 *c) {
     __m256 xmm1, xmm2, xmm3 = _mm256_setzero_ps(), sign_bit_sin, y;
     __m256i imm0, imm2, imm4;
 
@@ -806,8 +815,7 @@ static CAN_FORCEINLINE void sincos256_ps(__m256 x, __m256 *s, __m256 *c)
     *c = _mm256_xor_ps(xmm2, sign_bit_cos);
 }
 
-static CAN_FORCEINLINE __m256 tan256_ps(__m256 x)
-{
+static CAN_FORCEINLINE __m256 tan256_ps(__m256 x) {
     __m256 ysin, ycos;
     __m256 eps = _mm256_set1_ps(1E-8f);
     sincos256_ps(x, &ysin, &ycos);
@@ -818,8 +826,7 @@ static CAN_FORCEINLINE __m256 tan256_ps(__m256 x)
     return ytan;
 }
 
-static CAN_FORCEINLINE __m256 pow256_ps(__m256 a, __m256 b)
-{
+static CAN_FORCEINLINE __m256 pow256_ps(__m256 a, __m256 b) {
     // pow(x, m) = exp(m * log(x))
     return exp256_ps(_mm256_mul_ps(b, log256_ps(a)));
 }
