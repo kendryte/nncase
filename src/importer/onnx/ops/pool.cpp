@@ -74,12 +74,20 @@ void onnx_importer::convert_pool(const NodeProto &node, const reduce_op_t reduce
     const auto &output = node.output()[0];
 
     auto input_shape = get_shape(input);
+    auto output_shape = get_shape(output);
     padding_mode pad_mode = padding_mode::notset;
 
     const auto &auto_pad_attr = get_attribute<std::string>(node, "auto_pad");
     if (auto_pad_attr)
     {
         pad_mode = parse_padding_mode(auto_pad_attr.value());
+    }
+
+    int ceil_mode = 0;
+    const auto &ceil_mode_attr = get_attribute<int>(node, "ceil_mode");
+    if (ceil_mode_attr)
+    {
+        ceil_mode = static_cast<int>(ceil_mode_attr.value());
     }
 
     bool count_include_pad = false;
@@ -131,6 +139,17 @@ void onnx_importer::convert_pool(const NodeProto &node, const reduce_op_t reduce
     {
         break;
     }
+    }
+
+    if (ceil_mode)
+    {
+        auto get_input_size = [](int output_size, int k, int s, int p) { return (output_size - 1) * s + k - p; };
+        auto extra_paddg_h = get_input_size(output_shape[2], kernel_shape[0], strides[0], pads[0].sum()) - input_shape[2];
+        if (extra_paddg_h > 0)
+            pads[0].after += extra_paddg_h;
+        auto extra_paddg_w = get_input_size(output_shape[3], kernel_shape[1], strides[1], pads[1].sum()) - input_shape[3];
+        if (extra_paddg_w > 0)
+            pads[1].after += extra_paddg_w;
     }
 
     auto op = graph_.emplace<reduce_window2d>(reduce_op, move(input_shape), init_value, kernel_shape[0], kernel_shape[1],

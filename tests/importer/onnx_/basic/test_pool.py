@@ -70,7 +70,6 @@ count_include_pads = [
     True
 ]
 
-
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('kernel_size', kernel_sizes)
 @pytest.mark.parametrize('stride', strides)
