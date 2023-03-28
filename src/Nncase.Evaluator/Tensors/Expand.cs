@@ -32,6 +32,7 @@ public sealed partial class ExpandEvaluator : IEvaluator<Expand>, ITypeInference
     {
         var input = context.GetArgumentType<TensorType>(target, Expand.Input);
         var ret = context.GetReturnType<TensorType>();
+
         return CostUtility.GetBroadcastCost(input, ret);
     }
 
