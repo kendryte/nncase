@@ -32,8 +32,8 @@ namespace Nncase.Importer.TFLite
             var strideW = options.StrideW;
             var dilationH = 1;
             var dilationW = 1;
-            var padH = Util.GetWindowedPadding(inH, fH, strideH, dilationH, options.Padding == tflite.Padding.SAME);
-            var padW = Util.GetWindowedPadding(inW, fW, strideW, dilationW, options.Padding == tflite.Padding.SAME);
+            var padH = Util.GetWindowedPadding(newOutShape[2], fH, strideH, dilationH, options.Padding == tflite.Padding.SAME);
+            var padW = Util.GetWindowedPadding(newOutShape[3], fW, strideW, dilationW, options.Padding == tflite.Padding.SAME);
             var stride = Tensor.From<int>(new[] { strideH, strideW }, new[] { 2 });
             var dilation = Tensor.From<int>(new[] { dilationH, dilationW }, new[] { 2 });
             var padding = Util.ConcatPadding(padH, padW);
