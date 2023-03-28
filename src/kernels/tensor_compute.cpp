@@ -226,7 +226,7 @@ result<void> kernels::binary(binary_op_t op, const T *input_a, const T *input_b,
 result<void> kernels::unary(unary_op_t op, const float *input, float *output, const runtime_shape_t &shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, kernel_context &context) noexcept
 {
-    if (is_contiguous(shape, in_strides) && is_contiguous(shape, out_strides) && is_optimized_unary_op(op))
+    if (is_contiguous(shape, in_strides) && is_contiguous(shape, out_strides))
     {
         // optimization
         return cpu::optimized::unary(op, input, output, shape, in_strides, out_strides, context);
