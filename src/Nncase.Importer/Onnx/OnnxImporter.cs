@@ -189,7 +189,7 @@ public sealed partial class OnnxImporter : BaseImporter
             "TopK" => VisitTopK(op),
             "Transpose" => VisitTranspose(op),
 
-            // "Upsample" => VisitUpsample(op),
+            "Upsample" => VisitUpsample(op),
             "Unsqueeze" => VisitUnsqueeze(op),
             "Where" => VisitWhere(op),
             _ => UnSupportedOp(op.OpType),
