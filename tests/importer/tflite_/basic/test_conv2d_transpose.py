@@ -24,12 +24,13 @@ def _make_module(n, i_channels, i_size, k_size, o_channels, strides, padding, di
     class Conv2DTransposeModule(tf.Module):
         def __init__(self):
             super(Conv2DTransposeModule).__init__()
-            self.out = tf.keras.layers.Conv2DTranspose(o_channels, k_size, strides, padding, dilation_rate=dilations, use_bias=bias)
+            self.out = tf.keras.layers.Conv2DTranspose(
+                o_channels, k_size, strides, padding, dilation_rate=dilations, use_bias=bias)
 
         @tf.function(input_signature=[tf.TensorSpec([n, *i_size, i_channels], tf.float32)])
         def __call__(self, x):
             return self.out(x)
-        
+
     return Conv2DTransposeModule()
 
 
