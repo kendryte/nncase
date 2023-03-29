@@ -275,25 +275,38 @@ public abstract partial class Expr : IDisposable
         }
     }
 
-    private bool IsDescendantOf(Expr other)
+    private bool IsDescendantOf(Expr other, Dictionary<Expr, bool> visited)
     {
+        if (visited.TryGetValue(this, out var result))
+        {
+            return result;
+        }
+
         foreach (var operand in _operands)
         {
             if (ReferenceEquals(operand, other))
             {
-                return true;
+                result = true;
+                break;
             }
         }
 
         foreach (var operand in _operands)
         {
-            if (operand.IsDescendantOf(other))
+            if (operand.IsDescendantOf(other, visited))
             {
-                return true;
+                result = true;
+                break;
             }
         }
 
-        return false;
+        visited.Add(this, result);
+        return result;
+    }
+
+    private bool IsDescendantOf(Expr other)
+    {
+        return IsDescendantOf(other, new Dictionary<Expr, bool>(ReferenceEqualityComparer.Instance));
     }
 
     private void OnOperandsReplaced()
