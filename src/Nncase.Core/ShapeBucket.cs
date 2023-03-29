@@ -84,14 +84,53 @@ namespace Nncase
 
         private Expr MakeSplitEntry(Function preFunc, Var[] outerInput, ImmutableArray<SingleSegment> infos)
         {
+            // preprocess
             var inputs = outerInput.Select((v, i) => new Var($"SplitEntry_{i}", v.TypeAnnotation)).ToArray();
             var fixedShapeList = infos.Select(info =>
                 ComputeFixedShape(inputs[info.InputIndex], info.DimIndex, info.SegmentLimit)).ToArray();
+
+            var wrapParams = inputs.ToArray();
+            for (int i = 0; i < infos.Length; i++)
+            {
+                wrapParams[infos[i].InputIndex] = new Var($"split_dynamic_input_{i}",
+                    wrapParams[infos[i].InputIndex].TypeAnnotation);
+            }
+
+            var fitFixedShape = infos.Zip(fixedShapeList)
+                .Select(info => FitFixedShape(wrapParams[info.First.InputIndex], info.Second, info.First.InputIndex))
+                .ToArray();
+
+            var wrapperFn = new Function(preFunc.Name + $"_{MakeSegmentsStr(infos)}_wrapper",
+                new IR.Tuple(fitFixedShape), wrapParams);
+            var fitFixedShapeInputs = new Call(wrapperFn, inputs.ToArray());
+
             var newInputs = inputs.Select(v => (Expr)v).ToArray();
+            for (int i = 0; i < infos.Length; i++)
+            {
+                newInputs[infos[i].InputIndex] = fitFixedShapeInputs[i];
+            }
+
             var innerFunc = InnerFnImpl(preFunc, fixedShapeList, infos);
+
+            // postprocess
             var impl = new Function(new Call(innerFunc, newInputs), inputs);
             var then = new Call(impl, outerInput);
-            return then;
+
+            // input0: (1, len)
+            // ShapeOf(input0)[1] == len
+            return PostProcess(then, outerInput);
+        }
+
+        public Expr PostProcess(Expr output, Var[] outerInput)
+        {
+            // find first false
+            var actualLen = ShapeOf(outerInput[0])[1];
+            var len = Cast(actualLen, DataTypes.Int32);
+            // todo: replce with expr, not constant
+            // todo: out_shape_list in first should be remove
+            var encOut = Slice(output[0], new[] { 0, 0, 0 }, Stack(new Tuple(1, len, 224), 0), 3);
+            var dur = Slice(output[1], new[] { 0, 0 }, Stack(new Tuple(ShapeOf(output[1])[0], len), 0), 2);
+            return new Tuple(encOut, dur);
         }
 
         private static void Check(Function f, SegmentInfo info)
@@ -122,6 +161,20 @@ namespace Nncase
             // only dims[DimIndex] is unknown
             dims[dimIndex] = seg;
             return dims.Select(x => x.FixedValue).ToArray();
+        }
+
+        private static Expr FitFixedShape(Expr targetInput, int[] fixedShape, int inputIndex)
+        {
+            targetInput.InferenceType();
+            // rename
+            // compute paddings;
+            var pads = fixedShape - Cast(ShapeOf(targetInput), DataTypes.Int32);
+            var paddings = Transpose(Stack(new IR.Tuple(Enumerable.Repeat(0, fixedShape.Length).ToArray(), pads), 0),
+                new[] { 1, 0 });
+            var padValue = inputIndex == 0 ? 0 : 1;
+            var fixedInput = IR.F.NN.Pad(targetInput, paddings, PadMode.Constant,
+                Cast(padValue, targetInput.CheckedDataType));
+            return fixedInput;
         }
 
         private Function InnerFnImpl(Function preFunc, int[][] fixedShapeList, ImmutableArray<SingleSegment> segments)
