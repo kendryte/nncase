@@ -27,16 +27,3 @@ bool object_node::is_a(
 bool object_node::equals(const object_node &other) const noexcept {
     return this == &other;
 }
-
-uint32_t object_node::add_ref() const noexcept {
-    return ref_count_.fetch_add(1, std::memory_order_relaxed);
-}
-
-uint32_t object_node::release() const noexcept {
-    assert(ref_count_);
-    auto count = ref_count_.fetch_sub(1, std::memory_order_acq_rel);
-    if (count == 1) {
-        delete this;
-    }
-    return count;
-}
