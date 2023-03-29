@@ -119,35 +119,113 @@ internal class Compiler : ICompiler
         }
     }
 
-    public void Split()
+    public void ShapeBucket(ShapeBucketOptions options)
     {
-        // _module = new ShapeSplitSegment().Run((Function)Module.Entry!, new SegmentInfo(0, 2, new[] { 128, 224 }));
-        // _dumpper.DumpModule(Module, "Splited");
+        _module = new ShapeBucket().Run((Function)Module.Entry!, options.SegmentInfos);
+        _dumpper.DumpModule(Module, "Splited");
+    }
+
+    public class TimerRecord
+    {
+        private long startTime = -1;
+        private double secondsElapsed = -1;
+        private string _name;
+        public TimerRecord(string name, TimerRecord parent)
+        {
+            _name = name;
+        }
+
+        public void Start()
+        {
+            startTime = DateTime.Now.Ticks;
+        }
+
+        public void End()
+        {
+            var endTime = DateTime.Now.Ticks;
+            secondsElapsed = new TimeSpan(endTime - startTime).TotalSeconds;
+            Console.WriteLine($"{_name} took: {secondsElapsed}");
+        }
+    }
+
+    public class Timer : IDisposable
+    {
+        public static List<TimerRecord> Records = new();
+
+        private TimerRecord _record;
+
+        private Timer _parent;
+
+        public Timer(string name, Timer? parent = null)
+        {
+            _record = new TimerRecord(name, null);
+            Records.Add(_record);
+            _record.Start();
+        }
+
+        public void Dispose()
+        {
+            _record.End();
+        }
     }
 
     public async Task CompileAsync()
     {
         var target = _compileSession.Target;
 
-        await RunPassAsync(p => TargetIndependentPass(p), "TargetIndependentPass");
-        Split();
-        await RunPassAsync(p => target.RegisterTargetDependentPass(p, _compileSession.CompileOptions), "TargetDependentPass");
+        using (var _ = new Timer("TargetIndenpend"))
+        {
+            await RunPassAsync(p => TargetIndependentPass(p), "TargetIndependentPass");
+        }
+
+        using (var _ = new Timer("ShapeBucket"))
+        {
+            var shapeBucketOptions = _compileSession.CompileOptions.ShapeBucketOptions;
+            if (shapeBucketOptions.Enable)
+            {
+                ShapeBucket(shapeBucketOptions);
+                await RunPassAsync(pmg => pmg.Add<ShapeInferPass>(), "ShapeInferAfterBucket");
+                _module?.Entry!.InferenceType();
+                _dumpper.DumpModule(Module, "SplitedAfterInfer");
+            }
+        }
+
+        using (var _ = new Timer("TargetDepend"))
+        {
+            await RunPassAsync(p => target.RegisterTargetDependentPass(p, _compileSession.CompileOptions), "TargetDependentPass");
+        }
 
         if (_compileSession.CompileOptions.QuantizeOptions.ModelQuantMode == ModelQuantMode.UsePTQ)
         {
-            await RunPassAsync(p => target.RegisterQuantizePass(p, _compileSession.CompileOptions), "QuantizePass");
-            await RunPassAsync(p => target.RegisterTargetDependentAfterQuantPass(p, _compileSession.CompileOptions), "TargetDependentAfterQuantPass");
-            await RunPassAsync(
-                pmgr => pmgr.Add<DataflowPass>().Configure(p =>
-                {
-                    p.Name = "ClearMarker";
-                    p.Add<RemoveMarker>();
-                }),
-                "RemoveMarker");
+            using (var _ = new Timer("Quantize"))
+            {
+                await RunPassAsync(p => target.RegisterQuantizePass(p, _compileSession.CompileOptions), "QuantizePass");
+            }
+
+            using (var _ = new Timer("AfterQuantize"))
+            {
+                await RunPassAsync(p => target.RegisterTargetDependentAfterQuantPass(p, _compileSession.CompileOptions), "TargetDependentAfterQuantPass");
+            }
+
+            using (var _ = new Timer("ClearMarker"))
+            {
+                await RunPassAsync(
+                    pmgr => pmgr.Add<DataflowPass>().Configure(p =>
+                    {
+                        p.Name = "ClearMarker";
+                        p.Add<RemoveMarker>();
+                    }),
+                    "RemoveMarker");
+            }
         }
 
         // fold constant
-        // await RunPassAsync(p => p.Add<ShapeInferPass>(), "ShapeInferAfterCompile");
+        await RunPassAsync(p => p.Add<ShapeInferPass>(), "ShapeInferAfterCompile");
+
+        if (_dumpper.IsEnabled(DumpFlags.Compile))
+        {
+            _dumpper.DumpModule(_module, "ModuleBeforeCodegen");
+        }
     }
 
     public void Gencode(Stream output)
