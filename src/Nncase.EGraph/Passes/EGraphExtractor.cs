@@ -217,6 +217,11 @@ internal class EGraphExtractor
 
     private Function Visit(ENode enode, Function func, IRArray<Expr> children)
     {
+        if (children.Count == 0)
+        {
+            return func;
+        }
+
         var body = children[0];
         return func.With(body: body);
     }
