@@ -21,10 +21,10 @@ public class UnitTestExpressionOutputsNames
     public void TestExpressionOutputsNames()
     {
         var a = new Var("a", TensorType.Scalar(DataTypes.Float32));
-        var meta = a.GetMetadata();
+        var meta = a.Metadata;
         Assert.NotNull(meta);
-        Assert.Null(meta.GetOutPutsNames());
-        meta.SetOutPutsNames(new List<string> { "a" });
-        Assert.NotNull(meta.GetOutPutsNames());
+        Assert.Null(meta.OutputsNames);
+        meta.OutputsNames = new List<string> { "a" };
+        Assert.NotNull(meta.OutputsNames);
     }
 }
