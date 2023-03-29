@@ -197,12 +197,13 @@ public sealed partial class OnnxImporter : BaseImporter
 
         List<string> outputsNames = new();
 
-        for (int i = 0; i < op.Output.Count; i++)
+        var outputsCount = op.Output.Count;
+        for (int i = 0; i < outputsCount; i++)
         {
             outputsNames.Add(op.Output[i]);
         }
 
-        output.GetMetadata().SetOutPutsNames(outputsNames);
+        output.Metadata.OutputsNames = outputsNames;
 
         AddToOutputs(_outputTensors!, op.Output.ToArray(), output);
     }

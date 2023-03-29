@@ -341,12 +341,13 @@ public sealed partial class TFLiteImporter : BaseImporter
 
         List<string> outputsNames = new();
 
-        for (int i = 0; i < op.GetOutputsArray().Length; i++)
+        var outputsLength = op.GetOutputsArray().Length;
+        for (int i = 0; i < outputsLength; i++)
         {
             outputsNames.Add(GetOutputTensor(op, i).Name);
         }
 
-        ((Expr)output).GetMetadata().SetOutPutsNames(outputsNames);
+        ((Expr)output).Metadata.OutputsNames = outputsNames;
 
         AddToOutputs(_outputTensors, op.GetOutputsArray(), output);
     }
@@ -420,7 +421,7 @@ public sealed partial class TFLiteImporter : BaseImporter
 
         if (_outputTensors.TryGetValue(id, out var expr))
         {
-            expr.GetMetadata().SetOutPutsNames(new List<string> { GetInputTensor(op, index).Name });
+            expr.Metadata.OutputsNames = new List<string> { GetInputTensor(op, index).Name };
             return expr;
         }
         else
@@ -436,8 +437,8 @@ public sealed partial class TFLiteImporter : BaseImporter
             var data = buffer.GetDataBytes();
             if (!data.IsEmpty)
             {
-                var con = Const.FromValue(((Expr)Tensor.FromBytes(GetIRType(tensor), data.ToArray())).Evaluate());
-                ((Expr)con).GetMetadata().SetOutPutsNames(new List<string> { GetInputTensor(op, index).Name });
+                var con = Const.FromTensor(Tensor.FromBytes(GetIRType(tensor), data.ToArray()));
+                con.Metadata.OutputsNames = new List<string> { GetInputTensor(op, index).Name };
                 _outputTensors.Add(id, con);
                 return con;
             }

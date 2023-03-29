@@ -21,22 +21,6 @@ public class IRMetadata
     /// Gets or sets outputs names.
     /// </summary>
     public IReadOnlyList<string>? OutputsNames { get; set; }
-
-    /// <summary>
-    /// Get outputs names.
-    /// </summary>
-    public IReadOnlyList<string>? GetOutPutsNames()
-    {
-        return OutputsNames;
-    }
-
-    /// <summary>
-    /// Set outputs names.
-    /// </summary>
-    public void SetOutPutsNames(List<string> outputsNames)
-    {
-        OutputsNames = outputsNames;
-    }
 }
 
 /// <summary>
@@ -73,6 +57,8 @@ public abstract partial class Expr : IDisposable
 
         Metadata = new IRMetadata();
     }
+
+    public IRMetadata Metadata { get; set; }
 
     /// <summary>
     /// Gets or sets checked type.
@@ -142,8 +128,6 @@ public abstract partial class Expr : IDisposable
         set => _checkedType = value;
     }
 
-    private IRMetadata Metadata { get; set; }
-
     public static bool operator ==(Expr? left, Expr? right) => EqualityComparer<Expr>.Default.Equals(left, right);
 
     public static bool operator !=(Expr? left, Expr? right) => !(left == right);
@@ -191,14 +175,6 @@ public abstract partial class Expr : IDisposable
         {
             Dispose();
         }
-    }
-
-    /// <summary>
-    /// Get metadata.
-    /// </summary>
-    public IRMetadata GetMetadata()
-    {
-        return Metadata;
     }
 
     internal void AddUser(Expr user)
