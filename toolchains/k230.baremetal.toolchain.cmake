@@ -34,3 +34,7 @@ set(BUILD_BENCHMARK OFF)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=rv64imafdcv_zihintpause_zfh_zba_zbb_zbc_zbs_xtheadc -mabi=lp64d -mcmodel=medany -mtune=c908")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=rv64imafdcv_zihintpause_zfh_zba_zbb_zbc_zbs_xtheadc -mabi=lp64d -mcmodel=medany -mtune=c908")
+set(BUILDING_RUNTIME ON)
+set(ENABLE_K230_RUNTIME ON)
+set(BUILD_SHARED_LIBS OFF)
+add_compile_options(-D NNCASE_BAREMETAL)
