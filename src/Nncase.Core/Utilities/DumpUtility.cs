@@ -174,6 +174,7 @@ public static class DumpUtility
 
     public static void WriteKmodelData(Tensor[] inputs, Tensor[] outputs, string kmodelPath, string dumpDir, bool dynamic)
     {
+        Directory.CreateDirectory(dumpDir);
         BinFileUtil.WriteBinInputs(inputs, dumpDir);
         BinFileUtil.WriteBinOutputs(outputs, dumpDir);
         File.Copy(kmodelPath, Path.Join(dumpDir, "test.kmodel"));
