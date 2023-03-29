@@ -73,6 +73,27 @@ internal sealed class DDrBufferAllocator : ExprVisitor<bool, bool>
         _entry ??= primFunction;
         if (object.ReferenceEquals(_entry, primFunction))
         {
+            foreach (var physical in primFunction.Parameters)
+            {
+                if (physical.MemLocation is Schedule.MemoryLocation.Input or Schedule.MemoryLocation.Output)
+                {
+                    // avoid visit same buffer
+                    if (!_functionHashset.Contains(physical))
+                    {
+                        // input/output write into the FunctionUsage
+                        if (!_functionUsage.TryGetValue(physical.MemLocation, out var start))
+                        {
+                            start = 0;
+                        }
+
+                        physical.Start = start;
+                        _functionUsage[physical.MemLocation] = start + physical.Size;
+                        _functionHashset.Add(physical);
+                        Changed = true;
+                    }
+                }
+            }
+
             return base.VisitPrimFunction(_entry);
         }
 
@@ -112,23 +133,6 @@ internal sealed class DDrBufferAllocator : ExprVisitor<bool, bool>
                 module_usage[physical.MemLocation] = start + physical.Size;
                 module_hashset.Add(physical);
                 _entry.SchedResult.Rdatas.Add(physical);
-                Changed = true;
-            }
-        }
-        else if (physical.MemLocation is Schedule.MemoryLocation.Input or Schedule.MemoryLocation.Output)
-        {
-            // avoid visit same buffer
-            if (!_functionHashset.Contains(physical))
-            {
-                // input/output write into the FunctionUsage
-                if (!_functionUsage.TryGetValue(physical.MemLocation, out var start))
-                {
-                    start = 0;
-                }
-
-                physical.Start = start;
-                _functionUsage[physical.MemLocation] = start + physical.Size;
-                _functionHashset.Add(physical);
                 Changed = true;
             }
         }
