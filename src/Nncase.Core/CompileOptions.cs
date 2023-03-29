@@ -36,4 +36,9 @@ public sealed record CompileOptions
     /// Gets or sets quant options.
     /// </summary>
     public QuantizeOptions QuantizeOptions { get; set; } = QuantizeOptions.CreateNoQuant();
+
+    /// <summary>
+    /// Gets or sets quant options.
+    /// </summary>
+    public ShapeBucketOptions ShapeBucketOptions { get; set; } = ShapeBucketOptions.Default;
 }
