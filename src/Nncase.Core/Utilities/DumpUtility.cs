@@ -171,6 +171,26 @@ public static class DumpUtility
             }
         }
     }
+
+    public static void WriteKmodelData(Tensor[] inputs, Tensor[] outputs, string kmodelPath, string dumpDir, bool dynamic)
+    {
+        BinFileUtil.WriteBinInputs(inputs, dumpDir);
+        BinFileUtil.WriteBinOutputs(outputs, dumpDir);
+        File.Copy(kmodelPath, Path.Join(dumpDir, "test.kmodel"));
+        if (dynamic)
+        {
+            WriteKmodelDesc(inputs, outputs, dumpDir);
+        }
+    }
+
+    public static void WriteKmodelDesc(Tensor[] inputs, Tensor[] outputs, string dir)
+    {
+        var inputStr = string.Join("\n", inputs.Select(input => string.Join(" ", input.Shape.ToValueArray())));
+        var outputStr = string.Join("\n", outputs.Select(output => string.Join(" ", output.Shape.ToValueArray())));
+        var content =
+            $"{inputs.Length} {outputs.Length}\n{inputStr}\n{outputStr}";
+        DumpUtility.WriteResult(Path.Join(dir, "kmodel.desc"), content);
+    }
 }
 
 public static class BinFileUtil
@@ -198,26 +218,6 @@ public static class BinFileUtil
         {
             var bytes = reader.ReadBytes(shape.Prod().FixedValue * dt.SizeInBytes);
             return Tensor.FromBytes(dt, bytes, shape);
-        }
-    }
-
-    public static void WriteKmodelDesc(Tensor[] inputs, Tensor[] outputs, string dir)
-    {
-        var inputStr = string.Join("\n", inputs.Select(input => string.Join(" ", input.Shape.ToValueArray())));
-        var outputStr = string.Join("\n", outputs.Select(output => string.Join(" ", output.Shape.ToValueArray())));
-        var content =
-            $"{inputs.Length} {outputs.Length}\n{inputStr}\n{outputStr}";
-        DumpUtility.WriteResult(Path.Join(dir, "kmodel.desc"), content);
-    }
-
-    public static void GenerateKmodelData(Tensor[] inputs, Tensor[] outputs, string kmodelPath, string dumpDir, bool dynamic)
-    {
-        WriteBinInputs(inputs, dumpDir);
-        WriteBinOutputs(outputs, dumpDir);
-        File.Copy(kmodelPath, Path.Join(dumpDir, "test.kmodel"));
-        if (dynamic)
-        {
-            WriteKmodelDesc(inputs, outputs, dumpDir);
         }
     }
 }

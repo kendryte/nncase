@@ -60,7 +60,7 @@ namespace Nncase.Tests
             var (kmodelPath, expectKmodel) = Testing.BuildKModel("test.kmodel", m, CompileSession);
             Testing.DumpInterpModel(kmodelPath, inputs, Path.Join(Dumpper.Directory, "interp"));
             var outputs = Testing.RunKModel(expectKmodel, Dumpper.Directory, inputs).AsTensors();
-            BinFileUtil.GenerateKmodelData(inputs, outputs, kmodelPath, Path.Join(Dumpper.Directory, "kmodel_data"), isDynamic);
+            DumpUtility.WriteKmodelData(inputs, outputs, kmodelPath, Path.Join(Dumpper.Directory, "kmodel_data"), isDynamic);
         }
 
         /// <summary>
