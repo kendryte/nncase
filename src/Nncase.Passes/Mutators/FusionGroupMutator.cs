@@ -111,7 +111,8 @@ public class FusionGroupMutator : ExprRewriter
     /// <inheritdoc/>
     protected override Expr RewriteLeafCall(Call expr)
     {
-        if (TryMergeFusion(Rule, expr, out var merged_call))
+        // note only rewrite once. avoid RAUW problem.
+        if (!IsMutated && TryMergeFusion(Rule, expr, out var merged_call))
         {
             return merged_call;
         }
