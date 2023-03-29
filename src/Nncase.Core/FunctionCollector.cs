@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System.Reactive;
 using Nncase.IR;
 
 namespace Nncase
@@ -11,7 +12,10 @@ namespace Nncase
 
         public HashSet<Function> Functions => _functions;
 
-        protected internal override int VisitFunction(Function expr)
+        public FunctionCollector()
+            : base(true) { }
+
+        protected override int VisitLeafFunction(Function expr, Unit context)
         {
             _functions.Add(expr);
             return 0;
