@@ -45,6 +45,11 @@ public static class ValueDumper
         }
     }
 
+    /// <summary>
+    /// Dump multi tensor to single file.
+    /// </summary>
+    /// <param name="tensorValues"></param>
+    /// <param name="writer"></param>
     public static void DumpTensors(Tensor[] tensorValues, StreamWriter writer)
     {
         foreach (var tensorValue in tensorValues)
@@ -61,11 +66,20 @@ public static class ValueDumper
         }
     }
 
-    public static void DumpTensors(TensorValue[] tensorValue, string path)
+    /// <summary>
+    /// Dump multi tensor to dir with name i;
+    /// </summary>
+    /// <param name="tensorValue"></param>
+    /// <param name="dir"></param>
+    public static void DumpTensors(TensorValue[] tensorValue, string dir)
     {
-        using (var sr = new StreamWriter(path))
+        Directory.CreateDirectory(dir);
+        for (var i = 0; i < tensorValue.Length; i++)
         {
-            DumpTensors(tensorValue.Select(x => x.AsTensor()).ToArray(), sr);
+            using (var sr = new StreamWriter(Path.Join(dir, "{i}.txt")))
+            {
+                DumpTensor(tensorValue[i], sr);
+            }
         }
     }
 }
