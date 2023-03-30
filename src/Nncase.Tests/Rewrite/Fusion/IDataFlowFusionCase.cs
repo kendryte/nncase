@@ -604,6 +604,51 @@ internal sealed class DataFlowType10FusionCaseRight : IDataFlowFusionCase
 }
 
 /// <summary>
+/// ShortCutFusionCase, x have one or more user
+///                  x
+///             /        \
+///          /             \
+/// v2 = fusion_2_f(x)   v0 = fusion_0(x)   y
+///         |               \             /
+///         |               \           /
+///         |       v1 = fusion_1(v0,y).
+///           \         /
+///             \     /
+///           fusion_3_f(v3,v1).
+/// </summary>
+internal class DataFlowType10_1FusionCaseLeft : IDataFlowFusionCase
+{
+    public int FinalFusionCount => 3;
+
+    public static Expr BuildBodyCore(Expr inputLhs, Expr inputRhs, bool left)
+    {
+        var v0 = new Call(FusionBuilder.MakeConv2DFusion(true), inputLhs);
+        var v1 = new Call(FusionBuilder.MakeBinaryFusion(BinaryOp.Add, true), left ? new[] { v0, inputRhs } : new[] { inputRhs, v0, });
+        var v2 = new Call(FusionBuilder.MakeConv2DFusion(false), inputLhs);
+        var v4 = new Call(FusionBuilder.MakeBinaryFusion(BinaryOp.Sub, false), left ? new[] { v2, v1 } : new[] { v1, v2 });
+        return v4;
+    }
+
+    public Expr BuildBody(Var input)
+    {
+        return BuildBodyCore(input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 224, 224 }), true);
+    }
+}
+
+/// <summary>
+/// right version <see cref="DataFlowType10FusionCaseLeft"/>.
+/// </summary>
+internal sealed class DataFlowType10_1FusionCaseRight : IDataFlowFusionCase
+{
+    public int FinalFusionCount => 3;
+
+    public Expr BuildBody(Var input)
+    {
+        return DataFlowType10_1FusionCaseLeft.BuildBodyCore(input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 224, 224 }), false);
+    }
+}
+
+/// <summary>
 /// ShortCutFusionCase
 ///                x
 ///              /    \

@@ -18,6 +18,8 @@ public class UnitTestFusionGroup : TestClassBase
 {
     public static readonly TheoryData<IDataFlowFusionCase> DataOne = new()
     {
+        new DataFlowType10_1FusionCaseLeft(),
+        new DataFlowType10_1FusionCaseRight(),
         new DataFlowType14FusionCaseLeft(),
         new DataFlowType14FusionCaseRight(),
     };
