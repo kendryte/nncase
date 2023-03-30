@@ -75,7 +75,7 @@ public sealed partial class CombineConstBinaryTranspose : IRewriteRule
         {
             if (x.CheckedShape.Rank == 0)
             {
-                Transpose(Binary(binary.BinaryOp, x, y), perm);
+                return Transpose(Binary(binary.BinaryOp, x, y), perm);
             }
 
             var newShape = new List<int>() { x.CheckedShape[0].FixedValue };
@@ -96,7 +96,7 @@ public sealed partial class CombineConstBinaryTranspose : IRewriteRule
         {
             if (y.CheckedShape.Rank == 0)
             {
-                Transpose(Binary(binary.BinaryOp, x, y), perm);
+                return Transpose(Binary(binary.BinaryOp, x, y), perm);
             }
 
             var newShape = new List<int>() { y.CheckedShape[0].FixedValue };
