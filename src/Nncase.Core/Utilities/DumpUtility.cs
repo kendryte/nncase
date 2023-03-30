@@ -45,6 +45,11 @@ public static class ValueDumper
         }
     }
 
+    /// <summary>
+    /// Dump multi tensor to single file.
+    /// </summary>
+    /// <param name="tensorValues">tensor value.</param>
+    /// <param name="writer">writer.</param>
     public static void DumpTensors(Tensor[] tensorValues, StreamWriter writer)
     {
         foreach (var tensorValue in tensorValues)
@@ -61,11 +66,20 @@ public static class ValueDumper
         }
     }
 
-    public static void DumpTensors(TensorValue[] tensorValue, string path)
+    /// <summary>
+    /// Dump multi tensor to dir with name i.
+    /// </summary>
+    /// <param name="tensorValue">tensor value.</param>
+    /// <param name="dir">tensor.</param>
+    public static void DumpTensors(TensorValue[] tensorValue, string dir)
     {
-        using (var sr = new StreamWriter(path))
+        Directory.CreateDirectory(dir);
+        for (var i = 0; i < tensorValue.Length; i++)
         {
-            DumpTensors(tensorValue.Select(x => x.AsTensor()).ToArray(), sr);
+            using (var sr = new StreamWriter(Path.Join(dir, "{i}.txt")))
+            {
+                DumpTensor(tensorValue[i], sr);
+            }
         }
     }
 }
@@ -155,6 +169,56 @@ public static class DumpUtility
             {
                 writer.Write(b);
             }
+        }
+    }
+
+    public static void WriteKmodelData(Tensor[] inputs, Tensor[] outputs, string kmodelPath, string dumpDir, bool dynamic)
+    {
+        Directory.CreateDirectory(dumpDir);
+        BinFileUtil.WriteBinInputs(inputs, dumpDir);
+        BinFileUtil.WriteBinOutputs(outputs, dumpDir);
+        File.Copy(kmodelPath, Path.Join(dumpDir, "test.kmodel"));
+        if (dynamic)
+        {
+            WriteKmodelDesc(inputs, outputs, dumpDir);
+        }
+    }
+
+    public static void WriteKmodelDesc(Tensor[] inputs, Tensor[] outputs, string dir)
+    {
+        var inputStr = string.Join("\n", inputs.Select(input => string.Join(" ", input.Shape.ToValueArray())));
+        var outputStr = string.Join("\n", outputs.Select(output => string.Join(" ", output.Shape.ToValueArray())));
+        var content =
+            $"{inputs.Length} {outputs.Length}\n{inputStr}\n{outputStr}";
+        DumpUtility.WriteResult(Path.Join(dir, "kmodel.desc"), content);
+    }
+}
+
+public static class BinFileUtil
+{
+    public static void WriteBinOutputs(Tensor[] outputs, string dir)
+    {
+        for (var i = 0; i < outputs.Length; i++)
+        {
+            DumpUtility.WriteBinFile(Path.Join(dir, $"nncase_result_{i}.bin"), outputs[i]);
+        }
+    }
+
+    public static void WriteBinInputs(Tensor[] inputs, string dir)
+    {
+        for (var i = 0; i < inputs.Length; i++)
+        {
+            DumpUtility.WriteBinFile(Path.Join(dir, $"input_0_{i}.bin"), inputs[i]);
+        }
+    }
+
+    public static Tensor ReadBinFile(string path, DataType dt, Shape shape)
+    {
+        using (var stream = new FileStream(Path.Join(path), FileMode.Open, FileAccess.Read, FileShare.None))
+        using (var reader = new BinaryReader(stream))
+        {
+            var bytes = reader.ReadBytes(shape.Prod().FixedValue * dt.SizeInBytes);
+            return Tensor.FromBytes(dt, bytes, shape);
         }
     }
 }
