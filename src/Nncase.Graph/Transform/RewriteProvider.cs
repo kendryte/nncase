@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -24,6 +25,7 @@ internal class RewriteProvider : IRewriteProvider
         OnRewriteStart(expr, context, count);
         do
         {
+            IRewriteRule? currentRule = null;
             bool isMutated = false;
             foreach (var rule in rules)
             {
@@ -32,13 +34,14 @@ internal class RewriteProvider : IRewriteProvider
                 post = visitor.Rewrite(last);
                 if (visitor.IsMutated)
                 {
+                    currentRule = rule;
                     isMutated = true;
                     break;
                 }
             }
 
             var inferSuccess = CompilerServices.InferenceType(post);
-            OnRewriteEnd(post, context, count++);
+            OnRewriteEnd(post, context, count++, currentRule);
             if (!inferSuccess && DumpScope.Current.IsEnabled(DumpFlags.Rewrite))
             {
                 DumpScope.Current.DumpIR(post, $"{count}_End_InferFailed", "Rewrite");
@@ -69,11 +72,12 @@ internal class RewriteProvider : IRewriteProvider
     /// <summary>
     /// call back for rewrite end.
     /// </summary>
-    private void OnRewriteEnd(Expr expr, RunPassContext context, int count)
+    private void OnRewriteEnd(Expr expr, RunPassContext context, int count, IRewriteRule? rule)
     {
         if (DumpScope.Current.IsEnabled(DumpFlags.Rewrite))
         {
-            DumpScope.Current.DumpIR(expr, $"{count}_End", "Rewrite");
+            var ruleName = rule == null ? string.Empty : rule.GetType().Name;
+            DumpScope.Current.DumpIR(expr, $"{count}_{ruleName}_End", "Rewrite");
         }
     }
 }
