@@ -243,6 +243,7 @@ public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
         var callerOtherInput = (Expr)result["callerOtherInput"];
 
         var calleeInputUsers = new HashSet<Expr>(usedByReslut[calleeInput], ReferenceEqualityComparer.Instance);
+        var calleeUsers = new HashSet<Expr>(usedByReslut[callee], ReferenceEqualityComparer.Instance);
         if (object.ReferenceEquals(calleeInput, callerOtherInput))
         {
             // case : caller(callee(x),x)
@@ -260,15 +261,13 @@ public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
         else
         {
             // case : caller(callee(x),y)
-            // 1. callee input only usedby callee
-            if (calleeInputUsers.Count != 1 || !calleeInputUsers.Remove(callee))
+            if (!calleeUsers.Contains(caller))
             {
                 return null;
             }
         }
 
         // 2. callee only usedby caller
-        var calleeUsers = new HashSet<Expr>(usedByReslut[callee], ReferenceEqualityComparer.Instance);
         if (calleeUsers.Count != 1)
         {
             return null;
