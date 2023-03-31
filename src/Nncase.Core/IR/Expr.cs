@@ -42,8 +42,6 @@ public abstract partial class Expr : IDisposable
         {
             operand.AddUser(this);
         }
-
-        Metadata = new IRMetadata();
     }
 
     internal Expr(Expr[] operands)
@@ -54,11 +52,9 @@ public abstract partial class Expr : IDisposable
         {
             operand.AddUser(this);
         }
-
-        Metadata = new IRMetadata();
     }
 
-    public IRMetadata Metadata { get; set; }
+    public IRMetadata Metadata { get; set; } = new();
 
     /// <summary>
     /// Gets or sets checked type.

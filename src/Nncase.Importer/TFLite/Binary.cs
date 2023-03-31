@@ -13,7 +13,7 @@ namespace Nncase.Importer.TFLite
 {
     public partial class TFLiteImporter
     {
-        private object VisitBinary(in tflite.Operator op, BinaryOp binaryOp, tflite.ActivationFunctionType activation = tflite.ActivationFunctionType.NONE)
+        private Expr VisitBinary(in tflite.Operator op, BinaryOp binaryOp, tflite.ActivationFunctionType activation = tflite.ActivationFunctionType.NONE)
         {
             (var lhs, var rhs) = GetInputExprs(op, 0, 1);
 

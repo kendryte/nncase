@@ -24,7 +24,7 @@ public class UnitTestExpressionOutputsNames
         var meta = a.Metadata;
         Assert.NotNull(meta);
         Assert.Null(meta.OutputsNames);
-        meta.OutputsNames = new List<string> { "a" };
+        meta.OutputsNames = new string[] { "a" };
         Assert.NotNull(meta.OutputsNames);
     }
 }
