@@ -90,14 +90,14 @@ result<void> stackvm_runtime_function::pc_relative(intptr_t offset) noexcept {
 }
 
 uintptr_t stackvm_runtime_function::pop_addr() noexcept {
-    return stack_.pop().as_u();
+    return stack_.pop_nonobject<uintptr_t>();
 }
 
 dims_t stackvm_runtime_function::pop_shape() noexcept {
-    auto len = stack_.pop().as_u();
+    auto len = stack_.pop_nonobject<size_t>();
     dims_t dims(len);
     for (auto &d : dims)
-        d = (size_t)stack_.pop().as_u();
+        d = stack_.pop_nonobject<size_t>();
     return dims;
 }
 

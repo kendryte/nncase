@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using NetFabric.Hyperlinq;
@@ -38,6 +39,7 @@ namespace Nncase.Importer.TFLite
             var dilation = Tensor.From<int>(new[] { dilationH, dilationW }, new[] { 2 });
             var padding = Util.ConcatPadding(padH, padW);
             var clamp = ValueRange<float>.Full;
+
             return F.Tensors.NCHWToNHWC(F.Math.Clamp(
                 F.NN.Conv2DTranspose(
                     F.Tensors.NHWCToNCHW(input),

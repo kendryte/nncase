@@ -223,17 +223,17 @@ LDARG_IMPL(5);
 NNCASE_STACKVM_DISPATCH_END()
 
 NNCASE_STACKVM_DISPATCH_BEGIN(LDTUPLE_ELEM)
-auto index = stack_.pop();
-auto value = stack_.pop();
-try_var(t, value.as_object().as<tuple>());
-stack_.push(t->fields()[index.as_u()]);
+auto index = stack_.pop_nonobject<size_t>();
+auto value = stack_.pop_object();
+try_var(t, value.as<tuple>());
+stack_.push(t->fields()[index]);
 NNCASE_STACKVM_DISPATCH_END()
 
 NNCASE_STACKVM_DISPATCH_BEGIN(LDTUPLE)
-auto count = stack_.pop().as_u();
+auto count = stack_.pop_nonobject<size_t>();
 std::vector<value_t> fields(count);
 for (auto &field : fields) {
-    auto value = stack_.pop().as_object();
+    auto value = stack_.pop_object();
     try_set(field, value.as<value_t>());
 }
 

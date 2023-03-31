@@ -12,10 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "ref_ops.h"
 #include <cmath>
 #include <iostream>
 #include <nncase/kernels/kernel_utils.h>
-#include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/runtime/runtime_op_utility.h>
 
 using namespace nncase;
