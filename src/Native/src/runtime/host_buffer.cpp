@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/kernels/stackvm/opt_ops.h>
+#include "../kernels/stackvm/optimized/opt_ops.h"
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/host_buffer.h>
