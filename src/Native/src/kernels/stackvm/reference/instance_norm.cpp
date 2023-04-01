@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 #include "kernel_template.h"
+#include "ref_ops.h"
 #include <iostream>
 #include <nncase/kernels/kernel_context.h>
 #include <nncase/kernels/kernel_utils.h>
-#include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/runtime/runtime_op_utility.h>
 
 using namespace nncase;
@@ -52,7 +52,7 @@ result<void> nncase::kernels::stackvm::reference::instance_norm(
     for (size_t i = 2; i < in_shape.size(); ++i) {
         axes.push_back(i);
     }
-    auto in_size = kernels::detail::compute_size(in_shape);
+    auto in_size = runtime::compute_size(in_shape);
     auto channels = in_shape[0] * in_shape[1];
     auto mean = std::make_unique<float[]>(channels);
     auto var = std::make_unique<float[]>(channels);

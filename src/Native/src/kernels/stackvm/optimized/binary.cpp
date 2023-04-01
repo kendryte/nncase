@@ -12,11 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "ref_ops.h"
+#include "../reference/ref_ops.h"
+#include "opt_ops.h"
+#include <iostream>
 #include <nncase/kernels/kernel_utils.h>
-#include <nncase/runtime/allocator.h>
-#include <nncase/runtime/datatypes.h>
-#include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/util.h>
 
@@ -24,23 +23,17 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 using namespace nncase::kernels;
+using namespace nncase::kernels::stackvm;
+using namespace nncase::kernels::stackvm::optimized;
 
-template <typename T>
-result<void> constant_of_shape_impl(const T *value, T *output,
-                                    const dims_t &shape) {
-    for (size_t i = 0; i < compute_size(shape); ++i) {
-        output[i] = *value;
-    }
-    return ok();
-}
-
-#define KERNEL_IMPL(_ty)                                                       \
-    return constant_of_shape_impl(IN_CAST(_ty, value), OUT_CAST(_ty, output),  \
-                                  shape);
-
-result<void> nncase::kernels::stackvm::reference::constant_of_shape(
-    datatype_t dt, const gsl::byte *value, gsl::byte *output,
-    const dims_t &shape) {
-    try_var(tycode, to_typecode(dt));
-    TYPE_SELECT(tycode, KERNEL_IMPL);
+result<void>
+optimized::binary(typecode_t typecode, runtime::stackvm::binary_op_t op,
+                  const gsl::byte *lhs, const gsl::byte *rhs, gsl::byte *out,
+                  const dims_t &in_a_shape, const strides_t &lhs_strides,
+                  const dims_t &in_b_shape, const strides_t &rhs_strides,
+                  const dims_t &out_shape, const strides_t &out_strides,
+                  NNCASE_UNUSED kernel_context &context) noexcept {
+    return stackvm::reference::binary(typecode, op, lhs, rhs, out, in_a_shape,
+                                      lhs_strides, in_b_shape, rhs_strides,
+                                      out_shape, out_strides, context);
 }

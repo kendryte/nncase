@@ -120,11 +120,6 @@ inline dims_t get_binary_output_shape(const dims_t &input_a_shape,
     return out_shape;
 }
 
-template <class TShape> size_t compute_size(const TShape &shape) {
-    return std::accumulate(shape.begin(), shape.end(), size_t(1),
-                           std::multiplies<void>());
-}
-
 template <class T> inline T clamp(T value, T min, T max) {
     return std::max(std::min(value, max), min);
 }

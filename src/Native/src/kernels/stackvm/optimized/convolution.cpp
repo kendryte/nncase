@@ -12,9 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "../reference/ref_ops.h"
+#include "opt_ops.h"
 #include <nncase/kernels/kernel_utils.h>
-#include <nncase/kernels/stackvm/opt_ops.h>
-#include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <utility>
 #ifdef NNCASE_HALIDE

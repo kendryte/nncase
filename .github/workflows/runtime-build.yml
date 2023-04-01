@@ -9,9 +9,9 @@ jobs:
     strategy:
       matrix:
         config:
-          - {name: x86_64-macos, os: macos-latest, cmakeArgs: -G Ninja, buildType: Release}
-          - {name: x86_64-linux, os: ubuntu-latest, cmakeArgs: -G Ninja, buildType: Release}
-          - {name: x86_64-windows, os: windows-latest, arch: x64, cmakeArgs: -G Ninja, buildType: Release}
+          - {name: x86_64-macos, os: macos-latest, cmakeArgs: '', buildType: Release}
+          - {name: x86_64-linux, os: ubuntu-latest, cmakeArgs: '', buildType: Release}
+          - {name: x86_64-windows, os: windows-latest, arch: x64, cmakeArgs: '', buildType: Release}
 
     steps:
     - uses: actions/checkout@v3
