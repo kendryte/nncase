@@ -76,6 +76,10 @@ internal class Compiler : ICompiler
                 p.Add<Passes.Rules.Neutral.CombineTransposeActivations>();
                 p.Add<Passes.Rules.Neutral.CombineActivationsTranspose>();
                 p.Add<Passes.Rules.Neutral.CombineTransposeConcat>();
+                p.Add<Passes.Rules.Neutral.CombineBinaryReshape>();
+                p.Add<Passes.Rules.Neutral.CombineConstBinaryReshape>();
+                p.Add<Passes.Rules.Neutral.CombineUnaryReshape>();
+                p.Add<Passes.Rules.Neutral.CombineActivationsReshape>();
                 p.Add<Passes.Rules.Neutral.FoldNopPad>();
                 p.Add<Passes.Rules.Neutral.FoldConv2DPads>();
                 p.Add<Passes.Rules.Neutral.FoldReduceWindow2DPads>();
