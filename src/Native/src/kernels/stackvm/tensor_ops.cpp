@@ -79,6 +79,13 @@ result<value_t> kernels::stackvm::binary(binary_op_t binary_op, value_t lhs,
     return ok(output);
 }
 
+result<value_t> nncase::kernels::stackvm::bitcast(
+    [[maybe_unused]] prim_type_t type, [[maybe_unused]] prim_type_t new_type,
+    [[maybe_unused]] value_t input, [[maybe_unused]] value_t new_shape,
+    [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
+    return err(std::errc::not_supported);
+}
+
 result<value_t> kernels::stackvm::broadcast(value_t input, value_t shape,
                                             value_t output,
                                             kernel_context &context) {
@@ -135,6 +142,13 @@ result<value_t> nncase::kernels::stackvm::concat(value_t input, value_t axis,
                       output_tensor->shape(), strides, output_tensor->strides(),
                       axis_value, concat_dims, context);
     return ok(output);
+}
+
+result<value_t> nncase::kernels::stackvm::condition(
+    [[maybe_unused]] bool can_fold_const_call,
+    [[maybe_unused]] value_t predicate, [[maybe_unused]] value_t value,
+    [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
+    return err(std::errc::not_supported);
 }
 
 result<value_t> nncase::kernels::stackvm::constant_of_shape(
@@ -1017,19 +1031,6 @@ result<value_t> nncase::kernels::stackvm::fake_quantize(
 //
 //}
 
-result<value_t> nncase::kernels::stackvm::condition(
-    [[maybe_unused]] bool can_fold_const_call,
-    [[maybe_unused]] value_t predicate, [[maybe_unused]] value_t value,
-    [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
-    return err(std::errc::not_supported);
-}
-
-result<value_t> nncase::kernels::stackvm::bitcast(
-    [[maybe_unused]] prim_type_t type, [[maybe_unused]] prim_type_t new_type,
-    [[maybe_unused]] value_t input, [[maybe_unused]] value_t new_shape,
-    [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
-    return err(std::errc::not_supported);
-}
 // result<value_t> nncase::kernels::stackvm::uninitialized(
 //    NNCASE_UNUSED typecode_t dtype,
 //    NNCASE_UNUSED runtime::stackvm::memory_location_t memory_location,
