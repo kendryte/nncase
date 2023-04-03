@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "opt_ops.h"
 #include <nncase/kernels/kernel_utils.h>
-#include <nncase/kernels/stackvm/opt_ops.h>
 
 using namespace nncase;
 using namespace nncase::runtime;

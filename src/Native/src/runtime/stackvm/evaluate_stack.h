@@ -96,7 +96,8 @@ class stack_entry {
     float as_r4() const noexcept { return as_r(); }
     float as_r() const noexcept { return r_; }
 
-    constexpr const object &as_object() const noexcept { return o_; }
+    constexpr const object &as_object() const &noexcept { return o_; }
+    object as_object() &&noexcept { return std::move(o_); }
 
   private:
     void destroy() {
@@ -141,21 +142,31 @@ class evaluate_stack {
         return std::move(*--top_);
     }
 
-    DEFINE_STACK_PUSH(uint8_t)
-    DEFINE_STACK_PUSH(uint16_t)
-    DEFINE_STACK_PUSH(uint32_t)
-    DEFINE_STACK_PUSH(int8_t)
-    DEFINE_STACK_PUSH(int16_t)
-    DEFINE_STACK_PUSH(int32_t)
-    DEFINE_STACK_PUSH(uintptr_t)
-    DEFINE_STACK_PUSH(intptr_t)
-    DEFINE_STACK_PUSH(bfloat16)
-    DEFINE_STACK_PUSH(half)
-    DEFINE_STACK_PUSH(float)
-
+    // Ensure the stack entry is not O.
     template <class T,
-              class = std::enable_if_t<std::is_convertible_v<T, object>>>
-    DEFINE_STACK_PUSH(T)
+              class = std::enable_if_t<!std::is_convertible_v<T, object>>>
+    T pop_nonobject() noexcept {
+        dbg_check(!empty());
+        if constexpr (std::is_integral_v<T>) {
+            return static_cast<T>((--top_)->as_i());
+        } else {
+            return static_cast<T>((--top_)->as_r());
+        }
+    }
+
+    object pop_object() noexcept {
+        dbg_check(!empty());
+        return std::move(*--top_).as_object();
+    }
+
+    template <class... TArgs> void push(TArgs &&...args) noexcept {
+        if (!full()) {
+            new (top_++) stack_entry(std::forward<TArgs>(args)...);
+        } else {
+            enlarge();
+            new (top_++) stack_entry(std::forward<TArgs>(args)...);
+        }
+    }
 
     void push(stack_entry entry) noexcept;
 

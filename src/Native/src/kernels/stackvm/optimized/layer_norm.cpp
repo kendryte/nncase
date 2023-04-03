@@ -12,26 +12,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "kernel_template.h"
-#include "ref_ops.h"
-#include <iostream>
+#include "../reference/ref_ops.h"
+#include "opt_ops.h"
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/runtime/runtime_op_utility.h>
+#include <nncase/runtime/util.h>
 
 using namespace nncase;
+using namespace nncase::runtime;
+using namespace nncase::kernels;
 using namespace nncase::kernels::stackvm;
+using namespace nncase::kernels::stackvm::optimized;
 
-result<void> nncase::kernels::stackvm::reference::batchnorm(
-    const float *input, const float *scale, const float *bias,
-    const float *input_mean, const float *input_var, float *output,
-    const dims_t &in_shape, const strides_t &in_strides,
-    const strides_t &out_strides, float epsilon) {
-    return apply(in_shape, [&](const dims_t &index) -> result<void> {
-        auto c = index[1];
-        const auto x = input[offset(in_strides, index)];
-        output[offset(out_strides, index)] =
-            (x - input_mean[c]) / std::sqrt(input_var[c] + epsilon) * scale[c] +
-            bias[c];
-        return ok();
-    });
+result<void> nncase::kernels::stackvm::optimized::layer_norm(
+    const float *input, float *output, const float *scale, const float *bias,
+    const dims_t &in_shape, int32_t axis, float epsilon) {
+    return reference::layer_norm(input, output, scale, bias, in_shape, axis,
+                                 epsilon);
 }

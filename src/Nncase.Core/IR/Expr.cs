@@ -13,13 +13,23 @@ using Microsoft.Toolkit.HighPerformance.Helpers;
 namespace Nncase.IR;
 
 /// <summary>
+/// Expression's metadata.
+/// </summary>
+public class IRMetadata
+{
+    /// <summary>
+    /// Gets or sets outputs names.
+    /// </summary>
+    public IReadOnlyList<string>? OutputsNames { get; set; }
+}
+
+/// <summary>
 /// Expression.
 /// </summary>
 public abstract partial class Expr : IDisposable
 {
     private readonly Expr[] _operands;
     private readonly HashSet<Expr> _users = new(ReferenceEqualityComparer.Instance);
-
     private IRType? _checkedType;
     private int? _hashCodeCache;
     private bool _disposedValue;
@@ -43,6 +53,8 @@ public abstract partial class Expr : IDisposable
             operand.AddUser(this);
         }
     }
+
+    public IRMetadata Metadata { get; set; } = new();
 
     /// <summary>
     /// Gets or sets checked type.

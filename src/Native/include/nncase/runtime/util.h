@@ -527,9 +527,8 @@ inline bool is_contiguous(tensor tensor) {
 // used for op only do reshape
 inline tensor tensor_reshape(tensor in_tensor, const dims_t &new_shape) {
     auto strides = get_default_strides(new_shape);
-    auto node = new tensor_node(in_tensor->dtype(), new_shape, strides,
-                                in_tensor->buffer());
-    return tensor(node);
+    return tensor(std::in_place, in_tensor->dtype(), new_shape, strides,
+                  in_tensor->buffer());
 }
 
 inline bool is_scalar(tensor t) noexcept { return t->shape().empty(); }
