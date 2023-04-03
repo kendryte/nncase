@@ -78,11 +78,10 @@ result<void> pad_impl(const T *input, T *output, const dims_t &in_shape,
                       pad_mode_t mode, T pad_value,
                       NNCASE_UNUSED kernel_context &context) noexcept {
     int sum = 0;
-    for (const auto &item : paddings)
-    {
+    for (const auto &item : paddings) {
         sum += item.sum();
     }
-    if(sum == 0) {
+    if (sum == 0) {
         auto out_size = compute_size(out_shape);
         memcpy(output, input, out_size);
         return ok();

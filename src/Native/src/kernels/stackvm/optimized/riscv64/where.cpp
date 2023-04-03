@@ -1,4 +1,4 @@
-      
+
 /* Copyright 2019-2021 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,9 +30,10 @@ using namespace nncase::runtime::stackvm;
 namespace {
 #if __riscv_vector
 
-void ternary_vec(const uint8_t* input_a, const int input_a_len, const float* input_b, const int input_b_len, const float* input_c, 
-                 const int input_c_len, float* out, int out_len)
-{
+void ternary_vec(const uint8_t *input_a, const int input_a_len,
+                 const float *input_b, const int input_b_len,
+                 const float *input_c, const int input_c_len, float *out,
+                 int out_len) {
     (void)input_c_len;
     __asm volatile(
 
@@ -73,7 +74,6 @@ void ternary_vec(const uint8_t* input_a, const int input_a_len, const float* inp
         "bnez a4, TERNARY_RVV_B%=;"
         "j END%=;"
 
-
         //////////// len c == 1
 
         "C_IS_SCLAR%=:"
@@ -104,7 +104,6 @@ void ternary_vec(const uint8_t* input_a, const int input_a_len, const float* inp
         "addi a4, a4, -1;"
         "bnez a4, TERNARY_RVV_C%=;"
         "j END%=;"
-
 
         //////////////////////////////////////
         "BC_IS_VECTOR%=:;"
@@ -140,13 +139,14 @@ void ternary_vec(const uint8_t* input_a, const int input_a_len, const float* inp
 
         "END%=:;"
         :
-        :[mask]"r"(input_a), [mask_len]"r"(input_a_len), [b]"r"(input_b), [b_len]"r"(input_b_len), [c]"r"(input_c), [c_len]"r"(input_c_len),[dst]"r"(out), [dst_len]"r"(out_len)
-        :"t0","t1","a0","a1","a2","a3","a4", "a5", "a6", "ft0", "v0","v8","v16","v24"
-    );
-
+        : [mask] "r"(input_a), [mask_len] "r"(input_a_len), [b] "r"(input_b),
+          [b_len] "r"(input_b_len), [c] "r"(input_c), [c_len] "r"(input_c_len),
+          [dst] "r"(out), [dst_len] "r"(out_len)
+        : "t0", "t1", "a0", "a1", "a2", "a3", "a4", "a5", "a6", "ft0", "v0",
+          "v8", "v16", "v24");
 }
 
-int tenary_impl(const uint8_t* input_cond, const float *input_b,
+int tenary_impl(const uint8_t *input_cond, const float *input_b,
                 const float *input_c, float *output,
                 const dims_t &in_cond_shape, const dims_t &in_b_shape,
                 const dims_t &in_c_shape, const dims_t &out_shape) {
@@ -156,16 +156,13 @@ int tenary_impl(const uint8_t* input_cond, const float *input_b,
     int len_c = (int)compute_size(in_c_shape);
     int len_out = (int)compute_size(out_shape);
 
-    if(len_cond == len_b && len_cond == len_c)
-    {
-        ternary_vec(input_cond, len_cond, input_b, len_b, input_c, len_c, output, len_out);
-    }
-    else if(in_b_shape.empty() || in_c_shape.empty())
-    {
-        ternary_vec(input_cond, len_cond, input_b, len_b, input_c, len_c, output, len_out);
-    }
-    else
-    {
+    if (len_cond == len_b && len_cond == len_c) {
+        ternary_vec(input_cond, len_cond, input_b, len_b, input_c, len_c,
+                    output, len_out);
+    } else if (in_b_shape.empty() || in_c_shape.empty()) {
+        ternary_vec(input_cond, len_cond, input_b, len_b, input_c, len_c,
+                    output, len_out);
+    } else {
         return -1;
     }
     return 0;
@@ -181,16 +178,17 @@ result<void> nncase::kernels::stackvm::optimized::where(
     const strides_t &cond_strides, const strides_t &x_strides,
     const strides_t &y_strides, const strides_t &out_strides) {
 
-    // 这里做一步转换，明确下 cond 数据类型， c++ 中的 sizeof(bool) == 1，对于 sizeof(bool) != 1 的情况结果未定义。
+    // 这里做一步转换，明确下 cond 数据类型， c++ 中的 sizeof(bool) == 1，对于
+    // sizeof(bool) != 1 的情况结果未定义。
     assert(sizeof(bool) == 1);
-    const uint8_t* cond_pointer = (const uint8_t*)cond;
-#define WHERE_IMPL(_ty, ret_value)                                                        \
+    const uint8_t *cond_pointer = (const uint8_t *)cond;
+#define WHERE_IMPL(_ty, ret_value)                                             \
     {                                                                          \
         auto *input_x = IN_CAST(_ty, x);                                       \
         auto *input_y = IN_CAST(_ty, y);                                       \
         auto *out = OUT_CAST(_ty, output);                                     \
-        ret_value = tenary_impl(cond_pointer, input_x, input_y, out, cond_shape, x_shape, y_shape,           \
-                           out_shape);                                         \
+        ret_value = tenary_impl(cond_pointer, input_x, input_y, out,           \
+                                cond_shape, x_shape, y_shape, out_shape);      \
     }
     int ret_flag = 0;
     try_var(typecode, to_typecode(dt));
@@ -199,8 +197,7 @@ result<void> nncase::kernels::stackvm::optimized::where(
         WHERE_IMPL(float, ret_flag);
     default:;
     }
-    if(!ret_flag)
-    {
+    if (!ret_flag) {
         return ok();
     }
 
@@ -208,4 +205,3 @@ result<void> nncase::kernels::stackvm::optimized::where(
                             y_shape, out_shape, cond_strides, x_strides,
                             y_strides, out_strides);
 }
-
