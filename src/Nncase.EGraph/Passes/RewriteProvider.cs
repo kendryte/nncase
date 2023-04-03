@@ -71,12 +71,17 @@ internal class EGraphRewriteProvider : IEGraphRewriteProvider
                 var replacedExprs = (from result in results
                                      let expr = rule.GetReplace(result, context)
                                      where expr != null
-                                     select (eGraph.Find((ENode)result.Root), expr)).ToList();
+                                     select (((ENode)result.Root).Expr, eGraph.Find((ENode)result.Root), expr)).ToList();
 
-                foreach (var (oldEClass, newExpr) in replacedExprs)
+                foreach (var (oldExpr, oldEClass, newExpr) in replacedExprs)
                 {
                     var typeInferSuccess = CompilerServices.InferenceType(newExpr);
                     Trace.Assert(typeInferSuccess);
+
+                    if (oldExpr.Metadata.OutputNames != null)
+                    {
+                        newExpr.Metadata.OutputNames = oldExpr.Metadata.OutputNames;
+                    }
 
                     var newEClass = eGraph.Add(newExpr);
                     if (_logger.IsEnabled(LogLevel.Trace))

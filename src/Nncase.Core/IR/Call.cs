@@ -99,6 +99,14 @@ public sealed class Call : Expr, IParameterList<Expr>
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
         => functor.VisitCall(this, context);
 
-    public Call With(Expr? target = null, Expr[]? arguments = null)
-        => new Call(target ?? Target, arguments ?? Arguments);
+    public Call With(Expr? target = null, Expr[]? arguments = null, IRMetadata? metadata = null)
+    {
+        var call = new Call(target ?? Target, arguments ?? Arguments);
+        if (metadata != null && metadata!.OutputNames != null)
+        {
+            call.Metadata.OutputNames = metadata.OutputNames;
+        }
+
+        return call;
+    }
 }

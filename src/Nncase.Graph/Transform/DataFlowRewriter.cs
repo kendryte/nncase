@@ -38,6 +38,12 @@ internal sealed class DataFlowRewriter : ExprRewriter
             if (replace != null)
             {
                 _dontInheritExprs.Add(replace);
+
+                if (expr.Metadata.OutputNames != null)
+                {
+                    replace.Metadata.OutputNames = expr.Metadata.OutputNames;
+                }
+
                 return replace;
             }
         }

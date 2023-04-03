@@ -35,7 +35,7 @@ public partial class FoldConstCall : RewriteRule<CallPattern>
     private Const GetReplace(Call call, IReadOnlyList<Expr> constArgs)
     {
         // note for egraphs.
-        var new_call = call.With(arguments: constArgs.ToArray());
+        var new_call = call.With(arguments: constArgs.ToArray(), metadata: call.Metadata);
         return Const.FromValue(new_call.Evaluate());
     }
 }

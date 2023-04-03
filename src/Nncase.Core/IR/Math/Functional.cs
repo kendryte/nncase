@@ -388,7 +388,16 @@ public static class Math
     /// <param name="message">requrie message.</param>
     public static Call Require(Expr predicate, Expr value, [System.Runtime.CompilerServices.CallerArgumentExpression("predicate")] string? message = null) => new Call(new Require(message!), predicate, value);
 
-    public static Call RangeOf(Expr input) => new Call(new RangeOf(), input);
+    public static Call RangeOf(Expr input)
+    {
+        var call = new Call(new RangeOf(), input);
+        if (input.Metadata.OutputNames != null)
+        {
+            call.Metadata.OutputNames = input.Metadata.OutputNames;
+        }
+
+        return call;
+    }
 
     public static Call QuantParamOf(QuantMode mode, Expr range, Expr bits) => new Call(new QuantParamOf(mode), range, bits);
 
@@ -404,5 +413,14 @@ public static class Math
     /// attach the rangeof on the target, when run the egraph pass, will replace the rangeof expression with the constant.
     /// </summary>
     /// <returns> new marker expression. </returns>
-    public static Marker RangeOfMarker(Expr target, Expr range) => new Marker(WellknownMarkerNames.RangeOf, target, range);
+    public static Marker RangeOfMarker(Expr target, Expr range)
+    {
+        var call = new Marker(WellknownMarkerNames.RangeOf, target, range);
+        if (target.Metadata.OutputNames != null)
+        {
+            call.Metadata.OutputNames = target.Metadata.OutputNames;
+        }
+
+        return call;
+    }
 }

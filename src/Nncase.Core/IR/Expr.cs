@@ -20,7 +20,7 @@ public class IRMetadata
     /// <summary>
     /// Gets or sets outputs names.
     /// </summary>
-    public IReadOnlyList<string>? OutputsNames { get; set; }
+    public IReadOnlyList<string>? OutputNames { get; set; }
 }
 
 /// <summary>

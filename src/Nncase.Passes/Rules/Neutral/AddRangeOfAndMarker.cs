@@ -128,6 +128,10 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
         if (pairs.Count != 0)
         {
             newCall = ReplaceCallParams(op, callParams, list.Where(i => callParams[i] is not Marker).Select(i => (call: callParams[i], pairs[callParams[i]])).ToArray());
+            if (call.Metadata.OutputNames != null)
+            {
+                newCall.Metadata.OutputNames = call.Metadata.OutputNames;
+            }
         }
         else
         {
