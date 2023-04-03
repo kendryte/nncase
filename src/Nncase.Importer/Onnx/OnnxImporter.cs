@@ -195,15 +195,15 @@ public sealed partial class OnnxImporter : BaseImporter
             _ => UnSupportedOp(op.OpType),
         };
 
-        List<string> outputsNames = new();
+        List<string> outputNames = new();
 
         var outputsCount = op.Output.Count;
         for (int i = 0; i < outputsCount; i++)
         {
-            outputsNames.Add(op.Output[i]);
+            outputNames.Add(op.Output[i]);
         }
 
-        output.Metadata.OutputsNames = outputsNames;
+        output.Metadata.OutputNames = outputNames;
 
         AddToOutputs(_outputTensors!, op.Output.ToArray(), output);
     }
