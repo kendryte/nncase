@@ -91,12 +91,14 @@ public sealed partial class FoldTwoTransposes : IRewriteRule
 [RuleGenerator]
 public sealed partial class TransposeToReshape : IRewriteRule
 {
-    /// <inheritdoc/>
-    public IPattern Pattern { get; } = IsTranspose(
+    private IPattern _pattern = IsTranspose(
         target_name: null,
         call_name: "tp",
         IsWildcard("input") with { TypePattern = HasRank() },
         IsTensorConst("perm", IsIntegral()));
+
+    /// <inheritdoc/>
+    public IPattern Pattern => _pattern;
 
     private Expr? GetReplace(Expr input, Expr tp, Tensor<int> perm, RunPassContext context)
     {

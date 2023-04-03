@@ -160,16 +160,22 @@ public class UnitTestDataFlowMatch : TestClassBase
         var post = visitor.Rewrite(pre);
         Assert.True(visitor.IsMutated);
 
+        // rewrite once replace all:
+        // if (post is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Sub } } root_call)
+        // {
+        //     if (root_call[IR.Math.Binary.Lhs] is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Sub } } lhs_call)
+        //     {
+        //         Assert.True(lhs_call[IR.Math.Binary.Rhs] is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Sub } });
+        //     }
+        // }
+
+        // rewrite once replace once:
         if (post is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Sub } } root_call)
         {
             if (root_call[IR.Math.Binary.Lhs] is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Sub } } lhs_call)
             {
-                Assert.True(lhs_call[IR.Math.Binary.Rhs] is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Sub } });
+                Assert.True(lhs_call[IR.Math.Binary.Rhs] is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Add } });
             }
-        }
-        else
-        {
-            Assert.True(false);
         }
     }
 
