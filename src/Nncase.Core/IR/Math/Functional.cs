@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR.Math;
+using Nncase.Utilities;
 
 namespace Nncase.IR.F;
 
@@ -390,11 +391,7 @@ public static class Math
 
     public static Call RangeOf(Expr input)
     {
-        var call = new Call(new RangeOf(), input);
-        if (input.Metadata.OutputNames != null)
-        {
-            call.Metadata.OutputNames = input.Metadata.OutputNames;
-        }
+        Call call = (Call)new Call(new RangeOf(), input).InheritMetaData(input);
 
         return call;
     }
@@ -415,11 +412,7 @@ public static class Math
     /// <returns> new marker expression. </returns>
     public static Marker RangeOfMarker(Expr target, Expr range)
     {
-        var call = new Marker(WellknownMarkerNames.RangeOf, target, range);
-        if (target.Metadata.OutputNames != null)
-        {
-            call.Metadata.OutputNames = target.Metadata.OutputNames;
-        }
+        Marker call = (Marker)new Marker(WellknownMarkerNames.RangeOf, target, range).InheritMetaData(target);
 
         return call;
     }
