@@ -351,7 +351,7 @@ public sealed partial class CombineTransposeActivations : IRewriteRule
 
     private Expr GetReplace(Call actCall, ActivationOp activation, IReadOnlyList<Expr> parameters, Expr perm)
     {
-        Call newcall = new Call(
+        var newcall = new Call(
             activation,
             new Expr[] { Transpose(parameters[0], perm) }
                 .Concat(parameters.Skip(1)).ToArray());
@@ -417,7 +417,7 @@ public sealed partial class CombineActivationsTranspose : IRewriteRule
             return Transpose(new Call(activation, input, new_slope), perm);
         }
 
-        Call newCall = new Call(activation, new Expr[] { input }.Concat(parameters.Skip(1)).ToArray());
+        var newCall = new Call(activation, new Expr[] { input }.Concat(parameters.Skip(1)).ToArray());
         Utils.SetOutputNames(actCall, newCall);
         return Transpose(
           newCall,

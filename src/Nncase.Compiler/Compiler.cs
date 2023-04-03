@@ -64,7 +64,7 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.BroadcastTransposeOutputNames>();
             p.Add<Passes.Rules.Neutral.BroadcastReshapeOutputNames>();
             p.Add<Passes.Rules.Neutral.BroadcastNopPadOutputNames>();
-       });
+        });
     }
 
     public void TargetIndependentPass(IPassManager passManager)
