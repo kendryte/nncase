@@ -251,6 +251,6 @@ internal class EGraphExtractor
             }
         }
 
-        return call.With(target: target, arguments: arguments.ToArray());
+        return call.With(target: target, arguments: arguments.ToArray(), call.Metadata);
     }
 }

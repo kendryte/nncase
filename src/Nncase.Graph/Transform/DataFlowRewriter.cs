@@ -12,6 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
 using Nncase.PatternMatch;
+using Nncase.Utilities;
 
 namespace Nncase.Passes;
 
@@ -34,10 +35,11 @@ internal sealed class DataFlowRewriter : ExprRewriter
     {
         if (CompilerServices.TryMatchRoot(expr, _rule.Pattern, _options.MatchOptions, out var match))
         {
-            var replace = _rule.GetReplace(match, _options);
+            var replace = _rule.GetReplace(match, _options)?.InheritMetaData(expr);
             if (replace != null)
             {
                 _dontInheritExprs.Add(replace);
+
                 return replace;
             }
         }
