@@ -91,7 +91,7 @@ public sealed partial class FoldTwoTransposes : IRewriteRule
 [RuleGenerator]
 public sealed partial class TransposeToReshape : IRewriteRule
 {
-    private IPattern _pattern = IsTranspose(
+    private static readonly IPattern _pattern = IsTranspose(
         target_name: null,
         call_name: "tp",
         IsWildcard("input") with { TypePattern = HasRank() },
