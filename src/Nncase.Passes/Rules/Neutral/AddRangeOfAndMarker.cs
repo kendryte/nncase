@@ -62,16 +62,15 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
 
     private static readonly Dictionary<RuntimeTypeHandle, int[]> _DictList = new() { { typeof(LSTM).TypeHandle, new[] { 0, 1, 2, 5, 6 } }, };
 
-    private static readonly Pattern _pattern = IsCallWildcard(
+    /// <inheritdoc/>
+    public override Pattern Pattern { get; } =
+        IsCallWildcard(
                 "call",
                 IsOp<Op>("op"),
                 IsWildcard("input")) with
-    {
-        TypePattern = HasDataType(DataTypes.Float32) | IsTuple(t => t.All(tt => tt is TensorType { DType: DataType dt } && dt == DataTypes.Float32), "AllElementsAreF32"),
-    };
-
-    /// <inheritdoc/>
-    public override Pattern Pattern => _pattern;
+        {
+            TypePattern = HasDataType(DataTypes.Float32) | IsTuple(t => t.All(tt => tt is TensorType { DType: DataType dt } && dt == DataTypes.Float32), "AllElementsAreF32"),
+        };
 
     /// <summary>
     /// check op.
