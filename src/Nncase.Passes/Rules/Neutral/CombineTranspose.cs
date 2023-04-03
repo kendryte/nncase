@@ -19,25 +19,10 @@ using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.F.NN;
 using static Nncase.PatternMatch.F.Tensors;
 using static Nncase.PatternMatch.Utility;
+using static Nncase.Utilities.MetadataUtility;
 using Tuple = System.Tuple;
 
 namespace Nncase.Passes.Rules.Neutral;
-
-/// <summary>
-/// Common utils.
-/// </summary>
-public class Utils
-{
-    public static Expr SetOutputNames(Expr oldExpr, Expr newExpr)
-    {
-        if (oldExpr.Metadata.OutputNames != null)
-        {
-            newExpr.Metadata.OutputNames = oldExpr.Metadata.OutputNames;
-        }
-
-        return newExpr;
-    }
-}
 
 /// <summary>
 /// Combine Transpose with Binary
@@ -60,7 +45,7 @@ public sealed partial class CombineBinaryTranspose : IRewriteRule
 
     private Expr? GetReplace(Binary binary, Call binaryCall, Expr x, Expr y, Expr perm)
     {
-        return Transpose(Utils.SetOutputNames(binaryCall, Binary(binary.BinaryOp, x, y)), perm);
+        return Transpose(Binary(binary.BinaryOp, x, y).InheritMetaData(binaryCall), perm);
     }
 }
 
@@ -98,8 +83,8 @@ public sealed partial class CombineConstBinaryTranspose : IRewriteRule
                 }
             }
 
-            Expr newConst = Utils.SetOutputNames(x, Const.FromValue(((Expr)Tensor.From<float>(((TensorConst)x).Value.ToArray<float>(), new Nncase.IR.Shape(newShape))).Evaluate()));
-            return Transpose(Utils.SetOutputNames(binaryCall, Binary(binary.BinaryOp, newConst, y)), perm);
+            Expr newConst = Const.FromValue(((Expr)Tensor.From<float>(((TensorConst)x).Value.ToArray<float>(), new Nncase.IR.Shape(newShape))).Evaluate()).InheritMetaData(x);
+            return Transpose(Binary(binary.BinaryOp, newConst, y).InheritMetaData(binaryCall), perm);
         }
 
         if (y is Const)
@@ -113,8 +98,8 @@ public sealed partial class CombineConstBinaryTranspose : IRewriteRule
                 }
             }
 
-            var newConst = Utils.SetOutputNames(y, Const.FromValue(((Expr)Tensor.From<float>(((TensorConst)y).Value.ToArray<float>(), new Nncase.IR.Shape(newShape))).Evaluate()));
-            return Transpose(Utils.SetOutputNames(binaryCall, Binary(binary.BinaryOp, x, newConst)), perm);
+            var newConst = Const.FromValue(((Expr)Tensor.From<float>(((TensorConst)y).Value.ToArray<float>(), new Nncase.IR.Shape(newShape))).Evaluate()).InheritMetaData(y);
+            return Transpose(Binary(binary.BinaryOp, x, newConst).InheritMetaData(binaryCall), perm);
         }
 
         return null;
@@ -146,18 +131,18 @@ public sealed partial class CombineTransposeConstBinary : RewriteRule<CallPatter
             newConstShape = oldConst.Value.Shape.ToValueArray();
         }
 
-        return (Const)Utils.SetOutputNames(oldConst, Const.FromValue(Transpose(Tensor.FromBytes(oldConst.Value.ElementType, oldConst.Value.BytesBuffer.ToArray(), newConstShape), perm).Evaluate()));
+        return (Const)Const.FromValue(Transpose(Tensor.FromBytes(oldConst.Value.ElementType, oldConst.Value.BytesBuffer.ToArray(), newConstShape), perm).Evaluate()).InheritMetaData(oldConst);
     }
 
     private Expr? GetReplace(Binary binary, Call binaryCall, Expr x, Expr y, TensorConst perm)
     {
         if (x is TensorConst constX)
         {
-            return Utils.SetOutputNames(binaryCall, Binary(binary.BinaryOp, GetNewConst(constX, y, perm), Transpose(y, perm)));
+            return Binary(binary.BinaryOp, GetNewConst(constX, y, perm), Transpose(y, perm)).InheritMetaData(binaryCall);
         }
 
         var constY = (TensorConst)y;
-        return Utils.SetOutputNames(binaryCall, Binary(binary.BinaryOp, Transpose(x, perm), GetNewConst(constY, x, perm)));
+        return Binary(binary.BinaryOp, Transpose(x, perm), GetNewConst(constY, x, perm)).InheritMetaData(binaryCall);
     }
 }
 
@@ -199,7 +184,7 @@ public sealed partial class CombineTransposeConcat : IRewriteRule
             return null;
         }
 
-        return Transpose(Utils.SetOutputNames(concatCall, Concat(new IR.Tuple(inputs.ToArray()), perm[axis])), perm);
+        return Transpose(Concat(new IR.Tuple(inputs.ToArray()), perm[axis]).InheritMetaData(concatCall), perm);
     }
 }
 
@@ -230,7 +215,7 @@ public sealed partial class CombineTransposePad : IRewriteRule
             // newPads[i] = pads[perm[i]];
         }
 
-        var p = Utils.SetOutputNames(padCall, Pad(input, Stack(new IR.Tuple(newPads.ToArray()), 0), pad.PadMode, padValue));
+        var p = Pad(input, Stack(new IR.Tuple(newPads.ToArray()), 0), pad.PadMode, padValue).InheritMetaData(padCall);
         return Transpose(p, perm);
     }
 }
@@ -264,7 +249,7 @@ public sealed partial class CombinePadTranspose : IRewriteRule
             newPads.Add(((TensorConst)pads).Value.ToArray<int>()[(perm[i] * 2) + 1]);
         }
 
-        return Utils.SetOutputNames(padCall, Pad(Transpose(input, perm), Tensor.From<int>(newPads.ToArray(), pads.CheckedShape), pad.PadMode, padValue));
+        return Pad(Transpose(input, perm), Tensor.From<int>(newPads.ToArray(), pads.CheckedShape), pad.PadMode, padValue).InheritMetaData(padCall);
     }
 }
 
@@ -317,7 +302,7 @@ public sealed partial class CombineTransposeReduce : IRewriteRule
             }
         }
 
-        return Transpose(Utils.SetOutputNames(reduceCall, Reduce(reduce.ReduceOp, input, newAxis.ToArray(), initValue, keepDims)), newPerm.ToArray());
+        return Transpose(Reduce(reduce.ReduceOp, input, newAxis.ToArray(), initValue, keepDims).InheritMetaData(reduceCall), newPerm.ToArray());
     }
 }
 
@@ -333,7 +318,7 @@ public sealed partial class CombineTransposeUnary : IRewriteRule
 
     private Expr? GetReplace(Unary unary, Call unaryCall, Expr input, Expr perm)
     {
-        return Transpose(Utils.SetOutputNames(unaryCall, Unary(unary.UnaryOp, input)), perm);
+        return Transpose(Unary(unary.UnaryOp, input).InheritMetaData(unaryCall), perm);
     }
 }
 
@@ -355,7 +340,7 @@ public sealed partial class CombineTransposeActivations : IRewriteRule
             activation,
             new Expr[] { Transpose(parameters[0], perm) }
                 .Concat(parameters.Skip(1)).ToArray());
-        Utils.SetOutputNames(actCall, newcall);
+        newcall.InheritMetaData(actCall);
         return newcall;
     }
 }
@@ -418,7 +403,7 @@ public sealed partial class CombineActivationsTranspose : IRewriteRule
         }
 
         var newCall = new Call(activation, new Expr[] { input }.Concat(parameters.Skip(1)).ToArray());
-        Utils.SetOutputNames(actCall, newCall);
+        newCall.InheritMetaData(actCall);
         return Transpose(
           newCall,
           perm);

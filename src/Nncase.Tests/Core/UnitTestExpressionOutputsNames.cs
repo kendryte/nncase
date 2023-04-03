@@ -11,7 +11,10 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
+using Nncase.IR.NN;
+using Nncase.Utilities;
 using Xunit;
+using static Nncase.IR.F.NN;
 
 namespace Nncase.Tests.CoreTest;
 
@@ -26,5 +29,15 @@ public class UnitTestExpressionOutputNames
         Assert.Null(meta.OutputNames);
         meta.OutputNames = new string[] { "a" };
         Assert.NotNull(meta.OutputNames);
+    }
+
+    [Fact]
+    public void TestInheritMetaData()
+    {
+        var input = new Var(new TensorType(DataTypes.Float32, new Shape(1, 3, 224, 224)));
+        var pad1 = Pad(input, new float[,] { { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 } }, PadMode.Constant, 0.0f);
+        pad1.Metadata.OutputNames = new string[] { "pad" };
+        var pad2 = Pad(input, new float[,] { { 0, 0 }, { 1, 1 }, { 1, 1 }, { 0, 0 } }, PadMode.Constant, 0.0f).InheritMetaData(pad1);
+        Assert.NotNull(pad2.Metadata.OutputNames);
     }
 }
