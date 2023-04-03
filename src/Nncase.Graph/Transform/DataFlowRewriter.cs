@@ -32,7 +32,7 @@ internal sealed class DataFlowRewriter : ExprRewriter
 
     protected override Expr DefaultRewriteLeaf(Expr expr)
     {
-        if (CompilerServices.TryMatchRoot(expr, _rule.Pattern, _options.MatchOptions, out var match))
+        if (!IsMutated && CompilerServices.TryMatchRoot(expr, _rule.Pattern, _options.MatchOptions, out var match))
         {
             var replace = _rule.GetReplace(match, _options);
             if (replace != null)
