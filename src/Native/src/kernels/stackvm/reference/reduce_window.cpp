@@ -82,9 +82,16 @@ result<void> reduce_window2d_impl(
                             kernel_count++;
                         }
                     }
-                    if (count_include_pad) {
-                        kernel_count += padding_w.sum();
+
+                    int pad_count = filter_h * filter_w - kernel_count;
+                    for (int i = 0; i < pad_count; i++) {
+                        value = binary_op(value, 0);
                     }
+
+                    if (count_include_pad) {
+                        kernel_count = filter_h * filter_w;
+                    }
+
                     output[offset(out_strides, {batch, oc, oy, ox})] =
                         kernels::detail::apply_activation(
                             window_op(value, kernel_count), fused_activation);
