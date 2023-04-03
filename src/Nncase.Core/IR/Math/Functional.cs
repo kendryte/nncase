@@ -391,7 +391,7 @@ public static class Math
 
     public static Call RangeOf(Expr input)
     {
-        Call call = (Call)new Call(new RangeOf(), input).InheritMetaData(input);
+        var call = (Call)new Call(new RangeOf(), input).InheritMetaData(input);
 
         return call;
     }
@@ -412,7 +412,7 @@ public static class Math
     /// <returns> new marker expression. </returns>
     public static Marker RangeOfMarker(Expr target, Expr range)
     {
-        Marker call = (Marker)new Marker(WellknownMarkerNames.RangeOf, target, range).InheritMetaData(target);
+        var call = (Marker)new Marker(WellknownMarkerNames.RangeOf, target, range).InheritMetaData(target);
 
         return call;
     }
