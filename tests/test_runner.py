@@ -108,7 +108,7 @@ def generate_random(shape: List[int], dtype: np.dtype,
         data = np.random.randint(1, 5, size=shape, dtype='int64')
         # data = np.random.randint(1, 128, size=shape, dtype='int64')
     else:
-        data = np.random.rand(*shape)
+        data = (np.random.rand(*shape) - 0.5) * 2
     data = data.astype(dtype=dtype)
     if abs:
         return np.abs(data)
