@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "ref_ops.h"
 #include <nncase/kernels/kernel_utils.h>
-#include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/util.h>
@@ -114,7 +114,7 @@ result<void> nncase::kernels::stackvm::reference::conv2d_transpose(
     int32_t dilation_h, int32_t dilation_w, const padding &padding_h,
     const padding &padding_w,
     [[maybe_unused]] const value_range<float> &fused_activation) noexcept {
-    auto output_size = kernels::detail::compute_size(out_shape);
+    auto output_size = runtime::compute_size(out_shape);
     std::fill(output, output + output_size, 0.f);
     const auto g_ic = in_shape[1] / groups;
     const auto g_oc = out_shape[1] / groups;

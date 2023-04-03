@@ -55,8 +55,18 @@ class NNCASE_API object_node {
     virtual bool equals(const object_node &other) const noexcept;
 
   private:
-    uint32_t add_ref() const noexcept;
-    uint32_t release() const noexcept;
+    uint32_t add_ref() const noexcept {
+        return ref_count_.fetch_add(1, std::memory_order_relaxed);
+    }
+
+    uint32_t release() const noexcept {
+        assert(ref_count_);
+        auto count = ref_count_.fetch_sub(1, std::memory_order_acq_rel);
+        if (count == 1) {
+            delete this;
+        }
+        return count;
+    }
 
     template <class T> friend class object_t;
     friend int ::nncase_object_add_ref(nncase::object_node *node);

@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 #include "../shape_infer.h"
+#include "ref_ops.h"
 #include <iostream>
 #include <nncase/kernels/kernel_context.h>
 #include <nncase/kernels/kernel_utils.h>
-#include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/util.h>
 
@@ -50,7 +50,7 @@ result<void> nncase::kernels::stackvm::reference::lrn(
     std::vector<dims_t> tmpStrides;
     auto concat_size = 0;
     auto square_data =
-        std::make_unique<float[]>(kernels::detail::compute_size(in_shape));
+        std::make_unique<float[]>(runtime::compute_size(in_shape));
     try_(reference::unary(dt_float32, runtime::stackvm::unary_op_t::square,
                           IN_BYTE_CAST(input), OUT_BYTE_CAST(output), in_shape,
                           in_strides, in_shape, in_strides));
@@ -69,8 +69,8 @@ result<void> nncase::kernels::stackvm::reference::lrn(
         auto strides = axes_t{1, 1, 1, 1};
         auto tmp_out_shape = slice_infer_shape(in_shape, begins, ends, strides);
         auto tmp_out_strides = runtime::get_default_strides(tmp_out_shape);
-        auto slice_out = std::make_unique<float[]>(
-            kernels::detail::compute_size(tmp_out_shape));
+        auto slice_out =
+            std::make_unique<float[]>(runtime::compute_size(tmp_out_shape));
         try_(slice(dt_float32, IN_BYTE_CAST(square_data.get()),
                    OUT_CAST(gsl::byte, slice_out.get()), in_shape, in_strides,
                    out_strides, begins, ends, strides,
@@ -79,7 +79,7 @@ result<void> nncase::kernels::stackvm::reference::lrn(
         auto keep_dims = true;
         auto axes = dims_t{1};
         auto reduce_shape = reduce_infer_shape(tmp_out_shape, axes, keep_dims);
-        auto reduce_size = kernels::detail::compute_size(reduce_shape);
+        auto reduce_size = runtime::compute_size(reduce_shape);
         concat_size += reduce_size;
         tmpData.push_back(std::make_unique<float[]>(reduce_size));
         tmpShapes.push_back(reduce_shape);

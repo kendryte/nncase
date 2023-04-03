@@ -69,6 +69,11 @@ gather(datatype_t type, const gsl::byte *input, gsl::byte *output,
        const dims_t &indices_shape, size_t axis,
        kernel_context &context) noexcept;
 
+NNCASE_API result<void> layer_norm(const float *input, float *output,
+                                   const float *scale, const float *bias,
+                                   const dims_t &in_shape, int32_t axis,
+                                   float epsilon);
+
 NNCASE_API result<void>
 one_hot(datatype_t type, datatype_t indices_type, const gsl::byte *indices,
         gsl::byte *output, const dims_t &indices_shape, const dims_t &out_shape,
@@ -137,6 +142,13 @@ sigmoid(const T *input, T *output, const dims_t &in_shape,
         const strides_t &input_strides, const dims_t &out_shape,
         const strides_t &out_strides,
         kernel_context &context = default_kernel_context()) noexcept;
+
+NNCASE_API result<void>
+where(datatype_t dt, const bool *cond, const gsl::byte *x, const gsl::byte *y,
+      gsl::byte *output, const dims_t &cond_shape, const dims_t &x_shape,
+      const dims_t &y_shape, const dims_t &out_shape,
+      const strides_t &cond_strides, const strides_t &x_strides,
+      const strides_t &y_strides, const strides_t &out_strides);
 
 } // namespace optimized
 END_NS_NNCASE_KERNELS_MODULE
