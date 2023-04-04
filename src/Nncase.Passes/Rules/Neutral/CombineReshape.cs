@@ -11,6 +11,7 @@ using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
 using Nncase.PatternMatch;
+using Nncase.Utilities;
 using Tensorflow;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
@@ -38,17 +39,17 @@ public sealed partial class CombineBinaryReshape : IRewriteRule
     public CombineBinaryReshape()
     {
         var shape = IsWildcard("shape");
-        Pattern = IsBinary("binary", x => true, IsReshape(IsWildcard("x"), shape), IsReshape(IsWildcard("y"), shape));
+        Pattern = IsBinary("binary", "call", x => true, IsReshape(IsWildcard("x"), shape), IsReshape(IsWildcard("y"), shape));
     }
 
     /// <inheritdoc/>
     public IPattern Pattern { get; init; }
 
-    private Expr? GetReplace(Binary binary, Expr x, Expr y, Expr shape)
+    private Expr? GetReplace(Binary binary, Call call, Expr x, Expr y, Expr shape)
     {
         if (x.CheckedShape == y.CheckedShape)
         {
-            return Reshape(Binary(binary.BinaryOp, x, y), shape);
+            return Reshape(Binary(binary.BinaryOp, x, y).InheritMetaData(call), shape);
         }
 
         return null;
@@ -83,7 +84,7 @@ public sealed partial class CombineConstBinaryReshape : IRewriteRule
 
         if (constInput.CheckedShape.Rank == 0)
         {
-            var res = Reshape(Binary(binary.BinaryOp, input, constInput), shape);
+            var res = Reshape(Binary(binary.BinaryOp, input, constInput).InheritMetaData(call), shape);
             res.InferenceType();
             return res;
         }
@@ -97,7 +98,7 @@ public sealed partial class CombineConstBinaryReshape : IRewriteRule
             var newConstShape = Enumerable.Repeat(1, input.CheckedShape.Rank - 1 - broadcastIndex).ToList();
             newConstShape.Insert(0, constSize);
 
-            var res = Reshape(Binary(binary.BinaryOp, leftConst ? Reshape(constInput, newConstShape.ToArray()) : input, leftConst ? input : Reshape(constInput, newConstShape.ToArray())), call.CheckedShape);
+            var res = Reshape(Binary(binary.BinaryOp, leftConst ? Reshape(constInput, newConstShape.ToArray()) : input, leftConst ? input : Reshape(constInput, newConstShape.ToArray())).InheritMetaData(call), call.CheckedShape);
             res.InferenceType();
             return res;
         }
@@ -120,10 +121,10 @@ public sealed partial class CombineUnaryReshape : IRewriteRule
             _ => true,
             IsReshape(IsWildcard("input"), IsWildcard("shape")));
 
-    private Expr? GetReplace(Unary unary, Expr input, Expr shape)
+    private Expr? GetReplace(Unary unary, Call call, Expr input, Expr shape)
     {
         return Reshape(
-            Unary(unary.UnaryOp, input),
+            Unary(unary.UnaryOp, input).InheritMetaData(call),
             shape);
     }
 }
@@ -136,7 +137,7 @@ public sealed partial class CombineActivationsReshape : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
-        IsCall(IsOp<ActivationOp>("activation", op => true), IsVArgsRepeat("parameters", (inputs) =>
+        IsCall("call", IsOp<ActivationOp>("activation", op => true), IsVArgsRepeat("parameters", (inputs) =>
         {
             var patterns = new Pattern[inputs.Length];
             patterns[0] = IsReshape(IsWildcard("input"), IsWildcard("shape"));
@@ -148,7 +149,7 @@ public sealed partial class CombineActivationsReshape : IRewriteRule
             return patterns;
         }));
 
-    private Expr? GetReplace(ActivationOp activation, Expr input, IReadOnlyList<Expr> parameters, Expr shape)
+    private Expr? GetReplace(ActivationOp activation, Call call, Expr input, IReadOnlyList<Expr> parameters, Expr shape)
     {
         // TODO: Not support PRelu for now.
         if (activation is PRelu)
@@ -157,7 +158,7 @@ public sealed partial class CombineActivationsReshape : IRewriteRule
         }
 
         return Reshape(
-            new Call(activation, new Expr[] { input }.Concat(parameters.Skip(1)).ToArray()),
+            new Call(activation, new Expr[] { input }.Concat(parameters.Skip(1)).ToArray()).InheritMetaData(call),
             shape);
     }
 }
