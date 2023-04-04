@@ -156,7 +156,7 @@ public class UnitTestDataFlowMatch : TestClassBase
         var pre = a - (b + c) + (c * d);
         CompilerServices.InferenceType(pre);
 
-        var visitor = new DataFlowRewriter(new SimpleRule(), new());
+        var visitor = new DataFlowRewriter(new SimpleRule(), new() { RewriteOnce = true });
         var post = visitor.Rewrite(pre);
         Assert.True(visitor.IsMutated);
 
