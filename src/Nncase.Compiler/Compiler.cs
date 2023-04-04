@@ -45,6 +45,7 @@ internal class Compiler : ICompiler
             _dumpper.DumpModule(module, "IRImport");
         }
 
+        await RunPassAsync(pmg => BroadcastOutputNamesAfterImportPass(pmg), "BroadcastOutputNamesAfterImport");
         await RunPassAsync(pmg => pmg.Add<ShapeInferPass>(), "ShapeInferAfterImport");
 
         var inferSucc = CompilerServices.InferenceType(module.Entry!);
@@ -54,6 +55,16 @@ internal class Compiler : ICompiler
         }
 
         return module;
+    }
+
+    public void BroadcastOutputNamesAfterImportPass(IPassManager passManager)
+    {
+        passManager.AddWithName<DataflowPass>("BroadcastOutputNamesAfterImportPass").Configure(p =>
+        {
+            p.Add<Passes.Rules.Neutral.BroadcastTransposeOutputNames>();
+            p.Add<Passes.Rules.Neutral.BroadcastReshapeOutputNames>();
+            p.Add<Passes.Rules.Neutral.BroadcastNopPadOutputNames>();
+        });
     }
 
     public void TargetIndependentPass(IPassManager passManager)

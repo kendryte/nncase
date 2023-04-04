@@ -11,6 +11,7 @@ using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
+using Nncase.Utilities;
 using static Nncase.IR.TypePatternUtility;
 using static Nncase.PatternMatch.F.Tensors;
 using static Nncase.PatternMatch.Utility;
@@ -36,7 +37,7 @@ public partial class FoldConstCall : RewriteRule<CallPattern>
     {
         // note for egraphs.
         var new_call = call.With(arguments: constArgs.ToArray());
-        return Const.FromValue(new_call.Evaluate());
+        return (Const)Const.FromValue(new_call.Evaluate()).InheritMetaData(call);
     }
 }
 
