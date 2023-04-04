@@ -18,13 +18,14 @@ internal class RewriteProvider : IRewriteProvider
     public Expr Rewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassContext context)
     {
         CompilerServices.InferenceType(expr);
-
+        IRewriteRule? lastRule = null;
         var post = expr;
         int count = 0;
         OnRewriteStart(expr, context, count);
         do
         {
             bool isMutated = false;
+            bool isSwitchRule = false;
             foreach (var rule in rules)
             {
                 var visitor = new DataFlowRewriter(rule, context);
@@ -33,20 +34,29 @@ internal class RewriteProvider : IRewriteProvider
                 if (visitor.IsMutated)
                 {
                     isMutated = true;
+                    if (!ReferenceEquals(lastRule, rule))
+                    {
+                        lastRule = rule;
+                        isSwitchRule = true;
+                    }
+
                     break;
                 }
             }
 
-            var inferSuccess = CompilerServices.InferenceType(post);
-            OnRewriteEnd(post, context, count++);
-            if (!inferSuccess && DumpScope.Current.IsEnabled(DumpFlags.Rewrite))
+            if (isSwitchRule)
             {
-                DumpScope.Current.DumpIR(post, $"{count}_End_InferFailed", "Rewrite");
+                var inferSuccess = CompilerServices.InferenceType(post);
+                OnRewriteEnd(post, context, count++);
+                if (!inferSuccess && DumpScope.Current.IsEnabled(DumpFlags.Rewrite))
+                {
+                    DumpScope.Current.DumpIR(post, $"{count}_End_InferFailed", "Rewrite");
+                }
+
+                Trace.Assert(inferSuccess);
             }
 
-            Trace.Assert(inferSuccess);
-
-            if (!isMutated || context.RewriteOnce)
+            if (!isMutated)
             {
                 break;
             }

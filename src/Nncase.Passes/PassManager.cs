@@ -280,6 +280,7 @@ internal sealed class PassManager : IPassManager
                     populater.Populate(pass.AnalysisTypes);
                     _analyzers = populater.Analyzers;
                     AnalysisResults = populater.AnalysisResults;
+                    RewriteOnce = _analyzers.Count != 0;
                 }
 
                 private struct AnalyzerPopulater
