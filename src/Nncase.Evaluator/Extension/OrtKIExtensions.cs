@@ -98,7 +98,6 @@ public static class OrtKIExtensions
 
     private static OrtKISharp.Tensor ToOrtTensor(this Tensor tensor, int[] shape)
     {
-        var memory = tensor.BytesBuffer.ToArray().AsMemory();
-        return OrtKISharp.Tensor.MakeTensor(memory.Pin(), tensor.ElementType.ToOrtType(), shape.ToLongs());
+        return OrtKISharp.Tensor.MakeTensor(tensor.PinBuffer(), tensor.ElementType.ToOrtType(), shape.ToLongs());
     }
 }
