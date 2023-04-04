@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using Nncase.IR;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
@@ -143,6 +144,7 @@ namespace Nncase.Importer.TFLite
             }
 
             var clamp = ToFloatClampRange(options.FusedActivationFunction);
+
             return F.Tensors.NCHWToNHWC(
                 F.NN.Conv2D(
                     input,

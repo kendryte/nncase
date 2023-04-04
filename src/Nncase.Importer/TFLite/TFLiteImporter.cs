@@ -338,6 +338,17 @@ public sealed partial class TFLiteImporter : BaseImporter
             // tflite.BuiltinOperator.ZEROS_LIKE,
             _ => UnSupportedOp(builtinCode.ToString()),
         };
+
+        List<string> outputNames = new();
+
+        var outputsLength = op.GetOutputsArray().Length;
+        for (int i = 0; i < outputsLength; i++)
+        {
+            outputNames.Add(GetOutputTensor(op, i).Name);
+        }
+
+        output.Metadata.OutputNames = outputNames;
+
         AddToOutputs(_outputTensors, op.GetOutputsArray(), output);
     }
 
@@ -410,6 +421,7 @@ public sealed partial class TFLiteImporter : BaseImporter
 
         if (_outputTensors.TryGetValue(id, out var expr))
         {
+            expr.Metadata.OutputNames = new string[] { GetInputTensor(op, index).Name };
             return expr;
         }
         else
@@ -425,7 +437,8 @@ public sealed partial class TFLiteImporter : BaseImporter
             var data = buffer.GetDataBytes();
             if (!data.IsEmpty)
             {
-                var con = Tensor.FromBytes(GetIRType(tensor), data.ToArray());
+                var con = Const.FromTensor(Tensor.FromBytes(GetIRType(tensor), data.ToArray()));
+                con.Metadata.OutputNames = new string[] { GetInputTensor(op, index).Name };
                 _outputTensors.Add(id, con);
                 return con;
             }

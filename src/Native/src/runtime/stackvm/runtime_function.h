@@ -53,15 +53,20 @@ class stackvm_runtime_function final : public runtime_function,
     dims_t pop_shape() noexcept;
 
     template <class T> result<T> pop_object() noexcept {
+#ifndef NDEBUG
         auto var = stack_.pop();
         if (var.is_object())
             return var.as_object().as<T>();
         return err(std::errc::invalid_argument);
+#else
+        return stack_.pop_object().as<T>();
+#endif
     }
 
     result<tensor> pop_tensor() noexcept { return pop_object<tensor>(); }
 
     result<value_t> pop_value() noexcept {
+#ifndef NDEBUG
         auto var = stack_.pop();
         if (var.is_object()) {
             auto o = var.as_object();
@@ -69,6 +74,10 @@ class stackvm_runtime_function final : public runtime_function,
         }
 
         return err(std::errc::invalid_argument);
+#else
+        auto o = stack_.pop_object();
+        return !o.empty() ? o.as<value_t>() : ok<value_t>(nullptr);
+#endif
     }
 
     template <class T> T pop_addr() noexcept {
