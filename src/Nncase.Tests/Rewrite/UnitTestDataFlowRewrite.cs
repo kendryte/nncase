@@ -11,6 +11,8 @@ using Nncase.Evaluator;
 using Nncase.Importer;
 using Nncase.IR;
 using Nncase.IR.F;
+using Nncase.IR.NN;
+using Nncase.IR.Tensors;
 using Nncase.Passes;
 using Nncase.Passes.Analysis;
 using Nncase.PatternMatch;
@@ -307,6 +309,72 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
                     param1[1] is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Sub }, Arguments: var param2 } && // z - (x + (1))
                     param2[1] is Call { Target: IR.Math.Binary { BinaryOp: BinaryOp.Add }, Arguments: var param3 } && // x + (1)
                     param3[1] is TensorConst);
+    }
+
+    [Fact]
+    public void TestBroadcastNopPadOutputNames()
+    {
+        var input = new Var(new TensorType(DataTypes.Float32, new Shape(1, 3, 224, 224)));
+        var pad = new Call(new Pad(PadMode.Constant), new Expr[] { input, new float[,] { { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 } }, 0.0f });
+        pad.Metadata.OutputNames = new string[] { "pad" };
+        var pre = new Function(pad, new[] { input });
+        var pass = new DataflowPass() { Name = "BroadcastNopPadOutputNamesUpPass" };
+        pass.Add<Passes.Rules.Neutral.BroadcastNopPadOutputNames>();
+        pass.Add<Passes.Rules.Neutral.FoldNopPad>();
+        var post = (Function)pass.RunAsync(pre, new()).Result;
+        Assert.True(post.Body.Metadata.OutputNames![0] == "pad");
+
+        pad = new Call(new Pad(PadMode.Constant), new Expr[] { input, new float[,] { { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 } }, 0.0f });
+        input.Metadata.OutputNames = new string[] { "input" };
+        pre = new Function(pad, new[] { input });
+        pass = new DataflowPass() { Name = "BroadcastNopPadOutputNamesDownPass" };
+        pass.Add<Passes.Rules.Neutral.BroadcastNopPadOutputNames>();
+        post = (Function)pass.RunAsync(pre, new()).Result;
+        Assert.True(post.Body is Call && post.Body.Metadata.OutputNames![0] == "input");
+    }
+
+    [Fact]
+    public void TestBroadcastReshapeOutputNames()
+    {
+        var input = new Var(new TensorType(DataTypes.Float32, new Shape(1, 3, 224, 224)));
+        var reshape = new Call(new Reshape(), new Expr[] { input, new int[] { 1, 224, 224, 3 } });
+        reshape.Metadata.OutputNames = new string[] { "reshape" };
+        var pre = new Function(reshape, new[] { input });
+        var pass = new DataflowPass() { Name = "BroadcastReshapeOutputNamesUpPass" };
+        pass.Add<Passes.Rules.Neutral.BroadcastReshapeOutputNames>();
+        pass.Add<Passes.Rules.Neutral.FoldNopReshape>();
+        var post = (Function)pass.RunAsync(pre, new()).Result;
+        Assert.True(post.Body.Metadata.OutputNames![0] == "reshape");
+
+        reshape = new Call(new Reshape(), new Expr[] { input, new int[] { 1, 224, 224, 3 } });
+        input.Metadata.OutputNames = new string[] { "input" };
+        pre = new Function(reshape, new[] { input });
+        pass = new DataflowPass() { Name = "BroadcastReshapeOutputNamesDownPass" };
+        pass.Add<Passes.Rules.Neutral.BroadcastReshapeOutputNames>();
+        post = (Function)pass.RunAsync(pre, new()).Result;
+        Assert.True(post.Body is Call && post.Body.Metadata.OutputNames![0] == "input");
+    }
+
+    [Fact]
+    public void TestBroadcastTransposeOutputNames()
+    {
+        var input = new Var(new TensorType(DataTypes.Float32, new Shape(1, 3, 224, 224)));
+        var transpose = new Call(new Transpose(), new Expr[] { input, new int[] { 0, 1, 2, 3 } });
+        transpose.Metadata.OutputNames = new string[] { "transpose" };
+        var pre = new Function(transpose, new[] { input });
+        var pass = new DataflowPass() { Name = "BroadcastTransposeOutputNamesUpPass" };
+        pass.Add<Passes.Rules.Neutral.BroadcastTransposeOutputNames>();
+        pass.Add<Passes.Rules.Neutral.FoldNopTranspose>();
+        var post = (Function)pass.RunAsync(pre, new()).Result;
+        Assert.True(post.Body.Metadata.OutputNames![0] == "transpose");
+
+        transpose = new Call(new Transpose(), new Expr[] { input, new int[] { 0, 1, 2, 3 } });
+        input.Metadata.OutputNames = new string[] { "input" };
+        pre = new Function(transpose, new[] { input });
+        pass = new DataflowPass() { Name = "BroadcastTransposeOutputNamesDownPass" };
+        pass.Add<Passes.Rules.Neutral.BroadcastTransposeOutputNames>();
+        post = (Function)pass.RunAsync(pre, new()).Result;
+        Assert.True(post.Body is Call && post.Body.Metadata.OutputNames![0] == "input");
     }
 
     private sealed class DivToConst : IRewriteRule

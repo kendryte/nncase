@@ -143,6 +143,7 @@ result<void> nncase::kernels::stackvm::optimized::where(
     const strides_t &cond_strides, const strides_t &x_strides,
     const strides_t &y_strides, const strides_t &out_strides) {
 
+#if __riscv_vector
 #define WHERE_IMPL(_ty)                                                        \
     {                                                                          \
         auto *input_x = IN_CAST(_ty, x);                                       \
@@ -158,7 +159,7 @@ result<void> nncase::kernels::stackvm::optimized::where(
         WHERE_IMPL(float);
     default:;
     }
-
+#endif
     return reference::where(dt, cond, x, y, output, cond_shape, x_shape,
                             y_shape, out_shape, cond_strides, x_strides,
                             y_strides, out_strides);
