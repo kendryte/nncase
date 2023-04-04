@@ -38,7 +38,7 @@ public record RunPassContext
 
     /// <summary>
     /// Gets or sets a value indicating whether control rewrite once or not.
-    /// Default is false.
+    /// when RewriteOnce is true, the rule will only apply once, then restart rewrite from first rule.
     /// </summary>
     public bool RewriteOnce { get; set; }
 

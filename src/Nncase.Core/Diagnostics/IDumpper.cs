@@ -36,7 +36,7 @@ public interface IDumpper
     /// <returns>Sub dummper.</returns>
     IDumpper CreateSubDummper(string subDirectory, DumpFlags? dumpFlags = null);
 
-    void DumpIR(Expr expr, string prefix, string? reletivePath = null);
+    void DumpIR(Expr expr, string prefix, string? reletivePath = null, bool displayCallable = true);
 
     void DumpDotIR(Expr expr, string prefix, string? reletivePath = null);
 
