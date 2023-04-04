@@ -62,7 +62,7 @@ public sealed partial class CombineConstBinaryTranspose : IRewriteRule
     public CombineConstBinaryTranspose()
     {
         var perm = IsWildcard("perm");
-        Pattern = IsAlt(IsBinary("binary", "binaryCall", _ => true, IsTranspose(IsWildcard("x"), perm), IsConst("y") with { TypePattern = HasRank(1) }), IsBinary("binary", "binaryCall", _ => true, IsConst("x") with { TypePattern = HasRank(1) }, IsTranspose(IsWildcard("y"), perm)));
+        Pattern = IsAlt(IsBinary("binary", "binaryCall", _ => true, IsTranspose(IsWildcard("x"), perm), IsConst("y") with { TypePattern = HasRank(1) | HasRank(0) }), IsBinary("binary", "binaryCall", _ => true, IsConst("x") with { TypePattern = HasRank(1) | HasRank(0) }, IsTranspose(IsWildcard("y"), perm)));
     }
 
     /// <inheritdoc/>
@@ -74,6 +74,11 @@ public sealed partial class CombineConstBinaryTranspose : IRewriteRule
 
         if (x is Const)
         {
+            if (x.CheckedShape.Rank == 0)
+            {
+                return Transpose(Binary(binary.BinaryOp, x, y).InheritMetaData(binaryCall), perm);
+            }
+
             var newShape = new List<int>() { x.CheckedShape[0].FixedValue };
             if (x.CheckedShape[0].FixedValue != 1)
             {
@@ -89,6 +94,11 @@ public sealed partial class CombineConstBinaryTranspose : IRewriteRule
 
         if (y is Const)
         {
+            if (y.CheckedShape.Rank == 0)
+            {
+                return Transpose(Binary(binary.BinaryOp, x, y).InheritMetaData(binaryCall), perm);
+            }
+
             var newShape = new List<int>() { y.CheckedShape[0].FixedValue };
             if (y.CheckedShape[0].FixedValue != 1)
             {
