@@ -30,9 +30,11 @@ public class UnitTestCombineTranspose : TransformTestBase
     {
         // BinaryOp binaryOp, int[] lShape, int[] rShape, int[] perm, bool leftConst
         { BinaryOp.Add, new[] { 1, 32, 32, 64, }, new[] { 64 }, new[] { 0, 3, 1, 2 }, false },
+        { BinaryOp.Add, new[] { 1, 32, 32, 64, }, Array.Empty<int>(), new[] { 0, 3, 1, 2 }, false },
         { BinaryOp.Sub, new[] { 1, 32, 32, 64, }, new[] { 32, 64 }, new[] { 0, 3, 1, 2 }, false },
         { BinaryOp.Mul, new[] { 1, 32, 32, 64, }, new[] { 1, 1, 1, 64 }, new[] { 0, 3, 1, 2 }, false },
         { BinaryOp.Div, new[] { 64 }, new[] { 1, 32, 32, 64, }, new[] { 0, 3, 1, 2 }, true },
+        { BinaryOp.Div, Array.Empty<int>(), new[] { 1, 32, 32, 64, }, new[] { 0, 3, 1, 2 }, true },
         { BinaryOp.Sub, new[] { 32, 64 }, new[] { 1, 32, 32, 64, }, new[] { 0, 3, 1, 2 }, true },
         { BinaryOp.Mul, new[] { 1, 1, 1, 64 }, new[] { 1, 32, 32, 64, }, new[] { 0, 3, 1, 2 }, true },
     };
@@ -217,10 +219,10 @@ public class UnitTestCombineTranspose : TransformTestBase
     public void TestCombineTransposeConstBinaryPositive(BinaryOp binaryOp, int[] lShape, int[] rShape, int[] perm, bool leftConst)
     {
         Expr lhs = leftConst ?
-          Const.FromValue(Random.Normal(DataTypes.Float32, 0, 1, 3, lShape).Evaluate()) :
+          lShape.Length == 0 ? 0.5f : Const.FromValue(Random.Normal(DataTypes.Float32, 0, 1, 3, lShape).Evaluate()) :
           new Var("lhs", new TensorType(DataTypes.Float32, lShape));
         Expr rhs = leftConst ? new Var("b", new TensorType(DataTypes.Float32, rShape)) :
-          Const.FromValue(Random.Normal(DataTypes.Float32, 0, 1, 4, rShape).Evaluate());
+          rShape.Length == 0 ? 0.2f : Const.FromValue(Random.Normal(DataTypes.Float32, 0, 1, 4, rShape).Evaluate());
 
         var feedDict = new Dictionary<Var, IValue>();
         if (leftConst)

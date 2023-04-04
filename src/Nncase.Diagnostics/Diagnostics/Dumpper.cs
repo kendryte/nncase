@@ -34,10 +34,10 @@ internal sealed class Dumpper : IDumpper
         return new Dumpper(subDumpFlags, Path.Join(_dumpDirectory, subDirectory));
     }
 
-    public void DumpIR(Expr expr, string prefix, string? reletivePath = null)
+    public void DumpIR(Expr expr, string prefix, string? reletivePath = null, bool displayCallable = true)
     {
         var path = Path.Join(_dumpDirectory, reletivePath);
-        CompilerServices.DumpIR(expr, prefix, EnsureWritable(path));
+        CompilerServices.DumpIR(expr, prefix, EnsureWritable(path), displayCallable);
     }
 
     public void DumpDotIR(Expr expr, string prefix, string? reletivePath = null)
@@ -56,7 +56,7 @@ internal sealed class Dumpper : IDumpper
     {
         foreach (var func in module.Functions)
         {
-            DumpIR(func, string.Empty, reletivePath);
+            DumpIR(func, string.Empty, reletivePath, false);
         }
     }
 

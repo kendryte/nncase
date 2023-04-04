@@ -12,6 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
 using Nncase.PatternMatch;
+using Nncase.Utilities;
 
 namespace Nncase.Passes;
 
@@ -32,12 +33,19 @@ internal sealed class DataFlowRewriter : ExprRewriter
 
     protected override Expr DefaultRewriteLeaf(Expr expr)
     {
-        if (CompilerServices.TryMatchRoot(expr, _rule.Pattern, _options.MatchOptions, out var match))
+        if ((_options.RewriteOnce, IsMutated) switch
         {
-            var replace = _rule.GetReplace(match, _options);
+            (true, true) => false,
+            _ => true,
+        }
+
+         && CompilerServices.TryMatchRoot(expr, _rule.Pattern, _options.MatchOptions, out var match))
+        {
+            var replace = _rule.GetReplace(match, _options)?.InheritMetaData(expr);
             if (replace != null)
             {
                 _dontInheritExprs.Add(replace);
+
                 return replace;
             }
         }

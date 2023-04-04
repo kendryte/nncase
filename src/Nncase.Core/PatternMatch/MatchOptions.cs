@@ -48,7 +48,7 @@ public class MatchOptions
     {
         if (!SuppressedPatterns.TryGetValue(expr, out var patterns))
         {
-            patterns = new HashSet<IPattern>();
+            patterns = new HashSet<IPattern>(ReferenceEqualityComparer.Instance);
             SuppressedPatterns.Add(expr, patterns);
         }
 
@@ -60,6 +60,11 @@ public class MatchOptions
     /// </summary>
     public void InheritSuppressPatterns(Expr source, Expr dest)
     {
+        if (ReferenceEquals(source, dest))
+        {
+            return;
+        }
+
         if (SuppressedPatterns.TryGetValue(source, out var srcPatterns))
         {
             if (!SuppressedPatterns.TryGetValue(dest, out var destPatterns))
