@@ -14,6 +14,7 @@ using Microsoft.Extensions.Logging;
 using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.PatternMatch;
+using Nncase.Utilities;
 using Tensorflow;
 
 namespace Nncase.Passes;
@@ -69,11 +70,12 @@ internal class EGraphRewriteProvider : IEGraphRewriteProvider
             foreach (var (rule, results) in matches)
             {
                 var replacedExprs = (from result in results
-                                     let expr = rule.GetReplace(result, context)
-                                     where expr != null
-                                     select (eGraph.Find((ENode)result.Root), expr)).ToList();
+                                     let oldExpr = ((ENode)result.Root).Expr
+                                     let newExpr = rule.GetReplace(result, context)?.InheritMetaData(oldExpr)
+                                     where newExpr != null
+                                     select (oldExpr, eGraph.Find((ENode)result.Root), newExpr)).ToList();
 
-                foreach (var (oldEClass, newExpr) in replacedExprs)
+                foreach (var (oldExpr, oldEClass, newExpr) in replacedExprs)
                 {
                     var typeInferSuccess = CompilerServices.InferenceType(newExpr);
                     Trace.Assert(typeInferSuccess);
