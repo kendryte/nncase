@@ -56,7 +56,7 @@ internal class RewriteProvider : IRewriteProvider
                 Trace.Assert(inferSuccess);
             }
 
-            if (!isMutated || context.RewriteOnce)
+            if (!isMutated)
             {
                 break;
             }
