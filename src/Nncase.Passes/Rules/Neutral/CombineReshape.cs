@@ -121,7 +121,7 @@ public sealed partial class CombineUnaryReshape : IRewriteRule
             _ => true,
             IsReshape(IsWildcard("input"), IsWildcard("shape")));
 
-    private Expr? GetReplace(Unary unary, Call call,  Expr input, Expr shape)
+    private Expr? GetReplace(Unary unary, Call call, Expr input, Expr shape)
     {
         return Reshape(
             Unary(unary.UnaryOp, input).InheritMetaData(call),
