@@ -57,10 +57,10 @@ namespace Nncase.Importer
 
         private Expr ComputeOutSize(Expr inputSize, Expr weightSize, long[] strides, long[] outPaddings, Expr paddings, long[] dilations, int offset)
         {
-            return (strides[offset] * (inputSize - 1))
+            return (strides[offset] * (inputSize - 1L))
                 + outPaddings[offset]
-                + (((weightSize - 1)
-                * dilations[offset]) + 1) - paddings[offset][0] - paddings[offset][1];
+                + (((weightSize - 1L)
+                * dilations[offset]) + 1L) - paddings[offset][0] - paddings[offset][1];
         }
 
         private Expr GetOutputShape(Expr input, Expr weights, long[] strides, long[] outPadding, Expr paddings, long[] dilations, string autoPad, long group)

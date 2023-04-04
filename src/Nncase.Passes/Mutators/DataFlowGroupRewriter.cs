@@ -58,7 +58,7 @@ public sealed class DataFlowMergeRewriter
                 throw new InvalidOperationException($"After Rewrite {count - 1}, InferShape Failed For This Model!");
             }
 
-            if (!isMutated || options.RewriteOnce)
+            if (!isMutated)
             {
                 break;
             }

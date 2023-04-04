@@ -138,18 +138,22 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
             newCall = new Call(op, callParams.ToArray());
         }
 
-        context.RewriteOnce = true;
         context.MatchOptions.SuppressPattern(newCall, Pattern);
         return op switch
         {
-            LSTM => WrapLSTMOutput(newCall, ((TensorConst)newCall[LSTM.OutputSize]).Value.ToScalar<int>()), // note lstm output can't add marker.
+            LSTM => WrapLSTMOutput(newCall, ((TensorConst)newCall[LSTM.OutputSize]).Value.ToScalar<int>(), context), // note lstm output can't add marker.
             _ => IR.F.Math.RangeOfMarker(newCall, IR.F.Math.RangeOf(newCall)),
         };
     }
 
-    private IR.Tuple WrapLSTMOutput(Call call, int outputSize)
+    private IR.Tuple WrapLSTMOutput(Call call, int outputSize, RunPassContext context)
     {
         var outputs = Enumerable.Range(0, outputSize).Select(i => IR.F.Tensors.GetItem(call, i)).ToArray();
+        foreach (var o in outputs)
+        {
+            context.MatchOptions.SuppressPattern(o, Pattern);
+        }
+
         var exprs = outputs.Select(item => IR.F.Math.RangeOfMarker(item, IR.F.Math.RangeOf(item))).ToArray();
         return new IR.Tuple(exprs);
     }
