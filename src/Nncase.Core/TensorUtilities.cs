@@ -398,4 +398,16 @@ public static class TensorUtilities
     }
 
     public static int[] ToInts(this long[] longs) => ToInts((ReadOnlySpan<long>)longs);
+
+    public static int GetSize(Span<int> shapes, Span<int> strides, int elementSize)
+    {
+        int size = 0;
+        for (int i = 0; i < shapes.Length; i++)
+        {
+            size += (shapes[i] - 1) * strides[i];
+        }
+
+        size += 1;
+        return size * elementSize;
+    }
 }
