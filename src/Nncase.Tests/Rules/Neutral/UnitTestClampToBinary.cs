@@ -23,7 +23,7 @@ public class UnitTestClampToBinary : TransformTestBase
     public static IEnumerable<object[]> ClampToBinaryPositiveData =>
         new[]
         {
-            new object[] { new[] { 1, 32, 24, 24 }, new[] { float.MinValue, }, new[] { float.MaxValue }, },
+            new object[] { new[] { 1, 32, 24, 24 }, new[] { float.MinValue }, new[] { float.MaxValue }, },
             new object[] { new[] { 1, 32, 24, 24 }, new[] { -1.0f }, new[] { 1.0f }, },
         };
 
