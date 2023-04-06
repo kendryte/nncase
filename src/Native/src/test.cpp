@@ -31,7 +31,7 @@ using namespace std::string_view_literals;
 
 int main() {
     nncase_clr_initialize(
-        R"(E:\Work\Repos\nncase\src\Nncase.Compiler\bin\Debug\net6.0\Nncase.Compiler.dll)");
+        R"(E:\Work\Repos\nncase-v2\nncase\src\Nncase.Compiler\bin\Debug\net6.0\Nncase.Compiler.dll)");
     auto target_name = "cpu"sv;
     auto nncapi = nncase_clr_api();
     clr_object_ptr target, compile_session, compiler, compile_options;

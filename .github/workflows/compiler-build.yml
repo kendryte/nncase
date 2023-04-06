@@ -250,6 +250,9 @@ jobs:
       - name: Create Test Environment
         run: mkdir test_results
 
+      - uses: mxschmitt/action-tmate@v3
+        if: runner.os == 'macOS'
+
       - name: Test
         working-directory: ${{github.workspace}}
         shell: bash
