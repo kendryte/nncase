@@ -40,7 +40,7 @@ namespace {
             std::error_condition(GetLastError(), std::system_category()));     \
     }
 #define FindRuntimeMethod(snake_name, upper_name)                              \
-    result<rt_module_##snake_name##_t> find_runtime_##snake_name##(            \
+    result<rt_module_##snake_name##_t> find_runtime_##snake_name(              \
         const module_kind_t &kind) {                                           \
         auto module_name =                                                     \
             fmt::format("nncase.simulator.{}.dll", kind.data());               \
@@ -56,7 +56,7 @@ namespace {
     }
 
 // clang-format off
-FindRuntimeMethod(activator, ACTIVATOR) 
+FindRuntimeMethod(activator, ACTIVATOR)
 FindRuntimeMethod(collector, COLLECTOR)
 // clang-format on
 

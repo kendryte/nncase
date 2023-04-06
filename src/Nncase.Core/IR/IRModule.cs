@@ -9,7 +9,6 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
-using TorchSharp.Modules;
 
 namespace Nncase.IR;
 

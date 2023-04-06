@@ -303,14 +303,10 @@ template <class T> class NNCASE_NODISCARD result {
 
 template <> class NNCASE_NODISCARD result<void> {
   public:
-#if defined(__GNUC__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wnull-dereference"
-#endif
     result() noexcept : err_(0, *(std::error_category *)nullptr) {}
-#if defined(__GNUC__)
 #pragma GCC diagnostic pop
-#endif
 
     result(std::error_condition err) noexcept : err_(std::move(err)) {}
 
