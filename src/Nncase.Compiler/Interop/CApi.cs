@@ -68,6 +68,7 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr, QuantType, void> QuantizeOptionsSetWQuantTypePtr;
     public delegate* unmanaged<IntPtr, FineTuneWeightsMethod, void> QuantOptionsSetFineTuneWeightsMethodPtr;
     public delegate* unmanaged<IntPtr, byte, void> QuantOptionsSetUseMixQuantPtr;
+    public delegate* unmanaged<IntPtr, byte*, nuint, void> QuantOptionsSetImportConfigFilePtr;
     public delegate* unmanaged<IntPtr, IntPtr> RTValueFromHandlePtr;
     public delegate* unmanaged<IntPtr, IntPtr> RTValueGetHandlePtr;
     public delegate* unmanaged<CStreamMT*, IntPtr, IntPtr> StreamCreatePtr;
@@ -115,6 +116,7 @@ public static unsafe class CApi
         mt->QuantizeOptionsSetWQuantTypePtr = &QuantizeOptionsSetWQuantType;
         mt->QuantOptionsSetFineTuneWeightsMethodPtr = &QuantizeOptionsSetFineTuneWeightsMethod;
         mt->QuantOptionsSetUseMixQuantPtr = &QuantOptionsSetUseMixQuant;
+        mt->QuantOptionsSetImportConfigFilePtr = &QuantizeOptionsSetImportConfigFile;
         mt->RTValueFromHandlePtr = &RTValueFromHandle;
         mt->RTValueGetHandlePtr = &RTValueGetHandle;
         mt->StreamCreatePtr = &StreamCreate;
@@ -423,6 +425,12 @@ public static unsafe class CApi
             default:
                 throw new ArgumentException("Invalid useMixQuant Flag");
         }
+    }
+
+    [UnmanagedCallersOnly]
+    private static void QuantizeOptionsSetImportConfigFile(IntPtr quantizeOptionsHandle, byte* importConfigFilePtr, nuint importConfigFileLength)
+    {
+        Get<QuantizeOptions>(quantizeOptionsHandle).ImportConfigFile = ToString(importConfigFilePtr, importConfigFileLength);
     }
 
     [UnmanagedCallersOnly]

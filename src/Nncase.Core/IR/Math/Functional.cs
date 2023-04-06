@@ -416,4 +416,17 @@ public static class Math
 
         return call;
     }
+
+    public static Marker RangeOfMarker(Expr target, Expr range, DataType quantType)
+    {
+        var call = (Marker)new Marker(WellknownMarkerNames.RangeOf, target, range).InheritMetaData(target);
+        if (call.MixQuantInfo == null)
+        {
+            call.MixQuantInfo = new MixQuantInfo();
+        }
+
+        call.MixQuantInfo!.MarkerQuantType = quantType;
+
+        return call;
+    }
 }

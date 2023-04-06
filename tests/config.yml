@@ -52,6 +52,7 @@ case: # case的配置，应该是一个多层次的
     calibrate_method: 'Kld' #options: 'NoClip', 'Kld'
     finetune_weights_method: 'UseSquant' #options: 'NoFineTuneWeights', 'UseSquant', 'UseAdaRound'
     use_mix_quant: false
+    import_config_file: "/root/workspace/mv2_xiaocheng/ptq_config.json"
 
   ptq_opt:
     kwargs:

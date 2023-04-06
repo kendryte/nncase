@@ -150,6 +150,8 @@ typedef struct {
         nncase_finetune_weights_method_t method);
     void (*quantize_options_set_use_mix_quant)(
         clr_object_handle_t quantize_options, bool use_mix_quant);
+    void (*quantize_options_set_import_config_file)(
+        clr_object_handle_t quantize_options, const char *import_config_file, size_t import_config_file_length);
     clr_object_handle_t (*rtvalue_from_handle)(nncase::value_node *value);
     nncase::value_node *(*rtvalue_get_handle)(clr_object_handle_t rtvalue);
     clr_object_handle_t (*stream_create)(const nncase_stream_mt_t *mt,
@@ -323,6 +325,11 @@ class quantize_options : public clr_object_base {
     bool use_mix_quant() { return false; }
     void use_mix_quant(bool value) {
         nncase_clr_api()->quantize_options_set_use_mix_quant(obj_.get(), value);
+    }
+
+    std::string import_config_file() { return ""; }
+    void import_config_file(std::string_view value) {
+        nncase_clr_api()->quantize_options_set_import_config_file(obj_.get(), value.data(), value.length());
     }
 };
 

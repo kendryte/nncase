@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.Math;
@@ -22,42 +23,56 @@ internal partial class Quantizer
     private readonly QuantizeOptions _quantizeOptions;
     private readonly List<ENode> _rangeOfs = new List<ENode>();
     private readonly List<ENode> _childrenOfRangeOfs = new List<ENode>();
+    private readonly List<ENode> _markers = new List<ENode>();
 
     public Quantizer(IEGraph graph, QuantizeOptions quantizeOptions)
     {
         _graph = graph;
         _quantizeOptions = quantizeOptions;
         MarkRangeOfs();
+        MarkMarkers();
     }
 
     public async Task RunAsync(RunPassContext options)
     {
-        int srcBinSize = 8192;
-        int dstBinSize = 256;
-        if (_quantizeOptions.CalibrationDataset == null)
+        bool configExist = File.Exists(_quantizeOptions.ImportConfigFile);
+
+        if (!configExist)
         {
-            throw new InvalidOperationException($"{nameof(_quantizeOptions.CalibrationDataset)} is not set");
-        }
+            int srcBinSize = 8192;
+            int dstBinSize = 256;
 
-        // 1.0 Get ranges
-        var ranges = await GetRangesAsync(_quantizeOptions.CalibrationDataset);
+            if (_quantizeOptions.CalibrationDataset == null)
+            {
+                throw new InvalidOperationException($"{nameof(_quantizeOptions.CalibrationDataset)} is not set");
+            }
 
-        ranges = ranges.ToDictionary(item => item.Key, item => FixUpRange(item.Value));
+            // 1.0 Get ranges
+            var ranges = await GetRangesAsync(_quantizeOptions.CalibrationDataset);
 
-        if (_quantizeOptions.CalibrationMethod is CalibMethod.Kld)
-        {
-            // 1.1. Get histograms
-            var histograms = await GetHistogramsAsync(_quantizeOptions.CalibrationDataset, ranges, srcBinSize, dstBinSize);
+            ranges = ranges.ToDictionary(item => item.Key, item => FixUpRange(item.Value));
 
-            // 1.2. Select best ranges
-            var optRanges = GetOptRanges(histograms, ranges, srcBinSize, dstBinSize, _quantizeOptions.CalibrationMethod);
+            if (_quantizeOptions.CalibrationMethod is CalibMethod.Kld)
+            {
+                // 1.1. Get histograms
+                var histograms = await GetHistogramsAsync(_quantizeOptions.CalibrationDataset, ranges, srcBinSize, dstBinSize);
 
-            // 1.3. Assign ranges
-            AssignRanges(optRanges);
+                // 1.2. Select best ranges
+                var optRanges = GetOptRanges(histograms, ranges, srcBinSize, dstBinSize, _quantizeOptions.CalibrationMethod);
+
+                // 1.3. Assign ranges
+                AssignRanges(optRanges);
+            }
+            else
+            { // 2. Assign ranges
+                AssignRanges(ranges);
+            }
         }
         else
-        { // 2. Assign ranges
-            AssignRanges(ranges);
+        {
+            var ranges = GetRangesFromConfig(_quantizeOptions.ImportConfigFile);
+            AssignByChannelRanges(ranges);
+            AssignDataTypeFromConfig(_quantizeOptions.ImportConfigFile);
         }
 
         // // 3. Choose better quant method using cosine, and bind info with ir.
@@ -152,6 +167,83 @@ internal partial class Quantizer
             }
         });
         return ranges;
+    }
+
+    private IDictionary<ENode, ValueRange<float>[]> GetRangesFromConfig(string configFile)
+    {
+        var ranges = new Dictionary<ENode, ValueRange<float>[]>(ReferenceEqualityComparer.Instance);
+        string readJson = File.ReadAllText(configFile);
+        dynamic configJson = Newtonsoft.Json.Linq.JObject.Parse(readJson);
+
+        foreach (var rangeOf in _rangeOfs)
+        {
+            foreach (var output in configJson.outputs)
+            {
+                if (rangeOf.Expr.Metadata.OutputNames?[0] == output.name.Value)
+                {
+                    var valueRanges = new ValueRange<float>[output.data_range.Count];
+                    for (int i = 0; i < output.data_range.Count; i++)
+                    {
+                        valueRanges[i] = new ValueRange<float>((float)output.data_range[i].min.Value, (float)output.data_range[i].max.Value);
+                    }
+
+                    ranges.Add(rangeOf, valueRanges);
+                }
+            }
+        }
+
+        return ranges;
+    }
+
+    private void AssignDataTypeFromConfig(string configFile)
+    {
+        var ranges = new Dictionary<ENode, ValueRange<float>[]>(ReferenceEqualityComparer.Instance);
+        string readJson = File.ReadAllText(configFile);
+        dynamic configJson = Newtonsoft.Json.Linq.JObject.Parse(readJson);
+
+        foreach (var marker in _markers)
+        {
+            foreach (var output in configJson.outputs)
+            {
+                if (marker.Expr.Metadata.OutputNames?[0] == output.name.Value)
+                {
+                    if (((Marker)marker.Expr).MixQuantInfo == null)
+                    {
+                        ((Marker)marker.Expr).MixQuantInfo = new MixQuantInfo();
+                    }
+
+                    DataType dataType = DataTypes.UInt8;
+                    switch (output.data_type.Value)
+                    {
+                        case "u8":
+                            dataType = DataTypes.UInt8;
+                            break;
+                        case "i8":
+                            dataType = DataTypes.UInt8;
+                            break;
+                        case "i16":
+                            dataType = DataTypes.Int16;
+                            break;
+                        case "i32":
+                            dataType = DataTypes.Int32;
+                            break;
+                        case "f16":
+                            dataType = DataTypes.Float16;
+                            break;
+                        case "f32":
+                            dataType = DataTypes.Float32;
+                            break;
+                        case "bf16":
+                            dataType = DataTypes.BFloat16;
+                            break;
+                        default:
+                            throw new ArgumentException("Invalid data type.");
+                    }
+
+                    ((Marker)marker.Expr).MixQuantInfo!.MarkerQuantType = dataType;
+                }
+            }
+        }
     }
 
     private async Task<IDictionary<ENode, QuantizeHistogram<float>>> GetHistogramsAsync(ICalibrationDatasetProvider calibrationDataset, IDictionary<ENode, ValueRange<float>> ranges, int srcBinSize, int dstBinSize)
@@ -253,6 +345,29 @@ internal partial class Quantizer
         // _graph.Rebuild();
     }
 
+    private void AssignByChannelRanges(IDictionary<ENode, ValueRange<float>[]> ranges)
+    {
+        // note union the constant in the rangeof eclass, when extact the graph will replace the rangeof expression with the constant ValueRange.
+        foreach (var range in ranges)
+        {
+            var value = range.Value;
+            var oc = value.Length;
+            var minMaxArrSize = oc * 2;
+            var minMaxArr = new float[minMaxArrSize];
+            for (int i = 0; i < minMaxArrSize; i++)
+            {
+                minMaxArr[i] = i % 2 == 0 ? value[i / 2].Min : value[i / 2].Max;
+            }
+
+            var shape = oc == 1 ? new[] { 2 } : new[] { oc, 2 };
+            var rangeEclass = _graph.Add(new TensorConst(Tensor.From(minMaxArr.ToArray(), shape)));
+            var rangeOfEclass = _graph.Find(range.Key);
+            range.Key.Expr.CheckedType = rangeEclass.CheckedType;
+            rangeOfEclass.SetCheckedType(rangeEclass.CheckedType);
+            _graph.Union(rangeOfEclass, rangeEclass);
+        }
+    }
+
     /// <summary>
     /// collec all rangeof enode.
     /// </summary>
@@ -265,6 +380,21 @@ internal partial class Quantizer
                 var rangeOf = (ENode)match.Root;
                 _rangeOfs.Add(rangeOf);
                 _childrenOfRangeOfs.Add(rangeOf.Children[1].Nodes[0]);
+            }
+        }
+    }
+
+    /// <summary>
+    /// collec all marker enode.
+    /// </summary>
+    private void MarkMarkers()
+    {
+        if (EGraphMatcher.TryMatchRoot(_graph.Nodes, IsMarker("marker", _ => true, IsWildcard(), IsWildcard()), out var matches))
+        {
+            foreach (var match in matches)
+            {
+                var marker = (ENode)match.Root;
+                _markers.Add(marker);
             }
         }
     }

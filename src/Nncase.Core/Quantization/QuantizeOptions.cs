@@ -139,6 +139,11 @@ public class QuantizeOptions
     public ModelQuantMode ModelQuantMode { get; set; } = ModelQuantMode.NoQuant;
 
     /// <summary>
+    /// Gets or sets import config file.
+    /// </summary>
+    public string ImportConfigFile { get; set; } = string.Empty;
+
+    /// <summary>
     /// Creates no quantization options.
     /// </summary>
     /// <returns>No quant options.</returns>

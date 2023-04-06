@@ -42,6 +42,11 @@ internal sealed class DataFlowRewriter : ExprRewriter
          && CompilerServices.TryMatchRoot(expr, _rule.Pattern, _options.MatchOptions, out var match))
         {
             var replace = _rule.GetReplace(match, _options)?.InheritMetaData(expr);
+            if (expr.Metadata == null || expr.Metadata!.OutputNames == null)
+            {
+                return expr;
+            }
+
             if (replace != null)
             {
                 _dontInheritExprs.Add(replace);
