@@ -232,7 +232,9 @@ public static unsafe class CApi
     {
         var target = Get<ITarget>(targetHandle);
         var compileOptions = Get<CompileOptions>(compileOptionsHandle);
-        return GCHandle.ToIntPtr(GCHandle.Alloc(CompileSession.Create(target, compileOptions)));
+        var session = CompileSession.Create(target, compileOptions);
+        CompileSessionScope.RefeshExternal(session);
+        return GCHandle.ToIntPtr(GCHandle.Alloc(session));
     }
 
     [UnmanagedCallersOnly]
