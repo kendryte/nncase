@@ -140,6 +140,9 @@ jobs:
           echo "PATH=${env:PATH};${env:GITHUB_WORKSPACE}/install/bin" >> $env:GITHUB_ENV
         if: runner.os == 'Windows'
 
+      - uses: mxschmitt/action-tmate@v3
+        if: runner.os == 'macOS'
+
       - name: Dotnet Test
         working-directory: ${{github.workspace}}
         run: |
@@ -249,9 +252,6 @@ jobs:
 
       - name: Create Test Environment
         run: mkdir test_results
-
-      - uses: mxschmitt/action-tmate@v3
-        if: runner.os == 'macOS'
 
       - name: Test
         working-directory: ${{github.workspace}}
