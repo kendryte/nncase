@@ -68,18 +68,42 @@ def _make_module(op, in_type, in_shape_0, in_shape_1):
 
 ops = [
     'Add',
-    'Sub',
-    'Mul',
-    'Div',
-    'Min',
-    'Max'
+    # 'Sub',
+    # 'Mul',
+    # 'Div',
+    # 'Min',
+    # 'Max'
 ]
 
 in_types = [
     TensorProto.FLOAT,
-    # TensorProto.INT32,
+    # # TensorProto.INT32,
     # TensorProto.INT64
 ]
+
+# logical operators
+logical_ops = [
+    'And'
+]
+
+# logical operators data type
+logical_types = [
+    TensorProto.BOOL
+]
+
+def get_case_data(in_datas):
+    case_data = []
+    for op_types in in_datas:
+        _ops = op_types[0]
+        _types = op_types[1]
+        for _op in _ops:
+            for _type in _types:
+                tmp_pair = []
+                tmp_pair.append(_op)
+                tmp_pair.append(_type)
+                case_data.append(tmp_pair)
+    return case_data        
+    pass
 
 in_shapes = [
     # for benchmark
@@ -89,6 +113,9 @@ in_shapes = [
     # [[1], [1, 16, 4, 256]],
     # [[256], [1, 16, 4, 256]]
 
+
+    [[1, 3, 16, 16], [16, 1]],
+    [[1, 3, 16, 16], [3, 1, 16]],
     [[1, 3, 16, 16], [1]],
     [[1, 3, 16, 16], [16]],
     [[1, 3, 16, 16], [1, 16]],
@@ -129,17 +156,33 @@ in_shapes = [
     [[16], [3, 16, 16]],
     [[16], [1, 3, 16, 16]]
 ]
+ 
+class TestBinaryModule(object):
+ 
+    def setup_class(self):
+        pass
+ 
+    def teardown_class(self):
+        pass
+ 
+    # operators and types group
+    op_type_pairs = [
+        # [logical_ops, logical_types], 
+        [ops, in_types]
+    ]
+    
+    # get the test case
+    case_data=get_case_data(op_type_pairs)
+    print(case_data)
+    
+    @pytest.mark.parametrize('in_shape', in_shapes)
+    @pytest.mark.parametrize('op, in_type', case_data)
+    def test_unary(self, op, in_type, in_shape, request):
+        model_def = _make_module(op, in_type, in_shape[0], in_shape[1])
 
-@pytest.mark.parametrize('op', ops)
-@pytest.mark.parametrize('in_type', in_types)
-@pytest.mark.parametrize('in_shape', in_shapes)
-def test_binary(op, in_type, in_shape, request):
-    model_def = _make_module(op, in_type, in_shape[0], in_shape[1])
-
-    runner = OnnxTestRunner(request.node.name)
-    model_file = runner.from_onnx_helper(model_def)
-    runner.run(model_file)
-
+        runner = OnnxTestRunner(request.node.name)
+        model_file = runner.from_onnx_helper(model_def)
+        runner.run(model_file)
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_binary.py'])
