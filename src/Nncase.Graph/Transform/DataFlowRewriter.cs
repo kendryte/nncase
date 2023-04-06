@@ -42,13 +42,14 @@ internal sealed class DataFlowRewriter : ExprRewriter
          && CompilerServices.TryMatchRoot(expr, _rule.Pattern, _options.MatchOptions, out var match))
         {
             var replace = _rule.GetReplace(match, _options)?.InheritMetaData(expr);
-            if (expr.Metadata == null || expr.Metadata!.OutputNames == null)
-            {
-                return expr;
-            }
 
             if (replace != null)
             {
+                if (File.Exists(CompileSessionScope.GetCurrentThrowIfNull().CompileOptions.QuantizeOptions.ImportConfigFile) && (replace.Metadata == null || replace.Metadata!.OutputNames == null))
+                {
+                    return expr;
+                }
+
                 _dontInheritExprs.Add(replace);
 
                 return replace;

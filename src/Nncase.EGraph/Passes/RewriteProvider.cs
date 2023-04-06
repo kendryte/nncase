@@ -77,11 +77,11 @@ internal class EGraphRewriteProvider : IEGraphRewriteProvider
 
                 foreach (var (oldExpr, oldEClass, newExpr) in replacedExprs)
                 {
-                    if (oldExpr.Metadata == null || oldExpr.Metadata!.OutputNames == null)
-                    {
-                        var typeInferSuccess = CompilerServices.InferenceType(newExpr);
-                        Trace.Assert(typeInferSuccess);
+                    var typeInferSuccess = CompilerServices.InferenceType(newExpr);
+                    Trace.Assert(typeInferSuccess);
 
+                    if (File.Exists(CompileSessionScope.GetCurrentThrowIfNull().CompileOptions.QuantizeOptions.ImportConfigFile) && (oldExpr.Metadata == null || oldExpr.Metadata!.OutputNames == null))
+                    {
                         var newEClass = eGraph.Add(newExpr);
                         if (_logger.IsEnabled(LogLevel.Trace))
                         {
