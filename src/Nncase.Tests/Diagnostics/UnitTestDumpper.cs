@@ -16,7 +16,6 @@ using Nncase.PatternMatch;
 using Nncase.Tests.ReWriteTest;
 using Nncase.Tests.TestFixture;
 using Nncase.TIR;
-using Tensorboard;
 using Xunit;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.Tensors;

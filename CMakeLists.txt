@@ -38,15 +38,13 @@ option(BUILD_TESTING "Build test programs" OFF)
 option(ENABLE_OP_PROFILE "Profile ops cast time" OFF)
 option(ENABLE_DUMP_MANAGER "Enable dump manager" OFF)
 option(ENABLE_RVV "Some kernel impl by rvv" OFF)
-option(ENABLE_X86SIMD "Some kernel impl by x86 simd" ON)
 
 if (ENABLE_OP_PROFILE)
     add_definitions(-DENABLE_OP_PROFILE)
 endif()
 
-if(${CMAKE_SYSTEM_PROCESSOR} MATCHES
-   "(x86)|(X86)|(amd64)|(AMD64)|(x86_64)|(X86_64)")
-   include(toolchains/x86_64.toolchain.cmake)
+if(NOT CMAKE_TOOLCHAIN_FILE)
+   include(toolchains/native.toolchain.cmake)
 endif()
 
 if (BUILDING_RUNTIME)
