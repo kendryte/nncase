@@ -28,24 +28,18 @@ using namespace nncase::kernels::stackvm::optimized;
 using namespace nncase::runtime::stackvm;
 
 struct unary_op_abs {
-    unary_op_abs() {
-        const ALIGN32_BEG int32_t remove_sign_bit_data[8] ALIGN32_END = {
-            0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF,
-            0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF};
-        remove_sign_bit_flag =
-            _mm256_load_si256((__m256i const *)remove_sign_bit_data);
-    }
+    unary_op_abs() : sign_bit_(_mm256_set1_ps(-0.0f)) {}
 
     float operator()(float x) const { return fabsf(x); }
 
     void pack(const float *a, float *b) {
-        __m256i vector_a = _mm256_loadu_si256((__m256i const *)a);
-        __m256i dst_a = _mm256_and_si256(vector_a, remove_sign_bit_flag);
-        _mm256_storeu_si256((__m256i *)b, dst_a);
+        __m256 vector_a = _mm256_loadu_ps(a);
+        __m256 dst_a = _mm256_andnot_ps(sign_bit_, vector_a);
+        _mm256_storeu_ps(b, dst_a);
     }
 
   private:
-    __m256i remove_sign_bit_flag;
+    __m256 sign_bit_;
 };
 
 struct unary_op_ceil {
@@ -132,19 +126,22 @@ struct unary_op_rsqrt {
 };
 
 struct unary_op_sign {
+    unary_op_sign() : zero_(_mm256_setzero_ps()) {}
+
     float operator()(float x) const { return (0.f < x) - (x < 0.f); }
 
     void pack(const float *a, float *b) {
-        __m256 aa = _mm256_loadu_ps(a);
-        __m256 b1 = _mm256_cmp_ps(_mm256_setzero_ps(), aa, _CMP_LT_OQ);
-        __m256 b2 = _mm256_cmp_ps(aa, _mm256_setzero_ps(), _CMP_LT_OQ);
-        __m256i ib1 = _mm256_castps_si256(b1);
-        __m256i ib2 = _mm256_castps_si256(b2);
-        __m256i ret = _mm256_sub_epi32(ib2, ib1);
-
-        __m256 kbb = _mm256_cvtepi32_ps(ret);
-        _mm256_storeu_ps(b, kbb);
+        __m256 va = _mm256_loadu_ps(a);
+        __m256 positive = _mm256_and_ps(_mm256_cmp_ps(zero_, va, _CMP_LT_OQ),
+                                        _mm256_set1_ps(1.0f));
+        __m256 negative = _mm256_and_ps(_mm256_cmp_ps(va, zero_, _CMP_LT_OQ),
+                                        _mm256_set1_ps(-1.0f));
+        __m256 vb = _mm256_or_ps(positive, negative);
+        _mm256_storeu_ps(b, vb);
     }
+
+  private:
+    __m256 zero_;
 };
 
 struct unary_op_sin {

@@ -8,6 +8,10 @@ else()
     set(ARCH generic)
 endif()
 
+if (NOT ${ARCH} STREQUAL "generic")
+    add_subdirectory(${ARCH})
+endif()
+
 set(SRCS concat.cpp
          convolution.cpp
          slice.cpp

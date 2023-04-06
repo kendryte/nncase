@@ -1,5 +1,5 @@
 if (MSVC)
-    add_compile_options(/arch:AVX2)
+    add_compile_options(/arch:AVX)
 else()
-    add_compile_options(-mavx2)
+    add_compile_options(-mavx)
 endif()
