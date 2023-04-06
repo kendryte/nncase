@@ -11,7 +11,6 @@ using System.Threading.Tasks;
 using Nncase.Passes;
 using Nncase.Passes.Rules.Neutral;
 using Tensorflow;
-using TorchSharp;
 using Xunit;
 using Math = Nncase.IR.F.Math;
 using Random = Nncase.IR.F.Random;
