@@ -170,7 +170,7 @@ jobs:
       matrix:
         dotnet-version: ['6.0']
         config:
-          #- {name: x86_64-macos, os: macos-latest, shell: bash}
+          - {name: x86_64-macos, os: macos-latest, shell: bash}
           - {name: x86_64-linux, os: ubuntu-latest, shell: bash}
           - {name: x86_64-windows, os: windows-latest, shell: bash}
 
