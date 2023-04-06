@@ -143,7 +143,7 @@ jobs:
       - name: Dotnet Test
         working-directory: ${{github.workspace}}
         run: |
-          dotnet tool install --global dotnet-coverage
+          dotnet tool install --global dotnet-coverage --version 17.6.11
           dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/unit "dotnet test -c ${{matrix.config.buildType}} -s test.runsettings --no-build --verbosity normal"
           dotnet-coverage merge -o coverage.unit.xml -f cobertura -r coverage/*.xml
 
