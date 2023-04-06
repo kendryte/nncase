@@ -14,7 +14,6 @@ using Nncase.IR.Random;
 using Nncase.Passes;
 using Nncase.Passes.Rules.Neutral;
 using Nncase.Tests.TestFixture;
-using TorchSharp.Modules;
 using Xunit;
 using Random = Nncase.IR.F.Random;
 using Sigmoid = Nncase.IR.NN.Sigmoid;

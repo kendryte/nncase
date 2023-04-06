@@ -18,8 +18,6 @@
         <dependency id="Autofac" version="6.3.0" exclude="Build,Analyzers" />
         <dependency id="SciSharp.TensorFlow.Redist" version="2.7.0" exclude="Build,Analyzers" />
         <dependency id="TensorFlow.NET" version="0.60.5" exclude="Build,Analyzers" />
-        <dependency id="TorchSharp" version="0.95.4" exclude="Build,Analyzers" />
-        <dependency id="libtorch-cpu" version="1.10.0.1" exclude="Build,Analyzers" />
         <dependency id="GiGraph.Dot" version="2.0.0" exclude="Build,Analyzers" />
         <dependency id="NetFabric.Hyperlinq" version="3.0.0-beta48" exclude="Build,Analyzers" />
         <dependency id="ValueTaskSupplement" version="1.1.0" exclude="Build,Analyzers" />
