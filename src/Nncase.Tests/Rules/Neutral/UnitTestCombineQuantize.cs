@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.F;
 using Nncase.IR.Math;
@@ -34,6 +35,18 @@ public class UnitTestCombineQuantize : TestClassBase
     {
         { new int[][] { new int[] { 1, 32, 160, 160 }, new int[] { 1, 32, 160, 160 } }, 1, DataTypes.UInt8, new(2, 0.25185302f) },
         { new int[][] { new int[] { 1, 64, 80, 80 }, new int[] { 1, 64, 80, 80 } }, 1, DataTypes.UInt8, new(20, 0.042551044f) },
+    };
+
+    public static TheoryData<int[][], DataType, QuantParam> CombineQuantizeReshapePositiveData => new()
+    {
+        { new int[][] { new int[] { 1, 32, 160, 160 }, new int[] { 1, 160, 32, 160 } }, DataTypes.UInt8, new(2, 0.25185302f) },
+        { new int[][] { new int[] { 1, 64, 80, 80 }, new int[] { 1, 64, 1, 6400 } }, DataTypes.UInt8, new(20, 0.042551044f) },
+    };
+
+    public static TheoryData<int[][], DataType, QuantParam> CombineQuantizeTransposePositiveData => new()
+    {
+        { new int[][] { new int[] { 1, 32, 160, 160 }, new int[] { 0, 3, 1, 2  } }, DataTypes.UInt8, new(2, 0.25185302f) },
+        { new int[][] { new int[] { 1, 64, 80, 80 }, new int[] { 3, 2, 1, 0 } }, DataTypes.UInt8, new(20, 0.042551044f) },
     };
 
     public IAnalyzerManager AnalyzerMananger => CompileSession.GetRequiredService<IAnalyzerManager>();
@@ -91,6 +104,90 @@ public class UnitTestCombineQuantize : TestClassBase
 
         var pass = new DataflowPass();
         pass.Add<CombineQuantizeConcat>();
+        var rootPost = (Function)await pass.RunAsync(rootPre, new() { AnalysisResults = analysis });
+        Assert.Equal(rootPre, rootPost);
+    }
+
+    [Theory]
+    [MemberData(nameof(CombineQuantizeReshapePositiveData))]
+    public async Task TestCombineQuantizeReshapePositive(int[][] shapes, DataType destType, QuantParam quantParam)
+    {
+        var parameters = new List<Var>();
+        var feedDict = new Dictionary<Var, IValue>();
+        var v = new Var("input", new TensorType(DataTypes.Float32, shapes[0]));
+        parameters.Add(v);
+        feedDict.Add(v, IR.F.Random.Uniform(DataTypes.Float32, 1.0f, -1.0f, 0, shapes[0]).Evaluate());
+
+        var rootPre = new IR.Function(Math.Quantize(Tensors.Reshape(v, shapes[1]), quantParam, destType), parameters.ToArray());
+        Assert.True(CompilerServices.InferenceType(rootPre));
+        var preHashCode = rootPre.GetHashCode();
+        var preValue = CompilerServices.Evaluate(rootPre, feedDict);
+
+        var analysis = new Dictionary<Type, IAnalysisResult> { [typeof(IExprUserAnalysisResult)] = AnalyzerMananger.GetAnaylsis<IExprUserAnalysisResult>(rootPre), };
+
+        var pass = new DataflowPass();
+        pass.Add<CombineQuantizeReshape>();
+        var rootPost = (Function)await pass.RunAsync(rootPre, new() { AnalysisResults = analysis });
+        Assert.NotEqual(preHashCode, rootPost.GetHashCode());
+
+        Assert.Equal(preValue, CompilerServices.Evaluate(rootPost, feedDict));
+    }
+
+    [Fact]
+    public async Task TestCombineQuantizeReshapeNegative()
+    {
+        var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 256, 20, 20 })); // f32[1,256,20,20]
+        var v = Tensors.Reshape(input, new[] { 1, 256, 20, 20 }); // f32[1,256,20,20]
+        var body = Math.Add(IR.F.Math.Quantize(v, new QuantParam(1, 0.323f), DataTypes.UInt8), IR.F.Math.Quantize(v, new QuantParam(1, 0.323f), DataTypes.UInt8));
+        var rootPre = new Function(body, input);
+        Assert.True(CompilerServices.InferenceType(rootPre));
+
+        var analysis = new Dictionary<Type, IAnalysisResult> { [typeof(IExprUserAnalysisResult)] = AnalyzerMananger.GetAnaylsis<IExprUserAnalysisResult>(rootPre), };
+
+        var pass = new DataflowPass();
+        pass.Add<CombineQuantizeReshape>();
+        var rootPost = (Function)await pass.RunAsync(rootPre, new() { AnalysisResults = analysis });
+        Assert.Equal(rootPre, rootPost);
+    }
+
+    [Theory]
+    [MemberData(nameof(CombineQuantizeTransposePositiveData))]
+    public async Task TestCombineQuantizeTransposePositive(int[][] shape_and_perm, DataType destType, QuantParam quantParam)
+    {
+        var parameters = new List<Var>();
+        var feedDict = new Dictionary<Var, IValue>();
+        var v = new Var("input", new TensorType(DataTypes.Float32, shape_and_perm[0]));
+        parameters.Add(v);
+        feedDict.Add(v, Random.Uniform(DataTypes.Float32, 1.0f, -1.0f, 0, shape_and_perm[0]).Evaluate());
+
+        var rootPre = new IR.Function(Math.Quantize(Tensors.Transpose(v, shape_and_perm[1]), quantParam, destType), parameters.ToArray());
+        Assert.True(CompilerServices.InferenceType(rootPre));
+        var preHashCode = rootPre.GetHashCode();
+        var preValue = CompilerServices.Evaluate(rootPre, feedDict);
+
+        var analysis = new Dictionary<Type, IAnalysisResult> { [typeof(IExprUserAnalysisResult)] = AnalyzerMananger.GetAnaylsis<IExprUserAnalysisResult>(rootPre), };
+
+        var pass = new DataflowPass();
+        pass.Add<CombineQuantizeTranspose>();
+        var rootPost = (Function)await pass.RunAsync(rootPre, new() { AnalysisResults = analysis });
+        Assert.NotEqual(preHashCode, rootPost.GetHashCode());
+
+        Assert.Equal(preValue, CompilerServices.Evaluate(rootPost, feedDict));
+    }
+
+    [Fact]
+    public async Task TestCombineQuantizeTransposeNegative()
+    {
+        var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 256, 20, 20 })); // f32[1,256,20,20]
+        var v = Tensors.Transpose(input, new[] { 0, 3, 2, 1 }); // f32[1,256,20,20]
+        var body = Math.Add(Math.Quantize(v, new QuantParam(1, 0.323f), DataTypes.UInt8), IR.F.Math.Quantize(v, new QuantParam(1, 0.323f), DataTypes.UInt8));
+        var rootPre = new Function(body, input);
+        Assert.True(CompilerServices.InferenceType(rootPre));
+
+        var analysis = new Dictionary<Type, IAnalysisResult> { [typeof(IExprUserAnalysisResult)] = AnalyzerMananger.GetAnaylsis<IExprUserAnalysisResult>(rootPre), };
+
+        var pass = new DataflowPass();
+        pass.Add<CombineQuantizeTranspose>();
         var rootPost = (Function)await pass.RunAsync(rootPre, new() { AnalysisResults = analysis });
         Assert.Equal(rootPre, rootPost);
     }
