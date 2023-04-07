@@ -92,7 +92,7 @@ internal class EGraphRewriteProvider : IEGraphRewriteProvider
                     var typeInferSuccess = CompilerServices.InferenceType(newExpr);
                     Trace.Assert(typeInferSuccess);
 
-                    if (ImportConfigFileExist() && (oldExpr.Metadata == null || oldExpr.Metadata!.OutputNames == null))
+                    if (!ImportConfigFileExist() || (ImportConfigFileExist() && oldExpr.Metadata != null && oldExpr.Metadata!.OutputNames != null))
                     {
                         var newEClass = eGraph.Add(newExpr);
                         if (_logger.IsEnabled(LogLevel.Trace))
