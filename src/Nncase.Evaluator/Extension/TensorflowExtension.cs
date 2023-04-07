@@ -21,8 +21,6 @@ namespace Nncase.Evaluator;
 /// </summary>
 public static class TensorflowExtension
 {
-    private static unsafe readonly DeallocatorArgs* _deallocatorArgs;
-
     private static readonly Dictionary<DataType, TF_DataType> _dataTypesToTorchType = new()
     {
         { DataTypes.Boolean, TF_DataType.TF_BOOL },
@@ -51,16 +49,6 @@ public static class TensorflowExtension
         { TF_DataType.TF_DOUBLE, DataTypes.Float64 },
     };
 
-    static unsafe TensorflowExtension()
-    {
-        _deallocatorArgs = (DeallocatorArgs*)Marshal.AllocHGlobal(Marshal.SizeOf<DeallocatorArgs>());
-        *_deallocatorArgs = new DeallocatorArgs
-        {
-            gc_handle = IntPtr.Zero,
-            deallocator_called = false,
-        };
-    }
-
     /// <summary>
     /// Convert <see cref="Tensorflow.Tensor"/> to <see cref="Tensor"/>.
     /// </summary>
@@ -68,8 +56,8 @@ public static class TensorflowExtension
     /// <returns>Converted tensor.</returns>
     public static Tensor ToTensor(this Tensorflow.Tensor tensor)
     {
-        var mmgr = new TFTensorMemoryManager(tensor.Handle);
-        return Tensor.FromBytes(ToDataType(tensor.dtype), mmgr.Memory, tensor.shape.as_int_list());
+        var memory = tensor.BufferToArray().AsMemory();
+        return Tensor.FromBytes(ToDataType(tensor.dtype), memory, tensor.shape.as_int_list());
     }
 
     /// <summary>
@@ -107,40 +95,4 @@ public static class TensorflowExtension
     public static TF_DataType ToTFType(this DataType dt) => _dataTypesToTorchType[dt];
 
     public static DataType ToDataType(this TF_DataType dt) => _TorchTypeTodataTypes[dt];
-
-    private sealed class TFTensorMemoryManager : MemoryManager<byte>
-    {
-        private readonly SafeTensorHandle _tensor;
-
-        public TFTensorMemoryManager(SafeTensorHandle tensor)
-        {
-            bool success = false;
-            tensor.DangerousAddRef(ref success);
-            if (!success)
-            {
-                throw new InvalidOperationException("Add ref failed.");
-            }
-
-            _tensor = tensor;
-        }
-
-        public unsafe override Span<byte> GetSpan() =>
-            new Span<byte>(c_api.TF_TensorData(_tensor).ToPointer(), (int)c_api.TF_TensorByteSize(_tensor));
-
-        public unsafe override MemoryHandle Pin(int elementIndex = 0)
-        {
-            var basePtr = c_api.TF_TensorData(_tensor).ToPointer();
-            var pointer = Unsafe.Add<byte>(basePtr, elementIndex);
-            return new MemoryHandle(pointer, pinnable: this);
-        }
-
-        public override void Unpin()
-        {
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            _tensor.DangerousRelease();
-        }
-    }
 }
