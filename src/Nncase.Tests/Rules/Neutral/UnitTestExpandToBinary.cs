@@ -12,7 +12,6 @@ using Nncase.IR;
 using Nncase.Passes;
 using Nncase.Passes.Rules.Neutral;
 using Tensorflow;
-using TorchSharp;
 using Xunit;
 using Dimension = Nncase.IR.Dimension;
 using Math = Nncase.IR.F.Math;

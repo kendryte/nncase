@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include "ref_ops.h"
+#include <cstring>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/host_buffer.h>
@@ -76,6 +77,16 @@ result<void> pad_impl(const T *input, T *output, const dims_t &in_shape,
                       const strides_t &out_strides, const paddings_t &paddings,
                       pad_mode_t mode, T pad_value,
                       NNCASE_UNUSED kernel_context &context) noexcept {
+    int sum = 0;
+    for (const auto &item : paddings) {
+        sum += item.sum();
+    }
+    if (sum == 0) {
+        auto out_size = compute_size(out_shape);
+        memcpy(output, input, out_size);
+        return ok();
+    }
+
     return apply(out_shape, [&](const dims_t &index) -> result<void> {
         bool pad_element = false;
         auto in_index =
@@ -145,6 +156,11 @@ result<void> nncase::kernels::stackvm::reference::pad(
                             reinterpret_cast<uint32_t *>(output), in_shape,
                             out_shape, in_strides, out_strides, paddings, mode,
                             *IN_CAST(uint32_t, pad_value), context);
+        case 8:
+            return pad_impl(reinterpret_cast<const uint64_t *>(input),
+                            reinterpret_cast<uint64_t *>(output), in_shape,
+                            out_shape, in_strides, out_strides, paddings, mode,
+                            *IN_CAST(uint64_t, pad_value), context);
         default:
             return err(std::errc::not_supported);
         }
@@ -218,6 +234,12 @@ result<void> nncase::kernels::stackvm::reference::pad(
                             reinterpret_cast<uint32_t *>(output), out_shape,
                             out_shape2, strides, out_strides, padding_cfg, mode,
                             *IN_CAST(uint32_t, pad_value), context);
+
+        case 8:
+            return pad_impl(reinterpret_cast<const uint64_t *>(v.data()),
+                            reinterpret_cast<uint64_t *>(output), out_shape,
+                            out_shape2, strides, out_strides, padding_cfg, mode,
+                            *IN_CAST(uint64_t, pad_value), context);
         default:
             return err(std::errc::not_supported);
         }

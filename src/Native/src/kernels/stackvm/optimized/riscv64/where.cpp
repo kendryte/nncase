@@ -1,3 +1,4 @@
+
 /* Copyright 2019-2021 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,63 +30,105 @@ using namespace nncase::runtime::stackvm;
 namespace {
 #if __riscv_vector
 
-void ternary_vec(const bool *input_a, int input_a_len, const float *input_b,
-                 int input_b_len, const float *input_c,
-                 [[maybe_unused]] int input_c_len, float *out, int out_len) {
+void ternary_vec(const uint8_t *input_a, const int input_a_len,
+                 const float *input_b, const int input_b_len,
+                 const float *input_c, const int input_c_len, float *out,
+                 int out_len) {
+    (void)input_c_len;
     __asm volatile(
 
         "div a4, %[dst_len], %[mask_len];"
-        "mv a2, %[c];"
+        // "mv a2, %[c];"
         "mv a3, %[dst];"
+        "addi a6, x0, 1;"
 
-        "beq %[mask_len], %[b_len], B_IS_VECTOR%=;"
-
+        "beq %[c_len], %[b_len], BC_IS_VECTOR%=;"
+        "beq %[c_len], a6, C_IS_SCLAR%=;"
+        // "beq %[mask_len], %[b_len], B_IS_VECTOR%=;"
+        ///////////////////////////////////////////
         "flw ft0, (%[b]);"
-
-        "TERNARY_RVV%=:;"
+        "mv a2, %[c];"
+        "TERNARY_RVV_B%=:;"
 
         "mv a0, %[mask_len];"
         "mv a1, %[mask];"
 
-        "XXXXXX%=:"
+        "XXXXXX_B%=:"
         "vsetvli t0, a0, e32, m8;"
-        "vle32.v v8, (a1);"
+        "vle8.v v8, (a1);"
         "vle32.v v16,(a2);"
+        "vsetvli t0, a0, e8, m8;"
         "vmsne.vx v0, v8, x0;"
+        "vsetvli t0, a0, e32, m8;"
         "vfmerge.vfm v8, v16, ft0, v0;"
         "vse32.v v8, (a3);"
 
         "slli t1, t0, 2;"
         "sub a0, a0, t0; "
-        "add a1, a1, t1;"
+        "add a1, a1, t0;"
         "add a2, a2, t1;"
         "add a3, a3, t1;"
-        "bnez a0, XXXXXX%=;"
+        "bnez a0, XXXXXX_B%=;"
 
         "addi a4, a4, -1;"
-        "bnez a4, TERNARY_RVV%=;"
+        "bnez a4, TERNARY_RVV_B%=;"
         "j END%=;"
 
-        //////////////////////////////////////
-        "B_IS_VECTOR%=:;"
-        "TERNARY_RVV2%=:;"
+        //////////// len c == 1
+
+        "C_IS_SCLAR%=:"
+        "mv a5, %[b];"
+        "flw ft0, (%[c]);"
+        "TERNARY_RVV_C%=:;"
 
         "mv a0, %[mask_len];"
         "mv a1, %[mask];"
+
+        "XXXXXX_C%=:"
+        "vsetvli t0, a0, e32, m8;"
+        "vle8.v v8, (a1);"
+        "vle32.v v16,(a5);"
+        "vsetvli t0, a0, e8, m8;"
+        "vmseq.vx v0, v8, x0;"
+        "vsetvli t0, a0, e32, m8;"
+        "vfmerge.vfm v8, v16, ft0, v0;"
+        "vse32.v v8, (a3);"
+
+        "slli t1, t0, 2;"
+        "sub a0, a0, t0; "
+        "add a1, a1, t0;"
+        "add a5, a5, t1;"
+        "add a3, a3, t1;"
+        "bnez a0, XXXXXX_C%=;"
+
+        "addi a4, a4, -1;"
+        "bnez a4, TERNARY_RVV_C%=;"
+        "j END%=;"
+
+        //////////////////////////////////////
+        "BC_IS_VECTOR%=:;"
+
         "mv a5, %[b];"
+        "mv a2, %[c];"
+
+        "TERNARY_RVV2%=:;"
+        "mv a0, %[mask_len];"
+        "mv a1, %[mask];"
 
         "XXXXXX2%=:"
         "vsetvli t0, a0, e32, m8;"
-        "vle32.v v8, (a1);"
+        "vle8.v v8, (a1);"
         "vle32.v v16,(a2);"
         "vle32.v v24, (a5);"
+        "vsetvli t0, a0, e8, m8;"
         "vmsne.vx v0, v8, x0;"
+        "vsetvli t0, a0, e32, m8;"
         "vmerge.vvm v8, v16, v24, v0;"
         "vse32.v v8, (a3);"
 
         "slli t1, t0, 2;"
         "sub a0, a0, t0; "
-        "add a1, a1, t1;"
+        "add a1, a1, t0;"
         "add a2, a2, t1;"
         "add a3, a3, t1;"
         "add a5, a5, t1;"
@@ -95,42 +138,34 @@ void ternary_vec(const bool *input_a, int input_a_len, const float *input_b,
         "bnez a4, TERNARY_RVV2%=;"
 
         "END%=:;"
-
         :
         : [mask] "r"(input_a), [mask_len] "r"(input_a_len), [b] "r"(input_b),
-          [b_len] "r"(input_b_len), [c] "r"(input_c), [dst] "r"(out),
-          [dst_len] "r"(out_len)
-        : "t0", "t1", "a0", "a1", "a2", "a3", "a4", "a5", "ft0", "v0", "v8",
-          "v16", "v24");
+          [b_len] "r"(input_b_len), [c] "r"(input_c), [c_len] "r"(input_c_len),
+          [dst] "r"(out), [dst_len] "r"(out_len)
+        : "t0", "t1", "a0", "a1", "a2", "a3", "a4", "a5", "a6", "ft0", "v0",
+          "v8", "v16", "v24");
 }
 
-result<void> tenary_impl(const bool *input_a, const float *input_b,
-                         const float *input_c, float *output,
-                         const dims_t &in_a_shape, const dims_t &in_b_shape,
-                         const dims_t &in_c_shape) {
+int tenary_impl(const uint8_t *input_cond, const float *input_b,
+                const float *input_c, float *output,
+                const dims_t &in_cond_shape, const dims_t &in_b_shape,
+                const dims_t &in_c_shape, const dims_t &out_shape) {
 
-    int len_a = 1;
-    for (int i = 0; i < (int)in_a_shape.size(); ++i) {
-        len_a *= in_a_shape[i];
+    int len_cond = (int)compute_size(in_cond_shape);
+    int len_b = (int)compute_size(in_b_shape);
+    int len_c = (int)compute_size(in_c_shape);
+    int len_out = (int)compute_size(out_shape);
+
+    if (len_cond == len_b && len_cond == len_c) {
+        ternary_vec(input_cond, len_cond, input_b, len_b, input_c, len_c,
+                    output, len_out);
+    } else if (in_b_shape.empty() || in_c_shape.empty()) {
+        ternary_vec(input_cond, len_cond, input_b, len_b, input_c, len_c,
+                    output, len_out);
+    } else {
+        return -1;
     }
-    int len_b = 1;
-    for (int i = 0; i < (int)in_b_shape.size(); ++i) {
-        len_b *= in_b_shape[i];
-    }
-    int len_c = 1;
-    for (int i = 0; i < (int)in_c_shape.size(); ++i) {
-        len_c *= in_c_shape[i];
-    }
-    const auto out_shape = kernels::detail::get_binary_output_shape(
-        kernels::detail::get_binary_output_shape(in_a_shape, in_b_shape),
-        in_c_shape);
-    int len_out = 1;
-    for (int i = 0; i < (int)out_shape.size(); ++i) {
-        len_out *= out_shape[i];
-    }
-    ternary_vec(input_a, len_a, input_b, len_b, input_c, len_c, output,
-                len_out);
-    return ok();
+    return 0;
 }
 
 #endif
@@ -143,23 +178,29 @@ result<void> nncase::kernels::stackvm::optimized::where(
     const strides_t &cond_strides, const strides_t &x_strides,
     const strides_t &y_strides, const strides_t &out_strides) {
 
-#if __riscv_vector
-#define WHERE_IMPL(_ty)                                                        \
+    // 这里做一步转换，明确下 cond 数据类型， c++ 中的 sizeof(bool) == 1，对于
+    // sizeof(bool) != 1 的情况结果未定义。
+    assert(sizeof(bool) == 1);
+    const uint8_t *cond_pointer = (const uint8_t *)cond;
+#define WHERE_IMPL(_ty, ret_value)                                             \
     {                                                                          \
         auto *input_x = IN_CAST(_ty, x);                                       \
         auto *input_y = IN_CAST(_ty, y);                                       \
         auto *out = OUT_CAST(_ty, output);                                     \
-        return tenary_impl(cond, input_x, input_y, x_shape, y_shape,           \
-                           out_shape);                                         \
+        ret_value = tenary_impl(cond_pointer, input_x, input_y, out,           \
+                                cond_shape, x_shape, y_shape, out_shape);      \
     }
-
+    int ret_flag = 0;
     try_var(typecode, to_typecode(dt));
     switch (typecode) {
     case dt_float32:
-        WHERE_IMPL(float);
+        WHERE_IMPL(float, ret_flag);
     default:;
     }
-#endif
+    if (!ret_flag) {
+        return ok();
+    }
+
     return reference::where(dt, cond, x, y, output, cond_shape, x_shape,
                             y_shape, out_shape, cond_strides, x_strides,
                             y_strides, out_strides);
