@@ -178,6 +178,7 @@ result<void> nncase::kernels::stackvm::optimized::where(
     const strides_t &cond_strides, const strides_t &x_strides,
     const strides_t &y_strides, const strides_t &out_strides) {
 
+#if __riscv_vector
     // 这里做一步转换，明确下 cond 数据类型， c++ 中的 sizeof(bool) == 1，对于
     // sizeof(bool) != 1 的情况结果未定义。
     assert(sizeof(bool) == 1);
@@ -200,6 +201,7 @@ result<void> nncase::kernels::stackvm::optimized::where(
     if (!ret_flag) {
         return ok();
     }
+#endif
 
     return reference::where(dt, cond, x, y, output, cond_shape, x_shape,
                             y_shape, out_shape, cond_strides, x_strides,
