@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 using System.Collections.Generic;
 using System.Linq;
@@ -25,7 +25,7 @@ public class UnitTestAssignInfoFromConfig : TestClassBase
         var output = leaky;
         output.Metadata.OutputNames = new string[] { "leaky" };
         var dumpVisitor = await TestAssignInfoMainPassesAsync(input, output);
-        
+
         Assert.Equal(0.0f, ((TensorConst)dumpVisitor.ExprMemo.Keys.ToList()[7]).Value.ToArray<float>()[0]);
         Assert.Equal(1.0f, ((TensorConst)dumpVisitor.ExprMemo.Keys.ToList()[7]).Value.ToArray<float>()[1]);
     }
