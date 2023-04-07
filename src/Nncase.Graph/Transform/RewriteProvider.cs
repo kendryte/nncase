@@ -24,7 +24,6 @@ internal class RewriteProvider : IRewriteProvider
         OnRewriteStart(expr, context, count);
         do
         {
-            IRewriteRule? currentRule = null;
             bool isMutated = false;
             bool isSwitchRule = false;
             foreach (var rule in rules)
@@ -34,7 +33,6 @@ internal class RewriteProvider : IRewriteProvider
                 post = visitor.Rewrite(last);
                 if (visitor.IsMutated)
                 {
-                    currentRule = rule;
                     isMutated = true;
                     if (!ReferenceEquals(lastRule, rule))
                     {
@@ -49,7 +47,7 @@ internal class RewriteProvider : IRewriteProvider
             if (isSwitchRule)
             {
                 var inferSuccess = CompilerServices.InferenceType(post);
-                OnRewriteEnd(post, context, count++, currentRule);
+                OnRewriteEnd(post, context, count++, lastRule);
                 if (!inferSuccess && DumpScope.Current.IsEnabled(DumpFlags.Rewrite))
                 {
                     DumpScope.Current.DumpIR(post, $"{count}_End_InferFailed", "Rewrite");
