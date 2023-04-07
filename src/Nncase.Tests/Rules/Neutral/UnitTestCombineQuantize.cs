@@ -41,11 +41,9 @@ public class UnitTestCombineQuantize : TransformTestBase
         { new int[][] { new int[] { 1, 64, 80, 80 }, new int[] { 3, 2, 1, 0 } }, DataTypes.UInt8, new(20, 0.042551044f) },
     };
 
-    public IAnalyzerManager AnalyzerMananger => CompileSession.GetRequiredService<IAnalyzerManager>();
-
     [Theory]
     [MemberData(nameof(CombineQuantizeConcatPositiveData))]
-    public async Task TestCombineQuantizeConcatPositive(int[][] inShapes, int axis, DataType destType, QuantParam quantParam)
+    public void TestCombineQuantizeConcatPositive(int[][] inShapes, int axis, DataType destType, QuantParam quantParam)
     {
         var parameters = new List<Var>();
         var feedDict = new Dictionary<Var, IValue>();
@@ -61,7 +59,7 @@ public class UnitTestCombineQuantize : TransformTestBase
     }
 
     [Fact]
-    public async Task TestCombineQuantizeConcatNegative()
+    public void TestCombineQuantizeConcatNegative()
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 256, 20, 20 })); // f32[1,256,20,20]
         var v251 = ReduceWindow2D(ReduceOp.Max, input, -3.4028235E+38, new[] { 5L, 5L }, new[] { 1L, 1L }, new[,] { { 2L, 2L }, { 2L, 2L } }, new[] { 1L, 1L }, false, false); // f32[1,256,20,20]
@@ -75,7 +73,7 @@ public class UnitTestCombineQuantize : TransformTestBase
 
     [Theory]
     [MemberData(nameof(CombineQuantizeReshapePositiveData))]
-    public async Task TestCombineQuantizeReshapePositive(int[][] shapes, DataType destType, QuantParam quantParam)
+    public void TestCombineQuantizeReshapePositive(int[][] shapes, DataType destType, QuantParam quantParam)
     {
         var parameters = new List<Var>();
         var feedDict = new Dictionary<Var, IValue>();
@@ -88,7 +86,7 @@ public class UnitTestCombineQuantize : TransformTestBase
     }
 
     [Fact]
-    public async Task TestCombineQuantizeReshapeNegative()
+    public void TestCombineQuantizeReshapeNegative()
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 256, 20, 20 })); // f32[1,256,20,20]
         var v = Tensors.Reshape(input, new[] { 1, 256, 20, 20 }); // f32[1,256,20,20]
@@ -99,7 +97,7 @@ public class UnitTestCombineQuantize : TransformTestBase
 
     [Theory]
     [MemberData(nameof(CombineQuantizeTransposePositiveData))]
-    public async Task TestCombineQuantizeTransposePositive(int[][] shape_and_perm, DataType destType, QuantParam quantParam)
+    public void TestCombineQuantizeTransposePositive(int[][] shape_and_perm, DataType destType, QuantParam quantParam)
     {
         var parameters = new List<Var>();
         var feedDict = new Dictionary<Var, IValue>();
@@ -112,7 +110,7 @@ public class UnitTestCombineQuantize : TransformTestBase
     }
 
     [Fact]
-    public async Task TestCombineQuantizeTransposeNegative()
+    public void TestCombineQuantizeTransposeNegative()
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 256, 20, 20 })); // f32[1,256,20,20]
         var v = Tensors.Transpose(input, new[] { 0, 3, 2, 1 }); // f32[1,256,20,20]
