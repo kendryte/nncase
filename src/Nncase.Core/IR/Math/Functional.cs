@@ -412,21 +412,21 @@ public static class Math
     /// <returns> new marker expression. </returns>
     public static Marker RangeOfMarker(Expr target, Expr range)
     {
-        var call = (Marker)new Marker(WellknownMarkerNames.RangeOf, target, range).InheritMetaData(target);
+        var marker = (Marker)new Marker(WellknownMarkerNames.RangeOf, target, range).InheritMetaData(target);
 
-        return call;
+        return marker;
     }
 
     public static Marker RangeOfMarker(Expr target, Expr range, DataType markerQuantType)
     {
-        var call = (Marker)new Marker(WellknownMarkerNames.RangeOf, target, range).InheritMetaData(target);
-        if (call.MixQuantInfo == null)
+        var marker = (Marker)new Marker(WellknownMarkerNames.RangeOf, target, range).InheritMetaData(target);
+        if (marker.MixQuantInfo == null)
         {
-            call.MixQuantInfo = new MixQuantInfo();
+            marker.MixQuantInfo = new MixQuantInfo();
         }
 
-        call.MixQuantInfo!.MarkerQuantType = markerQuantType;
+        marker.MixQuantInfo!.MarkerQuantType = markerQuantType;
 
-        return call;
+        return marker;
     }
 }

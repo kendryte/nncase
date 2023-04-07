@@ -31,18 +31,6 @@ internal sealed class DataFlowRewriter : ExprRewriter
         _options = options;
     }
 
-    public bool ImportConfigFileExist()
-    {
-        try
-        {
-            return File.Exists(CompileSessionScope.GetCurrentThrowIfNull().CompileOptions.QuantizeOptions.ImportConfigFile);
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
     protected override Expr DefaultRewriteLeaf(Expr expr)
     {
         if ((_options.RewriteOnce, IsMutated) switch
@@ -57,11 +45,6 @@ internal sealed class DataFlowRewriter : ExprRewriter
 
             if (replace != null)
             {
-                if (ImportConfigFileExist() && (replace.Metadata == null || replace.Metadata!.OutputNames == null))
-                {
-                    return expr;
-                }
-
                 _dontInheritExprs.Add(replace);
 
                 return replace;

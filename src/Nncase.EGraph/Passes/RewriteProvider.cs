@@ -41,18 +41,6 @@ internal class EGraphRewriteProvider : IEGraphRewriteProvider
         return post;
     }
 
-    public bool ImportConfigFileExist()
-    {
-        try
-        {
-            return File.Exists(CompileSessionScope.GetCurrentThrowIfNull().CompileOptions.QuantizeOptions.ImportConfigFile);
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
     public IEGraph ERewrite(IEGraph eGraph, IEnumerable<IRewriteRule> rules, RunPassContext context)
     {
         var last_version = eGraph.Version;
@@ -92,16 +80,13 @@ internal class EGraphRewriteProvider : IEGraphRewriteProvider
                     var typeInferSuccess = CompilerServices.InferenceType(newExpr);
                     Trace.Assert(typeInferSuccess);
 
-                    if (!ImportConfigFileExist() || (ImportConfigFileExist() && oldExpr.Metadata != null && oldExpr.Metadata!.OutputNames != null))
+                    var newEClass = eGraph.Add(newExpr);
+                    if (_logger.IsEnabled(LogLevel.Trace))
                     {
-                        var newEClass = eGraph.Add(newExpr);
-                        if (_logger.IsEnabled(LogLevel.Trace))
-                        {
-                            _logger.LogTrace("Version {Version} : Merge {OldClass} to {NewClass}", eGraph.Version, oldEClass, newEClass);
-                        }
-
-                        eGraph.Union(newEClass, oldEClass);
+                        _logger.LogTrace("Version {Version} : Merge {OldClass} to {NewClass}", eGraph.Version, oldEClass, newEClass);
                     }
+
+                    eGraph.Union(newEClass, oldEClass);
                 }
             }
 
