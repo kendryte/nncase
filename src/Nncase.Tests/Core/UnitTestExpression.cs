@@ -11,6 +11,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
+using Nncase.TIR;
 using Xunit;
 
 namespace Nncase.Tests.CoreTest;
@@ -253,6 +254,19 @@ public class UnitTestExpression
         var ddr_ld_output = new TIR.BufferRegion(new TIR.PhysicalBuffer("ddr_ld_input", DataTypes.Float32, Schedule.MemoryLocation.Input, new[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new[] { 1, 16, 64, 400 }), 0, 0), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
         Assert.Equal(ddr_ld_input.Buffer, ddr_ld_output.Buffer);
         Assert.Equal(ddr_ld_input, ddr_ld_output);
+    }
+
+    [Fact]
+    public void TestPaddingEqual()
+    {
+        Assert.Equal(2, new Padding(1, 1).Sum());
+        Assert.Equal(new Padding(0, 0), Padding.Zero());
+    }
+
+    [Fact]
+    public void TestSegmentNDEqual()
+    {
+
     }
 
     [Fact]
