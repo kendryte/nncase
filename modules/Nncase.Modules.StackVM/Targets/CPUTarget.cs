@@ -66,6 +66,10 @@ public class CPUTarget : ITarget
     {
     }
 
+    public void RegisterTargetDependentBeforeCodeGen(IPassManager passManager, CompileOptions options)
+    {
+    }
+
     /// <inheritdoc/>
     public IModuleBuilder CreateModuleBuilder(string moduleKind, CompileOptions options)
     {
