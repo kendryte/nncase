@@ -266,7 +266,6 @@ public class UnitTestExpression
     [Fact]
     public void TestSegmentNDEqual()
     {
-
     }
 
     [Fact]
