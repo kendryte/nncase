@@ -95,7 +95,7 @@ public abstract partial class Expr : IDisposable
                 case TensorType type:
                     return type.Shape;
                 default:
-                    DumpScope.Current.DumpIR(this, "checked_shape_error");
+                    DumpScope.Current.DumpIR(this, "CheckedShapeError");
                     throw new InvalidOperationException("Only The Expr Have CheckedType Can Get It's Shape");
             }
         }
@@ -113,7 +113,7 @@ public abstract partial class Expr : IDisposable
                 case TensorType type:
                     return type.DType;
                 default:
-                    DumpScope.Current.DumpIR(this, "checked_datatype_error");
+                    DumpScope.Current.DumpIR(this, "CheckedDatatypeError");
                     throw new InvalidOperationException("Expr don't have a valid tensor type");
             }
         }
