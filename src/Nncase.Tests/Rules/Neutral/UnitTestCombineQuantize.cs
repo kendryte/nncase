@@ -45,7 +45,7 @@ public class UnitTestCombineQuantize : TestClassBase
 
     public static TheoryData<int[][], DataType, QuantParam> CombineQuantizeTransposePositiveData => new()
     {
-        { new int[][] { new int[] { 1, 32, 160, 160 }, new int[] { 0, 3, 1, 2  } }, DataTypes.UInt8, new(2, 0.25185302f) },
+        { new int[][] { new int[] { 1, 32, 160, 160 }, new int[] { 0, 3, 1, 2 } }, DataTypes.UInt8, new(2, 0.25185302f) },
         { new int[][] { new int[] { 1, 64, 80, 80 }, new int[] { 3, 2, 1, 0 } }, DataTypes.UInt8, new(20, 0.042551044f) },
     };
 
