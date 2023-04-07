@@ -77,6 +77,13 @@ public interface ITarget
     void RegisterTargetDependentAfterQuantPass(IPassManager passManager, CompileOptions options);
 
     /// <summary>
+    /// Register Target Dependent After Quant Pass.
+    /// </summary>
+    /// <param name="passManager">Pass manager.</param>
+    /// <param name="options">compile options.</param>
+    void RegisterTargetDependentBeforeCodeGen(IPassManager passManager, CompileOptions options);
+
+    /// <summary>
     /// Create module builder.
     /// </summary>
     /// <param name="moduleKind">Module kind.</param>
