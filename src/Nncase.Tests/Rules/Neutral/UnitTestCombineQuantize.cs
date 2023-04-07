@@ -35,7 +35,11 @@ public class UnitTestCombineQuantize : TransformTestBase
 
     public static TheoryData<int[][], DataType, QuantParam> CombineQuantizeReshapePositiveData => new() { { new int[][] { new int[] { 1, 32, 160, 160 }, new int[] { 1, 160, 32, 160 } }, DataTypes.UInt8, new(2, 0.25185302f) }, { new int[][] { new int[] { 1, 64, 80, 80 }, new int[] { 1, 64, 1, 6400 } }, DataTypes.UInt8, new(20, 0.042551044f) }, };
 
-    public static TheoryData<int[][], DataType, QuantParam> CombineQuantizeTransposePositiveData => new() { { new int[][] { new int[] { 1, 32, 160, 160 }, new int[] { 0, 3, 1, 2 } }, DataTypes.UInt8, new(2, 0.25185302f) }, { new int[][] { new int[] { 1, 64, 80, 80 }, new int[] { 3, 2, 1, 0 } }, DataTypes.UInt8, new(20, 0.042551044f) }, };
+    public static TheoryData<int[][], DataType, QuantParam> CombineQuantizeTransposePositiveData => new()
+    {
+        { new int[][] { new int[] { 1, 32, 160, 160 }, new int[] { 0, 3, 1, 2 } }, DataTypes.UInt8, new(2, 0.25185302f) },
+        { new int[][] { new int[] { 1, 64, 80, 80 }, new int[] { 3, 2, 1, 0 } }, DataTypes.UInt8, new(20, 0.042551044f) },
+    };
 
     public IAnalyzerManager AnalyzerMananger => CompileSession.GetRequiredService<IAnalyzerManager>();
 

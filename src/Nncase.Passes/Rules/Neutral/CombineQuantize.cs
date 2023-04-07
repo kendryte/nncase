@@ -77,10 +77,10 @@ public sealed partial class CombineQuantizeReshape : RewriteRule<Pattern>
     {
         var userAnalysis = options.GetAnalysis<IExprUserAnalysisResult>();
 
-            if (userAnalysis[reshapeCall].Count() > 1)
-            {
-                return null;
-            }
+        if (userAnalysis[reshapeCall].Count() > 1)
+        {
+            return null;
+        }
 
         var output = Reshape(Quantize(input, quantParam, quantize.TargetType), shape);
         output.InferenceType();
@@ -119,4 +119,3 @@ public sealed partial class CombineQuantizeTranspose : RewriteRule<Pattern>
         return output;
     }
 }
-
