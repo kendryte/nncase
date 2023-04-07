@@ -3,7 +3,7 @@
     "model": "",
     "outputs": [
         {
-            "name": "leaky",
+            "name": "leaky_relu",
             "data_type": "u8",
             "data_range": [
                 {

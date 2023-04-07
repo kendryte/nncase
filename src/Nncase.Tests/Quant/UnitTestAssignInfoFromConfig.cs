@@ -24,7 +24,7 @@ public class UnitTestAssignInfoFromConfig : TestClassBase
         var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 224, 224 }));
         var leaky = LeakyRelu(input, 0.1);
         var output = leaky;
-        output.Metadata.OutputNames = new string[] { "leaky" };
+        output.Metadata.OutputNames = new string[] { "leaky_relu" };
         var dumpVisitor = await TestAssignInfoMainPassesAsync(input, output);
 
         Assert.Equal(0.0f, ((TensorConst)dumpVisitor.ExprMemo.Keys.ToList()[7]).Value.ToArray<float>()[0]);
