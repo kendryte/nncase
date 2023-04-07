@@ -279,10 +279,10 @@ public class UnitTestExpression
     {
         var segments = new[]
         {
-            new Segment1D(default(System.Range), new Padding(0, 0)),
-            new Segment1D(default(System.Range), new Padding(0, 0)),
-            new Segment1D(default(System.Range), new Padding(0, 0)),
-            new Segment1D(default(System.Range), new Padding(0, 0)),
+            new Segment1D(default, new Padding(0, 0)),
+            new Segment1D(default, new Padding(0, 0)),
+            new Segment1D(default, new Padding(0, 0)),
+            new Segment1D(default, new Padding(0, 0)),
         };
         var segmentND = new SegmentND(segments);
         Assert.Equal(4, segmentND.Count);
