@@ -137,10 +137,10 @@ PYBIND11_MODULE(_nncase, m) {
                       py::overload_cast<>(&quantize_options::use_mix_quant),
                       py::overload_cast<bool>(&quantize_options::use_mix_quant))
         .def_property(
-            "import_config_file",
-            py::overload_cast<>(&quantize_options::import_config_file),
+            "quant_scheme",
+            py::overload_cast<>(&quantize_options::quant_scheme),
             py::overload_cast<std::string_view>(
-                &quantize_options::import_config_file));
+                &quantize_options::quant_scheme));
 
     py::class_<calibration_dataset_provider>(m, "CalibrationDatasetProvider")
         .def(py::init([](py::list dataset, size_t samples_count,

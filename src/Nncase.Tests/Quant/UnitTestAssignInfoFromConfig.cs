@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using NetFabric.Hyperlinq;
@@ -42,7 +43,7 @@ public class UnitTestAssignInfoFromConfig : TestClassBase
 
         CompileOptions.QuantizeOptions.CalibrationDataset = new SolidCalibrationDatasetProvider(new Var[] { input });
         CompileOptions.QuantizeOptions.CalibrationMethod = CalibMethod.Kld;
-        CompileOptions.QuantizeOptions.ImportConfigFile = System.IO.Directory.GetCurrentDirectory() + "/../../../Quant/config_leaky.json";
+        CompileOptions.QuantizeOptions.QuantScheme = File.ReadAllText(System.IO.Directory.GetCurrentDirectory() + "/../../../Quant/config_leaky.json");
 
         // 0. TargetIndependentPass
         pmgr.AddWithName<DataflowPass>("TargetInDependent").Configure(p =>

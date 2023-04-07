@@ -96,7 +96,7 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
 
     private Expr? GetReplace(Call call, Op op, IReadOnlyList<Expr> callParams, RunPassContext context)
     {
-        bool configExist = File.Exists(CompileSession.CompileOptions.QuantizeOptions.ImportConfigFile);
+        bool configExist = CompileSession.CompileOptions.QuantizeOptions.QuantScheme != string.Empty;
         bool useAutoMixQuant = CompileSession.CompileOptions.QuantizeOptions.BindQuantMethod;
 
         int length = 0;

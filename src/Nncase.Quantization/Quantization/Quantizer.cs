@@ -35,7 +35,7 @@ internal partial class Quantizer
 
     public async Task RunAsync(RunPassContext options)
     {
-        bool configExist = File.Exists(_quantizeOptions.ImportConfigFile);
+        bool configExist = _quantizeOptions.QuantScheme != string.Empty;
 
         if (!configExist)
         {
@@ -70,9 +70,9 @@ internal partial class Quantizer
         }
         else
         {
-            var ranges = GetRangesFromConfig(_quantizeOptions.ImportConfigFile);
+            var ranges = GetRangesFromConfig(_quantizeOptions.QuantScheme);
             AssignByChannelRanges(ranges);
-            AssignDataTypeFromConfig(_quantizeOptions.ImportConfigFile);
+            AssignDataTypeFromConfig(_quantizeOptions.QuantScheme);
         }
 
         // // 3. Choose better quant method using cosine, and bind info with ir.
@@ -169,10 +169,10 @@ internal partial class Quantizer
         return ranges;
     }
 
-    private IDictionary<ENode, ValueRange<float>[]> GetRangesFromConfig(string configFile)
+    private IDictionary<ENode, ValueRange<float>[]> GetRangesFromConfig(string quantScheme)
     {
         var ranges = new Dictionary<ENode, ValueRange<float>[]>(ReferenceEqualityComparer.Instance);
-        string readJson = File.ReadAllText(configFile);
+        string readJson = quantScheme;
         dynamic configJson = Newtonsoft.Json.Linq.JObject.Parse(readJson);
 
         foreach (var rangeOf in _rangeOfs)
@@ -195,10 +195,9 @@ internal partial class Quantizer
         return ranges;
     }
 
-    private void AssignDataTypeFromConfig(string configFile)
+    private void AssignDataTypeFromConfig(string quantScheme)
     {
-        _ = new Dictionary<ENode, ValueRange<float>[]>(ReferenceEqualityComparer.Instance);
-        string readJson = File.ReadAllText(configFile);
+        string readJson = quantScheme;
         dynamic configJson = Newtonsoft.Json.Linq.JObject.Parse(readJson);
 
         foreach (var marker in _markers)

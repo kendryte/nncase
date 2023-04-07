@@ -141,7 +141,7 @@ public class QuantizeOptions
     /// <summary>
     /// Gets or sets import config file.
     /// </summary>
-    public string ImportConfigFile { get; set; } = string.Empty;
+    public string QuantScheme { get; set; } = string.Empty;
 
     /// <summary>
     /// Creates no quantization options.

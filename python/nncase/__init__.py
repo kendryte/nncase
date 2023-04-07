@@ -67,7 +67,7 @@ class PTQTensorOptions:
     w_quant_type: str
     finetune_weights_method: str
     use_mix_quant: bool
-    import_config_file: str
+    quant_scheme: str
     cali_data: List[RuntimeTensor]
 
     def __init__(self) -> None:
@@ -213,7 +213,7 @@ class Compiler:
             raise Exception("Unsupported Weights Quant Type")
 
         self._quantize_options.use_mix_quant = ptq_dataset_options.use_mix_quant
-        self._quantize_options.import_config_file = ptq_dataset_options.import_config_file
+        self._quantize_options.quant_scheme = ptq_dataset_options.quant_scheme
 
     def dump_range_options(self) -> DumpRangeTensorOptions:
         raise NotImplementedError("dump_range_options")

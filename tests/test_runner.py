@@ -478,7 +478,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
             ptq_options.w_quant_type = cfg.compile_opt.w_quant_type
             ptq_options.finetune_weights_method = cfg.compile_opt.finetune_weights_method
             ptq_options.use_mix_quant = cfg.compile_opt.use_mix_quant
-            ptq_options.import_config_file = cfg.compile_opt.import_config_file
+            ptq_options.quant_scheme = cfg.compile_opt.quant_scheme
             compiler.use_ptq(ptq_options)
 
     def write_preprocess_opt(self, dict_args):
