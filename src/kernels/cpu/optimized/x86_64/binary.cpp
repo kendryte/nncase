@@ -481,7 +481,6 @@ static void powf_f32_vec(const float *a, const float *b, float *c, int n)
     for (int j = 0; j < n8_left; ++j)
     {
         c[j] = powf(a[j], b[j]);
-        ;
     }
 }
 
