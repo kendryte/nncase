@@ -58,18 +58,18 @@ public sealed class PytestCalibrationDatasetProvider : ICalibrationDatasetProvid
                 {
                     case TensorType tensorType:
                         {
-                            Shape shape = Shape.Invalid;
+                            int[] shape = Array.Empty<int>();
                             if (tensorType.Shape.IsFixed)
                             {
-                                shape = tensorType.Shape;
+                                shape = tensorType.Shape.ToValueArray();
                             }
                             else
                             {
                                 shape = sample.GetShape();
                             }
 
-                            Trace.Assert(!shape.IsInvalid);
-                            value = Value.FromTensor(Tensor.FromBytes(tensorType.DType, File.ReadAllBytes(sample.FileName), shape.ToValueArray()));
+                            Trace.Assert(shape.Length != 0);
+                            value = Value.FromTensor(Tensor.FromBytes(tensorType.DType, File.ReadAllBytes(sample.FileName), shape));
                             break;
                         }
 
@@ -113,17 +113,17 @@ public sealed class PytestCalibrationDatasetProvider : ICalibrationDatasetProvid
     {
         public string FileName => $"{Name}_{Number}_{InputIndex}.bin";
 
-        public Shape GetShape()
+        public int[] GetShape()
         {
             using var stream = File.OpenRead($"{Name}_{Number}_{InputIndex}.txt");
             using var reader = new StreamReader(stream);
             var line = reader.ReadLine();
-            Shape shape = Shape.Invalid;
+            int[] shape = Array.Empty<int>();
             if (line is string shapeString)
             {
                 string pattern = @"\d+";
                 MatchCollection matches = Regex.Matches(shapeString, pattern);
-                shape = new Shape(matches.Select(m => int.Parse(m.Value)).ToArray());
+                shape = matches.Select(m => int.Parse(m.Value)).ToArray();
             }
 
             return shape;

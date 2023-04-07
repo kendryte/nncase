@@ -15,7 +15,7 @@ namespace Nncase.Diagnostics;
 /// </summary>
 public struct DumpScope : IDisposable
 {
-    private static readonly AsyncLocal<IDumpper?> _dumpper = new AsyncLocal<IDumpper?>();
+    private static readonly AsyncLocal<IDumpper> _dumpper = new AsyncLocal<IDumpper>();
 
     private readonly bool _initialized;
     private readonly IDumpper _originalDumpper;
@@ -60,11 +60,15 @@ public struct DumpScope : IDisposable
         if (_dumpper.Value is null)
         {
             var provider = serviceProvider ?? CompileSessionScope.Current;
-            var root = provider?.GetRequiredService<IDumpperFactory>().Root;
-            _dumpper.Value = root;
+            if (provider is null)
+            {
+                return NullDumpper.Instance;
+            }
+
+            _dumpper.Value = provider.GetRequiredService<IDumpperFactory>().Root;
         }
 
-        return _dumpper.Value ?? NullDumpper.Instance;
+        return _dumpper.Value;
     }
 
     /// <inheritdoc/>
