@@ -100,34 +100,4 @@ public static class OrtKIExtensions
     {
         return OrtKISharp.Tensor.MakeTensor(tensor.PinBuffer(), tensor.ElementType.ToOrtType(), shape.ToLongs());
     }
-
-    private sealed class OrtTensorMemoryManager : MemoryManager<byte>
-    {
-        private readonly OrtKISharp.Tensor _tensor;
-
-        public OrtTensorMemoryManager(OrtKISharp.Tensor tensor)
-        {
-            _tensor = tensor;
-        }
-
-        public override Span<byte> GetSpan()
-        {
-            return _tensor.BytesBuffer;
-        }
-
-        public unsafe override MemoryHandle Pin(int elementIndex = 0)
-        {
-            var basePtr = Unsafe.AsPointer(ref _tensor.BytesBuffer.GetPinnableReference());
-            var pointer = Unsafe.Add<byte>(basePtr, elementIndex);
-            return new MemoryHandle(pointer, pinnable: this);
-        }
-
-        public override void Unpin()
-        {
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-        }
-    }
 }
