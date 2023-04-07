@@ -1,0 +1,17 @@
+{
+    "version": "1.0",
+    "model": "",
+    "outputs": [
+        {
+            "name": "leaky",
+            "data_type": "u8",
+            "data_range": [
+                {
+                    "min": 0.0,
+                    "max": 1.0
+                }
+            ],
+            "data_range_mode": "by_tensor"
+        },
+    ]
+}
