@@ -32,7 +32,6 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: 3.7
-        cache: 'pip'
 
     - name: Install Conan
       run: pip install conan==1.58
