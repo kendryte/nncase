@@ -6,9 +6,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Microsoft.Extensions.DependencyInjection;
+using Nncase;
 using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.Passes;
+using Nncase.Passes.Analysis;
 using Nncase.Passes.Rules.Neutral;
 using Nncase.Quantization;
 using Xunit;
@@ -25,6 +28,12 @@ public partial class TransformTestBase : TestClassBase
     {
         CompileOptions.QuantizeOptions.QuantType = DataTypes.UInt8;
         CompileOptions.QuantizeOptions.WQuantType = DataTypes.UInt8;
+    }
+
+    public virtual Expr TestMatched<T>(Function pre, IReadOnlyDictionary<Var, IValue>? feeds = null)
+        where T : IRewriteRule, new()
+    {
+        return TestMatchedCore(pre, feeds, false, new T());
     }
 
     public virtual Expr TestMatched<T>(Expr pre, IReadOnlyDictionary<Var, IValue>? feeds = null)
@@ -44,6 +53,37 @@ public partial class TransformTestBase : TestClassBase
         {
             TestNotMatch<T>(expr);
         }
+    }
+
+    public Expr TestMatchedCore(Function pre, IReadOnlyDictionary<Var, IValue>? feeds = null, bool isNotMatch = false, params IRewriteRule[] rules)
+    {
+        IAnalyzerManager AnalyzerManager = CompileSession.GetRequiredService<IAnalyzerManager>();
+        var analysis = new Dictionary<Type, IAnalysisResult> { [typeof(IExprUserAnalysisResult)] = AnalyzerManager.GetAnaylsis<IExprUserAnalysisResult>(pre) };
+        Assert.True(CompilerServices.InferenceType(pre), "TestInferFailed:" + pre.CheckedType);
+
+        if (rules.Length == 0)
+        {
+            throw new InvalidOperationException("Rules should not be empty");
+        }
+
+        var preHashCode = pre.GetHashCode();
+        var post = (Function)CompilerServices.Rewrite(pre, rules, new() { AnalysisResults = analysis });
+        if (isNotMatch)
+        {
+            Assert.Equal(preHashCode, post.GetHashCode());
+        }
+        else
+        {
+            var v1 = CompilerServices.Evaluate(pre.Body, feeds);
+            Assert.NotEqual(preHashCode, post.GetHashCode());
+            var v2 = CompilerServices.Evaluate(post.Body, feeds);
+            if (!Comparator.AllEqual(v1, v2))
+            {
+                Comparator.Compare(v1, v2);
+            }
+        }
+
+        return post;
     }
 
     public Expr TestMatchedCore(Expr pre, IReadOnlyDictionary<Var, IValue>? feeds = null, params IRewriteRule[] rules)
@@ -73,6 +113,12 @@ public partial class TransformTestBase : TestClassBase
         var preHashCode = pre.GetHashCode();
         var post = CompilerServices.Rewrite(pre, rules, new());
         Assert.Equal(preHashCode, post.GetHashCode());
+    }
+
+    public void TestNotMatch<T>(Function pre)
+        where T : IRewriteRule, new()
+    {
+        TestMatchedCore(pre, null, true, new T());
     }
 
     public void TestNotMatch<T>(Expr pre)
@@ -106,11 +152,7 @@ public partial class TransformTestBase : TestClassBase
     public Expr FoldNop(Expr expr, RunPassContext passOptions) =>
         CompilerServices.Rewrite(
             expr,
-            new IRewriteRule[]
-            {
-                new FoldNopCast(),
-                new FoldNopReshape(),
-            },
+            new IRewriteRule[] { new FoldNopCast(), new FoldNopReshape(), },
             passOptions with { RewriteOnce = false });
 
     public Expr RewriteWithSeq(Expr expr, RunPassContext passOptions, IEnumerable<IRewriteRule> lower, IRewriteRule fold, IEnumerable<IRewriteRule> fuse) => RewriteWithSeq(expr, passOptions, lower, new[] { fold }, fuse);
@@ -120,30 +162,26 @@ public partial class TransformTestBase : TestClassBase
             expr,
             passOptions,
             lower,
-            new IRewriteRule[]
-            {
-                new FoldNopReshape(),
-                new FoldNopCast(),
-            },
+            new IRewriteRule[] { new FoldNopReshape(), new FoldNopCast(), },
             fuse);
 
     public Expr TestMultiMatched<T>(Expr expr, int count)
         where T : IRewriteRule, new()
         =>
-        Enumerable.Range(0, count).Aggregate(expr, (expr1, i) =>
-        {
-            var ex = TestMatched<T>(expr1);
-            return ex;
-        });
+            Enumerable.Range(0, count).Aggregate(expr, (expr1, i) =>
+            {
+                var ex = TestMatched<T>(expr1);
+                return ex;
+            });
 
     public Expr RewriteMultiTimes<T>(Expr expr, int count)
         where T : IRewriteRule, new()
         =>
-        Enumerable.Range(0, count).Aggregate(expr, (expr1, i) =>
-        {
-            var ex = Rewrite<T>(expr1, new());
-            return ex;
-        });
+            Enumerable.Range(0, count).Aggregate(expr, (expr1, i) =>
+            {
+                var ex = Rewrite<T>(expr1, new());
+                return ex;
+            });
 
     protected virtual Task<TOutput> RunPassAsync<TInput, TOutput>(Pass<TInput, TOutput> pass, TInput input, bool rewriteOnce = true)
         where TInput : class
