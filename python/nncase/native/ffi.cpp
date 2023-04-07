@@ -139,7 +139,8 @@ PYBIND11_MODULE(_nncase, m) {
         .def_property(
             "import_config_file",
             py::overload_cast<>(&quantize_options::import_config_file),
-            py::overload_cast<std::string_view>(&quantize_options::import_config_file));
+            py::overload_cast<std::string_view>(
+                &quantize_options::import_config_file));
 
     py::class_<calibration_dataset_provider>(m, "CalibrationDatasetProvider")
         .def(py::init([](py::list dataset, size_t samples_count,
