@@ -197,7 +197,7 @@ internal partial class Quantizer
 
     private void AssignDataTypeFromConfig(string configFile)
     {
-        var ranges = new Dictionary<ENode, ValueRange<float>[]>(ReferenceEqualityComparer.Instance);
+        _ = new Dictionary<ENode, ValueRange<float>[]>(ReferenceEqualityComparer.Instance);
         string readJson = File.ReadAllText(configFile);
         dynamic configJson = Newtonsoft.Json.Linq.JObject.Parse(readJson);
 
