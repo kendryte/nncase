@@ -76,6 +76,10 @@ public sealed class UnitTestTensorUtilities
           new[] { 0..1, 0..512, 0..7, 0..14 }));
 
         Assert.False(TensorUtilities.IsContiguousSlice(
+            dim1,
+            new[] { 0..1, 0..512, 0..7, 0..14, 0..1 }));
+
+        Assert.False(TensorUtilities.IsContiguousSlice(
           dim1,
           new[] { 0..1, 10..512, 0..1, 0..1 }));
 
