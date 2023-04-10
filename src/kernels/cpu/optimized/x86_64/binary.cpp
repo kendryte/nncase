@@ -23,62 +23,61 @@ using namespace nncase::kernels;
 using namespace nncase::kernels::cpu;
 using namespace nncase::kernels::cpu::optimized;
 
-#define binary_operator_vec(op, type, typename)                                                   \
-static void binary_##op##_##type##_vec(const typename *a, int len_a, const typename *b, int len_b, typename *c, int len_c, int transposition) \
-{                 \
-    (void)len_c;  \
-    (void)transposition; \
-    if (len_a == len_b)  \
-    {                    \
-        op##_##type##_vv(a, b, c, len_a); \
-    }                               \
-    else if (len_a == 1)                 \
-    {                                    \
-        op##_##type##_vf(b, a[0], c, len_b);   \
-    }                                    \
-    else                                 \
-    {                                    \
-        op##_##type##_vf(a, b[0], c, len_a);   \
-    }                                   \
-}
+#define binary_operator_vec(op, type, typename)                                                                                                   \
+    static void binary_##op##_##type##_vec(const typename *a, int len_a, const typename *b, int len_b, typename *c, int len_c, int transposition) \
+    {                                                                                                                                             \
+        (void)len_c;                                                                                                                              \
+        (void)transposition;                                                                                                                      \
+        if (len_a == len_b)                                                                                                                       \
+        {                                                                                                                                         \
+            op##_##type##_vv(a, b, c, len_a);                                                                                                     \
+        }                                                                                                                                         \
+        else if (len_a == 1)                                                                                                                      \
+        {                                                                                                                                         \
+            op##_##type##_vf(b, a[0], c, len_b);                                                                                                  \
+        }                                                                                                                                         \
+        else                                                                                                                                      \
+        {                                                                                                                                         \
+            op##_##type##_vf(a, b[0], c, len_a);                                                                                                  \
+        }                                                                                                                                         \
+    }
 
-#define binary_operator_transposition_vec(op, type, typename)                                                   \
-static void binary_##op##_##type##_vec(const typename *a, int len_a, const typename *b, int len_b, typename *c, int len_c, int transposition) \
-{                                                \
-    (void)len_c;                                 \
-    (void)transposition;                         \
-    if (transposition)                           \
-    {                                            \
-        if (len_a == len_b)                      \
-        {                                        \
-            op##_##type##_vv(b, a, c, len_a);    \
-        }                                        \
-        else if (len_a == 1)                     \
-        {                                        \
-            op##_##type##_vf(b, a[0], c, len_b); \
-        }                                        \
-        else                                     \
-        {                                        \
-            op##_##type##_fv(b[0], a, c, len_a); \
-        }                                        \
-    }                                            \
-    else                                         \
-    {                                            \
-        if (len_a == len_b)                      \
-        {                                        \
-            op##_##type##_vv(a, b, c, len_a);    \
-        }                                        \
-        else if (len_a == 1)                     \
-        {                                        \
-            op##_##type##_fv(a[0], b, c, len_b); \
-        }                                        \
-        else                                     \
-        {                                        \
-            op##_##type##_vf(a, b[0], c, len_a); \
-        }                                        \
-    }                                            \
-}
-
+#define binary_operator_transposition_vec(op, type, typename)                                                                                     \
+    static void binary_##op##_##type##_vec(const typename *a, int len_a, const typename *b, int len_b, typename *c, int len_c, int transposition) \
+    {                                                                                                                                             \
+        (void)len_c;                                                                                                                              \
+        (void)transposition;                                                                                                                      \
+        if (transposition)                                                                                                                        \
+        {                                                                                                                                         \
+            if (len_a == len_b)                                                                                                                   \
+            {                                                                                                                                     \
+                op##_##type##_vv(b, a, c, len_a);                                                                                                 \
+            }                                                                                                                                     \
+            else if (len_a == 1)                                                                                                                  \
+            {                                                                                                                                     \
+                op##_##type##_vf(b, a[0], c, len_b);                                                                                              \
+            }                                                                                                                                     \
+            else                                                                                                                                  \
+            {                                                                                                                                     \
+                op##_##type##_fv(b[0], a, c, len_a);                                                                                              \
+            }                                                                                                                                     \
+        }                                                                                                                                         \
+        else                                                                                                                                      \
+        {                                                                                                                                         \
+            if (len_a == len_b)                                                                                                                   \
+            {                                                                                                                                     \
+                op##_##type##_vv(a, b, c, len_a);                                                                                                 \
+            }                                                                                                                                     \
+            else if (len_a == 1)                                                                                                                  \
+            {                                                                                                                                     \
+                op##_##type##_fv(a[0], b, c, len_b);                                                                                              \
+            }                                                                                                                                     \
+            else                                                                                                                                  \
+            {                                                                                                                                     \
+                op##_##type##_vf(a, b[0], c, len_a);                                                                                              \
+            }                                                                                                                                     \
+        }                                                                                                                                         \
+    }
 
 #if defined(X86_64_SIMD_ON)
 #include "avx_mathfun.h"
@@ -221,7 +220,6 @@ static void sub_f32_fv(const float a, const float *b, float *c, int n)
     }
 }
 
-
 static void sub_i32_vec(const int32_t *a, const int32_t *b, int32_t *c, int n)
 {
     int n8 = (n >> 3);
@@ -286,7 +284,7 @@ static void mul_f32_vf(const float *a, const float b, float *c, int n)
 {
     int n8 = (n >> 3);
     int n8_left = n & (8 - 1);
-	__m256 bb = _mm256_set1_ps(b);
+    __m256 bb = _mm256_set1_ps(b);
     for (int j = 0; j < n8; ++j)
     {
         __m256 aa = _mm256_loadu_ps(a);
@@ -300,7 +298,6 @@ static void mul_f32_vf(const float *a, const float b, float *c, int n)
         c[j] = a[j] * b;
     }
 }
-
 
 static void mul_i32_vec(const int32_t *a, const int32_t *b, int32_t *c, int n)
 {
@@ -380,7 +377,6 @@ static void div_f32_fv(const float a, const float *b, float *c, int n)
         c[j] = a / b[j];
     }
 }
-
 
 static void div_i32_vec(const int32_t *a, const int32_t *b, int32_t *c, int n)
 {
@@ -484,7 +480,6 @@ static void max_f32_vf(const float *a, const float b, float *c, int n)
         c[j] = a[j] > b ? a[j] : b;
     }
 }
-
 
 static void max_i32_vec(const int32_t *a, const int32_t *b, int32_t *c, int n)
 {
@@ -684,17 +679,17 @@ static void logical_and_f32_vv(const float *a, const float *b, float *c, int n)
 {
     int n8 = (n >> 3);
     int n8_left = n & (8 - 1);
-	__m256 f_zeros = _mm256_setzero_ps ();
-	__m256 f_ones = _mm256_set1_ps(1.0f);
+    __m256 f_zeros = _mm256_setzero_ps();
+    __m256 f_ones = _mm256_set1_ps(1.0f);
     for (int j = 0; j < n8; ++j)
     {
-		__m256 vector_a = _mm256_loadu_ps(a); 
-		__m256 vector_b = _mm256_loadu_ps(b);
-		__m256 result_and = _mm256_and_ps(vector_a, vector_b);
-		__m256i i_dst = _mm256_castps_si256(_mm256_cmp_ps (result_and, f_zeros, 8));
-		__m256 f_dst = _mm256_cvtepi32_ps(i_dst);
-		f_dst = _mm256_add_ps(f_dst, f_ones);
-		_mm256_storeu_ps(c, f_dst);
+        __m256 vector_a = _mm256_loadu_ps(a);
+        __m256 vector_b = _mm256_loadu_ps(b);
+        __m256 result_and = _mm256_and_ps(vector_a, vector_b);
+        __m256i i_dst = _mm256_castps_si256(_mm256_cmp_ps(result_and, f_zeros, 8));
+        __m256 f_dst = _mm256_cvtepi32_ps(i_dst);
+        f_dst = _mm256_add_ps(f_dst, f_ones);
+        _mm256_storeu_ps(c, f_dst);
 
         a += 8;
         b += 8;
@@ -718,17 +713,17 @@ static void logical_and_f32_vf(const float *a, const float b, float *c, int n)
 {
     int n8 = (n >> 3);
     int n8_left = n & (8 - 1);
-	__m256 f_zeros = _mm256_setzero_ps ();
-	__m256 f_ones = _mm256_set1_ps(1.0f);
-	__m256 vector_b = _mm256_set1_ps(b);
+    __m256 f_zeros = _mm256_setzero_ps();
+    __m256 f_ones = _mm256_set1_ps(1.0f);
+    __m256 vector_b = _mm256_set1_ps(b);
     for (int j = 0; j < n8; ++j)
     {
-		__m256 vector_a = _mm256_loadu_ps(a); 
-		__m256 result_and = _mm256_and_ps(vector_a, vector_b);
-		__m256i i_dst = _mm256_castps_si256(_mm256_cmp_ps (result_and, f_zeros, 8));
-		__m256 f_dst = _mm256_cvtepi32_ps(i_dst);
-		f_dst = _mm256_add_ps(f_dst, f_ones);
-		_mm256_storeu_ps(c, f_dst);
+        __m256 vector_a = _mm256_loadu_ps(a);
+        __m256 result_and = _mm256_and_ps(vector_a, vector_b);
+        __m256i i_dst = _mm256_castps_si256(_mm256_cmp_ps(result_and, f_zeros, 8));
+        __m256 f_dst = _mm256_cvtepi32_ps(i_dst);
+        f_dst = _mm256_add_ps(f_dst, f_ones);
+        _mm256_storeu_ps(c, f_dst);
 
         a += 8;
         c += 8;
@@ -981,37 +976,37 @@ static void max_i64_vec(const int64_t *a, const int64_t *b, int64_t *c, int n)
 }
 
 binary_operator_vec(add, f32, float)
-binary_operator_transposition_vec(sub, f32, float)
-binary_operator_vec(mul, f32, float)
-binary_operator_transposition_vec(div, f32, float)
-binary_operator_vec(min, f32, float)
-binary_operator_vec(max, f32, float)
-binary_operator_vec(pow, f32, float)
-binary_operator_vec(logical_and, f32, float)
+    binary_operator_transposition_vec(sub, f32, float)
+        binary_operator_vec(mul, f32, float)
+            binary_operator_transposition_vec(div, f32, float)
+                binary_operator_vec(min, f32, float)
+                    binary_operator_vec(max, f32, float)
+                        binary_operator_vec(pow, f32, float)
+                            binary_operator_vec(logical_and, f32, float)
 
-typedef void (*binary_fun_ptr)(const float *a, int len_a, const float *b, int len_b, float *c, int len_c, int transposition);
+                                typedef void (*binary_fun_ptr)(const float *a, int len_a, const float *b, int len_b, float *c, int len_c, int transposition);
 
 template <typename T>
 void operator_vec_binary(const T *a, int len_a, const T *b, int len_b, T *c, int len_c, int transposition, binary_fun_ptr f)
 {
     (void)len_c;
-	int out_len = len_a;
-	int inner_len = len_b;
-	assert(len_a >= len_b);
-	if (inner_len == 1)
-	{
-		f(a, len_a, b, len_b, c, len_c, transposition);
-	}
-	else
-	{
-		int _count = out_len / inner_len;
-		for (int i = 0; i < _count; ++i)
-		{
-			f(a, inner_len, b, inner_len, c, inner_len, transposition);
-			a += inner_len;
-			c += inner_len;
-		}
-	}
+    int out_len = len_a;
+    int inner_len = len_b;
+    assert(len_a >= len_b);
+    if (inner_len == 1)
+    {
+        f(a, len_a, b, len_b, c, len_c, transposition);
+    }
+    else
+    {
+        int _count = out_len / inner_len;
+        for (int i = 0; i < _count; ++i)
+        {
+            f(a, inner_len, b, inner_len, c, inner_len, transposition);
+            a += inner_len;
+            c += inner_len;
+        }
+    }
 }
 
 template <typename T>
@@ -1143,7 +1138,7 @@ result<void> optimized::binary<float>(binary_op_t op, const float *input_a, cons
     [[maybe_unused]] const runtime_shape_t &in_b_strides, [[maybe_unused]] const runtime_shape_t &out_shape, [[maybe_unused]] const runtime_shape_t &out_strides,
     [[maybe_unused]] value_range<float> fused_activation, [[maybe_unused]] kernel_context &context) noexcept
 {
-	int ret = 0;
+    int ret = 0;
     if (op == binary_add)
     {
         ret = binary_iml(input_a, in_a_shape, input_b, in_b_shape, output, out_shape, binary_add_f32_vec);
@@ -1154,27 +1149,27 @@ result<void> optimized::binary<float>(binary_op_t op, const float *input_a, cons
     }
     else if (op == binary_mul)
     {
-		ret = binary_iml(input_a, in_a_shape, input_b, in_b_shape, output, out_shape, binary_mul_f32_vec);
+        ret = binary_iml(input_a, in_a_shape, input_b, in_b_shape, output, out_shape, binary_mul_f32_vec);
     }
     else if (op == binary_div)
     {
-		ret = binary_iml(input_a, in_a_shape, input_b, in_b_shape, output, out_shape, binary_div_f32_vec);
+        ret = binary_iml(input_a, in_a_shape, input_b, in_b_shape, output, out_shape, binary_div_f32_vec);
     }
     else if (op == binary_min)
     {
-		ret = binary_iml(input_a, in_a_shape, input_b, in_b_shape, output, out_shape, binary_min_f32_vec);
+        ret = binary_iml(input_a, in_a_shape, input_b, in_b_shape, output, out_shape, binary_min_f32_vec);
     }
     else if (op == binary_max)
     {
-		ret = binary_iml(input_a, in_a_shape, input_b, in_b_shape, output, out_shape, binary_max_f32_vec);
+        ret = binary_iml(input_a, in_a_shape, input_b, in_b_shape, output, out_shape, binary_max_f32_vec);
     }
     else if (op == binary_pow)
     {
-		ret = binary_iml(input_a, in_a_shape, input_b, in_b_shape, output, out_shape, binary_pow_f32_vec);
+        ret = binary_iml(input_a, in_a_shape, input_b, in_b_shape, output, out_shape, binary_pow_f32_vec);
     }
-    else if(op == binary_logical_and)
+    else if (op == binary_logical_and)
     {
-		ret = binary_iml(input_a, in_a_shape, input_b, in_b_shape, output, out_shape, binary_logical_and_f32_vec);
+        ret = binary_iml(input_a, in_a_shape, input_b, in_b_shape, output, out_shape, binary_logical_and_f32_vec);
     }
     else
     {
