@@ -186,6 +186,7 @@ internal class Compiler : ICompiler
         if (_dumpper.IsEnabled(DumpFlags.Compile))
         {
             _dumpper.DumpModule(_module, name);
+            _dumpper.DumpDotIR(_module.Entry!, name);
         }
     }
 }
