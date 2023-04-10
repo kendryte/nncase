@@ -17,7 +17,7 @@ public sealed class UnitTestQuantUtility
     public void TestGetQuantParam()
     {
         var quantParam1 = QuantUtility.GetQuantParam(new ValueRange<float>(-1f, 1f), 1, QuantMode.SignedSymmetricMode);
-        Assert.Equal(new QuantParam(0, Single.PositiveInfinity), quantParam1);
+        Assert.Equal(new QuantParam(0, float.PositiveInfinity), quantParam1);
 
         var quantParam2 = QuantUtility.GetQuantParam(new ValueRange<float>(-1f, 1f), 1, QuantMode.SignedAsymmetricMode);
         Assert.Equal(new QuantParam(-1, 2f), quantParam2);
