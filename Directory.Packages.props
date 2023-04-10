@@ -2,7 +2,7 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
     <CodeAnalysisRuleSet>$(MSBuildThisFileDirectory)/tools/StyleCopAnalyzers.ruleset</CodeAnalysisRuleSet>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Nullable>enable</Nullable>

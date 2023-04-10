@@ -3,6 +3,7 @@
 on: [push, pull_request]
 env:
   NUGET_CERT_REVOCATION_MODE: offline
+  NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
 
 jobs:
   build-native:
@@ -71,7 +72,7 @@ jobs:
     runs-on: ${{matrix.config.os}}
     strategy:
       matrix:
-        dotnet-version: ['6.0']
+        dotnet-version: ['7.0']
         config:
           - {name: x86_64-macos, os: macos-latest, shell: bash, rid: osx-x64, buildType: Release}
           - {name: x86_64-linux, os: ubuntu-latest, shell: bash, rid: linux-x64, buildType: Release}
@@ -87,7 +88,7 @@ jobs:
       - name: Cache NuGet packages
         uses: actions/cache@v3
         with:
-          path: ~/.nuget/packages
+          path: ${{ github.workspace }}/.nuget/packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
           restore-keys: |
             ${{ runner.os }}-nuget-
@@ -159,7 +160,7 @@ jobs:
     runs-on: ${{matrix.config.os}}
     strategy:
       matrix:
-        dotnet-version: ['6.0']
+        dotnet-version: ['7.0']
         config:
           - {name: x86_64-macos, os: macos-latest, shell: bash}
           - {name: x86_64-linux, os: ubuntu-latest, shell: bash}
@@ -279,7 +280,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: "6.0"
+          dotnet-version: "7.0"
 
       - name: Download Unit Test Coverage
         uses: actions/download-artifact@v3
