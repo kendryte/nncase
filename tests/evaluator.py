@@ -44,11 +44,11 @@ class Evaluator:
         eval_output_paths = []
         for i in range(evaluator.outputs_size):
             result = evaluator.get_output_tensor(i).to_numpy()
-            if True:
-                os.makedirs(eval_dir, exist_ok=True)
-                eval_output_paths.append((
-                    os.path.join(eval_dir, f'nncase_result_{i}.bin'),
-                    os.path.join(eval_dir, f'nncase_result_{i}.txt')))
-                result.tofile(eval_output_paths[-1][0])
+            os.makedirs(eval_dir, exist_ok=True)
+            eval_output_paths.append((
+                os.path.join(eval_dir, f'nncase_result_{i}.bin'),
+                os.path.join(eval_dir, f'nncase_result_{i}.txt')))
+            result.tofile(eval_output_paths[-1][0])
+            if not test_utils.in_ci:
                 self.totxtfile(eval_output_paths[-1][1], result)
         return eval_output_paths
