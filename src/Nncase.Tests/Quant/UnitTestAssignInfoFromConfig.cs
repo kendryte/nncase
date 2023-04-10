@@ -3,6 +3,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
@@ -19,7 +20,7 @@ namespace Nncase.Tests.QuantTest;
 public class UnitTestAssignInfoFromConfig : TestClassBase
 {
     [Fact]
-    public async Task TestAssignInfoToLeaky()
+    public async Task TestAssignInfoToLeakyRelu()
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 224, 224 }));
         var leaky = LeakyRelu(input, 0.1);
@@ -43,7 +44,15 @@ public class UnitTestAssignInfoFromConfig : TestClassBase
 
         CompileOptions.QuantizeOptions.CalibrationDataset = new SolidCalibrationDatasetProvider(new Var[] { input });
         CompileOptions.QuantizeOptions.CalibrationMethod = CalibMethod.Kld;
-        CompileOptions.QuantizeOptions.QuantScheme = File.ReadAllText(System.IO.Directory.GetCurrentDirectory() + "/../../../Quant/config_leaky.json");
+
+        var assembly = Assembly.GetExecutingAssembly();
+        var resourceName = "Nncase.Tests.Quant.leaky_relu.quant.json";
+
+        using (Stream stream = assembly.GetManifestResourceStream(resourceName)!)
+        using (StreamReader reader = new StreamReader(stream))
+        {
+            CompileOptions.QuantizeOptions.QuantScheme = reader.ReadToEnd();
+        }
 
         // 0. TargetIndependentPass
         pmgr.AddWithName<DataflowPass>("TargetInDependent").Configure(p =>

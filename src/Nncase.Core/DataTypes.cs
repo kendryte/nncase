@@ -162,4 +162,27 @@ public static class DataTypes
         ValueType valueType => $"{valueType.CLRType.Name}",
         _ => throw new ArgumentOutOfRangeException(dataType.GetType().Name),
     };
+
+    public static DataType FromShortName(string ShortName)
+    {
+        switch (ShortName)
+        {
+            case "u8":
+                return DataTypes.UInt8;
+            case "i8":
+                return DataTypes.UInt8;
+            case "i16":
+                return DataTypes.Int16;
+            case "i32":
+                return DataTypes.Int32;
+            case "f16":
+                return DataTypes.Float16;
+            case "f32":
+                return DataTypes.Float32;
+            case "bf16":
+                return DataTypes.BFloat16;
+            default:
+                throw new ArgumentException("Invalid data type.");
+        }
+    }
 }

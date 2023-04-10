@@ -173,18 +173,19 @@ internal partial class Quantizer
     {
         var ranges = new Dictionary<ENode, ValueRange<float>[]>(ReferenceEqualityComparer.Instance);
         string readJson = quantScheme;
-        dynamic configJson = Newtonsoft.Json.Linq.JObject.Parse(readJson);
+
+        var configJson = JsonConvert.DeserializeObject<QuantScheme>(readJson);
 
         foreach (var rangeOf in _rangeOfs)
         {
-            foreach (var output in configJson.outputs)
+            for (int i = 0; i < configJson.Outputs.Length; i++)
             {
-                if (rangeOf.Expr.Metadata.OutputNames?[0] == output.name.Value)
+                if (rangeOf.Expr.Metadata.OutputNames?[0] == configJson.Outputs[i].Name)
                 {
-                    var valueRanges = new ValueRange<float>[output.data_range.Count];
-                    for (int i = 0; i < output.data_range.Count; i++)
+                    var valueRanges = new ValueRange<float>[configJson.Outputs[i].DataRange.Length];
+                    for (int j = 0; j < configJson.Outputs[i].DataRange.Length; j++)
                     {
-                        valueRanges[i] = new ValueRange<float>((float)output.data_range[i].min.Value, (float)output.data_range[i].max.Value);
+                        valueRanges[j] = new ValueRange<float>((float)configJson.Outputs[i].DataRange[j].Min, (float)configJson.Outputs[i].DataRange[j].Max);
                     }
 
                     ranges.Add(rangeOf, valueRanges);
@@ -198,47 +199,20 @@ internal partial class Quantizer
     private void AssignDataTypeFromConfig(string quantScheme)
     {
         string readJson = quantScheme;
-        dynamic configJson = Newtonsoft.Json.Linq.JObject.Parse(readJson);
+        var configJson = JsonConvert.DeserializeObject<QuantScheme>(readJson);
 
         foreach (var marker in _markers)
         {
-            foreach (var output in configJson.outputs)
+            for (int i = 0; i < configJson.Outputs.Length; i++)
             {
-                if (marker.Expr.Metadata.OutputNames?[0] == output.name.Value)
+                if (marker.Expr.Metadata.OutputNames?[0] == configJson.Outputs[i].Name)
                 {
                     if (((Marker)marker.Expr).MixQuantInfo == null)
                     {
                         ((Marker)marker.Expr).MixQuantInfo = new MixQuantInfo();
                     }
 
-                    DataType dataType = DataTypes.UInt8;
-                    switch (output.data_type.Value)
-                    {
-                        case "u8":
-                            dataType = DataTypes.UInt8;
-                            break;
-                        case "i8":
-                            dataType = DataTypes.UInt8;
-                            break;
-                        case "i16":
-                            dataType = DataTypes.Int16;
-                            break;
-                        case "i32":
-                            dataType = DataTypes.Int32;
-                            break;
-                        case "f16":
-                            dataType = DataTypes.Float16;
-                            break;
-                        case "f32":
-                            dataType = DataTypes.Float32;
-                            break;
-                        case "bf16":
-                            dataType = DataTypes.BFloat16;
-                            break;
-                        default:
-                            throw new ArgumentException("Invalid data type.");
-                    }
-
+                    DataType dataType = DataTypes.FromShortName(configJson.Outputs[i].DataType);
                     ((Marker)marker.Expr).MixQuantInfo!.MarkerQuantType = dataType;
                 }
             }
@@ -359,7 +333,7 @@ internal partial class Quantizer
             }
 
             var shape = oc == 1 ? new[] { 2 } : new[] { oc, 2 };
-            var rangeEclass = _graph.Add(new TensorConst(Tensor.From(minMaxArr.ToArray(), shape)));
+            var rangeEclass = _graph.Add(new TensorConst(Tensor.From(minMaxArr, shape)));
             var rangeOfEclass = _graph.Find(range.Key);
             range.Key.Expr.CheckedType = rangeEclass.CheckedType;
             rangeOfEclass.SetCheckedType(rangeEclass.CheckedType);
@@ -368,7 +342,7 @@ internal partial class Quantizer
     }
 
     /// <summary>
-    /// collec all rangeof enode.
+    /// collect all rangeof enode.
     /// </summary>
     private void MarkRangeOfs()
     {
@@ -384,16 +358,15 @@ internal partial class Quantizer
     }
 
     /// <summary>
-    /// collec all marker enode.
+    /// collect all marker enode.
     /// </summary>
     private void MarkMarkers()
     {
-        if (EGraphMatcher.TryMatchRoot(_graph.Nodes, IsMarker("marker", _ => true, IsWildcard(), IsWildcard()), out var matches))
+        foreach (var node in _graph.Nodes)
         {
-            foreach (var match in matches)
+            if (node.Expr is Marker)
             {
-                var marker = (ENode)match.Root;
-                _markers.Add(marker);
+                _markers.Add(node);
             }
         }
     }
