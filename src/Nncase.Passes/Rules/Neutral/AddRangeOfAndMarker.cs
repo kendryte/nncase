@@ -59,7 +59,7 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
         { typeof(Conv2DTranspose).TypeHandle, 2 },
         { typeof(Compare).TypeHandle, 2 },
         { typeof(Binary).TypeHandle, 2 },
-        { typeof(Clamp).TypeHandle, 3 },
+        { typeof(Clamp).TypeHandle, 1 },
     };
 
     private static readonly Dictionary<RuntimeTypeHandle, int[]> _DictList = new() { { typeof(LSTM).TypeHandle, new[] { 0, 1, 2, 5, 6 } }, };
