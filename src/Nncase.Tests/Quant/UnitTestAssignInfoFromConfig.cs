@@ -49,7 +49,7 @@ public class UnitTestAssignInfoFromConfig : TestClassBase
         var resourceName = "Nncase.Tests.Quant.leaky_relu.quant.json";
 
         using (Stream stream = assembly.GetManifestResourceStream(resourceName)!)
-        using (StreamReader reader = new StreamReader(stream))
+        using (var reader = new StreamReader(stream))
         {
             CompileOptions.QuantizeOptions.QuantScheme = reader.ReadToEnd();
         }
