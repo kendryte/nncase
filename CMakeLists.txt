@@ -41,7 +41,7 @@ endif()
 
 if(${CMAKE_SYSTEM_PROCESSOR} MATCHES
    "(x86)|(X86)|(amd64)|(AMD64)|(x86_64)|(X86_64)")
-  if(NOT TURNOFF_SIMD_OPTIMIZE)
+  if(NOT TURNOFF_X86_64_SIMD_OPTIMIZE)
     include(toolchains/x86_64.toolchain.cmake)
   endif()
 endif()

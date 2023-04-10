@@ -23,27 +23,65 @@ using namespace nncase::kernels;
 using namespace nncase::kernels::cpu;
 using namespace nncase::kernels::cpu::optimized;
 
+#define binary_operator_vec(op, type, typename)                                                   \
+static void binary_##op##_##type##_vec(const typename *a, int len_a, const typename *b, int len_b, typename *c, int len_c, int transposition) \
+{                 \
+    (void)len_c;  \
+    (void)transposition; \
+    if (len_a == len_b)  \
+    {                    \
+        op##_##type##_vv(a, b, c, len_a); \
+    }                               \
+    else if (len_a == 1)                 \
+    {                                    \
+        op##_##type##_vf(b, a[0], c, len_b);   \
+    }                                    \
+    else                                 \
+    {                                    \
+        op##_##type##_vf(a, b[0], c, len_a);   \
+    }                                   \
+}
+
+#define binary_operator_transposition_vec(op, type, typename)                                                   \
+static void binary_##op##_##type##_vec(const typename *a, int len_a, const typename *b, int len_b, typename *c, int len_c, int transposition) \
+{                                                \
+    (void)len_c;                                 \
+    (void)transposition;                         \
+    if (transposition)                           \
+    {                                            \
+        if (len_a == len_b)                      \
+        {                                        \
+            op##_##type##_vv(b, a, c, len_a);    \
+        }                                        \
+        else if (len_a == 1)                     \
+        {                                        \
+            op##_##type##_vf(b, a[0], c, len_b); \
+        }                                        \
+        else                                     \
+        {                                        \
+            op##_##type##_fv(b[0], a, c, len_a); \
+        }                                        \
+    }                                            \
+    else                                         \
+    {                                            \
+        if (len_a == len_b)                      \
+        {                                        \
+            op##_##type##_vv(a, b, c, len_a);    \
+        }                                        \
+        else if (len_a == 1)                     \
+        {                                        \
+            op##_##type##_fv(a[0], b, c, len_b); \
+        }                                        \
+        else                                     \
+        {                                        \
+            op##_##type##_vf(a, b[0], c, len_a); \
+        }                                        \
+    }                                            \
+}
+
+
 #if defined(X86_64_SIMD_ON)
 #include "avx_mathfun.h"
-static void add_f32_vec(const float *a, const float *b, float *c, int n)
-{
-    int n8 = (n >> 3);
-    int n8_left = n & (8 - 1);
-    for (int j = 0; j < n8; ++j)
-    {
-        __m256 aa = _mm256_loadu_ps(a);
-        __m256 bb = _mm256_loadu_ps(b);
-        __m256 cc = _mm256_add_ps(aa, bb);
-        _mm256_storeu_ps(c, cc);
-        c += 8;
-        a += 8;
-        b += 8;
-    }
-    for (int j = 0; j < n8_left; ++j)
-    {
-        c[j] = a[j] + b[j];
-    }
-}
 
 static void add_f32_vv(const float *a, const float *b, float *c, int n)
 {
@@ -81,24 +119,6 @@ static void add_f32_vf(const float *a, const float b, float *c, int n)
     for (int j = 0; j < n8_left; ++j)
     {
         c[j] = a[j] + b;
-    }
-}
-
-static void binary_add_f32_vec(const float *a, int len_a, const float *b, int len_b, float *c, int len_c, int transposition)
-{
-    (void)len_c;
-    (void)transposition;
-    if (len_a == len_b)
-    {
-        add_f32_vv(a, b, c, len_a);
-    }
-    else if (len_a == 1)
-    {
-        add_f32_vf(b, a[0], c, len_b);
-    }
-    else
-    {
-        add_f32_vf(a, b[0], c, len_a);
     }
 }
 
@@ -142,26 +162,6 @@ static void add_i64_vec(const int64_t *a, const int64_t *b, int64_t *c, int n)
     }
 }
 
-static void sub_f32_vec(const float *a, const float *b, float *c, int n)
-{
-    int n8 = (n >> 3);
-    int n8_left = n & (8 - 1);
-    for (int j = 0; j < n8; ++j)
-    {
-        __m256 aa = _mm256_loadu_ps(a);
-        __m256 bb = _mm256_loadu_ps(b);
-        __m256 cc = _mm256_sub_ps(aa, bb);
-        _mm256_storeu_ps(c, cc);
-        c += 8;
-        a += 8;
-        b += 8;
-    }
-    for (int j = 0; j < n8_left; ++j)
-    {
-        c[j] = a[j] - b[j];
-    }
-}
-
 static void sub_f32_vv(const float *a, const float *b, float *c, int n)
 {
     int n8 = (n >> 3);
@@ -191,12 +191,10 @@ static void sub_f32_vf(const float *a, const float b, float *c, int n)
     for (int j = 0; j < n8; ++j)
     {
         __m256 aa = _mm256_loadu_ps(a);
-        // __m256 bb = _mm256_loadu_ps(b);
         __m256 cc = _mm256_sub_ps(aa, bb);
         _mm256_storeu_ps(c, cc);
         c += 8;
         a += 8;
-        // b += 8;
     }
     for (int j = 0; j < n8_left; ++j)
     {
@@ -211,12 +209,10 @@ static void sub_f32_fv(const float a, const float *b, float *c, int n)
     __m256 aa = _mm256_set1_ps(a);
     for (int j = 0; j < n8; ++j)
     {
-        // __m256 aa = _mm256_loadu_ps(a);
         __m256 bb = _mm256_loadu_ps(b);
         __m256 cc = _mm256_sub_ps(aa, bb);
         _mm256_storeu_ps(c, cc);
         c += 8;
-        // a += 8;
         b += 8;
     }
     for (int j = 0; j < n8_left; ++j)
@@ -225,41 +221,6 @@ static void sub_f32_fv(const float a, const float *b, float *c, int n)
     }
 }
 
-static void binary_sub_f32_vec(const float *a, int len_a, const float *b, int len_b, float *c, int len_c, int transposition)
-{
-    (void)len_c;
-    (void)transposition;
-    if (transposition)
-    {
-        if (len_a == len_b)
-        {
-            sub_f32_vv(a, b, c, len_a);
-        }
-        else if (len_a == 1)
-        {
-            sub_f32_vf(b, a[0], c, len_b);
-        }
-        else
-        {
-            sub_f32_fv(b[0], a, c, len_a);
-        }
-    }
-    else
-    {
-        if (len_a == len_b)
-        {
-            sub_f32_vv(b, a, c, len_a);
-        }
-        else if (len_a == 1)
-        {
-            sub_f32_fv(a[0], b, c, len_b);
-        }
-        else
-        {
-            sub_f32_vf(a, b[0], c, len_a);
-        }
-    }
-}
 
 static void sub_i32_vec(const int32_t *a, const int32_t *b, int32_t *c, int n)
 {
@@ -301,7 +262,7 @@ static void sub_i64_vec(const int64_t *a, const int64_t *b, int64_t *c, int n)
     }
 }
 
-static void mul_f32_vec(const float *a, const float *b, float *c, int n)
+static void mul_f32_vv(const float *a, const float *b, float *c, int n)
 {
     int n8 = (n >> 3);
     int n8_left = n & (8 - 1);
@@ -320,6 +281,26 @@ static void mul_f32_vec(const float *a, const float *b, float *c, int n)
         c[j] = a[j] * b[j];
     }
 }
+
+static void mul_f32_vf(const float *a, const float b, float *c, int n)
+{
+    int n8 = (n >> 3);
+    int n8_left = n & (8 - 1);
+	__m256 bb = _mm256_set1_ps(b);
+    for (int j = 0; j < n8; ++j)
+    {
+        __m256 aa = _mm256_loadu_ps(a);
+        __m256 cc = _mm256_mul_ps(aa, bb);
+        _mm256_storeu_ps(c, cc);
+        c += 8;
+        a += 8;
+    }
+    for (int j = 0; j < n8_left; ++j)
+    {
+        c[j] = a[j] * b;
+    }
+}
+
 
 static void mul_i32_vec(const int32_t *a, const int32_t *b, int32_t *c, int n)
 {
@@ -341,7 +322,7 @@ static void mul_i32_vec(const int32_t *a, const int32_t *b, int32_t *c, int n)
     }
 }
 
-static void div_f32_vec(const float *a, const float *b, float *c, int n)
+static void div_f32_vv(const float *a, const float *b, float *c, int n)
 {
     int n8 = (n >> 3);
     int n8_left = n & (8 - 1);
@@ -360,6 +341,46 @@ static void div_f32_vec(const float *a, const float *b, float *c, int n)
         c[j] = a[j] / b[j];
     }
 }
+
+static void div_f32_vf(const float *a, const float b, float *c, int n)
+{
+    int n8 = (n >> 3);
+    int n8_left = n & (8 - 1);
+
+    __m256 bb = _mm256_set1_ps(b);
+    for (int j = 0; j < n8; ++j)
+    {
+        __m256 aa = _mm256_loadu_ps(a);
+        __m256 cc = _mm256_div_ps(aa, bb);
+        _mm256_storeu_ps(c, cc);
+        c += 8;
+        a += 8;
+    }
+    for (int j = 0; j < n8_left; ++j)
+    {
+        c[j] = a[j] / b;
+    }
+}
+
+static void div_f32_fv(const float a, const float *b, float *c, int n)
+{
+    int n8 = (n >> 3);
+    int n8_left = n & (8 - 1);
+    __m256 aa = _mm256_set1_ps(a);
+    for (int j = 0; j < n8; ++j)
+    {
+        __m256 bb = _mm256_loadu_ps(b);
+        __m256 cc = _mm256_div_ps(aa, bb);
+        _mm256_storeu_ps(c, cc);
+        c += 8;
+        b += 8;
+    }
+    for (int j = 0; j < n8_left; ++j)
+    {
+        c[j] = a / b[j];
+    }
+}
+
 
 static void div_i32_vec(const int32_t *a, const int32_t *b, int32_t *c, int n)
 {
@@ -384,7 +405,7 @@ static void div_i32_vec(const int32_t *a, const int32_t *b, int32_t *c, int n)
     }
 }
 
-static void min_f32_vec(const float *a, const float *b, float *c, int n)
+static void min_f32_vv(const float *a, const float *b, float *c, int n)
 {
     int n8 = (n >> 3);
     int n8_left = n & (8 - 1);
@@ -404,27 +425,27 @@ static void min_f32_vec(const float *a, const float *b, float *c, int n)
     }
 }
 
-static void min_i32_vec(const int32_t *a, const int32_t *b, int32_t *c, int n)
+static void min_f32_vf(const float *a, const float b, float *c, int n)
 {
     int n8 = (n >> 3);
     int n8_left = n & (8 - 1);
+
+    __m256 bb = _mm256_set1_ps(b);
     for (int j = 0; j < n8; ++j)
     {
-        __m256i aa = _mm256_loadu_si256((__m256i const *)a);
-        __m256i bb = _mm256_loadu_si256((__m256i const *)b);
-        __m256i cc = _mm256_min_epi32(aa, bb);
-        _mm256_storeu_si256((__m256i *)c, cc);
+        __m256 aa = _mm256_loadu_ps(a);
+        __m256 cc = _mm256_min_ps(aa, bb);
+        _mm256_storeu_ps(c, cc);
         c += 8;
         a += 8;
-        b += 8;
     }
     for (int j = 0; j < n8_left; ++j)
     {
-        c[j] = a[j] < b[j] ? a[j] : b[j];
+        c[j] = a[j] < b ? a[j] : b;
     }
 }
 
-static void max_f32_vec(const float *a, const float *b, float *c, int n)
+static void max_f32_vv(const float *a, const float *b, float *c, int n)
 {
     int n8 = (n >> 3);
     int n8_left = n & (8 - 1);
@@ -443,6 +464,27 @@ static void max_f32_vec(const float *a, const float *b, float *c, int n)
         c[j] = a[j] > b[j] ? a[j] : b[j];
     }
 }
+
+static void max_f32_vf(const float *a, const float b, float *c, int n)
+{
+    int n8 = (n >> 3);
+    int n8_left = n & (8 - 1);
+
+    __m256 bb = _mm256_set1_ps(b);
+    for (int j = 0; j < n8; ++j)
+    {
+        __m256 aa = _mm256_loadu_ps(a);
+        __m256 cc = _mm256_max_ps(aa, bb);
+        _mm256_storeu_ps(c, cc);
+        c += 8;
+        a += 8;
+    }
+    for (int j = 0; j < n8_left; ++j)
+    {
+        c[j] = a[j] > b ? a[j] : b;
+    }
+}
+
 
 static void max_i32_vec(const int32_t *a, const int32_t *b, int32_t *c, int n)
 {
@@ -464,7 +506,7 @@ static void max_i32_vec(const int32_t *a, const int32_t *b, int32_t *c, int n)
     }
 }
 
-static void powf_f32_vec(const float *a, const float *b, float *c, int n)
+static void pow_f32_vv(const float *a, const float *b, float *c, int n)
 {
     int n8 = (n >> 3);
     int n8_left = n & (8 - 1);
@@ -472,7 +514,7 @@ static void powf_f32_vec(const float *a, const float *b, float *c, int n)
     {
         __m256 aa = _mm256_loadu_ps(a);
         __m256 bb = _mm256_loadu_ps(b);
-        __m256 cc = pow256_ps(aa, bb); //pow256_ps
+        __m256 cc = pow256_ps(aa, bb);
         _mm256_storeu_ps(c, cc);
         c += 8;
         a += 8;
@@ -480,7 +522,46 @@ static void powf_f32_vec(const float *a, const float *b, float *c, int n)
     }
     for (int j = 0; j < n8_left; ++j)
     {
-        c[j] = powf(a[j], b[j]);
+        c[j] = a[j] > b[j] ? a[j] : b[j];
+    }
+}
+
+static void pow_f32_vf(const float *a, const float b, float *c, int n)
+{
+    int n8 = (n >> 3);
+    int n8_left = n & (8 - 1);
+
+    __m256 bb = _mm256_set1_ps(b);
+    for (int j = 0; j < n8; ++j)
+    {
+        __m256 aa = _mm256_loadu_ps(a);
+        __m256 cc = pow256_ps(aa, bb);
+        _mm256_storeu_ps(c, cc);
+        c += 8;
+        a += 8;
+    }
+    for (int j = 0; j < n8_left; ++j)
+    {
+        c[j] = a[j] > b ? a[j] : b;
+    }
+}
+
+static void pow_f32_fv(const float a, const float *b, float *c, int n)
+{
+    int n8 = (n >> 3);
+    int n8_left = n & (8 - 1);
+    __m256 aa = _mm256_set1_ps(a);
+    for (int j = 0; j < n8; ++j)
+    {
+        __m256 bb = _mm256_loadu_ps(b);
+        __m256 cc = pow256_ps(aa, bb);
+        _mm256_storeu_ps(c, cc);
+        c += 8;
+        b += 8;
+    }
+    for (int j = 0; j < n8_left; ++j)
+    {
+        c[j] = a / b[j];
     }
 }
 
@@ -574,7 +655,7 @@ static void logical_and_f32_vec(const float *a, const float *b, float *c, int n)
     __m256i i_ones = _mm256_set1_epi32(1); // __m256i _mm256_set1_epi32 (int a)
     for (int j = 0; j < n8; ++j)
     {
-        __m256i vector_a = _mm256_loadu_si256((__m256i const *)a); //__m256i _mm256_and_si256 (__m256i a, __m256i b)
+        __m256i vector_a = _mm256_loadu_si256((__m256i const *)a);
         __m256i vector_b = _mm256_loadu_si256((__m256i const *)b);
         __m256i result_and = _mm256_and_si256(vector_a, vector_b);
         __m256i i_dst = _mm256_cmpeq_epi32(result_and, i_zeros);
@@ -599,22 +680,87 @@ static void logical_and_f32_vec(const float *a, const float *b, float *c, int n)
     }
 }
 
+static void logical_and_f32_vv(const float *a, const float *b, float *c, int n)
+{
+    int n8 = (n >> 3);
+    int n8_left = n & (8 - 1);
+	__m256 f_zeros = _mm256_setzero_ps ();
+	__m256 f_ones = _mm256_set1_ps(1.0f);
+    for (int j = 0; j < n8; ++j)
+    {
+		__m256 vector_a = _mm256_loadu_ps(a); 
+		__m256 vector_b = _mm256_loadu_ps(b);
+		__m256 result_and = _mm256_and_ps(vector_a, vector_b);
+		__m256i i_dst = _mm256_castps_si256(_mm256_cmp_ps (result_and, f_zeros, 8));
+		__m256 f_dst = _mm256_cvtepi32_ps(i_dst);
+		f_dst = _mm256_add_ps(f_dst, f_ones);
+		_mm256_storeu_ps(c, f_dst);
+
+        a += 8;
+        b += 8;
+        c += 8;
+    }
+    for (int j = 0; j < n8_left; ++j)
+    {
+        int r = (*(a + j)) && (*(b + j));
+        if (r)
+        {
+            c[j] = 1.0f;
+        }
+        else
+        {
+            c[j] = 0.0f;
+        }
+    }
+}
+
+static void logical_and_f32_vf(const float *a, const float b, float *c, int n)
+{
+    int n8 = (n >> 3);
+    int n8_left = n & (8 - 1);
+	__m256 f_zeros = _mm256_setzero_ps ();
+	__m256 f_ones = _mm256_set1_ps(1.0f);
+	__m256 vector_b = _mm256_set1_ps(b);
+    for (int j = 0; j < n8; ++j)
+    {
+		__m256 vector_a = _mm256_loadu_ps(a); 
+		__m256 result_and = _mm256_and_ps(vector_a, vector_b);
+		__m256i i_dst = _mm256_castps_si256(_mm256_cmp_ps (result_and, f_zeros, 8));
+		__m256 f_dst = _mm256_cvtepi32_ps(i_dst);
+		f_dst = _mm256_add_ps(f_dst, f_ones);
+		_mm256_storeu_ps(c, f_dst);
+
+        a += 8;
+        c += 8;
+    }
+    for (int j = 0; j < n8_left; ++j)
+    {
+        int r = (*(a + j)) && b;
+        if (r)
+        {
+            c[j] = 1.0f;
+        }
+        else
+        {
+            c[j] = 0.0f;
+        }
+    }
+}
+
 static void logical_and_i32_vec(const int32_t *a, const int32_t *b, int32_t *c, int n)
 {
     int n8 = (n >> 3);
     int n8_left = n & (8 - 1);
     __m256i i_zeros = _mm256_setzero_si256();
-    __m256i i_ones = _mm256_set1_epi32(1); // __m256i _mm256_set1_epi32 (int a)
+    __m256i i_ones = _mm256_set1_epi32(1);
     for (int j = 0; j < n8; ++j)
     {
-        __m256i vector_a = _mm256_loadu_si256((__m256i const *)a); //__m256i _mm256_and_si256 (__m256i a, __m256i b)
+        __m256i vector_a = _mm256_loadu_si256((__m256i const *)a);
         __m256i vector_b = _mm256_loadu_si256((__m256i const *)b);
         __m256i result_and = _mm256_and_si256(vector_a, vector_b);
         __m256i i_dst = _mm256_cmpeq_epi32(result_and, i_zeros);
         i_dst = _mm256_add_epi32(i_ones, i_dst);
-        // __m256 f_dst = _mm256_cvtepi32_ps(i_dst);
-        // _mm256_storeu_ps(c, f_dst);  // void _mm256_storeu_si256 (__m256i * mem_addr, __m256i a)
-        _mm256_storeu_si256((__m256i *)c, i_dst); //_mm256_storeu_epi32(c, i_dst);
+        _mm256_storeu_si256((__m256i *)c, i_dst);
         a += 8;
         b += 8;
         c += 8;
@@ -632,7 +778,9 @@ static void logical_and_i32_vec(const int32_t *a, const int32_t *b, int32_t *c, 
         }
     }
 }
+
 #else // defined(X86_64_SIMD_ON)
+
 static void add_f32_vec(const float *a, const float *b, float *c, int n)
 {
     for (int j = 0; j < n; ++j)
@@ -749,7 +897,6 @@ static void powf_f32_vec(const float *a, const float *b, float *c, int n)
     for (int j = 0; j < n; ++j)
     {
         c[j] = powf(a[j], b[j]);
-        ;
     }
 }
 
@@ -833,52 +980,38 @@ static void max_i64_vec(const int64_t *a, const int64_t *b, int64_t *c, int n)
     }
 }
 
+binary_operator_vec(add, f32, float)
+binary_operator_transposition_vec(sub, f32, float)
+binary_operator_vec(mul, f32, float)
+binary_operator_transposition_vec(div, f32, float)
+binary_operator_vec(min, f32, float)
+binary_operator_vec(max, f32, float)
+binary_operator_vec(pow, f32, float)
+binary_operator_vec(logical_and, f32, float)
+
 typedef void (*binary_fun_ptr)(const float *a, int len_a, const float *b, int len_b, float *c, int len_c, int transposition);
 
 template <typename T>
 void operator_vec_binary(const T *a, int len_a, const T *b, int len_b, T *c, int len_c, int transposition, binary_fun_ptr f)
 {
     (void)len_c;
-    int out_len;
-    int inner_len;
-    if (len_a > len_b)
-    {
-        out_len = len_a;
-        inner_len = len_b;
-        if (inner_len == 1)
-        {
-            f(a, len_a, b, len_b, c, len_c, transposition);
-        }
-        else
-        {
-            int _count = out_len / inner_len;
-            for (int i = 0; i < _count; ++i)
-            {
-                f(a, inner_len, b, inner_len, c, inner_len, transposition);
-                a += inner_len;
-                c += inner_len;
-            }
-        }
-    }
-    else
-    {
-        out_len = len_b;
-        inner_len = len_a;
-        if (inner_len == 1)
-        {
-            f(a, len_a, b, len_b, c, len_c, transposition);
-        }
-        else
-        {
-            int _count = out_len / inner_len;
-            for (int i = 0; i < _count; ++i)
-            {
-                f(a, inner_len, b, inner_len, c, inner_len, transposition);
-                b += inner_len;
-                c += inner_len;
-            }
-        }
-    }
+	int out_len = len_a;
+	int inner_len = len_b;
+	assert(len_a >= len_b);
+	if (inner_len == 1)
+	{
+		f(a, len_a, b, len_b, c, len_c, transposition);
+	}
+	else
+	{
+		int _count = out_len / inner_len;
+		for (int i = 0; i < _count; ++i)
+		{
+			f(a, inner_len, b, inner_len, c, inner_len, transposition);
+			a += inner_len;
+			c += inner_len;
+		}
+	}
 }
 
 template <typename T>
@@ -907,21 +1040,15 @@ int binary_iml(const T *a, const runtime_shape_t &in_a_shape, const T *b, const 
         swap_can(len_a, len_b);
         transposition = 1;
         in_a_shape_ptr = &in_b_shape;
-        ;
         in_b_shape_ptr = &in_a_shape;
     }
     else
     {
         in_a_shape_ptr = &in_a_shape;
-        ;
         in_b_shape_ptr = &in_b_shape;
     }
-
-    // printf("-----------------%d, %d, %d\n", (int)in_b_shape_ptr->size(), len_a, len_b);
-
     if (in_b_shape_ptr->size() == 1 || len_a == len_b)
     {
-        // printf("lena:%d, lenb:%d, lenc:%d\n", len_a, len_b, len_out);
         operator_vec_binary(a, len_a, b, len_b, c, len_out, transposition, f);
     }
     else
@@ -933,7 +1060,7 @@ int binary_iml(const T *a, const runtime_shape_t &in_a_shape, const T *b, const 
         {
             outter_front_size *= (*in_a_shape_ptr)[i];
         }
-        int index = -1; // in_b_shape_ptr->size() - 1;
+        int index = -1;
         for (int i = 0; i < in_b_shape_ptr->size(); ++i)
         {
 
@@ -944,11 +1071,9 @@ int binary_iml(const T *a, const runtime_shape_t &in_a_shape, const T *b, const 
             }
             else
             {
-                // index = 1;
                 break;
             }
         }
-        // printf("outter_front_size:%d, outter_current_size:%d, index = %d\n", outter_front_size, outter_current_size, index);
         if (index == (in_b_shape_ptr->size() - 1)) // [[1, 3, 16, 16], [3, 16, 16]], [[1, 3, 16, 16], [16, 16]], [[1, 3, 16, 16], [16]],
         {
             for (int i = 0; i < outter_front_size; ++i)
@@ -963,7 +1088,6 @@ int binary_iml(const T *a, const runtime_shape_t &in_a_shape, const T *b, const 
             {
                 len_a_leave *= (*in_a_shape_ptr)[i + size_diff];
             }
-            // printf("len_a_leave:%d\n", len_a_leave);
             if ((*in_b_shape_ptr)[in_b_shape_ptr->size() - 1] == 1)
             { // [[1, 3, 16, 16],  [3, 1, 1]]，  [[1, 3, 16, 16],  [3, 16, 1]]
                 int len_b_leave = 1;
@@ -1019,47 +1143,39 @@ result<void> optimized::binary<float>(binary_op_t op, const float *input_a, cons
     [[maybe_unused]] const runtime_shape_t &in_b_strides, [[maybe_unused]] const runtime_shape_t &out_shape, [[maybe_unused]] const runtime_shape_t &out_strides,
     [[maybe_unused]] value_range<float> fused_activation, [[maybe_unused]] kernel_context &context) noexcept
 {
-    int len_out = (int)compute_size(out_shape);
-    int len_a = (int)compute_size(in_a_shape);
-    int len_b = (int)compute_size(in_b_shape);
-    int ret = 0;
-    (void)len_out;
-    (void)len_a;
-    (void)len_b;
-
+	int ret = 0;
     if (op == binary_add)
     {
         ret = binary_iml(input_a, in_a_shape, input_b, in_b_shape, output, out_shape, binary_add_f32_vec);
     }
     else if (op == binary_sub)
     {
-        // operator_vec_binary(input_a, len_a, input_b, len_b, output, len_out, sub_f32_vec);
         ret = binary_iml(input_a, in_a_shape, input_b, in_b_shape, output, out_shape, binary_sub_f32_vec);
     }
-    // else if (op == binary_mul)
-    // {
-    // // operator_vec_binary(input_a, len_a, input_b, len_b, output, len_out, mul_f32_vec);
-    // }
-    // else if (op == binary_div)
-    // {
-    // // operator_vec_binary(input_a, len_a, input_b, len_b, output, len_out, div_f32_vec);
-    // }
-    // else if (op == binary_min)
-    // {
-    // // operator_vec_binary(input_a, len_a, input_b, len_b, output, len_out, min_f32_vec);
-    // }
-    // else if (op == binary_max)
-    // {
-    // // operator_vec_binary(input_a, len_a, input_b, len_b, output, len_out, max_f32_vec);
-    // }
-    // else if (op == binary_pow)
-    // {
-    // // operator_vec_binary(input_a, len_a, input_b, len_b, output, len_out, powf_f32_vec);
-    // }
-    // else if(op == binary_logical_and)
-    // {
-    // // operator_vec_binary(input_a, len_a, input_b, len_b, output, len_out, logical_and_f32_vec);
-    // }
+    else if (op == binary_mul)
+    {
+		ret = binary_iml(input_a, in_a_shape, input_b, in_b_shape, output, out_shape, binary_mul_f32_vec);
+    }
+    else if (op == binary_div)
+    {
+		ret = binary_iml(input_a, in_a_shape, input_b, in_b_shape, output, out_shape, binary_div_f32_vec);
+    }
+    else if (op == binary_min)
+    {
+		ret = binary_iml(input_a, in_a_shape, input_b, in_b_shape, output, out_shape, binary_min_f32_vec);
+    }
+    else if (op == binary_max)
+    {
+		ret = binary_iml(input_a, in_a_shape, input_b, in_b_shape, output, out_shape, binary_max_f32_vec);
+    }
+    else if (op == binary_pow)
+    {
+		ret = binary_iml(input_a, in_a_shape, input_b, in_b_shape, output, out_shape, binary_pow_f32_vec);
+    }
+    else if(op == binary_logical_and)
+    {
+		ret = binary_iml(input_a, in_a_shape, input_b, in_b_shape, output, out_shape, binary_logical_and_f32_vec);
+    }
     else
     {
         return cpu::reference::binary(op, input_a, input_b, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides, out_shape, out_strides,
@@ -1072,99 +1188,7 @@ result<void> optimized::binary<float>(binary_op_t op, const float *input_a, cons
     }
     return ok();
 }
-#if (0)
-template <>
-result<void> optimized::binary<int32_t>(binary_op_t op, const int32_t *input_a, const int32_t *input_b, int32_t *output,
-    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
-    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides,
-    value_range<float> fused_activation, kernel_context &context) noexcept
-{
 
-    int len_out = (int)compute_size(out_shape);
-    int len_a = (int)compute_size(in_a_shape);
-    int len_b = (int)compute_size(in_b_shape);
-    if (op == binary_add)
-    {
-        operator_vec_binary(input_a, len_a, input_b, len_b, output, len_out, add_i32_vec);
-    }
-    else if (op == binary_sub)
-    {
-        operator_vec_binary(input_a, len_a, input_b, len_b, output, len_out, sub_i32_vec);
-    }
-    else if (op == binary_mul)
-    {
-        operator_vec_binary(input_a, len_a, input_b, len_b, output, len_out, mul_i32_vec);
-    }
-    else if (op == binary_div)
-    {
-        operator_vec_binary(input_a, len_a, input_b, len_b, output, len_out, div_i32_vec);
-    }
-    else if (op == binary_min)
-    {
-        operator_vec_binary(input_a, len_a, input_b, len_b, output, len_out, min_i32_vec);
-    }
-    else if (op == binary_max)
-    {
-        operator_vec_binary(input_a, len_a, input_b, len_b, output, len_out, max_i32_vec);
-    }
-    else if (op == binary_logical_and)
-    {
-        operator_vec_binary(input_a, len_a, input_b, len_b, output, len_out, logical_and_i32_vec);
-    }
-    else if (op == binary_pow)
-    {
-        operator_vec_binary(input_a, len_a, input_b, len_b, output, len_out, pow_i32_vec);
-    }
-    else
-    {
-        return cpu::reference::binary(op, input_a, input_b, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides, out_shape, out_strides,
-            fused_activation, context);
-    }
-
-    return ok();
-}
-
-template <>
-result<void> optimized::binary<int64_t>(binary_op_t op, const int64_t *input_a, const int64_t *input_b, int64_t *output,
-    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
-    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides,
-    value_range<float> fused_activation, kernel_context &context) noexcept
-{
-    int len_out = (int)compute_size(out_shape);
-    int len_a = (int)compute_size(in_a_shape);
-    int len_b = (int)compute_size(in_b_shape);
-    if (op == binary_add)
-    {
-        operator_vec_binary(input_a, len_a, input_b, len_b, output, len_out, add_i64_vec);
-    }
-    else if (op == binary_sub)
-    {
-        operator_vec_binary(input_a, len_a, input_b, len_b, output, len_out, sub_i64_vec);
-    }
-    else if (op == binary_mul)
-    {
-        operator_vec_binary(input_a, len_a, input_b, len_b, output, len_out, mul_i64_vec);
-    }
-    else if (op == binary_div)
-    {
-        operator_vec_binary(input_a, len_a, input_b, len_b, output, len_out, div_i64_vec);
-    }
-    else if (op == binary_min)
-    {
-        operator_vec_binary(input_a, len_a, input_b, len_b, output, len_out, min_i64_vec);
-    }
-    else if (op == binary_max)
-    {
-        operator_vec_binary(input_a, len_a, input_b, len_b, output, len_out, max_i64_vec);
-    }
-    else
-    {
-        return cpu::reference::binary(op, input_a, input_b, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides, out_shape, out_strides,
-            fused_activation, context);
-    }
-    return ok();
-}
-#else
 template result<void> optimized::binary<int64_t>(binary_op_t op, const int64_t *input_a, const int64_t *input_b, int64_t *output,
     const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
     const runtime_shape_t &in_b_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides,
@@ -1173,7 +1197,6 @@ template result<void> optimized::binary<int32_t>(binary_op_t op, const int32_t *
     const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
     const runtime_shape_t &in_b_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides,
     value_range<float> fused_activation, kernel_context &context) noexcept;
-#endif
 
 template <typename T>
 result<void> optimized::binary(binary_op_t op, const T *input_a, const T *input_b, T *output,
