@@ -48,7 +48,7 @@ public sealed class UnitTestResizeModeHelper
         Assert.Equal(ImageResizeTransformationMode.AlignCorners, ResizeModeHelper.ParseImageResizeTransformationMode("align_corners"));
         Assert.Equal(ImageResizeTransformationMode.Asymmetric, ResizeModeHelper.ParseImageResizeTransformationMode("asymmetric"));
         Assert.Equal(ImageResizeTransformationMode.TFCropAndResize, ResizeModeHelper.ParseImageResizeTransformationMode("tf_crop_and_resize"));
-        Assert.Throws<NotSupportedException>(() => ResizeModeHelper.ParseResizeMode(string.Empty));
+        Assert.Throws<NotSupportedException>(() => ResizeModeHelper.ParseImageResizeTransformationMode(string.Empty));
     }
 
     [Fact]
