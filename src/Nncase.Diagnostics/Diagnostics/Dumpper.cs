@@ -43,7 +43,7 @@ internal sealed class Dumpper : IDumpper
     public void DumpDotIR(Expr expr, string prefix, string? reletivePath = null)
     {
         var path = Path.Join(_dumpDirectory, reletivePath);
-        CompilerServices.DumpDotIR(expr, prefix, EnsureWritable(path));
+        CompilerServices.DumpDotIR(expr, prefix, EnsureWritable(path), false);
     }
 
     public void DumpCSharpIR(Expr expr, string prefix, string? reletivePath = null)

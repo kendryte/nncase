@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Toolkit.HighPerformance.Helpers;
+using Nncase.Diagnostics;
 
 namespace Nncase.IR;
 
@@ -85,20 +86,46 @@ public abstract partial class Expr : IDisposable
     /// <summary>
     /// Gets checked shape.
     /// </summary>
-    public Shape CheckedShape => CheckedType switch
+    public Shape CheckedShape
     {
-        TensorType type => type.Shape,
-        _ => throw new InvalidOperationException("Only The Expr Have CheckedType Can Get It's Shape"),
-    };
+        get
+        {
+            switch (CheckedType)
+            {
+                case TensorType type:
+                    return type.Shape;
+                default:
+                    if (DumpScope.Current.IsEnabled(DumpFlags.Compile))
+                    {
+                        DumpScope.Current.DumpIR(this, "CheckedShapeError");
+                    }
+
+                    throw new InvalidOperationException("Only The Expr Have CheckedType Can Get It's Shape");
+            }
+        }
+    }
 
     /// <summary>
     /// Gets if this expr is tensortype, can return the checkedDatatype.
     /// </summary>
-    public DataType CheckedDataType => CheckedType switch
+    public DataType CheckedDataType
     {
-        TensorType type => type.DType,
-        _ => throw new InvalidOperationException("Expr don't have a valid tensor type"),
-    };
+        get
+        {
+            switch (CheckedType)
+            {
+                case TensorType type:
+                    return type.DType;
+                default:
+                    if (DumpScope.Current.IsEnabled(DumpFlags.Compile))
+                    {
+                        DumpScope.Current.DumpIR(this, "CheckedDatatypeError");
+                    }
+
+                    throw new InvalidOperationException("Expr don't have a valid tensor type");
+            }
+        }
+    }
 
     /// <summary>
     /// Gets users.
