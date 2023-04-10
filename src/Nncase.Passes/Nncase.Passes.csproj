@@ -11,7 +11,6 @@
     <ProjectReference Include="..\Nncase.EGraph\Nncase.EGraph.csproj" />
     <ProjectReference Include="..\Nncase.Graph\Nncase.Graph.csproj" />
     <ProjectReference Include="..\Nncase.Evaluator\Nncase.Evaluator.csproj" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" />
   </ItemGroup>
 
   <ItemGroup>

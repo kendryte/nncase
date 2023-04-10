@@ -17,25 +17,22 @@ using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Quantization;
 
-internal partial class Output
+internal record class Output
 {
-    public string Name { get; set; } = default!;
+    public string Name { get; set; }
 
-    [JsonProperty(PropertyName = "data_type")]
-    public string DataType { get; set; } = default!;
+    public string DataType { get; set; }
 
-    [JsonProperty(PropertyName = "data_range")]
-    public ValueRange<float>[] DataRange { get; set; } = default!;
+    public ValueRange<float>[] DataRange { get; set; }
 
-    [JsonProperty(PropertyName = "data_range_mode")]
-    public string DataRangeMode { get; set; } = default!;
+    public string DataRangeMode { get; set; }
 }
 
-internal partial class QuantScheme
+internal record class QuantScheme
 {
-    public string Version { get; set; } = default!;
+    public string Version { get; set; }
 
-    public string Model { get; set; } = default!;
+    public string Model { get; set; }
 
-    public Output[] Outputs { get; set; } = default!;
+    public Output[] Outputs { get; set; }
 }

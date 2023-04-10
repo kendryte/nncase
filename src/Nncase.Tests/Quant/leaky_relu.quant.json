@@ -4,14 +4,14 @@
     "outputs": [
         {
             "name": "leaky_relu",
-            "data_type": "u8",
-            "data_range": [
+            "dataType": "u8",
+            "dataRange": [
                 {
                     "min": 0.0,
                     "max": 1.0
                 }
             ],
-            "data_range_mode": "by_tensor"
+            "dataRangeMode": "by_tensor"
         },
     ]
 }

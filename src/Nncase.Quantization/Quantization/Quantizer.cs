@@ -173,12 +173,11 @@ internal partial class Quantizer
     {
         var ranges = new Dictionary<ENode, ValueRange<float>[]>(ReferenceEqualityComparer.Instance);
         string readJson = quantScheme;
-
         var configJson = JsonConvert.DeserializeObject<QuantScheme>(readJson);
 
         foreach (var rangeOf in _rangeOfs)
         {
-            for (int i = 0; i < configJson.Outputs.Length; i++)
+            for (int i = 0; i < configJson!.Outputs.Length; i++)
             {
                 if (rangeOf.Expr.Metadata.OutputNames?[0] == configJson.Outputs[i].Name)
                 {
@@ -203,7 +202,7 @@ internal partial class Quantizer
 
         foreach (var marker in _markers)
         {
-            for (int i = 0; i < configJson.Outputs.Length; i++)
+            for (int i = 0; i < configJson!.Outputs.Length; i++)
             {
                 if (marker.Expr.Metadata.OutputNames?[0] == configJson.Outputs[i].Name)
                 {

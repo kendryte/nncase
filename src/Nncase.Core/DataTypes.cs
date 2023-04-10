@@ -163,26 +163,15 @@ public static class DataTypes
         _ => throw new ArgumentOutOfRangeException(dataType.GetType().Name),
     };
 
-    public static DataType FromShortName(string shortName)
+    public static DataType FromShortName(string shortName) => shortName switch
     {
-        switch (shortName)
-        {
-            case "u8":
-                return DataTypes.UInt8;
-            case "i8":
-                return DataTypes.UInt8;
-            case "i16":
-                return DataTypes.Int16;
-            case "i32":
-                return DataTypes.Int32;
-            case "f16":
-                return DataTypes.Float16;
-            case "f32":
-                return DataTypes.Float32;
-            case "bf16":
-                return DataTypes.BFloat16;
-            default:
-                throw new ArgumentException("Invalid data type.");
-        }
-    }
+        var x when x == DataTypes.UInt8.ShortName => DataTypes.UInt8,
+        var x when x == DataTypes.Int8.ShortName => DataTypes.Int8,
+        var x when x == DataTypes.Int16.ShortName => DataTypes.Int16,
+        var x when x == DataTypes.Int32.ShortName => DataTypes.Int32,
+        var x when x == DataTypes.Float16.ShortName => DataTypes.Float16,
+        var x when x == DataTypes.Float32.ShortName => DataTypes.Float32,
+        var x when x == DataTypes.BFloat16.ShortName => DataTypes.BFloat16,
+        _ => throw new ArgumentException("Invalid data type."),
+    };
 }

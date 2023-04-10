@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
-using Newtonsoft.Json;
 using Nncase.IR;
 using Nncase.IR.Imaging;
 using Nncase.IR.Math;
