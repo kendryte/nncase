@@ -163,9 +163,9 @@ public static class DataTypes
         _ => throw new ArgumentOutOfRangeException(dataType.GetType().Name),
     };
 
-    public static DataType FromShortName(string ShortName)
+    public static DataType FromShortName(string shortName)
     {
-        switch (ShortName)
+        switch (shortName)
         {
             case "u8":
                 return DataTypes.UInt8;
