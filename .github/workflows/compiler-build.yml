@@ -107,7 +107,7 @@ jobs:
         run: |
           dotnet restore -r ${{matrix.config.rid}}
           dotnet build -c ${{matrix.config.buildType}} --no-restore
-          dotnet publish src/Nncase.Compiler -c ${{matrix.config.buildType}} --no-build --sc false --use-current-runtime
+          dotnet publish src/Nncase.Compiler -c ${{matrix.config.buildType}} --no-restore --sc false -r ${{matrix.config.rid}}
 
       - name: Set up Dotnet Test settings
         uses: 1arp/create-a-file-action@0.2
@@ -135,7 +135,7 @@ jobs:
         working-directory: ${{github.workspace}}
         run: |
           dotnet tool install --global dotnet-coverage
-          dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/unit.xml "dotnet test -c ${{matrix.config.buildType}} -s test.runsettings -r ${{matrix.config.rid}} --no-build --verbosity normal"
+          dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/unit.xml "dotnet test -c ${{matrix.config.buildType}} -s test.runsettings --no-build --verbosity normal"
           dotnet-coverage merge -o coverage.unit.xml -f cobertura -r coverage/*.xml
 
       - name: Upload Coverage
