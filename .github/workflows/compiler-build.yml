@@ -105,7 +105,7 @@ jobs:
 
       - name: Build
         run: |
-          dotnet restore --locked-mode
+          dotnet restore --locked-mode -r ${{matrix.config.rid}}
           dotnet build -c ${{matrix.config.buildType}} --no-restore
           dotnet publish src/Nncase.Compiler -c ${{matrix.config.buildType}} --no-build --sc false --use-current-runtime
 
