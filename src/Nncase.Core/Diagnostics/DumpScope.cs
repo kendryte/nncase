@@ -60,12 +60,7 @@ public struct DumpScope : IDisposable
         if (_dumpper.Value is null)
         {
             var provider = serviceProvider ?? CompileSessionScope.Current;
-            if (provider is null)
-            {
-                return NullDumpper.Instance;
-            }
-
-            _dumpper.Value = provider.GetRequiredService<IDumpperFactory>().Root;
+            return provider?.GetRequiredService<IDumpperFactory>().Root ?? NullDumpper.Instance;
         }
 
         return _dumpper.Value;
