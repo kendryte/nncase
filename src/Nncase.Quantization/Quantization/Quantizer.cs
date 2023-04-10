@@ -177,14 +177,14 @@ internal partial class Quantizer
 
         foreach (var rangeOf in _rangeOfs)
         {
-            for (int i = 0; i < configJson!.Outputs.Length; i++)
+            for (int i = 0; i < configJson!.Outputs!.Length; i++)
             {
-                if (rangeOf.Expr.Metadata.OutputNames?[0] == configJson.Outputs[i].Name)
+                if (rangeOf.Expr.Metadata.OutputNames?[0] == configJson!.Outputs[i].Name)
                 {
-                    var valueRanges = new ValueRange<float>[configJson.Outputs[i].DataRange.Length];
-                    for (int j = 0; j < configJson.Outputs[i].DataRange.Length; j++)
+                    var valueRanges = new ValueRange<float>[configJson!.Outputs[i].DataRange!.Length];
+                    for (int j = 0; j < configJson!.Outputs[i].DataRange!.Length; j++)
                     {
-                        valueRanges[j] = new ValueRange<float>((float)configJson.Outputs[i].DataRange[j].Min, (float)configJson.Outputs[i].DataRange[j].Max);
+                        valueRanges[j] = new ValueRange<float>((float)configJson!.Outputs[i].DataRange![j].Min, (float)configJson!.Outputs[i].DataRange![j].Max);
                     }
 
                     ranges.Add(rangeOf, valueRanges);
@@ -202,17 +202,18 @@ internal partial class Quantizer
 
         foreach (var marker in _markers)
         {
-            for (int i = 0; i < configJson!.Outputs.Length; i++)
+            for (int i = 0; i < configJson!.Outputs!.Length; i++)
             {
                 if (marker.Expr.Metadata.OutputNames?[0] == configJson.Outputs[i].Name)
                 {
-                    if (((Marker)marker.Expr).MixQuantInfo == null)
+                    var markerExpr = (Marker)marker.Expr;
+                    if (markerExpr.MixQuantInfo == null)
                     {
-                        ((Marker)marker.Expr).MixQuantInfo = new MixQuantInfo();
+                        markerExpr.MixQuantInfo = new MixQuantInfo();
                     }
 
-                    DataType dataType = DataTypes.FromShortName(configJson.Outputs[i].DataType);
-                    ((Marker)marker.Expr).MixQuantInfo!.MarkerQuantType = dataType;
+                    DataType dataType = DataTypes.FromShortName(configJson!.Outputs[i].DataType!);
+                    markerExpr.MixQuantInfo!.MarkerQuantType = dataType;
                 }
             }
         }

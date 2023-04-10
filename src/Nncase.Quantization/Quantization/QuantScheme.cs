@@ -19,20 +19,20 @@ namespace Nncase.Quantization;
 
 internal record class Output
 {
-    public string Name { get; set; }
+    public string? Name { get; set; }
 
-    public string DataType { get; set; }
+    public string? DataType { get; set; }
 
-    public ValueRange<float>[] DataRange { get; set; }
+    public ValueRange<float>[]? DataRange { get; set; }
 
-    public string DataRangeMode { get; set; }
+    public string? DataRangeMode { get; set; }
 }
 
 internal record class QuantScheme
 {
-    public string Version { get; set; }
+    public string? Version { get; set; }
 
-    public string Model { get; set; }
+    public string? Model { get; set; }
 
-    public Output[] Outputs { get; set; }
+    public Output[]? Outputs { get; set; }
 }
