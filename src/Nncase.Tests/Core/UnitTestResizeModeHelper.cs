@@ -12,7 +12,7 @@ using Xunit;
 
 namespace Nncase.Tests.CoreTest;
 
-public sealed class unitTestResizeModeHelper
+public sealed class UnitTestResizeModeHelper
 {
     [Fact]
     public void TestParseResizeMode()
