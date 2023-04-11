@@ -113,7 +113,7 @@ using namespace nncase::kernels::cpu::optimized;
         }                                                                                  \
     }
 
-#if !defined(X86_64_SIMD_ON)
+#if defined(X86_64_SIMD_ON)
 #include "avx_mathfun.h"
 
 static void add_f32_vv(const float *a, const float *b, float *c, int n)
@@ -1060,7 +1060,7 @@ int binary_iml(const T *a, const runtime_shape_t &in_a_shape, const T *b, const 
             outter_front_size *= (*in_a_shape_ptr)[i];
         }
         int index = -1;
-        for (int i = 0; i < in_b_shape_ptr->size(); ++i)
+        for (int i = 0; i < (int)(in_b_shape_ptr->size()); ++i)
         {
 
             if ((*in_b_shape_ptr)[i] == (*in_a_shape_ptr)[i + size_diff])
@@ -1073,7 +1073,7 @@ int binary_iml(const T *a, const runtime_shape_t &in_a_shape, const T *b, const 
                 break;
             }
         }
-        if (index == (in_b_shape_ptr->size() - 1)) // [[1, 3, 16, 16], [3, 16, 16]], [[1, 3, 16, 16], [16, 16]], [[1, 3, 16, 16], [16]],
+        if (index == (int)(in_b_shape_ptr->size() - 1)) // [[1, 3, 16, 16], [3, 16, 16]], [[1, 3, 16, 16], [16, 16]], [[1, 3, 16, 16], [16]],
         {
             for (int i = 0; i < outter_front_size; ++i)
             {
@@ -1083,14 +1083,14 @@ int binary_iml(const T *a, const runtime_shape_t &in_a_shape, const T *b, const 
         else
         {
             int len_a_leave = 1;
-            for (int i = index + 1; i < in_b_shape_ptr->size(); ++i)
+            for (int i = index + 1; i < (int)(in_b_shape_ptr->size()); ++i)
             {
                 len_a_leave *= (*in_a_shape_ptr)[i + size_diff];
             }
             if ((*in_b_shape_ptr)[in_b_shape_ptr->size() - 1] == 1)
             { // [[1, 3, 16, 16],  [3, 1, 1]]，  [[1, 3, 16, 16],  [3, 16, 1]]
                 int len_b_leave = 1;
-                for (int i = index + 1; i < in_b_shape_ptr->size(); ++i)
+                for (int i = index + 1; i < (int)(in_b_shape_ptr->size()); ++i)
                 {
                     len_b_leave *= (*in_b_shape_ptr)[i];
                 }
@@ -1111,7 +1111,7 @@ int binary_iml(const T *a, const runtime_shape_t &in_a_shape, const T *b, const 
             else
             {
                 int len_b_leave = 1;
-                for (int i = index + 1; i < in_b_shape_ptr->size() - 1; ++i)
+                for (int i = index + 1; i < (int)(in_b_shape_ptr->size() - 1); ++i)
                 {
                     int _data = (*in_b_shape_ptr)[i];
                     if (_data != 1 && (*in_b_shape_ptr)[i + 1] == 1) // 末位非 1 的情况 则不能在 非 1 中间有 1 的情况如 [1, 16, 1, 16]
