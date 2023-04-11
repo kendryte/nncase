@@ -810,14 +810,14 @@ static void logical_and_i32_vec(const int32_t *a, const int32_t *b, int32_t *c, 
 
 #else // defined(X86_64_SIMD_ON)
 
-operator_vec(add, f32, float, add_fun);
-operator_vec(sub, f32, float, sub_fun);
-operator_vec(mul, f32, float, mul_fun);
-operator_vec(div, f32, float, div_fun);
-operator_vec(pow, f32, float, pow_fun);
-operator_vec(min, f32, float, min_fun);
-operator_vec(max, f32, float, max_fun);
-operator_vec(logical_and, f32, float, logical_and_fun);
+operator_vec(add, f32, float, add_fun)
+operator_vec(sub, f32, float, sub_fun)
+operator_vec(mul, f32, float, mul_fun)
+operator_vec(div, f32, float, div_fun)
+operator_vec(pow, f32, float, pow_fun)
+operator_vec(min, f32, float, min_fun)
+operator_vec(max, f32, float, max_fun)
+operator_vec(logical_and, f32, float, logical_and_fun)
 
 static void add_i32_vec(const int32_t *a, const int32_t *b, int32_t *c, int n)
 {
@@ -979,14 +979,14 @@ static void max_i64_vec(const int64_t *a, const int64_t *b, int64_t *c, int n)
     }
 }
 
-binary_operator_vec(add, f32, float);
-binary_operator_transposition_vec(sub, f32, float);
-binary_operator_vec(mul, f32, float);
-binary_operator_transposition_vec(div, f32, float);
-binary_operator_vec(min, f32, float);
-binary_operator_vec(max, f32, float);
-binary_operator_vec(pow, f32, float);
-binary_operator_vec(logical_and, f32, float);
+binary_operator_vec(add, f32, float)
+binary_operator_transposition_vec(sub, f32, float)
+binary_operator_vec(mul, f32, float)
+binary_operator_transposition_vec(div, f32, float)
+binary_operator_vec(min, f32, float)
+binary_operator_vec(max, f32, float)
+binary_operator_vec(pow, f32, float)
+binary_operator_vec(logical_and, f32, float)
 
 typedef void (*binary_fun_ptr)(const float *a, int len_a, const float *b, int len_b, float *c, int len_c, int transposition);
 
