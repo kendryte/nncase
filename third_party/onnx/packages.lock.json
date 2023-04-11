@@ -4,9 +4,9 @@
     "net7.0": {
       "Google.Protobuf": {
         "type": "Direct",
-        "requested": "[3.19.1, )",
-        "resolved": "3.19.1",
-        "contentHash": "M6yun2BPdHkBjD3V14muZSt72azWHRJEx88ME2TyyH2+/ww6R3hIptjBFQQtO6pmkfLXW/NGQ4hADWSa9AmK2A=="
+        "requested": "[3.19.4, )",
+        "resolved": "3.19.4",
+        "contentHash": "fd07/ykL4O4FhqrZIELm5lmiyOHfdPg9+o+hWr6tcfRdS7tHXnImg/2wtogLzlW2eEmr0J7j6ZrZvaWOLiJbxQ=="
       },
       "Grpc.Tools": {
         "type": "Direct",

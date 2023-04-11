@@ -1170,7 +1170,7 @@
       },
       "Google.Protobuf": {
         "type": "CentralTransitive",
-        "requested": "[3.19.1, )",
+        "requested": "[3.19.4, )",
         "resolved": "3.11.3",
         "contentHash": "PNbDbGVo75AHZYLlIFjtEbxcZ2x5VxbOihix8oz0YXJ9hf1unDwZ2tOolRQLr6UqLAVC+MedOFnYLCBj+BrZwA==",
         "dependencies": {
