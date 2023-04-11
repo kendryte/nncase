@@ -147,7 +147,7 @@ public class UnitTestCombineReshape : TransformTestBase
         var normal = new Dictionary<Var, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
         var rootPre = Math.Unary(opType, Tensors.Reshape(a, shape));
-        TestMatched<CombineReshapeUnary>(rootPre, normal);
+        TestMatched<CombineUnaryReshape>(rootPre, normal);
     }
 
     [Theory]
