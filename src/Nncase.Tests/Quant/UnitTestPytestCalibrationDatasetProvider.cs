@@ -27,6 +27,6 @@ public class UnitTestPytestCalibrationDatasetProvider
         var dataset = "./";
         var provider = new PytestCalibrationDatasetProvider(vars, dataset);
         Assert.Equal(0, provider.Count);
-        var expr = provider.Samples;
+        _ = provider.Samples;
     }
 }
