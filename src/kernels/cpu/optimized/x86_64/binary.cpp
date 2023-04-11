@@ -79,42 +79,41 @@ using namespace nncase::kernels::cpu::optimized;
         }                                                                                                                                         \
     }
 
+#define add_fun(a, b) ((a) + (b))
+#define sub_fun(a, b) ((a) - (b))
+#define mul_fun(a, b) ((a) * (b))
+#define div_fun(a, b) ((a) / (b))
+#define max_fun(a, b) ((a) > (b) ? (a) : (b))
+#define min_fun(a, b) ((a) < (b) ? (a) : (b))
+#define pow_fun(a, b) (pow((a), (b)))
+#define logical_and_fun(a, b) ((a) && (b))
 
-#define add_fun(a,b) ((a) + (b))
-#define sub_fun(a,b) ((a) - (b))
-#define mul_fun(a,b) ((a) * (b))
-#define div_fun(a,b) ((a) / (b))
-#define max_fun(a,b) ((a) > (b) ? (a) : (b))
-#define min_fun(a,b) ((a) < (b) ? (a) : (b))
-#define pow_fun(a,b) (pow((a), (b)))
-#define logical_and_fun(a,b) ((a) && (b))
-
-#define operator_vec(op, type, typename, fun_op)                                                                                                   \
+#define operator_vec(op, type, typename, fun_op)                                           \
     static void op##_##type##_vv(const typename *a, const typename *b, typename *c, int n) \
-    {                                                                                                                                             \
-		for (int j = 0; j < n; ++j)              \
-		{                                        \
-			c[j] = fun_op(a[j], b[j]);           \
-		}                                        \
-    } \
-\
-    static void op##_##type##_vf(const typename *a, const typename b, typename *c, int n) \
-    {                                                                                                                                             \
-		for (int j = 0; j < n; ++j)              \
-		{                                        \
-			c[j] = fun_op(a[j], b);              \
-		}                                        \
-    } \
- \
-    static void op##_##type##_fv(const typename a, const typename *b, typename *c, int n) \
-    {                                                                                                                                             \
-		for (int j = 0; j < n; ++j)              \
-		{                                        \
-			c[j] = fun_op(a, b[j]);              \
-		}                                        \
+    {                                                                                      \
+        for (int j = 0; j < n; ++j)                                                        \
+        {                                                                                  \
+            c[j] = fun_op(a[j], b[j]);                                                     \
+        }                                                                                  \
+    }                                                                                      \
+                                                                                           \
+    static void op##_##type##_vf(const typename *a, const typename b, typename *c, int n)  \
+    {                                                                                      \
+        for (int j = 0; j < n; ++j)                                                        \
+        {                                                                                  \
+            c[j] = fun_op(a[j], b);                                                        \
+        }                                                                                  \
+    }                                                                                      \
+                                                                                           \
+    static void op##_##type##_fv(const typename a, const typename *b, typename *c, int n)  \
+    {                                                                                      \
+        for (int j = 0; j < n; ++j)                                                        \
+        {                                                                                  \
+            c[j] = fun_op(a, b[j]);                                                        \
+        }                                                                                  \
     }
 
-#if ! defined(X86_64_SIMD_ON)
+#if !defined(X86_64_SIMD_ON)
 #include "avx_mathfun.h"
 
 static void add_f32_vv(const float *a, const float *b, float *c, int n)
@@ -836,7 +835,6 @@ static void add_i64_vec(const int64_t *a, const int64_t *b, int64_t *c, int n)
     }
 }
 
-
 static void sub_i32_vec(const int32_t *a, const int32_t *b, int32_t *c, int n)
 {
     for (int j = 0; j < n; ++j)
@@ -885,7 +883,6 @@ static void div_i32_vec(const int32_t *a, const int32_t *b, int32_t *c, int n)
     }
 }
 
-
 static void min_i32_vec(const int32_t *a, const int32_t *b, int32_t *c, int n)
 {
     for (int j = 0; j < n; ++j)
@@ -922,18 +919,18 @@ static void pow_i32_vec(const int32_t *a, const int32_t *b, int32_t *c, int n)
 
 // static void logical_and_f32_vec(const float *a, const float *b, float *c, int n)
 // {
-    // for (int j = 0; j < n; ++j)
-    // {
-        // int r = (*(a + j)) && (*(b + j));
-        // if (r)
-        // {
-            // c[j] = 1.0f;
-        // }
-        // else
-        // {
-            // c[j] = 0.0f;
-        // }
-    // }
+// for (int j = 0; j < n; ++j)
+// {
+// int r = (*(a + j)) && (*(b + j));
+// if (r)
+// {
+// c[j] = 1.0f;
+// }
+// else
+// {
+// c[j] = 0.0f;
+// }
+// }
 // }
 
 static void logical_and_i32_vec(const int32_t *a, const int32_t *b, int32_t *c, int n)
