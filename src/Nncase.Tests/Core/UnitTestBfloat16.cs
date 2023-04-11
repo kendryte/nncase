@@ -24,6 +24,13 @@ public sealed class UnitTestBfloat16
     }
 
     [Fact]
+    public void TestEpsilon()
+    {
+        var epsilon = (BFloat16)0.0078125;
+        Assert.Equal(BFloat16.Epsilon, epsilon);
+    }
+
+    [Fact]
     public void TestNan()
     {
         var nan = (BFloat16)(0F / 0F);

@@ -542,7 +542,6 @@ result<value_t>
 nncase::kernels::stackvm::prod([[maybe_unused]] value_t input,
                                [[maybe_unused]] value_t output,
                                [[maybe_unused]] kernel_context &context) {
-
     return err(std::errc::not_supported);
 }
 

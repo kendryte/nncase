@@ -208,5 +208,6 @@ public sealed class UnitTestIValue
         var values = tensors.Select(x => new TensorValue(x)).ToArray();
         var a = new TupleValue(values);
         Assert.Equal(HashCode<TensorValue>.Combine(values), a.GetHashCode());
+        Assert.Equal(a.ToString(), "(" + string.Join(",", values.Select(v => v.ToString())) + ")");
     }
 }

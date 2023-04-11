@@ -76,6 +76,10 @@ public sealed class UnitTestTensorUtilities
           new[] { 0..1, 0..512, 0..7, 0..14 }));
 
         Assert.False(TensorUtilities.IsContiguousSlice(
+            dim1,
+            new[] { 0..1, 0..512, 0..7, 0..14, 0..1 }));
+
+        Assert.False(TensorUtilities.IsContiguousSlice(
           dim1,
           new[] { 0..1, 10..512, 0..1, 0..1 }));
 
@@ -181,6 +185,27 @@ public sealed class UnitTestTensorUtilities
         var expect2 = new int[] { 1, 1, 2, 6 };
         var actual2 = TensorUtilities.GetStrides(a, true).Select(x => x.Evaluate().AsTensor().ToScalar<int>()).ToArray<int>();
         Assert.Equal(expect2, actual2);
+
+        var b = Array.Empty<Expr>();
+        var expect3 = Array.Empty<int>();
+        var actual3 = TensorUtilities.GetStrides(b, true).Select(x => x.Evaluate().AsTensor().ToScalar<int>()).ToArray<int>();
+        Assert.Equal(expect3, actual3);
+    }
+
+    [Fact]
+    public void TestGetSize()
+    {
+        var shapes = new[] { 1, 2, 4, 8 };
+        var strides = new[] { 1, 1, 1, 1 };
+        var elementSize = 1;
+        var getSize = TensorUtilities.GetSize(shapes, strides, elementSize);
+        var result = 1;
+        for (int i = 0; i < shapes.Length; i++)
+        {
+            result += (shapes[i] - 1) * strides[i];
+        }
+
+        Assert.Equal(result, getSize);
     }
 
     [Theory]

@@ -22,7 +22,7 @@
       <Version>6.6.4</Version>
     </PackageVersion>
     <PackageVersion Include="GiGraph.Dot" Version="2.0.0" />
-    <PackageVersion Include="Google.Protobuf" Version="3.19.1" />
+    <PackageVersion Include="Google.Protobuf" Version="3.19.4" />
     <PackageVersion Include="Grpc.Tools" Version="2.42.0" />
     <PackageVersion Include="Humanizer.Core" Version="2.14.1" />
     <PackageVersion Include="LanguageExt.Core" Version="4.4.0" />

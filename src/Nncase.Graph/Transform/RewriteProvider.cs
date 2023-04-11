@@ -47,7 +47,7 @@ internal class RewriteProvider : IRewriteProvider
             if (isSwitchRule)
             {
                 var inferSuccess = CompilerServices.InferenceType(post);
-                OnRewriteEnd(post, context, count++);
+                OnRewriteEnd(post, context, count++, lastRule);
                 if (!inferSuccess && DumpScope.Current.IsEnabled(DumpFlags.Rewrite))
                 {
                     DumpScope.Current.DumpIR(post, $"{count}_End_InferFailed", "Rewrite");
@@ -79,11 +79,12 @@ internal class RewriteProvider : IRewriteProvider
     /// <summary>
     /// call back for rewrite end.
     /// </summary>
-    private void OnRewriteEnd(Expr expr, RunPassContext context, int count)
+    private void OnRewriteEnd(Expr expr, RunPassContext context, int count, IRewriteRule? rule)
     {
         if (DumpScope.Current.IsEnabled(DumpFlags.Rewrite))
         {
-            DumpScope.Current.DumpIR(expr, $"{count}_End", "Rewrite");
+            var ruleName = rule == null ? string.Empty : rule.GetType().Name;
+            DumpScope.Current.DumpIR(expr, $"{count}_{ruleName}_End", "Rewrite");
         }
     }
 }

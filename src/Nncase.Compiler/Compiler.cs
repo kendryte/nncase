@@ -154,6 +154,8 @@ internal class Compiler : ICompiler
                 "RemoveMarker");
         }
 
+        await RunPassAsync(p => target.RegisterTargetDependentBeforeCodeGen(p, _compileSession.CompileOptions), "TargetDependentBeforeCodeGen");
+
         // fold constant
         // await RunPassAsync(p => p.Add<ShapeInferPass>(), "ShapeInferAfterCompile");
     }
@@ -184,6 +186,7 @@ internal class Compiler : ICompiler
         if (_dumpper.IsEnabled(DumpFlags.Compile))
         {
             _dumpper.DumpModule(_module, name);
+            _dumpper.DumpDotIR(_module.Entry!, name);
         }
     }
 }

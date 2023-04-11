@@ -20,8 +20,9 @@ template <typename F> void dump_append(dump_manager &dump_manager_, F &&f) {
 template <typename F>
 void dump_append(dump_manager &dump_manager_, F &&f, const std::string &path) {
     auto stream = dump_manager_.get_stream(path);
-    f(stream);
     dump_manager_.set_append(true);
+    f(stream);
+    dump_manager_.set_append(false);
     stream.close();
 }
 

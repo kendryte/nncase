@@ -10,8 +10,11 @@ using System.Linq.Expressions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using NetFabric.Hyperlinq;
+using Nncase.Evaluator.TIR;
 using Nncase.IR;
+using Nncase.TIR;
 using Xunit;
+using Buffer = Nncase.TIR.Buffer;
 
 namespace Nncase.Tests.CoreTest;
 
@@ -262,6 +265,40 @@ public class UnitTestExpression
         var glb_ld_output = new TIR.BufferRegion(new TIR.PhysicalBuffer("glb_ld_output", DataTypes.BFloat16, Schedule.MemoryLocation.Data, new[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new[] { 1, 16, 64, 400 }), 0, 0), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
         Assert.False(ddr_ld_input.Buffer.Equals(glb_ld_output.Buffer));
         Assert.False(ddr_ld_input.Equals(glb_ld_output));
+    }
+
+    [Fact]
+    public void TestPaddingEqual()
+    {
+        Assert.Equal(2, new Padding(1, 1).Sum());
+        Assert.Equal(new Padding(0, 0), Padding.Zero());
+    }
+
+    [Fact]
+    public void TestSegmentNDEqual()
+    {
+        var segments = new[]
+        {
+            new Segment1D(default, new Padding(0, 0)),
+            new Segment1D(default, new Padding(0, 0)),
+            new Segment1D(default, new Padding(0, 0)),
+            new Segment1D(default, new Padding(0, 0)),
+        };
+        var segmentND = new SegmentND(segments);
+        Assert.Equal(4, segmentND.Count);
+        Assert.False(segmentND.Equals(new SegmentND()));
+        Assert.Equal(
+            HashCode.Combine(StructuralComparisons.StructuralEqualityComparer.GetHashCode(segments), segmentND.PadH, segmentND.PadW), segmentND.GetHashCode());
+        Assert.Equal(string.Join(",", segments.Select(s => s.ToString())), segmentND.ToString());
+        Assert.Equal(segments.Aggregate(1, (acc, seg) => acc * seg.Length), segmentND.Shape_size);
+    }
+
+    [Fact]
+    public void TestSelectedRangeEqual()
+    {
+        var selectedRange = new SelectedRange(0, 0, new Padding(0, 0));
+        Assert.Equal(selectedRange, selectedRange.Slice(new Segment1D(new System.Range(0, 0), new Padding(0, 0))));
+        Assert.Equal(selectedRange with { }, selectedRange.Slice(new Segment1D(System.Range.All, new Padding(0, 0))));
     }
 
     [Fact]
