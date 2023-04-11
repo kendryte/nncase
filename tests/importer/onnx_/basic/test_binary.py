@@ -171,7 +171,7 @@ class TestBinaryModule(object):
  
     # operators and types group
     op_type_pairs = [
-        # [logical_ops, logical_types], 
+        [logical_ops, logical_types], 
         [ops, in_types]
     ]
     
