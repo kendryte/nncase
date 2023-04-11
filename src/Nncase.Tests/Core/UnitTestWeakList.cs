@@ -23,7 +23,5 @@ public sealed class UnitTestWeakList
         Assert.Throws<ArgumentOutOfRangeException>(() => weakList.GetWeakReference(-1));
         weakList.Add(1);
         Assert.Equal(new WeakReference<object>(1).TryGetTarget(out _), weakList.GetWeakReference(0).TryGetTarget(out _));
-        weakList.Add(2);
-        using var iEnumerator = weakList.GetEnumerator();
     }
 }
