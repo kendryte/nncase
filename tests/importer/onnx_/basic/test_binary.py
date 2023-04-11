@@ -76,8 +76,8 @@ ops = [
 ]
 
 in_types = [
-    # TensorProto.FLOAT,
-    # TensorProto.INT32,
+    TensorProto.FLOAT,
+    TensorProto.INT32,
     TensorProto.INT64
 ]
 
