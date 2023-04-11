@@ -985,13 +985,48 @@ binary_operator_vec(add, f32, float)
             binary_operator_transposition_vec(div, f32, float)
                 binary_operator_vec(min, f32, float)
                     binary_operator_vec(max, f32, float)
-                        binary_operator_vec(pow, f32, float)
+                        binary_operator_transposition_vec(pow, f32, float)
                             binary_operator_vec(logical_and, f32, float)
 
-                                typedef void (*binary_fun_ptr)(const float *a, int len_a, const float *b, int len_b, float *c, int len_c, int transposition);
+
+operator_vec(add, i32, int32_t, add_fun)
+operator_vec(sub, i32, int32_t, sub_fun)
+operator_vec(mul, i32, int32_t, mul_fun)
+operator_vec(div, i32, int32_t, div_fun)
+operator_vec(pow, i32, int32_t, pow_fun)
+operator_vec(min, i32, int32_t, min_fun)
+operator_vec(max, i32, int32_t, max_fun)
+operator_vec(logical_and, i32, int32_t, logical_and_fun)
+binary_operator_vec(add, i32, int32_t)
+    binary_operator_transposition_vec(sub, i32, int32_t)
+        binary_operator_vec(mul, i32, int32_t)
+            binary_operator_transposition_vec(div, i32, int32_t)
+                binary_operator_vec(min, i32, int32_t)
+                    binary_operator_vec(max, i32, int32_t)
+                        binary_operator_transposition_vec(pow, i32, int32_t)
+                            binary_operator_vec(logical_and, i32, int32_t)
+
+operator_vec(add, i64, int64_t, add_fun)
+operator_vec(sub, i64, int64_t, sub_fun)
+operator_vec(mul, i64, int64_t, mul_fun)
+operator_vec(div, i64, int64_t, div_fun)
+operator_vec(pow, i64, int64_t, pow_fun)
+operator_vec(min, i64, int64_t, min_fun)
+operator_vec(max, i64, int64_t, max_fun)
+operator_vec(logical_and, i64, int64_t, logical_and_fun)
+binary_operator_vec(add, i64, int64_t)
+    binary_operator_transposition_vec(sub, i64, int64_t)
+        binary_operator_vec(mul, i64, int64_t)
+            binary_operator_transposition_vec(div, i64, int64_t)
+                binary_operator_vec(min, i64, int64_t)
+                    binary_operator_vec(max, i64, int64_t)
+                        binary_operator_transposition_vec(pow, i64, int64_t)
+                            binary_operator_vec(logical_and, i64, int64_t)
+
 
 template <typename T>
-void operator_vec_binary(const T *a, int len_a, const T *b, int len_b, T *c, int len_c, int transposition, binary_fun_ptr f)
+// void operator_vec_binary(const T *a, int len_a, const T *b, int len_b, T *c, int len_c, int transposition, binary_fun_ptr f)
+void operator_vec_binary(const T *a, int len_a, const T *b, int len_b, T *c, int len_c, int transposition, void (*f)(const T *, int, const T *, int, T *, int, int))
 {
     (void)len_c;
     int out_len = len_a;
@@ -1023,7 +1058,7 @@ static void swap_can(T &t1, T &t2)
 
 template <typename T>
 int binary_iml(const T *a, const runtime_shape_t &in_a_shape, const T *b, const runtime_shape_t &in_b_shape,
-    T *c, const runtime_shape_t &out_shape, binary_fun_ptr f)
+    T *c, const runtime_shape_t &out_shape, void (*f)(const T *, int, const T *, int, T *, int, int))
 {
     const runtime_shape_t *in_a_shape_ptr;
     const runtime_shape_t *in_b_shape_ptr;
@@ -1073,6 +1108,11 @@ int binary_iml(const T *a, const runtime_shape_t &in_a_shape, const T *b, const 
                 break;
             }
         }
+		if(index == -1)
+		{
+			printf("inshape is incompatible ... \n");
+			return -1;
+		}
         if (index == (int)(in_b_shape_ptr->size() - 1)) // [[1, 3, 16, 16], [3, 16, 16]], [[1, 3, 16, 16], [16, 16]], [[1, 3, 16, 16], [16]],
         {
             for (int i = 0; i < outter_front_size; ++i)
@@ -1188,14 +1228,114 @@ result<void> optimized::binary<float>(binary_op_t op, const float *input_a, cons
     return ok();
 }
 
-template result<void> optimized::binary<int64_t>(binary_op_t op, const int64_t *input_a, const int64_t *input_b, int64_t *output,
+#if(0)
+template<> result<void> optimized::binary<int64_t>(binary_op_t op, const int64_t *input_a, const int64_t *input_b, int64_t *output,
+    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
+    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides,
+    value_range<float> fused_activation, kernel_context &context) noexcept
+{
+	int ret = 0;
+    if (op == binary_add)
+    {
+        ret = binary_iml(input_a, in_a_shape, input_b, in_b_shape, output, out_shape, binary_add_i64_vec);
+    }
+    else if (op == binary_sub)
+    {
+        ret = binary_iml(input_a, in_a_shape, input_b, in_b_shape, output, out_shape, binary_sub_i64_vec);
+    }
+    else if (op == binary_mul)
+    {
+        ret = binary_iml(input_a, in_a_shape, input_b, in_b_shape, output, out_shape, binary_mul_i64_vec);
+    }
+    else if (op == binary_div)
+    {
+        ret = binary_iml(input_a, in_a_shape, input_b, in_b_shape, output, out_shape, binary_div_i64_vec);
+    }
+    else if (op == binary_min)
+    {
+        ret = binary_iml(input_a, in_a_shape, input_b, in_b_shape, output, out_shape, binary_min_i64_vec);
+    }
+    else if (op == binary_max)
+    {
+        ret = binary_iml(input_a, in_a_shape, input_b, in_b_shape, output, out_shape, binary_max_i64_vec);
+    }
+    else if (op == binary_pow)
+    {
+        ret = binary_iml(input_a, in_a_shape, input_b, in_b_shape, output, out_shape, binary_pow_i64_vec);
+    }
+    else if (op == binary_logical_and)
+    {
+        ret = binary_iml(input_a, in_a_shape, input_b, in_b_shape, output, out_shape, binary_logical_and_i64_vec);
+    }
+    else
+    {
+        return cpu::reference::binary(op, input_a, input_b, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides, out_shape, out_strides,
+            fused_activation, context);
+    }
+    if (ret)
+    {
+        return cpu::reference::binary(op, input_a, input_b, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides, out_shape, out_strides,
+            fused_activation, context);
+    }
+    return ok();
+}
+#else
+	template result<void> optimized::binary<int64_t>(binary_op_t op, const int64_t *input_a, const int64_t *input_b, int64_t *output,
     const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
     const runtime_shape_t &in_b_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides,
     value_range<float> fused_activation, kernel_context &context) noexcept;
-template result<void> optimized::binary<int32_t>(binary_op_t op, const int32_t *input_a, const int32_t *input_b, int32_t *output,
+#endif
+
+template<> result<void> optimized::binary<int32_t>(binary_op_t op, const int32_t *input_a, const int32_t *input_b, int32_t *output,
     const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
     const runtime_shape_t &in_b_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides,
-    value_range<float> fused_activation, kernel_context &context) noexcept;
+    value_range<float> fused_activation, kernel_context &context) noexcept
+{
+	int ret = 0;
+    if (op == binary_add)
+    {
+        ret = binary_iml(input_a, in_a_shape, input_b, in_b_shape, output, out_shape, binary_add_i32_vec);
+    }
+    else if (op == binary_sub)
+    {
+        ret = binary_iml(input_a, in_a_shape, input_b, in_b_shape, output, out_shape, binary_sub_i32_vec);
+    }
+    else if (op == binary_mul)
+    {
+        ret = binary_iml(input_a, in_a_shape, input_b, in_b_shape, output, out_shape, binary_mul_i32_vec);
+    }
+    else if (op == binary_div)
+    {
+        ret = binary_iml(input_a, in_a_shape, input_b, in_b_shape, output, out_shape, binary_div_i32_vec);
+    }
+    else if (op == binary_min)
+    {
+        ret = binary_iml(input_a, in_a_shape, input_b, in_b_shape, output, out_shape, binary_min_i32_vec);
+    }
+    else if (op == binary_max)
+    {
+        ret = binary_iml(input_a, in_a_shape, input_b, in_b_shape, output, out_shape, binary_max_i32_vec);
+    }
+    else if (op == binary_pow)
+    {
+        ret = binary_iml(input_a, in_a_shape, input_b, in_b_shape, output, out_shape, binary_pow_i32_vec);
+    }
+    else if (op == binary_logical_and)
+    {
+        ret = binary_iml(input_a, in_a_shape, input_b, in_b_shape, output, out_shape, binary_logical_and_i32_vec);
+    }
+    else
+    {
+        return cpu::reference::binary(op, input_a, input_b, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides, out_shape, out_strides,
+            fused_activation, context);
+    }
+    if (ret)
+    {
+        return cpu::reference::binary(op, input_a, input_b, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides, out_shape, out_strides,
+            fused_activation, context);
+    }
+    return ok();
+}
 
 template <typename T>
 result<void> optimized::binary(binary_op_t op, const T *input_a, const T *input_b, T *output,
