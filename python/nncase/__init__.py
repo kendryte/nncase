@@ -218,8 +218,11 @@ class Compiler:
 
     def __process_compile_options(self, compile_options: CompileOptions) -> ClCompileOptions:
         self._target = _nncase.Target(compile_options.target)
-        self._compile_options.dump_flags = _nncase.DumpFlags.Nothing if not compile_options.dump_ir else _nncase.DumpFlags(
+        dump_flags = _nncase.DumpFlags.Nothing if not compile_options.dump_ir else _nncase.DumpFlags(
             _nncase.DumpFlags.Rewrite | _nncase.DumpFlags.EGraphCost | _nncase.DumpFlags.PassIR)
+        if (compile_options.dump_asm):
+            dump_flags = _nncase.DumpFlags(dump_flags | _nncase.DumpFlags.CodeGen)
+        self._compile_options.dump_flags = dump_flags
         self._compile_options.dump_dir = compile_options.dump_dir
 
     def _import_module(self, model_content: bytes | io.RawIOBase) -> None:

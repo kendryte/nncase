@@ -149,6 +149,9 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
     public override string VisitType(NoneType type) => $"";
 
     /// <inheritdoc/>
+    public override string VisitType(AnyType type) => "any";
+
+    /// <inheritdoc/>
     protected override IPrintSymbol VisitFunction(Function expr)
     {
         if (_exprMemo.TryGetValue(expr, out var doc))
