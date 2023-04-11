@@ -70,9 +70,11 @@ internal partial class Quantizer
         }
         else
         {
-            var ranges = GetRangesFromConfig(_quantizeOptions.QuantScheme);
+            string readJson = _quantizeOptions.QuantScheme;
+            var quantScheme = JsonConvert.DeserializeObject<QuantScheme>(readJson);
+            var ranges = GetRangesFromConfig(quantScheme!);
             AssignByChannelRanges(ranges);
-            AssignDataTypeFromConfig(_quantizeOptions.QuantScheme);
+            AssignDataTypeFromConfig(quantScheme!);
         }
 
         // // 3. Choose better quant method using cosine, and bind info with ir.
@@ -169,22 +171,20 @@ internal partial class Quantizer
         return ranges;
     }
 
-    private IDictionary<ENode, ValueRange<float>[]> GetRangesFromConfig(string quantScheme)
+    private IDictionary<ENode, ValueRange<float>[]> GetRangesFromConfig(QuantScheme quantScheme)
     {
         var ranges = new Dictionary<ENode, ValueRange<float>[]>(ReferenceEqualityComparer.Instance);
-        string readJson = quantScheme;
-        var configJson = JsonConvert.DeserializeObject<QuantScheme>(readJson);
 
         foreach (var rangeOf in _rangeOfs)
         {
-            for (int i = 0; i < configJson!.Outputs!.Length; i++)
+            for (int i = 0; i < quantScheme!.Outputs!.Length; i++)
             {
-                if (rangeOf.Expr.Metadata.OutputNames?[0] == configJson!.Outputs[i].Name)
+                if (rangeOf.Expr.Metadata.OutputNames?[0] == quantScheme!.Outputs[i].Name)
                 {
-                    var valueRanges = new ValueRange<float>[configJson!.Outputs[i].DataRange!.Length];
-                    for (int j = 0; j < configJson!.Outputs[i].DataRange!.Length; j++)
+                    var valueRanges = new ValueRange<float>[quantScheme!.Outputs[i].DataRange!.Length];
+                    for (int j = 0; j < quantScheme!.Outputs[i].DataRange!.Length; j++)
                     {
-                        valueRanges[j] = new ValueRange<float>((float)configJson!.Outputs[i].DataRange![j].Min, (float)configJson!.Outputs[i].DataRange![j].Max);
+                        valueRanges[j] = new ValueRange<float>((float)quantScheme!.Outputs[i].DataRange![j].Min, (float)quantScheme!.Outputs[i].DataRange![j].Max);
                     }
 
                     ranges.Add(rangeOf, valueRanges);
@@ -195,16 +195,13 @@ internal partial class Quantizer
         return ranges;
     }
 
-    private void AssignDataTypeFromConfig(string quantScheme)
+    private void AssignDataTypeFromConfig(QuantScheme quantScheme)
     {
-        string readJson = quantScheme;
-        var configJson = JsonConvert.DeserializeObject<QuantScheme>(readJson);
-
         foreach (var marker in _markers)
         {
-            for (int i = 0; i < configJson!.Outputs!.Length; i++)
+            for (int i = 0; i < quantScheme!.Outputs!.Length; i++)
             {
-                if (marker.Expr.Metadata.OutputNames?[0] == configJson.Outputs[i].Name)
+                if (marker.Expr.Metadata.OutputNames?[0] == quantScheme.Outputs[i].Name)
                 {
                     var markerExpr = (Marker)marker.Expr;
                     if (markerExpr.MixQuantInfo == null)
@@ -212,7 +209,7 @@ internal partial class Quantizer
                         markerExpr.MixQuantInfo = new MixQuantInfo();
                     }
 
-                    DataType dataType = DataTypes.FromShortName(configJson!.Outputs[i].DataType!);
+                    DataType dataType = DataTypes.FromShortName(quantScheme!.Outputs[i].DataType!);
                     markerExpr.MixQuantInfo!.MarkerQuantType = dataType;
                 }
             }
