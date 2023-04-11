@@ -217,8 +217,7 @@ result<void> kernels::binary(binary_op_t op, const T *input_a, const T *input_b,
     if (is_contiguous(in_a_shape, in_a_strides) && is_contiguous(in_b_shape, in_b_strides) && is_contiguous(out_shape, out_strides))
     {
         // optimization
-        if (is_optimized_binary_op(op) && is_optimized_input_shape(in_a_shape, out_shape) && is_optimized_input_shape(in_b_shape, out_shape) && (std::is_same_v<T, float> || std::is_same_v<T, int32_t>))
-            return cpu::optimized::binary(op, input_a, input_b, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides, out_shape, out_strides, fused_activation, context);
+        return cpu::optimized::binary(op, input_a, input_b, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides, out_shape, out_strides, fused_activation, context);
     }
     return cpu::reference::binary(op, input_a, input_b, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides, out_shape, out_strides, fused_activation, context);
 }
