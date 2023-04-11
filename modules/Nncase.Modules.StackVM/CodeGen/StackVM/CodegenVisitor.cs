@@ -10,7 +10,6 @@ using System.Text;
 using System.Threading.Tasks;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
-using static Tensorboard.TensorShapeProto.Types;
 
 namespace Nncase.CodeGen.StackVM;
 

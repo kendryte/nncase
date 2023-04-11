@@ -11,7 +11,6 @@ using Nncase.IR.F;
 using Nncase.IR.Tensors;
 using Nncase.Utilities;
 using OrtKISharp;
-using TorchSharp;
 using Xunit;
 using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Tensors;

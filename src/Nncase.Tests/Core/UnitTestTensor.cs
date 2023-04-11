@@ -101,6 +101,22 @@ public sealed class UnitTestTensor
         Assert.NotEqual(p2, t.ToScalar<Pointer<int>>());
     }
 
+    [Fact]
+    public unsafe void TestFromPointerET()
+    {
+        var value1 = 2022;
+        var value2 = 2023;
+        var addr1 = (ulong)&value1;
+        var addr2 = (ulong)&value2;
+        var p1 = new Pointer<int>(addr1);
+        var p2 = new Pointer<int>(addr2);
+
+        var t = Tensor.FromPointer(addr1, DataTypes.Int32);
+        Assert.Equal(p1, t.ToScalar<Pointer<int>>());
+        Assert.Equal(addr1, t.ToScalar<Pointer<int>>().Value);
+        Assert.NotEqual(p2, t.ToScalar<Pointer<int>>());
+    }
+
     // Tensor FromConst(Const @const)
     [Fact]
     public unsafe void TestFromConstOverload1()

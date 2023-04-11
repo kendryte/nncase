@@ -75,6 +75,9 @@ class nncaseConan(ConanFile):
         min_cppstd = "17" if self.options.runtime else "20"
         tools.check_min_cppstd(self, min_cppstd)
 
+        if self.settings.os == 'Windows':
+            self.settings.compiler.toolset = 'ClangCL'
+
         if self.settings.arch not in ("x86_64",):
             self.options.halide = False
             

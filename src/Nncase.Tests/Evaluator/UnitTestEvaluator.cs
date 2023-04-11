@@ -10,6 +10,7 @@ using NetFabric.Hyperlinq;
 using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.F;
+using Nncase.IR.Random;
 using Nncase.IR.Tensors;
 using Nncase.Utilities;
 using OrtKISharp;
@@ -78,6 +79,15 @@ public class UnitTestEvaluator : TestClassBase
     {
         var input = OrtKI.Random(1, 3, 224, 224).ToTensor();
         var image = Imaging.ResizeImage(ImageResizeMode.Bilinear, input, Array.Empty<int>(), new[] { 1, 3, 112, 112 }, isTFResize: true);
+        image.InferenceType();
+        Assert.Equal(new[] { 1, 3, 112, 112 }, image.Evaluate().AsTensor().Dimensions.ToArray());
+    }
+
+    [Fact]
+    public void TestOnnxResizeImage()
+    {
+        var input = OrtKI.Random(1, 3, 224, 224).ToTensor();
+        var image = Imaging.ResizeImage(ImageResizeMode.Bilinear, input, Array.Empty<float>(), new[] { 1, 3, 112, 112 }, isTFResize: false);
         image.InferenceType();
         Assert.Equal(new[] { 1, 3, 112, 112 }, image.Evaluate().AsTensor().Dimensions.ToArray());
     }

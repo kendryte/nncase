@@ -8,7 +8,6 @@ using System.Linq;
 using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.Utilities;
-using static TorchSharp.torch;
 using CallbacksRegister = System.Action<string, System.Action<Nncase.IR.Expr>>;
 using TensorGetter = System.Func<Nncase.IR.Expr, Nncase.Tensor[]>;
 

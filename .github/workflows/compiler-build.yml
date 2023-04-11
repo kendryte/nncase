@@ -11,7 +11,7 @@ jobs:
         config:
           - {name: x86_64-macos, os: macos-latest, cmakeArgs: -DENABLE_X86SIMD=OFF, buildType: Release}
           - {name: x86_64-linux, os: ubuntu-latest, cmakeArgs: '', buildType: Release}
-          - {name: x86_64-windows, os: windows-latest, arch: x64, cmakeArgs: '', buildType: Release}
+          - {name: x86_64-windows, os: windows-latest, arch: x64, cmakeArgs: -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl, buildType: Release}
 
     steps:
       - uses: actions/checkout@v3
@@ -144,7 +144,7 @@ jobs:
         working-directory: ${{github.workspace}}
         run: |
           dotnet tool install --global dotnet-coverage
-          dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/unit "dotnet test -c ${{matrix.config.buildType}} -s test.runsettings --no-build --verbosity normal"
+          dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/unit.xml "dotnet test -c ${{matrix.config.buildType}} -s test.runsettings --no-build --verbosity normal"
           dotnet-coverage merge -o coverage.unit.xml -f cobertura -r coverage/*.xml
 
       - name: Upload Coverage
@@ -170,9 +170,9 @@ jobs:
       matrix:
         dotnet-version: ['6.0']
         config:
-          #- {name: x86_64-macos, os: macos-latest, shell: bash}
+          - {name: x86_64-macos, os: macos-latest, shell: bash}
           - {name: x86_64-linux, os: ubuntu-latest, shell: bash}
-          #- {name: x86_64-windows, os: windows-latest, shell: bash}
+          - {name: x86_64-windows, os: windows-latest, shell: bash}
 
     env:
       VULKANSDK_VER: 1.2.182.0
@@ -257,12 +257,12 @@ jobs:
           NNCASE_COMPILER: ${{github.workspace}}/install/Nncase.Compiler.dll
         run: |
           dotnet tool install --global dotnet-coverage
-          dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/onnx_basic pytest tests/importer/onnx_/basic/ --doctest-modules --junitxml=test_results/onnx_basic.xml
-          dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/onnx_combine pytest tests/importer/onnx_/combine/ --doctest-modules --junitxml=test_results/onnx_combine.xml
-          dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/tflite_basic pytest tests/importer/tflite_/basic/ --doctest-modules --junitxml=test_results/tflite_basic.xml
-          dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/tflite_combine pytest tests/importer/tflite_/combine/ --doctest-modules --junitxml=test_results/tflite_combine.xml
-          dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/tflite_model pytest tests/importer/tflite_/model/ --doctest-modules --junitxml=test_results/tflite_model.xml
-          dotnet-coverage merge -o coverage.integration.xml -f cobertura -r coverage/*.cobertura.xml
+          dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/onnx_basic.xml pytest tests/importer/onnx_/basic/ --doctest-modules --junitxml=test_results/onnx_basic.xml
+          dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/onnx_combine.xml pytest tests/importer/onnx_/combine/ --doctest-modules --junitxml=test_results/onnx_combine.xml
+          dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/tflite_basic.xml pytest tests/importer/tflite_/basic/ --doctest-modules --junitxml=test_results/tflite_basic.xml
+          dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/tflite_combine.xml pytest tests/importer/tflite_/combine/ --doctest-modules --junitxml=test_results/tflite_combine.xml
+          dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/tflite_model.xml pytest tests/importer/tflite_/model/ --doctest-modules --junitxml=test_results/tflite_model.xml
+          dotnet-coverage merge -o coverage.integration.xml -f cobertura -r coverage/*.xml
 
       - name: Upload Coverage
         uses: actions/upload-artifact@v3
