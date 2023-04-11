@@ -117,4 +117,15 @@ public class UnitTestEvaluator : TestClassBase
         var ramp = T.Ramp(1, 2, 0);
         CompilerServices.InferenceType(ramp);
     }
+
+    [Fact]
+    public void TestEvaluatorUtil()
+    {
+        var pad = OrtKI.Random(1);
+        Assert.Throws<InvalidOperationException>(() => EvaluatorUtil.ToOnnxPadFormat(pad));
+
+        var pads = OrtKI.Random(2, 2);
+        var expect = OrtKI.Transpose(pads.Cast(OrtDataType.Int64), new long[] { 1, 0 }).ToArray<long>();
+        Assert.Equal(expect, EvaluatorUtil.ToOnnxPadFormat(pads));
+    }
 }
