@@ -988,45 +988,43 @@ binary_operator_vec(add, f32, float)
                         binary_operator_transposition_vec(pow, f32, float)
                             binary_operator_vec(logical_and, f32, float)
 
+                                operator_vec(add, i32, int32_t, add_fun)
+                                    operator_vec(sub, i32, int32_t, sub_fun)
+                                        operator_vec(mul, i32, int32_t, mul_fun)
+                                            operator_vec(div, i32, int32_t, div_fun)
+                                                operator_vec(pow, i32, int32_t, pow_fun)
+                                                    operator_vec(min, i32, int32_t, min_fun)
+                                                        operator_vec(max, i32, int32_t, max_fun)
+                                                            operator_vec(logical_and, i32, int32_t, logical_and_fun)
+                                                                binary_operator_vec(add, i32, int32_t)
+                                                                    binary_operator_transposition_vec(sub, i32, int32_t)
+                                                                        binary_operator_vec(mul, i32, int32_t)
+                                                                            binary_operator_transposition_vec(div, i32, int32_t)
+                                                                                binary_operator_vec(min, i32, int32_t)
+                                                                                    binary_operator_vec(max, i32, int32_t)
+                                                                                        binary_operator_transposition_vec(pow, i32, int32_t)
+                                                                                            binary_operator_vec(logical_and, i32, int32_t)
 
-operator_vec(add, i32, int32_t, add_fun)
-operator_vec(sub, i32, int32_t, sub_fun)
-operator_vec(mul, i32, int32_t, mul_fun)
-operator_vec(div, i32, int32_t, div_fun)
-operator_vec(pow, i32, int32_t, pow_fun)
-operator_vec(min, i32, int32_t, min_fun)
-operator_vec(max, i32, int32_t, max_fun)
-operator_vec(logical_and, i32, int32_t, logical_and_fun)
-binary_operator_vec(add, i32, int32_t)
-    binary_operator_transposition_vec(sub, i32, int32_t)
-        binary_operator_vec(mul, i32, int32_t)
-            binary_operator_transposition_vec(div, i32, int32_t)
-                binary_operator_vec(min, i32, int32_t)
-                    binary_operator_vec(max, i32, int32_t)
-                        binary_operator_transposition_vec(pow, i32, int32_t)
-                            binary_operator_vec(logical_and, i32, int32_t)
+                                                                                                operator_vec(add, i64, int64_t, add_fun)
+                                                                                                    operator_vec(sub, i64, int64_t, sub_fun)
+                                                                                                        operator_vec(mul, i64, int64_t, mul_fun)
+                                                                                                            operator_vec(div, i64, int64_t, div_fun)
+                                                                                                                operator_vec(pow, i64, int64_t, pow_fun)
+                                                                                                                    operator_vec(min, i64, int64_t, min_fun)
+                                                                                                                        operator_vec(max, i64, int64_t, max_fun)
+                                                                                                                            operator_vec(logical_and, i64, int64_t, logical_and_fun)
+                                                                                                                                binary_operator_vec(add, i64, int64_t)
+                                                                                                                                    binary_operator_transposition_vec(sub, i64, int64_t)
+                                                                                                                                        binary_operator_vec(mul, i64, int64_t)
+                                                                                                                                            binary_operator_transposition_vec(div, i64, int64_t)
+                                                                                                                                                binary_operator_vec(min, i64, int64_t)
+                                                                                                                                                    binary_operator_vec(max, i64, int64_t)
+                                                                                                                                                        binary_operator_transposition_vec(pow, i64, int64_t)
+                                                                                                                                                            binary_operator_vec(logical_and, i64, int64_t)
 
-operator_vec(add, i64, int64_t, add_fun)
-operator_vec(sub, i64, int64_t, sub_fun)
-operator_vec(mul, i64, int64_t, mul_fun)
-operator_vec(div, i64, int64_t, div_fun)
-operator_vec(pow, i64, int64_t, pow_fun)
-operator_vec(min, i64, int64_t, min_fun)
-operator_vec(max, i64, int64_t, max_fun)
-operator_vec(logical_and, i64, int64_t, logical_and_fun)
-binary_operator_vec(add, i64, int64_t)
-    binary_operator_transposition_vec(sub, i64, int64_t)
-        binary_operator_vec(mul, i64, int64_t)
-            binary_operator_transposition_vec(div, i64, int64_t)
-                binary_operator_vec(min, i64, int64_t)
-                    binary_operator_vec(max, i64, int64_t)
-                        binary_operator_transposition_vec(pow, i64, int64_t)
-                            binary_operator_vec(logical_and, i64, int64_t)
-
-
-template <typename T>
-// void operator_vec_binary(const T *a, int len_a, const T *b, int len_b, T *c, int len_c, int transposition, binary_fun_ptr f)
-void operator_vec_binary(const T *a, int len_a, const T *b, int len_b, T *c, int len_c, int transposition, void (*f)(const T *, int, const T *, int, T *, int, int))
+                                                                                                                                                                template <typename T>
+                                                                                                                                                                // void operator_vec_binary(const T *a, int len_a, const T *b, int len_b, T *c, int len_c, int transposition, binary_fun_ptr f)
+                                                                                                                                                                void operator_vec_binary(const T *a, int len_a, const T *b, int len_b, T *c, int len_c, int transposition, void (*f)(const T *, int, const T *, int, T *, int, int))
 {
     (void)len_c;
     int out_len = len_a;
@@ -1108,11 +1106,11 @@ int binary_iml(const T *a, const runtime_shape_t &in_a_shape, const T *b, const 
                 break;
             }
         }
-		if(index == -1)
-		{
-			printf("inshape is incompatible ... \n");
-			return -1;
-		}
+        if (index == -1)
+        {
+            printf("inshape is incompatible ... \n");
+            return -1;
+        }
         if (index == (int)(in_b_shape_ptr->size() - 1)) // [[1, 3, 16, 16], [3, 16, 16]], [[1, 3, 16, 16], [16, 16]], [[1, 3, 16, 16], [16]],
         {
             for (int i = 0; i < outter_front_size; ++i)
@@ -1228,13 +1226,14 @@ result<void> optimized::binary<float>(binary_op_t op, const float *input_a, cons
     return ok();
 }
 
-#if(0)
-template<> result<void> optimized::binary<int64_t>(binary_op_t op, const int64_t *input_a, const int64_t *input_b, int64_t *output,
+#if (0)
+template <>
+result<void> optimized::binary<int64_t>(binary_op_t op, const int64_t *input_a, const int64_t *input_b, int64_t *output,
     const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
     const runtime_shape_t &in_b_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides,
     value_range<float> fused_activation, kernel_context &context) noexcept
 {
-	int ret = 0;
+    int ret = 0;
     if (op == binary_add)
     {
         ret = binary_iml(input_a, in_a_shape, input_b, in_b_shape, output, out_shape, binary_add_i64_vec);
@@ -1280,18 +1279,19 @@ template<> result<void> optimized::binary<int64_t>(binary_op_t op, const int64_t
     return ok();
 }
 #else
-	template result<void> optimized::binary<int64_t>(binary_op_t op, const int64_t *input_a, const int64_t *input_b, int64_t *output,
+template result<void> optimized::binary<int64_t>(binary_op_t op, const int64_t *input_a, const int64_t *input_b, int64_t *output,
     const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
     const runtime_shape_t &in_b_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides,
     value_range<float> fused_activation, kernel_context &context) noexcept;
 #endif
 
-template<> result<void> optimized::binary<int32_t>(binary_op_t op, const int32_t *input_a, const int32_t *input_b, int32_t *output,
+template <>
+result<void> optimized::binary<int32_t>(binary_op_t op, const int32_t *input_a, const int32_t *input_b, int32_t *output,
     const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
     const runtime_shape_t &in_b_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides,
     value_range<float> fused_activation, kernel_context &context) noexcept
 {
-	int ret = 0;
+    int ret = 0;
     if (op == binary_add)
     {
         ret = binary_iml(input_a, in_a_shape, input_b, in_b_shape, output, out_shape, binary_add_i32_vec);
