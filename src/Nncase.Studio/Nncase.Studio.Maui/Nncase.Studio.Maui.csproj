@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 
     <PropertyGroup>
-        <TargetFrameworks>net6.0-maccatalyst</TargetFrameworks>
-        <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net6.0-windows10.0.19041.0</TargetFrameworks>
+        <TargetFrameworks>net7.0-maccatalyst</TargetFrameworks>
+        <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net7.0-windows10.0.19041.0</TargetFrameworks>
         <!-- Uncomment to also build the tizen app. You will need to install tizen by following this: https://github.com/Samsung/Tizen.NET -->
         <!-- <TargetFrameworks>$(TargetFrameworks);net6.0-tizen</TargetFrameworks> -->
         <OutputType>Exe</OutputType>
@@ -51,7 +51,15 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="AntDesign.ProLayout" Version="0.12.4" />
+      <Content Remove="packages.lock.json" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Include="packages.lock.json" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="AntDesign.ProLayout" />
     </ItemGroup>
 
     <ItemGroup>

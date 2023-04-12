@@ -1,18 +1,25 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 
   <PropertyGroup>
-    <TargetFramework>net6</TargetFramework>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Remove="packages.lock.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="packages.lock.json" />
+  </ItemGroup>
 
   <ItemGroup>
     <SupportedPlatform Include="browser" />
   </ItemGroup>
     
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="6.0.6" />
-    <PackageReference Include="AntDesign.Charts" Version="0.2.3" />
-    <PackageReference Include="AntDesign.ProLayout" Version="0.12.4" />
-    <PackageReference Include="System.Net.Http.Json" Version="6.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" />
+    <PackageReference Include="AntDesign.Charts" />
+    <PackageReference Include="AntDesign.ProLayout" />
+    <PackageReference Include="System.Net.Http.Json" />
   </ItemGroup>
   
   <Target Name="DebugEnsureNodeEnv" BeforeTargets="Build" Condition=" '$(Configuration)' == 'Debug' And !Exists('$(ProjectDir)node_modules') ">
