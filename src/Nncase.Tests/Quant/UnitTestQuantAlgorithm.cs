@@ -128,7 +128,7 @@ public class UnitTestKLQuant : TestClassBase
         var weightsArr = new float[] { -0.26237327f, 0.89416003f, -0.9190288f, 0.30857837f, 0.8356638f, -0.45278835f, -0.60886294f, -0.119574904f, -0.44323748f, 0.41989255f, -0.5338452f, -0.17311054f };
         var rangeArr = new float[] { -0.9190288f, 0.89416f, -0.45278835f, 0.8356638f, -0.60886294f, 0f, -0.5338452f, 0.41989255f };
         Expr range = Tensor.From<float>(rangeArr.ToArray(), new Shape(4, 2));
-        Nncase.IR.Shape inputWeightsShape = new Shape(4, 3, 1, 1);
+        var inputWeightsShape = new Shape(4, 3, 1, 1);
         QuantMode quantMode = QuantMode.UnsignedMode;
         int bits = 8;
         bool isByChannel = true;

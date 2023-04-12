@@ -1482,6 +1482,7 @@
           "Microsoft.Extensions.Options": "[6.0.0, )",
           "Microsoft.Toolkit.HighPerformance": "[7.1.1, )",
           "NetFabric.Hyperlinq": "[3.0.0-beta48, )",
+          "OrtKISharp": "[0.0.2, )",
           "System.Reactive": "[5.0.0, )"
         }
       },
