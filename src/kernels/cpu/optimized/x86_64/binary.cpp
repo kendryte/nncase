@@ -917,22 +917,6 @@ static void pow_i32_vec(const int32_t *a, const int32_t *b, int32_t *c, int n)
     }
 }
 
-// static void logical_and_f32_vec(const float *a, const float *b, float *c, int n)
-// {
-// for (int j = 0; j < n; ++j)
-// {
-// int r = (*(a + j)) && (*(b + j));
-// if (r)
-// {
-// c[j] = 1.0f;
-// }
-// else
-// {
-// c[j] = 0.0f;
-// }
-// }
-// }
-
 static void logical_and_i32_vec(const int32_t *a, const int32_t *b, int32_t *c, int n)
 {
     for (int j = 0; j < n; ++j)
@@ -949,35 +933,6 @@ static void logical_and_i32_vec(const int32_t *a, const int32_t *b, int32_t *c, 
     }
 }
 #endif // defined(X86_64_SIMD_ON)
-
-static void mul_i64_vec(const int64_t *a, const int64_t *b, int64_t *c, int n)
-{
-    for (int j = 0; j < n; ++j)
-    {
-        c[j] = a[j] * b[j];
-    }
-}
-static void div_i64_vec(const int64_t *a, const int64_t *b, int64_t *c, int n)
-{
-    for (int j = 0; j < n; ++j)
-    {
-        c[j] = a[j] / b[j];
-    }
-}
-static void min_i64_vec(const int64_t *a, const int64_t *b, int64_t *c, int n)
-{
-    for (int j = 0; j < n; ++j)
-    {
-        c[j] = a[j] < b[j] ? a[j] : b[j];
-    }
-}
-static void max_i64_vec(const int64_t *a, const int64_t *b, int64_t *c, int n)
-{
-    for (int j = 0; j < n; ++j)
-    {
-        c[j] = a[j] > b[j] ? a[j] : b[j];
-    }
-}
 
 binary_operator_vec(add, f32, float)
     binary_operator_transposition_vec(sub, f32, float)
@@ -1111,7 +1066,7 @@ int binary_iml(const T *a, const runtime_shape_t &in_a_shape, const T *b, const 
             printf("inshape is incompatible ... \n");
             return -1;
         }
-        if (index == (int)(in_b_shape_ptr->size() - 1)) // [[1, 3, 16, 16], [3, 16, 16]], [[1, 3, 16, 16], [16, 16]], [[1, 3, 16, 16], [16]],
+        if (index == (int)(in_b_shape_ptr->size() - 1))
         {
             for (int i = 0; i < outter_front_size; ++i)
             {
@@ -1126,7 +1081,7 @@ int binary_iml(const T *a, const runtime_shape_t &in_a_shape, const T *b, const 
                 len_a_leave *= (*in_a_shape_ptr)[i + size_diff];
             }
             if ((*in_b_shape_ptr)[in_b_shape_ptr->size() - 1] == 1)
-            { // [[1, 3, 16, 16],  [3, 1, 1]]，  [[1, 3, 16, 16],  [3, 16, 1]]
+            {
                 int len_b_leave = 1;
                 for (int i = index + 1; i < (int)(in_b_shape_ptr->size()); ++i)
                 {
@@ -1152,7 +1107,7 @@ int binary_iml(const T *a, const runtime_shape_t &in_a_shape, const T *b, const 
                 for (int i = index + 1; i < (int)(in_b_shape_ptr->size() - 1); ++i)
                 {
                     int _data = (*in_b_shape_ptr)[i];
-                    if (_data != 1 && (*in_b_shape_ptr)[i + 1] == 1) // 末位非 1 的情况 则不能在 非 1 中间有 1 的情况如 [1, 16, 1, 16]
+                    if (_data != 1 && (*in_b_shape_ptr)[i + 1] == 1)
                     {
                         printf("error ... in_b_shape_ptr[i] == 1\n");
                         return -1;
@@ -1226,7 +1181,6 @@ result<void> optimized::binary<float>(binary_op_t op, const float *input_a, cons
     return ok();
 }
 
-#if (0)
 template <>
 result<void> optimized::binary<int64_t>(binary_op_t op, const int64_t *input_a, const int64_t *input_b, int64_t *output,
     const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
@@ -1278,12 +1232,6 @@ result<void> optimized::binary<int64_t>(binary_op_t op, const int64_t *input_a, 
     }
     return ok();
 }
-#else
-template result<void> optimized::binary<int64_t>(binary_op_t op, const int64_t *input_a, const int64_t *input_b, int64_t *output,
-    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
-    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides,
-    value_range<float> fused_activation, kernel_context &context) noexcept;
-#endif
 
 template <>
 result<void> optimized::binary<int32_t>(binary_op_t op, const int32_t *input_a, const int32_t *input_b, int32_t *output,
