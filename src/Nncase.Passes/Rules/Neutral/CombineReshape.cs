@@ -85,7 +85,7 @@ public sealed partial class CombineConstBinaryReshape : IRewriteRule
         bool leftConst = ReferenceEquals(callParams[0], constInput);
         if (constInput.CheckedShape.Rank == 0)
         {
-            var res = Reshape(Binary(binary.BinaryOp,  leftConst ? constInput : input, leftConst ? input : constInput).InheritMetaData(call), shape);
+            var res = Reshape(Binary(binary.BinaryOp, leftConst ? constInput : input, leftConst ? input : constInput).InheritMetaData(call), shape);
             res.InferenceType();
             return res;
         }
