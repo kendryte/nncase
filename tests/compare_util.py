@@ -7,6 +7,7 @@ import numpy as np
 from typing import List, Tuple
 from pathlib import Path
 from operator import le, lt, ge, gt, eq
+import test_utils
 
 
 def cosine(gt: np.ndarray, pred: np.ndarray, *args):
@@ -64,7 +65,7 @@ def compare(result_path: Tuple[str, str],
             simarity = simarity_func[simarity_name](gt_arr, pred_arr)
         else:
             raise ValueError("The number of elements in gt and result not match\n")
-        if hist:
+        if hist and not test_utils.in_ci:
             y, x = np.histogram(gt_arr - pred_arr, 100)
             p = Path(result_path_bin)
             np.savetxt(str(p.parent / (p.stem + '_hist.csv')),

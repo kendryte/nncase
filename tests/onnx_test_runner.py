@@ -186,7 +186,8 @@ class OnnxTestRunner(TestRunner):
             text_file = os.path.join(case_dir, f'cpu_result_{i}.txt')
             self.output_paths.append((bin_file, text_file))
             output.tofile(bin_file)
-            self.totxtfile(text_file, output)
+            if not test_utils.in_ci:
+                self.totxtfile(text_file, output)
             i += 1
 
     def import_model(self, compiler, model_content, import_options):

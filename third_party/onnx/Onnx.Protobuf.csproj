@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
         <RootNamespace>Onnx.Proto</RootNamespace>
+        <NoWarn>$(NoWarn);CS8981</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>
