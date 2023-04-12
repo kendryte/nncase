@@ -1,6 +1,9 @@
 ﻿name: compiler-build
 
 on: [push, pull_request]
+env:
+  NUGET_CERT_REVOCATION_MODE: offline
+  NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
 
 jobs:
   build-native:
@@ -69,7 +72,7 @@ jobs:
     runs-on: ${{matrix.config.os}}
     strategy:
       matrix:
-        dotnet-version: ['6.0']
+        dotnet-version: ['7.0']
         config:
           - {name: x86_64-macos, os: macos-latest, shell: bash, rid: osx-x64, buildType: Release}
           - {name: x86_64-linux, os: ubuntu-latest, shell: bash, rid: linux-x64, buildType: Release}
@@ -82,6 +85,14 @@ jobs:
         with:
           dotnet-version: ${{matrix.dotnet-version}}
 
+      - name: Cache NuGet packages
+        uses: actions/cache@v3
+        with:
+          path: ${{ github.workspace }}/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
       - name: Install nncase native Artifact
         uses: actions/download-artifact@v2.0.9
         with:
@@ -93,30 +104,11 @@ jobs:
           brew install sunnycase/core/libomp@11.1.0
         if: runner.os == 'Macos'
 
-      - name: Remove useless packages
-        shell: pwsh
-        run: |
-          Get-Content .\Directory.Packages.props | Where-Object {$_ -notmatch 'libtorch-cpu-osx' -and $_ -notmatch 'libtorch-cpu-linux'} | Set-Content .\Directory.Packages.props.new
-          rm .\Directory.Packages.props
-          mv .\Directory.Packages.props.new .\Directory.Packages.props
-          Get-Content .\src\Nncase.Core\Nncase.Core.csproj | Where-Object {$_ -notmatch 'libtorch-cpu-osx' -and $_ -notmatch 'libtorch-cpu-linux'} | Set-Content .\src\Nncase.Core\Nncase.Core.csproj.new
-          rm .\src\Nncase.Core\Nncase.Core.csproj
-          mv .\src\Nncase.Core\Nncase.Core.csproj.new .\src\Nncase.Core\Nncase.Core.csproj
-        if: runner.os == 'Windows'
-
-      - name: Remove useless packages
-        shell: bash
-        run: |
-          sed -i '/libtorch-cpu-win/d' ./Directory.Packages.props
-          sed -i '/libtorch-cpu-osx/d' ./Directory.Packages.props
-          sed -i '/libtorch-cpu-win/d' ./src/Nncase.Core/Nncase.Core.csproj
-          sed -i '/libtorch-cpu-osx/d' ./src/Nncase.Core/Nncase.Core.csproj
-        if: runner.os == 'Linux'
-
       - name: Build
         run: |
-          dotnet build -c ${{matrix.config.buildType}}
-          dotnet publish src/Nncase.Compiler -c ${{matrix.config.buildType}} --sc false --use-current-runtime
+          dotnet restore -r ${{matrix.config.rid}}
+          dotnet build -c ${{matrix.config.buildType}} --no-restore
+          dotnet publish src/Nncase.Compiler -c ${{matrix.config.buildType}} --no-restore --sc false -r ${{matrix.config.rid}}
 
       - name: Set up Dotnet Test settings
         uses: 1arp/create-a-file-action@0.2
@@ -168,7 +160,7 @@ jobs:
     runs-on: ${{matrix.config.os}}
     strategy:
       matrix:
-        dotnet-version: ['6.0']
+        dotnet-version: ['7.0']
         config:
           - {name: x86_64-macos, os: macos-latest, shell: bash}
           - {name: x86_64-linux, os: ubuntu-latest, shell: bash}
@@ -243,6 +235,8 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: 3.7
+          cache: 'pip'
+          cache-dependency-path: '**/requirements.test.txt'
 
       - name: Install Python Packages
         run: pip install -r requirements.test.txt
@@ -286,7 +280,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: "6.0"
+          dotnet-version: "7.0"
 
       - name: Download Unit Test Coverage
         uses: actions/download-artifact@v3
