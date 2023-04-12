@@ -33,11 +33,13 @@ public class UnitTestUtility
     public void TestGetFixedMul()
     {
         var actual1 = Utility.GetFixedMul(0f, 0, 0, true);
-        var actual2 = Utility.GetFixedMul(2f, 0, 0, true);
-        var actual3 = Utility.GetFixedMul(1f, 0, 0, true);
+        var actual2 = Utility.GetFixedMul(2f, 1, 2, true);
+        var actual3 = Utility.GetFixedMul(1f, 2, 1, true);
+        var actual4 = Utility.GetFixedMul(1f, 1, 0, false);
         Assert.Equal(new FixedMul(0f, 0), actual1);
-        Assert.Equal(new FixedMul(0f, 0), actual2);
-        Assert.Equal(new FixedMul(0f, 0), actual3);
+        Assert.Equal(new FixedMul(0f, 2), actual2);
+        Assert.Equal(new FixedMul(0f, 1), actual3);
+        Assert.Equal(new FixedMul(0f, 0), actual4);
         Assert.Throws<InvalidOperationException>(() => Utility.GetFixedMul(-1f, 0, 0, false));
         Assert.Throws<ArgumentOutOfRangeException>(() => Utility.GetFixedMul(100f, 0, 0, true));
     }

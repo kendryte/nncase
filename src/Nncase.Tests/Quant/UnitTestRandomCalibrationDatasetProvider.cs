@@ -23,9 +23,9 @@ public class UnitTestRandomCalibrationDatasetProvider
     public void TestRandomCalibrationDatasetProvider()
     {
         var input = new Var();
-        var vars = new[] { input };
-        var provider = new RandomCalibrationDatasetProvider(vars, 1);
-        Assert.Equal(1, provider.Count);
+        var vars = new[] { input, input, input };
+        var provider = new RandomCalibrationDatasetProvider(vars, 1000);
+        Assert.Equal(1000, provider.Count);
         _ = provider.Samples;
     }
 }

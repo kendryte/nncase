@@ -16,11 +16,11 @@ public sealed class UnitTestQuantUtility
     [Fact]
     public void TestGetQuantParam()
     {
-        var quantParam1 = QuantUtility.GetQuantParam(new ValueRange<float>(-1f, 1f), 1, QuantMode.SignedSymmetricMode);
-        Assert.Equal(new QuantParam(0, float.PositiveInfinity), quantParam1);
+        var quantParam1 = QuantUtility.GetQuantParam(new ValueRange<float>(-1f, 1f), 8, QuantMode.SignedSymmetricMode);
+        Assert.Equal(new QuantParam(0, 0.007874016f), quantParam1);
 
-        var quantParam2 = QuantUtility.GetQuantParam(new ValueRange<float>(-1f, 1f), 1, QuantMode.SignedAsymmetricMode);
-        Assert.Equal(new QuantParam(-1, 2f), quantParam2);
+        var quantParam2 = QuantUtility.GetQuantParam(new ValueRange<float>(-1f, 1f), 8, QuantMode.SignedAsymmetricMode);
+        Assert.Equal(new QuantParam(0, 0.007843138f), quantParam2);
     }
 
     [Fact]
@@ -29,8 +29,11 @@ public sealed class UnitTestQuantUtility
         var range1 = QuantUtility.FixupRange(new ValueRange<float>(0f, 0f));
         Assert.Equal(new ValueRange<float>(0f, 0.1f), range1);
 
-        var range2 = QuantUtility.FixupRange(new ValueRange<float>(0f, 0.005f));
-        Assert.Equal(new ValueRange<float>(0f, 0.01f), range2);
+        var range2 = QuantUtility.FixupRange(new ValueRange<float>(0f, 0f), true);
+        Assert.Equal(new ValueRange<float>(-0.01f, 0.01f), range2);
+
+        var range3 = QuantUtility.FixupRange(new ValueRange<float>(0f, 0.005f));
+        Assert.Equal(new ValueRange<float>(0f, 0.01f), range3);
     }
 
     [Fact]

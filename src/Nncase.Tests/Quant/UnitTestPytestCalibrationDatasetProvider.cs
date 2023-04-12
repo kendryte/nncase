@@ -24,6 +24,7 @@ public class UnitTestPytestCalibrationDatasetProvider
     {
         var input = new Var();
         var vars = new[] { input };
+        var path = "~/.public";
         var dataset = "./";
         var provider = new PytestCalibrationDatasetProvider(vars, dataset);
         Assert.Equal(0, provider.Count);
