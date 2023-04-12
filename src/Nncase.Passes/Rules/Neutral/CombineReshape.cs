@@ -82,25 +82,28 @@ public sealed partial class CombineConstBinaryReshape : IRewriteRule
         var oldShape = shape.Value.ToArray<int>();
         var significantShape = oldShape.Where(x => x > 1).ToArray();
 
+        bool leftConst = ReferenceEquals(callParams[0], constInput);
         if (constInput.CheckedShape.Rank == 0)
         {
-            var res = Reshape(Binary(binary.BinaryOp, input, constInput).InheritMetaData(call), shape);
+            var res = Reshape(Binary(binary.BinaryOp,  leftConst ? constInput : input, leftConst ? input : constInput).InheritMetaData(call), shape);
             res.InferenceType();
             return res;
         }
 
-        var significantInputShape = input.CheckedShape.ToValueArray().Where(x => x > 1).ToArray();
-        bool leftConst = ReferenceEquals(callParams[0], constInput);
-        var constSize = constInput.CheckedShape.ToValueArray()[0];
-        if (significantShape.SequenceEqual(significantInputShape) && oldShape[^1] == constSize)
+        if (constInput.CheckedShape.Rank == 1)
         {
-            var broadcastIndex = Array.LastIndexOf(input.CheckedShape.ToValueArray(), constSize);
-            var newConstShape = Enumerable.Repeat(1, input.CheckedShape.Rank - 1 - broadcastIndex).ToList();
-            newConstShape.Insert(0, constSize);
+            var significantInputShape = input.CheckedShape.ToValueArray().Where(x => x > 1).ToArray();
+            var constSize = constInput.CheckedShape.ToValueArray()[0];
+            if (significantShape.SequenceEqual(significantInputShape) && oldShape[^1] == constSize)
+            {
+                var broadcastIndex = Array.LastIndexOf(input.CheckedShape.ToValueArray(), constSize);
+                var newConstShape = Enumerable.Repeat(1, input.CheckedShape.Rank - 1 - broadcastIndex).ToList();
+                newConstShape.Insert(0, constSize);
 
-            var res = Reshape(Binary(binary.BinaryOp, leftConst ? Reshape(constInput, newConstShape.ToArray()) : input, leftConst ? input : Reshape(constInput, newConstShape.ToArray())).InheritMetaData(call), call.CheckedShape);
-            res.InferenceType();
-            return res;
+                var res = Reshape(Binary(binary.BinaryOp, leftConst ? Reshape(constInput, newConstShape.ToArray()) : input, leftConst ? input : Reshape(constInput, newConstShape.ToArray())).InheritMetaData(call), call.CheckedShape);
+                res.InferenceType();
+                return res;
+            }
         }
 
         return null;
