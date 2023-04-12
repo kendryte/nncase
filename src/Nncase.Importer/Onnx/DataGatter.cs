@@ -100,14 +100,17 @@ public sealed partial class OnnxImporter
         var id = n.Input[index];
         if (_outputTensors!.TryGetValue(id, out var expr))
         {
+            expr.Metadata.OutputNames = new string[] { n.Input[index] };
             return expr;
         }
 
-        return _graph.Initializer
+        Expr ret = _graph.Initializer
             .Find(x => x.Name == id)
             .Match(
                 GetTensor,
                 () => throw new InvalidDataException($"Cannot load tensor data (tensor:{id})."));
+        ret.Metadata.OutputNames = new string[] { n.Input[index] };
+        return ret;
     }
 
     private DataType GetInputDataType(NodeProto n, int index)
