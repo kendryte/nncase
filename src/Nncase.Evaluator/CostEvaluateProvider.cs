@@ -1,10 +1,11 @@
-﻿using System;
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using System.Numerics.Tensors;
 using System.Reflection;
-using Autofac;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Nncase.CostModel;
@@ -21,7 +22,7 @@ internal sealed class CostEvaluateProvider : ICostEvaluateProvider
         _serviceProvider = serviceProvider;
     }
 
-    public Cost? EvaluateCost(Expr expr, IReadOnlyDictionary<Var, Cost>? varsValues = null)
+    public Cost EvaluateCost(Expr expr)
     {
         if (expr.CheckedType is null)
         {
@@ -33,11 +34,11 @@ internal sealed class CostEvaluateProvider : ICostEvaluateProvider
             throw new InvalidOperationException("Expr in Evaluator need a valid type");
         }
 
-        var evaluatorVisitor = new CostEvaluateVisitor(varsValues ?? new Dictionary<Var, Cost>());
+        var evaluatorVisitor = new CostEvaluateVisitor();
         return evaluatorVisitor.Visit(expr);
     }
 
-    public Cost? EvaluateOpCost(Op op, ICostEvaluateContext context)
+    public Cost EvaluateOpCost(Op op, ICostEvaluateContext context)
     {
         // TODO: Add inferencers cache.
         var evaluatorType = typeof(ICostEvaluator<>).MakeGenericType(op.GetType());

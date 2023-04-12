@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -6,9 +6,9 @@ using LanguageExt.UnsafeValueAccess;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using Onnx;
-using F = Nncase.IR.F;
 using static Nncase.IR.F.Tensors;
 using static Nncase.ResizeModeHelper;
+using F = Nncase.IR.F;
 
 namespace Nncase.Importer
 {
@@ -29,7 +29,7 @@ namespace Nncase.Importer
 
         private Expr GetRoi(NodeProto op)
         {
-            return GetOptionInputExpr(op, 1).Or(Tensor.FromSpan<float>(Array.Empty<float>(), new[] { 0 }));
+            return GetOptionInputExpr(op, 1).Or(None.Default);
         }
 
         private Expr ResizeV10(in NodeProto op)
@@ -53,9 +53,18 @@ namespace Nncase.Importer
             var cubicCoeffA = GetFloatAttribute(op, "cubic_coeff_a", -0.75f);
             var excludeOutside = GetBoolAttribute(op, "exclude_outside", false);
             var extrapolationValue = GetFloatAttribute(op, "extrapolation_value", -0.0f);
-            return F.Imaging.ResizeImage(mode, transformationMode, nearestMode, input, roi, newSize, cubicCoeffA,
-                excludeOutside, extrapolationValue);
+            return F.Imaging.ResizeImage(
+                mode,
+                transformationMode,
+                nearestMode,
+                input,
+                roi,
+                newSize,
+                cubicCoeffA,
+                excludeOutside,
+                extrapolationValue);
         }
+
         private ImageResizeMode GetResizeMode(NodeProto op)
         {
             return ParseResizeMode(GetStringAttribute(op, "mode", "nearest"));
@@ -64,8 +73,8 @@ namespace Nncase.Importer
         private Expr ComputeNewSizes(Expr input, Expr scales)
         {
             return Reshape(
-                Cast(Cast(ShapeOf(input), DataTypes.Float32) * Unsqueeze(scales, new[] {0}), DataTypes.Int64),
-                new[] {-1});
+                Cast(Cast(ShapeOf(input), DataTypes.Float32) * Unsqueeze(scales, new[] { 0 }), DataTypes.Int64),
+                new[] { -1 });
         }
 
         private Expr GetNewSize(NodeProto op)
@@ -82,6 +91,7 @@ namespace Nncase.Importer
                     return ComputeNewSizes(GetInputExpr(op, 0), scalesValue);
                 }
             }
+
             var sizes = GetOptionInputExpr(op, 3).ValueUnsafe();
             return sizes;
         }

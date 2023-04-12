@@ -1,139 +1,109 @@
-using Nncase.IR;
-using Tuple = Nncase.IR.Tuple;
-using ParameterInfo = Nncase.IR.ParameterInfo;
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System.Collections.Immutable;
 using NetFabric.Hyperlinq;
+using Nncase.IR;
+using Fx = System.Func<Nncase.IR.Expr, Nncase.IR.Expr>;
+using ParameterInfo = Nncase.IR.ParameterInfo;
+using Tuple = Nncase.IR.Tuple;
+
 namespace Nncase.Utilities;
 
-using Fx = Func<Expr, Expr>;
-
-public class ReplaceUtility
+/// <summary>
+/// Pattern Match Replace Utility.
+/// </summary>
+public static class ReplaceUtility
 {
-    public static Expr ReplaceOp(Call call, Op op)
+    /// <summary>
+    ///  find the old input in old args and replace it with new_input.
+    /// </summary>
+    /// <param name="list">matched exprsession list.</param>
+    /// <param name="pairs">target value pair.</param>
+    /// <returns>new args list.</returns>
+    /// <exception cref="InvalidOperationException">when the same target match two value.</exception>
+    public static Expr[] ReplaceItems(IReadOnlyList<Expr> list, params (Expr Target, Expr Value)[] pairs)
     {
-        return call with { Target = op };
-    }
-
-    public static Expr ReplaceFirst(Call call, Expr input)
-    {
-        return call with { Parameters = ReplaceFirst(call.Parameters, input) };
-    }
-
-    public static Expr ReplaceFirstCondWithThrow(Call call, Expr input, Func<Expr, bool> cond) =>
-        ReplaceFirstCond(call, input, cond)
-            .Match(i => i, () => throw new InvalidOperationException("Can't find parameter"));
-
-    public static Option<Expr> ReplaceFirstCond(Call call, Expr input, Func<Expr, bool> cond)
-    {
-        for (int i = 0; i < call.Parameters.Count; i++)
+        if (pairs.Length == 0)
         {
-            var p = call.Parameters[i];
-            if (cond(p))
+            return list.ToArray();
+        }
+
+        var new_args = new List<Expr>(list);
+
+        Dictionary<int, Expr> candidates = new();
+        for (int i = 0; i < list.Count; i++)
+        {
+            for (int j = 0; j < pairs.Length; j++)
             {
-                var newCall = call with { Parameters = ReplacePos(call.Parameters, input, i) };
-                return Option.Some((Expr)newCall);
+                if (object.ReferenceEquals(new_args[i], pairs[j].Target))
+                {
+                    if (!candidates.TryGetValue(i, out var last_matched))
+                    {
+                        last_matched = pairs[j].Value;
+                        candidates.Add(i, last_matched);
+                    }
+
+                    if (!object.ReferenceEquals(last_matched, pairs[j].Value))
+                    {
+                        throw new InvalidDataException("The same arg can't replace with two new pararmeter!");
+                    }
+                }
             }
         }
 
-        return Option.None;
+        if (candidates.Count == 0)
+        {
+            throw new InvalidOperationException("Not find the replace param");
+        }
+
+        foreach (var (i, new_input) in candidates)
+            new_args[i] = new_input;
+        return new_args.ToArray();
     }
 
     /// <summary>
-    /// make a inputCtor that receive a new input
-    /// usage:
-    /// Call(FakeXXX, input, otherArg1, ...)
-    /// newInput => Call(op, newInput, otherArg1, ...)
-    /// it's always used for Fake to NoFake Rule with IsWildcardCall
+    /// replace items with param info.
     /// </summary>
-    /// <param name="call"></param>
-    /// <param name="op"></param>
-    /// <returns></returns>
-    public static Fx ReplaceOpAndFirst(Call call, Op op) => input =>
+    /// <param name="list">expr list.</param>
+    /// <param name="pairs">pairs.</param>
+    /// <returns>replaced list.</returns>
+    public static Expr[] ReplaceItems(IReadOnlyList<Expr> list, params (IR.ParameterInfo Info, Expr Value)[] pairs)
     {
-        return call with { Target = op, Parameters = ReplaceFirst(call.Parameters, input) };
-    };
-
-    public static T[] ReplacePos<T>(IReadOnlyList<T> arr, T v, int i)
-    {
-        var array = arr.ToArray();
-        return array[..i].Concat(new[] { v }).Concat(array[(i + 1)..]).ToArray();
-    }
-
-    public static Expr ReplacePos(Call call, Expr input, int i)
-    {
-        return call with { Parameters = ReplacePos(call.Parameters, input, i) };
-    }
-
-    public static T[] ReplaceFirst<T>(IReadOnlyList<T> arr, T v)
-    {
-        return ReplacePos(arr, v, 0);
-    }
-
-    public static T[] ReplaceMulti<T>(IReadOnlyList<T> arr, params (ParameterInfo, T)[] valueAndPosition)
-    {
-        var data = arr.ToArray();
-        foreach (var (parameterInfo, v) in valueAndPosition)
-        {
-            data[parameterInfo.Index] = v;
-        }
-
-        return data;
+        return ReplaceItems(list, pairs.Select(p => (list[p.Info.Index], p.Value)).ToArray());
     }
 
     /// <summary>
-    /// Replace call params with posAndValue.
-    /// It is designed to easier to see the difference between rewrite before and rewrite after
-    /// e.g.
-    /// before:
-    /// call = Reduce(reduceOp, input, axis, initValue, keepDims)
-    /// call:
-    /// ReplaceParams(call,
-    ///     (Nncase.IR.Math.Reduce.InitValue, newInitValue),
-    ///     (Nncase.IR.Math.Reduce.Axis, newAxis)
-    /// )
-    /// after:
-    /// call == Reduce(reduceOp, input, newAxis, initValue, keepDims)
-    ///
-    /// posAndValue is not required to be in order
-    ///
-    /// warning: call which returned should be type infer, because of with should keep the type infer
+    /// replace call parameters.
     /// </summary>
-    /// <param name="call"></param>
-    /// <param name="posAndValue"></pxaram>
-    /// <returns></returns>
-    public static Call ReplaceParams(Call call, params (ParameterInfo, Expr)[] posAndValue)
+    /// <param name="target">new call target.</param>
+    /// <param name="oldParams">old params.</param>
+    /// <param name="pairs">replace pairs.</param>
+    /// <returns>new call.</returns>
+    public static Call ReplaceCallParams(Expr target, IReadOnlyList<Expr> oldParams, params (Expr, Expr)[] pairs)
     {
-        return call with { Parameters = ReplaceMulti(call.Parameters, posAndValue) };
+        return new Call(target, ReplaceItems(oldParams, pairs));
     }
 
-    private static Option<Expr> ReplaceTargetImpl(Expr root, Expr target, Expr expr)
+    /// <summary>
+    /// replace the call params with parameter info.
+    /// </summary>
+    /// <param name="target">call target.</param>
+    /// <param name="oldParams">target params.</param>
+    /// <param name="pairs">the param info pair.</param>
+    /// <returns>new call.</returns>
+    public static Call ReplaceCallParams(Expr target, IReadOnlyList<Expr> oldParams, params (IR.ParameterInfo, Expr)[] pairs)
     {
-        if (root == target)
-        {
-            return Option.Some(expr);
-        }
-
-        if (root is not Call)
-        {
-            return Option.None;
-        }
-
-        var rootCall = (Call)root;
-        for (var i = 0; i < rootCall.Parameters.Count; i++)
-        {
-            var e = ReplaceTargetImpl(rootCall.Parameters[i], target, expr);
-            if (e.IsSome)
-            {
-                return Option.Some(ReplacePos(rootCall, e.Value, i));
-            }
-        }
-        return Option.None;
+        return new Call(target, ReplaceItems(oldParams, pairs));
     }
-    
-    public static Expr ReplaceTarget(Expr root, Expr target, Expr expr) =>
-        ReplaceTargetImpl(root, target, expr)
-            .Match(
-                x => x,
-                () => throw new InvalidOperationException("target not found")
-            );
 
+    /// <summary>
+    /// replace the first params of call with expr.
+    /// </summary>
+    /// <param name="target">target.</param>
+    /// <param name="oldParams">oldParams.</param>
+    /// <param name="expr">expr.</param>
+    /// <returns>new Call.</returns>
+    public static Call ReplaceCallFirstParam(Expr target, IReadOnlyList<Expr> oldParams, Expr expr) =>
+        ReplaceCallParams(target, oldParams, (oldParams[0], expr));
 }

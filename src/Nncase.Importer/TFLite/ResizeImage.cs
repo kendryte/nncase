@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -7,8 +7,8 @@ using System.IO;
 using System.Linq;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
-using static Nncase.IR.F.Tensors;
 using static Nncase.IR.F.Imaging;
+using static Nncase.IR.F.Tensors;
 
 namespace Nncase.Importer.TFLite
 {
@@ -27,6 +27,7 @@ namespace Nncase.Importer.TFLite
                     0),
                 new Int64Type());
         }
+
         private Expr VisitResizeImage(in tflite.Operator op, ImageResizeMode resizeMode)
         {
             var (input, newSize) = GetInputExprs(op, 0, 1);
@@ -42,7 +43,8 @@ namespace Nncase.Importer.TFLite
                     Array.Empty<float>(),
                     MakeResizeSizes(input, newSize),
                     tranMode,
-                    nearestMode, true));
+                    nearestMode,
+                    true));
         }
 
         private ImageResizeTransformationMode GetResizeOptions(in tflite.Operator op)

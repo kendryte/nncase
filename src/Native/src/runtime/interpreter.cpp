@@ -160,18 +160,38 @@ result<void> interpreter::output_tensor(size_t index,
 }
 
 result<void> interpreter::run() noexcept {
-    std::vector<value_t> params(input_tensors_.size(), nullptr);
+    std::vector<value_t> params(inputs_size(), nullptr);
     for (size_t i = 0; i < params.size(); i++) {
-        params[i] = input_tensors_[i].impl();
+        try_var(in, input_tensor(i));
+        params[i] = in.impl();
     }
 
-    std::vector<value_t> ret_fields(output_tensors_.size(), nullptr);
-    for (size_t i = 0; i < ret_fields.size(); i++) {
-        ret_fields[i] = output_tensors_[i].impl();
+    auto is_tensor_output = entry_function_->return_type().is_a<tensor_type>();
+    if (output_tensors_.empty()) {
+        try_var(ret_value, entry_function_->invoke(params));
+        if (is_tensor_output) {
+            try_var(t, ret_value.as<tensor>());
+            try_(output_tensor(0, runtime_tensor(t)));
+        } else {
+            try_var(tp, ret_value.as<tuple>());
+            for (size_t i = 0; i < tp->fields().size(); i++) {
+                try_var(t, tp->fields()[i].as<tensor>());
+                try_(output_tensor(i, runtime_tensor(t)));
+            }
+        }
+    } else {
+        std::vector<value_t> ret_fields(outputs_size(), nullptr);
+        for (size_t i = 0; i < ret_fields.size(); i++) {
+            try_var(out, output_tensor(i));
+            ret_fields[i] = out.impl();
+        }
+
+        try_(entry_function_->invoke(
+            params, is_tensor_output
+                        ? ret_fields[0]
+                        : tuple(std::in_place, std::move(ret_fields))));
     }
 
-    try_(entry_function_->invoke(params,
-                                 tuple(std::in_place, std::move(ret_fields))));
     return ok();
 }
 

@@ -1,10 +1,10 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 using Nncase.IR;
 using Onnx;
-using static Nncase.IR.F.Tensors;
-using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Math;
+using static Nncase.IR.F.NN;
+using static Nncase.IR.F.Tensors;
 
 namespace Nncase.Importer
 {
@@ -61,7 +61,7 @@ namespace Nncase.Importer
         {
             var x = GetInputExpr(op, 0);
             var alpha = GetFloatAttribute(op, "alpha", 0.2f);
-            var beta = GetFloatAttribute(op, "alpha", 0.5f);
+            var beta = GetFloatAttribute(op, "beta", 0.5f);
             return HardSigmoid(x, alpha, beta);
         }
 
@@ -69,6 +69,12 @@ namespace Nncase.Importer
         {
             var input = GetInputExpr(op, 0);
             return HardSwish(input);
+        }
+
+        private Expr VisitErf(NodeProto op)
+        {
+            var input = GetInputExpr(op, 0);
+            return Erf(input);
         }
     }
 }

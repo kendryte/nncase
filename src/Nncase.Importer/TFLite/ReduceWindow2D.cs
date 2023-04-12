@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Linq;
@@ -22,12 +22,12 @@ namespace Nncase.Importer.TFLite
             var strideW = option.StrideW;
             var padH = Util.GetWindowedPadding(inH, filterH, strideH, 1, option.Padding == tflite.Padding.SAME);
             var padW = Util.GetWindowedPadding(inW, filterW, strideW, 1, option.Padding == tflite.Padding.SAME);
-            var filter = Tensor.FromSpan<int>(new[] { filterH, filterW }, new[] { 2 });
-            var stride = Tensor.FromSpan<int>(new[] { strideH, strideW }, new[] { 2 });
+            var filter = Tensor.From<int>(new[] { filterH, filterW }, new[] { 2 });
+            var stride = Tensor.From<int>(new[] { strideH, strideW }, new[] { 2 });
             var padding = Util.ConcatPadding(padH, padW);
             return F.Tensors.NCHWToNHWC(
                 F.NN.ReduceWindow2D(
-                    reduceOp, input, initValue, filter, stride, padding, Tensor.FromSpan<long>(new long[] { 1, 1 }), false, false));
+                    reduceOp, input, initValue, filter, stride, padding, Tensor.From<long>(new long[] { 1, 1 }), false, false));
         }
     }
 }

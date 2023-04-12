@@ -19,10 +19,12 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::k210;
 
-result<void> k210_runtime_function::visit(const kpu_download_options &op) noexcept
-{
+result<void>
+k210_runtime_function::visit(const kpu_download_options &op) noexcept {
     try_var(input, memory_at(op.input));
     try_var(output, memory_at(op.output));
 
-    return kernels::k210::kpu_download(reinterpret_cast<const uint8_t *>(input.data()), reinterpret_cast<uint8_t *>(output.data()), op.in_shape);
+    return kernels::k210::kpu_download(
+        reinterpret_cast<const uint8_t *>(input.data()),
+        reinterpret_cast<uint8_t *>(output.data()), op.in_shape);
 }

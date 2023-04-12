@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -8,7 +8,7 @@ using System.Linq;
 using Nncase.CostModel;
 using Nncase.Evaluator;
 using Nncase.IR;
-using Nncase.Transform;
+using Nncase.Passes;
 
 namespace Nncase.CostModel;
 
@@ -18,27 +18,14 @@ internal sealed class EGraphCostEvaluator
     private readonly Dictionary<ENode, Cost> _costs = new(ReferenceEqualityComparer.Instance);
     private readonly Dictionary<EClass, Cost> _eclassCosts = new();
     private readonly HashSet<EClass> _allEclasses = new();
+    private readonly IBaseFuncCostEvaluator? _baseFuncCostEvaluator;
     private bool _changed;
 
-    public EGraphCostEvaluator(EClass root)
+    public EGraphCostEvaluator(EClass root, IBaseFuncCostEvaluator? basefunc_cost_evaluator)
     {
         _root = root;
+        _baseFuncCostEvaluator = basefunc_cost_evaluator;
         PopulateAllEclasses(_root);
-    }
-
-    private void PopulateAllEclasses(EClass eClass)
-    {
-        if (!_allEclasses.Contains(eClass))
-        {
-            _allEclasses.Add(eClass);
-            foreach (var node in eClass.Nodes)
-            {
-                foreach (var child in node.Children)
-                {
-                    PopulateAllEclasses(child);
-                }
-            }
-        }
     }
 
     public EGraphCostModel Evaluate()
@@ -61,6 +48,21 @@ internal sealed class EGraphCostEvaluator
         return new(_costs);
     }
 
+    private void PopulateAllEclasses(EClass eClass)
+    {
+        if (!_allEclasses.Contains(eClass))
+        {
+            _allEclasses.Add(eClass);
+            foreach (var node in eClass.Nodes)
+            {
+                foreach (var child in node.Children)
+                {
+                    PopulateAllEclasses(child);
+                }
+            }
+        }
+    }
+
     private void TryEvaluateAll()
     {
         foreach (var eclass in _allEclasses)
@@ -74,7 +76,7 @@ internal sealed class EGraphCostEvaluator
         Cost? cost = null;
         foreach (var enode in eclass.Nodes)
         {
-            var newCost = Visit(enode);
+            var newCost = Visit(enode, eclass.CheckedType);
             if (newCost != null
                 && (cost == null || newCost < cost))
             {
@@ -85,7 +87,7 @@ internal sealed class EGraphCostEvaluator
         return UpdateCost(eclass, cost);
     }
 
-    private Cost? Visit(ENode enode)
+    private Cost? Visit(ENode enode, IRType returnType)
     {
         return enode.Expr switch
         {
@@ -93,11 +95,13 @@ internal sealed class EGraphCostEvaluator
             TensorConst con => Visit(enode, con),
             TupleConst con => Visit(enode, con),
             Function func => Visit(enode, func),
-            Call call => Visit(enode, call),
+            Call call => Visit(enode, call, returnType),
             IR.Tuple tuple => Visit(enode, tuple),
             Op op => Visit(enode, op),
+            If @if => Visit(enode, @if),
             Marker marker => Visit(enode, marker),
             None none => Visit(enode, none),
+            BaseFunction baseFunction => Visit(enode, baseFunction),
             _ => throw new ArgumentException("Unsupported expression type."),
         };
     }
@@ -132,17 +136,22 @@ internal sealed class EGraphCostEvaluator
         return Visit(enode, costs => costs.Sum());
     }
 
+    private Cost? Visit(ENode enode, If @if)
+    {
+        return Visit(enode, cost => cost[1] + cost[2]);
+    }
+
     private Cost? Visit(ENode enode, Marker marker)
     {
-        return Visit(enode, costs => Cost.Zero);
+        return Visit(enode, costs => costs[0]);
     }
 
-    private Cost? Visit(ENode enode, None marker)
+    private Cost? Visit(ENode enode, None none)
     {
         return Visit(enode, costs => Cost.Zero);
     }
 
-    private Cost? Visit(ENode enode, Call call)
+    private Cost? Visit(ENode enode, Call call, IRType returnType)
     {
         return Visit(enode, costs =>
         {
@@ -152,13 +161,13 @@ internal sealed class EGraphCostEvaluator
                 Cost? newCost;
                 if (targetEnode.Expr is Op op)
                 {
-                    var context = new EGraphOpCostEvaluateContext(call.CheckedType, call.Parameters.Select(x => x.CheckedType).ToArray());
+                    var context = new EGraphOpCostEvaluateContext(returnType, enode.Children.Skip(1).Select(x => x.CheckedType).ToArray(), enode.Children.Skip(1).ToArray());
                     newCost = CompilerServices.EvaluateOpCost(op, context);
                 }
                 else
                 {
-                    Debug.Assert(targetEnode.Expr is Function);
-                    newCost = Visit(targetEnode.Children[0]);
+                    // Trace.Assert(targetEnode.Expr is Function);
+                    newCost = Visit(targetEnode, returnType);
                 }
 
                 if (cost == null || (newCost != null && newCost < cost))
@@ -169,6 +178,11 @@ internal sealed class EGraphCostEvaluator
 
             return UpdateCost(enode, cost == null ? null : cost + costs.Sum());
         });
+    }
+
+    private Cost? Visit(ENode enode, BaseFunction baseFunction)
+    {
+        return VisitLeaf(enode, () => _baseFuncCostEvaluator?.VisitLeaf(baseFunction) ?? Cost.Zero);
     }
 
     private Cost? UpdateCost(ENode enode, Cost? cost)
@@ -266,11 +280,20 @@ internal sealed class EGraphCostEvaluator
     {
         private readonly IRType? _returnType;
         private readonly IRType?[] _argumentTypes;
+        private readonly EClass[] _arguments;
 
-        public EGraphOpCostEvaluateContext(IRType? returnType, IRType?[] argumentTypes)
+        public EGraphOpCostEvaluateContext(IRType? returnType, IRType?[] argumentTypes, EClass[] arguments)
         {
             _returnType = returnType;
             _argumentTypes = argumentTypes;
+            _arguments = arguments;
+        }
+
+        public T GetArgument<T>(Op op, ParameterInfo parameter)
+          where T : BaseFunction
+        {
+            System.Diagnostics.Trace.Assert(_arguments[parameter.Index].Nodes.Count == 1);
+            return (T)_arguments[parameter.Index].Nodes[0].Expr;
         }
 
         public T GetArgumentType<T>(Op op, ParameterInfo parameter)

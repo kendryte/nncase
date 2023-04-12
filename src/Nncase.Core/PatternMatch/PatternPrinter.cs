@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -43,9 +43,6 @@ public static class PatternPrinter
     /// <summary>
     /// dump the pattern to file.
     /// </summary>
-    /// <param name="pattern"></param>
-    /// <param name="name"></param>
-    /// <param name="dumpPath"></param>
     public static void DumpAsIL(this IPattern pattern, string name, string dumpPath)
     {
         Directory.CreateDirectory(dumpPath);
@@ -58,8 +55,8 @@ public static class PatternPrinter
     {
         private readonly TextWriter _textWriter;
         private readonly Dictionary<IPattern, string> _names = new();
-        private int _localId = 0;
-        private int _identLevel = 0;
+        private int _localId;
+        private int _identLevel;
 
         public ILDumpVisitor(TextWriter textWriter)
         {
@@ -75,7 +72,7 @@ public static class PatternPrinter
             }
 
             var target = Visit(pattern.Target);
-            var args = pattern.Parameters.Select(Visit).ToArray();
+            var args = pattern.Arguments.Select(Visit).ToArray();
             name = AllocateTempVar(pattern);
             Ident().Write($"{name} = {target}({string.Join(", ", args)})");
             AppendType(pattern.TypePattern);
@@ -228,7 +225,7 @@ public static class PatternPrinter
         }
 
         /// <inheritdoc/>
-        public override string VisitType(TypePattern pattern) => pattern.Reason;
+        public override string VisitType(TypePattern? pattern) => pattern?.Reason ?? string.Empty;
 
         private string AllocateTempVar(IPattern pattern)
         {

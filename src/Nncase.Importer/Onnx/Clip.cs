@@ -1,10 +1,10 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using Nncase.IR;
 using Onnx;
-using F = Nncase.IR.F;
 using static Nncase.IR.F.Tensors;
+using F = Nncase.IR.F;
 
 namespace Nncase.Importer
 {
@@ -28,16 +28,18 @@ namespace Nncase.Importer
             var input = GetInputExpr(op, 0);
             var min = GetOptionInputExpr(op, 1).Match(
                 min =>
-            {
-                min.InferenceType();
-                return min.CheckedShape.IsScalar ? min : Squeeze(min, new[] { 0 });
-            }, Cast(float.MinValue, DataTypes.Float32));
+                {
+                    min.InferenceType();
+                    return min.CheckedShape.IsScalar ? min : Squeeze(min, new[] { 0 });
+                },
+                Cast(float.MinValue, DataTypes.Float32));
             var max = GetOptionInputExpr(op, 2).Match(
                 max =>
-                {
-                    max.InferenceType();
-                    return max.CheckedShape.IsScalar ? max : Squeeze(max, new[] { 0 });
-                }, Cast(float.MaxValue, DataTypes.Float32));
+                    {
+                        max.InferenceType();
+                        return max.CheckedShape.IsScalar ? max : Squeeze(max, new[] { 0 });
+                    },
+                Cast(float.MaxValue, DataTypes.Float32));
             return F.Math.Clamp(input, min, max);
         }
     }

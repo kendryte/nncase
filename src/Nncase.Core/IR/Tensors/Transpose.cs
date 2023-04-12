@@ -10,7 +10,7 @@ namespace Nncase.IR.Tensors;
 /// Gets input.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Transpose() : Op
+public sealed partial class Transpose : Op
 {
     /// <summary>
     /// Gets input.
@@ -21,5 +21,4 @@ public sealed record Transpose() : Op
     /// Gets perm.
     /// </summary>
     public static readonly ParameterInfo Perm = new(typeof(Transpose), 1, "perm", HasRank(1) & IsIntegral());
-
 }

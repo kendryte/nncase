@@ -78,6 +78,7 @@ values = [
     [TensorProto.FLOAT, 1],
 ]
 
+
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('value', values)
 def test_constantofshape(in_shape, value, request):

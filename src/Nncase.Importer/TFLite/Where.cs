@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -16,9 +16,9 @@ namespace Nncase.Importer.TFLite
             var cond = GetInputExprs(op, 0);
             return op.InputsLength switch
             {
-                1 => Where(cond, new float[] { }, new float[] { }),
-                3 => Where(cond, GetInputExprs(op, 1), GetInputExprs(op, 2)),
-                _ => throw new NotImplementedException("Not Impl for where which has 2 input")
+                1 => Where(cond, Array.Empty<float>(), Array.Empty<float>(), true),
+                3 => Where(cond, GetInputExprs(op, 1), GetInputExprs(op, 2), true),
+                _ => throw new NotImplementedException("Not Impl for where which has 2 input"),
             };
         }
     }

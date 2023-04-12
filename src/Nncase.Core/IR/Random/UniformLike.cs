@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using Nncase.IR.Tensors;
@@ -11,7 +11,7 @@ namespace Nncase.IR.Random;
 /// Uniform like expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record UniformLike(DataType Type) : Op
+public sealed partial class UniformLike : Op
 {
     /// <summary>
     /// Gets input.
@@ -32,4 +32,9 @@ public sealed record UniformLike(DataType Type) : Op
     /// Gets seed.
     /// </summary>
     public static readonly ParameterInfo Seed = new(typeof(UniformLike), 3, "seed", IsFloatScalar());
+
+    public DataType Type { get; }
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => Type.GetCSharpName();
 }

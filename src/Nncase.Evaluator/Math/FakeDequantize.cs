@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -30,7 +30,7 @@ public class FakeDequantizeEvaluator : IEvaluator<FakeDequantize>, ITypeInferenc
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, FakeDequantize target)
+    public Cost Visit(ICostEvaluateContext context, FakeDequantize target)
     {
         var inputType = context.GetArgumentType<TensorType>(target, FakeDequantize.Input);
         var outputType = context.GetReturnType<TensorType>();

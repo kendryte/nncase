@@ -15,7 +15,6 @@
 #pragma once
 #include <nncase/runtime/k210/compiler_defs.h>
 
-namespace nncase::ir::k210
-{
+namespace nncase::ir::k210 {
 NNCASE_MODULES_K210_API void register_k210_evaluators();
 }

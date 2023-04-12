@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -31,8 +31,16 @@ public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICos
         var groups = context.GetArgumentValueAsScalar<long>(conv, Conv2D.Groups);
         var fusedClamp = context.GetArgumentValueAsArray<float>(conv, Conv2D.FusedClamp);
         var kernelShape = weights.Shape;
-        var result = OrtKI.Conv(input, weights, bias, "NOTSET", dilation, groups,
-            new long[] { kernelShape[2], kernelShape[3] }, ToOnnxPadFormat(pad), stride);
+        var result = OrtKI.Conv(
+            input,
+            weights,
+            bias,
+            "NOTSET",
+            dilation,
+            groups,
+            new long[] { kernelShape[2], kernelShape[3] },
+            ToOnnxPadFormat(pad),
+            stride);
         return OrtKI.Clip(result, fusedClamp[0], fusedClamp[1]).ToValue();
     }
 
@@ -45,26 +53,21 @@ public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICos
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, Conv2D target)
+    public Cost Visit(ICostEvaluateContext context, Conv2D target)
     {
         var inputType = context.GetArgumentType<TensorType>(target, Conv2D.Input);
         var weightsType = context.GetArgumentType<TensorType>(target, Conv2D.Weights);
         var biasType = context.GetArgumentType<TensorType>(target, Conv2D.Bias);
-        var weightsShape = context.GetArgumentType<TensorType>(target, Conv2D.Weights).Shape;
         var outputType = context.GetReturnType<TensorType>();
 
-        if (weightsShape.IsFixed)
+        var weightsShape = weightsType.Shape;
+        var macPerElement = (2 * weightsShape[1] * weightsShape[2] * weightsShape[3]) - 1;
+        return new()
         {
-            var macPerElement = weightsShape[1] * weightsShape[2] * weightsShape[3];
-            return new()
-            {
-                [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(weightsType) + CostUtility.GetMemoryAccess(biasType),
-                [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
-                [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, macPerElement.FixedValue * 2),
-            };
-        }
-
-        return null;
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(weightsType) + CostUtility.GetMemoryAccess(biasType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, macPerElement.FixedValue),
+        };
     }
 
     private IRType Visit(ITypeInferenceContext context, Conv2D target, TensorType input, TensorType weights)

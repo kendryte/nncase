@@ -9,6 +9,8 @@ if ((NOT BUILDING_RUNTIME) OR ENABLE_VULKAN_RUNTIME)
 endif ()
 
 if (NOT BUILDING_RUNTIME)
+    find_package(absl REQUIRED)
+    find_package(nethost REQUIRED)
     find_package(fmt REQUIRED)
     find_package(magic_enum REQUIRED)
     find_package(spdlog REQUIRED)

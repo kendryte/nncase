@@ -1,71 +1,148 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
-
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using Nncase.IR;
+using Nncase.Utilities;
 
 namespace Nncase.TIR;
 
+/// <summary>
+/// the buffer view interface.
+/// </summary>
+public interface IBufferView<T>
+  where T : class
+{
+    /// <summary>
+    /// Gets the parent.
+    /// </summary>
+    public T Parent { get; init; }
+
+    /// <summary>
+    /// Gets the root parent.
+    /// </summary>
+    public T RootParent { get; init; }
+
+    /// <summary>
+    /// Gets the select slice ranges.
+    /// </summary>
+    public ReadOnlySpan<SelectedRange> SelectedRanges { get; }
+
+    /// <summary>
+    /// Gets get current stride.
+    /// </summary>
+    public ReadOnlySpan<int> Stride { get; }
+
+    /// <summary>
+    /// Gets the shape of this buffer view.
+    /// </summary>
+    public ReadOnlySpan<int> Dimensions { get; }
+
+    /// <summary>
+    /// Gets get the DType.
+    /// </summary>
+    public DataType DType { get; init; }
+
+    /// <summary>
+    /// Gets a value indicating whether check if the buffer is sliced.
+    /// </summary>
+    public bool IsSubView { get; init; }
+
+    /// <summary>
+    /// support slice like the normal array.
+    /// </summary>
+    /// <param name="segments">the slice info.</param>
+    /// <returns>self sub buffer.</returns>
+    public T this[SegmentND segments] { get; }
+
+    /// <summary>
+    /// support slice like the normal array.
+    /// </summary>
+    /// <param name="segments">the slice info.</param>
+    /// <returns> self sub buffer. </returns>
+    public T this[params Segment1D[] segments] { get; }
+}
 
 /// <summary>
-/// the padding
+/// the padding.
 /// </summary>
-/// <param name="before"></param>
-/// <param name="After"></param>
-/// <param name="Interior"></param>
-public record Padding(int before, int After, int Interior = 0)
+public record Padding(int Before, int After, int Interior = 0)
 {
     /// <summary>
     /// get left right padding sum.
     /// </summary>
-    /// <returns></returns>
-    public int sum() { return before + After; }
+    public int Sum()
+    {
+        return Before + After;
+    }
 
     /// <summary>
     /// zero pad.
     /// </summary>
-    /// <returns></returns>
-    public static Padding Zero() { return new(0, 0, 0); }
+    public static Padding Zero()
+    {
+        return new(0, 0, 0);
+    }
 }
 
 public record Segment1D
 {
-    public System.Range Range;
-    public Padding Padding;
-    public int Start => Range.Start.Value;
-    public int End => Range.End.Value;
-    public int Index;
-    public int Length
-    {
-        get
-        {
-            if (Range.Equals(System.Range.All))
-                throw new InvalidOperationException("Range.Equals(Range.All)");
-            return Range.End.Value - Range.Start.Value;
-        }
-    }
-
     public Segment1D(System.Range range, Padding padding, int index = 0)
     {
         if (range.Start.IsFromEnd)
+        {
             throw new NotSupportedException("The Negative Start Slice");
+        }
+
         if (range.End.IsFromEnd && !range.Equals(System.Range.All))
+        {
             throw new NotSupportedException("The Negative Slice For The Tensor.");
+        }
+
         Range = range;
         Padding = padding;
         Index = index;
     }
 
+    public System.Range Range { get; set; }
+
+    public Padding Padding { get; set; }
+
+    public int Index { get; set; }
+
+    public int Start => Range.Start.Value;
+
+    public int End => Range.End.Value;
+
+    public int Length
+    {
+        get
+        {
+            if (Range.Equals(System.Range.All))
+            {
+                throw new InvalidOperationException("Range.Equals(Range.All)");
+            }
+
+            return Range.End.Value - Range.Start.Value;
+        }
+    }
+
+    public static implicit operator Segment1D(System.Range range)
+    {
+        return new(range, Padding.Zero());
+    }
+
     public static Segment1D operator /(Segment1D seg, int scale)
     {
         if (seg.Range.Equals(System.Range.All))
-            throw new ArgumentOutOfRangeException("The All Slice Can't Be Divide!");
+        {
+            throw new ArgumentOutOfRangeException(nameof(seg), "The All Slice Can't Be Divide!");
+        }
+
         return new(new(seg.Range.Start.Value / scale, seg.Range.End.Value / scale), seg.Padding);
     }
 
@@ -74,33 +151,27 @@ public record Segment1D
         return new(new(seg.Range.Start.Value * scale, seg.Range.End.Value * scale), seg.Padding);
     }
 
+    public static Segment1D operator +(Segment1D lhs, Segment1D rhs)
+    {
+        var min_start = Math.Min(lhs.Start, rhs.Start);
+        var max_end = Math.Max(lhs.End, rhs.End);
+        return new Segment1D(min_start..max_end, Padding.Zero());
+    }
+
     public override string ToString()
     {
         return $"{Range}";
-    }
-
-    public static implicit operator Segment1D(System.Range range)
-    {
-        return new(range, Padding.Zero());
     }
 }
 
 public class SegmentND : IEnumerable<Segment1D>, IReadOnlyList<Segment1D>
 {
+    private readonly Segment1D[] _segments;
 
-    readonly Segment1D[] _segments;
-    public Padding PadH => _segments[2].Padding;
-    public Padding PadW => _segments[3].Padding;
-
-    public ReadOnlySpan<Segment1D> Segments => _segments;
-
-    public Segment1D this[int index]
+    public SegmentND(IEnumerable<Segment1D> segments)
+        : this(segments.ToArray())
     {
-        get => _segments[index];
-        set => _segments[index] = value;
     }
-
-    public SegmentND(IEnumerable<Segment1D> segments) : this(segments.ToArray()) { }
 
     public SegmentND(ReadOnlySpan<Segment1D> segments)
     {
@@ -108,21 +179,54 @@ public class SegmentND : IEnumerable<Segment1D>, IReadOnlyList<Segment1D>
         segments.CopyTo(_segments);
     }
 
-    public SegmentND(params Segment1D[] segments) : this(segments.AsSpan())
+    public SegmentND(params Segment1D[] segments)
+        : this(segments.AsSpan())
     {
     }
 
+    public Padding PadH => _segments[2].Padding;
+
+    public Padding PadW => _segments[3].Padding;
+
+    public ReadOnlySpan<Segment1D> Segments => _segments;
+
     /// <summary>
-    /// todo remove it
+    /// Gets todo remove it.
     /// </summary>
-    public int shape_size => _segments.Aggregate(1, (acc, seg) => acc * seg.Length);
+    public int Shape_size => _segments.Aggregate(1, (acc, seg) => acc * seg.Length);
 
     public int Count => ((IReadOnlyCollection<Segment1D>)_segments).Count;
+
+    public Segment1D this[int index]
+    {
+        get => _segments[index];
+        set => _segments[index] = value;
+    }
+
+    public static bool operator ==(SegmentND lhs, SegmentND rhs)
+    {
+        return lhs.Equals(rhs);
+    }
+
+    public static bool operator !=(SegmentND lhs, SegmentND rhs)
+    {
+        return !(lhs == rhs);
+    }
+
+    public static SegmentND operator +(SegmentND lhs, SegmentND rhs)
+    {
+        return new(lhs[0] + rhs[0], lhs[1] + rhs[1], lhs[2] + rhs[2], lhs[3] + rhs[3]);
+    }
 
     public override bool Equals(object? obj)
     {
         return obj is SegmentND segment &&
                StructuralComparisons.StructuralEqualityComparer.Equals(_segments, segment._segments);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(StructuralComparisons.StructuralEqualityComparer.GetHashCode(_segments), PadH, PadW);
     }
 
     public IEnumerator<Segment1D> GetEnumerator()
@@ -142,89 +246,47 @@ public class SegmentND : IEnumerable<Segment1D>, IReadOnlyList<Segment1D>
     }
 }
 
-
 public record SelectedRange(int Start, int End, Padding Padding)
 {
     public SelectedRange Slice(Segment1D segment)
     {
         if (segment.Range.Equals(System.Range.All))
+        {
             return this with { };
+        }
+
         if (!(segment.Start >= Start && segment.End <= End))
+        {
             throw new NotSupportedException("!(segment.Start >= Start && segment.End <= End)");
+        }
+
         return new(segment.Start, segment.End, segment.Padding);
     }
 }
 
 /// <summary>
-/// the buffer view interface
+/// buffer.
 /// </summary>
-/// <typeparam name="T"></typeparam>
-public interface IBufferView<T>
-  where T : class
+public abstract class Buffer : Expr
 {
-    /// <summary>
-    /// the parent.
-    /// </summary>
-    public T Parent { get; init; }
+    public Buffer(string name, DataType elemType, Schedule.MemoryLocation memoryLocation, Expr[] operands)
+        : base(operands.ToArray())
+    {
+        Name = name;
+        ElemType = elemType;
+        MemLocation = memoryLocation;
+    }
+
+    public string Name { get; }
+
+    public DataType ElemType { get; }
+
+    public Schedule.MemoryLocation MemLocation { get; }
 
     /// <summary>
-    /// the root parent.
+    /// Gets if this buffer from the constant !.
     /// </summary>
-    public T RootParent { get; init; }
-
-    /// <summary>
-    /// the select slice ranges.
-    /// </summary>
-    public ReadOnlySpan<SelectedRange> SelectedRanges { get; }
-
-    /// <summary>
-    /// get current stride
-    /// </summary>
-    public ReadOnlySpan<int> Stride { get; }
-
-    /// <summary>
-    /// the shape of this buffer view
-    /// </summary>
-    public ReadOnlySpan<int> Dimensions { get; }
-
-    /// <summary>
-    /// get the DType
-    /// </summary>
-    public DataType DType { get; init; }
-
-    /// <summary>
-    /// check if the buffer is sliced
-    /// </summary>
-    public bool IsSubView { get; init; }
-
-    /// <summary>
-    /// support slice like the normal array.
-    /// </summary>
-    /// <param name="segments">the slice info.</param>
-    /// <returns>self sub buffer.</returns>
-    public T this[SegmentND segments] { get; }
-
-
-    /// <summary>
-    /// support slice like the normal array.
-    /// </summary>
-    /// <param name="segments">the slice info.</param>
-    /// <returns> self sub buffer. </returns>
-    public T this[params Segment1D[] segments] { get; }
-}
-
-/// <summary>
-/// buffer
-/// </summary>
-/// <param name="Name"></param>
-/// <param name="ElemType"></param>
-/// <param name="MemLocation"></param>
-public abstract record Buffer(string Name, DataType ElemType, Schedule.MemoryLocation MemLocation) : Expr
-{
-    /// <summary>
-    /// if this buffer from the constant !
-    /// </summary>
-    public TensorConst? Const;
+    public TensorConst? Const { get; init; }
 
     /// <summary>
     /// Gets rank of the tensor: number of dimensions.
@@ -232,28 +294,46 @@ public abstract record Buffer(string Name, DataType ElemType, Schedule.MemoryLoc
     public abstract int Rank { get; }
 
     /// <summary>
-    /// the strides
+    /// Gets the strides.
     /// <remarks>
     /// This Strides is by elements not by bytes!
     /// </remarks>
     /// </summary>
-    public abstract IRArray<Expr> Strides { get; }
+    public abstract ReadOnlySpan<Expr> Strides { get; }
 
     /// <summary>
-    /// the shape
+    /// Gets the shape.
     /// </summary>
-    public abstract IRArray<Expr> Dimensions { get; }
+    public abstract ReadOnlySpan<Expr> Dimensions { get; }
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj)
+    {
+        if (obj is not Buffer other)
+        {
+            return false;
+        }
+
+        if (Const is not null && !Const.Equals(other.Const))
+        {
+            return false;
+        }
+
+        return string.Equals(Name, other.Name, StringComparison.Ordinal) &&
+                ElemType.Equals(other.ElemType) &&
+                MemLocation.Equals(other.MemLocation) &&
+                Rank.Equals(other.Rank) &&
+                base.Equals(obj);
+    }
 }
 
 /// <summary>
-/// the logical buffer
+/// the logical buffer.
 /// </summary>
-/// <param name="Name"></param>
-/// <param name="ElemType"></param>
-/// <param name="MemLocation"></param>
-public sealed record LogicalBuffer(string Name, DataType ElemType, Schedule.MemoryLocation MemLocation) : Buffer(Name, ElemType, MemLocation)
+public sealed class LogicalBuffer : Buffer
 {
     /// <summary>
+    /// Initializes a new instance of the <see cref="LogicalBuffer"/> class.
     /// create from the IRType.
     /// </summary>
     /// <param name="name">the name.</param>
@@ -261,53 +341,48 @@ public sealed record LogicalBuffer(string Name, DataType ElemType, Schedule.Memo
     /// <param name="elemType">prim type.</param>
     /// <param name="dimensions">the shape.</param>
     /// <param name="strides">the strides.</param>
-    public LogicalBuffer(string name, DataType elemType, Schedule.MemoryLocation location, IRArray<Expr> dimensions, IRArray<Expr> strides) :
-      this(name, elemType, location)
+    public LogicalBuffer(string name, DataType elemType, Schedule.MemoryLocation location, ReadOnlySpan<Expr> dimensions, ReadOnlySpan<Expr> strides)
+        : base(name, elemType, location, ArrayUtility.Concat(dimensions, strides))
     {
-        Dimensions = dimensions;
-        Strides = strides;
+        Rank = dimensions.Length;
     }
 
     /// <summary>
-    /// <see cref="LogicalBuffer"/>
+    /// Initializes a new instance of the <see cref="LogicalBuffer"/> class.
+    /// <see cref="LogicalBuffer"/>.
     /// </summary>
-    /// <param name="name"></param>
-    /// <param name="location"></param>
-    /// <param name="tensor"></param>
-    public LogicalBuffer(string name, Schedule.MemoryLocation location, TensorConst tensor) : this(name, tensor.Value.ElementType, location,
-     ImmutableArray.Create<Expr>(tensor.Value.Dimensions), ImmutableArray.Create<Expr>(tensor.Value.Strides))
+    public LogicalBuffer(string name, Schedule.MemoryLocation location, TensorConst tensor)
+        : this(name, tensor.Value.ElementType, location, ArrayUtility.ToExprArray(tensor.Value.Dimensions), ArrayUtility.ToExprArray(tensor.Value.Strides))
     {
         Const = tensor;
     }
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="LogicalBuffer"/> class.
     /// <seealso cref="LogicalBuffer"/>
     /// </summary>
-    /// <param name="name"></param>
-    /// <param name="location"></param>
-    /// <param name="elemType"></param>
-    /// <param name="dimensions"></param>
-    public LogicalBuffer(string name, DataType elemType, Schedule.MemoryLocation location, IRArray<Expr> dimensions) :
-      this(name, elemType, location, dimensions, TensorUtilities.GetStrides(dimensions).ToImmutableArray())
-    { }
+    public LogicalBuffer(string name, DataType elemType, Schedule.MemoryLocation location, ReadOnlySpan<Expr> dimensions)
+        : this(name, elemType, location, dimensions, TensorUtilities.GetStrides(dimensions))
+    {
+    }
 
     /// <summary>
-    /// get the total length.
+    /// Gets get the total length.
     /// </summary>
     public Expr Length => TensorUtilities.GetProduct(Dimensions);
 
     /// <summary>
-    /// the strides
+    /// Gets the shape.
     /// </summary>
-    public override IRArray<Expr> Strides { get; }
+    public override ReadOnlySpan<Expr> Dimensions => Operands[0..Rank];
 
     /// <summary>
-    /// the shape
+    /// Gets the strides.
     /// </summary>
-    public override IRArray<Expr> Dimensions { get; }
+    public override ReadOnlySpan<Expr> Strides => Operands[Rank..];
 
     /// <inheritdoc/>
-    public override int Rank => Dimensions.Count;
+    public override int Rank { get; }
 
     /// <inheritdoc/>
     public override string ToString()
@@ -316,102 +391,82 @@ public sealed record LogicalBuffer(string Name, DataType ElemType, Schedule.Memo
     }
 
     /// <inheritdoc/>
-    protected override bool PrintMembers(StringBuilder builder)
-    {
-        builder.Append($"LogicalBuffer({Name}, {ElemType}, {nameof(MemLocation)})");
-        return true;
-    }
+    public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
+        => functor.VisitLogicalBuffer(this, context);
+
+    public LogicalBuffer With(string? name = null, DataType? elemType = null, Schedule.MemoryLocation? location = null, Expr[]? dimensions = null, Expr[]? strides = null)
+        => new LogicalBuffer(name ?? Name, elemType ?? ElemType, location ?? MemLocation, dimensions ?? Dimensions, strides ?? Strides) { Const = Const };
 }
 
-
 /// <summary>
-/// the physicall buffer
+/// the physical buffer.
 /// </summary>
-/// <param name="Name"></param>
-/// <param name="ElemType"></param>
-/// <param name="MemLocation"></param>
-public sealed record PhysicalBuffer(string Name, DataType ElemType, Schedule.MemoryLocation MemLocation) : Buffer(Name, ElemType, MemLocation)
+public sealed class PhysicalBuffer : Buffer
 {
-    /// <summary>
-    /// get fixed dimensions
-    /// </summary>
-    public int[] FixedDimensions = Array.Empty<int>();
+    private readonly int[] _fixedDimensions;
+    private readonly int[] _fixedStrides;
 
     /// <summary>
-    /// get fixed strides
+    /// Initializes a new instance of the <see cref="PhysicalBuffer"/> class.
+    /// ctor for physical buffer.
     /// </summary>
-    public int[] FixedStrides = Array.Empty<int>();
-
-    /// <summary>
-    /// start.
-    /// </summary>
-    public int Start;
-
-    /// <summary>
-    /// total size in bytes
-    /// </summary>
-    public int Size;
-
-    /// <summary>
-    /// ctor for physical buffer
-    /// </summary>
-    /// <param name="name"></param>
-    /// <param name="location"></param>
-    /// <param name="elemType"></param>
-    /// <param name="dimensions"></param>
-    /// <param name="stirdes"></param>
-    /// <param name="start"></param>
-    /// <param name="size"></param>
-    public PhysicalBuffer(string name, DataType elemType, Schedule.MemoryLocation location, IEnumerable<int> dimensions, IEnumerable<int> stirdes, int start, int size) :
-      this(name, elemType, location)
+    public PhysicalBuffer(string name, DataType elemType, Schedule.MemoryLocation location, ReadOnlySpan<int> dimensions, ReadOnlySpan<int> strides, int start, int size)
+        : base(name, elemType, location, Array.Empty<Expr>())
     {
         Start = start;
         Size = size;
-        FixedDimensions = dimensions.ToArray();
-        FixedStrides = stirdes.ToArray();
+        _fixedDimensions = dimensions.ToArray();
+        _fixedStrides = strides.ToArray();
     }
 
     /// <summary>
-    /// <see cref="PhysicalBuffer"/>
+    /// Initializes a new instance of the <see cref="PhysicalBuffer"/> class.
+    /// <see cref="PhysicalBuffer"/>.
     /// </summary>
-    /// <param name="name"></param>
-    /// <param name="elemType"></param>
-    /// <param name="location"></param>
-    /// <param name="dimensions"></param>
-    /// <param name="start"></param>
-    /// <param name="size"></param>
-    public PhysicalBuffer(string name, DataType elemType, Schedule.MemoryLocation location, IEnumerable<int> dimensions, int start, int size) :
-      this(name, elemType, location, dimensions, TensorUtilities.GetStrides(dimensions.ToArray()), start, size)
+    public PhysicalBuffer(string name, DataType elemType, Schedule.MemoryLocation location, ReadOnlySpan<int> dimensions, int start, int size)
+        : this(name, elemType, location, dimensions, TensorUtilities.GetStrides(dimensions), start, size)
     {
     }
 
     /// <summary>
-    /// <see cref="PhysicalBuffer"/>
+    /// Initializes a new instance of the <see cref="PhysicalBuffer"/> class.
+    /// <see cref="PhysicalBuffer"/>.
     /// </summary>
-    /// <param name="name"></param>
-    /// <param name="location"></param>
-    /// <param name="tensor"></param>
-    /// <param name="start"></param>
-    /// <param name="size"></param>
-    public PhysicalBuffer(string name, Schedule.MemoryLocation location, TensorConst tensor, int start, int size) : this(name, tensor.Value.ElementType, location, tensor.Value.Dimensions.ToArray(), tensor.Value.Strides.ToArray(), start, size)
+    public PhysicalBuffer(string name, Schedule.MemoryLocation location, TensorConst tensor, int start, int size)
+        : this(name, tensor.Value.ElementType, location, tensor.Value.Dimensions, tensor.Value.Strides, start, size)
     {
         Const = tensor;
     }
 
     /// <summary>
+    /// Gets fixed dimensions.
+    /// </summary>
+    public ReadOnlySpan<int> FixedDimensions => _fixedDimensions;
+
+    /// <summary>
+    /// Gets fixed strides.
+    /// </summary>
+    public ReadOnlySpan<int> FixedStrides => _fixedStrides;
+
+    /// <summary>
+    /// Gets or sets start.
+    /// </summary>
+    public int Start { get; set; }
+
+    /// <summary>
+    /// Gets total size in bytes.
+    /// </summary>
+    public int Size { get; init; }
+
+    /// <summary>
     /// Gets dimensions.
     /// </summary>
-    public override IRArray<Expr> Dimensions => FixedDimensions.Length == 0 ?
-      throw new ArgumentOutOfRangeException() :
-      new(FixedDimensions.Select(i => (Expr)i));
-
+    public override ReadOnlySpan<Expr> Dimensions => ArrayUtility.ToExprArray(FixedDimensions);
 
     /// <summary>
     /// Gets strides.
     /// </summary>
-    public override IRArray<Expr> Strides => FixedStrides.Length == 0 ?
-      throw new ArgumentOutOfRangeException() :
-      new(FixedStrides.Select(i => (Expr)i));
+    public override ReadOnlySpan<Expr> Strides => ArrayUtility.ToExprArray(FixedStrides);
 
     /// <summary>
     /// Gets shape.
@@ -419,7 +474,7 @@ public sealed record PhysicalBuffer(string Name, DataType ElemType, Schedule.Mem
     public Shape Shape => new Shape(FixedDimensions);
 
     /// <inheritdoc/>
-    public override int Rank => FixedDimensions.Rank;
+    public override int Rank => FixedDimensions.Length;
 
     /// <inheritdoc/>
     public override string ToString()
@@ -428,9 +483,17 @@ public sealed record PhysicalBuffer(string Name, DataType ElemType, Schedule.Mem
     }
 
     /// <inheritdoc/>
-    protected override bool PrintMembers(StringBuilder builder)
+    public override bool Equals(object? obj)
     {
-        builder.Append($"PhysicalBuffer({Name}, {ElemType}, {nameof(MemLocation)})");
-        return true;
+        return base.Equals(obj) && obj is PhysicalBuffer other &&
+          FixedDimensions.SequenceEqual(other.FixedDimensions) &&
+          FixedStrides.SequenceEqual(other.FixedStrides);
     }
+
+    /// <inheritdoc/>
+    public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
+        => functor.VisitPhysicalBuffer(this, context);
+
+    public PhysicalBuffer With(string? name = null, DataType? elemType = null, Schedule.MemoryLocation? location = null, int[]? dimensions = null, int[]? strides = null, int? start = null, int? size = null)
+        => new PhysicalBuffer(name ?? Name, elemType ?? ElemType, location ?? MemLocation, dimensions ?? FixedDimensions, strides ?? FixedStrides, start ?? Start, size ?? Size) { Const = Const };
 }

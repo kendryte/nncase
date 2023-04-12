@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using Nncase.CostModel;
@@ -41,6 +41,7 @@ public class RangeEvaluator : IEvaluator<Range>, ITypeInferencer<Range>, ICostEv
                                        $"end:{end.CheckedDataType}," +
                                        $"step:{step.CheckedDataType}");
             }
+
             return new TensorType(
                 dType,
                 new Shape((beginValue.Value.ToScalar<int>() + endValue.Value.ToScalar<int>()) /
@@ -61,19 +62,20 @@ public class RangeEvaluator : IEvaluator<Range>, ITypeInferencer<Range>, ICostEv
             {
                 return new InvalidType("DataType is unknown");
             }
+
             return new TensorType(dt, new Shape(Dimension.Unknown));
         }
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, Range target)
+    public Cost Visit(ICostEvaluateContext context, Range target)
     {
         var ret = context.GetReturnType<TensorType>();
         return new()
         {
             [CostFactorNames.MemoryLoad] = 0,
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
-            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(ret)
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(ret),
         };
     }
 }

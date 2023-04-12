@@ -16,7 +16,7 @@ namespace Nncase.IR.Tensors;
 /// Split expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Split() : Op
+public sealed partial class Split : Op
 {
     /// <summary>
     /// Gets input.

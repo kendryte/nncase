@@ -1,51 +1,58 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
-using Autofac;
+using DryIoc;
+using Nncase.Hosting;
 
 namespace Nncase.Evaluator.NN;
 
 /// <summary>
 /// NN module.
 /// </summary>
-public class NNModule : Module
+internal class NNModule : IApplicationPart
 {
-    /// <inheritdoc/>
-    protected override void Load(ContainerBuilder builder)
+    public void ConfigureServices(IRegistrator registrator)
     {
         // Activation
-        builder.RegisterType<CeluEvaluator>().AsImplementedInterfaces();
-        builder.RegisterType<EluEvaluator>().AsImplementedInterfaces();
-        builder.RegisterType<HardSwishEvaluator>().AsImplementedInterfaces();
-        builder.RegisterType<LeakyReluEvaluator>().AsImplementedInterfaces();
-        builder.RegisterType<PReluEvaluator>().AsImplementedInterfaces();
-        builder.RegisterType<ReluEvaluator>().AsImplementedInterfaces();
-        builder.RegisterType<SeluEvaluator>().AsImplementedInterfaces();
-        builder.RegisterType<SigmoidEvaluator>().AsImplementedInterfaces();
-        builder.RegisterType<HardSigmoidEvaluator>().AsImplementedInterfaces();
+        registrator.RegisterManyInterface<CeluEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<EluEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<HardSwishEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<SwishEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<LeakyReluEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<PReluEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<ReluEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<Relu6Evaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<SeluEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<SigmoidEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<HardSigmoidEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<ErfEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<GeluEvaluator>(reuse: Reuse.Singleton);
 
         // Convolution
-        builder.RegisterType<Conv2DEvaluator>().AsImplementedInterfaces();
-        builder.RegisterType<Conv2DTransposeEvaluator>().AsImplementedInterfaces();
+        registrator.RegisterManyInterface<Conv2DEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<Conv2DTransposeEvaluator>(reuse: Reuse.Singleton);
 
         // Normalization
-        builder.RegisterType<BatchNormalizationEvaluator>().AsImplementedInterfaces();
-        builder.RegisterType<InstanceNormalizationEvaluator>().AsImplementedInterfaces();
-        builder.RegisterType<LRNEvaluator>().AsImplementedInterfaces();
+        registrator.RegisterManyInterface<L2NormalizationEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<LayerNormEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<BatchNormalizationEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<InstanceNormalizationEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<LpNormalizationEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<LRNEvaluator>(reuse: Reuse.Singleton);
 
         // ReduceWindow
-        builder.RegisterType<ReduceWindow2DEvaluator>().AsImplementedInterfaces();
+        registrator.RegisterManyInterface<ReduceWindow2DEvaluator>(reuse: Reuse.Singleton);
 
         // Soft*
-        builder.RegisterType<LogSoftmaxEvaluator>().AsImplementedInterfaces();
-        builder.RegisterType<SoftmaxEvaluator>().AsImplementedInterfaces();
-        builder.RegisterType<SoftplusEvaluator>().AsImplementedInterfaces();
-        builder.RegisterType<SoftsignEvaluator>().AsImplementedInterfaces();
+        registrator.RegisterManyInterface<LogSoftmaxEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<SoftmaxEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<SoftplusEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<SoftsignEvaluator>(reuse: Reuse.Singleton);
 
-        builder.RegisterType<BatchToSpaceEvaluator>().AsImplementedInterfaces();
-        builder.RegisterType<HardmaxEvaluator>().AsImplementedInterfaces();
-        builder.RegisterType<OneHotEvaluator>().AsImplementedInterfaces();
-        builder.RegisterType<PadEvaluator>().AsImplementedInterfaces();
-        builder.RegisterType<SpaceToBatchEvaluator>().AsImplementedInterfaces();
+        registrator.RegisterManyInterface<BatchToSpaceEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<HardmaxEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<OneHotEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<PadEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<SpaceToBatchEvaluator>(reuse: Reuse.Singleton);
     }
 }

@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -15,7 +15,7 @@ namespace Nncase.IR.NN;
 /// BatchToSpace expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record BatchToSpace() : Op
+public sealed partial class BatchToSpace : Op
 {
     /// <summary>
     /// Gets input.

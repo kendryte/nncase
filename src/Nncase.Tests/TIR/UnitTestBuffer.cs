@@ -1,3 +1,6 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Nncase.Evaluator;
@@ -6,7 +9,6 @@ using Nncase.TIR;
 using Xunit;
 
 namespace Nncase.Tests.TIRTest;
-
 
 public class UnitTestTBuffer
 {
@@ -39,7 +41,7 @@ public class UnitTestTBuffer
         //               DataTypes.Float32,
         //               strides: (n + 1, 1));
         // var aptr = Ab.AccessPtr(AccessMode.ReadWrite);
-        // Assert.Equal(aptr.Parameters[2].Evaluate(dict), (Ab.Strides[0] * m).Evaluate(dict));
+        // Assert.Equal(aptr.Arguments[2].Evaluate(dict), (Ab.Strides[0] * m).Evaluate(dict));
         // Assert.IsType<AccessPtr>(aptr.Target);
     }
 
@@ -62,7 +64,7 @@ public class UnitTestTBuffer
 
         // var aptr2 = Ab.AccessPtr(AccessMode.ReadWrite, offset: 100 + 100 + v);
 
-        // Testing.AssertExprEqual(aptr2.Parameters[1], v + 200);
+        // Testing.AssertExprEqual(aptr2.Arguments[1], v + 200);
     }
 
     // [Fact]
@@ -72,10 +74,10 @@ public class UnitTestTBuffer
     //     var n = T.SizeVar("n");
     //     var Ab = T.DeclBuffer((m, n), DataTypes.Float32);
     //     var aptr = Ab.AccessPtr(AccessMode.ReadWrite, offset: 100);
-    //     Testing.AssertExprEqual(aptr.Parameters[2], m * n - 100);
+    //     Testing.AssertExprEqual(aptr.Arguments[2], m * n - 100);
     //     var Bb = T.DeclBuffer((m, n), DataTypes.Float32, strides: (n + 1, 1));
     //     var bptr = Bb.AccessPtr(AccessMode.ReadWrite, offset: 100);
-    //     Testing.AssertExprEqual(bptr.Parameters[2], Bb.Strides[0] * m - 100);
+    //     Testing.AssertExprEqual(bptr.Arguments[2], Bb.Strides[0] * m - 100);
     // }
 
     // [Fact]
@@ -88,4 +90,3 @@ public class UnitTestTBuffer
     //     Testing.AssertExprEqual(load[Load.Index], 100 + ((2 * n) + 3));
     // }
 }
-

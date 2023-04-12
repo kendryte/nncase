@@ -17,41 +17,36 @@
 using namespace nncase::ir::transforms::k210;
 
 piecewise_regression::piecewise_regression(size_t segments_count)
-    : desired_segments_count_(segments_count)
-{
-}
+    : desired_segments_count_(segments_count) {}
 
-std::vector<segment> piecewise_regression::fit(std::vector<point> &points) const
-{
+std::vector<segment>
+piecewise_regression::fit(std::vector<point> &points) const {
     if (points.size() <= desired_segments_count_)
         throw std::invalid_argument("Insufficient points");
 
-    std::sort(points.begin(), points.end(), [](const point &a, const point &b) { return a.x < b.x; });
+    std::sort(points.begin(), points.end(),
+              [](const point &a, const point &b) { return a.x < b.x; });
 
     // 1. initialize segments
     std::vector<segment> segments;
     segments.reserve(points.size() - 1);
-    for (size_t i = 0; i < points.size() - 1; i++)
-    {
+    for (size_t i = 0; i < points.size() - 1; i++) {
         const auto &p0 = points[i];
         const auto &p1 = points[i + 1];
         assert(std::isfinite(p0.y) && std::isfinite(p1.y));
-        segments.push_back({ p0.x, p1.x, (p1.y - p0.y) / (p1.x - p0.x), p0.y });
+        segments.push_back({p0.x, p1.x, (p1.y - p0.y) / (p1.x - p0.x), p0.y});
     }
 
     // 2. combine sibling segments
-    while (segments.size() != desired_segments_count_)
-    {
+    while (segments.size() != desired_segments_count_) {
         // 2.1 find min slope difference
         float min_diff = std::numeric_limits<float>::max();
         size_t min_idx = -1;
-        for (size_t i = 0; i < segments.size() - 1; i++)
-        {
+        for (size_t i = 0; i < segments.size() - 1; i++) {
             const auto &s0 = segments[i];
             const auto &s1 = segments[i + 1];
             auto diff = std::abs(s0.slop - s1.slop);
-            if (diff < min_diff)
-            {
+            if (diff < min_diff) {
                 min_diff = diff;
                 min_idx = i;
             }

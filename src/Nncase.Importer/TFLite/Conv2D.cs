@@ -1,14 +1,27 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using Nncase.IR;
+using static Nncase.IR.F.Math;
+using static Nncase.IR.F.NN;
+using static Nncase.IR.F.Tensors;
 using F = Nncase.IR.F;
 
 namespace Nncase.Importer.TFLite
 {
     public partial class TFLiteImporter
     {
+        private static ValueRange<float> ToFloatClampRange(tflite.ActivationFunctionType func) => func switch
+        {
+            tflite.ActivationFunctionType.NONE => ValueRange<float>.Full,
+            tflite.ActivationFunctionType.RELU => (0f, float.PositiveInfinity),
+            tflite.ActivationFunctionType.RELU_N1_TO_1 => (-1f, 1f),
+            tflite.ActivationFunctionType.RELU6 => (0f, 6f),
+            _ => throw new NotSupportedException("Unsupported Activation:" + func),
+        };
+
         private Expr VisitConv2D(in tflite.Operator op)
         {
             var (input, weights) = GetInputExprs(op, 0, 1);
@@ -24,14 +37,84 @@ namespace Nncase.Importer.TFLite
             var dilationW = options.DilationWFactor;
             var padH = Util.GetWindowedPadding(inH, fH, strideH, dilationH, options.Padding == tflite.Padding.SAME);
             var padW = Util.GetWindowedPadding(inW, fW, strideW, dilationW, options.Padding == tflite.Padding.SAME);
-            var stride = Tensor.FromSpan<int>(new[] { strideH, strideW }, new[] { 2 });
-            var dilation = Tensor.FromSpan<int>(new[] { dilationH, dilationW }, new[] { 2 });
+            var stride = Tensor.From<int>(new[] { strideH, strideW }, new[] { 2 });
+            var dilation = Tensor.From<int>(new[] { dilationH, dilationW }, new[] { 2 });
             var padding = Util.ConcatPadding(padH, padW);
             var clamp = ToFloatClampRange(options.FusedActivationFunction);
-            return F.Tensors.NCHWToNHWC(
-                F.NN.Conv2D(input, weights, bias, stride, padding, dilation,
-                    PadMode.Constant, 1,
-                    new[]{clamp.Min, clamp.Max}));
+
+            var inputQuantParams = GetInputQuantParams(op, 0);
+            var weightsQuantParams = GetInputQuantParams(op, 1);
+            var biasQuantParams = GetInputQuantParams(op, 2);
+            var outputQuantParams = GetOutputQuantParams(op, 0);
+
+            if (inputQuantParams != null)
+            {
+                input = Dequantize(input, new QuantParam(inputQuantParams[0].ZeroPoint, inputQuantParams[0].Scale), DataTypes.Float32);
+            }
+
+            if (weightsQuantParams != null)
+            {
+                weights = Dequantize(weights, new QuantParam(weightsQuantParams[0].ZeroPoint, weightsQuantParams[0].Scale), DataTypes.Float32);
+            }
+
+            if (biasQuantParams != null)
+            {
+                bias = Dequantize(bias, new QuantParam(biasQuantParams[0].ZeroPoint, biasQuantParams[0].Scale), DataTypes.Float32);
+            }
+
+            if (outputQuantParams != null)
+            {
+                if (GetOutputTensor(op, 0).Type == tflite.TensorType.INT8)
+                {
+                    return F.Tensors.NCHWToNHWC(Quantize(
+                        F.NN.Conv2D(
+                            input,
+                            weights,
+                            bias,
+                            stride,
+                            padding,
+                            dilation,
+                            PadMode.Constant,
+                            1,
+                            new[] { clamp.Min, clamp.Max }),
+                        new QuantParam(outputQuantParams[0].ZeroPoint, outputQuantParams[0].Scale),
+                        DataTypes.Int8));
+                }
+                else if (GetOutputTensor(op, 0).Type == tflite.TensorType.UINT8)
+                {
+                    return F.Tensors.NCHWToNHWC(Quantize(
+                        F.NN.Conv2D(
+                            input,
+                            weights,
+                            bias,
+                            stride,
+                            padding,
+                            dilation,
+                            PadMode.Constant,
+                            1,
+                            new[] { clamp.Min, clamp.Max }),
+                        new QuantParam(outputQuantParams[0].ZeroPoint, outputQuantParams[0].Scale),
+                        DataTypes.UInt8));
+                }
+                else
+                {
+                    throw new NotSupportedException("Unsupported qat quant type");
+                }
+            }
+            else
+            {
+                return F.Tensors.NCHWToNHWC(
+                    F.NN.Conv2D(
+                        input,
+                        weights,
+                        bias,
+                        stride,
+                        padding,
+                        dilation,
+                        PadMode.Constant,
+                        1,
+                        new[] { clamp.Min, clamp.Max }));
+            }
         }
 
         private Expr VisitDepthwiseConv2D(in tflite.Operator op)
@@ -40,7 +123,7 @@ namespace Nncase.Importer.TFLite
             var bias = GetInputExprs(op, 2);
             input = F.Tensors.NHWCToNCHW(input);
             weights = F.Tensors.Transpose(weights, new[] { 3, 0, 1, 2 });
-            var s = GetTensorShape(GetInputTensor(op, 1));
+            _ = GetTensorShape(GetInputTensor(op, 1));
             var options = op.BuiltinOptionsAsDepthwiseConv2DOptions();
             var (inH, inW) = Util.GetHW(input);
             var (fH, fW) = Util.GetHW(weights);
@@ -50,8 +133,8 @@ namespace Nncase.Importer.TFLite
             var dilationW = options.DilationWFactor;
             var padH = Util.GetWindowedPadding(inH, fH, strideH, dilationH, options.Padding == tflite.Padding.SAME);
             var padW = Util.GetWindowedPadding(inW, fW, strideW, dilationW, options.Padding == tflite.Padding.SAME);
-            var stride = Tensor.FromSpan<int>(new[] { strideH, strideW }, new[] { 2 });
-            var dilation = Tensor.FromSpan<int>(new[] { dilationH, dilationW }, new[] { 2 });
+            var stride = Tensor.From<int>(new[] { strideH, strideW }, new[] { 2 });
+            var dilation = Tensor.From<int>(new[] { dilationH, dilationW }, new[] { 2 });
             var padding = Util.ConcatPadding(padH, padW);
             var depthMul = options.DepthMultiplier;
             if (depthMul != 1)
@@ -61,18 +144,18 @@ namespace Nncase.Importer.TFLite
             }
 
             var clamp = ToFloatClampRange(options.FusedActivationFunction);
-            return F.Tensors.NCHWToNHWC(
-                F.NN.Conv2D(input, weights, bias, stride, padding, dilation,
-                    PadMode.Constant, Util.ShapeIndex(weights, 0), new[] {clamp.Min, clamp.Max}));
-        }
 
-        private static ValueRange<float> ToFloatClampRange(tflite.ActivationFunctionType func) => func switch
-        {
-            tflite.ActivationFunctionType.NONE => ValueRange<float>.Full,
-            tflite.ActivationFunctionType.RELU => (0f, float.PositiveInfinity),
-            tflite.ActivationFunctionType.RELU_N1_TO_1 => (-1f, 1f),
-            tflite.ActivationFunctionType.RELU6 => (0f, 6f),
-            _ => throw new NotSupportedException("Unsupported Activation:" + func),
-        };
+            return F.Tensors.NCHWToNHWC(
+                F.NN.Conv2D(
+                    input,
+                    weights,
+                    bias,
+                    stride,
+                    padding,
+                    dilation,
+                    PadMode.Constant,
+                    Util.ShapeIndex(weights, 0),
+                    new[] { clamp.Min, clamp.Max }));
+        }
     }
 }

@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
-using Nncase.Transform;
+using Nncase.Passes;
 
 namespace Nncase.PatternMatch;
 
@@ -51,4 +51,13 @@ public interface IEGraphMatchProvider
     /// <param name="results">Match results.</param>
     /// <returns>Match success.</returns>
     bool TryMatchRoot(IEnumerable<ENode> enodes, IPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results);
+
+    /// <summary>
+    /// Match expr as egraph.
+    /// </summary>
+    /// <param name="expr">Expression.</param>
+    /// <param name="pattern">Pattern.</param>
+    /// <param name="results">Match results.</param>
+    /// <returns>Match success.</returns>
+    bool TryEMatchRoot(Expr expr, IPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results);
 }

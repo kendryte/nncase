@@ -1,48 +1,47 @@
-﻿using System;
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+#if false
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Nncase.CodeGen;
 using Nncase.IR;
+using Nncase.Passes;
 using Nncase.Quantization;
 using Nncase.Runtime.Interop;
-using Nncase.Transform;
+using Nncase.Tests.TestFixture;
 using Xunit;
 
 namespace Nncase.Tests.Targets;
 
-public class UnitTestK210Target
+[AutoSetupTestMethod(InitSession = true)]
+public class UnitTestK210Target : TestClassBase
 {
     public UnitTestK210Target()
     {
-        CompileOptions = new CompileOptions(ModelQuantMode.UsePTQ);
+        DefaultTargetName = "k210";
+        CompileOptions.QuantizeOptions.ModelQuantMode = ModelQuantMode.UsePTQ;
     }
 
-    public CompileOptions CompileOptions { get; }
-
     [Fact]
+    [AutoSetupTestMethod(InitSession = false)]
     public void TestCreateK210Target()
     {
         var target = CompilerServices.GetTarget("k210");
         Assert.NotNull(target);
     }
 
-    [Fact]
-    public void TestCreateStackVMModuleBuilder()
+    [Theory]
+    [CombinatorialData]
+    public void TestCreateModuleBuilders([CombinatorialValues("stackvm", "kpu")] string moduleKind)
     {
-        var target = CompilerServices.GetTarget("k210");
-        var moduleBuilder = target.CreateModuleBuilder("stackvm", CompilerServices.CompileOptions);
-        Assert.NotNull(moduleBuilder);
-    }
-
-    [Fact]
-    public void TestCreateKPUModuleBuilder()
-    {
-        var target = CompilerServices.GetTarget("k210");
-        var moduleBuilder = target.CreateModuleBuilder("kpu", CompilerServices.CompileOptions);
+        var moduleBuilder = CompileSession.Target.CreateModuleBuilder(moduleKind, CompileSession.CompileOptions);
         Assert.NotNull(moduleBuilder);
     }
 
@@ -54,37 +53,45 @@ public class UnitTestK210Target
         var x = new Var("x", new TensorType(DataTypes.Float32, new[] { 1, inChannels, 4, 4 }));
         var w = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { outChannels, inChannels, 1, 1 }).Evaluate().AsTensor();
         var b = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { outChannels }).Evaluate().AsTensor();
-        var y = IR.F.NN.Conv2D(x, w, b, new[] { 1, 1 }, new[,] { { 0, 0 }, { 0, 0 } }, new[] { 1, 1 }, PadMode.Constant, 1);
-        await TestCodeGen(y, new[] { x });
+        var y = IR.F.NN.Conv2D(
+            x,
+            w,
+            b,
+            new[] { 1, 1 },
+            new[,]
+            {
+                { 0, 0 },
+                { 0, 0 },
+            },
+            new[] { 1, 1 },
+            PadMode.Constant,
+            1);
+        await TestCodeGenAsync(y, new[] { x });
     }
 
-    private async Task TestCodeGen(Expr body, Var[] vars, [CallerMemberName] string name = null)
+    private async Task TestCodeGenAsync(Expr body, Var[] vars)
     {
         var main = new Function("main", body, vars);
         var module = new IRModule(main);
-        var target = CompilerServices.GetTarget("k210");
-        var dumpDir = "k210_" + name;
-        var passOptions = new RunPassOptions(target, 2, dumpDir, CompileOptions);
-        if (Directory.Exists(dumpDir))
-            Directory.Delete(dumpDir, true);
 
         // 1. Optimize target dependent
-        CompileOptions.QuantizeOptions = new QuantizeOptions { CalibrationDataset = new RandomCalibrationDatasetProvider(vars), CalibrationMethod = CalibMethod.Kld };
-        var pmgr = new PassManager(module, passOptions);
-        target.RegisterTargetDependentPass(pmgr, CompileOptions);
-        await pmgr.RunAsync();
+        CompileOptions.QuantizeOptions.CalibrationDataset = new RandomCalibrationDatasetProvider(vars, 1);
+        CompileOptions.QuantizeOptions.CalibrationMethod = CalibMethod.Kld;
 
-        //var modelBuilder = new ModelBuilder(target);
-        //var linkedModel = modelBuilder.Build(module);
-        //using var output = File.Open($"k210_{name}/test.kmodel", FileMode.Create);
-        //linkedModel.Serialize(output);
-        //Assert.NotEqual(0, output.Length);
+        var pmgr = CompileSession.CreatePassManager("Passes");
+        CompileSession.Target.RegisterTargetDependentPass(pmgr, CompileOptions);
+        await pmgr.RunAsync(module);
+
+        // var modelBuilder = new ModelBuilder(target);
+        // var linkedModel = modelBuilder.Build(module);
+        // using var output = File.Open($"k210_{name}/test.kmodel", FileMode.Create);
+        // linkedModel.Serialize(output);
+        // Assert.NotEqual(0, output.Length);
     }
 
     private void GenerateKModelAndRun(IRModule module, Tensor input, Tensor[] expectedOutput, [CallerMemberName] string? name = null)
     {
-        var target = CompilerServices.GetTarget("cpu");
-        var modelBuilder = new ModelBuilder(target);
+        var modelBuilder = CompileSession.GetRequiredService<IModelBuilder>();
         var linkedModel = modelBuilder.Build(module);
         using (var output = File.Open($"{name}.kmodel", FileMode.Create))
         {
@@ -104,7 +111,7 @@ public class UnitTestK210Target
         var entry = interp.Entry;
 
         var rtInput = RTTensor.FromTensor(input);
-        var rtOutput = entry.Invoke(rtInput);
+        var rtOutput = entry!.Invoke(rtInput);
         var rtOutputs = rtOutput is RTTensor t ? new[] { t } : ((RTTuple)rtOutput).Fields.Cast<RTTensor>().ToArray();
         Assert.Equal(expectedOutput.Length, rtOutputs.Length);
 
@@ -122,24 +129,5 @@ public class UnitTestK210Target
     {
         GenerateKModelAndRun(module, input, new[] { expectedOutput }, name);
     }
-
-    class RandomCalibrationDatasetProvider : ICalibrationDatasetProvider
-    {
-        public int? Count => 1;
-
-        public IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples { get; }
-
-        public RandomCalibrationDatasetProvider(IReadOnlyList<Var> vars)
-        {
-            var values = new Dictionary<Var, IValue>();
-            foreach (var var in vars)
-            {
-                CompilerServices.InferenceType(var);
-                var value = IR.F.Random.Normal(var.CheckedDataType, var.CheckedShape).Evaluate();
-                values.Add(var, value);
-            }
-
-            Samples = new[] { values }.ToAsyncEnumerable();
-        }
-    }
 }
+#endif

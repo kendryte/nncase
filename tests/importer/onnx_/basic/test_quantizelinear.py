@@ -94,6 +94,7 @@ output_types = [
     TensorProto.INT8
 ]
 
+
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('scale', scales)
 @pytest.mark.parametrize('zero_point', zero_points)

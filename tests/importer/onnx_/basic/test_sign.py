@@ -57,9 +57,11 @@ def _make_module(in_shape):
 
     return model_def
 
+
 in_shapes = [
     [1, 3, 16, 16]
 ]
+
 
 @pytest.mark.parametrize('in_shape', in_shapes)
 def test_sign(in_shape, request):
@@ -68,6 +70,7 @@ def test_sign(in_shape, request):
     runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_onnx_helper(model_def)
     runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_sign.py'])

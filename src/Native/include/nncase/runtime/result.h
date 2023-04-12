@@ -15,7 +15,7 @@
 #pragma once
 #include "../compiler_defs.h"
 #include <functional>
-#include <mpark/variant.hpp>
+#include <string_view>
 #include <system_error>
 #include <type_traits>
 
@@ -28,7 +28,7 @@ namespace nncase {
     }
 
 #define try_var(name, x)                                                       \
-    typename decltype((x))::traits::ok_type name;                              \
+    typename decltype((x))::value_type name;                                   \
     {                                                                          \
         auto v = (x);                                                          \
         if (v.is_ok())                                                         \
@@ -38,7 +38,7 @@ namespace nncase {
     }
 
 #define try_var_err(name, x, e)                                                \
-    typename decltype((x))::traits::ok_type name;                              \
+    typename decltype((x))::value_type name;                                   \
     {                                                                          \
         auto v = (x);                                                          \
         if (v.is_ok()) {                                                       \
@@ -58,73 +58,41 @@ namespace nncase {
             return nncase::err(std::move(v.unwrap_err()));                     \
     }
 
-template <class T> struct Ok {
-    constexpr Ok(T &&value) : value(std::move(value)) {}
-
-    constexpr Ok(const T &value) : value(value) {}
-
-    template <class... Args>
-    constexpr explicit Ok(mpark::in_place_t, Args &&...args)
-        : value(std::forward<Args>(args)...) {}
-
-    T value;
-};
-
-template <> struct Ok<void> {};
-
-struct Err {
-    template <class ErrCode, class = std::enable_if_t<
-                                 std::is_error_condition_enum<ErrCode>::value>>
-    Err(ErrCode value) : err(value) {}
-
-    Err(std::error_condition err) : err(std::move(err)) {}
-
-    std::error_condition err;
-};
-
-inline constexpr Ok<void> ok() { return {}; }
-
-template <class T, class... Args> constexpr Ok<T> ok(Args &&...args) {
-    return Ok<T>(mpark::in_place, std::forward<Args>(args)...);
-}
-
-template <class T> constexpr Ok<std::decay_t<T>> ok(T &&value) {
-    return Ok<std::decay_t<T>>(std::forward<T>(value));
-}
-
-inline Err err(std::error_condition value) noexcept {
-    return Err(std::move(value));
-}
-
-template <class ErrCode, class = std::enable_if_t<
-                             std::is_error_condition_enum<ErrCode>::value>>
-Err err(ErrCode value) {
-    return err(std::error_condition(value));
+[[noreturn]] inline void fail_fast(const char *message) {
+    fprintf(stderr, "terminate:%s\n", message);
+    // auto exit for pld
+    fprintf(stderr, "}");
+    std::terminate();
 }
 
 template <class T> class NNCASE_NODISCARD result;
 
 namespace detail {
+enum class result_type { ok, err };
+
+struct ok_t {};
+NNCASE_INLINE_VAR ok_t constexpr ok_v = {};
+
 template <class T> NNCASE_INLINE_VAR bool constexpr is_result_v = false;
 template <class T>
 NNCASE_INLINE_VAR bool constexpr is_result_v<result<T>> = true;
 
-template <class T> struct result_traits {
-    static_assert(!is_result_v<T>, "Cannot use nested result");
-
-    using ok_type = T;
-};
-
 template <class T, class U, class Func> class map_call_impl {
-    result<U> operator()(Func &&func, Ok<T> &value) noexcept {
-        return ok(func(value.value));
+    result<U> operator()(Func &&func, T &value) noexcept {
+        return ok(func(value));
     }
 };
 
-template <class T, class Func> struct map_traits;
+template <class T, class Func> struct map_traits {
+    using U = invoke_result_t<Func, T>;
+    static_assert(
+        !is_result_v<U>,
+        "Cannot map a callback returning result, use and_then instead");
+    using result_t = result<U>;
 
-template <class U, class Func> class map_call_void_impl {
-    result<U> operator()(Func &&func) noexcept { return ok(func()); }
+    result<U> operator()(Func &&func, T &value) noexcept {
+        return map_call_impl<T, U, Func>()(std::forward<Func>(func), value);
+    }
 };
 
 template <class Func> struct map_traits<void, Func> {
@@ -132,9 +100,21 @@ template <class Func> struct map_traits<void, Func> {
     static_assert(
         !is_result_v<U>,
         "Cannot map a callback returning result, use and_then instead");
+    using result_t = result<U>;
 
-    result<U> operator()(Func &&func, NNCASE_UNUSED Ok<void> &value) noexcept {
-        return map_call_void_impl<U, Func>()(std::forward<Func>(func));
+    result<U> operator()(Func &&func) noexcept {
+        return map_call_impl<void, U, Func>()(std::forward<Func>(func));
+    }
+};
+
+template <class T, class Func> struct map_err_traits {
+    using U = invoke_result_t<Func, std::error_condition>;
+    static_assert(
+        !is_result_v<U>,
+        "Cannot map a callback returning result, use and_then instead");
+
+    result<U> operator()(Func &&func, std::error_condition &value) noexcept {
+        return err(func(value));
     }
 };
 
@@ -148,9 +128,7 @@ template <class T, class Func> struct and_then_traits {
         is_result_v<result_t>,
         "Cannot then a callback not returning result, use map instead");
 
-    result_t operator()(Func &&func, Ok<T> &value) noexcept {
-        return func(value.value);
-    }
+    result_t operator()(Func &&func, T &value) noexcept { return func(value); }
 };
 
 template <class Func> struct and_then_traits<void, Func> {
@@ -161,52 +139,99 @@ template <class Func> struct and_then_traits<void, Func> {
         is_result_v<result_t>,
         "Cannot then a callback not returning result, use map instead");
 
-    result_t operator()(Func &&func, NNCASE_UNUSED Ok<void> &value) noexcept {
-        return func();
-    }
-};
-
-template <class T> struct unwrap_impl {
-    T &operator()(Ok<T> &value) noexcept { return value.value; }
-
-    T &&operator()(Ok<T> &&value) noexcept { return std::move(value.value); }
-};
-
-template <> struct unwrap_impl<void> {
-    void operator()(NNCASE_UNUSED Ok<void> &value) noexcept {}
-
-    void operator()(NNCASE_UNUSED Ok<void> &&value) noexcept {}
+    result_t operator()(Func &&func) noexcept { return func(); }
 };
 } // namespace detail
 
 template <class T> class NNCASE_NODISCARD result {
   public:
-    using traits = detail::result_traits<T>;
+    static_assert(!detail::is_result_v<T>, "Cannot use nested result");
 
-    constexpr result(Ok<T> value) : ok_or_err_(std::move(value)) {}
+    using value_type = T;
 
-    result(Err err) : ok_or_err_(std::move(err)) {}
+    template <class... Args>
+    result(detail::ok_t, Args... args)
+        : type_(detail::result_type::ok), ok_(std::forward<Args>(args)...) {}
 
-    constexpr bool is_ok() const noexcept { return ok_or_err_.index() == 0; }
-    constexpr bool is_err() const noexcept { return ok_or_err_.index() == 1; }
+    result(std::error_condition err) noexcept
+        : type_(detail::result_type::err), err_(std::move(err)) {}
 
-    constexpr decltype(auto) unwrap() noexcept {
+    result(const result &other) : type_(other.type_) {
+        if (type_ == detail::result_type::ok)
+            new (&ok_) T(other.ok_);
+        else
+            new (&err_) std::error_condition(other.err_);
+    }
+
+    result(result &&other) : type_(other.type_) {
+        if (type_ == detail::result_type::ok)
+            new (&ok_) T(std::move(other.ok_));
+        else
+            new (&err_) std::error_condition(std::move(other.err_));
+    }
+
+    template <class U, class = std::enable_if_t<std::is_convertible_v<U, T>>>
+    result(result<U> &&other) : type_(other.type_) {
+        if (type_ == detail::result_type::ok)
+            new (&ok_) T(std::move(other.ok_));
+        else
+            new (&err_) std::error_condition(std::move(other.err_));
+    }
+
+    ~result() { destroy(); }
+
+    result &operator=(const result &other) noexcept {
+        destroy();
+        type_ = other.type_;
+        if (type_ == detail::result_type::ok)
+            new (&ok_) T(other.ok_);
+        else
+            new (&err_) std::error_condition(other.err_);
+        return *this;
+    }
+
+    result &operator=(result &&other) noexcept {
+        destroy();
+        type_ = other.type_;
+        if (type_ == detail::result_type::ok)
+            new (&ok_) T(std::move(other.ok_));
+        else
+            new (&err_) std::error_condition(std::move(other.err_));
+        return *this;
+    }
+
+    constexpr bool is_ok() const noexcept {
+        return type_ == detail::result_type::ok;
+    }
+
+    constexpr bool is_err() const noexcept {
+        return type_ == detail::result_type::err;
+    }
+
+    constexpr T &unwrap() &noexcept {
         if (is_ok())
-            return detail::unwrap_impl<T>()(value());
+            return ok_;
         else
             std::terminate();
     }
 
-    constexpr decltype(auto) unwrap_or_throw() & {
+    constexpr T &&unwrap() &&noexcept {
         if (is_ok())
-            return detail::unwrap_impl<T>()(value());
+            return std::move(ok_);
+        else
+            std::terminate();
+    }
+
+    constexpr T &unwrap_or_throw() & {
+        if (is_ok())
+            return ok_;
         else
             throw std::runtime_error(unwrap_err().message());
     }
 
-    constexpr decltype(auto) unwrap_or_throw() && {
+    constexpr T &&unwrap_or_throw() && {
         if (is_ok())
-            return detail::unwrap_impl<T>()(std::move(value()));
+            return std::move(ok_);
         else
             throw std::runtime_error(unwrap_err().message());
     }
@@ -215,83 +240,158 @@ template <class T> class NNCASE_NODISCARD result {
         if (is_ok())
             std::terminate();
         else
-            return err().err;
+            return err_;
     }
 
-    constexpr auto expect(NNCASE_UNUSED gsl::cstring_span message) noexcept {
+    constexpr T &expect(gsl::cstring_span message) &noexcept {
         if (is_ok())
-            return detail::unwrap_impl<T>()(value());
-        else
-            std::terminate();
+            return ok_;
+        else {
+            fail_fast(message.data());
+        }
+    }
+
+    constexpr T &&expect(gsl::cstring_span message) &&noexcept {
+        if (is_ok())
+            return std::move(ok_);
+        else {
+            fail_fast(message.data());
+        }
     }
 
     template <class Func, class Traits = detail::map_traits<T, Func>>
-    constexpr typename Traits::result_t map(Func &&func) noexcept {
+    constexpr typename Traits::result_t &&map(Func &&func) &&noexcept {
         if (is_ok())
-            return Traits()(std::forward<Func>(func), value());
+            return Traits()(std::forward<Func>(func), std::move(ok_));
         else
-            return err();
+            return std::move(*this);
     }
 
     template <class Func, class Traits = detail::map_err_traits<T, Func>>
-    constexpr typename Traits::result_t map_err(Func &&func) noexcept {
+    constexpr typename Traits::result_t &&map_err(Func &&func) &&noexcept {
         if (is_ok())
-            return value();
+            return std::move(*this);
         else
-            return Traits()(std::forward<Func>(func), err());
+            return Traits()(std::forward<Func>(func), err_);
     }
 
     template <class Func, class Traits = detail::and_then_traits<T, Func>>
-    constexpr typename Traits::result_t and_then(Func &&func) noexcept {
+    constexpr typename Traits::result_t &&and_then(Func &&func) &&noexcept {
         if (is_ok())
-            return Traits()(std::forward<Func>(func), value());
+            return Traits()(std::forward<Func>(func), ok_);
         else
-            return err();
+            return std::move(*this);
     }
 
   private:
-    constexpr Ok<T> &&value() &&noexcept {
-        return mpark::get<Ok<T>>(ok_or_err_);
+    void destroy() {
+        if (is_ok())
+            std::destroy_at(&ok_);
+        else
+            std::destroy_at(&err_);
     }
-    constexpr Ok<T> &value() &noexcept { return mpark::get<Ok<T>>(ok_or_err_); }
-    constexpr Err &err() noexcept { return mpark::get<Err>(ok_or_err_); }
 
   private:
-    mpark::variant<Ok<T>, Err> ok_or_err_;
+    template <class U> friend class result;
+
+    detail::result_type type_;
+    union {
+        T ok_;
+        std::error_condition err_;
+    };
 };
+
+template <> class NNCASE_NODISCARD result<void> {
+  public:
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnull-dereference"
+    result() noexcept : err_(0, *(std::error_category *)nullptr) {}
+#pragma GCC diagnostic pop
+
+    result(std::error_condition err) noexcept : err_(std::move(err)) {}
+
+    bool is_ok() const noexcept { return !is_err(); }
+    bool is_err() const noexcept { return (bool)err_; }
+
+    void unwrap() noexcept {
+        if (is_err())
+            std::terminate();
+    }
+
+    void unwrap_or_throw() {
+        if (is_err())
+            throw std::runtime_error(unwrap_err().message());
+    }
+
+    std::error_condition &unwrap_err() noexcept {
+        if (is_ok())
+            std::terminate();
+        else
+            return err_;
+    }
+
+    void expect(gsl::cstring_span message) noexcept {
+        if (is_err())
+            fail_fast(message.data());
+    }
+
+    template <class Func, class Traits = detail::map_traits<void, Func>>
+    typename Traits::result_t &&map(Func &&func) &&noexcept {
+        if (is_ok())
+            return Traits()(std::forward<Func>(func));
+        else
+            return std::move(*this);
+    }
+
+    template <class Func, class Traits = detail::map_err_traits<void, Func>>
+    typename Traits::result_t &&map_err(Func &&func) &&noexcept {
+        if (is_ok())
+            return std::move(*this);
+        else
+            return Traits()(std::forward<Func>(func), err_);
+    }
+
+    template <class Func, class Traits = detail::and_then_traits<void, Func>>
+    typename Traits::result_t &&and_then(Func &&func) &&noexcept {
+        if (is_ok())
+            return Traits()(std::forward<Func>(func));
+        else
+            return std::move(*this);
+    }
+
+  private:
+    std::error_condition err_;
+};
+
+inline result<void> ok() { return {}; }
+
+template <class T, class... Args> constexpr result<T> ok(Args &&...args) {
+    return {detail::ok_v, std::forward<Args>(args)...};
+}
+
+template <class T> constexpr result<std::decay_t<T>> ok(T &&value) {
+    return {detail::ok_v, std::forward<T>(value)};
+}
+
+inline std::error_condition err(std::error_condition value) noexcept {
+    return value;
+}
+
+template <class ErrCode, class = std::enable_if_t<
+                             std::is_error_condition_enum<ErrCode>::value>>
+std::error_condition err(ErrCode value) {
+    return err(std::error_condition(value));
+}
 
 namespace detail {
-template <class T, class Func> struct map_traits {
-    using U = invoke_result_t<Func, T>;
-    static_assert(
-        !is_result_v<U>,
-        "Cannot map a callback returning result, use and_then instead");
-    using result_t = result<U>;
-
-    result<U> operator()(Func &&func, Ok<T> &value) noexcept {
-        return map_call_impl<T, U, Func>()(std::forward<Func>(func), value);
-    }
-};
-
-template <class T, class Func> struct map_err_traits {
-    using U = invoke_result_t<Func, Err>;
-    static_assert(
-        !is_result_v<U>,
-        "Cannot map a callback returning result, use and_then instead");
-
-    result<U> operator()(Func &&func, Err &value) noexcept {
-        return err(func(value.err));
-    }
-};
-
 template <class T, class Func> class map_call_impl<T, void, Func> {
-    result<void> operator()(Func &&func, Ok<T> &value) noexcept {
-        func(value.value);
+    result<void> operator()(Func &&func, T &value) noexcept {
+        func(value);
         return ok();
     }
 };
 
-template <class Func> class map_call_void_impl<void, Func> {
+template <class Func> class map_call_impl<void, void, Func> {
     result<void> operator()(Func &&func) noexcept {
         func();
         return ok();

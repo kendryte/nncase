@@ -23,16 +23,14 @@ using namespace nncase::runtime::vulkan;
 using namespace nncase::ir::transforms;
 using namespace nncase::ir::transforms::vulkan;
 
-namespace
-{
-std::unordered_set<node_opcode> supported_opcodes { op_unary };
+namespace {
+std::unordered_set<node_opcode> supported_opcodes{op_unary};
 }
 
-bool mark_vulkan_ops_transform::on_try_match(node &node, transform_context &context)
-{
-    if (supported_opcodes.contains(node.runtime_opcode())
-        && node.module_type() != vulkan_module_type)
-    {
+bool mark_vulkan_ops_transform::on_try_match(node &node,
+                                             transform_context &context) {
+    if (supported_opcodes.contains(node.runtime_opcode()) &&
+        node.module_type() != vulkan_module_type) {
         for (auto in : node.inputs())
             context.inputs.emplace_back(in);
         for (auto out : node.outputs())
@@ -44,7 +42,6 @@ bool mark_vulkan_ops_transform::on_try_match(node &node, transform_context &cont
     return false;
 }
 
-void mark_vulkan_ops_transform::process(transform_context &context)
-{
+void mark_vulkan_ops_transform::process(transform_context &context) {
     context.matched_nodes.front()->module_type(vulkan_module_type);
 }

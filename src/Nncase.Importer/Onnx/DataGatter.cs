@@ -1,9 +1,12 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Nncase.IR;
 using System.Linq;
 using LanguageExt;
+using Nncase.IR;
 using Onnx;
 using static Nncase.IR.F.Tensors;
 
@@ -13,59 +16,19 @@ public sealed partial class OnnxImporter
 {
     private static readonly Dictionary<TensorProto.Types.DataType, DataType> _typeMap = new()
     {
-        {TensorProto.Types.DataType.Bool, DataTypes.Boolean},
-        {TensorProto.Types.DataType.Float16, DataTypes.Float16},
-        {TensorProto.Types.DataType.Float, DataTypes.Float32},
-        {TensorProto.Types.DataType.Double, DataTypes.Float64},
-        {TensorProto.Types.DataType.Int16, DataTypes.Int16},
-        {TensorProto.Types.DataType.Int32, DataTypes.Int32},
-        {TensorProto.Types.DataType.Int64, DataTypes.Int64},
-        {TensorProto.Types.DataType.Int8, DataTypes.Int8},
-        {TensorProto.Types.DataType.String, DataTypes.Utf8Char},
-        {TensorProto.Types.DataType.Uint32, DataTypes.UInt32},
-        {TensorProto.Types.DataType.Uint64, DataTypes.UInt64},
-        {TensorProto.Types.DataType.Uint8, DataTypes.UInt8},
+        { TensorProto.Types.DataType.Bool, DataTypes.Boolean },
+        { TensorProto.Types.DataType.Float16, DataTypes.Float16 },
+        { TensorProto.Types.DataType.Float, DataTypes.Float32 },
+        { TensorProto.Types.DataType.Double, DataTypes.Float64 },
+        { TensorProto.Types.DataType.Int16, DataTypes.Int16 },
+        { TensorProto.Types.DataType.Int32, DataTypes.Int32 },
+        { TensorProto.Types.DataType.Int64, DataTypes.Int64 },
+        { TensorProto.Types.DataType.Int8, DataTypes.Int8 },
+        { TensorProto.Types.DataType.String, DataTypes.Utf8Char },
+        { TensorProto.Types.DataType.Uint32, DataTypes.UInt32 },
+        { TensorProto.Types.DataType.Uint64, DataTypes.UInt64 },
+        { TensorProto.Types.DataType.Uint8, DataTypes.UInt8 },
     };
-
-    private bool EmptyTensor(TensorProto tensor)
-    {
-        return tensor.Dims.Count == 1 && tensor.Dims[0] == 0;
-    }
-
-    private Tensor GetTensor(TensorProto tensor)
-    {
-        var shape = GetShape(tensor).ToValueArray();
-        var type = GetDataType(tensor);
-        var dt = (TensorProto.Types.DataType) tensor.DataType;
-
-        // should not use tensor.DataLocation to distinguish whether it is RawData
-        if (tensor.RawData.ToByteArray().Length() != 0)
-        {
-            return Tensor.FromBytes(type, tensor.RawData.ToByteArray(), shape);
-        }
-        else
-        {
-            return dt switch
-            {
-                // todo:not directly supported type should convert
-                //TensorProto.Types.DataType.Bool => Tensor.FromSpan(),
-                //TensorProto.Types.DataType.Float16 => Tensor.FromSpan(),
-                TensorProto.Types.DataType.Float => Tensor.FromSpan<float>(tensor.FloatData.ToArray(), shape),
-                TensorProto.Types.DataType.Double => Tensor.FromSpan<double>(tensor.DoubleData.ToArray(), shape),
-
-                //TensorProto.Types.DataType.Int16 => Tensor.FromSpan(),
-                TensorProto.Types.DataType.Int32 => Tensor.FromSpan<int>(tensor.Int32Data.ToArray(), shape),
-                TensorProto.Types.DataType.Int64 => Tensor.FromSpan<long>(tensor.Int64Data.ToArray(), shape),
-
-                TensorProto.Types.DataType.Int8 => Tensor.FromSpan<sbyte>(tensor.Int32Data.Select(x => (sbyte)x).ToArray(), shape),
-                //TensorProto.Types.DataType.String => Tensor.FromSpan(),
-                //TensorProto.Types.DataType.Uint32 => Tensor.FromSpan(),
-                //TensorProto.Types.DataType.Uint64 => Tensor.FromSpan<ulong>(tensor.Uint64Data.ToArray(), shape),
-                TensorProto.Types.DataType.Uint8 => Tensor.FromSpan<byte>(tensor.Int32Data.Select(x => (byte)x).ToArray(), shape),
-                _ => throw new NotSupportedException($"Not supported onnx constant data type{dt}"),
-            };
-        }
-    }
 
     public Shape GetShape(ValueInfoProto v)
     {
@@ -77,7 +40,7 @@ public sealed partial class OnnxImporter
 
     public Shape GetShape(TensorProto tensor)
     {
-        return new Shape(tensor.Dims);
+        return new Shape(tensor.Dims.ToArray());
     }
 
     public TensorType GetIRType(ValueInfoProto v)
@@ -90,11 +53,52 @@ public sealed partial class OnnxImporter
         return new TensorType(GetDataType(v), GetShape(v));
     }
 
+    private bool EmptyTensor(TensorProto tensor)
+    {
+        return tensor.Dims.Count == 1 && tensor.Dims[0] == 0;
+    }
+
+    private Tensor GetTensor(TensorProto tensor)
+    {
+        var shape = GetShape(tensor).ToValueArray();
+        var type = GetDataType(tensor);
+        var dt = (TensorProto.Types.DataType)tensor.DataType;
+
+        // should not use tensor.DataLocation to distinguish whether it is RawData
+        if (tensor.RawData.ToByteArray().Length() != 0)
+        {
+            return Tensor.FromBytes(type, tensor.RawData.ToByteArray(), shape);
+        }
+        else
+        {
+            return dt switch
+            {
+                // todo:not directly supported type should convert
+                // TensorProto.Types.DataType.Bool => Tensor.FromSpan(),
+                // TensorProto.Types.DataType.Float16 => Tensor.FromSpan(),
+                TensorProto.Types.DataType.Float => Tensor.From<float>(tensor.FloatData.ToArray(), shape),
+                TensorProto.Types.DataType.Double => Tensor.From<double>(tensor.DoubleData.ToArray(), shape),
+
+                // TensorProto.Types.DataType.Int16 => Tensor.FromSpan(),
+                TensorProto.Types.DataType.Int32 => Tensor.From<int>(tensor.Int32Data.ToArray(), shape),
+                TensorProto.Types.DataType.Int64 => Tensor.From<long>(tensor.Int64Data.ToArray(), shape),
+
+                TensorProto.Types.DataType.Int8 => Tensor.From<sbyte>(tensor.Int32Data.Select(x => (sbyte)x).ToArray(), shape),
+
+                // TensorProto.Types.DataType.String => Tensor.FromSpan(),
+                // TensorProto.Types.DataType.Uint32 => Tensor.FromSpan(),
+                // TensorProto.Types.DataType.Uint64 => Tensor.FromSpan<ulong>(tensor.Uint64Data.ToArray(), shape),
+                TensorProto.Types.DataType.Uint8 => Tensor.From<byte>(tensor.Int32Data.Select(x => (byte)x).ToArray(), shape),
+                _ => throw new NotSupportedException($"Not supported onnx constant data type{dt}"),
+            };
+        }
+    }
+
     private Expr GetInputExpr(NodeProto n, int index)
     {
         // todo:is null?
         var id = n.Input[index];
-        if (_outputTensors.TryGetValue(id, out var expr))
+        if (_outputTensors!.TryGetValue(id, out var expr))
         {
             return expr;
         }
@@ -111,7 +115,8 @@ public sealed partial class OnnxImporter
         var id = n.Input[index];
         return _graph.Input.Concat(_graph.ValueInfo)
             .Find(x => x.Name == id)
-            .Match(GetDataType,
+            .Match(
+                GetDataType,
                 () => throw new InvalidDataException($"Cannot load tensor data (tensor:{id})."));
     }
 
@@ -124,11 +129,12 @@ public sealed partial class OnnxImporter
     {
         var outName = n.Output[0];
         return _graph.Output.Concat(_graph.ValueInfo).Find(node => node.Name == outName)
-            .Match(n => GetDataType(n),
+            .Match(
+                n => GetDataType(n),
                 () => throw new InvalidOperationException($"Can't find Output for node:{n.Name}"));
     }
-    
-    private (Expr, Expr) GetInputExprs(NodeProto n, int index0, int index1)
+
+    private (Expr Input1, Expr Input2) GetInputExprs(NodeProto n, int index0, int index1)
     {
         return (GetInputExpr(n, index0), GetInputExpr(n, index1));
     }
@@ -141,12 +147,12 @@ public sealed partial class OnnxImporter
         }
 
         var id = n.Input[index];
-        if (id == "")
+        if (id == string.Empty)
         {
             return Option<Expr>.None;
         }
 
-        if (_outputTensors.TryGetValue(id, out var expr))
+        if (_outputTensors!.TryGetValue(id, out var expr))
         {
             return expr;
         }
@@ -163,13 +169,13 @@ public sealed partial class OnnxImporter
         return GetOptionInputExpr(n, index).Or(defaultExpr);
     }
 
-    private (Option<Expr>, Option<Expr>) GetOptionInputExprs(NodeProto n, int index0, int index1)
+    private (Option<Expr> Input1, Option<Expr> Input2) GetOptionInputExprs(NodeProto n, int index0, int index1)
     {
         return (GetOptionInputExpr(n, index0), GetOptionInputExpr(n, index1));
     }
 
     private Expr ToNncasePadFormat(Expr pads)
     {
-        return Transpose(Reshape(pads, new[] {2, -1}), new[] {1, 0});
+        return Transpose(Reshape(pads, new[] { 2, -1 }), new[] { 1, 0 });
     }
 }

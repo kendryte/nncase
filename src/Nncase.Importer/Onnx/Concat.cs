@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Linq;
@@ -12,7 +12,7 @@ namespace Nncase.Importer
     {
         private Expr VisitConcat(NodeProto op)
         {
-            var inputs = Enumerable.Range(0, op.Input.Count).Select(x => GetInputExpr(op, x));
+            var inputs = Enumerable.Range(0, op.Input.Count).Select(x => GetInputExpr(op, x)).ToArray();
             var axis = GetIntAttribute(op, "axis");
             return F.Tensors.Concat(new Tuple(inputs), axis);
         }

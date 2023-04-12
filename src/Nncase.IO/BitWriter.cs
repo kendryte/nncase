@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -7,16 +10,17 @@ using System.Text;
 namespace Nncase.IO
 {
     /// <summary>
-    /// the bit writer
+    /// the bit writer.
     /// </summary>
     public ref struct BitWriter
     {
-        Span<byte> _data;
-        ulong _buffer;
-        ulong _avail;
+        private Span<byte> _data;
+        private ulong _buffer;
+        private ulong _avail;
 
         /// <summary>
-        /// ctor
+        /// Initializes a new instance of the <see cref="BitWriter"/> struct.
+        /// ctor.
         /// </summary>
         /// <param name="data"> the ouput stream.</param>
         /// <param name="bitoffset">start bit offset.</param>
@@ -29,29 +33,16 @@ namespace Nncase.IO
             {
                 _data = _data.Slice((int)(bitoffset / 8));
                 bitoffset %= 8;
-                _buffer = _data[0] & (((ulong)1 << (int)bitoffset) - 1);
+                _buffer = _data[0] & ((1UL << (int)bitoffset) - 1);
                 _avail -= bitoffset;
-            }
-        }
-
-        void WriteArray(ReadOnlySpan<byte> src, int bits)
-        {
-            while (bits > 0)
-            {
-                var to_write = Math.Min(bits, 8);
-                write_bits_le8(src[0], to_write);
-                src = src.Slice(1);
-                bits -= to_write;
             }
         }
 
         /// <summary>
         /// writhe the unmanaged value.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="value"></param>
-        /// <param name="bits"></param>
-        public void Write<T>(T value, int bits) where T : unmanaged
+        public void Write<T>(T value, int bits)
+            where T : unmanaged
         {
             WriteArray(MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref value, 1)), bits);
         }
@@ -61,54 +52,70 @@ namespace Nncase.IO
         /// </summary>
         public void Flush()
         {
-            var write_bytes = (buffer_written_bits() + 7) / 8;
+            var write_bytes = (Buffer_written_bits() + 7) / 8;
             if (write_bytes != 0)
             {
-                Debug.Assert(_data.Length >= write_bytes);
+                Trace.Assert(_data.Length >= write_bytes);
                 var bufferSpan = MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref _buffer, 1));
                 for (int i = 0; i < write_bytes; i++)
                 {
                     _data[i] = bufferSpan[i];
                 }
+
                 _data = _data.Slice(write_bytes);
                 _buffer = 0;
                 _avail = sizeof(ulong) * 8;
             }
         }
 
-        /// <summary>
-        /// write the value less then 8
-        /// </summary>
-        /// <param name="value"></param>
-        /// <param name="bits"></param>
-        void write_bits_le8(byte value, int bits)
+        private void WriteArray(ReadOnlySpan<byte> src, int bits)
         {
-            Debug.Assert(bits <= 8);
-            reserve_buffer_8();
-            ulong new_value = value & (((ulong)(1) << bits) - 1);
-            _buffer = _buffer | (new_value << buffer_written_bits());
+            while (bits > 0)
+            {
+                var to_write = Math.Min(bits, 8);
+                Write_bits_le8(src[0], to_write);
+                src = src.Slice(1);
+                bits -= to_write;
+            }
+        }
+
+        /// <summary>
+        /// write the value less then 8.
+        /// </summary>
+        private void Write_bits_le8(byte value, int bits)
+        {
+            Trace.Assert(bits <= 8);
+            Reserve_buffer_8();
+            ulong new_value = value & ((1UL << bits) - 1);
+            _buffer = _buffer | (new_value << Buffer_written_bits());
             _avail -= (ulong)bits;
         }
 
         /// <summary>
-        /// create the new buffer for wirte
+        /// create the new buffer for wirte.
         /// </summary>
-        void reserve_buffer_8()
+        private void Reserve_buffer_8()
         {
             if (_avail < 8)
             {
-                var write_bytes = buffer_written_bits() / 8;
-                Debug.Assert(_data.Length >= write_bytes);
+                var write_bytes = Buffer_written_bits() / 8;
+                Trace.Assert(_data.Length >= write_bytes);
                 var bufferSpan = MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref _buffer, 1));
                 for (int i = 0; i < write_bytes; i++)
                 {
                     _data[i] = bufferSpan[i];
                 }
+
                 _data = _data.Slice(write_bytes);
                 if (write_bytes == sizeof(ulong))
+                {
                     _buffer = 0;
+                }
                 else
+                {
                     _buffer >>= write_bytes * 8;
+                }
+
                 _avail += (ulong)write_bytes * 8;
             }
         }
@@ -116,10 +123,9 @@ namespace Nncase.IO
         /// <summary>
         /// get current written bits.
         /// </summary>
-        /// <returns></returns>
-        int buffer_written_bits()
+        private int Buffer_written_bits()
         {
-            return (int)(sizeof(ulong) * 8 - _avail);
+            return (int)((sizeof(ulong) * 8) - _avail);
         }
     }
 }

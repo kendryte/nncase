@@ -12,21 +12,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <chrono>
+#include <cstring>
 #include <iostream>
 #include <nncase/api.h>
+#include <nncase/compiler.h>
 #include <nncase/io_utils.h>
-#include <cstring>
+#include <string_view>
 
 using namespace nncase;
+using namespace nncase::clr;
 using namespace nncase::runtime;
+using namespace std::string_view_literals;
 
 #define TRY(x)                                                                 \
     if (x)                                                                     \
         throw 1;
 
 int main() {
+    nncase_clr_initialize(
+        R"(E:\Work\Repos\nncase-v2\nncase\src\Nncase.Compiler\bin\Debug\net6.0\Nncase.Compiler.dll)");
+    auto target_name = "cpu"sv;
+    auto nncapi = nncase_clr_api();
+    clr_object_ptr target, compile_session, compiler, compile_options;
+    compile_options = nncapi->compile_options_create();
+    target = nncapi->target_create(target_name.data(), target_name.length());
+    nncapi->compile_session_create(target.get(), compile_options.get());
+    compiler = nncapi->compile_session_get_compiler(compile_session.get());
+
     auto kmodel = read_file(
-        R"(E:\Work\Repos\nncase\src\Nncase.Tests\bin\Debug\net6.0\TestCallFunction.kmodel)");
+        R"(E:\Work\Repos\nncase\tests\private\tests_output\test_nmt_enc\infer\cpu\noptq\test.kmodel)");
 
     interpreter *interp;
     TRY(nncase_interp_create(&interp));
@@ -38,10 +53,10 @@ int main() {
     buffer_allocator *host_alloc;
     TRY(nncase_buffer_allocator_get_host(&host_alloc));
 
-    datatype_node *dtype_float32;
-    TRY(nncase_dtype_create_prime(dt_float32, &dtype_float32));
+    datatype_node *dtype_int64;
+    TRY(nncase_dtype_create_prime(dt_int64, &dtype_int64));
 
-    float x[] = {3.f};
+    int64_t x[] = {1};
     buffer_node *x_buf;
     TRY(nncase_buffer_allocator_alloc(host_alloc, sizeof(x), nullptr, &x_buf));
     {
@@ -52,19 +67,27 @@ int main() {
                                    nullptr));
         memcpy(x_buf_data, x, sizeof(x));
         TRY(nncase_host_buffer_unmap(x_host_buf));
-        TRY(nncase_object_free((object_node *)x_host_buf));
+        TRY(nncase_object_release((object_node *)x_host_buf));
     }
 
     tensor_node *x_tensor;
-    uint32_t dims[] = {1};
-    uint32_t strides[] = {1};
+    uint32_t dims[] = {1, 1};
+    uint32_t strides[] = {1, 1};
     nncase_buffer_slice x_buffer_slice{x_buf, 0, sizeof(x)};
-    TRY(nncase_tensor_create(dtype_float32, dims, 1, strides, 1,
-                             &x_buffer_slice, &x_tensor));
+    TRY(nncase_tensor_create(dtype_int64, dims, 1, strides, 1, &x_buffer_slice,
+                             &x_tensor));
 
     value_node *params[] = {(value_node *)x_tensor};
     tensor_node *ret = nullptr;
+
+    auto time_begin = std::chrono::steady_clock::now();
+
     TRY(nncase_func_invoke(entry, params, 1, (value_node **)&ret));
+
+    auto time_end = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
+        time_end - time_begin);
+    printf("Duration: %.2fms\n", duration.count() / 1e3);
 
     uint32_t ret_dims_len;
     TRY(nncase_tensor_get_dims(ret, nullptr, &ret_dims_len));
@@ -85,14 +108,14 @@ int main() {
         std::cout << *ret_float_data << std::endl;
 
         TRY(nncase_host_buffer_unmap(ret_host_buf));
-        TRY(nncase_object_free((object_node *)ret_host_buf));
+        TRY(nncase_object_release((object_node *)ret_host_buf));
     }
 
-    TRY(nncase_object_free((object_node *)out_buffer_slice.buffer));
-    TRY(nncase_object_free((object_node *)ret));
-    TRY(nncase_object_free((object_node *)x_buf));
-    TRY(nncase_object_free((object_node *)x_tensor));
-    TRY(nncase_object_free((object_node *)dtype_float32));
+    TRY(nncase_object_release((object_node *)out_buffer_slice.buffer));
+    TRY(nncase_object_release((object_node *)ret));
+    TRY(nncase_object_release((object_node *)x_buf));
+    TRY(nncase_object_release((object_node *)x_tensor));
+    TRY(nncase_object_release((object_node *)dtype_int64));
     TRY(nncase_interp_free(interp));
     return 0;
 }

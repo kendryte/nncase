@@ -8,37 +8,68 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
+using Nncase.Utilities;
 
 namespace Nncase.TIR;
 
 /// <summary>
 /// PrimFunction expression.
 /// </summary>
-public sealed record PrimFunction(string Name, string ModuleKind, Sequential Body, IRArray<PhysicalBuffer> Parameters) : BaseFunction(Name, ModuleKind)
+public sealed class PrimFunction : BaseFunction
 {
-    private static int _globalFuncIndex = 0;
+    private static int _globalFuncIndex;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PrimFunction"/> class.
+    /// </summary>
+    /// <param name="name">Name.</param>
+    /// <param name="moduleKind">module kind.</param>
+    /// <param name="parameters">Arguments.</param>
+    /// <param name="body">Body.</param>
+    public PrimFunction(string name, string moduleKind, Sequential body, ReadOnlySpan<PhysicalBuffer> parameters)
+        : base(name, moduleKind, ArrayUtility.Concat(body, SpanUtility.UnsafeCast<PhysicalBuffer, Expr>(parameters)))
+    {
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PrimFunction"/> class.
     /// </summary>
     /// <param name="moduleKind">module kind.</param>
-    /// <param name="parameters">Parameters.</param>
+    /// <param name="parameters">Arguments.</param>
     /// <param name="body">Body.</param>
-    public PrimFunction(string moduleKind, Sequential body, IRArray<PhysicalBuffer> parameters)
+    public PrimFunction(string moduleKind, Sequential body, ReadOnlySpan<PhysicalBuffer> parameters)
         : this($"primfunc_{_globalFuncIndex++}", moduleKind, body, parameters)
     {
     }
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="PrimFunction"/> class.
     /// build function.
     /// </summary>
-    /// <param name="body"></param>
-    /// <param name="parameters"></param>
     public PrimFunction(string moduleKind, Sequential body, params PhysicalBuffer[] parameters)
         : this($"primfunc_{_globalFuncIndex++}", moduleKind, body, new(parameters))
     {
     }
 
-    public override IEnumerable<IRType?> ParameterTypes => Parameters.Select(x => x.CheckedType);
+    /// <summary>
+    /// Gets body.
+    /// </summary>
+    public Sequential Body => (Sequential)Operands[0];
+
+    public ReadOnlySpan<PhysicalBuffer> Parameters => SpanUtility.UnsafeCast<Expr, PhysicalBuffer>(Operands.Slice(1));
+
+    public override IEnumerable<IRType?> ParameterTypes => Parameters.AsValueEnumerable().Select(x => x.CheckedType).ToArray();
+
+    /// <inheritdoc/>
+    public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
+        => functor.VisitPrimFunction(this, context);
+
+    public PrimFunction With(string? name = null, string? moduleKind = null, Sequential? body = null, PhysicalBuffer[]? parameters = null, Schedule.SchedFunctionResult? sched = null)
+        => new PrimFunction(name ?? Name, moduleKind ?? ModuleKind, body ?? Body, parameters ?? Parameters)
+        {
+            // note maybe add SchedResult into ctor.
+            SchedResult = sched ?? SchedResult,
+        };
 }

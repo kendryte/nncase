@@ -1,18 +1,17 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
-
-using Autofac;
+using DryIoc;
+using Nncase.Hosting;
 
 namespace Nncase.PatternMatch;
 
 /// <summary>
 /// PatternMatch module.
 /// </summary>
-public class PatternMatchModule : Module
+internal class PatternMatchModule : IApplicationPart
 {
-    /// <inheritdoc/>
-    protected override void Load(ContainerBuilder builder)
+    public void ConfigureServices(IRegistrator registrator)
     {
-        builder.RegisterType<MatchProvider>().AsImplementedInterfaces().SingleInstance();
+        registrator.RegisterManyInterface<MatchProvider>(reuse: Reuse.Singleton);
     }
 }

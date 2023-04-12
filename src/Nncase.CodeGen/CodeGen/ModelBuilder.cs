@@ -10,31 +10,15 @@ using Nncase.IR;
 
 namespace Nncase.CodeGen;
 
-internal class LinkContext : ILinkContext
-{
-    private readonly IDictionary<BaseFunction, FunctionId> _functionIds;
-
-    public LinkContext(IDictionary<BaseFunction, FunctionId> functionIds)
-    {
-        _functionIds = functionIds;
-    }
-
-    public FunctionId GetFunctionId(BaseFunction function)
-    {
-        return _functionIds[function];
-    }
-}
-
 /// <summary>
 /// The Kmodel Builder.
 /// </summary>
-public sealed class ModelBuilder
+public sealed class ModelBuilder : IModelBuilder
 {
     /// <summary>
+    /// Initializes a new instance of the <see cref="ModelBuilder"/> class.
     /// default ctor.
     /// </summary>
-    /// <param name="target"></param>
-    /// <param name="compileOptions"></param>
     public ModelBuilder(ITarget target, CompileOptions compileOptions)
     {
         Target = target;
@@ -42,24 +26,16 @@ public sealed class ModelBuilder
     }
 
     /// <summary>
-    /// ctor from the global compile options
-    /// </summary>
-    /// <param name="target"></param>
-    public ModelBuilder(ITarget target) : this(target, CompilerServices.CompileOptions)
-    {
-    }
-
-    /// <summary>
-    /// Get the Target.
+    /// Gets get the Target.
     /// </summary>
     public ITarget Target { get; }
 
     /// <summary>
-    /// Get the CompileOptions
+    /// Gets get the CompileOptions.
     /// </summary>
     public CompileOptions CompileOptions { get; }
 
-    public LinkedModel Build(IRModule module)
+    public ILinkedModel Build(IRModule module)
     {
         var functionsByKind = module.Functions.GroupBy(x => x.ModuleKind).ToList();
         var functionIds = MakeFunctionsIds(functionsByKind);
@@ -86,5 +62,20 @@ public sealed class ModelBuilder
         }
 
         return ids;
+    }
+}
+
+internal class LinkContext : ILinkContext
+{
+    private readonly IDictionary<BaseFunction, FunctionId> _functionIds;
+
+    public LinkContext(IDictionary<BaseFunction, FunctionId> functionIds)
+    {
+        _functionIds = functionIds;
+    }
+
+    public FunctionId GetFunctionId(BaseFunction function)
+    {
+        return _functionIds[function];
     }
 }

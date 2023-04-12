@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <RootNamespace>Nncase.Tests</RootNamespace>
+    </PropertyGroup>
+    
+    <ItemGroup>
+        <PackageReference Include="Fody">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="MethodBoundaryAspect.Fody" />
+        <PackageReference Include="Xunit.Combinatorial" />
+        <PackageReference Include="Xunit.DependencyInjection" />
+        <PackageReference Include="System.Linq.Async" />
+        <PackageReference Include="xunit.runner.visualstudio">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+        <PackageReference Include="xunit.v3.assert" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <ProjectReference Include="..\..\modules\Nncase.Modules.StackVM\Nncase.Modules.StackVM.csproj" />
+        <ProjectReference Include="..\Nncase.Core\Nncase.Core.csproj" />
+        <ProjectReference Include="..\Nncase.CodeGen\Nncase.CodeGen.csproj" />
+        <ProjectReference Include="..\Nncase.Simulator\Nncase.Simulator.csproj" />
+        <ProjectReference Include="..\Nncase.Passes\Nncase.Passes.csproj" />
+    </ItemGroup>
+
+</Project>

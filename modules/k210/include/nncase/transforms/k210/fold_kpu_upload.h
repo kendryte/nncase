@@ -16,24 +16,22 @@
 #include <nncase/runtime/k210/compiler_defs.h>
 #include <nncase/transforms/transform.h>
 
-namespace nncase::ir::transforms::k210
-{
-class NNCASE_MODULES_K210_API fold_kpu_upload_transform : public transform
-{
-public:
+namespace nncase::ir::transforms::k210 {
+class NNCASE_MODULES_K210_API fold_kpu_upload_transform : public transform {
+  public:
     void process(transform_context &context) override;
 
-protected:
+  protected:
     bool skip_self_contained_check() const noexcept override { return true; }
     bool on_try_match(ir::node &node, transform_context &context) override;
 };
 
-class NNCASE_MODULES_K210_API fold_input_kpu_upload_transform : public transform
-{
-public:
+class NNCASE_MODULES_K210_API fold_input_kpu_upload_transform
+    : public transform {
+  public:
     void process(transform_context &context) override;
 
-protected:
+  protected:
     bool on_try_match(ir::node &node, transform_context &context) override;
 };
-}
+} // namespace nncase::ir::transforms::k210

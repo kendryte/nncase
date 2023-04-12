@@ -15,7 +15,7 @@ namespace Nncase.IR.Tensors;
 /// Prod expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Prod() : Op
+public sealed partial class Prod : Op
 {
     /// <summary>
     /// Gets input.

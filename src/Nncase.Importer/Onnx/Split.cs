@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -26,7 +26,7 @@ namespace Nncase.Importer
 
             // inShape[axis] / outputSize
             var split = GetOptionIntsAttribute(op, "split")
-                .Map(x => (Expr)Tensor.FromSpan<long>(x))
+                .Map(x => (Expr)Tensor.From<long>(x))
                 .Or(ComputeSplit(input, op.Output.Count, axis));
             return F.Tensors.Split(input, axis, split);
         }

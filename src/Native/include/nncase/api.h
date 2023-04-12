@@ -40,7 +40,8 @@ struct nncase_buffer_slice {
     uint32_t size_bytes;
 };
 
-NNCASE_API int nncase_object_free(nncase::object_node *node);
+NNCASE_API int nncase_object_add_ref(nncase::object_node *node);
+NNCASE_API int nncase_object_release(nncase::object_node *node);
 
 NNCASE_API int nncase_interp_create(nncase::runtime::interpreter **interp);
 NNCASE_API int nncase_interp_free(nncase::runtime::interpreter *interp);
@@ -101,6 +102,9 @@ NNCASE_API int nncase_tensor_get_dims(nncase::tensor_node *tensor,
 NNCASE_API int nncase_tensor_get_strides(nncase::tensor_node *tensor,
                                          uint32_t *dims, uint32_t *dims_length);
 
+NNCASE_API int nncase_tuple_create(nncase::value_node **fields,
+                                   uint32_t fields_length,
+                                   nncase::tuple_node **tuple);
 NNCASE_API int nncase_tuple_get_fields(nncase::tuple_node *tuple,
                                        nncase::value_node **fields,
                                        uint32_t *fields_length);

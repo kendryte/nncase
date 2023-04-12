@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -11,7 +11,7 @@ namespace Nncase.IR.NN;
 /// LogSoftmax expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record LogSoftmax() : Op
+public sealed partial class LogSoftmax : Op
 {
     /// <summary>
     /// Gets input.
@@ -28,7 +28,7 @@ public sealed record LogSoftmax() : Op
 /// Softmax expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Softmax() : Op
+public sealed partial class Softmax : Op
 {
     /// <summary>
     /// Gets input.
@@ -45,7 +45,7 @@ public sealed record Softmax() : Op
 /// Softplus expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Softplus() : Op
+public sealed partial class Softplus : Op
 {
     /// <summary>
     /// Gets input.
@@ -57,7 +57,7 @@ public sealed record Softplus() : Op
 /// Softsign expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Softsign() : Op
+public sealed partial class Softsign : Op
 {
     /// <summary>
     /// Gets input.

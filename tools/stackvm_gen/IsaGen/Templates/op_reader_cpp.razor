@@ -28,48 +28,19 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 
-result<void> op_visitor::next() noexcept
+result<void> tensor_op_visitor::visit(tensor_function_t tensor_funct, span_reader &reader) noexcept
 {
-    auto opcode = static_cast<opcode_t>(reader_.peek_unaligned<uint8_t>());
-    if (opcode == opcode_t::TENSOR)
-    {
-        auto tensor_funct = static_cast<tensor_function_t>(reader_.peek_unaligned_with_offset<uint16_t>(1));
-        switch (tensor_funct)
-        {
+     switch (tensor_funct)
+     {
 @foreach (var inst in Model.TensorInstructions.SelectMany(x => x.Value).OrderBy(x => x.CppName))
 {
     var name = "tensor_" + inst.CppName.ToLowerInvariant().Replace('.', '_');
-@:        case tensor_function_t::@inst.CppName:
-@:            return visit(op_reader<@(name)_op_t>()(reader_));
+@:    case tensor_function_t::@inst.CppName:
+@:        return visit(tensor_op_reader<tensor_function_t::@(inst.CppName)>()(reader));
 }
-        default:
-            break;
-        }
-    }
-    else
-    {
-        switch (opcode)
-        {
-@foreach (var inst in Model.Instructions.SelectMany(x => x.Value))
-{
-    var name = inst.CppName.ToLowerInvariant().Replace('.', '_');
-@:        case @inst.Fields.First(x => x.CppName == "opcode").CppValueText:
-@:            return visit(op_reader<@(name)_op_t>()(reader_));
-}
-        default:
-            break;
-        }
+    default:
+        break;
     }
 
     return err(nncase_errc::stackvm_illegal_instruction);
-}
-
-result<void> op_visitor::visit(gsl::span<const gsl::byte> text) noexcept
-{
-    reader_ = span_reader(text);
-    interrupted_ = false;
-
-    while (!interrupted_ && !reader_.empty())
-        try_(next());
-    return ok();
 }

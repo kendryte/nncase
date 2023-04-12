@@ -12,9 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "ref_ops.h"
 #include <cstring>
 #include <nncase/kernels/kernel_utils.h>
-#include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/runtime_op_utility.h>
@@ -26,12 +26,14 @@ using namespace nncase::runtime::stackvm;
 using namespace nncase::kernels;
 using namespace nncase::kernels::stackvm;
 #include <iostream>
-result<void> nncase::kernels::stackvm::reference::lstm(const float *input, const float *w_xc, const float *w_rc, [[maybe_unused]] const float *bias,
-                  const float *init_h, const float *init_c, float *output,
-                  float *output_h, float *output_c, const dims_t &in_shape_3,
-                  const dims_t &init_h_shape_3, const dims_t &init_c_shape_3,
-                  const dims_t &out_shape_3, const dims_t &w_xc_shape_3,
-                  const dims_t &w_rc_shape_3, lstmdirection_t direction) {
+result<void> nncase::kernels::stackvm::reference::lstm(
+    const float *input, const float *w_xc, const float *w_rc,
+    [[maybe_unused]] const float *bias, const float *init_h,
+    const float *init_c, float *output, float *output_h, float *output_c,
+    const dims_t &in_shape_3, const dims_t &init_h_shape_3,
+    const dims_t &init_c_shape_3, const dims_t &out_shape_3,
+    const dims_t &w_xc_shape_3, const dims_t &w_rc_shape_3,
+    lstmdirection_t direction) {
     auto in_shape = to_4d(in_shape_3);
     auto init_h_shape = to_4d(init_h_shape_3);
     auto init_c_shape = to_4d(init_c_shape_3);

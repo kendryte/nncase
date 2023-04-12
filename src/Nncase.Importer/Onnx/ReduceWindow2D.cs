@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Linq;
@@ -25,13 +25,16 @@ namespace Nncase.Importer
                 : Enumerable.Repeat<long>(1, 2).ToArray();
             var kernelShape = isGlobal
                 ? Util.GetHW(input).Map((h, w) => (Expr)F.Tensors.Stack(new Tuple(h, w), 0))
-                : Tensor.FromSpan<long>(GetIntsAttribute(op, "kernel_shape"));
+                : Tensor.From<long>(GetIntsAttribute(op, "kernel_shape"));
             var strides = GetStrideAttribute(op);
-            return F.NN.ReduceWindow2D(reduceOp, input, initValue,
+            return F.NN.ReduceWindow2D(
+                reduceOp,
+                input,
+                initValue,
                 kernelShape,
                 strides,
                 pads,
-                Tensor.FromSpan<long>(dilation),
+                Tensor.From<long>(dilation),
                 ceilMode,
                 countIncludePad);
         }

@@ -16,7 +16,7 @@ namespace Nncase.IR.Tensors;
 /// GatherND expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record GatherND() : Op
+public sealed partial class GatherND : Op
 {
     /// <summary>
     /// Gets input.

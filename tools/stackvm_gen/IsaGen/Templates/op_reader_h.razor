@@ -41,19 +41,19 @@
 
 BEGIN_NS_NNCASE_RT_MODULE(stackvm)
 
-template <class TOp>
+template <opcode_t Op>
 struct op_reader;
 @foreach (var inst in Model.Instructions.SelectMany(x => x.Value))
 {
     var name = inst.CppName.ToLowerInvariant().Replace('.', '_');
 @:
 @:template <>
-@:struct op_reader<@(name)_op_t>
+@:struct op_reader<opcode_t::@(inst.CppName)>
 @:{
 @:    @(name)_op_t operator()(NNCASE_UNUSED span_reader &reader) const
 @:    {
 @:        @(name)_op_t op;
-foreach (var field in inst.Fields)
+foreach (var field in inst.Fields.Where(x => !x.IsOpCode))
 {
 @:        op.@field.CppName = @SpanReaderMethod(field);
 }
@@ -61,17 +61,20 @@ foreach (var field in inst.Fields)
 @:    }
 @:};
 }
+
+template <tensor_function_t Op>
+struct tensor_op_reader;
 @foreach (var inst in Model.TensorInstructions.SelectMany(x => x.Value).OrderBy(x => x.CppName))
 {
     var name = "tensor_" + inst.CppName.ToLowerInvariant().Replace('.', '_');
 @:
 @:template <>
-@:struct op_reader<@(name)_op_t>
+@:struct tensor_op_reader<tensor_function_t::@(inst.CppName)>
 @:{
 @:    @(name)_op_t operator()(NNCASE_UNUSED span_reader &reader) const
 @:    {
 @:        @(name)_op_t op;
-foreach (var field in inst.Fields)
+foreach (var field in inst.Fields.Where(x => !x.IsOpCode))
 {
 @:        op.@field.CppName = @SpanReaderMethod(field);
 }
@@ -80,39 +83,19 @@ foreach (var field in inst.Fields)
 @:};
 }
 
-class NNCASE_API op_visitor
+class NNCASE_API tensor_op_visitor
 {
 public:
-    op_visitor() noexcept
-        : reader_({})
-    {
-    }
-
-    ~op_visitor() = default;
-
-    result<void> visit(gsl::span<const gsl::byte> text) noexcept;
-
-    @foreach (var inst in Model.Instructions.SelectMany(x => x.Value))
-    {
-        var name = inst.CppName.ToLowerInvariant().Replace('.', '_');
-@:    virtual result<void> visit(NNCASE_UNUSED const @(name)_op_t &op) noexcept { return default_visit(op); }
-    }
+    result<void> visit(tensor_function_t tensor_funct, span_reader &reader) noexcept;
 
     @foreach (var inst in Model.TensorInstructions.SelectMany(x => x.Value).OrderBy(x => x.CppName))
     {
         var name = "tensor_" + inst.CppName.ToLowerInvariant().Replace('.', '_');
-@:    virtual result<void> visit(NNCASE_UNUSED const @(name)_op_t &op) noexcept { return default_visit(op); }
+@:    virtual result<void> visit(NNCASE_UNUSED const @(name)_op_t &op) noexcept { return default_visit(tensor_function_t::@inst.CppName, &op); }
     }
 
 protected:
-    virtual result<void> default_visit(NNCASE_UNUSED const op_base_t &op) noexcept { return err(std::errc::not_supported); }
-
-protected:
-    bool interrupted_;
-    span_reader reader_;
-
-private:
-    result<void> next() noexcept;
+    virtual result<void> default_visit(NNCASE_UNUSED tensor_function_t tensor_funct, NNCASE_UNUSED const void *op) noexcept { return err(std::errc::not_supported); }
 };
 
 END_NS_NNCASE_RT_MODULE

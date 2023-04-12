@@ -10,7 +10,7 @@ namespace Nncase.IR.Tensors;
 /// ReverseSequence expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record ReverseSequence() : Op
+public sealed partial class ReverseSequence : Op
 {
     /// <summary>
     /// Gets input.

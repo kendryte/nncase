@@ -55,11 +55,22 @@ class NNCASE_API object_node {
     virtual bool equals(const object_node &other) const noexcept;
 
   private:
-    uint32_t add_ref() const noexcept;
-    uint32_t release() const noexcept;
+    uint32_t add_ref() const noexcept {
+        return ref_count_.fetch_add(1, std::memory_order_relaxed);
+    }
+
+    uint32_t release() const noexcept {
+        assert(ref_count_);
+        auto count = ref_count_.fetch_sub(1, std::memory_order_acq_rel);
+        if (count == 1) {
+            delete this;
+        }
+        return count;
+    }
 
     template <class T> friend class object_t;
-    friend int ::nncase_object_free(nncase::object_node *node);
+    friend int ::nncase_object_add_ref(nncase::object_node *node);
+    friend int ::nncase_object_release(nncase::object_node *node);
 
   private:
     mutable std::atomic<uint32_t> ref_count_;
@@ -74,6 +85,7 @@ template <class T> class object_t {
     ~object_t() { release(); }
 
     object_t(T *node) noexcept : object_(node) { add_ref(); }
+    object_t(std::in_place_t, T *node) noexcept : object_(node) {}
 
     object_t(object_t &&other) noexcept : object_(other.object_) {
         other.object_ = nullptr;
@@ -161,6 +173,13 @@ template <class T> class object_t {
         object_ = nullptr;
         return obj;
     }
+
+    T **release_and_addressof() noexcept {
+        release();
+        return &object_;
+    }
+
+    void dangerous_add_ref() noexcept { return add_ref(); }
 
   private:
     void add_ref() noexcept {

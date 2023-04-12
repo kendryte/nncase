@@ -17,12 +17,18 @@
 #include <vector>
 
 namespace nncase {
-class NNCASE_API value_node : public object_node {
-    DEFINE_OBJECT_KIND(object_node, object_value);
-};
+
+class value_node;
 
 /** @brief Value */
 using value_t = object_t<value_node>;
+
+class NNCASE_API value_node : public object_node {
+    DEFINE_OBJECT_KIND(object_node, object_value);
+
+  public:
+    virtual result<void> copy_to(value_t dest) const noexcept = 0;
+};
 
 class NNCASE_API tuple_node : public value_node {
     DEFINE_OBJECT_KIND(value_node, object_tuple);
@@ -34,6 +40,8 @@ class NNCASE_API tuple_node : public value_node {
 
     gsl::span<const value_t> fields() const noexcept { return fields_; }
     gsl::span<value_t> fields() noexcept { return fields_; }
+
+    result<void> copy_to(value_t dest) const noexcept override;
 
   private:
     std::vector<value_t> fields_;

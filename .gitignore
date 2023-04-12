@@ -270,6 +270,11 @@ __pycache__/
 /src/nntest
 /src/NnCase.Cli/Properties/launchSettings.json
 
+# coverage
+/coverage
+/coveragereport
+/coverage.xml
+
 build/
 out/
 out_2/
@@ -292,3 +297,4 @@ wheelhouse/
 Directory.Build.targets
 *local*
 nupkg
+*.runsettings

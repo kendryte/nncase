@@ -8,64 +8,74 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Toolkit.HighPerformance;
 
-namespace Nncase.IR
+namespace Nncase.IR;
+
+/// <summary>
+/// Tuple expression.
+/// </summary>
+public sealed class Tuple : Expr, ITuple, IEquatable<Tuple?>
 {
-    /// <summary>
-    /// Tuple expression.
-    /// </summary>
-    public sealed record Tuple(IRArray<Expr> Fields) : Expr, ITuple
+    public Tuple(ReadOnlySpan<Expr> fields)
+        : base(fields.ToArray())
     {
-        /// <summary>
-        /// Void type.
-        /// </summary>
-        public static readonly TupleConst Void = new(ImmutableArray<Const>.Empty);
-
-        public Tuple(params Expr[] Fields) : this(ImmutableArray.Create<Expr>(Fields)) { }
-
-        public Tuple(IEnumerable<Expr> Fields) : this(Fields.ToArray()) { }
-
-        /// <inheritdoc/>
-        public int Count => Fields.Count;
-
-        IReadOnlyList<Expr> ITuple.Fields => Fields;
-
-        /// <inheritdoc/>
-        public Expr this[int index] => Fields[index];
-
-        /// <summary>
-        /// cast the value tuple to ir array.
-        /// </summary>
-        public static implicit operator Tuple(ValueTuple<Expr> tuple) =>
-            new Tuple(ImmutableArray.Create(new Expr[] { tuple.Item1 }));
-
-        /// <summary>
-        /// cast the value tuple to ir array.
-        /// </summary>
-        public static implicit operator Tuple(ValueTuple<Expr, Expr> tuple) =>
-            new Tuple(ImmutableArray.Create(new Expr[] { tuple.Item1, tuple.Item2 }));
-
-        /// <summary>
-        /// cast the value tuple to ir array.
-        /// </summary>
-        public static implicit operator Tuple(ValueTuple<Expr, Expr, Expr> tuple) =>
-            new Tuple(ImmutableArray.Create(new Expr[] { tuple.Item1, tuple.Item2, tuple.Item3 }));
-
-        /// <summary>
-        /// cast the value tuple to ir array.
-        /// </summary>
-        public static implicit operator Tuple(ValueTuple<Expr, Expr, Expr, Expr> tuple) =>
-            new Tuple(ImmutableArray.Create(new Expr[] { tuple.Item1, tuple.Item2, tuple.Item3, tuple.Item4 }));
-
-        /// <inheritdoc/>
-        public IEnumerator<Expr> GetEnumerator()
-        {
-            return Fields.GetEnumerator();
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
     }
+
+    public Tuple(params Expr[] fields)
+        : base(fields.ToArray())
+    {
+    }
+
+    /// <summary>
+    /// Gets void value.
+    /// </summary>
+    public static TupleConst Void => TupleConst.Void;
+
+    public ReadOnlySpan<Expr> Fields => Operands;
+
+    /// <inheritdoc/>
+    public int Count => Fields.Length;
+
+    public Expr this[int index] => Fields[index];
+
+    /// <summary>
+    /// cast the value tuple to ir array.
+    /// </summary>
+    public static implicit operator Tuple(ValueTuple<Expr> tuple) =>
+        new Tuple(new Expr[] { tuple.Item1 });
+
+    /// <summary>
+    /// cast the value tuple to ir array.
+    /// </summary>
+    public static implicit operator Tuple((Expr Expr1, Expr Expr2) tuple) =>
+        new Tuple(new Expr[] { tuple.Expr1, tuple.Expr2 });
+
+    /// <summary>
+    /// cast the value tuple to ir array.
+    /// </summary>
+    public static implicit operator Tuple((Expr Expr1, Expr Expr2, Expr Expr3) tuple) =>
+        new Tuple(new Expr[] { tuple.Expr1, tuple.Expr2, tuple.Expr3 });
+
+    /// <summary>
+    /// cast the value tuple to ir array.
+    /// </summary>
+    public static implicit operator Tuple((Expr Expr1, Expr Expr2, Expr Expr3, Expr Expr4) tuple) =>
+        new Tuple(new Expr[] { tuple.Expr1, tuple.Expr2, tuple.Expr3, tuple.Expr4 });
+
+    public static bool operator ==(Tuple? left, Tuple? right) => EqualityComparer<Tuple>.Default.Equals(left, right);
+
+    public static bool operator !=(Tuple? left, Tuple? right) => !(left == right);
+
+    /// <inheritdoc/>
+    public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
+        => functor.VisitTuple(this, context);
+
+    public Tuple With(Expr[]? fields = null) => new Tuple(fields ?? Fields);
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj) => Equals(obj as Tuple);
+
+    /// <inheritdoc/>
+    public bool Equals(Tuple? other) => other is not null && base.Equals(other);
 }

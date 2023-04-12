@@ -13,13 +13,13 @@
  * limitations under the License.
  */
 #include <limits>
+#include <nncase/kernels/apply.h>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/kernels/stackvm/tensor_ops.h>
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/util.h>
-#include <nncase/kernels/apply.h>
 #include <unordered_map>
 
 using namespace nncase;
@@ -60,8 +60,7 @@ result<void> reduce_arg_impl(TReducer &&reducer, T init_value, const T *input,
             out_map[out_idx].push_back(index[axes[0]]);
             dst = src;
         } else if constexpr (std::is_same_v<T, float>) {
-            if(fabs(src - dst) < epsilon)
-            {
+            if (fabs(src - dst) < epsilon) {
                 out_map[out_idx].push_back(index[axes[0]]);
             }
         }
@@ -85,30 +84,47 @@ result<void> reduce_arg_impl(TReducer &&reducer, T init_value, const T *input,
             kernels::detail::get_reduced_shape(in_shape, axes, keep_dims);     \
         switch (op) {                                                          \
         case reduce_arg_op_t::arg_min:                                         \
-            return reduce_arg_impl([](_ty a, _ty b) { return a < b; },         \
-                                   std::numeric_limits<_ty>::max(), IN_CAST(_ty, input),     \
-                                   OUT_CAST(int64_t, output), in_shape, out_shape, in_strides,    \
-                                   out_strides, axes, keep_dims,               \
-                                   select_last_idx, context);                  \
+            return output_typecode == dt_int32                                 \
+                       ? reduce_arg_impl(                                      \
+                             [](_ty a, _ty b) { return a < b; },               \
+                             std::numeric_limits<_ty>::max(),                  \
+                             IN_CAST(_ty, input), OUT_CAST(int32_t, output),   \
+                             in_shape, out_shape, in_strides, out_strides,     \
+                             axes, keep_dims, select_last_idx, context)        \
+                       : reduce_arg_impl(                                      \
+                             [](_ty a, _ty b) { return a < b; },               \
+                             std::numeric_limits<_ty>::max(),                  \
+                             IN_CAST(_ty, input), OUT_CAST(int64_t, output),   \
+                             in_shape, out_shape, in_strides, out_strides,     \
+                             axes, keep_dims, select_last_idx, context);       \
         case reduce_arg_op_t::arg_max:                                         \
-            return reduce_arg_impl([](_ty a, _ty b) { return a > b; },         \
-                                   std::numeric_limits<_ty>::min(), IN_CAST(_ty, input),     \
-                                   OUT_CAST(int64_t, output), in_shape, out_shape, in_strides,    \
-                                   out_strides, axes, keep_dims,               \
-                                   select_last_idx, context);                  \
+            return output_typecode == dt_int32                                 \
+                       ? reduce_arg_impl(                                      \
+                             [](_ty a, _ty b) { return a > b; },               \
+                             std::numeric_limits<_ty>::lowest(),               \
+                             IN_CAST(_ty, input), OUT_CAST(int32_t, output),   \
+                             in_shape, out_shape, in_strides, out_strides,     \
+                             axes, keep_dims, select_last_idx, context)        \
+                       : reduce_arg_impl(                                      \
+                             [](_ty a, _ty b) { return a > b; },               \
+                             std::numeric_limits<_ty>::lowest(),               \
+                             IN_CAST(_ty, input), OUT_CAST(int64_t, output),   \
+                             in_shape, out_shape, in_strides, out_strides,     \
+                             axes, keep_dims, select_last_idx, context);       \
         default:                                                               \
             return err(std::errc::not_supported);                              \
         }                                                                      \
     }
 
-result<void> reduce_arg_impl(typecode_t typecode, reduce_arg_op_t op,
+result<void> reduce_arg_impl(typecode_t input_typecode,
+                             typecode_t output_typecode, reduce_arg_op_t op,
                              const gsl::byte *input, gsl::byte *output,
                              const dims_t &in_shape,
                              const strides_t &in_strides,
                              const strides_t &out_strides, const dims_t &axes,
                              bool keep_dims, bool select_last_idx,
                              kernel_context &context) noexcept {
-    TYPE_SELECT(typecode, REDUCE_ARG_IMPL);
+    TYPE_SELECT(input_typecode, REDUCE_ARG_IMPL);
 }
 
 dims_t infer_shape(const dims_t &in_shape, int32_t axis, bool keep_dims) {
@@ -122,21 +138,22 @@ dims_t infer_shape(const dims_t &in_shape, int32_t axis, bool keep_dims) {
 }
 
 result<value_t> nncase::kernels::stackvm::reduce_arg(
-    reduce_arg_op_t reduce_arg_op, value_t input, value_t axis,
-    value_t keep_dims, value_t select_last_index, value_t output,
+    reduce_arg_op_t reduce_arg_op, typecode_t dest_type, value_t input,
+    value_t axis, value_t keep_dims, value_t select_last_index, value_t output,
     kernel_context &context) {
     try_input(in_mem, input);
-    try_typecode(typecode, input_tensor);
+    try_typecode(input_typecode, input_tensor);
     try_positive_axis(axis_value, axis, input_tensor);
     try_to_scalar(keep_dims_value, keep_dims, bool);
     try_to_scalar(select_last_index_value, select_last_index, bool);
     auto out_shape =
         infer_shape(input_tensor->shape(), axis_value, keep_dims_value);
-    try_output(out_mem, output, dt_int64, out_shape);
+    try_output(out_mem, output, dest_type, out_shape);
     auto axes = dims_t{axis_value};
-    try_(reduce_arg_impl(typecode, reduce_arg_op, in_mem, out_mem,
-                         input_tensor->shape(), input_tensor->strides(),
-                         output_tensor->strides(), axes, keep_dims_value,
-                         select_last_index_value, context));
+    try_(reduce_arg_impl(input_typecode, dest_type, reduce_arg_op, in_mem,
+                         out_mem, input_tensor->shape(),
+                         input_tensor->strides(), output_tensor->strides(),
+                         axes, keep_dims_value, select_last_index_value,
+                         context));
     return ok(output);
 }

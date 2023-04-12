@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using Nncase.PatternMatch;
@@ -10,7 +10,7 @@ namespace Nncase.IR.Math;
 /// Reduce expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Reduce(ReduceOp ReduceOp) : Op
+public sealed partial class Reduce : Op
 {
     /// <summary>
     /// Gets input.
@@ -31,4 +31,9 @@ public sealed record Reduce(ReduceOp ReduceOp) : Op
     /// Gets whether to keep dims.
     /// </summary>
     public static readonly ParameterInfo KeepDims = new(typeof(Reduce), 3, "keepDims", IsScalar() & IsIntegral());
+
+    public ReduceOp ReduceOp { get; }
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => $"ReduceOp.{ReduceOp}";
 }

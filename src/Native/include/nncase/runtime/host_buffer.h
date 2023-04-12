@@ -66,6 +66,11 @@ class NNCASE_API host_buffer_node : public buffer_node {
     virtual bool has_physical_address() const noexcept = 0;
     virtual result<uintptr_t> physical_address() noexcept = 0;
 
+    result<void> copy_to(buffer_t dest, size_t src_start, size_t dest_start,
+                         datatype_t datatype, const dims_t &shape,
+                         const strides_t &src_strides,
+                         const strides_t &dest_strides) noexcept override;
+
   protected:
     virtual result<gsl::span<gsl::byte>> map_core(map_access_t access) = 0;
     virtual result<void> unmap_core(map_access_t access) = 0;
@@ -80,9 +85,11 @@ class NNCASE_API host_buffer_node : public buffer_node {
 class NNCASE_API host_buffer_slice : public buffer_slice {
   public:
     host_buffer_slice() noexcept = default;
-    host_buffer_slice(host_buffer_t buffer) noexcept : buffer_slice(std::move(buffer)) {}
+    host_buffer_slice(host_buffer_t buffer) noexcept
+        : buffer_slice(std::move(buffer)) {}
 
-    host_buffer_slice(host_buffer_t buffer, size_t start, size_t length) noexcept
+    host_buffer_slice(host_buffer_t buffer, size_t start,
+                      size_t length) noexcept
         : buffer_slice(std::move(buffer), start, length) {}
 
     const host_buffer_t &buffer() const noexcept {

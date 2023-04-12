@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -41,7 +41,7 @@ public static partial class Utility
     /// Get the current expr checked Shape.
     /// </summary>
     /// <param name="expr">expr.</param>
-    /// <returns>dimension</returns>
+    /// <returns>dimension.</returns>
     /// <exception cref="InvalidOperationException">e.</exception>
     public static List<Dimension> GetShape(Expr expr) => expr.CheckedType switch
     {
@@ -50,22 +50,24 @@ public static partial class Utility
     };
 
     /// <summary>
-    /// fast utility for build wildcard pattern.
+    /// build wildcard pattern.
     /// </summary>
-    /// <param name="name">name.</param>
-    /// <returns> Returns. </returns>
     public static ExprPattern IsWildcard(string? name) => new ExprPattern(name);
 
     /// <summary>
-    /// <see cref="IsWildcard(string?)"/>
+    /// fast utitlty for build condition.
     /// </summary>
-    /// <returns></returns>
+    /// <param name="name">name.</param>
+    /// <param name="condition">conditions.</param>
+    public static ExprPattern IsWildcard(string? name, Func<Expr, bool> condition) => new ExprPattern(condition, name);
+
+    /// <summary>
+    /// <see cref="IsWildcard(string?)"/>.
+    /// </summary>
     public static ExprPattern IsWildcard() => IsWildcard(null);
 
     /// <summary>
     /// fast utitlty for build optional none pattern.
     /// </summary>
-    /// <returns></returns>
-    public static ExprPattern IsNone() => new ExprPattern(e => e == None.Default, null);
-
+    public static ExprPattern IsNone() => new ExprPattern(e => e is None, null);
 }

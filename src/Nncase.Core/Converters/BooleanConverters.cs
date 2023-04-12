@@ -239,8 +239,8 @@ internal class BooleanConverters :
             throw new ArgumentException("Dest buffer is not sufficient.");
         }
 
-        BFloat16 one = (BFloat16)1f;
-        BFloat16 zero = (BFloat16)0f;
+        var one = (BFloat16)1f;
+        var zero = (BFloat16)0f;
 
         for (int i = 0; i < source.Length; i++)
         {

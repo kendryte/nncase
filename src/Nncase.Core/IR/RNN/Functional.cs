@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,9 +18,6 @@ namespace Nncase.IR.F;
 /// </summary>
 public static class RNN
 {
-    public static Call LSTM(LSTMDirection direction, LSTMLayout layout, string[] acts, Expr x, Expr w, Expr r, Expr b, Expr seqLens,
-        Expr initH, Expr initC, Expr p, Expr actAlpha, Expr actBeta,
-        Expr clip, Expr hiddenSize, Expr inputForget, Expr outputSize) =>
-        new Call(new LSTM(direction, layout, acts), x, w, r, b, seqLens, initH, initC, p,
-            actAlpha, actBeta, clip, hiddenSize, inputForget, outputSize);
+    public static Call LSTM(LSTMDirection direction, LSTMLayout layout, string[] acts, Expr x, Expr w, Expr r, Expr b, Expr seqLens, Expr initH, Expr initC, Expr p, Expr actAlpha, Expr actBeta, Expr clip, Expr hiddenSize, Expr inputForget, Expr outputSize) =>
+        new Call(new IR.Tensors.LSTM(direction, layout, acts), x, w, r, b, seqLens, initH, initC, p, actAlpha, actBeta, clip, hiddenSize, inputForget, outputSize);
 }

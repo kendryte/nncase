@@ -1,16 +1,21 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.IO;
-using System.Numerics.Tensors;
 using System.Runtime.InteropServices;
 using Nncase.CodeGen;
 using Nncase.IR;
 using Nncase.Runtime.Interop;
 using Nncase.Schedule;
+using Nncase.Targets;
+using Nncase.Tests.TestFixture;
 using Xunit;
 
 namespace Nncase.Tests.SimulatorTest;
 
-public class UnitTestInterop
+[AutoSetupTestMethod(InitSession = false)]
+public class UnitTestInterop : TestClassBase
 {
     private readonly byte[] _kmodel;
 
@@ -20,8 +25,8 @@ public class UnitTestInterop
         var y = x + 1.0f;
         var main = new Function("main", y, new[] { x });
         var module = new IRModule(main);
-        var target = CompilerServices.GetTarget("cpu");
-        var modelBuilder = new ModelBuilder(target);
+        var target = CompilerServices.GetTarget(CPUTarget.Kind);
+        var modelBuilder = new ModelBuilder(target, CompileOptions);
         var linkedModel = modelBuilder.Build(module);
         using var output = new MemoryStream();
         linkedModel.Serialize(output);
@@ -55,7 +60,8 @@ public class UnitTestInterop
     {
         var allocator = RTBufferAllocator.Host;
         var buffer = allocator.Allocate(256).AsHost();
-        using (var mmOwner = buffer.Map(RTMapAccess.Write))
+        Assert.NotNull(buffer);
+        using (var mmOwner = buffer!.Map(RTMapAccess.Write))
         {
             mmOwner.Memory.Span.Fill(1);
         }
@@ -115,7 +121,7 @@ public class UnitTestInterop
         interp.LoadModel(_kmodel);
         var entry = interp.Entry;
         Assert.NotNull(entry);
-        Assert.Equal(1u, entry.ParamsCount);
+        Assert.Equal(1u, entry!.ParamsCount);
     }
 
     [Fact]
@@ -124,9 +130,10 @@ public class UnitTestInterop
         var interp = RTInterpreter.Create();
         interp.LoadModel(_kmodel);
         var entry = interp.Entry;
+        Assert.NotNull(entry);
 
         var input = RTTensor.FromTensor(new[] { 2.0f });
-        var result = (RTTensor)entry.Invoke(input);
+        var result = (RTTensor)entry!.Invoke(input);
         var buffer = result.Buffer.Buffer.AsHost()!;
         using (var mmOwner = buffer.Map(RTMapAccess.Read))
         {

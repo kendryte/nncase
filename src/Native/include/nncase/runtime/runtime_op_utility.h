@@ -53,7 +53,8 @@ inline size_t get_bytes(const datatype_t &type, const TShape &shape,
 namespace detail {
 template <class shape_type, class strides_type, class bs_ptr>
 inline std::size_t compute_strides(const shape_type &shape,
-                                   strides_type &strides, [[maybe_unused]] bs_ptr bs) {
+                                   strides_type &strides,
+                                   [[maybe_unused]] bs_ptr bs) {
     using strides_value_type = typename std::decay_t<strides_type>::value_type;
     strides_value_type data_size = 1;
     for (std::size_t i = shape.size(); i != 0; --i) {

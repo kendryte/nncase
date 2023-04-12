@@ -16,7 +16,8 @@
 #include <nncase/codegen/module_builder.h>
 #include <nncase/runtime/vulkan/runtime_module.h>
 
-namespace nncase::codegen
-{
-NNCASE_MODULES_VULKAN_API std::unique_ptr<module_builder> create_vulkan_module_builder(std::string_view module_name, const module_builder_params &params);
+namespace nncase::codegen {
+NNCASE_MODULES_VULKAN_API std::unique_ptr<module_builder>
+create_vulkan_module_builder(std::string_view module_name,
+                             const module_builder_params &params);
 }

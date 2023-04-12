@@ -11,7 +11,7 @@ using Extension.Mathematics;
 
 namespace Nncase.CodeGen;
 
-public sealed class LinkedModel
+internal sealed class LinkedModel : ILinkedModel
 {
     private const int _minAlignmnet = 8;
 
@@ -34,8 +34,8 @@ public sealed class LinkedModel
 
         var modelHeader = new ModelHeader
         {
-            Identifier = ModelInfo.IDENTIFIER,
-            Version = ModelInfo.VERSION,
+            Identifier = ModelInfo.Identifier,
+            Version = ModelInfo.Version,
             Flags = 0,
             Alignment = (uint)alignment,
             Modules = (uint)Modules.Count,
@@ -48,6 +48,33 @@ public sealed class LinkedModel
         {
             Serialize(writer, module);
         }
+    }
+
+    private static unsafe void FillModuleKind(ref ModuleHeader header, string source)
+    {
+        fixed (byte* kind = header.Kind)
+        {
+            if (Encoding.UTF8.GetBytes(source, new Span<byte>(kind, ModelInfo.MaxModuleKindLength)) < 1)
+            {
+                throw new ArgumentException("Invalid module kind");
+            }
+        }
+    }
+
+    private static unsafe void FillSectionName(ref SectionHeader header, string source)
+    {
+        fixed (byte* kind = header.Name)
+        {
+            if (Encoding.UTF8.GetBytes(source, new Span<byte>(kind, ModelInfo.MaxSectionNameLength)) < 1)
+            {
+                throw new ArgumentException("Invalid section name");
+            }
+        }
+    }
+
+    private static int LCM(IEnumerable<int> source)
+    {
+        return source.Aggregate(_minAlignmnet, (a, b) => Operations.LCM(a, b));
     }
 
     private unsafe void Serialize(BinaryWriter writer, ILinkedModule module)
@@ -142,32 +169,5 @@ public sealed class LinkedModel
         writer.Position(headerPos);
         writer.Write(ref header);
         writer.Position(endPos);
-    }
-
-    private static unsafe void FillModuleKind(ref ModuleHeader header, string source)
-    {
-        fixed (byte* kind = header.Kind)
-        {
-            if (Encoding.UTF8.GetBytes(source, new Span<byte>(kind, ModelInfo.MAX_MODULE_KIND_LENGTH)) < 1)
-            {
-                throw new ArgumentException("Invalid module kind");
-            }
-        }
-    }
-
-    private static unsafe void FillSectionName(ref SectionHeader header, string source)
-    {
-        fixed (byte* kind = header.Name)
-        {
-            if (Encoding.UTF8.GetBytes(source, new Span<byte>(kind, ModelInfo.MAX_SECTION_NAME_LENGTH)) < 1)
-            {
-                throw new ArgumentException("Invalid section name");
-            }
-        }
-    }
-
-    private static int LCM(IEnumerable<int> source)
-    {
-        return source.Aggregate(_minAlignmnet, (a, b) => Operations.LCM(a, b));
     }
 }

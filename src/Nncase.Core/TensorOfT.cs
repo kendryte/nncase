@@ -5,11 +5,13 @@ using System;
 using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Toolkit.HighPerformance.Helpers;
 using NetFabric.Hyperlinq;
 using Nncase.Buffers;
 using Nncase.IR;
@@ -26,9 +28,6 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     IReadOnlyCollection<T>, IList<T>, IReadOnlyList<T>, IEquatable<Tensor<T>>
     where T : unmanaged, IEquatable<T>
 {
-    private readonly object _memoryOwner;
-    private readonly IntPtr _pointer;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="Tensor{T}"/> class.
     /// </summary>
@@ -36,17 +35,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     public Tensor(int length)
         : base(DataType.FromType<T>(), length)
     {
-        if (length == 8)
-        {
-            _memoryOwner = new T[length];
-            _pointer = IntPtr.Zero;
-        }
-        else
-        {
-            var memoryOwner = new NativeMemoryManager<T>(Length);
-            _memoryOwner = memoryOwner;
-            _pointer = memoryOwner.Pointer;
-        }
+        Buffer = new T[length];
     }
 
     /// <summary>
@@ -56,39 +45,28 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     public Tensor(ReadOnlySpan<int> dimensions)
         : base(DataType.FromType<T>(), dimensions)
     {
-        if (Length < 8)
-        {
-            _memoryOwner = new T[Length];
-            _pointer = IntPtr.Zero;
-        }
-        else
-        {
-            var memoryOwner = new NativeMemoryManager<T>(Length);
-            _memoryOwner = memoryOwner;
-            _pointer = memoryOwner.Pointer;
-        }
+        Buffer = new T[Length];
     }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Tensor{T}"/> class.
     /// </summary>
-    /// <param name="memoryOwner">Memory owner.</param>
-    /// <param name="pointer">Memory pointer.</param>
+    /// <param name="buffer">Buffer memory.</param>
     /// <param name="dimensions">An span of integers that represent the size of each dimension of the DenseTensor to create.</param>
-    public Tensor(object memoryOwner, IntPtr pointer, ReadOnlySpan<int> dimensions)
+    public Tensor(Memory<T> buffer, ReadOnlySpan<int> dimensions)
         : base(DataType.FromType<T>(), dimensions)
     {
-        _memoryOwner = memoryOwner;
-        _pointer = pointer;
+        Trace.Assert(Length == buffer.Length);
+        Buffer = buffer;
     }
 
     /// <summary>
     /// Gets memory storing backing values of this tensor.
     /// </summary>
-    public Span<T> Buffer => _pointer == IntPtr.Zero ? (T[])_memoryOwner : new Span<T>((void*)_pointer, Length);
+    public Memory<T> Buffer { get; }
 
     /// <inheritdoc/>
-    public override Span<byte> BytesBuffer => MemoryMarshal.AsBytes(Buffer);
+    public override Span<byte> BytesBuffer => MemoryMarshal.AsBytes(Buffer.Span);
 
     int ICollection<T>.Count => Length;
 
@@ -166,7 +144,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     /// <returns>The value at the specified position in this Tensor.</returns>
     public T GetValue(int index)
     {
-        return Buffer[index];
+        return Buffer.Span[index];
     }
 
     /// <summary>
@@ -181,7 +159,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
             throw new ArgumentException("Length after reshape should remain same.");
         }
 
-        return new Tensor<T>(_memoryOwner, _pointer, dimensions);
+        return new Tensor<T>(Buffer, dimensions);
     }
 
     /// <summary>
@@ -192,7 +170,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     /// <param name="value">The new value to set at the specified position in this Tensor.</param>
     public void SetValue(int index, T value)
     {
-        Buffer[index] = value;
+        Buffer.Span[index] = value;
     }
 
     /// <summary>
@@ -201,7 +179,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     /// <param name="value">Value to fill.</param>
     public void Fill(T value)
     {
-        Buffer.Fill(value);
+        Buffer.Span.Fill(value);
     }
 
     /// <summary>
@@ -211,7 +189,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     /// <returns>true if item is found in the <see cref="Tensor{T}"/>; otherwise, false.</returns>
     public bool Contains(T value)
     {
-        return Buffer.Contains(value);
+        return Buffer.Span.Contains(value);
     }
 
     /// <summary>
@@ -227,7 +205,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
             throw new ArgumentException(nameof(indices) + " is not sufficient.");
         }
 
-        var index = Buffer.IndexOf(item);
+        var index = Buffer.Span.IndexOf(item);
         if (index < 0)
         {
             return false;
@@ -242,8 +220,11 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     {
         if (Dimensions.IsEmpty)
         {
-            return Buffer[0].ToString()!;
+            return Buffer.Span[0].ToString()!;
         }
+
+        string prefix = TensorOfT.PrefixMap.GetValueOrDefault(typeof(T).TypeHandle, string.Empty);
+        string suffix = TensorOfT.SuffixMap.GetValueOrDefault(typeof(T).TypeHandle, string.Empty);
 
         var builder = new StringBuilder();
 
@@ -282,17 +263,31 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
                     {
                         Indent(builder, indent, 2);
                     }
+
                     if (includeWhitespace)
+                    {
                         builder.Append($"[{string.Join(",", indices)}]: {{");
+                    }
                     else
-                        builder.Append("{");
+                    {
+                        builder.Append('{');
+                    }
                 }
                 else
                 {
                     builder.Append(',');
                 }
 
+                if (!string.IsNullOrEmpty(prefix))
+                {
+                    builder.Append(prefix);
+                }
+
                 builder.Append(this[indices]);
+                if (!string.IsNullOrEmpty(suffix))
+                {
+                    builder.Append(suffix);
+                }
             }
 
             builder.Append('}');
@@ -353,9 +348,15 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
 
             var converter = (ISpanConverter<T, TTo>)CompilerServices.DataTypeService.GetConverter(typeof(T), typeof(TTo));
             var tensor = new Tensor<TTo>(Dimensions);
-            converter.ConvertTo(Buffer, tensor.Buffer, castMode);
+            converter.ConvertTo(Buffer.Span, tensor.Buffer.Span, castMode);
             return tensor;
         }
+    }
+
+    /// <inheritdoc/>
+    public override MemoryHandle PinBuffer()
+    {
+        return Buffer.Pin();
     }
 
     /// <inheritdoc/>
@@ -366,7 +367,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
             return Equals(other);
         }
 
-        throw new ArgumentException("Cannot compare.");
+        return false;
     }
 
     /// <inheritdoc/>
@@ -387,20 +388,13 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
             return false;
         }
 
-        return Buffer.SequenceEqual(other.Buffer);
+        return Buffer.Span.SequenceEqual(other.Buffer.Span);
     }
 
     /// <inheritdoc/>
     public override int GetHashCode()
     {
-        HashCode hashcode = default;
-        var buffer = Buffer;
-        for (int i = 0; i < buffer.Length; i++)
-        {
-            hashcode.Add(buffer[i]);
-        }
-
-        return hashcode.ToHashCode();
+        return HashCode<T>.Combine(Buffer.Span);
     }
 
     IEnumerator<T> IEnumerable<T>.GetEnumerator()
@@ -415,7 +409,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
 
     void ICollection<T>.Clear()
     {
-        Buffer.Clear();
+        Buffer.Span.Clear();
     }
 
     bool ICollection<T>.Contains(T item)
@@ -425,7 +419,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
 
     void ICollection<T>.CopyTo(T[] array, int arrayIndex)
     {
-        Buffer.CopyTo(array.AsSpan(arrayIndex));
+        Buffer.Span.CopyTo(array.AsSpan(arrayIndex));
     }
 
     bool ICollection<T>.Remove(T item)
@@ -435,7 +429,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
 
     int IList<T>.IndexOf(T item)
     {
-        return Buffer.IndexOf(item);
+        return Buffer.Span.IndexOf(item);
     }
 
     void IList<T>.Insert(int index, T item)
@@ -495,14 +489,14 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     /// <inheritdoc/>
     private protected override int GetHashCode(IEqualityComparer comparer)
     {
-        int hashcode = 0;
-        var buffer = Buffer;
+        HashCode hashCode = default;
+        var buffer = Buffer.Span;
         for (int i = 0; i < buffer.Length; i++)
         {
-            hashcode ^= comparer.GetHashCode(buffer[i]);
+            hashCode.Add(comparer.GetHashCode(buffer[i]));
         }
 
-        return hashcode;
+        return hashCode.ToHashCode();
     }
 
     private protected override IEnumerator GetEnumeratorCore()
@@ -514,7 +508,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     {
         if (array is T[] arr)
         {
-            Buffer.CopyTo(arr.AsSpan(index));
+            Buffer.Span.CopyTo(arr.AsSpan(index));
         }
         else
         {
@@ -532,7 +526,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
                 var buffer = Buffer;
                 for (int i = 0; i < buffer.Length; i++)
                 {
-                    array.SetValue(buffer[i], index + i);
+                    array.SetValue(buffer.Span[i], index + i);
                 }
             }
         }
@@ -577,7 +571,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
 
         for (int i = 0; i < bufferA.Length; i++)
         {
-            result = comparer.Compare(bufferA[i], bufferB[i]);
+            result = comparer.Compare(bufferA.Span[i], bufferB.Span[i]);
             if (result != 0)
             {
                 break;
@@ -610,7 +604,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
         for (int i = 0; i < bufferA.Length; i++)
         {
             TensorUtilities.GetIndices(Strides, false, i, indices);
-            result = comparer.Compare(bufferA[i], other.GetValue(indices));
+            result = comparer.Compare(bufferA.Span[i], other.GetValue(indices));
             if (result != 0)
             {
                 break;
@@ -637,7 +631,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
 
         for (int i = 0; i < bufferA.Length; i++)
         {
-            if (!comparer.Equals(bufferA[i], bufferB[i]))
+            if (!comparer.Equals(bufferA.Span[i], bufferB.Span[i]))
             {
                 return false;
             }
@@ -668,7 +662,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
         for (int i = 0; i < bufferA.Length; i++)
         {
             TensorUtilities.GetIndices(Strides, false, i, indices);
-            if (!comparer.Equals(bufferA[i], other.GetValue(indices)))
+            if (!comparer.Equals(bufferA.Span[i], other.GetValue(indices)))
             {
                 return false;
             }
@@ -690,7 +684,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
         {
             _tensor = tensor;
             _index = 0;
-            Current = default(T);
+            Current = default;
         }
 
         /// <inheritdoc/>
@@ -724,4 +718,28 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
         {
         }
     }
+}
+
+internal sealed class TensorOfT
+{
+    /// <summary>
+    /// The array to string prefix map.
+    /// </summary>
+    public static readonly Dictionary<System.RuntimeTypeHandle, string> PrefixMap = new()
+    {
+        { typeof(Half).TypeHandle, "(Half)" },
+        { typeof(BFloat16).TypeHandle, "(BFloat16)" },
+    };
+
+    /// <summary>
+    /// The array to string suffix map.
+    /// </summary>
+    public static readonly Dictionary<System.RuntimeTypeHandle, string> SuffixMap = new()
+    {
+        { typeof(float).TypeHandle, "f" },
+        { typeof(double).TypeHandle, "d" },
+        { typeof(long).TypeHandle, "L" },
+        { typeof(uint).TypeHandle, "U" },
+        { typeof(ulong).TypeHandle, "UL" },
+    };
 }

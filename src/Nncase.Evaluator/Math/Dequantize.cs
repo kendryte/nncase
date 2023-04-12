@@ -1,7 +1,8 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
 using OrtKISharp;
@@ -12,7 +13,7 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Evaluator for <see cref="Dequantize"/>.
 /// </summary>
-public class DequantizeEvaluator : IEvaluator<Dequantize>, ITypeInferencer<Dequantize>
+public class DequantizeEvaluator : IEvaluator<Dequantize>, ITypeInferencer<Dequantize>, ICostEvaluator<Dequantize>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Dequantize target)
@@ -29,6 +30,20 @@ public class DequantizeEvaluator : IEvaluator<Dequantize>, ITypeInferencer<Dequa
         var input = context.CheckArgumentType<TensorType>(target, Dequantize.Input);
         var deqParam = context.CheckArgumentType<TensorType>(target, Dequantize.DequantParam);
         return Visit(target, input, deqParam);
+    }
+
+    /// <inheritdoc/>
+    public Cost Visit(ICostEvaluateContext context, Dequantize target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, Dequantize.Input);
+        var outputType = context.GetReturnType<TensorType>();
+
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, 2),
+        };
     }
 
     private IRType Visit(Dequantize target, TensorType input, TensorType deqParam)

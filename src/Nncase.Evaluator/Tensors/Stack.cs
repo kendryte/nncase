@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -23,7 +23,15 @@ public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>, ICostEv
     {
         var inputs = context.GetArgumentValueAsTensors(stack, Stack.Inputs);
         var axis = context.GetArgumentValueAsScalar<long>(stack, Stack.Axis);
-        return OrtKI.ConcatFromSequence(inputs.Select(t => t.ToOrtTensor()).ToArray(), axis, inputs.Length).ToValue();
+        var ort_inputs = inputs.Select(t =>
+        {
+            var ort = t.ToOrtTensor();
+            var old_shape = ort.Shape;
+            var new_shape = old_shape.Take((int)axis).Concat(new long[] { 1 }).Concat(old_shape.Skip((int)axis)).ToArray();
+            ort.Reshape(new_shape);
+            return ort;
+        }).ToArray();
+        return OrtKI.Concat(ort_inputs, axis).ToValue();
     }
 
     /// <inheritdoc/>
@@ -34,7 +42,7 @@ public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>, ICostEv
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, Stack target)
+    public Cost Visit(ICostEvaluateContext context, Stack target)
     {
         var input = context.GetArgumentType<TupleType>(target, Stack.Inputs);
         var ret = context.GetReturnType<TensorType>();
@@ -44,7 +52,6 @@ public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>, ICostEv
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
             [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(ret, 1),
         };
-
     }
 
     private IRType Visit(ITypeInferenceContext context, Stack target, TupleType inputs)
@@ -61,6 +68,7 @@ public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>, ICostEv
                     {
                         return ttype;
                     }
+
                     ttypes[i] = ttype;
                 }
                 else

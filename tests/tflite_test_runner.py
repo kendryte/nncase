@@ -79,7 +79,7 @@ class TfliteTestRunner(TestRunner):
         interp = tf.lite.Interpreter(model_path=model_file)
         interp.allocate_tensors()
         for input in self.inputs:
-            interp.set_tensor(input["index"], self.data_pre_process(input['data']))
+            interp.set_tensor(input["index"], self.data_pre_process(input['data'])[0])
 
         interp.invoke()
 
@@ -90,7 +90,8 @@ class TfliteTestRunner(TestRunner):
                 os.path.join(case_dir, f'cpu_result_{i}.bin'),
                 os.path.join(case_dir, f'cpu_result_{i}.txt')))
             data.tofile(self.output_paths[-1][0])
-            self.totxtfile(self.output_paths[-1][1], data)
+            if not test_utils.in_ci:
+                self.totxtfile(self.output_paths[-1][1], data)
             i += 1
 
     def import_model(self, compiler, model_content, import_options):

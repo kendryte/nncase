@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Collections.Generic;
@@ -15,7 +15,7 @@ namespace Nncase.Importer.TFLite
         private Expr VisitConcat(in tflite.Operator op)
         {
             var @operator = op;
-            var inputs = Enumerable.Range(0, op.InputsLength).Select(i => GetInputExprs(@operator, i));
+            var inputs = Enumerable.Range(0, op.InputsLength).Select(i => GetInputExprs(@operator, i)).ToArray();
             return F.Tensors.Concat(new Tuple(inputs), op.BuiltinOptionsAsConcatenationOptions().Axis);
         }
 
@@ -23,7 +23,7 @@ namespace Nncase.Importer.TFLite
         {
             var @operator = op;
             var axis = op.BuiltinOptionsAsPackOptions().Axis;
-            var inputs = Enumerable.Range(0, op.InputsLength).Select(i => GetInputExprs(@operator, i));
+            var inputs = Enumerable.Range(0, op.InputsLength).Select(i => GetInputExprs(@operator, i)).ToArray();
             return F.Tensors.Stack(new Tuple(inputs), axis);
         }
     }

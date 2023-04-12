@@ -1,10 +1,12 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
 using System.Linq;
+using Nncase.CostModel;
 using Nncase.IR;
-using Nncase.IR.NN;
+
+// using Nncase.IR.NN;
 using Nncase.IR.Tensors;
 using OrtKISharp;
 using static Nncase.LSTMHelper;
@@ -14,7 +16,7 @@ namespace Nncase.Evaluator.NN;
 /// <summary>
 /// Evaluator for <see cref="LSTM"/>.
 /// </summary>
-public class LSTMEvaluator : IEvaluator<LSTM>, ITypeInferencer<LSTM>
+public class LSTMEvaluator : IEvaluator<LSTM>, ITypeInferencer<LSTM>, ICostEvaluator<LSTM>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, LSTM target)
@@ -33,8 +35,7 @@ public class LSTMEvaluator : IEvaluator<LSTM>, ITypeInferencer<LSTM>
         var hiddenSize = context.GetArgumentValueAsScalar<long>(target, LSTM.HiddenSize);
         var inputForget = context.GetArgumentValueAsScalar<long>(target, LSTM.InputForget);
         var outputSize = context.GetArgumentValueAsScalar<long>(target, LSTM.OutputSize);
-        var result = OrtKI.LSTM(x, w, r, b, seqLens, initH, initC, p, actAlpha, actBeta, target.Activations, clip,
-                LSTMDirectionToValue(target.Direction), hiddenSize, inputForget, LSTMLayoutToValue(target.Layout), !clip.Equals(float.NaN), outputSize);
+        var result = OrtKI.LSTM(x, w, r, b, seqLens, initH, initC, p, actAlpha, actBeta, target.Activations.ToArray(), clip, LSTMDirectionToValue(target.Direction), hiddenSize, inputForget, LSTMLayoutToValue(target.Layout), !clip.Equals(float.NaN), outputSize);
         return Value.FromTensors(result.Select(t => t.ToTensor()).ToArray());
     }
 
@@ -48,7 +49,27 @@ public class LSTMEvaluator : IEvaluator<LSTM>, ITypeInferencer<LSTM>
         {
             return new InvalidType("LSTM First input tensor must have rank 3");
         }
+
         return Visit(context, x, initH, initC, target);
+    }
+
+    /// <inheritdoc/>
+    public Cost Visit(ICostEvaluateContext context, LSTM target)
+    {
+        var xType = context.GetArgumentType<TensorType>(target, LSTM.X);
+        var wType = context.GetArgumentType<TensorType>(target, LSTM.W);
+        var rType = context.GetArgumentType<TensorType>(target, LSTM.R);
+        var bType = context.GetArgumentType<TensorType>(target, LSTM.B);
+        var returnType = context.GetReturnType<TupleType>();
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(xType) + CostUtility.GetMemoryAccess(wType) + CostUtility.GetMemoryAccess(rType) + CostUtility.GetMemoryAccess(bType),
+            [CostFactorNames.MemoryStore] = returnType.Select(t => t switch
+            {
+                TensorType tensorType => CostUtility.GetMemoryAccess(tensorType),
+                _ => 1,
+            }).Sum(),
+        };
     }
 
     private IRType Visit(ITypeInferenceContext context, TensorType x, TensorType initH, TensorType initC, LSTM target)
@@ -80,6 +101,7 @@ public class LSTMEvaluator : IEvaluator<LSTM>, ITypeInferencer<LSTM>
         {
             hiddenSize = hiddenSizeConst.Value.ToScalar<int>();
         }
+
         yShape[^1] = hiddenSize;
         return x with { Shape = yShape.ToArray() };
     }

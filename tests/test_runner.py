@@ -16,8 +16,10 @@ import copy
 import cv2
 import numpy as np
 import yaml
+import test_utils
 from inference import *
 from evaluator import *
+
 
 class Edict:
     def __init__(self, d: Dict[str, int]) -> None:
@@ -98,7 +100,7 @@ def generate_random(shape: List[int], dtype: np.dtype,
         data = np.random.randint(0, 256, shape)
     elif dtype == np.int8:
         data = np.random.randint(-128, 128, shape)
-    elif dtype == np.bool or dtype == np.bool_:
+    elif dtype == bool:
         data = np.random.rand(*shape) > 0.5
     elif dtype == np.int32:
         data = np.random.randint(1, 5, size=shape, dtype='int32')
@@ -170,9 +172,6 @@ DataFactory = {
     'generate_image_dataset': generate_image_dataset
 }
 
-# singleton
-# if create compiler in each test, then will thorw exception: The configured user limit
-globalCompiler = nncase.Compiler()
 
 class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
     def __init__(self, case_name, targets=None, overwrite_configs: Union[Dict, str] = None) -> None:
@@ -205,28 +204,28 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         self.default_shape = [1, 1, 48, 48, 24, 24]
         self.shape_vars = {}
 
-    def transform_input(self, values: np.array, type: str, stage: str) -> np.ndarray:
-        values = copy.deepcopy(values)
-        if(len(values.shape) == 4 and self.pre_process[0]['preprocess']):
-            if stage == "CPU":
-                # onnx \ caffe
-                if (self.model_type == "onnx" or self.model_type == "caffe"):
-                    values = np.transpose(values, [0, 3, 1, 2])
+    def transform_input(self, values: List[np.ndarray], type: str, stage: str) -> List[np.ndarray]:
+        new_values = []
+        for value in values:
+            new_value = value
+            if(len(value.shape) == 4 and self.pre_process[0]['preprocess']):
+                if stage == "CPU":
+                    # onnx \ caffe
+                    if (self.model_type == "onnx" or self.model_type == "caffe"):
+                        new_value = np.transpose(value, [0, 3, 1, 2])
 
-            if type == 'float32':
-                return values.astype(np.float32)
-            elif type == 'uint8':
-                if values.dtype == np.float32:
-                    values = ((values) * 255).astype(np.uint8)
-                return values
-            elif type == 'int8':
-                if values.dtype == np.float32:
-                    values = (values * 255 - 128).astype(np.int8)
-                return values
-            else:
-                raise TypeError(" Not support type for quant input")
-        else:
-            return values
+                if type == 'float32':
+                    new_value = value.astype(np.float32)
+                elif type == 'uint8':
+                    if value.dtype == np.float32:
+                        new_value = (value * 255).astype(np.uint8)
+                elif type == 'int8':
+                    if value.dtype == np.float32:
+                        new_value = (value * 255 - 128).astype(np.int8)
+                else:
+                    raise TypeError(" Not support type for quant input")
+            new_values.append(value)
+        return values
 
     def get_process_config(self, config):
         # preprocess flag
@@ -269,84 +268,86 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         self.pre_process.append(process_norm)
         self.pre_process.append(process_layout)
 
-    def data_pre_process(self, data) -> np.ndarray:
-        data = copy.deepcopy(data)
-        if self.pre_process[0]['preprocess'] and len(data.shape) == 4:
-            if self.pre_process[-1]['input_layout'] == 'NCHW':
-                data = np.transpose(data, [0, 2, 3, 1])
-            if self.pre_process[3]['input_type'] == "uint8":
-                data *= 255.
-            # elif self.cfg.case.compile_opt.kwargs['input_type'] == "int8":
-            #     data *= 255.
-            #     data -= 128.
-            for item in self.pre_process:
-                # dequantize
-                if 'range' in item.keys() and 'input_type' in item.keys():
-                    Q_max, Q_min = 0, 0
-                    if item['input_type'] == 'uint8':
-                        Q_max, Q_min = 255, 0
-                    # elif item['input_type'] == 'int8':
-                    #     Q_max, Q_min = 127, -128
-                    else:
-                        continue
-                    scale = (item['range'][1] - item['range'][0]) / (Q_max - Q_min)
-                    bias = round((item['range'][1] * Q_min - item['range'][0] *
-                                  Q_max) / (item['range'][1] - item['range'][0]))
-                    data = data * scale
-                    data = data - bias
-
-                # swapRB
-                if 'swapRB' in item.keys():
-                    if data.shape[-1] != 3:
-                        assert("Please confirm your input channel is 3.")
-                    if item['swapRB'] == True:
-                        data = data[:, :, :, ::-1]
-                        data = np.array(data)
-
-                # LetterBox
-                if 'input_range' in item.keys() and 'input_shape' in item.keys() and 'model_shape' in item.keys():
-                    if item['input_shape'] != []:
-                        model_shape: List = []
-                        if self.model_type == "onnx" or self.model_type == "caffe":
-                            model_shape = [1, item['model_shape'][2],
-                                           item['model_shape'][3], item['model_shape'][1]]
+    def data_pre_process(self, values: List[np.ndarray]) -> List[np.ndarray]:
+        new_values = []
+        for value in values:
+            new_value = copy.deepcopy(value)
+            if self.pre_process[0]['preprocess'] and len(value.shape) == 4:
+                if self.pre_process[-1]['input_layout'] == 'NCHW':
+                    new_value = np.transpose(value, [0, 2, 3, 1])
+                if self.pre_process[3]['input_type'] == "uint8":
+                    new_value = value * 255.
+                # elif self.cfg.case.compile_opt.kwargs['input_type'] == "int8":
+                #     data *= 255.
+                #     data -= 128.
+                for item in self.pre_process:
+                    # dequantize
+                    if 'range' in item.keys() and 'input_type' in item.keys():
+                        Q_max, Q_min = 0, 0
+                        if item['input_type'] == 'uint8':
+                            Q_max, Q_min = 255, 0
+                        # elif item['input_type'] == 'int8':
+                        #     Q_max, Q_min = 127, -128
                         else:
-                            model_shape = item['model_shape']
-                        if model_shape[1] != data.shape[1] or model_shape[2] != data.shape[2]:
-                            in_h, in_w = data.shape[1], data.shape[2]
-                            model_h, model_w = model_shape[1], model_shape[2]
-                            ratio = min(model_h / in_h, model_w / in_w)
-                            resize_shape = data.shape[0], round(
-                                in_h * ratio), round(in_w * ratio), 3
-                            resize_data = cv2.resize(data[0], (resize_shape[2],
-                                                               resize_shape[1]), interpolation=cv2.INTER_LINEAR)
-                            dh = model_shape[1] - resize_shape[1]
-                            dw = model_shape[2] - resize_shape[2]
-                            dh /= 2
-                            dw /= 2
-                            resize_data = np.array(resize_data, dtype=np.float32)
-                            data = cv2.copyMakeBorder(resize_data, round(dh - 0.1), round(model_h - resize_shape[1] - round(dh - 0.1)), round(dw - 0.1), round(
-                                model_w - resize_shape[2] - round(dw - 0.1)), cv2.BORDER_CONSTANT, value=(item['letterbox_value'], item['letterbox_value'], item['letterbox_value']))
+                            continue
+                        scale = (item['range'][1] - item['range'][0]) / (Q_max - Q_min)
+                        bias = round((item['range'][1] * Q_min - item['range'][0] *
+                                      Q_max) / (item['range'][1] - item['range'][0]))
+                        new_value = value * scale
+                        new_value = new_value - bias
 
-                            data = np.array(data, dtype=np.float32)
-                            data = np.expand_dims(data, 0)
+                    # swapRB
+                    if 'swapRB' in item.keys():
+                        if value.shape[-1] != 3:
+                            assert("Please confirm your input channel is 3.")
+                        if item['swapRB'] == True:
+                            new_value = value[:, :, :, ::-1]
+                            new_value = np.array(new_value)
 
-                # Normalize
-                if 'norm' in item.keys():
-                    for i in range(data.shape[-1]):
-                        k = i
-                        if data.shape[-1] > 3:
-                            k = 0
-                        data[:, :, :, i] = (data[:, :, :, i] - float(item['norm']['mean'][k])) / \
-                            float(item['norm']['std'][k])
-        else:
-            assert("Please confirm your input shape and model shape is 4D!")
+                    # LetterBox
+                    if 'input_range' in item.keys() and 'input_shape' in item.keys() and 'model_shape' in item.keys():
+                        if item['input_shape'] != []:
+                            model_shape: List = []
+                            if self.model_type == "onnx" or self.model_type == "caffe":
+                                model_shape = [1, item['model_shape'][2],
+                                               item['model_shape'][3], item['model_shape'][1]]
+                            else:
+                                model_shape = item['model_shape']
+                            if model_shape[1] != value.shape[1] or model_shape[2] != value.shape[2]:
+                                in_h, in_w = value.shape[1], value.shape[2]
+                                model_h, model_w = model_shape[1], model_shape[2]
+                                ratio = min(model_h / in_h, model_w / in_w)
+                                resize_shape = value.shape[0], round(
+                                    in_h * ratio), round(in_w * ratio), 3
+                                resize_data = cv2.resize(value[0], (resize_shape[2],
+                                                                    resize_shape[1]), interpolation=cv2.INTER_LINEAR)
+                                dh = model_shape[1] - resize_shape[1]
+                                dw = model_shape[2] - resize_shape[2]
+                                dh /= 2
+                                dw /= 2
+                                resize_data = np.array(resize_data, dtype=np.float32)
+                                new_value = cv2.copyMakeBorder(resize_data, round(dh - 0.1), round(model_h - resize_shape[1] - round(dh - 0.1)), round(dw - 0.1), round(
+                                    model_w - resize_shape[2] - round(dw - 0.1)), cv2.BORDER_CONSTANT, value=(item['letterbox_value'], item['letterbox_value'], item['letterbox_value']))
 
-        return data
+                                new_value = np.array(new_value, dtype=np.float32)
+                                new_value = np.expand_dims(new_value, 0)
+
+                    # Normalize
+                    if 'norm' in item.keys():
+                        for i in range(value.shape[-1]):
+                            k = i
+                            if value.shape[-1] > 3:
+                                k = 0
+                            new_value[:, :, :, i] = (value[:, :, :, i] - float(item['norm']['mean'][k])) / \
+                                float(item['norm']['std'][k])
+            else:
+                assert("Please confirm your input shape and model shape is 4D!")
+            new_values.append(new_value)
+
+        return new_values
 
     def validte_config(self, config):
-        in_ci = os.getenv('CI', False)
-        if in_ci:
+        if test_utils.in_ci():
             config.judge.common.log_hist = False
             config.setup.log_txt = False
         return config
@@ -413,8 +414,6 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         pass
 
     def run_single(self, cfg, case_dir: str, model_file: Union[List[str], str]):
-        # todo: move to run
-        self.compiler = globalCompiler
         if not self.inputs:
             self.parse_model_input_output(model_file)
         for dict_args in self.make_args(cfg.preprocess_opt):
@@ -432,7 +431,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
 
             for infer_args in self.dispatch(cfg, cfg.infer):
                 infer_output_paths = self.run_inference(infer_args, cfg, case_dir, import_options,
-                                   compile_options, model_content, dict_args)
+                                                        compile_options, model_content, dict_args)
                 self.check_result(infer_output_paths, infer_args, 'infer')
 
     def translate_shape(self, shape):
@@ -456,26 +455,30 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
 
     def dispatch(self, full_cfg, sub_cfg):
         for dict_args in self.make_args(sub_cfg):
-            if dict_args['ptq'] and len(self.inputs) != 1:
-                continue
-            if full_cfg.compile_opt.dump_import_op_range and len(self.inputs) != 1:
-                continue
+            # if dict_args['ptq'] and len(self.inputs) != 1:
+            #     continue
+            # if full_cfg.compile_opt.dump_import_op_range and len(self.inputs) != 1:
+            #     continue
             yield dict_args
 
-    def set_quant_opt(self, cfg, kwargs, preprocess, compiler):
+    def set_quant_opt(self, cfg, kwargs, preprocess, compiler: nncase.Compiler):
         if cfg.compile_opt.dump_import_op_range:
             dump_range_options = nncase.DumpRangeTensorOptions()
-            dump_range_options.set_tensor_data(np.asarray(
-                [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.dump_range_data]).tobytes())
-            dump_range_options.samples_count = cfg.generate_dump_range_data.batch_size
-            compiler.dump_range_options(dump_range_options)
+            dump_range_options.set_tensor_data([self.transform_input(
+                sample['data'], preprocess['input_type'], "infer") for sample in self.dump_range_data])
+            dump_range_options.samples_count = cfg.generate_dump_range_data.numbers
+            # compiler.dump_range_options(dump_range_options)
         if kwargs['ptq']:
             ptq_options = nncase.PTQTensorOptions()
-            ptq_options.set_tensor_data(np.asarray(
-                [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.calibs]).tobytes())
-            ptq_options.samples_count = cfg.generate_calibs.batch_size
+            ptq_options.set_tensor_data([self.transform_input(
+                sample['data'], preprocess['input_type'], "infer") for sample in self.calibs])
+            ptq_options.samples_count = cfg.generate_calibs.numbers
+            ptq_options.calibrate_method = cfg.compile_opt.calibrate_method
+            ptq_options.quant_type = cfg.compile_opt.quant_type
+            ptq_options.w_quant_type = cfg.compile_opt.w_quant_type
+            ptq_options.finetune_weights_method = cfg.compile_opt.finetune_weights_method
+            ptq_options.use_mix_quant = cfg.compile_opt.use_mix_quant
             compiler.use_ptq(ptq_options)
-
 
     def write_preprocess_opt(self, dict_args):
         if dict_args['preprocess'] == True:
@@ -491,10 +494,10 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
     def generate_all_data(self, case_dir, cfg, dict_args):
         self.generate_data(cfg.generate_inputs, case_dir,
                            self.inputs, self.input_paths, 'input', dict_args)
-        # self.generate_data(cfg.generate_calibs, case_dir,
-        #                    self.calibs, self.calib_paths, 'calib', dict_args)
-        # self.generate_data(cfg.generate_dump_range_data, case_dir,
-        #                    self.dump_range_data, self.dump_range_data_paths, 'dump_range_data', dict_args)
+        self.generate_data(cfg.generate_calibs, case_dir,
+                           self.calibs, self.calib_paths, 'calib', dict_args)
+        self.generate_data(cfg.generate_dump_range_data, case_dir,
+                           self.dump_range_data, self.dump_range_data_paths, 'dump_range_data', dict_args)
 
     def get_compiler_options(self, cfg, model_file):
         import_options = nncase.ImportOptions()
@@ -550,25 +553,29 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         pass
 
     def generate_data(self, cfg, case_dir: str, inputs: List[Dict], path_list: List[str], name: str, preprocess_opt):
-        for n in range(cfg.numbers):
-            i = 0
-            for input in inputs:
-                shape = copy.deepcopy(input['model_shape'])
-                # if preprocess_opt['preprocess'] and preprocess_opt['input_shape'] != [] and len(preprocess_opt['input_shape']) == 4:
-                #     shape = copy.deepcopy(preprocess_opt['input_shape'])
-                # else:
-                #     shape = copy.deepcopy(input['model_shape'])
-                # if shape[0] != cfg.batch_size:
-                #     shape[0] *= cfg.batch_size
-                data = DataFactory[cfg.name](shape, input['dtype'], n, cfg.batch_size, **cfg.kwargs)
+        i = 0
+        os.mkdir(os.path.join(case_dir, name))
+        for input in inputs:
+            samples = []
+            shape = copy.deepcopy(input['model_shape'])
+            # if preprocess_opt['preprocess'] and preprocess_opt['input_shape'] != [] and len(preprocess_opt['input_shape']) == 4:
+            #     shape = copy.deepcopy(preprocess_opt['input_shape'])
+            # else:
+            #     shape = copy.deepcopy(input['model_shape'])
+            if shape[0] != cfg.batch_size:
+                shape[0] *= cfg.batch_size
 
-                path_list.append(
-                    (os.path.join(case_dir, f'{name}_{n}_{i}.bin'),
-                     os.path.join(case_dir, f'{name}_{n}_{i}.txt')))
-                data.tofile(path_list[-1][0])
-                self.totxtfile(path_list[-1][1], data)
-                i += 1
-                input['data'] = data
+            for n in range(cfg.numbers):
+                data = DataFactory[cfg.name](shape, input['dtype'], n, cfg.batch_size, **cfg.kwargs)
+                if not test_utils.in_ci():
+                    path_list.append(
+                        (os.path.join(case_dir, name, f'{name}_{n}_{i}.bin'),
+                         os.path.join(case_dir, name, f'{name}_{n}_{i}.txt')))
+                    data.tofile(path_list[-1][0])
+                    self.totxtfile(path_list[-1][1], data)
+                samples.append(data)
+            i += 1
+            input['data'] = samples
 
     def process_input(self, inputs: List[np.array], **kwargs) -> None:
         pass
@@ -592,6 +599,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                     break
 
         i = 0
+        judges = []
         for ref_file, test_file in zip(ref_ouputs, test_outputs):
 
             judge, simarity_info = compare(test_file, ref_file,
@@ -609,9 +617,8 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
             with open(os.path.join(self.case_dir, 'test_result.txt'), 'a+') as f:
                 f.write(result)
             i = i + 1
-            if not judge:
-                return False, result
-        return True, result
+            judges.append(judge)
+        return sum(judges) == len(judges), result
 
     def totxtfile(self, save_path, ndarray: np.array, bit_16_represent=False):
         if self.cfg.setup.log_txt:

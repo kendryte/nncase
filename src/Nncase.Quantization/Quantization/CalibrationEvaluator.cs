@@ -7,42 +7,34 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.Diagnostics;
 using Nncase.Evaluator;
 using Nncase.IR;
-using Nncase.Transform;
+using Nncase.Passes;
 
 namespace Nncase.Quantization;
 
-public class CalibrationEvaluator
+public class CalibrationEvaluator : IDisposable
 {
     private readonly IReadOnlyDictionary<Var, IValue> _inputs;
     private readonly IEnumerable<ENode> _awareEnodes;
     private readonly Dictionary<ENode, IValue> _values = new(ReferenceEqualityComparer.Instance);
     private readonly Dictionary<EClass, IValue> _eclassValues = new();
-    private readonly RunPassOptions _passOptions;
-    private StreamWriter _dumpWriter;
+    private readonly StreamWriter? _dumpWriter;
 
-    public CalibrationEvaluator(IReadOnlyDictionary<Var, IValue> inputs, IEnumerable<ENode> awareEnodes, RunPassOptions passOptions)
+    public CalibrationEvaluator(IReadOnlyDictionary<Var, IValue> inputs, IEnumerable<ENode> awareEnodes)
     {
         _inputs = inputs;
         _awareEnodes = awareEnodes;
-        _passOptions = passOptions;
-        _dumpWriter = StreamWriter.Null;
+        _dumpWriter = DumpScope.Current.IsEnabled(DumpFlags.Calibration)
+            ? new StreamWriter(DumpScope.Current.OpenFile("calibration_evaluator.il")) { AutoFlush = true }
+            : null;
     }
 
     public IReadOnlyDictionary<ENode, Tensor> Evaluate()
     {
-        if (_passOptions.DumpLevel >= 4)
-        {
-            if (!Directory.Exists(_passOptions.PassDumpDir))
-                Directory.CreateDirectory(_passOptions.PassDumpDir);
-            var fileStream = File.Open(Path.Combine(_passOptions.PassDumpDir, "calibration_evaluator.il"), FileMode.Create, FileAccess.Write);
-            _dumpWriter = new StreamWriter(fileStream);
-            _dumpWriter.AutoFlush = true;
-        }
-
         bool completed;
-        var awareTensors = new Dictionary<ENode, Tensor>();
+        var awareTensors = new Dictionary<ENode, Tensor>(ReferenceEqualityComparer.Instance);
 
         do
         {
@@ -69,14 +61,19 @@ public class CalibrationEvaluator
                 }
             }
 
-            if (_awareEnodes.Count() > 0 && _values.Count == oldValues)
+            if (_awareEnodes.Any() && _values.Count == oldValues)
             {
                 throw new InvalidOperationException("Endless evaluation found.");
             }
         }
         while (!completed);
-        _dumpWriter.Close();
         return awareTensors;
+    }
+
+    /// <inheritdoc/>
+    public void Dispose()
+    {
+        _dumpWriter?.Dispose();
     }
 
     private IValue? Visit(EClass eclass)
@@ -115,17 +112,20 @@ public class CalibrationEvaluator
         };
     }
 
-    private bool shapeChecker(Shape current, Shape target)
+    private bool ShapeChecker(Shape current, Shape target)
     {
         if (current.Count != target.Count)
+        {
             return false;
-        return current.Zip(target).All(p => p.Item2.IsUnknown ? true : p.Item2.FixedValue == p.Item1.FixedValue);
+        }
+
+        return current.Zip(target).All(p => p.Second.IsUnknown ? true : p.Second.FixedValue == p.First.FixedValue);
     }
 
-    private bool typeChecker(IRType cur_type, IRType target_type) => (cur_type, target_type) switch
+    private bool TypeChecker(IRType cur_type, IRType target_type) => (cur_type, target_type) switch
     {
-        (TensorType a, TensorType b) => a.DType == b.DType && shapeChecker(a.Shape, b.Shape),
-        (TupleType a, TupleType b) => a.Zip(b).All(p => typeChecker(p.Item1, p.Item2)),
+        (TensorType a, TensorType b) => a.DType == b.DType && ShapeChecker(a.Shape, b.Shape),
+        (TupleType a, TupleType b) => a.Zip(b).All(p => TypeChecker(p.First, p.Second)),
         (_, _) => true,
     };
 
@@ -134,8 +134,11 @@ public class CalibrationEvaluator
         return VisitLeaf(enode, () =>
         {
             var value = _inputs[var];
-            if (!new TypePattern(cur => typeChecker(cur, var.CheckedType!), "Var Type Checker").MatchLeaf(value.Type))
+            if (!new TypePattern(cur => TypeChecker(cur, var.CheckedType!), "Var Type Checker").MatchLeaf(value.Type))
+            {
                 throw new InvalidOperationException("Feed Value Is Invalid!");
+            }
+
             return value;
         });
     }
@@ -184,20 +187,23 @@ public class CalibrationEvaluator
             {
                 if (targetEnode.Expr is Op op)
                 {
-
                     var context = new EGraphOpEvaluateContext(call, costs.Skip(1).ToArray());
-                    if (_passOptions.DumpLevel >= 4)
-                        _dumpWriter.Write($"{op.GetType().Name}({string.Join(",", context.Arguments.Select(v => v.ToString()))})");
+                    _dumpWriter?.Write($"{op.GetType().Name}({string.Join(",", context.Arguments.Select(v => v.ToString()))})");
+
                     if (op.CanFoldConstCall)
+                    {
                         value = CompilerServices.EvaluateOp(op, context);
+                    }
                     else
+                    {
                         value = NoneValue.Default;
-                    if (_passOptions.DumpLevel >= 4)
-                        _dumpWriter.WriteLine($" => {value.ToString()}");
+                    }
+
+                    _dumpWriter?.WriteLine($" => {value}");
                 }
                 else
                 {
-                    Debug.Assert(targetEnode.Expr is Function);
+                    Trace.Assert(targetEnode.Expr is Function);
                     value = Visit(targetEnode.Children[0]);
                 }
 
@@ -252,13 +258,13 @@ public class CalibrationEvaluator
 
     private sealed class EGraphOpEvaluateContext : IEvaluateContext
     {
-        public readonly IValue[] Arguments;
-
         public EGraphOpEvaluateContext(Call currentCall, IValue[] arguments)
         {
             CurrentCall = currentCall;
             Arguments = arguments;
         }
+
+        public IValue[] Arguments { get; }
 
         public Call CurrentCall { get; }
 

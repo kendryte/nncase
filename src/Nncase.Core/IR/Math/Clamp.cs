@@ -16,7 +16,7 @@ namespace Nncase.IR.Math;
 /// Clamp expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Clamp() : Op
+public sealed partial class Clamp : Op
 {
     /// <summary>
     /// Gets input.
@@ -26,10 +26,10 @@ public sealed record Clamp() : Op
     /// <summary>
     /// Gets min.
     /// </summary>
-    public static readonly ParameterInfo Min = new(typeof(Clamp), 1, "min", IsScalar());
+    public static readonly ParameterInfo Min = new(typeof(Clamp), 1, "min");
 
     /// <summary>
     /// Gets max.
     /// </summary>
-    public static readonly ParameterInfo Max = new(typeof(Clamp), 2, "max", IsScalar());
+    public static readonly ParameterInfo Max = new(typeof(Clamp), 2, "max");
 }

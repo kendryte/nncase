@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Linq;
@@ -30,12 +30,18 @@ public class SqueezeEvaluator : IEvaluator<Squeeze>, ITypeInferencer<Squeeze>, I
         return Visit(context, target, input);
     }
 
+    public Cost Visit(ICostEvaluateContext context, Squeeze target)
+    {
+        return CostUtility.GetReshapeCost();
+    }
+
     private IRType Visit(ITypeInferenceContext context, Squeeze target, TensorType input)
     {
         if (input.Shape.IsUnranked)
         {
             return input;
         }
+
         if (context.GetArgument(target, Squeeze.Dim) is TensorConst dim_con)
         {
             var dims = dim_con.Value.Cast<int>();
@@ -44,6 +50,7 @@ public class SqueezeEvaluator : IEvaluator<Squeeze>, ITypeInferencer<Squeeze>, I
             {
                 return input with { Shape = new Shape(outshape.Where(x => x != 1).ToArray()) };
             }
+
             foreach (var dimV in dims)
             {
                 var dimValue = Util.PositiveIndex(dimV, input.Shape.Rank);
@@ -53,11 +60,6 @@ public class SqueezeEvaluator : IEvaluator<Squeeze>, ITypeInferencer<Squeeze>, I
             return input with { Shape = new Shape(outshape.Where(x => x != int.MaxValue)) };
         }
 
-        return input with { Shape = new Shape(Enumerable.Repeat(Dimension.Unknown, input.Shape.Count() - 1)) };
-    }
-
-    public Cost? Visit(ICostEvaluateContext context, Squeeze target)
-    {
-        return CostUtility.GetReshapeCost();
+        return input with { Shape = new Shape(Enumerable.Repeat(Dimension.Unknown, input.Shape.Count - 1)) };
     }
 }

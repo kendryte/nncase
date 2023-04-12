@@ -40,7 +40,7 @@ public interface IRTFunction
     /// <summary>
     /// Invoke function.
     /// </summary>
-    /// <param name="parameters">Parameters.</param>
+    /// <param name="parameters">Arguments.</param>
     /// <param name="ret">Return value.</param>
     /// <returns>Awaitable task.</returns>
     ValueTask InvokeAsync(IReadOnlyList<IValue> parameters, IValue ret);

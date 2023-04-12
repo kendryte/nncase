@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using Nncase.IR.Tensors;
@@ -11,7 +11,7 @@ namespace Nncase.IR.Random;
 /// Uniform expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Uniform(DataType Type) : Op
+public sealed partial class Uniform : Op
 {
     /// <summary>
     /// Gets high.
@@ -32,4 +32,9 @@ public sealed record Uniform(DataType Type) : Op
     /// Gets shape.
     /// </summary>
     public static readonly ParameterInfo Shape = new(typeof(Uniform), 3, "shape", IsIntegral() & HasRank(1));
+
+    public DataType Type { get; }
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => Type.GetCSharpName();
 }

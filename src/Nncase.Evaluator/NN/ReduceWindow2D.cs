@@ -1,12 +1,16 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Diagnostics;
+using System.Linq;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.NN;
 using OrtKISharp;
 using static Nncase.Evaluator.EvaluatorUtil;
+using static Nncase.PatternMatch.F.Math;
+using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Evaluator.NN;
 
@@ -26,11 +30,39 @@ public class ReduceWindow2DEvaluator : IEvaluator<ReduceWindow2D>, ITypeInferenc
         var countIncludePad = context.GetArgumentValueAsScalar<long>(r, ReduceWindow2D.CountIncludePad);
         var ceilMode = context.GetArgumentValueAsScalar<long>(r, ReduceWindow2D.CeilMode);
         var onnxPads = ToOnnxPadFormat(pads);
+
+        // when HasBindedMixQuantInfo is true, eval will do simulation of quant/dequant for some inputs, this is used for evaluate accumulated quant error for layers.
+        if (context.CurrentCall.EnodeBestQuantConfigWithCosine != null)
+        {
+            var pattern = IsRangeOfMarker(IsWildcard(), IsWildcard());
+            if (pattern.MatchLeaf(context.CurrentCall.Arguments.ToArray()[0]) && ((Nncase.IR.Marker)context.CurrentCall.Arguments.ToArray()[0]).MixQuantInfo?.HasBindedMixQuantInfo == true)
+            {
+                var quantParam = ((Nncase.IR.Marker)context.CurrentCall.Arguments.ToArray()[0]).MixQuantInfo!.QuantParameter;
+
+                // input feature map quantParam count should be 1 since input feature map quant is by tensor.
+                Trace.Assert(quantParam.Count == 1);
+                var inputFloat = input.ToArray<float>();
+                for (var i = 0; i < inputFloat.Length; i++)
+                {
+                    var inputBufQuant = (double)((inputFloat[i] / (double)quantParam[0].Scale) + quantParam[0].ZeroPoint);
+                    if (!(quantParam[0].Scale == 1.0f && quantParam[0].ZeroPoint == 0))
+                    {
+                        inputBufQuant = System.Math.Round((double)(float)inputBufQuant);
+                    }
+
+                    var inputBufDeQuant = (float)((inputBufQuant - quantParam[0].ZeroPoint) * (double)quantParam[0].Scale);
+                    inputFloat[i] = (float)inputBufDeQuant;
+                }
+
+                input = OrtKISharp.Tensor.MakeTensor(inputFloat, input.Shape);
+            }
+        }
+
         return (r.ReduceOp switch
         {
             ReduceOp.Mean => OrtKI.AveragePool(input, "NOTSET", ceilMode, countIncludePad, kernelSize, onnxPads, stride),
             ReduceOp.Max => OrtKI.MaxPool(input, "NOTSET", ceilMode, dilation, kernelSize, onnxPads, countIncludePad, stride)[0],
-            _ => throw new ArgumentOutOfRangeException(nameof(r.ReduceOp)),
+            _ => throw new ArgumentOutOfRangeException(nameof(r)),
         }).ToValue();
     }
 
@@ -42,7 +74,7 @@ public class ReduceWindow2DEvaluator : IEvaluator<ReduceWindow2D>, ITypeInferenc
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, ReduceWindow2D target)
+    public Cost Visit(ICostEvaluateContext context, ReduceWindow2D target)
     {
         var inputType = context.GetArgumentType<TensorType>(target, ReduceWindow2D.Input);
         var outputType = context.GetReturnType<TensorType>();

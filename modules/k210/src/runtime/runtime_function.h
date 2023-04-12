@@ -20,19 +20,24 @@
 
 BEGIN_NS_NNCASE_RT_MODULE(k210)
 
-class k210_runtime_function : public runtime_function, private op_visitor
-{
-public:
+class k210_runtime_function : public runtime_function, private op_visitor {
+  public:
     using runtime_function::runtime_function;
 
     k210_runtime_module &module() const noexcept;
 
-protected:
-    result<void> initialize_core(runtime_function_init_context &context) noexcept override;
-    result<runtime_tensor> allocate_input_tensor(size_t index) noexcept override;
-    result<runtime_tensor> allocate_output_tensor(size_t index) noexcept override;
-    result<void> validate_input_tensor(size_t index, runtime_tensor tensor) noexcept override;
-    result<void> validate_output_tensor(size_t index, runtime_tensor tensor) noexcept override;
+  protected:
+    result<void>
+    initialize_core(runtime_function_init_context &context) noexcept override;
+    result<runtime_tensor>
+    allocate_input_tensor(size_t index) noexcept override;
+    result<runtime_tensor>
+    allocate_output_tensor(size_t index) noexcept override;
+    result<void> validate_input_tensor(size_t index,
+                                       runtime_tensor tensor) noexcept override;
+    result<void>
+    validate_output_tensor(size_t index,
+                           runtime_tensor tensor) noexcept override;
     result<void> invoke_core() noexcept override;
 
     using op_visitor::visit;
@@ -41,10 +46,10 @@ protected:
     result<void> visit(const kpu_upload_options &op) noexcept override;
     result<void> visit(const copy_options &op) noexcept override;
 
-private:
+  private:
     result<gsl::span<gsl::byte>> memory_at(const memory_range &mrange) noexcept;
 
-private:
+  private:
     gsl::span<const gsl::byte> text_;
 };
 

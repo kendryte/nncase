@@ -21,13 +21,13 @@
     namespace nncase {                                                         \
     namespace kernels {                                                        \
     namespace stackvm {
-    namespace reference {
+namespace reference {
 
 #define END_NS_NNCASE_KERNELS_STACKVM                                          \
     }                                                                          \
     }                                                                          \
     }
-    }
+} // namespace reference
 
 BEGIN_NS_NNCASE_KERNELS_STACKVM
 

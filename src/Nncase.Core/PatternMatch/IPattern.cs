@@ -11,17 +11,12 @@ using Nncase.IR;
 namespace Nncase.PatternMatch;
 
 /// <summary>
-/// mark the record class auto generate the pattern define.
-/// </summary>
-public class PatternFunctionalGeneratorAttribute : Attribute { }
-
-/// <summary>
 /// Pattern.
 /// </summary>
 public interface IPattern
 {
     /// <summary>
-    /// get the name of this pattern.
+    /// Gets get the name of this pattern.
     /// </summary>
     string? Name { get; }
 
@@ -30,7 +25,7 @@ public interface IPattern
     /// </summary>
     /// <param name="input">Input.</param>
     /// <returns>Is match.</returns>
-    bool MatchLeaf(object input);
+    bool MatchLeaf(Expr input);
 }
 
 /// <summary>
@@ -45,4 +40,12 @@ public interface IPattern<in TInput> : IPattern
     /// <param name="input">Input.</param>
     /// <returns>Is match.</returns>
     bool MatchLeaf(TInput input);
+}
+
+/// <summary>
+/// mark the record class auto generate the pattern define.
+/// </summary>
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
+public sealed class PatternFunctionalGeneratorAttribute : Attribute
+{
 }

@@ -102,6 +102,7 @@ reverses = [
     1
 ]
 
+
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('axis', axes)
 @pytest.mark.parametrize('exclusive', exclusives)

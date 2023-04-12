@@ -1,31 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
     <RootNamespace>Nncase</RootNamespace>
-    <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-	  <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
-    <CodeAnalysisRuleSet>$(SolutionDir)/tools/StyleCopAnalyzers.ruleset</CodeAnalysisRuleSet>
+	<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.354">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
+    <PackageReference Include="System.Linq.Async" />
   </ItemGroup>
     
   <ItemGroup>
     <ProjectReference Include="..\Nncase.Core\Nncase.Core.csproj" />
-    <ProjectReference Include="..\Nncase.EGraph\Nncase.EGraph.csproj" />
-    <PackageReference Include="System.Linq.Async" Version="6.0.1" />
+    <ProjectReference Include="..\Nncase.Passes\Nncase.Passes.csproj" />
   </ItemGroup>
-
-    <ItemGroup>
-        <AdditionalFiles Include="$(SolutionDir)/tools/stylecop.json" />
-    </ItemGroup>
 
 </Project>

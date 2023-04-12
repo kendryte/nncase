@@ -16,14 +16,13 @@
 #include <nncase/ir/ir_types.h>
 #include <nncase/runtime/k210/runtime_types.h>
 
-namespace nncase::ir::k210
-{
+namespace nncase::ir::k210 {
 template <class T>
-runtime::k210::kpu_shape_t to_kpu_shape(const xt::dynamic_shape<T> &in_shape, T default_val = 1)
-{
+runtime::k210::kpu_shape_t to_kpu_shape(const xt::dynamic_shape<T> &in_shape,
+                                        T default_val = 1) {
     assert(in_shape.size() <= 4);
 
-    runtime::k210::kpu_shape_t r_in_shape {};
+    runtime::k210::kpu_shape_t r_in_shape{};
     const auto in_ext = 4 - (int32_t)in_shape.size();
 
     for (int32_t i = 0; i < in_ext; i++)
@@ -32,4 +31,4 @@ runtime::k210::kpu_shape_t to_kpu_shape(const xt::dynamic_shape<T> &in_shape, T 
         r_in_shape[i] = int32_t(in_shape[i - in_ext]);
     return r_in_shape;
 }
-}
+} // namespace nncase::ir::k210

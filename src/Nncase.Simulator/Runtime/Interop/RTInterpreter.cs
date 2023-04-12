@@ -17,38 +17,20 @@ namespace Nncase.Runtime.Interop;
 public sealed class RTInterpreter : SafeHandle
 {
     private MemoryHandle _pinnedModelBuffer;
-    // private bool _disposedValue;
     private RTFunction? _entry;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RTInterpreter"/> class.
     /// </summary>
-    internal RTInterpreter() : base(IntPtr.Zero, true)
+    internal RTInterpreter()
+        : base(IntPtr.Zero, true)
     {
     }
 
-    internal RTInterpreter(IntPtr handle) : base(handle, true)
+    internal RTInterpreter(IntPtr handle)
+        : base(handle, true)
     {
-
     }
-
-    /// <summary>
-    /// Create the Interpreter
-    /// </summary>
-    /// <returns></returns>
-    public static RTInterpreter Create()
-    {
-        Native.InterpCreate(out var interp).ThrowIfFailed();
-        return interp;
-    }
-
-    /// <summary>
-    /// Finalizes an instance of the <see cref="RTInterpreter"/> class.
-    /// </summary>
-    // ~RTInterpreter()
-    // {
-    //     Dispose(disposing: false);
-    // }
 
     /// <summary>
     /// Gets entry function.
@@ -71,13 +53,25 @@ public sealed class RTInterpreter : SafeHandle
     public override bool IsInvalid => handle == IntPtr.Zero;
 
     /// <summary>
-    /// set the runtim dump root dir
+    /// Create the Interpreter.
+    /// </summary>
+    public static RTInterpreter Create()
+    {
+        Native.InterpCreate(out var interp).ThrowIfFailed();
+        return interp;
+    }
+
+    /// <summary>
+    /// set the runtim dump root dir.
     /// </summary>
     /// <param name="root">root dir.</param>
     public void SetDumpRoot(string root)
     {
         if (!Directory.Exists(root))
+        {
             Directory.CreateDirectory(root);
+        }
+
         Native.InterpSetDumpRoot(this, root);
     }
 
@@ -98,25 +92,4 @@ public sealed class RTInterpreter : SafeHandle
         _pinnedModelBuffer.Dispose();
         return Native.InterpFree(handle).IsSuccess;
     }
-
-    /// <inheritdoc/>
-    // public void Dispose()
-    // {
-    //     Dispose(disposing: true);
-    //     GC.SuppressFinalize(this);
-    // }
-
-    // private void Dispose(bool disposing)
-    // {
-    //     if (!_disposedValue)
-    //     {
-    //         if (disposing)
-    //         {
-    //             _pinnedModelBuffer.Dispose();
-    //         }
-
-    //         Native.InterpFree(_handle);
-    //         _disposedValue = true;
-    //     }
-    // }
 }

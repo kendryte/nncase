@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "ref_ops.h"
 #include <nncase/kernels/kernel_utils.h>
-#include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/datatypes.h>
 #include <nncase/runtime/host_buffer.h>
@@ -27,12 +27,13 @@ using namespace nncase::kernels;
 using namespace nncase::kernels::stackvm;
 
 template <typename T>
-result<void> tile_impl(const T *input, T *output,const dims_t &in_shape,
+result<void> tile_impl(const T *input, T *output, const dims_t &in_shape,
                        const dims_t &out_shape, const strides_t &in_strides,
-                       const strides_t &out_strides, [[maybe_unused]] const dims_t &repeats) {
+                       const strides_t &out_strides,
+                       [[maybe_unused]] const dims_t &repeats) {
     return apply(out_shape, [&](const auto &out_index) -> result<void> {
         auto in_index = dims_t(out_index.size());
-        for (size_t i = 0; i  < in_shape.size(); ++i) {
+        for (size_t i = 0; i < in_shape.size(); ++i) {
             in_index[i] = out_index[i] % in_shape[i];
         }
         output[offset(out_strides, out_index)] =

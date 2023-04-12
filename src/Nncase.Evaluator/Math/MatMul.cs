@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -32,7 +32,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, MatMul target)
+    public Cost Visit(ICostEvaluateContext context, MatMul target)
     {
         var lhs = context.GetArgumentType<TensorType>(target, MatMul.Lhs);
         var rhs = context.GetArgumentType<TensorType>(target, MatMul.Rhs);
@@ -42,6 +42,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         {
             Console.WriteLine("unrank");
         }
+
         var macPerElement = lhs.Shape[^1].IsFixed ? lhs.Shape[^1].FixedValue : 1;
         return new()
         {
@@ -62,7 +63,6 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         // {
         //     return new TensorType(lhs.DType, Shape.Unranked);
         // }
-
         if (lhs.DType != rhs.DType)
         {
             return new InvalidType("MatMul lhs and rhs have different DType");
@@ -78,11 +78,16 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
             return new TensorType(lhs.DType, new[] { lhs.Shape[0], rhs.Shape[1] });
         }
 
-        var bigShape = lhs.Shape.Rank > rhs.Shape.Rank
-            ? lhs.Shape
-            : rhs.Shape;
+        var lhsShape = lhs.Shape.Rank >= rhs.Shape.Rank ? lhs.Shape.ToArray() : Enumerable.Repeat((Dimension)1, rhs.Shape.Rank - lhs.Shape.Rank).Concat(lhs.Shape).ToArray();
+        var rhsShape = lhs.Shape.Rank <= rhs.Shape.Rank ? rhs.Shape.ToArray() : Enumerable.Repeat((Dimension)1, lhs.Shape.Rank - rhs.Shape.Rank).Concat(rhs.Shape).ToArray();
+
+        var bigShape = Enumerable.Zip(lhsShape, rhsShape).SkipLast(2).Select(t =>
+            t.First == Dimension.Unknown || t.Second == Dimension.Unknown
+                ? Dimension.Unknown
+                : System.Math.Max(t.First.FixedValue, t.Second.FixedValue)).ToArray();
+
         // batch and channel
-        var front = bigShape.ToArray()[..(bigShape.Count - 2)];
+        var front = bigShape;
         var end = new[] { lhs.Shape[^2], rhs.Shape[^1] };
         return new TensorType(lhs.DType, front.Concat(end).ToArray());
     }

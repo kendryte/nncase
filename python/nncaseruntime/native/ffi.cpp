@@ -30,12 +30,10 @@ namespace py = pybind11;
 using namespace nncase;
 using namespace nncase::runtime;
 
-namespace
-{
+namespace {
 #ifdef WIN32
 #include <Windows.h>
-void LaunchDebugger()
-{
+void LaunchDebugger() {
     // Get System directory, typically c:\windows\system32
     std::wstring systemDir(MAX_PATH + 1, '\0');
     UINT nChars = GetSystemDirectoryW(&systemDir[0], systemDir.length());
@@ -57,7 +55,8 @@ void LaunchDebugger()
     PROCESS_INFORMATION pi;
     ZeroMemory(&pi, sizeof(pi));
 
-    if (!CreateProcessW(NULL, &cmdLine[0], NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi))
+    if (!CreateProcessW(NULL, &cmdLine[0], NULL, NULL, FALSE, 0, NULL, NULL,
+                        &si, &pi))
         return;
 
     // Close debugger process handles to eliminate resource leak
@@ -69,27 +68,42 @@ void LaunchDebugger()
         Sleep(100);
 }
 #endif
-}
+} // namespace
 
-PYBIND11_MODULE(_nncaseruntime, m)
-{
+PYBIND11_MODULE(_nncaseruntime, m) {
     m.doc() = "nncase runtime Library";
     m.attr("__version__") = NNCASE_VERSION;
 
-    //LaunchDebugger();
+    // LaunchDebugger();
 
 #include "runtime_tensor.inl"
 
     py::class_<interpreter>(m, "Interpreter")
         .def(py::init())
-        .def("load_model", [](interpreter &interp, gsl::span<const gsl::byte> buffer) { interp.load_model(buffer, true).unwrap_or_throw(); })
+        .def("load_model",
+             [](interpreter &interp, gsl::span<const gsl::byte> buffer) {
+                 interp.load_model(buffer, true).unwrap_or_throw();
+             })
         .def_property_readonly("inputs_size", &interpreter::inputs_size)
         .def_property_readonly("outputs_size", &interpreter::outputs_size)
         .def("get_input_desc", &interpreter::input_desc)
         .def("get_output_desc", &interpreter::output_desc)
-        .def("get_input_tensor", [](interpreter &interp, size_t index) { return interp.input_tensor(index).unwrap_or_throw(); })
-        .def("set_input_tensor", [](interpreter &interp, size_t index, runtime_tensor tensor) { return interp.input_tensor(index, tensor).unwrap_or_throw(); })
-        .def("get_output_tensor", [](interpreter &interp, size_t index) { return interp.output_tensor(index).unwrap_or_throw(); })
-        .def("set_output_tensor", [](interpreter &interp, size_t index, runtime_tensor tensor) { return interp.output_tensor(index, tensor).unwrap_or_throw(); })
-        .def("run", [](interpreter &interp) { interp.run().unwrap_or_throw(); });
+        .def("get_input_tensor",
+             [](interpreter &interp, size_t index) {
+                 return interp.input_tensor(index).unwrap_or_throw();
+             })
+        .def("set_input_tensor",
+             [](interpreter &interp, size_t index, runtime_tensor tensor) {
+                 return interp.input_tensor(index, tensor).unwrap_or_throw();
+             })
+        .def("get_output_tensor",
+             [](interpreter &interp, size_t index) {
+                 return interp.output_tensor(index).unwrap_or_throw();
+             })
+        .def("set_output_tensor",
+             [](interpreter &interp, size_t index, runtime_tensor tensor) {
+                 return interp.output_tensor(index, tensor).unwrap_or_throw();
+             })
+        .def("run",
+             [](interpreter &interp) { interp.run().unwrap_or_throw(); });
 }

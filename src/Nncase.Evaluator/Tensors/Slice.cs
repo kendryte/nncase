@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -41,7 +41,7 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, Slice target)
+    public Cost Visit(ICostEvaluateContext context, Slice target)
     {
         var outputType = context.GetReturnType<TensorType>();
 
@@ -52,14 +52,9 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
         };
     }
 
-    
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="axisConst"></param>
-    /// <param name="input"></param>
-    /// <param name="f">(index in axis, axis, inDim) -> outDim</param>
-    /// <returns></returns>
+    /// <param name="axisConst">Axis.</param>
+    /// <param name="input">Input type.</param>
+    /// <param name="f">(index in axis, axis, inDim) -> outDim.</param>
     private Shape ApplyAxis(TensorConst axisConst, TensorType input, Func<int, int, int, Dimension> f)
     {
         if (input.Shape.IsUnranked)
@@ -75,14 +70,14 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
             var axis = axisV < 0
                 ? axisV + input.Shape.Rank
                 : axisV;
-            outShape[axis] = input.Shape[axis].IsFixed 
-                ? f(i, axis, input.Shape[axis].FixedValue) 
+            outShape[axis] = input.Shape[axis].IsFixed
+                ? f(i, axis, input.Shape[axis].FixedValue)
                 : Dimension.Unknown;
         }
 
         return outShape;
     }
-    
+
     private IRType Visit(ITypeInferenceContext context, Slice target, TensorType input)
     {
         Shape outShape;
@@ -102,13 +97,32 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
 
                     outShape = ApplyAxis(axes_con, input, (i, axis, inDim) =>
                     {
-                        var begin = ts_begins[i];
-                        var end = System.Math.Min(ts_ends[i], inDim);
                         var stride = ts_strides[i];
-                        return (int) System.Math.Ceiling((float) System.Math.Abs(end - begin) /
-                                                         System.Math.Abs(stride));
+
+                        // reverse stride
+                        if (stride < 0)
+                        {
+                            // document in onnx operators:
+                            // for positive stepping and [0, dims[axes[i]]-1] for negative stepping.
+                            var begin = System.Math.Clamp(ts_begins[i], 0L, inDim - 1);
+
+                            // while for negative stepping it is clamped to [-1, dims[axes[i]]-1].
+                            var end = System.Math.Clamp(ts_ends[i], -1L, inDim);
+                            return (int)System.Math.Ceiling((float)System.Math.Abs(end - begin) /
+                                                            System.Math.Abs(stride));
+                        }
+                        else
+                        {
+                            // starts[i] is clamped into the range [0, dims[axes[i]]]
+                            var begin = System.Math.Clamp(ts_begins[i], 0L, inDim);
+
+                            // end[i] is clamped into the range [0, dims[axes[i]]]
+                            var end = System.Math.Clamp(ts_ends[i], 0L, inDim);
+                            return (int)System.Math.Ceiling((float)System.Math.Abs(end - begin) /
+                                                            System.Math.Abs(stride));
+                        }
                     });
-                    return input with {Shape = outShape};
+                    return input with { Shape = outShape };
                 }
                 else
                 {
@@ -122,9 +136,9 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
         }
         else
         {
-            return input with {Shape = Shape.Unknown(input.Shape.Rank)};
+            return input with { Shape = Shape.Unknown(input.Shape.Rank) };
         }
 
-        return input with {Shape = outShape};
+        return input with { Shape = outShape };
     }
 }

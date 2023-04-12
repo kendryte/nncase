@@ -12,6 +12,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <nncase/runtime/dbg.h>
 #include <nncase/value.h>
 
 using namespace nncase;
+
+result<void> tuple_node::copy_to(value_t dest) const noexcept {
+    try_var(dest_tuple, dest.as<tuple>());
+    CHECK_WITH_ERR(fields().size() == dest_tuple->fields().size(),
+                   std::errc::invalid_argument);
+    for (size_t i = 0; i < fields().size(); i++) {
+        try_(fields()[i]->copy_to(dest_tuple->fields()[i]));
+    }
+    return ok();
+}

@@ -18,11 +18,9 @@
 #include <nncase/runtime/k210/runtime_types.h>
 #include <xtensor/xtensor.hpp>
 
-namespace nncase::ir::k210
-{
-class NNCASE_MODULES_K210_API kpu_upload : public node
-{
-public:
+namespace nncase::ir::k210 {
+class NNCASE_MODULES_K210_API kpu_upload : public node {
+  public:
     DEFINE_NODE_OPCODE(op_k210_kpu_upload);
 
     input_connector &input() { return input_at(0); }
@@ -30,13 +28,14 @@ public:
 
     kpu_upload(shape_t input_shape);
 
-protected:
-    bool properties_equal([[maybe_unused]] node &other) const override { return true; }
+  protected:
+    bool properties_equal([[maybe_unused]] node &other) const override {
+        return true;
+    }
 };
 
-class NNCASE_MODULES_K210_API kpu_download : public node
-{
-public:
+class NNCASE_MODULES_K210_API kpu_download : public node {
+  public:
     DEFINE_NODE_OPCODE(op_k210_kpu_download);
 
     input_connector &input() { return input_at(0); }
@@ -44,7 +43,9 @@ public:
 
     kpu_download(shape_t input_shape);
 
-protected:
-    bool properties_equal([[maybe_unused]] node &other) const override { return true; }
+  protected:
+    bool properties_equal([[maybe_unused]] node &other) const override {
+        return true;
+    }
 };
-}
+} // namespace nncase::ir::k210

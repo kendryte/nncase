@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "ref_ops.h"
 #include <nncase/kernels/kernel_utils.h>
-#include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/runtime_op_utility.h>
@@ -48,11 +48,10 @@ result<void> transpose_impl(const T *input, T *output, const dims_t &in_shape,
                               in_strides, out_strides, context)
 } // namespace
 
-result<void> nncase::kernels::stackvm::reference::transpose(datatype_t type, const gsl::byte *src,
-                            gsl::byte *dest, const dims_t &in_shape,
-                            const dims_t &perm, const strides_t &in_strides,
-                            const strides_t &out_strides,
-                            kernel_context &context) noexcept {
+result<void> nncase::kernels::stackvm::reference::transpose(
+    datatype_t type, const gsl::byte *src, gsl::byte *dest,
+    const dims_t &in_shape, const dims_t &perm, const strides_t &in_strides,
+    const strides_t &out_strides, kernel_context &context) noexcept {
     switch (runtime::get_bytes(type)) {
         TRANSPOSE_IMPL(1, uint8_t);
         TRANSPOSE_IMPL(2, uint16_t);

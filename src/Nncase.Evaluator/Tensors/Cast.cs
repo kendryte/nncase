@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using Nncase.CostModel;
@@ -28,13 +28,13 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
     }
 
     /// <inheritdoc/>
-    public string Visit(IIRPrinterContext context, Cast target, bool ILmode)
+    public string Visit(IIRPrinterContext context, Cast target, bool iLmode)
     {
         return $"{CompilerServices.Print(target.NewType)}({context.GetArgument(target, Cast.Input)})";
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, Cast target)
+    public Cost Visit(ICostEvaluateContext context, Cast target)
     {
         var input = context.GetArgumentType<TensorType>(target, Cast.Input);
         return new()

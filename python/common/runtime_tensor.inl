@@ -23,35 +23,48 @@ py::class_<tensor_desc>(m, "TensorDesc")
     .def_readwrite("size", &tensor_desc::size);
 
 py::class_<runtime_tensor>(m, "RuntimeTensor")
-    .def_static("from_numpy", [](py::array arr) {
-        auto src_buffer = arr.request();
-        auto datatype = from_dtype(arr.dtype());
-        auto tensor = host_runtime_tensor::create(
-            datatype,
-            to_rt_shape(src_buffer.shape),
-            to_rt_strides(src_buffer.itemsize, src_buffer.strides),
-            gsl::make_span(reinterpret_cast<gsl::byte *>(src_buffer.ptr), src_buffer.size * src_buffer.itemsize),
-            [=](gsl::byte *) { arr.dec_ref(); })
-                          .unwrap_or_throw();
-        arr.inc_ref();
-        return tensor;
-    })
-    .def("copy_to", [](runtime_tensor &from, runtime_tensor &to) {
-        from.copy_to(to).unwrap_or_throw();
-    })
-    .def("to_numpy", [](runtime_tensor &tensor) {
-        auto host = tensor.to_host().unwrap_or_throw();
-        auto src_map = std::move(hrt::map(host, hrt::map_read).unwrap_or_throw());
-        auto src_buffer = src_map.buffer();
-        return py::array(
-            to_dtype(tensor.datatype()),
-            tensor.shape(),
-            to_py_strides(runtime::get_bytes(tensor.datatype()), tensor.strides()),
-            src_buffer.data());
-    })
-    .def_property_readonly("dtype", [](runtime_tensor &tensor) {
-        return to_dtype(tensor.datatype());
-    })
+    .def_static("from_numpy",
+                [](py::array arr) {
+                    auto src_buffer = arr.request();
+                    auto datatype = from_dtype(arr);
+                    auto tensor =
+                        host_runtime_tensor::create(
+                            datatype, to_rt_shape(src_buffer.shape),
+                            to_rt_strides(src_buffer.itemsize,
+                                          src_buffer.strides),
+                            gsl::make_span(
+                                reinterpret_cast<gsl::byte *>(src_buffer.ptr),
+                                src_buffer.size * src_buffer.itemsize),
+                            [=](gsl::byte *) {
+                                if (!py::detail::is_py_shutdown()) {
+                                    py::gil_scoped_acquire gil;
+                                    arr.dec_ref();
+                                }
+                            })
+                            .unwrap_or_throw();
+                    arr.inc_ref();
+                    return tensor;
+                })
+    .def("copy_to",
+         [](runtime_tensor &from, runtime_tensor &to) {
+             from.copy_to(to).unwrap_or_throw();
+         })
+    .def("to_numpy",
+         [](runtime_tensor &tensor) {
+             auto host = tensor.to_host().unwrap_or_throw();
+             auto src_map =
+                 std::move(hrt::map(host, runtime::map_read).unwrap_or_throw());
+             auto src_buffer = src_map.buffer();
+             return py::array(
+                 to_dtype(tensor.datatype()), tensor.shape(),
+                 to_py_strides(runtime::get_bytes(tensor.datatype()),
+                               tensor.strides()),
+                 src_buffer.data());
+         })
+    .def_property_readonly("dtype",
+                           [](runtime_tensor &tensor) {
+                               return to_dtype(tensor.datatype());
+                           })
     .def_property_readonly("shape", [](runtime_tensor &tensor) {
         return to_py_shape(tensor.shape());
     });

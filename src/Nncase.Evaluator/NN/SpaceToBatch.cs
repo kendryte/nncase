@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -9,7 +9,6 @@ using Nncase.IR;
 using Nncase.IR.NN;
 using Nncase.IR.Tensors;
 using OrtKISharp;
-using static OrtKISharp.TensorHelper;
 using Range = System.Range;
 
 namespace Nncase.Evaluator.NN;
@@ -31,23 +30,24 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
         for (int i = 0; i < spatialSize; i++)
         {
             newPaddings[1 + i] = paddings[2 * i];
-            newPaddings[1 + newPaddings.Length / 2 + i] = paddings[2 * i + 1];
+            newPaddings[1 + (newPaddings.Length / 2) + i] = paddings[(2 * i) + 1];
         }
 
-        var newPaddingsTensor = MakeOrtTensor(newPaddings);
-        var p = OrtKI.Pad(input, newPaddingsTensor, OrtTensorFromScalar(0f), "constant");
+        var newPaddingsTensor = (OrtKISharp.Tensor)newPaddings;
+        var p = OrtKI.Pad(input, newPaddingsTensor, OrtKISharp.Tensor.FromScalar(0f), "constant");
 
         var batchShape1 = new long[] { p.Shape[0] };
-        var spatialShape1 = RangeExec(spatialSize,
-                i => new[] { p.Shape[i + 1] / blockShape[i], blockShape[i] })
-            .Aggregate(new long[] { }, (x, y) => x.Concat(y).ToArray());
+        var spatialShape1 = RangeExec(
+            spatialSize,
+            i => new[] { p.Shape[i + 1] / blockShape[i], blockShape[i] })
+            .Aggregate(Array.Empty<long>(), (x, y) => x.Concat(y).ToArray());
         var remainShape1 = RangeExec(remainShapeSize, i => (long)p.Shape[1 + spatialSize + i]);
         var reshappedShape1 = batchShape1.Concat(spatialShape1.Concat(remainShape1)).ToArray();
 
-        var perm = RangeExec(spatialSize, i => i * 2 + 2)
+        var perm = RangeExec(spatialSize, i => (i * 2) + 2)
             .Concat(new[] { 0 })
-            .Concat(RangeExec(spatialSize, i => i * 2 + 1))
-            .Concat(RangeExec(remainShapeSize, i => i + (int)spatialSize * 2 + 1))
+            .Concat(RangeExec(spatialSize, i => (i * 2) + 1))
+            .Concat(RangeExec(remainShapeSize, i => i + ((int)spatialSize * 2) + 1))
             .Select(x => (long)x)
             .ToArray();
 
@@ -56,10 +56,19 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
             .Concat(RangeExec(remainShapeSize, i => (long)p.Shape[1 + spatialSize + i]))
             .ToArray();
 
-        var reshape1 = OrtKI.Reshape(p, MakeOrtTensor(reshappedShape1), 0);
+        var reshape1 = OrtKI.Reshape(p, (OrtKISharp.Tensor)reshappedShape1, 0);
         var rt = OrtKI.Transpose(reshape1, perm);
-        var reshape2 = OrtKI.Reshape(rt, MakeOrtTensor(reshappedShape2), 0);
+        var reshape2 = OrtKI.Reshape(rt, (OrtKISharp.Tensor)reshappedShape2, 0);
         return reshape2.ToValue();
+    }
+
+    /// <inheritdoc/>
+    public IRType Visit(ITypeInferenceContext context, SpaceToBatch target)
+    {
+        var input = context.CheckArgumentType<TensorType>(target, SpaceToBatch.Input);
+        var blockShape = context.CheckArgumentType<TensorType>(target, SpaceToBatch.BlockShape);
+        var paddings = context.CheckArgumentType<TensorType>(target, SpaceToBatch.Paddings);
+        return Visit(context, target, input, blockShape, paddings);
     }
 
     private T[] RangeExec<T>(long end, Func<int, T> f)
@@ -70,16 +79,6 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
     private IEnumerable<int> EndRange(int begin, int end)
     {
         return Enumerable.Range(begin, end - begin);
-    }
-
-
-    /// <inheritdoc/>
-    public IRType Visit(ITypeInferenceContext context, SpaceToBatch target)
-    {
-        var input = context.CheckArgumentType<TensorType>(target, SpaceToBatch.Input);
-        var blockShape = context.CheckArgumentType<TensorType>(target, SpaceToBatch.BlockShape);
-        var paddings = context.CheckArgumentType<TensorType>(target, SpaceToBatch.Paddings);
-        return Visit(context, target, input, blockShape, paddings);
     }
 
     private IRType Visit(ITypeInferenceContext context, SpaceToBatch target, TensorType input, TensorType blockShape, TensorType paddings)
@@ -95,7 +94,7 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
             {
                 if (!padded_shape[1 + i].IsUnknown)
                 {
-                    padded_shape[1 + i] += new Dimension(ts_paddings[2 * i] + ts_paddings[2 * i + 1]);
+                    padded_shape[1 + i] += new Dimension(ts_paddings[2 * i] + ts_paddings[(2 * i) + 1]);
                 }
             }
 
@@ -106,8 +105,7 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
                                     padded_shape[i].FixedValue % ts_block_shape[i - 1] == 0 ?
                                       padded_shape[i].FixedValue / ts_block_shape[i - 1] :
                                       throw new TypeInferenceInterruptException(
-                                        new InvalidType($"The Padded Shape Must Divides BlockShape!")
-                                      ));
+                                        new InvalidType($"The Padded Shape Must Divides BlockShape!")));
             }
 
             foreach (var i in Enumerable.Range(m + 1, outshape.Count - (m + 1)))

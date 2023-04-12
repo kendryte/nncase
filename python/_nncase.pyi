@@ -65,6 +65,10 @@ class PTQTensorOptions:
     input_mean: float
     input_std: float
     samples_count: int
+    quant_type: str
+    w_quant_type: str
+    finetune_weights_method: str
+    use_mix_quant: bool
     def __init__(self) -> None: ...
     def set_tensor_data(self, bytes: bytes) -> None: ...
 

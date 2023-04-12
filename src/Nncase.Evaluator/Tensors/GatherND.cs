@@ -1,7 +1,8 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Linq;
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using OrtKISharp;
@@ -11,7 +12,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="GatherND"/>.
 /// </summary>
-public class GatherNDEvaluator : IEvaluator<GatherND>, ITypeInferencer<GatherND>
+public class GatherNDEvaluator : IEvaluator<GatherND>, ITypeInferencer<GatherND>, ICostEvaluator<GatherND>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, GatherND gatherND)
@@ -31,11 +32,31 @@ public class GatherNDEvaluator : IEvaluator<GatherND>, ITypeInferencer<GatherND>
         return Visit(context, target, input, batchDims, index);
     }
 
+    /// <inheritdoc/>
+    public Cost Visit(ICostEvaluateContext context, GatherND target)
+    {
+        var returnType = context.GetReturnType<IRType>();
+
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = returnType switch
+            {
+                TensorType t => CostUtility.GetMemoryAccess(t),
+                _ => 1,
+            },
+            [CostFactorNames.MemoryStore] = returnType switch
+            {
+                TensorType t => CostUtility.GetMemoryAccess(t),
+                _ => 1,
+            },
+        };
+    }
+
     private IRType Visit(ITypeInferenceContext context, GatherND target, TensorType input, TensorType batchDims, TensorType index)
     {
         if (context.GetArgument(target, GatherND.BatchDims) is TensorConst batchDimsValue)
         {
-            var lastIndexDims = index.Shape.Last();
+            var lastIndexDims = index.Shape[index.Shape.Count - 1];
             if (!lastIndexDims.IsFixed)
             {
                 return new InvalidType("GatherND input last dim is dynamic, can't infer result shape");

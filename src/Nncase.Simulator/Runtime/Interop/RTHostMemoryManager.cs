@@ -46,7 +46,7 @@ internal unsafe class RTHostMemoryManager : MemoryManager<byte>
     {
         if ((uint)elementIndex > _length)
         {
-            throw new IndexOutOfRangeException();
+            throw new ArgumentOutOfRangeException(nameof(elementIndex));
         }
 
         return new MemoryHandle(Unsafe.Add<byte>((void*)_pointer, elementIndex), default, this);

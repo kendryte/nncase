@@ -1,10 +1,11 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using LanguageExt.UnsafeValueAccess;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
@@ -29,33 +30,46 @@ namespace Nncase.Importer
 
             var outShape = GetOptionIntsAttribute(op, "output_shape")
                 .Match(
-                    o => Tensor.FromSpan<long>(o),
-                    () => GetOutputShape(input, weights,
+                    o => Tensor.From<long>(o),
+                    () => GetOutputShape(
+                        input,
+                        weights,
                         strides.ToArray<long>(),
                         outputPadding,
                         pads,
                         dilation,
-                        autoPad, group));
+                        autoPad,
+                        group));
 
-            return F.NN.Conv2DTranspose(input, weights, bias, outShape, strides,
-                pads, Tensor.FromSpan<long>(outputPadding),
-                Tensor.FromSpan<long>(dilation), PadMode.Constant, group);
+            weights = IR.F.Tensors.Transpose(weights, new[] { 1, 0, 2, 3 });
+            return F.NN.Conv2DTranspose(
+                input,
+                weights,
+                bias,
+                outShape,
+                strides,
+                pads,
+                Tensor.From<long>(outputPadding),
+                Tensor.From<long>(dilation),
+                PadMode.Constant,
+                group);
         }
 
-        Expr ComputeOutSize(Expr inputSize, Expr weightSize, long[] strides, long[] outPaddings, Expr paddings, long[] dilations, int offset)
+        private Expr ComputeOutSize(Expr inputSize, Expr weightSize, long[] strides, long[] outPaddings, Expr paddings, long[] dilations, int offset)
         {
-            return strides[offset] * (inputSize - 1)
+            return (strides[offset] * (inputSize - 1L))
                 + outPaddings[offset]
-                + ((weightSize - 1)
-                * dilations[offset] + 1) - paddings[offset][0] - paddings[offset][1];
+                + (((weightSize - 1L)
+                * dilations[offset]) + 1L) - paddings[offset][0] - paddings[offset][1];
         }
 
-        Expr GetOutputShape(Expr input, Expr weights, long[] strides, long[] outPadding, Expr paddings, long[] dilations, string autoPad, long group)
+        private Expr GetOutputShape(Expr input, Expr weights, long[] strides, long[] outPadding, Expr paddings, long[] dilations, string autoPad, long group)
         {
             var iN = Util.ShapeIndex(input, 0);
-            var iC = Util.ShapeIndex(input, 1);
+            _ = Util.ShapeIndex(input, 1);
             var (iH, iW) = Util.GetHW(input);
             var oc = Util.ShapeIndex(weights, 1) * group;
+
             // var ic = Util.ShapeIndex(weights, 1);
             var (wH, wW) = Util.GetHW(weights);
             var outShape = new List<Expr>();
@@ -71,7 +85,8 @@ namespace Nncase.Importer
                 outShape.Add(ComputeOutSize(iH, wH, strides, outPadding, paddings, dilations, 0));
                 outShape.Add(ComputeOutSize(iW, wW, strides, outPadding, paddings, dilations, 1));
             }
-            return F.Tensors.Stack(new IR.Tuple(outShape), 0);
+
+            return F.Tensors.Stack(new IR.Tuple(CollectionsMarshal.AsSpan(outShape)), 0);
         }
     }
 }

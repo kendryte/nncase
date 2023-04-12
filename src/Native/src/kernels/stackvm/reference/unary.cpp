@@ -12,12 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "ref_ops.h"
 #include <nncase/kernels/kernel_utils.h>
-#include <nncase/kernels/stackvm/ref_ops.h>
-#include <nncase/runtime/util.h>
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/runtime_op_utility.h>
+#include <nncase/runtime/util.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -28,9 +28,10 @@ using namespace nncase::kernels::stackvm;
 namespace {
 template <class T, class TOp>
 result<void> unary_impl(TOp &&op, const T *input, T *output,
-                         [[maybe_unused]] const dims_t &input_shape, const strides_t &input_strides,
-                         const dims_t &out_shape, const strides_t &out_strides,
-                         NNCASE_UNUSED kernel_context &context) noexcept {
+                        [[maybe_unused]] const dims_t &input_shape,
+                        const strides_t &input_strides, const dims_t &out_shape,
+                        const strides_t &out_strides,
+                        NNCASE_UNUSED kernel_context &context) noexcept {
     return apply(out_shape, [&](const dims_t &index) -> result<void> {
         const auto v = input[offset(input_strides, index)];
         output[offset(out_strides, index)] = (T)op(v);
@@ -38,17 +39,17 @@ result<void> unary_impl(TOp &&op, const T *input, T *output,
     });
 }
 
-#define UNARY_IMPL_OP(op, funct)                                              \
-    case unary_op_t::op:                                                      \
+#define UNARY_IMPL_OP(op, funct)                                               \
+    case unary_op_t::op:                                                       \
         return unary_impl(funct, input, output, input_shape, input_strides,    \
-                           out_shape, out_strides,     \
-                           context)
+                          out_shape, out_strides, context)
 
 template <class T>
 result<void> unary_impl(unary_op_t op, const T *input, T *output,
-                         const dims_t &input_shape, const strides_t &input_strides,
-                         const dims_t &out_shape, const strides_t &out_strides,
-                         NNCASE_UNUSED kernel_context &context) noexcept {
+                        const dims_t &input_shape,
+                        const strides_t &input_strides, const dims_t &out_shape,
+                        const strides_t &out_strides,
+                        NNCASE_UNUSED kernel_context &context) noexcept {
     switch (op) {
         UNARY_IMPL_OP(abs, fabsf);
         UNARY_IMPL_OP(acos, acosf);
@@ -76,19 +77,18 @@ result<void> unary_impl(unary_op_t op, const T *input, T *output,
     }
 }
 
-#define UNARY_IMPL_DTYPE(dtype, type)                                         \
+#define UNARY_IMPL_DTYPE(dtype, type)                                          \
     case dtype:                                                                \
-        return unary_impl(op, reinterpret_cast<const type *>(input),            \
-                           reinterpret_cast<type *>(output), input_shape,        \
-                           input_strides, out_shape,     \
-                           out_strides, context);
+        return unary_impl(op, reinterpret_cast<const type *>(input),           \
+                          reinterpret_cast<type *>(output), input_shape,       \
+                          input_strides, out_shape, out_strides, context);
 } // namespace
 
-result<void> nncase::kernels::stackvm::reference::unary(typecode_t dtype, unary_op_t op, const gsl::byte *input,
-                         gsl::byte *output,
-                         const dims_t &input_shape, const strides_t &input_strides,
-                         const dims_t &out_shape, const strides_t &out_strides,
-                         kernel_context &context) noexcept {
+result<void> nncase::kernels::stackvm::reference::unary(
+    typecode_t dtype, unary_op_t op, const gsl::byte *input, gsl::byte *output,
+    const dims_t &input_shape, const strides_t &input_strides,
+    const dims_t &out_shape, const strides_t &out_strides,
+    kernel_context &context) noexcept {
     switch (dtype) {
         UNARY_IMPL_DTYPE(dt_float32, float)
         // Not in onnx, input is bool

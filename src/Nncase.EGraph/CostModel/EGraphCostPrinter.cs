@@ -1,9 +1,10 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using GiGraph.Dot.Entities.Clusters;
 using GiGraph.Dot.Entities.Graphs;
@@ -15,66 +16,113 @@ using GiGraph.Dot.Types.Graphs;
 using GiGraph.Dot.Types.Nodes;
 using GiGraph.Dot.Types.Records;
 using GiGraph.Dot.Types.Styling;
+using Nncase.IR;
+using Nncase.Passes;
 using Nncase.PatternMatch;
-using Nncase.Transform;
 
-namespace Nncase.Transform
+namespace Nncase.Passes;
+
+public partial class EGraphPrinter
 {
-    public partial class EGraphPrinter
+    internal static DotGraph DumpEgraphAsDot(IEGraph eGraph, CostModel.EGraphCostModel costModel, EClass entry, Stream file)
     {
-        //public DotGraph AttachEGraphCost(CostModel.EGraphCosts Costs, EClass entry)
-        //{
-        //    var nodeMap = new Dictionary<ENode, DotNode>();
-        //    foreach (var (eclass, (cost, enode)) in Costs.Context)
-        //    {
-        //        if (OpMaps.ContainsKey(eclass))
-        //        {
-        //            continue;
-        //        }
+        var printer = new EGraphPrinter(eGraph);
+        printer.ConvertEGraphAsDot();
+        printer.AttachEGraphCost(costModel, entry);
+        return printer.SaveToStream(file);
+    }
 
-        //        foreach (var dotnode in ClusterMaps[eclass].Nodes.Where((nd => ((DotNode)nd).Id == enode.Expr.GetHashCode().ToString())))
-        //        {
-        //            nodeMap.Add(enode, (DotNode)dotnode);
-        //            dotnode.Color = Color.DarkRed;
-        //        }
-        //    }
+    private DotGraph AttachEGraphCost(CostModel.EGraphCostModel costModel, EClass entry)
+    {
+        // 1. display each enode costs.
+        foreach (var (enode, (dotnode, table)) in NodesMap)
+        {
+            if (enode.Expr is IR.Var or IR.Op or IR.None)
+            {
+                continue;
+            }
 
-        //    dotGraph.Edges.Clear();
+            table.AddRow(row =>
+            {
+                var cost = costModel[enode];
+                foreach (var (k, v) in cost.Factors)
+                {
+                    row.AddCell($"{k}: {v:F2}");
+                }
 
-        //    void dfs(EClass curclass)
-        //    {
-        //        var curEnode = Costs.Context[curclass].Item2;
-        //        var curNode = nodeMap[curEnode];
-        //        curNode.Color = Color.RoyalBlue;
-        //        foreach (var (child, i) in curEnode.Children.Select((c, i) => (c, i)))
-        //        {
-        //            if (OpMaps.ContainsKey(child))
-        //            {
-        //                continue;
-        //            }
+                row.AddCell($"Score: {cost.Score:F2}");
+            });
+            dotnode.ToPlainHtmlNode(table);
+        }
 
-        //            var paramEnode = Costs[child].Item2;
-        //            var paramNode = nodeMap[paramEnode];
-        //            dfs(Costs[paramEnode].Find());
-        //            dotGraph.Edges.Add(paramNode, curNode, edge =>
-        //            {
-        //                edge.Head.Endpoint.Port = new DotEndpointPort($"P{i}");
-        //                edge.Color = Color.RoyalBlue;
-        //                edge.Label = Costs[child].Item1.ToString();
-        //            });
-        //        }
-        //    }
+        _dotGraph.Edges.Clear();
 
-        //    dfs(entry.Find());
-        //    return dotGraph;
-        //}
+        HashSet<EClass> eclassMemo = new();
+        HashSet<EClass> markerEclassMemo = new();
 
-        //public static DotGraph DumpEgraphAsDot(EGraph eGraph, CostModel.EGraphCosts Costs, EClass entry, string file)
-        //{
-        //    var printer = new EGraphPrinter(eGraph);
-        //    printer.ConvertEGraphAsDot();
-        //    printer.AttachEGraphCost(Costs, entry);
-        //    return printer.SaveToFile(file);
-        //}
+        void Dfs(EClass curclass)
+        {
+            var stack = new Stack<EClass>();
+            stack.Push(curclass);
+            while (stack.Any())
+            {
+                var parent = stack.Pop();
+                if (eclassMemo.Contains(parent) || _opMaps.ContainsKey(parent))
+                {
+                    continue;
+                }
+
+                var minCostEnode = parent.MinByWithMarker(costModel);
+
+                // when this marker ecalss has been visited, skip it.
+                if (markerEclassMemo.Contains(parent))
+                {
+                    minCostEnode = parent.MinByWithOutMarker(costModel);
+                }
+
+                var (minCostDotnode, table) = NodesMap[minCostEnode];
+                minCostDotnode.Color = Color.DeepSkyBlue;
+                foreach (var (child, i) in minCostEnode.Children.Select((c, i) => (c, i)))
+                {
+                    if (_opMaps.ContainsKey(child))
+                    {
+                        continue;
+                    }
+
+                    // note when marker child is it's self need select other node.
+                    if (minCostEnode.Expr is Marker && child == parent)
+                    {
+                        markerEclassMemo.Add(child);
+                        var otherminCostENode = child.MinByWithOutMarker(costModel);
+                        var (childDotNode, _) = NodesMap[otherminCostENode];
+                        _dotGraph.Edges.Add(childDotNode, minCostDotnode, edge =>
+                        {
+                            edge.Head.Endpoint.Port = new DotEndpointPort($"P{i}");
+                            edge.Color = Color.SpringGreen;
+                        });
+                    }
+                    else
+                    {
+                        var childEnode = child.Find().MinByWithMarker(costModel);
+                        var (childDotNode, _) = NodesMap[childEnode];
+                        _dotGraph.Edges.Add(childDotNode, minCostDotnode, edge =>
+                        {
+                            edge.Head.Endpoint.Port = new DotEndpointPort($"P{i}");
+                            edge.Color = Color.SpringGreen;
+                        });
+                    }
+
+                    stack.Push(child);
+                }
+
+                if (!markerEclassMemo.Contains(parent))
+                {
+                    eclassMemo.Add(parent);
+                }
+            }
+        }
+
+        Dfs(entry.Find());
+        return _dotGraph;
     }
 }

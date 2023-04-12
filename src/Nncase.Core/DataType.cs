@@ -13,6 +13,28 @@ using System.Threading.Tasks;
 namespace Nncase;
 
 /// <summary>
+/// Attributes of <see cref="PrimType"/>.
+/// </summary>
+[Flags]
+public enum PrimTypeAttributes
+{
+    /// <summary>
+    /// None.
+    /// </summary>
+    None = 0,
+
+    /// <summary>
+    /// Is integer.
+    /// </summary>
+    IsInteger = 1,
+
+    /// <summary>
+    /// Is floating point.
+    /// </summary>
+    IsFloat = 2,
+}
+
+/// <summary>
 /// The storge data Type, for simd/npu/gpu.
 /// <example>
 /// float32*4
@@ -89,28 +111,6 @@ public abstract record DataType
 }
 
 /// <summary>
-/// Attributes of <see cref="PrimType"/>.
-/// </summary>
-[Flags]
-public enum PrimTypeAttributes
-{
-    /// <summary>
-    /// None.
-    /// </summary>
-    None = 0,
-
-    /// <summary>
-    /// Is integer.
-    /// </summary>
-    IsInteger = 1,
-
-    /// <summary>
-    /// Is floating point.
-    /// </summary>
-    IsFloat = 2,
-}
-
-/// <summary>
 /// Prim type.
 /// </summary>
 public abstract record PrimType : DataType
@@ -135,7 +135,7 @@ public abstract record PrimType : DataType
     /// </summary>
     public abstract Runtime.TypeCode TypeCode { get; }
 
-    ///<inheritdoc/>
+    /// <inheritdoc/>
     public sealed override string ToString()
     {
         return ShortName;

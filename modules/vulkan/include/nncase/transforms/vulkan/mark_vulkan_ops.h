@@ -16,15 +16,13 @@
 #include <nncase/runtime/vulkan/compiler_defs.h>
 #include <nncase/transforms/transform.h>
 
-namespace nncase::ir::transforms::vulkan
-{
-class NNCASE_MODULES_VULKAN_API mark_vulkan_ops_transform : public transform
-{
-public:
+namespace nncase::ir::transforms::vulkan {
+class NNCASE_MODULES_VULKAN_API mark_vulkan_ops_transform : public transform {
+  public:
     void process(transform_context &context) override;
 
-protected:
+  protected:
     bool skip_self_contained_check() const noexcept override { return true; }
     bool on_try_match(ir::node &node, transform_context &context) override;
 };
-}
+} // namespace nncase::ir::transforms::vulkan

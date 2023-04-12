@@ -1,224 +1,321 @@
-name: compiler-build
+﻿name: compiler-build
 
 on: [push, pull_request]
-
 env:
-  BUILD_TYPE: Release
+  NUGET_CERT_REVOCATION_MODE: offline
+  NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
 
 jobs:
-  build-simulator:
-    runs-on: ${{ matrix.os }}
+  build-native:
+    name: build-native-${{matrix.config.name}}
+    runs-on: ${{matrix.config.os}}
     strategy:
       matrix:
-        os: [ubuntu-18.04,windows-2022,macos-10.15]
+        config:
+          - {name: x86_64-macos, os: macos-latest, cmakeArgs: -DENABLE_X86SIMD=OFF, buildType: Release}
+          - {name: x86_64-linux, os: ubuntu-latest, cmakeArgs: '', buildType: Release}
+          - {name: x86_64-windows, os: windows-latest, arch: x64, cmakeArgs: -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl, buildType: Release}
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: seanmiddleditch/gha-setup-ninja@master
 
-      - name: Install System Requirements
-        if: runner.os == 'Macos'
-        shell: bash
-        run: |
-          brew install libomp
-
-      - name: Add msbuild to PATH
+      - name: Set up build environment (Windows, Visual Studio)
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{matrix.config.arch}}
         if: runner.os == 'Windows'
-        uses: ilammy/msvc-dev-cmd@v1.10.0
+
+      - name: Set up build environment (Macos)
+        run: |
+          brew install sunnycase/core/libomp@11.1.0
+        if: runner.os == 'Macos'
 
       - name: Setup Python
-        uses: actions/setup-python@v2.2.1
+        uses: actions/setup-python@v4
         with:
           python-version: 3.7
 
       - name: Install Conan
         shell: bash
         run: |
-          pip install conan
+          pip install conan==1.58
 
-      - name: Configure Conan
-        if: runner.os == 'Linux'
-        shell: bash
+      - name: Configure Conan (Linux)
         run: |
           conan profile new default --detect
           conan profile update settings.compiler.libcxx=libstdc++11 default
-
-      - name: Create Build Environment
-        run: cmake -E make_directory ${{github.workspace}}/build
-
-      - name: Configure CMake
-        env:
-          CC: gcc-10
-          CXX: g++-10
+          echo "CC=gcc-10" >> $GITHUB_ENV
+          echo "CXX=g++-10" >> $GITHUB_ENV
         if: runner.os == 'Linux'
-        shell: bash
-        working-directory: ${{github.workspace}}/build
-        run: cmake -G Ninja $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=OFF -DPython3_ROOT_DIR=${pythonLocation}
 
       - name: Configure CMake
-        if: runner.os != 'Linux'
         shell: bash
-        working-directory: ${{github.workspace}}/build
-        run: cmake -G Ninja $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=OFF -DPython3_ROOT_DIR=${pythonLocation}
-
-      - name: Build
-        shell: bash
-        working-directory: ${{github.workspace}}/build
         run: |
-          cmake --build . --config $BUILD_TYPE
+          cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=${{matrix.config.buildType}} ${{matrix.config.cmakeArgs}} -DBUILD_TESTING=ON -DPython3_ROOT_DIR=${pythonLocation}
 
-      - name: Install
-        shell: bash
-        working-directory: ${{github.workspace}}/build
-        run: cmake --install . --prefix ../install
+      - name: Build & Install
+        run: |
+          cmake --build build --config ${{matrix.config.buildType}}
+          cmake --install build --prefix install
 
-      - name: Upload a Build Artifact
-        uses: actions/upload-artifact@v2.2.2
+      - name: Upload nncase Native Build Artifact
+        uses: actions/upload-artifact@v3
         with:
-          name: nncase-simulator-${{matrix.os}}-x86_64
+          name: nncase-native-${{matrix.config.name}}
           path: ${{github.workspace}}/install
           if-no-files-found: error
-        
-  build-and-test-compiler:
-    needs: [build-simulator]
-    runs-on: ${{ matrix.os }}
+
+  build-compiler:
+    needs: [build-native]
+    name: build-${{matrix.config.name}}
+    runs-on: ${{matrix.config.os}}
     strategy:
       matrix:
-        os: [ubuntu-18.04,windows-2022] #,macos-10.15]
+        dotnet-version: ['7.0']
+        config:
+          - {name: x86_64-macos, os: macos-latest, shell: bash, rid: osx-x64, buildType: Release}
+          - {name: x86_64-linux, os: ubuntu-latest, shell: bash, rid: linux-x64, buildType: Release}
+          - {name: x86_64-windows, os: windows-latest, shell: bash, rid: win-x64, buildType: Release}
 
     steps:
       - uses: actions/checkout@v2
       - name: Setup .NET
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: 6.0.x
+          dotnet-version: ${{matrix.dotnet-version}}
 
-      - name: Install System Requirements
+      - name: Cache NuGet packages
+        uses: actions/cache@v3
+        with:
+          path: ${{ github.workspace }}/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Install nncase native Artifact
+        uses: actions/download-artifact@v2.0.9
+        with:
+          name: nncase-native-${{matrix.config.name}}
+          path: ${{github.workspace}}/install
+
+      - name: Set up build environment (Macos)
+        run: |
+          brew install sunnycase/core/libomp@11.1.0
         if: runner.os == 'Macos'
-        shell: bash
+
+      - name: Build
         run: |
-          brew install libomp
-      
-      - name: Install Vulkan SDK
-        if: runner.os == 'Linux'
-        shell: bash
-        env:
-          VULKANSDK_VER: 1.2.182.0
-        run: |
-          wget https://sdk.lunarg.com/sdk/download/1.2.182.0/linux/vulkansdk-linux-x86_64-${VULKANSDK_VER}.tar.gz -O vulkansdk.tar.gz
-          tar xf vulkansdk.tar.gz
-          sudo cp -P ${VULKANSDK_VER}/x86_64/lib/libvulkan.so* /usr/local/lib/
-      
-      - name: Install Vulkan SDK
-        if: runner.os == 'Windows'
+          dotnet restore -r ${{matrix.config.rid}}
+          dotnet build -c ${{matrix.config.buildType}} --no-restore
+          dotnet publish src/Nncase.Compiler -c ${{matrix.config.buildType}} --no-restore --sc false -r ${{matrix.config.rid}}
+
+      - name: Set up Dotnet Test settings
+        uses: 1arp/create-a-file-action@0.2
+        with:
+          file: 'test.runsettings'
+          content: |
+            <?xml version="1.0" encoding="utf-8"?>
+            <!-- File name extension must be .runsettings -->
+            <RunSettings>
+              <RunConfiguration>
+                <EnvironmentVariables>
+                  <LD_LIBRARY_PATH>${{github.workspace}}/install/lib</LD_LIBRARY_PATH>
+                  <DYLD_LIBRARY_PATH>${{github.workspace}}/install/lib</DYLD_LIBRARY_PATH>
+                </EnvironmentVariables>
+              </RunConfiguration>
+            </RunSettings>
+
+      - name: Set up test environment (Windows)
         shell: pwsh
         run: |
-          Invoke-WebRequest -Uri https://sdk.lunarg.com/sdk/download/1.2.182.0/windows/VulkanSDK-1.2.182.0-Installer.exe -O VulkanSDK-Installer.exe
-          .\VulkanSDK-Installer.exe /S
-      
-      - name: Install SwiftShader
-        if: runner.os != 'Windows'
-        shell: bash
+          echo "PATH=${env:PATH};${env:GITHUB_WORKSPACE}/install/bin" >> $env:GITHUB_ENV
+        if: runner.os == 'Windows'
+
+      - name: Dotnet Test
+        working-directory: ${{github.workspace}}
         run: |
-          wget https://github.com/sunnycase/swiftshader/releases/download/v1.0/swiftshader-${{matrix.os}}-x86_64.zip -O swiftshader.zip
+          dotnet tool install --global dotnet-coverage
+          dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/unit.xml "dotnet test -c ${{matrix.config.buildType}} -s test.runsettings --no-build --verbosity normal"
+          dotnet-coverage merge -o coverage.unit.xml -f cobertura -r coverage/*.xml
+
+      - name: Upload Coverage
+        uses: actions/upload-artifact@v3
+        if: matrix.config.name == 'x86_64-linux'
+        with:
+          name: nncase-coverage-unit
+          path: coverage.unit.xml
+          if-no-files-found: error
+
+      - name: Upload nncase Build Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: nncase-${{matrix.config.name}}
+          path: ${{github.workspace}}/src/Nncase.Compiler/bin/${{matrix.config.buildType}}/net${{matrix.dotnet-version}}/${{matrix.config.rid}}/publish
+          if-no-files-found: error
+
+  test-compiler:
+    needs: [build-compiler]
+    name: test-${{matrix.config.name}}
+    runs-on: ${{matrix.config.os}}
+    strategy:
+      matrix:
+        dotnet-version: ['7.0']
+        config:
+          - {name: x86_64-macos, os: macos-latest, shell: bash}
+          - {name: x86_64-linux, os: ubuntu-latest, shell: bash}
+          - {name: x86_64-windows, os: windows-latest, shell: bash}
+
+    env:
+      VULKANSDK_VER: 1.2.182.0
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: ${{matrix.dotnet-version}}
+
+      - name: Install nncase native Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: nncase-native-${{matrix.config.name}}
+          path: ${{github.workspace}}/install
+
+      - name: Install nncase
+        uses: actions/download-artifact@v3
+        with:
+          name: nncase-${{matrix.config.name}}
+          path: ${{github.workspace}}/install
+
+      - name: Set up test environment (macOS)
+        run: |
+          brew install sunnycase/core/libomp@11.1.0
+          aria2c --parameterized-uri=true https://{sdk.lunarg.com/sdk/download/${VULKANSDK_VER}/mac,distfiles.macports.org/MoltenVK}/vulkansdk-macos-${VULKANSDK_VER}.dmg
+          hdiutil attach ./vulkansdk-macos-*.dmg
+          sudo /Volumes/vulkansdk-macos-*/InstallVulkan.app/Contents/MacOS/InstallVulkan --root $HOME/VulkanSDK --accept-licenses --default-answer --confirm-command install
+          hdiutil detach /Volumes/vulkansdk-macos-*
+          echo "VULKAN_SDK=$HOME/VulkanSDK/macOS" >> $GITHUB_ENV
+          wget https://github.com/sunnycase/swiftshader/releases/download/v1.0/swiftshader-macos-10.15-x86_64.zip -O swiftshader.zip
           unzip swiftshader.zip
           sudo cmake -E make_directory /usr/local/share/vulkan/icd.d
           sudo cp lib/* /usr/local/share/vulkan/icd.d
-      
-      - name: Install SwiftShader
-        if: runner.os == 'Windows'
+          cp install/lib/*.dylib install/
+          echo "PYTHONPATH=$GITHUB_WORKSPACE/install/lib:$GITHUB_WORKSPACE/install/python:$GITHUB_WORKSPACE/tests" >> $GITHUB_ENV
+        if: runner.os == 'macOS'
+
+      - name: Set up test environment (Linux)
+        run: |
+          wget https://sdk.lunarg.com/sdk/download/${VULKANSDK_VER}/linux/vulkansdk-linux-x86_64-${VULKANSDK_VER}.tar.gz -O vulkansdk.tar.gz
+          tar xf vulkansdk.tar.gz
+          sudo cp -P ${VULKANSDK_VER}/x86_64/lib/libvulkan.so* /usr/local/lib/
+          wget https://github.com/sunnycase/swiftshader/releases/download/v1.0/swiftshader-ubuntu-18.04-x86_64.zip -O swiftshader.zip
+          unzip swiftshader.zip
+          sudo cmake -E make_directory /usr/local/share/vulkan/icd.d
+          sudo cp lib/* /usr/local/share/vulkan/icd.d
+          cp install/lib/*.so install/
+          echo "PYTHONPATH=$GITHUB_WORKSPACE/install/lib:$GITHUB_WORKSPACE/install/python:$GITHUB_WORKSPACE/tests" >> $GITHUB_ENV
+        if: runner.os == 'Linux'
+
+      - name: Set up test environment (Windows)
         shell: pwsh
         run: |
+          Invoke-WebRequest -Uri https://sdk.lunarg.com/sdk/download/${env:VULKANSDK_VER}/windows/VulkanSDK-${env:VULKANSDK_VER}-Installer.exe -O VulkanSDK-Installer.exe
+          .\VulkanSDK-Installer.exe /S
           Invoke-WebRequest -Uri https://github.com/sunnycase/swiftshader/releases/download/v1.0/swiftshader-windows-2019-x86_64.zip -OutFile swiftshader.zip
           Expand-Archive swiftshader.zip
           Copy-Item swiftshader\lib\vk_swiftshader_icd.json swiftshader\bin\
-      
-      - name: Download nncase simulator Artifact
-        uses: actions/download-artifact@v2.0.9
-        with:
-          name: nncase-simulator-${{matrix.os}}-x86_64
-          path: ${{github.workspace}}/install
-
-      - name: Build
-        run: dotnet build -c Release
-
-      - name: Dotnet Test
-        working-directory: ${{github.workspace}}
+          Copy-Item install/bin/*.dll install/
+          echo "VK_ICD_FILENAMES=${env:GITHUB_WORKSPACE}/swiftshader/bin/vk_swiftshader_icd.json" >> $env:GITHUB_ENV
+          echo "PYTHONPATH=${env:GITHUB_WORKSPACE}/install/lib;${env:GITHUB_WORKSPACE}/install/python;${env:GITHUB_WORKSPACE}/tests" >> $env:GITHUB_ENV
+          echo "PATH=${env:PATH};${env:GITHUB_WORKSPACE}/install/bin" >> $env:GITHUB_ENV
         if: runner.os == 'Windows'
-        shell: bash
-        env:
-          PATH: ${{github.workspace}}/install/bin
-        run: |
-          dotnet test -c Release --no-build --verbosity normal 
-      
-      - name: Dotnet Test
-        working-directory: ${{github.workspace}}
-        if: runner.os != 'Windows'
-        shell: bash
-        env:
-          LD_LIBRARY_PATH: ${{github.workspace}}/install/lib
-        run: |
-          dotnet test -c Release --no-build --verbosity normal
 
       - name: Setup Python
-        uses: actions/setup-python@v2.2.1
+        uses: actions/setup-python@v4
         with:
           python-version: 3.7
-          
-      - name: Install Common Python Packages
-        run: |
-          pip install conan tensorflow==2.7.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0 opencv-python
-          pip install imageio==2.15.0 protobuf==3.20.1
-          pip install pytest
-          pip install pythonnet==3.0.0rc4 clr_loader==0.1.7
+          cache: 'pip'
+          cache-dependency-path: '**/requirements.test.txt'
 
       - name: Install Python Packages
-        if: runner.os == 'Linux'
-        shell: bash
-        run: |
-          pip install torch==1.9.0+cpu torchvision==0.10.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
-          pip install https://github.com/kendryte/caffe/releases/download/v1.0.0.20210829/kendryte_caffe-1.0.0.20210829-cp37-cp37m-manylinux_2_24_x86_64.whl
+        run: pip install -r requirements.test.txt
 
-      - name: Install Python Packages
-        if: runner.os == 'Windows'
-        shell: bash
-        run: |
-          pip install torch==1.9.0+cpu torchvision==0.10.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
-          pip install https://github.com/kendryte/caffe/releases/download/v1.0.0.20210829/kendryte_caffe-1.0.0.20210829-cp37-cp37m-win_amd64.whl
-
-      - name: Install Python Packages
-        if: runner.os == 'Macos'
-        shell: bash
-        run: |
-          pip install torch==1.9.0 torchvision==0.10.0 -f https://download.pytorch.org/whl/torch_stable.html
-          pip install https://github.com/kendryte/caffe/releases/download/v1.0.0.20210829/kendryte_caffe-1.0.0.20210829-cp37-cp37m-macosx_10_9_x86_64.whl
+      - name: Create Test Environment
+        run: mkdir test_results
 
       - name: Test
         working-directory: ${{github.workspace}}
-        if: runner.os != 'Windows'
         shell: bash
         env:
-          PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/tests
-          NNCASE_CLI: ${{github.workspace}}/src/Nncase.Cli/bin/Release/net6.0
-          LD_LIBRARY_PATH: ${{github.workspace}}/install/lib:${{github.workspace}}/src/Nncase.Cli/bin/Release/net6.0/runtimes/linux-x64/native
+          NNCASE_COMPILER: ${{github.workspace}}/install/Nncase.Compiler.dll
         run: |
-          pytest tests/importer/onnx_/basic/ --doctest-modules --junitxml=test_results/other.xml
-          pytest tests/importer/onnx_/combine/ --doctest-modules --junitxml=test_results/other.xml
-          pytest tests/importer/tflite_/basic/ --doctest-modules --junitxml=test_results/other.xml
-          pytest tests/importer/tflite_/combine/ --doctest-modules --junitxml=test_results/other.xml
-          pytest tests/importer/tflite_/model/ --doctest-modules --junitxml=test_results/other.xml
+          dotnet tool install --global dotnet-coverage
+          dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/onnx_basic.xml pytest tests/importer/onnx_/basic/ --doctest-modules --junitxml=test_results/onnx_basic.xml
+          dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/onnx_combine.xml pytest tests/importer/onnx_/combine/ --doctest-modules --junitxml=test_results/onnx_combine.xml
+          dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/tflite_basic.xml pytest tests/importer/tflite_/basic/ --doctest-modules --junitxml=test_results/tflite_basic.xml
+          dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/tflite_combine.xml pytest tests/importer/tflite_/combine/ --doctest-modules --junitxml=test_results/tflite_combine.xml
+          dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/tflite_model.xml pytest tests/importer/tflite_/model/ --doctest-modules --junitxml=test_results/tflite_model.xml
+          dotnet-coverage merge -o coverage.integration.xml -f cobertura -r coverage/*.xml
 
-#      - name: Test
-#        working-directory: ${{github.workspace}}
-#        if: runner.os == 'Windows'
-#        shell: bash
-#        env:
-#          PYTHONPATH: ${{github.workspace}}/install/lib;${{github.workspace}}/install/python;${{github.workspace}}/tests
-#          NNCASE_CLI: ${{github.workspace}}/src/Nncase.Cli/bin/Release/net6.0
-#          LD_LIBRARY_PATH: ${{github.workspace}}/install/lib;${{github.workspace}}/src/Nncase.Cli/bin/Release/net6.0/runtimes/win-x64/native
-#        run: |
-#          pytest tests/importer/onnx_/basic/ --doctest-modules --junitxml=test_results/other.xml
-#          pytest tests/importer/onnx_/combine/ --doctest-modules --junitxml=test_results/other.xml
-#          pytest tests/importer/tflite_/basic/ --doctest-modules --junitxml=test_results/other.xml
-#          pytest tests/importer/tflite_/combine/ --doctest-modules --junitxml=test_results/other.xml
-#          pytest tests/importer/tflite_/model/ --doctest-modules --junitxml=test_results/other.xml
+      - name: Upload Coverage
+        uses: actions/upload-artifact@v3
+        if: matrix.config.name == 'x86_64-linux'
+        with:
+          name: nncase-coverage-integration
+          path: coverage.integration.xml
+          if-no-files-found: error
+
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always() && matrix.config.name == 'x86_64-linux'
+        with:
+          files: test_results/*.xml
+
+  upload-coverage:
+    needs: [test-compiler]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: "7.0"
+
+      - name: Download Unit Test Coverage
+        uses: actions/download-artifact@v3
+        with:
+          name: nncase-coverage-unit
+          path: ${{github.workspace}}/coverage
+
+      - name: Download Integration Test Coverage
+        uses: actions/download-artifact@v3
+        with:
+          name: nncase-coverage-integration
+          path: ${{github.workspace}}/coverage
+
+      - name: Upload Codecov (Unit)
+        uses: codecov/codecov-action@v3
+        with:
+          files: coverage/coverage.unit.xml
+          flags: unit
+
+      - name: Upload Codecov (Integration)
+        uses: codecov/codecov-action@v3
+        with:
+          files: coverage/coverage.integration.xml
+          flags: integration
+
+      - name: Generate Coverage Report
+        run: |
+          dotnet tool install --global dotnet-coverage
+          dotnet tool install -g dotnet-reportgenerator-globaltool
+          dotnet-coverage merge -o coverage.xml -f cobertura -r coverage/*.xml
+          reportgenerator -reports:coverage.xml -targetdir:"coveragereport" -reporttypes:Html
+
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: nncase-coverage-report
+          path: coveragereport
+          if-no-files-found: error

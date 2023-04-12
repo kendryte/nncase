@@ -1,34 +1,20 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Nullable>enable</Nullable>
-    <CodeAnalysisRuleSet>$(SolutionDir)/tools/StyleCopAnalyzers.ruleset</CodeAnalysisRuleSet>
-	  <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+	<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Autofac" Version="6.3.0" />
-    <PackageReference Include="OrtKISharp" Version="0.0.1" />
-    <PackageReference Include="MagicalTensorflowLib" Version="0.0.2" />
-    <PackageReference Include="MagicalTensorflowLibOSX-ARM64" Version="0.0.4" />
-    <PackageReference Include="AnyTensorFlow.NET" Version="0.70.1" />
-    <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.354">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
+    <PackageReference Include="OrtKISharp" />
+    <PackageReference Include="MagicalTensorflowLib" />
+    <PackageReference Include="MagicalTensorflowLibOSX-ARM64" />
+    <PackageReference Include="AnyTensorFlow.NET" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Nncase.Core\Nncase.Core.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="../../tools/Nncase.SourceGenerator/Nncase.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <AdditionalFiles Include="$(SolutionDir)/tools/stylecop.json" />
   </ItemGroup>
 
 </Project>

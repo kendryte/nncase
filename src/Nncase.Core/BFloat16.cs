@@ -20,6 +20,14 @@ public struct BFloat16 : IEquatable<BFloat16>, IComparable<BFloat16>
     /// </summary>
     public ushort _value;
 
+    public static BFloat16 Infinity => FromRaw(0x7f80);
+
+    public static BFloat16 NegInfinity => FromRaw(0xff80);
+
+    public static BFloat16 Epsilon => FromRaw(0x3c00);
+
+    public static BFloat16 NaN => FromRaw(0x7fc0);
+
     /// <summary>
     /// Implicit convert <see cref="BFloat16"/> to <see cref="float"/>.
     /// </summary>
@@ -53,6 +61,26 @@ public struct BFloat16 : IEquatable<BFloat16>, IComparable<BFloat16>
     /// <param name="rhs">rhls.</param>
     /// <returns>result of value comparisons.</returns>
     public static bool operator !=(BFloat16 lhs, BFloat16 rhs) => lhs._value != rhs._value;
+
+    public static bool operator <(BFloat16 left, BFloat16 right)
+    {
+        return left.CompareTo(right) < 0;
+    }
+
+    public static bool operator <=(BFloat16 left, BFloat16 right)
+    {
+        return left.CompareTo(right) <= 0;
+    }
+
+    public static bool operator >(BFloat16 left, BFloat16 right)
+    {
+        return left.CompareTo(right) > 0;
+    }
+
+    public static bool operator >=(BFloat16 left, BFloat16 right)
+    {
+        return left.CompareTo(right) >= 0;
+    }
 
     /// <summary>
     /// Reinterpret cast <see cref="ushort"/> to <see cref="BFloat16"/>.
@@ -93,14 +121,6 @@ public struct BFloat16 : IEquatable<BFloat16>, IComparable<BFloat16>
         return FromRaw((ushort)(input >> 16));
     }
 
-    public static BFloat16 Infinity => FromRaw(0x7f80);
-
-    public static BFloat16 NegInfinity => FromRaw(0xff80);
-
-    public static BFloat16 Epsilon => FromRaw(0x3c00);
-
-    public static BFloat16 NaN => FromRaw(0x7fc0);
-
     /// <summary>
     /// Returns a value indicating whether this instance and other BFloat16 represent the same value.
     /// </summary>
@@ -122,7 +142,7 @@ public struct BFloat16 : IEquatable<BFloat16>, IComparable<BFloat16>
         bool result = false;
         if (obj is BFloat16)
         {
-            BFloat16 bfl16 = (BFloat16)obj;
+            var bfl16 = (BFloat16)obj;
             result = bfl16 == this;
         }
 

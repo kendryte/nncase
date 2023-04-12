@@ -109,15 +109,57 @@ public static class DataTypes
       srcType is PointerType;
 
     /// <summary>
-    /// display the datatype
+    /// display the datatype for il.
     /// </summary>
-    /// <param name="dataType"></param>
     /// <returns> datatype name.</returns>
-    /// <exception cref="ArgumentOutOfRangeException"></exception>
     public static string GetDisplayName(this DataType dataType) => dataType switch
     {
         PointerType pointerType => $"({GetDisplayName(pointerType.ElemType)}*)",
         PrimType primType => primType.ShortName,
-        _ => dataType.ToString(),
+        ValueType => dataType.ToString(),
+        _ => throw new ArgumentOutOfRangeException(dataType.GetType().Name),
+    };
+
+    /// <summary>
+    /// display the datatype for csharp build.
+    /// </summary>
+    /// <param name="dataType">datatype.</param>
+    /// <returns>datatype ctor.</returns>
+    public static string GetCSharpName(this DataType dataType) => dataType switch
+    {
+        PrimType primType => $"DataTypes.{primType.FullName}",
+        PointerType pointerType => $"new PointerType({pointerType.ElemType.GetCSharpName()})",
+        ValueType valueType => $"new {valueType.GetType().Name}()",
+        _ => throw new ArgumentOutOfRangeException(dataType.GetType().Name),
+    };
+
+    /// <summary>
+    /// display the datatype for builtin name. eg. Single => float.
+    /// </summary>
+    /// <param name="dataType">datatype.</param>
+    /// <returns>builtin name.</returns>
+    public static string GetBuiltInName(this DataType dataType) => dataType switch
+    {
+        PrimType primType => primType.TypeCode switch
+        {
+            Runtime.TypeCode.Boolean => "bool",
+            Runtime.TypeCode.Utf8Char => "Utf8Char",
+            Runtime.TypeCode.Int8 => "sbyte",
+            Runtime.TypeCode.Int16 => "short",
+            Runtime.TypeCode.Int32 => "int",
+            Runtime.TypeCode.Int64 => "long",
+            Runtime.TypeCode.UInt8 => "byte",
+            Runtime.TypeCode.UInt16 => "ushort",
+            Runtime.TypeCode.UInt32 => "uint",
+            Runtime.TypeCode.UInt64 => "ulong",
+            Runtime.TypeCode.Float16 => "Half",
+            Runtime.TypeCode.Float32 => "float",
+            Runtime.TypeCode.Float64 => "double",
+            Runtime.TypeCode.BFloat16 => "BFloat16",
+            _ => throw new ArgumentOutOfRangeException(primType.FullName),
+        },
+        PointerType pointerType => throw new NotSupportedException(nameof(PointerType)),
+        ValueType valueType => $"{valueType.CLRType.Name}",
+        _ => throw new ArgumentOutOfRangeException(dataType.GetType().Name),
     };
 }

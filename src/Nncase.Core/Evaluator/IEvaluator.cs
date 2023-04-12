@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,14 +9,6 @@ using System.Threading.Tasks;
 using Nncase.IR;
 
 namespace Nncase.Evaluator;
-
-/// <summary>
-/// this attribute mark the source generator auto generate IEvaluator's interface impl
-/// </summary>
-public class EvaluatorGeneratorAttribute : Attribute
-{
-
-}
 
 /// <summary>
 /// Evaluator interface.
@@ -47,4 +42,12 @@ public interface IEvaluator<T> : IEvaluator
     {
         return Visit(context, (T)target);
     }
+}
+
+/// <summary>
+/// this attribute mark the source generator auto generate IEvaluator's interface impl.
+/// </summary>
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
+public sealed class EvaluatorGeneratorAttribute : Attribute
+{
 }

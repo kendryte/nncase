@@ -12,14 +12,6 @@ using Nncase.IR;
 namespace Nncase.Evaluator;
 
 /// <summary>
-/// this attribute mark the source generator auto generate ICostEvaluator's interface impl
-/// </summary>
-public class CostEvaluatorGeneratorAttribute : Attribute
-{
-
-}
-
-/// <summary>
 /// Cost evaluator interface.
 /// </summary>
 public interface ICostEvaluator
@@ -30,7 +22,20 @@ public interface ICostEvaluator
     /// <param name="context">Context.</param>
     /// <param name="target">Target operator.</param>
     /// <returns>Result.</returns>
-    Cost? Visit(ICostEvaluateContext context, Op target);
+    Cost Visit(ICostEvaluateContext context, Op target);
+}
+
+/// <summary>
+/// BaseFunction Evaluator Cost interface.
+/// </summary>
+public interface IBaseFuncCostEvaluator
+{
+    /// <summary>
+    /// Evaluate the Base Function Cost.
+    /// </summary>
+    /// <param name="target">Target Fusion/Primfunc/PrimfuncWrapper.</param>
+    /// <returns>The base function costs.</returns>
+    Cost VisitLeaf(BaseFunction target);
 }
 
 /// <summary>
@@ -45,10 +50,18 @@ public interface ICostEvaluator<T> : ICostEvaluator
     /// <param name="context">Context.</param>
     /// <param name="target">Target operator.</param>
     /// <returns>Result.</returns>
-    Cost? Visit(ICostEvaluateContext context, T target);
+    Cost Visit(ICostEvaluateContext context, T target);
 
-    Cost? ICostEvaluator.Visit(ICostEvaluateContext context, Op target)
+    Cost ICostEvaluator.Visit(ICostEvaluateContext context, Op target)
     {
         return Visit(context, (T)target);
     }
+}
+
+/// <summary>
+/// this attribute mark the source generator auto generate ICostEvaluator's interface impl.
+/// </summary>
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
+public sealed class CostEvaluatorGeneratorAttribute : Attribute
+{
 }

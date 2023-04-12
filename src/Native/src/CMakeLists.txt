@@ -20,12 +20,22 @@ if (DEFAULT_BUILTIN_RUNTIMES)
 endif ()
 set_property(TARGET nncasebase PROPERTY POSITION_INDEPENDENT_CODE ON)
 
+add_subdirectory(compiler)
 add_subdirectory(runtime)
 add_subdirectory(kernels)
 
 if (NOT BUILDING_RUNTIME)
     add_executable(nncasetest test.cpp)
     target_link_libraries(nncasetest PRIVATE nncaseruntime)
+    if (${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo" AND MSVC)
+        set_target_properties(nncasetest PROPERTIES LINK_FLAGS "/PROFILE")
+    endif()
+
+    add_executable(nncasetest_cli test_cli.cpp)
+    target_link_libraries(nncasetest_cli PRIVATE nncaseruntime)
+
+    add_executable(nncasetest_dynamic_cli test_dynamic_cli.cpp)
+    target_link_libraries(nncasetest_dynamic_cli PRIVATE nncaseruntime)
 endif()
 
 if(BUILDING_RUNTIME)

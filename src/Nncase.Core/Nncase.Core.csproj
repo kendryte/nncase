@@ -1,33 +1,91 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
     <RootNamespace>Nncase</RootNamespace>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-	  <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
-    <CodeAnalysisRuleSet>$(SolutionDir)/tools/StyleCopAnalyzers.ruleset</CodeAnalysisRuleSet>
+	<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
   </PropertyGroup>
-
   <ItemGroup>
-    <PackageReference Include="CommonServiceLocator" Version="2.0.6" />
-    <PackageReference Include="Autofac.Extras.CommonServiceLocator" Version="6.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="5.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0" />
-    <PackageReference Include="Microsoft.Toolkit.HighPerformance" Version="7.1.1" />
-    <PackageReference Include="NetFabric.Hyperlinq" Version="3.0.0-beta48" />
-    <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.354">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="System.Numerics.Tensors" Version="6.0.0-rc.2.21480.5" />
-    <PackageReference Include="ValueTaskSupplement" Version="1.1.0" />
-	  <ProjectReference Include="../../tools/Nncase.SourceGenerator/Nncase.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <None Include="TIR\Range.Conversions.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Range.Conversions.tt</DependentUpon>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
-    <AdditionalFiles Include="$(SolutionDir)/tools/stylecop.json" />
+    <PackageReference Include="DryIoc.dll" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+    <PackageReference Include="Microsoft.Toolkit.HighPerformance" />
+    <PackageReference Include="NetFabric.Hyperlinq" />
+    <PackageReference Include="System.Reactive" />
+    <PackageReference Include="GiGraph.Dot" />
+  </ItemGroup>
+
+  <ItemGroup>
+      <ProjectReference Include="../../tools/Nncase.SourceGenerator/Nncase.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="IR\ExprRewriter.g.tt">
+      <LastGenOutput>ExprRewriter.g.cs</LastGenOutput>
+      <Generator>TextTemplatingFileGenerator</Generator>
+    </None>
+    <None Update="IR\ExprFunctor.g.tt">
+      <LastGenOutput>ExprFunctor.g.cs</LastGenOutput>
+      <Generator>TextTemplatingFileGenerator</Generator>
+    </None>
+    <None Update="IR\ExprCloner.g.tt">
+      <LastGenOutput>ExprCloner.g.cs</LastGenOutput>
+      <Generator>TextTemplatingFileGenerator</Generator>
+    </None>
+    <None Update="IR\ExprVisitor.g.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>ExprVisitor.g.cs</LastGenOutput>
+    </None>
+    <None Update="IR\IRListParser.tt">
+      <Generator></Generator>
+    </None>
+    <None Update="TIR\Range.Conversions.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>Range.Conversions.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="IR\ExprCloner.g.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ExprCloner.g.tt</DependentUpon>
+    </Compile>
+    <Compile Update="IR\ExprFunctor.g.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ExprFunctor.g.tt</DependentUpon>
+    </Compile>
+    <Compile Update="IR\ExprRewriter.g.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ExprRewriter.g.tt</DependentUpon>
+    </Compile>
+    <Compile Update="IR\ExprVisitor.g.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ExprVisitor.g.tt</DependentUpon>
+    </Compile>
+    <Compile Update="TIR\Range.Conversions.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Range.Conversions.tt</DependentUpon>
+    </Compile>
   </ItemGroup>
 
 </Project>

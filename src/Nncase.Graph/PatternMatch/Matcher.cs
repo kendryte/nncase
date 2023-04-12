@@ -7,16 +7,21 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Reactive;
+using System.Reactive.Joins;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Nncase.IR;
+using Nncase.Utilities;
+using Tensorflow.Contexts;
 
 namespace Nncase.PatternMatch;
 
-internal sealed class Matcher
+internal sealed partial class Matcher : ExprFunctor<bool, Unit, IPattern>
 {
+    private readonly MatchOptions _options;
     private MatchScope _currentScope = new MatchScope();
-    private MatchOptions _options;
 
     private Matcher(Expr root, MatchOptions options)
     {
@@ -41,7 +46,7 @@ internal sealed class Matcher
         }
 
         var matcher = new Matcher(expr, options);
-        matcher.Visit(pattern, expr);
+        matcher.Visit(expr, pattern);
         return matcher._currentScope.TryGetMatchResult(out result);
     }
 
@@ -70,265 +75,123 @@ internal sealed class Matcher
         return false;
     }
 
-    private bool Visit(IPattern pattern, Expr expr)
+    protected override bool VisitConst(Const expr, IPattern pattern)
     {
-        _currentScope.IsMatch = (pattern, expr) switch
+        if (pattern is ConstPattern constPattern)
         {
-            (VarPattern varPat, Var var) => VisitLeaf(varPat, var),
-            (TensorConstPattern constPat, TensorConst con) => VisitLeaf(constPat, con),
-            (TupleConstPattern constPat, TupleConst con) => VisitLeaf(constPat, con),
-            (ConstPattern constPat, Const con) => VisitLeaf(constPat, con),
-            (FunctionPattern functionPat, Function func) => Visit(functionPat, func),
-            (CallPattern callPat, Call call) => Visit(callPat, call),
-            (TuplePattern tuplePat, IR.Tuple tuple) => Visit(tuplePat, tuple),
-            (IOpPattern opPat, Op op) => VisitLeaf(opPat, op),
-            (MarkerPattern mkPat, Marker mk) => Visit(mkPat, mk),
-            (FusionPattern fusionPattern, Fusion fusion) => Visit(fusionPattern, fusion),
-            (OrPattern orPat, _) => Visit(orPat, expr),
-            (ExprPattern exprPattern, _) => VisitLeaf(exprPattern, expr),
+            return constPattern.MatchLeaf(expr);
+        }
+
+        return DefaultVisit(expr, pattern);
+    }
+
+    protected override bool VisitOp(Op expr, IPattern pattern)
+    {
+        if (pattern is IOpPattern opPattern)
+        {
+            return opPattern.MatchLeaf(expr);
+        }
+
+        return DefaultVisit(expr, pattern);
+    }
+
+    protected override bool DispatchVisit(Expr expr, IPattern pattern)
+    {
+        bool isMatch = _currentScope.IsMatch;
+        if (isMatch)
+        {
+            if (_options.IsSuppressedPattern(expr, pattern))
+            {
+                isMatch = false;
+            }
+            else if (_currentScope.TryGetMemo(pattern, out var oldExpr))
+            {
+                if (!ReferenceEquals(oldExpr, expr))
+                {
+                    isMatch = false;
+                }
+            }
+            else
+            {
+                if (expr.Accept(this, pattern))
+                {
+                    _currentScope.AddMatch(pattern, expr);
+                }
+                else
+                {
+                    isMatch = false;
+                }
+            }
+
+            if (!isMatch)
+            {
+                _currentScope.IsMatch = false;
+            }
+        }
+
+        return isMatch;
+    }
+
+    protected override bool DefaultVisit(Expr expr, IPattern pattern)
+    {
+        return pattern switch
+        {
+            OrPattern orPattern => VisitOrPattern(expr, orPattern),
+            ExprPattern exprPattern => VisitExprPattern(expr, exprPattern),
             _ => false,
         };
-        return _currentScope.IsMatch;
     }
 
-    private bool VisitLeaf(IPattern pattern, Expr expr)
+    private bool VisitOrPattern(Expr expr, OrPattern orPattern)
     {
-        if (_currentScope.TryGetMemo(pattern, out var oldExpr))
+        // Preserve context
+        var oldScope = _currentScope;
+        _currentScope = new MatchScope(oldScope);
+
+        if (!Visit(expr, orPattern.ConditionA))
         {
-            if (!ReferenceEquals(oldExpr, expr))
-            {
-                _currentScope.IsMatch = false;
-            }
-        }
-        else
-        {
-            if (!_options.IsSuppressedPattern(expr, pattern)
-                && pattern.MatchLeaf(expr))
-            {
-                _currentScope.AddMatch(pattern, expr);
-            }
-            else
-            {
-                _currentScope.IsMatch = false;
-            }
+            // Try plan B
+            _currentScope = new MatchScope(oldScope);
+            return Visit(expr, orPattern.ConditionB);
         }
 
-        return _currentScope.IsMatch;
+        return true;
     }
 
-    private bool Visit(FunctionPattern pattern, Function expr)
+    private bool VisitExprPattern(Expr expr, ExprPattern exprPattern)
     {
-        if (_currentScope.TryGetMemo(pattern, out var oldExpr))
-        {
-            if (!ReferenceEquals(oldExpr, expr))
-            {
-                _currentScope.IsMatch = false;
-            }
-        }
-        else
-        {
-            if (!_options.IsSuppressedPattern(expr, pattern)
-                && pattern.MatchLeaf(expr)
-                && Visit(pattern.Body, expr.Body)
-                && Visit(pattern.Parameters, expr.Parameters))
-            {
-                _currentScope.AddMatch(pattern, expr);
-            }
-            else
-            {
-                _currentScope.IsMatch = false;
-            }
-        }
-
-        return _currentScope.IsMatch;
+        return exprPattern.MatchLeaf(expr);
     }
 
-    private bool Visit(FusionPattern pattern, Fusion expr)
+    private bool VisitVArgsPattern<T>(ReadOnlySpan<T> exprs, VArgsPattern vArgsPattern)
+        where T : Expr
     {
-        if (_currentScope.TryGetMemo(pattern, out var oldExpr))
+        bool isMatch = vArgsPattern.MatchLeaf(SpanUtility.UnsafeCast<T, Expr>(exprs));
+        if (isMatch)
         {
-            if (!ReferenceEquals(oldExpr, expr))
+            for (int i = 0; i < exprs.Length; i++)
             {
-                _currentScope.IsMatch = false;
-            }
-        }
-        else
-        {
-            if (!_options.IsSuppressedPattern(expr, pattern)
-                && pattern.MatchLeaf(expr)
-                && Visit(pattern.Body, expr.Body)
-                && Visit(pattern.Parameters, expr.Parameters))
-            {
-                _currentScope.AddMatch(pattern, expr);
-            }
-            else
-            {
-                _currentScope.IsMatch = false;
-            }
-        }
-
-        return _currentScope.IsMatch;
-    }
-
-    private bool Visit(CallPattern pattern, Call expr)
-    {
-        if (_currentScope.TryGetMemo(pattern, out var oldExpr))
-        {
-            if (!ReferenceEquals(oldExpr, expr))
-            {
-                _currentScope.IsMatch = false;
-            }
-        }
-        else
-        {
-            if (!_options.IsSuppressedPattern(expr, pattern)
-                && pattern.MatchLeaf(expr)
-                && Visit(pattern.Target, expr.Target)
-                && Visit(pattern.Parameters, expr.Parameters))
-            {
-                _currentScope.AddMatch(pattern, expr);
-            }
-            else
-            {
-                _currentScope.IsMatch = false;
-            }
-        }
-
-        return _currentScope.IsMatch;
-    }
-
-    private bool Visit(MarkerPattern pattern, Marker expr)
-    {
-        if (_currentScope.TryGetMemo(pattern, out var oldExpr))
-        {
-            if (!ReferenceEquals(oldExpr, expr))
-            {
-                _currentScope.IsMatch = false;
-            }
-        }
-        else
-        {
-            if (!_options.IsSuppressedPattern(expr, pattern)
-                && pattern.MatchLeaf(expr)
-                && Visit(pattern.Target, expr.Target)
-                && Visit(pattern.Attribute, expr.Attribute))
-            {
-                _currentScope.AddMatch(pattern, expr);
-            }
-            else
-            {
-                _currentScope.IsMatch = false;
-            }
-        }
-
-        return _currentScope.IsMatch;
-    }
-
-    private bool Visit(TuplePattern pattern, IR.Tuple expr)
-    {
-        if (_currentScope.TryGetMemo(pattern, out var oldExpr))
-        {
-            if (!ReferenceEquals(oldExpr, expr))
-            {
-                _currentScope.IsMatch = false;
-            }
-        }
-        else
-        {
-            if (!_options.IsSuppressedPattern(expr, pattern)
-                && pattern.MatchLeaf(expr)
-                && Visit(pattern.Fields, expr.Fields))
-            {
-                _currentScope.AddMatch(pattern, expr);
-            }
-            else
-            {
-                _currentScope.IsMatch = false;
-            }
-        }
-
-        return _currentScope.IsMatch;
-    }
-
-    private bool Visit(OrPattern pattern, Expr expr)
-    {
-        if (_currentScope.TryGetMemo(pattern, out var oldExpr))
-        {
-            if (!ReferenceEquals(oldExpr, expr))
-            {
-                _currentScope.IsMatch = false;
-            }
-        }
-        else
-        {
-            if (!_options.IsSuppressedPattern(expr, pattern)
-                && pattern.MatchLeaf(expr))
-            {
-                // Preserve context
-                var oldScope = _currentScope;
-                _currentScope = new MatchScope(oldScope);
-
-                if (!Visit(pattern.ConditionA, expr))
+                isMatch = Visit(exprs[i], vArgsPattern.Fields[i]);
+                if (!isMatch)
                 {
-                    // Try plan B
-                    _currentScope = new MatchScope(oldScope);
-                    if (!Visit(pattern.ConditionB, expr))
-                    {
-                        _currentScope.IsMatch = false;
-                    }
-                }
-
-                if (_currentScope.IsMatch)
-                {
-                    oldScope.AddMatch(pattern, expr);
+                    break;
                 }
             }
-            else
-            {
-                _currentScope.IsMatch = false;
-            }
         }
 
-        return _currentScope.IsMatch;
-    }
-
-    private bool Visit(VArgsPattern pattern, IReadOnlyList<Expr> exprs)
-    {
-        if (_currentScope.TryGetMemo(pattern, out var oldExprs))
+        if (isMatch)
         {
-            if (!oldExprs.SequenceEqual(exprs, ReferenceEqualityComparer.Instance))
-            {
-                _currentScope.IsMatch = false;
-            }
+            _currentScope.AddMatch(vArgsPattern, exprs.ToArray());
+            return true;
         }
         else
         {
-            if (pattern.MatchLeaf(exprs))
-            {
-                for (int i = 0; i < pattern.Count; i++)
-                {
-                    if (!Visit(pattern[i], exprs[i]))
-                    {
-                        _currentScope.IsMatch = false;
-                        break;
-                    }
-                }
-
-                if (_currentScope.IsMatch)
-                {
-                    _currentScope.AddMatch(pattern, exprs);
-                }
-            }
-            else
-            {
-                _currentScope.IsMatch = false;
-            }
+            _currentScope.IsMatch = false;
+            return false;
         }
-
-        return _currentScope.IsMatch;
     }
 
-    private sealed class MatchVisitor : ExprVisitor<Expr, IRType>
+    private sealed class MatchVisitor : ExprWalker
     {
         private readonly List<Expr> _candidates;
         private readonly IPattern _rootPattern;
@@ -341,14 +204,14 @@ internal sealed class Matcher
             _options = options;
         }
 
-        public override Expr DefaultVisitLeaf(Expr expr)
+        protected override Unit DefaultVisitLeaf(Expr expr)
         {
             if (!_options.IsSuppressedPattern(expr, _rootPattern) && _rootPattern.MatchLeaf(expr))
             {
                 _candidates.Add(expr);
             }
 
-            return expr;
+            return default;
         }
     }
 }

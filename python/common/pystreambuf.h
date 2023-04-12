@@ -82,12 +82,11 @@ namespace py = pybind11;
   Note: references are to the C++ standard (the numbers between parentheses
   at the end of references are margin markers).
 */
-class streambuf : public std::basic_streambuf<char>
-{
-private:
+class streambuf : public std::basic_streambuf<char> {
+  private:
     typedef std::basic_streambuf<char> base_t;
 
-public:
+  public:
     /* The syntax
         using base_t::char_type;
        would be nicer but Visual Studio C++ 8 chokes on it
@@ -106,25 +105,26 @@ public:
 
     /// Construct from a Python file object
     /** if buffer_size is 0 the current default_buffer_size is used.
-    */
-    streambuf(
-        py::object &python_file_obj,
-        std::size_t buffer_size_ = 0)
-        : py_read(getattr(python_file_obj, "read", py::none())), py_write(getattr(python_file_obj, "write", py::none())), py_seek(getattr(python_file_obj, "seek", py::none())), py_tell(getattr(python_file_obj, "tell", py::none())), buffer_size(buffer_size_ != 0 ? buffer_size_ : default_buffer_size), write_buffer(0), pos_of_read_buffer_end_in_py_file(0), pos_of_write_buffer_end_in_py_file(buffer_size), farthest_pptr(0)
-    {
+     */
+    streambuf(py::object &python_file_obj, std::size_t buffer_size_ = 0)
+        : py_read(getattr(python_file_obj, "read", py::none())),
+          py_write(getattr(python_file_obj, "write", py::none())),
+          py_seek(getattr(python_file_obj, "seek", py::none())),
+          py_tell(getattr(python_file_obj, "tell", py::none())),
+          buffer_size(buffer_size_ != 0 ? buffer_size_ : default_buffer_size),
+          write_buffer(0),
+          pos_of_read_buffer_end_in_py_file(0),
+          pos_of_write_buffer_end_in_py_file(buffer_size),
+          farthest_pptr(0) {
         assert(buffer_size != 0);
         /* Some Python file objects (e.g. sys.stdout and sys.stdin)
          have non-functional seek and tell. If so, assign None to
          py_tell and py_seek.
        */
-        if (!py_tell.is_none())
-        {
-            try
-            {
+        if (!py_tell.is_none()) {
+            try {
                 py_tell();
-            }
-            catch (py::error_already_set &err)
-            {
+            } catch (py::error_already_set &err) {
                 py_tell = py::none();
                 py_seek = py::none();
                 err.restore();
@@ -132,22 +132,18 @@ public:
             }
         }
 
-        if (!py_write.is_none())
-        {
+        if (!py_write.is_none()) {
             // C-like string to make debugging easier
             write_buffer = new char[buffer_size + 1];
             write_buffer[buffer_size] = '\0';
             setp(write_buffer, write_buffer + buffer_size); // 27.5.2.4.5 (5)
             farthest_pptr = pptr();
-        }
-        else
-        {
+        } else {
             // The first attempt at output will result in a call to overflow
             setp(0, 0);
         }
 
-        if (!py_tell.is_none())
-        {
+        if (!py_tell.is_none()) {
             off_type py_pos = py_tell().cast<off_type>();
             pos_of_read_buffer_end_in_py_file = py_pos;
             pos_of_write_buffer_end_in_py_file = py_pos;
@@ -155,8 +151,7 @@ public:
     }
 
     /// Mundane destructor freeing the allocated resources
-    virtual ~streambuf()
-    {
+    virtual ~streambuf() {
         if (write_buffer)
             delete[] write_buffer;
     }
@@ -165,8 +160,7 @@ public:
     /** It is essential to override this virtual function for the stream
         member function readsome to work correctly (c.f. 27.6.1.3, alinea 30)
      */
-    virtual std::streamsize showmanyc()
-    {
+    virtual std::streamsize showmanyc() {
         int_type const failure = traits_type::eof();
         int_type status = underflow();
         if (status == failure)
@@ -175,21 +169,17 @@ public:
     }
 
     /// C.f. C++ standard section 27.5.2.4.3
-    virtual int_type underflow()
-    {
+    virtual int_type underflow() {
         int_type const failure = traits_type::eof();
-        if (py_read.is_none())
-        {
+        if (py_read.is_none()) {
             throw std::invalid_argument(
                 "That Python file object has no 'read' attribute");
         }
         read_buffer = py_read(buffer_size);
         char *read_buffer_data;
         py::ssize_t py_n_read;
-        if (PYBIND11_BYTES_AS_STRING_AND_SIZE(read_buffer.ptr(),
-                &read_buffer_data, &py_n_read)
-            == -1)
-        {
+        if (PYBIND11_BYTES_AS_STRING_AND_SIZE(
+                read_buffer.ptr(), &read_buffer_data, &py_n_read) == -1) {
             setg(0, 0, 0);
             throw std::invalid_argument(
                 "The method 'read' of the Python file object "
@@ -205,10 +195,8 @@ public:
     }
 
     /// C.f. C++ standard section 27.5.2.4.5
-    virtual int_type overflow(int_type c = traits_type::eof())
-    {
-        if (py_write.is_none())
-        {
+    virtual int_type overflow(int_type c = traits_type::eof()) {
+        if (py_write.is_none()) {
             throw std::invalid_argument(
                 "That Python file object has no 'write' attribute");
         }
@@ -216,22 +204,19 @@ public:
         off_type n_written = (off_type)(farthest_pptr - pbase());
         py::bytes chunk(pbase(), n_written);
         py_write(chunk);
-        if (!traits_type::eq_int_type(c, traits_type::eof()))
-        {
+        if (!traits_type::eq_int_type(c, traits_type::eof())) {
             py_write(traits_type::to_char_type(c));
             n_written++;
         }
-        if (n_written)
-        {
+        if (n_written) {
             pos_of_write_buffer_end_in_py_file += n_written;
             setp(pbase(), epptr());
             // ^^^ 27.5.2.4.5 (5)
             farthest_pptr = pptr();
         }
-        return traits_type::eq_int_type(
-                   c, traits_type::eof())
-            ? traits_type::not_eof(c)
-            : c;
+        return traits_type::eq_int_type(c, traits_type::eof())
+                   ? traits_type::not_eof(c)
+                   : c;
     }
 
     /// Update the python file to reflect the state of this stream buffer
@@ -241,21 +226,17 @@ public:
         read buffer, set the Python file object seek position to the
         seek position in that read buffer.
     */
-    virtual int sync()
-    {
+    virtual int sync() {
         int result = 0;
         farthest_pptr = std::max(farthest_pptr, pptr());
-        if (farthest_pptr && farthest_pptr > pbase())
-        {
+        if (farthest_pptr && farthest_pptr > pbase()) {
             off_type delta = pptr() - farthest_pptr;
             int_type status = overflow();
             if (traits_type::eq_int_type(status, traits_type::eof()))
                 result = -1;
             if (!py_seek.is_none())
                 py_seek(delta, 1);
-        }
-        else if (gptr() && gptr() < egptr())
-        {
+        } else if (gptr() && gptr() < egptr()) {
             if (!py_seek.is_none())
                 py_seek(gptr() - egptr(), 1);
         }
@@ -269,10 +250,10 @@ public:
         is avoided as much as possible (e.g. parsers which may do a lot of
         backtracking)
     */
-    virtual pos_type seekoff(off_type off, std::ios_base::seekdir way,
-        std::ios_base::openmode which = std::ios_base::in
-            | std::ios_base::out)
-    {
+    virtual pos_type
+    seekoff(off_type off, std::ios_base::seekdir way,
+            std::ios_base::openmode which = std::ios_base::in |
+                                            std::ios_base::out) {
         /* In practice, "which" is either std::ios_base::in or out
          since we end up here because either seekp or seekg was called
          on the stream using this buffer. That simplifies the code
@@ -280,25 +261,21 @@ public:
       */
         int const failure = off_type(-1);
 
-        if (py_seek.is_none())
-        {
+        if (py_seek.is_none()) {
             throw std::invalid_argument(
                 "That Python file object has no 'seek' attribute");
         }
 
         // we need the read buffer to contain something!
-        if (which == std::ios_base::in && !gptr())
-        {
-            if (traits_type::eq_int_type(underflow(), traits_type::eof()))
-            {
+        if (which == std::ios_base::in && !gptr()) {
+            if (traits_type::eq_int_type(underflow(), traits_type::eof())) {
                 return failure;
             }
         }
 
         // compute the whence parameter for Python seek
         int whence;
-        switch (way)
-        {
+        switch (way) {
         case std::ios_base::beg:
             whence = 0;
             break;
@@ -314,13 +291,11 @@ public:
 
         // Let's have a go
         off_type result;
-        if (!seekoff_without_calling_python(off, way, which, result))
-        {
+        if (!seekoff_without_calling_python(off, way, which, result)) {
             // we need to call Python
             if (which == std::ios_base::out)
                 overflow();
-            if (way == std::ios_base::cur)
-            {
+            if (way == std::ios_base::cur) {
                 if (which == std::ios_base::in)
                     off -= egptr() - gptr();
                 else if (which == std::ios_base::out)
@@ -335,14 +310,13 @@ public:
     }
 
     /// C.f. C++ standard section 27.5.2.4.2
-    virtual pos_type seekpos(pos_type sp,
-        std::ios_base::openmode which = std::ios_base::in
-            | std::ios_base::out)
-    {
+    virtual pos_type
+    seekpos(pos_type sp, std::ios_base::openmode which = std::ios_base::in |
+                                                         std::ios_base::out) {
         return streambuf::seekoff(sp, std::ios_base::beg, which);
     }
 
-private:
+  private:
     py::object py_read, py_write, py_seek, py_tell;
 
     std::size_t buffer_size;
@@ -363,56 +337,42 @@ private:
     // the farthest place the buffer has been written into
     char *farthest_pptr;
 
-    bool seekoff_without_calling_python(
-        off_type off,
-        std::ios_base::seekdir way,
-        std::ios_base::openmode which,
-        off_type &result)
-    {
+    bool seekoff_without_calling_python(off_type off,
+                                        std::ios_base::seekdir way,
+                                        std::ios_base::openmode which,
+                                        off_type &result) {
         // Buffer range and current position
         off_type buf_begin, buf_end, buf_cur, upper_bound;
         off_type pos_of_buffer_end_in_py_file;
-        if (which == std::ios_base::in)
-        {
+        if (which == std::ios_base::in) {
             pos_of_buffer_end_in_py_file = pos_of_read_buffer_end_in_py_file;
             buf_begin = reinterpret_cast<std::streamsize>(eback());
             buf_cur = reinterpret_cast<std::streamsize>(gptr());
             buf_end = reinterpret_cast<std::streamsize>(egptr());
             upper_bound = buf_end;
-        }
-        else if (which == std::ios_base::out)
-        {
+        } else if (which == std::ios_base::out) {
             pos_of_buffer_end_in_py_file = pos_of_write_buffer_end_in_py_file;
             buf_begin = reinterpret_cast<std::streamsize>(pbase());
             buf_cur = reinterpret_cast<std::streamsize>(pptr());
             buf_end = reinterpret_cast<std::streamsize>(epptr());
             farthest_pptr = std::max(farthest_pptr, pptr());
             upper_bound = reinterpret_cast<std::streamsize>(farthest_pptr) + 1;
-        }
-        else
-        {
-            std::runtime_error(
-                "Control flow passes through branch that should be unreachable.");
+        } else {
+            std::runtime_error("Control flow passes through branch that should "
+                               "be unreachable.");
         }
 
         // Sought position in "buffer coordinate"
-        off_type buf_sought;
-        if (way == std::ios_base::cur)
-        {
+        off_type buf_sought = 0;
+        if (way == std::ios_base::cur) {
             buf_sought = buf_cur + off;
-        }
-        else if (way == std::ios_base::beg)
-        {
+        } else if (way == std::ios_base::beg) {
             buf_sought = buf_end + (off - pos_of_buffer_end_in_py_file);
-        }
-        else if (way == std::ios_base::end)
-        {
+        } else if (way == std::ios_base::end) {
             return false;
-        }
-        else
-        {
-            std::runtime_error(
-                "Control flow passes through branch that should be unreachable.");
+        } else {
+            std::runtime_error("Control flow passes through branch that should "
+                               "be unreachable.");
         }
 
         // if the sought position is not in the buffer, give up
@@ -429,34 +389,26 @@ private:
         return true;
     }
 
-public:
-    class istream : public std::istream
-    {
-    public:
-        istream(streambuf &buf)
-            : std::istream(&buf)
-        {
+  public:
+    class istream : public std::istream {
+      public:
+        istream(streambuf &buf) : std::istream(&buf) {
             exceptions(std::ios_base::badbit);
         }
 
-        ~istream()
-        {
+        ~istream() {
             if (this->good())
                 this->sync();
         }
     };
 
-    class ostream : public std::ostream
-    {
-    public:
-        ostream(streambuf &buf)
-            : std::ostream(&buf)
-        {
+    class ostream : public std::ostream {
+      public:
+        ostream(streambuf &buf) : std::ostream(&buf) {
             exceptions(std::ios_base::badbit);
         }
 
-        ~ostream()
-        {
+        ~ostream() {
             if (this->good())
                 this->flush();
         }
@@ -465,122 +417,97 @@ public:
 
 std::size_t streambuf::default_buffer_size = 1024;
 
-struct streambuf_capsule
-{
+struct streambuf_capsule {
     streambuf python_streambuf;
 
-    streambuf_capsule(
-        py::object &python_file_obj,
-        std::size_t buffer_size = 0)
-        : python_streambuf(python_file_obj, buffer_size)
-    {
-    }
+    streambuf_capsule(py::object &python_file_obj, std::size_t buffer_size = 0)
+        : python_streambuf(python_file_obj, buffer_size) {}
 };
 
-struct ostream : private streambuf_capsule, streambuf::ostream
-{
-    ostream(
-        py::object &python_file_obj,
-        std::size_t buffer_size = 0)
-        : streambuf_capsule(python_file_obj, buffer_size), streambuf::ostream(python_streambuf)
-    {
-    }
+struct ostream : private streambuf_capsule, streambuf::ostream {
+    ostream(py::object &python_file_obj, std::size_t buffer_size = 0)
+        : streambuf_capsule(python_file_obj, buffer_size),
+          streambuf::ostream(python_streambuf) {}
 
-    ~ostream()
-    {
-        if (this->good())
-        {
+    ~ostream() {
+        if (this->good()) {
             this->flush();
         }
     }
 };
 
-struct istream : private streambuf_capsule, streambuf::istream
-{
-    istream(
-        py::object &python_file_obj,
-        std::size_t buffer_size = 0)
-        : streambuf_capsule(python_file_obj, buffer_size), streambuf::istream(python_streambuf)
-    {
-    }
+struct istream : private streambuf_capsule, streambuf::istream {
+    istream(py::object &python_file_obj, std::size_t buffer_size = 0)
+        : streambuf_capsule(python_file_obj, buffer_size),
+          streambuf::istream(python_streambuf) {}
 
-    ~istream()
-    {
-        if (this->good())
-        {
+    ~istream() {
+        if (this->good()) {
             this->sync();
         }
     }
 };
 
-namespace pybind11
-{
-namespace detail
-{
-    template <>
-    struct type_caster<std::istream>
-    {
-    public:
-        bool load(handle src, bool)
-        {
-            if (getattr(src, "read", py::none()).is_none())
-            {
-                return false;
-            }
-
-            obj = py::reinterpret_borrow<object>(src);
-            value = std::unique_ptr<istream>(new istream(obj, 0));
-
-            return true;
+namespace pybind11 {
+namespace detail {
+template <> struct type_caster<std::istream> {
+  public:
+    bool load(handle src, bool) {
+        if (getattr(src, "read", py::none()).is_none()) {
+            return false;
         }
 
-    protected:
-        py::object obj;
-        std::unique_ptr<istream> value;
+        obj = py::reinterpret_borrow<object>(src);
+        value = std::unique_ptr<istream>(new istream(obj, 0));
 
-    public:
-        static constexpr auto name = _("istream");
-        static handle cast(NNCASE_UNUSED const std::istream *src, NNCASE_UNUSED return_value_policy policy, NNCASE_UNUSED handle parent)
-        {
-            return none().release();
-        }
-        operator std::istream *() { return value.get(); }
-        operator std::istream &() { return *value; }
-        template <typename _T>
-        using cast_op_type = pybind11::detail::cast_op_type<_T>;
-    };
+        return true;
+    }
 
-    template <>
-    struct type_caster<std::ostream>
-    {
-    public:
-        bool load(handle src, bool)
-        {
-            if (getattr(src, "write", py::none()).is_none())
-            {
-                return false;
-            }
+  protected:
+    py::object obj;
+    std::unique_ptr<istream> value;
 
-            obj = py::reinterpret_borrow<object>(src);
-            value = std::unique_ptr<ostream>(new ostream(obj, 0));
+  public:
+    static constexpr auto name = _("istream");
+    static handle cast(NNCASE_UNUSED const std::istream *src,
+                       NNCASE_UNUSED return_value_policy policy,
+                       NNCASE_UNUSED handle parent) {
+        return none().release();
+    }
+    operator std::istream *() { return value.get(); }
+    operator std::istream &() { return *value; }
+    template <typename _T>
+    using cast_op_type = pybind11::detail::cast_op_type<_T>;
+};
 
-            return true;
+template <> struct type_caster<std::ostream> {
+  public:
+    bool load(handle src, bool) {
+        if (getattr(src, "write", py::none()).is_none()) {
+            return false;
         }
 
-    protected:
-        py::object obj;
-        std::unique_ptr<ostream> value;
+        obj = py::reinterpret_borrow<object>(src);
+        value = std::unique_ptr<ostream>(new ostream(obj, 0));
 
-    public:
-        static constexpr auto name = _("ostream");
-        static handle cast(NNCASE_UNUSED const std::ostream *src, NNCASE_UNUSED return_value_policy policy, NNCASE_UNUSED handle parent)
-        {
-            return none().release();
-        }
-        operator std::ostream *() { return value.get(); }
-        operator std::ostream &() { return *value; }
-        template <typename _T>
-        using cast_op_type = pybind11::detail::cast_op_type<_T>;
-    };
-}
-} // namespace pybind11::detail
+        return true;
+    }
+
+  protected:
+    py::object obj;
+    std::unique_ptr<ostream> value;
+
+  public:
+    static constexpr auto name = _("ostream");
+    static handle cast(NNCASE_UNUSED const std::ostream *src,
+                       NNCASE_UNUSED return_value_policy policy,
+                       NNCASE_UNUSED handle parent) {
+        return none().release();
+    }
+    operator std::ostream *() { return value.get(); }
+    operator std::ostream &() { return *value; }
+    template <typename _T>
+    using cast_op_type = pybind11::detail::cast_op_type<_T>;
+};
+} // namespace detail
+} // namespace pybind11

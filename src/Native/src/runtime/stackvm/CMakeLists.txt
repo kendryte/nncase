@@ -2,14 +2,12 @@
 
 set(SRCS runtime_module.cpp
          runtime_function.cpp
+         runtime_function.run.cpp
+         op_profile.cpp
          op_reader.cpp
          call_frame.cpp
          evaluate_stack.cpp
          ops/control.cpp
-         ops/loadstore.cpp
-         ops/stack.cpp
-         ops/scalar.cpp
-         ops/conversion.cpp
          ops/tensor.cpp)
 
 if (BUILDING_RUNTIME)

@@ -1,7 +1,6 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
-using System.Numerics.Tensors;
 using Nncase.PatternMatch;
 using static Nncase.IR.TypePatternUtility;
 
@@ -11,7 +10,7 @@ namespace Nncase.IR.Tensors;
 /// Range expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Range() : Op
+public sealed partial class Range : Op
 {
     /// <summary>
     /// Gets begin.

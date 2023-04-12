@@ -1,18 +1,18 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
-using Autofac;
+using DryIoc;
+using Nncase.Hosting;
 
 namespace Nncase.Evaluator.Imaging;
 
 /// <summary>
 /// Imaging module.
 /// </summary>
-public class ImagingModule : Module
+internal class ImagingModule : IApplicationPart
 {
-    /// <inheritdoc/>
-    protected override void Load(ContainerBuilder builder)
+    public void ConfigureServices(IRegistrator registrator)
     {
-        builder.RegisterType<ResizeImageEvaluator>().AsImplementedInterfaces();
+        registrator.RegisterManyInterface<ResizeImageEvaluator>(reuse: Reuse.Singleton);
     }
 }

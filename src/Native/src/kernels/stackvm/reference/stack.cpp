@@ -12,12 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/kernels/stackvm/ref_ops.h>
-#include <nncase/runtime/util.h>
+#include "ref_ops.h"
+#include <nncase/kernels/kernel_utils.h>
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/host_buffer.h>
-#include <nncase/kernels/kernel_utils.h>
 #include <nncase/runtime/runtime_op_utility.h>
+#include <nncase/runtime/util.h>
 #include <nncase/type.h>
 #include <nncase/value.h>
 
@@ -27,29 +27,34 @@ using namespace nncase::runtime::stackvm;
 using namespace nncase::kernels;
 using namespace nncase::kernels::stackvm;
 
-namespace
-{
+namespace {
 template <class T>
-result<void> stack_impl(gsl::span<const gsl::byte *const> inputs, T *output, const dims_t &out_shape,
-    gsl::span<const dims_t> &in_strides, const strides_t &out_strides, size_t axis, NNCASE_UNUSED kernel_context &context) noexcept
-{
+result<void> stack_impl(gsl::span<const gsl::byte *const> inputs, T *output,
+                        const dims_t &out_shape,
+                        gsl::span<const dims_t> &in_strides,
+                        const strides_t &out_strides, size_t axis,
+                        NNCASE_UNUSED kernel_context &context) noexcept {
     return apply(out_shape, [&](const dims_t &out_index) -> result<void> {
         auto i = out_index[axis];
         auto input = IN_CAST(T, inputs[i]);
         auto in_index = out_index;
         in_index.erase(in_index.begin() + axis);
-        output[offset(out_strides, out_index)] = input[offset(in_strides[i], in_index)];
+        output[offset(out_strides, out_index)] =
+            input[offset(in_strides[i], in_index)];
         return ok();
     });
 }
-}
+} // namespace
 
-#define STACK_IMPL(size, type) \
-    case size:                  \
-        return stack_impl(inputs, reinterpret_cast<type *>(output), out_shape, in_strides, out_strides, axis, context)
+#define STACK_IMPL(size, type)                                                 \
+    case size:                                                                 \
+        return stack_impl(inputs, reinterpret_cast<type *>(output), out_shape, \
+                          in_strides, out_strides, axis, context)
 
-result<void> nncase::kernels::stackvm::reference::stack(datatype_t type, gsl::span<const gsl::byte *const> inputs, gsl::byte *output, const dims_t &out_shape,
-    gsl::span<const dims_t> in_strides, const strides_t &out_strides, size_t axis, kernel_context &context) noexcept
-{
+result<void> nncase::kernels::stackvm::reference::stack(
+    datatype_t type, gsl::span<const gsl::byte *const> inputs,
+    gsl::byte *output, const dims_t &out_shape,
+    gsl::span<const dims_t> in_strides, const strides_t &out_strides,
+    size_t axis, kernel_context &context) noexcept {
     TYPE_IMPL_SELECT(type, STACK_IMPL);
 }

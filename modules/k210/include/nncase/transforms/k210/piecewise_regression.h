@@ -17,36 +17,31 @@
 #include <nncase/runtime/k210/compiler_defs.h>
 #include <nncase/transforms/transform.h>
 
-namespace nncase::ir::transforms::k210
-{
-struct point
-{
+namespace nncase::ir::transforms::k210 {
+struct point {
     float x;
     float y;
 };
 
-struct segment
-{
+struct segment {
     float start;
     float stop;
     float slop;
     float intercept;
 
-    constexpr float y(float x) const noexcept
-    {
+    constexpr float y(float x) const noexcept {
         assert(x >= start && x <= stop);
         return (x - start) * slop + intercept;
     }
 };
 
-class NNCASE_MODULES_K210_API piecewise_regression
-{
-public:
+class NNCASE_MODULES_K210_API piecewise_regression {
+  public:
     piecewise_regression(size_t segments_count);
 
     std::vector<segment> fit(std::vector<point> &points) const;
 
-private:
+  private:
     size_t desired_segments_count_;
 };
-}
+} // namespace nncase::ir::transforms::k210

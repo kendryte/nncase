@@ -21,6 +21,7 @@
 #include <nncase/runtime/datatypes.h>
 #include <nncase/runtime/error.h>
 #include <nncase/runtime/result.h>
+#include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/stackvm/opcode.h>
 #include <nncase/tensor.h>
 #include <nncase/value.h>
@@ -205,27 +206,29 @@ inline dims_t reduce_infer_shape(const dims_t &in_shape, const dims_t &axes,
     return new_shape;
 }
 
-inline std::vector<dims_t> lstm_infer_shape(const dims_t &x_shape,
-                                            const dims_t &init_h_shape, const dims_t &init_c_shape,
-                               runtime::stackvm::lstmdirection_t direction,
-                               runtime::stackvm::lstmlayout_t layout,
-                               size_t hidden_size,
-                               size_t out_size) {
-    auto num_directions = direction == runtime::stackvm::lstmdirection_t::bidirectional ? 2 : 1;
+inline std::vector<dims_t>
+lstm_infer_shape(const dims_t &x_shape, const dims_t &init_h_shape,
+                 const dims_t &init_c_shape,
+                 runtime::stackvm::lstmdirection_t direction,
+                 runtime::stackvm::lstmlayout_t layout, size_t hidden_size,
+                 size_t out_size) {
+    auto num_directions =
+        direction == runtime::stackvm::lstmdirection_t::bidirectional ? 2 : 1;
     auto seq_len_index = layout == runtime::stackvm::lstmlayout_t::zero ? 0 : 1;
     auto y_shape = x_shape;
     y_shape.insert(y_shape.begin() + seq_len_index + 1, num_directions);
     *(y_shape.end() - 1) = hidden_size;
-    if(out_size == 1) {
+    if (out_size == 1) {
         return {y_shape};
-    } else if(out_size == 2) {
+    } else if (out_size == 2) {
         return {y_shape, init_h_shape};
     } else {
         return {y_shape, init_h_shape, init_c_shape};
     }
 }
 
-inline dims_t transpose_infer_shape(const dims_t &in_shape, const dims_t &perm) {
+inline dims_t transpose_infer_shape(const dims_t &in_shape,
+                                    const dims_t &perm) {
     auto new_shape = in_shape;
     for (size_t i = 0; i < in_shape.size(); ++i) {
         new_shape[i] = in_shape[perm[i]];
@@ -233,7 +236,7 @@ inline dims_t transpose_infer_shape(const dims_t &in_shape, const dims_t &perm) 
     return new_shape;
 }
 
-inline dims_t pad_infer_shape(const dims_t& in_shape, const paddings_t& pads) {
+inline dims_t pad_infer_shape(const dims_t &in_shape, const paddings_t &pads) {
     auto d = pads.size();
     auto new_shape = in_shape;
     for (size_t i = 0; i < d; ++i) {
@@ -242,9 +245,11 @@ inline dims_t pad_infer_shape(const dims_t& in_shape, const paddings_t& pads) {
     return new_shape;
 }
 
-inline dims_t space_to_batch_shape_infer(const dims_t &in_shape, const dims_t &block_shape, const paddings_t &paddings) {
-    auto batch = in_shape[0] * detail::compute_size(block_shape);
-    auto out_shape = dims_t { batch };
+inline dims_t space_to_batch_shape_infer(const dims_t &in_shape,
+                                         const dims_t &block_shape,
+                                         const paddings_t &paddings) {
+    auto batch = in_shape[0] * runtime::compute_size(block_shape);
+    auto out_shape = dims_t{batch};
     auto m = block_shape.size();
     for (size_t i = 0; i < m; ++i) {
         auto d = (in_shape[i + 1] + paddings[i].sum()) / block_shape[i];
@@ -258,10 +263,31 @@ inline dims_t space_to_batch_shape_infer(const dims_t &in_shape, const dims_t &b
     return out_shape;
 }
 
-inline dims_t onehot_infer_shape(const dims_t& indices_shape, size_t depth, size_t axis) {
+inline dims_t onehot_infer_shape(const dims_t &indices_shape, size_t depth,
+                                 size_t axis) {
     auto new_shape = indices_shape;
     new_shape.insert(new_shape.begin() + axis, depth);
     return new_shape;
 }
 
+inline result<dims_t> matmul_infer_shape(const dims_t &lhs_shape,
+                                         const dims_t &rhs_shape) {
+    if (lhs_shape.size() == 2 && rhs_shape.size() == 2) {
+        auto new_shape = dims_t{lhs_shape[0], rhs_shape[1]};
+        return ok(new_shape);
+    }
+    auto big_shape =
+        lhs_shape.size() > rhs_shape.size() ? lhs_shape : rhs_shape;
+    auto new_shape =
+        dims_t(big_shape.begin(), big_shape.begin() + (big_shape.size() - 2));
+    new_shape.push_back(lhs_shape[lhs_shape.size() - 2]);
+    new_shape.push_back(rhs_shape.back());
+    return ok(new_shape);
+}
+
+inline dims_t topk_infer_shape(const dims_t &x, int k, int axis) {
+    auto result = x;
+    result[axis] = k;
+    return result;
+}
 END_NS_NNCASE_KERNELS_MODULE

@@ -13,9 +13,10 @@ namespace Nncase.Importer.TFLite
 {
     public partial class TFLiteImporter
     {
-        private object VisitBinary(in tflite.Operator op, BinaryOp binaryOp, tflite.ActivationFunctionType activation = tflite.ActivationFunctionType.NONE)
+        private Expr VisitBinary(in tflite.Operator op, BinaryOp binaryOp, tflite.ActivationFunctionType activation = tflite.ActivationFunctionType.NONE)
         {
             (var lhs, var rhs) = GetInputExprs(op, 0, 1);
+
             var node = F.Math.Binary(binaryOp, lhs, rhs);
             return Activate(node, activation);
         }

@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -8,17 +11,6 @@ using BitFields;
 
 namespace IsaGen
 {
-    [System.AttributeUsage(AttributeTargets.All, Inherited = false, AllowMultiple = false)]
-    public sealed class EnumNameAttribute : Attribute
-    {
-        public string Name { get; }
-
-        public EnumNameAttribute(string name)
-        {
-            Name = name;
-        }
-    }
-
     [EnumName("opcode_t")]
     public enum OpCode : byte
     {
@@ -77,14 +69,12 @@ namespace IsaGen
         LDLOCAL,
         STLOCAL,
 
-        LDSHAPE,
-        LDSTRIDES,
-
         LDTUPLE_ELEM,
         LDTUPLE,
 
         LDDATATYPE,
         LDTENSOR,
+        LDSCALAR,
 
         NEG,
         ADD,
@@ -136,6 +126,17 @@ namespace IsaGen
         BREAK,
 
         TENSOR,
+    }
+
+    [System.AttributeUsage(AttributeTargets.All, Inherited = false, AllowMultiple = false)]
+    public sealed class EnumNameAttribute : Attribute
+    {
+        public EnumNameAttribute(string name)
+        {
+            Name = name;
+        }
+
+        public string Name { get; }
     }
 
     public abstract class Instruction
@@ -522,22 +523,6 @@ namespace IsaGen
         public override OpCode OpCode => OpCode.LDARG_5;
     }
 
-    [DisplayName("LDSHAPE")]
-    [Category("Load Store Instructions")]
-    [Description("Load a shape to stack")]
-    public class LdShapeInstruction : Instruction
-    {
-        public override OpCode OpCode => OpCode.LDSHAPE;
-    }
-
-    [DisplayName("LDSTRIDES")]
-    [Category("Load Store Instructions")]
-    [Description("Load a strides to stack")]
-    public class LdStridesInstruction : Instruction
-    {
-        public override OpCode OpCode => OpCode.LDSTRIDES;
-    }
-
     [DisplayName("LDTUPLE_ELEM")]
     [Category("Load Store Instructions")]
     [Description("Load an element of tuple to stack")]
@@ -568,6 +553,14 @@ namespace IsaGen
     public class LdTensorInstruction : Instruction
     {
         public override OpCode OpCode => OpCode.LDTENSOR;
+    }
+
+    [DisplayName("LDSCALAR")]
+    [Category("Load scalar Instructions")]
+    [Description("Load a local object to scalar from stack")]
+    public class LdScalarInstruction : Instruction
+    {
+        public override OpCode OpCode => OpCode.LDSCALAR;
     }
 
     [DisplayName("DUP")]
@@ -977,7 +970,7 @@ namespace IsaGen
         [Description("Is prim function")]
         public bool IsPrimFunc { get; set; }
     }
-    
+
     [DisplayName("CUSCALL")]
     [Category("Control and Status Instructions")]
     [Description("Custom Call an User customed method")]
@@ -987,11 +980,11 @@ namespace IsaGen
 
         [DisplayName("registered_name")]
         [Description("Global Registered Name")]
-        public string RegisteredName { get; set; }
+        public string RegisteredName { get; set; } = string.Empty;
 
         [DisplayName("fields_span")]
         [Description("Fields Span")]
-        public byte[] FieldsSpan { get; set; }
+        public byte[] FieldsSpan { get; set; } = Array.Empty<byte>();
 
         [DisplayName("args")]
         [Description("Arguments count")]

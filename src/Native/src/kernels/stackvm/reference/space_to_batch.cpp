@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 #include "../shape_infer.h"
-#include <nncase/kernels/stackvm/ref_ops.h>
+#include "ref_ops.h"
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/util.h>
@@ -26,7 +26,7 @@ using namespace nncase::kernels::stackvm;
 
 namespace {
 
-std::vector<size_t> concat(const std::vector<std::vector<size_t>>& containers) {
+std::vector<size_t> concat(const std::vector<std::vector<size_t>> &containers) {
     std::vector<size_t> result;
     for (size_t i = 0; i < containers.size(); ++i) {
         result.insert(result.end(), containers[i].begin(), containers[i].end());
@@ -53,7 +53,8 @@ result<void>
 space_to_batch_impl(datatype_t dt, const T *input, T *output,
                     const dims_t &in_shape, const dims_t &block_shape,
                     const paddings_t &paddings, const strides_t &in_strides,
-                    [[maybe_unused]] const dims_t &out_shape, [[maybe_unused]] const strides_t &out_strides,
+                    [[maybe_unused]] const dims_t &out_shape,
+                    [[maybe_unused]] const strides_t &out_strides,
                     NNCASE_UNUSED kernel_context &context) noexcept {
     auto spatial_size = block_shape.size();
     auto remain_shape_size = in_shape.size() - spatial_size - 1;
@@ -66,24 +67,25 @@ space_to_batch_impl(datatype_t dt, const T *input, T *output,
     auto pad_output = std::make_unique<float[]>(compute_size(pad_out_shape));
     auto pad_out_strides = get_default_strides(pad_out_shape);
     int64_t pad_value = 0;
-    try_(kernels::stackvm::reference::pad(dt, IN_BYTE_CAST(input),
-                        OUT_BYTE_CAST(pad_output.get()), in_shape, in_strides,
-                        pad_out_strides, new_paddings,
-                        nncase::runtime::stackvm::pad_mode_t::constant,
-                        IN_BYTE_CAST(&pad_value)));
+    try_(kernels::stackvm::reference::pad(
+        dt, IN_BYTE_CAST(input), OUT_BYTE_CAST(pad_output.get()), in_shape,
+        in_strides, pad_out_strides, new_paddings,
+        nncase::runtime::stackvm::pad_mode_t::constant,
+        IN_BYTE_CAST(&pad_value)));
 
     auto batch_shape1 = std::vector{pad_out_shape[0]};
-    auto spatial_shape1 =
-        range_exec_flatten(spatial_size, [&](auto &&i) {
-            return std::vector{pad_out_shape[i + 1] / block_shape[i], block_shape[i]};
-        });
+    auto spatial_shape1 = range_exec_flatten(spatial_size, [&](auto &&i) {
+        return std::vector{pad_out_shape[i + 1] / block_shape[i],
+                           block_shape[i]};
+    });
 
     auto remain_shape1 = range_exec<size_t>(remain_shape_size, [&](auto &&i) {
-            return pad_out_shape[1 + spatial_size + i];
-        });
+        return pad_out_shape[1 + spatial_size + i];
+    });
 
-//    auto remain_shape1 = concat(remain_shape1_tmp);
-    auto reshapeed_shape1 = concat(std::vector<std::vector<size_t>>{batch_shape1, spatial_shape1, remain_shape1});
+    //    auto remain_shape1 = concat(remain_shape1_tmp);
+    auto reshapeed_shape1 = concat(std::vector<std::vector<size_t>>{
+        batch_shape1, spatial_shape1, remain_shape1});
     auto perm1 =
         range_exec<size_t>(spatial_size, [&](auto &&i) { return i * 2 + 2; });
     auto perm2 = std::vector<size_t>{0};
@@ -93,11 +95,15 @@ space_to_batch_impl(datatype_t dt, const T *input, T *output,
         remain_shape_size, [&](auto &&i) { return i + spatial_size * 2 + 1; });
     auto perms = std::vector<std::vector<size_t>>{perm1, perm2, perm3, perm4};
     auto perm = concat(perms);
-    auto reshapeed_shape1_dims = dims_t(reshapeed_shape1.begin(), reshapeed_shape1.end());
+    auto reshapeed_shape1_dims =
+        dims_t(reshapeed_shape1.begin(), reshapeed_shape1.end());
     auto perm_dims = dims_t(perm.begin(), perm.end());
     auto tr_out_shape = transpose_infer_shape(reshapeed_shape1_dims, perm_dims);
     auto tr_out_stride = get_default_strides(tr_out_shape);
-    try_(kernels::stackvm::reference::transpose(dt, IN_BYTE_CAST(pad_output.get()), OUT_BYTE_CAST(output), reshapeed_shape1_dims, perm_dims, get_default_strides(reshapeed_shape1_dims), tr_out_stride));
+    try_(kernels::stackvm::reference::transpose(
+        dt, IN_BYTE_CAST(pad_output.get()), OUT_BYTE_CAST(output),
+        reshapeed_shape1_dims, perm_dims,
+        get_default_strides(reshapeed_shape1_dims), tr_out_stride));
     return ok();
 }
 } // namespace

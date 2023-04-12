@@ -13,7 +13,7 @@ namespace Nncase.CodeGen;
 /// <summary>
 /// Function builder.
 /// </summary>
-public abstract class FunctionBuilder
+public abstract class FunctionBuilder : IDisposable
 {
     private readonly MemoryStream _textContent = new MemoryStream();
 
@@ -50,6 +50,11 @@ public abstract class FunctionBuilder
         return CreateLinkableFunction(Id, callable, FunctionRefs, _textContent.ToArray());
     }
 
+    public void Dispose()
+    {
+        throw new NotImplementedException();
+    }
+
     protected abstract void Compile(BaseFunction callable);
 
     protected abstract void WriteText();
@@ -67,7 +72,11 @@ public abstract class FunctionBuilder
                 symbolAddr += SymbolAddrs[refer.Symbol];
             }
 
-            TextWriter.WriteByLength(symbolAddr + refer.Offset, refer.Length);
+            long originValue = symbolAddr + refer.Offset;
+            long value = refer.Relative ? originValue - refer.Position : originValue;
+
+            // todo: neg addr is error
+            TextWriter.WriteByLength(value, refer.Length);
         }
     }
 }

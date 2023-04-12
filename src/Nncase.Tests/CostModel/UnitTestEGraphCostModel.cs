@@ -1,46 +1,56 @@
-// using System;
-// using Microsoft.Extensions.Hosting;
-// using Nncase.CostModel;
-// using Nncase.IR;
-// using Nncase.IR.F;
-// using Nncase.PatternMatch;
-// using Nncase.Tests.ReWriteTest;
-// using Nncase.Transform;
-// using Xunit;
-// using static Nncase.PatternMatch.Utility;
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+using System.Collections.Generic;
+using System.Linq;
+using Nncase;
+using Nncase.CostModel;
+using Nncase.IR;
+using Nncase.Passes;
+using Xunit;
 
-// namespace Nncase.Tests.CostModelTest
-// {
+namespace Nncase.Tests.CostModelTest;
 
-//     public class UnitTestEGraphCostModel : RewriteFixtrue
-//     {
-//         public UnitTestEGraphCostModel(IHost host) : base(host) { }
+public sealed class UnitTestEGraphCostModel
+{
+    [Fact]
+    public void TestEGraphExtractMinBy()
+    {
+        var a = new Call(new IR.Math.RangeOf());
+        var b = (Const)new[] { 1, 2, 3 };
+        var c = new Call(new IR.Math.Unary(UnaryOp.Abs));
+        var d = new Call(new IR.Math.Clamp());
 
-//         [Fact]
-//         public void TestConst()
-//         {
-//             var expr = (Const)1 + ((Const)2 * ((Const)3 / (Const)5));
-//             CompilerServices.InferenceType(expr);
-//             var egraph = new EGraph(expr);
-//             var graphCosts = egraph.Costs();
-//             Assert.Equal(new Cost(0, 0), graphCosts[expr.Target]);
-//             Assert.Equal(new Cost(0, 4), graphCosts[expr.Parameters[0]]);
-//             Assert.Equal(new Cost(2, 4 * 3), graphCosts[expr.Parameters[1]]);
-//         }
+        var list = new Expr[] { a, b, c, d };
 
-//         [Fact]
-//         public void TestConstXmul1()
-//         {
-//             var lhs = ((Const)2 * ((Const)3 / (Const)5));
-//             var expr = lhs * (Const)1;
-//             CompilerServices.InferenceType(expr);
-//             var egraph = new EGraph();
-//             egraph.Add(expr, out var root);
-//             EGraphReWriter.ReWrite(egraph, new Transform.Rule.Xmul1(), passOptions.SetName("EGraphCostModelTest/TestConstXmul1"));
-//             var new_expr = egraph.Extract(root, passOptions);
-//             Console.WriteLine(new_expr.DumpExprAsIL());
-//             Console.WriteLine(lhs.DumpExprAsIL());
-//             Assert.Equal(lhs, new_expr);
-//         }
-//     }
-// }
+        var cost = new Dictionary<Expr, Cost>(ReferenceEqualityComparer.Instance)
+        {
+          { a,
+            new() {
+              [CostFactorNames.MemoryLoad] = 76380,
+              [CostFactorNames.MemoryLoad] = 42336,
+              [CostFactorNames.CPUCycles] = 532529182956,
+            }
+          },
+          { b, Cost.Zero },
+          { c,
+            new() {
+              [CostFactorNames.MemoryLoad] = 37940,
+              [CostFactorNames.MemoryLoad] = 20840,
+              [CostFactorNames.CPUCycles] = 266073472105,
+            }
+          },
+          { d, new() {
+              [CostFactorNames.MemoryLoad] = 38080,
+              [CostFactorNames.MemoryLoad] = 20980,
+              [CostFactorNames.CPUCycles] = 266073472105,
+            }
+          },
+        };
+
+        Assert.IsType<TensorConst>(list.OrderBy(e => e, EGraphExtractExtensions.ENodeTypeComparer.Instance).First());
+
+        Assert.True(cost[b] < cost[c]);
+
+        Assert.IsType<TensorConst>(list.OrderBy(e => e, EGraphExtractExtensions.ENodeTypeComparer.Instance).MinBy(e => cost[e]));
+    }
+}

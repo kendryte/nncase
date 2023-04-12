@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -40,7 +40,7 @@ public struct FunctionHeader
 [StructLayout(LayoutKind.Sequential)]
 public unsafe struct ModuleHeader
 {
-    public fixed byte Kind[ModelInfo.MAX_MODULE_KIND_LENGTH];
+    public fixed byte Kind[ModelInfo.MaxModuleKindLength];
     public uint Version;
     public uint Size;
     public uint Sections;
@@ -53,7 +53,7 @@ public unsafe struct ModuleHeader
 [StructLayout(LayoutKind.Sequential)]
 public unsafe struct SectionHeader
 {
-    public fixed byte Name[ModelInfo.MAX_SECTION_NAME_LENGTH];
+    public fixed byte Name[ModelInfo.MaxSectionNameLength];
     public uint Flags;
     public uint Size;
     public uint BodyStart;
@@ -62,13 +62,12 @@ public unsafe struct SectionHeader
     public uint Reserved0;
 }
 
-
 [StructLayout(LayoutKind.Sequential)]
-public struct shape_header
+public struct Shape_header
 {
     public uint Size;
 
-    //     const uint* begin() const noexcept
+    // const uint* begin() const noexcept
     //     {
     //     return reinterpret_cast<const uint*>(reinterpret_cast<uintptr_t>(this) + sizeof(shape_header));
     // }
@@ -78,7 +77,7 @@ public struct shape_header
     //     return begin() + size;
     // }
 
-    //         uint operator[](size_t index) const
+    // uint operator[](size_t index) const
     //             {
     //         assert(index<size);
     // return begin()[index];

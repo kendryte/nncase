@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "ref_ops.h"
 #include <nncase/kernels/kernel_utils.h>
-#include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/util.h>
@@ -160,23 +160,20 @@ result<void> resize_nearest_neighbor_impl(
                                  align_corners, half_pixel_centers, context);
 } // namespace
 
-result<void> nncase::kernels::stackvm::reference::resize_bilinear(typecode_t type, const gsl::byte *input,
-                                                                  gsl::byte *output, const dims_t &in_shape,
-                                                                  const strides_t &in_strides,
-                                                                  const strides_t &out_strides, int32_t out_h,
-                                                                  int32_t out_w, bool align_corners,
-                                                                  bool half_pixel_centers,
-                                                                  kernel_context &context) noexcept {
+result<void> nncase::kernels::stackvm::reference::resize_bilinear(
+    typecode_t type, const gsl::byte *input, gsl::byte *output,
+    const dims_t &in_shape, const strides_t &in_strides,
+    const strides_t &out_strides, int32_t out_h, int32_t out_w,
+    bool align_corners, bool half_pixel_centers,
+    kernel_context &context) noexcept {
     FP_OR_Q_IMPL(type, RESIZE_BILINEAR_IMPL);
 }
 
-result<void> nncase::kernels::stackvm::reference::resize_nearest_neighbor(typecode_t type, const gsl::byte *input,
-                                                                          gsl::byte *output, const dims_t &in_shape,
-                                                                          const strides_t &in_strides,
-                                                                          const strides_t &out_strides,
-                                                                          int32_t out_h, int32_t out_w,
-                                                                          bool align_corners,
-                                                                          bool half_pixel_centers,
-                                                                          kernel_context &context) noexcept {
+result<void> nncase::kernels::stackvm::reference::resize_nearest_neighbor(
+    typecode_t type, const gsl::byte *input, gsl::byte *output,
+    const dims_t &in_shape, const strides_t &in_strides,
+    const strides_t &out_strides, int32_t out_h, int32_t out_w,
+    bool align_corners, bool half_pixel_centers,
+    kernel_context &context) noexcept {
     FP_OR_Q_IMPL(type, RESIZE_NEAREST_NEIGHBOR_IMPL);
 }

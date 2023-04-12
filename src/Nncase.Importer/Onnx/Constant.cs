@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -7,8 +7,8 @@ using LanguageExt;
 using LanguageExt.UnsafeValueAccess;
 using Nncase.IR;
 using Onnx;
-using F = Nncase.IR.F;
 using static Onnx.AttributeProto.Types;
+using F = Nncase.IR.F;
 
 namespace Nncase.Importer
 {
@@ -32,7 +32,7 @@ namespace Nncase.Importer
             if (floatsValue)
             {
                 var floats = floatsValue.ValueUnsafe();
-                return Tensor.FromSpan<float>(floats.ToArray(), new Shape(floats.Count));
+                return Tensor.From<float>(floats.ToArray(), new Shape(floats.Count));
             }
 
             var intValue = GetAttr(op, "value_int", AttributeType.Int, x => x.I);
@@ -47,7 +47,7 @@ namespace Nncase.Importer
             if (intsValue)
             {
                 var ints = intsValue.ValueUnsafe();
-                return Tensor.FromSpan<long>(ints.ToArray(), new Shape(ints.Count));
+                return Tensor.From<long>(ints.ToArray(), new Shape(ints.Count));
             }
 
             throw new NotSupportedException("Constant field format is not supported.");

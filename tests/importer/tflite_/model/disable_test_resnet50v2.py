@@ -21,7 +21,7 @@ from tflite_test_runner import TfliteTestRunner
 
 
 def _make_module(in_shape):
-    return tf.keras.applications.ResNet50V2(input_shape=in_shape)
+    return tf.keras.applications.ResNet50V2(include_top=False, input_shape=in_shape)
 
 
 in_shapes = [

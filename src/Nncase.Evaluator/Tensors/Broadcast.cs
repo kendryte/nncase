@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -19,29 +19,31 @@ public sealed partial class BroadcastEvaluator : IEvaluator<Broadcast>, ITypeInf
     public IValue Visit(IEvaluateContext context, Broadcast b)
     {
         var input = context.GetOrtArgumentValue(b, Broadcast.Input);
-        var shape = context.GetArgumentValueAsArray<int>(b, Broadcast.Shape);
+        var shape = context.GetArgumentValueAsArray<long>(b, Broadcast.Shape);
         return input.BroadcastTo(shape).ToValue();
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, Broadcast target)
+    public Cost Visit(ICostEvaluateContext context, Broadcast target)
     {
         var input = context.GetArgumentType<TensorType>(target, Broadcast.Input);
         var ret = context.GetReturnType<TensorType>();
         return CostUtility.GetBroadcastCost(input, ret);
     }
 
-    IRType Visit(TensorType Input, TensorType Shape, ITypeInferenceContext context, Broadcast op)
+    private IRType Visit(TensorType input, TensorType shape, ITypeInferenceContext context, Broadcast op)
     {
         var shapeValue = context.GetArgument(op, Broadcast.Shape);
-        if (shapeValue is TensorConst constShapeValue && Input.Shape.IsFixed)
+        if (shapeValue is TensorConst constShapeValue && input.Shape.IsFixed)
         {
-            return TypeInference.BroadcastType(Input, new TensorType(Input.DType, constShapeValue.Value.ToArray<int>()));
+            return TypeInference.BroadcastType(input, new TensorType(input.DType, constShapeValue.Value.ToArray<int>()));
         }
-        if (Shape.Shape[0].IsFixed)
+
+        if (shape.Shape[0].IsFixed)
         {
-            return Input with { Shape = Enumerable.Repeat(Dimension.Unknown, Shape.Shape[0].FixedValue).ToArray() };
+            return input with { Shape = Enumerable.Repeat(Dimension.Unknown, shape.Shape[0].FixedValue).ToArray() };
         }
-        return Input with { Shape = IR.Shape.Unranked };
+
+        return input with { Shape = IR.Shape.Unranked };
     }
 }

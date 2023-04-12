@@ -13,46 +13,58 @@
  * limitations under the License.
  */
 #include "evaluate_stack.h"
+#include <cstdlib>
 
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 
+namespace {
+constexpr size_t INITIAL_STACK_ENTRIES = 64;
+}
+
 evaluate_stack::evaluate_stack() noexcept
-    : top_(0)
-{
-    entries_.resize(64);
+    : entries_((stack_entry *)std::malloc(sizeof(stack_entry) *
+                                          INITIAL_STACK_ENTRIES)),
+      top_(entries_),
+      end_(entries_ + INITIAL_STACK_ENTRIES) {
+    dbg_check(entries_);
+    std::uninitialized_default_construct(entries_, end_);
 }
 
-bool evaluate_stack::empty() const noexcept
-{
-    return top_ == 0;
+evaluate_stack::~evaluate_stack() {
+    for (auto it = entries_; it != end_; ++it)
+        it->~stack_entry();
+    free(entries_);
 }
 
-bool evaluate_stack::full() const noexcept
-{
-    return top_ == entries_.size();
+void evaluate_stack::enlarge() noexcept {
+    auto new_size = (end_ - entries_) * 3 / 2; // 1.5x
+    auto top_offset = top_ - entries_;
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#if !defined(__clang__) and !defined(__nds_v5)
+#pragma GCC diagnostic ignored "-Wclass-memaccess"
+#endif
+#endif
+    auto new_entries =
+        (stack_entry *)std::realloc(entries_, sizeof(stack_entry) * new_size);
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
+    if (!new_entries)
+        fail_fast("Out of memory");
+
+    entries_ = new_entries;
+    top_ = entries_ + top_offset;
+    end_ = entries_ + new_size;
 }
 
-result<stack_entry> evaluate_stack::peek() noexcept
-{
-    if (!empty())
-        return ok(entries_[top_ - 1]);
-    return err(nncase_errc::stackvm_stack_underflow);
-}
-
-result<stack_entry> evaluate_stack::pop() noexcept
-{
-    if (!empty())
-        return ok(entries_[--top_]);
-    return err(nncase_errc::stackvm_stack_underflow);
-}
-
-result<void> evaluate_stack::push(stack_entry entry) noexcept
-{
-    if (full())
-        entries_.resize(entries_.size() + 1);
-
-    entries_[top_++] = entry;
-    return ok();
+void evaluate_stack::push(stack_entry entry) noexcept {
+    if (!full()) {
+        new (top_++) stack_entry(std::move(entry));
+    } else {
+        enlarge();
+        new (top_++) stack_entry(std::move(entry));
+    }
 }

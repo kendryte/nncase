@@ -1,34 +1,33 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using Nncase.IR;
 
 namespace Nncase.PatternMatch;
+
+public delegate IReadOnlyList<Pattern> PatternGenerator(ReadOnlySpan<Expr> exprs);
 
 /// <summary>
 /// Pattern for varadic expressions.
 /// </summary>
 /// <param name="FieldsGenerator">Fields patterns generator.</param>
 /// <param name="Name">name.</param>
-public sealed record VArgsPattern(Func<IReadOnlyList<Expr>, IRArray<Pattern>> FieldsGenerator, string? Name)
-    : Pattern(Name), IPattern<IReadOnlyList<Expr>>, IReadOnlyList<Pattern>
+public sealed record VArgsPattern(PatternGenerator FieldsGenerator, string? Name)
+    : Pattern(Name), IReadOnlyList<Pattern>
 {
-    private IRArray<Pattern> _fields;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="VArgsPattern"/> class.
     /// </summary>
     /// <param name="fields">Fields patterns.</param>
     /// <param name="name">name.</param>
-    public VArgsPattern(IRArray<Pattern> fields, string? name)
+    public VArgsPattern(IReadOnlyList<Pattern> fields, string? name)
         : this(x => fields, name)
     {
-        _fields = fields;
+        Fields = fields;
     }
 
     /// <summary>
@@ -36,29 +35,25 @@ public sealed record VArgsPattern(Func<IReadOnlyList<Expr>, IRArray<Pattern>> Fi
     /// </summary>
     /// <param name="fields">Fields patterns.</param>
     /// <param name="name">name.</param>
-    public VArgsPattern(IRArray<Expr> fields, string? name)
+    public VArgsPattern(IEnumerable<Expr> fields, string? name)
         : this(x => fields.Select(f => (Pattern)f).ToArray(), name)
     {
-        _fields = fields.Select(f => (Pattern)f).ToArray();
+        Fields = fields.Select(f => (Pattern)f).ToArray();
     }
 
-    /// <inheritdoc/>
-    public int Count => _fields.Count;
+    public IReadOnlyList<Pattern> Fields { get; private set; } = Array.Empty<Pattern>();
 
-    /// <inheritdoc/>
-    public Pattern this[int index] => _fields[index];
+    public int Count => Fields.Count;
 
-    /// <inheritdoc/>
-    public IEnumerator<Pattern> GetEnumerator() => _fields.GetEnumerator();
+    public Pattern this[int index] => Fields[index];
 
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    public IEnumerator<Pattern> GetEnumerator() => Fields.GetEnumerator();
 
-    /// <inheritdoc/>
-    public bool MatchLeaf(IReadOnlyList<Expr> input)
+    public bool MatchLeaf(ReadOnlySpan<Expr> input)
     {
-        _fields = FieldsGenerator(input);
+        Fields = FieldsGenerator(input);
 
-        if (input.Count != _fields.Count)
+        if (input.Length != Fields.Count)
         {
             return false;
         }
@@ -67,7 +62,9 @@ public sealed record VArgsPattern(Func<IReadOnlyList<Expr>, IRArray<Pattern>> Fi
     }
 
     /// <inheritdoc/>
-    public override bool MatchLeaf(object input) => input is IReadOnlyList<Expr> exprs and not Expr && MatchLeaf(exprs);
+    public override bool MatchLeaf(Expr input) => false;
+
+    IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)Fields).GetEnumerator();
 }
 
 public partial class Utility
@@ -88,7 +85,6 @@ public partial class Utility
     public static VArgsPattern IsVArgs(params Pattern[] parameters)
       => IsVArgs(null, parameters);
 
-
     /// <summary>
     /// Create repeated Vargs by template pattern, eg. give the const pattern as Template, will match {Const(),...Const()}.
     /// </summary>
@@ -98,7 +94,7 @@ public partial class Utility
     public static VArgsPattern IsVArgsRepeat(string? name, Func<Pattern> creator) => IsVArgsRepeat(
         name, input =>
         {
-            var patterns = new Pattern[input.Count];
+            var patterns = new Pattern[input.Length];
             for (int i = 0; i < patterns.Length; i++)
             {
                 patterns[i] = creator();
@@ -115,11 +111,11 @@ public partial class Utility
     /// <summary>
     /// Create repeated Vargs match pattern, it will manual clear the inner container.
     /// </summary>
-    /// <param name="creator">the int mean matched params nums, list[pattern] is inner params contianer. </param>
     /// <param name="name">name.</param>
+    /// <param name="generator">the int mean matched params nums, list[pattern] is inner params contianer. </param>
     /// <returns>VArgsPattern.</returns>
-    public static VArgsPattern IsVArgsRepeat(string? name, Func<IReadOnlyList<Expr>, IRArray<Pattern>> creator)
-      => new VArgsPattern(creator, name);
+    public static VArgsPattern IsVArgsRepeat(string? name, PatternGenerator generator)
+      => new VArgsPattern(generator, name);
 
-    public static VArgsPattern IsVArgsRepeat(Func<IReadOnlyList<Expr>, IRArray<Pattern>> creator) => IsVArgsRepeat(null, creator);
+    public static VArgsPattern IsVArgsRepeat(PatternGenerator generator) => IsVArgsRepeat(null, generator);
 }

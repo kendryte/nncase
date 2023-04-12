@@ -15,10 +15,18 @@ namespace Nncase.IR.Math;
 /// Unary expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Unary(UnaryOp UnaryOp) : Op
+public sealed partial class Unary : Op
 {
     /// <summary>
     /// Gets input.
     /// </summary>
     public static readonly ParameterInfo Input = new(typeof(Unary), 0, "input");
+
+    public UnaryOp UnaryOp { get; }
+
+    /// <inheritdoc/>
+    public override string DisplayProperty()
+    {
+        return $"UnaryOp.{UnaryOp}";
+    }
 }

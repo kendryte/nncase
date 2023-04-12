@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "ref_ops.h"
 #include <nncase/kernels/kernel_utils.h>
-#include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/runtime_op_utility.h>
@@ -40,13 +40,14 @@ result<void> split_impl(const T *input, gsl::span<gsl::byte *> outputs,
         for (size_t j = 0; j < i; ++j) {
             sections_sum += sections[j];
         }
-        try_(kernels::stackvm::apply(out_shape, [&](const dims_t &out_index) -> result<void> {
-            auto in_index = out_index;
-            in_index[axis] = sections_sum + out_index[axis];
-            output[offset(out_strides[i], out_index)] =
-                input[offset(in_strides, in_index)];
-            return ok();
-        }));
+        try_(kernels::stackvm::apply(
+            out_shape, [&](const dims_t &out_index) -> result<void> {
+                auto in_index = out_index;
+                in_index[axis] = sections_sum + out_index[axis];
+                output[offset(out_strides[i], out_index)] =
+                    input[offset(in_strides, in_index)];
+                return ok();
+            }));
     }
     return ok();
 }
@@ -55,11 +56,11 @@ result<void> split_impl(const T *input, gsl::span<gsl::byte *> outputs,
 #define SPLIT_IMPL(size, type)                                                 \
     case size:                                                                 \
         return split_impl(reinterpret_cast<const type *>(input), output,       \
-                          in_shape, in_strides, out_strides, axis, sections,     \
+                          in_shape, in_strides, out_strides, axis, sections,   \
                           context)
 
 result<void> nncase::kernels::stackvm::reference::split(
-    datatype_t type, const gsl::byte *input, gsl::span<gsl::byte*> output,
+    datatype_t type, const gsl::byte *input, gsl::span<gsl::byte *> output,
     const dims_t &in_shape, const strides_t &in_strides,
     gsl::span<strides_t> out_strides, size_t axis, const dims_t &sections,
     kernel_context &context) noexcept {

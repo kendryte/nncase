@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
+using Nncase.Utilities;
 
 namespace Nncase.TIR;
 
@@ -31,26 +32,77 @@ namespace Nncase.TIR;
 ///    body
 /// </code>
 /// </summary>
-/// <param name="Name"> The name_hint of the block.</param>
-/// <param name="Body"> block body </param>
-/// <param name="InitBody">the Block init statement.</param>
-/// <param name="IterVars">The List Exprs contain the IterVars</param>
-/// <param name="Reads">The read buffer regions of the block.</param>
-/// <param name="Writes">The write buffer regions of the block.</param>
-/// <param name="AllocBuffers">The buffer allocated in the block.</param>
-/// <param name="Predicate">The predicate of the block realization, the block will only be executed when the predicate is true.</param>
-public sealed record Block(string Name, Sequential Body, Sequential InitBody,
-                            IRArray<IterVar> IterVars,
-                            IRArray<BufferRegion> Reads,
-                            IRArray<BufferRegion> Writes,
-                            IRArray<TIR.Buffer> AllocBuffers, Expr Predicate) : Expr
+public sealed class Block : Expr
 {
+    private readonly int _iterVarsCount;
+    private readonly int _readsCount;
+    private readonly int _writesCount;
+    private readonly int _allocBuffersCount;
+
+    public Block(string name, Sequential body, Sequential initBody, ReadOnlySpan<IterVar> iterVars, ReadOnlySpan<BufferRegion> reads, ReadOnlySpan<BufferRegion> writes, ReadOnlySpan<Buffer> allocBuffers, Expr predicate)
+
+        // TODO: Optimize allocates
+        : base(new Expr[] { body, initBody }.Concat(iterVars.ToArray()).Concat(reads.ToArray()).Concat(writes.ToArray()).Concat(allocBuffers.ToArray()).Append(predicate).ToArray())
+    {
+        Name = name;
+        _iterVarsCount = iterVars.Length;
+        _readsCount = reads.Length;
+        _writesCount = writes.Length;
+        _allocBuffersCount = allocBuffers.Length;
+    }
+
     /// <summary>
     /// Initializes a new instance of the <see cref="Block"/> class.
     /// </summary>
-    /// <param name="name">block name.</param>
     public Block(string name)
-        : this(name, new(), new(), new(), new(), new(), new(), true)
+        : this(name, new(), new(), Array.Empty<IterVar>(), Array.Empty<BufferRegion>(), Array.Empty<BufferRegion>(), Array.Empty<Buffer>(), true)
     {
     }
+
+    /// <summary>
+    /// Gets the name_hint of the block.
+    /// </summary>
+    public string Name { get; }
+
+    /// <summary>
+    /// Gets block body.
+    /// </summary>
+    public Sequential Body => (Sequential)Operands[0];
+
+    /// <summary>
+    /// Gets the Block init statement.
+    /// </summary>
+    public Sequential InitBody => (Sequential)Operands[1];
+
+    /// <summary>
+    /// Gets the List Exprs contain the IterVars.
+    /// </summary>
+    public ReadOnlySpan<IterVar> IterVars => SpanUtility.UnsafeCast<Expr, IterVar>(Operands.Slice(2, _iterVarsCount));
+
+    /// <summary>
+    /// Gets the read buffer regions of the block.
+    /// </summary>
+    public ReadOnlySpan<BufferRegion> Reads => SpanUtility.UnsafeCast<Expr, BufferRegion>(Operands.Slice(2 + _iterVarsCount, _readsCount));
+
+    /// <summary>
+    /// Gets the write buffer regions of the block.
+    /// </summary>
+    public ReadOnlySpan<BufferRegion> Writes => SpanUtility.UnsafeCast<Expr, BufferRegion>(Operands.Slice(2 + _iterVarsCount + _readsCount, _writesCount));
+
+    /// <summary>
+    /// Gets the buffer allocated in the block.
+    /// </summary>
+    public ReadOnlySpan<Buffer> AllocBuffers => SpanUtility.UnsafeCast<Expr, Buffer>(Operands.Slice(2 + _iterVarsCount + _readsCount + _writesCount, _allocBuffersCount));
+
+    /// <summary>
+    /// Gets the predicate of the block realization, the block will only be executed when the predicate is true.
+    /// </summary>
+    public Expr Predicate => Operands[2 + _iterVarsCount + _readsCount + _writesCount + _allocBuffersCount];
+
+    /// <inheritdoc/>
+    public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
+        => functor.VisitBlock(this, context);
+
+    public Block With(string? name = null, Sequential? body = null, Sequential? initBody = null, IterVar[]? iterVars = null, BufferRegion[]? reads = null, BufferRegion[]? writes = null, Buffer[]? allocBuffers = null, Expr? predicate = null)
+        => new Block(name ?? Name, body ?? Body, initBody ?? InitBody, iterVars ?? IterVars, reads ?? Reads, writes ?? Writes, allocBuffers ?? AllocBuffers, predicate ?? Predicate);
 }

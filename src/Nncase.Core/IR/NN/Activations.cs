@@ -13,10 +13,17 @@ using static Nncase.IR.TypePatternUtility;
 namespace Nncase.IR.NN;
 
 /// <summary>
+/// The base class.
+/// </summary>
+public abstract class ActivationOp : Op
+{
+}
+
+/// <summary>
 /// Sigmoid expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Sigmoid() : Op
+public sealed partial class Sigmoid : ActivationOp
 {
     /// <summary>
     /// Gets input.
@@ -28,7 +35,7 @@ public sealed record Sigmoid() : Op
 /// Relu expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Relu() : Op
+public sealed partial class Relu : ActivationOp
 {
     /// <summary>
     /// Gets input.
@@ -40,7 +47,7 @@ public sealed record Relu() : Op
 /// Relu6 expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Relu6() : Op
+public sealed partial class Relu6 : ActivationOp
 {
     /// <summary>
     /// Gets input.
@@ -52,7 +59,7 @@ public sealed record Relu6() : Op
 /// PRelu expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record PRelu() : Op
+public sealed partial class PRelu : ActivationOp
 {
     /// <summary>
     /// Gets input.
@@ -69,7 +76,7 @@ public sealed record PRelu() : Op
 /// LeakyRelu expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record LeakyRelu() : Op
+public sealed partial class LeakyRelu : ActivationOp
 {
     /// <summary>
     /// Gets input.
@@ -86,7 +93,7 @@ public sealed record LeakyRelu() : Op
 /// Celu expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Celu() : Op
+public sealed partial class Celu : ActivationOp
 {
     /// <summary>
     /// Gets input.
@@ -103,7 +110,7 @@ public sealed record Celu() : Op
 /// Selu expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Selu() : Op
+public sealed partial class Selu : ActivationOp
 {
     /// <summary>
     /// Gets input.
@@ -125,7 +132,7 @@ public sealed record Selu() : Op
 /// Elu expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Elu() : Op
+public sealed partial class Elu : ActivationOp
 {
     /// <summary>
     /// Gets input.
@@ -139,10 +146,22 @@ public sealed record Elu() : Op
 }
 
 /// <summary>
+/// Swish expression.
+/// </summary>
+[PatternFunctionalGenerator]
+public sealed partial class Swish : ActivationOp
+{
+    /// <summary>
+    /// Gets input.
+    /// </summary>
+    public static readonly ParameterInfo Input = new(typeof(Swish), 0, "input");
+}
+
+/// <summary>
 /// HardSwish expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record HardSwish() : Op
+public sealed partial class HardSwish : ActivationOp
 {
     /// <summary>
     /// Gets input.
@@ -154,7 +173,7 @@ public sealed record HardSwish() : Op
 /// HardSigmoid expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record HardSigmoid() : Op
+public sealed partial class HardSigmoid : ActivationOp
 {
     /// <summary>
     /// Gets input.
@@ -170,4 +189,33 @@ public sealed record HardSigmoid() : Op
     /// Gets beta.
     /// </summary>
     public static readonly ParameterInfo Beta = new(typeof(HardSigmoid), 2, "beta", IsFloatScalar());
+}
+
+/// <summary>
+/// Erf expression.
+/// </summary>
+[PatternFunctionalGenerator]
+public sealed partial class Erf : ActivationOp
+{
+    /// <summary>
+    /// Gets input.
+    /// </summary>
+    public static readonly ParameterInfo Input = new(typeof(Erf), 0, "input");
+}
+
+/// <summary>
+/// Gelu expression.
+/// </summary>
+[PatternFunctionalGenerator]
+public sealed partial class Gelu : ActivationOp
+{
+    /// <summary>
+    /// Gets input.
+    /// </summary>
+    public static readonly ParameterInfo Input = new(typeof(Gelu), 0, "input");
+
+    /// <summary>
+    /// Gets alpha.
+    /// </summary>
+    public static readonly ParameterInfo Alpha = new(typeof(Gelu), 1, "alpha", IsFloatScalar());
 }

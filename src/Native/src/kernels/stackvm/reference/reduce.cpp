@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "ref_ops.h"
 #include <nncase/kernels/kernel_utils.h>
-#include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/runtime_op_utility.h>
@@ -83,10 +83,11 @@ result<void> reduce_prod(const T *input, T *output, const dims_t &in_shape,
     auto out_strides =
         out_strides_origin.size() == 0 ? dims_t{1} : out_strides_origin;
     // init with init_value
-    try_(kernels::stackvm::apply(out_shape, [&](const dims_t &index) -> result<void> {
-        output[offset(out_strides, index)] = 1;
-        return ok();
-    }));
+    try_(kernels::stackvm::apply(out_shape,
+                                 [&](const dims_t &index) -> result<void> {
+                                     output[offset(out_strides, index)] = 1;
+                                     return ok();
+                                 }));
 
     try_(apply(in_shape, [&](const dims_t &index) -> result<void> {
         const auto src = input[offset(in_strides, index)];
@@ -129,11 +130,11 @@ reduce_prod<float>(const float *input, float *output, const dims_t &in_shape,
         }                                                                      \
     }
 
-result<void> nncase::kernels::stackvm::reference::reduce(typecode_t typecode, reduce_op_t op,
-                         const gsl::byte *init_value, const gsl::byte *input,
-                         gsl::byte *output, const dims_t &in_shape,
-                         const dims_t &axis, const strides_t &in_strides,
-                         const strides_t &out_strides, bool keep_dims,
-                         kernel_context &context) noexcept {
+result<void> nncase::kernels::stackvm::reference::reduce(
+    typecode_t typecode, reduce_op_t op, const gsl::byte *init_value,
+    const gsl::byte *input, gsl::byte *output, const dims_t &in_shape,
+    const dims_t &axis, const strides_t &in_strides,
+    const strides_t &out_strides, bool keep_dims,
+    kernel_context &context) noexcept {
     TYPE_SELECT(typecode, REDUCE_FULL_IMPL);
 }

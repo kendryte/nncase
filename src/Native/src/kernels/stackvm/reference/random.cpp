@@ -12,20 +12,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "ref_ops.h"
 #include <nncase/kernels/kernel_utils.h>
-#include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/runtime/runtime_op_utility.h>
-#include <random>
 #include <nncase/runtime/util.h>
+#include <random>
 
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::kernels;
 
 template <typename T>
-result<void> random_normal_impl(
-    T *output, const dims_t &out_shape, float mean, float std,
-    float seed) noexcept {
+result<void> random_normal_impl(T *output, const dims_t &out_shape, float mean,
+                                float std, float seed) noexcept {
     std::default_random_engine engine(seed);
     std::normal_distribution<T> dis(mean, std);
     std::generate_n(output, compute_size(out_shape),
@@ -36,7 +35,7 @@ result<void> random_normal_impl(
 
 template <typename T>
 result<void> random_uniform_impl(T *output, const dims_t &out_shape, float low,
-                            float high, float seed) noexcept {
+                                 float high, float seed) noexcept {
     std::default_random_engine engine(seed);
     std::uniform_real_distribution<T> dis(low, high);
     std::generate_n(output, compute_size(out_shape),
@@ -46,21 +45,21 @@ result<void> random_uniform_impl(T *output, const dims_t &out_shape, float low,
 }
 
 result<void> nncase::kernels::stackvm::reference::random_normal(
-    typecode_t type, gsl::byte *output, const dims_t &out_shape, float mean, float std,
-    float seed) noexcept
-{
-    if(type != dt_float32)
-    {
+    typecode_t type, gsl::byte *output, const dims_t &out_shape, float mean,
+    float std, float seed) noexcept {
+    if (type != dt_float32) {
         return err(nncase_errc::datatype_mismatch);
     }
-    return random_normal_impl(OUT_CAST(float, output), out_shape, mean, std, seed);
+    return random_normal_impl(OUT_CAST(float, output), out_shape, mean, std,
+                              seed);
 }
 
-result<void> nncase::kernels::stackvm::reference::random_uniform(typecode_t type, gsl::byte *output, const dims_t &out_shape,
-                            float low, float high, float seed) noexcept {
-    if(type != dt_float32)
-    {
+result<void> nncase::kernels::stackvm::reference::random_uniform(
+    typecode_t type, gsl::byte *output, const dims_t &out_shape, float low,
+    float high, float seed) noexcept {
+    if (type != dt_float32) {
         return err(nncase_errc::datatype_mismatch);
     }
-    return random_uniform_impl(OUT_CAST(float, output), out_shape, low, high, seed);
+    return random_uniform_impl(OUT_CAST(float, output), out_shape, low, high,
+                               seed);
 }

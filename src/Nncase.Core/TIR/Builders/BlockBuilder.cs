@@ -1,6 +1,10 @@
-﻿using System;
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
@@ -29,49 +33,28 @@ public interface IBlockBuilder : IExprBuilder<Block>
     /// <summary>
     /// create the iterVar and bind the value.
     /// </summary>
-    /// <param name="vi"></param>
-    /// <param name="domain"></param>
-    /// <param name="mode"></param>
-    /// <param name="value"></param>
-    /// <returns></returns>
     IBlockBuilder Bind(out IterVar vi, Range domain, IterationMode mode, Var value);
 
     /// <summary>
     /// bind the itervar with for loop.
     /// </summary>
-    /// <param name="vi"></param>
-    /// <param name="fi"></param>
-    /// <param name="iterType"></param>
-    /// <returns></returns>
-    /// <exception cref="NotSupportedException"></exception>
     IBlockBuilder Remap(out IterVar vi, For fi, char iterType);
 
     /// <summary>
-    /// alloctions
+    /// alloctions.
     /// </summary>
-    /// <param name="buffers"></param>
-    /// <returns></returns>
-    IBlockBuilder Alloc(params TIR.Buffer[] buffers);
+    IBlockBuilder Alloc(params object[] buffers);
 
     /// <summary>
-    /// reads
+    /// reads.
     /// </summary>
-    /// <param name="buffer_regions"></param>
-    /// <returns></returns>
-    IBlockBuilder Reads(params TIR.BufferRegion[] buffer_regions);
+    IBlockBuilder Reads(params object[] buffer_regions);
 
     /// <summary>
-    /// writes
+    /// writes.
     /// </summary>
-    /// <param name="buffer_regions"></param>
-    /// <returns></returns>
-    IBlockBuilder Writes(params TIR.BufferRegion[] buffer_regions);
+    IBlockBuilder Writes(params object[] buffer_regions);
 
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="predicate"></param>
-    /// <returns></returns>
     IBlockBuilder Predicate(Expr predicate);
 }
 
@@ -123,31 +106,59 @@ internal class BlockBuilder : IBlockBuilder
 
     public Block Build()
     {
-        return new(_name, Sequential.Flatten(_body), Sequential.Flatten(_init), new(_iterVars), new(_reads), new(_writes), new(_allocations), _predicate ?? true);
+        return new(_name, Sequential.Flatten(CollectionsMarshal.AsSpan(_body)), Sequential.Flatten(CollectionsMarshal.AsSpan(_init)), CollectionsMarshal.AsSpan(_iterVars), CollectionsMarshal.AsSpan(_reads), CollectionsMarshal.AsSpan(_writes), CollectionsMarshal.AsSpan(_allocations), _predicate ?? true);
     }
 
-    public IBlockBuilder Alloc(params Buffer[] buffers)
+    public IBlockBuilder Alloc(params object[] buffers)
     {
-        _allocations.AddRange(buffers.OfType<Buffer>());
+        HashSet<TIR.Buffer> set = new(ReferenceEqualityComparer.Instance);
+        Add(set, buffers);
+        _allocations.AddRange(set.ToList());
         return this;
     }
 
-    public IBlockBuilder Reads(params BufferRegion[] buffer_regions)
+    public IBlockBuilder Reads(params object[] buffer_regions)
     {
-        _reads.AddRange(buffer_regions.OfType<BufferRegion>());
+        HashSet<TIR.BufferRegion> set = new(ReferenceEqualityComparer.Instance);
+        Add(set, buffer_regions);
+        _reads.AddRange(set.ToList());
         return this;
     }
 
-    public IBlockBuilder Writes(params BufferRegion[] buffer_regions)
+    public IBlockBuilder Writes(params object[] buffer_regions)
     {
-        _writes.AddRange(buffer_regions.OfType<BufferRegion>());
+        HashSet<TIR.BufferRegion> set = new(ReferenceEqualityComparer.Instance);
+        Add(set, buffer_regions);
+        _reads.AddRange(set.ToList());
         return this;
-
     }
 
     public IBlockBuilder Predicate(Expr predicate)
     {
         _predicate ??= predicate;
         return this;
+    }
+
+    private static void Add<T>(HashSet<T> set, IEnumerable<object> inputs)
+    {
+        if (inputs is null)
+        {
+            return;
+        }
+
+        foreach (var obj in inputs)
+        {
+            switch (obj)
+            {
+                case T item:
+                    set.Add(item);
+                    break;
+                case IEnumerable<object> items:
+                    Add(set, items);
+                    break;
+                default:
+                    break;
+            }
+        }
     }
 }

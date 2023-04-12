@@ -1,82 +1,28 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System.Text;
 using Nncase.IR;
 
 namespace Nncase.Utilities;
-
-public class DumpManager
-{
-    public static bool OpenDump { get; private set; } = false;
-
-    public static bool Append = false;
-    
-    public static int Count = 1;
-
-    public static string Dir;
-
-    public string CountStr => Count.ToString();
-    
-    public static void RunWithDump(string dir, Action f)
-    {
-        RunWithDump<int>(dir, () =>
-        {
-            f();
-            // discard return value
-            return -1;
-        });
-    }
-
-    public static T RunWithDump<T>(string dir, Func<T> f)
-    {
-        Dir = dir;
-        Count = 1;
-        OpenDump = true;
-        Append = false;
-        var result = f();
-        OpenDump = false;
-        return result;
-    }
-    
-    public string GetMaybeDumpDir()
-    {
-        return ValueDumper.GetMaybeDumpDir(Dir);
-    }
-    
-    protected void UpdateOrder(string root, string target)
-    {
-        using (var order = new StreamWriter(Path.Join(root, "order"), Append))
-        {
-            order.WriteLine(target);
-        }
-    }
-
-    protected void DumpCallParam(string target, ParameterInfo info, Action<StreamWriter> f)
-    {
-        var path = Path.Join(GetMaybeDumpDir(), CountStr + target + $"${info.Name}");
-        using (var sr = new StreamWriter(path))
-        {
-            f(sr);
-        }
-    }
-    
-    protected void DumpCall(string target, Action<StreamWriter> f)
-    {
-        var path = Path.Join(GetMaybeDumpDir(), $"{CountStr}${target}");
-        using (var sr = new StreamWriter(path))
-        {
-            f(sr);
-        }
-        UpdateOrder(GetMaybeDumpDir(), target);
-        Append = true;
-        ++Count;
-    }
-}
 
 public static class ValueDumper
 {
     public static void DumpTensor(TensorValue tensorValue, StreamWriter writer)
     {
         var tensor = tensorValue.AsTensor();
+        if (tensor.ElementType is PrimType)
+        {
+            var typeCode = ((PrimType)tensor.ElementType).TypeCode;
+            writer.WriteLine($"type:{(int)typeCode}");
+        }
+        else
+        {
+            writer.WriteLine($"type:0");
+        }
+
         writer.WriteLine(DumpUtility.SerializeShape(tensor.Shape));
+
         // todo:other type
         var dt = tensor.ElementType;
         if (dt == DataTypes.Int8 || dt == DataTypes.Int32 || dt == DataTypes.Int64)
@@ -99,6 +45,11 @@ public static class ValueDumper
         }
     }
 
+    /// <summary>
+    /// Dump multi tensor to single file.
+    /// </summary>
+    /// <param name="tensorValues">tensor value.</param>
+    /// <param name="writer">writer.</param>
     public static void DumpTensors(Tensor[] tensorValues, StreamWriter writer)
     {
         foreach (var tensorValue in tensorValues)
@@ -106,7 +57,7 @@ public static class ValueDumper
             DumpTensor(tensorValue, writer);
         }
     }
-    
+
     public static void DumpTensor(TensorValue tensorValue, string path)
     {
         using (var sr = new StreamWriter(path))
@@ -114,24 +65,22 @@ public static class ValueDumper
             DumpTensor(tensorValue, sr);
         }
     }
-    
-    public static void DumpTensors(TensorValue[] tensorValue, string path)
-    {
-        using (var sr = new StreamWriter(path))
-        {
-            DumpTensors(tensorValue.Select(x => x.AsTensor()).ToArray(), sr);
-        }
-    }
-    
-    public static string GetMaybeDumpDir(string dir)
-    {
-        var root = Path.Join(CompilerServices.CompileOptions.DumpDir, dir);
-        if (!Directory.Exists(root))
-        {
-            Directory.CreateDirectory(root);
-        }
 
-        return root;
+    /// <summary>
+    /// Dump multi tensor to dir with name i.
+    /// </summary>
+    /// <param name="tensorValue">tensor value.</param>
+    /// <param name="dir">tensor.</param>
+    public static void DumpTensors(TensorValue[] tensorValue, string dir)
+    {
+        Directory.CreateDirectory(dir);
+        for (var i = 0; i < tensorValue.Length; i++)
+        {
+            using (var sr = new StreamWriter(Path.Join(dir, "{i}.txt")))
+            {
+                DumpTensor(tensorValue[i], sr);
+            }
+        }
     }
 }
 
@@ -145,36 +94,41 @@ public static class DumpUtility
             stream.Write(data);
         }
     }
-    
+
     public static void WriteResult<T>(string path, T[] data, string prefix = "")
     {
         WriteResult(path, SerializeByColumn(data), prefix);
     }
-    
+
     public static string SerializeByColumn<T>(T[] f)
     {
         return string.Join("\n", f);
     }
-    
-    public static string SerializeByRow<T>(T[] f)
+
+    public static string SerializeByRow<T>(T[] arr)
     {
-        return string.Join(" ", f);
+        return string.Join(" ", arr);
     }
 
     public static string SerializeShape(int[] shape)
     {
-        return $"shape:[{SerializeByRow(shape)}]";
+        return $"shape:{SerializeByRow(shape)}";
     }
 
-    public static string SerializeShape(Shape shape) => SerializeShape(shape.ToValueArray());
+    public static string SerializeShape(Dimension[] dims)
+    {
+        return $"shape:{SerializeByRow(dims)}";
+    }
+
+    public static string SerializeShape(Shape shape) => SerializeShape(shape.ToArray());
 
     public static string PathJoinByCreate(string root, params string[] paths)
     {
-        var path = Path.Join(new[]{root}.Concat(paths).ToArray());
+        var path = Path.Join(new[] { root }.Concat(paths).ToArray());
         Directory.CreateDirectory(path);
         return path;
     }
-    
+
     public static string SnakeName(string name)
     {
         var sb = new StringBuilder();
@@ -187,19 +141,25 @@ public static class DumpUtility
             if (!lastCapital && isCaptial && sb.Length != 0)
             {
                 if (lastIsLetter || c != 'D')
+                {
                     sb.Append('_');
+                }
             }
+
             sb.Append(char.ToLowerInvariant(c));
 
             if (!lastIsLetter && c == 'D')
+            {
                 sb.Append('_');
+            }
 
             lastCapital = isCaptial;
             lastIsLetter = isLetter;
         }
+
         return sb.ToString().Trim('_');
     }
-    
+
     public static void WriteBinFile(string path, Tensor tensor)
     {
         using (var stream = new FileStream(Path.Join(path), FileMode.Create, FileAccess.Write, FileShare.None))
@@ -211,24 +171,54 @@ public static class DumpUtility
             }
         }
     }
+
+    public static void WriteKmodelData(Tensor[] inputs, Tensor[] outputs, string kmodelPath, string dumpDir, bool dynamic)
+    {
+        Directory.CreateDirectory(dumpDir);
+        BinFileUtil.WriteBinInputs(inputs, dumpDir);
+        BinFileUtil.WriteBinOutputs(outputs, dumpDir);
+        File.Copy(kmodelPath, Path.Join(dumpDir, "test.kmodel"));
+        if (dynamic)
+        {
+            WriteKmodelDesc(inputs, outputs, dumpDir);
+        }
+    }
+
+    public static void WriteKmodelDesc(Tensor[] inputs, Tensor[] outputs, string dir)
+    {
+        var inputStr = string.Join("\n", inputs.Select(input => string.Join(" ", input.Shape.ToValueArray())));
+        var outputStr = string.Join("\n", outputs.Select(output => string.Join(" ", output.Shape.ToValueArray())));
+        var content =
+            $"{inputs.Length} {outputs.Length}\n{inputStr}\n{outputStr}";
+        DumpUtility.WriteResult(Path.Join(dir, "kmodel.desc"), content);
+    }
 }
 
-public class Counter
+public static class BinFileUtil
 {
-    public Counter(int count = 0)
+    public static void WriteBinOutputs(Tensor[] outputs, string dir)
     {
-        Count = count;
+        for (var i = 0; i < outputs.Length; i++)
+        {
+            DumpUtility.WriteBinFile(Path.Join(dir, $"nncase_result_{i}.bin"), outputs[i]);
+        }
     }
-    
-    private int Count;
-    
-    public T Run<T>(Func<int, T> f)
+
+    public static void WriteBinInputs(Tensor[] inputs, string dir)
     {
-        return f(Count++);
+        for (var i = 0; i < inputs.Length; i++)
+        {
+            DumpUtility.WriteBinFile(Path.Join(dir, $"input_0_{i}.bin"), inputs[i]);
+        }
     }
-    
-    public void Run(Action<int> f)
+
+    public static Tensor ReadBinFile(string path, DataType dt, Shape shape)
     {
-        f(Count++);
+        using (var stream = new FileStream(Path.Join(path), FileMode.Open, FileAccess.Read, FileShare.None))
+        using (var reader = new BinaryReader(stream))
+        {
+            var bytes = reader.ReadBytes(shape.Prod().FixedValue * dt.SizeInBytes);
+            return Tensor.FromBytes(dt, bytes, shape);
+        }
     }
 }

@@ -28,15 +28,13 @@ using namespace nncase::runtime::k210;
 using namespace nncase::ir::transforms;
 using namespace nncase::ir::transforms::k210;
 
-bool slice_fused_unary_motion_transform::on_try_match(node &node, transform_context &context)
-{
-    if (node.runtime_opcode() == op_k210_fake_kpu_conv2d)
-    {
+bool slice_fused_unary_motion_transform::on_try_match(
+    node &node, transform_context &context) {
+    if (node.runtime_opcode() == op_k210_fake_kpu_conv2d) {
         slice *s;
         fused_unary *fu;
-        if ((s = try_get_direct_child<slice>(node))
-            && (fu = try_get_direct_child<fused_unary>(*s)))
-        {
+        if ((s = try_get_direct_child<slice>(node)) &&
+            (fu = try_get_direct_child<fused_unary>(*s))) {
             context.inputs.emplace_back(&s->input());
             context.outputs.emplace_back(&fu->output());
 
@@ -49,15 +47,15 @@ bool slice_fused_unary_motion_transform::on_try_match(node &node, transform_cont
     return false;
 }
 
-void slice_fused_unary_motion_transform::process(transform_context &context)
-{
+void slice_fused_unary_motion_transform::process(transform_context &context) {
     auto &output = *context.inputs[0]->connection();
     auto inputs = context.outputs[0]->connections();
 
     auto &old_slice = static_cast<slice &>(*context.matched_nodes[0]);
     auto &old_fu = static_cast<fused_unary &>(*context.matched_nodes[1]);
 
-    auto fu = context.graph.emplace<fused_unary>(old_fu.subgraph(), output.shape());
+    auto fu =
+        context.graph.emplace<fused_unary>(old_fu.subgraph(), output.shape());
     fu->name(old_fu.name());
     fu->input().connect(output);
     old_slice.input().connect(fu->output());
@@ -66,15 +64,13 @@ void slice_fused_unary_motion_transform::process(transform_context &context)
         in->connect(old_slice.output());
 }
 
-bool pad_fused_unary_motion_transform::on_try_match(node &node, transform_context &context)
-{
-    if (node.runtime_opcode() == op_k210_fake_kpu_conv2d)
-    {
+bool pad_fused_unary_motion_transform::on_try_match(
+    node &node, transform_context &context) {
+    if (node.runtime_opcode() == op_k210_fake_kpu_conv2d) {
         pad *p;
         fused_unary *fu;
-        if ((p = try_get_direct_child<pad>(node))
-            && (fu = try_get_direct_child<fused_unary>(*p)))
-        {
+        if ((p = try_get_direct_child<pad>(node)) &&
+            (fu = try_get_direct_child<fused_unary>(*p))) {
             context.inputs.emplace_back(&p->input());
             context.outputs.emplace_back(&fu->output());
 
@@ -87,15 +83,15 @@ bool pad_fused_unary_motion_transform::on_try_match(node &node, transform_contex
     return false;
 }
 
-void pad_fused_unary_motion_transform::process(transform_context &context)
-{
+void pad_fused_unary_motion_transform::process(transform_context &context) {
     auto &output = *context.inputs[0]->connection();
     auto inputs = context.outputs[0]->connections();
 
     auto &old_pad = static_cast<pad &>(*context.matched_nodes[0]);
     auto &old_fu = static_cast<fused_unary &>(*context.matched_nodes[1]);
 
-    auto fu = context.graph.emplace<fused_unary>(old_fu.subgraph(), output.shape());
+    auto fu =
+        context.graph.emplace<fused_unary>(old_fu.subgraph(), output.shape());
     fu->name(old_fu.name());
     fu->input().connect(output);
     old_pad.input().connect(fu->output());

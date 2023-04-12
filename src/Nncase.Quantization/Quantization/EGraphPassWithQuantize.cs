@@ -6,38 +6,22 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Nncase.Transform;
+using Nncase.Evaluator;
+using Nncase.Passes;
+using Tensorflow;
 
 namespace Nncase.Quantization;
 
 /// <summary>
-/// the quantization egraph pass 
+/// the quantization egraph pass.
 /// </summary>
-public class EGraphPassWithQuantize : EGraphPass
+public class EGraphPassWithQuantize : EGraphRulesPass
 {
-    private readonly QuantizeOptions _quantizeOptions;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="EGraphPassWithQuantize"/> class.
-    /// </summary>
-    /// <param name="name">Pass name.</param>
-    /// <param name="quantizeOptions">options.</param>
-    public EGraphPassWithQuantize(string name, QuantizeOptions quantizeOptions)
-        : base(name)
+    /// <inheritdoc/>
+    protected override async Task<IEGraph> RunCoreAsync(IEGraph input, RunPassContext context)
     {
-        _quantizeOptions = quantizeOptions;
-    }
-
-    /// <summary>
-    /// the callback on the rewirte finish.
-    /// 
-    /// </summary>
-    /// <param name="graph"></param>
-    /// <param name="options"></param>
-    /// <returns></returns>
-    protected override async Task OnPostRewrite(EGraph graph, RunPassOptions options)
-    {
-        var quantizer = new Quantizer(graph, options);
-        await quantizer.RunAsync(options);
+        var quantizer = new Quantizer(input, CompileSession.CompileOptions.QuantizeOptions);
+        await quantizer.RunAsync(context);
+        return input;
     }
 }

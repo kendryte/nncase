@@ -15,7 +15,7 @@ namespace Nncase.IR.Math;
 /// Binary expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Binary(BinaryOp BinaryOp) : Op
+public sealed partial class Binary : Op
 {
     /// <summary>
     /// Gets lhs.
@@ -26,4 +26,12 @@ public sealed record Binary(BinaryOp BinaryOp) : Op
     /// Gets rhs.
     /// </summary>
     public static readonly ParameterInfo Rhs = new(typeof(Binary), 1, "rhs");
+
+    public BinaryOp BinaryOp { get; }
+
+    /// <inheritdoc/>
+    public override string DisplayProperty()
+    {
+        return $"BinaryOp.{BinaryOp}";
+    }
 }

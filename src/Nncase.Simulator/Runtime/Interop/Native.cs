@@ -14,8 +14,11 @@ internal static class Native
 {
     public const string LibraryName = "Nncase.Runtime.Native";
 
-    [DllImport(LibraryName, EntryPoint = "nncase_object_free")]
-    public static extern ErrorCode ObjectFree(IntPtr obj);
+    [DllImport(LibraryName, EntryPoint = "nncase_object_add_ref")]
+    public static extern ErrorCode ObjectAddRef(IntPtr obj);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_object_release")]
+    public static extern ErrorCode ObjectRelease(IntPtr obj);
 
     [DllImport(LibraryName, EntryPoint = "nncase_interp_create")]
     public static extern ErrorCode InterpCreate(out RTInterpreter interp);
@@ -26,9 +29,9 @@ internal static class Native
     [DllImport(LibraryName, EntryPoint = "nncase_interp_load_model")]
     public static extern unsafe ErrorCode InterpLoadModel(RTInterpreter interp, void* modelBuffer, uint modelSize, bool copyBuffer);
 
-    [DllImport(LibraryName, EntryPoint = "nncase_interp_set_dump_root")]
-    public static extern unsafe ErrorCode InterpSetDumpRoot(RTInterpreter interp, String path);
-    
+    [DllImport(LibraryName, EntryPoint = "nncase_interp_set_dump_root", CharSet = CharSet.Ansi)]
+    public static extern unsafe ErrorCode InterpSetDumpRoot(RTInterpreter interp, [MarshalAs(UnmanagedType.LPStr)] string path);
+
     [DllImport(LibraryName, EntryPoint = "nncase_interp_get_entry_func")]
     public static extern unsafe ErrorCode InterpGetEntryFunction(RTInterpreter interp, out IntPtr func);
 
@@ -76,7 +79,10 @@ internal static class Native
 
     [DllImport(LibraryName, EntryPoint = "nncase_tensor_get_strides")]
     public static extern unsafe ErrorCode TensorGetStrides(RTTensor tensor, uint* strides, ref uint stridesLength);
-    
+
+    [DllImport(LibraryName, EntryPoint = "nncase_tuple_create")]
+    public static extern unsafe ErrorCode TupleCreate(IntPtr* fields, uint fieldsLength, out RTTuple tuple);
+
     [DllImport(LibraryName, EntryPoint = "nncase_tuple_get_fields")]
     public static extern unsafe ErrorCode TupleGetFields(RTTuple tuple, IntPtr* fields, ref uint fieldsLength);
 }

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+    <CodeCoverage>
+        <!--
+        Additional paths to search for .pdb (symbol) files. Symbols must be found for modules to be instrumented.
+        If .pdb files are in the same folder as the .dll or .exe files, they are automatically found. Otherwise, specify them here.
+        Note that searching for symbols increases code coverage run time. So keep this small and local.
+        -->
+        <SymbolSearchPaths>
+        </SymbolSearchPaths>
+
+        <!--
+        About include/exclude lists:
+        Empty "Include" clauses imply all; empty "Exclude" clauses imply none.
+        Each element in the list is a regular expression (ECMAScript syntax). See /visualstudio/ide/using-regular-expressions-in-visual-studio.
+        An item must first match at least one entry in the include list to be included.
+        Included items must then not match any entries in the exclude list to remain included.
+        -->
+
+        <!-- Match assembly file paths: -->
+        <ModulePaths>
+            <Include>
+                <ModulePath>.*Nncase.*\.dll$</ModulePath>
+            </Include>
+            <Exclude>
+                <ModulePath>.*xunit.*</ModulePath>
+                <ModulePath>.*System.*</ModulePath>
+            </Exclude>
+            <!-- Additional directories from .NET assemblies should be statically instrumented: -->
+            <IncludeDirectories>
+                <!-- Build-time -->
+                <Directory Recursive="true">src</Directory>
+                <!-- CI-time -->
+                <Directory Recursive="true">install</Directory>
+            </IncludeDirectories>
+        </ModulePaths>
+
+        <!-- Match fully qualified names of functions: -->
+        <!-- (Use "\." to delimit namespaces in C# or Visual Basic, "::" in C++.)  -->
+        <Functions>
+            <Exclude>
+                <Function>^Onnx\..*</Function>
+                <Function>^tflite\..*</Function>
+                <Function>^Nncase.TestFixture\..*</Function>
+                <Function>^Nncase.TestFixtureApplicationPart\..*</Function>
+                <Function>^Nncase.Tests\..*</Function>
+            </Exclude>
+        </Functions>
+
+        <!-- Match attributes on any code element: -->
+        <Attributes>
+            <Exclude>
+                <!-- Don't forget "Attribute" at the end of the name -->
+                <Attribute>^System\.Diagnostics\.DebuggerHiddenAttribute$</Attribute>
+                <Attribute>^System\.Diagnostics\.DebuggerNonUserCodeAttribute$</Attribute>
+                <Attribute>^System\.CodeDom\.Compiler\.GeneratedCodeAttribute$</Attribute>
+                <Attribute>^System\.Diagnostics\.CodeAnalysis\.ExcludeFromCodeCoverageAttribute$</Attribute>
+            </Exclude>
+        </Attributes>
+
+        <!-- Match the path of the source files in which each method is defined: -->
+        <Sources>
+            <Exclude>
+            </Exclude>
+        </Sources>
+
+        <!-- Match the company name property in the assembly: -->
+        <CompanyNames>
+            <Exclude>
+                <CompanyName>.*microsoft.*</CompanyName>
+            </Exclude>
+        </CompanyNames>
+
+        <!-- Match the public key token of a signed assembly: -->
+        <PublicKeyTokens>
+            <!-- Exclude Visual Studio extensions: -->
+            <Exclude>
+                <PublicKeyToken>^B77A5C561934E089$</PublicKeyToken>
+                <PublicKeyToken>^B03F5F7F11D50A3A$</PublicKeyToken>
+                <PublicKeyToken>^31BF3856AD364E35$</PublicKeyToken>
+                <PublicKeyToken>^89845DCD8080CC91$</PublicKeyToken>
+                <PublicKeyToken>^71E9BCE111E9429C$</PublicKeyToken>
+                <PublicKeyToken>^8F50407C4E9E73B6$</PublicKeyToken>
+                <PublicKeyToken>^E361AF139669C375$</PublicKeyToken>
+            </Exclude>
+        </PublicKeyTokens>
+
+        <EnableStaticManagedInstrumentation>True</EnableStaticManagedInstrumentation>
+        <EnableDynamicManagedInstrumentation>False</EnableDynamicManagedInstrumentation>
+
+    </CodeCoverage>
+</Configuration>

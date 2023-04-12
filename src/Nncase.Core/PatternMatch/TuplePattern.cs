@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -22,7 +22,7 @@ public sealed record TuplePattern(VArgsPattern Fields, string? Name) : Pattern<I
     /// <param name="tuple"><see cref="IR.Tuple"/> expression.</param>
     /// <param name="name">name.</param>
     public TuplePattern(IR.Tuple tuple, string? name)
-        : this(new VArgsPattern(tuple.Fields, null), name)
+        : this(new VArgsPattern(tuple.Fields.ToArray(), null), name)
     {
     }
 }
@@ -32,29 +32,36 @@ public static partial class Utility
     /// <summary>
     /// Create tuple pattern.
     /// </summary>
+    /// <param name="name">name.</param>
     /// <param name="fields">fields.</param>
-    /// <param name="name">name.</param>
     /// <returns>TuplePattern .</returns>
-    public static TuplePattern IsTuple(Pattern[] fields, string? name = null) => new TuplePattern(new VArgsPattern(fields, null), name);
+    public static TuplePattern IsTuple(string? name, Pattern[] fields) => new TuplePattern(new VArgsPattern(fields, null), name);
+
+    /// <summary>
+    /// Create tuple pattern.
+    /// </summary>
+    /// <param name="name">name.</param>
+    /// <param name="fields">fields.</param>
+    /// <returns>TuplePattern .</returns>
+    public static TuplePattern IsTuple(string? name, VArgsPattern fields) => new TuplePattern(fields, name);
 
     /// <summary>
     /// Create tuple pattern.
     /// </summary>
     /// <param name="fields">fields.</param>
-    /// <param name="name">name.</param>
     /// <returns>TuplePattern .</returns>
-    public static TuplePattern IsTuple(VArgsPattern fields, string? name = null) => new TuplePattern(fields, name);
+    public static TuplePattern IsTuple(VArgsPattern fields) => new TuplePattern(fields, null);
 
     /// <summary>
     /// Create tuple pattern.
     /// </summary>
     /// <param name="name">name.</param>
     /// <returns>TuplePattern .</returns>
-    public static TuplePattern IsTuple(string? name) => IsTuple(IsVArgsRepeat(() => IsWildcard()), name);
+    public static TuplePattern IsTuple(string? name) => IsTuple(name, IsVArgsRepeat(() => IsWildcard()));
 
     /// <summary>
     /// Create tuple pattern.
     /// </summary>
     /// <returns>TuplePattern .</returns>
-    public static TuplePattern IsConstTuple() => IsTuple(IsVArgsRepeat(() => IsConst()));
+    public static TuplePattern IsConstTuple() => IsTuple(null, IsVArgsRepeat(() => IsConst()));
 }

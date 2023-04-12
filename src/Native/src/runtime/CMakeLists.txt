@@ -27,7 +27,7 @@ if (BUILDING_RUNTIME)
       target_compile_definitions(runtime PRIVATE -DNNCASE_DEFAULT_BUILTIN_RUNTIMES)
     endif()
     string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UPPER)
-    if (CMAKE_BUILD_TYPE_UPPER STREQUAL "DEBUG")
+    if (ENABLE_DUMP_MANAGER)
       target_compile_definitions(runtime PUBLIC -DNNCASE_DUMP_MANAGER)
     endif()
     set_property(TARGET runtime PROPERTY POSITION_INDEPENDENT_CODE ON)
@@ -60,16 +60,17 @@ else()
       target_compile_definitions(simulator PRIVATE -DNNCASE_DEFAULT_BUILTIN_RUNTIMES)
     endif()
     string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UPPER)
-    if (CMAKE_BUILD_TYPE_UPPER STREQUAL "DEBUG")
+    if (ENABLE_DUMP_MANAGER)
       target_compile_definitions(simulator PUBLIC -DNNCASE_DUMP_MANAGER)
     endif()
     set_property(TARGET simulator PROPERTY POSITION_INDEPENDENT_CODE ON)
     
     add_library(nncaseruntime SHARED dummy.cpp)
-    target_link_libraries(nncaseruntime PRIVATE nncasebase kernels simulator simulator_stackvm fmt::fmt)
+    target_link_libraries(nncaseruntime PRIVATE nncasebase kernels simulator compiler simulator_stackvm fmt::fmt)
     target_link_libraries(nncaseruntime PUBLIC gsl::gsl-lite mpark_variant::mpark_variant)
     set_target_properties(nncaseruntime PROPERTIES
                                         OUTPUT_NAME "Nncase.Runtime.Native")
+
     install(TARGETS nncaseruntime EXPORT nncaseTargets
         COMPONENT nncase-runtime
         ARCHIVE DESTINATION lib
@@ -79,6 +80,10 @@ else()
     )
     install(EXPORT nncaseTargets
         DESTINATION lib/cmake/nncase)
+
+    if (WIN32)
+        install(FILES ${CONAN_NETHOST_ROOT}/bin/nethost.dll DESTINATION bin)
+    endif()
 
     configure_file(${CMAKE_CURRENT_LIST_DIR}/../../../../cmake/nncaseConfig.cmake.in nncaseConfig.cmake @ONLY)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/nncaseConfig.cmake DESTINATION lib/cmake/nncase)

@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -7,87 +7,60 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
 using Nncase.PatternMatch;
+using Nncase.Utilities;
 
-namespace Nncase.Transform;
+namespace Nncase.Passes;
 
 /// <summary>
-/// rewrite method.
+/// Dataflow rewriter.
 /// </summary>
-internal class DataflowRewriter
+internal sealed class DataFlowRewriter : ExprRewriter
 {
-    public Expr Rewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassOptions options)
-    {
-        var post = expr;
-        var last = post;
-        int count = 0;
-        OnRewriteStart(expr, options, count);
-        do
-        {
-            bool isMutated = false;
-            foreach (var rule in rules)
-            {
-                var visitor = new DataFlowRewriteVisitor(rule, options);
-                last = post;
-                post = visitor.Visit(last);
-                if (visitor.IsMutated)
-                {
-                    isMutated = true;
-                    break;
-                }
-            }
+    private readonly IRewriteRule _rule;
+    private readonly RunPassContext _options;
+    private readonly HashSet<Expr> _dontInheritExprs = new HashSet<Expr>(ReferenceEqualityComparer.Instance);
 
-            var inferSuccess = CompilerServices.InferenceType(post);
-            OnRewriteEnd(post, options, count++);
-            if (isMutated && !inferSuccess)
-            {
-                if (options.DumpLevel > 1)
-                    CompilerServices.DumpIR(post, $"InferShape_{count - 1}_Failed", options.PassDumpDir);
-                throw new InvalidOperationException($"After Rewrite {count - 1}, InferShape Failed For This Model!");
-            }
-            if (!isMutated || options.RewriteOnce)
-            {
-                break;
-            }
-        }
-        while (true);
-        return post;
+    public DataFlowRewriter(IRewriteRule rule, RunPassContext options)
+    {
+        _rule = rule;
+        _options = options;
     }
 
-    /// <summary>
-    /// callback for rewrite start.
-    /// </summary>
-    private void OnRewriteStart(Expr expr, RunPassOptions options, int count)
+    protected override Expr DefaultRewriteLeaf(Expr expr)
     {
-        switch (options.DumpLevel)
+        if ((_options.RewriteOnce, IsMutated) switch
         {
-            case >= 2:
-                CompilerServices.DumpIR(expr, $"{count}_Start", Path.Combine(options.PassDumpDir, "Rewrite"));
-                break;
-            case >= 1:
-                break;
-            default:
-                break;
+            (true, true) => false,
+            _ => true,
         }
+
+         && CompilerServices.TryMatchRoot(expr, _rule.Pattern, _options.MatchOptions, out var match))
+        {
+            var replace = _rule.GetReplace(match, _options)?.InheritMetaData(expr);
+            if (replace != null)
+            {
+                _dontInheritExprs.Add(replace);
+
+                return replace;
+            }
+        }
+
+        return expr;
     }
 
-    /// <summary>
-    /// call back for rewrite end.
-    /// </summary>
-    private void OnRewriteEnd(Expr expr, RunPassOptions options, int count)
+    protected override Expr DispatchVisit(Expr expr, Unit context)
     {
-        switch (options.DumpLevel)
+        var replace = base.DispatchVisit(expr, context);
+        if (!_dontInheritExprs.Contains(expr))
         {
-            case >= 2:
-                CompilerServices.DumpIR(expr, $"{count}_End", Path.Combine(options.PassDumpDir, "Rewrite"));
-                break;
-            case >= 1:
-                break;
-            default:
-                break;
+            _options.MatchOptions.InheritSuppressPatterns(expr, replace);
         }
+
+        return replace;
     }
 }

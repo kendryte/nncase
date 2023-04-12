@@ -43,15 +43,11 @@ foreach (var f in e.Fields)
 }
 
 // Instructions
-struct op_base_t
-{
-    opcode_t opcode;
-};
 @foreach (var inst in Model.Instructions.SelectMany(x => x.Value))
 {
     var name = inst.CppName.ToLowerInvariant().Replace('.', '_');
 @:
-@:struct @(name)_op_t : public op_base_t
+@:struct @(name)_op_t
 @:{
 foreach (var field in inst.Fields.Where(x => !x.IsOpCode))
 {
@@ -61,15 +57,11 @@ foreach (var field in inst.Fields.Where(x => !x.IsOpCode))
 }
 
 // Tensor instructions
-struct tensor_op_base_t : public op_base_t
-{
-    tensor_function_t tensor_funct;
-};
 @foreach (var inst in Model.TensorInstructions.SelectMany(x => x.Value).OrderBy(x => x.CppName))
 {
     var name = "tensor_" + inst.CppName.ToLowerInvariant().Replace('.', '_');
 @:
-@:struct @(name)_op_t : public tensor_op_base_t
+@:struct @(name)_op_t
 @:{
 foreach (var field in inst.Fields.Where(x => !x.IsOpCode))
 {

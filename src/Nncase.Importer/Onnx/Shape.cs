@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -37,10 +37,10 @@ namespace Nncase.Importer
             var start = GetIntAttribute(op, "start", 0);
             var inShape = F.Tensors.ShapeOf(input);
             var end = GetOptionIntAttribute(op, "end");
-            Expr endValue = end ? end.Value() : F.Tensors.ShapeOf(inShape);
+            Expr endValue = end ? new[] { end.Value() } : F.Tensors.ShapeOf(inShape);
             return F.Tensors.Slice(
                 inShape,
-                start,
+                new[] { start },
                 endValue,
                 1);
         }

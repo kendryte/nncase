@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.IR;
 
 namespace Nncase.Utilities;
 
@@ -38,5 +39,32 @@ public static class ArrayUtility
         }
 
         return dataOut;
+    }
+
+    public static T[] Concat<T>(T value1, ReadOnlySpan<T> values)
+    {
+        var array = new T[values.Length + 1];
+        array[0] = value1;
+        values.CopyTo(array.AsSpan(1));
+        return array;
+    }
+
+    public static T[] Concat<T>(ReadOnlySpan<T> values1, ReadOnlySpan<T> values2)
+    {
+        var array = new T[values1.Length + values2.Length];
+        values1.CopyTo(array);
+        values2.CopyTo(array.AsSpan(values1.Length));
+        return array;
+    }
+
+    public static Expr[] ToExprArray(ReadOnlySpan<int> values)
+    {
+        var array = new Expr[values.Length];
+        for (int i = 0; i < array.Length; i++)
+        {
+            array[i] = (Expr)values[i];
+        }
+
+        return array;
     }
 }

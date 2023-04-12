@@ -18,20 +18,17 @@
 
 BEGIN_NS_NNCASE_RT_MODULE(k210)
 
-enum class nncase_k210_errc
-{
-    k210_illegal_instruction = 0x01
-};
+enum class nncase_k210_errc { k210_illegal_instruction = 0x01 };
 
-NNCASE_MODULES_K210_API const std::error_category &nncase_k210_category() noexcept;
-NNCASE_MODULES_K210_API std::error_condition make_error_condition(nncase_k210_errc code);
+NNCASE_MODULES_K210_API const std::error_category &
+nncase_k210_category() noexcept;
+NNCASE_MODULES_K210_API std::error_condition
+make_error_condition(nncase_k210_errc code);
 
 END_NS_NNCASE_RT_MODULE
 
-namespace std
-{
+namespace std {
 template <>
-struct is_error_condition_enum<nncase::runtime::k210::nncase_k210_errc> : true_type
-{
-};
-}
+struct is_error_condition_enum<nncase::runtime::k210::nncase_k210_errc>
+    : true_type {};
+} // namespace std

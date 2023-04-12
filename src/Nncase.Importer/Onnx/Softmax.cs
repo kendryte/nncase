@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -6,8 +6,8 @@ using LanguageExt.UnsafeValueAccess;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using Onnx;
-using static Nncase.IR.F.Tensors;
 using static Nncase.IR.F.NN;
+using static Nncase.IR.F.Tensors;
 
 namespace Nncase.Importer
 {
@@ -27,7 +27,7 @@ namespace Nncase.Importer
             var inShape = ShapeOf(input);
             Expr axisExpr = axis < 0
                 ? axis + Rank(input)
-                : Tensor.FromSpan<int>(new[] { axis });
+                : Tensor.From<int>(new[] { axis });
             var first = Prod(Slice(inShape, new[] { 0 }, axisExpr, 1));
             var second = Prod(Slice(inShape, axisExpr, Rank(input), 1));
             var beforeShape = Stack(new IR.Tuple(first, second), 0);

@@ -21,10 +21,9 @@
 
 BEGIN_NS_NNCASE_RT_MODULE(vulkan)
 
-class vulkan_runtime_module : public runtime_module
-{
+class vulkan_runtime_module : public runtime_module {
 
-public:
+  public:
     virtual ~vulkan_runtime_module();
 
     vk::Buffer data() const noexcept { return data_buffer_; }
@@ -33,29 +32,43 @@ public:
 
     vk::Device device() const noexcept { return ctx_->device(); }
     vk::CommandPool command_pool() const noexcept { return cmd_pool_; }
-    uint32_t compute_queue_index() const noexcept { return ctx_->compute_queue_index(); }
+    uint32_t compute_queue_index() const noexcept {
+        return ctx_->compute_queue_index();
+    }
     vk::Queue compute_queue() const noexcept { return ctx_->compute_queue(); }
-    vk::DescriptorPool buffer_desc_pool() const noexcept { return buffer_desc_pool_; }
+    vk::DescriptorPool buffer_desc_pool() const noexcept {
+        return buffer_desc_pool_;
+    }
 
-    result<vk::DeviceMemory> allocate_vulkan_memory(const select_options<vk::MemoryPropertyFlagBits> &options, vk::Buffer buffer) noexcept;
+    result<vk::DeviceMemory> allocate_vulkan_memory(
+        const select_options<vk::MemoryPropertyFlagBits> &options,
+        vk::Buffer buffer) noexcept;
     result<vk::Buffer> allocate_vulkan_buffer(size_t required_size) noexcept;
-    result<void> bind_vulkan_buffer(vk::Buffer buffer, vk::DeviceMemory memory) noexcept;
-    result<void> add_pipeline(vk::Pipeline pipeline, vk::PipelineLayout pipeline_layout, vk::DescriptorSetLayout set_layout) noexcept;
+    result<void> bind_vulkan_buffer(vk::Buffer buffer,
+                                    vk::DeviceMemory memory) noexcept;
+    result<void> add_pipeline(vk::Pipeline pipeline,
+                              vk::PipelineLayout pipeline_layout,
+                              vk::DescriptorSetLayout set_layout) noexcept;
 
-protected:
-    result<void> initialize_before_functions(runtime_module_init_context &context) noexcept override;
-    result<std::unique_ptr<runtime_function>> create_function() noexcept override;
+  protected:
+    result<void> initialize_before_functions(
+        runtime_module_init_context &context) noexcept override;
+    result<std::unique_ptr<runtime_function>>
+    create_function() noexcept override;
 
-private:
+  private:
     result<void> initialize_vulkan() noexcept;
     result<void> initialize_vulkan_device() noexcept;
     result<void> initialize_vulkan_memory() noexcept;
 
-    result<size_t> select_memory_type(const vk::PhysicalDeviceMemoryProperties &properties, const select_options<vk::MemoryPropertyFlagBits> &options, size_t required_size) noexcept;
+    result<size_t> select_memory_type(
+        const vk::PhysicalDeviceMemoryProperties &properties,
+        const select_options<vk::MemoryPropertyFlagBits> &options,
+        size_t required_size) noexcept;
 
     void free_vulkan_resources() noexcept;
 
-private:
+  private:
     uint32_t descriptors_;
     uint32_t descriptor_sets_;
     gsl::span<const gsl::byte> text_;

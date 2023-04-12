@@ -15,7 +15,7 @@ namespace Nncase.IR.Math;
 /// MatMul expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record MatMul() : Op
+public sealed partial class MatMul : Op
 {
     /// <summary>
     /// Gets input.

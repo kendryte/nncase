@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -11,9 +11,9 @@ namespace Nncase.PatternMatch;
 /// Pattern for <see cref="Call"/>.
 /// </summary>
 /// <param name="Target">Target pattern.</param>
-/// <param name="Parameters">Parameters pattern.</param>
+/// <param name="Arguments">Arguments pattern.</param>
 /// <param name="Name"> name. </param>
-public sealed record CallPattern(Pattern Target, VArgsPattern Parameters, string? Name) : Pattern<Call>(Name)
+public sealed record CallPattern(Pattern Target, VArgsPattern Arguments, string? Name) : Pattern<Call>(Name)
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="CallPattern"/> class.
@@ -21,7 +21,7 @@ public sealed record CallPattern(Pattern Target, VArgsPattern Parameters, string
     /// <param name="call"><see cref="Call"/> expression.</param>
     /// <param name="name">name.</param>
     public CallPattern(Call call, string? name)
-        : this(call.Target, new VArgsPattern(call.Parameters, null), name)
+        : this(call.Target, new VArgsPattern(call.Arguments.ToArray(), null), name)
     {
     }
 
@@ -32,21 +32,21 @@ public sealed record CallPattern(Pattern Target, VArgsPattern Parameters, string
     /// <returns>Parameter pattern.</returns>
     public Pattern this[ParameterInfo parameter]
     {
-        get => Parameters[parameter.Index];
+        get => Arguments.Fields[parameter.Index];
     }
 }
 
 /// <summary>
-/// PatternMatch Utility
+/// PatternMatch Utility.
 /// </summary>
 public static partial class Utility
 {
     /// <summary>
     /// is call .
     /// </summary>
+    /// <param name="name">name.</param>
     /// <param name="target">target.</param>
     /// <param name="parameters">params.</param>
-    /// <param name="name">name.</param>
     /// <returns>call pattern.</returns>
     public static CallPattern IsCall(string? name, Pattern target, VArgsPattern parameters) => new CallPattern(target, parameters, name);
 
@@ -61,9 +61,9 @@ public static partial class Utility
     /// <summary>
     /// is call .
     /// </summary>
+    /// <param name="name">name.</param>
     /// <param name="target">target.</param>
     /// <param name="parameters">params.</param>
-    /// <param name="name">name.</param>
     /// <returns>call pattern.</returns>
     public static CallPattern IsCall(string? name, Pattern target, params Pattern[] parameters) => new CallPattern(target, new VArgsPattern(parameters, null), name);
 
@@ -73,7 +73,6 @@ public static partial class Utility
     /// <param name="name">name.</param>
     /// <param name="target">function target.</param>
     /// <param name="parameters">params.</param>
-    /// <returns></returns>
     public static CallPattern IsCall(string? name, FunctionPattern target, params Pattern[] parameters) => new CallPattern(target, new VArgsPattern(parameters, null), name);
 
     /// <summary>
@@ -82,7 +81,6 @@ public static partial class Utility
     /// <param name="name">name.</param>
     /// <param name="target">function target.</param>
     /// <param name="parameters">params.</param>
-    /// <returns></returns>
     public static CallPattern IsCall(string? name, FunctionPattern target, VArgsPattern parameters) => new CallPattern(target, parameters, name);
 
     /// <summary>
@@ -90,7 +88,6 @@ public static partial class Utility
     /// </summary>
     /// <param name="target">function target.</param>
     /// <param name="parameters">params.</param>
-    /// <returns></returns>
     public static CallPattern IsCall(Pattern target, params Pattern[] parameters) => IsCall(null, target, parameters);
 
     /// <summary>
@@ -99,8 +96,9 @@ public static partial class Utility
     /// <param name="name">name.</param>
     /// <param name="target">op target.</param>
     /// <param name="parameters">params.</param>
-    /// <returns></returns>
-    public static CallPattern IsCall<T>(string name, OpPattern<T> target, params Pattern[] parameters) where T : Op => new CallPattern(target, new VArgsPattern(parameters, null), name);
+    public static CallPattern IsCall<T>(string? name, OpPattern<T> target, params Pattern[] parameters)
+        where T : Op
+        => new CallPattern(target, new VArgsPattern(parameters, null), name);
 
     /// <summary>
     /// is call .
@@ -108,6 +106,7 @@ public static partial class Utility
     /// <param name="name">name.</param>
     /// <param name="target">op target.</param>
     /// <param name="parameters">params.</param>
-    /// <returns></returns>
-    public static CallPattern IsCall<T>(string name, OpPattern<T> target, VArgsPattern parameters) where T : Op => new CallPattern(target, parameters, name);
+    public static CallPattern IsCall<T>(string? name, OpPattern<T> target, VArgsPattern parameters)
+        where T : Op
+        => new CallPattern(target, parameters, name);
 }

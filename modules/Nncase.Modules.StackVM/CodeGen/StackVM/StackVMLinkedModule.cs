@@ -19,7 +19,7 @@ internal class StackVMLinkedModule : ILinkedModule
         {
             new LinkedSection(text, ".text", 0, 8, (uint)text.Length),
             new LinkedSection(rdata, ".rdata", 0, 8, (uint)(rdata?.Length ?? 0)),
-            new LinkedSection(custom_calls, ".custom_calls", 0, 8, (uint)(custom_calls?.Length ?? 0))
+            new LinkedSection(custom_calls, ".custom_calls", 0, 8, (uint)(custom_calls?.Length ?? 0)),
         };
     }
 

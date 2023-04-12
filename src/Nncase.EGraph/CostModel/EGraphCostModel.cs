@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Nncase.Transform;
+using Nncase.Passes;
 
 namespace Nncase.CostModel;
 

@@ -1,7 +1,8 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
-using Autofac;
+using DryIoc;
+using Nncase.Hosting;
 using Nncase.Targets;
 
 namespace Nncase;
@@ -9,11 +10,10 @@ namespace Nncase;
 /// <summary>
 /// StackVM module.
 /// </summary>
-public class StackVMModule : Module
+internal class StackVMModule : IApplicationPart
 {
-    /// <inheritdoc/>
-    protected override void Load(ContainerBuilder builder)
+    public void ConfigureServices(IRegistrator registrator)
     {
-        builder.RegisterType<CPUTarget>().AsImplementedInterfaces().SingleInstance();
+        registrator.Register<ITarget, CPUTarget>(reuse: Reuse.Singleton);
     }
 }

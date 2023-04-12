@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 
 namespace Nncase.IR;
 
-
 /// <summary>
 /// Type inferencer interface.
 /// </summary>
@@ -20,9 +19,9 @@ public interface IOpPrinter
     /// </summary>
     /// <param name="context">Context.</param>
     /// <param name="target">Target operator.</param>
-    /// <param name="ILmode">if is print is il or script.</param>
+    /// <param name="iLmode">if is print is il or script.</param>
     /// <returns>Result.</returns>
-    string Visit(IIRPrinterContext context, Op target, bool ILmode);
+    string Visit(IIRPrinterContext context, Op target, bool iLmode);
 }
 
 /// <summary>
@@ -36,12 +35,12 @@ public interface IOpPrinter<T> : IOpPrinter
     /// </summary>
     /// <param name="context">Context.</param>
     /// <param name="target">Target operator.</param>
-    /// <param name="ILmode">if is print like il.</param>
+    /// <param name="iLmode">if is print like il.</param>
     /// <returns>Result.</returns>
-    string Visit(IIRPrinterContext context, T target, bool ILmode);
+    string Visit(IIRPrinterContext context, T target, bool iLmode);
 
-    string IOpPrinter.Visit(IIRPrinterContext ctx, Op target, bool ILmode)
+    string IOpPrinter.Visit(IIRPrinterContext ctx, Op target, bool iLmode)
     {
-        return Visit(ctx, (T)target, ILmode);
+        return Visit(ctx, (T)target, iLmode);
     }
 }

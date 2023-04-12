@@ -95,6 +95,7 @@ zero_points = [
     [100],
 ]
 
+
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('input_type', input_types)
 @pytest.mark.parametrize('scale', scales)

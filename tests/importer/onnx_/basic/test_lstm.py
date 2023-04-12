@@ -42,7 +42,6 @@ input_size = [10, 23]
 length = [2, 4]
 
 
-
 @pytest.mark.parametrize('D', D)
 @pytest.mark.parametrize('num_layers', num_layers)
 @pytest.mark.parametrize('batch_size', batch_size)

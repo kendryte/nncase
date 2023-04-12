@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using Nncase.CostModel;
@@ -11,7 +11,7 @@ namespace Nncase.Evaluator.NN;
 /// <summary>
 /// Evaluator for <see cref="LogSoftmax"/>.
 /// </summary>
-public class LogSoftmaxEvaluator : IEvaluator<LogSoftmax>, ITypeInferencer<LogSoftmax>, ICostEvaluator<Softmax>
+public class LogSoftmaxEvaluator : IEvaluator<LogSoftmax>, ITypeInferencer<LogSoftmax>, ICostEvaluator<LogSoftmax>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, LogSoftmax logSoftMax)
@@ -29,7 +29,7 @@ public class LogSoftmaxEvaluator : IEvaluator<LogSoftmax>, ITypeInferencer<LogSo
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, Softmax target)
+    public Cost Visit(ICostEvaluateContext context, LogSoftmax target)
     {
         var ret = context.GetReturnType<TensorType>();
         var macPerElement = 4;
@@ -50,7 +50,7 @@ public class LogSoftmaxEvaluator : IEvaluator<LogSoftmax>, ITypeInferencer<LogSo
 /// <summary>
 /// Evaluator for <see cref="Softmax"/>.
 /// </summary>
-public class SoftmaxEvaluator : IEvaluator<Softmax>, ITypeInferencer<Softmax>
+public class SoftmaxEvaluator : IEvaluator<Softmax>, ITypeInferencer<Softmax>, ICostEvaluator<Softmax>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Softmax softMax)
@@ -67,6 +67,17 @@ public class SoftmaxEvaluator : IEvaluator<Softmax>, ITypeInferencer<Softmax>
         return Visit(input);
     }
 
+    /// <inheritdoc/>
+    public Cost Visit(ICostEvaluateContext context, Softmax target)
+    {
+        var ret = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(ret),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
+        };
+    }
+
     private IRType Visit(TensorType input)
     {
         return input;
@@ -76,7 +87,7 @@ public class SoftmaxEvaluator : IEvaluator<Softmax>, ITypeInferencer<Softmax>
 /// <summary>
 /// Evaluator for <see cref="Softplus"/>.
 /// </summary>
-public class SoftplusEvaluator : IEvaluator<Softplus>, ITypeInferencer<Softplus>
+public class SoftplusEvaluator : IEvaluator<Softplus>, ITypeInferencer<Softplus>, ICostEvaluator<Softplus>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Softplus softPlus)
@@ -92,6 +103,17 @@ public class SoftplusEvaluator : IEvaluator<Softplus>, ITypeInferencer<Softplus>
         return Visit(input);
     }
 
+    /// <inheritdoc/>
+    public Cost Visit(ICostEvaluateContext context, Softplus target)
+    {
+        var ret = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(ret),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
+        };
+    }
+
     private IRType Visit(TensorType input)
     {
         return input;
@@ -101,7 +123,7 @@ public class SoftplusEvaluator : IEvaluator<Softplus>, ITypeInferencer<Softplus>
 /// <summary>
 /// Evaluator for <see cref="Softsign"/>.
 /// </summary>
-public class SoftsignEvaluator : IEvaluator<Softsign>, ITypeInferencer<Softsign>
+public class SoftsignEvaluator : IEvaluator<Softsign>, ITypeInferencer<Softsign>, ICostEvaluator<Softsign>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Softsign softSign)
@@ -115,6 +137,17 @@ public class SoftsignEvaluator : IEvaluator<Softsign>, ITypeInferencer<Softsign>
     {
         var input = context.CheckArgumentType<TensorType>(target, Softsign.Input);
         return Visit(input);
+    }
+
+    /// <inheritdoc/>
+    public Cost Visit(ICostEvaluateContext context, Softsign target)
+    {
+        var ret = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(ret),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
+        };
     }
 
     private IRType Visit(TensorType input)

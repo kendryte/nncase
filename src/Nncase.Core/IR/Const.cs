@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics.Tensors;
+using System.Runtime.InteropServices;
 using NetFabric.Hyperlinq;
 
 namespace Nncase.IR;
@@ -12,8 +12,20 @@ namespace Nncase.IR;
 /// <summary>
 /// Constant expression.
 /// </summary>
-public abstract record Const(IRType ValueType) : Expr
+public abstract class Const : Expr
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Const"/> class.
+    /// </summary>
+    /// <param name="valueType">Type of value.</param>
+    public Const(IRType valueType)
+        : base(Array.Empty<Expr>())
+    {
+        ValueType = valueType;
+    }
+
+    public IRType ValueType { get; }
+
     /// <summary>
     /// Create constant from a <see cref="byte"/>.
     /// </summary>
@@ -93,10 +105,16 @@ public abstract record Const(IRType ValueType) : Expr
     public static implicit operator Const(bool value) => FromTensor(Tensor.FromScalar(value));
 
     /// <summary>
+    /// Create constant from a <see cref="Utf8Char"/>.
+    /// </summary>
+    /// <param name="value">Value.</param>
+    public static implicit operator Const(Utf8Char value) => FromTensor(Tensor.FromScalar(value));
+
+    /// <summary>
     /// Create constant from <see cref="string"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator Const(string value) => FromTensor(Tensor.FromSpan<char>(value));
+    public static implicit operator Const(string value) => FromTensor(Tensor.From<char>(value.ToCharArray()));
 
     /// <summary>
     /// Create constant from a tensor.
@@ -109,9 +127,7 @@ public abstract record Const(IRType ValueType) : Expr
     /// <summary>
     /// convert shape to const expr.
     /// </summary>
-    /// <param name="shape"></param>
-    /// <returns></returns>
-    public static Const FromShape(Shape shape) => FromTensor(Tensor.FromSpan<int>(shape.ToValueArray()));
+    public static Const FromShape(Shape shape) => FromTensor(Tensor.From<int>(shape.ToValueArray()));
 
     /// <summary>
     /// Convert value to const expr.
@@ -127,9 +143,7 @@ public abstract record Const(IRType ValueType) : Expr
         else
         {
             var tpv = (TupleValue)value;
-            return new TupleConst(tpv.Select(x => FromValue(x)).ToArray());
+            return new TupleConst(tpv);
         }
     }
-
 }
-

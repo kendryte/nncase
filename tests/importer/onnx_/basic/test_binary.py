@@ -18,6 +18,7 @@ import torch
 import numpy as np
 from onnx_test_runner import OnnxTestRunner
 
+
 def _make_module(v_shape):
     class BinaryModule(torch.nn.Module):
         def __init__(self):

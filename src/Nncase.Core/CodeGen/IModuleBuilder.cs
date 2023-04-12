@@ -11,13 +11,6 @@ using Nncase.IR;
 namespace Nncase.CodeGen;
 
 /// <summary>
-/// Function id.
-/// </summary>
-/// <param name="Id">Id.</param>
-/// <param name="ModuleId">Module id.</param>
-public record FunctionId(uint Id, uint ModuleId);
-
-/// <summary>
 /// Link context.
 /// </summary>
 public interface ILinkContext
@@ -159,3 +152,10 @@ public interface IModuleBuilder
     /// <returns>Compiled linkable module.</returns>
     ILinkableModule Build(IReadOnlyList<BaseFunction> functions);
 }
+
+/// <summary>
+/// Function id.
+/// </summary>
+/// <param name="Id">Id.</param>
+/// <param name="ModuleId">Module id.</param>
+public record FunctionId(uint Id, uint ModuleId);

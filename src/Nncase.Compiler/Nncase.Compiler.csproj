@@ -1,27 +1,29 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="7.2.0" />
-        <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
-        <!--        <PackageReference Include="System.CommandLine.Hosting" Version="0.3.0-alpha.21216.1" />-->
+        <PackageReference Include="DryIoc.dll" />
+        <PackageReference Include="DryIoc.Microsoft.DependencyInjection" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" />
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\Nncase.CodeGen\Nncase.CodeGen.csproj" />
         <ProjectReference Include="..\Nncase.Core\Nncase.Core.csproj" />
+        <ProjectReference Include="..\Nncase.Diagnostics\Nncase.Diagnostics.csproj" />
         <ProjectReference Include="..\Nncase.Graph\Nncase.Graph.csproj" />
         <ProjectReference Include="..\Nncase.EGraph\Nncase.EGraph.csproj" />
         <ProjectReference Include="..\Nncase.Evaluator\Nncase.Evaluator.csproj" />
         <ProjectReference Include="..\Nncase.Importer\Nncase.Importer.csproj" />
         <ProjectReference Include="..\Nncase.Simulator\Nncase.Simulator.csproj" />
-        <ProjectReference Include="..\Nncase.Transform\Nncase.Transform.csproj" />
+        <ProjectReference Include="..\Nncase.Quantization\Nncase.Quantization.csproj" />
+        <ProjectReference Include="..\Nncase.Passes\Nncase.Passes.csproj" />
         <ProjectReference Include="..\..\modules\Nncase.Modules.StackVM\Nncase.Modules.StackVM.csproj" />
     </ItemGroup>
-
 </Project>

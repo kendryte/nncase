@@ -21,36 +21,41 @@
 #include <nncase/runtime/vulkan/runtime_types.h>
 #include <nncase/schedule/scheduler.h>
 
-namespace nncase::codegen::vulkan
-{
-class vulkan_module_builder : public module_builder
-{
-public:
-    vulkan_module_builder(std::string_view module_name, const module_builder_params &params);
+namespace nncase::codegen::vulkan {
+class vulkan_module_builder : public module_builder {
+  public:
+    vulkan_module_builder(std::string_view module_name,
+                          const module_builder_params &params);
 
     module_type_t module_type() const noexcept override;
     uint32_t module_version() const noexcept override;
 
-protected:
+  protected:
     section_writer &text_writer();
     section_writer &shader_writer();
 
-    void begin_emit_function(const schedule::function_schedule_result &function) override;
-    void end_emit_function(const schedule::function_schedule_result &function) override;
+    void begin_emit_function(
+        const schedule::function_schedule_result &function) override;
+    void end_emit_function(
+        const schedule::function_schedule_result &function) override;
     void emit(ir::node &node) override;
     void end_emit_module() override;
 
-private:
-    std::vector<uint32_t> compile_shader(ir::node &node, const std::string &template_name, const nlohmann::json &context);
+  private:
+    std::vector<uint32_t> compile_shader(ir::node &node,
+                                         const std::string &template_name,
+                                         const nlohmann::json &context);
     void ldbuf(const memory_range &range);
-    void ldpipeline(ir::node &node, size_t shader_index, runtime::vulkan::ldpipeline_op_t &op, const std::vector<uint32_t> &shader);
+    void ldpipeline(ir::node &node, size_t shader_index,
+                    runtime::vulkan::ldpipeline_op_t &op,
+                    const std::vector<uint32_t> &shader);
 
-private:
+  private:
 #define DEFINE_OP(op_) void emit(ir::op_ &op);
 #include "ops.def"
 #undef DEFINE_OP
-private:
+  private:
     uint32_t descriptor_sets_ = 0;
     uint32_t descriptors_ = 0;
 };
-}
+} // namespace nncase::codegen::vulkan

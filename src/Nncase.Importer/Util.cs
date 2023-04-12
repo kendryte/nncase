@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -6,9 +6,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Nncase.IR;
 using Nncase.IR.Tensors;
+using static Nncase.IR.F.Tensors;
 using F = Nncase.IR.F;
 using Tuple = Nncase.IR.Tuple;
-using static Nncase.IR.F.Tensors;
 
 namespace Nncase
 {
@@ -21,7 +21,7 @@ namespace Nncase
             Expr i;
             if (input.CheckedType != null)
             {
-                i = index < 0 ? index + input.CheckedShape.Size : index;
+                i = index < 0 ? index + input.CheckedShape.Rank : index;
             }
             else
             {
@@ -34,22 +34,22 @@ namespace Nncase
         public static Expr GetItem(in Expr input, Expr index)
         {
             return F.Tensors.Squeeze(
-                F.Tensors.Slice(input, 
-                StackScalar(index), 
-                StackScalar(index + 1),
-                1), new[] { 0L});
+                F.Tensors.Slice(
+                    input,
+                    StackScalar(index),
+                    StackScalar(index + 1),
+                    1),
+                new[] { 0L });
         }
 
-        public static (Expr, Expr) GetHW(in Expr input)
+        public static (Expr H, Expr W) GetHW(in Expr input)
         {
             return (ShapeIndex(input, 2), ShapeIndex(input, 3));
         }
 
         /// <summary>
-        /// onnx format pads to nncase format(same as tf)
+        /// onnx format pads to nncase format(same as tf).
         /// </summary>
-        /// <param name="input"></param>
-        /// <returns></returns>
         public static Expr PadTranslate(Expr pads)
         {
             return Transpose(Reshape(pads, new[] { -1, 2 }), new[] { 1, 0 });
@@ -57,49 +57,20 @@ namespace Nncase
 
         public static TensorConst ZeroTensor()
         {
-            return new TensorConst(Tensor.FromSpan<int>(new[] { 0 }));
+            return new TensorConst(Tensor.From<int>(new[] { 0 }));
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="padH"> [before, after] </param>
-        /// <param name="padW"> [before, after] </param>
-        /// <returns></returns>
+        /// <param name="padH">H [before, after]. </param>
+        /// <param name="padW">W [before, after]. </param>
         public static Expr ConcatPadding(Expr[] padH, Expr[] padW)
         {
             // return [[padh_before, padh_after],
             //         [padw_before, padw_after]]
-            return Stack(new Tuple(
-                Stack(new Tuple(padH), 0),
-                Stack(new Tuple(padW), 0)), 0);
-        }
-
-        private static Expr GetWindowedOutputSize(Expr size, Expr filter, Expr stride, Expr dilation, bool same, bool ceilMode)
-        {
-            var effectiveFilterSize = ((filter - 1) * dilation) + 1;
-            var falseBranch = !ceilMode
-                ? ((size - effectiveFilterSize + stride) / stride)
-                : F.Tensors.Cast(F.Math.Ceil(
-                        F.Tensors.Cast((size - effectiveFilterSize + stride), DataTypes.Float32) /
-                        F.Tensors.Cast(stride, DataTypes.Float32)),
-                    DataTypes.Int32);
-            var trueBranch = (size + stride - 1) / stride;
-            return same ? trueBranch : falseBranch;
-        }
-
-        private static Expr[] GetWindowedPaddingValue(Expr inputSize, Expr outputSize, Expr filter, Expr stride, Expr dilation, bool lower)
-        {
-            var effectiveFilterSize = ((filter - 1) * dilation) + 1;
-            var padding = F.Math.Max(0, ((outputSize - 1) * stride) + effectiveFilterSize - inputSize);
-            var before = F.Tensors.Cast(padding / 2, DataTypes.Int32);
-            var after = F.Tensors.Cast(padding - (padding / 2), DataTypes.Int32);
-            if (lower)
-            {
-                return new[] { F.Math.Max(before, after), F.Math.Min(before, after) };
-            }
-
-            return new[] { before, after };
+            return Stack(
+                new Tuple(
+                    Stack(new Tuple(padH), 0),
+                    Stack(new Tuple(padW), 0)),
+                0);
         }
 
         // todo:refactor and set private this
@@ -122,13 +93,40 @@ namespace Nncase
             var padW = GetWindowedPadding(inW, fW, (int)stride[1], (int)dilation[1], same, lower);
             return ConcatPadding(padH, padW);
         }
-        
+
         public static Expr ComputeSplit(Expr input, long outputSize, long axis)
         {
             return F.Tensors.Expand(
-                // Util.DynamicShapeIndex(input, Cast(axis, DataTypes.Int32)) / outputSize,
-                Util.ShapeIndex(input, (int)axis) / outputSize,
+                Util.ShapeIndex(input, (int)axis) / outputSize, // Util.DynamicShapeIndex(input, Cast(axis, DataTypes.Int32)) / outputSize
                 Stack(new Tuple(outputSize), 0));
+        }
+
+        private static Expr GetWindowedOutputSize(Expr size, Expr filter, Expr stride, Expr dilation, bool same, bool ceilMode)
+        {
+            var effectiveFilterSize = ((filter - 1) * dilation) + 1;
+            var falseBranch = !ceilMode
+                ? ((size - effectiveFilterSize + stride) / stride)
+                : F.Tensors.Cast(
+                    F.Math.Ceil(
+                        F.Tensors.Cast(size - effectiveFilterSize + stride, DataTypes.Float32) /
+                        F.Tensors.Cast(stride, DataTypes.Float32)),
+                    DataTypes.Int32);
+            var trueBranch = (size + stride - 1) / stride;
+            return same ? trueBranch : falseBranch;
+        }
+
+        private static Expr[] GetWindowedPaddingValue(Expr inputSize, Expr outputSize, Expr filter, Expr stride, Expr dilation, bool lower)
+        {
+            var effectiveFilterSize = ((filter - 1) * dilation) + 1;
+            var padding = F.Math.Max(0, ((outputSize - 1) * stride) + effectiveFilterSize - inputSize);
+            var before = F.Tensors.Cast(padding / 2, DataTypes.Int32);
+            var after = F.Tensors.Cast(padding - (padding / 2), DataTypes.Int32);
+            if (lower)
+            {
+                return new[] { F.Math.Max(before, after), F.Math.Min(before, after) };
+            }
+
+            return new[] { before, after };
         }
     }
 }

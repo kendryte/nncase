@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Xml.Schema;
@@ -16,7 +16,7 @@ namespace Nncase.Importer
             var mean = GetFloatAttribute(op, "mean", 0.0f);
             var scale = GetFloatAttribute(op, "scale", 1.0f);
             var seed = GetFloatAttribute(op, "seed", float.NaN);
-            var shape = Tensor.FromSpan<long>(GetIntsAttribute(op, "shape"));
+            var shape = Tensor.From<long>(GetIntsAttribute(op, "shape"));
             return F.Random.Normal(GetDataType(dtype), mean, scale, seed, shape);
         }
 
@@ -39,7 +39,7 @@ namespace Nncase.Importer
             var high = GetFloatAttribute(op, "high", 1.0f);
             var low = GetFloatAttribute(op, "low", 0.0f);
             var seed = GetFloatAttribute(op, "seed", float.NaN);
-            var shape = Tensor.FromSpan<long>(GetIntsAttribute(op, "shape"));
+            var shape = Tensor.From<long>(GetIntsAttribute(op, "shape"));
             return F.Random.Uniform(GetDataType(dtype), high, low, seed, shape);
         }
 

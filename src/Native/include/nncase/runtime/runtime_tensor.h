@@ -55,10 +55,6 @@ NNCASE_API bool operator!=(const runtime_tensor &lhs,
                            const runtime_tensor &rhs) noexcept;
 
 namespace host_runtime_tensor {
-using runtime::map_access_t::map_none;
-using runtime::map_access_t::map_read;
-using runtime::map_access_t::map_read_write;
-using runtime::map_access_t::map_write;
 
 typedef enum memory_pool_ {
     pool_shared_first,

@@ -27,3 +27,11 @@ result<host_buffer_slice> buffer_slice::as_host() const noexcept {
     checked_try_var(host_buffer, buffer_.as<host_buffer_t>());
     return ok(host_buffer_slice(host_buffer, start_, length_));
 }
+
+result<void>
+buffer_slice::copy_to(const buffer_slice &dest, datatype_t datatype,
+                      const dims_t &shape, const strides_t &src_strides,
+                      const strides_t &dest_strides) const noexcept {
+    return buffer()->copy_to(dest.buffer(), start(), dest.start(), datatype,
+                             shape, src_strides, dest_strides);
+}

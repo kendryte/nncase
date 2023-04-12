@@ -1,6 +1,7 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using OrtKISharp;
@@ -10,7 +11,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="ReverseSequence"/>.
 /// </summary>
-public class ReverseSequenceEvaluator : IEvaluator<ReverseSequence>, ITypeInferencer<ReverseSequence>
+public class ReverseSequenceEvaluator : IEvaluator<ReverseSequence>, ITypeInferencer<ReverseSequence>, ICostEvaluator<ReverseSequence>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, ReverseSequence random)
@@ -27,6 +28,18 @@ public class ReverseSequenceEvaluator : IEvaluator<ReverseSequence>, ITypeInfere
     {
         var input = context.CheckArgumentType<TensorType>(target, ReverseSequence.Input);
         return Visit(context, target, input);
+    }
+
+    /// <inheritdoc/>
+    public Cost Visit(ICostEvaluateContext context, ReverseSequence target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, ReverseSequence.Input);
+        var returnType = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType),
+        };
     }
 
     private IRType Visit(ITypeInferenceContext context, ReverseSequence target, TensorType input)

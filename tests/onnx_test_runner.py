@@ -114,7 +114,17 @@ class OnnxTestRunner(TestRunner):
 
         def to_dim_value(d, default_d):
             if d.dim_value == 0:
-                return self.shape_vars.get(d.dim_param, default_d)
+                if len(self.shape_vars):
+                    # we should eval dim_param instead of get var value
+                    # e.g. dim_param = dec_len - 1
+                    return eval(f"{d.dim_param}", self.shape_vars)
+                else:
+                    # if not set shape vars, then return default d
+                    # if it has multi input that all of them have var, must set shape var
+                    # e.g.
+                    # input0: [8,24,dec_len-1]
+                    # input1: [8,dec_len-1,24]
+                    return default_d
             else:
                 return d.dim_value
 
@@ -128,6 +138,7 @@ class OnnxTestRunner(TestRunner):
             input_dict['name'] = e.name
             input_dict['dtype'] = onnx.mapping.TENSOR_TYPE_TO_NP_TYPE[onnx_type.elem_type]
             shape = translate_shape(onnx_type.shape.dim, self.default_shape)
+            input_dict['shape'] = shape
             input_dict['model_shape'] = shape
             self.inputs.append(input_dict)
             self.calibs.append(copy.deepcopy(input_dict))
@@ -166,7 +177,7 @@ class OnnxTestRunner(TestRunner):
         input_dict = {}
         for input in self.inputs:
             input_dict[input['name']] = self.transform_input(
-                self.data_pre_process(input['data']), "float32", "CPU")
+                self.data_pre_process(input['data']), "float32", "CPU")[0]
 
         outputs = sess.run(None, input_dict)
         i = 0
@@ -175,7 +186,8 @@ class OnnxTestRunner(TestRunner):
             text_file = os.path.join(case_dir, f'cpu_result_{i}.txt')
             self.output_paths.append((bin_file, text_file))
             output.tofile(bin_file)
-            self.totxtfile(text_file, output)
+            if not test_utils.in_ci:
+                self.totxtfile(text_file, output)
             i += 1
 
     def import_model(self, compiler, model_content, import_options):

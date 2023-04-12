@@ -1,8 +1,9 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
-using Autofac;
+using DryIoc;
 using Nncase.Evaluator.K210;
+using Nncase.Hosting;
 using Nncase.Targets;
 
 namespace Nncase;
@@ -10,14 +11,13 @@ namespace Nncase;
 /// <summary>
 /// K210 module.
 /// </summary>
-public class K210Module : Module
+internal sealed class K210Module : IApplicationPart
 {
-    /// <inheritdoc/>
-    protected override void Load(ContainerBuilder builder)
+    public void ConfigureServices(IRegistrator registrator)
     {
-        builder.RegisterType<K210Target>().AsImplementedInterfaces().SingleInstance();
-        builder.RegisterType<FakeKPUConv2DEvaluator>().AsImplementedInterfaces();
-        builder.RegisterType<FakeKPUDownloadEvaluator>().AsImplementedInterfaces();
-        builder.RegisterType<FakeKPUUploadEvaluator>().AsImplementedInterfaces();
+        registrator.Register<ITarget, K210Target>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<FakeKPUConv2DEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<FakeKPUDownloadEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<FakeKPUUploadEvaluator>(reuse: Reuse.Singleton);
     }
 }

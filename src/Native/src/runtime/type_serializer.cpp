@@ -81,7 +81,7 @@ result<datatype_t> runtime::deserialize_datatype(span_reader &sr) noexcept {
         // prim types
     default: {
         if (typecode >= dt_boolean && typecode <= dt_bfloat16) {
-            return ok<datatype_t>(prim_type_t(std::in_place, typecode));
+            return datatype_t::from_typecode(typecode);
         } else {
             return err(std::errc::invalid_argument);
         }

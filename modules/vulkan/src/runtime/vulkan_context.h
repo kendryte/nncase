@@ -18,39 +18,45 @@
 
 BEGIN_NS_NNCASE_RT_MODULE(vulkan)
 
-template <class T>
-struct select_options
-{
+template <class T> struct select_options {
     T requried;
     T preferred;
     T not_preferred;
 };
 
-class vulkan_context
-{
-public:
+class vulkan_context {
+  public:
     ~vulkan_context();
 
     vk::Instance instance() const noexcept { return instance_; }
-    vk::PhysicalDevice physical_device() const noexcept { return physical_device_; }
+    vk::PhysicalDevice physical_device() const noexcept {
+        return physical_device_;
+    }
     vk::Device device() const noexcept { return device_; }
-    uint32_t compute_queue_index() const noexcept { return compute_queue_index_; }
+    uint32_t compute_queue_index() const noexcept {
+        return compute_queue_index_;
+    }
     vk::Queue compute_queue() const noexcept { return compute_queue_; }
 
     static result<vulkan_context *> get() noexcept;
 
-private:
+  private:
     result<void> initialize_vulkan() noexcept;
     result<void> initialize_vulkan_instance() noexcept;
     result<void> initialize_vulkan_device() noexcept;
 
     result<vk::PhysicalDevice> select_physical_device() noexcept;
-    result<uint32_t> select_queue_family(const std::vector<vk::QueueFamilyProperties> &families, const select_options<vk::QueueFlagBits> options) noexcept;
-    result<size_t> select_memory_type(const vk::PhysicalDeviceMemoryProperties &properties, const select_options<vk::MemoryPropertyFlagBits> &options, size_t required_size) noexcept;
+    result<uint32_t> select_queue_family(
+        const std::vector<vk::QueueFamilyProperties> &families,
+        const select_options<vk::QueueFlagBits> options) noexcept;
+    result<size_t> select_memory_type(
+        const vk::PhysicalDeviceMemoryProperties &properties,
+        const select_options<vk::MemoryPropertyFlagBits> &options,
+        size_t required_size) noexcept;
 
     void free_vulkan_resources() noexcept;
 
-private:
+  private:
     vk::Instance instance_;
     vk::PhysicalDevice physical_device_;
     vk::Device device_;

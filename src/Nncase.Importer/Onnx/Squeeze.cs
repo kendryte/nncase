@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using Nncase.IR;
@@ -19,14 +19,14 @@ namespace Nncase.Importer
         private Expr SqueezeV11(in NodeProto op)
         {
             var input = GetInputExpr(op, 0);
-            var axes = GetOptionIntsAttribute(op, "axes").Or(new long[] { });
+            var axes = GetOptionIntsAttribute(op, "axes").Or(System.Array.Empty<long>());
             return Squeeze(input, axes);
         }
 
         private Expr SqueezeV13(in NodeProto op)
         {
             var input = GetInputExpr(op, 0);
-            var axes = GetOptionInputExpr(op, 1, Tensor.FromSpan<long>(new long[] { }));
+            var axes = GetOptionInputExpr(op, 1, Tensor.From<long>(System.Array.Empty<long>()));
             return Squeeze(input, axes);
         }
     }

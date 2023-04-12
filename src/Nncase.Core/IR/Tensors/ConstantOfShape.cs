@@ -16,13 +16,13 @@ namespace Nncase.IR.Tensors;
 /// ConstantOfShape expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record ConstantOfShape() : Op
+public sealed partial class ConstantOfShape : Op
 {
     /// <summary>
     /// Gets Shape.
     /// </summary>
     public static readonly ParameterInfo Shape = new(typeof(ConstantOfShape), 0, "shape", IsIntegral() & HasRank(1));
-    
+
     /// <summary>
     /// Gets Value.
     /// </summary>

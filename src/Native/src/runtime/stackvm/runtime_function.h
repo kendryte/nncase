@@ -23,9 +23,10 @@
 
 BEGIN_NS_NNCASE_RT_MODULE(stackvm)
 
-class stackvm_runtime_function : public runtime_function, private op_visitor {
+class stackvm_runtime_function final : public runtime_function,
+                                       private tensor_op_visitor {
   public:
-    using runtime_function::runtime_function;
+    stackvm_runtime_function(runtime_module &rt_module);
 
     stackvm_runtime_module &module() const noexcept;
 
@@ -35,37 +36,61 @@ class stackvm_runtime_function : public runtime_function, private op_visitor {
     result<value_t> invoke_core(gsl::span<value_t> parameters,
                                 value_t return_value) noexcept override;
 
-    using op_visitor::visit;
+    using tensor_op_visitor::visit;
 #include "runtime_function_ops.h"
 
   private:
+    result<void> run(gsl::span<const gsl::byte> text) noexcept;
+
+    result<void> visit(const extcall_op_t &op) noexcept;
+    result<void> visit(const cuscall_op_t &op) noexcept;
+
     uintptr_t pc() const noexcept;
     result<void> pc(uintptr_t value) noexcept;
     result<void> pc_relative(intptr_t offset) noexcept;
-    result<uintptr_t> pop_addr() noexcept;
+    uintptr_t pop_addr() noexcept;
     result<scalar> pop_scalar(typecode_t type) noexcept;
-    result<dims_t> pop_shape() noexcept;
+    dims_t pop_shape() noexcept;
 
     template <class T> result<T> pop_object() noexcept {
-        try_var(var, stack_.pop());
+#ifndef NDEBUG
+        auto var = stack_.pop();
         if (var.is_object())
             return var.as_object().as<T>();
         return err(std::errc::invalid_argument);
+#else
+        return stack_.pop_object().as<T>();
+#endif
     }
 
     result<tensor> pop_tensor() noexcept { return pop_object<tensor>(); }
 
-    result<value_t> pop_value() noexcept { return pop_object<value_t>(); }
+    result<value_t> pop_value() noexcept {
+#ifndef NDEBUG
+        auto var = stack_.pop();
+        if (var.is_object()) {
+            auto o = var.as_object();
+            return !o.empty() ? o.as<value_t>() : ok<value_t>(nullptr);
+        }
 
-    template <class T> result<T> pop_addr() noexcept {
-        try_var(addr, pop_addr());
+        return err(std::errc::invalid_argument);
+#else
+        auto o = stack_.pop_object();
+        return !o.empty() ? o.as<value_t>() : ok<value_t>(nullptr);
+#endif
+    }
+
+    template <class T> T pop_addr() noexcept {
+        auto addr = pop_addr();
         return reinterpret_cast<T>(addr);
     }
 
   private:
     gsl::span<const gsl::byte> text_;
+    const gsl::byte *pc_;
     evaluate_stack stack_;
     call_frames frames_;
+    span_reader reader_;
 };
 
 END_NS_NNCASE_RT_MODULE

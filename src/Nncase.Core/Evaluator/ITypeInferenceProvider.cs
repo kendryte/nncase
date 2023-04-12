@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -24,6 +27,7 @@ public interface ITypeInferenceProvider
     /// </summary>
     /// <param name="op">Target operator.</param>
     /// <param name="context">Inference context.</param>
+    /// <param name="inferencer_cache">Inferencer cache.</param>
     /// <returns>Inference result.</returns>
     IRType InferenceOp(Op op, ITypeInferenceContext context, Dictionary<Type, ITypeInferencer> inferencer_cache);
 }

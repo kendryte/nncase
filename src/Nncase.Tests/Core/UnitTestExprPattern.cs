@@ -1,10 +1,13 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using Nncase.IR;
 using Nncase.IR.Math;
+using Nncase.Passes;
 using Nncase.PatternMatch;
-using Nncase.Transform;
 using Xunit;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.Tensors;
@@ -14,7 +17,6 @@ using static Nncase.PatternMatch.F.Tensors;
 using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Tests.CoreTest;
-
 
 public class UnitTestExprPattern
 {
@@ -33,7 +35,7 @@ public class UnitTestExprPattern
     [Fact]
     public void TestVarPattern()
     {
-        Var e = new Var("x", AnyType.Default);
+        var e = new Var("x", AnyType.Default);
         Assert.True(e.InferenceType());
         Pattern ep = e;
         Assert.IsType<VarPattern>(ep);
@@ -43,7 +45,7 @@ public class UnitTestExprPattern
     [Fact]
     public void TestTensorConstantPattern()
     {
-        var con = (Const)(1.1f);
+        var con = (Const)1.1f;
         Assert.True(con.InferenceType());
         Pattern cp1 = con;
         Assert.IsType<TensorConstPattern>(cp1);
@@ -61,8 +63,8 @@ public class UnitTestExprPattern
     [Fact]
     public void TestTensorConstantPatternEqual()
     {
-        TensorConstPattern cp1 = (TensorConstPattern)1;
-        TensorConstPattern cp2 = (TensorConstPattern)1;
+        var cp1 = (TensorConstPattern)1;
+        var cp2 = (TensorConstPattern)1;
         Dictionary<TensorConstPattern, int> d = new();
         d.Add(cp1, 1);
         Assert.NotEqual(cp1, cp2);
@@ -103,12 +105,12 @@ public class UnitTestExprPattern
         var c = wc1 + wc2;
         Assert.IsType<CallPattern>(c);
         Assert.IsType<OpPattern<Binary>>(c.Target);
-        Assert.IsType<ExprPattern>(c.Parameters[0]);
-        Assert.IsType<ExprPattern>(c.Parameters[1]);
+        Assert.IsType<ExprPattern>(c.Arguments[0]);
+        Assert.IsType<ExprPattern>(c.Arguments[1]);
 
         CallPattern c2 = IsBinary(BinaryOp.Add, wc1, wc2);
 
-        CallPattern c3 = IsBinary(x => x.BinaryOp is (BinaryOp.Div or BinaryOp.Sub), wc1, wc2);
+        CallPattern c3 = IsBinary(x => x.BinaryOp is BinaryOp.Div or BinaryOp.Sub, wc1, wc2);
 
         Assert.True(CompilerServices.TryMatchRoot(e, c, out _));
         Assert.True(CompilerServices.TryMatchRoot(e, c2, out _));
@@ -126,10 +128,9 @@ public class UnitTestExprPattern
         Assert.IsType<ExprPattern>(fp.Parameters[0]);
         Assert.IsType<ExprPattern>(fp.Parameters[1]);
         Assert.IsType<CallPattern>(fp.Body);
-        Assert.IsType<ExprPattern>(((CallPattern)fp.Body).Parameters[0]);
-        Assert.IsType<ExprPattern>(((CallPattern)fp.Body).Parameters[1]);
-
-        var fp2 = new FunctionPattern(c, IsVArgs(new[] { wc1, wc2 }), null);
+        Assert.IsType<ExprPattern>(((CallPattern)fp.Body).Arguments[0]);
+        Assert.IsType<ExprPattern>(((CallPattern)fp.Body).Arguments[1]);
+        _ = new FunctionPattern(c, IsVArgs(new[] { wc1, wc2 }), null);
         Assert.IsType<ExprPattern>(fp.Parameters[0]);
         Assert.IsType<ExprPattern>(fp.Parameters[1]);
     }
@@ -139,12 +140,12 @@ public class UnitTestExprPattern
     {
         var wc1 = IsWildcard();
         var wc2 = IsWildcard();
-        var t = IsTuple(new[] { wc1, wc2 });
+        var t = PatternMatch.Utility.IsTuple(null, new[] { wc1, wc2 });
         Assert.IsType<TuplePattern>(t);
         Assert.IsType<ExprPattern>(t.Fields[0]);
         Assert.IsType<ExprPattern>(t.Fields[1]);
 
-        var t2 = IsTuple(IsVArgs(new[] { wc1, wc2 }));
+        var t2 = PatternMatch.Utility.IsTuple(IsVArgs(new[] { wc1, wc2 }));
         Assert.IsType<TuplePattern>(t2);
         Assert.IsType<ExprPattern>(t2.Fields[0]);
         Assert.IsType<ExprPattern>(t2.Fields[1]);
@@ -187,13 +188,13 @@ public class UnitTestExprPattern
     public void TestVArgsPatternFunc()
     {
         var pat = IsTuple(IsVArgsRepeat(() => IsConst()));
-        IR.Tuple expr1 = new IR.Tuple(1, 2, 3, 4, 5, 6);
-        IR.Tuple expr2 = new IR.Tuple(new Var("x"), 2, 3, 4, 5, 6);
+        var expr1 = new IR.Tuple(1, 2, 3, 4, 5, 6);
+        var expr2 = new IR.Tuple(new Var("x"), 2, 3, 4, 5, 6);
 
         Assert.True(CompilerServices.TryMatchRoot(expr1, pat, out _));
-        Assert.Equal(pat.Fields.Count, expr1.Fields.Count);
+        Assert.Equal(pat.Fields.Count, expr1.Fields.Length);
         Assert.False(CompilerServices.TryMatchRoot(expr2, pat, out _));
-        Assert.Equal(pat.Fields.Count, expr2.Fields.Count);
+        Assert.Equal(pat.Fields.Count, expr2.Fields.Length);
     }
 
     [Fact]
@@ -202,8 +203,8 @@ public class UnitTestExprPattern
         var lhs = IsWildcard();
         var rhs = IsWildcard();
         var is_op_call = IsCall(IsWildcard(), new[] { lhs, rhs });
-        Const x = (Const)1;
-        Const y = (Const)2;
+        var x = (Const)1;
+        var y = (Const)2;
         var z1 = x + y;
         var z2 = x * y;
         z1.InferenceType();
@@ -213,8 +214,8 @@ public class UnitTestExprPattern
 
         var is_op_call2 = IsCall(IsWildcard(), IsVArgs(new[] { lhs, rhs }));
 
-        Assert.IsType<ExprPattern>(is_op_call2.Parameters[0]);
-        Assert.IsType<ExprPattern>(is_op_call2.Parameters[1]);
+        Assert.IsType<ExprPattern>(is_op_call2.Arguments[0]);
+        Assert.IsType<ExprPattern>(is_op_call2.Arguments[1]);
     }
 
     [Fact]
@@ -259,10 +260,11 @@ public class UnitTestExprPattern
     [Fact]
     public void TestBuildExprFromPattern()
     {
-        ConstPattern c0 = IsConst(), c1 = IsConst();
+        ConstPattern c0 = IsConst();
+        _ = IsConst();
         var x = IsWildcard();
-        var pat = x + c0;
-        var res = x - c0;
-        var ped = Equal(c0, 0);
+        _ = x + c0;
+        _ = x - c0;
+        _ = Equal(c0, 0);
     }
 }

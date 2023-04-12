@@ -28,7 +28,7 @@ public sealed class TypeInferenceInterruptException : ApplicationException
     /// Initializes a new instance of the <see cref="TypeInferenceInterruptException"/> class.
     /// </summary>
     /// <param name="reasonType">Reason type.</param>
-    /// <param name="innerException"></param>
+    /// <param name="innerException">Inner exception.</param>
     public TypeInferenceInterruptException(IRType reasonType, Exception? innerException)
         : base(null, innerException)
     {

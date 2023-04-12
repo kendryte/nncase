@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -15,7 +15,7 @@ namespace Nncase.IR.NN;
 /// OneHot expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record OneHot(OneHotMode OneHotMode) : Op
+public sealed partial class OneHot : Op
 {
     /// <summary>
     /// Gets input.
@@ -36,4 +36,9 @@ public sealed record OneHot(OneHotMode OneHotMode) : Op
     /// Gets axis.
     /// </summary>
     public static readonly ParameterInfo Axis = new(typeof(OneHot), 3, "axis");
+
+    public OneHotMode OneHotMode { get; }
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => $"OneHotMode.{OneHotMode}";
 }

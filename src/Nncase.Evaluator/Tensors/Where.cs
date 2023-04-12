@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -23,16 +23,18 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
     {
         var xt = context.GetArgumentValueAsTensor(where, Where.X);
         var yt = context.GetArgumentValueAsTensor(where, Where.Y);
-        if (xt.Dimensions[0] == 0 && yt.Dimensions[0] == 0 && xt.ElementType == DataTypes.Float32)
+        if (where.IsTfWhere)
         {
             var condTensor = context.GetArgumentValueAsTensor<bool>(where, Where.Cond);
             if (condTensor.Rank > 1)
             {
                 throw new NotImplementedException();
             }
+
             var result = condTensor.Select((b, i) => (b, i)).Where(t => t.b).Select(t => (long)t.i).ToArray();
-            return Value.FromTensor(Tensor.FromSpan<long>(result, new Shape(result.Length, condTensor.Rank)));
+            return Value.FromTensor(Tensor.From<long>(result, new Shape(result.Length, condTensor.Rank)));
         }
+
         var cond = context.GetOrtArgumentValue(where, Where.Cond);
         var x = context.GetOrtArgumentValue(where, Where.X);
         var y = context.GetOrtArgumentValue(where, Where.Y);
@@ -45,20 +47,15 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
         var cond = context.CheckArgumentType<TensorType>(target, Where.Cond);
         var x = context.CheckArgumentType<TensorType>(target, Where.X);
         var y = context.CheckArgumentType<TensorType>(target, Where.Y);
-        if (IsTFWhere(x, y))
+        if (target.IsTfWhere)
         {
-            // dim[0] = count_nonzero(cond)
             return new TensorType(DataTypes.Int64, new Shape(Dimension.Unknown, cond.Shape.Rank));
         }
+
         return TypeInference.BroadcastType(x.DType, cond, x, y);
     }
 
-    private bool IsTFWhere(TensorType x, TensorType y)
-    {
-        return x.Shape[0] == 0 && y.Shape[0] == 0 && x.DType == DataTypes.Float32;
-    }
-
-    public Cost? Visit(ICostEvaluateContext context, Where target)
+    public Cost Visit(ICostEvaluateContext context, Where target)
     {
         var cond = context.GetArgumentType<TensorType>(target, Where.Cond);
         var x = context.GetArgumentType<TensorType>(target, Where.X);
@@ -70,5 +67,10 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
             [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(cond, CostUtility.GetCPUCyclesOfCompare()),
         };
+    }
+
+    private bool IsTFWhere(TensorType x, TensorType y)
+    {
+        return x.Shape[0] == 0 && y.Shape[0] == 0 && x.DType == DataTypes.Float32;
     }
 }

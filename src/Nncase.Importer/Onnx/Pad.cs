@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -23,7 +23,7 @@ namespace Nncase.Importer
             var input = GetInputExpr(op, 0);
             var padMode = GetPadMode(op);
             var paddings = GetIntsAttribute(op, "pads");
-            var pads = Tensor.FromSpan<long>(paddings, new[]{2, 4});
+            var pads = Tensor.From<long>(paddings, new[] { 2, 4 });
             var value = GetFloatAttribute(op, "value", 0f);
             return Pad(input, ToNncasePadFormat(pads), padMode, value);
         }
@@ -38,7 +38,7 @@ namespace Nncase.Importer
             // GetInputExpr will get a Tensor with shape [1], but padValue is a scalar
             var padValue = GetOptionInputExpr(op, 2)
                 .Match(
-                    x => SliceIndex(x, 0),
+                    x => SliceIndex(Stack(new IR.Tuple(x), 0), 0),
                     () => 0f);
             return Pad(input, ToNncasePadFormat(pads), padMode, padValue);
         }

@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -18,34 +18,26 @@ public sealed record OrPattern(Pattern ConditionA, Pattern ConditionB, string? N
     : Pattern(Name)
 {
     /// <inheritdoc/>
-    public override bool MatchLeaf(object input) => true;
+    public override bool MatchLeaf(Expr input) => true;
 }
-
 
 public static partial class Utility
 {
-    private static OrPattern IsAltImpl(string? name, Pattern condition_a, Pattern condition_b)
-        => new OrPattern(condition_a, condition_b, name);
-
     /// <summary>
-    /// create or pattern
+    /// create or pattern.
     /// </summary>
-    /// <param name="name"></param>
-    /// <param name="condition_a"></param>
-    /// <param name="condition_b"></param>
-    /// <returns></returns>
     public static OrPattern IsAlt(string? name, Pattern condition_a, Pattern condition_b)
         => IsAltImpl(name, condition_a, condition_b);
-
 
     /// <summary>
     /// create or pattern without name.
     /// </summary>
-    /// <param name="patterns"></param>
-    /// <returns></returns>
     public static OrPattern IsAlt(params Pattern[] patterns)
-        => (OrPattern)(patterns
+        => (OrPattern)patterns
             .Aggregate(
                 (pattern, pattern1)
-                    => IsAltImpl(null, pattern, pattern1)));
+                    => IsAltImpl(null, pattern, pattern1));
+
+    private static OrPattern IsAltImpl(string? name, Pattern condition_a, Pattern condition_b)
+        => new OrPattern(condition_a, condition_b, name);
 }

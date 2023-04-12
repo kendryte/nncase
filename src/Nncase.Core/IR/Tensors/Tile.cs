@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -16,7 +16,7 @@ namespace Nncase.IR.Tensors;
 /// Stack expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Tile() : Op
+public sealed partial class Tile : Op
 {
     /// <summary>
     /// Gets input\.
@@ -26,5 +26,5 @@ public sealed record Tile() : Op
     /// <summary>
     /// Gets repeats.
     /// </summary>
-    public static readonly ParameterInfo Repeats = new(typeof(Tile), 1, "repeats");
+    public static readonly ParameterInfo Repeats = new(typeof(Tile), 1, "repeats", HasRank(1) & HasDataType(DataTypes.Int64));
 }

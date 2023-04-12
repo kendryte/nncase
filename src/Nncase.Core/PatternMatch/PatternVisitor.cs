@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -31,7 +31,7 @@ public abstract class PatternVisitor<TExprPatternResult, TTypeResult> : PatternF
         if (!_patternMemo.TryGetValue(pattern, out var result))
         {
             Visit(pattern.Target);
-            foreach (var param in pattern.Parameters)
+            foreach (var param in pattern.Arguments)
             {
                 Visit(param);
             }
@@ -84,12 +84,6 @@ public abstract class PatternVisitor<TExprPatternResult, TTypeResult> : PatternF
     {
         if (!_patternMemo.TryGetValue(pattern, out var result))
         {
-            foreach (var param in pattern.Parameters)
-            {
-                Visit(param);
-            }
-
-            Visit(pattern.Body);
             result = VisitLeaf(pattern);
             _patternMemo.Add(pattern, result);
         }

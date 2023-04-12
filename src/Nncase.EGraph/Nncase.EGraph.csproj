@@ -1,42 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
     <RootNamespace>Nncase</RootNamespace>
-    <Nullable>enable</Nullable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <CodeAnalysisRuleSet>$(SolutionDir)/tools/StyleCopAnalyzers.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Transform\Rules\**" />
-    <EmbeddedResource Remove="Transform\Rules\**" />
-    <None Remove="Transform\Rules\**" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="LanguageExt.Core" Version="4.0.3" />
-    <PackageReference Include="NetFabric.Hyperlinq" Version="3.0.0-beta48" />
-    <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.354">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="ValueTaskSupplement" Version="1.1.0" />
-    <PackageReference Include="GiGraph.Dot" Version="2.0.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <AdditionalFiles Include="$(SolutionDir)/tools/stylecop.json" />
+    <PackageReference Include="NetFabric.Hyperlinq" />
+    <PackageReference Include="GiGraph.Dot" />
+    <PackageReference Include="Singulink.Collections.Weak" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Nncase.Core\Nncase.Core.csproj" />
     <ProjectReference Include="..\Nncase.Evaluator\Nncase.Evaluator.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Remove="Graphviz" />
-    <None Remove="QuikGraph.Graphviz" />
-    <None Remove="GiGraph.Dot" />
   </ItemGroup>
 </Project>

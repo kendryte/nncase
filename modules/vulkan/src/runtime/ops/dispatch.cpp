@@ -18,8 +18,7 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::vulkan;
 
-result<void> vulkan_runtime_function::visit(const dispatch_op_t &op) noexcept
-{
+result<void> vulkan_runtime_function::visit(const dispatch_op_t &op) noexcept {
     cmd_buffer_.dispatch(op.x, op.y, op.z);
     return ok();
 }

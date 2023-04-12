@@ -48,9 +48,11 @@ class NNCASE_API tensor_node : public value_node {
     /** @brief Gets whether buffer is contiguous. */
     bool is_contiguous() const noexcept;
 
-    result<void> copy_from(tensor src) const noexcept;
+    result<void> copy_from(tensor src) noexcept;
     result<void> copy_to(tensor dest) const noexcept;
     result<tensor> to_host() noexcept;
+
+    result<void> copy_to(value_t dest) const noexcept override;
 
   private:
     datatype_t dtype_;

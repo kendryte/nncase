@@ -22,55 +22,15 @@ using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 
 result<void>
-stackvm_runtime_function::visit(NNCASE_UNUSED const nop_op_t &op) noexcept {
-    return ok();
-}
-
-result<void> stackvm_runtime_function::visit(const br_op_t &op) noexcept {
-    return pc_relative(op.target);
-}
-
-result<void> stackvm_runtime_function::visit(const br_true_op_t &op) noexcept {
-    try_var(value, stack_.pop());
-    if (value.as_i())
-        return pc_relative(op.target);
-    return ok();
-}
-
-result<void> stackvm_runtime_function::visit(const br_false_op_t &op) noexcept {
-    try_var(value, stack_.pop());
-    if (!value.as_i())
-        return pc_relative(op.target);
-    return ok();
-}
-
-result<void>
-stackvm_runtime_function::visit(NNCASE_UNUSED const ret_op_t &op) noexcept {
-    try_var(ret_addr, frames_.pop());
-    if (frames_.empty()) {
-        interrupted_ = true;
-        return ok();
-    }
-
-    return pc(ret_addr);
-}
-
-result<void>
-stackvm_runtime_function::visit(NNCASE_UNUSED const call_op_t &op) noexcept {
-    return err(std::errc::not_supported);
-}
-
-result<void>
-stackvm_runtime_function::visit(NNCASE_UNUSED const ecall_op_t &op) noexcept {
-    return err(std::errc::not_supported);
-}
-
-result<void>
 stackvm_runtime_function::visit(NNCASE_UNUSED const extcall_op_t &op) noexcept {
-    try_var(module_id, stack_.pop());
-    try_var(func_id, stack_.pop());
-    try_var(mod, module().interp().find_module_by_id(module_id.as_u()));
-    try_var(func, mod->find_function_by_id(func_id.as_u()));
+    auto module_id = stack_.pop().as_u();
+    auto func_id = stack_.pop().as_u();
+    try_var(mod, module().interp().find_module_by_id(module_id));
+    try_var(func, mod->find_function_by_id(func_id));
+#ifdef NNCASE_DUMP_MANAGER
+    auto dump_manager = module().interp().dump_manager();
+    dump_manager->dump_op("extcall");
+#endif
 
     std::vector<value_t> params(op.args);
     for (size_t i = 0; i < op.args; i++) {
@@ -94,14 +54,19 @@ stackvm_runtime_function::visit(NNCASE_UNUSED const extcall_op_t &op) noexcept {
         }
 
         try_var(retval, func->invoke(params));
-        if (outputs.size() == 1) {
-            return stack_.push(outputs[0]);
-        }
-        return stack_.push(tuple(std::in_place, std::move(outputs)));
+        if (outputs.size() == 1)
+            stack_.push(outputs[0]);
+        else
+            stack_.push(tuple(std::in_place, std::move(outputs)));
     } else {
         try_var(retval, func->invoke(params));
-        return stack_.push(retval);
+        stack_.push(retval);
     }
+
+#ifdef NNCASE_DUMP_MANAGER
+    dump_manager->dump_output(stack_.peek().as_object().as<value_t>().unwrap());
+#endif
+    return ok();
 }
 
 result<void>
@@ -128,15 +93,6 @@ stackvm_runtime_function::visit(NNCASE_UNUSED const cuscall_op_t &op) noexcept {
 #ifdef NNCASE_DUMP_MANAGER
     dump_manager->dump_output(retval);
 #endif
-    return stack_.push(retval);
-}
-
-result<void>
-stackvm_runtime_function::visit(NNCASE_UNUSED const throw_op_t &op) noexcept {
-    return err(std::errc::not_supported);
-}
-
-result<void>
-stackvm_runtime_function::visit(NNCASE_UNUSED const break_op_t &op) noexcept {
-    return err(std::errc::not_supported);
+    stack_.push(retval);
+    return ok();
 }

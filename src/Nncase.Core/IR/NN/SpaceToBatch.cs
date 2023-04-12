@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -16,7 +16,7 @@ namespace Nncase.IR.NN;
 /// SpaceToBatch expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record SpaceToBatch() : Op
+public sealed partial class SpaceToBatch : Op
 {
     /// <summary>
     /// Gets input.
@@ -26,12 +26,10 @@ public sealed record SpaceToBatch() : Op
     /// <summary>
     /// Gets block shape.
     /// </summary>
-    public static readonly ParameterInfo BlockShape = new(typeof(SpaceToBatch), 1, "block_shape",
-      HasRank(1) & IsIntegral());
+    public static readonly ParameterInfo BlockShape = new(typeof(SpaceToBatch), 1, "block_shape", HasRank(1) & IsIntegral());
 
     /// <summary>
     /// Gets paddings.
     /// </summary>
-    public static readonly ParameterInfo Paddings = new(typeof(SpaceToBatch), 2, "paddings",
-      HasShape(new[] { Dimension.Unknown, 2 }) & IsIntegral());
+    public static readonly ParameterInfo Paddings = new(typeof(SpaceToBatch), 2, "paddings", HasShape(new[] { Dimension.Unknown, 2 }) & IsIntegral());
 }

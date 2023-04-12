@@ -16,7 +16,7 @@ namespace Nncase.IR.NN;
 /// Hardmax expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Hardmax() : Op
+public sealed partial class Hardmax : Op
 {
     /// <summary>
     /// Gets input.

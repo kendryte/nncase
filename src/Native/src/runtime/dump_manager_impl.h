@@ -1,11 +1,11 @@
 #pragma once
 #include <fstream>
 #include <iostream>
-#include <nncase/runtime/util.h>
 #include <nncase/runtime/datatypes.h>
 #include <nncase/runtime/dump_manager.h>
 #include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/stackvm/opcode.h>
+#include <nncase/runtime/util.h>
 #include <nncase/tensor.h>
 #include <nncase/type.h>
 #include <nncase/value.h>
@@ -20,8 +20,9 @@ template <typename F> void dump_append(dump_manager &dump_manager_, F &&f) {
 template <typename F>
 void dump_append(dump_manager &dump_manager_, F &&f, const std::string &path) {
     auto stream = dump_manager_.get_stream(path);
-    f(stream);
     dump_manager_.set_append(true);
+    f(stream);
+    dump_manager_.set_append(false);
     stream.close();
 }
 

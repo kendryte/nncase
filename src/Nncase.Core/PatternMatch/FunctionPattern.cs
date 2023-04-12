@@ -1,10 +1,11 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 
 namespace Nncase.PatternMatch;
@@ -23,7 +24,7 @@ public sealed record FunctionPattern(Pattern Body, VArgsPattern Parameters, stri
     /// <param name="function"><see cref="Function"/> expression.</param>
     /// <param name="name">name.</param>
     public FunctionPattern(Function function, string? name)
-        : this(function.Body, new VArgsPattern(function.Parameters.Select(x => (Pattern)x).ToArray(), null), name)
+        : this(function.Body, new VArgsPattern(function.Parameters.AsValueEnumerable().Select(x => (Pattern)x).ToArray(), null), name)
     {
     }
 
@@ -44,13 +45,15 @@ public static partial class Utility
     /// <summary>
     /// Create the function pattern.
     /// </summary>
+    /// <param name="name">name.</param>
     /// <param name="body">body.</param>
     /// <param name="parameters">params.</param>
-    /// <param name="name">name.</param>
     /// <returns>FunctionPattern .</returns>
     public static FunctionPattern IsFunction(string? name, Pattern body, VArgsPattern parameters) => new FunctionPattern(body, parameters, name);
 
     public static FunctionPattern IsFunction(Pattern body, VArgsPattern parameters) => IsFunction(null, body, parameters);
+
     public static FunctionPattern IsFunction(string? name, Pattern body, params Pattern[] parameters) => IsFunction(name, body, IsVArgs(parameters));
+
     public static FunctionPattern IsFunction(Pattern body, params Pattern[] parameters) => IsFunction(null, body, IsVArgs(parameters));
 }

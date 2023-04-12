@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "opt_ops.h"
 #include <nncase/kernels/kernel_utils.h>
-#include <nncase/kernels/stackvm/opt_ops.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/util.h>
 
@@ -32,8 +32,8 @@ void riscv_quantize(const float *CXX_RESTRICT input, TQ *CXX_RESTRICT output,
     for (size_t i = 0; i < count / 2; i++) {
         auto in1 = input[i * 2];
         auto in2 = input[i * 2 + 1];
-        in1 = in1 * scale + bias;
-        in2 = in2 * scale + bias;
+        in1 = in1 / scale + bias;
+        in2 = in2 / scale + bias;
         int32_t out1, out2;
         asm volatile("fcvt.w.s %0, %1, rne" : "=r"(out1) : "f"(in1));
         asm volatile("fcvt.w.s %0, %1, rne" : "=r"(out2) : "f"(in2));
@@ -47,7 +47,7 @@ void riscv_quantize(const float *CXX_RESTRICT input, TQ *CXX_RESTRICT output,
     }
 
     if (count % 2) {
-        auto in = (int32_t)roundf(input[count - 1] * scale + bias);
+        auto in = (int32_t)roundf(input[count - 1] / scale + bias);
         output[count - 1] = kernels::detail::clamp(
             in, (int32_t)std::numeric_limits<TQ>::lowest(),
             (int32_t)std::numeric_limits<TQ>::max());
@@ -62,7 +62,7 @@ result<void> quantize(const float *CXX_RESTRICT input, TQ *CXX_RESTRICT output,
     riscv_quantize(input, output, count, scale, bias);
 #else
     for (size_t i = 0; i < count; i++) {
-        auto qvalue = (int32_t)std::nearbyintf(input[i] * scale + bias);
+        auto qvalue = (int32_t)std::nearbyintf(input[i] / scale + bias);
         output[i] = (TQ)kernels::detail::clamp(
             qvalue, (int32_t)std::numeric_limits<TQ>::lowest(),
             (int32_t)std::numeric_limits<TQ>::max());

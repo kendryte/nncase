@@ -14,41 +14,55 @@ namespace Nncase.IR;
 /// <summary>
 /// Constant of tuple.
 /// </summary>
-public sealed record TupleConst(IRArray<Const> Fields) : Const(new TupleType(Fields.Select(x => x.ValueType))),
-    IReadOnlyList<Const>, ITuple
+public sealed class TupleConst : Const, ITuple, IEquatable<TupleConst?>
 {
+    public TupleConst(TupleValue value)
+        : base(value.Type)
+    {
+        Value = value;
+    }
+
     /// <summary>
-    /// Void type.
+    /// Gets void value.
     /// </summary>
-    public static readonly TupleConst Void = new(ImmutableArray<Const>.Empty);
+    public static TupleConst Void => new(TupleValue.Void);
+
+    public TupleValue Value { get; }
 
     /// <inheritdoc/>
-    public int Count => Fields.Count;
-
-    IReadOnlyList<Expr> ITuple.Fields => Fields;
-
-    Expr IReadOnlyList<Expr>.this[int index] => this[index];
+    public int Count => Value.Count;
 
     /// <summary>
     /// Gets field constant.
     /// </summary>
     /// <param name="index">Index of the field.</param>
     /// <returns>Constant.</returns>
-    public Const this[int index] => Fields[index];
+    public IValue this[int index] => Value[index];
+
+    public static bool operator ==(TupleConst? left, TupleConst? right) => EqualityComparer<TupleConst>.Default.Equals(left, right);
+
+    public static bool operator !=(TupleConst? left, TupleConst? right) => !(left == right);
 
     /// <inheritdoc/>
-    public IEnumerator<Const> GetEnumerator()
+    public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
+        => functor.VisitTupleConst(this, context);
+
+    public TupleConst With(TupleValue? value = null) => new TupleConst(value ?? Value);
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj) => Equals(obj as TupleConst);
+
+    /// <inheritdoc/>
+    public bool Equals(TupleConst? other)
     {
-        return Fields.GetEnumerator();
+        if (ReferenceEquals(this, other))
+        {
+            return true;
+        }
+
+        return other is not null && base.Equals(other) && EqualityComparer<TupleValue>.Default.Equals(Value, other.Value);
     }
 
-    IEnumerator<Expr> IEnumerable<Expr>.GetEnumerator()
-    {
-        return GetEnumerator();
-    }
-
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return GetEnumerator();
-    }
+    /// <inheritdoc/>
+    protected override int GetHashCodeCore() => HashCode.Combine(Value);
 }

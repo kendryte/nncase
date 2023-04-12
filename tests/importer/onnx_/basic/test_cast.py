@@ -62,6 +62,7 @@ op_versions = [
     13
 ]
 
+
 @pytest.mark.parametrize('in_shape,in_type,out_type', in_shapes_in_types_out_types)
 @pytest.mark.parametrize('op_version', op_versions)
 def test_cast(in_shape, in_type, out_type, op_version, request):

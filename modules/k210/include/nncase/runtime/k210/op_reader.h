@@ -19,28 +19,35 @@
 
 BEGIN_NS_NNCASE_RT_MODULE(k210)
 
-class NNCASE_MODULES_K210_API op_visitor
-{
-public:
-    op_visitor() noexcept
-        : reader_({})
-    {
-    }
+class NNCASE_MODULES_K210_API op_visitor {
+  public:
+    op_visitor() noexcept : reader_({}) {}
 
     ~op_visitor() = default;
 
     result<void> visit(gsl::span<const gsl::byte> text) noexcept;
 
-    virtual result<void> visit(NNCASE_UNUSED const kpu_download_options &op) noexcept { return ok(); }
-    virtual result<void> visit(NNCASE_UNUSED const kpu_conv2d_options &op) noexcept { return ok(); }
-    virtual result<void> visit(NNCASE_UNUSED const kpu_upload_options &op) noexcept { return ok(); }
-    virtual result<void> visit(NNCASE_UNUSED const copy_options &op) noexcept { return ok(); }
+    virtual result<void>
+    visit(NNCASE_UNUSED const kpu_download_options &op) noexcept {
+        return ok();
+    }
+    virtual result<void>
+    visit(NNCASE_UNUSED const kpu_conv2d_options &op) noexcept {
+        return ok();
+    }
+    virtual result<void>
+    visit(NNCASE_UNUSED const kpu_upload_options &op) noexcept {
+        return ok();
+    }
+    virtual result<void> visit(NNCASE_UNUSED const copy_options &op) noexcept {
+        return ok();
+    }
 
-protected:
+  protected:
     bool interrupted_;
     span_reader reader_;
 
-private:
+  private:
     result<void> next() noexcept;
 };
 

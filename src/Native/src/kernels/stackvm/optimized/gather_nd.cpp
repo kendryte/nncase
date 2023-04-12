@@ -12,12 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "opt_ops.h"
 #include <cstring>
 #include <nncase/kernels/kernel_utils.h>
-#include <nncase/kernels/stackvm/opt_ops.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/util.h>
-
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -60,7 +59,7 @@ gather_nd_impl(const T *input, T *output, const dims_t &in_shape,
 #ifdef NNCASE_OPENMP
 #pragma omp parallel for num_threads(context.num_threads)
 #endif
-        for (size_t j = 0; j < indices_block_count; ++j) {
+        for (int j = 0; j < indices_block_count; ++j) {
             const auto *indices_ptr = indices + j * indices_list_size;
             auto *out_ptr = output + j * block_size;
             auto *batch_begin_input = input;
@@ -86,15 +85,17 @@ gather_nd_impl(const T *input, T *output, const dims_t &in_shape,
         return integer_cast(indices_type, indices, [&](auto &&indices_value) { \
             return gather_nd_impl(reinterpret_cast<const type *>(input),       \
                                   reinterpret_cast<type *>(output), in_shape,  \
-                                  out_shape, in_strides, out_strides, indices_value, \
-                                  indices_shape, batch_dims, context);         \
+                                  out_shape, in_strides, out_strides,          \
+                                  indices_value, indices_shape, batch_dims,    \
+                                  context);                                    \
         });
 
 result<void>
 optimized::gather_nd(datatype_t type, const gsl::byte *input, gsl::byte *output,
                      const dims_t &in_shape, const dims_t &out_shape,
                      const dims_t &in_strides, const dims_t &out_strides,
-                     datatype_t indices_type, const gsl::byte *indices, const dims_t &indices_shape,
-                     size_t batch_dims, kernel_context &context) noexcept {
+                     datatype_t indices_type, const gsl::byte *indices,
+                     const dims_t &indices_shape, size_t batch_dims,
+                     kernel_context &context) noexcept {
     TYPE_IMPL_SELECT(type, GATHER_ND_IMPL);
 }

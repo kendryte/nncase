@@ -1,18 +1,19 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
-using Autofac;
+using DryIoc;
+using Nncase.Hosting;
+using Nncase.PatternMatch;
 
-namespace Nncase.Transform;
+namespace Nncase.Passes;
 
 /// <summary>
 /// Transform module.
 /// </summary>
-public class TransformModule : Module
+internal class TransformModule : IApplicationPart
 {
-    /// <inheritdoc/>
-    protected override void Load(ContainerBuilder builder)
+    public void ConfigureServices(IRegistrator registrator)
     {
-        builder.RegisterType<RewriteProvider>().AsImplementedInterfaces().SingleInstance();
+        registrator.RegisterManyInterface<RewriteProvider>(reuse: Reuse.Singleton);
     }
 }

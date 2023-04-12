@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -16,7 +16,7 @@ namespace Nncase.IR.Tensors;
 /// Shape expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record GetItem() : Op
+public sealed partial class GetItem : Op
 {
     /// <summary>
     /// Gets input.

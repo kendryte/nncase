@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -28,19 +28,24 @@ public sealed partial class ExpandEvaluator : IEvaluator<Expand>, ITypeInference
         return OrtKI.Expand(input, shape).ToValue();
     }
 
-    private IRType Visit(ITypeInferenceContext context, Expand target, TensorType Input, TensorType Shape)
-    {
-        var shape_expr = context.GetArgument(target, Expand.Shape);
-        if (shape_expr is TensorConst constShape)
-            return Input with { Shape = new Shape(constShape.Value.Cast<int>()) };
-        else
-            return Input with { Shape = TypeInference.ReshapeTo(Shape) };
-    }
-
-    public Cost? Visit(ICostEvaluateContext context, Expand target)
+    public Cost Visit(ICostEvaluateContext context, Expand target)
     {
         var input = context.GetArgumentType<TensorType>(target, Expand.Input);
         var ret = context.GetReturnType<TensorType>();
+
         return CostUtility.GetBroadcastCost(input, ret);
+    }
+
+    private IRType Visit(ITypeInferenceContext context, Expand target, TensorType input, TensorType shape)
+    {
+        var shape_expr = context.GetArgument(target, Expand.Shape);
+        if (shape_expr is TensorConst constShape)
+        {
+            return input with { Shape = new Shape(constShape.Value.Cast<int>()) };
+        }
+        else
+        {
+            return input with { Shape = TypeInference.ReshapeTo(shape) };
+        }
     }
 }

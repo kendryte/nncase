@@ -49,7 +49,7 @@ internal class StackVMFunctionBuilder : FunctionBuilder
         // 2. Gen code
         foreach (var snippet in _context.TextSnippets)
         {
-            SymbolAddrs.Add(snippet.Symbol, _textEmitter.Position);
+            SymbolAddrs.Add(snippet.BeginSymbol, _textEmitter.Position);
 
             // 2.1 Load inputs
             foreach (var inputSnippet in snippet.InputSnippets)
@@ -93,12 +93,14 @@ internal class StackVMFunctionBuilder : FunctionBuilder
                 _snippetLocals.Add(snippet, localId);
                 _textEmitter.Stlocal(localId);
             }
+
+            SymbolAddrs.Add(snippet.EndSymbol, _textEmitter.Position);
         }
     }
 
     private class LocalsAllocator
     {
-        private SortedSet<ushort> _locals = new SortedSet<ushort>();
+        private readonly SortedSet<ushort> _locals = new SortedSet<ushort>();
 
         public ushort MaxCount { get; private set; }
 

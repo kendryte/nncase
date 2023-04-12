@@ -49,6 +49,9 @@ case: # case的配置，应该是一个多层次的
     quant_type: 'uint8'
     w_quant_type: 'uint8'
     use_mse_quant_w: true
+    calibrate_method: 'Kld' #options: 'NoClip', 'Kld'
+    finetune_weights_method: 'UseSquant' #options: 'NoFineTuneWeights', 'UseSquant', 'UseAdaRound'
+    use_mix_quant: false
 
   ptq_opt:
     kwargs:
@@ -62,13 +65,13 @@ case: # case的配置，应该是一个多层次的
   generate_calibs:
     name: generate_random
     kwargs: null
-    numbers: 1
-    batch_size: 50
+    numbers: 5
+    batch_size: 1
   generate_dump_range_data:
     name: generate_random
     kwargs: null
-    numbers: 1
-    batch_size: 10
+    numbers: 50
+    batch_size: 1
   eval:
     - name: target
       values:
@@ -79,8 +82,7 @@ case: # case的配置，应该是一个多层次的
 #        - k230
     - name: ptq
       values:
-        - false
-        # - true
+        - true
   infer:
     - name: target
       values:
@@ -91,8 +93,7 @@ case: # case的配置，应该是一个多层次的
 #        - k230
     - name: ptq
       values:
-        - false
-#        - true
+        - true
 judge:
   common: &judge_common
     simarity_name:  cosine

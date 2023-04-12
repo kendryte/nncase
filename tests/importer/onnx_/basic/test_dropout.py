@@ -75,4 +75,4 @@ def test_dropout(in_shape, ratio, request):
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_lrn.py'])
+    pytest.main(['-vv', 'test_dropout.py'])

@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.IO;
@@ -22,7 +22,7 @@ namespace Nncase.Importer.TFLite
         private Expr VisitExpandDims(in tflite.Operator op)
         {
             var (input, dim) = GetInputExprs(op, 0, 1);
-            return Unsqueeze(input, Unsqueeze(dim, new[]{0}));
+            return Unsqueeze(input, Unsqueeze(dim, new[] { 0 }));
         }
     }
 }

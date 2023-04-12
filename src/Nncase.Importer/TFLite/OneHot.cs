@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.IO;
@@ -13,7 +13,10 @@ namespace Nncase.Importer.TFLite
         {
             var (indices, depth) = GetInputExprs(op, 0, 1);
             var (onValue, offValue) = GetInputExprs(op, 2, 3);
-            return F.NN.OneHot(OneHotMode.Normal, indices, depth,
+            return F.NN.OneHot(
+                OneHotMode.Normal,
+                indices,
+                depth,
                 F.Tensors.Stack(new Tuple(offValue, onValue), 0),
                 op.BuiltinOptionsAsOneHotOptions().Axis);
         }

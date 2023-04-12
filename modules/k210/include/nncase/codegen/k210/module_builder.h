@@ -16,7 +16,8 @@
 #include <nncase/codegen/module_builder.h>
 #include <nncase/runtime/k210/runtime_module.h>
 
-namespace nncase::codegen
-{
-NNCASE_MODULES_K210_API std::unique_ptr<module_builder> create_k210_module_builder(std::string_view module_name, const module_builder_params &params);
+namespace nncase::codegen {
+NNCASE_MODULES_K210_API std::unique_ptr<module_builder>
+create_k210_module_builder(std::string_view module_name,
+                           const module_builder_params &params);
 }

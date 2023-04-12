@@ -1,9 +1,22 @@
-﻿using System;
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using DryIoc;
+using Nncase.Evaluator;
+using Nncase.Evaluator.Buffers;
+using Nncase.Evaluator.Imaging;
+using Nncase.Evaluator.Math;
+using Nncase.Evaluator.NN;
+using Nncase.Evaluator.Random;
+using Nncase.Evaluator.RNN;
+using Nncase.Evaluator.TIR;
+using Nncase.Hosting;
 
 namespace Nncase;
 
@@ -15,11 +28,18 @@ public static class EvaluatorApplicationPart
     /// <summary>
     /// Add evaluator assembly.
     /// </summary>
-    /// <param name="assemblies">Assembly collection.</param>
-    /// <returns>Updated assembly collection.</returns>
-    public static IList<Assembly> AddEvaluator(this IList<Assembly> assemblies)
+    /// <param name="registrator">Service registrator.</param>
+    /// <returns>Configured service registrator.</returns>
+    public static IRegistrator AddEvaluator(this IRegistrator registrator)
     {
-        assemblies.Add(typeof(EvaluatorApplicationPart).Assembly);
-        return assemblies;
+        return registrator.RegisterModule<EvaluatorModule>()
+            .RegisterModule<BufferModule>()
+            .RegisterModule<ImagingModule>()
+            .RegisterModule<MathModule>()
+            .RegisterModule<NNModule>()
+            .RegisterModule<RandomModule>()
+            .RegisterModule<RNNModule>()
+            .RegisterModule<TensorsModule>()
+            .RegisterModule<TIRModule>();
     }
 }

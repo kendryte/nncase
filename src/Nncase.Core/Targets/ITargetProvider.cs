@@ -18,6 +18,6 @@ public interface ITargetProvider
     /// Get target.
     /// </summary>
     /// <param name="name">Target name.</param>
-    /// <returns>Target</returns>
+    /// <returns>Target.</returns>
     ITarget GetTarget(string name);
 }

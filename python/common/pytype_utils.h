@@ -18,11 +18,34 @@
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 
+namespace pybind11::detail {
+// Similar to enums in `pybind11/numpy.h`. Determined by doing:
+// python3 -c 'import numpy as np; print(np.dtype(np.float16).num)'
+constexpr int NPY_FLOAT16 = 23;
+
+// Kinda following:
+// https://github.com/pybind/pybind11/blob/9bb3313162c0b856125e481ceece9d8faa567716/include/pybind11/numpy.h#L1000
+template <> struct npy_format_descriptor<nncase::half> {
+    static pybind11::dtype dtype() {
+        handle ptr = npy_api::get().PyArray_DescrFromType_(NPY_FLOAT16);
+        return reinterpret_borrow<pybind11::dtype>(ptr);
+    }
+    static std::string format() {
+        // following:
+        // https://docs.python.org/3/library/struct.html#format-characters
+        return "e";
+    }
+    static constexpr auto name() { return _("float16"); }
+};
+} // namespace pybind11::detail
+
 namespace nncase {
 pybind11::dtype to_dtype(typecode_t type) {
     namespace py = pybind11;
 
     switch (type) {
+    case dt_boolean:
+        return py::dtype::of<bool>();
     case dt_uint8:
         return py::dtype::of<uint8_t>();
     case dt_uint16:
@@ -58,33 +81,35 @@ pybind11::dtype to_dtype(const datatype_t type) {
     return to_dtype(primtype.unwrap()->typecode());
 }
 
-typecode_t from_dtype(pybind11::dtype dtype) {
+typecode_t from_dtype(pybind11::array array) {
     namespace py = pybind11;
 
-    if (dtype.is(py::dtype::of<uint8_t>()) || dtype.is(py::dtype::of<bool>()))
+    if (py::isinstance<py::array_t<bool>>(array))
+        return dt_boolean;
+    else if (py::isinstance<py::array_t<uint8_t>>(array))
         return dt_uint8;
-    else if (dtype.is(py::dtype::of<uint16_t>()))
+    else if (py::isinstance<py::array_t<uint16_t>>(array))
         return dt_uint16;
-    else if (dtype.is(py::dtype::of<uint32_t>()))
+    else if (py::isinstance<py::array_t<uint32_t>>(array))
         return dt_uint32;
-    else if (dtype.is(py::dtype::of<uint64_t>()))
+    else if (py::isinstance<py::array_t<uint64_t>>(array))
         return dt_uint64;
-    else if (dtype.is(py::dtype::of<int8_t>()))
+    else if (py::isinstance<py::array_t<int8_t>>(array))
         return dt_int8;
-    else if (dtype.is(py::dtype::of<int16_t>()))
+    else if (py::isinstance<py::array_t<int16_t>>(array))
         return dt_int16;
-    else if (dtype.is(py::dtype::of<int32_t>()))
+    else if (py::isinstance<py::array_t<int32_t>>(array))
         return dt_int32;
-    else if (dtype.is(py::dtype::of<int64_t>()))
+    else if (py::isinstance<py::array_t<int64_t>>(array))
         return dt_int64;
-    else if (dtype.is(py::dtype("float16")))
+    else if (py::isinstance<py::array_t<half>>(array))
         return dt_float16;
-    else if (dtype.is(py::dtype::of<float>()))
+    else if (py::isinstance<py::array_t<float>>(array))
         return dt_float32;
-    else if (dtype.is(py::dtype::of<double>()))
+    else if (py::isinstance<py::array_t<double>>(array))
         return dt_float64;
     throw std::runtime_error("Unsupported dtype " +
-                             (std::string)py::str(dtype));
+                             (std::string)py::str(array.dtype()));
 }
 
 dims_t to_rt_shape(const std::vector<pybind11::ssize_t> &value) {

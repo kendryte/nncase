@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -16,7 +16,7 @@ namespace Nncase.IR.Math;
 /// Require expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Require(string Message) : Op
+public sealed partial class Require : Op
 {
     /// <summary>
     /// Gets Condition.
@@ -27,4 +27,9 @@ public sealed record Require(string Message) : Op
     /// Gets FalseValue.
     /// </summary>
     public static readonly ParameterInfo Value = new(typeof(Require), 1, "value");
+
+    public string Message { get; }
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => "\"\"";
 }

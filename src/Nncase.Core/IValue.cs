@@ -7,6 +7,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Toolkit.HighPerformance.Helpers;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 
 namespace Nncase;
@@ -39,6 +41,11 @@ public interface IValue : IReadOnlyList<IValue>
 /// </summary>
 public static class Value
 {
+    /// <summary>
+    /// Gets get the None Value.
+    /// </summary>
+    public static IValue None => NoneValue.Default;
+
     /// <summary>
     /// Create value form a tensor.
     /// </summary>
@@ -73,21 +80,15 @@ public static class Value
         else
         {
             var tpc = (TupleConst)@const;
-            return new TupleValue(tpc.Fields.Select(x => FromConst(x)).ToArray());
+            return tpc.Value;
         }
     }
-
-    /// <summary>
-    /// get the None Value.
-    /// </summary>
-    /// <returns></returns>
-    public static IValue None => Nncase.NoneValue.Default;
 }
 
 /// <summary>
 /// The None Value.
 /// </summary>
-public sealed class NoneValue : IValue
+public sealed class NoneValue : IValue, IEquatable<NoneValue?>
 {
     /// <summary>
     /// Get the default None Value instane.
@@ -99,13 +100,17 @@ public sealed class NoneValue : IValue
     }
 
     /// <inheritdoc/>
-    public IValue this[int index] => throw new InvalidOperationException("This Is None Value!");
-
-    /// <inheritdoc/>
     public IRType Type => NoneType.Default;
 
     /// <inheritdoc/>
-    public int Count => throw new InvalidOperationException("This Is None Value!");
+    public int Count => 1;
+
+    /// <inheritdoc/>
+    public IValue this[int index] => index == 0 ? this : throw new ArgumentOutOfRangeException(nameof(index));
+
+    public static bool operator ==(NoneValue? left, NoneValue? right) => true;
+
+    public static bool operator !=(NoneValue? left, NoneValue? right) => false;
 
     /// <inheritdoc/>
     public Tensor AsTensor()
@@ -122,13 +127,20 @@ public sealed class NoneValue : IValue
     /// <inheritdoc/>
     public IEnumerator<IValue> GetEnumerator()
     {
-        throw new InvalidOperationException("This Is None Value!");
+        yield break;
     }
+
     /// <inheritdoc/>
     IEnumerator IEnumerable.GetEnumerator()
     {
-        throw new InvalidOperationException("This Is None Value!");
+        yield break;
     }
+
+    public override bool Equals(object? obj) => Equals(obj as NoneValue);
+
+    public bool Equals(NoneValue? other) => other is not null;
+
+    public override int GetHashCode() => 0;
 }
 
 /// <summary>
@@ -155,7 +167,7 @@ public sealed class TensorValue : IValue, IEquatable<TensorValue?>
     public IRType Type { get; }
 
     /// <inheritdoc/>
-    public IValue this[int index] => index == 0 ? this : throw new IndexOutOfRangeException();
+    public IValue this[int index] => index == 0 ? this : throw new ArgumentOutOfRangeException(nameof(index));
 
     /// <inheritdoc/>
     public IEnumerator<IValue> GetEnumerator()
@@ -203,7 +215,10 @@ public sealed class TensorValue : IValue, IEquatable<TensorValue?>
     public override string ToString()
     {
         if (_value.BytesBuffer.Length <= 64)
+        {
             return _value.Shape.ToString() + " : " + _value.GetArrayString(false);
+        }
+
         return _value.Shape.ToString();
     }
 }
@@ -213,16 +228,18 @@ public sealed class TensorValue : IValue, IEquatable<TensorValue?>
 /// </summary>
 public sealed class TupleValue : IValue, IEquatable<TupleValue?>
 {
+    public static readonly TupleValue Void = new TupleValue(ReadOnlySpan<IValue>.Empty);
+
     private readonly IValue[] _values;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TupleValue"/> class.
     /// </summary>
     /// <param name="values">Tuple fields.</param>
-    public TupleValue(params IValue[] values)
+    public TupleValue(ReadOnlySpan<IValue> values)
     {
-        _values = values;
-        Type = new TupleType(values.Select(x => x.Type));
+        _values = values.ToArray();
+        Type = new TupleType(values.AsValueEnumerable().Select(x => x.Type).ToArray());
     }
 
     /// <inheritdoc/>
@@ -266,14 +283,13 @@ public sealed class TupleValue : IValue, IEquatable<TupleValue?>
     /// <inheritdoc/>
     public bool Equals(TupleValue? other)
     {
-        return other != null &&
-               EqualityComparer<IValue[]>.Default.Equals(_values, other._values);
+        return other != null && _values.SequenceEqual(other._values);
     }
 
     /// <inheritdoc/>
     public override int GetHashCode()
     {
-        return HashCode.Combine(_values);
+        return HashCode<IValue>.Combine(_values);
     }
 
     /// <inheritdoc/>

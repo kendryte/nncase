@@ -1,0 +1,122 @@
+name: runtime-build
+
+on: [push, pull_request]
+
+jobs:
+  build-native:
+    name: ${{matrix.config.name}}
+    runs-on: ${{matrix.config.os}}
+    strategy:
+      matrix:
+        config:
+          - {name: x86_64-macos, os: macos-latest, cmakeArgs: '', buildType: Release}
+          - {name: x86_64-linux, os: ubuntu-latest, cmakeArgs: '', buildType: Release}
+          - {name: x86_64-windows, os: windows-latest, arch: x64, cmakeArgs: -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl, buildType: Release}
+
+    steps:
+    - uses: actions/checkout@v3
+    - uses: seanmiddleditch/gha-setup-ninja@master
+
+    - name: Set up build environment (Windows, Visual Studio)
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: ${{matrix.config.arch}}
+      if: runner.os == 'Windows'
+      
+    - name: Set up build environment (Macos)
+      run: |
+        brew install sunnycase/core/libomp@11.1.0
+      if: runner.os == 'Macos'
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.7
+
+    - name: Install Conan
+      run: pip install conan==1.58
+
+    - name: Configure Conan (Linux)
+      run: |
+        conan profile new default --detect
+        conan profile update settings.compiler.libcxx=libstdc++11 default
+        echo "CC=gcc-10" >> $GITHUB_ENV
+        echo "CXX=g++-10" >> $GITHUB_ENV
+      if: runner.os == 'Linux'
+
+    - name: Configure CMake
+      shell: bash
+      run: |
+        cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=${{matrix.config.buildType}} ${{matrix.config.cmakeArgs}} -DBUILDING_RUNTIME=TRUE -DBUILD_PYTHON_BINDING=OFF -DPython3_ROOT_DIR=${pythonLocation}
+
+    - name: Build & Install
+      run: |
+        cmake --build build --config ${{matrix.config.buildType}}
+        cmake --install build --prefix install
+
+    #- name: Benchmark
+    #  run: |
+    #    ${{github.workspace}}/install/bin/benchnncase > benchnncase.log
+    #    cat benchnncase.log
+
+    - name: Upload nncaseruntime Build Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: nncaseruntime-${{matrix.config.name}}
+        path: ${{github.workspace}}/install
+        if-no-files-found: error
+
+    #- name: Upload nncaseruntime Benchmark
+    #  uses: actions/upload-artifact@v3
+    #  with:
+    #    name: nncaseruntime-benchmark-${{matrix.config.name}}
+    #    path: ${{github.workspace}}/benchnncase.log
+    #    if-no-files-found: error
+
+  #build-cross:
+  #  name: ${{matrix.config.name}}
+  #  runs-on: ubuntu-latest
+  #  strategy:
+  #    matrix:
+  #      config:
+  #        - {name: riscv64-none-k210, shell: bash, toolchain: k210, cmakeArgs: -DK210_SDK_DIR=$GITHUB_WORKSPACE/kendryte-standalone-sdk-develop, buildType: Release}
+
+  #  steps:
+  #  - uses: actions/checkout@v3
+  #  - uses: seanmiddleditch/gha-setup-ninja@master
+
+  #  - name: Setup Python
+  #    uses: actions/setup-python@v4
+  #    with:
+  #      python-version: 3.7
+        
+  #  - name: Install K210 Baremetal SDK
+  #    shell: bash
+  #    run: |
+  #      wget https://github.com/kendryte/kendryte-gnu-toolchain/releases/download/v8.2.0-20190409/kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar.xz -O $GITHUB_WORKSPACE/kendryte-toolchain.tar.xz
+  #      sudo tar xf $GITHUB_WORKSPACE/kendryte-toolchain.tar.xz -C $GITHUB_WORKSPACE
+  #      wget https://github.com/kendryte/kendryte-standalone-sdk/archive/refs/heads/develop.tar.gz -O $GITHUB_WORKSPACE/k210-sdk.tar.gz
+  #      sudo tar xf $GITHUB_WORKSPACE/k210-sdk.tar.gz -C $GITHUB_WORKSPACE
+  #      echo "RISCV_ROOT_PATH=$GITHUB_WORKSPACE/kendryte-toolchain" >> $GITHUB_ENV
+  #    if: matrix.config.name == 'riscv64-none-k210'
+        
+  #  - name: Install Conan
+  #    run: pip install conan==1.58
+
+  #  - name: Configure Conan (Linux)
+  #    run: |
+  #      conan profile new default --detect
+  #      conan profile update settings.compiler.libcxx=libstdc++11 default
+  #  - name: Build
+  #    run: |
+  #      cmake -B build -G Ninja -DCMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/toolchains/${{matrix.config.toolchain}}.toolchain.cmake -DCMAKE_BUILD_TYPE=${{matrix.config.buildType}} ${{matrix.config.cmakeArgs}} -DBUILDING_RUNTIME=TRUE -DBUILD_PYTHON_BINDING=OFF -DPython3_ROOT_DIR=${pythonLocation}
+  #      cmake --build build --config ${{matrix.config.buildType}}
+  #  - name: Install
+  #    run: cmake --install build --prefix install
+
+  #  - name: Upload nncaseruntime Build Artifact
+  #    uses: actions/upload-artifact@v3
+  #    with:
+  #      name: nncaseruntime-${{matrix.config.name}}
+  #      path: ${{github.workspace}}/install
+  #      if-no-files-found: error

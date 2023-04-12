@@ -1,6 +1,5 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
-
 
 using System.Runtime.CompilerServices;
 using Nncase.IR;
@@ -56,9 +55,8 @@ public static class T
     public static Call Load(Var handle, Expr index) => new Call(new Load(), handle, index);
 
     /// <summary>
-    /// get the nop op
+    /// get the nop op.
     /// </summary>
-    /// <returns></returns>
     public static Call Nop() => new Call(new Nop());
 
     /// <summary>
@@ -76,9 +74,8 @@ public static class T
     /// </example>
     /// </summary>
     /// <param name="handle">The buffer Variable.</param>
-    /// <param name="value">The value we want to store.</param>
     /// <param name="index">The index in the store expression.</param>
-    /// <returns></returns>
+    /// <param name="value">The value we want to store.</param>
     public static Call Store(Var handle, Expr index, Expr value) => new Call(new Store(), handle, index, value);
 
     /// <summary>
@@ -88,7 +85,6 @@ public static class T
     /// <param name="op">the op call.</param>
     /// <param name="value">update value.</param>
     /// <returns>new store call.</returns>
-    /// <exception cref="InvalidOperationException"></exception>
     public static Expr Store(Expr op, Expr value) => op switch
     {
         Call load => load.Target switch
@@ -106,7 +102,6 @@ public static class T
     /// <param name="loopVar">out index var.</param>
     /// <param name="domain">ranges.</param>
     /// <param name="mode">loop mode.</param>
-    /// <param name="loop">loop instance.</param>
     /// <param name="var_name">loop var name.</param>
     /// <returns> for builder. </returns>
     public static ISequentialBuilder<For> ForLoop(out Var loopVar, Range domain, LoopMode mode, [CallerArgumentExpression("loopVar")] string var_name = "v")
@@ -116,22 +111,20 @@ public static class T
     }
 
     /// <summary>
-    /// get the Serial For
+    /// get the Serial For.
     /// </summary>
     /// <param name="loopVar">out index var.</param>
     /// <param name="domain">ranges.</param>
     /// <param name="var_name">loop var name.</param>
-    /// <returns> the for loop </returns>
+    /// <returns> the for loop. </returns>
     public static ISequentialBuilder<For> Serial(out Var loopVar, Range domain, [CallerArgumentExpression("loopVar")] string var_name = "v") => ForLoop(out loopVar, domain, LoopMode.Serial, var_name);
 
     /// <summary>
-    /// make unroll for loop
+    /// make unroll for loop.
     /// </summary>
     /// <param name="loopVar">out index var.</param>
     /// <param name="domain">ranges.</param>
-    /// <param name="loop">ranges.</param>
     /// <param name="var_name">loop var name.</param>
-    /// <returns></returns>
     public static ISequentialBuilder<For> Unrolled(out Var loopVar, Range domain, [CallerArgumentExpression("loopVar")] string var_name = "v") => ForLoop(out loopVar, domain, LoopMode.Unrolled, var_name);
 
     /// <summary>
@@ -144,6 +137,7 @@ public static class T
     /// <param name="j">inner index var.</param>
     /// <param name="ends">end exprs.</param>
     /// <returns>the inner for loop.</returns>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1316:Tuple element names should use correct casing", Justification = "Naming i, j is conventional.")]
     public static ISequentialBuilder<For> Grid(out Var i, out Var j, (Expr i, Expr j) ends)
     {
         var builder_i = T.Serial(out i, (0, ends.i));
@@ -154,22 +148,17 @@ public static class T
     /// <summary>
     /// make the the grid by ranges.
     /// </summary>
-    /// <param name="loopMode"></param>
-    /// <param name="ranges"></param>
-    /// <returns></returns>
     public static ISequentialBuilder<For> Grid(out Var[] loopVars, LoopMode loopMode, params TIR.Range[] ranges)
     {
         string[] names = { "i", "j", "k", "l" };
         var newLoopVars = loopVars = new Var[ranges.Length];
         return new NestBodyExprBuilder<For>(ranges.Select((rg, i) =>
-             T.ForLoop(out newLoopVars[i], rg, loopMode, names[i % 4] + (i / 4 == 0 ? string.Empty : (i / 4).ToString())).Body()
-        ).ToArray());
+             T.ForLoop(out newLoopVars[i], rg, loopMode, names[i % 4] + (i / 4 == 0 ? string.Empty : (i / 4).ToString())).Body()).ToArray());
     }
 
     /// <summary>
     /// a named variable represents a tensor index size.
     /// </summary>
-    /// <param name="name"></param>
     public static Var SizeVar(string name)
     {
         return Var.SizeVar(name);
@@ -178,9 +167,6 @@ public static class T
     /// <summary>
     /// create a block.
     /// </summary>
-    /// <param name="name"></param>
-    /// <returns></returns>
-    /// <exception cref="InvalidOperationException"></exception>
     public static IBlockBuilder Block(string name)
     {
         return new BlockBuilder(name);
@@ -188,7 +174,7 @@ public static class T
 
     public static Sequential Sequential(params Expr[] fields)
     {
-        return new Sequential(new IRArray<Expr>(fields));
+        return new Sequential(fields);
     }
 
     public static Sequential Sequential(params object[] fields)
@@ -216,21 +202,14 @@ public static class T
     /// ));
     /// </code>
     /// </summary>
-    /// <param name="name"></param>
-    /// <param name="module_kind"></param>
-    /// <param name="parameters"></param>
-    /// <returns></returns>
     public static ISequentialBuilder<PrimFunction> PrimFunc(string name, string module_kind, params PhysicalBuffer[] parameters)
     {
-        return new SequentialBuilder<PrimFunction>(body => new PrimFunction(name, module_kind, body, new IRArray<PhysicalBuffer>(parameters)));
+        return new SequentialBuilder<PrimFunction>(body => new PrimFunction(name, module_kind, body, parameters));
     }
 
     /// <summary>
     /// create the handle var.
     /// </summary>
-    /// <param name="name"></param>
-    /// <param name="dtype"></param>
-    /// <returns></returns>
     public static Var Handle(string name, DataType dtype)
     {
         return Var.Handle(name, dtype);
@@ -239,8 +218,6 @@ public static class T
     /// <summary>
     /// rethen the IfThenElseBuilder.
     /// </summary>
-    /// <param name="condition"></param>
-    /// <returns></returns>
     public static IIfThenElseBuilder If(Expr condition)
     {
         return new IfThenElseBuilder(condition);
@@ -249,33 +226,21 @@ public static class T
     /// <summary>
     /// create the memRef by tensortype.
     /// </summary>
-    /// <param name="elem_type"></param>
-    /// <param name="dimensions"></param>
-    /// <param name="buffer"></param>
-    /// <param name="name"></param>
-    /// <param name="location"></param>
-    /// <returns></returns>
-    public static LogicalBuffer Buffer(DataType elem_type, Schedule.MemoryLocation location, IEnumerable<Expr> dimensions, out LogicalBuffer buffer, [CallerArgumentExpression("buffer")] string name = "")
+    public static LogicalBuffer Buffer(DataType elem_type, Schedule.MemoryLocation location, ReadOnlySpan<Expr> dimensions, out LogicalBuffer buffer, [CallerArgumentExpression("buffer")] string name = "")
     {
         if (name.StartsWith("var "))
         {
             name = name[4..];
         }
 
-        buffer = new LogicalBuffer(name, elem_type, location, new(dimensions));
+        buffer = new LogicalBuffer(name, elem_type, location, dimensions);
         return buffer;
     }
 
     /// <summary>
-    /// ctor for physical buffer
+    /// ctor for physical buffer.
     /// </summary>
-    /// <param name="elem_type"></param>
-    /// <param name="location"></param>
-    /// <param name="dimensions"></param>
-    /// <param name="buffer"></param>
-    /// <param name="name"></param>
-    /// <returns></returns>
-    public static PhysicalBuffer PhysicalBuffer(DataType elem_type, Schedule.MemoryLocation location, IEnumerable<int> dimensions, out PhysicalBuffer buffer, [CallerArgumentExpression("buffer")] string name = "")
+    public static PhysicalBuffer PhysicalBuffer(DataType elem_type, Schedule.MemoryLocation location, ReadOnlySpan<int> dimensions, out PhysicalBuffer buffer, [CallerArgumentExpression("buffer")] string name = "")
     {
         if (name.StartsWith("var "))
         {
@@ -287,27 +252,30 @@ public static class T
     }
 
     /// <summary>
-    /// create buffer from const
+    /// create buffer from const.
     /// </summary>
-    /// <param name="expr"></param>
-    /// <param name="buffer"></param>
-    /// <param name="name"></param>
-    /// <returns></returns>
     public static PhysicalBuffer ConstBuffer(Const expr, out PhysicalBuffer buffer, [CallerArgumentExpression("buffer")] string name = "")
     {
         if (name.StartsWith("var "))
         {
             name = name[4..];
         }
+
         int size;
         if (expr is TensorConst tc)
+        {
             size = tc.Value.BytesBuffer.Length;
+        }
         else
+        {
             throw new NotSupportedException();
-        buffer = new PhysicalBuffer(name, Schedule.MemoryLocation.Rdata, ((TensorConst)expr), 0, size);
+        }
+
+        buffer = new PhysicalBuffer(name, Schedule.MemoryLocation.Rdata, (TensorConst)expr, 0, size);
         return buffer;
     }
 
+#if false
     /// <summary>
     /// maybe can get the const.
     /// </summary>
@@ -315,27 +283,26 @@ public static class T
     /// <param name="buffer"></param>
     /// <param name="name"></param>
     /// <returns></returns>
-    // public static Expr MayBeConst(Const? expr, out Buffer? buffer, [CallerArgumentExpression("buffer")] string name = "")
-    // {
-    //     if (expr is null)
-    //     {
-    //         buffer = null;
-    //         return Nop();
-    //     }
+    public static Expr MayBeConst(Const? expr, out Buffer? buffer, [CallerArgumentExpression("buffer")] string name = "")
+    {
+        if (expr is null)
+        {
+            buffer = null;
+            return Nop();
+        }
+        if (name.StartsWith("var "))
+        {
+            name = name[4..];
+        }
+        buffer = new Buffer(name, Schedule.MemoryLocation.Rdata, (TensorType)expr.ValueType)
+        {
+            Const = expr,
+        };
+        return buffer;
+    }
+#endif
 
-    //     if (name.StartsWith("var "))
-    //     {
-    //         name = name[4..];
-    //     }
-
-    //     buffer = new Buffer(name, Schedule.MemoryLocation.Rdata, (TensorType)expr.ValueType)
-    //     {
-    //         Const = expr,
-    //     };
-    //     return buffer;
-    // }
-
-    public static ISequentialBuilder<For> ForSegment(out (Expr b, Expr e) seg, Expr low, Expr chunck, Expr high)
+    public static ISequentialBuilder<For> ForSegment(out (Expr B, Expr E) seg, Expr low, Expr chunck, Expr high)
     {
         var count = IR.F.Tensors.Cast((high - low) / IR.F.Tensors.Cast(chunck, DataTypes.Float32), DataTypes.Int32);
         var forloop = T.Serial(out var i, (0, count));
@@ -346,7 +313,7 @@ public static class T
     /// <summary>
     /// Let bind.
     /// </summary>
-    /// <param name="v"></param>
+    /// <param name="v">Variable.</param>
     /// <param name="expression">the expression.</param>
     /// <param name="name">the var name.</param>
     /// <returns>let builder.</returns>
@@ -359,14 +326,9 @@ public static class T
     /// <summary>
     /// we can use it get some temp var.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="value"></param>
-    /// <param name="creator"></param>
-    /// <returns></returns>
     public static Call Emit<T>(out T value, Func<T> creator)
     {
         value = creator();
         return Nop();
     }
-
 }

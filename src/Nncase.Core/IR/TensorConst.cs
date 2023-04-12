@@ -12,8 +12,16 @@ namespace Nncase.IR;
 /// <summary>
 /// Constant of tensor.
 /// </summary>
-public sealed record TensorConst(Tensor Value) : Const(new TensorType(Value.ElementType, Value.Shape))
+public sealed class TensorConst : Const, IEquatable<TensorConst?>
 {
+    public TensorConst(Tensor tensor)
+        : base(new TensorType(tensor.ElementType, tensor.Shape))
+    {
+        Value = tensor;
+    }
+
+    public Tensor Value { get; }
+
     /// <summary>
     /// Gets value type.
     /// </summary>
@@ -98,10 +106,20 @@ public sealed record TensorConst(Tensor Value) : Const(new TensorType(Value.Elem
     public static implicit operator TensorConst(bool value) => new(Tensor.FromScalar(value));
 
     /// <summary>
+    /// Create TensorConstant from <see cref="Utf8Char"/>.
+    /// </summary>
+    /// <param name="value">Value.</param>
+    public static implicit operator TensorConst(Utf8Char value) => new(Tensor.FromScalar(value));
+
+    /// <summary>
     /// Create TensorConstant from <see cref="string"/>.
     /// </summary>
     /// <param name="value">Value.</param>
-    public static implicit operator TensorConst(string value) => new(Tensor.FromSpan<char>(value));
+    public static implicit operator TensorConst(string value) => new(Tensor.From<char>(value.ToCharArray()));
+
+    public static bool operator ==(TensorConst? left, TensorConst? right) => EqualityComparer<TensorConst>.Default.Equals(left, right);
+
+    public static bool operator !=(TensorConst? left, TensorConst? right) => !(left == right);
 
     /// <inheritdoc/>
     public override string ToString() => ValueType switch
@@ -113,8 +131,23 @@ public sealed record TensorConst(Tensor Value) : Const(new TensorType(Value.Elem
               var dtype when DataTypes.IsFloat(dtype) => Value.ToScalar<float>().ToString(),
               var dtype when DataTypes.IsPointer(dtype) => Value.ToScalar<ulong>().ToString(),
               var dtype when dtype == DataTypes.Boolean => Value.ToScalar<bool>().ToString(),
-              _ => $"{x.DType.GetDisplayName()} {x.Shape}"
+              _ => $"{x.DType.GetDisplayName()} {x.Shape}",
           },
-        _ => $"{ValueType.DType.GetDisplayName()} {ValueType.Shape}"
+        _ => $"{ValueType.DType.GetDisplayName()} {ValueType.Shape}",
     };
+
+    /// <inheritdoc/>
+    public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
+        => functor.VisitTensorConst(this, context);
+
+    public TensorConst With(Tensor? value = null) => new TensorConst(value ?? Value);
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj) => Equals(obj as TensorConst);
+
+    /// <inheritdoc/>
+    public bool Equals(TensorConst? other) => other is not null && base.Equals(other) && EqualityComparer<Tensor>.Default.Equals(Value, other.Value);
+
+    /// <inheritdoc/>
+    protected override int GetHashCodeCore() => HashCode.Combine(Value);
 }

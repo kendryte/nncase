@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -36,9 +36,9 @@ public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>, ICostEv
     }
 
     /// <inheritdoc/>
-    public Cost? Visit(ICostEvaluateContext context, Split target)
+    public Cost Visit(ICostEvaluateContext context, Split target)
     {
-        var ret = context.GetReturnType<TupleType>();
+        _ = context.GetReturnType<TupleType>();
         return new()
         {
             [CostFactorNames.CPUCycles] = 1,

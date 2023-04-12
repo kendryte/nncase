@@ -20,17 +20,11 @@ using namespace nncase::schedule;
 using namespace nncase::schedule::k210;
 
 kpu_buffer_allocator::kpu_buffer_allocator()
-    : first_fit_allocator(2 * 1024 * 1024)
-{
-}
+    : first_fit_allocator(2 * 1024 * 1024) {}
 
-size_t kpu_buffer_allocator::alignment() const noexcept
-{
-    return 64;
-}
+size_t kpu_buffer_allocator::alignment() const noexcept { return 64; }
 
-size_t kpu_buffer_allocator::get_size_in_bytes(const logical_buffer &buffer)
-{
+size_t kpu_buffer_allocator::get_size_in_bytes(const logical_buffer &buffer) {
     if (buffer.type() != dt_uint8)
         throw std::invalid_argument("KPU only support uint8 datatype");
     return runtime::k210::get_kpu_bytes(buffer.shape());

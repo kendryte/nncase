@@ -17,15 +17,14 @@
 #include <nlohmann/json.hpp>
 #include <vector>
 
-namespace nncase::codegen::vulkan
-{
-struct compile_options
-{
+namespace nncase::codegen::vulkan {
+struct compile_options {
     const nlohmann::json &context;
     std::string function_name;
     bool dump_asm;
     std::filesystem::path dump_dir;
 };
 
-std::vector<uint32_t> render_and_compile(const std::string &template_name, const compile_options &options);
-}
+std::vector<uint32_t> render_and_compile(const std::string &template_name,
+                                         const compile_options &options);
+} // namespace nncase::codegen::vulkan

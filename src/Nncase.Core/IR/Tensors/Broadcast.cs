@@ -17,7 +17,7 @@ namespace Nncase.IR.Tensors;
 /// Broadcast expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Broadcast() : Op
+public sealed partial class Broadcast : Op
 {
     /// <summary>
     /// Gets input.
@@ -27,5 +27,5 @@ public sealed record Broadcast() : Op
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Shape = new(typeof(Broadcast), 1, "shape", HasRank(1) & HasDataType(DataTypes.Int64));
+    public static readonly ParameterInfo Shape = new(typeof(Broadcast), 1, "shape", IsIntegral());
 }

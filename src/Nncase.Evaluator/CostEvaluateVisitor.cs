@@ -1,74 +1,61 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive;
+using NetFabric.Hyperlinq;
 using Nncase.CostModel;
 using Nncase.IR;
 
 namespace Nncase.Evaluator;
 
-internal sealed class CostEvaluateVisitor : ExprVisitor<Cost?, IRType>
+internal sealed class CostEvaluateVisitor : ExprVisitor<Cost, Unit>
 {
     private readonly CostEvaluateContext _context;
-    private readonly IReadOnlyDictionary<Var, Cost> _varsValues;
 
-    public CostEvaluateVisitor(IReadOnlyDictionary<Var, Cost> varsValues)
+    public CostEvaluateVisitor()
     {
-        _context = new CostEvaluateContext(ExpressionMemo);
-        _varsValues = varsValues;
+        _context = new CostEvaluateContext(ExprMemo);
     }
 
-    public override Cost? VisitLeaf(Call expr)
+    /// <inheritdoc/>
+    protected override Cost VisitLeafBaseFunction(BaseFunction expr) => Cost.Zero;
+
+    /// <inheritdoc/>
+    protected override Cost VisitLeafConst(Const expr) => Cost.Zero;
+
+    /// <inheritdoc/>
+    protected override Cost VisitLeafMarker(Marker expr) => ExprMemo[expr.Target];
+
+    /// <inheritdoc/>
+    protected override Cost VisitLeafNone(None expr) => Cost.Zero;
+
+    /// <inheritdoc/>
+    protected override Cost VisitLeafCall(Call expr)
     {
+        var argumentsCost = expr.Arguments.AsValueEnumerable().Select(x => ExprMemo[x]).Sum();
         _context.CurrentCall = expr;
-        if (expr.Target is Function)
-        {
-            throw new NotImplementedException();
-        }
 
-        var target = (Op)expr.Target;
-        return CompilerServices.EvaluateOpCost(target, _context);
-    }
-
-    public override Cost? VisitLeaf(Const expr)
-    {
-        return expr switch
+        var targetCost = expr.Target switch
         {
-            TensorConst tc => Cost.Zero,
-            TupleConst tc => tc.Fields.Select(VisitLeaf).Sum(),
-            _ => throw new ArgumentException("Invalid const type."),
+            Op op => CompilerServices.EvaluateOpCost(op, _context),
+            Function func => CompilerServices.EvaluateCost(func.Body),
+            _ => throw new NotImplementedException(expr.Target.ToString()),
         };
+        return argumentsCost + targetCost;
     }
 
-    public override Cost VisitLeaf(Op expr)
+    /// <inheritdoc/>
+    protected override Cost VisitLeafOp(Op expr) => Cost.Zero;
+
+    /// <inheritdoc/>
+    protected override Cost VisitLeafTuple(IR.Tuple expr)
     {
-        return Cost.Zero;
+        return expr.Fields.AsValueEnumerable().Select(x => ExprMemo[x]).Sum();
     }
 
-    public override Cost VisitLeaf(Function expr)
-    {
-        return Cost.Zero;
-    }
-
-    public override Cost VisitLeaf(Marker expr)
-    {
-        return Cost.Zero;
-    }
-
-    public override Cost? VisitLeaf(IR.Tuple expr)
-    {
-        return expr.Fields.Select(Visit).Sum();
-    }
-
-    public override Cost VisitLeaf(Var expr)
-    {
-        if (!_varsValues.TryGetValue(expr, out var result))
-        {
-            result = Cost.Zero;
-        }
-
-        return result;
-    }
+    /// <inheritdoc/>
+    protected override Cost VisitLeafVar(Var expr) => Cost.Zero;
 }

@@ -11,19 +11,20 @@ namespace Nncase.CodeGen.StackVM;
 
 internal class StackVMLinkableModule : LinkableModule
 {
-    public HashSet<ModuleType> CustomCallModules;
+    private readonly HashSet<ModuleType> _customCallModules;
 
     public StackVMLinkableModule(IReadOnlyList<ILinkableFunction> functions, SectionManager sectionManager)
         : base(functions, sectionManager)
     {
-        CustomCallModules = new();
+        _customCallModules = new();
         foreach (var funcs in functions.OfType<StackVMLinkableFunction>())
         {
-            CustomCallModules.UnionWith(funcs.CustomCallModules);
+            _customCallModules.UnionWith(funcs.CustomCallModules);
         }
+
         var writer = SectionManager.GetWriter(".custom_calls");
-        writer.Write((uint)CustomCallModules.Count);
-        foreach (var item in CustomCallModules)
+        writer.Write((uint)_customCallModules.Count);
+        foreach (var item in _customCallModules)
         {
             writer.Write(item.Types.AsSpan());
         }
@@ -31,8 +32,10 @@ internal class StackVMLinkableModule : LinkableModule
 
     protected override ILinkedModule CreateLinkedModule(IReadOnlyList<LinkedFunction> linkedFunctions, byte[] text)
     {
-        return new StackVMLinkedModule(linkedFunctions, text,
-          SectionManager.GetContent(WellknownSectionNames.Rdata),
-          SectionManager.GetContent(".custom_calls"));
+        return new StackVMLinkedModule(
+            linkedFunctions,
+            text,
+            SectionManager.GetContent(WellknownSectionNames.Rdata),
+            SectionManager.GetContent(".custom_calls"));
     }
 }

@@ -11,6 +11,63 @@ using System.Threading.Tasks;
 
 namespace Nncase.Runtime.Interop;
 
+public enum RTMapAccess
+{
+    None = 0,
+    Read = 1,
+    Write = 2,
+    ReadWrite = 3,
+}
+
+/// <summary>
+/// Runtime buffer slice.
+/// </summary>
+public struct RTBufferSlice
+{
+    /// <summary>
+    /// Gets or sets buffer.
+    /// </summary>
+    public RTBuffer Buffer { get; set; }
+
+    /// <summary>
+    /// Gets or sets start.
+    /// </summary>
+    public uint Start { get; set; }
+
+    /// <summary>
+    /// Gets or sets size in bytes.
+    /// </summary>
+    public uint SizeBytes { get; set; }
+
+    internal static RTBufferSlice FromRT(in RuntimeStruct rt)
+    {
+        return new RTBufferSlice
+        {
+            Buffer = new RTBuffer(rt.Buffer),
+            Start = rt.Start,
+            SizeBytes = rt.SizeBytes,
+        };
+    }
+
+    internal RuntimeStruct ToRT()
+    {
+        return new RuntimeStruct
+        {
+            Buffer = Buffer.DangerousGetHandle(),
+            Start = Start,
+            SizeBytes = SizeBytes,
+        };
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct RuntimeStruct
+    {
+        public IntPtr Buffer;
+        public uint Start;
+        public uint SizeBytes;
+    }
+}
+
 /// <summary>
 /// Runtime buffer.
 /// </summary>
@@ -43,14 +100,6 @@ public class RTBuffer : RTObject
     }
 }
 
-public enum RTMapAccess
-{
-    None = 0,
-    Read = 1,
-    Write = 2,
-    ReadWrite = 3,
-}
-
 /// <summary>
 /// Runtime host buffer.
 /// </summary>
@@ -74,54 +123,5 @@ public class RTHostBuffer : RTBuffer
     {
         Native.HostBufferMap(handle, mapAccess, out var data, out var bytes).ThrowIfFailed();
         return new RTHostMemoryManager(this, data, bytes);
-    }
-}
-
-/// <summary>
-/// Runtime buffer slice.
-/// </summary>
-public struct RTBufferSlice
-{
-    /// <summary>
-    /// Buffer.
-    /// </summary>
-    public RTBuffer Buffer { get; set; }
-
-    /// <summary>
-    /// Start.
-    /// </summary>
-    public uint Start { get; set; }
-
-    /// <summary>
-    /// Size in bytes.
-    /// </summary>
-    public uint SizeBytes { get; set; }
-
-    [StructLayout(LayoutKind.Sequential)]
-    internal struct RuntimeStruct
-    {
-        public IntPtr Buffer;
-        public uint Start;
-        public uint SizeBytes;
-    }
-
-    internal RuntimeStruct ToRT()
-    {
-        return new RuntimeStruct
-        {
-            Buffer = Buffer.DangerousGetHandle(),
-            Start = Start,
-            SizeBytes = SizeBytes
-        };
-    }
-
-    internal static RTBufferSlice FromRT(in RuntimeStruct rt)
-    {
-        return new RTBufferSlice
-        {
-            Buffer = new RTBuffer(rt.Buffer),
-            Start = rt.Start,
-            SizeBytes = rt.SizeBytes
-        };
     }
 }

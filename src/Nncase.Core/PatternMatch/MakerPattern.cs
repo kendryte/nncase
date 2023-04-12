@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -26,20 +26,13 @@ public sealed record MarkerPattern(Func<string, bool> NameCondition, Pattern Tar
     {
     }
 
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="expr"></param>
-    /// <returns></returns>
     protected override bool MatchLeafCore(Marker expr) => NameCondition(expr.Name);
-
 }
 
 public static partial class Utility
 {
-
     /// <summary>
-    /// is marker
+    /// is marker.
     /// </summary>
     /// <param name="name">name.</param>
     /// <param name="name_condition"> mark name condition. </param>
@@ -74,4 +67,13 @@ public static partial class Utility
     /// <param name="attribute">attribute.</param>
     /// <returns> MarkerPattern. </returns>
     public static MarkerPattern IsRangeOfMarker(Pattern target, Pattern attribute) => IsMarker(null, WellknownMarkerNames.RangeOf, target, attribute);
+
+    /// <summary>
+    /// is range of maker with name.
+    /// </summary>
+    /// <param name="name">name.</param>
+    /// <param name="target">target.</param>
+    /// <param name="attribute">attribute.</param>
+    /// <returns> MarkerPattern. </returns>
+    public static MarkerPattern IsRangeOfMarker(string? name, Pattern target, Pattern attribute) => IsMarker(name, WellknownMarkerNames.RangeOf, target, attribute);
 }

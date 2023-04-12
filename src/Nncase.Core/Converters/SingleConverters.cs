@@ -286,20 +286,7 @@ internal class SingleConverters :
 
     public void ConvertTo(ReadOnlySpan<float> source, Span<float> dest, CastMode castMode)
     {
-        if (castMode == CastMode.Exact)
-        {
-            throw new InvalidCastException();
-        }
-
-        if (dest.Length < source.Length)
-        {
-            throw new ArgumentException("Dest buffer is not sufficient.");
-        }
-
-        for (int i = 0; i < source.Length; i++)
-        {
-            dest[i] = (float)source[i];
-        }
+        source.CopyTo(dest);
     }
 
     public void ConvertTo(ReadOnlySpan<float> source, Span<double> dest, CastMode castMode)

@@ -1,48 +1,52 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
     <IsPackable>false</IsPackable>
-    <NoWarn>1591</NoWarn>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <CodeAnalysisRuleSet>$(SolutionDir)/tools/StyleCopAnalyzers.ruleset</CodeAnalysisRuleSet>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="7.2.0" />
-    <PackageReference Include="Tomlyn.Extensions.Configuration" Version="1.0.5" />
-    <PackageReference Include="System.Linq.Async" Version="6.0.1" />
-    <PackageReference Include="Xunit.DependencyInjection" Version="8.3.0" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.9.4" />
-    <PackageReference Include="Microsoft.Toolkit.HighPerformance" Version="7.1.1" />
-    <PackageReference Include="System.Numerics.Tensors" Version="6.0.0-rc.2.21480.5" />
-    <PackageReference Include="xunit" Version="2.4.1" />
-    <PackageReference Include="Xunit.DependencyInjection" Version="8.3.0" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
+    <PackageReference Include="Fody">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="MethodBoundaryAspect.Fody" />
+    <PackageReference Include="Tomlyn.Extensions.Configuration" />
+    <PackageReference Include="System.Linq.Async" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Microsoft.Toolkit.HighPerformance" />
+    <PackageReference Include="xunit.analyzers" />
+    <PackageReference Include="Xunit.Combinatorial" />
+    <PackageReference Include="xunit.core" />
+    <PackageReference Include="Xunit.DependencyInjection" />
+    <PackageReference Include="xunit.runner.visualstudio">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="coverlet.collector" Version="3.0.2">
+    <PackageReference Include="coverlet.collector">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="xunit.v3.assert" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\modules\Nncase.Modules.K210\Nncase.Modules.K210.csproj" />
+    <ProjectReference Include="..\Nncase.Compiler\Nncase.Compiler.csproj" />
     <ProjectReference Include="..\Nncase.EGraph\Nncase.EGraph.csproj" /> 
-    <ProjectReference Include="..\Nncase.Graph\Nncase.Graph.csproj" />
-    <ProjectReference Include="..\Nncase.Transform\Nncase.Transform.csproj" />
+    <ProjectReference Include="..\Nncase.Graph\Nncase.Graph.csproj" /> 
+    <ProjectReference Include="..\Nncase.Tests.TestFixture\Nncase.Tests.TestFixture.csproj" />
+    <ProjectReference Include="..\Nncase.Passes\Nncase.Passes.csproj" />
     <ProjectReference Include="..\Nncase.Core\Nncase.Core.csproj" />
     <ProjectReference Include="..\Nncase.Evaluator\Nncase.Evaluator.csproj" />
     <ProjectReference Include="..\Nncase.Importer\Nncase.Importer.csproj" />
     <ProjectReference Include="..\Nncase.CodeGen\Nncase.CodeGen.csproj" />
     <ProjectReference Include="..\Nncase.IO\Nncase.IO.csproj" />
     <ProjectReference Include="..\Nncase.Simulator\Nncase.Simulator.csproj" />
-    <ProjectReference Include="..\Nncase.TestFixture\Nncase.TestFixture.csproj" />
     <ProjectReference Include="..\..\modules\Nncase.Modules.StackVM\Nncase.Modules.StackVM.csproj" />
+    <!--<ProjectReference Include="..\..\modules\Nncase.Modules.K210\Nncase.Modules.K210.csproj" />-->
     <!--<ProjectReference Include="..\..\targets\Nncase.Targets.CSource\Nncase.Targets.CSource.csproj" />-->
   </ItemGroup>
 

@@ -8,8 +8,8 @@ using System.Linq;
 using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Nncase.CodeGen;
+using Nncase.Passes;
 using Nncase.Quantization;
-using Nncase.Transform;
 
 namespace Nncase;
 
@@ -24,41 +24,64 @@ public interface ITarget
     string Kind { get; }
 
     /// <summary>
-    /// Bind Quant Method And Quant Cosine With IR
+    /// Bind Quant Method And Quant Cosine With IR.
     /// </summary>
     /// <param name="calibrationDataset">calibration dataset.</param>
-    /// <param name="target">target.</param>
     /// <param name="rangeOfs">rangeOf nodes.</param>
     /// <param name="childrenOfRangeOfs">rangeOf nodes children.</param>
-    /// <param name="runPassOptions">options.</param>
-    Task<Dictionary<ENode, List<Tuple<List<DataType>, List<QuantParam>, float>>>> BindQuantMethodCosine(ICalibrationDatasetProvider calibrationDataset, ITarget target, List<ENode> rangeOfs, List<ENode> childrenOfRangeOfs, RunPassOptions runPassOptions);
+    /// <param name="quantizeOptions">options.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    Task<Dictionary<ENode, List<Tuple<List<DataType>, List<List<QuantParam>>, float>>>> BindQuantMethodCosine(ICalibrationDatasetProvider calibrationDataset, List<ENode> rangeOfs, List<ENode> childrenOfRangeOfs, QuantizeOptions quantizeOptions);
 
     /// <summary>
-    /// Parse Target Dependent Options 
+    /// AdaRound Weights.
     /// </summary>
-    /// <param name="configure"></param>
+    /// <param name="calibrationDataset">calibration dataset.</param>
+    /// <param name="rangeOfs">rangeOf nodes.</param>
+    /// <param name="childrenOfRangeOfs">rangeOf nodes children.</param>
+    /// <param name="quantizeOptions">options.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    Task AdaRoundWeights(ICalibrationDatasetProvider calibrationDataset, List<ENode> rangeOfs, List<ENode> childrenOfRangeOfs, QuantizeOptions quantizeOptions);
+
+    /// <summary>
+    /// Parse Target Dependent Options.
+    /// </summary>
     void ParseTargetDependentOptions(IConfigurationSection configure);
 
     /// <summary>
-    /// Register Target Dependent Pass
+    /// Register Target InDependent Pass.
     /// </summary>
     /// <param name="passManager">pass manager.</param>
     /// <param name="options">compile options.</param>
-    void RegisterTargetDependentPass(PassManager passManager, CompileOptions options);
+    void RegisterTargetInDependentPass(IPassManager passManager, CompileOptions options);
 
     /// <summary>
-    /// Register Quantize Pass
+    /// Register Target Dependent Pass.
     /// </summary>
     /// <param name="passManager">pass manager.</param>
     /// <param name="options">compile options.</param>
-    void RegisterQuantizePass(PassManager passManager, CompileOptions options);
+    void RegisterTargetDependentPass(IPassManager passManager, CompileOptions options);
 
     /// <summary>
-    /// Register Target Dependent After Quant Pass
+    /// Register Quantize Pass.
     /// </summary>
-    /// <param name="passManager"></param>
+    /// <param name="passManager">pass manager.</param>
     /// <param name="options">compile options.</param>
-    void RegisterTargetDependentAfterQuantPass(PassManager passManager, CompileOptions options);
+    void RegisterQuantizePass(IPassManager passManager, CompileOptions options);
+
+    /// <summary>
+    /// Register Target Dependent After Quant Pass.
+    /// </summary>
+    /// <param name="passManager">Pass manager.</param>
+    /// <param name="options">compile options.</param>
+    void RegisterTargetDependentAfterQuantPass(IPassManager passManager, CompileOptions options);
+
+    /// <summary>
+    /// Register Target Dependent After Quant Pass.
+    /// </summary>
+    /// <param name="passManager">Pass manager.</param>
+    /// <param name="options">compile options.</param>
+    void RegisterTargetDependentBeforeCodeGen(IPassManager passManager, CompileOptions options);
 
     /// <summary>
     /// Create module builder.

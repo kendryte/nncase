@@ -12,10 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/kernels/stackvm/opt_ops.h>
+#include "opt_ops.h"
+#include <cstring>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/runtime/runtime_op_utility.h>
-#include <cstring>
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -23,36 +23,35 @@ using namespace nncase::kernels;
 using namespace nncase::kernels::stackvm;
 using namespace nncase::kernels::stackvm::optimized;
 
-namespace
-{
+namespace {
 template <size_t Dims, size_t CurDim = 0, class Callable = DefaultCallable>
-void _slice_contiguous_dim_copy(const axes_t &begins, NNCASE_UNUSED const axes_t &ends,
-    Callable &&line_copy, dims_t &in_index,
-    std::false_type) noexcept
-{
+void _slice_contiguous_dim_copy(const axes_t &begins,
+                                NNCASE_UNUSED const axes_t &ends,
+                                Callable &&line_copy, dims_t &in_index,
+                                std::false_type) noexcept {
     in_index[Dims] = begins[Dims];
     line_copy();
 }
 
 template <size_t Dims, size_t CurDim = 0, class Callable = DefaultCallable>
-void _slice_contiguous_dim_copy(const axes_t &begins, NNCASE_UNUSED const axes_t &ends,
-    Callable &&line_copy, dims_t &in_index,
-    std::true_type) noexcept
-{
-    for (size_t i = begins[CurDim]; i < static_cast<size_t>(ends[CurDim]); ++i)
-    {
+void _slice_contiguous_dim_copy(const axes_t &begins,
+                                NNCASE_UNUSED const axes_t &ends,
+                                Callable &&line_copy, dims_t &in_index,
+                                std::true_type) noexcept {
+    for (size_t i = begins[CurDim]; i < static_cast<size_t>(ends[CurDim]);
+         ++i) {
         in_index[CurDim] = i;
-        _slice_contiguous_dim_copy<Dims, CurDim + 1>(begins, ends,
-            std::forward<Callable>(line_copy), in_index,
+        _slice_contiguous_dim_copy<Dims, CurDim + 1>(
+            begins, ends, std::forward<Callable>(line_copy), in_index,
             is_not_equal<Dims, CurDim + 1>);
     }
 }
 
 template <class T>
-result<void> slice_contiguous_impl(const T *input, T *output, const dims_t &in_shape,
-    const dims_t &in_strides, NNCASE_UNUSED const dims_t &out_strides,
-    const axes_t &begins, const axes_t &ends, NNCASE_UNUSED const axes_t &strides) noexcept
-{
+result<void> slice_contiguous_impl(
+    const T *input, T *output, const dims_t &in_shape, const dims_t &in_strides,
+    NNCASE_UNUSED const dims_t &out_strides, const axes_t &begins,
+    const axes_t &ends, NNCASE_UNUSED const axes_t &strides) noexcept {
     size_t elemsize = sizeof(T);
     auto *out_ptr = output;
     auto dims = in_shape.size() - 1;
@@ -66,173 +65,169 @@ result<void> slice_contiguous_impl(const T *input, T *output, const dims_t &in_s
         out_ptr += distance;
     };
 
-    if (dims == 0)
-    {
-        _slice_contiguous_dim_copy<0>(begins, ends,
-            line_copy, in_index, std::false_type {});
-    }
-    else if (dims == 1)
-    {
-        _slice_contiguous_dim_copy<1>(begins, ends,
-            line_copy, in_index, std::true_type {});
-    }
-    else if (dims == 2)
-    {
-        _slice_contiguous_dim_copy<2>(begins, ends,
-            line_copy, in_index, std::true_type {});
-    }
-    else if (dims == 3)
-    {
-        _slice_contiguous_dim_copy<3>(begins, ends,
-            line_copy, in_index, std::true_type {});
-    }
-    else
-    {
+    if (dims == 0) {
+        _slice_contiguous_dim_copy<0>(begins, ends, line_copy, in_index,
+                                      std::false_type{});
+    } else if (dims == 1) {
+        _slice_contiguous_dim_copy<1>(begins, ends, line_copy, in_index,
+                                      std::true_type{});
+    } else if (dims == 2) {
+        _slice_contiguous_dim_copy<2>(begins, ends, line_copy, in_index,
+                                      std::true_type{});
+    } else if (dims == 3) {
+        _slice_contiguous_dim_copy<3>(begins, ends, line_copy, in_index,
+                                      std::true_type{});
+    } else {
         assert(false);
     }
     return ok();
 }
 
 template <size_t Dims, size_t CurDim = 0, class Callable = DefaultCallable>
-void _slice_dim_copy(NNCASE_UNUSED const axes_t &begins, NNCASE_UNUSED const axes_t &ends,
-    NNCASE_UNUSED const axes_t &strides, Callable &&line_copy, dims_t &in_index, dims_t &out_index,
-    std::false_type) noexcept
-{
+void _slice_dim_copy(NNCASE_UNUSED const axes_t &begins,
+                     NNCASE_UNUSED const axes_t &ends,
+                     NNCASE_UNUSED const axes_t &strides, Callable &&line_copy,
+                     dims_t &in_index, dims_t &out_index,
+                     std::false_type) noexcept {
     line_copy(in_index, out_index);
 }
 
 template <size_t Dims, size_t CurDim = 0, class Callable = DefaultCallable>
 void _slice_dim_copy(const axes_t &begins, const axes_t &ends,
-    const axes_t &strides, Callable &&line_copy, dims_t &in_index, dims_t &out_index,
-    std::true_type) noexcept
-{
+                     const axes_t &strides, Callable &&line_copy,
+                     dims_t &in_index, dims_t &out_index,
+                     std::true_type) noexcept {
     out_index[CurDim] = 0;
-    for (size_t i = begins[CurDim]; i < static_cast<size_t>(ends[CurDim]); i += strides[CurDim])
-    {
+    for (size_t i = begins[CurDim]; i < static_cast<size_t>(ends[CurDim]);
+         i += strides[CurDim]) {
         in_index[CurDim] = i;
-        _slice_dim_copy<Dims, CurDim + 1>(begins, ends, strides,
-            std::forward<Callable>(line_copy), in_index, out_index,
-            is_not_equal<Dims, CurDim + 1>);
+        _slice_dim_copy<Dims, CurDim + 1>(
+            begins, ends, strides, std::forward<Callable>(line_copy), in_index,
+            out_index, is_not_equal<Dims, CurDim + 1>);
         ++out_index[CurDim];
     }
 }
 
 template <class Callable>
-result<void> _slice_impl(const dims_t &in_shape, const axes_t &begins, const axes_t &ends,
-    const axes_t &strides, Callable &&line_copy) noexcept
-{
+result<void> _slice_impl(const dims_t &in_shape, const axes_t &begins,
+                         const axes_t &ends, const axes_t &strides,
+                         Callable &&line_copy) noexcept {
     auto dims = in_shape.size() - 1;
     dims_t in_index(in_shape.size());
     dims_t out_index(in_shape.size());
-    if (dims == 0)
-    {
+    if (dims == 0) {
         in_index[0] = begins[0];
         _slice_dim_copy<0>(begins, ends, strides,
-            std::forward<Callable &&>(line_copy), in_index, out_index, std::false_type {});
-    }
-    else if (dims == 1)
-    {
+                           std::forward<Callable &&>(line_copy), in_index,
+                           out_index, std::false_type{});
+    } else if (dims == 1) {
         _slice_dim_copy<1>(begins, ends, strides,
-            std::forward<Callable &&>(line_copy), in_index, out_index, std::true_type {});
-    }
-    else if (dims == 2)
-    {
+                           std::forward<Callable &&>(line_copy), in_index,
+                           out_index, std::true_type{});
+    } else if (dims == 2) {
         _slice_dim_copy<2>(begins, ends, strides,
-            std::forward<Callable &&>(line_copy), in_index, out_index, std::true_type {});
-    }
-    else if (dims == 3)
-    {
+                           std::forward<Callable &&>(line_copy), in_index,
+                           out_index, std::true_type{});
+    } else if (dims == 3) {
         _slice_dim_copy<3>(begins, ends, strides,
-            std::forward<Callable &&>(line_copy), in_index, out_index, std::true_type {});
-    }
-    else
-    {
+                           std::forward<Callable &&>(line_copy), in_index,
+                           out_index, std::true_type{});
+    } else {
         assert(false);
     }
     return ok();
 }
 
 template <class T>
-result<void> slice_linecopy_impl(const T *input, T *output, const dims_t &in_shape,
-    const dims_t &in_strides, const dims_t &out_strides, const axes_t &begins, const axes_t &ends, const axes_t &strides) noexcept
-{
+result<void>
+slice_linecopy_impl(const T *input, T *output, const dims_t &in_shape,
+                    const dims_t &in_strides, const dims_t &out_strides,
+                    const axes_t &begins, const axes_t &ends,
+                    const axes_t &strides) noexcept {
     auto dims = in_shape.size() - 1;
-    return _slice_impl(
-        in_shape, begins, ends, strides,
-        [&, dims](dims_t &in_index, dims_t &out_index) {
-            in_index[dims] = begins[dims];
-            const auto distance = static_cast<size_t>(ends[dims]) - begins[dims];
-            auto copy_size = distance * sizeof(T);
-            const auto *in_ptr = input + offset(in_strides, in_index);
-            auto *out_ptr = output + offset(out_strides, out_index);
-            memcpy(out_ptr, in_ptr, copy_size);
-        });
+    return _slice_impl(in_shape, begins, ends, strides,
+                       [&, dims](dims_t &in_index, dims_t &out_index) {
+                           in_index[dims] = begins[dims];
+                           const auto distance =
+                               static_cast<size_t>(ends[dims]) - begins[dims];
+                           auto copy_size = distance * sizeof(T);
+                           const auto *in_ptr =
+                               input + offset(in_strides, in_index);
+                           auto *out_ptr =
+                               output + offset(out_strides, out_index);
+                           memcpy(out_ptr, in_ptr, copy_size);
+                       });
 }
 
 template <class T>
-result<void> slice_strides_impl(const T *input, T *output, const dims_t &in_shape,
-    const dims_t &in_strides, const dims_t &out_strides, const axes_t &begins, const axes_t &ends, const axes_t &strides) noexcept
-{
+result<void>
+slice_strides_impl(const T *input, T *output, const dims_t &in_shape,
+                   const dims_t &in_strides, const dims_t &out_strides,
+                   const axes_t &begins, const axes_t &ends,
+                   const axes_t &strides) noexcept {
     auto dims = in_shape.size() - 1;
-    return _slice_impl(
-        in_shape, begins, ends, strides,
-        [&, dims](dims_t &in_index, dims_t &out_index) {
-            for (size_t i = begins[dims]; i < static_cast<size_t>(ends[dims]); i += strides[dims])
-            {
-                in_index[dims] = i;
-                output[offset(out_strides, out_index)] = input[offset(in_strides, in_index)];
-                ++out_index[dims];
-            }
-            out_index[dims] = 0;
-        });
+    return _slice_impl(in_shape, begins, ends, strides,
+                       [&, dims](dims_t &in_index, dims_t &out_index) {
+                           for (size_t i = begins[dims];
+                                i < static_cast<size_t>(ends[dims]);
+                                i += strides[dims]) {
+                               in_index[dims] = i;
+                               output[offset(out_strides, out_index)] =
+                                   input[offset(in_strides, in_index)];
+                               ++out_index[dims];
+                           }
+                           out_index[dims] = 0;
+                       });
 }
-}
+} // namespace
 
-#define SLICE_LINECOPY_IMPL(size, type) \
-    case size:                          \
-        return slice_linecopy_impl(reinterpret_cast<const type *>(input), reinterpret_cast<type *>(output), in_shape, in_strides, out_strides, begins, ends, strides)
+#define SLICE_LINECOPY_IMPL(size, type)                                        \
+    case size:                                                                 \
+        return slice_linecopy_impl(reinterpret_cast<const type *>(input),      \
+                                   reinterpret_cast<type *>(output), in_shape, \
+                                   in_strides, out_strides, begins, ends,      \
+                                   strides)
 
-#define SLICE_CONTIGUOUS_IMPL(size, type) \
-    case size:                            \
-        return slice_contiguous_impl(reinterpret_cast<const type *>(input), reinterpret_cast<type *>(output), in_shape, in_strides, out_strides, begins, ends, strides)
+#define SLICE_CONTIGUOUS_IMPL(size, type)                                      \
+    case size:                                                                 \
+        return slice_contiguous_impl(reinterpret_cast<const type *>(input),    \
+                                     reinterpret_cast<type *>(output),         \
+                                     in_shape, in_strides, out_strides,        \
+                                     begins, ends, strides)
 
-#define SLICE_STRIDES_IMPL(size, type) \
-    case size:                         \
-        return slice_strides_impl(reinterpret_cast<const type *>(input), reinterpret_cast<type *>(output), in_shape, in_strides, out_strides, begins, ends, strides)
+#define SLICE_STRIDES_IMPL(size, type)                                         \
+    case size:                                                                 \
+        return slice_strides_impl(reinterpret_cast<const type *>(input),       \
+                                  reinterpret_cast<type *>(output), in_shape,  \
+                                  in_strides, out_strides, begins, ends,       \
+                                  strides)
 
-result<void> nncase::kernels::stackvm::optimized::slice(datatype_t type, const gsl::byte *input, gsl::byte *output, const dims_t &in_shape,
-    const strides_t &in_strides, const strides_t &out_strides, const axes_t &begins, const axes_t &ends, const axes_t &strides,
-    NNCASE_UNUSED kernel_context &context) noexcept
-{
+result<void> nncase::kernels::stackvm::optimized::slice(
+    datatype_t type, const gsl::byte *input, gsl::byte *output,
+    const dims_t &in_shape, const strides_t &in_strides,
+    const strides_t &out_strides, const axes_t &begins, const axes_t &ends,
+    const axes_t &strides, NNCASE_UNUSED kernel_context &context) noexcept {
     auto dims = begins.size();
     dims_t out_shape(dims);
-    for (size_t i = 0; i < dims; ++i)
-    {
+    for (size_t i = 0; i < dims; ++i) {
         out_shape[i] = static_cast<size_t>(ends[i]) - begins[i];
     }
 
-    for (size_t i = 0; i < dims; ++i)
-    {
-        if (strides[i] != 1)
-        {
+    for (size_t i = 0; i < dims; ++i) {
+        if (strides[i] != 1) {
             // only last dims' stride is not 1
-            if (strides[dims - 1] == 1)
-            {
+            if (strides[dims - 1] == 1) {
                 TYPE_IMPL_SELECT(type, SLICE_LINECOPY_IMPL);
-            }
-            else
-            {
+            } else {
                 TYPE_IMPL_SELECT(type, SLICE_STRIDES_IMPL);
             }
         }
     }
-    if (is_contiguous(in_shape, in_strides) && is_contiguous(out_shape, out_strides))
-    {
+    if (is_contiguous(in_shape, in_strides) &&
+        is_contiguous(out_shape, out_strides)) {
         // all of strides are 1 and contiguous
         TYPE_IMPL_SELECT(type, SLICE_CONTIGUOUS_IMPL);
-    }
-    else
-    {
+    } else {
         // summary memory is not continous, but line is contiguous
         TYPE_IMPL_SELECT(type, SLICE_LINECOPY_IMPL);
     }

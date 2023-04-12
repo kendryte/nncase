@@ -12,43 +12,53 @@ using Nncase.IR;
 namespace Nncase.Runtime.Interop;
 
 /// <summary>
-/// the Runtime Value
+/// the Runtime Value.
 /// </summary>
 public abstract class RTValue : RTObject
 {
-    internal RTValue() : base(IntPtr.Zero)
+    internal RTValue()
+        : base(IntPtr.Zero)
     {
     }
 
-    internal RTValue(IntPtr handle) : base(handle)
+    internal RTValue(IntPtr handle)
+        : base(handle)
     {
     }
 
-    internal static RTValue FromHandle(IntPtr handle)
+    /// <summary>
+    /// convert IValue Value To RTValue.
+    /// </summary>
+    public static RTValue FromValue(IValue value) => value switch
+    {
+        TensorValue tv => RTTensor.FromTensor(tv.AsTensor()),
+        TupleValue tv => RTTuple.FromTuple(tv),
+        _ => throw new ArgumentOutOfRangeException(nameof(value)),
+    };
+
+    public static RTValue FromHandle(IntPtr handle, bool addRef = false)
     {
         try
         {
             Native.ValueIsTensor(handle, out var isTensor).ThrowIfFailed();
-            return isTensor ? new RTTensor(handle) : new RTTuple(handle);
+            return isTensor ? new RTTensor(handle, addRef) : new RTTuple(handle, addRef);
         }
         catch
         {
-            Native.ObjectFree(handle);
+            Native.ObjectRelease(handle);
             throw;
         }
     }
 
     /// <summary>
-    /// convert RT Value To IValue
+    /// convert RT Value To IValue.
     /// </summary>
-    /// <returns></returns>
     public IValue ToValue() => this switch
     {
         RTTensor rTTensor => new TensorValue(rTTensor.ToTensor()),
         RTTuple rTTuple => new TupleValue(rTTuple.Fields.Select(f => f.ToValue()).ToArray()),
         _ => throw new ArgumentOutOfRangeException(),
     };
-
 }
 
 /// <summary>
@@ -60,13 +70,18 @@ public class RTTensor : RTValue
     private uint[]? _dimensions;
     private uint[]? _strides;
 
-    internal RTTensor() : base(IntPtr.Zero)
+    internal RTTensor()
+        : base(IntPtr.Zero)
     {
     }
 
-    internal RTTensor(IntPtr handle)
+    internal RTTensor(IntPtr handle, bool addRef = false)
         : base(handle)
     {
+        if (addRef)
+        {
+            Native.ObjectAddRef(handle);
+        }
     }
 
     /// <summary>
@@ -87,7 +102,7 @@ public class RTTensor : RTValue
     }
 
     /// <summary>
-    /// Get the buffer slice
+    /// Gets get the buffer slice.
     /// </summary>
     public RTBufferSlice Buffer
     {
@@ -99,7 +114,7 @@ public class RTTensor : RTValue
     }
 
     /// <summary>
-    /// Get the dimensions
+    /// Gets get the dimensions.
     /// </summary>
     public unsafe ReadOnlySpan<uint> Dimensions
     {
@@ -123,7 +138,7 @@ public class RTTensor : RTValue
     }
 
     /// <summary>
-    /// Get the Strides
+    /// Gets get the Strides.
     /// </summary>
     public unsafe ReadOnlySpan<uint> Strides
     {
@@ -194,11 +209,9 @@ public class RTTensor : RTValue
     {
         var dtype = DataType.FromTypeCode(ElementType.TypeCode);
         var dims = MemoryMarshal.Cast<uint, int>(Dimensions);
-        var strides = MemoryMarshal.Cast<uint, int>(Strides);
+        _ = MemoryMarshal.Cast<uint, int>(Strides);
         var hostBuffer = Buffer.Buffer.AsHost()!;
-        using (var owner = hostBuffer.Map(RTMapAccess.Read))
-        {
-            return Tensor.FromBytes(new TensorType(dtype, new(dims.ToArray())), owner.Memory.Span);
-        }
+        using var owner = hostBuffer.Map(RTMapAccess.Read);
+        return Tensor.FromBytes(new TensorType(dtype, new(dims.ToArray())), owner.Memory.ToArray());
     }
 }

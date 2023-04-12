@@ -8,14 +8,13 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using LanguageExt;
 using Nncase.IR;
-using Nncase.Transform;
+using Nncase.Passes;
 
 namespace Nncase.PatternMatch;
 
 /// <summary>
-/// egraph matcher
+/// egraph matcher.
 /// </summary>
 public sealed class EGraphMatcher
 {
@@ -64,6 +63,7 @@ public sealed class EGraphMatcher
             (TensorConstPattern constPat, TensorConst con) => VisitLeaf(matchScopes, constPat, enode, con),
             (TupleConstPattern constPat, TupleConst con) => VisitLeaf(matchScopes, constPat, enode, con),
             (ConstPattern constPat, Const con) => VisitLeaf(matchScopes, constPat, enode, con),
+            (FusionPattern fusionPattern, Fusion fusion) => VisitLeaf(matchScopes, fusionPattern, enode, fusion),
             (FunctionPattern functionPat, Function func) => Visit(matchScopes, functionPat, enode, func),
             (CallPattern callPat, Call call) => Visit(matchScopes, callPat, enode, call),
             (MarkerPattern mkPat, Marker mk) => Visit(matchScopes, mkPat, enode, mk),
@@ -113,13 +113,29 @@ public sealed class EGraphMatcher
             && pattern.MatchLeaf(expr))
         {
             var newScopes = Visit(context.Candidates, pattern.Body, enode.Children[0]);
-            newScopes = Visit(newScopes, pattern.Parameters, enode.Children.Skip(1));
-
             if (newScopes.Count > 0)
             {
-                context.NewScopes.AddRange(newScopes);
-                context.MatchCandidates(pattern, expr);
+                newScopes = Visit(newScopes, pattern.Parameters, enode.Children.Skip(1));
+                if (newScopes.Count > 0)
+                {
+                    context.NewScopes.AddRange(newScopes);
+                    context.MatchCandidates(pattern, expr);
+                }
             }
+        }
+
+        return context.NewScopes;
+    }
+
+    private IReadOnlyList<MatchScope> VisitLeaf(IReadOnlyList<MatchScope> matchScopes, FusionPattern pattern, ENode enode, Fusion expr)
+    {
+        var context = new MatchContext(matchScopes, pattern, expr);
+
+        if (context.HasCandidates
+            && CompilerServices.TryMatchRoot(expr, pattern, out var result))
+        {
+            context.NewScopes.AddRange(context.Candidates);
+            context.MatchCandidates(pattern, (Expr)result[pattern]);
         }
 
         return context.NewScopes;
@@ -131,21 +147,24 @@ public sealed class EGraphMatcher
 
         if (context.HasCandidates
             && pattern.MatchLeaf(expr)
-            && pattern.Parameters.MatchLeaf(expr.Parameters))
+            && pattern.Target.MatchLeaf(expr.Target)
+            && pattern.Arguments.MatchLeaf(expr.Arguments))
         {
             var newScopes = Visit(context.Candidates, pattern.Target, enode.Children[0]);
-            newScopes = Visit(newScopes, pattern.Parameters, enode.Children.Skip(1));
-
             if (newScopes.Count > 0)
             {
-                context.NewScopes.AddRange(newScopes);
-                context.MatchCandidates(pattern, expr);
+                newScopes = Visit(newScopes, pattern.Arguments, enode.Children.Skip(1));
+                if (newScopes.Count > 0)
+                {
+                    context.NewScopes.AddRange(newScopes);
+                    context.MatchCandidates(pattern, expr);
+                }
             }
         }
 
         return context.NewScopes;
     }
-    
+
     private IReadOnlyList<MatchScope> Visit(IReadOnlyList<MatchScope> matchScopes, MarkerPattern pattern, ENode enode, Marker expr)
     {
         var context = new MatchContext(matchScopes, pattern, expr);
@@ -154,12 +173,14 @@ public sealed class EGraphMatcher
             && pattern.MatchLeaf(expr))
         {
             var newScopes = Visit(context.Candidates, pattern.Target, enode.Children[0]);
-            newScopes = Visit(newScopes, pattern.Attribute, enode.Children[1]);
-
             if (newScopes.Count > 0)
             {
-                context.NewScopes.AddRange(newScopes);
-                context.MatchCandidates(pattern, expr);
+                newScopes = Visit(newScopes, pattern.Attribute, enode.Children[1]);
+                if (newScopes.Count > 0)
+                {
+                    context.NewScopes.AddRange(newScopes);
+                    context.MatchCandidates(pattern, expr);
+                }
             }
         }
 
@@ -171,10 +192,10 @@ public sealed class EGraphMatcher
         var context = new MatchContext(matchScopes, pattern, expr);
 
         if (context.HasCandidates
-            && pattern.MatchLeaf(expr))
+            && pattern.MatchLeaf(expr)
+            && pattern.Fields.MatchLeaf(expr.Fields))
         {
             var newScopes = Visit(context.Candidates, pattern.Fields, enode.Children);
-
             if (newScopes.Count > 0)
             {
                 context.NewScopes.AddRange(newScopes);
@@ -216,7 +237,7 @@ public sealed class EGraphMatcher
 
     private IReadOnlyList<MatchScope> Visit(IReadOnlyList<MatchScope> matchScopes, VArgsPattern pattern, IReadOnlyList<ENode> enodes)
     {
-        var exprs = enodes.Select(x => x.Expr).ToList();
+        var exprs = enodes.Select(x => x.Expr).ToArray();
         var context = new MatchContext(matchScopes, pattern, exprs);
 
         if (context.HasCandidates
@@ -244,7 +265,7 @@ public sealed class EGraphMatcher
 
     private IReadOnlyList<MatchScope> Visit(IReadOnlyList<MatchScope> matchScopes, VArgsPattern pattern, IEnumerable<EClass> eClasses)
     {
-        if (eClasses.Count() != pattern.Count)
+        if (pattern.Count == 0 || eClasses.Count() != pattern.Count)
         {
             return Array.Empty<MatchScope>();
         }
@@ -257,7 +278,7 @@ public sealed class EGraphMatcher
                                            select en).CartesianProduct())
             {
                 var scopes = Visit(matchScopes, pattern, enodes.ToList());
-                if (scopes.Count() > 0)
+                if (scopes.Count > 0)
                 {
                     newScopes.AddRange(scopes);
                 }

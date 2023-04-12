@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -8,7 +8,7 @@ using static Nncase.IR.TypePatternUtility;
 namespace Nncase.IR.NN;
 
 [PatternFunctionalGenerator]
-public sealed record L2Normalization() : Op
+public sealed partial class L2Normalization : Op
 {
     /// <summary>
     /// Gets input.
@@ -17,7 +17,7 @@ public sealed record L2Normalization() : Op
 }
 
 [PatternFunctionalGenerator]
-public sealed record BatchNormalization() : Op
+public sealed partial class BatchNormalization : Op
 {
     /// <summary>
     /// Gets input.
@@ -56,7 +56,7 @@ public sealed record BatchNormalization() : Op
 }
 
 [PatternFunctionalGenerator]
-public sealed record InstanceNormalization() : Op
+public sealed partial class InstanceNormalization : Op
 {
     /// <summary>
     /// Gets input.
@@ -80,12 +80,12 @@ public sealed record InstanceNormalization() : Op
 }
 
 [PatternFunctionalGenerator]
-public sealed record LpNormalization() : Op
+public sealed partial class LpNormalization : Op
 {
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(LpNormalization), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(LpNormalization), 0, "input", IsFloat());
 
     /// <summary>
     /// Gets Axis.
@@ -95,11 +95,11 @@ public sealed record LpNormalization() : Op
     /// <summary>
     /// Gets P.
     /// </summary>
-    public static readonly ParameterInfo P = new(typeof(L2Normalization), 2, "p", IsFloatScalar());
+    public static readonly ParameterInfo P = new(typeof(LpNormalization), 2, "p", IsFloatScalar());
 }
 
 [PatternFunctionalGenerator]
-public sealed record LRN() : Op
+public sealed partial class LRN : Op
 {
     /// <summary>
     /// Gets input.

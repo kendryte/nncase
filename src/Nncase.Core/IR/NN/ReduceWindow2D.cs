@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using Nncase.PatternMatch;
@@ -10,7 +10,7 @@ namespace Nncase.IR.NN;
 /// ReduceWindow2D.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record ReduceWindow2D(ReduceOp ReduceOp) : Op
+public sealed partial class ReduceWindow2D : Op
 {
     /// <summary>
     /// Gets input.
@@ -51,4 +51,9 @@ public sealed record ReduceWindow2D(ReduceOp ReduceOp) : Op
     /// Gets CountIncludePad.
     /// </summary>
     public static readonly ParameterInfo CountIncludePad = new(typeof(ReduceWindow2D), 7, "countIncludePad", IsBool());
+
+    public ReduceOp ReduceOp { get; }
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => $"ReduceOp.{ReduceOp}";
 }

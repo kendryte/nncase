@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -38,30 +38,32 @@ public sealed record TensorConstPattern(Func<TensorConst, bool> Condition, strin
 
 public static partial class Utility
 {
-
     /// <summary>
     /// create the TensorConstPattern.
     /// </summary>
     /// <param name="name">name.</param>
     /// <returns>TensorConstPattern.</returns>
     public static TensorConstPattern IsTensorConst(string? name) => new TensorConstPattern(x => x is not null, name);
+
     public static TensorConstPattern IsTensorConst() => IsTensorConst(name: null);
 
     /// <summary>
     /// create the TensorConstPattern.
     /// </summary>
-    /// <param name="cond">condition.</param>
     /// <param name="name">name.</param>
+    /// <param name="cond">condition.</param>
     /// <returns>TensorConstPattern.</returns>
     public static TensorConstPattern IsTensorConst(string? name, Func<TensorConst, bool> cond) => new TensorConstPattern(cond, name);
+
     public static TensorConstPattern IsTensorConst(Func<TensorConst, bool> cond) => IsTensorConst(null, cond);
 
     /// <summary>
     /// create the TensorConstPattern.
     /// </summary>
-    /// <param name="typePattern">tyeppattern.</param>
     /// <param name="name">name.</param>
+    /// <param name="typePattern">tyeppattern.</param>
     /// <returns>TensorConstPattern.</returns>
     public static TensorConstPattern IsTensorConst(string? name, TypePattern typePattern) => new TensorConstPattern(x => typePattern.MatchLeaf(x.ValueType), name);
+
     public static TensorConstPattern IsTensorConst(TypePattern typePattern) => IsTensorConst(null, typePattern);
 }

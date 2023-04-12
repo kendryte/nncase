@@ -1,9 +1,14 @@
-﻿using System;
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using DryIoc;
+using Nncase.Hosting;
 
 namespace Nncase;
 
@@ -15,11 +20,10 @@ public static class StackVMApplicationPart
     /// <summary>
     /// Add stackVM assembly.
     /// </summary>
-    /// <param name="assemblies">Assembly collection.</param>
-    /// <returns>Updated assembly collection.</returns>
-    public static IList<Assembly> AddStackVM(this IList<Assembly> assemblies)
+    /// <param name="registrator">Service registrator.</param>
+    /// <returns>Configured service registrator.</returns>
+    public static IRegistrator AddStackVM(this IRegistrator registrator)
     {
-        assemblies.Add(typeof(StackVMApplicationPart).Assembly);
-        return assemblies;
+        return registrator.RegisterModule<StackVMModule>();
     }
 }

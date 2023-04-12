@@ -3,236 +3,159 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Nncase.IR
+namespace Nncase.IR;
+
+/// <summary>
+/// Expression functor.
+/// </summary>
+/// <typeparam name="TExprResult">Expression visit result type.</typeparam>
+/// <typeparam name="TTypeResult">Type visit result type.</typeparam>
+/// <typeparam name="TContext">Visit context.</typeparam>
+public abstract partial class ExprFunctor<TExprResult, TTypeResult, TContext> : TypeFunctor<TTypeResult, TContext>
 {
     /// <summary>
-    /// Expression functor.
+    /// Gets visit root.
     /// </summary>
-    /// <typeparam name="TExprResult">Expression visit result type.</typeparam>
-    /// <typeparam name="TTypeResult">Type visit result type.</typeparam>
-    public abstract class ExprFunctor<TExprResult, TTypeResult> : TypeFunctor<TTypeResult>
+    protected Expr? VisitRoot { get; private set; }
+
+    /// <summary>
+    /// Visit <see cref="Expr"/>.
+    /// </summary>
+    public TExprResult Visit(Expr expr, TContext context)
     {
-        /// <summary>
-        /// Visit expression.
-        /// </summary>
-        /// <param name="expr">Expression.</param>
-        /// <returns>Result.</returns>
-        public virtual TExprResult Visit(Expr expr)
-        {
-            return expr switch
-            {
-                Var var => Visit(var),
-                Const con => Visit(con),
-                Call call => Visit(call),
-                Tuple tuple => Visit(tuple),
-                Op op => Visit(op),
-                None none => Visit(none),
-                Marker marker => Visit(marker),
-                BaseFunction basefunc => Visit(basefunc),
-                TIR.IterVar itvar => Visit(itvar),
-                TIR.Sequential seq => Visit(seq),
-                TIR.For @for => Visit(@for),
-                TIR.Block block => Visit(block),
-                TIR.BufferLoad bload => Visit(bload),
-                TIR.BufferStore bstore => Visit(bstore),
-                TIR.IfThenElse ift => Visit(ift),
-                TIR.Let let => Visit(let),
-                TIR.Buffer buffer => Visit(buffer),
-                TIR.BufferRegion region => Visit(region),
-                _ => DefaultVisit(expr),
-            };
-        }
-
-        /// <summary>
-        /// Visit Basefunction expression.
-        /// </summary>
-        /// <param name="baseFunction"> base function. </param>
-        /// <returns></returns>
-        public virtual TExprResult Visit(BaseFunction baseFunction) => baseFunction switch
-        {
-            Function func => Visit(func),
-            Fusion fusion => Visit(fusion),
-            PrimFunctionWrapper wrapper => Visit(wrapper),
-            TIR.PrimFunction primfunc => Visit(primfunc),
-            _ => DefaultVisit(baseFunction)
-        };
-
-        /// <summary>
-        /// Visit variable expression.
-        /// </summary>
-        /// <param name="expr">Variable expression.</param>
-        /// <returns>Result.</returns>
-        public virtual TExprResult Visit(Var expr) => DefaultVisit(expr);
-
-        /// <summary>
-        /// Visit constant expression.
-        /// </summary>
-        /// <param name="expr">Constant expression.</param>
-        /// <returns>Result.</returns>
-        public virtual TExprResult Visit(Const expr) => DefaultVisit(expr);
-
-        /// <summary>
-        /// Visit function expression.
-        /// </summary>
-        /// <param name="expr">Variable expression.</param>
-        /// <returns>Result.</returns>
-        public virtual TExprResult Visit(Function expr) => DefaultVisit(expr);
-
-        /// <summary>
-        /// Visit fusion expression
-        /// </summary>
-        /// <param name="expr">Fusion Expression</param>
-        /// <returns></returns>
-        public virtual TExprResult Visit(Fusion expr) => DefaultVisit(expr);
-
-        /// <summary>
-        /// Visit prim function wrapper expression.
-        /// </summary>
-        /// <param name="expr">PrimFunctionWrapper expression.</param>
-        /// <returns>Result.</returns>
-        public virtual TExprResult Visit(PrimFunctionWrapper expr) => DefaultVisit(expr);
-
-        /// <summary>
-        /// Visit prim function expression.
-        /// </summary>
-        /// <param name="expr">Variable expression.</param>
-        /// <returns>Result.</returns>
-        public virtual TExprResult Visit(TIR.PrimFunction expr) => DefaultVisit(expr);
-
-        /// <summary>
-        /// Visit call expression.
-        /// </summary>
-        /// <param name="expr">Call expression.</param>
-        /// <returns>Result.</returns>
-        public virtual TExprResult Visit(Call expr) => DefaultVisit(expr);
-
-        /// <summary>
-        /// Visit tuple expression.
-        /// </summary>
-        /// <param name="expr">Variable expression.</param>
-        /// <returns>Result.</returns>
-        public virtual TExprResult Visit(Tuple expr) => DefaultVisit(expr);
-
-        /// <summary>
-        /// Visit operator expression.
-        /// </summary>
-        /// <param name="expr">Operator expression.</param>
-        /// <returns>Result.</returns>
-        public virtual TExprResult Visit(Op expr) => DefaultVisit(expr);
-
-        /// <summary>
-        /// Visit None expression
-        /// </summary>
-        /// <param name="expr">None expr.</param>
-        /// <returns>Result.</returns>
-        public virtual TExprResult Visit(None expr) => DefaultVisit(expr);
-
-        /// <summary>
-        /// Visit marker expression
-        /// </summary>
-        /// <param name="expr">Marker expr.</param>
-        /// <returns>Result.</returns>
-        public virtual TExprResult Visit(Marker expr) => DefaultVisit(expr);
-
-        /// <summary>
-        /// Visit IterVar expression.
-        /// </summary>
-        /// <param name="expr">IterVar expression.</param>
-        /// <returns>Result.</returns>
-        public virtual TExprResult Visit(TIR.IterVar expr) => DefaultVisit(expr);
-
-        /// <summary>
-        /// Visit Sequential expression.
-        /// </summary>
-        /// <param name="expr">Sequential expression.</param>
-        /// <returns>Result.</returns>
-        public virtual TExprResult Visit(TIR.Sequential expr) => DefaultVisit(expr);
-
-        /// <summary>
-        /// Visit For expression.
-        /// </summary>
-        /// <param name="expr">For expression.</param>
-        /// <returns>Result.</returns>
-        public virtual TExprResult Visit(TIR.For expr) => DefaultVisit(expr);
-
-        /// <summary>
-        /// Visit block expression.
-        /// </summary>
-        /// <param name="expr">block expression.</param>
-        /// <returns>Result.</returns>
-        public virtual TExprResult Visit(TIR.Block expr) => DefaultVisit(expr);
-
-        /// <summary>
-        /// Visit BufferLoad expression.
-        /// </summary>
-        /// <param name="expr">BufferLoad expression.</param>
-        /// <returns>Result.</returns>
-        public virtual TExprResult Visit(TIR.BufferLoad expr) => DefaultVisit(expr);
-
-        /// <summary>
-        /// Visit BufferStore expression.
-        /// </summary>
-        /// <param name="expr">BufferStore expression.</param>
-        /// <returns>Result.</returns>
-        public virtual TExprResult Visit(TIR.BufferStore expr) => DefaultVisit(expr);
-
-        /// <summary>
-        /// Visit IfThenElse expression.
-        /// </summary>
-        /// <param name="expr">IfThenElse expression.</param>
-        /// <returns>Result.</returns>
-        public virtual TExprResult Visit(TIR.IfThenElse expr) => DefaultVisit(expr);
-
-        /// <summary>
-        /// Visit Let expression.
-        /// </summary>
-        /// <param name="expr">Let expression.</param>
-        /// <returns>Result.</returns>
-        public virtual TExprResult Visit(TIR.Let expr) => DefaultVisit(expr);
-
-        /// <summary>
-        /// Visit MemRef expression.
-        /// </summary>
-        /// <param name="expr">MemRef expression.</param>
-        /// <returns>Result.</returns>
-        public virtual TExprResult Visit(TIR.Buffer expr) => DefaultVisit(expr);
-
-        /// <summary>
-        /// Visit buffer region expression.
-        /// </summary>
-        /// <param name="expr">buffer region expression.</param>
-        /// <returns>Result.</returns>
-        public virtual TExprResult Visit(TIR.BufferRegion expr) => DefaultVisit(expr);
-
-        /// <summary>
-        /// Visit visitable
-        /// </summary>
-        /// <param name="visitable"></param>
-        /// <returns></returns>
-        public virtual object Visit(IVisitable visitable) => DefaultVisit(visitable);
-
-        /// <summary>
-        /// Default Visit IVisitable.
-        /// </summary>
-        /// <param name="visitable"></param>
-        /// <returns></returns>
-        public virtual object DefaultVisit(IVisitable visitable)
-        {
-            return visitable.Visit<TExprResult, TTypeResult>(this);
-        }
-
-        /// <summary>
-        /// Default visit routine.
-        /// </summary>
-        /// <param name="expr">Expression.</param>
-        /// <returns>Result.</returns>
-        public virtual TExprResult DefaultVisit(Expr expr)
-        {
-            throw new NotImplementedException($"Unhandled visit routine for {expr.GetType()}.");
-        }
+        VisitRoot ??= expr;
+        return DispatchVisit(expr, context);
     }
+
+    /// <summary>
+    /// Clear functor states.
+    /// </summary>
+    public virtual void Clear()
+    {
+        VisitRoot = null;
+    }
+
+    /// <summary>
+    /// Default visit routine.
+    /// </summary>
+    /// <param name="expr">Expression.</param>
+    /// <param name="context">Context.</param>
+    /// <returns>Result.</returns>
+    protected internal virtual TExprResult DefaultVisit(Expr expr, TContext context)
+    {
+        throw new NotImplementedException($"Unhandled visit routine for {expr.GetType()}.");
+    }
+
+    protected virtual TExprResult DispatchVisit(Expr expr, TContext context) => expr.Accept(this, context);
+}
+
+/// <summary>
+/// Expression functor.
+/// </summary>
+/// <typeparam name="TExprResult">Expression visit result type.</typeparam>
+/// <typeparam name="TTypeResult">Type visit result type.</typeparam>
+public partial class ExprFunctor<TExprResult, TTypeResult> : ExprFunctor<TExprResult, TTypeResult, Unit>
+{
+    /// <summary>
+    /// Visit <see cref="Expr"/>.
+    /// </summary>
+    public TExprResult Visit(Expr expr) => Visit(expr, default);
+
+    /// <summary>
+    /// Visit type.
+    /// </summary>
+    /// <param name="type">Type.</param>
+    /// <returns>Result.</returns>
+    public TTypeResult VisitType(IRType type) => VisitType(type, default);
+
+    /// <summary>
+    /// Visit any type.
+    /// </summary>
+    /// <param name="type">Any type.</param>
+    /// <returns>Result.</returns>
+    public virtual TTypeResult VisitType(AnyType type) => base.VisitType(type, default);
+
+    /// <summary>
+    /// Visit None type.
+    /// </summary>
+    /// <param name="type">None type.</param>
+    /// <returns>Result.</returns>
+    public virtual TTypeResult VisitType(NoneType type) => base.VisitType(type, default);
+
+    /// <summary>
+    /// Visit invalid type.
+    /// </summary>
+    /// <param name="type">Invalid type.</param>
+    /// <returns>Result.</returns>
+    public virtual TTypeResult VisitType(InvalidType type) => base.VisitType(type, default);
+
+    /// <summary>
+    /// Visit tensor type.
+    /// </summary>
+    /// <param name="type">Tensor type.</param>
+    /// <returns>Result.</returns>
+    public virtual TTypeResult VisitType(TensorType type) => base.VisitType(type, default);
+
+    /// <summary>
+    /// Visit tuple type.
+    /// </summary>
+    /// <param name="type">Tuple type.</param>
+    /// <returns>Result.</returns>
+    public virtual TTypeResult VisitType(TupleType type) => base.VisitType(type, default);
+
+    /// <summary>
+    /// Visit callable type.
+    /// </summary>
+    /// <param name="type">Callable type.</param>
+    /// <returns>Result.</returns>
+    public virtual TTypeResult VisitType(CallableType type) => base.VisitType(type, default);
+
+    /// <summary>
+    /// Default visit routine.
+    /// </summary>
+    /// <param name="type">Type.</param>
+    /// <returns>Result.</returns>
+    public virtual TTypeResult DefaultVisitType(IRType type) => base.DefaultVisitType(type, default);
+
+    /// <inheritdoc/>
+    public sealed override TTypeResult VisitType(AnyType type, Unit context) => VisitType(type);
+
+    /// <inheritdoc/>
+    public sealed override TTypeResult VisitType(NoneType type, Unit context) => VisitType(type);
+
+    /// <inheritdoc/>
+    public sealed override TTypeResult VisitType(InvalidType type, Unit context) => VisitType(type);
+
+    /// <inheritdoc/>
+    public sealed override TTypeResult VisitType(TensorType type, Unit context) => VisitType(type);
+
+    /// <inheritdoc/>
+    public sealed override TTypeResult VisitType(TupleType type, Unit context) => VisitType(type);
+
+    /// <inheritdoc/>
+    public sealed override TTypeResult VisitType(CallableType type, Unit context) => VisitType(type);
+
+    /// <inheritdoc/>
+    public sealed override TTypeResult DefaultVisitType(IRType type, Unit context) => DefaultVisitType(type);
+
+    /// <summary>
+    /// Default visit routine.
+    /// </summary>
+    /// <param name="expr">Expression.</param>
+    /// <returns>Result.</returns>
+    protected internal virtual TExprResult DefaultVisit(Expr expr) => base.DefaultVisit(expr, default);
+
+    /// <inheritdoc/>
+    protected internal sealed override TExprResult DefaultVisit(Expr expr, Unit context) => DefaultVisit(expr);
+
+    protected virtual TExprResult DispatchVisit(Expr expr) => base.DispatchVisit(expr, default);
+
+    /// <inheritdoc/>
+    protected sealed override TExprResult DispatchVisit(Expr expr, Unit context) => DispatchVisit(expr);
 }

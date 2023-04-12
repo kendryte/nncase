@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -11,16 +11,13 @@ using System.Threading.Tasks;
 namespace Nncase.Runtime.Interop;
 
 /// <summary>
-/// the runtime interop extensions method
+/// the runtime interop extensions method.
 /// </summary>
 public static class RTExtensions
 {
     /// <summary>
     /// convert the rt datatype to primtype.
     /// </summary>
-    /// <param name="rt_dtype"></param>
-    /// <returns></returns>
-    /// <exception cref="ArgumentOutOfRangeException"></exception>
     public static PrimType ToPrimType(this RTDataType rt_dtype) => rt_dtype.TypeCode
     switch
     {
@@ -37,6 +34,6 @@ public static class RTExtensions
         TypeCode.Float32 => DataTypes.Float32,
         TypeCode.Float64 => DataTypes.Float64,
         TypeCode.BFloat16 => DataTypes.BFloat16,
-        _ => throw new ArgumentOutOfRangeException(),
+        _ => throw new ArgumentOutOfRangeException(nameof(rt_dtype)),
     };
 }

@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Linq;
@@ -10,7 +10,7 @@ namespace Nncase.IR.Tensors;
 /// Flatten expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed record Flatten() : Op
+public sealed partial class Flatten : Op
 {
     /// <summary>
     /// Gets input.

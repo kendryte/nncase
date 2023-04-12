@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "ref_ops.h"
 #include <nncase/kernels/kernel_utils.h>
-#include <nncase/kernels/stackvm/ref_ops.h>
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/runtime_op_utility.h>
@@ -81,12 +81,11 @@ gather_nd_impl(const T *input, T *output, const dims_t &in_shape,
                                   context);                                    \
         });
 
-result<void>
-nncase::kernels::stackvm::reference::gather_nd(datatype_t type, const gsl::byte *input, gsl::byte *output,
-                     const dims_t &in_shape, const dims_t &out_shape,
-                     const dims_t &in_strides, const dims_t &out_strides,
-                     datatype_t indices_type, const gsl::byte *indices,
-                     const dims_t &indices_shape, size_t batch_dims,
-                     kernel_context &context) noexcept {
+result<void> nncase::kernels::stackvm::reference::gather_nd(
+    datatype_t type, const gsl::byte *input, gsl::byte *output,
+    const dims_t &in_shape, const dims_t &out_shape, const dims_t &in_strides,
+    const dims_t &out_strides, datatype_t indices_type,
+    const gsl::byte *indices, const dims_t &indices_shape, size_t batch_dims,
+    kernel_context &context) noexcept {
     TYPE_IMPL_SELECT(type, GATHER_ND_IMPL);
 }

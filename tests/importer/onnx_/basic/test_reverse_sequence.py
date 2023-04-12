@@ -20,6 +20,7 @@ from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
 import numpy as np
 
+
 def _make_module(in_shape, sequence_len, batch_axis, time_axis):
     inputs = []
     outputs = []
@@ -73,6 +74,7 @@ def _make_module(in_shape, sequence_len, batch_axis, time_axis):
 
     return model_def
 
+
 in_shapes = [
     [2, 3, 2, 2]
 ]
@@ -99,6 +101,7 @@ time_axes = [
     1
 ]
 
+
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('sequence_len', sequence_lens)
 @pytest.mark.parametrize('batch_axis', batch_axes)
@@ -110,6 +113,7 @@ def test_reverse_sequence(in_shape, sequence_len, batch_axis, time_axis, request
         runner = OnnxTestRunner(request.node.name)
         model_file = runner.from_onnx_helper(model_def)
         runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_reverse_sequence.py'])

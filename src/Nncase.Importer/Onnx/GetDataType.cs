@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.IO;
@@ -19,7 +19,7 @@ namespace Nncase.Importer
                     GetDataType,
                     () =>
                     {
-                        if (_constTensors.TryGetValue(name, out var tensor))
+                        if (_constTensors!.TryGetValue(name, out var tensor))
                         {
                             return GetDataType(tensor);
                         }

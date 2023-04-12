@@ -1,9 +1,10 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
+using static NetFabric.Hyperlinq.ArrayExtensions;
 
 namespace Nncase.CostModel;
 
@@ -99,12 +100,23 @@ public sealed record Cost : IComparable<Cost>, IEquatable<Cost>
         return newCost;
     }
 
+    public static bool operator <=(Cost left, Cost right)
+    {
+        return left is null || left.CompareTo(right) <= 0;
+    }
+
+    public static bool operator >=(Cost left, Cost right)
+    {
+        return left is null ? right is null : left.CompareTo(right) >= 0;
+    }
+
     /// <inheritdoc/>
     public int CompareTo(Cost? other)
     {
-        return (int)(Score - other?.Score ?? 0);
+        return Comparer<double>.Default.Compare(Score, other?.Score ?? 0.0);
     }
 
+    /// <inheritdoc/>
     public bool Equals(Cost? other)
     {
         if (other == null)
@@ -134,6 +146,11 @@ public sealed record Cost : IComparable<Cost>, IEquatable<Cost>
 
         return true;
     }
+
+    public override int GetHashCode()
+    {
+        return Factors.GetHashCode();
+    }
 }
 
 /// <summary>
@@ -146,9 +163,26 @@ public static class CostExtensions
     /// </summary>
     /// <param name="costs">Source.</param>
     /// <returns>Result.</returns>
-    public static Cost? Sum(this IEnumerable<Cost?> costs)
+    public static Cost Sum(this IEnumerable<Cost> costs)
     {
-        return costs.Aggregate((Cost?)Cost.Zero, (x, y) => y == null ? null : x + y);
+        return costs.Aggregate(Cost.Zero, (x, y) => x + y)!;
+    }
+
+    /// <summary>
+    /// Sum all costs.
+    /// </summary>
+    /// <param name="costs">Source.</param>
+    /// <returns>Result.</returns>
+    public static Cost Sum<TSource, TSelector>(this in SpanSelectEnumerable<TSource, Cost, TSelector> costs)
+            where TSelector : struct, IFunction<TSource, Cost>
+    {
+        var sum = Cost.Zero;
+        foreach (var cost in costs)
+        {
+            sum += cost;
+        }
+
+        return sum;
     }
 }
 
@@ -166,7 +200,7 @@ public static class CostUtility
 
     public static double GetMemoryAccess(params IRType[] types)
     {
-        return types.Aggregate((double)0, (sum, type) => sum + GetMemoryAccess(type));
+        return types.Aggregate(0D, (sum, type) => sum + GetMemoryAccess(type));
     }
 
     public static double GetFakeMemoryAccess(IRType type, int bits)
@@ -250,7 +284,7 @@ public static class CostUtility
     {
         return 1;
     }
-    
+
     public static double GetCPUCyclesOfCompare()
     {
         return 1;

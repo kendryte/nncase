@@ -21,14 +21,12 @@
 #include <nncase/runtime/runtime_op_utility.h>
 
 class CopyTest : public ::testing::TestWithParam<
-                     std::tuple<
-                         runtime_shape_t, // shape
-                         runtime_shape_t, // src strides bias
-                         runtime_shape_t>> // dest strides bias
+                     std::tuple<runtime_shape_t,  // shape
+                                runtime_shape_t,  // src strides bias
+                                runtime_shape_t>> // dest strides bias
 {
-public:
-    void SetUp() override
-    {
+  public:
+    void SetUp() override {
         auto &&[shape, in_strides_bias, out_strides_bias] = GetParam();
         input = create_input_tensor(shape, in_strides_bias);
 
@@ -40,111 +38,74 @@ public:
 };
 
 INSTANTIATE_TEST_SUITE_P(
-    CopyTestD1,
-    CopyTest,
-    testing::Combine(
-        testing::Values(
-            runtime_shape_t { 11 }), // shape
-        testing::Values(
-            runtime_shape_t { 0 }, // src strides bias
-            runtime_shape_t { 1 }),
-        testing::Values(
-            runtime_shape_t { 0 }))); // dest strides bias
+    CopyTestD1, CopyTest,
+    testing::Combine(testing::Values(runtime_shape_t{11}), // shape
+                     testing::Values(runtime_shape_t{0},   // src strides bias
+                                     runtime_shape_t{1}),
+                     testing::Values(runtime_shape_t{0}))); // dest strides bias
 
 INSTANTIATE_TEST_SUITE_P(
-    CopyTestD2,
-    CopyTest,
+    CopyTestD2, CopyTest,
     testing::Combine(
-        testing::Values(
-            runtime_shape_t { 3, 5 }), // shape
-        testing::Values(
-            runtime_shape_t { 1, 0 }, // src strides bias
-            runtime_shape_t { 0, 1 },
-            runtime_shape_t { 0, 0 }),
-        testing::Values(
-            runtime_shape_t { 0, 0 }))); // dest strides bias
+        testing::Values(runtime_shape_t{3, 5}), // shape
+        testing::Values(runtime_shape_t{1, 0},  // src strides bias
+                        runtime_shape_t{0, 1}, runtime_shape_t{0, 0}),
+        testing::Values(runtime_shape_t{0, 0}))); // dest strides bias
 
 INSTANTIATE_TEST_SUITE_P(
-    CopyTestD3,
-    CopyTest,
+    CopyTestD3, CopyTest,
     testing::Combine(
-        testing::Values(
-            runtime_shape_t { 3, 5, 4 }), // shape
-        testing::Values(
-            runtime_shape_t { 0, 0, 0 }, // src strides bias
-            runtime_shape_t { 1, 0, 0 },
-            runtime_shape_t { 0, 1, 0 },
-            runtime_shape_t { 0, 0, 1 }),
-        testing::Values(
-            runtime_shape_t { 0, 0, 0 }))); // dest strides bias
+        testing::Values(runtime_shape_t{3, 5, 4}), // shape
+        testing::Values(runtime_shape_t{0, 0, 0},  // src strides bias
+                        runtime_shape_t{1, 0, 0}, runtime_shape_t{0, 1, 0},
+                        runtime_shape_t{0, 0, 1}),
+        testing::Values(runtime_shape_t{0, 0, 0}))); // dest strides bias
 
 INSTANTIATE_TEST_SUITE_P(
-    CopyTestD4,
-    CopyTest,
+    CopyTestD4, CopyTest,
     testing::Combine(
-        testing::Values(
-            runtime_shape_t { 3, 5, 4, 7 }), // shape
-        testing::Values(
-            runtime_shape_t { 0, 0, 0, 0 }, // src strides bias
-            runtime_shape_t { 1, 0, 0, 0 },
-            runtime_shape_t { 0, 1, 0, 0 },
-            runtime_shape_t { 0, 0, 1, 0 },
-            runtime_shape_t { 0, 0, 0, 1 }),
-        testing::Values(
-            runtime_shape_t { 0, 0, 0, 0 }, // dest strides bias
-            runtime_shape_t { 1, 0, 0, 0 },
-            runtime_shape_t { 0, 1, 0, 0 },
-            runtime_shape_t { 0, 0, 1, 0 },
-            runtime_shape_t { 0, 0, 0, 1 })));
+        testing::Values(runtime_shape_t{3, 5, 4, 7}), // shape
+        testing::Values(runtime_shape_t{0, 0, 0, 0},  // src strides bias
+                        runtime_shape_t{1, 0, 0, 0},
+                        runtime_shape_t{0, 1, 0, 0},
+                        runtime_shape_t{0, 0, 1, 0},
+                        runtime_shape_t{0, 0, 0, 1}),
+        testing::Values(runtime_shape_t{0, 0, 0, 0}, // dest strides bias
+                        runtime_shape_t{1, 0, 0, 0},
+                        runtime_shape_t{0, 1, 0, 0},
+                        runtime_shape_t{0, 0, 1, 0},
+                        runtime_shape_t{0, 0, 0, 1})));
 
 INSTANTIATE_TEST_SUITE_P(
-    CopyTest0,
-    CopyTest,
-    testing::Combine(
-        testing::Values(
-            runtime_shape_t { 1, 1, 1, 1 }), // shape
-        testing::Values(
-            runtime_shape_t { 0, 0, 0, 0 } // src strides bias
-            ),
-        testing::Values(
-            runtime_shape_t { 0, 0, 0, 0 } // dest strides bias
-            )));
+    CopyTest0, CopyTest,
+    testing::Combine(testing::Values(runtime_shape_t{1, 1, 1, 1}), // shape
+                     testing::Values(runtime_shape_t{0, 0, 0, 0}
+                                     // src strides bias
+                                     ),
+                     testing::Values(runtime_shape_t{0, 0, 0, 0}
+                                     // dest strides bias
+                                     )));
 
-void copy(runtime_tensor &input, runtime_tensor &output, OpType type)
-{
-    if (type == OpType::Ref)
-    {
+void copy(runtime_tensor &input, runtime_tensor &output, OpType type) {
+    if (type == OpType::Ref) {
         NNCASE_UNUSED auto res = cpu::reference::copy(
-            dt_float32,
-            get_tensor_cbegin(input),
-            get_tensor_begin(output),
-            input.shape(),
-            input.strides(),
-            output.strides(), default_kernel_context());
-    }
-    else if (type == OpType::Opt)
-    {
+            dt_float32, get_tensor_cbegin(input), get_tensor_begin(output),
+            input.shape(), input.strides(), output.strides(),
+            default_kernel_context());
+    } else if (type == OpType::Opt) {
         NNCASE_UNUSED auto res = kernels::copy(
-            dt_float32,
-            get_tensor_cbegin(input),
-            get_tensor_begin(output),
-            input.shape(),
-            input.strides(),
-            output.strides());
-    }
-    else
-    {
+            dt_float32, get_tensor_cbegin(input), get_tensor_begin(output),
+            input.shape(), input.strides(), output.strides());
+    } else {
         assert(false);
     }
 }
 
-TEST_P(CopyTest, normal)
-{
+TEST_P(CopyTest, normal) {
     copy(input, output_ref, OpType::Ref);
     copy(input, output_opt, OpType::Opt);
     auto is_ok = is_same_tensor(output_ref, output_opt);
-    if (!is_ok)
-    {
+    if (!is_ok) {
         output_all_data(input, output_ref, output_opt);
         ASSERT_EQ(output_ref, output_opt);
     }

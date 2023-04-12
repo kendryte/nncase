@@ -11,39 +11,36 @@ using Nncase.Importer;
 using Nncase.Importer.TFLite;
 using Nncase.IR;
 
-namespace Nncase
+namespace Nncase;
+
+/// <summary>
+/// Graph importers.
+/// </summary>
+public static class Importers
 {
     /// <summary>
-    /// Graph importers.
+    /// Import tflite model.
     /// </summary>
-    public static class Importers
+    /// <param name="tflite">tflite model stream.</param>
+    /// <param name="compileSession">compile session.</param>
+    /// <returns>Imported IR module.</returns>
+    public static IRModule ImportTFLite(Stream tflite, CompileSession compileSession)
     {
-        /// <summary>
-        /// Import tflite model.
-        /// </summary>
-        /// <param name="tflite">tflite model stream.</param>
-        /// <param name="options">compile options.</param>
-        /// <returns>Imported IR module.</returns>
-        public static IRModule ImportTFLite(Stream tflite, CompileOptions options)
-        {
-            var model = new byte[tflite.Length];
-            tflite.Read(model);
-            var importer = new TFLiteImporter(model);
-            return importer.Import(options);
-        }
+        var model = new byte[tflite.Length];
+        tflite.Read(model);
+        var importer = new TFLiteImporter(model, compileSession);
+        return importer.Import();
+    }
 
-        /// <summary>
-        /// Import onnx model.
-        /// </summary>
-        /// <param name="onnx">onnx model contents.</param>
-        /// <param name="options">options.</param>
-        /// <returns>Imported IR module.</returns>
-        public static IRModule ImportOnnx(Stream onnx, CompileOptions options)
-        {
-            var model = new byte[onnx.Length];
-            onnx.Read(model);
-            var importer = new OnnxImporter(model);
-            return importer.Import(options);
-        }
+    /// <summary>
+    /// Import onnx model.
+    /// </summary>
+    /// <param name="onnx">onnx model contents.</param>
+    /// <param name="compileSession">compile session.</param>
+    /// <returns>Imported IR module.</returns>
+    public static IRModule ImportOnnx(Stream onnx, CompileSession compileSession)
+    {
+        var importer = new OnnxImporter(onnx, compileSession);
+        return importer.Import();
     }
 }

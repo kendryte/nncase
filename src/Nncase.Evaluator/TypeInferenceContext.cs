@@ -15,20 +15,13 @@ namespace Nncase.Evaluator;
 
 internal sealed class TypeInferenceContext : ITypeInferenceContext
 {
-    private readonly Dictionary<Expr, IRType> _exprMemo;
-
-    public TypeInferenceContext(Dictionary<Expr, IRType> exprMemo)
-    {
-        _exprMemo = exprMemo;
-    }
-
     public Call? CurrentCall { get; set; }
 
     public Expr GetArgument(Op op, ParameterInfo parameter)
     {
         if (op.GetType() == parameter.OwnerType)
         {
-            return GetCurrentCall().Parameters[parameter.Index];
+            return GetCurrentCall().Arguments[parameter.Index];
         }
         else
         {
@@ -42,7 +35,7 @@ internal sealed class TypeInferenceContext : ITypeInferenceContext
     }
 
     public IRType GetArgumentType(Op op, ParameterInfo parameter) =>
-        _exprMemo[GetArgument(op, parameter)];
+        GetArgument(op, parameter).CheckedType ?? throw new InvalidOperationException("Incomplete type inference.");
 
     private Call GetCurrentCall() => CurrentCall ?? throw new InvalidOperationException("Current call is not set.");
 }
