@@ -55,8 +55,16 @@ public struct DumpScope : IDisposable
     /// </summary>
     /// <param name="serviceProvider">Service provider.</param>
     /// <returns>Current dumpper.</returns>
-    public static IDumpper GetCurrent(IServiceProvider? serviceProvider) =>
-        _dumpper.Value ??= (serviceProvider ?? CompileSessionScope.Current)?.GetRequiredService<IDumpperFactory>().Root ?? NullDumpper.Instance;
+    public static IDumpper GetCurrent(IServiceProvider? serviceProvider)
+    {
+        if (_dumpper.Value is null)
+        {
+            var provider = serviceProvider ?? CompileSessionScope.Current;
+            return provider?.GetRequiredService<IDumpperFactory>().Root ?? NullDumpper.Instance;
+        }
+
+        return _dumpper.Value;
+    }
 
     /// <inheritdoc/>
     public void Dispose()

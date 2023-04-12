@@ -86,11 +86,6 @@ public enum CalibMethod
     /// kld.
     /// </summary>
     Kld,
-
-    /// <summary>
-    /// use random data only for test.
-    /// </summary>
-    Random,
 }
 
 /// <summary>
