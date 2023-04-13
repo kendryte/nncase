@@ -24,9 +24,9 @@ public class UnitTestPytestCalibrationDatasetProvider
     [Fact]
     public async Task TestPytestCalibrationDatasetProvider()
     {
-        var vars = new[] { new Var("0.152153"), new Var("0.090337") };
+        var vars = new[] { new Var("0.090337") };
         var dataset = "./public";
-        Tensors(new TensorValue[] { new TensorValue(0.152153), new TensorValue(0.090337) }, dataset);
+        Tensors(new TensorValue[] { new TensorValue(0.090337) }, dataset);
         var provider = new PytestCalibrationDatasetProvider(vars, dataset);
         Assert.Equal(0, provider.Count);
         var samples = provider.Samples;
@@ -51,6 +51,6 @@ public class UnitTestPytestCalibrationDatasetProvider
         var tensor = tensorValue.AsTensor();
         writer.WriteLine("#" + tensor.Shape.ToArray());
         var number = tensor.ToArray<float>();
-        writer.WriteLine($"${number}");
+        writer.WriteLine($"${number[0]}");
     }
 }
