@@ -127,12 +127,12 @@ public class UnitTestKLQuant : TestClassBase
     {
         var weightsArr = new float[] { -0.26237327f, 0.89416003f, -0.9190288f, 0.30857837f, 0.8356638f, -0.45278835f, -0.60886294f, -0.119574904f, -0.44323748f, 0.41989255f, -0.5338452f, -0.17311054f };
         var rangeArr = new float[] { -0.9190288f, 0.89416f, -0.45278835f, 0.8356638f, -0.60886294f, 0f, -0.5338452f, 0.41989255f };
-        Expr range = Tensor.From<float>(rangeArr.ToArray(), new Shape(4, 2));
+        Tensor<float> range = Tensor.From<float>(rangeArr.ToArray(), new Shape(4, 2));
         var inputWeightsShape = new Shape(4, 3, 1, 1);
         QuantMode quantMode = QuantMode.UnsignedMode;
         int bits = 8;
         bool isByChannel = true;
-        var ret = Nncase.Utilities.QuantUtility.SquantWeights(weightsArr, range, inputWeightsShape, quantMode, bits, isByChannel);
+        var ret = QuantUtility.SquantWeights(weightsArr, range, inputWeightsShape, quantMode, bits, isByChannel);
         Assert.True(Enumerable.SequenceEqual(new float[] { -0.26309013f, 0.8959286f, -0.9172602f, 0.30821797f, 0.83370435f, -0.44969508f, -0.60886294f, -0.11938489f, -0.4441118f, 0.41889656f, -0.5348412f, -0.17204681f }, ret.ToArray()));
     }
 

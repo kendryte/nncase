@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="OrtKISharp" />
     <PackageReference Include="System.Linq.Async" />
     <PackageReference Include="Newtonsoft.Json" />
   </ItemGroup>

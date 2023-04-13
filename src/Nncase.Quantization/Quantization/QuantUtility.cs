@@ -5,12 +5,14 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
+using OrtKISharp;
 using SMath = System.Math;
 
-namespace Nncase.Utilities;
+namespace Nncase.Quantization;
 
 /// <summary>
 /// Array utility.
@@ -150,7 +152,7 @@ public static class QuantUtility
         return minMaxArr;
     }
 
-    public static Span<float> SquantWeights(Span<float> inputWeights, Expr inputWeightsRanges, Nncase.IR.Shape inputWeightsShape, QuantMode quantMode, int bits, bool isByChannel)
+    public static Span<float> SquantWeights(Span<float> inputWeights, Tensor<float> inputWeightsRanges, ReadOnlySpan<int> inputWeightsShape, QuantMode quantMode, int bits, bool isByChannel)
     {
         float qMax, qMin;
         if (quantMode == QuantMode.UnsignedMode)
@@ -170,23 +172,30 @@ public static class QuantUtility
         }
 
         OrtKISharp.Tensor x, delta, zeroPoint;
-        if (inputWeightsShape.Rank == 4)
+        if (inputWeightsShape.Length == 4)
         {
             var outChannel = inputWeightsShape[0];
             var inChannel = inputWeightsShape[1];
             var filterH = inputWeightsShape[2];
             var filterW = inputWeightsShape[3];
-            x = OrtKISharp.Tensor.MakeTensor(inputWeights.ToArray(), new long[] { outChannel.FixedValue, inChannel.FixedValue, filterH.FixedValue, filterW.FixedValue });
+            unsafe
+            {
+                fixed (void* numPtr1 = &inputWeights.GetPinnableReference())
+                {
+                    x = OrtKISharp.Tensor.MakeTensor(new System.Buffers.MemoryHandle(numPtr1), OrtDataType.Float, new long[] { outChannel, inChannel, filterH, filterW });
+                }
+            }
+
             if (isByChannel)
             {
                 float[] deltaArr = new float[inputWeights.Length];
                 float[] zeroPointArr = new float[inputWeights.Length];
-                int eachChannelSize = inputWeights.Length / outChannel.FixedValue;
+                int eachChannelSize = inputWeights.Length / outChannel;
 
-                for (var c = 0; c < outChannel.FixedValue; c++)
+                for (var c = 0; c < outChannel; c++)
                 {
-                    var xMin = ((Tensor<float>)((TensorConst)inputWeightsRanges).Value).ToArray()[2 * c];
-                    var xMax = ((Tensor<float>)((TensorConst)inputWeightsRanges).Value).ToArray()[(2 * c) + 1];
+                    var xMin = inputWeightsRanges[c, 0];
+                    var xMax = inputWeightsRanges[c, 1];
                     var deltaTmp = (xMax - xMin) / (qMax - qMin);
                     var zeroPointTmp = System.Math.Round(((xMax * qMin) - (xMin * qMax)) / (xMax - xMin));
                     for (int i = 0; i < eachChannelSize; i++)
@@ -196,8 +205,8 @@ public static class QuantUtility
                     }
                 }
 
-                delta = OrtKISharp.Tensor.MakeTensor(deltaArr, new long[] { outChannel.FixedValue, inChannel.FixedValue, filterH.FixedValue, filterW.FixedValue });
-                zeroPoint = OrtKISharp.Tensor.MakeTensor(zeroPointArr, new long[] { outChannel.FixedValue, inChannel.FixedValue, filterH.FixedValue, filterW.FixedValue });
+                delta = OrtKISharp.Tensor.MakeTensor(deltaArr, new long[] { outChannel, inChannel, filterH, filterW });
+                zeroPoint = OrtKISharp.Tensor.MakeTensor(zeroPointArr, new long[] { outChannel, inChannel, filterH, filterW });
             }
             else
             {
@@ -208,17 +217,17 @@ public static class QuantUtility
         {
             var outChannel = inputWeightsShape[0];
             var inChannel = inputWeightsShape[1];
-            x = OrtKISharp.Tensor.MakeTensor(inputWeights.ToArray(), new long[] { outChannel.FixedValue, inChannel.FixedValue });
+            x = OrtKISharp.Tensor.MakeTensor(inputWeights.ToArray(), new long[] { outChannel, inChannel });
             if (isByChannel)
             {
                 float[] deltaArr = new float[inputWeights.Length];
                 float[] zeroPointArr = new float[inputWeights.Length];
-                int eachChannelSize = inputWeights.Length / outChannel.FixedValue;
+                int eachChannelSize = inputWeights.Length / outChannel;
 
-                for (var c = 0; c < outChannel.FixedValue; c++)
+                for (var c = 0; c < outChannel; c++)
                 {
-                    var xMin = ((Tensor<float>)((TensorConst)inputWeightsRanges).Value).ToArray()[2 * c];
-                    var xMax = ((Tensor<float>)((TensorConst)inputWeightsRanges).Value).ToArray()[(2 * c) + 1];
+                    var xMin = inputWeightsRanges[c, 0];
+                    var xMax = inputWeightsRanges[c, 1];
                     var deltaTmp = (xMax - xMin) / (qMax - qMin);
                     var zeroPointTmp = System.Math.Round(((xMax * qMin) - (xMin * qMax)) / (xMax - xMin));
                     for (int i = 0; i < eachChannelSize; i++)
@@ -228,8 +237,8 @@ public static class QuantUtility
                     }
                 }
 
-                delta = OrtKISharp.Tensor.MakeTensor(deltaArr, new long[] { outChannel.FixedValue, inChannel.FixedValue });
-                zeroPoint = OrtKISharp.Tensor.MakeTensor(zeroPointArr, new long[] { outChannel.FixedValue, inChannel.FixedValue });
+                delta = OrtKISharp.Tensor.MakeTensor(deltaArr, new long[] { outChannel, inChannel });
+                zeroPoint = OrtKISharp.Tensor.MakeTensor(zeroPointArr, new long[] { outChannel, inChannel });
             }
             else
             {
@@ -463,6 +472,6 @@ public static class QuantUtility
         upPriority = OrtKI.Reshape(upPriority, x.Shape, 0);
         downPriority = OrtKI.Reshape(downPriority, x.Shape, 0);
 
-        return roundingNumber;
+        return roundingNumber!;
     }
 }
