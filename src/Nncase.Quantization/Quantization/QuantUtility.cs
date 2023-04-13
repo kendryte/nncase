@@ -45,10 +45,7 @@ public static class QuantAlgorithmUtility
             var inChannel = inputWeightsShape[1];
             var filterH = inputWeightsShape[2];
             var filterW = inputWeightsShape[3];
-            unsafe
-            {
-                x = OrtKISharp.Tensor.MakeTensor(inputWeights.PinBuffer(), OrtDataType.Float, new long[] { outChannel, inChannel, filterH, filterW });
-            }
+            x = OrtKISharp.Tensor.MakeTensor(inputWeights.PinBuffer(), OrtDataType.Float, new long[] { outChannel, inChannel, filterH, filterW });
 
             if (isByChannel)
             {
@@ -81,7 +78,7 @@ public static class QuantAlgorithmUtility
         {
             var outChannel = inputWeightsShape[0];
             var inChannel = inputWeightsShape[1];
-            x = OrtKISharp.Tensor.MakeTensor(inputWeights.ToArray(), new long[] { outChannel, inChannel });
+            x = OrtKISharp.Tensor.MakeTensor(inputWeights.PinBuffer(), OrtDataType.Float, new long[] { outChannel, inChannel });
             if (isByChannel)
             {
                 float[] deltaArr = new float[inputWeights.Length];
