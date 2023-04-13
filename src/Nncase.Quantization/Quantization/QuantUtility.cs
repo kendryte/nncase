@@ -15,7 +15,7 @@ using SMath = System.Math;
 namespace Nncase.Quantization;
 
 /// <summary>
-/// Array utility.
+/// QuantAlgorithm utility.
 /// </summary>
 public static class QuantAlgorithmUtility
 {
