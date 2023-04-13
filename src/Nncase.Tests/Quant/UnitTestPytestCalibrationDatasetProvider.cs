@@ -12,6 +12,7 @@ using Nncase.Passes;
 using Nncase.Passes.Rules.Neutral;
 using Nncase.Quantization;
 using Nncase.Tests.TestFixture;
+using Nncase.TIR;
 using Xunit;
 using static Nncase.IR.F.NN;
 using Utility = Nncase.Quantization.Utility;
@@ -21,61 +22,35 @@ namespace Nncase.Tests.QuantTest;
 public class UnitTestPytestCalibrationDatasetProvider
 {
     [Fact]
-    public void TestPytestCalibrationDatasetProvider()
+    public async Task TestPytestCalibrationDatasetProvider()
     {
-        var vars = new[] { new Var("123"), new Var("234") };
+        var vars = new[] { new Var("0.152153"), new Var("0.090337") };
         var dataset = "./public";
-        Tensors(new TensorValue[] { new TensorValue(123), new TensorValue(234) }, dataset);
+        Tensors(new TensorValue[] { new TensorValue(0.152153), new TensorValue(0.090337) }, dataset);
         var provider = new PytestCalibrationDatasetProvider(vars, dataset);
         Assert.Equal(0, provider.Count);
-        _ = provider.Samples;
+        var samples = provider.Samples;
+        await foreach (var sample in samples)
+        {
+            Assert.Equal(sample[vars[0]], new TensorValue(0.152153));
+        }
     }
 
     private static void Tensors(TensorValue[] tensorValue, string dir)
     {
         Directory.CreateDirectory(dir);
-        for (var i = 0; i < tensorValue.Length; i++)
+        foreach (var t in tensorValue)
         {
-            using (var sr = new StreamWriter(Path.Join(dir, "{i}.txt")))
-            {
-                Tensor(tensorValue[i], sr);
-            }
+            using var sr = new StreamWriter(Path.Join(dir, "input_0_0.txt"));
+            Tensor(t, sr);
         }
     }
 
     private static void Tensor(TensorValue tensorValue, StreamWriter writer)
     {
         var tensor = tensorValue.AsTensor();
-        if (tensor.ElementType is PrimType)
-        {
-            var typeCode = ((PrimType)tensor.ElementType).TypeCode;
-            writer.WriteLine($"type:{(int)typeCode}");
-        }
-        else
-        {
-            writer.WriteLine($"type:0");
-        }
-
-        writer.WriteLine(tensor.Shape.ToArray());
-
-        var dt = tensor.ElementType;
-        if (dt == DataTypes.Int8 || dt == DataTypes.Int32 || dt == DataTypes.Int64)
-        {
-            foreach (var v in tensor.ToArray<long>())
-            {
-                writer.WriteLine(v);
-            }
-        }
-        else if (dt is PrimType)
-        {
-            foreach (var v in tensor.ToArray<float>())
-            {
-                writer.WriteLine(v);
-            }
-        }
-        else
-        {
-            writer.WriteLine($"{dt} NotImpl");
-        }
+        writer.WriteLine("#" + tensor.Shape.ToArray());
+        var number = tensor.ToArray<float>();
+        writer.WriteLine($"${number}");
     }
 }
