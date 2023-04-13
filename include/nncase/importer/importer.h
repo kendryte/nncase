@@ -29,4 +29,5 @@ struct import_options
 void import_tflite(ir::graph &graph, std::span<const uint8_t> model, const import_options &options, std::string &real_inlayout, std::string &real_outlayout);
 void import_onnx(ir::graph &graph, std::span<const uint8_t> model, const import_options &options, std::string &real_inlayout, std::string &real_outlayout);
 void import_caffe(ir::graph &graph, std::span<const uint8_t> model, std::span<const uint8_t> prototxt, std::string &real_inlayout, std::string &real_outlayout);
+void import_pnnx(ir::graph &graph, std::string parampath, std::string binpath, const import_options &options, std::string &real_inlayout, std::string &real_outlayout);
 }

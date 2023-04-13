@@ -1,0 +1,9 @@
+DEFINE_OPCODE(pnnx.Input, pnnx_Input)
+DEFINE_OPCODE(pnnx.Output, pnnx_Output)
+
+DEFINE_OPCODE(F.relu, F_relu)
+DEFINE_OPCODE(F.relu6, F_relu6)
+
+DEFINE_OPCODE(nn.Conv2d, nn_Conv2d)
+DEFINE_OPCODE(nn.ReLU, nn_ReLU)
+DEFINE_OPCODE(nn.ReLU6, nn_ReLU6)

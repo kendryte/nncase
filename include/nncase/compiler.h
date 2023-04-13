@@ -111,6 +111,7 @@ public:
     virtual void import_tflite(std::span<const uint8_t> model, const import_options &options) = 0;
     virtual void import_onnx(std::span<const uint8_t> model, const import_options &options) = 0;
     virtual void import_caffe(std::span<const uint8_t> model, std::span<const uint8_t> prototxt) = 0;
+    virtual void import_pnnx(std::string parampath, std::string binpath, const import_options &options) = 0;
     virtual void use_ptq(ptq_dataset_options options) = 0;
     virtual void use_ptq(ptq_tensor_options options) = 0;
     virtual void dump_range_options(dump_range_dataset_options options) = 0;
