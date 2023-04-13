@@ -89,6 +89,39 @@ public sealed partial class CombineQuantizeReshape : RewriteRule<Pattern>
 }
 
 /// <summary>
+/// reshape(quantize(a)) => quantize(reshape(a)).
+/// </summary>
+[RuleGenerator]
+public sealed partial class CombineReshapeQuantize : RewriteRule<Pattern>
+{
+    /// <inheritdoc/>
+    public override Pattern Pattern { get; } = IsReshape(
+        "reshape",
+        _ => true,
+        IsQuantize(
+            "quantize",
+            "quantizeCall",
+            _ => true,
+            IsWildcard("input"),
+            IsWildcard("quantParam")),
+        IsWildcard("shape"));
+
+    private Expr? GetReplace(Quantize quantize, Call quantizeCall, Expr input, Expr shape, Expr quantParam, RunPassContext options)
+    {
+        var userAnalysis = options.GetAnalysis<IExprUserAnalysisResult>();
+
+        if (userAnalysis[quantizeCall].Count() > 1)
+        {
+            return null;
+        }
+
+        var output = Quantize(Reshape(input, shape), quantParam, quantize.TargetType);
+        output.InferenceType();
+        return output;
+    }
+}
+
+/// <summary>
 /// quantize(transpose(a)) => transpose(quantize(a)).
 /// </summary>
 [RuleGenerator]
