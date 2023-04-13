@@ -85,12 +85,36 @@ public class UnitTestCombineQuantize : TransformTestBase
         TestMatched<CombineQuantizeReshape>(rootPre, feedDict);
     }
 
+    [Theory]
+    [MemberData(nameof(CombineQuantizeReshapePositiveData))]
+    public void TestCombineReshapeQuantizePositive(int[][] shapes, DataType destType, QuantParam quantParam)
+    {
+        var parameters = new List<Var>();
+        var feedDict = new Dictionary<Var, IValue>();
+        var v = new Var("input", new TensorType(DataTypes.Float32, shapes[0]));
+        parameters.Add(v);
+        feedDict.Add(v, IR.F.Random.Uniform(DataTypes.Float32, 1.0f, -1.0f, 0, shapes[0]).Evaluate());
+
+        var rootPre = new IR.Function(Tensors.Reshape(Math.Quantize(v, quantParam, destType), shapes[1]), parameters.ToArray());
+        TestMatched<CombineReshapeQuantize>(rootPre, feedDict);
+    }
+
     [Fact]
     public void TestCombineQuantizeReshapeNegative()
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 256, 20, 20 })); // f32[1,256,20,20]
         var v = Tensors.Reshape(input, new[] { 1, 256, 20, 20 }); // f32[1,256,20,20]
         var body = Math.Add(IR.F.Math.Quantize(v, new QuantParam(1, 0.323f), DataTypes.UInt8), IR.F.Math.Quantize(v, new QuantParam(1, 0.323f), DataTypes.UInt8));
+        var rootPre = new Function(body, input);
+        TestNotMatch<CombineQuantizeReshape>(rootPre);
+    }
+
+    [Fact]
+    public void TestCombineReshapeQuantizeNegative()
+    {
+        var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 256, 20, 20 })); // f32[1,256,20,20]
+        var v = IR.F.Math.Quantize(input, new QuantParam(1, 0.323f), DataTypes.UInt8); // f32[1,256,20,20]
+        var body = Math.Add(Tensors.Reshape(v, new[] { 1, 256, 20, 20 }), Tensors.Reshape(v, new[] { 1, 256, 20, 20 }));
         var rootPre = new Function(body, input);
         TestNotMatch<CombineQuantizeReshape>(rootPre);
     }
