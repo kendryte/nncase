@@ -13,7 +13,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- <ProjectReference Include="..\Nncase.Quantization\Nncase.Quantization.csproj" /> -->
     <ProjectReference Include="..\Nncase.Core\Nncase.Core.csproj" />
     <ProjectReference Include="../../tools/Nncase.SourceGenerator/Nncase.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
