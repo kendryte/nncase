@@ -17,7 +17,7 @@ namespace Nncase.Quantization;
 /// <summary>
 /// Array utility.
 /// </summary>
-public static class QuantUtility
+public static class QuantAlgorithmUtility
 {
     public enum AdaMode
     {

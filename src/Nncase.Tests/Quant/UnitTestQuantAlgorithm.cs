@@ -132,7 +132,7 @@ public class UnitTestKLQuant : TestClassBase
         QuantMode quantMode = QuantMode.UnsignedMode;
         int bits = 8;
         bool isByChannel = true;
-        var ret = QuantUtility.SquantWeights(weightsArr, range, inputWeightsShape, quantMode, bits, isByChannel);
+        var ret = QuantAlgorithmUtility.SquantWeights(weightsArr, range, inputWeightsShape, quantMode, bits, isByChannel);
         Assert.True(Enumerable.SequenceEqual(new float[] { -0.26309013f, 0.8959286f, -0.9172602f, 0.30821797f, 0.83370435f, -0.44969508f, -0.60886294f, -0.11938489f, -0.4441118f, 0.41889656f, -0.5348412f, -0.17204681f }, ret.ToArray()));
     }
 
