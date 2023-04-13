@@ -33,6 +33,7 @@ public class UnitTestCombineReshape : TransformTestBase
         { BinaryOp.Sub, new[] { 1, 32, 32, 64 }, new[] { 1 }, new[] { 1, 1024, 1, 64 }, false },
         { BinaryOp.Div, new[] { 64 }, new[] { 32, 1, 32, 64, }, new[] { 1, 32, 32, 64 }, true },
         { BinaryOp.Mul, new[] { 1 }, new[] { 1, 32, 32, 64, }, new[] { 1, 1024, 64, 1 }, true },
+        { BinaryOp.Sub, new[] { 1 }, new[] { 1, 32, 32, 64, }, new[] { 1, 1024, 64, 1 }, true },
     };
 
     public static IEnumerable<object[]> CombineBinaryReshapePositiveData =>
