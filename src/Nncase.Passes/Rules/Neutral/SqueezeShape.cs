@@ -28,11 +28,11 @@ public sealed partial class SqueezeTransposeShape : IRewriteRule
     /// <inheritdoc/>
     public IPattern Pattern { get; } = IsTranspose(IsWildcard("input"), IsWildcard("perm"));
 
-    private (bool, List<int>, List<int>) SqueezeTranspose(List<int> oldShape, List<int> oldAxis)
+    private Tuple<bool, List<int>, List<int>> SqueezeTranspose(List<int> oldShape, List<int> oldAxis)
     {
         if (oldShape.Count <= 4)
         {
-            return (false, oldAxis, oldShape);
+            return new Tuple<bool, List<int>, List<int>>(false, oldAxis, oldShape);
         }
 
         List<int> newAxis = new List<int>(oldAxis);
@@ -50,7 +50,7 @@ public sealed partial class SqueezeTransposeShape : IRewriteRule
 
         if (foldIndexCouple.Count < squeezeTimes)
         {
-            return (false, newAxis, newShape);
+            return new Tuple<bool, List<int>, List<int>>(false, newAxis, newShape);
         }
 
         while (squeezeTimes > 0 && foldIndexCouple.Count > 0)
@@ -76,7 +76,7 @@ public sealed partial class SqueezeTransposeShape : IRewriteRule
             }
         }
 
-        return (true, newAxis, newShape);
+        return new Tuple<bool, List<int>, List<int>>(true, newAxis, newShape);
     }
 
     private Expr? GetReplace(Expr input, int[] perm)
