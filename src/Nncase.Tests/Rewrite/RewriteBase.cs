@@ -16,6 +16,8 @@ using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Random;
 using static Nncase.IR.F.Tensors;
+using Math = Nncase.IR.F.Math;
+using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.ReWriteTest;
 
@@ -1258,5 +1260,39 @@ public sealed class FoldHardSwishCase : IRewriteCase
     public Dictionary<Var, IValue> FeedDict => new()
     {
         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+    };
+}
+
+public sealed class MatMulToConv2DCase : IRewriteCase
+{
+    private readonly Var _inputLhs;
+    private readonly Var _inputRhs;
+
+    public MatMulToConv2DCase()
+    {
+        _inputLhs = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 5 }));
+        _inputRhs = new Var("input", new TensorType(DataTypes.Float32, new[] { 5, 1 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var a = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 5 });
+            var b = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 5, 1 }).Evaluate();
+            var rootPre = Math.MatMul(a, b.AsTensor());
+            return new Function(rootPre, new Var[] { _inputLhs, _inputRhs });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = new Type[]
+    {
+        typeof(Passes.Rules.Neutral.MatMulToConv2D),
+    };
+
+    public Dictionary<Var, IValue> FeedDict => new()
+    {
+        { _inputLhs, Normal(DataTypes.Float32, 0, 1, 1, _inputLhs.CheckedShape.ToValueArray()).Evaluate() },
+        { _inputRhs, Normal(DataTypes.Float32, 0, 1, 1, _inputRhs.CheckedShape.ToValueArray()).Evaluate() },
     };
 }

@@ -51,6 +51,7 @@ public sealed class UnitTestEGraphRewriteFactory : TestClassBase
         new FoldSwishCase(),
         new FoldGeluCase(),
         new FoldHardSwishCase(),
+        new MatMulToConv2DCase(),
     };
 
     [Theory]
