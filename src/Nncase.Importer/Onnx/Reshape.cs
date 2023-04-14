@@ -1,9 +1,9 @@
-﻿// Copyright (c) Canaan Inc. All rights reserved.
+﻿
+// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
 using Nncase.IR;
-using Nncase.IR.Tensors;
 using Onnx;
 using F = Nncase.IR.F;
 
@@ -15,49 +15,55 @@ namespace Nncase.Importer
         {
             var (input, shape) = GetInputExprs(op, 0, 1);
             var inputShape = F.Tensors.ShapeOf(input);
-            var shapeValue = ((TensorConst)shape).Value.ToArray<long>();
-            var actualShape = new Expr[shapeValue.Length];
-            var negAxis = shapeValue.Length;
-            for (int i = 0; i < actualShape.Length; i++)
+            if (shape is TensorConst)
             {
-                if (shapeValue[i] == 0L)
+                var shapeValue = ((TensorConst)shape).Value.ToArray<long>();
+                var actualShape = new Expr[shapeValue.Length];
+                var negAxis = shapeValue.Length;
+                for (int i = 0; i < actualShape.Length; i++)
                 {
-                    actualShape[i] = inputShape[i];
-                }
-                else if (shapeValue[i] == -1L)
-                {
-                    negAxis = i;
-                }
-                else
-                {
-                    actualShape[i] = shapeValue[i];
-                }
-            }
-
-            if (negAxis < shapeValue.Length)
-            {
-                Expr productOut = 1L;
-                for (int i = 0; i < shapeValue.Length; i++)
-                {
-                    if (i != negAxis)
+                    if (shapeValue[i] == 0L)
                     {
-                        productOut *= actualShape[i];
+                        actualShape[i] = inputShape[i];
+                    }
+                    else if (shapeValue[i] == -1L)
+                    {
+                        negAxis = i;
+                    }
+                    else
+                    {
+                        actualShape[i] = shapeValue[i];
                     }
                 }
 
-                Expr productIn = F.Tensors.Prod(inputShape);
+                if (negAxis < shapeValue.Length)
+                {
+                    Expr productOut = 1L;
+                    for (int i = 0; i < shapeValue.Length; i++)
+                    {
+                        if (i != negAxis)
+                        {
+                            productOut *= actualShape[i];
+                        }
+                    }
 
-                actualShape[negAxis] = productIn / productOut;
+                    Expr productIn = F.Tensors.Prod(inputShape);
+
+                    actualShape[negAxis] = productIn / productOut;
+                }
+                return F.Tensors.Reshape(input, F.Tensors.Stack(new IR.Tuple(actualShape), 0));
             }
-
-            // allowzero has been avaliable since opset 14
-            var allowZero = GetBoolAttribute(op, "allowzero", false);
-            if (allowZero)
+            else
             {
-                throw new NotSupportedException("Not support reshape attribute: allowzero");
+                // allowzero has been avaliable since opset 14
+                var allowZero = GetBoolAttribute(op, "allowzero", false);
+                if (allowZero)
+                {
+                    throw new NotSupportedException("Not support reshape attribute: allowzero");
+                }
+                return F.Tensors.Reshape(input, shape);
             }
-
-            return F.Tensors.Reshape(input, F.Tensors.Stack(new IR.Tuple(actualShape), 0));
         }
     }
 }
+
