@@ -26,7 +26,7 @@ namespace Nncase.Passes.Rules.Neutral;
 public sealed partial class SqueezeTransposeShape : IRewriteRule
 {
     /// <inheritdoc/>
-    public IPattern Pattern { get; } = IsTranspose(IsWildcard("input"), IsWildcard("perm"));
+    public IPattern Pattern { get; } = IsTranspose(IsWildcard("input") with { TypePattern = HasFixedShape() & HasRank(x => x > 4, "more than 4D need to squeeze") }, IsWildcard("perm"));
 
     private Tuple<bool, List<int>, List<int>> SqueezeTranspose(List<int> oldShape, List<int> oldAxis)
     {
@@ -81,11 +81,6 @@ public sealed partial class SqueezeTransposeShape : IRewriteRule
 
     private Expr? GetReplace(Expr input, int[] perm)
     {
-        if (perm.Length <= 4)
-        {
-            return null;
-        }
-
         var inputShape = input.CheckedShape;
         var (result, new_perm, new_shape) = SqueezeTranspose(inputShape.ToValueList(), perm.ToList());
         if (!result)

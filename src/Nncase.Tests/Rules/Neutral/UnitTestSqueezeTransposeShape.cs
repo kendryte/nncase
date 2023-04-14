@@ -35,6 +35,8 @@ public class UnitTestSqueezeTransposeShape : TransformTestBase
     public static IEnumerable<object[]> TestSqueezeTransposeShapeNegativeData =>
         new[]
         {
+            new object[] { new[] { 1, 2, 4 }, new[] { 0, 2, 1 } },
+            new object[] { new[] { 1, 2, 4, 8 }, new[] { 0, 2, 1, 3 } },
             new object[] { new[] { 1, 2, 4, 8, 3 }, new[] { 0, 2, 1, 4, 3 } },
             new object[] { new[] { 1, 2, 4, 8, 3 }, new[] { 0, 4, 2, 1, 3 } },
             new object[] { new[] { 1, 2, 4, 8, 3, 5, 3, 5 }, new[] { 0, 1, 3, 4, 2, 6, 5, 7 } },
@@ -45,7 +47,6 @@ public class UnitTestSqueezeTransposeShape : TransformTestBase
     [MemberData(nameof(TestSqueezeTransposeShapePosivateData))]
     public void TestSqueezeTransposeShapePositivate(int[] shape, int[] perm)
     {
-        CompileOptions.DumpFlags = DumpFlags.Evaluator | DumpFlags.Rewrite | DumpFlags.PassIR;
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Transpose(a, perm);
         TestMatched<SqueezeTransposeShape>(rootPre);
@@ -55,7 +56,6 @@ public class UnitTestSqueezeTransposeShape : TransformTestBase
     [MemberData(nameof(TestSqueezeTransposeShapeNegativeData))]
     public void TestSqueezeTransposeShapeNegative(int[] shape, int[] perm)
     {
-        CompileOptions.DumpFlags = DumpFlags.Evaluator | DumpFlags.Rewrite | DumpFlags.PassIR;
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Transpose(a, perm);
         TestNotMatch<SqueezeTransposeShape>(rootPre);
