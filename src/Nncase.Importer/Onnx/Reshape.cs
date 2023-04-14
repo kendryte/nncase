@@ -1,7 +1,5 @@
-﻿
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
-
 using System;
 using Nncase.IR;
 using Onnx;
@@ -51,6 +49,7 @@ namespace Nncase.Importer
 
                     actualShape[negAxis] = productIn / productOut;
                 }
+
                 return F.Tensors.Reshape(input, F.Tensors.Stack(new IR.Tuple(actualShape), 0));
             }
             else
@@ -61,9 +60,9 @@ namespace Nncase.Importer
                 {
                     throw new NotSupportedException("Not support reshape attribute: allowzero");
                 }
+
                 return F.Tensors.Reshape(input, shape);
             }
         }
     }
 }
-
