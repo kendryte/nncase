@@ -47,6 +47,10 @@ public sealed class UnitTestEGraphRewriteFactory : TestClassBase
         new FoldTransposeCase(),
         new PadTransposeCaseEgraph(),
         new RemoveMarkerCaseEgraph(),
+        new FoldLayerNormCase(),
+        new FoldSwishCase(),
+        new FoldGeluCase(),
+        new FoldHardSwishCase(),
     };
 
     [Theory]
