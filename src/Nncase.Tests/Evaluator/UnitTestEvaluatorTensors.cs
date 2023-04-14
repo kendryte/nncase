@@ -589,6 +589,20 @@ public class UnitTestEvaluatorTensors : TestClassBase
     }
 
     [Fact]
+    public void TestGather()
+    {
+        var shape = new[] { 2, 2 };
+        var input = new Tensor<int>(new[] { 0, 1, 2, 3 }, shape);
+        var indices = new Tensor<long>(new[] { 0L, 0L, 1L, 1L }, shape);
+        long batchDims = 0L;
+        var expect = OrtKI.Gather(input.ToOrtTensor(), indices.ToOrtTensor(), batchDims);
+
+        var expr = IR.F.Tensors.Gather(input, batchDims, indices);
+        CompilerServices.InferenceType(expr);
+        Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
+    }
+
+    [Fact]
     public void TestReverseSequence()
     {
         var shape = new long[] { 4, 4 };
