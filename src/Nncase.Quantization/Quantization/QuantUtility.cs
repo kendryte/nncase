@@ -198,7 +198,7 @@ public static class QuantAlgorithmUtility
                 {
                     var priorityTmp = OrtKI.Squeeze(OrtKI.Slice(upPriority, starts, ends, axes, steps), axes);
                     var priority1Tmp = OrtKI.Squeeze(OrtKI.Slice(downPriority, starts, ends, axes, steps), axes);
-                    RoundingForward(roundingErrorSumArr[(n * batches) + c], ref roundingNumberTmp, ref roundingErrorTmp, upNumberSlice, upErrorSlice, ref priorityTmp, upOrderSlice, ref priority1Tmp);
+                    RoundingForward(roundingErrorSumArr[(n * inputChannel) + c], ref roundingNumberTmp, ref roundingErrorTmp, upNumberSlice, upErrorSlice, ref priorityTmp, upOrderSlice, ref priority1Tmp);
 
                     var roundingNumberTmpArr = roundingNumberTmp.ToArray<float>();
                     var roundingErrorTmpArr = roundingErrorTmp.ToArray<float>();
@@ -228,7 +228,7 @@ public static class QuantAlgorithmUtility
                 {
                     var priorityTmp = OrtKI.Squeeze(OrtKI.Slice(downPriority, starts, ends, axes, steps), axes);
                     var priority1Tmp = OrtKI.Squeeze(OrtKI.Slice(upPriority, starts, ends, axes, steps), axes);
-                    RoundingForward(roundingErrorSumArr[(n * batches) + c], ref roundingNumberTmp, ref roundingErrorTmp, downNumberSlice, downErrorSlice, ref priorityTmp, downOrderSlice, ref priority1Tmp);
+                    RoundingForward(roundingErrorSumArr[(n * inputChannel) + c], ref roundingNumberTmp, ref roundingErrorTmp, downNumberSlice, downErrorSlice, ref priorityTmp, downOrderSlice, ref priority1Tmp);
 
                     var roundingNumberTmpArr = roundingNumberTmp.ToArray<float>();
                     var roundingErrorTmpArr = roundingErrorTmp.ToArray<float>();
