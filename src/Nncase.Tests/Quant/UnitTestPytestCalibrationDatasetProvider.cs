@@ -21,36 +21,68 @@ namespace Nncase.Tests.QuantTest;
 
 public class UnitTestPytestCalibrationDatasetProvider
 {
+    public Var[] Setup()
+    {
+        var input1 = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 224, 224 }));
+        var input2 = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 224, 224 }));
+        return new[] { input1, input2 };
+    }
+
     [Fact]
     public async Task TestPytestCalibrationDatasetProvider()
     {
-        var vars = new[] { new Var("0.090337") };
+        var vars = Setup();
         var dataset = "./public";
-        Tensors(new TensorValue[] { new TensorValue(0.090337) }, dataset);
-        var provider = new PytestCalibrationDatasetProvider(vars, dataset);
-        Assert.Equal(0, provider.Count);
-        var samples = provider.Samples;
-        await foreach (var sample in samples)
+        foreach (var t in vars)
         {
-            Assert.Equal(sample[vars[0]], new TensorValue(0.152153));
+            var actual = IR.F.Random.Uniform(t.CheckedDataType, 1.0f, -1.0f, 0, t.CheckedShape).Evaluate().AsTensor();
+            Tensors(new[] { actual }, dataset);
+            var provider = new PytestCalibrationDatasetProvider(new[] { t }, dataset);
+            Assert.Equal(1, provider.Count);
+            var samples = provider.Samples;
+            await foreach (var sample in samples)
+            {
+                Assert.Equal(sample[t].AsTensor(), actual);
+            }
         }
     }
 
-    private static void Tensors(TensorValue[] tensorValue, string dir)
+    private static void Tensors(Tensor[] tensorValue, string dir)
     {
         Directory.CreateDirectory(dir);
         foreach (var t in tensorValue)
         {
-            using var sr = new StreamWriter(Path.Join(dir, "input_0_0.txt"));
-            Tensor(t, sr);
+            var value = t;
+            var sr1 = new StreamWriter(Path.Join(dir, "input_0_0.txt"));
+            TensorTxt(value, sr1);
+            var sr2 = Path.Join(dir, "input_0_0.bin");
+            TensorBin(value, sr2);
         }
     }
 
-    private static void Tensor(TensorValue tensorValue, StreamWriter writer)
+    private static void TensorTxt(Tensor tensorValue, StreamWriter writer)
     {
-        var tensor = tensorValue.AsTensor();
-        writer.WriteLine("#" + tensor.Shape.ToArray());
-        var number = tensor.ToArray<float>();
-        writer.WriteLine($"${number[0]}");
+        var tensor = tensorValue;
+        var desc = "# (";
+        for (var s = 0; s < tensor.Shape.Count; s++)
+        {
+            desc += tensor.Shape.ToValueArray()[s];
+            if (s < tensor.Shape.Count - 1)
+            {
+                desc += " ,";
+            }
+        }
+
+        desc += ")";
+        writer.WriteLine(desc);
+        foreach (var v in tensor.ToArray<float>())
+        {
+            writer.WriteLine(v);
+        }
+    }
+
+    private static void TensorBin(Tensor tensorValue, string file)
+    {
+        File.WriteAllBytes(file, tensorValue.BytesBuffer.ToArray());
     }
 }
