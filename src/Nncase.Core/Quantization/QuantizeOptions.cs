@@ -86,11 +86,6 @@ public enum CalibMethod
     /// kld.
     /// </summary>
     Kld,
-
-    /// <summary>
-    /// use random data only for test.
-    /// </summary>
-    Random,
 }
 
 /// <summary>
@@ -137,6 +132,11 @@ public class QuantizeOptions
     /// Gets or sets model quant mode.
     /// </summary>
     public ModelQuantMode ModelQuantMode { get; set; } = ModelQuantMode.NoQuant;
+
+    /// <summary>
+    /// Gets or sets import config file.
+    /// </summary>
+    public string QuantScheme { get; set; } = string.Empty;
 
     /// <summary>
     /// Creates no quantization options.

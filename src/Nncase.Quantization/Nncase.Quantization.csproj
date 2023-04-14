@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
     <RootNamespace>Nncase</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -11,6 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="System.Linq.Async" />
+    <PackageReference Include="Newtonsoft.Json" />
   </ItemGroup>
     
   <ItemGroup>

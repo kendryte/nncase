@@ -26,10 +26,18 @@ internal enum QuantType
     Int16,
 }
 
+internal enum DatasetFormat
+{
+    Image,
+    Raw,
+    Pytest,
+    Random,
+}
+
 /// <summary>
 /// Compile command.
 /// </summary>
-public class Compile : Command
+public sealed class Compile : Command
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="Compile"/> class.
@@ -48,7 +56,7 @@ public class Compile : Command
           getDefaultValue: () => "tflite"));
         AddOption(new Option<int>(
           alias: "--dump-level",
-          description: "dump ir to .il, default is 0",
+          description: $"dump ir to .il, default is {0}",
           getDefaultValue: () => 0));
         AddOption(new Option<string>(
           alias: "--dump-dir",
@@ -56,20 +64,28 @@ public class Compile : Command
           getDefaultValue: () => "."));
         AddOption(new Option<QuantType>(
           alias: "--quant-type",
-          description: "quant type, default is uint8",
+          description: $"quant type, default is {QuantType.UInt8}",
           getDefaultValue: () => QuantType.UInt8));
         AddOption(new Option<QuantType>(
           alias: "--wquant-type",
-          description: "wquant type, default is uint8",
+          description: $"wquant type, default is {QuantType.UInt8}",
           getDefaultValue: () => QuantType.UInt8));
+        AddOption(new Option<string>(
+          alias: "--dataset",
+          description: $"calibration dataset, used in post quantization, default is empty",
+          getDefaultValue: () => string.Empty));
+        AddOption(new Option<DatasetFormat>(
+          alias: "--dataset-format",
+          description: $"datset format: e.g. Image|Raw|Pytest",
+          getDefaultValue: () => DatasetFormat.Raw));
         AddOption(new Option<Quantization.ModelQuantMode>(
           alias: "--model-quant-mode",
-          description: "model quant mode, default is NoQuant",
+          description: $"model quant mode, default is {Quantization.ModelQuantMode.NoQuant}",
           getDefaultValue: () => Quantization.ModelQuantMode.NoQuant));
         AddOption(new Option<Quantization.CalibMethod>(
           alias: "--calib-method",
-          description: "model quant options, default is Random",
-          getDefaultValue: () => Quantization.CalibMethod.Random));
+          description: $"model quant options, default is {Quantization.CalibMethod.Kld}",
+          getDefaultValue: () => Quantization.CalibMethod.Kld));
 
         Handler = CommandHandler.Create<CliCompileOptions, IHost>(RunAsync);
     }
@@ -137,9 +153,17 @@ public class Compile : Command
         // 3. create the calib dataset
         if (compileOptions.QuantizeOptions.ModelQuantMode == Quantization.ModelQuantMode.UsePTQ)
         {
-            if (compileOptions.QuantizeOptions.CalibrationMethod == Quantization.CalibMethod.Random)
+            if (cliOptions.DatasetFormat == DatasetFormat.Random)
             {
                 compileOptions.QuantizeOptions.CalibrationDataset = new RandomCalibrationDatasetProvider(((Function)module.Entry!).Parameters.ToArray(), 5);
+            }
+            else if (cliOptions.DatasetFormat == DatasetFormat.Pytest)
+            {
+                compileOptions.QuantizeOptions.CalibrationDataset = new PytestCalibrationDatasetProvider(((Function)module.Entry!).Parameters.ToArray(), cliOptions.Dataset);
+            }
+            else
+            {
+                throw new NotSupportedException(cliOptions.DatasetFormat.ToString());
             }
         }
 
@@ -178,6 +202,10 @@ internal sealed class CliCompileOptions
     public ModelQuantMode ModelQuantMode { get; set; }
 
     public CalibMethod CalibMethod { get; set; }
+
+    public string Dataset { get; set; }
+
+    public DatasetFormat DatasetFormat { get; set; }
 }
 
 #pragma warning restore CS8618
