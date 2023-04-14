@@ -11,16 +11,16 @@ using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
 using Tensorflow;
 using static Nncase.IR.F.Tensors;
-using static Nncase.PatternMatch.F.Tensors;
 using static Nncase.IR.TypePatternUtility;
 using static Nncase.PatternMatch.F.Math;
+using static Nncase.PatternMatch.F.Tensors;
 using static Nncase.PatternMatch.Utility;
 using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Passes.Rules.Neutral;
 
 /// <summary>
-/// Squeeze transpose shape
+/// Squeeze transpose shape.
 /// </summary>
 [RuleGenerator]
 public sealed partial class SqueezeTransposeShape : IRewriteRule
@@ -35,11 +35,11 @@ public sealed partial class SqueezeTransposeShape : IRewriteRule
             return (false, oldAxis, oldShape);
         }
 
-        List<int> newAxis = new List<int>(oldAxis);
-        List<int> newShape = new List<int>(oldShape);
+        var newAxis = new List<int>(oldAxis);
+        var newShape = new List<int>(oldShape);
         int squeezeTimes = oldShape.Count - 4;
 
-        List<Tuple<int, int>> foldIndexCouple = new List<Tuple<int, int>>();
+        var foldIndexCouple = new List<Tuple<int, int>>();
         for (int i = oldShape.Count - 1; i > 0; i--)
         {
             if (oldAxis[i - 1] + 1 == oldAxis[i])

@@ -32,6 +32,15 @@ public class UnitTestSqueezeTransposeShape : TransformTestBase
             new object[] { new[] { 1, 2, 4, 8, 3, 5, 3, 5 }, new[] { 0, 1, 2, 5, 3, 4, 6, 7 } },
         };
 
+    public static IEnumerable<object[]> TestSqueezeTransposeShapeNegativeData =>
+        new[]
+        {
+            new object[] { new[] { 1, 2, 4, 8, 3 }, new[] { 0, 2, 1, 4, 3 } },
+            new object[] { new[] { 1, 2, 4, 8, 3 }, new[] { 0, 4, 2, 1, 3 } },
+            new object[] { new[] { 1, 2, 4, 8, 3, 5, 3, 5 }, new[] { 0, 1, 3, 4, 2, 6, 5, 7 } },
+            new object[] { new[] { 1, 2, 4, 8, 3, 5, 3, 5 }, new[] { 7, 5, 1, 3, 0, 2, 4, 6 } },
+        };
+
     [Theory]
     [MemberData(nameof(TestSqueezeTransposeShapePosivateData))]
     public void TestSqueezeTransposeShapePositivate(int[] shape, int[] perm)
@@ -41,15 +50,6 @@ public class UnitTestSqueezeTransposeShape : TransformTestBase
         var rootPre = Tensors.Transpose(a, perm);
         TestMatched<SqueezeTransposeShape>(rootPre);
     }
-
-    public static IEnumerable<object[]> TestSqueezeTransposeShapeNegativeData =>
-        new[]
-        {
-            new object[] { new[] { 1, 2, 4, 8, 3 }, new[] { 0, 2, 1, 4, 3 } },
-            new object[] { new[] { 1, 2, 4, 8, 3 }, new[] { 0, 4, 2, 1, 3 } },
-            new object[] { new[] { 1, 2, 4, 8, 3, 5, 3, 5 }, new[] { 0, 1, 3, 4, 2, 6, 5, 7 } },
-            new object[] { new[] { 1, 2, 4, 8, 3, 5, 3, 5 }, new[] { 7, 5, 1, 3, 0, 2, 4, 6 } },
-        };
 
     [Theory]
     [MemberData(nameof(TestSqueezeTransposeShapeNegativeData))]
