@@ -16,6 +16,8 @@ using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Random;
 using static Nncase.IR.F.Tensors;
+using Math = Nncase.IR.F.Math;
+using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.ReWriteTest;
 
@@ -1103,4 +1105,194 @@ public sealed class FoldConv2DBnCase : IRewriteCase
     {
         return true;
     }
+}
+
+public sealed class FoldLayerNormCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public FoldLayerNormCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var shape = new[] { 1, 3, 16, 16 };
+            var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape);
+            long[] axes = { 0 };
+            float initValue = 0F;
+            long keepDims = 1;
+            var v0 = input;
+            var v1 = IR.F.Tensors.Reshape(v0, shape);
+            var v2 = IR.F.Tensors.Reduce(ReduceOp.Mean, v1, axes, initValue, keepDims);
+            var v3 = IR.F.Math.Binary(BinaryOp.Sub, v1, v2);
+            var v4 = IR.F.Math.Binary(BinaryOp.Pow, v3, 1f);
+            var v5 = IR.F.Tensors.Reduce(ReduceOp.Mean, v4, axes, initValue, keepDims);
+            var v6 = IR.F.Math.Binary(BinaryOp.Add, v5, 1e-05f);
+            var v7 = IR.F.Math.Unary(UnaryOp.Sqrt, v6);
+            var v8 = IR.F.Math.Binary(BinaryOp.Div, v3, v7);
+            var v9 = IR.F.Tensors.Reshape(v8, shape);
+            var v10 = IR.F.Math.Binary(BinaryOp.Mul, v9, 1f);
+            var v11 = IR.F.Math.Binary(BinaryOp.Add, v10, 1f);
+            var rootPre = v11;
+            return new Function(rootPre, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = new Type[]
+    {
+        typeof(Passes.Rules.Neutral.FoldLayerNormPattern1),
+        typeof(Passes.Rules.Neutral.FoldLayerNormPattern2),
+        typeof(Passes.Rules.Neutral.FoldLayerNormPattern3),
+    };
+
+    public Dictionary<Var, IValue> FeedDict => new()
+    {
+        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+    };
+}
+
+public sealed class FoldSwishCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public FoldSwishCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var shape = new[] { 1, 3, 16, 16 };
+            var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape);
+            var v0 = input;
+            var v1 = IR.F.NN.Sigmoid(v0);
+            var v2 = IR.F.Math.Binary(BinaryOp.Mul, v1, v0);
+            var rootPre = v2;
+            return new Function(rootPre, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = new Type[]
+    {
+        typeof(Passes.Rules.Neutral.FoldSwishPattern1),
+        typeof(Passes.Rules.Neutral.FoldSwishPattern2),
+    };
+
+    public Dictionary<Var, IValue> FeedDict => new()
+    {
+        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+    };
+}
+
+public sealed class FoldGeluCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public FoldGeluCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, new[] { 1, 3, 16, 16 });
+            var v0 = input;
+            var v4 = IR.F.Math.Binary(BinaryOp.Mul, v0, 0.577350f); // "mul3Call"
+            var v1 = IR.F.Math.Binary(BinaryOp.Div, v4, 1.414213f); // divCall
+            var v2 = IR.F.NN.Erf(v1); // "erfCall"
+            var v3 = IR.F.Math.Binary(BinaryOp.Add, v2, 1f); // "addCall"
+            var v5 = IR.F.Math.Binary(BinaryOp.Mul, v4, v3); // "mul2Call"
+            var v6 = IR.F.Math.Binary(BinaryOp.Mul, v5, 0.5f); // "Mul1Call"
+            var rootPre = v6;
+            return new Function(rootPre, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = new Type[]
+    {
+        typeof(Passes.Rules.Neutral.FoldGeneralGelu),
+        typeof(Passes.Rules.Neutral.FoldGeluWithScale),
+    };
+
+    public Dictionary<Var, IValue> FeedDict => new()
+    {
+        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+    };
+}
+
+public sealed class FoldHardSwishCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public FoldHardSwishCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, new[] { 1, 3, 16, 16 });
+            var v0 = input;
+            var v1 = IR.F.Math.Binary(BinaryOp.Add, v0, 3f); // "addCall"
+            var v2 = IR.F.Math.Clamp(v1, new ValueRange<float>(0f, 6f)); // "clampCall"
+            var v3 = IR.F.Math.Binary(BinaryOp.Mul, v2, v0); // "mulCall"
+            var v4 = IR.F.Math.Binary(BinaryOp.Div, v3, 6f); // "divCall"
+            var rootPre = v4;
+            return new Function(rootPre, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = new Type[]
+    {
+        typeof(Passes.Rules.Neutral.FoldHardSwish),
+    };
+
+    public Dictionary<Var, IValue> FeedDict => new()
+    {
+        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+    };
+}
+
+public sealed class MatMulToConv2DCase : IRewriteCase
+{
+    private readonly Var _inputLhs;
+    private readonly Var _inputRhs;
+
+    public MatMulToConv2DCase()
+    {
+        _inputLhs = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 5 }));
+        _inputRhs = new Var("input", new TensorType(DataTypes.Float32, new[] { 5, 1 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var a = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 5 });
+            var b = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 5, 1 }).Evaluate();
+            var rootPre = Math.MatMul(a, b.AsTensor());
+            return new Function(rootPre, new Var[] { _inputLhs, _inputRhs });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = new Type[]
+    {
+        typeof(Passes.Rules.Neutral.MatMulToConv2D),
+    };
+
+    public Dictionary<Var, IValue> FeedDict => new()
+    {
+        { _inputLhs, Normal(DataTypes.Float32, 0, 1, 1, _inputLhs.CheckedShape.ToValueArray()).Evaluate() },
+        { _inputRhs, Normal(DataTypes.Float32, 0, 1, 1, _inputRhs.CheckedShape.ToValueArray()).Evaluate() },
+    };
 }
