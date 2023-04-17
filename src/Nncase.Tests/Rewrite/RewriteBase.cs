@@ -2723,11 +2723,12 @@ public sealed class ReduceArgCase : IRewriteCase
         {
             long axis = 0L;
             _ =
-        {
-            0L
-, 
-1L
+            {
+                0L
+,
+                1L
         }
+
             long select_last_idx = 0L;
             var a = new float[] { 1, 2, 3, 4, 5, 6, 7, 8 };
             var result = new int[] { 5, 6, 7, 8 };
