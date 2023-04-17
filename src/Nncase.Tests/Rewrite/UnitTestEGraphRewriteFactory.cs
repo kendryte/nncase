@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using NetFabric.Hyperlinq;
 using Nncase.Diagnostics;
 using Nncase.IR;
+using Nncase.IR.Tensors;
 using Nncase.Passes;
 using Nncase.Tests.TestFixture;
 using Xunit;
@@ -52,6 +53,54 @@ public sealed class UnitTestEGraphRewriteFactory : TestClassBase
         new FoldGeluCase(),
         new FoldHardSwishCase(),
         new MatMulToConv2DCase(),
+        new ReduceCase(),
+        new BroadcastCase(),
+        new CastCase(),
+        new TileCase(),
+        new StackCase(),
+        new BitcastCase(),
+        new SliceCase(),
+        new TopKCase(),
+        new GatherCase(),
+        new GatherNDCase(),
+        new FlattenCase(),
+        new SplitCase(),
+        new SqueezeCase(),
+        new ConcatCase(),
+        new UnsqueezeCase(),
+        new ExpandCase(),
+        new ShapeOfCase(),
+        new ReverseSequenceCase(),
+        new WhereCase(),
+        new RangeCase(),
+        new SizeOfCase(),
+        new BatchToSpaceCase(),
+        new L2NormalizationCase(),
+        new OneHotCase(),
+        new CeluCase(),
+        new EluCase(),
+        new SeluCase(),
+        new HardmaxCase(),
+        new HardSigmoidCase(),
+        new LRNCase(),
+        new SoftmaxCase(),
+        new CumSumCase(),
+        new LSTMCase(),
+        new InstanceNormalizationCase(),
+        new HardSwishCase(),
+        new SoftplusCase(),
+        new SoftsignCase(),
+        new LpNormalizationCase(),
+        new Conv2DTransposeCase(),
+        new LogSoftmaxCase(),
+        new CompareCase(),
+        new FakeDequantizeCase(),
+        new FakeQuantizeCase(),
+        new ReduceArgCase(),
+        new NormalLikeCase(),
+        new UniformLikeCase(),
+        new UniformCase(),
+        new ResizeImageCase(),
     };
 
     [Theory]
