@@ -1718,8 +1718,6 @@ public sealed class HardSwishCase : IRewriteCase
         get
         {
             var input = OrtKI.Random(new long[] { 1, 3, 16, 16 });
-            var alpha = 1F / 6F;
-            var beta = 0.5F;
             var expr = IR.F.NN.HardSwish(input.ToTensor());
             return new Function(expr, new Var[] { _input });
         }
