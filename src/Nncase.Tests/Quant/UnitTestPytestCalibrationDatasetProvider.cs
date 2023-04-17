@@ -105,7 +105,7 @@ public class UnitTestPytestCalibrationDatasetProvider
     private static void DumpTensors(Tensor[] tensorValue, string dir, int sample = 1)
     {
         Directory.CreateDirectory(dir);
-        for (var s = 0; s< sample; s++)
+        for (var s = 0; s < sample; s++)
         {
             for (var t = 0; t < tensorValue.Length; t++)
             {
