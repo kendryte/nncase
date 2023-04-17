@@ -1347,7 +1347,7 @@ public sealed class BroadcastCase : IRewriteCase
     {
         get
         {
-            var oldShape = new long[] { 16 };
+            _ = new long[] { 16 };
             var newShape = new[] { 1, 3, 16, 16 };
             var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, new[] { 1, 3, 16, 16 });
             var expr = IR.F.Tensors.Broadcast(input, newShape);
@@ -1508,7 +1508,7 @@ public sealed class SliceCase : IRewriteCase
             var end = Tensor.From<int>(new[] { 1, 1, 1, 5 }, new Shape(new[] { 4 }));
             var axes = Tensor.From<int>(new[] { 0, 1, 2, 3 }, new Shape(new[] { 4 }));
             var strides = Tensor.From<int>(new[] { 1, 1, 1, 1 }, new Shape(new[] { 4 }));
-            var result = Const.FromTensor(Tensor.From<int>(Enumerable.Range(0, 5).ToArray(), new Shape(new[] { 1, 1, 1, 5 })));
+            _ = Const.FromTensor(Tensor.From<int>(Enumerable.Range(0, 5).ToArray(), new Shape(new[] { 1, 1, 1, 5 })));
             var expr = IR.F.Tensors.Slice(input, begin, end, axes, strides);
             return new Function(expr, new Var[] { _input });
         }
@@ -2012,7 +2012,7 @@ public sealed class TopKCase : IRewriteCase
         get
         {
             var x = Tensor.From<int>(Enumerable.Range(0, 120).ToArray(), new Shape(new[] { 2, 3, 4, 5 }));
-            var shape = new long[] { 1, 2, 4, 8 };
+            _ = new long[] { 1, 2, 4, 8 };
             var k = 1L;
             var axis = -1;
             var largest = 1;
@@ -2430,7 +2430,7 @@ public sealed class SizeOfCase : IRewriteCase
     {
         get
         {
-            var shape = new Shape(new[] { 1, 3, 16, 16 });
+            _ = new Shape(new[] { 1, 3, 16, 16 });
             var input = OrtKI.Random(1, 3, 16, 16).ToTensor();
             var expr = IR.F.Tensors.SizeOf(input);
             return new Function(expr, new Var[] { _input });
@@ -2464,7 +2464,7 @@ public sealed class BatchToSpaceCase : IRewriteCase
             var a = new float[] { 1, 3, 9, 11, 2, 4, 10, 12, 5, 7, 13, 15, 6, 8, 14, 16 };
             var input = Tensor.From(a, new[] { 4, 1, 2, 2 });
             var shape = new long[] { 2, 2 };
-            var b = new float[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
+            _ = new float[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
             var crops = new long[] { 0, 0, 0, 0 };
             var expr = IR.F.NN.BatchToSpace(
                 input,
@@ -2499,7 +2499,7 @@ public sealed class L2NormalizationCase : IRewriteCase
         get
         {
             var a = new float[] { 0F, 2F, 3F, 2F, 2F, 2F };
-            var b = new float[] { 0F, 0.4F, 0.6F, 0.4F, 0.4F, 0.4F };
+            _ = new float[] { 0F, 0.4F, 0.6F, 0.4F, 0.4F, 0.4F };
             var input = Tensor.From(a, new[] { 6 });
             var expr = IR.F.NN.L2Normalization(input);
             return new Function(expr, new Var[] { _input });
@@ -2722,7 +2722,12 @@ public sealed class ReduceArgCase : IRewriteCase
         get
         {
             long axis = 0L;
-            long[] keepDims = { 0L, 1L };
+            _ =
+        {
+            0L
+, 
+1L
+        }
             long select_last_idx = 0L;
             var a = new float[] { 1, 2, 3, 4, 5, 6, 7, 8 };
             var result = new int[] { 5, 6, 7, 8 };
