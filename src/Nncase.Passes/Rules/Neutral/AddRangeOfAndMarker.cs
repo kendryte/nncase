@@ -129,16 +129,16 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
                     {
                         if (isWeights)
                         {
-                            pairs.Add(callParams[i], IR.F.Math.RangeOfMarker(callParams[i], IR.F.Math.RangeOf(callParams[i]), CompileSession.CompileOptions.QuantizeOptions.WQuantType));
+                            pairs.Add(callParams[i], IR.F.Math.RangeOfMarker(callParams[i], IR.F.Math.RangeOf(callParams[i], isWeights), CompileSession.CompileOptions.QuantizeOptions.WQuantType));
                         }
                         else
                         {
-                            pairs.Add(callParams[i], IR.F.Math.RangeOfMarker(callParams[i], IR.F.Math.RangeOf(callParams[i]), CompileSession.CompileOptions.QuantizeOptions.QuantType));
+                            pairs.Add(callParams[i], IR.F.Math.RangeOfMarker(callParams[i], IR.F.Math.RangeOf(callParams[i], isWeights), CompileSession.CompileOptions.QuantizeOptions.QuantType));
                         }
                     }
                     else
                     {
-                        pairs.Add(callParams[i], IR.F.Math.RangeOfMarker(callParams[i], IR.F.Math.RangeOf(callParams[i])));
+                        pairs.Add(callParams[i], IR.F.Math.RangeOfMarker(callParams[i], IR.F.Math.RangeOf(callParams[i], isWeights)));
                     }
                 }
             }
@@ -170,11 +170,11 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
     {
         if (!configExist && !useAutoMixQuant)
         {
-            return IR.F.Math.RangeOfMarker(call, IR.F.Math.RangeOf(call), CompileSession.CompileOptions.QuantizeOptions.QuantType);
+            return IR.F.Math.RangeOfMarker(call, IR.F.Math.RangeOf(call, false), CompileSession.CompileOptions.QuantizeOptions.QuantType);
         }
         else
         {
-            return IR.F.Math.RangeOfMarker(call, IR.F.Math.RangeOf(call));
+            return IR.F.Math.RangeOfMarker(call, IR.F.Math.RangeOf(call, false));
         }
     }
 
@@ -186,10 +186,10 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
             context.MatchOptions.SuppressPattern(o, Pattern);
         }
 
-        var exprs = outputs.Select(item => IR.F.Math.RangeOfMarker(item, IR.F.Math.RangeOf(item))).ToArray();
+        var exprs = outputs.Select(item => IR.F.Math.RangeOfMarker(item, IR.F.Math.RangeOf(item, false))).ToArray();
         if (!configExist && !useAutoMixQuant)
         {
-            exprs = outputs.Select(item => IR.F.Math.RangeOfMarker(item, IR.F.Math.RangeOf(item), CompileSession.CompileOptions.QuantizeOptions.QuantType)).ToArray();
+            exprs = outputs.Select(item => IR.F.Math.RangeOfMarker(item, IR.F.Math.RangeOf(item, false), CompileSession.CompileOptions.QuantizeOptions.QuantType)).ToArray();
         }
 
         return new IR.Tuple(exprs);

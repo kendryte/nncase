@@ -396,6 +396,15 @@ public static class Math
         return call;
     }
 
+    public static Call RangeOf(Expr input, bool isRangeOfWeight)
+    {
+        var rangeOf = new RangeOf();
+        rangeOf.IsRangeOfWeight = isRangeOfWeight;
+        var call = (Call)new Call(rangeOf, input).InheritMetaData(input);
+
+        return call;
+    }
+
     public static Call QuantParamOf(QuantMode mode, Expr range, Expr bits) => new Call(new QuantParamOf(mode), range, bits);
 
     public static Call Quantize(Expr input, Expr quantParam, DataType targetType) => new Call(new Quantize(targetType), input, quantParam);
