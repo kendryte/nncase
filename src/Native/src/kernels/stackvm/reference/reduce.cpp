@@ -103,8 +103,8 @@ result<void> reduce_prod(const T *input, T *output, const dims_t &in_shape,
 }
 
 template <>
-result<void> reduce_prod(const bool *input, bool *output, const dims_t &in_shape,
-                         const strides_t &in_strides,
+result<void> reduce_prod(const bool *input, bool *output,
+                         const dims_t &in_shape, const strides_t &in_strides,
                          const strides_t &out_strides_origin,
                          const dims_t &axes, bool keep_dims) noexcept {
     auto out_shape =
