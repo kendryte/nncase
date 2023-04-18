@@ -148,7 +148,7 @@ class OnnxTestRunner(TestRunner):
 
         def is_dynamic(output):
             dims = output.type.tensor_type.shape.dim
-            return any(dim.dim_value == 0 for dim in dims)
+            return any(dim.dim_param != '' for dim in dims)
 
         outputs = onnx_model.graph.output
         self.dynamic = any(is_dynamic(output) for output in outputs)
