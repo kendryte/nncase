@@ -7,6 +7,7 @@ import shutil
 import os
 import numpy as np
 from test_runner import *
+from collections import ChainMap
 
 
 class OnnxTestRunner(TestRunner):
@@ -153,7 +154,9 @@ class OnnxTestRunner(TestRunner):
         self.dynamic = any(is_dynamic(output) for output in outputs)
         # make a static model for infer output
         if self.dynamic:
-            (onnx_model, _) = onnxsim.simplify(onnx_model, input_shapes=self.inputs)
+            input_shapes = list(map(lambda input: {input['name'] : input['shape']}, self.inputs))
+            input_shapes = dict(ChainMap(*input_shapes))
+            (onnx_model, _) = onnxsim.simplify(onnx_model, input_shapes=input_shapes)
 
         # output
         for e in onnx_model.graph.output:
@@ -161,7 +164,7 @@ class OnnxTestRunner(TestRunner):
             onnx_type = e.type.tensor_type
             output_dict['name'] = e.name
             output_dict['dtype'] = onnx.mapping.TENSOR_TYPE_TO_NP_TYPE[onnx_type.elem_type]
-            output_dict['model_shape'] = onnx_type.shape.dim
+            output_dict['model_shape'] = [i.dim_value for i in onnx_type.shape.dim]
             self.outputs.append(output_dict)
 
     def cpu_infer(self, case_dir: str, model_file: bytes, type: str):
