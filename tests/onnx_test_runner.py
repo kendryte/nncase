@@ -94,7 +94,8 @@ class OnnxTestRunner(TestRunner):
                 for input in self.inputs:
                     input_shapes[input['name']] = input['shape']
 
-                onnx_model, check = onnxsim.simplify(onnx_model, input_shapes=input_shapes, dynamic_input_shape=self.dynamic)
+                onnx_model, check = onnxsim.simplify(
+                    onnx_model, input_shapes=input_shapes, dynamic_input_shape=self.dynamic)
                 assert check, "Simplified ONNX model could not be validated"
 
             print('[info]: preprocess ONNX model success: ', args)
