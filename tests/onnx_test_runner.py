@@ -94,7 +94,7 @@ class OnnxTestRunner(TestRunner):
                 for input in self.inputs:
                     input_shapes[input['name']] = input['shape']
 
-                onnx_model, check = onnxsim.simplify(onnx_model, input_shapes=input_shapes)
+                onnx_model, check = onnxsim.simplify(onnx_model, input_shapes=input_shapes, dynamic_input_shape=self.dynamic)
                 assert check, "Simplified ONNX model could not be validated"
 
             print('[info]: preprocess ONNX model success: ', args)
@@ -144,14 +144,23 @@ class OnnxTestRunner(TestRunner):
             self.calibs.append(copy.deepcopy(input_dict))
             self.dump_range_data.append(copy.deepcopy(input_dict))
 
+        def is_dynamic(output):
+            dims = output.type.tensor_type.shape.dim
+            return any(dim.dim_value == 0 for dim in dims)
+
+        outputs = onnx_model.graph.output
+        self.dynamic = any(is_dynamic(output) for output in outputs)
+        # make a static model for infer output
+        if self.dynamic:
+            (onnx_model, _) = onnxsim.simplify(onnx_model, input_shapes=self.inputs)
+
         # output
         for e in onnx_model.graph.output:
             output_dict = {}
             onnx_type = e.type.tensor_type
             output_dict['name'] = e.name
             output_dict['dtype'] = onnx.mapping.TENSOR_TYPE_TO_NP_TYPE[onnx_type.elem_type]
-            # todo:fix this
-            output_dict['model_shape'] = translate_shape(onnx_type.shape.dim, self.default_shape)
+            output_dict['model_shape'] = onnx_type.shape.dim
             self.outputs.append(output_dict)
 
     def cpu_infer(self, case_dir: str, model_file: bytes, type: str):
