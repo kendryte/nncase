@@ -5,7 +5,9 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using NetFabric.Hyperlinq;
+using System.Linq.Expressions;
 using Nncase.IR;
+using Nncase.Quantization;
 using Nncase.Utilities;
 using static Nncase.IR.F.Tensors;
 using Tuple = Nncase.IR.Tuple;
@@ -18,7 +20,7 @@ namespace Nncase
     {
         private static int Count = 0;
 
-        private Expr Default => new Call(new Function(IR.F.Math.Require(false, 0, "input dim large than limit")));
+        private Expr Default => IR.F.Math.Require(false, 0, "input dim large than limit");
 
         record SingleSegment(int InputIndex, int DimIndex, int SegmentLimit);
 
@@ -27,15 +29,15 @@ namespace Nncase
             return SplitImpl(preFunc, infos, 0, 1, vars);
         }
 
-        private Expr SplitImpl(Function preFunc, SegmentInfo[] infos, int current, int limit, Var[] outVars)
+        private Expr SplitImpl(Function originPreFunc, SegmentInfo[] infos, int current, int limit, Var[] outVars)
         {
             var info = infos[current];
-            Check(preFunc, info);
+            Check(originPreFunc, info);
             var body = info.Segments.OrderByDescending(x => x).Aggregate(
                 Default,
                 (sum, seg) =>
                 {
-                    var currVars = outVars.Select(v => new Var($"hash_{v.GetHashCode()}", v.TypeAnnotation)).ToArray();
+                    var currVars = outVars;
 
                     var cond = info.Segments.Aggregate((Expr)true, (cond, _) =>
                     {
@@ -46,88 +48,121 @@ namespace Nncase
                     // get all input fixed shape info
                     var newSegments = infos.Select(info => new SingleSegment(info.InputIndex, info.DimIndex, seg)).ToImmutableArray();
 
-                    var thenCall = current + 1 < limit
+                    var preFunc = originPreFunc.Clone();
+                    CompilerServices.DumpIR(preFunc, MakeSegmentsStr(newSegments), "/Users/homura/Code/nncase/tests_output/UnitTestShapeSplitSegment/TestSplitEncWithMask/dump");
+                    CompilerServices.DumpIR(preFunc.Clone(), MakeSegmentsStr(newSegments) + "Clone", "/Users/homura/Code/nncase/tests_output/UnitTestShapeSplitSegment/TestSplitEncWithMask/dump");
+
+                    var thenBody = current + 1 < limit
                         ? SplitImpl(preFunc, infos, current + 1, limit, currVars)
                         : MakeSplitEntry(preFunc, currVars, newSegments);
 
-                    var elseF = (Function)(((Call)sum).Target);
-                    var elseIfVar = currVars.Select(v => new Var($"hash_else_{v.GetHashCode()}", v.TypeAnnotation)).ToArray();
-                    var elseBody = ReplaceVarInFunction(elseF, elseF.Parameters.ToArray().Zip(elseIfVar).ToArray(), out var elseNewParams);
-                    var elseFn = new Function(elseF.Name, elseBody, elseNewParams);
-                    var elseCall = new Call(elseFn, currVars);
-                    var body = new If(
-                        cond,
-                        thenCall,
-                        elseCall);
-                    var f = new Function(body, currVars);
-                    return new Call(f, outVars);
+                    var elseBody = sum;
+                    return new If(cond, thenBody, elseBody);
                 });
             return body;
         }
 
         private static Expr MakeGetDimCall(Var[] inputs, SegmentInfo info)
         {
-            var input = new Var("input", inputs[info.InputIndex].TypeAnnotation);
+            var input = inputs[info.InputIndex];
             var inShape = ShapeOf(input);
             var dim = Cast(inShape, DataTypes.Int32)[info.DimIndex];
-            var f = new Function($"GetDim_{Count++}_{info.InputIndex}_{info.DimIndex}", dim, new[] { input });
-            return new Call(f, inputs[info.InputIndex]);
+            return dim;
         }
 
-        public IRModule Run(Function preFn, SegmentInfo[] infos)
+        private CompileOptions _options;
+        public IRModule Run(Function preFn, SegmentInfo[] infos, CompileOptions options)
         {
-            var vars = preFn.Parameters.ToArray().Select((x, i) => new Var($"main_{i}", x.TypeAnnotation)).ToArray();
+            _options = options;
+            var vars = preFn.Parameters.ToArray();
             var body = SplitImpl(preFn, infos, vars);
             var newFn = new Function("main", body, vars);
             return CollectFunctionToNewModule(newFn);
         }
 
-        private Expr MakeSplitEntry(Function preFunc, Var[] outerInput, ImmutableArray<SingleSegment> infos)
+        private (Expr[], int[][]) Preprocess(Function preFunc, Expr[] outerInput, ImmutableArray<SingleSegment> infos)
         {
-            // preprocess
-            var inputs = outerInput.Select((v, i) => new Var($"SplitEntry_{i}", v.TypeAnnotation)).ToArray();
+            var inputs = outerInput;
             var fixedShapeList = infos.Select(info =>
                 ComputeFixedShape(inputs[info.InputIndex], info.DimIndex, info.SegmentLimit)).ToArray();
 
-            var wrapParams = inputs.ToArray();
-            for (int i = 0; i < infos.Length; i++)
-            {
-                wrapParams[infos[i].InputIndex] = new Var($"split_dynamic_input_{i}",
-                    wrapParams[infos[i].InputIndex].TypeAnnotation);
-            }
-
             var fitFixedShape = infos.Zip(fixedShapeList)
-                .Select(info => FitFixedShape(wrapParams[info.First.InputIndex], info.Second, info.First.InputIndex))
+                .Select(info => FitFixedShape(outerInput[info.First.InputIndex], info.Second, info.First.InputIndex))
                 .ToArray();
 
-            var wrapperFn = new Function(preFunc.Name + $"_{MakeSegmentsStr(infos)}_wrapper",
-                new IR.Tuple(fitFixedShape), wrapParams);
-            var fitFixedShapeInputs = new Call(wrapperFn, inputs.ToArray());
+            Expr fitFixedShapeInputs = new IR.Tuple(fitFixedShape);
 
             var newInputs = inputs.Select(v => (Expr)v).ToArray();
             for (int i = 0; i < infos.Length; i++)
             {
                 newInputs[infos[i].InputIndex] = fitFixedShapeInputs[i];
             }
+            return (newInputs, fixedShapeList);
+        }
 
+        internal class DatasetProvider :ICalibrationDatasetProvider
+        {
+            public int? Count { get; }
+
+            public IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples { get; }
+
+            public DatasetProvider(IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> samples)
+            {
+                Samples = samples;
+            }
+        }
+
+        private Expr MakeSplitEntry(Function preFunc, Var[] outerInput, ImmutableArray<SingleSegment> infos)
+        {
+            var (newInputs, fixedShapeList) = Preprocess(preFunc, outerInput, infos);
             var innerFunc = InnerFnImpl(preFunc, fixedShapeList, infos);
-
-            // postprocess
-            var impl = new Function(new Call(innerFunc, newInputs), inputs);
-            var then = new Call(impl, outerInput);
-
-            // input0: (1, len)
-            // ShapeOf(input0)[1] == len
+            var then = new Call(innerFunc, newInputs);
+            UpdateCaliData(preFunc, infos, innerFunc);
             return PostProcess(then, outerInput);
+        }
+
+        public class VarEqualityComparer : IEqualityComparer<Var>
+        {
+            public bool Equals(Var x, Var y)
+            {
+                return x.GlobalVarIndex == y.GlobalVarIndex;
+            }
+
+            public int GetHashCode(Var obj)
+            {
+                return obj.GetHashCode();
+            }
+        }
+
+        private void UpdateCaliData(Function preFunc, ImmutableArray<SingleSegment> infos, Function innerFunc)
+        {
+            var vars = innerFunc.Parameters.ToArray();
+            if (_options.QuantizeOptions.ModelQuantMode != ModelQuantMode.UsePTQ)
+            {
+                return;
+            }
+            var oldSamples = _options.QuantizeOptions.CalibrationDataset!.Samples;
+            var newSamples = oldSamples.ToEnumerable().Select(
+                sample =>
+                {
+                    var values = sample.Values;
+                    var (newCalibData, _) =
+                        Preprocess(preFunc, values.Select(v => (Expr)v.AsTensor()).ToArray(), infos);
+                    var newInputData = newCalibData.Select(expr => expr.Evaluate().AsTensor()).Select(t => (IValue)Value.FromTensor(t));
+                    var dict = vars.Zip(newInputData)
+                        .ToDictionary(pair => pair.Item1, pair => pair.Item2).Concat(sample)
+                        .ToDictionary(pair => pair.Key, pair => pair.Value);
+                    return dict;
+                }
+            ).ToAsyncEnumerable();
+
+            _options.QuantizeOptions.CalibrationDataset = new DatasetProvider(newSamples);
         }
 
         public Expr PostProcess(Expr output, Var[] outerInput)
         {
-            // find first false
             var actualLen = ShapeOf(outerInput[0])[1];
             var len = Cast(actualLen, DataTypes.Int32);
-            // todo: replce with expr, not constant
-            // todo: out_shape_list in first should be remove
             var encOut = Slice(output[0], new[] { 0, 0, 0 }, Stack(new Tuple(1, len, 224), 0), 3);
             var dur = Slice(output[1], new[] { 0, 0 }, Stack(new Tuple(ShapeOf(output[1])[0], len), 0), 2);
             return new Tuple(encOut, dur);
@@ -157,8 +192,6 @@ namespace Nncase
         {
             var originShape = input.CheckedShape;
             var dims = originShape.Select(x => x).ToArray();
-
-            // only dims[DimIndex] is unknown
             dims[dimIndex] = seg;
             return dims.Select(x => x.FixedValue).ToArray();
         }
@@ -166,8 +199,6 @@ namespace Nncase
         private static Expr FitFixedShape(Expr targetInput, int[] fixedShape, int inputIndex)
         {
             targetInput.InferenceType();
-            // rename
-            // compute paddings;
             var pads = fixedShape - Cast(ShapeOf(targetInput), DataTypes.Int32);
             var paddings = Transpose(Stack(new IR.Tuple(Enumerable.Repeat(0, fixedShape.Length).ToArray(), pads), 0),
                 new[] { 1, 0 });
@@ -189,12 +220,15 @@ namespace Nncase
                     var (fixedShape, inIndex) = indexAndShape;
                     var oldVar = preFunc.Parameters[inIndex];
                     return (oldVar, new Var(
-                        preFunc.Name + $"_seg_{MakeSegmentsStr(segments)}_inner_var_{index++}",
+                        preFunc.Name + $"_seg_{segStr}_inner_var_{index++}",
                         new TensorType(oldVar.CheckedDataType, fixedShape)));
                 })
                 .ToArray();
 
-            var newBody = ReplaceVarInFunction(preFunc, innerFixedShapeVarList, out var newParams);
+            var otherVar = preFunc.Parameters.ToArray().Where((_, i) => !inputIndex.Contains(i)).ToArray();
+            var newOtherVar = otherVar.Select(v =>
+                (v, new Var(preFunc.Name + $"_seg_{segStr}_inner_var_{index++}", v.TypeAnnotation)));
+            var newBody = ReplaceVarInFunction(preFunc, innerFixedShapeVarList.Concat(newOtherVar).ToArray(), out var newParams);
 
             // replace Fix var.
             var innerFunc = new Function(
