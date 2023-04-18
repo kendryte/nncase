@@ -75,6 +75,7 @@ internal class Compiler : ICompiler
             passManager.AddWithName<DataflowPass>("SqueezeShape").Configure(p =>
             {
                 p.Add<Passes.Rules.Neutral.SqueezeTransposeShape>();
+                p.Add<Passes.Rules.Neutral.Squeeze5DTranspose>();
             });
             passManager.AddWithName<EGraphRulesPass>("NeutralOptimizeTranspose").Configure(p =>
             {
