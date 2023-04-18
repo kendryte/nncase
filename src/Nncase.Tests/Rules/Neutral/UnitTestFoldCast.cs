@@ -34,6 +34,13 @@ public class UnitTestFoldCast : TransformTestBase
             new[] { DataTypes.Int8, DataTypes.UInt8, DataTypes.UInt32 },
             new[] { DataTypes.BFloat16, DataTypes.UInt32, DataTypes.UInt8 },
             new[] { DataTypes.BFloat16, DataTypes.UInt32, DataTypes.Int64 },
+            new[] { DataTypes.UInt16, DataTypes.UInt8, DataTypes.UInt64 },
+            new[] { DataTypes.Int16, DataTypes.UInt8, DataTypes.UInt64 },
+            new[] { DataTypes.UInt32, DataTypes.Float32, DataTypes.UInt64 },
+            new[] { DataTypes.Int32, DataTypes.Float32, DataTypes.UInt64 },
+            new[] { DataTypes.Float32, DataTypes.Float32, DataTypes.UInt64 },
+            new[] { DataTypes.UInt64, DataTypes.Float32, DataTypes.UInt64 },
+            new[] { DataTypes.Int64, DataTypes.Float32, DataTypes.UInt64 },
         };
 
     public static IEnumerable<object[]> TestFoldNopCastPositiveData =>
