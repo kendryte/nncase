@@ -94,6 +94,15 @@ public class UnitTestCombineUnary : TransformTestBase
             new object[] { UnaryOp.Square, new[] { 3, 2, 4, 5 }, new[] { 3, 4, 1, 10 } },
         };
 
+    public static IEnumerable<object[]> TestCombineTranposeUnaryPositiveData =>
+        new[]
+        {
+            new object[] { UnaryOp.Exp, new[] { 6 }, new[] { 0 } },
+            new object[] { UnaryOp.Abs, new[] { 4, 5 }, new[] { 1, 0 }, },
+            new object[] { UnaryOp.Sqrt, new[] { 3, 4, 5 }, new[] { 2, 0, 1 } },
+            new object[] { UnaryOp.Square, new[] { 3, 2, 4, 5 }, new[] { 3, 1, 2, 0 } },
+        };
+
     [Theory]
     [MemberData(nameof(TestCombinePadUnaryPositiveData))]
     public void TestCombinePadUnaryPositive(UnaryOp opType, int[] inShape, int[,] paddings, PadMode padM, float padValue)
@@ -150,5 +159,16 @@ public class UnitTestCombineUnary : TransformTestBase
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
         var rootPre = IR.F.Math.Unary(opType, Tensors.Reshape(a, outShape));
         TestMatched<CombineReshapeUnary>(rootPre, normal);
+    }
+
+    [Theory]
+    [MemberData(nameof(TestCombineTranposeUnaryPositiveData))]
+    public void TestCombineTranposeUnaryPositive(UnaryOp opType, int[] inShape, int[] perm)
+    {
+        var a = new Var();
+        var normal = new Dictionary<Var, IValue>();
+        normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
+        var rootPre = IR.F.Math.Unary(opType, Tensors.Transpose(a, perm));
+        TestMatched<CombineTranposeUnary>(rootPre, normal);
     }
 }
