@@ -1,13 +1,20 @@
-﻿@page "/open/{*workingDirectory}"
+﻿@page "/workspace/{*workingDirectory}"
 
-<Tabs DefaultActiveKey="1" Type="@TabType.EditableCard" OnAddClick="OnAddClick" OnClose="OnTabClose" @bind-ActiveKey="activeKey">
-    @foreach (var pane in panes)
-    {
-        <TabPane Key="@pane.Key" Tab="@pane.Title" Closable="@pane.Closable">
-            @pane.Content
-        </TabPane>
-    }
-</Tabs>
+<Layout>
+    <Sider Theme="SiderTheme.Light" Width="400">
+        <ResourceExplorer WorkingDirectoy="@WorkingDirectory" />
+    </Sider>
+    <Content>
+        <Tabs DefaultActiveKey="1" Type="@TabType.EditableCard" OnAddClick="OnAddClick" OnClose="OnTabClose" @bind-ActiveKey="activeKey">
+            @foreach (var pane in panes)
+            {
+                <TabPane Key="@pane.Key" Tab="@pane.Title" Closable="@pane.Closable">
+                    @pane.Content
+                </TabPane>
+            }
+        </Tabs>
+    </Content>
+</Layout>
 
 @code {
     private string activeKey;

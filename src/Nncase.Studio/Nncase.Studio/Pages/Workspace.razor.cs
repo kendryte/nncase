@@ -7,8 +7,8 @@ using Microsoft.AspNetCore.Components;
 
 namespace Nncase.Studio.Pages;
 
-public partial class Open
+public partial class Workspace
 {
     [Parameter]
-    public string WorkingDirectory { get; set; }
+    public string WorkingDirectory { get; set; } = default!;
 }

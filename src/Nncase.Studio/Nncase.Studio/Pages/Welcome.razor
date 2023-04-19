@@ -2,9 +2,12 @@
 
 <Card>
     <Alert Message="请打开工作区"
-           Type="success"
+           Type="@AlertType.Info"
            ShowIcon="true"
            Banner
            Style="margin: -12px; margin-bottom: 24px" />
-    <Button>打开工作区</Button>
+    <Button OnClick="OpenWorkspace">打开工作区</Button>
 </Card>
+
+@code {
+}

@@ -1,29 +1,17 @@
 ﻿<Divider Orientation="left">资源管理器</Divider>
 
-<Tree TItem="string"
-	  ShowIcon
-	  DefaultExpandAll
-	  DefaultSelectedKeys="@(new[]{"0-0-0"})">
+<Tree TItem="ResourceNode"
+    DataSource="TopNodes"
+    ShowIcon
+    TitleExpression="x => x.DataItem.Name"
+    KeyExpression="x => x.DataItem.Path"
+    IsLeafExpression="x => !x.DataItem.IsDirectory"
+    ChildrenExpression="x => x.DataItem.Children"
+    IconExpression="x => x.DataItem.Icon"
+    OnSelect="OnNodeSelected">
 	<SwitcherIconTemplate>
 		@switcherIcon
 	</SwitcherIconTemplate>
-	<Nodes>
-		<TreeNode Title="parent 2" Key="0-0" Icon="smile" TItem="string">
-			<TreeNode Title="leaf" Key="0-0-0" Icon="meh" TItem="string" />
-		</TreeNode>
-		<TreeNode Title="leaf2" Key="0-0-1" TItem="string">
-			<IconTemplate Context="node">
-				@if (node.Selected)
-				{
-					<Icon Type="frown" Theme="fill" />
-				}
-				else
-				{
-					<Icon Type="frown" Theme="outline" />
-				}
-			</IconTemplate>
-		</TreeNode>
-	</Nodes>
 </Tree>
 
 @code {

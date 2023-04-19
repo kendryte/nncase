@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Shell xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+       xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+       xmlns:local="clr-namespace:Nncase.Studio.Maui"
+       xmlns:studio="clr-namespace:Nncase.Studio;assembly=Nncase.Studio"
+       x:Class="Nncase.Studio.Maui.AppShell"
+       BackgroundColor="{DynamicResource PageBackgroundColor}"
+       Title="Nncase Studio">
+    <ShellContent>
+        <ContentPage>
+            <BlazorWebView HostPage="wwwroot/index.html">
+                <BlazorWebView.RootComponents>
+                    <RootComponent Selector="#app" ComponentType="{x:Type studio:Main}" />
+                </BlazorWebView.RootComponents>
+            </BlazorWebView>
+        </ContentPage>
+    </ShellContent>
+</Shell>

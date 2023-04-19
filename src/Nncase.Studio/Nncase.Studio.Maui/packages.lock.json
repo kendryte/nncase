@@ -11,6 +11,15 @@
           "AntDesign": "0.12.4"
         }
       },
+      "CommunityToolkit.Maui": {
+        "type": "Direct",
+        "requested": "[5.0.0, )",
+        "resolved": "5.0.0",
+        "contentHash": "iIEnYmQxFPH650rtcUlVrFy1/gLuvDLqvLVcnMCzWTJAFCSkNDspPY8EmGGN37FOqBSzQ7OttReyAZiroAjVdA==",
+        "dependencies": {
+          "CommunityToolkit.Maui.Core": "5.0.0"
+        }
+      },
       "Microsoft.AspNetCore.Components.WebView.Maui": {
         "type": "Direct",
         "requested": "[7.0.81, )",
@@ -83,6 +92,11 @@
           "Microsoft.AspNetCore.Components.Web": "6.0.0",
           "OneOf": "2.1.155"
         }
+      },
+      "CommunityToolkit.Maui.Core": {
+        "type": "Transitive",
+        "resolved": "5.0.0",
+        "contentHash": "gZp9b++c8fR1QRVsizrQRCeKxVh+RmC9+2IsPC+qpm/nQNHSyWq6PoIp555cb05zQ/AUyM7OTYnzA1BU1JNl4Q=="
       },
       "Microsoft.AspNetCore.Authorization": {
         "type": "Transitive",
@@ -2954,7 +2968,7 @@
         }
       }
     },
-    "net7.0-windows10.0.19041": {
+    "net7.0-windows10.0.22000": {
       "AntDesign.ProLayout": {
         "type": "Direct",
         "requested": "[0.12.4, )",
@@ -2962,6 +2976,15 @@
         "contentHash": "j1vmVi7I3k+3ubosEM3wHsB8sKQNZNeQJg9fesRqFm0NlxVsfoaTgBgRE1/3P0wsUtllYQNgJ4ctuOnWULSewQ==",
         "dependencies": {
           "AntDesign": "0.12.4"
+        }
+      },
+      "CommunityToolkit.Maui": {
+        "type": "Direct",
+        "requested": "[5.0.0, )",
+        "resolved": "5.0.0",
+        "contentHash": "iIEnYmQxFPH650rtcUlVrFy1/gLuvDLqvLVcnMCzWTJAFCSkNDspPY8EmGGN37FOqBSzQ7OttReyAZiroAjVdA==",
+        "dependencies": {
+          "CommunityToolkit.Maui.Core": "5.0.0"
         }
       },
       "Microsoft.AspNetCore.Components.WebView.Maui": {
@@ -3062,6 +3085,11 @@
           "Microsoft.AspNetCore.Components.Web": "6.0.0",
           "OneOf": "2.1.155"
         }
+      },
+      "CommunityToolkit.Maui.Core": {
+        "type": "Transitive",
+        "resolved": "5.0.0",
+        "contentHash": "gZp9b++c8fR1QRVsizrQRCeKxVh+RmC9+2IsPC+qpm/nQNHSyWq6PoIp555cb05zQ/AUyM7OTYnzA1BU1JNl4Q=="
       },
       "Microsoft.AspNetCore.Authorization": {
         "type": "Transitive",
@@ -4205,7 +4233,7 @@
         }
       }
     },
-    "net7.0-windows10.0.19041/maccatalyst-x64": {
+    "net7.0-windows10.0.22000/maccatalyst-x64": {
       "Microsoft.WindowsAppSDK": {
         "type": "Direct",
         "requested": "[1.2.221209.1, )",
@@ -5088,7 +5116,7 @@
         }
       }
     },
-    "net7.0-windows10.0.19041/win10-x64": {
+    "net7.0-windows10.0.22000/win10-x64": {
       "Microsoft.WindowsAppSDK": {
         "type": "Direct",
         "requested": "[1.2.221209.1, )",

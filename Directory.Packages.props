@@ -16,6 +16,7 @@
     <PackageVersion Include="AntDesign.ProLayout" Version="0.12.4" />
     <PackageVersion Include="AnyTensorFlow.NET" Version="0.70.1" />
     <PackageVersion Include="BitFields" Version="0.1.0" />
+    <PackageVersion Include="CommunityToolkit.Maui" Version="5.0.0" />
     <PackageVersion Include="coverlet.collector" Version="3.0.2" />
     <PackageVersion Include="DryIoc.dll" Version="5.3.1" />
     <PackageVersion Include="DryIoc.Microsoft.DependencyInjection" Version="6.1.0" />
@@ -37,16 +38,18 @@
       <Version>1.1.1</Version>
     </PackageVersion>
     <PackageVersion Include="Microsoft.AspNetCore.Components.Web" Version="6.0.6" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebView.WindowsForms" Version="7.0.81" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.0.1" />
     <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="6.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="6.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0" Condition="'$(UseMaui)' != 'true'"/>
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0" Condition="'$(UseMaui)' != 'true'" />
     <PackageVersion Include="Microsoft.Extensions.Options" Version="6.0.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="16.9.4" />
     <PackageVersion Include="Microsoft.Toolkit.HighPerformance" Version="7.1.1" />
     <PackageVersion Include="NetFabric.Hyperlinq" Version="3.0.0-beta48" />
     <PackageVersion Include="Nncase.FlatBuffers" Version="2.0.0" />
+    <PackageVersion Include="Ookii.Dialogs.WinForms" Version="4.0.0" />
     <PackageVersion Include="OrtKISharp" Version="0.0.2" />
     <PackageVersion Include="RazorLight" Version="2.3.0" />
     <PackageVersion Include="Singulink.Collections.Weak" Version="1.0.2" />

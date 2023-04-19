@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Components.WebView.Maui;
+﻿using CommunityToolkit.Maui;
+using Microsoft.AspNetCore.Components.WebView.Maui;
 
 namespace Nncase.Studio.Maui
 {
@@ -9,6 +10,7 @@ namespace Nncase.Studio.Maui
             var builder = MauiApp.CreateBuilder();
             builder
                 .UseMauiApp<App>()
+                .UseMauiCommunityToolkit()
                 .ConfigureFonts(fonts =>
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
@@ -16,8 +18,9 @@ namespace Nncase.Studio.Maui
 
             builder.Services.AddMauiBlazorWebView();
             builder.Services.AddNncaseStudio();
+            builder.Services.AddNncaseStudioMaui();
 #if DEBUG
-		builder.Services.AddBlazorWebViewDeveloperTools();
+            builder.Services.AddBlazorWebViewDeveloperTools();
 #endif
 
             return builder.Build();
