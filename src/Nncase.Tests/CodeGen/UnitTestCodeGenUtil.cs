@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Microsoft.VisualBasic;
 using Nncase;
@@ -18,6 +19,7 @@ public class UnitTestCodeGenUtil
     [Fact]
     public void TestCodeGenUtil()
     {
-        CodeGenUtil.GetTempFileName();
+        string tempPath = Path.GetTempPath() + Guid.NewGuid().ToString();
+        Assert.NotEqual(tempPath, CodeGenUtil.GetTempFileName());
     }
 }
