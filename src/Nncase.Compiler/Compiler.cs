@@ -72,6 +72,10 @@ internal class Compiler : ICompiler
         var quantMode = _compileSession.CompileOptions.QuantizeOptions.ModelQuantMode;
         if (quantMode == ModelQuantMode.UsePTQ)
         {
+            passManager.AddWithName<DataflowPass>("SqueezeShape").Configure(p =>
+            {
+                p.Add<Passes.Rules.Neutral.SqueezeTransposeShape>();
+            });
             passManager.AddWithName<EGraphRulesPass>("NeutralOptimizeTranspose").Configure(p =>
             {
                 p.Add<Passes.Rules.Neutral.FoldConstCall>();
