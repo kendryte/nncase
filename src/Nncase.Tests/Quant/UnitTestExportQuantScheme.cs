@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 using System.Collections.Generic;
 using System.IO;
@@ -42,8 +42,7 @@ public class UnitTestExportQuantScheme : TestClassBase
         var conv = Conv2D(input, weights, bias, stride, padding, dilation, PadMode.Constant, 1);
 
         var output = conv;
-
-        var dumpVisitor = await TestExportQuantSchemeMainPassesAsync(input, output, false);
+        _ = await TestExportQuantSchemeMainPassesAsync(input, output, false);
 
         Assert.Equal("{\"Version\":\"1.0\",\"Model\":null,\"Outputs\":[{\"Name\":\"weight\",\"DataType\":\"u8\",\"DataRange\":[{\"Min\":0.0,\"Max\":0.9988426,\"IsFull\":false}],\"DataRangeMode\":\"by_tensor\"}]}", CompileOptions.QuantizeOptions.QuantScheme);
     }
@@ -70,8 +69,7 @@ public class UnitTestExportQuantScheme : TestClassBase
         var conv = Conv2D(input, weights, bias, stride, padding, dilation, PadMode.Constant, 1);
 
         var output = conv;
-
-        var dumpVisitor = await TestExportQuantSchemeMainPassesAsync(input, output, true);
+        _ = await TestExportQuantSchemeMainPassesAsync(input, output, true);
 
         var expectedQuantScheme = "{\"Version\":\"1.0\",\"Model\":null,\"Outputs\":[{\"Name\":\"weight\",\"DataType\":\"u8\",\"DataRange\":[{\"Min\":0.0,\"Max\":0.32098764,\"IsFull\":false},{\"Min\":0.33333334,\"Max\":0.654321,\"IsFull\":false},{\"Min\":0.6666667,\"Max\":0.9876543,\"IsFull\":false}],\"DataRangeMode\":\"by_channel\"}]}";
         Assert.Equal(expectedQuantScheme, CompileOptions.QuantizeOptions.QuantScheme);
