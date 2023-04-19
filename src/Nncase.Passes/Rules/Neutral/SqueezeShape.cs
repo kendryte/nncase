@@ -33,7 +33,7 @@ public sealed partial class Squeeze5DTranspose : IRewriteRule
         IsTranspose(
         "transpose",
         "call",
-        IsWildcard("input") with { TypePattern = HasFixedShape() & HasRank(x => x > 4, "more than 4D need to squeeze") },
+        IsWildcard("input") with { TypePattern = HasFixedShape() & HasRank(x => x == 5, "more than 4D need to squeeze") },
         IsWildcard("perm"));
 
     private Expr? GetReplace(Expr call, Expr input, int[] perm)
