@@ -45,7 +45,8 @@ public class UnitTestExportQuantScheme : TestClassBase
 
         var dumpVisitor = await TestExportQuantSchemeMainPassesAsync(input, output, false);
 
-        Assert.Equal("{\"Version\":\"1.0\",\"Model\":null,\"Outputs\":[{\"Name\":\"weight\",\"DataType\":\"u8\",\"DataRange\":[{\"Min\":0.0,\"Max\":0.9988426,\"IsFull\":false}],\"DataRangeMode\":\"by_tensor\"}]}", CompileOptions.QuantizeOptions.QuantScheme);
+        var expectedQuantScheme = "{\"Version\":\"1.0\",\"Model\":null,\"Outputs\":[{\"Name\":\"weight\",\"DataType\":\"u8\",\"DataRange\":[{\"Min\":0.0,\"Max\":0.9988426,\"IsFull\":false}],\"DataRangeMode\":\"by_tensor\"}]}";
+        Assert.Equal(expectedQuantScheme, CompileOptions.QuantizeOptions.QuantScheme);
     }
 
     [Fact]
