@@ -180,7 +180,8 @@ public sealed partial class CombineReshapePad : IRewriteRule
             "reshapeCall",
             _ => true,
             IsPad("pad", "padCall", _ => true, IsWildcard("input"), IsTensorConst("pads"), IsTensorConst("value")) with { TypePattern = HasFixedShape() },
-            IsWildcard("shape")) with { TypePattern = HasFixedShape() };
+            IsWildcard("shape")) with
+        { TypePattern = HasFixedShape() };
 
     private Expr? GetReplace(Reshape reshape, Call reshapeCall, Pad pad, Call padCall, Expr input, Expr shape, int[] pads, Expr value)
     {
