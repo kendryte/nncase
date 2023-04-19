@@ -80,7 +80,7 @@ public sealed class UnitTestWeakList
         var sizeBefore = list.ToList().Count;
 
         // Act
-        var result = list.GetEnumerator();
+        _ = list.GetEnumerator();
         var sizeAfter = list.ToList().Count;
 
         // Assert
