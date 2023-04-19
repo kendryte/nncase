@@ -13,12 +13,12 @@ using Xunit;
 
 namespace Nncase.Tests.CoreTest;
 
-public struct enm
+public struct Enm
 {
-    public string title;
-    public string author;
-    public string subject;
-    public int book_id;
+    public string Title;
+    public string Author;
+    public string Subject;
+    public int BookId;
 }
 
 public class UnitTestCodeGenUtil
