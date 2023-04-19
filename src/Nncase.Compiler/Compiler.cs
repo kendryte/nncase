@@ -113,7 +113,8 @@ internal class Compiler : ICompiler
                 p.Add<Passes.Rules.Neutral.FoldGeneralGelu>();
                 p.Add<Passes.Rules.Neutral.FoldSwishPattern1>();
                 p.Add<Passes.Rules.Neutral.FoldSwishPattern2>();
-                p.Add<Passes.Rules.Neutral.FoldHardSwish>();
+                p.Add<Passes.Rules.Neutral.FoldHardSwish1>();
+                p.Add<Passes.Rules.Neutral.FoldHardSwish2>();
             });
 
             // passManager.AddWithName<EGraphPass>("NeutralOptimizeClamp").Configure(p =>
