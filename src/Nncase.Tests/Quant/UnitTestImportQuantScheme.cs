@@ -30,8 +30,8 @@ public class UnitTestImportQuantScheme : TestClassBase
         var resourceName = "Nncase.Tests.Quant.leaky_relu.quant.json";
         var dumpVisitor = await TestImportQuantSchemeMainPassesAsync(input, output, resourceName);
 
-        Assert.Equal(0.0f, ((TensorConst)dumpVisitor.ExprMemo.Keys.ToList()[7]).Value.ToArray<float>()[0]);
-        Assert.Equal(1.0f, ((TensorConst)dumpVisitor.ExprMemo.Keys.ToList()[7]).Value.ToArray<float>()[1]);
+        Assert.Equal(0.0f, ((TensorConst)dumpVisitor.ExprMemo.Keys.ToList()[7]).Value[0]);
+        Assert.Equal(1.0f, ((TensorConst)dumpVisitor.ExprMemo.Keys.ToList()[7]).Value[1]);
     }
 
     [Fact]
@@ -60,12 +60,13 @@ public class UnitTestImportQuantScheme : TestClassBase
         var resourceName = "Nncase.Tests.Quant.conv2d.quant.json";
         var dumpVisitor = await TestImportQuantSchemeMainPassesAsync(input, output, resourceName);
 
-        var ranges = ((TensorConst)dumpVisitor.ExprMemo.Keys.ToList()[6]).Value.ToArray<float>();
+        var ranges = ((TensorConst)dumpVisitor.ExprMemo.Keys.ToList()[6]).Value;
         Assert.Equal(64, ranges.Length);
 
-        for (int i = 0; i < 64; i++)
+        for (int i = 0; i < 32; i++)
         {
-            Assert.Equal(i % 2, ((TensorConst)dumpVisitor.ExprMemo.Keys.ToList()[6]).Value.ToArray<float>()[i]);
+            Assert.Equal(0.0f, ranges[i, 0]);
+            Assert.Equal(1.0f, ranges[i, 1]);
         }
     }
 

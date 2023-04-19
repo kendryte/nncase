@@ -109,7 +109,7 @@ internal partial class Quantizer
                         {
                             var oc = range.Key.Children[1].Nodes[0].Expr.CheckedShape[0].FixedValue;
                             var valueRanges = new ValueRange<float>[oc];
-                            var weightsValue = ((TensorConst)range.Key.Children[1].Nodes[0].Expr).Value.ToArray<float>();
+                            var weightsValue = ((TensorConst)range.Key.Children[1].Nodes[0].Expr).Value.Cast<float>().Buffer;
                             var weightsSize = weightsValue.Length;
                             var eachChannelSize = weightsSize / oc;
                             var tmpMin = float.MaxValue;
@@ -117,14 +117,14 @@ internal partial class Quantizer
 
                             for (int i = 0; i < weightsSize; i++)
                             {
-                                if (weightsValue[i] < tmpMin)
+                                if (weightsValue.Span[i] < tmpMin)
                                 {
-                                    tmpMin = weightsValue[i];
+                                    tmpMin = weightsValue.Span[i];
                                 }
 
-                                if (weightsValue[i] > tmpMax)
+                                if (weightsValue.Span[i] > tmpMax)
                                 {
-                                    tmpMax = weightsValue[i];
+                                    tmpMax = weightsValue.Span[i];
                                 }
 
                                 if ((i + 1) % eachChannelSize == 0)
