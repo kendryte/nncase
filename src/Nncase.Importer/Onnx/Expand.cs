@@ -18,15 +18,16 @@ namespace Nncase.Importer
             {
                 var maxLen = System.Math.Max(input.CheckedShape.Rank, shape.CheckedShape.Size);
                 var outputShape = new Expr[maxLen];
+                var inputShape = F.Tensors.ShapeOf(input);
                 for (var i = 0; i < maxLen; i++)
                 {
                     if (maxLen == input.CheckedShape.Rank)
                     {
-                        outputShape[i] = F.Math.Max(F.Tensors.ShapeOf(input)[i], i < input.CheckedShape.Rank - shape.CheckedShape.Size ? 1 : shape[i]);
+                        outputShape[i] = F.Math.Max(inputShape[i], i < input.CheckedShape.Rank - shape.CheckedShape.Size ? 1L : shape[i - (input.CheckedShape.Rank - shape.CheckedShape.Size)]);
                     }
                     else
                     {
-                        outputShape[i] = F.Math.Max(i < shape.CheckedShape.Size - input.CheckedShape.Rank ? 1 : F.Tensors.ShapeOf(input)[i], shape[i]);
+                        outputShape[i] = F.Math.Max(i < shape.CheckedShape.Size - input.CheckedShape.Rank ? 1L : inputShape[i - (shape.CheckedShape.Size - input.CheckedShape.Rank)], shape[i]);
                     }
                 }
 
