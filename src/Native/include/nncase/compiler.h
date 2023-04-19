@@ -156,7 +156,8 @@ typedef struct {
     void (*quantize_options_set_export_quant_scheme)(
         clr_object_handle_t quantize_options, bool export_quant_scheme);
     void (*quantize_options_set_export_weight_range_by_channel)(
-        clr_object_handle_t quantize_options, bool export_weight_range_by_channel);
+        clr_object_handle_t quantize_options,
+        bool export_weight_range_by_channel);
     clr_object_handle_t (*rtvalue_from_handle)(nncase::value_node *value);
     nncase::value_node *(*rtvalue_get_handle)(clr_object_handle_t rtvalue);
     clr_object_handle_t (*stream_create)(const nncase_stream_mt_t *mt,
@@ -340,12 +341,14 @@ class quantize_options : public clr_object_base {
 
     bool export_quant_scheme() { return false; }
     void export_quant_scheme(bool value) {
-        nncase_clr_api()->quantize_options_set_export_quant_scheme(obj_.get(), value);
+        nncase_clr_api()->quantize_options_set_export_quant_scheme(obj_.get(),
+                                                                   value);
     }
 
     bool export_weight_range_by_channel() { return false; }
     void export_weight_range_by_channel(bool value) {
-        nncase_clr_api()->quantize_options_set_export_weight_range_by_channel(obj_.get(), value);
+        nncase_clr_api()->quantize_options_set_export_weight_range_by_channel(
+            obj_.get(), value);
     }
 };
 
