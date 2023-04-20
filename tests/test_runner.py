@@ -203,6 +203,8 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         # [n, c, h, w].zip default_shape => [(n, 1), (c, 1), (h, 48), (w, 48)]
         self.default_shape = [1, 1, 48, 48, 24, 24]
         self.shape_vars = {}
+        # used for tag dynamic model for onnx simplify
+        self.dynamic = False
 
     def transform_input(self, values: List[np.ndarray], type: str, stage: str) -> List[np.ndarray]:
         new_values = []
