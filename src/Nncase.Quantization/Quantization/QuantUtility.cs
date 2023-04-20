@@ -71,7 +71,7 @@ public static class QuantAlgorithmUtility
             }
             else
             {
-                throw new NotSupportedException("By layer weights quant is not supported.");
+                throw new NotSupportedException("By tensor weights quant is not supported.");
             }
         }
         else
