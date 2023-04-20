@@ -85,6 +85,10 @@ jobs:
         with:
           dotnet-version: ${{matrix.dotnet-version}}
 
+      - name: Set up Maui
+        run: |
+          dotnet workload install maui-tizen # https://github.com/dotnet/maui/issues/11579
+
       - name: Cache NuGet packages
         uses: actions/cache@v3
         with:
@@ -106,8 +110,8 @@ jobs:
 
       - name: Build
         run: |
-          dotnet restore src/Nncase.Tests -r ${{matrix.config.rid}}
-          dotnet build src/Nncase.Tests -c ${{matrix.config.buildType}} --no-restore
+          dotnet restore -r ${{matrix.config.rid}}
+          dotnet build -c ${{matrix.config.buildType}} --no-restore
           dotnet publish src/Nncase.Compiler -c ${{matrix.config.buildType}} --no-restore --sc false -r ${{matrix.config.rid}}
 
       - name: Set up Dotnet Test settings
