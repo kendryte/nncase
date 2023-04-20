@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Nncase;
 using Nncase.IR;
@@ -18,6 +19,8 @@ public sealed class UnitTestDumpUtility
     {
         ValueDumper.DumpTensor(new TensorValue(new Tensor<int>(new[] { 1 })), "./test1");
         ValueDumper.DumpTensors(new[] { new TensorValue(new Tensor<int>(new[] { 1 })) }, "./test2");
+        Assert.True(File.Exists("./test1"));
+        Assert.True(Directory.Exists("./test2"));
     }
 
     [Fact]
@@ -28,6 +31,9 @@ public sealed class UnitTestDumpUtility
         DumpUtility.SerializeShape(new[] { 1, 1, 1 });
         DumpUtility.PathJoinByCreate("./", "test4");
         DumpUtility.WriteBinFile("./test5", new Tensor<int>(new[] { 1 }));
+        Assert.True(File.Exists("./test3"));
+        Assert.True(Directory.Exists("./test4"));
+        Assert.True(File.Exists("./test5"));
     }
 
     [Fact]
@@ -35,5 +41,6 @@ public sealed class UnitTestDumpUtility
     {
         BinFileUtil.WriteBinInputs(new Tensor[] { new Tensor<int>(new[] { 1 }) }, "./");
         BinFileUtil.WriteBinOutputs(new Tensor[] { new Tensor<int>(new[] { 1 }) }, "./");
+        Assert.True(Directory.Exists("./"));
     }
 }

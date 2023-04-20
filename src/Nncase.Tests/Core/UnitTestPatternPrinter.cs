@@ -18,5 +18,6 @@ public sealed class UnitTestPatternPrinter
     {
         IPattern pattern = null!;
         Assert.Throws<NullReferenceException>(() => PatternPrinter.DumpAsIL(pattern));
+        Assert.Throws<NullReferenceException>(() => PatternPrinter.DumpAsIL(pattern, "dumpAsIl", "./"));
     }
 }
