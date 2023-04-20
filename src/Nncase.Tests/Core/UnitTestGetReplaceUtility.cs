@@ -30,10 +30,10 @@ public sealed class UnitTestGetReplaceUtility
             dilation: new[] { 1, 1 },
             PadMode.Constant,
             1);
-        var a = Utility.WithTmpBF16(_ => expr);
-        var b = Utility.WithTmpType(_ => expr, DataTypes.Float32);
-        var c = Utility.WithTmp4DShape(_ => expr, new[] { 1, 1, 1, 1 });
-        var d = Utility.Get4DGNNEShape(new[] { 0, 1, 2, 3 });
+        _ = Utility.WithTmpBF16(_ => expr);
+        _ = Utility.WithTmpType(_ => expr, DataTypes.Float32);
+        _ = Utility.WithTmp4DShape(_ => expr, new[] { 1, 1, 1, 1 });
+        _ = Utility.Get4DGNNEShape(new[] { 0, 1, 2, 3 });
         Assert.Throws<InvalidOperationException>(() => Utility.Get4DGNNEShape(new[] { 0, 1, 2, 3, 4 }));
     }
 }
