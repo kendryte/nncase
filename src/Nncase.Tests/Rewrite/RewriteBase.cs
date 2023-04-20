@@ -1323,10 +1323,7 @@ public sealed class ReduceCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -1356,10 +1353,7 @@ public sealed class BroadcastCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -1387,10 +1381,7 @@ public sealed class CastCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -1417,10 +1408,7 @@ public sealed class TileCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -1434,7 +1422,7 @@ public sealed class StackCase : IRewriteCase
 
     public StackCase()
     {
-        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1 }));
     }
 
     public Function PreExpr
@@ -1449,10 +1437,7 @@ public sealed class StackCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -1479,10 +1464,7 @@ public sealed class BitcastCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -1496,7 +1478,7 @@ public sealed class SliceCase : IRewriteCase
 
     public SliceCase()
     {
-        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 2, 3, 4, 5 }));
     }
 
     public Function PreExpr
@@ -1514,10 +1496,7 @@ public sealed class SliceCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -1549,10 +1528,7 @@ public sealed class LRNCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -1580,10 +1556,7 @@ public sealed class SoftmaxCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -1597,7 +1570,7 @@ public sealed class CumSumCase : IRewriteCase
 
     public CumSumCase()
     {
-        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 2, 4 }));
     }
 
     public Function PreExpr
@@ -1615,10 +1588,7 @@ public sealed class CumSumCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -1632,7 +1602,7 @@ public sealed class LSTMCase : IRewriteCase
 
     public LSTMCase()
     {
-        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 1, 2 }));
     }
 
     public Function PreExpr
@@ -1659,10 +1629,7 @@ public sealed class LSTMCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -1693,10 +1660,7 @@ public sealed class InstanceNormalizationCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -1723,10 +1687,7 @@ public sealed class HardSwishCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -1753,10 +1714,7 @@ public sealed class SoftplusCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -1783,10 +1741,7 @@ public sealed class SoftsignCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -1813,10 +1768,7 @@ public sealed class LpNormalizationCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -1830,7 +1782,7 @@ public sealed class Conv2DTransposeCase : IRewriteCase
 
     public Conv2DTransposeCase()
     {
-        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 1, 5, 5 }));
     }
 
     public Function PreExpr
@@ -1856,10 +1808,7 @@ public sealed class Conv2DTransposeCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -1887,10 +1836,7 @@ public sealed class LogSoftmaxCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -1904,7 +1850,7 @@ public sealed class CompareCase : IRewriteCase
 
     public CompareCase()
     {
-        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 10 }));
     }
 
     public Function PreExpr
@@ -1917,10 +1863,7 @@ public sealed class CompareCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -1934,7 +1877,7 @@ public sealed class FakeDequantizeCase : IRewriteCase
 
     public FakeDequantizeCase()
     {
-        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 2, 4 }));
     }
 
     public Function PreExpr
@@ -1952,10 +1895,7 @@ public sealed class FakeDequantizeCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -1969,7 +1909,7 @@ public sealed class FakeQuantizeCase : IRewriteCase
 
     public FakeQuantizeCase()
     {
-        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 2, 4 }));
     }
 
     public Function PreExpr
@@ -1987,10 +1927,7 @@ public sealed class FakeQuantizeCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -2004,7 +1941,7 @@ public sealed class TopKCase : IRewriteCase
 
     public TopKCase()
     {
-        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 2, 3, 4, 5 }));
     }
 
     public Function PreExpr
@@ -2012,7 +1949,6 @@ public sealed class TopKCase : IRewriteCase
         get
         {
             var x = Tensor.From<int>(Enumerable.Range(0, 120).ToArray(), new Shape(new[] { 2, 3, 4, 5 }));
-            _ = new long[] { 1, 2, 4, 8 };
             var k = 1L;
             var axis = -1;
             var largest = 1;
@@ -2022,10 +1958,7 @@ public sealed class TopKCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -2055,10 +1988,7 @@ public sealed class GatherCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -2088,10 +2018,7 @@ public sealed class GatherNDCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -2119,10 +2046,7 @@ public sealed class FlattenCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -2152,10 +2076,7 @@ public sealed class SplitCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -2184,10 +2105,7 @@ public sealed class SqueezeCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -2216,10 +2134,7 @@ public sealed class ConcatCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -2246,10 +2161,7 @@ public sealed class UnsqueezeCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -2277,10 +2189,7 @@ public sealed class ExpandCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -2307,10 +2216,7 @@ public sealed class ShapeOfCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -2341,10 +2247,7 @@ public sealed class ReverseSequenceCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -2374,10 +2277,7 @@ public sealed class WhereCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -2406,10 +2306,7 @@ public sealed class RangeCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -2437,10 +2334,7 @@ public sealed class SizeOfCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -2474,10 +2368,7 @@ public sealed class BatchToSpaceCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -2506,10 +2397,7 @@ public sealed class L2NormalizationCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -2540,10 +2428,7 @@ public sealed class OneHotCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -2571,10 +2456,7 @@ public sealed class CeluCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -2602,10 +2484,7 @@ public sealed class EluCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -2634,10 +2513,7 @@ public sealed class SeluCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldConstCall),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -2665,10 +2541,7 @@ public sealed class HardmaxCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -2697,10 +2570,7 @@ public sealed class HardSigmoidCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -2732,10 +2602,7 @@ public sealed class ReduceArgCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -2766,10 +2633,7 @@ public sealed class NormalLikeCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -2800,10 +2664,7 @@ public sealed class UniformLikeCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -2833,10 +2694,7 @@ public sealed class UniformCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
@@ -2850,7 +2708,7 @@ public sealed class ResizeImageCase : IRewriteCase
 
     public ResizeImageCase()
     {
-        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 224, 224 }));
     }
 
     public Function PreExpr
@@ -2863,10 +2721,7 @@ public sealed class ResizeImageCase : IRewriteCase
         }
     }
 
-    public IEnumerable<Type> Rules { get; } = new Type[]
-    {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
-    };
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
