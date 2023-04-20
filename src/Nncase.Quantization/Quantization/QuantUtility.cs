@@ -342,9 +342,9 @@ public static class QuantAlgorithmUtility
         }
 
         roundingNumber = OrtKI.Reshape(roundingNumber, x.Shape, 0);
-        roundingError = OrtKI.Reshape(roundingError, x.Shape, 0);
-        upPriority = OrtKI.Reshape(upPriority, x.Shape, 0);
-        downPriority = OrtKI.Reshape(downPriority, x.Shape, 0);
+        _ = OrtKI.Reshape(roundingError, x.Shape, 0);
+        _ = OrtKI.Reshape(upPriority, x.Shape, 0);
+        _ = OrtKI.Reshape(downPriority, x.Shape, 0);
 
         return roundingNumber!;
     }
