@@ -82,6 +82,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nncase.Diagnostics", "src\N
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nncase.Studio.Maui", "src\Nncase.Studio\Nncase.Studio.Maui\Nncase.Studio.Maui.csproj", "{CFD4540C-208B-4B24-9AFE-6B74C6077B2B}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{E64FD12D-1722-48E0-BE3A-58E2233EDB64}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{B4C3A657-4147-4F04-949F-E971E0FE26E0}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\code-format.yml = .github\workflows\code-format.yml
+		.github\workflows\compiler-build.yml = .github\workflows\compiler-build.yml
+		.github\workflows\runtime-build.yml = .github\workflows\runtime-build.yml
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -219,6 +228,7 @@ Global
 		{E6462E82-B48F-4AFA-AE34-725EF0A9CB42} = {BCA74168-F015-4B5B-B4CD-C83AE06B9822}
 		{EB12FD4D-0680-47F3-B1E3-689C009FE74C} = {BCA74168-F015-4B5B-B4CD-C83AE06B9822}
 		{CFD4540C-208B-4B24-9AFE-6B74C6077B2B} = {312313E7-99DB-451E-BF47-B198E0CE7B72}
+		{B4C3A657-4147-4F04-949F-E971E0FE26E0} = {E64FD12D-1722-48E0-BE3A-58E2233EDB64}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B251C48E-7D05-4662-8DFF-20843CB2DB99}
