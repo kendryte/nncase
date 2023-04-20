@@ -11,6 +11,7 @@ using Nncase.Schedule;
 using Nncase.TIR;
 using OrtKISharp;
 using Xunit;
+using Range = Nncase.TIR.Range;
 
 namespace Nncase.Tests.CoreTest;
 
@@ -35,5 +36,6 @@ public sealed class UnitTestTIR
         Assert.Equal(function, scheduler.Entry);
         Assert.Throws<InvalidOperationException>(() => scheduler.GetBlock("test"));
         scheduler.GetLoops(new Block("block"));
+        scheduler.Split(new For("loopVar", new Range(0, 0, 0), LoopMode.Parallel, new Sequential()), new Expr[] { original });
     }
 }
