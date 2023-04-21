@@ -10,6 +10,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{E11A07F5-DDF9-4BCA-94E4-988913EF7F51}"
 	ProjectSection(SolutionItems) = preProject
 		tools\stylecop.json = tools\stylecop.json
+		tools\compiler_coverage.settings.xml = tools\compiler_coverage.settings.xml
 		tools\StyleCopAnalyzers.ruleset = tools\StyleCopAnalyzers.ruleset
 	EndProjectSection
 EndProject
@@ -89,6 +90,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{
 		.github\workflows\code-format.yml = .github\workflows\code-format.yml
 		.github\workflows\compiler-build.yml = .github\workflows\compiler-build.yml
 		.github\workflows\runtime-build.yml = .github\workflows\runtime-build.yml
+		.github\workflows\studio-build.yml = .github\workflows\studio-build.yml
 	EndProjectSection
 EndProject
 Global

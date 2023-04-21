@@ -1,0 +1,139 @@
+﻿name: studio-build
+
+on: [push, pull_request]
+env:
+  NUGET_CERT_REVOCATION_MODE: offline
+  NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
+
+jobs:
+  build-native:
+    name: build-native-${{matrix.config.name}}
+    runs-on: ${{matrix.config.os}}
+    strategy:
+      matrix:
+        config:
+          - {name: x86_64-macos, os: macos-latest, cmakeArgs: -DENABLE_X86SIMD=OFF, buildType: Release}
+          - {name: x86_64-linux, os: ubuntu-latest, cmakeArgs: '', buildType: Release}
+          - {name: x86_64-windows, os: windows-latest, arch: x64, cmakeArgs: -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl, buildType: Release}
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: seanmiddleditch/gha-setup-ninja@master
+
+      - name: Set up build environment (Windows, Visual Studio)
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{matrix.config.arch}}
+        if: runner.os == 'Windows'
+
+      - name: Set up build environment (Macos)
+        run: |
+          brew install sunnycase/core/libomp@11.1.0
+        if: runner.os == 'Macos'
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.7
+
+      - name: Install Conan
+        shell: bash
+        run: |
+          pip install conan==1.58
+
+      - name: Configure Conan (Linux)
+        run: |
+          conan profile new default --detect
+          conan profile update settings.compiler.libcxx=libstdc++11 default
+          echo "CC=gcc-10" >> $GITHUB_ENV
+          echo "CXX=g++-10" >> $GITHUB_ENV
+        if: runner.os == 'Linux'
+
+      - name: Configure CMake
+        shell: bash
+        run: |
+          cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=${{matrix.config.buildType}} ${{matrix.config.cmakeArgs}} -DBUILD_TESTING=ON -DPython3_ROOT_DIR=${pythonLocation}
+
+      - name: Build & Install
+        run: |
+          cmake --build build --config ${{matrix.config.buildType}}
+          cmake --install build --prefix install
+
+      - name: Upload nncase Native Build Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: nncase-native-${{matrix.config.name}}
+          path: ${{github.workspace}}/install
+          if-no-files-found: error
+
+  build-studio:
+    needs: [build-native]
+    name: build-${{matrix.config.name}}
+    runs-on: ${{matrix.config.os}}
+    strategy:
+      matrix:
+        dotnet-version: ['7.0']
+        config:
+          - {name: x86_64-macos, os: macos-latest, shell: bash, project: Nncase.Studio.Maui, rid: osx-x64, buildType: Release}
+          - {name: x86_64-windows, os: windows-latest, shell: bash, project: Nncase.Studio.Maui, rid: win-x64, buildType: Release}
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: ${{matrix.dotnet-version}}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v3
+        with:
+          path: ${{ github.workspace }}/.nuget/packages
+          key: studio-${{ matrix.config.name }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            studio-${{ matrix.config.name }}-nuget-
+
+      - name: Install nncase native Artifact
+        uses: actions/download-artifact@v2.0.9
+        with:
+          name: nncase-native-${{matrix.config.name}}
+          path: ${{github.workspace}}/install
+
+      - name: Set up build environment (Macos)
+        run: |
+          brew install sunnycase/core/libomp@11.1.0
+        if: runner.os == 'Macos'
+
+      - name: Build
+        run: |
+          dotnet restore src/Nncase.Studio/${{matrix.config.project}} -r ${{matrix.config.rid}}
+          dotnet build src/Nncase.Studio/${{matrix.config.project}} -c ${{matrix.config.buildType}} --no-restore
+          dotnet publish src/Nncase.Studio/${{matrix.config.project}} -c ${{matrix.config.buildType}} --no-restore --sc false -r ${{matrix.config.rid}}
+
+      - name: Set up Dotnet Test settings
+        uses: 1arp/create-a-file-action@0.2
+        with:
+          file: 'test.runsettings'
+          content: |
+            <?xml version="1.0" encoding="utf-8"?>
+            <!-- File name extension must be .runsettings -->
+            <RunSettings>
+              <RunConfiguration>
+                <EnvironmentVariables>
+                  <LD_LIBRARY_PATH>${{github.workspace}}/install/lib</LD_LIBRARY_PATH>
+                  <DYLD_LIBRARY_PATH>${{github.workspace}}/install/lib</DYLD_LIBRARY_PATH>
+                </EnvironmentVariables>
+              </RunConfiguration>
+            </RunSettings>
+
+      - name: Set up test environment (Windows)
+        shell: pwsh
+        run: |
+          echo "PATH=${env:PATH};${env:GITHUB_WORKSPACE}/install/bin" >> $env:GITHUB_ENV
+        if: runner.os == 'Windows'
+
+      - name: Upload nncase Studio Build Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: nncase-studio-${{matrix.config.name}}
+          path: ${{github.workspace}}/src/Nncase.Studio/${{matrix.config.project}}/bin/${{matrix.config.buildType}}/net${{matrix.dotnet-version}}/${{matrix.config.rid}}/publish
+          if-no-files-found: error

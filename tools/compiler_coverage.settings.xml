@@ -25,6 +25,7 @@
             <Exclude>
                 <ModulePath>.*xunit.*</ModulePath>
                 <ModulePath>.*System.*</ModulePath>
+                <ModulePath>.*Nncase.Studio.*\.dll$</ModulePath>
             </Exclude>
             <!-- Additional directories from .NET assemblies should be statically instrumented: -->
             <IncludeDirectories>
