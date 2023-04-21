@@ -53,6 +53,8 @@ case: # case的配置，应该是一个多层次的
     finetune_weights_method: 'UseSquant' #options: 'NoFineTuneWeights', 'UseSquant', 'UseAdaRound'
     use_mix_quant: false
     quant_scheme: ""
+    export_quant_scheme: false
+    export_weight_range_by_channel: true
 
   ptq_opt:
     kwargs:

@@ -87,6 +87,12 @@ public class BatchNormalizationEvaluator : IEvaluator<BatchNormalization>, IType
     public IRType Visit(ITypeInferenceContext context, BatchNormalization target)
     {
         var input = context.CheckArgumentType<TensorType>(target, BatchNormalization.Input);
+        context.CheckArgumentType<TensorType>(target, BatchNormalization.Scale);
+        context.CheckArgumentType<TensorType>(target, BatchNormalization.Bias);
+        context.CheckArgumentType<TensorType>(target, BatchNormalization.InputVar);
+        context.CheckArgumentType<TensorType>(target, BatchNormalization.InputMean);
+        context.CheckArgumentType<TensorType>(target, BatchNormalization.Epsilon);
+
         return Visit(input);
     }
 

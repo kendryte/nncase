@@ -102,6 +102,35 @@ result<void> reduce_prod(const T *input, T *output, const dims_t &in_shape,
     return ok();
 }
 
+template <>
+result<void> reduce_prod(const bool *input, bool *output,
+                         const dims_t &in_shape, const strides_t &in_strides,
+                         const strides_t &out_strides_origin,
+                         const dims_t &axes, bool keep_dims) noexcept {
+    auto out_shape =
+        kernels::detail::get_reduced_shape(in_shape, axes, keep_dims);
+    auto out_strides =
+        out_strides_origin.size() == 0 ? dims_t{1} : out_strides_origin;
+    // init with init_value
+    try_(kernels::stackvm::apply(out_shape,
+                                 [&](const dims_t &index) -> result<void> {
+                                     output[offset(out_strides, index)] = 1;
+                                     return ok();
+                                 }));
+
+    try_(apply(in_shape, [&](const dims_t &index) -> result<void> {
+        const auto src = input[offset(in_strides, index)];
+        auto out_idx =
+            offset(out_strides,
+                   kernels::detail::get_reduced_offset(index, axes, keep_dims));
+        auto &dst = output[out_idx];
+        dst &= src;
+        return ok();
+    }));
+
+    return ok();
+}
+
 template NNCASE_API result<void>
 reduce_prod<float>(const float *input, float *output, const dims_t &in_shape,
                    const strides_t &in_strides, const strides_t &out_strides,
