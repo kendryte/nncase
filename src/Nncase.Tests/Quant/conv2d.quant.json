@@ -1,0 +1,17 @@
+{
+    "version": "1.0",
+    "model": "",
+    "outputs": [
+        {
+            "name": "weight",
+            "dataType": "u8",
+            "dataRange": [
+                {
+                    "min": 0.0,
+                    "max": 1.0
+                }
+            ],
+            "dataRangeMode": "by_tensor"
+        },
+    ]
+}
