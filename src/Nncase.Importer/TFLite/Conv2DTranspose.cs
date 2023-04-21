@@ -20,7 +20,7 @@ namespace Nncase.Importer.TFLite
             var outShape = ((TensorConst)GetInputExprs(op, 0)).Value.ToArray<int>();
             var newOutShape = new[] { outShape[0], outShape[3], outShape[1], outShape[2] };
             var (input, weights) = GetInputExprs(op, 2, 1);
-            Expr bias = Enumerable.Repeat(0f, outShape[0]).ToArray();
+            Expr bias = Enumerable.Repeat(0f, newOutShape[1]).ToArray();
             if (op.InputsLength > 3)
             {
                 bias = GetInputExprs(op, 3);

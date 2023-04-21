@@ -6,6 +6,7 @@ using System.Linq;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Tensors;
+using OrtKISharp;
 
 namespace Nncase.Evaluator.Tensors;
 
@@ -20,6 +21,11 @@ public sealed partial class BroadcastEvaluator : IEvaluator<Broadcast>, ITypeInf
     {
         var input = context.GetOrtArgumentValue(b, Broadcast.Input);
         var shape = context.GetArgumentValueAsArray<long>(b, Broadcast.Shape);
+        if (input.DataType == OrtDataType.Bool)
+        {
+            return input.Cast(OrtDataType.Float).BroadcastTo(shape).Cast(OrtDataType.Bool).ToValue();
+        }
+
         return input.BroadcastTo(shape).ToValue();
     }
 

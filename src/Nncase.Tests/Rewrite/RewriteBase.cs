@@ -1254,7 +1254,7 @@ public sealed class FoldHardSwishCase : IRewriteCase
 
     public IEnumerable<Type> Rules { get; } = new Type[]
     {
-        typeof(Passes.Rules.Neutral.FoldHardSwish),
+        typeof(Passes.Rules.Neutral.FoldHardSwish1),
     };
 
     public Dictionary<Var, IValue> FeedDict => new()
