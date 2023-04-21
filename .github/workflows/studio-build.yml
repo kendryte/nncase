@@ -105,6 +105,7 @@ jobs:
 
       - name: Build
         run: |
+          dotnet workload restore src/Nncase.Studio/${{matrix.config.project}}
           dotnet restore src/Nncase.Studio/${{matrix.config.project}} -r ${{matrix.config.rid}}
           dotnet build src/Nncase.Studio/${{matrix.config.project}} -c ${{matrix.config.buildType}} --no-restore
           dotnet publish src/Nncase.Studio/${{matrix.config.project}} -c ${{matrix.config.buildType}} --no-restore --sc false -r ${{matrix.config.rid}}
