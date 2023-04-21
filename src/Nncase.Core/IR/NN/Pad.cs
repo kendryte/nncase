@@ -20,7 +20,7 @@ public sealed partial class Pad : Op
     /// <summary>
     /// [1, 2, 3, 4] [[0, 0, 0, 0, 1, 1, 2, 2]] ⇒ [1, 2, 5, 8].
     /// </summary>
-    public static readonly ParameterInfo Pads = new(typeof(Pad), 1, "pads", HasRank(1) & IsIntegral());
+    public static readonly ParameterInfo Pads = new(typeof(Pad), 1, "pads", HasRank(2) & IsIntegral());
 
     /// <summary>
     /// float pad value.
