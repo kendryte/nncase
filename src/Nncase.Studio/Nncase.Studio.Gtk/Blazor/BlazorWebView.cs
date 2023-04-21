@@ -5,6 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components;
@@ -19,6 +21,11 @@ namespace Nncase.Studio.Gtk.Blazor;
 internal sealed class BlazorWebView : WebView
 {
     private readonly WebKitWebViewManager _webViewManager;
+
+    static BlazorWebView()
+    {
+        NativeLibrary.SetDllImportResolver(Assembly.GetExecutingAssembly(), DllImportResolver.Resolve);
+    }
 
     public BlazorWebView(IServiceProvider serviceProvider)
     {
@@ -65,8 +72,8 @@ internal sealed class BlazorWebView : WebView
         // Dispatch because this is going to be async, and we want to catch any errors
         _ = Dispatcher.InvokeAsync(async () =>
         {
-            var newItems = eventArgs.NewItems!.Cast<RootComponent>();
-            var oldItems = eventArgs.OldItems!.Cast<RootComponent>();
+            var newItems = eventArgs.NewItems?.Cast<RootComponent>() ?? Array.Empty<RootComponent>();
+            var oldItems = eventArgs.OldItems?.Cast<RootComponent>() ?? Array.Empty<RootComponent>();
 
             foreach (var item in newItems.Except(oldItems))
             {

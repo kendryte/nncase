@@ -75,7 +75,7 @@ jobs:
         dotnet-version: ['7.0']
         config:
           - {name: x86_64-macos, os: macos-latest, shell: bash, project: Nncase.Studio.Maui, rid: osx-x64, buildType: Release}
-          - {name: x86_64-linux, os: ubuntu-latest, shell: bash, project: Nncase.Studio.Photino, rid: linux-x64, buildType: Release}
+          - {name: x86_64-linux, os: ubuntu-latest, shell: bash, project: Nncase.Studio.Gtk, rid: linux-x64, buildType: Release}
           - {name: x86_64-windows, os: windows-latest, shell: bash, project: Nncase.Studio.Maui, rid: win-x64, buildType: Release}
 
     steps:
