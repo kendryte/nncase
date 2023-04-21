@@ -78,7 +78,7 @@ public static class Tensors
         Reduce(ReduceOp.Min, input, axis, initValue, keepDims);
 
     public static Call ReduceMax(Expr input, Expr axis, Expr initValue, Expr keepDims) =>
-        Reduce(ReduceOp.Min, input, axis, initValue, keepDims);
+        Reduce(ReduceOp.Max, input, axis, initValue, keepDims);
 
     public static Call ReduceSum(Expr input, Expr axis, Expr initValue, Expr keepDims) =>
         Reduce(ReduceOp.Sum, input, axis, initValue, keepDims);
