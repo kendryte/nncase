@@ -36,6 +36,8 @@ internal partial class Quantizer
     public async Task RunAsync(RunPassContext options)
     {
         bool configExist = _quantizeOptions.QuantScheme != string.Empty;
+        bool exportQuantScheme = _quantizeOptions.ExportQuantScheme;
+        bool exportWeightRangeByChannel = _quantizeOptions.ExportWeightRangeByChannel;
 
         if (!configExist)
         {
@@ -66,6 +68,103 @@ internal partial class Quantizer
             else
             { // 2. Assign ranges
                 AssignRanges(ranges);
+            }
+
+            // 3. Export quant info
+            if (_quantizeOptions.ExportQuantScheme == true)
+            {
+                var quantScheme = new QuantScheme();
+                quantScheme.Version = "1.0";
+                var outputsCount = 0;
+                foreach (var range in ranges)
+                {
+                    if (range.Key.Expr.Metadata.OutputNames != null)
+                    {
+                        outputsCount++;
+                    }
+                }
+
+                quantScheme.Outputs = new Output[outputsCount];
+
+                if (_quantizeOptions.ExportWeightRangeByChannel == false)
+                {
+                    var index = 0;
+                    foreach (var range in ranges.Where(r => r.Key.Expr.Metadata.OutputNames != null))
+                    {
+                        quantScheme.Outputs[index] = new Output();
+                        quantScheme.Outputs[index].Name = range.Key.Expr.Metadata.OutputNames![0];
+                        quantScheme.Outputs[index].DataRangeMode = "by_tensor";
+                        quantScheme.Outputs[index].DataType = ((RangeOf)((Call)range.Key.Expr).Target).IsRangeOfWeight == true ? _quantizeOptions.WQuantType.ToString() : _quantizeOptions.QuantType.ToString();
+                        quantScheme.Outputs[index].DataRange = new ValueRange<float>[1];
+                        quantScheme.Outputs[index].DataRange![0] = range.Value;
+                        index++;
+                    }
+                }
+                else
+                {
+                    var weightsByChannelRanges = new Dictionary<ENode, ValueRange<float>[]>(ReferenceEqualityComparer.Instance);
+                    foreach (var range in ranges)
+                    {
+                        if (((RangeOf)((Call)range.Key.Expr).Target).IsRangeOfWeight == true)
+                        {
+                            var oc = range.Key.Children[1].Nodes[0].Expr.CheckedShape[0].FixedValue;
+                            var valueRanges = new ValueRange<float>[oc];
+                            var weightsValue = ((TensorConst)range.Key.Children[1].Nodes[0].Expr).Value.Cast<float>().Buffer;
+                            var weightsSize = weightsValue.Length;
+                            var eachChannelSize = weightsSize / oc;
+                            var tmpMin = float.MaxValue;
+                            var tmpMax = float.MinValue;
+
+                            for (int i = 0; i < weightsSize; i++)
+                            {
+                                if (weightsValue.Span[i] < tmpMin)
+                                {
+                                    tmpMin = weightsValue.Span[i];
+                                }
+
+                                if (weightsValue.Span[i] > tmpMax)
+                                {
+                                    tmpMax = weightsValue.Span[i];
+                                }
+
+                                if ((i + 1) % eachChannelSize == 0)
+                                {
+                                    valueRanges[i / eachChannelSize] = new ValueRange<float> { Min = tmpMin, Max = tmpMax };
+                                    tmpMin = float.MaxValue;
+                                    tmpMax = float.MinValue;
+                                }
+                            }
+
+                            weightsByChannelRanges.Add(range.Key, valueRanges);
+                        }
+                        else
+                        {
+                            var valueRanges = new ValueRange<float>[1];
+                            valueRanges[0] = range.Value;
+                            weightsByChannelRanges.Add(range.Key, valueRanges);
+                        }
+                    }
+
+                    var index = 0;
+                    foreach (var range in ranges.Where(r => r.Key.Expr.Metadata.OutputNames != null))
+                    {
+                        quantScheme.Outputs[index] = new Output();
+                        quantScheme.Outputs[index].Name = range.Key.Expr.Metadata.OutputNames![0];
+                        quantScheme.Outputs[index].DataRangeMode = ((RangeOf)((Call)range.Key.Expr).Target).IsRangeOfWeight == true ? "by_channel" : "by_tensor";
+                        quantScheme.Outputs[index].DataType = ((RangeOf)((Call)range.Key.Expr).Target).IsRangeOfWeight == true ? _quantizeOptions.WQuantType.ToString() : _quantizeOptions.QuantType.ToString();
+                        var rangeLength = weightsByChannelRanges[range.Key].Length;
+                        quantScheme.Outputs[index].DataRange = new ValueRange<float>[rangeLength];
+                        for (int i = 0; i < rangeLength; i++)
+                        {
+                            quantScheme.Outputs[index].DataRange![i] = weightsByChannelRanges[range.Key][i];
+                        }
+
+                        index++;
+                    }
+                }
+
+                var quantSchemeString = JsonConvert.SerializeObject(quantScheme);
+                _quantizeOptions.QuantScheme = quantSchemeString;
             }
         }
         else
@@ -181,13 +280,27 @@ internal partial class Quantizer
             {
                 if (rangeOf.Expr.Metadata.OutputNames?[0] == quantScheme!.Outputs[i].Name)
                 {
-                    var valueRanges = new ValueRange<float>[quantScheme!.Outputs[i].DataRange!.Length];
-                    for (int j = 0; j < quantScheme!.Outputs[i].DataRange!.Length; j++)
+                    if (((RangeOf)((Call)rangeOf.Expr).Target).IsRangeOfWeight == true && quantScheme!.Outputs[i].DataRangeMode == "by_tensor")
                     {
-                        valueRanges[j] = new ValueRange<float>((float)quantScheme!.Outputs[i].DataRange![j].Min, (float)quantScheme!.Outputs[i].DataRange![j].Max);
-                    }
+                        var oc = ((Call)rangeOf.Expr).Operands[1].CheckedShape[0].FixedValue;
+                        var valueRanges = new ValueRange<float>[oc];
+                        for (int j = 0; j < oc; j++)
+                        {
+                            valueRanges[j] = FixUpRange(new ValueRange<float>((float)quantScheme!.Outputs[i].DataRange![0].Min, (float)quantScheme!.Outputs[i].DataRange![0].Max));
+                        }
 
-                    ranges.Add(rangeOf, valueRanges);
+                        ranges.Add(rangeOf, valueRanges);
+                    }
+                    else
+                    {
+                        var valueRanges = new ValueRange<float>[quantScheme!.Outputs[i].DataRange!.Length];
+                        for (int j = 0; j < quantScheme!.Outputs[i].DataRange!.Length; j++)
+                        {
+                            valueRanges[j] = FixUpRange(new ValueRange<float>((float)quantScheme!.Outputs[i].DataRange![j].Min, (float)quantScheme!.Outputs[i].DataRange![j].Max));
+                        }
+
+                        ranges.Add(rangeOf, valueRanges);
+                    }
                 }
             }
         }

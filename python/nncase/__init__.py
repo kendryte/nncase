@@ -68,6 +68,8 @@ class PTQTensorOptions:
     finetune_weights_method: str
     use_mix_quant: bool
     quant_scheme: str
+    export_quant_scheme: bool
+    export_weight_range_by_channel: bool
     cali_data: List[RuntimeTensor]
 
     def __init__(self) -> None:
@@ -214,6 +216,8 @@ class Compiler:
 
         self._quantize_options.use_mix_quant = ptq_dataset_options.use_mix_quant
         self._quantize_options.quant_scheme = ptq_dataset_options.quant_scheme
+        self._quantize_options.export_quant_scheme = ptq_dataset_options.export_quant_scheme
+        self._quantize_options.export_weight_range_by_channel = ptq_dataset_options.export_weight_range_by_channel
 
     def dump_range_options(self) -> DumpRangeTensorOptions:
         raise NotImplementedError("dump_range_options")

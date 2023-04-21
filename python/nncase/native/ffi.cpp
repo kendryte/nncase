@@ -139,7 +139,16 @@ PYBIND11_MODULE(_nncase, m) {
         .def_property("quant_scheme",
                       py::overload_cast<>(&quantize_options::quant_scheme),
                       py::overload_cast<std::string_view>(
-                          &quantize_options::quant_scheme));
+                          &quantize_options::quant_scheme))
+        .def_property(
+            "export_quant_scheme",
+            py::overload_cast<>(&quantize_options::export_quant_scheme),
+            py::overload_cast<bool>(&quantize_options::export_quant_scheme))
+        .def_property("export_weight_range_by_channel",
+                      py::overload_cast<>(
+                          &quantize_options::export_weight_range_by_channel),
+                      py::overload_cast<bool>(
+                          &quantize_options::export_weight_range_by_channel));
 
     py::class_<calibration_dataset_provider>(m, "CalibrationDatasetProvider")
         .def(py::init([](py::list dataset, size_t samples_count,
