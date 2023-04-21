@@ -24,12 +24,14 @@ internal class Compiler : ICompiler
     private readonly IModelBuilder _modelBuilder;
     private readonly IDumpper _dumpper;
     private IRModule? _module;
+    private int _runPassCount;
 
     public Compiler(CompileSession compileSession, IModelBuilder modelBuilder, IDumpperFactory dumpperFactory)
     {
         _compileSession = compileSession;
         _modelBuilder = modelBuilder;
         _dumpper = dumpperFactory.Root;
+        _runPassCount = 0;
     }
 
     public IRModule Module => _module ?? throw new InvalidOperationException("Module has not been imported");
@@ -93,6 +95,7 @@ internal class Compiler : ICompiler
                 p.Add<Passes.Rules.Neutral.CombineActivationsReshape>();
                 p.Add<Passes.Rules.Neutral.FoldNopPad>();
                 p.Add<Passes.Rules.Neutral.FoldConv2DPads>();
+                p.Add<Passes.Rules.Neutral.FuseClampConv2D>();
                 p.Add<Passes.Rules.Neutral.FoldReduceWindow2DPads>();
                 p.Add<Passes.Rules.Neutral.SqueezeToReshape>();
                 p.Add<Passes.Rules.Neutral.UnSqueezeToReshape>();
@@ -108,6 +111,7 @@ internal class Compiler : ICompiler
                 p.Add<Passes.Rules.Neutral.FoldSwishPattern1>();
                 p.Add<Passes.Rules.Neutral.FoldSwishPattern2>();
                 p.Add<Passes.Rules.Neutral.FoldHardSwish>();
+                p.Add<Passes.Rules.Neutral.Relu6ToClamp>();
             });
 
             // passManager.AddWithName<EGraphPass>("NeutralOptimizeClamp").Configure(p =>
@@ -179,14 +183,15 @@ internal class Compiler : ICompiler
 
     private async Task RunPassAsync(Action<IPassManager> register, string name)
     {
-        var pmgr = _compileSession.CreatePassManager(name);
+        var newName = $"{_runPassCount++}_" + name;
+        var pmgr = _compileSession.CreatePassManager(newName);
         register(pmgr);
         _module = await pmgr.RunAsync(Module).ConfigureAwait(false);
 
         if (_dumpper.IsEnabled(DumpFlags.Compile))
         {
-            _dumpper.DumpModule(_module, name);
-            _dumpper.DumpDotIR(_module.Entry!, name);
+            _dumpper.DumpModule(_module, newName);
+            _dumpper.DumpDotIR(_module.Entry!, newName);
         }
     }
 }

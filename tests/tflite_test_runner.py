@@ -90,7 +90,7 @@ class TfliteTestRunner(TestRunner):
                 os.path.join(case_dir, f'cpu_result_{i}.bin'),
                 os.path.join(case_dir, f'cpu_result_{i}.txt')))
             data.tofile(self.output_paths[-1][0])
-            if not test_utils.in_ci:
+            if not test_utils.in_ci():
                 self.totxtfile(self.output_paths[-1][1], data)
             i += 1
 

@@ -48,17 +48,37 @@ public static class TIRUtilities
 
     /// <summary>
     /// Compute the sub no pad bounds.
+    /// 
     /// </summary>
-    public static IReadOnlyList<TIR.Range> ComputeSubNoPadBounds(IReadOnlyList<TIR.Range> bounds, IReadOnlyList<TIR.Range> sub_bounds, IReadOnlyList<(IR.Expr Before, IR.Expr After)> paddings, IReadOnlyList<(IR.Expr Before, IR.Expr After)> sub_paddings) =>
-      bounds.Zip(sub_bounds).Zip(paddings, sub_paddings).Select(t =>
-      {
-          var (bound, sub_bounds) = t.First;
-          var (before, after) = t.Second;
-          var (before1, after1) = t.Third;
-          var new_start = sub_bounds.Start + before1 - (bound.Start + before);
-          var new_stop = new_start + sub_bounds.Stop - (sub_bounds.Start + before1) - after1;
-          return (TIR.Range)(new_start, new_stop, bound.Step);
-      }).ToArray();
+    public static IReadOnlyList<TIR.Range> ComputeSubNoPadBounds(IReadOnlyList<TIR.Range> bounds, IReadOnlyList<TIR.Range> sub_bounds, IReadOnlyList<(IR.Expr Before, IR.Expr After)> paddings, IReadOnlyList<(IR.Expr Before, IR.Expr After)> sub_paddings, int? promote)
+    {
+        var subNoPadbounds = new TIR.Range[bounds.Count];
+        for (int i = 0; i < bounds.Count; i++)
+        {
+            var bound = bounds[i];
+            var sub_bound = sub_bounds[i];
+            var (before, after) = paddings[i];
+            var (before1, after1) = sub_paddings[i];
+
+            /*  
+              note 这里暂时用一种错误方式正确运行, 实际需要知道每个buffer在全局promote的维度和他的bounds是不是有关系. 
+              因为通常提升都是-1,或者3. 对于act这种两维的参数正好忽略.
+            */
+            if (promote is int promoteInt && (promoteInt == -1 || i >= promoteInt))
+            {
+                var new_start = sub_bound.Start + before1;
+                var new_stop = sub_bound.Stop - after1;
+                subNoPadbounds[i] = new(new_start, new_stop, bound.Step);
+            }
+            else
+            {
+                var new_start = sub_bound.Start + before1 - (bound.Start + before); // 这里应该加一个偏移
+                var new_stop = new_start + sub_bound.Stop - (sub_bound.Start + before1) - after1;
+                subNoPadbounds[i] = new(new_start, new_stop, bound.Step);
+            }
+        }
+        return subNoPadbounds;
+    }
 
     /// <summary>
     /// give the sub no pad bounds, then get the current bounds.

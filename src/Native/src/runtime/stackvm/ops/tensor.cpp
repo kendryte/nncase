@@ -25,8 +25,7 @@ using namespace nncase::runtime::stackvm;
 
 #ifdef NNCASE_DUMP_MANAGER
 #define dump_op(op)                                                            \
-    auto dump_manager = module().interp().dump_manager();                      \
-    dump_manager->dump_op(op.tensor_funct)
+    auto dump_manager = module().interp().dump_manager();
 #define dump_input(var) dump_manager->dump_input(var, #var)
 #define dump_output(var) dump_manager->dump_output(var)
 #else

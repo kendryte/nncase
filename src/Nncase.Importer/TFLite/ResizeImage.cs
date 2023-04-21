@@ -40,7 +40,7 @@ namespace Nncase.Importer.TFLite
                 ResizeImage(
                     resizeMode,
                     input,
-                    Array.Empty<float>(),
+                    None.Default,
                     MakeResizeSizes(input, newSize),
                     tranMode,
                     nearestMode,
