@@ -22,4 +22,11 @@ public class UnitTestCodeGenUtil
         string tempPath = Path.GetTempPath() + Guid.NewGuid().ToString();
         Assert.NotEqual(tempPath, CodeGenUtil.GetTempFileName());
     }
+
+    [Fact]
+    public void TestStructToBytes()
+    {
+        var num = new[] { new byte[] { 1, 2, 3 }, new byte[] { 2, 3, 4 }, new byte[] { 3, 4, 5 } };
+        Assert.Throws<ArgumentException>(() => CodeGenUtil.StructToBytes(num));
+    }
 }
