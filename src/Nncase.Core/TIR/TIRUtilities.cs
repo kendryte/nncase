@@ -48,7 +48,6 @@ public static class TIRUtilities
 
     /// <summary>
     /// Compute the sub no pad bounds.
-    /// 
     /// </summary>
     public static IReadOnlyList<TIR.Range> ComputeSubNoPadBounds(IReadOnlyList<TIR.Range> bounds, IReadOnlyList<TIR.Range> sub_bounds, IReadOnlyList<(IR.Expr Before, IR.Expr After)> paddings, IReadOnlyList<(IR.Expr Before, IR.Expr After)> sub_paddings, int? promote)
     {
@@ -60,8 +59,8 @@ public static class TIRUtilities
             var (before, after) = paddings[i];
             var (before1, after1) = sub_paddings[i];
 
-            /*  
-              note 这里暂时用一种错误方式正确运行, 实际需要知道每个buffer在全局promote的维度和他的bounds是不是有关系. 
+            /*
+              note 这里暂时用一种错误方式正确运行, 实际需要知道每个buffer在全局promote的维度和他的bounds是不是有关系.
               因为通常提升都是-1,或者3. 对于act这种两维的参数正好忽略.
             */
             if (promote is int promoteInt && (promoteInt == -1 || i >= promoteInt))
@@ -77,6 +76,7 @@ public static class TIRUtilities
                 subNoPadbounds[i] = new(new_start, new_stop, bound.Step);
             }
         }
+
         return subNoPadbounds;
     }
 
