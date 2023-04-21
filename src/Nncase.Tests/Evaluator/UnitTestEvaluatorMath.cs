@@ -11,6 +11,7 @@ using Nncase.IR;
 using Nncase.IR.F;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
+using Nncase.Quantization;
 using Nncase.Utilities;
 using OrtKISharp;
 using Xunit;
