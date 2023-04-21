@@ -1,0 +1,32 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photino for .NET Demo</title>
+    <link rel="stylesheet" href="assets/main.css" />
+</head>
+<body>
+    <img src="assets/photino-logo-full.png" alt="Photino" class="logo center" />
+
+    <h1 class="text-center">Hello to Photino for .NET</h1>
+
+    <p class="text-center">
+        This is a static HTML file with CSS and JavaScript, served from a local web root. 
+        Click on the button below to send a message to the backend. 
+        It will respond and send a message back to the UI.
+    </p>
+    <button class="primary center" onclick="callDotNet()">Call .NET</button>
+
+    <script src="app://dynamic.js"></script>
+
+    <script>
+        function callDotNet() {
+            window.external.sendMessage('Hi .NET! 🤖');
+        }
+
+        window.external.receiveMessage(message => alert(message));
+    </script>
+</body>
+</html>

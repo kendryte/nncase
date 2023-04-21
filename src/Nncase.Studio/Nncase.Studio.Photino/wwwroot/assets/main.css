@@ -1,0 +1,102 @@
+html, body {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    padding: 2em;
+    color: #111;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 15px;
+    font-weight: normal;
+}
+
+.logo {
+    display: block;
+    width: 300px;
+    height: auto;
+    margin: 3em auto 2em;
+}
+
+.center {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.text-center {
+    text-align: center;
+}
+
+/* Typography */
+h1, .h1 {
+    margin: 0.67em 0;
+    padding: 0;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 1em;
+    font-weight: bold;
+    line-height: 1.1em;
+}
+
+h1, .h1 {
+    color: #1E5078;
+    font-size: 1.8em;
+}
+
+/* Buttons */
+button,
+.button,
+a.button {
+    display: block;
+    background: #f6f6f6;
+    margin: 1em auto;
+    padding: 0.9em 1em 1em;
+    color: #1E5078;
+    text-align: center;
+    text-decoration: none;
+    line-height: 1em;
+    border-radius: 3px;
+    border: 1px solid #e1e1e1;
+    cursor: pointer;
+}
+button,
+.button:hover,
+a.button:hover {
+    background: #f0f0f0;
+}
+    button.primary,
+    .button.primary,
+    a.button.primary {
+        background: #1E5078;
+        color: #e1f3f8;
+        border-color: #113d61;
+    }
+    button.primary:hover,
+    .button.primary:hover,
+    a.button.primary:hover {
+        background: #3f698b;
+    }
+
+@media (min-width: 768px) {
+    button:not(.center),
+    .button:not(.center),
+    a.button:not(.center) {
+        display: inline-block;
+        margin: 0 1em;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    button,
+    .button,
+    a.button {
+        background: #333;
+        color: #dadada;
+        border-color: #2f2f2f;
+    }
+        button:hover,
+        .button:hover,
+        a.button:hover {
+            background: #444;
+            border-color: #333;
+        }
+}

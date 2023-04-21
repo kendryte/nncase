@@ -9,8 +9,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{BCA74168-F01
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{E11A07F5-DDF9-4BCA-94E4-988913EF7F51}"
 	ProjectSection(SolutionItems) = preProject
-		tools\stylecop.json = tools\stylecop.json
 		tools\compiler_coverage.settings.xml = tools\compiler_coverage.settings.xml
+		tools\stylecop.json = tools\stylecop.json
 		tools\StyleCopAnalyzers.ruleset = tools\StyleCopAnalyzers.ruleset
 	EndProjectSection
 EndProject
@@ -92,6 +92,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{
 		.github\workflows\runtime-build.yml = .github\workflows\runtime-build.yml
 		.github\workflows\studio-build.yml = .github\workflows\studio-build.yml
 	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nncase.Studio.Photino", "src\Nncase.Studio\Nncase.Studio.Photino\Nncase.Studio.Photino.csproj", "{4B3C3413-823E-4A29-95E7-F370B53A09A6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -197,6 +199,10 @@ Global
 		{CFD4540C-208B-4B24-9AFE-6B74C6077B2B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CFD4540C-208B-4B24-9AFE-6B74C6077B2B}.Release|Any CPU.Build.0 = Release|Any CPU
 		{CFD4540C-208B-4B24-9AFE-6B74C6077B2B}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{4B3C3413-823E-4A29-95E7-F370B53A09A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4B3C3413-823E-4A29-95E7-F370B53A09A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4B3C3413-823E-4A29-95E7-F370B53A09A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4B3C3413-823E-4A29-95E7-F370B53A09A6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -231,6 +237,7 @@ Global
 		{EB12FD4D-0680-47F3-B1E3-689C009FE74C} = {BCA74168-F015-4B5B-B4CD-C83AE06B9822}
 		{CFD4540C-208B-4B24-9AFE-6B74C6077B2B} = {312313E7-99DB-451E-BF47-B198E0CE7B72}
 		{B4C3A657-4147-4F04-949F-E971E0FE26E0} = {E64FD12D-1722-48E0-BE3A-58E2233EDB64}
+		{4B3C3413-823E-4A29-95E7-F370B53A09A6} = {312313E7-99DB-451E-BF47-B198E0CE7B72}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B251C48E-7D05-4662-8DFF-20843CB2DB99}

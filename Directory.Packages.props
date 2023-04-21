@@ -51,6 +51,7 @@
     <PackageVersion Include="Nncase.FlatBuffers" Version="2.0.0" />
     <PackageVersion Include="Ookii.Dialogs.WinForms" Version="4.0.0" />
     <PackageVersion Include="OrtKISharp" Version="0.0.2" />
+    <PackageVersion Include="Photino.NET" Version="2.3.0" />
     <PackageVersion Include="RazorLight" Version="2.3.0" />
     <PackageVersion Include="Singulink.Collections.Weak" Version="1.0.2" />
     <PackageVersion Include="StyleCop.Analyzers" Version="1.2.0-beta.435" />
