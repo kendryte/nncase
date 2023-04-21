@@ -10,9 +10,11 @@ using System.Linq;
 using Google.Protobuf;
 using Google.Protobuf.Collections;
 using LanguageExt;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using Onnx;
+using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Importer;
 
@@ -49,9 +51,12 @@ public sealed partial class OnnxImporter : BaseImporter
         _constTensors = _graph.Initializer
             .ToDictionary(tensor => tensor.Name, tensor => tensor);
 
-        var createdInputs = _graph.Input
-            .Where(n => !_constTensors.ContainsKey(n.Name))
-            .Select(n => new Var(n.Name, GetIRType(n))).ToArray();
+        var originInputs = _graph.Input
+            .Where(n => !_constTensors.ContainsKey(n.Name));
+        var createdInputs = originInputs.Select(n => new Var(n.Name, GetIRType(n))).ToArray();
+        var varMap = originInputs
+            .Select((v, i) => (createdInputs[i], GetOriginShape(v)))
+            .ToDictionary(tup => tup.Item1, tup => tup.Item2);
 
         _outputTensors = createdInputs.ToDictionary(n => n.Name, n => (Expr)n);
         return createdInputs;

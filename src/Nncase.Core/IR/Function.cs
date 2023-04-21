@@ -22,18 +22,20 @@ public sealed class Function : BaseFunction
     /// Initializes a new instance of the <see cref="Function"/> class.
     /// build function.
     /// </summary>
-    public Function(string name, Expr body, ReadOnlySpan<Var> parameters)
+    public Function(string name, Expr body, ReadOnlySpan<Var> parameters, Dictionary<Var, Expr[]> varMap = null)
         : base(name, StackVMModuleKind, ArrayUtility.Concat(body, SpanUtility.UnsafeCast<Var, Expr>(parameters)))
     {
+        VarMap = varMap;
     }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Function"/> class.
     /// build function.
     /// </summary>
-    public Function(Expr body, ReadOnlySpan<Var> parameters)
+    public Function(Expr body, ReadOnlySpan<Var> parameters, Dictionary<Var, Expr[]> varMap = null)
         : this($"func_{_globalFuncIndex++}", body, parameters)
     {
+        VarMap = varMap;
     }
 
     /// <summary>
@@ -58,6 +60,7 @@ public sealed class Function : BaseFunction
 
     public ReadOnlySpan<Var> Parameters => SpanUtility.UnsafeCast<Expr, Var>(Operands[1..]);
 
+    public Dictionary<Var, Expr[]> VarMap { get; }
     /// <summary>
     /// Gets get all parameter checked types.
     /// </summary>
