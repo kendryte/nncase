@@ -17,7 +17,7 @@ public static class WellknownMarkerNames
     /// <summary>
     /// attribute. <seealso cref="IR.Math.RangeOf"/>
     /// </summary>
-    public static readonly string RangeOf = "RangeOf";
+    public const string RangeOf = "RangeOf";
 }
 
 public class MixQuantInfo
