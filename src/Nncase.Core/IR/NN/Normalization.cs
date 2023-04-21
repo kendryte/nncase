@@ -27,22 +27,22 @@ public sealed partial class BatchNormalization : Op
     /// <summary>
     /// Gets scale.
     /// </summary>
-    public static readonly ParameterInfo Scale = new(typeof(BatchNormalization), 1, "scale", IsFloatScalar());
+    public static readonly ParameterInfo Scale = new(typeof(BatchNormalization), 1, "scale", HasRank(1));
 
     /// <summary>
     /// Gets bias.
     /// </summary>
-    public static readonly ParameterInfo Bias = new(typeof(BatchNormalization), 2, "bias", IsFloatScalar());
+    public static readonly ParameterInfo Bias = new(typeof(BatchNormalization), 2, "bias", HasRank(1));
 
     /// <summary>
     /// Gets input_mean.
     /// </summary>
-    public static readonly ParameterInfo InputMean = new(typeof(BatchNormalization), 3, "input_mean", IsFloatScalar());
+    public static readonly ParameterInfo InputMean = new(typeof(BatchNormalization), 3, "input_mean", HasRank(1));
 
     /// <summary>
     /// Gets input_var.
     /// </summary>
-    public static readonly ParameterInfo InputVar = new(typeof(BatchNormalization), 4, "input_var", IsFloatScalar());
+    public static readonly ParameterInfo InputVar = new(typeof(BatchNormalization), 4, "input_var", HasRank(1));
 
     /// <summary>
     /// Gets epsilon.
