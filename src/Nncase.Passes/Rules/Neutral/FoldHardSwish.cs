@@ -9,12 +9,13 @@ using Nncase.PatternMatch;
 using static Nncase.IR.F.NN;
 using static Nncase.IR.TypePatternUtility;
 using static Nncase.PatternMatch.F.Math;
+using static Nncase.PatternMatch.F.NN;
 using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Passes.Rules.Neutral;
 
 [RuleGenerator]
-public sealed partial class FoldHardSwish : RewriteRule<CallPattern>
+public sealed partial class FoldHardSwish1 : RewriteRule<CallPattern>
 {
     /// <inheritdoc/>
     public override CallPattern Pattern { get; } =
@@ -47,6 +48,44 @@ public sealed partial class FoldHardSwish : RewriteRule<CallPattern>
             && Math.Abs(addConst[0] - 3f) < 1e-6f
             && Math.Abs(clampMin[0]) < 1e-6f
             && Math.Abs(clampMax[0] - 6f) < 1e-6)
+        {
+            return HardSwish(input);
+        }
+
+        return null;
+    }
+}
+
+[RuleGenerator]
+public sealed partial class FoldHardSwish2 : RewriteRule<CallPattern>
+{
+    /// <inheritdoc/>
+    public override CallPattern Pattern { get; } =
+        IsBinary(
+            "mul",
+            "mulCall",
+            BinaryOp.Mul,
+            IsBinary(
+                "mul1_6",
+                "mul1_6Call",
+                BinaryOp.Mul,
+                IsTensorConst("mul1_6Const") with { TypePattern = HasRank(0) | HasShape(new[] { 1 }) },
+                IsRelu6(
+                    "relu6",
+                    "relu6Call",
+                    IsBinary(
+                        "add",
+                        "addCall",
+                        BinaryOp.Add,
+                        IsWildcard(),
+                        IsTensorConst("addConst") with { TypePattern = HasRank(0) | HasShape(new[] { 1 }) }))),
+            IsWildcard("input"));
+
+    private Expr? GetReplace(Expr input, Call addCall, Tensor<float> mul1_6Const, Tensor<float> addConst)
+    {
+        if (addCall[Binary.Lhs] == input
+            && Math.Abs(addConst[0] - 3f) < 1e-6f
+            && Math.Abs(mul1_6Const[0] - 0.1666666716337204f) < 1e-6f)
         {
             return HardSwish(input);
         }

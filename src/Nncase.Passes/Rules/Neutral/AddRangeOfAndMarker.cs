@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
 using Nncase.IR;
 using Nncase.IR.Imaging;
@@ -94,6 +95,9 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
 
     private Expr? GetReplace(Call call, Op op, IReadOnlyList<Expr> callParams, RunPassContext context)
     {
+        bool configExist = CompileSession.CompileOptions.QuantizeOptions.QuantScheme != string.Empty;
+        bool useAutoMixQuant = CompileSession.CompileOptions.QuantizeOptions.BindQuantMethod;
+
         int length = 0;
         _ = Array.Empty<int>();
         int[]? list;
@@ -119,7 +123,23 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
             {
                 if (!pairs.ContainsKey(callParams[i]))
                 {
-                    pairs.Add(callParams[i], IR.F.Math.RangeOfMarker(callParams[i], IR.F.Math.RangeOf(callParams[i])));
+                    bool isWeights = (call.Target is Conv2D || call.Target is Conv2DTranspose) && (i == 1);
+
+                    if (!configExist && !useAutoMixQuant)
+                    {
+                        if (isWeights)
+                        {
+                            pairs.Add(callParams[i], IR.F.Math.RangeOfMarker(callParams[i], IR.F.Math.RangeOf(callParams[i], isWeights), CompileSession.CompileOptions.QuantizeOptions.WQuantType));
+                        }
+                        else
+                        {
+                            pairs.Add(callParams[i], IR.F.Math.RangeOfMarker(callParams[i], IR.F.Math.RangeOf(callParams[i], isWeights), CompileSession.CompileOptions.QuantizeOptions.QuantType));
+                        }
+                    }
+                    else
+                    {
+                        pairs.Add(callParams[i], IR.F.Math.RangeOfMarker(callParams[i], IR.F.Math.RangeOf(callParams[i], isWeights)));
+                    }
                 }
             }
         }
@@ -141,12 +161,24 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
         context.MatchOptions.SuppressPattern(newCall, Pattern);
         return op switch
         {
-            LSTM => WrapLSTMOutput(newCall, ((TensorConst)newCall[LSTM.OutputSize]).Value.ToScalar<int>(), context), // note lstm output can't add marker.
-            _ => IR.F.Math.RangeOfMarker(newCall, IR.F.Math.RangeOf(newCall)),
+            LSTM => WrapLSTMOutput(newCall, ((TensorConst)newCall[LSTM.OutputSize]).Value.ToScalar<int>(), configExist, useAutoMixQuant, context), // note lstm output can't add marker.
+            _ => WrapNormalOutput(newCall, configExist, useAutoMixQuant),
         };
     }
 
-    private IR.Tuple WrapLSTMOutput(Call call, int outputSize, RunPassContext context)
+    private Marker WrapNormalOutput(Call call, bool configExist, bool useAutoMixQuant)
+    {
+        if (!configExist && !useAutoMixQuant)
+        {
+            return IR.F.Math.RangeOfMarker(call, IR.F.Math.RangeOf(call, false), CompileSession.CompileOptions.QuantizeOptions.QuantType);
+        }
+        else
+        {
+            return IR.F.Math.RangeOfMarker(call, IR.F.Math.RangeOf(call, false));
+        }
+    }
+
+    private IR.Tuple WrapLSTMOutput(Call call, int outputSize, bool configExist, bool useAutoMixQuant, RunPassContext context)
     {
         var outputs = Enumerable.Range(0, outputSize).Select(i => IR.F.Tensors.GetItem(call, i)).ToArray();
         foreach (var o in outputs)
@@ -154,7 +186,12 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
             context.MatchOptions.SuppressPattern(o, Pattern);
         }
 
-        var exprs = outputs.Select(item => IR.F.Math.RangeOfMarker(item, IR.F.Math.RangeOf(item))).ToArray();
+        var exprs = outputs.Select(item => IR.F.Math.RangeOfMarker(item, IR.F.Math.RangeOf(item, false))).ToArray();
+        if (!configExist && !useAutoMixQuant)
+        {
+            exprs = outputs.Select(item => IR.F.Math.RangeOfMarker(item, IR.F.Math.RangeOf(item, false), CompileSession.CompileOptions.QuantizeOptions.QuantType)).ToArray();
+        }
+
         return new IR.Tuple(exprs);
     }
 }

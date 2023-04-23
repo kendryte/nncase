@@ -5,6 +5,7 @@ using System;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
+using Nncase.Quantization;
 using Nncase.Utilities;
 using OrtKISharp;
 

@@ -150,6 +150,14 @@ typedef struct {
         nncase_finetune_weights_method_t method);
     void (*quantize_options_set_use_mix_quant)(
         clr_object_handle_t quantize_options, bool use_mix_quant);
+    void (*quantize_options_set_quant_scheme)(
+        clr_object_handle_t quantize_options, const char *quant_scheme,
+        size_t quant_scheme_length);
+    void (*quantize_options_set_export_quant_scheme)(
+        clr_object_handle_t quantize_options, bool export_quant_scheme);
+    void (*quantize_options_set_export_weight_range_by_channel)(
+        clr_object_handle_t quantize_options,
+        bool export_weight_range_by_channel);
     clr_object_handle_t (*rtvalue_from_handle)(nncase::value_node *value);
     nncase::value_node *(*rtvalue_get_handle)(clr_object_handle_t rtvalue);
     clr_object_handle_t (*stream_create)(const nncase_stream_mt_t *mt,
@@ -323,6 +331,24 @@ class quantize_options : public clr_object_base {
     bool use_mix_quant() { return false; }
     void use_mix_quant(bool value) {
         nncase_clr_api()->quantize_options_set_use_mix_quant(obj_.get(), value);
+    }
+
+    std::string quant_scheme() { return ""; }
+    void quant_scheme(std::string_view value) {
+        nncase_clr_api()->quantize_options_set_quant_scheme(
+            obj_.get(), value.data(), value.length());
+    }
+
+    bool export_quant_scheme() { return false; }
+    void export_quant_scheme(bool value) {
+        nncase_clr_api()->quantize_options_set_export_quant_scheme(obj_.get(),
+                                                                   value);
+    }
+
+    bool export_weight_range_by_channel() { return false; }
+    void export_weight_range_by_channel(bool value) {
+        nncase_clr_api()->quantize_options_set_export_weight_range_by_channel(
+            obj_.get(), value);
     }
 };
 

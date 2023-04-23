@@ -396,6 +396,15 @@ public static class Math
         return call;
     }
 
+    public static Call RangeOf(Expr input, bool isRangeOfWeight)
+    {
+        var rangeOf = new RangeOf();
+        rangeOf.IsRangeOfWeight = isRangeOfWeight;
+        var call = (Call)new Call(rangeOf, input).InheritMetaData(input);
+
+        return call;
+    }
+
     public static Call QuantParamOf(QuantMode mode, Expr range, Expr bits) => new Call(new QuantParamOf(mode), range, bits);
 
     public static Call Quantize(Expr input, Expr quantParam, DataType targetType) => new Call(new Quantize(targetType), input, quantParam);
@@ -412,8 +421,21 @@ public static class Math
     /// <returns> new marker expression. </returns>
     public static Marker RangeOfMarker(Expr target, Expr range)
     {
-        var call = (Marker)new Marker(WellknownMarkerNames.RangeOf, target, range).InheritMetaData(target);
+        var marker = (Marker)new Marker(WellknownMarkerNames.RangeOf, target, range).InheritMetaData(target);
 
-        return call;
+        return marker;
+    }
+
+    public static Marker RangeOfMarker(Expr target, Expr range, DataType markerQuantType)
+    {
+        var marker = (Marker)new Marker(WellknownMarkerNames.RangeOf, target, range).InheritMetaData(target);
+        if (marker.MixQuantInfo == null)
+        {
+            marker.MixQuantInfo = new MixQuantInfo();
+        }
+
+        marker.MixQuantInfo!.MarkerQuantType = markerQuantType;
+
+        return marker;
     }
 }

@@ -68,6 +68,9 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr, QuantType, void> QuantizeOptionsSetWQuantTypePtr;
     public delegate* unmanaged<IntPtr, FineTuneWeightsMethod, void> QuantOptionsSetFineTuneWeightsMethodPtr;
     public delegate* unmanaged<IntPtr, byte, void> QuantOptionsSetUseMixQuantPtr;
+    public delegate* unmanaged<IntPtr, byte*, nuint, void> QuantOptionsSetQuantSchemePtr;
+    public delegate* unmanaged<IntPtr, byte, void> QuantOptionsSetExportQuantSchemePtr;
+    public delegate* unmanaged<IntPtr, byte, void> QuantOptionsSetExportWeightRangeByChannelPtr;
     public delegate* unmanaged<IntPtr, IntPtr> RTValueFromHandlePtr;
     public delegate* unmanaged<IntPtr, IntPtr> RTValueGetHandlePtr;
     public delegate* unmanaged<CStreamMT*, IntPtr, IntPtr> StreamCreatePtr;
@@ -115,6 +118,9 @@ public static unsafe class CApi
         mt->QuantizeOptionsSetWQuantTypePtr = &QuantizeOptionsSetWQuantType;
         mt->QuantOptionsSetFineTuneWeightsMethodPtr = &QuantizeOptionsSetFineTuneWeightsMethod;
         mt->QuantOptionsSetUseMixQuantPtr = &QuantOptionsSetUseMixQuant;
+        mt->QuantOptionsSetQuantSchemePtr = &QuantizeOptionsSetQuantScheme;
+        mt->QuantOptionsSetExportQuantSchemePtr = &QuantizeOptionsSetExportQuantScheme;
+        mt->QuantOptionsSetExportWeightRangeByChannelPtr = &QuantizeOptionsSetExportWeightRangeByChannel;
         mt->RTValueFromHandlePtr = &RTValueFromHandle;
         mt->RTValueGetHandlePtr = &RTValueGetHandle;
         mt->StreamCreatePtr = &StreamCreate;
@@ -422,6 +428,44 @@ public static unsafe class CApi
                 break;
             default:
                 throw new ArgumentException("Invalid useMixQuant Flag");
+        }
+    }
+
+    [UnmanagedCallersOnly]
+    private static void QuantizeOptionsSetQuantScheme(IntPtr quantizeOptionsHandle, byte* quantSchemePtr, nuint quantSchemeLength)
+    {
+        Get<QuantizeOptions>(quantizeOptionsHandle).QuantScheme = ToString(quantSchemePtr, quantSchemeLength);
+    }
+
+    [UnmanagedCallersOnly]
+    private static void QuantizeOptionsSetExportQuantScheme(IntPtr quantizeOptionsHandle, byte exportQuantScheme)
+    {
+        switch (exportQuantScheme)
+        {
+            case 0:
+                Get<QuantizeOptions>(quantizeOptionsHandle).ExportQuantScheme = false;
+                break;
+            case 1:
+                Get<QuantizeOptions>(quantizeOptionsHandle).ExportQuantScheme = true;
+                break;
+            default:
+                throw new ArgumentException("Invalid exportQuantScheme Flag");
+        }
+    }
+
+    [UnmanagedCallersOnly]
+    private static void QuantizeOptionsSetExportWeightRangeByChannel(IntPtr quantizeOptionsHandle, byte exportWeightRangeByChannel)
+    {
+        switch (exportWeightRangeByChannel)
+        {
+            case 0:
+                Get<QuantizeOptions>(quantizeOptionsHandle).ExportWeightRangeByChannel = false;
+                break;
+            case 1:
+                Get<QuantizeOptions>(quantizeOptionsHandle).ExportWeightRangeByChannel = true;
+                break;
+            default:
+                throw new ArgumentException("Invalid exportWeightRangeByChannel Flag");
         }
     }
 

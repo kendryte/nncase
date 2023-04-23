@@ -33,6 +33,7 @@ public class UnitTestCombineReshape : TransformTestBase
         { BinaryOp.Sub, new[] { 1, 32, 32, 64 }, new[] { 1 }, new[] { 1, 1024, 1, 64 }, false },
         { BinaryOp.Div, new[] { 64 }, new[] { 32, 1, 32, 64, }, new[] { 1, 32, 32, 64 }, true },
         { BinaryOp.Mul, new[] { 1 }, new[] { 1, 32, 32, 64, }, new[] { 1, 1024, 64, 1 }, true },
+        { BinaryOp.Sub, new[] { 1 }, new[] { 1, 32, 32, 64, }, new[] { 1, 1024, 64, 1 }, true },
     };
 
     public static IEnumerable<object[]> CombineBinaryReshapePositiveData =>
@@ -64,6 +65,20 @@ public class UnitTestCombineReshape : TransformTestBase
             new object[] { UnaryOp.Sqrt, new[] { 1, 3, 4 }, new[] { 3, 4, 1 } },
             new object[] { UnaryOp.Log, new[] { 1, 3, 4, 5 }, new[] { 3, 1, 1, 20 } },
             new object[] { UnaryOp.Abs, new[] { 1, 3, 4, 5 }, new[] { 1, 12, 5, 1 } },
+        };
+
+    public static IEnumerable<object[]> TestCombineReshapePadPositiveData =>
+        new[]
+        {
+            new object[] { new[] { 1, 3, 4 }, new[] { 1, 5, 8 }, new[] { 0, 0, 1, 1, 2, 2 } },
+            new object[] { new[] { 1, 3, 4 }, new[] { 1, 4, 5, 7 }, new[] { 1, 2, 1, 1, 2, 1 } },
+        };
+
+    public static IEnumerable<object[]> TestCombineReshapePadNegativeData =>
+        new[]
+        {
+            new object[] { new[] { 1, 3, 4 }, new[] { 5, 8 }, new[] { 0, 0, 1, 1, 2, 2 } },
+            new object[] { new[] { 1, 3, 4 }, new[] { 1, 4, 1, 35 }, new[] { 1, 2, 1, 1, 2, 1 } },
         };
 
     public static TheoryData<(int Count, IR.Expr Act)> TestCombineActivationsReshapePositiveData => new()
@@ -147,7 +162,7 @@ public class UnitTestCombineReshape : TransformTestBase
         var normal = new Dictionary<Var, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
         var rootPre = Math.Unary(opType, Tensors.Reshape(a, shape));
-        TestMatched<CombineReshapeUnary>(rootPre, normal);
+        TestMatched<CombineUnaryReshape>(rootPre, normal);
     }
 
     [Theory]
@@ -162,5 +177,25 @@ public class UnitTestCombineReshape : TransformTestBase
     public void TestCombineActivationsReshapeNegative((int Count, IR.Expr Act) param)
     {
         TestNotMatch<CombineActivationsReshape>(param.Act);
+    }
+
+    [Theory]
+    [MemberData(nameof(TestCombineReshapePadPositiveData))]
+    public void TestCombineReshapePadPositive(int[] inShape, int[] shape, int[] pads)
+    {
+        var a = new Var("input", new TensorType(DataTypes.Float32, inShape));
+        var normal = new Dictionary<Var, IValue>();
+        normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
+        var rootPre = Tensors.Reshape(NN.Pad(a, Tensor.From(pads, new[] { pads.Length / 2, 2 }), PadMode.Constant, 0f), shape);
+        TestMatched<CombineReshapePad>(rootPre, normal);
+    }
+
+    [Theory]
+    [MemberData(nameof(TestCombineReshapePadNegativeData))]
+    public void TestCombineReshapePadNegative(int[] inShape, int[] shape, int[] pads)
+    {
+        var a = new Var("input", new TensorType(DataTypes.Float32, inShape));
+        var rootPre = Tensors.Reshape(NN.Pad(a, Tensor.From(pads, new[] { pads.Length / 2, 2 }), PadMode.Constant, 0f), shape);
+        TestNotMatch<CombineReshapePad>(rootPre);
     }
 }

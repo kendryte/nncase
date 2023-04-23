@@ -44,6 +44,33 @@ public interface IMergeRewriteRule
       IExprUserAnalysisResult usedByReslut,
       IMatchResult result,
       RunPassContext options);
+
+    protected sealed class FusionMerger : ExprCloner<Unit>
+    {
+        private readonly IReadOnlyDictionary<Var, Expr> _calleeBodyMap;
+        private readonly IReadOnlyDictionary<Var, Var> _multiVarMap;
+
+        public FusionMerger(IReadOnlyDictionary<Var, Expr> calleeBodyMap, IReadOnlyDictionary<Var, Var> multiVarMap)
+        {
+            _calleeBodyMap = calleeBodyMap;
+            _multiVarMap = multiVarMap;
+        }
+
+        protected override Expr VisitLeafVar(Var expr, Unit context)
+        {
+            if (_calleeBodyMap.TryGetValue(expr, out var callee))
+            {
+                return Visit(callee, context);
+            }
+
+            if (_multiVarMap.TryGetValue(expr, out var newVar))
+            {
+                return newVar;
+            }
+
+            throw new InvalidOperationException();
+        }
+    }
 }
 
 /// <summary>
@@ -669,7 +696,7 @@ v2 =f2(v0)      v1 = f1(v0)
         }
 
         // 1. replace the caller_fusion input_var with the callee_fusion_i body
-        var merger = new FusionMerger(calleeBodyMap, multiVarMap);
+        var merger = new IMergeRewriteRule.FusionMerger(calleeBodyMap, multiVarMap);
         var merged_fusion_body = merger.Clone(caller_fusion.Body, default);
 
         // 2. run call back.

@@ -54,4 +54,9 @@
     <None Update="testsettings.toml" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Quant\leaky_relu.quant.json" />
+    <EmbeddedResource Include="Quant\conv2d.quant.json" />
+  </ItemGroup>
+
 </Project>

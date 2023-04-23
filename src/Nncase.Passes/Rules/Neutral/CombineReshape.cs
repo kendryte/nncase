@@ -10,6 +10,7 @@ using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
+using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
 using Nncase.Utilities;
 using Tensorflow;
@@ -82,25 +83,28 @@ public sealed partial class CombineConstBinaryReshape : IRewriteRule
         var oldShape = shape.Value.ToArray<int>();
         var significantShape = oldShape.Where(x => x > 1).ToArray();
 
+        bool leftConst = ReferenceEquals(callParams[0], constInput);
         if (constInput.CheckedShape.Rank == 0)
         {
-            var res = Reshape(Binary(binary.BinaryOp, input, constInput).InheritMetaData(call), shape);
+            var res = Reshape(Binary(binary.BinaryOp, leftConst ? constInput : input, leftConst ? input : constInput).InheritMetaData(call), shape);
             res.InferenceType();
             return res;
         }
 
-        var significantInputShape = input.CheckedShape.ToValueArray().Where(x => x > 1).ToArray();
-        bool leftConst = ReferenceEquals(callParams[0], constInput);
-        var constSize = constInput.CheckedShape.ToValueArray()[0];
-        if (significantShape.SequenceEqual(significantInputShape) && oldShape[^1] == constSize)
+        if (constInput.CheckedShape.Rank == 1)
         {
-            var broadcastIndex = Array.LastIndexOf(input.CheckedShape.ToValueArray(), constSize);
-            var newConstShape = Enumerable.Repeat(1, input.CheckedShape.Rank - 1 - broadcastIndex).ToList();
-            newConstShape.Insert(0, constSize);
+            var significantInputShape = input.CheckedShape.ToValueArray().Where(x => x > 1).ToArray();
+            var constSize = constInput.CheckedShape.ToValueArray()[0];
+            if (significantShape.SequenceEqual(significantInputShape) && oldShape[^1] == constSize)
+            {
+                var broadcastIndex = Array.LastIndexOf(input.CheckedShape.ToValueArray(), constSize);
+                var newConstShape = Enumerable.Repeat(1, input.CheckedShape.Rank - 1 - broadcastIndex).ToList();
+                newConstShape.Insert(0, constSize);
 
-            var res = Reshape(Binary(binary.BinaryOp, leftConst ? Reshape(constInput, newConstShape.ToArray()) : input, leftConst ? input : Reshape(constInput, newConstShape.ToArray())).InheritMetaData(call), call.CheckedShape);
-            res.InferenceType();
-            return res;
+                var res = Reshape(Binary(binary.BinaryOp, leftConst ? Reshape(constInput, newConstShape.ToArray()) : input, leftConst ? input : Reshape(constInput, newConstShape.ToArray())).InheritMetaData(call), call.CheckedShape);
+                res.InferenceType();
+                return res;
+            }
         }
 
         return null;
@@ -160,5 +164,40 @@ public sealed partial class CombineActivationsReshape : IRewriteRule
         return Reshape(
             new Call(activation, new Expr[] { input }.Concat(parameters.Skip(1)).ToArray()).InheritMetaData(call),
             shape);
+    }
+}
+
+/// <summary>
+/// reshape(pad(input), shape) => pad(reshape(input, shape)).
+/// </summary>
+[RuleGenerator]
+public sealed partial class CombineReshapePad : IRewriteRule
+{
+    /// <inheritdoc/>
+    public IPattern Pattern { get; } =
+        IsReshape(
+            "reshape",
+            "reshapeCall",
+            _ => true,
+            IsPad("pad", "padCall", _ => true, IsWildcard("input"), IsTensorConst("pads"), IsTensorConst("value")) with { TypePattern = HasFixedShape() },
+            IsWildcard("shape")) with
+        { TypePattern = HasFixedShape() };
+
+    private Expr? GetReplace(Reshape reshape, Call reshapeCall, Pad pad, Call padCall, Expr input, Expr shape, int[] pads, Expr value)
+    {
+        // only support pattern like melgan
+        var reshapeRank = reshapeCall.CheckedShape.Rank;
+        var padRank = padCall.CheckedShape.Rank;
+        if (reshapeRank >= padRank
+            && Enumerable.SequenceEqual(reshapeCall.CheckedShape.ToValueArray()[(reshapeRank - padRank)..], padCall.CheckedShape.ToValueArray()))
+        {
+            return Pad(
+            Reshape(input, Enumerable.Repeat(1, reshapeRank - padRank).Concat(input.CheckedShape.ToValueArray()).ToArray()).InheritMetaData(reshapeCall),
+            Tensor.From(Enumerable.Repeat(0, (reshapeRank - padRank) * 2).Concat(pads).ToArray(), new[] { reshapeRank, 2 }),
+            pad.PadMode,
+            value).InheritMetaData(padCall);
+        }
+
+        return null;
     }
 }

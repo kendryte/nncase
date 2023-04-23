@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.Math;
@@ -22,42 +23,157 @@ internal partial class Quantizer
     private readonly QuantizeOptions _quantizeOptions;
     private readonly List<ENode> _rangeOfs = new List<ENode>();
     private readonly List<ENode> _childrenOfRangeOfs = new List<ENode>();
+    private readonly List<ENode> _markers = new List<ENode>();
 
     public Quantizer(IEGraph graph, QuantizeOptions quantizeOptions)
     {
         _graph = graph;
         _quantizeOptions = quantizeOptions;
         MarkRangeOfs();
+        MarkMarkers();
     }
 
     public async Task RunAsync(RunPassContext options)
     {
-        int srcBinSize = 8192;
-        int dstBinSize = 256;
-        if (_quantizeOptions.CalibrationDataset == null)
+        bool configExist = _quantizeOptions.QuantScheme != string.Empty;
+        bool exportQuantScheme = _quantizeOptions.ExportQuantScheme;
+        bool exportWeightRangeByChannel = _quantizeOptions.ExportWeightRangeByChannel;
+
+        if (!configExist)
         {
-            throw new InvalidOperationException($"{nameof(_quantizeOptions.CalibrationDataset)} is not set");
-        }
+            int srcBinSize = 8192;
+            int dstBinSize = 256;
 
-        // 1.0 Get ranges
-        var ranges = await GetRangesAsync(_quantizeOptions.CalibrationDataset);
+            if (_quantizeOptions.CalibrationDataset == null)
+            {
+                throw new InvalidOperationException($"{nameof(_quantizeOptions.CalibrationDataset)} is not set");
+            }
 
-        ranges = ranges.ToDictionary(item => item.Key, item => FixUpRange(item.Value));
+            // 1.0 Get ranges
+            var ranges = await GetRangesAsync(_quantizeOptions.CalibrationDataset);
 
-        if (_quantizeOptions.CalibrationMethod is CalibMethod.Kld)
-        {
-            // 1.1. Get histograms
-            var histograms = await GetHistogramsAsync(_quantizeOptions.CalibrationDataset, ranges, srcBinSize, dstBinSize);
+            ranges = ranges.ToDictionary(item => item.Key, item => FixUpRange(item.Value));
 
-            // 1.2. Select best ranges
-            var optRanges = GetOptRanges(histograms, ranges, srcBinSize, dstBinSize, _quantizeOptions.CalibrationMethod);
+            if (_quantizeOptions.CalibrationMethod is CalibMethod.Kld)
+            {
+                // 1.1. Get histograms
+                var histograms = await GetHistogramsAsync(_quantizeOptions.CalibrationDataset, ranges, srcBinSize, dstBinSize);
 
-            // 1.3. Assign ranges
-            AssignRanges(optRanges);
+                // 1.2. Select best ranges
+                var optRanges = GetOptRanges(histograms, ranges, srcBinSize, dstBinSize, _quantizeOptions.CalibrationMethod);
+
+                // 1.3. Assign ranges
+                AssignRanges(optRanges);
+            }
+            else
+            { // 2. Assign ranges
+                AssignRanges(ranges);
+            }
+
+            // 3. Export quant info
+            if (_quantizeOptions.ExportQuantScheme == true)
+            {
+                var quantScheme = new QuantScheme();
+                quantScheme.Version = "1.0";
+                var outputsCount = 0;
+                foreach (var range in ranges)
+                {
+                    if (range.Key.Expr.Metadata.OutputNames != null)
+                    {
+                        outputsCount++;
+                    }
+                }
+
+                quantScheme.Outputs = new Output[outputsCount];
+
+                if (_quantizeOptions.ExportWeightRangeByChannel == false)
+                {
+                    var index = 0;
+                    foreach (var range in ranges.Where(r => r.Key.Expr.Metadata.OutputNames != null))
+                    {
+                        quantScheme.Outputs[index] = new Output();
+                        quantScheme.Outputs[index].Name = range.Key.Expr.Metadata.OutputNames![0];
+                        quantScheme.Outputs[index].DataRangeMode = "by_tensor";
+                        quantScheme.Outputs[index].DataType = ((RangeOf)((Call)range.Key.Expr).Target).IsRangeOfWeight == true ? _quantizeOptions.WQuantType.ToString() : _quantizeOptions.QuantType.ToString();
+                        quantScheme.Outputs[index].DataRange = new ValueRange<float>[1];
+                        quantScheme.Outputs[index].DataRange![0] = range.Value;
+                        index++;
+                    }
+                }
+                else
+                {
+                    var weightsByChannelRanges = new Dictionary<ENode, ValueRange<float>[]>(ReferenceEqualityComparer.Instance);
+                    foreach (var range in ranges)
+                    {
+                        if (((RangeOf)((Call)range.Key.Expr).Target).IsRangeOfWeight == true)
+                        {
+                            var oc = range.Key.Children[1].Nodes[0].Expr.CheckedShape[0].FixedValue;
+                            var valueRanges = new ValueRange<float>[oc];
+                            var weightsValue = ((TensorConst)range.Key.Children[1].Nodes[0].Expr).Value.Cast<float>().Buffer;
+                            var weightsSize = weightsValue.Length;
+                            var eachChannelSize = weightsSize / oc;
+                            var tmpMin = float.MaxValue;
+                            var tmpMax = float.MinValue;
+
+                            for (int i = 0; i < weightsSize; i++)
+                            {
+                                if (weightsValue.Span[i] < tmpMin)
+                                {
+                                    tmpMin = weightsValue.Span[i];
+                                }
+
+                                if (weightsValue.Span[i] > tmpMax)
+                                {
+                                    tmpMax = weightsValue.Span[i];
+                                }
+
+                                if ((i + 1) % eachChannelSize == 0)
+                                {
+                                    valueRanges[i / eachChannelSize] = new ValueRange<float> { Min = tmpMin, Max = tmpMax };
+                                    tmpMin = float.MaxValue;
+                                    tmpMax = float.MinValue;
+                                }
+                            }
+
+                            weightsByChannelRanges.Add(range.Key, valueRanges);
+                        }
+                        else
+                        {
+                            var valueRanges = new ValueRange<float>[1];
+                            valueRanges[0] = range.Value;
+                            weightsByChannelRanges.Add(range.Key, valueRanges);
+                        }
+                    }
+
+                    var index = 0;
+                    foreach (var range in ranges.Where(r => r.Key.Expr.Metadata.OutputNames != null))
+                    {
+                        quantScheme.Outputs[index] = new Output();
+                        quantScheme.Outputs[index].Name = range.Key.Expr.Metadata.OutputNames![0];
+                        quantScheme.Outputs[index].DataRangeMode = ((RangeOf)((Call)range.Key.Expr).Target).IsRangeOfWeight == true ? "by_channel" : "by_tensor";
+                        quantScheme.Outputs[index].DataType = ((RangeOf)((Call)range.Key.Expr).Target).IsRangeOfWeight == true ? _quantizeOptions.WQuantType.ToString() : _quantizeOptions.QuantType.ToString();
+                        var rangeLength = weightsByChannelRanges[range.Key].Length;
+                        quantScheme.Outputs[index].DataRange = new ValueRange<float>[rangeLength];
+                        for (int i = 0; i < rangeLength; i++)
+                        {
+                            quantScheme.Outputs[index].DataRange![i] = weightsByChannelRanges[range.Key][i];
+                        }
+
+                        index++;
+                    }
+                }
+
+                var quantSchemeString = JsonConvert.SerializeObject(quantScheme);
+                _quantizeOptions.QuantScheme = quantSchemeString;
+            }
         }
         else
-        { // 2. Assign ranges
-            AssignRanges(ranges);
+        {
+            string readJson = _quantizeOptions.QuantScheme;
+            var quantScheme = JsonConvert.DeserializeObject<QuantScheme>(readJson);
+            var ranges = GetRangesFromConfig(quantScheme!);
+            AssignByChannelRanges(ranges);
+            AssignDataTypeFromConfig(quantScheme!);
         }
 
         // // 3. Choose better quant method using cosine, and bind info with ir.
@@ -152,6 +268,65 @@ internal partial class Quantizer
             }
         });
         return ranges;
+    }
+
+    private IDictionary<ENode, ValueRange<float>[]> GetRangesFromConfig(QuantScheme quantScheme)
+    {
+        var ranges = new Dictionary<ENode, ValueRange<float>[]>(ReferenceEqualityComparer.Instance);
+
+        foreach (var rangeOf in _rangeOfs)
+        {
+            for (int i = 0; i < quantScheme!.Outputs!.Length; i++)
+            {
+                if (rangeOf.Expr.Metadata.OutputNames?[0] == quantScheme!.Outputs[i].Name)
+                {
+                    if (((RangeOf)((Call)rangeOf.Expr).Target).IsRangeOfWeight == true && quantScheme!.Outputs[i].DataRangeMode == "by_tensor")
+                    {
+                        var oc = ((Call)rangeOf.Expr).Operands[1].CheckedShape[0].FixedValue;
+                        var valueRanges = new ValueRange<float>[oc];
+                        for (int j = 0; j < oc; j++)
+                        {
+                            valueRanges[j] = FixUpRange(new ValueRange<float>((float)quantScheme!.Outputs[i].DataRange![0].Min, (float)quantScheme!.Outputs[i].DataRange![0].Max));
+                        }
+
+                        ranges.Add(rangeOf, valueRanges);
+                    }
+                    else
+                    {
+                        var valueRanges = new ValueRange<float>[quantScheme!.Outputs[i].DataRange!.Length];
+                        for (int j = 0; j < quantScheme!.Outputs[i].DataRange!.Length; j++)
+                        {
+                            valueRanges[j] = FixUpRange(new ValueRange<float>((float)quantScheme!.Outputs[i].DataRange![j].Min, (float)quantScheme!.Outputs[i].DataRange![j].Max));
+                        }
+
+                        ranges.Add(rangeOf, valueRanges);
+                    }
+                }
+            }
+        }
+
+        return ranges;
+    }
+
+    private void AssignDataTypeFromConfig(QuantScheme quantScheme)
+    {
+        foreach (var marker in _markers)
+        {
+            for (int i = 0; i < quantScheme!.Outputs!.Length; i++)
+            {
+                if (marker.Expr.Metadata.OutputNames?[0] == quantScheme.Outputs[i].Name)
+                {
+                    var markerExpr = (Marker)marker.Expr;
+                    if (markerExpr.MixQuantInfo == null)
+                    {
+                        markerExpr.MixQuantInfo = new MixQuantInfo();
+                    }
+
+                    DataType dataType = DataTypes.FromShortName(quantScheme!.Outputs[i].DataType!);
+                    markerExpr.MixQuantInfo!.MarkerQuantType = dataType;
+                }
+            }
+        }
     }
 
     private async Task<IDictionary<ENode, QuantizeHistogram<float>>> GetHistogramsAsync(ICalibrationDatasetProvider calibrationDataset, IDictionary<ENode, ValueRange<float>> ranges, int srcBinSize, int dstBinSize)
@@ -253,8 +428,31 @@ internal partial class Quantizer
         // _graph.Rebuild();
     }
 
+    private void AssignByChannelRanges(IDictionary<ENode, ValueRange<float>[]> ranges)
+    {
+        // note union the constant in the rangeof eclass, when extact the graph will replace the rangeof expression with the constant ValueRange.
+        foreach (var range in ranges)
+        {
+            var value = range.Value;
+            var oc = value.Length;
+            var minMaxArrSize = oc * 2;
+            var minMaxArr = new float[minMaxArrSize];
+            for (int i = 0; i < minMaxArrSize; i++)
+            {
+                minMaxArr[i] = i % 2 == 0 ? value[i / 2].Min : value[i / 2].Max;
+            }
+
+            var shape = oc == 1 ? new[] { 2 } : new[] { oc, 2 };
+            var rangeEclass = _graph.Add(new TensorConst(Tensor.From(minMaxArr, shape)));
+            var rangeOfEclass = _graph.Find(range.Key);
+            range.Key.Expr.CheckedType = rangeEclass.CheckedType;
+            rangeOfEclass.SetCheckedType(rangeEclass.CheckedType);
+            _graph.Union(rangeOfEclass, rangeEclass);
+        }
+    }
+
     /// <summary>
-    /// collec all rangeof enode.
+    /// collect all rangeof enode.
     /// </summary>
     private void MarkRangeOfs()
     {
@@ -265,6 +463,20 @@ internal partial class Quantizer
                 var rangeOf = (ENode)match.Root;
                 _rangeOfs.Add(rangeOf);
                 _childrenOfRangeOfs.Add(rangeOf.Children[1].Nodes[0]);
+            }
+        }
+    }
+
+    /// <summary>
+    /// collect all marker enode.
+    /// </summary>
+    private void MarkMarkers()
+    {
+        foreach (var node in _graph.Nodes)
+        {
+            if (node.Expr is Marker)
+            {
+                _markers.Add(node);
             }
         }
     }
