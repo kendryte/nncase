@@ -72,68 +72,64 @@ internal class Compiler : ICompiler
     public void TargetIndependentPass(IPassManager passManager)
     {
         var quantMode = _compileSession.CompileOptions.QuantizeOptions.ModelQuantMode;
-        if (quantMode == ModelQuantMode.UsePTQ)
+        passManager.AddWithName<DataflowPass>("SqueezeShape").Configure(p =>
         {
-            passManager.AddWithName<DataflowPass>("SqueezeShape").Configure(p =>
-            {
-                p.Add<Passes.Rules.Neutral.SqueezeTransposeShape>();
-                p.Add<Passes.Rules.Neutral.Squeeze5DTranspose>();
-            });
-            passManager.AddWithName<EGraphRulesPass>("NeutralOptimizeTranspose").Configure(p =>
-            {
-                p.Add<Passes.Rules.Neutral.FoldConstCall>();
-                p.Add<Passes.Rules.Neutral.FoldNopTranspose>();
-                p.Add<Passes.Rules.Neutral.FoldTwoTransposes>();
-                p.Add<Passes.Rules.Neutral.CombineTransposeUnary>();
-                p.Add<Passes.Rules.Neutral.CombineTransposePad>();
-                p.Add<Passes.Rules.Neutral.CombinePadTranspose>();
-                p.Add<Passes.Rules.Neutral.CombineBinaryTranspose>();
-                p.Add<Passes.Rules.Neutral.CombineConstBinaryTranspose>();
-                p.Add<Passes.Rules.Neutral.CombineTransposeConstBinary>();
-                p.Add<Passes.Rules.Neutral.CombineTransposeReduce>();
-                p.Add<Passes.Rules.Neutral.CombineTransposeActivations>();
-                p.Add<Passes.Rules.Neutral.CombineActivationsTranspose>();
-                p.Add<Passes.Rules.Neutral.CombineTransposeConcat>();
-                p.Add<Passes.Rules.Neutral.CombineBinaryReshape>();
-                p.Add<Passes.Rules.Neutral.CombineConstBinaryReshape>();
-                p.Add<Passes.Rules.Neutral.CombineUnaryReshape>();
-                p.Add<Passes.Rules.Neutral.CombineActivationsReshape>();
-                p.Add<Passes.Rules.Neutral.CombineReshapePad>();
-                p.Add<Passes.Rules.Neutral.FoldNopPad>();
-                p.Add<Passes.Rules.Neutral.FoldConv2DPads>();
-                p.Add<Passes.Rules.Neutral.FuseClampConv2D>();
-                p.Add<Passes.Rules.Neutral.FoldReduceWindow2DPads>();
-                p.Add<Passes.Rules.Neutral.SqueezeToReshape>();
-                p.Add<Passes.Rules.Neutral.UnSqueezeToReshape>();
-                p.Add<Passes.Rules.Neutral.TransposeToReshape>();
-                p.Add<Passes.Rules.Neutral.FlattenToReshape>();
-                p.Add<Passes.Rules.Neutral.FoldNopReshape>();
-                p.Add<Passes.Rules.Neutral.FoldTwoReshapes>();
-                p.Add<Passes.Rules.Neutral.FoldLayerNormPattern1>();
-                p.Add<Passes.Rules.Neutral.FoldLayerNormPattern2>();
-                p.Add<Passes.Rules.Neutral.FoldLayerNormPattern3>();
-                p.Add<Passes.Rules.Neutral.FoldGeluWithScale>();
-                p.Add<Passes.Rules.Neutral.FoldGeneralGelu>();
-                p.Add<Passes.Rules.Neutral.FoldSwishPattern1>();
-                p.Add<Passes.Rules.Neutral.FoldSwishPattern2>();
-                p.Add<Passes.Rules.Neutral.Relu6ToClamp>();
-                p.Add<Passes.Rules.Neutral.FoldHardSwish1>();
-                p.Add<Passes.Rules.Neutral.FoldHardSwish2>();
-                p.Add<Passes.Rules.Neutral.FoldNopSlice>();
-            });
+            p.Add<Passes.Rules.Neutral.SqueezeTransposeShape>();
+            p.Add<Passes.Rules.Neutral.Squeeze5DTranspose>();
+        });
+        passManager.AddWithName<EGraphRulesPass>("NeutralOptimizeTranspose").Configure(p =>
+        {
+            p.Add<Passes.Rules.Neutral.FoldConstCall>();
+            p.Add<Passes.Rules.Neutral.FoldNopTranspose>();
+            p.Add<Passes.Rules.Neutral.FoldTwoTransposes>();
+            p.Add<Passes.Rules.Neutral.CombineTransposeUnary>();
+            p.Add<Passes.Rules.Neutral.CombineTransposePad>();
+            p.Add<Passes.Rules.Neutral.CombinePadTranspose>();
+            p.Add<Passes.Rules.Neutral.CombineBinaryTranspose>();
+            p.Add<Passes.Rules.Neutral.CombineConstBinaryTranspose>();
+            p.Add<Passes.Rules.Neutral.CombineTransposeConstBinary>();
+            p.Add<Passes.Rules.Neutral.CombineTransposeReduce>();
+            p.Add<Passes.Rules.Neutral.CombineTransposeActivations>();
+            p.Add<Passes.Rules.Neutral.CombineActivationsTranspose>();
+            p.Add<Passes.Rules.Neutral.CombineTransposeConcat>();
+            p.Add<Passes.Rules.Neutral.CombineBinaryReshape>();
+            p.Add<Passes.Rules.Neutral.CombineConstBinaryReshape>();
+            p.Add<Passes.Rules.Neutral.CombineUnaryReshape>();
+            p.Add<Passes.Rules.Neutral.CombineActivationsReshape>();
+            p.Add<Passes.Rules.Neutral.CombineReshapePad>();
+            p.Add<Passes.Rules.Neutral.FoldNopPad>();
+            p.Add<Passes.Rules.Neutral.FoldConv2DPads>();
+            p.Add<Passes.Rules.Neutral.FuseClampConv2D>();
+            p.Add<Passes.Rules.Neutral.FoldReduceWindow2DPads>();
+            p.Add<Passes.Rules.Neutral.SqueezeToReshape>();
+            p.Add<Passes.Rules.Neutral.UnSqueezeToReshape>();
+            p.Add<Passes.Rules.Neutral.TransposeToReshape>();
+            p.Add<Passes.Rules.Neutral.FlattenToReshape>();
+            p.Add<Passes.Rules.Neutral.FoldNopReshape>();
+            p.Add<Passes.Rules.Neutral.FoldTwoReshapes>();
+            p.Add<Passes.Rules.Neutral.FoldLayerNormPattern1>();
+            p.Add<Passes.Rules.Neutral.FoldLayerNormPattern2>();
+            p.Add<Passes.Rules.Neutral.FoldLayerNormPattern3>();
+            p.Add<Passes.Rules.Neutral.FoldGeluWithScale>();
+            p.Add<Passes.Rules.Neutral.FoldGeneralGelu>();
+            p.Add<Passes.Rules.Neutral.FoldSwishPattern1>();
+            p.Add<Passes.Rules.Neutral.FoldSwishPattern2>();
+            p.Add<Passes.Rules.Neutral.Relu6ToClamp>();
+            p.Add<Passes.Rules.Neutral.FoldHardSwish1>();
+            p.Add<Passes.Rules.Neutral.FoldHardSwish2>();
+            p.Add<Passes.Rules.Neutral.FoldNopSlice>();
+        });
 
-            // passManager.AddWithName<EGraphPass>("NeutralOptimizeClamp").Configure(p =>
-            // {
-            //     p.Add<Passes.Rules.Neutral.FoldConstCall>();
-            //     p.Add<Passes.Rules.Neutral.FoldConv2DAddMul>();
-            //     p.Add<Passes.Rules.Neutral.ReluToClamp>();
-            //     p.Add<Passes.Rules.Neutral.Relu6ToClamp>();
-            //     p.Add<Passes.Rules.Neutral.CombineClampAdd>();
-            //     p.Add<Passes.Rules.Neutral.CombineClampMul>();
-            //     p.Add<Passes.Rules.Neutral.FoldNopClamp>();
-            // });
-        }
-
+        // passManager.AddWithName<EGraphPass>("NeutralOptimizeClamp").Configure(p =>
+        // {
+        //     p.Add<Passes.Rules.Neutral.FoldConstCall>();
+        //     p.Add<Passes.Rules.Neutral.FoldConv2DAddMul>();
+        //     p.Add<Passes.Rules.Neutral.ReluToClamp>();
+        //     p.Add<Passes.Rules.Neutral.Relu6ToClamp>();
+        //     p.Add<Passes.Rules.Neutral.CombineClampAdd>();
+        //     p.Add<Passes.Rules.Neutral.CombineClampMul>();
+        //     p.Add<Passes.Rules.Neutral.FoldNopClamp>();
+        // });
         _compileSession.Target.RegisterTargetInDependentPass(passManager, _compileSession.CompileOptions);
 
         if (quantMode == ModelQuantMode.UsePTQ)
@@ -149,27 +145,11 @@ internal class Compiler : ICompiler
     public async Task CompileAsync()
     {
         var target = _compileSession.Target;
-
         await RunPassAsync(p => TargetIndependentPass(p), "TargetIndependentPass");
         await RunPassAsync(p => target.RegisterTargetDependentPass(p, _compileSession.CompileOptions), "TargetDependentPass");
-
-        if (_compileSession.CompileOptions.QuantizeOptions.ModelQuantMode == ModelQuantMode.UsePTQ)
-        {
-            await RunPassAsync(p => target.RegisterQuantizePass(p, _compileSession.CompileOptions), "QuantizePass");
-            await RunPassAsync(p => target.RegisterTargetDependentAfterQuantPass(p, _compileSession.CompileOptions), "TargetDependentAfterQuantPass");
-            await RunPassAsync(
-                pmgr => pmgr.Add<DataflowPass>().Configure(p =>
-                {
-                    p.Name = "ClearMarker";
-                    p.Add<RemoveMarker>();
-                }),
-                "RemoveMarker");
-        }
-
+        await RunPassAsync(p => target.RegisterQuantizePass(p, _compileSession.CompileOptions), "QuantizePass");
+        await RunPassAsync(p => target.RegisterTargetDependentAfterQuantPass(p, _compileSession.CompileOptions), "TargetDependentAfterQuantPass");
         await RunPassAsync(p => target.RegisterTargetDependentBeforeCodeGen(p, _compileSession.CompileOptions), "TargetDependentBeforeCodeGen");
-
-        // fold constant
-        // await RunPassAsync(p => p.Add<ShapeInferPass>(), "ShapeInferAfterCompile");
     }
 
     public void Gencode(Stream output)
