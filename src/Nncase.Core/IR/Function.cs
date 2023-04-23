@@ -22,7 +22,12 @@ public sealed class Function : BaseFunction
     /// Initializes a new instance of the <see cref="Function"/> class.
     /// build function.
     /// </summary>
-    public Function(string name, Expr body, ReadOnlySpan<Var> parameters, Dictionary<Var, Expr[]> varMap = null)
+    public Function(string name, Expr body, ReadOnlySpan<Var> parameters)
+        : this(name, body, parameters, new Dictionary<Var, Expr[]>())
+    {
+    }
+
+    public Function(string name, Expr body, ReadOnlySpan<Var> parameters, Dictionary<Var, Expr[]> varMap)
         : base(name, StackVMModuleKind, ArrayUtility.Concat(body, SpanUtility.UnsafeCast<Var, Expr>(parameters)))
     {
         VarMap = varMap;
@@ -32,10 +37,9 @@ public sealed class Function : BaseFunction
     /// Initializes a new instance of the <see cref="Function"/> class.
     /// build function.
     /// </summary>
-    public Function(Expr body, ReadOnlySpan<Var> parameters, Dictionary<Var, Expr[]> varMap = null)
-        : this($"func_{_globalFuncIndex++}", body, parameters)
+    public Function(Expr body, ReadOnlySpan<Var> parameters)
+        : this($"func_{_globalFuncIndex++}", body, parameters, new Dictionary<Var, Expr[]>())
     {
-        VarMap = varMap;
     }
 
     /// <summary>

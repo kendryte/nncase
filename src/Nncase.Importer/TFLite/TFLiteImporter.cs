@@ -63,7 +63,7 @@ public sealed partial class TFLiteImporter : BaseImporter
     }
 
     /// <inheritdoc/>
-    protected override (IEnumerable<Var>, Dictionary<Var, Expr[]>) CreateInputs()
+    protected override (IEnumerable<Var> Inputs, Dictionary<Var, Expr[]> VarMap) CreateInputs()
     {
         var inputsCount = _subGraph.InputsLength;
         var created_inputs = new Var[inputsCount];

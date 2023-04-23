@@ -21,7 +21,7 @@ internal sealed class ShapeEvaluateProvider : IShapeEvaluateProvider
         _serviceProvider = serviceProvider;
     }
 
-    public Expr EvaluateShapeExpr(Expr expr, IReadOnlyDictionary<Var, Expr[]>? varsMap = null)
+    public Expr EvaluateShapeExpr(Expr expr, IReadOnlyDictionary<Var, Expr[]> varsMap)
     {
         if (expr.CheckedType is null)
         {
@@ -47,11 +47,6 @@ internal sealed class ShapeEvaluateProvider : IShapeEvaluateProvider
                     .Select(field => (Expr)Tensor.From(((TensorType)field).Shape.ToValueArray()));
                 return new IR.Tuple(shapes.ToArray());
             }
-        }
-
-        if (varsMap == null)
-        {
-            varsMap = new Dictionary<Var, Expr[]>();
         }
 
         var evaluatorVisitor = new ShapeEvaluateVisitor(varsMap);

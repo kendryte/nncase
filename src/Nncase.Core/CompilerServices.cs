@@ -586,11 +586,13 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
         return _costEvaluateProvider.EvaluateOpCost(op, context);
     }
 
+    /// <inheritdoc/>
     public Expr EvaluateShapeExpr(Expr expr, IReadOnlyDictionary<Var, Expr[]>? varsMap = null)
     {
-        return _shapeEvaluateProvider.EvaluateShapeExpr(expr, varsMap);
+        return _shapeEvaluateProvider.EvaluateShapeExpr(expr, varsMap ?? new Dictionary<Var, Expr[]>());
     }
 
+    /// <inheritdoc/>
     public Expr EvaluateOpShapeExpr(Op op, IShapeEvaluateContext context)
     {
         return _shapeEvaluateProvider.EvaluateOpShapeExpr(op, context);

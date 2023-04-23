@@ -65,40 +65,6 @@ public class UnitTestShapeEvaluator : TestClassBase
         TestOpShapeEval(input => Unary(UnaryOp.Abs, input));
     }
 
-    private (Var, Expr[]) MakeInput(Dimension[] shape)
-    {
-        var input = new Var(new TensorType(DataTypes.Float32, shape));
-        var newShape = shape.Select(x => x.IsFixed ? x.FixedValue : MakeDim()).ToArray();
-        return (input, newShape);
-    }
-
-    private void TestOpShapeEval(Func<Expr, Expr> exprCtor, Var input, Expr[] newShape)
-    {
-        var varMap = new Dictionary<Var, Expr[]> { { input, newShape } };
-        var expr = exprCtor(input);
-        var shape = expr.EvaluateShapeExpr(varMap);
-        var varValues = newShape.Where(x => x is Var).ToDictionary(x => (Var)x, _ => (IValue)Value.FromTensor(_defaultDim));
-        var shapeValue = shape.Evaluate(varValues).AsTensor().ToArray<int>();
-
-        var fixedShape = newShape.Select(x =>
-        {
-            return x switch
-            {
-                Var => 4,
-                TensorConst t => t.Value.ToScalar<int>(),
-            };
-        }).ToArray();
-        var varsValues = new Dictionary<Var, IValue> { { input, Value.FromTensor(Testing.Rand<float>(fixedShape)) } };
-        var fixedShapeResult = expr.Evaluate(varsValues).AsTensor().Shape.ToValueArray();
-        Assert.Equal(fixedShapeResult, shapeValue);
-    }
-
-    private void TestOpShapeEval(Func<Expr, Expr> exprCtor)
-    {
-        var (input, newShape) = MakeInput(new[] { 2, 3, Dimension.Unknown, 24 });
-        TestOpShapeEval(exprCtor, input, newShape);
-    }
-
     [Fact]
     public void TestBinary()
     {
@@ -236,9 +202,44 @@ public class UnitTestShapeEvaluator : TestClassBase
         var expr = Softmax(Abs(input), 0);
         var varMap = new Dictionary<Var, Expr[]> { { input, newShape } };
         expr.EvaluateShapeExpr(varMap);
-        Assert.NotEqual(null, expr.Metadata.ShapeExpr);
-        Assert.NotEqual(null, expr.Arguments[0].Metadata.ShapeExpr);
+        Assert.NotNull(expr.Metadata.ShapeExpr);
+        Assert.NotNull(expr.Arguments[0].Metadata.ShapeExpr);
     }
 
     private Expr MakeDim() => new Var(new TensorType(DataTypes.Int32, Shape.Scalar));
+
+    private (Var Var, Expr[] NewShape) MakeInput(Dimension[] shape)
+    {
+        var input = new Var(new TensorType(DataTypes.Float32, shape));
+        var newShape = shape.Select(x => x.IsFixed ? x.FixedValue : MakeDim()).ToArray();
+        return (input, newShape);
+    }
+
+    private void TestOpShapeEval(Func<Expr, Expr> exprCtor, Var input, Expr[] newShape)
+    {
+        var varMap = new Dictionary<Var, Expr[]> { { input, newShape } };
+        var expr = exprCtor(input);
+        var shape = expr.EvaluateShapeExpr(varMap);
+        var varValues = newShape.Where(x => x is Var).ToDictionary(x => (Var)x, _ => (IValue)Value.FromTensor(_defaultDim));
+        var shapeValue = shape.Evaluate(varValues).AsTensor().ToArray<int>();
+
+        var fixedShape = newShape.Select(x =>
+        {
+            return x switch
+            {
+                Var => 4,
+                TensorConst t => t.Value.ToScalar<int>(),
+                _ => 4,
+            };
+        }).ToArray();
+        var varsValues = new Dictionary<Var, IValue> { { input, Value.FromTensor(Testing.Rand<float>(fixedShape)) } };
+        var fixedShapeResult = expr.Evaluate(varsValues).AsTensor().Shape.ToValueArray();
+        Assert.Equal(fixedShapeResult, shapeValue);
+    }
+
+    private void TestOpShapeEval(Func<Expr, Expr> exprCtor)
+    {
+        var (input, newShape) = MakeInput(new[] { 2, 3, Dimension.Unknown, 24 });
+        TestOpShapeEval(exprCtor, input, newShape);
+    }
 }

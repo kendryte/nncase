@@ -96,7 +96,7 @@ public abstract class BaseImporter
         }
     }
 
-    protected abstract (IEnumerable<Var>, Dictionary<Var, Expr[]>) CreateInputs();
+    protected abstract (IEnumerable<Var> Inputs, Dictionary<Var, Expr[]> VarMap) CreateInputs();
 
     protected abstract void ConvertOp();
 
