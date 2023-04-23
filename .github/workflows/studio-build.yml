@@ -74,9 +74,9 @@ jobs:
       matrix:
         dotnet-version: ['7.0']
         config:
-          - {name: x86_64-macos, os: macos-latest, shell: bash, project: Nncase.Studio.Maui, rid: osx-x64, buildType: Release}
-          - {name: x86_64-linux, os: ubuntu-latest, shell: bash, project: Nncase.Studio.Gtk, rid: linux-x64, buildType: Release}
-          - {name: x86_64-windows, os: windows-latest, shell: bash, project: Nncase.Studio.Maui, rid: win-x64, buildType: Release}
+          - {name: x86_64-macos, os: macos-latest, shell: bash, project: Nncase.Studio.Maui, framework: net7.0-maccatalyst, rid: osx-x64, buildType: Release}
+          - {name: x86_64-linux, os: ubuntu-latest, shell: bash, project: Nncase.Studio.Gtk, framework: net7.0, rid: linux-x64, buildType: Release}
+          - {name: x86_64-windows, os: windows-latest, shell: bash, project: Nncase.Studio.Maui, framework: net7.0-windows10.0.22000.0, rid: win-x64, buildType: Release}
 
     steps:
       - uses: actions/checkout@v2
@@ -108,8 +108,7 @@ jobs:
         run: |
           dotnet workload restore src/Nncase.Studio/${{matrix.config.project}}/${{matrix.config.project}}.csproj
           dotnet restore src/Nncase.Studio/${{matrix.config.project}} -r ${{matrix.config.rid}}
-          dotnet build src/Nncase.Studio/${{matrix.config.project}} -c ${{matrix.config.buildType}} --no-restore
-          dotnet publish src/Nncase.Studio/${{matrix.config.project}} -c ${{matrix.config.buildType}} --no-restore --sc false -r ${{matrix.config.rid}}
+          dotnet publish src/Nncase.Studio/${{matrix.config.project}} -c ${{matrix.config.buildType}} --no-restore --sc false -r ${{matrix.config.rid}} -f ${{matrix.config.framework}}
 
       - name: Set up Dotnet Test settings
         uses: 1arp/create-a-file-action@0.2
