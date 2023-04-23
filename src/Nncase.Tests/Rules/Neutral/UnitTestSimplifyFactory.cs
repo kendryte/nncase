@@ -38,7 +38,7 @@ public class UnitTestSimplifyFactory
     [Fact]
     public void TestSimplifyFactory()
     {
-        Assert.NotEqual(_simplifyAdd, SimplifyFactory.SimplifyAdd());
-        Assert.NotEqual(_simplifyMul, SimplifyFactory.SimplifyMul());
+        Assert.Equal(_simplifyAdd.ToString(), SimplifyFactory.SimplifyAdd().ToString());
+        Assert.Equal(_simplifyMul.ToString(), SimplifyFactory.SimplifyMul().ToString());
     }
 }

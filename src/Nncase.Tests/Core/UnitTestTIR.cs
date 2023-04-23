@@ -20,9 +20,10 @@ public sealed class UnitTestTIR
     [Fact]
     public void TestLogicalBuffer()
     {
-        var logicalBuffer = new LogicalBuffer("logicalBuffer", default, new TensorConst(new Tensor<int>(new[] { 1 })));
-        Assert.Equal(logicalBuffer.Length, logicalBuffer.Length);
-        Assert.Equal("LogicalBuffer(logicalBuffer, i32, MemLocation)", logicalBuffer.ToString());
+        var logicalBuffer1 = new LogicalBuffer("logicalBuffer", default, new TensorConst(new Tensor<int>(new[] { 1 })));
+        var logicalBuffer2 = new LogicalBuffer("logicalBuffer", DataTypes.Int32, default, new[] { (Expr)new Tensor<int>(new[] { 1 }) });
+        Assert.Equal(logicalBuffer2.Length.ToString(), logicalBuffer1.Length.ToString());
+        Assert.Equal("LogicalBuffer(logicalBuffer, i32, MemLocation)", logicalBuffer1.ToString());
     }
 
     [Fact]

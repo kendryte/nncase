@@ -19,15 +19,15 @@ public sealed class UnitTestBufferAllocation
     [Fact]
     public void TestBufferAllocation()
     {
-        var bufferAllocation = new BufferAllocation(default, DataTypes.Int8, 1UL, 1UL, 1UL, new[] { 1, 1, 1, 1 }, new[] { 1, 1, 1, 1 }, new[] { 1, 1, 1, 1 });
+        var bufferAllocation = new BufferAllocation(default, DataTypes.Int8, 1UL, 1UL, 1UL, new[] { 1, 3, 16, 16 }, new[] { 1, 1, 1, 1 }, new[] { 1 });
         Assert.Equal(default, bufferAllocation.MemoryLocate);
         Assert.Equal(1UL, bufferAllocation.SharedModule);
         Assert.Equal(1UL, bufferAllocation.Start);
         Assert.Equal(DataTypes.Int8, bufferAllocation.DType);
         Assert.Equal(1UL, bufferAllocation.Size);
-        Assert.Equal(new[] { 1, 1, 1, 1 }, bufferAllocation.Shape);
+        Assert.Equal(new[] { 1, 3, 16, 16 }, bufferAllocation.Shape);
         Assert.Equal(new[] { 1, 1, 1, 1 }, bufferAllocation.Strides);
-        Assert.Equal(new[] { 1, 1, 1, 1 }, bufferAllocation.StridesShape);
+        Assert.Equal(new[] { 1 }, bufferAllocation.StridesShape);
         Assert.Equal(2UL, bufferAllocation.LinearEnd());
         Assert.True(bufferAllocation.Overlap(bufferAllocation));
         var bufferAllocationMemoryRange = bufferAllocation.MemoryRange;

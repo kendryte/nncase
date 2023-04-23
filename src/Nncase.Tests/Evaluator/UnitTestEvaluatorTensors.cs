@@ -383,7 +383,7 @@ public class UnitTestEvaluatorTensors : TestClassBase
     {
         var input = Tensor.From<int>(Enumerable.Range(0, 120).ToArray(), new Shape(new[] { 2, 3, 4, 5 }));
         var expr = NHWCToWNCH(input);
-        var expect = Transpose(input, new[] { 3, 0, 1, 2 });
+        var expect = Transpose(input, new[] { 2, 0, 3, 1 });
         Assert.Equal(expr, expect);
     }
 
@@ -682,7 +682,7 @@ public class UnitTestEvaluatorTensors : TestClassBase
     public void TestReduceMean()
     {
         long axis = 0L;
-        long[] keepDims = { 0L, 1L };
+        long keepDims = 0L;
         var a = new float[] { 1, 2, 3, 4, 5, 6, 7, 8 };
         var expr_a = Tensor.From(a, new[] { 2, 4 });
         var expr = IR.F.Tensors.ReduceMean(expr_a, axis, 0f, keepDims);
@@ -696,7 +696,7 @@ public class UnitTestEvaluatorTensors : TestClassBase
     public void TestReduceMin()
     {
         long axis = 0L;
-        long[] keepDims = { 0L, 1L };
+        long keepDims = 0L;
         var a = new float[] { 1, 2, 3, 4, 5, 6, 7, 8 };
         var expr_a = Tensor.From(a, new[] { 2, 4 });
         var expr = IR.F.Tensors.ReduceMin(expr_a, axis, 0f, keepDims);
@@ -710,7 +710,7 @@ public class UnitTestEvaluatorTensors : TestClassBase
     public void TestReduceMax()
     {
         long axis = 0L;
-        long[] keepDims = { 0L, 1L };
+        long keepDims = 0L;
         var a = new float[] { 1, 2, 3, 4, 5, 6, 7, 8 };
         var expr_a = Tensor.From(a, new[] { 2, 4 });
         var expr = IR.F.Tensors.ReduceMax(expr_a, axis, 0f, keepDims);
@@ -724,7 +724,7 @@ public class UnitTestEvaluatorTensors : TestClassBase
     public void TestReduceSum()
     {
         long axis = 0L;
-        long[] keepDims = { 0L, 1L };
+        long keepDims = 0L;
         var a = new float[] { 1, 2, 3, 4, 5, 6, 7, 8 };
         var expr_a = Tensor.From(a, new[] { 2, 4 });
         var expr = IR.F.Tensors.ReduceSum(expr_a, axis, 0f, keepDims);

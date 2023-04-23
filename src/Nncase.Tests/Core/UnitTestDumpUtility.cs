@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using Nncase;
 using Nncase.IR;
 using Nncase.Utilities;
@@ -41,6 +42,7 @@ public sealed class UnitTestDumpUtility
     {
         BinFileUtil.WriteBinInputs(new Tensor[] { new Tensor<int>(new[] { 1 }) }, "./");
         BinFileUtil.WriteBinOutputs(new Tensor[] { new Tensor<int>(new[] { 1 }) }, "./");
-        Assert.True(Directory.Exists("./"));
+        Assert.True(File.Exists("./input_0_0.bin"));
+        Assert.True(File.Exists("./nncase_result_0.bin"));
     }
 }

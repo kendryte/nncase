@@ -24,7 +24,7 @@ public static class Tensors
 
     public static Expr NCHWToNHWC(Expr input) => Transpose(input, new[] { 0, 2, 3, 1 });
 
-    public static Expr NHWCToWNCH(Expr input) => Transpose(input, new[] { 3, 0, 1, 2 });
+    public static Expr NHWCToWNCH(Expr input) => Transpose(input, new[] { 2, 0, 3, 1 });
 
     public static Call Broadcast(Expr input, Expr shape) => new Call(new Broadcast(), input, shape);
 

@@ -27,8 +27,11 @@ public sealed class UnitTestWeakList
         weakList.Add(3);
         weakList.Add(4);
         Assert.Equal(new WeakReference<object>(1).TryGetTarget(out _), weakList.GetWeakReference(0).TryGetTarget(out _));
+    }
 
-#if false
+    [Fact(Skip = "As the class isn't the real WeakList,the GC is no use that the null objects can't be collected")]
+    public void TestWeakListGC()
+    {
         var list = new WeakList<object>();
         var obj1 = new object();
         var obj2 = new object();
@@ -64,7 +67,6 @@ public sealed class UnitTestWeakList
 
         // Check that the enumerator only returns the live objects
         Assert.Equal(new[] { obj2, obj4 }, list.ToList());
-#endif
     }
 
     [Fact]
@@ -85,6 +87,5 @@ public sealed class UnitTestWeakList
 
         // Assert
         Assert.Equal(sizeAfter, sizeBefore);
-        Assert.True(sizeAfter > sizeBefore / 4);
     }
 }
