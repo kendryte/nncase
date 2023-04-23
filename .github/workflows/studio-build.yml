@@ -74,7 +74,7 @@ jobs:
       matrix:
         dotnet-version: ['7.0']
         config:
-          - {name: x86_64-macos, os: macos-latest, shell: bash, project: Nncase.Studio.Maui, framework: net7.0-maccatalyst, rid: maccatalyst-x64, buildType: Release}
+          # - {name: x86_64-macos, os: macos-latest, shell: bash, project: Nncase.Studio.Maui, framework: net7.0-maccatalyst, rid: maccatalyst-x64, buildType: Release}
           - {name: x86_64-linux, os: ubuntu-latest, shell: bash, project: Nncase.Studio.Gtk, framework: net7.0, rid: linux-x64, buildType: Release}
           - {name: x86_64-windows, os: windows-latest, shell: bash, project: Nncase.Studio.Maui, framework: net7.0-windows10.0.22000.0, rid: win10-x64, buildType: Release}
 
