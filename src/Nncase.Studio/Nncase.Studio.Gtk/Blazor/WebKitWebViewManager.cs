@@ -21,22 +21,21 @@ namespace Nncase.Studio.Gtk.Blazor;
 
 public class WebKitWebViewManager : WebViewManager
 {
-    private delegate void void_nint_nint_nint(nint arg0, nint arg1, nint arg2);
-
     private static readonly string _appScheme = "app";
     private static readonly Uri _appBaseUri = new Uri($"{_appScheme}://localhost/");
 
-    private ILogger<WebKitWebViewManager> _logger;
     private readonly WebView _webView;
     private readonly string _relativeHostPath;
-    private readonly void_nint_nint_nint _handleWebMessageDelegate;
+    private readonly GCHandle _thisHandle;
+
+    private ILogger<WebKitWebViewManager> _logger;
 
     public WebKitWebViewManager(WebView webView, IServiceProvider provider, Dispatcher dispatcher, IFileProvider fileProvider, JSComponentConfigurationStore jsComponents, IOptions<BlazorWebViewOptions> options)
         : base(provider, dispatcher, _appBaseUri, fileProvider, jsComponents, options.Value.RelativeHostPath)
     {
         _webView = webView;
         _relativeHostPath = options.Value.RelativeHostPath;
-        _handleWebMessageDelegate = HandleWebMessage;
+        _thisHandle = GCHandle.Alloc(this, GCHandleType.Weak);
         _logger = provider.GetRequiredService<ILogger<WebKitWebViewManager>>();
 
         SetupSchemeHandler();
@@ -56,6 +55,41 @@ public class WebKitWebViewManager : WebViewManager
 
         var script = $"__dispatchMessageCallback(\"{HttpUtility.JavaScriptStringEncode(message)}\")";
         WebKit.webkit_web_view_run_javascript(_webView.Handle, script, nint.Zero, nint.Zero, nint.Zero);
+    }
+
+    [UnmanagedCallersOnly]
+    private static void HandleWebMessage(nint contentManager, nint jsResult, nint arg)
+    {
+        var handle = GCHandle.FromIntPtr(arg);
+        var webViewManager = (WebKitWebViewManager?)handle.Target;
+        if (webViewManager is null)
+        {
+            handle.Free();
+            return;
+        }
+
+        var jsValue = WebKit.webkit_javascript_result_get_js_value(jsResult);
+
+        if (WebKit.jsc_value_is_string(jsValue))
+        {
+            var p = WebKit.jsc_value_to_string(jsValue);
+            var s = Marshal.PtrToStringAuto(p);
+            if (s is not null)
+            {
+                webViewManager._logger.LogDebug($"Received message `{s}`");
+
+                try
+                {
+                    webViewManager.MessageReceived(_appBaseUri, s);
+                }
+                finally
+                {
+                    Marshal.FreeHGlobal(p);
+                }
+            }
+        }
+
+        WebKit.webkit_javascript_result_unref(jsResult);
     }
 
     private void SetupMessageChannel()
@@ -79,9 +113,14 @@ public class WebKitWebViewManager : WebViewManager
         WebKit.webkit_user_content_manager_add_script(_webView.UserContentManager.Handle, script);
         WebKit.webkit_user_script_unref(script);
 
-        Gtk.g_signal_connect(_webView.UserContentManager.Handle, "script-message-received::webview",
-            Marshal.GetFunctionPointerForDelegate(_handleWebMessageDelegate),
-            nint.Zero);
+        unsafe
+        {
+            Gtk.g_signal_connect(
+                _webView.UserContentManager.Handle,
+                "script-message-received::webview",
+                (nint)(delegate* unmanaged<nint, nint, nint, void>)&HandleWebMessage,
+                (nint)_thisHandle);
+        }
 
         WebKit.webkit_user_content_manager_register_script_message_handler(_webView.UserContentManager.Handle, "webview");
     }
@@ -98,7 +137,7 @@ public class WebKitWebViewManager : WebViewManager
     {
         if (request.Scheme != _appScheme)
         {
-            throw new Exception($"Invalid scheme \"{request.Scheme}\"");
+            throw new ArgumentException($"Invalid scheme \"{request.Scheme}\"");
         }
 
         var uri = request.Uri;
@@ -122,33 +161,7 @@ public class WebKitWebViewManager : WebViewManager
         }
         else
         {
-            throw new Exception($"Failed to serve \"{uri}\". {statusCode} - {statusMessage}");
+            throw new InvalidOperationException($"Failed to serve \"{uri}\". {statusCode} - {statusMessage}");
         }
-    }
-
-    private void HandleWebMessage(nint contentManager, nint jsResult, nint arg)
-    {
-        var jsValue = WebKit.webkit_javascript_result_get_js_value(jsResult);
-
-        if (WebKit.jsc_value_is_string(jsValue))
-        {
-            var p = WebKit.jsc_value_to_string(jsValue);
-            var s = Marshal.PtrToStringAuto(p);
-            if (s is not null)
-            {
-                 _logger.LogDebug($"Received message `{s}`");
-
-                try
-                {
-                    MessageReceived(_appBaseUri, s);
-                }
-                finally
-                {
-                    Marshal.FreeHGlobal(p);
-                }
-            }
-        }
-
-        WebKit.webkit_javascript_result_unref(jsResult);
     }
 }
