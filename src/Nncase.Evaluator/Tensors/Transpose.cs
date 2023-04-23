@@ -20,7 +20,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Transpose"/>.
 /// </summary>
-public class TransposeEvaluator : IEvaluator<Transpose>, ITypeInferencer<Transpose>, ICostEvaluator<Transpose>
+public class TransposeEvaluator : IEvaluator<Transpose>, ITypeInferencer<Transpose>, ICostEvaluator<Transpose>, IShapeEvaluator<Transpose>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Transpose tr)
@@ -82,5 +82,25 @@ public class TransposeEvaluator : IEvaluator<Transpose>, ITypeInferencer<Transpo
     {
         var permExpr = context.GetArgument(target, Transpose.Perm);
         return TypeInference.TransposeType(input, permExpr);
+    }
+
+    public Expr Visit(IShapeEvaluateContext context, Transpose target)
+    {
+        var perm = context.GetArgument(target, Transpose.Perm);
+        if (perm is TensorConst permConst)
+        {
+            var permValue = permConst.Value.ToArray<int>();
+            var inShape = context.GetArgumentShape(target, Transpose.Input);
+            var inDims = Enumerable.Range(0, permValue.Length).Select(i => inShape[i]).ToArray();
+            var outShape = new List<Expr>(permValue.Length);
+            for (int i = 0; i < permValue.Length; i++)
+            {
+                outShape[i] = inDims[permValue[i]];
+            }
+
+            return IR.F.Tensors.Stack(outShape.ToArray(), 0);
+        }
+
+        throw new NotImplementedException();
     }
 }

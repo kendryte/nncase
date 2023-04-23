@@ -5,6 +5,7 @@ using System;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
+using Nncase.Utilities;
 using OrtKISharp;
 
 namespace Nncase.Evaluator.Math;
@@ -12,7 +13,7 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Evaluator for <see cref="Binary"/>.
 /// </summary>
-public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binary>, ICostEvaluator<Binary>, IOpPrinter<Binary>
+public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binary>, ICostEvaluator<Binary>, IOpPrinter<Binary>, IShapeEvaluator<Binary>
 {
     /// <inheritdoc />
     public IValue Visit(IEvaluateContext context, Binary binary)
@@ -229,5 +230,12 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
         }
 
         return TypeInference.BroadcastType(lhs, rhs);
+    }
+
+    public Expr Visit(IShapeEvaluateContext context, Binary target)
+    {
+        var lhs = context.GetArgumentShape(target, Binary.Lhs);
+        var rhs = context.GetArgumentShape(target, Binary.Rhs);
+        return ShapeExprUtility.BroadcastShape(lhs, rhs);
     }
 }

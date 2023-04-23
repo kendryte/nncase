@@ -6,17 +6,25 @@ using System.Collections.Generic;
 using System.Linq;
 using NetFabric.Hyperlinq;
 using Nncase.CostModel;
+using Nncase.Evaluator.Math;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
+using Nncase.Utilities;
 using OrtKISharp;
+using Tensorflow;
+using Slice = Nncase.IR.Tensors.Slice;
+using static Nncase.IR.F.Tensors;
+using static Nncase.IR.F.Math;
+using Dimension = Nncase.IR.Dimension;
+using Shape = Nncase.IR.Shape;
 
 namespace Nncase.Evaluator.Tensors;
 
 /// <summary>
 /// Evaluator for <see cref="Slice"/>.
 /// </summary>
-public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEvaluator<Slice>
+public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEvaluator<Slice>, IShapeEvaluator<Slice>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Slice sl)
@@ -140,5 +148,27 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
         }
 
         return input with { Shape = outShape };
+    }
+
+    public Expr Visit(IShapeEvaluateContext context, Slice target)
+    {
+        var inShape = context.GetArgumentShape(target, Slice.Input);
+        var begins = context.GetArgument(target, Slice.Begins);
+        var ends = context.GetArgument(target, Slice.Ends);
+        var strides = context.GetArgument(target, Slice.Strides);
+        var axes = context.GetArgument(target, Slice.Axes);
+        var size = axes.CheckedShape.Count;
+        var outDims = Enumerable.Range(0, size).Select(i =>
+        {
+            var begin = begins[i];
+            var end = ends[i];
+            var stride = strides[i];
+            var dim = inShape[i];
+            var strideIsNeg = stride < 0;
+            begin = new If(strideIsNeg, Clamp(begin, 0, dim - 1), Clamp(begin, 0, dim));
+            end = new If(strideIsNeg, Clamp(end, -1, dim), Clamp(end, 0, dim));
+            return Ceil(Abs(end - begin) / Abs(stride));
+        }).ToArray();
+        return Stack(new IR.Tuple(outDims), 0);
     }
 }

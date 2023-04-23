@@ -6,14 +6,17 @@ using System.Linq;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
+using Nncase.Utilities;
 using OrtKISharp;
+using static Nncase.IR.F.Tensors;
+using MatMul = Nncase.IR.Math.MatMul;
 
 namespace Nncase.Evaluator.Math;
 
 /// <summary>
 /// Evaluator for <see cref="MatMul"/>.
 /// </summary>
-public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICostEvaluator<MatMul>
+public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICostEvaluator<MatMul>, IShapeEvaluator<MatMul>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, MatMul matMul)
@@ -90,5 +93,29 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         var front = bigShape;
         var end = new[] { lhs.Shape[^2], rhs.Shape[^1] };
         return new TensorType(lhs.DType, front.Concat(end).ToArray());
+    }
+
+    public Expr Visit(IShapeEvaluateContext context, MatMul target)
+    {
+        var lhsRank = context.GetArgument(target, MatMul.Lhs).CheckedShape.Rank;
+        var rhsRank = context.GetArgument(target, MatMul.Rhs).CheckedShape.Rank;
+        var lhsShape = context.GetArgumentShape(target, MatMul.Rhs);
+        var rhsShape = context.GetArgumentShape(target, MatMul.Rhs);
+
+        Expr lhs, rhs;
+        if (lhsRank >= rhsRank)
+        {
+            lhs = ShapeExprUtility.Slice(lhsShape, 0, lhsRank - 2);
+            rhs = Enumerable.Repeat(1, lhsRank - rhsRank).ToArray();
+        }
+        else
+        {
+            lhs = Enumerable.Repeat(1, rhsRank - lhsRank).ToArray();
+            rhs = ShapeExprUtility.Slice(rhsShape, 0, rhsRank - 2);
+        }
+
+        var front = IR.F.Math.Max(lhs, rhs);
+        var end = Stack(new IR.Tuple(lhsShape[lhsRank - 2], rhsShape[rhsRank - 1]), 0);
+        return Concat(new IR.Tuple(front, end), 0);
     }
 }

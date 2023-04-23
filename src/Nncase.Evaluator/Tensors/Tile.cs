@@ -17,7 +17,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Tile"/>.
 /// </summary>
-public class TileEvaluator : IEvaluator<Tile>, ITypeInferencer<Tile>, ICostEvaluator<Tile>
+public class TileEvaluator : IEvaluator<Tile>, ITypeInferencer<Tile>, ICostEvaluator<Tile>, IShapeEvaluator<Tile>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Tile tile)
@@ -58,5 +58,12 @@ public class TileEvaluator : IEvaluator<Tile>, ITypeInferencer<Tile>, ICostEvalu
         return new TensorType(
             input.DType,
             new Shape(Enumerable.Repeat(Dimension.Unknown, input.Shape.Rank)));
+    }
+
+    public Expr Visit(IShapeEvaluateContext context, Tile target)
+    {
+        var inShape = context.GetArgumentShape(target, Tile.Input);
+        var repeats = context.GetArgument(target, Tile.Repeats);
+        return inShape * repeats;
     }
 }

@@ -8,14 +8,18 @@ using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
+using Nncase.Utilities;
 using OrtKISharp;
+using Concat = Nncase.IR.Tensors.Concat;
+using static Nncase.IR.F.Tensors;
 
 namespace Nncase.Evaluator.Tensors;
 
 /// <summary>
 /// Evaluator for <see cref="Concat"/>.
 /// </summary>
-public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICostEvaluator<Concat>
+public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICostEvaluator<Concat>,
+    IShapeEvaluator<Concat>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Concat cat)
@@ -73,7 +77,8 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
             allDType ??= type.DType;
             if (allDType != type.DType)
             {
-                return new InvalidType($"The ConCat Item[{i}] Must Be {allDType} But Get {type.DType.GetDisplayName()}");
+                return new InvalidType(
+                    $"The ConCat Item[{i}] Must Be {allDType} But Get {type.DType.GetDisplayName()}");
             }
         }
 
@@ -160,5 +165,16 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
         {
             return Dimension.Unknown;
         }
+    }
+
+    public Expr Visit(IShapeEvaluateContext context, Concat target)
+    {
+        var inShape = context.GetArgumentShape(target, Concat.Input);
+        var axis = context.GetArgument(target, Concat.Axis);
+        var axisV = ShapeExprUtility.Positive(axis, inShape[0]);
+        var inShapes = ((IR.Tuple)inShape).Fields;
+        var dim = inShapes.ToArray().Aggregate((Expr)0, (sum, shape) => sum + shape[axisV]);
+        var outShape = ShapeExprUtility.Replace(inShapes[0], axisV, dim);
+        return outShape;
     }
 }

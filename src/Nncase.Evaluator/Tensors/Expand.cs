@@ -18,7 +18,7 @@ namespace Nncase.Evaluator.Tensors;
 /// Evaluator for <see cref="Expand"/>.
 /// </summary>
 [TypeInferGenerator]
-public sealed partial class ExpandEvaluator : IEvaluator<Expand>, ITypeInferencer<Expand>, ICostEvaluator<Expand>
+public sealed partial class ExpandEvaluator : IEvaluator<Expand>, ITypeInferencer<Expand>, ICostEvaluator<Expand>, IShapeEvaluator<Expand>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Expand expand)
@@ -47,5 +47,11 @@ public sealed partial class ExpandEvaluator : IEvaluator<Expand>, ITypeInference
         {
             return input with { Shape = TypeInference.ReshapeTo(shape) };
         }
+    }
+
+    public Expr Visit(IShapeEvaluateContext context, Expand target)
+    {
+        var shape = context.GetArgument(target, Expand.Shape);
+        return shape;
     }
 }

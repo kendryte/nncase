@@ -7,16 +7,19 @@ using System.Linq;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
+using Nncase.Utilities;
 using OrtKISharp;
 using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.Utility;
+using static Nncase.IR.F.Tensors;
+using Reduce = Nncase.IR.Math.Reduce;
 
 namespace Nncase.Evaluator.Math;
 
 /// <summary>
 /// Evaluator for <see cref="Reduce"/>.
 /// </summary>
-public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICostEvaluator<Reduce>
+public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICostEvaluator<Reduce>, IShapeEvaluator<Reduce>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Reduce reduce)
@@ -95,5 +98,35 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICos
     {
         var args = context.GetArguments(target, Reduce.KeepDims, Reduce.Axis);
         return TypeInference.ReduceType(input, args[0], args[1]);
+    }
+
+    public Expr Visit(IShapeEvaluateContext context, Reduce target)
+    {
+        var keepDims = context.GetArgument(target, Reduce.KeepDims);
+        var axis = context.GetArgument(target, Reduce.Axis);
+        if (keepDims is TensorConst keepDimsV &&
+            axis is TensorConst axisValue)
+        {
+            var outShape = context.GetArgumentShape(target, Reduce.Input);
+            var inShape = context.GetArgumentShape(target, Reduce.Input);
+            var axes = axisValue.Value.Cast<int>();
+            var keepDimsValue = keepDimsV.Value.ToScalar<int>();
+            foreach (var axValue in axes)
+            {
+                var ax = ShapeExprUtility.Positive(axValue, inShape);
+                if (keepDimsValue == 1)
+                {
+                    outShape = ShapeExprUtility.Replace(outShape, ax, 1);
+                }
+                else
+                {
+                    outShape = ShapeExprUtility.Remove(outShape, ax);
+                }
+            }
+
+            return outShape;
+        }
+
+        throw new NotImplementedException();
     }
 }

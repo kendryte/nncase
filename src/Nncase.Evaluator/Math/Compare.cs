@@ -5,6 +5,7 @@ using System;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
+using Nncase.Utilities;
 using OrtKISharp;
 
 namespace Nncase.Evaluator.Math;
@@ -12,7 +13,7 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Evaluator for <see cref="Compare"/>.
 /// </summary>
-public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, ICostEvaluator<Compare>, IOpPrinter<Compare>
+public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, ICostEvaluator<Compare>, IOpPrinter<Compare>, IShapeEvaluator<Compare>
 {
     /// <inheritdoc />
     public IValue Visit(IEvaluateContext context, Compare target)
@@ -90,5 +91,12 @@ public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, I
     private IRType Visit(TensorType lhs, TensorType rhs)
     {
         return ((TensorType)TypeInference.BroadcastType(lhs, rhs)) with { DType = DataTypes.Boolean };
+    }
+
+    public Expr Visit(IShapeEvaluateContext context, Compare target)
+    {
+        var lhs = context.GetArgumentShape(target, Compare.Lhs);
+        var rhs = context.GetArgumentShape(target, Compare.Rhs);
+        return ShapeExprUtility.BroadcastShape(lhs, rhs);
     }
 }
