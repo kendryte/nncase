@@ -47,7 +47,7 @@ public abstract class BaseImporter
     /// <returns>IRModule.</returns>
     public IRModule Import()
     {
-        var inputs = CreateInputs().ToArray();
+        var (inputs, varMap) = CreateInputs();
         ConvertOp();
         SupportedCheck(GetType().Name.Split("Importer")[0]);
         var outputs = CreateOutputs();
@@ -57,7 +57,7 @@ public abstract class BaseImporter
             DumpOpsInModel(Dumpper.OpenFile("OpsInModel.txt"));
         }
 
-        var module = CreateModule(inputs.ToArray(), outputs);
+        var module = CreateModule(inputs.ToArray(), varMap, outputs);
 
         // GC here as large models often leave much garbage.
         GC.Collect();
@@ -96,7 +96,7 @@ public abstract class BaseImporter
         }
     }
 
-    protected abstract IEnumerable<Var> CreateInputs();
+    protected abstract (IEnumerable<Var>, Dictionary<Var, Expr[]>) CreateInputs();
 
     protected abstract void ConvertOp();
 
@@ -122,9 +122,9 @@ public abstract class BaseImporter
         }
     }
 
-    private IRModule CreateModule(Var[] inputs, Expr body)
+    private IRModule CreateModule(Var[] inputs, Dictionary<Var, Expr[]> varMap,  Expr body)
     {
-        var mainFunc = new Function("main", body, inputs);
+        var mainFunc = new Function("main", body, inputs, varMap);
         var module = new IRModule(mainFunc);
         return module;
     }

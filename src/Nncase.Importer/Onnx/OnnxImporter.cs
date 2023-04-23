@@ -46,7 +46,7 @@ public sealed partial class OnnxImporter : BaseImporter
     }
 
     /// <inheritdoc/>
-    protected override IEnumerable<Var> CreateInputs()
+    protected override (IEnumerable<Var>, Dictionary<Var, Expr[]>) CreateInputs()
     {
         _constTensors = _graph.Initializer
             .ToDictionary(tensor => tensor.Name, tensor => tensor);
@@ -59,7 +59,7 @@ public sealed partial class OnnxImporter : BaseImporter
             .ToDictionary(tup => tup.Item1, tup => tup.Item2);
 
         _outputTensors = createdInputs.ToDictionary(n => n.Name, n => (Expr)n);
-        return createdInputs;
+        return (createdInputs, varMap);
     }
 
     /// <inheritdoc/>
