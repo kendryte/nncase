@@ -62,11 +62,13 @@ internal partial class Quantizer
                 // 1.2. Select best ranges
                 var optRanges = GetOptRanges(histograms, ranges, srcBinSize, dstBinSize, _quantizeOptions.CalibrationMethod);
 
-                ranges = optRanges;
+                // 1.3. Assign ranges
+                AssignRanges(optRanges);
             }
-
-            // 2. Assign ranges
-            AssignRanges(ranges);
+            else
+            { // 2. Assign ranges
+                AssignRanges(ranges);
+            }
 
             // 3. Export quant info
             if (_quantizeOptions.ExportQuantScheme == true)
