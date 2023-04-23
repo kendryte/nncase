@@ -48,7 +48,6 @@ public sealed class UnitTestWeakList
         Assert.Equal(new WeakReference<object>(obj3).TryGetTarget(out _), list.GetWeakReference(2).TryGetTarget(out _));
 
         // Let some objects get collected
-        obj1 = null;
         GC.Collect();
 
         // Check that the enumerator only returns the live objects
@@ -61,8 +60,6 @@ public sealed class UnitTestWeakList
         list.Add(obj5);
 
         // Let some more objects get collected
-        obj3 = null;
-        obj5 = null;
         GC.Collect();
 
         // Check that the enumerator only returns the live objects
