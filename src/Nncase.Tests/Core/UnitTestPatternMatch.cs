@@ -47,7 +47,7 @@ public sealed class UnitTestPatternMatch
     [Fact]
     public void TestPatternMatch()
     {
-        var input = IR.F.Random.Normal(new[] { 1, 1, 1, 1 });
+        _ = IR.F.Random.Normal(new[] { 1, 1, 1, 1 });
         Math.Abs(1f);
         Math.Ceil(1f);
         Math.Cos(1f);
