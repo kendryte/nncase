@@ -74,9 +74,9 @@ jobs:
       matrix:
         dotnet-version: ['7.0']
         config:
-          - {name: x86_64-macos, os: macos-latest, shell: bash, project: Nncase.Studio.Maui, framework: net7.0-maccatalyst, rid: osx-x64, buildType: Release}
+          - {name: x86_64-macos, os: macos-latest, shell: bash, project: Nncase.Studio.Maui, framework: net7.0-maccatalyst, rid: maccatalyst-x64, buildType: Release}
           - {name: x86_64-linux, os: ubuntu-latest, shell: bash, project: Nncase.Studio.Gtk, framework: net7.0, rid: linux-x64, buildType: Release}
-          - {name: x86_64-windows, os: windows-latest, shell: bash, project: Nncase.Studio.Maui, framework: net7.0-windows10.0.22000.0, rid: win-x64, buildType: Release}
+          - {name: x86_64-windows, os: windows-latest, shell: bash, project: Nncase.Studio.Maui, framework: net7.0-windows10.0.22000.0, rid: win10-x64, buildType: Release}
 
     steps:
       - uses: actions/checkout@v2
@@ -102,6 +102,7 @@ jobs:
       - name: Set up build environment (Macos)
         run: |
           brew install sunnycase/core/libomp@11.1.0
+          dotnet workload install maui-maccatalyst
         if: runner.os == 'Macos'
 
       - name: Build
@@ -136,5 +137,5 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: nncase-studio-${{matrix.config.name}}
-          path: ${{github.workspace}}/src/Nncase.Studio/${{matrix.config.project}}/bin/${{matrix.config.buildType}}/net${{matrix.dotnet-version}}/${{matrix.config.rid}}/publish
+          path: ${{github.workspace}}/src/Nncase.Studio/${{matrix.config.project}}/bin/${{matrix.config.buildType}}/net${{matrix.config.framework}}/${{matrix.config.rid}}/publish
           if-no-files-found: error

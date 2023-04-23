@@ -24,7 +24,7 @@ public partial class Welcome
         var folder = await FolderPicker.PickFolderAsync("打开工作区");
         if (!string.IsNullOrEmpty(folder))
         {
-            NavigationManager.NavigateTo($"workspace/{folder}");
+            NavigationManager.NavigateTo($"workspace?path={Uri.EscapeDataString(folder)}");
         }
     }
 }

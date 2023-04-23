@@ -15,7 +15,7 @@ internal sealed class FolderPicker : IFolderPicker
 {
     public Task<string?> PickFolderAsync(string title, string? defaultPath = null)
     {
-        var fileChooser = new FileChooserDialog(
+        using var fileChooser = new FileChooserDialog(
             title,
             null!,
             FileChooserAction.SelectFolder,

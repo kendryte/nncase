@@ -13,5 +13,6 @@ namespace Nncase.Studio.Pages;
 public partial class Workspace
 {
     [Parameter]
+    [SupplyParameterFromQuery(Name = "path")]
     public string WorkingDirectory { get; set; } = default!;
 }
