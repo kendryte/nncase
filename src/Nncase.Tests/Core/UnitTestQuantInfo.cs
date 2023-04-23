@@ -17,21 +17,21 @@ public sealed class UnitTestQuantInfo
     public void TestMixQuantInfo()
     {
         var mixQuantInfo = new MixQuantInfo();
-        var quantParameter = mixQuantInfo.QuantParameter;
-        bool hasBindedMixQuantInfo = mixQuantInfo.HasBindedMixQuantInfo;
-        var markerQuantType = mixQuantInfo.MarkerQuantType;
-        bool doSquant = mixQuantInfo.DoSquant;
-        var i8FineTunedWeights = mixQuantInfo.I8FineTunedWeights;
-        var u8FineTunedWeights = mixQuantInfo.U8FineTunedWeights;
-        var i8FineTunedWeightsRangesByChannel = mixQuantInfo.I8FineTunedWeightsRangesByChannel;
-        var u8FineTunedWeightsRangesByChannel = mixQuantInfo.U8FineTunedWeightsRangesByChannel;
+        _ = mixQuantInfo.QuantParameter;
+        _ = mixQuantInfo.HasBindedMixQuantInfo;
+        _ = mixQuantInfo.MarkerQuantType;
+        _ = mixQuantInfo.DoSquant;
+        _ = mixQuantInfo.I8FineTunedWeights;
+        _ = mixQuantInfo.U8FineTunedWeights;
+        _ = mixQuantInfo.I8FineTunedWeightsRangesByChannel;
+        _ = mixQuantInfo.U8FineTunedWeightsRangesByChannel;
     }
 
     [Fact]
     public void TestAdaQuantInfo()
     {
         var adaQuantInfo = new AdaQuantInfo();
-        var inputQuantParameter = adaQuantInfo.InputQuantParameter;
-        var adaRoundRefTensor = adaQuantInfo.AdaRoundRefTensor;
+        _ = adaQuantInfo.InputQuantParameter;
+        _ = adaQuantInfo.AdaRoundRefTensor;
     }
 }
