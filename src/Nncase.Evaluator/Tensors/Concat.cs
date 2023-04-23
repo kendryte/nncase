@@ -98,6 +98,11 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
             return result;
         }
 
+        var sameRank = inputs.All(input => ((TensorType)input).Shape.Rank == ((TensorType)inputs[0]).Shape.Rank);
+        if (!sameRank)
+        {
+            return new InvalidType("Inputs of concat should be same rank");
+        }
         var input0 = (TensorType)inputs[0];
         InvalidType? invalidType = null;
         var axisV = ((TensorConst)context.GetArgument(target, Concat.Axis)).Value.ToScalar<int>();

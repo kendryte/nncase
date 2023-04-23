@@ -51,7 +51,7 @@ internal sealed class ShapeEvaluateProvider : IShapeEvaluateProvider
 
         if (varsMap == null)
         {
-            throw new InvalidOperationException();
+            varsMap = new Dictionary<Var, Expr[]>();
         }
 
         var evaluatorVisitor = new ShapeEvaluateVisitor(varsMap);

@@ -99,11 +99,16 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
     {
         var lhsRank = context.GetArgument(target, MatMul.Lhs).CheckedShape.Rank;
         var rhsRank = context.GetArgument(target, MatMul.Rhs).CheckedShape.Rank;
-        var lhsShape = context.GetArgumentShape(target, MatMul.Rhs);
+        var lhsShape = context.GetArgumentShape(target, MatMul.Lhs);
         var rhsShape = context.GetArgumentShape(target, MatMul.Rhs);
 
         Expr lhs, rhs;
-        if (lhsRank >= rhsRank)
+        if (lhsRank == rhsRank)
+        {
+            lhs = ShapeExprUtility.Slice(lhsShape, 0, lhsRank - 2);
+            rhs = ShapeExprUtility.Slice(rhsShape, 0, rhsRank - 2);
+        }
+        else if (lhsRank > rhsRank)
         {
             lhs = ShapeExprUtility.Slice(lhsShape, 0, lhsRank - 2);
             rhs = Enumerable.Repeat(1, lhsRank - rhsRank).ToArray();

@@ -156,8 +156,7 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
         var begins = context.GetArgument(target, Slice.Begins);
         var ends = context.GetArgument(target, Slice.Ends);
         var strides = context.GetArgument(target, Slice.Strides);
-        var axes = context.GetArgument(target, Slice.Axes);
-        var size = axes.CheckedShape.Count;
+        var size = context.GetArgument(target, Slice.Input).CheckedShape.Rank;
         var outDims = Enumerable.Range(0, size).Select(i =>
         {
             var begin = begins[i];

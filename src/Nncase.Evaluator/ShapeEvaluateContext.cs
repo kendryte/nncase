@@ -44,7 +44,6 @@ internal sealed class ShapeEvaluateContext : IShapeEvaluateContext
 
     public Expr GetArgumentShape(Op op, ParameterInfo parameter)
     {
-        // todo: try get, or ShapeOf
         return _memo[GetArgument(op, parameter)];
     }
 

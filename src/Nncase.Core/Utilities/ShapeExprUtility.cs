@@ -7,7 +7,7 @@ public static class ShapeExprUtility
 {
     public static Expr BroadcastShape(Expr lhsShape, params Expr[] rhsShape)
     {
-        var tmpTensor = new[] { lhsShape }
+        var tmpTensor = new[] { ConstantOfShape(lhsShape, 0) }
             .Concat(rhsShape)
             .Aggregate((sum, shape) => ConstantOfShape(shape, 0) * sum);
         return ShapeOf(tmpTensor);
@@ -19,7 +19,10 @@ public static class ShapeExprUtility
         return new If(axis < 0, axis + rank, axis);
     }
 
-    private static Expr StackOne(Expr expr) => Stack(new IR.Tuple(expr), 0);
+    private static Expr StackOne(Expr expr)
+    {
+        return Stack(new IR.Tuple(expr), 0);
+    }
 
     public static Expr Slice(Expr shape, int begin, int end)
     {
@@ -52,6 +55,8 @@ public static class ShapeExprUtility
     {
         var front = Slice(shapeExpr, 0, index);
         var last = Slice(shapeExpr, index + indexOffset, int.MaxValue);
-        return Concat(new IR.Tuple(front, value, last), 0);
+        return Concat(new IR.Tuple(front, StackOne(value), last), 0);
     }
+
+    public static Expr ShapeOf(Expr expr) => Cast(IR.F.Tensors.ShapeOf(expr), DataTypes.Int32);
 }

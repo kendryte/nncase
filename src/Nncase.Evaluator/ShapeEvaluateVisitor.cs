@@ -5,8 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive;
-using System.Text.Unicode;
-using NetFabric.Hyperlinq;
 using Nncase.IR;
 
 namespace Nncase.Evaluator;
@@ -20,22 +18,20 @@ internal sealed class ShapeEvaluateVisitor : ExprVisitor<Expr, Unit>
         _context = new ShapeEvaluateContext(ExprMemo, varMap);
     }
 
+    protected override Expr DispatchVisit(Expr expr)
+    {
+        if (expr.Metadata.ShapeExpr is null)
+        {
+            expr.Metadata.ShapeExpr = base.DispatchVisit(expr);
+        }
+
+        return expr.Metadata.ShapeExpr;
+    }
+
     /// <inheritdoc/>
     protected override Expr VisitLeafConst(Const expr)
     {
         return expr.CheckedShape.ToValueArray();
-    }
-
-    /// <inheritdoc/>
-    protected override Expr VisitLeafMarker(Marker expr)
-    {
-        throw new NotImplementedException();
-    }
-
-    /// <inheritdoc/>
-    protected override Expr VisitLeafNone(None expr)
-    {
-        throw new NotImplementedException();
     }
 
     /// <inheritdoc/>
