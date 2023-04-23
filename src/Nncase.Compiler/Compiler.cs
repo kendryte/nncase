@@ -75,6 +75,7 @@ internal class Compiler : ICompiler
             passManager.AddWithName<DataflowPass>("SqueezeShape").Configure(p =>
             {
                 p.Add<Passes.Rules.Neutral.SqueezeTransposeShape>();
+                p.Add<Passes.Rules.Neutral.Squeeze5DTranspose>();
             });
             passManager.AddWithName<EGraphRulesPass>("NeutralOptimizeTranspose").Configure(p =>
             {
@@ -95,6 +96,7 @@ internal class Compiler : ICompiler
                 p.Add<Passes.Rules.Neutral.CombineConstBinaryReshape>();
                 p.Add<Passes.Rules.Neutral.CombineUnaryReshape>();
                 p.Add<Passes.Rules.Neutral.CombineActivationsReshape>();
+                p.Add<Passes.Rules.Neutral.CombineReshapePad>();
                 p.Add<Passes.Rules.Neutral.FoldNopPad>();
                 p.Add<Passes.Rules.Neutral.FoldConv2DPads>();
                 p.Add<Passes.Rules.Neutral.FoldReduceWindow2DPads>();
@@ -111,7 +113,9 @@ internal class Compiler : ICompiler
                 p.Add<Passes.Rules.Neutral.FoldGeneralGelu>();
                 p.Add<Passes.Rules.Neutral.FoldSwishPattern1>();
                 p.Add<Passes.Rules.Neutral.FoldSwishPattern2>();
-                p.Add<Passes.Rules.Neutral.FoldHardSwish>();
+                p.Add<Passes.Rules.Neutral.FoldHardSwish1>();
+                p.Add<Passes.Rules.Neutral.FoldHardSwish2>();
+                p.Add<Passes.Rules.Neutral.FoldNopSlice>();
             });
 
             // passManager.AddWithName<EGraphPass>("NeutralOptimizeClamp").Configure(p =>

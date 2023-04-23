@@ -203,6 +203,8 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         # [n, c, h, w].zip default_shape => [(n, 1), (c, 1), (h, 48), (w, 48)]
         self.default_shape = [1, 1, 48, 48, 24, 24]
         self.shape_vars = {}
+        # used for tag dynamic model for onnx simplify
+        self.dynamic = False
 
     def transform_input(self, values: List[np.ndarray], type: str, stage: str) -> List[np.ndarray]:
         new_values = []
@@ -479,6 +481,8 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
             ptq_options.finetune_weights_method = cfg.compile_opt.finetune_weights_method
             ptq_options.use_mix_quant = cfg.compile_opt.use_mix_quant
             ptq_options.quant_scheme = cfg.compile_opt.quant_scheme
+            ptq_options.export_quant_scheme = cfg.compile_opt.export_quant_scheme
+            ptq_options.export_weight_range_by_channel = cfg.compile_opt.export_weight_range_by_channel
             compiler.use_ptq(ptq_options)
 
     def write_preprocess_opt(self, dict_args):

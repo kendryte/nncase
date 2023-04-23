@@ -122,10 +122,10 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
                         else
                         {
                             // starts[i] is clamped into the range [0, dims[axes[i]]]
-                            var begin = System.Math.Clamp(ts_begins[i], 0L, inDim);
+                            var begin = ts_begins[i] < 0 ? inDim + ts_begins[i] : System.Math.Clamp(ts_begins[i], 0L, inDim);
 
                             // end[i] is clamped into the range [0, dims[axes[i]]]
-                            var end = System.Math.Clamp(ts_ends[i], 0L, inDim);
+                            var end = ts_ends[i] < 0 ? inDim + ts_ends[i] : System.Math.Clamp(ts_ends[i], 0L, inDim);
                             return (int)System.Math.Ceiling((float)System.Math.Abs(end - begin) /
                                                             System.Math.Abs(stride));
                         }
