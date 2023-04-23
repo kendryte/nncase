@@ -11,6 +11,7 @@
         <SingleProject>true</SingleProject>
         <ImplicitUsings>enable</ImplicitUsings>
         <EnableDefaultCssItems>false</EnableDefaultCssItems>
+        <PublishReadyToRun>false</PublishReadyToRun>
 
         <!-- Display name -->
         <ApplicationTitle>nncase studio</ApplicationTitle>
