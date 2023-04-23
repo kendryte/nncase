@@ -140,6 +140,9 @@ void fused_unary::compile_graph(const std::vector<fused_unary_op> &subgraph, cod
             case unary_logical_not:
                 builder.emit_logical_not();
                 break;
+            case unary_erf:
+                builder.emit_erf();
+                break;
             default:
                 throw std::invalid_argument("Unsupported unary op for nnil: " + (std::string)magic_enum::enum_name(op.unary.unary_op));
             }
