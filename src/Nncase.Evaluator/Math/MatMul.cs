@@ -55,6 +55,35 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         };
     }
 
+    public Expr Visit(IShapeEvaluateContext context, MatMul target)
+    {
+        var lhsRank = context.GetArgument(target, MatMul.Lhs).CheckedShape.Rank;
+        var rhsRank = context.GetArgument(target, MatMul.Rhs).CheckedShape.Rank;
+        var lhsShape = context.GetArgumentShape(target, MatMul.Lhs);
+        var rhsShape = context.GetArgumentShape(target, MatMul.Rhs);
+
+        Expr lhs, rhs;
+        if (lhsRank == rhsRank)
+        {
+            lhs = ShapeExprUtility.Slice(lhsShape, 0, lhsRank - 2);
+            rhs = ShapeExprUtility.Slice(rhsShape, 0, rhsRank - 2);
+        }
+        else if (lhsRank > rhsRank)
+        {
+            lhs = ShapeExprUtility.Slice(lhsShape, 0, lhsRank - 2);
+            rhs = Enumerable.Repeat(1, lhsRank - rhsRank).ToArray();
+        }
+        else
+        {
+            lhs = Enumerable.Repeat(1, rhsRank - lhsRank).ToArray();
+            rhs = ShapeExprUtility.Slice(rhsShape, 0, rhsRank - 2);
+        }
+
+        var front = IR.F.Math.Max(lhs, rhs);
+        var end = Stack(new IR.Tuple(lhsShape[lhsRank - 2], rhsShape[rhsRank - 1]), 0);
+        return Concat(new IR.Tuple(front, end), 0);
+    }
+
     private IRType Visit(TensorType lhs, TensorType rhs)
     {
         if (lhs.Shape.IsUnranked || rhs.Shape.IsUnranked)
@@ -93,34 +122,5 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         var front = bigShape;
         var end = new[] { lhs.Shape[^2], rhs.Shape[^1] };
         return new TensorType(lhs.DType, front.Concat(end).ToArray());
-    }
-
-    public Expr Visit(IShapeEvaluateContext context, MatMul target)
-    {
-        var lhsRank = context.GetArgument(target, MatMul.Lhs).CheckedShape.Rank;
-        var rhsRank = context.GetArgument(target, MatMul.Rhs).CheckedShape.Rank;
-        var lhsShape = context.GetArgumentShape(target, MatMul.Lhs);
-        var rhsShape = context.GetArgumentShape(target, MatMul.Rhs);
-
-        Expr lhs, rhs;
-        if (lhsRank == rhsRank)
-        {
-            lhs = ShapeExprUtility.Slice(lhsShape, 0, lhsRank - 2);
-            rhs = ShapeExprUtility.Slice(rhsShape, 0, rhsRank - 2);
-        }
-        else if (lhsRank > rhsRank)
-        {
-            lhs = ShapeExprUtility.Slice(lhsShape, 0, lhsRank - 2);
-            rhs = Enumerable.Repeat(1, lhsRank - rhsRank).ToArray();
-        }
-        else
-        {
-            lhs = Enumerable.Repeat(1, rhsRank - lhsRank).ToArray();
-            rhs = ShapeExprUtility.Slice(rhsShape, 0, rhsRank - 2);
-        }
-
-        var front = IR.F.Math.Max(lhs, rhs);
-        var end = Stack(new IR.Tuple(lhsShape[lhsRank - 2], rhsShape[rhsRank - 1]), 0);
-        return Concat(new IR.Tuple(front, end), 0);
     }
 }

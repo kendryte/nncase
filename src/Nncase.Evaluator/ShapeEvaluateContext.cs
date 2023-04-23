@@ -16,12 +16,14 @@ namespace Nncase.Evaluator;
 internal sealed class ShapeEvaluateContext : IShapeEvaluateContext
 {
     private readonly Dictionary<Expr, Expr> _memo;
-    public IReadOnlyDictionary<Var, Expr[]> VarMap { get; }
+
     public ShapeEvaluateContext(Dictionary<Expr, Expr> memo, IReadOnlyDictionary<Var, Expr[]> varMap)
     {
         _memo = memo;
         VarMap = varMap;
     }
+
+    public IReadOnlyDictionary<Var, Expr[]> VarMap { get; }
 
     public Call? CurrentCall { get; set; }
 

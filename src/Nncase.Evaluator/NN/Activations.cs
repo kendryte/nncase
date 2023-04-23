@@ -392,12 +392,12 @@ public class ErfEvaluator : IEvaluator<Erf>, ITypeInferencer<Erf>, ICostEvaluato
         };
     }
 
+    public Expr Visit(IShapeEvaluateContext context, Erf target) => context.GetArgumentShape(target, Erf.Input);
+
     private IRType Visit(TensorType input)
     {
         return input;
     }
-
-    public Expr Visit(IShapeEvaluateContext context, Erf target) => context.GetArgumentShape(target, Erf.Input);
 }
 
 /// <summary>

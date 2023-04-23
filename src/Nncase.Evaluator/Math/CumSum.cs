@@ -44,10 +44,10 @@ public class CumSumEvaluator : IEvaluator<CumSum>, ITypeInferencer<CumSum>, ICos
         };
     }
 
+    public Expr Visit(IShapeEvaluateContext context, CumSum target) => context.GetArgumentShape(target, CumSum.Input);
+
     private IRType Visit(TensorType input)
     {
         return input;
     }
-
-    public Expr Visit(IShapeEvaluateContext context, CumSum target) => context.GetArgumentShape(target, CumSum.Input);
 }

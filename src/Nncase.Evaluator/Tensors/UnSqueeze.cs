@@ -41,6 +41,33 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
         };
     }
 
+    public Expr Visit(IShapeEvaluateContext context, Unsqueeze target)
+    {
+        var dims = context.GetArgument(target, Unsqueeze.Dim);
+        if (dims is TensorConst dimsConst)
+        {
+            var dimsValue = dimsConst.Value.ToArray<int>();
+            var outShape = context.GetArgumentShape(target, Unsqueeze.Input);
+
+            foreach (var dimVal in dimsValue)
+            {
+                if (dimVal >= 0)
+                {
+                    outShape = ShapeExprUtility.Insert(outShape, dimVal, 1);
+                }
+                else
+                {
+                    var index = IR.F.Math.Max(IR.F.Tensors.ShapeOf(outShape)[0] + dimVal + 1, 0);
+                    outShape = ShapeExprUtility.Insert(outShape, index, 1);
+                }
+            }
+
+            return outShape;
+        }
+
+        throw new NotImplementedException();
+    }
+
     private IRType Visit(ITypeInferenceContext context, Unsqueeze target, TensorType input)
     {
         if (input.Shape.IsUnranked)
@@ -71,32 +98,5 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
         }
 
         return input with { Shape = new Shape(Enumerable.Repeat(Dimension.Unknown, input.Shape.Rank + 1)) };
-    }
-
-    public Expr Visit(IShapeEvaluateContext context, Unsqueeze target)
-    {
-        var dims = context.GetArgument(target, Unsqueeze.Dim);
-        if (dims is TensorConst dimsConst)
-        {
-            var dimsValue = dimsConst.Value.ToArray<int>();
-            var outShape = context.GetArgumentShape(target, Unsqueeze.Input);
-
-            foreach (var dimVal in dimsValue)
-            {
-                if (dimVal >= 0)
-                {
-                    outShape = ShapeExprUtility.Insert(outShape, dimVal, 1);
-                }
-                else
-                {
-                    var index = IR.F.Math.Max(IR.F.Tensors.ShapeOf(outShape)[0] + dimVal + 1, 0);
-                    outShape = ShapeExprUtility.Insert(outShape, index, 1);
-                }
-            }
-
-            return outShape;
-        }
-
-        throw new NotImplementedException();
     }
 }

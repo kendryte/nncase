@@ -9,9 +9,9 @@ using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.Utilities;
 using OrtKISharp;
+using static Nncase.IR.F.Tensors;
 using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.Utility;
-using static Nncase.IR.F.Tensors;
 using Reduce = Nncase.IR.Math.Reduce;
 
 namespace Nncase.Evaluator.Math;
@@ -94,12 +94,6 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICos
         };
     }
 
-    private IRType Visit(ITypeInferenceContext context, Reduce target, TensorType input)
-    {
-        var args = context.GetArguments(target, Reduce.KeepDims, Reduce.Axis);
-        return TypeInference.ReduceType(input, args[0], args[1]);
-    }
-
     public Expr Visit(IShapeEvaluateContext context, Reduce target)
     {
         var keepDims = context.GetArgument(target, Reduce.KeepDims);
@@ -128,5 +122,11 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICos
         }
 
         throw new NotImplementedException();
+    }
+
+    private IRType Visit(ITypeInferenceContext context, Reduce target, TensorType input)
+    {
+        var args = context.GetArguments(target, Reduce.KeepDims, Reduce.Axis);
+        return TypeInference.ReduceType(input, args[0], args[1]);
     }
 }

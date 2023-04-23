@@ -41,12 +41,12 @@ public class LogSoftmaxEvaluator : IEvaluator<LogSoftmax>, ITypeInferencer<LogSo
         };
     }
 
+    public Expr Visit(IShapeEvaluateContext context, LogSoftmax target) => context.GetArgumentShape(target, LogSoftmax.Input);
+
     private IRType Visit(TensorType input)
     {
         return input;
     }
-
-    public Expr Visit(IShapeEvaluateContext context, LogSoftmax target) => context.GetArgumentShape(target, LogSoftmax.Input);
 }
 
 /// <summary>
@@ -80,12 +80,12 @@ public class SoftmaxEvaluator : IEvaluator<Softmax>, ITypeInferencer<Softmax>, I
         };
     }
 
+    public Expr Visit(IShapeEvaluateContext context, Softmax target) => context.GetArgumentShape(target, Softmax.Input);
+
     private IRType Visit(TensorType input)
     {
         return input;
     }
-
-    public Expr Visit(IShapeEvaluateContext context, Softmax target) => context.GetArgumentShape(target, Softmax.Input);
 }
 
 /// <summary>

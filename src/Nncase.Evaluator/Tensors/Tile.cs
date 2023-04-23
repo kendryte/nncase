@@ -42,6 +42,13 @@ public class TileEvaluator : IEvaluator<Tile>, ITypeInferencer<Tile>, ICostEvalu
         return CostUtility.GetBroadcastCost(input, ret);
     }
 
+    public Expr Visit(IShapeEvaluateContext context, Tile target)
+    {
+        var inShape = context.GetArgumentShape(target, Tile.Input);
+        var repeats = context.GetArgument(target, Tile.Repeats);
+        return inShape * IR.F.Tensors.Cast(repeats, DataTypes.Int32);
+    }
+
     private IRType Visit(ITypeInferenceContext context, Tile target, TensorType input, TensorType repeat)
     {
         if (input.Shape.IsUnranked)
@@ -58,12 +65,5 @@ public class TileEvaluator : IEvaluator<Tile>, ITypeInferencer<Tile>, ICostEvalu
         return new TensorType(
             input.DType,
             new Shape(Enumerable.Repeat(Dimension.Unknown, input.Shape.Rank)));
-    }
-
-    public Expr Visit(IShapeEvaluateContext context, Tile target)
-    {
-        var inShape = context.GetArgumentShape(target, Tile.Input);
-        var repeats = context.GetArgument(target, Tile.Repeats);
-        return inShape * IR.F.Tensors.Cast(repeats, DataTypes.Int32);
     }
 }

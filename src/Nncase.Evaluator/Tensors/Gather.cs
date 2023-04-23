@@ -49,6 +49,16 @@ public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>, ICos
         };
     }
 
+    public Expr Visit(IShapeEvaluateContext context, Gather target)
+    {
+        var axis = context.GetArgument(target, Gather.Axis);
+        var inShape = context.GetArgumentShape(target, Gather.Input);
+        axis = ShapeExprUtility.Positive(axis, inShape);
+        var indexShape = context.GetArgumentShape(target, Gather.Index);
+        var outShape = ShapeExprUtility.Replace(inShape, axis, indexShape);
+        return outShape;
+    }
+
     private IRType Visit(ITypeInferenceContext context, Gather target, TensorType input, TensorType axis, TensorType index)
     {
         if (input.Shape.IsUnranked)
@@ -70,15 +80,5 @@ public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>, ICos
         {
             return new InvalidType("Gather axis must be constant");
         }
-    }
-
-    public Expr Visit(IShapeEvaluateContext context, Gather target)
-    {
-        var axis = context.GetArgument(target, Gather.Axis);
-        var inShape = context.GetArgumentShape(target, Gather.Input);
-        axis = ShapeExprUtility.Positive(axis, inShape);
-        var indexShape = context.GetArgumentShape(target, Gather.Index);
-        var outShape = ShapeExprUtility.Replace(inShape, axis, indexShape);
-        return outShape;
     }
 }

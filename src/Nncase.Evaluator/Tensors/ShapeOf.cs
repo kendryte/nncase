@@ -42,6 +42,11 @@ public class ShapeOfEvaluator : IEvaluator<ShapeOf>, ITypeInferencer<ShapeOf>, I
         };
     }
 
+    public Expr Visit(IShapeEvaluateContext context, ShapeOf target)
+    {
+        return context.GetArgumentShape(target, ShapeOf.Input);
+    }
+
     private IRType Visit(ITypeInferenceContext context, ShapeOf target, TensorType input)
     {
         var inExpr = context.GetArgument(target, ShapeOf.Input);
@@ -51,10 +56,5 @@ public class ShapeOfEvaluator : IEvaluator<ShapeOf>, ITypeInferencer<ShapeOf>, I
         }
 
         return new TensorType(DataTypes.Int64, new Shape(Dimension.Unknown));
-    }
-
-    public Expr Visit(IShapeEvaluateContext context, ShapeOf target)
-    {
-        return context.GetArgumentShape(target, ShapeOf.Input);
     }
 }

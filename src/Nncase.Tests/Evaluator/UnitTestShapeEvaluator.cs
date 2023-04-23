@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -5,9 +8,9 @@ using Nncase.IR;
 using Nncase.Passes.Rules.Neutral;
 using Nncase.Tests.TestFixture;
 using Xunit;
-using static Nncase.IR.F.Tensors;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
+using static Nncase.IR.F.Tensors;
 using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Tests.EvaluatorTest;
@@ -15,6 +18,8 @@ namespace Nncase.Tests.EvaluatorTest;
 [AutoSetupTestMethod(InitSession = true)]
 public class UnitTestShapeEvaluator : TestClassBase
 {
+    private readonly int _defaultDim = 4;
+
     [Fact]
     public void TestConstant1()
     {
@@ -54,6 +59,12 @@ public class UnitTestShapeEvaluator : TestClassBase
         Assert.Equal(result, new Tuple(new[] { 4 }, new[] { 3 }, new[] { 2 }));
     }
 
+    [Fact]
+    public void TestUnary()
+    {
+        TestOpShapeEval(input => Unary(UnaryOp.Abs, input));
+    }
+
     private (Var, Expr[]) MakeInput(Dimension[] shape)
     {
         var input = new Var(new TensorType(DataTypes.Float32, shape));
@@ -66,7 +77,7 @@ public class UnitTestShapeEvaluator : TestClassBase
         var varMap = new Dictionary<Var, Expr[]> { { input, newShape } };
         var expr = exprCtor(input);
         var shape = expr.EvaluateShapeExpr(varMap);
-        var varValues = newShape.Where(x => x is Var).ToDictionary(x => (Var)x, _ => (IValue)Value.FromTensor(DefaultDim));
+        var varValues = newShape.Where(x => x is Var).ToDictionary(x => (Var)x, _ => (IValue)Value.FromTensor(_defaultDim));
         var shapeValue = shape.Evaluate(varValues).AsTensor().ToArray<int>();
 
         var fixedShape = newShape.Select(x =>
@@ -74,7 +85,7 @@ public class UnitTestShapeEvaluator : TestClassBase
             return x switch
             {
                 Var => 4,
-                TensorConst t => t.Value.ToScalar<int>()
+                TensorConst t => t.Value.ToScalar<int>(),
             };
         }).ToArray();
         var varsValues = new Dictionary<Var, IValue> { { input, Value.FromTensor(Testing.Rand<float>(fixedShape)) } };
@@ -86,12 +97,6 @@ public class UnitTestShapeEvaluator : TestClassBase
     {
         var (input, newShape) = MakeInput(new[] { 2, 3, Dimension.Unknown, 24 });
         TestOpShapeEval(exprCtor, input, newShape);
-    }
-
-    [Fact]
-    public void TestUnary()
-    {
-        TestOpShapeEval(input => Unary(UnaryOp.Abs, input));
     }
 
     [Fact]
@@ -109,7 +114,7 @@ public class UnitTestShapeEvaluator : TestClassBase
     [Fact]
     public void UnitTestUnsqueeze()
     {
-        TestOpShapeEval(input => Unsqueeze(input, new[]{1}));
+        TestOpShapeEval(input => Unsqueeze(input, new[] { 1 }));
     }
 
     [Fact]
@@ -146,7 +151,7 @@ public class UnitTestShapeEvaluator : TestClassBase
         var input = new Var(new TensorType(DataTypes.Int32, new[] { 4 }));
         var expr = ConstantOfShape(input, 0);
         var shape = expr.EvaluateShapeExpr();
-        var fixedShape = new[]{1, 3, 24, 24};
+        var fixedShape = new[] { 1, 3, 24, 24 };
         var varValues = new Dictionary<Var, IValue> { { input, Value.FromTensor(fixedShape) } };
         var shapeValue = shape.Evaluate(varValues).AsTensor().ToArray<int>();
         Assert.Equal(shapeValue, fixedShape);
@@ -155,13 +160,13 @@ public class UnitTestShapeEvaluator : TestClassBase
     [Fact]
     public void UnitTestGather()
     {
-        TestOpShapeEval(input => Gather(input, 2, new[]{0, 1}));
+        TestOpShapeEval(input => Gather(input, 2, new[] { 0, 1 }));
     }
 
     [Fact]
     public void UnitTestExpand()
     {
-        TestOpShapeEval(input => Expand(input, new[]{2, 3, DefaultDim, 24}));
+        TestOpShapeEval(input => Expand(input, new[] { 2, 3, _defaultDim, 24 }));
     }
 
     [Fact]
@@ -185,13 +190,13 @@ public class UnitTestShapeEvaluator : TestClassBase
     [Fact]
     public void UnitTestTranspose()
     {
-        TestOpShapeEval(input => Transpose(input, new[]{0, 2, 3, 1}));
+        TestOpShapeEval(input => Transpose(input, new[] { 0, 2, 3, 1 }));
     }
 
     [Fact]
     public void UnitTestReshape()
     {
-        TestOpShapeEval(input => Reshape(input, new[]{1, 3, 12, -1}));
+        TestOpShapeEval(input => Reshape(input, new[] { 1, 3, 12, -1 }));
     }
 
     [Fact]
@@ -224,10 +229,6 @@ public class UnitTestShapeEvaluator : TestClassBase
         TestOpShapeEval(input => Erf(input));
     }
 
-    private Expr MakeDim() => new Var(new TensorType(DataTypes.Int32, Shape.Scalar));
-
-    private int DefaultDim = 4;
-
     [Fact]
     public void UnitTestShapeExprSaveInMeta()
     {
@@ -235,7 +236,9 @@ public class UnitTestShapeEvaluator : TestClassBase
         var expr = Softmax(Abs(input), 0);
         var varMap = new Dictionary<Var, Expr[]> { { input, newShape } };
         expr.EvaluateShapeExpr(varMap);
-        Assert.NotEqual(expr.Metadata.ShapeExpr , null);
-        Assert.NotEqual(expr.Arguments[0].Metadata.ShapeExpr , null);
+        Assert.NotEqual(null, expr.Metadata.ShapeExpr);
+        Assert.NotEqual(null, expr.Arguments[0].Metadata.ShapeExpr);
     }
+
+    private Expr MakeDim() => new Var(new TensorType(DataTypes.Int32, Shape.Scalar));
 }

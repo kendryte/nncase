@@ -47,6 +47,31 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
         };
     }
 
+    public Expr Visit(IShapeEvaluateContext context, Reshape target)
+    {
+        var shape = context.GetArgument(target, Reshape.Shape);
+        if (shape is TensorConst shapeConst)
+        {
+            var shapeArray = shapeConst.Value.ToArray<int>();
+            var negIndex = shapeArray.IndexOf(-1);
+            if (negIndex < 0)
+            {
+                return shapeArray;
+            }
+
+            var inputShape = context.GetArgumentShape(target, Reshape.Input);
+            var dim = IR.F.Tensors.Prod(inputShape) / System.Math.Abs(shapeArray.Aggregate((s, x) => x * s));
+            var rhs = Enumerable.Repeat((Expr)0, negIndex).Append(dim + 1).ToArray();
+            var newShape = IR.F.Tensors.Stack(new IR.Tuple(rhs), 0);
+
+            // dim = Product(inShape) / Produce(Reshape.Shape)
+            // [1, 3, -1, 24] + [dim + 1, 0]
+            return newShape + shapeArray;
+        }
+
+        return shape;
+    }
+
     private IRType Visit(ITypeInferenceContext context, Reshape target, TensorType input)
     {
         if (input.Shape.IsUnranked)
@@ -94,28 +119,5 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
         var targetType = context.CheckArgumentType<TensorType>(target, Reshape.Shape);
         var outShape = ReshapeTo(targetType);
         return input with { Shape = outShape };
-    }
-
-    public Expr Visit(IShapeEvaluateContext context, Reshape target)
-    {
-        var shape = context.GetArgument(target, Reshape.Shape);
-        if (shape is TensorConst shapeConst)
-        {
-            var shapeArray = shapeConst.Value.ToArray<int>();
-            var negIndex = shapeArray.IndexOf(-1);
-            if (negIndex < 0)
-            {
-                return shapeArray;
-            }
-            var inputShape = context.GetArgumentShape(target, Reshape.Input);
-            var dim = IR.F.Tensors.Prod(inputShape) / System.Math.Abs(shapeArray.Aggregate((s, x) => x * s));
-            var rhs = Enumerable.Repeat((Expr)0, negIndex).Append(dim + 1).ToArray();
-            var newShape = IR.F.Tensors.Stack(new IR.Tuple(rhs), 0);
-            // dim = Product(inShape) / Produce(Reshape.Shape)
-            // [1, 3, -1, 24] + [dim + 1, 0]
-            return newShape + shapeArray;
-        }
-
-        return shape;
     }
 }

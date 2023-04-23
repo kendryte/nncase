@@ -70,11 +70,6 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
         };
     }
 
-    private bool IsTFWhere(TensorType x, TensorType y)
-    {
-        return x.Shape[0] == 0 && y.Shape[0] == 0 && x.DType == DataTypes.Float32;
-    }
-
     public Expr Visit(IShapeEvaluateContext context, Where target)
     {
         if (target.IsTfWhere)
@@ -86,5 +81,10 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
         var y = context.GetArgumentShape(target, Where.Y);
         var cond = context.GetArgumentShape(target, Where.Cond);
         return ShapeExprUtility.BroadcastShape(x, y, cond);
+    }
+
+    private bool IsTFWhere(TensorType x, TensorType y)
+    {
+        return x.Shape[0] == 0 && y.Shape[0] == 0 && x.DType == DataTypes.Float32;
     }
 }

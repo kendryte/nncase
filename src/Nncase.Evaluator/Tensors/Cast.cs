@@ -45,10 +45,10 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
         };
     }
 
+    public Expr Visit(IShapeEvaluateContext context, Cast target) => context.GetArgumentShape(target, Cast.Input);
+
     private IRType Visit(Cast target, TensorType input)
     {
         return new TensorType(target.NewType, input.Shape);
     }
-
-    public Expr Visit(IShapeEvaluateContext context, Cast target) => context.GetArgumentShape(target, Cast.Input);
 }

@@ -61,6 +61,7 @@ public sealed class Function : BaseFunction
     public ReadOnlySpan<Var> Parameters => SpanUtility.UnsafeCast<Expr, Var>(Operands[1..]);
 
     public Dictionary<Var, Expr[]> VarMap { get; }
+
     /// <summary>
     /// Gets get all parameter checked types.
     /// </summary>

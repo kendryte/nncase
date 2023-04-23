@@ -10,8 +10,8 @@ using Nncase.IR.Math;
 using Nncase.IR.Tensors;
 using Nncase.Utilities;
 using OrtKISharp;
-using Concat = Nncase.IR.Tensors.Concat;
 using static Nncase.IR.F.Tensors;
+using Concat = Nncase.IR.Tensors.Concat;
 
 namespace Nncase.Evaluator.Tensors;
 
@@ -47,6 +47,17 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
             [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(ret),
         };
+    }
+
+    public Expr Visit(IShapeEvaluateContext context, Concat target)
+    {
+        var inShape = context.GetArgumentShape(target, Concat.Input);
+        var axis = context.GetArgument(target, Concat.Axis);
+        var axisV = ShapeExprUtility.Positive(axis, inShape[0]);
+        var inShapes = ((IR.Tuple)inShape).Fields;
+        var dim = inShapes.ToArray().Aggregate((Expr)0, (sum, shape) => sum + shape[axisV]);
+        var outShape = ShapeExprUtility.Replace(inShapes[0], axisV, dim);
+        return outShape;
     }
 
     private IRType? CheckType(TupleType inputs)
@@ -103,6 +114,7 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
         {
             return new InvalidType("Inputs of concat should be same rank");
         }
+
         var input0 = (TensorType)inputs[0];
         InvalidType? invalidType = null;
         var axisV = ((TensorConst)context.GetArgument(target, Concat.Axis)).Value.ToScalar<int>();
@@ -170,16 +182,5 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
         {
             return Dimension.Unknown;
         }
-    }
-
-    public Expr Visit(IShapeEvaluateContext context, Concat target)
-    {
-        var inShape = context.GetArgumentShape(target, Concat.Input);
-        var axis = context.GetArgument(target, Concat.Axis);
-        var axisV = ShapeExprUtility.Positive(axis, inShape[0]);
-        var inShapes = ((IR.Tuple)inShape).Fields;
-        var dim = inShapes.ToArray().Aggregate((Expr)0, (sum, shape) => sum + shape[axisV]);
-        var outShape = ShapeExprUtility.Replace(inShapes[0], axisV, dim);
-        return outShape;
     }
 }

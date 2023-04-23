@@ -36,6 +36,12 @@ public sealed partial class ExpandEvaluator : IEvaluator<Expand>, ITypeInference
         return CostUtility.GetBroadcastCost(input, ret);
     }
 
+    public Expr Visit(IShapeEvaluateContext context, Expand target)
+    {
+        var shape = context.GetArgument(target, Expand.Shape);
+        return shape;
+    }
+
     private IRType Visit(ITypeInferenceContext context, Expand target, TensorType input, TensorType shape)
     {
         var shape_expr = context.GetArgument(target, Expand.Shape);
@@ -47,11 +53,5 @@ public sealed partial class ExpandEvaluator : IEvaluator<Expand>, ITypeInference
         {
             return input with { Shape = TypeInference.ReshapeTo(shape) };
         }
-    }
-
-    public Expr Visit(IShapeEvaluateContext context, Expand target)
-    {
-        var shape = context.GetArgument(target, Expand.Shape);
-        return shape;
     }
 }

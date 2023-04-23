@@ -84,12 +84,6 @@ public class TransposeEvaluator : IEvaluator<Transpose>, ITypeInferencer<Transpo
         };
     }
 
-    private IRType Visit(ITypeInferenceContext context, Transpose target, TensorType input)
-    {
-        var permExpr = context.GetArgument(target, Transpose.Perm);
-        return TypeInference.TransposeType(input, permExpr);
-    }
-
     public Expr Visit(IShapeEvaluateContext context, Transpose target)
     {
         var perm = context.GetArgument(target, Transpose.Perm);
@@ -103,5 +97,11 @@ public class TransposeEvaluator : IEvaluator<Transpose>, ITypeInferencer<Transpo
         }
 
         return IR.F.Tensors.Stack(new IR.Tuple(outShape), 0);
+    }
+
+    private IRType Visit(ITypeInferenceContext context, Transpose target, TensorType input)
+    {
+        var permExpr = context.GetArgument(target, Transpose.Perm);
+        return TypeInference.TransposeType(input, permExpr);
     }
 }

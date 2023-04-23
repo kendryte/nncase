@@ -122,7 +122,7 @@ public abstract class BaseImporter
         }
     }
 
-    private IRModule CreateModule(Var[] inputs, Dictionary<Var, Expr[]> varMap,  Expr body)
+    private IRModule CreateModule(Var[] inputs, Dictionary<Var, Expr[]> varMap, Expr body)
     {
         var mainFunc = new Function("main", body, inputs, varMap);
         var module = new IRModule(mainFunc);

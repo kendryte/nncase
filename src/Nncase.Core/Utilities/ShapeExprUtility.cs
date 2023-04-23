@@ -1,6 +1,10 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using static Nncase.IR.F.Tensors;
+
 namespace Nncase.Utilities;
 
 public static class ShapeExprUtility
@@ -19,14 +23,14 @@ public static class ShapeExprUtility
         return new If(axis < 0, axis + rank, axis);
     }
 
-    private static Expr StackOne(Expr expr)
-    {
-        return Stack(new IR.Tuple(expr), 0);
-    }
-
     public static Expr Slice(Expr shape, int begin, int end)
     {
         return IR.F.Tensors.Slice(shape, new[] { begin }, new[] { end }, 1);
+    }
+
+    private static Expr StackOne(Expr expr)
+    {
+        return Stack(new IR.Tuple(expr), 0);
     }
 
     public static Expr Slice(Expr shape, Expr begin, Expr end)
@@ -51,12 +55,12 @@ public static class ShapeExprUtility
         return Concat(new IR.Tuple(front, last), 0);
     }
 
+    public static Expr ShapeOf(Expr expr) => Cast(IR.F.Tensors.ShapeOf(expr), DataTypes.Int32);
+
     private static Expr SliceAndMerge(Expr shapeExpr, Expr index, Expr value, Expr indexOffset)
     {
         var front = Slice(shapeExpr, 0, index);
         var last = Slice(shapeExpr, index + indexOffset, int.MaxValue);
         return Concat(new IR.Tuple(front, StackOne(value), last), 0);
     }
-
-    public static Expr ShapeOf(Expr expr) => Cast(IR.F.Tensors.ShapeOf(expr), DataTypes.Int32);
 }
