@@ -11,7 +11,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Bitcast"/>.
 /// </summary>
-public class BitcastEvaluator : IEvaluator<Bitcast>, ITypeInferencer<Bitcast>, IOpPrinter<Bitcast>, ICostEvaluator<Bitcast>
+public class BitcastEvaluator : IEvaluator<Bitcast>, ITypeInferencer<Bitcast>, ICostEvaluator<Bitcast>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Bitcast cast)
@@ -26,12 +26,6 @@ public class BitcastEvaluator : IEvaluator<Bitcast>, ITypeInferencer<Bitcast>, I
     {
         var input = context.CheckArgumentType<TensorType>(target, Bitcast.Input);
         return Visit(target, input);
-    }
-
-    /// <inheritdoc/>
-    public string Visit(IIRPrinterContext context, Bitcast target, bool iLmode)
-    {
-        return $"{CompilerServices.Print(target.NewType)}({context.GetArgument(target, Cast.Input)})";
     }
 
     /// <inheritdoc/>
