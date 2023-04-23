@@ -137,5 +137,5 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: nncase-studio-${{matrix.config.name}}
-          path: ${{github.workspace}}/src/Nncase.Studio/${{matrix.config.project}}/bin/${{matrix.config.buildType}}/{{matrix.config.framework}}/${{matrix.config.rid}}/publish
+          path: ${{github.workspace}}/src/Nncase.Studio/${{matrix.config.project}}/bin/${{matrix.config.buildType}}/${{matrix.config.framework}}/${{matrix.config.rid}}/publish
           if-no-files-found: error
