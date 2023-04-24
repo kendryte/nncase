@@ -35,7 +35,7 @@ template <class TShape>
 inline size_t compute_size(const TShape &shape, const TShape &strides) {
     size_t max_stride = 1, max_shape = 1;
     for (size_t i = 0; i < shape.size(); i++) {
-        if ((shape[i] == 1 ? 0 : strides[i]) > max_stride) {
+        if ((shape[i] == 1 ? 0 : strides[i]) >= max_stride) {
             max_stride = strides[i];
             max_shape = shape[i];
         }
