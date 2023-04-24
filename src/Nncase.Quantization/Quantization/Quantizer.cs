@@ -73,7 +73,7 @@ internal partial class Quantizer
             // 3. Export quant info
             if (_quantizeOptions.ExportQuantScheme == true)
             {
-                var outputNames = new List<string>();
+                var outputNames = new HashSet<string>();
                 var quantScheme = new QuantScheme();
                 quantScheme.Version = "1.0";
                 var outputsCount = 0;
