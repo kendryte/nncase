@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using Nncase;
 using Xunit;
+using TypeCode = Nncase.Runtime.TypeCode;
 
 namespace Nncase.Tests.CoreTest;
 
@@ -18,5 +19,12 @@ public sealed class UnitTestDataType
 
         var t = DataType.FromType(typeof(Pointer<int>));
         Assert.Equal(8, t.SizeInBytes);
+    }
+
+    [Fact]
+    public void TestFromTypeCode()
+    {
+        var expect = CompilerServices.DataTypeService.GetPrimTypeFromTypeCode(TypeCode.Boolean);
+        Assert.Equal(expect, DataType.FromTypeCode(TypeCode.Boolean));
     }
 }

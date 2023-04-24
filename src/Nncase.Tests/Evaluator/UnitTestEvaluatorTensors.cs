@@ -365,6 +365,26 @@ public class UnitTestEvaluatorTensors : TestClassBase
         Assert.Equal(
             tResult,
             expr.Evaluate().AsTensor().ToOrtTensor());
+        Assert.Throws<ArgumentOutOfRangeException>(() => Tensors.Slice(input, begin, end, 0));
+    }
+
+    [Fact]
+    public void TestSliceIndex()
+    {
+        var input = Tensor.From<int>(Enumerable.Range(0, 120).ToArray(), new Shape(new[] { 2, 3, 4, 5 }));
+        var expr = Tensors.SliceIndex(input, 1);
+        var expect = Slice(input, new[] { 1 }, new[] { 2 }, 1);
+        Assert.True(expr.InferenceType());
+        Assert.Equal(expect, expr);
+    }
+
+    [Fact]
+    public void TestNHWCToWNCH()
+    {
+        var input = Tensor.From<int>(Enumerable.Range(0, 120).ToArray(), new Shape(new[] { 2, 3, 4, 5 }));
+        var expr = NHWCToWNCH(input);
+        var expect = Transpose(input, new[] { 2, 0, 3, 1 });
+        Assert.Equal(expr, expect);
     }
 
     [Fact]
@@ -656,6 +676,62 @@ public class UnitTestEvaluatorTensors : TestClassBase
         var result = conTF.Select((b, i) => (b, i)).Where(t => t.b).Select(t => (long)t.i).ToArray();
         var expectTF = Tensor.From<long>(result, new Shape(result.Length, conTF.Rank));
         Assert.Equal(expectTF, exprTF.Evaluate().AsTensor());
+    }
+
+    [Fact]
+    public void TestReduceMean()
+    {
+        long axis = 0L;
+        long keepDims = 0L;
+        var a = new float[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+        var expr_a = Tensor.From(a, new[] { 2, 4 });
+        var expr = IR.F.Tensors.ReduceMean(expr_a, axis, 0f, keepDims);
+        CompilerServices.InferenceType(expr);
+        var expect = Reduce(ReduceOp.Mean, expr_a, axis, 0f, keepDims);
+        CompilerServices.InferenceType(expect);
+        Assert.Equal(expr, expect);
+    }
+
+    [Fact]
+    public void TestReduceMin()
+    {
+        long axis = 0L;
+        long keepDims = 0L;
+        var a = new float[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+        var expr_a = Tensor.From(a, new[] { 2, 4 });
+        var expr = IR.F.Tensors.ReduceMin(expr_a, axis, 0f, keepDims);
+        CompilerServices.InferenceType(expr);
+        var expect = Reduce(ReduceOp.Min, expr_a, axis, 0f, keepDims);
+        CompilerServices.InferenceType(expect);
+        Assert.Equal(expr, expect);
+    }
+
+    [Fact]
+    public void TestReduceMax()
+    {
+        long axis = 0L;
+        long keepDims = 0L;
+        var a = new float[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+        var expr_a = Tensor.From(a, new[] { 2, 4 });
+        var expr = IR.F.Tensors.ReduceMax(expr_a, axis, 0f, keepDims);
+        CompilerServices.InferenceType(expr);
+        var expect = Reduce(ReduceOp.Max, expr_a, axis, 0f, keepDims);
+        CompilerServices.InferenceType(expect);
+        Assert.Equal(expr, expect);
+    }
+
+    [Fact]
+    public void TestReduceSum()
+    {
+        long axis = 0L;
+        long keepDims = 0L;
+        var a = new float[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+        var expr_a = Tensor.From(a, new[] { 2, 4 });
+        var expr = IR.F.Tensors.ReduceSum(expr_a, axis, 0f, keepDims);
+        CompilerServices.InferenceType(expr);
+        var expect = Reduce(ReduceOp.Sum, expr_a, axis, 0f, keepDims);
+        CompilerServices.InferenceType(expect);
+        Assert.Equal(expr, expect);
     }
 
     private void DoConstantOfShape(long[] shape, Expr value, Tensor expect)
