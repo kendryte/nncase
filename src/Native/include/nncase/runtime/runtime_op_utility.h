@@ -33,7 +33,7 @@ inline size_t get_bytes(const datatype_t &type, const TShape &shape) {
 
 template <class TShape>
 inline size_t compute_size(const TShape &shape, const TShape &strides) {
-    size_t max_stride = 0, max_shape = 0;
+    size_t max_stride = 1, max_shape = 1;
     for (size_t i = 0; i < shape.size(); i++) {
         if ((shape[i] == 1 ? 0 : strides[i]) > max_stride) {
             max_stride = strides[i];
@@ -41,7 +41,7 @@ inline size_t compute_size(const TShape &shape, const TShape &strides) {
         }
     }
     size_t size = max_stride * max_shape;
-    return shape.size() ? size : 1;
+    return size;
 }
 
 template <class TShape>
