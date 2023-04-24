@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Linq;
 using Nncase.IR;
 using Onnx;
 using F = Nncase.IR.F;
@@ -19,13 +20,28 @@ namespace Nncase.Importer
         {
             var input = GetInputExpr(op, 0);
             Expr axis;
-            if (GetOpSet(op) < 13)
+            if (GetOpSet(op) < 18)
             {
                 axis = GetAxesAttribute(op, input);
             }
             else
             {
-                axis = GetInputExpr(op, 1);
+                if (op.Input.Count > 1)
+                {
+                    axis = GetInputExpr(op, 1);
+                }
+                else
+                {
+                    var noop_with_empty_axes = GetOptionIntAttribute(op, "noop_with_empty_axes").Or(0);
+                    if (noop_with_empty_axes == 1)
+                    {
+                        return input;
+                    }
+                    else
+                    {
+                        axis = Enumerable.Range(0, input.CheckedShape.Rank).Select(i => (long)i).ToArray();
+                    }
+                }
             }
 
             var keepDims = GetBoolAttribute(op, "keepdims", true);
