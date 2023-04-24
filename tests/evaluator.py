@@ -49,6 +49,6 @@ class Evaluator:
                 os.path.join(eval_dir, f'nncase_result_{i}.bin'),
                 os.path.join(eval_dir, f'nncase_result_{i}.txt')))
             result.tofile(eval_output_paths[-1][0])
-            if not test_utils.in_ci:
+            if not test_utils.in_ci():
                 self.totxtfile(eval_output_paths[-1][1], result)
         return eval_output_paths

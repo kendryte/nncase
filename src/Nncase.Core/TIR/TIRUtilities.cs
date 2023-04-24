@@ -47,20 +47,6 @@ public static class TIRUtilities
       }).ToArray();
 
     /// <summary>
-    /// Compute the sub no pad bounds.
-    /// </summary>
-    public static IReadOnlyList<TIR.Range> ComputeSubNoPadBounds(IReadOnlyList<TIR.Range> bounds, IReadOnlyList<TIR.Range> sub_bounds, IReadOnlyList<(IR.Expr Before, IR.Expr After)> paddings, IReadOnlyList<(IR.Expr Before, IR.Expr After)> sub_paddings) =>
-      bounds.Zip(sub_bounds).Zip(paddings, sub_paddings).Select(t =>
-      {
-          var (bound, sub_bounds) = t.First;
-          var (before, after) = t.Second;
-          var (before1, after1) = t.Third;
-          var new_start = sub_bounds.Start + before1 - (bound.Start + before);
-          var new_stop = new_start + sub_bounds.Stop - (sub_bounds.Start + before1) - after1;
-          return (TIR.Range)(new_start, new_stop, bound.Step);
-      }).ToArray();
-
-    /// <summary>
     /// give the sub no pad bounds, then get the current bounds.
     /// </summary>
     public static IReadOnlyList<TIR.Range> ComputeBounds(IReadOnlyList<TIR.Range> sub_no_pad_bounds, IReadOnlyList<TIR.Range> bounds, IReadOnlyList<(IR.Expr Before, IR.Expr After)> paddings)

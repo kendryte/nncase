@@ -89,6 +89,6 @@ class Inference:
                 os.path.join(infer_dir, f'nncase_result_{i}.bin'),
                 os.path.join(infer_dir, f'nncase_result_{i}.txt')))
             output.tofile(infer_output_paths[-1][0])
-            if not test_utils.in_ci:
+            if not test_utils.in_ci():
                 self.totxtfile(infer_output_paths[-1][1], output)
         return infer_output_paths

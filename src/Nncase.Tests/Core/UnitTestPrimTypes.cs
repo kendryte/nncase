@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using Nncase;
-using Nncase.Runtime;
 using Xunit;
 
 namespace Nncase.Tests.CoreTest;
@@ -40,31 +39,5 @@ public sealed class UnitTestPrimTypes
         Assert.Equal(clrType, a.CLRType);
         Assert.Equal(sizeInBytes, a.SizeInBytes);
         Assert.Equal(typeCode, a.TypeCode);
-    }
-
-    [Fact]
-    public void TestPrimTypeCodes()
-    {
-        Assert.Equal(DataTypes.UInt8, PrimTypeCodes.ToDataType(PrimTypeCode.UInt8));
-        Assert.Equal(DataTypes.UInt16, PrimTypeCodes.ToDataType(PrimTypeCode.UInt16));
-        Assert.Equal(DataTypes.UInt32, PrimTypeCodes.ToDataType(PrimTypeCode.UInt32));
-        Assert.Equal(DataTypes.UInt64, PrimTypeCodes.ToDataType(PrimTypeCode.UInt64));
-        Assert.Equal(DataTypes.Int8, PrimTypeCodes.ToDataType(PrimTypeCode.Int8));
-        Assert.Equal(DataTypes.Int16, PrimTypeCodes.ToDataType(PrimTypeCode.Int16));
-        Assert.Equal(DataTypes.Int32, PrimTypeCodes.ToDataType(PrimTypeCode.Int32));
-        Assert.Equal(DataTypes.Int64, PrimTypeCodes.ToDataType(PrimTypeCode.Int64));
-
-        Assert.Equal(PrimTypeCode.Int64, PrimTypeCodes.ToTypeCode(DataTypes.Int64));
-        Assert.Equal(PrimTypeCode.Int32, PrimTypeCodes.ToTypeCode(DataTypes.Int32));
-        Assert.Equal(PrimTypeCode.Int16, PrimTypeCodes.ToTypeCode(DataTypes.Int16));
-        Assert.Equal(PrimTypeCode.Int8, PrimTypeCodes.ToTypeCode(DataTypes.Int8));
-        Assert.Equal(PrimTypeCode.UInt64, PrimTypeCodes.ToTypeCode(DataTypes.UInt64));
-        Assert.Equal(PrimTypeCode.UInt32, PrimTypeCodes.ToTypeCode(DataTypes.UInt32));
-        Assert.Equal(PrimTypeCode.UInt16, PrimTypeCodes.ToTypeCode(DataTypes.UInt16));
-        Assert.Equal(PrimTypeCode.UInt8, PrimTypeCodes.ToTypeCode(DataTypes.UInt8));
-        Assert.Equal(PrimTypeCode.BFloat16, PrimTypeCodes.ToTypeCode(DataTypes.BFloat16));
-        Assert.Equal(PrimTypeCode.Float16, PrimTypeCodes.ToTypeCode(DataTypes.Float16));
-        Assert.Equal(PrimTypeCode.Float32, PrimTypeCodes.ToTypeCode(DataTypes.Float32));
-        Assert.Equal(PrimTypeCode.Float64, PrimTypeCodes.ToTypeCode(DataTypes.Float64));
     }
 }

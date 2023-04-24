@@ -18,7 +18,16 @@ namespace Nncase.Importer
         private Expr ReduceCore(in NodeProto op, ReduceOp reduceOp, float initValue, Func<Expr, Expr> f)
         {
             var input = GetInputExpr(op, 0);
-            var axis = GetAxesAttribute(op, input);
+            Expr axis;
+            if (GetOpSet(op) < 13)
+            {
+                axis = GetAxesAttribute(op, input);
+            }
+            else
+            {
+                axis = GetInputExpr(op, 1);
+            }
+
             var keepDims = GetBoolAttribute(op, "keepdims", true);
             return F.Tensors.Reduce(reduceOp, f(input), axis, initValue, keepDims);
         }

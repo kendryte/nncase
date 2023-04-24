@@ -33,7 +33,6 @@ public class UnitTestEvaluatorRandom : TestClassBase
         var expr = IR.F.Random.Normal(DataTypes.Float32, mean, scale, seed, shape);
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
-        CompilerServices.InferenceType(IR.F.Random.Normal(DataType.FromTypeCode(Runtime.TypeCode.Float32)));
     }
 
     [Fact]

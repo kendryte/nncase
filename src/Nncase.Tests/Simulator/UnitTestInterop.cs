@@ -147,22 +147,4 @@ public class UnitTestInterop : TestClassBase
         var dt1 = RTDataType.FromTypeCode(Runtime.TypeCode.Int16);
         Assert.False(dt1.IsInvalid);
     }
-
-    [Fact]
-    public void TestRTExtensions()
-    {
-        Assert.Equal(DataTypes.Boolean, RTExtensions.ToPrimType(RTDataType.FromTypeCode(Runtime.TypeCode.Boolean)));
-        Assert.Equal(DataTypes.Int8, RTExtensions.ToPrimType(RTDataType.FromTypeCode(Runtime.TypeCode.Int8)));
-        Assert.Equal(DataTypes.Int16, RTExtensions.ToPrimType(RTDataType.FromTypeCode(Runtime.TypeCode.Int16)));
-        Assert.Equal(DataTypes.Int32, RTExtensions.ToPrimType(RTDataType.FromTypeCode(Runtime.TypeCode.Int32)));
-        Assert.Equal(DataTypes.Int64, RTExtensions.ToPrimType(RTDataType.FromTypeCode(Runtime.TypeCode.Int64)));
-        Assert.Equal(DataTypes.UInt8, RTExtensions.ToPrimType(RTDataType.FromTypeCode(Runtime.TypeCode.UInt8)));
-        Assert.Equal(DataTypes.UInt16, RTExtensions.ToPrimType(RTDataType.FromTypeCode(Runtime.TypeCode.UInt16)));
-        Assert.Equal(DataTypes.UInt32, RTExtensions.ToPrimType(RTDataType.FromTypeCode(Runtime.TypeCode.UInt32)));
-        Assert.Equal(DataTypes.UInt64, RTExtensions.ToPrimType(RTDataType.FromTypeCode(Runtime.TypeCode.UInt64)));
-        Assert.Equal(DataTypes.Float16, RTExtensions.ToPrimType(RTDataType.FromTypeCode(Runtime.TypeCode.Float16)));
-        Assert.Equal(DataTypes.Float32, RTExtensions.ToPrimType(RTDataType.FromTypeCode(Runtime.TypeCode.Float32)));
-        Assert.Equal(DataTypes.Float64, RTExtensions.ToPrimType(RTDataType.FromTypeCode(Runtime.TypeCode.Float64)));
-        Assert.Equal(DataTypes.BFloat16, RTExtensions.ToPrimType(RTDataType.FromTypeCode(Runtime.TypeCode.BFloat16)));
-    }
 }
