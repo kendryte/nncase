@@ -25,7 +25,8 @@ using namespace nncase::runtime::stackvm;
 
 #ifdef NNCASE_DUMP_MANAGER
 #define dump_op(op)                                                            \
-    auto dump_manager = module().interp().dump_manager();
+    auto dump_manager = module().interp().dump_manager();                      \
+    dump_manager->dump_op(#op)
 #define dump_input(var) dump_manager->dump_input(var, #var)
 #define dump_output(var) dump_manager->dump_output(var)
 #else
@@ -36,7 +37,7 @@ using namespace nncase::runtime::stackvm;
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_batch_normalization_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(batch_normalization);
     try_var(input, pop_value());
     dump_input(input);
     try_var(scale, pop_value());
@@ -61,7 +62,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_batch_to_space_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(batch_to_space);
     try_var(input, pop_value());
     dump_input(input);
     try_var(block_shape, pop_value());
@@ -78,7 +79,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_binary_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(binary);
     try_var(lhs, pop_value());
     dump_input(lhs);
     try_var(rhs, pop_value());
@@ -92,7 +93,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_bitcast_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(bitcast);
     try_var(input, pop_value());
     dump_input(input);
     try_var(new_shape, pop_value());
@@ -107,7 +108,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_broadcast_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(broadcast);
     try_var(input, pop_value());
     dump_input(input);
     try_var(shape, pop_value());
@@ -121,7 +122,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_cast_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(cast);
     try_var(input, pop_value());
     dump_input(input);
     try_var(output, kernels::stackvm::cast(op.new_type, op.cast_mode, input,
@@ -133,7 +134,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_celu_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(celu);
     try_var(input, pop_value());
     dump_input(input);
     try_var(alpha, pop_value());
@@ -147,7 +148,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_clamp_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(clamp);
     try_var(input, pop_value());
     dump_input(input);
     try_var(min, pop_value());
@@ -163,7 +164,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_compare_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(compare);
     try_var(lhs, pop_value());
     dump_input(lhs);
     try_var(rhs, pop_value());
@@ -177,7 +178,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_concat_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(concat);
     try_var(input, pop_value());
     dump_input(input);
     try_var(axis, pop_value());
@@ -191,7 +192,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_condition_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(condition);
     try_var(predicate, pop_value());
     dump_input(predicate);
     try_var(value, pop_value());
@@ -206,7 +207,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_constant_of_shape_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(constant_of_shape);
     try_var(shape, pop_value());
     dump_input(shape);
     try_var(value, pop_value());
@@ -220,7 +221,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_conv2d_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(conv2d);
     try_var(input, pop_value());
     dump_input(input);
     try_var(weights, pop_value());
@@ -248,7 +249,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_conv2d_transpose_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(conv2d_transpose);
     try_var(input, pop_value());
     dump_input(input);
     try_var(weights, pop_value());
@@ -280,7 +281,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_cum_sum_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(cum_sum);
     try_var(input, pop_value());
     dump_input(input);
     try_var(axis, pop_value());
@@ -299,7 +300,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_dequantize_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(dequantize);
     try_var(input, pop_value());
     dump_input(input);
     try_var(dequant_param, pop_value());
@@ -314,7 +315,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_elu_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(elu);
     try_var(input, pop_value());
     dump_input(input);
     try_var(alpha, pop_value());
@@ -328,7 +329,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_erf_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(erf);
     try_var(input, pop_value());
     dump_input(input);
     try_var(output,
@@ -340,7 +341,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_expand_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(expand);
     try_var(input, pop_value());
     dump_input(input);
     try_var(shape, pop_value());
@@ -354,7 +355,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_fake_dequantize_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(fake_dequantize);
     try_var(input, pop_value());
     dump_input(input);
     try_var(dequant_param, pop_value());
@@ -369,7 +370,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_fake_quantize_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(fake_quantize);
     try_var(input, pop_value());
     dump_input(input);
     try_var(quant_param, pop_value());
@@ -384,7 +385,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_flatten_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(flatten);
     try_var(input, pop_value());
     dump_input(input);
     try_var(axis, pop_value());
@@ -398,7 +399,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_gather_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(gather);
     try_var(input, pop_value());
     dump_input(input);
     try_var(axis, pop_value());
@@ -414,7 +415,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_gather_nd_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(gather_nd);
     try_var(input, pop_value());
     dump_input(input);
     try_var(batch_dims, pop_value());
@@ -431,7 +432,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_gelu_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(gelu);
     try_var(input, pop_value());
     dump_input(input);
     try_var(alpha, pop_value());
@@ -445,7 +446,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_get_item_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(get_item);
     try_var(input, pop_value());
     dump_input(input);
     try_var(index, pop_value());
@@ -459,7 +460,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_hard_sigmoid_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(hard_sigmoid);
     try_var(input, pop_value());
     dump_input(input);
     try_var(alpha, pop_value());
@@ -475,7 +476,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_hard_swish_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(hard_swish);
     try_var(input, pop_value());
     dump_input(input);
     try_var(output, kernels::stackvm::hard_swish(input, nullptr,
@@ -487,7 +488,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_hardmax_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(hardmax);
     try_var(input, pop_value());
     dump_input(input);
     try_var(axis, pop_value());
@@ -501,7 +502,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_instance_normalization_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(instance_normalization);
     try_var(input, pop_value());
     dump_input(input);
     try_var(scale, pop_value());
@@ -520,7 +521,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_l2_normalization_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(l2_normalization);
     try_var(input, pop_value());
     dump_input(input);
     try_var(output, kernels::stackvm::l2_normalization(
@@ -532,7 +533,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_layer_norm_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(layer_norm);
     try_var(input, pop_value());
     dump_input(input);
     try_var(scale, pop_value());
@@ -549,7 +550,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_leaky_relu_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(leaky_relu);
     try_var(input, pop_value());
     dump_input(input);
     try_var(alpha, pop_value());
@@ -563,7 +564,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_log_softmax_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(log_softmax);
     try_var(input, pop_value());
     dump_input(input);
     try_var(axis, pop_value());
@@ -577,7 +578,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_lp_normalization_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(lp_normalization);
     try_var(input, pop_value());
     dump_input(input);
     try_var(axis, pop_value());
@@ -593,7 +594,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_lrn_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(lrn);
     try_var(input, pop_value());
     dump_input(input);
     try_var(alpha, pop_value());
@@ -613,7 +614,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_lstm_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(lstm);
     try_var(x, pop_value());
     dump_input(x);
     try_var(w, pop_value());
@@ -655,7 +656,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_mat_mul_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(mat_mul);
     try_var(lhs, pop_value());
     dump_input(lhs);
     try_var(rhs, pop_value());
@@ -669,7 +670,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_normal_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(normal);
     try_var(mean, pop_value());
     dump_input(mean);
     try_var(scale, pop_value());
@@ -688,7 +689,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_normal_like_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(normal_like);
     try_var(input, pop_value());
     dump_input(input);
     try_var(mean, pop_value());
@@ -707,7 +708,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_one_hot_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(one_hot);
     try_var(indices, pop_value());
     dump_input(indices);
     try_var(depth, pop_value());
@@ -726,7 +727,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_pad_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(pad);
     try_var(input, pop_value());
     dump_input(input);
     try_var(pads, pop_value());
@@ -742,7 +743,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_prelu_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(prelu);
     try_var(input, pop_value());
     dump_input(input);
     try_var(slope, pop_value());
@@ -756,7 +757,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_prod_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(prod);
     try_var(input, pop_value());
     dump_input(input);
     try_var(output,
@@ -768,7 +769,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_quant_param_of_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(quant_param_of);
     try_var(range, pop_value());
     dump_input(range);
     try_var(bits, pop_value());
@@ -783,7 +784,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_quantize_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(quantize);
     try_var(input, pop_value());
     dump_input(input);
     try_var(quant_param, pop_value());
@@ -798,7 +799,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_range_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(range);
     try_var(begin, pop_value());
     dump_input(begin);
     try_var(end, pop_value());
@@ -814,7 +815,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_range_of_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(range_of);
     try_var(input, pop_value());
     dump_input(input);
     try_var(output, kernels::stackvm::range_of(input, nullptr,
@@ -826,7 +827,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_reduce_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(reduce);
     try_var(input, pop_value());
     dump_input(input);
     try_var(axis, pop_value());
@@ -845,7 +846,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_reduce_arg_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(reduce_arg);
     try_var(input, pop_value());
     dump_input(input);
     try_var(axis, pop_value());
@@ -864,7 +865,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_reduce_window2d_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(reduce_window2d);
     try_var(input, pop_value());
     dump_input(input);
     try_var(init_value, pop_value());
@@ -892,7 +893,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_relu_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(relu);
     try_var(input, pop_value());
     dump_input(input);
     try_var(output,
@@ -904,7 +905,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_relu6_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(relu6);
     try_var(input, pop_value());
     dump_input(input);
     try_var(output,
@@ -916,7 +917,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_require_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(require);
     try_var(predicate, pop_value());
     dump_input(predicate);
     try_var(value, pop_value());
@@ -931,7 +932,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_reshape_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(reshape);
     try_var(input, pop_value());
     dump_input(input);
     try_var(shape, pop_value());
@@ -945,7 +946,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_resize_image_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(resize_image);
     try_var(input, pop_value());
     dump_input(input);
     try_var(roi, pop_value());
@@ -970,7 +971,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_reverse_sequence_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(reverse_sequence);
     try_var(input, pop_value());
     dump_input(input);
     try_var(seq_lens, pop_value());
@@ -989,7 +990,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_select_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(select);
     try_var(predicate, pop_value());
     dump_input(predicate);
     try_var(true_value, pop_value());
@@ -1006,7 +1007,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_selu_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(selu);
     try_var(input, pop_value());
     dump_input(input);
     try_var(alpha, pop_value());
@@ -1022,7 +1023,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_shape_of_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(shape_of);
     try_var(input, pop_value());
     dump_input(input);
     try_var(output, kernels::stackvm::shape_of(input, nullptr,
@@ -1034,7 +1035,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_sigmoid_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(sigmoid);
     try_var(input, pop_value());
     dump_input(input);
     try_var(output, kernels::stackvm::sigmoid(input, nullptr,
@@ -1046,7 +1047,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_size_of_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(size_of);
     try_var(input, pop_value());
     dump_input(input);
     try_var(output, kernels::stackvm::size_of(input, nullptr,
@@ -1058,7 +1059,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_slice_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(slice);
     try_var(input, pop_value());
     dump_input(input);
     try_var(begins, pop_value());
@@ -1079,7 +1080,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_softmax_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(softmax);
     try_var(input, pop_value());
     dump_input(input);
     try_var(axis, pop_value());
@@ -1093,7 +1094,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_softplus_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(softplus);
     try_var(input, pop_value());
     dump_input(input);
     try_var(output, kernels::stackvm::softplus(input, nullptr,
@@ -1105,7 +1106,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_softsign_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(softsign);
     try_var(input, pop_value());
     dump_input(input);
     try_var(output, kernels::stackvm::softsign(input, nullptr,
@@ -1117,7 +1118,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_space_to_batch_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(space_to_batch);
     try_var(input, pop_value());
     dump_input(input);
     try_var(block_shape, pop_value());
@@ -1134,7 +1135,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_split_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(split);
     try_var(input, pop_value());
     dump_input(input);
     try_var(axis, pop_value());
@@ -1150,7 +1151,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_squeeze_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(squeeze);
     try_var(input, pop_value());
     dump_input(input);
     try_var(dim, pop_value());
@@ -1164,7 +1165,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_stack_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(stack);
     try_var(inputs, pop_value());
     dump_input(inputs);
     try_var(axis, pop_value());
@@ -1178,7 +1179,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_swish_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(swish);
     try_var(input, pop_value());
     dump_input(input);
     try_var(output,
@@ -1190,7 +1191,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_tile_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(tile);
     try_var(input, pop_value());
     dump_input(input);
     try_var(repeats, pop_value());
@@ -1204,7 +1205,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_top_k_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(top_k);
     try_var(x, pop_value());
     dump_input(x);
     try_var(k, pop_value());
@@ -1225,7 +1226,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_transpose_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(transpose);
     try_var(input, pop_value());
     dump_input(input);
     try_var(perm, pop_value());
@@ -1239,7 +1240,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_unary_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(unary);
     try_var(input, pop_value());
     dump_input(input);
     try_var(output, kernels::stackvm::unary(op.unary_op, input, nullptr,
@@ -1251,7 +1252,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_uniform_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(uniform);
     try_var(high, pop_value());
     dump_input(high);
     try_var(low, pop_value());
@@ -1270,7 +1271,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_uniform_like_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(uniform_like);
     try_var(input, pop_value());
     dump_input(input);
     try_var(high, pop_value());
@@ -1289,7 +1290,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_unsqueeze_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(unsqueeze);
     try_var(input, pop_value());
     dump_input(input);
     try_var(dim, pop_value());
@@ -1303,7 +1304,7 @@ result<void> stackvm_runtime_function::visit(
 
 result<void> stackvm_runtime_function::visit(
     [[maybe_unused]] const tensor_where_op_t &op) noexcept {
-    dump_op(op);
+    dump_op(where);
     try_var(cond, pop_value());
     dump_input(cond);
     try_var(x, pop_value());

@@ -114,6 +114,7 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FoldGeneralGelu>();
             p.Add<Passes.Rules.Neutral.FoldSwishPattern1>();
             p.Add<Passes.Rules.Neutral.FoldSwishPattern2>();
+            p.Add<Passes.Rules.Neutral.ReluToClamp>();
             p.Add<Passes.Rules.Neutral.Relu6ToClamp>();
             p.Add<Passes.Rules.Neutral.FoldHardSwish1>();
             p.Add<Passes.Rules.Neutral.FoldHardSwish2>();
