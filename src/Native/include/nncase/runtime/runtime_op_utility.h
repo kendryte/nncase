@@ -41,7 +41,7 @@ inline size_t compute_size(const TShape &shape, const TShape &strides) {
         }
     }
     size_t size = max_stride * max_shape;
-    return size ? size : 1;
+    return shape.size() ? size : 1;
 }
 
 template <class TShape>
