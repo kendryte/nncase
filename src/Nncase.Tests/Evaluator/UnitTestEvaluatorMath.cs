@@ -739,9 +739,18 @@ public class UnitTestEvaluatorMath : TestClassBase
 
         {
             var f = 123;
-            foreach (var op in new UnaryOp[] { UnaryOp.Neg, UnaryOp.Abs, UnaryOp.Square })
+            foreach (var op in new UnaryOp[] { UnaryOp.Neg, UnaryOp.Abs, UnaryOp.Square, UnaryOp.Ceil, UnaryOp.Floor })
             {
-                TestUnaryNormal(op, OrtKISharp.Tensor.FromScalar(f), Tensor.FromScalar(f));
+                if (op == UnaryOp.Ceil || op == UnaryOp.Floor)
+                {
+                    var expr = IR.F.Math.Unary(op, f);
+                    CompilerServices.InferenceType(expr);
+                    Assert.Equal(f, expr.Evaluate().AsTensor().ToOrtTensor());
+                }
+                else
+                {
+                    TestUnaryNormal(op, OrtKISharp.Tensor.FromScalar(f), Tensor.FromScalar(f));
+                }
             }
         }
 
@@ -756,6 +765,10 @@ public class UnitTestEvaluatorMath : TestClassBase
         {
             bool[] a = new bool[] { true, false, false, true };
             TestUnaryNormal(UnaryOp.LogicalNot, OrtKISharp.Tensor.MakeTensor(a, new long[] { 2, 2 }), Tensor.From(a, new[] { 2, 2 }));
+
+            var expr = IR.F.Math.Unary(UnaryOp.BitwiseNot, a);
+            CompilerServices.InferenceType(expr);
+            Assert.Throws<NotSupportedException>(() => expr.Evaluate().AsTensor().ToOrtTensor());
         }
     }
 
