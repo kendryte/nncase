@@ -23,13 +23,13 @@ public class Conv2DTransposeEvaluator : IEvaluator<Conv2DTranspose>, ITypeInfere
     {
         var input = context.GetOrtArgumentValue(conv, Conv2DTranspose.Input);
         var weights = context.GetOrtArgumentValue(conv, Conv2DTranspose.Weights);
-        var bias = context.GetOrtArgumentValue(conv, Conv2DTranspose.Bias);
+        _ = context.GetOrtArgumentValue(conv, Conv2DTranspose.Bias);
         var stride = context.GetArgumentValueAsArray<long>(conv, Conv2DTranspose.Stride);
         var outputShape = context.GetArgumentValueAsArray<long>(conv, Conv2DTranspose.OutputShape);
 
         // [h:[top bottom] w:[left right] ]
         var pads = context.GetArgumentValueAsArray<long>(conv, Conv2DTranspose.Padding);
-        var outputPaddings = context.GetArgumentValueAsArray<long>(conv, Conv2DTranspose.OutputPadding);
+        _ = context.GetArgumentValueAsArray<long>(conv, Conv2DTranspose.OutputPadding);
         var dilation = context.GetArgumentValueAsArray<long>(conv, Conv2DTranspose.Dilation);
         var groups = context.GetArgumentValueAsScalar<long>(conv, Conv2DTranspose.Groups);
         var kernelShape = weights.Shape;
