@@ -27,7 +27,7 @@ public sealed class UnitTestTIRUtilities
             new TIR.Range(0, 8, 1),
         };
 
-        IReadOnlyList<TIR.Range> Targetbounds = new List<TIR.Range>()
+        IReadOnlyList<TIR.Range> targetbounds = new List<TIR.Range>()
         {
             new TIR.Range(0, 32, 1), new TIR.Range(0, 8, 1),
             new TIR.Range(0, 8, 1),
@@ -37,7 +37,7 @@ public sealed class UnitTestTIRUtilities
 
         // Act
         var paddings1 = TIRUtilities.ComputePaddings(bounds, shape);
-        var paddings2 = TIRUtilities.ComputePaddings(bounds, Targetbounds);
+        var paddings2 = TIRUtilities.ComputePaddings(bounds, targetbounds);
 
         // Assert
         Assert.Equal(3, paddings1.Count);
