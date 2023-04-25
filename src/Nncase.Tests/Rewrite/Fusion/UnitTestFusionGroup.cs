@@ -66,7 +66,6 @@ public class UnitTestFusionGroup : TestClassBase
 
     public IAnalyzerManager AnalyzerMananger => CompileSession.GetRequiredService<IAnalyzerManager>();
 
-
     [Fact]
     public void TestFusionMergeCandidateComparer()
     {
