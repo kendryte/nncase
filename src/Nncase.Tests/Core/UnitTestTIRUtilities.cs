@@ -53,7 +53,7 @@ public sealed class UnitTestTIRUtilities
             new TIR.Range(0, 32, 1), new TIR.Range(0, 16, 1),
             new TIR.Range(0, 8, 1),
         };
-        IReadOnlyList<TIR.Range> sub_bounds = new List<TIR.Range>()
+        _ = new List<TIR.Range>()
         {
             new TIR.Range(0, 32, 1), new TIR.Range(0, 16, 1),
             new TIR.Range(0, 16, 1),
@@ -64,7 +64,7 @@ public sealed class UnitTestTIRUtilities
             (IR.F.Math.Max(0, 0), IR.F.Math.Max(0 - 16 - 0, 0)),
             (IR.F.Math.Max(-2, 0), IR.F.Math.Max(0 - 8 - 2, 0)),
         };
-        IReadOnlyList<(IR.Expr Before, IR.Expr After)> sub_paddings = new List<(IR.Expr Before, IR.Expr After)>()
+        _ = new List<(IR.Expr Before, IR.Expr After)>()
         {
             (IR.F.Math.Max(-1, 0), IR.F.Math.Max(0 - 32 - 1, 0)),
             (IR.F.Math.Max(0, 0), IR.F.Math.Max(0 - 16 - 0, 0)),
