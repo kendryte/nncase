@@ -96,7 +96,8 @@ public sealed partial class TransposeToReshape : IRewriteRule
         target_name: null,
         call_name: "tp",
         IsWildcard("input") with { TypePattern = HasRank() },
-        IsTensorConst("perm", IsIntegral())) with { TypePattern = HasFixedShape() };
+        IsTensorConst("perm", IsIntegral())) with
+    { TypePattern = HasFixedShape() };
 
     private Expr? GetReplace(Expr input, Expr tp, Tensor<int> perm, RunPassContext context)
     {
