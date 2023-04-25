@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using Nncase;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.Utilities;
 using Xunit;
@@ -44,5 +45,17 @@ public sealed class UnitTestDumpUtility
         BinFileUtil.WriteBinOutputs(new Tensor[] { new Tensor<int>(new[] { 1 }) }, "./");
         Assert.True(File.Exists("./input_0_0.bin"));
         Assert.True(File.Exists("./nncase_result_0.bin"));
+    }
+
+    [Fact]
+    public void TestNullDumpper()
+    {
+        var nullDumpper = new NullDumpper();
+        string nullDumpperDirectory = nullDumpper.Directory;
+        nullDumpper.DumpIR(1, string.Empty);
+        nullDumpper.DumpDotIR(1, string.Empty);
+        nullDumpper.DumpModule(new IRModule(), string.Empty);
+        nullDumpper.DumpCSharpIR(1, string.Empty);
+        nullDumpper.OpenFile("./");
     }
 }
