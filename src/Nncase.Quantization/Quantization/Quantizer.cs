@@ -73,23 +73,27 @@ internal partial class Quantizer
             // 3. Export quant info
             if (_quantizeOptions.ExportQuantScheme == true)
             {
+                var outputNames = new HashSet<string>();
                 var quantScheme = new QuantScheme();
                 quantScheme.Version = "1.0";
                 var outputsCount = 0;
                 foreach (var range in ranges)
                 {
-                    if (range.Key.Expr.Metadata.OutputNames != null)
+                    if (range.Key.Expr.Metadata.OutputNames != null && !outputNames.Contains(range.Key.Expr.Metadata.OutputNames[0]))
                     {
+                        outputNames.Add(range.Key.Expr.Metadata.OutputNames[0]);
                         outputsCount++;
                     }
                 }
+
+                outputNames.Clear();
 
                 quantScheme.Outputs = new Output[outputsCount];
 
                 if (_quantizeOptions.ExportWeightRangeByChannel == false)
                 {
                     var index = 0;
-                    foreach (var range in ranges.Where(r => r.Key.Expr.Metadata.OutputNames != null))
+                    foreach (var range in ranges.Where(r => r.Key.Expr.Metadata.OutputNames != null && !outputNames.Contains(r.Key.Expr.Metadata.OutputNames[0])))
                     {
                         quantScheme.Outputs[index] = new Output();
                         quantScheme.Outputs[index].Name = range.Key.Expr.Metadata.OutputNames![0];
@@ -97,12 +101,13 @@ internal partial class Quantizer
                         quantScheme.Outputs[index].DataType = ((RangeOf)((Call)range.Key.Expr).Target).IsRangeOfWeight == true ? _quantizeOptions.WQuantType.ToString() : _quantizeOptions.QuantType.ToString();
                         quantScheme.Outputs[index].DataRange = new ValueRange<float>[1];
                         quantScheme.Outputs[index].DataRange![0] = range.Value;
+                        outputNames.Add(range.Key.Expr.Metadata.OutputNames[0]);
                         index++;
                     }
                 }
                 else
                 {
-                    var weightsByChannelRanges = new Dictionary<ENode, ValueRange<float>[]>(ReferenceEqualityComparer.Instance);
+                    var byChannelRanges = new Dictionary<ENode, ValueRange<float>[]>(ReferenceEqualityComparer.Instance);
                     foreach (var range in ranges)
                     {
                         if (((RangeOf)((Call)range.Key.Expr).Target).IsRangeOfWeight == true)
@@ -135,30 +140,31 @@ internal partial class Quantizer
                                 }
                             }
 
-                            weightsByChannelRanges.Add(range.Key, valueRanges);
+                            byChannelRanges.Add(range.Key, valueRanges);
                         }
                         else
                         {
                             var valueRanges = new ValueRange<float>[1];
                             valueRanges[0] = range.Value;
-                            weightsByChannelRanges.Add(range.Key, valueRanges);
+                            byChannelRanges.Add(range.Key, valueRanges);
                         }
                     }
 
                     var index = 0;
-                    foreach (var range in ranges.Where(r => r.Key.Expr.Metadata.OutputNames != null))
+                    foreach (var range in ranges.Where(r => r.Key.Expr.Metadata.OutputNames != null && !outputNames.Contains(r.Key.Expr.Metadata.OutputNames[0])))
                     {
                         quantScheme.Outputs[index] = new Output();
                         quantScheme.Outputs[index].Name = range.Key.Expr.Metadata.OutputNames![0];
                         quantScheme.Outputs[index].DataRangeMode = ((RangeOf)((Call)range.Key.Expr).Target).IsRangeOfWeight == true ? "by_channel" : "by_tensor";
                         quantScheme.Outputs[index].DataType = ((RangeOf)((Call)range.Key.Expr).Target).IsRangeOfWeight == true ? _quantizeOptions.WQuantType.ToString() : _quantizeOptions.QuantType.ToString();
-                        var rangeLength = weightsByChannelRanges[range.Key].Length;
+                        var rangeLength = byChannelRanges[range.Key].Length;
                         quantScheme.Outputs[index].DataRange = new ValueRange<float>[rangeLength];
                         for (int i = 0; i < rangeLength; i++)
                         {
-                            quantScheme.Outputs[index].DataRange![i] = weightsByChannelRanges[range.Key][i];
+                            quantScheme.Outputs[index].DataRange![i] = byChannelRanges[range.Key][i];
                         }
 
+                        outputNames.Add(range.Key.Expr.Metadata.OutputNames[0]);
                         index++;
                     }
                 }
