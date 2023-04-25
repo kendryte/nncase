@@ -46,16 +46,16 @@ public sealed class UnitTestTIR
     {
         Assert.Throws<InvalidOperationException>(() => T.Store(null!, null!));
 
-        Var variable = new Var("x", DataTypes.Int32);
+        var variable = new Var("x", DataTypes.Int32);
         int index = 0;
         Expr loadOp = T.Load(variable, index);
         Expr value = 42;
         _ = T.Store(loadOp, value);
 
         var physicalBuffer = new TIR.PhysicalBuffer("testInput", DataTypes.Float32, Schedule.MemoryLocation.Input, new[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new[] { 1, 16, 64, 400 }), 0, 0);
-        Expr[] indices = new Expr[] { 0, 1 };
+        var indices = new Expr[] { 0, 1 };
         Expr storeOp = T.Store(new BufferLoad(physicalBuffer, indices), value);
-        BufferStore store = (BufferStore)storeOp;
+        var store = (BufferStore)storeOp;
         Assert.Equal(physicalBuffer, store.Buffer);
         Assert.Equal(value, store.Value);
         _ = store.Indices;
