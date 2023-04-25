@@ -1326,9 +1326,9 @@ public sealed class ReduceCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class BroadcastCase : IRewriteCase
@@ -1356,9 +1356,9 @@ public sealed class BroadcastCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class CastCase : IRewriteCase
@@ -1384,9 +1384,9 @@ public sealed class CastCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class TileCase : IRewriteCase
@@ -1411,9 +1411,9 @@ public sealed class TileCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class StackCase : IRewriteCase
@@ -1440,9 +1440,9 @@ public sealed class StackCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class BitcastCase : IRewriteCase
@@ -1467,9 +1467,9 @@ public sealed class BitcastCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class SliceCase : IRewriteCase
@@ -1499,9 +1499,9 @@ public sealed class SliceCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class LRNCase : IRewriteCase
@@ -1531,9 +1531,9 @@ public sealed class LRNCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class SoftmaxCase : IRewriteCase
@@ -1559,9 +1559,9 @@ public sealed class SoftmaxCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class CumSumCase : IRewriteCase
@@ -1591,9 +1591,9 @@ public sealed class CumSumCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class LSTMCase : IRewriteCase
@@ -1632,9 +1632,9 @@ public sealed class LSTMCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class InstanceNormalizationCase : IRewriteCase
@@ -1663,9 +1663,9 @@ public sealed class InstanceNormalizationCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class HardSwishCase : IRewriteCase
@@ -1690,9 +1690,9 @@ public sealed class HardSwishCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class SoftplusCase : IRewriteCase
@@ -1717,9 +1717,9 @@ public sealed class SoftplusCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class SoftsignCase : IRewriteCase
@@ -1744,9 +1744,9 @@ public sealed class SoftsignCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class LpNormalizationCase : IRewriteCase
@@ -1771,9 +1771,9 @@ public sealed class LpNormalizationCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class Conv2DTransposeCase : IRewriteCase
@@ -1811,9 +1811,9 @@ public sealed class Conv2DTransposeCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class LogSoftmaxCase : IRewriteCase
@@ -1839,9 +1839,9 @@ public sealed class LogSoftmaxCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class CompareCase : IRewriteCase
@@ -1866,9 +1866,9 @@ public sealed class CompareCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class FakeDequantizeCase : IRewriteCase
@@ -1898,9 +1898,9 @@ public sealed class FakeDequantizeCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class FakeQuantizeCase : IRewriteCase
@@ -1930,9 +1930,9 @@ public sealed class FakeQuantizeCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class TopKCase : IRewriteCase
@@ -1961,9 +1961,9 @@ public sealed class TopKCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class GatherCase : IRewriteCase
@@ -1991,9 +1991,9 @@ public sealed class GatherCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class GatherNDCase : IRewriteCase
@@ -2021,9 +2021,9 @@ public sealed class GatherNDCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class FlattenCase : IRewriteCase
@@ -2049,9 +2049,9 @@ public sealed class FlattenCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class SplitCase : IRewriteCase
@@ -2079,9 +2079,9 @@ public sealed class SplitCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class SqueezeCase : IRewriteCase
@@ -2108,9 +2108,9 @@ public sealed class SqueezeCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class ConcatCase : IRewriteCase
@@ -2137,9 +2137,9 @@ public sealed class ConcatCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class UnsqueezeCase : IRewriteCase
@@ -2164,9 +2164,9 @@ public sealed class UnsqueezeCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class ExpandCase : IRewriteCase
@@ -2192,9 +2192,9 @@ public sealed class ExpandCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class ShapeOfCase : IRewriteCase
@@ -2219,9 +2219,9 @@ public sealed class ShapeOfCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class ReverseSequenceCase : IRewriteCase
@@ -2250,9 +2250,9 @@ public sealed class ReverseSequenceCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class WhereCase : IRewriteCase
@@ -2280,9 +2280,9 @@ public sealed class WhereCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class RangeCase : IRewriteCase
@@ -2309,9 +2309,9 @@ public sealed class RangeCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class SizeOfCase : IRewriteCase
@@ -2337,9 +2337,9 @@ public sealed class SizeOfCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class BatchToSpaceCase : IRewriteCase
@@ -2371,9 +2371,9 @@ public sealed class BatchToSpaceCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class L2NormalizationCase : IRewriteCase
@@ -2400,9 +2400,9 @@ public sealed class L2NormalizationCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class OneHotCase : IRewriteCase
@@ -2431,9 +2431,9 @@ public sealed class OneHotCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class CeluCase : IRewriteCase
@@ -2459,9 +2459,9 @@ public sealed class CeluCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class EluCase : IRewriteCase
@@ -2487,9 +2487,9 @@ public sealed class EluCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class SeluCase : IRewriteCase
@@ -2516,9 +2516,9 @@ public sealed class SeluCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class HardmaxCase : IRewriteCase
@@ -2544,9 +2544,9 @@ public sealed class HardmaxCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class HardSigmoidCase : IRewriteCase
@@ -2573,9 +2573,9 @@ public sealed class HardSigmoidCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class ReduceArgCase : IRewriteCase
@@ -2605,9 +2605,9 @@ public sealed class ReduceArgCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class NormalLikeCase : IRewriteCase
@@ -2636,9 +2636,9 @@ public sealed class NormalLikeCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class UniformLikeCase : IRewriteCase
@@ -2667,9 +2667,9 @@ public sealed class UniformLikeCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class UniformCase : IRewriteCase
@@ -2697,9 +2697,9 @@ public sealed class UniformCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }
 
 public sealed class ResizeImageCase : IRewriteCase
@@ -2724,7 +2724,7 @@ public sealed class ResizeImageCase : IRewriteCase
     public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
 
     public Dictionary<Var, IValue> FeedDict => new()
-    {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
-    };
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }

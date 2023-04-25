@@ -165,7 +165,6 @@ internal partial class Quantizer
                         }
 
                         outputNames.Add(range.Key.Expr.Metadata.OutputNames[0]);
-
                         index++;
                     }
                 }
