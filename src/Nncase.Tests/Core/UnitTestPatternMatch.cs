@@ -10,6 +10,7 @@ using Nncase.IR;
 using Nncase.Passes;
 using Nncase.PatternMatch;
 using Nncase.PatternMatch.F;
+using Nncase.TIR;
 using Tensorflow;
 using Xunit;
 using static Nncase.IR.F.Math;
@@ -82,5 +83,11 @@ public sealed class UnitTestPatternMatch
         Math.LessEqual(1f, 1f);
         Math.GreaterEqual(1f, 1f);
         Math.GreaterThan(1f, 1f);
+    }
+
+    [Fact]
+    public void TestUtility()
+    {
+        IsSwappableBinary("testName", "call", binary => true, 1f, 1f);
     }
 }
