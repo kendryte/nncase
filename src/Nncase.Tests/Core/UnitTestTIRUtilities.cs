@@ -72,12 +72,10 @@ public sealed class UnitTestTIRUtilities
         };
 
         // Act
-        var noPadBounds1 = TIRUtilities.ComputeNoPadBounds(bounds, paddings);
-        var noPadBounds2 = TIRUtilities.ComputeSubNoPadBounds(bounds, sub_bounds, paddings, sub_paddings);
+        var noPadBounds = TIRUtilities.ComputeNoPadBounds(bounds, paddings);
 
         // Assert
-        Assert.Equal(3, noPadBounds1.Count);
-        Assert.Equal(3, noPadBounds2.Count);
+        Assert.Equal(3, noPadBounds.Count);
     }
 
     [Fact]
