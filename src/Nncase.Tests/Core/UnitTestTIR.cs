@@ -123,4 +123,18 @@ public sealed class UnitTestTIR
         var actual = T.ForSegment(out var seg, 1, 2, 3);
         Assert.Equal(expect.ToString(), actual.ToString());
     }
+
+    [Fact]
+    public void TestGrid()
+    {
+        var grid = T.Grid(out Var[] loopVars, LoopMode.Serial, new Range(-1f, 1f, 1));
+    }
+
+    [Fact]
+    public void TestEmit()
+    {
+        int result;
+        T.Emit(out result, () => 5);
+        Assert.Equal(5, result);
+    }
 }
