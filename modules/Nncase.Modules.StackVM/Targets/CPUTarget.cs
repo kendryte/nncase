@@ -64,6 +64,13 @@ public class CPUTarget : ITarget
     /// <inheritdoc/>
     public void RegisterTargetDependentAfterQuantPass(IPassManager passManager, CompileOptions options)
     {
+        if (options.QuantizeOptions.ModelQuantMode == ModelQuantMode.UsePTQ)
+        {
+            passManager.AddWithName<DataflowPass>("RemoveMarker").Configure(p =>
+            {
+                p.Add<Passes.Rules.Lower.RemoveMarker>();
+            });
+        }
     }
 
     public void RegisterTargetDependentBeforeCodeGen(IPassManager passManager, CompileOptions options)

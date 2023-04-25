@@ -26,16 +26,26 @@ namespace Nncase.Importer
                 b = F.Tensors.Transpose(b, new[] { 1, 0 });
             }
 
-            var gemm = F.Tensors.MatMul(a, b) * alpha;
+            var mm = F.Tensors.MatMul(a, b);
+            if (alpha != 1.0f)
+            {
+                mm = mm * alpha;
+            }
+
             if (op.Input.Count == 3)
             {
-                var c = GetInputExpr(op, 2);
+                var bias = GetInputExpr(op, 2);
                 var beta = GetFloatAttribute(op, "beta", 1.0f);
-                return gemm + (beta * c);
+                if (beta != 1.0f)
+                {
+                    bias = bias * beta;
+                }
+
+                return mm + bias;
             }
             else
             {
-                return gemm;
+                return mm;
             }
         }
     }

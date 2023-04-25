@@ -24,7 +24,7 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
     {
         var input = context.GetOrtArgumentValue(reshape, Reshape.Input);
         var shape = context.GetInt64OrtTensorArgumentValue(reshape, Reshape.Shape);
-        return OrtKI.Reshape(input, shape, 0).ToValue();
+        return OrtKI.Reshape(input, shape, context.CurrentCall.CheckedType is TensorType && context.CurrentCall.CheckedShape.IsFixed ? (context.CurrentCall.CheckedShape.ToValueArray().Contains(0) ? 1 : 0) : 0).ToValue();
     }
 
     /// <inheritdoc/>
