@@ -42,8 +42,13 @@ namespace Nncase
                 new[] { 0L });
         }
 
-        public static (Expr H, Expr W) GetHW(in Expr input)
+        public static (Expr H, Expr W) GetHW(in Expr input, bool isNHWC = false)
         {
+            if (isNHWC)
+            {
+                return (ShapeIndex(input, 1), ShapeIndex(input, 2));
+            }
+
             return (ShapeIndex(input, 2), ShapeIndex(input, 3));
         }
 
