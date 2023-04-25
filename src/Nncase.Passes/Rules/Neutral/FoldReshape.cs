@@ -5,10 +5,14 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using DryIoc.ImTools;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
+using Nncase.Utilities;
+using Tensorflow;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.Tensors;
 using static Nncase.IR.TypePatternUtility;
@@ -56,5 +60,43 @@ public sealed partial class FoldTwoReshapes : IRewriteRule
     private Expr? GetReplace(Expr input, Expr newShape)
     {
         return Reshape(input, newShape);
+    }
+}
+
+/// <summary>
+/// Fold nop <see cref="IR.Tensors.Reshape"/>.
+/// </summary>
+[RuleGenerator]
+public sealed partial class ReshapeToTranspose : IRewriteRule
+{
+    /// <inheritdoc/>
+    public IPattern Pattern { get; } = IsReshape(
+        "reshape",
+        "call",
+        _ => true,
+        IsWildcard("input") with { TypePattern = HasFixedShape() },
+        IsTensorConst("newShape", IsIntegral()));
+
+    private Expr? GetReplace(Expr input, Call call)
+    {
+        var newShape = call.CheckedShape.ToValueArray();
+        var inShape = input.CheckedShape.ToValueArray();
+        var sigNewShape = newShape.Where(x => x != 1).ToArray();
+        var sigInShape = inShape.Where(x => x != 1).ToArray();
+        if (newShape.Length == inShape.Length && sigInShape.SequenceEqual(sigNewShape))
+        {
+            var inShapeList = inShape.Zip(Enumerable.Range(0, inShape.Length)).ToList();
+            var perm = new List<int>();
+            for (var o = 0; o < newShape.Length; o++)
+            {
+                var inShapeZip = inShapeList.FindFirst((i) => i.First == newShape[o]);
+                perm.Add(inShapeZip.Second);
+                inShapeList.Remove(inShapeZip);
+            }
+
+            return Transpose(input, perm.ToArray()).InheritMetaData(call);
+        }
+
+        return null;
     }
 }

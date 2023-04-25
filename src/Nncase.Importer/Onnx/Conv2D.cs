@@ -87,12 +87,12 @@ namespace Nncase.Importer
             return GetIntsAttribute(op, "dilations", new[] { 1, 1 });
         }
 
-        private Expr GetBias(NodeProto op, Expr weights, bool isConvTranspose = false)
+        private Expr GetBias(NodeProto op, Expr weights, bool isConvTranspose = false, long groups = 1)
         {
             var biasSizeIndex = isConvTranspose ? 1 : 0;
             return op.Input.Count > 2
                 ? GetInputExpr(op, 2)
-                : F.Tensors.Expand(0f, Util.ShapeIndex(weights, biasSizeIndex));
+                : F.Tensors.Expand(0f, Util.ShapeIndex(weights, biasSizeIndex) * groups);
         }
 
         private Expr AutoPad(NodeProto op, string autoPad, Expr input, Expr weights, long[] strides, long[] dilation, bool isConv1D = false) => autoPad switch

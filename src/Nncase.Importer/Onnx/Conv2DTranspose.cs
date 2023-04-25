@@ -20,10 +20,10 @@ namespace Nncase.Importer
         private Expr VisitConv2DTranspose(NodeProto op)
         {
             var (input, weights) = GetInputExprs(op, 0, 1);
-            var bias = GetBias(op, weights, true);
+            var group = GetIntAttribute(op, "group", 1);
+            var bias = GetBias(op, weights, true, group);
             var strides = GetStrideAttribute(op);
             var dilation = GetDilationsAttribute(op);
-            var group = GetIntAttribute(op, "group", 1);
             var autoPad = GetStringAttribute(op, "auto_pad", "NOTSET");
             var outputPadding = GetIntsAttribute(op, "output_padding", new[] { 0, 0 });
             var pads = AutoPad(op, autoPad, input, weights, strides.ToArray<long>(), dilation.ToArray<long>());
