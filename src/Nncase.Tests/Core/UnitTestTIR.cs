@@ -9,9 +9,12 @@ using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.Schedule;
 using Nncase.TIR;
+using Nncase.TIR.Builders;
 using OrtKISharp;
+using Tensorflow;
 using Xunit;
 using Buffer = Nncase.TIR.Buffer;
+using Function = Nncase.IR.Function;
 using Range = Nncase.TIR.Range;
 
 namespace Nncase.Tests.CoreTest;
@@ -71,5 +74,53 @@ public sealed class UnitTestTIR
         Assert.Equal(dom, iterVar.Dom);
         Assert.Equal(mode, iterVar.Mode);
         Assert.Equal(value, iterVar.Value);
+    }
+
+    [Fact]
+    public void TestSizeVar()
+    {
+        var name = "test";
+        var actual = T.SizeVar(name);
+        var expected = Var.SizeVar(name);
+        Assert.True(actual.ToString().Equals(expected.ToString(), StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void TestSerial()
+    {
+        var domain = new Range(-1f, 1f, 1);
+        var actual = T.Serial(out _, domain);
+        var expect = T.ForLoop(out _, domain, LoopMode.Serial, "v");
+        Assert.Equal(expect.ToString(), actual.ToString());
+    }
+
+    [Fact]
+    public void TestSequential()
+    {
+        var expect1 = new SequentialBuilder<Sequential>(body => body);
+        var actual1 = T.Sequential();
+        Assert.Equal(expect1.ToString(), actual1.ToString());
+
+        var expect2 = TIR.Sequential.Flatten(Array.Empty<object>());
+        var actual2 = T.Sequential(Array.Empty<object>());
+        Assert.Equal(expect2, actual2);
+    }
+
+    [Fact]
+    public void TestBuffer()
+    {
+        var buffer = T.Buffer(DataTypes.Float32, MemoryLocation.Input, new Expr[] { 1, 16, 64, 400 }, out _);
+        Assert.Equal(DataTypes.Float32, buffer.ElemType);
+        var expect = new LogicalBuffer("_", DataTypes.Float32, MemoryLocation.Input, new Expr[] { 1, 16, 64, 400 });
+        Assert.Equal(expect, buffer);
+    }
+
+    [Fact]
+    public void TestForSegment()
+    {
+        var count = IR.F.Tensors.Cast(2 / IR.F.Tensors.Cast(2, DataTypes.Float32), DataTypes.Int32);
+        var expect = T.Serial(out var i, (0, count));
+        var actual = T.ForSegment(out var seg, 1, 2, 3);
+        Assert.Equal(expect.ToString(), actual.ToString());
     }
 }
