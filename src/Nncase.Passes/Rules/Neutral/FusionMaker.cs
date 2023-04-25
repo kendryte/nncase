@@ -224,14 +224,14 @@ public partial class DoubleInputFusion<T, TBegin, TEnd> : FusionMaker
     {
         var newArgs = new List<Var>();
         var newParams = new List<Expr>();
-        var replace_pairs = new List<(Expr, Expr)>();
+        var replace_pairs = new List<(int, Expr)>();
         if (lhs is not TensorConst)
         {
             var arg = new Var(lhs.CheckedType!);
             var newBeginLhsCall = ReplaceCallParams(beginLhsOp, beginLhsCallParams, (lhs, arg));
             newArgs.Add(arg);
             newParams.Add(lhs);
-            replace_pairs.Add((beginLhsCall, newBeginLhsCall));
+            replace_pairs.Add((0, newBeginLhsCall));
         }
 
         if (rhs is not TensorConst)
@@ -240,7 +240,7 @@ public partial class DoubleInputFusion<T, TBegin, TEnd> : FusionMaker
             var newBeginRhsCall = ReplaceCallParams(beginRhsOp, beginRhsCallParams, (rhs, arg));
             newArgs.Add(arg);
             newParams.Add(rhs);
-            replace_pairs.Add((beginRhsCall, newBeginRhsCall));
+            replace_pairs.Add((1, newBeginRhsCall));
         }
 
         var newMidCall = ReplaceCallParams(midOp, midCallParams, replace_pairs.ToArray());
