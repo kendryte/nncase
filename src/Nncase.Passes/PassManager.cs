@@ -178,6 +178,7 @@ internal sealed class PassManager : IPassManager
 
         public override async Task<IRModule> RunAsync(IRModule module)
         {
+            bool replaced = false;
             for (int i = 0; i < module.Functions.Count; i++)
             {
                 var pre = module.Functions[i];
@@ -186,18 +187,14 @@ internal sealed class PassManager : IPassManager
 
                 if (!object.ReferenceEquals(pre, post))
                 {
-                    if (DumpScope.Current.IsEnabled(DumpFlags.PassIR))
-                    {
-                        DumpScope.Current.DumpModule(module, $"Epoch_{StartPassIndex}_{i}/Before");
-                    }
-
                     module.Replace(i, post);
-
-                    if (DumpScope.Current.IsEnabled(DumpFlags.PassIR))
-                    {
-                        DumpScope.Current.DumpModule(module, $"Epoch_{StartPassIndex}_{i}/After");
-                    }
+                    replaced = true;
                 }
+            }
+
+            if (replaced && DumpScope.Current.IsEnabled(DumpFlags.PassIR))
+            {
+                DumpScope.Current.DumpModule(module, $"Epoch_{StartPassIndex}/After");
             }
 
             return module;
