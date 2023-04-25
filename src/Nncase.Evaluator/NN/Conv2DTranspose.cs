@@ -65,7 +65,7 @@ public class Conv2DTransposeEvaluator : IEvaluator<Conv2DTranspose>, ITypeInfere
                             int filter_x_start = (int)System.Math.Max(0, (-out_x_origin + dilation[1] - 1) / dilation[1]);
                             int filter_x_end = (int)System.Math.Min(kernelShape[3], ((int)outputShape[3] - out_x_origin + dilation[1] - 1) / dilation[1]);
 
-                            float in_v = 0f;
+                            float in_v;
                             if (ix < 0 || ix >= inputShape[3] || iy < 0 || iy >= inputShape[2])
                             {
                                 in_v = 0f;
