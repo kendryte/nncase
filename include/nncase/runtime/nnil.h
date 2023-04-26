@@ -55,6 +55,7 @@ typedef enum _nnil_opcode
     nnil_max = 0x45,
     nnil_pow = 0x46,
     nnil_erf = 0x47,
+    nnil_logical_and = 0x48,
     nnil_clamp = 0x80,
     nnil_ret = 0xA0
 } nnil_opcode_t;

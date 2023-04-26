@@ -792,6 +792,13 @@ inline void nnil_unary_method(const float *input, float *output, size_t count, g
                 stack.push(std::pow(a, b));
                 break;
             }
+            case nnil_logical_and:
+            {
+                auto b = stack.pop();
+                auto a = stack.pop();
+                stack.push(a && b);
+                break;
+            }
             case nnil_clamp:
             {
                 auto high = stack.pop();

@@ -173,6 +173,9 @@ void fused_unary::compile_graph(const std::vector<fused_unary_op> &subgraph, cod
             case binary_pow:
                 builder.emit_pow();
                 break;
+            case binary_logical_and:
+                builder.emit_logical_and();
+                break;
             default:
                 throw std::invalid_argument("Unsupported binary op: " + (std::string)magic_enum::enum_name(op.binary.binary_op));
             }

@@ -63,6 +63,7 @@ public:
     void emit_min() { emit_opcode(runtime::nnil_min); }
     void emit_max() { emit_opcode(runtime::nnil_max); }
     void emit_pow() { emit_opcode(runtime::nnil_pow); }
+    void emit_logical_and() { emit_opcode(runtime::nnil_logical_and); }
     void emit_clamp() { emit_opcode(runtime::nnil_clamp); }
 
     // emit_erf
