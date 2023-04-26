@@ -1,8 +1,10 @@
 [project]
+name = "nncase"
+version = "2.0.0"
 requires-python = ">=3.6"
 
 [build-system]
-requires = ["setuptools>=42", "wheel", "conan", "ninja"]
+requires = ["setuptools>=42", "wheel", "conan==1.59", "ninja"]
 
 [tool.cibuildwheel]
 build = "cp3*"
