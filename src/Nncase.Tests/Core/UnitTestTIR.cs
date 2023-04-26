@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using NetFabric.Hyperlinq;
 using Nncase;
 using Nncase.Evaluator;
 using Nncase.IR;
@@ -127,7 +128,9 @@ public sealed class UnitTestTIR
     [Fact]
     public void TestGrid()
     {
-        var grid = T.Grid(out Var[] loopVars, LoopMode.Serial, new Range(-1f, 1f, 1));
+        var grid1 = T.Grid(out _, LoopMode.Serial, new Range(-1f, 1f, 1));
+        var grid2 = T.Grid(out _, out _, new(1, 1));
+        Assert.Equal(grid1.GetDataType(), grid2.GetDataType());
     }
 
     [Fact]
@@ -136,5 +139,56 @@ public sealed class UnitTestTIR
         int result;
         T.Emit(out result, () => 5);
         Assert.Equal(5, result);
+    }
+
+    [Fact]
+    public void TestBufferRegion()
+    {
+        var buffer = T.Buffer(DataTypes.Float32, MemoryLocation.Input, new Expr[] { 1, 16, 64, 400 }, out _);
+        var region = new Range[] { new Range(1, 2, 2), new Range(-1, 3, 2) };
+        var bufferRegion = new BufferRegion(buffer, region);
+
+        var newRegion = bufferRegion[new Range(0, 1, 2), new Range(-3, 3, 2)];
+        Assert.Equal(buffer, newRegion.Buffer);
+        Assert.Equal(new Range(0, 1, 2), newRegion.Region[0]);
+        Assert.Equal(new Range(-3, 3, 2), newRegion.Region[1]);
+    }
+
+    [Fact]
+    public void TestNop()
+    {
+        var nop = new Nop();
+        Assert.False(nop.CanFoldConstCall);
+    }
+
+    [Fact]
+    public void TestPrimFunction()
+    {
+        var primFunc = new PrimFunction("test_module", new Sequential(new Expr[] { 1 }), new[]
+        {
+            new TIR.PhysicalBuffer("testInput", DataTypes.Float32, Schedule.MemoryLocation.Input, new[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new[] { 1, 16, 64, 400 }), 0, 0),
+            new TIR.PhysicalBuffer("testInput", DataTypes.Float32, Schedule.MemoryLocation.Input, new[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new[] { 1, 16, 64, 400 }), 0, 0),
+        });
+
+        var primFuncParameters = primFunc.Parameters;
+        var primFuncParameterTypes = primFunc.ParameterTypes;
+        var expect = primFuncParameters.AsValueEnumerable().Select(x => x.CheckedType).ToArray();
+        Assert.Equal(expect, primFuncParameterTypes);
+
+        var newModuleKind = "new_module";
+        var newBody = new Sequential(new Expr[] { 3 });
+        var newParams = new[]
+        {
+            new TIR.PhysicalBuffer("testInput", DataTypes.Float32, Schedule.MemoryLocation.Input, new[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new[] { 1, 16, 64, 400 }), 0, 0),
+            new TIR.PhysicalBuffer("testInput", DataTypes.Float32, Schedule.MemoryLocation.Input, new[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new[] { 1, 16, 64, 400 }), 0, 0),
+        };
+
+        var newPrimFunc = primFunc.With(moduleKind: newModuleKind, body: newBody, parameters: newParams);
+
+        Assert.NotSame(primFunc, newPrimFunc);
+        Assert.Equal(newModuleKind, newPrimFunc.ModuleKind);
+        Assert.Equal(newBody, newPrimFunc.Body);
+        Assert.Equal(newParams, newPrimFunc.Parameters.ToArray());
+        Assert.Equal(primFunc.Name, newPrimFunc.Name); // should not change the name
     }
 }
