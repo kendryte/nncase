@@ -31,6 +31,7 @@ project(nncase
 
 option(ENABLE_OPENMP "OpenMP support" ON)
 option(ENABLE_HALIDE "halide kernels support" ON)
+option(DOTNET_INIT_FOR_CONFIG "Initialize dotnet from runtimeconfig" OFF)
 option(BUILD_PYTHON_BINDING "Build python binding" ON)
 option(BUILD_CSHARP_BINDING "Build csharp binding" ON)
 option(BUILD_BENCHMARK "Build benchmark programs" ON)

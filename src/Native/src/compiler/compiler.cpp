@@ -194,26 +194,41 @@ struct premain {
 } premain_v;
 
 #endif
-
-c_api_initialize_fn
-load_compiler_c_api_initializer(const char *root_assembly_path) {
+std::basic_string<char_t>
+get_hostfxr_path_wrapper() {
     size_t path_length;
     if (get_hostfxr_path(nullptr, &path_length, nullptr) != 0x80008098)
         throw std::runtime_error("Failed to get hostfxr path.");
 
-    std::basic_string<char_t> path(path_length, '\0');
-    if (get_hostfxr_path(path.data(), &path_length, nullptr))
+    std::basic_string<char_t> hostfxr_path(path_length, '\0');
+    if (get_hostfxr_path(hostfxr_path.data(), &path_length, nullptr))
         throw std::runtime_error("Failed to get hostfxr path.");
+    return hostfxr_path;
+}
 
-    auto hostfxr_mod = load_library(path.c_str());
-    auto hostfxr_initialize =
-        (hostfxr_initialize_for_dotnet_command_line_fn)load_symbol(
-            hostfxr_mod, "hostfxr_initialize_for_dotnet_command_line");
+c_api_initialize_fn
+load_compiler_c_api_initializer(const char *root_assembly_path) {
+    auto hostfxr_mod =
+        load_library(get_hostfxr_path_wrapper().c_str());
 
     hostfxr_handle handle;
     std::filesystem::path compiler_path(root_assembly_path);
+
+#ifdef NNCASE_DOTNET_INIT_FOR_CONFIG
+    auto hostfxr_initialize =
+        (hostfxr_initialize_for_runtime_config_fn)load_symbol(
+            hostfxr_mod, "hostfxr_initialize_for_runtime_config");
+    hostfxr_initialize(
+        compiler_path.replace_extension(".runtimeconfig.json").c_str(), nullptr,
+        &handle);
+#else
     const char_t *args[] = {compiler_path.c_str()};
+    auto hostfxr_initialize =
+        (hostfxr_initialize_for_dotnet_command_line_fn)load_symbol(
+            hostfxr_mod, "hostfxr_initialize_for_dotnet_command_line");
     hostfxr_initialize(1, args, nullptr, &handle);
+#endif
+
     THROW_IF_NOT(handle, nncase::runtime::nncase_errc::runtime_not_found);
 
     auto hostfxr_get_delegate = (hostfxr_get_runtime_delegate_fn)load_symbol(

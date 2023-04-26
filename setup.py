@@ -81,11 +81,10 @@ class InstallCMakeLibs(install_lib):
         libs = [os.path.join(root, _lib) for root, _, files in
                 os.walk(bin_dir) for _lib in files if
                 os.path.isfile(os.path.join(root, _lib)) and
-                os.path.splitext(_lib)[1] in [".dll", ".so", ".dylib"]
+                os.path.splitext(_lib)[-1] in [".dll", ".so", ".dylib", ".json"]
                 and not (_lib.startswith("python") or _lib.startswith("_nncase"))]
 
         for lib in libs:
-
             shutil.move(lib, os.path.join(self.build_dir,
                                           os.path.basename(lib)))
 
@@ -232,6 +231,15 @@ class BuildCMakeExt(build_ext):
                     os.path.splitext(_pyd)[-1] in [".pyd", ".so"]][0]
 
         shutil.move(pyd_path, extpath)
+
+        # copy nncase publish
+        nncase_libs = [os.path.join(root, _lib) for root, _, files in
+                os.walk(os.path.join(ext.sourdir, 'install')) for _lib in files if
+                os.path.isfile(os.path.join(root, _lib)) and
+                os.path.splitext(_lib)[-1] in [".dll", ".so", ".dylib", ".json"]]
+
+        for lib in nncase_libs:
+            shutil.move(lib, os.path.join(bin_dir, 'nncase.deps', os.path.basename(lib)))
 
         # After build_ext is run, the following commands will run:
         #

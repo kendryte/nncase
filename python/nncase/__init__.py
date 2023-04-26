@@ -34,19 +34,11 @@ import _nncase
 from _nncase import RuntimeTensor, TensorDesc, Simulator
 
 
-def _check_env():
-    env = os.environ
-    errors = []
-    if not "NNCASE_COMPILER" in env:
-        errors.append("NNCASE_COMPILER not found")
-    return errors
-
-
 def _initialize():
-    errors = _check_env()
-    if len(errors) > 0:
-        raise Exception("check failed:\n" + str.join('\n', errors))
-    _nncase.initialize(os.getenv("NNCASE_COMPILER"))
+    compiler_path = os.getenv("NNCASE_COMPILER")
+    if not compiler_path:
+        compiler_path = os.path.join(os.path.dirname(_nncase.__file__), "Nncase.Compiler.dll")
+    _nncase.initialize(compiler_path)
 
 
 _initialize()
