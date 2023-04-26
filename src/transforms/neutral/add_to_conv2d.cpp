@@ -31,8 +31,7 @@ bool add_to_conv2d_transform::on_try_match(node &node, transform_context &contex
         && (add->input_a().shape().size() == 4)
         && (add->input_a().shape() == add->input_b().shape())
         && (add->input_a().type() == dt_float32)
-        && (add->input_b().type() == dt_float32)
-        )
+        && (add->input_b().type() == dt_float32))
     {
         context.inputs.emplace_back(&add->input_a());
         context.inputs.emplace_back(&add->input_b());
