@@ -44,7 +44,7 @@ def _make_module(op, in_type, in_shape_0, in_shape_1):
     else:
        tensor = helper.make_tensor(
            'input2',
-           in_type,
+           TensorProto.INT32,
            dims=[1],
            vals=[2]
        )
