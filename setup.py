@@ -189,7 +189,7 @@ class BuildCMakeExt(build_ext):
         if platform.system() == 'Linux':
             cmake_args += ['-DCMAKE_C_COMPILER=gcc-10']
             cmake_args += ['-DCMAKE_CXX_COMPILER=g++-10']
-        elif platform.system() == 'Window':
+        elif platform.system() == 'Windows':
             cmake_args += ['-DCMAKE_C_COMPILER=clang-cl']
             cmake_args += ['-DCMAKE_CXX_COMPILER=clang-cl']
         cmake_args += ['-DPython3_ROOT_DIR=' + os.path.dirname(sys.executable)]
