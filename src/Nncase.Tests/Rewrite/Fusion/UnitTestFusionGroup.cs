@@ -66,6 +66,16 @@ public class UnitTestFusionGroup : TestClassBase
 
     public IAnalyzerManager AnalyzerMananger => CompileSession.GetRequiredService<IAnalyzerManager>();
 
+    [Fact]
+    public void TestFusionMergeCandidateComparer()
+    {
+        var f1 = new Fusion("main", Callable.StackVMModuleKind, None.Default, Array.Empty<Var>());
+        var f2 = new Fusion("main", Callable.StackVMModuleKind, None.Default, Array.Empty<Var>());
+        var h1 = new HashSet<Fusion>() { f1, f2 };
+        var h2 = new HashSet<Fusion>() { f1, f2 };
+        Assert.Equal(FusionGroupMutator.GroupedMatchOptions.GetCandidateHashCode(h1), FusionGroupMutator.GroupedMatchOptions.GetCandidateHashCode(h2));
+    }
+
     [Theory]
     [MemberData(nameof(DataOne))]
     public void RunOne(IDataFlowFusionCase fusionCase) => RunCore(fusionCase);
@@ -108,7 +118,7 @@ public class UnitTestFusionGroup : TestClassBase
                 new ShortCutFusionMergeRuleRight(),
             },
             (rule, option) => new TestFusionGroupMutator(rule, option),
-            new() { AnalysisResults = analysis });
+            new() { AnalysisResults = analysis, MatchOptions = new FusionGroupMutator.GroupedMatchOptions() });
 #if DEBUG
         Dumpper.DumpDotIR(post, "post1");
 #endif
