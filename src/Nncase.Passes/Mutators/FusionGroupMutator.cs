@@ -13,6 +13,8 @@ using Nncase.Passes.Analysis;
 using Nncase.PatternMatch;
 using static Nncase.PatternMatch.Utility;
 
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Nncase.Tests")]
+
 namespace Nncase.Passes.Mutators;
 
 /// <summary>
@@ -21,11 +23,6 @@ namespace Nncase.Passes.Mutators;
 public class FusionGroupMutator : ExprRewriter
 {
     private readonly IExprUserAnalysisResult _userAnalysis;
-
-    /// <summary>
-    /// cache the check result.
-    /// </summary>
-    private readonly Dictionary<HashSet<Fusion>, bool> _candidateFusionCache;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="FusionGroupMutator"/> class.
@@ -38,7 +35,6 @@ public class FusionGroupMutator : ExprRewriter
         passOptions.GetAnalysis(out _userAnalysis);
         Rule = fusionRule;
         PassOptions = passOptions;
-        _candidateFusionCache = new(new FusionMergeCandidateComparer());
     }
 
     /// <summary>
@@ -47,10 +43,8 @@ public class FusionGroupMutator : ExprRewriter
     public IMergeRewriteRule Rule { get; }
 
     /// <summary>
-    /// Gets get the merge check cache result.
+    /// Gets a run pass options.
     /// </summary>
-    public IReadOnlyDictionary<HashSet<Fusion>, bool> FusionMergeCandidateCache => _candidateFusionCache;
-
     protected RunPassContext PassOptions { get; }
 
     /// <summary>
@@ -127,17 +121,19 @@ public class FusionGroupMutator : ExprRewriter
             throw new InvalidDataException("The candidates less than 2!");
         }
 
-        if (!_candidateFusionCache.TryGetValue(candidateFusions, out var ret))
+        if (PassOptions.MatchOptions is GroupedMatchOptions { Cache: var candidateFusionCache })
         {
-            return true;
+            var c = GroupedMatchOptions.GetCandidateHashCode(candidateFusions);
+            if (!candidateFusionCache.TryGetValue(c, out var ret))
+            {
+                return true;
+            }
+
+            System.Diagnostics.Trace.Assert(ret == false, "the cached candidate must be false!");
+            return ret;
         }
 
-        if (ret != false)
-        {
-            throw new InvalidDataException("Only cache failed candidates!");
-        }
-
-        return false;
+        return true;
     }
 
     private void CandidateFusionRecordCallBack(HashSet<Fusion> candidateFusions)
@@ -147,25 +143,26 @@ public class FusionGroupMutator : ExprRewriter
             throw new InvalidDataException("The candidates less than 2!");
         }
 
-        _candidateFusionCache.Add(candidateFusions, false);
+        if (PassOptions.MatchOptions is GroupedMatchOptions { Cache: var candidateFusionCache })
+        {
+            var c = GroupedMatchOptions.GetCandidateHashCode(candidateFusions);
+            candidateFusionCache.Add(c, false);
+        }
     }
 
-    private sealed class FusionMergeCandidateComparer : IEqualityComparer<HashSet<Fusion>>
+    /// <summary>
+    /// Grouped Match Options.
+    /// </summary>
+    public sealed class GroupedMatchOptions : MatchOptions
     {
-        public bool Equals(HashSet<Fusion>? x, HashSet<Fusion>? y) => (x, y) switch
-        {
-            (null, null) => true,
-            (null, _) => false,
-            (_, null) => false,
-            (var lhs, var rhs) => GetHashCode(lhs) == GetHashCode(rhs),
-        };
+        internal Dictionary<int, bool> Cache { get; } = new();
 
-        public int GetHashCode([DisallowNull] HashSet<Fusion> obj)
+        internal static int GetCandidateHashCode(HashSet<Fusion> obj)
         {
             var hash = default(HashCode);
             foreach (var o in obj)
             {
-                hash.Add(ReferenceEqualityComparer.Instance.GetHashCode(obj));
+                hash.Add(ReferenceEqualityComparer.Instance.GetHashCode(o));
             }
 
             return hash.ToHashCode();
