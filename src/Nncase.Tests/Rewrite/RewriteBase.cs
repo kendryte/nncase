@@ -12,6 +12,7 @@ using Nncase.IR.F;
 using Nncase.Passes;
 using Nncase.Passes.Transforms;
 using Nncase.Schedule;
+using Nncase.Utilities;
 using OrtKISharp;
 using Xunit;
 using static Nncase.IR.F.Math;
@@ -2753,6 +2754,6 @@ public sealed class ProdCase : IRewriteCase
 
     public Dictionary<Var, IValue> FeedDict => new()
     {
-        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+        { _input, Normal(DataTypes.Int32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
     };
 }
