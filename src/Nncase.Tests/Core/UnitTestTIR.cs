@@ -190,5 +190,7 @@ public sealed class UnitTestTIR
         Assert.Equal(newBody, newPrimFunc.Body);
         Assert.Equal(newParams, newPrimFunc.Parameters.ToArray());
         Assert.Equal(primFunc.Name, newPrimFunc.Name); // should not change the name
+
+        Assert.NotNull(new PrimFunction("test_module", new Sequential(new Expr[] { 1 }), default(ReadOnlySpan<PhysicalBuffer>)));
     }
 }
