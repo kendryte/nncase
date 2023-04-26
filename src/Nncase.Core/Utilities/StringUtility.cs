@@ -61,6 +61,8 @@ public static class StringUtility
         return result.ToString();
     }
 
+#if false
+    // “WhereSelect” constructor method is modified by private
     public static string Join<TSource, TResult, TPredicate, TSelector>(ReadOnlySpan<char> separator, in SpanWhereSelectEnumerable<TSource, TResult, TPredicate, TSelector> values)
             where TSelector : struct, IFunction<TSource, TResult>
             where TPredicate : struct, IFunction<TSource, bool>
@@ -107,4 +109,5 @@ public static class StringUtility
 
         return result.ToString();
     }
+#endif
 }
