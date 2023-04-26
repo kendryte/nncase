@@ -20,6 +20,7 @@ from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
 import numpy as np
 
+
 def _make_module(op, in_type, in_shape_0, in_shape_1):
     inputs = []
     outputs = []
@@ -78,6 +79,7 @@ def _make_module(op, in_type, in_shape_0, in_shape_1):
     model_def = helper.make_model(graph_def, producer_name='onnx')
     return model_def
 
+
 ops = [
     'Add',
     'Sub',
@@ -133,6 +135,7 @@ in_shapes = [
     [[16], [3, 16, 16]],
     [[16], [1, 3, 16, 16]]
 ]
+
 
 @pytest.mark.parametrize('op', ops)
 @pytest.mark.parametrize('in_type', in_types)
