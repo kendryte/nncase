@@ -28,7 +28,7 @@ namespace Nncase.Importer.TFLite
 
             var options = op.BuiltinOptionsAsTransposeConvOptions();
             var (_, _) = Util.GetHW(input);
-            var (fH, fW) = Util.GetHW(weights);
+            var (fH, fW) = Util.GetHW(weights, true);
             var strideH = options.StrideH;
             var strideW = options.StrideW;
             var dilationH = 1;
