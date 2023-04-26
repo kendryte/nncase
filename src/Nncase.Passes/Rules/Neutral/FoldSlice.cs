@@ -49,71 +49,56 @@ public sealed partial class FoldNopSlice : IRewriteRule
 /// Fold two <see cref="IR.Tensors.Slice"/>.
 /// </summary>
 [RuleGenerator]
-public sealed partial class FoldTwoSlices : IRewriteRule
+public sealed partial class FoldTwoSlices : RewriteRule<Pattern>
 {
     /// <inheritdoc/>
-    public IPattern Pattern { get; } = IsSlice(
+    public override Pattern Pattern { get; } = IsSlice(
         IsSlice(IsWildcard("input") with { TypePattern = HasFixedShape() }, IsTensorConst("begins1"), IsTensorConst("ends1"), IsTensorConst("axes1"), IsTensorConst("strides1")),
         IsTensorConst("begins2"),
         IsTensorConst("ends2"),
         IsTensorConst("axes2"),
         IsTensorConst("strides2"));
 
-    // private bool IsNoSlice(Shape inShape, Tensor<int> begins, Tensor<int> ends, Tensor<int> axes, Tensor<int> strides, int dim)
-    // {
-    //     return Enumerable.Range(0, begins.Length)
-    //         .All(i => begins[i] == 0 && ends[i] == inShape[i].FixedValue && strides[i] == 1);
-    // }
-    private Expr? GetReplace(Expr input, Tensor<int> begins1, Tensor<int> ends1, Tensor<int> axes1, Tensor<int> strides1, Tensor<int> begins2, Tensor<int> ends2, Tensor<int> axes2, Tensor<int> strides2)
+    private Expr? GetReplace(Expr input, int[] begins1, long[] ends1, int[] axes1, int[] strides1, int[] begins2, long[] ends2, int[] axes2, int[] strides2)
     {
         var inShape = input.CheckedShape;
 
-        // bool CanMerge()
-        // {
-        //     return Enumerable.Range(0, inShape.Rank).All(
-        //       dim => (IsNoSlice(inShape, begins1, ends1, axes1, strides1, dim)
-        //         || IsNoSlice(inShape, begins2, ends2, axes2, strides2, dim))
-        //         && axes1[dim] == axes2[dim]);
-        // }
-
-        // if (!CanMerge())
-        // {
-        //     return null;
-        // }
         var newBegins = new List<int>();
-        var newEnds = new List<int>();
+        var newEnds = new List<long>();
         var newStrides = new List<int>();
         var newAxes = new List<int>();
-        _ = inShape.Rank;
 
-        for (int axis_1 = 0; axis_1 < axes1.Length; axis_1++)
+        for (int axis = 0; axis < inShape.Rank; axis++)
         {
-            var process_args = false;
-            for (int axis_2 = 0; axis_2 < axes2.Length; axis_2++)
+            int i1 = axes1.ToList().IndexOf(axis);
+            int i2 = axes2.ToList().IndexOf(axis);
+
+            if ((i1, i2) is (-1, -1))
             {
-                if (axes1[axis_1] == axes2[axis_2])
+                continue;
+            }
+            else if ((i1, i2) is (_, -1) or (-1, _))
+            {
+                // apply slice on different slice.
+                if (i1 != -1)
                 {
-                    newBegins.Add(strides1[axis_1] * begins2[axis_2]);
-                    newEnds.Add(strides1[axis_1] * ends2[axis_2]);
-                    newStrides.Add(strides1[axis_1] * strides2[axis_2]);
-                    newAxes.Add(axes1[axis_1]);
-                    process_args = true;
+                    newBegins.Add(begins1[i1]);
+                    newEnds.Add(ends1[i1]);
+                    newStrides.Add(strides1[i1]);
+                    newAxes.Add(axes1[i1]);
                 }
                 else
                 {
-                    newBegins.Add(begins2[axis_2]);
-                    newEnds.Add(ends2[axis_2]);
-                    newStrides.Add(strides2[axis_2]);
-                    newAxes.Add(axes2[axis_2]);
+                    newBegins.Add(begins2[i2]);
+                    newEnds.Add(ends2[i2]);
+                    newStrides.Add(strides2[i2]);
+                    newAxes.Add(axes2[i2]);
                 }
             }
-
-            if (!process_args)
+            else
             {
-                newBegins.Add(begins1[axis_1]);
-                newEnds.Add(ends1[axis_1]);
-                newStrides.Add(strides1[axis_1]);
-                newAxes.Add(axes1[axis_1]);
+                // todo add same axis slice fold
+                return null;
             }
         }
 
