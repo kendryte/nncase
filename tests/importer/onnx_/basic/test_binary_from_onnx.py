@@ -20,6 +20,7 @@ from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
 import numpy as np
 
+
 def _make_module(op, in_type, in_shape_0, in_shape_1):
     inputs = []
     outputs = []
@@ -37,20 +38,20 @@ def _make_module(op, in_type, in_shape_0, in_shape_1):
             'input2',
             in_type,
             dims=in_shape_1,
-            vals=(np.random.rand(*in_shape_1) + 2).astype(onnx.mapping.TENSOR_TYPE_TO_NP_TYPE[in_type]).flatten().tolist()
+            vals=(np.random.rand(*in_shape_1) +
+                  2).astype(onnx.mapping.TENSOR_TYPE_TO_NP_TYPE[in_type]).flatten().tolist()
         )
         inputs.append('input2')
         initializers.append(tensor)
     else:
-       tensor = helper.make_tensor(
-           'input2',
-           in_type,
-           dims=[1],
-           vals=[2]
-       )
-       inputs.append('input2')
-       initializers.append(tensor)
-
+        tensor = helper.make_tensor(
+            'input2',
+            in_type,
+            dims=[1],
+            vals=[2]
+        )
+        inputs.append('input2')
+        initializers.append(tensor)
 
     # output
     x = np.random.randn(*in_shape_0)
@@ -76,6 +77,7 @@ def _make_module(op, in_type, in_shape_0, in_shape_1):
 
     model_def = helper.make_model(graph_def, producer_name='onnx')
     return model_def
+
 
 ops = [
     'Add',
@@ -132,6 +134,7 @@ in_shapes = [
     [[16], [3, 16, 16]],
     [[16], [1, 3, 16, 16]]
 ]
+
 
 @pytest.mark.parametrize('op', ops)
 @pytest.mark.parametrize('in_type', in_types)
