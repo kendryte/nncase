@@ -44,15 +44,14 @@ def _make_module(op, in_type, in_shape_0, in_shape_1):
         inputs.append('input2')
         initializers.append(tensor)
     else:
-       tensor = helper.make_tensor(
-           'input2',
-           TensorProto.INT32,
-           dims=[1],
-           vals=[2]
-       )
-       inputs.append('input2')
-       initializers.append(tensor)
-
+        tensor = helper.make_tensor(
+            'input2',
+            TensorProto.INT32,
+            dims=[1],
+            vals=[2]
+        )
+        inputs.append('input2')
+        initializers.append(tensor)
 
     # output
     x = np.random.randn(*in_shape_0)
