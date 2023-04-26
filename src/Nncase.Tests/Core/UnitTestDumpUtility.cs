@@ -51,7 +51,7 @@ public sealed class UnitTestDumpUtility
     public void TestNullDumpper()
     {
         var nullDumpper = new NullDumpper();
-        string nullDumpperDirectory = nullDumpper.Directory;
+        _ = nullDumpper.Directory;
         nullDumpper.DumpIR(1, string.Empty);
         nullDumpper.DumpDotIR(1, string.Empty);
         nullDumpper.DumpModule(new IRModule(), string.Empty);

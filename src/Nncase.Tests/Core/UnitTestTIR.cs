@@ -120,8 +120,8 @@ public sealed class UnitTestTIR
     public void TestForSegment()
     {
         var count = IR.F.Tensors.Cast(2 / IR.F.Tensors.Cast(2, DataTypes.Float32), DataTypes.Int32);
-        var expect = T.Serial(out var i, (0, count));
-        var actual = T.ForSegment(out var seg, 1, 2, 3);
+        var expect = T.Serial(out _, (0, count));
+        var actual = T.ForSegment(out _, 1, 2, 3);
         Assert.Equal(expect.ToString(), actual.ToString());
     }
 
