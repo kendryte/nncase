@@ -34,10 +34,9 @@ namespace Nncase.Importer
 
         private Expr ResizeV10(in NodeProto op)
         {
-            var (input, scales) = GetInputExprs(op, 0, 2);
-            var roi = GetRoi(op);
+            var (input, scales) = GetInputExprs(op, 0, 1);
             var mode = GetResizeMode(op);
-            return F.Imaging.ResizeImage(mode, input, roi, ComputeNewSizes(input, scales));
+            return F.Imaging.ResizeImage(mode, input, Array.Empty<float>(), ComputeNewSizes(input, scales));
         }
 
         private Expr ResizeV11(in NodeProto op)
