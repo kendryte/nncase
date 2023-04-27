@@ -66,18 +66,19 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
         var begins = context.GetArgument(target, Slice.Begins);
         var ends = context.GetArgument(target, Slice.Ends);
         var strides = context.GetArgument(target, Slice.Strides);
-        var size = context.GetArgument(target, Slice.Input).CheckedShape.Rank;
+        var size = context.GetArgument(target, Slice.Begins).CheckedShape.Rank;
         var outDims = Enumerable.Range(0, size).Select(i =>
         {
-            var begin = begins[i];
-            var end = ends[i];
-            var stride = strides[i];
-            var dim = inShape[i];
+            Expr begin = Cast(begins[i], DataTypes.Int32);
+            Expr end = Cast(ends[i], DataTypes.Int32);
+            var stride = Cast(strides[i], DataTypes.Int32);
+            var dim = Cast(inShape[i], DataTypes.Int32);
             var strideIsNeg = stride < 0;
             begin = new If(strideIsNeg, Clamp(begin, 0, dim - 1), Clamp(begin, 0, dim));
             end = new If(strideIsNeg, Clamp(end, -1, dim), Clamp(end, 0, dim));
             return Ceil(Abs(end - begin) / Abs(stride));
         }).ToArray();
+
         return Stack(new IR.Tuple(outDims), 0);
     }
 

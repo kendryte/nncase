@@ -16,7 +16,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Stack"/>.
 /// </summary>
-public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>, ICostEvaluator<Stack>
+public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>, ICostEvaluator<Stack>, IShapeEvaluator<Stack>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Stack stack)
@@ -100,5 +100,11 @@ public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>, ICostEv
         }
 
         return new InvalidType("The Stack Axis Must Be Const!");
+    }
+
+    public Expr Visit(IShapeEvaluateContext context, Stack target)
+    {
+        var inputs = context.GetArgumentShape(target, Stack.Inputs);
+        return IR.F.Tensors.Concat(new IR.Tuple(inputs, Tensor.From(new[] { 1 })), 0);
     }
 }
