@@ -53,9 +53,9 @@ public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>, ICos
     {
         var axis = context.GetArgument(target, Gather.Axis);
         var inShape = context.GetArgumentShape(target, Gather.Input);
-        axis = ShapeExprUtility.Positive(axis, inShape);
+        axis = ShapeExprUtility.Positive(Cast(axis, DataTypes.Int32), inShape);
         var indexShape = context.GetArgumentShape(target, Gather.Index);
-        var outShape = ShapeExprUtility.Replace(inShape, axis, indexShape);
+        var outShape = ShapeExprUtility.ReplaceList(inShape, axis, indexShape);
         return outShape;
     }
 

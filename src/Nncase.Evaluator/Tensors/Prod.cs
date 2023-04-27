@@ -12,7 +12,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Prod"/>.
 /// </summary>
-public class ProdEvaluator : IEvaluator<Prod>, ITypeInferencer<Prod>, ICostEvaluator<Prod>
+public class ProdEvaluator : IEvaluator<Prod>, ITypeInferencer<Prod>, ICostEvaluator<Prod>, IShapeEvaluator<Prod>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Prod prod)
@@ -47,4 +47,6 @@ public class ProdEvaluator : IEvaluator<Prod>, ITypeInferencer<Prod>, ICostEvalu
     {
         return new TensorType(input.DType, Shape.Scalar);
     }
+
+    public Expr Visit(IShapeEvaluateContext context, Prod target) => 1;
 }
