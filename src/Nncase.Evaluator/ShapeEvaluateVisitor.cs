@@ -49,9 +49,15 @@ internal sealed class ShapeEvaluateVisitor : ExprVisitor<Expr, Unit>
         {
             Op op => CompilerServices.EvaluateOpShapeExpr(op, _context),
             Function func => CompilerServices.EvaluateShapeExpr(func.Body, Merge(func.Parameters, expr.Arguments)),
-            Fusion {ModuleKind:"stackvm"} func => CompilerServices.EvaluateShapeExpr(func.Body, Merge(func.Parameters, expr.Arguments)),
+            Fusion { ModuleKind: "stackvm" } func => CompilerServices.EvaluateShapeExpr(func.Body, Merge(func.Parameters, expr.Arguments)),
             _ => throw new NotImplementedException(expr.Target.ToString()),
         };
+    }
+
+    /// <inheritdoc/>
+    protected override Expr VisitLeafOp(Op expr)
+    {
+        return None.Default;
     }
 
     private Dictionary<Var, Expr[]> Merge(ReadOnlySpan<Var> paramList, ReadOnlySpan<Expr> args)
@@ -62,21 +68,15 @@ internal sealed class ShapeEvaluateVisitor : ExprVisitor<Expr, Unit>
             return Enumerable.Range(0, arg.CheckedShape.Rank).Select(i => result[i]).ToArray();
         })).Select(pair => new KeyValuePair<Var, Expr[]>(pair.First, pair.Second));
         var dict = _context.VarMap.Concat(data).ToDictionary(pair => pair.Key, pair => pair.Value);
+
         // Console.WriteLine("merge begin");
         // foreach (var (key, value) in dict)
         // {
-            // Console.WriteLine(key.Name);
-            // Console.WriteLine(value);
+        // Console.WriteLine(key.Name);
+        // Console.WriteLine(value);
         // }
         // Console.WriteLine("merge end");
-
         return dict;
-    }
-
-    /// <inheritdoc/>
-    protected override Expr VisitLeafOp(Op expr)
-    {
-        return None.Default;
     }
 
     /// <inheritdoc/>
@@ -122,10 +122,11 @@ internal sealed class ShapeEvaluateVisitor : ExprVisitor<Expr, Unit>
 
             // if (!_context.VarMap.ContainsKey(expr))
             // {
-                // Console.WriteLine("error");
-                // Console.WriteLine(expr.Name);
+            // Console.WriteLine("error");
+            // Console.WriteLine(expr.Name);
             // }
             var shapeExpr = shape.Select((x, i) => x.IsFixed ? x.FixedValue : _context.VarMap[expr][i]).ToArray();
+
             // Console.WriteLine("ShapeExprList");
             // foreach (var expr1 in shapeExpr)
             // {

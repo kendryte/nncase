@@ -54,6 +54,12 @@ public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>, ICostEv
         };
     }
 
+    public Expr Visit(IShapeEvaluateContext context, Stack target)
+    {
+        var inputs = context.GetArgumentShape(target, Stack.Inputs);
+        return IR.F.Tensors.Concat(new IR.Tuple(inputs, Tensor.From(new[] { 1 })), 0);
+    }
+
     private IRType Visit(ITypeInferenceContext context, Stack target, TupleType inputs)
     {
         if (context.GetArgument(target, Stack.Axis) is TensorConst axis_con)
@@ -100,11 +106,5 @@ public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>, ICostEv
         }
 
         return new InvalidType("The Stack Axis Must Be Const!");
-    }
-
-    public Expr Visit(IShapeEvaluateContext context, Stack target)
-    {
-        var inputs = context.GetArgumentShape(target, Stack.Inputs);
-        return IR.F.Tensors.Concat(new IR.Tuple(inputs, Tensor.From(new[] { 1 })), 0);
     }
 }

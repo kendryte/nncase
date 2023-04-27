@@ -30,7 +30,6 @@ public sealed partial class OnnxImporter
         { TensorProto.Types.DataType.Uint8, DataTypes.UInt8 },
     };
 
-
     public Shape GetShape(ValueInfoProto v)
     {
         var shape = v.Type.TensorType.Shape.Dim
@@ -38,13 +37,13 @@ public sealed partial class OnnxImporter
         return new Shape(shape);
     }
 
-    private static bool IsDynamicDim(TensorShapeProto.Types.Dimension x) => x.DimParam != string.Empty;
-
     public Expr[] GetOriginShape(ValueInfoProto v)
     {
         var shape = v.Type.TensorType.Shape.Dim;
         return shape.Select(x => IsDynamicDim(x) ? _dynVarMap[x.DimParam] : (Expr)x.DimValue).ToArray();
     }
+
+    private static bool IsDynamicDim(TensorShapeProto.Types.Dimension x) => x.DimParam != string.Empty;
 
     public Shape GetShape(TensorProto tensor)
     {

@@ -43,10 +43,10 @@ public class ProdEvaluator : IEvaluator<Prod>, ITypeInferencer<Prod>, ICostEvalu
         };
     }
 
+    public Expr Visit(IShapeEvaluateContext context, Prod target) => 1;
+
     private IRType Visit(ITypeInferenceContext context, Prod target, TensorType input)
     {
         return new TensorType(input.DType, Shape.Scalar);
     }
-
-    public Expr Visit(IShapeEvaluateContext context, Prod target) => 1;
 }
