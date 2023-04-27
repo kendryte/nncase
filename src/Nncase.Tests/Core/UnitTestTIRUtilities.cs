@@ -23,13 +23,15 @@ public sealed class UnitTestTIRUtilities
         // Arrange
         IReadOnlyList<TIR.Range> bounds = new List<TIR.Range>()
         {
-            new TIR.Range(0, 32, 1), new TIR.Range(0, 16, 1),
+            new TIR.Range(0, 32, 1),
+            new TIR.Range(0, 16, 1),
             new TIR.Range(0, 8, 1),
         };
 
         IReadOnlyList<TIR.Range> targetbounds = new List<TIR.Range>()
         {
-            new TIR.Range(0, 32, 1), new TIR.Range(0, 8, 1),
+            new TIR.Range(0, 32, 1),
+            new TIR.Range(0, 8, 1),
             new TIR.Range(0, 8, 1),
         };
 
@@ -50,12 +52,14 @@ public sealed class UnitTestTIRUtilities
         // Arrange
         IReadOnlyList<TIR.Range> bounds = new List<TIR.Range>()
         {
-            new TIR.Range(0, 32, 1), new TIR.Range(0, 16, 1),
+            new TIR.Range(0, 32, 1),
+            new TIR.Range(0, 16, 1),
             new TIR.Range(0, 8, 1),
         };
         _ = new List<TIR.Range>()
         {
-            new TIR.Range(0, 32, 1), new TIR.Range(0, 16, 1),
+            new TIR.Range(0, 32, 1),
+            new TIR.Range(0, 16, 1),
             new TIR.Range(0, 16, 1),
         };
         IReadOnlyList<(IR.Expr Before, IR.Expr After)> paddings = new List<(IR.Expr Before, IR.Expr After)>()
@@ -123,5 +127,45 @@ public sealed class UnitTestTIRUtilities
 
         // Assert
         Assert.Equal(3, computeBounds.Count);
+    }
+
+    [Fact]
+    public void TestTypePatternUtility()
+    {
+        var actual1 = TypePatternUtility.GetWindowedOutputSize(3, 3, 1, 1, true);
+        var expect1 = 3;
+        Assert.Equal(expect1, actual1);
+
+        var actual2 = TypePatternUtility.GetWindowedOutputSize(3, 3, 1, 1, false, true);
+        var expect2 = 1;
+        Assert.Equal(expect2, actual2);
+
+        var actual3 = TypePatternUtility.GetWindowedOutputSize(3, 3, 1, 1, (1, 1));
+        var expect3 = 3;
+        Assert.Equal(expect3, actual3);
+    }
+
+    [Fact]
+    public void TestTypePattern()
+    {
+        var type1 = new InvalidType("test");
+        var typePattern1 = new TypePattern(type1);
+        Assert.True(typePattern1.MatchLeaf(type1));
+
+        var type2 = new TensorType(DataTypes.Float32, new Shape(1));
+        var typePattern2 = new TypePattern(type2);
+        Assert.True(typePattern2.MatchLeaf(type2));
+
+        var type3 = new TupleType(new[] { type2 });
+        var typePattern3 = new TypePattern(type3);
+        Assert.True(typePattern3.MatchLeaf(type3));
+
+        var type4 = new CallableType(type2, new[] { type2 });
+        var typePattern4 = new TypePattern(type4);
+        Assert.True(typePattern4.MatchLeaf(type4));
+
+        var type5 = AnyType.Default;
+        var typePattern5 = new TypePattern(type5);
+        Assert.True(typePattern5.MatchLeaf(type5));
     }
 }
