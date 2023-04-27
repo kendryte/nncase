@@ -42,6 +42,11 @@ public static class ShapeExprUtility
         return SliceAndMerge(shapeExpr, index, value, 0);
     }
 
+    public static Expr ReplaceList(Expr shapeExpr, Expr list, Expr value)
+    {
+        return SliceAndMerge(shapeExpr, list, value, 1, false);
+    }
+
     public static Expr Remove(Expr shapeExpr, Expr index)
     {
         var front = Slice(shapeExpr, 0, index);
@@ -49,17 +54,19 @@ public static class ShapeExprUtility
         return Concat(new IR.Tuple(front, last), 0);
     }
 
+    // public static Expr ShapeOf(Expr expr) => expr.EvaluateShapeExpr();
     public static Expr ShapeOf(Expr expr) => Cast(IR.F.Tensors.ShapeOf(expr), DataTypes.Int32);
 
-    private static Expr SliceAndMerge(Expr shapeExpr, Expr index, Expr value, Expr indexOffset)
+    private static Expr SliceAndMerge(Expr shapeExpr, Expr index, Expr value, Expr indexOffset, bool valueIsList = true)
     {
         var front = Slice(shapeExpr, 0, index);
-        var last = Slice(shapeExpr, index + indexOffset, int.MaxValue);
-        return Concat(new IR.Tuple(front, StackOne(value), last), 0);
+        var last = Slice(shapeExpr, Cast(index, DataTypes.Int32) + indexOffset, int.MaxValue);
+        return Concat(new IR.Tuple(front, valueIsList ? StackOne(value) : value, last), 0);
     }
 
     private static Expr StackOne(Expr expr)
     {
+        // return new If(Rank(expr) > 0L, expr, Stack(new IR.Tuple(expr), 0));
         return Stack(new IR.Tuple(expr), 0);
     }
 }
