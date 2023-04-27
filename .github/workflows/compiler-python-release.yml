@@ -29,17 +29,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      - name: Install nncase native Artifact
-        uses: actions/download-artifact@v2.0.9
-        with:
-          name: nncase-native-${{matrix.config.name}}
-          path: ${{github.workspace}}/install
-
-      - name: Set up build environment (Macos)
-        run: |
-          brew install sunnycase/core/libomp@11.1.0
-        if: runner.os == 'Macos'
-
       - name: Build
         run: |
           dotnet restore -r ${{matrix.config.rid}}
