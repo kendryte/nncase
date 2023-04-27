@@ -97,6 +97,12 @@ public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, I
 
     private IRType Visit(TensorType lhs, TensorType rhs)
     {
-        return ((TensorType)TypeInference.BroadcastType(lhs, rhs)) with { DType = DataTypes.Boolean };
+        var broadcastType = TypeInference.BroadcastType(lhs, rhs);
+        if (broadcastType is TensorType tensorType)
+        {
+            return tensorType with { DType = DataTypes.Boolean };
+        }
+
+        return broadcastType;
     }
 }
