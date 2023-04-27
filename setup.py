@@ -239,7 +239,7 @@ class BuildCMakeExt(build_ext):
                 os.path.splitext(_lib)[-1] in [".dll", ".so", ".dylib", ".json"]]
 
         for lib in nncase_libs:
-            shutil.move(lib, os.path.join(bin_dir, 'nncase.deps', os.path.basename(lib)))
+            shutil.move(lib, os.path.join(bin_dir, 'lib', os.path.basename(lib)))
 
         # After build_ext is run, the following commands will run:
         #
