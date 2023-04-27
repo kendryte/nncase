@@ -49,7 +49,7 @@ namespace Nncase.Importer
 
                     actualShape[negAxis] = productIn / productOut;
                 }
-1
+
                 return F.Tensors.Reshape(input, F.Tensors.Stack(new IR.Tuple(actualShape), 0));
             }
             else
