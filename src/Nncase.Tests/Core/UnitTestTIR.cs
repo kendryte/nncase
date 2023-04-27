@@ -202,7 +202,7 @@ public sealed class UnitTestTIR
         list.Add(2);
         list.Add(3);
 
-        Sequential seq = list.ToSequential();
+        var seq = list.ToSequential();
 
         Assert.Equal(3, seq.Count);
         Assert.Equal(1, seq[0]);
