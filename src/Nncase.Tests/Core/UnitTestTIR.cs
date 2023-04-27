@@ -193,4 +193,20 @@ public sealed class UnitTestTIR
 
         Assert.NotNull(new PrimFunction("test_module", new Sequential(new Expr[] { 1 }), default(ReadOnlySpan<PhysicalBuffer>)));
     }
+
+    [Fact]
+    public void TestTIRExtensions()
+    {
+        var list = new List<Expr>();
+        list.Add(1);
+        list.Add(2);
+        list.Add(3);
+
+        Sequential seq = list.ToSequential();
+
+        Assert.Equal(3, seq.Count);
+        Assert.Equal(1, seq[0]);
+        Assert.Equal(2, seq[1]);
+        Assert.Equal(3, seq[2]);
+    }
 }
