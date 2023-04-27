@@ -234,7 +234,7 @@ class BuildCMakeExt(build_ext):
 
         # copy nncase publish
         nncase_libs = [os.path.join(root, _lib) for root, _, files in
-                os.walk(os.path.join(ext.sourdir, 'install')) for _lib in files if
+                os.walk(os.path.join(ext.sourcedir, 'install')) for _lib in files if
                 os.path.isfile(os.path.join(root, _lib)) and
                 os.path.splitext(_lib)[-1] in [".dll", ".so", ".dylib", ".json"]]
 
