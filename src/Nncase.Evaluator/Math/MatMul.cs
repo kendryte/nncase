@@ -59,8 +59,8 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
     {
         var lhsRank = context.GetArgument(target, MatMul.Lhs).CheckedShape.Rank;
         var rhsRank = context.GetArgument(target, MatMul.Rhs).CheckedShape.Rank;
-        var lhsShape = context.GetArgumentShape(target, MatMul.Lhs);
-        var rhsShape = context.GetArgumentShape(target, MatMul.Rhs);
+        var lhsShape = Cast(context.GetArgumentShape(target, MatMul.Lhs), DataTypes.Int32);
+        var rhsShape = Cast(context.GetArgumentShape(target, MatMul.Rhs), DataTypes.Int32);
 
         Expr lhs, rhs;
         if (lhsRank == rhsRank)

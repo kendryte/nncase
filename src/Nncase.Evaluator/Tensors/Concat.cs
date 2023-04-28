@@ -54,7 +54,7 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
         var inShape = context.GetArgumentShape(target, Concat.Input);
         var axis = context.GetArgument(target, Concat.Axis);
         var axisV = ShapeExprUtility.Positive(axis, inShape[0]);
-        var inShapes = ((IR.Tuple)inShape).Fields;
+        var inShapes = (((IR.Tuple)inShape).Fields).ToArray().Select(x => Cast(x, DataTypes.Int32)).ToArray();
         var dim = inShapes.ToArray().Aggregate((Expr)0, (sum, shape) => sum + shape[axisV]);
         var outShape = ShapeExprUtility.Replace(inShapes[0], axisV, dim);
         return outShape;

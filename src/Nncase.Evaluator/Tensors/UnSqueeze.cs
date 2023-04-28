@@ -57,7 +57,7 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
                 }
                 else
                 {
-                    var index = IR.F.Math.Max(ShapeExprUtility.ShapeOf(outShape)[0] + dimVal + 1, 0);
+                    var index = IR.F.Math.Max(ShapeExprUtility.Rank(outShape) + dimVal + 1, 0);
                     outShape = ShapeExprUtility.Insert(outShape, index, 1);
                 }
             }

@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Tensors;
@@ -17,6 +18,8 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
     public IValue Visit(IEvaluateContext context, Cast cast)
     {
         var input = context.GetArgumentValue(cast, Cast.Input).AsTensor();
+        Console.WriteLine("Cast");
+        Console.WriteLine(string.Join(",", input.Shape.ToValueArray()));
         return Value.FromTensor(input.CastTo(cast.NewType, cast.CastMode));
     }
 

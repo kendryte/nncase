@@ -1,7 +1,9 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using GiGraph.Dot.Output.Writers.Edges;
 using Nncase.IR;
+using Nncase.IR.Tensors;
 using static Nncase.IR.F.Tensors;
 
 namespace Nncase.Utilities;
@@ -18,8 +20,9 @@ public static class ShapeExprUtility
 
     public static Expr Positive(Expr axis, Expr inShape)
     {
-        var rank = ShapeOf(inShape)[0];
-        return new If(axis < 0, axis + rank, axis);
+        var rank = Rank(inShape);
+        var i32Axis = Cast(axis, DataTypes.Int32);
+        return new If( i32Axis < 0, i32Axis + rank, i32Axis);
     }
 
     public static Expr Slice(Expr shape, int begin, int end)
@@ -56,6 +59,8 @@ public static class ShapeExprUtility
 
     // public static Expr ShapeOf(Expr expr) => expr.EvaluateShapeExpr();
     public static Expr ShapeOf(Expr expr) => Cast(IR.F.Tensors.ShapeOf(expr), DataTypes.Int32);
+
+    public static Expr Rank(Expr expr) => IR.F.Tensors.Rank(expr);
 
     private static Expr SliceAndMerge(Expr shapeExpr, Expr index, Expr value, Expr indexOffset, bool valueIsList = true)
     {

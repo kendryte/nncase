@@ -1,6 +1,3 @@
-﻿// Copyright (c) Canaan Inc. All rights reserved.
-// Licensed under the Apache license. See LICENSE file in the project root for full license information.
-
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -14,14 +11,21 @@ using Nncase.Passes.Rules.Neutral;
 using Nncase.Tests.TestFixture;
 using Nncase.Tests.TransformTest;
 using Xunit;
-using static Nncase.IR.F.Math;
+using Xunit.Abstractions;
 using static Nncase.IR.F.Tensors;
+using static Nncase.IR.F.Math;
 
 namespace Nncase.Tests.Rules;
 
 [AutoSetupTestMethod(InitSession = true)]
 public class ShapeBucketTest : TransformTestBase
 {
+    private readonly ITestOutputHelper _testOutputHelper;
+
+    public ShapeBucketTest(ITestOutputHelper testOutputHelper)
+    {
+        _testOutputHelper = testOutputHelper;
+    }
     // [Fact]
     // public void TestToFusion()
     // {
@@ -33,6 +37,7 @@ public class ShapeBucketTest : TransformTestBase
     //     var expr = Abs(matmul);
     //     TestMatched<MatmulToFusion>(expr);
     // }
+
     [Fact]
     public void TestBucket()
     {
@@ -46,7 +51,7 @@ public class ShapeBucketTest : TransformTestBase
         var f = new VarFusion("stackvm", effectVar, IR.F.Math.MatMul(lhs, rhs), lhs, rhs);
         var inputInfo = new Dictionary<Var, Expr[]>
         {
-            { lhs, new[] { 1, 3, 24, (Expr)effectVar } }, { rhs, new[] { 1, 3, (Expr)effectVar, 24 } },
+            { lhs, new[] { 1, 3, 24, (Expr)effectVar } }, { rhs, new[] { 1, 3, (Expr)effectVar, 24 } }
         };
         var call = new Call(f, inputA, inputB);
         Assert.True(call.InferenceType());
@@ -94,7 +99,6 @@ public class ShapeBucketTest : TransformTestBase
             { dec_v2, new Expr[] { batch, 4, dec_len, 64 } },
             { dec_v3, new Expr[] { batch, 4, dec_len, 64 } },
         };
-
         // todo: import相同名字的var归一化
         var dict = new Dictionary<string, (int, int)>
         {
@@ -126,22 +130,65 @@ public class ShapeBucketTest : TransformTestBase
     }
 
     [Fact]
+    public void TestValue()
+    {
+        Expr a = new long[] { 9223372036854775807 };
+        var value = Cast(a[0], DataTypes.Int32).Evaluate().AsTensor().ToScalar<long>();
+        _testOutputHelper.WriteLine(value.ToString());
+    }
+    private Var Scalar(string name) => new Var(new TensorType(DataTypes.Int32, Shape.Scalar));
+    [Fact]
+    public async Task TestSliceExpr()
+    {
+        var data = new Var(new TensorType(DataTypes.Int32, new[] { Dimension.Unknown, Dimension.Unknown }));
+        var batch = Scalar("batch");
+        var tok_len = Scalar("tok_len");
+        var dict = new Dictionary<Var, Expr[]> { { data, new[] { batch, tok_len } } };
+        var slice = Slice(data, new long[] { -1 }, new long[] { 9223372036854775807 }, new long[] { 1 }, new long[] { 1 });
+
+        var shapeExpr = slice.EvaluateShapeExpr(dict);
+        Dumpper.DumpIR(shapeExpr, "shapeExpr");
+        var varValue = new Dictionary<Var, IValue>
+        {
+            { batch, Value.FromTensor(1) }, { tok_len, Value.FromTensor(1) },
+        };
+        var result = shapeExpr.Evaluate(varValue);
+        _testOutputHelper.WriteLine(string.Join(",", result.AsTensor().ToArray<int>()));
+    }
+
+    // public virtual Tensor[] MakeInputs(TensorType[] types)
+    // {
+    //     var batch = 1;
+    //     var tok_len = 1;
+    //     var enc_len = 1;
+    //     var dec_len = 1;
+    //     var in0 = Testing.Rand<long>(batch, tok_len);
+    //     var in4 = Testing.Rand<float>(batch, 4, dec_len, 64);
+    //     var in5 = Testing.Rand<float>(batch, 4, dec_len, 64);
+    //     var in6 = Testing.Rand<float>(batch, 4, dec_len, 64);
+    //     var in7 = Testing.Rand<float>(batch, 4, dec_len, 64);
+    //     var in8 = Testing.Rand<float>(batch, 4, dec_len, 64);
+    //     var in9 = Testing.Rand<float>(batch, 4, dec_len, 64);
+    //     return new[] { (Tensor)in0, in1, in2, in3, in4, in5, in6, in7, in8, in9 };
+    // }
+
+    [Fact]
     public async Task TestModel()
     {
         CompileOptions.DumpFlags = DumpFlags.Rewrite | DumpFlags.PassIR;
         var path = "/Users/homura/Downloads/model_dec.onnx";
+        // var path = "/Users/homura/Downloads/model_dec.sim.onnx";
         using var file = File.OpenRead(path);
         CompileOptions.InputFormat = Path.GetExtension(file.Name).Trim('.');
         var m = await CompileSession.Compiler.ImportModuleAsync(file);
         m.Entry.InferenceType();
-        var mp = ((Function)m.Entry!).VarMap;
+        var mp = ((Function)(m.Entry!)).VarMap;
         Console.WriteLine("all mp");
         foreach (var (key, value) in mp)
         {
             Console.WriteLine(key.Name);
             Console.WriteLine(value.Select(x => x.ToString().ToArray()));
         }
-
         Dumpper.DumpIR(m.Entry, "module");
         var pm = CompileSession.CreatePassManager("pm");
         pm.AddWithName<DataflowPass>("pass").Configure(p =>

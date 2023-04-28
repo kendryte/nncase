@@ -20,9 +20,13 @@ public class ClampEvaluator : IEvaluator<Clamp>, ITypeInferencer<Clamp>, ICostEv
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Clamp clamp)
     {
+        Console.WriteLine("Clamp Value");
         var input = context.GetOrtArgumentValue(clamp, Clamp.Input);
+        Console.WriteLine(string.Join(",", input.ToArray<int>()));
         var min = context.GetOrtArgumentValue(clamp, Clamp.Min);
+        Console.WriteLine(min.ToTensor().ToScalar<int>());
         var max = context.GetOrtArgumentValue(clamp, Clamp.Max);
+        Console.WriteLine(max.ToTensor().ToScalar<int>());
         return OrtKI.Min(new[] { OrtKI.Max(new[] { input, min }), max }).ToValue();
     }
 

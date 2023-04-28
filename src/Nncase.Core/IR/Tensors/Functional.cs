@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DryIoc.ImTools;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
 using Nncase.IR.Tensors;
@@ -139,4 +140,6 @@ public static class Tensors
 
     public static Call TopK(Expr x, Expr k, Expr axis, Expr largest, Expr sorted) =>
         new Call(new TopK(), x, k, axis, largest, sorted);
+
+    public static Call IndexOf(Expr input, Expr value) => new Call(new IndexOf(), input, value);
 }

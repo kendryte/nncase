@@ -88,7 +88,7 @@ public class TransposeEvaluator : IEvaluator<Transpose>, ITypeInferencer<Transpo
     {
         var perm = context.GetArgument(target, Transpose.Perm);
         var rank = context.GetArgument(target, Transpose.Input).CheckedShape.Rank;
-        var permValue = perm;
+        var permValue = IR.F.Tensors.Cast(perm, DataTypes.Int32);
         var inShape = context.GetArgumentShape(target, Transpose.Input);
         var outShape = Enumerable.Range(0, rank).Select(i => inShape[i]).ToArray();
         for (int i = 0; i < rank; i++)

@@ -66,16 +66,28 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
         var begins = context.GetArgument(target, Slice.Begins);
         var ends = context.GetArgument(target, Slice.Ends);
         var strides = context.GetArgument(target, Slice.Strides);
-        var size = context.GetArgument(target, Slice.Begins).CheckedShape.Rank;
+        var axes = context.GetArgument(target, Slice.Axes);
+        var size = context.GetArgument(target, Slice.Input).CheckedShape.Rank;
+
+        Expr Translate(Expr x, Expr dim) => new If(x < 0, dim + x, Clamp(x, 0, dim));
+
+        var axesValue = ((TensorConst)axes).Value.ToArray<int>();
+        int j = 0;
         var outDims = Enumerable.Range(0, size).Select(i =>
         {
-            Expr begin = Cast(begins[i], DataTypes.Int32);
-            Expr end = Cast(ends[i], DataTypes.Int32);
-            var stride = Cast(strides[i], DataTypes.Int32);
             var dim = Cast(inShape[i], DataTypes.Int32);
+            if (!axesValue.Contains(i))
+            {
+                return dim;
+            }
+            Expr begin = Cast(Clamp(begins[j], (long)int.MinValue, (long)int.MaxValue), DataTypes.Int32);
+            Expr end = Cast(Clamp(ends[j], (long)int.MinValue, (long)int.MaxValue), DataTypes.Int32);
+            var stride = Cast(Clamp(strides[j], (long)int.MinValue, (long)int.MaxValue), DataTypes.Int32);
             var strideIsNeg = stride < 0;
-            begin = new If(strideIsNeg, Clamp(begin, 0, dim - 1), Clamp(begin, 0, dim));
-            end = new If(strideIsNeg, Clamp(end, -1, dim), Clamp(end, 0, dim));
+            begin = new If(strideIsNeg,
+                Clamp(begin, 0, dim - 1), Translate(begin, dim));
+            end = new If(strideIsNeg, Clamp(end, -1, dim), Translate(end, dim));
+            j++;
             return Ceil(Abs(end - begin) / Abs(stride));
         }).ToArray();
 

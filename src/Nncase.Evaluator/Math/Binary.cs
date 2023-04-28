@@ -20,6 +20,11 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
     {
         var lhs = context.GetArgumentValueAsTensor(binary, Binary.Lhs);
         var rhs = context.GetArgumentValueAsTensor(binary, Binary.Rhs);
+        Console.WriteLine(binary.BinaryOp);
+        Console.WriteLine(DumpUtility.SerializeShape(lhs.Shape));
+        Console.WriteLine(string.Join(",", lhs.ToArray<int>()));
+        Console.WriteLine(DumpUtility.SerializeShape(rhs.Shape));
+        Console.WriteLine(string.Join(",", rhs.ToArray<int>()));
         if (lhs.Shape.IsScalar && rhs.Shape.IsScalar)
         {
             if (lhs.ElementType == DataTypes.Int32 && rhs.ElementType == DataTypes.Int32)

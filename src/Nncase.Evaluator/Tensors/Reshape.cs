@@ -8,9 +8,14 @@ using NetFabric.Hyperlinq;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Tensors;
+using Nncase.Utilities;
 using OrtKISharp;
+using Tensorflow.Keras.Engine;
 using static Nncase.Evaluator.TypeInference;
 using Range = Nncase.IR.Tensors.Range;
+using Reshape = Nncase.IR.Tensors.Reshape;
+using static Nncase.IR.F.Tensors;
+using static Nncase.IR.F.Math;
 
 namespace Nncase.Evaluator.Tensors;
 
@@ -50,6 +55,7 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
     public Expr Visit(IShapeEvaluateContext context, Reshape target)
     {
         var shape = context.GetArgument(target, Reshape.Shape);
+        var inputShape = context.GetArgumentShape(target, Reshape.Input);
         if (shape is TensorConst shapeConst)
         {
             var shapeArray = shapeConst.Value.ToArray<int>();
@@ -59,17 +65,20 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
                 return shapeArray;
             }
 
-            var inputShape = context.GetArgumentShape(target, Reshape.Input);
-            var dim = IR.F.Tensors.Prod(inputShape) / System.Math.Abs(shapeArray.Aggregate((s, x) => x * s));
+            var dim = Prod(inputShape) / System.Math.Abs(shapeArray.Aggregate((s, x) => x * s));
             var rhs = Enumerable.Repeat((Expr)0, negIndex).Append(dim + 1).ToArray();
-            var newShape = IR.F.Tensors.Stack(new IR.Tuple(rhs), 0);
+            var newShape = Stack(new IR.Tuple(rhs), 0);
 
             // dim = Product(inShape) / Produce(Reshape.Shape)
             // [1, 3, -1, 24] + [dim + 1, 0]
             return newShape + shapeArray;
         }
 
-        return shape;
+        var iSize = Prod(inputShape);
+        var sSize = Prod(shape);
+        var negDimInfactValue = iSize / Abs(sSize);
+        var index = IndexOf(sSize, -1);
+        return new If(sSize < 0, ShapeExprUtility.Replace(sSize, index, negDimInfactValue), shape);
     }
 
     private IRType Visit(ITypeInferenceContext context, Reshape target, TensorType input)
