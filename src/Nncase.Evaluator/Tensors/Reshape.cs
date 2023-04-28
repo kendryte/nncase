@@ -55,7 +55,7 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
     public Expr Visit(IShapeEvaluateContext context, Reshape target)
     {
         var shape = context.GetArgument(target, Reshape.Shape);
-        var inputShape = context.GetArgumentShape(target, Reshape.Input);
+        var inputShape = Cast(context.GetArgumentShape(target, Reshape.Input), DataTypes.Int32);
         if (shape is TensorConst shapeConst)
         {
             var shapeArray = shapeConst.Value.ToArray<int>();
@@ -74,10 +74,11 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
             return newShape + shapeArray;
         }
 
+        shape = Cast(shape, DataTypes.Int32);
         var iSize = Prod(inputShape);
         var sSize = Prod(shape);
         var negDimInfactValue = iSize / Abs(sSize);
-        var index = IndexOf(sSize, -1);
+        var index = IndexOf(shape, -1);
         return new If(sSize < 0, ShapeExprUtility.Replace(sSize, index, negDimInfactValue), shape);
     }
 
