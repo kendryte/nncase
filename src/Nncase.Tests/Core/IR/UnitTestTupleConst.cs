@@ -34,5 +34,23 @@ public sealed class UnitTestTupleConst
 
         var list = (IReadOnlyList<IValue>)tc.Value;
         Assert.Equal(c1, list[0]);
+
+        var tc1 = new TupleConst(new TupleValue(new[] { c1, c2 }));
+        var tc2 = new TupleConst(new TupleValue(new[] { c1, c2 }));
+        Assert.True(tc1.Equals(tc2));
+        Assert.False(tc1.Equals(new object()));
+    }
+
+    [Fact]
+    public void TestWithUpdatedValue()
+    {
+        var value1 = new TupleValue(new[] { Value.FromConst(0) });
+        var value2 = new TupleValue(new[] { Value.FromConst(1) });
+        var const1 = new TupleConst(value1);
+
+        var const2 = const1.With(value2);
+
+        Assert.NotSame(const1, const2);
+        Assert.Equal(value2, const2.Value);
     }
 }
