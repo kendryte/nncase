@@ -22,7 +22,7 @@ public static class ShapeExprUtility
     {
         var rank = Rank(inShape);
         var i32Axis = Cast(axis, DataTypes.Int32);
-        return new If( i32Axis < 0, i32Axis + rank, i32Axis);
+        return new If(i32Axis < 0, i32Axis + rank, i32Axis);
     }
 
     public static Expr Slice(Expr shape, int begin, int end)

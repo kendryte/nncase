@@ -61,8 +61,10 @@ public sealed partial class OnnxImporter : BaseImporter
         var varMap = originInputs
             .Select((v, i) => (createdInputs[i], GetOriginShape(v)))
             .ToDictionary(tup => tup.Item1, tup => tup.Item2);
+
         // var nameSet = varMap.Values.SelectMany(x => x).OfType<Var>().Select(v => v.Name).ToHashSet();
         var dynamicDims = varMap.Values.SelectMany(x => x).ToArray();
+
         // todo: save into function, dispose when function dispose
         new ExprPinner(dynamicDims);
 

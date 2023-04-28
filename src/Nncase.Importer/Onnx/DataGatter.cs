@@ -43,12 +43,12 @@ public sealed partial class OnnxImporter
         return shape.Select(x => IsDynamicDim(x) ? _dynVarMap[x.DimParam] : (Expr)x.DimValue).ToArray();
     }
 
-    private static bool IsDynamicDim(TensorShapeProto.Types.Dimension x) => x.DimParam != string.Empty;
-
     public Shape GetShape(TensorProto tensor)
     {
         return new Shape(tensor.Dims.ToArray());
     }
+
+    private static bool IsDynamicDim(TensorShapeProto.Types.Dimension x) => x.DimParam != string.Empty;
 
     public TensorType GetIRType(ValueInfoProto v)
     {

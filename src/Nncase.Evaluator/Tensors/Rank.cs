@@ -17,9 +17,9 @@ namespace Nncase.Evaluator.Tensors;
 public class RankEvaluator : IEvaluator<Rank>, ITypeInferencer<Rank>, ICostEvaluator<Rank>, IShapeEvaluator<Rank>
 {
     /// <inheritdoc/>
-    public IValue Visit(IEvaluateContext context, Rank Rank)
+    public IValue Visit(IEvaluateContext context, Rank rank)
     {
-        var input = context.GetArgumentValue(Rank, Rank.Input);
+        var input = context.GetArgumentValue(rank, Rank.Input);
         return Value.FromTensor(input.AsTensor().Shape.Rank);
     }
 
@@ -42,10 +42,10 @@ public class RankEvaluator : IEvaluator<Rank>, ITypeInferencer<Rank>, ICostEvalu
         };
     }
 
+    public Expr Visit(IShapeEvaluateContext context, Rank target) => 1;
+
     private IRType Visit(ITypeInferenceContext context, Rank target, TensorType input)
     {
         return new TensorType(input.DType, Shape.Scalar);
     }
-
-    public Expr Visit(IShapeEvaluateContext context, Rank target) => 1;
 }

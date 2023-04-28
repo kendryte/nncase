@@ -270,8 +270,8 @@ public abstract partial class Expr : IDisposable
             // Console.WriteLine(this);
             // if (this is Var var)
             // {
-                // Console.WriteLine(var.Name);
-                // Console.WriteLine(var.GlobalVarIndex);
+            // Console.WriteLine(var.Name);
+            // Console.WriteLine(var.GlobalVarIndex);
             // }
             foreach (var operand in _operands)
             {

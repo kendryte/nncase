@@ -80,11 +80,13 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
             {
                 return dim;
             }
+
             Expr begin = Cast(Clamp(begins[j], (long)int.MinValue, (long)int.MaxValue), DataTypes.Int32);
             Expr end = Cast(Clamp(ends[j], (long)int.MinValue, (long)int.MaxValue), DataTypes.Int32);
             var stride = Cast(Clamp(strides[j], (long)int.MinValue, (long)int.MaxValue), DataTypes.Int32);
             var strideIsNeg = stride < 0;
-            begin = new If(strideIsNeg,
+            begin = new If(
+                strideIsNeg,
                 Clamp(begin, 0, dim - 1), Translate(begin, dim));
             end = new If(strideIsNeg, Clamp(end, -1, dim), Translate(end, dim));
             j++;

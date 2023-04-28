@@ -17,10 +17,10 @@ namespace Nncase.Evaluator.Tensors;
 public class IndexOfEvaluator : IEvaluator<IndexOf>, ITypeInferencer<IndexOf>, ICostEvaluator<IndexOf>, IShapeEvaluator<IndexOf>
 {
     /// <inheritdoc/>
-    public IValue Visit(IEvaluateContext context, IndexOf IndexOf)
+    public IValue Visit(IEvaluateContext context, IndexOf indexOf)
     {
-        var input = context.GetArgumentValueAsArray<int>(IndexOf, IndexOf.Input);
-        var v = context.GetArgumentValueAsScalar<int>(IndexOf, IndexOf.Value);
+        var input = context.GetArgumentValueAsArray<int>(indexOf, IndexOf.Input);
+        var v = context.GetArgumentValueAsScalar<int>(indexOf, IndexOf.Value);
         return Value.FromTensor(input.IndexOf(v));
     }
 
@@ -43,10 +43,10 @@ public class IndexOfEvaluator : IEvaluator<IndexOf>, ITypeInferencer<IndexOf>, I
         };
     }
 
+    public Expr Visit(IShapeEvaluateContext context, IndexOf target) => 1;
+
     private IRType Visit(ITypeInferenceContext context, IndexOf target, TensorType input)
     {
         return new TensorType(input.DType, Shape.Scalar);
     }
-
-    public Expr Visit(IShapeEvaluateContext context, IndexOf target) => 1;
 }

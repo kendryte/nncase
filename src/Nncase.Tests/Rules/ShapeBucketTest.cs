@@ -1,3 +1,6 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -12,8 +15,8 @@ using Nncase.Tests.TestFixture;
 using Nncase.Tests.TransformTest;
 using Xunit;
 using Xunit.Abstractions;
-using static Nncase.IR.F.Tensors;
 using static Nncase.IR.F.Math;
+using static Nncase.IR.F.Tensors;
 
 namespace Nncase.Tests.Rules;
 
@@ -26,6 +29,7 @@ public class ShapeBucketTest : TransformTestBase
     {
         _testOutputHelper = testOutputHelper;
     }
+
     // [Fact]
     // public void TestToFusion()
     // {
@@ -37,7 +41,6 @@ public class ShapeBucketTest : TransformTestBase
     //     var expr = Abs(matmul);
     //     TestMatched<MatmulToFusion>(expr);
     // }
-
     [Fact]
     public void TestBucket()
     {
@@ -51,7 +54,7 @@ public class ShapeBucketTest : TransformTestBase
         var f = new VarFusion("stackvm", effectVar, IR.F.Math.MatMul(lhs, rhs), lhs, rhs);
         var inputInfo = new Dictionary<Var, Expr[]>
         {
-            { lhs, new[] { 1, 3, 24, (Expr)effectVar } }, { rhs, new[] { 1, 3, (Expr)effectVar, 24 } }
+            { lhs, new[] { 1, 3, 24, (Expr)effectVar } }, { rhs, new[] { 1, 3, (Expr)effectVar, 24 } },
         };
         var call = new Call(f, inputA, inputB);
         Assert.True(call.InferenceType());
@@ -99,6 +102,7 @@ public class ShapeBucketTest : TransformTestBase
             { dec_v2, new Expr[] { batch, 4, dec_len, 64 } },
             { dec_v3, new Expr[] { batch, 4, dec_len, 64 } },
         };
+
         // todo: import相同名字的var归一化
         var dict = new Dictionary<string, (int, int)>
         {
@@ -136,7 +140,7 @@ public class ShapeBucketTest : TransformTestBase
         var value = Cast(a[0], DataTypes.Int32).Evaluate().AsTensor().ToScalar<long>();
         _testOutputHelper.WriteLine(value.ToString());
     }
-    private Var Scalar(string name) => new Var(new TensorType(DataTypes.Int32, Shape.Scalar));
+
     [Fact]
     public async Task TestSliceExpr()
     {
@@ -156,6 +160,8 @@ public class ShapeBucketTest : TransformTestBase
         _testOutputHelper.WriteLine(string.Join(",", result.AsTensor().ToArray<int>()));
     }
 
+    private Var Scalar(string name) => new Var(new TensorType(DataTypes.Int32, Shape.Scalar));
+
     // public virtual Tensor[] MakeInputs(TensorType[] types)
     // {
     //     var batch = 1;
@@ -171,24 +177,25 @@ public class ShapeBucketTest : TransformTestBase
     //     var in9 = Testing.Rand<float>(batch, 4, dec_len, 64);
     //     return new[] { (Tensor)in0, in1, in2, in3, in4, in5, in6, in7, in8, in9 };
     // }
-
     [Fact]
     public async Task TestModel()
     {
         CompileOptions.DumpFlags = DumpFlags.Rewrite | DumpFlags.PassIR;
         var path = "/Users/homura/Downloads/model_dec.onnx";
+
         // var path = "/Users/homura/Downloads/model_dec.sim.onnx";
         using var file = File.OpenRead(path);
         CompileOptions.InputFormat = Path.GetExtension(file.Name).Trim('.');
         var m = await CompileSession.Compiler.ImportModuleAsync(file);
         m.Entry.InferenceType();
-        var mp = ((Function)(m.Entry!)).VarMap;
+        var mp = ((Function)m.Entry!).VarMap;
         Console.WriteLine("all mp");
         foreach (var (key, value) in mp)
         {
             Console.WriteLine(key.Name);
             Console.WriteLine(value.Select(x => x.ToString().ToArray()));
         }
+
         Dumpper.DumpIR(m.Entry, "module");
         var pm = CompileSession.CreatePassManager("pm");
         pm.AddWithName<DataflowPass>("pass").Configure(p =>
