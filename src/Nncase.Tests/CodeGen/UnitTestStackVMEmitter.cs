@@ -1,0 +1,115 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using Microsoft.VisualBasic;
+using Nncase;
+using Nncase.CodeGen;
+using Nncase.CodeGen.StackVM;
+using Nncase.IR;
+using Nncase.Utilities;
+using Xunit;
+
+namespace Nncase.Tests.CoreTest;
+
+public class UnitTestStackVMEmitter
+{
+    [Fact]
+    public void TestStackVMEmitterG()
+    {
+        var stackVmEmitter = new StackVMEmitter(new BinaryWriter(new MemoryStream(), Encoding.UTF8, leaveOpen: true));
+        stackVmEmitter.Br(90);
+        stackVmEmitter.Add();
+        stackVmEmitter.And();
+        stackVmEmitter.Break();
+        stackVmEmitter.Call(1, 1);
+        stackVmEmitter.Ceq();
+        stackVmEmitter.Cge();
+        stackVmEmitter.Cgt();
+        stackVmEmitter.Cle();
+        stackVmEmitter.Cne();
+        stackVmEmitter.Div();
+        stackVmEmitter.Dup();
+        stackVmEmitter.Ldarg(1);
+        stackVmEmitter.Ldarg0();
+        stackVmEmitter.Ldarg1();
+        stackVmEmitter.Ldarg2();
+        stackVmEmitter.Ldarg3();
+        stackVmEmitter.Ldarg4();
+        stackVmEmitter.Ldarg5();
+        stackVmEmitter.Mul();
+        stackVmEmitter.Neg();
+        stackVmEmitter.ConvI();
+        stackVmEmitter.BrTrue(0);
+        stackVmEmitter.CgeU();
+        stackVmEmitter.CgtU();
+        stackVmEmitter.CleU();
+        stackVmEmitter.Clt();
+        stackVmEmitter.CltU();
+        stackVmEmitter.ConvBR2();
+        stackVmEmitter.ConvI1();
+        stackVmEmitter.ConvI2();
+        stackVmEmitter.ConvR4();
+        stackVmEmitter.ConvU();
+        stackVmEmitter.ConvU1();
+        stackVmEmitter.ConvU2();
+        stackVmEmitter.ConvU4();
+        stackVmEmitter.ConvI4();
+        stackVmEmitter.CusCall(string.Empty, Array.Empty<byte>(), 1);
+        stackVmEmitter.DivU();
+        stackVmEmitter.ECall(0);
+        stackVmEmitter.LdcI4_0();
+        stackVmEmitter.LdcI4_1();
+        stackVmEmitter.LdcR4(0f);
+        stackVmEmitter.LdelemBR2();
+        stackVmEmitter.LdelemI();
+        stackVmEmitter.LdelemI1();
+        stackVmEmitter.LdelemI2();
+        stackVmEmitter.LdelemI4();
+        stackVmEmitter.LdelemR4();
+        stackVmEmitter.LdelemU();
+        stackVmEmitter.LdelemU1();
+        stackVmEmitter.LdelemU2();
+        stackVmEmitter.LdelemU4();
+        stackVmEmitter.LdindBR2();
+        stackVmEmitter.LdindI();
+        stackVmEmitter.LdindI1();
+        stackVmEmitter.LdindI2();
+        stackVmEmitter.LdindI4();
+        stackVmEmitter.LdindR4();
+        stackVmEmitter.LdindU();
+        stackVmEmitter.LdindU1();
+        stackVmEmitter.LdindU2();
+        stackVmEmitter.LdindU4();
+        stackVmEmitter.LdTupleElem();
+        stackVmEmitter.Nop();
+        stackVmEmitter.Not();
+        stackVmEmitter.Or();
+        stackVmEmitter.Pop();
+        stackVmEmitter.Rem();
+        stackVmEmitter.RemU();
+        stackVmEmitter.Ret();
+        stackVmEmitter.Shl();
+        stackVmEmitter.Shr();
+        stackVmEmitter.ShrU();
+        stackVmEmitter.StelemBR2();
+        stackVmEmitter.StelemI();
+        stackVmEmitter.StelemI1();
+        stackVmEmitter.StelemI2();
+        stackVmEmitter.StelemI4();
+        stackVmEmitter.StelemR4();
+        stackVmEmitter.StindBR2();
+        stackVmEmitter.StindI();
+        stackVmEmitter.StindI1();
+        stackVmEmitter.StindI2();
+        stackVmEmitter.StindI4();
+        stackVmEmitter.StindR4();
+        stackVmEmitter.Sub();
+        stackVmEmitter.Throw();
+        stackVmEmitter.Xor();
+    }
+}
