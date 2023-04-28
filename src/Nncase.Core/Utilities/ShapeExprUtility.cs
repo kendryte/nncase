@@ -25,14 +25,29 @@ public static class ShapeExprUtility
         return new If(i32Axis < 0, i32Axis + rank, i32Axis);
     }
 
+    private static Expr CheckShape(Expr shape)
+    {
+        if (shape.CheckedType == null)
+        {
+            shape.InferenceType();
+        }
+
+        if (shape.CheckedType is not TensorType || shape.CheckedShape.Count == 0)
+        {
+            // CompilerServices.DumpIR(shape, "checkShape", "/Users/homura/Code/nncase-fix/tests_output/ShapeBucketTest/TestModel/ShapeExpr/");
+            throw new InvalidOperationException();
+        }
+
+        return shape;
+    }
     public static Expr Slice(Expr shape, int begin, int end)
     {
-        return IR.F.Tensors.Slice(shape, new[] { begin }, new[] { end }, 1);
+        return IR.F.Tensors.Slice(CheckShape(shape), new[] { begin }, new[] { end }, 1);
     }
 
     public static Expr Slice(Expr shape, Expr begin, Expr end)
     {
-        return IR.F.Tensors.Slice(shape, StackOne(begin), StackOne(end), 1);
+        return IR.F.Tensors.Slice(CheckShape(shape), StackOne(begin), StackOne(end), 1);
     }
 
     public static Expr Replace(Expr shapeExpr, Expr index, Expr value)

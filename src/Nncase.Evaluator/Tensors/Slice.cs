@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using DryIoc.FastExpressionCompiler.LightExpression;
 using NetFabric.Hyperlinq;
 using Nncase.CostModel;
 using Nncase.Evaluator.Math;
@@ -125,6 +126,10 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
     private IRType Visit(ITypeInferenceContext context, Slice target, TensorType input)
     {
         Shape outShape;
+        if (input.Shape.IsRanked && input.Shape.Count == 0)
+        {
+            return new InvalidType("Slice Input should not scalar");
+        }
         if (context.GetArgument(target, Slice.Axes) is TensorConst axes_con)
         {
             if (input.Shape.IsRanked)

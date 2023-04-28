@@ -88,6 +88,11 @@ public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>, ICostEv
                 return new InvalidType("The Tuple Elements Shape Must All Equal!");
             }
 
+            if (!ttypes.Skip(1).All(ttype => ttype.DType == ttypes[0].DType))
+            {
+                return new InvalidType("The Tuple Elements DatType Must All Equal!");
+            }
+
             if (ttypes[0].Shape.IsScalar)
             {
                 if (axis_v != 0)

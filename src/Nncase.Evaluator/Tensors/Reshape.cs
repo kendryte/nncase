@@ -79,7 +79,7 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
         var sSize = Prod(shape);
         var negDimInfactValue = iSize / Abs(sSize);
         var index = IndexOf(shape, -1);
-        return new If(sSize < 0, ShapeExprUtility.Replace(sSize, index, negDimInfactValue), shape);
+        return new If(sSize < 0, ShapeExprUtility.Replace(shape, index, negDimInfactValue), shape);
     }
 
     private IRType Visit(ITypeInferenceContext context, Reshape target, TensorType input)
