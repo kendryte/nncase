@@ -12,10 +12,10 @@ using Nncase.Utilities;
 using OrtKISharp;
 using Tensorflow.Keras.Engine;
 using static Nncase.Evaluator.TypeInference;
+using static Nncase.IR.F.Math;
+using static Nncase.IR.F.Tensors;
 using Range = Nncase.IR.Tensors.Range;
 using Reshape = Nncase.IR.Tensors.Reshape;
-using static Nncase.IR.F.Tensors;
-using static Nncase.IR.F.Math;
 
 namespace Nncase.Evaluator.Tensors;
 

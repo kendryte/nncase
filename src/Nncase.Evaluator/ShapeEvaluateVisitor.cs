@@ -60,6 +60,12 @@ internal sealed class ShapeEvaluateVisitor : ExprVisitor<Expr, Unit>
         return None.Default;
     }
 
+    /// <inheritdoc/>
+    protected override Expr VisitLeafTuple(IR.Tuple expr)
+    {
+        return new IR.Tuple(expr.Fields.ToArray().Select(Visit).ToArray());
+    }
+
     private Dictionary<Var, Expr[]> Merge(ReadOnlySpan<Var> paramList, ReadOnlySpan<Expr> args)
     {
         var data = paramList.ToArray().Zip(args.ToArray().Select(arg =>
@@ -77,12 +83,6 @@ internal sealed class ShapeEvaluateVisitor : ExprVisitor<Expr, Unit>
         // }
         // Console.WriteLine("merge end");
         return dict;
-    }
-
-    /// <inheritdoc/>
-    protected override Expr VisitLeafTuple(IR.Tuple expr)
-    {
-        return new IR.Tuple(expr.Fields.ToArray().Select(Visit).ToArray());
     }
 
     /// <inheritdoc/>

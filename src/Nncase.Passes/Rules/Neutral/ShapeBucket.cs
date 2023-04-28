@@ -87,7 +87,11 @@ public partial class MatmulToFusion : IRewriteRule
 [RuleGenerator]
 public partial class ReplaceRewrite : IRewriteRule
 {
+    private static Call _currentcall;
+
     private readonly Dictionary<Var, Expr[]> _inputInfo;
+
+    private readonly Dictionary<Var, Expr[]> _fusionInputData;
 
     public ReplaceRewrite(Var var, Dictionary<Var, Expr[]> inputInfo, Dictionary<Var, Expr[]> fusionInputData)
     {
@@ -96,12 +100,9 @@ public partial class ReplaceRewrite : IRewriteRule
         _fusionInputData = fusionInputData;
     }
 
-    private readonly Dictionary<Var, Expr[]> _fusionInputData;
-
     private readonly Var _dimVar;
 
     public IPattern Pattern => IsCall("call", IsWildcard(), GenerateParameters(null));
-    private static Call _currentcall;
 
     public static (Dictionary<Var, IValue> MinDict, Dictionary<Var, IValue> MaxDict) GetBoundDict(Dictionary<Var, Expr[]> inputInfo, Dictionary<string, (int Min, int Max)> limitDict)
     {
@@ -119,6 +120,13 @@ public partial class ReplaceRewrite : IRewriteRule
             pair => vars.FindFirst(v => v.Name == pair.Key),
             pair => (IValue)Value.FromTensor((long)pair.Value.Max));
         return (minDict, maxDict);
+    }
+
+    public static Expr MakeSplitEntry(Call call, Dictionary<Var, Expr[]> inputInfo, Dictionary<Var, IValue> varInfo)
+    {
+        var fixedShapeList = call.Arguments.ToArray().Select(arg => PreProcess(arg, inputInfo, varInfo)).ToArray();
+        var then = call.With(arguments: fixedShapeList);
+        return PostProcess(then);
     }
 
     // compute segment
@@ -153,11 +161,19 @@ public partial class ReplaceRewrite : IRewriteRule
         return call;
     }
 
-    public static Expr MakeSplitEntry(Call call, Dictionary<Var, Expr[]> inputInfo, Dictionary<Var, IValue> varInfo)
+    public static Expr PreProcess(Expr input, Dictionary<Var, Expr[]> inputInfo, Dictionary<Var, IValue> varInfo)
     {
-        var fixedShapeList = call.Arguments.ToArray().Select(arg => PreProcess(arg, inputInfo, varInfo)).ToArray();
-        var then = call.With(arguments: fixedShapeList);
-        return PostProcess(then);
+        return input;
+
+        // var fixedShape = ShapeEvaluate(input, inputInfo, varInfo);
+        // var pads = fixedShape - Cast(ShapeOf(input), DataTypes.Int32);
+        // var paddings = Transpose(Stack(new IR.Tuple(Enumerable.Repeat(0, fixedShape.Length).ToArray(), pads), 0),
+        //     new[] { 1, 0 });
+        // var fixedInput = IR.F.NN.Pad(input, paddings, PadMode.Constant, Cast(0, input.CheckedDataType));
+        // // todo:
+        // // 1. reshape的问题
+        // // 2. 消除pad和slice的问题，这个不应该去消除，而是应该在要分段的时候判断插入分段的位置，不然很难消除
+        // return fixedInput;
     }
 
     private int[][] ComputeFixedShape(Call call, Dictionary<Var, IValue> varInfo) =>
@@ -184,21 +200,6 @@ public partial class ReplaceRewrite : IRewriteRule
                 return new If(cond, thenBody, elseBody);
             });
         return body;
-    }
-
-    public static Expr PreProcess(Expr input, Dictionary<Var, Expr[]> inputInfo, Dictionary<Var, IValue> varInfo)
-    {
-        return input;
-
-        // var fixedShape = ShapeEvaluate(input, inputInfo, varInfo);
-        // var pads = fixedShape - Cast(ShapeOf(input), DataTypes.Int32);
-        // var paddings = Transpose(Stack(new IR.Tuple(Enumerable.Repeat(0, fixedShape.Length).ToArray(), pads), 0),
-        //     new[] { 1, 0 });
-        // var fixedInput = IR.F.NN.Pad(input, paddings, PadMode.Constant, Cast(0, input.CheckedDataType));
-        // // todo:
-        // // 1. reshape的问题
-        // // 2. 消除pad和slice的问题，这个不应该去消除，而是应该在要分段的时候判断插入分段的位置，不然很难消除
-        // return fixedInput;
     }
 
     public static int[] ShapeEvaluate(Expr expr, Dictionary<Var, Expr[]> info, Dictionary<Var, IValue> varInfo, Dictionary<Var, Expr[]> fusionInfo)
@@ -274,7 +275,6 @@ public partial class FusionBucket : IRewriteRule
 
         // ctx.RewriteOnce = true;
         // var sp = call.Arguments.ToArray().Select(x => x.Metadata.ShapeExpr).ToArray();
-
         int i = 0;
         var data = fusion.Parameters.ToArray().Zip(call.Arguments.ToArray().Select(arg =>
         {

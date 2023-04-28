@@ -122,7 +122,7 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, Unit>, IDisposable
 
     protected override IValue VisitLeafCall(Call expr)
     {
-        var result =  expr.Target switch
+        var result = expr.Target switch
         {
             Op op => CompilerServices.EvaluateOp(op, _context, _evaluator_cache),
             Function func => CompilerServices.Evaluate(func.Body, CreateFunctionEvaluateArguments(func.Parameters, expr.Arguments), _evaluator_cache),
