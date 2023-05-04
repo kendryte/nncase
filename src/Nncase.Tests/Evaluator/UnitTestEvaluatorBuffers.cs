@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Nncase.Evaluator;
+using Nncase.Evaluator.Buffers;
 using Nncase.IR;
 using Nncase.IR.Buffers;
 using Nncase.IR.F;

@@ -36,6 +36,8 @@ public sealed class UnitTestDumpUtility
         Assert.True(File.Exists("./test3"));
         Assert.True(Directory.Exists("./test4"));
         Assert.True(File.Exists("./test5"));
+        DumpUtility.WriteKmodelData(new Tensor[] { new Tensor<int>(new[] { 1 }) }, new Tensor[] { new Tensor<int>(new[] { 1 }) }, "./test3", "./", true);
+        File.Delete("./test.kmodel");
     }
 
     [Fact]
@@ -45,6 +47,7 @@ public sealed class UnitTestDumpUtility
         BinFileUtil.WriteBinOutputs(new Tensor[] { new Tensor<int>(new[] { 1 }) }, "./");
         Assert.True(File.Exists("./input_0_0.bin"));
         Assert.True(File.Exists("./nncase_result_0.bin"));
+        BinFileUtil.ReadBinFile("./nncase_result_0.bin", DataTypes.Float32, new Shape(1));
     }
 
     [Fact]
