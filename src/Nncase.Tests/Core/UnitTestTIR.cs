@@ -209,4 +209,30 @@ public sealed class UnitTestTIR
         Assert.Equal(2, seq[1]);
         Assert.Equal(3, seq[2]);
     }
+
+    [Fact]
+    public void TestRange()
+    {
+        var expectedStart = int.MinValue;
+        var expectedStop = int.MaxValue;
+        var expectedStep = 1;
+
+        var range = Range.All;
+
+        Assert.Equal(expectedStart, range.Start);
+        Assert.Equal(expectedStop, range.Stop);
+        Assert.Equal(expectedStep, range.Step);
+
+        var range0 = new Range(0, 1, 1);
+        Assert.Equal(0, range0.Start);
+
+        var range1 = range + range;
+        var range2 = range - range;
+        var range3 = range * 2;
+        var range4 = range / 2;
+        Assert.NotEqual(range0, range1);
+        Assert.NotEqual(range0, range2);
+        Assert.NotEqual(range0, range3);
+        Assert.NotEqual(range0, range4);
+    }
 }
