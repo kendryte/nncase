@@ -39,7 +39,7 @@ public class ClampEvaluator : IEvaluator<Clamp>, ITypeInferencer<Clamp>, ICostEv
         if (input.DType != min.DType || input.DType != max.DType || min.DType != max.DType)
         {
             return new InvalidType(
-                $"clamp type is not equal, input:{input.DType}, min:${input.DType}, max:${input.DType}");
+                $"clamp type is not equal, input:{input.DType}, min:${min.DType}, max:${max.DType}");
         }
 
         return Visit(input, min, max);

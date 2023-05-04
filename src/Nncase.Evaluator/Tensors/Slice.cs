@@ -64,9 +64,10 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
     public Expr Visit(IShapeEvaluateContext context, Slice target)
     {
         var inShape = context.GetArgumentShape(target, Slice.Input);
-        var begins = context.GetArgument(target, Slice.Begins);
-        var ends = context.GetArgument(target, Slice.Ends);
-        var strides = context.GetArgument(target, Slice.Strides);
+        // avoid i64 when slice created by tf or user
+        var begins = Cast(context.GetArgument(target, Slice.Begins), DataTypes.Int64);
+        var ends = Cast(context.GetArgument(target, Slice.Ends), DataTypes.Int64);
+        var strides = Cast(context.GetArgument(target, Slice.Strides), DataTypes.Int64);
         var axes = context.GetArgument(target, Slice.Axes);
         var size = context.GetArgument(target, Slice.Input).CheckedShape.Rank;
 
@@ -82,6 +83,7 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
                 return dim;
             }
 
+            // avoid: (int)long.MaxValue = -1
             Expr begin = Cast(Clamp(begins[j], (long)int.MinValue, (long)int.MaxValue), DataTypes.Int32);
             Expr end = Cast(Clamp(ends[j], (long)int.MinValue, (long)int.MaxValue), DataTypes.Int32);
             var stride = Cast(Clamp(strides[j], (long)int.MinValue, (long)int.MaxValue), DataTypes.Int32);

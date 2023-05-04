@@ -23,6 +23,11 @@ internal sealed class ShapeEvaluateVisitor : ExprVisitor<Expr, Unit>
         return None.Default;
     }
 
+    protected override Expr VisitLeafIf(If expr)
+    {
+        // todo: then or else??
+        return Visit(expr.Then);
+    }
     // protected override Expr DispatchVisit(Expr expr)
     // {
     //     // if (expr.Metadata.ShapeExpr is null)
@@ -49,7 +54,8 @@ internal sealed class ShapeEvaluateVisitor : ExprVisitor<Expr, Unit>
         {
             Op op => CompilerServices.EvaluateOpShapeExpr(op, _context),
             Function func => CompilerServices.EvaluateShapeExpr(func.Body, Merge(func.Parameters, expr.Arguments)),
-            Fusion { ModuleKind: "stackvm" } func => CompilerServices.EvaluateShapeExpr(func.Body, Merge(func.Parameters, expr.Arguments)),
+            Fusion { ModuleKind: "stackvm" } func => CompilerServices.EvaluateShapeExpr(func.Body,
+                Merge(func.Parameters, expr.Arguments)),
             _ => throw new NotImplementedException(expr.Target.ToString()),
         };
     }
@@ -116,15 +122,17 @@ internal sealed class ShapeEvaluateVisitor : ExprVisitor<Expr, Unit>
             //         {
             //             Console.WriteLine(v.ToString());
             //         }
+            //
             //         Console.WriteLine(v.IsAlive);
             //     }
             // }
-
+            //
             // if (!_context.VarMap.ContainsKey(expr))
             // {
-            // Console.WriteLine("error");
-            // Console.WriteLine(expr.Name);
+            //     Console.WriteLine("error");
+            //     Console.WriteLine(expr.Name);
             // }
+
             var shapeExpr = shape.Select((x, i) => x.IsFixed ? x.FixedValue : _context.VarMap[expr][i]).ToArray();
 
             // Console.WriteLine("ShapeExprList");

@@ -6,8 +6,10 @@ using System.Diagnostics;
 using System.Linq;
 using NetFabric.Hyperlinq;
 using Nncase.CostModel;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.NN;
+using Nncase.Utilities;
 using OrtKISharp;
 using Tensorflow;
 using Tensorflow.NumPy;
@@ -15,13 +17,14 @@ using static Nncase.Evaluator.EvaluatorUtil;
 using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.Utility;
 using static Tensorflow.Binding;
+using static Nncase.IR.F.Tensors;
 
 namespace Nncase.Evaluator.NN;
 
 /// <summary>
 /// Evaluator for <see cref="Pad"/>.
 /// </summary>
-public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluator<Pad>
+public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluator<Pad>, IShapeEvaluator<Pad>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Pad pad)
@@ -133,5 +136,20 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
             [CostFactorNames.MemoryStore] = outputType is TensorType outT ? CostUtility.GetMemoryAccess(outT) : CostUtility.GetMemoryAccess(inputType),
         };
+    }
+
+    public Expr Visit(IShapeEvaluateContext context, Pad target)
+    {
+        var inShape = context.GetArgumentShape(target, Pad.Input);
+        var rank = context.GetArgumentRank(target, Pad.Input);
+        var pads = context.GetArgument(target, Pad.Pads);
+        var front = Slice(pads, new[] {0}, new[] { 1 }, new[] {1}, new[] {1});
+        var end = Slice(pads, new[] {1}, new[] { 2 }, new[] {1}, new[] {1});
+        // paddings = [4, 2] -> [4, 1] + [4, 1]
+        var paddings = front + end;
+        // outShape = inShape + paddings
+        var outShape = inShape + Reshape(paddings, rank);
+        DumpScope.Current.DumpIR(outShape, "paddings");
+        return outShape;
     }
 }

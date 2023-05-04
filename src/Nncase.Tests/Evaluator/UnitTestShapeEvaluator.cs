@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.Passes.Rules.Neutral;
 using Nncase.Tests.TestFixture;
@@ -193,6 +194,18 @@ public class UnitTestShapeEvaluator : TestClassBase
     public void UnitTestErf()
     {
         TestOpShapeEval(input => Erf(input));
+    }
+
+    [Fact]
+    public void UniTestReshape()
+    {
+        TestOpShapeEval(input => Reshape(input ,new long[]{1, 3, 1, -1}));
+    }
+
+    [Fact]
+    public void UnitTestPad()
+    {
+        TestOpShapeEval(input => Pad(input, new[,]{{1, 2}, {1, 3}, {2, 4}, {6, 1}}, PadMode.Constant, 0f));
     }
 
     [Fact]

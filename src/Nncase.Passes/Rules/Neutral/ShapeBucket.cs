@@ -122,13 +122,16 @@ public partial class ReplaceRewrite : IRewriteRule
         currentcall = call;
         var (minDict, maxDict) = GetBoundDict(InputInfo, dict);
 
+        Console.WriteLine("ComputeFixedShape");
         // 1. compute dim range
         var minFixedShapeList = ComputeFixedShape(call, minDict);
         var maxFixedShapeList = ComputeFixedShape(call, maxDict);
 
+        Console.WriteLine("GetDimInfo");
         // 2. get dim info(inputIndex, (dimIndex, range)
         var counts = minFixedShapeList.Zip(maxFixedShapeList).Select((pair, inputIndex) =>
         {
+            Console.WriteLine(inputIndex);
             var (min, max) = pair;
             // (range, dimIndex)
             var range = Enumerable.Range(0, min.Length).Zip(min.Zip(max)).Where(data =>
@@ -236,11 +239,11 @@ public partial class ReplaceRewrite : IRewriteRule
     private Expr Split(Call call, SegmentInfo info, int current, int limit, Dictionary<Var, int[]> varValues)
     {
         var (inputIndex, dimIndex, segments) = info;
-        var newVar = new Var(new TensorType(call.CheckedDataType,
-            Enumerable.Repeat(Dimension.Unknown, call.CheckedShape.Rank).ToArray()));
+        // var newVar = new Var(new TensorType(call.CheckedDataType,
+            // Enumerable.Repeat(Dimension.Unknown, call.CheckedShape.Rank).ToArray()));
         int i = 0;
         var body = segments.OrderByDescending(x => x).Aggregate(
-            (Expr)IR.F.Math.Require(false, newVar, "input dim large than limit"),
+            (Expr)IR.F.Math.Require(false, ConstantOfShape(ShapeOf(call), Cast(0, call.CheckedDataType)), "input dim large than limit"),
             (sum, seg) =>
             {
                 Console.WriteLine("segment value");
@@ -375,6 +378,7 @@ public partial class FusionBucket : IRewriteRule
     {
         var data = fusion.Parameters.ToArray().Zip(call.Arguments.ToArray().Select((arg, i) =>
         {
+            Console.WriteLine("arg shape eval");
             var result = arg.EvaluateShapeExpr(InputInfo);
             Console.WriteLine("Before Infer");
             result.InferenceType();

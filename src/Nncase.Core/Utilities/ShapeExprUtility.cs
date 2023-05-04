@@ -75,8 +75,6 @@ public static class ShapeExprUtility
     // public static Expr ShapeOf(Expr expr) => expr.EvaluateShapeExpr();
     public static Expr ShapeOf(Expr expr) => Cast(IR.F.Tensors.ShapeOf(expr), DataTypes.Int32);
 
-    public static Expr Rank(Expr expr) => Cast(IR.F.Tensors.Rank(expr), DataTypes.Int32);
-
     private static Expr SliceAndMerge(Expr shapeExpr, Expr index, Expr value, Expr indexOffset, bool valueIsList = true)
     {
         var front = Slice(shapeExpr, 0, index);

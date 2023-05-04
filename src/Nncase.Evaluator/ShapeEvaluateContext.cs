@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
 using Nncase.TIR;
+using static Nncase.IR.F.Tensors;
 using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Evaluator;
@@ -50,10 +51,15 @@ internal sealed class ShapeEvaluateContext : IShapeEvaluateContext
         var expr = _memo[GetArgument(op, parameter)];
         if (expr is Tuple tuple)
         {
-            return new IR.Tuple(tuple.Fields.ToArray().Select(v => IR.F.Tensors.Cast(v, DataTypes.Int32)).ToArray());
+            return new IR.Tuple(tuple.Fields.ToArray().Select(v => Cast(v, DataTypes.Int32)).ToArray());
         }
 
-        return IR.F.Tensors.Cast(expr, DataTypes.Int32);
+        return Cast(expr, DataTypes.Int32);
+    }
+
+    public Expr GetArgumentRank(Op op, ParameterInfo parameter)
+    {
+        return StackScalar(Cast(ShapeOf(GetArgumentShape(op, parameter))[0], DataTypes.Int32));
     }
 
     private Call GetCurrentCall() => CurrentCall ?? throw new InvalidOperationException("Current call is not set.");
