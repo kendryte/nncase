@@ -9,6 +9,7 @@ using NetFabric.Hyperlinq;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Tensors;
+using Tuple = System.Tuple;
 
 namespace Nncase.Evaluator.Tensors;
 
@@ -17,7 +18,7 @@ namespace Nncase.Evaluator.Tensors;
 /// </summary>
 [EvaluatorGenerator]
 [TypeInferGenerator]
-public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<GetItem>, IOpPrinter<GetItem>, ICostEvaluator<GetItem>
+public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<GetItem>, IOpPrinter<GetItem>, ICostEvaluator<GetItem>, IShapeEvaluator<GetItem>
 {
     public string Visit(IIRPrinterContext context, GetItem target, bool iLmode)
     {
@@ -35,6 +36,8 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
 
     private IValue Visit(IValue input, IValue index)
     {
+        Console.WriteLine(string.Join(",", input.AsTensor().ToArray<int>()));
+        Console.WriteLine(string.Join(",", index.AsTensor().ToArray<int>()));
         if (input.Type is TensorType ttype)
         {
             var tensor = input.AsTensor();
@@ -100,5 +103,19 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
         }
 
         return ret;
+    }
+
+    public Expr Visit(IShapeEvaluateContext context, GetItem target)
+    {
+        var input = context.GetArgumentShape(target, GetItem.Input);
+        var index = context.GetArgument(target, GetItem.Index);
+        if (input is IR.Tuple)
+        {
+            return input[index];
+        }
+        else
+        {
+            return IR.F.Tensors.ShapeOf(input[index]);
+        }
     }
 }

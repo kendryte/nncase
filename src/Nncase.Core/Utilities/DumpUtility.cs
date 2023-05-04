@@ -76,7 +76,7 @@ public static class ValueDumper
         Directory.CreateDirectory(dir);
         for (var i = 0; i < tensorValue.Length; i++)
         {
-            using (var sr = new StreamWriter(Path.Join(dir, "{i}.txt")))
+            using (var sr = new StreamWriter(Path.Join(dir, $"{i}.txt")))
             {
                 DumpTensor(tensorValue[i], sr);
             }

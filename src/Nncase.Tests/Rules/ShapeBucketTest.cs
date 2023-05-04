@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Nncase.Diagnostics;
 using Nncase.IR;
@@ -45,20 +46,29 @@ public class ShapeBucketTest : TransformTestBase
     public void TestBucket()
     {
         CompileOptions.DumpFlags = DumpFlags.Rewrite;
-        var dim = 27;
+        var dim = 5;
         var inputA = Testing.Rand<float>(1, 3, 24, dim);
         var inputB = Testing.Rand<float>(1, 3, dim, 24);
-        var effectVar = new Var(new TensorType(DataTypes.Int32, Shape.Scalar));
-        var lhs = new Var(new TensorType(DataTypes.Float32, new[] { 1, 3, 24, Dimension.Unknown }));
-        var rhs = new Var(new TensorType(DataTypes.Float32, new[] { 1, 3, Dimension.Unknown, 24 }));
-        var f = new VarFusion("stackvm", effectVar, IR.F.Math.MatMul(lhs, rhs), lhs, rhs);
-        var inputInfo = new Dictionary<Var, Expr[]>
+        var effectVar = new Var("v", new TensorType(DataTypes.Int32, Shape.Scalar));
+        var lhs = new Var("lhs", new TensorType(DataTypes.Float32, new[] { 1, 3, 24, Dimension.Unknown }));
+        var rhs = new Var("rhs", new TensorType(DataTypes.Float32, new[] { 1, 3, Dimension.Unknown, 24 }));
+
+
+        var f = new VarFusion("stackvm", new[] { effectVar }, IR.F.Math.MatMul(lhs, rhs), lhs, rhs);
+
+        var mainLhs = new Var("mainLhs", new TensorType(DataTypes.Float32, new[] { 1, 3, 24, Dimension.Unknown }));
+        var mainRhs = new Var("mainRhs", new TensorType(DataTypes.Float32, new[] { 1, 3, Dimension.Unknown, 24 }));
+        var mainInputInfo = new Dictionary<Var, Expr[]>
         {
-            { lhs, new[] { 1, 3, 24, (Expr)effectVar } }, { rhs, new[] { 1, 3, (Expr)effectVar, 24 } },
+            { mainLhs, new[] { 1, 3, 24, (Expr)effectVar } }, { mainRhs, new[] { 1, 3, (Expr)effectVar, 24 } },
         };
-        var call = new Call(f, inputA, inputB);
-        Assert.True(call.InferenceType());
-        TestMatchedCore(call, null, new[] { new FusionBucket(inputInfo) });
+
+        var call = new Call(f, mainLhs, mainRhs);
+        var main = new Function(call, mainLhs, mainRhs);
+        var dict = new Dictionary<string, (int, int)> { { "v", (4, 8) } };
+        Assert.True(main.InferenceType());
+        Dumpper.DumpIR(main, "main");
+        TestMatchedCore(main.Body, new Dictionary<Var, IValue>{{mainLhs, Value.FromTensor(inputA)}, {mainRhs, Value.FromTensor(inputB)}}, new[] { new FusionBucket(mainInputInfo, dict) });
     }
 
     [Fact]
@@ -116,10 +126,10 @@ public class ShapeBucketTest : TransformTestBase
     public virtual Tensor[] MakeInputs(TensorType[] types)
     {
         // return types.Select(type => Testing.Rand(type.DType, type.Shape.ToValueArray())).ToArray();
-        var batch = 1;
-        var tok_len = 1;
-        var enc_len = 1;
-        var dec_len = 1;
+        var batch = 2;
+        var tok_len = 3;
+        var enc_len = 6;
+        var dec_len = 2;
         var in0 = Testing.Rand<long>(batch, tok_len);
         var in1 = Testing.Rand<float>(3, enc_len, 1, 256);
         var in2 = Testing.Rand<float>(3, enc_len, 1, 256);
@@ -197,17 +207,27 @@ public class ShapeBucketTest : TransformTestBase
         }
 
         Dumpper.DumpIR(m.Entry, "module");
-        var pm = CompileSession.CreatePassManager("pm");
-        pm.AddWithName<DataflowPass>("pass").Configure(p =>
+
+        var dict = new Dictionary<string, (int, int)>
         {
-            p.Add<MatmulToFusion>(mp);
-        });
-        await pm.RunAsync(m);
-        var f = (Function)m.Entry!;
-        var types = m.Entry!.ParameterTypes.Select(type => (TensorType)type!).ToArray();
-        var inputs = MakeInputs(types);
-        var samples = f.Parameters.ToArray().Zip(inputs)
-            .ToDictionary(x => x.First, x => (IValue)Value.FromTensor(x.Second));
-        TestMatchedCore(f.Body, samples, new FusionBucket(f.VarMap));
+            { "batch", (2, 2) }, { "tok_len", (3, 12) }, { "enc_len", (6, 24) }, { "dec_len", (2, 8) },
+        };
+        async void Start()
+        {
+            var pm = CompileSession.CreatePassManager("pm");
+            pm.AddWithName<DataflowPass>("pass").Configure(p => { p.Add<MatmulToFusion>(mp); });
+            await pm.RunAsync(m);
+            var f = (Function)m.Entry!;
+            var types = m.Entry!.ParameterTypes.Select(type => (TensorType)type!).ToArray();
+            var inputs = MakeInputs(types);
+            var samples = f.Parameters.ToArray()
+                .Zip(inputs)
+                .ToDictionary(x => x.First, x => (IValue)Value.FromTensor(x.Second));
+            TestMatchedCore(f.Body, samples, new FusionBucket(f.VarMap, dict));
+        }
+
+        var t = new Thread(Start, 3278400);
+        t.Start();
+        t.Join();
     }
 }
