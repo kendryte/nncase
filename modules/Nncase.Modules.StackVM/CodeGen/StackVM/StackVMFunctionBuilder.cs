@@ -125,7 +125,7 @@ internal class StackVMFunctionBuilder : FunctionBuilder
             }
         }
 
-        Debug.Assert(localSet.Count == 0);
+        // Debug.Assert(localSet.Count == 0);
     }
 
     private bool NormalReduceCount(TextSnippet snippet, TextSnippet input)

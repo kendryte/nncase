@@ -318,9 +318,10 @@ result<value_t> nncase::kernels::stackvm::get_item(
         try_axes(begins_value, index);
         auto n = begins_value.size();
         auto in_shape = input_tensor->shape();
-        auto ends_value = axes_t(n, std::numeric_limits<int>::max());
+        auto ends_value = axes_t(n, 0);
         auto axes_value = axes_t(n, 0);
         for (size_t i = 0; i < n; ++i) {
+            ends_value[i] = begins_value[i] + 1;
             axes_value[i] = i;
         }
         auto strides_value = axes_t(n, 1);
