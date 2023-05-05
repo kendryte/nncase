@@ -36,4 +36,12 @@ public sealed class UnitTestBufferAllocation
 
         Assert.Throws<KeyNotFoundException>(() => new BufferAllocation(default, DataTypes.Utf8Char, 1UL, 1UL, 1UL, new[] { 1, 3, 16, 16 }, new[] { 1, 1, 1, 1 }, new[] { 1 }).MemoryRange);
     }
+
+    [Fact]
+    public void TestSchedFunctionResult()
+    {
+        var schedFunctionResult = new SchedFunctionResult();
+        Assert.False(schedFunctionResult.Equals(new object()));
+        _ = schedFunctionResult.GetHashCode();
+    }
 }
