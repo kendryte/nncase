@@ -177,7 +177,12 @@ public static class DumpUtility
         Directory.CreateDirectory(dumpDir);
         BinFileUtil.WriteBinInputs(inputs, dumpDir);
         BinFileUtil.WriteBinOutputs(outputs, dumpDir);
-        File.Copy(kmodelPath, Path.Join(dumpDir, "test.kmodel"));
+        var kmodel_path = Path.Join(dumpDir, "test.kmodel");
+        if (File.Exists(kmodel_path))
+        {
+            File.Delete(kmodel_path);
+        }
+        File.Copy(kmodelPath, kmodel_path);
         if (dynamic)
         {
             WriteKmodelDesc(inputs, outputs, dumpDir);
