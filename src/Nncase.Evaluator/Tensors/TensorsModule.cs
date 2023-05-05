@@ -41,5 +41,6 @@ internal class TensorsModule : IApplicationPart
         registrator.RegisterManyInterface<WhereEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<GetItemEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<IndexOfEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<FixShapeEvaluator>(reuse: Reuse.Singleton);
     }
 }

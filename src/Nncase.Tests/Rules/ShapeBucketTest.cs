@@ -14,6 +14,7 @@ using Nncase.Passes;
 using Nncase.Passes.Rules.Neutral;
 using Nncase.Tests.TestFixture;
 using Nncase.Tests.TransformTest;
+using Nncase.Utilities;
 using Xunit;
 using Xunit.Abstractions;
 using static Nncase.IR.F.Math;
@@ -123,25 +124,25 @@ public class ShapeBucketTest : TransformTestBase
         Assert.Equal(Enumerable.Repeat(24, maxDict.Count).ToArray(), minDict.Values.Select(x => x.AsTensor().ToScalar<int>()));
     }
 
-    public virtual Tensor[] MakeInputs(TensorType[] types)
-    {
-        // return types.Select(type => Testing.Rand(type.DType, type.Shape.ToValueArray())).ToArray();
-        var batch = 2;
-        var tok_len = 3;
-        var enc_len = 6;
-        var dec_len = 2;
-        var in0 = Testing.Rand<long>(batch, tok_len);
-        var in1 = Testing.Rand<float>(3, enc_len, 1, 256);
-        var in2 = Testing.Rand<float>(3, enc_len, 1, 256);
-        var in3 = Testing.Rand<bool>(1, enc_len);
-        var in4 = Testing.Rand<float>(batch, 4, dec_len, 64);
-        var in5 = Testing.Rand<float>(batch, 4, dec_len, 64);
-        var in6 = Testing.Rand<float>(batch, 4, dec_len, 64);
-        var in7 = Testing.Rand<float>(batch, 4, dec_len, 64);
-        var in8 = Testing.Rand<float>(batch, 4, dec_len, 64);
-        var in9 = Testing.Rand<float>(batch, 4, dec_len, 64);
-        return new[] { (Tensor)in0, in1, in2, in3, in4, in5, in6, in7, in8, in9 };
-    }
+    // public virtual Tensor[] MakeInputs(TensorType[] types)
+    // {
+    //     // return types.Select(type => Testing.Rand(type.DType, type.Shape.ToValueArray())).ToArray();
+    //     var batch = 2;
+    //     var tok_len = 3;
+    //     var enc_len = 6;
+    //     var dec_len = 2;
+    //     var in0 = Testing.Rand<long>(batch, tok_len);
+    //     var in1 = Testing.Rand<float>(3, enc_len, 1, 256);
+    //     var in2 = Testing.Rand<float>(3, enc_len, 1, 256);
+    //     var in3 = Testing.Rand<bool>(1, enc_len);
+    //     var in4 = Testing.Rand<float>(batch, 4, dec_len, 64);
+    //     var in5 = Testing.Rand<float>(batch, 4, dec_len, 64);
+    //     var in6 = Testing.Rand<float>(batch, 4, dec_len, 64);
+    //     var in7 = Testing.Rand<float>(batch, 4, dec_len, 64);
+    //     var in8 = Testing.Rand<float>(batch, 4, dec_len, 64);
+    //     var in9 = Testing.Rand<float>(batch, 4, dec_len, 64);
+    //     return new[] { (Tensor)in0, in1, in2, in3, in4, in5, in6, in7, in8, in9 };
+    // }
 
     [Fact]
     public void TestValue()
@@ -172,21 +173,37 @@ public class ShapeBucketTest : TransformTestBase
 
     private Var Scalar(string name) => new Var(new TensorType(DataTypes.Int32, Shape.Scalar));
 
-    // public virtual Tensor[] MakeInputs(TensorType[] types)
-    // {
-    //     var batch = 1;
-    //     var tok_len = 1;
-    //     var enc_len = 1;
-    //     var dec_len = 1;
-    //     var in0 = Testing.Rand<long>(batch, tok_len);
-    //     var in4 = Testing.Rand<float>(batch, 4, dec_len, 64);
-    //     var in5 = Testing.Rand<float>(batch, 4, dec_len, 64);
-    //     var in6 = Testing.Rand<float>(batch, 4, dec_len, 64);
-    //     var in7 = Testing.Rand<float>(batch, 4, dec_len, 64);
-    //     var in8 = Testing.Rand<float>(batch, 4, dec_len, 64);
-    //     var in9 = Testing.Rand<float>(batch, 4, dec_len, 64);
-    //     return new[] { (Tensor)in0, in1, in2, in3, in4, in5, in6, in7, in8, in9 };
-    // }
+    [Fact]
+    public void TestComputeSegmentList()
+    {
+        var min = 3;
+        var max = 9;
+        var count = 2;
+        var segments = ReplaceRewrite.ComputeSegmentList(count, min, max);
+        Assert.Equal(segments, new[]{3, 9});
+    }
+
+    public Tensor[] MakeInputs(TensorType[] types)
+    {
+        var root = "/Users/homura/tmp/nmtv4_dec_fixed";
+        var batch = 2;
+        var tok_len = 3;
+        var enc_len = 6;
+        var dec_len = 2;
+        var i = 2;
+        var tokens = BinFileUtil.ReadBinFile(Path.Join(root, $"tokens_{i}.bin"), DataTypes.Int64, new[] { batch, tok_len });
+        var enc_k = BinFileUtil.ReadBinFile(Path.Join(root, "enc_k.bin"), DataTypes.Float32, new[] { 3, enc_len, 1, 256 });
+        var enc_v = BinFileUtil.ReadBinFile(Path.Join(root, "enc_v.bin"), DataTypes.Float32, new[] { 3, enc_len, 1, 256 });
+        var enc_pad_mask = BinFileUtil.ReadBinFile(Path.Join(root, "enc_pad_mask.bin"), DataTypes.Boolean, new[] { 1, enc_len });
+        var dec_k1 = BinFileUtil.ReadBinFile(Path.Join(root, $"dec_k_1_{i}.bin"), DataTypes.Float32,new[] { batch, 4, dec_len, 64 });
+        var dec_k2 = BinFileUtil.ReadBinFile(Path.Join(root, $"dec_k_2_{i}.bin"), DataTypes.Float32,new[] { batch, 4, dec_len, 64 });
+        var dec_k3 = BinFileUtil.ReadBinFile(Path.Join(root, $"dec_k_3_{i}.bin"), DataTypes.Float32,new[] { batch, 4, dec_len, 64 });
+        var dec_v1 = BinFileUtil.ReadBinFile(Path.Join(root, $"dec_v_1_{i}.bin"), DataTypes.Float32,new[] { batch, 4, dec_len, 64 });
+        var dec_v2 = BinFileUtil.ReadBinFile(Path.Join(root, $"dec_v_2_{i}.bin"), DataTypes.Float32,new[] { batch, 4, dec_len, 64 });
+        var dec_v3 = BinFileUtil.ReadBinFile(Path.Join(root, $"dec_v_3_{i}.bin"), DataTypes.Float32,new[] { batch, 4, dec_len, 64 });
+        return new[] { tokens, enc_k, enc_v, enc_pad_mask, dec_k1, dec_k2, dec_k3, dec_v1, dec_v2, dec_v3 };
+    }
+
     [Fact]
     public async Task TestModel()
     {
@@ -208,9 +225,10 @@ public class ShapeBucketTest : TransformTestBase
 
         Dumpper.DumpIR(m.Entry, "module");
 
+        // { "batch", (2, 2) }
         var dict = new Dictionary<string, (int, int)>
         {
-            { "batch", (2, 2) }, { "tok_len", (3, 12) }, { "enc_len", (6, 24) }, { "dec_len", (2, 8) },
+            { "tok_len", (3, 12) }, { "enc_len", (6, 24) }, { "dec_len", (2, 8) },
         };
         async void Start()
         {
@@ -219,6 +237,7 @@ public class ShapeBucketTest : TransformTestBase
             await pm.RunAsync(m);
             var f = (Function)m.Entry!;
             var types = m.Entry!.ParameterTypes.Select(type => (TensorType)type!).ToArray();
+            // var inputs = MakeInputs(types);
             var inputs = MakeInputs(types);
             var samples = f.Parameters.ToArray()
                 .Zip(inputs)
