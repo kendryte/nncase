@@ -17,6 +17,11 @@ namespace Nncase.Importer
         {
             // auto_pad had been DEPRECATED
             var input = GetInputExpr(op, 0);
+            if (isGlobal && input.CheckedShape.Rank != 4)
+            {
+                return F.Tensors.Reduce(reduceOp, input, Enumerable.Range(0, input.CheckedShape.Rank).Skip(2).ToArray(), initValue, true);
+            }
+
             var ceilMode = GetBoolAttribute(op, "ceil_mode", false);
             var countIncludePad = GetBoolAttribute(op, "count_include_pad", false);
             var pads = GetPadsAttribute(op);

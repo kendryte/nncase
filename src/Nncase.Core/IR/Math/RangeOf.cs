@@ -15,4 +15,9 @@ public sealed partial class RangeOf : Op
     /// Gets input.
     /// </summary>
     public static readonly ParameterInfo Input = new(typeof(RangeOf), 0, "input");
+
+    /// <summary>
+    /// Gets or sets a value indicating whether is the range of weight.
+    /// </summary>
+    public bool IsRangeOfWeight { get; set; }
 }

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DryIoc.ImTools;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
 using Nncase.IR.Tensors;
@@ -24,7 +25,7 @@ public static class Tensors
 
     public static Expr NCHWToNHWC(Expr input) => Transpose(input, new[] { 0, 2, 3, 1 });
 
-    public static Expr NHWCToWNCH(Expr input) => Transpose(input, new[] { 3, 0, 1, 2 });
+    public static Expr NHWCToWNCH(Expr input) => Transpose(input, new[] { 2, 0, 3, 1 });
 
     public static Call Broadcast(Expr input, Expr shape) => new Call(new Broadcast(), input, shape);
 
@@ -78,7 +79,7 @@ public static class Tensors
         Reduce(ReduceOp.Min, input, axis, initValue, keepDims);
 
     public static Call ReduceMax(Expr input, Expr axis, Expr initValue, Expr keepDims) =>
-        Reduce(ReduceOp.Min, input, axis, initValue, keepDims);
+        Reduce(ReduceOp.Max, input, axis, initValue, keepDims);
 
     public static Call ReduceSum(Expr input, Expr axis, Expr initValue, Expr keepDims) =>
         Reduce(ReduceOp.Sum, input, axis, initValue, keepDims);
@@ -146,4 +147,6 @@ public static class Tensors
 
     public static Call TopK(Expr x, Expr k, Expr axis, Expr largest, Expr sorted) =>
         new Call(new TopK(), x, k, axis, largest, sorted);
+
+    public static Call IndexOf(Expr input, Expr value) => new Call(new IndexOf(), input, value);
 }

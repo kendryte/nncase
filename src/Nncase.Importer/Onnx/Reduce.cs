@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Linq;
 using Nncase.IR;
 using Onnx;
 using F = Nncase.IR.F;
@@ -18,7 +19,31 @@ namespace Nncase.Importer
         private Expr ReduceCore(in NodeProto op, ReduceOp reduceOp, float initValue, Func<Expr, Expr> f)
         {
             var input = GetInputExpr(op, 0);
-            var axis = GetAxesAttribute(op, input);
+            Expr axis;
+            if (GetOpSet(op) < 18)
+            {
+                axis = GetAxesAttribute(op, input);
+            }
+            else
+            {
+                if (op.Input.Count > 1)
+                {
+                    axis = GetInputExpr(op, 1);
+                }
+                else
+                {
+                    var noop_with_empty_axes = GetOptionIntAttribute(op, "noop_with_empty_axes").Or(0);
+                    if (noop_with_empty_axes == 1)
+                    {
+                        return input;
+                    }
+                    else
+                    {
+                        axis = Enumerable.Range(0, input.CheckedShape.Rank).Select(i => (long)i).ToArray();
+                    }
+                }
+            }
+
             var keepDims = GetBoolAttribute(op, "keepdims", true);
             return F.Tensors.Reduce(reduceOp, f(input), axis, initValue, keepDims);
         }

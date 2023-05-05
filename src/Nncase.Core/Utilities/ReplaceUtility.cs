@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Collections.Immutable;
+using System.Linq;
 using System.Reactive;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
@@ -25,41 +26,37 @@ public static class ReplaceUtility
     /// <exception cref="InvalidOperationException">when the same target match two value.</exception>
     public static Expr[] ReplaceItems(IReadOnlyList<Expr> list, params (Expr Target, Expr Value)[] pairs)
     {
+        var l = list.ToList();
+        return ReplaceItems(list, pairs.Select(p => (l.IndexOf(p.Target), p.Value)).ToArray());
+    }
+
+    /// <summary>
+    /// replace items with param info.
+    /// </summary>
+    /// <param name="list">expr list.</param>
+    /// <param name="pairs">pairs.</param>
+    /// <returns>replaced list.</returns>
+    public static Expr[] ReplaceItems(IReadOnlyList<Expr> list, params (int Index, Expr Value)[] pairs)
+    {
         if (pairs.Length == 0)
         {
             return list.ToArray();
         }
 
-        var new_args = new List<Expr>(list);
-
-        Dictionary<int, Expr> candidates = new();
-        for (int i = 0; i < list.Count; i++)
+        var new_args = list.ToArray();
+        var hashset = new HashSet<int>();
+        foreach (var (index, value) in pairs)
         {
-            for (int j = 0; j < pairs.Length; j++)
+            if (hashset.Add(index))
             {
-                if (object.ReferenceEquals(new_args[i], pairs[j].Target))
-                {
-                    if (!candidates.TryGetValue(i, out var last_matched))
-                    {
-                        last_matched = pairs[j].Value;
-                        candidates.Add(i, last_matched);
-                    }
-
-                    if (!object.ReferenceEquals(last_matched, pairs[j].Value))
-                    {
-                        throw new InvalidDataException("The same arg can't replace with two new pararmeter!");
-                    }
-                }
+                new_args[index] = value;
+            }
+            else
+            {
+                throw new InvalidDataException($"The same arg {index} can't replace with two new pararmeter!");
             }
         }
 
-        if (candidates.Count == 0)
-        {
-            throw new InvalidOperationException("Not find the replace param");
-        }
-
-        foreach (var (i, new_input) in candidates)
-            new_args[i] = new_input;
         return new_args.ToArray();
     }
 
@@ -71,7 +68,7 @@ public static class ReplaceUtility
     /// <returns>replaced list.</returns>
     public static Expr[] ReplaceItems(IReadOnlyList<Expr> list, params (IR.ParameterInfo Info, Expr Value)[] pairs)
     {
-        return ReplaceItems(list, pairs.Select(p => (list[p.Info.Index], p.Value)).ToArray());
+        return ReplaceItems(list, pairs.Select(p => (p.Info.Index, p.Value)).ToArray());
     }
 
     /// <summary>
@@ -94,6 +91,18 @@ public static class ReplaceUtility
     /// <param name="pairs">the param info pair.</param>
     /// <returns>new call.</returns>
     public static Call ReplaceCallParams(Expr target, IReadOnlyList<Expr> oldParams, params (IR.ParameterInfo, Expr)[] pairs)
+    {
+        return new Call(target, ReplaceItems(oldParams, pairs));
+    }
+
+    /// <summary>
+    /// replace the call params with parameter info.
+    /// </summary>
+    /// <param name="target">call target.</param>
+    /// <param name="oldParams">target params.</param>
+    /// <param name="pairs">the param info pair.</param>
+    /// <returns>new call.</returns>
+    public static Call ReplaceCallParams(Expr target, IReadOnlyList<Expr> oldParams, params (int, Expr)[] pairs)
     {
         return new Call(target, ReplaceItems(oldParams, pairs));
     }

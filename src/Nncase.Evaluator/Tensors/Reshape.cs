@@ -3,27 +3,33 @@
 
 using System;
 using System.Linq;
+using DryIoc.ImTools;
 using NetFabric.Hyperlinq;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Tensors;
+using Nncase.Utilities;
 using OrtKISharp;
+using Tensorflow.Keras.Engine;
 using static Nncase.Evaluator.TypeInference;
+using static Nncase.IR.F.Math;
+using static Nncase.IR.F.Tensors;
 using Range = Nncase.IR.Tensors.Range;
+using Reshape = Nncase.IR.Tensors.Reshape;
 
 namespace Nncase.Evaluator.Tensors;
 
 /// <summary>
 /// Evaluator for <see cref="Range"/>.
 /// </summary>
-public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, ICostEvaluator<Reshape>
+public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, ICostEvaluator<Reshape>, IShapeEvaluator<Reshape>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Reshape reshape)
     {
         var input = context.GetOrtArgumentValue(reshape, Reshape.Input);
         var shape = context.GetInt64OrtTensorArgumentValue(reshape, Reshape.Shape);
-        return OrtKI.Reshape(input, shape, 0).ToValue();
+        return OrtKI.Reshape(input, shape, context.CurrentCall.CheckedType is TensorType && context.CurrentCall.CheckedShape.IsFixed ? (context.CurrentCall.CheckedShape.ToValueArray().Contains(0) ? 1 : 0) : 0).ToValue();
     }
 
     /// <inheritdoc/>
@@ -44,6 +50,36 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
         {
             [CostFactorNames.CPUCycles] = 1,
         };
+    }
+
+    public Expr Visit(IShapeEvaluateContext context, Reshape target)
+    {
+        var shape = context.GetArgument(target, Reshape.Shape);
+        var inputShape = Cast(context.GetArgumentShape(target, Reshape.Input), DataTypes.Int32);
+        if (shape is TensorConst shapeConst)
+        {
+            var shapeArray = shapeConst.Value.ToArray<int>();
+            var negIndex = shapeArray.IndexOf(-1);
+            if (negIndex < 0)
+            {
+                return shapeArray;
+            }
+
+            var dim = Prod(inputShape) / System.Math.Abs(shapeArray.Aggregate((s, x) => x * s));
+            var rhs = Enumerable.Repeat((Expr)0, negIndex).Append(dim + 1).ToArray();
+            var newShape = Stack(new IR.Tuple(rhs), 0);
+
+            // dim = Product(inShape) / Produce(Reshape.Shape)
+            // [1, 3, -1, 24] + [dim + 1, 0]
+            return newShape + shapeArray;
+        }
+
+        shape = Cast(shape, DataTypes.Int32);
+        var iSize = Prod(inputShape);
+        var sSize = Prod(shape);
+        var negDimInfactValue = iSize / Abs(sSize);
+        var index = IndexOf(shape, -1);
+        return new If(sSize < 0, ShapeExprUtility.Replace(shape, index, negDimInfactValue), shape);
     }
 
     private IRType Visit(ITypeInferenceContext context, Reshape target, TensorType input)

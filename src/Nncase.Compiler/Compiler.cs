@@ -12,7 +12,6 @@ using Nncase.Hosting;
 using Nncase.IR;
 using Nncase.Passes;
 using Nncase.Passes.Rules.Lower;
-using Nncase.Passes.Rules.Neutral;
 using Nncase.Passes.Transforms;
 using Nncase.Quantization;
 using Nncase.Utilities;
@@ -25,12 +24,14 @@ internal class Compiler : ICompiler
     private readonly IModelBuilder _modelBuilder;
     private readonly IDumpper _dumpper;
     private IRModule? _module;
+    private int _runPassCount;
 
     public Compiler(CompileSession compileSession, IModelBuilder modelBuilder, IDumpperFactory dumpperFactory)
     {
         _compileSession = compileSession;
         _modelBuilder = modelBuilder;
         _dumpper = dumpperFactory.Root;
+        _runPassCount = 0;
     }
 
     public IRModule Module => _module ?? throw new InvalidOperationException("Module has not been imported");
@@ -68,74 +69,69 @@ internal class Compiler : ICompiler
         });
     }
 
-    public void TargetIndependentQuantPass(IPassManager passManager)
-    {
-        var quantMode = _compileSession.CompileOptions.QuantizeOptions.ModelQuantMode;
-        if (quantMode == ModelQuantMode.UsePTQ)
-        {
-            passManager.AddWithName<DataflowPass>("AddRangeOfMarker").Configure(p =>
-            {
-                p.Add<Passes.Rules.Neutral.AddRangeOfAndMarker>();
-            });
-            passManager.AddWithName<EGraphPassWithQuantize>("AssignRanges");
-        }
-    }
-
     public void TargetIndependentPass(IPassManager passManager)
     {
         var quantMode = _compileSession.CompileOptions.QuantizeOptions.ModelQuantMode;
-        if (quantMode == ModelQuantMode.UsePTQ)
+        passManager.AddWithName<DataflowPass>("SqueezeShape").Configure(p =>
         {
-            passManager.AddWithName<EGraphRulesPass>("NeutralOptimizeTranspose").Configure(p =>
-            {
-                p.Add<Passes.Rules.Neutral.FoldConstCall>();
-                p.Add<Passes.Rules.Neutral.FoldNopTranspose>();
-                p.Add<Passes.Rules.Neutral.FoldTwoTransposes>();
-                p.Add<Passes.Rules.Neutral.CombineTransposeUnary>();
-                p.Add<Passes.Rules.Neutral.CombineTransposePad>();
-                p.Add<Passes.Rules.Neutral.CombinePadTranspose>();
-                p.Add<Passes.Rules.Neutral.CombineBinaryTranspose>();
-                p.Add<Passes.Rules.Neutral.CombineConstBinaryTranspose>();
-                p.Add<Passes.Rules.Neutral.CombineTransposeConstBinary>();
-                p.Add<Passes.Rules.Neutral.CombineTransposeReduce>();
-                p.Add<Passes.Rules.Neutral.CombineTransposeActivations>();
-                p.Add<Passes.Rules.Neutral.CombineActivationsTranspose>();
-                p.Add<Passes.Rules.Neutral.CombineTransposeConcat>();
-                p.Add<Passes.Rules.Neutral.CombineBinaryReshape>();
-                p.Add<Passes.Rules.Neutral.CombineConstBinaryReshape>();
-                p.Add<Passes.Rules.Neutral.CombineUnaryReshape>();
-                p.Add<Passes.Rules.Neutral.CombineActivationsReshape>();
-                p.Add<Passes.Rules.Neutral.FoldNopPad>();
-                p.Add<Passes.Rules.Neutral.FoldConv2DPads>();
-                p.Add<Passes.Rules.Neutral.FoldReduceWindow2DPads>();
-                p.Add<Passes.Rules.Neutral.SqueezeToReshape>();
-                p.Add<Passes.Rules.Neutral.UnSqueezeToReshape>();
-                p.Add<Passes.Rules.Neutral.TransposeToReshape>();
-                p.Add<Passes.Rules.Neutral.FlattenToReshape>();
-                p.Add<Passes.Rules.Neutral.FoldNopReshape>();
-                p.Add<Passes.Rules.Neutral.FoldTwoReshapes>();
-                p.Add<Passes.Rules.Neutral.FoldLayerNormPattern1>();
-                p.Add<Passes.Rules.Neutral.FoldLayerNormPattern2>();
-                p.Add<Passes.Rules.Neutral.FoldLayerNormPattern3>();
-                p.Add<Passes.Rules.Neutral.FoldGeluWithScale>();
-                p.Add<Passes.Rules.Neutral.FoldGeneralGelu>();
-                p.Add<Passes.Rules.Neutral.FoldSwishPattern1>();
-                p.Add<Passes.Rules.Neutral.FoldSwishPattern2>();
-                p.Add<Passes.Rules.Neutral.FoldHardSwish>();
-            });
+            p.Add<Passes.Rules.Neutral.SqueezeTransposeShape>();
+            p.Add<Passes.Rules.Neutral.Squeeze5DTranspose>();
+        });
+        passManager.AddWithName<EGraphRulesPass>("NeutralOptimizeTranspose").Configure(p =>
+        {
+            p.Add<Passes.Rules.Neutral.FoldConstCall>();
+            p.Add<Passes.Rules.Neutral.FoldNopTranspose>();
+            p.Add<Passes.Rules.Neutral.FoldTwoTransposes>();
+            p.Add<Passes.Rules.Neutral.CombineTransposeUnary>();
+            p.Add<Passes.Rules.Neutral.CombineTransposePad>();
+            p.Add<Passes.Rules.Neutral.CombinePadTranspose>();
+            p.Add<Passes.Rules.Neutral.CombineBinaryTranspose>();
+            p.Add<Passes.Rules.Neutral.CombineConstBinaryTranspose>();
+            p.Add<Passes.Rules.Neutral.CombineTransposeConstBinary>();
+            p.Add<Passes.Rules.Neutral.CombineTransposeReduce>();
+            p.Add<Passes.Rules.Neutral.CombineTransposeActivations>();
+            p.Add<Passes.Rules.Neutral.CombineActivationsTranspose>();
+            p.Add<Passes.Rules.Neutral.CombineTransposeConcat>();
+            p.Add<Passes.Rules.Neutral.CombineBinaryReshape>();
+            p.Add<Passes.Rules.Neutral.CombineConstBinaryReshape>();
+            p.Add<Passes.Rules.Neutral.CombineUnaryReshape>();
+            p.Add<Passes.Rules.Neutral.CombineActivationsReshape>();
+            p.Add<Passes.Rules.Neutral.CombineReshapePad>();
+            p.Add<Passes.Rules.Neutral.FoldNopPad>();
+            p.Add<Passes.Rules.Neutral.FoldConv2DPads>();
+            p.Add<Passes.Rules.Neutral.FuseClampConv2D>();
+            p.Add<Passes.Rules.Neutral.FoldReduceWindow2DPads>();
+            p.Add<Passes.Rules.Neutral.SqueezeToReshape>();
+            p.Add<Passes.Rules.Neutral.UnSqueezeToReshape>();
+            p.Add<Passes.Rules.Neutral.TransposeToReshape>();
+            p.Add<Passes.Rules.Neutral.FlattenToReshape>();
+            p.Add<Passes.Rules.Neutral.ReshapeToTranspose>();
+            p.Add<Passes.Rules.Neutral.FoldNopReshape>();
+            p.Add<Passes.Rules.Neutral.FoldTwoReshapes>();
+            p.Add<Passes.Rules.Neutral.FoldLayerNormPattern1>();
+            p.Add<Passes.Rules.Neutral.FoldLayerNormPattern2>();
+            p.Add<Passes.Rules.Neutral.FoldLayerNormPattern3>();
+            p.Add<Passes.Rules.Neutral.FoldGeluWithScale>();
+            p.Add<Passes.Rules.Neutral.FoldGeneralGelu>();
+            p.Add<Passes.Rules.Neutral.FoldSwishPattern1>();
+            p.Add<Passes.Rules.Neutral.FoldSwishPattern2>();
+            p.Add<Passes.Rules.Neutral.ReluToClamp>();
+            p.Add<Passes.Rules.Neutral.Relu6ToClamp>();
+            p.Add<Passes.Rules.Neutral.FoldHardSwish1>();
+            p.Add<Passes.Rules.Neutral.FoldHardSwish2>();
+            p.Add<Passes.Rules.Neutral.FoldNopSlice>();
+        });
 
-            // passManager.AddWithName<EGraphPass>("NeutralOptimizeClamp").Configure(p =>
-            // {
-            //     p.Add<Passes.Rules.Neutral.FoldConstCall>();
-            //     p.Add<Passes.Rules.Neutral.FoldConv2DAddMul>();
-            //     p.Add<Passes.Rules.Neutral.ReluToClamp>();
-            //     p.Add<Passes.Rules.Neutral.Relu6ToClamp>();
-            //     p.Add<Passes.Rules.Neutral.CombineClampAdd>();
-            //     p.Add<Passes.Rules.Neutral.CombineClampMul>();
-            //     p.Add<Passes.Rules.Neutral.FoldNopClamp>();
-            // });
-        }
-
+        // passManager.AddWithName<EGraphPass>("NeutralOptimizeClamp").Configure(p =>
+        // {
+        //     p.Add<Passes.Rules.Neutral.FoldConstCall>();
+        //     p.Add<Passes.Rules.Neutral.FoldConv2DAddMul>();
+        //     p.Add<Passes.Rules.Neutral.ReluToClamp>();
+        //     p.Add<Passes.Rules.Neutral.Relu6ToClamp>();
+        //     p.Add<Passes.Rules.Neutral.CombineClampAdd>();
+        //     p.Add<Passes.Rules.Neutral.CombineClampMul>();
+        //     p.Add<Passes.Rules.Neutral.FoldNopClamp>();
+        // });
         _compileSession.Target.RegisterTargetInDependentPass(passManager, _compileSession.CompileOptions);
 
         if (quantMode == ModelQuantMode.UsePTQ)
@@ -148,223 +144,14 @@ internal class Compiler : ICompiler
         }
     }
 
-    // public void TargetIndependentPass(IPassManager passManager)
-    // {
-    //     passManager.AddWithName<EGraphRulesPass>("NeutralOptimizeTranspose").Configure(p =>
-    //     {
-    //         p.Add<Passes.Rules.Neutral.FoldConstCall>();
-    //         p.Add<Passes.Rules.Neutral.FoldNopTranspose>();
-    //         p.Add<Passes.Rules.Neutral.FoldTwoTransposes>();
-    //         p.Add<Passes.Rules.Neutral.CombineTransposeUnary>();
-    //         p.Add<Passes.Rules.Neutral.CombineTransposePad>();
-    //         p.Add<Passes.Rules.Neutral.CombinePadTranspose>();
-    //         p.Add<Passes.Rules.Neutral.CombineBinaryTranspose>();
-    //         p.Add<Passes.Rules.Neutral.CombineConstBinaryTranspose>();
-    //         p.Add<Passes.Rules.Neutral.CombineTransposeConstBinary>();
-    //         p.Add<Passes.Rules.Neutral.CombineTransposeReduce>();
-    //         p.Add<Passes.Rules.Neutral.CombineTransposeActivations>();
-    //         p.Add<Passes.Rules.Neutral.CombineActivationsTranspose>();
-    //         p.Add<Passes.Rules.Neutral.CombineTransposeConcat>();
-    //         p.Add<Passes.Rules.Neutral.FoldNopPad>();
-    //         p.Add<Passes.Rules.Neutral.FoldConv2DPads>();
-    //         p.Add<Passes.Rules.Neutral.FoldReduceWindow2DPads>();
-    //         p.Add<Passes.Rules.Neutral.SqueezeToReshape>();
-    //         p.Add<Passes.Rules.Neutral.UnSqueezeToReshape>();
-    //         p.Add<Passes.Rules.Neutral.TransposeToReshape>();
-    //         p.Add<Passes.Rules.Neutral.FlattenToReshape>();
-    //         p.Add<Passes.Rules.Neutral.FoldNopReshape>();
-    //         p.Add<Passes.Rules.Neutral.FoldTwoReshapes>();
-    //         p.Add<Passes.Rules.Neutral.FoldLayerNormPattern1>();
-    //         p.Add<Passes.Rules.Neutral.FoldLayerNormPattern2>();
-    //         p.Add<Passes.Rules.Neutral.FoldLayerNormPattern3>();
-    //         p.Add<Passes.Rules.Neutral.FoldGeluWithScale>();
-    //         p.Add<Passes.Rules.Neutral.FoldGeneralGelu>();
-    //         p.Add<Passes.Rules.Neutral.FoldSwishPattern1>();
-    //         p.Add<Passes.Rules.Neutral.FoldSwishPattern2>();
-    //         p.Add<Passes.Rules.Neutral.FoldHardSwish>();
-    //     });
-    //
-    //         // passManager.AddWithName<EGraphPass>("NeutralOptimizeClamp").Configure(p =>
-    //         // {
-    //         //     p.Add<Passes.Rules.Neutral.FoldConstCall>();
-    //         //     p.Add<Passes.Rules.Neutral.FoldConv2DAddMul>();
-    //         //     p.Add<Passes.Rules.Neutral.ReluToClamp>();
-    //         //     p.Add<Passes.Rules.Neutral.Relu6ToClamp>();
-    //         //     p.Add<Passes.Rules.Neutral.CombineClampAdd>();
-    //         //     p.Add<Passes.Rules.Neutral.CombineClampMul>();
-    //         //     p.Add<Passes.Rules.Neutral.FoldNopClamp>();
-    //         // });
-    //     // }
-    //
-    //     _compileSession.Target.RegisterTargetInDependentPass(passManager, _compileSession.CompileOptions);
-    //
-    //     if (_compileSession.CompileOptions.QuantizeOptions.ModelQuantMode == ModelQuantMode.UsePTQ)
-    //     {
-    //         passManager.AddWithName<DataflowPass>("AddRangeOfMarker").Configure(p =>
-    //         {
-    //             p.Add<Passes.Rules.Neutral.AddRangeOfAndMarker>();
-    //         });
-    //         passManager.AddWithName<EGraphPassWithQuantize>("AssignRanges");
-    //     }
-    // }
-
-    public void ShapeBucket(ShapeBucketOptions options)
-    {
-        _module = new ShapeBucket().Run((Function)Module.Entry!, options.SegmentInfos, _compileSession.CompileOptions);
-        _dumpper.DumpModule(Module, "Splited");
-    }
-
-    public class TimerRecord
-    {
-        private long startTime = -1;
-        private double secondsElapsed = -1;
-        private string _name;
-
-        public TimerRecord(string name, TimerRecord parent)
-        {
-            _name = name;
-        }
-
-        public void Start()
-        {
-            startTime = DateTime.Now.Ticks;
-        }
-
-        public void End()
-        {
-            var endTime = DateTime.Now.Ticks;
-            secondsElapsed = new TimeSpan(endTime - startTime).TotalSeconds;
-            Console.WriteLine($"{_name} took: {secondsElapsed}");
-        }
-    }
-
-    public class Timer : IDisposable
-    {
-        public static List<TimerRecord> Records = new();
-
-        private TimerRecord _record;
-
-        private Timer _parent;
-
-        public Timer(string name, Timer? parent = null)
-        {
-            _record = new TimerRecord(name, null);
-            Records.Add(_record);
-            _record.Start();
-        }
-
-        public void Dispose()
-        {
-            _record.End();
-        }
-    }
-
-    // public async Task CompileAsync()
-    // {
-    //     var target = _compileSession.Target;
-    //
-    //     using (var _ = new Timer("ShapeBucket"))
-    //     {
-    //         var shapeBucketOptions = _compileSession.CompileOptions.ShapeBucketOptions;
-    //         if (shapeBucketOptions.Enable)
-    //         {
-    //             ShapeBucket(shapeBucketOptions);
-    //             await RunPassAsync(pmg => pmg.Add<ShapeInferPass>(), "ShapeInferAfterBucket");
-    //             _module?.Entry!.InferenceType();
-    //             _dumpper.DumpModule(Module, "SplitedAfterInfer");
-    //             // entry之外的所有function跑对应的pass
-    //             // shape bucket 的时候创建的所有var都要绑定一个calibration
-    //             // 但是输入的shape有限怎么办。。。
-    //         }
-    //     }
-    //
-    //     using (var _ = new Timer("TargetIndenpend"))
-    //     {
-    //         await RunPassAsync(p => TargetIndependentPass(p), "TargetIndependentPass");
-    //     }
-    //
-    //     // using (var _ = new Timer("TargetIndenpendQuant"))
-    //     // {
-    //     //     await RunPassAsync(p => TargetIndependentQuantPass(p), "TargetIndependentQuantPass");
-    //     // }
-    //
-    //     if (_compileSession.CompileOptions.QuantizeOptions.ModelQuantMode == ModelQuantMode.UsePTQ)
-    //     {
-    //         using (var _ = new Timer("Quantize"))
-    //         {
-    //             await RunPassAsync(p => target.RegisterQuantizePass(p, _compileSession.CompileOptions), "QuantizePass");
-    //         }
-    //
-    //         using (var _ = new Timer("ClearMarker"))
-    //         {
-    //             await RunPassAsync(
-    //                 pmgr => pmgr.Add<DataflowPass>().Configure(p =>
-    //                 {
-    //                     p.Name = "ClearMarker";
-    //                     p.Add<RemoveMarker>();
-    //                 }),
-    //                 "RemoveMarker");
-    //         }
-    //
-    //         using (var _ = new Timer("AfterQuantize"))
-    //         {
-    //             await RunPassAsync(p => target.RegisterTargetDependentAfterQuantPass(p, _compileSession.CompileOptions), "TargetDependentAfterQuantPass");
-    //         }
-    //     }
-    //
-    //     // await RunPassAsync(pmgr => pmgr
-    //         // .Add<MergePrimFuncRule>()
-    //         // .Add<DDrBufferSchdeulePass>(), "MergeCall");
-    //
-    //     await RunPassAsync(p => target.RegisterTargetDependentBeforeCodeGen(p, _compileSession.CompileOptions), "TargetDependentBeforeCodeGen");
-    //
-    //     // fold constant
-    //     // await RunPassAsync(p => p.Add<ShapeInferPass>(), "ShapeInferAfterCompile");
-    //
-    //     if (_dumpper.IsEnabled(DumpFlags.Compile))
-    //     {
-    //         _dumpper.DumpModule(_module, "ModuleBeforeCodegen");
-    //     }
-    // }
     public async Task CompileAsync()
     {
         var target = _compileSession.Target;
-        using (var _ = new Timer("ShapeBucket"))
-        {
-            var shapeBucketOptions = _compileSession.CompileOptions.ShapeBucketOptions;
-            if (shapeBucketOptions.Enable)
-            {
-                ShapeBucket(shapeBucketOptions);
-                await RunPassAsync(pmg => pmg.Add<ShapeInferPass>(), "ShapeInferAfterBucket");
-                _module?.Entry!.InferenceType();
-                _dumpper.DumpModule(Module, "SplitedAfterInfer");
-            }
-        }
         await RunPassAsync(p => TargetIndependentPass(p), "TargetIndependentPass");
-        await RunPassAsync(p => target.RegisterTargetDependentPass(p, _compileSession.CompileOptions),
-            "TargetDependentPass");
-
-        if (_compileSession.CompileOptions.QuantizeOptions.ModelQuantMode == ModelQuantMode.UsePTQ)
-        {
-            await RunPassAsync(p => target.RegisterQuantizePass(p, _compileSession.CompileOptions), "QuantizePass");
-            await RunPassAsync(
-                pmgr => pmgr.Add<DataflowPass>().Configure(p =>
-                {
-                    p.Name = "ClearMarker";
-                    p.Add<RemoveMarker>();
-                }),
-                "RemoveMarker");
-            await RunPassAsync(p => target.RegisterTargetDependentAfterQuantPass(p, _compileSession.CompileOptions),
-                "TargetDependentAfterQuantPass");
-        }
-
-        await RunPassAsync(p => target.RegisterTargetDependentBeforeCodeGen(p, _compileSession.CompileOptions),
-            "TargetDependentBeforeCodeGen");
-
-        if (_dumpper.IsEnabled(DumpFlags.Compile))
-        {
-            _dumpper.DumpModule(_module, "ModuleBeforeCodegen");
-        }
+        await RunPassAsync(p => target.RegisterTargetDependentPass(p, _compileSession.CompileOptions), "TargetDependentPass");
+        await RunPassAsync(p => target.RegisterQuantizePass(p, _compileSession.CompileOptions), "QuantizePass");
+        await RunPassAsync(p => target.RegisterTargetDependentAfterQuantPass(p, _compileSession.CompileOptions), "TargetDependentAfterQuantPass");
+        await RunPassAsync(p => target.RegisterTargetDependentBeforeCodeGen(p, _compileSession.CompileOptions), "TargetDependentBeforeCodeGen");
     }
 
     public void Gencode(Stream output)
@@ -386,14 +173,15 @@ internal class Compiler : ICompiler
 
     private async Task RunPassAsync(Action<IPassManager> register, string name)
     {
-        var pmgr = _compileSession.CreatePassManager(name);
+        var newName = $"{_runPassCount++}_" + name;
+        var pmgr = _compileSession.CreatePassManager(newName);
         register(pmgr);
         _module = await pmgr.RunAsync(Module).ConfigureAwait(false);
 
         if (_dumpper.IsEnabled(DumpFlags.Compile))
         {
-            _dumpper.DumpModule(_module, name);
-            _dumpper.DumpDotIR(_module.Entry!, name);
+            _dumpper.DumpModule(_module, newName);
+            _dumpper.DumpDotIR(_module.Entry!, newName);
         }
     }
 }

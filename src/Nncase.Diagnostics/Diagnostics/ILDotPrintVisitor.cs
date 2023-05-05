@@ -384,6 +384,11 @@ internal sealed class ILDotPrintVisitor : ExprFunctor<ILDotOption, string>
             // 4. connect edge.
             foreach (var (child, port_name) in connect_list)
             {
+                if (child is BaseFunction)
+                {
+                    continue;
+                }
+
                 _dotGraph.Edges.Add(Visit(child).DotNode, dotNode, edge =>
                 {
                     edge.Head.Endpoint.Port = new DotEndpointPort(port_name);

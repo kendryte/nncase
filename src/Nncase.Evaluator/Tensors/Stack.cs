@@ -16,7 +16,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Stack"/>.
 /// </summary>
-public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>, ICostEvaluator<Stack>
+public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>, ICostEvaluator<Stack>, IShapeEvaluator<Stack>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Stack stack)
@@ -54,6 +54,12 @@ public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>, ICostEv
         };
     }
 
+    public Expr Visit(IShapeEvaluateContext context, Stack target)
+    {
+        var inputs = context.GetArgumentShape(target, Stack.Inputs);
+        return IR.F.Tensors.Concat(new IR.Tuple(inputs, Tensor.From(new[] { 1 })), 0);
+    }
+
     private IRType Visit(ITypeInferenceContext context, Stack target, TupleType inputs)
     {
         if (context.GetArgument(target, Stack.Axis) is TensorConst axis_con)
@@ -80,6 +86,11 @@ public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>, ICostEv
             if (!ttypes.Skip(1).All(ttype => ttype.Shape == ttypes[0].Shape))
             {
                 return new InvalidType("The Tuple Elements Shape Must All Equal!");
+            }
+
+            if (!ttypes.Skip(1).All(ttype => ttype.DType == ttypes[0].DType))
+            {
+                return new InvalidType("The Tuple Elements DatType Must All Equal!");
             }
 
             if (ttypes[0].Shape.IsScalar)

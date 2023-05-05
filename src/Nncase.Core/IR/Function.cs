@@ -23,8 +23,14 @@ public sealed class Function : BaseFunction
     /// build function.
     /// </summary>
     public Function(string name, Expr body, ReadOnlySpan<Var> parameters)
+        : this(name, body, parameters, new Dictionary<Var, Expr[]>())
+    {
+    }
+
+    public Function(string name, Expr body, ReadOnlySpan<Var> parameters, Dictionary<Var, Expr[]> varMap)
         : base(name, StackVMModuleKind, ArrayUtility.Concat(body, SpanUtility.UnsafeCast<Var, Expr>(parameters)))
     {
+        VarMap = varMap;
     }
 
     /// <summary>
@@ -32,7 +38,7 @@ public sealed class Function : BaseFunction
     /// build function.
     /// </summary>
     public Function(Expr body, ReadOnlySpan<Var> parameters)
-        : this($"func_{_globalFuncIndex++}", body, parameters)
+        : this($"func_{_globalFuncIndex++}", body, parameters, new Dictionary<Var, Expr[]>())
     {
     }
 
@@ -57,6 +63,8 @@ public sealed class Function : BaseFunction
     public Expr Body => Operands[0];
 
     public ReadOnlySpan<Var> Parameters => SpanUtility.UnsafeCast<Expr, Var>(Operands[1..]);
+
+    public Dictionary<Var, Expr[]> VarMap { get; }
 
     /// <summary>
     /// Gets get all parameter checked types.

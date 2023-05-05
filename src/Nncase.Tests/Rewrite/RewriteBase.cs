@@ -10,12 +10,16 @@ using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.Passes;
 using Nncase.Passes.Transforms;
+using Nncase.Schedule;
 using OrtKISharp;
 using Xunit;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Random;
 using static Nncase.IR.F.Tensors;
+using Math = Nncase.IR.F.Math;
+using Random = Nncase.IR.F.Random;
+using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Tests.ReWriteTest;
 
@@ -1103,4 +1107,1624 @@ public sealed class FoldConv2DBnCase : IRewriteCase
     {
         return true;
     }
+}
+
+public sealed class FoldLayerNormCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public FoldLayerNormCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var shape = new[] { 1, 3, 16, 16 };
+            var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape);
+            long[] axes = { 0 };
+            float initValue = 0F;
+            long keepDims = 1;
+            var v0 = input;
+            var v1 = IR.F.Tensors.Reshape(v0, shape);
+            var v2 = IR.F.Tensors.Reduce(ReduceOp.Mean, v1, axes, initValue, keepDims);
+            var v3 = IR.F.Math.Binary(BinaryOp.Sub, v1, v2);
+            var v4 = IR.F.Math.Binary(BinaryOp.Pow, v3, 1f);
+            var v5 = IR.F.Tensors.Reduce(ReduceOp.Mean, v4, axes, initValue, keepDims);
+            var v6 = IR.F.Math.Binary(BinaryOp.Add, v5, 1e-05f);
+            var v7 = IR.F.Math.Unary(UnaryOp.Sqrt, v6);
+            var v8 = IR.F.Math.Binary(BinaryOp.Div, v3, v7);
+            var v9 = IR.F.Tensors.Reshape(v8, shape);
+            var v10 = IR.F.Math.Binary(BinaryOp.Mul, v9, 1f);
+            var v11 = IR.F.Math.Binary(BinaryOp.Add, v10, 1f);
+            var rootPre = v11;
+            return new Function(rootPre, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = new Type[]
+    {
+        typeof(Passes.Rules.Neutral.FoldLayerNormPattern1),
+        typeof(Passes.Rules.Neutral.FoldLayerNormPattern2),
+        typeof(Passes.Rules.Neutral.FoldLayerNormPattern3),
+    };
+
+    public Dictionary<Var, IValue> FeedDict => new()
+    {
+        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+    };
+}
+
+public sealed class FoldSwishCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public FoldSwishCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var shape = new[] { 1, 3, 16, 16 };
+            var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape);
+            var v0 = input;
+            var v1 = IR.F.NN.Sigmoid(v0);
+            var v2 = IR.F.Math.Binary(BinaryOp.Mul, v1, v0);
+            var rootPre = v2;
+            return new Function(rootPre, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = new Type[]
+    {
+        typeof(Passes.Rules.Neutral.FoldSwishPattern1),
+        typeof(Passes.Rules.Neutral.FoldSwishPattern2),
+    };
+
+    public Dictionary<Var, IValue> FeedDict => new()
+    {
+        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+    };
+}
+
+public sealed class FoldGeluCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public FoldGeluCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, new[] { 1, 3, 16, 16 });
+            var v0 = input;
+            var v4 = IR.F.Math.Binary(BinaryOp.Mul, v0, 0.577350f); // "mul3Call"
+            var v1 = IR.F.Math.Binary(BinaryOp.Div, v4, 1.414213f); // divCall
+            var v2 = IR.F.NN.Erf(v1); // "erfCall"
+            var v3 = IR.F.Math.Binary(BinaryOp.Add, v2, 1f); // "addCall"
+            var v5 = IR.F.Math.Binary(BinaryOp.Mul, v4, v3); // "mul2Call"
+            var v6 = IR.F.Math.Binary(BinaryOp.Mul, v5, 0.5f); // "Mul1Call"
+            var rootPre = v6;
+            return new Function(rootPre, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = new Type[]
+    {
+        typeof(Passes.Rules.Neutral.FoldGeneralGelu),
+        typeof(Passes.Rules.Neutral.FoldGeluWithScale),
+    };
+
+    public Dictionary<Var, IValue> FeedDict => new()
+    {
+        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+    };
+}
+
+public sealed class FoldHardSwishCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public FoldHardSwishCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, new[] { 1, 3, 16, 16 });
+            var v0 = input;
+            var v1 = IR.F.Math.Binary(BinaryOp.Add, v0, 3f); // "addCall"
+            var v2 = IR.F.Math.Clamp(v1, new ValueRange<float>(0f, 6f)); // "clampCall"
+            var v3 = IR.F.Math.Binary(BinaryOp.Mul, v2, v0); // "mulCall"
+            var v4 = IR.F.Math.Binary(BinaryOp.Div, v3, 6f); // "divCall"
+            var rootPre = v4;
+            return new Function(rootPre, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = new Type[]
+    {
+        typeof(Passes.Rules.Neutral.FoldHardSwish1),
+    };
+
+    public Dictionary<Var, IValue> FeedDict => new()
+    {
+        { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+    };
+}
+
+public sealed class MatMulToConv2DCase : IRewriteCase
+{
+    private readonly Var _inputLhs;
+    private readonly Var _inputRhs;
+
+    public MatMulToConv2DCase()
+    {
+        _inputLhs = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 5 }));
+        _inputRhs = new Var("input", new TensorType(DataTypes.Float32, new[] { 5, 1 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var a = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 5 });
+            var b = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 5, 1 }).Evaluate();
+            var rootPre = Math.MatMul(a, b.AsTensor());
+            return new Function(rootPre, new Var[] { _inputLhs, _inputRhs });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = new Type[]
+    {
+        typeof(Passes.Rules.Neutral.MatMulToConv2D),
+    };
+
+    public Dictionary<Var, IValue> FeedDict => new()
+    {
+        { _inputLhs, Normal(DataTypes.Float32, 0, 1, 1, _inputLhs.CheckedShape.ToValueArray()).Evaluate() },
+        { _inputRhs, Normal(DataTypes.Float32, 0, 1, 1, _inputRhs.CheckedShape.ToValueArray()).Evaluate() },
+    };
+}
+
+public sealed class ReduceCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public ReduceCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var shape = new[] { 1, 3, 16, 16 };
+            var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape);
+            long[] axes = { 0 };
+            float initValue = 0F;
+            long keepDims = 1;
+            var v0 = input;
+            var v5 = IR.F.Tensors.Reduce(ReduceOp.Mean, v0, axes, initValue, keepDims);
+            return new Function(v5, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class BroadcastCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public BroadcastCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            _ = new long[] { 16 };
+            var newShape = new[] { 1, 3, 16, 16 };
+            var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, new[] { 1, 3, 16, 16 });
+            var expr = IR.F.Tensors.Broadcast(input, newShape);
+            var rootPre = expr;
+            return new Function(rootPre, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class CastCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public CastCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, new[] { 1, 3, 16, 16 });
+            var expr = IR.F.Tensors.Cast(input, DataTypes.Int32);
+            var rootPre = expr;
+            return new Function(rootPre, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class TileCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public TileCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, new[] { 1, 3, 16, 16 });
+            var expr = IR.F.Tensors.Tile(input, new[] { 1L, 1L, 1L, 1L });
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class StackCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public StackCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            Expr a = 1;
+            Expr b = 2;
+            var inputList = new Tuple(a, b);
+            var expr = IR.F.Tensors.Stack(inputList, 0);
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class BitcastCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public BitcastCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, new[] { 1, 3, 16, 16 });
+            var expr = IR.F.Tensors.Bitcast(DataTypes.Float32, input, DataTypes.Float32, new[] { 1, 3, 32, 8 });
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class SliceCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public SliceCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 2, 3, 4, 5 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var input = Tensor.From<int>(Enumerable.Range(0, 120).ToArray(), new Shape(new[] { 2, 3, 4, 5 }));
+            var begin = Tensor.From<int>(new[] { 0, 0, 0, 0 }, new Shape(new[] { 4 }));
+            var end = Tensor.From<int>(new[] { 1, 1, 1, 5 }, new Shape(new[] { 4 }));
+            var axes = Tensor.From<int>(new[] { 0, 1, 2, 3 }, new Shape(new[] { 4 }));
+            var strides = Tensor.From<int>(new[] { 1, 1, 1, 1 }, new Shape(new[] { 4 }));
+            _ = Const.FromTensor(Tensor.From<int>(Enumerable.Range(0, 5).ToArray(), new Shape(new[] { 1, 1, 1, 5 })));
+            var expr = IR.F.Tensors.Slice(input, begin, end, axes, strides);
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class LRNCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public LRNCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var shape = new long[] { 1, 3, 16, 16 };
+            var input = OrtKI.Random(shape);
+            var alpha = 0.001F;
+            var beta = 0.5F;
+            var bias = 0.8F;
+            var size = 3L;
+            var expr = IR.F.NN.LRN(input.ToTensor(), alpha, beta, bias, size);
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class SoftmaxCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public SoftmaxCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var ortTensor = OrtKI.Random(new long[] { 1, 3, 16, 16 });
+            var nncaseTensor = ortTensor.ToTensor();
+            var expr = IR.F.NN.Softmax(nncaseTensor, -1L);
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class CumSumCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public CumSumCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 2, 4 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var input = new float[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+            var axis = 0;
+            var exclusive = false;
+            var reverse = false;
+
+            var input1 = Tensor.From(input, new[] { 2, 4 });
+            var expr = IR.F.Tensors.CumSum(input1, axis, exclusive, reverse);
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class LSTMCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public LSTMCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 1, 2 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var inputSize = 2;
+            var hiddenSize = 1;
+            var outputSize = 1;
+            var direction = LSTMDirection.Forward;
+            var batchSize = 1;
+            var seqLength = 1;
+            var numberDirections = 1;
+            var x = OrtKI.Random(seqLength, batchSize, inputSize);
+            var initC = OrtKI.Random(numberDirections, batchSize, hiddenSize);
+            var initH = OrtKI.Random(numberDirections, batchSize, hiddenSize);
+            var b = OrtKI.Random(numberDirections, 8 * hiddenSize);
+            var w = OrtKI.Random(numberDirections, 4 * hiddenSize, inputSize);
+            var r = OrtKI.Random(numberDirections, 4 * hiddenSize, hiddenSize);
+            var p = new float[numberDirections, 3 * hiddenSize];
+            var acts = new[] { "Sigmoid", "Tanh", "Tanh" };
+            var expr = IR.F.RNN.LSTM(direction, LSTMLayout.Zero, acts, x.ToTensor(), w.ToTensor(), r.ToTensor(), b.ToTensor(), new[] { seqLength }, initH.ToTensor(), initC.ToTensor(), p, 0, 0, float.NaN, hiddenSize, 0, outputSize);
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class InstanceNormalizationCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public InstanceNormalizationCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var shape = new long[] { 1, 3, 16, 16 };
+            var x = OrtKI.Random(shape);
+            var scale = OrtKI.Random(new long[] { shape[1] });
+            var b = OrtKI.Random(new long[] { shape[1] });
+            var epsilon = 0.01F;
+            var expr = IR.F.NN.InstanceNormalization(x.ToTensor(), scale.ToTensor(), b.ToTensor(), epsilon);
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class HardSwishCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public HardSwishCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var input = OrtKI.Random(new long[] { 1, 3, 16, 16 });
+            var expr = IR.F.NN.HardSwish(input.ToTensor());
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class SoftplusCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public SoftplusCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var input = OrtKI.Random(new long[] { 1, 3, 16, 16 });
+            var expr = IR.F.NN.Softplus(input.ToTensor());
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class SoftsignCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public SoftsignCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var input = OrtKI.Random(new long[] { 1, 3, 16, 16 });
+            var expr = IR.F.NN.Softsign(input.ToTensor());
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class LpNormalizationCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public LpNormalizationCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var input = OrtKI.Random(new long[] { 1, 3, 16, 16 });
+            var expr = IR.F.NN.LpNormalization(input.ToTensor(), 0L, 1L);
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class Conv2DTransposeCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public Conv2DTransposeCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 1, 5, 5 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var input = OrtKI.Random(1, 1, 5, 5);
+            var weight = OrtKI.Random(2, 1, 3, 3);
+            var bias = OrtKI.Random(2);
+            var outShape = Tensor.From(new long[] { 1, 2, 5, 5 }, new Shape(4));
+            var expr = IR.F.NN.Conv2DTranspose(
+                input.ToTensor(),
+                weight.ToTensor(),
+                bias.ToTensor(),
+                outShape,
+                stride: new[] { 1, 1 },
+                padding: Tensor.From<long>(new long[] { 1, 1, 1, 1 }, new[] { 4 }),
+                outputPadding: Tensor.From<long>(new long[] { 0, 0 }, new[] { 2 }),
+                dilation: new[] { 1, 1 },
+                PadMode.Constant,
+                1);
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class LogSoftmaxCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public LogSoftmaxCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var ortTensor = OrtKI.Random(new long[] { 1, 3, 16, 16 });
+            var nncaseTensor = ortTensor.ToTensor();
+            var expr = IR.F.NN.LogSoftmax(nncaseTensor, -1L);
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class CompareCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public CompareCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 10 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var expr_a = Tensor.FromScalar<int>(10);
+            var expr = IR.F.Math.Compare(CompareOp.Equal, expr_a, expr_a);
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class FakeDequantizeCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public FakeDequantizeCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 2, 4 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var input = new byte[] { 127, 128, 150, 160, 170, 180, 200, 205 };
+            byte zero_point = 127;
+            var scale = 0.01F;
+            var expr = IR.F.Math.FakeDequantize(
+                Tensor.From(input, new[] { 2, 4 }),
+                new QuantParam(zero_point, scale),
+                DataTypes.Float32);
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class FakeQuantizeCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public FakeQuantizeCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 2, 4 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var input = new float[] { 1.0F, 1.2F, 1.4F, 1.5F, 1.6F, 1.8F, 1.9F, 2.0F };
+            byte zero_point = 127;
+            var scale = 0.05F;
+            var expr = IR.F.Math.FakeQuantize(
+                Tensor.From(input, new[] { 2, 4 }),
+                new QuantParam(zero_point, scale),
+                DataTypes.UInt8);
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class TopKCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public TopKCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 2, 3, 4, 5 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var x = Tensor.From<int>(Enumerable.Range(0, 120).ToArray(), new Shape(new[] { 2, 3, 4, 5 }));
+            var k = 1L;
+            var axis = -1;
+            var largest = 1;
+            var sorted = 1;
+            var expr = IR.F.Tensors.TopK(x, k, axis, largest, sorted);
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class GatherCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public GatherCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 0, 1, 2, 3 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var shape = new[] { 2, 2 };
+            var input = new Tensor<int>(new[] { 0, 1, 2, 3 }, shape);
+            var indices = new Tensor<long>(new[] { 0L, 0L, 1L, 1L }, shape);
+            long batchDims = 0L;
+            var expr = IR.F.Tensors.Gather(input, batchDims, indices);
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class GatherNDCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public GatherNDCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 0, 1, 2, 3 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var shape = new[] { 2, 2 };
+            var input = new Tensor<int>(new[] { 0, 1, 2, 3 }, shape);
+            var indices = new Tensor<long>(new[] { 0L, 0L, 1L, 1L }, shape);
+            long batchDims = 0L;
+            var expr = IR.F.Tensors.GatherND(input, batchDims, indices);
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class FlattenCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public FlattenCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var shape = new long[] { 1, 3, 16, 16 };
+            var input = OrtKI.Random(shape);
+            var expr = IR.F.Tensors.Flatten(input.ToTensor(), -1);
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class SplitCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public SplitCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var shape = new long[] { 1, 3, 16, 16 };
+            var input = OrtKI.Random(shape);
+            var axis = 1L;
+            var sections = new long[] { 1, 2 };
+            var expr = IR.F.Tensors.Split(input.ToTensor(), axis, sections);
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class SqueezeCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public SqueezeCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 1, 16 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var shape = new long[] { 1, 3, 1, 16 };
+            var input = OrtKI.Random(shape);
+            var axes = new long[] { 0, 2 };
+            var expr = IR.F.Tensors.Squeeze(input.ToTensor(), axes);
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class ConcatCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public ConcatCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 4 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var a = Const.FromTensor(Tensor.From<int>(Enumerable.Range(0, 12).ToArray(), new Shape(new[] { 1, 3, 4 })));
+            var b = Const.FromTensor(Tensor.From<int>(new int[12], new Shape(new[] { 1, 3, 4 })));
+            var inputList = new Tuple(a, b);
+            var expr = IR.F.Tensors.Concat(inputList, 0);
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class UnsqueezeCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public UnsqueezeCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 4, 6 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var a = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 4, 6 });
+            var rootPre = IR.F.Tensors.Unsqueeze(a, new[] { 0, 2 });
+            return new Function(rootPre, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class ExpandCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public ExpandCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 16 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var oldShape = new long[] { 1, 16 };
+            var input = OrtKI.Random(oldShape);
+            var expr = IR.F.Tensors.Expand(input.ToTensor(), new long[] { 16, 16 });
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class ShapeOfCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public ShapeOfCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 2, 3 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var v = Tensor.From<int>(new[] { 1, 2, 3 });
+            var shape = ShapeOf(v);
+            return new Function(shape, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class ReverseSequenceCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public ReverseSequenceCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 4, 4 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var shape = new long[] { 4, 4 };
+            var input = OrtKI.Random(shape);
+            var seqLens = Tensor.From<long>(new long[] { 1, 2, 3, 4 });
+            var batchAxis = 1L;
+            var timeAxis = 0L;
+            var expr = IR.F.Tensors.ReverseSequence(input.ToTensor(), seqLens, batchAxis, timeAxis);
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class WhereCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public WhereCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 2, 2 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var shape = new long[] { 2, 2 };
+            var con = new Tensor<bool>(new[] { true, false, true, true }, new[] { 2, 2 });
+            var x = OrtKI.Random(shape);
+            var y = OrtKI.Random(shape);
+            var expr = IR.F.Tensors.Where(con, x.ToTensor(), y.ToTensor());
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class RangeCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public RangeCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 4 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var begin = 0F;
+            var end = 100F;
+            var step = 2F;
+            var expr = IR.F.Tensors.Range(begin, end, step);
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class SizeOfCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public SizeOfCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            _ = new Shape(new[] { 1, 3, 16, 16 });
+            var input = OrtKI.Random(1, 3, 16, 16).ToTensor();
+            var expr = IR.F.Tensors.SizeOf(input);
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class BatchToSpaceCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public BatchToSpaceCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 4, 1, 2, 2 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var a = new float[] { 1, 3, 9, 11, 2, 4, 10, 12, 5, 7, 13, 15, 6, 8, 14, 16 };
+            var input = Tensor.From(a, new[] { 4, 1, 2, 2 });
+            var shape = new long[] { 2, 2 };
+            _ = new float[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
+            var crops = new long[] { 0, 0, 0, 0 };
+            var expr = IR.F.NN.BatchToSpace(
+                input,
+                Tensor.From(shape, new[] { 2 }),
+                Tensor.From(crops, new[] { 2, 2 }));
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class L2NormalizationCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public L2NormalizationCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var a = new float[] { 0F, 2F, 3F, 2F, 2F, 2F };
+            _ = new float[] { 0F, 0.4F, 0.6F, 0.4F, 0.4F, 0.4F };
+            var input = Tensor.From(a, new[] { 6 });
+            var expr = IR.F.NN.L2Normalization(input);
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class OneHotCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public OneHotCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 4 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var a = new int[] { 1, 2, 0, 3 };
+            var indices = Tensor.From(a, new[] { 4 });
+            var depth = 5;
+            var values = Tensor.From(new int[] { 0, 1 }, new Shape(new[] { 2 }));
+            var axis = 0L;
+            var expr = IR.F.NN.OneHot(OneHotMode.Normal, indices, depth, values, axis);
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class CeluCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public CeluCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var input = OrtKI.Random(new long[] { 1, 3, 16, 16 });
+            var alpha = 0.8F;
+            var expr = IR.F.NN.Celu(input.ToTensor(), alpha);
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class EluCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public EluCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var input = OrtKI.Random(new long[] { 1, 3, 16, 16 });
+            var alpha = 0.8F;
+            var expr = IR.F.NN.Elu(input.ToTensor(), alpha);
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class SeluCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public SeluCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var input = OrtKI.Random(new long[] { 1, 3, 16, 16 });
+            var alpha = 1.2F;
+            var gamma = 1.3F;
+            var expr = IR.F.NN.Selu(input.ToTensor(), alpha, gamma);
+            return new Function(expr, _input);
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class HardmaxCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public HardmaxCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var ortTensor = OrtKI.Random(new long[] { 1, 3, 16, 16 });
+            var nncaseTensor = ortTensor.ToTensor();
+            var expr = IR.F.NN.Hardmax(nncaseTensor, -1L);
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class HardSigmoidCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public HardSigmoidCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var input = OrtKI.Random(new long[] { 1, 3, 16, 16 });
+            var alpha = 1.2F;
+            var gamma = 1.3F;
+            var expr = IR.F.NN.HardSigmoid(input.ToTensor(), alpha, gamma);
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class ReduceArgCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public ReduceArgCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            long axis = 0L;
+            long select_last_idx = 0L;
+            var a = new float[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+            var result = new int[] { 5, 6, 7, 8 };
+            var expr_a = Tensor.From(a, new[] { 2, 4 });
+            _ = Tensor.From(result, new[] { 1, 4 }).ToOrtTensor();
+            var expr = IR.F.Tensors.ReduceArg(ReduceArgOp.ArgMax, DataTypes.Int64, expr_a, axis, 0L, select_last_idx);
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class NormalLikeCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public NormalLikeCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var mean = 0.5F;
+            var scale = 1F;
+            var seed = 1F;
+            var shape = new long[] { 1, 3, 16, 16 };
+            var input = OrtKISharp.Tensor.Empty(shape);
+            var expr = IR.F.Random.NormalLike(DataTypes.Float32, input.ToTensor(), mean, scale, seed);
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class UniformLikeCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public UniformLikeCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var high = 1F;
+            var low = 0F;
+            var seed = 1F;
+            var shape = new long[] { 1, 3, 16, 16 };
+            var input = OrtKISharp.Tensor.Empty(shape);
+            var expr = IR.F.Random.UniformLike(DataTypes.Float32, input.ToTensor(), high, low, seed);
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class UniformCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public UniformCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 16, 16 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var high = 1F;
+            var low = 0F;
+            var seed = 1F;
+            var shape = new long[] { 1, 3, 16, 16 };
+            var expr = IR.F.Random.Uniform(DataTypes.Float32, high, low, seed, shape);
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
+}
+
+public sealed class ResizeImageCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public ResizeImageCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 224, 224 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var input = OrtKI.Random(1, 3, 224, 224).ToTensor();
+            var expr = IR.F.Imaging.ResizeImage(ImageResizeMode.Bilinear, input, Array.Empty<int>(), new[] { 1, 3, 112, 112 }, isTFResize: true);
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+     {
+         { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+     };
 }

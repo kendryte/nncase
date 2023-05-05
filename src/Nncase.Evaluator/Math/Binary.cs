@@ -5,6 +5,7 @@ using System;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
+using Nncase.Utilities;
 using OrtKISharp;
 
 namespace Nncase.Evaluator.Math;
@@ -12,13 +13,18 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Evaluator for <see cref="Binary"/>.
 /// </summary>
-public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binary>, ICostEvaluator<Binary>, IOpPrinter<Binary>
+public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binary>, ICostEvaluator<Binary>, IOpPrinter<Binary>, IShapeEvaluator<Binary>
 {
     /// <inheritdoc />
     public IValue Visit(IEvaluateContext context, Binary binary)
     {
         var lhs = context.GetArgumentValueAsTensor(binary, Binary.Lhs);
         var rhs = context.GetArgumentValueAsTensor(binary, Binary.Rhs);
+        Console.WriteLine(binary.BinaryOp);
+        Console.WriteLine(DumpUtility.SerializeShape(lhs.Shape));
+        Console.WriteLine(string.Join(",", lhs.ToArray<int>()));
+        Console.WriteLine(DumpUtility.SerializeShape(rhs.Shape));
+        Console.WriteLine(string.Join(",", rhs.ToArray<int>()));
         if (lhs.Shape.IsScalar && rhs.Shape.IsScalar)
         {
             if (lhs.ElementType == DataTypes.Int32 && rhs.ElementType == DataTypes.Int32)
@@ -99,6 +105,13 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
         };
     }
 
+    public Expr Visit(IShapeEvaluateContext context, Binary target)
+    {
+        var lhs = context.GetArgumentShape(target, Binary.Lhs);
+        var rhs = context.GetArgumentShape(target, Binary.Rhs);
+        return ShapeExprUtility.BroadcastShape(lhs, rhs);
+    }
+
     private int Compute(BinaryOp op, int a, int b) => op switch
     {
         BinaryOp.Add => a + b,
@@ -163,8 +176,8 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
 
     private IValue Ort_compute(Binary binary, Tensor lhs, Tensor rhs)
     {
-        var a = lhs.ToOrtTensor();
-        var b = rhs.ToOrtTensor();
+        var a = lhs.ElementType == DataTypes.Boolean ? lhs.Cast<float>().ToOrtTensor() : lhs.ToOrtTensor();
+        var b = rhs.ElementType == DataTypes.Boolean ? rhs.Cast<float>().ToOrtTensor() : rhs.ToOrtTensor();
         static OrtKISharp.Tensor Mod(OrtKISharp.Tensor a, OrtKISharp.Tensor b)
         {
             var fmod = DataTypes.IsFloat(a.DataType.ToDataType()) && DataTypes.IsFloat(b.DataType.ToDataType()) ? 1L : 0L;

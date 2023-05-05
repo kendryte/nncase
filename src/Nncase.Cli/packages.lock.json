@@ -1372,7 +1372,8 @@
       "nncase.modules.stackvm": {
         "type": "Project",
         "dependencies": {
-          "Nncase.CodeGen": "[1.0.0, )"
+          "Nncase.CodeGen": "[1.0.0, )",
+          "Nncase.Passes": "[1.0.0, )"
         }
       },
       "nncase.passes": {
@@ -1390,6 +1391,7 @@
           "Newtonsoft.Json": "[13.0.3, )",
           "Nncase.Core": "[1.0.0, )",
           "Nncase.Passes": "[1.0.0, )",
+          "OrtKISharp": "[0.0.2, )",
           "System.Linq.Async": "[6.0.1, )"
         }
       },

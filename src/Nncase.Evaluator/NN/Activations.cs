@@ -364,7 +364,7 @@ public class PReluEvaluator : IEvaluator<PRelu>, ITypeInferencer<PRelu>, ICostEv
 /// <summary>
 /// Evaluator for <see cref="Erf"/>.
 /// </summary>
-public class ErfEvaluator : IEvaluator<Erf>, ITypeInferencer<Erf>, ICostEvaluator<Erf>
+public class ErfEvaluator : IEvaluator<Erf>, ITypeInferencer<Erf>, ICostEvaluator<Erf>, IShapeEvaluator<Erf>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Erf erf)
@@ -391,6 +391,8 @@ public class ErfEvaluator : IEvaluator<Erf>, ITypeInferencer<Erf>, ICostEvaluato
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
         };
     }
+
+    public Expr Visit(IShapeEvaluateContext context, Erf target) => context.GetArgumentShape(target, Erf.Input);
 
     private IRType Visit(TensorType input)
     {

@@ -4,19 +4,28 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using DryIoc.FastExpressionCompiler.LightExpression;
 using NetFabric.Hyperlinq;
 using Nncase.CostModel;
+using Nncase.Evaluator.Math;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
+using Nncase.Utilities;
 using OrtKISharp;
+using Tensorflow;
+using static Nncase.IR.F.Math;
+using static Nncase.IR.F.Tensors;
+using Dimension = Nncase.IR.Dimension;
+using Shape = Nncase.IR.Shape;
+using Slice = Nncase.IR.Tensors.Slice;
 
 namespace Nncase.Evaluator.Tensors;
 
 /// <summary>
 /// Evaluator for <see cref="Slice"/>.
 /// </summary>
-public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEvaluator<Slice>
+public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEvaluator<Slice>, IShapeEvaluator<Slice>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Slice sl)
@@ -52,6 +61,44 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
         };
     }
 
+    public Expr Visit(IShapeEvaluateContext context, Slice target)
+    {
+        var inShape = context.GetArgumentShape(target, Slice.Input);
+        // avoid i64 when slice created by tf or user
+        var begins = Cast(context.GetArgument(target, Slice.Begins), DataTypes.Int64);
+        var ends = Cast(context.GetArgument(target, Slice.Ends), DataTypes.Int64);
+        var strides = Cast(context.GetArgument(target, Slice.Strides), DataTypes.Int64);
+        var axes = context.GetArgument(target, Slice.Axes);
+        var size = context.GetArgument(target, Slice.Input).CheckedShape.Rank;
+
+        Expr Translate(Expr x, Expr dim) => new If(x < 0, dim + x, Clamp(x, 0, dim));
+
+        var axesValue = ((TensorConst)axes).Value.ToArray<int>();
+        int j = 0;
+        var outDims = Enumerable.Range(0, size).Select(i =>
+        {
+            var dim = Cast(inShape[i], DataTypes.Int32);
+            if (!axesValue.Contains(i))
+            {
+                return dim;
+            }
+
+            // avoid: (int)long.MaxValue = -1
+            Expr begin = Cast(Clamp(begins[j], (long)int.MinValue, (long)int.MaxValue), DataTypes.Int32);
+            Expr end = Cast(Clamp(ends[j], (long)int.MinValue, (long)int.MaxValue), DataTypes.Int32);
+            var stride = Cast(Clamp(strides[j], (long)int.MinValue, (long)int.MaxValue), DataTypes.Int32);
+            var strideIsNeg = stride < 0;
+            begin = new If(
+                strideIsNeg,
+                Clamp(begin, 0, dim - 1), Translate(begin, dim));
+            end = new If(strideIsNeg, Clamp(end, -1, dim), Translate(end, dim));
+            j++;
+            return Ceil(Abs(end - begin) / Abs(stride));
+        }).ToArray();
+
+        return Stack(new IR.Tuple(outDims), 0);
+    }
+
     /// <param name="axisConst">Axis.</param>
     /// <param name="input">Input type.</param>
     /// <param name="f">(index in axis, axis, inDim) -> outDim.</param>
@@ -81,6 +128,10 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
     private IRType Visit(ITypeInferenceContext context, Slice target, TensorType input)
     {
         Shape outShape;
+        if (input.Shape.IsRanked && input.Shape.Count == 0)
+        {
+            return new InvalidType("Slice Input should not scalar");
+        }
         if (context.GetArgument(target, Slice.Axes) is TensorConst axes_con)
         {
             if (input.Shape.IsRanked)
@@ -114,10 +165,10 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
                         else
                         {
                             // starts[i] is clamped into the range [0, dims[axes[i]]]
-                            var begin = System.Math.Clamp(ts_begins[i], 0L, inDim);
+                            var begin = ts_begins[i] < 0 ? inDim + ts_begins[i] : System.Math.Clamp(ts_begins[i], 0L, inDim);
 
                             // end[i] is clamped into the range [0, dims[axes[i]]]
-                            var end = System.Math.Clamp(ts_ends[i], 0L, inDim);
+                            var end = ts_ends[i] < 0 ? inDim + ts_ends[i] : System.Math.Clamp(ts_ends[i], 0L, inDim);
                             return (int)System.Math.Ceiling((float)System.Math.Abs(end - begin) /
                                                             System.Math.Abs(stride));
                         }

@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Tensors;
@@ -11,12 +12,14 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Cast"/>.
 /// </summary>
-public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter<Cast>, ICostEvaluator<Cast>
+public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter<Cast>, ICostEvaluator<Cast>, IShapeEvaluator<Cast>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Cast cast)
     {
         var input = context.GetArgumentValue(cast, Cast.Input).AsTensor();
+        Console.WriteLine("Cast");
+        Console.WriteLine(string.Join(",", input.Shape.ToValueArray()));
         return Value.FromTensor(input.CastTo(cast.NewType, cast.CastMode));
     }
 
@@ -44,6 +47,8 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
             [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(target.NewType, 1),
         };
     }
+
+    public Expr Visit(IShapeEvaluateContext context, Cast target) => context.GetArgumentShape(target, Cast.Input);
 
     private IRType Visit(Cast target, TensorType input)
     {

@@ -33,15 +33,56 @@ public sealed partial class OnnxImporter
     public Shape GetShape(ValueInfoProto v)
     {
         var shape = v.Type.TensorType.Shape.Dim
-            .Select(x => (int)x.DimValue)
-            .Select(x => x <= 0 ? Dimension.Unknown : x).ToArray();
+            .Select(x =>
+            {
+                if (IsDynamicDim(x))
+                {
+                    if (x.DimParam == "batch")
+                    {
+                        return 2;
+                    }
+                    else
+                    {
+                        return Dimension.Unknown;
+                    }
+                }
+                else
+                {
+                    return (Dimension)x.DimValue;
+                }
+            }).ToArray();
         return new Shape(shape);
+    }
+
+    public Expr[] GetOriginShape(ValueInfoProto v)
+    {
+        var shape = v.Type.TensorType.Shape.Dim;
+        return shape.Select(x =>
+        {
+            if (IsDynamicDim(x))
+            {
+                if (x.DimParam == "batch")
+                {
+                    return 2;
+                }
+                else
+                {
+                    return _dynVarMap[x.DimParam];
+                }
+            }
+            else
+            {
+                return (Expr)x.DimValue;
+            }
+        }).ToArray();
     }
 
     public Shape GetShape(TensorProto tensor)
     {
         return new Shape(tensor.Dims.ToArray());
     }
+
+    private static bool IsDynamicDim(TensorShapeProto.Types.Dimension x) => x.DimParam != string.Empty;
 
     public TensorType GetIRType(ValueInfoProto v)
     {

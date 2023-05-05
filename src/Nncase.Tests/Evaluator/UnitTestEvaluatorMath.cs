@@ -11,6 +11,7 @@ using Nncase.IR;
 using Nncase.IR.F;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
+using Nncase.Quantization;
 using Nncase.Utilities;
 using OrtKISharp;
 using Xunit;
@@ -59,7 +60,7 @@ public class UnitTestEvaluatorMath : TestClassBase
             var b = 2U;
 
             // if (op != BinaryOp.LogicalAnd && op != BinaryOp.LogicalOr && op != BinaryOp.LogicalXor)
-            if (op == BinaryOp.LeftShift || op == BinaryOp.RightShift)
+            if (op == BinaryOp.LeftShift || op == BinaryOp.RightShift || op == BinaryOp.Mod || op == BinaryOp.Max || op == BinaryOp.Min)
             {
                 TestBinaryRunNormal(op, OrtKISharp.Tensor.FromScalar(a), OrtKISharp.Tensor.FromScalar(b), a, b);
             }
