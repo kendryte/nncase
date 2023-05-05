@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using Microsoft.Extensions.Hosting;
 using Nncase.IR;
+using Nncase.IR.NN;
 using Nncase.Passes;
 using Nncase.PatternMatch;
 using Nncase.PatternMatch.F;
@@ -89,5 +90,30 @@ public sealed class UnitTestPatternMatch
     public void TestUtility()
     {
         IsSwappableBinary("testName", "call", binary => true, 1f, 1f);
+
+        var wc1 = IsWildcard();
+        var wc2 = IsWildcard();
+        IsCall(null, new FunctionPattern(wc1 + wc2, IsVArgs(wc1, wc2), null));
+        IsCall(null, new FunctionPattern(wc1 + wc2, IsVArgs(wc1, wc2), null), IsVArgs(wc1, wc2));
+        IsCall("call", IsOp<ActivationOp>("activation", op => true));
+
+        IsConst(new TypePattern(new TensorType(DataTypes.Float32, new[] { 1 })));
+        IsConstIntTensor(null);
+        IsConstIntTensor();
+        IsConstIntSclar();
+
+        IsNone();
+
+        IsRangeOfMarker(null, IsWildcard(), IsWildcard());
+        IsMarker(WellknownMarkerNames.RangeOf, IsWildcard(), IsWildcard());
+
+        IsAlt(string.Empty, IsNone(), IsNone());
+    }
+
+    [Fact]
+    public void TestCallPattern()
+    {
+        var func = IR.F.Random.Normal(DataTypes.Float32);
+        Assert.Throws<MissingMethodException>(() => new CallPattern(func, null));
     }
 }
