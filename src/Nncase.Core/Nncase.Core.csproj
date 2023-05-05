@@ -24,6 +24,7 @@
     <PackageReference Include="NetFabric.Hyperlinq" />
     <PackageReference Include="System.Reactive" />
     <PackageReference Include="GiGraph.Dot" />
+    <PackageReference Include="System.Linq.Async" />
   </ItemGroup>
 
   <ItemGroup>
