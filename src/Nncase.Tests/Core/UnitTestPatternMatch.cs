@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using Microsoft.Extensions.Hosting;
 using Nncase.IR;
+using Nncase.IR.Math;
 using Nncase.IR.NN;
 using Nncase.Passes;
 using Nncase.PatternMatch;
@@ -22,6 +23,7 @@ using static Nncase.PatternMatch.F.Tensors;
 using static Nncase.PatternMatch.Utility;
 using Function = Nncase.IR.Function;
 using Math = Nncase.PatternMatch.F.Math;
+using Utility = Nncase.PatternMatch.Utility;
 
 namespace Nncase.Tests.CoreTest;
 
@@ -108,6 +110,13 @@ public sealed class UnitTestPatternMatch
         IsMarker(WellknownMarkerNames.RangeOf, IsWildcard(), IsWildcard());
 
         IsAlt(string.Empty, IsNone(), IsNone());
+
+        IsFusion<Binary, Binary, Unary>(null!, null!, null!, null!, null!, null!);
+
+        IsTupleConst();
+        IsTupleConst(_ => true);
+
+        GetShape(1);
     }
 
     [Fact]
