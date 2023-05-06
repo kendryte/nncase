@@ -66,6 +66,11 @@ internal sealed class ShapeEvaluateVisitor : ExprVisitor<Expr, Unit>
         return None.Default;
     }
 
+    protected override Expr VisitLeafMarker(Marker marker)
+    {
+        return Visit(marker.Target);
+    }
+
     /// <inheritdoc/>
     protected override Expr VisitLeafTuple(IR.Tuple expr)
     {

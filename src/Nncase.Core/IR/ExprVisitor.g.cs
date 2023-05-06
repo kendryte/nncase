@@ -554,7 +554,7 @@ public partial class ExprVisitor<TExprResult, TTypeResult>
     protected virtual TExprResult VisitLeafFunction(Function expr) => base.VisitLeafFunction(expr, default);
 
     /// <inheritdoc/>
-    protected sealed override TExprResult VisitLeafFunction(Function expr, Unit context) => VisitLeafFunction(expr);
+    protected override TExprResult VisitLeafFunction(Function expr, Unit context) => VisitLeafFunction(expr);
 
     /// <summary>
     /// Visit leaf <see cref="Fusion"/>.

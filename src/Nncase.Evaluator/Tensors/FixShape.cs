@@ -42,5 +42,5 @@ public class FixShapeEvaluator : IEvaluator<FixShape>, ITypeInferencer<FixShape>
         };
     }
 
-    public Expr Visit(IShapeEvaluateContext context, FixShape target) => context.GetArgumentShape(target, FixShape.Shape);
+    public Expr Visit(IShapeEvaluateContext context, FixShape target) => context.GetArgument(target, FixShape.Shape);
 }

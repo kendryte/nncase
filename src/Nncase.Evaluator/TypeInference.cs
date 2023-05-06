@@ -429,34 +429,32 @@ public static class TypeInference
     /// <returns>IRType.</returns>
     public static IRType CommonType(IRType thenType, IRType elseType)
     {
-        return AnyType.Default;
+        IRType CommonTypeImpl(TensorType a, TensorType b)
+        {
+            if (a == b)
+            {
+                return a;
+            }
 
-        // IRType CommonTypeImpl(TensorType a, TensorType b)
-        // {
-        //     if (a == b)
-        //     {
-        //         return a;
-        //     }
+        if (a.DType != b.DType)
+            {
+                return new InvalidType($"Inputs DType of if should be same, then: {a.DType}, else: {b.DType}");
+            }
 
-        // if (a.DType != b.DType)
-        //     {
-        //         return new InvalidType($"Inputs DType of if should be same, then: {a.DType}, else: {b.DType}");
-        //     }
+        // if (a.Shape.Rank != b.Shape.Rank)
+            // {
+            // return new InvalidType($"Inputs Shape of if should be same Rank, then: {a.Shape.Rank}, else: {b.Shape.Rank}");
+            // }
+            return new TensorType(a.DType, Shape.Unknown(a.Shape.Rank));
+        }
 
-        // // if (a.Shape.Rank != b.Shape.Rank)
-        //     // {
-        //     // return new InvalidType($"Inputs Shape of if should be same Rank, then: {a.Shape.Rank}, else: {b.Shape.Rank}");
-        //     // }
-        //     return new TensorType(a.DType, Shape.Unknown(a.Shape.Rank));
-        // }
-
-        // return (thenType, elseType) switch
-        // {
-        //     (TensorType then, TensorType @else) => CommonTypeImpl(then, @else),
-        //     (TupleType then, TupleType @else) => then.Count != @else.Count
-        //         ? new InvalidType($"tuple Inputs of if should be same count, then: {then.Count}, else: {@else.Count}")
-        //         : new TupleType(then.Zip(@else).Select(tuple => CommonType(tuple.First, tuple.Second))),
-        //     _ => new InvalidType($"Inputs of if should be same IRType Kind, but then:{thenType}, else: {elseType}"),
-        // };
+        return (thenType, elseType) switch
+        {
+            (TensorType then, TensorType @else) => CommonTypeImpl(then, @else),
+            (TupleType then, TupleType @else) => then.Count != @else.Count
+                ? new InvalidType($"tuple Inputs of if should be same count, then: {then.Count}, else: {@else.Count}")
+                : new TupleType(then.Zip(@else).Select(tuple => CommonType(tuple.First, tuple.Second))),
+            _ => new InvalidType($"Inputs of if should be same IRType Kind, but then:{thenType}, else: {elseType}"),
+        };
     }
 }

@@ -76,5 +76,5 @@ public sealed class Function : BaseFunction
         => functor.VisitFunction(this, context);
 
     public Function With(string? name = null, Expr? body = null, Var[]? parameters = null)
-        => new Function(name ?? Name, body ?? Body, parameters ?? Parameters);
+        => new Function(name ?? Name, body ?? Body, parameters ?? Parameters, VarMap);
 }

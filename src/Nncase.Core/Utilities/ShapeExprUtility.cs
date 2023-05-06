@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using GiGraph.Dot.Output.Writers.Edges;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using static Nncase.IR.F.Tensors;
@@ -34,7 +35,7 @@ public static class ShapeExprUtility
 
         if (shape.CheckedType is not TensorType || shape.CheckedShape.Count == 0)
         {
-            // CompilerServices.DumpIR(shape, "checkShape", "/Users/homura/Code/nncase-fix/tests_output/ShapeBucketTest/TestModel/ShapeExpr/");
+            DumpScope.Current.DumpIR(shape, "CheckShape");
             throw new InvalidOperationException();
         }
 

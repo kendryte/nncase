@@ -12,6 +12,7 @@ using Nncase.Hosting;
 using Nncase.IR;
 using Nncase.Passes;
 using Nncase.Passes.Rules.Lower;
+using Nncase.Passes.Rules.Neutral;
 using Nncase.Passes.Transforms;
 using Nncase.Quantization;
 using Nncase.Utilities;
@@ -144,13 +145,39 @@ internal class Compiler : ICompiler
         }
     }
 
+    public void RegisterShapeBucket(IPassManager p)
+    {
+        var f = (Function)_module.Entry!;
+        var dict = new Dictionary<string, (int, int)>
+        {
+            { "tok_len", (3, 12) }, { "enc_len", (6, 24) }, { "dec_len", (2, 8) },
+        };
+        Console.WriteLine("VarMapLength");
+        Console.WriteLine(f.VarMap.Count);
+        p.AddWithName<DataflowPass>("MatmulToFusion").Configure(c =>
+        {
+            c.Add<MatmulToFusion>(f.VarMap);
+        });
+        p.AddWithName<DataflowPass>("FusionBucket").Configure(c =>
+        {
+            c.Add<FusionBucket>(f.VarMap, dict);
+        });
+    }
+
+    public void ClearFixShape(IPassManager p)
+    {
+        p.AddWithName<DataflowPass>("ClearFixShape").Configure(c => c.Add<FoldFixShape>());
+    }
+
     public async Task CompileAsync()
     {
         var target = _compileSession.Target;
         await RunPassAsync(p => TargetIndependentPass(p), "TargetIndependentPass");
+        await RunPassAsync(p => RegisterShapeBucket(p), "ShapeBucket");
         await RunPassAsync(p => target.RegisterTargetDependentPass(p, _compileSession.CompileOptions), "TargetDependentPass");
         await RunPassAsync(p => target.RegisterQuantizePass(p, _compileSession.CompileOptions), "QuantizePass");
         await RunPassAsync(p => target.RegisterTargetDependentAfterQuantPass(p, _compileSession.CompileOptions), "TargetDependentAfterQuantPass");
+        await RunPassAsync(p => ClearFixShape(p), "ClearFixShape");
         await RunPassAsync(p => target.RegisterTargetDependentBeforeCodeGen(p, _compileSession.CompileOptions), "TargetDependentBeforeCodeGen");
     }
 
