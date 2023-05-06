@@ -188,7 +188,7 @@ public sealed class UnitTestTensorConst
     public void TestQuantParam()
     {
         var quantParam = new QuantParam(0, 1);
-        int hashCode = quantParam.GetHashCode();
+        _ = quantParam.GetHashCode();
         Assert.False(quantParam.Equals(new object()));
     }
 }
