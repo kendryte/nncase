@@ -139,15 +139,15 @@ result<value_t> nncase::kernels::stackvm::concat(value_t input, value_t axis,
     auto inputs_mem_span =
         gsl::make_span(inputs_mem).as_span<const gsl::byte *const>();
 
-    if (is_contiguous(input0) && axis_value < 4) {                                           
-        try_(optimized::concat(dtype, inputs_mem_span, out_mem,
-                      output_tensor->shape(), strides, output_tensor->strides(),
-                      axis_value, concat_dims, context))                                      
-    } else {                                                                   
-        try_(reference::concat(dtype, inputs_mem_span, out_mem,
-                      output_tensor->shape(), strides, output_tensor->strides(),
-                      axis_value, concat_dims, context))                                      
-    }                      
+    if (is_contiguous(input0) && axis_value < 4) {
+        try_(optimized::concat(
+            dtype, inputs_mem_span, out_mem, output_tensor->shape(), strides,
+            output_tensor->strides(), axis_value, concat_dims, context))
+    } else {
+        try_(reference::concat(
+            dtype, inputs_mem_span, out_mem, output_tensor->shape(), strides,
+            output_tensor->strides(), axis_value, concat_dims, context))
+    }
     return ok(output);
 }
 
