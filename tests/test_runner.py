@@ -175,8 +175,8 @@ def generate_image_dataset(shape: List[int], dtype: np.dtype,
 
 
 def generate_constant_of_shape(shape: List[int], dtype: np.dtype,
-                           batch_index: int, batch_size: int,
-                           in_shape: List[int]) -> np.ndarray:
+                               batch_index: int, batch_size: int,
+                               in_shape: List[int]) -> np.ndarray:
     return np.array(in_shape, dtype=dtype)
 
 

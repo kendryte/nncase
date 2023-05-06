@@ -78,7 +78,8 @@ values = [
 def test_constantofshape(in_shape, value, request):
     model_def = _make_module(in_shape, value)
 
-    runner = OnnxTestRunner(request.node.name, overwrite_configs={"case": {"generate_inputs": {"name": "generate_constant_of_shape", "batch_size": 1, "numbers": 1, "kwargs": {"in_shape": in_shape}}}})
+    runner = OnnxTestRunner(request.node.name, overwrite_configs={"case": {"generate_inputs": {
+                            "name": "generate_constant_of_shape", "batch_size": 1, "numbers": 1, "kwargs": {"in_shape": in_shape}}}})
     model_file = runner.from_onnx_helper(model_def)
     runner.run(model_file)
 
