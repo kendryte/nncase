@@ -117,6 +117,13 @@ public sealed class UnitTestPatternMatch
         IsTupleConst(_ => true);
 
         GetShape(1);
+
+        var tuplePattern = new TuplePattern(new IR.Tuple(new[] { 1 }), null);
+
+        var tupleConstPattern =
+            new TupleConstPattern(new TupleConst(new TupleValue(new[] { Value.FromConst(1F) })), null);
+
+        var markerPattern = new MarkerPattern(new Marker(null, 1, 1), null);
     }
 
     [Fact]
