@@ -5,6 +5,7 @@ using System;
 using System.Collections;
 using Nncase;
 using Nncase.IR;
+using Nncase.IR.Math;
 using Nncase.Tests.TestFixture;
 using Xunit;
 
@@ -181,5 +182,13 @@ public sealed class UnitTestTensorConst
         var expect3 = new TensorType(new PointerType(DataTypes.Float32), Shape.Scalar);
         var actual3 = TensorType.Pointer(DataTypes.Float32);
         Assert.Equal(expect3, actual3);
+    }
+
+    [Fact]
+    public void TestQuantParam()
+    {
+        var quantParam = new QuantParam(0, 1);
+        int hashCode = quantParam.GetHashCode();
+        Assert.False(quantParam.Equals(new object()));
     }
 }
