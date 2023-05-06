@@ -40,4 +40,72 @@ public sealed class UnitTestPatternPrinter
         PatternPrinter.DumpAsIL(writer, pattern);
         Assert.Equal(builder.ToString(), string.Empty);
     }
+
+    [Fact]
+    public void TestDumpAsILCallPattern()
+    {
+        var wc1 = IsWildcard();
+        var wc2 = IsWildcard();
+        var pattern = IsCall(null, new FunctionPattern(wc1 + wc2, IsVArgs(wc1, wc2), null));
+        var il = pattern.DumpAsIL();
+        var builder = new StringBuilder();
+        var writer = new StringWriter(builder);
+        PatternPrinter.DumpAsIL(writer, pattern);
+        Assert.Equal(builder.ToString(), il);
+    }
+
+    [Fact]
+    public void TestDumpAsILConstPattern()
+    {
+        var pattern = IsConst(new TypePattern(new TensorType(DataTypes.Float32, new[] { 1 })));
+        var il = pattern.DumpAsIL();
+        var builder = new StringBuilder();
+        var writer = new StringWriter(builder);
+        PatternPrinter.DumpAsIL(writer, pattern);
+        Assert.Equal(builder.ToString(), il);
+    }
+
+    [Fact]
+    public void TestDumpAsILTensorConstPattern()
+    {
+        var pattern = IsTensorConst(new TypePattern(new TensorType(DataTypes.Float32, new[] { 1 })));
+        var il = pattern.DumpAsIL();
+        var builder = new StringBuilder();
+        var writer = new StringWriter(builder);
+        PatternPrinter.DumpAsIL(writer, pattern);
+        Assert.Equal(builder.ToString(), il);
+    }
+
+    [Fact]
+    public void TestDumpAsILTupleConstPattern()
+    {
+        var pattern = IsTupleConst(new TypePattern(new TensorType(DataTypes.Float32, new[] { 1 })));
+        var il = pattern.DumpAsIL();
+        var builder = new StringBuilder();
+        var writer = new StringWriter(builder);
+        PatternPrinter.DumpAsIL(writer, pattern);
+        Assert.Equal(builder.ToString(), il);
+    }
+
+    [Fact]
+    public void TestDumpAsILTuplePattern()
+    {
+        var pattern = IsTuple(string.Empty);
+        var il = pattern.DumpAsIL();
+        var builder = new StringBuilder();
+        var writer = new StringWriter(builder);
+        PatternPrinter.DumpAsIL(writer, pattern);
+        Assert.Equal(builder.ToString(), il);
+    }
+
+    [Fact]
+    public void TestDumpAsILVarPattern()
+    {
+        var pattern = IsVar(new TypePattern(new TensorType(DataTypes.Float32, new[] { 1 })));
+        var il = pattern.DumpAsIL();
+        var builder = new StringBuilder();
+        var writer = new StringWriter(builder);
+        PatternPrinter.DumpAsIL(writer, pattern);
+        Assert.Equal(builder.ToString(), il);
+    }
 }
