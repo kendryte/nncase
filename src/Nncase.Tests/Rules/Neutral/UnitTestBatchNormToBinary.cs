@@ -28,20 +28,20 @@ namespace Nncase.Tests.Rules.NeutralTest;
 
 public class UnitTestBatchNormToBinary : TransformTestBase
 {
-    public static readonly TheoryData<int[]> FoldMatmulAddBNPositiveData = new()
+    public static readonly TheoryData<int[]> BatchNormToBinaryPositiveData = new()
     {
         new[] { 56, 56 },
         new[] { 1, 64, 112, 112 },
     };
 
-    public static readonly TheoryData<int[]> FoldMatmulAddBNNegativeData = new()
+    public static readonly TheoryData<int[]> BatchNormToBinaryNegativeData = new()
     {
         new[] { 56 },
     };
 
     [Theory]
-    [MemberData(nameof(FoldMatmulAddBNPositiveData))]
-    public void TestFoldMatmulAddBNPositive(int[] shape)
+    [MemberData(nameof(BatchNormToBinaryPositiveData))]
+    public void TestBatchNormToBinaryPositive(int[] shape)
     {
         var a = new Var("input", new TensorType(DataTypes.Float32, shape));
         var normal = new Dictionary<Var, IValue>();
@@ -59,8 +59,8 @@ public class UnitTestBatchNormToBinary : TransformTestBase
     }
 
     [Theory]
-    [MemberData(nameof(FoldMatmulAddBNNegativeData))]
-    public void TestFoldMatmulAddBNNegative(int[] shape)
+    [MemberData(nameof(BatchNormToBinaryNegativeData))]
+    public void TestBatchNormToBinaryNegative(int[] shape)
     {
         var a = new Var("input", new TensorType(DataTypes.Float32, shape));
         var oc = 1;
