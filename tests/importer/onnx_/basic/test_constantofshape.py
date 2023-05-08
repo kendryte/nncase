@@ -27,14 +27,8 @@ def _make_module(in_shape, value):
     attributes_dict = {}
 
     # input
-    input_const = helper.make_tensor(
-        'input',
-        TensorProto.INT64,
-        dims=[len(in_shape)],
-        vals=in_shape
-    )
+    input = helper.make_tensor_value_info('input', TensorProto.INT64, [len(in_shape)])
     inputs.append('input')
-    initializers.append(input_const)
 
     type = TensorProto.FLOAT
     if value is not None:
@@ -59,7 +53,7 @@ def _make_module(in_shape, value):
     graph_def = helper.make_graph(
         nodes,
         'test-model',
-        [],
+        [input],
         [output],
         initializer=initializers)
 
@@ -84,7 +78,8 @@ values = [
 def test_constantofshape(in_shape, value, request):
     model_def = _make_module(in_shape, value)
 
-    runner = OnnxTestRunner(request.node.name)
+    runner = OnnxTestRunner(request.node.name, overwrite_configs={"case": {"generate_inputs": {
+                            "name": "generate_constant_of_shape", "batch_size": 1, "numbers": 1, "kwargs": {"in_shape": in_shape}}}})
     model_file = runner.from_onnx_helper(model_def)
     runner.run(model_file)
 

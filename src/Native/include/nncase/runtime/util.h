@@ -364,9 +364,9 @@ inline result<gsl::byte *> get_readonly_span(tensor input) {
 
 // get data from value
 template <typename TI, typename TO>
-itlib::small_vector<TO, 4> to_vec(const gsl::byte *input, size_t size) {
+itlib::small_vector<TO, 8> to_vec(const gsl::byte *input, size_t size) {
     auto in_ptr = reinterpret_cast<const TI *>(input);
-    auto vec = itlib::small_vector<TO, 4>(size);
+    auto vec = itlib::small_vector<TO, 8>(size);
     for (size_t i = 0; i < size; ++i) {
         vec[i] = (TO)in_ptr[i];
     }
@@ -398,7 +398,7 @@ inline result<T> value_to_scalar([[maybe_unused]] value_t value) {
 }
 
 template <typename T>
-inline result<itlib::small_vector<T, 4>> value_as_Ts(value_t value) {
+inline result<itlib::small_vector<T, 8>> value_as_Ts(value_t value) {
     try_input(input, value);
     assert(value_tensor->shape().size() <= 1);
     auto size =
