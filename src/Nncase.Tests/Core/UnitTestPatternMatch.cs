@@ -21,6 +21,7 @@ using static Nncase.IR.TypePatternUtility;
 using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.F.Tensors;
 using static Nncase.PatternMatch.Utility;
+using Dimension = Nncase.IR.Dimension;
 using Function = Nncase.IR.Function;
 using Math = Nncase.PatternMatch.F.Math;
 using Utility = Nncase.PatternMatch.Utility;
@@ -51,41 +52,40 @@ public sealed class UnitTestPatternMatch
     [Fact]
     public void TestPatternMatch()
     {
-        _ = IR.F.Random.Normal(new[] { 1, 1, 1, 1 });
-        Math.Abs(1f);
-        Math.Ceil(1f);
-        Math.Cos(1f);
-        Math.Exp(1f);
-        Math.Floor(1f);
-        Math.Log(1f);
-        Math.Neg(1f);
-        Math.Round(1f);
-        Math.Rsqrt(1f);
-        Math.Sin(1f);
-        Math.Sqrt(1f);
-        Math.Square(1f);
-        Math.Tanh(1f);
-        Math.BitwiseNot(1f);
-        Math.LogicalNot(1f);
-        Math.Mod(1f, 1f);
-        Math.Min(1f, 1f);
-        Math.Max(1f, 1f);
-        Math.Pow(1f, 1f);
-        Math.BitwiseAnd(1f, 1f);
-        Math.BitwiseOr(1f, 1f);
-        Math.BitwiseXor(1f, 1f);
-        Math.LogicalAnd(1f, 1f);
-        Math.LogicalOr(1f, 1f);
-        Math.LogicalXor(1f, 1f);
-        Math.LeftShift(1f, 1f);
-        Math.RightShift(1f, 1f);
-        Math.FloorDiv(1f, 1f);
-        Math.FloorMod(1f, 1f);
-        Math.NotEqual(1f, 1f);
-        Math.LessThan(1f, 1f);
-        Math.LessEqual(1f, 1f);
-        Math.GreaterEqual(1f, 1f);
-        Math.GreaterThan(1f, 1f);
+        Assert.NotNull(Math.Abs(1f));
+        Assert.NotNull(Math.Ceil(1f));
+        Assert.NotNull(Math.Cos(1f));
+        Assert.NotNull(Math.Exp(1f));
+        Assert.NotNull(Math.Floor(1f));
+        Assert.NotNull(Math.Log(1f));
+        Assert.NotNull(Math.Neg(1f));
+        Assert.NotNull(Math.Round(1f));
+        Assert.NotNull(Math.Rsqrt(1f));
+        Assert.NotNull(Math.Sin(1f));
+        Assert.NotNull(Math.Sqrt(1f));
+        Assert.NotNull(Math.Square(1f));
+        Assert.NotNull(Math.Tanh(1f));
+        Assert.NotNull(Math.BitwiseNot(1f));
+        Assert.NotNull(Math.LogicalNot(1f));
+        Assert.NotNull(Math.Mod(1f, 1f));
+        Assert.NotNull(Math.Min(1f, 1f));
+        Assert.NotNull(Math.Max(1f, 1f));
+        Assert.NotNull(Math.Pow(1f, 1f));
+        Assert.NotNull(Math.BitwiseAnd(1f, 1f));
+        Assert.NotNull(Math.BitwiseOr(1f, 1f));
+        Assert.NotNull(Math.BitwiseXor(1f, 1f));
+        Assert.NotNull(Math.LogicalAnd(1f, 1f));
+        Assert.NotNull(Math.LogicalOr(1f, 1f));
+        Assert.NotNull(Math.LogicalXor(1f, 1f));
+        Assert.NotNull(Math.LeftShift(1f, 1f));
+        Assert.NotNull(Math.RightShift(1f, 1f));
+        Assert.NotNull(Math.FloorDiv(1f, 1f));
+        Assert.NotNull(Math.FloorMod(1f, 1f));
+        Assert.NotNull(Math.NotEqual(1f, 1f));
+        Assert.NotNull(Math.LessThan(1f, 1f));
+        Assert.NotNull(Math.LessEqual(1f, 1f));
+        Assert.NotNull(Math.GreaterEqual(1f, 1f));
+        Assert.NotNull(Math.GreaterThan(1f, 1f));
     }
 
     [Fact]
@@ -95,35 +95,34 @@ public sealed class UnitTestPatternMatch
 
         var wc1 = IsWildcard();
         var wc2 = IsWildcard();
-        IsCall(null, new FunctionPattern(wc1 + wc2, IsVArgs(wc1, wc2), null));
-        IsCall(null, new FunctionPattern(wc1 + wc2, IsVArgs(wc1, wc2), null), IsVArgs(wc1, wc2));
-        IsCall("call", IsOp<ActivationOp>("activation", op => true));
+        Assert.NotNull(IsCall(null, new FunctionPattern(wc1 + wc2, IsVArgs(wc1, wc2), null)));
+        Assert.NotNull(IsCall(null, new FunctionPattern(wc1 + wc2, IsVArgs(wc1, wc2), null), IsVArgs(wc1, wc2)));
+        Assert.NotNull(IsCall("call", IsOp<ActivationOp>("activation", op => true)));
 
-        IsConst(new TypePattern(new TensorType(DataTypes.Float32, new[] { 1 })));
-        IsConstIntTensor(null);
-        IsConstIntTensor();
-        IsConstIntSclar();
+        Assert.NotNull(IsConstIntTensor(null));
+        Assert.NotNull(IsConstIntTensor());
+        Assert.NotNull(IsConstIntSclar());
 
-        IsNone();
+        Assert.NotNull(IsRangeOfMarker(null, IsWildcard(), IsWildcard()));
+        Assert.NotNull(IsMarker(WellknownMarkerNames.RangeOf, IsWildcard(), IsWildcard()));
 
-        IsRangeOfMarker(null, IsWildcard(), IsWildcard());
-        IsMarker(WellknownMarkerNames.RangeOf, IsWildcard(), IsWildcard());
+        Assert.NotNull(IsAlt(string.Empty, IsNone(), IsNone()));
 
-        IsAlt(string.Empty, IsNone(), IsNone());
+        Assert.NotNull(IsFusion<Binary, Binary, Unary>(null!, null!, null!, null!, null!, null!));
 
-        IsFusion<Binary, Binary, Unary>(null!, null!, null!, null!, null!, null!);
+        Assert.NotNull(IsTupleConst());
+        Assert.NotNull(IsTupleConst(_ => true));
 
-        IsTupleConst();
-        IsTupleConst(_ => true);
-
-        GetShape(1);
+        Assert.Equal(new List<Dimension>(1), GetShape(1));
 
         var tuplePattern = new TuplePattern(new IR.Tuple(new[] { 1 }), null);
+        Assert.NotNull(tuplePattern);
 
-        var tupleConstPattern =
-            new TupleConstPattern(new TupleConst(new TupleValue(new[] { Value.FromConst(1F) })), null);
+        var tupleConstPattern = new TupleConstPattern(new TupleConst(new TupleValue(new[] { Value.FromConst(1F) })), null);
+        Assert.NotNull(tupleConstPattern);
 
         var markerPattern = new MarkerPattern(new Marker(null!, 1, 1), null);
+        Assert.NotNull(markerPattern);
     }
 
     [Fact]
