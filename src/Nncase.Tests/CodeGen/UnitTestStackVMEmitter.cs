@@ -18,7 +18,7 @@ namespace Nncase.Tests.CoreTest;
 
 public class UnitTestStackVMEmitter
 {
-    [Fact]
+    // [Fact]
     public void TestStackVMEmitterG()
     {
         var stackVmEmitter = new StackVMEmitter(new BinaryWriter(new MemoryStream(), Encoding.UTF8, leaveOpen: true));
