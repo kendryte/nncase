@@ -21,6 +21,7 @@ set(SRCS concat.cpp
          gather_nd.cpp
          quantize.cpp
          onehot.cpp
+		 log_softmax.cpp
 )
 
 function(_TARGET_ARCH_FILES)
