@@ -124,7 +124,7 @@ struct padding {
 
 using uuid_t = std::array<uint8_t, 16>;
 using dims_t = itlib::small_vector<size_t, 8>;
-using axes_t = itlib::small_vector<int64_t, 8>
+using axes_t = itlib::small_vector<int64_t, 8>;
 using strides_t = itlib::small_vector<size_t, 8>;
 using paddings_t = itlib::small_vector<padding, 4>;
 
