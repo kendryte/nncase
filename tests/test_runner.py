@@ -68,9 +68,16 @@ class Edict:
                     old_value = getattr(self, name)
                     if old_value is None:
                         setattr(self, name, Edict(new_value))
-                    for i in range(len(new_value['preprocess_opt'])):
-                        self.case.preprocess_opt[i].values = copy.deepcopy(
-                            new_value['preprocess_opt'][i]['values'])
+                    for new_key in new_value.keys():
+                        for old_key in new_value.keys():
+                            if new_key != old_key:
+                                continue
+                            if new_key == 'preprocess_opt':
+                                for i in range(len(new_value['preprocess_opt'])):
+                                    self.case.preprocess_opt[i].values = copy.deepcopy(
+                                        new_value['preprocess_opt'][i]['values'])
+                            else:
+                                setattr(self.case, new_key, Edict(new_value[new_key]))
                 elif isinstance(new_value, dict):
                     old_value = getattr(self, name)
                     if old_value is None:
@@ -167,9 +174,16 @@ def generate_image_dataset(shape: List[int], dtype: np.dtype,
     return np.stack(imgs)
 
 
+def generate_constant_of_shape(shape: List[int], dtype: np.dtype,
+                               batch_index: int, batch_size: int,
+                               in_shape: List[int]) -> np.ndarray:
+    return np.array(in_shape, dtype=dtype)
+
+
 DataFactory = {
     'generate_random': generate_random,
-    'generate_image_dataset': generate_image_dataset
+    'generate_image_dataset': generate_image_dataset,
+    'generate_constant_of_shape': generate_constant_of_shape
 }
 
 
