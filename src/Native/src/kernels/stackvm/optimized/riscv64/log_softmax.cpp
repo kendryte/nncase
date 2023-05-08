@@ -173,8 +173,8 @@ static void log_softmax_impl(const float *input, float *output, const dims_t &in
 	{
         in_side *= in_shape[i];
 	}
-	printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!ndim: %d, out_side: %d, in_side: %d, axis: %d, axis_dim:%d\n", (int)ndim, (int)out_side, 
-	(int)in_side, (int)positive_axis, (int)axis_dim);
+	// printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!ndim: %d, out_side: %d, in_side: %d, axis: %d, axis_dim:%d\n", (int)ndim, (int)out_side, 
+	// (int)in_side, (int)positive_axis, (int)axis_dim);
 	if (positive_axis == (ndim - 1)) {
 		const float *ptr_input = input;
         float *ptr_output = output;
@@ -232,3 +232,4 @@ optimized::log_softmax(const T *input, T *output, const dims_t &in_shape,
 	log_softmax_impl(input, output, in_shape, axis);
 	return ok();
 }
+
