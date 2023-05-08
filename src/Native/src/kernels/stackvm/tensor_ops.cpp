@@ -385,13 +385,16 @@ result<value_t> nncase::kernels::stackvm::log_softmax(
     try_f32_input(in_mem, input);
     try_f32_output(out_mem, output, input_tensor->shape());
     try_positive_axis(axis_value, axis, input_tensor);
-    // try_(reference::softmax(in_mem, out_mem, input_tensor->shape(),
-                            // input_tensor->strides(), output_tensor->strides(),
-                            // axis_value, 1.f, true));
-	// printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! in tensor_ops.cpp \n");
-	try_(optimized::log_softmax(in_mem, out_mem, input_tensor->shape(),
-                            input_tensor->strides(), output_tensor->strides(),
-                            axis_value, 1.f));
+	#if __riscv_vector
+		// printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! in tensor_ops.cpp \n");
+		try_(optimized::log_softmax(in_mem, out_mem, input_tensor->shape(),
+								input_tensor->strides(), output_tensor->strides(),
+								axis_value, 1.f));
+	#else
+		try_(reference::softmax(in_mem, out_mem, input_tensor->shape(),
+							input_tensor->strides(), output_tensor->strides(),
+							axis_value, 1.f, true));
+	#endif
 							
 							// optimized::log_softmax
     return ok(output);

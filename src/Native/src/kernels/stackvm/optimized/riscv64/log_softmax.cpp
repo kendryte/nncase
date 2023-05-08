@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../reference/ref_ops.h"
-#include "opt_ops.h"
+#include "../../reference/ref_ops.h"
+#include "../opt_ops.h"
 #include <iostream>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/runtime/runtime_op_utility.h>
@@ -25,28 +25,6 @@ using namespace nncase::kernels::stackvm;
 using namespace nncase::kernels::stackvm::optimized;
 
 #include <math.h>
-
-void log_softmax_golden_step12(int32_t len, const float* x, float* dx)
-{
-    float max_value = x[0];
-    for (int32_t i = 1; i < len; i++)
-    {
-
-        max_value = fmaxf(max_value, x[i]);
-    }
-    float sum_value = 0;
-    for (int32_t i = 0; i < len; i++)
-    {
-        dx[i] = x[i] - max_value;
-        dx[i] = expf(dx[i]);
-        sum_value += dx[i];
-    }
-    float r_sum = 1.0 / sum_value;
-    for (int32_t i = 0; i < len; i++)
-    {
-        dx[i] = log(dx[i] * r_sum);
-    }
-}
 
 void log_softmax_golden_step1(int32_t len, const float* x, float* dx)
 {
@@ -67,7 +45,7 @@ void log_softmax_golden_step1(int32_t len, const float* x, float* dx)
     }
 }
 #if __riscv_vector
-#include "riscv64/utils.h"
+#include "utils.h"
 #include <riscv_vector.h>
 
 static float get_max_value(int n, const float* x)
@@ -76,10 +54,10 @@ static float get_max_value(int n, const float* x)
         __asm volatile(
         "mv a0, %[avl];"
         "mv a1, %[input_ptr];"
-        "vsetvli t0, a0, e32, m8;"//RVVSETVLI(t0,a0,e32,RVV_LMUL)
+        "vsetvli t0, a0, e32, m8;"
         "vfmv.s.f v16, %3;"
     "loop_rvv_max_index:;"
-        "vsetvli t0, a0, e32, m8;"//RVVSETVLI(t0,a0,e32,RVV_LMUL)
+        "vsetvli t0, a0, e32, m8;"
         "vle32.v v8, (a1);"
         "slli t1, t0, 2;"
         "sub a0, a0, t0;"
@@ -156,6 +134,7 @@ void log_softmax_golden_step_not1(int32_t len, const float* x, float* dx, int st
 
 void log_softmax_golden_step_not1_2(int32_t len, const float* x, float* dx, int step)
 {
+	// printf("!!!!!!!!!!!!!!!!!!!!! %d,%d\n", len , step);
 	for(int j = 0; j < step; ++j)
 	{
 		float max_value = x[0];
@@ -194,7 +173,8 @@ static void log_softmax_impl(const float *input, float *output, const dims_t &in
 	{
         in_side *= in_shape[i];
 	}
-	// printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!ndim: %d\n", (int)ndim);
+	printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!ndim: %d, out_side: %d, in_side: %d, axis: %d, axis_dim:%d\n", (int)ndim, (int)out_side, 
+	(int)in_side, (int)positive_axis, (int)axis_dim);
 	if (positive_axis == (ndim - 1)) {
 		const float *ptr_input = input;
         float *ptr_output = output;
