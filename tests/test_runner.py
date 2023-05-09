@@ -105,8 +105,7 @@ def generate_real_data(shape: List[int], dtype: np.dtype,
                     dir_path: str):
     """
     read data, file name with increase index and data type.
-    e.g. 0_u8.bin, 1_fp32.bin, 2_i64.bin
-    [uint8: u8, int8: i8, float32: f32, int32: i32, int64: i64]
+    e.g. 0.bin, 1.bin, 2.bin
 
     config:
     generate_inputs:
