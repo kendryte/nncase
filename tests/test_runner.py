@@ -119,17 +119,7 @@ def generate_real_data(shape: List[int], dtype: np.dtype,
     data_list = os.listdir(dir_path)
     data_list.sort()
     file_name = data_list[input_index]
-    data_type = file_name.split(".")[0].split("_")[-1]
-    if data_type == "u8":
-        data = np.fromfile(os.path.join(dir_path, file_name), np.uint8)
-    elif data_type == "i8":
-        data = np.fromfile(os.path.join(dir_path, file_name), np.int8)
-    elif data_type == "f32":
-        data = np.fromfile(os.path.join(dir_path, file_name), np.float32)
-    elif data_type == "i32":
-        data = np.fromfile(os.path.join(dir_path, file_name), np.int32)
-    elif data_type == "i64":
-        data = np.fromfile(os.path.join(dir_path, file_name), np.int64)
+    data = np.fromfile(os.path.join(dir_path, file_name), dtype)
     data = np.reshape(data, shape)
     return data
 
