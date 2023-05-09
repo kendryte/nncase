@@ -6,6 +6,7 @@ using Nncase.IR;
 using Nncase.IR.Tensors;
 using Onnx;
 using F = Nncase.IR.F;
+using static Nncase.IR.F.Tensors;
 
 namespace Nncase.Importer
 {
@@ -52,7 +53,16 @@ namespace Nncase.Importer
                 var x when x == DataTypes.Boolean => F.Tensors.ConstantOfShape(shape, true),
                 _ => throw new NotSupportedException("not supported expand type"),
             };
-            return F.Tensors.Expand(input, F.Tensors.ShapeOf(F.Math.Mul(input, rhs)));
+            Expr shapeOfValue;
+            if (input.CheckedDataType == DataTypes.Boolean)
+            {
+                shapeOfValue = Cast(F.Math.Mul(Cast(input, DataTypes.Float32), Cast(rhs, DataTypes.Float32)), DataTypes.Boolean);
+            }
+            else
+            {
+                shapeOfValue = F.Math.Mul(input, rhs);
+            }
+            return Expand(input, ShapeOf(shapeOfValue));
         }
     }
 }

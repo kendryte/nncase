@@ -9,7 +9,9 @@ using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
 using NetFabric.Hyperlinq;
+using Nncase.Diagnostics;
 using Nncase.IR;
+using Nncase.IR.Tensors;
 
 namespace Nncase.CodeGen.StackVM;
 
@@ -255,13 +257,16 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         return null!;
     }
 
+    private static int counter = 1;
     protected override TextSnippet VisitLeafCall(Call expr)
     {
+        Console.WriteLine(expr.Target);
         var snippet = BeginTextSnippet(expr);
         foreach (var param in expr.Arguments.ToArray().Reverse())
         {
             var paramSnippet = Visit(param);
-            if (paramSnippet.BasicBlock == snippet.BasicBlock)
+            // todo: refactor
+            if (paramSnippet.BasicBlock == snippet.BasicBlock || paramSnippet.BasicBlock.Prev.Count != 1 || paramSnippet.BasicBlock.Prev[0].Nexts.Count < 1)
             {
                 snippet.AddInput(paramSnippet, true);
             }
@@ -302,13 +307,12 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
 
     protected override TextSnippet VisitIf(If expr)
     {
-        if (!ExprMemo.TryGetValue(expr, out var result))
+        if (HasVisited(expr, out var result))
         {
-            result = VisitLeafIf(expr);
-            ExprMemo.Add(expr, result);
+            return result;
         }
 
-        return result;
+        return MarkVisited(expr, VisitLeafIf(expr));
     }
 
     /// <summary>
@@ -328,6 +332,10 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
     /// <returns>TextSnippet.</returns>
     protected override TextSnippet VisitLeafIf(If @if)
     {
+        foreach (var expr in @if.ParamList)
+        {
+            Visit(expr);
+        }
         var condSnippet = Visit(@if.Condition);
         condSnippet.Emitter.LdScalar();
         var brFalse = BeginTextSnippet(@if);
@@ -371,6 +379,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
     {
         var visitor = new CodeGenVisitor(_function, _context);
         var subBlockFirst = visitor.CurrentBasicBlock;
+
         CurrentBasicBlock.AddNext(subBlockFirst);
         foreach (var (key, value) in ExprMemo)
         {

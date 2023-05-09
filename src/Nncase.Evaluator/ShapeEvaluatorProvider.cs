@@ -8,6 +8,7 @@ using System.Linq;
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Nncase.Diagnostics;
 using Nncase.IR;
 
 namespace Nncase.Evaluator;
@@ -30,6 +31,7 @@ internal sealed class ShapeEvaluateProvider : IShapeEvaluateProvider
 
         if (expr.CheckedType is InvalidType)
         {
+            DumpScope.Current.DumpIR(expr, "EvaluateShapeExprInvalid");
             throw new InvalidOperationException("Expr in Evaluator need a valid type");
         }
 
@@ -57,6 +59,10 @@ internal sealed class ShapeEvaluateProvider : IShapeEvaluateProvider
     {
         var evaluatorType = typeof(IShapeEvaluator<>).MakeGenericType(op.GetType());
         var evaluator = (IShapeEvaluator)_serviceProvider.GetRequiredService(evaluatorType);
+        // return evaluator.Visit(context, op);
+        // Console.WriteLine("ShapeExprRequire");
+        // Console.WriteLine(op.ToString());
         return evaluator.Visit(context, op);
+        // return IR.F.Math.Require(true, evaluator.Visit(context, op), op.ToString());
     }
 }

@@ -8,7 +8,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
+using Nncase.IR.Tensors;
 using Nncase.Runtime.StackVM;
+using Nncase.Utilities;
+using static Nncase.CodeGen.CodeGenDumper;
 
 namespace Nncase.CodeGen.StackVM;
 
@@ -51,15 +54,32 @@ internal class StackVMFunctionBuilder : FunctionBuilder
         }
 
         var localSet = new HashSet<int>();
+        var sourceMap = new List<(Expr, (long, long))>();
+        Var Tag(string name) => new(name, AnyType.Default);
+        int i = 1;
         foreach (var basicBlock in _context.BasicBlocks)
         {
+            // 6
+            // Console.WriteLine($"BB Id:{basicBlock.Id}");
+            sourceMap.Add((Tag("Begin"), (0, 0)));
             foreach (var snippet in basicBlock.TextSnippets)
             {
+                // Console.WriteLine($"Current Expr: {ToStr(snippet.Expr)}");
+                if (snippet.Expr is Call { Target: Reshape } snippetCall && snippetCall.Arguments[0] is Call gatherCall && gatherCall.Target is Gather)
+                {
+                    i++;
+                }
                 SymbolAddrs.Add(snippet.BeginSymbol, _textEmitter.Position);
+                var begin = _textEmitter.Position;
+                // Console.WriteLine($"pc:{begin}");
+
+                // 是因为then和else进入一个新的visitor里面，因此产生了新的snippet。但是这个新的snippet里面的输入哪里来的呢†
 
                 // end of if
                 if (basicBlock.Prev.Count > 1 && _context.AllocInfo.TryGetValue(snippet, out var uses))
                 {
+                    sourceMap.Add((Tag("endOfIf"), (0, 0)));
+                    // // Console.WriteLine("EndOfIf");
                     foreach (var inputSnippet in uses)
                     {
                         var localId = _snippetLocals[inputSnippet];
@@ -68,29 +88,37 @@ internal class StackVMFunctionBuilder : FunctionBuilder
                         if (inputSnippet.RefCount == 0)
                         {
                             _snippetLocals.Remove(inputSnippet);
+                            // // Console.WriteLine($"Release {ToStr(snippet.Expr)}:{localId}");
                             localSet.Remove(localId);
+                            sourceMap.Add((Tag($"release {ToStr(inputSnippet.Expr)}"), (0, 0)));
                         }
                     }
 
                     Debug.Assert(snippet.InputSnippets.Count == 0, "snippet end of if is should be 0 input");
                 }
 
+                // Console.WriteLine("LoadInputs");
                 // 2.1 Load inputs
                 foreach (var inputSnippet in snippet.InputSnippets)
                 {
                     // in locals
                     if (inputSnippet.OutputInLocal)
                     {
+                        // Console.WriteLine($"Load {ToStr(inputSnippet.Expr)}");
                         var localId = _snippetLocals[inputSnippet];
+                        // Console.WriteLine($"local Id {localId}");
                         _textEmitter.Ldlocal(localId);
 
                         if (NormalReduceCount(snippet, inputSnippet))
                         {
+                            var beforePos = _textEmitter.Position;
                             RefCountReduce(inputSnippet, localId);
                             if (inputSnippet.RefCount == 0)
                             {
-                                _snippetLocals.Remove(inputSnippet);
+                                // Console.WriteLine($"Release {ToStr(inputSnippet.Expr)}:{localId}");
                                 localSet.Remove(localId);
+                                sourceMap.Add((Tag($"release {ToStr(inputSnippet.Expr)}"), (beforePos, _textEmitter.Position)));
+                                _snippetLocals.Remove(inputSnippet);
                             }
                         }
                     }
@@ -111,6 +139,7 @@ internal class StackVMFunctionBuilder : FunctionBuilder
                 snippet.Writer.Flush();
                 TextWriter.Write(snippet.Text.ToArray());
 
+                // Console.WriteLine("StoreOutputs");
                 // 2.3 Store output
                 // in locals
                 if (snippet.OutputInLocal)
@@ -119,13 +148,18 @@ internal class StackVMFunctionBuilder : FunctionBuilder
                     localSet.Add(localId);
                     _snippetLocals.Add(snippet, localId);
                     _textEmitter.Stlocal(localId);
+                    // Console.WriteLine($"Alloc {ToStr(snippet.Expr)}:{localId}");
                 }
 
                 SymbolAddrs.Add(snippet.EndSymbol, _textEmitter.Position);
+                var end = _textEmitter.Position;
+                sourceMap.Add((snippet.Expr, (begin, end)));
             }
+            sourceMap.Add((Tag("End"), (0, 0)));
         }
 
         // Debug.Assert(localSet.Count == 0);
+        WriteDebugInfo(Id, 0, sourceMap);
     }
 
     private bool NormalReduceCount(TextSnippet snippet, TextSnippet input)

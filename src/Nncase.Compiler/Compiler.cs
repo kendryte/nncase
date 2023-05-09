@@ -179,6 +179,7 @@ internal class Compiler : ICompiler
         await RunPassAsync(p => target.RegisterTargetDependentAfterQuantPass(p, _compileSession.CompileOptions), "TargetDependentAfterQuantPass");
         await RunPassAsync(p => ClearFixShape(p), "ClearFixShape");
         await RunPassAsync(p => target.RegisterTargetDependentBeforeCodeGen(p, _compileSession.CompileOptions), "TargetDependentBeforeCodeGen");
+        DumpScope.Current.DumpModule(_module, "ModuleAfterCompile");
     }
 
     public void Gencode(Stream output)

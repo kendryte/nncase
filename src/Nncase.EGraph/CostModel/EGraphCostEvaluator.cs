@@ -138,7 +138,7 @@ internal sealed class EGraphCostEvaluator
 
     private Cost? Visit(ENode enode, If @if)
     {
-        return Visit(enode, cost => cost[1] + cost[2]);
+        return Visit(enode, cost => cost[^2] + cost[^1]);
     }
 
     private Cost? Visit(ENode enode, Marker marker)

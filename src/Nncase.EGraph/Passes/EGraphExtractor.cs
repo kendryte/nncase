@@ -233,7 +233,7 @@ internal class EGraphExtractor
 
     private IR.If Visit(ENode enode, IR.If @if, IRArray<Expr> children)
     {
-        return @if.With(condition: children[0], then: children[1], @else: children[2]);
+        return @if.With(condition: children[^3], then: children[^2], @else: children[^1]);
     }
 
     private Call Visit(ENode enode, Call call, IRArray<Expr> children)

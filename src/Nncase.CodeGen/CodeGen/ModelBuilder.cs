@@ -39,6 +39,7 @@ public sealed class ModelBuilder : IModelBuilder
     {
         var functionsByKind = module.Functions.GroupBy(x => x.ModuleKind).ToList();
         var functionIds = MakeFunctionsIds(functionsByKind);
+        CodeGenDumper.DumpIdMap(functionIds);
         var linkableModules = functionsByKind.Select(x => Target.CreateModuleBuilder(x.Key, CompileOptions).Build(x.ToList())).ToList();
         var linkContext = new LinkContext(functionIds);
         var linkedModules = linkableModules.Select(x => x.Link(linkContext)).ToList();

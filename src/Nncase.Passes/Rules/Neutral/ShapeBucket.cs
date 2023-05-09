@@ -67,19 +67,19 @@ public partial class MatmulToFusion : IRewriteRule
 
     public Expr? GetReplace(Marker arg0, Marker arg1, Marker matmul)
     {
-        Console.WriteLine($"MatMulToFusion count {counter++}");
-        // if (counter > 3)
-        // {
-        //     return null;
-        // }
+        if (counter > 2)
+        {
+            return null;
+        }
+        // Console.WriteLine($"MatMulToFusion count {counter++}");
         DumpScope.Current.DumpIR(arg0, "arg0");
         DumpScope.Current.DumpIR(arg1, "arg1");
         var visitor = new FindVar();
-        Console.WriteLine("argExpr0");
+        // Console.WriteLine("argExpr0");
         var arg0Expr = arg0.EvaluateShapeExpr(VarMap);
-        Console.WriteLine("argExpr1");
+        // Console.WriteLine("argExpr1");
         var arg1Expr = arg1.EvaluateShapeExpr(VarMap);
-        Console.WriteLine("visit");
+        // Console.WriteLine("visit");
         visitor.Visit(arg0Expr);
         visitor.Visit(arg1Expr);
         var set = visitor.Vars.ToHashSet().Except(VarMap.Keys.ToHashSet()).ToHashSet();
@@ -90,13 +90,13 @@ public partial class MatmulToFusion : IRewriteRule
         var m = IR.F.Math.MatMul(inputLhs, inputRhs);
         var matmulWithMarker = matmul.With(target: m);
         // Debug.Assert(set.Count <= 1);
-        Console.WriteLine($"matmul_{counter} GetReplace Set {string.Join(",", set.Select(x => x.Name).ToArray())}");
+        // Console.WriteLine($"matmul_{counter} GetReplace Set {string.Join(",", set.Select(x => x.Name).ToArray())}");
         // foreach (var var in set)
         // {
-            // Console.WriteLine(var.Name);
+            // // Console.WriteLine(var.Name);
         // }
 
-        // Console.WriteLine("GetReplace End");
+        // // Console.WriteLine("GetReplace End");
 
         var f = new VarFusion($"matmul_{counter++}", "stackvm", set.ToArray(), matmulWithMarker, lhs, rhs);
         var c = new Call(f, arg0, arg1);
@@ -154,22 +154,22 @@ public partial class ReplaceRewrite : IRewriteRule
             {
                 if (!ex.IsAlive)
                 {
-                    Console.WriteLine("not alive in replace");
+                    // Console.WriteLine("not alive in replace");
                     throw new NotImplementedException();
                 }
             }
         }
 
-        Console.WriteLine("ComputeFixedShape");
+        // Console.WriteLine("ComputeFixedShape");
         // 1. compute dim range
         var minFixedShapeList = ComputeFixedShape(call, minDict);
         var maxFixedShapeList = ComputeFixedShape(call, maxDict);
 
-        Console.WriteLine("GetDimInfo");
+        // Console.WriteLine("GetDimInfo");
         // 2. get dim info(inputIndex, (dimIndex, range)
         var counts = minFixedShapeList.Zip(maxFixedShapeList).Select((pair, inputIndex) =>
         {
-            Console.WriteLine(inputIndex);
+            // Console.WriteLine(inputIndex);
             var (min, max) = pair;
             // (range, dimIndex)
             var range = Enumerable.Range(0, min.Length).Zip(min.Zip(max)).Where(data =>
@@ -183,12 +183,12 @@ public partial class ReplaceRewrite : IRewriteRule
 
         PrintMatmulInfo(call, minFixedShapeList, maxFixedShapeList, totalCount);
         PrintSegmentInfo(counts);
-        Console.WriteLine($"total count {totalCount}");
+        // Console.WriteLine($"total count {totalCount}");
         if (minFixedShapeList[0].SequenceEqual(maxFixedShapeList[0]) &&
             minFixedShapeList[1].SequenceEqual(maxFixedShapeList[1]))
         {
             // todo: 做了不该做的，写个test验证下
-            Console.WriteLine("same, not be process");
+            // Console.WriteLine("same, not be process");
             return FixInput(call, minFixedShapeList);
             return null;
         }
@@ -196,7 +196,7 @@ public partial class ReplaceRewrite : IRewriteRule
         // todo: no effect, fix this
         if (totalCount == 0)
         {
-            Console.WriteLine("total count = 0, not be process");
+            // Console.WriteLine("total count = 0, not be process");
             return FixInput(call, minFixedShapeList);
             return null;
         }
@@ -207,7 +207,7 @@ public partial class ReplaceRewrite : IRewriteRule
         var expr = Split(call, marker, lhsMarker, rhsMarker, info, 0, 1, varValues);
         expr.InferenceType();
         DumpScope.Current.DumpIR(expr, "SplitResult");
-        Console.WriteLine("SplitOk");
+        // Console.WriteLine("SplitOk");
         return expr;
     }
 
@@ -227,13 +227,13 @@ public partial class ReplaceRewrite : IRewriteRule
 
     private static void PrintSegmentInfo((int inputIndex, (int First, (int First, int Second) Second)[] range)[] counts)
     {
-        Console.Write("InputSegement ");
+        // Console.Write("InputSegement ");
         foreach ((int inputIndex, var range) in counts)
         {
-            Console.Write($"{inputIndex} {string.Join(", ", range)}");
+            // Console.Write($"{inputIndex} {string.Join(", ", range)}");
         }
 
-        Console.WriteLine();
+        // Console.WriteLine();
     }
 
     private Dictionary<Var, int[]> MakeVarValuesForAllSegment(int segmentCount)
@@ -242,10 +242,10 @@ public partial class ReplaceRewrite : IRewriteRule
         {
             var (min, max) = pair.Value;
             var segments = ComputeSegmentList(segmentCount, min, max);
-            Console.WriteLine("segments list");
-            Console.WriteLine($"{min}, {max}");
-            Console.WriteLine($"{((max - min) / segmentCount)}");
-            Console.WriteLine(string.Join(",", segments));
+            // Console.WriteLine("segments list");
+            // Console.WriteLine($"{min}, {max}");
+            // Console.WriteLine($"{((max - min) / segmentCount)}");
+            // Console.WriteLine(string.Join(",", segments));
             return segments;
         });
 
@@ -311,8 +311,8 @@ public partial class ReplaceRewrite : IRewriteRule
             // (Expr)error,
             (sum, seg) =>
             {
-                Console.WriteLine("segment value");
-                Console.WriteLine(seg);
+                // Console.WriteLine("segment value");
+                // Console.WriteLine(seg);
                 var cond = Cast(ShapeOf(call.Arguments[inputIndex]), DataTypes.Int32)[dimIndex] <= seg;
                 // select var value for current segment
                 var varInfo = varValues.ToDictionary(pair => pair.Key, pair => (IValue)Value.FromTensor(pair.Value[i]));
@@ -329,7 +329,7 @@ public partial class ReplaceRewrite : IRewriteRule
     public static Expr MakeSplitEntry(Call call, Marker callMaker, Marker lhsMarker, Marker rhsMarker, SegmentInfo info, int seg, Dictionary<Var, Expr[]> inputInfo,
         Dictionary<Var, IValue> varInfo, Dictionary<Var, Expr[]> fusionInputdata)
     {
-        Console.WriteLine("MakeEntry");
+        // Console.WriteLine("MakeEntry");
         var fixedShapeList = call.Arguments.ToArray()
             .Select((arg, i) => PreProcess(arg, info, seg, inputInfo, varInfo, fusionInputdata)).ToArray();
         // return new IR.Tuple(fixedShapeList);
@@ -344,12 +344,12 @@ public partial class ReplaceRewrite : IRewriteRule
     public static Expr PreProcess(Expr input, SegmentInfo info, int seg, Dictionary<Var, Expr[]> inputInfo,
         Dictionary<Var, IValue> varValues, Dictionary<Var, Expr[]> fusionInputData)
     {
-        Console.WriteLine($"input type {input.GetType().Name}");
+        // Console.WriteLine($"input type {input.GetType().Name}");
         // compute FixedShape by new var value
-        Console.WriteLine("PreProcess");
+        // Console.WriteLine("PreProcess");
         var fixedShape = ShapeEvaluate(input, inputInfo, varValues, fusionInputData);
-        Console.WriteLine("fixedShape");
-        Console.WriteLine(string.Join(",", fixedShape));
+        // Console.WriteLine("fixedShape");
+        // Console.WriteLine(string.Join(",", fixedShape));
         var pads = fixedShape - Cast(ShapeOf(input), DataTypes.Int32);
         var paddings = Transpose(Stack(new IR.Tuple(Enumerable.Repeat(0, fixedShape.Length).ToArray(), pads), 0),
             new[] { 1, 0 });
@@ -369,46 +369,46 @@ public partial class ReplaceRewrite : IRewriteRule
         var dummyInput = info.ToDictionary(pair => pair.Key,
             pair =>
             {
-                Console.WriteLine("mkinput");
+                // Console.WriteLine("mkinput");
                 // foreach (var expr1 in pair.Value)
                 // {
-                //     Console.WriteLine(expr1);
-                //     Console.WriteLine(expr1.IsAlive);
-                //     Console.WriteLine(expr1.CheckedDataType);
+                //     // Console.WriteLine(expr1);
+                //     // Console.WriteLine(expr1.IsAlive);
+                //     // Console.WriteLine(expr1.CheckedDataType);
                 // }
                 //
-                // Console.WriteLine("end");
+                // // Console.WriteLine("end");
                 // 包含了input的shape表达式，必须想办法区分开才行
                 try
                 {
                     var shapeExpr = Stack(new IR.Tuple(pair.Value.Select(x => Cast(x, DataTypes.Int32)).ToArray()), 0);
                     DumpScope.Current.DumpIR(shapeExpr, "mkInputShapeExpr");
                     var shape = shapeExpr.Evaluate(varInfo).AsTensor();
-                    // Console.WriteLine(pair.Key.Name);
-                    // Console.WriteLine(string.Join(",", pair.Value.Select(x => x.ToString()).ToArray()));
+                    // // Console.WriteLine(pair.Key.Name);
+                    // // Console.WriteLine(string.Join(",", pair.Value.Select(x => x.ToString()).ToArray()));
                     return ConstantOfShape(
                         shape,
                         Cast(0, pair.Key.CheckedDataType)).Evaluate();
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine(e);
+                    // Console.WriteLine(e);
                     throw;
                 }
             });
-        Console.WriteLine("dummyInput");
+        // Console.WriteLine("dummyInput");
         var newEvaluatorInfo = dummyInput.Concat(varInfo).ToDictionary(pair => pair.Key, pair => pair.Value);
-        Console.WriteLine("new info");
+        // Console.WriteLine("new info");
         DumpScope.Current.DumpIR(expr, "ShapeEval382");
         var shapeExpr =
             expr.EvaluateShapeExpr(info.Concat(fusionInfo).ToDictionary(pair => pair.Key, pair => pair.Value));
         shapeExpr.InferenceType();
         DumpScope.Current.DumpIR(shapeExpr, "ShapeExpr");
-        Console.WriteLine("evaluate shapeExpr");
+        // Console.WriteLine("evaluate shapeExpr");
         // todo:this error
         // todo: shape expr inference
         var shape = shapeExpr.Evaluate(newEvaluatorInfo);
-        Console.WriteLine("after evaluate shapeExpr");
+        // Console.WriteLine("after evaluate shapeExpr");
 
         return shape.AsTensor().ToArray<int>();
     }
@@ -440,13 +440,17 @@ public partial class FusionBucket : IRewriteRule
 
     public Expr? GetReplace(Call call, VarFusion fusion)
     {
-        Console.WriteLine($"FusionBucketGetReplace {count}");
+        if (count > 2)
+        {
+            return null;
+        }
+        // Console.WriteLine($"FusionBucketGetReplace {count}");
         // todo: replace every call in Fusion
         var ctx = new RunPassContext();
         // ctx.RewriteOnce = true;
         // var sp = call.Arguments.ToArray().Select(x => x.Metadata.ShapeExpr).ToArray();
 
-        DumpScope.Current.DumpIR(call, "origin");
+        DumpScope.Current.DumpIR(call, "origin", $"ShapeBucketDebug/{count}");
 
         var fusionInputInfo = MakeFusionInputShapeInfo(call, fusion);
 
@@ -456,12 +460,12 @@ public partial class FusionBucket : IRewriteRule
             {
                 if (!expr.IsAlive)
                 {
-                    Console.WriteLine("not alive in fusion bucket");
+                    // Console.WriteLine("not alive in fusion bucket");
                     throw new NotImplementedException();
                 }
             }
         }
-        Console.WriteLine("Check all live");
+        // Console.WriteLine("Check all live");
         using var _ = new ExprPinner(fusionInputInfo.Values.SelectMany(x => x).ToArray());
 
         var oldBody = fusion.Body;
@@ -481,23 +485,43 @@ public partial class FusionBucket : IRewriteRule
             new[] { new ReplaceRewrite(fusion.EffectVar, InputInfo, fusionInputInfo, Dict, call.Arguments.ToArray()) }, ctx);
         if (oldBody == newBody)
         {
-            Console.WriteLine("no change");
+            // Console.WriteLine("no change");
             return null;
         }
-        count++;
 
+        DumpScope.Current.DumpIR(newBody, $"newBody", $"ShapeBucketDebug/{count}");
         if (newBody is Call c && c.Arguments[0] is Call argCall && argCall.Target is FixShape)
         {
-            Console.WriteLine("remove Fusion");
+            // Console.WriteLine("remove Fusion");
         }
-
-        Console.WriteLine("Fusion Bucket ok");
-        var body = fusion.Parameters.ToArray().Zip(call.Arguments.ToArray()).Aggregate(newBody, (sum, pair) =>
+        int n = 0;
+        foreach (var callArgument in call.Arguments)
+        {
+            DumpScope.Current.DumpIR(callArgument, $"{n++}_arg", $"ShapeBucketDebug/{count}");
+        }
+        // Console.WriteLine("Fusion Bucket ok");
+        var args = call.Arguments.ToArray();
+        if (newBody is If @if)
+        {
+            // var letBody = GetItem(IR.F.Math.Require(true, new IR.Tuple(new[]{}.Append(newBody).ToArray())), args.Length - 1);
+            // newBody = GetItem(IR.F.Math.Require(true, new IR.Tuple(new[]{@if.Then, @if.Else}.Append(newBody).ToArray())), args.Length - 1);
+            newBody = @if.With(paramList: call.Arguments.ToArray());
+            DumpScope.Current.DumpIR(newBody, $"after_let", $"ShapeBucketDebug/{count}");
+        }
+        var body = fusion.Parameters.ToArray().Zip(args).Aggregate(newBody, (sum, pair) =>
         {
             var (param, arg) = pair;
             return ReplaceExpr(sum, param, arg);
         });
 
+        DumpScope.Current.DumpIR(body, $"after", $"ShapeBucketDebug/{count}");
+
+
+        int j = 0;
+        foreach (var callArgument in call.Arguments)
+        {
+            DumpScope.Current.DumpIR(callArgument, $"{j++}_arg_after_replace", $"ShapeBucketDebug/{count}");
+        }
         // todo: move marker
         // 1. 在replace里面将var替换为input，在preprocess的时候将marker移动过去
         // 2. 输出的marker在出去的时候自动会添加，但是后面还有一个slice，必须把marker移动过去
@@ -520,8 +544,9 @@ public partial class FusionBucket : IRewriteRule
         // }
 
         // unpack fusion
-        Console.WriteLine("after rewrite");
+        // Console.WriteLine("after rewrite");
 
+        count++;
         return body;
     }
 
@@ -529,11 +554,11 @@ public partial class FusionBucket : IRewriteRule
     {
         var data = fusion.Parameters.ToArray().Zip(call.Arguments.ToArray().Select((arg, i) =>
         {
-            Console.WriteLine("arg shape eval");
+            // Console.WriteLine("arg shape eval");
             var result = arg.EvaluateShapeExpr(InputInfo);
-            Console.WriteLine("Before Infer");
+            // Console.WriteLine("Before Infer");
             result.InferenceType();
-            Console.WriteLine("Infer ok");
+            // Console.WriteLine("Infer ok");
             DumpScope.Current.DumpIR(result, $"result{i++}");
             return Enumerable.Range(0, arg.CheckedShape.Rank).Select(i => result[i]).ToArray();
         })).Select(pair => new KeyValuePair<Var, Expr[]>(pair.First, pair.Second));

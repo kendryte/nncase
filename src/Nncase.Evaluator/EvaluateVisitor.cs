@@ -23,6 +23,7 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, Unit>, IDisposable
     private readonly EvaluatorDumpManager _dumpManager;
     private readonly Dictionary<Type, IEvaluator> _evaluator_cache;
 
+    private int count = 0;
     public EvaluateVisitor(IReadOnlyDictionary<Var, IValue> varsValues, Dictionary<Type, IEvaluator> evaluator_cache)
     {
         _context = new EvaluateContext(ExprMemo);
@@ -41,41 +42,14 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, Unit>, IDisposable
         _dumpManager.Dispose();
     }
 
-    protected override IValue VisitLeafBaseFunction(BaseFunction expr) => NoneValue.Default;
-
-    /// <inheritdoc/>
-
     protected override IValue VisitIf(If @if)
     {
-        if (!ExprMemo.TryGetValue(@if, out var result))
-        {
-            result = VisitLeafIf(@if);
-            ExprMemo.Add(@if, result);
-        }
-
-        return result;
+        bool cond = Visit(@if.Condition).AsTensor().ToScalar<bool>();
+        return cond ? Visit(@if.Then) : Visit(@if.Else);
     }
 
-    protected override IValue VisitLeafIf(If @if)
-    {
-        bool cond = @if.Condition.Evaluate(_varsValues, _evaluator_cache).AsTensor().ToScalar<bool>();
-        return (cond ? @if.Then : @if.Else).Evaluate(_varsValues, _evaluator_cache);
-    }
-
-    protected override IValue VisitConst(Const expr, Unit context)
-    {
-        return Value.FromConst(expr);
-    }
-
-    protected override IValue VisitNone(None expr)
-    {
-        return Value.None;
-    }
-
-    protected override IValue VisitMarker(Marker expr)
-    {
-        return Visit(expr.Target);
-    }
+    /// <inheritdoc/>
+    protected override IValue VisitLeafBaseFunction(BaseFunction expr) => NoneValue.Default;
 
     /// <inheritdoc/>
     protected override IValue VisitLeafConst(Const expr) => Value.FromConst(expr);
@@ -149,6 +123,9 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, Unit>, IDisposable
 
     protected override IValue VisitLeafCall(Call expr)
     {
+        // Console.Write("op start:");
+        // Console.WriteLine(expr.Target);
+        // Console.WriteLine(count++);
         var result = expr.Target switch
         {
             Op op => CompilerServices.EvaluateOp(op, _context, _evaluator_cache),
@@ -156,9 +133,10 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, Unit>, IDisposable
             Fusion { ModuleKind: "stackvm" } fusion => CompilerServices.Evaluate(fusion.Body, CreateFunctionEvaluateArguments(fusion.Parameters, expr.Arguments), _evaluator_cache),
             _ => throw new NotImplementedException(expr.Target.ToString()),
         };
-        Console.WriteLine("op:");
-        Console.WriteLine(expr.Target);
-        Console.WriteLine(string.Join(",", result.AsTensors()[0].ToArray<int>()));
+        // vnar arr = result.AsTensors()[0].ToArray<int>();
+        // Console.WriteLine(string.Join(",", arr.Length > 10 ? arr[..10] : arr));
+        // Console.Write("op end:");
+        // Console.WriteLine(expr.Target);
         return result;
     }
 
