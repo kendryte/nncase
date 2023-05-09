@@ -100,8 +100,42 @@ class Edict:
                 setattr(self, name, new_value)
 
 
+def generate_real_data(shape: List[int], dtype: np.dtype,
+                    number: int, batch_size: int, input_index: int,
+                    dir_path: str):
+    """
+    read data, file name with increase index and data type.
+    e.g. 0_u8.bin, 1_fp32.bin, 2_i64.bin
+    [uint8: u8, int8: i8, float32: f32, int32: i32, int64: i64]
+
+    config:
+    generate_inputs:
+        name: generate_real_data
+        kwargs:
+            dir_path: "/home/curio/model/issue_model/baller/enzh/data/enc"
+        numbers: 1
+        batch_size: 1
+    """
+    data_list = os.listdir(dir_path)
+    data_list.sort()
+    file_name = data_list[input_index]
+    data_type = file_name.split(".")[0].split("_")[-1]
+    if data_type == "u8":
+        data = np.fromfile(os.path.join(dir_path, file_name), np.uint8)
+    elif data_type == "i8":
+        data = np.fromfile(os.path.join(dir_path, file_name), np.int8)
+    elif data_type == "f32":
+        data = np.fromfile(os.path.join(dir_path, file_name), np.float32)
+    elif data_type == "i32":
+        data = np.fromfile(os.path.join(dir_path, file_name), np.int32)
+    elif data_type == "i64":
+        data = np.fromfile(os.path.join(dir_path, file_name), np.int64)
+    data = np.reshape(data, shape)
+    return data
+
+
 def generate_random(shape: List[int], dtype: np.dtype,
-                    number: int, batch_size: int,
+                    number: int, batch_size: int, input_index: int,
                     abs: bool = False) -> np.ndarray:
     if dtype == np.uint8:
         data = np.random.randint(0, 256, shape)
@@ -135,7 +169,7 @@ def _cast_bfloat16_then_float32(values: np.array):
 
 
 def generate_image_dataset(shape: List[int], dtype: np.dtype,
-                           batch_index: int, batch_size: int,
+                           batch_index: int, batch_size: int, input_index: int,
                            dir_path: str) -> np.ndarray:
     """ read image from folder, return the rgb image with padding, dtype = float32, range = [0,255]. same as k210 carmera.
     """
@@ -183,7 +217,8 @@ def generate_constant_of_shape(shape: List[int], dtype: np.dtype,
 DataFactory = {
     'generate_random': generate_random,
     'generate_image_dataset': generate_image_dataset,
-    'generate_constant_of_shape': generate_constant_of_shape
+    'generate_constant_of_shape': generate_constant_of_shape,
+    'generate_real_data': generate_real_data
 }
 
 
@@ -572,9 +607,8 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         pass
 
     def generate_data(self, cfg, case_dir: str, inputs: List[Dict], path_list: List[str], name: str, preprocess_opt):
-        i = 0
         os.mkdir(os.path.join(case_dir, name))
-        for input in inputs:
+        for idx, input in enumerate(inputs):
             samples = []
             shape = copy.deepcopy(input['model_shape'])
             # if preprocess_opt['preprocess'] and preprocess_opt['input_shape'] != [] and len(preprocess_opt['input_shape']) == 4:
@@ -585,15 +619,14 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                 shape[0] *= cfg.batch_size
 
             for n in range(cfg.numbers):
-                data = DataFactory[cfg.name](shape, input['dtype'], n, cfg.batch_size, **cfg.kwargs)
+                data = DataFactory[cfg.name](shape, input['dtype'], n, cfg.batch_size, idx, **cfg.kwargs)
                 if not test_utils.in_ci():
                     path_list.append(
-                        (os.path.join(case_dir, name, f'{name}_{n}_{i}.bin'),
-                         os.path.join(case_dir, name, f'{name}_{n}_{i}.txt')))
+                        (os.path.join(case_dir, name, f'{name}_{n}_{idx}.bin'),
+                         os.path.join(case_dir, name, f'{name}_{n}_{idx}.txt')))
                     data.tofile(path_list[-1][0])
                     self.totxtfile(path_list[-1][1], data)
                 samples.append(data)
-            i += 1
             input['data'] = samples
 
     def process_input(self, inputs: List[np.array], **kwargs) -> None:
