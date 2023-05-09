@@ -101,8 +101,8 @@ class Edict:
 
 
 def generate_real_data(shape: List[int], dtype: np.dtype,
-                    number: int, batch_size: int, input_index: int,
-                    dir_path: str):
+                       number: int, batch_size: int, input_index: int,
+                       dir_path: str):
     """
     read data, file name with increase index and data type.
     e.g. 0.bin, 1.bin, 2.bin
@@ -608,7 +608,8 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                 shape[0] *= cfg.batch_size
 
             for n in range(cfg.numbers):
-                data = DataFactory[cfg.name](shape, input['dtype'], n, cfg.batch_size, idx, **cfg.kwargs)
+                data = DataFactory[cfg.name](shape, input['dtype'], n,
+                                             cfg.batch_size, idx, **cfg.kwargs)
                 if not test_utils.in_ci():
                     path_list.append(
                         (os.path.join(case_dir, name, f'{name}_{n}_{idx}.bin'),
