@@ -162,7 +162,7 @@ public sealed class UnRollLoopSequential : ExprRewriter
             var arguments = CloneArray(expr.Arguments, context);
             if (target is Op op && op.CanFoldConstCall && arguments.AsValueEnumerable().All(e => e is Const))
             {
-                return CSEConst(Const.FromValue(CompilerServices.Evaluate(expr.With(target, arguments), _cmap, _evaluator_cache)));
+                return CSE(Const.FromValue(CompilerServices.Evaluate(expr.With(target, arguments), _cmap, _evaluator_cache)));
             }
 
             if (target is Function fn)
@@ -178,7 +178,7 @@ public sealed class UnRollLoopSequential : ExprRewriter
                     feedDict.Add(v, Value.FromConst(constArg));
                 }
 
-                return CSEConst(Const.FromValue(CompilerServices.Evaluate(fn.Body, feedDict, _evaluator_cache)));
+                return CSE(Const.FromValue(CompilerServices.Evaluate(fn.Body, feedDict, _evaluator_cache)));
             }
 
             return expr.With(target, arguments);
@@ -186,16 +186,17 @@ public sealed class UnRollLoopSequential : ExprRewriter
 
         protected override Expr VisitLeafRange(TIR.Range expr, Unit context)
         {
-            var newRange = expr.With(start: Clone(expr.Start, context), stop: Clone(expr.Stop, context), step: Clone(expr.Step, context));
-            if (newRange.Start is Const && newRange.Stop is Const && newRange.Step is Const)
-            {
-                newRange = (TIR.Range)CSEConst(newRange);
-            }
-
-            return newRange;
+            return CSE(expr.With(start: Clone(expr.Start, context), stop: Clone(expr.Stop, context), step: Clone(expr.Step, context)));
         }
 
-        private Expr CSEConst(Expr c)
+        protected override Expr VisitLeafLogicalBuffer(LogicalBuffer expr, Unit context)
+        {
+            return expr.With(
+                dimensions: CloneArray(expr.Dimensions, context).Select(e => CSE(e)).ToArray(),
+                strides: CloneArray(expr.Strides, context));
+        }
+
+        private Expr CSE(Expr c)
         {
             if (!_cseMemo.TryGetValue(c, out var result))
             {
