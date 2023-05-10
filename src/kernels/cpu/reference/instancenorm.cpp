@@ -33,7 +33,6 @@ result<void> reference::instancenorm(const T *input, T *output, T *scale, T *bia
     auto inner_size = 1;
     for (auto i = 2; i < static_cast<int>(in_shape.size()); i++)
         inner_size *= in_shape[i];
-    std::cout << "inner_size = " << inner_size << std::endl;
     for (int32_t batch = 0; batch < outer_size; batch++)
     {
         for (int32_t c = 0; c < in_shape[1]; c++)
@@ -63,10 +62,6 @@ result<void> reference::instancenorm(const T *input, T *output, T *scale, T *bia
             for (auto i = 0; i < inner_size; i++)
                 dest[i] = sub[i] * scale[c] / sqrt + bias[c];
         }
-    }
-    for (auto i = 0; i < 10; i++)
-    {
-        std::cout << "src[i] = " << input[i] << " --> dest[i] = " << output[i] << std::endl;
     }
 
     return ok();
