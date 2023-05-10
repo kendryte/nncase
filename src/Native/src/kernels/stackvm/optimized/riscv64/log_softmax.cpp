@@ -70,7 +70,7 @@ static float get_max_value(int n, const float* x)
         "vfmv.f.s %[value_index], v16;"
         
         :[value_index]"=f"(max_value)
-        :[avl]"r"(n), [input_ptr]"r"(x), "f"(-100000.0f)
+        :[avl]"r"(n), [input_ptr]"r"(x), "f"(-FLT_MAX)
         :"t0","t1","t2","t3","t5","a0","a1", "fa0"
         );
         // printf("****max value = %f\n", max_value);

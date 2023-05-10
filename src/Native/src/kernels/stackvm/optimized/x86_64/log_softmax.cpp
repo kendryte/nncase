@@ -25,6 +25,7 @@ using namespace nncase::kernels::stackvm;
 using namespace nncase::kernels::stackvm::optimized;
 
 #include <math.h>
+#include <float.h>
 #include "nncase_log.h"
 
 void log_softmax_golden_step1(int32_t len, const float* x, float* dx)
@@ -61,39 +62,128 @@ void log_softmax_golden_step_not1(int32_t len, const float* x, float* dx, int st
 	sum_value = log(sum_value);
     for (int32_t i = 0; i < len; i++)
     {
-        dx[i] = x[i * step] - max_value - sum_value;
+        dx[i* step] = x[i * step] - max_value - sum_value;
     }
 }
 
-void log_softmax_golden_step_not1_2(int32_t len, const float* x, float* dx, int step)
-{
-	printf("----------!!!!!!!!!!!!!!!!!!!!! %d,%d\n", len , step);
-	
-	// print_vector_by_type(x, len * step, 16, "... data ... ", 1);
-	for(int j = 0; j < step; ++j)
+#if 0
+	void log_softmax_golden_step_not1_2(int32_t len, const float* x, float* dx, int step)
 	{
-		/// data_type: 1 float, 2 int32, 3 int64
-// static void print_vector_by_type(const void *a, int len, int align_number, const char *title, int data_type)
-		float max_value = x[0];
-		for (int32_t i = 1; i < len; i++)
+		printf("----------!!!!!!!!!!!!!!!!!!!!! %d,%d\n", len , step);
+		
+		// print_vector_by_type(x, len * step, 16, "... data ... ", 1);
+		for(int j = 0; j < step; ++j)
 		{
-			max_value = fmaxf(max_value, x[i * step]);
+			float max_value = x[0];
+			for (int32_t i = 1; i < len; i++)
+			{
+				max_value = fmaxf(max_value, x[i * step]);
+			}
+			float sum_value = 0;
+			for (int32_t i = 0; i < len; i++)
+			{
+				sum_value += exp(x[i * step] - max_value);
+			}
+			sum_value = log(sum_value);
+			for (int32_t i = 0; i < len; i++)
+			{
+				dx[i * step] = x[i * step] - max_value - sum_value;
+			}
+			++ x;
+			++ dx;
 		}
-		float sum_value = 0;
-		for (int32_t i = 0; i < len; i++)
-		{
-			sum_value += exp(x[i * step] - max_value);
-		}
-		sum_value = log(sum_value);
-		for (int32_t i = 0; i < len; i++)
-		{
-			dx[i] = x[i * step] - max_value - sum_value;
-		}
-		++ x;
-		++ dx;
 	}
-}
+#else
+	#define BLOCK_LOGSOFTMAX 32
+	void log_softmax_golden_step_not1_2(int32_t len, const float* x, float* dx, int step)
+	{
+		printf("----------!!!!!!!!!!!!!!!!!!!!! %d,%d\n", len , step);
+		
+		float max_v[BLOCK_LOGSOFTMAX];
+		float sum_v[BLOCK_LOGSOFTMAX];
+		
+		for(int i = 0; i < BLOCK_LOGSOFTMAX; ++i)
+		{
+			max_v[i] = -FLT_MAX;
+			sum_v[i] = 0.0f;
+		}
+		// print_vector_by_type(x, len * step, 16, "... data ... ", 1);
+		for(int j = 0; j < step / BLOCK_LOGSOFTMAX; ++j)
+		{
+			for (int32_t i = 0; i < len; i++)
+			{
+				for(int k = 0; k < BLOCK_LOGSOFTMAX; ++k)
+				{
+					max_v[k] = fmaxf(max_v[k], x[i * step + k]);
+				}
+			}
+			for (int32_t i = 0; i < len; i++)
+			{
+				for(int k = 0; k < BLOCK_LOGSOFTMAX; ++k)
+				{
+					sum_v[k] += expf(x[i * step + k] - max_v[k]);
+				}
+			}
+			for(int k = 0; k < BLOCK_LOGSOFTMAX; ++k)
+			{
+				sum_v[k] = logf(sum_v[k]);
+			}
 
+			for (int32_t i = 0; i < len; i++)
+			{
+				for(int k = 0; k < BLOCK_LOGSOFTMAX; ++k)
+				{
+					dx[i * step + k] = x[i * step + k] - sum_v[k] - max_v[k];
+				}
+			}
+			x += BLOCK_LOGSOFTMAX;
+			dx += BLOCK_LOGSOFTMAX;
+		}
+		for(int i = 0; i < BLOCK_LOGSOFTMAX; ++i)
+		{
+			max_v[i] = -FLT_MAX;
+			sum_v[i] = 0.0f;
+		}
+		int left_number = step & (BLOCK_LOGSOFTMAX - 1);
+		if(left_number)
+		{
+			printf("VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV2: %d\n", left_number);
+			for (int32_t i = 0; i < len; i++)
+			{
+				// max_value = fmaxf(max_value, x[i * step]);
+				for(int k = 0; k < left_number; ++k)
+				{
+					max_v[k] = fmaxf(max_v[k], x[i * step + k]);
+				}
+			}
+			// float sum_value = 0;
+			for (int32_t i = 0; i < len; i++)
+			{
+				//sum_value += exp(x[i * step] - max_value);
+				for(int k = 0; k < left_number; ++k)
+				{
+					sum_v[k] += expf(x[i * step + k] - max_v[k]);
+				}
+			}
+			//sum_value = log(sum_value);
+			for(int k = 0; k < left_number; ++k)
+			{
+				sum_v[k] = logf(sum_v[k]);
+			}
+
+			for (int32_t i = 0; i < len; i++)
+			{
+				// dx[i * step] = x[i * step] - max_value - sum_value;
+				for(int k = 0; k < left_number; ++k)
+				{
+					dx[i * step + k] = x[i * step + k] - sum_v[k] - max_v[k];
+					// dx[i + k] = x[i * step + k] - sum_v[k] - max_v[k];
+					// printf("----------i + k: %d, i*step + k: %d\n", i+k, i* step +k);
+				}
+			}
+		}
+	}
+#endif
 
 static void log_softmax_impl(const float *input, float *output, const dims_t &in_shape, int axis)
 {
@@ -162,7 +252,31 @@ optimized::log_softmax(const T *input, T *output, const dims_t &in_shape,
                    [[maybe_unused]] const dims_t &in_strides, [[maybe_unused]]const dims_t &out_strides,
                    int32_t axis, [[maybe_unused]]float beta) noexcept {
 	printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! x86 ....   \n");
+	result<void> ret_value = ok();
+	#if (LogEnable)
+            t1 = (unsigned long)GetCycleCount();
+    #endif
+	int len = (int)compute_size(in_shape);
+	memset(output, 0, len* sizeof(float));
 	log_softmax_impl(input, output, in_shape, axis);
-	return ok();
+	// reference::softmax(input, output, in_shape,
+							// in_strides, out_strides,
+							// axis, 1.f, true)
+							
+							
+	        #if (LogEnable)
+            printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+            // int len = (int)compute_size(in_shape);
+
+            write_log_by_typef(t1, len, "log_softmax_1", 1, 0, output, 1);
+			
+			memset(output, 0, len* sizeof(float));
+            t1 = (unsigned long)GetCycleCount();
+            	ret_value = reference::softmax(input, output, in_shape,
+							in_strides, out_strides,
+							axis, 1.f, true);
+            write_log_by_typef(t1, len, "log_softmax_2", 0, 1, output, 1);
+        #endif
+	return ret_value;
 }
 
