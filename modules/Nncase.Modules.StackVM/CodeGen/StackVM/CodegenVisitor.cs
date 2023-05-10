@@ -260,7 +260,6 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
     private static int counter = 1;
     protected override TextSnippet VisitLeafCall(Call expr)
     {
-        Console.WriteLine(expr.Target);
         var snippet = BeginTextSnippet(expr);
         foreach (var param in expr.Arguments.ToArray().Reverse())
         {

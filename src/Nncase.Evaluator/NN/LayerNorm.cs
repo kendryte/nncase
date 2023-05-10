@@ -11,7 +11,7 @@ namespace Nncase.Evaluator.NN;
 /// <summary>
 /// Evaluator for <see cref="LayerNorm"/>.
 /// </summary>
-public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNorm>, ICostEvaluator<LayerNorm>
+public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNorm>, ICostEvaluator<LayerNorm>, IShapeEvaluator<LayerNorm>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, LayerNorm layerNorm)
@@ -117,4 +117,5 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
         return new Tensor<float>(outputArray, input.Shape);
     }
 #endif
+    public Expr Visit(IShapeEvaluateContext context, LayerNorm target) => context.GetArgumentShape(target, LayerNorm.Input);
 }

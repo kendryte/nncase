@@ -18,8 +18,6 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
     public IValue Visit(IEvaluateContext context, Cast cast)
     {
         var input = context.GetArgumentValue(cast, Cast.Input).AsTensor();
-        Console.WriteLine("Cast");
-        Console.WriteLine(string.Join(",", input.Shape.ToValueArray()));
         return Value.FromTensor(input.CastTo(cast.NewType, cast.CastMode));
     }
 

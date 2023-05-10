@@ -440,7 +440,7 @@ public class SwishEvaluator : IEvaluator<Swish>, ITypeInferencer<Swish>, ICostEv
 /// <summary>
 /// Evaluator for <see cref="Gelu"/>.
 /// </summary>
-public class GeluEvaluator : IEvaluator<Gelu>, ITypeInferencer<Gelu>, ICostEvaluator<Gelu>
+public class GeluEvaluator : IEvaluator<Gelu>, ITypeInferencer<Gelu>, ICostEvaluator<Gelu>, IShapeEvaluator<Gelu>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Gelu gelu)
@@ -475,4 +475,6 @@ public class GeluEvaluator : IEvaluator<Gelu>, ITypeInferencer<Gelu>, ICostEvalu
     {
         return input;
     }
+
+    public Expr Visit(IShapeEvaluateContext context, Gelu target) => context.GetArgumentShape(target, Gelu.Input);
 }

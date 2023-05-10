@@ -32,6 +32,7 @@ public sealed partial class OnnxImporter
 
     public Shape GetShape(ValueInfoProto v)
     {
+        // todo: refactor
         var shape = v.Type.TensorType.Shape.Dim
             .Select(x =>
             {
