@@ -1,4 +1,4 @@
-﻿cmake_minimum_required (VERSION 3.13)
+﻿cmake_minimum_required(VERSION 3.13)
 
 target_sources(transforms PRIVATE
     add_quant_checkpoints.cpp
@@ -50,4 +50,5 @@ target_sources(transforms PRIVATE
     squeeze_dims.cpp
     fix_output_shape.cpp
     fold_layernorm.cpp
-    )
+    fold_instancenorm.cpp
+)

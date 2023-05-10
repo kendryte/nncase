@@ -1,4 +1,4 @@
-﻿cmake_minimum_required (VERSION 3.13)
+﻿cmake_minimum_required(VERSION 3.13)
 
 target_sources(ir PRIVATE
     call.cpp
@@ -51,4 +51,5 @@ target_sources(ir PRIVATE
     gather_elements.cpp
     layernorm.cpp
     compress.cpp
-    )
+    instancenorm.cpp
+)

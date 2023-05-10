@@ -23,5 +23,6 @@ set(SRCS convolution.cpp
     ${ARCH}/softmax.cpp
     ${ARCH}/layernorm.cpp
     ${ARCH}/ternary.cpp
-    ${ARCH}/reduce.cpp)
+    ${ARCH}/reduce.cpp
+    ${ARCH}/instancenorm.cpp)
 target_sources(kernels PRIVATE ${SRCS})

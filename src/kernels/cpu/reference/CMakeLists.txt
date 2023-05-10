@@ -39,5 +39,6 @@ set(SRCS batch_to_space.cpp
          trilu.cpp
          tflite_detection_postprocess.cpp
          unary.cpp
-         layernorm.cpp)
+         layernorm.cpp
+         instancenorm.cpp)
 target_sources(kernels PRIVATE ${SRCS})

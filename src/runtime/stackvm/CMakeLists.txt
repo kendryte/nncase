@@ -48,7 +48,8 @@ set(SRCS runtime_module.cpp
         ops/tensor.trilu.cpp
         ops/tensor.tflite_detection_postprocess.cpp
         ops/tensor.unary.cpp
-        ops/tensor.layernorm.cpp)
+        ops/tensor.layernorm.cpp
+        ops/tensor.instancenorm.cpp)
 
 if (BUILDING_RUNTIME)
     add_library(runtime_stackvm OBJECT ${SRCS})
