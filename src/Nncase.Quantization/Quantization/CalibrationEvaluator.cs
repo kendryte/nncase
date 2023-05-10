@@ -136,7 +136,7 @@ public class CalibrationEvaluator : IDisposable
             var value = _inputs[var];
             if (!new TypePattern(cur => TypeChecker(cur, var.CheckedType!), "Var Type Checker").MatchLeaf(value.Type))
             {
-                throw new InvalidOperationException("Feed Value Is Invalid!");
+                throw new InvalidOperationException($"Feed Value Is Invalid, need {var.CheckedType} but get {value.Type}!");
             }
 
             return value;
