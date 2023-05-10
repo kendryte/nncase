@@ -34,6 +34,10 @@ inline std::string lookup([[maybe_unused]] std::string path, [[maybe_unused]] ui
         idMap[std::pair(std::stoi(info[0]), std::stoi(info[1]))] = info[2];
     }
     auto fnName = idMap[std::pair(module_id, func_id)];
+    if(fnName == "")
+    {
+        return std::to_string(module_id) + "_" + std::to_string(func_id);
+    }
     return fnName;
     //    auto extcall_str = "extcall_" + std::to_string(module_id.as_u()) + "_"
     //    + std::to_string(func_id.as_u());

@@ -507,6 +507,9 @@ nncase::kernels::stackvm::pad(runtime::stackvm::pad_mode_t pad_mode,
                               value_t output, kernel_context &context) {
     try_input(input_mem, input);
     try_paddings(paddings, pads);
+    if(std::all_of(paddings.begin(), paddings.end(), [](const padding &p) { return p.sum() == 0; })) {
+        return ok(input);
+    }
     auto out_shape = pad_infer_shape(input_tensor->shape(), paddings);
     try_output(out_mem, output, input_tensor->dtype(), out_shape);
 
@@ -592,7 +595,7 @@ result<value_t> nncase::kernels::stackvm::range(
 }
 
 result<value_t>
-nncase::kernels::stackvm::range_of([[maybe_unused]] value_t input,
+nncase::kernels::stackvm::range_of([[maybe_unused]] bool is_range_of_weight, [[maybe_unused]] value_t input,
                                    [[maybe_unused]] value_t output,
                                    [[maybe_unused]] kernel_context &context) {
     return err(std::errc::not_supported);
@@ -625,7 +628,7 @@ nncase::kernels::stackvm::relu6([[maybe_unused]] value_t input,
 }
 
 result<value_t> nncase::kernels::stackvm::require(
-    [[maybe_unused]] std::string message, [[maybe_unused]] value_t predicate,
+    [[maybe_unused]] std::string message, [[maybe_unused]] bool can_fold_const_call, [[maybe_unused]] value_t predicate,
     [[maybe_unused]] value_t value, [[maybe_unused]] value_t output,
     [[maybe_unused]] kernel_context &context) {
     try_to_scalar(cond, predicate, bool);
@@ -636,6 +639,26 @@ result<value_t> nncase::kernels::stackvm::require(
     }
     output = value;
     KERNEL_FINISH;
+}
+
+result<value_t> nncase::kernels::stackvm::bucket_pad([[maybe_unused]] value_t input, [[maybe_unused]] value_t shape, [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &)
+{
+    return ok(input);
+}
+
+result<value_t> nncase::kernels::stackvm::rank([[maybe_unused]] value_t input, [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &)
+{
+    return ok(input);
+}
+
+result<value_t> nncase::kernels::stackvm::index_of([[maybe_unused]] value_t input, [[maybe_unused]] value_t value, [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &)
+{
+    return ok(input);
+}
+
+result<value_t> nncase::kernels::stackvm::fix_shape([[maybe_unused]] value_t input, [[maybe_unused]] value_t shape, [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &)
+{
+    return ok(input);
 }
 
 result<value_t>
