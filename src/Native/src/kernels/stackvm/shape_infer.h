@@ -23,6 +23,7 @@
 #include <nncase/runtime/result.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/stackvm/opcode.h>
+#include <nncase/runtime/util.h>
 #include <nncase/tensor.h>
 #include <nncase/value.h>
 #include <numeric>
@@ -276,10 +277,15 @@ inline result<dims_t> matmul_infer_shape(const dims_t &lhs_shape,
         auto new_shape = dims_t{lhs_shape[0], rhs_shape[1]};
         return ok(new_shape);
     }
-    auto big_shape =
-        lhs_shape.size() > rhs_shape.size() ? lhs_shape : rhs_shape;
-    auto new_shape =
-        dims_t(big_shape.begin(), big_shape.begin() + (big_shape.size() - 2));
+
+    auto new_a_shape = runtime::to_4d(lhs_shape);
+    auto new_b_shape = runtime::to_4d(rhs_shape);
+    auto big_shape = std::max(lhs_shape.size(), rhs_shape.size());
+    auto new_shape = dims_t();
+    for (size_t i = 0; i < big_shape - 2; ++i) {
+        new_shape.push_back(std::max(new_a_shape[i + 4 - big_shape],
+                                     new_b_shape[i + 4 - big_shape]));
+    }
     new_shape.push_back(lhs_shape[lhs_shape.size() - 2]);
     new_shape.push_back(rhs_shape.back());
     return ok(new_shape);
