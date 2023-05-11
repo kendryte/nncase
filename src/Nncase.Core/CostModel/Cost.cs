@@ -192,7 +192,7 @@ public static class CostUtility
     {
         return type switch
         {
-            TensorType t => (UInt128)(t.Shape.Sum(x => x.IsFixed ? x.FixedValue : 1) * t.DType.SizeInBytes),
+            TensorType t => (UInt128)(t.Shape.Aggregate(1D, (acc, x) => acc * (x.IsFixed ? x.FixedValue : 1)) * t.DType.SizeInBytes),
             TupleType t => t.Fields.Sum(GetMemoryAccess),
             _ => 0,
         };
@@ -207,7 +207,7 @@ public static class CostUtility
     {
         return type switch
         {
-            TensorType t => (UInt128)Math.Ceiling((float)t.Shape.Sum(x => x.IsFixed ? x.FixedValue : 1) * t.DType.SizeInBytes * bits / 8),
+            TensorType t => (UInt128)Math.Ceiling((float)t.Shape.Aggregate(1D, (acc, x) => acc * (x.IsFixed ? x.FixedValue : 1)) * t.DType.SizeInBytes * bits / 8),
             TupleType t => t.Fields.Sum(x => GetFakeMemoryAccess(x, bits)),
             _ => 0,
         };
@@ -217,7 +217,7 @@ public static class CostUtility
     {
         return type switch
         {
-            TensorType t => (UInt128)(t.Shape.Sum(x => x.IsFixed ? x.FixedValue : 1) * cyclesPerElement),
+            TensorType t => (UInt128)(t.Shape.Aggregate(1D, (acc, x) => acc * (x.IsFixed ? x.FixedValue : 1)) * cyclesPerElement),
             TupleType t => t.Fields.Sum(GetMemoryAccess),
             _ => 0,
         };
