@@ -208,9 +208,6 @@ jobs:
    - name: Test
      run: |
        echo "TESTS_EXECUTABLE_LOADER=qemu-riscv64" >> $GITHUB_ENV
-       echo "TESTS_EXECUTABLE_LOADER_ARGUMENTS=\"-cpu;rv64,v=true,Zfh=true,vlen=128,elen=64,vext_spec=v1.0;-L;$GITHUB_WORKSPACE/riscv64-unknown-linux_gnu_12.0.1/sysroot\" >> $GITHUB_ENV
+       echo "TESTS_EXECUTABLE_LOADER_ARGUMENTS=\"-cpu;rv64,v=true,Zfh=true,vlen=128,elen=64,vext_spec=v1.0;-L;$GITHUB_WORKSPACE/riscv64-unknown-linux_gnu_12.0.1/sysroot\"" >> $GITHUB_ENV
        cd build
        ctest --test-dir tests/kernels --output-on-failure -j4
-
-   - name: Setup tmate session
-     uses: mxschmitt/action-tmate@v3
