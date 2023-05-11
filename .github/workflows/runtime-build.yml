@@ -205,10 +205,8 @@ jobs:
        cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=${{matrix.config.buildType}} ${{matrix.config.cmakeArgs}} -DBUILDING_RUNTIME=TRUE -DBUILD_PYTHON_BINDING=OFF -DPython3_ROOT_DIR=${pythonLocation} -DBUILD_TESTING=on -DCMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/toolchains/${{matrix.config.toolchain}}.toolchain.cmake
        cmake --build build --config ${{matrix.config.buildType}}
 
-   - name: Setup tmate session
-     uses: mxschmitt/action-tmate@v3
-
    - name: Test
+     shell: bash
      run: |
        echo "TESTS_EXECUTABLE_LOADER=qemu-riscv64" >> $GITHUB_ENV
        echo "TESTS_EXECUTABLE_LOADER_ARGUMENTS=\"-cpu;rv64,v=true,Zfh=true,vlen=128,elen=64,vext_spec=v1.0;-L;$GITHUB_WORKSPACE/riscv64-unknown-linux_gnu_12.0.1/sysroot\"" >> $GITHUB_ENV
