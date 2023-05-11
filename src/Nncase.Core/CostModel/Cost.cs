@@ -30,14 +30,14 @@ public sealed record Cost : IComparable<Cost>, IEquatable<Cost>
     /// <summary>
     /// Gets or sets factors.
     /// </summary>
-    public Dictionary<string, double> Factors { get; set; } = new();
+    public Dictionary<string, UInt128> Factors { get; set; } = new();
 
     /// <summary>
     /// Gets score.
     /// </summary>
-    public double Score => Factors.Sum(x => x.Value);
+    public UInt128 Score => Factors.Sum(x => x.Value);
 
-    public double this[string name]
+    public UInt128 this[string name]
     {
         get => Factors[name];
         set => Factors[name] = value;
@@ -89,7 +89,7 @@ public sealed record Cost : IComparable<Cost>, IEquatable<Cost>
     /// <param name="lhs">Lhs.</param>
     /// <param name="scale">Scale.</param>
     /// <returns>Added result.</returns>
-    public static Cost operator *(Cost lhs, double scale)
+    public static Cost operator *(Cost lhs, UInt128 scale)
     {
         var newCost = new Cost();
         foreach (var factor in lhs.Factors)
@@ -113,7 +113,7 @@ public sealed record Cost : IComparable<Cost>, IEquatable<Cost>
     /// <inheritdoc/>
     public int CompareTo(Cost? other)
     {
-        return Comparer<double>.Default.Compare(Score, other?.Score ?? 0.0);
+        return Comparer<UInt128>.Default.Compare(Score, other?.Score ?? 0UL);
     }
 
     /// <inheritdoc/>
@@ -188,42 +188,42 @@ public static class CostExtensions
 
 public static class CostUtility
 {
-    public static double GetMemoryAccess(IRType type)
+    public static UInt128 GetMemoryAccess(IRType type)
     {
         return type switch
         {
-            TensorType t => t.Shape.Sum(x => x.IsFixed ? x.FixedValue : 1) * t.DType.SizeInBytes,
+            TensorType t => (UInt128)(t.Shape.Sum(x => x.IsFixed ? x.FixedValue : 1) * t.DType.SizeInBytes),
             TupleType t => t.Fields.Sum(GetMemoryAccess),
             _ => 0,
         };
     }
 
-    public static double GetMemoryAccess(params IRType[] types)
+    public static UInt128 GetMemoryAccess(params IRType[] types)
     {
-        return types.Aggregate(0D, (sum, type) => sum + GetMemoryAccess(type));
+        return types.Aggregate((UInt128)0, (sum, type) => sum + GetMemoryAccess(type));
     }
 
-    public static double GetFakeMemoryAccess(IRType type, int bits)
+    public static UInt128 GetFakeMemoryAccess(IRType type, uint bits)
     {
         return type switch
         {
-            TensorType t => Math.Ceiling(t.Shape.Sum(x => x.IsFixed ? x.FixedValue : 1) * t.DType.SizeInBytes * bits / 8.0),
+            TensorType t => (UInt128)Math.Ceiling((float)t.Shape.Sum(x => x.IsFixed ? x.FixedValue : 1) * t.DType.SizeInBytes * bits / 8),
             TupleType t => t.Fields.Sum(x => GetFakeMemoryAccess(x, bits)),
             _ => 0,
         };
     }
 
-    public static double GetCPUCycles(IRType type, double cyclesPerElement = 1)
+    public static UInt128 GetCPUCycles(IRType type, uint cyclesPerElement = 1)
     {
         return type switch
         {
-            TensorType t => t.Shape.Sum(x => x.IsFixed ? x.FixedValue : 1) * cyclesPerElement,
+            TensorType t => (UInt128)(t.Shape.Sum(x => x.IsFixed ? x.FixedValue : 1) * cyclesPerElement),
             TupleType t => t.Fields.Sum(GetMemoryAccess),
             _ => 0,
         };
     }
 
-    public static double GetCPUCyclesOfUnary(UnaryOp unaryOp)
+    public static uint GetCPUCyclesOfUnary(UnaryOp unaryOp)
     {
         // TODO: Arch dependent
         return unaryOp switch
@@ -254,7 +254,7 @@ public static class CostUtility
         };
     }
 
-    public static double GetCPUCyclesOfBinary(BinaryOp binaryOp)
+    public static uint GetCPUCyclesOfBinary(BinaryOp binaryOp)
     {
         // TODO: Arch dependent
         return binaryOp switch
@@ -280,12 +280,12 @@ public static class CostUtility
     }
 
     // todo:GetCPUCyclesOfMath
-    public static double GetCPUCyclesOfMax()
+    public static uint GetCPUCyclesOfMax()
     {
         return 1;
     }
 
-    public static double GetCPUCyclesOfCompare()
+    public static uint GetCPUCyclesOfCompare()
     {
         return 1;
     }
@@ -299,7 +299,7 @@ public static class CostUtility
         };
     }
 
-    public static Cost GetActivationCost(TensorType ret, double macPerElement)
+    public static Cost GetActivationCost(TensorType ret, uint macPerElement)
     {
         return new()
         {
