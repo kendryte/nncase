@@ -23,8 +23,8 @@ instancenorm::instancenorm(datatype_t input_type, shape_t input_shape, float eps
     : epsilon_(epsilon)
 {
     add_input("input", input_type, input_shape);
-    add_input("scale", input_type, shape_t { input_shape[1], 1, 1 });
-    add_input("bias", input_type, shape_t { input_shape[1], 1, 1 });
+    add_input("scale", input_type, get_instancenorm_const_shape(input_shape));
+    add_input("bias", input_type, get_instancenorm_const_shape(input_shape));
     add_output("output", input_type, input_shape);
 }
 
