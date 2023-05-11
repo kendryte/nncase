@@ -29,7 +29,6 @@ fi
 # to avoid finding emacs backup files
 find "${ROOT_DIR}/tests" \
      "${ROOT_DIR}/src" \
-     "${ROOT_DIR}/include" \
      "${ROOT_DIR}/modules" \
      "${ROOT_DIR}/python" \
      "${ROOT_DIR}/targets" \

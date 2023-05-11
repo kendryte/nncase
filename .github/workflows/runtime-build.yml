@@ -22,7 +22,7 @@ jobs:
       with:
         arch: ${{matrix.config.arch}}
       if: runner.os == 'Windows'
-      
+
     - name: Set up build environment (Macos)
       run: |
         brew install sunnycase/core/libomp@11.1.0
@@ -89,7 +89,7 @@ jobs:
   #    uses: actions/setup-python@v4
   #    with:
   #      python-version: 3.7
-        
+
   #  - name: Install K210 Baremetal SDK
   #    shell: bash
   #    run: |
@@ -99,7 +99,7 @@ jobs:
   #      sudo tar xf $GITHUB_WORKSPACE/k210-sdk.tar.gz -C $GITHUB_WORKSPACE
   #      echo "RISCV_ROOT_PATH=$GITHUB_WORKSPACE/kendryte-toolchain" >> $GITHUB_ENV
   #    if: matrix.config.name == 'riscv64-none-k210'
-        
+
   #  - name: Install Conan
   #    run: pip install conan==1.58
 
@@ -120,3 +120,94 @@ jobs:
   #      name: nncaseruntime-${{matrix.config.name}}
   #      path: ${{github.workspace}}/install
   #      if-no-files-found: error
+
+  test-native:
+    name: ${{matrix.config.name}}
+    runs-on: ${{matrix.config.os}}
+    strategy:
+      matrix:
+        config:
+          - {name: x86_64-linux, os: ubuntu-latest, cmakeArgs: '', buildType: Release}
+
+    steps:
+    - uses: actions/checkout@v3
+    - uses: seanmiddleditch/gha-setup-ninja@master
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.7
+
+    - name: Install Conan
+      run: pip install conan==1.58
+
+    - name: Configure Conan (Linux)
+      run: |
+        conan profile new default --detect
+        conan profile update settings.compiler.libcxx=libstdc++11 default
+        echo "CC=gcc-10" >> $GITHUB_ENV
+        echo "CXX=g++-10" >> $GITHUB_ENV
+      if: runner.os == 'Linux'
+
+    - name: Build
+      shell: bash
+      run: |
+        cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=${{matrix.config.buildType}} ${{matrix.config.cmakeArgs}} -DBUILDING_RUNTIME=TRUE -DBUILD_PYTHON_BINDING=OFF -DPython3_ROOT_DIR=${pythonLocation} -DBUILD_TESTING=on
+        cmake --build build --config ${{matrix.config.buildType}}
+
+    - name: Test
+      run: |
+        cd build
+        ctest --test-dir tests/kernels --output-on-failure -j4
+
+
+  test-cross:
+   name: ${{matrix.config.name}}
+   runs-on: ubuntu-latest
+   strategy:
+     matrix:
+       config:
+         - {name: riscv64-unknown-linux_gnu, shell: bash, toolchain: riscv64-unknown-linux, cmakeArgs: '', buildType: Release}
+
+   steps:
+   - uses: actions/checkout@v3
+   - uses: seanmiddleditch/gha-setup-ninja@master
+
+   - name: Setup Python
+     uses: actions/setup-python@v4
+     with:
+       python-version: 3.7
+
+   - name: Setup
+     shell: bash
+     run: |
+       wget https://dav.sunnycase.moe/d/ci/riscv64-unknown-linux_gnu_12.0.1.tgz -O $GITHUB_WORKSPACE/riscv64-unknown-linux_gnu_12.0.1.tgz
+       sudo tar xf $GITHUB_WORKSPACE/riscv64-unknown-linux_gnu_12.0.1.tgz -C $GITHUB_WORKSPACE
+       echo "RISCV_ROOT_PATH=$GITHUB_WORKSPACE/riscv64-unknown-linux_gnu_12.0.1" >> $GITHUB_ENV
+
+       wget https://dav.sunnycase.moe/d/ci/qemu-riscv64.tgz -O $GITHUB_WORKSPACE/qemu-riscv64.tgz
+       sudo tar xf $GITHUB_WORKSPACE/qemu-riscv64.tgz  -C $GITHUB_WORKSPACE
+       echo "PATH=$GITHUB_WORKSPACE:$PATH" >> $GITHUB_ENV
+     if: matrix.config.name == 'riscv64-unknown-linux_gnu'
+
+   - name: Install Conan
+     run: pip install conan==1.58
+
+   - name: Configure Conan (Linux)
+     run: |
+       conan profile new default --detect
+       conan profile update settings.compiler.libcxx=libstdc++11 default
+       sed -i 's/xtensalx7]/xtensalx7, riscv32, riscv64]/g' ~/.conan/settings.yml
+       sed -i 's/"12", "12.1", "12.2"]/"12", "12.0", "12.1", "12.2"]/g' ~/.conan/settings.yml
+
+   - name: Build
+     run: |
+       cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=${{matrix.config.buildType}} ${{matrix.config.cmakeArgs}} -DBUILDING_RUNTIME=TRUE -DBUILD_PYTHON_BINDING=OFF -DPython3_ROOT_DIR=${pythonLocation} -DBUILD_TESTING=on -DCMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/toolchains/${{matrix.config.toolchain}}.toolchain.cmake
+       cmake --build build --config ${{matrix.config.buildType}}
+
+   - name: Test
+     run: |
+       TESTS_EXECUTABLE_LOADER=qemu-riscv64
+       TESTS_EXECUTABLE_LOADER_ARGUMENTS="-cpu;rv64,v=true,Zfh=true,vlen=128,elen=64,vext_spec=v1.0;-L;$GITHUB_WORKSPACE/riscv64-unknown-linux_gnu_12.0.1/sysroot"
+       cd build
+       ctest --test-dir tests/kernels --output-on-failure -j4

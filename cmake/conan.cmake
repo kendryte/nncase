@@ -126,6 +126,8 @@ macro(_conan_detect_compiler)
 
     if(ARGUMENTS_ARCH)
         set(_CONAN_SETTING_ARCH ${ARGUMENTS_ARCH})
+    else()
+        set(_CONAN_SETTING_ARCH ${CMAKE_SYSTEM_PROCESSOR})
     endif()
 
     if(USING_CXX)
