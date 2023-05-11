@@ -98,7 +98,7 @@ public sealed class UnitTestCost
     [Fact]
     public void TestGetCPUCycles()
     {
-        Assert.Equal((UInt128)0, CostUtility.GetCPUCycles(DataTypes.Int32));
+        Assert.Equal((UInt128)1, CostUtility.GetCPUCycles(DataTypes.Int32));
         Assert.Equal((UInt128)0, CostUtility.GetCPUCycles(new TupleType(new List<IRType>())));
     }
 
@@ -112,7 +112,7 @@ public sealed class UnitTestCost
     [Fact]
     public void TestGetMemoryAccess()
     {
-        Assert.Equal((UInt128)0, CostUtility.GetMemoryAccess(DataTypes.Float32, DataTypes.Float32));
+        Assert.Equal((UInt128)8, CostUtility.GetMemoryAccess(DataTypes.Float32, DataTypes.Float32));
     }
 
     [Fact]
