@@ -155,7 +155,7 @@ using namespace nncase::kernels::cpu::optimized;
 // }
 // #endif
 
-// template <>
+template <>
 result<void> optimized::instancenorm<float>(const float *input, float *output, float *scale, float *bias, const runtime_shape_t &in_shape, float epsilon) noexcept
 {
     // #if __riscv_vector

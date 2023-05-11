@@ -29,13 +29,13 @@ template result<void> reference::instancenorm<float>(const float *input, float *
 template <typename T>
 result<void> reference::instancenorm(const T *input, T *output, T *scale, T *bias, const runtime_shape_t &in_shape, float epsilon) noexcept
 {
-    auto outer_size = in_shape[0];
+    auto outer_size = static_cast<int>(in_shape[0]);
     auto inner_size = 1;
-    for (auto i = 2; i < static_cast<int>(in_shape.size()); i++)
-        inner_size *= in_shape[i];
-    for (int32_t batch = 0; batch < outer_size; batch++)
+    for (size_t i = 2; i < in_shape.size(); i++)
+        inner_size *= static_cast<int>(in_shape[i]);
+    for (auto batch = 0; batch < outer_size; batch++)
     {
-        for (int32_t c = 0; c < in_shape[1]; c++)
+        for (size_t c = 0; c < in_shape[1]; c++)
         {
             auto src = input + batch * inner_size * in_shape[1] + c * inner_size;
             auto dest = output + batch * inner_size * in_shape[1] + c * inner_size;
