@@ -76,6 +76,16 @@ internal class Compiler : ICompiler
         {
             p.Add<Passes.Rules.Neutral.SqueezeTransposeShape>();
             p.Add<Passes.Rules.Neutral.Squeeze5DTranspose>();
+            p.Add<Passes.Rules.Neutral.FoldLayerNormPattern1>();
+            p.Add<Passes.Rules.Neutral.FoldLayerNormPattern2>();
+            p.Add<Passes.Rules.Neutral.FoldLayerNormPattern3>();
+            p.Add<Passes.Rules.Neutral.FoldGeluWithScale>();
+            p.Add<Passes.Rules.Neutral.FoldGeneralGelu>();
+            p.Add<Passes.Rules.Neutral.FoldSwishPattern1>();
+            p.Add<Passes.Rules.Neutral.FoldSwishPattern2>();
+            p.Add<Passes.Rules.Neutral.FoldHardSwish1>();
+            p.Add<Passes.Rules.Neutral.FoldHardSwish2>();
+            p.Add<Passes.Rules.Neutral.FocusFull>();
         });
         passManager.AddWithName<EGraphRulesPass>("NeutralOptimizeTranspose").Configure(p =>
         {
@@ -108,20 +118,10 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.ReshapeToTranspose>();
             p.Add<Passes.Rules.Neutral.FoldNopReshape>();
             p.Add<Passes.Rules.Neutral.FoldTwoReshapes>();
-            p.Add<Passes.Rules.Neutral.FoldLayerNormPattern1>();
-            p.Add<Passes.Rules.Neutral.FoldLayerNormPattern2>();
-            p.Add<Passes.Rules.Neutral.FoldLayerNormPattern3>();
-            p.Add<Passes.Rules.Neutral.FoldGeluWithScale>();
-            p.Add<Passes.Rules.Neutral.FoldGeneralGelu>();
-            p.Add<Passes.Rules.Neutral.FoldSwishPattern1>();
-            p.Add<Passes.Rules.Neutral.FoldSwishPattern2>();
             p.Add<Passes.Rules.Neutral.ReluToClamp>();
             p.Add<Passes.Rules.Neutral.Relu6ToClamp>();
-            p.Add<Passes.Rules.Neutral.FoldHardSwish1>();
-            p.Add<Passes.Rules.Neutral.FoldHardSwish2>();
             p.Add<Passes.Rules.Neutral.FoldNopSlice>();
             p.Add<Passes.Rules.Neutral.FoldTwoSlices>();
-            p.Add<Passes.Rules.Neutral.FocusFull>();
         });
 
         // passManager.AddWithName<EGraphPass>("NeutralOptimizeClamp").Configure(p =>
