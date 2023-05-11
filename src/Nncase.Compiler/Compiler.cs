@@ -176,9 +176,11 @@ internal class Compiler : ICompiler
         var target = _compileSession.Target;
         await RunPassAsync(p => TargetIndependentPass(p), "TargetIndependentPass");
         await RunPassAsync(p => RegisterShapeBucket(p), "ShapeBucket");
+        await RunPassAsync(p => _compileSession.Target.RegisterTargetInDependentPass(p, _compileSession.CompileOptions), "TargetIndependtPass");
         await RunPassAsync(p => target.RegisterTargetDependentPass(p, _compileSession.CompileOptions), "TargetDependentPass");
         await RunPassAsync(p => target.RegisterQuantizePass(p, _compileSession.CompileOptions), "QuantizePass");
         await RunPassAsync(p => target.RegisterTargetDependentAfterQuantPass(p, _compileSession.CompileOptions), "TargetDependentAfterQuantPass");
+        DumpScope.Current.DumpModule(_module, "ModuleBeforeClearFixShape");
         await RunPassAsync(p => ClearFixShape(p), "ClearFixShape");
         await RunPassAsync(p => target.RegisterTargetDependentBeforeCodeGen(p, _compileSession.CompileOptions), "TargetDependentBeforeCodeGen");
         DumpScope.Current.DumpModule(_module, "ModuleAfterCompile");

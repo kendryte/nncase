@@ -35,7 +35,7 @@ public static class ShapeExprUtility
 
         if (shape.CheckedType is not TensorType || shape.CheckedShape.Count == 0)
         {
-            DumpScope.Current.DumpIR(shape, "CheckShape");
+            DumpScope.Current.DumpIR(shape, "ShapeExprUtilityCheckShape");
             throw new InvalidOperationException();
         }
 

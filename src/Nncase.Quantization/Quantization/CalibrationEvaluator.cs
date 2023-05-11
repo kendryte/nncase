@@ -108,6 +108,7 @@ public class CalibrationEvaluator : IDisposable
             Op op => Visit(enode, op),
             Marker marker => Visit(enode, marker),
             None none => Visit(enode, none),
+            If @if => Visit(enode, @if),
             _ => throw new ArgumentException("Unsupported expression type."),
         };
     }
@@ -185,6 +186,16 @@ public class CalibrationEvaluator : IDisposable
     private IValue? Visit(ENode enode, None none)
     {
         return NoneValue.Default;
+    }
+
+    private IValue? Visit(ENode enode, If expr)
+    {
+        return Visit(enode, values =>
+        {
+            return values[^3].AsTensor().ToScalar<bool>()
+                ? values[^2]
+                : values[^1];
+        });
     }
 
     private IValue? Visit(ENode enode, Call call)
