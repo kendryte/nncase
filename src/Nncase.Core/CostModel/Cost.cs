@@ -213,7 +213,7 @@ public static class CostUtility
         };
     }
 
-    public static UInt128 GetCPUCycles(IRType type, uint cyclesPerElement = 1)
+    public static UInt128 GetCPUCycles(IRType type, double cyclesPerElement = 1)
     {
         return type switch
         {
