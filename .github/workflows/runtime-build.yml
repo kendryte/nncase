@@ -122,7 +122,7 @@ jobs:
   #      if-no-files-found: error
 
   test-native:
-    name: ${{matrix.config.name}}
+    name: test-native
     runs-on: ${{matrix.config.os}}
     strategy:
       matrix:
@@ -160,9 +160,8 @@ jobs:
         cd build
         ctest --test-dir tests/kernels --output-on-failure -j4
 
-
   test-cross:
-   name: ${{matrix.config.name}}
+   name: test-cross
    runs-on: ubuntu-latest
    strategy:
      matrix:
@@ -208,7 +207,10 @@ jobs:
 
    - name: Test
      run: |
-       TESTS_EXECUTABLE_LOADER=qemu-riscv64
-       TESTS_EXECUTABLE_LOADER_ARGUMENTS="-cpu;rv64,v=true,Zfh=true,vlen=128,elen=64,vext_spec=v1.0;-L;$GITHUB_WORKSPACE/riscv64-unknown-linux_gnu_12.0.1/sysroot"
+       echo "TESTS_EXECUTABLE_LOADER=qemu-riscv64" >> $GITHUB_ENV
+       echo "TESTS_EXECUTABLE_LOADER_ARGUMENTS=\"-cpu;rv64,v=true,Zfh=true,vlen=128,elen=64,vext_spec=v1.0;-L;$GITHUB_WORKSPACE/riscv64-unknown-linux_gnu_12.0.1/sysroot\" >> $GITHUB_ENV
        cd build
        ctest --test-dir tests/kernels --output-on-failure -j4
+
+   - name: Setup tmate session
+     uses: mxschmitt/action-tmate@v3
