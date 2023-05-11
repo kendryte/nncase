@@ -197,8 +197,8 @@ jobs:
      run: |
        conan profile new default --detect
        conan profile update settings.compiler.libcxx=libstdc++11 default
-       sed -i 's/xtensalx7]/xtensalx7, riscv32, riscv64]/g' /home/runner/.conan/profiles/default
-       sed -i 's/"12", "12.1", "12.2"]/"12", "12.0", "12.1", "12.2"]/g' /home/runner/.conan/profiles/default
+       sed -i 's/xtensalx7]/xtensalx7, riscv32, riscv64]/g' /home/runner/.conan/settings.yml
+       sed -i 's/"12", "12.1", "12.2"]/"12", "12.0", "12.1", "12.2"]/g' /home/runner/.conan/settings.yml
 
    - name: Build
      run: |
