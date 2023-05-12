@@ -172,9 +172,6 @@ jobs:
    - uses: actions/checkout@v3
    - uses: seanmiddleditch/gha-setup-ninja@master
 
-   - name: Setup tmate session
-     uses: mxschmitt/action-tmate@v3
-
    - name: Setup Python
      uses: actions/setup-python@v4
      with:
@@ -190,6 +187,8 @@ jobs:
        wget https://dav.sunnycase.moe/d/ci/qemu-riscv64.tgz -O $GITHUB_WORKSPACE/qemu-riscv64.tgz
        sudo tar xf $GITHUB_WORKSPACE/qemu-riscv64.tgz -C $GITHUB_WORKSPACE
        echo "PATH=$GITHUB_WORKSPACE:$PATH" >> $GITHUB_ENV
+       echo "TESTS_EXECUTABLE_LOADER=qemu-riscv64" >> $GITHUB_ENV
+       echo "TESTS_EXECUTABLE_LOADER_ARGUMENTS=\"-cpu;rv64,v=true,Zfh=true,vlen=128,elen=64,vext_spec=v1.0;-L;$GITHUB_WORKSPACE/riscv64-unknown-linux_gnu_12.0.1/sysroot\"" >> $GITHUB_ENV
      if: matrix.config.name == 'riscv64-unknown-linux_gnu'
 
    - name: Install Conan
@@ -200,8 +199,8 @@ jobs:
        conan profile new default --detect
        conan profile update settings.compiler.libcxx=libstdc++11 default
        conan config init
-       sed -i 's/xtensalx7]/xtensalx7, riscv32, riscv64]/g' /home/runner/.conan/settings.yml
-       sed -i 's/"12", "12.1", "12.2"]/"12", "12.0", "12.1", "12.2"]/g' /home/runner/.conan/settings.yml
+       sed -i 's/xtensalx7]/xtensalx7, riscv32, riscv64]/g' ~/.conan/settings.yml
+       sed -i 's/"12", "12.1", "12.2"]/"12", "12.0", "12.1", "12.2"]/g' ~/.conan/settings.yml
 
    - name: Build
      run: |
@@ -211,7 +210,5 @@ jobs:
    - name: Test
      shell: bash
      run: |
-       echo "TESTS_EXECUTABLE_LOADER=qemu-riscv64" >> $GITHUB_ENV
-       echo "TESTS_EXECUTABLE_LOADER_ARGUMENTS=\"-cpu;rv64,v=true,Zfh=true,vlen=128,elen=64,vext_spec=v1.0;-L;$GITHUB_WORKSPACE/riscv64-unknown-linux_gnu_12.0.1/sysroot\"" >> $GITHUB_ENV
        cd build
        ctest --test-dir tests/kernels --output-on-failure -j4
