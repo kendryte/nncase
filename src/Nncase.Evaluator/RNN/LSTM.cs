@@ -67,7 +67,7 @@ public class LSTMEvaluator : IEvaluator<LSTM>, ITypeInferencer<LSTM>, ICostEvalu
             [CostFactorNames.MemoryStore] = returnType.Select(t => t switch
             {
                 TensorType tensorType => CostUtility.GetMemoryAccess(tensorType),
-                _ => 1,
+                _ => UInt128.One,
             }).Sum(),
         };
     }
