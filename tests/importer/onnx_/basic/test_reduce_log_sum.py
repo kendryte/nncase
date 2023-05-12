@@ -22,7 +22,7 @@ from onnx_test_runner import OnnxTestRunner
 import numpy as np
 
 
-def _make_module(in_shape, axes, keepdims):
+def _make_module(in_shape, axes, keepdims, op_version):
     inputs = []
     outputs = []
     initializers = []
@@ -66,7 +66,9 @@ def _make_module(in_shape, axes, keepdims):
         [output],
         initializer=initializers)
 
-    model_def = helper.make_model(graph_def, producer_name='onnx')
+    op = onnx.OperatorSetIdProto()
+    op.version = op_version
+    model_def = helper.make_model(graph_def, producer_name='onnx', opset_imports=[op])
     return model_def
 
 
@@ -95,13 +97,19 @@ keepdims_lists = [
     0
 ]
 
+op_version_lists = [
+    1,
+    11,
+    13
+]
 
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('axes', axes_list)
 @pytest.mark.parametrize('keepdims', keepdims_lists)
-def test_reduce_log_sum(in_shape, axes, keepdims, request):
+@pytest.mark.parametrize('version', op_version_lists)
+def test_reduce_log_sum(in_shape, axes, keepdims, request, version):
     if axes is None or len(axes) <= len(in_shape):
-        model_def = _make_module(in_shape, axes, keepdims)
+        model_def = _make_module(in_shape, axes, keepdims, version)
 
         runner = OnnxTestRunner(request.node.name)
         model_file = runner.from_onnx_helper(model_def)
