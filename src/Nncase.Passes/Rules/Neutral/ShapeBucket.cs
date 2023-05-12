@@ -436,6 +436,7 @@ public partial class ReplaceRewrite : IRewriteRule
 
     public static Call PostProcess(Expr call, Expr originCall)
     {
+
         var rank = call.CheckedShape.Rank;
         return Slice(call, Enumerable.Repeat(0, rank).ToArray(), Cast(ShapeOf(call), DataTypes.Int32), rank);
         // 原始的input，在这个op里面根据call的类型，推导出对应的原始的shape
@@ -571,6 +572,11 @@ public partial class FusionBucket : IRewriteRule
             // var letBody = GetItem(IR.F.Math.Require(true, new IR.Tuple(new[]{}.Append(newBody).ToArray())), args.Length - 1);
             // newBody = GetItem(IR.F.Math.Require(true, new IR.Tuple(new[]{@if.Then, @if.Else}.Append(newBody).ToArray())), args.Length - 1);
             newBody = @if.With(paramList: call.Arguments.ToArray());
+            for (int i = 0; i < call.Arguments.Length; i++)
+            {
+                DumpScope.Current.DumpIR(call.Arguments[i], i.ToString(), "if_args");
+            }
+
             // DumpScope.Current.DumpIR(newBody, $"after_let", $"ShapeBucketDebug/{counter}");
         }
         var body = fusion.Parameters.ToArray().Zip(args).Aggregate(newBody, (sum, pair) =>

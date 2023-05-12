@@ -12,6 +12,7 @@ using Nncase.IR;
 using Nncase.IR.Tensors;
 using Nncase.Passes;
 using Nncase.Passes.Rules.Neutral;
+using Nncase.Quantization;
 using Nncase.Tests.TestFixture;
 using Nncase.Tests.TransformTest;
 using Nncase.Utilities;
@@ -202,5 +203,47 @@ public class ShapeBucketTest : TransformTestBase
         var dec_v2 = BinFileUtil.ReadBinFile(Path.Join(root, $"dec_v_2_{i}.bin"), DataTypes.Float32,new[] { batch, 4, dec_len, 64 });
         var dec_v3 = BinFileUtil.ReadBinFile(Path.Join(root, $"dec_v_3_{i}.bin"), DataTypes.Float32,new[] { batch, 4, dec_len, 64 });
         return new[] { tokens, enc_k, enc_v, enc_pad_mask, dec_k1, dec_k2, dec_k3, dec_v1, dec_v2, dec_v3 };
+    }
+
+
+    [Fact]
+    public async Task TestSplitIf()
+    {
+        CompileOptions.QuantizeOptions.ModelQuantMode = ModelQuantMode.UsePTQ;
+        CompileOptions.QuantizeOptions.CalibrationMethod = CalibMethod.NoClip;
+        CompileOptions.QuantizeOptions.BindQuantMethod = false;
+        CompileOptions.QuantizeOptions.UseSquant = false;
+        CompileOptions.DumpFlags = DumpFlags.Rewrite;
+
+        var k = new Var("k", new TensorType(DataTypes.Int32, Shape.Scalar));
+        var v1 = new Var(new TensorType(DataTypes.Float32, new[] { 1, 2, Dimension.Unknown }));
+        var v2 = new Var(new TensorType(DataTypes.Float32, new[] { Dimension.Unknown, 24 }));
+        var varMap = new Dictionary<Var, Expr[]> { { v1, new Expr[] { 1, 2, k } }, { v2, new Expr[] { k, 24 } } };
+        var dict = new Dictionary<string, (int, int)> { { "k", (4, 8) } };
+        var bn = v1 * 2f;
+        var lhs = Abs(bn);
+        var matmul = IR.F.Math.MatMul(lhs, v2);
+        var body = new IR.Tuple(bn, matmul);
+        var post0 = CompilerServices.Rewrite(body, new[] { new AddRangeOfAndMarker() }, new());
+        new ExprPinner(varMap.Values.SelectMany(x => x).ToArray());
+        var f = new Function(post0, v1, v2);
+        var samples = f.Parameters.ToArray()
+            .Zip(new[]{Testing.Rand<float>(1, 2, 24), Testing.Rand<float>(24, 24)})
+            .ToDictionary(x => x.First, x => (IValue)Value.FromTensor(x.Second));
+        CompileOptions.QuantizeOptions.CalibrationDataset = new SelfInputCalibrationDatasetProvider(
+            samples);
+        var module = new IRModule(f);
+        var rpm = CompileSession.CreatePassManager("");
+        rpm.AddWithName<EGraphPassWithQuantize>("AssignRanges");
+        await rpm.RunAsync(module);
+
+        CompilerServices.Rewrite(module.Entry!, new[] { new MatmulToFusion(varMap) }, new());
+        CompilerServices.Rewrite(module.Entry!, new[] { new FusionBucket(varMap, dict) }, new());
+
+        Dumpper.DumpIR(module.Entry!, "before");
+        var pm = CompileSession.CreatePassManager("EGraphPM");
+        pm.AddWithName<EGraphRulesPass>("RulePass");
+        await pm.RunAsync(module);
+        Dumpper.DumpIR(module.Entry!, "pm");
     }
 }
