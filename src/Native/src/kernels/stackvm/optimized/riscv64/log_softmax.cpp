@@ -92,10 +92,7 @@ void log_softmax_block(int len, int real_blocksize, const float* x, float* dx, i
 {
 	size_t vl;
 	vl = vsetvl_e32m8(real_blocksize);
-	if((int)vl != real_blocksize)
-	{
-		printf("error ... vl != block_size ... \n");
-	}
+	assert((int)vl == real_blocksize);
 	vfloat32m8_t max_sf = vfmv_v_f_f32m8(-FLT_MAX, vl);
 	vfloat32m8_t sum_sf = vfmv_v_f_f32m8(0.0f, vl);
 	for (int32_t i = 0; i < len; i++)
