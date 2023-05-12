@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #include "../../reference/ref_ops.h"
 #include "../opt_ops.h"
 #include <iostream>
@@ -23,7 +24,6 @@ using namespace nncase::runtime;
 using namespace nncase::kernels;
 using namespace nncase::kernels::stackvm;
 using namespace nncase::kernels::stackvm::optimized;
-
 
 #if __riscv_vector
 #include <math.h>
@@ -46,16 +46,12 @@ static float get_max_value(int n, const float* x)
         "add a1, a1, t1;"
         "vredmax.vs v16,v8,v16;"
         /////////////////
-        
         "bnez a0, loop_rvv_max_index%=;"
-
         "vfmv.f.s %[value_index], v16;"
-        
         :[value_index]"=f"(max_value)
         :[avl]"r"(n), [input_ptr]"r"(x), "f"(-FLT_MAX)
         :"t0","t1","t2","t3","t5","a0","a1", "fa0"
         );
-        // printf("****max value = %f\n", max_value);
     return max_value;
 }
 
@@ -94,12 +90,11 @@ void log_softmax_step1(int n, const float* x, float* y)
 
 void log_softmax_block(int len, int real_blocksize, const float* x, float* dx, int data_stride)
 {
-	int n = real_blocksize; 
 	size_t vl;
-	vl = vsetvl_e32m8(n);
-	if((int)vl != n)
+	vl = vsetvl_e32m8(real_blocksize);
+	if((int)vl != real_blocksize)
 	{
-		printf("error ... vl != n ... \n");
+		printf("error ... vl != block_size ... \n");
 	}
 	vfloat32m8_t max_sf = vfmv_v_f_f32m8(-FLT_MAX, vl);
 	vfloat32m8_t sum_sf = vfmv_v_f_f32m8(0.0f, vl);
@@ -130,7 +125,6 @@ void log_softmax_block(int len, int real_blocksize, const float* x, float* dx, i
 #define BLOCK_LOGSOFTMAX 32
 void log_softmax_step_not1(int32_t len, const float* x, float* dx, int step)
 {
-	// float* dx2 = dx;
 	for(int j = 0; j < step / BLOCK_LOGSOFTMAX; ++j)
 	{
 		log_softmax_block(len, BLOCK_LOGSOFTMAX, x, dx, step);
@@ -138,15 +132,11 @@ void log_softmax_step_not1(int32_t len, const float* x, float* dx, int step)
 		dx += BLOCK_LOGSOFTMAX;
 	}
 	int left_number = step & (BLOCK_LOGSOFTMAX - 1);
-	// int left_number = step % (BLOCK_LOGSOFTMAX);
 	if(left_number)
 	{
 		log_softmax_block(len, left_number, x, dx, step);
 	}
-	// print_vector_by_type(dx2, len * step, 16, "dataout ...", 1);
 }
-
-
 
 static void log_softmax_impl(const float *input, float *output, const dims_t &in_shape, int axis)
 {
@@ -156,7 +146,9 @@ static void log_softmax_impl(const float *input, float *output, const dims_t &in
 
     size_t out_side = 1;
     for (size_t i = 0; i < positive_axis; i++)
+	{
         out_side *= in_shape[i];
+	}
 
     size_t in_side = 1;
     for (size_t i = positive_axis + 1; i < ndim; i++)
@@ -195,14 +187,12 @@ static void log_softmax_impl(const float *input, float *output, const dims_t &in
 template result<void>
 optimized::log_softmax<float>(const float *input, float *output,
                           const dims_t &in_shape, [[maybe_unused]] const dims_t &in_strides,
-                          [[maybe_unused]] const dims_t &out_strides, int32_t axis,
-                          [[maybe_unused]]float beta) noexcept;
+                          [[maybe_unused]] const dims_t &out_strides, int32_t axis) noexcept;
 
 template <typename T>
-result<void>
-optimized::log_softmax(const T *input, T *output, const dims_t &in_shape,
+result<void> optimized::log_softmax(const T *input, T *output, const dims_t &in_shape,
                    [[maybe_unused]] const dims_t &in_strides, [[maybe_unused]]const dims_t &out_strides,
-                   int32_t axis, [[maybe_unused]]float beta) noexcept {
+                   int32_t axis) noexcept {
 	result<void> ret_value = ok();
 #if __riscv_vector
 	log_softmax_impl(input, output, in_shape, axis);
