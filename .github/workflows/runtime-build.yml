@@ -172,6 +172,9 @@ jobs:
    - uses: actions/checkout@v3
    - uses: seanmiddleditch/gha-setup-ninja@master
 
+   - name: Setup tmate session
+     uses: mxschmitt/action-tmate@v3
+
    - name: Setup Python
      uses: actions/setup-python@v4
      with:
@@ -185,7 +188,7 @@ jobs:
        echo "RISCV_ROOT_PATH=$GITHUB_WORKSPACE/riscv64-unknown-linux_gnu_12.0.1" >> $GITHUB_ENV
 
        wget https://dav.sunnycase.moe/d/ci/qemu-riscv64.tgz -O $GITHUB_WORKSPACE/qemu-riscv64.tgz
-       sudo tar xf $GITHUB_WORKSPACE/qemu-riscv64.tgz  -C $GITHUB_WORKSPACE
+       sudo tar xf $GITHUB_WORKSPACE/qemu-riscv64.tgz -C $GITHUB_WORKSPACE
        echo "PATH=$GITHUB_WORKSPACE:$PATH" >> $GITHUB_ENV
      if: matrix.config.name == 'riscv64-unknown-linux_gnu'
 
