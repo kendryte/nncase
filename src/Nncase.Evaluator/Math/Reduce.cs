@@ -80,9 +80,9 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICos
     {
         var input = context.GetArgumentType<TensorType>(target, Reduce.Input);
         var ret = context.GetReturnType<TensorType>();
-        var input_elem = input.Shape.Aggregate(1, (acc, d) => acc * (d.IsFixed ? d.FixedValue : 1));
-        var ret_elem = ret.Shape.Aggregate(1, (acc, d) => acc * (d.IsFixed ? d.FixedValue : 1));
-        var macPerElement = input_elem / ret_elem;
+        uint input_elem = input.Shape.Aggregate(1U, (acc, d) => acc * (d.IsFixed ? (uint)d.FixedValue : 1U));
+        uint ret_elem = ret.Shape.Aggregate(1U, (acc, d) => acc * (d.IsFixed ? (uint)d.FixedValue : 1U));
+        uint macPerElement = input_elem / ret_elem;
         return new()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(input),

@@ -79,7 +79,7 @@ public class ReduceWindow2DEvaluator : IEvaluator<ReduceWindow2D>, ITypeInferenc
         var inputType = context.GetArgumentType<TensorType>(target, ReduceWindow2D.Input);
         var outputType = context.GetReturnType<TensorType>();
 
-        var macPerElement = 1;
+        uint macPerElement = 1;
         return new()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
