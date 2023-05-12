@@ -379,38 +379,15 @@ result<value_t> nncase::kernels::stackvm::l2_normalization(
     return err(std::errc::not_supported);
 }
 
-static void print_runtime_shape(const dims_t &a, const char *title)
-{
-    printf("--- %s, sum: %d, ", title, (int)a.size());
-    for (int i = 0; i < (int)a.size(); ++i)
-    {
-        printf("%d, ", (int)a[i]);
-    }
-    printf("---\n");
-}
-
 result<value_t> nncase::kernels::stackvm::log_softmax(
     value_t input, value_t axis, value_t output,
     [[maybe_unused]] kernel_context &context) {
     try_f32_input(in_mem, input);
     try_f32_output(out_mem, output, input_tensor->shape());
     try_positive_axis(axis_value, axis, input_tensor);
-	print_runtime_shape(input_tensor->shape(), "!!!!!!!!!! shape ... ");
 	try_(optimized::log_softmax(in_mem, out_mem, input_tensor->shape(),
 						input_tensor->strides(), output_tensor->strides(),
 						axis_value, 1.f));
-	// #if __riscv_vector
-		// // printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! in tensor_ops.cpp \n");
-		// try_(optimized::log_softmax(in_mem, out_mem, input_tensor->shape(),
-								// input_tensor->strides(), output_tensor->strides(),
-								// axis_value, 1.f));
-	// #else
-		// try_(reference::softmax(in_mem, out_mem, input_tensor->shape(),
-							// input_tensor->strides(), output_tensor->strides(),
-							// axis_value, 1.f, true));
-	// #endif
-							
-							// optimized::log_softmax
     return ok(output);
 }
 
