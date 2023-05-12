@@ -299,7 +299,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         {
             Visit(expr1);
         }
-        _scope.IndWriteLine($"if({Visit(expr.Condition)}) " + "{");
+        _scope.IndWriteLine($"if({Visit(expr.Condition)}, Params: ({string.Join(",", expr.ParamList.AsValueEnumerable().Select(Visit))})) " + "{");
         using (_scope.IndentUp())
         {
             Visit(expr.Then);
