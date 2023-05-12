@@ -16,61 +16,61 @@ public sealed class UnitTestCost
     [Fact]
     public void TestGetCPUCyclesOfUnary()
     {
-        Assert.Equal(1, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Abs));
-        Assert.Equal(8, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Acos));
-        Assert.Equal(8, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Acosh));
-        Assert.Equal(8, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Asin));
-        Assert.Equal(8, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Asinh));
-        Assert.Equal(1, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Ceil));
-        Assert.Equal(8, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Cos));
-        Assert.Equal(8, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Cosh));
-        Assert.Equal(8, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Exp));
-        Assert.Equal(1, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Floor));
-        Assert.Equal(8, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Log));
-        Assert.Equal(1, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Neg));
-        Assert.Equal(1, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Round));
-        Assert.Equal(4, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Rsqrt));
-        Assert.Equal(8, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Sin));
-        Assert.Equal(8, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Sinh));
-        Assert.Equal(1, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Sign));
-        Assert.Equal(8, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Sqrt));
-        Assert.Equal(2, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Square));
-        Assert.Equal(8, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Tanh));
-        Assert.Equal(1, CostUtility.GetCPUCyclesOfUnary(UnaryOp.BitwiseNot));
-        Assert.Equal(1, CostUtility.GetCPUCyclesOfUnary(UnaryOp.LogicalNot));
+        Assert.Equal((UInt128)1, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Abs));
+        Assert.Equal((UInt128)8, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Acos));
+        Assert.Equal((UInt128)8, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Acosh));
+        Assert.Equal((UInt128)8, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Asin));
+        Assert.Equal((UInt128)8, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Asinh));
+        Assert.Equal((UInt128)1, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Ceil));
+        Assert.Equal((UInt128)8, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Cos));
+        Assert.Equal((UInt128)8, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Cosh));
+        Assert.Equal((UInt128)8, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Exp));
+        Assert.Equal((UInt128)1, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Floor));
+        Assert.Equal((UInt128)8, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Log));
+        Assert.Equal((UInt128)1, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Neg));
+        Assert.Equal((UInt128)1, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Round));
+        Assert.Equal((UInt128)4, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Rsqrt));
+        Assert.Equal((UInt128)8, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Sin));
+        Assert.Equal((UInt128)8, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Sinh));
+        Assert.Equal((UInt128)1, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Sign));
+        Assert.Equal((UInt128)8, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Sqrt));
+        Assert.Equal((UInt128)2, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Square));
+        Assert.Equal((UInt128)8, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Tanh));
+        Assert.Equal((UInt128)1, CostUtility.GetCPUCyclesOfUnary(UnaryOp.BitwiseNot));
+        Assert.Equal((UInt128)1, CostUtility.GetCPUCyclesOfUnary(UnaryOp.LogicalNot));
     }
 
     [Fact]
     public void TestGetCPUCyclesOfBinary()
     {
-        Assert.Equal(1, CostUtility.GetCPUCyclesOfBinary(BinaryOp.Add));
-        Assert.Equal(1, CostUtility.GetCPUCyclesOfBinary(BinaryOp.Sub));
-        Assert.Equal(2, CostUtility.GetCPUCyclesOfBinary(BinaryOp.Mul));
-        Assert.Equal(8, CostUtility.GetCPUCyclesOfBinary(BinaryOp.Div));
-        Assert.Equal(8, CostUtility.GetCPUCyclesOfBinary(BinaryOp.Mod));
-        Assert.Equal(1, CostUtility.GetCPUCyclesOfBinary(BinaryOp.Min));
-        Assert.Equal(1, CostUtility.GetCPUCyclesOfBinary(BinaryOp.Max));
-        Assert.Equal(8, CostUtility.GetCPUCyclesOfBinary(BinaryOp.Pow));
-        Assert.Equal(1, CostUtility.GetCPUCyclesOfBinary(BinaryOp.BitwiseAnd));
-        Assert.Equal(1, CostUtility.GetCPUCyclesOfBinary(BinaryOp.BitwiseOr));
-        Assert.Equal(1, CostUtility.GetCPUCyclesOfBinary(BinaryOp.BitwiseXor));
-        Assert.Equal(1, CostUtility.GetCPUCyclesOfBinary(BinaryOp.LogicalAnd));
-        Assert.Equal(1, CostUtility.GetCPUCyclesOfBinary(BinaryOp.LogicalOr));
-        Assert.Equal(1, CostUtility.GetCPUCyclesOfBinary(BinaryOp.LogicalXor));
-        Assert.Equal(1, CostUtility.GetCPUCyclesOfBinary(BinaryOp.LeftShift));
-        Assert.Equal(1, CostUtility.GetCPUCyclesOfBinary(BinaryOp.RightShift));
+        Assert.Equal((UInt128)1, CostUtility.GetCPUCyclesOfBinary(BinaryOp.Add));
+        Assert.Equal((UInt128)1, CostUtility.GetCPUCyclesOfBinary(BinaryOp.Sub));
+        Assert.Equal((UInt128)2, CostUtility.GetCPUCyclesOfBinary(BinaryOp.Mul));
+        Assert.Equal((UInt128)8, CostUtility.GetCPUCyclesOfBinary(BinaryOp.Div));
+        Assert.Equal((UInt128)8, CostUtility.GetCPUCyclesOfBinary(BinaryOp.Mod));
+        Assert.Equal((UInt128)1, CostUtility.GetCPUCyclesOfBinary(BinaryOp.Min));
+        Assert.Equal((UInt128)1, CostUtility.GetCPUCyclesOfBinary(BinaryOp.Max));
+        Assert.Equal((UInt128)8, CostUtility.GetCPUCyclesOfBinary(BinaryOp.Pow));
+        Assert.Equal((UInt128)1, CostUtility.GetCPUCyclesOfBinary(BinaryOp.BitwiseAnd));
+        Assert.Equal((UInt128)1, CostUtility.GetCPUCyclesOfBinary(BinaryOp.BitwiseOr));
+        Assert.Equal((UInt128)1, CostUtility.GetCPUCyclesOfBinary(BinaryOp.BitwiseXor));
+        Assert.Equal((UInt128)1, CostUtility.GetCPUCyclesOfBinary(BinaryOp.LogicalAnd));
+        Assert.Equal((UInt128)1, CostUtility.GetCPUCyclesOfBinary(BinaryOp.LogicalOr));
+        Assert.Equal((UInt128)1, CostUtility.GetCPUCyclesOfBinary(BinaryOp.LogicalXor));
+        Assert.Equal((UInt128)1, CostUtility.GetCPUCyclesOfBinary(BinaryOp.LeftShift));
+        Assert.Equal((UInt128)1, CostUtility.GetCPUCyclesOfBinary(BinaryOp.RightShift));
     }
 
     [Fact]
     public void TestGetCPUCyclesOfMax()
     {
-        Assert.Equal(1, CostUtility.GetCPUCyclesOfMax());
+        Assert.Equal((UInt128)1, CostUtility.GetCPUCyclesOfMax());
     }
 
     [Fact]
     public void TestGetCPUCyclesOfCompare()
     {
-        Assert.Equal(1, CostUtility.GetCPUCyclesOfCompare());
+        Assert.Equal((UInt128)1, CostUtility.GetCPUCyclesOfCompare());
     }
 
     [Fact]
@@ -98,20 +98,39 @@ public sealed class UnitTestCost
     [Fact]
     public void TestGetCPUCycles()
     {
-        Assert.Equal(0, CostUtility.GetCPUCycles(DataTypes.Int32));
-        Assert.Equal(0, CostUtility.GetCPUCycles(new TupleType(new List<IRType>())));
+        Assert.Equal((UInt128)1, CostUtility.GetCPUCycles(DataTypes.Int32));
+        Assert.Equal((UInt128)0, CostUtility.GetCPUCycles(new TupleType(new List<IRType>())));
     }
 
     [Fact]
     public void TestGetFakeMemoryAccess()
     {
-        Assert.Equal(0, CostUtility.GetFakeMemoryAccess(DataTypes.Float32, 0));
-        Assert.Equal(0, CostUtility.GetFakeMemoryAccess(new TupleType(new List<IRType>()), 0));
+        Assert.Equal((UInt128)0, CostUtility.GetFakeMemoryAccess(DataTypes.Float32, 0));
+        Assert.Equal((UInt128)0, CostUtility.GetFakeMemoryAccess(new TupleType(new List<IRType>()), 0));
     }
 
     [Fact]
     public void TestGetMemoryAccess()
     {
-        Assert.Equal(0, CostUtility.GetMemoryAccess(DataTypes.Float32, DataTypes.Float32));
+        Assert.Equal((UInt128)8, CostUtility.GetMemoryAccess(DataTypes.Float32, DataTypes.Float32));
+    }
+
+    [Fact]
+    public void TestDoubleCostSumErrorCase()
+    {
+        // note when use double costs, somtime the value sum will got error.
+        var c = new Cost()
+        {
+            [CostFactorNames.MemoryLoad] = (UInt128)1651643172136040,
+            [CostFactorNames.MemoryStore] = (UInt128)953885239498522,
+            [CostFactorNames.CPUCycles] = (UInt128)13437180688291688,
+        };
+
+        var c2 = new Cost()
+        {
+            [CostFactorNames.CPUCycles] = UInt128.One,
+        };
+
+        Assert.Equal((UInt128)16042709099926251, (c2 + c).Score);
     }
 }

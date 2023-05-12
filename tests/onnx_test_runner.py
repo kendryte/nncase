@@ -115,7 +115,11 @@ class OnnxTestRunner(TestRunner):
         input_tensors = [node for node in onnx_model.graph.input if node.name in input_names]
 
         def to_dim_value(d, default_d):
-            if d.dim_value == 0:
+            """
+            if dim_value is not digit, it should be fixed.
+            dim_value range: [0, inf)
+            """
+            if not str(d.dim_value).isdigit():
                 if len(self.shape_vars):
                     # we should eval dim_param instead of get var value
                     # e.g. dim_param = dec_len - 1
