@@ -36,7 +36,7 @@ public class HardmaxEvaluator : IEvaluator<Hardmax>, ITypeInferencer<Hardmax>, I
         return new()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
-            [CostFactorNames.MemoryStore] = (double)inputType.Shape.Rank,
+            [CostFactorNames.MemoryStore] = (UInt128)inputType.Shape.Rank,
         };
     }
 

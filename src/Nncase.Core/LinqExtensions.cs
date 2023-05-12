@@ -43,4 +43,26 @@ public static class LinqExtensions
 
         return items;
     }
+
+    public static UInt128 Sum<TSource>(this IEnumerable<TSource> source, Func<TSource, UInt128> selector)
+    {
+        UInt128 acc = 0;
+        foreach (var item in source)
+        {
+            acc += selector(item);
+        }
+
+        return acc;
+    }
+
+    public static UInt128 Sum(this IEnumerable<UInt128> source)
+    {
+        UInt128 acc = 0;
+        foreach (var item in source)
+        {
+            acc += item;
+        }
+
+        return acc;
+    }
 }
