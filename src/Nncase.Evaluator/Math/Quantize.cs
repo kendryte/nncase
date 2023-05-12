@@ -46,8 +46,8 @@ public class QuantizeEvaluator : IEvaluator<Quantize>, ITypeInferencer<Quantize>
         var quant_param = context.GetArgumentType<TensorType>(target, Quantize.QuantParam);
         var output = context.GetReturnType<TensorType>();
 
-        var macPerElement = 1;
-        var macParallel = 1;
+        uint macPerElement = 1;
+        uint macParallel = 1;
         return new()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(input) +
