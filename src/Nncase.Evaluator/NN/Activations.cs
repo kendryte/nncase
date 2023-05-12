@@ -274,7 +274,7 @@ public class SigmoidEvaluator : IEvaluator<Sigmoid>, ITypeInferencer<Sigmoid>, I
     public Cost Visit(ICostEvaluateContext context, Sigmoid target)
     {
         var ret = context.GetReturnType<TensorType>();
-        var macPerElement = 3;
+        uint macPerElement = 3;
         return CostUtility.GetActivationCost(ret, macPerElement);
     }
 
