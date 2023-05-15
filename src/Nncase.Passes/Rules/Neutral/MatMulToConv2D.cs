@@ -8,7 +8,6 @@ using System.Linq;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
-using Tensorflow;
 using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Tensors;
 using static Nncase.IR.TypePatternUtility;
