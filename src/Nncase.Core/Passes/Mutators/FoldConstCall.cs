@@ -14,12 +14,19 @@ namespace Nncase.Passes.Mutators;
 /// </summary>
 public sealed class FoldConstCall : ExprRewriter
 {
+    private readonly Dictionary<Expr, Expr> _cseMemo = new();
+
+    protected override Expr RewriteLeafConst(Const @const)
+    {
+        return CSEConst(@const);
+    }
+
     /// <inheritdoc/>
     protected override Expr RewriteLeafTuple(IR.Tuple expr)
     {
         if (IsAllConst(expr.Fields))
         {
-            return new TupleConst(new TupleValue(expr.Fields.AsValueEnumerable().Select(x => Value.FromConst((Const)x)).ToArray()));
+            return CSEConst(new TupleConst(new TupleValue(expr.Fields.AsValueEnumerable().Select(x => Value.FromConst((Const)x)).ToArray())));
         }
 
         return expr;
@@ -32,7 +39,7 @@ public sealed class FoldConstCall : ExprRewriter
         {
             if (IsAllConst(expr.Arguments))
             {
-                return Const.FromValue(CompilerServices.Evaluate(expr));
+                return CSEConst(Const.FromValue(CompilerServices.Evaluate(expr)));
             }
 
             if (expr.Target is IR.Tensors.GetItem && expr[IR.Tensors.GetItem.Input] is IR.Tuple tuple &&
@@ -48,4 +55,15 @@ public sealed class FoldConstCall : ExprRewriter
     private bool IsAllConst(ReadOnlySpan<Expr> parameters) =>
       parameters.AsValueEnumerable()
         .All(e => e is Const);
+
+    private Expr CSEConst(Const c)
+    {
+        if (!_cseMemo.TryGetValue(c, out var result))
+        {
+            result = c;
+            _cseMemo.Add(c, result);
+        }
+
+        return result;
+    }
 }
