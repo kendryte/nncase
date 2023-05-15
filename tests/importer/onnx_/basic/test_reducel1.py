@@ -100,6 +100,7 @@ op_version_lists = [
     13
 ]
 
+
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('axes', axes_list)
 @pytest.mark.parametrize('keep_dim', keep_dims)
