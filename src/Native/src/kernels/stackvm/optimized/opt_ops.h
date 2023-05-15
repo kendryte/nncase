@@ -135,11 +135,12 @@ NNCASE_API result<void>
 softmax(const T *input, T *output, const dims_t &in_shape,
         const dims_t &in_strides, const dims_t &out_strides, int32_t axis,
         float beta) noexcept;
-		
+
 template <typename T>
 NNCASE_API result<void>
 log_softmax(const T *input, T *output, const dims_t &in_shape,
-        const dims_t &in_strides, const dims_t &out_strides, int32_t axis) noexcept;
+            const dims_t &in_strides, const dims_t &out_strides,
+            int32_t axis) noexcept;
 
 template <typename T>
 NNCASE_API result<void>
