@@ -605,14 +605,14 @@ public class UnitTestEvaluatorTensors : TestClassBase
         var indices = new Tensor<long>(new[] { 0L, 0L, 1L, 1L, 0L, 1L }, new[] { 2, 1, 1, 3 });
         var updates = new Tensor<float>(new[] { 5f, 10f }, new[] { 2, 1, 1 });
 
-        // var expect = OrtKI.ScatterND(input.ToOrtTensor(), indices.ToOrtTensor(), updates.ToOrtTensor(), "none");
-        var expect = Tensor.FromScalar(0f, shape);
-        expect[0, 0, 1] = 5f;
-        expect[1, 0, 1] = 10f;
+        var expect = OrtKI.ScatterND(input.ToOrtTensor(), indices.ToOrtTensor(), updates.ToOrtTensor(), "none");
 
+        // var expect = Tensor.FromScalar(0f, shape);
+        // expect[0, 0, 1] = 5f;
+        // expect[1, 0, 1] = 10f;
         var expr = IR.F.Tensors.ScatterND(input, indices, updates);
         CompilerServices.InferenceType(expr);
-        Assert.Equal(expect, expr.Evaluate().AsTensor());
+        Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }
 
     [Fact]
