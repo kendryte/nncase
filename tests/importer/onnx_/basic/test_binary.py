@@ -33,6 +33,7 @@ def _make_module(v_shape):
             outs.append(torch.max(x, self.v))
             outs.append(torch.div(x, self.v))
             outs.append(torch.min(x, self.v))
+            outs.append(torch.fmod(x, self.v))
             return outs
 
     return BinaryModule()
