@@ -235,6 +235,18 @@ public sealed class UnitTestMath
     }
 
     [Fact]
+    public void TestMod()
+    {
+        var lhs = IR.F.Random.Normal(new[] { 1, 3, 16, 16 });
+        var rhs = IR.F.Random.Normal(new[] { 1, 3, 16, 16 });
+        var expr = IR.F.Math.Binary(BinaryOp.Mod, lhs, rhs);
+        CompilerServices.InferenceType(expr);
+        var expect = IR.F.Math.Mod(lhs, rhs);
+        CompilerServices.InferenceType(expect);
+        Assert.Equal(expect.Evaluate(), expr.Evaluate());
+    }
+
+    [Fact]
     public void TestNotEqual()
     {
         var lhs = IR.F.Random.Normal(new[] { 1, 3, 16, 16 });
