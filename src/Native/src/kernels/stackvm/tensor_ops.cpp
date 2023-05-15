@@ -604,10 +604,9 @@ result<value_t> nncase::kernels::stackvm::range(
     KERNEL_FINISH;
 }
 
-result<value_t>
-nncase::kernels::stackvm::range_of([[maybe_unused]] value_t input,
-                                   [[maybe_unused]] value_t output,
-                                   [[maybe_unused]] kernel_context &context) {
+result<value_t> nncase::kernels::stackvm::range_of(
+    [[maybe_unused]] bool is_range_of_weight, [[maybe_unused]] value_t input,
+    [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
     return err(std::errc::not_supported);
 }
 
