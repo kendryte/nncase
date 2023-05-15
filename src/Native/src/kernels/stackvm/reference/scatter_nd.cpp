@@ -41,7 +41,7 @@ result<void> scatter_nd_impl(const T *input, T *output, const dims_t &in_shape,
     indices_strides.pop_back();
 
     auto in_strides = get_default_strides(in_shape);
-    for (auto i = 0; i <  in_shape.size() - indices_shape.back(); ++i) {
+    for (auto i = 0; i < in_shape.size() - indices_shape.back(); ++i) {
         in_strides.pop_back();
     }
 

@@ -21,6 +21,7 @@ from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
 import numpy as np
 
+
 def _make_module(in_shape, indices, updates_shape):
     input = helper.make_tensor_value_info('input', TensorProto.FLOAT, in_shape)
     indices = helper.make_tensor('indices', TensorProto.INT64, np.array(
@@ -49,9 +50,9 @@ def _make_module(in_shape, indices, updates_shape):
 
 
 in_shapes_indices_updates_shapes = [
-    ([2,5,10], [[[[0,0,1]]],[[[1,0,1]]]], [2,1,1]),
-    ([2,5,10], [[[[0,0]]],[[[1,0]]]], [2,1,1,10]),
-    ([2,5,10], [[[[0]]],[[[1]]]], [2,1,1,5,10]),
+    ([2, 5, 10], [[[[0, 0, 1]]], [[[1, 0, 1]]]], [2, 1, 1]),
+    ([2, 5, 10], [[[[0, 0]]], [[[1, 0]]]], [2, 1, 1, 10]),
+    ([2, 5, 10], [[[[0]]], [[[1]]]], [2, 1, 1, 5, 10]),
 ]
 
 
