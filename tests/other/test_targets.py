@@ -18,9 +18,9 @@ import nncase
 
 
 def test_targets(request):
-    assert nncase.target_exists("cpu")
-    #assert nncase.target_exists("k210")
-    #assert nncase.target_exists("vulkan")
+    assert nncase.check_target("cpu")
+    #assert nncase.check_target("k210")
+    #assert nncase.check_target("vulkan")
 
 
 if __name__ == "__main__":
