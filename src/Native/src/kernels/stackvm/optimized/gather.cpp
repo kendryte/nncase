@@ -49,7 +49,8 @@ result<void> gather_impl(const T *input, T *output, const dims_t &in_shape,
 #endif
         for (int i = 0; i < indices_count; ++i) {
             auto *o_ptr = out_ptr + i * block_size;
-            auto indices_ptr = indices[i] >=0 ? indices[i] : indices[i] + in_shape[axis];
+            auto indices_ptr =
+                indices[i] >= 0 ? indices[i] : indices[i] + in_shape[axis];
             memcpy(o_ptr, in_ptr + (indices_ptr * block_size),
                    block_size * sizeof(T));
         }
