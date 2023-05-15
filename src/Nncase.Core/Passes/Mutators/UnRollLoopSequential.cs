@@ -19,6 +19,7 @@ namespace Nncase.Passes.Mutators;
 public sealed class UnRollLoopSequential : ExprRewriter
 {
     private readonly Dictionary<Type, Evaluator.IEvaluator> _evaluator_cache = new();
+    private readonly Dictionary<Expr, Expr> _cseMemo = new();
 
     /// <inheritdoc/>
     protected internal override Expr VisitFor(For expr, Unit context)
@@ -112,14 +113,11 @@ public sealed class UnRollLoopSequential : ExprRewriter
             });
 
         // warming up
-        var unrolled_first = new LoopBodyCloner(vmaps.First(), _evaluator_cache).Clone(nested_loops[^1].Body, default);
+        var unrolled_first = new LoopBodyCloner(vmaps.First(), _evaluator_cache, _cseMemo).Clone(nested_loops[^1].Body, default);
         var unrolled = new Expr[] { unrolled_first }.
             Concat(vmaps.
                 Skip(1).
-
-                // AsParallel().
-                // AsOrdered().
-                Select(vmap => new LoopBodyCloner(vmap, _evaluator_cache).Clone(nested_loops[^1].Body, default)));
+                Select(vmap => new LoopBodyCloner(vmap, _evaluator_cache, _cseMemo).Clone(nested_loops[^1].Body, default)));
 
         return Sequential.Flatten(unrolled.ToArray());
     }
@@ -132,12 +130,14 @@ public sealed class UnRollLoopSequential : ExprRewriter
         private readonly IReadOnlyDictionary<Var, TensorConst> _vmap;
         private readonly Dictionary<Var, IValue> _cmap;
         private readonly Dictionary<Type, Evaluator.IEvaluator> _evaluator_cache;
+        private readonly IDictionary<Expr, Expr> _cseMemo;
 
-        public LoopBodyCloner(IReadOnlyDictionary<Var, TensorConst> vmap, Dictionary<Type, Evaluator.IEvaluator> evaluator_cache)
+        public LoopBodyCloner(IReadOnlyDictionary<Var, TensorConst> vmap, Dictionary<Type, Evaluator.IEvaluator> evaluator_cache, IDictionary<Expr, Expr> cseMemo)
         {
             _vmap = vmap;
             _cmap = new(ReferenceEqualityComparer.Instance);
             _evaluator_cache = evaluator_cache;
+            _cseMemo = cseMemo;
             foreach (var p in vmap)
             {
                 _cmap.Add(p.Key, Value.FromConst(p.Value));
@@ -162,7 +162,7 @@ public sealed class UnRollLoopSequential : ExprRewriter
             var arguments = CloneArray(expr.Arguments, context);
             if (target is Op op && op.CanFoldConstCall && arguments.AsValueEnumerable().All(e => e is Const))
             {
-                return Const.FromValue(CompilerServices.Evaluate(expr.With(target, arguments), _cmap, _evaluator_cache));
+                return CSE(Const.FromValue(CompilerServices.Evaluate(expr.With(target, arguments), _cmap, _evaluator_cache)));
             }
 
             if (target is Function fn)
@@ -178,10 +178,33 @@ public sealed class UnRollLoopSequential : ExprRewriter
                     feedDict.Add(v, Value.FromConst(constArg));
                 }
 
-                return Const.FromValue(CompilerServices.Evaluate(fn.Body, feedDict, _evaluator_cache));
+                return CSE(Const.FromValue(CompilerServices.Evaluate(fn.Body, feedDict, _evaluator_cache)));
             }
 
             return expr.With(target, arguments);
+        }
+
+        protected override Expr VisitLeafRange(TIR.Range expr, Unit context)
+        {
+            return CSE(expr.With(start: Clone(expr.Start, context), stop: Clone(expr.Stop, context), step: Clone(expr.Step, context)));
+        }
+
+        protected override Expr VisitLeafLogicalBuffer(LogicalBuffer expr, Unit context)
+        {
+            return expr.With(
+                dimensions: CloneArray(expr.Dimensions, context).Select(e => CSE(e)).ToArray(),
+                strides: CloneArray(expr.Strides, context));
+        }
+
+        private Expr CSE(Expr c)
+        {
+            if (!_cseMemo.TryGetValue(c, out var result))
+            {
+                result = c;
+                _cseMemo.Add(c, result);
+            }
+
+            return result;
         }
     }
 }
