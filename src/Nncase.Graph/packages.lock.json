@@ -25,12 +25,12 @@
       "libortki-linux": {
         "type": "Transitive",
         "resolved": "0.0.2",
-        "contentHash": "XM54tEwidvoFd7jBBJa8kGczylpyEJlzyjaVtTvw8R5+IQqMjjKOqq+s/YgiDDHregYeRTRztlrcclBQ/vItHw=="
+        "contentHash": "b04LWD4lgGy60tys3hPFhnUpgWDM6dN5r1PI7GOcPj8VupXCaI70LKNQ5/5twbDE6rkowOGanVTw0S2wBGBqBQ=="
       },
       "libortki-osx": {
         "type": "Transitive",
         "resolved": "0.0.2",
-        "contentHash": "Yh6/rBY9To/yWfwYUU9+Smr/u35PDL2J7Si811whm6ZUC/yLUsfwkdOwlzwNBwZ2rKL4lYs9dQ50s2GVq40C9A=="
+        "contentHash": "O6Q9GLULkDkZEPAZJVKLPH0ROXGVOE7BxuddgOcHNK2oiTEM7wIRnzp2OIlYgLpaOLyxJMisbGOhtWgdzt2Wng=="
       },
       "libortki-osx-arm64": {
         "type": "Transitive",
@@ -40,7 +40,7 @@
       "libortki-win": {
         "type": "Transitive",
         "resolved": "0.0.2",
-        "contentHash": "/szZNgM/3OGoqcfORyc74R+q20fBwFUo1YfaXGDXSIyzs/0RA6Me8YzGI+byc8qZmELuqs75UkhXioJ/5hnMqA=="
+        "contentHash": "HAoROgAKn8XBun11X43HZuspKlo5JGy8/OYw5IUPo7FVh5TCaPrLjGmyGYYZ2dqLlv31yv/b6s254PIRGn95cA=="
       },
       "Microsoft.Extensions.Configuration.Abstractions": {
         "type": "Transitive",
@@ -1134,7 +1134,7 @@
         "type": "CentralTransitive",
         "requested": "[0.0.2, )",
         "resolved": "0.0.2",
-        "contentHash": "CuXSz3XjH1ANByrOwLdpTKkqhxaj5chtSP4gifi4pBSBsvnxEPU1ok0mDuSzE8UJ3ZV3IBEKtadpWBKzxYXT3w==",
+        "contentHash": "q8j0yR5836Zhv9WB9BFkQt1UaEFyibq8bqJcTiULlILF6/sz8z7Wy2N8sgYdDKsdW25zncIz7j6IDbKM5ynePg==",
         "dependencies": {
           "libortki": "0.0.2"
         }
