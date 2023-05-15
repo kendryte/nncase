@@ -104,10 +104,10 @@ op_version_lists = [
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('axes', axes_list)
 @pytest.mark.parametrize('keep_dim', keep_dims)
-@pytest.mark.parametrize('version', op_version_lists)
-def test_reducel2(in_shape, axes, keep_dim, request, version):
+@pytest.mark.parametrize('op_version', op_version_lists)
+def test_reducel2(in_shape, axes, keep_dim, request, op_version):
     if axes is None or len(axes) <= len(in_shape):
-        model_def = _make_module(in_shape, axes, keep_dim, version)
+        model_def = _make_module(in_shape, axes, keep_dim, op_version)
 
         runner = OnnxTestRunner(request.node.name)
         model_file = runner.from_onnx_helper(model_def)

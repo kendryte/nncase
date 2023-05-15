@@ -102,7 +102,7 @@ zero_points = [
 @pytest.mark.parametrize('zero_point', zero_points)
 def test_dequantizelinear(in_shape, input_type, scale, zero_point, request):
 
-    if input_type == TensorProto.INT8 and zero_point is not None:
+    if input_type == TensorProto.INT8 and zero_point is 0:
         return
 
     model_def = _make_module(in_shape, input_type, scale, zero_point)

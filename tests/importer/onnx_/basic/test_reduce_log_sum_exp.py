@@ -107,10 +107,10 @@ op_version_lists = [
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('axes', axes_list)
 @pytest.mark.parametrize('keepdims', keepdims_lists)
-@pytest.mark.parametrize('version', op_version_lists)
-def test_reduce_log_sum_exp(in_shape, axes, keepdims, request, version):
+@pytest.mark.parametrize('op_version', op_version_lists)
+def test_reduce_log_sum_exp(in_shape, axes, keepdims, request, op_version):
     if axes is None or len(axes) <= len(in_shape):
-        model_def = _make_module(in_shape, axes, keepdims, version)
+        model_def = _make_module(in_shape, axes, keepdims, op_version)
 
         runner = OnnxTestRunner(request.node.name)
         model_file = runner.from_onnx_helper(model_def)
