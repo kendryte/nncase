@@ -41,14 +41,21 @@ public class OneHotEvaluator : IEvaluator<OneHot>, ITypeInferencer<OneHot>, ICos
 
     private IValue OnnxOneHot(IEvaluateContext context, OneHot oneHot)
     {
-        var indices = context.GetArgumentValueAsTensor<long>(oneHot, OneHot.Indices);
+        var indices = context.GetArgumentValueAsTensor<long>(oneHot, OneHot.Indices).ToOrtTensor();
         var depth = context.GetInt64OrtTensorArgumentValue(oneHot, OneHot.Depth);
         var values = context.GetArgumentValueAsTensor(oneHot, OneHot.Values);
         var axis = context.GetArgumentValueAsScalar<long>(oneHot, OneHot.Axis);
 
         var onnxValues = values.ElementType == DataTypes.Float32 ? values.ToOrtTensor()
             : values.Cast<float>().ToOrtTensor();
-        return new TensorValue(OrtKI.OneHot(indices.ToOrtTensor(), depth, onnxValues, axis).ToTensor().CastTo(values.ElementType));
+
+        // Set negative indices to depth + 1.
+        if (oneHot.OneHotMode == OneHotMode.Normal)
+        {
+            indices = OrtKI.Where(OrtKI.Less(indices, 0L), depth, indices);
+        }
+
+        return new TensorValue(OrtKI.OneHot(indices, depth, onnxValues, axis).ToTensor().CastTo(values.ElementType));
     }
 
     private IRType Visit(ITypeInferenceContext context, OneHot target, TensorType indices, TensorType values)
