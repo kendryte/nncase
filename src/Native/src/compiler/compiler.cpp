@@ -30,9 +30,11 @@
 #include <dlfcn.h>
 #endif
 
-#define THROW_IF_NOT(x, err)                                                   \
+#define THROW_IF_NOT(x, format, ...)                                           \
     if (!(x)) {                                                                \
-        throw std::system_error(make_error_code(err));                         \
+        char msg[256];                                                         \
+        std::snprintf(msg, std::size(msg), format, __VA_ARGS__);               \
+        throw std::runtime_error(msg);                                         \
     }
 
 #define UNMANAGEDCALLERSONLY_METHOD ((const char_t *)-1)
@@ -44,6 +46,11 @@ typedef int (*get_function_pointer_fn)(const char_t *type_name,
                                        const char_t *delegate_type_name,
                                        void *load_context, void *reserved,
                                        /*out*/ void **delegate);
+
+typedef int (*load_assembly_and_get_function_pointer_fn)(
+    const char_t *assembly_path, const char_t *type_name,
+    const char_t *method_name, const char_t *delegate_type_name, void *reserved,
+    /*out*/ void **delegate);
 
 typedef void (*c_api_initialize_fn)(nncase_api_mt_t *mt);
 
@@ -194,8 +201,7 @@ struct premain {
 } premain_v;
 
 #endif
-std::basic_string<char_t>
-get_hostfxr_path_wrapper() {
+std::basic_string<char_t> get_hostfxr_path_wrapper() {
     size_t path_length;
     if (get_hostfxr_path(nullptr, &path_length, nullptr) != 0x80008098)
         throw std::runtime_error("Failed to get hostfxr path.");
@@ -208,17 +214,16 @@ get_hostfxr_path_wrapper() {
 
 c_api_initialize_fn
 load_compiler_c_api_initializer(const char *root_assembly_path) {
-    auto hostfxr_mod =
-        load_library(get_hostfxr_path_wrapper().c_str());
+    auto hostfxr_mod = load_library(get_hostfxr_path_wrapper().c_str());
 
-    hostfxr_handle handle;
+    hostfxr_handle handle = nullptr;
     std::filesystem::path compiler_path(root_assembly_path);
 
 #ifdef NNCASE_DOTNET_INIT_FOR_CONFIG
     auto hostfxr_initialize =
         (hostfxr_initialize_for_runtime_config_fn)load_symbol(
             hostfxr_mod, "hostfxr_initialize_for_runtime_config");
-    hostfxr_initialize(
+    auto hr = hostfxr_initialize(
         compiler_path.replace_extension(".runtimeconfig.json").c_str(), nullptr,
         &handle);
 #else
@@ -226,26 +231,46 @@ load_compiler_c_api_initializer(const char *root_assembly_path) {
     auto hostfxr_initialize =
         (hostfxr_initialize_for_dotnet_command_line_fn)load_symbol(
             hostfxr_mod, "hostfxr_initialize_for_dotnet_command_line");
-    hostfxr_initialize(1, args, nullptr, &handle);
+    auto hr = hostfxr_initialize(1, args, nullptr, &handle);
 #endif
 
-    THROW_IF_NOT(handle, nncase::runtime::nncase_errc::runtime_not_found);
+    THROW_IF_NOT(handle, "Failed to initialize hostfxr: 0x%x.", hr);
 
     auto hostfxr_get_delegate = (hostfxr_get_runtime_delegate_fn)load_symbol(
         hostfxr_mod, "hostfxr_get_runtime_delegate");
 
-    get_function_pointer_fn hostfxr_get_fn_ptr;
-    hostfxr_get_delegate(handle, hdt_get_function_pointer,
-                         (void **)&hostfxr_get_fn_ptr);
+#ifdef NNCASE_DOTNET_INIT_FOR_CONFIG
+    load_assembly_and_get_function_pointer_fn hostfxr_get_fn_ptr = nullptr;
+    hr =
+        hostfxr_get_delegate(handle, hdt_load_assembly_and_get_function_pointer,
+                             (void **)&hostfxr_get_fn_ptr);
     THROW_IF_NOT(hostfxr_get_fn_ptr,
-                 nncase::runtime::nncase_errc::runtime_not_found);
+                 "Failed to initialize "
+                 "hdt_load_assembly_and_get_function_pointer: 0x%x.",
+                 hr);
+#else
+    get_function_pointer_fn hostfxr_get_fn_ptr = nullptr;
+    hr = hostfxr_get_delegate(handle, hdt_get_function_pointer,
+                              (void **)&hostfxr_get_fn_ptr);
+    THROW_IF_NOT(hostfxr_get_fn_ptr,
+                 "Failed to initialize hdt_get_function_pointer: 0x%x.", hr);
+#endif
 
-    c_api_initialize_fn c_api_initialize;
-    hostfxr_get_fn_ptr(_T("Nncase.Compiler.Interop.CApi, Nncase.Compiler"),
-                       _T("Initialize"), UNMANAGEDCALLERSONLY_METHOD, nullptr,
-                       nullptr, (void **)&c_api_initialize);
+    c_api_initialize_fn c_api_initialize = nullptr;
+#ifdef NNCASE_DOTNET_INIT_FOR_CONFIG
+    hr = hostfxr_get_fn_ptr(compiler_path.c_str(),
+                            _T("Nncase.Compiler.Interop.CApi, Nncase.Compiler"),
+                            _T("Initialize"), UNMANAGEDCALLERSONLY_METHOD,
+                            nullptr, (void **)&c_api_initialize);
+#else
+    hr = hostfxr_get_fn_ptr(_T("Nncase.Compiler.Interop.CApi, Nncase.Compiler"),
+                            _T("Initialize"), UNMANAGEDCALLERSONLY_METHOD,
+                            nullptr, nullptr, (void **)&c_api_initialize);
+#endif
+
     THROW_IF_NOT(c_api_initialize,
-                 nncase::runtime::nncase_errc::runtime_not_found);
+                 "Failed to initialize Nncase.Compiler.Interop.CApi: 0x%x.",
+                 hr);
     return c_api_initialize;
 }
 

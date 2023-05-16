@@ -184,7 +184,7 @@ class BuildCMakeExt(build_ext):
             extdir += os.path.sep
 
         bin_dir = os.path.abspath(os.path.join(self.build_temp, 'install'))
-        cmake_args = ['-G', 'Ninja']
+        cmake_args = ['-G', 'Ninja', '-DDOTNET_INIT_FOR_CONFIG=ON']
         if platform.system() == 'Linux':
             cmake_args += ['-DCMAKE_C_COMPILER=gcc-10']
             cmake_args += ['-DCMAKE_CXX_COMPILER=g++-10']
@@ -239,7 +239,7 @@ class BuildCMakeExt(build_ext):
                 os.path.splitext(_lib)[-1] in [".dll", ".so", ".dylib", ".json"]]
 
         for lib in nncase_libs:
-            shutil.move(lib, os.path.join(bin_dir, 'lib', os.path.basename(lib)))
+            shutil.copy(lib, os.path.join(bin_dir, 'lib', os.path.basename(lib)))
 
         # After build_ext is run, the following commands will run:
         #
