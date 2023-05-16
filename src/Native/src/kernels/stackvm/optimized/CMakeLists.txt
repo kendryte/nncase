@@ -21,7 +21,6 @@ set(SRCS concat.cpp
          gather_nd.cpp
          quantize.cpp
          onehot.cpp
-		 # log_softmax.cpp
 )
 
 function(_TARGET_ARCH_FILES)
@@ -50,7 +49,7 @@ _TARGET_ARCH_FILES(TARGET kernels
                    softmax.cpp
                    unary.cpp
                    where.cpp
-				   log_softmax.cpp
+                   log_softmax.cpp
 )
 
 if(NOT MSVC)
