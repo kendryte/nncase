@@ -37,7 +37,7 @@ from _nncase import RuntimeTensor, TensorDesc, Simulator
 def _initialize():
     compiler_path = os.getenv("NNCASE_COMPILER")
     if not compiler_path:
-        compiler_path = os.path.join(os.path.dirname(_nncase.__file__), "Nncase.Compiler.dll")
+        compiler_path = os.path.join(os.path.dirname(_nncase.__file__), "nncase", "Nncase.Compiler.dll")
     _nncase.initialize(compiler_path)
 
 

@@ -78,8 +78,20 @@ class InstallCMakeLibs(install_lib):
         # your files are moved to the appropriate location when the installation
         # is run
 
+        sharp_libs = [os.path.join(root, _lib) for root, _, files in
+                os.walk(os.path.join(bin_dir, 'sharplibs')) for _lib in files if
+                os.path.isfile(os.path.join(root, _lib)) and
+                os.path.splitext(_lib)[-1] in [".dll", ".so", ".dylib", ".json"]
+                and not _lib.endswith(".deps.json")]
+
+        for lib in sharp_libs:
+            shutil.move(lib, os.path.join(self.build_dir,
+                                          'nncase',
+                                          os.path.basename(lib)))
+
         libs = [os.path.join(root, _lib) for root, _, files in
                 os.walk(bin_dir) for _lib in files if
+                'sharplibs' not in root and
                 os.path.isfile(os.path.join(root, _lib)) and
                 os.path.splitext(_lib)[-1] in [".dll", ".so", ".dylib", ".json"]
                 and not (_lib.startswith("python") or _lib.startswith("_nncase"))]
@@ -105,9 +117,14 @@ class InstallCMakeLibs(install_lib):
         # step; depending on the files that are generated from your cmake
         # build chain, you may need to modify the below code
 
-        self.distribution.data_files = [os.path.join(self.install_dir,
-                                                     os.path.basename(lib))
-                                        for lib in libs]
+        data_files = [os.path.join(self.install_dir,
+                                   os.path.basename(lib))
+                                   for lib in libs]
+        data_files += [os.path.join(self.install_dir,
+                                   'nncase',
+                                   os.path.basename(lib))
+                                   for lib in sharp_libs]
+        self.distribution.data_files = data_files
 
         # Must be forced to run after adding the libs to data_files
 
@@ -238,8 +255,10 @@ class BuildCMakeExt(build_ext):
                 os.path.isfile(os.path.join(root, _lib)) and
                 os.path.splitext(_lib)[-1] in [".dll", ".so", ".dylib", ".json"]]
 
+        sharp_libs_dir = os.path.join(bin_dir, 'sharplibs')
+        os.makedirs(sharp_libs_dir)
         for lib in nncase_libs:
-            shutil.copy(lib, os.path.join(bin_dir, 'lib', os.path.basename(lib)))
+            shutil.copy(lib, os.path.join(sharp_libs_dir, os.path.basename(lib)))
 
         # After build_ext is run, the following commands will run:
         #
