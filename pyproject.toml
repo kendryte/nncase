@@ -29,7 +29,7 @@ requires = ["setuptools>=42", "wheel", "conan<=1.59", "ninja"]
 [tool.cibuildwheel]
 build = ["cp37*", "cp38*", "cp39*", "cp310*"]
 skip = "*musllinux*"
-manylinux-x86_64-image = "sunnycase/manylinux_2_24_x86_64:version1.1"
+manylinux-x86_64-image = "sunnycase/manylinux2014_x86_64:1.0"
 test-requires = "pytest"
 test-command = [
   "pytest {project}/tests/other"
