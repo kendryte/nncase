@@ -385,18 +385,16 @@ result<value_t> nncase::kernels::stackvm::log_softmax(
     try_f32_input(in_mem, input);
     try_f32_output(out_mem, output, input_tensor->shape());
     try_positive_axis(axis_value, axis, input_tensor);
-    // refere log_softmax have no define, so now cannot use CONTIGUOUS_KERNEL macro
-    if(is_contiguous(input_tensor))
-    {
+    // refere log_softmax have no define, so now cannot use CONTIGUOUS_KERNEL
+    // macro
+    if (is_contiguous(input_tensor)) {
         try_(optimized::log_softmax(in_mem, out_mem, input_tensor->shape(),
-                            input_tensor->strides(),
-                            output_tensor->strides(), axis_value));
-    }
-    else
-    {
-        try_(reference::softmax(in_mem, out_mem, input_tensor->shape(),
-                            input_tensor->strides(), output_tensor->strides(),
-                            axis_value, 1.f, true));
+                                    input_tensor->strides(),
+                                    output_tensor->strides(), axis_value));
+    } else {
+        try_(reference::softmax(
+            in_mem, out_mem, input_tensor->shape(), input_tensor->strides(),
+            output_tensor->strides(), axis_value, 1.f, true));
     }
     return ok(output);
 }
