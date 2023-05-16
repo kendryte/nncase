@@ -27,15 +27,16 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class UnaryTest : public KernelTest,
-                   public ::testing::TestWithParam<
-                       std::tuple<nncase::typecode_t, dims_t>> {
+class UnaryTest
+    : public KernelTest,
+      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
   public:
     void SetUp() override {
         auto &&[typecode, i_shape] = GetParam();
 
-        input = hrt::create(typecode, i_shape, host_runtime_tensor::pool_cpu_only)
-                  .expect("create tensor failed");
+        input =
+            hrt::create(typecode, i_shape, host_runtime_tensor::pool_cpu_only)
+                .expect("create tensor failed");
         init_tensor(input);
     }
 
@@ -65,10 +66,9 @@ TEST_P(UnaryTest, sqrt) {
                         .expect("create tensor failed");
 
     // actual
-    auto output =
-        kernels::stackvm::unary(nncase::runtime::stackvm::unary_op_t::sqrt,
-                                 input.impl())
-            .expect("binary failed");
+    auto output = kernels::stackvm::unary(
+                      nncase::runtime::stackvm::unary_op_t::sqrt, input.impl())
+                      .expect("binary failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
