@@ -202,10 +202,7 @@ class BuildCMakeExt(build_ext):
 
         bin_dir = os.path.abspath(os.path.join(self.build_temp, 'install'))
         cmake_args = ['-G', 'Ninja', '-DDOTNET_INIT_FOR_CONFIG=ON']
-        if platform.system() == 'Linux':
-            cmake_args += ['-DCMAKE_C_COMPILER=gcc-10']
-            cmake_args += ['-DCMAKE_CXX_COMPILER=g++-10']
-        elif platform.system() == 'Windows':
+        if platform.system() == 'Windows':
             cmake_args += ['-DCMAKE_C_COMPILER=clang-cl']
             cmake_args += ['-DCMAKE_CXX_COMPILER=clang-cl']
         cmake_args += ['-DPython3_ROOT_DIR=' + os.path.dirname(sys.executable)]
