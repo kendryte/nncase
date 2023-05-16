@@ -134,6 +134,7 @@ public sealed partial class OnnxImporter : BaseImporter
             "MaxPool" => VisitReduceWindow2D(op, ReduceOp.Max, float.MinValue),
             "Max" => VisitBinary(op, BinaryOp.Max),
             "Min" => VisitBinary(op, BinaryOp.Min),
+            "Mod" => VisitBinary(op, BinaryOp.Mod),
             "Mul" => VisitBinary(op, BinaryOp.Mul),
             "Neg" => VisitUnary(op, UnaryOp.Neg),
             "Not" => VisitUnary(op, UnaryOp.LogicalNot),

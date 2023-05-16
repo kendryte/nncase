@@ -22,7 +22,7 @@ from onnx_test_runner import OnnxTestRunner
 import numpy as np
 
 
-def _make_module(in_shape, axes, keepdims):
+def _make_module(in_shape, axes, keepdims, op_version):
     inputs = []
     initializers = []
 
@@ -62,7 +62,9 @@ def _make_module(in_shape, axes, keepdims):
         [output],
         initializer=initializers)
 
-    model_def = helper.make_model(graph_def, producer_name='kendryte')
+    op = onnx.OperatorSetIdProto()
+    op.version = op_version
+    model_def = helper.make_model(graph_def, producer_name='kendryte', opset_imports=[op])
 
     return model_def
 
@@ -92,13 +94,20 @@ keep_dims = [
     0
 ]
 
+op_version_lists = [
+    1,
+    11,
+    13
+]
+
 
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('axes', axes_list)
 @pytest.mark.parametrize('keep_dim', keep_dims)
-def test_reducel2(in_shape, axes, keep_dim, request):
+@pytest.mark.parametrize('op_version', op_version_lists)
+def test_reducel2(in_shape, axes, keep_dim, request, op_version):
     if axes is None or len(axes) <= len(in_shape):
-        model_def = _make_module(in_shape, axes, keep_dim)
+        model_def = _make_module(in_shape, axes, keep_dim, op_version)
 
         runner = OnnxTestRunner(request.node.name)
         model_file = runner.from_onnx_helper(model_def)
