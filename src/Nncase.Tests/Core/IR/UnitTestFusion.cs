@@ -17,7 +17,7 @@ namespace Nncase.Tests.CoreTest;
 public sealed class UnitTestFusion
 {
     [Fact]
-    public void FusionWith_UpdatesProperties()
+    public void FusionWithUpdatesProperties()
     {
         var fusion = new Fusion("myFunc", "module", 1, new Var("x", DataTypes.Int32));
 
@@ -30,8 +30,8 @@ public sealed class UnitTestFusion
         Assert.Equal(DataTypes.Boolean, updatedFusion.Parameters[0].CheckedType);
         Assert.Equal("module", updatedFusion.ModuleKind);
 
-        var readOnlySpan = fusion.Parameters;
-        var expect = readOnlySpan.AsValueEnumerable().Select(x => x.CheckedType).ToArray();
+        var parameters = fusion.Parameters;
+        var expect = parameters.AsValueEnumerable().Select(x => x.CheckedType).ToArray();
         Assert.Equal(expect, fusion.ParameterTypes);
 
         Assert.NotNull(new Fusion("module", 1, default(ReadOnlySpan<Var>)));

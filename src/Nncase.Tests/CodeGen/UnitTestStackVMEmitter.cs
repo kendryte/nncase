@@ -1420,9 +1420,9 @@ public class UnitTestStackVMEmitter
         var memoryStream = new MemoryStream();
         var stackVmEmitter = new StackVMEmitter(new BinaryWriter(memoryStream, Encoding.UTF8, true));
         var tensorEmitter = new StackVMEmitter.TensorEmitter(stackVmEmitter);
-        tensorEmitter.RangeOf();
+        tensorEmitter.RangeOf(false);
         var actual = memoryStream.ToArray();
-        Assert.Equal(new byte[] { 100, 47, 0 }, actual);
+        Assert.Equal(new byte[] { 100, 47, 0, 0 }, actual);
     }
 
     [Fact]
