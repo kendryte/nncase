@@ -61,7 +61,7 @@ public sealed class UnitTestTIR
         var store = (BufferStore)storeOp;
         Assert.Equal(physicalBuffer, store.Buffer);
         Assert.Equal(value, store.Value);
-        _ = store.Indices;
+        Assert.Equal(new Expr[] { 0 }, store.Indices.ToArray());
     }
 
     [Fact]
