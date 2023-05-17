@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.Extensions.Hosting;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
@@ -90,8 +91,6 @@ public sealed class UnitTestPatternMatch
     [Fact]
     public void TestUtility()
     {
-        IsSwappableBinary("testName", "call", binary => true, 1f, 1f);
-
         var targetFunc = new Function(new Normal(DataTypes.Float32));
         var funcPattern = new FunctionPattern(IsOp<Normal>("normal"), IsVArgs(), null);
         Assert.True(CompilerServices.TryMatchRoot(new Call(targetFunc, 1f), IsCall(null, funcPattern, IsWildcard()), out _));
@@ -99,31 +98,36 @@ public sealed class UnitTestPatternMatch
 
         Assert.True(CompilerServices.TryMatchRoot(IR.F.Random.Normal(DataTypes.Float32), IsCall(null, IsOp<Normal>("normal"), IsWildcard(), IsWildcard(), IsWildcard(), IsWildcard()), out _));
 
-        Assert.True(CompilerServices.TryMatchRoot(new Call(new TensorConst(null)), IsConstIntTensor(null), out _));
-        Assert.NotNull(IsConstIntTensor(null));
-        Assert.NotNull(IsConstIntTensor());
-        Assert.NotNull(IsConstIntSclar());
+        Assert.Equal(IsTensorConst(null, IsIntegral()).ToString(), IsConstIntTensor().ToString());
+        Assert.Equal(IsTensorConst(null, IsIntegral()).ToString(), IsConstIntSclar().ToString());
 
-        Assert.NotNull(IsRangeOfMarker(null, IsWildcard(), IsWildcard()));
-        Assert.NotNull(IsMarker(WellknownMarkerNames.RangeOf, IsWildcard(), IsWildcard()));
+        Assert.Equal(IsMarker(null, WellknownMarkerNames.RangeOf, IsWildcard(), IsWildcard()).Target, IsRangeOfMarker(null, IsWildcard(), IsWildcard()).Target);
+        Assert.Equal(IsMarker(null, WellknownMarkerNames.RangeOf, IsWildcard(), IsWildcard()).Target, IsMarker(WellknownMarkerNames.RangeOf, IsWildcard(), IsWildcard()).Target);
 
-        Assert.NotNull(IsAlt(string.Empty, IsNone(), IsNone()));
+        Assert.Equal(new OrPattern(IsNone(), IsNone(), string.Empty), IsAlt(string.Empty, IsNone(), IsNone()));
 
-        Assert.NotNull(IsFusion<Binary, Binary, Unary>(null!, null!, null!, null!, null!, null!));
+        Assert.Equal(new FusionPattern(null!, null!, null!, null!).Name, IsFusion<Binary, Binary, Unary>(null!, null!, null!, null!, null!, null!).Name);
 
-        Assert.NotNull(IsTupleConst());
-        Assert.NotNull(IsTupleConst(_ => true));
+        Assert.Equal(IsTupleConst(_ => true).Value, IsTupleConst().Value);
 
         Assert.Equal(new List<Dimension>(1), GetShape(1));
 
-        var tuplePattern = new TuplePattern(new IR.Tuple(new[] { 1 }), null);
-        Assert.NotNull(tuplePattern);
+        var tuplePattern1 = new TuplePattern(new IR.Tuple(new[] { 1 }), "tuplePattern1");
+        var tuplePattern2 = new TuplePattern(new IR.Tuple(new[] { 2 }), "tuplePattern2");
+        Assert.NotEqual(tuplePattern1, tuplePattern2);
 
-        var tupleConstPattern = new TupleConstPattern(new TupleConst(new TupleValue(new[] { Value.FromConst(1F) })), null);
-        Assert.NotNull(tupleConstPattern);
+        var tupleConstPattern1 = new TupleConstPattern(new TupleConst(new TupleValue(new[] { Value.FromConst(1F) })), null);
+        var tupleConstPattern2 = new TupleConstPattern(new TupleConst(new TupleValue(new[] { Value.FromConst(2F) })), null);
+        Assert.NotEqual(tupleConstPattern1, tupleConstPattern2);
 
-        var markerPattern = new MarkerPattern(new Marker(null!, 1, 1), null);
-        Assert.NotNull(markerPattern);
+        var markerPattern1 = new MarkerPattern(new Marker(null!, 1, 1), null);
+        var markerPattern2 = new MarkerPattern(new Marker(null!, 2, 1), null);
+        Assert.NotEqual(markerPattern1, markerPattern2);
+
+        var expect = IsAlt(
+            IsBinary("testName", "call", binary => true, 1f, 1f),
+            IsBinary("testName", "call", binary => true, 1f, 1f)).Name;
+        Assert.Equal(expect, IsSwappableBinary("testName", "call", binary => true, 1f, 1f).Name);
     }
 
     [Fact]
