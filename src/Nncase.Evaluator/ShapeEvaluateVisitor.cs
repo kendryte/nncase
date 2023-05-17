@@ -25,18 +25,8 @@ internal sealed class ShapeEvaluateVisitor : ExprVisitor<Expr, Unit>
 
     protected override Expr VisitLeafIf(If expr)
     {
-        // todo: then or else??
-        return Visit(expr.Then);
+        return new If(expr.Condition, Visit(expr.Then), Visit(expr.Else));
     }
-    // protected override Expr DispatchVisit(Expr expr)
-    // {
-    //     // if (expr.Metadata.ShapeExpr is null)
-    //     // {
-    //         // expr.Metadata.ShapeExpr = base.DispatchVisit(expr);
-    //     // }
-    //
-    //     return expr.Metadata.ShapeExpr;
-    // }
 
     /// <inheritdoc/>
     protected override Expr VisitLeafConst(Const expr)
@@ -134,7 +124,7 @@ internal sealed class ShapeEvaluateVisitor : ExprVisitor<Expr, Unit>
             //
             // if (!_context.VarMap.ContainsKey(expr))
             // {
-            //     Console.WriteLine("error");
+            //     Console.WriteLine("key not found error");
             //     Console.WriteLine(expr.Name);
             // }
 

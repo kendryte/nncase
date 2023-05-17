@@ -9,6 +9,7 @@ using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
+using Nncase.Utilities;
 using OrtKISharp;
 
 namespace Nncase.Evaluator.Tensors;
@@ -56,8 +57,8 @@ public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>, ICostEv
 
     public Expr Visit(IShapeEvaluateContext context, Stack target)
     {
-        var inputs = context.GetArgumentShape(target, Stack.Inputs);
-        return IR.F.Tensors.Concat(new IR.Tuple(inputs, Tensor.From(new[] { 1 })), 0);
+        var inShape = context.GetArgumentShape(target, Stack.Inputs);
+        return IR.F.Tensors.Concat(new IR.Tuple(inShape[0], Tensor.From(new[] { 1 })), 0);
     }
 
     private IRType Visit(ITypeInferenceContext context, Stack target, TupleType inputs)

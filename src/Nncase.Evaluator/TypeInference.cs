@@ -436,7 +436,7 @@ public static class TypeInference
                 return a;
             }
 
-        if (a.DType != b.DType)
+            if (a.DType != b.DType)
             {
                 return new InvalidType($"Inputs DType of if should be same, then: {a.DType}, else: {b.DType}");
             }
