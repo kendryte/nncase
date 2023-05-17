@@ -6,7 +6,6 @@ using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
 using OrtKISharp;
-using Tensorflow;
 
 namespace Nncase.Evaluator.Math;
 

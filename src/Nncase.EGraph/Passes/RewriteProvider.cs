@@ -15,7 +15,6 @@ using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.PatternMatch;
 using Nncase.Utilities;
-using Tensorflow;
 
 namespace Nncase.Passes;
 

@@ -1,14 +1,35 @@
 [project]
 name = "nncase"
-version = "2.0.0"
-requires-python = ">=3.6"
+dynamic = ["version"]
+requires-python = ">=3.7"
+authors = [{ name = "sunnycase" }, { email = "sunnycase@live.cn" }]
+maintainers = [{ name = "sunnycase" }, { email = "sunnycase@live.cn" }]
+readme = "README.md"
+description = "A neural network compiler for AI accelerators"
+license = { file = "LICENSE" }
+classifiers = [
+    "Programming Language :: C++",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+]
+keywords = ["kendryte", "nn", "compiler", "k210", "k510", "k230"]
+dependencies = ["numpy"]
+
+[project.urls]
+homepage = "https://github.com/kendryte/nncase"
 
 [build-system]
-requires = ["setuptools>=42", "wheel", "conan==1.59", "ninja"]
+requires = ["setuptools>=42", "wheel", "conan<=1.59", "ninja"]
 
 [tool.cibuildwheel]
-build = "cp3*"
-manylinux-x86_64-image = "sunnycase/manylinux_2_24_x86_64:version1.0"
+build = ["cp37*", "cp38*", "cp39*", "cp310*"]
+skip = "*musllinux*"
+manylinux-x86_64-image = "sunnycase/manylinux2014_x86_64:1.0"
 test-requires = "pytest"
 test-command = [
   "pytest {project}/tests/other"
@@ -23,11 +44,14 @@ archs = ["AMD64"]
 [tool.cibuildwheel.linux]
 archs = ["x86_64"]
 before-all = [
-  "pip install conan",
+  "pip install conan==1.59",
   "conan profile new default --detect",
-  "conan profile update settings.compiler.libcxx=libstdc++11 default"
+  "conan profile update settings.compiler.libcxx=libstdc++11 default",
+  "curl -L https://sdk.lunarg.com/sdk/download/1.2.182.0/linux/vulkansdk-linux-x86_64-1.2.182.0.tar.gz --output vulkansdk.tar.gz",
+  "tar xf vulkansdk.tar.gz",
+  "cp -P 1.2.182.0/x86_64/lib/libvulkan.so* /usr/local/lib/"
 ]
-before-build = "pip install https://github.com/sunnycase/auditwheel/releases/download/4.0.0-nncase-2/auditwheel-0.0.0-py3-none-any.whl"
+before-build = "pip install auditwheel"
 repair-wheel-command = "LD_LIBRARY_PATH=/usr/lib64 auditwheel repair -w {dest_dir} {wheel} --exclude libvulkan.so.1,libgomp.so.1"
 
 [tool.cibuildwheel.macos]

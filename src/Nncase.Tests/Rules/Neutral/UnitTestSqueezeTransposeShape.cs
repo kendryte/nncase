@@ -12,7 +12,6 @@ using Nncase.Diagnostics;
 using Nncase.Passes;
 using Nncase.Passes.Rules.Neutral;
 using Nncase.Tests.TestFixture;
-using Tensorflow;
 using Xunit;
 using Math = Nncase.IR.F.Math;
 using Random = Nncase.IR.F.Random;

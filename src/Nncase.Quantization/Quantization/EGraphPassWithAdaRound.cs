@@ -8,7 +8,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Nncase.Evaluator;
 using Nncase.Passes;
-using Tensorflow;
 
 namespace Nncase.Quantization;
 
