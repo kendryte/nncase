@@ -145,6 +145,16 @@ public sealed partial class CombineTransposeConstBinary : RewriteRule<CallPatter
 
     private Expr? GetReplace(Binary binary, Call binaryCall, Expr x, Expr y, TensorConst perm)
     {
+        if (x is TensorConst && y.CheckedShape.Rank != binaryCall.CheckedShape.Rank)
+        {
+            return null;
+        }
+
+        if (y is TensorConst && x.CheckedShape.Rank != binaryCall.CheckedShape.Rank)
+        {
+            return null;
+        }
+
         if (x is TensorConst constX)
         {
             return Binary(binary.BinaryOp, GetNewConst(constX, y, perm), Transpose(y, perm)).InheritMetaData(binaryCall);

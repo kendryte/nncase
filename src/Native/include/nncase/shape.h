@@ -163,6 +163,6 @@ class NNCASE_API shape_t {
 
   private:
     shape_kind_t kind_;
-    itlib::small_vector<dim_t, 4> dims_;
+    itlib::small_vector<dim_t, 8> dims_;
 };
 } // namespace nncase

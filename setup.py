@@ -210,8 +210,7 @@ class BuildCMakeExt(build_ext):
         cfg = 'Debug' if self.debug else 'Release'
         build_args = ['--config', cfg]
         cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
-        install_args = ['--prefix', bin_dir,
-                        '--component', 'nncase-runtime']
+        install_args = ['--prefix', bin_dir]
 
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)

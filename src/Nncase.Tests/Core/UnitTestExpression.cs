@@ -61,6 +61,19 @@ public class UnitTestExpression
         Assert.Equal(sa.GetHashCode(), sb.GetHashCode());
     }
 
+    [Fact]
+    public void TestConstNotEqual()
+    {
+        var a = (Const)(int)1;
+        var b = (Const)(uint)1U;
+        Assert.NotEqual(a, b);
+        Assert.Equal(a.GetHashCode(), b.GetHashCode());
+        var dict = new Dictionary<Expr, int>();
+        dict.TryAdd(a, 0);
+        dict.TryAdd(b, 1);
+        Assert.Equal(2, dict.Keys.Count);
+    }
+
     /// <summary>
     /// when check type is different, expression not equal.
     /// </summary>

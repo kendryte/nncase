@@ -17,6 +17,7 @@ using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
+[TestFixture.AutoSetupTestMethod(InitSession = true)]
 public class UnitTestFoldSlice : TransformTestBase
 {
     public static IEnumerable<object[]> TestFoldNopSlicePositiveData =>
@@ -45,12 +46,6 @@ public class UnitTestFoldSlice : TransformTestBase
         {
             new object[]
             {
-                new[] { 2, 4, 6, 8 },
-                new[] { 0 }, new[] { 6 }, new[] { 3 }, new[] { 2 },
-                new[] { 0 }, new[] { 2 }, new[] { 3 }, new[] { 1 },
-            }, // Naive Case
-            new object[]
-            {
                 new[] { 1, 4, 6, 8 },
                 new[] { 0 }, new[] { 6 }, new[] { 3 }, new[] { 3 },
                 new[] { 0 }, new[] { 4 }, new[] { 2 }, new[] { 2 },
@@ -68,6 +63,58 @@ public class UnitTestFoldSlice : TransformTestBase
                 new[] { -5 }, new[] { 4 }, new[] { 2 }, new[] { -2 },
             }, // negative begin|end
         }.Select((o, i) => o.Concat(new object[] { i }).ToArray());
+
+    public static TheoryData<int[], int[], int[], int[], int[], int[], int[], int[], int[], int> TestFoldTwoSlicePositiveData2 { get; } = new()
+    {
+      {
+        new[] { 1, 3, 640, 640 },
+        new[] { 0 },
+        new[] { int.MaxValue },
+        new[] { 2 },
+        new[] { 2 },
+        new[] { 0 },
+        new[] { int.MaxValue },
+        new[] { 3 },
+        new[] { 2 },
+        0
+      },
+      {
+        new[] { 1, 3, 640, 640 },
+        new[] { 0 },
+        new[] { int.MaxValue },
+        new[] { 2 },
+        new[] { 2 },
+        new[] { 1 },
+        new[] { int.MaxValue },
+        new[] { 3 },
+        new[] { 2 },
+        1
+      },
+      {
+        new[] { 1, 3, 640, 640 },
+        new[] { 1 },
+        new[] { int.MaxValue },
+        new[] { 2 },
+        new[] { 2 },
+        new[] { 0 },
+        new[] { int.MaxValue },
+        new[] { 3 },
+        new[] { 2 },
+        2
+      },
+      {
+        new[] { 1, 3, 640, 640 },
+        new[] { 1 },
+        new[] { int.MaxValue },
+        new[] { 2 },
+        new[] { 2 },
+        new[] { 1 },
+        new[] { int.MaxValue },
+        new[] { 3 },
+        new[] { 2 },
+        3
+      },
+    };
 
     [Theory]
     [MemberData(nameof(TestFoldNopSlicePositiveData))]
@@ -88,6 +135,7 @@ public class UnitTestFoldSlice : TransformTestBase
     }
 
     [Theory]
+    [MemberData(nameof(TestFoldTwoSlicePositiveData2))]
     [MemberData(nameof(TestFoldTwoSlicePositiveData))]
     public void TestFoldTwoSlicePositive(int[] shape, int[] begins1, int[] ends1, int[] axes1, int[] strides1, int[] begins2, int[] ends2, int[] axes2, int[] strides2, int index)
     {

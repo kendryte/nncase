@@ -13,6 +13,7 @@ using static Nncase.IR.F.Tensors;
 using static Nncase.IR.TypePatternUtility;
 using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.Utility;
+using static Nncase.Utilities.MetadataUtility;
 using Shape = Nncase.IR.Shape;
 
 namespace Nncase.Passes.Rules.Neutral;
@@ -24,11 +25,15 @@ namespace Nncase.Passes.Rules.Neutral;
 public sealed partial class MatMulToConv2D : IRewriteRule
 {
     /// <inheritdoc/>
-    public IPattern Pattern { get; } = IsMatMul(
-        IsWildcard("a") with { TypePattern = HasRank(2) & HasFixedShape() },
-        IsTensorConst("b") with { TypePattern = HasRank(2) & HasFixedShape() });
+    public IPattern Pattern { get; } =
+        IsMatMul(
+            "matMul",
+            "matMulCall",
+            _ => true,
+            IsWildcard("a") with { TypePattern = HasRank(2) & HasFixedShape() },
+            IsTensorConst("b") with { TypePattern = HasRank(2) & HasFixedShape() });
 
-    private Expr? GetReplace(Expr a, Expr b)
+    private Expr? GetReplace(Call matMulCall, Expr a, Expr b)
     {
         var aShape = a.CheckedShape;
         var bShape = b.CheckedShape;
@@ -42,8 +47,8 @@ public sealed partial class MatMulToConv2D : IRewriteRule
         var of_shape = new Shape(new[] { aShape[0].FixedValue, bShape[1].FixedValue });
 
         var if_reshape = Reshape(a, if_shape);
-        var w_tp = Transpose(b, Tensor.From<int>(new[] { 1, 0 }));
-        var w_reshape = Reshape(w_tp, w_shape);
+        var w_tp = Transpose(b, Tensor.From<int>(new[] { 1, 0 })).InheritMetaData(b);
+        var w_reshape = Reshape(w_tp, w_shape).InheritMetaData(b);
         var conv2d = Conv2D(
             if_reshape,
             w_reshape,
@@ -52,8 +57,8 @@ public sealed partial class MatMulToConv2D : IRewriteRule
             Tensor.FromScalar(0, new[] { 2, 2 }),
             new int[] { 1, 1 },
             PadMode.Constant,
-            1);
-        return Reshape(conv2d, of_shape);
+            1).InheritMetaData(matMulCall);
+        return Reshape(conv2d, of_shape).InheritMetaData(matMulCall);
     }
 }
 
@@ -64,11 +69,15 @@ public sealed partial class MatMulToConv2D : IRewriteRule
 public sealed partial class BroadcastMatMulToConv2D : IRewriteRule
 {
     /// <inheritdoc/>
-    public IPattern Pattern { get; } = IsMatMul(
-        IsWildcard("a") with { TypePattern = HasRank(3) & HasFixedShape() },
-        IsTensorConst("b") with { TypePattern = HasRank(2) & HasFixedShape() });
+    public IPattern Pattern { get; } =
+        IsMatMul(
+            "matMul",
+            "matMulCall",
+            _ => true,
+            IsWildcard("a") with { TypePattern = HasRank(3) & HasFixedShape() },
+            IsTensorConst("b") with { TypePattern = HasRank(2) & HasFixedShape() });
 
-    private Expr? GetReplace(Expr a, Expr b)
+    private Expr? GetReplace(Call matMulCall, Expr a, Expr b)
     {
         var aShape = a.CheckedShape;
         var bShape = b.CheckedShape;
@@ -82,8 +91,8 @@ public sealed partial class BroadcastMatMulToConv2D : IRewriteRule
         var of_shape = new Shape(new[] { aShape[0].FixedValue, aShape[1].FixedValue, bShape[1].FixedValue });
 
         var if_reshape = Reshape(a, if_shape);
-        var w_tp = Transpose(b, Tensor.From<int>(new[] { 1, 0 }));
-        var w_reshape = Reshape(w_tp, w_shape);
+        var w_tp = Transpose(b, Tensor.From<int>(new[] { 1, 0 })).InheritMetaData(b);
+        var w_reshape = Reshape(w_tp, w_shape).InheritMetaData(b);
 
         var conv2d = Conv2D(
             if_reshape,
@@ -93,8 +102,8 @@ public sealed partial class BroadcastMatMulToConv2D : IRewriteRule
             Tensor.FromScalar(0, new[] { 2, 2 }),
             new int[] { 1, 1 },
             PadMode.Constant,
-            1);
-        return Reshape(conv2d, of_shape);
+            1).InheritMetaData(matMulCall);
+        return Reshape(conv2d, of_shape).InheritMetaData(matMulCall);
     }
 }
 
@@ -105,11 +114,15 @@ public sealed partial class BroadcastMatMulToConv2D : IRewriteRule
 public sealed partial class SplitBatchMatMul : IRewriteRule
 {
     /// <inheritdoc/>
-    public IPattern Pattern { get; } = IsMatMul(
-        IsWildcard("a") with { TypePattern = HasRank(3) & HasFixedShape() },
-        IsTensorConst("b") with { TypePattern = HasRank(3) & HasFixedShape() });
+    public IPattern Pattern { get; } =
+        IsMatMul(
+            "matMul",
+            "matMulCall",
+            _ => true,
+            IsWildcard("a") with { TypePattern = HasRank(3) & HasFixedShape() },
+            IsTensorConst("b") with { TypePattern = HasRank(3) & HasFixedShape() });
 
-    private Expr? GetReplace(Expr a, Expr b)
+    private Expr? GetReplace(Call matMulCall, Expr a, Expr b)
     {
         var aShape = a.CheckedShape;
         var bShape = b.CheckedShape;
@@ -137,6 +150,6 @@ public sealed partial class SplitBatchMatMul : IRewriteRule
             ofSlices[i] = Reshape(mmSlices[i], new Shape(1, aShape[1].FixedValue, bShape[2].FixedValue));
         }
 
-        return Concat(new IR.Tuple(ofSlices), 0);
+        return Concat(new IR.Tuple(ofSlices), 0).InheritMetaData(matMulCall);
     }
 }
