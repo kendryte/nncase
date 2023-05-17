@@ -12,7 +12,6 @@ using NetFabric.Hyperlinq;
 using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.TIR;
-using Tensorflow.Contexts;
 
 namespace Nncase.Evaluator;
 

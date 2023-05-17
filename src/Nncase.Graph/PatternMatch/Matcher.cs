@@ -14,7 +14,6 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Nncase.IR;
 using Nncase.Utilities;
-using Tensorflow.Contexts;
 
 namespace Nncase.PatternMatch;
 

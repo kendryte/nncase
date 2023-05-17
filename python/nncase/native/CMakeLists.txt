@@ -10,4 +10,6 @@ target_link_libraries(nncase_python PRIVATE nncaseruntime)
 target_include_directories(nncase_python PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../common)
 set_target_properties(nncase_python PROPERTIES
                                     OUTPUT_NAME _nncase)
-install(TARGETS nncase_python DESTINATION lib)
+install(TARGETS nncase_python
+        COMPONENT nncase-runtime
+        DESTINATION lib)

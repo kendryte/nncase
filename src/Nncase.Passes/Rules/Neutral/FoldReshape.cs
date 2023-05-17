@@ -12,7 +12,6 @@ using Nncase.IR.Math;
 using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
 using Nncase.Utilities;
-using Tensorflow;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.Tensors;
 using static Nncase.IR.TypePatternUtility;
