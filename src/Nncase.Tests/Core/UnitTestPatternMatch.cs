@@ -13,7 +13,6 @@ using Nncase.Passes;
 using Nncase.PatternMatch;
 using Nncase.PatternMatch.F;
 using Nncase.TIR;
-using Tensorflow;
 using Xunit;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.Tensors;

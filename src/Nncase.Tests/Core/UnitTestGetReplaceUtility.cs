@@ -12,7 +12,6 @@ using Nncase.Passes;
 using Nncase.Tests.TestFixture;
 using Nncase.TIR;
 using OrtKISharp;
-using Tensorflow;
 using Xunit;
 using Fx = System.Func<Nncase.IR.Expr, Nncase.IR.Expr>;
 

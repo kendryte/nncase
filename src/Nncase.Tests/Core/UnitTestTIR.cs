@@ -12,7 +12,6 @@ using Nncase.Schedule;
 using Nncase.TIR;
 using Nncase.TIR.Builders;
 using OrtKISharp;
-using Tensorflow;
 using Xunit;
 using Buffer = Nncase.TIR.Buffer;
 using Function = Nncase.IR.Function;
@@ -130,7 +129,7 @@ public sealed class UnitTestTIR
     {
         var grid1 = T.Grid(out _, LoopMode.Serial, new Range(-1f, 1f, 1));
         var grid2 = T.Grid(out _, out _, new(1, 1));
-        Assert.Equal(grid1.GetDataType(), grid2.GetDataType());
+        Assert.Equal(grid1.GetType(), grid2.GetType());
     }
 
     [Fact]
@@ -226,13 +225,25 @@ public sealed class UnitTestTIR
         var range0 = new Range(0, 1, 1);
         Assert.Equal(0, range0.Start);
 
-        var range1 = range + range;
-        var range2 = range - range;
-        var range3 = range * 2;
-        var range4 = range / 2;
-        Assert.NotEqual(range0, range1);
-        Assert.NotEqual(range0, range2);
-        Assert.NotEqual(range0, range3);
-        Assert.NotEqual(range0, range4);
+        var range1 = range0 + 1;
+
+        Assert.Equal(1, range1.Start.Evaluate().AsTensor().ToScalar<int>());
+        Assert.Equal(2, range1.Stop.Evaluate().AsTensor().ToScalar<int>());
+        Assert.Equal(1, range1.Step.Evaluate().AsTensor().ToScalar<int>());
+
+        var range2 = range0 - 1;
+        Assert.Equal(-1, range2.Start.Evaluate().AsTensor().ToScalar<int>());
+        Assert.Equal(0, range2.Stop.Evaluate().AsTensor().ToScalar<int>());
+        Assert.Equal(1, range2.Step.Evaluate().AsTensor().ToScalar<int>());
+
+        var range3 = range0 * 2;
+        Assert.Equal(0, range3.Start.Evaluate().AsTensor().ToScalar<int>());
+        Assert.Equal(2, range3.Stop.Evaluate().AsTensor().ToScalar<int>());
+        Assert.Equal(1, range3.Step.Evaluate().AsTensor().ToScalar<int>());
+
+        var range4 = range0 / 2;
+        Assert.Equal(0, range4.Start.Evaluate().AsTensor().ToScalar<int>());
+        Assert.Equal(0, range4.Stop.Evaluate().AsTensor().ToScalar<int>());
+        Assert.Equal(1, range4.Step.Evaluate().AsTensor().ToScalar<int>());
     }
 }
