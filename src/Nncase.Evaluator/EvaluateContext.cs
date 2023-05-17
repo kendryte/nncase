@@ -30,11 +30,6 @@ public static class EvaluateContextExtensions
         var tensor = context.GetArgumentValue(op, parameter).AsTensor().Cast<long>();
         return tensor.Shape.IsScalar ? tensor.ScalarToOrtTensor() : tensor.ToOrtTensor();
     }
-
-    public static Tensorflow.Tensor GetTFArgumentValue(this IEvaluateContext context, Op op, ParameterInfo parameter)
-    {
-        return context.GetArgumentValue(op, parameter).AsTensor().ToTFTensor();
-    }
 }
 
 /// <summary>
