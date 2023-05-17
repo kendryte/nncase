@@ -15,7 +15,6 @@ using Nncase.IR.Tensors;
 using Nncase.Passes;
 using Nncase.Passes.Rules.Neutral;
 using Nncase.PatternMatch;
-using Tensorflow;
 using Xunit;
 using static Nncase.IR.F.NN;
 using ITuple = Nncase.IR.ITuple;

@@ -4,7 +4,6 @@
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.PatternMatch;
-using Tensorflow.Operations.Activation;
 using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.F.NN;
 using static Nncase.PatternMatch.Utility;
