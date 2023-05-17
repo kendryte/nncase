@@ -17,7 +17,7 @@ public class ScatterNDEvaluator : IEvaluator<ScatterND>, ITypeInferencer<Scatter
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, ScatterND target)
     {
-#if true
+#if false
         var input = context.GetOrtArgumentValue(target, ScatterND.Input);
         var indices = context.GetInt64OrtTensorArgumentValue(target, ScatterND.Indices);
         var updates = context.GetOrtArgumentValue(target, ScatterND.Updates);
