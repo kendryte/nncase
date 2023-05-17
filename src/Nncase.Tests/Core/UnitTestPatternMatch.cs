@@ -51,39 +51,39 @@ public sealed class UnitTestPatternMatch
     [Fact]
     public void TestPatternMatch()
     {
-        Assert.False(Math.Abs(1f).GetHashCode().Equals(IsUnary(UnaryOp.Abs, 1f).GetHashCode()));
-        Assert.False(Math.Ceil(1f).GetHashCode().Equals(IsUnary(UnaryOp.Ceil, 1f).GetHashCode()));
-        Assert.False(Math.Cos(1f).GetHashCode().Equals(IsUnary(UnaryOp.Cos, 1f).GetHashCode()));
-        Assert.False(Math.Exp(1f).GetHashCode().Equals(IsUnary(UnaryOp.Exp, 1f).GetHashCode()));
-        Assert.False(Math.Floor(1f).GetHashCode().Equals(IsUnary(UnaryOp.Floor, 1f).GetHashCode()));
-        Assert.False(Math.Log(1f).GetHashCode().Equals(IsUnary(UnaryOp.Log, 1f).GetHashCode()));
-        Assert.False(Math.Neg(1f).GetHashCode().Equals(IsUnary(UnaryOp.Neg, 1f).GetHashCode()));
-        Assert.False(Math.Round(1f).GetHashCode().Equals(IsUnary(UnaryOp.Round, 1f).GetHashCode()));
-        Assert.False(Math.Rsqrt(1f).GetHashCode().Equals(IsUnary(UnaryOp.Rsqrt, 1f).GetHashCode()));
-        Assert.False(Math.Sin(1f).GetHashCode().Equals(IsUnary(UnaryOp.Sin, 1f).GetHashCode()));
-        Assert.False(Math.Sqrt(1f).GetHashCode().Equals(IsUnary(UnaryOp.Sqrt, 1f).GetHashCode()));
-        Assert.False(Math.Square(1f).GetHashCode().Equals(IsUnary(UnaryOp.Square, 1f).GetHashCode()));
-        Assert.False(Math.Tanh(1f).GetHashCode().Equals(IsUnary(UnaryOp.Tanh, 1f).GetHashCode()));
-        Assert.False(Math.BitwiseNot(1f).GetHashCode().Equals(IsUnary(UnaryOp.BitwiseNot, 1f).GetHashCode()));
-        Assert.False(Math.LogicalNot(1f).GetHashCode().Equals(IsUnary(UnaryOp.LogicalNot, 1f).GetHashCode()));
-        Assert.False(Math.Mod(1f, 1f).GetHashCode().Equals(IsBinary(BinaryOp.Mod, 1f, 1f).GetHashCode()));
-        Assert.False(Math.Min(1f, 1f).GetHashCode().Equals(IsBinary(BinaryOp.Min, 1f, 1f).GetHashCode()));
-        Assert.False(Math.Pow(1f, 1f).GetHashCode().Equals(IsBinary(BinaryOp.Pow, 1f, 1f).GetHashCode()));
-        Assert.False(Math.BitwiseAnd(1f, 1f).GetHashCode().Equals(IsBinary(BinaryOp.BitwiseAnd, 1f, 1f).GetHashCode()));
-        Assert.False(Math.BitwiseOr(1f, 1f).GetHashCode().Equals(IsBinary(BinaryOp.BitwiseOr, 1f, 1f).GetHashCode()));
-        Assert.False(Math.BitwiseXor(1f, 1f).GetHashCode().Equals(IsBinary(BinaryOp.BitwiseXor, 1f, 1f).GetHashCode()));
-        Assert.False(Math.LogicalAnd(1f, 1f).GetHashCode().Equals(IsBinary(BinaryOp.LogicalAnd, 1f, 1f).GetHashCode()));
-        Assert.False(Math.LogicalOr(1f, 1f).GetHashCode().Equals(IsBinary(BinaryOp.LogicalOr, 1f, 1f).GetHashCode()));
-        Assert.False(Math.LogicalXor(1f, 1f).GetHashCode().Equals(IsBinary(BinaryOp.LogicalXor, 1f, 1f).GetHashCode()));
-        Assert.False(Math.LeftShift(1f, 1f).GetHashCode().Equals(IsBinary(BinaryOp.LeftShift, 1f, 1f).GetHashCode()));
-        Assert.False(Math.RightShift(1f, 1f).GetHashCode().Equals(IsBinary(BinaryOp.RightShift, 1f, 1f).GetHashCode()));
-        Assert.False(Math.FloorDiv(1f, 1f).GetHashCode().Equals(Floor(1f / 1f).GetHashCode()));
-        Assert.False(Math.FloorMod(1f, 1f).GetHashCode().Equals(Sub(1f, FloorDiv(1f, 1f) * 1f).GetHashCode()));
-        Assert.False(Math.NotEqual(1f, 1f).GetHashCode().Equals(IsCompare(CompareOp.NotEqual, 1f, 1f).GetHashCode()));
-        Assert.False(Math.LessThan(1f, 1f).GetHashCode().Equals(IsCompare(CompareOp.LowerThan, 1f, 1f).GetHashCode()));
-        Assert.False(Math.LessEqual(1f, 1f).GetHashCode().Equals(IsCompare(CompareOp.LowerOrEqual, 1f, 1f).GetHashCode()));
-        Assert.False(Math.GreaterEqual(1f, 1f).GetHashCode().Equals(IsCompare(CompareOp.GreaterThan, 1f, 1f).GetHashCode()));
-        Assert.False(Math.GreaterThan(1f, 1f).GetHashCode().Equals(IsCompare(CompareOp.GreaterOrEqual, 1f, 1f).GetHashCode()));
+        Assert.True(CompilerServices.TryMatchRoot(IR.F.Math.Abs(1f), IsUnary(UnaryOp.Abs, 1f), out _));
+        Assert.True(CompilerServices.TryMatchRoot(IR.F.Math.Ceil(1f), IsUnary(UnaryOp.Ceil, 1f), out _));
+        Assert.True(CompilerServices.TryMatchRoot(IR.F.Math.Cos(1f), IsUnary(UnaryOp.Cos, 1f), out _));
+        Assert.True(CompilerServices.TryMatchRoot(IR.F.Math.Exp(1f), IsUnary(UnaryOp.Exp, 1f), out _));
+        Assert.True(CompilerServices.TryMatchRoot(IR.F.Math.Floor(1f), IsUnary(UnaryOp.Floor, 1f), out _));
+        Assert.True(CompilerServices.TryMatchRoot(IR.F.Math.Log(1f), IsUnary(UnaryOp.Log, 1f), out _));
+        Assert.True(CompilerServices.TryMatchRoot(IR.F.Math.Neg(1f), IsUnary(UnaryOp.Neg, 1f), out _));
+        Assert.True(CompilerServices.TryMatchRoot(IR.F.Math.Round(1f), IsUnary(UnaryOp.Round, 1f), out _));
+        Assert.True(CompilerServices.TryMatchRoot(IR.F.Math.Rsqrt(1f), IsUnary(UnaryOp.Rsqrt, 1f), out _));
+        Assert.True(CompilerServices.TryMatchRoot(IR.F.Math.Sin(1f), IsUnary(UnaryOp.Sin, 1f), out _));
+        Assert.True(CompilerServices.TryMatchRoot(IR.F.Math.Sqrt(1f), IsUnary(UnaryOp.Sqrt, 1f), out _));
+        Assert.True(CompilerServices.TryMatchRoot(IR.F.Math.Square(1f), IsUnary(UnaryOp.Square, 1f), out _));
+        Assert.True(CompilerServices.TryMatchRoot(IR.F.Math.Tanh(1f), IsUnary(UnaryOp.Tanh, 1f), out _));
+        Assert.True(CompilerServices.TryMatchRoot(IR.F.Math.BitwiseNot(1f), IsUnary(UnaryOp.BitwiseNot, 1f), out _));
+        Assert.True(CompilerServices.TryMatchRoot(IR.F.Math.LogicalNot(1f), IsUnary(UnaryOp.LogicalNot, 1f), out _));
+        Assert.True(CompilerServices.TryMatchRoot(IR.F.Math.Mod(1f, 1f), IsBinary(BinaryOp.Mod, 1f, 1f), out _));
+        Assert.True(CompilerServices.TryMatchRoot(IR.F.Math.Min(1f, 1f), IsBinary(BinaryOp.Min, 1f, 1f), out _));
+        Assert.True(CompilerServices.TryMatchRoot(IR.F.Math.Pow(1f, 1f), IsBinary(BinaryOp.Pow, 1f, 1f), out _));
+        Assert.True(CompilerServices.TryMatchRoot(IR.F.Math.BitwiseAnd(1f, 1f), IsBinary(BinaryOp.BitwiseAnd, 1f, 1f), out _));
+        Assert.True(CompilerServices.TryMatchRoot(IR.F.Math.BitwiseOr(1f, 1f), IsBinary(BinaryOp.BitwiseOr, 1f, 1f), out _));
+        Assert.True(CompilerServices.TryMatchRoot(IR.F.Math.BitwiseXor(1f, 1f), IsBinary(BinaryOp.BitwiseXor, 1f, 1f), out _));
+        Assert.True(CompilerServices.TryMatchRoot(IR.F.Math.LogicalAnd(1f, 1f), IsBinary(BinaryOp.LogicalAnd, 1f, 1f), out _));
+        Assert.True(CompilerServices.TryMatchRoot(IR.F.Math.LogicalOr(1f, 1f), IsBinary(BinaryOp.LogicalOr, 1f, 1f), out _));
+        Assert.True(CompilerServices.TryMatchRoot(IR.F.Math.LogicalXor(1f, 1f), IsBinary(BinaryOp.LogicalXor, 1f, 1f), out _));
+        Assert.True(CompilerServices.TryMatchRoot(IR.F.Math.LeftShift(1f, 1f), IsBinary(BinaryOp.LeftShift, 1f, 1f), out _));
+        Assert.True(CompilerServices.TryMatchRoot(IR.F.Math.RightShift(1f, 1f), IsBinary(BinaryOp.RightShift, 1f, 1f), out _));
+        Assert.True(CompilerServices.TryMatchRoot(IR.F.Math.NotEqual(1f, 1f), IsCompare(CompareOp.NotEqual, 1f, 1f), out _));
+        Assert.True(CompilerServices.TryMatchRoot(IR.F.Math.LessThan(1f, 1f), IsCompare(CompareOp.LowerThan, 1f, 1f), out _));
+        Assert.True(CompilerServices.TryMatchRoot(IR.F.Math.LessEqual(1f, 1f), IsCompare(CompareOp.LowerOrEqual, 1f, 1f), out _));
+        Assert.True(CompilerServices.TryMatchRoot(IR.F.Math.GreaterThan(1f, 1f), IsCompare(CompareOp.GreaterThan, 1f, 1f), out _));
+        Assert.True(CompilerServices.TryMatchRoot(IR.F.Math.GreaterEqual(1f, 1f), IsCompare(CompareOp.GreaterOrEqual, 1f, 1f), out _));
+        Assert.Equal(IR.F.Math.FloorDiv(1f, 1f), Floor(Div(1f, 1f)));
+        Assert.Equal(IR.F.Math.FloorMod(1f, 1f), Sub(1f, Mul(FloorDiv(1f, 1f), 1f)));
     }
 
     [Fact]
