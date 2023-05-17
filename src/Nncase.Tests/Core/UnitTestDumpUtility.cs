@@ -37,6 +37,8 @@ public sealed class UnitTestDumpUtility
         Assert.True(Directory.Exists("./test4"));
         Assert.True(File.Exists("./test5"));
         DumpUtility.WriteKmodelData(new Tensor[] { new Tensor<int>(new[] { 1 }) }, new Tensor[] { new Tensor<int>(new[] { 1 }) }, "./test3", "./", true);
+        Assert.True(File.Exists("./test.kmodel"));
+        Assert.True(File.Exists("./kmodel.desc"));
         File.Delete("./test.kmodel");
     }
 
