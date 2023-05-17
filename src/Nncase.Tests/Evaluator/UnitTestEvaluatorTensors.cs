@@ -15,7 +15,6 @@ using Nncase.IR.Tensors;
 using Nncase.Utilities;
 using OrtKISharp;
 using Xunit;
-
 using static Nncase.IR.F.Random;
 using static Nncase.IR.F.Tensors;
 using static Nncase.Utilities.DumpUtility;
@@ -26,20 +25,10 @@ namespace Nncase.Tests.EvaluatorTest;
 public class UnitTestEvaluatorTensors : TestClassBase
 {
     public static IEnumerable<object[]> TestExpandData =>
-        new[]
-        {
-            new object[] { new long[] { 16, 16 } },
-            new object[] { new long[] { 1, 3, 16 } },
-            new object[] { new long[] { 1, 3, 16, 16 } },
-        };
+        new[] { new object[] { new long[] { 16, 16 } }, new object[] { new long[] { 1, 3, 16 } }, new object[] { new long[] { 1, 3, 16, 16 } }, };
 
     public static IEnumerable<object[]> TestTileData =>
-        new[]
-        {
-            new object[] { new long[] { 1, 1, 1, 1 } },
-            new object[] { new long[] { 1, 2, 1, 1 } },
-            new object[] { new long[] { 1, 1, 2, 2 } },
-        };
+        new[] { new object[] { new long[] { 1, 1, 1, 1 } }, new object[] { new long[] { 1, 2, 1, 1 } }, new object[] { new long[] { 1, 1, 2, 2 } }, };
 
     [Fact]
     public void TestBitcast()
@@ -606,6 +595,24 @@ public class UnitTestEvaluatorTensors : TestClassBase
         var expr = IR.F.Tensors.GatherND(input, batchDims, indices);
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
+    }
+
+    [Fact]
+    public void TestScatterND()
+    {
+        var shape = new[] { 2, 1, 10 };
+        var input = Tensor.FromScalar(0f, shape);
+        var indices = new Tensor<long>(new[] { 0L, 0L, 1L, 1L, 0L, 1L }, new[] { 2, 1, 1, 3 });
+        var updates = new Tensor<float>(new[] { 5f, 10f }, new[] { 2, 1, 1 });
+
+        // var expect = OrtKI.ScatterND(input.ToOrtTensor(), indices.ToOrtTensor(), updates.ToOrtTensor(), "none");
+        var expect = Tensor.FromScalar(0f, shape);
+        expect[0, 0, 1] = 5f;
+        expect[1, 0, 1] = 10f;
+
+        var expr = IR.F.Tensors.ScatterND(input, indices, updates);
+        CompilerServices.InferenceType(expr);
+        Assert.Equal(expect, expr.Evaluate().AsTensor());
     }
 
     [Fact]
