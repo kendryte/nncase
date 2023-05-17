@@ -9,6 +9,7 @@ using Microsoft.Extensions.Hosting;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
+using Nncase.IR.Random;
 using Nncase.Passes;
 using Nncase.PatternMatch;
 using Nncase.PatternMatch.F;
@@ -91,12 +92,14 @@ public sealed class UnitTestPatternMatch
     {
         IsSwappableBinary("testName", "call", binary => true, 1f, 1f);
 
-        var wc1 = IsWildcard();
-        var wc2 = IsWildcard();
-        Assert.NotNull(IsCall(null, new FunctionPattern(wc1 + wc2, IsVArgs(wc1, wc2), null)));
-        Assert.NotNull(IsCall(null, new FunctionPattern(wc1 + wc2, IsVArgs(wc1, wc2), null), IsVArgs(wc1, wc2)));
-        Assert.NotNull(IsCall("call", IsOp<ActivationOp>("activation", op => true)));
+        var targetFunc = new Function(new Normal(DataTypes.Float32));
+        var funcPattern = new FunctionPattern(IsOp<Normal>("normal"), IsVArgs(), null);
+        Assert.True(CompilerServices.TryMatchRoot(new Call(targetFunc, 1f), IsCall(null, funcPattern, IsWildcard()), out _));
+        Assert.True(CompilerServices.TryMatchRoot(new Call(targetFunc, 1f), IsCall(null, funcPattern, IsVArgs(IsWildcard())), out _));
 
+        Assert.True(CompilerServices.TryMatchRoot(IR.F.Random.Normal(DataTypes.Float32), IsCall(null, IsOp<Normal>("normal"), IsWildcard(), IsWildcard(), IsWildcard(), IsWildcard()), out _));
+
+        Assert.True(CompilerServices.TryMatchRoot(new Call(new TensorConst(null)), IsConstIntTensor(null), out _));
         Assert.NotNull(IsConstIntTensor(null));
         Assert.NotNull(IsConstIntTensor());
         Assert.NotNull(IsConstIntSclar());
