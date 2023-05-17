@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using NetFabric.Hyperlinq;
 using Nncase.Diagnostics;
 using Nncase.IR;
+using Nncase.IR.Math;
 using Nncase.IR.Tensors;
 
 namespace Nncase.CodeGen.StackVM;
@@ -336,8 +337,15 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
             Visit(expr);
         }
         var condSnippet = Visit(@if.Condition);
-        condSnippet.Emitter.LdScalar();
+
         var brFalse = BeginTextSnippet(@if);
+        if (@if.Condition is Call c)
+        {
+            condSnippet.MaxUserParameters = c.Arguments.Length;
+        }
+
+        brFalse.AddInput(condSnippet, true);
+        brFalse.Emitter.LdScalar();
         brFalse.Emitter.BrFalse(0);
 
         var (thenBlock, thenSet) = SubBlock(@if.Then);
