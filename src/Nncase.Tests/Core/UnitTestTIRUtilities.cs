@@ -39,11 +39,21 @@ public sealed class UnitTestTIRUtilities
 
         // Act
         var paddings1 = TIRUtilities.ComputePaddings(bounds, shape);
+        var expect1 = bounds.Select((bound, i) =>
+            ((IR.Expr)IR.F.Math.Max(-bound.Start, 0), (IR.Expr)IR.F.Math.Max(bound.Stop - shape[i].FixedValue, 0))).ToArray();
+
         var paddings2 = TIRUtilities.ComputePaddings(bounds, targetbounds);
+        var expect2 = bounds.Zip(targetbounds).
+            Select(it =>
+                ((IR.Expr)IR.F.Math.Max(-it.First.Start, 0),
+                    (IR.Expr)IR.F.Math.Max(it.First.Stop - (it.Second.Stop - it.Second.Start), 0))).ToArray();
 
         // Assert
         Assert.Equal(3, paddings1.Count);
+        Assert.Equal(expect1, paddings1);
+
         Assert.Equal(3, paddings2.Count);
+        Assert.Equal(expect2, paddings2);
     }
 
     [Fact]
@@ -77,9 +87,20 @@ public sealed class UnitTestTIRUtilities
 
         // Act
         var noPadBounds = TIRUtilities.ComputeNoPadBounds(bounds, paddings);
+        var expect = bounds.Zip(paddings).Select(t =>
+        {
+            var bound = t.First;
+            var (before, after) = t.Second;
+
+            // var start = bound.Start - pad.Before;
+            // var end = bound.Stop - pad.After;
+            // glb 的start和end分别算
+            return new TIR.Range(bound.Start - bound.Start, bound.Stop - bound.Start - (before + after), bound.Step);
+        }).ToArray();
 
         // Assert
         Assert.Equal(3, noPadBounds.Count);
+        Assert.Equal(expect, noPadBounds);
     }
 
     [Fact]
@@ -95,9 +116,14 @@ public sealed class UnitTestTIRUtilities
 
         // Act
         var clampedBounds1 = TIRUtilities.ClampBounds(bounds, shape);
+        var expect = bounds.Zip(shape).Select(
+            t => new TIR.Range(
+                IR.F.Math.Max(0, t.First.Start),
+                IR.F.Math.Min(t.Second.FixedValue, t.First.Stop),
+                t.First.Step)).ToArray();
 
         // Assert
-        Assert.Equal(3, clampedBounds1.Count);
+        Assert.Equal(expect, clampedBounds1);
     }
 
     [Fact]
@@ -124,9 +150,19 @@ public sealed class UnitTestTIRUtilities
 
         // Act
         var computeBounds = TIRUtilities.ComputeBounds(sub_no_pad_bounds, bounds, paddings);
+        var expect = sub_no_pad_bounds.Zip(bounds, paddings).Select(t =>
+        {
+            var rg = t.First;
+            var bound = t.Second;
+            var (before, after) = t.Third;
+            var start = bound.Start + before + rg.Start;
+            var stop = rg.Stop - rg.Start + start;
+            return new TIR.Range(start, stop, rg.Step);
+        }).ToArray();
 
         // Assert
         Assert.Equal(3, computeBounds.Count);
+        Assert.Equal(expect, computeBounds);
     }
 
     [Fact]
