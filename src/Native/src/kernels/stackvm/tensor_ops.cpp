@@ -79,6 +79,13 @@ result<value_t> kernels::stackvm::binary(binary_op_t binary_op, value_t lhs,
     return ok(output);
 }
 
+result<value_t> nncase::kernels::stackvm::bitcast(
+    [[maybe_unused]] prim_type_t type, [[maybe_unused]] prim_type_t new_type,
+    [[maybe_unused]] value_t input, [[maybe_unused]] value_t new_shape,
+    [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
+    return err(std::errc::not_supported);
+}
+
 result<value_t> kernels::stackvm::broadcast(value_t input, value_t shape,
                                             value_t output,
                                             kernel_context &context) {
@@ -142,6 +149,13 @@ result<value_t> nncase::kernels::stackvm::concat(value_t input, value_t axis,
             output_tensor->strides(), axis_value, concat_dims, context))
     }
     return ok(output);
+}
+
+result<value_t> nncase::kernels::stackvm::condition(
+    [[maybe_unused]] bool can_fold_const_call,
+    [[maybe_unused]] value_t predicate, [[maybe_unused]] value_t value,
+    [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
+    return err(std::errc::not_supported);
 }
 
 result<value_t> nncase::kernels::stackvm::constant_of_shape(
@@ -309,6 +323,23 @@ result<value_t> nncase::kernels::stackvm::gather_nd(value_t input,
     return ok(output);
 }
 
+result<value_t> nncase::kernels::stackvm::scatter_nd(value_t input,
+                                                     value_t indices,
+                                                     value_t updates,
+                                                     value_t output,
+                                                     kernel_context &context) {
+    try_input(input_mem, input);
+    try_input(indices_mem, indices);
+    try_input(updates_memm, updates);
+    auto dtype = input_tensor->dtype();
+    auto out_shape = input_tensor->shape();
+    try_output(out_mem, output, dtype, out_shape);
+    try_(reference::scatter_nd(dtype, input_mem, out_mem, input_tensor->shape(),
+                               indices_tensor->dtype(), indices_mem,
+                               indices_tensor->shape(), updates_memm,
+                               updates_tensor->shape(), context));
+    return ok(output);
+}
 result<value_t> nncase::kernels::stackvm::get_item(
     [[maybe_unused]] value_t input, [[maybe_unused]] value_t index,
     [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
@@ -594,10 +625,9 @@ result<value_t> nncase::kernels::stackvm::range(
     KERNEL_FINISH;
 }
 
-result<value_t>
-nncase::kernels::stackvm::range_of([[maybe_unused]] bool is_range_of_weight, [[maybe_unused]] value_t input,
-                                   [[maybe_unused]] value_t output,
-                                   [[maybe_unused]] kernel_context &context) {
+result<value_t> nncase::kernels::stackvm::range_of(
+    [[maybe_unused]] bool is_range_of_weight, [[maybe_unused]] value_t input,
+    [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
     return err(std::errc::not_supported);
 }
 
@@ -632,8 +662,7 @@ result<value_t> nncase::kernels::stackvm::require(
     [[maybe_unused]] value_t value, [[maybe_unused]] value_t output,
     [[maybe_unused]] kernel_context &context) {
     try_to_scalar(cond, predicate, bool);
-    if(!cond)
-    {
+    if (!cond) {
         printf("%s\n", message.data());
         return err(std::errc::invalid_argument);
     }
@@ -1049,19 +1078,6 @@ result<value_t> nncase::kernels::stackvm::fake_quantize(
 //
 //}
 
-result<value_t> nncase::kernels::stackvm::condition(
-    [[maybe_unused]] bool can_fold_const_call,
-    [[maybe_unused]] value_t predicate, [[maybe_unused]] value_t value,
-    [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
-    return err(std::errc::not_supported);
-}
-
-result<value_t> nncase::kernels::stackvm::bitcast(
-    [[maybe_unused]] prim_type_t type, [[maybe_unused]] prim_type_t new_type,
-    [[maybe_unused]] value_t input, [[maybe_unused]] value_t new_shape,
-    [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
-    return err(std::errc::not_supported);
-}
 // result<value_t> nncase::kernels::stackvm::uninitialized(
 //    NNCASE_UNUSED typecode_t dtype,
 //    NNCASE_UNUSED runtime::stackvm::memory_location_t memory_location,

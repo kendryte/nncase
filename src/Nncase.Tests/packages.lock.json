@@ -173,12 +173,12 @@
       "libortki-linux": {
         "type": "Transitive",
         "resolved": "0.0.2",
-        "contentHash": "guNs4Hclqt7W7APTyJfNfQQGZn5+aDOLoAyoFGrUj8ljq7G9xvAvV24K7NM/ef67ze5BIpuR6wzNMhKlGN0M2g=="
+        "contentHash": "b04LWD4lgGy60tys3hPFhnUpgWDM6dN5r1PI7GOcPj8VupXCaI70LKNQ5/5twbDE6rkowOGanVTw0S2wBGBqBQ=="
       },
       "libortki-osx": {
         "type": "Transitive",
         "resolved": "0.0.2",
-        "contentHash": "PVAjAopytCj2yzDmaAGpaEPICp/3qkAF1W264/vZnAhYlhhetgKqyNqQui0pfmbAqud//nPvXSEqWno/TCFZIA=="
+        "contentHash": "O6Q9GLULkDkZEPAZJVKLPH0ROXGVOE7BxuddgOcHNK2oiTEM7wIRnzp2OIlYgLpaOLyxJMisbGOhtWgdzt2Wng=="
       },
       "libortki-osx-arm64": {
         "type": "Transitive",
@@ -188,7 +188,7 @@
       "libortki-win": {
         "type": "Transitive",
         "resolved": "0.0.2",
-        "contentHash": "6qdymCIPXApKunttyba2UWcx/1STRJOzVjxr5vZAJ1sw+tbDxMbKTcjn0lslqlnn7ZKl340IDty9TkrxxoajSw=="
+        "contentHash": "HAoROgAKn8XBun11X43HZuspKlo5JGy8/OYw5IUPo7FVh5TCaPrLjGmyGYYZ2dqLlv31yv/b6s254PIRGn95cA=="
       },
       "Microsoft.Bcl.AsyncInterfaces": {
         "type": "Transitive",
@@ -515,14 +515,6 @@
         "resolved": "5.0.0",
         "contentHash": "c5JVjuVAm4f7E9Vj+v09Z9s2ZsqFDjBpcsyS3M9xRo0bEdm/LVZSzLxxNvfvAwRiiE8nwe1h2G4OwiwlzFKXlA=="
       },
-      "Protobuf.Text": {
-        "type": "Transitive",
-        "resolved": "0.5.0",
-        "contentHash": "GVu3Y7hyybXv8nmKp9HtSzj1g0+rmNSZ4brM5t0auqpwYFYi5lL02UX9Nu9355DgPQbALLWUnjx+h2PttUNieg==",
-        "dependencies": {
-          "Google.Protobuf": "3.11.3"
-        }
-      },
       "runtime.debian.8-x64.runtime.native.System.Security.Cryptography.OpenSsl": {
         "type": "Transitive",
         "resolved": "4.3.0",
@@ -629,19 +621,6 @@
         "type": "Transitive",
         "resolved": "4.3.0",
         "contentHash": "VB5cn/7OzUfzdnC8tqAIMQciVLiq2epm2NrAm1E9OjNRyG4lVhfR61SMcLizejzQP8R8Uf/0l5qOIbUEi+RdEg=="
-      },
-      "Serilog": {
-        "type": "Transitive",
-        "resolved": "2.10.0",
-        "contentHash": "+QX0hmf37a0/OZLxM3wL7V6/ADvC1XihXN4Kq/p6d8lCPfgkRdiuhbWlMaFjR9Av0dy5F0+MBeDmDdRZN/YwQA=="
-      },
-      "Serilog.Sinks.Console": {
-        "type": "Transitive",
-        "resolved": "4.0.1",
-        "contentHash": "apLOvSJQLlIbKlbx+Y2UDHSP05kJsV7mou+fvJoRGs/iR+jC22r8cuFVMjjfVxz/AD4B2UCltFhE1naRLXwKNw==",
-        "dependencies": {
-          "Serilog": "2.10.0"
-        }
       },
       "StyleCop.Analyzers.Unstable": {
         "type": "Transitive",
@@ -1504,9 +1483,6 @@
       "nncase.evaluator": {
         "type": "Project",
         "dependencies": {
-          "AnyTensorFlow.NET": "[0.70.1, )",
-          "MagicalTensorflowLib": "[0.0.2, )",
-          "MagicalTensorflowLibOSX-ARM64": "[0.0.4, )",
           "Nncase.Core": "[1.0.0, )",
           "OrtKISharp": "[0.0.2, )"
         }
@@ -1589,17 +1565,6 @@
           "Nncase.FlatBuffers": "[2.0.0, )"
         }
       },
-      "AnyTensorFlow.NET": {
-        "type": "CentralTransitive",
-        "requested": "[0.70.1, )",
-        "resolved": "0.70.1",
-        "contentHash": "uUXNveJhZuvBue8ixPXKkMwYUeKBeVNVqptNlhmTe+YhIwn6xke1WSg3EfUJrjmmF6xkJtAYhE4H0Ejj/+H0aA==",
-        "dependencies": {
-          "MethodBoundaryAspect.Fody": "2.0.144",
-          "Protobuf.Text": "0.5.0",
-          "Serilog.Sinks.Console": "4.0.1"
-        }
-      },
       "DryIoc.dll": {
         "type": "CentralTransitive",
         "requested": "[5.3.1, )",
@@ -1652,18 +1617,6 @@
           "System.ValueTuple": "4.5.0"
         }
       },
-      "MagicalTensorflowLib": {
-        "type": "CentralTransitive",
-        "requested": "[0.0.2, )",
-        "resolved": "0.0.2",
-        "contentHash": "77rldBcc11n69dhtdbJUw3aDxBfVkr5a5raA5gY7sRrDbgJ00/4whx3XLnhn6uBzRsKlpm6jDdYG2fcDUZPfkQ=="
-      },
-      "MagicalTensorflowLibOSX-ARM64": {
-        "type": "CentralTransitive",
-        "requested": "[0.0.4, )",
-        "resolved": "0.0.4",
-        "contentHash": "nycg8x7AMPaQrjF0vvwhL6idLLb/IWIMad7UbEO0btIz6dyNIZI3drYefSM8pzV5lOweoyj0zDr98YfsxbxG8Q=="
-      },
       "Microsoft.Extensions.Hosting.Abstractions": {
         "type": "CentralTransitive",
         "requested": "[6.0.0, )",
@@ -1708,7 +1661,7 @@
         "type": "CentralTransitive",
         "requested": "[0.0.2, )",
         "resolved": "0.0.2",
-        "contentHash": "Gk8TyNN/iYaifC3t4xR3okJwPJldRkjzS4BFn3fWLK7+l2z1+XkI/z4Nz6MW6LJHS77XFLNhq0I+H9suEsvGIw==",
+        "contentHash": "q8j0yR5836Zhv9WB9BFkQt1UaEFyibq8bqJcTiULlILF6/sz8z7Wy2N8sgYdDKsdW25zncIz7j6IDbKM5ynePg==",
         "dependencies": {
           "libortki": "0.0.2"
         }

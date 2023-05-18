@@ -9,11 +9,8 @@ using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using OrtKISharp;
-using Tensorflow;
-using Tensorflow.NumPy;
 using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.Utility;
-using static Tensorflow.Binding;
 
 namespace Nncase.Evaluator.Tensors;
 

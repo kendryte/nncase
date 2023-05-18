@@ -2,23 +2,19 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using NetFabric.Hyperlinq;
 using Nncase.CostModel;
 using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.NN;
 using Nncase.Utilities;
 using OrtKISharp;
-using Tensorflow;
-using Tensorflow.NumPy;
 using static Nncase.Evaluator.EvaluatorUtil;
 using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.Utility;
-using static Tensorflow.Binding;
 using static Nncase.IR.F.Tensors;
-
 namespace Nncase.Evaluator.NN;
 
 /// <summary>
@@ -32,16 +28,12 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
         var input = context.GetOrtArgumentValue(pad, Pad.Input);
         var pads = context.GetInt64OrtTensorArgumentValue(pad, Pad.Pads);
         var constValue = context.GetOrtArgumentValue(pad, Pad.Value);
-        if (pad.PadMode == PadMode.Symmetric)
-        {
-            var result = SymmetricPad(context, pad);
-            return result;
-        }
 
         var mode = pad.PadMode switch
         {
             PadMode.Constant => "constant",
             PadMode.Reflect => "reflect",
+            PadMode.Symmetric => "reflect",
             PadMode.Edge => "edge",
             _ => throw new ArgumentOutOfRangeException(nameof(pad)),
         };
@@ -73,47 +65,14 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
             }
         }
 
-        return OrtKI.Pad(input, ToOnnxPadFormat(pads), constValue, mode).ToValue();
-    }
-
-    public IValue SymmetricPad(IEvaluateContext context, Pad pad)
-    {
-        var input = context.GetTFArgumentValue(pad, Pad.Input);
-        var pads = context.GetTFArgumentValue(pad, Pad.Pads);
-        var mode = "SYMMETRIC";
-
-        // when HasBindedMixQuantInfo is true, eval will do simulation of quant/dequant for some inputs, this is used for evaluate accumulated quant error for layers.
-        if (context.CurrentCall.EnodeBestQuantConfigWithCosine != null)
+        if (pad.PadMode == PadMode.Symmetric)
         {
-            var pattern = IsRangeOfMarker(IsWildcard(), IsWildcard());
-            if (pattern.MatchLeaf(context.CurrentCall.Arguments.ToArray()[0]) && ((Nncase.IR.Marker)context.CurrentCall.Arguments.ToArray()[0]).MixQuantInfo?.HasBindedMixQuantInfo == true)
-            {
-                var quantParam = ((Nncase.IR.Marker)context.CurrentCall.Arguments.ToArray()[0]).MixQuantInfo!.QuantParameter;
-
-                // input feature map quantParam count should be 1 since input feature map quant is by tensor.
-                Trace.Assert(quantParam.Count == 1);
-                var inputFloat = input.ToArray<float>();
-                for (var i = 0; i < inputFloat.Length; i++)
-                {
-                    var inputBufQuant = (double)((inputFloat[i] / (double)quantParam[0].Scale) + quantParam[0].ZeroPoint);
-                    if (!(quantParam[0].Scale == 1.0f && quantParam[0].ZeroPoint == 0))
-                    {
-                        inputBufQuant = System.Math.Round((double)(float)inputBufQuant);
-                    }
-
-                    var inputBufDeQuant = (float)((inputBufQuant - quantParam[0].ZeroPoint) * (double)quantParam[0].Scale);
-                    inputFloat[i] = (float)inputBufDeQuant;
-                }
-
-                input = tf.constant(inputFloat, TF_DataType.TF_FLOAT, input.shape);
-            }
+            return SymmetricPad(input, ToOnnxPadFormat(pads), constValue).ToValue();
         }
-
-        var result = tf.Context.ExecuteOp(
-            "MirrorPad",
-            null!,
-            new ExecuteOpArgs(input, pads).SetAttributes(new { mode }))[0];
-        return result.ToValue();
+        else
+        {
+            return OrtKI.Pad(input, ToOnnxPadFormat(pads), constValue, mode).ToValue();
+        }
     }
 
     /// <inheritdoc/>
@@ -136,6 +95,37 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
             [CostFactorNames.MemoryStore] = outputType is TensorType outT ? CostUtility.GetMemoryAccess(outT) : CostUtility.GetMemoryAccess(inputType),
         };
+    }
+
+    private OrtKISharp.Tensor SymmetricPad(OrtKISharp.Tensor input, long[] pads, OrtKISharp.Tensor constValue)
+    {
+        // Currently there isn't a symmetric padding mode in ONNX so we add a dummy row then use the reflect mode
+        // and remove the dummy row with compress.Ex: 1234-> 012340-> 2101234043-> 21123443.Only do this to
+        // dims with non - zero pads(if pads are constant)
+        var rank = input.Rank;
+        var nonZeroAxes = new List<int>();
+        var incPads = new long[rank * 2];
+        for (int i = 0; i < rank; i++)
+        {
+            if (pads[i] != 0 || pads[i + rank] != 0)
+            {
+                nonZeroAxes.Add(i);
+                incPads[i] = 1;
+                incPads[i + rank] = 1;
+            }
+        }
+
+        var paddedInput = OrtKI.Pad(input, incPads, constValue, "constant");
+        var output = OrtKI.Pad(paddedInput, pads, constValue, "reflect");
+        foreach (var axis in nonZeroAxes)
+        {
+            var originLen = (int)input.Shape[axis];
+            var leftPad = (int)pads[axis];
+            var indices = Enumerable.Range(0, leftPad).Concat(Enumerable.Range(leftPad + 1, originLen)).Concat(Enumerable.Range(leftPad + originLen + 2, (int)pads[axis + rank])).ToArray();
+            output = OrtKI.Gather(output, indices, axis);
+        }
+
+        return output;
     }
 
     public Expr Visit(IShapeEvaluateContext context, Pad target)

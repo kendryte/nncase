@@ -4,18 +4,15 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
-using NetFabric.Hyperlinq;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Imaging;
 using Nncase.IR.Tensors;
 using OrtKISharp;
-using Tensorflow;
-using Tensorflow.NumPy;
 using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.Utility;
-using static Tensorflow.Binding;
 
 namespace Nncase.Evaluator.Imaging;
 
@@ -27,54 +24,7 @@ public class ResizeImageEvaluator : IEvaluator<ResizeImage>, ITypeInferencer<Res
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, ResizeImage target)
     {
-        return target.IsTFResize
-            ? TFResize(context, target)
-            : OnnxResize(context, target);
-    }
-
-    public IValue TFResize(IEvaluateContext context, ResizeImage target)
-    {
-        var input = context.GetTFArgumentValue(target, ResizeImage.Input);
-
-        // when HasBindedMixQuantInfo is true, eval will do simulation of quant/dequant for some inputs, this is used for evaluate accumulated quant error for layers.
-        if (context.CurrentCall.EnodeBestQuantConfigWithCosine != null)
-        {
-            var pattern = IsRangeOfMarker(IsWildcard(), IsWildcard());
-            if (pattern.MatchLeaf(context.CurrentCall.Arguments.ToArray()[0]) && ((Nncase.IR.Marker)context.CurrentCall.Arguments.ToArray()[0]).MixQuantInfo?.HasBindedMixQuantInfo == true)
-            {
-                var quantParam = ((Nncase.IR.Marker)context.CurrentCall.Arguments.ToArray()[0]).MixQuantInfo!.QuantParameter;
-
-                // input feature map quantParam count should be 1 since input feature map quant is by tensor.
-                Trace.Assert(quantParam.Count == 1);
-                var inputFloat = input.ToArray<float>();
-                for (var i = 0; i < inputFloat.Length; i++)
-                {
-                    var inputBufQuant = (double)((inputFloat[i] / (double)quantParam[0].Scale) + quantParam[0].ZeroPoint);
-                    if (!(quantParam[0].Scale == 1.0f && quantParam[0].ZeroPoint == 0))
-                    {
-                        inputBufQuant = System.Math.Round((double)(float)inputBufQuant);
-                    }
-
-                    var inputBufDeQuant = (float)((inputBufQuant - quantParam[0].ZeroPoint) * (double)quantParam[0].Scale);
-                    inputFloat[i] = (float)inputBufDeQuant;
-                }
-
-                input = tf.constant(inputFloat, TF_DataType.TF_FLOAT, input.shape);
-            }
-        }
-
-        input = tf.transpose(input, new[] { 0, 2, 3, 1 });
-        var sizes = context.GetArgumentValueAsArray<int>(target, ResizeImage.NewSize);
-        var halfPixelCenter = target.TransformationMode == ImageResizeTransformationMode.HalfPixel;
-        var alignCorners = target.TransformationMode == ImageResizeTransformationMode.AlignCorners;
-        var size = new NDArray(new[] { sizes[2], sizes[3] }, new[] { 2 });
-        var output = target.ResizeMode switch
-        {
-            ImageResizeMode.Bilinear => tf.image.resize_bilinear(input, size, alignCorners, halfPixelCenter),
-            ImageResizeMode.NearestNeighbor => tf.image.resize_nearest_neighbor(input, size, alignCorners, string.Empty, halfPixelCenter),
-            _ => throw new NotSupportedException($"TFResize Not suppoprted {target.ResizeMode}"),
-        };
-        return tf.transpose(output, new[] { 0, 3, 1, 2 }).ToValue();
+        return OnnxResize(context, target);
     }
 
     public IValue OnnxResize(IEvaluateContext context, ResizeImage target)
@@ -82,7 +32,7 @@ public class ResizeImageEvaluator : IEvaluator<ResizeImage>, ITypeInferencer<Res
         var input = context.GetOrtArgumentValue(target, ResizeImage.Input);
         var roi = context.GetOptionalOrtArgumentValue(target, ResizeImage.Roi, Array.Empty<float>());
         var sizes = context.GetInt64OrtTensorArgumentValue(target, ResizeImage.NewSize);
-        var cubicCoeffA = context.GetOptionArgumentValueAsScalar<float>(target, ResizeImage.CubicCoeffA, -0.75f);
+        var cubicCoeffA = context.GetOptionArgumentValueAsScalar<float>(target, ResizeImage.CubicCoeffA, target.IsTFResize ? -0.5f : -0.75f);
         var excludeOutside = context.GetOptionArgumentValueAsScalar<long>(target, ResizeImage.ExcludeOutside, 0);
         var extrapolationValue = context.GetOptionArgumentValueAsScalar<float>(target, ResizeImage.ExtrapolationValue, 0f);
 
@@ -113,16 +63,48 @@ public class ResizeImageEvaluator : IEvaluator<ResizeImage>, ITypeInferencer<Res
             }
         }
 
-        return OrtKI.ResizeWithSizes(
-            input,
-            roi,
-            sizes,
-            ResizeModeHelper.ToString(target.TransformationMode),
-            cubicCoeffA,
-            excludeOutside,
-            extrapolationValue,
-            ResizeModeHelper.ToString(target.ResizeMode),
-            ResizeModeHelper.ToString(target.NearestMode)).ToValue();
+        if (target.IsTFResize)
+        {
+            var transformationMode = "asymmetric";
+            var nearestMode = "floor";
+            if (target.TransformationMode == ImageResizeTransformationMode.AlignCorners)
+            {
+                transformationMode = "align_corners";
+                nearestMode = "round_prefer_ceil";
+            }
+            else if (target.TransformationMode == ImageResizeTransformationMode.HalfPixel)
+            {
+                transformationMode = target.ResizeMode switch
+                {
+                    ImageResizeMode.NearestNeighbor => "tf_half_pixel_for_nn",
+                    _ => "half_pixel",
+                };
+            }
+
+            return OrtKI.ResizeWithSizes(
+                input,
+                roi.Cast(OrtDataType.Float),
+                sizes,
+                transformationMode,
+                cubicCoeffA,
+                excludeOutside,
+                extrapolationValue,
+                ResizeModeHelper.ToString(target.ResizeMode),
+                nearestMode).ToValue();
+        }
+        else
+        {
+            return OrtKI.ResizeWithSizes(
+                input,
+                roi,
+                sizes,
+                ResizeModeHelper.ToString(target.TransformationMode),
+                cubicCoeffA,
+                excludeOutside,
+                extrapolationValue,
+                ResizeModeHelper.ToString(target.ResizeMode),
+                ResizeModeHelper.ToString(target.NearestMode)).ToValue();
+        }
     }
 
     /// <inheritdoc/>

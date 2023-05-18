@@ -3,14 +3,10 @@
 
 using System;
 using System.Linq;
-using NetFabric.Hyperlinq;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.NN;
 using OrtKISharp;
-using Tensorflow;
-using Tensorflow.NumPy;
-using static Tensorflow.Binding;
 
 namespace Nncase.Evaluator.NN;
 
@@ -22,9 +18,7 @@ public class OneHotEvaluator : IEvaluator<OneHot>, ITypeInferencer<OneHot>, ICos
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, OneHot oneHot)
     {
-        return oneHot.OneHotMode == OneHotMode.ProcessNeg
-            ? OnnxOneHot(context, oneHot)
-            : TFOneHot(context, oneHot);
+        return OnnxOneHot(context, oneHot);
     }
 
     /// <inheritdoc/>
@@ -45,57 +39,23 @@ public class OneHotEvaluator : IEvaluator<OneHot>, ITypeInferencer<OneHot>, ICos
         };
     }
 
-    private static IValue TF_OneHot(
-        Tensorflow.Tensor indices,
-        Tensorflow.Tensor depth,
-        Tensorflow.Tensor on_value,
-        Tensorflow.Tensor off_value,
-        TF_DataType dtype = TF_DataType.DtInvalid,
-        int axis = -1,
-        string name = "")
-    {
-        return tf_with(
-            ops.name_scope(name, nameof(TF_OneHot), new
-            {
-                indices,
-                depth,
-                dtype,
-            }),
-            scope =>
-            {
-                if (dtype == TF_DataType.DtInvalid)
-                {
-                    dtype = TF_DataType.TF_FLOAT;
-                }
-
-                on_value = ops.convert_to_tensor(on_value, dtype, nameof(on_value));
-                off_value = ops.convert_to_tensor(off_value, dtype, name = nameof(off_value));
-                return gen_array_ops.one_hot(indices, depth, on_value, off_value, axis: axis, name: name);
-            }).ToValue();
-    }
-
     private IValue OnnxOneHot(IEvaluateContext context, OneHot oneHot)
     {
-        var indices = context.GetArgumentValueAsTensor<long>(oneHot, OneHot.Indices);
+        var indices = context.GetArgumentValueAsTensor<long>(oneHot, OneHot.Indices).ToOrtTensor();
         var depth = context.GetInt64OrtTensorArgumentValue(oneHot, OneHot.Depth);
-        var values = context.GetOrtArgumentValue(oneHot, OneHot.Values);
+        var values = context.GetArgumentValueAsTensor(oneHot, OneHot.Values);
         var axis = context.GetArgumentValueAsScalar<long>(oneHot, OneHot.Axis);
-        return OrtKI.OneHot(indices.ToOrtTensor(), depth, values, axis).ToValue();
-    }
 
-    private IValue TFOneHot(IEvaluateContext context, OneHot oneHot)
-    {
-        var depth = context.GetArgumentValueAsScalar<int>(oneHot, OneHot.Depth);
-        var indices = context.GetTFArgumentValue(oneHot, OneHot.Indices);
-        var values = context.GetTFArgumentValue(oneHot, OneHot.Values);
-        var axis = context.GetArgumentValueAsScalar<int>(oneHot, OneHot.Axis);
-        return TF_OneHot(
-            indices,
-            ops.convert_to_tensor(depth),
-            values[1],
-            values[0],
-            TF_DataType.TF_FLOAT,
-            axis);
+        var onnxValues = values.ElementType == DataTypes.Float32 ? values.ToOrtTensor()
+            : values.Cast<float>().ToOrtTensor();
+
+        // Set negative indices to depth + 1.
+        if (oneHot.OneHotMode == OneHotMode.Normal)
+        {
+            indices = OrtKI.Where(OrtKI.Less(indices, 0L), depth, indices);
+        }
+
+        return new TensorValue(OrtKI.OneHot(indices, depth, onnxValues, axis).ToTensor().CastTo(values.ElementType));
     }
 
     private IRType Visit(ITypeInferenceContext context, OneHot target, TensorType indices, TensorType values)

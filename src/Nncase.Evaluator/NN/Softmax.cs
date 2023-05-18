@@ -32,7 +32,7 @@ public class LogSoftmaxEvaluator : IEvaluator<LogSoftmax>, ITypeInferencer<LogSo
     public Cost Visit(ICostEvaluateContext context, LogSoftmax target)
     {
         var ret = context.GetReturnType<TensorType>();
-        var macPerElement = 4;
+        uint macPerElement = 4;
         return new()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(ret),
