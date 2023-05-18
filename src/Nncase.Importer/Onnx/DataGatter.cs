@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Google.Protobuf.Collections;
 using LanguageExt;
 using Nncase.IR;
 using Onnx;
@@ -32,49 +33,35 @@ public sealed partial class OnnxImporter
 
     public Shape GetShape(ValueInfoProto v)
     {
-        // todo: refactor
-        var shape = v.Type.TensorType.Shape.Dim
-            .Select(x =>
-            {
-                if (IsDynamicDim(x))
-                {
-                    if (x.DimParam == "batch")
-                    {
-                        return 2;
-                    }
-                    else
-                    {
-                        return Dimension.Unknown;
-                    }
-                }
-                else
-                {
-                    return (Dimension)x.DimValue;
-                }
-            }).ToArray();
-        return new Shape(shape);
+        var shape = v.Type.TensorType.Shape.Dim;
+        var dimArr = GetDimArray(shape, d => d,_ => Dimension.Unknown, d => (Dimension)d.DimValue);
+        return new Shape(dimArr);
     }
 
     public Expr[] GetOriginShape(ValueInfoProto v)
     {
         var shape = v.Type.TensorType.Shape.Dim;
+        return GetDimArray(shape, d => d, dim => _dynVarMap[dim.DimParam], dim => (Expr)dim.DimValue);
+    }
+
+    public T[] GetDimArray<T>(RepeatedField<TensorShapeProto.Types.Dimension> shape,
+        Func<int, T> fixVarF,
+        Func<TensorShapeProto.Types.Dimension, T> dynamicF,
+        Func<TensorShapeProto.Types.Dimension, T> fixF)
+    {
         return shape.Select(x =>
         {
             if (IsDynamicDim(x))
             {
-                if (x.DimParam == "batch")
+                if (_fixVarMap.TryGetValue(x.DimParam, out var dim))
                 {
-                    return 2;
+                    return fixVarF(dim);
                 }
-                else
-                {
-                    return _dynVarMap[x.DimParam];
-                }
+
+                return dynamicF(x);
             }
-            else
-            {
-                return (Expr)x.DimValue;
-            }
+
+            return fixF(x);
         }).ToArray();
     }
 
@@ -125,12 +112,14 @@ public sealed partial class OnnxImporter
                 TensorProto.Types.DataType.Int32 => Tensor.From<int>(tensor.Int32Data.ToArray(), shape),
                 TensorProto.Types.DataType.Int64 => Tensor.From<long>(tensor.Int64Data.ToArray(), shape),
 
-                TensorProto.Types.DataType.Int8 => Tensor.From<sbyte>(tensor.Int32Data.Select(x => (sbyte)x).ToArray(), shape),
+                TensorProto.Types.DataType.Int8 => Tensor.From<sbyte>(tensor.Int32Data.Select(x => (sbyte)x).ToArray(),
+                    shape),
 
                 // TensorProto.Types.DataType.String => Tensor.FromSpan(),
                 // TensorProto.Types.DataType.Uint32 => Tensor.FromSpan(),
                 // TensorProto.Types.DataType.Uint64 => Tensor.FromSpan<ulong>(tensor.Uint64Data.ToArray(), shape),
-                TensorProto.Types.DataType.Uint8 => Tensor.From<byte>(tensor.Int32Data.Select(x => (byte)x).ToArray(), shape),
+                TensorProto.Types.DataType.Uint8 => Tensor.From<byte>(tensor.Int32Data.Select(x => (byte)x).ToArray(),
+                    shape),
                 _ => throw new NotSupportedException($"Not supported onnx constant data type{dt}"),
             };
         }

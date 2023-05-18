@@ -26,6 +26,7 @@ public sealed partial class OnnxImporter : BaseImporter
     private Dictionary<string, Expr>? _outputTensors;
     private Dictionary<string, TensorProto>? _constTensors;
     private Dictionary<string, Var> _dynVarMap;
+    private Dictionary<string, int> _fixVarMap;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="OnnxImporter"/> class.
@@ -49,6 +50,9 @@ public sealed partial class OnnxImporter : BaseImporter
     /// <inheritdoc/>
     protected override (IEnumerable<Var> Inputs, Dictionary<Var, Expr[]> VarMap) CreateInputs()
     {
+        var bucketOptions = CompileSession.CompileOptions.ShapeBucketOptions;
+        _fixVarMap = bucketOptions.FixVarMap;
+
         _constTensors = _graph.Initializer
             .ToDictionary(tensor => tensor.Name, tensor => tensor);
 
@@ -62,12 +66,13 @@ public sealed partial class OnnxImporter : BaseImporter
             .Select((v, i) => (createdInputs[i], GetOriginShape(v)))
             .ToDictionary(tup => tup.Item1, tup => tup.Item2);
 
+        // todo: refactor this
+        CompileSession.CompileOptions.ShapeBucketOptions =
+            bucketOptions with { VarMap = varMap };
         // var nameSet = varMap.Values.SelectMany(x => x).OfType<Var>().Select(v => v.Name).ToHashSet();
         var dynamicDims = varMap.Values.SelectMany(x => x).ToArray();
-
         // todo: save into function, dispose when function dispose
         new ExprPinner(dynamicDims);
-
         _outputTensors = createdInputs.ToDictionary(n => n.Name, n => (Expr)n);
         return (createdInputs, varMap);
     }
