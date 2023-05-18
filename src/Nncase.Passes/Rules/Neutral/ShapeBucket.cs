@@ -13,7 +13,6 @@ using Nncase.IR.Tensors;
 using Nncase.Passes.Transforms;
 using Nncase.PatternMatch;
 using Nncase.Utilities;
-using Tensorflow;
 using static Nncase.IR.F.Tensors;
 using static Nncase.PatternMatch.Utility;
 using static Nncase.PatternMatch.F.Math;

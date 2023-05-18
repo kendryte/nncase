@@ -19,7 +19,6 @@ using Nncase.IR.Tensors;
 using Nncase.Passes.Transforms;
 using Nncase.Tests.TestFixture;
 using Nncase.Utilities;
-using Tensorflow;
 using Xunit;
 using Xunit.Abstractions;
 using static Nncase.IR.F.Math;

@@ -7,7 +7,6 @@ using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using OrtKISharp;
-using Protobuf.Text;
 
 namespace Nncase.Evaluator.Tensors;
 

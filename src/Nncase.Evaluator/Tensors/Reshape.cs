@@ -10,7 +10,6 @@ using Nncase.IR;
 using Nncase.IR.Tensors;
 using Nncase.Utilities;
 using OrtKISharp;
-using Tensorflow.Keras.Engine;
 using static Nncase.Evaluator.TypeInference;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.Tensors;

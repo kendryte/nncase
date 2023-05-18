@@ -8,7 +8,6 @@ using Nncase.IR;
 using Nncase.IR.NN;
 using Nncase.IR.Tensors;
 using OrtKISharp;
-using Protobuf.Text;
 using static Nncase.IR.F.Tensors;
 
 namespace Nncase.Evaluator.Tensors;

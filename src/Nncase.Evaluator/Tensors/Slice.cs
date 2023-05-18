@@ -13,7 +13,6 @@ using Nncase.IR.Math;
 using Nncase.IR.Tensors;
 using Nncase.Utilities;
 using OrtKISharp;
-using Tensorflow;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.Tensors;
 using Dimension = Nncase.IR.Dimension;

@@ -142,21 +142,21 @@ namespace Nncase
                 return;
             }
             var oldSamples = _options.QuantizeOptions.CalibrationDataset!.Samples;
-            var newSamples = oldSamples.ToEnumerable().Select(
-                sample =>
-                {
-                    var values = sample.Values;
-                    var (newCalibData, _) =
-                        Preprocess(preFunc, values.Select(v => (Expr)v.AsTensor()).ToArray(), infos);
-                    var newInputData = newCalibData.Select(expr => expr.Evaluate().AsTensor()).Select(t => (IValue)Value.FromTensor(t));
-                    var dict = vars.Zip(newInputData)
-                        .ToDictionary(pair => pair.Item1, pair => pair.Item2).Concat(sample)
-                        .ToDictionary(pair => pair.Key, pair => pair.Value);
-                    return dict;
-                }
-            ).ToAsyncEnumerable();
+            // var newSamples = oldSamples.ToEnumerable().Select(
+            //     sample =>
+            //     {
+            //         var values = sample.Values;
+            //         var (newCalibData, _) =
+            //             Preprocess(preFunc, values.Select(v => (Expr)v.AsTensor()).ToArray(), infos);
+            //         var newInputData = newCalibData.Select(expr => expr.Evaluate().AsTensor()).Select(t => (IValue)Value.FromTensor(t));
+            //         var dict = vars.Zip(newInputData)
+            //             .ToDictionary(pair => pair.Item1, pair => pair.Item2).Concat(sample)
+            //             .ToDictionary(pair => pair.Key, pair => pair.Value);
+            //         return dict;
+            //     }
+            // ).ToAsyncEnumerable();
 
-            _options.QuantizeOptions.CalibrationDataset = new DatasetProvider(newSamples);
+            // _options.QuantizeOptions.CalibrationDataset = new DatasetProvider(newSamples);
         }
 
         public Expr PostProcess(Expr output, Var[] outerInput)
