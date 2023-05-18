@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -26,5 +27,8 @@ public sealed class UnitTestDataType
     {
         var expect = CompilerServices.DataTypeService.GetPrimTypeFromTypeCode(TypeCode.Boolean);
         Assert.Equal(expect, DataType.FromTypeCode(TypeCode.Boolean));
+
+        Assert.Throws<NullReferenceException>(() => CompilerServices.DataTypeService.GetPrimTypeFromType(Type.GetType(string.Empty)!));
+        Assert.Throws<NullReferenceException>(() => CompilerServices.DataTypeService.GetValueTypeFromType(Type.GetType(string.Empty)!));
     }
 }
