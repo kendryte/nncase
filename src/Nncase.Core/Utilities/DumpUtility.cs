@@ -226,4 +226,14 @@ public static class BinFileUtil
             return Tensor.FromBytes(dt, bytes, shape);
         }
     }
+
+    public static Tensor ReadBinFile(string path, Func<byte[], Tensor> f)
+    {
+        using (var stream = new FileStream(Path.Join(path), FileMode.Open, FileAccess.Read, FileShare.None))
+        using (var reader = new BinaryReader(stream))
+        {
+            var bytes = reader.ReadBytes((int)stream.Length);
+            return f(bytes);
+        }
+    }
 }
