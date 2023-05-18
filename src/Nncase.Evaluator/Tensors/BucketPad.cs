@@ -22,7 +22,7 @@ public class BucketPadEvaluator : IEvaluator<BucketPad>, ITypeInferencer<BucketP
     {
         var input = context.GetArgumentValueAsTensor(BucketPad, BucketPad.Input);
         var shape = context.GetArgumentValueAsArray<int>(BucketPad, BucketPad.Shape);
-        var pads = (Expr)input.Shape - shape;
+        var pads = shape - (Expr)input.Shape;
         var paddings = Transpose(Stack(new Tuple(Enumerable.Repeat(0, shape.Length).ToArray(), pads), 0),
             new[] { 1, 0 });
         var fixedInput = IR.F.NN.Pad(input, paddings, PadMode.Constant, Cast(0, input.ElementType)).Evaluate();

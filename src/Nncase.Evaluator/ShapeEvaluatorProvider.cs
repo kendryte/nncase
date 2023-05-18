@@ -59,10 +59,6 @@ internal sealed class ShapeEvaluateProvider : IShapeEvaluateProvider
     {
         var evaluatorType = typeof(IShapeEvaluator<>).MakeGenericType(op.GetType());
         var evaluator = (IShapeEvaluator)_serviceProvider.GetRequiredService(evaluatorType);
-        // return evaluator.Visit(context, op);
-        // Console.WriteLine("ShapeExprRequire");
-        // Console.WriteLine(op.ToString());
         return evaluator.Visit(context, op);
-        // return IR.F.Math.Require(true, evaluator.Visit(context, op), op.ToString());
     }
 }

@@ -70,7 +70,7 @@ public class ShapeBucketTest : TransformTestBase
         var dict = new Dictionary<string, (int, int)> { { "v", (4, 8) } };
         Assert.True(main.InferenceType());
         Dumpper.DumpIR(main, "main");
-        // TestMatchedCore(main.Body, new Dictionary<Var, IValue>{{mainLhs, Value.FromTensor(inputA)}, {mainRhs, Value.FromTensor(inputB)}}, new[] { new FusionBucket(mainInputInfo, dict) });
+        TestMatchedCore(main.Body, new Dictionary<Var, IValue>{{mainLhs, Value.FromTensor(inputA)}, {mainRhs, Value.FromTensor(inputB)}}, new[] { new FusionBucket() });
     }
 
     [Fact]
@@ -218,7 +218,7 @@ public class ShapeBucketTest : TransformTestBase
         var k = new Var("k", new TensorType(DataTypes.Int32, Shape.Scalar));
         var v1 = new Var(new TensorType(DataTypes.Float32, new[] { 1, 2, Dimension.Unknown }));
         var v2 = new Var(new TensorType(DataTypes.Float32, new[] { Dimension.Unknown, 24 }));
-        var varMap = new Dictionary<Var, Expr[]> { { v1, new Expr[] { 1, 2, k } }, { v2, new Expr[] { k, 24 } } };
+        var varMap = new Dictionary<Var, Expr[]> { { v1, new Expr[] { 1, k, k } }, { v2, new Expr[] { k, 24 } } };
         var dict = new Dictionary<string, (int, int)> { { "k", (4, 8) } };
         var bn = v1 * 2f;
         var lhs = Abs(bn);
@@ -237,8 +237,8 @@ public class ShapeBucketTest : TransformTestBase
         rpm.AddWithName<EGraphPassWithQuantize>("AssignRanges");
         await rpm.RunAsync(module);
 
-        CompilerServices.Rewrite(module.Entry!, new[] { new MatmulToFusion(varMap) }, new());
-        // CompilerServices.Rewrite(module.Entry!, new[] { new FusionBucket(varMap, dict) }, new());
+        CompilerServices.Rewrite(module.Entry!, new[] { new MatmulToFusion() }, new());
+        CompilerServices.Rewrite(module.Entry!, new[] { new FusionBucket() }, new());
 
         Dumpper.DumpIR(module.Entry!, "before");
         var pm = CompileSession.CreatePassManager("EGraphPM");

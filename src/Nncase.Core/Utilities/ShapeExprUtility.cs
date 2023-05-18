@@ -16,12 +16,12 @@ public static class ShapeExprUtility
         var tmpTensor = new[] { ConstantOfShape(lhsShape, 0) }
             .Concat(rhsShape)
             .Aggregate((sum, shape) => ConstantOfShape(shape, 0) * sum);
-        return ShapeOf(tmpTensor);
+        return  Cast(IR.F.Tensors.ShapeOf(tmpTensor), DataTypes.Int32);
     }
 
     public static Expr Positive(Expr axis, Expr inShape)
     {
-        var rank = ShapeOf(inShape)[0];
+        var rank = new Call(new Rank(), inShape);
         var i32Axis = Cast(axis, DataTypes.Int32);
         return new If(i32Axis < 0, i32Axis + rank, i32Axis);
     }
@@ -73,8 +73,9 @@ public static class ShapeExprUtility
         return Concat(new IR.Tuple(front, last), 0);
     }
 
-    // public static Expr ShapeOf(Expr expr) => expr.EvaluateShapeExpr();
-    public static Expr ShapeOf(Expr expr) => Cast(IR.F.Tensors.ShapeOf(expr), DataTypes.Int32);
+    public static Expr ShapeOf(Expr expr) => expr.EvaluateShapeExpr();
+
+    // public static Expr ShapeOf(Expr expr) => Cast(IR.F.Tensors.ShapeOf(expr), DataTypes.Int32);
 
     private static Expr SliceAndMerge(Expr shapeExpr, Expr index, Expr value, Expr indexOffset, bool valueIsList = true)
     {
