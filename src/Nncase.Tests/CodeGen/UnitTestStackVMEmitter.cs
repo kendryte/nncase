@@ -1712,6 +1712,17 @@ public class UnitTestStackVMEmitter
     }
 
     [Fact]
+    public void TestStackVMEmitterGUnary()
+    {
+        var memoryStream = new MemoryStream();
+        var stackVmEmitter = new StackVMEmitter(new BinaryWriter(memoryStream, Encoding.UTF8, true));
+        var tensorEmitter = new StackVMEmitter.TensorEmitter(stackVmEmitter);
+        tensorEmitter.Unary(UnaryOp.Abs);
+        var actual = memoryStream.ToArray();
+        Assert.Equal(new byte[] { 100, actual[1], 0, 0 }, actual);
+    }
+
+    [Fact]
     public void TestStackVMEmitterGUniformLike()
     {
         var memoryStream = new MemoryStream();
