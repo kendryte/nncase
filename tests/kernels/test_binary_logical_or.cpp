@@ -71,10 +71,10 @@ TEST_P(BinaryTest, logical_or) {
                         .expect("create tensor failed");
 
     // actual
-    auto output =
-        kernels::stackvm::binary(nncase::runtime::stackvm::binary_op_t::logical_or,
-                                 lhs.impl(), rhs.impl())
-            .expect("binary failed");
+    auto output = kernels::stackvm::binary(
+                      nncase::runtime::stackvm::binary_op_t::logical_or,
+                      lhs.impl(), rhs.impl())
+                      .expect("binary failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
