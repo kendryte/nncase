@@ -101,6 +101,7 @@ public sealed class UnitTestEGraphRewriteFactory : TestClassBase
         new UniformLikeCase(),
         new UniformCase(),
         new ResizeImageCase(),
+        new ProdCase(),
     };
 
     [Theory]

@@ -57,8 +57,14 @@ inline dims_t gather_infer_shape(const dims_t &in_shape,
         // scalar
         return dims_t();
     }
+    auto index_shape_copy = index_shape;
+    for (size_t i = 0; i < index_shape.size(); ++i) {
+        if (index_shape[i] < 0) {
+            index_shape_copy[i] += in_shape[axis];
+        }
+    }
     auto new_shape = in_shape;
-    auto indices_shape = index_shape.size() == 0 ? dims_t{1} : index_shape;
+    auto indices_shape = index_shape.size() == 0 ? dims_t() : index_shape_copy;
     new_shape.erase(new_shape.begin() + axis);
     new_shape.insert(new_shape.begin() + axis, indices_shape.begin(),
                      indices_shape.end());

@@ -7,7 +7,6 @@ using System.Collections.Immutable;
 using System.Linq;
 using Nncase.IR;
 using Nncase.PatternMatch;
-using Tensorflow;
 using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Tensors;
 using static Nncase.IR.TypePatternUtility;

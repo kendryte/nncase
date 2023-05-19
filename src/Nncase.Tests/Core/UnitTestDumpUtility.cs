@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using Nncase;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.Utilities;
 using Xunit;
@@ -35,6 +36,10 @@ public sealed class UnitTestDumpUtility
         Assert.True(File.Exists("./test3"));
         Assert.True(Directory.Exists("./test4"));
         Assert.True(File.Exists("./test5"));
+        DumpUtility.WriteKmodelData(new Tensor[] { new Tensor<int>(new[] { 1 }) }, new Tensor[] { new Tensor<int>(new[] { 1 }) }, "./test3", "./", true);
+        Assert.True(File.Exists("./test.kmodel"));
+        Assert.True(File.Exists("./kmodel.desc"));
+        File.Delete("./test.kmodel");
     }
 
     [Fact]
@@ -44,5 +49,18 @@ public sealed class UnitTestDumpUtility
         BinFileUtil.WriteBinOutputs(new Tensor[] { new Tensor<int>(new[] { 1 }) }, "./");
         Assert.True(File.Exists("./input_0_0.bin"));
         Assert.True(File.Exists("./nncase_result_0.bin"));
+        BinFileUtil.ReadBinFile("./nncase_result_0.bin", DataTypes.Float32, new Shape(1));
+    }
+
+    [Fact]
+    public void TestNullDumpper()
+    {
+        var nullDumpper = new NullDumpper();
+        _ = nullDumpper.Directory;
+        nullDumpper.DumpIR(1, string.Empty);
+        nullDumpper.DumpDotIR(1, string.Empty);
+        nullDumpper.DumpModule(new IRModule(), string.Empty);
+        nullDumpper.DumpCSharpIR(1, string.Empty);
+        nullDumpper.OpenFile("./");
     }
 }

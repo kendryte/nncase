@@ -8,6 +8,7 @@ using System.Linq;
 using Microsoft.VisualBasic;
 using Nncase;
 using Nncase.CodeGen;
+using Nncase.CodeGen.StackVM;
 using Nncase.IR;
 using Nncase.Utilities;
 using Xunit;
@@ -28,5 +29,12 @@ public class UnitTestCodeGenUtil
     {
         var num = new[] { new byte[] { 1, 2, 3 }, new byte[] { 2, 3, 4 }, new byte[] { 3, 4, 5 } };
         Assert.Throws<ArgumentException>(() => CodeGenUtil.StructToBytes(num));
+    }
+
+    [Fact]
+    public void TestStackVMModuleBuilder()
+    {
+        string moduleKind = new StackVMModuleBuilder().ModuleKind;
+        Assert.Equal("stackvm", moduleKind);
     }
 }
