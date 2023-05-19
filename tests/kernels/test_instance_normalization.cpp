@@ -1,17 +1,18 @@
-test_conv2d.cpp/* Copyright 2019-2021 Canaan Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+test_conv2d
+    .cpp /* Copyright 2019-2021 Canaan Inc.
+          *
+          * Licensed under the Apache License, Version 2.0 (the "License");
+          * you may not use this file except in compliance with the License.
+          * You may obtain a copy of the License at
+          *
+          *     http://www.apache.org/licenses/LICENSE-2.0
+          *
+          * Unless required by applicable law or agreed to in writing, software
+          * distributed under the License is distributed on an "AS IS" BASIS,
+          * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+          * implied. See the License for the specific language governing
+          * permissions and limitations under the License.
+          */
 #include "kernel_test.h"
 #include <c_api.h>
 #include <gtest/gtest.h>
@@ -23,13 +24,14 @@ test_conv2d.cpp/* Copyright 2019-2021 Canaan Inc.
 #include <nncase/runtime/stackvm/opcode.h>
 #include <operators.h>
 
-using namespace nncase;
+    using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class InstanceNormalizationTest : public KernelTest,
-                   public ::testing::TestWithParam<
-                       std::tuple<nncase::typecode_t, dims_t, dims_t>> {
+class InstanceNormalizationTest
+    : public KernelTest,
+      public ::testing::TestWithParam<
+          std::tuple<nncase::typecode_t, dims_t, dims_t>> {
   public:
     void SetUp() override {
         auto &&[typecode, l_shape, r_shape] = GetParam();
