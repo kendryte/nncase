@@ -3,7 +3,6 @@
 
 using Nncase.IR;
 using Nncase.Utilities;
-using static Tensorflow.tensorflow;
 
 namespace Nncase.Tests;
 

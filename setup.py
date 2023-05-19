@@ -7,6 +7,7 @@ from setuptools.command.install_lib import install_lib
 from setuptools.command.install_scripts import install_scripts
 import shutil
 import os
+import platform
 import sys
 import io
 import re
@@ -77,14 +78,25 @@ class InstallCMakeLibs(install_lib):
         # your files are moved to the appropriate location when the installation
         # is run
 
+        sharp_libs = [os.path.join(root, _lib) for root, _, files in
+                os.walk(os.path.join(bin_dir, 'sharplibs')) for _lib in files if
+                os.path.isfile(os.path.join(root, _lib)) and
+                os.path.splitext(_lib)[-1] in [".dll", ".so", ".dylib", ".json"]
+                and not _lib.endswith(".deps.json")]
+
+        for lib in sharp_libs:
+            shutil.move(lib, os.path.join(self.build_dir,
+                                          'nncase',
+                                          os.path.basename(lib)))
+
         libs = [os.path.join(root, _lib) for root, _, files in
                 os.walk(bin_dir) for _lib in files if
+                'sharplibs' not in root and
                 os.path.isfile(os.path.join(root, _lib)) and
-                os.path.splitext(_lib)[1] in [".dll", ".so", ".dylib"]
+                os.path.splitext(_lib)[-1] in [".dll", ".so", ".dylib", ".json"]
                 and not (_lib.startswith("python") or _lib.startswith("_nncase"))]
 
         for lib in libs:
-
             shutil.move(lib, os.path.join(self.build_dir,
                                           os.path.basename(lib)))
 
@@ -105,9 +117,14 @@ class InstallCMakeLibs(install_lib):
         # step; depending on the files that are generated from your cmake
         # build chain, you may need to modify the below code
 
-        self.distribution.data_files = [os.path.join(self.install_dir,
-                                                     os.path.basename(lib))
-                                        for lib in libs]
+        data_files = [os.path.join(self.install_dir,
+                                   os.path.basename(lib))
+                                   for lib in libs]
+        data_files += [os.path.join(self.install_dir,
+                                   'nncase',
+                                   os.path.basename(lib))
+                                   for lib in sharp_libs]
+        self.distribution.data_files = data_files
 
         # Must be forced to run after adding the libs to data_files
 
@@ -184,10 +201,10 @@ class BuildCMakeExt(build_ext):
             extdir += os.path.sep
 
         bin_dir = os.path.abspath(os.path.join(self.build_temp, 'install'))
-        cmake_args = ['-G', 'Ninja']
-        if os.getenv('AUDITWHEEL_PLAT') != None:
-            cmake_args += ['-DCMAKE_C_COMPILER=gcc-10']
-            cmake_args += ['-DCMAKE_CXX_COMPILER=g++-10']
+        cmake_args = ['-G', 'Ninja', '-DDOTNET_INIT_FOR_CONFIG=ON']
+        if platform.system() == 'Windows':
+            cmake_args += ['-DCMAKE_C_COMPILER=clang-cl']
+            cmake_args += ['-DCMAKE_CXX_COMPILER=clang-cl']
         cmake_args += ['-DPython3_ROOT_DIR=' + os.path.dirname(sys.executable)]
 
         cfg = 'Debug' if self.debug else 'Release'
@@ -228,6 +245,17 @@ class BuildCMakeExt(build_ext):
 
         shutil.move(pyd_path, extpath)
 
+        # copy nncase publish
+        nncase_libs = [os.path.join(root, _lib) for root, _, files in
+                os.walk(os.path.join(ext.sourcedir, 'install')) for _lib in files if
+                os.path.isfile(os.path.join(root, _lib)) and
+                os.path.splitext(_lib)[-1] in [".dll", ".so", ".dylib", ".json"]]
+
+        sharp_libs_dir = os.path.join(bin_dir, 'sharplibs')
+        os.makedirs(sharp_libs_dir)
+        for lib in nncase_libs:
+            shutil.copy(lib, os.path.join(sharp_libs_dir, os.path.basename(lib)))
+
         # After build_ext is run, the following commands will run:
         #
         # install_lib
@@ -251,33 +279,11 @@ def find_version():
     raise RuntimeError("Unable to find version string.")
 
 
-requirements = ["numpy"]
-
 setup(name='nncase',
       version=find_version(),
-      author="sunnycase",
-      author_email="sunnycase@live.cn",
-      maintainer="sunnycase",
       packages=['nncase'],
       package_dir={'': 'python'},
-      python_requires=">=3.6",
-      install_requires=requirements,
       ext_modules=[CMakeExtension(name="_nncase", sourcedir='.')],
-      description="A neural network compiler for AI accelerators",
-      url='https://github.com/kendryte/nncase',
-      long_description=open("README.md", 'r', encoding='utf8').read(),
-      long_description_content_type="text/markdown",
-      keywords="kendryte, nn, compiler, k210, k510",
-      classifiers=[
-          "Programming Language :: C++",
-          "Programming Language :: Python :: 3",
-          "Programming Language :: Python :: 3.6",
-          "Programming Language :: Python :: 3.7",
-          "Programming Language :: Python :: 3.8",
-          "Programming Language :: Python :: 3.9",
-          "License :: OSI Approved :: Apache Software License",
-          "Operating System :: OS Independent", ],
-      license='Apache-2.0',
       cmdclass={
           'build_ext': BuildCMakeExt,
           'install_data': InstallCMakeLibsData,

@@ -16,7 +16,6 @@ using Nncase.IR.Tensors;
 using Nncase.Passes.Rules.Neutral;
 using Nncase.Passes.Transforms;
 using Nncase.Tests.TestFixture;
-using Tensorflow.Operations.Initializers;
 using Xunit;
 using Math = Nncase.IR.F.Math;
 using Random = Nncase.IR.F.Random;
