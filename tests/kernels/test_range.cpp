@@ -28,8 +28,8 @@ using namespace nncase::runtime;
 using namespace ortki;
 
 class RangeTest : public KernelTest,
-                   public ::testing::TestWithParam<
-                       std::tuple<nncase::typecode_t, dims_t, dims_t>> {
+                  public ::testing::TestWithParam<
+                      std::tuple<nncase::typecode_t, dims_t, dims_t>> {
   public:
     void SetUp() override {
         auto &&[typecode, l_shape, r_shape] = GetParam();
