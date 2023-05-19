@@ -366,10 +366,12 @@ NNCASE_API result<void> softmax(const float *input, float *output,
                                 const dims_t &in_strides,
                                 const dims_t &out_strides, int64_t axis,
                                 float beta, bool needLog = false) noexcept;
-                                
-NNCASE_API result<void> log_softmax(
-    const float *input, float *output, const dims_t &in_shape,
-    const dims_t &in_strides, const dims_t &out_strides, int32_t axis) noexcept;
+
+NNCASE_API result<void> log_softmax(const float *input, float *output,
+                                    const dims_t &in_shape,
+                                    const dims_t &in_strides,
+                                    const dims_t &out_strides,
+                                    int32_t axis) noexcept;
 
 NNCASE_API result<void>
 softplus(tensor input, tensor output = nullptr,

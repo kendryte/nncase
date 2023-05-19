@@ -25,11 +25,13 @@ using namespace nncase::kernels::stackvm::reference;
 using namespace nncase::kernels::stackvm;
 
 namespace {
-// log_softmax(x) = log(exp(x - reduce_max(x)) / reduce_sum(exp(x - reduce_max(x))))
+// log_softmax(x) = log(exp(x - reduce_max(x)) / reduce_sum(exp(x -
+// reduce_max(x))))
 template <typename T>
 result<void> log_softmax_impl(const T *input, T *output, const dims_t &in_shape,
-                          const dims_t &in_strides, const dims_t &out_strides,
-                          int64_t axis) noexcept {
+                              const dims_t &in_strides,
+                              const dims_t &out_strides,
+                              int64_t axis) noexcept {
     size_t positive_axis = axis < 0 ? in_shape.size() + axis : axis;
     dims_t axes{positive_axis};
 
@@ -103,6 +105,8 @@ result<void> log_softmax_impl(const T *input, T *output, const dims_t &in_shape,
 
 result<void> nncase::kernels::stackvm::reference::log_softmax(
     const float *input, float *output, const dims_t &in_shape,
-    const dims_t &in_strides, const dims_t &out_strides, int32_t axis) noexcept {
-    return log_softmax_impl(input, output, in_shape, in_strides, out_strides, axis);
+    const dims_t &in_strides, const dims_t &out_strides,
+    int32_t axis) noexcept {
+    return log_softmax_impl(input, output, in_shape, in_strides, out_strides,
+                            axis);
 }

@@ -403,8 +403,8 @@ result<value_t> nncase::kernels::stackvm::log_softmax(
     try_f32_output(out_mem, output, input_tensor->shape());
     try_positive_axis(axis_value, axis, input_tensor);
     CONTIGUOUS_KERNEL(log_softmax, input_tensor, in_mem, out_mem,
-                input_tensor->shape(), input_tensor->strides(),
-                output_tensor->strides(), axis_value);
+                      input_tensor->shape(), input_tensor->strides(),
+                      output_tensor->strides(), axis_value);
     return ok(output);
 }
 
