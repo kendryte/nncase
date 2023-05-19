@@ -27,9 +27,10 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class InstanceNormalizationTest : public KernelTest,
-                   public ::testing::TestWithParam<
-                       std::tuple<nncase::typecode_t, dims_t, dims_t>> {
+class InstanceNormalizationTest
+    : public KernelTest,
+      public ::testing::TestWithParam<
+          std::tuple<nncase::typecode_t, dims_t, dims_t>> {
   public:
     void SetUp() override {
         auto &&[typecode, l_shape, r_shape] = GetParam();
