@@ -58,6 +58,9 @@ public static class Tensors
     public static Call GatherND(Expr input, Expr batch_dims, Expr index) =>
         new Call(new GatherND(), input, batch_dims, index);
 
+    public static Call ScatterND(Expr input, Expr indices, Expr updates) =>
+        new Call(new ScatterND(), input, indices, updates);
+
     public static Call MatMul(Expr input, Expr other) => new Call(new MatMul(), input, other);
 
     // todo:remove prod

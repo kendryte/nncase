@@ -420,7 +420,7 @@ public class UnitTestEvaluatorNN : TestClassBase
         var a = new int[] { 1, 2, 0, 3 };
         var indices = Tensor.From(a, new[] { 4 });
         var depth = 5;
-        var values = Tensor.From(new int[] { 0, 1 }, new Shape(new[] { 2 }));
+        var values = Tensor.From(new float[] { 0, 1 }, new Shape(new[] { 2 }));
         var axis = 0L;
 
         var b = new float[] { 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0 };

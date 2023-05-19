@@ -1,0 +1,100 @@
+name: compiler-python-release
+
+on: [push, pull_request]
+
+jobs:
+  build-compiler:
+    name: build-${{matrix.config.name}}
+    runs-on: ${{matrix.config.os}}
+    strategy:
+      matrix:
+        dotnet-version: ['7.0']
+        config:
+          - {name: x86_64-macos, os: macos-latest, shell: bash, rid: osx-x64, buildType: Release}
+          - {name: x86_64-linux, os: ubuntu-latest, shell: bash, rid: linux-x64, buildType: Release}
+          - {name: x86_64-windows, os: windows-latest, shell: bash, rid: win-x64, buildType: Release}
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: ${{matrix.dotnet-version}}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v3
+        with:
+          path: ${{ github.workspace }}/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Build
+        run: |
+          dotnet restore -r ${{matrix.config.rid}}
+          dotnet publish src/Nncase.Compiler -c ${{matrix.config.buildType}} --no-restore --sc false -r ${{matrix.config.rid}}
+
+      - name: Upload nncase Build Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: nncase-${{matrix.config.name}}
+          path: ${{github.workspace}}/src/Nncase.Compiler/bin/${{matrix.config.buildType}}/net${{matrix.dotnet-version}}/${{matrix.config.rid}}/publish
+          if-no-files-found: error
+
+  build-native:
+    needs: [build-compiler]
+    name: build-native-${{matrix.config.name}}
+    runs-on: ${{matrix.config.os}}
+    strategy:
+      matrix:
+        dotnet-version: ['7.0']
+        config:
+          - {name: x86_64-macos, os: macos-latest}
+          - {name: x86_64-linux, os: ubuntu-latest}
+          - {name: x86_64-windows, os: windows-latest, arch: x64}
+
+    env:
+      VULKANSDK_VER: 1.2.182.0
+
+    steps:
+    - uses: actions/checkout@v3
+    - uses: seanmiddleditch/gha-setup-ninja@master
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: ${{matrix.dotnet-version}}
+
+    - name: Install nncase
+      uses: actions/download-artifact@v3
+      with:
+        name: nncase-${{matrix.config.name}}
+        path: ${{github.workspace}}/install
+
+    - name: Set up build environment (Windows, Visual Studio)
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: ${{matrix.config.arch}}
+      if: runner.os == 'Windows'
+      
+    - name: Set up build environment (Macos)
+      run: |
+        brew install sunnycase/core/libomp@11.1.0
+      if: runner.os == 'Macos'
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.7
+
+    - name: Install cibuildwheel
+      run: pip install cibuildwheel
+
+    - name: Build wheel
+      run: python -m cibuildwheel --output-dir wheelhouse
+
+    - name: Upload nncase-python Build Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: nncase-python-${{matrix.config.name}}
+        path: ${{github.workspace}}/wheelhouse
+        if-no-files-found: error

@@ -11,7 +11,6 @@ using Nncase.IR.Math;
 using Nncase.IR.NN;
 using Nncase.Passes.Analysis;
 using Nncase.PatternMatch;
-using Tensorflow;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Tensors;

@@ -33,5 +33,15 @@ public sealed class UnitTestBufferAllocation
         var bufferAllocationMemoryRange = bufferAllocation.MemoryRange;
         var memoryRange = new MemoryRange(bufferAllocation.MemoryLocate, PrimTypeCodes.ToTypeCode(DataTypes.Int8), (ushort)bufferAllocation.SharedModule, (uint)bufferAllocation.Start, (uint)bufferAllocation.Size);
         Assert.Equal(memoryRange, bufferAllocationMemoryRange);
+
+        Assert.Throws<KeyNotFoundException>(() => new BufferAllocation(default, DataTypes.Utf8Char, 1UL, 1UL, 1UL, new[] { 1, 3, 16, 16 }, new[] { 1, 1, 1, 1 }, new[] { 1 }).MemoryRange);
+    }
+
+    [Fact]
+    public void TestSchedFunctionResult()
+    {
+        var schedFunctionResult = new SchedFunctionResult();
+        Assert.False(schedFunctionResult.Equals(new object()));
+        _ = schedFunctionResult.GetHashCode();
     }
 }

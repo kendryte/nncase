@@ -82,7 +82,9 @@ else()
         DESTINATION lib/cmake/nncase)
 
     if (WIN32)
-        install(FILES ${CONAN_NETHOST_ROOT}/bin/nethost.dll DESTINATION bin)
+        install(FILES ${CONAN_NETHOST_ROOT}/bin/nethost.dll
+            COMPONENT nncase-runtime
+            DESTINATION bin)
     endif()
 
     configure_file(${CMAKE_CURRENT_LIST_DIR}/../../../../cmake/nncaseConfig.cmake.in nncaseConfig.cmake @ONLY)
