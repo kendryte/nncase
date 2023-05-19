@@ -71,7 +71,7 @@ class BatchNormalizationTest
     runtime_tensor var;
 };
 
-INSTANTIATE_TEST_SUITE_P(Binary, BatchNormalizationTest,
+INSTANTIATE_TEST_SUITE_P(batch_normalization, BatchNormalizationTest,
                          testing::Combine(testing::Values(dt_float32),
                                           testing::Values(dims_t{1, 3, 16, 16}),
                                           testing::Values(dims_t{3}),
