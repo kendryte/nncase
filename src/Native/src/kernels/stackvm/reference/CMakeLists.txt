@@ -35,6 +35,7 @@ set(SRCS ../tensor_ops.cpp
          split.cpp
          slice.cpp
          softmax.cpp
+         log_softmax.cpp
          space_to_batch.cpp
          stack.cpp
          tile.cpp

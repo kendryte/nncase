@@ -36,6 +36,6 @@ result<void>
 optimized::log_softmax(const T *input, T *output, const dims_t &in_shape,
                        const dims_t &in_strides, const dims_t &out_strides,
                        int32_t axis) noexcept {
-    return reference::softmax(input, output, in_shape, in_strides, out_strides,
-                              axis, 1.f, true);
+    return reference::log_softmax(input, output, in_shape, in_strides, out_strides,
+                              axis);
 }
