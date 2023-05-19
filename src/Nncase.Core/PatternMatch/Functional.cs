@@ -287,10 +287,10 @@ public static partial class Math
     /// <summary>
     /// CallPattern greater equal.
     /// </summary>
-    public static CallPattern GreaterEqual(Pattern lhs, Pattern rhs) => IsCompare(CompareOp.GreaterThan, lhs, rhs);
+    public static CallPattern GreaterEqual(Pattern lhs, Pattern rhs) => IsCompare(CompareOp.GreaterOrEqual, lhs, rhs);
 
     /// <summary>
     /// CallPattern greater than.
     /// </summary>
-    public static CallPattern GreaterThan(Pattern lhs, Pattern rhs) => IsCompare(CompareOp.GreaterOrEqual, lhs, rhs);
+    public static CallPattern GreaterThan(Pattern lhs, Pattern rhs) => IsCompare(CompareOp.GreaterThan, lhs, rhs);
 }

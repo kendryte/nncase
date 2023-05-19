@@ -3,7 +3,7 @@
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/Modules)
 
 if(NOT DEFINED NNCASE_VERSION)
-    set(NNCASE_VERSION "1.0.0")
+    set(NNCASE_VERSION "2.0.0")
 endif()
 
 if(DEFINED ENV{NNCASE_VERSION_SUFFIX})
@@ -31,6 +31,7 @@ project(nncase
 
 option(ENABLE_OPENMP "OpenMP support" ON)
 option(ENABLE_HALIDE "halide kernels support" ON)
+option(DOTNET_INIT_FOR_CONFIG "Initialize dotnet from runtimeconfig" OFF)
 option(BUILD_PYTHON_BINDING "Build python binding" ON)
 option(BUILD_CSHARP_BINDING "Build csharp binding" ON)
 option(BUILD_BENCHMARK "Build benchmark programs" ON)

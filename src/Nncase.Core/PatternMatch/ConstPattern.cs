@@ -119,7 +119,7 @@ public static partial class Utility
     /// <returns>ConstPattern.</returns>
     public static ConstPattern IsConst(string? name, TypePattern typePattern) => new(x => typePattern.MatchLeaf(x.ValueType), name);
 
-    public static ConstPattern IsConst(TypePattern typePattern) => IsConst(typePattern);
+    public static ConstPattern IsConst(TypePattern typePattern) => IsConst(null, typePattern);
 
     /// <summary>
     /// create const pattern.

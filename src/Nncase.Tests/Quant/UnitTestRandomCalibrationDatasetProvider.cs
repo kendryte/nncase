@@ -20,12 +20,39 @@ namespace Nncase.Tests.QuantTest;
 public class UnitTestRandomCalibrationDatasetProvider
 {
     [Fact]
-    public void TestRandomCalibrationDatasetProvider()
+    public async Task TestRandomCalibrationDatasetProvider1()
     {
-        var input = new Var();
-        var vars = new[] { input, input, input };
-        var provider = new RandomCalibrationDatasetProvider(vars, 1000);
-        Assert.Equal(1000, provider.Count);
-        _ = provider.Samples;
+        var vars = new List<Var> { new Var("x", DataTypes.Float32) };
+        var samplesCount = 5;
+        var provider = new RandomCalibrationDatasetProvider(vars, samplesCount);
+
+        var sampleCount = provider.Count;
+        var samples = await provider.Samples.ToListAsync();
+
+        Assert.Equal(samplesCount, sampleCount);
+        Assert.Equal(samplesCount, samples.Count);
+    }
+
+    [Fact]
+    public async Task TestRandomCalibrationDatasetProvider2()
+    {
+        var vars = new List<Var>
+        {
+            new Var("x", DataTypes.Float32),
+            new Var("y", DataTypes.Int32),
+        };
+        var samplesCount = 5;
+        var provider = new RandomCalibrationDatasetProvider(vars, samplesCount);
+
+        var samples = await provider.Samples.ToListAsync();
+
+        foreach (var sample in samples)
+        {
+            Assert.True(sample.ContainsKey(vars[0]));
+            Assert.True(sample[vars[0]].Type == DataTypes.Float32);
+
+            Assert.True(sample.ContainsKey(vars[1]));
+            Assert.True(sample[vars[1]].Type == DataTypes.Int32);
+        }
     }
 }

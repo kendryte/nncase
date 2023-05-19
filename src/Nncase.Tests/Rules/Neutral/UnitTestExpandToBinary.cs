@@ -11,7 +11,6 @@ using System.Threading.Tasks;
 using Nncase.IR;
 using Nncase.Passes;
 using Nncase.Passes.Rules.Neutral;
-using Tensorflow;
 using Xunit;
 using Dimension = Nncase.IR.Dimension;
 using Math = Nncase.IR.F.Math;

@@ -88,4 +88,22 @@ public sealed class UnitTestWeakList
         // Assert
         Assert.Equal(sizeAfter, sizeBefore);
     }
+
+    [Fact]
+    public void GetEnumeratorEmptyList()
+    {
+        // Arrange
+        var list = new WeakList<TestClass>();
+
+        // Act
+        using var enumerator = list.GetEnumerator();
+
+        // Assert
+        Assert.False(enumerator.MoveNext());
+        Assert.Equal(0, list.WeakCount);
+    }
+
+    private class TestClass
+    {
+    }
 }

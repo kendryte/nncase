@@ -158,7 +158,7 @@ public sealed partial class StackVMEmitter
     /// </summary>
     public sealed partial class TensorEmitter
     {
-        internal TensorEmitter(StackVMEmitter emitter)
+        public TensorEmitter(StackVMEmitter emitter)
         {
             _emitter = emitter;
         }

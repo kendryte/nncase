@@ -150,6 +150,55 @@ public class UnitTestKLQuant : TestClassBase
         bool isByChannel = true;
         var ret = QuantAlgorithmUtility.SquantWeights(weights, range, inputWeightsShape, quantMode, bits, isByChannel).ToArray();
         Assert.True(Enumerable.SequenceEqual(new float[] { -0.26148358f, 0.83261883f, -0.9220737f, 0.3096516f, 0.83261883f, -0.44727457f, -0.60918456f, -0.12103005f, -0.44377682f, 0.4195708f, -0.5325322f, -0.1734764f }, ret));
+        Assert.Throws<NotSupportedException>(() =>
+            QuantAlgorithmUtility.SquantWeights(weights, range, inputWeightsShape, quantMode, bits, false));
+    }
+
+    [Fact]
+    public void TestSQuant3()
+    {
+        var weightsArr = new float[] { -0.26237327f, 0.89416003f, -0.9190288f, 0.30857837f, 0.8356638f, -0.45278835f, -0.60886294f, -0.119574904f, -0.44323748f, 0.41989255f, -0.5338452f, -0.17311054f };
+        var weights = Tensor.From<float>(weightsArr.ToArray(), new Shape(2, 3, 2, 1));
+        var rangeArr = new float[] { -0.9190288f, 0.8356638f, -0.60886294f, 0.41989255f };
+        var range = Tensor.From<float>(rangeArr.ToArray(), new Shape(2, 2));
+        var inputWeightsShape = new Shape(2, 3, 2, 1);
+        QuantMode quantMode = QuantMode.SignedAsymmetricMode;
+        int bits = 8;
+        bool isByChannel = true;
+        var ret = QuantAlgorithmUtility.SquantWeights(weights, range, inputWeightsShape, quantMode, bits, isByChannel).ToArray();
+        Assert.True(Enumerable.SequenceEqual(new float[] { -0.26148358f, 0.83261883f, -0.9220737f, 0.3096516f, 0.83261883f, -0.44727457f, -0.60918456f, -0.12103005f, -0.44377682f, 0.4195708f, -0.5325322f, -0.1734764f }, ret));
+    }
+
+    [Fact]
+    public void TestSQuant4()
+    {
+        var weightsArr = new float[] { -0.26237327f, 0.89416003f, -0.9190288f, 0.30857837f, 0.8356638f, -0.45278835f, -0.60886294f, -0.119574904f, -0.44323748f, 0.41989255f, -0.5338452f, -0.17311054f };
+        var weights = Tensor.From<float>(weightsArr.ToArray(), new Shape(2, 3, 2, 1));
+        var rangeArr = new float[] { -0.9190288f, 0.8356638f, -0.60886294f, 0.41989255f };
+        var range = Tensor.From<float>(rangeArr.ToArray(), new Shape(2, 2));
+        var inputWeightsShape = new Shape(2, 3, 2, 1);
+        QuantMode quantMode = QuantMode.SignedSymmetricMode;
+        int bits = 8;
+        bool isByChannel = true;
+        var ret = QuantAlgorithmUtility.SquantWeights(weights, range, inputWeightsShape, quantMode, bits, isByChannel).ToArray();
+        Assert.True(Enumerable.SequenceEqual(new float[] { -0.255604833f, 0.83589685f, -0.918795705f, 0.310870737f, 0.83589685f, -0.455943733f, -0.60753268f, -0.121506542f, -0.441473752f, 0.421222687f, -0.534628808f, -0.174159378f }, ret));
+    }
+
+    [Fact]
+    public void TestSQuant5()
+    {
+        var weightsArr = new float[] { -0.26237327f, 0.89416003f, -0.9190288f, 0.30857837f, 0.8356638f, -0.45278835f };
+        var weights = Tensor.From<float>(weightsArr.ToArray(), new Shape(2, 3, 1));
+        var rangeArr = new float[] { -0.9190288f, 0.8356638f, -0.60886294f, 0.41989255f };
+        var range = Tensor.From<float>(rangeArr.ToArray(), new Shape(2, 2));
+        var inputWeightsShape = new Shape(2, 3, 1);
+        QuantMode quantMode = QuantMode.UnsignedMode;
+        int bits = 8;
+        bool isByChannel = true;
+        var ret = QuantAlgorithmUtility.SquantWeights(weights, range, inputWeightsShape, quantMode, bits, isByChannel).ToArray();
+        Assert.True(Enumerable.SequenceEqual(new float[] { -0.26148358f, 0.832618833f, -0.922073722f, 0.306609452f, 0.419570804f, -0.451845497f }, ret));
+        Assert.Throws<NotSupportedException>(() =>
+            QuantAlgorithmUtility.SquantWeights(weights, range, inputWeightsShape, quantMode, bits, false));
     }
 
     private Expr Pad(int[][] p) => Const.FromTensor(Tensor.From<int>(p.SelectMany(i => i).ToArray(), new[] { 2, 2 }));
