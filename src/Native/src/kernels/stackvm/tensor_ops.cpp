@@ -323,6 +323,23 @@ result<value_t> nncase::kernels::stackvm::gather_nd(value_t input,
     return ok(output);
 }
 
+result<value_t> nncase::kernels::stackvm::scatter_nd(value_t input,
+                                                     value_t indices,
+                                                     value_t updates,
+                                                     value_t output,
+                                                     kernel_context &context) {
+    try_input(input_mem, input);
+    try_input(indices_mem, indices);
+    try_input(updates_memm, updates);
+    auto dtype = input_tensor->dtype();
+    auto out_shape = input_tensor->shape();
+    try_output(out_mem, output, dtype, out_shape);
+    try_(reference::scatter_nd(dtype, input_mem, out_mem, input_tensor->shape(),
+                               indices_tensor->dtype(), indices_mem,
+                               indices_tensor->shape(), updates_memm,
+                               updates_tensor->shape(), context));
+    return ok(output);
+}
 result<value_t> nncase::kernels::stackvm::get_item(
     [[maybe_unused]] value_t input, [[maybe_unused]] value_t index,
     [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {

@@ -151,6 +151,14 @@ gather_nd(datatype_t type, const gsl::byte *input, gsl::byte *output,
           const dims_t &indices_shape, size_t batch_dims,
           kernel_context &context = default_kernel_context()) noexcept;
 
+NNCASE_API
+result<void>
+scatter_nd(datatype_t type, const gsl::byte *input, gsl::byte *output,
+           const dims_t &in_shape, datatype_t indices_type,
+           const gsl::byte *indices, const dims_t &indices_shape,
+           const gsl::byte *updates, const dims_t &updates_shape,
+           kernel_context &context = default_kernel_context()) noexcept;
+
 NNCASE_API result<void>
 get_item(tensor input, tensor index, tensor output = nullptr,
          kernel_context &context = default_kernel_context());

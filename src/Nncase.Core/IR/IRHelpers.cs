@@ -48,7 +48,7 @@ public static class IRHelpers
         DCESanity(function);
     }
 
-    [Conditional("DEBUG")]
+    // [Conditional("DEBUG")]
     public static void DCESanity(Expr root)
     {
         using var exprPin = new ExprPinner(root);

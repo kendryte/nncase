@@ -44,5 +44,6 @@ set(SRCS ../tensor_ops.cpp
          unary.cpp
          where.cpp
          uninitialized.cpp
-         layer_norm.cpp)
+         layer_norm.cpp
+         scatter_nd.cpp)
 target_sources(kernels PRIVATE ${SRCS})

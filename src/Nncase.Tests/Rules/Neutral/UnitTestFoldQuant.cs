@@ -43,6 +43,19 @@ public class UnitTestFoldQuant : TransformTestBase
         }
     }
 
+    // todo remove it when resolve the bug
+    [Theory]
+    [MemberData(nameof(FoldQuantDequantData))]
+    public void TestFoldQuantDequant1(int count, bool is_pos, int[] shape, DataType input_dtype, QuantParam q_param, DataType quant_type, QuantParam deq_param, DataType dequant_type)
+    {
+        using var dumpScope = new DumpScope($"{count}");
+        var pre = IR.F.Math.Dequantize(IR.F.Math.Quantize(Random.Normal(input_dtype, 0, 1, 0, shape), q_param, quant_type), deq_param, dequant_type);
+        if (!is_pos)
+        {
+            TestNotMatch<FoldQuantDeQuant>(pre);
+        }
+    }
+
     [Theory]
     [MemberData(nameof(FoldDequantQuantData))]
     public void TestFoldDequantQuant(int count, bool is_pos, int[] shape, DataType input_dtype, QuantParam deq_param, DataType dequant_type, QuantParam q_param, DataType quant_type)

@@ -6,6 +6,7 @@ using System.Security.Cryptography;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using Onnx;
+using static Nncase.IR.F.Tensors;
 using F = Nncase.IR.F;
 
 namespace Nncase.Importer
@@ -24,24 +25,40 @@ namespace Nncase.Importer
 
             var ceilMode = GetBoolAttribute(op, "ceil_mode", false);
             var countIncludePad = GetBoolAttribute(op, "count_include_pad", false);
-            var pads = GetPadsAttribute(op);
             var dilation = reduceOp == ReduceOp.Max
-                ? GetIntsAttribute(op, "dilations", 1, 2)
-                : Enumerable.Repeat<long>(1, 2).ToArray();
+                ? GetIntsAttribute(op, "dilations", 1, 2).ToList()
+                : Enumerable.Repeat<long>(1, 2).ToList();
             var kernelShape = isGlobal
                 ? Util.GetHW(input).Map((h, w) => (Expr)F.Tensors.Stack(new Tuple(h, w), 0))
                 : Tensor.From<long>(GetIntsAttribute(op, "kernel_shape"));
-            var strides = GetStrideAttribute(op);
-            return F.NN.ReduceWindow2D(
+            var strides = GetStrideAttribute(op).ToArray<long>().ToList();
+
+            var isPool1D = input.CheckedShape.Rank == 3;
+            var pads = GetPadsAttribute(op, isPool1D);
+            if (isPool1D)
+            {
+                strides.Add(1);
+                kernelShape = Concat(new Tuple(kernelShape, new[] { 1L }), 0);
+                input = To4D(input);
+            }
+
+            var pdp = F.NN.ReduceWindow2D(
                 reduceOp,
                 input,
                 initValue,
                 kernelShape,
-                strides,
+                strides.ToArray(),
                 pads,
-                Tensor.From<long>(dilation),
+                Tensor.From<long>(dilation.ToArray()),
                 ceilMode,
                 countIncludePad);
+
+            if (isPool1D)
+            {
+                pdp = Squeeze(pdp, new[] { 3 });
+            }
+
+            return pdp;
         }
     }
 }

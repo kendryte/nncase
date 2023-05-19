@@ -25,6 +25,7 @@ public class UnitTestClampToBinary : TransformTestBase
         {
             new object[] { new[] { 1, 32, 24, 24 }, new[] { float.MinValue }, new[] { float.MaxValue }, },
             new object[] { new[] { 1, 32, 24, 24 }, new[] { -1.0f }, new[] { 1.0f }, },
+            new object[] { new[] { 1, 32, 24, 24 }, new[] { float.MinValue }, new[] { 1.0f }, },
         };
 
     [Theory]

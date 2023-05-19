@@ -168,6 +168,7 @@ public sealed partial class OnnxImporter : BaseImporter
             "Resize" => VisitResize(op),
             "ReverseSequence" => VisitReverseSequence(op),
             "Round" => VisitUnary(op, UnaryOp.Round),
+            "ScatterND" => VisitScatterND(op),
             "Selu" => VisitSelu(op),
             "Shape" => VisitShape(op),
             "Sin" => VisitUnary(op, UnaryOp.Sin),

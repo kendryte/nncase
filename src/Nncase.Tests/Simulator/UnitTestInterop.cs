@@ -165,4 +165,19 @@ public class UnitTestInterop : TestClassBase
         Assert.Equal(DataTypes.Float64, RTExtensions.ToPrimType(RTDataType.FromTypeCode(Runtime.TypeCode.Float64)));
         Assert.Equal(DataTypes.BFloat16, RTExtensions.ToPrimType(RTDataType.FromTypeCode(Runtime.TypeCode.BFloat16)));
     }
+
+    [Fact]
+    public void TestRTTuple()
+    {
+        Assert.Throws<InvalidOperationException>(() => RTTuple.FromTuple(new TupleValue(ReadOnlySpan<IValue>.Empty)));
+
+        var intVal = Value.FromConst(42);
+        var floatVal = Value.FromConst(3.14f);
+        var tupleValue = new TupleValue(new[] { intVal, floatVal });
+        var tuple = RTTuple.FromTuple(tupleValue);
+        var fields = tuple.Fields;
+        Assert.Equal(2, fields.Length);
+        Assert.Equal(intVal, fields[0].ToValue());
+        Assert.Equal(floatVal, fields[1].ToValue());
+    }
 }
