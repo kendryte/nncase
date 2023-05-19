@@ -27,31 +27,37 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class BatchNormalizationTest : public KernelTest,
-                   public ::testing::TestWithParam<
-                       std::tuple<nncase::typecode_t, dims_t, dims_t, dims_t, dims_t, dims_t>> {
+class BatchNormalizationTest
+    : public KernelTest,
+      public ::testing::TestWithParam<std::tuple<
+          nncase::typecode_t, dims_t, dims_t, dims_t, dims_t, dims_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode, input_shape, scale_shape, b_shape, mean_shape, var_shape] = GetParam();
+        auto &&[typecode, input_shape, scale_shape, b_shape, mean_shape,
+                var_shape] = GetParam();
 
-        input = hrt::create(typecode, input_shape, host_runtime_tensor::pool_cpu_only)
-                  .expect("create tensor failed");
+        input = hrt::create(typecode, input_shape,
+                            host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
         init_tensor(input);
 
-        scale = hrt::create(typecode, scale_shape, host_runtime_tensor::pool_cpu_only)
-                  .expect("create tensor failed");
+        scale = hrt::create(typecode, scale_shape,
+                            host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
         init_tensor(scale);
 
         b = hrt::create(typecode, b_shape, host_runtime_tensor::pool_cpu_only)
-                    .expect("create tensor failed");
+                .expect("create tensor failed");
         init_tensor(b);
 
-        mean = hrt::create(typecode, mean_shape, host_runtime_tensor::pool_cpu_only)
-                .expect("create tensor failed");
+        mean = hrt::create(typecode, mean_shape,
+                           host_runtime_tensor::pool_cpu_only)
+                   .expect("create tensor failed");
         init_tensor(mean);
 
-        var = hrt::create(typecode, var_shape, host_runtime_tensor::pool_cpu_only)
-                   .expect("create tensor failed");
+        var =
+            hrt::create(typecode, var_shape, host_runtime_tensor::pool_cpu_only)
+                .expect("create tensor failed");
         init_tensor(var);
     }
 
@@ -81,7 +87,8 @@ TEST_P(BatchNormalizationTest, batch_normalization) {
     auto var_ort = runtime_tensor_2_ort_tensor(var);
 
     // expected
-    auto output_ort = ortki_BatchNormalization(input_ort, scale_ort, b_ort, mean_ort, var_ort, 0.01f, 0.5f);
+    auto output_ort = ortki_BatchNormalization(input_ort, scale_ort, b_ort,
+                                               mean_ort, var_ort, 0.01f, 0.5f);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
@@ -93,21 +100,24 @@ TEST_P(BatchNormalizationTest, batch_normalization) {
 
     float *epsilon_ptr;
     *epsilon_ptr = 0.01f;
-    auto epsilon =  hrt::create(nncase::dt_float32, {1},
-                                    {reinterpret_cast<gsl::byte *>(epsilon_ptr), sizeof(float)},
-                                    true, host_runtime_tensor::pool_cpu_only)
-                            .expect("create tensor failed");
+    auto epsilon =
+        hrt::create(nncase::dt_float32, {1},
+                    {reinterpret_cast<gsl::byte *>(epsilon_ptr), sizeof(float)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
 
     float *monentum_ptr;
     *monentum_ptr = 0.5f;
-    auto monentum =  hrt::create(nncase::dt_float32, {1},
-                               {reinterpret_cast<gsl::byte *>(epsilon_ptr), sizeof(float)},
-                               true, host_runtime_tensor::pool_cpu_only)
-                       .expect("create tensor failed");
+    auto monentum =
+        hrt::create(nncase::dt_float32, {1},
+                    {reinterpret_cast<gsl::byte *>(epsilon_ptr), sizeof(float)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
     // actual
-    auto output =
-        kernels::stackvm::batch_normalization(input.impl(), scale.impl(), b.impl(), mean.impl(), var.impl(), epsilon.impl(), monentum.impl())
-            .expect("batch_normalization failed");
+    auto output = kernels::stackvm::batch_normalization(
+                      input.impl(), scale.impl(), b.impl(), mean.impl(),
+                      var.impl(), epsilon.impl(), monentum.impl())
+                      .expect("batch_normalization failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
