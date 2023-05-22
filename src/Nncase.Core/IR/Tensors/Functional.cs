@@ -114,14 +114,7 @@ public static class Tensors
 
     public static Expr SizeOf(Expr input) => new Call(new SizeOf(), input);
 
-    public static Call Stack(Expr inputs, Expr axis)
-    {
-        if (inputs is not Tuple)
-        {
-            Console.WriteLine("Error");
-        }
-        return new Call(new Stack(), inputs, axis);
-    }
+    public static Call Stack(Expr inputs, Expr axis) => new Call(new Stack(), inputs, axis);
 
     // squeeze input by give dims
     public static Call Squeeze(Expr input, Expr dims) => new Call(new Squeeze(), input, dims);

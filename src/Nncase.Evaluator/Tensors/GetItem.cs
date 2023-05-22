@@ -38,8 +38,6 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
     {
         if (input.Type is TensorType ttype)
         {
-            Console.WriteLine(string.Join(",", input.AsTensor().ToArray<int>()));
-            Console.WriteLine(string.Join(",", index.AsTensor().ToArray<int>()));
             var tensor = input.AsTensor();
             var elementSize = tensor.ElementType.SizeInBytes;
             var indices = new int[tensor.Rank];

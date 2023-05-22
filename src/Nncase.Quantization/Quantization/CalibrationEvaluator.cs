@@ -134,15 +134,6 @@ public class CalibrationEvaluator : IDisposable
     {
         return VisitLeaf(enode, () =>
         {
-            // Console.WriteLine("Inputs");
-            // foreach (var (key, iValue) in _inputs)
-            // {
-            //     Console.WriteLine(key.Name);
-            //     Console.WriteLine(key.GlobalVarIndex);
-            // }
-            // Console.WriteLine("Inputs end");
-            // Console.WriteLine(var.Name);
-            // Console.WriteLine(var.GlobalVarIndex);
             var value = _inputs[var];
             if (!new TypePattern(cur => TypeChecker(cur, var.CheckedType!), "Var Type Checker").MatchLeaf(value.Type))
             {

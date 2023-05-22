@@ -266,13 +266,6 @@ public abstract partial class Expr : IDisposable
     {
         if (!_disposedValue)
         {
-            // Console.WriteLine("dispose");
-            // Console.WriteLine(this);
-            // if (this is Var var)
-            // {
-            // Console.WriteLine(var.Name);
-            // Console.WriteLine(var.GlobalVarIndex);
-            // }
             foreach (var operand in _operands)
             {
                 operand.RemoveUser(this);

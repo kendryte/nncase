@@ -122,21 +122,13 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, Unit>, IDisposable
 
     protected override IValue VisitLeafCall(Call expr)
     {
-        // Console.Write("op start:");
-        // Console.WriteLine(expr.Target);
-        // Console.WriteLine(count++);
-        var result = expr.Target switch
+        return expr.Target switch
         {
             Op op => CompilerServices.EvaluateOp(op, _context, _evaluator_cache),
             Function func => CompilerServices.Evaluate(func.Body, CreateFunctionEvaluateArguments(func.Parameters, expr.Arguments), _evaluator_cache),
             Fusion { ModuleKind: "stackvm" } fusion => CompilerServices.Evaluate(fusion.Body, CreateFunctionEvaluateArguments(fusion.Parameters, expr.Arguments), _evaluator_cache),
             _ => throw new NotImplementedException(expr.Target.ToString()),
         };
-        // vnar arr = result.AsTensors()[0].ToArray<int>();
-        // Console.WriteLine(string.Join(",", arr.Length > 10 ? arr[..10] : arr));
-        // Console.Write("op end:");
-        // Console.WriteLine(expr.Target);
-        return result;
     }
 
     private IReadOnlyDictionary<Var, IValue> CreateFunctionEvaluateArguments(ReadOnlySpan<Var> parameters, ReadOnlySpan<Expr> arguments)
