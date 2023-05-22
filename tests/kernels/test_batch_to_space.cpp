@@ -29,43 +29,47 @@ using namespace ortki;
 
 class BinaryTest : public KernelTest,
                    public ::testing::TestWithParam<
-                       std::tuple<nncase::typecode_t, dims_t, dims_t>> {
+                       std::tuple<nncase::typecode_t, dims_t, dims_t, dims_t, dims_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape, r_shape] = GetParam();
+        auto &&[typecode, input_shape, expect_shape, shape_shape, crops_shape] = GetParam();
 
-        lhs = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
+        input = hrt::create(typecode, input_shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
-        init_tensor(lhs);
+        init_tensor(input);
 
-        rhs = hrt::create(typecode, r_shape, host_runtime_tensor::pool_cpu_only)
+        expect = hrt::create(typecode, expect_shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
-        init_tensor(rhs);
+        init_tensor(expect);
     }
 
     void TearDown() override {}
 
   protected:
-    runtime_tensor lhs;
-    runtime_tensor rhs;
+    runtime_tensor input;
+    runtime_tensor expect;
+    runtime_tensor shape;
+    runtime_tensor crops;
 };
 
 INSTANTIATE_TEST_SUITE_P(Binary, BinaryTest,
                          testing::Combine(testing::Values(dt_float32),
                                           testing::Values(dims_t{4, 1, 2, 2}),
-                                          testing::Values(dims_t{1, 1, 4, 4})));
+                                          testing::Values(dims_t{1, 1, 4, 4}),
+                                          testing::Values(dims_t{2}),
+                                          testing::Values(dims_t{2, 2})));
 
 TEST_P(BinaryTest, add) {
-    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
-    auto r_ort = runtime_tensor_2_ort_tensor(rhs);
+    auto input_ort = runtime_tensor_2_ort_tensor(input);
+    auto expect_ort = runtime_tensor_2_ort_tensor(expect);
 
     // expected
-    auto output_ort = ortki_Add(l_ort, r_ort);
+    auto output_ort = ortki_Add(input_ort, expect_ort);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
-    auto expected = hrt::create(lhs.datatype(), shape,
+    auto expected = hrt::create(input.datatype(), shape,
                                 {reinterpret_cast<gsl::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
@@ -73,7 +77,7 @@ TEST_P(BinaryTest, add) {
     // actual
     auto output =
         kernels::stackvm::binary(nncase::runtime::stackvm::binary_op_t::add,
-                                 lhs.impl(), rhs.impl())
+                                 input.impl(), expect.impl())
             .expect("binary failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 

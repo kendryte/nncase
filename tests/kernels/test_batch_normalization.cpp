@@ -110,7 +110,7 @@ TEST_P(BatchNormalizationTest, batch_normalization) {
     *monentum_ptr = 0.5f;
     auto monentum =
         hrt::create(nncase::dt_float32, {1},
-                    {reinterpret_cast<gsl::byte *>(epsilon_ptr), sizeof(float)},
+                    {reinterpret_cast<gsl::byte *>(monentum_ptr), sizeof(float)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     // actual
