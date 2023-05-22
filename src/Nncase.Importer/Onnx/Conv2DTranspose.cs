@@ -43,7 +43,7 @@ namespace Nncase.Importer
             var outShape = GetOptionIntsAttribute(op, "output_shape")
                 .Match(
                     o => Tensor.From<long>(o),
-                    () => GetOutputShape(
+                    () => IR.Util.GetConvTransposeOutputShape(
                         input,
                         weights,
                         strides.ToArray(),
@@ -72,40 +72,6 @@ namespace Nncase.Importer
             }
 
             return conv;
-        }
-
-        private Expr ComputeOutSize(Expr inputSize, Expr weightSize, long[] strides, long[] outPaddings, Expr paddings, long[] dilations, int offset)
-        {
-            return (strides[offset] * (inputSize - 1L))
-                + outPaddings[offset]
-                + (((weightSize - 1L)
-                * dilations[offset]) + 1L) - paddings[offset][0] - paddings[offset][1];
-        }
-
-        private Expr GetOutputShape(Expr input, Expr weights, long[] strides, long[] outPadding, Expr paddings, long[] dilations, string autoPad, long group)
-        {
-            var iN = Util.ShapeIndex(input, 0);
-            _ = Util.ShapeIndex(input, 1);
-            var (iH, iW) = Util.GetHW(input);
-            var oc = Util.ShapeIndex(weights, 1) * group;
-
-            // var ic = Util.ShapeIndex(weights, 1);
-            var (wH, wW) = Util.GetHW(weights);
-            var outShape = new List<Expr>();
-            outShape.Add(iN);
-            outShape.Add(oc);
-            if (autoPad is "SAME_UPPER" or "SAME_LOWER")
-            {
-                outShape.Add(iH * strides[0]);
-                outShape.Add(iW * strides[1]);
-            }
-            else
-            {
-                outShape.Add(ComputeOutSize(iH, wH, strides, outPadding, paddings, dilations, 0));
-                outShape.Add(ComputeOutSize(iW, wW, strides, outPadding, paddings, dilations, 1));
-            }
-
-            return F.Tensors.Stack(new IR.Tuple(CollectionsMarshal.AsSpan(outShape)), 0);
         }
     }
 }

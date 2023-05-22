@@ -33,7 +33,7 @@ public static class ShapeExprUtility
             shape.InferenceType();
         }
 
-        if (shape.CheckedType is not TensorType || shape.CheckedShape.Count == 0)
+        if (shape.CheckedType is not TensorType || shape.CheckedShape.IsScalar)
         {
             DumpScope.Current.DumpIR(shape, "ShapeExprUtilityCheckShape");
             throw new InvalidOperationException();

@@ -20,6 +20,7 @@ using static Nncase.PatternMatch.Utility;
 using static Nncase.PatternMatch.F.Math;
 using static Nncase.Passes.Rules.Neutral.ShapeBucketHelper;
 using Dimension = Nncase.IR.Dimension;
+using Tuple = System.Tuple;
 
 namespace Nncase.Passes.Rules.Neutral;
 
@@ -73,13 +74,21 @@ public partial class MarkerCallToFusion<T> : RewriteRule<Pattern> where T : Op
 
     public int Counter = 0;
 
+    public Call CurrentCall;
+
+    public string RelPath => $"{Counter}_{CurrentCall.Target.GetType().Name}";
+
+    virtual public bool Check(Call call) { return true;}
+
     public Var[] MakeEffectVarArray(params Expr[] args)
     {
         var varMap = CompileSession.CompileOptions.ShapeBucketOptions.VarMap;
         var visitor = new FindVar();
         args.ForEach(arg =>
         {
+            DumpScope.Current.DumpIR(arg, "arg", RelPath);
             var argShapeExpr = arg.EvaluateShapeExpr(varMap);
+            DumpScope.Current.DumpIR(argShapeExpr, "shapeExpr", RelPath);
             visitor.Visit(argShapeExpr);
         });
         return visitor.Vars.ToHashSet().Except(varMap.Keys.ToHashSet()).ToHashSet().ToArray();
@@ -87,19 +96,32 @@ public partial class MarkerCallToFusion<T> : RewriteRule<Pattern> where T : Op
 
     public Expr GetReplace(Marker callMarker)
     {
+        if (Counter > 5)
+        {
+            return null;
+        }
         var call = (Call)(callMarker.Target);
+        CurrentCall = call;
+        DumpScope.Current.DumpIR(callMarker, "origin", RelPath);
         var argsMarker = GetCallInputs(call);
         var args = argsMarker.Select(arg => arg.Target).ToArray();
         var set = MakeEffectVarArray(args);
         var fusionVars = argsMarker.Select(arg => new Var(arg.CheckedType)).ToArray();
         var inputsWithMarker =
             fusionVars.Zip(argsMarker).Select(pair => pair.Second.With(target: pair.First)).ToArray();
+
         var pairs = inputsWithMarker.Select((input, i) => (i, (Expr)input)).ToArray();
+        // arguments用到其他input的地方就要replace对应的input
         var newCall = ReplaceUtility.ReplaceCallParams(call.Target, call.Arguments.ToArray(), pairs);
         var newCallWithMarker = callMarker.With(target: newCall);
-        var f = new VarFusion($"{Name}_{Counter}", ModuleKind, set, newCallWithMarker, fusionVars);
+        var body = fusionVars.Zip(args).Aggregate((Expr)newCallWithMarker, (newBody, tuple) =>
+        {
+            var (fusionVar, arg) = tuple;
+            return ReplaceUtility.ReplaceExpr(newBody, arg, fusionVar);
+        });
+        var f = new VarFusion($"{Name}_{Counter}", ModuleKind, set, body, fusionVars);
         var outerCall = new Call(f, args);
-        DumpScope.Current.DumpIR(outerCall, $"Fusion_{Counter}");
+        DumpScope.Current.DumpIR(outerCall, "fusion", RelPath);
         Counter++;
         return outerCall;
     }
@@ -107,7 +129,11 @@ public partial class MarkerCallToFusion<T> : RewriteRule<Pattern> where T : Op
 
 public class Conv2DToFusion : MarkerCallToFusion<Conv2D> {}
 
-public class Conv2DTransposeToFusion : MarkerCallToFusion<Conv2DTranspose> {}
+public class Conv2DTransposeToFusion : MarkerCallToFusion<Conv2DTranspose>
+{
+    // when OutputShape is Const, it means output shape is not effected by input.
+    public override bool Check(Call call) => call.Arguments[Conv2DTranspose.OutputShape.Index] is not Const;
+}
 
 public class MatmulToFusion : MarkerCallToFusion<MatMul> {}
 
@@ -135,7 +161,7 @@ public partial class ReplaceRewrite : RewriteRule<Pattern>
     private Expr[] FusionInputs;
 
     public override Pattern Pattern => IsRangeOfMarker("callMarker",
-        IsAlt(IsOp<MatMul>(), IsOp<Conv2D>(), IsOp<Conv2DTranspose>()), IsTensorConst());
+        IsCallWildcard("call", IsAlt(IsOp<MatMul>(), IsOp<Conv2D>(), IsOp<Conv2DTranspose>())), IsTensorConst());
 
     private Var[] DimVar;
 
@@ -156,6 +182,7 @@ public partial class ReplaceRewrite : RewriteRule<Pattern>
 
     public Expr? GetReplace(Marker callMarker, Call call)
     {
+        Console.WriteLine($"Rewrite{count}");
         var (minDict, maxDict) = GetBoundDict(InputInfo, dict);
         PrintBoundDict(minDict, maxDict);
         CheckAlive();
@@ -317,52 +344,223 @@ public partial class ReplaceRewrite : RewriteRule<Pattern>
     private Expr Split(Call call, Marker callMarker, Marker[] callInputs, SegmentInfo info, int current,
         int limit, Dictionary<Var, int[]> varValues)
     {
+        FusionInputs = callInputs.Zip(FusionInputs).Select(pair => pair.Item1.With(target: pair.Item2)).ToArray();
+
+        // 分段是针对input做的，而不是替换了input。
+        // arg var -> compute
+        // arg var -> bucket -> compute
+        // arg -> bucket -> compute
         var (inputIndex, dimIndex, segments) = info;
         var sp = ConstantOfShape(new[] { 1 }, Cast(0, call.CheckedDataType));
         int i = 0;
+
+        // todo: fusionInputs
         var body = segments.OrderByDescending(x => x).Aggregate(
             (Expr)IR.F.Math.Require(false, sp, "input dim large than limit"),
             (sum, seg) =>
             {
                 // Console.WriteLine("segment value");
                 // Console.WriteLine(seg);
-                var cond = Cast(ShapeOf(call.Arguments[inputIndex]), DataTypes.Int32)[dimIndex] <= seg;
+                var cond = Cast(ShapeOf(FusionInputs[inputIndex]), DataTypes.Int32)[dimIndex] <= seg;
                 // select var value for current segment
+                DumpScope.Current.DumpIR(call, $"call_before{i}");
                 var varInfo = varValues.ToDictionary(pair => pair.Key, pair => (IValue)Value.FromTensor(pair.Value[i]));
                 var thenBody = current + 1 < limit
                     ? Split(call, callMarker, callInputs, info, current + 1, limit, varValues)
-                    : MakeSplitEntry(call, callMarker, callInputs, info, seg, InputInfo, varInfo, FusionInputData,
-                        FusionInputsShape);
+                    : MakeSplitEntry(call, callMarker, callInputs, InputInfo, varInfo, FusionInputData,
+                        FusionInputsShape, FusionInputs);
+                DumpScope.Current.DumpIR(call, $"after_{i}");
                 var elseBody = sum;
                 i++;
-                return new If(cond, thenBody, elseBody);
+                var result = new If(cond, thenBody, elseBody);
+                DumpScope.Current.DumpIR(result, $"{i}");
+                return result;
             });
+        // let args
+        if (body is If @if)
+        {
+            return @if.With(paramList: FusionInputs);
+        }
         return body;
     }
 
-    public static Expr MakeSplitEntry(Call call, Marker callMaker, Marker[] callInputs, SegmentInfo info,
-        int seg, Dictionary<Var, Expr[]> inputInfo,
+    // todo: 问题本质是每个分支需要其单独的var，因为其参数需要fixed的input
+    public static Expr MakeSplitEntry(Expr originCall, Marker callMaker, Marker[] callInputs,
+        Dictionary<Var, Expr[]> inputInfo,
         Dictionary<Var, IValue> varInfo, Dictionary<Var, Expr[]> fusionInputdata,
-        Dictionary<Var, Expr[]> fusionInputsShape)
+        Dictionary<Var, Expr[]> fusionInputsShape, Expr[] fusionInputs)
     {
+        var call = originCall.Clone();
+
+        Console.WriteLine("MakeSplitEntry");
+        // var callInputs = GetCallInputs((Call)call);
+        var newInputs = GetCallInputs((Call)call).Select(x => (Var)x.Target).ToArray();
+
+        var fixInputs = callInputs
+            .Select((arg, i) => PreProcess(arg, inputInfo, varInfo, fusionInputdata, fusionInputs, i)).ToArray();
+        DumpScope.Current.DumpIR(call, "CopyBeforeReplace");
+
+        // var v1 = varAndFixArg[0].OriginVar;
+        var v2 = fusionInputsShape.Keys.First();
+        // call参数里面的var
+        // Console.WriteLine(varAndFixArg[0].OriginVar.GetHashCode());
+        call = newInputs.Zip(fixInputs).Aggregate(call, (sum, pair) =>
+        {
+            return ReplaceUtility.ReplaceExpr(sum, pair.Item1, pair.Item2);
+        });
+        call = callMaker.With(target: call);
+        DumpScope.Current.DumpIR(call, "AfterReplace");
+
+
+        // 如何创建一个new function
+        // var oldVars = varAndFixArg.Select(pair => pair.OriginVar).ToArray();
+        // // var functionVar = oldVars.Select(oldVar => oldVar.Clone()).ToArray();
+        // var inputsShape = oldVars.Select(v =>
+        // {
+        //     // find copy
+        //     var testV = fusionInputsShape.FindFirst(oldV => oldV.Key.GlobalVarIndex == v.GlobalVarIndex);
+        //     return (v, testV.Value);
+        // }).ToDictionary(pair => pair.v, pair => pair.Value);
+
+
+        // shape表达式应该是关于原始input的，所以shape表达式不受影响，之后安心替换var就可以了把
+        var originShape = originCall.EvaluateShapeExpr(fusionInputsShape);
+        originShape.InferenceType();
+
+        var rank = call.CheckedShape.Rank;
+        var body = (Expr)Slice(call, Enumerable.Repeat(0, rank).ToArray(), Cast(originShape, DataTypes.Int32), rank);
+        // var body = call;
+
+        // var oldVars = callInputs.Select(x => (Var)x.Target).ToArray();
+        // oldVars.Zip(fusionInputs).Aggregate(body, (sum, tuple) =>
+        // {
+            // return ReplaceUtility.ReplaceExpr(sum, tuple.Item1, tuple.Item2)
+        // });
+
+        return body;
+
+        // 传进来的是clone的call，但是这样对var找不到对应的var
+        // 但是针对非clone的call调用replace的话，那么会修改外部的东西，因为现在的replace是mutable的
+
+        // 现在这里必须要保证var不变的情况下创建一个新的call拿进来用才行
+
+
+        // 1. 所有input进行前处理。
+
+        // todo：是不是应该对整个var处理啊...而不是针对call，最后将var替换，但是替换var的时候也是有一样的问题
+        // 每个if的分支里面其实应该是一套单独的东西，要不还是将if分支里面的东西转成一个function call...但是好像还是不能避免
+
+
         // Console.WriteLine("MakeEntry");
-        var fixedShapeList = callInputs
-            .Select((arg, i) => PreProcess(arg, info, seg, inputInfo, varInfo, fusionInputdata)).ToArray();
-        var markers = callInputs;
-        var pairs = fixedShapeList.Select((arg, i) => (i, (Expr)markers[i].With(target: arg))).ToArray();
-        var args = ReplaceUtility.ReplaceItems(call.Arguments.ToArray(), pairs);
-        var then = call.With(arguments: args);
-        var thenWithMarker = callMaker.With(target: then);
-        thenWithMarker.InferenceType();
+        // var varAndFixArg = callInputs
+            // .Select((arg, i) => PreProcess(arg, inputInfo, varInfo, fusionInputdata, fusionInputs, i)).ToArray();
+        // var fixedShapeList = varAndFixArg.Select(x => x.Item2).ToArray();
+        // var markers = callInputs;
+        // var bucketInputPairs = fixedShapeList.Select((arg, i) => (i, (Expr)markers[i].With(target: arg)));
+
+        // var normalInputPairsList =
+        //     call.Arguments.ToArray().Select((arg, i) => (i, arg)).Where(pair => pair.arg is Call);
+        // var normalInputPairs = normalInputPairsList.Select(pair =>
+        // {
+        //     var (arg, i) = pair;
+        //     var newArg = varAndFixArg.Aggregate((Expr)arg, (sum, varAndArg) =>
+        //     {
+        //         DumpScope.Current.DumpIR(sum, "body", $"{count}");
+        //         DumpScope.Current.DumpIR(varAndArg.Item1, "target", $"{count}");
+        //         DumpScope.Current.DumpIR(varAndArg.Item2, "expr", $"{count}");
+        //         var newExpr = ReplaceUtility.ReplaceExpr(sum, varAndArg.Item1, varAndArg.Item2);
+        //         if (newExpr == sum)
+        //         {
+        //             Console.WriteLine();
+        //         }
+        //
+        //         return newExpr;
+        //     });
+        //     DumpScope.Current.DumpIR(arg, "after_arg", $"{count}");
+        //     return (i, newArg);
+        // });
+        // var args = ReplaceUtility.ReplaceItems(call.Arguments.ToArray(), bucketInputPairs.ToArray());
+        // var then = (Expr)call.With(arguments: args);
+        // var thenWithMarker = callMaker.With(target: then);
+        // thenWithMarker.InferenceType();
+        // DumpScope.Current.DumpIR(thenWithMarker, "thenWithMarker", $"{count}");
         // // Console.WriteLine($"PostShape: {DumpUtility.SerializeShape(thenWithMarker.CheckedShape.ToValueArray())}");
-        var post = PostProcess(thenWithMarker, call, fusionInputsShape);
-        post.InferenceType();
+
+
+
+        // get preprocess input
+        // var varAndFixArg = callInputs
+            // .Select((arg, i) => PreProcess(arg, inputInfo, varInfo, fusionInputdata, fusionInputs, i)).ToArray();
+        // var fixedShapeList = varAndFixArg.Select(x => x.Item2).ToArray();
+        // var bucketInputPairs = fixedShapeList.Select((arg, i) => (i, (Expr)callInputs[i].With(target: arg)));
+        // 问题是这里替换var的时候，没有把argument里的var也换掉，但是也不能直接替换，因为是mutable的
+
+
+
+        // var originCall = call;
+        var then = call;
+        // var then = varAndFixArg.Aggregate((Expr)call, (sum, pair) =>
+        // {
+        //     return ReplaceUtility.ReplaceExpr(sum, pair.Item1, pair.Item2);
+        // });
+        // // var pairs = tmpInputs.Select((tmpVar, i) => (i, (Expr)callInputs[i].With(target: tmpVar))).ToArray();
+        //
+
+        // generate a new call
+        // var args = ReplaceUtility.ReplaceItems(call.Arguments.ToArray(), pairs);
+        // var then = (Expr)call.With(arguments: args);
+        var thenWithMarker = callMaker.With(target: then);
+
+        // replace var with fixedInputs
+        // 因为所有的argument都要用FixInput来计算
+        // var replacePair = tmpInputs.Zip(varAndFixArg).Select(tup => (tup.Item1, tup.Item2.FixInput)).ToArray();
+        // DumpScope.Current.DumpIR(thenWithMarker, "thenWithMarker");
+        // DumpScope.Current.DumpIR(thenWithMarker.Clone(), "thenWithMarkerClone");
+        // var body = replacePair.Aggregate((Expr)thenWithMarker, (sum, varAndArg) =>
+        // {
+        //     return ReplaceUtility.ReplaceExpr(sum, varAndArg.Item1, varAndArg.Item2);
+        // });
+        // if (body == thenWithMarker)
+        // {
+        //     Console.WriteLine();
+        // }
+
+        // 现在clone会发生什么，var是不是也会变成另一个呢
+
+        // post process call
+        // post中shape表达式的var不能发生改变，因为要针对原始的arg计算
+        // DumpScope.Current.DumpIR(originCall, "origin");
+        // DumpScope.Current.DumpIR(thenWithMarker, "thenWithMarker");
+        // var originShape = originCall.EvaluateShapeExpr(fusionInputsShape);
+        // originShape.InferenceType();
+        // var rank = call.CheckedShape.Rank;
+        // var post = (Expr)Slice(thenWithMarker, Enumerable.Repeat(0, rank).ToArray(), Cast(originShape, DataTypes.Int32), rank);
+        // post.InferenceType();
+
+
+
+
+
+
+
+
+        // preprocess本质是针对原始的arg，但是目前能获取到的只有var，
+        // post针对的是输出，但是输出的时候var必须存在于计算的参数中，因为需要对原始的var做shape of才行
+
+        // 在post后，甚至整个分段结束再将var替换为arg。因为post里面的shape表达式会引用到原始的inputs，不论哪个if分支都是一样的
+        //
+        // 也就是说一开始不实际替换，只需要使用args构建出对应的bucket input就可以，最后把var和整个input进行替换。但要注意
+        // slice的是fix的call
+
+
         // DumpScope.Current.DumpIR(post, "PostExpr");
-        return post;
+        // return post;
     }
 
-    public static Expr PreProcess(Expr input, SegmentInfo info, int seg, Dictionary<Var, Expr[]> inputInfo,
-        Dictionary<Var, IValue> varValues, Dictionary<Var, Expr[]> fusionInputData)
+    // 将一个var使用fusion的arg代替，而这个arg则是经过pad过的
+    // 返回的是这个var以及对应pad后的arg，用于其他非marker的参数替换这个var
+    public static Expr PreProcess(Marker input, Dictionary<Var, Expr[]> inputInfo,
+        Dictionary<Var, IValue> varValues, Dictionary<Var, Expr[]> fusionInputData, Expr[] fusionInputs, int i)
     {
         // Console.WriteLine($"input type {input.GetType().Name}");
         // compute FixedShape by new var value
@@ -375,13 +573,15 @@ public partial class ReplaceRewrite : RewriteRule<Pattern>
         // Console.WriteLine(string.Join(",", fixedShape));
         // return new Call(new BucketPad(), input, fixedShape);
 
-
-        var pads = fixedShape - Cast(ShapeOf(input), DataTypes.Int32);
+        // todo:处理这个问题，用var替换整个fusion的input
+        var originVar = (Var)input.Target;
+        var pads = fixedShape - Cast(ShapeOf(fusionInputs[i]), DataTypes.Int32);
         var paddings = Transpose(Stack(new IR.Tuple(Enumerable.Repeat(0, fixedShape.Length).ToArray(), pads), 0),
             new[] { 1, 0 });
-        var fixedInput = IR.F.NN.Pad(input, paddings, PadMode.Constant, Cast(0, input.CheckedDataType));
+        var fixedInput = IR.F.NN.Pad(fusionInputs[i], paddings, PadMode.Constant, Cast(0, input.CheckedDataType));
         var fixedResult = new Call(new FixShape(), fixedInput, fixedShape);
         return fixedResult;
+        // return (originVar, fixedResult);
     }
 
     private static int count = 0;
@@ -453,7 +653,7 @@ public partial class ReplaceRewrite : RewriteRule<Pattern>
                 try
                 {
                     var shapeExpr = Stack(new IR.Tuple(pair.Value.Select(x => Cast(x, DataTypes.Int32)).ToArray()), 0);
-                    // DumpScope.Current.DumpIR(shapeExpr, "mkInputShapeExpr", $"{count}");
+                    DumpScope.Current.DumpIR(shapeExpr, "mkInputShapeExpr", $"{count}");
                     var shape = shapeExpr.Evaluate(varInfo).AsTensor();
                     return ConstantOfShape(
                         shape,
@@ -532,13 +732,16 @@ public partial class FusionBucket : RewriteRule<Pattern>
         var relPath = $"ShapeBucketDebug/{counter}";
         var ctx = new RunPassContext();
         var varMap = CompileSession.CompileOptions.ShapeBucketOptions.VarMap;
+        // fusion -> 关联到外部的表达式，用于计算实际的shape范围
         var fusionInputInfo = MakeFusionInputShapeInfo(call, fusion, varMap);
         CheckAlive(fusionInputInfo);
         // ensure alive in rewrite, release when return
         using var _ = new ExprPinner(fusionInputInfo.Values.SelectMany(x => x).ToArray());
         var oldBody = fusion.Body;
         var args = call.Arguments.ToArray();
+        // fusion 内部var的表达式，
         var fusionInputShapes = GetFusionInputShapes(fusion, args);
+
         // DumpScope.Current.DumpIR(fusion.Body, "oldBody", relPath);
         // PrintMinMaxShape("oldBody", call, oldBody, relPath, fusionInputInfo);
         var newBody = CompilerServices.Rewrite(fusion.Body,
@@ -552,16 +755,12 @@ public partial class FusionBucket : RewriteRule<Pattern>
             return null;
         }
 
-        if (newBody is If @if)
-        {
-            newBody = @if.With(paramList: args);
-        }
-        // else is only unpack fusion, because newBody has fixed shape, don't need ShapeBucket
-
-        var body = ReplaceFusionVarWithCallArgs(fusion, args, newBody);
-        DumpScope.Current.DumpIR(body, "BucketResult", relPath);
+        // DumpScope.Current.DumpIR(newBody, "BeforeReplace", relPath);
+        // FixInput Replace Var
+        newBody = ReplaceFusionVarWithCallArgs(fusion, args, newBody);
+        DumpScope.Current.DumpIR(newBody, "BucketResult", relPath);
         counter++;
-        return body;
+        return newBody;
     }
 
     private static Expr ReplaceFusionVarWithCallArgs(VarFusion fusion, Expr[] args, Expr newBody) =>
@@ -578,7 +777,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
             .Zip(args)
             .ToDictionary(pair => pair.First, pair =>
             {
-                var shape = (Expr)ShapeOf(pair.Second);
+                var shape = Cast((Expr)ShapeOf(pair.Second), DataTypes.Int32);
                 return Enumerable.Range(0, pair.Second.CheckedShape.Rank).Select(i => shape[i]).ToArray();
             });
         return fusionInputShapes;

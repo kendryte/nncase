@@ -10,13 +10,14 @@ using Nncase.IR;
 using Nncase.IR.NN;
 using OrtKISharp;
 using static Nncase.Evaluator.EvaluatorUtil;
+using static Nncase.IR.F.Tensors;
 
 namespace Nncase.Evaluator.NN;
 
 /// <summary>
 /// Evaluator for <see cref="Conv2D"/>.
 /// </summary>
-public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICostEvaluator<Conv2D>
+public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICostEvaluator<Conv2D>, IShapeEvaluator<Conv2D>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Conv2D conv)
@@ -74,5 +75,20 @@ public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICos
     {
         var args = context.GetArguments(target, Conv2D.Stride, Conv2D.Padding, Conv2D.Dilation, Conv2D.Groups);
         return TypeInference.Conv2DType(input, weights, args[0], args[1], args[2], args[3]);
+    }
+
+    public Expr Visit(IShapeEvaluateContext context, Conv2D target)
+    {
+        var inShape = context.GetArgumentShape(target, Conv2D.Input);
+        var wShape = context.GetArgumentShape(target, Conv2D.Weights);
+        var pad = Cast(context.GetArgument(target, Conv2D.Padding), DataTypes.Int32);
+        var stride = Cast(context.GetArgument(target, Conv2D.Stride), DataTypes.Int32);
+        var dilation = Cast(context.GetArgument(target, Conv2D.Dilation), DataTypes.Int32);
+        var n = inShape[0];
+        var oc = wShape[0];
+        var h = Util.GetWindowedOutputSize(inShape[2] + pad[0, 0] + pad[0, 1], wShape[2], stride[0], dilation[0], false, false);
+        var w = Util.GetWindowedOutputSize(inShape[3] + pad[1, 0] + pad[1, 1], wShape[3], stride[1], dilation[1], false, false);
+        return Stack(new IR.Tuple(n, oc, h, w), 0);
+
     }
 }

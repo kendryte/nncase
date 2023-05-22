@@ -116,7 +116,7 @@ public class HardSwishEvaluator : IEvaluator<HardSwish>, ITypeInferencer<HardSwi
 /// <summary>
 /// Evaluator for <see cref="LeakyRelu"/>.
 /// </summary>
-public class LeakyReluEvaluator : IEvaluator<LeakyRelu>, ITypeInferencer<LeakyRelu>, ICostEvaluator<LeakyRelu>
+public class LeakyReluEvaluator : IEvaluator<LeakyRelu>, ITypeInferencer<LeakyRelu>, ICostEvaluator<LeakyRelu>, IShapeEvaluator<LeakyRelu>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, LeakyRelu leakyRelu)
@@ -148,12 +148,14 @@ public class LeakyReluEvaluator : IEvaluator<LeakyRelu>, ITypeInferencer<LeakyRe
     {
         return input;
     }
+
+    public Expr Visit(IShapeEvaluateContext context, LeakyRelu target) => context.GetArgumentShape(target, LeakyRelu.Input);
 }
 
 /// <summary>
 /// Evaluator for <see cref="Relu"/>.
 /// </summary>
-public class ReluEvaluator : IEvaluator<Relu>, ITypeInferencer<Relu>, ICostEvaluator<Relu>
+public class ReluEvaluator : IEvaluator<Relu>, ITypeInferencer<Relu>, ICostEvaluator<Relu>, IShapeEvaluator<Relu>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Relu relu)
@@ -179,6 +181,8 @@ public class ReluEvaluator : IEvaluator<Relu>, ITypeInferencer<Relu>, ICostEvalu
     {
         return input;
     }
+
+    public Expr Visit(IShapeEvaluateContext context, Relu target) => context.GetArgumentShape(target, Relu.Input);
 }
 
 /// <summary>
@@ -254,7 +258,7 @@ public class SeluEvaluator : IEvaluator<Selu>, ITypeInferencer<Selu>, ICostEvalu
 /// <summary>
 /// Evaluator for <see cref="Sigmoid"/>.
 /// </summary>
-public class SigmoidEvaluator : IEvaluator<Sigmoid>, ITypeInferencer<Sigmoid>, ICostEvaluator<Sigmoid>
+public class SigmoidEvaluator : IEvaluator<Sigmoid>, ITypeInferencer<Sigmoid>, ICostEvaluator<Sigmoid>, IShapeEvaluator<Sigmoid>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Sigmoid sigmoid)
@@ -282,6 +286,8 @@ public class SigmoidEvaluator : IEvaluator<Sigmoid>, ITypeInferencer<Sigmoid>, I
     {
         return input;
     }
+
+    public Expr Visit(IShapeEvaluateContext context, Sigmoid target) => context.GetArgumentShape(target, Sigmoid.Input);
 }
 
 /// <summary>

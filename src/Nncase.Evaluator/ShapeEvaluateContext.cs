@@ -51,7 +51,12 @@ internal sealed class ShapeEvaluateContext : IShapeEvaluateContext
         var expr = GetArgument(op, parameter);
         if (expr is Tuple tuple)
         {
-            return new IR.Tuple(tuple.Fields.ToArray().Select(v => Cast(_memo[v], DataTypes.Int32)).ToArray());
+            return new Tuple(tuple.Fields.ToArray().Select(v => Cast(_memo[v], DataTypes.Int32)).ToArray());
+        }
+        if (expr.CheckedType is TupleType)
+        {
+            var tupleShapeExpr = (Tuple)(expr.EvaluateShapeExpr(VarMap));
+            return new Tuple(tupleShapeExpr.Fields.ToArray().Select(expr => Cast(expr, DataTypes.Int32)).ToArray());
         }
         var shapeExpr = _memo[expr];
         return Cast(shapeExpr, DataTypes.Int32);

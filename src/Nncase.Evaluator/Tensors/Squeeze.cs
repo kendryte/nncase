@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System;
 using System.Linq;
 using NetFabric.Hyperlinq;
 using Nncase.CostModel;
@@ -13,7 +14,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Squeeze"/>.
 /// </summary>
-public class SqueezeEvaluator : IEvaluator<Squeeze>, ITypeInferencer<Squeeze>, ICostEvaluator<Squeeze>
+public class SqueezeEvaluator : IEvaluator<Squeeze>, ITypeInferencer<Squeeze>, ICostEvaluator<Squeeze>, IShapeEvaluator<Squeeze>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Squeeze squeeze)
@@ -61,5 +62,25 @@ public class SqueezeEvaluator : IEvaluator<Squeeze>, ITypeInferencer<Squeeze>, I
         }
 
         return input with { Shape = new Shape(Enumerable.Repeat(Dimension.Unknown, input.Shape.Count - 1)) };
+    }
+
+    public Expr Visit(IShapeEvaluateContext context, Squeeze target)
+    {
+        var inShape = context.GetArgumentShape(target, Squeeze.Input);
+        var input = context.GetArgument(target, Squeeze.Input);
+        var dims = context.GetArgument(target, Squeeze.Dim);
+        if (dims is TensorConst dimConst)
+        {
+            var dimValue = dimConst.Value.ToArray<int>();
+            var rank = input.CheckedShape.Count;
+            var outDims = Enumerable.Range(0, rank).Where(i => !dimValue.Contains(i)).Select(i => inShape[i]).ToArray();
+            if (outDims.Length == 0)
+            {
+                return 1;
+            }
+            return IR.F.Tensors.Stack(new IR.Tuple(outDims), 0);
+        }
+
+        throw new NotImplementedException();
     }
 }

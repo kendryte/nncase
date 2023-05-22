@@ -209,6 +209,12 @@ public class UnitTestShapeEvaluator : TestClassBase
     }
 
     [Fact]
+    public void UnitTestSqueeze()
+    {
+        TestOpShapeEval(input => Squeeze(input, new[]{0}));
+    }
+
+    [Fact]
     public void UnitTestShapeExprSaveInMeta()
     {
         var (input, newShape) = MakeInput(new[] { 1, 3, Dimension.Unknown, 24 });
@@ -252,7 +258,7 @@ public class UnitTestShapeEvaluator : TestClassBase
 
     private void TestOpShapeEval(Func<Expr, Expr> exprCtor)
     {
-        var (input, newShape) = MakeInput(new[] { 2, 3, Dimension.Unknown, 24 });
+        var (input, newShape) = MakeInput(new[] { 1, 3, Dimension.Unknown, 24 });
         TestOpShapeEval(exprCtor, input, newShape);
     }
 }

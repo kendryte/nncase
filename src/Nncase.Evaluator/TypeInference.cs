@@ -300,6 +300,10 @@ public static class TypeInference
             return input;
         }
 
+        if (input.Shape.IsScalar)
+        {
+            return new InvalidType("Reduce input shape should not be scalar");
+        }
         if (keepDims is TensorConst keepDimsV &&
             axis is TensorConst axisValue)
         {
@@ -315,7 +319,6 @@ public static class TypeInference
                 }
                 else
                 {
-                    // todo: test
                     outShape[ax] = 0;
                 }
             }
