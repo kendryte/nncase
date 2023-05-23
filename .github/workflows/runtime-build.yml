@@ -3,8 +3,8 @@ name: runtime-build
 on: [push, pull_request]
 
 jobs:
-  build-native:
-    name: ${{matrix.config.name}}
+  build-native-runtime:
+    name: build-runtime-${{matrix.config.name}}
     runs-on: ${{matrix.config.os}}
     strategy:
       matrix:
@@ -47,12 +47,17 @@ jobs:
     - name: Configure CMake
       shell: bash
       run: |
-        cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=${{matrix.config.buildType}} ${{matrix.config.cmakeArgs}} -DBUILDING_RUNTIME=TRUE -DBUILD_PYTHON_BINDING=OFF -DPython3_ROOT_DIR=${pythonLocation}
+        cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=${{matrix.config.buildType}} ${{matrix.config.cmakeArgs}} -DBUILDING_RUNTIME=TRUE -DBUILD_PYTHON_BINDING=OFF -DPython3_ROOT_DIR=${pythonLocation} -DBUILD_TESTING=ON
 
     - name: Build & Install
       run: |
         cmake --build build --config ${{matrix.config.buildType}}
         cmake --install build --prefix install
+
+    - name: Test
+      run: |
+        cd build
+        ctest --test-dir tests/kernels --output-on-failure -j4
 
     #- name: Benchmark
     #  run: |
@@ -73,100 +78,13 @@ jobs:
     #    path: ${{github.workspace}}/benchnncase.log
     #    if-no-files-found: error
 
-  #build-cross:
-  #  name: ${{matrix.config.name}}
-  #  runs-on: ubuntu-latest
-  #  strategy:
-  #    matrix:
-  #      config:
-  #        - {name: riscv64-none-k210, shell: bash, toolchain: k210, cmakeArgs: -DK210_SDK_DIR=$GITHUB_WORKSPACE/kendryte-standalone-sdk-develop, buildType: Release}
-
-  #  steps:
-  #  - uses: actions/checkout@v3
-  #  - uses: seanmiddleditch/gha-setup-ninja@master
-
-  #  - name: Setup Python
-  #    uses: actions/setup-python@v4
-  #    with:
-  #      python-version: 3.7
-
-  #  - name: Install K210 Baremetal SDK
-  #    shell: bash
-  #    run: |
-  #      wget https://github.com/kendryte/kendryte-gnu-toolchain/releases/download/v8.2.0-20190409/kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar.xz -O $GITHUB_WORKSPACE/kendryte-toolchain.tar.xz
-  #      sudo tar xf $GITHUB_WORKSPACE/kendryte-toolchain.tar.xz -C $GITHUB_WORKSPACE
-  #      wget https://github.com/kendryte/kendryte-standalone-sdk/archive/refs/heads/develop.tar.gz -O $GITHUB_WORKSPACE/k210-sdk.tar.gz
-  #      sudo tar xf $GITHUB_WORKSPACE/k210-sdk.tar.gz -C $GITHUB_WORKSPACE
-  #      echo "RISCV_ROOT_PATH=$GITHUB_WORKSPACE/kendryte-toolchain" >> $GITHUB_ENV
-  #    if: matrix.config.name == 'riscv64-none-k210'
-
-  #  - name: Install Conan
-  #    run: pip install conan==1.58
-
-  #  - name: Configure Conan (Linux)
-  #    run: |
-  #      conan profile new default --detect
-  #      conan profile update settings.compiler.libcxx=libstdc++11 default
-  #  - name: Build
-  #    run: |
-  #      cmake -B build -G Ninja -DCMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/toolchains/${{matrix.config.toolchain}}.toolchain.cmake -DCMAKE_BUILD_TYPE=${{matrix.config.buildType}} ${{matrix.config.cmakeArgs}} -DBUILDING_RUNTIME=TRUE -DBUILD_PYTHON_BINDING=OFF -DPython3_ROOT_DIR=${pythonLocation}
-  #      cmake --build build --config ${{matrix.config.buildType}}
-  #  - name: Install
-  #    run: cmake --install build --prefix install
-
-  #  - name: Upload nncaseruntime Build Artifact
-  #    uses: actions/upload-artifact@v3
-  #    with:
-  #      name: nncaseruntime-${{matrix.config.name}}
-  #      path: ${{github.workspace}}/install
-  #      if-no-files-found: error
-
-  test-native:
-    name: test-native
-    runs-on: ${{matrix.config.os}}
-    strategy:
-      matrix:
-        config:
-          - {name: x86_64-linux, os: ubuntu-latest, cmakeArgs: '', buildType: Release}
-
-    steps:
-    - uses: actions/checkout@v3
-    - uses: seanmiddleditch/gha-setup-ninja@master
-
-    - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: 3.7
-
-    - name: Install Conan
-      run: pip install conan==1.58
-
-    - name: Configure Conan (Linux)
-      run: |
-        conan profile new default --detect
-        conan profile update settings.compiler.libcxx=libstdc++11 default
-        echo "CC=gcc-10" >> $GITHUB_ENV
-        echo "CXX=g++-10" >> $GITHUB_ENV
-      if: runner.os == 'Linux'
-
-    - name: Build
-      shell: bash
-      run: |
-        cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=${{matrix.config.buildType}} ${{matrix.config.cmakeArgs}} -DBUILDING_RUNTIME=TRUE -DBUILD_PYTHON_BINDING=OFF -DPython3_ROOT_DIR=${pythonLocation} -DBUILD_TESTING=on
-        cmake --build build --config ${{matrix.config.buildType}}
-
-    - name: Test
-      run: |
-        cd build
-        ctest --test-dir tests/kernels --output-on-failure -j4
-
-  test-cross:
-   name: test-cross
+  build-cross-linux-runtime:
+   name: build-runtime-${{matrix.config.name}}
    runs-on: ubuntu-latest
    strategy:
      matrix:
        config:
-         - {name: riscv64-unknown-linux_gnu, shell: bash, toolchain: riscv64-unknown-linux, cmakeArgs: '', buildType: Release}
+         - {name: riscv64-linux, shell: bash, arch: riscv64, toolchain: riscv64-unknown-linux, toolchain_env: RISCV_ROOT_PATH, toolchain_file: riscv64-unknown-linux-gnu-12.0.1, qemu: qemu-riscv64, loader_args: '-cpu;rv64,v=true,Zfh=true,vlen=128,elen=64,vext_spec=v1.0;-L', cmakeArgs: '', buildType: Release}
 
    steps:
    - uses: actions/checkout@v3
@@ -177,38 +95,46 @@ jobs:
      with:
        python-version: 3.7
 
-   - name: Setup
+   - name: Install toolchain and QEMU
      shell: bash
      run: |
-       wget https://dav.sunnycase.moe/d/ci/riscv64-unknown-linux_gnu_12.0.1.tgz -O $GITHUB_WORKSPACE/riscv64-unknown-linux_gnu_12.0.1.tgz
-       sudo tar xf $GITHUB_WORKSPACE/riscv64-unknown-linux_gnu_12.0.1.tgz -C $GITHUB_WORKSPACE
-       echo "RISCV_ROOT_PATH=$GITHUB_WORKSPACE/riscv64-unknown-linux_gnu_12.0.1" >> $GITHUB_ENV
+       wget https://dav.sunnycase.moe/d/ci/nncase/${{matrix.config.toolchain_file}}.xz -O toolchain.xz
+       sudo tar xf toolchain.xz -C $GITHUB_WORKSPACE
+       echo "${{matrix.config.toolchain_env}}=$GITHUB_WORKSPACE/${{matrix.config.toolchain_file}}" >> $GITHUB_ENV
 
-       wget https://dav.sunnycase.moe/d/ci/qemu-riscv64.tgz -O $GITHUB_WORKSPACE/qemu-riscv64.tgz
-       sudo tar xf $GITHUB_WORKSPACE/qemu-riscv64.tgz -C $GITHUB_WORKSPACE
-       echo "PATH=$GITHUB_WORKSPACE:$PATH" >> $GITHUB_ENV
-       echo "TESTS_EXECUTABLE_LOADER=qemu-riscv64" >> $GITHUB_ENV
-       echo "TESTS_EXECUTABLE_LOADER_ARGUMENTS=-cpu;rv64,v=true,Zfh=true,vlen=128,elen=64,vext_spec=v1.0;-L;$GITHUB_WORKSPACE/riscv64-unknown-linux_gnu_12.0.1/sysroot" >> $GITHUB_ENV
-     if: matrix.config.name == 'riscv64-unknown-linux_gnu'
+       wget https://dav.sunnycase.moe/d/ci/nncase/${{matrix.config.qemu}}.tgz -O qemu.tgz
+       sudo tar xf qemu.tgz -C /usr/local/bin
+       echo "TESTS_EXECUTABLE_LOADER=${{matrix.config.qemu}}" >> $GITHUB_ENV
+       echo "TESTS_EXECUTABLE_LOADER_ARGUMENTS=${{matrix.config.loader_args}};$GITHUB_WORKSPACE/${{matrix.config.toolchain_file}}/sysroot" >> $GITHUB_ENV
 
    - name: Install Conan
      run: pip install conan==1.58
 
-   - name: Configure Conan (Linux)
+   - name: Configure Conan
      run: |
        conan profile new default --detect
        conan profile update settings.compiler.libcxx=libstdc++11 default
        conan config init
-       sed -i 's/xtensalx7]/xtensalx7, riscv32, riscv64]/g' ~/.conan/settings.yml
-       sed -i 's/"12", "12.1", "12.2"]/"12", "12.0", "12.1", "12.2"]/g' ~/.conan/settings.yml
+       sed -i 's/xtensalx7]/xtensalx7, ${{matrix.config.arch}}]/g' ~/.conan/settings.yml
 
-   - name: Build
+   - name: Configure CMake
      run: |
-       cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=${{matrix.config.buildType}} ${{matrix.config.cmakeArgs}} -DBUILDING_RUNTIME=TRUE -DBUILD_PYTHON_BINDING=OFF -DPython3_ROOT_DIR=${pythonLocation} -DBUILD_TESTING=on -DCMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/toolchains/${{matrix.config.toolchain}}.toolchain.cmake
+       cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=${{matrix.config.buildType}} ${{matrix.config.cmakeArgs}} -DBUILDING_RUNTIME=TRUE -DBUILD_PYTHON_BINDING=OFF -DPython3_ROOT_DIR=${pythonLocation} -DBUILD_TESTING=ON -DCMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/toolchains/${{matrix.config.toolchain}}.toolchain.cmake
+
+   - name: Build & Install
+     run: |
        cmake --build build --config ${{matrix.config.buildType}}
+       cmake --install build --prefix install
 
    - name: Test
      shell: bash
      run: |
        cd build
        ctest --test-dir tests/kernels --output-on-failure -j4
+
+   - name: Upload nncaseruntime Build Artifact
+     uses: actions/upload-artifact@v3
+     with:
+       name: nncaseruntime-${{matrix.config.name}}
+       path: ${{github.workspace}}/install
+       if-no-files-found: error
