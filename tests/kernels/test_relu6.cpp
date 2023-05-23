@@ -29,25 +29,20 @@ using namespace ortki;
 
 class Relu6Test : public KernelTest,
                   public ::testing::TestWithParam<
-                      std::tuple<nncase::typecode_t, dims_t, dims_t>> {
+                      std::tuple<nncase::typecode_t, dims_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape, r_shape] = GetParam();
+        auto &&[typecode, l_shape] = GetParam();
 
         lhs = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
         init_tensor(lhs);
-
-        rhs = hrt::create(typecode, r_shape, host_runtime_tensor::pool_cpu_only)
-                  .expect("create tensor failed");
-        init_tensor(rhs);
     }
 
     void TearDown() override {}
 
   protected:
     runtime_tensor lhs;
-    runtime_tensor rhs;
 };
 
 INSTANTIATE_TEST_SUITE_P(Relu6, Relu6Test,
@@ -57,12 +52,10 @@ INSTANTIATE_TEST_SUITE_P(Relu6, Relu6Test,
                                                           /*dims_t { 3, 16, 16
                                                           }, dims_t { 16, 16 },
                                                           dims_t { 16 },*/
-                                                          dims_t{1}),
-                                          testing::Values(dims_t{1})));
+                                                          dims_t{1})));
 
 TEST_P(Relu6Test, Relu6) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
-    auto r_ort = runtime_tensor_2_ort_tensor(rhs);
 
     // expected
     float *min_ptr;
@@ -73,6 +66,7 @@ TEST_P(Relu6Test, Relu6) {
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto min_ort = runtime_tensor_2_ort_tensor(min);
+
     float *max_ptr;
     *min_ptr = 0.0f;
     auto max =
@@ -81,6 +75,7 @@ TEST_P(Relu6Test, Relu6) {
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto max_ort = runtime_tensor_2_ort_tensor(max);
+
     auto output_ort = ortki_Clip(l_ort, min_ort, max_ort);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
