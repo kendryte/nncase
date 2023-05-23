@@ -28,8 +28,8 @@ public class GatherElementsEvaluator : IEvaluator<GatherElements>, ITypeInferenc
     public IRType Visit(ITypeInferenceContext context, GatherElements target)
     {
         var input = context.CheckArgumentType<TensorType>(target, GatherElements.Input);
-		var indices = context.CheckArgumentType<TensorType>(target, GatherElements.Indices);
-		
+        var indices = context.CheckArgumentType<TensorType>(target, GatherElements.Indices);
+
         return new TensorType(input.DType, indices.Shape);
     }
 

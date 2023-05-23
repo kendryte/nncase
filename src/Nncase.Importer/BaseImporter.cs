@@ -104,9 +104,8 @@ public abstract class BaseImporter
 
     protected Expr UnSupportedOp(string opType)
     {
-        throw new NotSupportedException($"Not Supported op: {opType}");
-        // _unsupportedOp.Add(opType);
-        // return None.Default;
+        _unsupportedOp.Add(opType);
+        return None.Default;
     }
 
     protected void AddOpInModel(string opType)

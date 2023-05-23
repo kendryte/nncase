@@ -14,7 +14,7 @@ namespace Nncase.Importer
         {
             var (input, indices) = GetInputExprs(op, 0, 1);
             var axis = GetIntAttribute(op, "axis", 0);
-        	return F.Tensors.GatherElements(input, axis, indices);
+            return F.Tensors.GatherElements(input, axis, indices);
         }
     }
 }
