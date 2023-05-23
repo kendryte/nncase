@@ -50,11 +50,11 @@ class CompareTest : public KernelTest,
     runtime_tensor rhs;
 };
 
-INSTANTIATE_TEST_SUITE_P(compare, CompareTest,
-                         testing::Combine(testing::Values(dt_float32, dt_int32,
-                                                          dt_int64),
-                                          testing::Values(dims_t{1, 3, 16, 16}),
-                                          testing::Values(dims_t{1, 3, 16, 16})));
+INSTANTIATE_TEST_SUITE_P(
+    compare, CompareTest,
+    testing::Combine(testing::Values(dt_float32, dt_int32, dt_int64),
+                     testing::Values(dims_t{1, 3, 16, 16}),
+                     testing::Values(dims_t{1, 3, 16, 16})));
 
 TEST_P(CompareTest, equal) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
@@ -72,10 +72,10 @@ TEST_P(CompareTest, equal) {
                         .expect("create tensor failed");
 
     // actual
-    auto output =
-        kernels::stackvm::compare(nncase::runtime::stackvm::compare_op_t::not_equal,
-                                 lhs.impl(), rhs.impl())
-            .expect("compare failed");
+    auto output = kernels::stackvm::compare(
+                      nncase::runtime::stackvm::compare_op_t::not_equal,
+                      lhs.impl(), rhs.impl())
+                      .expect("compare failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare

@@ -27,15 +27,16 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class TransposeTest : public KernelTest,
-                      public ::testing::TestWithParam<
-                          std::tuple<nncase::typecode_t, dims_t>> {
+class TransposeTest
+    : public KernelTest,
+      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
   public:
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
 
-        input = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
-                  .expect("create tensor failed");
+        input =
+            hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
+                .expect("create tensor failed");
         init_tensor(input);
     }
 
@@ -47,7 +48,8 @@ class TransposeTest : public KernelTest,
 
 INSTANTIATE_TEST_SUITE_P(Transpose, TransposeTest,
                          testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 3, 16, 16})));
+                                          testing::Values(dims_t{1, 3, 16,
+                                                                 16})));
 
 TEST_P(TransposeTest, Transpose) {
     auto input_ort = runtime_tensor_2_ort_tensor(input);
@@ -67,21 +69,22 @@ TEST_P(TransposeTest, Transpose) {
 
     // actual
     int64_t *perm_ptr = perm;
-    auto perm1 = hrt::create(nncase::dt_int64, {1},
+    auto perm1 =
+        hrt::create(nncase::dt_int64, {1},
                     {reinterpret_cast<gsl::byte *>(perm_ptr), sizeof(long)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
     int32_t *perm_size_ptr;
     *perm_size_ptr = 4;
-    auto perm_size1 = hrt::create(nncase::dt_int32, {1},
-                             {reinterpret_cast<gsl::byte *>(perm_size_ptr), sizeof(int)},
-                             true, host_runtime_tensor::pool_cpu_only)
-                     .expect("create tensor failed");
+    auto perm_size1 =
+        hrt::create(nncase::dt_int32, {1},
+                    {reinterpret_cast<gsl::byte *>(perm_size_ptr), sizeof(int)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
 
-    auto output =
-        kernels::stackvm::transpose(input.impl(), perm1.impl())
-            .expect("perm failed");
+    auto output = kernels::stackvm::transpose(input.impl(), perm1.impl())
+                      .expect("perm failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare

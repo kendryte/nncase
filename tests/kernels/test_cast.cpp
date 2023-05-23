@@ -27,15 +27,16 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class CastTest : public KernelTest,
-                 public ::testing::TestWithParam<
-                     std::tuple<nncase::typecode_t, dims_t>> {
+class CastTest
+    : public KernelTest,
+      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
   public:
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
 
-        input = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
-                  .expect("create tensor failed");
+        input =
+            hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
+                .expect("create tensor failed");
         init_tensor(input);
     }
 
@@ -69,7 +70,8 @@ TEST_P(CastTest, cast) {
 
     // actual
     auto output =
-        kernels::stackvm::cast(dt_int64, runtime::stackvm::cast_mode_t::kdefault, input.impl())
+        kernels::stackvm::cast(
+            dt_int64, runtime::stackvm::cast_mode_t::kdefault, input.impl())
             .expect("binary failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
