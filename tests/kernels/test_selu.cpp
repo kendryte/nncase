@@ -84,9 +84,8 @@ TEST_P(SeluTest, Selu) {
                         .expect("create tensor failed");
 
     // actual
-    auto output =
-        kernels::stackvm::selu(lhs.impl(), alpha.impl(), gamma.impl())
-            .expect("selu failed");
+    auto output = kernels::stackvm::selu(lhs.impl(), alpha.impl(), gamma.impl())
+                      .expect("selu failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
