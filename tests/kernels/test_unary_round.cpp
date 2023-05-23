@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 #include "kernel_test.h"
-#include <c_api.h>
 #include <gtest/gtest.h>
 #include <iostream>
 #include <nncase/kernels/stackvm/tensor_ops.h>
@@ -21,7 +20,7 @@
 #include <nncase/runtime/runtime_tensor.h>
 #include <nncase/runtime/simple_types.h>
 #include <nncase/runtime/stackvm/opcode.h>
-#include <operators.h>
+#include <ortki/operators.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
