@@ -27,9 +27,9 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class SeluTest : public KernelTest,
-                 public ::testing::TestWithParam<
-                     std::tuple<nncase::typecode_t, dims_t>> {
+class SeluTest
+    : public KernelTest,
+      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
   public:
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
@@ -84,9 +84,8 @@ TEST_P(SeluTest, Selu) {
                         .expect("create tensor failed");
 
     // actual
-    auto output =
-        kernels::stackvm::selu(lhs.impl(), alpha.impl(), gamma.impl())
-            .expect("binary failed");
+    auto output = kernels::stackvm::selu(lhs.impl(), alpha.impl(), gamma.impl())
+                      .expect("binary failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
