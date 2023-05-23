@@ -29,7 +29,8 @@ using namespace nncase::kernels::stackvm;
 namespace {
 template <class T, class IndicesT>
 result<void>
-gather_elements_impl(const T *input, T *output,[[maybe_unused]] const dims_t &in_shape,
+gather_elements_impl(const T *input, T *output,
+                     [[maybe_unused]] const dims_t &in_shape,
                      const dims_t &out_shape, const strides_t &in_strides,
                      const strides_t &out_strides, const IndicesT *indices,
                      const dims_t &indices_shape, size_t axis,

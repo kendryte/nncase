@@ -302,19 +302,21 @@ result<value_t> nncase::kernels::stackvm::gather(value_t input, value_t axis,
     return ok(output);
 }
 
-result<value_t> nncase::kernels::stackvm::gather_elements(value_t input, value_t axis,
-                                                 value_t indices, value_t output,
-                                                 kernel_context &context) {
+result<value_t>
+nncase::kernels::stackvm::gather_elements(value_t input, value_t axis,
+                                          value_t indices, value_t output,
+                                          kernel_context &context) {
     try_input(input_mem, input);
     try_input(indices_mem, indices);
     auto dtype = input_tensor->dtype();
     try_positive_axis(axis_value, axis, input_tensor);
     auto out_shape = indices_tensor->shape();
     try_output(out_mem, output, dtype, out_shape);
-    try_(reference::gather_elements(dtype, input_mem, out_mem, input_tensor->shape(),
-                               out_shape, input_tensor->strides(),
-                               output_tensor->strides(), indices_tensor->dtype(),
-                           indices_mem, indices_tensor->shape(), axis_value, context));
+    try_(reference::gather_elements(
+        dtype, input_mem, out_mem, input_tensor->shape(), out_shape,
+        input_tensor->strides(), output_tensor->strides(),
+        indices_tensor->dtype(), indices_mem, indices_tensor->shape(),
+        axis_value, context));
     return ok(output);
 }
 
