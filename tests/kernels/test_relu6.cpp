@@ -92,9 +92,7 @@ TEST_P(Relu6Test, Relu6) {
                         .expect("create tensor failed");
 
     // actual
-    auto output =
-        kernels::stackvm::relu6(lhs.impl())
-            .expect("relu6 failed");
+    auto output = kernels::stackvm::relu6(lhs.impl()).expect("relu6 failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare

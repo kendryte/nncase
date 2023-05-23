@@ -27,15 +27,16 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class EluTest : public KernelTest,
-                public ::testing::TestWithParam<
-                    std::tuple<nncase::typecode_t, dims_t>> {
+class EluTest
+    : public KernelTest,
+      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
   public:
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
 
-        input = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
-                  .expect("create tensor failed");
+        input =
+            hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
+                .expect("create tensor failed");
         init_tensor(input);
     }
 
@@ -47,7 +48,8 @@ class EluTest : public KernelTest,
 
 INSTANTIATE_TEST_SUITE_P(elu, EluTest,
                          testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 3, 16, 16})));
+                                          testing::Values(dims_t{1, 3, 16,
+                                                                 16})));
 
 TEST_P(EluTest, add) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
@@ -66,14 +68,12 @@ TEST_P(EluTest, add) {
     // actual
     float *a_ptr;
     *a_ptr = 0.8f;
-    auto a =
-        hrt::create(nncase::dt_float32, {1},
-                    {reinterpret_cast<gsl::byte *>(a_ptr), sizeof(float)},
-                    true, host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
+    auto a = hrt::create(nncase::dt_float32, {1},
+                         {reinterpret_cast<gsl::byte *>(a_ptr), sizeof(float)},
+                         true, host_runtime_tensor::pool_cpu_only)
+                 .expect("create tensor failed");
     auto output =
-        kernels::stackvm::elu(input.impl(), a.impl())
-            .expect("elu failed");
+        kernels::stackvm::elu(input.impl(), a.impl()).expect("elu failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare

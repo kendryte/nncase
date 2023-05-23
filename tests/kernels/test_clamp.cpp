@@ -27,9 +27,9 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class ClampTest : public KernelTest,
-                  public ::testing::TestWithParam<
-                      std::tuple<nncase::typecode_t, dims_t>> {
+class ClampTest
+    : public KernelTest,
+      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
   public:
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
@@ -37,7 +37,6 @@ class ClampTest : public KernelTest,
         lhs = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
         init_tensor(lhs);
-
     }
 
     void TearDown() override {}
@@ -46,33 +45,34 @@ class ClampTest : public KernelTest,
     runtime_tensor lhs;
 };
 
-INSTANTIATE_TEST_SUITE_P(Clamp, ClampTest,
-                         testing::Combine(testing::Values(dt_float32, dt_int32,
-                                                          dt_int64),
-                                          testing::Values(dims_t{1, 3, 16, 16})));
+INSTANTIATE_TEST_SUITE_P(
+    Clamp, ClampTest,
+    testing::Combine(testing::Values(dt_float32, dt_int32, dt_int64),
+                     testing::Values(dims_t{1, 3, 16, 16})));
 
 TEST_P(ClampTest, clamp) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
 
     // expected
-//    auto output_ort = (l_ort);
-//    size_t size = 0;
-//    void *ptr_ort = tensor_buffer(output_ort, &size);
-//    dims_t shape(tensor_rank(output_ort));
-//    tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
-//    auto expected = hrt::create(lhs.datatype(), shape,
-//                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
-//                                true, host_runtime_tensor::pool_cpu_only)
-//                        .expect("create tensor failed");
+    //    auto output_ort = (l_ort);
+    //    size_t size = 0;
+    //    void *ptr_ort = tensor_buffer(output_ort, &size);
+    //    dims_t shape(tensor_rank(output_ort));
+    //    tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
+    //    auto expected = hrt::create(lhs.datatype(), shape,
+    //                                {reinterpret_cast<gsl::byte *>(ptr_ort),
+    //                                size}, true,
+    //                                host_runtime_tensor::pool_cpu_only)
+    //                        .expect("create tensor failed");
 
     // actual
-//    auto output =
-//        kernels::stackvm::clamp(lhs.impl(), -1f, 2f)
-//            .expect("binary failed");
-//    runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
-//
-//    // compare
-//    EXPECT_TRUE(is_same_tensor(actual, actual));
+    //    auto output =
+    //        kernels::stackvm::clamp(lhs.impl(), -1f, 2f)
+    //            .expect("binary failed");
+    //    runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
+    //
+    //    // compare
+    //    EXPECT_TRUE(is_same_tensor(actual, actual));
 }
 
 int main(int argc, char *argv[]) {
