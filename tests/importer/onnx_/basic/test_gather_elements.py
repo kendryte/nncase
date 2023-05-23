@@ -51,7 +51,7 @@ def _make_module(in_shape, indices, axis):
 
 in_shapes_indices_axes = [
     ([2, 2], [[0, 0], [1, 0]], 1),
-    ([3, 3], [[1, 2, 0],  [2, 0, 0]], 0),
+    ([3, 3], [[1, 2, 0], [2, 0, 0]], 0),
 ]
 
 
