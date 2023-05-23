@@ -82,14 +82,12 @@ TEST_P(GeluTest, gelu) {
     // actual
     float *a_ptr;
     *a_ptr = 0.5f;
-    auto a =
-        hrt::create(nncase::dt_float32, {1},
-                    {reinterpret_cast<gsl::byte *>(a_ptr), sizeof(float)},
-                    true, host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
+    auto a = hrt::create(nncase::dt_float32, {1},
+                         {reinterpret_cast<gsl::byte *>(a_ptr), sizeof(float)},
+                         true, host_runtime_tensor::pool_cpu_only)
+                 .expect("create tensor failed");
     auto output =
-        kernels::stackvm::gelu(lhs.impl(), a.impl())
-            .expect("binary failed");
+        kernels::stackvm::gelu(lhs.impl(), a.impl()).expect("binary failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
