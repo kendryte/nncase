@@ -27,50 +27,55 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class BitcastTest
-    : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
+class CompareTest : public KernelTest,
+                    public ::testing::TestWithParam<
+                        std::tuple<nncase::typecode_t, dims_t, dims_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape] = GetParam();
+        auto &&[typecode, l_shape, r_shape] = GetParam();
 
-        input =
-            hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
-                .expect("create tensor failed");
-        init_tensor(input);
+        lhs = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
+                  .expect("create tensor failed");
+        init_tensor(lhs);
+
+        rhs = hrt::create(typecode, r_shape, host_runtime_tensor::pool_cpu_only)
+                  .expect("create tensor failed");
+        init_tensor(rhs);
     }
 
     void TearDown() override {}
 
   protected:
-    runtime_tensor input;
+    runtime_tensor lhs;
+    runtime_tensor rhs;
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    Binary, BitcastTest,
-    testing::Combine(testing::Values(dt_float32, dt_int32, dt_int64),
-                     testing::Values(dims_t{1, 3, 16, 16})));
+INSTANTIATE_TEST_SUITE_P(compare, CompareTest,
+                         testing::Combine(testing::Values(dt_float32, dt_int32,
+                                                          dt_int64),
+                                          testing::Values(dims_t{1, 3, 16, 16}),
+                                          testing::Values(dims_t{1, 3, 16, 16})));
 
-TEST_P(BitcastTest, bitcast) {
-    auto l_ort = runtime_tensor_2_ort_tensor(input);
-    auto shape_ort = runtime_tensor_2_ort_tensor(input);
+TEST_P(CompareTest, equal) {
+    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
+    auto r_ort = runtime_tensor_2_ort_tensor(rhs);
 
     // expected
-    auto output_ort = ortki_Reshape(l_ort, shape_ort, (long)0);
+    auto output_ort = ortki_Greater(l_ort, r_ort);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
-    auto expected = hrt::create(input.datatype(), shape,
+    auto expected = hrt::create(lhs.datatype(), shape,
                                 {reinterpret_cast<gsl::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
     // actual
     auto output =
-        kernels::stackvm::binary(nncase::runtime::stackvm::binary_op_t::add,
-                                 input.impl(), input.impl())
-            .expect("binary failed");
+        kernels::stackvm::compare(nncase::runtime::stackvm::compare_op_t::greater_than,
+                                 lhs.impl(), rhs.impl())
+            .expect("compare failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare

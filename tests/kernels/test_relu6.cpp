@@ -58,18 +58,30 @@ INSTANTIATE_TEST_SUITE_P(Relu6, Relu6Test,
                                                           }, dims_t { 16, 16 },
                                                           dims_t { 16 },*/
                                                           dims_t{1}),
-                                          testing::Values(dims_t{1, 3, 16, 16},
-                                                          /*dims_t { 3, 16, 16
-                                                          }, dims_t { 16, 16 },
-                                                          dims_t { 16 },*/
-                                                          dims_t{1})));
+                                          testing::Values(dims_t{1})));
 
 TEST_P(Relu6Test, Relu6) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
     auto r_ort = runtime_tensor_2_ort_tensor(rhs);
 
     // expected
-    auto output_ort = ortki_Add(l_ort, r_ort);
+    float *min_ptr;
+    *min_ptr = 0.0f;
+    auto min =
+        hrt::create(nncase::dt_float32, {1},
+                    {reinterpret_cast<gsl::byte *>(min_ptr), sizeof(float)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
+    auto min_ort = runtime_tensor_2_ort_tensor(min);
+    float *max_ptr;
+    *min_ptr = 0.0f;
+    auto max =
+        hrt::create(nncase::dt_float32, {1},
+                    {reinterpret_cast<gsl::byte *>(max_ptr), sizeof(float)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
+    auto max_ort = runtime_tensor_2_ort_tensor(max);
+    auto output_ort = ortki_Clip(l_ort, min_ort, max_ort);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
@@ -81,9 +93,8 @@ TEST_P(Relu6Test, Relu6) {
 
     // actual
     auto output =
-        kernels::stackvm::binary(nncase::runtime::stackvm::binary_op_t::add,
-                                 lhs.impl(), rhs.impl())
-            .expect("binary failed");
+        kernels::stackvm::relu6(lhs.impl())
+            .expect("relu6 failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare

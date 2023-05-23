@@ -50,12 +50,12 @@ INSTANTIATE_TEST_SUITE_P(Transpose, TransposeTest,
                                           testing::Values(dims_t{1, 3, 16, 16})));
 
 TEST_P(TransposeTest, Transpose) {
-    auto l_ort = runtime_tensor_2_ort_tensor(input);
+    auto input_ort = runtime_tensor_2_ort_tensor(input);
     int64_t perm[] = {1, 0, 2, 3};
     size_t perm_size = 4;
 
     // expected
-    auto output_ort = ortki_Transpose(l_ort, perm, perm_size);
+    auto output_ort = ortki_Transpose(input_ort, perm, perm_size);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
