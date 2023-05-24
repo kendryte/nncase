@@ -68,7 +68,7 @@ TEST_P(UnaryTest, sqrt) {
     // actual
     auto output = kernels::stackvm::unary(
                       nncase::runtime::stackvm::unary_op_t::sqrt, input.impl())
-                      .expect("binary failed");
+                      .expect("unary failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare

@@ -68,7 +68,7 @@ TEST_P(UnaryTest, acosh) {
     // actual
     auto output = kernels::stackvm::unary(
                       nncase::runtime::stackvm::unary_op_t::acosh, input.impl())
-                      .expect("binary failed");
+                      .expect("unary failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare todo: it's a issue

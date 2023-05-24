@@ -84,7 +84,7 @@ TEST_P(L2NormalizationTest, L2Normalization) {
     auto output =
         kernels::stackvm::binary(nncase::runtime::stackvm::binary_op_t::add,
                                  lhs.impl(), rhs.impl())
-            .expect("binary failed");
+            .expect("l2_normalization failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare

@@ -83,7 +83,7 @@ TEST_P(DequantizeTest, dequantize) {
     auto output =
         kernels::stackvm::binary(nncase::runtime::stackvm::binary_op_t::add,
                                  lhs.impl(), rhs.impl())
-            .expect("binary failed");
+            .expect("dequantize failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare

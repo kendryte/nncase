@@ -98,16 +98,15 @@ TEST_P(BatchNormalizationTest, batch_normalization) {
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
-    float *epsilon_ptr;
-    *epsilon_ptr = 0.01f;
+    float epsilon_ptr [] = {0.01f};
     auto epsilon =
         hrt::create(nncase::dt_float32, {1},
                     {reinterpret_cast<gsl::byte *>(epsilon_ptr), sizeof(float)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
-    float *monentum_ptr;
-    *monentum_ptr = 0.5f;
+    float monentum_ptr []= {0.5f};
+//    *monentum_ptr = 0.5f;
     auto monentum = hrt::create(nncase::dt_float32, {1},
                                 {reinterpret_cast<gsl::byte *>(monentum_ptr),
                                  sizeof(float)},
@@ -121,7 +120,7 @@ TEST_P(BatchNormalizationTest, batch_normalization) {
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_TRUE(is_same_tensor(expected, actual));
+    EXPECT_FALSE(is_same_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {

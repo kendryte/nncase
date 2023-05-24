@@ -83,7 +83,7 @@ TEST_P(SqueezeTest, Squeeze) {
     auto output =
         kernels::stackvm::binary(nncase::runtime::stackvm::binary_op_t::add,
                                  lhs.impl(), rhs.impl())
-            .expect("binary failed");
+            .expect("squeeze failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare

@@ -54,25 +54,37 @@ TEST_P(ClampTest, clamp) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
 
     // expected
-    //    auto output_ort = (l_ort);
-    //    size_t size = 0;
-    //    void *ptr_ort = tensor_buffer(output_ort, &size);
-    //    dims_t shape(tensor_rank(output_ort));
-    //    tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
-    //    auto expected = hrt::create(lhs.datatype(), shape,
-    //                                {reinterpret_cast<gsl::byte *>(ptr_ort),
-    //                                size}, true,
-    //                                host_runtime_tensor::pool_cpu_only)
-    //                        .expect("create tensor failed");
+    auto output_ort = (l_ort);
+    size_t size = 0;
+    void *ptr_ort = tensor_buffer(output_ort, &size);
+    dims_t shape(tensor_rank(output_ort));
+    tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
+    auto expected = hrt::create(lhs.datatype(), shape,
+                                {reinterpret_cast<gsl::byte *>(ptr_ort),
+                                 size}, true,
+                                host_runtime_tensor::pool_cpu_only)
+                        .expect("create tensor failed");
 
     // actual
-    //    auto output =
-    //        kernels::stackvm::clamp(lhs.impl(), -1f, 2f)
-    //            .expect("binary failed");
-    //    runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
-    //
-    //    // compare
-    //    EXPECT_TRUE(is_same_tensor(actual, actual));
+    float min[] = {-1.0f};
+    auto min_tensor = hrt::create(nncase::dt_float32, {1},
+                         {reinterpret_cast<gsl::byte *>(min), sizeof(float)},
+                         true, host_runtime_tensor::pool_cpu_only)
+                 .expect("create tensor failed");
+
+    float max[] = {-1.0f};
+    auto max_tensor = hrt::create(nncase::dt_float32, {1},
+                         {reinterpret_cast<gsl::byte *>(max), sizeof(float)},
+                         true, host_runtime_tensor::pool_cpu_only)
+                 .expect("create tensor failed");
+
+    auto output =
+        kernels::stackvm::clamp(lhs.impl(), min_tensor.impl(), max_tensor.impl())
+            .expect("clamp failed");
+    runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
+
+    // compare
+    EXPECT_TRUE(is_same_tensor(actual, actual));
 }
 
 int main(int argc, char *argv[]) {

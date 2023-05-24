@@ -84,7 +84,7 @@ TEST_P(TransposeTest, Transpose) {
             .expect("create tensor failed");
 
     auto output = kernels::stackvm::transpose(input.impl(), perm1.impl())
-                      .expect("perm failed");
+                      .expect("transpose failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare

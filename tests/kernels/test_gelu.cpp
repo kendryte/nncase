@@ -87,7 +87,7 @@ TEST_P(GeluTest, gelu) {
                          true, host_runtime_tensor::pool_cpu_only)
                  .expect("create tensor failed");
     auto output =
-        kernels::stackvm::gelu(lhs.impl(), a.impl()).expect("binary failed");
+        kernels::stackvm::gelu(lhs.impl(), a.impl()).expect("gelu failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare

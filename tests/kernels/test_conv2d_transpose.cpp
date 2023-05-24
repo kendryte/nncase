@@ -84,7 +84,7 @@ TEST_P(Conv2DTransposeTest, conv2d_transpose) {
     auto output =
         kernels::stackvm::binary(nncase::runtime::stackvm::binary_op_t::add,
                                  lhs.impl(), rhs.impl())
-            .expect("binary failed");
+            .expect("conv2d_transpose failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare

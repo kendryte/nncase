@@ -78,7 +78,7 @@ TEST_P(PreluTest, Prelu) {
 
     // actual
     auto output =
-        kernels::stackvm::prelu(lhs.impl(), slope.impl()).expect("relu failed");
+        kernels::stackvm::prelu(lhs.impl(), slope.impl()).expect("prelu failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare

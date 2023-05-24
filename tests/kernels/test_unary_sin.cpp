@@ -68,7 +68,7 @@ TEST_P(UnaryTest, sin) {
     // actual
     auto output = kernels::stackvm::unary(
                       nncase::runtime::stackvm::unary_op_t::sin, input.impl())
-                      .expect("binary failed");
+                      .expect("unary failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare

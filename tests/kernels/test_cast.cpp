@@ -72,7 +72,7 @@ TEST_P(CastTest, cast) {
     auto output =
         kernels::stackvm::cast(
             dt_int64, runtime::stackvm::cast_mode_t::kdefault, input.impl())
-            .expect("binary failed");
+            .expect("cast failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare

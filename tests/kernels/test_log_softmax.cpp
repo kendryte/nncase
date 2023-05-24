@@ -83,7 +83,7 @@ TEST_P(LogSoftmaxTest, log_softmax) {
     auto output =
         kernels::stackvm::binary(nncase::runtime::stackvm::binary_op_t::add,
                                  lhs.impl(), rhs.impl())
-            .expect("binary failed");
+            .expect("log_softmax failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
