@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
+using Microsoft.VisualBasic;
 using Nncase.CodeGen;
 using Nncase.CodeGen.StackVM;
 using Nncase.IR;
@@ -64,11 +65,6 @@ public class CPUTarget : ITarget
     /// <inheritdoc/>
     public void RegisterQuantizePass(IPassManager passManager, CompileOptions options)
     {
-    }
-
-    /// <inheritdoc/>
-    public void RegisterTargetDependentAfterQuantPass(IPassManager passManager, CompileOptions options)
-    {
         if (options.QuantizeOptions.ModelQuantMode == ModelQuantMode.UsePTQ)
         {
             passManager.AddWithName<DataflowPass>("RemoveMarker").Configure(p =>
@@ -76,6 +72,15 @@ public class CPUTarget : ITarget
                 p.Add<Passes.Rules.Lower.RemoveMarker>();
             });
         }
+    }
+
+    /// <inheritdoc/>
+    public void RegisterTargetDependentAfterQuantPass(IPassManager passManager, CompileOptions options)
+    {
+        passManager.AddWithName<DataflowPass>("MakeFusion").Configure(p =>
+        {
+            p.Add<CPUUnaryFusion>();
+        });
     }
 
     public void RegisterTargetDependentBeforeCodeGen(IPassManager passManager, CompileOptions options)
