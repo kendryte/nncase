@@ -34,11 +34,12 @@ jobs:
         python-version: 3.7
 
     - name: Install Conan
-      run: pip install conan==1.58
+      run: |
+        pip install conan==1.58
+        conan remote add -i 0 sunnycase https://conan.sunnycase.moe
 
     - name: Configure Conan (Linux)
       run: |
-        conan remote add -i 0 sunnycase https://conan.sunnycase.moe
         conan profile new default --detect
         conan profile update settings.compiler.libcxx=libstdc++11 default
         echo "CC=gcc-10" >> $GITHUB_ENV
@@ -109,11 +110,12 @@ jobs:
        echo "TESTS_EXECUTABLE_LOADER_ARGUMENTS=${{matrix.config.loader_args}};$GITHUB_WORKSPACE/${{matrix.config.toolchain_file}}/sysroot" >> $GITHUB_ENV
 
    - name: Install Conan
-     run: pip install conan==1.58
+     run: |
+       pip install conan==1.58
+       conan remote add -i 0 sunnycase https://conan.sunnycase.moe
 
    - name: Configure Conan
      run: |
-       conan remote add -i 0 sunnycase https://conan.sunnycase.moe
        conan profile new default --detect
        conan profile update settings.compiler.libcxx=libstdc++11 default
        conan config init
@@ -121,7 +123,7 @@ jobs:
 
    - name: Configure CMake
      run: |
-       conan install . -if build --build=missing -s build_type=${{matrix.config.buildType}} --profile:host=../toolchains/riscv64-unknown-linux.profile.jinja --profile:build=default -o runtime=True -o python=False -o tests=True -s compiler.cppstd=17
+       conan install . -if build --build=missing -s build_type=${{matrix.config.buildType}} --profile:host=toolchains/riscv64-unknown-linux.profile.jinja --profile:build=default -o runtime=True -o python=False -o tests=True -s compiler.cppstd=17
 
    - name: Build & Install
      run: |
