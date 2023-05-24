@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System.Security.AccessControl;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -15,7 +16,7 @@ using Nncase.Passes.Rules.Lower;
 using Nncase.Passes.Rules.Neutral;
 using Nncase.Passes.Transforms;
 using Nncase.Quantization;
-using Nncase.Utilities;
+using Timer = Nncase.Utilities.Timer;
 
 namespace Nncase.Compiler;
 
@@ -152,56 +153,13 @@ internal class Compiler : ICompiler
         p.AddWithName<DataflowPass>("MatmulToFusion").Configure(c =>
         {
             c.Add<MatmulToFusion>();
+            c.Add<Conv2DToFusion>();
+            c.Add<Conv2DTransposeToFusion>();
         });
         p.AddWithName<DataflowPass>("FusionBucket").Configure(c =>
         {
             c.Add<FusionBucket>();
         });
-    }
-
-    public class TimerRecord
-    {
-        private long startTime = -1;
-        private double secondsElapsed = -1;
-        private string _name;
-
-        public TimerRecord(string name, TimerRecord parent)
-        {
-            _name = name;
-        }
-
-        public void Start()
-        {
-            startTime = DateTime.Now.Ticks;
-        }
-
-        public void End()
-        {
-            var endTime = DateTime.Now.Ticks;
-            secondsElapsed = new TimeSpan(endTime - startTime).TotalSeconds;
-            Console.WriteLine($"{_name} took: {secondsElapsed}");
-        }
-    }
-
-    public class Timer : IDisposable
-    {
-        public static List<TimerRecord> Records = new();
-
-        private TimerRecord _record;
-
-        private Timer _parent;
-
-        public Timer(string name, Timer? parent = null)
-        {
-            _record = new TimerRecord(name, null);
-            Records.Add(_record);
-            _record.Start();
-        }
-
-        public void Dispose()
-        {
-            _record.End();
-        }
     }
 
     public void ClearFixShape(IPassManager p)
@@ -212,53 +170,23 @@ internal class Compiler : ICompiler
     public async Task CompileAsync()
     {
         var target = _compileSession.Target;
-        using (var _ = new Timer("TargetIndependentPass"))
+        await RunPassAsync(p => TargetIndependentPass(p), "TargetIndependentPass");
+        await RunPassAsync(p => RegisterShapeBucket(p), "ShapeBucket");
+        await RunPassAsync(
+            p => _compileSession.Target.RegisterTargetInDependentPass(p, _compileSession.CompileOptions),
+            "TargetIndependtPass");
+        await RunPassAsync(p => target.RegisterTargetDependentPass(p, _compileSession.CompileOptions),
+            "TargetDependentPass");
+        await RunPassAsync(p => target.RegisterQuantizePass(p, _compileSession.CompileOptions), "QuantizePass");
+        await RunPassAsync(p => target.RegisterTargetDependentAfterQuantPass(p, _compileSession.CompileOptions),
+            "TargetDependentAfterQuantPass");
+        await RunPassAsync(p => ClearFixShape(p), "ClearFixShape");
+        await RunPassAsync(p => target.RegisterTargetDependentBeforeCodeGen(p, _compileSession.CompileOptions),
+            "TargetDependentBeforeCodeGen");
+        if (_dumpper.IsEnabled(DumpFlags.Compile))
         {
-            await RunPassAsync(p => TargetIndependentPass(p), "TargetIndependentPass");
+            DumpScope.Current.DumpModule(_module, "ModuleAfterCompile");
         }
-
-        using (var _ = new Timer("ShapeBucketTargetIndenpend"))
-        {
-            await RunPassAsync(p => RegisterShapeBucket(p), "ShapeBucket");
-        }
-
-        using (var _ = new Timer("TargetIndependtPass"))
-        {
-            await RunPassAsync(
-                p => _compileSession.Target.RegisterTargetInDependentPass(p, _compileSession.CompileOptions),
-                "TargetIndependtPass");
-        }
-
-        using (var _ = new Timer("TargetDependentPass"))
-        {
-            await RunPassAsync(p => target.RegisterTargetDependentPass(p, _compileSession.CompileOptions),
-                "TargetDependentPass");
-        }
-
-        using (var _ = new Timer("QuantizePass"))
-        {
-            await RunPassAsync(p => target.RegisterQuantizePass(p, _compileSession.CompileOptions), "QuantizePass");
-        }
-
-        using (var _ = new Timer("TargetDependentAfterQuantPass"))
-        {
-            await RunPassAsync(p => target.RegisterTargetDependentAfterQuantPass(p, _compileSession.CompileOptions),
-                "TargetDependentAfterQuantPass");
-        }
-
-        DumpScope.Current.DumpModule(_module, "ModuleBeforeClearFixShape");
-        using (var _ = new Timer("ClearFixShape"))
-        {
-            await RunPassAsync(p => ClearFixShape(p), "ClearFixShape");
-        }
-
-        using (var _ = new Timer("TargetDependentBeforeCodeGen"))
-        {
-            await RunPassAsync(p => target.RegisterTargetDependentBeforeCodeGen(p, _compileSession.CompileOptions),
-                "TargetDependentBeforeCodeGen");
-        }
-
-        DumpScope.Current.DumpModule(_module, "ModuleAfterCompile");
     }
 
     public void Gencode(Stream output)
@@ -280,15 +208,18 @@ internal class Compiler : ICompiler
 
     private async Task RunPassAsync(Action<IPassManager> register, string name)
     {
-        var newName = $"{_runPassCount++}_" + name;
-        var pmgr = _compileSession.CreatePassManager(newName);
-        register(pmgr);
-        _module = await pmgr.RunAsync(Module).ConfigureAwait(false);
-
-        if (_dumpper.IsEnabled(DumpFlags.Compile))
+        using (var _ = new Timer(name))
         {
-            _dumpper.DumpModule(_module, newName);
-            _dumpper.DumpDotIR(_module.Entry!, newName);
+            var newName = $"{_runPassCount++}_" + name;
+            var pmgr = _compileSession.CreatePassManager(newName);
+            register(pmgr);
+            _module = await pmgr.RunAsync(Module).ConfigureAwait(false);
+
+            if (_dumpper.IsEnabled(DumpFlags.Compile))
+            {
+                _dumpper.DumpModule(_module, newName);
+                _dumpper.DumpDotIR(_module.Entry!, newName);
+            }
         }
     }
 }

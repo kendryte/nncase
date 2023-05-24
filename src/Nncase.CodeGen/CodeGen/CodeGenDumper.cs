@@ -38,6 +38,8 @@ namespace Nncase.CodeGen
             return Ids;
         }
 
+
+        // todo: refactor this
         public static string ToStr(Expr expr)
         {
             string str;
@@ -73,7 +75,6 @@ namespace Nncase.CodeGen
         }
 
         public static void PrintAlloc(ushort localId, Expr expr, string prefix)
-
         {
             var str = "";
             if (expr is Call call)

@@ -98,7 +98,7 @@ internal class StackVMFunctionBuilder : FunctionBuilder
                         var localId = _snippetLocals[inputSnippet];
                         _textEmitter.Ldlocal(localId);
 
-                        if (NormalReduceCount(snippet, inputSnippet))
+                        if (CodegenUtility.NormalReduceCount(snippet, inputSnippet))
                         {
                             var beforePos = _textEmitter.Position;
                             RefCountReduce(inputSnippet, localId);
@@ -145,30 +145,6 @@ internal class StackVMFunctionBuilder : FunctionBuilder
         }
 
         WriteDebugInfo(Id, 0, sourceMap);
-    }
-
-    private bool NormalReduceCount(TextSnippet snippet, TextSnippet input)
-    {
-        if (snippet.BasicBlock == input.BasicBlock)
-        {
-            return true;
-        }
-
-        var prevBasicBlock = snippet.BasicBlock.Prev;
-        if (prevBasicBlock.Count == 1)
-        {
-            // if has two next, then and else has only one prev.
-            var snippetInIf = prevBasicBlock[0].Nexts.Count > 1;
-
-            // snippetInIf and snippet and input are in different BasicBlock.
-            // it means input is out of if.
-            if (snippetInIf)
-            {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     private void RefCountReduce(TextSnippet inputSnippet, ushort localId)

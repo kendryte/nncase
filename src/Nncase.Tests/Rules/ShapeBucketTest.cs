@@ -26,6 +26,7 @@ namespace Nncase.Tests.Rules;
 [AutoSetupTestMethod(InitSession = true)]
 public class ShapeBucketTest : TransformTestBase
 {
+    // todo: fix this file
     private readonly ITestOutputHelper _testOutputHelper;
 
     public ShapeBucketTest(ITestOutputHelper testOutputHelper)

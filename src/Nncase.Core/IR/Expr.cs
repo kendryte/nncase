@@ -22,8 +22,6 @@ public class IRMetadata
     /// Gets or sets outputs names.
     /// </summary>
     public IReadOnlyList<string>? OutputNames { get; set; }
-
-    public Expr? ShapeExpr { get; set; }
 }
 
 /// <summary>

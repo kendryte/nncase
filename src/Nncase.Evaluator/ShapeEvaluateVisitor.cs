@@ -43,9 +43,9 @@ internal sealed class ShapeEvaluateVisitor : ExprVisitor<Expr, Unit>
         return expr.Target switch
         {
             Op op => CompilerServices.EvaluateOpShapeExpr(op, _context),
-            Function func => CompilerServices.EvaluateShapeExpr(func.Body, Merge(func.Parameters, expr.Arguments)),
+            Function func => CompilerServices.EvaluateShapeExpr(func.Body, MergeArgsVarMap(func.Parameters, expr.Arguments)),
             Fusion { ModuleKind: "stackvm" } func => CompilerServices.EvaluateShapeExpr(func.Body,
-                Merge(func.Parameters, expr.Arguments)),
+                MergeArgsVarMap(func.Parameters, expr.Arguments)),
             _ => throw new NotImplementedException(expr.Target.ToString()),
         };
     }
@@ -67,7 +67,7 @@ internal sealed class ShapeEvaluateVisitor : ExprVisitor<Expr, Unit>
         return new IR.Tuple(expr.Fields.ToArray().Select(Visit).ToArray());
     }
 
-    private Dictionary<Var, Expr[]> Merge(ReadOnlySpan<Var> paramList, ReadOnlySpan<Expr> args)
+    private Dictionary<Var, Expr[]> MergeArgsVarMap(ReadOnlySpan<Var> paramList, ReadOnlySpan<Expr> args)
     {
         var data = paramList.ToArray().Zip(args.ToArray().Select(arg =>
         {

@@ -35,6 +35,7 @@ public sealed partial class MatMulToConv2D : IRewriteRule
             IsRangeOfMarker("bm", IsTensorConst("b") with { TypePattern = HasRank(2) & HasFixedShape() }, IsWildcard())),
             IsWildcard());
 
+    // todo: fix this marker
     private static int counter = 0;
     private Expr? GetReplace(Marker marker, Call matMulCall, Expr a, Expr b, Marker am, Marker bm)
     {

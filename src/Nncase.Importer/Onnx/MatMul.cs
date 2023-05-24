@@ -12,6 +12,7 @@ namespace Nncase.Importer
     {
         private Expr VisitMatMul(in NodeProto op)
         {
+            // todo: fix this
             var (a, b) = GetInputExprs(op, 0, 1);
             return F.Tensors.MatMul(a, b);
         }

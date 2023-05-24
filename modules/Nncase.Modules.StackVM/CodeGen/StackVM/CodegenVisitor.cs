@@ -259,14 +259,14 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
     }
 
     private static int counter = 1;
+
     protected override TextSnippet VisitLeafCall(Call expr)
     {
         var snippet = BeginTextSnippet(expr);
         foreach (var param in expr.Arguments.ToArray().Reverse())
         {
             var paramSnippet = Visit(param);
-            // todo: refactor
-            if (paramSnippet.BasicBlock == snippet.BasicBlock || paramSnippet.BasicBlock.Prev.Count != 1 || paramSnippet.BasicBlock.Prev[0].Nexts.Count < 1)
+            if (CodegenUtility.NormalReduceCount(paramSnippet, snippet))
             {
                 snippet.AddInput(paramSnippet, true);
             }
@@ -275,13 +275,15 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
                 snippet.AddInput(paramSnippet, false);
                 _refTextSnippets.Add(paramSnippet);
             }
+
             paramSnippet.MaxUserParameters = Math.Max(paramSnippet.MaxUserParameters, expr.Arguments.Length);
         }
 
         if (expr.Target is CustomOp custom_op)
         {
             _context.AddCustomCallModule(custom_op.ModuleType);
-            Emitter.CusCall(custom_op.RegisteredName, custom_op.SerializeFields(), checked((ushort)expr.Arguments.Length));
+            Emitter.CusCall(custom_op.RegisteredName, custom_op.SerializeFields(),
+                checked((ushort)expr.Arguments.Length));
         }
         else if (expr.Target is Op op)
         {
@@ -336,9 +338,11 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         {
             Visit(expr);
         }
+
         var condSnippet = Visit(@if.Condition);
 
         var brFalse = BeginTextSnippet(@if);
+        // todo: fix this
         if (@if.Condition is Call c)
         {
             condSnippet.MaxUserParameters = c.Arguments.Length;
@@ -444,14 +448,16 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         return AddSymbolRef(CurrentTextSnippet, symbol, positionOffset, length, relative, offset);
     }
 
-    private SymbolRef AddSymbolRef(TextSnippet snippet, Symbol symbol, int positionOffset, int length, bool relative = false, int offset = 0)
+    private SymbolRef AddSymbolRef(TextSnippet snippet, Symbol symbol, int positionOffset, int length,
+        bool relative = false, int offset = 0)
     {
         var symbolRef = new SymbolRef(snippet.Emitter.Position + positionOffset, length, symbol, relative, offset);
         snippet.SymbolRefs.Add(symbolRef);
         return symbolRef;
     }
 
-    private FunctionRef AddFunctionRef(BaseFunction callable, FunctionIdComponent component, int positionOffset, int length, int offset = 0)
+    private FunctionRef AddFunctionRef(BaseFunction callable, FunctionIdComponent component, int positionOffset,
+        int length, int offset = 0)
     {
         var functionRef = new FunctionRef(Emitter.Position + positionOffset, length, callable, component, offset);
         CurrentTextSnippet.FunctionRefs.Add(functionRef);

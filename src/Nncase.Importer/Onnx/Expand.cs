@@ -36,6 +36,7 @@ namespace Nncase.Importer
                 return F.Tensors.Expand(input, F.Tensors.Stack(new IR.Tuple(outputShape), 0));
             }
 
+            // todo: fix this
             var rhs = input.CheckedDataType switch
             {
                 var x when x == DataTypes.UInt8 => F.Tensors.ConstantOfShape(shape, (byte)1),

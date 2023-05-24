@@ -31,6 +31,8 @@ public sealed class Function : BaseFunction
         : base(name, StackVMModuleKind, ArrayUtility.Concat(body, SpanUtility.UnsafeCast<Var, Expr>(parameters)))
     {
         VarMap = varMap;
+        var dynamicDims = varMap.Values.SelectMany(x => x).ToArray();
+        Pinner = new ExprPinner(dynamicDims);
     }
 
     /// <summary>
@@ -62,9 +64,14 @@ public sealed class Function : BaseFunction
 
     public Expr Body => Operands[0];
 
+    /// <summary>
+    /// used for save expr in VarMap
+    /// </summary>
+    private ExprPinner? Pinner;
+
     public ReadOnlySpan<Var> Parameters => SpanUtility.UnsafeCast<Expr, Var>(Operands[1..]);
 
-    public Dictionary<Var, Expr[]> VarMap { get; }
+    public Dictionary<Var, Expr[]>? VarMap { get; }
 
     /// <summary>
     /// Gets get all parameter checked types.

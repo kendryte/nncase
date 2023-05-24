@@ -66,13 +66,8 @@ public sealed partial class OnnxImporter : BaseImporter
             .Select((v, i) => (createdInputs[i], GetOriginShape(v)))
             .ToDictionary(tup => tup.Item1, tup => tup.Item2);
 
-        // todo: refactor this
         CompileSession.CompileOptions.ShapeBucketOptions =
             bucketOptions with { VarMap = varMap };
-        // var nameSet = varMap.Values.SelectMany(x => x).OfType<Var>().Select(v => v.Name).ToHashSet();
-        var dynamicDims = varMap.Values.SelectMany(x => x).ToArray();
-        // todo: save into function, dispose when function dispose
-        new ExprPinner(dynamicDims);
         _outputTensors = createdInputs.ToDictionary(n => n.Name, n => (Expr)n);
         return (createdInputs, varMap);
     }

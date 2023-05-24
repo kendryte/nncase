@@ -69,7 +69,7 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
             var newShape = Stack(new IR.Tuple(rhs), 0);
 
             // dim = Product(inShape) / Produce(Reshape.Shape)
-            // [1, 3, -1, 24] + [dim + 1, 0]
+            // e.g. [1, 3, -1, 24] + [dim + 1, 0] = [1, 3, dim, 24]
             return newShape + shapeArray;
         }
 

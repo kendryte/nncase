@@ -13,7 +13,7 @@ using static Nncase.IR.TypePatternUtility;
 namespace Nncase.IR.Tensors;
 
 /// <summary>
-/// Prod expression.
+/// Fix Input Shape for TypeInfer
 /// </summary>
 [PatternFunctionalGenerator]
 public sealed partial class FixShape : Op

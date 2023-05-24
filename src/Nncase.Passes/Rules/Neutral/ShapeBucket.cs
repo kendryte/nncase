@@ -21,6 +21,7 @@ using static Nncase.PatternMatch.F.Math;
 using static Nncase.Passes.Rules.Neutral.ShapeBucketHelper;
 using Dimension = Nncase.IR.Dimension;
 using Tuple = System.Tuple;
+using static Nncase.Utilities.ReplaceUtility;
 
 namespace Nncase.Passes.Rules.Neutral;
 
@@ -194,8 +195,6 @@ public partial class ReplaceRewrite : RewriteRule<Pattern>
         if (totalCount == 0 || (minFixedShapeList[0].SequenceEqual(maxFixedShapeList[0]) &&
                                 minFixedShapeList[1].SequenceEqual(maxFixedShapeList[1])))
         {
-            // todo: 做了不该做的，写个test验证下
-            Console.WriteLine("same, not be process");
             var fix = FixInput(call, callInputs, minFixedShapeList, callMarker);
             return fix;
         }
@@ -792,20 +791,6 @@ public partial class FusionBucket : RewriteRule<Pattern>
         var fusionInputData = data.ToDictionary(pair => pair.Key, pair => pair.Value);
         return fusionInputData;
     }
-
-    public static Expr ReplaceExpr(Expr body, Expr target, Expr expr)
-    {
-        var mutator = new Passes.Mutators.Substitutor(e =>
-        {
-            if (ReferenceEquals(e, target))
-            {
-                return expr;
-            }
-
-            return null;
-        });
-        return mutator.Visit(body, Unit.Default);
-    }
 }
 
 public class FindVar : ExprVisitor<Expr, Unit>
@@ -820,3 +805,4 @@ public class FindVar : ExprVisitor<Expr, Unit>
 
     protected override Expr DefaultVisitLeaf(Expr expr) => expr;
 }
+
