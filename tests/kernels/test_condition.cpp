@@ -69,9 +69,8 @@ TEST_P(ConditionTest, condition) {
     auto r_ort = runtime_tensor_2_ort_tensor(rhs);
 
     // actual
-    auto output =
-        kernels::stackvm::condition(true, lhs.impl(), lhs.impl())
-            .expect("condition failed");
+    auto output = kernels::stackvm::condition(true, lhs.impl(), lhs.impl())
+                      .expect("condition failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare

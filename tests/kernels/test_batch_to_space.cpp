@@ -83,11 +83,10 @@ TEST_P(BatchToSpaceTest, BatchToSpace) {
                             .expect("create tensor failed");
     long crops[] = {0, 0, 0, 0};
     // auto crops_ptr = crops;
-    auto crops_tensor =
-        hrt::create(dt_int64, {2, 2},
-                    {reinterpret_cast<gsl::byte *>(crops), 16}, true,
-                    host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
+    auto crops_tensor = hrt::create(dt_int64, {2, 2},
+                                    {reinterpret_cast<gsl::byte *>(crops), 16},
+                                    true, host_runtime_tensor::pool_cpu_only)
+                            .expect("create tensor failed");
     auto output = kernels::stackvm::batch_to_space(
                       input_tensor.impl(), shape.impl(), crops_tensor.impl())
                       .expect("binary failed");

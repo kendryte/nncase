@@ -91,9 +91,8 @@ TEST_P(ConcatTest, Concat) {
                             {reinterpret_cast<gsl::byte *>(axis_ptr), size},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
-    auto output =
-        kernels::stackvm::concat(input.impl(), axis.impl())
-            .expect("concat failed");
+    auto output = kernels::stackvm::concat(input.impl(), axis.impl())
+                      .expect("concat failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
