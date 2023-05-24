@@ -29,60 +29,88 @@ using namespace ortki;
 
 class Conv2DTest : public KernelTest,
                    public ::testing::TestWithParam<
-                       std::tuple<nncase::typecode_t, dims_t, dims_t>> {
+                       std::tuple<nncase::typecode_t, dims_t, dims_t, dims_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape, r_shape] = GetParam();
+        auto &&[typecode, input_shape, weight_shape, bias_shape] = GetParam();
 
-        lhs = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
+        input = hrt::create(typecode, input_shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
-        init_tensor(lhs);
+        init_tensor(input);
 
-        rhs = hrt::create(typecode, r_shape, host_runtime_tensor::pool_cpu_only)
+        weight = hrt::create(typecode, weight_shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
-        init_tensor(rhs);
+        init_tensor(weight);
+
+        bais = hrt::create(typecode, bias_shape, host_runtime_tensor::pool_cpu_only)
+                     .expect("create tensor failed");
+        init_tensor(bais);
     }
 
     void TearDown() override {}
 
   protected:
-    runtime_tensor lhs;
-    runtime_tensor rhs;
+    runtime_tensor input;
+    runtime_tensor weight;
+    runtime_tensor bais;
 };
 
 INSTANTIATE_TEST_SUITE_P(Conv2D, Conv2DTest,
-                         testing::Combine(testing::Values(dt_float32, dt_int32,
-                                                          dt_int64),
-                                          testing::Values(dims_t{1, 3, 16, 16},
-                                                          /*dims_t { 3, 16, 16
-                                                          }, dims_t { 16, 16 },
-                                                          dims_t { 16 },*/
-                                                          dims_t{1}),
-                                          testing::Values(dims_t{1, 3, 16, 16},
-                                                          /*dims_t { 3, 16, 16
-                                                          }, dims_t { 16, 16 },
-                                                          dims_t { 16 },*/
-                                                          dims_t{1})));
+                         testing::Combine(testing::Values(dt_float32),
+                                          testing::Values(dims_t{1, 4, 5, 5}),
+                                          testing::Values(dims_t{8, 4, 3, 3}),
+                                          testing::Values(dims_t{8})));
 
 TEST_P(Conv2DTest, conv2d) {
-    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
-    auto r_ort = runtime_tensor_2_ort_tensor(rhs);
+    auto input_ort = runtime_tensor_2_ort_tensor(input);
+    auto weight_ort = runtime_tensor_2_ort_tensor(weight);
+    auto bais_ort = runtime_tensor_2_ort_tensor(bais);
 
     // expected
-    auto output_ort = ortki_Add(l_ort, r_ort);
+    const char* auto_pad = "NOTSET";
+    int64_t dilations[] = { 1, 1 };
+    int64_t kernel_shape[] = {3, 3};
+    int64_t pad[] = {1, 1, 1, 1};
+    int64_t strides[] = {1, 1};
+    auto output_ort = ortki_Conv(input_ort, weight_ort, bais_ort, auto_pad, dilations, 2, 1, kernel_shape, 2, pad,4, strides, 2);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
-    auto expected = hrt::create(lhs.datatype(), shape,
+    auto expected = hrt::create(dt_float32, shape,
                                 {reinterpret_cast<gsl::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
     // actual
+    int64_t group[] = {1};
+    float fused_clamp[] = {FLT_MIN,FLT_MAX};
+    auto dilations_ptr = hrt::create(nncase::dt_float32, {2},
+                                     {reinterpret_cast<gsl::byte *>(dilations), sizeof(float)},
+                                     true, host_runtime_tensor::pool_cpu_only)
+                             .expect("create tensor failed");
+    auto kernel_shape_ptr = hrt::create(nncase::dt_float32, {2},
+                                     {reinterpret_cast<gsl::byte *>(kernel_shape), sizeof(float)},
+                                     true, host_runtime_tensor::pool_cpu_only)
+                             .expect("create tensor failed");
+    auto pad_ptr = hrt::create(nncase::dt_float32, {4},
+                                     {reinterpret_cast<gsl::byte *>(pad), sizeof(float)},
+                                     true, host_runtime_tensor::pool_cpu_only)
+                             .expect("create tensor failed");
+    auto strides_ptr = hrt::create(nncase::dt_float32, {2},
+                                     {reinterpret_cast<gsl::byte *>(strides), sizeof(float)},
+                                     true, host_runtime_tensor::pool_cpu_only)
+                             .expect("create tensor failed");
+    auto group_ptr = hrt::create(nncase::dt_float32, {1},
+                                   {reinterpret_cast<gsl::byte *>(group), sizeof(float)},
+                                   true, host_runtime_tensor::pool_cpu_only)
+                           .expect("create tensor failed");
+    auto fused_clamp_ptr = hrt::create(nncase::dt_float32, {2},
+                                   {reinterpret_cast<gsl::byte *>(fused_clamp), sizeof(float)},
+                                   true, host_runtime_tensor::pool_cpu_only)
+                           .expect("create tensor failed");
     auto output =
-        kernels::stackvm::binary(nncase::runtime::stackvm::binary_op_t::add,
-                                 lhs.impl(), rhs.impl())
+        kernels::stackvm::conv2d(runtime::stackvm::pad_mode_t::constant, input.impl(), weight.impl(), bais.impl(), strides_ptr.impl(), pad_ptr.impl(), dilations_ptr.impl(), group_ptr.impl(), fused_clamp_ptr.impl())
             .expect("conv2d failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 

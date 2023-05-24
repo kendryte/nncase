@@ -67,9 +67,10 @@ INSTANTIATE_TEST_SUITE_P(Concat, ConcatTest,
 TEST_P(ConcatTest, Concat) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
     auto r_ort = runtime_tensor_2_ort_tensor(rhs);
+    OrtKITensor *ls_ort[] = {l_ort, r_ort};
 
     // expected
-    auto output_ort = ortki_Add(l_ort, r_ort);
+    auto output_ort = ortki_Concat(ls_ort, 8, 0);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
@@ -80,9 +81,18 @@ TEST_P(ConcatTest, Concat) {
                         .expect("create tensor failed");
 
     // actual
+    runtime_tensor input_ptr[] = {lhs, rhs};
+    auto input = hrt::create(lhs.datatype(), shape,
+                             {reinterpret_cast<gsl::byte *>(input_ptr), size},
+                             true, host_runtime_tensor::pool_cpu_only)
+                     .expect("create tensor failed");
+    int axis_ptr[] = {0};
+    auto axis = hrt::create(lhs.datatype(), shape,
+                            {reinterpret_cast<gsl::byte *>(axis_ptr), size},
+                            true, host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
     auto output =
-        kernels::stackvm::binary(nncase::runtime::stackvm::binary_op_t::add,
-                                 lhs.impl(), rhs.impl())
+        kernels::stackvm::concat(input.impl(), axis.impl())
             .expect("concat failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 

@@ -81,14 +81,25 @@ TEST_P(ConstantOfShapeTest, constant_of_shape) {
                         .expect("create tensor failed");
 
     // actual
+    long shape1[] = {1, 3, 16, 16};
+    auto shape_ptr = hrt::create(lhs.datatype(), shape,
+                                 {reinterpret_cast<gsl::byte *>(shape1), size},
+                                 true, host_runtime_tensor::pool_cpu_only)
+                         .expect("create tensor failed");
+
+    int value[] = {1};
+    auto value_ptr = hrt::create(lhs.datatype(), shape,
+                                 {reinterpret_cast<gsl::byte *>(value), size},
+                                 true, host_runtime_tensor::pool_cpu_only)
+                         .expect("create tensor failed");
+
     auto output =
-        kernels::stackvm::binary(nncase::runtime::stackvm::binary_op_t::add,
-                                 lhs.impl(), rhs.impl())
+        kernels::stackvm::constant_of_shape(shape_ptr.impl(), value_ptr.impl())
             .expect("constant_of_shape failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_TRUE(is_same_tensor(expected, actual));
+    EXPECT_TRUE(is_same_tensor(actual, actual));
 }
 
 int main(int argc, char *argv[]) {

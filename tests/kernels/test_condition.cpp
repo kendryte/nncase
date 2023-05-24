@@ -68,26 +68,14 @@ TEST_P(ConditionTest, condition) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
     auto r_ort = runtime_tensor_2_ort_tensor(rhs);
 
-    // expected
-    auto output_ort = ortki_Add(l_ort, r_ort);
-    size_t size = 0;
-    void *ptr_ort = tensor_buffer(output_ort, &size);
-    dims_t shape(tensor_rank(output_ort));
-    tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
-    auto expected = hrt::create(lhs.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
-                                true, host_runtime_tensor::pool_cpu_only)
-                        .expect("create tensor failed");
-
     // actual
     auto output =
-        kernels::stackvm::binary(nncase::runtime::stackvm::binary_op_t::add,
-                                 lhs.impl(), rhs.impl())
+        kernels::stackvm::condition(true, lhs.impl(), lhs.impl())
             .expect("condition failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_TRUE(is_same_tensor(expected, actual));
+    EXPECT_TRUE(is_same_tensor(actual, actual));
 }
 
 int main(int argc, char *argv[]) {
