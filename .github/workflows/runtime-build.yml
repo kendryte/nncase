@@ -43,6 +43,8 @@ jobs:
         conan profile new default --detect
         conan profile update settings.compiler.libcxx=libstdc++11 default
         conan profile update settings.compiler.version=10 default
+        echo "CC=gcc-10" >> $GITHUB_ENV
+        echo "CXX=g++-10" >> $GITHUB_ENV
       if: runner.os == 'Linux'
 
     - name: Configure CMake
