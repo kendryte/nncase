@@ -38,6 +38,7 @@ jobs:
 
     - name: Configure Conan (Linux)
       run: |
+        conan remote add -i 0 sunnycase https://conan.sunnycase.moe
         conan profile new default --detect
         conan profile update settings.compiler.libcxx=libstdc++11 default
         echo "CC=gcc-10" >> $GITHUB_ENV
@@ -112,6 +113,7 @@ jobs:
 
    - name: Configure Conan
      run: |
+       conan remote add -i 0 sunnycase https://conan.sunnycase.moe
        conan profile new default --detect
        conan profile update settings.compiler.libcxx=libstdc++11 default
        conan config init
