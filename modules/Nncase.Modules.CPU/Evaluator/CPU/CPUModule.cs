@@ -3,16 +3,16 @@
 
 using DryIoc;
 using Nncase.Hosting;
-using Nncase.Targets;
 
-namespace Nncase;
+namespace Nncase.Evaluator.CPU;
 
 /// <summary>
-/// StackVM module.
+/// CPU module.
 /// </summary>
-internal class StackVMModule : IApplicationPart
+internal class CPUModule : IApplicationPart
 {
     public void ConfigureServices(IRegistrator registrator)
     {
+        registrator.RegisterManyInterface<CPUUnaryEvaluator>(reuse: Reuse.Singleton);
     }
 }

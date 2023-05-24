@@ -12,6 +12,7 @@ using Nncase.CodeGen;
 using Nncase.CodeGen.StackVM;
 using Nncase.IR;
 using Nncase.Passes;
+using Nncase.Passes.Rules;
 using Nncase.Quantization;
 
 namespace Nncase.Targets;
@@ -41,6 +42,10 @@ public class CPUTarget : ITarget
     /// <inheritdoc/>
     public void RegisterTargetDependentPass(IPassManager passManager, CompileOptions options)
     {
+        passManager.AddWithName<EGraphRulesPass>("LowerIR").Configure(p =>
+        {
+            p.Add<LowerUnary>();
+        });
     }
 
     /// <inheritdoc/>

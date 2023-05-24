@@ -8,11 +8,12 @@ using Nncase.Targets;
 namespace Nncase;
 
 /// <summary>
-/// StackVM module.
+/// CPU module.
 /// </summary>
-internal class StackVMModule : IApplicationPart
+internal class CPUModule : IApplicationPart
 {
     public void ConfigureServices(IRegistrator registrator)
     {
+        registrator.Register<ITarget, CPUTarget>(reuse: Reuse.Singleton);
     }
 }
