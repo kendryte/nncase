@@ -60,27 +60,28 @@ TEST_P(ClampTest, clamp) {
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
     auto expected = hrt::create(lhs.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort),
-                                 size}, true,
-                                host_runtime_tensor::pool_cpu_only)
+                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+                                true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
     // actual
     float min[] = {-1.0f};
-    auto min_tensor = hrt::create(nncase::dt_float32, {1},
-                         {reinterpret_cast<gsl::byte *>(min), sizeof(float)},
-                         true, host_runtime_tensor::pool_cpu_only)
-                 .expect("create tensor failed");
+    auto min_tensor =
+        hrt::create(nncase::dt_float32, {1},
+                    {reinterpret_cast<gsl::byte *>(min), sizeof(float)}, true,
+                    host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
 
     float max[] = {-1.0f};
-    auto max_tensor = hrt::create(nncase::dt_float32, {1},
-                         {reinterpret_cast<gsl::byte *>(max), sizeof(float)},
-                         true, host_runtime_tensor::pool_cpu_only)
-                 .expect("create tensor failed");
+    auto max_tensor =
+        hrt::create(nncase::dt_float32, {1},
+                    {reinterpret_cast<gsl::byte *>(max), sizeof(float)}, true,
+                    host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
 
-    auto output =
-        kernels::stackvm::clamp(lhs.impl(), min_tensor.impl(), max_tensor.impl())
-            .expect("clamp failed");
+    auto output = kernels::stackvm::clamp(lhs.impl(), min_tensor.impl(),
+                                          max_tensor.impl())
+                      .expect("clamp failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
