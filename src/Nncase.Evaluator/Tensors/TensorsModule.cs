@@ -1,4 +1,5 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using DryIoc;
@@ -44,7 +45,6 @@ internal class TensorsModule : IApplicationPart
         registrator.RegisterManyInterface<IndexOfEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<FixShapeEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<BucketPadEvaluator>(reuse: Reuse.Singleton);
-        registrator.RegisterManyInterface<BucketSliceEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<RankEvaluator>(reuse: Reuse.Singleton);
     }
 }

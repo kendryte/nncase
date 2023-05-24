@@ -96,10 +96,6 @@ public partial class MarkerCallToFusion<T> : RewriteRule<Pattern> where T : Op
 
     public Expr GetReplace(Marker callMarker)
     {
-        if (Counter > 5)
-        {
-            return null;
-        }
         var call = (Call)(callMarker.Target);
         CurrentCall = call;
         DumpScope.Current.DumpIR(callMarker, "origin", RelPath);
@@ -562,26 +558,14 @@ public partial class ReplaceRewrite : RewriteRule<Pattern>
     public static Expr PreProcess(Marker input, Dictionary<Var, Expr[]> inputInfo,
         Dictionary<Var, IValue> varValues, Dictionary<Var, Expr[]> fusionInputData, Expr[] fusionInputs, int i)
     {
-        // Console.WriteLine($"input type {input.GetType().Name}");
-        // compute FixedShape by new var value
-        // Console.WriteLine("PreProcess");
-
         var fixedShape = ShapeEvaluate(input, inputInfo, varValues, fusionInputData);
         // return new Call(new BucketPad(), input, fixedShape);
-
-        // Console.WriteLine("fixedShape");
-        // Console.WriteLine(string.Join(",", fixedShape));
-        // return new Call(new BucketPad(), input, fixedShape);
-
-        // todo:处理这个问题，用var替换整个fusion的input
-        var originVar = (Var)input.Target;
         var pads = fixedShape - Cast(ShapeOf(fusionInputs[i]), DataTypes.Int32);
         var paddings = Transpose(Stack(new IR.Tuple(Enumerable.Repeat(0, fixedShape.Length).ToArray(), pads), 0),
             new[] { 1, 0 });
         var fixedInput = IR.F.NN.Pad(fusionInputs[i], paddings, PadMode.Constant, Cast(0, input.CheckedDataType));
         var fixedResult = new Call(new FixShape(), fixedInput, fixedShape);
         return fixedResult;
-        // return (originVar, fixedResult);
     }
 
     private static int count = 0;
@@ -680,42 +664,6 @@ public partial class ReplaceRewrite : RewriteRule<Pattern>
         return Slice(call, Enumerable.Repeat(0, rank).ToArray(), Cast(shape, DataTypes.Int32), rank);
     }
 }
-//
-// [RuleGenerator]
-// public partial class MergeChildCallToFusion : IRewriteRule
-// {
-//     // fusion
-//     //   |
-//     //  call
-//
-//     public Expr GetReplace(Call fusionCall, Call call, Fusion fusion)
-//     {
-//         var body = call;
-//         var index = call.Arguments.IndexOf(fusionCall);
-//         var fusionBody = fusion.Body;
-//         var newBody = ReplaceUtility.ReplaceCallParams(body, (index, fusionBody));
-//         var newParams = new[] { };
-//         // 更新effect var？
-//         return new VarFusion(fusion.Name, fusion.ModuleKind, new[] { }, newBody);
-//     }
-// }
-//
-// [RuleGenerator]
-// public partial class MergeParentCallToFusion : IRewriteRule
-// {
-//     //  call
-//     //   |
-//     // fusion
-//     public Expr GetReplace(Call fusionCall, Call call, Fusion fusion)
-//     {
-//         // call input into fusion
-//         var body = (Call)fusion.Body;
-//         var index = fusionCall.Arguments.IndexOf(call);
-//         var newBody = ReplaceUtility.ReplaceCall(body, (index, call));
-//         // input of call is new input
-//         return new VarFusion(fusion.Name, fusion.ModuleKind, new[] { }, newBody);
-//     }
-// }
 
 [RuleGenerator]
 public partial class FusionBucket : RewriteRule<Pattern>
