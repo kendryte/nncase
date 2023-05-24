@@ -352,8 +352,22 @@ result<value_t> nncase::kernels::stackvm::get_item(
         output = target;
         KERNEL_FINISH;
     } else {
+        // used for get dim
         try_input(in_mem, input);
         try_axes(begins_value, index);
+        if(input_tensor->shape().size() == 1) {
+            auto i = begins_value[0];
+            auto out_shape = dims_t{};
+            try_output(out_mem, output, input_tensor->dtype(), out_shape);
+#define RETURN_RESULT(_in_type)                                                \
+    if (cmp_type<_in_type>(input_tensor->dtype())) {                           \
+        OUT_CAST(_in_type, out_mem)[0] = IN_CAST(_in_type, in_mem)[i];                 \
+        return ok(output);\
+    }
+            RETURN_RESULT_SELECT(RETURN_RESULT);
+#undef RETURN_RESULT
+            return err(std::errc::not_supported);
+        }
         auto n = begins_value.size();
         auto in_shape = input_tensor->shape();
         auto ends_value = axes_t(n, 0);
@@ -670,19 +684,51 @@ result<value_t> nncase::kernels::stackvm::require(
     KERNEL_FINISH;
 }
 
-result<value_t> nncase::kernels::stackvm::bucket_pad([[maybe_unused]] value_t input, [[maybe_unused]] value_t shape, [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &)
-{
-    return ok(input);
+result<value_t> nncase::kernels::stackvm::bucket_pad([[maybe_unused]] value_t input, [[maybe_unused]] value_t shape, [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &) {
+//    return err(std::errc::not_supported);
+    try_dims_v(shape);
+    auto in_tensor = input.as<tensor>().unwrap();
+    auto in_shape = in_tensor->shape();
+    auto paddings = std::vector<int>(8);
+    auto rank = shape_value.size();
+    for (int i = 0; i < rank; ++i) {
+        paddings[2 * i + 0] = shape_value[i] - in_shape[i];
+        paddings[2 * i + 1] = 0;
+    }
+    auto pads_shape = dims_t{rank, 2};
+    auto span = gsl::span(reinterpret_cast<gsl::byte*>(paddings.data()), compute_size(pads_shape));
+    try_var(pads, hrt::create(dt_int32, pads_shape, span, false, host_runtime_tensor::pool_cpu_only));
+    auto pad_value = 0;
+    auto data = gsl::span(reinterpret_cast<gsl::byte*>(&pad_value), 1);
+    try_var(pad_v, hrt::create(in_tensor->dtype()->typecode(), dims_t {}, data, false, host_runtime_tensor::pool_cpu_only));
+    return nncase::kernels::stackvm::pad(pad_mode_t::constant, input, pads.impl(), pad_v.impl(), output);
 }
 
 result<value_t> nncase::kernels::stackvm::rank([[maybe_unused]] value_t input, [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &)
 {
-    return ok(input);
+    try_output(out_mem, output, dt_int64, dims_t{});
+    OUT_CAST(int64_t, out_mem)[0] = input.as<tensor>().unwrap()->shape().size();
+    return ok(output);
 }
 
-result<value_t> nncase::kernels::stackvm::index_of([[maybe_unused]] value_t input, [[maybe_unused]] value_t value, [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &)
-{
-    return ok(input);
+result<value_t> nncase::kernels::stackvm::index_of([[maybe_unused]] value_t input, [[maybe_unused]] value_t value, [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &) {
+    return err(std::errc::not_supported);
+    auto t = input.as<tensor>().unwrap();
+    try_output(out_mem, output, dt_int32, dims_t{});
+    try_input(input_mem, input);
+    try_input(value_mem, value);
+
+#define TRANSLATE_TYPE(_ty) \
+    for (int i = 0; i < compute_size(t->shape()); ++i) { \
+        if (input_mem[i] == value_mem[0]) { \
+            OUT_CAST(int64_t, out_mem)[0] = i; \
+            return ok(output);\
+        } \
+    } \
+    OUT_CAST(int64_t, out_mem)[0] = -1; \
+    return ok(output);
+
+    RETURN_RESULT_SELECT(TRANSLATE_TYPE);
 }
 
 result<value_t> nncase::kernels::stackvm::fix_shape([[maybe_unused]] value_t input, [[maybe_unused]] value_t shape, [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &)
