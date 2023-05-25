@@ -308,7 +308,7 @@ public sealed partial class CombineTransposeReduce : IRewriteRule
 
         if (!keepDims)
         {
-            var sortedNewAxis = newAxis;
+            var sortedNewAxis = new List<int>(newAxis);
             sortedNewAxis.Sort((a, b) => b.CompareTo(a));
             for (int i = 0; i < sortedNewAxis.Count; i++)
             {
