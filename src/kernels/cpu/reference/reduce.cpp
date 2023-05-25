@@ -37,20 +37,40 @@ template <class T, class TReducer, class TPostProcess>
 result<void> reduce_impl(TReducer &&reducer, TPostProcess &&post_process, T init_value, const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &axis,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides, bool keep_dims, NNCASE_UNUSED kernel_context &context) noexcept
 {
+    T* tmp_out;
+    if((intptr_t)input == (intptr_t)output)
+    {
+        int out_len = compute_size(out_shape);
+        tmp_out = (T*)malloc(out_len * sizeof(T));
+    }
+    else
+    {
+        tmp_out = output;
+    }
     try_(apply(out_shape, [&](const runtime_shape_t &index) -> result<void> {
-        output[offset(out_strides, index)] = init_value;
+        tmp_out[offset(out_strides, index)] = init_value;
         return ok();
     }));
     try_(apply(in_shape, [&](const runtime_shape_t &index) -> result<void> {
         const auto v = input[offset(in_strides, index)];
         const auto out_index = kernels::detail::get_reduced_offset(index, axis, keep_dims);
-        auto &dest = output[offset(out_strides, out_index)];
+        auto &dest = tmp_out[offset(out_strides, out_index)];
         dest = reducer(dest, v);
         return ok();
     }));
     try_(apply(out_shape, [&](const runtime_shape_t &index) -> result<void> {
-        auto &dest = output[offset(out_strides, index)];
-        dest = post_process(dest);
+        
+        if((intptr_t)input == (intptr_t)output)
+        {
+            auto &src = tmp_out[offset(out_strides, index)];
+            auto &dest = output[offset(out_strides, index)];
+            dest = post_process(src);
+        }
+        else
+        {
+            auto &dest = tmp_out[offset(out_strides, index)];
+            dest = post_process(dest);
+        }
         return ok();
     }));
     return ok();
