@@ -142,6 +142,14 @@ gather(datatype_t type, const gsl::byte *input, gsl::byte *output,
        const dims_t &indices_shape, size_t axis,
        kernel_context &context = default_kernel_context()) noexcept;
 
+NNCASE_API result<void>
+gather_elements(datatype_t type, const gsl::byte *input, gsl::byte *output,
+                const dims_t &in_shape, const dims_t &out_shape,
+                const strides_t &in_strides, const strides_t &out_strides,
+                datatype_t indices_type, const gsl::byte *indices,
+                const dims_t &indices_shape, size_t axis,
+                kernel_context &context = default_kernel_context()) noexcept;
+
 NNCASE_API
 result<void>
 gather_nd(datatype_t type, const gsl::byte *input, gsl::byte *output,
