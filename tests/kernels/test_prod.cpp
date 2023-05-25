@@ -26,9 +26,9 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class ProdTest : public KernelTest,
-                 public ::testing::TestWithParam<
-                     std::tuple<nncase::typecode_t, dims_t>> {
+class ProdTest
+    : public KernelTest,
+      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
   public:
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
@@ -46,13 +46,14 @@ class ProdTest : public KernelTest,
 
 INSTANTIATE_TEST_SUITE_P(Prod, ProdTest,
                          testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 3, 16, 16})));
+                                          testing::Values(dims_t{1, 3, 16,
+                                                                 16})));
 
 TEST_P(ProdTest, Prod) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
 
     // expected
-    int64_t axis[] = { 0, 1, 2, 3 };
+    int64_t axis[] = {0, 1, 2, 3};
     auto output_ort = ortki_ReduceProd(l_ort, axis, 4, 0);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
@@ -64,9 +65,7 @@ TEST_P(ProdTest, Prod) {
                         .expect("create tensor failed");
 
     // actual
-    auto output =
-        kernels::stackvm::prod(lhs.impl())
-            .expect("prod failed");
+    auto output = kernels::stackvm::prod(lhs.impl()).expect("prod failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare

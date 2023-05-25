@@ -67,21 +67,21 @@ TEST_P(OneHotTest, OneHot) {
 
     // expected
     size_t size = 0;
-    float a[] = { 1, 2, 0, 3 };
+    float a[] = {1, 2, 0, 3};
     auto indices = hrt::create(lhs.datatype(), {4},
-                               {reinterpret_cast<gsl::byte *>(a), size},
-                               true, host_runtime_tensor::pool_cpu_only)
+                               {reinterpret_cast<gsl::byte *>(a), size}, true,
+                               host_runtime_tensor::pool_cpu_only)
                        .expect("create tensor failed");
-    float values_ptr[] = {0,1};
+    float values_ptr[] = {0, 1};
     auto values = hrt::create(lhs.datatype(), {2},
                               {reinterpret_cast<gsl::byte *>(values_ptr), size},
                               true, host_runtime_tensor::pool_cpu_only)
                       .expect("create tensor failed");
     float depth_ptr[] = {5.0f};
     auto depth = hrt::create(lhs.datatype(), {1},
-                              {reinterpret_cast<gsl::byte *>(depth_ptr), size},
-                              true, host_runtime_tensor::pool_cpu_only)
-                      .expect("create tensor failed");
+                             {reinterpret_cast<gsl::byte *>(depth_ptr), size},
+                             true, host_runtime_tensor::pool_cpu_only)
+                     .expect("create tensor failed");
     auto indices_ort = runtime_tensor_2_ort_tensor(indices);
     auto values_ort = runtime_tensor_2_ort_tensor(values);
     auto depth_ort = runtime_tensor_2_ort_tensor(depth);
@@ -97,11 +97,13 @@ TEST_P(OneHotTest, OneHot) {
     // actual
     int64_t axis_ptr[] = {1};
     auto axis = hrt::create(dt_int64, {1},
-                                  {reinterpret_cast<gsl::byte *>(axis_ptr), size},
-                                  true, host_runtime_tensor::pool_cpu_only)
-                          .expect("create tensor failed");
-    auto output = kernels::stackvm::one_hot(runtime::stackvm::one_hot_mode_t::process_neg, indices.impl(), depth.impl(), values.impl(), axis.impl())
-            .expect("one_hot failed");
+                            {reinterpret_cast<gsl::byte *>(axis_ptr), size},
+                            true, host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
+    auto output = kernels::stackvm::one_hot(
+                      runtime::stackvm::one_hot_mode_t::process_neg,
+                      indices.impl(), depth.impl(), values.impl(), axis.impl())
+                      .expect("one_hot failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare

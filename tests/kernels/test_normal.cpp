@@ -90,15 +90,16 @@ TEST_P(NormalTest, normal) {
                              true, host_runtime_tensor::pool_cpu_only)
                      .expect("create tensor failed");
     auto seed = hrt::create(lhs.datatype(), shape,
-                             {reinterpret_cast<gsl::byte *>(seed_ptr), size},
-                             true, host_runtime_tensor::pool_cpu_only)
-                     .expect("create tensor failed");
-    auto shape0 = hrt::create(lhs.datatype(), shape,
-                            {reinterpret_cast<gsl::byte *>(shape_ptr), size},
+                            {reinterpret_cast<gsl::byte *>(seed_ptr), size},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
+    auto shape0 = hrt::create(lhs.datatype(), shape,
+                              {reinterpret_cast<gsl::byte *>(shape_ptr), size},
+                              true, host_runtime_tensor::pool_cpu_only)
+                      .expect("create tensor failed");
     auto output =
-        kernels::stackvm::normal(dt_float32, mean.impl(), scale.impl(), seed.impl(), shape0.impl())
+        kernels::stackvm::normal(dt_float32, mean.impl(), scale.impl(),
+                                 seed.impl(), shape0.impl())
             .expect("normal failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 

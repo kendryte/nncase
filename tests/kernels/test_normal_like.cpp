@@ -85,8 +85,8 @@ TEST_P(NormalLikeTest, normal_like) {
                               true, host_runtime_tensor::pool_cpu_only)
                       .expect("create tensor failed");
     auto output =
-        kernels::stackvm::normal_like(dt_float32, lhs.impl(), mean.impl(), scale.impl(),
-                                 seed.impl())
+        kernels::stackvm::normal_like(dt_float32, lhs.impl(), mean.impl(),
+                                      scale.impl(), seed.impl())
             .expect("normal_like failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 

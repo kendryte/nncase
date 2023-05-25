@@ -26,9 +26,9 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class PadTest : public KernelTest,
-                public ::testing::TestWithParam<
-                    std::tuple<nncase::typecode_t, dims_t>> {
+class PadTest
+    : public KernelTest,
+      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
   public:
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
@@ -52,10 +52,10 @@ TEST_P(PadTest, Pad) {
 
     // expected
     size_t size = 0;
-    int64_t pad_ptr[] = { 0, 0, 1, 2, 2, 4, 5, 6 };
+    int64_t pad_ptr[] = {0, 0, 1, 2, 2, 4, 5, 6};
     auto pad = hrt::create(dt_int64, {4, 2},
-                           {reinterpret_cast<gsl::byte *>(pad_ptr), size},
-                           true, host_runtime_tensor::pool_cpu_only)
+                           {reinterpret_cast<gsl::byte *>(pad_ptr), size}, true,
+                           host_runtime_tensor::pool_cpu_only)
                    .expect("create tensor failed");
     float value_ptr[] = {1.0f};
     auto value = hrt::create(dt_float32, {1},
@@ -75,9 +75,9 @@ TEST_P(PadTest, Pad) {
                         .expect("create tensor failed");
 
     // actual
-    auto output =
-        kernels::stackvm::pad(runtime::stackvm::pad_mode_t::constant, lhs.impl(), pad.impl(), value.impl())
-            .expect("pad failed");
+    auto output = kernels::stackvm::pad(runtime::stackvm::pad_mode_t::constant,
+                                        lhs.impl(), pad.impl(), value.impl())
+                      .expect("pad failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
