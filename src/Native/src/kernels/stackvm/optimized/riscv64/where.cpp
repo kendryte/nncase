@@ -150,7 +150,6 @@ int tenary_impl(const uint8_t *input_cond, const float *input_b,
                 const float *input_c, float *output,
                 const dims_t &in_cond_shape, const dims_t &in_b_shape,
                 const dims_t &in_c_shape, const dims_t &out_shape) {
-
     int len_cond = (int)compute_size(in_cond_shape);
     int len_b = (int)compute_size(in_b_shape);
     int len_c = (int)compute_size(in_c_shape);
@@ -183,23 +182,20 @@ result<void> nncase::kernels::stackvm::optimized::where(
     // sizeof(bool) != 1 的情况结果未定义。
     assert(sizeof(bool) == 1);
     const uint8_t *cond_pointer = (const uint8_t *)cond;
-#define WHERE_IMPL(_ty, ret_value)                                             \
-    {                                                                          \
+#define WHERE_IMPL(_ty)                                             \
         auto *input_x = IN_CAST(_ty, x);                                       \
         auto *input_y = IN_CAST(_ty, y);                                       \
         auto *out = OUT_CAST(_ty, output);                                     \
-        ret_value = tenary_impl(cond_pointer, input_x, input_y, out,           \
-                                cond_shape, x_shape, y_shape, out_shape);      \
-    }
-    int ret_flag = 0;
+        tenary_impl(cond_pointer, input_x, input_y, out,           \
+                                cond_shape, x_shape, y_shape, out_shape);
+
     try_var(typecode, to_typecode(dt));
     switch (typecode) {
-    case dt_float32:
-        WHERE_IMPL(float, ret_flag);
-    default:;
-    }
-    if (!ret_flag) {
+    case dt_float32: {
+        WHERE_IMPL(float);
         return ok();
+    }
+    default:;
     }
 #endif
 
