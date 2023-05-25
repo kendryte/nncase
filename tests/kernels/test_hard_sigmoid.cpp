@@ -29,47 +29,43 @@ using namespace ortki;
 
 class HardSigmoidTest : public KernelTest,
                         public ::testing::TestWithParam<
-                            std::tuple<nncase::typecode_t, dims_t, dims_t>> {
+                            std::tuple<nncase::typecode_t, dims_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape, r_shape] = GetParam();
+        auto &&[typecode, l_shape] = GetParam();
 
         lhs = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
         init_tensor(lhs);
-
-        rhs = hrt::create(typecode, r_shape, host_runtime_tensor::pool_cpu_only)
-                  .expect("create tensor failed");
-        init_tensor(rhs);
     }
 
     void TearDown() override {}
 
   protected:
     runtime_tensor lhs;
-    runtime_tensor rhs;
 };
 
 INSTANTIATE_TEST_SUITE_P(HardSigmoid, HardSigmoidTest,
-                         testing::Combine(testing::Values(dt_float32, dt_int32,
-                                                          dt_int64),
-                                          testing::Values(dims_t{1, 3, 16, 16},
-                                                          /*dims_t { 3, 16, 16
-                                                          }, dims_t { 16, 16 },
-                                                          dims_t { 16 },*/
-                                                          dims_t{1}),
-                                          testing::Values(dims_t{1, 3, 16, 16},
-                                                          /*dims_t { 3, 16, 16
-                                                          }, dims_t { 16, 16 },
-                                                          dims_t { 16 },*/
-                                                          dims_t{1})));
+                         testing::Combine(testing::Values(dt_float32),
+                                          testing::Values(dims_t{1, 3, 16, 16})));
 
 TEST_P(HardSigmoidTest, hard_sigmoid) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
-    auto r_ort = runtime_tensor_2_ort_tensor(rhs);
 
     // expected
-    auto output_ort = ortki_Add(l_ort, r_ort);
+    float alpha_ptr[] = {1.2f};
+    auto alpha = hrt::create(nncase::dt_float32, {1},
+                         {reinterpret_cast<gsl::byte *>(alpha_ptr), sizeof(float)},
+                         true, host_runtime_tensor::pool_cpu_only)
+                 .expect("create tensor failed");
+
+    float gamma_ptr[] = {1.3f};
+    auto gamma = hrt::create(nncase::dt_float32, {1},
+                         {reinterpret_cast<gsl::byte *>(gamma_ptr), sizeof(float)},
+                         true, host_runtime_tensor::pool_cpu_only)
+                 .expect("create tensor failed");
+
+    auto output_ort = ortki_HardSigmoid(l_ort, 1.2f, 1.3f);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
@@ -81,8 +77,7 @@ TEST_P(HardSigmoidTest, hard_sigmoid) {
 
     // actual
     auto output =
-        kernels::stackvm::binary(nncase::runtime::stackvm::binary_op_t::add,
-                                 lhs.impl(), rhs.impl())
+        kernels::stackvm::hard_sigmoid(lhs.impl(), alpha.impl(), gamma.impl())
             .expect("hard_sigmoid failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
