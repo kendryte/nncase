@@ -71,9 +71,8 @@ TEST_P(MatMulTest, mat_mul) {
                         .expect("create tensor failed");
 
     // actual
-    auto output =
-        kernels::stackvm::mat_mul(lhs.impl(), rhs.impl())
-            .expect("matmul failed");
+    auto output = kernels::stackvm::mat_mul(lhs.impl(), rhs.impl())
+                      .expect("matmul failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare

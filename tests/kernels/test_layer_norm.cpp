@@ -27,9 +27,10 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class LayerNormTest : public KernelTest,
-                      public ::testing::TestWithParam<
-                          std::tuple<nncase::typecode_t, dims_t, dims_t, dims_t>> {
+class LayerNormTest
+    : public KernelTest,
+      public ::testing::TestWithParam<
+          std::tuple<nncase::typecode_t, dims_t, dims_t, dims_t>> {
   public:
     void SetUp() override {
         auto &&[typecode, l_shape, scale_shape, b_shape] = GetParam();
@@ -38,12 +39,13 @@ class LayerNormTest : public KernelTest,
                   .expect("create tensor failed");
         init_tensor(lhs);
 
-        scale = hrt::create(typecode, scale_shape, host_runtime_tensor::pool_cpu_only)
+        scale = hrt::create(typecode, scale_shape,
+                            host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
         init_tensor(scale);
 
         b = hrt::create(typecode, b_shape, host_runtime_tensor::pool_cpu_only)
-                    .expect("create tensor failed");
+                .expect("create tensor failed");
         init_tensor(b);
     }
 
@@ -67,20 +69,23 @@ TEST_P(LayerNormTest, layer_norm) {
     auto b_ort = runtime_tensor_2_ort_tensor(b);
 
     // expected
-    auto output_ort = ortki_LayerNormalization(l_ort, scale_ort, b_ort, 0, 1e-05f, 0);
+    auto output_ort =
+        ortki_LayerNormalization(l_ort, scale_ort, b_ort, 0, 1e-05f, 0);
     size_t size = 0;
-    void *ptr_ort = tensor_buffer(tensor_seq_get_value(output_ort, size), &size);
+    void *ptr_ort =
+        tensor_buffer(tensor_seq_get_value(output_ort, size), &size);
     dims_t shape(tensor_seq_size(output_ort));
-    tensor_shape(tensor_seq_get_value(output_ort, size), reinterpret_cast<int64_t *>(shape.data()));
+    tensor_shape(tensor_seq_get_value(output_ort, size),
+                 reinterpret_cast<int64_t *>(shape.data()));
     auto expected = hrt::create(lhs.datatype(), shape,
                                 {reinterpret_cast<gsl::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
     // actual
-    auto output =
-        kernels::stackvm::layer_norm(0, 1e-05f, lhs.impl(), scale.impl(), b.impl())
-            .expect("layer_norm failed");
+    auto output = kernels::stackvm::layer_norm(0, 1e-05f, lhs.impl(),
+                                               scale.impl(), b.impl())
+                      .expect("layer_norm failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare

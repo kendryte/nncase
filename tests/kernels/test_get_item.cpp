@@ -27,9 +27,9 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class GetItemTest : public KernelTest,
-                    public ::testing::TestWithParam<
-                        std::tuple<nncase::typecode_t, dims_t>> {
+class GetItemTest
+    : public KernelTest,
+      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
   public:
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
@@ -57,13 +57,13 @@ TEST_P(GetItemTest, get_item) {
 
     // actual
     float index_ptr[] = {0.5f};
-    auto index = hrt::create(nncase::dt_float32, {1},
-                         {reinterpret_cast<gsl::byte *>(index_ptr), sizeof(float)},
-                         true, host_runtime_tensor::pool_cpu_only)
-                 .expect("create tensor failed");
-    auto output =
-        kernels::stackvm::get_item(lhs.impl(), index.impl())
-            .expect("get_item failed");
+    auto index =
+        hrt::create(nncase::dt_float32, {1},
+                    {reinterpret_cast<gsl::byte *>(index_ptr), sizeof(float)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
+    auto output = kernels::stackvm::get_item(lhs.impl(), index.impl())
+                      .expect("get_item failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
