@@ -29,47 +29,42 @@ using namespace ortki;
 
 class FakeQuantizeTest : public KernelTest,
                          public ::testing::TestWithParam<
-                             std::tuple<nncase::typecode_t, dims_t, dims_t>> {
+                             std::tuple<nncase::typecode_t, dims_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape, r_shape] = GetParam();
+        auto &&[typecode, l_shape] = GetParam();
 
         lhs = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
         init_tensor(lhs);
-
-        rhs = hrt::create(typecode, r_shape, host_runtime_tensor::pool_cpu_only)
-                  .expect("create tensor failed");
-        init_tensor(rhs);
     }
 
     void TearDown() override {}
 
   protected:
     runtime_tensor lhs;
-    runtime_tensor rhs;
 };
 
 INSTANTIATE_TEST_SUITE_P(FakeQuantize, FakeQuantizeTest,
-                         testing::Combine(testing::Values(dt_float32, dt_int32,
-                                                          dt_int64),
-                                          testing::Values(dims_t{1, 3, 16, 16},
-                                                          /*dims_t { 3, 16, 16
-                                                          }, dims_t { 16, 16 },
-                                                          dims_t { 16 },*/
-                                                          dims_t{1}),
-                                          testing::Values(dims_t{1, 3, 16, 16},
-                                                          /*dims_t { 3, 16, 16
-                                                          }, dims_t { 16, 16 },
-                                                          dims_t { 16 },*/
-                                                          dims_t{1})));
+                         testing::Combine(testing::Values(dt_float32),
+                                          testing::Values(dims_t{1, 3, 16, 16})));
 
 TEST_P(FakeQuantizeTest, fake_quantize) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
-    auto r_ort = runtime_tensor_2_ort_tensor(rhs);
 
     // expected
-    auto output_ort = ortki_Add(l_ort, r_ort);
+    int8_t zero_point[] = {127};
+    auto zero_point_ptr = hrt::create(nncase::dt_int8, {1},
+                                      {reinterpret_cast<gsl::byte *>(zero_point), sizeof(float)},
+                                      true, host_runtime_tensor::pool_cpu_only)
+                              .expect("create tensor failed");
+
+    float scale[] = {0.01f};
+    auto scale_ptr = hrt::create(nncase::dt_float32, {1},
+                                 {reinterpret_cast<gsl::byte *>(scale), sizeof(float)},
+                                 true, host_runtime_tensor::pool_cpu_only)
+                         .expect("create tensor failed");
+    auto output_ort = ortki_QuantizeLinear(l_ort, runtime_tensor_2_ort_tensor(zero_point_ptr), runtime_tensor_2_ort_tensor(scale_ptr), 0);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
@@ -80,10 +75,14 @@ TEST_P(FakeQuantizeTest, fake_quantize) {
                         .expect("create tensor failed");
 
     // actual
+    float dequant_param[] = {127, 0.01f};
+    auto dequant_param_ptr = hrt::create(nncase::dt_float32, {2},
+                                         {reinterpret_cast<gsl::byte *>(dequant_param), sizeof(float)},
+                                         true, host_runtime_tensor::pool_cpu_only)
+                                 .expect("create tensor failed");
     auto output =
-        kernels::stackvm::binary(nncase::runtime::stackvm::binary_op_t::add,
-                                 lhs.impl(), rhs.impl())
-            .expect("fake_quantize failed");
+        kernels::stackvm::fake_quantize(dt_float32, lhs.impl(), dequant_param_ptr.impl())
+            .expect("dequantize failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare

@@ -29,60 +29,61 @@ using namespace ortki;
 
 class GatherTest : public KernelTest,
                    public ::testing::TestWithParam<
-                       std::tuple<nncase::typecode_t, dims_t, dims_t>> {
+                       std::tuple<nncase::typecode_t, dims_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape, r_shape] = GetParam();
+        auto &&[typecode, shape] = GetParam();
 
-        lhs = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
-                  .expect("create tensor failed");
-        init_tensor(lhs);
+        size_t size = 0;
+        int input_array[] = { 0, 1, 2, 3 };
+        input = hrt::create(dt_int32, shape,
+                                    {reinterpret_cast<gsl::byte *>(input_array), size},
+                                    true, host_runtime_tensor::pool_cpu_only)
+                            .expect("create tensor failed");
 
-        rhs = hrt::create(typecode, r_shape, host_runtime_tensor::pool_cpu_only)
-                  .expect("create tensor failed");
-        init_tensor(rhs);
+        long indices_array[] = { 0, 0, 1, 1 };
+        indices = hrt::create(dt_int64, shape,
+                                 {reinterpret_cast<gsl::byte *>(indices_array), size},
+                                 true, host_runtime_tensor::pool_cpu_only)
+                         .expect("create tensor failed");
+
+        long batchDims_array[] = { 0 };
+        batchDims = hrt::create(dt_int64, shape,
+                              {reinterpret_cast<gsl::byte *>(batchDims_array), size},
+                              true, host_runtime_tensor::pool_cpu_only)
+                      .expect("create tensor failed");
     }
 
     void TearDown() override {}
 
   protected:
-    runtime_tensor lhs;
-    runtime_tensor rhs;
+    runtime_tensor input;
+    runtime_tensor indices;
+    runtime_tensor batchDims;
 };
 
 INSTANTIATE_TEST_SUITE_P(Gather, GatherTest,
-                         testing::Combine(testing::Values(dt_float32, dt_int32,
-                                                          dt_int64),
-                                          testing::Values(dims_t{1, 3, 16, 16},
-                                                          /*dims_t { 3, 16, 16
-                                                          }, dims_t { 16, 16 },
-                                                          dims_t { 16 },*/
-                                                          dims_t{1}),
-                                          testing::Values(dims_t{1, 3, 16, 16},
-                                                          /*dims_t { 3, 16, 16
-                                                          }, dims_t { 16, 16 },
-                                                          dims_t { 16 },*/
-                                                          dims_t{1})));
+                         testing::Combine(testing::Values(dt_int32,dt_int64),
+                                          testing::Values(dims_t{2, 2})));
 
 TEST_P(GatherTest, gather) {
-    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
-    auto r_ort = runtime_tensor_2_ort_tensor(rhs);
+    auto input_ort = runtime_tensor_2_ort_tensor(input);
+    auto indices_ort = runtime_tensor_2_ort_tensor(indices);
 
     // expected
-    auto output_ort = ortki_Add(l_ort, r_ort);
+    auto output_ort = ortki_Gather(input_ort, indices_ort, 0);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
-    auto expected = hrt::create(lhs.datatype(), shape,
+    auto expected = hrt::create(input.datatype(), shape,
                                 {reinterpret_cast<gsl::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
     // actual
     auto output =
-        kernels::stackvm::binary(nncase::runtime::stackvm::binary_op_t::add,
-                                 lhs.impl(), rhs.impl())
+        kernels::stackvm::gather(input.impl(), batchDims.impl(), indices.impl())
             .expect("gather failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
