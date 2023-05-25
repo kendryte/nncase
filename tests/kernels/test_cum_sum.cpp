@@ -27,9 +27,9 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class CumSumTest : public KernelTest,
-                   public ::testing::TestWithParam<
-                       std::tuple<nncase::typecode_t, dims_t>> {
+class CumSumTest
+    : public KernelTest,
+      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
   public:
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
@@ -47,17 +47,19 @@ class CumSumTest : public KernelTest,
 
 INSTANTIATE_TEST_SUITE_P(cum_sum, CumSumTest,
                          testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 3, 16, 16})));
+                                          testing::Values(dims_t{1, 3, 16,
+                                                                 16})));
 
 TEST_P(CumSumTest, cum_sum) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
 
     // expected
     float axis[] = {0};
-    auto axis_ptr = hrt::create(nncase::dt_float32, {2},
-                                {reinterpret_cast<gsl::byte *>(axis), sizeof(float)},
-                                true, host_runtime_tensor::pool_cpu_only)
-                        .expect("create tensor failed");
+    auto axis_ptr =
+        hrt::create(nncase::dt_float32, {2},
+                    {reinterpret_cast<gsl::byte *>(axis), sizeof(float)}, true,
+                    host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
     auto axis_ort = runtime_tensor_2_ort_tensor(axis_ptr);
     auto output_ort = ortki_CumSum(l_ort, axis_ort, 0, 0);
     size_t size = 0;
@@ -71,17 +73,20 @@ TEST_P(CumSumTest, cum_sum) {
 
     // actual
     float exclusive[] = {0};
-    auto exclusive_ptr = hrt::create(nncase::dt_float32, {2},
-                                {reinterpret_cast<gsl::byte *>(exclusive), sizeof(float)},
-                                true, host_runtime_tensor::pool_cpu_only)
-                        .expect("create tensor failed");
+    auto exclusive_ptr =
+        hrt::create(nncase::dt_float32, {2},
+                    {reinterpret_cast<gsl::byte *>(exclusive), sizeof(float)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
     float reverse[] = {0};
-    auto reverse_ptr = hrt::create(nncase::dt_float32, {2},
-                                {reinterpret_cast<gsl::byte *>(reverse), sizeof(float)},
-                                true, host_runtime_tensor::pool_cpu_only)
-                        .expect("create tensor failed");
+    auto reverse_ptr =
+        hrt::create(nncase::dt_float32, {2},
+                    {reinterpret_cast<gsl::byte *>(reverse), sizeof(float)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
     auto output =
-        kernels::stackvm::cum_sum(lhs.impl(), axis_ptr.impl(), exclusive_ptr.impl(), reverse_ptr.impl())
+        kernels::stackvm::cum_sum(lhs.impl(), axis_ptr.impl(),
+                                  exclusive_ptr.impl(), reverse_ptr.impl())
             .expect("cum_sum failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
