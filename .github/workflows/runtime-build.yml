@@ -34,12 +34,15 @@ jobs:
         python-version: 3.7
 
     - name: Install Conan
-      run: pip install conan==1.58
+      run: |
+        pip install conan==1.58
+        conan remote add -i 0 sunnycase https://conan.sunnycase.moe
 
     - name: Configure Conan (Linux)
       run: |
         conan profile new default --detect
         conan profile update settings.compiler.libcxx=libstdc++11 default
+        conan profile update settings.compiler.version=10 default
         echo "CC=gcc-10" >> $GITHUB_ENV
         echo "CXX=g++-10" >> $GITHUB_ENV
       if: runner.os == 'Linux'
@@ -47,11 +50,11 @@ jobs:
     - name: Configure CMake
       shell: bash
       run: |
-        cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=${{matrix.config.buildType}} ${{matrix.config.cmakeArgs}} -DBUILDING_RUNTIME=TRUE -DBUILD_PYTHON_BINDING=OFF -DPython3_ROOT_DIR=${pythonLocation} -DBUILD_TESTING=ON
+        conan install . -if build --build=missing -s build_type=${{matrix.config.buildType}} --profile=default -o runtime=True -o python=False -o tests=True -s compiler.cppstd=17
 
     - name: Build & Install
       run: |
-        cmake --build build --config ${{matrix.config.buildType}}
+        conan build . -if build -bf build
         cmake --install build --prefix install
 
     - name: Test
@@ -98,8 +101,8 @@ jobs:
    - name: Install toolchain and QEMU
      shell: bash
      run: |
-       wget https://dav.sunnycase.moe/d/ci/nncase/${{matrix.config.toolchain_file}}.xz -O toolchain.xz
-       sudo tar xf toolchain.xz -C $GITHUB_WORKSPACE
+       wget https://dav.sunnycase.moe/d/ci/nncase/${{matrix.config.toolchain_file}}.tar.xz -O toolchain.tar.xz
+       sudo tar xf toolchain.tar.xz -C $GITHUB_WORKSPACE
        echo "${{matrix.config.toolchain_env}}=$GITHUB_WORKSPACE/${{matrix.config.toolchain_file}}" >> $GITHUB_ENV
 
        wget https://dav.sunnycase.moe/d/ci/nncase/${{matrix.config.qemu}}.tgz -O qemu.tgz
@@ -108,7 +111,9 @@ jobs:
        echo "TESTS_EXECUTABLE_LOADER_ARGUMENTS=${{matrix.config.loader_args}};$GITHUB_WORKSPACE/${{matrix.config.toolchain_file}}/sysroot" >> $GITHUB_ENV
 
    - name: Install Conan
-     run: pip install conan==1.58
+     run: |
+       pip install conan==1.58
+       conan remote add -i 0 sunnycase https://conan.sunnycase.moe
 
    - name: Configure Conan
      run: |
@@ -119,11 +124,11 @@ jobs:
 
    - name: Configure CMake
      run: |
-       cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=${{matrix.config.buildType}} ${{matrix.config.cmakeArgs}} -DBUILDING_RUNTIME=TRUE -DBUILD_PYTHON_BINDING=OFF -DPython3_ROOT_DIR=${pythonLocation} -DBUILD_TESTING=ON -DCMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/toolchains/${{matrix.config.toolchain}}.toolchain.cmake
+       conan install . -if build --build=missing -s build_type=${{matrix.config.buildType}} --profile:host=toolchains/riscv64-unknown-linux.profile.jinja --profile:build=default -o runtime=True -o python=False -o tests=True -s compiler.cppstd=17
 
    - name: Build & Install
      run: |
-       cmake --build build --config ${{matrix.config.buildType}}
+       conan build . -if build -bf build
        cmake --install build --prefix install
 
    - name: Test

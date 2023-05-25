@@ -27,19 +27,18 @@
 #include <random>
 #include <string>
 
-using namespace nncase;
-using namespace nncase::runtime;
-using namespace nncase::kernels;
-
+namespace nncase {
 class KernelTest {
   public:
-    template <typename T> T &get(runtime_tensor &t, const dims_t &index) {
-        auto map = std::move(hrt::map(t, map_read).unwrap_or_throw());
+    template <typename T>
+    T &get(runtime::runtime_tensor &t, const dims_t &index) {
+        auto map = std::move(
+            runtime::hrt::map(t, runtime::map_read).unwrap_or_throw());
         auto data = map.buffer().as_span<T>();
-        return data[offset(t.strides(), index)];
+        return data[kernels::offset(t.strides(), index)];
     }
 
-    virtual void init_tensor(runtime_tensor &tensor) {
+    virtual void init_tensor(runtime::runtime_tensor &tensor) {
         auto dtype = tensor.datatype();
         switch (dtype) {
         case dt_int8: {
@@ -163,8 +162,10 @@ class KernelTest {
         }
     }
 
-    ortki::OrtKITensor *runtime_tensor_2_ort_tensor(runtime_tensor &tensor) {
-        auto mapped = std::move(hrt::map(tensor, map_read).unwrap());
+    ortki::OrtKITensor *
+    runtime_tensor_2_ort_tensor(runtime::runtime_tensor &tensor) {
+        auto mapped =
+            std::move(runtime::hrt::map(tensor, runtime::map_read).unwrap());
         void *buffer = reinterpret_cast<void *>(mapped.buffer().data());
 
         ortki::DataType ort_type = ortki::DataType_FLOAT;
@@ -223,7 +224,8 @@ class KernelTest {
         return make_tensor(buffer, ort_type, shape, shape_size);
     }
 
-    bool is_same_tensor(runtime_tensor &lhs, runtime_tensor &rhs) {
+    bool is_same_tensor(runtime::runtime_tensor &lhs,
+                        runtime::runtime_tensor &rhs) {
         if (lhs.shape() != rhs.shape()) {
             return false;
         }
@@ -345,3 +347,4 @@ class KernelTest {
         std::cout << std::endl;
     }
 };
+} // namespace nncase
