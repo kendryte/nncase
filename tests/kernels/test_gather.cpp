@@ -27,31 +27,33 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class GatherTest : public KernelTest,
-                   public ::testing::TestWithParam<
-                       std::tuple<nncase::typecode_t, dims_t>> {
+class GatherTest
+    : public KernelTest,
+      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
   public:
     void SetUp() override {
         auto &&[typecode, shape] = GetParam();
 
         size_t size = 0;
-        int input_array[] = { 0, 1, 2, 3 };
+        int input_array[] = {0, 1, 2, 3};
         input = hrt::create(dt_int32, shape,
-                                    {reinterpret_cast<gsl::byte *>(input_array), size},
-                                    true, host_runtime_tensor::pool_cpu_only)
-                            .expect("create tensor failed");
+                            {reinterpret_cast<gsl::byte *>(input_array), size},
+                            true, host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
 
-        long indices_array[] = { 0, 0, 1, 1 };
-        indices = hrt::create(dt_int64, shape,
-                                 {reinterpret_cast<gsl::byte *>(indices_array), size},
-                                 true, host_runtime_tensor::pool_cpu_only)
-                         .expect("create tensor failed");
+        long indices_array[] = {0, 0, 1, 1};
+        indices =
+            hrt::create(dt_int64, shape,
+                        {reinterpret_cast<gsl::byte *>(indices_array), size},
+                        true, host_runtime_tensor::pool_cpu_only)
+                .expect("create tensor failed");
 
-        long batchDims_array[] = { 0 };
-        batchDims = hrt::create(dt_int64, shape,
-                              {reinterpret_cast<gsl::byte *>(batchDims_array), size},
-                              true, host_runtime_tensor::pool_cpu_only)
-                      .expect("create tensor failed");
+        long batchDims_array[] = {0};
+        batchDims =
+            hrt::create(dt_int64, shape,
+                        {reinterpret_cast<gsl::byte *>(batchDims_array), size},
+                        true, host_runtime_tensor::pool_cpu_only)
+                .expect("create tensor failed");
     }
 
     void TearDown() override {}
@@ -63,7 +65,7 @@ class GatherTest : public KernelTest,
 };
 
 INSTANTIATE_TEST_SUITE_P(Gather, GatherTest,
-                         testing::Combine(testing::Values(dt_int32,dt_int64),
+                         testing::Combine(testing::Values(dt_int32, dt_int64),
                                           testing::Values(dims_t{2, 2})));
 
 TEST_P(GatherTest, gather) {

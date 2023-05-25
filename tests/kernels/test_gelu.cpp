@@ -27,9 +27,9 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class GeluTest : public KernelTest,
-                 public ::testing::TestWithParam<
-                     std::tuple<nncase::typecode_t, dims_t>> {
+class GeluTest
+    : public KernelTest,
+      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
   public:
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
@@ -47,7 +47,8 @@ class GeluTest : public KernelTest,
 
 INSTANTIATE_TEST_SUITE_P(Gelu, GeluTest,
                          testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 3, 16, 16})));
+                                          testing::Values(dims_t{1, 3, 16,
+                                                                 16})));
 
 TEST_P(GeluTest, gelu) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
@@ -57,7 +58,7 @@ TEST_P(GeluTest, gelu) {
     auto a = hrt::create(nncase::dt_float32, {1},
                          {reinterpret_cast<gsl::byte *>(a_ptr), sizeof(float)},
                          true, host_runtime_tensor::pool_cpu_only)
-        .expect("create tensor failed");
+                 .expect("create tensor failed");
     auto a_ort = runtime_tensor_2_ort_tensor(a);
 
     float b_ptr[] = {2.0f};
@@ -75,7 +76,11 @@ TEST_P(GeluTest, gelu) {
     auto c_ort = runtime_tensor_2_ort_tensor(c);
 
     auto scaledInput = ortki_Mul(a_ort, l_ort);
-    auto output_ort = ortki_Mul(a_ort, ortki_Mul(scaledInput, ortki_Add(ortki_Erf(ortki_Div(scaledInput, ortki_Sqrt(b_ort))), c_ort)));
+    auto output_ort = ortki_Mul(
+        a_ort,
+        ortki_Mul(scaledInput, ortki_Add(ortki_Erf(ortki_Div(
+                                             scaledInput, ortki_Sqrt(b_ort))),
+                                         c_ort)));
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
