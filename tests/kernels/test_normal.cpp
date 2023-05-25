@@ -65,11 +65,10 @@ INSTANTIATE_TEST_SUITE_P(Normal, NormalTest,
                                                           dims_t{1})));
 
 TEST_P(NormalTest, normal) {
-    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
-    auto r_ort = runtime_tensor_2_ort_tensor(rhs);
 
     // expected
-    auto output_ort = ortki_Add(l_ort, r_ort);
+    int64_t shape_ptr[] = {1, 3, 16, 16};
+    auto output_ort = ortki_RandomNormal(1, 0.5f, 1.0f, 1.0f, shape_ptr, 4);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
@@ -80,9 +79,27 @@ TEST_P(NormalTest, normal) {
                         .expect("create tensor failed");
 
     // actual
+    float mean_ptr[] = {0.5f};
+    float scale_ptr[] = {1.0f};
+    float seed_ptr[] = {1.0f};
+    auto mean = hrt::create(lhs.datatype(), shape,
+                            {reinterpret_cast<gsl::byte *>(mean_ptr), size},
+                            true, host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
+    auto scale = hrt::create(lhs.datatype(), shape,
+                             {reinterpret_cast<gsl::byte *>(scale_ptr), size},
+                             true, host_runtime_tensor::pool_cpu_only)
+                     .expect("create tensor failed");
+    auto seed = hrt::create(lhs.datatype(), shape,
+                             {reinterpret_cast<gsl::byte *>(seed_ptr), size},
+                             true, host_runtime_tensor::pool_cpu_only)
+                     .expect("create tensor failed");
+    auto shape0 = hrt::create(lhs.datatype(), shape,
+                            {reinterpret_cast<gsl::byte *>(shape_ptr), size},
+                            true, host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
     auto output =
-        kernels::stackvm::binary(nncase::runtime::stackvm::binary_op_t::add,
-                                 lhs.impl(), rhs.impl())
+        kernels::stackvm::normal(dt_float32, mean.impl(), scale.impl(), seed.impl(), shape0.impl())
             .expect("normal failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
