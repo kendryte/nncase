@@ -1,25 +1,10 @@
 enable_testing()
 
-add_definitions(-DONNX_ML)
-add_definitions(-DONNX_NAMESPACE=onnx)
-set(CMAKE_CXX_FLAGS "-w")
-set(CMAKE_CXX_STANDARD 17)
-
-include_directories(${PROJECT_SOURCE_DIR}/third_party/ortki/include/include)
-include_directories(${PROJECT_SOURCE_DIR}/third_party/ortki/include/onnxruntime)
-include_directories(${PROJECT_SOURCE_DIR}/third_party/ortki/include/onnxruntime/include/onnxruntime)
-include_directories(${PROJECT_SOURCE_DIR}/third_party/ortki/include/onnxruntime/cmake/)
-include_directories(${PROJECT_SOURCE_DIR}/third_party/ortki/include/onnxruntime/cmake/external/onnx)
-include_directories(${PROJECT_SOURCE_DIR}/third_party/ortki/include/onnxruntime/cmake/external/protobuf/src)
-include_directories(${PROJECT_SOURCE_DIR}/third_party/ortki/include/onnxruntime/cmake/external/mp11/include)
-include_directories(${PROJECT_SOURCE_DIR}/third_party/ortki/include/onnxruntime/cmake/external/nsync/public)
-include_directories(${PROJECT_SOURCE_DIR}/third_party/ortki/include/onnxruntime/onnxruntime)
-include_directories(${PROJECT_SOURCE_DIR}/third_party/ortki/include/_deps/abseil_cpp-src)
-link_directories(${PROJECT_SOURCE_DIR}/third_party/ortki/lib/${CMAKE_SYSTEM_PROCESSOR})
+find_package(ortki)
 
 macro(add_test_exec name)
     add_executable(${name} ${name}.cpp)
-    target_link_libraries(${name} PRIVATE GTest::gtest_main nncaseruntime ortki atomic)
+    target_link_libraries(${name} PRIVATE GTest::gtest_main nncaseruntime ortki)
     add_test(NAME ${name} COMMAND ${CMAKE_COMMAND} -DTEST_EXECUTABLE=$<TARGET_FILE:${name}> -P ${CMAKE_CURRENT_SOURCE_DIR}/../../toolchains/run_test.cmake)
 endmacro()
 

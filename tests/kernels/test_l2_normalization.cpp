@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 #include "kernel_test.h"
-#include <c_api.h>
 #include <gtest/gtest.h>
 #include <iostream>
 #include <nncase/kernels/stackvm/tensor_ops.h>
@@ -21,7 +20,7 @@
 #include <nncase/runtime/runtime_tensor.h>
 #include <nncase/runtime/simple_types.h>
 #include <nncase/runtime/stackvm/opcode.h>
-#include <operators.h>
+#include <ortki/operators.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -29,20 +28,19 @@ using namespace ortki;
 
 class L2NormalizationTest
     : public KernelTest,
-      public ::testing::TestWithParam<
-          std::tuple<nncase::typecode_t, dims_t>> {
+      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
   public:
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
 
-        float lhs_ptr[] = { 0.0f, 2.0f, 3.0f, 2.0f, 2.0f, 2.0f };
+        float lhs_ptr[] = {0.0f, 2.0f, 3.0f, 2.0f, 2.0f, 2.0f};
         size_t size = 0;
         lhs = hrt::create(lhs.datatype(), l_shape,
-                          {reinterpret_cast<gsl::byte *>(lhs_ptr), size},
-                          true, host_runtime_tensor::pool_cpu_only)
+                          {reinterpret_cast<gsl::byte *>(lhs_ptr), size}, true,
+                          host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
 
-        float expect_ptr[] = { 0.0f, 0.4f, 0.6f, 0.4f, 0.4f, 0.4f };
+        float expect_ptr[] = {0.0f, 0.4f, 0.6f, 0.4f, 0.4f, 0.4f};
         expect = hrt::create(expect.datatype(), l_shape,
                              {reinterpret_cast<gsl::byte *>(expect_ptr), size},
                              true, host_runtime_tensor::pool_cpu_only)
@@ -66,9 +64,8 @@ TEST_P(L2NormalizationTest, L2Normalization) {
     auto expected = expect;
 
     // actual
-    auto output =
-        kernels::stackvm::l2_normalization(lhs.impl())
-            .expect("l2_normalization failed");
+    auto output = kernels::stackvm::l2_normalization(lhs.impl())
+                      .expect("l2_normalization failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare

@@ -43,6 +43,7 @@ class nncaseConan(ConanFile):
     def imports(self):
         if self.settings.os == 'Windows':
             self.copy("nethost.dll", "bin", "bin")
+            self.copy("ortki.dll", "bin", "bin")
 
     def requirements(self):
         self.requires('gsl-lite/0.37.0')
@@ -50,6 +51,7 @@ class nncaseConan(ConanFile):
         self.requires('hkg/0.0.1')
         if self.options.tests:
             self.requires('gtest/1.10.0')
+            self.requires('ortki/0.0.2')
 
         if self.options.python:
             self.requires('pybind11/2.6.1')
@@ -92,13 +94,17 @@ class nncaseConan(ConanFile):
                 self.options["vulkan-loader"].with_wsi_wayland = False
                 self.options["vulkan-loader"].with_wsi_directfb = False
 
+        if self.options.tests:
+            self.options["ortki"].shared = True
+
     def cmake_configure(self):
         cmake = CMake(self)
         cmake.definitions['BUILDING_RUNTIME'] = self.options.runtime
         cmake.definitions['ENABLE_OPENMP'] = self.options.openmp
-        cmake.definitions['ENABLE_VULKAN'] = self.options.vulkan
+        cmake.definitions['ENABLE_VULKAN_RUNTIME'] = self.options.vulkan_runtime
         cmake.definitions['ENABLE_HALIDE'] = self.options.halide
         cmake.definitions['BUILD_PYTHON_BINDING'] = self.options.python
+        cmake.definitions['BUILD_TESTING'] = self.options.tests
         if self.options.runtime:
             cmake.definitions["CMAKE_CXX_STANDARD"] = 17
         cmake.configure()

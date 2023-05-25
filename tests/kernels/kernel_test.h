@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 #pragma once
-#include "c_api.h"
 #include "nncase/shape.h"
 #include <filesystem>
 #include <fstream>
@@ -24,22 +23,22 @@
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/runtime_tensor.h>
 #include <nncase/runtime/simple_types.h>
+#include <ortki/c_api.h>
 #include <random>
 #include <string>
 
-using namespace nncase;
-using namespace nncase::runtime;
-using namespace nncase::kernels;
-
+namespace nncase {
 class KernelTest {
   public:
-    template <typename T> T &get(runtime_tensor &t, const dims_t &index) {
-        auto map = std::move(hrt::map(t, map_read).unwrap_or_throw());
+    template <typename T>
+    T &get(runtime::runtime_tensor &t, const dims_t &index) {
+        auto map = std::move(
+            runtime::hrt::map(t, runtime::map_read).unwrap_or_throw());
         auto data = map.buffer().as_span<T>();
-        return data[offset(t.strides(), index)];
+        return data[kernels::offset(t.strides(), index)];
     }
 
-    virtual void init_tensor(runtime_tensor &tensor) {
+    virtual void init_tensor(runtime::runtime_tensor &tensor) {
         auto dtype = tensor.datatype();
         switch (dtype) {
         case dt_int8: {
@@ -163,51 +162,53 @@ class KernelTest {
         }
     }
 
-    ortki::OrtKITensor *runtime_tensor_2_ort_tensor(runtime_tensor &tensor) {
-        auto mapped = std::move(hrt::map(tensor, map_read).unwrap());
+    ortki::OrtKITensor *
+    runtime_tensor_2_ort_tensor(runtime::runtime_tensor &tensor) {
+        auto mapped =
+            std::move(runtime::hrt::map(tensor, runtime::map_read).unwrap());
         void *buffer = reinterpret_cast<void *>(mapped.buffer().data());
 
-        ortki::DataType ort_type = onnx::TensorProto_DataType_FLOAT;
+        ortki::DataType ort_type = ortki::DataType_FLOAT;
         auto dtype = tensor.datatype();
         switch (dtype) {
         case dt_int8: {
-            ort_type = onnx::TensorProto_DataType_INT8;
+            ort_type = ortki::DataType_INT8;
             break;
         }
         case dt_int16: {
-            ort_type = onnx::TensorProto_DataType_INT16;
+            ort_type = ortki::DataType_INT16;
             break;
         }
         case dt_int32: {
-            ort_type = onnx::TensorProto_DataType_INT32;
+            ort_type = ortki::DataType_INT32;
             break;
         }
         case dt_int64: {
-            ort_type = onnx::TensorProto_DataType_INT64;
+            ort_type = ortki::DataType_INT64;
             break;
         }
         case dt_uint8: {
-            ort_type = onnx::TensorProto_DataType_UINT8;
+            ort_type = ortki::DataType_UINT8;
             break;
         }
         case dt_uint16: {
-            ort_type = onnx::TensorProto_DataType_UINT16;
+            ort_type = ortki::DataType_UINT16;
             break;
         }
         case dt_uint32: {
-            ort_type = onnx::TensorProto_DataType_UINT32;
+            ort_type = ortki::DataType_UINT32;
             break;
         }
         case dt_uint64: {
-            ort_type = onnx::TensorProto_DataType_UINT64;
+            ort_type = ortki::DataType_UINT64;
             break;
         }
         case dt_float32: {
-            ort_type = onnx::TensorProto_DataType_FLOAT;
+            ort_type = ortki::DataType_FLOAT;
             break;
         }
         case dt_float64: {
-            ort_type = onnx::TensorProto_DataType_DOUBLE;
+            ort_type = ortki::DataType_DOUBLE;
             break;
         }
         default: {
@@ -223,7 +224,8 @@ class KernelTest {
         return make_tensor(buffer, ort_type, shape, shape_size);
     }
 
-    bool is_same_tensor(runtime_tensor &lhs, runtime_tensor &rhs) {
+    bool is_same_tensor(runtime::runtime_tensor &lhs,
+                        runtime::runtime_tensor &rhs) {
         if (lhs.shape() != rhs.shape()) {
             return false;
         }
@@ -345,3 +347,4 @@ class KernelTest {
         std::cout << std::endl;
     }
 };
+} // namespace nncase

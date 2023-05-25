@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 #include "kernel_test.h"
-#include <c_api.h>
 #include <gtest/gtest.h>
 #include <iostream>
 #include <nncase/kernels/stackvm/tensor_ops.h>
@@ -21,15 +20,15 @@
 #include <nncase/runtime/runtime_tensor.h>
 #include <nncase/runtime/simple_types.h>
 #include <nncase/runtime/stackvm/opcode.h>
-#include <operators.h>
+#include <ortki/operators.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class HardSwishTest : public KernelTest,
-                      public ::testing::TestWithParam<
-                          std::tuple<nncase::typecode_t, dims_t>> {
+class HardSwishTest
+    : public KernelTest,
+      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
   public:
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
@@ -47,23 +46,26 @@ class HardSwishTest : public KernelTest,
 
 INSTANTIATE_TEST_SUITE_P(HardSwish, HardSwishTest,
                          testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 3, 16, 16})));
+                                          testing::Values(dims_t{1, 3, 16,
+                                                                 16})));
 
 TEST_P(HardSwishTest, hard_swish) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
 
     // expected
-    float alpha_ptr[] = {1.0f/6.0f};
-    auto alpha = hrt::create(nncase::dt_float32, {1},
-                             {reinterpret_cast<gsl::byte *>(alpha_ptr), sizeof(float)},
-                             true, host_runtime_tensor::pool_cpu_only)
-                     .expect("create tensor failed");
+    float alpha_ptr[] = {1.0f / 6.0f};
+    auto alpha =
+        hrt::create(nncase::dt_float32, {1},
+                    {reinterpret_cast<gsl::byte *>(alpha_ptr), sizeof(float)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
 
     float beta_ptr[] = {0.5f};
-    auto beta = hrt::create(nncase::dt_float32, {1},
-                             {reinterpret_cast<gsl::byte *>(beta_ptr), sizeof(float)},
-                             true, host_runtime_tensor::pool_cpu_only)
-                     .expect("create tensor failed");
+    auto beta =
+        hrt::create(nncase::dt_float32, {1},
+                    {reinterpret_cast<gsl::byte *>(beta_ptr), sizeof(float)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
 
     auto output_ort = ortki_Mul(l_ort, ortki_HardSigmoid(l_ort, 1.2f, 1.3f));
     size_t size = 0;
@@ -77,8 +79,7 @@ TEST_P(HardSwishTest, hard_swish) {
 
     // actual
     auto output =
-        kernels::stackvm::hard_swish(lhs.impl())
-            .expect("hard_swish failed");
+        kernels::stackvm::hard_swish(lhs.impl()).expect("hard_swish failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare

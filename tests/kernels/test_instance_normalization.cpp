@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 #include "kernel_test.h"
-#include <c_api.h>
 #include <gtest/gtest.h>
 #include <iostream>
 #include <nncase/kernels/stackvm/tensor_ops.h>
@@ -21,7 +20,7 @@
 #include <nncase/runtime/runtime_tensor.h>
 #include <nncase/runtime/simple_types.h>
 #include <nncase/runtime/stackvm/opcode.h>
-#include <operators.h>
+#include <ortki/operators.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -60,7 +59,8 @@ TEST_P(InstanceNormalizationTest, instance_normalization) {
     auto b_ort = runtime_tensor_2_ort_tensor(b);
 
     // expected
-    auto output_ort = ortki_InstanceNormalization(l_ort, scale_ort, b_ort, 0.01f);
+    auto output_ort =
+        ortki_InstanceNormalization(l_ort, scale_ort, b_ort, 0.01f);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
@@ -72,13 +72,14 @@ TEST_P(InstanceNormalizationTest, instance_normalization) {
 
     // actual
     float epsilon_ptr[] = {-1.0f};
-    auto epsilon = hrt::create(nncase::dt_float32, {1},
-                            {reinterpret_cast<gsl::byte *>(epsilon_ptr), sizeof(float)},
-                            true, host_runtime_tensor::pool_cpu_only)
-                    .expect("create tensor failed");
-    auto output =
-        kernels::stackvm::instance_normalization(lhs.impl(), scale.impl(), b.impl(), epsilon.impl())
-            .expect("instance_normalization failed");
+    auto epsilon =
+        hrt::create(nncase::dt_float32, {1},
+                    {reinterpret_cast<gsl::byte *>(epsilon_ptr), sizeof(float)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
+    auto output = kernels::stackvm::instance_normalization(
+                      lhs.impl(), scale.impl(), b.impl(), epsilon.impl())
+                      .expect("instance_normalization failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
