@@ -29,60 +29,123 @@ using namespace ortki;
 
 class LstmTest : public KernelTest,
                  public ::testing::TestWithParam<
-                     std::tuple<nncase::typecode_t, dims_t, dims_t>> {
+                     std::tuple<nncase::typecode_t, dims_t, dims_t, dims_t, dims_t, dims_t, dims_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape, r_shape] = GetParam();
+        auto &&[typecode, x_shape, initC_shape, initH_shape, b_shape, w_shape, r_shape] = GetParam();
 
-        lhs = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
+        x = hrt::create(typecode, x_shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
-        init_tensor(lhs);
+        init_tensor(x);
 
-        rhs = hrt::create(typecode, r_shape, host_runtime_tensor::pool_cpu_only)
+        initC = hrt::create(typecode, initC_shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
-        init_tensor(rhs);
+        init_tensor(initC);
+
+        initH = hrt::create(typecode, initH_shape, host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
+        init_tensor(initH);
+
+        b = hrt::create(typecode, b_shape, host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
+        init_tensor(b);
+
+        w = hrt::create(typecode, w_shape, host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
+        init_tensor(w);
+
+        r = hrt::create(typecode, r_shape, host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
+        init_tensor(r);
     }
 
     void TearDown() override {}
 
   protected:
-    runtime_tensor lhs;
-    runtime_tensor rhs;
+    runtime_tensor x;
+    runtime_tensor initC;
+    runtime_tensor initH;
+    runtime_tensor b;
+    runtime_tensor w;
+    runtime_tensor r;
 };
 
 INSTANTIATE_TEST_SUITE_P(lstm, LstmTest,
-                         testing::Combine(testing::Values(dt_float32, dt_int32,
-                                                          dt_int64),
-                                          testing::Values(dims_t{1, 3, 16, 16},
-                                                          /*dims_t { 3, 16, 16
-                                                          }, dims_t { 16, 16 },
-                                                          dims_t { 16 },*/
-                                                          dims_t{1}),
-                                          testing::Values(dims_t{1, 3, 16, 16},
-                                                          /*dims_t { 3, 16, 16
-                                                          }, dims_t { 16, 16 },
-                                                          dims_t { 16 },*/
-                                                          dims_t{1})));
+                         testing::Combine(testing::Values(dt_float32),
+                                          testing::Values(dims_t{1, 1, 2}),
+                                          testing::Values(dims_t{1, 1, 1}),
+                                          testing::Values(dims_t{1, 1, 1}),
+                                          testing::Values(dims_t{1, 8}),
+                                          testing::Values(dims_t{1, 4, 2}),
+                                          testing::Values(dims_t{1, 4, 1})));
 
 TEST_P(LstmTest, lstm) {
-    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
-    auto r_ort = runtime_tensor_2_ort_tensor(rhs);
+    auto x_ort = runtime_tensor_2_ort_tensor(x);
+    auto initC_ort = runtime_tensor_2_ort_tensor(initC);
+    auto initH_ort = runtime_tensor_2_ort_tensor(initH);
+    auto b_ort = runtime_tensor_2_ort_tensor(b);
+    auto w_ort = runtime_tensor_2_ort_tensor(w);
+    auto r_ort = runtime_tensor_2_ort_tensor(r);
 
     // expected
-    auto output_ort = ortki_Add(l_ort, r_ort);
     size_t size = 0;
-    void *ptr_ort = tensor_buffer(output_ort, &size);
-    dims_t shape(tensor_rank(output_ort));
-    tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
-    auto expected = hrt::create(lhs.datatype(), shape,
+    int32_t seqLength_ptr[] = {1};
+    auto seqLength = hrt::create(dt_int32, {1},
+                                 {reinterpret_cast<gsl::byte *>(seqLength_ptr), size},
+                                 true, host_runtime_tensor::pool_cpu_only)
+                         .expect("create tensor failed");
+    auto seqLength_ort = runtime_tensor_2_ort_tensor(seqLength);
+    float p_ptr[] = {{},{},{}};
+    auto p = hrt::create(dt_float32, {1, 3},
+                                 {reinterpret_cast<gsl::byte *>(p_ptr), size},
+                                 true, host_runtime_tensor::pool_cpu_only)
+                         .expect("create tensor failed");
+    auto p_ort = runtime_tensor_2_ort_tensor(p);
+    float alpha[] = {0.0f};
+    float beta[] = {0.0f};
+    const char* activations_ptr[] = { "Sigmoid", "Tanh", "Tanh" };
+    float clip = std::numeric_limits<float>::quiet_NaN();
+    const char* direction = "forward";
+    auto output_ort = ortki_LSTM(x_ort, w_ort, r_ort, b_ort, seqLength_ort, initH_ort, initC_ort, p_ort, alpha, 1, beta, 1, activations_ptr,
+                                 3, clip, direction, 1, 0, 0, false, 1);
+    void *ptr_ort = tensor_buffer(tensor_seq_get_value(output_ort, 0), &size);
+    dims_t shape(tensor_rank(tensor_seq_get_value(output_ort, 0)));
+    tensor_shape(tensor_seq_get_value(output_ort, 0), reinterpret_cast<int64_t *>(shape.data()));
+    auto expected = hrt::create(dt_float32, shape,
                                 {reinterpret_cast<gsl::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
     // actual
+    std::vector<std::string> activations = { "Sigmoid", "Tanh", "Tanh" };
+    auto alpha_ptr = hrt::create(dt_float32, shape,
+                                   {reinterpret_cast<gsl::byte *>(alpha), size},
+                                   true, host_runtime_tensor::pool_cpu_only)
+                           .expect("create tensor failed");
+    auto beta_ptr = hrt::create(dt_float32, shape,
+                                 {reinterpret_cast<gsl::byte *>(beta), size},
+                                 true, host_runtime_tensor::pool_cpu_only)
+                         .expect("create tensor failed");
+    float f[] = {clip};
+    auto clip_ptr = hrt::create(dt_float32, shape,
+                                {reinterpret_cast<gsl::byte *>(f), size},
+                                true, host_runtime_tensor::pool_cpu_only)
+                        .expect("create tensor failed");
+    auto hidden_size_ptr = hrt::create(dt_int32, shape,
+                                {reinterpret_cast<gsl::byte *>(1), size},
+                                true, host_runtime_tensor::pool_cpu_only)
+                        .expect("create tensor failed");
+    auto input_forget_ptr = hrt::create(dt_int32, shape,
+                                {reinterpret_cast<gsl::byte *>(0), size},
+                                true, host_runtime_tensor::pool_cpu_only)
+                        .expect("create tensor failed");
+    auto output_size_ptr = hrt::create(dt_int32, shape,
+                                        {reinterpret_cast<gsl::byte *>(1), size},
+                                        true, host_runtime_tensor::pool_cpu_only)
+                                .expect("create tensor failed");
     auto output =
-        kernels::stackvm::binary(nncase::runtime::stackvm::binary_op_t::add,
-                                 lhs.impl(), rhs.impl())
+        kernels::stackvm::lstm(runtime::stackvm::lstmdirection_t::forward, runtime::stackvm::lstmlayout_t::zero, activations, x.impl(), w.impl(), r.impl(),
+                               b.impl(), seqLength.impl(), initH.impl(), initC.impl(), p.impl(), alpha_ptr.impl(), beta_ptr.impl(), clip_ptr.impl(), hidden_size_ptr.impl(), input_forget_ptr.impl(), output_size_ptr.impl())
             .expect("lstm failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 

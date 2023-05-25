@@ -51,25 +51,16 @@ class MatMulTest : public KernelTest,
 };
 
 INSTANTIATE_TEST_SUITE_P(MatMul, MatMulTest,
-                         testing::Combine(testing::Values(dt_float32, dt_int32,
-                                                          dt_int64),
-                                          testing::Values(dims_t{1, 3, 16, 16},
-                                                          /*dims_t { 3, 16, 16
-                                                          }, dims_t { 16, 16 },
-                                                          dims_t { 16 },*/
-                                                          dims_t{1}),
-                                          testing::Values(dims_t{1, 3, 16, 16},
-                                                          /*dims_t { 3, 16, 16
-                                                          }, dims_t { 16, 16 },
-                                                          dims_t { 16 },*/
-                                                          dims_t{1})));
+                         testing::Combine(testing::Values(dt_int32, dt_int64),
+                                          testing::Values(dims_t{3, 16}),
+                                          testing::Values(dims_t{16, 3})));
 
 TEST_P(MatMulTest, mat_mul) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
     auto r_ort = runtime_tensor_2_ort_tensor(rhs);
 
     // expected
-    auto output_ort = ortki_Add(l_ort, r_ort);
+    auto output_ort = ortki_MatMul(l_ort, r_ort);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
@@ -81,8 +72,7 @@ TEST_P(MatMulTest, mat_mul) {
 
     // actual
     auto output =
-        kernels::stackvm::binary(nncase::runtime::stackvm::binary_op_t::add,
-                                 lhs.impl(), rhs.impl())
+        kernels::stackvm::mat_mul(lhs.impl(), rhs.impl())
             .expect("matmul failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
