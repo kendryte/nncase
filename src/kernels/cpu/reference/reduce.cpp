@@ -37,11 +37,11 @@ template <class T, class TReducer, class TPostProcess>
 result<void> reduce_impl(TReducer &&reducer, TPostProcess &&post_process, T init_value, const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &axis,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides, bool keep_dims, NNCASE_UNUSED kernel_context &context) noexcept
 {
-    T* tmp_out;
-    if((intptr_t)input == (intptr_t)output)
+    T *tmp_out;
+    if ((intptr_t)input == (intptr_t)output)
     {
         int out_len = compute_size(out_shape);
-        tmp_out = (T*)malloc(out_len * sizeof(T));
+        tmp_out = (T *)malloc(out_len * sizeof(T));
     }
     else
     {
@@ -59,8 +59,7 @@ result<void> reduce_impl(TReducer &&reducer, TPostProcess &&post_process, T init
         return ok();
     }));
     try_(apply(out_shape, [&](const runtime_shape_t &index) -> result<void> {
-        
-        if((intptr_t)input == (intptr_t)output)
+        if ((intptr_t)input == (intptr_t)output)
         {
             auto &src = tmp_out[offset(out_strides, index)];
             auto &dest = output[offset(out_strides, index)];
