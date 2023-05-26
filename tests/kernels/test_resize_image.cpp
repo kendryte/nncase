@@ -69,11 +69,12 @@ TEST_P(ResizeImageTest, ResizeImage) {
 
     // expected
     size_t size = 0;
-    int32_t expected_array[] = { 1, 3, 112, 112 };
-    auto expected = hrt::create(lhs.datatype(), {4},
-                                {reinterpret_cast<gsl::byte *>(expected_array), size},
-                                true, host_runtime_tensor::pool_cpu_only)
-                        .expect("create tensor failed");
+    int32_t expected_array[] = {1, 3, 112, 112};
+    auto expected =
+        hrt::create(lhs.datatype(), {4},
+                    {reinterpret_cast<gsl::byte *>(expected_array), size}, true,
+                    host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
 
     // actual
     float roi_array[1];
@@ -82,23 +83,32 @@ TEST_P(ResizeImageTest, ResizeImage) {
                            true, host_runtime_tensor::pool_cpu_only)
                    .expect("create tensor failed");
     bool exclude_outside_array[] = {false};
-    auto exclude_outside = hrt::create(dt_boolean, {1},
-                           {reinterpret_cast<gsl::byte *>(exclude_outside_array), size},
-                           true, host_runtime_tensor::pool_cpu_only)
-                   .expect("create tensor failed");
+    auto exclude_outside =
+        hrt::create(
+            dt_boolean, {1},
+            {reinterpret_cast<gsl::byte *>(exclude_outside_array), size}, true,
+            host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
     float cubic_coeff_a_array[] = {-0.75f};
-    auto cubic_coeff_a = hrt::create(dt_float32, {1},
-                           {reinterpret_cast<gsl::byte *>(cubic_coeff_a_array), size},
-                           true, host_runtime_tensor::pool_cpu_only)
-                   .expect("create tensor failed");
+    auto cubic_coeff_a =
+        hrt::create(dt_float32, {1},
+                    {reinterpret_cast<gsl::byte *>(cubic_coeff_a_array), size},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
     float extrapolation_value_array[] = {-0.0f};
-    auto extrapolation_value = hrt::create(dt_float32, {1},
-                           {reinterpret_cast<gsl::byte *>(extrapolation_value_array), size},
-                           true, host_runtime_tensor::pool_cpu_only)
-                   .expect("create tensor failed");
+    auto extrapolation_value =
+        hrt::create(
+            dt_float32, {1},
+            {reinterpret_cast<gsl::byte *>(extrapolation_value_array), size},
+            true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
     auto output =
-        kernels::stackvm::resize_image(runtime::stackvm::image_resize_mode_t::bilinear, runtime::stackvm::image_resize_transformation_mode_t::asymmetric,
-                                       runtime::stackvm::image_resize_nearest_mode_t::floor,false, lhs.impl(), roi.impl(), expected.impl(), cubic_coeff_a.impl(), exclude_outside.impl(), extrapolation_value.impl())
+        kernels::stackvm::resize_image(
+            runtime::stackvm::image_resize_mode_t::bilinear,
+            runtime::stackvm::image_resize_transformation_mode_t::asymmetric,
+            runtime::stackvm::image_resize_nearest_mode_t::floor, false,
+            lhs.impl(), roi.impl(), expected.impl(), cubic_coeff_a.impl(),
+            exclude_outside.impl(), extrapolation_value.impl())
             .expect("resize_image failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 

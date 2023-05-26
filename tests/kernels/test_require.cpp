@@ -79,9 +79,8 @@ TEST_P(RequireTest, Require) {
                         .expect("create tensor failed");
 
     // actual
-    auto output =
-        kernels::stackvm::require("",lhs.impl(), rhs.impl())
-            .expect("require failed");
+    auto output = kernels::stackvm::require("", lhs.impl(), rhs.impl())
+                      .expect("require failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
