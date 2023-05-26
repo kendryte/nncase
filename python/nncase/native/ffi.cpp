@@ -156,11 +156,9 @@ PYBIND11_MODULE(_nncase, m) {
 
     py::class_<shape_bucket_options>(m, "ShapeBucketOptions")
         .def(py::init())
-        .def_property(
-            "enable",
+        .def_property("enable",
             py::overload_cast<>(&shape_bucket_options::enable),
-            py::overload_cast<bool>(
-                &shape_bucket_options::enable))
+            py::overload_cast<bool>(&shape_bucket_options::enable))
         .def_property(
             "range_info",
             py::overload_cast<>(&shape_bucket_options::range_info),

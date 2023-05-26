@@ -48,6 +48,7 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr, DumpFlags> CompileOptionsGetDumpFlagsPtr;
     public delegate* unmanaged<IntPtr, DumpFlags, void> CompileOptionsSetDumpFlagsPtr;
     public delegate* unmanaged<IntPtr, IntPtr, void> CompileOptionsSetQuantizeOptionsPtr;
+    public delegate* unmanaged<IntPtr, IntPtr, void> CompileOptionsSetShapeBucketOptionsPtr;
     public delegate* unmanaged<IntPtr, IntPtr, IntPtr> CompileSessionCreatePtr;
     public delegate* unmanaged<IntPtr, IntPtr> CompileSessionGetCompilerPtr;
     public delegate* unmanaged<void> CompilerInitializePtr;
@@ -61,6 +62,7 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr, IntPtr> IRModuleGetEntryPtr;
     public delegate* unmanaged<void> LaunchDebuggerPtr;
     public delegate* unmanaged<IntPtr> QuantizeOptionsCreatePtr;
+    public delegate* unmanaged<IntPtr> ShapeBucketOptionsCreatePtr;
     public delegate* unmanaged<IntPtr, IntPtr, void> QuantizeOptionsSetCalibrationDatasetPtr;
     public delegate* unmanaged<IntPtr, CalibMethod, void> QuantizeOptionsSetCalibrationMethodPtr;
     public delegate* unmanaged<IntPtr, ModelQuantMode, void> QuantizeOptionsSetModelQuantModePtr;
@@ -71,7 +73,6 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr, byte*, nuint, void> QuantOptionsSetQuantSchemePtr;
     public delegate* unmanaged<IntPtr, byte, void> QuantOptionsSetExportQuantSchemePtr;
     public delegate* unmanaged<IntPtr, byte, void> QuantOptionsSetExportWeightRangeByChannelPtr;
-    public delegate* unmanaged<IntPtr> ShapeBucketOptionsCreatePtr;
     public delegate* unmanaged<IntPtr, byte, void> ShapeBucketOptionsSetEnablePtr;
     public delegate* unmanaged<IntPtr, byte*, nuint, void> ShapeBucketOptionsSetRangeInfoPtr;
     public delegate* unmanaged<IntPtr, nuint, void> ShapeBucketOptionsSetSegmentsCountPtr;
@@ -103,6 +104,7 @@ public static unsafe class CApi
         mt->CompileOptionsSetDumpFlagsPtr = &CompileOptionsSetDumpFlags;
         mt->CompileOptionsGetDumpFlagsPtr = &CompileOptionsGetDumpFlags;
         mt->CompileOptionsSetQuantizeOptionsPtr = &CompileOptionsSetQuantizeOptions;
+        mt->CompileOptionsSetShapeBucketOptionsPtr = &CompileOptionsSetShapeBucketOptions;
         mt->CompileSessionCreatePtr = &CompileSessionCreate;
         mt->CompileSessionGetCompilerPtr = &CompileSessionGetCompiler;
         mt->CompilerInitializePtr = &CompilerInitialize;
@@ -116,6 +118,7 @@ public static unsafe class CApi
         mt->IRModuleGetEntryPtr = &IRModuleGetEntry;
         mt->LaunchDebuggerPtr = &LaunchDebugger;
         mt->QuantizeOptionsCreatePtr = &QuantizeOptionsCreate;
+        mt->ShapeBucketOptionsCreatePtr = &ShapeBucketOptionsCreate;
         mt->QuantizeOptionsSetCalibrationDatasetPtr = &QuantizeOptionsSetCalibrationDataset;
         mt->QuantizeOptionsSetCalibrationMethodPtr = &QuantizeOptionsSetCalibrationMethod;
         mt->QuantizeOptionsSetModelQuantModePtr = &QuantizeOptionsSetModelQuantMode;
@@ -126,7 +129,6 @@ public static unsafe class CApi
         mt->QuantOptionsSetQuantSchemePtr = &QuantizeOptionsSetQuantScheme;
         mt->QuantOptionsSetExportQuantSchemePtr = &QuantizeOptionsSetExportQuantScheme;
         mt->QuantOptionsSetExportWeightRangeByChannelPtr = &QuantizeOptionsSetExportWeightRangeByChannel;
-        mt->ShapeBucketOptionsCreatePtr = &ShapeBucketOptionsCreate;
         mt->ShapeBucketOptionsSetEnablePtr = &ShapeBucketOptionsSetEnable;
         mt->ShapeBucketOptionsSetRangeInfoPtr = &ShapeBucketOptionsSetRangeInfo;
         mt->ShapeBucketOptionsSetSegmentsCountPtr = &ShapeBucketOptionsSetSegmentsCount;
@@ -244,6 +246,12 @@ public static unsafe class CApi
     }
 
     [UnmanagedCallersOnly]
+    private static void CompileOptionsSetShapeBucketOptions(IntPtr compileOptionsHandle, IntPtr shapeBucketOptionsHandle)
+    {
+        Get<CompileOptions>(compileOptionsHandle).ShapeBucketOptions = Get<ShapeBucketOptions>(shapeBucketOptionsHandle);
+    }
+
+    [UnmanagedCallersOnly]
     private static IntPtr CompileSessionCreate(IntPtr targetHandle, IntPtr compileOptionsHandle)
     {
         var target = Get<ITarget>(targetHandle);
@@ -345,6 +353,12 @@ public static unsafe class CApi
     private static IntPtr QuantizeOptionsCreate()
     {
         return GCHandle.ToIntPtr(GCHandle.Alloc(new QuantizeOptions()));
+    }
+
+    [UnmanagedCallersOnly]
+    private static IntPtr ShapeBucketOptionsCreate()
+    {
+        return GCHandle.ToIntPtr(GCHandle.Alloc(ShapeBucketOptions.Default));
     }
 
     [UnmanagedCallersOnly]
@@ -477,12 +491,6 @@ public static unsafe class CApi
             default:
                 throw new ArgumentException("Invalid exportWeightRangeByChannel Flag");
         }
-    }
-
-    [UnmanagedCallersOnly]
-    private static IntPtr ShapeBucketOptionsCreate()
-    {
-        return GCHandle.ToIntPtr(GCHandle.Alloc(ShapeBucketOptions.Default));
     }
 
     [UnmanagedCallersOnly]

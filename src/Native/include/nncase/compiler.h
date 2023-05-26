@@ -119,6 +119,9 @@ typedef struct {
     void (*compile_options_set_quantize_options)(
         clr_object_handle_t compile_options,
         clr_object_handle_t quantize_options);
+    void (*compile_options_set_shape_bucket_options)(
+        clr_object_handle_t compile_options,
+        clr_object_handle_t shape_bucket_options);
     clr_object_handle_t (*compile_session_create)(
         clr_object_handle_t target, clr_object_handle_t compile_options);
     clr_object_handle_t (*compile_session_get_compiler)(
@@ -139,6 +142,7 @@ typedef struct {
     clr_object_handle_t (*ir_module_get_entry)(clr_object_handle_t module);
     void (*luanch_debugger)();
     clr_object_handle_t (*quantize_options_create)();
+    clr_object_handle_t (*shape_bucket_options_create)();
     void (*quantize_options_set_calibration_dataset)(
         clr_object_handle_t quantize_options, clr_object_handle_t dataset);
     void (*quantize_options_set_calibration_method)(
@@ -163,11 +167,6 @@ typedef struct {
     void (*quantize_options_set_export_weight_range_by_channel)(
         clr_object_handle_t quantize_options,
         bool export_weight_range_by_channel);
-
-    void (*compile_options_set_shape_bucket_options)(
-        clr_object_handle_t compile_options,
-        clr_object_handle_t shape_bucket_options);
-    clr_object_handle_t (*shape_bucket_options_create)();
     void (*shape_bucket_options_set_enable)(
         clr_object_handle_t shape_bucket_options, bool enable);
     void (*shape_bucket_options_set_range_info)(
