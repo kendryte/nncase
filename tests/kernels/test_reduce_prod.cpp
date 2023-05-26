@@ -26,9 +26,9 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class RangeTest : public KernelTest,
-                  public ::testing::TestWithParam<
-                      std::tuple<nncase::typecode_t, dims_t, dims_t>> {
+class ReduceProdTest : public KernelTest,
+                      public ::testing::TestWithParam<
+                          std::tuple<nncase::typecode_t, dims_t, dims_t>> {
   public:
     void SetUp() override {
         auto &&[typecode, l_shape, r_shape] = GetParam();
@@ -49,7 +49,7 @@ class RangeTest : public KernelTest,
     runtime_tensor rhs;
 };
 
-INSTANTIATE_TEST_SUITE_P(Range, RangeTest,
+INSTANTIATE_TEST_SUITE_P(ReduceProd, ReduceProdTest,
                          testing::Combine(testing::Values(dt_float32, dt_int32,
                                                           dt_int64),
                                           testing::Values(dims_t{1, 3, 16, 16},
@@ -63,31 +63,33 @@ INSTANTIATE_TEST_SUITE_P(Range, RangeTest,
                                                           dims_t { 16 },*/
                                                           dims_t{1})));
 
-TEST_P(RangeTest, Range) {
+TEST_P(ReduceProdTest, ReduceProd) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
     auto r_ort = runtime_tensor_2_ort_tensor(rhs);
 
     // expected
     size_t size = 0;
-    float begin_array[] = {0.0f};
-    auto begin = hrt::create(lhs.datatype(), {1},
-                             {reinterpret_cast<gsl::byte *>(begin_array), size},
-                             true, host_runtime_tensor::pool_cpu_only)
-                     .expect("create tensor failed");
-
-    float end_array[] = {100.0f};
-    auto end = hrt::create(lhs.datatype(), {1},
-                             {reinterpret_cast<gsl::byte *>(end_array), size},
-                             true, host_runtime_tensor::pool_cpu_only)
-                     .expect("create tensor failed");
-
-    float step_array[] = {100.0f};
-    auto step = hrt::create(lhs.datatype(), {1},
-                           {reinterpret_cast<gsl::byte *>(step_array), size},
-                           true, host_runtime_tensor::pool_cpu_only)
-                   .expect("create tensor failed");
-
-    auto output_ort = ortki_Range(runtime_tensor_2_ort_tensor(begin), runtime_tensor_2_ort_tensor(end), runtime_tensor_2_ort_tensor(step));
+    float a_array[] = { 1, 2, 3, 4, 5, 6, 7, 8 };
+    auto a = hrt::create(dt_float32, {2, 4},
+                         {reinterpret_cast<gsl::byte *>(a_array), size},
+                         true, host_runtime_tensor::pool_cpu_only)
+                 .expect("create tensor failed");
+    int64_t axis_array[] = {0};
+    auto axis = hrt::create(dt_int64, {1},
+                            {reinterpret_cast<gsl::byte *>(axis_array), size},
+                            true, host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
+    int64_t keepDims_array[] = {0};
+    auto keepDims = hrt::create(dt_int64, {1},
+                                {reinterpret_cast<gsl::byte *>(keepDims_array), size},
+                                true, host_runtime_tensor::pool_cpu_only)
+                        .expect("create tensor failed");
+    int64_t select_last_idx_array = {0};
+    auto select_last_idx = hrt::create(dt_int64, {1},
+                                       {reinterpret_cast<gsl::byte *>(select_last_idx_array), size},
+                                       true, host_runtime_tensor::pool_cpu_only)
+                               .expect("create tensor failed");
+    auto output_ort = ortki_ReduceProd(runtime_tensor_2_ort_tensor(a), 0, 0, 0);
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
@@ -98,8 +100,8 @@ TEST_P(RangeTest, Range) {
 
     // actual
     auto output =
-        kernels::stackvm::range(begin.impl(), end.impl(), step.impl())
-            .expect("range failed");
+        kernels::stackvm::reduce(runtime::stackvm::reduce_op_t::prod, a.impl(), axis.impl(), keepDims.impl(), select_last_idx.impl())
+            .expect("reduce_arg_max failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare

@@ -88,7 +88,7 @@ TEST_P(FakeQuantizeTest, fake_quantize) {
             .expect("create tensor failed");
     auto output = kernels::stackvm::fake_quantize(dt_float32, lhs.impl(),
                                                   dequant_param_ptr.impl())
-                      .expect("dequantize failed");
+                      .expect("fake quantize failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
