@@ -77,17 +77,19 @@ TEST_P(RangeTest, Range) {
 
     float end_array[] = {100.0f};
     auto end = hrt::create(lhs.datatype(), {1},
-                             {reinterpret_cast<gsl::byte *>(end_array), size},
-                             true, host_runtime_tensor::pool_cpu_only)
-                     .expect("create tensor failed");
-
-    float step_array[] = {100.0f};
-    auto step = hrt::create(lhs.datatype(), {1},
-                           {reinterpret_cast<gsl::byte *>(step_array), size},
+                           {reinterpret_cast<gsl::byte *>(end_array), size},
                            true, host_runtime_tensor::pool_cpu_only)
                    .expect("create tensor failed");
 
-    auto output_ort = ortki_Range(runtime_tensor_2_ort_tensor(begin), runtime_tensor_2_ort_tensor(end), runtime_tensor_2_ort_tensor(step));
+    float step_array[] = {100.0f};
+    auto step = hrt::create(lhs.datatype(), {1},
+                            {reinterpret_cast<gsl::byte *>(step_array), size},
+                            true, host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
+
+    auto output_ort = ortki_Range(runtime_tensor_2_ort_tensor(begin),
+                                  runtime_tensor_2_ort_tensor(end),
+                                  runtime_tensor_2_ort_tensor(step));
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
@@ -97,9 +99,8 @@ TEST_P(RangeTest, Range) {
                         .expect("create tensor failed");
 
     // actual
-    auto output =
-        kernels::stackvm::range(begin.impl(), end.impl(), step.impl())
-            .expect("range failed");
+    auto output = kernels::stackvm::range(begin.impl(), end.impl(), step.impl())
+                      .expect("range failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
