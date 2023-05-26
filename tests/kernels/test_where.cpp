@@ -61,12 +61,13 @@ TEST_P(WhereTest, Where) {
 
     // expected
     size_t size = 0;
-    bool con_array[] = { true, false, true, true };
+    bool con_array[] = {true, false, true, true};
     auto con = hrt::create(dt_boolean, {2, 2},
                            {reinterpret_cast<gsl::byte *>(con_array), size},
                            true, host_runtime_tensor::pool_cpu_only)
                    .expect("create tensor failed");
-    auto output_ort = ortki_Where(runtime_tensor_2_ort_tensor(con), l_ort, r_ort);
+    auto output_ort =
+        ortki_Where(runtime_tensor_2_ort_tensor(con), l_ort, r_ort);
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));

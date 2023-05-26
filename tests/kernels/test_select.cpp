@@ -75,22 +75,20 @@ TEST_P(SelectTest, Select) {
     size_t size = 0;
     bool p1_array[] = {true};
     auto p1 = hrt::create(dt_boolean, {1},
-                               {reinterpret_cast<gsl::byte *>(p1_array), size},
-                               true, host_runtime_tensor::pool_cpu_only)
-                       .expect("create tensor failed");
+                          {reinterpret_cast<gsl::byte *>(p1_array), size}, true,
+                          host_runtime_tensor::pool_cpu_only)
+                  .expect("create tensor failed");
     bool p2_array[] = {false};
     auto p2 = hrt::create(dt_boolean, {1},
-                          {reinterpret_cast<gsl::byte *>(p2_array), size},
-                          true, host_runtime_tensor::pool_cpu_only)
+                          {reinterpret_cast<gsl::byte *>(p2_array), size}, true,
+                          host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
-    auto output1 =
-        kernels::stackvm::select(p1.impl(), lhs.impl(), rhs.impl())
-            .expect("select failed");
+    auto output1 = kernels::stackvm::select(p1.impl(), lhs.impl(), rhs.impl())
+                       .expect("select failed");
     runtime_tensor actual1(output1.as<tensor>().expect("as tensor failed"));
 
-    auto output2 =
-        kernels::stackvm::select(p2.impl(), lhs.impl(), rhs.impl())
-            .expect("select failed");
+    auto output2 = kernels::stackvm::select(p2.impl(), lhs.impl(), rhs.impl())
+                       .expect("select failed");
     runtime_tensor actual2(output1.as<tensor>().expect("as tensor failed"));
 
     // compare

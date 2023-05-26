@@ -26,9 +26,9 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class SigmoidTest : public KernelTest,
-                    public ::testing::TestWithParam<
-                        std::tuple<nncase::typecode_t, dims_t>> {
+class SigmoidTest
+    : public KernelTest,
+      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
   public:
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
@@ -46,7 +46,8 @@ class SigmoidTest : public KernelTest,
 
 INSTANTIATE_TEST_SUITE_P(Sigmoid, SigmoidTest,
                          testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 3, 16, 16})));
+                                          testing::Values(dims_t{1, 3, 16,
+                                                                 16})));
 
 TEST_P(SigmoidTest, Sigmoid) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
@@ -64,8 +65,7 @@ TEST_P(SigmoidTest, Sigmoid) {
 
     // actual
     auto output =
-        kernels::stackvm::sigmoid(lhs.impl())
-            .expect("sigmoid failed");
+        kernels::stackvm::sigmoid(lhs.impl()).expect("sigmoid failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare

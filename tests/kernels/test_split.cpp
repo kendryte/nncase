@@ -26,9 +26,9 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class SplitTest : public KernelTest,
-                  public ::testing::TestWithParam<
-                      std::tuple<nncase::typecode_t, dims_t>> {
+class SplitTest
+    : public KernelTest,
+      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
   public:
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
@@ -46,16 +46,23 @@ class SplitTest : public KernelTest,
 
 INSTANTIATE_TEST_SUITE_P(Split, SplitTest,
                          testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 3, 16, 16})));
+                                          testing::Values(dims_t{1, 3, 16,
+                                                                 16})));
 
 TEST_P(SplitTest, Split) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
 
     // expected
     size_t size = 0;
-    int64_t sections_array[] = { 1, 2 };
-    auto sextions = hrt::create(dt_int64, {2}, {reinterpret_cast<gsl::byte *>(sections_array), size}, true, host_runtime_tensor::pool_cpu_only).expect("create tensor failed");;
-    auto output_ort = tensor_seq_get_value(ortki_Split(l_ort, runtime_tensor_2_ort_tensor(sextions), 1l), 0);
+    int64_t sections_array[] = {1, 2};
+    auto sextions =
+        hrt::create(dt_int64, {2},
+                    {reinterpret_cast<gsl::byte *>(sections_array), size}, true,
+                    host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
+    ;
+    auto output_ort = tensor_seq_get_value(
+        ortki_Split(l_ort, runtime_tensor_2_ort_tensor(sextions), 1l), 0);
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));

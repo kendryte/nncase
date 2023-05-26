@@ -26,9 +26,9 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class TileTest : public KernelTest,
-                 public ::testing::TestWithParam<
-                     std::tuple<nncase::typecode_t, dims_t>> {
+class TileTest
+    : public KernelTest,
+      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
   public:
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
@@ -46,7 +46,8 @@ class TileTest : public KernelTest,
 
 INSTANTIATE_TEST_SUITE_P(Tile, TileTest,
                          testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 3, 16, 16})));
+                                          testing::Values(dims_t{1, 3, 16,
+                                                                 16})));
 
 TEST_P(TileTest, Tile) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
@@ -54,10 +55,11 @@ TEST_P(TileTest, Tile) {
     // expected
     size_t size = 0;
     int64_t repeats_array[] = {1, 1, 1, 1};
-    auto repeats = hrt::create(lhs.datatype(), {4},
-                               {reinterpret_cast<gsl::byte *>(repeats_array), size},
-                               true, host_runtime_tensor::pool_cpu_only)
-                       .expect("create tensor failed");
+    auto repeats =
+        hrt::create(lhs.datatype(), {4},
+                    {reinterpret_cast<gsl::byte *>(repeats_array), size}, true,
+                    host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
     auto output_ort = ortki_Tile(l_ort, runtime_tensor_2_ort_tensor(repeats));
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
@@ -68,9 +70,8 @@ TEST_P(TileTest, Tile) {
                         .expect("create tensor failed");
 
     // actual
-    auto output =
-        kernels::stackvm::tile(lhs.impl(), repeats.impl())
-            .expect("tile failed");
+    auto output = kernels::stackvm::tile(lhs.impl(), repeats.impl())
+                      .expect("tile failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare

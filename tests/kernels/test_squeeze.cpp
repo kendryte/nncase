@@ -26,9 +26,9 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class SqueezeTest : public KernelTest,
-                    public ::testing::TestWithParam<
-                        std::tuple<nncase::typecode_t, dims_t>> {
+class SqueezeTest
+    : public KernelTest,
+      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
   public:
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
@@ -46,7 +46,8 @@ class SqueezeTest : public KernelTest,
 
 INSTANTIATE_TEST_SUITE_P(Squeeze, SqueezeTest,
                          testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 3, 16, 16})));
+                                          testing::Values(dims_t{1, 3, 16,
+                                                                 16})));
 
 TEST_P(SqueezeTest, Squeeze) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
@@ -68,9 +69,8 @@ TEST_P(SqueezeTest, Squeeze) {
                         .expect("create tensor failed");
 
     // actual
-    auto output =
-        kernels::stackvm::squeeze(lhs.impl(), axes.impl())
-            .expect("squeeze failed");
+    auto output = kernels::stackvm::squeeze(lhs.impl(), axes.impl())
+                      .expect("squeeze failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
