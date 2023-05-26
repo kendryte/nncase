@@ -23,6 +23,7 @@ import subprocess
 import shutil
 import os
 import sys
+import string
 import numpy as np
 from pathlib import Path
 from shutil import which
@@ -304,6 +305,16 @@ class CompileOptions:
     output_layout: str
     letterbox_value: float
     tcu_num: int
+
+    def __init__(self) -> None:
+        pass
+
+class ShapeBucketOptions:
+    enable: bool
+    var_map: dict
+    range_info: dict
+    segments_count: int
+    fix_var_map: dict
 
     def __init__(self) -> None:
         pass
