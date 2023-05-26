@@ -124,6 +124,7 @@ class Compiler:
     _compiler: _nncase.Compiler
     _compile_options: _nncase.CompileOptions
     _quantize_options: _nncase.QuantizeOptions
+    _shape_bucket_options: _nncase.ShapeBucketOptions
     _module: IRModule
 
     def __init__(self, compile_options: CompileOptions) -> None:
@@ -132,6 +133,7 @@ class Compiler:
         self._session = _nncase.CompileSession(self._target, self._compile_options)
         self._compiler = self._session.compiler
         self._quantize_options = None
+        self._shape_bucket_options = _nncase.ShapeBucketOptions()
 
     def compile(self) -> None:
         self._compiler.compile()

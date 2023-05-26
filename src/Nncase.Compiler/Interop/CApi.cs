@@ -71,6 +71,11 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr, byte*, nuint, void> QuantOptionsSetQuantSchemePtr;
     public delegate* unmanaged<IntPtr, byte, void> QuantOptionsSetExportQuantSchemePtr;
     public delegate* unmanaged<IntPtr, byte, void> QuantOptionsSetExportWeightRangeByChannelPtr;
+    public delegate* unmanaged<IntPtr> ShapeBucketOptionsCreatePtr;
+    public delegate* unmanaged<IntPtr, byte, void> ShapeBucketOptionsSetEnablePtr;
+    public delegate* unmanaged<IntPtr, byte*, nuint, void> ShapeBucketOptionsSetRangeInfoPtr;
+    public delegate* unmanaged<IntPtr, nuint, void> ShapeBucketOptionsSetSegmentsCountPtr;
+    public delegate* unmanaged<IntPtr, byte*, nuint, void> ShapeBucketOptionsSetFixVarMapPtr;
     public delegate* unmanaged<IntPtr, IntPtr> RTValueFromHandlePtr;
     public delegate* unmanaged<IntPtr, IntPtr> RTValueGetHandlePtr;
     public delegate* unmanaged<CStreamMT*, IntPtr, IntPtr> StreamCreatePtr;
@@ -121,6 +126,11 @@ public static unsafe class CApi
         mt->QuantOptionsSetQuantSchemePtr = &QuantizeOptionsSetQuantScheme;
         mt->QuantOptionsSetExportQuantSchemePtr = &QuantizeOptionsSetExportQuantScheme;
         mt->QuantOptionsSetExportWeightRangeByChannelPtr = &QuantizeOptionsSetExportWeightRangeByChannel;
+        mt->ShapeBucketOptionsCreatePtr = &ShapeBucketOptionsCreate;
+        mt->ShapeBucketOptionsSetEnablePtr = &ShapeBucketOptionsSetEnable;
+        mt->ShapeBucketOptionsSetRangeInfoPtr = &ShapeBucketOptionsSetRangeInfo;
+        mt->ShapeBucketOptionsSetSegmentsCountPtr = &ShapeBucketOptionsSetSegmentsCount;
+        mt->ShapeBucketOptionsSetFixVarMapPtr = &ShapeBucketOptionsSetFixVarMap;
         mt->RTValueFromHandlePtr = &RTValueFromHandle;
         mt->RTValueGetHandlePtr = &RTValueGetHandle;
         mt->StreamCreatePtr = &StreamCreate;
@@ -467,6 +477,56 @@ public static unsafe class CApi
             default:
                 throw new ArgumentException("Invalid exportWeightRangeByChannel Flag");
         }
+    }
+
+    [UnmanagedCallersOnly]
+    private static IntPtr ShapeBucketOptionsCreate()
+    {
+        return GCHandle.ToIntPtr(GCHandle.Alloc(ShapeBucketOptions.Default));
+    }
+
+    [UnmanagedCallersOnly]
+    private static void ShapeBucketOptionsSetEnable(IntPtr shapeBucketOptionsHandle, byte enable)
+    {
+        switch (enable)
+        {
+            case 0:
+                Get<ShapeBucketOptions>(shapeBucketOptionsHandle).Enable = false;
+                break;
+            case 1:
+                Get<ShapeBucketOptions>(shapeBucketOptionsHandle).Enable = true;
+                break;
+            default:
+                throw new ArgumentException("Invalid enable Flag");
+        }
+    }
+
+    [UnmanagedCallersOnly]
+    private static void ShapeBucketOptionsSetRangeInfo(IntPtr shapeBucketOptionsHandle, byte* rangeInfo, nuint rangeInfoSize)
+    {
+        byte[] rangeInfoByte = new byte[rangeInfoSize];
+        Marshal.Copy(new IntPtr(rangeInfo), rangeInfoByte , 0, (int)rangeInfoSize);
+        var pData = GCHandle.Alloc(rangeInfoByte, GCHandleType.Pinned);
+        var rangeInfoStruct = (Dictionary<string, (int, int)>)Marshal.PtrToStructure(pData.AddrOfPinnedObject(), typeof(Dictionary<string, (int, int)>))!;
+        Get<ShapeBucketOptions>(shapeBucketOptionsHandle).RangeInfo = rangeInfoStruct;
+        pData.Free();
+    }
+
+    [UnmanagedCallersOnly]
+    private static void ShapeBucketOptionsSetSegmentsCount(IntPtr shapeBucketOptionsHandle, nuint segmentCount)
+    {
+        Get<ShapeBucketOptions>(shapeBucketOptionsHandle).SegmentsCount = (int)segmentCount;
+    }
+
+    [UnmanagedCallersOnly]
+    private static void ShapeBucketOptionsSetFixVarMap(IntPtr shapeBucketOptionsHandle, byte* fixVarMap, nuint fixVarMapSize)
+    {
+        byte[] fixVarMapByte = new byte[fixVarMapSize];
+        Marshal.Copy(new IntPtr(fixVarMap), fixVarMapByte , 0, (int)fixVarMapSize);
+        var pData = GCHandle.Alloc(fixVarMapByte, GCHandleType.Pinned);
+        var fixVarMapByteStruct = (Dictionary<string, int>)Marshal.PtrToStructure(pData.AddrOfPinnedObject(), typeof(Dictionary<string, int>))!;
+        Get<ShapeBucketOptions>(shapeBucketOptionsHandle).FixVarMap = fixVarMapByteStruct;
+        pData.Free();
     }
 
     [UnmanagedCallersOnly]
