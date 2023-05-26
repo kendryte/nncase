@@ -68,25 +68,34 @@ TEST_P(SelectTest, Select) {
     auto r_ort = runtime_tensor_2_ort_tensor(rhs);
 
     // expected
-    auto output_ort = ortki_Add(l_ort, r_ort);
-    size_t size = 0;
-    void *ptr_ort = tensor_buffer(output_ort, &size);
-    dims_t shape(tensor_rank(output_ort));
-    tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
-    auto expected = hrt::create(lhs.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
-                                true, host_runtime_tensor::pool_cpu_only)
-                        .expect("create tensor failed");
+    auto expected1 = lhs;
+    auto expected2 = rhs;
 
     // actual
-    auto output =
-        kernels::stackvm::binary(nncase::runtime::stackvm::binary_op_t::add,
-                                 lhs.impl(), rhs.impl())
+    size_t size = 0;
+    bool p1_array[] = {true};
+    auto p1 = hrt::create(dt_boolean, {1},
+                               {reinterpret_cast<gsl::byte *>(p1_array), size},
+                               true, host_runtime_tensor::pool_cpu_only)
+                       .expect("create tensor failed");
+    bool p2_array[] = {false};
+    auto p2 = hrt::create(dt_boolean, {1},
+                          {reinterpret_cast<gsl::byte *>(p2_array), size},
+                          true, host_runtime_tensor::pool_cpu_only)
+                  .expect("create tensor failed");
+    auto output1 =
+        kernels::stackvm::select(p1.impl(), lhs.impl(), rhs.impl())
             .expect("select failed");
-    runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
+    runtime_tensor actual1(output1.as<tensor>().expect("as tensor failed"));
+
+    auto output2 =
+        kernels::stackvm::select(p2.impl(), lhs.impl(), rhs.impl())
+            .expect("select failed");
+    runtime_tensor actual2(output1.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_TRUE(is_same_tensor(expected, actual));
+    EXPECT_TRUE(is_same_tensor(expected2, actual1));
+    EXPECT_TRUE(is_same_tensor(expected1, actual2));
 }
 
 int main(int argc, char *argv[]) {

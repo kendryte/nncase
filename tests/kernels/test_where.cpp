@@ -52,24 +52,21 @@ class WhereTest : public KernelTest,
 INSTANTIATE_TEST_SUITE_P(Where, WhereTest,
                          testing::Combine(testing::Values(dt_float32, dt_int32,
                                                           dt_int64),
-                                          testing::Values(dims_t{1, 3, 16, 16},
-                                                          /*dims_t { 3, 16, 16
-                                                          }, dims_t { 16, 16 },
-                                                          dims_t { 16 },*/
-                                                          dims_t{1}),
-                                          testing::Values(dims_t{1, 3, 16, 16},
-                                                          /*dims_t { 3, 16, 16
-                                                          }, dims_t { 16, 16 },
-                                                          dims_t { 16 },*/
-                                                          dims_t{1})));
+                                          testing::Values(dims_t{2, 2}),
+                                          testing::Values(dims_t{2, 2})));
 
 TEST_P(WhereTest, Where) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
     auto r_ort = runtime_tensor_2_ort_tensor(rhs);
 
     // expected
-    auto output_ort = ortki_Add(l_ort, r_ort);
     size_t size = 0;
+    bool con_array[] = { true, false, true, true };
+    auto con = hrt::create(dt_boolean, {2, 2},
+                           {reinterpret_cast<gsl::byte *>(con_array), size},
+                           true, host_runtime_tensor::pool_cpu_only)
+                   .expect("create tensor failed");
+    auto output_ort = ortki_Where(runtime_tensor_2_ort_tensor(con), l_ort, r_ort);
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
@@ -80,8 +77,7 @@ TEST_P(WhereTest, Where) {
 
     // actual
     auto output =
-        kernels::stackvm::binary(nncase::runtime::stackvm::binary_op_t::add,
-                                 lhs.impl(), rhs.impl())
+        kernels::stackvm::where(true, con.impl(), lhs.impl(), rhs.impl())
             .expect("where failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
