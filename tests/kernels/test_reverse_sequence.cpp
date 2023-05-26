@@ -29,48 +29,37 @@ using namespace ortki;
 class ReverseSequenceTest
     : public KernelTest,
       public ::testing::TestWithParam<
-          std::tuple<nncase::typecode_t, dims_t, dims_t>> {
+          std::tuple<nncase::typecode_t, dims_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape, r_shape] = GetParam();
+        auto &&[typecode, l_shape] = GetParam();
 
         lhs = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
         init_tensor(lhs);
-
-        rhs = hrt::create(typecode, r_shape, host_runtime_tensor::pool_cpu_only)
-                  .expect("create tensor failed");
-        init_tensor(rhs);
     }
 
     void TearDown() override {}
 
   protected:
     runtime_tensor lhs;
-    runtime_tensor rhs;
 };
 
 INSTANTIATE_TEST_SUITE_P(ReverseSequence, ReverseSequenceTest,
-                         testing::Combine(testing::Values(dt_float32, dt_int32,
-                                                          dt_int64),
-                                          testing::Values(dims_t{1, 3, 16, 16},
-                                                          /*dims_t { 3, 16, 16
-                                                          }, dims_t { 16, 16 },
-                                                          dims_t { 16 },*/
-                                                          dims_t{1}),
-                                          testing::Values(dims_t{1, 3, 16, 16},
-                                                          /*dims_t { 3, 16, 16
-                                                          }, dims_t { 16, 16 },
-                                                          dims_t { 16 },*/
-                                                          dims_t{1})));
+                         testing::Combine(testing::Values(dt_float32),
+                                          testing::Values(dims_t{4, 4})));
 
 TEST_P(ReverseSequenceTest, ReverseSequence) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
-    auto r_ort = runtime_tensor_2_ort_tensor(rhs);
 
     // expected
-    auto output_ort = ortki_Add(l_ort, r_ort);
     size_t size = 0;
+    int64_t seqLens_array[] = {1, 2, 3, 4};
+    auto seqLens = hrt::create(dt_int64, {4},
+                               {reinterpret_cast<gsl::byte *>(seqLens_array), size},
+                               true, host_runtime_tensor::pool_cpu_only)
+                       .expect("create tensor failed");
+    auto output_ort = ortki_ReverseSequence(l_ort, runtime_tensor_2_ort_tensor(seqLens), 1, 0);
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
@@ -80,9 +69,18 @@ TEST_P(ReverseSequenceTest, ReverseSequence) {
                         .expect("create tensor failed");
 
     // actual
+    int64_t batch_axis_array[] = {1};
+    auto batch_axis = hrt::create(dt_int64, shape,
+                                  {reinterpret_cast<gsl::byte *>(batch_axis_array), size},
+                                  true, host_runtime_tensor::pool_cpu_only)
+                          .expect("create tensor failed");
+    int64_t time_axis_array[] = {0};
+    auto time_axis = hrt::create(dt_int64, shape,
+                                  {reinterpret_cast<gsl::byte *>(time_axis_array), size},
+                                  true, host_runtime_tensor::pool_cpu_only)
+                          .expect("create tensor failed");
     auto output =
-        kernels::stackvm::binary(nncase::runtime::stackvm::binary_op_t::add,
-                                 lhs.impl(), rhs.impl())
+        kernels::stackvm::reverse_sequence(lhs.impl(), seqLens.impl(), batch_axis.impl(), time_axis.impl())
             .expect("reverse_sequence failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 

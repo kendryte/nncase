@@ -28,48 +28,38 @@ using namespace ortki;
 
 class ReshapeTest : public KernelTest,
                     public ::testing::TestWithParam<
-                        std::tuple<nncase::typecode_t, dims_t, dims_t>> {
+                        std::tuple<nncase::typecode_t, dims_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape, r_shape] = GetParam();
+        auto &&[typecode, l_shape] = GetParam();
 
         lhs = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
         init_tensor(lhs);
-
-        rhs = hrt::create(typecode, r_shape, host_runtime_tensor::pool_cpu_only)
-                  .expect("create tensor failed");
-        init_tensor(rhs);
     }
 
     void TearDown() override {}
 
   protected:
     runtime_tensor lhs;
-    runtime_tensor rhs;
 };
 
 INSTANTIATE_TEST_SUITE_P(Reshape, ReshapeTest,
                          testing::Combine(testing::Values(dt_float32, dt_int32,
                                                           dt_int64),
-                                          testing::Values(dims_t{1, 3, 16, 16},
-                                                          /*dims_t { 3, 16, 16
-                                                          }, dims_t { 16, 16 },
-                                                          dims_t { 16 },*/
-                                                          dims_t{1}),
-                                          testing::Values(dims_t{1, 3, 16, 16},
-                                                          /*dims_t { 3, 16, 16
-                                                          }, dims_t { 16, 16 },
-                                                          dims_t { 16 },*/
-                                                          dims_t{1})));
+                                          testing::Values(dims_t{1, 3, 16, 16})));
 
 TEST_P(ReshapeTest, Reshape) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
-    auto r_ort = runtime_tensor_2_ort_tensor(rhs);
 
     // expected
-    auto output_ort = ortki_Reshape(l_ort, r_ort, (long)0);
     size_t size = 0;
+    int32_t new_shape_array[] = {1, 3, 32, 8};
+    auto new_shape = hrt::create(dt_int32, {4},
+                                 {reinterpret_cast<gsl::byte *>(new_shape_array), size},
+                                 true, host_runtime_tensor::pool_cpu_only)
+                         .expect("create tensor failed");
+    auto output_ort = ortki_Reshape(l_ort, runtime_tensor_2_ort_tensor(new_shape), (long)0);
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
@@ -80,8 +70,7 @@ TEST_P(ReshapeTest, Reshape) {
 
     // actual
     auto output =
-        kernels::stackvm::binary(nncase::runtime::stackvm::binary_op_t::add,
-                                 lhs.impl(), rhs.impl())
+        kernels::stackvm::reshape(lhs.impl(), new_shape.impl())
             .expect("reshape failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 

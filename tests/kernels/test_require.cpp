@@ -80,8 +80,7 @@ TEST_P(RequireTest, Require) {
 
     // actual
     auto output =
-        kernels::stackvm::binary(nncase::runtime::stackvm::binary_op_t::add,
-                                 lhs.impl(), rhs.impl())
+        kernels::stackvm::require("",lhs.impl(), rhs.impl())
             .expect("require failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
