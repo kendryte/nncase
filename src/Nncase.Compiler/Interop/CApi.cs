@@ -12,6 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Newtonsoft.Json;
 using Nncase.Diagnostics;
 using Nncase.Hosting;
 using Nncase.IR;
@@ -513,11 +514,13 @@ public static unsafe class CApi
     private static void ShapeBucketOptionsSetRangeInfo(IntPtr shapeBucketOptionsHandle, byte* rangeInfo, nuint rangeInfoSize)
     {
         byte[] rangeInfoByte = new byte[rangeInfoSize];
-        Marshal.Copy(new IntPtr(rangeInfo), rangeInfoByte , 0, (int)rangeInfoSize);
-        var pData = GCHandle.Alloc(rangeInfoByte, GCHandleType.Pinned);
-        var rangeInfoStruct = (Dictionary<string, (int, int)>)Marshal.PtrToStructure(pData.AddrOfPinnedObject(), typeof(Dictionary<string, (int, int)>))!;
+        Marshal.Copy(new IntPtr(rangeInfo), rangeInfoByte, 0, (int)rangeInfoSize);
+        string jsonStr = Encoding.UTF8.GetString(rangeInfoByte);
+        Dictionary<String, List<int>> rangeInfoStructTmp = JsonConvert.DeserializeObject<Dictionary<String, List<int>>>(jsonStr)!;
+        Dictionary<string, (int, int)> rangeInfoStruct = new();
+        foreach (var element in rangeInfoStructTmp)
+            rangeInfoStruct.Add(element.Key, (element.Value[0], element.Value[1]));
         Get<ShapeBucketOptions>(shapeBucketOptionsHandle).RangeInfo = rangeInfoStruct;
-        pData.Free();
     }
 
     [UnmanagedCallersOnly]
@@ -531,10 +534,9 @@ public static unsafe class CApi
     {
         byte[] fixVarMapByte = new byte[fixVarMapSize];
         Marshal.Copy(new IntPtr(fixVarMap), fixVarMapByte , 0, (int)fixVarMapSize);
-        var pData = GCHandle.Alloc(fixVarMapByte, GCHandleType.Pinned);
-        var fixVarMapByteStruct = (Dictionary<string, int>)Marshal.PtrToStructure(pData.AddrOfPinnedObject(), typeof(Dictionary<string, int>))!;
-        Get<ShapeBucketOptions>(shapeBucketOptionsHandle).FixVarMap = fixVarMapByteStruct;
-        pData.Free();
+        string jsonStr = Encoding.UTF8.GetString(fixVarMapByte);
+        Dictionary<String, int> fixVarMapStruct = JsonConvert.DeserializeObject<Dictionary<String, int>>(jsonStr)!;
+        Get<ShapeBucketOptions>(shapeBucketOptionsHandle).FixVarMap = fixVarMapStruct;
     }
 
     [UnmanagedCallersOnly]

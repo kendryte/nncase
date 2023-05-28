@@ -21,6 +21,8 @@
 #include <nncase/compiler_defs.h>
 #include <nncase/runtime/simple_types.h>
 #include <nncase/value.h>
+#include <nlohmann/json.hpp>
+using nlohmann::json;
 
 extern "C" {
 typedef void *clr_object_handle_t;
@@ -385,9 +387,9 @@ class shape_bucket_options : public clr_object_base {
 
     std::map<std::string, std::tuple<int, int>> range_info() { return {}; }
     void range_info(std::map<std::string, std::tuple<int, int>> value) {
-        char buf[sizeof(value)];
-        memcpy(buf, &value, sizeof(value));
-        nncase_clr_api()->shape_bucket_options_set_range_info(obj_.get(), buf, sizeof(value));
+        json j = value;
+        std::string s = j.dump();
+        nncase_clr_api()->shape_bucket_options_set_range_info(obj_.get(), s.c_str(), s.length());
     }
 
     int segments_count() { return 2; }
@@ -397,9 +399,9 @@ class shape_bucket_options : public clr_object_base {
 
     std::map<std::string, int> fix_var_map() { return {}; }
     void fix_var_map(std::map<std::string, int> value) {
-        char buf[sizeof(value)];
-        memcpy(buf, &value, sizeof(value));
-        nncase_clr_api()->shape_bucket_options_set_fix_var_map(obj_.get(), buf, sizeof(value));
+        json j = value;
+        std::string s = j.dump();
+        nncase_clr_api()->shape_bucket_options_set_fix_var_map(obj_.get(), s.c_str(), s.length());
     }
 };
 
