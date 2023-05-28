@@ -32,7 +32,7 @@ internal partial class QuantizerConfigBind
     public async Task RunAsync()
     {
         var quantOptions = _compileSession.CompileOptions.QuantizeOptions;
-        if (quantOptions.CalibrationDataset == null)
+        if (quantOptions.BindQuantMethod && quantOptions.CalibrationDataset == null)
         {
             throw new ArgumentNullException(nameof(quantOptions.CalibrationDataset));
         }
