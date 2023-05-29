@@ -26,9 +26,9 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class UniformTest : public KernelTest,
-                    public ::testing::TestWithParam<
-                        std::tuple<nncase::typecode_t, dims_t>> {
+class UniformTest
+    : public KernelTest,
+      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
   public:
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
@@ -57,7 +57,8 @@ TEST_P(UniformTest, Uniform) {
 
     // expected
     int64_t shape_u_array[] = {1, 3, 16, 16};
-    auto output_ort = ortki_RandomUniform(1, 1.0f, 0.0f, 1.0f, shape_u_array, 4);
+    auto output_ort =
+        ortki_RandomUniform(1, 1.0f, 0.0f, 1.0f, shape_u_array, 4);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
@@ -75,21 +76,22 @@ TEST_P(UniformTest, Uniform) {
                     .expect("create tensor failed");
     float low_array[] = {0.0f};
     auto low = hrt::create(dt_float32, {1},
-                            {reinterpret_cast<gsl::byte *>(low_array), size},
-                            true, host_runtime_tensor::pool_cpu_only)
-                    .expect("create tensor failed");
+                           {reinterpret_cast<gsl::byte *>(low_array), size},
+                           true, host_runtime_tensor::pool_cpu_only)
+                   .expect("create tensor failed");
     float seed_array[] = {1.0f};
     auto seed = hrt::create(dt_float32, {1},
                             {reinterpret_cast<gsl::byte *>(seed_array), size},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
-    auto shape_u = hrt::create(dt_int32, {4},
-                            {reinterpret_cast<gsl::byte *>(shape_u_array), size},
-                            true, host_runtime_tensor::pool_cpu_only)
-                    .expect("create tensor failed");
-    auto output =
-        kernels::stackvm::uniform(dt_float32, high.impl(), low.impl(), seed.impl(), shape_u.impl())
-            .expect("uniform failed");
+    auto shape_u =
+        hrt::create(dt_int32, {4},
+                    {reinterpret_cast<gsl::byte *>(shape_u_array), size}, true,
+                    host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
+    auto output = kernels::stackvm::uniform(dt_float32, high.impl(), low.impl(),
+                                            seed.impl(), shape_u.impl())
+                      .expect("uniform failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare

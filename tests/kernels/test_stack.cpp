@@ -26,9 +26,9 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class StackTest : public KernelTest,
-                  public ::testing::TestWithParam<
-                      std::tuple<nncase::typecode_t, dims_t>> {
+class StackTest
+    : public KernelTest,
+      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
   public:
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
@@ -46,7 +46,8 @@ class StackTest : public KernelTest,
 
 INSTANTIATE_TEST_SUITE_P(Stack, StackTest,
                          testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 3, 16, 16})));
+                                          testing::Values(dims_t{1, 3, 16,
+                                                                 16})));
 
 TEST_P(StackTest, Stack) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
@@ -70,8 +71,7 @@ TEST_P(StackTest, Stack) {
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
     auto output =
-        kernels::stackvm::stack(lhs.impl(), axes.impl())
-            .expect("stack failed");
+        kernels::stackvm::stack(lhs.impl(), axes.impl()).expect("stack failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare

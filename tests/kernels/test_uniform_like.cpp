@@ -93,12 +93,14 @@ TEST_P(UniformLikeTest, UniformLike) {
                             {reinterpret_cast<gsl::byte *>(seed_array), size},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
-    auto shape_u = hrt::create(dt_int32, {4},
-                               {reinterpret_cast<gsl::byte *>(shape_u_array), size},
-                               true, host_runtime_tensor::pool_cpu_only)
-                       .expect("create tensor failed");
+    auto shape_u =
+        hrt::create(dt_int32, {4},
+                    {reinterpret_cast<gsl::byte *>(shape_u_array), size}, true,
+                    host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
     auto output =
-        kernels::stackvm::uniform_like(dt_float32, lhs.impl(), high.impl(), low.impl(), seed.impl())
+        kernels::stackvm::uniform_like(dt_float32, lhs.impl(), high.impl(),
+                                       low.impl(), seed.impl())
             .expect("uniform_like failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
