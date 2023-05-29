@@ -64,8 +64,8 @@ INSTANTIATE_TEST_SUITE_P(Range, RangeTest,
                                                           dims_t{1})));
 
 TEST_P(RangeTest, Range) {
-    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
-    auto r_ort = runtime_tensor_2_ort_tensor(rhs);
+//    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
+//    auto r_ort = runtime_tensor_2_ort_tensor(rhs);
 
     // expected
     size_t size = 0;

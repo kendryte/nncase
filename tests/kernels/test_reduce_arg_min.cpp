@@ -64,8 +64,8 @@ INSTANTIATE_TEST_SUITE_P(ReduceArgMin, ReduceArgMinTest,
                                                           dims_t{1})));
 
 TEST_P(ReduceArgMinTest, ReduceArgMin) {
-    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
-    auto r_ort = runtime_tensor_2_ort_tensor(rhs);
+//    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
+//    auto r_ort = runtime_tensor_2_ort_tensor(rhs);
 
     // expected
     size_t size = 0;
