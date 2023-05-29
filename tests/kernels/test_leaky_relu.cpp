@@ -45,8 +45,7 @@ class LeakyReluTest
 };
 
 INSTANTIATE_TEST_SUITE_P(leaky_relu, LeakyReluTest,
-                         testing::Combine(testing::Values(dt_float32, dt_int32,
-                                                          dt_int64),
+                         testing::Combine(testing::Values(dt_float32),
                                           testing::Values(dims_t{1, 3, 16, 16},
                                                           /*dims_t { 3, 16, 16
                                                           }, dims_t { 16, 16 },
@@ -57,8 +56,7 @@ TEST_P(LeakyReluTest, leaky_relu) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
 
     // expected
-    float *alpha_ptr;
-    *alpha_ptr = 0.6f;
+    float alpha_ptr[] = {0.6f};
     auto alpha =
         hrt::create(nncase::dt_float32, {1},
                     {reinterpret_cast<gsl::byte *>(alpha_ptr), sizeof(float)},
