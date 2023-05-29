@@ -55,6 +55,9 @@ public static class Tensors
 
     public static Call Gather(Expr input, Expr axis, Expr index) => new Call(new Gather(), input, axis, index);
 
+    public static Call GatherElements(Expr input, Expr axis, Expr indices) =>
+        new Call(new GatherElements(), input, axis, indices);
+
     public static Call GatherND(Expr input, Expr batch_dims, Expr index) =>
         new Call(new GatherND(), input, batch_dims, index);
 

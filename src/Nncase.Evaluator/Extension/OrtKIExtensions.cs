@@ -96,6 +96,8 @@ public static class OrtKIExtensions
         throw new ArgumentOutOfRangeException("Unsupported OrtDataType: " + dt);
     }
 
+    public static OrtKISharp.Tensor BroadcastTo(this OrtKISharp.Tensor tensor, long[] shape, OrtDataType dtype = OrtDataType.Float) => tensor + OrtKISharp.Tensor.Empty(shape, dtype);
+
     private static OrtKISharp.Tensor ToOrtTensor(this Tensor tensor, int[] shape)
     {
         return OrtKISharp.Tensor.MakeTensor(tensor.PinBuffer(), tensor.ElementType.ToOrtType(), shape.ToLongs());
