@@ -16,6 +16,7 @@
 #include <cstring>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/runtime/runtime_op_utility.h>
+#include "opt_common.h"
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -58,7 +59,7 @@ result<void> concat_contiguous_impl(
             const auto dims_width = concat_dims[n] * subsize;
             const auto in_offset = offset(in_strides[n], in_index);
             auto *in_ptr = reinterpret_cast<const T *>(inputs[n]) + in_offset;
-            memcpy(out_ptr, in_ptr, dims_width * sizeof(T));
+            opt_memcpy(out_ptr, in_ptr, dims_width * sizeof(T));
             out_ptr += dims_width;
         }
     };

@@ -150,5 +150,9 @@ where(datatype_t dt, const bool *cond, const gsl::byte *x, const gsl::byte *y,
       const strides_t &cond_strides, const strides_t &x_strides,
       const strides_t &y_strides, const strides_t &out_strides);
 
+NNCASE_API result<void> transpose(
+    datatype_t type, const gsl::byte *src, gsl::byte *dest,
+    const dims_t &in_shape, const dims_t &perm, const strides_t &in_strides,
+    const strides_t &out_strides, kernel_context &context) noexcept;
 } // namespace optimized
 END_NS_NNCASE_KERNELS_MODULE

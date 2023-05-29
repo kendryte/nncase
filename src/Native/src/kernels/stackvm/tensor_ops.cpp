@@ -685,21 +685,20 @@ result<value_t> nncase::kernels::stackvm::require(
 }
 
 result<value_t> nncase::kernels::stackvm::bucket_pad([[maybe_unused]] value_t input, [[maybe_unused]] value_t shape, [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &) {
-//    return err(std::errc::not_supported);
     try_dims_v(shape);
     auto in_tensor = input.as<tensor>().unwrap();
     auto in_shape = in_tensor->shape();
     auto paddings = std::vector<int>(8);
     auto rank = shape_value.size();
     for (int i = 0; i < rank; ++i) {
-        paddings[2 * i + 0] = shape_value[i] - in_shape[i];
-        paddings[2 * i + 1] = 0;
+        paddings[2 * i + 0] = 0;
+        paddings[2 * i + 1] = shape_value[i] - in_shape[i];
     }
     auto pads_shape = dims_t{rank, 2};
-    auto span = gsl::span(reinterpret_cast<gsl::byte*>(paddings.data()), compute_size(pads_shape));
+    auto span = gsl::span(reinterpret_cast<gsl::byte*>(paddings.data()), compute_size(pads_shape) * sizeof(int));
     try_var(pads, hrt::create(dt_int32, pads_shape, span, false, host_runtime_tensor::pool_cpu_only));
     auto pad_value = 0;
-    auto data = gsl::span(reinterpret_cast<gsl::byte*>(&pad_value), 1);
+    auto data = gsl::span(reinterpret_cast<gsl::byte*>(&pad_value), in_tensor->dtype()->size_bytes());
     try_var(pad_v, hrt::create(in_tensor->dtype()->typecode(), dims_t {}, data, false, host_runtime_tensor::pool_cpu_only));
     return nncase::kernels::stackvm::pad(pad_mode_t::constant, input, pads.impl(), pad_v.impl(), output);
 }
@@ -839,6 +838,27 @@ nncase::kernels::stackvm::size_of([[maybe_unused]] value_t input,
     KERNEL_FINISH;
 }
 
+bool is_nop_slice(const axes_t& begin, const axes_t& end, [[maybe_unused]] const axes_t& axes, const axes_t& strides, const dims_t& in_shape) {
+    if (begin.size() != in_shape.size()) {
+        return false;
+    }
+    if (!std::all_of(begin.begin(), begin.end(),
+                     [](auto x) { return x == 0; })) {
+        return false;
+    }
+    for (int i = 0; i < in_shape.size(); ++i) {
+        if (end[i] < in_shape[i]) {
+            return false;
+        }
+    }
+    if (!std::all_of(strides.begin(), strides.end(),
+                     [](auto x) { return x == 1; })) {
+        return false;
+    }
+    // todo: check axes
+    return true;
+}
+
 result<value_t> nncase::kernels::stackvm::slice(value_t input, value_t begins,
                                                 value_t ends, value_t axes,
                                                 value_t strides, value_t output,
@@ -849,6 +869,9 @@ result<value_t> nncase::kernels::stackvm::slice(value_t input, value_t begins,
     try_axes(axes_value, axes);
     try_axes(strides_value, strides);
     auto in_shape = input_tensor->shape();
+    if(is_nop_slice(begins_value, ends_value, axes_value, strides_value, in_shape)){
+        return ok(input);
+    }
 
     auto &&[begin_values, end_values, strides_values] = slice_fill(
         in_shape, begins_value, ends_value, strides_value, axes_value);
@@ -864,11 +887,13 @@ result<value_t> nncase::kernels::stackvm::slice(value_t input, value_t begins,
         }
     }
     if (neg_strides) {
+        std::cout << "ref slice" << std::endl;
         try_(reference::slice(input_tensor->dtype(), in_mem, out_mem, in_shape,
                               input_tensor->strides(), output_tensor->strides(),
                               begin_values, end_values, strides_values,
                               context));
     } else {
+        std::cout << "opt slice" << std::endl;
         try_(optimized::slice(input_tensor->dtype(), in_mem, out_mem, in_shape,
                               input_tensor->strides(), output_tensor->strides(),
                               begin_values, end_values, strides_values,
@@ -946,12 +971,27 @@ result<value_t> nncase::kernels::stackvm::stack(value_t inputs, value_t axis,
     auto out_shape = stack_infer_shape(
         input0->shape(), inputs_tuple->fields().size(), axis_value);
     try_output(out_mem, output, input0->dtype(), out_shape);
-    try_var(strides, get_strides(inputs_tuple));
+    try_var(shapes, get_shapes(inputs_tuple));
+    auto strides = std::vector<dims_t>(shapes.size());
+    for (int i = 0; i < shapes.size(); ++i) {
+        strides[i] = get_default_strides(shapes[i]);
+    }
     auto inputs_value_span =
         gsl::make_span(inputs_value).as_span<const gsl::byte *const>();
     try_(reference::stack(input0->dtype(), inputs_value_span, out_mem,
                           out_shape, strides, output_tensor->strides(),
                           axis_value, context));
+//    auto dtype = input0->dtype();
+//    auto concat_dims = dims_t{axis_value};
+//    if (is_contiguous(input0) && axis_value < 4) {
+//        try_(optimized::concat(
+//            dtype, inputs_value_span, out_mem, output_tensor->shape(), strides,
+//            output_tensor->strides(), axis_value, concat_dims, context))
+//    } else {
+//        try_(reference::concat(
+//            dtype, inputs_value_span, out_mem, output_tensor->shape(), strides,
+//            output_tensor->strides(), axis_value, concat_dims, context))
+//    }
     KERNEL_FINISH;
 }
 
@@ -998,16 +1038,22 @@ nncase::kernels::stackvm::top_k(value_t x, value_t k, value_t axis,
 
 result<value_t> nncase::kernels::stackvm::transpose(value_t input, value_t perm,
                                                     value_t output,
-                                                    kernel_context &context) {
+                                                    [[maybe_unused]] kernel_context &context) {
     try_input(input_mem, input);
     auto dt = input_tensor->dtype();
     try_dims(perm_value, perm);
     auto out_shape = transpose_infer_shape(input_tensor->shape(), perm_value);
     try_output(out_mem, output, dt, out_shape);
 
-    try_(reference::transpose(dt, input_mem, out_mem, input_tensor->shape(),
-                              perm_value, input_tensor->strides(),
-                              output_tensor->strides(), context));
+    if(out_shape.size() == 4) {
+        try_(optimized::transpose(dt, input_mem, out_mem, input_tensor->shape(),
+                                  perm_value, input_tensor->strides(),
+                                  output_tensor->strides(), context));
+    } else {
+        try_(reference::transpose(dt, input_mem, out_mem, input_tensor->shape(),
+                                  perm_value, input_tensor->strides(),
+                                  output_tensor->strides()));
+    }
     return ok(output);
 }
 

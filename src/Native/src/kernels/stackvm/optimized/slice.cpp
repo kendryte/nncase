@@ -16,6 +16,7 @@
 #include <cstring>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/runtime/runtime_op_utility.h>
+#include "opt_common.h"
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -61,7 +62,7 @@ result<void> slice_contiguous_impl(
         const auto distance = static_cast<size_t>(ends[dims]) - begins[dims];
         const auto copy_size = distance * elemsize;
         const auto *in_ptr = input + offset(in_strides, in_index);
-        memcpy(out_ptr, in_ptr, copy_size);
+        opt_memcpy(out_ptr, in_ptr, copy_size);
         out_ptr += distance;
     };
 
