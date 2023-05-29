@@ -53,7 +53,7 @@ INSTANTIATE_TEST_SUITE_P(Uniform, UniformTest,
                                                           dims_t{1})));
 
 TEST_P(UniformTest, Uniform) {
-//    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
+    //    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
 
     // expected
     int64_t shape_u_array[] = {1, 3, 16, 16};
