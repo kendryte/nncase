@@ -291,6 +291,11 @@ public sealed class SchedFunctionResult
             return false;
         }
 
+        if (Rdatas.Count == 0)
+        {
+            return true;
+        }
+
         return EqualityComparer<HashSet<TIR.PhysicalBuffer>>.Default.Equals(Rdatas, result.Rdatas) &&
                EqualityComparer<int>.Default.Equals(DataUsage, result.DataUsage);
     }
