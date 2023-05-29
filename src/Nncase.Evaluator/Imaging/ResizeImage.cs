@@ -112,6 +112,7 @@ public class ResizeImageEvaluator : IEvaluator<ResizeImage>, ITypeInferencer<Res
     {
         var input = context.CheckArgumentType<TensorType>(target, ResizeImage.Input);
         var newSize = context.GetArgument(target, ResizeImage.NewSize);
+        context.CheckArgumentType<TensorType>(target, ResizeImage.NewSize);
         return TypeInference.ResizeType(input, newSize, null);
     }
 
