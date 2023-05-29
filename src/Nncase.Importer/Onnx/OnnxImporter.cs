@@ -129,6 +129,7 @@ public sealed partial class OnnxImporter : BaseImporter
             "Flatten" => VisitFlatten(op),
             "Floor" => VisitUnary(op, UnaryOp.Floor),
             "Gather" => VisitGather(op),
+            "GatherElements" => VisitGatherElements(op),
             "GatherND" => VisitGatherND(op),
             "Gemm" => VisitGemm(op),
             "GlobalAveragePool" => VisitReduceWindow2D(op, ReduceOp.Mean, 0f, true),

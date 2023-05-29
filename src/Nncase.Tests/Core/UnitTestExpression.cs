@@ -304,6 +304,35 @@ public class UnitTestExpression
             HashCode.Combine(StructuralComparisons.StructuralEqualityComparer.GetHashCode(segments), segmentND.PadH, segmentND.PadW), segmentND.GetHashCode());
         Assert.Equal(string.Join(",", segments.Select(s => s.ToString())), segmentND.ToString());
         Assert.Equal(segments.Aggregate(1, (acc, seg) => acc * seg.Length), segmentND.Shape_size);
+        var segAll = new Segment1D(System.Range.All, Padding.Zero());
+        Assert.Throws<InvalidOperationException>(() => segAll.Length);
+        var segAddND = segmentND + segmentND;
+        Assert.Equal(segments, segAddND.Segments);
+        Assert.Equal(4, segAddND.Count);
+        Assert.True(segAddND == segmentND);
+        Assert.False(segAddND != segmentND);
+
+        var seg1 = new Segment1D(2..5, Padding.Zero());
+        Assert.Equal(2, seg1.Start);
+        Assert.Equal(5, seg1.End);
+        Assert.Equal(3, seg1.Length);
+        Assert.Equal(Padding.Zero(), seg1.Padding);
+
+        var seg2 = new Segment1D(4..7, Padding.Zero());
+        var segAdd = seg1 + seg2;
+        Assert.Equal(2, segAdd.Start);
+        Assert.Equal(7, segAdd.End);
+        Assert.Equal(5, segAdd.Length);
+
+        var segDivide = seg1 / 2;
+        Assert.Equal(1, segDivide.Start);
+        Assert.Equal(2, segDivide.End);
+        Assert.Equal(1, segDivide.Length);
+
+        var segMultiply = seg1 * 3;
+        Assert.Equal(6, segMultiply.Start);
+        Assert.Equal(15, segMultiply.End);
+        Assert.Equal(9, segMultiply.Length);
     }
 
     [Fact]

@@ -35,6 +35,7 @@ set(SRCS ../tensor_ops.cpp
          split.cpp
          slice.cpp
          softmax.cpp
+         log_softmax.cpp
          space_to_batch.cpp
          stack.cpp
          tile.cpp
@@ -44,5 +45,6 @@ set(SRCS ../tensor_ops.cpp
          where.cpp
          uninitialized.cpp
          layer_norm.cpp
-         scatter_nd.cpp)
+         scatter_nd.cpp
+         gather_elements.cpp)
 target_sources(kernels PRIVATE ${SRCS})

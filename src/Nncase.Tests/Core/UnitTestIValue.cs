@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -209,5 +210,45 @@ public sealed class UnitTestIValue
         var a = new TupleValue(values);
         Assert.Equal(HashCode<TensorValue>.Combine(values), a.GetHashCode());
         Assert.Equal(a.ToString(), "(" + string.Join(",", values.Select(v => v.ToString())) + ")");
+    }
+
+    [Fact]
+    public void TestNoneValue()
+    {
+        var defaultInstance = NoneValue.Default;
+        Assert.NotNull(defaultInstance);
+
+        var noneValue = NoneValue.Default;
+        var type = noneValue.Type;
+        Assert.Equal(NoneType.Default, type);
+
+        var noneValue1 = NoneValue.Default;
+        var count = noneValue1.Count;
+        Assert.Equal(1, count);
+
+        var noneValue2 = NoneValue.Default;
+        var indexerResult = noneValue2[0];
+        Assert.Equal(noneValue2, indexerResult);
+
+        var noneValue3 = NoneValue.Default;
+        Assert.Throws<ArgumentOutOfRangeException>(() => noneValue3[1]);
+
+        var noneValue4 = NoneValue.Default;
+        Assert.Throws<InvalidOperationException>(() => noneValue4.AsTensor());
+
+        var noneValue5 = NoneValue.Default;
+        using var enumerator = noneValue5.GetEnumerator();
+        Assert.False(enumerator.MoveNext());
+
+        var noneValue6 = NoneValue.Default;
+        var other = NoneValue.Default;
+        var equals = noneValue6.Equals(other);
+        Assert.True(equals);
+
+        var noneValue7 = NoneValue.Default;
+        var other1 = None.Default;
+        var equals1 = noneValue7.Equals(other1);
+        Assert.False(equals1);
+        Assert.Equal(0, noneValue7.GetHashCode());
     }
 }

@@ -26,7 +26,7 @@ public sealed partial class BroadcastEvaluator : IEvaluator<Broadcast>, ITypeInf
             return input.Cast(OrtDataType.Float).BroadcastTo(shape).Cast(OrtDataType.Bool).ToValue();
         }
 
-        return input.BroadcastTo(shape).ToValue();
+        return OrtKIExtensions.BroadcastTo(input, shape, input.DataType).ToValue();
     }
 
     /// <inheritdoc/>

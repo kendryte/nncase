@@ -138,6 +138,12 @@ softmax(const T *input, T *output, const dims_t &in_shape,
 
 template <typename T>
 NNCASE_API result<void>
+log_softmax(const T *input, T *output, const dims_t &in_shape,
+            const dims_t &in_strides, const dims_t &out_strides,
+            int32_t axis) noexcept;
+
+template <typename T>
+NNCASE_API result<void>
 sigmoid(const T *input, T *output, const dims_t &in_shape,
         const strides_t &input_strides, const dims_t &out_shape,
         const strides_t &out_strides,

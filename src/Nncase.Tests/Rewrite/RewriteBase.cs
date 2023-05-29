@@ -8,9 +8,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using Nncase.Evaluator;
 using Nncase.IR;
+using Nncase.IR.F;
 using Nncase.Passes;
 using Nncase.Passes.Transforms;
 using Nncase.Schedule;
+using Nncase.Utilities;
 using OrtKISharp;
 using Xunit;
 using static Nncase.IR.F.Math;
@@ -2727,4 +2729,31 @@ public sealed class ResizeImageCase : IRewriteCase
      {
          { _input, Normal(DataTypes.Float32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
      };
+}
+
+public sealed class ProdCase : IRewriteCase
+{
+    private readonly Var _input;
+
+    public ProdCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Int32, new[] { 1, 2, 3, 4 }));
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var input = Tensor.From<int>(new[] { 1, 2, 3, 4 });
+            var expr = Tensors.Prod(input);
+            return new Function(expr, new Var[] { _input });
+        }
+    }
+
+    public IEnumerable<Type> Rules { get; } = Array.Empty<Type>();
+
+    public Dictionary<Var, IValue> FeedDict => new()
+    {
+        { _input, Normal(DataTypes.Int32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
+    };
 }
