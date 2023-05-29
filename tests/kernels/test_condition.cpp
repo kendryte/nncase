@@ -64,8 +64,8 @@ INSTANTIATE_TEST_SUITE_P(Condition, ConditionTest,
                                                           dims_t{1})));
 
 TEST_P(ConditionTest, condition) {
-    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
-    auto r_ort = runtime_tensor_2_ort_tensor(rhs);
+//    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
+//    auto r_ort = runtime_tensor_2_ort_tensor(rhs);
 
     // actual
     auto output = kernels::stackvm::condition(true, lhs.impl(), lhs.impl())
