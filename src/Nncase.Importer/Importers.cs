@@ -26,6 +26,7 @@ public static class Importers
     /// <returns>Imported IR module.</returns>
     public static IRModule ImportTFLite(Stream tflite, CompileSession compileSession)
     {
+        compileSession.CompileOptions.ModelLayout = "NHWC";
         var model = new byte[tflite.Length];
         tflite.Read(model);
         var importer = new TFLiteImporter(model, compileSession);
@@ -40,6 +41,7 @@ public static class Importers
     /// <returns>Imported IR module.</returns>
     public static IRModule ImportOnnx(Stream onnx, CompileSession compileSession)
     {
+        compileSession.CompileOptions.ModelLayout = "NCHW";
         var importer = new OnnxImporter(onnx, compileSession);
         return importer.Import();
     }

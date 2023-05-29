@@ -78,8 +78,15 @@ class TfliteTestRunner(TestRunner):
     def cpu_infer(self, case_dir: str, model_file: bytes, type: str):
         interp = tf.lite.Interpreter(model_path=model_file)
         interp.allocate_tensors()
-        for input in self.inputs:
-            interp.set_tensor(input["index"], self.data_pre_process(input['data'])[0])
+        for idx, value in enumerate(self.inputs):
+            new_value = self.transform_input(self.data_pre_process(value['data']), "float32", "CPU")
+            interp.set_tensor(value["index"], new_value)
+            if self.pre_process[0]['preprocess']:
+                bin_file = os.path.join(case_dir, f'frame_input_{idx}.bin')
+                text_file = os.path.join(case_dir, f'frame_input_{idx}.txt')
+                new_value[0].tofile(bin_file)
+                if not test_utils.in_ci():
+                    self.totxtfile(text_file, new_value)
 
         interp.invoke()
 

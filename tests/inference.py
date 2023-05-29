@@ -65,16 +65,16 @@ class Inference:
         return compile_options
 
     def set_infer_input(self, preprocess, case_dir, sim):
-        for i in range(len(self.inputs)):
+        for idx,value in enumerate(self.inputs):
             data = self.transform_input(
-                self.inputs[i]['data'], preprocess['input_type'], "infer")[0]
+                value['data'], preprocess['input_type'], "infer")
             dtype = preprocess['input_type']
             if preprocess['preprocess'] and dtype != 'float32':
                 if not test_utils.in_ci():
-                    data.tofile(os.path.join(case_dir, f'input_{i}_{dtype}.bin'))
-                    self.totxtfile(os.path.join(case_dir, f'input_{i}_{dtype}.txt'), data)
+                    data.tofile(os.path.join(case_dir, f'input_{idx}_{dtype}.bin'))
+                    self.totxtfile(os.path.join(case_dir, f'input_{idx}_{dtype}.txt'), data)
 
-            sim.set_input_tensor(i, nncase.RuntimeTensor.from_numpy(data))
+            sim.set_input_tensor(idx, nncase.RuntimeTensor.from_numpy(data))
 
     def dump_infer_output(self, infer_dir, preprocess, sim):
         infer_output_paths = []

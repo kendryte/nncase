@@ -12,6 +12,7 @@ using Nncase.Hosting;
 using Nncase.IR;
 using Nncase.Passes;
 using Nncase.Passes.Rules.Lower;
+using Nncase.Passes.Rules.Neutral;
 using Nncase.Passes.Transforms;
 using Nncase.Quantization;
 using Nncase.Utilities;
@@ -46,9 +47,11 @@ internal class Compiler : ICompiler
         {
             _dumpper.DumpModule(module, "IRImport");
         }
+        var preprocess_option = _compileSession.CompileOptions;
 
         await RunPassAsync(pmg => BroadcastOutputNamesAfterImportPass(pmg), "BroadcastOutputNamesAfterImport");
         await RunPassAsync(pmg => pmg.Add<ShapeInferPass>(), "ShapeInferAfterImport");
+        await RunPassAsync(pmg => pmg.Add<AddPreProcess>(), "AddPreProcessAfterImport");
 
         var inferSucc = CompilerServices.InferenceType(module.Entry!);
         if (!inferSucc)

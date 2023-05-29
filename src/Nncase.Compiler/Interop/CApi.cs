@@ -48,6 +48,16 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr, DumpFlags> CompileOptionsGetDumpFlagsPtr;
     public delegate* unmanaged<IntPtr, DumpFlags, void> CompileOptionsSetDumpFlagsPtr;
     public delegate* unmanaged<IntPtr, IntPtr, void> CompileOptionsSetQuantizeOptionsPtr;
+    public delegate* unmanaged<IntPtr, byte, void> CompileOptionsSetPreProcessPtr;
+    public delegate* unmanaged<IntPtr, byte*, nuint, void> CompileOptionsSetInputLayoutPtr;
+    public delegate* unmanaged<IntPtr, byte*, nuint, void> CompileOptionsSetOutputLayoutPtr;
+    public delegate* unmanaged<IntPtr, byte, void> CompileOptionsSetInputTypePtr;
+    public delegate* unmanaged<IntPtr, byte*, nuint, void> CompileOptionsSetInputShapePtr;
+    public delegate* unmanaged<IntPtr, byte*, nuint, void> CompileOptionsSetInputRangePtr;
+    public delegate* unmanaged<IntPtr, byte, void> CompileOptionsSetSwapRBPtr;
+    public delegate* unmanaged<IntPtr, float, void> CompileOptionsSetLetterBoxValuePtr;
+    public delegate* unmanaged<IntPtr, byte*, nuint, void> CompileOptionsSetMeanPtr;
+    public delegate* unmanaged<IntPtr, byte*, nuint, void> CompileOptionsSetStdPtr;
     public delegate* unmanaged<IntPtr, IntPtr, IntPtr> CompileSessionCreatePtr;
     public delegate* unmanaged<IntPtr, IntPtr> CompileSessionGetCompilerPtr;
     public delegate* unmanaged<void> CompilerInitializePtr;
@@ -98,6 +108,16 @@ public static unsafe class CApi
         mt->CompileOptionsSetDumpFlagsPtr = &CompileOptionsSetDumpFlags;
         mt->CompileOptionsGetDumpFlagsPtr = &CompileOptionsGetDumpFlags;
         mt->CompileOptionsSetQuantizeOptionsPtr = &CompileOptionsSetQuantizeOptions;
+        mt->CompileOptionsSetPreProcessPtr = &CompileOptionsSetPreProcess;
+        mt->CompileOptionsSetInputLayoutPtr = &CompileOptionsSetInputLayout;
+        mt->CompileOptionsSetOutputLayoutPtr = &CompileOptionsSetOutputLayout;
+        mt->CompileOptionsSetInputTypePtr = &CompileOptionsSetInputType;
+        mt->CompileOptionsSetInputShapePtr = &CompileOptionsSetInputShape;
+        mt->CompileOptionsSetInputRangePtr = &CompileOptionsSetInputRange;
+        mt->CompileOptionsSetSwapRBPtr = &CompileOptionsSetSwapRB;
+        mt->CompileOptionsSetLetterBoxValuePtr = &CompileOptionsSetLetterBoxValue;
+        mt->CompileOptionsSetMeanPtr = &CompileOptionsSetMean;
+        mt->CompileOptionsSetStdPtr = &CompileOptionsSetStd;
         mt->CompileSessionCreatePtr = &CompileSessionCreate;
         mt->CompileSessionGetCompilerPtr = &CompileSessionGetCompiler;
         mt->CompilerInitializePtr = &CompilerInitialize;
@@ -232,6 +252,100 @@ public static unsafe class CApi
     {
         Get<CompileOptions>(compileOptionsHandle).QuantizeOptions = Get<QuantizeOptions>(quantizeOptionsHandle);
     }
+
+    [UnmanagedCallersOnly]
+    private static void CompileOptionsSetPreProcess(IntPtr compileOptionsHandle, byte preProcess)
+    {
+        switch (preProcess)
+        {
+            case 0:
+                Get<CompileOptions>(compileOptionsHandle).PreProcess = false;
+                break;
+            case 1:
+                Get<CompileOptions>(compileOptionsHandle).PreProcess = true;
+                break;
+            default:
+                throw new ArgumentException("Invalid PreProcess Flag");
+        }
+    }
+
+    [UnmanagedCallersOnly]
+    private static void CompileOptionsSetInputLayout(IntPtr compileOptionsHandle, byte* inputLayout, nuint inputLayoutLength)
+    {
+        Get<CompileOptions>(compileOptionsHandle).InputLayout = ToString(inputLayout, inputLayoutLength);
+    }
+    [UnmanagedCallersOnly]
+    private static void CompileOptionsSetOutputLayout(IntPtr compileOptionsHandle, byte* outputLayout, nuint outputLayoutLength)
+    {
+        Get<CompileOptions>(compileOptionsHandle).OutputLayout = ToString(outputLayout, outputLayoutLength);
+    }
+
+    [UnmanagedCallersOnly]
+    private static void CompileOptionsSetInputType(IntPtr compileOptionsHandle, byte inputType)
+    {
+        // Get<CompileOptions>(compileOptionsHandle).InputType = inputType;
+        switch (inputType)
+        {
+            case 0:
+                Get<CompileOptions>(compileOptionsHandle).InputType = InputType.Uint8;
+                break;
+            case 1:
+                Get<CompileOptions>(compileOptionsHandle).InputType = InputType.Int8;
+                break;
+            case 2:
+                Get<CompileOptions>(compileOptionsHandle).InputType = InputType.Float32;
+                break;
+            default:
+                throw new ArgumentException("Invalid InputType Flag");
+        }
+    }
+
+    [UnmanagedCallersOnly]
+    private static void CompileOptionsSetInputShape(IntPtr compileOptionsHandle, byte* inputShapeValue, nuint inputShapeValueLength)
+    {
+        Get<CompileOptions>(compileOptionsHandle).InputShape = StringToArrayInt32(ToString(inputShapeValue, inputShapeValueLength));
+    }
+
+    [UnmanagedCallersOnly]
+    private static void CompileOptionsSetInputRange(IntPtr compileOptionsHandle, byte* inputRangeValue, nuint inputRangeValueLength)
+    {
+        Get<CompileOptions>(compileOptionsHandle).InputRange = StringToArrayFloat(ToString(inputRangeValue, inputRangeValueLength));
+    }
+
+    [UnmanagedCallersOnly]
+    private static void CompileOptionsSetSwapRB(IntPtr compileOptionsHandle, byte swapRBValue)
+    {
+        switch (swapRBValue)
+        {
+            case 0:
+                Get<CompileOptions>(compileOptionsHandle).SwapRB = false;
+                break;
+            case 1:
+                Get<CompileOptions>(compileOptionsHandle).SwapRB = true;
+                break;
+            default:
+                throw new ArgumentException("Invalid SwapRB Flag");
+        }
+    }
+
+    [UnmanagedCallersOnly]
+    private static void CompileOptionsSetLetterBoxValue(IntPtr compileOptionsHandle, float letterBoxValue)
+    {
+        Get<CompileOptions>(compileOptionsHandle).LetterBoxValue = letterBoxValue;
+    }
+
+    [UnmanagedCallersOnly]
+    private static void CompileOptionsSetMean(IntPtr compileOptionsHandle, byte* meanValue, nuint meanValueLength)
+    {
+        Get<CompileOptions>(compileOptionsHandle).Mean = StringToArrayFloat(ToString(meanValue, meanValueLength));
+    }
+
+    [UnmanagedCallersOnly]
+    private static void CompileOptionsSetStd(IntPtr compileOptionsHandle, byte* stdValue, nuint stdValueLength)
+    {
+        Get<CompileOptions>(compileOptionsHandle).Std = StringToArrayFloat(ToString(stdValue, stdValueLength));
+    }
+
 
     [UnmanagedCallersOnly]
     private static IntPtr CompileSessionCreate(IntPtr targetHandle, IntPtr compileOptionsHandle)
@@ -518,6 +632,18 @@ public static unsafe class CApi
 
     private static string ToString(byte* bytes, nuint length) =>
         Encoding.UTF8.GetString(bytes, (int)length);
+
+    private static int[] StringToArrayInt32(string value)
+    {
+        var data = value.Replace(" ","").Split(",");
+        return Array.ConvertAll(data, int.Parse);
+    }
+
+    private static float[] StringToArrayFloat(string value)
+    {
+        var data = value.Replace(" ","").Split(",");
+        return Array.ConvertAll(data, float.Parse);
+    }
 
     private class CCalibrationDatasetProvider : ICalibrationDatasetProvider
     {

@@ -192,9 +192,15 @@ class OnnxTestRunner(TestRunner):
                 sess = ort.InferenceSession(model_file)
 
         input_dict = {}
-        for input in self.inputs:
-            input_dict[input['name']] = self.transform_input(
-                self.data_pre_process(input['data']), "float32", "CPU")[0]
+        for i, input in enumerate(self.inputs):
+            new_value = self.transform_input(self.data_pre_process(input['data']), "float32", "CPU")
+            input_dict[input['name']] = new_value
+            if self.pre_process[0]['preprocess']:
+                bin_file = os.path.join(case_dir, f'frame_input_{i}.bin')
+                text_file = os.path.join(case_dir, f'frame_input_{i}.txt')
+                new_value[0].tofile(bin_file)
+                if not test_utils.in_ci():
+                    self.totxtfile(text_file, new_value)
 
         outputs = sess.run(None, input_dict)
         i = 0
