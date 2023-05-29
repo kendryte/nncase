@@ -305,7 +305,6 @@ class ClCompileOptions():
     LetterBoxValue: float
 
 
-
 class CompileOptions:
     benchmark_only: bool
     dump_asm: bool

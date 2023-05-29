@@ -65,7 +65,7 @@ class Inference:
         return compile_options
 
     def set_infer_input(self, preprocess, case_dir, sim):
-        for idx,value in enumerate(self.inputs):
+        for idx, value in enumerate(self.inputs):
             data = self.transform_input(
                 value['data'], preprocess['input_type'], "infer")
             dtype = preprocess['input_type']

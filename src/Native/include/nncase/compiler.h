@@ -121,31 +121,29 @@ typedef struct {
         clr_object_handle_t compile_options,
         clr_object_handle_t quantize_options);
     void (*compile_options_set_preprocess)(clr_object_handle_t compile_options,
-                                            bool preprocess);
-    void (*compile_options_set_input_layout)(clr_object_handle_t compile_options,
-                                            const char* input_layout,
-                                            size_t input_layout_length);
-    void (*compile_options_set_output_layout )(clr_object_handle_t compile_options,
-                                            const char* output_layout,
-                                            size_t output_layout_length);
-    void (*compile_options_set_input_type )(clr_object_handle_t compile_options,
-                                            nncase_input_type_t input_type);
-    void (*compile_options_set_input_shape )(clr_object_handle_t compile_options,
-                                            const char* input_shape,
+                                           bool preprocess);
+    void (*compile_options_set_input_layout)(
+        clr_object_handle_t compile_options, const char *input_layout,
+        size_t input_layout_length);
+    void (*compile_options_set_output_layout)(
+        clr_object_handle_t compile_options, const char *output_layout,
+        size_t output_layout_length);
+    void (*compile_options_set_input_type)(clr_object_handle_t compile_options,
+                                           nncase_input_type_t input_type);
+    void (*compile_options_set_input_shape)(clr_object_handle_t compile_options,
+                                            const char *input_shape,
                                             size_t input_shape_length);
-    void (*compile_options_set_input_range )(clr_object_handle_t compile_options,
-                                            const char* input_range,
+    void (*compile_options_set_input_range)(clr_object_handle_t compile_options,
+                                            const char *input_range,
                                             size_t input_range_length);
-    void (*compile_options_set_swapRB )(clr_object_handle_t compile_options,
-                                            bool swapRB);
-    void (*compile_options_set_letterbox_value )(clr_object_handle_t compile_options,
-                                            float letterbox_value);
-    void (*compile_options_set_mean )(clr_object_handle_t compile_options,
-                                            const char* mean,
-                                            size_t mean_length);
-    void (*compile_options_set_std )(clr_object_handle_t compile_options,
-                                            const char* std,
-                                            size_t std_length);
+    void (*compile_options_set_swapRB)(clr_object_handle_t compile_options,
+                                       bool swapRB);
+    void (*compile_options_set_letterbox_value)(
+        clr_object_handle_t compile_options, float letterbox_value);
+    void (*compile_options_set_mean)(clr_object_handle_t compile_options,
+                                     const char *mean, size_t mean_length);
+    void (*compile_options_set_std)(clr_object_handle_t compile_options,
+                                    const char *std, size_t std_length);
     clr_object_handle_t (*compile_session_create)(
         clr_object_handle_t target, clr_object_handle_t compile_options);
     clr_object_handle_t (*compile_session_get_compiler)(
@@ -431,14 +429,14 @@ class compile_options : public clr_object_base {
 
     std::string input_layout() { return ""; }
     void input_layout(std::string_view value) {
-        nncase_clr_api()->compile_options_set_input_layout(obj_.get(), value.data(),
-                                                           value.length());
+        nncase_clr_api()->compile_options_set_input_layout(
+            obj_.get(), value.data(), value.length());
     }
 
     std::string output_layout() { return ""; }
     void output_layout(std::string_view value) {
-        nncase_clr_api()->compile_options_set_output_layout(obj_.get(), value.data(),
-                                                            value.length());
+        nncase_clr_api()->compile_options_set_output_layout(
+            obj_.get(), value.data(), value.length());
     }
 
     nncase_input_type_t input_type() { return nncase_it_float32; }
@@ -448,13 +446,14 @@ class compile_options : public clr_object_base {
 
     std::string input_shape() { return ""; }
     void input_shape(std::string_view value) {
-        nncase_clr_api()->compile_options_set_input_shape(obj_.get(), value.data(),
-                                                          value.length());
+        nncase_clr_api()->compile_options_set_input_shape(
+            obj_.get(), value.data(), value.length());
     }
 
     std::string input_range() { return ""; }
     void input_range(std::string_view value) {
-        nncase_clr_api()->compile_options_set_input_range(obj_.get(), value.data(), value.length());
+        nncase_clr_api()->compile_options_set_input_range(
+            obj_.get(), value.data(), value.length());
     }
 
     bool swapRB() { return false; }
@@ -464,20 +463,21 @@ class compile_options : public clr_object_base {
 
     float letterbox_value() { return 0.f; }
     void letterbox_value(float value) {
-        nncase_clr_api()->compile_options_set_letterbox_value(obj_.get(), value);
+        nncase_clr_api()->compile_options_set_letterbox_value(obj_.get(),
+                                                              value);
     }
 
     std::string mean() { return ""; }
     void mean(std::string_view value) {
-        nncase_clr_api()->compile_options_set_mean(obj_.get(), value.data(), value.length());
+        nncase_clr_api()->compile_options_set_mean(obj_.get(), value.data(),
+                                                   value.length());
     }
 
     std::string std() { return ""; }
     void std(std::string_view value) {
-        nncase_clr_api()->compile_options_set_std(obj_.get(), value.data(), value.length());
+        nncase_clr_api()->compile_options_set_std(obj_.get(), value.data(),
+                                                  value.length());
     }
-
-
 };
 
 class target : public clr_object_base {

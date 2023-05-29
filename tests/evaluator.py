@@ -5,6 +5,7 @@ import numpy as np
 import test_utils
 import preprocess_utils
 
+
 class Evaluator:
     def run_evaluator(self, eval_args, cfg, case_dir, import_options, compile_options, model_content, preprocess_opt):
         eval_output_paths = self.generate_evaluates(
@@ -36,7 +37,7 @@ class Evaluator:
         return eval_output_paths
 
     def set_inputs(self, evaluator, preprocess):
-        for idx,i in enumerate(self.inputs):
+        for idx, i in enumerate(self.inputs):
             input_tensor: nncase.RuntimeTensor = nncase.RuntimeTensor.from_numpy(
                 self.transform_input((i['data']), preprocess['input_type'], "infer"))
             evaluator.set_input_tensor(idx, input_tensor)

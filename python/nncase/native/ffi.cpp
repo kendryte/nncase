@@ -107,12 +107,10 @@ PYBIND11_MODULE(_nncase, m) {
                           &compile_options::quantize_options))
         .def_property("preprocess",
                       py::overload_cast<>(&compile_options::preprocess),
-                      py::overload_cast<bool>(
-                          &compile_options::preprocess))
-        .def_property("input_layout",
-                      py::overload_cast<>(&compile_options::input_layout),
-                      py::overload_cast<std::string_view>(
-                          &compile_options::input_layout))
+                      py::overload_cast<bool>(&compile_options::preprocess))
+        .def_property(
+            "input_layout", py::overload_cast<>(&compile_options::input_layout),
+            py::overload_cast<std::string_view>(&compile_options::input_layout))
         .def_property("output_layout",
                       py::overload_cast<>(&compile_options::output_layout),
                       py::overload_cast<std::string_view>(
@@ -121,30 +119,24 @@ PYBIND11_MODULE(_nncase, m) {
                       py::overload_cast<>(&compile_options::input_type),
                       py::overload_cast<nncase_input_type_t>(
                           &compile_options::input_type))
-        .def_property("input_shape",
-                      py::overload_cast<>(&compile_options::input_shape),
-                      py::overload_cast<std::string_view>(
-                      &compile_options::input_shape))
-        .def_property("input_range",
-                      py::overload_cast<>(&compile_options::input_range),
-                      py::overload_cast<std::string_view>(
-                          &compile_options::input_range))
-        .def_property("swapRB",
-                      py::overload_cast<>(&compile_options::swapRB),
-                      py::overload_cast<bool>(
-                          &compile_options::swapRB))
-        .def_property("letterbox_value",
-                      py::overload_cast<>(&compile_options::letterbox_value),
-                      py::overload_cast<float>(
-                          &compile_options::letterbox_value))
-        .def_property("mean",
-                      py::overload_cast<>(&compile_options::mean),
-                      py::overload_cast<std::string_view>(
-                          &compile_options::mean))
-        .def_property("std",
-                      py::overload_cast<>(&compile_options::std),
-                      py::overload_cast<std::string_view>(
-                          &compile_options::std));
+        .def_property(
+            "input_shape", py::overload_cast<>(&compile_options::input_shape),
+            py::overload_cast<std::string_view>(&compile_options::input_shape))
+        .def_property(
+            "input_range", py::overload_cast<>(&compile_options::input_range),
+            py::overload_cast<std::string_view>(&compile_options::input_range))
+        .def_property("swapRB", py::overload_cast<>(&compile_options::swapRB),
+                      py::overload_cast<bool>(&compile_options::swapRB))
+        .def_property(
+            "letterbox_value",
+            py::overload_cast<>(&compile_options::letterbox_value),
+            py::overload_cast<float>(&compile_options::letterbox_value))
+        .def_property(
+            "mean", py::overload_cast<>(&compile_options::mean),
+            py::overload_cast<std::string_view>(&compile_options::mean))
+        .def_property(
+            "std", py::overload_cast<>(&compile_options::std),
+            py::overload_cast<std::string_view>(&compile_options::std));
 
     py::class_<target>(m, "Target")
         .def(py::init<std::string_view>())

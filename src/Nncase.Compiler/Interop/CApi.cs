@@ -274,6 +274,7 @@ public static unsafe class CApi
     {
         Get<CompileOptions>(compileOptionsHandle).InputLayout = ToString(inputLayout, inputLayoutLength);
     }
+
     [UnmanagedCallersOnly]
     private static void CompileOptionsSetOutputLayout(IntPtr compileOptionsHandle, byte* outputLayout, nuint outputLayoutLength)
     {
@@ -345,7 +346,6 @@ public static unsafe class CApi
     {
         Get<CompileOptions>(compileOptionsHandle).Std = StringToArrayFloat(ToString(stdValue, stdValueLength));
     }
-
 
     [UnmanagedCallersOnly]
     private static IntPtr CompileSessionCreate(IntPtr targetHandle, IntPtr compileOptionsHandle)
@@ -635,13 +635,13 @@ public static unsafe class CApi
 
     private static int[] StringToArrayInt32(string value)
     {
-        var data = value.Replace(" ","").Split(",");
+        var data = value.Replace(" ", string.Empty).Split(",");
         return Array.ConvertAll(data, int.Parse);
     }
 
     private static float[] StringToArrayFloat(string value)
     {
-        var data = value.Replace(" ","").Split(",");
+        var data = value.Replace(" ", string.Empty).Split(",");
         return Array.ConvertAll(data, float.Parse);
     }
 

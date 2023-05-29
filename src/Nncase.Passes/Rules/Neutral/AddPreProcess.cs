@@ -44,18 +44,17 @@ public sealed class AddPreProcess : ModulePass
         var entry = (IR.Function)module.Entry;
         var newType = new[] { DataTypes.UInt8, DataTypes.Int8, DataTypes.Float32 };
 
-
         if (!preProcess)
         {
             return Task.FromResult(module);
         }
 
-        Var a = new Var(new TensorType(newType[(int)inputType], inputShape));
+        var a = new Var(new TensorType(newType[(int)inputType], inputShape));
         foreach (var input in entry.Parameters)
         {
             Expr newInput = a;
             var oldShape = input.CheckedShape;
-            
+
             int n, c, h, w;
             if (inputLayout == "NHWC")
             {
@@ -69,21 +68,21 @@ public sealed class AddPreProcess : ModulePass
             // Convert new input to NCHW
             if (inputLayout == "NHWC")
             {
-                newInput = Transpose(newInput, new int[4] {0, 3, 1, 2});
+                newInput = Transpose(newInput, new int[4] { 0, 3, 1, 2 });
             }
 
             // SwapRB
             if (swapRB)
             {
-                var axes = new int[4] {0, 1, 2, 3};
-                var strides = new int[4] {1, 1, 1, 1};
+                var axes = new int[4] { 0, 1, 2, 3 };
+                var strides = new int[4] { 1, 1, 1, 1 };
                 newInput = Concat(
-                new IR.Tuple(new []{ Slice(newInput, new int[4] {0, 2, 0, 0}, new int[4] {n, 3, h, w}, axes, strides),
-                                     Slice(newInput, new int[4] {0, 1, 0, 0}, new int[4] {n, 2, h, w}, axes, strides),
-                                     Slice(newInput, new int[4] {0, 0, 0, 0}, new int[4] {n, 1, h, w}, axes, strides), }),
+                new IR.Tuple(new[] { Slice(newInput, new int[4] { 0, 2, 0, 0 }, new int[4] { n, 3, h, w }, axes, strides),
+                                     Slice(newInput, new int[4] { 0, 1, 0, 0 }, new int[4] { n, 2, h, w }, axes, strides),
+                                     Slice(newInput, new int[4] { 0, 0, 0, 0 }, new int[4] { n, 1, h, w }, axes, strides), }),
                 1);
 
-                //TODO: fix slice neg strides shape inference
+                // TODO: fix slice neg strides shape inference
                 // newInput = Slice(newInput, new int[] {n, c, h, w },new[] { 0, 0, 0, 0 },  axes, strides);
             }
 
@@ -116,7 +115,7 @@ public sealed class AddPreProcess : ModulePass
 
                 var padH = modelH - resizeH;
                 var padW = modelW - resizeW;
-                var resizeShape = new int[] {n, c, (int)resizeH, (int)resizeW };
+                var resizeShape = new int[] { n, c, (int)resizeH, (int)resizeW };
 
                 pads[2, 0] = (int)Math.Round((padH / 2) - 0.1);
                 pads[2, 1] = (int)padH - (int)Math.Round((padH / 2) - 0.1);
@@ -129,18 +128,19 @@ public sealed class AddPreProcess : ModulePass
             // Normalization
             if (mean.Length != 0)
             {
-                newInput = (newInput - Tensor.From(mean, new[] {1, 3, 1, 1})) / Tensor.From(std, new[] {1, 3, 1, 1});
+                newInput = (newInput - Tensor.From(mean, new[] { 1, 3, 1, 1 })) / Tensor.From(std, new[] { 1, 3, 1, 1 });
+
                 // newInput = Binary(BinaryOp.Div, Binary(BinaryOp.Sub, newInput, Tensor.From(mean, new []{1,3,1,1})), Const.FromTensor(std) );
             }
 
             // Convert to model layout
             if (modelLayout == "NHWC")
             {
-                newInput = Transpose(newInput, new[] {0, 2, 3, 1});
+                newInput = Transpose(newInput, new[] { 0, 2, 3, 1 });
             }
 
             var y = new Passes.Mutators.Substitutor(expr => object.ReferenceEquals(expr, input) ? newInput : null).Rewrite(entry.Body);
-            var x = (Function) new Passes.Mutators.Substitutor(expr =>object.ReferenceEquals(expr, input) ? a : null).Rewrite(entry);
+            var x = (Function)new Passes.Mutators.Substitutor(expr => object.ReferenceEquals(expr, input) ? a : null).Rewrite(entry);
         }
 
         return Task.FromResult(module);

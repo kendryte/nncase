@@ -356,7 +356,8 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                                     in_h * ratio), round(in_w * ratio), 3
                                 resize_data = np.random.rand(*model_shape)
                                 for batch_data in new_value:
-                                    tmp = cv2.resize(batch_data, (resize_shape[2],resize_shape[1]), interpolation=cv2.INTER_LINEAR)
+                                    tmp = cv2.resize(
+                                        batch_data, (resize_shape[2], resize_shape[1]), interpolation=cv2.INTER_LINEAR)
 
                                     dh = model_shape[1] - resize_shape[1]
                                     dw = model_shape[2] - resize_shape[2]
@@ -366,7 +367,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                                     tmp = cv2.copyMakeBorder(tmp, round(dh - 0.1), round(model_h - resize_shape[1] - round(dh - 0.1)), round(dw - 0.1), round(
                                         model_w - resize_shape[2] - round(dw - 0.1)), cv2.BORDER_CONSTANT, value=(item['letterbox_value'], item['letterbox_value'], item['letterbox_value']))
                                     tmp = np.expand_dims(tmp, 0)
-                                    print("resize_data.shape = ",resize_data.shape)
+                                    print("resize_data.shape = ", resize_data.shape)
                                     print("tmp.shape = ", tmp.shape)
                                     resize_data = np.concatenate([resize_data, tmp], axis=0)
                                 new_value = np.array(resize_data[1:], dtype=np.float32)
@@ -509,7 +510,8 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
             # compiler.dump_range_options(dump_range_options)
         if kwargs['ptq']:
             ptq_options = nncase.PTQTensorOptions()
-            data = [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.calibs]
+            data = [self.transform_input(
+                sample['data'], preprocess['input_type'], "infer") for sample in self.calibs]
             ptq_options.set_tensor_data(data)
             ptq_options.samples_count = cfg.generate_calibs.numbers
             ptq_options.calibrate_method = cfg.compile_opt.calibrate_method

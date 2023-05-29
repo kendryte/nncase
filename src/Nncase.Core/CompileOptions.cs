@@ -58,7 +58,7 @@ public sealed record CompileOptions
     /// <summary>
     /// Gets or sets a value indicating whether gets or sets the preprocess.
     /// </summary>
-    public bool PreProcess { get; set; } = false;
+    public bool PreProcess { get; set; }
 
     /// <summary>
     /// Gets or sets the input layout.
@@ -88,7 +88,7 @@ public sealed record CompileOptions
     /// <summary>
     /// Gets or sets a value indicating whether gets or sets the swapRB.
     /// </summary>
-    public bool SwapRB { get; set; } = false;
+    public bool SwapRB { get; set; }
 
     /// <summary>
     /// Gets or sets the letterbox_value.
@@ -108,5 +108,5 @@ public sealed record CompileOptions
     /// <summary>
     /// Gets or sets the std.
     /// </summary>
-    public string ModelLayout { get; set; } = "";
+    public string ModelLayout { get; set; } = string.Empty;
 }
