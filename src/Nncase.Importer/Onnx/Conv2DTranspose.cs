@@ -40,6 +40,8 @@ namespace Nncase.Importer
             var pads = AutoPad(op, autoPad, input, weights, strides.ToArray<long>(), dilation.ToArray<long>(), isConv1D);
             pads.InferenceType();
 
+            weights = IR.F.Tensors.Transpose(weights, new[] { 1, 0, 2, 3 });
+
             var outShape = GetOptionIntsAttribute(op, "output_shape")
                 .Match(
                     o => Tensor.From<long>(o),
@@ -53,7 +55,6 @@ namespace Nncase.Importer
                         autoPad,
                         group));
 
-            weights = IR.F.Tensors.Transpose(weights, new[] { 1, 0, 2, 3 });
             var conv = F.NN.Conv2DTranspose(
                 input,
                 weights,

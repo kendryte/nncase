@@ -45,7 +45,7 @@ namespace Nncase.Importer
             return conv;
         }
 
-        private Call To4D(Expr input) => Reshape(input, Concat(new IR.Tuple(ShapeOf(input), new[] { 1L }), 0));
+        private Call To4D(Expr input) => Unsqueeze(input, new[] { 3 });
 
         private bool IsConv1D(Expr weights)
         {

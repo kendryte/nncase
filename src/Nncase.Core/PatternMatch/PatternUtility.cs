@@ -37,10 +37,12 @@ public static partial class Utility
     public static VArgsPattern GenerateParameters(string? prefix, params Pattern[] patterns)
       => IsVArgsRepeat(
           (prefix is not null && prefix != string.Empty) ? prefix + "Params" : null,
-          list => patterns.Concat(
-            Enumerable.Range(0, list.Length - patterns.Length).
-            Select(_ => (Pattern)IsWildcard(null)))
-          .ToArray());
+          list =>
+          {
+              return patterns.Concat(
+                      Enumerable.Range(0, Math.Max(list.Length - patterns.Length, 0)).Select(_ => (Pattern)IsWildcard(null)))
+                  .ToArray();
+          });
 
     /// <summary>
     /// generate postion specific vargs pattern.

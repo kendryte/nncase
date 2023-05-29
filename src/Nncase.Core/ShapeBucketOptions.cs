@@ -2,13 +2,13 @@
 
 namespace Nncase
 {
-    public record ShapeBucketOptions()
+    public record ShapeBucketOptions(bool Enable, Dictionary<Var, Expr[]> VarMap, Dictionary<string, (int Min, int Max)> RangeInfo, int SegmentsCount, Dictionary<string, int> FixVarMap)
     {
-        public bool Enable;
-        public Dictionary<Var, Expr[]> VarMap = new();
-        public Dictionary<string, (int, int)> RangeInfo = new();
-        public int SegmentsCount;
-        public Dictionary<string, int> FixVarMap = new();
-        public static ShapeBucketOptions Default => new();
+        public bool Enable = Enable;
+        public Dictionary<Var, Expr[]> VarMap = VarMap;
+        public Dictionary<string, (int, int)> RangeInfo = RangeInfo;
+        public int SegmentsCount = SegmentsCount;
+        public Dictionary<string, int> FixVarMap = FixVarMap;
+        public static ShapeBucketOptions Default => new(false, new(), new(), 0, new());
     }
 }
