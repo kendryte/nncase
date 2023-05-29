@@ -1,4 +1,5 @@
-﻿// Copyright (c) Canaan Inc. All rights reserved.
+﻿
+// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Collections;
@@ -254,6 +255,7 @@ public sealed class SchedFunctionResult
     public SchedFunctionResult()
     {
         Rdatas = new(ReferenceEqualityComparer.Instance);
+        DataUsage = 0;
         IsScheduled = false;
     }
 
@@ -261,6 +263,11 @@ public sealed class SchedFunctionResult
     /// Gets the buffer allocation.
     /// </summary>
     public HashSet<TIR.PhysicalBuffer> Rdatas { get; }
+
+    /// <summary>
+    /// Gets the data section length.
+    /// </summary>
+    public int DataUsage { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the Scheduled status.
@@ -285,12 +292,8 @@ public sealed class SchedFunctionResult
             return false;
         }
 
-        if (Rdatas.Count == 0)
-        {
-            return true;
-        }
-
-        return EqualityComparer<HashSet<TIR.PhysicalBuffer>>.Default.Equals(Rdatas, result.Rdatas);
+        return EqualityComparer<HashSet<TIR.PhysicalBuffer>>.Default.Equals(Rdatas, result.Rdatas) &&
+               EqualityComparer<int>.Default.Equals(DataUsage, result.DataUsage);
     }
 
     /// <inheritdoc/>

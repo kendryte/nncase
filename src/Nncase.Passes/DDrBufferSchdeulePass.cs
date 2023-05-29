@@ -3,12 +3,18 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
+using Nncase.Passes.Analysis;
 using Nncase.Passes.Rules;
+using Nncase.PatternMatch;
 using Nncase.TIR;
+using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Passes;
 
@@ -18,11 +24,63 @@ namespace Nncase.Passes;
 public sealed class DDrBufferSchdeulePass : ModulePass
 {
     private readonly Dictionary<string, Dictionary<Schedule.MemoryLocation, int>> _module_usage = new();
+
     private readonly Dictionary<string, HashSet<TIR.Buffer>> _module_hashset = new();
 
-    /// <inheritdoc/>
-    protected override Task<IRModule> RunCoreAsync(IRModule module, RunPassContext options)
+    private IAnalyzerManager AnalyzerManager => CompileSession.GetRequiredService<IAnalyzerManager>();
+
+    private bool _enbaleMergeCall;
+
+    public DDrBufferSchdeulePass(bool enableMergeCall = false)
     {
+        _enbaleMergeCall = enableMergeCall;
+    }
+
+    /// <inheritdoc/>
+    protected override async Task<IRModule> RunCoreAsync(IRModule module, RunPassContext options)
+    {
+        // 1. merge the all call prim func
+        if (_enbaleMergeCall)
+        {
+            HashSet<BaseFunction> mergedFuncs = new(ReferenceEqualityComparer.Instance);
+            HashSet<BaseFunction> stackvmFuncs = new(ReferenceEqualityComparer.Instance);
+            for (int i = 0; i < module.Functions.Count; i++)
+            {
+                if (module.Functions[i] is Function { ModuleKind: "stackvm" } func)
+                {
+                    var analysis = new Dictionary<Type, IAnalysisResult>
+                    {
+                        [typeof(IExprUserAnalysisResult)] = AnalyzerManager.GetAnaylsis<IExprUserAnalysisResult>(func),
+                    };
+
+                    var mergedFusionCache = new HashSet<BaseFunction>(ReferenceEqualityComparer.Instance);
+                    var mergePass = new DataflowPass();
+                    mergePass.Add<Rules.Neutral.PrimFuncMergeRule>(mergedFuncs);
+                    var post = await mergePass.RunAsync(func, new() { AnalysisResults = analysis, RewriteOnce = true });
+                    module.Replace(i, post);
+                    stackvmFuncs.Add(post);
+                }
+            }
+
+            // 2. add the ext func into module.
+            foreach (var func in stackvmFuncs)
+            {
+                var collector = new ExternalFuncCollector();
+                collector.Visit(func);
+                foreach (var ext_func in collector.GetExternalFuncs())
+                {
+                    module.Add(ext_func);
+                }
+            }
+
+            // 3. remove the all merged funcs
+            foreach (var item in mergedFuncs)
+            {
+                module.Remove(item);
+            }
+        }
+
+        // 4. schedule the prim funcs.
         for (int i = 0; i < module.Functions.Count; i++)
         {
             if (module.Functions[i] is TIR.PrimFunction prim_func)
@@ -31,12 +89,16 @@ public sealed class DDrBufferSchdeulePass : ModulePass
                 {
                     var ddr_allocator = new DDrBufferAllocator(_module_usage, _module_hashset);
                     ddr_allocator.Visit(prim_func); // changed ddr buffer.
+                    prim_func.SchedResult.DataUsage = ddr_allocator.DataUsage;
                     prim_func.SchedResult.IsScheduled = ddr_allocator.Changed;
                 }
             }
         }
 
-        return Task.FromResult(module);
+        _module_hashset.Clear();
+        _module_usage.Clear();
+
+        return await Task.FromResult(module);
     }
 }
 
@@ -65,6 +127,8 @@ internal sealed class DDrBufferAllocator : ExprVisitor<bool, bool>
 
     public bool Changed { get; private set; }
 
+    public int DataUsage => _functionUsage.GetValueOrDefault(Schedule.MemoryLocation.Data, 0);
+
     /// <remarks>
     /// only visit one prim func.
     /// </remarks>
@@ -91,6 +155,10 @@ internal sealed class DDrBufferAllocator : ExprVisitor<bool, bool>
                         _functionHashset.Add(physical);
                         Changed = true;
                     }
+                }
+                else
+                {
+                    throw new NotSupportedException($"The prim function parameters mem location must be input/output but get {physical.MemLocation}!");
                 }
             }
 
@@ -133,10 +201,27 @@ internal sealed class DDrBufferAllocator : ExprVisitor<bool, bool>
                 module_usage[physical.MemLocation] = start + physical.Size;
                 module_hashset.Add(physical);
                 _entry.SchedResult.Rdatas.Add(physical);
+
                 Changed = true;
             }
         }
-        else if (physical.MemLocation is Schedule.MemoryLocation.Data or Schedule.MemoryLocation.SharedData)
+        else if (physical.MemLocation is Schedule.MemoryLocation.Data)
+        {
+            // data write into the FunctionUsage
+            if (!_functionHashset.Contains(physical))
+            {
+                if (!_functionUsage.TryGetValue(physical.MemLocation, out var start))
+                {
+                    start = 0;
+                }
+
+                physical.Start = start;
+                _functionUsage[physical.MemLocation] = start + physical.Size;
+                _functionHashset.Add(physical);
+                Changed = true;
+            }
+        }
+        else if (physical.MemLocation is Schedule.MemoryLocation.SharedData)
         {
             throw new NotSupportedException("Current Not Support!");
         }
@@ -145,4 +230,15 @@ internal sealed class DDrBufferAllocator : ExprVisitor<bool, bool>
     }
 
     protected override bool DefaultVisitLeaf(Expr expr) => true;
+}
+
+internal sealed class ExternalFuncCollector : ExprWalker
+{
+    public HashSet<BaseFunction> GetExternalFuncs()
+    {
+        var set = new HashSet<BaseFunction>(ReferenceEqualityComparer.Instance);
+        set.UnionWith(ExprMemo.Keys.OfType<PrimFunctionWrapper>());
+        set.UnionWith(set.OfType<PrimFunctionWrapper>().Select(w => w.Target).ToArray());
+        return set;
+    }
 }
