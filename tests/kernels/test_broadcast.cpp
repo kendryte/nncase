@@ -26,9 +26,9 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class BroadCastTest
-    : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t, dims_t>> {
+class BroadCastTest : public KernelTest,
+                      public ::testing::TestWithParam<
+                          std::tuple<nncase::typecode_t, dims_t, dims_t>> {
   public:
     void SetUp() override {
         auto &&[typecode, l_shape, r_shape] = GetParam();
@@ -53,29 +53,28 @@ class BroadCastTest
 
 INSTANTIATE_TEST_SUITE_P(
     BroadCast, BroadCastTest,
-    testing::Combine(testing::Values(dt_float32),
-                     testing::Values(dims_t{16}),
+    testing::Combine(testing::Values(dt_float32), testing::Values(dims_t{16}),
                      testing::Values(dims_t{1, 3, 16, 16})));
 
 TEST_P(BroadCastTest, BroadCast) {
-//    auto l_ort = runtime_tensor_2_ort_tensor(input);
+    //    auto l_ort = runtime_tensor_2_ort_tensor(input);
     // auto shape_ort = runtime_tensor_2_ort_tensor(input);
 
     // expected
-//    auto output_ort = ortki_Reshape(l_ort, l_ort, (long)0);
-//    size_t size = 0;
-//    void *ptr_ort = tensor_buffer(output_ort, &size);
-//    dims_t shape(tensor_rank(output_ort));
-//    tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
-//    auto expected = hrt::create(input.datatype(), shape,
-//                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
-//                                true, host_runtime_tensor::pool_cpu_only)
-//                        .expect("create tensor failed");
+    //    auto output_ort = ortki_Reshape(l_ort, l_ort, (long)0);
+    //    size_t size = 0;
+    //    void *ptr_ort = tensor_buffer(output_ort, &size);
+    //    dims_t shape(tensor_rank(output_ort));
+    //    tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
+    //    auto expected = hrt::create(input.datatype(), shape,
+    //                                {reinterpret_cast<gsl::byte *>(ptr_ort),
+    //                                size}, true,
+    //                                host_runtime_tensor::pool_cpu_only)
+    //                        .expect("create tensor failed");
 
     // actual
-    auto output =
-        kernels::stackvm::broadcast(input.impl(), input.impl())
-            .expect("broadcast failed");
+    auto output = kernels::stackvm::broadcast(input.impl(), input.impl())
+                      .expect("broadcast failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare

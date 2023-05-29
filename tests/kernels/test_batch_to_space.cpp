@@ -68,23 +68,23 @@ TEST_P(BatchToSpaceTest, BatchToSpace) {
     float b[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
     auto b_ptr = b;
     auto expected = hrt::create(input.datatype(), {1, 1, 4, 4},
-                                {reinterpret_cast<gsl::byte *>(b_ptr), 4},
-                                true, host_runtime_tensor::pool_cpu_only)
+                                {reinterpret_cast<gsl::byte *>(b_ptr), 4}, true,
+                                host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
     // actual
     float a[] = {1, 3, 9, 11, 2, 4, 10, 12, 5, 7, 13, 15, 6, 8, 14, 16};
     // auto a_ptr = a;
     auto input_tensor = hrt::create(input.datatype(), input.shape(),
-                                    {reinterpret_cast<gsl::byte *>(a), 4},
-                                    true, host_runtime_tensor::pool_cpu_only)
+                                    {reinterpret_cast<gsl::byte *>(a), 4}, true,
+                                    host_runtime_tensor::pool_cpu_only)
                             .expect("create tensor failed");
     long crops[] = {0, 0, 0, 0};
     // auto crops_ptr = crops;
-    auto crops_tensor = hrt::create(dt_int64, {2, 2},
-                                    {reinterpret_cast<gsl::byte *>(crops), 2},
-                                    true, host_runtime_tensor::pool_cpu_only)
-                            .expect("create tensor failed");
+    auto crops_tensor =
+        hrt::create(dt_int64, {2, 2}, {reinterpret_cast<gsl::byte *>(crops), 2},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
     auto output = kernels::stackvm::batch_to_space(
                       input_tensor.impl(), shape.impl(), crops_tensor.impl())
                       .expect("batch_to_space failed");
