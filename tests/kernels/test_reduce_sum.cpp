@@ -64,8 +64,8 @@ INSTANTIATE_TEST_SUITE_P(ReduceSum, ReduceSumTest,
                                                           dims_t{1})));
 
 TEST_P(ReduceSumTest, ReduceSum) {
-//    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
-//    auto r_ort = runtime_tensor_2_ort_tensor(rhs);
+    //    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
+    //    auto r_ort = runtime_tensor_2_ort_tensor(rhs);
 
     // expected
     size_t size = 0;
