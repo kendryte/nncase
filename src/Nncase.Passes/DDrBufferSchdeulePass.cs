@@ -29,12 +29,12 @@ public sealed class DDrBufferSchdeulePass : ModulePass
 
     private readonly bool _enbaleMergeCall;
 
-    private IAnalyzerManager AnalyzerManager => CompileSession.GetRequiredService<IAnalyzerManager>();
-
     public DDrBufferSchdeulePass(bool enableMergeCall = false)
     {
         _enbaleMergeCall = enableMergeCall;
     }
+
+    private IAnalyzerManager AnalyzerManager => CompileSession.GetRequiredService<IAnalyzerManager>();
 
     /// <inheritdoc/>
     protected override async Task<IRModule> RunCoreAsync(IRModule module, RunPassContext options)

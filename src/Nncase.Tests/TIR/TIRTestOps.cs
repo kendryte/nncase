@@ -52,13 +52,14 @@ public sealed class BinaryT : Op
 {
     public static readonly ParameterInfo GlbLhsPp = new(typeof(BinaryT), 0, "glb_lhs_pp", TypePatternUtility.IsTensor() | TypePatternUtility.IsAnyType());
 
+    public static readonly ParameterInfo GlbRhsPp = new(typeof(BinaryT), 1, "glb_rhs_pp", TypePatternUtility.IsTensor() | TypePatternUtility.IsAnyType());
+
+    public static readonly ParameterInfo GlbOutPp = new(typeof(BinaryT), 2, "glb_out_pp", TypePatternUtility.IsTensor() | TypePatternUtility.IsAnyType());
+
     public BinaryT(BinaryOp binaryOp)
     {
         BinaryOp = binaryOp;
     }
-
-    public static readonly ParameterInfo GlbRhsPp = new(typeof(BinaryT), 1, "glb_rhs_pp", TypePatternUtility.IsTensor() | TypePatternUtility.IsAnyType());
-    public static readonly ParameterInfo GlbOutPp = new(typeof(BinaryT), 2, "glb_out_pp", TypePatternUtility.IsTensor() | TypePatternUtility.IsAnyType());
 
     public BinaryOp BinaryOp { get; }
 

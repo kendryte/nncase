@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -36,8 +36,7 @@ public sealed partial class PrimFuncMergeRule : RewriteRule<PatternMatch.Pattern
         var patterns = new List<Pattern>();
         for (int i = 0; i < exprs.Length; i++)
         {
-            patterns.Add(IsAlt($"callerArgs{i}", IsCallWildcard($"callee_{i}", IsWildcard($"calleeWrapper_{i}", e => e is PrimFunctionWrapper)),
-                                IsWildcard()));
+            patterns.Add(IsAlt($"callerArgs{i}", IsCallWildcard($"callee_{i}", IsWildcard($"calleeWrapper_{i}", e => e is PrimFunctionWrapper)), IsWildcard()));
         }
 
         return patterns;
@@ -78,8 +77,7 @@ public sealed partial class PrimFuncMergeRule : RewriteRule<PatternMatch.Pattern
         return null;
     }
 
-    private Expr? Process(Call caller, PrimFunctionWrapper callerWrapper, IReadOnlyList<Expr> callerParams,
-      Call callee, PrimFunctionWrapper calleeWrapper, IReadOnlyList<Expr> calleeParams)
+    private Expr? Process(Call caller, PrimFunctionWrapper callerWrapper, IReadOnlyList<Expr> callerParams, Call callee, PrimFunctionWrapper calleeWrapper, IReadOnlyList<Expr> calleeParams)
     {
         var calleeFunc = calleeWrapper.Target;
         var callerFunc = callerWrapper.Target;

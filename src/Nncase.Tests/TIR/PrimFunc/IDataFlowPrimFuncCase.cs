@@ -26,7 +26,7 @@ public interface IDataFlowPrimFuncCase
 
 internal static class PrimFuncBuilder
 {
-    public static int[] Dimensions = new[] { 1, 4, 8, 9 };
+    public static readonly int[] Dimensions = new[] { 1, 4, 8, 9 };
 
     private static int _count;
 
@@ -41,8 +41,7 @@ internal static class PrimFuncBuilder
 
         var fusion_1 = TIR.T.PrimFunc($"fusion_{_count}_{mask}", Callable.StackVMModuleKind, fusion_input, fusion_output).Body(
           new Call(new TIRTest.LoadT(), fusion_input, glb),
-          new Call(new TIRTest.LoadT(), glb, fusion_output))
-        .Build();
+          new Call(new TIRTest.LoadT(), glb, fusion_output)).Build();
 
         _count++;
         return new PrimFunctionWrapper($"fusion_{_count}_{mask}_w", fusion_1, 1);
@@ -62,8 +61,7 @@ internal static class PrimFuncBuilder
           new Call(new TIRTest.LoadT(), fusion_input_lhs, glb_lhs),
           new Call(new TIRTest.LoadT(), fusion_input_rhs, glb_rhs),
           new Call(new TIRTest.BinaryT(binaryOp), glb_lhs, glb_rhs, glb_output),
-          new Call(new TIRTest.StoreT(), glb_output, fusion_output))
-        .Build();
+          new Call(new TIRTest.StoreT(), glb_output, fusion_output)).Build();
 
         var wrapper = new PrimFunctionWrapper($"fusion_{_count}_{mask}_w", fusion, 2);
         _count++;

@@ -194,7 +194,7 @@ internal sealed class PrimFuncEvaluateVisitor
                             BinaryOp.Div => glb_lhs_pp[i] / glb_rhs_pp[i],
                             BinaryOp.Min => System.MathF.Min(glb_lhs_pp[i], glb_rhs_pp[i]),
                             BinaryOp.Max => System.MathF.Max(glb_lhs_pp[i], glb_rhs_pp[i]),
-                            _ => throw new ArgumentOutOfRangeException(nameof(binary)),
+                            _ => throw new NotSupportedException(nameof(binary)),
                         };
                     }
 
