@@ -27,9 +27,9 @@ public sealed class DDrBufferSchdeulePass : ModulePass
 
     private readonly Dictionary<string, HashSet<TIR.Buffer>> _module_hashset = new();
 
-    private IAnalyzerManager AnalyzerManager => CompileSession.GetRequiredService<IAnalyzerManager>();
+    private readonly bool _enbaleMergeCall;
 
-    private bool _enbaleMergeCall;
+    private IAnalyzerManager AnalyzerManager => CompileSession.GetRequiredService<IAnalyzerManager>();
 
     public DDrBufferSchdeulePass(bool enableMergeCall = false)
     {
@@ -52,8 +52,7 @@ public sealed class DDrBufferSchdeulePass : ModulePass
                     {
                         [typeof(IExprUserAnalysisResult)] = AnalyzerManager.GetAnaylsis<IExprUserAnalysisResult>(func),
                     };
-
-                    var mergedFusionCache = new HashSet<BaseFunction>(ReferenceEqualityComparer.Instance);
+                    _ = new HashSet<BaseFunction>(ReferenceEqualityComparer.Instance);
                     var mergePass = new DataflowPass();
                     mergePass.Add<Rules.Neutral.PrimFuncMergeRule>(mergedFuncs);
                     var post = await mergePass.RunAsync(func, new() { AnalysisResults = analysis, RewriteOnce = true });

@@ -26,10 +26,9 @@ public interface IDataFlowPrimFuncCase
 
 internal static class PrimFuncBuilder
 {
-    private static int _count;
-
     public static int[] Dimensions = new[] { 1, 4, 8, 9 };
 
+    private static int _count;
 
     public static PrimFunctionWrapper MakeLoadStoreFunc(bool mask)
     {
@@ -42,8 +41,8 @@ internal static class PrimFuncBuilder
 
         var fusion_1 = TIR.T.PrimFunc($"fusion_{_count}_{mask}", Callable.StackVMModuleKind, fusion_input, fusion_output).Body(
           new Call(new TIRTest.LoadT(), fusion_input, glb),
-          new Call(new TIRTest.LoadT(), glb, fusion_output)
-        ).Build();
+          new Call(new TIRTest.LoadT(), glb, fusion_output))
+        .Build();
 
         _count++;
         return new PrimFunctionWrapper($"fusion_{_count}_{mask}_w", fusion_1, 1);
@@ -63,8 +62,8 @@ internal static class PrimFuncBuilder
           new Call(new TIRTest.LoadT(), fusion_input_lhs, glb_lhs),
           new Call(new TIRTest.LoadT(), fusion_input_rhs, glb_rhs),
           new Call(new TIRTest.BinaryT(binaryOp), glb_lhs, glb_rhs, glb_output),
-          new Call(new TIRTest.StoreT(), glb_output, fusion_output)
-        ).Build();
+          new Call(new TIRTest.StoreT(), glb_output, fusion_output))
+        .Build();
 
         var wrapper = new PrimFunctionWrapper($"fusion_{_count}_{mask}_w", fusion, 2);
         _count++;
@@ -88,19 +87,17 @@ internal static class PrimFuncBuilder
         var fusion = TIR.T.PrimFunc($"multi_fusion_{_count}_{mask}", Callable.StackVMModuleKind, fusion_inputs.Concat(new[] { fusion_output }).ToArray());
 
         fusion.Body(
-          new Call(new LoadT(), fusion_inputs[0], glb1)
-        );
+          new Call(new LoadT(), fusion_inputs[0], glb1));
         var last = glb1;
         foreach (var (b, i) in GetBinaryOp(length - 1).Select((b, i) => (b, i)))
         {
             fusion.Body(
               new Call(new LoadT(), fusion_inputs[i + 1], glb2),
-              new Call(new BinaryT(b), glb1, glb2, glb1)
-            );
+              new Call(new BinaryT(b), glb1, glb2, glb1));
         }
+
         fusion.Body(
-          new Call(new TIRTest.StoreT(), glb1, fusion_output)
-        );
+          new Call(new TIRTest.StoreT(), glb1, fusion_output));
 
         var wrapper = new PrimFunctionWrapper($"multi_fusion_{_count}_{mask}_w", fusion.Build(), length);
         _count++;
@@ -130,9 +127,9 @@ internal static class PrimFuncBuilder
     private sealed class Allocator
     {
         private readonly Dictionary<Schedule.MemoryLocation, int> _useage = new() {
-          {Schedule.MemoryLocation.Input, 0},
-          {Schedule.MemoryLocation.Output, 0},
-          {Schedule.MemoryLocation.L2Data, 0},
+          { Schedule.MemoryLocation.Input, 0 },
+          { Schedule.MemoryLocation.Output, 0 },
+          { Schedule.MemoryLocation.L2Data, 0 },
         };
 
         public TIR.PhysicalBuffer Allocate(string name, Schedule.MemoryLocation location)
@@ -170,13 +167,12 @@ internal sealed class DataFlowType0FusionCase : IDataFlowPrimFuncCase
     }
 }
 
-
 /// <summary>
 ///   x
 ///   |
 /// fusion1 y   =>   x     y
 ///  \     /          \   /
-///   fusion2        fusion1_2
+///   fusion2        fusion1_2.
 /// </summary>
 internal sealed class DataFlowType1FusionCase : IDataFlowPrimFuncCase
 {
@@ -210,7 +206,7 @@ internal sealed class DataFlowType1FusionCase : IDataFlowPrimFuncCase
 ///  \     /          \   /
 ///   fusion2        fusion1_2_3
 ///     |
-///   fusion3        
+///   fusion3.
 /// </summary>
 internal sealed class DataFlowType2FusionCase : IDataFlowPrimFuncCase
 {
@@ -239,11 +235,11 @@ internal sealed class DataFlowType2FusionCase : IDataFlowPrimFuncCase
 /// current not support
 ///        y
 ///        |
-///     fusion1               y  
+///     fusion1               y
 ///   /       \              |
 ///  \        /    =>       |
-///   fusion2           fusion2_1
-///   
+///   fusion2           fusion2_1.
+///
 /// </summary>
 internal sealed class DataFlowType3FusionCase : IDataFlowPrimFuncCase
 {
@@ -263,23 +259,23 @@ internal sealed class DataFlowType3FusionCase : IDataFlowPrimFuncCase
 }
 
 /// <summary>
-///                       in2            
+///                       in2
 ///                        |
 ///                      func_1           in4
 ///         in1         /      \            |
 ///          |        /         \          |
 ///        func0    /    in3     |     func_3
 ///          |     |      |      |        |
-///  func_4(            func_2            )     
-///  
+///  func_4(            func_2            )
+///
 ///                                in4
 ///         in1                     |
 ///          |                     |
 ///        func0  in2    in3     func_3
 ///          |     |      |       |
-///  func_5_1(          func_2      )     
-/// 
-/// 
+///  func_5_1(          func_2      ).
+///
+///
 /// </summary>
 internal sealed class DataFlowType4FusionCase : IDataFlowPrimFuncCase
 {
@@ -298,7 +294,6 @@ internal sealed class DataFlowType4FusionCase : IDataFlowPrimFuncCase
         var in3 = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, PrimFuncBuilder.Dimensions);
         var v_3 = new Call(PrimFuncBuilder.MakeLoadStoreFunc(true), in3);
 
-
         var v_4 = new Call(PrimFuncBuilder.MakeMultiInputFunc(5, true), v_0, v_1, v_2, v_1, v_3);
         return v_4;
     }
@@ -308,7 +303,7 @@ internal sealed class DataFlowType4FusionCase : IDataFlowPrimFuncCase
         return BuildBodyCore(input);
     }
 
-    bool CheckOnFinish(TestVisitor v)
+    private bool CheckOnFinish(TestVisitor v)
     {
         var wrapper = v.ExprMemo.OfType<PrimFunctionWrapper>().Where(p => p.Name.StartsWith("multi_fusion_")).First();
         return wrapper.ParametersCount == 3;
@@ -317,18 +312,17 @@ internal sealed class DataFlowType4FusionCase : IDataFlowPrimFuncCase
 
 /// <summary>
 ///       x
-///       |   
+///       |
 ///    func_0
 ///       |   \           x
 ///    func_1  |    ->    |
 ///       |   /         func_3
 ///    func_2
 ///       |
-///    func_3
+///    func_3.
 /// </summary>
 internal sealed class DataFlowType5FusionCase : IDataFlowPrimFuncCase
 {
-
     private readonly bool _left;
 
     public DataFlowType5FusionCase(bool left)
@@ -352,7 +346,7 @@ internal sealed class DataFlowType5FusionCase : IDataFlowPrimFuncCase
         return BuildBodyCore(input, _left);
     }
 
-    bool CheckOnFinish(TestVisitor v)
+    private bool CheckOnFinish(TestVisitor v)
     {
         var wrapper = v.ExprMemo.OfType<PrimFunctionWrapper>().First();
         return wrapper.ParametersCount == 1;
@@ -380,7 +374,6 @@ internal sealed class DataFlowType5FusionCase : IDataFlowPrimFuncCase
 /// </summary>
 internal sealed class DataFlowType6FusionCase : IDataFlowPrimFuncCase
 {
-
     private readonly bool _left;
 
     public DataFlowType6FusionCase(bool left)
@@ -421,7 +414,6 @@ internal sealed class DataFlowType6FusionCase : IDataFlowPrimFuncCase
 /// </summary>
 internal sealed class DataFlowType7FusionCase : IDataFlowPrimFuncCase
 {
-
     private readonly bool _left;
 
     public DataFlowType7FusionCase(bool left)
@@ -456,7 +448,6 @@ internal sealed class DataFlowType7FusionCase : IDataFlowPrimFuncCase
 /// </summary>
 internal sealed class DataFlowType8FusionCase : IDataFlowPrimFuncCase
 {
-
     private readonly bool _left;
 
     public DataFlowType8FusionCase(bool left)
@@ -479,7 +470,6 @@ internal sealed class DataFlowType8FusionCase : IDataFlowPrimFuncCase
     }
 }
 
-
 /// <summary>
 /// ShortCutFusionCase
 ///                            y
@@ -497,7 +487,6 @@ internal sealed class DataFlowType8FusionCase : IDataFlowPrimFuncCase
 /// </summary>
 internal sealed class DataFlowType9FusionCase : IDataFlowPrimFuncCase
 {
-
     private readonly bool _left;
 
     public DataFlowType9FusionCase(bool left)
@@ -510,7 +499,7 @@ internal sealed class DataFlowType9FusionCase : IDataFlowPrimFuncCase
     public static Expr BuildBodyCore(Expr input, bool left)
     {
         var y = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 7, PrimFuncBuilder.Dimensions);
-        var inputRhs = DataFlowType8FusionCase.BuildBodyCore(y, !left);
+        _ = DataFlowType8FusionCase.BuildBodyCore(y, !left);
         var v1 = DataFlowType7FusionCase.BuildBodyCore(input, left);
         var v2 = DataFlowType8FusionCase.BuildBodyCore(v1, !left);
         return v2;
@@ -533,7 +522,6 @@ internal sealed class DataFlowType9FusionCase : IDataFlowPrimFuncCase
 /// </summary>
 internal sealed class DataFlowType10FusionCase : IDataFlowPrimFuncCase
 {
-
     private readonly bool _left;
 
     public DataFlowType10FusionCase(bool left)

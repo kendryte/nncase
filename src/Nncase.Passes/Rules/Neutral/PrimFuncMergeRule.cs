@@ -39,6 +39,7 @@ public sealed partial class PrimFuncMergeRule : RewriteRule<PatternMatch.Pattern
             patterns.Add(IsAlt($"callerArgs{i}", IsCallWildcard($"callee_{i}", IsWildcard($"calleeWrapper_{i}", e => e is PrimFunctionWrapper)),
                                 IsWildcard()));
         }
+
         return patterns;
     }));
 
@@ -53,6 +54,7 @@ public sealed partial class PrimFuncMergeRule : RewriteRule<PatternMatch.Pattern
             {
                 continue;
             }
+
             var callee = (Call)result[$"callee_{i}"];
             var calleeWrapper = (PrimFunctionWrapper)result[$"calleeWrapper_{i}"];
             var calleeParams = (IReadOnlyList<Expr>)result[$"callee_{i}Params"];
@@ -135,7 +137,6 @@ public sealed partial class PrimFuncMergeRule : RewriteRule<PatternMatch.Pattern
         newCallParams.AddRange(calleeParams);
         newCallParams.AddRange(Enumerable.Range(0, callerParams.Count).Where(i => i > calleeBufferIndexs[0] && !calleeBufferIndexs.Contains(i)).Select(i => callerParams[i]).ToArray());
 
-
         // 6. add the merged in cache.
         _mergedFuncs.Add(calleeFunc);
         _mergedFuncs.Add(calleeWrapper);
@@ -153,8 +154,7 @@ public sealed partial class PrimFuncMergeRule : RewriteRule<PatternMatch.Pattern
             retBuffer.ElemType == inBuffer.ElemType &&
             retBuffer.Size == inBuffer.Size &&
             retBuffer.MemLocation == Schedule.MemoryLocation.Output &&
-            inBuffer.MemLocation == Schedule.MemoryLocation.Input
-        )
+            inBuffer.MemLocation == Schedule.MemoryLocation.Input)
         {
             dataBuffer = new TIR.PhysicalBuffer(inBuffer.Name, inBuffer.ElemType, Schedule.MemoryLocation.Data, inBuffer.FixedDimensions, inBuffer.FixedStrides, inBuffer.Start, inBuffer.Size);
             return true;
@@ -166,6 +166,7 @@ public sealed partial class PrimFuncMergeRule : RewriteRule<PatternMatch.Pattern
     internal sealed class PrimFuncCloner : ExprCloner<Unit>
     {
         private readonly Dictionary<TIR.PhysicalBuffer, TIR.PhysicalBuffer> _dict;
+
         public PrimFuncCloner(Dictionary<TIR.PhysicalBuffer, TIR.PhysicalBuffer> dict)
         {
             _dict = dict;
