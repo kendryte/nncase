@@ -905,13 +905,11 @@ result<value_t> nncase::kernels::stackvm::slice(value_t input, value_t begins,
         }
     }
     if (neg_strides) {
-        std::cout << "ref slice" << std::endl;
         try_(reference::slice(input_tensor->dtype(), in_mem, out_mem, in_shape,
                               input_tensor->strides(), output_tensor->strides(),
                               begin_values, end_values, strides_values,
                               context));
     } else {
-        std::cout << "opt slice" << std::endl;
         try_(optimized::slice(input_tensor->dtype(), in_mem, out_mem, in_shape,
                               input_tensor->strides(), output_tensor->strides(),
                               begin_values, end_values, strides_values,
