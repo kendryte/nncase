@@ -72,14 +72,14 @@ TEST_P(ReverseSequenceTest, ReverseSequence) {
     // actual
     int64_t batch_axis_array[] = {1};
     auto batch_axis =
-        hrt::create(dt_int64, shape,
-                    {reinterpret_cast<gsl::byte *>(batch_axis_array), size},
+        hrt::create(dt_int64, {1},
+                    {reinterpret_cast<gsl::byte *>(batch_axis_array), 8},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     int64_t time_axis_array[] = {0};
     auto time_axis =
-        hrt::create(dt_int64, shape,
-                    {reinterpret_cast<gsl::byte *>(time_axis_array), size},
+        hrt::create(dt_int64, {1},
+                    {reinterpret_cast<gsl::byte *>(time_axis_array), 8},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto output =
