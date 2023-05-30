@@ -41,7 +41,7 @@ public sealed class AddPreProcess : ModulePass
         var std = CompileSession.CompileOptions.Std;
         var modelLayout = CompileSession.CompileOptions.ModelLayout;
 
-        var entry = (IR.Function)module.Entry;
+        var entry = (IR.Function)module.Entry!;
         var newType = new[] { DataTypes.UInt8, DataTypes.Int8, DataTypes.Float32 };
 
         if (!preProcess)
