@@ -136,8 +136,7 @@ PYBIND11_MODULE(_nncase, m) {
             py::overload_cast<std::string_view>(&compile_options::mean))
         .def_property(
             "std", py::overload_cast<>(&compile_options::std),
-            py::overload_cast<std::string_view>(&compile_options::std));
-                          &compile_options::quantize_options))
+            py::overload_cast<std::string_view>(&compile_options::std))
         .def_property("shape_bucket_options",
                       py::overload_cast<>(&compile_options::shape_bucket_options),
                       py::overload_cast<const shape_bucket_options &>(
