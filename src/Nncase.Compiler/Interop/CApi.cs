@@ -516,10 +516,13 @@ public static unsafe class CApi
         byte[] rangeInfoByte = new byte[rangeInfoSize];
         Marshal.Copy(new IntPtr(rangeInfo), rangeInfoByte, 0, (int)rangeInfoSize);
         string jsonStr = Encoding.UTF8.GetString(rangeInfoByte);
-        Dictionary<String, List<int>> rangeInfoStructTmp = JsonConvert.DeserializeObject<Dictionary<String, List<int>>>(jsonStr)!;
+        Dictionary<string, List<int>> rangeInfoStructTmp = JsonConvert.DeserializeObject<Dictionary<string, List<int>>>(jsonStr)!;
         Dictionary<string, (int, int)> rangeInfoStruct = new();
         foreach (var element in rangeInfoStructTmp)
+        {
             rangeInfoStruct.Add(element.Key, (element.Value[0], element.Value[1]));
+        }
+
         Get<ShapeBucketOptions>(shapeBucketOptionsHandle).RangeInfo = rangeInfoStruct;
     }
 
@@ -533,9 +536,9 @@ public static unsafe class CApi
     private static void ShapeBucketOptionsSetFixVarMap(IntPtr shapeBucketOptionsHandle, byte* fixVarMap, nuint fixVarMapSize)
     {
         byte[] fixVarMapByte = new byte[fixVarMapSize];
-        Marshal.Copy(new IntPtr(fixVarMap), fixVarMapByte , 0, (int)fixVarMapSize);
+        Marshal.Copy(new IntPtr(fixVarMap), fixVarMapByte, 0, (int)fixVarMapSize);
         string jsonStr = Encoding.UTF8.GetString(fixVarMapByte);
-        Dictionary<String, int> fixVarMapStruct = JsonConvert.DeserializeObject<Dictionary<String, int>>(jsonStr)!;
+        Dictionary<string, int> fixVarMapStruct = JsonConvert.DeserializeObject<Dictionary<string, int>>(jsonStr)!;
         Get<ShapeBucketOptions>(shapeBucketOptionsHandle).FixVarMap = fixVarMapStruct;
     }
 

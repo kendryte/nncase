@@ -31,8 +31,8 @@ public sealed partial class Require : Op
     public string Message { get; }
 
     /// <inheritdoc/>
-    public override string DisplayProperty() => Message;
+    public override bool CanFoldConstCall => false;
 
     /// <inheritdoc/>
-    public override bool CanFoldConstCall => false;
+    public override string DisplayProperty() => Message;
 }

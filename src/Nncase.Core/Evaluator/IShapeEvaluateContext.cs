@@ -39,7 +39,6 @@ public interface IShapeEvaluateContext
     /// <returns>The argument shape expr.</returns>
     Expr GetArgumentShape(Op op, ParameterInfo parameter);
 
-
     /// <summary>
     /// Get argument rank expr.
     /// </summary>

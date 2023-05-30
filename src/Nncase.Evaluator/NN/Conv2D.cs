@@ -71,12 +71,6 @@ public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICos
         };
     }
 
-    private IRType Visit(ITypeInferenceContext context, Conv2D target, TensorType input, TensorType weights)
-    {
-        var args = context.GetArguments(target, Conv2D.Stride, Conv2D.Padding, Conv2D.Dilation, Conv2D.Groups);
-        return TypeInference.Conv2DType(input, weights, args[0], args[1], args[2], args[3]);
-    }
-
     public Expr Visit(IShapeEvaluateContext context, Conv2D target)
     {
         var inShape = context.GetArgumentShape(target, Conv2D.Input);
@@ -89,6 +83,11 @@ public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICos
         var h = Util.GetWindowedOutputSize(inShape[2] + pad[0, 0] + pad[0, 1], wShape[2], stride[0], dilation[0], false, false);
         var w = Util.GetWindowedOutputSize(inShape[3] + pad[1, 0] + pad[1, 1], wShape[3], stride[1], dilation[1], false, false);
         return Stack(new IR.Tuple(n, oc, h, w), 0);
+    }
 
+    private IRType Visit(ITypeInferenceContext context, Conv2D target, TensorType input, TensorType weights)
+    {
+        var args = context.GetArguments(target, Conv2D.Stride, Conv2D.Padding, Conv2D.Dilation, Conv2D.Groups);
+        return TypeInference.Conv2DType(input, weights, args[0], args[1], args[2], args[3]);
     }
 }

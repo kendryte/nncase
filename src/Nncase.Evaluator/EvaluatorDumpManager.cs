@@ -49,6 +49,12 @@ internal sealed class EvaluatorDumpManager : IDisposable
         GC.SuppressFinalize(this);
     }
 
+    private static string GetTargetName(Call call)
+    {
+        var target = DumpUtility.SnakeName(call.Target.GetType().Name);
+        return target;
+    }
+
     private void DumpCallArgs(Call call)
     {
         string target = GetTargetName(call);
@@ -62,12 +68,6 @@ internal sealed class EvaluatorDumpManager : IDisposable
                 ValueDumper.DumpTensors(ps, sr);
             });
         });
-    }
-
-    private static string GetTargetName(Call call)
-    {
-        var target = DumpUtility.SnakeName(call.Target.GetType().Name);
-        return target;
     }
 
     private void DumpCall(Call call)

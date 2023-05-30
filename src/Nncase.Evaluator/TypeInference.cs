@@ -304,6 +304,7 @@ public static class TypeInference
         {
             return new InvalidType("Reduce input shape should not be scalar");
         }
+
         if (keepDims is TensorConst keepDimsV &&
             axis is TensorConst axisValue)
         {

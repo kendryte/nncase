@@ -53,18 +53,20 @@ internal sealed class ShapeEvaluateContext : IShapeEvaluateContext
         {
             return new Tuple(tuple.Fields.ToArray().Select(v => Cast(_memo[v], DataTypes.Int32)).ToArray());
         }
+
         if (expr.CheckedType is TupleType)
         {
-            var tupleShapeExpr = (Tuple)(expr.EvaluateShapeExpr(VarMap));
+            var tupleShapeExpr = (Tuple)expr.EvaluateShapeExpr(VarMap);
             return new Tuple(tupleShapeExpr.Fields.ToArray().Select(expr => Cast(expr, DataTypes.Int32)).ToArray());
         }
+
         var shapeExpr = _memo[expr];
         return Cast(shapeExpr, DataTypes.Int32);
     }
 
     public Expr GetArgumentRank(Op op, ParameterInfo parameter)
     {
-        return StackScalar(Cast((GetArgumentShape(op, parameter))[0], DataTypes.Int32));
+        return StackScalar(Cast(GetArgumentShape(op, parameter)[0], DataTypes.Int32));
     }
 
     private Call GetCurrentCall() => CurrentCall ?? throw new InvalidOperationException("Current call is not set.");

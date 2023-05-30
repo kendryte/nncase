@@ -37,23 +37,24 @@ public class ShapeBucketTest : TransformTestBase
         Assert.Equal(visitor.Vars, new HashSet<Var>(new[] { v1, v2 }));
     }
 
-    private Var Scalar(string name) => new Var(new TensorType(DataTypes.Int32, Shape.Scalar));
-
     [Fact]
     public void TestBucketPad()
     {
         var input = Testing.Rand<float>(1, 2, 16, 16);
         var fixedShape = new[] { 1, 3, 24, 24 };
-        var p =  new Call(new BucketPad(), input, fixedShape);
-        var (path, kmodel) = Testing.BuildKModel("test", new IRModule(new Function(p)), CompileSession);
-        var result = Testing.RunKModel(kmodel, "call_arg", new Tensor[]{});
+        var p = new Call(new BucketPad(), input, fixedShape);
+        var (_, kmodel) = Testing.BuildKModel("test", new IRModule(new Function(p)), CompileSession);
+        var result = Testing.RunKModel(kmodel, "call_arg", Array.Empty<Tensor>());
         var pads = fixedShape - Cast(ShapeOf(input), DataTypes.Int32);
-        var paddings = Transpose(Stack(new IR.Tuple(Enumerable.Repeat(0, fixedShape.Length).ToArray(), pads), 0),
-        new[] { 1, 0 });
+        var paddings = Transpose(
+            Stack(new IR.Tuple(Enumerable.Repeat(0, fixedShape.Length).ToArray(), pads), 0),
+            new[] { 1, 0 });
         var fixedInput = IR.F.NN.Pad(input, paddings, PadMode.Constant, Cast(0, input.ElementType));
         var fixedResult = new Call(new FixShape(), fixedInput, fixedShape);
         var origin = fixedResult.Evaluate();
         var cos = Comparator.CosSimilarity(origin, result)[0];
         Assert.True(cos > 0.999);
     }
+
+    private Var Scalar(string name) => new Var(new TensorType(DataTypes.Int32, Shape.Scalar));
 }

@@ -18,12 +18,13 @@ namespace Nncase.Evaluator.Tensors;
 public class BucketPadEvaluator : IEvaluator<BucketPad>, ITypeInferencer<BucketPad>, ICostEvaluator<BucketPad>, IShapeEvaluator<BucketPad>
 {
     /// <inheritdoc/>
-    public IValue Visit(IEvaluateContext context, BucketPad BucketPad)
+    public IValue Visit(IEvaluateContext context, BucketPad bucketPad)
     {
-        var input = context.GetArgumentValueAsTensor(BucketPad, BucketPad.Input);
-        var shape = context.GetArgumentValueAsArray<int>(BucketPad, BucketPad.Shape);
+        var input = context.GetArgumentValueAsTensor(bucketPad, BucketPad.Input);
+        var shape = context.GetArgumentValueAsArray<int>(bucketPad, BucketPad.Shape);
         var pads = shape - (Expr)input.Shape;
-        var paddings = Transpose(Stack(new Tuple(Enumerable.Repeat(0, shape.Length).ToArray(), pads), 0),
+        var paddings = Transpose(
+            Stack(new Tuple(Enumerable.Repeat(0, shape.Length).ToArray(), pads), 0),
             new[] { 1, 0 });
         var fixedInput = IR.F.NN.Pad(input, paddings, PadMode.Constant, Cast(0, input.ElementType)).Evaluate();
         return fixedInput;
@@ -53,8 +54,11 @@ public class BucketPadEvaluator : IEvaluator<BucketPad>, ITypeInferencer<BucketP
     private IRType Visit(ITypeInferenceContext context, BucketPad target, TensorType input)
     {
         var shape = context.GetArgument(target, BucketPad.Shape);
-        if(shape is TensorConst shapeConst)
+        if (shape is TensorConst shapeConst)
+        {
             return new TensorType(input.DType, shapeConst.Value.ToArray<int>());
+        }
+
         return new InvalidType("BucketPad Shape need const");
     }
 }

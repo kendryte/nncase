@@ -30,6 +30,8 @@ internal class TextSnippet
         BasicBlock = basicBlock;
     }
 
+    public BasicBlock BasicBlock { get; set; }
+
     public Expr Expr { get; }
 
     public MemoryStream Text { get; } = new MemoryStream();
@@ -56,8 +58,6 @@ internal class TextSnippet
 
     public int RefCount { get; set; }
 
-    public readonly BasicBlock BasicBlock;
-
     public void AddInput(TextSnippet input, bool addCount)
     {
         _inputSnippets.Add(input);
@@ -75,16 +75,18 @@ internal class TextSnippet
 
 internal class BasicBlock
 {
-    private static int _count = 0;
+    private static int _count;
+
+    private readonly List<TextSnippet> _textSnippets = new();
 
     public BasicBlock()
     {
-        _id = _count++;
+        Id = _count++;
     }
 
     public BasicBlock(BasicBlock[] prevs)
     {
-        _id = _count++;
+        Id = _count++;
         Prev = Prev.Concat(prevs).ToList();
         foreach (var prev in prevs)
         {
@@ -92,28 +94,24 @@ internal class BasicBlock
         }
     }
 
+    public List<BasicBlock> Prev { get; set; } = new();
+
+    public List<BasicBlock> Nexts { get; set; } = new();
+
+    public int Id { get; set; }
+
+    public IReadOnlyList<TextSnippet> TextSnippets => _textSnippets;
+
     public void AddNext(BasicBlock next)
     {
         next.Prev.Add(this);
-        this.Nexts.Add(next);
+        Nexts.Add(next);
     }
 
     public void AddTextSnippet(TextSnippet textSnippet)
     {
         _textSnippets.Add(textSnippet);
     }
-
-    private readonly List<TextSnippet> _textSnippets = new();
-
-    public IReadOnlyList<TextSnippet> TextSnippets => _textSnippets;
-
-    public List<BasicBlock> Prev = new();
-
-    public List<BasicBlock> Nexts = new();
-
-    private int _id;
-
-    public int Id => _id;
 }
 
 internal class CodeGenContext
@@ -121,12 +119,12 @@ internal class CodeGenContext
     private readonly List<BasicBlock> _basicBlocks = new();
     private readonly HashSet<ModuleType> _custom_call_modules = new();
 
-    public readonly Dictionary<TextSnippet, HashSet<TextSnippet>> AllocInfo = new();
-
     public CodeGenContext(BinaryWriter rdataWriter)
     {
         RdataWriter = rdataWriter;
     }
+
+    public Dictionary<TextSnippet, HashSet<TextSnippet>> AllocInfo { get; set; } = new();
 
     public BinaryWriter RdataWriter { get; }
 
@@ -173,6 +171,22 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
     private BasicBlock CurrentBasicBlock => _currentBasicBlock!;
 
     private StackVMEmitter Emitter => CurrentTextSnippet.Emitter;
+
+    public (BasicBlock BB, HashSet<TextSnippet> SnippetSet) SubBlock(Expr expr)
+    {
+        var visitor = new CodeGenVisitor(_function, _context);
+        var subBlockFirst = visitor.CurrentBasicBlock;
+
+        CurrentBasicBlock.AddNext(subBlockFirst);
+        foreach (var (key, value) in ExprMemo)
+        {
+            visitor.ExprMemo[key] = value;
+        }
+
+        visitor.Visit(expr);
+        var refTextSnippets = visitor._refTextSnippets;
+        return (subBlockFirst, refTextSnippets);
+    }
 
     protected override TextSnippet VisitLeafConst(Const expr)
     {
@@ -258,8 +272,6 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         return null!;
     }
 
-    private static int counter = 1;
-
     protected override TextSnippet VisitLeafCall(Call expr)
     {
         var snippet = BeginTextSnippet(expr);
@@ -282,8 +294,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         if (expr.Target is CustomOp custom_op)
         {
             _context.AddCustomCallModule(custom_op.ModuleType);
-            Emitter.CusCall(custom_op.RegisteredName, custom_op.SerializeFields(),
-                checked((ushort)expr.Arguments.Length));
+            Emitter.CusCall(custom_op.RegisteredName, custom_op.SerializeFields(), checked((ushort)expr.Arguments.Length));
         }
         else if (expr.Target is Op op)
         {
@@ -342,6 +353,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         var condSnippet = Visit(@if.Condition);
 
         var brFalse = BeginTextSnippet(@if);
+
         // todo: fix this
         if (@if.Condition is Call c)
         {
@@ -361,10 +373,10 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
 
         var (elseBlock, elseSet) = SubBlock(@if.Else);
 
-
         var endIf = new BasicBlock(new[] { thenBlock, elseBlock });
         _currentBasicBlock = endIf;
         _context.AddBasicBlock(endIf);
+
         // because visit param is before VisitLeaf, we can't use ref of elseSnippet.Symbol to jump.
         // snippet structure: | ... | else param1 | else param2 | ... | elseSnippet |
         AddSymbolRef(brFalse, br.EndSymbol, -4, 4, true, 1);
@@ -384,22 +396,6 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         }
 
         _context.AllocInfo[endSnippet] = useSnippetSet;
-    }
-
-    public (BasicBlock, HashSet<TextSnippet>) SubBlock(Expr expr)
-    {
-        var visitor = new CodeGenVisitor(_function, _context);
-        var subBlockFirst = visitor.CurrentBasicBlock;
-
-        CurrentBasicBlock.AddNext(subBlockFirst);
-        foreach (var (key, value) in ExprMemo)
-        {
-            visitor.ExprMemo[key] = value;
-        }
-
-        visitor.Visit(expr);
-        var refTextSnippets = visitor._refTextSnippets;
-        return (subBlockFirst, refTextSnippets);
     }
 
     private TextSnippet Visit(TensorConst expr, Tensor tensor)
@@ -448,16 +444,14 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         return AddSymbolRef(CurrentTextSnippet, symbol, positionOffset, length, relative, offset);
     }
 
-    private SymbolRef AddSymbolRef(TextSnippet snippet, Symbol symbol, int positionOffset, int length,
-        bool relative = false, int offset = 0)
+    private SymbolRef AddSymbolRef(TextSnippet snippet, Symbol symbol, int positionOffset, int length, bool relative = false, int offset = 0)
     {
         var symbolRef = new SymbolRef(snippet.Emitter.Position + positionOffset, length, symbol, relative, offset);
         snippet.SymbolRefs.Add(symbolRef);
         return symbolRef;
     }
 
-    private FunctionRef AddFunctionRef(BaseFunction callable, FunctionIdComponent component, int positionOffset,
-        int length, int offset = 0)
+    private FunctionRef AddFunctionRef(BaseFunction callable, FunctionIdComponent component, int positionOffset, int length, int offset = 0)
     {
         var functionRef = new FunctionRef(Emitter.Position + positionOffset, length, callable, component, offset);
         CurrentTextSnippet.FunctionRefs.Add(functionRef);

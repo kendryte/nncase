@@ -1,3 +1,6 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.Utilities;
@@ -12,32 +15,33 @@ namespace Nncase.CodeGen
             DumpUtility.WriteResult(Path.Join(DumpScope.Current.Directory, "ids.txt"), idInfo);
         }
 
-        public static void WriteDebugInfo(uint fnId, uint moduleId, List<(Expr, (long, long))> sourceMap)
+        public static void WriteDebugInfo(uint fnId, uint moduleId, List<(Expr Expr, (long Min, long Max) Range)> sourceMap)
         {
             var dir = DumpScope.Current.Directory;
             var ids = ReadIds(dir);
+
             // stackvm id is 0
             var debugInfoDir = Path.Join(dir, "StackVMInst");
             if (!Directory.Exists(debugInfoDir))
             {
                 Directory.CreateDirectory(debugInfoDir);
             }
+
             DumpUtility.WriteResult(
                 Path.Join(dir, "StackVMInst", $"{ids[new(fnId, moduleId)]}.txt"),
-                sourceMap.Where(x => x.Item1 is not PrimFunctionWrapper).Select(x => ToStr(x.Item1) + x.Item2).ToArray());
+                sourceMap.Where(x => x.Expr is not PrimFunctionWrapper).Select(x => ToStr(x.Expr) + x.Range).ToArray());
         }
 
         public static Dictionary<FunctionId, string> ReadIds(string dir)
         {
             using var sr = new StreamReader(Path.Join(dir, "ids.txt"));
-            var Ids = sr.ReadToEnd().Split("\n").Select(line =>
+            var ids = sr.ReadToEnd().Split("\n").Select(line =>
             {
                 var data = line.Split(" ").ToArray();
                 return (new FunctionId(uint.Parse(data[1]), uint.Parse(data[0])), data[2]);
             }).ToDictionary(x => x.Item1, x => x.Item2);
-            return Ids;
+            return ids;
         }
-
 
         // todo: refactor this
         public static string ToStr(Expr expr)
@@ -47,20 +51,20 @@ namespace Nncase.CodeGen
             {
                 if (call.Target is BaseFunction fn)
                 {
-                    str = ($"Expr: call fn_{fn.Name}");
+                    str = $"Expr: call fn_{fn.Name}";
                 }
                 else if (call.Target is Op o)
                 {
-                    str = ($"Expr:{o.GetType().Name}");
+                    str = $"Expr:{o.GetType().Name}";
                 }
                 else
                 {
-                    str = ($"Expr:{expr}");
+                    str = $"Expr:{expr}";
                 }
             }
             else if (expr is Var v)
             {
-                str = ($"Expr:{v.Name}");
+                str = $"Expr:{v.Name}";
             }
             else if (expr is If)
             {
@@ -68,7 +72,7 @@ namespace Nncase.CodeGen
             }
             else
             {
-                str = ($"Expr:{expr}");
+                str = $"Expr:{expr}";
             }
 
             return str + $"_{expr.GetHashCode()}";
@@ -76,25 +80,25 @@ namespace Nncase.CodeGen
 
         public static void PrintAlloc(ushort localId, Expr expr, string prefix)
         {
-            var str = "";
+            string? str;
             if (expr is Call call)
             {
                 if (call.Target is BaseFunction fn)
                 {
-                    str = ($"{prefix} id:{localId} Expr: call fn_{fn.Name}");
+                    str = $"{prefix} id:{localId} Expr: call fn_{fn.Name}";
                 }
                 else if (call.Target is Op o)
                 {
-                    str = ($"{prefix} id:{localId} Expr:{o.GetType().Name}");
+                    str = $"{prefix} id:{localId} Expr:{o.GetType().Name}";
                 }
                 else
                 {
-                    str = ($"{prefix} id:{localId} Expr:{expr}");
+                    str = $"{prefix} id:{localId} Expr:{expr}";
                 }
             }
             else if (expr is Var v)
             {
-                str = ($"{prefix} id:{localId} Expr:{v.Name}");
+                str = $"{prefix} id:{localId} Expr:{v.Name}";
             }
             else if (expr is If)
             {
@@ -102,7 +106,7 @@ namespace Nncase.CodeGen
             }
             else
             {
-                str = ($"{prefix} id:{localId} Expr:{expr}");
+                str = $"{prefix} id:{localId} Expr:{expr}";
             }
 
             Console.WriteLine(str);

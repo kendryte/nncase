@@ -319,10 +319,10 @@ public static class DetailComparator
     /// <summary>
     /// Compare and generate info.
     /// </summary>
-    /// <param name="a"></param>
-    /// <param name="b"></param>
-    /// <param name="resultRoot"></param>
-    /// <exception cref="InvalidOperationException"></exception>
+    /// <param name="a">a.</param>
+    /// <param name="b">b.</param>
+    /// <param name="resultRoot">ResultRoot.</param>
+    /// <exception cref="InvalidOperationException">Exception.</exception>
     public static void GenerateFullCompareInfo(OriginValue[] a, OriginValue[] b, string resultRoot)
     {
         if (a.Length != b.Length)

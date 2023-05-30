@@ -44,6 +44,7 @@ public sealed class ModelBuilder : IModelBuilder
         {
             CodeGenDumper.DumpIdMap(functionIds);
         }
+
         var linkableModules = functionsByKind.Select(x => Target.CreateModuleBuilder(x.Key, CompileOptions).Build(x.ToList())).ToList();
         var linkContext = new LinkContext(functionIds);
         var linkedModules = linkableModules.Select(x => x.Link(linkContext)).ToList();

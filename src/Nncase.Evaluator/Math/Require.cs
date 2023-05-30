@@ -25,6 +25,17 @@ public partial class RequireEvaluator : IEvaluator<Require>, ITypeInferencer<Req
         return $"IR.F.Math.Require({condition}, {value})";
     }
 
+    public Cost Visit(ICostEvaluateContext context, Require target)
+    {
+        return new()
+        {
+            [CostFactorNames.CPUCycles] = 1,
+        };
+    }
+
+    public Expr Visit(IShapeEvaluateContext context, Require target) =>
+        context.GetArgumentShape(target, Require.Value);
+
     private IValue Visit(bool predicate, IValue value, Require target)
     {
         if (!predicate)
@@ -39,15 +50,4 @@ public partial class RequireEvaluator : IEvaluator<Require>, ITypeInferencer<Req
     {
         return value;
     }
-
-    public Cost? Visit(ICostEvaluateContext context, Require target)
-    {
-        return new()
-        {
-            [CostFactorNames.CPUCycles] = 1,
-        };
-    }
-
-    public Expr Visit(IShapeEvaluateContext context, Require target) =>
-        context.GetArgumentShape(target, Require.Value);
 }

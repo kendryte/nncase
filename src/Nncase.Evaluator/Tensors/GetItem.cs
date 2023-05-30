@@ -34,6 +34,20 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
         };
     }
 
+    public Expr Visit(IShapeEvaluateContext context, GetItem target)
+    {
+        var input = context.GetArgumentShape(target, GetItem.Input);
+        var index = context.GetArgument(target, GetItem.Index);
+        if (input is IR.Tuple)
+        {
+            return input[index];
+        }
+        else
+        {
+            return IR.F.Tensors.ShapeOf(input[index]);
+        }
+    }
+
     private IValue Visit(IValue input, IValue index)
     {
         if (input.Type is TensorType ttype)
@@ -101,19 +115,5 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
         }
 
         return ret;
-    }
-
-    public Expr Visit(IShapeEvaluateContext context, GetItem target)
-    {
-        var input = context.GetArgumentShape(target, GetItem.Input);
-        var index = context.GetArgument(target, GetItem.Index);
-        if (input is IR.Tuple)
-        {
-            return input[index];
-        }
-        else
-        {
-            return IR.F.Tensors.ShapeOf(input[index]);
-        }
     }
 }

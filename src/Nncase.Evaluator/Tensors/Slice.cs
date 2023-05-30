@@ -63,6 +63,7 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
     public Expr Visit(IShapeEvaluateContext context, Slice target)
     {
         var inShape = context.GetArgumentShape(target, Slice.Input);
+
         // avoid i64 when slice created by tf or user
         var begins = Cast(context.GetArgument(target, Slice.Begins), DataTypes.Int64);
         var ends = Cast(context.GetArgument(target, Slice.Ends), DataTypes.Int64);
@@ -87,9 +88,7 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
             Expr end = Cast(Clamp(ends[j], (long)int.MinValue, (long)int.MaxValue), DataTypes.Int32);
             var stride = Cast(Clamp(strides[j], (long)int.MinValue, (long)int.MaxValue), DataTypes.Int32);
             var strideIsNeg = stride < 0;
-            begin = new If(
-                strideIsNeg,
-                Clamp(begin, 0, dim - 1), Translate(begin, dim));
+            begin = new If(strideIsNeg, Clamp(begin, 0, dim - 1), Translate(begin, dim));
             end = new If(strideIsNeg, Clamp(end, -1, dim), Translate(end, dim));
             j++;
             return Ceil(Abs(end - begin) / Abs(stride));
@@ -131,6 +130,7 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
         {
             return new InvalidType("Slice Input should not scalar");
         }
+
         if (context.GetArgument(target, Slice.Axes) is TensorConst axes_con)
         {
             if (input.Shape.IsRanked)

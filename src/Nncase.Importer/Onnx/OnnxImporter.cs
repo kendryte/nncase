@@ -25,8 +25,8 @@ public sealed partial class OnnxImporter : BaseImporter
     private readonly Dictionary<string, long> _opSetMap;
     private Dictionary<string, Expr>? _outputTensors;
     private Dictionary<string, TensorProto>? _constTensors;
-    private Dictionary<string, Var> _dynVarMap;
-    private Dictionary<string, int> _fixVarMap;
+    private Dictionary<string, Var> _dynVarMap = new();
+    private Dictionary<string, int> _fixVarMap = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="OnnxImporter"/> class.

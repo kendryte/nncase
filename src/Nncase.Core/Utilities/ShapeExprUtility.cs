@@ -16,7 +16,7 @@ public static class ShapeExprUtility
         var tmpTensor = new[] { ConstantOfShape(lhsShape, 0) }
             .Concat(rhsShape)
             .Aggregate((sum, shape) => ConstantOfShape(shape, 0) * sum);
-        return  Cast(IR.F.Tensors.ShapeOf(tmpTensor), DataTypes.Int32);
+        return Cast(IR.F.Tensors.ShapeOf(tmpTensor), DataTypes.Int32);
     }
 
     public static Expr Positive(Expr axis, Expr inShape)
@@ -26,21 +26,6 @@ public static class ShapeExprUtility
         return new If(i32Axis < 0, i32Axis + rank, i32Axis);
     }
 
-    private static Expr CheckShape(Expr shape)
-    {
-        if (shape.CheckedType == null)
-        {
-            shape.InferenceType();
-        }
-
-        if (shape.CheckedType is not TensorType || shape.CheckedShape.IsScalar)
-        {
-            DumpScope.Current.DumpIR(shape, "ShapeExprUtilityCheckShape");
-            throw new InvalidOperationException();
-        }
-
-        return shape;
-    }
     public static Expr Slice(Expr shape, int begin, int end)
     {
         return IR.F.Tensors.Slice(CheckShape(shape), new[] { begin }, new[] { end }, 1);
@@ -86,5 +71,20 @@ public static class ShapeExprUtility
     {
         return Stack(new IR.Tuple(expr), 0);
     }
-}
 
+    private static Expr CheckShape(Expr shape)
+    {
+        if (shape.CheckedType == null)
+        {
+            shape.InferenceType();
+        }
+
+        if (shape.CheckedType is not TensorType || shape.CheckedShape.IsScalar)
+        {
+            DumpScope.Current.DumpIR(shape, "ShapeExprUtilityCheckShape");
+            throw new InvalidOperationException();
+        }
+
+        return shape;
+    }
+}

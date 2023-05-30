@@ -23,7 +23,7 @@ namespace Nncase.Passes.Rules.Neutral;
 public sealed partial class FoldFixShape : IRewriteRule
 {
     /// <inheritdoc/>
-    public IPattern Pattern { get; } = IsCall(new OpPattern<FixShape>(x => true, ""), IsWildcard("input"), IsWildcard());
+    public IPattern Pattern { get; } = IsCall(new OpPattern<FixShape>(x => true, string.Empty), IsWildcard("input"), IsWildcard());
 
     private Expr? GetReplace(Expr input)
     {

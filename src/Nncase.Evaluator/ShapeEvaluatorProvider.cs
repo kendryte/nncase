@@ -70,6 +70,7 @@ internal sealed class ShapeEvaluateProvider : IShapeEvaluateProvider
             {
                 DumpScope.Current.DumpIR(result, "EvaluateOpShapeExprInvalidResult");
             }
+
             throw new InvalidOperationException();
         }
 

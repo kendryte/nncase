@@ -5,8 +5,8 @@ using System;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using Onnx;
-using F = Nncase.IR.F;
 using static Nncase.IR.F.Tensors;
+using F = Nncase.IR.F;
 
 namespace Nncase.Importer
 {
@@ -41,15 +41,15 @@ namespace Nncase.Importer
             {
                 var x when x == DataTypes.UInt8 => F.Tensors.ConstantOfShape(shape, (byte)1),
                 var x when x == DataTypes.UInt16 => F.Tensors.ConstantOfShape(shape, (ushort)1),
-                var x when x == DataTypes.UInt32 => F.Tensors.ConstantOfShape(shape, (uint)1),
-                var x when x == DataTypes.UInt64 => F.Tensors.ConstantOfShape(shape, (ulong)1),
+                var x when x == DataTypes.UInt32 => F.Tensors.ConstantOfShape(shape, 1U),
+                var x when x == DataTypes.UInt64 => F.Tensors.ConstantOfShape(shape, 1UL),
                 var x when x == DataTypes.Int8 => F.Tensors.ConstantOfShape(shape, (sbyte)1),
                 var x when x == DataTypes.Int16 => F.Tensors.ConstantOfShape(shape, (short)1),
                 var x when x == DataTypes.Int32 => F.Tensors.ConstantOfShape(shape, (int)1),
-                var x when x == DataTypes.Int64 => F.Tensors.ConstantOfShape(shape, (long)1),
+                var x when x == DataTypes.Int64 => F.Tensors.ConstantOfShape(shape, 1L),
                 var x when x == DataTypes.Float16 => F.Tensors.ConstantOfShape(shape, (Half)1),
-                var x when x == DataTypes.Float32 => F.Tensors.ConstantOfShape(shape, (float)1),
-                var x when x == DataTypes.Float64 => F.Tensors.ConstantOfShape(shape, (double)1),
+                var x when x == DataTypes.Float32 => F.Tensors.ConstantOfShape(shape, 1F),
+                var x when x == DataTypes.Float64 => F.Tensors.ConstantOfShape(shape, 1D),
                 var x when x == DataTypes.BFloat16 => F.Tensors.ConstantOfShape(shape, (BFloat16)1),
                 var x when x == DataTypes.Boolean => F.Tensors.ConstantOfShape(shape, true),
                 _ => throw new NotSupportedException("not supported expand type"),
@@ -63,6 +63,7 @@ namespace Nncase.Importer
             {
                 shapeOfValue = F.Math.Mul(input, rhs);
             }
+
             return Expand(input, ShapeOf(shapeOfValue));
         }
     }

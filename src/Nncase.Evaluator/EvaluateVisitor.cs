@@ -22,7 +22,6 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, Unit>, IDisposable
     private readonly EvaluatorDumpManager _dumpManager;
     private readonly Dictionary<Type, IEvaluator> _evaluator_cache;
 
-    private int count = 0;
     public EvaluateVisitor(IReadOnlyDictionary<Var, IValue> varsValues, Dictionary<Type, IEvaluator> evaluator_cache)
     {
         _context = new EvaluateContext(ExprMemo);

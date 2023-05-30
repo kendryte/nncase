@@ -10,10 +10,12 @@ namespace Nncase
     {
         private readonly HashSet<Function> _functions = new(ReferenceEqualityComparer.Instance);
 
-        public HashSet<Function> Functions => _functions;
-
         public FunctionCollector()
-            : base(true) { }
+            : base(true)
+        {
+        }
+
+        public HashSet<Function> Functions => _functions;
 
         protected override int VisitLeafFunction(Function expr, Unit context)
         {

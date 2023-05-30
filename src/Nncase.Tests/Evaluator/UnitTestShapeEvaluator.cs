@@ -199,31 +199,20 @@ public class UnitTestShapeEvaluator : TestClassBase
     [Fact]
     public void UniTestReshape()
     {
-        TestOpShapeEval(input => Reshape(input ,new long[]{1, 3, 1, -1}));
+        TestOpShapeEval(input => Reshape(input, new long[] { 1, 3, 1, -1 }));
     }
 
     [Fact]
     public void UnitTestPad()
     {
-        TestOpShapeEval(input => Pad(input, new[,]{{1, 2}, {1, 3}, {2, 4}, {6, 1}}, PadMode.Constant, 0f));
+        TestOpShapeEval(input => Pad(input, new[,] { { 1, 2 }, { 1, 3 }, { 2, 4 }, { 6, 1 } }, PadMode.Constant, 0f));
     }
 
     [Fact]
     public void UnitTestSqueeze()
     {
-        TestOpShapeEval(input => Squeeze(input, new[]{0}));
+        TestOpShapeEval(input => Squeeze(input, new[] { 0 }));
     }
-
-    // [Fact]
-    // public void UnitTestShapeExprSaveInMeta()
-    // {
-    //     var (input, newShape) = MakeInput(new[] { 1, 3, Dimension.Unknown, 24 });
-    //     var expr = Softmax(Abs(input), 0);
-    //     var varMap = new Dictionary<Var, Expr[]> { { input, newShape } };
-    //     expr.EvaluateShapeExpr(varMap);
-    //     Assert.NotNull(expr.Metadata.ShapeExpr);
-    //     Assert.NotNull(expr.Arguments[0].Metadata.ShapeExpr);
-    // }
 
     private Expr MakeDim() => new Var(new TensorType(DataTypes.Int32, Shape.Scalar));
 

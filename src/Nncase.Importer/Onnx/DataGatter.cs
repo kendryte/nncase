@@ -34,7 +34,7 @@ public sealed partial class OnnxImporter
     public Shape GetShape(ValueInfoProto v)
     {
         var shape = v.Type.TensorType.Shape.Dim;
-        var dimArr = GetDimArray(shape, d => d,_ => Dimension.Unknown, d => (Dimension)d.DimValue);
+        var dimArr = GetDimArray(shape, d => d, _ => Dimension.Unknown, d => (Dimension)d.DimValue);
         return new Shape(dimArr);
     }
 
@@ -44,7 +44,8 @@ public sealed partial class OnnxImporter
         return GetDimArray(shape, d => d, dim => _dynVarMap[dim.DimParam], dim => (Expr)dim.DimValue);
     }
 
-    public T[] GetDimArray<T>(RepeatedField<TensorShapeProto.Types.Dimension> shape,
+    public T[] GetDimArray<T>(
+        RepeatedField<TensorShapeProto.Types.Dimension> shape,
         Func<int, T> fixVarF,
         Func<TensorShapeProto.Types.Dimension, T> dynamicF,
         Func<TensorShapeProto.Types.Dimension, T> fixF)
@@ -70,8 +71,6 @@ public sealed partial class OnnxImporter
         return new Shape(tensor.Dims.ToArray());
     }
 
-    private static bool IsDynamicDim(TensorShapeProto.Types.Dimension x) => x.DimParam != string.Empty;
-
     public TensorType GetIRType(ValueInfoProto v)
     {
         return new TensorType(GetDataType(v), GetShape(v));
@@ -81,6 +80,8 @@ public sealed partial class OnnxImporter
     {
         return new TensorType(GetDataType(v), GetShape(v));
     }
+
+    private static bool IsDynamicDim(TensorShapeProto.Types.Dimension x) => x.DimParam != string.Empty;
 
     private bool EmptyTensor(TensorProto tensor)
     {
@@ -112,13 +113,15 @@ public sealed partial class OnnxImporter
                 TensorProto.Types.DataType.Int32 => Tensor.From<int>(tensor.Int32Data.ToArray(), shape),
                 TensorProto.Types.DataType.Int64 => Tensor.From<long>(tensor.Int64Data.ToArray(), shape),
 
-                TensorProto.Types.DataType.Int8 => Tensor.From<sbyte>(tensor.Int32Data.Select(x => (sbyte)x).ToArray(),
+                TensorProto.Types.DataType.Int8 => Tensor.From<sbyte>(
+                    tensor.Int32Data.Select(x => (sbyte)x).ToArray(),
                     shape),
 
                 // TensorProto.Types.DataType.String => Tensor.FromSpan(),
                 // TensorProto.Types.DataType.Uint32 => Tensor.FromSpan(),
                 // TensorProto.Types.DataType.Uint64 => Tensor.FromSpan<ulong>(tensor.Uint64Data.ToArray(), shape),
-                TensorProto.Types.DataType.Uint8 => Tensor.From<byte>(tensor.Int32Data.Select(x => (byte)x).ToArray(),
+                TensorProto.Types.DataType.Uint8 => Tensor.From<byte>(
+                    tensor.Int32Data.Select(x => (byte)x).ToArray(),
                     shape),
                 _ => throw new NotSupportedException($"Not supported onnx constant data type{dt}"),
             };

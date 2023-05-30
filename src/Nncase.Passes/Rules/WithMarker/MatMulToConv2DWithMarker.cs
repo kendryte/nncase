@@ -27,17 +27,19 @@ namespace Nncase.Passes.Rules.Neutral;
 [RuleGenerator]
 public sealed partial class MatMulToConv2DWithMarker : IRewriteRule
 {
-    /// <inheritdoc/>
-    public IPattern Pattern { get; } =
-        IsRangeOfMarker("marker", IsMatMul(
-            "matMul",
-            "matMulCall",
-            _ => true,
-            IsRangeOfMarker("am", IsWildcard("a") with { TypePattern = HasRank(2) & HasFixedShape() }, IsWildcard()),
-            IsRangeOfMarker("bm", IsTensorConst("b") with { TypePattern = HasRank(2) & HasFixedShape() }, IsWildcard())),
-            IsWildcard());
+    private static int _counter;
 
-    private static int counter = 0;
+    /// <inheritdoc/>
+    public IPattern Pattern { get; } = IsRangeOfMarker(
+        "marker",
+        IsMatMul(
+                "matMul",
+                "matMulCall",
+                _ => true,
+                IsRangeOfMarker("am", IsWildcard("a") with { TypePattern = HasRank(2) & HasFixedShape() }, IsWildcard()),
+                IsRangeOfMarker("bm", IsTensorConst("b") with { TypePattern = HasRank(2) & HasFixedShape() }, IsWildcard())),
+        IsWildcard());
+
     private Expr? GetReplace(Marker marker, Call matMulCall, Expr a, Expr b, Marker am, Marker bm)
     {
         var aShape = a.CheckedShape;
@@ -46,6 +48,7 @@ public sealed partial class MatMulToConv2DWithMarker : IRewriteRule
         {
             return null;
         }
+
         if (aShape[^1] != bShape[^2])
         {
             return null;
@@ -68,7 +71,7 @@ public sealed partial class MatMulToConv2DWithMarker : IRewriteRule
             PadMode.Constant,
             1).InheritMetaData(matMulCall);
         var m = Reshape(marker.With(target: conv2d), of_shape).InheritMetaData(matMulCall);
-        DumpScope.Current.DumpIR(m, $"{counter++}", "withMarker");
+        DumpScope.Current.DumpIR(m, $"{_counter++}", "withMarker");
         return m;
     }
 }
@@ -81,7 +84,9 @@ public sealed partial class BroadcastMatMulToConv2DWithMarker : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
-        IsRangeOfMarker("marker", IsMatMul(
+        IsRangeOfMarker(
+            "marker",
+            IsMatMul(
                 "matMul",
                 "matMulCall",
                 _ => true,

@@ -67,6 +67,7 @@ internal class StackVMFunctionBuilder : FunctionBuilder
                 {
                     i++;
                 }
+
                 SymbolAddrs.Add(snippet.BeginSymbol, _textEmitter.Position);
                 var begin = _textEmitter.Position;
 
@@ -142,6 +143,7 @@ internal class StackVMFunctionBuilder : FunctionBuilder
                 var end = _textEmitter.Position;
                 sourceMap.Add((snippet.Expr, (begin, end)));
             }
+
             sourceMap.Add((Tag("End"), (0, 0)));
         }
 
@@ -161,7 +163,6 @@ internal class StackVMFunctionBuilder : FunctionBuilder
             _localsAllocator.Free(localId);
         }
     }
-
 
     private class LocalsAllocator
     {

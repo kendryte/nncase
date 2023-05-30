@@ -46,6 +46,15 @@ public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>, ICostEv
         };
     }
 
+    public Expr Visit(IShapeEvaluateContext context, Split target)
+    {
+        var inShape = context.GetArgumentShape(target, Split.Input);
+        var axis = ((TensorConst)context.GetArgument(target, Split.Axis)).Value.ToScalar<int>();
+        var sections = ((TensorConst)context.GetArgument(target, Split.Sections)).Value.ToArray<int>();
+        var shapes = sections.Select(section => ShapeExprUtility.Replace(inShape, axis, section)).ToArray();
+        return new IR.Tuple(shapes);
+    }
+
     private IRType Visit(ITypeInferenceContext context, Split target, TensorType input)
     {
         if (context.GetArgument(target, Split.Axis) is TensorConst axis_con &&
@@ -90,14 +99,5 @@ public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>, ICostEv
         }
 
         return input with { Shape = Shape.Unranked };
-    }
-
-    public Expr Visit(IShapeEvaluateContext context, Split target)
-    {
-        var inShape = context.GetArgumentShape(target, Split.Input);
-        var axis = ((TensorConst)context.GetArgument(target, Split.Axis)).Value.ToScalar<int>();
-        var sections = ((TensorConst)context.GetArgument(target, Split.Sections)).Value.ToArray<int>();
-        var shapes = sections.Select(section => ShapeExprUtility.Replace(inShape, axis, section)).ToArray();
-        return new IR.Tuple(shapes);
     }
 }

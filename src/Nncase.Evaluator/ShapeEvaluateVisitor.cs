@@ -44,7 +44,8 @@ internal sealed class ShapeEvaluateVisitor : ExprVisitor<Expr, Unit>
         {
             Op op => CompilerServices.EvaluateOpShapeExpr(op, _context),
             Function func => CompilerServices.EvaluateShapeExpr(func.Body, MergeArgsVarMap(func.Parameters, expr.Arguments)),
-            Fusion { ModuleKind: "stackvm" } func => CompilerServices.EvaluateShapeExpr(func.Body,
+            Fusion { ModuleKind: "stackvm" } func => CompilerServices.EvaluateShapeExpr(
+                func.Body,
                 MergeArgsVarMap(func.Parameters, expr.Arguments)),
             _ => throw new NotImplementedException(expr.Target.ToString()),
         };
@@ -67,17 +68,6 @@ internal sealed class ShapeEvaluateVisitor : ExprVisitor<Expr, Unit>
         return new IR.Tuple(expr.Fields.ToArray().Select(Visit).ToArray());
     }
 
-    private Dictionary<Var, Expr[]> MergeArgsVarMap(ReadOnlySpan<Var> paramList, ReadOnlySpan<Expr> args)
-    {
-        var data = paramList.ToArray().Zip(args.ToArray().Select(arg =>
-        {
-            var result = Visit(arg);
-            return Enumerable.Range(0, arg.CheckedShape.Rank).Select(i => result[i]).ToArray();
-        })).Select(pair => new KeyValuePair<Var, Expr[]>(pair.First, pair.Second));
-        var dict = _context.VarMap.Concat(data).ToDictionary(pair => pair.Key, pair => pair.Value);
-        return dict;
-    }
-
     /// <inheritdoc/>
     protected override Expr VisitLeafVar(Var expr)
     {
@@ -95,6 +85,17 @@ internal sealed class ShapeEvaluateVisitor : ExprVisitor<Expr, Unit>
         }
 
         throw new InvalidOperationException();
+    }
+
+    private Dictionary<Var, Expr[]> MergeArgsVarMap(ReadOnlySpan<Var> paramList, ReadOnlySpan<Expr> args)
+    {
+        var data = paramList.ToArray().Zip(args.ToArray().Select(arg =>
+        {
+            var result = Visit(arg);
+            return Enumerable.Range(0, arg.CheckedShape.Rank).Select(i => result[i]).ToArray();
+        })).Select(pair => new KeyValuePair<Var, Expr[]>(pair.First, pair.Second));
+        var dict = _context.VarMap.Concat(data).ToDictionary(pair => pair.Key, pair => pair.Value);
+        return dict;
     }
 
     private void PrintNotExistVarMap(Var expr)

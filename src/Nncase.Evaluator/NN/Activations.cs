@@ -144,12 +144,12 @@ public class LeakyReluEvaluator : IEvaluator<LeakyRelu>, ITypeInferencer<LeakyRe
         };
     }
 
+    public Expr Visit(IShapeEvaluateContext context, LeakyRelu target) => context.GetArgumentShape(target, LeakyRelu.Input);
+
     private IRType Visit(TensorType input)
     {
         return input;
     }
-
-    public Expr Visit(IShapeEvaluateContext context, LeakyRelu target) => context.GetArgumentShape(target, LeakyRelu.Input);
 }
 
 /// <summary>
@@ -177,12 +177,12 @@ public class ReluEvaluator : IEvaluator<Relu>, ITypeInferencer<Relu>, ICostEvalu
         return CostUtility.GetActivationCost(inputType, CostUtility.GetCPUCyclesOfMax());
     }
 
+    public Expr Visit(IShapeEvaluateContext context, Relu target) => context.GetArgumentShape(target, Relu.Input);
+
     private IRType Visit(TensorType input)
     {
         return input;
     }
-
-    public Expr Visit(IShapeEvaluateContext context, Relu target) => context.GetArgumentShape(target, Relu.Input);
 }
 
 /// <summary>
@@ -282,12 +282,12 @@ public class SigmoidEvaluator : IEvaluator<Sigmoid>, ITypeInferencer<Sigmoid>, I
         return CostUtility.GetActivationCost(ret, macPerElement);
     }
 
+    public Expr Visit(IShapeEvaluateContext context, Sigmoid target) => context.GetArgumentShape(target, Sigmoid.Input);
+
     private IRType Visit(TensorType input)
     {
         return input;
     }
-
-    public Expr Visit(IShapeEvaluateContext context, Sigmoid target) => context.GetArgumentShape(target, Sigmoid.Input);
 }
 
 /// <summary>
@@ -477,10 +477,10 @@ public class GeluEvaluator : IEvaluator<Gelu>, ITypeInferencer<Gelu>, ICostEvalu
         };
     }
 
+    public Expr Visit(IShapeEvaluateContext context, Gelu target) => context.GetArgumentShape(target, Gelu.Input);
+
     private IRType Visit(TensorType input)
     {
         return input;
     }
-
-    public Expr Visit(IShapeEvaluateContext context, Gelu target) => context.GetArgumentShape(target, Gelu.Input);
 }

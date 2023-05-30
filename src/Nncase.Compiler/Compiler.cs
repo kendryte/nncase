@@ -189,6 +189,7 @@ internal class Compiler : ICompiler
         {
             return;
         }
+
         p.AddWithName<DataflowPass>("ClearFixShape").Configure(c => c.Add<FoldFixShape>());
     }
 
@@ -200,17 +201,20 @@ internal class Compiler : ICompiler
         await RunPassAsync(
             p => _compileSession.Target.RegisterTargetInDependentPass(p, _compileSession.CompileOptions),
             "TargetIndependtPass");
-        await RunPassAsync(p => target.RegisterTargetDependentPass(p, _compileSession.CompileOptions),
+        await RunPassAsync(
+            p => target.RegisterTargetDependentPass(p, _compileSession.CompileOptions),
             "TargetDependentPass");
         await RunPassAsync(p => target.RegisterQuantizePass(p, _compileSession.CompileOptions), "QuantizePass");
-        await RunPassAsync(p => target.RegisterTargetDependentAfterQuantPass(p, _compileSession.CompileOptions),
+        await RunPassAsync(
+            p => target.RegisterTargetDependentAfterQuantPass(p, _compileSession.CompileOptions),
             "TargetDependentAfterQuantPass");
         await RunPassAsync(p => ClearFixShape(p), "ClearFixShape");
-        await RunPassAsync(p => target.RegisterTargetDependentBeforeCodeGen(p, _compileSession.CompileOptions),
+        await RunPassAsync(
+            p => target.RegisterTargetDependentBeforeCodeGen(p, _compileSession.CompileOptions),
             "TargetDependentBeforeCodeGen");
         if (_dumpper.IsEnabled(DumpFlags.Compile))
         {
-            DumpScope.Current.DumpModule(_module, "ModuleAfterCompile");
+            DumpScope.Current.DumpModule(_module!, "ModuleAfterCompile");
         }
     }
 
@@ -233,7 +237,7 @@ internal class Compiler : ICompiler
 
     private async Task RunPassAsync(Action<IPassManager> register, string name)
     {
-        using (var _ = new Timer(name))
+        using (var timer = new Timer(name))
         {
             var newName = $"{_runPassCount++}_" + name;
             var pmgr = _compileSession.CreatePassManager(newName);

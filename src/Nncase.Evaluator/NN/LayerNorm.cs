@@ -43,6 +43,8 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
         };
     }
 
+    public Expr Visit(IShapeEvaluateContext context, LayerNorm target) => context.GetArgumentShape(target, LayerNorm.Input);
+
     private IRType Visit(TensorType input)
     {
         return input;
@@ -117,5 +119,4 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
         return new Tensor<float>(outputArray, input.Shape);
     }
 #endif
-    public Expr Visit(IShapeEvaluateContext context, LayerNorm target) => context.GetArgumentShape(target, LayerNorm.Input);
 }

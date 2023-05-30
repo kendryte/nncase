@@ -57,6 +57,8 @@ public class ClampEvaluator : IEvaluator<Clamp>, ITypeInferencer<Clamp>, ICostEv
         };
     }
 
+    public Expr Visit(IShapeEvaluateContext context, Clamp target) => context.GetArgumentShape(target, Clamp.Input);
+
     private IRType Visit(TensorType input, TensorType min, TensorType max)
     {
         if (TypeInference.BroadcastType(input, min) is InvalidType invalidMin)
@@ -76,6 +78,4 @@ public class ClampEvaluator : IEvaluator<Clamp>, ITypeInferencer<Clamp>, ICostEv
 
         return input;
     }
-
-    public Expr Visit(IShapeEvaluateContext context, Clamp target) => context.GetArgumentShape(target, Clamp.Input);
 }

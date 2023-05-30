@@ -39,7 +39,7 @@ internal partial class QuantizerAdaRound
 
         if (quantOptions.UseAdaRound)
         {
-            await _compileSession.Target.AdaRoundWeights(quantOptions.CalibrationDataset, _rangeOfs, _childrenOfRangeOfs, quantOptions);
+            await _compileSession.Target.AdaRoundWeights(quantOptions.CalibrationDataset!, _rangeOfs, _childrenOfRangeOfs, quantOptions);
         }
 
         _graph.Rebuild();

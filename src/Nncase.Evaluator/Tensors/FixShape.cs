@@ -16,9 +16,9 @@ namespace Nncase.Evaluator.Tensors;
 public class FixShapeEvaluator : IEvaluator<FixShape>, ITypeInferencer<FixShape>, ICostEvaluator<FixShape>, IShapeEvaluator<FixShape>
 {
     /// <inheritdoc/>
-    public IValue Visit(IEvaluateContext context, FixShape FixShape)
+    public IValue Visit(IEvaluateContext context, FixShape fixShape)
     {
-        return context.GetArgumentValue(FixShape, FixShape.Input);
+        return context.GetArgumentValue(fixShape, FixShape.Input);
     }
 
     /// <inheritdoc/>

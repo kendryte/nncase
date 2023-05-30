@@ -32,14 +32,6 @@ namespace Nncase.IR
             return same ? trueBranch : falseBranch;
         }
 
-        private static Expr ComputeOutSize(Expr inputSize, Expr weightSize, Expr strides, Expr outPaddings, Expr paddings, Expr dilations, int offset)
-        {
-            return (strides[offset] * (inputSize - 1L))
-                + outPaddings[offset]
-                + (((weightSize - 1L)
-                    * dilations[offset]) + 1L) - paddings[offset][0] - paddings[offset][1];
-        }
-
         public static Expr GetConvTransposeOutputShape(Expr input, Expr weights, Expr strides, Expr outPadding, Expr paddings, Expr dilations, string autoPad, Expr group)
         {
             var inShape = ShapeOf(input);
@@ -66,6 +58,14 @@ namespace Nncase.IR
             }
 
             return F.Tensors.Stack(new IR.Tuple(CollectionsMarshal.AsSpan(outShape)), 0);
+        }
+
+        private static Expr ComputeOutSize(Expr inputSize, Expr weightSize, Expr strides, Expr outPaddings, Expr paddings, Expr dilations, int offset)
+        {
+            return (strides[offset] * (inputSize - 1L))
+                + outPaddings[offset]
+                + (((weightSize - 1L)
+                    * dilations[offset]) + 1L) - paddings[offset][0] - paddings[offset][1];
         }
     }
 }

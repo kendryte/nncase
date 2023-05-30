@@ -2,11 +2,11 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Collections.Immutable;
+using System.Linq;
 using System.Text.RegularExpressions;
 using DryIoc.ImTools;
 using Nncase.IR;
 using Nncase.Utilities;
-using System.Linq;
 
 namespace Nncase.Tests;
 
@@ -70,10 +70,11 @@ public static class RuntimeResultAnalysis
         // 1. get params
         var e = new TextDataExtractor();
         var number = DumpPathExtractor.GetCount(fileName);
+
         // todo: param sort
         var paramFiles = e.GetParams(dir, number);
-        var lhs = paramFiles.FindFirst(x => x.FileName.Contains("lhs"));
-        var rhs = paramFiles.FindFirst(x => x.FileName.Contains("rhs"));
+        var lhs = paramFiles.FindFirst(x => x.FileName.Contains("lhs", StringComparison.Ordinal));
+        var rhs = paramFiles.FindFirst(x => x.FileName.Contains("rhs", StringComparison.Ordinal));
         var param = new[] { lhs, rhs }.OrderBy(x => x.FileName.Last()).Select(x => x.Value).ToArray();
 
         var expect = e.GetComputeResult(dir, number);
@@ -93,10 +94,6 @@ public static class RuntimeResultAnalysis
 
 public static class ResultFinder
 {
-    private static OriginValue? FindFirst(string dir, Func<OriginValue, bool> f) => new TextDataExtractor()
-        .ExtractValues(dir, DumpPathExtractor.IsResultFile)
-        .FindFirst(f);
-
     public static OriginValue? FindFirstNanResult(string dir) =>
         FindFirst(
             dir,
@@ -110,4 +107,8 @@ public static class ResultFinder
     public static OriginValue? FindFirstAllZero(string dir) => FindFirstAll(dir, f => f == 0);
 
     public static OriginValue? FindFirstAllNaN(string dir) => FindFirstAll(dir, f => float.IsNaN(f));
+
+    private static OriginValue? FindFirst(string dir, Func<OriginValue, bool> f) => new TextDataExtractor()
+        .ExtractValues(dir, DumpPathExtractor.IsResultFile)
+        .FindFirst(f);
 }

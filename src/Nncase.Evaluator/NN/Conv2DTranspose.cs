@@ -83,6 +83,6 @@ public class Conv2DTransposeEvaluator : IEvaluator<Conv2DTranspose>, ITypeInfere
         var padding = context.GetArgument(target, Conv2DTranspose.Padding);
         var outputPadding = context.GetArgument(target, Conv2DTranspose.OutputPadding);
         var groups = context.GetArgument(target, Conv2DTranspose.Groups);
-        return Util.GetConvTransposeOutputShape(input, weights, stride, outputPadding, padding, dilation, "", groups);
+        return Util.GetConvTransposeOutputShape(input, weights, stride, outputPadding, padding, dilation, string.Empty, groups);
     }
 }

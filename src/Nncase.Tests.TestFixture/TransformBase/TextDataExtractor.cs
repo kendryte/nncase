@@ -15,8 +15,8 @@ namespace Nncase.Tests;
 /// <summary>
 /// Value with path.
 /// </summary>
-/// <param name="Value"></param>
-/// <param name="Path"></param>
+/// <param name="Value">Value.</param>
+/// <param name="Path">Path.</param>
 public record OriginValue(IValue Value, string Path)
 {
     public string FileName => System.IO.Path.GetFileName(Path);
@@ -29,8 +29,8 @@ public record OriginValue(IValue Value, string Path)
 /// <summary>
 /// Tensor with path.
 /// </summary>
-/// <param name="Tensor"></param>
-/// <param name="Path"></param>
+/// <param name="Tensor">Tensor.</param>
+/// <param name="Path">Path.</param>
 public record OriginTensor(Tensor Tensor, string Path) : OriginValue(Nncase.Value.FromTensor(Tensor), Path);
 
 /// <summary>
@@ -84,11 +84,6 @@ public class TextDataExtractor
         var a = GetDumpFileNum(x);
         var b = GetDumpFileNum(y);
         return a.CompareTo(b);
-    }
-
-    private bool FileFilter(string name)
-    {
-        return name != ".DS_Store" && !name.EndsWith("extcall");
     }
 
     public List<string> GetFilesByOrdered(string dir)
@@ -152,5 +147,10 @@ public class TextDataExtractor
     public OriginValue[] MatmulExtract(string dir)
     {
         return ExtractValues(dir, DynamicMatmulOnlyExtract).ToArray();
+    }
+
+    private bool FileFilter(string name)
+    {
+        return name != ".DS_Store" && !name.EndsWith("extcall");
     }
 }
