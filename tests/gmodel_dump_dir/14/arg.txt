@@ -1,7 +1,0 @@
-gmodel_dump_dir/14/gmodel.bin
-9739368
-9741238
-600
-"gmodel_dump_dir/14"
-4
-wait-key
