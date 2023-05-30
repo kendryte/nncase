@@ -635,13 +635,13 @@ public static unsafe class CApi
 
     private static int[] StringToArrayInt32(string value)
     {
-        var data = value.Replace(" ", string.Empty).Split(",");
+        var data = value.Replace(" ", string.Empty, StringComparison.OrdinalIgnoreCase).Split(",");
         return Array.ConvertAll(data, int.Parse);
     }
 
     private static float[] StringToArrayFloat(string value)
     {
-        var data = value.Replace(" ", string.Empty).Split(",");
+        var data = value.Replace(" ", string.Empty, StringComparison.OrdinalIgnoreCase).Split(',');
         return Array.ConvertAll(data, float.Parse);
     }
 
