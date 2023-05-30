@@ -70,10 +70,11 @@ TEST_P(ShapeOfTest, ShapeOf) {
     auto output_ort = l_ort;
     size_t size = 0;
     dims_t shape(tensor_rank(output_ort));
+    void *ptr_ort = tensor_buffer(output_ort, &size);
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
     auto expected =
         hrt::create(lhs.datatype(), shape,
-                    {reinterpret_cast<gsl::byte *>(tensor_shape), size}, true,
+                    {reinterpret_cast<gsl::byte *>(ptr_ort), size}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 

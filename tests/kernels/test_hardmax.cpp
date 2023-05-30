@@ -67,7 +67,7 @@ TEST_P(HardmaxTest, hardmax) {
     int64_t axis_ptr[] = {-1};
     auto axis =
         hrt::create(nncase::dt_int64, {1},
-                    {reinterpret_cast<gsl::byte *>(axis_ptr), sizeof(float)},
+                    {reinterpret_cast<gsl::byte *>(axis_ptr), sizeof(int64_t)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto output = kernels::stackvm::hardmax(lhs.impl(), axis.impl())

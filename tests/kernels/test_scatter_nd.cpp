@@ -50,26 +50,26 @@ INSTANTIATE_TEST_SUITE_P(ScatterND, ScatterNDTest,
                                                                  16})));
 
 TEST_P(ScatterNDTest, ScatterND) {
-    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
+//    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
 
     // expected
     size_t size = 0;
     float input_array[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     auto input = hrt::create(dt_float32, {2, 1, 10},
-                             {reinterpret_cast<gsl::byte *>(input_array), size},
+                             {reinterpret_cast<gsl::byte *>(input_array), 80},
                              true, host_runtime_tensor::pool_cpu_only)
                      .expect("create tensor failed");
     int64_t indices_array[] = {0, 0, 1, 1, 0, 1};
     auto indices =
         hrt::create(dt_int64, {2, 1, 1, 3},
-                    {reinterpret_cast<gsl::byte *>(indices_array), size}, true,
+                    {reinterpret_cast<gsl::byte *>(indices_array), 48}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     float updates_array[] = {5.0f, 10.0f};
     auto updates =
         hrt::create(dt_float32, {2, 1, 1},
-                    {reinterpret_cast<gsl::byte *>(updates_array), size}, true,
+                    {reinterpret_cast<gsl::byte *>(updates_array), 8}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto input_ort = runtime_tensor_2_ort_tensor(input);

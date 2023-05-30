@@ -71,25 +71,25 @@ TEST_P(ReduceProdTest, ReduceProd) {
     size_t size = 0;
     float a_array[] = {1, 2, 3, 4, 5, 6, 7, 8};
     auto a = hrt::create(dt_float32, {2, 4},
-                         {reinterpret_cast<gsl::byte *>(a_array), size}, true,
+                         {reinterpret_cast<gsl::byte *>(a_array), 32}, true,
                          host_runtime_tensor::pool_cpu_only)
                  .expect("create tensor failed");
     int64_t axis_array[] = {0};
     auto axis = hrt::create(dt_int64, {1},
-                            {reinterpret_cast<gsl::byte *>(axis_array), size},
+                            {reinterpret_cast<gsl::byte *>(axis_array), 8},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
     int64_t keepDims_array[] = {0};
     auto keepDims =
         hrt::create(dt_int64, {1},
-                    {reinterpret_cast<gsl::byte *>(keepDims_array), size}, true,
+                    {reinterpret_cast<gsl::byte *>(keepDims_array), 8}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     int64_t select_last_idx_array = {0};
     auto select_last_idx =
         hrt::create(
             dt_int64, {1},
-            {reinterpret_cast<gsl::byte *>(select_last_idx_array), size}, true,
+            {reinterpret_cast<gsl::byte *>(select_last_idx_array), 8}, true,
             host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto output_ort = ortki_ReduceProd(runtime_tensor_2_ort_tensor(a), 0, 0, 0);

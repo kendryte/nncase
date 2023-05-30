@@ -56,7 +56,7 @@ TEST_P(ReverseSequenceTest, ReverseSequence) {
     int64_t seqLens_array[] = {1, 2, 3, 4};
     auto seqLens =
         hrt::create(dt_int64, {4},
-                    {reinterpret_cast<gsl::byte *>(seqLens_array), size}, true,
+                    {reinterpret_cast<gsl::byte *>(seqLens_array), 32}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto output_ort = ortki_ReverseSequence(

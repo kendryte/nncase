@@ -80,22 +80,22 @@ TEST_P(UniformLikeTest, UniformLike) {
     // actual
     float high_array[] = {1.0f};
     auto high = hrt::create(dt_float32, {1},
-                            {reinterpret_cast<gsl::byte *>(high_array), size},
+                            {reinterpret_cast<gsl::byte *>(high_array), 4},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
     float low_array[] = {0.0f};
     auto low = hrt::create(dt_float32, {1},
-                           {reinterpret_cast<gsl::byte *>(low_array), size},
+                           {reinterpret_cast<gsl::byte *>(low_array), 4},
                            true, host_runtime_tensor::pool_cpu_only)
                    .expect("create tensor failed");
     float seed_array[] = {1.0f};
     auto seed = hrt::create(dt_float32, {1},
-                            {reinterpret_cast<gsl::byte *>(seed_array), size},
+                            {reinterpret_cast<gsl::byte *>(seed_array), 4},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
     auto shape_u =
         hrt::create(dt_int32, {4},
-                    {reinterpret_cast<gsl::byte *>(shape_u_array), size}, true,
+                    {reinterpret_cast<gsl::byte *>(shape_u_array), 16}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto output =

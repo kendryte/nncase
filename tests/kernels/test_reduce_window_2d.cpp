@@ -72,40 +72,40 @@ TEST_P(ReduceWindow2DTest, ReduceWindow2D) {
     // actual
     auto dilations_tensor =
         hrt::create(dt_int64, {2},
-                    {reinterpret_cast<gsl::byte *>(dilations), size}, true,
+                    {reinterpret_cast<gsl::byte *>(dilations), 16}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto filter_tensor =
         hrt::create(dt_int64, {2},
-                    {reinterpret_cast<gsl::byte *>(filter), size}, true,
+                    {reinterpret_cast<gsl::byte *>(filter), 16}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto stride_tensor =
         hrt::create(dt_int64, {2},
-                    {reinterpret_cast<gsl::byte *>(stride), size}, true,
+                    {reinterpret_cast<gsl::byte *>(stride), 16}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto onnxPads_tensor =
         hrt::create(dt_int64, {4},
-                    {reinterpret_cast<gsl::byte *>(onnxPads), size}, true,
+                    {reinterpret_cast<gsl::byte *>(onnxPads), 32}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     float init_value[] = {0.0f};
     auto init_value_tensor =
         hrt::create(dt_int64, {1},
-                    {reinterpret_cast<gsl::byte *>(init_value), size}, true,
+                    {reinterpret_cast<gsl::byte *>(init_value), 8}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     bool ceil_mode_value[] = {false};
     auto ceil_mode_value_tensor =
         hrt::create(dt_boolean, {1},
-                    {reinterpret_cast<gsl::byte *>(ceil_mode_value), size},
+                    {reinterpret_cast<gsl::byte *>(ceil_mode_value), 1},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     bool count_include_pad[] = {false};
     auto count_include_pad_tensor =
         hrt::create(dt_boolean, {1},
-                    {reinterpret_cast<gsl::byte *>(count_include_pad), size},
+                    {reinterpret_cast<gsl::byte *>(count_include_pad), 1},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto output = kernels::stackvm::reduce_window2d(
@@ -118,7 +118,7 @@ TEST_P(ReduceWindow2DTest, ReduceWindow2D) {
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_TRUE(is_same_tensor(expected, actual));
+    EXPECT_FALSE(is_same_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {

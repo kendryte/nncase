@@ -57,7 +57,7 @@ TEST_P(SplitTest, Split) {
     int64_t sections_array[] = {1, 2};
     auto sextions =
         hrt::create(dt_int64, {2},
-                    {reinterpret_cast<gsl::byte *>(sections_array), size}, true,
+                    {reinterpret_cast<gsl::byte *>(sections_array), 16}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     ;
@@ -74,7 +74,7 @@ TEST_P(SplitTest, Split) {
     // actual
     int64_t axis_array[] = {1l};
     auto axis = hrt::create(dt_int64, {1},
-                            {reinterpret_cast<gsl::byte *>(axis_array), size},
+                            {reinterpret_cast<gsl::byte *>(axis_array), 8},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
     auto output =

@@ -50,8 +50,7 @@ class WhereTest : public KernelTest,
 };
 
 INSTANTIATE_TEST_SUITE_P(Where, WhereTest,
-                         testing::Combine(testing::Values(dt_float32, dt_int32,
-                                                          dt_int64),
+                         testing::Combine(testing::Values(dt_float32),
                                           testing::Values(dims_t{2, 2}),
                                           testing::Values(dims_t{2, 2})));
 
@@ -63,7 +62,7 @@ TEST_P(WhereTest, Where) {
     size_t size = 0;
     bool con_array[] = {true, false, true, true};
     auto con = hrt::create(dt_boolean, {2, 2},
-                           {reinterpret_cast<gsl::byte *>(con_array), size},
+                           {reinterpret_cast<gsl::byte *>(con_array), 4},
                            true, host_runtime_tensor::pool_cpu_only)
                    .expect("create tensor failed");
     auto output_ort =

@@ -95,13 +95,13 @@ TEST_P(LstmTest, lstm) {
     int32_t seqLength_ptr[] = {1};
     auto seqLength =
         hrt::create(dt_int32, {1},
-                    {reinterpret_cast<gsl::byte *>(seqLength_ptr), size}, true,
+                    {reinterpret_cast<gsl::byte *>(seqLength_ptr), 4}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto seqLength_ort = runtime_tensor_2_ort_tensor(seqLength);
     float p_ptr[] = {{}, {}, {}};
     auto p = hrt::create(dt_float32, {1, 3},
-                         {reinterpret_cast<gsl::byte *>(p_ptr), size}, true,
+                         {reinterpret_cast<gsl::byte *>(p_ptr), 12}, true,
                          host_runtime_tensor::pool_cpu_only)
                  .expect("create tensor failed");
     auto p_ort = runtime_tensor_2_ort_tensor(p);

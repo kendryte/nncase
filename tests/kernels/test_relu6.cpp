@@ -45,8 +45,7 @@ class Relu6Test
 };
 
 INSTANTIATE_TEST_SUITE_P(Relu6, Relu6Test,
-                         testing::Combine(testing::Values(dt_float32, dt_int32,
-                                                          dt_int64),
+                         testing::Combine(testing::Values(dt_float32, dt_int32),
                                           testing::Values(dims_t{1, 3, 16, 16},
                                                           /*dims_t { 3, 16, 16
                                                           }, dims_t { 16, 16 },

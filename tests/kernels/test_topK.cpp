@@ -55,7 +55,7 @@ TEST_P(TopKTest, TopK) {
     size_t size = 0;
     int64_t k_array[] = {1};
     auto k = hrt::create(lhs.datatype(), {1},
-                         {reinterpret_cast<gsl::byte *>(k_array), size}, true,
+                         {reinterpret_cast<gsl::byte *>(k_array), 4}, true,
                          host_runtime_tensor::pool_cpu_only)
                  .expect("create tensor failed");
     auto output_ort = tensor_seq_get_value(
@@ -71,19 +71,19 @@ TEST_P(TopKTest, TopK) {
     // actual
     int64_t axis_array[] = {-1};
     auto axis = hrt::create(lhs.datatype(), {1},
-                            {reinterpret_cast<gsl::byte *>(axis_array), size},
+                            {reinterpret_cast<gsl::byte *>(axis_array), 4},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
     int64_t largest_array[] = {1};
     auto largest =
         hrt::create(lhs.datatype(), {1},
-                    {reinterpret_cast<gsl::byte *>(largest_array), size}, true,
+                    {reinterpret_cast<gsl::byte *>(largest_array), 4}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     int64_t sorted_array[] = {1};
     auto sorted =
         hrt::create(lhs.datatype(), {1},
-                    {reinterpret_cast<gsl::byte *>(sorted_array), size}, true,
+                    {reinterpret_cast<gsl::byte *>(sorted_array), 4}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto output = kernels::stackvm::top_k(lhs.impl(), k.impl(), axis.impl(),

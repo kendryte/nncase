@@ -57,7 +57,7 @@ TEST_P(ReshapeTest, Reshape) {
     int32_t new_shape_array[] = {1, 3, 32, 8};
     auto new_shape =
         hrt::create(dt_int32, {4},
-                    {reinterpret_cast<gsl::byte *>(new_shape_array), size},
+                    {reinterpret_cast<gsl::byte *>(new_shape_array), 16},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto output_ort =

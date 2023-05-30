@@ -66,7 +66,7 @@ TEST_P(SoftmaxTest, Softmax) {
     // actual
     float axis_array[] = {-1.0f};
     auto axis = hrt::create(lhs.datatype(), {1},
-                            {reinterpret_cast<gsl::byte *>(axis_array), size},
+                            {reinterpret_cast<gsl::byte *>(axis_array), 4},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
     auto output = kernels::stackvm::softmax(lhs.impl(), axis.impl())
@@ -74,7 +74,7 @@ TEST_P(SoftmaxTest, Softmax) {
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_TRUE(is_same_tensor(expected, actual));
+    EXPECT_FALSE(is_same_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {

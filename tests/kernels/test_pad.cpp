@@ -54,12 +54,12 @@ TEST_P(PadTest, Pad) {
     size_t size = 0;
     int64_t pad_ptr[] = {0, 0, 1, 2, 2, 4, 5, 6};
     auto pad = hrt::create(dt_int64, {4, 2},
-                           {reinterpret_cast<gsl::byte *>(pad_ptr), size}, true,
+                           {reinterpret_cast<gsl::byte *>(pad_ptr), 64}, true,
                            host_runtime_tensor::pool_cpu_only)
                    .expect("create tensor failed");
     float value_ptr[] = {1.0f};
     auto value = hrt::create(dt_float32, {1},
-                             {reinterpret_cast<gsl::byte *>(value_ptr), size},
+                             {reinterpret_cast<gsl::byte *>(value_ptr), 4},
                              true, host_runtime_tensor::pool_cpu_only)
                      .expect("create tensor failed");
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);

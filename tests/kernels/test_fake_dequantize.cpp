@@ -56,14 +56,14 @@ TEST_P(FakeDequantizeTest, fake_dequantize) {
     int8_t zero_point[] = {127};
     auto zero_point_ptr =
         hrt::create(nncase::dt_int8, {1},
-                    {reinterpret_cast<gsl::byte *>(zero_point), sizeof(float)},
+                    {reinterpret_cast<gsl::byte *>(zero_point), 1},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
     float scale[] = {0.01f};
     auto scale_ptr =
         hrt::create(nncase::dt_float32, {1},
-                    {reinterpret_cast<gsl::byte *>(scale), sizeof(float)}, true,
+                    {reinterpret_cast<gsl::byte *>(scale), 4}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto output_ort =

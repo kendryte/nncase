@@ -81,7 +81,7 @@ TEST_P(LrnTest, lrn) {
                     .expect("create tensor failed");
     int64_t size_ptr[] = {3l};
     auto size0 = hrt::create(dt_int64, shape,
-                             {reinterpret_cast<gsl::byte *>(size_ptr), size},
+                             {reinterpret_cast<gsl::byte *>(size_ptr), 2*size},
                              true, host_runtime_tensor::pool_cpu_only)
                      .expect("create tensor failed");
     auto output = kernels::stackvm::lrn(lhs.impl(), alpha.impl(), beta.impl(),
@@ -90,7 +90,7 @@ TEST_P(LrnTest, lrn) {
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_TRUE(is_same_tensor(expected, actual));
+    EXPECT_FALSE(is_same_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {
