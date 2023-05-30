@@ -56,8 +56,8 @@ TEST_P(CumSumTest, cum_sum) {
     float axis[] = {0};
     auto axis_ptr =
         hrt::create(nncase::dt_float32, {2},
-                    {reinterpret_cast<gsl::byte *>(axis), 2*sizeof(float)}, true,
-                    host_runtime_tensor::pool_cpu_only)
+                    {reinterpret_cast<gsl::byte *>(axis), 2 * sizeof(float)},
+                    true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto axis_ort = runtime_tensor_2_ort_tensor(axis_ptr);
     auto output_ort = ortki_CumSum(l_ort, axis_ort, 0, 0);
@@ -72,15 +72,15 @@ TEST_P(CumSumTest, cum_sum) {
 
     // actual
     float exclusive[] = {0};
-    auto exclusive_ptr =
-        hrt::create(nncase::dt_float32, {2},
-                    {reinterpret_cast<gsl::byte *>(exclusive), 2*sizeof(float)},
-                    true, host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
+    auto exclusive_ptr = hrt::create(nncase::dt_float32, {2},
+                                     {reinterpret_cast<gsl::byte *>(exclusive),
+                                      2 * sizeof(float)},
+                                     true, host_runtime_tensor::pool_cpu_only)
+                             .expect("create tensor failed");
     float reverse[] = {0};
     auto reverse_ptr =
         hrt::create(nncase::dt_float32, {2},
-                    {reinterpret_cast<gsl::byte *>(reverse), 2*sizeof(float)},
+                    {reinterpret_cast<gsl::byte *>(reverse), 2 * sizeof(float)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto output =
