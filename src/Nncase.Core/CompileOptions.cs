@@ -7,6 +7,24 @@ using Nncase.Quantization;
 
 namespace Nncase;
 
+public enum InputType : int
+{
+    /// <summary>
+    /// uint8.
+    /// </summary>
+    Uint8,
+
+    /// <summary>
+    /// int8.
+    /// </summary>
+    Int8,
+
+    /// <summary>
+    /// float32.
+    /// </summary>
+    Float32,
+}
+
 /// <summary>
 /// Compile options.
 /// </summary>
@@ -36,4 +54,59 @@ public sealed record CompileOptions
     /// Gets or sets quant options.
     /// </summary>
     public QuantizeOptions QuantizeOptions { get; set; } = QuantizeOptions.CreateNoQuant();
+
+    /// <summary>
+    /// Gets or sets a value indicating whether gets or sets the preprocess.
+    /// </summary>
+    public bool PreProcess { get; set; }
+
+    /// <summary>
+    /// Gets or sets the input layout.
+    /// </summary>
+    public string InputLayout { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the output type.
+    /// </summary>
+    public string OutputLayout { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the input type.
+    /// </summary>
+    public InputType InputType { get; set; } = InputType.Float32;
+
+    /// <summary>
+    /// Gets or sets the input shape.
+    /// </summary>
+    public int[] InputShape { get; set; } = Array.Empty<int>();
+
+    /// <summary>
+    /// Gets or sets the input range.
+    /// </summary>
+    public float[] InputRange { get; set; } = Array.Empty<float>();
+
+    /// <summary>
+    /// Gets or sets a value indicating whether gets or sets the swapRB.
+    /// </summary>
+    public bool SwapRB { get; set; }
+
+    /// <summary>
+    /// Gets or sets the letterbox_value.
+    /// </summary>
+    public float LetterBoxValue { get; set; }
+
+    /// <summary>
+    /// Gets or sets the mean.
+    /// </summary>
+    public float[] Mean { get; set; } = Array.Empty<float>();
+
+    /// <summary>
+    /// Gets or sets the std.
+    /// </summary>
+    public float[] Std { get; set; } = Array.Empty<float>();
+
+    /// <summary>
+    /// Gets or sets the std.
+    /// </summary>
+    public string ModelLayout { get; set; } = string.Empty;
 }
