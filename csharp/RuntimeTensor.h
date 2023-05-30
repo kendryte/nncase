@@ -33,7 +33,7 @@ using namespace nncase;
 using namespace nncase::runtime;
 
 template <typename T> datatype_t from_dtype() {
-    if (std::is_same_v<T, float>)
+    if (std::is_same_v<T, uint8_t>)
         return dt_uint8;
     else if (std::is_same_v<T, uint16_t>)
         return dt_uint16;
