@@ -83,4 +83,25 @@ public sealed class IRModule
 
         old = function;
     }
+
+    /// <summary>
+    /// Remove function .
+    /// </summary>
+    /// <param name="function">function.</param>
+    public void Remove(BaseFunction function)
+    {
+        var index = _functions.FindIndex(x => object.ReferenceEquals(x, function));
+        if (index == -1)
+        {
+            return;
+        }
+
+        function.RemoveUser(_exprUser);
+        if (function.IsAlive)
+        {
+            function.DisposeIfNoUsers();
+        }
+
+        _functions.RemoveAt(index);
+    }
 }
