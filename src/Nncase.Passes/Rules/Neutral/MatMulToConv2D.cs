@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
@@ -27,48 +26,39 @@ public sealed partial class MatMulToConv2D : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
-        IsRangeOfMarker("marker", IsMatMul(
+        IsMatMul(
             "matMul",
             "matMulCall",
             _ => true,
-            IsRangeOfMarker("am", IsWildcard("a") with { TypePattern = HasFixedShape() }, IsWildcard()),
-            IsRangeOfMarker("bm", IsTensorConst("b") with { TypePattern = HasRank(2) & HasFixedShape() }, IsWildcard())),
-            IsWildcard());
+            IsWildcard("a") with { TypePattern = HasRank(2) & HasFixedShape() },
+            IsTensorConst("b") with { TypePattern = HasRank(2) & HasFixedShape() });
 
-    // todo: fix this marker
-    private static int counter = 0;
-    private Expr? GetReplace(Marker marker, Call matMulCall, Expr a, Expr b, Marker am, Marker bm)
+    private Expr? GetReplace(Call matMulCall, Expr a, Expr b)
     {
         var aShape = a.CheckedShape;
         var bShape = b.CheckedShape;
-        if (aShape.Count > 2 && aShape.ToValueArray()[..^2].Aggregate(1, (sum, x) => sum * x) != 1)
-        {
-            return null;
-        }
-        if (aShape[^1] != bShape[^2])
+        if (aShape[1] != bShape[0])
         {
             return null;
         }
 
-        var if_shape = new Shape(new[] { aShape[^2].FixedValue, aShape[^1].FixedValue, 1, 1 });
-        var w_shape = new Shape(new[] { bShape[^1].FixedValue, bShape[^2].FixedValue, 1, 1 });
-        var of_shape = new Shape(new[] { aShape[^2].FixedValue, bShape[^1].FixedValue });
+        var if_shape = new Shape(new[] { aShape[0].FixedValue, aShape[1].FixedValue, 1, 1 });
+        var w_shape = new Shape(new[] { bShape[1].FixedValue, bShape[0].FixedValue, 1, 1 });
+        var of_shape = new Shape(new[] { aShape[0].FixedValue, bShape[1].FixedValue });
 
         var if_reshape = Reshape(a, if_shape);
         var w_tp = Transpose(b, Tensor.From<int>(new[] { 1, 0 })).InheritMetaData(b);
         var w_reshape = Reshape(w_tp, w_shape).InheritMetaData(b);
         var conv2d = Conv2D(
-            am.With(target: if_reshape),
-            bm.With(target: w_reshape),
+            if_reshape,
+            w_reshape,
             Tensor.FromScalar(0.0f, w_shape[0].FixedValue),
             Tensor.FromScalar(1, new[] { 2 }),
             Tensor.FromScalar(0, new[] { 2, 2 }),
             new int[] { 1, 1 },
             PadMode.Constant,
             1).InheritMetaData(matMulCall);
-        var m = Reshape(marker.With(target: conv2d), of_shape).InheritMetaData(matMulCall);
-        DumpScope.Current.DumpIR(m, $"{counter++}", "withMarker");
-        return m;
+        return Reshape(conv2d, of_shape).InheritMetaData(matMulCall);
     }
 }
 
@@ -80,15 +70,14 @@ public sealed partial class BroadcastMatMulToConv2D : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
-        IsRangeOfMarker("marker", IsMatMul(
-                "matMul",
-                "matMulCall",
-                _ => true,
-                IsRangeOfMarker("am", IsWildcard("a") with { TypePattern = HasRank(3) & HasFixedShape() }, IsWildcard()),
-                IsRangeOfMarker("bm", IsTensorConst("b") with { TypePattern = HasRank(2) & HasFixedShape() }, IsWildcard())),
-            IsWildcard());
+        IsMatMul(
+            "matMul",
+            "matMulCall",
+            _ => true,
+            IsWildcard("a") with { TypePattern = HasRank(3) & HasFixedShape() },
+            IsTensorConst("b") with { TypePattern = HasRank(2) & HasFixedShape() });
 
-    private Expr? GetReplace(Marker marker, Call matMulCall, Expr a, Expr b, Marker am, Marker bm)
+    private Expr? GetReplace(Call matMulCall, Expr a, Expr b)
     {
         var aShape = a.CheckedShape;
         var bShape = b.CheckedShape;
@@ -106,17 +95,15 @@ public sealed partial class BroadcastMatMulToConv2D : IRewriteRule
         var w_reshape = Reshape(w_tp, w_shape).InheritMetaData(b);
 
         var conv2d = Conv2D(
-            am.With(target: if_reshape),
-            bm.With(target: w_reshape),
+            if_reshape,
+            w_reshape,
             Tensor.FromScalar(0.0f, w_shape[0].FixedValue),
             Tensor.FromScalar(1, new[] { 2 }),
             Tensor.FromScalar(0, new[] { 2, 2 }),
             new int[] { 1, 1 },
             PadMode.Constant,
             1).InheritMetaData(matMulCall);
-        var m = Reshape(marker.With(target: conv2d), of_shape).InheritMetaData(matMulCall);
-        return m;
-        // return Reshape(conv2d, of_shape).InheritMetaData(matMulCall);
+        return Reshape(conv2d, of_shape).InheritMetaData(matMulCall);
     }
 }
 

@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using Nncase.Runtime.StackVM;
@@ -144,7 +145,10 @@ internal class StackVMFunctionBuilder : FunctionBuilder
             sourceMap.Add((Tag("End"), (0, 0)));
         }
 
-        WriteDebugInfo(Id, 0, sourceMap);
+        if (DumpScope.Current.IsEnabled(DumpFlags.CodeGen))
+        {
+            WriteDebugInfo(Id, 0, sourceMap);
+        }
     }
 
     private void RefCountReduce(TextSnippet inputSnippet, ushort localId)

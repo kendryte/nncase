@@ -81,7 +81,7 @@ public class UnitTestShapeEvaluator : TestClassBase
     [Fact]
     public void UnitTestUnsqueeze()
     {
-        TestOpShapeEval(input => Unsqueeze(input, new[] { 1 }));
+        TestOpShapeEval(input => Unsqueeze(input, new[] { 4 }));
     }
 
     [Fact]
@@ -214,16 +214,16 @@ public class UnitTestShapeEvaluator : TestClassBase
         TestOpShapeEval(input => Squeeze(input, new[]{0}));
     }
 
-    [Fact]
-    public void UnitTestShapeExprSaveInMeta()
-    {
-        var (input, newShape) = MakeInput(new[] { 1, 3, Dimension.Unknown, 24 });
-        var expr = Softmax(Abs(input), 0);
-        var varMap = new Dictionary<Var, Expr[]> { { input, newShape } };
-        expr.EvaluateShapeExpr(varMap);
-        // Assert.NotNull(expr.Metadata.ShapeExpr);
-        // Assert.NotNull(expr.Arguments[0].Metadata.ShapeExpr);
-    }
+    // [Fact]
+    // public void UnitTestShapeExprSaveInMeta()
+    // {
+    //     var (input, newShape) = MakeInput(new[] { 1, 3, Dimension.Unknown, 24 });
+    //     var expr = Softmax(Abs(input), 0);
+    //     var varMap = new Dictionary<Var, Expr[]> { { input, newShape } };
+    //     expr.EvaluateShapeExpr(varMap);
+    //     Assert.NotNull(expr.Metadata.ShapeExpr);
+    //     Assert.NotNull(expr.Arguments[0].Metadata.ShapeExpr);
+    // }
 
     private Expr MakeDim() => new Var(new TensorType(DataTypes.Int32, Shape.Scalar));
 

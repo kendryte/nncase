@@ -89,10 +89,42 @@ internal sealed class ShapeEvaluateVisitor : ExprVisitor<Expr, Unit>
                 return shape.ToValueArray();
             }
 
+            // PrintNotExistVarMap(expr);
             var shapeExpr = shape.Select((x, i) => x.IsFixed ? x.FixedValue : _context.VarMap[expr][i]).ToArray();
             return IR.F.Tensors.Stack(new IR.Tuple(shapeExpr), 0);
         }
 
         throw new InvalidOperationException();
+    }
+
+    private void PrintNotExistVarMap(Var expr)
+    {
+        if (!_context.VarMap.ContainsKey(expr))
+        {
+            Console.WriteLine("key not found error");
+            Console.WriteLine(expr.Name);
+            Console.WriteLine("VarMap");
+            foreach (var (key, value) in _context.VarMap)
+            {
+                Console.WriteLine("Key:");
+                Console.WriteLine(key.Name);
+                Console.WriteLine(key.GlobalVarIndex);
+                Console.WriteLine("Value:");
+                foreach (var v in value)
+                {
+                    if (v is Var var)
+                    {
+                        Console.WriteLine(var.Name);
+                        Console.WriteLine(var.GlobalVarIndex);
+                    }
+                    else
+                    {
+                        Console.WriteLine(v.ToString());
+                    }
+
+                    Console.WriteLine(v.IsAlive);
+                }
+            }
+        }
     }
 }

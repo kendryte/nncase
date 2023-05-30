@@ -48,7 +48,7 @@ namespace Nncase.IR
             var iH = inShape[2];
             var iW = inShape[3];
             var wShape = ShapeOf(weights);
-            var oc = wShape[1] * group;
+            var oc = wShape[0] * group;
             var wH = wShape[2];
             var wW = wShape[3];
             var outShape = new List<Expr>();

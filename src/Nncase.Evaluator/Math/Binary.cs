@@ -171,8 +171,8 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
 
     private IValue Ort_compute(Binary binary, Tensor lhs, Tensor rhs)
     {
-        var a = lhs.ElementType == DataTypes.Boolean ? lhs.Cast<float>().ToOrtTensor() : lhs.ToOrtTensor();
-        var b = rhs.ElementType == DataTypes.Boolean ? rhs.Cast<float>().ToOrtTensor() : rhs.ToOrtTensor();
+        var a = lhs.ToOrtTensor();
+        var b = rhs.ToOrtTensor();
         static OrtKISharp.Tensor Mod(OrtKISharp.Tensor a, OrtKISharp.Tensor b)
         {
             var fmod = DataTypes.IsFloat(a.DataType.ToDataType()) && DataTypes.IsFloat(b.DataType.ToDataType()) ? 1L : 0L;

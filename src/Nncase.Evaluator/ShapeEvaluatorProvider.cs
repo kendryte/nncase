@@ -63,6 +63,16 @@ internal sealed class ShapeEvaluateProvider : IShapeEvaluateProvider
     {
         var evaluatorType = typeof(IShapeEvaluator<>).MakeGenericType(op.GetType());
         var evaluator = (IShapeEvaluator)_serviceProvider.GetRequiredService(evaluatorType);
-        return evaluator.Visit(context, op);
+        var result = evaluator.Visit(context, op);
+        if (!result.InferenceType())
+        {
+            if (DumpScope.Current.IsEnabled(DumpFlags.Compile))
+            {
+                DumpScope.Current.DumpIR(result, "EvaluateOpShapeExprInvalidResult");
+            }
+            throw new InvalidOperationException();
+        }
+
+        return result;
     }
 }
