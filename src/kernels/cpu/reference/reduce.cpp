@@ -42,7 +42,8 @@ result<void> reduce_impl(TReducer &&reducer, TPostProcess &&post_process, T init
     {
         int out_len = compute_size(out_shape);
         tmp_out = (T *)malloc(out_len * sizeof(T));
-        if(tmp_out == NULL) return err(std::errc::not_enough_memory);
+        if (tmp_out == NULL)
+            return err(std::errc::not_enough_memory);
     }
     else
     {
