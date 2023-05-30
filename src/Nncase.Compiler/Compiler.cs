@@ -150,12 +150,33 @@ internal class Compiler : ICompiler
 
     public void RegisterShapeBucket(IPassManager p)
     {
-        p.AddWithName<DataflowPass>("MatmulToFusion").Configure(c =>
+        if (!_compileSession.CompileOptions.ShapeBucketOptions.Enable)
+        {
+            return;
+        }
+
+        p.AddWithName<DataflowPass>("ToFusion").Configure(c =>
         {
             c.Add<MatmulToFusion>();
             c.Add<Conv2DToFusion>();
             c.Add<Conv2DTransposeToFusion>();
         });
+
+        p.AddWithName<DataflowPass>("MergeNextCall").Configure(c =>
+        {
+            c.Add<MergeNextCallToFusion>();
+            c.Add<MergeNextMarkerToFusion>();
+        });
+        p.AddWithName<DataflowPass>("MergePrevCall").Configure(c =>
+        {
+            c.Add<MergePrevCallToFusion>();
+        });
+
+        p.AddWithName<DataflowPass>("MergeMarker").Configure(c =>
+        {
+            c.Add<MergePrevMarkerToFusion>();
+        });
+
         p.AddWithName<DataflowPass>("FusionBucket").Configure(c =>
         {
             c.Add<FusionBucket>();
@@ -164,6 +185,10 @@ internal class Compiler : ICompiler
 
     public void ClearFixShape(IPassManager p)
     {
+        if (!_compileSession.CompileOptions.ShapeBucketOptions.Enable)
+        {
+            return;
+        }
         p.AddWithName<DataflowPass>("ClearFixShape").Configure(c => c.Add<FoldFixShape>());
     }
 
