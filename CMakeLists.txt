@@ -98,7 +98,7 @@ if (BUILDING_RUNTIME)
             add_compile_options(-Wno-uninitialized -Wno-unused-private-field)
         else()
             if(CMAKE_SYSTEM_PROCESSOR STREQUAL riscv64 AND NNCASE_RISCV_CPU_NAME STREQUAL k510) # k510 toolchain 
-              add_compile_options(-Wno-maybe-uninitialized -matomic)
+              add_compile_options(-Wno-maybe-uninitialized -matomic -Wno-attributes)
             else()
               add_compile_options(-Wno-maybe-uninitialized -Wno-unused-private-field)
             endif()
