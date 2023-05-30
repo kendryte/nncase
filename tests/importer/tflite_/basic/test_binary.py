@@ -30,37 +30,35 @@ def _make_module(in_shape, v_shape):
         def __call__(self, x):
             outs = []
             outs.append(x + self.v)
-            # outs.append(x - self.v)
-            # outs.append(x * self.v)
-            # outs.append(self.v / (2.0 + x))
-            # outs.append(tf.minimum(x, self.v))
-            # outs.append(tf.maximum(x, self.v))
+            outs.append(x - self.v)
+            outs.append(x * self.v)
+            outs.append(self.v / (2.0 + x))
+            outs.append(tf.minimum(x, self.v))
+            outs.append(tf.maximum(x, self.v))
             return outs
     return BinaryModule()
 
 
 lhs_shapes = [
-    # [3],
-    # [64, 3],
-    # [3, 64, 3],
-    # [8, 3, 64, 3]
-    [1, 24, 24, 3]
+    [3],
+    [64, 3],
+    [3, 64, 3],
+    [8, 3, 64, 3]
 ]
 
 rhs_shapes = [
-    # [1],
-    # [3],
-    # [1, 3],
-    # [64, 1],
-    # [64, 3],
-    # [3, 64, 1],
-    # [3, 64, 3],
-    # [8, 3, 64, 1],
-    # [8, 3, 64, 3],
-    # [8, 3, 1, 3],
-    # [8, 1, 64, 3],
-    # [1, 3, 64, 1]
-    [1, 24, 24, 3]
+    [1],
+    [3],
+    [1, 3],
+    [64, 1],
+    [64, 3],
+    [3, 64, 1],
+    [3, 64, 3],
+    [8, 3, 64, 1],
+    [8, 3, 64, 3],
+    [8, 3, 1, 3],
+    [8, 1, 64, 3],
+    [1, 3, 64, 1]
 ]
 
 
