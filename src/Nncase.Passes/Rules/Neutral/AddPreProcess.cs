@@ -49,9 +49,10 @@ public sealed class AddPreProcess : ModulePass
             return Task.FromResult(module);
         }
 
-        var a = new Var(new TensorType(newType[(int)inputType], inputShape));
         foreach (var input in entry.Parameters)
         {
+            var a = new Var(new TensorType(newType[(int)inputType], inputShape));
+
             Expr newInput = a;
             var oldShape = input.CheckedShape;
 
@@ -140,7 +141,7 @@ public sealed class AddPreProcess : ModulePass
             }
 
             var y = new Passes.Mutators.Substitutor(expr => object.ReferenceEquals(expr, input) ? newInput : null).Rewrite(entry.Body);
-            var x = (Function)new Passes.Mutators.Substitutor(expr => object.ReferenceEquals(expr, input) ? a : null).Rewrite(entry);
+            var x = new Passes.Mutators.Substitutor(expr => object.ReferenceEquals(expr, input) ? a : null).Rewrite(entry);
         }
 
         return Task.FromResult(module);

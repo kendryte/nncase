@@ -9,9 +9,8 @@ using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using System.Runtime.CompilerServices;
+using System.Runtime.Loader;
 using Microsoft.Extensions.Logging;
-using Nncase.Compiler;
-using Nncase.IR;
 
 namespace Nncase.Hosting;
 
@@ -30,6 +29,7 @@ public sealed class PluginLoader
     };
 
     private readonly ILogger<PluginLoader> _logger;
+    private readonly AssemblyLoadContext _loadContext;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PluginLoader"/> class.
@@ -38,6 +38,8 @@ public sealed class PluginLoader
     public PluginLoader(ILogger<PluginLoader> logger)
     {
         _logger = logger;
+        _loadContext = AssemblyLoadContext.GetLoadContext(typeof(PluginLoader).Assembly)
+            ?? AssemblyLoadContext.Default;
     }
 
     /// <summary>
@@ -47,7 +49,7 @@ public sealed class PluginLoader
     public IReadOnlyList<IPlugin> LoadPlugins()
     {
         var pluginAsms = GetPluginsSearchDirectories().Select(GetPluginAssemblies).SelectMany(x => x)
-                    .DistinctBy(Path.GetFileName).Select(Assembly.LoadFrom).Distinct().ToList();
+                    .DistinctBy(Path.GetFileName).Select(LoadPluginAssembly).Distinct().ToList();
         var plugins = (from asm in pluginAsms
                        from t in asm.ExportedTypes
                        where t.IsClass
@@ -55,6 +57,7 @@ public sealed class PluginLoader
                        let ctor = t.GetConstructor(Type.EmptyTypes)
                        where ctor != null
                        select (IPlugin)ctor.Invoke(null)).ToList();
+
         return plugins;
     }
 
@@ -90,12 +93,24 @@ public sealed class PluginLoader
         return true;
     }
 
+    private Assembly LoadPluginAssembly(string assemblyFile)
+    {
+        return _loadContext.LoadFromAssemblyPath(assemblyFile);
+    }
+
     private IEnumerable<string> GetPluginAssemblies(string basePath)
     {
-        return (from filePath in Directory.GetFiles(basePath, _modulesDllPattern, SearchOption.AllDirectories)
-                where !_builtinModules.Contains(Path.GetFileName(filePath))
-                 && IsLoadableAssembly(filePath)
-                select filePath).Distinct();
+        if (Directory.Exists(basePath))
+        {
+            return (from filePath in Directory.GetFiles(basePath, _modulesDllPattern, SearchOption.AllDirectories)
+                    where !_builtinModules.Contains(Path.GetFileName(filePath))
+                     && IsLoadableAssembly(filePath)
+                    select filePath).Distinct();
+        }
+        else
+        {
+            return Array.Empty<string>();
+        }
     }
 
     private IEnumerable<string> GetPluginsSearchDirectories()
@@ -114,6 +129,11 @@ public sealed class PluginLoader
                               select Environment.ExpandEnvironmentVariables(path);
             directories.AddRange(targetPaths);
         }
+
+        // 2. Python nncase modules
+        var rootPath = Path.GetDirectoryName(typeof(PluginLoader).Assembly.Location)!;
+        var modulesPath = Path.Combine(rootPath, "modules");
+        directories.Add(modulesPath);
 
         if (_logger.IsEnabled(LogLevel.Trace))
         {

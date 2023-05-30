@@ -177,10 +177,8 @@ public static class TypeInference
             padding is TensorConst paddingValue &&
             dilation is TensorConst dilation_con &&
             groups is TensorConst groups_con &&
-            input.Shape[2].IsFixed &&
-            input.Shape[3].IsFixed &&
-            weights.Shape[2].IsFixed &&
-            weights.Shape[3].IsFixed)
+            input.Shape.IsFixed &&
+            weights.Shape.IsFixed)
         {
             var ts_stride = strideValue.Value.Cast<int>();
             var ts_padding = paddingValue.Value.Cast<int>();
