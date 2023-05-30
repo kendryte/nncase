@@ -14,10 +14,14 @@
 */
 #pragma once
 #include <cstring>
+#if __riscv_vector
+#include "riscv64/utils.h"
+#endif
 
+// todo: reimplement memcpy with rvv
 inline void *opt_memcpy(void *dst, const void *src, size_t n) {
 #if __riscv_vector
-    return memcpy_vec(out_ptr, in_ptr, copy_size);
+    return memcpy(dst, src, n);
 #else
     return memcpy(dst, src, n);
 #endif
