@@ -52,7 +52,8 @@ class RangeTest : public KernelTest,
 INSTANTIATE_TEST_SUITE_P(Range, RangeTest,
                          testing::Combine(testing::Values(dt_float32, dt_int32),
                                           testing::Values(dims_t{1, 3, 16, 16}),
-                                          testing::Values(dims_t{1, 3, 16, 16})));
+                                          testing::Values(dims_t{1, 3, 16,
+                                                                 16})));
 
 TEST_P(RangeTest, Range) {
     //    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
@@ -68,8 +69,8 @@ TEST_P(RangeTest, Range) {
 
     float end_array[] = {100.0f};
     auto end = hrt::create(lhs.datatype(), {1},
-                           {reinterpret_cast<gsl::byte *>(end_array), 4},
-                           true, host_runtime_tensor::pool_cpu_only)
+                           {reinterpret_cast<gsl::byte *>(end_array), 4}, true,
+                           host_runtime_tensor::pool_cpu_only)
                    .expect("create tensor failed");
 
     float step_array[] = {100.0f};

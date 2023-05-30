@@ -49,7 +49,7 @@ INSTANTIATE_TEST_SUITE_P(GetItem, GetItemTest,
                                           testing::Values(dims_t{1})));
 
 TEST_P(GetItemTest, get_item) {
-//    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
+    //    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
 
     // expected
     auto expected = lhs;

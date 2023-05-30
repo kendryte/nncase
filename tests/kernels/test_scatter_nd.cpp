@@ -50,7 +50,7 @@ INSTANTIATE_TEST_SUITE_P(ScatterND, ScatterNDTest,
                                                                  16})));
 
 TEST_P(ScatterNDTest, ScatterND) {
-//    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
+    //    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
 
     // expected
     size_t size = 0;

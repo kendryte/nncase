@@ -64,11 +64,11 @@ INSTANTIATE_TEST_SUITE_P(ResizeImage, ResizeImageTest,
                                                           dims_t{1})));
 
 TEST_P(ResizeImageTest, ResizeImage) {
-//    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
-//    auto r_ort = runtime_tensor_2_ort_tensor(rhs);
+    //    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
+    //    auto r_ort = runtime_tensor_2_ort_tensor(rhs);
 
     // expected
-//    size_t size = 0;
+    //    size_t size = 0;
     int32_t expected_array[] = {1, 3, 112, 112};
     auto expected =
         hrt::create(lhs.datatype(), {4},
@@ -79,15 +79,14 @@ TEST_P(ResizeImageTest, ResizeImage) {
     // actual
     float roi_array[1];
     auto roi = hrt::create(dt_float32, {1},
-                           {reinterpret_cast<gsl::byte *>(roi_array), 4},
-                           true, host_runtime_tensor::pool_cpu_only)
+                           {reinterpret_cast<gsl::byte *>(roi_array), 4}, true,
+                           host_runtime_tensor::pool_cpu_only)
                    .expect("create tensor failed");
     bool exclude_outside_array[] = {false};
     auto exclude_outside =
-        hrt::create(
-            dt_boolean, {1},
-            {reinterpret_cast<gsl::byte *>(exclude_outside_array), 1}, true,
-            host_runtime_tensor::pool_cpu_only)
+        hrt::create(dt_boolean, {1},
+                    {reinterpret_cast<gsl::byte *>(exclude_outside_array), 1},
+                    true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     float cubic_coeff_a_array[] = {-0.75f};
     auto cubic_coeff_a =
@@ -99,8 +98,8 @@ TEST_P(ResizeImageTest, ResizeImage) {
     auto extrapolation_value =
         hrt::create(
             dt_float32, {1},
-            {reinterpret_cast<gsl::byte *>(extrapolation_value_array), 4},
-            true, host_runtime_tensor::pool_cpu_only)
+            {reinterpret_cast<gsl::byte *>(extrapolation_value_array), 4}, true,
+            host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto output =
         kernels::stackvm::resize_image(

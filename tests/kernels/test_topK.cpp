@@ -81,11 +81,10 @@ TEST_P(TopKTest, TopK) {
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     int64_t sorted_array[] = {1};
-    auto sorted =
-        hrt::create(lhs.datatype(), {1},
-                    {reinterpret_cast<gsl::byte *>(sorted_array), 4}, true,
-                    host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
+    auto sorted = hrt::create(lhs.datatype(), {1},
+                              {reinterpret_cast<gsl::byte *>(sorted_array), 4},
+                              true, host_runtime_tensor::pool_cpu_only)
+                      .expect("create tensor failed");
     auto output = kernels::stackvm::top_k(lhs.impl(), k.impl(), axis.impl(),
                                           largest.impl(), sorted.impl())
                       .expect("topk failed");

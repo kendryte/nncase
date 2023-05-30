@@ -62,8 +62,8 @@ TEST_P(WhereTest, Where) {
     size_t size = 0;
     bool con_array[] = {true, false, true, true};
     auto con = hrt::create(dt_boolean, {2, 2},
-                           {reinterpret_cast<gsl::byte *>(con_array), 4},
-                           true, host_runtime_tensor::pool_cpu_only)
+                           {reinterpret_cast<gsl::byte *>(con_array), 4}, true,
+                           host_runtime_tensor::pool_cpu_only)
                    .expect("create tensor failed");
     auto output_ort =
         ortki_Where(runtime_tensor_2_ort_tensor(con), l_ort, r_ort);

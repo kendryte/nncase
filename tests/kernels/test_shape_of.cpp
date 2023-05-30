@@ -72,11 +72,10 @@ TEST_P(ShapeOfTest, ShapeOf) {
     dims_t shape(tensor_rank(output_ort));
     void *ptr_ort = tensor_buffer(output_ort, &size);
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
-    auto expected =
-        hrt::create(lhs.datatype(), shape,
-                    {reinterpret_cast<gsl::byte *>(ptr_ort), size}, true,
-                    host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
+    auto expected = hrt::create(lhs.datatype(), shape,
+                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+                                true, host_runtime_tensor::pool_cpu_only)
+                        .expect("create tensor failed");
 
     // actual
     auto output = kernels::stackvm::shape_of(lhs.impl()).expect("selu failed");

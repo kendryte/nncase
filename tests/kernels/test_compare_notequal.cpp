@@ -49,15 +49,15 @@ class CompareTest : public KernelTest,
     runtime_tensor rhs;
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    compare, CompareTest,
-    testing::Combine(testing::Values(dt_boolean),
-                     testing::Values(dims_t{1, 3, 16, 16}),
-                     testing::Values(dims_t{1, 3, 16, 16})));
+INSTANTIATE_TEST_SUITE_P(compare, CompareTest,
+                         testing::Combine(testing::Values(dt_boolean),
+                                          testing::Values(dims_t{1, 3, 16, 16}),
+                                          testing::Values(dims_t{1, 3, 16,
+                                                                 16})));
 
 TEST_P(CompareTest, equal) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
-//    auto r_ort = runtime_tensor_2_ort_tensor(rhs);
+    //    auto r_ort = runtime_tensor_2_ort_tensor(rhs);
 
     // expected
     auto output_ort = ortki_Not(l_ort);
@@ -65,10 +65,11 @@ TEST_P(CompareTest, equal) {
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
-    auto expected = hrt::create(lhs.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), 4*size},
-                                true, host_runtime_tensor::pool_cpu_only)
-                        .expect("create tensor failed");
+    auto expected =
+        hrt::create(lhs.datatype(), shape,
+                    {reinterpret_cast<gsl::byte *>(ptr_ort), 4 * size}, true,
+                    host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
 
     // actual
     auto output = kernels::stackvm::compare(

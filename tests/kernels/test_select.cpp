@@ -64,15 +64,15 @@ INSTANTIATE_TEST_SUITE_P(Select, SelectTest,
                                                           dims_t{1})));
 
 TEST_P(SelectTest, Select) {
-//    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
-//    auto r_ort = runtime_tensor_2_ort_tensor(rhs);
+    //    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
+    //    auto r_ort = runtime_tensor_2_ort_tensor(rhs);
 
     // expected
     auto expected1 = lhs;
     auto expected2 = rhs;
 
     // actual
-//    size_t size = 0;
+    //    size_t size = 0;
     bool p1_array[] = {true};
     auto p1 = hrt::create(dt_boolean, {1},
                           {reinterpret_cast<gsl::byte *>(p1_array), 1}, true,

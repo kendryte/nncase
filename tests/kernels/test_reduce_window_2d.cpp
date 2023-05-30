@@ -76,14 +76,12 @@ TEST_P(ReduceWindow2DTest, ReduceWindow2D) {
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto filter_tensor =
-        hrt::create(dt_int64, {2},
-                    {reinterpret_cast<gsl::byte *>(filter), 16}, true,
-                    host_runtime_tensor::pool_cpu_only)
+        hrt::create(dt_int64, {2}, {reinterpret_cast<gsl::byte *>(filter), 16},
+                    true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto stride_tensor =
-        hrt::create(dt_int64, {2},
-                    {reinterpret_cast<gsl::byte *>(stride), 16}, true,
-                    host_runtime_tensor::pool_cpu_only)
+        hrt::create(dt_int64, {2}, {reinterpret_cast<gsl::byte *>(stride), 16},
+                    true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto onnxPads_tensor =
         hrt::create(dt_int64, {4},
@@ -99,14 +97,14 @@ TEST_P(ReduceWindow2DTest, ReduceWindow2D) {
     bool ceil_mode_value[] = {false};
     auto ceil_mode_value_tensor =
         hrt::create(dt_boolean, {1},
-                    {reinterpret_cast<gsl::byte *>(ceil_mode_value), 1},
-                    true, host_runtime_tensor::pool_cpu_only)
+                    {reinterpret_cast<gsl::byte *>(ceil_mode_value), 1}, true,
+                    host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     bool count_include_pad[] = {false};
     auto count_include_pad_tensor =
         hrt::create(dt_boolean, {1},
-                    {reinterpret_cast<gsl::byte *>(count_include_pad), 1},
-                    true, host_runtime_tensor::pool_cpu_only)
+                    {reinterpret_cast<gsl::byte *>(count_include_pad), 1}, true,
+                    host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto output = kernels::stackvm::reduce_window2d(
                       runtime::stackvm::reduce_op_t::max, lhs.impl(),

@@ -50,10 +50,10 @@ INSTANTIATE_TEST_SUITE_P(SizeOf, SizeOfTest,
                                                                  16})));
 
 TEST_P(SizeOfTest, SizeOf) {
-//    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
+    //    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
 
     // expected
-//    size_t size = 0;
+    //    size_t size = 0;
     int32_t ptr_ort[] = {4};
     auto expected = hrt::create(lhs.datatype(), {1},
                                 {reinterpret_cast<gsl::byte *>(ptr_ort), 4},

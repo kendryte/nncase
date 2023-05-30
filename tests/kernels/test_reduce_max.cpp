@@ -87,10 +87,9 @@ TEST_P(ReduceArgMaxTest, ReduceArgMax) {
             .expect("create tensor failed");
     int64_t select_last_idx_array = {0};
     auto select_last_idx =
-        hrt::create(
-            dt_int64, {1},
-            {reinterpret_cast<gsl::byte *>(select_last_idx_array), 8}, true,
-            host_runtime_tensor::pool_cpu_only)
+        hrt::create(dt_int64, {1},
+                    {reinterpret_cast<gsl::byte *>(select_last_idx_array), 8},
+                    true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto output_ort = ortki_ReduceMax(runtime_tensor_2_ort_tensor(a), 0, 0, 0);
     void *ptr_ort = tensor_buffer(output_ort, &size);

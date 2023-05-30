@@ -56,8 +56,8 @@ TEST_P(QuantizeTest, quantize) {
     int8_t zero_point[] = {127};
     auto zero_point_ptr =
         hrt::create(nncase::dt_int8, {1},
-                    {reinterpret_cast<gsl::byte *>(zero_point), 1},
-                    true, host_runtime_tensor::pool_cpu_only)
+                    {reinterpret_cast<gsl::byte *>(zero_point), 1}, true,
+                    host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
     float scale[] = {0.01f};

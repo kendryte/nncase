@@ -49,10 +49,10 @@ INSTANTIATE_TEST_SUITE_P(Slice, SliceTest,
                                           testing::Values(dims_t{2, 3, 4, 5})));
 
 TEST_P(SliceTest, Slice) {
-//    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
+    //    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
 
     // expected
-//    size_t size = 0;
+    //    size_t size = 0;
     int32_t result[] = {0, 1, 2, 3, 4};
     auto expected = hrt::create(lhs.datatype(), {1, 1, 1, 5},
                                 {reinterpret_cast<gsl::byte *>(result), 20},
@@ -67,8 +67,8 @@ TEST_P(SliceTest, Slice) {
                      .expect("create tensor failed");
     int32_t end_array[] = {1, 1, 1, 5};
     auto end = hrt::create(lhs.datatype(), {4},
-                           {reinterpret_cast<gsl::byte *>(end_array), 16},
-                           true, host_runtime_tensor::pool_cpu_only)
+                           {reinterpret_cast<gsl::byte *>(end_array), 16}, true,
+                           host_runtime_tensor::pool_cpu_only)
                    .expect("create tensor failed");
     int32_t axes_array[] = {0, 1, 2, 3};
     auto axes = hrt::create(lhs.datatype(), {4},

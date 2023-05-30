@@ -65,10 +65,10 @@ TEST_P(LpNormalizationTest, lp_normalization) {
 
     // actual
     int64_t axis_ptr[] = {0};
-    auto axit = hrt::create(dt_int64, {1},
-                            {reinterpret_cast<gsl::byte *>(axis_ptr), 8},
-                            true, host_runtime_tensor::pool_cpu_only)
-                    .expect("create tensor failed");
+    auto axit =
+        hrt::create(dt_int64, {1}, {reinterpret_cast<gsl::byte *>(axis_ptr), 8},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
     int64_t p_ptr[] = {1};
     auto p =
         hrt::create(dt_int64, {1}, {reinterpret_cast<gsl::byte *>(p_ptr), 8},
