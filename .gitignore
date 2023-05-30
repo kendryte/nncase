@@ -298,3 +298,4 @@ Directory.Build.targets
 *local*
 nupkg
 *.runsettings
+cmake-build-*
