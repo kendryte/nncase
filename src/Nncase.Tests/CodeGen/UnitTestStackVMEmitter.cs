@@ -1488,7 +1488,7 @@ public class UnitTestStackVMEmitter
         var tensorEmitter = new StackVMEmitter.TensorEmitter(stackVmEmitter);
         tensorEmitter.Require(string.Empty, false);
         var actual = memoryStream.ToArray();
-        Assert.Equal(new byte[] { 100, actual[1], 0, 0 }, actual);
+        Assert.Equal(new byte[] { 100, actual[1], 0, 0, 0}, actual);
     }
 
     [Fact]
