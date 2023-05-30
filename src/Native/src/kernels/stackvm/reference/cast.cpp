@@ -46,6 +46,19 @@ result<void> cast_impl(const TInput *input, TOutput *output,
     });
 }
 
+template <class TInput, class TOutput>
+result<void> cast_contiguous(const TInput *input, TOutput *output,
+                           const dims_t &in_shape,
+                           [[maybe_unused]] const strides_t &in_strides,
+                           [[maybe_unused]] const strides_t &out_strides,
+                           NNCASE_UNUSED kernel_context &context) noexcept {
+    SCALAR_CAST_IMPL(static_cast<TOutput>);
+    for (int i = 0; i < compute_size(in_shape); ++i) {
+        output[i] = static_cast<TOutput>(input[i]);
+    }
+    return ok();
+}
+
 result<void>
 cast_f32_to_bf16_impl(const float *input, bfloat16 *output,
                       const dims_t &in_shape, const strides_t &in_strides,
@@ -73,10 +86,17 @@ cast_f32_to_fp16_impl(const float *input, half *output, const dims_t &in_shape,
 } // namespace
 
 #define CAST_IMPL_LV2(input_t, output_t)                                       \
-    if (cmp_type<output_t>(out_type))                                          \
-    return cast_impl(reinterpret_cast<const input_t *>(input),                 \
-                     reinterpret_cast<output_t *>(output), in_shape,           \
-                     in_strides, out_strides, context)
+    if (cmp_type<output_t>(out_type)) {                                        \
+        if (contiguous) {                                                      \
+            return cast_contiguous(reinterpret_cast<const input_t *>(input),     \
+                                 reinterpret_cast<output_t *>(output),         \
+                                 in_shape, in_strides, out_strides, context);   \
+        } else {                                                               \
+            return cast_impl(reinterpret_cast<const input_t *>(input),         \
+                             reinterpret_cast<output_t *>(output), in_shape,   \
+                             in_strides, out_strides, context);                 \
+        }                                                                      \
+    }
 
 #define CAST_IMPL_LV1(input_t)                                                 \
     if (cmp_type<input_t>(in_type)) {                                          \
@@ -106,6 +126,7 @@ result<void> cast_impl(datatype_t in_type, datatype_t out_type,
         return cast_f32_to_fp16_impl(reinterpret_cast<const float *>(input),
                                      reinterpret_cast<half *>(output), in_shape,
                                      in_strides, out_strides, context);
+    bool contiguous = is_contiguous(in_shape, in_strides);
     CAST_IMPL_LV1(bool);
     CAST_IMPL_LV1(uint8_t);
     CAST_IMPL_LV1(uint16_t);

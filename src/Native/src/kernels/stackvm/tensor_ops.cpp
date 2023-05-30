@@ -373,7 +373,12 @@ result<value_t> nncase::kernels::stackvm::get_item(
         // used for get dim
         try_input(in_mem, input);
         try_axes(begins_value, index);
-        if(input_tensor->shape().size() == 1) {
+        for (int i = 0; i < begins_value.size(); ++i) {
+            if(begins_value[i] < 0) {
+                begins_value[i] += input_tensor->shape()[i];
+            }
+        }
+        if(input_tensor->shape().size() == 1 && begins_value.size() == 1) {
             auto i = begins_value[0];
             auto out_shape = dims_t{};
             try_output(out_mem, output, input_tensor->dtype(), out_shape);
@@ -564,13 +569,18 @@ result<value_t> nncase::kernels::stackvm::one_hot(one_hot_mode_t one_hot_mode,
     return ok(output);
 }
 
+bool is_nop_pad(const paddings_t& paddings) {
+    return std::all_of(paddings.begin(), paddings.end(),
+                    [](const padding &p) { return p.sum() == 0; });
+}
+
 result<value_t>
 nncase::kernels::stackvm::pad(runtime::stackvm::pad_mode_t pad_mode,
                               value_t input, value_t pads, value_t value,
                               value_t output, kernel_context &context) {
     try_input(input_mem, input);
     try_paddings(paddings, pads);
-    if(std::all_of(paddings.begin(), paddings.end(), [](const padding &p) { return p.sum() == 0; })) {
+    if(is_nop_pad(paddings)) {
         return ok(input);
     }
     auto out_shape = pad_infer_shape(input_tensor->shape(), paddings);
@@ -702,6 +712,10 @@ result<value_t> nncase::kernels::stackvm::require(
     KERNEL_FINISH;
 }
 
+bool is_nop_pad(const std::vector<int>& paddings) {
+    return std::all_of(paddings.begin(), paddings.end(), [](auto &p) { return p == 0;});
+}
+
 result<value_t> nncase::kernels::stackvm::bucket_pad([[maybe_unused]] value_t input, [[maybe_unused]] value_t shape, [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &) {
     try_dims_v(shape);
     auto in_tensor = input.as<tensor>().unwrap();
@@ -711,6 +725,9 @@ result<value_t> nncase::kernels::stackvm::bucket_pad([[maybe_unused]] value_t in
     for (int i = 0; i < rank; ++i) {
         paddings[2 * i + 0] = 0;
         paddings[2 * i + 1] = shape_value[i] - in_shape[i];
+    }
+    if(is_nop_pad(paddings)) {
+        return ok(input);
     }
     auto pads_shape = dims_t{rank, 2};
     auto span = gsl::span(reinterpret_cast<gsl::byte*>(paddings.data()), compute_size(pads_shape) * sizeof(int));

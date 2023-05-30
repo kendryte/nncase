@@ -16,7 +16,8 @@
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/runtime_tensor.h>
-
+#include "ids_parser.h"
+#include <filesystem>
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
@@ -27,15 +28,23 @@ stackvm_runtime_function::visit(NNCASE_UNUSED const extcall_op_t &op) noexcept {
     auto func_id = stack_.pop().as_u();
     try_var(mod, module().interp().find_module_by_id(module_id));
     try_var(func, mod->find_function_by_id(func_id));
+
+
 #ifdef NNCASE_DUMP_MANAGER
     auto dump_manager = module().interp().dump_manager();
-    dump_manager->dump_op("extcall");
+    auto idPath = std::filesystem::path(dump_manager->dump_path()).parent_path().parent_path().parent_path().parent_path().append("ids.txt");
+    // todo: should do search and only once
+    auto name = lookup(idPath, module_id, func_id);
+    dump_manager->dump_op(name);
 #endif
 
     std::vector<value_t> params(op.args);
     for (size_t i = 0; i < op.args; i++) {
         try_var(arg, pop_object<value_t>());
         params[i] = std::move(arg);
+#ifdef NNCASE_DUMP_MANAGER
+        dump_manager->dump_input(arg, "arg_" + std::to_string(i));
+#endif
     }
 
     if (op.is_prim_func) {
