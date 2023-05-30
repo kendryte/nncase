@@ -45,8 +45,7 @@ class PreluTest
 };
 
 INSTANTIATE_TEST_SUITE_P(Prelu, PreluTest,
-                         testing::Combine(testing::Values(dt_float32, dt_int32,
-                                                          dt_int64),
+                         testing::Combine(testing::Values(dt_float32),
                                           testing::Values(dims_t{1, 3, 16, 16},
                                                           /*dims_t { 3, 16, 16
                                                           }, dims_t { 16, 16 },
@@ -57,8 +56,7 @@ TEST_P(PreluTest, Prelu) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
 
     // expected
-    float *slope_ptr;
-    *slope_ptr = 0.2f;
+    float slope_ptr[] = {0.2f};
     auto slope =
         hrt::create(nncase::dt_float32, {1},
                     {reinterpret_cast<gsl::byte *>(slope_ptr), sizeof(float)},

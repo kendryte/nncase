@@ -57,8 +57,7 @@ TEST_P(Relu6Test, Relu6) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
 
     // expected
-    float *min_ptr;
-    *min_ptr = 0.0f;
+    float min_ptr[] = {0.0f};
     auto min =
         hrt::create(nncase::dt_float32, {1},
                     {reinterpret_cast<gsl::byte *>(min_ptr), sizeof(float)},
@@ -66,8 +65,7 @@ TEST_P(Relu6Test, Relu6) {
             .expect("create tensor failed");
     auto min_ort = runtime_tensor_2_ort_tensor(min);
 
-    float *max_ptr;
-    *min_ptr = 0.0f;
+    float max_ptr[] = {0.0f};
     auto max =
         hrt::create(nncase::dt_float32, {1},
                     {reinterpret_cast<gsl::byte *>(max_ptr), sizeof(float)},
