@@ -10,9 +10,7 @@ using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using System.Runtime.CompilerServices;
 using System.Runtime.Loader;
-using System.Xml.Linq;
 using Microsoft.Extensions.Logging;
-using Nncase.Collections;
 
 namespace Nncase.Hosting;
 
@@ -102,10 +100,17 @@ public sealed class PluginLoader
 
     private IEnumerable<string> GetPluginAssemblies(string basePath)
     {
-        return (from filePath in Directory.GetFiles(basePath, _modulesDllPattern, SearchOption.AllDirectories)
-                where !_builtinModules.Contains(Path.GetFileName(filePath))
-                 && IsLoadableAssembly(filePath)
-                select filePath).Distinct();
+        if (Directory.Exists(basePath))
+        {
+            return (from filePath in Directory.GetFiles(basePath, _modulesDllPattern, SearchOption.AllDirectories)
+                    where !_builtinModules.Contains(Path.GetFileName(filePath))
+                     && IsLoadableAssembly(filePath)
+                    select filePath).Distinct();
+        }
+        else
+        {
+            return Array.Empty<string>();
+        }
     }
 
     private IEnumerable<string> GetPluginsSearchDirectories()
