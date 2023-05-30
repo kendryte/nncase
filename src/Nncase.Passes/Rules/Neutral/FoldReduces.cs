@@ -43,9 +43,9 @@ public sealed partial class FoldTwoReduce : IRewriteRule
             IsTensorConst("axis2"),
             IsTensorConst("initValue2"),
             IsTensorConst("keepDims2")) with
-        {
-            TypePattern = HasFixedShape(),
-        };
+    {
+        TypePattern = HasFixedShape(),
+    };
 
     private Expr? GetReplace(Expr input, Reduce rd1, Reduce rd2, int[] axis1, int[] axis2, float initValue1, float initValue2, bool keepDims1, bool keepDims2)
     {
