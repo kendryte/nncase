@@ -227,6 +227,21 @@ class Compiler:
             dump_flags = _nncase.DumpFlags(dump_flags | _nncase.DumpFlags.CodeGen)
         self._compile_options.dump_flags = dump_flags
         self._compile_options.dump_dir = compile_options.dump_dir
+        self._compile_options.preprocess = compile_options.preprocess
+        self._compile_options.input_layout = compile_options.input_layout
+        self._compile_options.output_layout = compile_options.output_layout
+        if compile_options.input_type == "uint8":
+            self._compile_options.input_type = _nncase.InputType.Uint8
+        elif compile_options.input_type == "int8":
+            self._compile_options.input_type = _nncase.InputType.Int8
+        if compile_options.input_type == "float32":
+            self._compile_options.input_type = _nncase.InputType.Float32
+        self._compile_options.input_shape = str(compile_options.input_shape)[1:-1]
+        self._compile_options.input_range = str(compile_options.input_range)[1:-1]
+        self._compile_options.swapRB = compile_options.swapRB
+        self._compile_options.letterbox_value = compile_options.letterbox_value
+        self._compile_options.mean = str(compile_options.mean)[1:-1]
+        self._compile_options.std = str(compile_options.std)[1:-1]
 
     def _import_module(self, model_content: bytes | io.RawIOBase) -> None:
         stream = io.BytesIO(model_content) if isinstance(model_content, bytes) else model_content
@@ -282,6 +297,16 @@ class ClCompileOptions():
     OutputFile: str
     ModelQuantMode: int
     QuantizeOptions: ClQuantizeOptions
+    SwapRB: bool
+    InputRange: List[float]
+    InputShape: List[int]
+    InputType: str
+    Mean: List[float]
+    Std: List[float]
+    PreProcess: bool
+    InputLayout: str
+    OutputLayout: str
+    LetterBoxValue: float
 
 
 class CompileOptions:

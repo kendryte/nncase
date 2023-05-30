@@ -188,7 +188,7 @@ public class UnitTestTypeInfer : UnitTypeInferBase
             ImageResizeMode.NearestNeighbor,
             IR.F.Random.Uniform(DataTypes.Float32, 0, 2, 1, new[] { 1, 3, 34, 67 }),
             float.NaN,
-            Const.FromShape(new[] { 32, 48 }));
+            Const.FromShape(new[] { 1, 3, 32, 48 }));
         Assert.True(CompilerServices.InferenceType(resize));
         Assert.True(HasShape(new[] { 1, 3, 32, 48 }).MatchLeaf(resize.CheckedType!));
 
@@ -196,7 +196,7 @@ public class UnitTestTypeInfer : UnitTypeInferBase
             ImageResizeMode.NearestNeighbor,
             IR.F.Random.Uniform(DataTypes.Float32, 0, 2, 1, new[] { 3, 34, 67 }),
             float.NaN,
-            Const.FromShape(new[] { 32, 48 }));
+            Const.FromShape(new[] { 32, 48, 67 }));
         Assert.True(CompilerServices.InferenceType(resize2));
         Assert.True(HasShape(new[] { 32, 48, 67 }).MatchLeaf(resize2.CheckedType!));
 

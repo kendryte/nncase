@@ -3,6 +3,7 @@ import os
 import nncase
 import numpy as np
 import test_utils
+import preprocess_utils
 
 
 class Evaluator:
@@ -25,6 +26,7 @@ class Evaluator:
         compile_options.dump_dir = eval_dir
         compile_options.dump_asm = cfg.compile_opt.dump_asm
         compile_options.dump_ir = cfg.compile_opt.dump_ir
+        compile_options = preprocess_utils.update_compile_options(compile_options, preprocess)
         compile_options.shape_bucket_options = nncase.ShapeBucketOptions()
         compile_options.shape_bucket_options.enable = False
         compile_options.shape_bucket_options.range_info = {}
@@ -34,16 +36,16 @@ class Evaluator:
         self.import_model(self.compiler, model_content, import_options)
         self.set_quant_opt(cfg, kwargs, preprocess, self.compiler)
         evaluator = self.compiler.create_evaluator(3)
-        self.set_inputs(evaluator)
+        self.set_inputs(evaluator, preprocess)
         evaluator.run()
         eval_output_paths = self.dump_outputs(eval_dir, evaluator)
         return eval_output_paths
 
-    def set_inputs(self, evaluator):
-        for i in range(len(self.inputs)):
+    def set_inputs(self, evaluator, preprocess):
+        for idx, i in enumerate(self.inputs):
             input_tensor: nncase.RuntimeTensor = nncase.RuntimeTensor.from_numpy(
-                self.transform_input(self.data_pre_process(self.inputs[i]['data'])[0], "float32", "CPU"))
-            evaluator.set_input_tensor(i, input_tensor)
+                self.transform_input((i['data']), preprocess['input_type'], "infer")[0])
+            evaluator.set_input_tensor(idx, input_tensor)
 
     def dump_outputs(self, eval_dir, evaluator):
         eval_output_paths = []

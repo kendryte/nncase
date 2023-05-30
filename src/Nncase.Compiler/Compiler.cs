@@ -49,8 +49,11 @@ internal class Compiler : ICompiler
             _dumpper.DumpModule(module, "IRImport");
         }
 
+        var preprocess_option = _compileSession.CompileOptions;
+
         await RunPassAsync(pmg => BroadcastOutputNamesAfterImportPass(pmg), "BroadcastOutputNamesAfterImport");
         await RunPassAsync(pmg => pmg.Add<ShapeInferPass>(), "ShapeInferAfterImport");
+        await RunPassAsync(pmg => pmg.Add<AddPreProcess>(), "AddPreProcessAfterImport");
 
         var inferSucc = CompilerServices.InferenceType(module.Entry!);
         if (!inferSucc)
