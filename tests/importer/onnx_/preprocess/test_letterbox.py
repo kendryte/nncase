@@ -80,7 +80,7 @@ case:
     - name: model_layout
       values:
         - NCHW
-    - name: letter_value
+    - name: letterbox_value
       values:
         - 114.
 """

@@ -1,0 +1,7 @@
+gmodel_dump_dir/13/gmodel.bin
+9828968
+9832144
+2400
+"gmodel_dump_dir/13"
+4
+wait-key

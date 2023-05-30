@@ -67,7 +67,7 @@ class Inference:
     def set_infer_input(self, preprocess, case_dir, sim):
         for idx, value in enumerate(self.inputs):
             data = self.transform_input(
-                value['data'], preprocess['input_type'], "infer")
+                value['data'], preprocess['input_type'], "infer")[0]
             dtype = preprocess['input_type']
             if preprocess['preprocess'] and dtype != 'float32':
                 if not test_utils.in_ci():

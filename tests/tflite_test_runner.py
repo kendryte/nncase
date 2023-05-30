@@ -79,7 +79,8 @@ class TfliteTestRunner(TestRunner):
         interp = tf.lite.Interpreter(model_path=model_file)
         interp.allocate_tensors()
         for idx, value in enumerate(self.inputs):
-            new_value = self.transform_input(self.data_pre_process(value['data']), "float32", "CPU")
+            new_value = self.transform_input(
+                self.data_pre_process(value['data']), "float32", "CPU")[0]
             interp.set_tensor(value["index"], new_value)
             if self.pre_process[0]['preprocess']:
                 bin_file = os.path.join(case_dir, f'frame_input_{idx}.bin')

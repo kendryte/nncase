@@ -71,7 +71,7 @@ class PTQTensorOptions:
     def set_tensor_data(self, data: List[List[np.ndarray]]) -> None:
         reshape_data = list(map(list, zip(*data)))
         self.cali_data = [RuntimeTensor.from_numpy(
-            np.expand_dims(d, 0)) for d in itertools.chain.from_iterable(reshape_data)]
+            d) for d in itertools.chain.from_iterable(reshape_data)]
 
 
 class GraphEvaluator:

@@ -1,0 +1,7 @@
+gmodel_dump_dir/20/gmodel.bin
+9726912
+9728030
+24
+"gmodel_dump_dir/20"
+4
+wait-key

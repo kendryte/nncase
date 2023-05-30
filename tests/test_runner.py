@@ -265,7 +265,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                 else:
                     raise TypeError(" Not support type for quant input")
             new_values.append(new_value)
-        return np.array(new_values)[0]
+        return np.array(new_values)
 
     def get_process_config(self, config):
         # preprocess flag
