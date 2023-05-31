@@ -109,7 +109,7 @@ tensor_desc interpreter::input_desc(size_t index) const noexcept {
         auto dtype = type.as<prim_type_t>().expect("Not a prim type");
         start += get_bytes(dtype, input_shape(i));
     }
-    return {dtype->typecode(), 0, size_bytes};
+    return {dtype->typecode(), start, size_bytes};
 }
 
 tensor_desc interpreter::output_desc(size_t index) const noexcept {
