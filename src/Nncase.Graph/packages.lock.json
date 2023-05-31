@@ -171,7 +171,7 @@
         "type": "CentralTransitive",
         "requested": "[0.0.2, )",
         "resolved": "0.0.2",
-        "contentHash": "Gk8TyNN/iYaifC3t4xR3okJwPJldRkjzS4BFn3fWLK7+l2z1+XkI/z4Nz6MW6LJHS77XFLNhq0I+H9suEsvGIw==",
+        "contentHash": "q8j0yR5836Zhv9WB9BFkQt1UaEFyibq8bqJcTiULlILF6/sz8z7Wy2N8sgYdDKsdW25zncIz7j6IDbKM5ynePg==",
         "dependencies": {
           "libortki": "0.0.2"
         }
