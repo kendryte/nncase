@@ -46,7 +46,7 @@ rhs_shapes = [
 def test_letterbox(lhs_shape, rhs_shape, request):
     module = _make_module(rhs_shape)
     overwrite_cfg = """
-case: 
+case:
   preprocess_opt:
     - name: preprocess
       values:
@@ -54,9 +54,6 @@ case:
     - name: swapRB
       values:
         - false
-    - name: input_shape
-      values:
-        - [1,224,224,3]
     - name: mean
       values:
         - [0,0,0]
@@ -69,14 +66,19 @@ case:
     - name: input_type
       values:
         - uint8
+    - name: input_shape
+      values:
+        - [1,3,224,224]
     - name: input_layout
       values:
-        - NHWC
+        - NCHW
     - name: output_layout
       values:
-        - NHWC
         - NCHW
-    - name: letter_value
+    - name: model_layout
+      values:
+        - NCHW
+    - name: letterbox_value
       values:
         - 0.
 """
