@@ -298,3 +298,5 @@ Directory.Build.targets
 *local*
 nupkg
 *.runsettings
+cmake-build-*
+*gmodel_dump_dir*

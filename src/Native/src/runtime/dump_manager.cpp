@@ -1,11 +1,21 @@
 #ifndef NNCASE_BAREMETAL
 #include "dump_manager_impl.h"
+#if defined(__nds_v5)
+#include <experimental/filesystem>
+#else
 #include <filesystem>
+#endif
 #include <nncase/runtime/dump_manager.h>
 #include <nncase/runtime/result.h>
 #include <nncase/runtime/stackvm/opcode.h>
 
+#if defined(__nds_v5)
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#else
+#include <filesystem>
 namespace fs = std::filesystem;
+#endif
 
 using namespace nncase;
 using namespace nncase::runtime;
