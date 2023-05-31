@@ -1097,15 +1097,15 @@ nncase::kernels::stackvm::transpose(value_t input, value_t perm, value_t output,
     auto out_shape = transpose_infer_shape(input_tensor->shape(), perm_value);
     try_output(out_mem, output, dt, out_shape);
 
-    if (out_shape.size() == 4) {
-        try_(optimized::transpose(dt, input_mem, out_mem, input_tensor->shape(),
-                                  perm_value, input_tensor->strides(),
-                                  output_tensor->strides(), context));
-    } else {
+//    if (out_shape.size() == 4) {
+//        try_(optimized::transpose(dt, input_mem, out_mem, input_tensor->shape(),
+//                                  perm_value, input_tensor->strides(),
+//                                  output_tensor->strides(), context));
+//    } else {
         try_(reference::transpose(dt, input_mem, out_mem, input_tensor->shape(),
                                   perm_value, input_tensor->strides(),
                                   output_tensor->strides()));
-    }
+//    }
     return ok(output);
 }
 

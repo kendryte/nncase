@@ -88,7 +88,7 @@ cast_f32_to_fp16_impl(const float *input, half *output, const dims_t &in_shape,
 #define CAST_IMPL_LV2(input_t, output_t)                                       \
     if (cmp_type<output_t>(out_type)) {                                        \
         if (contiguous) {                                                      \
-            return cast_contiguous(reinterpret_cast<const input_t *>(input),   \
+            return cast_impl(reinterpret_cast<const input_t *>(input),   \
                                    reinterpret_cast<output_t *>(output),       \
                                    in_shape, in_strides, out_strides,          \
                                    context);                                   \
