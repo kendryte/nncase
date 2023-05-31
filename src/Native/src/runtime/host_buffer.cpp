@@ -121,7 +121,7 @@ result<void> host_buffer_node::copy_to(buffer_t dest, size_t src_start,
 
     try_var(dest_host, dest.as<host_buffer_t>());
     try_var(src_map, map(map_read));
-    try_var(dest_map, map(map_write));
+    try_var(dest_map, dest_host->map(map_write));
     return kernels::stackvm::optimized::slice(
         datatype, src_map.buffer().data() + src_start * datatype->size_bytes(),
         dest_map.buffer().data() + dest_start * datatype->size_bytes(), shape,
