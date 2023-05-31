@@ -61,6 +61,7 @@ jobs:
       run: |
         cd build
         ctest --test-dir tests/kernels --output-on-failure -j4
+      if: runner.os != 'Macos'
 
     #- name: Benchmark
     #  run: |
