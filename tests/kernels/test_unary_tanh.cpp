@@ -73,7 +73,7 @@ TEST_P(UnaryTest, tanh) {
 
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
-    // compare todo false
+    // compare
     EXPECT_TRUE(is_same_tensor(expected, actual));
 }
 
