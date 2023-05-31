@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using NetFabric.Hyperlinq;
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.NN;
 using Nncase.IR.Tensors;
@@ -16,8 +17,19 @@ namespace Nncase.Evaluator.NN;
 /// <summary>
 /// Evaluator for <see cref="SpaceToBatch"/>.
 /// </summary>
-public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<SpaceToBatch>
+public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<SpaceToBatch>, ICostEvaluator<SpaceToBatch>
 {
+    /// <inheritdoc/>
+    public Cost Visit(ICostEvaluateContext context, SpaceToBatch target)
+    {
+        var ret = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(ret),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
+        };
+    }
+
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, SpaceToBatch s)
     {
@@ -108,7 +120,7 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
                                         new InvalidType($"The Padded Shape Must Divides BlockShape!")));
             }
 
-            foreach (var i in Enumerable.Range(m + 1, outshape.Count - (m + 1)))
+            foreach (var i in Enumerable.Range(m + 1, padded_shape.Count - (m + 1)))
             {
                 outshape.Add(padded_shape[i]);
             }
