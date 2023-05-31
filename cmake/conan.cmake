@@ -126,6 +126,12 @@ macro(_conan_detect_compiler)
 
     if(ARGUMENTS_ARCH)
         set(_CONAN_SETTING_ARCH ${ARGUMENTS_ARCH})
+    else()
+        set(_CONAN_SETTING_ARCH ${CMAKE_SYSTEM_PROCESSOR})
+    endif()
+
+    if (${_CONAN_SETTING_ARCH} STREQUAL "AMD64")
+        set(_CONAN_SETTING_ARCH "x86_64")
     endif()
 
     if(USING_CXX)
