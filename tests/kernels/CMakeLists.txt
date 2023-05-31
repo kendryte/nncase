@@ -1,17 +1,15 @@
 enable_testing()
 
+find_package(ortki)
+
 macro(add_test_exec name)
     add_executable(${name} ${name}.cpp)
-    target_link_libraries(${name} PRIVATE
-    GTest::gtest_main nncase)
-    add_test(NAME ${name} COMMAND ${name})
+    target_link_libraries(${name} PRIVATE GTest::gtest_main nncaseruntime ortki)
+    add_test(NAME ${name} COMMAND ${CMAKE_COMMAND} -DTEST_EXECUTABLE=$<TARGET_FILE:${name}> -P ${CMAKE_CURRENT_SOURCE_DIR}/../../toolchains/run_test.cmake)
 endmacro()
 
-set(CMAKE_CXX_STANDARD 17)
-
 file(GLOB TEST_NAMES CONFIGURE_DEPENDS test_*.cpp)
-
-foreach(test_name ${TEST_NAMES}) 
+foreach(test_name ${TEST_NAMES})
     get_filename_component(tname ${test_name} NAME_WE)
     add_test_exec(${tname})
 endforeach()

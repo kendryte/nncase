@@ -42,7 +42,7 @@ class CaffeTestRunner(TestRunner):
 
         for input in self.inputs:
             caffe_model.blobs[input['name']].data[...] = self.transform_input(
-                self.data_pre_process(input['data']), "float32", "CPU")
+                self.data_pre_process(input['data']), "float32", "CPU")[0]
 
         outputs = caffe_model.forward()
 

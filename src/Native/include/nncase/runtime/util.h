@@ -18,6 +18,7 @@
 #include "buffer.h"
 #include "error.h"
 #include "host_buffer.h"
+#include "runtime_tensor.h"
 #include "simple_types.h"
 #include <nncase/api.h>
 #include <nncase/runtime/runtime_op_utility.h>
@@ -112,11 +113,9 @@ inline result<void> alloc_output<false, dims_t>(value_t &output,
                                                 const dims_t &out_shape) {
     // TODO: copy back output
     if (output.empty()) {
-        auto out_strides = get_default_strides(out_shape);
-        try_var(out_buffer, buffer_allocator::host().allocate(
-                                get_bytes(dtype, out_shape, out_strides), {}));
-        output =
-            tensor(std::in_place, dtype, out_shape, out_strides, out_buffer);
+        try_var(typecode, to_typecode(dtype));
+        try_var(out_tensor, hrt::create(typecode, out_shape));
+        output = out_tensor.impl();
     } else {
         try_var(
             out_tensor,
