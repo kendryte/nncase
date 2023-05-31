@@ -173,7 +173,7 @@ class Compiler:
         if not self._quantize_options:
             self._quantize_options = _nncase.QuantizeOptions()
             self._compile_options.quantize_options = self._quantize_options
-        if len(provider) != 0:
+        if len(dataset) != 0:
             self._quantize_options.calibration_dataset = provider
         self._quantize_options.model_quant_mode = _nncase.ModelQuantMode.UsePTQ
 
