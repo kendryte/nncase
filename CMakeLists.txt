@@ -203,10 +203,6 @@ else()
     add_subdirectory(src/Native/include/nncase)
     add_subdirectory(src/Native/src)
 
-    if(BUILD_TESTING)
-        #add_subdirectory(tests/kernels)
-    endif()
-    
     # Python binding
     if(BUILD_PYTHON_BINDING)
         add_subdirectory(python/nncase/native)
@@ -258,6 +254,10 @@ else()
     #add_subdirectory(targets/cpu)
     #add_subdirectory(targets/k210)
     #add_subdirectory(targets/vulkan)
+endif()
+
+if(BUILD_TESTING)
+    add_subdirectory(tests/kernels)
 endif()
 
 # Modules
