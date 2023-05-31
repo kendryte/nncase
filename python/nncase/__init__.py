@@ -336,6 +336,7 @@ class CompileOptions:
     def __init__(self) -> None:
         self.preprocess = False
 
+
 class ShapeBucketOptions:
     enable: bool
     var_map: dict

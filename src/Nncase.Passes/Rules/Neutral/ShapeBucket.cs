@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -444,7 +444,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
             return fixedShape;
         }).ToArray();
 
-        // 计算每个var在不同的段下的值
+    // 计算每个var在不同的段下的值
     private Dictionary<Var, int[]> MakeVarValuesForAllSegment(ShapeBucketOptions options)
     {
         int segmentCount = options.SegmentsCount;

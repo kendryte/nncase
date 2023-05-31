@@ -15,13 +15,13 @@
 #pragma once
 #include <cstring>
 #include <iostream>
-#include <string>
 #include <map>
-#include <unordered_map>
+#include <nlohmann/json.hpp>
 #include <nncase/compiler_defs.h>
 #include <nncase/runtime/simple_types.h>
 #include <nncase/value.h>
-#include <nlohmann/json.hpp>
+#include <string>
+#include <unordered_map>
 using nlohmann::json;
 
 extern "C" {
@@ -408,7 +408,9 @@ class shape_bucket_options : public clr_object_base {
   public:
     using clr_object_base::clr_object_base;
 
-    shape_bucket_options() { obj_ = nncase_clr_api()->shape_bucket_options_create(); }
+    shape_bucket_options() {
+        obj_ = nncase_clr_api()->shape_bucket_options_create();
+    }
 
     bool enable() { return false; }
     void enable(bool value) {
@@ -419,19 +421,22 @@ class shape_bucket_options : public clr_object_base {
     void range_info(std::map<std::string, std::tuple<int, int>> value) {
         json j = value;
         std::string s = j.dump();
-        nncase_clr_api()->shape_bucket_options_set_range_info(obj_.get(), s.c_str(), s.length());
+        nncase_clr_api()->shape_bucket_options_set_range_info(
+            obj_.get(), s.c_str(), s.length());
     }
 
     int segments_count() { return 2; }
     void segments_count(int value) {
-        nncase_clr_api()->shape_bucket_options_set_segments_count(obj_.get(), value);
+        nncase_clr_api()->shape_bucket_options_set_segments_count(obj_.get(),
+                                                                  value);
     }
 
     std::map<std::string, int> fix_var_map() { return {}; }
     void fix_var_map(std::map<std::string, int> value) {
         json j = value;
         std::string s = j.dump();
-        nncase_clr_api()->shape_bucket_options_set_fix_var_map(obj_.get(), s.c_str(), s.length());
+        nncase_clr_api()->shape_bucket_options_set_fix_var_map(
+            obj_.get(), s.c_str(), s.length());
     }
 };
 

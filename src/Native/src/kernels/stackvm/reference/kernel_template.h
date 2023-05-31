@@ -37,10 +37,10 @@
     result<void> _name##_opt_impl(                                             \
         const T *input, T *output, const dims_t &in_shape,                     \
         [[maybe_unused]] const strides_t &input_strides,                       \
-        [[maybe_unused]] const dims_t &out_shape,                                               \
+        [[maybe_unused]] const dims_t &out_shape,                              \
         [[maybe_unused]] const strides_t &out_strides,                         \
         NNCASE_UNUSED kernel_context &context) noexcept {                      \
-        for (int i = 0; i < compute_size(in_shape); ++i) {                    \
+        for (int i = 0; i < compute_size(in_shape); ++i) {                     \
             auto x = input[i];                                                 \
             output[i] = _compute;                                              \
         }                                                                      \

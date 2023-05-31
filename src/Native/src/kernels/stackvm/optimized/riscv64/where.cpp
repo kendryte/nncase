@@ -182,12 +182,12 @@ result<void> nncase::kernels::stackvm::optimized::where(
     // sizeof(bool) != 1 的情况结果未定义。
     assert(sizeof(bool) == 1);
     const uint8_t *cond_pointer = (const uint8_t *)cond;
-#define WHERE_IMPL(_ty)                                             \
-        auto *input_x = IN_CAST(_ty, x);                                       \
-        auto *input_y = IN_CAST(_ty, y);                                       \
-        auto *out = OUT_CAST(_ty, output);                                     \
-        tenary_impl(cond_pointer, input_x, input_y, out,           \
-                                cond_shape, x_shape, y_shape, out_shape);
+#define WHERE_IMPL(_ty)                                                        \
+    auto *input_x = IN_CAST(_ty, x);                                           \
+    auto *input_y = IN_CAST(_ty, y);                                           \
+    auto *out = OUT_CAST(_ty, output);                                         \
+    tenary_impl(cond_pointer, input_x, input_y, out, cond_shape, x_shape,      \
+                y_shape, out_shape);
 
     try_var(typecode, to_typecode(dt));
     switch (typecode) {

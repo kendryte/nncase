@@ -12,11 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "opt_common.h"
 #include "opt_ops.h"
 #include <cstring>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/runtime/runtime_op_utility.h>
-#include "opt_common.h"
 
 using namespace nncase;
 using namespace nncase::runtime;

@@ -40,7 +40,7 @@ using namespace nncase::kernels::stackvm::optimized;
 namespace {
 template <class T>
 result<void> transpose_impl(const T *input, T *output, const dims_t &in_shape,
-                    const dims_t &perm) {
+                            const dims_t &perm) {
     dims_t out_shape(in_shape.size());
     for (size_t i = 0; i < 4; i++) {
         out_shape[i] = in_shape[perm[i]];
@@ -93,12 +93,12 @@ result<void> transpose_impl(const T *input, T *output, const dims_t &in_shape,
                               reinterpret_cast<type *>(dest), in_shape, perm)
 } // namespace
 
-result<void> kernels::stackvm::optimized::transpose(datatype_t type, const gsl::byte *src,
-                                  gsl::byte *dest, const dims_t &in_shape,
-                                  const dims_t &perm,
-                                  [[maybe_unused]] const strides_t &in_strides,
-                                  [[maybe_unused]] const strides_t &out_strides,
-                                  [[maybe_unused]] kernel_context &context) noexcept {
+result<void> kernels::stackvm::optimized::transpose(
+    datatype_t type, const gsl::byte *src, gsl::byte *dest,
+    const dims_t &in_shape, const dims_t &perm,
+    [[maybe_unused]] const strides_t &in_strides,
+    [[maybe_unused]] const strides_t &out_strides,
+    [[maybe_unused]] kernel_context &context) noexcept {
     switch (runtime::get_bytes(type)) {
         TRANSPOSE_IMPL(1, uint8_t);
         TRANSPOSE_IMPL(2, uint16_t);

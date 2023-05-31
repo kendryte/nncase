@@ -13,11 +13,11 @@
  * limitations under the License.
  */
 #include "../runtime_function.h"
+#include "ids_parser.h"
+#include <filesystem>
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/runtime_tensor.h>
-#include "ids_parser.h"
-#include <filesystem>
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
@@ -29,10 +29,14 @@ stackvm_runtime_function::visit(NNCASE_UNUSED const extcall_op_t &op) noexcept {
     try_var(mod, module().interp().find_module_by_id(module_id));
     try_var(func, mod->find_function_by_id(func_id));
 
-
 #ifdef NNCASE_DUMP_MANAGER
     auto dump_manager = module().interp().dump_manager();
-    auto idPath = std::filesystem::path(dump_manager->dump_path()).parent_path().parent_path().parent_path().parent_path().append("ids.txt");
+    auto idPath = std::filesystem::path(dump_manager->dump_path())
+                      .parent_path()
+                      .parent_path()
+                      .parent_path()
+                      .parent_path()
+                      .append("ids.txt");
     // todo: should do search and only once
     auto name = lookup(idPath, module_id, func_id);
     dump_manager->dump_op(name);
