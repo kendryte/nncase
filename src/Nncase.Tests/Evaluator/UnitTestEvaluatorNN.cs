@@ -453,7 +453,7 @@ public class UnitTestEvaluatorNN : TestClassBase
         var tinput = OrtKI.Random(1, 1, 2, 3);
         var input = tinput.ToTensor();
         var pads = Tensor.From<int>(new[] { 0, 0, 0, 0, 1, 1, 2, 2 }, new Shape(new[] { 4, 2 }));
-        var value = Tensor.FromScalar<float>(1.0f);
+        _ = Tensor.FromScalar<float>(1.0f);
         var expr = NN.Pad(input, pads, PadMode.Constant, 1.0f);
         CompilerServices.InferenceType(expr);
         var result = expr.Evaluate().AsTensor().ToOrtTensor();
