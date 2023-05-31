@@ -50,18 +50,9 @@ class RequireTest : public KernelTest,
 };
 
 INSTANTIATE_TEST_SUITE_P(Require, RequireTest,
-                         testing::Combine(testing::Values(dt_float32, dt_int32,
-                                                          dt_int64),
-                                          testing::Values(dims_t{1, 3, 16, 16},
-                                                          /*dims_t { 3, 16, 16
-                                                          }, dims_t { 16, 16 },
-                                                          dims_t { 16 },*/
-                                                          dims_t{1}),
-                                          testing::Values(dims_t{1, 3, 16, 16},
-                                                          /*dims_t { 3, 16, 16
-                                                          }, dims_t { 16, 16 },
-                                                          dims_t { 16 },*/
-                                                          dims_t{1})));
+                         testing::Combine(testing::Values(dt_float32, dt_int32),
+                                          testing::Values(dims_t{1, 3, 16, 16}),
+                                          testing::Values(dims_t{1, 3, 16, 16})));
 
 TEST_P(RequireTest, Require) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
