@@ -33,10 +33,12 @@ class UnaryTest
     void SetUp() override {
         auto &&[typecode, i_shape] = GetParam();
 
+        float ptr_ort[] = {1.0f};
         input =
-            hrt::create(typecode, i_shape, host_runtime_tensor::pool_cpu_only)
+            hrt::create(typecode, i_shape,
+                        {reinterpret_cast<gsl::byte *>(ptr_ort), 4},
+                        true, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
-        init_tensor(input);
     }
 
     void TearDown() override {}
@@ -49,12 +51,12 @@ INSTANTIATE_TEST_SUITE_P(Unary, UnaryTest,
                          testing::Combine(testing::Values(dt_float32),
                                           testing::Values(dims_t{1})));
 
-TEST_P(UnaryTest, log) {
+TEST_P(UnaryTest, tanh) {
     OrtKITensor *orts[1];
     orts[0] = runtime_tensor_2_ort_tensor(input);
 
     // expected
-    auto output_ort = ortki_Log(orts[0]);
+    auto output_ort = ortki_Tanh(orts[0]);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
@@ -66,8 +68,9 @@ TEST_P(UnaryTest, log) {
 
     // actual
     auto output = kernels::stackvm::unary(
-                      nncase::runtime::stackvm::unary_op_t::log, input.impl())
-                      .expect("binary failed");
+                      nncase::runtime::stackvm::unary_op_t::tanh, input.impl())
+                      .expect("unary failed");
+
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare

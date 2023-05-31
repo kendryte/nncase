@@ -33,10 +33,12 @@ class UnaryTest
     void SetUp() override {
         auto &&[typecode, i_shape] = GetParam();
 
+        float ptr_ort[] = {1.0f};
         input =
-            hrt::create(typecode, i_shape, host_runtime_tensor::pool_cpu_only)
+            hrt::create(typecode, i_shape,
+                        {reinterpret_cast<gsl::byte *>(ptr_ort), 4},
+                        true, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
-        init_tensor(input);
     }
 
     void TearDown() override {}
@@ -67,11 +69,11 @@ TEST_P(UnaryTest, acosh) {
     // actual
     auto output = kernels::stackvm::unary(
                       nncase::runtime::stackvm::unary_op_t::acosh, input.impl())
-                      .expect("binary failed");
+                      .expect("unary failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
-    // compare todo: it's a issue
-    EXPECT_FALSE(is_same_tensor(expected, actual));
+    // compare
+    EXPECT_TRUE(is_same_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {
