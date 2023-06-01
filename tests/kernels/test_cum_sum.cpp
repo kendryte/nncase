@@ -53,7 +53,7 @@ TEST_P(CumSumTest, cum_sum) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
 
     // expected
-    float axis[] = {0};
+    float_t axis[] = {0};
     auto axis_ptr =
         hrt::create(nncase::dt_float32, {2},
                     {reinterpret_cast<gsl::byte *>(axis), 2 * sizeof(float)},
@@ -71,13 +71,13 @@ TEST_P(CumSumTest, cum_sum) {
                         .expect("create tensor failed");
 
     // actual
-    float exclusive[] = {0};
+    float_t exclusive[] = {0};
     auto exclusive_ptr = hrt::create(nncase::dt_float32, {2},
                                      {reinterpret_cast<gsl::byte *>(exclusive),
                                       2 * sizeof(float)},
                                      true, host_runtime_tensor::pool_cpu_only)
                              .expect("create tensor failed");
-    float reverse[] = {0};
+    float_t reverse[] = {0};
     auto reverse_ptr =
         hrt::create(nncase::dt_float32, {2},
                     {reinterpret_cast<gsl::byte *>(reverse), 2 * sizeof(float)},

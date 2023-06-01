@@ -69,7 +69,7 @@ TEST_P(ReduceSumTest, ReduceSum) {
 
     // expected
     size_t size = 0;
-    float a_array[] = {1, 2, 3, 4, 5, 6, 7, 8};
+    float_t a_array[] = {1, 2, 3, 4, 5, 6, 7, 8};
     auto a = hrt::create(dt_float32, {2, 4},
                          {reinterpret_cast<gsl::byte *>(a_array), 32}, true,
                          host_runtime_tensor::pool_cpu_only)

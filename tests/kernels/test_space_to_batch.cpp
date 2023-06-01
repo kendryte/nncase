@@ -69,7 +69,7 @@ TEST_P(SpaceToBatchTest, SpaceToBatch) {
 
     // expected
     //    size_t size = 0;
-    float expected_array[] = {1, 3, 9,  11, 2, 4, 10, 12,
+    float_t expected_array[] = {1, 3, 9,  11, 2, 4, 10, 12,
                               5, 7, 13, 15, 6, 8, 14, 16};
     auto expected =
         hrt::create(dt_float32, {4, 2, 2, 1},
@@ -78,7 +78,7 @@ TEST_P(SpaceToBatchTest, SpaceToBatch) {
             .expect("create tensor failed");
 
     // actual
-    float a[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+    float_t a[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
     auto input = hrt::create(dt_float32, {1, 4, 4, 1},
                              {reinterpret_cast<gsl::byte *>(a), 64}, true,
                              host_runtime_tensor::pool_cpu_only)

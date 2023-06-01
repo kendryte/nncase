@@ -54,7 +54,7 @@ TEST_P(ScatterNDTest, ScatterND) {
 
     // expected
     size_t size = 0;
-    float input_array[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    float_t input_array[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     auto input = hrt::create(dt_float32, {2, 1, 10},
                              {reinterpret_cast<gsl::byte *>(input_array), 80},
@@ -66,7 +66,7 @@ TEST_P(ScatterNDTest, ScatterND) {
                     {reinterpret_cast<gsl::byte *>(indices_array), 48}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
-    float updates_array[] = {5.0f, 10.0f};
+    float_t updates_array[] = {5.0f, 10.0f};
     auto updates =
         hrt::create(dt_float32, {2, 1, 1},
                     {reinterpret_cast<gsl::byte *>(updates_array), 8}, true,

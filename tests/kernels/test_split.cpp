@@ -60,7 +60,7 @@ TEST_P(SplitTest, Split) {
                     {reinterpret_cast<gsl::byte *>(sections_array), 16}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
-    ;
+
     auto output_ort = tensor_seq_get_value(
         ortki_Split(l_ort, runtime_tensor_2_ort_tensor(sextions), 1l), 0);
     void *ptr_ort = tensor_buffer(output_ort, &size);

@@ -53,7 +53,7 @@ TEST_P(ExpandTest, expand) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
 
     // expected
-    float new_shape[] = {0.01f};
+    float_t new_shape[] = {0.01f};
     auto new_shape_ptr =
         hrt::create(nncase::dt_float32, {1},
                     {reinterpret_cast<gsl::byte *>(new_shape), sizeof(float)},

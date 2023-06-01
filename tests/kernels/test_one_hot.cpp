@@ -67,17 +67,17 @@ TEST_P(OneHotTest, OneHot) {
 
     // expected
     size_t size = 0;
-    float a[] = {1, 2, 0, 3};
+    float_t a[] = {1, 2, 0, 3};
     auto indices =
         hrt::create(lhs.datatype(), {4}, {reinterpret_cast<gsl::byte *>(a), 16},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
-    float values_ptr[] = {0, 1};
+    float_t values_ptr[] = {0, 1};
     auto values = hrt::create(lhs.datatype(), {2},
                               {reinterpret_cast<gsl::byte *>(values_ptr), 8},
                               true, host_runtime_tensor::pool_cpu_only)
                       .expect("create tensor failed");
-    float depth_ptr[] = {5.0f};
+    float_t depth_ptr[] = {5.0f};
     auto depth = hrt::create(lhs.datatype(), {1},
                              {reinterpret_cast<gsl::byte *>(depth_ptr), 4},
                              true, host_runtime_tensor::pool_cpu_only)

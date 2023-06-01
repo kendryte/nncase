@@ -60,7 +60,7 @@ TEST_P(QuantizeTest, quantize) {
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
-    float scale[] = {0.01f};
+    float_t scale[] = {0.01f};
     auto scale_ptr =
         hrt::create(nncase::dt_float32, {1},
                     {reinterpret_cast<gsl::byte *>(scale), sizeof(float)}, true,
@@ -79,7 +79,7 @@ TEST_P(QuantizeTest, quantize) {
                         .expect("create tensor failed");
 
     // actual
-    float quant_param[] = {127, 0.01f};
+    float_t quant_param[] = {127, 0.01f};
     auto quant_param_ptr =
         hrt::create(nncase::dt_float32, {2},
                     {reinterpret_cast<gsl::byte *>(quant_param), sizeof(float)},

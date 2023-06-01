@@ -99,16 +99,16 @@ TEST_P(LstmTest, lstm) {
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto seqLength_ort = runtime_tensor_2_ort_tensor(seqLength);
-    float p_ptr[] = {{}, {}, {}};
+    float_t p_ptr[] = {{}, {}, {}};
     auto p = hrt::create(dt_float32, {1, 3},
                          {reinterpret_cast<gsl::byte *>(p_ptr), 12}, true,
                          host_runtime_tensor::pool_cpu_only)
                  .expect("create tensor failed");
     auto p_ort = runtime_tensor_2_ort_tensor(p);
-    float alpha[] = {0.0f};
-    float beta[] = {0.0f};
+    float_t alpha[] = {0.0f};
+    float_t beta[] = {0.0f};
     const char *activations_ptr[] = {"Sigmoid", "Tanh", "Tanh"};
-    float clip = std::numeric_limits<float>::quiet_NaN();
+    float_t clip = std::numeric_limits<float>::quiet_NaN();
     const char *direction = "forward";
     auto output_ort =
         ortki_LSTM(x_ort, w_ort, r_ort, b_ort, seqLength_ort, initH_ort,
@@ -133,7 +133,7 @@ TEST_P(LstmTest, lstm) {
                                 {reinterpret_cast<gsl::byte *>(beta), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
-    float f[] = {clip};
+    float_t f[] = {clip};
     auto clip_ptr =
         hrt::create(dt_float32, shape, {reinterpret_cast<gsl::byte *>(f), size},
                     true, host_runtime_tensor::pool_cpu_only)

@@ -65,9 +65,9 @@ TEST_P(NormalLikeTest, normal_like) {
                         .expect("create tensor failed");
 
     // actual
-    float mean_ptr[] = {0.5f};
-    float scale_ptr[] = {1.0f};
-    float seed_ptr[] = {1.0f};
+    float_t mean_ptr[] = {0.5f};
+    float_t scale_ptr[] = {1.0f};
+    float_t seed_ptr[] = {1.0f};
     auto mean = hrt::create(lhs.datatype(), shape,
                             {reinterpret_cast<gsl::byte *>(mean_ptr), size},
                             true, host_runtime_tensor::pool_cpu_only)

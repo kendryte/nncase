@@ -85,7 +85,7 @@ TEST_P(ConcatTest, Concat) {
                              {reinterpret_cast<gsl::byte *>(input_ptr), size},
                              true, host_runtime_tensor::pool_cpu_only)
                      .expect("create tensor failed");
-    int axis_ptr[] = {0};
+    int32_t axis_ptr[] = {0};
     auto axis = hrt::create(lhs.datatype(), shape,
                             {reinterpret_cast<gsl::byte *>(axis_ptr), size},
                             true, host_runtime_tensor::pool_cpu_only)

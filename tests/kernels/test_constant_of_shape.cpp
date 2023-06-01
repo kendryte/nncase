@@ -80,13 +80,13 @@ TEST_P(ConstantOfShapeTest, constant_of_shape) {
                         .expect("create tensor failed");
 
     // actual
-    long shape1[] = {1, 3, 16, 16};
+    int64_t shape1[] = {1, 3, 16, 16};
     auto shape_ptr = hrt::create(lhs.datatype(), shape,
                                  {reinterpret_cast<gsl::byte *>(shape1), size},
                                  true, host_runtime_tensor::pool_cpu_only)
                          .expect("create tensor failed");
 
-    int value[] = {1};
+    int32_t value[] = {1};
     auto value_ptr = hrt::create(lhs.datatype(), shape,
                                  {reinterpret_cast<gsl::byte *>(value), size},
                                  true, host_runtime_tensor::pool_cpu_only)

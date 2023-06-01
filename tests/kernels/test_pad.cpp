@@ -57,7 +57,7 @@ TEST_P(PadTest, Pad) {
                            {reinterpret_cast<gsl::byte *>(pad_ptr), 64}, true,
                            host_runtime_tensor::pool_cpu_only)
                    .expect("create tensor failed");
-    float value_ptr[] = {1.0f};
+    float_t value_ptr[] = {1.0f};
     auto value = hrt::create(dt_float32, {1},
                              {reinterpret_cast<gsl::byte *>(value_ptr), 4},
                              true, host_runtime_tensor::pool_cpu_only)

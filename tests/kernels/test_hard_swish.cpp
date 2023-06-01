@@ -53,14 +53,14 @@ TEST_P(HardSwishTest, hard_swish) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
 
     // expected
-    float alpha_ptr[] = {1.0f / 6.0f};
+    float_t alpha_ptr[] = {1.0f / 6.0f};
     auto alpha =
         hrt::create(nncase::dt_float32, {1},
                     {reinterpret_cast<gsl::byte *>(alpha_ptr), sizeof(float)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
-    float beta_ptr[] = {0.5f};
+    float_t beta_ptr[] = {0.5f};
     auto beta =
         hrt::create(nncase::dt_float32, {1},
                     {reinterpret_cast<gsl::byte *>(beta_ptr), sizeof(float)},

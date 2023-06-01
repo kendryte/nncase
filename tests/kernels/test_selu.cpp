@@ -52,14 +52,14 @@ TEST_P(SeluTest, Selu) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
 
     // expected
-    float alpha_ptr[] = {1.2f};
+    float_t alpha_ptr[] = {1.2f};
     auto alpha =
         hrt::create(nncase::dt_float32, {1},
                     {reinterpret_cast<gsl::byte *>(alpha_ptr), sizeof(float)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
-    float gamma_ptr[] = {1.3f};
+    float_t gamma_ptr[] = {1.3f};
     auto gamma =
         hrt::create(nncase::dt_float32, {1},
                     {reinterpret_cast<gsl::byte *>(gamma_ptr), sizeof(float)},

@@ -60,7 +60,7 @@ TEST_P(DequantizeTest, dequantize) {
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
-    float scale[] = {0.01f};
+    float_t scale[] = {0.01f};
     auto scale_ptr = hrt::create(nncase::dt_float32, {1},
                                  {reinterpret_cast<gsl::byte *>(scale), 4},
                                  true, host_runtime_tensor::pool_cpu_only)
@@ -78,7 +78,7 @@ TEST_P(DequantizeTest, dequantize) {
                         .expect("create tensor failed");
 
     // actual
-    float dequant_param[] = {127, 0.01f};
+    float_t dequant_param[] = {127, 0.01f};
     auto dequant_param_ptr =
         hrt::create(
             nncase::dt_float32, {2},

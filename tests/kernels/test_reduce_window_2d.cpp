@@ -88,7 +88,7 @@ TEST_P(ReduceWindow2DTest, ReduceWindow2D) {
                     {reinterpret_cast<gsl::byte *>(onnxPads), 32}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
-    float init_value[] = {0.0f};
+    float_t init_value[] = {0.0f};
     auto init_value_tensor =
         hrt::create(dt_int64, {1},
                     {reinterpret_cast<gsl::byte *>(init_value), 8}, true,

@@ -77,7 +77,7 @@ TEST_P(ResizeImageTest, ResizeImage) {
             .expect("create tensor failed");
 
     // actual
-    float roi_array[1];
+    float_t roi_array[1];
     auto roi = hrt::create(dt_float32, {1},
                            {reinterpret_cast<gsl::byte *>(roi_array), 4}, true,
                            host_runtime_tensor::pool_cpu_only)
@@ -88,13 +88,13 @@ TEST_P(ResizeImageTest, ResizeImage) {
                     {reinterpret_cast<gsl::byte *>(exclude_outside_array), 1},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
-    float cubic_coeff_a_array[] = {-0.75f};
+    float_t cubic_coeff_a_array[] = {-0.75f};
     auto cubic_coeff_a =
         hrt::create(dt_float32, {1},
                     {reinterpret_cast<gsl::byte *>(cubic_coeff_a_array), 4},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
-    float extrapolation_value_array[] = {-0.0f};
+    float_t extrapolation_value_array[] = {-0.0f};
     auto extrapolation_value =
         hrt::create(
             dt_float32, {1},

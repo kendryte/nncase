@@ -40,14 +40,14 @@ class GatherTest
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
 
-        long indices_array[] = {0, 0, 1, 1};
+        int64_t indices_array[] = {0, 0, 1, 1};
         indices =
             hrt::create(dt_int64, shape,
                         {reinterpret_cast<gsl::byte *>(indices_array), 32},
                         true, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
 
-        long batchDims_array[] = {0};
+        int64_t batchDims_array[] = {0};
         batchDims =
             hrt::create(dt_int64, shape,
                         {reinterpret_cast<gsl::byte *>(batchDims_array), 32},

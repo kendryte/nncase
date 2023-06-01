@@ -64,7 +64,7 @@ TEST_P(SoftmaxTest, Softmax) {
                         .expect("create tensor failed");
 
     // actual
-    float axis_array[] = {-1.0f};
+    float_t axis_array[] = {-1.0f};
     auto axis = hrt::create(lhs.datatype(), {1},
                             {reinterpret_cast<gsl::byte *>(axis_array), 4},
                             true, host_runtime_tensor::pool_cpu_only)
