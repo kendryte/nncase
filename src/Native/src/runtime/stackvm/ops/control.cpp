@@ -45,10 +45,10 @@ stackvm_runtime_function::visit(NNCASE_UNUSED const extcall_op_t &op) noexcept {
     std::vector<value_t> params(op.args);
     for (size_t i = 0; i < op.args; i++) {
         try_var(arg, pop_object<value_t>());
-        params[i] = std::move(arg);
 #ifdef NNCASE_DUMP_MANAGER
         dump_manager->dump_input(arg, "arg_" + std::to_string(i));
 #endif
+        params[i] = std::move(arg);
     }
 
     if (op.is_prim_func) {
