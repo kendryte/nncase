@@ -34,7 +34,7 @@ class GatherNDTest
         auto &&[typecode, shape] = GetParam();
 
         //        size_t size = 0;
-        int input_array[] = {0, 1, 2, 3};
+        int32_t input_array[] = {0, 1, 2, 3};
         input = hrt::create(dt_int32, shape,
                             {reinterpret_cast<gsl::byte *>(input_array), 16},
                             true, host_runtime_tensor::pool_cpu_only)

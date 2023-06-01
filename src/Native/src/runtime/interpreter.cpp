@@ -103,14 +103,26 @@ tensor_desc interpreter::input_desc(size_t index) const noexcept {
     auto type = input_tensor_type(index)->dtype();
     auto dtype = type.as<prim_type_t>().expect("Not a prim type");
     auto size_bytes = get_bytes(dtype, input_shape(index));
-    return {dtype->typecode(), 0, size_bytes};
+    size_t start = 0;
+    for (size_t i = 0; i < index; i++) {
+        auto type = input_tensor_type(i)->dtype();
+        auto dtype = type.as<prim_type_t>().expect("Not a prim type");
+        start += get_bytes(dtype, input_shape(i));
+    }
+    return {dtype->typecode(), start, size_bytes};
 }
 
 tensor_desc interpreter::output_desc(size_t index) const noexcept {
     auto type = output_tensor_type(index)->dtype();
     auto dtype = type.as<prim_type_t>().expect("Not a prim type");
     auto size_bytes = get_bytes(dtype, output_shape(index));
-    return {dtype->typecode(), 0, size_bytes};
+    size_t start = 0;
+    for (size_t i = 0; i < index; i++) {
+        auto type = output_tensor_type(i)->dtype();
+        auto dtype = type.as<prim_type_t>().expect("Not a prim type");
+        start += get_bytes(dtype, output_shape(i));
+    }
+    return {dtype->typecode(), start, size_bytes};
 }
 
 dims_t interpreter::input_shape(size_t index) const noexcept {
