@@ -47,10 +47,10 @@ class GatherTest
                         true, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
 
-        std::vector<int64_t> batchDims_array(1);
+        int64_t batchDims_array[] = {0};
         batchDims =
             hrt::create(dt_int64, dims_t {1},
-                        {reinterpret_cast<gsl::byte *>(batchDims_array.data()), 8},
+                        {reinterpret_cast<gsl::byte *>(batchDims_array), sizeof(int64_t)},
                         true, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
     }

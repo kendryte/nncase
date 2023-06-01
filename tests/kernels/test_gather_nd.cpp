@@ -49,8 +49,8 @@ class GatherNDTest
 
         int64_t batchDims_array[] = {0};
         batchDims =
-            hrt::create(dt_int64, shape,
-                        {reinterpret_cast<gsl::byte *>(batchDims_array), 32},
+            hrt::create(dt_int64, {1},
+                        {reinterpret_cast<gsl::byte *>(batchDims_array), 8},
                         true, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
     }
