@@ -357,8 +357,8 @@ class CompileOptions:
         self.input_range = []
         self.input_shape = []
         self.input_type = "float32"
-        self.mean = []
-        self.std = []
+        self.mean = [0,0,0]
+        self.std = [1,1,1]
         self.input_layout = ""
         self.output_layout = ""
         self.letterbox_value = 0
