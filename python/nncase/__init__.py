@@ -66,7 +66,18 @@ class PTQTensorOptions:
     cali_data: List[RuntimeTensor]
 
     def __init__(self) -> None:
-        pass
+        self.calibrate_method: str = "Kld"
+        self.input_mean: float = 0.5
+        self.input_std: float = 0.5
+        self.samples_count: int = 5
+        self.quant_type: str = "uint8"
+        self.w_quant_type: str = "uint8"
+        self.finetune_weights_method: str = "NoFineTuneWeights"
+        self.use_mix_quant: bool = False
+        self.quant_scheme: str = ""
+        self.export_quant_scheme: bool = False
+        self.export_weight_range_by_channel: bool = False
+        self.cali_data: List[RuntimeTensor] = []
 
     def set_tensor_data(self, data: List[List[np.ndarray]]) -> None:
         reshape_data = list(map(list, zip(*data)))
@@ -330,4 +341,24 @@ class CompileOptions:
     tcu_num: int
 
     def __init__(self) -> None:
+        self.benchmark_only = False
+        self.dump_asm = True
+        self.dump_dir = "tmp"
+        self.dump_ir = False
+        self.is_fpga = False
+        self.quant_type = "uint8"
+        self.target = "cpu"
+        self.w_quant_type = "uint8"
+        self.use_mse_quant_w = True
+        self.tcu_num = 0
+
         self.preprocess = False
+        self.swapRB = False
+        self.input_range = []
+        self.input_shape = []
+        self.input_type = "float32"
+        self.mean = []
+        self.std = []
+        self.input_layout = ""
+        self.output_layout = ""
+        self.letterbox_value = 0
