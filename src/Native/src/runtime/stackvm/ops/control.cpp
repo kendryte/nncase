@@ -31,12 +31,7 @@ stackvm_runtime_function::visit(NNCASE_UNUSED const extcall_op_t &op) noexcept {
 
 #ifdef NNCASE_DUMP_MANAGER
     auto dump_manager = module().interp().dump_manager();
-    auto idPath = std::filesystem::path(dump_manager->dump_path())
-                      .parent_path()
-                      .parent_path()
-                      .parent_path()
-                      .parent_path()
-                      .append("ids.txt");
+    auto idPath = lookup_path(dump_manager->dump_path());
     // todo: should do search and only once
     auto name = lookup(idPath, module_id, func_id);
     dump_manager->dump_op(name);
