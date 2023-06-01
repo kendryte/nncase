@@ -55,7 +55,7 @@ TEST_P(ScatterNDTest, ScatterND) {
     // expected
     size_t size = 0;
     float_t input_array[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+                             0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     auto input = hrt::create(dt_float32, {2, 1, 10},
                              {reinterpret_cast<gsl::byte *>(input_array), 80},
                              true, host_runtime_tensor::pool_cpu_only)
