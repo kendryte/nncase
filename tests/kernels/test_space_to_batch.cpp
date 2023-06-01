@@ -70,7 +70,7 @@ TEST_P(SpaceToBatchTest, SpaceToBatch) {
     // expected
     //    size_t size = 0;
     float_t expected_array[] = {1, 3, 9,  11, 2, 4, 10, 12,
-                              5, 7, 13, 15, 6, 8, 14, 16};
+                                5, 7, 13, 15, 6, 8, 14, 16};
     auto expected =
         hrt::create(dt_float32, {4, 2, 2, 1},
                     {reinterpret_cast<gsl::byte *>(expected_array), 64}, true,
