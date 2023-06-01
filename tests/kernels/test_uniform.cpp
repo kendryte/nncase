@@ -69,17 +69,17 @@ TEST_P(UniformTest, Uniform) {
                         .expect("create tensor failed");
 
     // actual
-    float high_array[] = {1.0f};
+    float_t high_array[] = {1.0f};
     auto high = hrt::create(dt_float32, {1},
                             {reinterpret_cast<gsl::byte *>(high_array), 4},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
-    float low_array[] = {0.0f};
+    float_t low_array[] = {0.0f};
     auto low = hrt::create(dt_float32, {1},
                            {reinterpret_cast<gsl::byte *>(low_array), 4}, true,
                            host_runtime_tensor::pool_cpu_only)
                    .expect("create tensor failed");
-    float seed_array[] = {1.0f};
+    float_t seed_array[] = {1.0f};
     auto seed = hrt::create(dt_float32, {1},
                             {reinterpret_cast<gsl::byte *>(seed_array), 4},
                             true, host_runtime_tensor::pool_cpu_only)

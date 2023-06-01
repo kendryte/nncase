@@ -64,14 +64,14 @@ TEST_P(ClampTest, clamp) {
                         .expect("create tensor failed");
 
     // actual
-    float min[] = {-1.0f};
+    float_t min[] = {-1.0f};
     auto min_tensor =
         hrt::create(nncase::dt_float32, {1},
                     {reinterpret_cast<gsl::byte *>(min), sizeof(float)}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
-    float max[] = {-1.0f};
+    float_t max[] = {-1.0f};
     auto max_tensor =
         hrt::create(nncase::dt_float32, {1},
                     {reinterpret_cast<gsl::byte *>(max), sizeof(float)}, true,

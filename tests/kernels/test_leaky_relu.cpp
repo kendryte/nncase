@@ -56,7 +56,7 @@ TEST_P(LeakyReluTest, leaky_relu) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
 
     // expected
-    float alpha_ptr[] = {0.6f};
+    float_t alpha_ptr[] = {0.6f};
     auto alpha =
         hrt::create(nncase::dt_float32, {1},
                     {reinterpret_cast<gsl::byte *>(alpha_ptr), sizeof(float)},

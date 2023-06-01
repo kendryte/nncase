@@ -56,7 +56,7 @@ TEST_P(PreluTest, Prelu) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
 
     // expected
-    float slope_ptr[] = {0.2f};
+    float_t slope_ptr[] = {0.2f};
     auto slope =
         hrt::create(nncase::dt_float32, {1},
                     {reinterpret_cast<gsl::byte *>(slope_ptr), sizeof(float)},

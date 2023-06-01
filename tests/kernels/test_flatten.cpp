@@ -64,7 +64,7 @@ TEST_P(FlattenTest, flatten) {
                         .expect("create tensor failed");
 
     // actual
-    int axis[] = {-4};
+    int32_t axis[] = {-4};
     auto axis_ptr = hrt::create(lhs.datatype(), shape,
                                 {reinterpret_cast<gsl::byte *>(axis), size},
                                 true, host_runtime_tensor::pool_cpu_only)
