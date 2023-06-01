@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using DryIoc.ImTools;
+using Nncase.Diagnostics;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
 using Nncase.IR.Tensors;
@@ -67,7 +68,12 @@ public static class Tensors
 
     public static Call MatMul(Expr input, Expr other) => new Call(new MatMul(), input, other);
 
-    public static Call Prod(Expr input) => new Call(new Prod(), input);
+    public static Call Prod(Expr input)
+    {
+        CompilerServices.DumpIR(input, "input", "/Users/homura/Code/nncase-fix/tests/importer/onnx_/basic/tests_output");
+        return Reduce(ReduceOp.Prod, input, Enumerable.Range(0, input.CheckedShape.Rank).Select(x => (long)x).ToArray(),
+            0, false);
+    }
 
     public static Call Range(Expr begin, Expr end, Expr step) => new Call(new Range(), begin, end, step);
 
