@@ -33,15 +33,15 @@ class TileTest
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
 
-        lhs = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
+        input = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
-        init_tensor(lhs);
+        init_tensor(input);
     }
 
     void TearDown() override {}
 
   protected:
-    runtime_tensor lhs;
+    runtime_tensor input;
 };
 
 INSTANTIATE_TEST_SUITE_P(Tile, TileTest,
@@ -50,13 +50,13 @@ INSTANTIATE_TEST_SUITE_P(Tile, TileTest,
                                                                  16})));
 
 TEST_P(TileTest, Tile) {
-    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
+    auto l_ort = runtime_tensor_2_ort_tensor(input);
 
     // expected
     size_t size = 0;
     int64_t repeats_array[] = {1, 1, 1, 1};
     auto repeats =
-        hrt::create(lhs.datatype(), {4},
+        hrt::create(input.datatype(), {4},
                     {reinterpret_cast<gsl::byte *>(repeats_array), 16}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
@@ -64,13 +64,13 @@ TEST_P(TileTest, Tile) {
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
-    auto expected = hrt::create(lhs.datatype(), shape,
+    auto expected = hrt::create(input.datatype(), shape,
                                 {reinterpret_cast<gsl::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
     // actual
-    auto output = kernels::stackvm::tile(lhs.impl(), repeats.impl())
+    auto output = kernels::stackvm::tile(input.impl(), repeats.impl())
                       .expect("tile failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 

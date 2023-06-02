@@ -33,15 +33,15 @@ class FlattenTest
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
 
-        lhs = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
+        input = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
-        init_tensor(lhs);
+        init_tensor(input);
     }
 
     void TearDown() override {}
 
   protected:
-    runtime_tensor lhs;
+    runtime_tensor input;
 };
 
 INSTANTIATE_TEST_SUITE_P(flatten, FlattenTest,
@@ -50,7 +50,7 @@ INSTANTIATE_TEST_SUITE_P(flatten, FlattenTest,
                                                                  16})));
 
 TEST_P(FlattenTest, flatten) {
-    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
+    auto l_ort = runtime_tensor_2_ort_tensor(input);
 
     // expected
     auto output_ort = ortki_Flatten(l_ort, -4);
@@ -58,7 +58,7 @@ TEST_P(FlattenTest, flatten) {
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
-    auto expected = hrt::create(lhs.datatype(), shape,
+    auto expected = hrt::create(input.datatype(), shape,
                                 {reinterpret_cast<gsl::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
@@ -69,7 +69,7 @@ TEST_P(FlattenTest, flatten) {
         hrt::create(dt_int32, {1}, {reinterpret_cast<gsl::byte *>(axis), 4},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
-    auto output = kernels::stackvm::flatten(lhs.impl(), axis_ptr.impl())
+    auto output = kernels::stackvm::flatten(input.impl(), axis_ptr.impl())
                       .expect("flatten failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 

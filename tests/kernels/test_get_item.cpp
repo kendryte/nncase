@@ -33,15 +33,15 @@ class GetItemTest
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
 
-        lhs = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
+        input = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
-        init_tensor(lhs);
+        init_tensor(input);
     }
 
     void TearDown() override {}
 
   protected:
-    runtime_tensor lhs;
+    runtime_tensor input;
 };
 
 INSTANTIATE_TEST_SUITE_P(GetItem, GetItemTest,
@@ -49,10 +49,10 @@ INSTANTIATE_TEST_SUITE_P(GetItem, GetItemTest,
                                           testing::Values(dims_t{1})));
 
 TEST_P(GetItemTest, get_item) {
-    //    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
+    //    auto l_ort = runtime_tensor_2_ort_tensor(input);
 
     // expected
-    auto expected = lhs;
+    auto expected = input;
 
     // actual
     float index_ptr[] = {0.5f};
@@ -61,7 +61,7 @@ TEST_P(GetItemTest, get_item) {
                     {reinterpret_cast<gsl::byte *>(index_ptr), sizeof(float)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
-    auto output = kernels::stackvm::get_item(lhs.impl(), index.impl())
+    auto output = kernels::stackvm::get_item(input.impl(), index.impl())
                       .expect("get_item failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 

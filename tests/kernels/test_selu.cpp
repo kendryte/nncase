@@ -33,15 +33,15 @@ class SeluTest
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
 
-        lhs = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
+        input = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
-        init_tensor(lhs);
+        init_tensor(input);
     }
 
     void TearDown() override {}
 
   protected:
-    runtime_tensor lhs;
+    runtime_tensor input;
 };
 
 INSTANTIATE_TEST_SUITE_P(Selu, SeluTest,
@@ -49,7 +49,7 @@ INSTANTIATE_TEST_SUITE_P(Selu, SeluTest,
                                           testing::Values(dims_t{1})));
 
 TEST_P(SeluTest, Selu) {
-    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
+    auto l_ort = runtime_tensor_2_ort_tensor(input);
 
     // expected
     float_t alpha_ptr[] = {1.2f};
@@ -70,13 +70,13 @@ TEST_P(SeluTest, Selu) {
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
-    auto expected = hrt::create(lhs.datatype(), shape,
+    auto expected = hrt::create(input.datatype(), shape,
                                 {reinterpret_cast<gsl::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
     // actual
-    auto output = kernels::stackvm::selu(lhs.impl(), alpha.impl(), gamma.impl())
+    auto output = kernels::stackvm::selu(input.impl(), alpha.impl(), gamma.impl())
                       .expect("selu failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 

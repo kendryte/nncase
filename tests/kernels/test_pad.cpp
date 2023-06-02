@@ -33,15 +33,15 @@ class PadTest
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
 
-        lhs = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
+        input = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
-        init_tensor(lhs);
+        init_tensor(input);
     }
 
     void TearDown() override {}
 
   protected:
-    runtime_tensor lhs;
+    runtime_tensor input;
 };
 
 INSTANTIATE_TEST_SUITE_P(Pad, PadTest,
@@ -62,21 +62,21 @@ TEST_P(PadTest, Pad) {
                              {reinterpret_cast<gsl::byte *>(value_ptr), 4},
                              true, host_runtime_tensor::pool_cpu_only)
                      .expect("create tensor failed");
-    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
+    auto l_ort = runtime_tensor_2_ort_tensor(input);
     auto pad_ort = runtime_tensor_2_ort_tensor(pad);
     auto value_ort = runtime_tensor_2_ort_tensor(value);
     auto output_ort = ortki_Pad(l_ort, pad_ort, value_ort, "constant");
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
-    auto expected = hrt::create(lhs.datatype(), shape,
+    auto expected = hrt::create(input.datatype(), shape,
                                 {reinterpret_cast<gsl::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
     // actual
     auto output = kernels::stackvm::pad(runtime::stackvm::pad_mode_t::constant,
-                                        lhs.impl(), pad.impl(), value.impl())
+                                        input.impl(), pad.impl(), value.impl())
                       .expect("pad failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 

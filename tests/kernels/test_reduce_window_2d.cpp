@@ -33,15 +33,15 @@ class ReduceWindow2DTest
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
 
-        lhs = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
+        input = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
-        init_tensor(lhs);
+        init_tensor(input);
     }
 
     void TearDown() override {}
 
   protected:
-    runtime_tensor lhs;
+    runtime_tensor input;
 };
 
 INSTANTIATE_TEST_SUITE_P(ReduceWindow2D, ReduceWindow2DTest,
@@ -50,7 +50,7 @@ INSTANTIATE_TEST_SUITE_P(ReduceWindow2D, ReduceWindow2DTest,
                                                                  16})));
 
 TEST_P(ReduceWindow2DTest, ReduceWindow2D) {
-    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
+    auto l_ort = runtime_tensor_2_ort_tensor(input);
 
     // expected
     int64_t dilations[] = {1, 1};
@@ -64,7 +64,7 @@ TEST_P(ReduceWindow2DTest, ReduceWindow2D) {
     dims_t shape(tensor_rank(tensor_seq_get_value(output_ort, 0)));
     tensor_shape(tensor_seq_get_value(output_ort, 0),
                  reinterpret_cast<int64_t *>(shape.data()));
-    auto expected = hrt::create(lhs.datatype(), shape,
+    auto expected = hrt::create(input.datatype(), shape,
                                 {reinterpret_cast<gsl::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
@@ -107,7 +107,7 @@ TEST_P(ReduceWindow2DTest, ReduceWindow2D) {
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto output = kernels::stackvm::reduce_window2d(
-                      runtime::stackvm::reduce_op_t::max, lhs.impl(),
+                      runtime::stackvm::reduce_op_t::max, input.impl(),
                       init_value_tensor.impl(), filter_tensor.impl(),
                       stride_tensor.impl(), onnxPads_tensor.impl(),
                       dilations_tensor.impl(), ceil_mode_value_tensor.impl(),

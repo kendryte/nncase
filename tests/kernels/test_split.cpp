@@ -33,15 +33,15 @@ class SplitTest
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
 
-        lhs = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
+        input = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
-        init_tensor(lhs);
+        init_tensor(input);
     }
 
     void TearDown() override {}
 
   protected:
-    runtime_tensor lhs;
+    runtime_tensor input;
 };
 
 INSTANTIATE_TEST_SUITE_P(Split, SplitTest,
@@ -50,7 +50,7 @@ INSTANTIATE_TEST_SUITE_P(Split, SplitTest,
                                                                  16})));
 
 TEST_P(SplitTest, Split) {
-    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
+    auto l_ort = runtime_tensor_2_ort_tensor(input);
 
     // expected
     size_t size = 0;
@@ -66,7 +66,7 @@ TEST_P(SplitTest, Split) {
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
-    auto expected = hrt::create(lhs.datatype(), shape,
+    auto expected = hrt::create(input.datatype(), shape,
                                 {reinterpret_cast<gsl::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
@@ -78,7 +78,7 @@ TEST_P(SplitTest, Split) {
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
     auto output =
-        kernels::stackvm::split(lhs.impl(), axis.impl(), sextions.impl())
+        kernels::stackvm::split(input.impl(), axis.impl(), sextions.impl())
             .expect("split failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 

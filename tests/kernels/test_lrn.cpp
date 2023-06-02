@@ -33,15 +33,15 @@ class LrnTest
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
 
-        lhs = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
+        input = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
-        init_tensor(lhs);
+        init_tensor(input);
     }
 
     void TearDown() override {}
 
   protected:
-    runtime_tensor lhs;
+    runtime_tensor input;
 };
 
 INSTANTIATE_TEST_SUITE_P(lrn, LrnTest,
@@ -50,7 +50,7 @@ INSTANTIATE_TEST_SUITE_P(lrn, LrnTest,
                                                                  16})));
 
 TEST_P(LrnTest, lrn) {
-    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
+    auto l_ort = runtime_tensor_2_ort_tensor(input);
 
     // expected
     auto output_ort = ortki_LRN(l_ort, 0.001f, 0.5f, 0.8f, 3);
@@ -58,7 +58,7 @@ TEST_P(LrnTest, lrn) {
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
-    auto expected = hrt::create(lhs.datatype(), shape,
+    auto expected = hrt::create(input.datatype(), shape,
                                 {reinterpret_cast<gsl::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
@@ -85,13 +85,13 @@ TEST_P(LrnTest, lrn) {
                     {reinterpret_cast<gsl::byte *>(size_ptr), 2 * size}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
-    auto output = kernels::stackvm::lrn(lhs.impl(), alpha.impl(), beta.impl(),
+    auto output = kernels::stackvm::lrn(input.impl(), alpha.impl(), beta.impl(),
                                         bias.impl(), size0.impl())
                       .expect("lrn failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_FALSE(is_same_tensor(expected, actual));
+    EXPECT_TRUE(is_same_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {

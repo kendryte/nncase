@@ -33,15 +33,15 @@ class NormalLikeTest
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
 
-        lhs = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
+        input = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
-        init_tensor(lhs);
+        init_tensor(input);
     }
 
     void TearDown() override {}
 
   protected:
-    runtime_tensor lhs;
+    runtime_tensor input;
 };
 
 INSTANTIATE_TEST_SUITE_P(NormalLike, NormalLikeTest,
@@ -50,7 +50,7 @@ INSTANTIATE_TEST_SUITE_P(NormalLike, NormalLikeTest,
                                                                  16})));
 
 TEST_P(NormalLikeTest, normal_like) {
-    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
+    auto l_ort = runtime_tensor_2_ort_tensor(input);
 
     // expected
     int64_t shape_ptr[] = {1, 3, 16, 16};
@@ -59,7 +59,7 @@ TEST_P(NormalLikeTest, normal_like) {
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
-    auto expected = hrt::create(lhs.datatype(), shape,
+    auto expected = hrt::create(input.datatype(), shape,
                                 {reinterpret_cast<gsl::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
@@ -68,24 +68,24 @@ TEST_P(NormalLikeTest, normal_like) {
     float_t mean_ptr[] = {0.5f};
     float_t scale_ptr[] = {1.0f};
     float_t seed_ptr[] = {1.0f};
-    auto mean = hrt::create(lhs.datatype(), shape,
+    auto mean = hrt::create(input.datatype(), shape,
                             {reinterpret_cast<gsl::byte *>(mean_ptr), size},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
-    auto scale = hrt::create(lhs.datatype(), shape,
+    auto scale = hrt::create(input.datatype(), shape,
                              {reinterpret_cast<gsl::byte *>(scale_ptr), size},
                              true, host_runtime_tensor::pool_cpu_only)
                      .expect("create tensor failed");
-    auto seed = hrt::create(lhs.datatype(), shape,
+    auto seed = hrt::create(input.datatype(), shape,
                             {reinterpret_cast<gsl::byte *>(seed_ptr), size},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
-    auto shape0 = hrt::create(lhs.datatype(), shape,
+    auto shape0 = hrt::create(input.datatype(), shape,
                               {reinterpret_cast<gsl::byte *>(shape_ptr), size},
                               true, host_runtime_tensor::pool_cpu_only)
                       .expect("create tensor failed");
     auto output =
-        kernels::stackvm::normal_like(dt_float32, lhs.impl(), mean.impl(),
+        kernels::stackvm::normal_like(dt_float32, input.impl(), mean.impl(),
                                       scale.impl(), seed.impl())
             .expect("normal_like failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
