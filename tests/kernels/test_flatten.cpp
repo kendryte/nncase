@@ -65,10 +65,10 @@ TEST_P(FlattenTest, flatten) {
 
     // actual
     int32_t axis[] = {-4};
-    auto axis_ptr = hrt::create(dt_int32, {1},
-                                {reinterpret_cast<gsl::byte *>(axis), 4},
-                                true, host_runtime_tensor::pool_cpu_only)
-                        .expect("create tensor failed");
+    auto axis_ptr =
+        hrt::create(dt_int32, {1}, {reinterpret_cast<gsl::byte *>(axis), 4},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
     auto output = kernels::stackvm::flatten(lhs.impl(), axis_ptr.impl())
                       .expect("flatten failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
