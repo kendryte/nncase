@@ -90,8 +90,8 @@ TEST_P(ReduceWindow2DTest, ReduceWindow2D) {
             .expect("create tensor failed");
     float_t init_value[] = {0.0f};
     auto init_value_tensor =
-        hrt::create(dt_int64, {1},
-                    {reinterpret_cast<gsl::byte *>(init_value), 8}, true,
+        hrt::create(dt_float32, {1},
+                    {reinterpret_cast<gsl::byte *>(init_value), 4}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     bool ceil_mode_value[] = {false};
