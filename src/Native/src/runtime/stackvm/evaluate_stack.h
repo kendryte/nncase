@@ -27,21 +27,21 @@ class stack_entry {
     enum class entry_type { I, R, O };
 
   public:
-    constexpr stack_entry() : type_(entry_type::I), i_(0) {}
+    stack_entry() : type_(entry_type::I), i_(0) {}
 
-    constexpr stack_entry(uint8_t v) noexcept : stack_entry((intptr_t)v) {}
-    constexpr stack_entry(uint16_t v) noexcept : stack_entry((intptr_t)v) {}
-    constexpr stack_entry(uint32_t v) noexcept : stack_entry((intptr_t)v) {}
-    constexpr stack_entry(int8_t v) noexcept : stack_entry((intptr_t)v) {}
-    constexpr stack_entry(int16_t v) noexcept : stack_entry((intptr_t)v) {}
-    constexpr stack_entry(int32_t v) noexcept : stack_entry((intptr_t)v) {}
-    constexpr stack_entry(uintptr_t v) noexcept : stack_entry((intptr_t)v) {}
+    stack_entry(uint8_t v) noexcept : stack_entry((intptr_t)v) {}
+    stack_entry(uint16_t v) noexcept : stack_entry((intptr_t)v) {}
+    stack_entry(uint32_t v) noexcept : stack_entry((intptr_t)v) {}
+    stack_entry(int8_t v) noexcept : stack_entry((intptr_t)v) {}
+    stack_entry(int16_t v) noexcept : stack_entry((intptr_t)v) {}
+    stack_entry(int32_t v) noexcept : stack_entry((intptr_t)v) {}
+    stack_entry(uintptr_t v) noexcept : stack_entry((intptr_t)v) {}
 
     stack_entry(bfloat16 v) noexcept : stack_entry((float)v) {}
     stack_entry(half v) noexcept : stack_entry((float)v) {}
 
-    constexpr stack_entry(intptr_t v) noexcept : type_(entry_type::I), i_(v) {}
-    constexpr stack_entry(float v) noexcept : type_(entry_type::R), r_(v) {}
+    stack_entry(intptr_t v) noexcept : type_(entry_type::I), i_(v) {}
+    stack_entry(float v) noexcept : type_(entry_type::R), r_(v) {}
 
     template <class T,
               class = std::enable_if_t<std::is_convertible_v<T, object>>>
