@@ -238,6 +238,8 @@ class Compiler:
             self._compile_options.preprocess = compile_options.preprocess
             self._compile_options.input_layout = compile_options.input_layout
             self._compile_options.output_layout = compile_options.output_layout
+            if compile_options.output_layout != "":
+                raise NotImplementedError("Setting output layout is currently not supported.")
             if compile_options.input_type == "uint8":
                 self._compile_options.input_type = _nncase.InputType.Uint8
             elif compile_options.input_type == "int8":

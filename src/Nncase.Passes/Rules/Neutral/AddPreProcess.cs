@@ -95,18 +95,19 @@ public sealed class AddPreProcess : ModulePass
             }
 
             // Letterbox
+            int modelH, modelW;
+
+            if (modelLayout != "NCHW")
             {
-                int modelH, modelW;
+                (modelH, modelW) = (oldShape[1].FixedValue, oldShape[2].FixedValue);
+            }
+            else
+            {
+                (modelH, modelW) = (oldShape[2].FixedValue, oldShape[3].FixedValue);
+            }
 
-                if (modelLayout != "NCHW")
-                {
-                    (modelH, modelW) = (oldShape[1].FixedValue, oldShape[2].FixedValue);
-                }
-                else
-                {
-                    (modelH, modelW) = (oldShape[2].FixedValue, oldShape[3].FixedValue);
-                }
-
+            if (modelH != h || modelW != w)
+            {
                 var ratio = Math.Min(modelH / (float)h, modelW / (float)w);
 
                 var pads = Tensor.From<int>(new[] { 0, 0, 0, 0, 0, 0, 0, 0 }, new Shape(new[] { 4, 2 }));
