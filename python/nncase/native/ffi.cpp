@@ -280,6 +280,14 @@ PYBIND11_MODULE(_nncase, m) {
         .def_property_readonly("outputs_size", &interpreter::outputs_size)
         .def("get_input_desc", &interpreter::input_desc)
         .def("get_output_desc", &interpreter::output_desc)
+        .def("get_input_shape",
+             [](interpreter &interp, size_t index) {
+                 return to_py_shape(interp.input_shape(index));
+             })
+        .def("get_output_shape",
+             [](interpreter &interp, size_t index) {
+                 return to_py_shape(interp.output_shape(index));
+             })
         .def("get_input_tensor",
              [](interpreter &interp, size_t index) {
                  return interp.input_tensor(index).unwrap_or_throw();
