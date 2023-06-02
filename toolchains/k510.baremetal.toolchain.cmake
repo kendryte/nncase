@@ -28,3 +28,6 @@ set(DEFAULT_BUILTIN_RUNTIMES OFF)
 set(BUILD_PYTHON_BINDING OFF)
 set(DEFAULT_SHARED_RUNTIME_TENSOR_PLATFORM_IMPL OFF)
 add_compile_options(-D NNCASE_BAREMETAL)
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=rv64imafdc -mabi=lp64d -mcmodel=medany")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=rv64imafdc -mabi=lp64d -mcmodel=medany")
