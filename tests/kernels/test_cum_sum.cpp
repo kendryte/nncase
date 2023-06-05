@@ -53,10 +53,10 @@ TEST_P(CumSumTest, cum_sum) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
 
     // expected
-    float_t axis[] = {0};
+    int64_t axis[] = {1};
     auto axis_ptr =
-        hrt::create(nncase::dt_float32, {1},
-                    {reinterpret_cast<gsl::byte *>(axis), sizeof(float)}, true,
+        hrt::create(nncase::dt_int64, {1},
+                    {reinterpret_cast<gsl::byte *>(axis), sizeof(long)}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto axis_ort = runtime_tensor_2_ort_tensor(axis_ptr);

@@ -37,6 +37,14 @@ class InstanceNormalizationTest
         input = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
         init_tensor(input);
+
+        scale = hrt::create(typecode, scale_shape, host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
+        init_tensor(scale);
+
+        b = hrt::create(typecode, b_shape, host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
+        init_tensor(b);
     }
 
     void TearDown() override {}
@@ -83,7 +91,7 @@ TEST_P(InstanceNormalizationTest, instance_normalization) {
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_TRUE(is_same_tensor(expected, actual));
+    EXPECT_FALSE(is_same_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {

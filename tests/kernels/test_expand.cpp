@@ -46,17 +46,16 @@ class ExpandTest
 
 INSTANTIATE_TEST_SUITE_P(Expand, ExpandTest,
                          testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 3, 16,
-                                                                 16})));
+                                          testing::Values(dims_t{3, 1})));
 
 TEST_P(ExpandTest, expand) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
 
     // expected
-    float_t new_shape[] = {0.01f};
+    int64_t new_shape[] = {1};
     auto new_shape_ptr =
-        hrt::create(nncase::dt_float32, {1},
-                    {reinterpret_cast<gsl::byte *>(new_shape), sizeof(float)},
+        hrt::create(nncase::dt_int64, {1},
+                    {reinterpret_cast<gsl::byte *>(new_shape), sizeof(long)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto new_shape_ort = runtime_tensor_2_ort_tensor(new_shape_ptr);

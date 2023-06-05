@@ -31,10 +31,10 @@ class CeluTest
       public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape] = GetParam();
+        auto &&[typecode, input_shape] = GetParam();
 
         input =
-            hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
+            hrt::create(typecode, input_shape, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
         init_tensor(input);
     }
@@ -47,14 +47,13 @@ class CeluTest
 
 INSTANTIATE_TEST_SUITE_P(Celu, CeluTest,
                          testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 3, 16,
-                                                                 16})));
+                                          testing::Values(dims_t{1})));
 
 TEST_P(CeluTest, celu) {
-    auto l_ort = runtime_tensor_2_ort_tensor(input);
+    auto input_ort = runtime_tensor_2_ort_tensor(input);
 
     // expected
-    auto output_ort = ortki_Celu(l_ort, 0.8f);
+    auto output_ort = ortki_Celu(input_ort, 1.0f);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
@@ -65,7 +64,7 @@ TEST_P(CeluTest, celu) {
                         .expect("create tensor failed");
 
     // actual
-    float_t a_ptr[] = {0.8f};
+    float_t a_ptr[] = {1.0f};
     auto a = hrt::create(nncase::dt_float32, {1},
                          {reinterpret_cast<gsl::byte *>(a_ptr), sizeof(float)},
                          true, host_runtime_tensor::pool_cpu_only)

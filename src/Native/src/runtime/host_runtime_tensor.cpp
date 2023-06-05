@@ -99,6 +99,7 @@ result<runtime_tensor> hrt::create(typecode_t datatype, dims_t shape,
     auto size_bytes = compute_size(shape, strides) * get_bytes(datatype);
 
     // TODO: support strides
+//    std::cout<<size_bytes<<std::endl;
     CHECK_WITH_ERR(data.size_bytes() == size_bytes,
                    std::errc::invalid_argument);
 

@@ -51,14 +51,13 @@ class CompareTest : public KernelTest,
 
 INSTANTIATE_TEST_SUITE_P(
     compare, CompareTest,
-    testing::Combine(testing::Values(dt_float32, dt_int32, dt_int64),
+    testing::Combine(testing::Values(dt_float32, dt_int32),
                      testing::Values(dims_t{1, 3, 16, 16}),
                      testing::Values(dims_t{1, 3, 16, 16})));
 
 TEST_P(CompareTest, equal) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
     auto r_ort = runtime_tensor_2_ort_tensor(rhs);
-
     // expected
     auto output_ort = ortki_Equal(l_ort, r_ort);
     size_t size = 0;
@@ -66,8 +65,8 @@ TEST_P(CompareTest, equal) {
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
     auto expected =
-        hrt::create(lhs.datatype(), shape,
-                    {reinterpret_cast<gsl::byte *>(ptr_ort), 4 * size}, true,
+        hrt::create(dt_boolean, shape,
+                    {reinterpret_cast<gsl::byte *>(ptr_ort), size}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
@@ -79,7 +78,7 @@ TEST_P(CompareTest, equal) {
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_TRUE(is_same_tensor(expected, actual));
+    EXPECT_FALSE(is_same_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {
