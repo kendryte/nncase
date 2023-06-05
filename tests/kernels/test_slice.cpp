@@ -33,8 +33,9 @@ class SliceTest
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
 
-        input = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
-                  .expect("create tensor failed");
+        input =
+            hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
+                .expect("create tensor failed");
         init_tensor(input);
     }
 
@@ -81,9 +82,10 @@ TEST_P(SliceTest, Slice) {
                     {reinterpret_cast<gsl::byte *>(strides_array), 16}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
-    auto output = kernels::stackvm::slice(input.impl(), begin.impl(), end.impl(),
-                                          axes.impl(), strides.impl())
-                      .expect("slice failed");
+    auto output =
+        kernels::stackvm::slice(input.impl(), begin.impl(), end.impl(),
+                                axes.impl(), strides.impl())
+            .expect("slice failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare

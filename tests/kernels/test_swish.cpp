@@ -33,8 +33,9 @@ class SwishTest
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
 
-        input = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
-                  .expect("create tensor failed");
+        input =
+            hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
+                .expect("create tensor failed");
         init_tensor(input);
     }
 

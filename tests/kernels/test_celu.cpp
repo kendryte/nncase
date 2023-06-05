@@ -33,9 +33,9 @@ class CeluTest
     void SetUp() override {
         auto &&[typecode, input_shape] = GetParam();
 
-        input =
-            hrt::create(typecode, input_shape, host_runtime_tensor::pool_cpu_only)
-                .expect("create tensor failed");
+        input = hrt::create(typecode, input_shape,
+                            host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
         init_tensor(input);
     }
 

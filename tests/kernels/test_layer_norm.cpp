@@ -34,8 +34,9 @@ class LayerNormTest
     void SetUp() override {
         auto &&[typecode, l_shape, scale_shape, b_shape] = GetParam();
 
-        input = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
-                  .expect("create tensor failed");
+        input =
+            hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
+                .expect("create tensor failed");
         init_tensor(input);
 
         scale = hrt::create(typecode, scale_shape,
@@ -63,23 +64,24 @@ INSTANTIATE_TEST_SUITE_P(LayerNorm, LayerNormTest,
                                           testing::Values(dims_t{1})));
 
 TEST_P(LayerNormTest, layer_norm) {
-//    auto l_ort = runtime_tensor_2_ort_tensor(input);
-//    auto scale_ort = runtime_tensor_2_ort_tensor(scale);
-//    auto b_ort = runtime_tensor_2_ort_tensor(b);
+    //    auto l_ort = runtime_tensor_2_ort_tensor(input);
+    //    auto scale_ort = runtime_tensor_2_ort_tensor(scale);
+    //    auto b_ort = runtime_tensor_2_ort_tensor(b);
 
     // expected
-//    auto output_ort =
-//        ortki_LayerNormalization(l_ort, scale_ort, b_ort, 0, 1e-05f, 0);
-//    size_t size = 0;
-//    void *ptr_ort =
-//        tensor_buffer(tensor_seq_get_value(output_ort, size), &size);
-//    dims_t shape(tensor_seq_size(output_ort));
-//    tensor_shape(tensor_seq_get_value(output_ort, size),
-//                 reinterpret_cast<int64_t *>(shape.data()));
-//    auto expected = hrt::create(input.datatype(), shape,
-//                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
-//                                true, host_runtime_tensor::pool_cpu_only)
-//                        .expect("create tensor failed");
+    //    auto output_ort =
+    //        ortki_LayerNormalization(l_ort, scale_ort, b_ort, 0, 1e-05f, 0);
+    //    size_t size = 0;
+    //    void *ptr_ort =
+    //        tensor_buffer(tensor_seq_get_value(output_ort, size), &size);
+    //    dims_t shape(tensor_seq_size(output_ort));
+    //    tensor_shape(tensor_seq_get_value(output_ort, size),
+    //                 reinterpret_cast<int64_t *>(shape.data()));
+    //    auto expected = hrt::create(input.datatype(), shape,
+    //                                {reinterpret_cast<gsl::byte *>(ptr_ort),
+    //                                size}, true,
+    //                                host_runtime_tensor::pool_cpu_only)
+    //                        .expect("create tensor failed");
 
     // actual
     auto output = kernels::stackvm::layer_norm(0, 1e-05f, input.impl(),

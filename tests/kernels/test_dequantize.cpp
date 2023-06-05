@@ -33,8 +33,9 @@ class DequantizeTest
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
 
-        input = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
-                  .expect("create tensor failed");
+        input =
+            hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
+                .expect("create tensor failed");
         init_tensor(input);
     }
 
@@ -65,9 +66,9 @@ TEST_P(DequantizeTest, dequantize) {
                                  {reinterpret_cast<gsl::byte *>(scale), 4},
                                  true, host_runtime_tensor::pool_cpu_only)
                          .expect("create tensor failed");
-    auto output_ort = ortki_DequantizeLinear(
-        l_ort, runtime_tensor_2_ort_tensor(scale_ptr),
-        runtime_tensor_2_ort_tensor(zero_point_ptr), 0);
+    auto output_ort =
+        ortki_DequantizeLinear(l_ort, runtime_tensor_2_ort_tensor(scale_ptr),
+                               runtime_tensor_2_ort_tensor(zero_point_ptr), 0);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
@@ -82,8 +83,8 @@ TEST_P(DequantizeTest, dequantize) {
     auto dequant_param_ptr =
         hrt::create(
             nncase::dt_float32, {2},
-            {reinterpret_cast<gsl::byte *>(dequant_param), 2*sizeof(float)}, true,
-            host_runtime_tensor::pool_cpu_only)
+            {reinterpret_cast<gsl::byte *>(dequant_param), 2 * sizeof(float)},
+            true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto output = kernels::stackvm::dequantize(dt_float32, input.impl(),
                                                dequant_param_ptr.impl())

@@ -224,12 +224,9 @@ class KernelTest {
         return make_tensor(buffer, ort_type, shape, shape_size);
     }
 
-    template <typename T>
-    double dot(const T &v1, const T &v2, size_t size)
-    {
+    template <typename T> double dot(const T &v1, const T &v2, size_t size) {
         double ret = 0.f;
-        for (size_t i = 0; i < size; i++)
-        {
+        for (size_t i = 0; i < size; i++) {
             ret += v1[i] * v2[i];
         }
 
@@ -237,9 +234,10 @@ class KernelTest {
     }
 
     template <typename T>
-    double cosine(runtime::runtime_tensor &v1, runtime::runtime_tensor &v2, size_t size)
-    {
-        return dot(v1, v2, size) / ((sqrt(dot(v1, v1, size)) * sqrt(dot(v2, v2, size))));
+    double cosine(runtime::runtime_tensor &v1, runtime::runtime_tensor &v2,
+                  size_t size) {
+        return dot(v1, v2, size) /
+               ((sqrt(dot(v1, v1, size)) * sqrt(dot(v2, v2, size))));
     }
 
     bool is_same_tensor(runtime::runtime_tensor &lhs,

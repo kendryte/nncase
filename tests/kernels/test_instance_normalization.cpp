@@ -34,16 +34,18 @@ class InstanceNormalizationTest
     void SetUp() override {
         auto &&[typecode, l_shape, scale_shape, b_shape] = GetParam();
 
-        input = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
-                  .expect("create tensor failed");
+        input =
+            hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
+                .expect("create tensor failed");
         init_tensor(input);
 
-        scale = hrt::create(typecode, scale_shape, host_runtime_tensor::pool_cpu_only)
+        scale = hrt::create(typecode, scale_shape,
+                            host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
         init_tensor(scale);
 
         b = hrt::create(typecode, b_shape, host_runtime_tensor::pool_cpu_only)
-                    .expect("create tensor failed");
+                .expect("create tensor failed");
         init_tensor(b);
     }
 

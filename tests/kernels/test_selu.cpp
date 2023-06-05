@@ -33,8 +33,9 @@ class SeluTest
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
 
-        input = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
-                  .expect("create tensor failed");
+        input =
+            hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
+                .expect("create tensor failed");
         init_tensor(input);
     }
 
@@ -76,8 +77,9 @@ TEST_P(SeluTest, Selu) {
                         .expect("create tensor failed");
 
     // actual
-    auto output = kernels::stackvm::selu(input.impl(), alpha.impl(), gamma.impl())
-                      .expect("selu failed");
+    auto output =
+        kernels::stackvm::selu(input.impl(), alpha.impl(), gamma.impl())
+            .expect("selu failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
