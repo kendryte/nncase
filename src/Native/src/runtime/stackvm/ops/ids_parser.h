@@ -51,7 +51,7 @@ inline std::string lookup_path(const std::string &p, int depth = 0) {
     auto parent = std::filesystem::path(p).parent_path();
     auto parent_ids = parent.append("ids.txt");
     if (std::filesystem::exists(parent_ids)) {
-        return parent_ids;
+        return parent_ids.string();
     } else {
         return lookup_path(parent.parent_path().string(), depth + 1);
     }
