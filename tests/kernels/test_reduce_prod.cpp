@@ -91,7 +91,8 @@ TEST_P(ReduceProdTest, ReduceProd) {
                     {reinterpret_cast<gsl::byte *>(select_last_idx_array), 8},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
-    auto output_ort = ortki_ReduceProd(runtime_tensor_2_ort_tensor(a), axis_array, 1, 0);
+    auto output_ort =
+        ortki_ReduceProd(runtime_tensor_2_ort_tensor(a), axis_array, 1, 0);
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));

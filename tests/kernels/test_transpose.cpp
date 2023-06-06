@@ -67,11 +67,11 @@ TEST_P(TransposeTest, Transpose) {
                         .expect("create tensor failed");
 
     // actual
-//        int64_t *perm_ptr = perm;
+    //        int64_t *perm_ptr = perm;
     auto perm1 =
         hrt::create(nncase::dt_int64, {4},
-                    {reinterpret_cast<gsl::byte *>(perm), 4*sizeof(long)}, true,
-                    host_runtime_tensor::pool_cpu_only)
+                    {reinterpret_cast<gsl::byte *>(perm), 4 * sizeof(long)},
+                    true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
     int32_t perm_size_ptr[] = {4};

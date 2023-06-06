@@ -52,7 +52,8 @@ class OneHotTest : public KernelTest,
 INSTANTIATE_TEST_SUITE_P(OneHot, OneHotTest,
                          testing::Combine(testing::Values(dt_float32),
                                           testing::Values(dims_t{1, 3, 16, 16}),
-                                          testing::Values(dims_t{1, 3, 16, 16})));
+                                          testing::Values(dims_t{1, 3, 16,
+                                                                 16})));
 
 TEST_P(OneHotTest, OneHot) {
 
@@ -88,7 +89,8 @@ TEST_P(OneHotTest, OneHot) {
     // actual
     int axis_ptr[] = {-1};
     auto axis =
-        hrt::create(dt_int32, {1}, {reinterpret_cast<gsl::byte *>(axis_ptr), sizeof(int)},
+        hrt::create(dt_int32, {1},
+                    {reinterpret_cast<gsl::byte *>(axis_ptr), sizeof(int)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto output = kernels::stackvm::one_hot(

@@ -71,12 +71,12 @@ TEST_P(StackTest, Stack) {
                             {reinterpret_cast<gsl::byte *>(axes_array), 8},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
-//    auto output = kernels::stackvm::stack(input.impl(), axes.impl())
-//                      .expect("stack failed");
-//    runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
+    //    auto output = kernels::stackvm::stack(input.impl(), axes.impl())
+    //                      .expect("stack failed");
+    //    runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
-//    EXPECT_TRUE(is_same_tensor(expected, actual));
+    //    EXPECT_TRUE(is_same_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {
