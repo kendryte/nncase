@@ -247,7 +247,7 @@ jobs:
       - name: Test
         working-directory: ${{github.workspace}}
         shell: bash
-        if: matrix.config.name != x86_64-windows
+        if: matrix.config.name != 'x86_64-windows'
         env:
           NNCASE_COMPILER: ${{github.workspace}}/install/Nncase.Compiler.dll
         run: |
