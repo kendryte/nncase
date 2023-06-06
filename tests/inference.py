@@ -85,11 +85,11 @@ class Inference:
         infer_output_paths = []
         for i in range(sim.outputs_size):
             output = sim.get_output_tensor(i).to_numpy()
-            if preprocess['preprocess'] and len(output.shape) == 4:
-                if(preprocess['output_layout'] == 'NHWC' and self.model_type in ['caffe', 'onnx']):
-                    output = np.transpose(output, [0, 3, 1, 2])
-                elif (preprocess['output_layout'] == 'NCHW' and self.model_type in ['tflite']):
-                    output = np.transpose(output, [0, 2, 3, 1])
+            # if preprocess['preprocess'] and len(output.shape) == 4:
+            #     if(preprocess['output_layout'] == 'NHWC' and self.model_type in ['caffe', 'onnx']):
+            #         output = np.transpose(output, [0, 3, 1, 2])
+            #     elif (preprocess['output_layout'] == 'NCHW' and self.model_type in ['tflite']):
+            #         output = np.transpose(output, [0, 2, 3, 1])
             infer_output_paths.append((
                 os.path.join(infer_dir, f'nncase_result_{i}.bin'),
                 os.path.join(infer_dir, f'nncase_result_{i}.txt')))

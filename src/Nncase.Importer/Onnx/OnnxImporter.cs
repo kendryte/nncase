@@ -125,6 +125,7 @@ public sealed partial class OnnxImporter : BaseImporter
             "Elu" => VisitElu(op),
             "Equal" => VisitCompare(op, CompareOp.Equal),
             "Exp" => VisitUnary(op, UnaryOp.Exp),
+            "Erf" => VisitErf(op),
             "Expand" => VisitExpand(op),
             "Flatten" => VisitFlatten(op),
             "Floor" => VisitUnary(op, UnaryOp.Floor),
@@ -158,7 +159,6 @@ public sealed partial class OnnxImporter : BaseImporter
             "Pad" => VisitPad(op),
             "Pow" => VisitBinary(op, BinaryOp.Pow),
             "PRelu" => VisitPRelu(op),
-            "Erf" => VisitErf(op),
 
             "QuantizeLinear" => VisitQuantizeLinear(op),
             "QLinearConv" => VisitQLinearConv(op),
