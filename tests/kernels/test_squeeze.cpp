@@ -47,7 +47,7 @@ class SqueezeTest
 
 INSTANTIATE_TEST_SUITE_P(Squeeze, SqueezeTest,
                          testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 3, 16,
+                                          testing::Values(dims_t{1, 3, 1,
                                                                  16})));
 
 TEST_P(SqueezeTest, Squeeze) {
