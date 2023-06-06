@@ -70,9 +70,7 @@ public static class Tensors
 
     public static Call Prod(Expr input)
     {
-        CompilerServices.DumpIR(input, "input", "/Users/homura/Code/nncase-fix/tests/importer/onnx_/basic/tests_output");
-        return Reduce(ReduceOp.Prod, input, Enumerable.Range(0, input.CheckedShape.Rank).Select(x => (long)x).ToArray(),
-            0, false);
+        return Reduce(ReduceOp.Prod, input, Enumerable.Range(0, input.CheckedShape.Rank).Select(x => (long)x).ToArray(), 0, false);
     }
 
     public static Call Range(Expr begin, Expr end, Expr step) => new Call(new Range(), begin, end, step);

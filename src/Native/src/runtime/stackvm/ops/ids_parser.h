@@ -53,6 +53,6 @@ inline std::string lookup_path(const std::string &p, int depth = 0) {
     if (std::filesystem::exists(parent_ids)) {
         return parent_ids;
     } else {
-        return lookup_path(parent.parent_path(), depth + 1);
+        return lookup_path(parent.parent_path().string(), depth + 1);
     }
 }
