@@ -22,22 +22,24 @@
 //#include <nncase/runtime/stackvm/opcode.h>
 //#include <ortki/operators.h>
 //
-//using namespace nncase;
-//using namespace nncase::runtime;
-//using namespace ortki;
+// using namespace nncase;
+// using namespace nncase::runtime;
+// using namespace ortki;
 //
-//class OneHotTest : public KernelTest,
+// class OneHotTest : public KernelTest,
 //                   public ::testing::TestWithParam<
 //                       std::tuple<nncase::typecode_t, dims_t, dims_t>> {
 //  public:
 //    void SetUp() override {
 //        auto &&[typecode, l_shape, r_shape] = GetParam();
 //
-//        lhs = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
+//        lhs = hrt::create(typecode, l_shape,
+//        host_runtime_tensor::pool_cpu_only)
 //                  .expect("create tensor failed");
 //        init_tensor(lhs);
 //
-//        rhs = hrt::create(typecode, r_shape, host_runtime_tensor::pool_cpu_only)
+//        rhs = hrt::create(typecode, r_shape,
+//        host_runtime_tensor::pool_cpu_only)
 //                  .expect("create tensor failed");
 //        init_tensor(rhs);
 //    }
@@ -49,12 +51,13 @@
 //    runtime_tensor rhs;
 //};
 //
-//INSTANTIATE_TEST_SUITE_P(OneHot, OneHotTest,
+// INSTANTIATE_TEST_SUITE_P(OneHot, OneHotTest,
 //                         testing::Combine(testing::Values(dt_float32),
-//                                          testing::Values(dims_t{1, 3, 16, 16}),
-//                                          testing::Values(dims_t{1, 3, 16, 16})));
+//                                          testing::Values(dims_t{1, 3, 16,
+//                                          16}), testing::Values(dims_t{1, 3,
+//                                          16, 16})));
 //
-//TEST_P(OneHotTest, OneHot) {
+// TEST_P(OneHotTest, OneHot) {
 //
 //    // expected
 //    size_t size = 0;
@@ -81,27 +84,29 @@
 //    dims_t shape(tensor_rank(output_ort));
 //    tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
 //    auto expected = hrt::create(lhs.datatype(), shape,
-//                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
-//                                true, host_runtime_tensor::pool_cpu_only)
+//                                {reinterpret_cast<gsl::byte *>(ptr_ort),
+//                                size}, true,
+//                                host_runtime_tensor::pool_cpu_only)
 //                        .expect("create tensor failed");
 //
 //    // actual
 //    int axis_ptr[] = {-1};
 //    auto axis =
-//        hrt::create(dt_int32, {1}, {reinterpret_cast<gsl::byte *>(axis_ptr), sizeof(int)},
+//        hrt::create(dt_int32, {1}, {reinterpret_cast<gsl::byte *>(axis_ptr),
+//        sizeof(int)},
 //                    true, host_runtime_tensor::pool_cpu_only)
 //            .expect("create tensor failed");
 //    auto output = kernels::stackvm::one_hot(
 //                      runtime::stackvm::one_hot_mode_t::process_neg,
-//                      indices.impl(), depth.impl(), values.impl(), axis.impl())
-//                      .expect("one_hot failed");
+//                      indices.impl(), depth.impl(), values.impl(),
+//                      axis.impl()) .expect("one_hot failed");
 //    runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 //
 //    // compare
 //    EXPECT_TRUE(is_same_tensor(expected, actual));
 //}
 //
-//int main(int argc, char *argv[]) {
+// int main(int argc, char *argv[]) {
 //    ::testing::InitGoogleTest(&argc, argv);
 //    return RUN_ALL_TESTS();
 //}
