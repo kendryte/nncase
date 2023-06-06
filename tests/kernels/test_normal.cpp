@@ -73,20 +73,24 @@ TEST_P(NormalTest, normal) {
     float_t mean_ptr[] = {0.5f};
     float_t scale_ptr[] = {1.0f};
     float_t seed_ptr[] = {1.0f};
-    auto mean = hrt::create(lhs.datatype(), {1},
-                            {reinterpret_cast<gsl::byte *>(mean_ptr), sizeof(float)},
-                            true, host_runtime_tensor::pool_cpu_only)
-                    .expect("create tensor failed");
-    auto scale = hrt::create(lhs.datatype(), {1},
-                             {reinterpret_cast<gsl::byte *>(scale_ptr), sizeof(float)},
-                             true, host_runtime_tensor::pool_cpu_only)
-                     .expect("create tensor failed");
-    auto seed = hrt::create(lhs.datatype(), {1},
-                            {reinterpret_cast<gsl::byte *>(seed_ptr), sizeof(float)},
-                            true, host_runtime_tensor::pool_cpu_only)
-                    .expect("create tensor failed");
+    auto mean =
+        hrt::create(lhs.datatype(), {1},
+                    {reinterpret_cast<gsl::byte *>(mean_ptr), sizeof(float)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
+    auto scale =
+        hrt::create(lhs.datatype(), {1},
+                    {reinterpret_cast<gsl::byte *>(scale_ptr), sizeof(float)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
+    auto seed =
+        hrt::create(lhs.datatype(), {1},
+                    {reinterpret_cast<gsl::byte *>(seed_ptr), sizeof(float)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
     auto shape0 = hrt::create(dt_int64, {4},
-                              {reinterpret_cast<gsl::byte *>(shape_ptr), 4*sizeof(long)},
+                              {reinterpret_cast<gsl::byte *>(shape_ptr),
+                               4 * sizeof(long)},
                               true, host_runtime_tensor::pool_cpu_only)
                       .expect("create tensor failed");
     auto output =

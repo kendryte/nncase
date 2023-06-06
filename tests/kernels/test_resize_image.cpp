@@ -101,18 +101,18 @@ TEST_P(ResizeImageTest, ResizeImage) {
             {reinterpret_cast<gsl::byte *>(extrapolation_value_array), 4}, true,
             host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
-//    auto output =
-//        kernels::stackvm::resize_image(
-//            runtime::stackvm::image_resize_mode_t::bilinear,
-//            runtime::stackvm::image_resize_transformation_mode_t::asymmetric,
-//            runtime::stackvm::image_resize_nearest_mode_t::floor, false,
-//            lhs.impl(), roi.impl(), expected.impl(), cubic_coeff_a.impl(),
-//            exclude_outside.impl(), extrapolation_value.impl())
-//            .expect("resize_image failed");
-//    runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
+    //    auto output =
+    //        kernels::stackvm::resize_image(
+    //            runtime::stackvm::image_resize_mode_t::bilinear,
+    //            runtime::stackvm::image_resize_transformation_mode_t::asymmetric,
+    //            runtime::stackvm::image_resize_nearest_mode_t::floor, false,
+    //            lhs.impl(), roi.impl(), expected.impl(), cubic_coeff_a.impl(),
+    //            exclude_outside.impl(), extrapolation_value.impl())
+    //            .expect("resize_image failed");
+    //    runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
-//    EXPECT_TRUE(is_same_tensor(expected, actual));
+    //    EXPECT_TRUE(is_same_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {

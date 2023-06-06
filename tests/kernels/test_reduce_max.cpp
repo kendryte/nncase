@@ -75,10 +75,11 @@ TEST_P(ReduceArgMaxTest, ReduceArgMax) {
                          host_runtime_tensor::pool_cpu_only)
                  .expect("create tensor failed");
     int64_t axis_array[] = {-1};
-    auto axis = hrt::create(dt_int64, {1},
-                            {reinterpret_cast<gsl::byte *>(axis_array), sizeof(long)},
-                            true, host_runtime_tensor::pool_cpu_only)
-                    .expect("create tensor failed");
+    auto axis =
+        hrt::create(dt_int64, {1},
+                    {reinterpret_cast<gsl::byte *>(axis_array), sizeof(long)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
     int64_t keepDims_array[] = {0};
     auto keepDims =
         hrt::create(dt_int64, {1},
@@ -91,7 +92,8 @@ TEST_P(ReduceArgMaxTest, ReduceArgMax) {
                     {reinterpret_cast<gsl::byte *>(select_last_idx_array), 8},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
-    auto output_ort = ortki_ReduceMax(runtime_tensor_2_ort_tensor(a), axis_array, 1, 0l);
+    auto output_ort =
+        ortki_ReduceMax(runtime_tensor_2_ort_tensor(a), axis_array, 1, 0l);
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
