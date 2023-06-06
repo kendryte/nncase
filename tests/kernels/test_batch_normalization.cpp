@@ -118,7 +118,6 @@ TEST_P(BatchNormalizationTest, batch_normalization) {
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
-    //    ort_tensor_dump(output_ort);
     EXPECT_FALSE(is_same_tensor(expected, actual));
 }
 
