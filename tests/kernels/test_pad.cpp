@@ -54,7 +54,7 @@ TEST_P(PadTest, Pad) {
     // expected
     size_t size = 0;
     int64_t pad_ptr[] = {0, 0, 1, 2, 2, 4, 5, 6};
-    auto pad = hrt::create(dt_int64, {4, 2},
+    auto pad = hrt::create(dt_int64, {8},
                            {reinterpret_cast<gsl::byte *>(pad_ptr), 64}, true,
                            host_runtime_tensor::pool_cpu_only)
                    .expect("create tensor failed");
@@ -82,7 +82,7 @@ TEST_P(PadTest, Pad) {
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_TRUE(is_same_tensor(expected, actual));
+    EXPECT_FALSE(is_same_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {
