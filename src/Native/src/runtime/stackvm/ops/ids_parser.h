@@ -20,8 +20,9 @@ inline std::vector<std::string> split(const std::string &s, char delim = ' ') {
 inline std::string lookup([[maybe_unused]] std::string path,
                           [[maybe_unused]] uint32_t module_id,
                           [[maybe_unused]] uint32_t func_id) {
-    auto defaultName = std::to_string(module_id) + "_" + std::to_string(func_id);
-    if(path.empty()) {
+    auto defaultName =
+        std::to_string(module_id) + "_" + std::to_string(func_id);
+    if (path.empty()) {
         return defaultName;
     }
     // todo: lookup once
@@ -42,13 +43,13 @@ inline std::string lookup([[maybe_unused]] std::string path,
     return fnName;
 }
 
-inline std::string lookup_path(const std::string& p, int depth = 0) {
-    if(depth > 6) {
+inline std::string lookup_path(const std::string &p, int depth = 0) {
+    if (depth > 6) {
         return "";
     }
     auto parent = std::filesystem::path(p).parent_path();
     auto parent_ids = parent.append("ids.txt");
-    if(std::filesystem::exists(parent_ids)) {
+    if (std::filesystem::exists(parent_ids)) {
         return parent_ids;
     } else {
         return lookup_path(parent.parent_path(), depth + 1);
