@@ -133,7 +133,9 @@ public sealed class UnitTestEGraphRewriteFactory : TestClassBase
         var pre = @case.PreExpr;
         var infered = pre.InferenceType();
         Assert.True(infered);
-
+#if DEBUG
+        DumpScope.Current.DumpIR(pre, "pre");
+#endif
         var pass = new EGraphRulesPass { Name = "EGraphOptimize" };
         foreach (var rule in @case.Rules)
         {

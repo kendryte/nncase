@@ -120,7 +120,7 @@ public class UnitTestEGraphRewrite : TestClassBase
     public async Task TestEgraphRemoveMarkerPreserveCosts()
     {
 #if DEBUG
-        CompileOptions.DumpFlags = Diagnostics.DumpFlags.Rewrite | Diagnostics.DumpFlags.EGraphCost;
+        CompileOptions.DumpFlags = Diagnostics.DumpFlags.PassIR | Diagnostics.DumpFlags.Rewrite | Diagnostics.DumpFlags.EGraphCost;
 #endif
         var v8 = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 64, 56, 56 }));
         var v9 = IR.F.NN.Conv2D(v8, Testing.Rand<float>(64, 64, 1, 1), Testing.Rand<float>(64), new[] { 1, 1 }, new[,] { { 0, 0 }, { 0, 0 } }, new[] { 1, 1 }, PadMode.Constant, 1, new[] { float.NegativeInfinity, float.PositiveInfinity });

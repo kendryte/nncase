@@ -15,6 +15,11 @@ using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Passes;
 
+internal interface IEGraphExtractor
+{
+    Expr Extract(EClass root, IEGraph eGraph);
+}
+
 /// <summary>
 /// EGraph extract extensions.
 /// </summary>
@@ -49,7 +54,8 @@ public static class EGraphExtractExtensions
             EGraphPrinter.DumpEgraphAsDot(eGraph, costModel, root.Find(), fs);
         }
 
-        return new EGraphExtractor(costModel).Extract(root.Find());
+        // return new EGraphExtractor(costModel).Extract(root.Find(), eGraph);
+        return new SatEGraphExtractor(costModel).Extract(root.Find(), eGraph);
     }
 
     /// <summary>
@@ -92,7 +98,7 @@ public static class EGraphExtractExtensions
     }
 }
 
-internal class EGraphExtractor
+internal class EGraphExtractor : IEGraphExtractor
 {
     private readonly EGraphCostModel _costModel;
     private readonly Dictionary<EClass, Expr> _eclassMemo = new();
@@ -104,7 +110,7 @@ internal class EGraphExtractor
         _costModel = costModel;
     }
 
-    public Expr Extract(EClass root)
+    public Expr Extract(EClass root, IEGraph eGraph)
     {
         _dumpWriter = DumpScope.Current.IsEnabled(DumpFlags.EGraphCost)
             ? new StreamWriter(DumpScope.Current.OpenFile($"{nameof(EGraphExtractor)}_Class_{root.Id}.txt"))

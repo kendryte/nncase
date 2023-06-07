@@ -9,6 +9,7 @@
     <PackageReference Include="NetFabric.Hyperlinq" />
     <PackageReference Include="GiGraph.Dot" />
     <PackageReference Include="Singulink.Collections.Weak" />
+    <PackageReference Include="Google.OrTools" />
   </ItemGroup>
 
   <ItemGroup>
