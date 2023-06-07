@@ -20,6 +20,7 @@ from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
 import numpy as np
 
+
 def _make_module(compare_op, in_type, in_shape_0, in_shape_1):
     inputs = []
     outputs = []
@@ -60,6 +61,7 @@ def _make_module(compare_op, in_type, in_shape_0, in_shape_1):
 
     return model_def
 
+
 compare_ops = {
     'Equal',
     'Greater',
@@ -84,7 +86,9 @@ in_shapes = [
 ]
 
 # pytest with multiprocess will fail on uppercase names
-@pytest.mark.parametrize('compare_op', compare_ops, ids=['equal','greater','greater_or_equal','less','less_or_equal'])
+
+
+@pytest.mark.parametrize('compare_op', compare_ops, ids=['equal', 'greater', 'greater_or_equal', 'less', 'less_or_equal'])
 @pytest.mark.parametrize('in_type', in_types)
 @pytest.mark.parametrize('in_shape', in_shapes)
 def test_compare(compare_op, in_type, in_shape, request):
@@ -94,6 +98,7 @@ def test_compare(compare_op, in_type, in_shape, request):
         runner = OnnxTestRunner(request.node.name)
         model_file = runner.from_onnx_helper(model_def)
         runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_compare.py'])
