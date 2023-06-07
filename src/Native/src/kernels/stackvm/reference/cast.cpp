@@ -46,19 +46,6 @@ result<void> cast_impl(const TInput *input, TOutput *output,
     });
 }
 
-template <class TInput, class TOutput>
-result<void> cast_contiguous(const TInput *input, TOutput *output,
-                             const dims_t &in_shape,
-                             [[maybe_unused]] const strides_t &in_strides,
-                             [[maybe_unused]] const strides_t &out_strides,
-                             NNCASE_UNUSED kernel_context &context) noexcept {
-    SCALAR_CAST_IMPL(static_cast<TOutput>);
-    for (int i = 0; i < compute_size(in_shape); ++i) {
-        output[i] = static_cast<TOutput>(input[i]);
-    }
-    return ok();
-}
-
 result<void>
 cast_f32_to_bf16_impl(const float *input, bfloat16 *output,
                       const dims_t &in_shape, const strides_t &in_strides,
