@@ -126,38 +126,35 @@ TEST_P(LstmTest, lstm) {
     // actual
     std::vector<std::string> activations = {"Sigmoid", "Tanh", "Tanh"};
     auto alpha_ptr =
-        hrt::create(dt_float32, {1},
-                    {reinterpret_cast<gsl::byte *>(alpha), 4}, true,
-                    host_runtime_tensor::pool_cpu_only)
+        hrt::create(dt_float32, {1}, {reinterpret_cast<gsl::byte *>(alpha), 4},
+                    true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto beta_ptr =
-        hrt::create(dt_float32, {1},
-                    {reinterpret_cast<gsl::byte *>(beta), 4}, true,
-                    host_runtime_tensor::pool_cpu_only)
+        hrt::create(dt_float32, {1}, {reinterpret_cast<gsl::byte *>(beta), 4},
+                    true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     float_t f[] = {clip};
     auto clip_ptr =
-        hrt::create(dt_float32, {1},
-                    {reinterpret_cast<gsl::byte *>(f), 4}, true,
-                    host_runtime_tensor::pool_cpu_only)
+        hrt::create(dt_float32, {1}, {reinterpret_cast<gsl::byte *>(f), 4},
+                    true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     int64_t hidden_size[] = {1};
     auto hidden_size_ptr =
         hrt::create(dt_int64, {1},
-                    {reinterpret_cast<gsl::byte *>(hidden_size), 8},
-                    true, host_runtime_tensor::pool_cpu_only)
+                    {reinterpret_cast<gsl::byte *>(hidden_size), 8}, true,
+                    host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     int64_t input_forget[] = {0};
     auto input_forget_ptr =
         hrt::create(dt_int64, {1},
-                    {reinterpret_cast<gsl::byte *>(input_forget), 8},
-                    true, host_runtime_tensor::pool_cpu_only)
+                    {reinterpret_cast<gsl::byte *>(input_forget), 8}, true,
+                    host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     int64_t output_size[] = {1};
     auto output_size_ptr =
         hrt::create(dt_int64, {1},
-                    {reinterpret_cast<gsl::byte *>(output_size), 8},
-                    true, host_runtime_tensor::pool_cpu_only)
+                    {reinterpret_cast<gsl::byte *>(output_size), 8}, true,
+                    host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     //    auto output = kernels::stackvm::lstm(
     //                      runtime::stackvm::lstmdirection_t::forward,

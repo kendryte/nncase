@@ -23,8 +23,8 @@
 #include <nncase/kernels/stackvm/tensor_ops.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/runtime_tensor.h>
-#include <nncase/runtime/util.h>
 #include <nncase/runtime/simple_types.h>
+#include <nncase/runtime/util.h>
 #include <ortki/c_api.h>
 #include <random>
 #include <string>
@@ -242,17 +242,20 @@ class KernelTest {
                ((sqrt(dot(v1, v1, size)) * sqrt(dot(v2, v2, size))));
     }
 
-    result<void> check_output(runtime::runtime_tensor expected, value_t output)
-    {
+    result<void> check_output(runtime::runtime_tensor expected,
+                              value_t output) {
         try_var(output_tuple, output.as<tuple>());
-        for (size_t i = 0; i < output_tuple->fields().size(); i++)
-        {
+        for (size_t i = 0; i < output_tuple->fields().size(); i++) {
             try_var(output_tensor, output_tuple->fields()[i].as<tensor>());
-            try_var(output_span, nncase::runtime::get_output_span(output_tensor));
-            auto output1 = runtime::hrt::create(dt_int64, {1},
-                        {reinterpret_cast<gsl::byte *>(output_span.data()), sizeof(long)},
-                        true, runtime::host_runtime_tensor::pool_cpu_only)
-                .expect("create tensor failed");
+            try_var(output_span,
+                    nncase::runtime::get_output_span(output_tensor));
+            auto output1 =
+                runtime::hrt::create(
+                    dt_int64, {1},
+                    {reinterpret_cast<gsl::byte *>(output_span.data()),
+                     sizeof(long)},
+                    true, runtime::host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
             EXPECT_TRUE(is_same_tensor(expected, output1));
         }
 

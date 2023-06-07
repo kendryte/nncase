@@ -56,8 +56,8 @@ TEST_P(ExpandTest, expand) {
     int64_t new_shape[] = {1};
     auto new_shape_ptr =
         hrt::create(nncase::dt_int64, {1},
-                    {reinterpret_cast<gsl::byte *>(new_shape), 8},
-                    true, host_runtime_tensor::pool_cpu_only)
+                    {reinterpret_cast<gsl::byte *>(new_shape), 8}, true,
+                    host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto new_shape_ort = runtime_tensor_2_ort_tensor(new_shape_ptr);
     auto output_ort = ortki_Expand(l_ort, new_shape_ort);

@@ -72,19 +72,18 @@ TEST_P(LrnTest, lrn) {
                      .expect("create tensor failed");
     float_t beta_ptr[] = {0.5f};
     auto beta = hrt::create(dt_float32, {1},
-                            {reinterpret_cast<gsl::byte *>(beta_ptr), 4},
-                            true, host_runtime_tensor::pool_cpu_only)
+                            {reinterpret_cast<gsl::byte *>(beta_ptr), 4}, true,
+                            host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
     float_t bias_ptr[] = {0.8f};
     auto bias = hrt::create(dt_float32, {1},
-                            {reinterpret_cast<gsl::byte *>(bias_ptr), 4},
-                            true, host_runtime_tensor::pool_cpu_only)
+                            {reinterpret_cast<gsl::byte *>(bias_ptr), 4}, true,
+                            host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
     int64_t size_ptr[] = {3l};
     auto size0 =
-        hrt::create(dt_int64, {1},
-                    {reinterpret_cast<gsl::byte *>(size_ptr), 8}, true,
-                    host_runtime_tensor::pool_cpu_only)
+        hrt::create(dt_int64, {1}, {reinterpret_cast<gsl::byte *>(size_ptr), 8},
+                    true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto output = kernels::stackvm::lrn(input.impl(), alpha.impl(), beta.impl(),
                                         bias.impl(), size0.impl())
