@@ -34,11 +34,11 @@ class SigmoidTest
         auto &&[typecode, l_shape] = GetParam();
 
         float input_array[] = {1.0f};
-        input =
-            hrt::create(typecode, l_shape,
-                        {reinterpret_cast<gsl::byte *>(input_array), sizeof(float)},
-                        true, host_runtime_tensor::pool_cpu_only)
-                .expect("create tensor failed");
+        input = hrt::create(
+                    typecode, l_shape,
+                    {reinterpret_cast<gsl::byte *>(input_array), sizeof(float)},
+                    true, host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
     }
 
     void TearDown() override {}
