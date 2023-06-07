@@ -857,7 +857,6 @@ internal class DataFlowType15FusionCaseRight : IDataFlowFusionCaseTwoStage
     }
 }
 
-
 internal class DataFlowType16FusionCase : IDataFlowFusionCaseTwoStage
 {
     public int FinalFusionCount => 1;
