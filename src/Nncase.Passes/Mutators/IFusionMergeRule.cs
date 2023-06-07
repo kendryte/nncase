@@ -266,6 +266,12 @@ public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
             calleeInLeft = true;
         }
 
+        // can't merge left right have same input: caller(callee(x),callee(x))
+        if (object.ReferenceEquals(callerInputs[calleeInLeft ? 1 : 0], callee))
+        {
+            return null;
+        }
+
         var calleeInput = (Expr)result["calleeInput"];
         var callerOtherInput = (Expr)result["callerOtherInput"];
 
