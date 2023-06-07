@@ -82,11 +82,11 @@ TEST_P(SplitTest, Split) {
             .expect("split failed");
     tuple actual(output.as<tuple>().expect("as tensor failed"));
     // try_var(output_tensor, actual->fields()[0].as<tensor>());
-//    [[maybe_unused]] auto ret = check_output(expected, output);
-//        runtime_tensor actual1 = actual[0];
+    //    [[maybe_unused]] auto ret = check_output(expected, output);
+    //        runtime_tensor actual1 = actual[0];
 
     // compare
-//        EXPECT_TRUE(is_same_tensor(expected, actual1));
+    //        EXPECT_TRUE(is_same_tensor(expected, actual1));
 }
 
 int main(int argc, char *argv[]) {
