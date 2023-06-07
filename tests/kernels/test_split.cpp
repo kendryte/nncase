@@ -74,7 +74,7 @@ TEST_P(SplitTest, Split) {
     // actual
     int64_t axis_array[] = {-3};
     auto axis = hrt::create(dt_int64, {1},
-                            {reinterpret_cast<gsl::byte *>(axis_array), sizeof(long)},
+                            {reinterpret_cast<gsl::byte *>(axis_array), 8},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
     auto output =

@@ -90,7 +90,7 @@ TEST_P(NormalTest, normal) {
             .expect("create tensor failed");
     auto shape0 = hrt::create(dt_int64, {4},
                               {reinterpret_cast<gsl::byte *>(shape_ptr),
-                               4 * sizeof(long)},
+                               4 * 8},
                               true, host_runtime_tensor::pool_cpu_only)
                       .expect("create tensor failed");
     auto output =
