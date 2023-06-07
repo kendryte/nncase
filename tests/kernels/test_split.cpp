@@ -47,15 +47,14 @@ class SplitTest
 
 INSTANTIATE_TEST_SUITE_P(Split, SplitTest,
                          testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 3, 16,
-                                                                 16})));
+                                          testing::Values(dims_t{4, 8, 8})));
 
 TEST_P(SplitTest, Split) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
 
     // expected
     size_t size = 0;
-    int64_t sections_array[] = {1, 2};
+    int64_t sections_array[] = {2, 2};
     auto sextions =
         hrt::create(dt_int64, {2},
                     {reinterpret_cast<gsl::byte *>(sections_array), 16}, true,
@@ -63,7 +62,7 @@ TEST_P(SplitTest, Split) {
             .expect("create tensor failed");
 
     auto output_ort = tensor_seq_get_value(
-        ortki_Split(l_ort, runtime_tensor_2_ort_tensor(sextions), 1l), 0);
+        ortki_Split(l_ort, runtime_tensor_2_ort_tensor(sextions), -3), 0);
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
@@ -73,18 +72,21 @@ TEST_P(SplitTest, Split) {
                         .expect("create tensor failed");
 
     // actual
-    int64_t axis_array[] = {1l};
+    int64_t axis_array[] = {-3};
     auto axis = hrt::create(dt_int64, {1},
-                            {reinterpret_cast<gsl::byte *>(axis_array), 8},
+                            {reinterpret_cast<gsl::byte *>(axis_array), sizeof(long)},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
     auto output =
         kernels::stackvm::split(input.impl(), axis.impl(), sextions.impl())
             .expect("split failed");
-    //    runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
+    tuple actual(output.as<tuple>().expect("as tensor failed"));
+    // try_var(output_tensor, actual->fields()[0].as<tensor>());
+//    [[maybe_unused]] auto ret = check_output(expected, output);
+//        runtime_tensor actual1 = actual[0];
 
     // compare
-    //    EXPECT_TRUE(is_same_tensor(expected, actual));
+//        EXPECT_TRUE(is_same_tensor(expected, actual1));
 }
 
 int main(int argc, char *argv[]) {

@@ -75,17 +75,17 @@ TEST_P(NormalTest, normal) {
     float_t seed_ptr[] = {1.0f};
     auto mean =
         hrt::create(lhs.datatype(), {1},
-                    {reinterpret_cast<gsl::byte *>(mean_ptr), sizeof(float)},
+                    {reinterpret_cast<gsl::byte *>(mean_ptr), 4},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto scale =
         hrt::create(lhs.datatype(), {1},
-                    {reinterpret_cast<gsl::byte *>(scale_ptr), sizeof(float)},
+                    {reinterpret_cast<gsl::byte *>(scale_ptr), 4},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto seed =
         hrt::create(lhs.datatype(), {1},
-                    {reinterpret_cast<gsl::byte *>(seed_ptr), sizeof(float)},
+                    {reinterpret_cast<gsl::byte *>(seed_ptr), 4},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto shape0 = hrt::create(dt_int64, {4},
