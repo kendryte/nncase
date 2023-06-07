@@ -73,20 +73,21 @@ TEST_P(SplitTest, Split) {
 
     // actual
     int64_t axis_array[] = {-3};
-    auto axis = hrt::create(dt_int64, {1},
-                            {reinterpret_cast<gsl::byte *>(axis_array), sizeof(long)},
-                            true, host_runtime_tensor::pool_cpu_only)
-                    .expect("create tensor failed");
+    auto axis =
+        hrt::create(dt_int64, {1},
+                    {reinterpret_cast<gsl::byte *>(axis_array), sizeof(long)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
     auto output =
         kernels::stackvm::split(input.impl(), axis.impl(), sextions.impl())
             .expect("split failed");
     tuple actual(output.as<tuple>().expect("as tensor failed"));
     // try_var(output_tensor, actual->fields()[0].as<tensor>());
-//    [[maybe_unused]] auto ret = check_output(expected, output);
-//        runtime_tensor actual1 = actual[0];
+    //    [[maybe_unused]] auto ret = check_output(expected, output);
+    //        runtime_tensor actual1 = actual[0];
 
     // compare
-//        EXPECT_TRUE(is_same_tensor(expected, actual1));
+    //        EXPECT_TRUE(is_same_tensor(expected, actual1));
 }
 
 int main(int argc, char *argv[]) {

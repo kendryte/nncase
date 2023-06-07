@@ -22,11 +22,11 @@
 //#include <nncase/runtime/stackvm/opcode.h>
 //#include <ortki/operators.h>
 //
-//using namespace nncase;
-//using namespace nncase::runtime;
-//using namespace ortki;
+// using namespace nncase;
+// using namespace nncase::runtime;
+// using namespace ortki;
 //
-//class LayerNormTest
+// class LayerNormTest
 //    : public KernelTest,
 //      public ::testing::TestWithParam<
 //          std::tuple<nncase::typecode_t, dims_t, dims_t, dims_t>> {
@@ -57,13 +57,13 @@
 //    runtime_tensor b;
 //};
 //
-//INSTANTIATE_TEST_SUITE_P(LayerNorm, LayerNormTest,
+// INSTANTIATE_TEST_SUITE_P(LayerNorm, LayerNormTest,
 //                         testing::Combine(testing::Values(dt_float32),
-//                                          testing::Values(dims_t{1, 3, 16, 16}),
-//                                          testing::Values(dims_t{1}),
+//                                          testing::Values(dims_t{1, 3, 16,
+//                                          16}), testing::Values(dims_t{1}),
 //                                          testing::Values(dims_t{1})));
 //
-//TEST_P(LayerNormTest, layer_norm) {
+// TEST_P(LayerNormTest, layer_norm) {
 //    //    auto l_ort = runtime_tensor_2_ort_tensor(input);
 //    //    auto scale_ort = runtime_tensor_2_ort_tensor(scale);
 //    //    auto b_ort = runtime_tensor_2_ort_tensor(b);
@@ -93,7 +93,7 @@
 //    EXPECT_TRUE(is_same_tensor(actual, actual));
 //}
 //
-//int main(int argc, char *argv[]) {
+// int main(int argc, char *argv[]) {
 //    ::testing::InitGoogleTest(&argc, argv);
 //    return RUN_ALL_TESTS();
 //}
