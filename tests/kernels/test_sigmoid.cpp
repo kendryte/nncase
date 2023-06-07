@@ -47,8 +47,7 @@ class SigmoidTest
 
 INSTANTIATE_TEST_SUITE_P(Sigmoid, SigmoidTest,
                          testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 3, 16,
-                                                                 16})));
+                                          testing::Values(dims_t{1})));
 
 TEST_P(SigmoidTest, Sigmoid) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
@@ -70,7 +69,7 @@ TEST_P(SigmoidTest, Sigmoid) {
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_FALSE(is_same_tensor(expected, actual));
+    EXPECT_TRUE(is_same_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {

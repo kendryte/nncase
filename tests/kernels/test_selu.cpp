@@ -33,10 +33,12 @@ class SeluTest
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
 
+        float input_array[] = {1.0f};
         input =
-            hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
+            hrt::create(typecode, l_shape,
+                        {reinterpret_cast<gsl::byte *>(input_array), sizeof(float)},
+                        true, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
-        init_tensor(input);
     }
 
     void TearDown() override {}

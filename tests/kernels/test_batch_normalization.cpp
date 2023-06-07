@@ -29,33 +29,32 @@ using namespace ortki;
 class BatchNormalizationTest
     : public KernelTest,
       public ::testing::TestWithParam<std::tuple<
-          nncase::typecode_t, dims_t, dims_t, dims_t, dims_t, dims_t>> {
+          nncase::typecode_t, dims_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode, input_shape, scale_shape, b_shape, mean_shape,
-                var_shape] = GetParam();
+        auto &&[typecode, input_shape] = GetParam();
 
         input = hrt::create(typecode, input_shape,
                             host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
         init_tensor(input);
 
-        scale = hrt::create(typecode, scale_shape,
+        scale = hrt::create(typecode, {input_shape[1]},
                             host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
         init_tensor(scale);
 
-        b = hrt::create(typecode, b_shape, host_runtime_tensor::pool_cpu_only)
+        b = hrt::create(typecode, {input_shape[1]}, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
         init_tensor(b);
 
-        mean = hrt::create(typecode, mean_shape,
+        mean = hrt::create(typecode, {input_shape[1]},
                            host_runtime_tensor::pool_cpu_only)
                    .expect("create tensor failed");
         init_tensor(mean);
 
         var =
-            hrt::create(typecode, var_shape, host_runtime_tensor::pool_cpu_only)
+            hrt::create(typecode, {input_shape[1]}, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
         init_tensor(var);
     }
@@ -72,11 +71,7 @@ class BatchNormalizationTest
 
 INSTANTIATE_TEST_SUITE_P(batch_normalization, BatchNormalizationTest,
                          testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 8, 24, 24}),
-                                          testing::Values(dims_t{8}),
-                                          testing::Values(dims_t{8}),
-                                          testing::Values(dims_t{8}),
-                                          testing::Values(dims_t{8})));
+                                          testing::Values(dims_t{1, 8, 24, 24},dims_t{1, 64, 28, 28})));
 
 TEST_P(BatchNormalizationTest, batch_normalization) {
     auto input_ort = runtime_tensor_2_ort_tensor(input);

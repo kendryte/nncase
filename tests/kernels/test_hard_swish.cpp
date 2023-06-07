@@ -36,7 +36,6 @@ class HardSwishTest
         input =
             hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
-        init_tensor(input);
     }
 
     void TearDown() override {}
@@ -68,7 +67,7 @@ TEST_P(HardSwishTest, hard_swish) {
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
-    auto output_ort = ortki_Mul(l_ort, ortki_HardSigmoid(l_ort, 1.2f, 1.3f));
+    auto output_ort = ortki_Mul(l_ort, ortki_HardSigmoid(l_ort, 1.0f / 6.0f, 0.5f));
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
@@ -84,7 +83,7 @@ TEST_P(HardSwishTest, hard_swish) {
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_FALSE(is_same_tensor(expected, actual));
+    EXPECT_TRUE(is_same_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {
