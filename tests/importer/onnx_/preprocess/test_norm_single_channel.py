@@ -33,7 +33,7 @@ def _make_module(v_shape):
 
 
 lhs_shapes = [
-    [1, 3, 224, 224]
+    [1, 1, 224, 224]
 ]
 
 rhs_shapes = [
@@ -43,7 +43,7 @@ rhs_shapes = [
 
 @pytest.mark.parametrize('lhs_shape', lhs_shapes)
 @pytest.mark.parametrize('rhs_shape', rhs_shapes)
-def test_norm(lhs_shape, rhs_shape, request):
+def test_norm_single_channel(lhs_shape, rhs_shape, request):
     module = _make_module(rhs_shape)
     overwrite_cfg = """
 case:
@@ -56,10 +56,10 @@ case:
         - false
     - name: mean
       values:
-        - [123,114,109]
+        - [123]
     - name: std
       values:
-        - [2,2,2]
+        - [2]
     - name: input_range
       values:
         - [0,255]
@@ -68,7 +68,7 @@ case:
         - uint8
     - name: input_shape
       values:
-        - [1,3,224,224]
+        - [1,1,224,224]
     - name: input_layout
       values:
         - NCHW
@@ -89,4 +89,4 @@ case:
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_norm.py'])
+    pytest.main(['-vv', 'test_norm_single_channel.py'])
