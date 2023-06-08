@@ -857,25 +857,21 @@ internal class DataFlowType15FusionCaseRight : IDataFlowFusionCaseTwoStage
     }
 }
 
-/// <summary>
-///     x
-///    | \
-///  f(x, x).
-/// </summary>
-internal class DataFlowType16FusionCase : IDataFlowFusionCase
+internal class DataFlowType16FusionCase : IDataFlowFusionCaseTwoStage
 {
     public int FinalFusionCount => 1;
+
+    public int MidFusionCount => 2;
 
     public static Expr BuildBodyCore(Expr input, bool left)
     {
         var v0 = new Call(FusionBuilder.MakeConv2DFusion(true), input);
-
-        var v3 = new Call(FusionBuilder.MakeBinaryFusion(BinaryOp.Sub, true), new[] { v0, v0 });
+        var v3 = new Call(FusionBuilder.MakeBinaryFusion(BinaryOp.Mul, true), new[] { v0, v0 });
         return v3;
     }
 
     public Expr BuildBody(Var input)
     {
-        return BuildBodyCore(input, true);
+        return BuildBodyCore(input, false);
     }
 }

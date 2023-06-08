@@ -59,6 +59,7 @@ public class UnitTestFusionGroup : TestClassBase
 
     public static readonly TheoryData<IDataFlowFusionCaseTwoStage> DataTwoStage = new()
     {
+        new DataFlowType16FusionCase(),
         new DataFlowType15FusionCaseLeft(),
         new DataFlowType15FusionCaseRight(),
     };
