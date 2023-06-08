@@ -147,20 +147,30 @@ public class UnitTestVrp : TestClassBase
         model.AddBoolOr(new[] { vars[1].Not(), vars[0] });
 
         // 3. pick less nodes
-        var obj = LinearExpr.WeightedSum(vars, new[] { 8, 8, 8, 8, 8, 8, 8, 8 });
+        var costs = new[] { 0, 100, 125, 50, 30, 40, 100, 20 };
+        var obj = LinearExpr.WeightedSum(vars, costs);
         model.Minimize(obj);
 
         // 3. soft clause
         var solver = new CpSolver();
         solver.StringParameters = "enumerate_all_solutions:true";
         System.Console.WriteLine(model.Validate());
-        var status = solver.Solve(model, new PrintCallBack(vars));
+        var status = solver.Solve(model, new PrintCallBack(vars, costs));
         if (status is CpSolverStatus.Feasible or CpSolverStatus.Optimal)
         {
             foreach (var v in vars)
             {
                 System.Console.WriteLine(v.Name() + " " + solver.BooleanValue(v));
             }
+
+            Assert.True(solver.BooleanValue(vars[0]));
+            Assert.True(solver.BooleanValue(vars[1]));
+            Assert.False(solver.BooleanValue(vars[2]));
+            Assert.False(solver.BooleanValue(vars[3]));
+            Assert.True(solver.BooleanValue(vars[4]));
+            Assert.False(solver.BooleanValue(vars[5]));
+            Assert.True(solver.BooleanValue(vars[6]));
+            Assert.True(solver.BooleanValue(vars[7]));
         }
     }
 
@@ -194,11 +204,13 @@ public class UnitTestVrp : TestClassBase
     private class PrintCallBack : CpSolverSolutionCallback
     {
         private readonly BoolVar[] _vars;
+        private readonly int[] _costs;
         private int _count;
 
-        public PrintCallBack(BoolVar[] vars)
+        public PrintCallBack(BoolVar[] vars, int[] costs)
         {
             _vars = vars;
+            _costs = costs;
             _count = 0;
         }
 
@@ -210,6 +222,7 @@ public class UnitTestVrp : TestClassBase
                 System.Console.WriteLine(v.Name() + " " + BooleanValue(v));
             }
 
+            System.Console.WriteLine("costs: " + _vars.Zip(_costs).Select(p => BooleanValue(p.First) ? p.Second : 0).Sum());
             System.Console.WriteLine();
         }
     }

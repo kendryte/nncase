@@ -13,99 +13,21 @@ using Nncase.PatternMatch;
 using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.Utility;
 
-namespace Nncase.Passes;
+namespace Nncase.Passes.EGraphExtractors;
 
-internal interface IEGraphExtractor
+internal interface IExtractor
 {
     Expr Extract(EClass root, IEGraph eGraph);
 }
 
-/// <summary>
-/// EGraph extract extensions.
-/// </summary>
-public static class EGraphExtractExtensions
-{
-    /// <summary>
-    /// Extract egraph.
-    /// </summary>
-    /// <param name="eGraph">eGraph.</param>
-    /// <param name="root">Root eclass.</param>
-    /// <param name="basefunc_cost_evaluator">base func cost evaluator.</param>
-    /// <returns>Extracted root expression.</returns>
-    public static Expr Extract(this IEGraph eGraph, EClass root, Evaluator.IBaseFuncCostEvaluator? basefunc_cost_evaluator)
-    {
-        // 1. set the all expr checked shape
-        foreach (var eclass in eGraph.Classes)
-        {
-            foreach (var nodes in eclass.Nodes)
-            {
-                if (eclass.CheckedType.CompareTo(nodes.Expr.CheckedType) > 0)
-                {
-                    nodes.Expr.CheckedType = eclass.CheckedType;
-                }
-            }
-        }
-
-        // 2. start the cost evaluator
-        var costModel = new EGraphCostEvaluator(root.Find(), basefunc_cost_evaluator).Evaluate();
-        if (DumpScope.Current.IsEnabled(DumpFlags.EGraphCost))
-        {
-            using var fs = DumpScope.Current.OpenFile(Path.Combine("Costs", $"V{eGraph.Version}.dot"));
-            EGraphPrinter.DumpEgraphAsDot(eGraph, costModel, root.Find(), fs);
-        }
-
-        // return new EGraphExtractor(costModel).Extract(root.Find(), eGraph);
-        return new SatEGraphExtractor(costModel).Extract(root.Find(), eGraph);
-    }
-
-    /// <summary>
-    /// find the minCostEnode in eclass.
-    /// <remarks>
-    /// the marker first.
-    /// </remarks>
-    /// </summary>
-    internal static ENode MinByWithMarker(this EClass eClass, CostModel.EGraphCostModel costModel)
-    {
-        return eClass.Nodes.OrderBy(e => e.Expr, ENodeTypeComparer.Instance).MinBy(x => x.Expr is Marker ? Cost.Zero : costModel[x])!;
-    }
-
-    /// <summary>
-    /// find the minCostEnode in eclass skip marker.
-    /// </summary>
-    internal static ENode MinByWithOutMarker(this EClass eClass, CostModel.EGraphCostModel costModel)
-    {
-        return eClass.Nodes.Where(e => e.Expr is not Marker).MinBy(x => costModel[x])!;
-    }
-
-    internal sealed class ENodeTypeComparer : IComparer<Expr>
-    {
-        public static readonly ENodeTypeComparer Instance = new();
-
-        public int Compare(Expr? x, Expr? y) => (x, y) switch
-        {
-            (null, null) => 0,
-            (Expr, null) => 1,
-            (null, Expr) => -1,
-            (Expr, Expr) => GetPriority(x).CompareTo(GetPriority(y)),
-        };
-
-        private int GetPriority(Expr x) => x switch
-        {
-            Marker => 0,
-            Const => 1,
-            _ => 2,
-        };
-    }
-}
-
-internal class EGraphExtractor : IEGraphExtractor
+internal class Extractor : IExtractor
 {
     private readonly EGraphCostModel _costModel;
     private readonly Dictionary<EClass, Expr> _eclassMemo = new();
     private readonly Dictionary<EClass, Expr> _markerEclassMemo = new();
     private StreamWriter? _dumpWriter;
 
-    public EGraphExtractor(EGraphCostModel costModel)
+    public Extractor(EGraphCostModel costModel)
     {
         _costModel = costModel;
     }
@@ -113,7 +35,7 @@ internal class EGraphExtractor : IEGraphExtractor
     public Expr Extract(EClass root, IEGraph eGraph)
     {
         _dumpWriter = DumpScope.Current.IsEnabled(DumpFlags.EGraphCost)
-            ? new StreamWriter(DumpScope.Current.OpenFile($"{nameof(EGraphExtractor)}_Class_{root.Id}.txt"))
+            ? new StreamWriter(DumpScope.Current.OpenFile($"{nameof(Extractor)}_Class_{root.Id}.txt"))
             : null;
         try
         {
