@@ -311,7 +311,7 @@ internal sealed class SingleInputFusionMergeRule : IRewriteRule
         }
 
         // 1. replace the caller_fusion input_var with the callee_fusion body
-        var new_fusion_body = new FusionMerger(caller_fusion.Parameters[0], callee_fusion.Body).Clone(caller_fusion.Body, default);
+        var new_fusion_body = new FusionMerger(new Dictionary<Var, Expr>(ReferenceEqualityComparer.Instance) { { caller_fusion.Parameters[0], callee_fusion.Body } }).Clone(caller_fusion.Body, default);
 
         // 2. fold the store load
         // new_fusion_body = CompilerServices.Rewrite(new_fusion_body, new[] { new Passes.Rules.K510.FoldStoreLoad() }, passOptions.IndentDir("MergeSingleInputFusion"));
@@ -380,20 +380,7 @@ internal sealed class TwoInputFusionMergeRule : IRewriteRule
     public static Fusion MergeTwoInputFusion(Call caller, Call lhs_callee, Call rhs_callee, Fusion caller_fusion, Fusion lhs_callee_fusion, Fusion rhs_callee_fusion, RunPassContext passOptions)
     {
         // 1. replace the caller_fusion input_var with the callee_fusion body
-        var new_fusion_body = Mutator.Substitute(e =>
-        {
-            if (object.ReferenceEquals(e, caller_fusion.Parameters[0]))
-            {
-                return lhs_callee_fusion.Body;
-            }
-
-            if (object.ReferenceEquals(e, caller_fusion.Parameters[1]))
-            {
-                return rhs_callee_fusion.Body;
-            }
-
-            return null;
-        })().Rewrite(caller_fusion.Body);
+        var new_fusion_body = new FusionMerger(new Dictionary<Var, Expr>(ReferenceEqualityComparer.Instance) { { caller_fusion.Parameters[0], lhs_callee_fusion.Body }, { caller_fusion.Parameters[1], rhs_callee_fusion.Body }, }).Clone(caller_fusion.Body, default);
 
         // 2. fold the store load
         // new_fusion_body = CompilerServices.Rewrite(new_fusion_body, new[] { new Passes.Rules.K510.FoldStoreLoad() }, passOptions.IndentDir("MergeSingleInputFusion"));
@@ -441,22 +428,20 @@ internal sealed class TwoInputFusionMergeRule : IRewriteRule
 
 internal sealed class FusionMerger : ExprCloner<Unit>
 {
-    private readonly Var _callerParam;
-    private readonly Expr _calleeBody;
+    private readonly Dictionary<Var, Expr> _varMap;
 
-    public FusionMerger(Var callerParam, Expr calleeBody)
+    public FusionMerger(Dictionary<Var, Expr> varMap)
     {
-        _callerParam = callerParam;
-        _calleeBody = calleeBody;
+        _varMap = varMap;
     }
 
-    protected override Expr VisitLeafVar(Var expr, Unit context)
+    protected override Expr VisitLeafVar(Var v, Unit context)
     {
-        if (ReferenceEquals(expr, _callerParam))
+        if (_varMap.TryGetValue(v, out var new_expr))
         {
-            return Visit(_calleeBody, context);
+            return Visit(new_expr, context);
         }
 
-        return expr;
+        return v;
     }
 }
