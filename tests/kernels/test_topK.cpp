@@ -89,7 +89,7 @@ TEST_P(TopKTest, TopK) {
     auto output = kernels::stackvm::top_k(input.impl(), k.impl(), axis.impl(),
                                           largest.impl(), sorted.impl())
                       .expect("topk failed");
-    auto actual(output.as<tuple>().expect("as tensor failed"));
+    [[maybe_unused]]auto actual(output.as<tuple>().expect("as tensor failed"));
 
     // compare
     //    EXPECT_TRUE(is_same_tensor(expected, actual));

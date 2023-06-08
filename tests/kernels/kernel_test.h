@@ -173,6 +173,10 @@ class KernelTest {
         ortki::DataType ort_type = ortki::DataType_FLOAT;
         auto dtype = tensor.datatype();
         switch (dtype) {
+        case dt_boolean: {
+            ort_type = ortki::DataType_BOOL;
+            break;
+        }
         case dt_int8: {
             ort_type = ortki::DataType_INT8;
             break;
