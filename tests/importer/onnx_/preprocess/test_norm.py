@@ -43,7 +43,7 @@ rhs_shapes = [
 
 @pytest.mark.parametrize('lhs_shape', lhs_shapes)
 @pytest.mark.parametrize('rhs_shape', rhs_shapes)
-def test_letterbox(lhs_shape, rhs_shape, request):
+def test_norm(lhs_shape, rhs_shape, request):
     module = _make_module(rhs_shape)
     overwrite_cfg = """
 case:
@@ -89,4 +89,4 @@ case:
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_letterbox.py'])
+    pytest.main(['-vv', 'test_norm.py'])
