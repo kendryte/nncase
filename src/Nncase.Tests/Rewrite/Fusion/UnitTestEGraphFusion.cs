@@ -6,10 +6,13 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
+using System.Reactive;
 using System.Threading.Tasks;
 using NetFabric.Hyperlinq;
 using Nncase.CostModel;
+using Nncase.Diagnostics;
 using Nncase.IR;
+using Nncase.IR.NN;
 using Nncase.Passes;
 using Nncase.PatternMatch;
 using Nncase.Tests.TestFixture;
@@ -22,6 +25,13 @@ namespace Nncase.Tests.ReWrite.FusionTest;
 [AutoSetupTestMethod(InitSession = true)]
 public class UnitTestEGraphFusion : TestClassBase
 {
+    public UnitTestEGraphFusion()
+    {
+#if DEBUG
+        CompileOptions.DumpFlags = DumpFlags.PassIR | DumpFlags.EGraphCost | DumpFlags.Rewrite;
+#endif
+    }
+
     [Fact]
     public async Task TestResNet18Fusion()
     {
@@ -31,14 +41,24 @@ public class UnitTestEGraphFusion : TestClassBase
         var body = model.Forward(input);
         var main = new Function("main", body, input);
 
-        Assert.True(CompilerServices.InferenceType(main));
+        var tv = new TestVisitor();
+        tv.Visit(main);
+        var pre_number = tv.CountCallOp<Conv2D>();
 
-        var pass = new EGraphRulesPass { Name = "AutoMergeFusion" };
-        pass.Add<SingleInputFusionMergeRule>();
+        var module = new IRModule(main);
+        var pmgr = CompileSession.CreatePassManager("pmgr");
+        pmgr.AddWithName<EGraphRulesPass>("AutoMergeFusion").Configure(p =>
+        {
+            p.Add<SingleInputFusionMergeRule>();
+        });
+        pmgr.Add<EGraphExtractPass>(new FusionCostEvaluator());
 
-        var graph = new EGraph(main);
-        await pass.RunAsync(graph, new());
-        graph.Extract(graph.Root!, new FusionCostEvaluator());
+        await pmgr.RunAsync(module);
+
+        tv.Clear();
+        tv.Visit(module.Entry!);
+        var post_number = tv.CountCallOp<Conv2D>();
+        Assert.Equal(pre_number, post_number);
     }
 
     [Fact]
@@ -50,26 +70,40 @@ public class UnitTestEGraphFusion : TestClassBase
         var body = model.Forward(input);
         var main = new Function("main", body, input);
 
-        Assert.True(CompilerServices.InferenceType(main));
+        var tv = new TestVisitor(true);
+        tv.Visit(main);
+        var pre_number = tv.CountCallOp<Conv2D>();
 
-        var pass = new EGraphRulesPass { Name = "AutoMergeFusion" };
-        pass.Add<SingleInputFusionMergeRule>();
-        pass.Add<TwoInputFusionMergeRule>();
+        var module = new IRModule(main);
+        var pmgr = CompileSession.CreatePassManager("pmgr");
+        pmgr.AddWithName<EGraphRulesPass>("AutoMergeFusion").Configure(p =>
+        {
+            p.Add<SingleInputFusionMergeRule>();
+            p.Add<TwoInputFusionMergeRule>();
+        });
+        pmgr.Add<EGraphExtractPass>(new FusionCostEvaluator());
 
-        var graph = new EGraph(main);
-        await pass.RunAsync(graph, new());
-        graph.Extract(graph.Root!, new FusionCostEvaluator());
+        await pmgr.RunAsync(module);
+
+        tv.Clear();
+        tv.Visit(module.Entry!);
+        var post_number = tv.CountCallOp<Conv2D>();
+        Assert.Equal(pre_number, post_number);
     }
 
     /// <summary>
-    /// cycle type 1:  这里会存在一个bug, 如果是dataflow的话, merge single input 就会把 x y 合并在一起. 需要知道use关系才行.
+    /// cycle type 1.
+    ///  in dataflow pass, will merge fusion1_2_3, then it will run duplicate fusion_1,fusion_2.
+    ///  but in egraph pass, we have no need using user analysis.
     ///             x = fusion1(input)
+    ///               |
+    ///             z = fusion2(y)
     ///            /    \
     ///         /         \
-    ///        |      y = fusion2(x)
+    ///        |      m = fusion2(z)
     ///         \        /
     ///          \     /
-    ///     fusion3(x,y).
+    ///     fusion3(z,m).
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
@@ -133,29 +167,30 @@ public class UnitTestEGraphFusion : TestClassBase
 
         Assert.True(CompilerServices.InferenceType(main));
 
-        var pass = new DataflowPass { Name = "AutoMergeFusion" };
-        pass.Add<SingleInputFusionMergeRule>();
-        var post = (Function)await pass.RunAsync(main, new());
-
-        var pass2 = new EGraphRulesPass { Name = "EGraphAutoMergeFusion" };
-        pass2.Add<SingleInputFusionMergeRule>();
-
-        var graph = new EGraph(main);
-        await pass2.RunAsync(graph, new());
-        var post2 = (Function)graph.Extract(graph.Root!, new FusionCostEvaluator());
-
         var input_tensor = Testing.Rand<float>(1, 224, 224, 3);
         var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
         {
           { input, Value.FromTensor(input_tensor) },
         };
         var pre_result = CompilerServices.Evaluate(main.Body, feed_dict);
+        var test_visitor = new TestVisitor(true);
+        var module = new IRModule(main);
+
+        var prmg = CompileSession.CreatePassManager("prmg");
+        prmg.Add<EGraphRulesPass>().Configure(p =>
+        {
+            p.Add<SingleInputFusionMergeRule>();
+        });
+        prmg.Add<EGraphExtractPass>(new FusionCostEvaluator());
+
+        await prmg.RunAsync(module);
+
+        var post = (Function)module.Entry!;
+
         var post_result = CompilerServices.Evaluate(post.Body, feed_dict);
-        var post2_result = CompilerServices.Evaluate(post2.Body, feed_dict);
 
         // note 这里他其实强行分成了两个分支, fusion_1_2_3 和 fusion_2_fusion_1, 虽然结果一致但是不合理.
         Assert.True(Comparator.AllEqual(pre_result, post_result));
-        Assert.True(Comparator.AllEqual(pre_result, post2_result));
     }
 }
 
@@ -276,7 +311,7 @@ internal sealed class SingleInputFusionMergeRule : IRewriteRule
         }
 
         // 1. replace the caller_fusion input_var with the callee_fusion body
-        var new_fusion_body = Mutator.Substitute(e => object.ReferenceEquals(e, caller_fusion.Parameters[0]) ? callee_fusion.Body : null)().Rewrite(caller_fusion.Body);
+        var new_fusion_body = new FusionMerger(caller_fusion.Parameters[0], callee_fusion.Body).Clone(caller_fusion.Body, default);
 
         // 2. fold the store load
         // new_fusion_body = CompilerServices.Rewrite(new_fusion_body, new[] { new Passes.Rules.K510.FoldStoreLoad() }, passOptions.IndentDir("MergeSingleInputFusion"));
@@ -401,5 +436,27 @@ internal sealed class TwoInputFusionMergeRule : IRewriteRule
         }
 
         return new_call;
+    }
+}
+
+internal sealed class FusionMerger : ExprCloner<Unit>
+{
+    private readonly Var _callerParam;
+    private readonly Expr _calleeBody;
+
+    public FusionMerger(Var callerParam, Expr calleeBody)
+    {
+        _callerParam = callerParam;
+        _calleeBody = calleeBody;
+    }
+
+    protected override Expr VisitLeafVar(Var expr, Unit context)
+    {
+        if (ReferenceEquals(expr, _callerParam))
+        {
+            return Visit(_calleeBody, context);
+        }
+
+        return expr;
     }
 }

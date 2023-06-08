@@ -159,7 +159,7 @@ public sealed record Cost : IComparable<Cost>, IEquatable<Cost>
             return "Zero";
         }
 
-        return $"{{ {string.Join(", ", Factors.Select(kv => $"{kv.Key}: {kv.Value}"))}\nScore:{Score} }}";
+        return $"{{ {string.Join(", ", Factors.Select(kv => $"{kv.Key}: {kv.Value}"))}, Score:{Score} }}";
     }
 }
 
