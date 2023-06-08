@@ -22,24 +22,22 @@
 #include <nncase/runtime/stackvm/opcode.h>
 #include <ortki/operators.h>
 
- using namespace nncase;
- using namespace nncase::runtime;
- using namespace ortki;
+using namespace nncase;
+using namespace nncase::runtime;
+using namespace ortki;
 
- class CompareTest : public KernelTest,
+class CompareTest : public KernelTest,
                     public ::testing::TestWithParam<
                         std::tuple<nncase::typecode_t, dims_t, dims_t>> {
   public:
     void SetUp() override {
         auto &&[typecode, l_shape, r_shape] = GetParam();
 
-        lhs = hrt::create(typecode, l_shape,
-        host_runtime_tensor::pool_cpu_only)
+        lhs = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
         init_tensor(lhs);
 
-        rhs = hrt::create(typecode, r_shape,
-        host_runtime_tensor::pool_cpu_only)
+        rhs = hrt::create(typecode, r_shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
         init_tensor(rhs);
     }
@@ -51,14 +49,13 @@
     runtime_tensor rhs;
 };
 
- INSTANTIATE_TEST_SUITE_P(compare, CompareTest,
+INSTANTIATE_TEST_SUITE_P(compare, CompareTest,
                          testing::Combine(testing::Values(dt_boolean),
+                                          testing::Values(dims_t{1, 3, 16, 16}),
                                           testing::Values(dims_t{1, 3, 16,
-                                          16}), testing::Values(dims_t{1, 3,
-                                          16,
                                                                  16})));
 
- TEST_P(CompareTest, equal) {
+TEST_P(CompareTest, equal) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
     auto r_ort = runtime_tensor_2_ort_tensor(rhs);
 
@@ -68,11 +65,10 @@
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
-    auto expected =
-        hrt::create(dt_boolean, shape,
-                    {reinterpret_cast<gsl::byte *>(ptr_ort), size}, true,
-                    host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
+    auto expected = hrt::create(dt_boolean, shape,
+                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+                                true, host_runtime_tensor::pool_cpu_only)
+                        .expect("create tensor failed");
 
     // actual
     auto output = kernels::stackvm::compare(
@@ -85,7 +81,7 @@
     EXPECT_FALSE(is_same_tensor(expected, actual));
 }
 
- int main(int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

@@ -22,24 +22,22 @@
 #include <nncase/runtime/stackvm/opcode.h>
 #include <ortki/operators.h>
 
- using namespace nncase;
- using namespace nncase::runtime;
- using namespace ortki;
+using namespace nncase;
+using namespace nncase::runtime;
+using namespace ortki;
 
- class WhereTest : public KernelTest,
+class WhereTest : public KernelTest,
                   public ::testing::TestWithParam<
                       std::tuple<nncase::typecode_t, dims_t, dims_t>> {
   public:
     void SetUp() override {
         auto &&[typecode, l_shape, r_shape] = GetParam();
 
-        lhs = hrt::create(typecode, l_shape,
-        host_runtime_tensor::pool_cpu_only)
+        lhs = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
         init_tensor(lhs);
 
-        rhs = hrt::create(typecode, r_shape,
-        host_runtime_tensor::pool_cpu_only)
+        rhs = hrt::create(typecode, r_shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
         init_tensor(rhs);
     }
@@ -51,12 +49,12 @@
     runtime_tensor rhs;
 };
 
- INSTANTIATE_TEST_SUITE_P(Where, WhereTest,
+INSTANTIATE_TEST_SUITE_P(Where, WhereTest,
                          testing::Combine(testing::Values(dt_int32),
                                           testing::Values(dims_t{4}),
                                           testing::Values(dims_t{4})));
 
- TEST_P(WhereTest, Where) {
+TEST_P(WhereTest, Where) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
     auto r_ort = runtime_tensor_2_ort_tensor(rhs);
 
@@ -64,8 +62,8 @@
     size_t size = 0;
     bool con_array[] = {true, true, false, true};
     auto con = hrt::create(dt_boolean, {4},
-                           {reinterpret_cast<gsl::byte *>(con_array), 4},
-                           true, host_runtime_tensor::pool_cpu_only)
+                           {reinterpret_cast<gsl::byte *>(con_array), 4}, true,
+                           host_runtime_tensor::pool_cpu_only)
                    .expect("create tensor failed");
     auto output_ort =
         ortki_Where(runtime_tensor_2_ort_tensor(con), l_ort, r_ort);
@@ -73,9 +71,8 @@
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
     auto expected = hrt::create(lhs.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort),
-                                size}, true,
-                                host_runtime_tensor::pool_cpu_only)
+                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+                                true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
     // actual
@@ -88,7 +85,7 @@
     EXPECT_TRUE(is_same_tensor(expected, actual));
 }
 
- int main(int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
