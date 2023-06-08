@@ -220,7 +220,7 @@ public sealed partial class CombineTransposePad : IRewriteRule
         "padCall",
         x => true,
         IsTranspose(IsWildcard("input"), IsTensorConst("perm")),
-        IsWildcard("pads"),
+        IsTensorConst("pads"),
         IsWildcard("padValue"));
 
     private Expr GetReplace(Pad pad, Call padCall, Expr input, int[] perm, Expr pads, Expr padValue)
@@ -229,12 +229,12 @@ public sealed partial class CombineTransposePad : IRewriteRule
         var newPads = new List<Expr>();
         for (var i = 0; i < inv_perm.Length; i++)
         {
-            newPads.Add(pads[inv_perm[i].i]);
+            newPads.Add(Stack(new IR.Tuple(pads[inv_perm[i].i, 0], pads[inv_perm[i].i, 1]), 0));
 
             // newPads[i] = pads[perm[i]];
         }
 
-        var p = Pad(input, Stack(new IR.Tuple(newPads.ToArray()), 0), pad.PadMode, padValue).InheritMetaData(padCall);
+        var p = Pad(input, Stack(new IR.Tuple(newPads.ToArray()), 0).Evaluate().AsTensor(), pad.PadMode, padValue).InheritMetaData(padCall);
         return Transpose(p, perm);
     }
 }
