@@ -19,6 +19,13 @@ namespace Nncase.Tests.ReWriteTest;
 [AutoSetupTestMethod(InitSession = true)]
 public sealed class UnitTestEGraphRewriteFactory : TestClassBase
 {
+    public UnitTestEGraphRewriteFactory()
+    {
+#if DEBUG
+        CompileOptions.DumpFlags = DumpFlags.PassIR | DumpFlags.EGraphCost | DumpFlags.Rewrite;
+#endif
+    }
+
     public static TheoryData<IRewriteCase> DataOne => new()
     {
         new FoldConv2DBnCase(),
@@ -125,36 +132,35 @@ public sealed class UnitTestEGraphRewriteFactory : TestClassBase
 
     private async Task RunCoreAsync(IRewriteCase @case)
     {
-        DumpFlags dumpFlag = DumpFlags.None;
-#if DEBUG
-        dumpFlag = DumpFlags.EGraphCost;
-#endif
-        using var dumpScope = new DumpScope($"../{@case.Name}", dumpFlag);
+        using var dumpScope = new DumpScope($"../{@case.Name}");
+        IValue pre_ret, post_ret;
         var pre = @case.PreExpr;
         var infered = pre.InferenceType();
         Assert.True(infered);
 #if DEBUG
         DumpScope.Current.DumpIR(pre, "pre");
 #endif
-        var pass = new EGraphRulesPass { Name = "EGraphOptimize" };
-        foreach (var rule in @case.Rules)
-        {
-            pass.Add(rule);
-        }
+        var feedDict = @case.FeedDict;
+        _ = CountRunTicks(pre, feedDict, out pre_ret);
 
-        var graph = new EGraph(pre);
-        await pass.RunAsync(graph, new());
-        var post = (Function)graph.Extract(graph.Root!, null);
+        var module = new IRModule(pre);
+        var pmgr = CompileSession.CreatePassManager("pmgr");
+        pmgr.AddWithName<EGraphRulesPass>("EGraphOptimize").Configure(p =>
+        {
+            foreach (var rule in @case.Rules)
+            {
+                p.Add(rule);
+            }
+        });
+
+        await pmgr.RunAsync(module);
+        var post = (Function)module.Entry!;
         Assert.True(post.InferenceType());
 
 #if DEBUG
         DumpScope.Current.DumpIR(post, "post");
 #endif
         Assert.True(@case.ChecksPostCallBack(post));
-
-        IValue pre_ret, post_ret;
-        var feedDict = @case.FeedDict;
-        _ = CountRunTicks(pre, feedDict, out pre_ret);
         _ = CountRunTicks(post, feedDict, out post_ret);
         Assert.True(Comparator.Compare(pre_ret, post_ret));
 

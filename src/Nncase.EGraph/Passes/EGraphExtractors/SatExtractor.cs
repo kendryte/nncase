@@ -107,7 +107,8 @@ internal class SatExtractor : IExtractor
                 }
                 else
                 {
-                    EncodeCycle(subpath, cpModel, vars, ref cycleVarCount);
+                    // EncodeCycle(subpath, cpModel, vars, ref cycleVarCount);
+                    cpModel.Add(cpModel.NewConstant(subpath.Length) != LinearExpr.Sum(subpath.Select(p => vars[p.Node])));
                 }
 
                 return;
