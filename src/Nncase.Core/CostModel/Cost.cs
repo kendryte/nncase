@@ -154,7 +154,7 @@ public sealed record Cost : IComparable<Cost>, IEquatable<Cost>
 
     public override string ToString()
     {
-        if (this.Equals(Cost.Zero))
+        if (Equals(Cost.Zero))
         {
             return "Zero";
         }

@@ -19,8 +19,8 @@ internal sealed class EGraphCostEvaluator
     private readonly Dictionary<EClass, Cost> _eclassCosts = new();
     private readonly HashSet<EClass> _allEclasses = new();
     private readonly IBaseFuncCostEvaluator? _baseFuncCostEvaluator;
+    private readonly bool _accumulate;
     private bool _changed;
-    private bool _accumulate;
 
     public EGraphCostEvaluator(EClass root, IBaseFuncCostEvaluator? basefunc_cost_evaluator, bool accumulate = true)
     {

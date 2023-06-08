@@ -197,7 +197,7 @@ internal sealed class PrintCostCallBack : CpSolverSolutionCallback
     private readonly IReadOnlyDictionary<ENode, BoolVar> _vars;
     private readonly EGraphCostModel _costModel;
     private readonly StreamWriter _dumpWriter;
-    private bool _enableDump;
+    private readonly bool _enableDump;
     private int _count;
 
     public PrintCostCallBack(IReadOnlyDictionary<ENode, BoolVar> vars, EGraphCostModel costModel, StreamWriter writer, bool enableDump)
@@ -220,6 +220,7 @@ internal sealed class PrintCostCallBack : CpSolverSolutionCallback
                     cost += _costModel[n];
                 }
             }
+
             _dumpWriter.WriteLine($"Solution {_count++} @ {WallTime()}:");
             _dumpWriter.WriteLine(cost.ToString());
         }
