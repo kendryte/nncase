@@ -73,7 +73,7 @@ public sealed class AddPreProcess : ModulePass
             }
 
             // SwapRB
-            if (swapRB)
+            if (swapRB && c != 1)
             {
                 var axes = new int[4] { 0, 1, 2, 3 };
                 var strides = new int[4] { 1, 1, 1, 1 };
@@ -130,7 +130,7 @@ public sealed class AddPreProcess : ModulePass
             // Normalization
             if (mean.Length != 0)
             {
-                newInput = (newInput - Tensor.From(mean, new[] { 1, 3, 1, 1 })) / Tensor.From(std, new[] { 1, 3, 1, 1 });
+                newInput = (newInput - Tensor.From(mean, new[] { 1, mean.Length, 1, 1 })) / Tensor.From(std, new[] { 1, std.Length, 1, 1 });
 
                 // newInput = Binary(BinaryOp.Div, Binary(BinaryOp.Sub, newInput, Tensor.From(mean, new []{1,3,1,1})), Const.FromTensor(std) );
             }
