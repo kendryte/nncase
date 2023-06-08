@@ -135,7 +135,7 @@ public sealed class UnitTestDumpper : TestClassBase
             },
             new());
 
-        Assert.True(File.Exists(Path.Join(Dumpper.Directory, "Costs", "V4.dot")));
+        Assert.True(File.Exists(Path.Join(Dumpper.Directory, "Costs.txt")));
     }
 
     [Fact]

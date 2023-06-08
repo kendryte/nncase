@@ -84,7 +84,7 @@ public class UnitTestEGraphRewrite : TestClassBase
 
     [Fact]
     [AutoSetupTestMethod(InitSession = true)]
-    public void TestEgraphRemoveMarkerPreserveConstMarker()
+    public void TestEgraphRemoveMarkerWithoutConstMarker()
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 224, 224, 3 }));
         Expr pre;
@@ -111,9 +111,9 @@ public class UnitTestEGraphRewrite : TestClassBase
         Assert.True(post.InferenceType());
 
         Assert.True(
-          post is Marker { Target: Call { Arguments: var param } } &&
+          post is Call { Arguments: var param } &&
           param.Length == 2 &&
-          param[1] is Marker);
+          param[1] is not Marker);
     }
 
     [Fact]
