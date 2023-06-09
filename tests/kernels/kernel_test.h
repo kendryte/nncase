@@ -209,6 +209,10 @@ class KernelTest {
             ort_type = ortki::DataType_UINT64;
             break;
         }
+        case dt_float16: {
+            ort_type = ortki::DataType_FLOAT16;
+            break;
+        }
         case dt_float32: {
             ort_type = ortki::DataType_FLOAT;
             break;
@@ -228,42 +232,6 @@ class KernelTest {
             reinterpret_cast<const int64_t *>(tensor.shape().data());
         auto shape_size = tensor.shape().size();
         return make_tensor(buffer, ort_type, shape, shape_size);
-    }
-
-    template <typename T> double dot(const T &v1, const T &v2, size_t size) {
-        double ret = 0.f;
-        for (size_t i = 0; i < size; i++) {
-            ret += v1[i] * v2[i];
-        }
-
-        return ret;
-    }
-
-    template <typename T>
-    double cosine(runtime::runtime_tensor &v1, runtime::runtime_tensor &v2,
-                  size_t size) {
-        return dot(v1, v2, size) /
-               ((sqrt(dot(v1, v1, size)) * sqrt(dot(v2, v2, size))));
-    }
-
-    result<void> check_output(runtime::runtime_tensor expected,
-                              value_t output) {
-        try_var(output_tuple, output.as<tuple>());
-        for (size_t i = 0; i < output_tuple->fields().size(); i++) {
-            try_var(output_tensor, output_tuple->fields()[i].as<tensor>());
-            try_var(output_span,
-                    nncase::runtime::get_output_span(output_tensor));
-            auto output1 =
-                runtime::hrt::create(
-                    dt_int64, {1},
-                    {reinterpret_cast<gsl::byte *>(output_span.data()),
-                     sizeof(long)},
-                    true, runtime::host_runtime_tensor::pool_cpu_only)
-                    .expect("create tensor failed");
-            EXPECT_TRUE(is_same_tensor(expected, output1));
-        }
-
-        return ok();
     }
 
     bool is_same_tensor(runtime::runtime_tensor &lhs,
