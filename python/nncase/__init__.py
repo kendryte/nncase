@@ -378,4 +378,8 @@ class ShapeBucketOptions:
     fix_var_map: dict
 
     def __init__(self) -> None:
-        pass
+        self.enable = False
+        self.var_map = {}
+        self.range_info = {}
+        self.segments_count = 2
+        self.fix_var_map = {}

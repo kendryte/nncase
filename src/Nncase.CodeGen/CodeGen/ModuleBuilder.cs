@@ -21,7 +21,7 @@ public abstract class ModuleBuilder : IModuleBuilder
     public SectionManager SectionManager { get; } = new SectionManager();
 
     /// <inheritdoc/>
-    public ILinkableModule Build(IReadOnlyList<BaseFunction> functions)
+    public ILinkableModule Build(IReadOnlyList<BaseFunction> functions, List<string> orderedNames)
     {
         var linkableFunctions = Compile(functions);
         return CreateLinkableModule(linkableFunctions);
