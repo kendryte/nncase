@@ -266,6 +266,12 @@ public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
             calleeInLeft = true;
         }
 
+        // can't merge left right have same input: caller(callee(x),callee(x))
+        if (object.ReferenceEquals(callerInputs[calleeInLeft ? 1 : 0], callee))
+        {
+            return null;
+        }
+
         var calleeInput = (Expr)result["calleeInput"];
         var callerOtherInput = (Expr)result["callerOtherInput"];
 
@@ -555,18 +561,18 @@ v2 =f2(v0)      v1 = f1(v0)
         }
 
         /*  1. when cycle like:
-            x                x                  x
-           /  \           /  |  \         /  |  \      \
-       f1(x)  f2(x)     | f1(x) f2(x)   |   |   f1(x) f2(x)
-           \  /         \   |   /       \   |   /      /
-          f3(x,y)       f3(x,y,z)        f3(x,x,y,z)
+            x                x                  x                 x
+           /  \           /  |  \         /  |  \      \          |
+       f1(x)  f2(x)     | f1(x) f2(x)   |   |   f1(x) f2(x)     f1(x)
+           \  /         \   |   /       \   |   /      /         / \
+          f3(x,y)       f3(x,y,z)        f3(x,x,y,z)          f2(y,y)
         */
         if (caller_inputs.Count > 1)
         {
             var input_users = new HashSet<Expr>(usedByReslut[input], ReferenceEqualityComparer.Instance);
 
             // 1. remove the all mid fusion users.
-            foreach (var caller_input in caller_inputs)
+            foreach (var caller_input in new HashSet<Expr>(caller_inputs, ReferenceEqualityComparer.Instance))
             {
                 if (!object.ReferenceEquals(caller_input, input))
                 {
@@ -674,10 +680,14 @@ v2 =f2(v0)      v1 = f1(v0)
                 }
 
                 calleeBodyMap.Add(caller_fusion.Parameters[i], callee_fusion.Body);
-                new_fusion_name += "_" + callee_fusion.Name;
-                candidate_fusions.Add(callee_fusion);
-                multiVarMap.Add(callee_fusion.Parameters[0], new_fusion_input_var);
                 has_fusion_for_merge = true;
+
+                // avoid same callee fusion
+                if (candidate_fusions.Add(callee_fusion))
+                {
+                    new_fusion_name += "_" + callee_fusion.Name;
+                    multiVarMap.Add(callee_fusion.Parameters[0], new_fusion_input_var);
+                }
             }
             else
             {
