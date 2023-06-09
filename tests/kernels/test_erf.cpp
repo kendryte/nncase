@@ -45,9 +45,11 @@ class ErfTest
     runtime_tensor input;
 };
 
-INSTANTIATE_TEST_SUITE_P(Erf, ErfTest,
-                         testing::Combine(testing::Values(dt_float32, dt_float16),
-                                          testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 2, 16}, dims_t{8, 8})));
+INSTANTIATE_TEST_SUITE_P(
+    Erf, ErfTest,
+    testing::Combine(testing::Values(dt_float32, dt_float16),
+                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 2, 16},
+                                     dims_t{8, 8})));
 
 TEST_P(ErfTest, erf) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
