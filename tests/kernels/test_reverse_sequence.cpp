@@ -55,11 +55,11 @@ TEST_P(ReverseSequenceTest, ReverseSequence) {
     // expected
     size_t size = 0;
     int64_t seqLens_array[] = {1, 2, 3, 4};
-    auto seqLens =
-        hrt::create(dt_int64, {4},
-                    {reinterpret_cast<gsl::byte *>(seqLens_array), 32}, true,
-                    host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
+    auto seqLens = hrt::create(dt_int64, {4},
+                               {reinterpret_cast<gsl::byte *>(seqLens_array),
+                                sizeof(seqLens_array)},
+                               true, host_runtime_tensor::pool_cpu_only)
+                       .expect("create tensor failed");
     auto output_ort = ortki_ReverseSequence(
         l_ort, runtime_tensor_2_ort_tensor(seqLens), 1, 0);
     void *ptr_ort = tensor_buffer(output_ort, &size);
@@ -74,14 +74,16 @@ TEST_P(ReverseSequenceTest, ReverseSequence) {
     int64_t batch_axis_array[] = {1};
     auto batch_axis =
         hrt::create(dt_int64, {1},
-                    {reinterpret_cast<gsl::byte *>(batch_axis_array), 8}, true,
-                    host_runtime_tensor::pool_cpu_only)
+                    {reinterpret_cast<gsl::byte *>(batch_axis_array),
+                     sizeof(batch_axis_array)},
+                    true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     int64_t time_axis_array[] = {0};
     auto time_axis =
         hrt::create(dt_int64, {1},
-                    {reinterpret_cast<gsl::byte *>(time_axis_array), 8}, true,
-                    host_runtime_tensor::pool_cpu_only)
+                    {reinterpret_cast<gsl::byte *>(time_axis_array),
+                     sizeof(time_axis_array)},
+                    true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto output =
         kernels::stackvm::reverse_sequence(input.impl(), seqLens.impl(),

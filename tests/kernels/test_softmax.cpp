@@ -67,7 +67,8 @@ TEST_P(SoftmaxTest, Softmax) {
     // actual
     float_t axis_array[] = {-1.0f};
     auto axis = hrt::create(input.datatype(), {1},
-                            {reinterpret_cast<gsl::byte *>(axis_array), 4},
+                            {reinterpret_cast<gsl::byte *>(axis_array),
+                             sizeof(axis_array)},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
     auto output = kernels::stackvm::softmax(input.impl(), axis.impl())

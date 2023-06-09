@@ -57,11 +57,11 @@ TEST_P(PreluTest, Prelu) {
 
     // expected
     float_t slope_ptr[] = {0.2f};
-    auto slope =
-        hrt::create(nncase::dt_float32, {1},
-                    {reinterpret_cast<gsl::byte *>(slope_ptr), sizeof(float)},
-                    true, host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
+    auto slope = hrt::create(nncase::dt_float32, {1},
+                             {reinterpret_cast<gsl::byte *>(slope_ptr),
+                              sizeof(slope_ptr)},
+                             true, host_runtime_tensor::pool_cpu_only)
+                     .expect("create tensor failed");
     auto slope_ort = runtime_tensor_2_ort_tensor(slope);
     auto output_ort = ortki_PRelu(l_ort, slope_ort);
     size_t size = 0;

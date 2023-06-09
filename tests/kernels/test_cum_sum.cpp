@@ -72,16 +72,17 @@ TEST_P(CumSumTest, cum_sum) {
 
     // actual
     float_t exclusive[] = {0};
-    auto exclusive_ptr =
-        hrt::create(nncase::dt_float32, {1},
-                    {reinterpret_cast<gsl::byte *>(exclusive), 4}, true,
-                    host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
+    auto exclusive_ptr = hrt::create(nncase::dt_float32, {1},
+                                     {reinterpret_cast<gsl::byte *>(exclusive),
+                                      sizeof(exclusive)},
+                                     true, host_runtime_tensor::pool_cpu_only)
+                             .expect("create tensor failed");
     float_t reverse[] = {0};
-    auto reverse_ptr = hrt::create(nncase::dt_float32, {1},
-                                   {reinterpret_cast<gsl::byte *>(reverse), 4},
-                                   true, host_runtime_tensor::pool_cpu_only)
-                           .expect("create tensor failed");
+    auto reverse_ptr =
+        hrt::create(nncase::dt_float32, {1},
+                    {reinterpret_cast<gsl::byte *>(reverse), sizeof(reverse)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
     auto output =
         kernels::stackvm::cum_sum(input.impl(), axis_ptr.impl(),
                                   exclusive_ptr.impl(), reverse_ptr.impl())

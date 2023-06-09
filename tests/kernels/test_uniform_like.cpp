@@ -80,24 +80,27 @@ TEST_P(UniformLikeTest, UniformLike) {
     // actual
     float_t high_array[] = {1.0f};
     auto high = hrt::create(dt_float32, {1},
-                            {reinterpret_cast<gsl::byte *>(high_array), 4},
+                            {reinterpret_cast<gsl::byte *>(high_array),
+                             sizeof(high_array)},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
     float_t low_array[] = {0.0f};
     auto low = hrt::create(dt_float32, {1},
-                           {reinterpret_cast<gsl::byte *>(low_array), 4}, true,
-                           host_runtime_tensor::pool_cpu_only)
+                           {reinterpret_cast<gsl::byte *>(low_array),
+                            sizeof(low_array)},
+                           true, host_runtime_tensor::pool_cpu_only)
                    .expect("create tensor failed");
     float_t seed_array[] = {1.0f};
     auto seed = hrt::create(dt_float32, {1},
-                            {reinterpret_cast<gsl::byte *>(seed_array), 4},
+                            {reinterpret_cast<gsl::byte *>(seed_array),
+                             sizeof(seed_array)},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
-    auto shape_u =
-        hrt::create(dt_int32, {4},
-                    {reinterpret_cast<gsl::byte *>(shape_u_array), 16}, true,
-                    host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
+    auto shape_u = hrt::create(dt_int64, {4},
+                               {reinterpret_cast<gsl::byte *>(shape_u_array),
+                                sizeof(shape_u_array)},
+                               true, host_runtime_tensor::pool_cpu_only)
+                       .expect("create tensor failed");
     auto output =
         kernels::stackvm::uniform_like(dt_float32, lhs.impl(), high.impl(),
                                        low.impl(), seed.impl())

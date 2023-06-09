@@ -55,18 +55,18 @@ TEST_P(HardSigmoidTest, hard_sigmoid) {
 
     // expected
     float_t alpha_ptr[] = {0.5f};
-    auto alpha =
-        hrt::create(nncase::dt_float32, {1},
-                    {reinterpret_cast<gsl::byte *>(alpha_ptr), sizeof(float)},
-                    true, host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
+    auto alpha = hrt::create(nncase::dt_float32, {1},
+                             {reinterpret_cast<gsl::byte *>(alpha_ptr),
+                              sizeof(alpha_ptr)},
+                             true, host_runtime_tensor::pool_cpu_only)
+                     .expect("create tensor failed");
 
     float_t gamma_ptr[] = {0.6f};
-    auto gamma =
-        hrt::create(nncase::dt_float32, {1},
-                    {reinterpret_cast<gsl::byte *>(gamma_ptr), sizeof(float)},
-                    true, host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
+    auto gamma = hrt::create(nncase::dt_float32, {1},
+                             {reinterpret_cast<gsl::byte *>(gamma_ptr),
+                              sizeof(gamma_ptr)},
+                             true, host_runtime_tensor::pool_cpu_only)
+                     .expect("create tensor failed");
 
     auto output_ort = ortki_HardSigmoid(l_ort, 0.5f, 0.6f);
     size_t size = 0;

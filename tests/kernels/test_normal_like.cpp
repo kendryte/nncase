@@ -54,7 +54,6 @@ TEST_P(NormalLikeTest, normal_like) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
 
     // expected
-    int64_t shape_ptr[] = {1, 3, 16, 16};
     auto output_ort = ortki_RandomNormalLike(l_ort, 1, 0.5f, 1.0f, 1.0f);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
@@ -69,22 +68,21 @@ TEST_P(NormalLikeTest, normal_like) {
     float_t mean_ptr[] = {0.5f};
     float_t scale_ptr[] = {1.0f};
     float_t seed_ptr[] = {1.0f};
-    auto mean = hrt::create(input.datatype(), {1},
-                            {reinterpret_cast<gsl::byte *>(mean_ptr), 4}, true,
-                            host_runtime_tensor::pool_cpu_only)
-                    .expect("create tensor failed");
+    auto mean =
+        hrt::create(input.datatype(), {1},
+                    {reinterpret_cast<gsl::byte *>(mean_ptr), sizeof(mean_ptr)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
     auto scale = hrt::create(input.datatype(), {1},
-                             {reinterpret_cast<gsl::byte *>(scale_ptr), 4},
+                             {reinterpret_cast<gsl::byte *>(scale_ptr),
+                              sizeof(scale_ptr)},
                              true, host_runtime_tensor::pool_cpu_only)
                      .expect("create tensor failed");
-    auto seed = hrt::create(input.datatype(), {1},
-                            {reinterpret_cast<gsl::byte *>(seed_ptr), 4}, true,
-                            host_runtime_tensor::pool_cpu_only)
-                    .expect("create tensor failed");
-    auto shape0 = hrt::create(input.datatype(), {1},
-                              {reinterpret_cast<gsl::byte *>(shape_ptr), 4},
-                              true, host_runtime_tensor::pool_cpu_only)
-                      .expect("create tensor failed");
+    auto seed =
+        hrt::create(input.datatype(), {1},
+                    {reinterpret_cast<gsl::byte *>(seed_ptr), sizeof(seed_ptr)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
     auto output =
         kernels::stackvm::normal_like(dt_float32, input.impl(), mean.impl(),
                                       scale.impl(), seed.impl())

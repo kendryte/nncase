@@ -63,19 +63,22 @@ TEST_P(RangeTest, Range) {
     size_t size = 0;
     float_t begin_array[] = {0.0f};
     auto begin = hrt::create(lhs.datatype(), {1},
-                             {reinterpret_cast<gsl::byte *>(begin_array), 4},
+                             {reinterpret_cast<gsl::byte *>(begin_array),
+                              sizeof(begin_array)},
                              true, host_runtime_tensor::pool_cpu_only)
                      .expect("create tensor failed");
 
     float_t end_array[] = {100.0f};
     auto end = hrt::create(lhs.datatype(), {1},
-                           {reinterpret_cast<gsl::byte *>(end_array), 4}, true,
-                           host_runtime_tensor::pool_cpu_only)
+                           {reinterpret_cast<gsl::byte *>(end_array),
+                            sizeof(end_array)},
+                           true, host_runtime_tensor::pool_cpu_only)
                    .expect("create tensor failed");
 
     float_t step_array[] = {100.0f};
     auto step = hrt::create(lhs.datatype(), {1},
-                            {reinterpret_cast<gsl::byte *>(step_array), 4},
+                            {reinterpret_cast<gsl::byte *>(step_array),
+                             sizeof(step_array)},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
 

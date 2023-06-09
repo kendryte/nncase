@@ -48,7 +48,9 @@ class ReshapeTest
 INSTANTIATE_TEST_SUITE_P(
     Reshape, ReshapeTest,
     testing::Combine(testing::Values(dt_float32, dt_int32, dt_int64),
-                     testing::Values(dims_t{1, 3, 16, 16})));
+                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 16, 3, 16},
+                                     dims_t{3, 16, 16}, dims_t{768},
+                                     dims_t{48, 16})));
 
 TEST_P(ReshapeTest, Reshape) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
@@ -58,8 +60,9 @@ TEST_P(ReshapeTest, Reshape) {
     int64_t new_shape_array[] = {1, 3, 32, 8};
     auto new_shape =
         hrt::create(dt_int64, {4},
-                    {reinterpret_cast<gsl::byte *>(new_shape_array), 32}, true,
-                    host_runtime_tensor::pool_cpu_only)
+                    {reinterpret_cast<gsl::byte *>(new_shape_array),
+                     sizeof(new_shape_array)},
+                    true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto output_ort =
         ortki_Reshape(l_ort, runtime_tensor_2_ort_tensor(new_shape), (long)0);

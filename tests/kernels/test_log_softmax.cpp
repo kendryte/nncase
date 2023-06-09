@@ -67,7 +67,8 @@ TEST_P(LogSoftmaxTest, log_softmax) {
     // actual
     int64_t axis_ptr[] = {-1};
     auto axis =
-        hrt::create(dt_int64, {1}, {reinterpret_cast<gsl::byte *>(axis_ptr), 8},
+        hrt::create(dt_int64, {1},
+                    {reinterpret_cast<gsl::byte *>(axis_ptr), sizeof(axis_ptr)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto output = kernels::stackvm::log_softmax(input.impl(), axis.impl())

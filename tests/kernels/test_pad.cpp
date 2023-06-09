@@ -55,7 +55,8 @@ TEST_P(PadTest, Pad) {
     size_t size = 0;
     int64_t pad_ptr[] = {0, 0, 0, 0, 0, 0, 0, 0};
     auto pad =
-        hrt::create(dt_int64, {8}, {reinterpret_cast<gsl::byte *>(pad_ptr), 64},
+        hrt::create(dt_int64, {8},
+                    {reinterpret_cast<gsl::byte *>(pad_ptr), sizeof(pad_ptr)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     float_t value_ptr[] = {0.0f};

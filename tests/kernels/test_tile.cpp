@@ -58,7 +58,7 @@ TEST_P(TileTest, Tile) {
     int64_t repeats_array[] = {1, 1, 2, 2};
     auto repeats1 = hrt::create(dt_int64, {4},
                                 {reinterpret_cast<gsl::byte *>(repeats_array),
-                                 4 * sizeof(int64_t)},
+                                 sizeof(repeats_array)},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
     auto output_ort = ortki_Tile(l_ort, runtime_tensor_2_ort_tensor(repeats1));

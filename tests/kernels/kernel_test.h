@@ -234,6 +234,46 @@ class KernelTest {
         return make_tensor(buffer, ort_type, shape, shape_size);
     }
 
+    template <typename T> double dot(const T &v1, const T &v2, size_t size) {
+        double ret = 0.f;
+        for (size_t i = 0; i < size; i++) {
+            ret += v1[i] * v2[i];
+        }
+
+        return ret;
+    }
+
+    template <typename T> double cosine(const T &v1, const T &v2, size_t size) {
+        auto mapped1 =
+            std::move(runtime::hrt::map(v1, runtime::map_read).unwrap());
+        void *buffer1 = reinterpret_cast<void *>(mapped1.buffer().data());
+        auto mapped2 =
+            std::move(runtime::hrt::map(v2, runtime::map_read).unwrap());
+        void *buffer2 = reinterpret_cast<void *>(mapped2.buffer().data());
+        return dot(buffer1, buffer2, size) /
+               ((sqrt(dot(buffer1, buffer1, size)) *
+                 sqrt(dot(buffer1, buffer1, size))));
+    }
+
+    result<void> check_output(runtime::runtime_tensor expected,
+                              value_t output) {
+        try_var(output_tuple, output.as<tuple>());
+        for (size_t i = 0; i < output_tuple->fields().size(); i++) {
+            try_var(output_tensor, output_tuple->fields()[i].as<tensor>());
+            try_var(output_span,
+                    nncase::runtime::get_output_span(output_tensor));
+            auto output1 =
+                runtime::hrt::create(
+                    dt_int64, {1},
+                    {reinterpret_cast<gsl::byte *>(output_span.data()), 8},
+                    true, runtime::host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
+            EXPECT_TRUE(is_same_tensor(expected, output1));
+        }
+
+        return ok();
+    }
+
     bool is_same_tensor(runtime::runtime_tensor &lhs,
                         runtime::runtime_tensor &rhs) {
         if (lhs.shape() != rhs.shape()) {

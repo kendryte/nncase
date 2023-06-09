@@ -36,23 +36,24 @@ class GatherTest
         //        size_t size = 0;
         int32_t input_array[] = {0, 1, 2, 3};
         input = hrt::create(dt_int32, shape,
-                            {reinterpret_cast<gsl::byte *>(input_array), 16},
+                            {reinterpret_cast<gsl::byte *>(input_array),
+                             sizeof(input_array)},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
 
         int64_t indices_array[] = {0, 0, 1, 1};
-        indices =
-            hrt::create(dt_int64, shape,
-                        {reinterpret_cast<gsl::byte *>(indices_array), 32},
-                        true, host_runtime_tensor::pool_cpu_only)
-                .expect("create tensor failed");
+        indices = hrt::create(dt_int64, shape,
+                              {reinterpret_cast<gsl::byte *>(indices_array),
+                               sizeof(indices_array)},
+                              true, host_runtime_tensor::pool_cpu_only)
+                      .expect("create tensor failed");
 
         int64_t batchDims_array[1] = {0};
-        batchDims =
-            hrt::create(dt_int64, dims_t{1},
-                        {reinterpret_cast<gsl::byte *>(batchDims_array), 8},
-                        true, host_runtime_tensor::pool_cpu_only)
-                .expect("create tensor failed");
+        batchDims = hrt::create(dt_int64, dims_t{1},
+                                {reinterpret_cast<gsl::byte *>(batchDims_array),
+                                 sizeof(batchDims_array)},
+                                true, host_runtime_tensor::pool_cpu_only)
+                        .expect("create tensor failed");
     }
 
     void TearDown() override {}

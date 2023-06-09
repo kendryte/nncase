@@ -56,10 +56,11 @@ TEST_P(SizeOfTest, SizeOf) {
     // expected
     //    size_t size = 0;
     int32_t ptr_ort[] = {4};
-    auto expected = hrt::create(input.datatype(), {1},
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), 4},
-                                true, host_runtime_tensor::pool_cpu_only)
-                        .expect("create tensor failed");
+    auto expected =
+        hrt::create(input.datatype(), {1},
+                    {reinterpret_cast<gsl::byte *>(ptr_ort), sizeof(ptr_ort)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
 
     // actual
     auto output =

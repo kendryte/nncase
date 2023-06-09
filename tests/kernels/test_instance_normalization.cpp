@@ -82,11 +82,11 @@ TEST_P(InstanceNormalizationTest, instance_normalization) {
 
     // actual
     float epsilon_ptr[] = {-1.0f};
-    auto epsilon =
-        hrt::create(nncase::dt_float32, {1},
-                    {reinterpret_cast<gsl::byte *>(epsilon_ptr), sizeof(float)},
-                    true, host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
+    auto epsilon = hrt::create(nncase::dt_float32, {1},
+                               {reinterpret_cast<gsl::byte *>(epsilon_ptr),
+                                sizeof(epsilon_ptr)},
+                               true, host_runtime_tensor::pool_cpu_only)
+                       .expect("create tensor failed");
     auto output = kernels::stackvm::instance_normalization(
                       input.impl(), scale.impl(), b.impl(), epsilon.impl())
                       .expect("instance_normalization failed");

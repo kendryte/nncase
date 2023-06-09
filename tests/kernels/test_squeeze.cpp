@@ -57,7 +57,8 @@ TEST_P(SqueezeTest, Squeeze) {
     size_t size = 0;
     int64_t axes_array[] = {0, 2};
     auto axes = hrt::create(dt_int64, {2},
-                            {reinterpret_cast<gsl::byte *>(axes_array), 16},
+                            {reinterpret_cast<gsl::byte *>(axes_array),
+                             sizeof(axes_array)},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
     auto output_ort = ortki_Squeeze(l_ort, runtime_tensor_2_ort_tensor(axes));

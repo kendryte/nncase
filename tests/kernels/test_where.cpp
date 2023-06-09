@@ -60,7 +60,7 @@ TEST_P(WhereTest, Where) {
 
     // expected
     size_t size = 0;
-    bool con_array[] = {true, true, false, true};
+    bool con_array[] = {true, false, false, true};
     auto con = hrt::create(dt_boolean, {4},
                            {reinterpret_cast<gsl::byte *>(con_array), 4}, true,
                            host_runtime_tensor::pool_cpu_only)

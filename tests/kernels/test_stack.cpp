@@ -68,7 +68,8 @@ TEST_P(StackTest, Stack) {
     // actual
     int64_t axes_array[] = {-1};
     auto axes = hrt::create(dt_int64, {1},
-                            {reinterpret_cast<gsl::byte *>(axes_array), 8},
+                            {reinterpret_cast<gsl::byte *>(axes_array),
+                             sizeof(axes_array)},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
     //    auto output = kernels::stackvm::stack(input.impl(), axes.impl())

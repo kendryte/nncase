@@ -34,9 +34,10 @@ class UnaryTest
         auto &&[typecode, i_shape] = GetParam();
 
         float ptr_ort[] = {1.0f};
-        input = hrt::create(typecode, i_shape,
-                            {reinterpret_cast<gsl::byte *>(ptr_ort), 4}, true,
-                            host_runtime_tensor::pool_cpu_only)
+        input = hrt::create(
+                    typecode, i_shape,
+                    {reinterpret_cast<gsl::byte *>(ptr_ort), sizeof(ptr_ort)},
+                    true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
     }
 
