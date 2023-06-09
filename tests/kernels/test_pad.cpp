@@ -60,7 +60,8 @@ TEST_P(PadTest, Pad) {
             .expect("create tensor failed");
     float_t value_ptr[] = {0.0f};
     auto value = hrt::create(dt_float32, {1},
-                             {reinterpret_cast<gsl::byte *>(value_ptr), sizeof(value_ptr)},
+                             {reinterpret_cast<gsl::byte *>(value_ptr),
+                              sizeof(value_ptr)},
                              true, host_runtime_tensor::pool_cpu_only)
                      .expect("create tensor failed");
     auto l_ort = runtime_tensor_2_ort_tensor(input);
