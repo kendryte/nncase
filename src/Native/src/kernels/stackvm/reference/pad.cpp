@@ -77,7 +77,6 @@ result<void> pad_impl(const T *input, T *output, const dims_t &in_shape,
                       const strides_t &out_strides, const paddings_t &paddings,
                       pad_mode_t mode, T pad_value,
                       NNCASE_UNUSED kernel_context &context) noexcept {
-
     return apply(out_shape, [&](const dims_t &index) -> result<void> {
         bool pad_element = false;
         auto in_index =
