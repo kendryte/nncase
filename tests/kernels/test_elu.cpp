@@ -69,7 +69,7 @@ TEST_P(EluTest, add) {
     // actual
     float_t a_ptr[] = {0.8f};
     auto a = hrt::create(nncase::dt_float32, {1},
-                         {reinterpret_cast<gsl::byte *>(a_ptr), sizeof(float)},
+                         {reinterpret_cast<gsl::byte *>(a_ptr), sizeof(a_ptr)},
                          true, host_runtime_tensor::pool_cpu_only)
                  .expect("create tensor failed");
     auto output =

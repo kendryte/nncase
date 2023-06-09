@@ -46,9 +46,8 @@ class CastTest
 };
 
 INSTANTIATE_TEST_SUITE_P(Cast, CastTest,
-                         testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 3, 16,
-                                                                 16})));
+                         testing::Combine(testing::Values(dt_float32, dt_float16, dt_int32, dt_int8, dt_int16),
+                                          testing::Values(dims_t{1, 3, 16,16}, dims_t{1, 3, 8, 8}, dims_t{1, 3, 1})));
 
 TEST_P(CastTest, cast) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);

@@ -46,13 +46,12 @@ class TransposeTest
 };
 
 INSTANTIATE_TEST_SUITE_P(Transpose, TransposeTest,
-                         testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 3, 16,
-                                                                 16})));
+                         testing::Combine(testing::Values(dt_float32, dt_int32, dt_int16, dt_int8, dt_uint8),
+                                          testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 2, 4, 8}, dims_t{2, 2, 4, 4})));
 
 TEST_P(TransposeTest, Transpose) {
     auto input_ort = runtime_tensor_2_ort_tensor(input);
-    int64_t perm[] = {1, 0, 2, 3};
+    int64_t perm[] = {1, 0, 3, 2};
     size_t perm_size = 4;
 
     // expected
@@ -67,14 +66,14 @@ TEST_P(TransposeTest, Transpose) {
                         .expect("create tensor failed");
 
     auto perm1 = hrt::create(nncase::dt_int64, {4},
-                             {reinterpret_cast<gsl::byte *>(perm), 4 * 8}, true,
+                             {reinterpret_cast<gsl::byte *>(perm), sizeof(perm)}, true,
                              host_runtime_tensor::pool_cpu_only)
                      .expect("create tensor failed");
 
     int32_t perm_size_ptr[] = {4};
     auto perm_size1 =
         hrt::create(nncase::dt_int32, {1},
-                    {reinterpret_cast<gsl::byte *>(perm_size_ptr), 4}, true,
+                    {reinterpret_cast<gsl::byte *>(perm_size_ptr), sizeof(perm_size_ptr)}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 

@@ -47,7 +47,7 @@ class PadTest
 
 INSTANTIATE_TEST_SUITE_P(Pad, PadTest,
                          testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 1, 2, 3})));
+                                          testing::Values(dims_t{1, 1, 2, 4})));
 
 TEST_P(PadTest, Pad) {
 
@@ -58,9 +58,9 @@ TEST_P(PadTest, Pad) {
         hrt::create(dt_int64, {8}, {reinterpret_cast<gsl::byte *>(pad_ptr), 64},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
-    float_t value_ptr[] = {1.0f};
+    float_t value_ptr[] = {0.0f};
     auto value = hrt::create(dt_float32, {1},
-                             {reinterpret_cast<gsl::byte *>(value_ptr), 4},
+                             {reinterpret_cast<gsl::byte *>(value_ptr), sizeof(value_ptr)},
                              true, host_runtime_tensor::pool_cpu_only)
                      .expect("create tensor failed");
     auto l_ort = runtime_tensor_2_ort_tensor(input);
