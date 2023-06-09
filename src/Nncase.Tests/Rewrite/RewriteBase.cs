@@ -98,6 +98,92 @@ public sealed class FoldReshapeCase : IRewriteCase
     public Dictionary<Var, IValue> FeedDict => new();
 }
 
+public sealed class MultiReshapeCase : IRewriteCase
+{
+    private int _n = 1;
+    private int _ic = 4;
+    private int _h = 60;
+    private int _w = 72;
+    private int _oc = 1;
+
+    private readonly Var _input;
+
+    public MultiReshapeCase()
+    {
+        _input = new Var("input", new TensorType(DataTypes.Float32, new[] { _n, _ic, _h, _w }));
+        FeedDict = new Dictionary<Var, IValue>() { { _input, Normal(DataTypes.Float32, 1, 1, 1, new[] { _n, _ic, _h, _w }).Evaluate() } };
+    }
+
+    public Function PreExpr
+    {
+        get
+        {
+            var conv = Conv2D(
+                _input,
+                Normal(DataTypes.Float32, 0, 1, 1, new[] { _oc, _ic, 1, 1 }).Evaluate().AsTensor(),
+                Normal(DataTypes.Float32, 0, 1, 1, new[] { _oc }).Evaluate().AsTensor(),
+                new[] { 1, 1 },
+                new[,]
+                {
+                    { 0, 0 },
+                    { 0, 0 },
+                },
+                new[] { 1, 1 },
+                PadMode.Constant,
+                1,
+                new[] { 0.0f, 6.0f }); // f32[1,64,112,112]
+            var x = conv;
+            x = Reshape(x, new[] { _n, _oc * _h * _w });
+            x = Reshape(x, new[] { _n, _oc, _h * _w });
+            x = Reshape(x, new[] { _n, _oc * _h, _w });
+            x = Reshape(x, new[] { _n * _oc, _h * _w });
+            x = Reshape(x, new[] { _n * _oc, _h, _w });
+            x = Reshape(x, new[] { _n * _oc * _h, _w });
+            x = Reshape(x, new[] { -1, _w });
+            return new Function(x, Array.Empty<Var>());
+        }
+    }
+
+    public IEnumerable<Type> Rules => new Type[]
+    {
+        typeof(Passes.Rules.Neutral.FoldConstCall),
+        typeof(Passes.Rules.Neutral.FoldNopTranspose),
+        typeof(Passes.Rules.Neutral.FoldTwoTransposes),
+        typeof(Passes.Rules.Neutral.CombineTransposeUnary),
+        typeof(Passes.Rules.Neutral.CombineTransposePad),
+        typeof(Passes.Rules.Neutral.CombinePadTranspose),
+        typeof(Passes.Rules.Neutral.CombineBinaryTranspose),
+        typeof(Passes.Rules.Neutral.CombineConstBinaryTranspose),
+        typeof(Passes.Rules.Neutral.CombineTransposeConstBinary),
+        typeof(Passes.Rules.Neutral.CombineTransposeReduce),
+        typeof(Passes.Rules.Neutral.CombineTransposeActivations),
+        typeof(Passes.Rules.Neutral.CombineActivationsTranspose),
+        typeof(Passes.Rules.Neutral.CombineTransposeConcat),
+        typeof(Passes.Rules.Neutral.CombineBinaryReshape),
+        typeof(Passes.Rules.Neutral.CombineConstBinaryReshape),
+        typeof(Passes.Rules.Neutral.CombineUnaryReshape),
+        typeof(Passes.Rules.Neutral.CombineActivationsReshape),
+        typeof(Passes.Rules.Neutral.CombineReshapePad),
+        typeof(Passes.Rules.Neutral.FoldNopPad),
+        typeof(Passes.Rules.Neutral.FoldConv2DPads),
+        typeof(Passes.Rules.Neutral.FuseClampConv2D),
+        typeof(Passes.Rules.Neutral.FoldReduceWindow2DPads),
+        typeof(Passes.Rules.Neutral.SqueezeToReshape),
+        typeof(Passes.Rules.Neutral.UnSqueezeToReshape),
+        typeof(Passes.Rules.Neutral.TransposeToReshape),
+        typeof(Passes.Rules.Neutral.FlattenToReshape),
+        typeof(Passes.Rules.Neutral.ReshapeToTranspose),
+        typeof(Passes.Rules.Neutral.FoldNopReshape),
+        typeof(Passes.Rules.Neutral.FoldTwoReshapes),
+        typeof(Passes.Rules.Neutral.ReluToClamp),
+        typeof(Passes.Rules.Neutral.Relu6ToClamp),
+        typeof(Passes.Rules.Neutral.FoldNopSlice),
+        typeof(Passes.Rules.Neutral.FoldTwoSlices),
+    };
+
+    public Dictionary<Var, IValue> FeedDict { get; }
+}
+
 public sealed class FoldNopReshapeCase : IRewriteCase
 {
     public Function PreExpr

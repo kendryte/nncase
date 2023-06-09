@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Google.OrTools.Sat;
+using Google.Protobuf.WellKnownTypes;
 using Nncase.CostModel;
 using Nncase.Diagnostics;
 using Nncase.IR;
@@ -16,8 +17,6 @@ namespace Nncase.Passes.EGraphExtractors;
 internal class SatExtractor : IExtractor
 {
     private readonly EGraphCostModel _costModel;
-    private readonly Dictionary<EClass, Expr> _eclassMemo = new();
-    private readonly Dictionary<EClass, Expr> _markerEclassMemo = new();
 
     public SatExtractor(EGraphCostModel costModel)
     {
@@ -66,7 +65,7 @@ internal class SatExtractor : IExtractor
 
         var enableDump = DumpScope.Current.IsEnabled(DumpFlags.EGraphCost);
         CpSolverStatus status;
-        using (var dumpStream = enableDump ? DumpScope.Current.OpenFile("Costs.txt") : MemoryStream.Null)
+        using (var dumpStream = enableDump ? DumpScope.Current.OpenFile("Costs/Solve.txt") : Stream.Null)
         {
             using var writer = new StreamWriter(dumpStream);
             var cb = new PrintCostCallBack(vars, _costModel, writer, enableDump);
@@ -74,12 +73,18 @@ internal class SatExtractor : IExtractor
             dumpStream.Flush();
         }
 
-        if (status is not (CpSolverStatus.Optimal or CpSolverStatus.Optimal))
+        if (status is not (CpSolverStatus.Optimal or CpSolverStatus.Feasible))
         {
             throw new InvalidProgramException("SatExtract Failed!");
         }
 
-        return new SatExprBuildVisitor(eGraph.Nodes.ToDictionary(e => e, e => solver.BooleanValue(vars[e]))).Visit(root);
+        var pick = eGraph.Nodes.ToDictionary(e => e, e => solver.BooleanValue(vars[e]));
+        using (var dumpStream = enableDump ? DumpScope.Current.OpenFile("Costs/Pick.dot") : Stream.Null)
+        {
+            EGraphPrinter.DumpEgraphAsDot(eGraph, _costModel, pick, root.Find(), dumpStream);
+        }
+
+        return new SatExprBuildVisitor(pick).Visit(root);
     }
 
     private void GetAllCycles(EClass root, Dictionary<EClass, int> visited, List<(EClass Class, ENode Node)> path, CpModel cpModel, IReadOnlyDictionary<ENode, BoolVar> vars, ref int cycleVarCount)
@@ -215,7 +220,7 @@ internal sealed class PrintCostCallBack : CpSolverSolutionCallback
             var cost = Cost.Zero;
             foreach (var (n, v) in _vars)
             {
-                if (_costModel[n] != Cost.Zero)
+                if (_costModel[n] != Cost.Zero && BooleanValue(v))
                 {
                     cost += _costModel[n];
                 }
