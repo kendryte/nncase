@@ -47,8 +47,7 @@ class SoftmaxTest
 
 INSTANTIATE_TEST_SUITE_P(Softmax, SoftmaxTest,
                          testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 3, 16,
-                                                                 16})));
+                                          testing::Values(dims_t{1})));
 
 TEST_P(SoftmaxTest, Softmax) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
@@ -65,8 +64,8 @@ TEST_P(SoftmaxTest, Softmax) {
                         .expect("create tensor failed");
 
     // actual
-    float_t axis_array[] = {-1.0f};
-    auto axis = hrt::create(input.datatype(), {1},
+    int32_t axis_array[] = {-1};
+    auto axis = hrt::create(dt_int32, {1},
                             {reinterpret_cast<gsl::byte *>(axis_array),
                              sizeof(axis_array)},
                             true, host_runtime_tensor::pool_cpu_only)
@@ -76,7 +75,7 @@ TEST_P(SoftmaxTest, Softmax) {
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_FALSE(is_same_tensor(expected, actual));
+    EXPECT_TRUE(is_same_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {

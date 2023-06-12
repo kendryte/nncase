@@ -48,7 +48,8 @@ class CeluTest
 INSTANTIATE_TEST_SUITE_P(Celu, CeluTest,
                          testing::Combine(testing::Values(dt_float32),
                                           testing::Values(dims_t{1},
-                                                          dims_t{2})));
+                                                          dims_t{1, 2},
+                                                          dims_t{1, 2, 4})));
 
 TEST_P(CeluTest, celu) {
     auto input_ort = runtime_tensor_2_ort_tensor(input);

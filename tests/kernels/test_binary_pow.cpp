@@ -52,15 +52,15 @@ class BinaryTest : public KernelTest,
 INSTANTIATE_TEST_SUITE_P(Binary, BinaryTest,
                          testing::Combine(testing::Values(dt_int32, dt_int64),
                                           testing::Values(
-                                              /*dims_t { 3, 16, 16
+                                              dims_t { 3, 16, 16
                                                 }, dims_t { 1, 3, 16, 16
                                               }, dims_t { 16, 16 },
-                                              dims_t { 16 },*/
+                                              dims_t { 16 },
                                               dims_t{1}),
                                           testing::Values(
-                                              /*dims_t { 3, 16, 16
+                                              dims_t { 3, 16, 16
                                               }, dims_t { 16, 16 },
-                                              dims_t { 16 },*/
+                                              dims_t { 16 },
                                               dims_t{1})));
 
 TEST_P(BinaryTest, pow) {
