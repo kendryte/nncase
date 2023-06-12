@@ -48,7 +48,24 @@ internal class SatExtractor : IExtractor
 
         // 3. no cycle
         {
-            EliminateAllCycles(root, new(), new(), cpmodel, vars);
+            // 1. first simplify const folding.
+            var visited = new Dictionary<ENode, bool>();
+            foreach (var eclass in eGraph.Classes)
+            {
+                if (eclass.Nodes.Count > 1 && eclass.Nodes.Count(e => e.Expr is Const) == 1)
+                {
+                    foreach (var enode in eclass.Nodes.Where(e => e.Expr is not Const))
+                    {
+                        if (!visited.ContainsKey(enode))
+                        {
+                            cpmodel.AddAssumption(vars[enode].Not());
+                            visited.Add(enode, true);
+                        }
+                    }
+                }
+            }
+
+            EliminateAllCycles(root, new(), new(), visited, cpmodel, vars);
 
             // int cycleVarCount = 0;
             // GetAllCycles(root, new Dictionary<EClass, int>(), new List<(EClass Class, ENode Node)>(), cpmodel, vars, ref cycleVarCount);
@@ -88,43 +105,50 @@ internal class SatExtractor : IExtractor
         return new SatExprBuildVisitor(pick).Visit(root);
     }
 
-    private void EliminateAllCycles(EClass root, LinkedList<(EClass Class, ENode Node)> path, Dictionary<EClass, LinkedListNode<(EClass Class, ENode Node)>> visited, CpModel cpModel, Dictionary<ENode, BoolVar> vars)
+    private void EliminateAllCycles(EClass root, LinkedList<(EClass Class, ENode Node)> path, Dictionary<EClass, LinkedListNode<(EClass Class, ENode Node)>> pathMemo, Dictionary<ENode, bool> visited, CpModel cpModel, Dictionary<ENode, BoolVar> vars)
     {
         // note how to avoid duplicate visit same cycle ?
         // simulate the extract, disable the all cycle path.
         // when detect the cycle, do not pick the cycle path
-        if (visited.TryGetValue(root, out var oldNode))
+        if (pathMemo.TryGetValue(root, out var oldNode))
         {
-            var cycle = new List<BoolVar>();
-            do
-            {
-                cycle.Add(vars[oldNode!.Value.Node]);
-                oldNode = oldNode.Next;
-            } while (oldNode is not null);
+            var lastNode = path.Last!.Value;
+            cpModel.AddAssumption(vars[lastNode.Node].Not());
+            // var cycle = new List<BoolVar>();
+            // do
+            // {
+            //     cycle.Add(vars[oldNode!.Value.Node]);
+            //     oldNode = oldNode.Next;
+            // } while (oldNode is not null);
 
-            if (cycle.Count == 1)
-            {
-                // eg. eclass: [marker(x) , x], don't pick marker.
-                cpModel.AddAssumption(cycle[0].Not());
-            }
-            else
-            {
-                // note maybe we just do not pick backward node?
-                cpModel.Add(cpModel.NewConstant(cycle.Count) != LinearExpr.Sum(cycle));
-            }
+            // if (cycle.Count == 1)
+            // {
+            //     // eg. eclass: [marker(x) , x], don't pick marker.
+            //     cpModel.AddAssumption(cycle[0].Not());
+            // }
+            // else
+            // {
+            //     // note maybe we just do not pick backward node?
+            //     cpModel.Add(cpModel.NewConstant(cycle.Count) != LinearExpr.Sum(cycle));
+            // }
 
             return;
         }
 
         foreach (var enode in root.Nodes)
         {
-            foreach (var ch in enode.Children)
+            if (!visited.ContainsKey(enode))
             {
-                var linkNode = path.AddLast((root, enode));
-                visited.Add(root, linkNode);
-                EliminateAllCycles(ch, path, visited, cpModel, vars);
-                path.Remove(linkNode);
-                visited.Remove(root);
+                foreach (var ch in enode.Children)
+                {
+                    var linkNode = path.AddLast((root, enode));
+                    pathMemo.Add(root, linkNode);
+                    EliminateAllCycles(ch, path, pathMemo, visited, cpModel, vars);
+                    path.Remove(linkNode);
+                    pathMemo.Remove(root);
+                }
+
+                visited.Add(enode, true);
             }
         }
     }
