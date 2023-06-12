@@ -7,7 +7,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Google.OrTools.Sat;
-using Google.Protobuf.WellKnownTypes;
 using Nncase.CostModel;
 using Nncase.Diagnostics;
 using Nncase.IR;
@@ -49,8 +48,9 @@ internal class SatExtractor : IExtractor
 
         // 3. no cycle
         {
-            int cycleVarCount = 0;
-            GetAllCycles(root, new Dictionary<EClass, int>(), new List<(EClass Class, ENode Node)>(), cpmodel, vars, ref cycleVarCount);
+            EliminateAllCycles(root, new(), new(), cpmodel, vars);
+            // int cycleVarCount = 0;
+            // GetAllCycles(root, new Dictionary<EClass, int>(), new List<(EClass Class, ENode Node)>(), cpmodel, vars, ref cycleVarCount);
         }
 
         // 3. add pick weights for all enode.
@@ -85,6 +85,47 @@ internal class SatExtractor : IExtractor
         }
 
         return new SatExprBuildVisitor(pick).Visit(root);
+    }
+
+    private void EliminateAllCycles(EClass root, LinkedList<(EClass Class, ENode Node)> path, Dictionary<EClass, LinkedListNode<(EClass Class, ENode Node)>> visited, CpModel cpModel, Dictionary<ENode, BoolVar> vars)
+    {
+        // note how to avoid duplicate visit same cycle ?
+        // simulate the extract, disable the all cycle path.
+        // when detect the cycle, do not pick the cycle path
+        if (visited.TryGetValue(root, out var oldNode))
+        {
+            var cycle = new List<BoolVar>();
+            do
+            {
+                cycle.Add(vars[oldNode!.Value.Node]);
+                oldNode = oldNode.Next;
+            } while (oldNode is not null);
+
+            if (cycle.Count == 1)
+            {
+                // eg. eclass: [marker(x) , x], don't pick marker.
+                cpModel.AddAssumption(cycle[0].Not());
+            }
+            else
+            {
+                // note maybe we just do not pick backward node?
+                cpModel.Add(cpModel.NewConstant(cycle.Count) != LinearExpr.Sum(cycle));
+            }
+
+            return;
+        }
+
+        foreach (var enode in root.Nodes)
+        {
+            foreach (var ch in enode.Children)
+            {
+                var linkNode = path.AddLast((root, enode));
+                visited.Add(root, linkNode);
+                EliminateAllCycles(ch, path, visited, cpModel, vars);
+                path.Remove(linkNode);
+                visited.Remove(root);
+            }
+        }
     }
 
     private void GetAllCycles(EClass root, Dictionary<EClass, int> visited, List<(EClass Class, ENode Node)> path, CpModel cpModel, IReadOnlyDictionary<ENode, BoolVar> vars, ref int cycleVarCount)
