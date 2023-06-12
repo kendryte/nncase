@@ -110,10 +110,11 @@ internal class SatExtractor : IExtractor
         // note how to avoid duplicate visit same cycle ?
         // simulate the extract, disable the all cycle path.
         // when detect the cycle, do not pick the cycle path
-        if (pathMemo.TryGetValue(root, out var oldNode))
+        if (pathMemo.TryGetValue(root, out _))
         {
-            var lastNode = path.Last!.Value;
-            cpModel.AddAssumption(vars[lastNode.Node].Not());
+            var (_, node) = path.Last!.Value;
+            cpModel.AddAssumption(vars[node].Not());
+
             // var cycle = new List<BoolVar>();
             // do
             // {
@@ -131,7 +132,6 @@ internal class SatExtractor : IExtractor
             //     // note maybe we just do not pick backward node?
             //     cpModel.Add(cpModel.NewConstant(cycle.Count) != LinearExpr.Sum(cycle));
             // }
-
             return;
         }
 
