@@ -100,11 +100,11 @@ public sealed class FoldReshapeCase : IRewriteCase
 
 public sealed class MultiReshapeCase : IRewriteCase
 {
-    private int _n = 1;
-    private int _ic = 4;
-    private int _h = 60;
-    private int _w = 72;
-    private int _oc = 1;
+    private readonly int _n = 1;
+    private readonly int _ic = 4;
+    private readonly int _h = 60;
+    private readonly int _w = 72;
+    private readonly int _oc = 1;
 
     private readonly Var _input;
 

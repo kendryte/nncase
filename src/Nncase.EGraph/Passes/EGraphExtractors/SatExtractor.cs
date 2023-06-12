@@ -49,6 +49,7 @@ internal class SatExtractor : IExtractor
         // 3. no cycle
         {
             EliminateAllCycles(root, new(), new(), cpmodel, vars);
+
             // int cycleVarCount = 0;
             // GetAllCycles(root, new Dictionary<EClass, int>(), new List<(EClass Class, ENode Node)>(), cpmodel, vars, ref cycleVarCount);
         }
