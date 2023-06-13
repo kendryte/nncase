@@ -102,8 +102,7 @@ namespace hrt = host_runtime_tensor;
 namespace detail {
 NNCASE_API result<tensor>
 create(datatype_t datatype, dims_t shape,
-       hrt::memory_pool_t pool = hrt::pool_shared_first,
-       uintptr_t physical_address = 0) noexcept;
+       hrt::memory_pool_t pool = hrt::pool_shared_first) noexcept;
 }
 
 END_NS_NNCASE_RUNTIME

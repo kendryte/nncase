@@ -78,8 +78,7 @@ result<buffer_t> attach_buffer(gsl::span<gsl::byte> data,
 } // namespace
 
 result<tensor> runtime::detail::create(datatype_t datatype, dims_t shape,
-                                       hrt::memory_pool_t pool,
-                                       uintptr_t physical_address) noexcept {
+                                       hrt::memory_pool_t pool) noexcept {
     auto strides = get_default_strides(shape);
     auto size_bytes = compute_size(shape, strides) * get_bytes(datatype);
     checked_try_var(buffer, allocate_buffer(size_bytes, pool));
