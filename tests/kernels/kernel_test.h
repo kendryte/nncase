@@ -164,7 +164,7 @@ class KernelTest {
         }
     }
 
-    virtual void init_tensor_pow_f32(runtime::runtime_tensor &tensor){
+    virtual void init_tensor_pow_f32(runtime::runtime_tensor &tensor) {
         std::random_device rd;
         std::mt19937 gen(rd());
         std::uniform_real_distribution<float> dis(-1.0f, 1.0f);

@@ -39,11 +39,10 @@ class BinaryTest : public KernelTest,
         rhs = hrt::create(typecode, r_shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
 
-        if(typecode == dt_float32){
+        if (typecode == dt_float32) {
             init_tensor_pow_f32(lhs);
             init_tensor_pow_f32(rhs);
-        }
-        else{
+        } else {
             init_tensor(lhs);
             init_tensor(rhs);
         }
