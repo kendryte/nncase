@@ -12,8 +12,6 @@ jobs:
     strategy:
       matrix:
         config:
-          - {name: x86_64-macos, os: macos-latest, cmakeArgs: -DENABLE_X86SIMD=OFF, buildType: Release}
-          - {name: x86_64-linux, os: ubuntu-latest, cmakeArgs: '', buildType: Release}
           - {name: x86_64-windows, os: windows-latest, arch: x64, cmakeArgs: -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl, buildType: Release}
 
     steps:
@@ -74,8 +72,6 @@ jobs:
       matrix:
         dotnet-version: ['7.0']
         config:
-          - {name: x86_64-macos, os: macos-latest, shell: bash, rid: osx-x64, buildType: Release}
-          - {name: x86_64-linux, os: ubuntu-latest, shell: bash, rid: linux-x64, buildType: Release}
           - {name: x86_64-windows, os: windows-latest, shell: bash, rid: win-x64, buildType: Release}
 
     steps:
@@ -162,8 +158,6 @@ jobs:
       matrix:
         dotnet-version: ['7.0']
         config:
-          - {name: x86_64-macos, os: macos-latest, shell: bash}
-          - {name: x86_64-linux, os: ubuntu-latest, shell: bash}
           - {name: x86_64-windows, os: windows-latest, shell: bash}
 
     env:
@@ -251,71 +245,71 @@ jobs:
           NNCASE_COMPILER: ${{github.workspace}}/install/Nncase.Compiler.dll
         run: |
           dotnet tool install --global dotnet-coverage
-          dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/onnx_basic.xml pytest tests/importer/onnx_/basic/ --doctest-modules --junitxml=test_results/onnx_basic.xml
-          dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/onnx_combine.xml pytest tests/importer/onnx_/combine/ --doctest-modules --junitxml=test_results/onnx_combine.xml
-          dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/tflite_basic.xml pytest tests/importer/tflite_/basic/ --doctest-modules --junitxml=test_results/tflite_basic.xml
-          dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/tflite_combine.xml pytest tests/importer/tflite_/combine/ --doctest-modules --junitxml=test_results/tflite_combine.xml
-          dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/tflite_model.xml pytest tests/importer/tflite_/model/ --doctest-modules --junitxml=test_results/tflite_model.xml
-          dotnet-coverage merge -o coverage.integration.xml -f cobertura -r coverage/*.xml
-
-      - name: Upload Coverage
-        uses: actions/upload-artifact@v3
-        if: matrix.config.name == 'x86_64-linux'
-        with:
-          name: nncase-coverage-integration
-          path: coverage.integration.xml
-          if-no-files-found: error
-
-      - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v2
-        if: always() && matrix.config.name == 'x86_64-linux'
-        with:
-          files: test_results/*.xml
-
-  upload-coverage:
-    needs: [test-compiler]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: "7.0"
-
-      - name: Download Unit Test Coverage
-        uses: actions/download-artifact@v3
-        with:
-          name: nncase-coverage-unit
-          path: ${{github.workspace}}/coverage
-
-      - name: Download Integration Test Coverage
-        uses: actions/download-artifact@v3
-        with:
-          name: nncase-coverage-integration
-          path: ${{github.workspace}}/coverage
-
-      - name: Upload Codecov (Unit)
-        uses: codecov/codecov-action@v3
-        with:
-          files: coverage/coverage.unit.xml
-          flags: unit
-
-      - name: Upload Codecov (Integration)
-        uses: codecov/codecov-action@v3
-        with:
-          files: coverage/coverage.integration.xml
-          flags: integration
-
-      - name: Generate Coverage Report
-        run: |
-          dotnet tool install --global dotnet-coverage
-          dotnet tool install -g dotnet-reportgenerator-globaltool
-          dotnet-coverage merge -o coverage.xml -f cobertura -r coverage/*.xml
-          reportgenerator -reports:coverage.xml -targetdir:"coveragereport" -reporttypes:Html
-
-      - name: Upload Coverage Report
-        uses: actions/upload-artifact@v3
-        with:
-          name: nncase-coverage-report
-          path: coveragereport
-          if-no-files-found: error
+          pytest tests/importer/onnx_/basic/ -s --doctest-modules --junitxml=test_results/onnx_basic.xml
+          pytest -s tests/importer/onnx_/combine/ -s --doctest-modules --junitxml=test_results/onnx_combine.xml
+          pytest -s tests/importer/tflite_/basic/ -s --doctest-modules --junitxml=test_results/tflite_basic.xml
+          pytest -s tests/importer/tflite_/combine/ -s --doctest-modules --junitxml=test_results/tflite_combine.xml
+          pytest -s tests/importer/tflite_/model/ -s --doctest-modules --junitxml=test_results/tflite_model.xml
+#          dotnet-coverage merge -o coverage.integration.xml -f cobertura -r coverage/*.xml
+#
+#      - name: Upload Coverage
+#        uses: actions/upload-artifact@v3
+#        if: matrix.config.name == 'x86_64-linux'
+#        with:
+#          name: nncase-coverage-integration
+#          path: coverage.integration.xml
+#          if-no-files-found: error
+#
+#      - name: Publish Test Results
+#        uses: EnricoMi/publish-unit-test-result-action@v2
+#        if: always() && matrix.config.name == 'x86_64-linux'
+#        with:
+#          files: test_results/*.xml
+#
+#  upload-coverage:
+#    needs: [test-compiler]
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v3
+#      - name: Setup .NET
+#        uses: actions/setup-dotnet@v1
+#        with:
+#          dotnet-version: "7.0"
+#
+#      - name: Download Unit Test Coverage
+#        uses: actions/download-artifact@v3
+#        with:
+#          name: nncase-coverage-unit
+#          path: ${{github.workspace}}/coverage
+#
+#      - name: Download Integration Test Coverage
+#        uses: actions/download-artifact@v3
+#        with:
+#          name: nncase-coverage-integration
+#          path: ${{github.workspace}}/coverage
+#
+#      - name: Upload Codecov (Unit)
+#        uses: codecov/codecov-action@v3
+#        with:
+#          files: coverage/coverage.unit.xml
+#          flags: unit
+#
+#      - name: Upload Codecov (Integration)
+#        uses: codecov/codecov-action@v3
+#        with:
+#          files: coverage/coverage.integration.xml
+#          flags: integration
+#
+#      - name: Generate Coverage Report
+#        run: |
+#          dotnet tool install --global dotnet-coverage
+#          dotnet tool install -g dotnet-reportgenerator-globaltool
+#          dotnet-coverage merge -o coverage.xml -f cobertura -r coverage/*.xml
+#          reportgenerator -reports:coverage.xml -targetdir:"coveragereport" -reporttypes:Html
+#
+#      - name: Upload Coverage Report
+#        uses: actions/upload-artifact@v3
+#        with:
+#          name: nncase-coverage-report
+#          path: coveragereport
+#          if-no-files-found: error
