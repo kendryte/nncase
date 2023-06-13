@@ -28,7 +28,7 @@ public sealed class UnitTestEGraphRewriteFactory : TestClassBase
 
     public static TheoryData<IRewriteCase> DataOne => new()
     {
-        new MultiReshapeCase(),
+        new PReluTransposeCase(),
     };
 
     public static TheoryData<IRewriteCase> DataAll => new()
@@ -110,6 +110,7 @@ public sealed class UnitTestEGraphRewriteFactory : TestClassBase
         new UniformCase(),
         new ResizeImageCase(),
         new ProdCase(),
+        new MultiReshapeCase(),
     };
 
     [Theory]

@@ -72,6 +72,11 @@ public class UnitTestExpression
         dict.TryAdd(a, 0);
         dict.TryAdd(b, 1);
         Assert.Equal(2, dict.Keys.Count);
+        var arr = new float[] { -0.12399824f, -0.03634571f, 0.5353417f, -0.67039806f, 0.91027457f, -1.0752988f, 0.55657554f, -1.1045103f };
+        a = Const.FromTensor(Tensor.From(arr, new[] { 8, 1, 1 }));
+        b = Const.FromTensor(Tensor.From(arr, new[] { 1, 8, 1 }));
+        Assert.NotEqual(a, b);
+        Assert.Equal(2, new HashSet<Const>(new[] { a, b }).Count);
     }
 
     /// <summary>

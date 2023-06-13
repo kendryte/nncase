@@ -10,6 +10,7 @@ using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.F;
 using Nncase.Passes;
+using Nncase.Passes.Rules.Neutral;
 using Nncase.Passes.Transforms;
 using Nncase.Schedule;
 using Nncase.Utilities;
@@ -2842,4 +2843,34 @@ public sealed class ProdCase : IRewriteCase
     {
         { _input, Normal(DataTypes.Int32, 0, 1, 1, _input.CheckedShape.ToValueArray()).Evaluate() },
     };
+}
+
+public sealed class PReluTransposeCase : IRewriteCase
+{
+    public PReluTransposeCase()
+    {
+        var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 33, 65, 1 }));
+        {
+            var v0 = Transpose(input, new[] { 0, 3, 1, 2 }); // f32[1,1,33,65]
+            var v1 = IR.F.NN.Conv2D(v0, IR.F.Random.Normal(new[] { 8, 1, 3, 3 }).Evaluate().AsTensor(), new[] { 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f }, new[] { 1, 1 }, new[,] { { 1, 1 }, { 1, 1 } }, new[] { 1, 1 }, PadMode.Constant, 1, new[] { -float.PositiveInfinity, float.PositiveInfinity }); // f32[1,8,33,65]
+            var v2 = Transpose(v1, new[] { 0, 2, 3, 1 }); // f32[1,33,65,8]
+            var v3 = PRelu(v2, Tensor.From(new[] { -0.12399824f, -0.03634571f, 0.5353417f, -0.67039806f, 0.91027457f, -1.0752988f, 0.55657554f, -1.1045103f }, new[] { 1, 1, 8 })); // f32[1,33,65,8]
+            PreExpr = new Function(v3, new[] { input });
+        }
+
+        FeedDict = new() { { input, IR.F.Random.Normal(new[] { 1, 33, 65, 1 }).Evaluate() } };
+    }
+
+    public Function PreExpr { get; }
+
+    public IEnumerable<Type> Rules => new[] {
+        typeof(CombineTransposeActivations),
+        typeof(CombineActivationsTranspose),
+        typeof(TransposeToReshape),
+        typeof(ReshapeToTranspose),
+        typeof(FoldNopTranspose),
+        typeof(FoldNopReshape),
+    };
+
+    public Dictionary<Var, IValue> FeedDict { get; }
 }
