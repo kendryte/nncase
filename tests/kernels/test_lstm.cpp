@@ -161,16 +161,17 @@ TEST_P(LstmTest, lstm) {
             {reinterpret_cast<gsl::byte *>(output_size), sizeof(output_size)},
             true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
-//        auto output = kernels::stackvm::lstm(
-//                          runtime::stackvm::lstmdirection_t::forward,
-//                          runtime::stackvm::lstmlayout_t::zero, activations,
-//                          x.impl(), w.impl(), r.impl(), b.impl(),
-//                          seqLength.impl(), initH.impl(), initC.impl(),
-//                          p.impl(), alpha_ptr.impl(), beta_ptr.impl(),
-//                          clip_ptr.impl(), hidden_size_ptr.impl(),
-//                          input_forget_ptr.impl(), output_size_ptr.impl())
-//                          .expect("lstm failed");
-//        runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
+    //        auto output = kernels::stackvm::lstm(
+    //                          runtime::stackvm::lstmdirection_t::forward,
+    //                          runtime::stackvm::lstmlayout_t::zero,
+    //                          activations, x.impl(), w.impl(), r.impl(),
+    //                          b.impl(), seqLength.impl(), initH.impl(),
+    //                          initC.impl(), p.impl(), alpha_ptr.impl(),
+    //                          beta_ptr.impl(), clip_ptr.impl(),
+    //                          hidden_size_ptr.impl(), input_forget_ptr.impl(),
+    //                          output_size_ptr.impl()) .expect("lstm failed");
+    //        runtime_tensor actual(output.as<tensor>().expect("as tensor
+    //        failed"));
 
     // compare
     EXPECT_TRUE(is_same_tensor(expected, expected));
