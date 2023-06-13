@@ -66,8 +66,7 @@ typedef std::function<void(gsl::byte *)> data_deleter_t;
 
 NNCASE_API result<runtime_tensor>
 create(typecode_t datatype, dims_t shape,
-       memory_pool_t pool = pool_shared_first,
-       uintptr_t physical_address = 0) noexcept;
+       memory_pool_t pool = pool_shared_first) noexcept;
 NNCASE_API result<runtime_tensor>
 create(typecode_t datatype, dims_t shape, gsl::span<gsl::byte> data, bool copy,
        memory_pool_t pool = pool_shared_first,
@@ -78,8 +77,7 @@ create(typecode_t datatype, dims_t shape, gsl::span<gsl::byte> data,
        uintptr_t physical_address = 0) noexcept;
 NNCASE_API result<runtime_tensor>
 create(typecode_t datatype, dims_t shape, strides_t strides,
-       memory_pool_t pool = pool_shared_first,
-       uintptr_t physical_address = 0) noexcept;
+       memory_pool_t pool = pool_shared_first) noexcept;
 NNCASE_API result<runtime_tensor>
 create(typecode_t datatype, dims_t shape, strides_t strides,
        gsl::span<gsl::byte> data, bool copy,

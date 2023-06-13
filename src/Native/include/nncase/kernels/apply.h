@@ -33,12 +33,60 @@ namespace reference {
 BEGIN_NS_NNCASE_KERNELS_STACKVM
 
 namespace detail {
+#define APPLY_IMPL_FOR(i) for (index[i] = 0; index[i] < shape[i]; index[i]++)
+
 template <class Callable>
 result<void> apply_1(gsl::span<const size_t> shape,
                      Callable &&callable) noexcept {
-    for (size_t i = 0; i < shape[0]; i++) {
-        try_(callable(gsl::span(&i, 1)));
-    }
+    size_t index[1];
+    APPLY_IMPL_FOR(0)
+    try_(callable(gsl::span(index)));
+    return ok();
+}
+
+template <class Callable>
+result<void> apply_2(gsl::span<const size_t> shape,
+                     Callable &&callable) noexcept {
+    size_t index[2];
+    APPLY_IMPL_FOR(0)
+    APPLY_IMPL_FOR(1)
+    try_(callable(gsl::span(index)));
+    return ok();
+}
+
+template <class Callable>
+result<void> apply_3(gsl::span<const size_t> shape,
+                     Callable &&callable) noexcept {
+    size_t index[3];
+    APPLY_IMPL_FOR(0)
+    APPLY_IMPL_FOR(1)
+    APPLY_IMPL_FOR(2)
+    try_(callable(gsl::span(index)));
+    return ok();
+}
+
+template <class Callable>
+result<void> apply_4(gsl::span<const size_t> shape,
+                     Callable &&callable) noexcept {
+    size_t index[4];
+    APPLY_IMPL_FOR(0)
+    APPLY_IMPL_FOR(1)
+    APPLY_IMPL_FOR(2)
+    APPLY_IMPL_FOR(3)
+    try_(callable(gsl::span(index)));
+    return ok();
+}
+
+template <class Callable>
+result<void> apply_5(gsl::span<const size_t> shape,
+                     Callable &&callable) noexcept {
+    size_t index[5];
+    APPLY_IMPL_FOR(0)
+    APPLY_IMPL_FOR(1)
+    APPLY_IMPL_FOR(2)
+    APPLY_IMPL_FOR(3)
+    APPLY_IMPL_FOR(4)
+    try_(callable(gsl::span(index)));
     return ok();
 }
 
@@ -82,6 +130,14 @@ result<void> apply(gsl::span<const size_t> shape,
         return callable(shape);
     case 1:
         return detail::apply_1(shape, std::forward<Callable>(callable));
+    case 2:
+        return detail::apply_2(shape, std::forward<Callable>(callable));
+    case 3:
+        return detail::apply_3(shape, std::forward<Callable>(callable));
+    case 4:
+        return detail::apply_4(shape, std::forward<Callable>(callable));
+    case 5:
+        return detail::apply_5(shape, std::forward<Callable>(callable));
     default:
         break;
     }
