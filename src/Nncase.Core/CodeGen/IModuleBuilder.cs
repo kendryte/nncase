@@ -149,9 +149,8 @@ public interface IModuleBuilder
     /// Build linkable module.
     /// </summary>
     /// <param name="functions">Source functions.</param>
-    /// <param name="orderedNames">Ordered Names.</param>
     /// <returns>Compiled linkable module.</returns>
-    ILinkableModule Build(IReadOnlyList<BaseFunction> functions, List<string> orderedNames);
+    ILinkableModule Build(IReadOnlyList<BaseFunction> functions);
 }
 
 /// <summary>

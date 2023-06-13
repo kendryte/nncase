@@ -4,12 +4,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.Diagnostics;
 using Nncase.IR;
-using Nncase.TIR;
 
 namespace Nncase.CodeGen;
 
@@ -38,21 +36,6 @@ public sealed class ModelBuilder : IModelBuilder
     /// </summary>
     public CompileOptions CompileOptions { get; }
 
-    internal sealed class TraceInfoVisitor : ExprVisitor<Unit, Unit>
-    {
-        public readonly List<string> _primfuncNames = new();
-        protected override Unit DefaultVisitLeaf(Expr expr) => default;
-
-        protected override Unit VisitLeafCall(Call expr)
-        {
-            if (expr is Call { Target: PrimFunctionWrapper { Target: PrimFunction primFunc } wrapper })
-            {
-                _primfuncNames.Add(primFunc.Name);
-            }
-
-            return default;
-        }
-    }
     public ILinkedModel Build(IRModule module)
     {
         var functionsByKind = module.Functions.GroupBy(x => x.ModuleKind).ToList();
@@ -62,10 +45,7 @@ public sealed class ModelBuilder : IModelBuilder
             CodeGenDumper.DumpIdMap(functionIds);
         }
 
-        var visitor = new TraceInfoVisitor();
-        visitor.Visit(module.Entry!);
-
-        var linkableModules = functionsByKind.Select(x => Target.CreateModuleBuilder(x.Key, CompileOptions).Build(x.ToList(), visitor._primfuncNames)).ToList();
+        var linkableModules = functionsByKind.Select(x => Target.CreateModuleBuilder(x.Key, CompileOptions).Build(x.ToList())).ToList();
         var linkContext = new LinkContext(functionIds);
         var linkedModules = linkableModules.Select(x => x.Link(linkContext)).ToList();
         var entryFunctionId = module.Entry == null ? null : functionIds[module.Entry];
