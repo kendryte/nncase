@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #pragma once
+#include <malloc.h>
 #include <nncase/runtime/datatypes.h>
 #include <nncase/runtime/error.h>
 #include <nncase/runtime/result.h>
@@ -32,36 +33,51 @@ namespace reference {
 BEGIN_NS_NNCASE_KERNELS_STACKVM
 
 namespace detail {
-template <class TShape, class Callable, class TIt>
-result<void> apply_impl(Callable &&callable, TShape index_prefix,
-                        TIt index_begin, TIt index_end) noexcept {
-    const auto head = *index_begin++;
-    index_prefix.push_back(0);
-    if (index_begin == index_end) {
-        for (size_t i = 0; i < head; i++) {
-            index_prefix.back() = i;
-            try_(callable(index_prefix));
-        }
-    } else {
-        for (size_t i = 0; i < head; i++) {
-            index_prefix.back() = i;
-            try_(apply_impl(std::forward<Callable>(callable), index_prefix,
-                            index_begin, index_end));
-        }
+template <class Callable>
+result<void> apply_1(gsl::span<const size_t> shape,
+                     Callable &&callable) noexcept {
+    for (size_t i = 0; i < shape[0]; i++) {
+        try_(callable(gsl::span(&i, 1)));
     }
+    return ok();
+}
 
+template <class Callable>
+result<void> apply_generic(gsl::span<const size_t> shape,
+                           Callable &&callable) noexcept {
+    size_t *index = (size_t *)_alloca(sizeof(size_t) * shape.size());
+    auto last_dim_idx = (int32_t)shape.size() - 1;
+    while (true) {
+        int dim = last_dim_idx;
+        while (index[dim] == shape[dim]) {
+            if (dim == 0) {
+                return ok();
+            }
+
+            index[dim] = 0;
+            index[--dim]++;
+        }
+
+        try_(callable({index, shape.size()}));
+        index[last_dim_idx]++;
+    }
     return ok();
 }
 } // namespace detail
 
-template <class TShape, class Callable>
-result<void> apply(const TShape &shape, Callable &&callable) noexcept {
-    if (shape.size() == 0) {
+template <class Callable>
+result<void> apply(gsl::span<const size_t> shape,
+                   Callable &&callable) noexcept {
+    switch (shape.size()) {
+    case 0:
         return callable(shape);
+    case 1:
+        return detail::apply_1(shape, std::forward<Callable>(callable));
+    default:
+        break;
     }
 
-    return detail::apply_impl(std::forward<Callable>(callable), TShape(),
-                              shape.cbegin(), shape.cend());
+    return detail::apply_generic(shape, std::forward<Callable>(callable));
 }
 
 END_NS_NNCASE_KERNELS_STACKVM
