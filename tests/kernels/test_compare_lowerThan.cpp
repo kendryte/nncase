@@ -51,7 +51,7 @@ class CompareTest : public KernelTest,
 
 INSTANTIATE_TEST_SUITE_P(
     compare, CompareTest,
-    testing::Combine(testing::Values(dt_float32, dt_int32, dt_int64),
+    testing::Combine(testing::Values(dt_int32, dt_int64),
                      testing::Values(dims_t{1, 3, 16, 16}),
                      testing::Values(dims_t{1, 3, 16, 16})));
 

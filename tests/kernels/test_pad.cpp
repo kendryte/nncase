@@ -46,21 +46,21 @@ class PadTest
 };
 
 INSTANTIATE_TEST_SUITE_P(Pad, PadTest,
-                         testing::Combine(testing::Values(dt_int8),
+                         testing::Combine(testing::Values(dt_uint8),
                                           testing::Values(dims_t{2, 3})));
 
 TEST_P(PadTest, Pad) {
 
     // expected
     size_t size = 0;
-    int64_t pad_ptr[] = {0, 0, 0, 0};
+    int64_t pad_ptr[] = {0, 0, 0, 1};
     auto pad =
         hrt::create(dt_int64, {4},
                     {reinterpret_cast<gsl::byte *>(pad_ptr), sizeof(pad_ptr)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
-    int8_t value_ptr[] = {0};
-    auto value = hrt::create(dt_int8, {1},
+    uint8_t value_ptr[] = {0};
+    auto value = hrt::create(dt_uint8, {1},
                              {reinterpret_cast<gsl::byte *>(value_ptr),
                               sizeof(value_ptr)},
                              true, host_runtime_tensor::pool_cpu_only)
