@@ -35,11 +35,18 @@ class BinaryTest : public KernelTest,
 
         lhs = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
-        init_tensor(lhs);
 
         rhs = hrt::create(typecode, r_shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
-        init_tensor(rhs);
+
+        if(typecode == dt_float32){
+            init_tensor_pow_f32(lhs);
+            init_tensor_pow_f32(rhs);
+        }
+        else{
+            init_tensor(lhs);
+            init_tensor(rhs);
+        }
     }
 
     void TearDown() override {}
@@ -51,7 +58,7 @@ class BinaryTest : public KernelTest,
 
 INSTANTIATE_TEST_SUITE_P(
     Binary, BinaryTest,
-    testing::Combine(testing::Values(dt_int32, dt_int64),
+    testing::Combine(testing::Values(dt_int32, dt_int64, dt_float32),
                      testing::Values(dims_t{3, 16, 16}, dims_t{1, 3, 16, 16},
                                      dims_t{16, 16}, dims_t{16}, dims_t{1},
                                      dims_t{}),
