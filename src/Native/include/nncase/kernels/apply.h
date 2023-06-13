@@ -13,7 +13,12 @@
  * limitations under the License.
  */
 #pragma once
-#include <malloc.h>
+#ifdef _WIN32
+#include <malloc.h>     // alloca
+#else
+#include <alloca.h>     // alloca
+#endif
+
 #include <nncase/runtime/datatypes.h>
 #include <nncase/runtime/error.h>
 #include <nncase/runtime/result.h>
