@@ -204,7 +204,7 @@ result<void> nncase::kernels::stackvm::reference::pad(
     bool padding_before_is_zero =
         std::all_of(paddings.begin(), paddings.end(),
                     [](const padding &p) { return p.before == 0; }) &&
-        mode == pad_mode_t::constant;
+        mode == pad_mode_t::constant && in_shape.size() >= 3;
 
     if (std::all_of(paddings.begin(), paddings.end(),
                     [](const padding &p) { return p.interior == 0; })) {
