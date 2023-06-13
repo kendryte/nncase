@@ -28,11 +28,11 @@ using namespace nncase::kernels::stackvm;
 
 template <typename T>
 result<void> where_impl(const bool *cond, const T *x, const T *y, T *output,
-                        const dims_t &cond_shape, const dims_t &x_shape,
-                        const dims_t &y_shape, const dims_t &out_shape,
-                        const strides_t &cond_strides,
-                        const strides_t &x_strides, const strides_t &y_strides,
-                        const strides_t &out_strides) {
+                        gsl::span<const size_t> cond_shape, gsl::span<const size_t> x_shape,
+                        gsl::span<const size_t> y_shape, gsl::span<const size_t> out_shape,
+                        gsl::span<const size_t> cond_strides,
+                        gsl::span<const size_t> x_strides, gsl::span<const size_t> y_strides,
+                        gsl::span<const size_t> out_strides) {
     return apply(out_shape, [&](const auto &index) -> result<void> {
         const auto cond_index =
             kernels::detail::get_reduced_offset(index, cond_shape);
@@ -58,10 +58,10 @@ result<void> where_impl(const bool *cond, const T *x, const T *y, T *output,
 
 result<void> nncase::kernels::stackvm::reference::where(
     datatype_t dt, const bool *cond, const gsl::byte *x, const gsl::byte *y,
-    gsl::byte *output, const dims_t &cond_shape, const dims_t &x_shape,
-    const dims_t &y_shape, const dims_t &out_shape,
-    const strides_t &cond_strides, const strides_t &x_strides,
-    const strides_t &y_strides, const strides_t &out_strides) {
+    gsl::byte *output, gsl::span<const size_t> cond_shape, gsl::span<const size_t> x_shape,
+    gsl::span<const size_t> y_shape, gsl::span<const size_t> out_shape,
+    gsl::span<const size_t> cond_strides, gsl::span<const size_t> x_strides,
+    gsl::span<const size_t> y_strides, gsl::span<const size_t> out_strides) {
     try_var(tycode, to_typecode(dt));
     TYPE_SELECT(tycode, WHERE_IMPL);
 }

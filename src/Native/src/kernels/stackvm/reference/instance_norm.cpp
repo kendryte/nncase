@@ -29,10 +29,10 @@ namespace {
 result<void> instance_norm_impl(const float *input, const float *scale,
                                 const float *bias, const float *input_mean,
                                 const float *input_var, float *output,
-                                const dims_t &in_shape,
-                                const strides_t &in_strides,
-                                const strides_t &out_strides, float epsilon) {
-    return apply(in_shape, [&](const dims_t &index) -> result<void> {
+                                gsl::span<const size_t> in_shape,
+                                gsl::span<const size_t> in_strides,
+                                gsl::span<const size_t> out_strides, float epsilon) {
+    return apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
         auto c = index[1];
         auto off = offset(in_strides, index);
         const auto x = input[off];
@@ -46,8 +46,8 @@ result<void> instance_norm_impl(const float *input, const float *scale,
 
 result<void> nncase::kernels::stackvm::reference::instance_norm(
     const float *input, const float *scale, const float *bias, float *output,
-    const dims_t &in_shape, const strides_t &in_strides,
-    const strides_t &out_strides, float epsilon) {
+    gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
+    gsl::span<const size_t> out_strides, float epsilon) {
     auto axes = dims_t{};
     for (size_t i = 2; i < in_shape.size(); ++i) {
         axes.push_back(i);

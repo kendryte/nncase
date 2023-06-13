@@ -29,7 +29,7 @@ using namespace nncase::kernels::stackvm;
 
 namespace {
 std::pair<size_t, size_t>
-find_input_id_and_index(size_t index, const dims_t &concat_dims) noexcept {
+find_input_id_and_index(size_t index, gsl::span<const size_t> concat_dims) noexcept {
     size_t input_id;
     for (input_id = 0;; input_id++) {
         auto input_dim = concat_dims[input_id];
@@ -43,12 +43,12 @@ find_input_id_and_index(size_t index, const dims_t &concat_dims) noexcept {
 
 template <class T>
 result<void> concat_impl(gsl::span<const gsl::byte *const> inputs, T *output,
-                         const dims_t &out_shape,
+                         gsl::span<const size_t> out_shape,
                          gsl::span<const dims_t> &in_strides,
-                         const strides_t &out_strides, size_t axis,
-                         const dims_t &concat_dims,
+                         gsl::span<const size_t> out_strides, size_t axis,
+                         gsl::span<const size_t> concat_dims,
                          NNCASE_UNUSED kernel_context &context) noexcept {
-    return apply(out_shape, [&](const dims_t &out_index) -> result<void> {
+    return apply(out_shape, [&](gsl::span<const size_t> out_index) -> result<void> {
         auto in_id_index =
             find_input_id_and_index(out_index[axis], concat_dims);
         auto input = reinterpret_cast<const T *>(inputs[in_id_index.first]);
@@ -71,9 +71,9 @@ result<void> concat_impl(gsl::span<const gsl::byte *const> inputs, T *output,
 
 result<void> nncase::kernels::stackvm::reference::concat(
     datatype_t type, gsl::span<const gsl::byte *const> inputs,
-    gsl::byte *output, const dims_t &out_shape,
-    gsl::span<const dims_t> in_strides, const strides_t &out_strides,
-    size_t axis, const dims_t &concat_dims, kernel_context &context) noexcept {
+    gsl::byte *output, gsl::span<const size_t> out_shape,
+    gsl::span<const dims_t> in_strides, gsl::span<const size_t> out_strides,
+    size_t axis, gsl::span<const size_t> concat_dims, kernel_context &context) noexcept {
     switch (runtime::get_bytes(type)) {
         CONCAT_IMPL(1, uint8_t);
         CONCAT_IMPL(2, uint16_t);

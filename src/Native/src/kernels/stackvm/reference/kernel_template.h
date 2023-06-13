@@ -19,11 +19,11 @@
 #define FLOAT_UNARY_IMPL_TEMPLATE(_name, _compute)                             \
     template <class T>                                                         \
     result<void> _name##_impl(                                                 \
-        const T *input, T *output, const dims_t &in_shape,                     \
-        const strides_t &input_strides, const dims_t &out_shape,               \
-        const strides_t &out_strides,                                          \
+        const T *input, T *output, gsl::span<const size_t> in_shape,                     \
+        gsl::span<const size_t> input_strides, gsl::span<const size_t> out_shape,               \
+        gsl::span<const size_t> out_strides,                                          \
         NNCASE_UNUSED kernel_context &context) noexcept {                      \
-        return apply(out_shape, [&](const dims_t &index) -> result<void> {     \
+        return apply(out_shape, [&](gsl::span<const size_t> index) -> result<void> {     \
             const auto in_index =                                              \
                 kernels::detail::get_reduced_offset(index, in_shape);          \
             auto src_idx = offset(input_strides, in_index);                    \
@@ -53,11 +53,11 @@
 #define FLOAT_UNARY_WITH_MUL_IMPL_TEMPLATE(_name, _alpha_name, _compute)       \
     template <class T>                                                         \
     result<void> _name##_impl(                                                 \
-        const T *input, T *output, T _alpha_name, const dims_t &in_shape,      \
-        const strides_t &input_strides, const dims_t &out_shape,               \
-        const strides_t &out_strides,                                          \
+        const T *input, T *output, T _alpha_name, gsl::span<const size_t> in_shape,      \
+        gsl::span<const size_t> input_strides, gsl::span<const size_t> out_shape,               \
+        gsl::span<const size_t> out_strides,                                          \
         NNCASE_UNUSED kernel_context &context) noexcept {                      \
-        return apply(out_shape, [&](const dims_t &index) -> result<void> {     \
+        return apply(out_shape, [&](gsl::span<const size_t> index) -> result<void> {     \
             const auto in_index =                                              \
                 kernels::detail::get_reduced_offset(index, in_shape);          \
             auto src_idx = offset(input_strides, in_index);                    \
@@ -70,9 +70,9 @@
 
 #define FLOAT_UNARY_WITH_MUL_OP_TEMPLATE(_name, _alpha_name)                   \
     result<void> _name##_impl(                                                 \
-        const float *input, float *output, const dims_t &input_shape,          \
-        const strides_t &input_strides, const dims_t &out_shape,               \
-        const strides_t &out_strides, NNCASE_UNUSED kernel_context &context);  \
+        const float *input, float *output, gsl::span<const size_t> input_shape,          \
+        gsl::span<const size_t> input_strides, gsl::span<const size_t> out_shape,               \
+        gsl::span<const size_t> out_strides, NNCASE_UNUSED kernel_context &context);  \
     result<value_t> nncase::kernels::stackvm::_name(                           \
         value_t input, value_t _alpha_name, value_t output,                    \
         kernel_context &context) {                                             \
@@ -114,11 +114,11 @@
 #define FLOAT_ACTIVATION_IMPL_TEMPLATE(_name, _compute, ...)                   \
     template <class T>                                                         \
     result<void> _name##_impl(                                                 \
-        const T *input, T *output, const dims_t &in_shape,                     \
-        const strides_t &input_strides, const dims_t &out_shape,               \
-        const strides_t &out_strides, FLOAT_ARGS_EXPAND(__VA_ARGS__),          \
+        const T *input, T *output, gsl::span<const size_t> in_shape,                     \
+        gsl::span<const size_t> input_strides, gsl::span<const size_t> out_shape,               \
+        gsl::span<const size_t> out_strides, FLOAT_ARGS_EXPAND(__VA_ARGS__),          \
         NNCASE_UNUSED kernel_context &context) noexcept {                      \
-        return apply(out_shape, [&](const dims_t &index) -> result<void> {     \
+        return apply(out_shape, [&](gsl::span<const size_t> index) -> result<void> {     \
             const auto in_index =                                              \
                 kernels::detail::get_reduced_offset(index, in_shape);          \
             auto src_idx = offset(input_strides, in_index);                    \
@@ -191,14 +191,14 @@
     FLOAT_ACTIVATION_OP_TEMPLATE(_name, __VA_ARGS__)
 
 #define BASIC_PARAM                                                            \
-    const gsl::byte *input, gsl::byte *output, const dims_t &in_shape,         \
-        const dims_t &out_shape, const strides_t &in_strides,                  \
-        const strides_t &out_strides
+    const gsl::byte *input, gsl::byte *output, gsl::span<const size_t> in_shape,         \
+        gsl::span<const size_t> out_shape, gsl::span<const size_t> in_strides,                  \
+        gsl::span<const size_t> out_strides
 
 #define BASIC_PARAM_T                                                          \
-    const T *input, T *output, const dims_t &in_shape,                         \
-        const dims_t &out_shape, const strides_t &in_strides,                  \
-        const strides_t &out_strides
+    const T *input, T *output, gsl::span<const size_t> in_shape,                         \
+        gsl::span<const size_t> out_shape, gsl::span<const size_t> in_strides,                  \
+        gsl::span<const size_t> out_strides
 
 #define PASS_BASIC_ARG(_input, _output)                                        \
     _input##_mem, _output##_mem, _input##_tensor->shape(),                     \
@@ -207,15 +207,15 @@
 
 #define BASIC_BINARY_PARAM                                                     \
     const gsl::byte *lhs, const gsl::byte *rhs, gsl::byte *output,             \
-        const dims_t &lhs_shape, const dims_t &rhs_shape,                      \
-        const dims_t &out_shape, const strides_t &lhs_strides,                 \
-        const strides_t &rhs_strides, const strides_t &out_strides
+        gsl::span<const size_t> lhs_shape, gsl::span<const size_t> rhs_shape,                      \
+        gsl::span<const size_t> out_shape, gsl::span<const size_t> lhs_strides,                 \
+        gsl::span<const size_t> rhs_strides, gsl::span<const size_t> out_strides
 
 #define BASIC_BINARY_PARAM_T                                                   \
-    const T *lhs, const T *rhs, T *output, const dims_t &in_shape,             \
-        const dims_t &rhs_shape, const dims_t &out_shape,                      \
-        const strides_t &lhs_strides, const strides_t &rhs_strides,            \
-        const strides_t &out_strides
+    const T *lhs, const T *rhs, T *output, gsl::span<const size_t> in_shape,             \
+        gsl::span<const size_t> rhs_shape, gsl::span<const size_t> out_shape,                      \
+        gsl::span<const size_t> lhs_strides, gsl::span<const size_t> rhs_strides,            \
+        gsl::span<const size_t> out_strides
 
 #define PASS_BASIC_BINARY_ARG(_lhs, _rhs, _output)                             \
     _lhs##_mem, _rhs##_mem, _output##_mem, _lhs##_tensor->shape(),             \

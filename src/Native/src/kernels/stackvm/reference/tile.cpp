@@ -27,10 +27,10 @@ using namespace nncase::kernels;
 using namespace nncase::kernels::stackvm;
 
 template <typename T>
-result<void> tile_impl(const T *input, T *output, const dims_t &in_shape,
-                       const dims_t &out_shape, const strides_t &in_strides,
-                       const strides_t &out_strides,
-                       [[maybe_unused]] const dims_t &repeats) {
+result<void> tile_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
+                       gsl::span<const size_t> out_shape, gsl::span<const size_t> in_strides,
+                       gsl::span<const size_t> out_strides,
+                       [[maybe_unused]] gsl::span<const size_t> repeats) {
     return apply(out_shape, [&](const auto &out_index) -> result<void> {
         auto in_index = dims_t(out_index.size());
         for (size_t i = 0; i < in_shape.size(); ++i) {
@@ -48,9 +48,9 @@ result<void> tile_impl(const T *input, T *output, const dims_t &in_shape,
 
 result<void> nncase::kernels::stackvm::reference::tile(
     datatype_t dt, const gsl::byte *input, gsl::byte *output,
-    const dims_t &in_shape, const dims_t &out_shape,
-    const strides_t &in_strides, const strides_t &out_strides,
-    const dims_t &repeats) {
+    gsl::span<const size_t> in_shape, gsl::span<const size_t> out_shape,
+    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
+    gsl::span<const size_t> repeats) {
     try_var(tycode, to_typecode(dt));
     TYPE_SELECT(tycode, TILE_IMPL);
 }

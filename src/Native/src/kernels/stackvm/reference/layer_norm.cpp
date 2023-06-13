@@ -23,7 +23,7 @@ using namespace nncase::kernels::stackvm;
 
 result<void> nncase::kernels::stackvm::reference::layer_norm(
     const float *input, float *output, const float *scale, const float *bias,
-    const dims_t &in_shape, int32_t axis, float epsilon) {
+    gsl::span<const size_t> in_shape, int32_t axis, float epsilon) {
     auto outer_size = 1;
     auto inner_size = 1;
     for (auto i = 0; i < axis; i++)

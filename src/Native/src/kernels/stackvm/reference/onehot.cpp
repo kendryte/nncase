@@ -28,12 +28,12 @@ using namespace nncase::kernels::stackvm;
 namespace {
 template <class T, class IndicesT>
 result<void> one_hot_impl(const IndicesT *indices, T *output,
-                          const dims_t &indices_shape, const dims_t &out_shape,
-                          const strides_t &out_strides,
+                          gsl::span<const size_t> indices_shape, gsl::span<const size_t> out_shape,
+                          gsl::span<const size_t> out_strides,
                           NNCASE_UNUSED size_t depth, T off_value, T on_value,
                           size_t axis, runtime::stackvm::one_hot_mode_t mode,
                           NNCASE_UNUSED kernel_context &context) {
-    return apply(out_shape, [&](const dims_t &out_index) -> result<void> {
+    return apply(out_shape, [&](gsl::span<const size_t> out_index) -> result<void> {
         dims_t indices_index(indices_shape.size());
         for (size_t i = 0; i < axis; ++i) {
             indices_index[i] = out_index[i];
@@ -73,8 +73,8 @@ result<void> one_hot_impl(const IndicesT *indices, T *output,
 
 result<void> nncase::kernels::stackvm::reference::one_hot(
     datatype_t type, datatype_t indices_type, const gsl::byte *indices,
-    gsl::byte *output, const dims_t &indices_shape, const dims_t &out_shape,
-    const strides_t &out_strides, size_t depth, gsl::byte *values, size_t axis,
+    gsl::byte *output, gsl::span<const size_t> indices_shape, gsl::span<const size_t> out_shape,
+    gsl::span<const size_t> out_strides, size_t depth, gsl::byte *values, size_t axis,
     runtime::stackvm::one_hot_mode_t mode, kernel_context &context) noexcept {
     TYPE_IMPL_SELECT(type, ONEHOT_IMPL);
 }

@@ -26,8 +26,8 @@ using namespace nncase::kernels;
 namespace {
 template <class T>
 result<void>
-resize_bilinear_impl(const T *input, T *output, const dims_t &in_shape,
-                     const strides_t &in_strides, const strides_t &out_strides,
+resize_bilinear_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
+                     gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
                      int32_t out_h, int32_t out_w, bool align_corners,
                      NNCASE_UNUSED bool half_pixel_centers,
                      NNCASE_UNUSED kernel_context &context) noexcept {
@@ -89,8 +89,8 @@ resize_bilinear_impl(const T *input, T *output, const dims_t &in_shape,
 
 template <class T>
 result<void> resize_nearest_neighbor_impl(
-    const T *input, T *output, const dims_t &in_shape,
-    const strides_t &in_strides, const strides_t &out_strides, int32_t out_h,
+    const T *input, T *output, gsl::span<const size_t> in_shape,
+    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides, int32_t out_h,
     int32_t out_w, bool align_corners, bool half_pixel_centers,
     NNCASE_UNUSED kernel_context &context) noexcept {
     auto scales = kernels::detail::get_resize_scales(in_shape, out_h, out_w,
@@ -162,8 +162,8 @@ result<void> resize_nearest_neighbor_impl(
 
 result<void> nncase::kernels::stackvm::reference::resize_bilinear(
     typecode_t type, const gsl::byte *input, gsl::byte *output,
-    const dims_t &in_shape, const strides_t &in_strides,
-    const strides_t &out_strides, int32_t out_h, int32_t out_w,
+    gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
+    gsl::span<const size_t> out_strides, int32_t out_h, int32_t out_w,
     bool align_corners, bool half_pixel_centers,
     kernel_context &context) noexcept {
     FP_OR_Q_IMPL(type, RESIZE_BILINEAR_IMPL);
@@ -171,8 +171,8 @@ result<void> nncase::kernels::stackvm::reference::resize_bilinear(
 
 result<void> nncase::kernels::stackvm::reference::resize_nearest_neighbor(
     typecode_t type, const gsl::byte *input, gsl::byte *output,
-    const dims_t &in_shape, const strides_t &in_strides,
-    const strides_t &out_strides, int32_t out_h, int32_t out_w,
+    gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
+    gsl::span<const size_t> out_strides, int32_t out_h, int32_t out_w,
     bool align_corners, bool half_pixel_centers,
     kernel_context &context) noexcept {
     FP_OR_Q_IMPL(type, RESIZE_NEAREST_NEIGHBOR_IMPL);

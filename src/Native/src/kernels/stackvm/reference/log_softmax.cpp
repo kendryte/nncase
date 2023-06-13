@@ -28,9 +28,9 @@ namespace {
 // log_softmax(x) = log(exp(x - reduce_max(x)) / reduce_sum(exp(x -
 // reduce_max(x))))
 template <typename T>
-result<void> log_softmax_impl(const T *input, T *output, const dims_t &in_shape,
-                              const dims_t &in_strides,
-                              const dims_t &out_strides,
+result<void> log_softmax_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
+                              gsl::span<const size_t> in_strides,
+                              gsl::span<const size_t> out_strides,
                               int64_t axis) noexcept {
     size_t positive_axis = axis < 0 ? in_shape.size() + axis : axis;
     dims_t axes{positive_axis};
@@ -42,7 +42,7 @@ result<void> log_softmax_impl(const T *input, T *output, const dims_t &in_shape,
     std::vector<T> tmp(reduced_size, std::numeric_limits<T>::lowest());
 
     // reduce_max
-    try_(apply(in_shape, [&](const dims_t &index) -> result<void> {
+    try_(apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
         auto in_idx = offset(in_strides, index);
         const auto in = input[in_idx];
 
@@ -56,7 +56,7 @@ result<void> log_softmax_impl(const T *input, T *output, const dims_t &in_shape,
     }));
 
     // x - reduce_max
-    try_(apply(in_shape, [&](const dims_t &index) -> result<void> {
+    try_(apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
         auto in_idx = offset(in_strides, index);
         const auto in = input[in_idx];
 
@@ -72,7 +72,7 @@ result<void> log_softmax_impl(const T *input, T *output, const dims_t &in_shape,
 
     // exp(x - reduce_max) and sum
     tmp.assign(tmp.size(), static_cast<T>(0));
-    try_(apply(in_shape, [&](const dims_t &index) -> result<void> {
+    try_(apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
         auto in_idx = offset(out_strides, index);
         const auto in = output[in_idx];
 
@@ -86,7 +86,7 @@ result<void> log_softmax_impl(const T *input, T *output, const dims_t &in_shape,
     }));
 
     // div and log
-    try_(apply(in_shape, [&](const dims_t &index) -> result<void> {
+    try_(apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
         const auto in_index =
             kernels::detail::get_reduced_offset(index, axes, true);
         auto in_idx = offset(reduced_strides, in_index);
@@ -104,8 +104,8 @@ result<void> log_softmax_impl(const T *input, T *output, const dims_t &in_shape,
 } // namespace
 
 result<void> nncase::kernels::stackvm::reference::log_softmax(
-    const float *input, float *output, const dims_t &in_shape,
-    const dims_t &in_strides, const dims_t &out_strides,
+    const float *input, float *output, gsl::span<const size_t> in_shape,
+    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
     int32_t axis) noexcept {
     return log_softmax_impl(input, output, in_shape, in_strides, out_strides,
                             axis);

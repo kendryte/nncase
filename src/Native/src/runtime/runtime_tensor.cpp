@@ -30,9 +30,9 @@ typecode_t runtime_tensor::datatype() const noexcept {
     return type->typecode();
 }
 
-const dims_t &runtime_tensor::shape() const noexcept { return impl_->shape(); }
+gsl::span<const size_t> runtime_tensor::shape() const noexcept { return impl_->shape(); }
 
-const strides_t &runtime_tensor::strides() const noexcept {
+gsl::span<const size_t> runtime_tensor::strides() const noexcept {
     return impl_->strides();
 }
 

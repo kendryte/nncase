@@ -31,7 +31,7 @@ namespace nncase {
 class KernelTest {
   public:
     template <typename T>
-    T &get(runtime::runtime_tensor &t, const dims_t &index) {
+    T &get(runtime::runtime_tensor &t, gsl::span<const size_t> index) {
         auto map = std::move(
             runtime::hrt::map(t, runtime::map_read).unwrap_or_throw());
         auto data = map.buffer().as_span<T>();
@@ -46,7 +46,7 @@ class KernelTest {
             std::mt19937 gen(rd());
             std::uniform_int_distribution<> dis(-6, 6);
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
-                tensor.shape(), [&](const dims_t &index) -> result<void> {
+                tensor.shape(), [&](gsl::span<const size_t> index) -> result<void> {
                     get<int8_t>(tensor, index) = static_cast<int8_t>(dis(gen));
                     return ok();
                 });
@@ -57,7 +57,7 @@ class KernelTest {
             std::mt19937 gen(rd());
             std::uniform_int_distribution<> dis(-6, 6);
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
-                tensor.shape(), [&](const dims_t &index) -> result<void> {
+                tensor.shape(), [&](gsl::span<const size_t> index) -> result<void> {
                     get<int16_t>(tensor, index) =
                         static_cast<int16_t>(dis(gen));
                     return ok();
@@ -69,7 +69,7 @@ class KernelTest {
             std::mt19937 gen(rd());
             std::uniform_int_distribution<> dis(-6, 6);
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
-                tensor.shape(), [&](const dims_t &index) -> result<void> {
+                tensor.shape(), [&](gsl::span<const size_t> index) -> result<void> {
                     get<int32_t>(tensor, index) = dis(gen);
                     return ok();
                 });
@@ -80,7 +80,7 @@ class KernelTest {
             std::mt19937 gen(rd());
             std::uniform_int_distribution<> dis(-6, 6);
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
-                tensor.shape(), [&](const dims_t &index) -> result<void> {
+                tensor.shape(), [&](gsl::span<const size_t> index) -> result<void> {
                     get<int64_t>(tensor, index) =
                         static_cast<int64_t>(dis(gen));
                     return ok();
@@ -92,7 +92,7 @@ class KernelTest {
             std::mt19937 gen(rd());
             std::uniform_int_distribution<> dis(0, 127);
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
-                tensor.shape(), [&](const dims_t &index) -> result<void> {
+                tensor.shape(), [&](gsl::span<const size_t> index) -> result<void> {
                     get<uint8_t>(tensor, index) =
                         static_cast<uint8_t>(dis(gen));
                     return ok();
@@ -104,7 +104,7 @@ class KernelTest {
             std::mt19937 gen(rd());
             std::uniform_int_distribution<> dis(0, 127);
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
-                tensor.shape(), [&](const dims_t &index) -> result<void> {
+                tensor.shape(), [&](gsl::span<const size_t> index) -> result<void> {
                     get<uint16_t>(tensor, index) =
                         static_cast<uint16_t>(dis(gen));
                     return ok();
@@ -116,7 +116,7 @@ class KernelTest {
             std::mt19937 gen(rd());
             std::uniform_int_distribution<> dis(0, 127);
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
-                tensor.shape(), [&](const dims_t &index) -> result<void> {
+                tensor.shape(), [&](gsl::span<const size_t> index) -> result<void> {
                     get<uint32_t>(tensor, index) =
                         static_cast<uint32_t>(dis(gen));
                     return ok();
@@ -128,7 +128,7 @@ class KernelTest {
             std::mt19937 gen(rd());
             std::uniform_int_distribution<uint64_t> dis(0, 127);
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
-                tensor.shape(), [&](const dims_t &index) -> result<void> {
+                tensor.shape(), [&](gsl::span<const size_t> index) -> result<void> {
                     get<uint64_t>(tensor, index) =
                         static_cast<uint64_t>(dis(gen));
                     return ok();
@@ -140,7 +140,7 @@ class KernelTest {
             std::mt19937 gen(rd());
             std::uniform_real_distribution<float> dis(-1.0f, 1.0f);
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
-                tensor.shape(), [&](const dims_t &index) -> result<void> {
+                tensor.shape(), [&](gsl::span<const size_t> index) -> result<void> {
                     get<float>(tensor, index) = static_cast<float>(dis(gen));
                     return ok();
                 });
@@ -151,7 +151,7 @@ class KernelTest {
             std::mt19937 gen(rd());
             std::uniform_real_distribution<double> dis(-1.0, 1.0);
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
-                tensor.shape(), [&](const dims_t &index) -> result<void> {
+                tensor.shape(), [&](gsl::span<const size_t> index) -> result<void> {
                     get<double>(tensor, index) = static_cast<double>(dis(gen));
                     return ok();
                 });
@@ -231,7 +231,7 @@ class KernelTest {
         }
         return kernels::stackvm::apply(
                    lhs.shape(),
-                   [&](const dims_t &index) -> result<void> {
+                   [&](gsl::span<const size_t> index) -> result<void> {
                        auto dtype = lhs.datatype();
                        switch (dtype) {
                        case dt_int8: {

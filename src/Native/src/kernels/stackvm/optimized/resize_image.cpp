@@ -25,9 +25,9 @@ namespace {
 
 template <class T>
 result<void>
-resize_bilinear_impl(const T *input, T *output, const dims_t &in_shape,
-                     NNCASE_UNUSED const dims_t &in_strides,
-                     NNCASE_UNUSED const dims_t &out_strides, int32_t out_h,
+resize_bilinear_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
+                     NNCASE_UNUSED gsl::span<const size_t> in_strides,
+                     NNCASE_UNUSED gsl::span<const size_t> out_strides, int32_t out_h,
                      int32_t out_w, bool align_corners,
                      NNCASE_UNUSED bool half_pixel_centers,
                      NNCASE_UNUSED kernel_context &context) noexcept {
@@ -87,9 +87,9 @@ resize_bilinear_impl(const T *input, T *output, const dims_t &in_shape,
 
 template <class T>
 result<void>
-resize_nearest_neighbor_impl(const T *input, T *output, const dims_t &in_shape,
-                             NNCASE_UNUSED const dims_t &in_strides,
-                             NNCASE_UNUSED const dims_t &out_strides,
+resize_nearest_neighbor_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
+                             NNCASE_UNUSED gsl::span<const size_t> in_strides,
+                             NNCASE_UNUSED gsl::span<const size_t> out_strides,
                              int32_t out_h, int32_t out_w, bool align_corners,
                              bool half_pixel_centers,
                              NNCASE_UNUSED kernel_context &context) noexcept {
@@ -130,9 +130,9 @@ resize_nearest_neighbor_impl(const T *input, T *output, const dims_t &in_shape,
 }
 
 inline result<void> gnne_resize_nearest_neighbor(
-    const bfloat16 *input, bfloat16 *output, const dims_t &in_shape,
-    NNCASE_UNUSED const dims_t &in_strides,
-    NNCASE_UNUSED const dims_t &out_strides, int32_t out_h, int32_t out_w,
+    const bfloat16 *input, bfloat16 *output, gsl::span<const size_t> in_shape,
+    NNCASE_UNUSED gsl::span<const size_t> in_strides,
+    NNCASE_UNUSED gsl::span<const size_t> out_strides, int32_t out_h, int32_t out_w,
     NNCASE_UNUSED bool align_corners, NNCASE_UNUSED bool half_pixel_centers,
     NNCASE_UNUSED kernel_context &context) {
     if (align_corners || half_pixel_centers) {
@@ -172,9 +172,9 @@ inline result<void> gnne_resize_nearest_neighbor(
 }
 
 inline result<void> resize_bilinear_impl(
-    const bfloat16 *input, bfloat16 *output, const dims_t &in_shape,
-    NNCASE_UNUSED const dims_t &in_strides,
-    NNCASE_UNUSED const dims_t &out_strides, int32_t out_h, int32_t out_w,
+    const bfloat16 *input, bfloat16 *output, gsl::span<const size_t> in_shape,
+    NNCASE_UNUSED gsl::span<const size_t> in_strides,
+    NNCASE_UNUSED gsl::span<const size_t> out_strides, int32_t out_h, int32_t out_w,
     bool align_corners, NNCASE_UNUSED bool half_pixel_centers,
     NNCASE_UNUSED kernel_context &context) {
     if (half_pixel_centers) {
@@ -269,7 +269,7 @@ inline result<void> resize_bilinear_impl(
 
 result<void> optimized::resize_bilinear(
     typecode_t type, const gsl::byte *input, gsl::byte *output,
-    const dims_t &in_shape, const dims_t &in_strides, const dims_t &out_strides,
+    gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
     int32_t out_h, int32_t out_w, bool align_corners, bool half_pixel_centers,
     kernel_context &context) noexcept {
     FP_OR_Q_IMPL(type, RESIZE_BILINEAR_IMPL);
@@ -277,7 +277,7 @@ result<void> optimized::resize_bilinear(
 
 result<void> optimized::resize_nearest_neighbor(
     typecode_t type, const gsl::byte *input, gsl::byte *output,
-    const dims_t &in_shape, const dims_t &in_strides, const dims_t &out_strides,
+    gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
     int32_t out_h, int32_t out_w, bool align_corners, bool half_pixel_centers,
     kernel_context &context) noexcept {
     FP_OR_Q_IMPL(type, RESIZE_NEAREST_NEIGHBOR_IMPL);

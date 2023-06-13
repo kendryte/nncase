@@ -27,10 +27,10 @@ using namespace nncase::kernels::stackvm::optimized;
 namespace {
 template <class T, class IndicesT>
 result<void>
-gather_nd_impl(const T *input, T *output, const dims_t &in_shape,
-               NNCASE_UNUSED const dims_t &out_shape, const dims_t &in_strides,
-               NNCASE_UNUSED const dims_t &out_strides, const IndicesT *indices,
-               const dims_t &indices_shape, size_t batch_dims,
+gather_nd_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
+               NNCASE_UNUSED gsl::span<const size_t> out_shape, gsl::span<const size_t> in_strides,
+               NNCASE_UNUSED gsl::span<const size_t> out_strides, const IndicesT *indices,
+               gsl::span<const size_t> indices_shape, size_t batch_dims,
                NNCASE_UNUSED kernel_context &context) noexcept {
     auto last_indices_index = indices_shape.size() - 1;
     auto indices_list_size = indices_shape[last_indices_index];
@@ -92,10 +92,10 @@ gather_nd_impl(const T *input, T *output, const dims_t &in_shape,
 
 result<void>
 optimized::gather_nd(datatype_t type, const gsl::byte *input, gsl::byte *output,
-                     const dims_t &in_shape, const dims_t &out_shape,
-                     const dims_t &in_strides, const dims_t &out_strides,
+                     gsl::span<const size_t> in_shape, gsl::span<const size_t> out_shape,
+                     gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
                      datatype_t indices_type, const gsl::byte *indices,
-                     const dims_t &indices_shape, size_t batch_dims,
+                     gsl::span<const size_t> indices_shape, size_t batch_dims,
                      kernel_context &context) noexcept {
     TYPE_IMPL_SELECT(type, GATHER_ND_IMPL);
 }

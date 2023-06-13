@@ -28,10 +28,10 @@ using namespace nncase::kernels::stackvm;
 namespace {
 template <class T>
 result<void> clamp_impl(const T *input, T min, T max, T *output,
-                        const dims_t &in_shape, const strides_t &in_strides,
-                        const strides_t &out_strides,
+                        gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
+                        gsl::span<const size_t> out_strides,
                         NNCASE_UNUSED kernel_context &context) {
-    return apply(in_shape, [&](const dims_t &index) -> result<void> {
+    return apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
         const auto v = input[offset(index, in_strides)];
         output[offset(index, out_strides)] = std::min(std::max(v, min), max);
         return ok();
@@ -46,8 +46,8 @@ result<void> clamp_impl(const T *input, T min, T max, T *output,
 
 result<void> nncase::kernels::stackvm::reference::clamp(
     typecode_t type, const gsl::byte *input, const gsl::byte *min,
-    const gsl::byte *max, gsl::byte *output, const dims_t &in_shape,
-    const strides_t &in_strides, const strides_t &out_strides,
+    const gsl::byte *max, gsl::byte *output, gsl::span<const size_t> in_shape,
+    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
     NNCASE_UNUSED kernel_context &context) noexcept {
     TYPE_SELECT(type, CLAMP_IMPL);
 }

@@ -27,11 +27,11 @@ using namespace nncase::kernels::stackvm;
 namespace {
 template <class TOp, class T>
 result<void> compare_impl(TOp &&op, const T *input_a, const T *input_b,
-                          bool *output, const dims_t &in_a_shape,
-                          const dims_t &in_a_strides, const dims_t &in_b_shape,
-                          const dims_t &in_b_strides, const dims_t &out_shape,
-                          const dims_t &out_strides) noexcept {
-    return apply(out_shape, [&](const dims_t &index) -> result<void> {
+                          bool *output, gsl::span<const size_t> in_a_shape,
+                          gsl::span<const size_t> in_a_strides, gsl::span<const size_t> in_b_shape,
+                          gsl::span<const size_t> in_b_strides, gsl::span<const size_t> out_shape,
+                          gsl::span<const size_t> out_strides) noexcept {
+    return apply(out_shape, [&](gsl::span<const size_t> index) -> result<void> {
         const auto in_a_index =
             kernels::detail::get_reduced_offset(index, in_a_shape);
         const auto in_b_index =
@@ -51,10 +51,10 @@ result<void> compare_impl(TOp &&op, const T *input_a, const T *input_b,
 
 template <typename T>
 result<void> compare_impl(compare_op_t op, const T *lhs, const T *rhs,
-                          bool *output, const dims_t &lhs_shape,
-                          const dims_t &lhs_strides, const dims_t &rhs_shape,
-                          const dims_t &rhs_strides, const dims_t &out_shape,
-                          const dims_t &out_strides) noexcept {
+                          bool *output, gsl::span<const size_t> lhs_shape,
+                          gsl::span<const size_t> lhs_strides, gsl::span<const size_t> rhs_shape,
+                          gsl::span<const size_t> rhs_strides, gsl::span<const size_t> out_shape,
+                          gsl::span<const size_t> out_strides) noexcept {
     switch (op) {
         COMPARE_IMPL_OP(equal, std::equal_to<T>());
         COMPARE_IMPL_OP(not_equal, std::not_equal_to<T>());
@@ -74,10 +74,10 @@ result<void> compare_impl(compare_op_t op, const T *lhs, const T *rhs,
 
 result<void> compare_impl(typecode_t typecode, compare_op_t op,
                           const gsl::byte *lhs, const gsl::byte *rhs,
-                          gsl::byte *output, const dims_t &lhs_shape,
-                          const strides_t &lhs_strides, const dims_t &rhs_shape,
-                          const strides_t &rhs_strides, const dims_t &out_shape,
-                          const strides_t &out_strides,
+                          gsl::byte *output, gsl::span<const size_t> lhs_shape,
+                          gsl::span<const size_t> lhs_strides, gsl::span<const size_t> rhs_shape,
+                          gsl::span<const size_t> rhs_strides, gsl::span<const size_t> out_shape,
+                          gsl::span<const size_t> out_strides,
                           NNCASE_UNUSED kernel_context &context) noexcept {
     TYPE_SELECT(typecode, COMPARE_IMPL);
 }

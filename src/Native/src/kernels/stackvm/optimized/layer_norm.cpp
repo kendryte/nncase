@@ -26,7 +26,7 @@ using namespace nncase::kernels::stackvm::optimized;
 
 result<void> nncase::kernels::stackvm::optimized::layer_norm(
     const float *input, float *output, const float *scale, const float *bias,
-    const dims_t &in_shape, int32_t axis, float epsilon) {
+    gsl::span<const size_t> in_shape, int32_t axis, float epsilon) {
     return reference::layer_norm(input, output, scale, bias, in_shape, axis,
                                  epsilon);
 }

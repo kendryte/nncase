@@ -27,11 +27,11 @@ using namespace nncase::kernels::stackvm;
 
 namespace {
 template <class T>
-result<void> expand_impl(const T *input, T *output, const dims_t &in_shape,
-                         const strides_t &input_strides,
-                         const dims_t &out_shape, const strides_t &out_strides,
+result<void> expand_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
+                         gsl::span<const size_t> input_strides,
+                         gsl::span<const size_t> out_shape, gsl::span<const size_t> out_strides,
                          NNCASE_UNUSED kernel_context &context) noexcept {
-    return apply(out_shape, [&](const dims_t &index) -> result<void> {
+    return apply(out_shape, [&](gsl::span<const size_t> index) -> result<void> {
         const auto in_index =
             kernels::detail::get_reduced_offset(index, in_shape);
         output[offset(out_strides, index)] =
@@ -50,8 +50,8 @@ result<void> expand_impl(const T *input, T *output, const dims_t &in_shape,
 
 result<void> nncase::kernels::stackvm::reference::expand(
     typecode_t typecode, const gsl::byte *input, gsl::byte *output,
-    const dims_t &input_shape, const strides_t &input_strides,
-    const dims_t &out_shape, const strides_t &out_strides,
+    gsl::span<const size_t> input_shape, gsl::span<const size_t> input_strides,
+    gsl::span<const size_t> out_shape, gsl::span<const size_t> out_strides,
     NNCASE_UNUSED kernel_context &context) noexcept {
     switch (typecode_bytes(typecode)) {
         EXPAND_IMPL(1, uint8_t);

@@ -28,10 +28,10 @@ using namespace nncase::runtime::stackvm;
 
 result<void> nncase::kernels::stackvm::optimized::where(
     datatype_t dt, const bool *cond, const gsl::byte *x, const gsl::byte *y,
-    gsl::byte *output, const dims_t &cond_shape, const dims_t &x_shape,
-    const dims_t &y_shape, const dims_t &out_shape,
-    const strides_t &cond_strides, const strides_t &x_strides,
-    const strides_t &y_strides, const strides_t &out_strides) {
+    gsl::byte *output, gsl::span<const size_t> cond_shape, gsl::span<const size_t> x_shape,
+    gsl::span<const size_t> y_shape, gsl::span<const size_t> out_shape,
+    gsl::span<const size_t> cond_strides, gsl::span<const size_t> x_strides,
+    gsl::span<const size_t> y_strides, gsl::span<const size_t> out_strides) {
     return reference::where(dt, cond, x, y, output, cond_shape, x_shape,
                             y_shape, out_shape, cond_strides, x_strides,
                             y_strides, out_strides);

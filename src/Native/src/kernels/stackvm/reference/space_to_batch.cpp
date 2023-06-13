@@ -51,10 +51,10 @@ template <typename Fn> std::vector<size_t> range_exec_flatten(int end, Fn &&f) {
 template <class T>
 result<void>
 space_to_batch_impl(datatype_t dt, const T *input, T *output,
-                    const dims_t &in_shape, const dims_t &block_shape,
-                    const paddings_t &paddings, const strides_t &in_strides,
-                    [[maybe_unused]] const dims_t &out_shape,
-                    [[maybe_unused]] const strides_t &out_strides,
+                    gsl::span<const size_t> in_shape, gsl::span<const size_t> block_shape,
+                    const paddings_t &paddings, gsl::span<const size_t> in_strides,
+                    [[maybe_unused]] gsl::span<const size_t> out_shape,
+                    [[maybe_unused]] gsl::span<const size_t> out_strides,
                     NNCASE_UNUSED kernel_context &context) noexcept {
     auto spatial_size = block_shape.size();
     auto remain_shape_size = in_shape.size() - spatial_size - 1;
@@ -117,9 +117,9 @@ space_to_batch_impl(datatype_t dt, const T *input, T *output,
 
 result<void> nncase::kernels::stackvm::reference::space_to_batch(
     datatype_t dt, const gsl::byte *input, gsl::byte *output,
-    const dims_t &in_shape, const dims_t &block_shape,
-    const paddings_t &paddings, const strides_t &in_strides,
-    const dims_t &out_shape, const strides_t &out_strides,
+    gsl::span<const size_t> in_shape, gsl::span<const size_t> block_shape,
+    const paddings_t &paddings, gsl::span<const size_t> in_strides,
+    gsl::span<const size_t> out_shape, gsl::span<const size_t> out_strides,
     NNCASE_UNUSED kernel_context &context) {
     switch (runtime::get_bytes(dt)) {
         SPACE_TO_BATCH_IMPL(1, uint8_t);

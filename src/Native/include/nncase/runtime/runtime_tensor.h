@@ -31,8 +31,8 @@ class NNCASE_API runtime_tensor {
     explicit runtime_tensor(tensor impl) noexcept;
 
     typecode_t datatype() const noexcept;
-    const dims_t &shape() const noexcept;
-    const strides_t &strides() const noexcept;
+    gsl::span<const size_t> shape() const noexcept;
+    gsl::span<const size_t> strides() const noexcept;
     bool empty() const noexcept;
     bool is_host() const noexcept;
     bool is_contiguous() const noexcept;
