@@ -197,8 +197,7 @@ result<void> optimized_binary_impl(const float *input_a, const float *input_b,
             out += vl;
             n -= vl;
         }
-    }
-    else if (in_a_shape.size() < in_b_shape.size()) {
+    } else if (in_a_shape.size() < in_b_shape.size()) {
         assert(in_a_shape.size() <= 1);
         if (is_scalar(in_a_shape) || in_a_shape[0] == 1) {
             // a is scalar, b is tensor
@@ -338,8 +337,7 @@ result<void> optimized_binary_impl(const int32_t *input_a,
                 }
             }
         }
-    }
-    else {
+    } else {
         assert(in_b_shape.size() <= 1);
         if (is_scalar(in_b_shape) || in_b_shape[0] == 1) {
             // a is tensor, b is scalar
@@ -376,11 +374,9 @@ result<void> optimized_binary_impl(const int32_t *input_a,
                 }
             }
         }
-
     }
 
     return ok();
-
 }
 
 // int64_t
@@ -410,8 +406,7 @@ result<void> optimized_binary_impl(const int64_t *input_a,
             out += vl;
             n -= vl;
         }
-    }
-    else if (in_a_shape.size() < in_b_shape.size()) {
+    } else if (in_a_shape.size() < in_b_shape.size()) {
         assert(in_a_shape.size() <= 1);
         if (is_scalar(in_a_shape) || in_a_shape[0] == 1) {
             // a is scalar, b is tensor
@@ -447,10 +442,9 @@ result<void> optimized_binary_impl(const int64_t *input_a,
                 }
             }
         }
-    }
-    else {
+    } else {
         assert(in_b_shape.size() <= 1);
-        if(is_scalar(in_b_shape) || in_b_shape[0] == 1) {
+        if (is_scalar(in_b_shape) || in_b_shape[0] == 1) {
             // a is tensor, b is scalar
             int n = count;
             while (n > 0) {
