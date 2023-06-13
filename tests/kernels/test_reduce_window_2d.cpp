@@ -123,7 +123,7 @@ TEST_P(ReduceWindow2DTest, ReduceWindow2D) {
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
-//    EXPECT_FALSE(is_same_tensor(expected, actual));
+    //    EXPECT_FALSE(is_same_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {
