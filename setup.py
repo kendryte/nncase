@@ -271,7 +271,7 @@ class BuildCMakeExt(build_ext):
         for lib in nncase_libs:
             shutil.copy(lib, os.path.join(sharp_libs_dir, os.path.basename(lib)))
         for lib in nncase_pub_libs:
-            shutil.copy(lib, os.path.join(sharp_libs_dir, os.path.basename(lib)))
+            shutil.copy(lib, os.path.join(ext.sourcedir, 'install', os.path.basename(lib)))
 
         # After build_ext is run, the following commands will run:
         #
