@@ -66,9 +66,6 @@ internal class SatExtractor : IExtractor
             }
 
             EliminateAllCycles(root, new(), new(), visited, cpmodel, vars);
-
-            // int cycleVarCount = 0;
-            // GetAllCycles(root, new Dictionary<EClass, int>(), new List<(EClass Class, ENode Node)>(), cpmodel, vars, ref cycleVarCount);
         }
 
         // 3. add pick weights for all enode.
@@ -151,115 +148,6 @@ internal class SatExtractor : IExtractor
                 visited.Add(enode, true);
             }
         }
-    }
-
-    private void GetAllCycles(EClass root, Dictionary<EClass, int> visited, List<(EClass Class, ENode Node)> path, CpModel cpModel, IReadOnlyDictionary<ENode, BoolVar> vars, ref int cycleVarCount)
-    {
-        if (visited.ContainsKey(root) && visited[root] == 2)
-        {
-            return;
-        }
-
-        if (visited.ContainsKey(root) && visited[root] == 1)
-        {
-            if (path.FindIndex(p => p.Class == root) is int idx && idx != -1)
-            {
-                var new_cycle = new List<BoolVar>();
-                var subpath = path.Skip(idx).ToArray();
-                foreach (var (_, n) in subpath)
-                {
-                    new_cycle.Add(vars[n]);
-                }
-
-                if (new_cycle.Count == 1)
-                {
-                    // eg. eclass: [marker(x) , x], don't pick marker.
-                    cpModel.AddAssumption(new_cycle[0].Not());
-                }
-                else
-                {
-                    // EncodeCycle(subpath, cpModel, vars, ref cycleVarCount);
-                    cpModel.Add(cpModel.NewConstant(subpath.Length) != LinearExpr.Sum(subpath.Select(p => vars[p.Node])));
-                }
-
-                return;
-            }
-
-            throw new InvalidOperationException($"Should have a cycle here: {root} , {path}.");
-        }
-
-        visited[root] = 1;
-        foreach (var node in root.Nodes)
-        {
-            foreach (var ch in node.Children)
-            {
-                path.Add((root, node));
-                GetAllCycles(ch, visited, path, cpModel, vars, ref cycleVarCount);
-                path.RemoveAt(path.Count - 1);
-            }
-        }
-
-        visited[root] = 2;
-    }
-
-    private void EncodeCycle(ReadOnlySpan<(EClass Class, ENode Node)> subpath, CpModel cpModel, IReadOnlyDictionary<ENode, BoolVar> vars, ref int cycleVarCount)
-    {
-        var clauses = AggregateClauses(subpath, cpModel, vars);
-        TseytinEncoding(clauses, cpModel, ref cycleVarCount);
-    }
-
-    private List<List<BoolVar>> AggregateClauses(ReadOnlySpan<(EClass Class, ENode Node)> subpath, CpModel cpModel, IReadOnlyDictionary<ENode, BoolVar> vars)
-    {
-        var clauses = new List<List<BoolVar>>();
-        for (int i = 0; i < subpath.Length; i++)
-        {
-            var clause = new List<BoolVar>();
-            foreach (var var in subpath[i].Class.Nodes.Select(x => vars[x]))
-            {
-                clause.Add(var);
-            }
-
-            clauses.Add(clause);
-        }
-
-        return clauses;
-    }
-
-    private void TseytinEncoding(List<List<BoolVar>> clauses, CpModel cpModel, ref int cycleVarCount)
-    {
-        var var_map = new Dictionary<int, BoolVar>();
-        for (int i = 0; i < clauses.Count; i++)
-        {
-            var c = clauses[i];
-            if (c.Count > 1)
-            {
-                // new variable to represent the clause
-                var v = cpModel.NewBoolVar($"cycle_v_{cycleVarCount++}");
-                var_map.Add(i, v);
-
-                // v <-> c
-                // == v -> c /\ c -> v
-                // == -v \/ c /\ -c \/ v
-                // == -v \/ c AND -c \/ v
-                // for `c`, it is a conjunction of (negation of) variables therefore
-                // 1. -v \/ c == -v \/ -x /\ -v \/ -y /\ -v \/ -z ...
-                // -c \/ v == -(-x /\ -y /\ -z ...) \/ v
-                // 2. == x \/ y \/ z \/ ... \/ v
-
-                // Add 1 as hard clauses
-                foreach (var x in c)
-                {
-                    cpModel.AddBoolOr(new[] { v.Not(), x.Not() });
-                }
-
-                // Add 2 as hard clauses
-                cpModel.AddBoolOr(c.Concat(new[] { v }));
-            }
-        }
-
-        // Finally, tseytin encoding for the clauses
-        // == v1 \/ v2 \/ ... \/ vn
-        cpModel.AddBoolOr(clauses.Select((c, i) => c.Count > 1 ? var_map[i] : c[0].Not()).ToArray());
     }
 }
 

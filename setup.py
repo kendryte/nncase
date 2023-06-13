@@ -251,9 +251,26 @@ class BuildCMakeExt(build_ext):
                 os.path.isfile(os.path.join(root, _lib)) and
                 os.path.splitext(_lib)[-1] in [".dll", ".so", ".dylib", ".json"]]
 
+        rid = ""
+        if platform.system() == "Linux":
+          rid = 'linux-x64'
+        elif platform.system() == "Windows":
+          rid = 'win-x64'
+        elif platform.system() == "Darwin":
+          rid = 'osx-x64'
+
+        nncase_pub_dir = os.path.join(ext.sourcedir, 'src', 'Nncase.Compiler', 'bin', 'Release', 'net7.0', rid, 'publish')
+        nncase_pub_libs = [os.path.join(root, _lib) for root, _, files in
+          os.walk(nncase_pub_dir) for _lib in files if
+          os.path.isfile(os.path.join(root, _lib)) and
+          os.path.basename(_lib) not in nncase_libs and
+          (os.path.splitext(_lib)[-1] in [".dll", ".so", ".dylib", ".json"] and 'ortools' in _lib)]
+
         sharp_libs_dir = os.path.join(bin_dir, 'sharplibs')
         os.makedirs(sharp_libs_dir)
         for lib in nncase_libs:
+            shutil.copy(lib, os.path.join(sharp_libs_dir, os.path.basename(lib)))
+        for lib in nncase_pub_libs:
             shutil.copy(lib, os.path.join(sharp_libs_dir, os.path.basename(lib)))
 
         # After build_ext is run, the following commands will run:
