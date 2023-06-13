@@ -45,7 +45,14 @@ result<void> apply_1(gsl::span<const size_t> shape,
 template <class Callable>
 result<void> apply_generic(gsl::span<const size_t> shape,
                            Callable &&callable) noexcept {
-    auto index_buffer = (size_t *)_alloca(sizeof(size_t) * shape.size());
+    auto index_buffer = (size_t *)
+#ifdef _WIN32
+        _alloca
+#else
+        alloca
+#endif
+        (sizeof(size_t) * shape.size());
+
     gsl::span<size_t> index(index_buffer, shape.size());
     std::fill(index.begin(), index.end(), 0);
     auto last_dim_idx = (int32_t)shape.size() - 1;
