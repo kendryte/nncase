@@ -144,7 +144,7 @@ void padding_impl_opt(T *in, T *out, const dims_t &in_shape,
                       const dims_t &out_shape, T value) {
     int cl, dl, hl, wl;
     int ch, dh, hh, wh;
-    if (in_shape.size() == 3) {
+    if (in_shape.size() == 3 || (in_shape.size() == 4 && in_shape[in_shape.size() - 1] == 1)) {
         cl = 1;
         dl = in_shape[0];
         hl = in_shape[1];
@@ -202,7 +202,7 @@ result<void> nncase::kernels::stackvm::reference::pad(
     auto unit = runtime::get_bytes(type);
     bool padding_before_is_zero =
         std::all_of(paddings.begin(), paddings.end(),
-                    [](const padding &p) { return p.before == 0; });
+                    [](const padding &p) { return p.before == 0; }) && mode == pad_mode_t::constant;
 
     if (std::all_of(paddings.begin(), paddings.end(),
                     [](const padding &p) { return p.interior == 0; })) {
