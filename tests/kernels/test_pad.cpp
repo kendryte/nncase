@@ -46,21 +46,21 @@ class PadTest
 };
 
 INSTANTIATE_TEST_SUITE_P(Pad, PadTest,
-                         testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 1, 2, 4})));
+                         testing::Combine(testing::Values(dt_int8),
+                                          testing::Values(dims_t{2, 3})));
 
 TEST_P(PadTest, Pad) {
 
     // expected
     size_t size = 0;
-    int64_t pad_ptr[] = {0, 0, 0, 0, 0, 0, 0, 0};
+    int64_t pad_ptr[] = {0, 0, 0, 0};
     auto pad =
-        hrt::create(dt_int64, {8},
+        hrt::create(dt_int64, {4},
                     {reinterpret_cast<gsl::byte *>(pad_ptr), sizeof(pad_ptr)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
-    float_t value_ptr[] = {0.0f};
-    auto value = hrt::create(dt_float32, {1},
+    int8_t value_ptr[] = {0};
+    auto value = hrt::create(dt_int8, {1},
                              {reinterpret_cast<gsl::byte *>(value_ptr),
                               sizeof(value_ptr)},
                              true, host_runtime_tensor::pool_cpu_only)
@@ -84,7 +84,7 @@ TEST_P(PadTest, Pad) {
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_FALSE(is_same_tensor(expected, actual));
+    EXPECT_TRUE(is_same_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {
