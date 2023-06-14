@@ -102,7 +102,7 @@ result<void> apply_generic(gsl::span<const size_t> shape,
 #ifdef _WIN32
         _alloca
 #else
-        alloca
+        __builtin_alloca
 #endif
         (sizeof(size_t) * shape.size());
 
