@@ -12,6 +12,8 @@ jobs:
     strategy:
       matrix:
         config:
+          - {name: x86_64-macos, os: macos-latest, cmakeArgs: -DENABLE_X86SIMD=OFF, buildType: Release}
+          - {name: x86_64-linux, os: ubuntu-latest, cmakeArgs: '', buildType: Release}
           - {name: x86_64-windows, os: windows-latest, arch: x64, cmakeArgs: -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl, buildType: Release}
 
     steps:
@@ -72,6 +74,8 @@ jobs:
       matrix:
         dotnet-version: ['7.0']
         config:
+          - {name: x86_64-macos, os: macos-latest, shell: bash, rid: osx-x64, buildType: Release}
+          - {name: x86_64-linux, os: ubuntu-latest, shell: bash, rid: linux-x64, buildType: Release}
           - {name: x86_64-windows, os: windows-latest, shell: bash, rid: win-x64, buildType: Release}
 
     steps:
@@ -158,6 +162,8 @@ jobs:
       matrix:
         dotnet-version: ['7.0']
         config:
+          - {name: x86_64-macos, os: macos-latest, shell: bash}
+          - {name: x86_64-linux, os: ubuntu-latest, shell: bash}
           - {name: x86_64-windows, os: windows-latest, shell: bash}
 
     env:
@@ -241,17 +247,18 @@ jobs:
       - name: Test
         working-directory: ${{github.workspace}}
         shell: bash
+        if: matrix.config.name != 'x86_64-windows'
         env:
           NNCASE_COMPILER: ${{github.workspace}}/install/Nncase.Compiler.dll
         run: |
           dotnet tool install --global dotnet-coverage
-          pytest tests/importer/onnx_/basic/ -s --doctest-modules --junitxml=test_results/onnx_basic.xml
-          pytest -s tests/importer/onnx_/combine/ -s --doctest-modules --junitxml=test_results/onnx_combine.xml
-          pytest -s tests/importer/tflite_/basic/ -s --doctest-modules --junitxml=test_results/tflite_basic.xml
-          pytest -s tests/importer/tflite_/combine/ -s --doctest-modules --junitxml=test_results/tflite_combine.xml
-          pytest -s tests/importer/tflite_/model/ -s --doctest-modules --junitxml=test_results/tflite_model.xml
-#          dotnet-coverage merge -o coverage.integration.xml -f cobertura -r coverage/*.xml
-#
+          pytest -s tests/importer/onnx_/basic/ --doctest-modules --junitxml=test_results/onnx_basic.xml
+          pytest -s tests/importer/onnx_/combine/ --doctest-modules --junitxml=test_results/onnx_combine.xml
+          pytest -s tests/importer/tflite_/basic/ --doctest-modules --junitxml=test_results/tflite_basic.xml
+          pytest -s tests/importer/tflite_/combine/ --doctest-modules --junitxml=test_results/tflite_combine.xml
+          pytest -s tests/importer/tflite_/model/ --doctest-modules --junitxml=test_results/tflite_model.xml
+          dotnet-coverage merge -o coverage.integration.xml -f cobertura -r coverage/*.xml
+
 #      - name: Upload Coverage
 #        uses: actions/upload-artifact@v3
 #        if: matrix.config.name == 'x86_64-linux'

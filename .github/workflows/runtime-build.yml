@@ -1,146 +1,146 @@
-#name: runtime-build
-#
-#on: [push, pull_request]
-#
-#jobs:
-#  build-native-runtime:
-#    name: build-runtime-${{matrix.config.name}}
-#    runs-on: ${{matrix.config.os}}
-#    strategy:
-#      matrix:
-#        config:
-#          - {name: x86_64-macos, os: macos-latest, cmakeArgs: '', buildType: Release}
-#          - {name: x86_64-linux, os: ubuntu-latest, cmakeArgs: '', buildType: Release}
-#          - {name: x86_64-windows, os: windows-latest, arch: x64, cmakeArgs: -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl, buildType: Release}
-#
-#    steps:
-#    - uses: actions/checkout@v3
-#    - uses: seanmiddleditch/gha-setup-ninja@master
-#
-#    - name: Set up build environment (Windows, Visual Studio)
-#      uses: ilammy/msvc-dev-cmd@v1
-#      with:
-#        arch: ${{matrix.config.arch}}
-#      if: runner.os == 'Windows'
-#
-#    - name: Set up build environment (Macos)
-#      run: |
-#        brew install sunnycase/core/libomp@11.1.0
-#      if: runner.os == 'Macos'
-#
-#    - name: Setup Python
-#      uses: actions/setup-python@v4
-#      with:
-#        python-version: 3.7
-#
-#    - name: Install Conan
-#      run: |
-#        pip install conan==1.58
-#        conan remote add -i 0 sunnycase https://conan.sunnycase.moe
-#
-#    - name: Configure Conan (Linux)
-#      run: |
-#        conan profile new default --detect
-#        conan profile update settings.compiler.libcxx=libstdc++11 default
-#        conan profile update settings.compiler.version=10 default
-#        echo "CC=gcc-10" >> $GITHUB_ENV
-#        echo "CXX=g++-10" >> $GITHUB_ENV
-#      if: runner.os == 'Linux'
-#
-#    - name: Configure CMake
-#      shell: bash
-#      run: |
-#        conan install . -if build --build=missing -s build_type=${{matrix.config.buildType}} --profile=default -o runtime=True -o python=False -o tests=True -s compiler.cppstd=17
-#
-#    - name: Build & Install
-#      run: |
-#        conan build . -if build -bf build
-#        cmake --install build --prefix install
-#
-#    - name: Test
-#      run: |
-#        cd build
-#        ctest -C ${{matrix.config.buildType}} --test-dir tests/kernels --output-on-failure -j4
-#      if: runner.os != 'Macos'
-#
-#    #- name: Benchmark
-#    #  run: |
-#    #    ${{github.workspace}}/install/bin/benchnncase > benchnncase.log
-#    #    cat benchnncase.log
-#
-#    - name: Upload nncaseruntime Build Artifact
-#      uses: actions/upload-artifact@v3
-#      with:
-#        name: nncaseruntime-${{matrix.config.name}}
-#        path: ${{github.workspace}}/install
-#        if-no-files-found: error
-#
-#    #- name: Upload nncaseruntime Benchmark
-#    #  uses: actions/upload-artifact@v3
-#    #  with:
-#    #    name: nncaseruntime-benchmark-${{matrix.config.name}}
-#    #    path: ${{github.workspace}}/benchnncase.log
-#    #    if-no-files-found: error
-#
-#  build-cross-linux-runtime:
-#   name: build-runtime-${{matrix.config.name}}
-#   runs-on: ubuntu-latest
-#   strategy:
-#     matrix:
-#       config:
-#         - {name: riscv64-linux, shell: bash, arch: riscv64, toolchain: riscv64-unknown-linux, toolchain_env: RISCV_ROOT_PATH, toolchain_file: riscv64-unknown-linux-gnu-12.0.1, qemu: qemu-riscv64, loader_args: '-cpu;rv64,v=true,Zfh=true,vlen=128,elen=64,vext_spec=v1.0;-L', cmakeArgs: '', buildType: Release}
-#
-#   steps:
-#   - uses: actions/checkout@v3
-#   - uses: seanmiddleditch/gha-setup-ninja@master
-#
-#   - name: Setup Python
-#     uses: actions/setup-python@v4
-#     with:
-#       python-version: 3.7
-#
-#   - name: Install toolchain and QEMU
-#     shell: bash
-#     run: |
-#       wget https://dav.sunnycase.moe/d/ci/nncase/${{matrix.config.toolchain_file}}.tar.xz -O toolchain.tar.xz
-#       sudo tar xf toolchain.tar.xz -C $GITHUB_WORKSPACE
-#       echo "${{matrix.config.toolchain_env}}=$GITHUB_WORKSPACE/${{matrix.config.toolchain_file}}" >> $GITHUB_ENV
-#
-#       wget https://dav.sunnycase.moe/d/ci/nncase/${{matrix.config.qemu}}.tgz -O qemu.tgz
-#       sudo tar xf qemu.tgz -C /usr/local/bin
-#       echo "TESTS_EXECUTABLE_LOADER=${{matrix.config.qemu}}" >> $GITHUB_ENV
-#       echo "TESTS_EXECUTABLE_LOADER_ARGUMENTS=${{matrix.config.loader_args}};$GITHUB_WORKSPACE/${{matrix.config.toolchain_file}}/sysroot" >> $GITHUB_ENV
-#
-#   - name: Install Conan
-#     run: |
-#       pip install conan==1.58
-#       conan remote add -i 0 sunnycase https://conan.sunnycase.moe
-#
-#   - name: Configure Conan
-#     run: |
-#       conan profile new default --detect
-#       conan profile update settings.compiler.libcxx=libstdc++11 default
-#       conan config init
-#       sed -i 's/xtensalx7]/xtensalx7, ${{matrix.config.arch}}]/g' ~/.conan/settings.yml
-#
-#   - name: Configure CMake
-#     run: |
-#       conan install . -if build --build=missing -s build_type=${{matrix.config.buildType}} --profile:host=toolchains/riscv64-unknown-linux.profile.jinja --profile:build=default -o runtime=True -o python=False -o tests=True -s compiler.cppstd=17
-#
-#   - name: Build & Install
-#     run: |
-#       conan build . -if build -bf build
-#       cmake --install build --prefix install
-#
-#   - name: Test
-#     shell: bash
-#     run: |
-#       cd build
-#       ctest --test-dir tests/kernels --output-on-failure -j4
-#
-#   - name: Upload nncaseruntime Build Artifact
-#     uses: actions/upload-artifact@v3
-#     with:
-#       name: nncaseruntime-${{matrix.config.name}}
-#       path: ${{github.workspace}}/install
-#       if-no-files-found: error
+name: runtime-build
+
+on: [push, pull_request]
+
+jobs:
+  build-native-runtime:
+    name: build-runtime-${{matrix.config.name}}
+    runs-on: ${{matrix.config.os}}
+    strategy:
+      matrix:
+        config:
+          - {name: x86_64-macos, os: macos-latest, cmakeArgs: '', buildType: Release}
+          - {name: x86_64-linux, os: ubuntu-latest, cmakeArgs: '', buildType: Release}
+          - {name: x86_64-windows, os: windows-latest, arch: x64, cmakeArgs: -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl, buildType: Release}
+
+    steps:
+    - uses: actions/checkout@v3
+    - uses: seanmiddleditch/gha-setup-ninja@master
+
+    - name: Set up build environment (Windows, Visual Studio)
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: ${{matrix.config.arch}}
+      if: runner.os == 'Windows'
+
+    - name: Set up build environment (Macos)
+      run: |
+        brew install sunnycase/core/libomp@11.1.0
+      if: runner.os == 'Macos'
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.7
+
+    - name: Install Conan
+      run: |
+        pip install conan==1.58
+        conan remote add -i 0 sunnycase https://conan.sunnycase.moe
+
+    - name: Configure Conan (Linux)
+      run: |
+        conan profile new default --detect
+        conan profile update settings.compiler.libcxx=libstdc++11 default
+        conan profile update settings.compiler.version=10 default
+        echo "CC=gcc-10" >> $GITHUB_ENV
+        echo "CXX=g++-10" >> $GITHUB_ENV
+      if: runner.os == 'Linux'
+
+    - name: Configure CMake
+      shell: bash
+      run: |
+        conan install . -if build --build=missing -s build_type=${{matrix.config.buildType}} --profile=default -o runtime=True -o python=False -o tests=True -s compiler.cppstd=17
+
+    - name: Build & Install
+      run: |
+        conan build . -if build -bf build
+        cmake --install build --prefix install
+
+    - name: Test
+      run: |
+        cd build
+        ctest -C ${{matrix.config.buildType}} --test-dir tests/kernels --output-on-failure -j4
+      if: runner.os != 'Macos'
+
+    #- name: Benchmark
+    #  run: |
+    #    ${{github.workspace}}/install/bin/benchnncase > benchnncase.log
+    #    cat benchnncase.log
+
+    - name: Upload nncaseruntime Build Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: nncaseruntime-${{matrix.config.name}}
+        path: ${{github.workspace}}/install
+        if-no-files-found: error
+
+    #- name: Upload nncaseruntime Benchmark
+    #  uses: actions/upload-artifact@v3
+    #  with:
+    #    name: nncaseruntime-benchmark-${{matrix.config.name}}
+    #    path: ${{github.workspace}}/benchnncase.log
+    #    if-no-files-found: error
+
+  build-cross-linux-runtime:
+   name: build-runtime-${{matrix.config.name}}
+   runs-on: ubuntu-latest
+   strategy:
+     matrix:
+       config:
+         - {name: riscv64-linux, shell: bash, arch: riscv64, toolchain: riscv64-unknown-linux, toolchain_env: RISCV_ROOT_PATH, toolchain_file: riscv64-unknown-linux-gnu-12.0.1, qemu: qemu-riscv64, loader_args: '-cpu;rv64,v=true,Zfh=true,vlen=128,elen=64,vext_spec=v1.0;-L', cmakeArgs: '', buildType: Release}
+
+   steps:
+   - uses: actions/checkout@v3
+   - uses: seanmiddleditch/gha-setup-ninja@master
+
+   - name: Setup Python
+     uses: actions/setup-python@v4
+     with:
+       python-version: 3.7
+
+   - name: Install toolchain and QEMU
+     shell: bash
+     run: |
+       wget https://dav.sunnycase.moe/d/ci/nncase/${{matrix.config.toolchain_file}}.tar.xz -O toolchain.tar.xz
+       sudo tar xf toolchain.tar.xz -C $GITHUB_WORKSPACE
+       echo "${{matrix.config.toolchain_env}}=$GITHUB_WORKSPACE/${{matrix.config.toolchain_file}}" >> $GITHUB_ENV
+
+       wget https://dav.sunnycase.moe/d/ci/nncase/${{matrix.config.qemu}}.tgz -O qemu.tgz
+       sudo tar xf qemu.tgz -C /usr/local/bin
+       echo "TESTS_EXECUTABLE_LOADER=${{matrix.config.qemu}}" >> $GITHUB_ENV
+       echo "TESTS_EXECUTABLE_LOADER_ARGUMENTS=${{matrix.config.loader_args}};$GITHUB_WORKSPACE/${{matrix.config.toolchain_file}}/sysroot" >> $GITHUB_ENV
+
+   - name: Install Conan
+     run: |
+       pip install conan==1.58
+       conan remote add -i 0 sunnycase https://conan.sunnycase.moe
+
+   - name: Configure Conan
+     run: |
+       conan profile new default --detect
+       conan profile update settings.compiler.libcxx=libstdc++11 default
+       conan config init
+       sed -i 's/xtensalx7]/xtensalx7, ${{matrix.config.arch}}]/g' ~/.conan/settings.yml
+
+   - name: Configure CMake
+     run: |
+       conan install . -if build --build=missing -s build_type=${{matrix.config.buildType}} --profile:host=toolchains/riscv64-unknown-linux.profile.jinja --profile:build=default -o runtime=True -o python=False -o tests=True -s compiler.cppstd=17
+
+   - name: Build & Install
+     run: |
+       conan build . -if build -bf build
+       cmake --install build --prefix install
+
+   - name: Test
+     shell: bash
+     run: |
+       cd build
+       ctest --test-dir tests/kernels --output-on-failure -j4
+
+   - name: Upload nncaseruntime Build Artifact
+     uses: actions/upload-artifact@v3
+     with:
+       name: nncaseruntime-${{matrix.config.name}}
+       path: ${{github.workspace}}/install
+       if-no-files-found: error
