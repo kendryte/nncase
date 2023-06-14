@@ -148,8 +148,8 @@ void ternary_vec(const uint8_t *input_a, const int input_a_len,
 
 int tenary_impl(const uint8_t *input_cond, const float *input_b,
                 const float *input_c, float *output,
-                const dims_t &in_cond_shape, const dims_t &in_b_shape,
-                const dims_t &in_c_shape, const dims_t &out_shape) {
+                gsl::span<size_t> in_cond_shape, gsl::span<size_t> in_b_shape,
+                gsl::span<size_t> in_c_shape, gsl::span<size_t> out_shape) {
     int len_cond = (int)compute_size(in_cond_shape);
     int len_b = (int)compute_size(in_b_shape);
     int len_c = (int)compute_size(in_c_shape);
@@ -172,8 +172,8 @@ int tenary_impl(const uint8_t *input_cond, const float *input_b,
 
 result<void> nncase::kernels::stackvm::optimized::where(
     datatype_t dt, const bool *cond, const gsl::byte *x, const gsl::byte *y,
-    gsl::byte *output, const dims_t &cond_shape, const dims_t &x_shape,
-    const dims_t &y_shape, const dims_t &out_shape,
+    gsl::byte *output, gsl::span<size_t> cond_shape, gsl::span<size_t> x_shape,
+    gsl::span<size_t> y_shape, gsl::span<size_t> out_shape,
     const strides_t &cond_strides, const strides_t &x_strides,
     const strides_t &y_strides, const strides_t &out_strides) {
 
