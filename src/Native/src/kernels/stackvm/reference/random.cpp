@@ -23,8 +23,8 @@ using namespace nncase::runtime;
 using namespace nncase::kernels;
 
 template <typename T>
-result<void> random_normal_impl(T *output, const dims_t &out_shape, float mean,
-                                float std, float seed) noexcept {
+result<void> random_normal_impl(T *output, gsl::span<const size_t> out_shape,
+                                float mean, float std, float seed) noexcept {
     std::default_random_engine engine(seed);
     std::normal_distribution<T> dis(mean, std);
     std::generate_n(output, compute_size(out_shape),
@@ -34,8 +34,8 @@ result<void> random_normal_impl(T *output, const dims_t &out_shape, float mean,
 }
 
 template <typename T>
-result<void> random_uniform_impl(T *output, const dims_t &out_shape, float low,
-                                 float high, float seed) noexcept {
+result<void> random_uniform_impl(T *output, gsl::span<const size_t> out_shape,
+                                 float low, float high, float seed) noexcept {
     std::default_random_engine engine(seed);
     std::uniform_real_distribution<T> dis(low, high);
     std::generate_n(output, compute_size(out_shape),
@@ -45,8 +45,8 @@ result<void> random_uniform_impl(T *output, const dims_t &out_shape, float low,
 }
 
 result<void> nncase::kernels::stackvm::reference::random_normal(
-    typecode_t type, gsl::byte *output, const dims_t &out_shape, float mean,
-    float std, float seed) noexcept {
+    typecode_t type, gsl::byte *output, gsl::span<const size_t> out_shape,
+    float mean, float std, float seed) noexcept {
     if (type != dt_float32) {
         return err(nncase_errc::datatype_mismatch);
     }
@@ -55,8 +55,8 @@ result<void> nncase::kernels::stackvm::reference::random_normal(
 }
 
 result<void> nncase::kernels::stackvm::reference::random_uniform(
-    typecode_t type, gsl::byte *output, const dims_t &out_shape, float low,
-    float high, float seed) noexcept {
+    typecode_t type, gsl::byte *output, gsl::span<const size_t> out_shape,
+    float low, float high, float seed) noexcept {
     if (type != dt_float32) {
         return err(nncase_errc::datatype_mismatch);
     }

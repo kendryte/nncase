@@ -32,7 +32,7 @@ tensor_node::tensor_node(datatype_t dtype, dims_t shape, strides_t strides,
 }
 
 bool tensor_node::is_contiguous() const noexcept {
-    return strides() == get_default_strides(shape());
+    return runtime::is_contiguous(shape_, strides_);
 }
 
 result<void> tensor_node::copy_from(tensor src) noexcept {

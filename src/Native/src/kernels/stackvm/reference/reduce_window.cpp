@@ -33,12 +33,13 @@ struct identity_window {
 
 template <class TBinaryOp, class TWindowOp>
 result<void> reduce_window2d_impl(
-    const float *input, float init_value, float *output, const dims_t &in_shape,
-    const strides_t &in_strides, const strides_t &out_strides,
-    const padding &padding_h, const padding &padding_w, int32_t filter_h,
-    int32_t filter_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h,
-    int32_t dilation_w, value_range<float> fused_activation,
-    TBinaryOp &&binary_op, TWindowOp &&window_op, bool count_include_pad,
+    const float *input, float init_value, float *output,
+    gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
+    gsl::span<const size_t> out_strides, const padding &padding_h,
+    const padding &padding_w, int32_t filter_h, int32_t filter_w,
+    int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
+    value_range<float> fused_activation, TBinaryOp &&binary_op,
+    TWindowOp &&window_op, bool count_include_pad,
     NNCASE_UNUSED kernel_context &context) noexcept {
     const auto out_h = kernels::detail::get_windowed_output_size(
         in_shape[2], filter_h, stride_h, dilation_h, padding_h);
@@ -76,7 +77,7 @@ result<void> reduce_window2d_impl(
                             const size_t in_x = in_x_origin + dilation_w * kx;
 
                             const float in_v = input[offset(
-                                in_strides, {batch, oc, in_y, in_x})];
+                                in_strides, fixed_dims(batch, oc, in_y, in_x))];
 
                             value = binary_op(value, in_v);
                             kernel_count++;
@@ -92,7 +93,7 @@ result<void> reduce_window2d_impl(
                         kernel_count = filter_h * filter_w;
                     }
 
-                    output[offset(out_strides, {batch, oc, oy, ox})] =
+                    output[offset(out_strides, fixed_dims(batch, oc, oy, ox))] =
                         kernels::detail::apply_activation(
                             window_op(value, kernel_count), fused_activation);
                 }
@@ -120,15 +121,14 @@ result<void> reduce_window2d_impl(
             dilation_h, dilation_w, fused_activation, reducer,                 \
             identity_window(), count_include_pad, context)
 
-result<void>
-reduce_window2d_impl(reduce_op_t op, const float *input, float init_value,
-                     float *output, const dims_t &in_shape,
-                     const strides_t &in_strides, const strides_t &out_strides,
-                     const padding &padding_h, const padding &padding_w,
-                     int32_t filter_h, int32_t filter_w, int32_t stride_h,
-                     int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
-                     value_range<float> fused_activation,
-                     bool count_include_pad, kernel_context &context) noexcept {
+result<void> reduce_window2d_impl(
+    reduce_op_t op, const float *input, float init_value, float *output,
+    gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
+    gsl::span<const size_t> out_strides, const padding &padding_h,
+    const padding &padding_w, int32_t filter_h, int32_t filter_w,
+    int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
+    value_range<float> fused_activation, bool count_include_pad,
+    kernel_context &context) noexcept {
     switch (op) {
         REDUCE_WINDOW2D_IMPL(
             reduce_op_t::mean, std::plus<float>(),
@@ -143,10 +143,12 @@ reduce_window2d_impl(reduce_op_t op, const float *input, float init_value,
     }
 }
 
-dims_t infer_shape(const dims_t &in_shape, const dims_t &filter,
-                   const dims_t &stride, const dims_t &dilation,
+dims_t infer_shape(gsl::span<const size_t> in_shape,
+                   gsl::span<const size_t> filter,
+                   gsl::span<const size_t> stride,
+                   gsl::span<const size_t> dilation,
                    const paddings_t &paddings) {
-    auto new_shape = in_shape;
+    dims_t new_shape(in_shape);
     new_shape[2] = kernels::detail::get_windowed_output_size(
         in_shape[2], filter[0], stride[0], dilation[0], paddings[0]);
     new_shape[3] = kernels::detail::get_windowed_output_size(

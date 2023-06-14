@@ -30,19 +30,20 @@ using namespace nncase::kernels::stackvm;
 namespace {
 template <class T>
 result<void> stack_impl(gsl::span<const gsl::byte *const> inputs, T *output,
-                        const dims_t &out_shape,
+                        gsl::span<const size_t> out_shape,
                         gsl::span<const dims_t> &in_strides,
-                        const strides_t &out_strides, size_t axis,
+                        gsl::span<const size_t> out_strides, size_t axis,
                         NNCASE_UNUSED kernel_context &context) noexcept {
-    return apply(out_shape, [&](const dims_t &out_index) -> result<void> {
-        auto i = out_index[axis];
-        auto input = IN_CAST(T, inputs[i]);
-        auto in_index = out_index;
-        in_index.erase(in_index.begin() + axis);
-        output[offset(out_strides, out_index)] =
-            input[offset(in_strides[i], in_index)];
-        return ok();
-    });
+    return apply(out_shape,
+                 [&](gsl::span<const size_t> out_index) -> result<void> {
+                     auto i = out_index[axis];
+                     auto input = IN_CAST(T, inputs[i]);
+                     dims_t in_index(out_index);
+                     in_index.erase(in_index.begin() + axis);
+                     output[offset(out_strides, out_index)] =
+                         input[offset(in_strides[i], in_index)];
+                     return ok();
+                 });
 }
 } // namespace
 
@@ -53,8 +54,8 @@ result<void> stack_impl(gsl::span<const gsl::byte *const> inputs, T *output,
 
 result<void> nncase::kernels::stackvm::reference::stack(
     datatype_t type, gsl::span<const gsl::byte *const> inputs,
-    gsl::byte *output, const dims_t &out_shape,
-    gsl::span<const dims_t> in_strides, const strides_t &out_strides,
+    gsl::byte *output, gsl::span<const size_t> out_shape,
+    gsl::span<const dims_t> in_strides, gsl::span<const size_t> out_strides,
     size_t axis, kernel_context &context) noexcept {
     TYPE_IMPL_SELECT(type, STACK_IMPL);
 }

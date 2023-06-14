@@ -173,9 +173,10 @@ struct binary_op_div_rvv {
 // float
 template <typename Top>
 result<void> optimized_binary_impl(const float *input_a, const float *input_b,
-                                   float *output, const dims_t &in_a_shape,
-                                   const dims_t &in_b_shape,
-                                   const dims_t &out_shape) noexcept {
+                                   float *output,
+                                   gsl::span<const size_t> in_a_shape,
+                                   gsl::span<const size_t> in_b_shape,
+                                   gsl::span<const size_t> out_shape) noexcept {
     Top op;
     const int count = compute_size(out_shape);
     size_t vl = 0;
@@ -276,9 +277,9 @@ result<void> optimized_binary_impl(const float *input_a, const float *input_b,
 template <typename Top>
 result<void> optimized_binary_impl(const int32_t *input_a,
                                    const int32_t *input_b, int32_t *output,
-                                   const dims_t &in_a_shape,
-                                   const dims_t &in_b_shape,
-                                   const dims_t &out_shape) noexcept {
+                                   gsl::span<const size_t> in_a_shape,
+                                   gsl::span<const size_t> in_b_shape,
+                                   gsl::span<const size_t> out_shape) noexcept {
     Top op;
     const int count = compute_size(out_shape);
     size_t vl = 0;
@@ -383,9 +384,9 @@ result<void> optimized_binary_impl(const int32_t *input_a,
 template <typename Top>
 result<void> optimized_binary_impl(const int64_t *input_a,
                                    const int64_t *input_b, int64_t *output,
-                                   const dims_t &in_a_shape,
-                                   const dims_t &in_b_shape,
-                                   const dims_t &out_shape) noexcept {
+                                   gsl::span<const size_t> in_a_shape,
+                                   gsl::span<const size_t> in_b_shape,
+                                   gsl::span<const size_t> out_shape) noexcept {
     Top op;
     const int count = compute_size(out_shape);
     size_t vl = 0;
@@ -485,13 +486,13 @@ result<void> optimized_binary_impl(const int64_t *input_a,
 #endif
 } // namespace
 
-result<void>
-optimized::binary(typecode_t typecode, runtime::stackvm::binary_op_t op,
-                  const gsl::byte *lhs, const gsl::byte *rhs, gsl::byte *out,
-                  const dims_t &in_a_shape, const strides_t &lhs_strides,
-                  const dims_t &in_b_shape, const strides_t &rhs_strides,
-                  const dims_t &out_shape, const strides_t &out_strides,
-                  NNCASE_UNUSED kernel_context &context) noexcept {
+result<void> optimized::binary(
+    typecode_t typecode, runtime::stackvm::binary_op_t op, const gsl::byte *lhs,
+    const gsl::byte *rhs, gsl::byte *out, gsl::span<const size_t> in_a_shape,
+    gsl::span<const size_t> lhs_strides, gsl::span<const size_t> in_b_shape,
+    gsl::span<const size_t> rhs_strides, gsl::span<const size_t> out_shape,
+    gsl::span<const size_t> out_strides,
+    NNCASE_UNUSED kernel_context &context) noexcept {
 #if __riscv_vector
 #define BINARY_IMPL(_ty)                                                       \
     {                                                                          \
