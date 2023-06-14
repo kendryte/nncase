@@ -151,10 +151,11 @@
       },
       "xunit.v3.assert": {
         "type": "Direct",
-        "requested": "[0.1.1-pre.121, )",
-        "resolved": "0.1.1-pre.121",
-        "contentHash": "4jUnozt+aFfuOnNyLSV4LJ84LYwznIq5oDIH+A2UEj9IIZakhhtFF+OVyGZtvudCct18Bcsloq4b9wMfX2H8dQ==",
+        "requested": "[0.1.1-pre.239, )",
+        "resolved": "0.1.1-pre.239",
+        "contentHash": "Yh/hk/isI4lizTaWHtW4S0RVN58QJVCDUwPnYxf2bf2AXH9jQUQuYSHSrAhCqSDuozO4BlCLQAmHRQ+BKcX3nQ==",
         "dependencies": {
+          "System.Collections.Immutable": "7.0.0",
           "System.Memory": "4.5.5",
           "System.Threading.Tasks.Extensions": "4.5.4"
         }
@@ -666,6 +667,11 @@
           "System.Threading": "4.3.0",
           "System.Threading.Tasks": "4.3.0"
         }
+      },
+      "System.Collections.Immutable": {
+        "type": "Transitive",
+        "resolved": "7.0.0",
+        "contentHash": "dQPcs0U1IKnBdRDBkrCTi1FoajSTBzLcVTpjO4MBCMC7f4pDOIPzgBoX8JjG7X6uZRJ8EBxsi8+DR1JuwjnzOQ=="
       },
       "System.Console": {
         "type": "Transitive",
@@ -1550,7 +1556,7 @@
           "System.Linq.Async": "[6.0.1, )",
           "Xunit.Combinatorial": "[1.5.25, )",
           "Xunit.DependencyInjection": "[8.3.0, )",
-          "xunit.v3.assert": "[0.1.1-pre.121, )"
+          "xunit.v3.assert": "[0.1.1-pre.239, )"
         }
       },
       "onnx.protobuf": {
