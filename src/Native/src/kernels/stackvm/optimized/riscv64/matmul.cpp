@@ -12,13 +12,13 @@
 // * See the License for the specific language governing permissions and
 // * limitations under the License.
 // */
-//#include <nncase/kernels/stackvm/ref_ops.h>
-//#include <nncase/kernels/stackvm/opt_ops.h>
-//#include <nncase/kernels/kernel_utils.h>
-//#include <nncase/runtime/runtime_op_utility.h>
-//#if __riscv_vector
-//#include <riscv_vector.h>
-//#endif
+// #include <nncase/kernels/stackvm/ref_ops.h>
+// #include <nncase/kernels/stackvm/opt_ops.h>
+// #include <nncase/kernels/kernel_utils.h>
+// #include <nncase/runtime/runtime_op_utility.h>
+// #if __riscv_vector
+// #include <riscv_vector.h>
+// #endif
 //
 // using namespace nncase;
 // using namespace nncase::runtime;
@@ -28,7 +28,7 @@
 //
 // namespace
 //{
-//#if __riscv_vector
+// #if __riscv_vector
 //
 //// float
 // result<void> optimized_matmul_impl(const float *input_a, const float
@@ -109,7 +109,7 @@
 //
 //    return ok();
 //}
-//#endif
+// #endif
 //}
 //
 //
@@ -126,11 +126,11 @@
 //                         gsl::span<const size_t> in_a_shape,
 //                         gsl::span<const size_t> in_b_shape) noexcept
 //{
-//#if __riscv_vector
+// #if __riscv_vector
 //    return optimized_matmul_impl(input_a, input_b, bias, output, in_a_shape,
 //    in_a_strides, in_b_shape, in_b_strides, out_shape, out_strides,
 //    fused_activation);
-//#endif
+// #endif
 //
 //    return kernels::stackvm::reference::matmul(typecode, input_a, input_b,
 //    output, in_a_shape, in_b_shape);
