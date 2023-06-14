@@ -116,7 +116,7 @@
 ////template <typename T>
 ////result<void> optimized::matmul(const T *input_a, const T *input_b, const T
 ///*bias, T *output, /    gsl::span<const size_t> in_a_shape, gsl::span<const
-///size_t> in_a_strides,
+/// size_t> in_a_strides,
 /// gsl::span<const size_t> in_b_shape, /    gsl::span<const size_t>
 /// in_b_strides, const dims_t
 ///&out_shape, gsl::span<const size_t> out_strides, /    value_range<float>
