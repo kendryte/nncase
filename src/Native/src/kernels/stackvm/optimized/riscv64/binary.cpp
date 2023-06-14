@@ -326,10 +326,9 @@ void binary_impl_fv_i64(int64_t input_a, const int64_t *input_b, int64_t *out,
     }
 }
 
-static int verify_shape(dims_t in_a_shape, dims_t in_b_shape) {
+static int verify_shape_impl(const dims_t& in_a_shape, const dims_t& in_b_shape) {
+
     int size_diff = in_a_shape.size() - in_b_shape.size();
-    if (size_diff < 0)
-        return -1;
     int outter_front_size = 1;
     int outter_current_size = 1;
     for (int i = 0; i < size_diff; ++i) {
@@ -356,6 +355,24 @@ static int verify_shape(dims_t in_a_shape, dims_t in_b_shape) {
     return -1;
 }
 
+static int verify_shape(const dims_t& in_a_shape, const dims_t& in_b_shape, int a_len, int b_len)
+{
+    if(a_len == 1 || b_len == 1)
+        return 0;
+    if(a_len > b_len)
+    {
+        return verify_shape_impl(in_a_shape, in_b_shape);
+    }
+    if(a_len < b_len)
+    {
+        return verify_shape_impl(in_b_shape, in_b_shape);
+    }
+    if(in_a_shape.size() < in_b_shape.size())
+        return verify_shape_impl(in_b_shape, in_b_shape);
+    return verify_shape_impl(in_a_shape, in_b_shape);
+}
+
+
 // float
 template <typename Top>
 int optimized_binary_impl(const float *input_a, const float *input_b,
@@ -363,20 +380,17 @@ int optimized_binary_impl(const float *input_a, const float *input_b,
                           const dims_t &in_b_shape,
                           const dims_t &out_shape) noexcept {
     (void)out_shape;
-    if (in_a_shape.size() == 0 || in_b_shape.size() == 0) {
-        return 0;
-    }
-    int len_a = (int)compute_size(in_a_shape);
-    int len_b = (int)compute_size(in_b_shape);
+    int len_a = in_a_shape.size() != 0 ? (int)compute_size(in_a_shape) : 1;
+    int len_b = in_b_shape.size() != 0 ? (int)compute_size(in_b_shape) : 1;
     if (in_a_shape == in_b_shape) {
         binary_impl_vv_f32<Top>(input_a, input_b, output, len_a);
         return 0;
     }
+    if (verify_shape(in_a_shape, in_b_shape, len_a, len_b)) // 校验失败
+    {
+        return -1;
+    }
     if (len_a >= len_b) {
-        if (verify_shape(in_a_shape, in_b_shape)) // 校验失败
-        {
-            return -1;
-        }
         if (len_b == 1) {
             binary_impl_vf_f32<Top>(input_a, input_b[0], output, len_a);
         } else {
@@ -389,10 +403,6 @@ int optimized_binary_impl(const float *input_a, const float *input_b,
         }
     } else // len_a < len_b
     {
-        if (verify_shape(in_b_shape, in_a_shape)) // 校验失败
-        {
-            return -1;
-        }
         if (len_a == 1) {
             binary_impl_fv_f32<Top>(input_a[0], input_b, output, len_b);
         } else {
@@ -415,20 +425,17 @@ int optimized_binary_impl(const int32_t *input_a, const int32_t *input_b,
                           const dims_t &in_b_shape,
                           const dims_t &out_shape) noexcept {
     (void)out_shape;
-    if (in_a_shape.size() == 0 || in_b_shape.size() == 0) {
-        return 0;
-    }
-    int len_a = (int)compute_size(in_a_shape);
-    int len_b = (int)compute_size(in_b_shape);
+    int len_a = in_a_shape.size() != 0 ? (int)compute_size(in_a_shape) : 1;
+    int len_b = in_b_shape.size() != 0 ? (int)compute_size(in_b_shape) : 1;
     if (in_a_shape == in_b_shape) {
         binary_impl_vv_i32<Top>(input_a, input_b, output, len_a);
         return 0;
     }
+    if (verify_shape(in_a_shape, in_b_shape, len_a, len_b)) // 校验失败
+    {
+        return -1;
+    }
     if (len_a >= len_b) {
-        if (verify_shape(in_a_shape, in_b_shape)) // 校验失败
-        {
-            return -1;
-        }
         if (len_b == 1) {
             binary_impl_vf_i32<Top>(input_a, input_b[0], output, len_a);
         } else {
@@ -441,10 +448,6 @@ int optimized_binary_impl(const int32_t *input_a, const int32_t *input_b,
         }
     } else // len_a < len_b
     {
-        if (verify_shape(in_b_shape, in_a_shape)) // 校验失败
-        {
-            return -1;
-        }
         if (len_a == 1) {
             binary_impl_fv_i32<Top>(input_a[0], input_b, output, len_b);
         } else {
@@ -467,20 +470,17 @@ int optimized_binary_impl(const int64_t *input_a, const int64_t *input_b,
                           const dims_t &in_b_shape,
                           const dims_t &out_shape) noexcept {
     (void)out_shape;
-    if (in_a_shape.size() == 0 || in_b_shape.size() == 0) {
-        return 0;
-    }
-    int len_a = (int)compute_size(in_a_shape);
-    int len_b = (int)compute_size(in_b_shape);
+    int len_a = in_a_shape.size() != 0 ? (int)compute_size(in_a_shape) : 1;
+    int len_b = in_b_shape.size() != 0 ? (int)compute_size(in_b_shape) : 1;
     if (in_a_shape == in_b_shape) {
         binary_impl_vv_i64<Top>(input_a, input_b, output, len_a);
         return 0;
     }
+    if (verify_shape(in_a_shape, in_b_shape, len_a, len_b)) // 校验失败
+    {
+        return -1;
+    }
     if (len_a >= len_b) {
-        if (verify_shape(in_a_shape, in_b_shape)) // 校验失败
-        {
-            return -1;
-        }
         if (len_b == 1) {
             binary_impl_vf_i64<Top>(input_a, input_b[0], output, len_a);
         } else {
@@ -493,10 +493,6 @@ int optimized_binary_impl(const int64_t *input_a, const int64_t *input_b,
         }
     } else // len_a < len_b
     {
-        if (verify_shape(in_b_shape, in_a_shape)) // 校验失败
-        {
-            return -1;
-        }
         if (len_a == 1) {
             binary_impl_fv_i64<Top>(input_a[0], input_b, output, len_b);
         } else {
@@ -579,6 +575,7 @@ optimized::binary(typecode_t typecode, runtime::stackvm::binary_op_t op,
     if (!ret_value) {
         return ok();
     }
+
     return stackvm::reference::binary(typecode, op, lhs, rhs, out, in_a_shape,
                                       lhs_strides, in_b_shape, rhs_strides,
                                       out_shape, out_strides, context);
