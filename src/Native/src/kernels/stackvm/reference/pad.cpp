@@ -27,7 +27,8 @@ using namespace nncase::kernels;
 using namespace nncase::kernels::stackvm;
 
 namespace {
-dims_t get_padded_shape(gsl::span<const size_t> in_shape, const paddings_t &paddings) {
+dims_t get_padded_shape(gsl::span<const size_t> in_shape,
+                        const paddings_t &paddings) {
     dims_t out_shape(in_shape.size());
     for (size_t i = 0; i < in_shape.size(); i++)
         out_shape[i] = (size_t)((int32_t)in_shape[i] + paddings[i].sum() +
@@ -35,7 +36,8 @@ dims_t get_padded_shape(gsl::span<const size_t> in_shape, const paddings_t &padd
     return out_shape;
 }
 
-dims_t get_in_index(gsl::span<const size_t> index, gsl::span<const size_t> in_shape,
+dims_t get_in_index(gsl::span<const size_t> index,
+                    gsl::span<const size_t> in_shape,
                     const paddings_t &paddings, pad_mode_t mode,
                     bool &pad_element) {
     dims_t in_index(index.size());
