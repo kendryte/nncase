@@ -28,24 +28,25 @@ using namespace nncase::kernels::stackvm;
 
 namespace {
 template <class T, class IndicesT>
-result<void>
-gather_elements_impl(const T *input, T *output,
-                     [[maybe_unused]] const dims_t &in_shape,
-                     const dims_t &out_shape, const strides_t &in_strides,
-                     const strides_t &out_strides, const IndicesT *indices,
-                     const dims_t &indices_shape, size_t axis,
-                     NNCASE_UNUSED kernel_context &context) noexcept {
-    return apply(out_shape, [&](const dims_t &out_index) -> result<void> {
-        dims_t in_index(out_index);
+result<void> gather_elements_impl(
+    const T *input, T *output,
+    [[maybe_unused]] gsl::span<const size_t> in_shape,
+    gsl::span<const size_t> out_shape, gsl::span<const size_t> in_strides,
+    gsl::span<const size_t> out_strides, const IndicesT *indices,
+    gsl::span<const size_t> indices_shape, size_t axis,
+    NNCASE_UNUSED kernel_context &context) noexcept {
+    return apply(out_shape,
+                 [&](gsl::span<const size_t> out_index) -> result<void> {
+                     dims_t in_index(out_index);
 
-        auto indices_offset =
-            offset(get_default_strides(indices_shape), out_index);
-        in_index[axis] = indices[indices_offset];
+                     auto indices_offset =
+                         offset(get_default_strides(indices_shape), out_index);
+                     in_index[axis] = indices[indices_offset];
 
-        output[offset(out_strides, out_index)] =
-            input[offset(in_strides, in_index)];
-        return ok();
-    });
+                     output[offset(out_strides, out_index)] =
+                         input[offset(in_strides, in_index)];
+                     return ok();
+                 });
 }
 } // namespace
 
@@ -61,10 +62,10 @@ gather_elements_impl(const T *input, T *output,
 
 result<void> nncase::kernels::stackvm::reference::gather_elements(
     datatype_t type, const gsl::byte *input, gsl::byte *output,
-    const dims_t &in_shape, const dims_t &out_shape,
-    const strides_t &in_strides, const strides_t &out_strides,
+    gsl::span<const size_t> in_shape, gsl::span<const size_t> out_shape,
+    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
     datatype_t indices_type, const gsl::byte *indices,
-    const dims_t &indices_shape, size_t axis,
+    gsl::span<const size_t> indices_shape, size_t axis,
     kernel_context &context) noexcept {
     TYPE_IMPL_SELECT(type, GATHER_ELEMENTS_IMPL);
 }

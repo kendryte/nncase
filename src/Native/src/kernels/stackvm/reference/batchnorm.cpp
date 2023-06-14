@@ -24,9 +24,9 @@ using namespace nncase::kernels::stackvm;
 result<void> nncase::kernels::stackvm::reference::batchnorm(
     const float *input, const float *scale, const float *bias,
     const float *input_mean, const float *input_var, float *output,
-    const dims_t &in_shape, const strides_t &in_strides,
-    const strides_t &out_strides, float epsilon) {
-    return apply(in_shape, [&](const dims_t &index) -> result<void> {
+    gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
+    gsl::span<const size_t> out_strides, float epsilon) {
+    return apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
         auto c = index[1];
         const auto x = input[offset(in_strides, index)];
         output[offset(out_strides, index)] =

@@ -30,8 +30,9 @@ result<host_buffer_slice> buffer_slice::as_host() const noexcept {
 
 result<void>
 buffer_slice::copy_to(const buffer_slice &dest, datatype_t datatype,
-                      const dims_t &shape, const strides_t &src_strides,
-                      const strides_t &dest_strides) const noexcept {
+                      gsl::span<const size_t> shape,
+                      gsl::span<const size_t> src_strides,
+                      gsl::span<const size_t> dest_strides) const noexcept {
     return buffer()->copy_to(dest.buffer(), start(), dest.start(), datatype,
                              shape, src_strides, dest_strides);
 }
