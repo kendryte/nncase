@@ -35,7 +35,8 @@ namespace {
 
 template <class TInput, class TOutput>
 result<void> cast_impl(const TInput *input, TOutput *output,
-                       gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
+                       gsl::span<const size_t> in_shape,
+                       gsl::span<const size_t> in_strides,
                        gsl::span<const size_t> out_strides,
                        NNCASE_UNUSED kernel_context &context) noexcept {
     SCALAR_CAST_IMPL(static_cast<TOutput>);
@@ -46,11 +47,10 @@ result<void> cast_impl(const TInput *input, TOutput *output,
     });
 }
 
-result<void>
-cast_f32_to_bf16_impl(const float *input, bfloat16 *output,
-                      gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
-                      gsl::span<const size_t> out_strides,
-                      NNCASE_UNUSED kernel_context &context) noexcept {
+result<void> cast_f32_to_bf16_impl(
+    const float *input, bfloat16 *output, gsl::span<const size_t> in_shape,
+    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
+    NNCASE_UNUSED kernel_context &context) noexcept {
     SCALAR_CAST_IMPL(bfloat16::round_to_bfloat16);
     return apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
         auto value = input[offset(in_strides, index)];
@@ -59,10 +59,10 @@ cast_f32_to_bf16_impl(const float *input, bfloat16 *output,
     });
 }
 
-result<void>
-cast_f32_to_fp16_impl(const float *input, half *output, gsl::span<const size_t> in_shape,
-                      gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
-                      NNCASE_UNUSED kernel_context &context) noexcept {
+result<void> cast_f32_to_fp16_impl(
+    const float *input, half *output, gsl::span<const size_t> in_shape,
+    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
+    NNCASE_UNUSED kernel_context &context) noexcept {
     SCALAR_CAST_IMPL(half::round_to_half);
     return apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
         auto value = input[offset(in_strides, index)];
@@ -94,7 +94,8 @@ cast_f32_to_fp16_impl(const float *input, half *output, gsl::span<const size_t> 
 
 result<void> cast_impl(datatype_t in_type, datatype_t out_type,
                        const gsl::byte *input, gsl::byte *output,
-                       gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
+                       gsl::span<const size_t> in_shape,
+                       gsl::span<const size_t> in_strides,
                        gsl::span<const size_t> out_strides,
                        kernel_context &context) noexcept {
     if (cmp_dt(in_type, dt_float32) && cmp_dt(out_type, dt_bfloat16))

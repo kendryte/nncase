@@ -33,9 +33,10 @@
 //// float
 // result<void> optimized_matmul_impl(const float *input_a, const float
 // *input_b, const float *bias, float *output,
-//    gsl::span<const size_t> in_a_shape, gsl::span<const size_t> in_a_strides, const dims_t
-//    &in_b_shape, gsl::span<const size_t> in_b_strides, gsl::span<const size_t> out_shape, const
-//    dims_t out_strides, value_range<float> fused_activation) noexcept
+//    gsl::span<const size_t> in_a_shape, gsl::span<const size_t> in_a_strides,
+//    const dims_t &in_b_shape, gsl::span<const size_t> in_b_strides,
+//    gsl::span<const size_t> out_shape, const dims_t out_strides,
+//    value_range<float> fused_activation) noexcept
 //{
 //    size_t M = in_a_shape[in_a_shape.size() - 2];
 //    size_t K = in_a_shape.back();
@@ -114,8 +115,10 @@
 //
 ////template <typename T>
 ////result<void> optimized::matmul(const T *input_a, const T *input_b, const T
-///*bias, T *output, /    gsl::span<const size_t> in_a_shape, gsl::span<const size_t> in_a_strides,
-/// gsl::span<const size_t> in_b_shape, /    gsl::span<const size_t> in_b_strides, const dims_t
+///*bias, T *output, /    gsl::span<const size_t> in_a_shape, gsl::span<const
+///size_t> in_a_strides,
+/// gsl::span<const size_t> in_b_shape, /    gsl::span<const size_t>
+/// in_b_strides, const dims_t
 ///&out_shape, gsl::span<const size_t> out_strides, /    value_range<float>
 /// fused_activation) noexcept
 // result<void> matmul_impl(typecode_t typecode, const gsl::byte *input_a, const

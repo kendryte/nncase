@@ -27,8 +27,9 @@ using namespace nncase::kernels;
 namespace {
 
 template <typename T>
-result<void> cumsum_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
-                         int32_t axis, bool exclusive, bool reverse) noexcept {
+result<void> cumsum_impl(const T *input, T *output,
+                         gsl::span<const size_t> in_shape, int32_t axis,
+                         bool exclusive, bool reverse) noexcept {
     const int32_t rank = in_shape.size();
     assert(rank >= 1);
     assert(axis >= 0);

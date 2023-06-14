@@ -27,10 +27,11 @@ using namespace nncase::kernels;
 using namespace nncase::kernels::stackvm;
 
 template <typename T>
-result<void> tile_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
-                       gsl::span<const size_t> out_shape, gsl::span<const size_t> in_strides,
-                       gsl::span<const size_t> out_strides,
-                       [[maybe_unused]] gsl::span<const size_t> repeats) {
+result<void>
+tile_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
+          gsl::span<const size_t> out_shape, gsl::span<const size_t> in_strides,
+          gsl::span<const size_t> out_strides,
+          [[maybe_unused]] gsl::span<const size_t> repeats) {
     return apply(out_shape, [&](const auto &out_index) -> result<void> {
         auto in_index = dims_t(out_index.size());
         for (size_t i = 0; i < in_shape.size(); ++i) {

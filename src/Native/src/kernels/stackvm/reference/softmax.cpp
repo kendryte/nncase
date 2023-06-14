@@ -27,10 +27,11 @@ using namespace nncase::kernels::stackvm;
 namespace {
 // softmax(x) = exp(x - reduce_max(x)) / reduce_sum(exp(x - reduce_max(x)))
 template <typename T>
-result<void> softmax_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
-                          gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
-                          int64_t axis, float beta,
-                          bool needLog = false) noexcept {
+result<void> softmax_impl(const T *input, T *output,
+                          gsl::span<const size_t> in_shape,
+                          gsl::span<const size_t> in_strides,
+                          gsl::span<const size_t> out_strides, int64_t axis,
+                          float beta, bool needLog = false) noexcept {
     size_t positive_axis = axis < 0 ? in_shape.size() + axis : axis;
     dims_t axes{positive_axis};
 
@@ -105,8 +106,8 @@ result<void> softmax_impl(const T *input, T *output, gsl::span<const size_t> in_
 } // namespace
 result<void> nncase::kernels::stackvm::reference::softmax(
     const float *input, float *output, gsl::span<const size_t> in_shape,
-    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides, int64_t axis,
-    float beta, bool needLog) noexcept {
+    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
+    int64_t axis, float beta, bool needLog) noexcept {
     return softmax_impl(input, output, in_shape, in_strides, out_strides, axis,
                         beta, needLog);
 }

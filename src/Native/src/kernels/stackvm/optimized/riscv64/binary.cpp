@@ -173,7 +173,8 @@ struct binary_op_div_rvv {
 // float
 template <typename Top>
 result<void> optimized_binary_impl(const float *input_a, const float *input_b,
-                                   float *output, gsl::span<const size_t> in_a_shape,
+                                   float *output,
+                                   gsl::span<const size_t> in_a_shape,
                                    gsl::span<const size_t> in_b_shape,
                                    gsl::span<const size_t> out_shape) noexcept {
     Top op;
@@ -484,13 +485,13 @@ result<void> optimized_binary_impl(const int64_t *input_a,
 #endif
 } // namespace
 
-result<void>
-optimized::binary(typecode_t typecode, runtime::stackvm::binary_op_t op,
-                  const gsl::byte *lhs, const gsl::byte *rhs, gsl::byte *out,
-                  gsl::span<const size_t> in_a_shape, gsl::span<const size_t> lhs_strides,
-                  gsl::span<const size_t> in_b_shape, gsl::span<const size_t> rhs_strides,
-                  gsl::span<const size_t> out_shape, gsl::span<const size_t> out_strides,
-                  NNCASE_UNUSED kernel_context &context) noexcept {
+result<void> optimized::binary(
+    typecode_t typecode, runtime::stackvm::binary_op_t op, const gsl::byte *lhs,
+    const gsl::byte *rhs, gsl::byte *out, gsl::span<const size_t> in_a_shape,
+    gsl::span<const size_t> lhs_strides, gsl::span<const size_t> in_b_shape,
+    gsl::span<const size_t> rhs_strides, gsl::span<const size_t> out_shape,
+    gsl::span<const size_t> out_strides,
+    NNCASE_UNUSED kernel_context &context) noexcept {
 #if __riscv_vector
 #define BINARY_IMPL(_ty)                                                       \
     {                                                                          \

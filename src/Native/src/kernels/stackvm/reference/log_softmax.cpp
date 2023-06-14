@@ -28,10 +28,10 @@ namespace {
 // log_softmax(x) = log(exp(x - reduce_max(x)) / reduce_sum(exp(x -
 // reduce_max(x))))
 template <typename T>
-result<void> log_softmax_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
-                              gsl::span<const size_t> in_strides,
-                              gsl::span<const size_t> out_strides,
-                              int64_t axis) noexcept {
+result<void>
+log_softmax_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
+                 gsl::span<const size_t> in_strides,
+                 gsl::span<const size_t> out_strides, int64_t axis) noexcept {
     size_t positive_axis = axis < 0 ? in_shape.size() + axis : axis;
     dims_t axes{positive_axis};
 

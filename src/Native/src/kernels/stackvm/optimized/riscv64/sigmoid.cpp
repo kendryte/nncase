@@ -31,10 +31,11 @@ using namespace nncase::kernels::stackvm::optimized;
 namespace {
 #if __riscv_vector
 
-result<void> optimized_sigmoid_impl(const float *input, float *output,
-                                    gsl::span<const size_t> in_shape,
-                                    gsl::span<const size_t> in_strides,
-                                    gsl::span<const size_t> out_strides) noexcept {
+result<void>
+optimized_sigmoid_impl(const float *input, float *output,
+                       gsl::span<const size_t> in_shape,
+                       gsl::span<const size_t> in_strides,
+                       gsl::span<const size_t> out_strides) noexcept {
 
     if (get_default_strides(in_shape) != in_strides) {
         size_t ndim = in_shape.size();
@@ -100,11 +101,12 @@ result<void> optimized_sigmoid_impl(const float *input, float *output,
 } // namespace
 
 template <typename T>
-result<void>
-optimized::sigmoid(const T *input, T *output, gsl::span<const size_t> in_shape,
-                   gsl::span<const size_t> in_strides, gsl::span<const size_t> out_shape,
-                   gsl::span<const size_t> out_strides,
-                   kernel_context &context) noexcept {
+result<void> optimized::sigmoid(const T *input, T *output,
+                                gsl::span<const size_t> in_shape,
+                                gsl::span<const size_t> in_strides,
+                                gsl::span<const size_t> out_shape,
+                                gsl::span<const size_t> out_strides,
+                                kernel_context &context) noexcept {
 #if __riscv_vector
     return optimized_sigmoid_impl(input, output, in_shape, in_strides,
                                   out_strides);

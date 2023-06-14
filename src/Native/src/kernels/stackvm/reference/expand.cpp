@@ -27,9 +27,11 @@ using namespace nncase::kernels::stackvm;
 
 namespace {
 template <class T>
-result<void> expand_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
+result<void> expand_impl(const T *input, T *output,
+                         gsl::span<const size_t> in_shape,
                          gsl::span<const size_t> input_strides,
-                         gsl::span<const size_t> out_shape, gsl::span<const size_t> out_strides,
+                         gsl::span<const size_t> out_shape,
+                         gsl::span<const size_t> out_strides,
                          NNCASE_UNUSED kernel_context &context) noexcept {
     return apply(out_shape, [&](gsl::span<const size_t> index) -> result<void> {
         const auto in_index =

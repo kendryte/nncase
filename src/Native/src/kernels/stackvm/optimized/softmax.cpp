@@ -24,17 +24,17 @@ using namespace nncase::kernels;
 using namespace nncase::kernels::stackvm;
 using namespace nncase::kernels::stackvm::optimized;
 
-template result<void>
-optimized::softmax<float>(const float *input, float *output,
-                          gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
-                          gsl::span<const size_t> out_strides, int32_t axis,
-                          float beta) noexcept;
+template result<void> optimized::softmax<float>(
+    const float *input, float *output, gsl::span<const size_t> in_shape,
+    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
+    int32_t axis, float beta) noexcept;
 
 template <typename T>
-result<void>
-optimized::softmax(const T *input, T *output, gsl::span<const size_t> in_shape,
-                   gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
-                   int32_t axis, float beta) noexcept {
+result<void> optimized::softmax(const T *input, T *output,
+                                gsl::span<const size_t> in_shape,
+                                gsl::span<const size_t> in_strides,
+                                gsl::span<const size_t> out_strides,
+                                int32_t axis, float beta) noexcept {
     return stackvm::reference::softmax(input, output, in_shape, in_strides,
                                        out_strides, axis, beta);
 }

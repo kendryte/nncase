@@ -14,9 +14,9 @@
  */
 #pragma once
 #ifdef _WIN32
-#include <malloc.h>     // alloca
+#include <malloc.h> // alloca
 #else
-#include <alloca.h>     // alloca
+#include <alloca.h> // alloca
 #endif
 
 #include <nncase/runtime/datatypes.h>

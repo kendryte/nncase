@@ -28,36 +28,38 @@ using namespace nncase::kernels::stackvm;
 namespace {
 template <class T, class IndicesT>
 result<void> one_hot_impl(const IndicesT *indices, T *output,
-                          gsl::span<const size_t> indices_shape, gsl::span<const size_t> out_shape,
+                          gsl::span<const size_t> indices_shape,
+                          gsl::span<const size_t> out_shape,
                           gsl::span<const size_t> out_strides,
                           NNCASE_UNUSED size_t depth, T off_value, T on_value,
                           size_t axis, runtime::stackvm::one_hot_mode_t mode,
                           NNCASE_UNUSED kernel_context &context) {
-    return apply(out_shape, [&](gsl::span<const size_t> out_index) -> result<void> {
-        dims_t indices_index(indices_shape.size());
-        for (size_t i = 0; i < axis; ++i) {
-            indices_index[i] = out_index[i];
-        }
-        for (size_t i = axis; i < indices_shape.size(); ++i) {
-            indices_index[i] = out_index[i + 1];
-        }
-        auto indices_v =
-            indices[offset(get_default_strides(indices_shape), indices_index)];
-        T out_v;
-        auto cur_axis_index = static_cast<int64_t>(out_index[axis]);
-        if (indices_v < 0 &&
-            mode == runtime::stackvm::one_hot_mode_t::process_neg) {
-            out_v = (indices_v + static_cast<int64_t>(out_shape[axis])) ==
-                            cur_axis_index
-                        ? on_value
-                        : off_value;
-        } else {
-            out_v = indices_v == cur_axis_index ? on_value : off_value;
-        }
+    return apply(
+        out_shape, [&](gsl::span<const size_t> out_index) -> result<void> {
+            dims_t indices_index(indices_shape.size());
+            for (size_t i = 0; i < axis; ++i) {
+                indices_index[i] = out_index[i];
+            }
+            for (size_t i = axis; i < indices_shape.size(); ++i) {
+                indices_index[i] = out_index[i + 1];
+            }
+            auto indices_v = indices[offset(get_default_strides(indices_shape),
+                                            indices_index)];
+            T out_v;
+            auto cur_axis_index = static_cast<int64_t>(out_index[axis]);
+            if (indices_v < 0 &&
+                mode == runtime::stackvm::one_hot_mode_t::process_neg) {
+                out_v = (indices_v + static_cast<int64_t>(out_shape[axis])) ==
+                                cur_axis_index
+                            ? on_value
+                            : off_value;
+            } else {
+                out_v = indices_v == cur_axis_index ? on_value : off_value;
+            }
 
-        output[offset(out_strides, out_index)] = out_v;
-        return ok();
-    });
+            output[offset(out_strides, out_index)] = out_v;
+            return ok();
+        });
 }
 } // namespace
 
@@ -73,8 +75,9 @@ result<void> one_hot_impl(const IndicesT *indices, T *output,
 
 result<void> nncase::kernels::stackvm::reference::one_hot(
     datatype_t type, datatype_t indices_type, const gsl::byte *indices,
-    gsl::byte *output, gsl::span<const size_t> indices_shape, gsl::span<const size_t> out_shape,
-    gsl::span<const size_t> out_strides, size_t depth, gsl::byte *values, size_t axis,
+    gsl::byte *output, gsl::span<const size_t> indices_shape,
+    gsl::span<const size_t> out_shape, gsl::span<const size_t> out_strides,
+    size_t depth, gsl::byte *values, size_t axis,
     runtime::stackvm::one_hot_mode_t mode, kernel_context &context) noexcept {
     TYPE_IMPL_SELECT(type, ONEHOT_IMPL);
 }

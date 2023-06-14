@@ -26,13 +26,13 @@ using namespace nncase::kernels::stackvm::optimized;
 
 namespace {
 template <class T, class IndicesT>
-result<void> gather_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
-                         NNCASE_UNUSED gsl::span<const size_t> out_shape,
-                         NNCASE_UNUSED gsl::span<const size_t> in_strides,
-                         NNCASE_UNUSED gsl::span<const size_t> out_strides,
-                         const IndicesT *indices, gsl::span<const size_t> indices_shape,
-                         size_t axis,
-                         NNCASE_UNUSED kernel_context &context) noexcept {
+result<void>
+gather_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
+            NNCASE_UNUSED gsl::span<const size_t> out_shape,
+            NNCASE_UNUSED gsl::span<const size_t> in_strides,
+            NNCASE_UNUSED gsl::span<const size_t> out_strides,
+            const IndicesT *indices, gsl::span<const size_t> indices_shape,
+            size_t axis, NNCASE_UNUSED kernel_context &context) noexcept {
     size_t outer_count =
         std::accumulate(in_shape.begin(), in_shape.begin() + axis, 1,
                         std::multiplies<size_t>{});
@@ -72,9 +72,10 @@ result<void> gather_impl(const T *input, T *output, gsl::span<const size_t> in_s
 
 result<void> nncase::kernels::stackvm::optimized::gather(
     datatype_t type, const gsl::byte *input, gsl::byte *output,
-    gsl::span<const size_t> in_shape, gsl::span<const size_t> out_shape, gsl::span<const size_t> in_strides,
-    gsl::span<const size_t> out_strides, datatype_t indices_type,
-    const gsl::byte *indices, gsl::span<const size_t> indices_shape, size_t axis,
+    gsl::span<const size_t> in_shape, gsl::span<const size_t> out_shape,
+    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
+    datatype_t indices_type, const gsl::byte *indices,
+    gsl::span<const size_t> indices_shape, size_t axis,
     kernel_context &context) noexcept {
     TYPE_IMPL_SELECT(type, GATHER_IMPL);
 }

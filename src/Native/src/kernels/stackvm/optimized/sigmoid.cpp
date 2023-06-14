@@ -25,11 +25,12 @@ using namespace nncase::kernels::stackvm;
 using namespace nncase::kernels::stackvm::optimized;
 
 template <typename T>
-result<void>
-optimized::sigmoid(const T *input, T *output, gsl::span<const size_t> in_shape,
-                   gsl::span<const size_t> in_strides, gsl::span<const size_t> out_shape,
-                   gsl::span<const size_t> out_strides,
-                   kernel_context &context) noexcept {
+result<void> optimized::sigmoid(const T *input, T *output,
+                                gsl::span<const size_t> in_shape,
+                                gsl::span<const size_t> in_strides,
+                                gsl::span<const size_t> out_shape,
+                                gsl::span<const size_t> out_strides,
+                                kernel_context &context) noexcept {
     return stackvm::reference::sigmoid(input, output, in_shape, in_strides,
                                        out_shape, out_strides, context);
 }

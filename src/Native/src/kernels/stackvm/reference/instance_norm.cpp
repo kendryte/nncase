@@ -31,7 +31,8 @@ result<void> instance_norm_impl(const float *input, const float *scale,
                                 const float *input_var, float *output,
                                 gsl::span<const size_t> in_shape,
                                 gsl::span<const size_t> in_strides,
-                                gsl::span<const size_t> out_strides, float epsilon) {
+                                gsl::span<const size_t> out_strides,
+                                float epsilon) {
     return apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
         auto c = index[1];
         auto off = offset(in_strides, index);

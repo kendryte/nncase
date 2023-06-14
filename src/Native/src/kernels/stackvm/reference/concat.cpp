@@ -29,7 +29,8 @@ using namespace nncase::kernels::stackvm;
 
 namespace {
 std::pair<size_t, size_t>
-find_input_id_and_index(size_t index, gsl::span<const size_t> concat_dims) noexcept {
+find_input_id_and_index(size_t index,
+                        gsl::span<const size_t> concat_dims) noexcept {
     size_t input_id;
     for (input_id = 0;; input_id++) {
         auto input_dim = concat_dims[input_id];
@@ -48,18 +49,19 @@ result<void> concat_impl(gsl::span<const gsl::byte *const> inputs, T *output,
                          gsl::span<const size_t> out_strides, size_t axis,
                          gsl::span<const size_t> concat_dims,
                          NNCASE_UNUSED kernel_context &context) noexcept {
-    return apply(out_shape, [&](gsl::span<const size_t> out_index) -> result<void> {
-        auto in_id_index =
-            find_input_id_and_index(out_index[axis], concat_dims);
-        auto input = reinterpret_cast<const T *>(inputs[in_id_index.first]);
-        auto &sel_in_strides = in_strides[in_id_index.first];
-        dims_t in_index(out_index);
-        in_index[axis] = in_id_index.second;
+    return apply(
+        out_shape, [&](gsl::span<const size_t> out_index) -> result<void> {
+            auto in_id_index =
+                find_input_id_and_index(out_index[axis], concat_dims);
+            auto input = reinterpret_cast<const T *>(inputs[in_id_index.first]);
+            auto &sel_in_strides = in_strides[in_id_index.first];
+            dims_t in_index(out_index);
+            in_index[axis] = in_id_index.second;
 
-        output[offset(out_strides, out_index)] =
-            input[offset(sel_in_strides, in_index)];
-        return ok();
-    });
+            output[offset(out_strides, out_index)] =
+                input[offset(sel_in_strides, in_index)];
+            return ok();
+        });
 }
 } // namespace
 
@@ -73,7 +75,8 @@ result<void> nncase::kernels::stackvm::reference::concat(
     datatype_t type, gsl::span<const gsl::byte *const> inputs,
     gsl::byte *output, gsl::span<const size_t> out_shape,
     gsl::span<const dims_t> in_strides, gsl::span<const size_t> out_strides,
-    size_t axis, gsl::span<const size_t> concat_dims, kernel_context &context) noexcept {
+    size_t axis, gsl::span<const size_t> concat_dims,
+    kernel_context &context) noexcept {
     switch (runtime::get_bytes(type)) {
         CONCAT_IMPL(1, uint8_t);
         CONCAT_IMPL(2, uint16_t);

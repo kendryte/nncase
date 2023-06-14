@@ -40,7 +40,8 @@ void memset_(int32_t *output, size_t output_size, int32_t off_value) {
 
 template <class T, class IndicesT>
 result<void> one_hot_impl(const IndicesT *indices, T *output,
-                          gsl::span<const size_t> indices_shape, gsl::span<const size_t> out_shape,
+                          gsl::span<const size_t> indices_shape,
+                          gsl::span<const size_t> out_shape,
                           NNCASE_UNUSED gsl::span<const size_t> out_strides,
                           NNCASE_UNUSED size_t depth, T off_value, T on_value,
                           size_t axis, runtime::stackvm::one_hot_mode_t mode,
@@ -132,10 +133,13 @@ result<void> one_hot_impl(const IndicesT *indices, T *output,
                 reinterpret_cast<type *>(values)[1], axis, mode, context);     \
         });
 
-result<void> optimized::one_hot(
-    datatype_t type, datatype_t indices_type, const gsl::byte *indices,
-    gsl::byte *output, gsl::span<const size_t> indices_shape, gsl::span<const size_t> out_shape,
-    gsl::span<const size_t> out_strides, size_t depth, gsl::byte *values, size_t axis,
-    runtime::stackvm::one_hot_mode_t mode, kernel_context &context) noexcept {
+result<void> optimized::one_hot(datatype_t type, datatype_t indices_type,
+                                const gsl::byte *indices, gsl::byte *output,
+                                gsl::span<const size_t> indices_shape,
+                                gsl::span<const size_t> out_shape,
+                                gsl::span<const size_t> out_strides,
+                                size_t depth, gsl::byte *values, size_t axis,
+                                runtime::stackvm::one_hot_mode_t mode,
+                                kernel_context &context) noexcept {
     TYPE_IMPL_SELECT(type, ONEHOT_IMPL);
 }

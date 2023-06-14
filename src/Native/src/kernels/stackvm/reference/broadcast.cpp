@@ -27,7 +27,8 @@ using namespace nncase::kernels::stackvm;
 
 namespace {
 template <class T>
-result<void> broadcast_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
+result<void> broadcast_impl(const T *input, T *output,
+                            gsl::span<const size_t> in_shape,
                             gsl::span<const size_t> input_strides,
                             gsl::span<const size_t> out_shape,
                             gsl::span<const size_t> out_strides,

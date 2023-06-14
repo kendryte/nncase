@@ -49,7 +49,8 @@ void _slice_contiguous_dim_copy(const axes_t &begins,
 
 template <class T>
 result<void> slice_contiguous_impl(
-    const T *input, T *output, gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
+    const T *input, T *output, gsl::span<const size_t> in_shape,
+    gsl::span<const size_t> in_strides,
     NNCASE_UNUSED gsl::span<const size_t> out_strides, const axes_t &begins,
     const axes_t &ends, NNCASE_UNUSED const axes_t &strides) noexcept {
     size_t elemsize = sizeof(T);
@@ -141,9 +142,9 @@ result<void> _slice_impl(gsl::span<const size_t> in_shape, const axes_t &begins,
 template <class T>
 result<void>
 slice_linecopy_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
-                    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
-                    const axes_t &begins, const axes_t &ends,
-                    const axes_t &strides) noexcept {
+                    gsl::span<const size_t> in_strides,
+                    gsl::span<const size_t> out_strides, const axes_t &begins,
+                    const axes_t &ends, const axes_t &strides) noexcept {
     auto dims = in_shape.size() - 1;
     return _slice_impl(in_shape, begins, ends, strides,
                        [&, dims](dims_t &in_index, dims_t &out_index) {
@@ -162,9 +163,9 @@ slice_linecopy_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
 template <class T>
 result<void>
 slice_strides_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
-                   gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
-                   const axes_t &begins, const axes_t &ends,
-                   const axes_t &strides) noexcept {
+                   gsl::span<const size_t> in_strides,
+                   gsl::span<const size_t> out_strides, const axes_t &begins,
+                   const axes_t &ends, const axes_t &strides) noexcept {
     auto dims = in_shape.size() - 1;
     return _slice_impl(in_shape, begins, ends, strides,
                        [&, dims](dims_t &in_index, dims_t &out_index) {
@@ -205,8 +206,9 @@ slice_strides_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
 result<void> nncase::kernels::stackvm::optimized::slice(
     datatype_t type, const gsl::byte *input, gsl::byte *output,
     gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
-    gsl::span<const size_t> out_strides, const axes_t &begins, const axes_t &ends,
-    const axes_t &strides, NNCASE_UNUSED kernel_context &context) noexcept {
+    gsl::span<const size_t> out_strides, const axes_t &begins,
+    const axes_t &ends, const axes_t &strides,
+    NNCASE_UNUSED kernel_context &context) noexcept {
     auto dims = begins.size();
     dims_t out_shape(dims);
     for (size_t i = 0; i < dims; ++i) {

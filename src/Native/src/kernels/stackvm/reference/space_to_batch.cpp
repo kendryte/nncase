@@ -49,13 +49,13 @@ template <typename Fn> std::vector<size_t> range_exec_flatten(int end, Fn &&f) {
 }
 
 template <class T>
-result<void>
-space_to_batch_impl(datatype_t dt, const T *input, T *output,
-                    gsl::span<const size_t> in_shape, gsl::span<const size_t> block_shape,
-                    const paddings_t &paddings, gsl::span<const size_t> in_strides,
-                    [[maybe_unused]] gsl::span<const size_t> out_shape,
-                    [[maybe_unused]] gsl::span<const size_t> out_strides,
-                    NNCASE_UNUSED kernel_context &context) noexcept {
+result<void> space_to_batch_impl(
+    datatype_t dt, const T *input, T *output, gsl::span<const size_t> in_shape,
+    gsl::span<const size_t> block_shape, const paddings_t &paddings,
+    gsl::span<const size_t> in_strides,
+    [[maybe_unused]] gsl::span<const size_t> out_shape,
+    [[maybe_unused]] gsl::span<const size_t> out_strides,
+    NNCASE_UNUSED kernel_context &context) noexcept {
     auto spatial_size = block_shape.size();
     auto remain_shape_size = in_shape.size() - spatial_size - 1;
     auto new_paddings = paddings_t((1 + spatial_size + remain_shape_size));

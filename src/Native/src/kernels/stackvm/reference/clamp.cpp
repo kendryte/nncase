@@ -28,7 +28,8 @@ using namespace nncase::kernels::stackvm;
 namespace {
 template <class T>
 result<void> clamp_impl(const T *input, T min, T max, T *output,
-                        gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
+                        gsl::span<const size_t> in_shape,
+                        gsl::span<const size_t> in_strides,
                         gsl::span<const size_t> out_strides,
                         NNCASE_UNUSED kernel_context &context) {
     return apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {

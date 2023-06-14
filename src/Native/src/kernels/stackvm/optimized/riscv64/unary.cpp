@@ -162,11 +162,12 @@ result<void> optimized_unary_impl(const float *input, float *output,
 
 // result<void> optimized::unary(runtime::stackvm::unary_op_t op, const float
 // *input, float *output, gsl::span<const size_t> shape,
-//    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides, kernel_context
-//    &context) noexcept
+//    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
+//    kernel_context &context) noexcept
 result<void> optimized::unary(typecode_t dtype, runtime::stackvm::unary_op_t op,
                               const gsl::byte *in, gsl::byte *out,
-                              gsl::span<const size_t> shape, gsl::span<const size_t> in_strides,
+                              gsl::span<const size_t> shape,
+                              gsl::span<const size_t> in_strides,
                               gsl::span<const size_t> out_shape,
                               gsl::span<const size_t> out_strides,
                               kernel_context &context) noexcept {

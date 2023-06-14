@@ -43,8 +43,8 @@ result<void> lrn_impl(const float *input, float alpha, float beta, float bias,
 
 result<void> nncase::kernels::stackvm::reference::lrn(
     const float *input, float alpha, float beta, float bias, int size,
-    float *output, gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
-    gsl::span<const size_t> out_strides) {
+    float *output, gsl::span<const size_t> in_shape,
+    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides) {
     std::vector<std::unique_ptr<float[]>> tmpData;
     std::vector<dims_t> tmpShapes;
     std::vector<dims_t> tmpStrides;

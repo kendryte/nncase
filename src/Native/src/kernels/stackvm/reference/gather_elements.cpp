@@ -28,24 +28,25 @@ using namespace nncase::kernels::stackvm;
 
 namespace {
 template <class T, class IndicesT>
-result<void>
-gather_elements_impl(const T *input, T *output,
-                     [[maybe_unused]] gsl::span<const size_t> in_shape,
-                     gsl::span<const size_t> out_shape, gsl::span<const size_t> in_strides,
-                     gsl::span<const size_t> out_strides, const IndicesT *indices,
-                     gsl::span<const size_t> indices_shape, size_t axis,
-                     NNCASE_UNUSED kernel_context &context) noexcept {
-    return apply(out_shape, [&](gsl::span<const size_t> out_index) -> result<void> {
-        dims_t in_index(out_index);
+result<void> gather_elements_impl(
+    const T *input, T *output,
+    [[maybe_unused]] gsl::span<const size_t> in_shape,
+    gsl::span<const size_t> out_shape, gsl::span<const size_t> in_strides,
+    gsl::span<const size_t> out_strides, const IndicesT *indices,
+    gsl::span<const size_t> indices_shape, size_t axis,
+    NNCASE_UNUSED kernel_context &context) noexcept {
+    return apply(out_shape,
+                 [&](gsl::span<const size_t> out_index) -> result<void> {
+                     dims_t in_index(out_index);
 
-        auto indices_offset =
-            offset(get_default_strides(indices_shape), out_index);
-        in_index[axis] = indices[indices_offset];
+                     auto indices_offset =
+                         offset(get_default_strides(indices_shape), out_index);
+                     in_index[axis] = indices[indices_offset];
 
-        output[offset(out_strides, out_index)] =
-            input[offset(in_strides, in_index)];
-        return ok();
-    });
+                     output[offset(out_strides, out_index)] =
+                         input[offset(in_strides, in_index)];
+                     return ok();
+                 });
 }
 } // namespace
 

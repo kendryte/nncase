@@ -169,14 +169,16 @@ static void log_softmax_impl(const float *input, float *output,
 template result<void> optimized::log_softmax<float>(
     const float *input, float *output, gsl::span<const size_t> in_shape,
     [[maybe_unused]] gsl::span<const size_t> in_strides,
-    [[maybe_unused]] gsl::span<const size_t> out_strides, int32_t axis) noexcept;
+    [[maybe_unused]] gsl::span<const size_t> out_strides,
+    int32_t axis) noexcept;
 
 template <typename T>
-result<void> optimized::log_softmax(const T *input, T *output,
-                                    gsl::span<const size_t> in_shape,
-                                    [[maybe_unused]] gsl::span<const size_t> in_strides,
-                                    [[maybe_unused]] gsl::span<const size_t> out_strides,
-                                    int32_t axis) noexcept {
+result<void>
+optimized::log_softmax(const T *input, T *output,
+                       gsl::span<const size_t> in_shape,
+                       [[maybe_unused]] gsl::span<const size_t> in_strides,
+                       [[maybe_unused]] gsl::span<const size_t> out_strides,
+                       int32_t axis) noexcept {
     result<void> ret_value = ok();
 #if __riscv_vector
     log_softmax_impl(input, output, in_shape, axis);

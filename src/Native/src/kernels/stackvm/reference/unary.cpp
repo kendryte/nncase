@@ -29,7 +29,8 @@ namespace {
 template <class T, class TOp>
 result<void> unary_impl(TOp &&op, const T *input, T *output,
                         [[maybe_unused]] gsl::span<const size_t> input_shape,
-                        gsl::span<const size_t> input_strides, gsl::span<const size_t> out_shape,
+                        gsl::span<const size_t> input_strides,
+                        gsl::span<const size_t> out_shape,
                         gsl::span<const size_t> out_strides,
                         NNCASE_UNUSED kernel_context &context) noexcept {
     return apply(out_shape, [&](gsl::span<const size_t> index) -> result<void> {
@@ -47,7 +48,8 @@ result<void> unary_impl(TOp &&op, const T *input, T *output,
 template <class T>
 result<void> unary_impl(unary_op_t op, const T *input, T *output,
                         gsl::span<const size_t> input_shape,
-                        gsl::span<const size_t> input_strides, gsl::span<const size_t> out_shape,
+                        gsl::span<const size_t> input_strides,
+                        gsl::span<const size_t> out_shape,
                         gsl::span<const size_t> out_strides,
                         NNCASE_UNUSED kernel_context &context) noexcept {
     switch (op) {

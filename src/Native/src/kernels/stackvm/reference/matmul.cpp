@@ -81,10 +81,10 @@ result<void> matmul_impl(const T *input_a, const T *input_b, T *output,
     return ok();
 }
 
-template result<void> matmul_impl<float>(const float *input_a,
-                                         const float *input_b, float *output,
-                                         gsl::span<const size_t> in_a_shape,
-                                         gsl::span<const size_t> in_b_shape) noexcept;
+template result<void>
+matmul_impl<float>(const float *input_a, const float *input_b, float *output,
+                   gsl::span<const size_t> in_a_shape,
+                   gsl::span<const size_t> in_b_shape) noexcept;
 
 #define MATMUL_IMPL(_ty)                                                       \
     return matmul_impl(IN_CAST(_ty, input_a), IN_CAST(_ty, input_b),           \
@@ -94,7 +94,8 @@ template result<void> matmul_impl<float>(const float *input_a,
 
 result<void> nncase::kernels::stackvm::reference::matmul(
     typecode_t typecode, const gsl::byte *input_a, const gsl::byte *input_b,
-    gsl::byte *output, gsl::span<const size_t> in_a_shape, gsl::span<const size_t> in_b_shape,
+    gsl::byte *output, gsl::span<const size_t> in_a_shape,
+    gsl::span<const size_t> in_b_shape,
     [[maybe_unused]] kernel_context &context) noexcept {
     TYPE_SELECT(typecode, MATMUL_IMPL);
 }

@@ -26,13 +26,13 @@ using namespace nncase::kernels;
 using namespace nncase::kernels::stackvm;
 using namespace nncase::kernels::stackvm::optimized;
 
-result<void>
-optimized::binary(typecode_t typecode, runtime::stackvm::binary_op_t op,
-                  const gsl::byte *lhs, const gsl::byte *rhs, gsl::byte *out,
-                  gsl::span<const size_t> in_a_shape, gsl::span<const size_t> lhs_strides,
-                  gsl::span<const size_t> in_b_shape, gsl::span<const size_t> rhs_strides,
-                  gsl::span<const size_t> out_shape, gsl::span<const size_t> out_strides,
-                  NNCASE_UNUSED kernel_context &context) noexcept {
+result<void> optimized::binary(
+    typecode_t typecode, runtime::stackvm::binary_op_t op, const gsl::byte *lhs,
+    const gsl::byte *rhs, gsl::byte *out, gsl::span<const size_t> in_a_shape,
+    gsl::span<const size_t> lhs_strides, gsl::span<const size_t> in_b_shape,
+    gsl::span<const size_t> rhs_strides, gsl::span<const size_t> out_shape,
+    gsl::span<const size_t> out_strides,
+    NNCASE_UNUSED kernel_context &context) noexcept {
     return stackvm::reference::binary(typecode, op, lhs, rhs, out, in_a_shape,
                                       lhs_strides, in_b_shape, rhs_strides,
                                       out_shape, out_strides, context);

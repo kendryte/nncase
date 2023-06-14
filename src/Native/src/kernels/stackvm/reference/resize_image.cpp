@@ -25,12 +25,12 @@ using namespace nncase::kernels;
 
 namespace {
 template <class T>
-result<void>
-resize_bilinear_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
-                     gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
-                     int32_t out_h, int32_t out_w, bool align_corners,
-                     NNCASE_UNUSED bool half_pixel_centers,
-                     NNCASE_UNUSED kernel_context &context) noexcept {
+result<void> resize_bilinear_impl(
+    const T *input, T *output, gsl::span<const size_t> in_shape,
+    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
+    int32_t out_h, int32_t out_w, bool align_corners,
+    NNCASE_UNUSED bool half_pixel_centers,
+    NNCASE_UNUSED kernel_context &context) noexcept {
     auto scales = kernels::detail::get_resize_scales(in_shape, out_h, out_w,
                                                      align_corners);
     auto height_scale = scales.first;
@@ -90,8 +90,8 @@ resize_bilinear_impl(const T *input, T *output, gsl::span<const size_t> in_shape
 template <class T>
 result<void> resize_nearest_neighbor_impl(
     const T *input, T *output, gsl::span<const size_t> in_shape,
-    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides, int32_t out_h,
-    int32_t out_w, bool align_corners, bool half_pixel_centers,
+    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
+    int32_t out_h, int32_t out_w, bool align_corners, bool half_pixel_centers,
     NNCASE_UNUSED kernel_context &context) noexcept {
     auto scales = kernels::detail::get_resize_scales(in_shape, out_h, out_w,
                                                      align_corners);
