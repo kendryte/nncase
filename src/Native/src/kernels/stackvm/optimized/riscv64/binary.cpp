@@ -326,8 +326,8 @@ void binary_impl_fv_i64(int64_t input_a, const int64_t *input_b, int64_t *out,
     }
 }
 
-static int verify_shape_impl(gsl::span<const size_t> &in_a_shape,
-                             gsl::span<const size_t> &in_b_shape) {
+static int verify_shape_impl(gsl::span<const size_t> in_a_shape,
+                             gsl::span<const size_t> in_b_shape) {
 
     int size_diff = in_a_shape.size() - in_b_shape.size();
     int outter_front_size = 1;
@@ -356,8 +356,8 @@ static int verify_shape_impl(gsl::span<const size_t> &in_a_shape,
     return -1;
 }
 
-static int verify_shape(gsl::span<const size_t> &in_a_shape,
-                        gsl::span<const size_t> &in_b_shape, int a_len,
+static int verify_shape(gsl::span<const size_t> in_a_shape,
+                        gsl::span<const size_t> in_b_shape, int a_len,
                         int b_len) {
     if (a_len == 1 || b_len == 1)
         return 0;
@@ -375,9 +375,9 @@ static int verify_shape(gsl::span<const size_t> &in_a_shape,
 // float
 template <typename Top>
 int optimized_binary_impl(const float *input_a, const float *input_b,
-                          float *output, gsl::span<const size_t> &in_a_shape,
-                          gsl::span<const size_t> &in_b_shape,
-                          gsl::span<const size_t> &out_shape) noexcept {
+                          float *output, gsl::span<const size_t> in_a_shape,
+                          gsl::span<const size_t> in_b_shape,
+                          gsl::span<const size_t> out_shape) noexcept {
     (void)out_shape;
     int len_a = in_a_shape.size() != 0 ? (int)compute_size(in_a_shape) : 1;
     int len_b = in_b_shape.size() != 0 ? (int)compute_size(in_b_shape) : 1;
@@ -420,10 +420,9 @@ int optimized_binary_impl(const float *input_a, const float *input_b,
 // int32_t
 template <typename Top>
 int optimized_binary_impl(const int32_t *input_a, const int32_t *input_b,
-                          int32_t *output, gsl::span<const size_t> &in_a_shape,
-                          gsl::span<const size_t> &in_b_shape,
-                          gsl::span<const size_t> &out_shape) noexcept {
-    (void)out_shape;
+                          int32_t *output, gsl::span<const size_t> in_a_shape,
+                          gsl::span<const size_t> in_b_shape,
+                          [[maybe_unused]] gsl::span<const size_t> out_shape) noexcept {
     int len_a = in_a_shape.size() != 0 ? (int)compute_size(in_a_shape) : 1;
     int len_b = in_b_shape.size() != 0 ? (int)compute_size(in_b_shape) : 1;
     if (in_a_shape == in_b_shape) {
@@ -465,9 +464,9 @@ int optimized_binary_impl(const int32_t *input_a, const int32_t *input_b,
 // int64_t
 template <typename Top>
 int optimized_binary_impl(const int64_t *input_a, const int64_t *input_b,
-                          int64_t *output, gsl::span<const size_t> &in_a_shape,
-                          gsl::span<const size_t> &in_b_shape,
-                          gsl::span<const size_t> &out_shape) noexcept {
+                          int64_t *output, gsl::span<const size_t> in_a_shape,
+                          gsl::span<const size_t> in_b_shape,
+                          gsl::span<const size_t> out_shape) noexcept {
     (void)out_shape;
     int len_a = in_a_shape.size() != 0 ? (int)compute_size(in_a_shape) : 1;
     int len_b = in_b_shape.size() != 0 ? (int)compute_size(in_b_shape) : 1;
