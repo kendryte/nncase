@@ -19,17 +19,12 @@ public class UnitTestFusionGroup : TestClassBase
     public static readonly TheoryData<IDataFlowFusionCase> DataOne = new()
     {
         new DataFlowType16FusionCase(),
-        new DataFlowType10_1FusionCaseLeft(),
-        new DataFlowType10_1FusionCaseRight(),
-        new DataFlowType14FusionCaseLeft(),
-        new DataFlowType14FusionCaseRight(),
     };
 
     public static readonly TheoryData<IDataFlowFusionCase> DataAll = new()
     {
         new DataFlowType0FusionCase(),
         new DataFlowType0NotFusionCase(),
-
         new DataFlowType1FusionCaseLeft(),
         new DataFlowType2FusionCaseLeft(),
         new DataFlowType3FusionCaseLeft(),
@@ -39,10 +34,11 @@ public class UnitTestFusionGroup : TestClassBase
         new DataFlowType6_1FusionCaseLeft(),
         new DataFlowType7FusionCaseLeft(),
         new DataFlowType10FusionCaseLeft(),
+        new DataFlowType10_1FusionCaseLeft(),
         new DataFlowType11FusionCaseLeft(),
         new DataFlowType12FusionCaseLeft(),
         new DataFlowType13FusionCaseLeft(),
-
+        new DataFlowType14FusionCaseLeft(),
         new DataFlowType1FusionCaseRight(),
         new DataFlowType2FusionCaseRight(),
         new DataFlowType3FusionCaseRight(),
@@ -54,9 +50,11 @@ public class UnitTestFusionGroup : TestClassBase
         new DataFlowType8FusionCase(),
         new DataFlowType9FusionCase(),
         new DataFlowType10FusionCaseRight(),
+        new DataFlowType10_1FusionCaseRight(),
         new DataFlowType11FusionCaseRight(),
         new DataFlowType12FusionCaseRight(),
         new DataFlowType13FusionCaseRight(),
+        new DataFlowType14FusionCaseRight(),
     };
 
     public static readonly TheoryData<IDataFlowFusionCaseTwoStage> DataTwoStage = new()
