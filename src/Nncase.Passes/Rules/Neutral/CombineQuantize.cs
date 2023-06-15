@@ -63,6 +63,11 @@ public sealed partial class CombineQuantizeReshape : RewriteRule<Pattern>
 {
     private readonly bool _checkShapeSize;
 
+    public CombineQuantizeReshape()
+    {
+        _checkShapeSize = false;
+    }
+
     /// <summary>
     /// Initializes a new instance of the <see cref="CombineQuantizeReshape"/> class.
     /// </summary>
