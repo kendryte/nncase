@@ -419,10 +419,10 @@ int optimized_binary_impl(const float *input_a, const float *input_b,
 
 // int32_t
 template <typename Top>
-int optimized_binary_impl(const int32_t *input_a, const int32_t *input_b,
-                          int32_t *output, gsl::span<const size_t> in_a_shape,
-                          gsl::span<const size_t> in_b_shape,
-                          [[maybe_unused]] gsl::span<const size_t> out_shape) noexcept {
+int optimized_binary_impl(
+    const int32_t *input_a, const int32_t *input_b, int32_t *output,
+    gsl::span<const size_t> in_a_shape, gsl::span<const size_t> in_b_shape,
+    [[maybe_unused]] gsl::span<const size_t> out_shape) noexcept {
     int len_a = in_a_shape.size() != 0 ? (int)compute_size(in_a_shape) : 1;
     int len_b = in_b_shape.size() != 0 ? (int)compute_size(in_b_shape) : 1;
     if (in_a_shape == in_b_shape) {
