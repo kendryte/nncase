@@ -50,9 +50,9 @@ class MatMulTest : public KernelTest,
 };
 
 INSTANTIATE_TEST_SUITE_P(MatMul, MatMulTest,
-                         testing::Combine(testing::Values(dt_int32, dt_int64),
-                                          testing::Values(dims_t{3, 16}),
-                                          testing::Values(dims_t{16, 3})));
+                         testing::Combine(testing::Values(dt_int32, dt_int64, dt_float32),
+                                          testing::Values(dims_t{1, 3}),
+                                          testing::Values(dims_t{3, 1})));
 
 TEST_P(MatMulTest, mat_mul) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);

@@ -26,7 +26,7 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class ReduceArgMaxTest : public KernelTest,
+class ReduceMaxTest : public KernelTest,
                          public ::testing::TestWithParam<
                              std::tuple<nncase::typecode_t, dims_t, dims_t>> {
   public:
@@ -49,7 +49,7 @@ class ReduceArgMaxTest : public KernelTest,
     runtime_tensor rhs;
 };
 
-INSTANTIATE_TEST_SUITE_P(ReduceArgMax, ReduceArgMaxTest,
+INSTANTIATE_TEST_SUITE_P(ReduceMax, ReduceMaxTest,
                          testing::Combine(testing::Values(dt_float32, dt_int32,
                                                           dt_int64),
                                           testing::Values(dims_t{1, 3, 16, 16},
@@ -63,7 +63,7 @@ INSTANTIATE_TEST_SUITE_P(ReduceArgMax, ReduceArgMaxTest,
                                                           dims_t { 16 },*/
                                                           dims_t{1})));
 
-TEST_P(ReduceArgMaxTest, ReduceArgMax) {
+TEST_P(ReduceMaxTest, ReduceMax) {
     //    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
     //    auto r_ort = runtime_tensor_2_ort_tensor(rhs);
 

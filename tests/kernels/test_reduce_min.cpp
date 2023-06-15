@@ -26,7 +26,7 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class ReduceMaxTest : public KernelTest,
+class ReduceMinTest : public KernelTest,
                       public ::testing::TestWithParam<
                           std::tuple<nncase::typecode_t, dims_t, dims_t>> {
   public:
@@ -49,7 +49,7 @@ class ReduceMaxTest : public KernelTest,
     runtime_tensor rhs;
 };
 
-INSTANTIATE_TEST_SUITE_P(ReduceMax, ReduceMaxTest,
+INSTANTIATE_TEST_SUITE_P(ReduceMin, ReduceMinTest,
                          testing::Combine(testing::Values(dt_float32, dt_int32,
                                                           dt_int64),
                                           testing::Values(dims_t{1, 3, 16, 16},
@@ -63,7 +63,7 @@ INSTANTIATE_TEST_SUITE_P(ReduceMax, ReduceMaxTest,
                                                           dims_t { 16 },*/
                                                           dims_t{1})));
 
-TEST_P(ReduceMaxTest, ReduceMax) {
+TEST_P(ReduceMinTest, ReduceMin) {
     //    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
     //    auto r_ort = runtime_tensor_2_ort_tensor(rhs);
 
@@ -100,7 +100,7 @@ TEST_P(ReduceMaxTest, ReduceMax) {
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
     auto expected = hrt::create(dt_float32, shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), 8},
+                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
