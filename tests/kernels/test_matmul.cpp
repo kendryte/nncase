@@ -50,7 +50,8 @@ class MatMulTest : public KernelTest,
 };
 
 INSTANTIATE_TEST_SUITE_P(MatMul, MatMulTest,
-                         testing::Combine(testing::Values(dt_int32, dt_int64, dt_float32),
+                         testing::Combine(testing::Values(dt_int32, dt_int64,
+                                                          dt_float32),
                                           testing::Values(dims_t{1, 3}),
                                           testing::Values(dims_t{3, 1})));
 
