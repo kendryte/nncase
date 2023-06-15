@@ -28,10 +28,10 @@ using namespace nncase::kernels::stackvm;
 
 namespace {
 result<void> lrn_impl(const float *input, float alpha, float beta, float bias,
-                      float *output, const dims_t &in_shape,
-                      const strides_t &in_strides,
-                      const strides_t &out_strides) {
-    return apply(in_shape, [&](const dims_t &index) -> result<void> {
+                      float *output, gsl::span<const size_t> in_shape,
+                      gsl::span<const size_t> in_strides,
+                      gsl::span<const size_t> out_strides) {
+    return apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
         auto off = offset(in_strides, index);
         const auto x = input[off];
         output[offset(out_strides, index)] =
@@ -43,8 +43,8 @@ result<void> lrn_impl(const float *input, float alpha, float beta, float bias,
 
 result<void> nncase::kernels::stackvm::reference::lrn(
     const float *input, float alpha, float beta, float bias, int size,
-    float *output, const dims_t &in_shape, const strides_t &in_strides,
-    const strides_t &out_strides) {
+    float *output, gsl::span<const size_t> in_shape,
+    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides) {
     std::vector<std::unique_ptr<float[]>> tmpData;
     std::vector<dims_t> tmpShapes;
     std::vector<dims_t> tmpStrides;

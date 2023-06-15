@@ -27,15 +27,16 @@ using namespace nncase::kernels::stackvm;
 
 namespace {
 template <class T, class IndicesT>
-result<void> scatter_nd_impl(const T *input, T *output, const dims_t &in_shape,
-                             [[maybe_unused]] const IndicesT *indices,
-                             const dims_t &indices_shape,
-                             [[maybe_unused]] const T *updates,
-                             [[maybe_unused]] const dims_t &updates_shape,
-                             NNCASE_UNUSED kernel_context &context) noexcept {
+result<void>
+scatter_nd_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
+                [[maybe_unused]] const IndicesT *indices,
+                gsl::span<const size_t> indices_shape,
+                [[maybe_unused]] const T *updates,
+                [[maybe_unused]] gsl::span<const size_t> updates_shape,
+                NNCASE_UNUSED kernel_context &context) noexcept {
 
     std::copy(input, input + compute_size(in_shape), output);
-    auto update_indices = indices_shape;
+    dims_t update_indices(indices_shape);
     update_indices.pop_back();
     auto indices_strides = get_default_strides(indices_shape);
     indices_strides.pop_back();
@@ -59,8 +60,8 @@ result<void> scatter_nd_impl(const T *input, T *output, const dims_t &in_shape,
     //     data_size *= in_shape[i];
     // }
     return apply(
-        (const dims_t &)update_indices,
-        [&]([[maybe_unused]] const dims_t &idx) -> result<void> {
+        (gsl::span<const size_t>)update_indices,
+        [&]([[maybe_unused]] gsl::span<const size_t> idx) -> result<void> {
             auto updates_begin = updates + offset(updates_strides, idx);
 
             auto data_indices_begin = indices + offset(indices_strides, idx);
@@ -90,8 +91,9 @@ result<void> scatter_nd_impl(const T *input, T *output, const dims_t &in_shape,
 
 result<void> nncase::kernels::stackvm::reference::scatter_nd(
     datatype_t type, const gsl::byte *input, gsl::byte *output,
-    const dims_t &in_shape, datatype_t indices_type, const gsl::byte *indices,
-    const dims_t &indices_shape, const gsl::byte *updates,
-    const dims_t &updates_shape, kernel_context &context) noexcept {
+    gsl::span<const size_t> in_shape, datatype_t indices_type,
+    const gsl::byte *indices, gsl::span<const size_t> indices_shape,
+    const gsl::byte *updates, gsl::span<const size_t> updates_shape,
+    kernel_context &context) noexcept {
     TYPE_IMPL_SELECT(type, SCATTER_ND_IMPL);
 }

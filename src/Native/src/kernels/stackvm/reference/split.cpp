@@ -28,12 +28,13 @@ using namespace nncase::kernels::stackvm;
 namespace {
 template <class T>
 result<void> split_impl(const T *input, gsl::span<gsl::byte *> outputs,
-                        const dims_t &in_shape, const strides_t &in_strides,
+                        gsl::span<const size_t> in_shape,
+                        gsl::span<const size_t> in_strides,
                         const gsl::span<strides_t> out_strides, size_t axis,
-                        const dims_t &sections,
+                        gsl::span<const size_t> sections,
                         NNCASE_UNUSED kernel_context &context) noexcept {
     for (size_t i = 0; i < outputs.size(); ++i) {
-        auto out_shape = in_shape;
+        dims_t out_shape(in_shape);
         out_shape[axis] = sections[i];
         auto output = reinterpret_cast<T *>(outputs[i]);
         size_t sections_sum = 0;
@@ -41,8 +42,8 @@ result<void> split_impl(const T *input, gsl::span<gsl::byte *> outputs,
             sections_sum += sections[j];
         }
         try_(kernels::stackvm::apply(
-            out_shape, [&](const dims_t &out_index) -> result<void> {
-                auto in_index = out_index;
+            out_shape, [&](gsl::span<const size_t> out_index) -> result<void> {
+                dims_t in_index(out_index);
                 in_index[axis] = sections_sum + out_index[axis];
                 output[offset(out_strides[i], out_index)] =
                     input[offset(in_strides, in_index)];
@@ -61,8 +62,8 @@ result<void> split_impl(const T *input, gsl::span<gsl::byte *> outputs,
 
 result<void> nncase::kernels::stackvm::reference::split(
     datatype_t type, const gsl::byte *input, gsl::span<gsl::byte *> output,
-    const dims_t &in_shape, const strides_t &in_strides,
-    gsl::span<strides_t> out_strides, size_t axis, const dims_t &sections,
-    kernel_context &context) noexcept {
+    gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
+    gsl::span<strides_t> out_strides, size_t axis,
+    gsl::span<const size_t> sections, kernel_context &context) noexcept {
     TYPE_IMPL_SELECT(type, SPLIT_IMPL);
 }

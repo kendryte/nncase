@@ -107,11 +107,11 @@ result<void> host_buffer_node::sync(sync_op_t op, bool force) noexcept {
     return ok();
 }
 
-result<void> host_buffer_node::copy_to(buffer_t dest, size_t src_start,
-                                       size_t dest_start, datatype_t datatype,
-                                       const dims_t &shape,
-                                       const strides_t &src_strides,
-                                       const strides_t &dest_strides) noexcept {
+result<void>
+host_buffer_node::copy_to(buffer_t dest, size_t src_start, size_t dest_start,
+                          datatype_t datatype, gsl::span<const size_t> shape,
+                          gsl::span<const size_t> src_strides,
+                          gsl::span<const size_t> dest_strides) noexcept {
     axes_t begins(shape.size(), 0);
     axes_t ends(shape.size(), 0);
     axes_t strides(shape.size(), 1);
