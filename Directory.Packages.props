@@ -12,6 +12,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
+    <PackageVersion Include="Google.OrTools" Version="9.4.1874" />
     <PackageVersion Include="AnyTensorFlow.NET" Version="0.70.1" />
     <PackageVersion Include="BitFields" Version="0.1.0" />
     <PackageVersion Include="coverlet.collector" Version="3.0.2" />

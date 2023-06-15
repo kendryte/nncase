@@ -9,6 +9,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.Diagnostics;
+using Nncase.IR;
 using Nncase.IR.F;
 using Nncase.Passes;
 using Nncase.Passes.Rules.Neutral;
@@ -50,8 +51,10 @@ public class UnitTestFoldTranspose : TransformTestBase
         (1, IR.F.NN.Relu(IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 1, 2, 4 })), new int[] { 1, 0, 2 }),
         (2, IR.F.NN.Celu(IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 4, 2, 1 }), 0.6f), new int[] { 1, 0, 2 }),
         (3, IR.F.NN.HardSigmoid(IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 4, 2, 1 }), 0.6f, 0.3f), new int[] { 1, 0, 2 }),
-        (3, IR.F.NN.Erf(IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 4, 2, 1 })), new int[] { 1, 0, 2 }),
-        (3, IR.F.NN.Gelu(IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 4, 2, 1 }), 1f), new int[] { 1, 0, 2 }),
+        (4, IR.F.NN.Erf(IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 4, 2, 1 })), new int[] { 1, 0, 2 }),
+        (5, IR.F.NN.Gelu(IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 4, 2, 1 }), 1f), new int[] { 1, 0, 2 }),
+        (6, IR.F.NN.PRelu(IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 1, 8, 33, 65 }), IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 8, 1, 1 })), new int[] { 0, 2, 3, 1 }),
+        (7, IR.F.NN.PRelu(IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 1, 8, 33, 65 }), IR.F.Random.Normal(DataTypes.Float32, 1, 1, 1, new[] { 33, 1 })), new int[] { 0, 1, 3, 2 }),
     };
 
     public static TheoryData<(int Count, IR.Expr Act, int[] Perm)> TestCombineTransposeActivationsNegativeData => new()
@@ -99,7 +102,7 @@ public class UnitTestFoldTranspose : TransformTestBase
     {
         using var dumpScope = new DumpScope($"{param.Count}");
         var rootPre = Tensors.Transpose(param.Act, param.Perm);
-        TestMatched<CombineTransposeActivations>(rootPre);
+        TestMatched<CombineTransposeActivations>(rootPre, new Dictionary<Var, IValue>());
     }
 
     [Theory]

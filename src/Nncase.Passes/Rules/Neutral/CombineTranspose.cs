@@ -350,15 +350,31 @@ public sealed partial class CombineTransposeActivations : IRewriteRule
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
         IsTranspose(
-            IsCall("actCall", IsOp<ActivationOp>("activation", op => true), IsVArgsRepeat("parameters", () => IsWildcard())),
-            IsWildcard("perm"));
+            IsCall("actCall", IsOp<ActivationOp>("activation", op => true), IsVArgsRepeat("arguments", () => IsWildcard() with { TypePattern = HasFixedShape() })),
+            IsTensorConst("perm"));
 
-    private Expr GetReplace(Call actCall, ActivationOp activation, IReadOnlyList<Expr> parameters, Expr perm)
+    private Expr? GetReplace(Call actCall, ActivationOp activation, IReadOnlyList<Expr> arguments, int[] perm)
     {
-        var newcall = new Call(
-            activation,
-            new Expr[] { Transpose(parameters[0], perm) }
-                .Concat(parameters.Skip(1)).ToArray());
+        var newArgs = new List<Expr>();
+        foreach (var arg in arguments)
+        {
+            if (arg.CheckedShape.IsScalar)
+            {
+                newArgs.Add(arg);
+                continue;
+            }
+            else if (arg.CheckedShape.Rank <= perm.Length)
+            {
+                newArgs.Add(Transpose(arg, perm.Select(p => p - (perm.Length - arg.CheckedShape.Rank)).Where(p => p >= 0).ToArray()));
+                continue;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        var newcall = new Call(activation, newArgs.ToArray());
         newcall.InheritMetaData(actCall);
         return newcall;
     }
