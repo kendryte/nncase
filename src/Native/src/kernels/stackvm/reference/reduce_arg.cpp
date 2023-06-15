@@ -31,24 +31,25 @@ using namespace nncase::kernels::stackvm;
 namespace {
 template <class TReducer, class TOutput, class T>
 result<void> reduce_arg_impl(TReducer &&reducer, T init_value, const T *input,
-                             TOutput *output, const dims_t &in_shape,
-                             const dims_t &out_shape,
-                             const strides_t &in_strides,
-                             const strides_t &out_strides, const dims_t &axes,
-                             bool keep_dims, bool select_last_idx,
+                             TOutput *output, gsl::span<const size_t> in_shape,
+                             gsl::span<const size_t> out_shape,
+                             gsl::span<const size_t> in_strides,
+                             gsl::span<const size_t> out_strides,
+                             gsl::span<const size_t> axes, bool keep_dims,
+                             bool select_last_idx,
                              NNCASE_UNUSED kernel_context &context) noexcept {
     const float epsilon = 0.000001f;
 
     // init with init_value
     std::unique_ptr<T[]> ptr(new T[compute_size(out_shape)]);
-    try_(apply(out_shape, [&](const dims_t &index) -> result<void> {
+    try_(apply(out_shape, [&](gsl::span<const size_t> index) -> result<void> {
         ptr[offset(out_strides, index)] = init_value;
         return ok();
     }));
 
     // collect all min/max indices
     std::unordered_map<size_t, std::vector<TOutput>> out_map;
-    try_(apply(in_shape, [&](const dims_t &index) -> result<void> {
+    try_(apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
         const auto src = input[offset(in_strides, index)];
         auto out_idx =
             offset(out_strides,
@@ -68,7 +69,7 @@ result<void> reduce_arg_impl(TReducer &&reducer, T init_value, const T *input,
     }));
 
     // update min/max idx
-    try_(apply(out_shape, [&](const dims_t &index) -> result<void> {
+    try_(apply(out_shape, [&](gsl::span<const size_t> index) -> result<void> {
         auto out_idx = offset(out_strides, index);
         output[out_idx] = select_last_idx ? out_map[out_idx].back()
                                           : out_map[out_idx].front();
@@ -116,19 +117,18 @@ result<void> reduce_arg_impl(TReducer &&reducer, T init_value, const T *input,
         }                                                                      \
     }
 
-result<void> reduce_arg_impl(typecode_t input_typecode,
-                             typecode_t output_typecode, reduce_arg_op_t op,
-                             const gsl::byte *input, gsl::byte *output,
-                             const dims_t &in_shape,
-                             const strides_t &in_strides,
-                             const strides_t &out_strides, const dims_t &axes,
-                             bool keep_dims, bool select_last_idx,
-                             kernel_context &context) noexcept {
+result<void> reduce_arg_impl(
+    typecode_t input_typecode, typecode_t output_typecode, reduce_arg_op_t op,
+    const gsl::byte *input, gsl::byte *output, gsl::span<const size_t> in_shape,
+    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
+    gsl::span<const size_t> axes, bool keep_dims, bool select_last_idx,
+    kernel_context &context) noexcept {
     TYPE_SELECT(input_typecode, REDUCE_ARG_IMPL);
 }
 
-dims_t infer_shape(const dims_t &in_shape, int32_t axis, bool keep_dims) {
-    auto new_shape = in_shape;
+dims_t infer_shape(gsl::span<const size_t> in_shape, int32_t axis,
+                   bool keep_dims) {
+    dims_t new_shape(in_shape);
     if (keep_dims) {
         new_shape[axis] = 1;
     } else {

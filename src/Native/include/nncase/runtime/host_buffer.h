@@ -66,10 +66,11 @@ class NNCASE_API host_buffer_node : public buffer_node {
     virtual bool has_physical_address() const noexcept = 0;
     virtual result<uintptr_t> physical_address() noexcept = 0;
 
-    result<void> copy_to(buffer_t dest, size_t src_start, size_t dest_start,
-                         datatype_t datatype, const dims_t &shape,
-                         const strides_t &src_strides,
-                         const strides_t &dest_strides) noexcept override;
+    result<void>
+    copy_to(buffer_t dest, size_t src_start, size_t dest_start,
+            datatype_t datatype, gsl::span<const size_t> shape,
+            gsl::span<const size_t> src_strides,
+            gsl::span<const size_t> dest_strides) noexcept override;
 
   protected:
     virtual result<gsl::span<gsl::byte>> map_core(map_access_t access) = 0;

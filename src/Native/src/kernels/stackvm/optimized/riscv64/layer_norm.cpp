@@ -137,7 +137,7 @@ static void layer_norm_update1(const float *data, float *out, int len,
 
 result<void> layernorm_impl(const float *input, float *output,
                             const float *scale, const float *bias,
-                            const dims_t &in_shape, int32_t axis,
+                            gsl::span<const size_t> in_shape, int32_t axis,
                             float epsilon) {
     if (axis < 0) {
         axis = (int)in_shape.size() + axis;
@@ -166,7 +166,7 @@ result<void> layernorm_impl(const float *input, float *output,
 
 result<void> nncase::kernels::stackvm::optimized::layer_norm(
     const float *input, float *output, const float *scale, const float *bias,
-    const dims_t &in_shape, int32_t axis, float epsilon) {
+    gsl::span<const size_t> in_shape, int32_t axis, float epsilon) {
 #if __riscv_vector
     return layernorm_impl(input, output, scale, bias, in_shape, axis, epsilon);
 #else

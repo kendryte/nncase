@@ -28,15 +28,18 @@ using namespace nncase::kernels::stackvm;
 namespace {
 template <class T, class TOp>
 result<void> binary_impl(TOp &&op, const T *lhs, const T *rhs, T *output,
-                         const dims_t &lhs_shape, const strides_t &lhs_strides,
-                         const dims_t &rhs_shape, const strides_t &rhs_strides,
-                         const dims_t &out_shape, const strides_t &out_strides,
+                         gsl::span<const size_t> lhs_shape,
+                         gsl::span<const size_t> lhs_strides,
+                         gsl::span<const size_t> rhs_shape,
+                         gsl::span<const size_t> rhs_strides,
+                         gsl::span<const size_t> out_shape,
+                         gsl::span<const size_t> out_strides,
                          NNCASE_UNUSED kernel_context &context) noexcept {
     if (is_scalar(out_shape)) {
         output[0] = op(lhs[0], rhs[0]);
         return ok();
     }
-    return apply(out_shape, [&](const dims_t &index) -> result<void> {
+    return apply(out_shape, [&](gsl::span<const size_t> index) -> result<void> {
         const auto lhs_index =
             kernels::detail::get_reduced_offset(index, lhs_shape);
         const auto rhs_index =
@@ -55,10 +58,12 @@ result<void> binary_impl(TOp &&op, const T *lhs, const T *rhs, T *output,
                            context)
 
 result<void> binary_impl(binary_op_t op, const bool *lhs, const bool *rhs,
-                         bool *output, const dims_t &lhs_shape,
-                         const strides_t &lhs_strides, const dims_t &rhs_shape,
-                         const strides_t &rhs_strides, const dims_t &out_shape,
-                         const strides_t &out_strides,
+                         bool *output, gsl::span<const size_t> lhs_shape,
+                         gsl::span<const size_t> lhs_strides,
+                         gsl::span<const size_t> rhs_shape,
+                         gsl::span<const size_t> rhs_strides,
+                         gsl::span<const size_t> out_shape,
+                         gsl::span<const size_t> out_strides,
                          NNCASE_UNUSED kernel_context &context) noexcept {
     switch (op) {
         BINARY_IMPL_OP(logical_and, [](bool a, bool b) { return (a && b); });
@@ -71,9 +76,12 @@ result<void> binary_impl(binary_op_t op, const bool *lhs, const bool *rhs,
 
 template <class T>
 result<void> binary_impl(binary_op_t op, const T *lhs, const T *rhs, T *output,
-                         const dims_t &lhs_shape, const strides_t &lhs_strides,
-                         const dims_t &rhs_shape, const strides_t &rhs_strides,
-                         const dims_t &out_shape, const strides_t &out_strides,
+                         gsl::span<const size_t> lhs_shape,
+                         gsl::span<const size_t> lhs_strides,
+                         gsl::span<const size_t> rhs_shape,
+                         gsl::span<const size_t> rhs_strides,
+                         gsl::span<const size_t> out_shape,
+                         gsl::span<const size_t> out_strides,
                          NNCASE_UNUSED kernel_context &context) noexcept {
     switch (op) {
         BINARY_IMPL_OP(add, std::plus<T>());
@@ -100,10 +108,10 @@ result<void> binary_impl(binary_op_t op, const T *lhs, const T *rhs, T *output,
 
 result<void> nncase::kernels::stackvm::reference::binary(
     typecode_t typecode, binary_op_t op, const gsl::byte *lhs,
-    const gsl::byte *rhs, gsl::byte *output, const dims_t &lhs_shape,
-    const strides_t &lhs_strides, const dims_t &rhs_shape,
-    const strides_t &rhs_strides, const dims_t &out_shape,
-    const strides_t &out_strides,
+    const gsl::byte *rhs, gsl::byte *output, gsl::span<const size_t> lhs_shape,
+    gsl::span<const size_t> lhs_strides, gsl::span<const size_t> rhs_shape,
+    gsl::span<const size_t> rhs_strides, gsl::span<const size_t> out_shape,
+    gsl::span<const size_t> out_strides,
     NNCASE_UNUSED kernel_context &context) noexcept {
     if (typecode == dt_boolean) {
         return binary_impl(op, IN_CAST(bool, lhs), IN_CAST(bool, rhs),

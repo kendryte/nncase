@@ -381,7 +381,7 @@ public class UnitTestExpression
 
         var a = ImmutableArray.CreateRange(new[] { n, c });
         var b = ImmutableArray.CreateRange(new[] { new Dimension(1), new Dimension(1) });
-        Assert.NotEqual(a, b);
+        Assert.Equal(a, b);
 
         var sa = new Shape(new[] { 1, 2, 3 });
         var sb = new Shape(new[] { 1, 2, 3 });

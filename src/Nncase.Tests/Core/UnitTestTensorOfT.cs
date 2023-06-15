@@ -235,16 +235,16 @@ public sealed class UnitTestTensorOfT
 
         var t1 = new Tensor<int>(memory, new int[] { 1, 1, 2, 4 });
         Tensor<int>? n = null;
-        Assert.NotEqual(t1, n);
+        Assert.NotStrictEqual(t1, n);
         Assert.False(t1.Equals(n));
 
         var t2 = new Tensor<int>(memory, new int[] { 2, 4 });
-        Assert.NotEqual(t1, t2);
+        Assert.NotStrictEqual(t1, t2);
 
         var t3 = new Tensor<int>(memory, new int[] { 1, 1, 4, 2 });
-        Assert.NotEqual(t1, t3);
+        Assert.NotStrictEqual(t1, t3);
 
         var t4 = new Tensor<int>(memory, new int[] { 1, 1, 2, 4 });
-        Assert.Equal(t1, t4);
+        Assert.StrictEqual(t1, t4);
     }
 }

@@ -116,9 +116,9 @@ public sealed class UnitTestIValue
         Assert.True(a != c);
         Assert.True(a != d);
 
-        Assert.Equal(a, b);
-        Assert.Equal(a, c);
-        Assert.NotEqual(a, d);
+        Assert.StrictEqual(a, b);
+        Assert.StrictEqual(a, c);
+        Assert.NotStrictEqual(a, d);
         Assert.True(a.Equals((object)b));
         Assert.True(a.Equals((object)c));
         Assert.False(a.Equals((object)d));

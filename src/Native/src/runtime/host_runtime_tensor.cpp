@@ -50,8 +50,10 @@ result<buffer_t> allocate_buffer(size_t size_bytes,
 
 result<buffer_t> attach_buffer(gsl::span<gsl::byte> data,
                                hrt::data_deleter_t deleter,
-                               hrt::memory_pool_t pool) noexcept {
+                               hrt::memory_pool_t pool,
+                               uintptr_t physical_address) noexcept {
     buffer_attach_options options{};
+    options.physical_address = physical_address;
     options.deleter = std::move(deleter);
 
     result<buffer_t> buffer(std::errc::not_enough_memory);
@@ -95,7 +97,8 @@ result<runtime_tensor> hrt::create(typecode_t datatype, dims_t shape,
 
 result<runtime_tensor> hrt::create(typecode_t datatype, dims_t shape,
                                    strides_t strides, gsl::span<gsl::byte> data,
-                                   bool copy, memory_pool_t pool) noexcept {
+                                   bool copy, memory_pool_t pool,
+                                   uintptr_t physical_address) noexcept {
     auto size_bytes = compute_size(shape, strides) * get_bytes(datatype);
 
     // TODO: support strides
@@ -104,6 +107,7 @@ result<runtime_tensor> hrt::create(typecode_t datatype, dims_t shape,
 
     buffer_t buffer;
     if (copy) {
+        CHECK_WITH_ERR(!physical_address, std::errc::invalid_argument);
         checked_try_set(buffer, allocate_buffer(size_bytes, pool));
         checked_try_var(host_buffer, buffer.as<host_buffer_t>());
         checked_try_var(mapped_data, host_buffer->map(map_write));
@@ -113,8 +117,9 @@ result<runtime_tensor> hrt::create(typecode_t datatype, dims_t shape,
         memcpy(dest_buffer.data(), data.data(), size_bytes);
         host_buffer->host_sync_status(host_sync_status_t::need_write_back);
     } else {
-        checked_try_set(buffer, attach_buffer(
-                                    data, [](gsl::byte *) {}, pool));
+        checked_try_set(buffer,
+                        attach_buffer(
+                            data, [](gsl::byte *) {}, pool, physical_address));
     }
     return ok(runtime_tensor(tensor(std::in_place, datatype, std::move(shape),
                                     std::move(strides), buffer)));
@@ -123,11 +128,13 @@ result<runtime_tensor> hrt::create(typecode_t datatype, dims_t shape,
 result<runtime_tensor> hrt::create(typecode_t datatype, dims_t shape,
                                    strides_t strides, gsl::span<gsl::byte> data,
                                    data_deleter_t data_deleter,
-                                   memory_pool_t pool) noexcept {
+                                   memory_pool_t pool,
+                                   uintptr_t physical_address) noexcept {
     auto size = compute_size(shape, strides) * get_bytes(datatype);
     CHECK_WITH_ERR(data.size_bytes() == size, std::errc::invalid_argument);
 
-    checked_try_var(buffer, attach_buffer(data, std::move(data_deleter), pool));
+    checked_try_var(buffer, attach_buffer(data, std::move(data_deleter), pool,
+                                          physical_address));
     return ok(runtime_tensor(tensor(std::in_place, datatype, std::move(shape),
                                     std::move(strides), buffer)));
 }
@@ -139,17 +146,19 @@ result<runtime_tensor> hrt::create(typecode_t datatype, dims_t shape,
 
 result<runtime_tensor> hrt::create(typecode_t datatype, dims_t shape,
                                    gsl::span<gsl::byte> data, bool copy,
-                                   memory_pool_t pool) noexcept {
-    return create(datatype, shape, get_default_strides(shape), data, copy,
-                  pool);
+                                   memory_pool_t pool,
+                                   uintptr_t physical_address) noexcept {
+    return create(datatype, shape, get_default_strides(shape), data, copy, pool,
+                  physical_address);
 }
 
 result<runtime_tensor> hrt::create(typecode_t datatype, dims_t shape,
                                    gsl::span<gsl::byte> data,
                                    data_deleter_t data_deleter,
-                                   memory_pool_t pool) noexcept {
+                                   memory_pool_t pool,
+                                   uintptr_t physical_address) noexcept {
     return create(datatype, shape, get_default_strides(shape), data,
-                  std::move(data_deleter), pool);
+                  std::move(data_deleter), pool, physical_address);
 }
 
 result<hrt::memory_pool_t>

@@ -27,8 +27,8 @@ using namespace nncase::kernels;
 namespace {
 template <typename T>
 result<void> matmul_unit_impl(const T *input_a, const T *input_b, T *output,
-                              const dims_t &in_a_shape,
-                              const dims_t &in_b_shape) noexcept {
+                              gsl::span<const size_t> in_a_shape,
+                              gsl::span<const size_t> in_b_shape) noexcept {
     int32_t a_rows = static_cast<int32_t>(in_a_shape[0]);
     int32_t a_cols = static_cast<int32_t>(in_a_shape[1]);
     int32_t b_cols = static_cast<int32_t>(in_b_shape[1]);
@@ -52,8 +52,8 @@ result<void> matmul_unit_impl(const T *input_a, const T *input_b, T *output,
 
 template <typename T>
 result<void> matmul_impl(const T *input_a, const T *input_b, T *output,
-                         const dims_t &in_a_shape,
-                         const dims_t &in_b_shape) noexcept {
+                         gsl::span<const size_t> in_a_shape,
+                         gsl::span<const size_t> in_b_shape) noexcept {
     auto new_a_shape = to_4d(in_a_shape);
     auto new_b_shape = to_4d(in_b_shape);
     auto a_unit_size = new_a_shape[2] * new_a_shape[3];
@@ -81,10 +81,10 @@ result<void> matmul_impl(const T *input_a, const T *input_b, T *output,
     return ok();
 }
 
-template result<void> matmul_impl<float>(const float *input_a,
-                                         const float *input_b, float *output,
-                                         const dims_t &in_a_shape,
-                                         const dims_t &in_b_shape) noexcept;
+template result<void>
+matmul_impl<float>(const float *input_a, const float *input_b, float *output,
+                   gsl::span<const size_t> in_a_shape,
+                   gsl::span<const size_t> in_b_shape) noexcept;
 
 #define MATMUL_IMPL(_ty)                                                       \
     return matmul_impl(IN_CAST(_ty, input_a), IN_CAST(_ty, input_b),           \
@@ -94,7 +94,8 @@ template result<void> matmul_impl<float>(const float *input_a,
 
 result<void> nncase::kernels::stackvm::reference::matmul(
     typecode_t typecode, const gsl::byte *input_a, const gsl::byte *input_b,
-    gsl::byte *output, const dims_t &in_a_shape, const dims_t &in_b_shape,
+    gsl::byte *output, gsl::span<const size_t> in_a_shape,
+    gsl::span<const size_t> in_b_shape,
     [[maybe_unused]] kernel_context &context) noexcept {
     TYPE_SELECT(typecode, MATMUL_IMPL);
 }

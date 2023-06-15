@@ -28,9 +28,10 @@ using namespace nncase::runtime::stackvm;
 
 result<void> optimized::unary(typecode_t dtype, runtime::stackvm::unary_op_t op,
                               const gsl::byte *in, gsl::byte *out,
-                              const dims_t &shape, const strides_t &in_strides,
-                              const dims_t &out_shape,
-                              const strides_t &out_strides,
+                              gsl::span<const size_t> shape,
+                              gsl::span<const size_t> in_strides,
+                              gsl::span<const size_t> out_shape,
+                              gsl::span<const size_t> out_strides,
                               kernel_context &context) noexcept {
     return stackvm::reference::unary(dtype, op, in, out, shape, in_strides,
                                      out_shape, out_strides, context);
