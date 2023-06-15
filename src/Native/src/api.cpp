@@ -270,7 +270,7 @@ int nncase_tensor_get_buffer(nncase::tensor_node *tensor,
 int nncase_tensor_get_dims(nncase::tensor_node *tensor, uint32_t *dims,
                            uint32_t *dims_length) {
     if (tensor && dims_length) {
-        auto &shape = tensor->shape();
+        auto shape = tensor->shape();
         auto required_length = (uint32_t)shape.size();
         if (*dims_length < required_length) {
             *dims_length = required_length;
@@ -293,7 +293,7 @@ int nncase_tensor_get_dims(nncase::tensor_node *tensor, uint32_t *dims,
 int nncase_tensor_get_strides(nncase::tensor_node *tensor, uint32_t *strides,
                               uint32_t *strides_length) {
     if (tensor && strides_length) {
-        auto &src_strides = tensor->strides();
+        auto src_strides = tensor->strides();
         auto required_length = (uint32_t)src_strides.size();
         if (*strides_length < required_length) {
             *strides_length = required_length;

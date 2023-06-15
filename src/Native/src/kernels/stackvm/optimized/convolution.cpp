@@ -55,18 +55,21 @@ using namespace nncase::kernels;
 using namespace nncase::kernels::stackvm;
 using namespace nncase::kernels::stackvm::optimized;
 
-result<void> conv2d_1x1_s1(
-    const float *input, const float *weights, const float *bias, float *output,
-    const dims_t &in_shape, NNCASE_UNUSED const dims_t &in_strides,
-    NNCASE_UNUSED const dims_t &w_shape, NNCASE_UNUSED const dims_t &w_strides,
-    NNCASE_UNUSED const dims_t &bias_strides,
-    NNCASE_UNUSED const dims_t &out_strides,
-    NNCASE_UNUSED const padding &padding_h,
-    NNCASE_UNUSED const padding &padding_w, NNCASE_UNUSED int32_t groups,
-    NNCASE_UNUSED int32_t stride_h, NNCASE_UNUSED int32_t stride_w,
-    NNCASE_UNUSED int32_t dilation_h, NNCASE_UNUSED int32_t dilation_w,
-    value_range<float> fused_activation,
-    NNCASE_UNUSED kernels::kernel_context &context) noexcept {
+result<void>
+conv2d_1x1_s1(const float *input, const float *weights, const float *bias,
+              float *output, gsl::span<const size_t> in_shape,
+              NNCASE_UNUSED gsl::span<const size_t> in_strides,
+              NNCASE_UNUSED gsl::span<const size_t> w_shape,
+              NNCASE_UNUSED gsl::span<const size_t> w_strides,
+              NNCASE_UNUSED gsl::span<const size_t> bias_strides,
+              NNCASE_UNUSED gsl::span<const size_t> out_strides,
+              NNCASE_UNUSED const padding &padding_h,
+              NNCASE_UNUSED const padding &padding_w,
+              NNCASE_UNUSED int32_t groups, NNCASE_UNUSED int32_t stride_h,
+              NNCASE_UNUSED int32_t stride_w, NNCASE_UNUSED int32_t dilation_h,
+              NNCASE_UNUSED int32_t dilation_w,
+              value_range<float> fused_activation,
+              NNCASE_UNUSED kernels::kernel_context &context) noexcept {
     const auto widths = in_shape[2] * in_shape[3];
     // if oc's type is size_t, openmp will throw error in visual studio
     // if no cast, compiler will throw warning because of comparison of integer
@@ -143,18 +146,21 @@ result<void> conv2d_1x1_s1(
     return ok();
 }
 
-result<void> conv2d_1x1_s2(
-    const float *input, const float *weights, const float *bias, float *output,
-    const dims_t &in_shape, NNCASE_UNUSED const dims_t &in_strides,
-    NNCASE_UNUSED const dims_t &w_shape, NNCASE_UNUSED const dims_t &w_strides,
-    NNCASE_UNUSED const dims_t &bias_strides,
-    NNCASE_UNUSED const dims_t &out_strides,
-    NNCASE_UNUSED const padding &padding_h,
-    NNCASE_UNUSED const padding &padding_w, NNCASE_UNUSED int32_t groups,
-    NNCASE_UNUSED int32_t stride_h, NNCASE_UNUSED int32_t stride_w,
-    NNCASE_UNUSED int32_t dilation_h, NNCASE_UNUSED int32_t dilation_w,
-    value_range<float> fused_activation,
-    NNCASE_UNUSED kernels::kernel_context &context) noexcept {
+result<void>
+conv2d_1x1_s2(const float *input, const float *weights, const float *bias,
+              float *output, gsl::span<const size_t> in_shape,
+              NNCASE_UNUSED gsl::span<const size_t> in_strides,
+              NNCASE_UNUSED gsl::span<const size_t> w_shape,
+              NNCASE_UNUSED gsl::span<const size_t> w_strides,
+              NNCASE_UNUSED gsl::span<const size_t> bias_strides,
+              NNCASE_UNUSED gsl::span<const size_t> out_strides,
+              NNCASE_UNUSED const padding &padding_h,
+              NNCASE_UNUSED const padding &padding_w,
+              NNCASE_UNUSED int32_t groups, NNCASE_UNUSED int32_t stride_h,
+              NNCASE_UNUSED int32_t stride_w, NNCASE_UNUSED int32_t dilation_h,
+              NNCASE_UNUSED int32_t dilation_w,
+              value_range<float> fused_activation,
+              NNCASE_UNUSED kernels::kernel_context &context) noexcept {
     const auto batch = in_shape[0], in_channels = in_shape[1],
                in_h = in_shape[2], in_w = in_shape[3],
                out_channels = w_shape[0];
@@ -410,18 +416,20 @@ void conv2d_channel(size_t out_h, size_t out_w, std::array<T, Parallel> &sum,
 
 template <size_t Parallel, size_t Filter_h, size_t Filter_w, size_t Stride_h,
           size_t Stride_w>
-result<void> conv2d_nxm(
-    const float *input, const float *weights, const float *bias, float *output,
-    const dims_t &in_shape, NNCASE_UNUSED const dims_t &in_strides,
-    NNCASE_UNUSED const dims_t &w_shape, NNCASE_UNUSED const dims_t &w_strides,
-    NNCASE_UNUSED const dims_t &bias_strides,
-    NNCASE_UNUSED const dims_t &out_strides,
-    NNCASE_UNUSED const padding &padding_h,
-    NNCASE_UNUSED const padding &padding_w, NNCASE_UNUSED int32_t groups,
-    NNCASE_UNUSED int32_t stride_h, NNCASE_UNUSED int32_t stride_w,
-    NNCASE_UNUSED int32_t dilation_h, NNCASE_UNUSED int32_t dilation_w,
-    value_range<float> fused_activation,
-    NNCASE_UNUSED kernels::kernel_context &context) noexcept {
+result<void>
+conv2d_nxm(const float *input, const float *weights, const float *bias,
+           float *output, gsl::span<const size_t> in_shape,
+           NNCASE_UNUSED gsl::span<const size_t> in_strides,
+           NNCASE_UNUSED gsl::span<const size_t> w_shape,
+           NNCASE_UNUSED gsl::span<const size_t> w_strides,
+           NNCASE_UNUSED gsl::span<const size_t> bias_strides,
+           NNCASE_UNUSED gsl::span<const size_t> out_strides,
+           NNCASE_UNUSED const padding &padding_h,
+           NNCASE_UNUSED const padding &padding_w, NNCASE_UNUSED int32_t groups,
+           NNCASE_UNUSED int32_t stride_h, NNCASE_UNUSED int32_t stride_w,
+           NNCASE_UNUSED int32_t dilation_h, NNCASE_UNUSED int32_t dilation_w,
+           value_range<float> fused_activation,
+           NNCASE_UNUSED kernels::kernel_context &context) noexcept {
     const auto batch = in_shape[0], out_channels = w_shape[0],
                in_channels = w_shape[1], in_h = in_shape[2], in_w = in_shape[3];
     const auto out_h = nncase::kernels::detail::get_windowed_output_size(
@@ -480,10 +488,12 @@ template <size_t Parallel, size_t Filter_h, size_t Filter_w, size_t Stride_h,
           size_t Stride_w>
 result<void> conv2d_depthwise_nxm(
     const float *input, const float *weights, const float *bias, float *output,
-    const dims_t &in_shape, NNCASE_UNUSED const dims_t &in_strides,
-    NNCASE_UNUSED const dims_t &w_shape, NNCASE_UNUSED const dims_t &w_strides,
-    NNCASE_UNUSED const dims_t &bias_strides,
-    NNCASE_UNUSED const dims_t &out_strides,
+    gsl::span<const size_t> in_shape,
+    NNCASE_UNUSED gsl::span<const size_t> in_strides,
+    NNCASE_UNUSED gsl::span<const size_t> w_shape,
+    NNCASE_UNUSED gsl::span<const size_t> w_strides,
+    NNCASE_UNUSED gsl::span<const size_t> bias_strides,
+    NNCASE_UNUSED gsl::span<const size_t> out_strides,
     NNCASE_UNUSED const padding &padding_h,
     NNCASE_UNUSED const padding &padding_w, NNCASE_UNUSED int32_t groups,
     NNCASE_UNUSED int32_t stride_h, NNCASE_UNUSED int32_t stride_w,
@@ -601,10 +611,11 @@ result<void> conv2d_depthwise_nxm(
 
 result<void> optimized::conv2d(
     const float *input, const float *weights, const float *bias, float *output,
-    const dims_t &in_shape, const dims_t &in_strides, const dims_t &w_shape,
-    NNCASE_UNUSED const dims_t &w_strides,
-    NNCASE_UNUSED const dims_t &bias_strides,
-    NNCASE_UNUSED const dims_t &out_strides, const padding &padding_h,
+    gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
+    gsl::span<const size_t> w_shape,
+    NNCASE_UNUSED gsl::span<const size_t> w_strides,
+    NNCASE_UNUSED gsl::span<const size_t> bias_strides,
+    NNCASE_UNUSED gsl::span<const size_t> out_strides, const padding &padding_h,
     const padding &padding_w, int32_t groups, int32_t stride_h,
     int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
     value_range<float> fused_activation,
