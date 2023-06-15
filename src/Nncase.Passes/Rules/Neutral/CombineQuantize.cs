@@ -61,6 +61,17 @@ public sealed partial class CombineQuantizeConcat : RewriteRule<Pattern>
 [RuleGenerator]
 public sealed partial class CombineQuantizeReshape : RewriteRule<Pattern>
 {
+    private readonly bool _checkShapeSize;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CombineQuantizeReshape"/> class.
+    /// </summary>
+    /// <param name="checkShapeSize">if true, skip pass.</param>
+    public CombineQuantizeReshape(bool checkShapeSize = false)
+    {
+        _checkShapeSize = checkShapeSize;
+    }
+
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = IsQuantize(
         "quantize",
@@ -77,6 +88,11 @@ public sealed partial class CombineQuantizeReshape : RewriteRule<Pattern>
         var userAnalysis = options.GetAnalysis<IExprUserAnalysisResult>();
 
         if (userAnalysis[reshapeCall].Count() > 1)
+        {
+            return null;
+        }
+
+        if (_checkShapeSize && input.CheckedShape.ToValueArray().Any(s => s >= 65536))
         {
             return null;
         }
