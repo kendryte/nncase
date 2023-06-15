@@ -326,7 +326,8 @@ void binary_impl_fv_i64(int64_t input_a, const int64_t *input_b, int64_t *out,
     }
 }
 
-static int verify_shape_impl(gsl::span<const size_t>& in_a_shape, gsl::span<const size_t>& in_b_shape) {
+static int verify_shape_impl(gsl::span<const size_t> &in_a_shape,
+                             gsl::span<const size_t> &in_b_shape) {
 
     int size_diff = in_a_shape.size() - in_b_shape.size();
     int outter_front_size = 1;
@@ -355,23 +356,21 @@ static int verify_shape_impl(gsl::span<const size_t>& in_a_shape, gsl::span<cons
     return -1;
 }
 
-static int verify_shape(gsl::span<const size_t>& in_a_shape, gsl::span<const size_t>& in_b_shape, int a_len, int b_len)
-{
-    if(a_len == 1 || b_len == 1)
+static int verify_shape(gsl::span<const size_t> &in_a_shape,
+                        gsl::span<const size_t> &in_b_shape, int a_len,
+                        int b_len) {
+    if (a_len == 1 || b_len == 1)
         return 0;
-    if(a_len > b_len)
-    {
+    if (a_len > b_len) {
         return verify_shape_impl(in_a_shape, in_b_shape);
     }
-    if(a_len < b_len)
-    {
+    if (a_len < b_len) {
         return verify_shape_impl(in_b_shape, in_b_shape);
     }
-    if(in_a_shape.size() < in_b_shape.size())
+    if (in_a_shape.size() < in_b_shape.size())
         return verify_shape_impl(in_b_shape, in_b_shape);
     return verify_shape_impl(in_a_shape, in_b_shape);
 }
-
 
 // float
 template <typename Top>
@@ -510,13 +509,13 @@ int optimized_binary_impl(const int64_t *input_a, const int64_t *input_b,
 #endif
 } // namespace
 
-result<void>
-optimized::binary(typecode_t typecode, runtime::stackvm::binary_op_t op,
-                  const gsl::byte *lhs, const gsl::byte *rhs, gsl::byte *out,
-                  gsl::span<const size_t> in_a_shape, gsl::span<const size_t> lhs_strides,
-                  gsl::span<const size_t> in_b_shape, gsl::span<const size_t> rhs_strides,
-                  gsl::span<const size_t> out_shape, gsl::span<const size_t> out_strides,
-                  NNCASE_UNUSED kernel_context &context) noexcept {
+result<void> optimized::binary(
+    typecode_t typecode, runtime::stackvm::binary_op_t op, const gsl::byte *lhs,
+    const gsl::byte *rhs, gsl::byte *out, gsl::span<const size_t> in_a_shape,
+    gsl::span<const size_t> lhs_strides, gsl::span<const size_t> in_b_shape,
+    gsl::span<const size_t> rhs_strides, gsl::span<const size_t> out_shape,
+    gsl::span<const size_t> out_strides,
+    NNCASE_UNUSED kernel_context &context) noexcept {
     int ret_value = -1;
 #if __riscv_vector
 #define BINARY_IMPL(_ty)                                                       \
