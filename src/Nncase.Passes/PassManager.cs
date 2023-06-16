@@ -78,6 +78,15 @@ internal sealed class PassManager : IPassManager
                 AddModulePass(modulePass);
                 _isLastAddedEGraphPass = false;
                 break;
+            case EGraphExtractPass:
+                if (!_isLastAddedEGraphPass)
+                {
+                    throw new InvalidOperationException("Can't Add EGraphExtractPass without EGraphPass!");
+                }
+
+                AddPass(pass);
+                _isLastAddedEGraphPass = false;
+                break;
             default:
                 throw new NotSupportedException($"Unsupported pass type: {pass.GetType().AssemblyQualifiedName}");
         }

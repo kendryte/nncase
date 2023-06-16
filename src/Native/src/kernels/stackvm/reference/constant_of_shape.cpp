@@ -27,7 +27,7 @@ using namespace nncase::kernels;
 
 template <typename T>
 result<void> constant_of_shape_impl(const T *value, T *output,
-                                    const dims_t &shape) {
+                                    gsl::span<const size_t> shape) {
     for (size_t i = 0; i < compute_size(shape); ++i) {
         output[i] = *value;
     }
@@ -40,7 +40,7 @@ result<void> constant_of_shape_impl(const T *value, T *output,
 
 result<void> nncase::kernels::stackvm::reference::constant_of_shape(
     datatype_t dt, const gsl::byte *value, gsl::byte *output,
-    const dims_t &shape) {
+    gsl::span<const size_t> shape) {
     try_var(tycode, to_typecode(dt));
     TYPE_SELECT(tycode, KERNEL_IMPL);
 }

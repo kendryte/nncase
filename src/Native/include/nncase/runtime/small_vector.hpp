@@ -135,6 +135,7 @@
 #pragma once
 
 #include <cstddef>
+#include <gsl/gsl-lite.hpp>
 #include <memory>
 #include <type_traits>
 
@@ -243,6 +244,12 @@ struct small_vector : Alloc {
     small_vector(std::initializer_list<T> l, const Alloc &alloc = Alloc())
         : small_vector(alloc) {
         assign_impl(l);
+    }
+
+    template <class U>
+    small_vector(gsl::span<U> c, const Alloc &alloc = Alloc())
+        : small_vector(alloc) {
+        assign_impl(c.begin(), c.end());
     }
 
     small_vector(const small_vector &v)

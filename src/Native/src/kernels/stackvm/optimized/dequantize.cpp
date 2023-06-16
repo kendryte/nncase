@@ -69,9 +69,9 @@ result<void> dequantize(const TQint *CXX_RESTRICT input,
 
 result<void> optimized::dequantize(
     datatype_t in_type, datatype_t out_type, const gsl::byte *input,
-    gsl::byte *output, const dims_t &in_shape,
-    NNCASE_UNUSED const dims_t &in_strides,
-    NNCASE_UNUSED const dims_t &out_strides, float scale, float bias,
+    gsl::byte *output, gsl::span<const size_t> in_shape,
+    NNCASE_UNUSED gsl::span<const size_t> in_strides,
+    NNCASE_UNUSED gsl::span<const size_t> out_strides, float scale, float bias,
     NNCASE_UNUSED kernel_context &context) noexcept {
     DEQUANTIZE_IMPL(uint8_t, float)
     DEQUANTIZE_IMPL(int8_t, float)

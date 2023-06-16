@@ -23,18 +23,22 @@ class host_buffer_impl : public host_buffer_node {
   public:
     host_buffer_impl(gsl::byte *data, size_t bytes,
                      std::function<void(gsl::byte *)> deleter,
-                     buffer_allocator &allocator,
+                     uintptr_t physical_address, buffer_allocator &allocator,
                      host_sync_status_t host_sync_status)
         : host_buffer_node(bytes, allocator, host_sync_status),
           data_(std::move(data)),
+          physical_address_(physical_address),
           deleter_(std::move(deleter)) {}
 
     ~host_buffer_impl() { deleter_(data_); }
 
-    bool has_physical_address() const noexcept override { return false; }
+    bool has_physical_address() const noexcept override {
+        return physical_address_;
+    }
 
     result<uintptr_t> physical_address() noexcept override {
-        return err(std::errc::not_supported);
+        return has_physical_address() ? ok(physical_address_)
+                                      : err(std::errc::not_supported);
     }
 
     result<gsl::span<gsl::byte>>
@@ -52,6 +56,7 @@ class host_buffer_impl : public host_buffer_node {
 
   private:
     gsl::byte *data_;
+    uintptr_t physical_address_;
     std::function<void(gsl::byte *)> deleter_;
 };
 
@@ -64,8 +69,8 @@ class host_buffer_allocator : public buffer_allocator {
         if (!data)
             return err(std::errc::not_enough_memory);
         return ok<buffer_t>(object_t<host_buffer_impl>(
-            std::in_place, data, bytes, [](gsl::byte *p) { delete[] p; }, *this,
-            host_sync_status_t::valid));
+            std::in_place, data, bytes, [](gsl::byte *p) { delete[] p; }, 0,
+            *this, host_sync_status_t::valid));
     }
 
     result<buffer_t>
@@ -73,8 +78,8 @@ class host_buffer_allocator : public buffer_allocator {
            [[maybe_unused]] const buffer_attach_options &options) override {
         return ok<buffer_t>(object_t<host_buffer_impl>(
             std::in_place, data.data(), data.size_bytes(),
-            []([[maybe_unused]] gsl::byte *p) {}, *this,
-            host_sync_status_t::valid));
+            []([[maybe_unused]] gsl::byte *p) {}, options.physical_address,
+            *this, host_sync_status_t::valid));
     }
 };
 

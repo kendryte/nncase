@@ -103,18 +103,12 @@ inline result<std::vector<dims_t>> get_strides(tuple inputs) {
 }
 
 // get input and output
-template <bool IsTuple, typename ShapeT = dims_t>
 inline result<void> alloc_output(value_t &output, datatype_t dtype,
-                                 const ShapeT &out_shape);
-
-template <>
-inline result<void> alloc_output<false, dims_t>(value_t &output,
-                                                datatype_t dtype,
-                                                const dims_t &out_shape) {
+                                 gsl::span<const size_t> out_shape) {
     // TODO: copy back output
     if (output.empty()) {
         try_var(typecode, to_typecode(dtype));
-        try_var(out_tensor, hrt::create(typecode, out_shape));
+        try_var(out_tensor, hrt::create(typecode, dims_t(out_shape)));
         output = out_tensor.impl();
     } else {
         try_var(
@@ -132,7 +126,7 @@ inline result<void> check_tuple_shape(value_t &outputs,
     try_(tuple_for_each_with_i(
         output_tuple, [&](auto &output, auto i) -> result<void> {
             try_var(out_tensor, output.template as<tensor>());
-            if (out_tensor->shape() != out_shapes[i]) {
+            if (out_tensor->shape() != gsl::span(out_shapes[i])) {
                 return err(nncase_errc::shape_mismatch);
             } else {
                 return ok();
@@ -149,7 +143,7 @@ inline result<void> alloc_tuple_output(value_t &outputs,
         std::vector<value_t> fields(size);
         for (size_t i = 0; i < size; ++i) {
             auto output = value_t();
-            try_(alloc_output<false>(output, dtypes[i], out_shapes[i]));
+            try_(alloc_output(output, dtypes[i], out_shapes[i]));
             fields[i] = output;
         }
         outputs = tuple(std::in_place, std::move(fields));
@@ -159,16 +153,14 @@ inline result<void> alloc_tuple_output(value_t &outputs,
     return ok();
 }
 
-template <>
-inline result<void>
-alloc_output<true, std::vector<dims_t>>(value_t &outputs, datatype_t dtype,
-                                        const std::vector<dims_t> &out_shapes) {
+inline result<void> alloc_output(value_t &outputs, datatype_t dtype,
+                                 const std::vector<dims_t> &out_shapes) {
     if (outputs.empty()) {
         auto size = out_shapes.size();
         std::vector<value_t> fields(size);
         for (size_t i = 0; i < size; ++i) {
             auto output = value_t();
-            try_(alloc_output<false>(output, dtype, out_shapes[i]));
+            try_(alloc_output(output, dtype, out_shapes[i]));
             fields[i] = output;
         }
         outputs = tuple(std::in_place, std::move(fields));
@@ -247,7 +239,7 @@ inline result<gsl::byte *> get_readonly_span(tensor input) {
 // 1. in_mem: const gsl::byte*
 // 2. input_tensor: tensor
 #define try_alloc_output(_out_tensor, _dt, _shape, _is_tuple)                  \
-    try_(alloc_output<_is_tuple>(_out_tensor, _dt, _shape));
+    try_(alloc_output(_out_tensor, _dt, _shape));
 
 #define try_input_impl(_var_name, _value_name, _value_kind)                    \
     try_var(_value_name##_##_value_kind, _value_name.as<_value_kind>());       \
@@ -526,14 +518,15 @@ inline bool is_contiguous(tensor tensor) {
     }
 
 // used for op only do reshape
-inline tensor tensor_reshape(tensor in_tensor, const dims_t &new_shape) {
+inline tensor tensor_reshape(tensor in_tensor,
+                             gsl::span<const size_t> new_shape) {
     auto strides = get_default_strides(new_shape);
     return tensor(std::in_place, in_tensor->dtype(), new_shape, strides,
                   in_tensor->buffer());
 }
 
 inline bool is_scalar(tensor t) noexcept { return t->shape().empty(); }
-inline bool is_scalar(const dims_t &t) noexcept { return t.empty(); }
+inline bool is_scalar(gsl::span<const size_t> t) noexcept { return t.empty(); }
 
 template <typename F>
 inline result<void> integer_cast(datatype_t type, const gsl::byte *input,
@@ -550,8 +543,8 @@ inline result<void> integer_cast(datatype_t type, const gsl::byte *input,
 
 // used for slice args
 inline std::tuple<axes_t, axes_t, axes_t>
-slice_fill(const dims_t &in_shape, axes_t &begins_value, axes_t &ends_value,
-           axes_t &strides_value, axes_t axes_value) {
+slice_fill(gsl::span<const size_t> in_shape, axes_t &begins_value,
+           axes_t &ends_value, axes_t &strides_value, axes_t axes_value) {
     auto ndim = in_shape.size();
     axes_t begin_values(ndim, 0);
     axes_t end_values(in_shape.begin(), in_shape.end());
