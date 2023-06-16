@@ -37,7 +37,10 @@ optimized_sigmoid_impl(const float *input, float *output,
                        gsl::span<const size_t> in_strides,
                        gsl::span<const size_t> out_strides) noexcept {
 
-    if (get_default_strides(in_shape) != in_strides) {
+    auto strides = get_default_strides(in_shape);
+    auto strides_span = gsl::span<const size_t>{strides.begin(), strides.end()};
+    if (std::equal(strides_span.begin(), strides_span.end(),
+                   in_strides.begin())) {
         size_t ndim = in_shape.size();
         if (ndim > 1) {
             const float *ptr_input = input;
