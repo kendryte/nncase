@@ -28,6 +28,12 @@ namespace Nncase.Passes.Rules.Neutral;
 [RuleGenerator]
 public sealed class AddPreProcess : ModulePass
 {
+    /// <summary>
+    /// Main func for AddPreProcess.
+    /// </summary>
+    /// <param name="module"> The graph. </param>
+    /// <param name="options"> RunPassContext. </param>
+    /// <returns> Return a new graph with preprocess and postprocess. </returns>
     protected override Task<IRModule> RunCoreAsync(IRModule module, RunPassContext options)
     {
         var preProcess = CompileSession.CompileOptions.PreProcess;
@@ -40,6 +46,7 @@ public sealed class AddPreProcess : ModulePass
         var mean = CompileSession.CompileOptions.Mean;
         var std = CompileSession.CompileOptions.Std;
         var modelLayout = CompileSession.CompileOptions.ModelLayout;
+        var outputLayout = CompileSession.CompileOptions.OutputLayout;
 
         var entry = (IR.Function)module.Entry!;
         var newType = new[] { DataTypes.UInt8, DataTypes.Int8, DataTypes.Float32 };
@@ -141,8 +148,25 @@ public sealed class AddPreProcess : ModulePass
                 newInput = Transpose(newInput, new[] { 0, 2, 3, 1 });
             }
 
-            var y = new Passes.Mutators.Substitutor(expr => object.ReferenceEquals(expr, input) ? newInput : null).Rewrite(entry.Body);
-            var x = new Passes.Mutators.Substitutor(expr => object.ReferenceEquals(expr, input) ? a : null).Rewrite(entry);
+            new Passes.Mutators.Substitutor(expr => object.ReferenceEquals(expr, input) ? newInput : null).Rewrite(entry.Body);
+            new Passes.Mutators.Substitutor(expr => object.ReferenceEquals(expr, input) ? a : null).Rewrite(entry);
+
+            if (modelLayout != outputLayout)
+            {
+                var newOutput = entry.Body;
+                newOutput = outputLayout switch
+                {
+                    "NHWC" when modelLayout == "NCHW" => Transpose(newOutput, new[] { 0, 2, 3, 1 }),
+                    "NCHW" when modelLayout == "NHWC" => Transpose(newOutput, new[] { 0, 3, 1, 2 }),
+                    _ => Transpose(
+                        newOutput,
+                        Array.ConvertAll(
+                            outputLayout.Replace(" ", string.Empty, StringComparison.OrdinalIgnoreCase).Split(","),
+                            int.Parse)),
+                };
+
+                new Passes.Mutators.Substitutor(expr => object.ReferenceEquals(expr, newOutput) ? newOutput : null).Rewrite(entry.Body);
+            }
         }
 
         return Task.FromResult(module);
