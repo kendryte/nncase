@@ -157,8 +157,15 @@ public sealed class AddPreProcess : ModulePass
                     pads[3, 1] = (int)padW - (int)Math.Round((padW / 2) - 0.1);
 
                     newInput = IR.F.NN.Pad(
-                        IR.F.Imaging.ResizeImage(ImageResizeMode.Bilinear, newInput, float.NaN, resizeShape,
-                            ImageResizeTransformationMode.HalfPixel), pads, PadMode.Constant, letterBoxValue);
+                        IR.F.Imaging.ResizeImage(
+                            ImageResizeMode.Bilinear,
+                            newInput,
+                            float.NaN,
+                            resizeShape,
+                            ImageResizeTransformationMode.HalfPixel), 
+                        pads,
+                        PadMode.Constant,
+                        letterBoxValue);
                 }
             }
 
