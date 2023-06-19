@@ -10,9 +10,11 @@ using System.Linq;
 using Google.Protobuf;
 using Google.Protobuf.Collections;
 using LanguageExt;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using Onnx;
+using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Importer;
 
@@ -23,6 +25,8 @@ public sealed partial class OnnxImporter : BaseImporter
     private readonly Dictionary<string, long> _opSetMap;
     private Dictionary<string, Expr>? _outputTensors;
     private Dictionary<string, TensorProto>? _constTensors;
+    private Dictionary<string, Var> _dynVarMap = new();
+    private Dictionary<string, int> _fixVarMap = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="OnnxImporter"/> class.
@@ -44,17 +48,28 @@ public sealed partial class OnnxImporter : BaseImporter
     }
 
     /// <inheritdoc/>
-    protected override IEnumerable<Var> CreateInputs()
+    protected override (IEnumerable<Var> Inputs, Dictionary<Var, Expr[]> VarMap) CreateInputs()
     {
+        var bucketOptions = CompileSession.CompileOptions.ShapeBucketOptions;
+        _fixVarMap = bucketOptions.FixVarMap;
+
         _constTensors = _graph.Initializer
             .ToDictionary(tensor => tensor.Name, tensor => tensor);
 
-        var createdInputs = _graph.Input
-            .Where(n => !_constTensors.ContainsKey(n.Name))
-            .Select(n => new Var(n.Name, GetIRType(n))).ToArray();
+        var originInputs = _graph.Input
+            .Where(n => !_constTensors.ContainsKey(n.Name));
+        var createdInputs = originInputs.Select(n => new Var(n.Name, GetIRType(n))).ToArray();
+        _dynVarMap = _graph.Input.SelectMany(input => input.Type.TensorType.Shape.Dim.Where(d => IsDynamicDim(d)))
+            .Select(v => v.DimParam).ToHashSet().Select(v => new Var(v, new TensorType(DataTypes.Int32, Shape.Scalar)))
+            .ToDictionary(v => v.Name, v => v);
+        var varMap = originInputs
+            .Select((v, i) => (createdInputs[i], GetOriginShape(v)))
+            .ToDictionary(tup => tup.Item1, tup => tup.Item2);
 
+        CompileSession.CompileOptions.ShapeBucketOptions =
+            bucketOptions with { VarMap = varMap };
         _outputTensors = createdInputs.ToDictionary(n => n.Name, n => (Expr)n);
-        return createdInputs;
+        return (createdInputs, varMap);
     }
 
     /// <inheritdoc/>

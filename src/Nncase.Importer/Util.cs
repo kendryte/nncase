@@ -85,7 +85,7 @@ namespace Nncase
             var i32Filter = Cast(filter, DataTypes.Int32);
             var i32Stride = Cast(stride, DataTypes.Int32);
             var i32Dilation = Cast(dilation, DataTypes.Int32);
-            var outputSize = GetWindowedOutputSize(i32InputSize, i32Filter, i32Stride, i32Dilation, same, false);
+            var outputSize = IR.Util.GetWindowedOutputSize(i32InputSize, i32Filter, i32Stride, i32Dilation, same, false);
             return GetWindowedPaddingValue(i32InputSize, outputSize, i32Filter, i32Stride, i32Dilation, lower);
         }
 
@@ -104,20 +104,6 @@ namespace Nncase
             return F.Tensors.Expand(
                 Util.ShapeIndex(input, (int)axis) / outputSize, // Util.DynamicShapeIndex(input, Cast(axis, DataTypes.Int32)) / outputSize
                 Stack(new Tuple(outputSize), 0));
-        }
-
-        private static Expr GetWindowedOutputSize(Expr size, Expr filter, Expr stride, Expr dilation, bool same, bool ceilMode)
-        {
-            var effectiveFilterSize = ((filter - 1) * dilation) + 1;
-            var falseBranch = !ceilMode
-                ? ((size - effectiveFilterSize + stride) / stride)
-                : F.Tensors.Cast(
-                    F.Math.Ceil(
-                        F.Tensors.Cast(size - effectiveFilterSize + stride, DataTypes.Float32) /
-                        F.Tensors.Cast(stride, DataTypes.Float32)),
-                    DataTypes.Int32);
-            var trueBranch = (size + stride - 1) / stride;
-            return same ? trueBranch : falseBranch;
         }
 
         private static Expr[] GetWindowedPaddingValue(Expr inputSize, Expr outputSize, Expr filter, Expr stride, Expr dilation, bool lower)

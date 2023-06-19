@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "opt_common.h"
 #include "opt_ops.h"
 #include <cstring>
 #include <nncase/kernels/kernel_utils.h>
@@ -61,7 +62,7 @@ concat_contiguous_impl(gsl::span<const gsl::byte *const> inputs, T *output,
             const auto dims_width = concat_dims[n] * subsize;
             const auto in_offset = offset(in_strides[n], in_index);
             auto *in_ptr = reinterpret_cast<const T *>(inputs[n]) + in_offset;
-            memcpy(out_ptr, in_ptr, dims_width * sizeof(T));
+            opt_memcpy(out_ptr, in_ptr, dims_width * sizeof(T));
             out_ptr += dims_width;
         }
     };
