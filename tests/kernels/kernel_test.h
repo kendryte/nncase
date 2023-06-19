@@ -255,25 +255,132 @@ class KernelTest {
         return make_tensor(buffer, ort_type, shape, shape_size);
     }
 
-    template <typename T> double dot(const T &v1, const T &v2, size_t size) {
-        double ret = 0.f;
-        for (size_t i = 0; i < size; i++) {
-            ret += v1[i] * v2[i];
+//    template <typename T> double dot(const T &v1, const T &v2, size_t size) {
+//        double ret = 0.f;
+//        for (size_t i = 0; i < size; i++) {
+//            ret += v1[i] * v2[i];
+//        }
+//
+//        return ret;
+//    }
+//
+//    template <typename T> double cosine(const T &v1, const T &v2, size_t size) {
+//        auto mapped1 =
+//            std::move(runtime::hrt::map(v1, runtime::map_read).unwrap());
+//        void *buffer1 = reinterpret_cast<void *>(mapped1.buffer().data());
+//        auto mapped2 =
+//            std::move(runtime::hrt::map(v2, runtime::map_read).unwrap());
+//        void *buffer2 = reinterpret_cast<void *>(mapped2.buffer().data());
+//        return dot(buffer1, buffer2, size) /
+//               ((sqrt(dot(buffer1, buffer1, size)) *
+//                 sqrt(dot(buffer2, buffer2, size))));
+//    }
+    bool cosine(runtime::runtime_tensor &lhs,
+                runtime::runtime_tensor &rhs) {
+        if (lhs.shape() != rhs.shape()) {
+            return false;
         }
-
-        return ret;
-    }
-
-    template <typename T> double cosine(const T &v1, const T &v2, size_t size) {
-        auto mapped1 =
-            std::move(runtime::hrt::map(v1, runtime::map_read).unwrap());
-        void *buffer1 = reinterpret_cast<void *>(mapped1.buffer().data());
-        auto mapped2 =
-            std::move(runtime::hrt::map(v2, runtime::map_read).unwrap());
-        void *buffer2 = reinterpret_cast<void *>(mapped2.buffer().data());
-        return dot(buffer1, buffer2, size) /
-               ((sqrt(dot(buffer1, buffer1, size)) *
-                 sqrt(dot(buffer1, buffer1, size))));
+        return kernels::stackvm::apply(
+                   lhs.shape(),
+                   [&](gsl::span<const size_t> index) -> result<void> {
+                       auto dtype = lhs.datatype();
+                       switch (dtype) {
+                       case dt_int8: {
+                           if (get<int8_t>(lhs, index) ==
+                               get<int8_t>(rhs, index)) {
+                               return ok();
+                           } else {
+                               return err(std::errc::not_supported);
+                           }
+                           break;
+                       }
+                       case dt_int16: {
+                           if (get<int16_t>(lhs, index) ==
+                               get<int16_t>(rhs, index)) {
+                               return ok();
+                           } else {
+                               return err(std::errc::not_supported);
+                           }
+                           break;
+                       }
+                       case dt_int32: {
+                           if (get<int32_t>(lhs, index) ==
+                               get<int32_t>(rhs, index)) {
+                               return ok();
+                           } else {
+                               return err(std::errc::not_supported);
+                           }
+                           break;
+                       }
+                       case dt_int64: {
+                           if (get<int64_t>(lhs, index) ==
+                               get<int64_t>(rhs, index)) {
+                               return ok();
+                           } else {
+                               return err(std::errc::not_supported);
+                           }
+                           break;
+                       }
+                       case dt_uint8: {
+                           if (get<uint8_t>(lhs, index) ==
+                               get<uint8_t>(rhs, index)) {
+                               return ok();
+                           } else {
+                               return err(std::errc::not_supported);
+                           }
+                           break;
+                       }
+                       case dt_uint16: {
+                           if (get<uint16_t>(lhs, index) ==
+                               get<uint16_t>(rhs, index)) {
+                               return ok();
+                           } else {
+                               return err(std::errc::not_supported);
+                           }
+                           break;
+                       }
+                       case dt_uint32: {
+                           if (get<uint32_t>(lhs, index) ==
+                               get<uint32_t>(rhs, index)) {
+                               return ok();
+                           } else {
+                               return err(std::errc::not_supported);
+                           }
+                           break;
+                       }
+                       case dt_uint64: {
+                           if (get<uint64_t>(lhs, index) ==
+                               get<uint64_t>(rhs, index)) {
+                               return ok();
+                           } else {
+                               return err(std::errc::not_supported);
+                           }
+                           break;
+                       }
+                       case dt_float32: {
+                           if (get<float>(lhs, index) ==
+                               get<float>(rhs, index)) {
+                               return ok();
+                           } else {
+                               return err(std::errc::not_supported);
+                           }
+                           break;
+                       }
+                       case dt_float64: {
+                           if (get<double>(lhs, index) ==
+                               get<double>(rhs, index)) {
+                               return ok();
+                           } else {
+                               return err(std::errc::not_supported);
+                           }
+                           break;
+                       }
+                       default: {
+                           return err(std::errc::not_supported);
+                       }
+                       }
+                   })
+            .is_ok();
     }
 
     result<void> check_output(runtime::runtime_tensor expected,
