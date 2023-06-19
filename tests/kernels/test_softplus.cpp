@@ -47,9 +47,11 @@ class SoftplusTest
     runtime_tensor input;
 };
 
-INSTANTIATE_TEST_SUITE_P(Softplus, SoftplusTest,
-                         testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1})));
+INSTANTIATE_TEST_SUITE_P(
+    Softplus, SoftplusTest,
+    testing::Combine(testing::Values(dt_float32),
+                     testing::Values(dims_t{1}, dims_t{1, 1}, dims_t{1, 1, 1},
+                                     dims_t{1, 1, 1, 1})));
 
 TEST_P(SoftplusTest, Softplus) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);

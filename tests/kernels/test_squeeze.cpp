@@ -45,10 +45,12 @@ class SqueezeTest
     runtime_tensor input;
 };
 
-INSTANTIATE_TEST_SUITE_P(Squeeze, SqueezeTest,
-                         testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 3, 1,
-                                                                 16})));
+INSTANTIATE_TEST_SUITE_P(
+    Squeeze, SqueezeTest,
+    testing::Combine(testing::Values(dt_float32, dt_int32, dt_int16, dt_float64,
+                                     dt_int8, dt_uint8),
+                     testing::Values(dims_t{1, 3, 1, 16},
+                                     dims_t{1, 3, 1, 1})));
 
 TEST_P(SqueezeTest, Squeeze) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);

@@ -83,10 +83,10 @@ TEST_P(DequantizeTest, dequantize) {
     // actual
     float_t dequant_param[] = {127, 0.01f};
     auto dequant_param_ptr =
-        hrt::create(
-            nncase::dt_float32, {2},
-            {reinterpret_cast<gsl::byte *>(dequant_param), 2 * sizeof(float)},
-            true, host_runtime_tensor::pool_cpu_only)
+        hrt::create(nncase::dt_float32, {2},
+                    {reinterpret_cast<gsl::byte *>(dequant_param),
+                     sizeof(dequant_param)},
+                    true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto output = kernels::stackvm::dequantize(dt_float32, input.impl(),
                                                dequant_param_ptr.impl())
