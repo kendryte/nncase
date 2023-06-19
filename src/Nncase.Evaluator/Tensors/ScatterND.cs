@@ -12,7 +12,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="ScatterND"/>.
 /// </summary>
-public class ScatterNDEvaluator : IEvaluator<ScatterND>, ITypeInferencer<ScatterND>, ICostEvaluator<ScatterND>
+public class ScatterNDEvaluator : IEvaluator<ScatterND>, ITypeInferencer<ScatterND>, ICostEvaluator<ScatterND>, IShapeEvaluator<ScatterND>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, ScatterND target)
@@ -74,4 +74,6 @@ public class ScatterNDEvaluator : IEvaluator<ScatterND>, ITypeInferencer<Scatter
             },
         };
     }
+
+    public Expr Visit(IShapeEvaluateContext context, ScatterND target) => context.GetArgumentShape(target, ScatterND.Input);
 }

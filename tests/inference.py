@@ -62,6 +62,11 @@ class Inference:
         compile_options.input_layout = preprocess['input_layout']
         compile_options.output_layout = preprocess['output_layout']
         compile_options.tcu_num = cfg.compile_opt.tcu_num
+        compile_options.shape_bucket_options = nncase.ShapeBucketOptions()
+        compile_options.shape_bucket_options.enable = False
+        compile_options.shape_bucket_options.range_info = {}
+        compile_options.shape_bucket_options.segments_count = 2
+        compile_options.shape_bucket_options.fix_var_map = {}
         return compile_options
 
     def set_infer_input(self, preprocess, case_dir, sim):

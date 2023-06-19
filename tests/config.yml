@@ -53,11 +53,15 @@ case: # case的配置，应该是一个多层次的
     w_quant_type: 'uint8'
     use_mse_quant_w: true
     calibrate_method: 'Kld' #options: 'NoClip', 'Kld'
-    finetune_weights_method: 'UseSquant' #options: 'NoFineTuneWeights', 'UseSquant', 'UseAdaRound'
+    finetune_weights_method: 'NoFineTuneWeights' #options: 'NoFineTuneWeights', 'UseSquant', 'UseAdaRound'
     use_mix_quant: false
     quant_scheme: ""
     export_quant_scheme: false
     export_weight_range_by_channel: true
+    shape_bucket_enable: false
+    shape_bucket_range_info: {}
+    shape_bucket_segments_count: 2
+    shape_bucket_fix_var_map: {}
 
   ptq_opt:
     kwargs:

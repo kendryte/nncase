@@ -140,7 +140,7 @@ internal sealed class EGraphCostEvaluator
 
     private Cost? Visit(ENode enode, If @if)
     {
-        return Visit(enode, cost => _accumulate ? cost[1] + cost[2] + cost[3] : Cost.Zero);
+        return Visit(enode, cost => _accumulate ? cost[^3] + cost[^2] + cost[^1] : Cost.Zero);
     }
 
     private Cost? Visit(ENode enode, Marker marker)

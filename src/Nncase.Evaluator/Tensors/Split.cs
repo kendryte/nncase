@@ -9,6 +9,7 @@ using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
+using Nncase.Utilities;
 using OrtKISharp;
 
 namespace Nncase.Evaluator.Tensors;
@@ -16,7 +17,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Split"/>.
 /// </summary>
-public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>, ICostEvaluator<Split>
+public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>, ICostEvaluator<Split>, IShapeEvaluator<Split>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Split target)
@@ -43,6 +44,15 @@ public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>, ICostEv
         {
             [CostFactorNames.CPUCycles] = 1,
         };
+    }
+
+    public Expr Visit(IShapeEvaluateContext context, Split target)
+    {
+        var inShape = context.GetArgumentShape(target, Split.Input);
+        var axis = ((TensorConst)context.GetArgument(target, Split.Axis)).Value.ToScalar<int>();
+        var sections = ((TensorConst)context.GetArgument(target, Split.Sections)).Value.ToArray<int>();
+        var shapes = sections.Select(section => ShapeExprUtility.Replace(inShape, axis, section)).ToArray();
+        return new IR.Tuple(shapes);
     }
 
     private IRType Visit(ITypeInferenceContext context, Split target, TensorType input)

@@ -2,9 +2,6 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Linq;
-using DryIoc.ImTools;
-using LanguageExt;
 using Nncase.IR;
 using Onnx;
 using F = Nncase.IR.F;

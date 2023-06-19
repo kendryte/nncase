@@ -27,6 +27,11 @@ class Evaluator:
         compile_options.dump_asm = cfg.compile_opt.dump_asm
         compile_options.dump_ir = cfg.compile_opt.dump_ir
         compile_options = preprocess_utils.update_compile_options(compile_options, preprocess)
+        compile_options.shape_bucket_options = nncase.ShapeBucketOptions()
+        compile_options.shape_bucket_options.enable = False
+        compile_options.shape_bucket_options.range_info = {}
+        compile_options.shape_bucket_options.segments_count = 2
+        compile_options.shape_bucket_options.fix_var_map = {}
         self.compiler = nncase.Compiler(compile_options)
         self.import_model(self.compiler, model_content, import_options)
         self.set_quant_opt(cfg, kwargs, preprocess, self.compiler)

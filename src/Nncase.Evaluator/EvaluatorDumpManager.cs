@@ -49,9 +49,15 @@ internal sealed class EvaluatorDumpManager : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private void DumpCallArgs(Call call)
+    private static string GetTargetName(Call call)
     {
         var target = DumpUtility.SnakeName(call.Target.GetType().Name);
+        return target;
+    }
+
+    private void DumpCallArgs(Call call)
+    {
+        string target = GetTargetName(call);
         var paramsInfo = ((Op)call.Target).Parameters.ToArray();
 
         call.ParametersForeach((param, paramInfo) =>
@@ -66,7 +72,7 @@ internal sealed class EvaluatorDumpManager : IDisposable
 
     private void DumpCall(Call call)
     {
-        var target = call.Target.ToString();
+        string target = GetTargetName(call);
 
         // a bad tmp change
         var shape = !(call.CheckedType is TensorType) ? Shape.Scalar : call.CheckedShape;
