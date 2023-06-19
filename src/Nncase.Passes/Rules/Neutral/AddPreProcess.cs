@@ -162,7 +162,7 @@ public sealed class AddPreProcess : ModulePass
                             newInput,
                             float.NaN,
                             resizeShape,
-                            ImageResizeTransformationMode.HalfPixel), 
+                            ImageResizeTransformationMode.HalfPixel),
                         pads,
                         PadMode.Constant,
                         letterBoxValue);
