@@ -16,7 +16,6 @@ using Nncase.Passes.Rules.Lower;
 using Nncase.Passes.Rules.Neutral;
 using Nncase.Passes.Transforms;
 using Nncase.Quantization;
-using Timer = Nncase.Utilities.Timer;
 
 namespace Nncase.Compiler;
 
@@ -242,18 +241,15 @@ internal class Compiler : ICompiler
 
     private async Task RunPassAsync(Action<IPassManager> register, string name)
     {
-        using (var timer = new Timer(name))
-        {
-            var newName = $"{_runPassCount++}_" + name;
-            var pmgr = _compileSession.CreatePassManager(newName);
-            register(pmgr);
-            _module = await pmgr.RunAsync(Module).ConfigureAwait(false);
+        var newName = $"{_runPassCount++}_" + name;
+        var pmgr = _compileSession.CreatePassManager(newName);
+        register(pmgr);
+        _module = await pmgr.RunAsync(Module).ConfigureAwait(false);
 
-            if (_dumpper.IsEnabled(DumpFlags.Compile))
-            {
-                _dumpper.DumpModule(_module, newName);
-                _dumpper.DumpDotIR(_module.Entry!, newName);
-            }
+        if (_dumpper.IsEnabled(DumpFlags.Compile))
+        {
+            _dumpper.DumpModule(_module, newName);
+            _dumpper.DumpDotIR(_module.Entry!, newName);
         }
     }
 }
