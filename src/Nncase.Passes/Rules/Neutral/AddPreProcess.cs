@@ -76,7 +76,7 @@ public sealed class AddPreProcess : ModulePass
 
                 newInput = inputLayout switch
                 {
-                    "NHWC" => Transpose(newInput, new[] {0, 3, 1, 2}),
+                    "NHWC" => Transpose(newInput, new[] { 0, 3, 1, 2 }),
                     "NCHW" => Transpose(newInput, new[] { 0, 1, 2, 3 }),
                     _ => Transpose(newInput, newInputPerm),
                 };
@@ -101,14 +101,14 @@ public sealed class AddPreProcess : ModulePass
                 // SwapRB
                 if (swapRB && c != 1)
                 {
-                    var axes = new int[4] {0, 1, 2, 3};
-                    var strides = new int[4] {1, 1, 1, 1};
+                    var axes = new int[4] { 0, 1, 2, 3 };
+                    var strides = new int[4] { 1, 1, 1, 1 };
                     newInput = Concat(
                         new IR.Tuple(new[]
                         {
-                            Slice(newInput, new int[4] {0, 2, 0, 0}, new int[4] {n, 3, h, w}, axes, strides),
-                            Slice(newInput, new int[4] {0, 1, 0, 0}, new int[4] {n, 2, h, w}, axes, strides),
-                            Slice(newInput, new int[4] {0, 0, 0, 0}, new int[4] {n, 1, h, w}, axes, strides),
+                            Slice(newInput, new int[4] { 0, 2, 0, 0 }, new int[4] { n, 3, h, w }, axes, strides),
+                            Slice(newInput, new int[4] { 0, 1, 0, 0 }, new int[4] { n, 2, h, w }, axes, strides),
+                            Slice(newInput, new int[4] { 0, 0, 0, 0 }, new int[4] { n, 1, h, w }, axes, strides),
                         }),
                         1);
 
@@ -142,19 +142,19 @@ public sealed class AddPreProcess : ModulePass
                 {
                     var ratio = Math.Min(modelH / (float)h, modelW / (float)w);
 
-                    var pads = Tensor.From<int>(new[] {0, 0, 0, 0, 0, 0, 0, 0}, new Shape(new[] {4, 2}));
+                    var pads = Tensor.From<int>(new[] { 0, 0, 0, 0, 0, 0, 0, 0 }, new Shape(new[] { 4, 2 }));
 
                     var resizeH = Math.Round(h * ratio);
                     var resizeW = Math.Round(w * ratio);
 
                     var padH = modelH - resizeH;
                     var padW = modelW - resizeW;
-                    var resizeShape = new int[] {n, c, (int)resizeH, (int)resizeW};
+                    var resizeShape = new int[] { n, c, (int)resizeH, (int)resizeW };
 
-                    pads[2, 0] = (int) Math.Round((padH / 2) - 0.1);
-                    pads[2, 1] = (int) padH - (int) Math.Round((padH / 2) - 0.1);
-                    pads[3, 0] = (int) Math.Round((padW / 2) - 0.1);
-                    pads[3, 1] = (int) padW - (int) Math.Round((padW / 2) - 0.1);
+                    pads[2, 0] = (int)Math.Round((padH / 2) - 0.1);
+                    pads[2, 1] = (int)padH - (int)Math.Round((padH / 2) - 0.1);
+                    pads[3, 0] = (int)Math.Round((padW / 2) - 0.1);
+                    pads[3, 1] = (int)padW - (int)Math.Round((padW / 2) - 0.1);
 
                     newInput = IR.F.NN.Pad(
                         IR.F.Imaging.ResizeImage(ImageResizeMode.Bilinear, newInput, float.NaN, resizeShape,
@@ -179,7 +179,7 @@ public sealed class AddPreProcess : ModulePass
             // Convert to model layout
             if (modelLayout == "NHWC" && inputShape.Length == 4)
             {
-                newInput = Transpose(newInput, new[] {0, 2, 3, 1});
+                newInput = Transpose(newInput, new[] { 0, 2, 3, 1 });
             }
 
             new Passes.Mutators.Substitutor(expr => object.ReferenceEquals(expr, input) ? newInput : null).Rewrite(

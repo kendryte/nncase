@@ -39,15 +39,15 @@ public sealed class AddPostProcess : ModulePass
         var modelLayout = CompileSession.CompileOptions.ModelLayout;
         var outputLayout = CompileSession.CompileOptions.OutputLayout;
 
-        var entry = (IR.Function) module.Entry!;
+        var entry = (IR.Function)module.Entry!;
 
         if (modelLayout != outputLayout)
         {
             // Expr newOutput = entry.Body;
             var newOutput = outputLayout switch
             {
-                "NHWC" when modelLayout == "NCHW" => Transpose(entry.Body, new[] {0, 2, 3, 1}),
-                "NCHW" when modelLayout == "NHWC" => Transpose(entry.Body, new[] {0, 3, 1, 2}),
+                "NHWC" when modelLayout == "NCHW" => Transpose(entry.Body, new[] { 0, 2, 3, 1 }),
+                "NCHW" when modelLayout == "NHWC" => Transpose(entry.Body, new[] { 0, 3, 1, 2 }),
                 _ => Transpose(
                     entry.Body,
                     Array.ConvertAll(
@@ -59,7 +59,7 @@ public sealed class AddPostProcess : ModulePass
             module.Add(newEntry);
             module.Entry = newEntry;
         }
-        
+
         return Task.FromResult(module);
     }
 }
