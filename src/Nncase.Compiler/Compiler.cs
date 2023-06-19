@@ -52,7 +52,7 @@ internal class Compiler : ICompiler
 
         await RunPassAsync(pmg => BroadcastOutputNamesAfterImportPass(pmg), "BroadcastOutputNamesAfterImport");
         await RunPassAsync(pmg => pmg.Add<ShapeInferPass>(), "ShapeInferAfterImport");
-        await RunPassAsync(pmg => pmg.Add<AddPreProcess>(), "AddPreProcessAfterImport");
+        await RunPassAsync(pmg => AddPreAndPostProcess(pmg), "AddPreAndPostProcessAfterImport");
 
         var inferSucc = CompilerServices.InferenceType(module.Entry!);
         if (!inferSucc)
@@ -70,6 +70,16 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.BroadcastTransposeOutputNames>();
             p.Add<Passes.Rules.Neutral.BroadcastReshapeOutputNames>();
             p.Add<Passes.Rules.Neutral.BroadcastNopPadOutputNames>();
+        });
+    }
+
+    public void AddPreAndPostProcess(IPassManager passManager)
+    {
+        passManager.Add<AddPreProcess>();
+        passManager.Add<AddPostProcess>();
+        passManager.AddWithName<DataflowPass>("FoldNopBinary").Configure(p =>
+        {
+            p.Add<Passes.Rules.Neutral.FoldNopBinary>();
         });
     }
 

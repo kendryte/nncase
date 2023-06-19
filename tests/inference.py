@@ -3,7 +3,7 @@ import os
 import nncase
 import numpy as np
 import test_utils
-
+import preprocess_utils
 
 class Inference:
     def run_inference(self, dict_args, cfg, case_dir, import_options, compile_options, model_content, preprocess_opt):
@@ -49,18 +49,9 @@ class Inference:
         compile_options.dump_import_op_range = cfg.compile_opt.dump_import_op_range
         compile_options.is_fpga = cfg.compile_opt.is_fpga
         compile_options.use_mse_quant_w = cfg.compile_opt.use_mse_quant_w
-        compile_options.input_type = preprocess['input_type']
         compile_options.quant_type = cfg.compile_opt.quant_type
         compile_options.w_quant_type = cfg.compile_opt.w_quant_type
-        compile_options.swapRB = preprocess['swapRB']
-        compile_options.input_shape = self.pre_process[3]['input_shape'] if self.pre_process[3]['input_shape'] != [
-        ] else self.pre_process[3]['model_shape']
-        compile_options.input_range = preprocess['input_range']
-        compile_options.preprocess = preprocess['preprocess']
-        compile_options.mean = preprocess['mean']
-        compile_options.std = preprocess['std']
-        compile_options.input_layout = preprocess['input_layout']
-        compile_options.output_layout = preprocess['output_layout']
+        compile_options = preprocess_utils.update_compile_options(compile_options, preprocess)
         compile_options.tcu_num = cfg.compile_opt.tcu_num
         return compile_options
 
@@ -80,11 +71,15 @@ class Inference:
         infer_output_paths = []
         for i in range(sim.outputs_size):
             output = sim.get_output_tensor(i).to_numpy()
-            # if preprocess['preprocess'] and len(output.shape) == 4:
-            #     if(preprocess['output_layout'] == 'NHWC' and self.model_type in ['caffe', 'onnx']):
-            #         output = np.transpose(output, [0, 3, 1, 2])
-            #     elif (preprocess['output_layout'] == 'NCHW' and self.model_type in ['tflite']):
-            #         output = np.transpose(output, [0, 2, 3, 1])
+            if preprocess['preprocess']:
+                if(preprocess['output_layout'] == 'NHWC' and self.model_type in ['caffe', 'onnx']):
+                    output = np.transpose(output, [0, 3, 1, 2])
+                elif (preprocess['output_layout'] == 'NCHW' and self.model_type in ['tflite']):
+                    output = np.transpose(output, [0, 2, 3, 1])
+                elif preprocess['output_layout'] not in ["NCHW", "NHWC"]:
+                    tmp_perm = [int(idx) for idx in preprocess['output_layout'].split(",")]
+                    output = np.transpose(
+                        output, preprocess_utils.get_source_transpose_index(tmp_perm))
             infer_output_paths.append((
                 os.path.join(infer_dir, f'nncase_result_{i}.bin'),
                 os.path.join(infer_dir, f'nncase_result_{i}.txt')))
