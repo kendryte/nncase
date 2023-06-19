@@ -5,6 +5,7 @@ import numpy as np
 import test_utils
 import preprocess_utils
 
+
 class Inference:
     def run_inference(self, dict_args, cfg, case_dir, import_options, compile_options, model_content, preprocess_opt):
         infer_output_paths = self.nncase_infer(
