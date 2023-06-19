@@ -13,7 +13,7 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Evaluator for <see cref="Unary"/>.
 /// </summary>
-public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEvaluator<Unary>, IOpPrinter<Unary>
+public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEvaluator<Unary>, IOpPrinter<Unary>, IShapeEvaluator<Unary>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Unary unary)
@@ -97,6 +97,11 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
         }
 
         throw new NotSupportedException("ILmode = true");
+    }
+
+    public Expr Visit(IShapeEvaluateContext context, Unary target)
+    {
+        return context.GetArgumentShape(target, Unary.Input);
     }
 
     private int Compute_int(int input, UnaryOp op) => op switch

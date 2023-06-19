@@ -16,7 +16,7 @@ namespace Nncase.Evaluator.NN;
 /// <summary>
 /// Evaluator for <see cref="Conv2DTranspose"/>.
 /// </summary>
-public class Conv2DTransposeEvaluator : IEvaluator<Conv2DTranspose>, ITypeInferencer<Conv2DTranspose>, ICostEvaluator<Conv2DTranspose>
+public class Conv2DTransposeEvaluator : IEvaluator<Conv2DTranspose>, ITypeInferencer<Conv2DTranspose>, ICostEvaluator<Conv2DTranspose>, IShapeEvaluator<Conv2DTranspose>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Conv2DTranspose conv)
@@ -72,5 +72,17 @@ public class Conv2DTransposeEvaluator : IEvaluator<Conv2DTranspose>, ITypeInfere
 
         var macPerElement = weightsShape[1] * weightsShape[2] * weightsShape[3];
         return new() { [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(weightsType) + CostUtility.GetMemoryAccess(biasType), [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType), [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, (uint)macPerElement.FixedValue * 2), };
+    }
+
+    public Expr Visit(IShapeEvaluateContext context, Conv2DTranspose target)
+    {
+        var input = context.GetArgument(target, Conv2DTranspose.Input);
+        var weights = context.GetArgument(target, Conv2DTranspose.Weights);
+        var stride = context.GetArgument(target, Conv2DTranspose.Stride);
+        var dilation = context.GetArgument(target, Conv2DTranspose.Dilation);
+        var padding = context.GetArgument(target, Conv2DTranspose.Padding);
+        var outputPadding = context.GetArgument(target, Conv2DTranspose.OutputPadding);
+        var groups = context.GetArgument(target, Conv2DTranspose.Groups);
+        return Util.GetConvTransposeOutputShape(input, weights, stride, outputPadding, padding, dilation, string.Empty, groups);
     }
 }

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.Diagnostics;
 using Nncase.IR;
 
 namespace Nncase.CodeGen;
@@ -39,6 +40,11 @@ public sealed class ModelBuilder : IModelBuilder
     {
         var functionsByKind = module.Functions.GroupBy(x => x.ModuleKind).ToList();
         var functionIds = MakeFunctionsIds(functionsByKind);
+        if (DumpScope.Current.IsEnabled(DumpFlags.CodeGen))
+        {
+            CodeGenDumper.DumpIdMap(functionIds);
+        }
+
         var linkableModules = functionsByKind.Select(x => Target.CreateModuleBuilder(x.Key, CompileOptions).Build(x.ToList())).ToList();
         var linkContext = new LinkContext(functionIds);
         var linkedModules = linkableModules.Select(x => x.Link(linkContext)).ToList();

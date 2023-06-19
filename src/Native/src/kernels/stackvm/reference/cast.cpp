@@ -73,10 +73,17 @@ result<void> cast_f32_to_fp16_impl(
 } // namespace
 
 #define CAST_IMPL_LV2(input_t, output_t)                                       \
-    if (cmp_type<output_t>(out_type))                                          \
-    return cast_impl(reinterpret_cast<const input_t *>(input),                 \
-                     reinterpret_cast<output_t *>(output), in_shape,           \
-                     in_strides, out_strides, context)
+    if (cmp_type<output_t>(out_type)) {                                        \
+        if (contiguous) {                                                      \
+            return cast_impl(reinterpret_cast<const input_t *>(input),         \
+                             reinterpret_cast<output_t *>(output), in_shape,   \
+                             in_strides, out_strides, context);                \
+        } else {                                                               \
+            return cast_impl(reinterpret_cast<const input_t *>(input),         \
+                             reinterpret_cast<output_t *>(output), in_shape,   \
+                             in_strides, out_strides, context);                \
+        }                                                                      \
+    }
 
 #define CAST_IMPL_LV1(input_t)                                                 \
     if (cmp_type<input_t>(in_type)) {                                          \
@@ -107,6 +114,7 @@ result<void> cast_impl(datatype_t in_type, datatype_t out_type,
         return cast_f32_to_fp16_impl(reinterpret_cast<const float *>(input),
                                      reinterpret_cast<half *>(output), in_shape,
                                      in_strides, out_strides, context);
+    bool contiguous = is_contiguous(in_shape, in_strides);
     CAST_IMPL_LV1(bool);
     CAST_IMPL_LV1(uint8_t);
     CAST_IMPL_LV1(uint16_t);

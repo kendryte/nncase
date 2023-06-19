@@ -109,4 +109,9 @@ public sealed record CompileOptions
     /// Gets or sets the std.
     /// </summary>
     public string ModelLayout { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets quant options.
+    /// </summary>
+    public ShapeBucketOptions ShapeBucketOptions { get; set; } = ShapeBucketOptions.Default;
 }

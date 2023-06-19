@@ -1,6 +1,10 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System.Collections.Immutable;
+using System.Linq;
+using System.Text.RegularExpressions;
+using DryIoc.ImTools;
 using Nncase.IR;
 using Nncase.Utilities;
 
@@ -53,7 +57,7 @@ public static class RuntimeResultAnalysis
     /// <param name="dir">dump data dir.</param>
     /// <param name="resultPath">resultPath for write cos.</param>
     /// <param name="ctor">call constructor.</param>
-    public static void MatmulRun(string dir, string resultPath, Func<IEnumerable<Expr>, Call> ctor)
+    public static void MatmulRun(string dir, string resultPath, Func<Expr[], Call> ctor)
     {
         var e = new TextDataExtractor();
         var data = e.MatmulExtract(dir);
@@ -61,12 +65,18 @@ public static class RuntimeResultAnalysis
         DumpUtility.WriteResult(resultPath, cosList);
     }
 
-    public static float[] Run(string fileName, string dir, Func<IEnumerable<Expr>, Call> f)
+    public static float[] Run(string fileName, string dir, Func<Expr[], Call> f)
     {
         // 1. get params
         var e = new TextDataExtractor();
         var number = DumpPathExtractor.GetCount(fileName);
-        var param = e.GetParams(dir, number).OrderBy(x => x.FileName.Last()).Select(x => x.Value);
+
+        // todo: param sort
+        var paramFiles = e.GetParams(dir, number);
+        var lhs = paramFiles.FindFirst(x => x.FileName.Contains("lhs", StringComparison.Ordinal));
+        var rhs = paramFiles.FindFirst(x => x.FileName.Contains("rhs", StringComparison.Ordinal));
+        var param = new[] { lhs, rhs }.OrderBy(x => x.FileName.Last()).Select(x => x.Value).ToArray();
+
         var expect = e.GetComputeResult(dir, number);
 
         // 2. construct call
@@ -78,5 +88,27 @@ public static class RuntimeResultAnalysis
         return cos;
     }
 
-    public static Call MakeCall(IEnumerable<IValue> parameters, Func<IEnumerable<Expr>, Call> f) => f(parameters.Select(Const.FromValue));
+    private static Call MakeCall(IValue[] parameters, Func<Expr[], Call> f) =>
+        f(parameters.Select(Const.FromValue).ToArray());
+}
+
+public static class ResultFinder
+{
+    public static OriginValue? FindFirstNanResult(string dir) =>
+        FindFirst(
+            dir,
+            v => v.Value.AsTensor().ToArray<float>().Contains(float.NaN));
+
+    public static OriginValue? FindFirstAll(string dir, Func<float, bool> fn) =>
+        FindFirst(
+            dir,
+            v => v.Value.AsTensor().ToArray<float>().All(f => fn(f)));
+
+    public static OriginValue? FindFirstAllZero(string dir) => FindFirstAll(dir, f => f == 0);
+
+    public static OriginValue? FindFirstAllNaN(string dir) => FindFirstAll(dir, f => float.IsNaN(f));
+
+    private static OriginValue? FindFirst(string dir, Func<OriginValue, bool> f) => new TextDataExtractor()
+        .ExtractValues(dir, DumpPathExtractor.IsResultFile)
+        .FindFirst(f);
 }

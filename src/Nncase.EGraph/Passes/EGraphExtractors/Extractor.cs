@@ -145,6 +145,11 @@ internal class Extractor : IExtractor
 
     private Function Visit(ENode enode, Function func, IRArray<Expr> children)
     {
+        if (children.Count == 0)
+        {
+            return func;
+        }
+
         var body = children[0];
         return func.With(body: body);
     }
@@ -156,7 +161,7 @@ internal class Extractor : IExtractor
 
     private IR.If Visit(ENode enode, IR.If @if, IRArray<Expr> children)
     {
-        return @if.With(condition: children[0], then: children[1], @else: children[2]);
+        return @if.With(condition: children[^3], then: children[^2], @else: children[^1], paramList: children[..^3].ToArray());
     }
 
     private Call Visit(ENode enode, Call call, IRArray<Expr> children)
