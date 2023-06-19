@@ -22,17 +22,18 @@
 //#include <nncase/runtime/stackvm/opcode.h>
 //#include <ortki/operators.h>
 //
-//using namespace nncase;
-//using namespace nncase::runtime;
-//using namespace ortki;
+// using namespace nncase;
+// using namespace nncase::runtime;
+// using namespace ortki;
 //
-//class BatchToSpaceTest
+// class BatchToSpaceTest
 //    : public KernelTest,
 //      public ::testing::TestWithParam<
 //          std::tuple<nncase::typecode_t, dims_t, dims_t, dims_t, dims_t>> {
 //  public:
 //    void SetUp() override {
-//        auto &&[typecode, input_shape, expect_shape, shape_shape, crops_shape] =
+//        auto &&[typecode, input_shape, expect_shape, shape_shape, crops_shape]
+//        =
 //            GetParam();
 //
 //        input = hrt::create(typecode, input_shape,
@@ -55,14 +56,14 @@
 //    runtime_tensor crops;
 //};
 //
-//INSTANTIATE_TEST_SUITE_P(BatchToSpace, BatchToSpaceTest,
+// INSTANTIATE_TEST_SUITE_P(BatchToSpace, BatchToSpaceTest,
 //                         testing::Combine(testing::Values(dt_float32),
 //                                          testing::Values(dims_t{4, 1, 2, 2}),
 //                                          testing::Values(dims_t{1, 1, 4, 4}),
 //                                          testing::Values(dims_t{2}),
 //                                          testing::Values(dims_t{2, 2})));
 //
-//TEST_P(BatchToSpaceTest, BatchToSpace) {
+// TEST_P(BatchToSpaceTest, BatchToSpace) {
 //
 //    // expected
 //    float_t b[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
@@ -73,7 +74,8 @@
 //                        .expect("create tensor failed");
 //
 //    //    // actual
-//    //    float_t a[] = {1, 3, 9, 11, 2, 4, 10, 12, 5, 7, 13, 15, 6, 8, 14, 16};
+//    //    float_t a[] = {1, 3, 9, 11, 2, 4, 10, 12, 5, 7, 13, 15, 6, 8, 14,
+//    16};
 //    //    // auto a_ptr = a;
 //    //    auto input_tensor = hrt::create(input.datatype(), input.shape(),
 //    //                                    {reinterpret_cast<gsl::byte *>(a),
@@ -83,7 +85,8 @@
 //    //    int64_t crops[] = {0, 0, 0, 0};
 //    //    // auto crops_ptr = crops;
 //    //    auto crops_tensor = hrt::create(dt_int64, {2, 2},
-//    //                                    {reinterpret_cast<gsl::byte *>(crops),
+//    //                                    {reinterpret_cast<gsl::byte
+//    *>(crops),
 //    //                                    32}, true,
 //    //                                    host_runtime_tensor::pool_cpu_only)
 //    //                            .expect("create tensor failed");
@@ -91,13 +94,14 @@
 //    //                      input_tensor.impl(), shape.impl(),
 //    //                      crops_tensor.impl()) .expect("batch_to_space
 //    //                      failed");
-//    //    runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
+//    //    runtime_tensor actual(output.as<tensor>().expect("as tensor
+//    failed"));
 //
 //    // compare
 //    EXPECT_TRUE(is_same_tensor(expected, expected));
 //}
 //
-//int main(int argc, char *argv[]) {
+// int main(int argc, char *argv[]) {
 //    ::testing::InitGoogleTest(&argc, argv);
 //    return RUN_ALL_TESTS();
 //}

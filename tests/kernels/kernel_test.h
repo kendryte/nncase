@@ -255,28 +255,29 @@ class KernelTest {
         return make_tensor(buffer, ort_type, shape, shape_size);
     }
 
-//    template <typename T> double dot(const T &v1, const T &v2, size_t size) {
-//        double ret = 0.f;
-//        for (size_t i = 0; i < size; i++) {
-//            ret += v1[i] * v2[i];
-//        }
-//
-//        return ret;
-//    }
-//
-//    template <typename T> double cosine(const T &v1, const T &v2, size_t size) {
-//        auto mapped1 =
-//            std::move(runtime::hrt::map(v1, runtime::map_read).unwrap());
-//        void *buffer1 = reinterpret_cast<void *>(mapped1.buffer().data());
-//        auto mapped2 =
-//            std::move(runtime::hrt::map(v2, runtime::map_read).unwrap());
-//        void *buffer2 = reinterpret_cast<void *>(mapped2.buffer().data());
-//        return dot(buffer1, buffer2, size) /
-//               ((sqrt(dot(buffer1, buffer1, size)) *
-//                 sqrt(dot(buffer2, buffer2, size))));
-//    }
-    bool cosine(runtime::runtime_tensor &lhs,
-                runtime::runtime_tensor &rhs) {
+    //    template <typename T> double dot(const T &v1, const T &v2, size_t
+    //    size) {
+    //        double ret = 0.f;
+    //        for (size_t i = 0; i < size; i++) {
+    //            ret += v1[i] * v2[i];
+    //        }
+    //
+    //        return ret;
+    //    }
+    //
+    //    template <typename T> double cosine(const T &v1, const T &v2, size_t
+    //    size) {
+    //        auto mapped1 =
+    //            std::move(runtime::hrt::map(v1, runtime::map_read).unwrap());
+    //        void *buffer1 = reinterpret_cast<void *>(mapped1.buffer().data());
+    //        auto mapped2 =
+    //            std::move(runtime::hrt::map(v2, runtime::map_read).unwrap());
+    //        void *buffer2 = reinterpret_cast<void *>(mapped2.buffer().data());
+    //        return dot(buffer1, buffer2, size) /
+    //               ((sqrt(dot(buffer1, buffer1, size)) *
+    //                 sqrt(dot(buffer2, buffer2, size))));
+    //    }
+    bool cosine(runtime::runtime_tensor &lhs, runtime::runtime_tensor &rhs) {
         if (lhs.shape() != rhs.shape()) {
             return false;
         }
