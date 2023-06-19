@@ -49,18 +49,13 @@ class UniformLikeTest : public KernelTest,
     runtime_tensor rhs;
 };
 
-INSTANTIATE_TEST_SUITE_P(UniformLike, UniformLikeTest,
-                         testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 3, 16, 16},
-                                                          dims_t { 3, 16, 16
-                                                          }, dims_t { 16, 16 },
-                                                          dims_t { 16 },
-                                                          dims_t{1}),
-                                          testing::Values(dims_t{1, 3, 16, 16},
-                                                          dims_t { 3, 16, 16
-                                                          }, dims_t { 16, 16 },
-                                                          dims_t { 16 },
-                                                          dims_t{1})));
+INSTANTIATE_TEST_SUITE_P(
+    UniformLike, UniformLikeTest,
+    testing::Combine(testing::Values(dt_float32),
+                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{3, 16, 16},
+                                     dims_t{16, 16}, dims_t{16}, dims_t{1}),
+                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{3, 16, 16},
+                                     dims_t{16, 16}, dims_t{16}, dims_t{1})));
 
 TEST_P(UniformLikeTest, UniformLike) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
