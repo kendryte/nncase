@@ -16,6 +16,7 @@
 #include "model.h"
 #include "result.h"
 #include "runtime_function.h"
+#include "stream_reader.h"
 #include <nncase/kernels/kernel_context.h>
 
 BEGIN_NS_NNCASE_RUNTIME
@@ -48,6 +49,8 @@ class NNCASE_API runtime_module {
     runtime_module &operator=(const runtime_module &) = delete;
 
     result<void> initialize(gsl::span<const gsl::byte> payload,
+                            interpreter &interp) noexcept;
+    result<void> initialize(stream_reader &reader,
                             interpreter &interp) noexcept;
     const module_kind_t &kind() const noexcept;
 

@@ -22,9 +22,10 @@ using namespace nncase;
 using namespace nncase::runtime;
 
 namespace {
-class runtime_module_init_context_impl : public runtime_module_init_context {
+class runtime_module_init_context_span_impl
+    : public runtime_module_init_context {
   public:
-    runtime_module_init_context_impl(
+    runtime_module_init_context_span_impl(
         const module_header &header, interpreter &interp,
         gsl::span<const gsl::byte> sections) noexcept
         : header_(header), interp_(interp), sections_(sections) {}
@@ -70,6 +71,35 @@ result<void> runtime_module::initialize(gsl::span<const gsl::byte> payload,
                                         interpreter &interp) noexcept {
     interp_ = &interp;
     span_reader reader(payload);
+    reader.read(header_);
+
+    try {
+        functions_.resize(header_.functions);
+    } catch (...) {
+        return err(std::errc::not_enough_memory);
+    }
+
+    span_reader func_reader(read_functions(reader, header_.functions));
+    runtime_module_init_context_span_impl init_context(
+        header_, interp, read_sections(reader, header_.sections));
+    try_(initialize_before_functions(init_context));
+
+    for (size_t i = 0; i < header_.functions; i++) {
+        auto func_size =
+            func_reader.peek_with_offset<decltype(function_header::size)>(
+                offsetof(function_header, size));
+        auto payload = func_reader.read_span(func_size);
+        try_var(func, create_function());
+        try_(func->initialize(payload, init_context));
+        functions_[i] = std::move(func);
+    }
+
+    return initialize_after_functions(init_context);
+}
+
+result<void> runtime_module::initialize(stream_reader &reader,
+                                        interpreter &interp) noexcept {
+    interp_ = &interp;
     reader.read(header_);
 
     try {

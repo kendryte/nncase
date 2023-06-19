@@ -14,46 +14,33 @@
  */
 #include <cassert>
 #include <iostream>
+#include <nncase/runtime/char_array_buffer.h>
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/error.h>
 #include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/runtime_loader.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/span_reader.h>
+#include <nncase/runtime/stream_reader.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
 
-interpreter::interpreter() noexcept
-    : model_data_(nullptr), entry_function_(nullptr) {}
+interpreter::interpreter() noexcept : entry_function_(nullptr) {}
 
 result<void> interpreter::load_model(gsl::span<const gsl::byte> buffer,
                                      bool copy_buffer) noexcept {
-    entry_function_ = nullptr;
     if (copy_buffer) {
-        model_data_ = std::make_unique<gsl::byte[]>(buffer.size());
-        memcpy(model_data_.get(), buffer.data(), buffer.size_bytes());
-        buffer = {model_data_.get(), buffer.size()};
-    } else {
-        model_data_.reset();
+        char_array_buffer array_buffer(buffer.as_span<const char>());
+        std::istream stream(&array_buffer);
+        return load_model(stream);
     }
 
     span_reader reader(buffer);
-    auto header = reader.get_ref<model_header>();
-    // 1. Validate model
-    if (header->identifier != MODEL_IDENTIFIER)
-        return err(nncase_errc::invalid_model_indentifier);
-    if (header->version != MODEL_VERSION)
-        return err(nncase_errc::invalid_model_version);
+    auto &header = *reader.get_ref<model_header>();
+    try_(initialize_model(header));
 
-    // 2. Load modules
-    try {
-        modules_.resize(header->modules);
-    } catch (...) {
-        return err(std::errc::not_enough_memory);
-    }
-
-    for (size_t i = 0; i < header->modules; i++) {
+    for (size_t i = 0; i < header.modules; i++) {
         auto mod_type = reader.peek_with_offset<decltype(module_header::kind)>(
             offsetof(module_header, kind));
         auto mod_size = reader.peek_with_offset<decltype(module_header::size)>(
@@ -62,14 +49,59 @@ result<void> interpreter::load_model(gsl::span<const gsl::byte> buffer,
         try_var(rt_module, runtime_module::create(mod_type));
 
         try_(rt_module->initialize(payload, *this));
-        if (header->entry_module != MODEL_HAS_NO_ENTRY) {
-            if (i == header->entry_module) {
+        if (header.entry_module != MODEL_HAS_NO_ENTRY) {
+            if (i == header.entry_module) {
                 try_set(entry_function_,
-                        rt_module->find_function_by_id(header->entry_function));
+                        rt_module->find_function_by_id(header.entry_function));
             }
         }
 
         modules_[i] = std::move(rt_module);
+    }
+
+    return ok();
+}
+
+result<void> interpreter::load_model(std::istream &stream) noexcept {
+    stream_reader reader(stream);
+    auto header = reader.read<model_header>();
+    try_(initialize_model(header));
+
+    std::streampos module_pos = reader.tell();
+    for (size_t i = 0; i < header.modules; i++) {
+        auto mod_header = reader.read<module_header>();
+        try_var(rt_module, runtime_module::create(mod_header.kind));
+
+        reader.seek(module_pos);
+        try_(rt_module->initialize(reader, *this));
+        if (header.entry_module != MODEL_HAS_NO_ENTRY) {
+            if (i == header.entry_module) {
+                try_set(entry_function_,
+                        rt_module->find_function_by_id(header.entry_function));
+            }
+        }
+
+        modules_[i] = std::move(rt_module);
+        module_pos += mod_header.size;
+    }
+
+    return ok();
+}
+
+result<void>
+interpreter::initialize_model(const model_header &header) noexcept {
+    entry_function_ = nullptr;
+    // 1. Validate model
+    if (header.identifier != MODEL_IDENTIFIER)
+        return err(nncase_errc::invalid_model_indentifier);
+    if (header.version != MODEL_VERSION)
+        return err(nncase_errc::invalid_model_version);
+
+    // 2. Load modules
+    try {
+        modules_.resize(header.modules);
+    } catch (...) {
+        return err(std::errc::not_enough_memory);
     }
 
     return ok();
