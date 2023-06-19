@@ -19,11 +19,13 @@ internal sealed class EGraphCostEvaluator
     private readonly Dictionary<EClass, Cost> _eclassCosts = new();
     private readonly HashSet<EClass> _allEclasses = new();
     private readonly IBaseFuncCostEvaluator? _baseFuncCostEvaluator;
+    private readonly bool _accumulate;
     private bool _changed;
 
-    public EGraphCostEvaluator(EClass root, IBaseFuncCostEvaluator? basefunc_cost_evaluator)
+    public EGraphCostEvaluator(EClass root, IBaseFuncCostEvaluator? basefunc_cost_evaluator, bool accumulate = true)
     {
         _root = root;
+        _accumulate = accumulate;
         _baseFuncCostEvaluator = basefunc_cost_evaluator;
         PopulateAllEclasses(_root);
     }
@@ -133,17 +135,17 @@ internal sealed class EGraphCostEvaluator
 
     private Cost? Visit(ENode enode, IR.Tuple tuple)
     {
-        return Visit(enode, costs => costs.Sum());
+        return Visit(enode, costs => _accumulate ? costs.Sum() : Cost.Zero);
     }
 
     private Cost? Visit(ENode enode, If @if)
     {
-        return Visit(enode, cost => cost[^2] + cost[^1]);
+        return Visit(enode, cost => _accumulate ? cost[^3] + cost[^2] + cost[^1] : Cost.Zero);
     }
 
     private Cost? Visit(ENode enode, Marker marker)
     {
-        return Visit(enode, costs => costs[0]);
+        return Visit(enode, costs => _accumulate ? costs[0] : Cost.Zero);
     }
 
     private Cost? Visit(ENode enode, None none)
@@ -176,7 +178,7 @@ internal sealed class EGraphCostEvaluator
                 }
             }
 
-            return UpdateCost(enode, cost == null ? null : cost + costs.Sum());
+            return UpdateCost(enode, cost == null ? null : (_accumulate ? cost + costs.Sum() : cost));
         });
     }
 
@@ -275,44 +277,44 @@ internal sealed class EGraphCostEvaluator
         var cost = costGetter(costs);
         return UpdateCost(enode, cost);
     }
+}
 
-    private sealed class EGraphOpCostEvaluateContext : ICostEvaluateContext
+internal sealed class EGraphOpCostEvaluateContext : ICostEvaluateContext
+{
+    private readonly IRType? _returnType;
+    private readonly IRType?[] _argumentTypes;
+    private readonly EClass[] _arguments;
+
+    public EGraphOpCostEvaluateContext(IRType? returnType, IRType?[] argumentTypes, EClass[] arguments)
     {
-        private readonly IRType? _returnType;
-        private readonly IRType?[] _argumentTypes;
-        private readonly EClass[] _arguments;
+        _returnType = returnType;
+        _argumentTypes = argumentTypes;
+        _arguments = arguments;
+    }
 
-        public EGraphOpCostEvaluateContext(IRType? returnType, IRType?[] argumentTypes, EClass[] arguments)
-        {
-            _returnType = returnType;
-            _argumentTypes = argumentTypes;
-            _arguments = arguments;
-        }
+    public T GetArgument<T>(Op op, ParameterInfo parameter)
+      where T : BaseFunction
+    {
+        System.Diagnostics.Trace.Assert(_arguments[parameter.Index].Nodes.Count == 1);
+        return (T)_arguments[parameter.Index].Nodes[0].Expr;
+    }
 
-        public T GetArgument<T>(Op op, ParameterInfo parameter)
-          where T : BaseFunction
+    public T GetArgumentType<T>(Op op, ParameterInfo parameter)
+        where T : IRType
+    {
+        if (op.GetType() == parameter.OwnerType)
         {
-            System.Diagnostics.Trace.Assert(_arguments[parameter.Index].Nodes.Count == 1);
-            return (T)_arguments[parameter.Index].Nodes[0].Expr;
+            return (T?)_argumentTypes[parameter.Index] ?? throw new InvalidOperationException("Run type infer first.");
         }
+        else
+        {
+            throw new ArgumentOutOfRangeException($"Operator {op} doesn't have parameter: {parameter.Name}.");
+        }
+    }
 
-        public T GetArgumentType<T>(Op op, ParameterInfo parameter)
-            where T : IRType
-        {
-            if (op.GetType() == parameter.OwnerType)
-            {
-                return (T?)_argumentTypes[parameter.Index] ?? throw new InvalidOperationException("Run type infer first.");
-            }
-            else
-            {
-                throw new ArgumentOutOfRangeException($"Operator {op} doesn't have parameter: {parameter.Name}.");
-            }
-        }
-
-        public T GetReturnType<T>()
-            where T : IRType
-        {
-            return (T?)_returnType ?? throw new InvalidOperationException("Run type infer first.");
-        }
+    public T GetReturnType<T>()
+        where T : IRType
+    {
+        return (T?)_returnType ?? throw new InvalidOperationException("Run type infer first.");
     }
 }
