@@ -125,7 +125,7 @@ jobs:
 
    - name: Configure CMake
      run: |
-       conan install . -if build --build=missing -s build_type=${{matrix.config.buildType}} --profile:host=toolchains/riscv64-unknown-linux.profile.jinja --profile:build=default -o runtime=True -o python=False -o tests=True -s compiler.cppstd=17
+       conan install . -if build --build=missing -s build_type=${{matrix.config.buildType}} --profile:host=toolchains/riscv64-unknown-linux.profile.jinja --profile:build=default -o runtime=True -o python=False -o tests=True -s compiler.cppstd=17 -e CONAN_CMAKE_SYSTEM_PROCESSOR=riscv64
 
    - name: Build & Install
      run: |
