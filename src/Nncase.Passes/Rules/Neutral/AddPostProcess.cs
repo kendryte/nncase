@@ -44,7 +44,6 @@ public sealed class AddPostProcess : ModulePass
 
         if (preProcess && modelLayout != outputLayout)
         {
-            // Expr newOutput = entry.Body;
             var newOutput = outputLayout switch
             {
                 "NHWC" when modelLayout == "NCHW" => Transpose(entry.Body, new[] { 0, 2, 3, 1 }),
