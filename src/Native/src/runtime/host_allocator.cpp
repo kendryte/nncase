@@ -84,7 +84,7 @@ class host_buffer_allocator : public buffer_allocator {
             return err(std::errc::not_enough_memory);
         return ok<buffer_t>(object_t<host_buffer_impl>(
             std::in_place, data, bytes,
-            []([[maybe_unused]]size_t s, gsl::byte *p) {
+            []([[maybe_unused]] size_t s, gsl::byte *p) {
                 delete[] p;
 #ifdef DUMP_MEM
                 if (s != 0) {
