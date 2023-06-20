@@ -23,7 +23,7 @@ using namespace nncase::runtime;
 #include <iostream>
 static uint64_t used_mem = 0;
 static uint64_t max_mem = 0;
-static std::unordered_map<gsl::byte*, size_t> mem_info;
+static std::unordered_map<gsl::byte *, size_t> mem_info;
 #endif
 namespace {
 class host_buffer_impl : public host_buffer_node {
@@ -90,11 +90,10 @@ class host_buffer_allocator : public buffer_allocator {
                 if (max_mem < used_mem)
                     max_mem = used_mem;
                 auto s = mem_info[p];
-                std::cout
-                    << "[Used_mem]:" << std::setw(16) << std::setfill(' ')
-                    << used_mem << "\t[deleter ]:" << std::setw(16)
-                    << std::setfill(' ') << s << "\t[Max_mem]: " << max_mem
-                    << std::endl;
+                std::cout << "[Used_mem]:" << std::setw(16) << std::setfill(' ')
+                          << used_mem << "\t[deleter ]:" << std::setw(16)
+                          << std::setfill(' ') << s
+                          << "\t[Max_mem]: " << max_mem << std::endl;
                 used_mem -= s;
                 mem_info.erase(p);
 #endif
@@ -107,8 +106,8 @@ class host_buffer_allocator : public buffer_allocator {
            [[maybe_unused]] const buffer_attach_options &options) override {
         return ok<buffer_t>(object_t<host_buffer_impl>(
             std::in_place, data.data(), data.size_bytes(),
-            []([[maybe_unused]] gsl::byte *p) {},
-            options.physical_address, *this, host_sync_status_t::valid));
+            []([[maybe_unused]] gsl::byte *p) {}, options.physical_address,
+            *this, host_sync_status_t::valid));
     }
 };
 
