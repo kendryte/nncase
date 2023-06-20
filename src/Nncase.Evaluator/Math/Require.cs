@@ -15,7 +15,7 @@ namespace Nncase.Evaluator.Math;
 [PatternMatch.PatternFunctionalGenerator]
 [TypeInferGenerator]
 [EvaluatorGenerator]
-public partial class RequireEvaluator : IEvaluator<Require>, ITypeInferencer<Require>, IOpPrinter<Require>
+public partial class RequireEvaluator : IEvaluator<Require>, ITypeInferencer<Require>, IOpPrinter<Require>, ICostEvaluator<Require>, IShapeEvaluator<Require>
 {
     /// <inheritdoc/>
     public string Visit(IIRPrinterContext context, Require target, bool iLmode)
@@ -24,6 +24,17 @@ public partial class RequireEvaluator : IEvaluator<Require>, ITypeInferencer<Req
         var value = context.GetArgument(target, Require.Value);
         return $"IR.F.Math.Require({condition}, {value})";
     }
+
+    public Cost Visit(ICostEvaluateContext context, Require target)
+    {
+        return new()
+        {
+            [CostFactorNames.CPUCycles] = 1,
+        };
+    }
+
+    public Expr Visit(IShapeEvaluateContext context, Require target) =>
+        context.GetArgumentShape(target, Require.Value);
 
     private IValue Visit(bool predicate, IValue value, Require target)
     {

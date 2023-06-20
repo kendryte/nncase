@@ -3,11 +3,16 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.Diagnostics;
 using Nncase.IR;
+using Nncase.IR.Tensors;
 using Nncase.Runtime.StackVM;
+using Nncase.Utilities;
+using static Nncase.CodeGen.CodeGenDumper;
 
 namespace Nncase.CodeGen.StackVM;
 
@@ -41,60 +46,121 @@ internal class StackVMFunctionBuilder : FunctionBuilder
     protected override void WriteText()
     {
         // 1. Assign ref counts
-        foreach (var snippet in _context.TextSnippets)
+        foreach (var basicBlock in _context.BasicBlocks)
         {
-            snippet.RefCount = snippet.UseCount;
+            foreach (var snippet in basicBlock.TextSnippets)
+            {
+                snippet.RefCount = snippet.UseCount;
+            }
         }
 
-        // 2. Gen code
-        foreach (var snippet in _context.TextSnippets)
+        var localSet = new HashSet<int>();
+        var sourceMap = new List<(Expr, (long, long))>();
+        Var Tag(string name) => new(name, AnyType.Default);
+        int i = 1;
+        foreach (var basicBlock in _context.BasicBlocks)
         {
-            SymbolAddrs.Add(snippet.BeginSymbol, _textEmitter.Position);
-
-            // 2.1 Load inputs
-            foreach (var inputSnippet in snippet.InputSnippets)
+            sourceMap.Add((Tag("Begin"), (0, 0)));
+            foreach (var snippet in basicBlock.TextSnippets)
             {
-                // in locals
-                if (inputSnippet.OutputInLocal)
+                if (snippet.Expr is Call { Target: Reshape } snippetCall && snippetCall.Arguments[0] is Call gatherCall && gatherCall.Target is Gather)
                 {
-                    var localId = _snippetLocals[inputSnippet];
-                    _textEmitter.Ldlocal(localId);
+                    i++;
+                }
 
-                    // last usage, set the local to null
-                    if (--inputSnippet.RefCount == 0)
+                SymbolAddrs.Add(snippet.BeginSymbol, _textEmitter.Position);
+                var begin = _textEmitter.Position;
+
+                // end of if
+                if (basicBlock.Prev.Count > 1 && _context.AllocInfo.TryGetValue(snippet, out var uses))
+                {
+                    sourceMap.Add((Tag("endOfIf"), (0, 0)));
+                    foreach (var inputSnippet in uses)
                     {
-                        _textEmitter.LdNull();
-                        _textEmitter.Stlocal(localId);
-                        _localsAllocator.Free(localId);
+                        var localId = _snippetLocals[inputSnippet];
+                        RefCountReduce(inputSnippet, localId);
+
+                        if (inputSnippet.RefCount == 0)
+                        {
+                            _snippetLocals.Remove(inputSnippet);
+                            localSet.Remove(localId);
+                            sourceMap.Add((Tag($"release {ToStr(inputSnippet.Expr)}"), (0, 0)));
+                        }
+                    }
+
+                    Debug.Assert(snippet.InputSnippets.Count == 0, "snippet end of if is should be 0 input");
+                }
+
+                // 2.1 Load inputs
+                foreach (var inputSnippet in snippet.InputSnippets)
+                {
+                    // in locals
+                    if (inputSnippet.OutputInLocal)
+                    {
+                        var localId = _snippetLocals[inputSnippet];
+                        _textEmitter.Ldlocal(localId);
+
+                        if (CodegenUtility.NormalReduceCount(snippet, inputSnippet))
+                        {
+                            var beforePos = _textEmitter.Position;
+                            RefCountReduce(inputSnippet, localId);
+                            if (inputSnippet.RefCount == 0)
+                            {
+                                localSet.Remove(localId);
+                                sourceMap.Add((Tag($"release {ToStr(inputSnippet.Expr)}"), (beforePos, _textEmitter.Position)));
+                                _snippetLocals.Remove(inputSnippet);
+                            }
+                        }
                     }
                 }
+
+                // 2.2 Write body
+                var bodyPosition = _textEmitter.Position;
+                foreach (var refer in snippet.SymbolRefs)
+                {
+                    SymbolRefs.Add(refer with { Position = refer.Position + bodyPosition });
+                }
+
+                foreach (var refer in snippet.FunctionRefs)
+                {
+                    FunctionRefs.Add(refer with { Position = refer.Position + bodyPosition });
+                }
+
+                snippet.Writer.Flush();
+                TextWriter.Write(snippet.Text.ToArray());
+
+                // 2.3 Store output
+                // in locals
+                if (snippet.OutputInLocal)
+                {
+                    var localId = _localsAllocator.Allocate();
+                    localSet.Add(localId);
+                    _snippetLocals.Add(snippet, localId);
+                    _textEmitter.Stlocal(localId);
+                }
+
+                SymbolAddrs.Add(snippet.EndSymbol, _textEmitter.Position);
+                var end = _textEmitter.Position;
+                sourceMap.Add((snippet.Expr, (begin, end)));
             }
 
-            // 2.2 Write body
-            var bodyPosition = _textEmitter.Position;
-            foreach (var refer in snippet.SymbolRefs)
-            {
-                SymbolRefs.Add(refer with { Position = refer.Position + bodyPosition });
-            }
+            sourceMap.Add((Tag("End"), (0, 0)));
+        }
 
-            foreach (var refer in snippet.FunctionRefs)
-            {
-                FunctionRefs.Add(refer with { Position = refer.Position + bodyPosition });
-            }
+        if (DumpScope.Current.IsEnabled(DumpFlags.CodeGen))
+        {
+            WriteDebugInfo(Id, 0, sourceMap);
+        }
+    }
 
-            snippet.Writer.Flush();
-            TextWriter.Write(snippet.Text.ToArray());
-
-            // 2.3 Store output
-            // in locals
-            if (snippet.OutputInLocal)
-            {
-                var localId = _localsAllocator.Allocate();
-                _snippetLocals.Add(snippet, localId);
-                _textEmitter.Stlocal(localId);
-            }
-
-            SymbolAddrs.Add(snippet.EndSymbol, _textEmitter.Position);
+    private void RefCountReduce(TextSnippet inputSnippet, ushort localId)
+    {
+        // last usage, set the local to null
+        if (--inputSnippet.RefCount == 0)
+        {
+            _textEmitter.LdNull();
+            _textEmitter.Stlocal(localId);
+            _localsAllocator.Free(localId);
         }
     }
 

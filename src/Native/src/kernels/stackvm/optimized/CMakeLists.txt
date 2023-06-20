@@ -22,6 +22,7 @@ set(SRCS concat.cpp
          gather_nd.cpp
          quantize.cpp
          onehot.cpp
+         transpose.cpp
 )
 
 function(_TARGET_ARCH_FILES)
