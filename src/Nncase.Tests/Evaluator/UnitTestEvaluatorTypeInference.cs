@@ -38,25 +38,19 @@ public class UnitTestEvaluatorTypeInference
         var expect3 = thenType3;
         Assert.Equal(actual3, expect3);
 
-        var thenType4 = new TensorType(DataTypes.Float32, new Shape(1, 3, 8));
-        var elseType4 = new TensorType(DataTypes.Float32, new Shape(1, 3, 16, 16));
-        var actual4 = TypeInference.CommonType(thenType4, elseType4);
-        var expect4 = new InvalidType($"Inputs Shape of if should be same Rank, then: {thenType4.Shape.Rank}, else: {elseType4.Shape.Rank}");
-        Assert.Equal(actual4, expect4);
-
         var typeArray1 = new List<IRType>();
         typeArray1.Add(DataTypes.Int8);
         typeArray1.Add(DataTypes.Float16);
         var tupleType1 = new TupleType(typeArray1);
-        var actual5 = TypeInference.CommonType(tupleType1, tupleType1);
-        Assert.Equal(tupleType1, actual5);
+        var actual4 = TypeInference.CommonType(tupleType1, tupleType1);
+        Assert.Equal(tupleType1, actual4);
 
         var typeArray2 = new List<IRType>();
         typeArray2.Add(DataTypes.Int8);
         var tupleType2 = new TupleType(typeArray2);
-        var actual6 = TypeInference.CommonType(tupleType1, tupleType2);
-        var expect6 = new InvalidType($"tuple Inputs of if should be same count, then: {tupleType1.Count}, else: {@tupleType2.Count}");
-        Assert.Equal(expect6, actual6);
+        var actual5 = TypeInference.CommonType(tupleType1, tupleType2);
+        var expect5 = new InvalidType($"tuple Inputs of if should be same count, then: {tupleType1.Count}, else: {@tupleType2.Count}");
+        Assert.Equal(expect5, actual5);
 
         var actual7 = TypeInference.CommonType(tupleType1, thenType3);
         var expect7 = new InvalidType($"Inputs of if should be same IRType Kind, but then:{tupleType1}, else: {thenType3}");

@@ -10,7 +10,7 @@ namespace Nncase.IR;
 /// <summary>
 /// Fusion expression.
 /// </summary>
-public sealed class Fusion : BaseFunction
+public class Fusion : BaseFunction
 {
     private static int _globalFusionIndex;
 

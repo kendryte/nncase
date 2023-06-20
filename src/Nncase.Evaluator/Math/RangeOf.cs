@@ -14,7 +14,7 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Evaluator for <see cref="RangeOf"/>.
 /// </summary>
-public class RangeOfEvaluator : IEvaluator<RangeOf>, ITypeInferencer<RangeOf>, ICostEvaluator<RangeOf>
+public class RangeOfEvaluator : IEvaluator<RangeOf>, ITypeInferencer<RangeOf>, ICostEvaluator<RangeOf>, IShapeEvaluator<RangeOf>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, RangeOf target)
@@ -54,4 +54,6 @@ public class RangeOfEvaluator : IEvaluator<RangeOf>, ITypeInferencer<RangeOf>, I
             [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(inputType, 2),
         };
     }
+
+    public Expr Visit(IShapeEvaluateContext context, RangeOf target) => context.GetArgumentShape(target, RangeOf.Input);
 }

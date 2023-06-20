@@ -55,7 +55,7 @@ def _make_module(op, in_type, in_shape_0, in_shape_1):
 
     # output
     x = np.random.randn(*in_shape_0)
-    y = np.random.randn(*in_shape_1)
+    y = np.random.randn(*in_shape_1) if op != 'Pow' else 2
     output_shape = np.add(x, y).shape
     output = helper.make_tensor_value_info('output', in_type, output_shape)
     outputs.append('output')

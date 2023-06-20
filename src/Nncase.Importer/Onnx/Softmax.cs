@@ -26,7 +26,7 @@ namespace Nncase.Importer
             var axis = (int)GetIntAttribute(op, "axis", 1);
             var inShape = ShapeOf(input);
             Expr axisExpr = axis < 0
-                ? axis + Rank(input)
+                ? axis + Cast(Rank(input), DataTypes.Int32)
                 : Tensor.From<int>(new[] { axis });
             var first = Prod(Slice(inShape, new[] { 0 }, axisExpr, 1));
             var second = Prod(Slice(inShape, axisExpr, Rank(input), 1));

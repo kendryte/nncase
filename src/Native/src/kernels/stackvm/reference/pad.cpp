@@ -80,16 +80,6 @@ pad_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
          gsl::span<const size_t> out_strides, const paddings_t &paddings,
          pad_mode_t mode, T pad_value,
          NNCASE_UNUSED kernel_context &context) noexcept {
-    int sum = 0;
-    for (const auto &item : paddings) {
-        sum += item.sum();
-    }
-    if (sum == 0) {
-        auto out_size = compute_size(out_shape);
-        memcpy(output, input, out_size);
-        return ok();
-    }
-
     return apply(out_shape, [&](gsl::span<const size_t> index) -> result<void> {
         bool pad_element = false;
         auto in_index =
@@ -102,6 +92,83 @@ pad_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
         output[offset(out_strides, index)] = value;
         return ok();
     });
+}
+
+template <class T>
+void copy_data_v(T *src, T *dst, int blocks_in, int blocks_out, T value) {
+    for (int i = 0; i < blocks_in; ++i) {
+        dst[i] = src[i];
+    }
+    dst += blocks_in;
+    for (int i = 0; i < blocks_out - blocks_in; ++i) {
+        dst[i] = value;
+    }
+}
+template <class T> void set_data_v(T *dst, int len, T value) {
+    for (int i = 0; i < len; ++i) {
+        dst[i] = value;
+    }
+}
+
+template <class T>
+void pad_data2(T *in, T *out, int cl, int dl, int hl, int wl, int ch, int dh,
+               int hh, int wh, T value) {
+    (void)ch;
+    int blocks_in = wl;
+
+    int blocks_out = wh;
+
+    for (int c = 0; c < cl; ++c) {
+        for (int d = 0; d < dl; ++d) {
+            for (int h = 0; h < hl; ++h) {
+                int index_out = h + d * hh + c * dh * hh;
+                int index_in = c * hl * dl + d * hl + h;
+                T *inptr = in + index_in * blocks_in;
+                T *outptr = out + index_out * blocks_out;
+                copy_data_v(inptr, outptr, blocks_in, blocks_out, value);
+            }
+        }
+    }
+    for (int c = 0; c < ch; ++c) {
+        for (int d = 0; d < dh; ++d) {
+            for (int h = 0; h < hh; ++h) {
+                int index = h + d * hh + c * dh * hh;
+                T *outptr = out + index * blocks_out;
+                if (h >= hl || d >= dl || c >= cl) {
+                    set_data_v(outptr, blocks_out, value);
+                }
+            }
+        }
+    }
+}
+
+template <class T>
+void padding_impl_opt(T *in, T *out, gsl::span<const size_t> in_shape,
+                      gsl::span<const size_t> out_shape, T value) {
+    int cl, dl, hl, wl;
+    int ch, dh, hh, wh;
+    if (in_shape.size() == 3 ||
+        (in_shape.size() == 4 && in_shape[in_shape.size() - 1] == 1)) {
+        cl = 1;
+        dl = in_shape[0];
+        hl = in_shape[1];
+        wl = in_shape[2];
+        ch = 1;
+        dh = out_shape[0];
+        hh = out_shape[1];
+        wh = out_shape[2];
+    } else {
+        cl = in_shape[0];
+        dl = in_shape[1];
+        hl = in_shape[2];
+        wl = in_shape[3];
+        ch = out_shape[0];
+        dh = out_shape[1];
+        hh = out_shape[2];
+        wh = out_shape[3];
+    }
+
+    pad_data2(in, out, cl, dl, hl, wl, ch, dh, hh, wh, value);
 }
 
 template <class T>
@@ -140,35 +207,64 @@ result<void> nncase::kernels::stackvm::reference::pad(
     pad_mode_t mode, const gsl::byte *pad_value,
     kernel_context &context) noexcept {
     auto unit = runtime::get_bytes(type);
+    bool padding_before_is_zero =
+        std::all_of(paddings.begin(), paddings.end(),
+                    [](const padding &p) { return p.before == 0; }) &&
+        mode == pad_mode_t::constant && in_shape.size() >= 3;
+
     if (std::all_of(paddings.begin(), paddings.end(),
                     [](const padding &p) { return p.interior == 0; })) {
         auto out_shape = get_padded_shape(in_shape, paddings);
         switch (unit) {
         case 1:
-            return pad_impl(reinterpret_cast<const uint8_t *>(input),
-                            reinterpret_cast<uint8_t *>(output), in_shape,
-                            out_shape, in_strides, out_strides, paddings, mode,
-                            *IN_CAST(uint8_t, pad_value), context);
-
+            if (padding_before_is_zero) {
+                padding_impl_opt((int8_t *)input, (int8_t *)output, in_shape,
+                                 out_shape, *(int8_t *)pad_value);
+            } else {
+                return pad_impl(reinterpret_cast<const uint8_t *>(input),
+                                reinterpret_cast<uint8_t *>(output), in_shape,
+                                out_shape, in_strides, out_strides, paddings,
+                                mode, *IN_CAST(uint8_t, pad_value), context);
+            }
+            break;
         case 2:
-            return pad_impl(reinterpret_cast<const uint16_t *>(input),
-                            reinterpret_cast<uint16_t *>(output), in_shape,
-                            out_shape, in_strides, out_strides, paddings, mode,
-                            *IN_CAST(uint16_t, pad_value), context);
-
+            if (padding_before_is_zero) {
+                padding_impl_opt((int16_t *)input, (int16_t *)output, in_shape,
+                                 out_shape, *(int16_t *)pad_value);
+            } else {
+                return pad_impl(reinterpret_cast<const uint16_t *>(input),
+                                reinterpret_cast<uint16_t *>(output), in_shape,
+                                out_shape, in_strides, out_strides, paddings,
+                                mode, *IN_CAST(uint16_t, pad_value), context);
+            }
+            break;
         case 4:
-            return pad_impl(reinterpret_cast<const uint32_t *>(input),
-                            reinterpret_cast<uint32_t *>(output), in_shape,
-                            out_shape, in_strides, out_strides, paddings, mode,
-                            *IN_CAST(uint32_t, pad_value), context);
+            if (padding_before_is_zero) {
+                padding_impl_opt((int32_t *)input, (int32_t *)output, in_shape,
+                                 out_shape, *(int32_t *)pad_value);
+            } else {
+                return pad_impl(reinterpret_cast<const uint32_t *>(input),
+                                reinterpret_cast<uint32_t *>(output), in_shape,
+                                out_shape, in_strides, out_strides, paddings,
+                                mode, *IN_CAST(uint32_t, pad_value), context);
+            }
+            break;
         case 8:
-            return pad_impl(reinterpret_cast<const uint64_t *>(input),
-                            reinterpret_cast<uint64_t *>(output), in_shape,
-                            out_shape, in_strides, out_strides, paddings, mode,
-                            *IN_CAST(uint64_t, pad_value), context);
+            if (padding_before_is_zero) {
+                padding_impl_opt((int64_t *)input, (int64_t *)output, in_shape,
+                                 out_shape, *(int64_t *)pad_value);
+            } else {
+                return pad_impl(reinterpret_cast<const uint64_t *>(input),
+                                reinterpret_cast<uint64_t *>(output), in_shape,
+                                out_shape, in_strides, out_strides, paddings,
+                                mode, *IN_CAST(uint64_t, pad_value), context);
+            }
+            break;
         default:
             return err(std::errc::not_supported);
         }
+        return ok();
+
     } else {
         assert(mode == pad_mode_t::constant);
 

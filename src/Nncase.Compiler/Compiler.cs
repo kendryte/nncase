@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System.Security.AccessControl;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -15,7 +16,6 @@ using Nncase.Passes.Rules.Lower;
 using Nncase.Passes.Rules.Neutral;
 using Nncase.Passes.Transforms;
 using Nncase.Quantization;
-using Nncase.Utilities;
 
 namespace Nncase.Compiler;
 
@@ -89,6 +89,7 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FoldSwishPattern2>();
             p.Add<Passes.Rules.Neutral.FoldHardSwish1>();
             p.Add<Passes.Rules.Neutral.FoldHardSwish2>();
+            p.Add<Passes.Rules.Neutral.FoldHardSwish3>();
             p.Add<Passes.Rules.Neutral.FoldTwoSlices>();
             p.Add<Passes.Rules.Neutral.FocusFull>();
         });
@@ -151,14 +152,74 @@ internal class Compiler : ICompiler
         }
     }
 
+    public void RegisterShapeBucket(IPassManager p)
+    {
+        if (!_compileSession.CompileOptions.ShapeBucketOptions.Enable)
+        {
+            return;
+        }
+
+        p.AddWithName<DataflowPass>("ToFusion").Configure(c =>
+        {
+            c.Add<MatmulToFusion>();
+            c.Add<Conv2DToFusion>();
+            c.Add<Conv2DTransposeToFusion>();
+        });
+
+        p.AddWithName<DataflowPass>("MergeNextCall").Configure(c =>
+        {
+            c.Add<MergeNextCallToFusion>();
+            c.Add<MergeNextMarkerToFusion>();
+        });
+        p.AddWithName<DataflowPass>("MergePrevCall").Configure(c =>
+        {
+            c.Add<MergePrevCallToFusion>();
+        });
+
+        p.AddWithName<DataflowPass>("MergeMarker").Configure(c =>
+        {
+            c.Add<MergePrevMarkerToFusion>();
+        });
+
+        p.AddWithName<DataflowPass>("FusionBucket").Configure(c =>
+        {
+            c.Add<FusionBucket>();
+        });
+    }
+
+    public void ClearFixShape(IPassManager p)
+    {
+        if (!_compileSession.CompileOptions.ShapeBucketOptions.Enable)
+        {
+            return;
+        }
+
+        p.AddWithName<DataflowPass>("ClearFixShape").Configure(c => c.Add<FoldFixShape>());
+    }
+
     public async Task CompileAsync()
     {
         var target = _compileSession.Target;
         await RunPassAsync(p => TargetIndependentPass(p), "TargetIndependentPass");
-        await RunPassAsync(p => target.RegisterTargetDependentPass(p, _compileSession.CompileOptions), "TargetDependentPass");
+        await RunPassAsync(p => RegisterShapeBucket(p), "ShapeBucket");
+        await RunPassAsync(
+            p => _compileSession.Target.RegisterTargetInDependentPass(p, _compileSession.CompileOptions),
+            "TargetIndependtPass");
+        await RunPassAsync(
+            p => target.RegisterTargetDependentPass(p, _compileSession.CompileOptions),
+            "TargetDependentPass");
         await RunPassAsync(p => target.RegisterQuantizePass(p, _compileSession.CompileOptions), "QuantizePass");
-        await RunPassAsync(p => target.RegisterTargetDependentAfterQuantPass(p, _compileSession.CompileOptions), "TargetDependentAfterQuantPass");
-        await RunPassAsync(p => target.RegisterTargetDependentBeforeCodeGen(p, _compileSession.CompileOptions), "TargetDependentBeforeCodeGen");
+        await RunPassAsync(
+            p => target.RegisterTargetDependentAfterQuantPass(p, _compileSession.CompileOptions),
+            "TargetDependentAfterQuantPass");
+        await RunPassAsync(p => ClearFixShape(p), "ClearFixShape");
+        await RunPassAsync(
+            p => target.RegisterTargetDependentBeforeCodeGen(p, _compileSession.CompileOptions),
+            "TargetDependentBeforeCodeGen");
+        if (_dumpper.IsEnabled(DumpFlags.Compile))
+        {
+            DumpScope.Current.DumpModule(_module!, "ModuleAfterCompile");
+        }
     }
 
     public void Gencode(Stream output)

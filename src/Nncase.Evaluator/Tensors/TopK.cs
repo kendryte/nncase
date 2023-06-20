@@ -53,14 +53,9 @@ public class TopKEvaluator : IEvaluator<TopK>, ITypeInferencer<TopK>, ICostEvalu
 
     private IRType Visit(ITypeInferenceContext context, TopK target, TensorType x, TensorType k)
     {
-        if (x.Shape.IsUnranked)
+        if (x.Shape.IsUnranked || k.Shape.IsUnranked)
         {
-            return x;
-        }
-
-        if (k.Shape.IsUnranked)
-        {
-            return k;
+            return new TupleType(new[] { x, new TensorType(DataTypes.Int64, Shape.Unranked) });
         }
 
         if (k.DType != DataTypes.Int64)

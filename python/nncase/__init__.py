@@ -23,6 +23,7 @@ import subprocess
 import shutil
 import os
 import sys
+import string
 import numpy as np
 from pathlib import Path
 from shutil import which
@@ -135,6 +136,7 @@ class Compiler:
     _compiler: _nncase.Compiler
     _compile_options: _nncase.CompileOptions
     _quantize_options: _nncase.QuantizeOptions
+    _shape_bucket_options: _nncase.ShapeBucketOptions
     _module: IRModule
 
     def __init__(self, compile_options: CompileOptions) -> None:
@@ -143,6 +145,7 @@ class Compiler:
         self._session = _nncase.CompileSession(self._target, self._compile_options)
         self._compiler = self._session.compiler
         self._quantize_options = None
+        self._shape_bucket_options = _nncase.ShapeBucketOptions()
 
     def compile(self) -> None:
         self._compiler.compile()
@@ -177,11 +180,12 @@ class Compiler:
         dataset = [_nncase.RTValue.from_runtime_tensor(
             data) for data in ptq_dataset_options.cali_data]
         provider = _nncase.CalibrationDatasetProvider(
-            dataset, ptq_dataset_options.samples_count, self._module.entry.parameters)
+            dataset, ptq_dataset_options.samples_count, self._module.entry.parameters) if len(dataset) != 0 else []
         if not self._quantize_options:
             self._quantize_options = _nncase.QuantizeOptions()
             self._compile_options.quantize_options = self._quantize_options
-        self._quantize_options.calibration_dataset = provider
+        if len(dataset) != 0:
+            self._quantize_options.calibration_dataset = provider
         self._quantize_options.model_quant_mode = _nncase.ModelQuantMode.UsePTQ
 
         if (ptq_dataset_options.calibrate_method == "NoClip"):
@@ -364,3 +368,18 @@ class CompileOptions:
         self.input_layout = ""
         self.output_layout = ""
         self.letterbox_value = 0
+
+
+class ShapeBucketOptions:
+    enable: bool
+    var_map: dict
+    range_info: dict
+    segments_count: int
+    fix_var_map: dict
+
+    def __init__(self) -> None:
+        self.enable = False
+        self.var_map = {}
+        self.range_info = {}
+        self.segments_count = 2
+        self.fix_var_map = {}

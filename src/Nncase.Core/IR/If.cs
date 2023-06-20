@@ -14,21 +14,23 @@ namespace Nncase.IR;
 /// </summary>
 public sealed class If : Expr
 {
-    public If(Expr condition, Expr then, Expr @else)
-        : base(new[] { condition, then, @else })
+    public If(Expr condition, Expr then, Expr @else, params Expr[] paramList)
+        : base(paramList.Concat(new[] { condition, then, @else }))
     {
     }
 
-    public Expr Condition => Operands[0];
+    public Expr Condition => Operands[^3];
 
-    public Expr Then => Operands[1];
+    public Expr Then => Operands[^2];
 
-    public Expr Else => Operands[2];
+    public Expr Else => Operands[^1];
+
+    public Expr[] ParamList => Operands[..^3].ToArray();
 
     /// <inheritdoc/>
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
         => functor.VisitIf(this, context);
 
-    public If With(Expr? condition = null, Expr? then = null, Expr? @else = null)
-        => new If(condition ?? Condition, then ?? Then, @else ?? Else);
+    public If With(Expr? condition = null, Expr? then = null, Expr? @else = null, Expr[]? paramList = null)
+        => new If(condition ?? Condition, then ?? Then, @else ?? Else, paramList ?? ParamList);
 }

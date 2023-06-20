@@ -1,19 +1,23 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System;
 using System.Linq;
 using NetFabric.Hyperlinq;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Tensors;
+using Nncase.Utilities;
 using OrtKISharp;
+using static Nncase.IR.F.Tensors;
+using Gather = Nncase.IR.Tensors.Gather;
 
 namespace Nncase.Evaluator.Tensors;
 
 /// <summary>
 /// Evaluator for <see cref="Gather"/>.
 /// </summary>
-public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>, ICostEvaluator<Gather>
+public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>, ICostEvaluator<Gather>, IShapeEvaluator<Gather>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Gather gather)
@@ -43,6 +47,16 @@ public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>, ICos
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret_type.DType),
             [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(ret_type.DType, 1),
         };
+    }
+
+    public Expr Visit(IShapeEvaluateContext context, Gather target)
+    {
+        var axis = context.GetArgument(target, Gather.Axis);
+        var inShape = context.GetArgumentShape(target, Gather.Input);
+        axis = ShapeExprUtility.Positive(Cast(axis, DataTypes.Int32), inShape);
+        var indexShape = context.GetArgumentShape(target, Gather.Index);
+        var outShape = ShapeExprUtility.ReplaceList(inShape, axis, indexShape);
+        return outShape;
     }
 
     private IRType Visit(ITypeInferenceContext context, Gather target, TensorType input, TensorType axis, TensorType index)

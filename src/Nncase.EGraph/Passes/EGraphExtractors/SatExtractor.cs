@@ -77,6 +77,7 @@ internal class SatExtractor : IExtractor
         }
 
         var solver = new CpSolver();
+        solver.StringParameters = $"max_time_in_seconds:{10f},num_workers:0";
 
         var enableDump = DumpScope.Current.IsEnabled(DumpFlags.EGraphCost);
         CpSolverStatus status;
@@ -182,6 +183,7 @@ internal sealed class PrintCostCallBack : CpSolverSolutionCallback
 
             _dumpWriter.WriteLine($"Solution {_count++} @ {WallTime()}:");
             _dumpWriter.WriteLine(cost.ToString());
+            _dumpWriter.Flush();
         }
     }
 }
