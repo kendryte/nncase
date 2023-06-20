@@ -19,8 +19,8 @@ using namespace nncase;
 using namespace nncase::runtime;
 
 #ifdef DUMP_MEM
-#include<iostream>
 #include <iomanip>
+#include <iostream>
 static uint64_t used_mem = 0;
 static uint64_t max_mem = 0;
 #endif
@@ -74,26 +74,32 @@ class host_buffer_allocator : public buffer_allocator {
     allocate([[maybe_unused]] size_t bytes,
              [[maybe_unused]] const buffer_allocate_options &options) override {
 #ifdef DUMP_MEM
-        std::cout<<"[Used_mem]:"<<std::setw(16)<<std::setfill(' ')<<used_mem<<"\t[allocate]:"<<std::setw(16)<<std::setfill(' ')<<bytes<<std::endl;
-        used_mem+=bytes;
+        std::cout << "[Used_mem]:" << std::setw(16) << std::setfill(' ')
+                  << used_mem << "\t[allocate]:" << std::setw(16)
+                  << std::setfill(' ') << bytes << std::endl;
+        used_mem += bytes;
 #endif
         auto data = new (std::nothrow) gsl::byte[bytes];
         if (!data)
             return err(std::errc::not_enough_memory);
         return ok<buffer_t>(object_t<host_buffer_impl>(
-            std::in_place, data, bytes, []([[maybe_unused]]size_t s, gsl::byte *p) {
+            std::in_place, data, bytes,
+            []([[maybe_unused]]size_t s, gsl::byte *p) {
                 delete[] p;
 #ifdef DUMP_MEM
-                if(s != 0)
-                {
-                    if(max_mem < used_mem)
+                if (s != 0) {
+                    if (max_mem < used_mem)
                         max_mem = used_mem;
-                    std::cout<<"[Used_mem]:"<<std::setw(16)<<std::setfill(' ')<<used_mem<<"\t[deleter ]:"<<std::setw(16)<<std::setfill(' ')<<s<<"\t[Max_mem]: "<<max_mem<<std::endl;
+                    std::cout
+                        << "[Used_mem]:" << std::setw(16) << std::setfill(' ')
+                        << used_mem << "\t[deleter ]:" << std::setw(16)
+                        << std::setfill(' ') << s << "\t[Max_mem]: " << max_mem
+                        << std::endl;
                     used_mem -= s;
                 }
 #endif
-            }, 0,
-            *this, host_sync_status_t::valid));
+            },
+            0, *this, host_sync_status_t::valid));
     }
 
     result<buffer_t>
@@ -101,8 +107,8 @@ class host_buffer_allocator : public buffer_allocator {
            [[maybe_unused]] const buffer_attach_options &options) override {
         return ok<buffer_t>(object_t<host_buffer_impl>(
             std::in_place, data.data(), data.size_bytes(),
-            []([[maybe_unused]] size_t s, [[maybe_unused]] gsl::byte *p) {}, options.physical_address,
-            *this, host_sync_status_t::valid));
+            []([[maybe_unused]] size_t s, [[maybe_unused]] gsl::byte *p) {},
+            options.physical_address, *this, host_sync_status_t::valid));
     }
 };
 
