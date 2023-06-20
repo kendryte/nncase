@@ -47,7 +47,6 @@ class nncaseConan(ConanFile):
 
     def requirements(self):
         self.requires('gsl-lite/0.37.0')
-        self.requires('mpark-variant/1.4.0')
         self.requires('hkg/0.0.1')
         if self.options.tests:
             self.requires('gtest/1.10.0')
