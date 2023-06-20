@@ -36,12 +36,13 @@ public sealed class AddPostProcess : ModulePass
     /// <returns> Return a new graph with preprocess and postprocess. </returns>
     protected override Task<IRModule> RunCoreAsync(IRModule module, RunPassContext options)
     {
+        var preProcess = CompileSession.CompileOptions.PreProcess;
         var modelLayout = CompileSession.CompileOptions.ModelLayout;
         var outputLayout = CompileSession.CompileOptions.OutputLayout;
 
         var entry = (IR.Function)module.Entry!;
 
-        if (modelLayout != outputLayout)
+        if (preProcess && modelLayout != outputLayout)
         {
             // Expr newOutput = entry.Body;
             var newOutput = outputLayout switch
