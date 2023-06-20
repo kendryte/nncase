@@ -222,7 +222,11 @@ public sealed partial class FoldLayerNormPattern4 : RewriteRule<CallPattern>
                 "mulX",
                 "mulXCall",
                 BinaryOp.Mul,
-                IsWildcard(),
+                IsBinary(
+                    "addInput",
+                    "addInputCall",
+                    BinaryOp.Add,
+                    IsWildcard("input")),
                 IsBinary(
                     "mulGamma",
                     "mulGammaCall",
@@ -239,20 +243,27 @@ public sealed partial class FoldLayerNormPattern4 : RewriteRule<CallPattern>
                                 "rdVar",
                                 "rdVarCall",
                                 ReduceOp.Mean,
-                                IsUnary(
-                                    "square",
-                                    "sqareCall",
-                                    UnaryOp.Square,
-                                    IsBinary(
-                                        "subMu",
-                                        "subMuCall",
-                                        BinaryOp.Sub,
-                                        IsWildcard(),
-                                        IsReduce(
-                                            "rdMu",
-                                            "rdMuCall",
-                                            ReduceOp.Mean,
-                                            IsWildcard("input"))))),
+                                IsBinary(
+                                        "subMul",
+                                        "subMulCall",
+                                        BinaryOp.Mul,
+                                        IsBinary(
+                                            "sub",
+                                            "subCall",
+                                            BinaryOp.Sub,
+                                            IsBinary(
+                                                "addInput",
+                                                "addInputCall",
+                                                BinaryOp.Add,
+                                                IsWildcard("input")),
+                                            IsReduce(
+                                                "mean",
+                                                "meanCall",
+                                                ReduceOp.Mean)),
+                                        IsBinary(
+                                            "sub",
+                                            "subCall",
+                                            BinaryOp.Sub))),
                             IsTensorConst("eps"))),
                     IsTensorConst("gamma"))),
             IsBinary(
@@ -263,12 +274,25 @@ public sealed partial class FoldLayerNormPattern4 : RewriteRule<CallPattern>
                 IsBinary(
                     "mulMu",
                     "mulMuCall",
-                    BinaryOp.Mul)));
+                    BinaryOp.Mul,
+                    IsReduce(
+                        "mean",
+                        "meanCall",
+                        ReduceOp.Mean,
+                        IsBinary(
+                            "addInput",
+                            "addInputCall",
+                            BinaryOp.Add,
+                            IsWildcard("input"))),
+                    IsBinary(
+                        "mulGamma",
+                        "mulGammaCall",
+                        BinaryOp.Mul))));
 
-    private Expr? GetReplace(Call addAllCall, Call mulMuCall, Call subMuCall, Call mulXCall, Call rdMuCall, TensorConst eps, TensorConst gamma, TensorConst beta, Expr input)
+    private Expr? GetReplace(Call addAllCall, Call subCall, Call mulXCall, Call mulMuCall, Call subMulCall, TensorConst eps, TensorConst gamma, TensorConst beta, Expr input)
     {
-        if (mulMuCall[Binary.Lhs] == subMuCall[Binary.Rhs] && mulMuCall[Binary.Rhs] == mulXCall[Binary.Rhs] &&
-            mulXCall[Binary.Lhs] == subMuCall[Binary.Lhs] && mulXCall[Binary.Lhs] == rdMuCall[Reduce.Input])
+        if (subMulCall[Binary.Lhs] == subMulCall[Binary.Rhs] && mulXCall[Binary.Rhs] == mulMuCall[Binary.Rhs] &&
+            subCall[Binary.Lhs] == mulXCall[Binary.Lhs] && subCall[Binary.Rhs] == mulMuCall[Binary.Lhs])
         {
             var axis = addAllCall.CheckedShape.Count - gamma.CheckedShape.Count;
             return LayerNorm(axis, eps.Value.Cast<float>()[0], input, gamma, beta);
