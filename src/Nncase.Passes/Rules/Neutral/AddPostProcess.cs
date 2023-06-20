@@ -29,11 +29,11 @@ namespace Nncase.Passes.Rules.Neutral;
 public sealed class AddPostProcess : ModulePass
 {
     /// <summary>
-    /// Main func for AddPreProcess.
+    /// Postprocess: support outputLayout.
     /// </summary>
     /// <param name="module"> The graph. </param>
     /// <param name="options"> RunPassContext. </param>
-    /// <returns> Return a new graph with preprocess and postprocess. </returns>
+    /// <returns> Return a new graph with postprocess. </returns>
     protected override Task<IRModule> RunCoreAsync(IRModule module, RunPassContext options)
     {
         var preProcess = CompileSession.CompileOptions.PreProcess;
@@ -42,7 +42,7 @@ public sealed class AddPostProcess : ModulePass
 
         var entry = (IR.Function)module.Entry!;
 
-        if (preProcess && modelLayout != outputLayout)
+        if (preProcess && modelLayout != outputLayout && outputLayout != string.Empty)
         {
             var newOutput = outputLayout switch
             {
