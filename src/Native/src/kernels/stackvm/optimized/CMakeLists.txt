@@ -12,7 +12,7 @@ if (NOT ${ARCH} STREQUAL "generic")
     add_subdirectory(${ARCH})
 endif()
 
-message(STATUS "-----------------------ci arch :${ARCH}------------------")
+message(STATUS "-----------------------ci CMAKE_SYSTEM_PROCESSOR :${CMAKE_SYSTEM_PROCESSOR}------------------")
 set(SRCS concat.cpp
          convolution.cpp
          slice.cpp
