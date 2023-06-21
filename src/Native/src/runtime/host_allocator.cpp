@@ -35,8 +35,7 @@ class host_buffer_impl : public host_buffer_node {
         : host_buffer_node(bytes, allocator, host_sync_status),
           data_(std::move(data)),
           physical_address_(physical_address),
-          deleter_(std::move(deleter))
-    {
+          deleter_(std::move(deleter)) {
 #ifdef DUMP_MEM
         bytes_size_ = bytes;
         collect_ = collect;
