@@ -148,8 +148,10 @@ void ternary_vec(const uint8_t *input_a, const int input_a_len,
 
 int tenary_impl(const uint8_t *input_cond, const float *input_b,
                 const float *input_c, float *output,
-                gsl::span<size_t> in_cond_shape, gsl::span<size_t> in_b_shape,
-                gsl::span<size_t> in_c_shape, gsl::span<size_t> out_shape) {
+                gsl::span<const size_t> in_cond_shape,
+                gsl::span<const size_t> in_b_shape,
+                gsl::span<const size_t> in_c_shape,
+                gsl::span<const size_t> out_shape) {
     int len_cond = (int)compute_size(in_cond_shape);
     int len_b = (int)compute_size(in_b_shape);
     int len_c = (int)compute_size(in_c_shape);
@@ -172,10 +174,11 @@ int tenary_impl(const uint8_t *input_cond, const float *input_b,
 
 result<void> nncase::kernels::stackvm::optimized::where(
     datatype_t dt, const bool *cond, const gsl::byte *x, const gsl::byte *y,
-    gsl::byte *output, gsl::span<size_t> cond_shape, gsl::span<size_t> x_shape,
-    gsl::span<size_t> y_shape, gsl::span<size_t> out_shape,
-    const strides_t &cond_strides, const strides_t &x_strides,
-    const strides_t &y_strides, const strides_t &out_strides) {
+    gsl::byte *output, gsl::span<const size_t> cond_shape,
+    gsl::span<const size_t> x_shape, gsl::span<const size_t> y_shape,
+    gsl::span<const size_t> out_shape, gsl::span<const size_t> cond_strides,
+    gsl::span<const size_t> x_strides, gsl::span<const size_t> y_strides,
+    gsl::span<const size_t> out_strides) {
 
 #if __riscv_vector
     // 这里做一步转换，明确下 cond 数据类型， c++ 中的 sizeof(bool) == 1，对于
