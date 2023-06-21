@@ -31,12 +31,16 @@ using namespace nncase::kernels::stackvm::optimized;
 namespace {
 #if __riscv_vector
 
-result<void> optimized_sigmoid_impl(const float *input, float *output,
-                                    const dims_t &in_shape,
-                                    const dims_t &in_strides,
-                                    const dims_t &out_strides) noexcept {
+result<void>
+optimized_sigmoid_impl(const float *input, float *output,
+                       gsl::span<const size_t> in_shape,
+                       gsl::span<const size_t> in_strides,
+                       gsl::span<const size_t> out_strides) noexcept {
 
-    if (get_default_strides(in_shape) != in_strides) {
+    auto strides = get_default_strides(in_shape);
+    auto strides_span = gsl::span<const size_t>{strides.begin(), strides.end()};
+    if (std::equal(strides_span.begin(), strides_span.end(),
+                   in_strides.begin())) {
         size_t ndim = in_shape.size();
         if (ndim > 1) {
             const float *ptr_input = input;
@@ -100,11 +104,12 @@ result<void> optimized_sigmoid_impl(const float *input, float *output,
 } // namespace
 
 template <typename T>
-result<void>
-optimized::sigmoid(const T *input, T *output, const dims_t &in_shape,
-                   const strides_t &in_strides, const dims_t &out_shape,
-                   const strides_t &out_strides,
-                   kernel_context &context) noexcept {
+result<void> optimized::sigmoid(const T *input, T *output,
+                                gsl::span<const size_t> in_shape,
+                                gsl::span<const size_t> in_strides,
+                                gsl::span<const size_t> out_shape,
+                                gsl::span<const size_t> out_strides,
+                                kernel_context &context) noexcept {
 #if __riscv_vector
     return optimized_sigmoid_impl(input, output, in_shape, in_strides,
                                   out_strides);

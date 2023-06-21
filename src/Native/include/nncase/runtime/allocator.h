@@ -28,6 +28,7 @@ inline constexpr size_t HOST_BUFFER_ALLOCATE_SHARED = 2;
 
 struct buffer_attach_options {
     size_t flags;
+    uintptr_t physical_address;
     std::function<void(gsl::byte *)> deleter;
 };
 

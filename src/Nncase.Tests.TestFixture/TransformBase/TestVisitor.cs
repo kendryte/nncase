@@ -11,6 +11,11 @@ namespace Nncase.Tests;
 /// </summary>
 public sealed class TestVisitor : ExprVisitor<bool, IRType>
 {
+    public TestVisitor(bool visitOtherFunctions = false)
+        : base(visitOtherFunctions)
+    {
+    }
+
     /// <summary>
     /// check Contains expr with type.
     /// </summary>
@@ -30,7 +35,8 @@ public sealed class TestVisitor : ExprVisitor<bool, IRType>
     public int CountCallOp<T>()
       where T : Op
     {
-        return ExprMemo.Keys.OfType<Call>().Where(call => call is { Target: T }).Count();
+        var count = ExprMemo.Keys.OfType<Call>().Where(call => call is { Target: T }).Count();
+        return count;
     }
 
     /// <inheritdoc/>

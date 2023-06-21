@@ -151,6 +151,16 @@ public sealed record Cost : IComparable<Cost>, IEquatable<Cost>
     {
         return Factors.GetHashCode();
     }
+
+    public override string ToString()
+    {
+        if (Equals(Cost.Zero))
+        {
+            return "Zero";
+        }
+
+        return $"{{ {string.Join(", ", Factors.Select(kv => $"{kv.Key}: {kv.Value}"))}, Score:{Score} }}";
+    }
 }
 
 /// <summary>

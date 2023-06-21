@@ -27,13 +27,18 @@ class Evaluator:
         compile_options.dump_asm = cfg.compile_opt.dump_asm
         compile_options.dump_ir = cfg.compile_opt.dump_ir
         compile_options = preprocess_utils.update_compile_options(compile_options, preprocess)
+        compile_options.shape_bucket_options = nncase.ShapeBucketOptions()
+        compile_options.shape_bucket_options.enable = False
+        compile_options.shape_bucket_options.range_info = {}
+        compile_options.shape_bucket_options.segments_count = 2
+        compile_options.shape_bucket_options.fix_var_map = {}
         self.compiler = nncase.Compiler(compile_options)
         self.import_model(self.compiler, model_content, import_options)
         self.set_quant_opt(cfg, kwargs, preprocess, self.compiler)
         evaluator = self.compiler.create_evaluator(3)
         self.set_inputs(evaluator, preprocess)
         evaluator.run()
-        eval_output_paths = self.dump_outputs(eval_dir, evaluator)
+        eval_output_paths = self.dump_outputs(eval_dir, preprocess, evaluator)
         return eval_output_paths
 
     def set_inputs(self, evaluator, preprocess):
@@ -42,10 +47,19 @@ class Evaluator:
                 self.transform_input((i['data']), preprocess['input_type'], "infer")[0])
             evaluator.set_input_tensor(idx, input_tensor)
 
-    def dump_outputs(self, eval_dir, evaluator):
+    def dump_outputs(self, eval_dir, preprocess, evaluator):
         eval_output_paths = []
         for i in range(evaluator.outputs_size):
             result = evaluator.get_output_tensor(i).to_numpy()
+            if preprocess['preprocess']:
+                if(preprocess['output_layout'] == 'NHWC' and self.model_type in ['caffe', 'onnx']):
+                    result = np.transpose(result, [0, 3, 1, 2])
+                elif (preprocess['output_layout'] == 'NCHW' and self.model_type in ['tflite']):
+                    result = np.transpose(result, [0, 2, 3, 1])
+                elif preprocess['output_layout'] not in ["NCHW", "NHWC"]:
+                    tmp_perm = [int(idx) for idx in preprocess['output_layout'].split(",")]
+                    result = np.transpose(
+                        result, preprocess_utils.get_source_transpose_index(tmp_perm))
             os.makedirs(eval_dir, exist_ok=True)
             eval_output_paths.append((
                 os.path.join(eval_dir, f'nncase_result_{i}.bin'),

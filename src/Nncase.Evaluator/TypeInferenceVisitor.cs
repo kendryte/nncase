@@ -182,8 +182,7 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
     /// <inheritdoc/>
     protected override IRType VisitLeafIf(If expr)
     {
-        var type = AnyType.Default;
-        return type;
+        return TypeInference.CommonType(expr.Then.CheckedType, expr.Else.CheckedType);
     }
 
     /// <inheritdoc/>

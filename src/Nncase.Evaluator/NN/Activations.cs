@@ -116,7 +116,7 @@ public class HardSwishEvaluator : IEvaluator<HardSwish>, ITypeInferencer<HardSwi
 /// <summary>
 /// Evaluator for <see cref="LeakyRelu"/>.
 /// </summary>
-public class LeakyReluEvaluator : IEvaluator<LeakyRelu>, ITypeInferencer<LeakyRelu>, ICostEvaluator<LeakyRelu>
+public class LeakyReluEvaluator : IEvaluator<LeakyRelu>, ITypeInferencer<LeakyRelu>, ICostEvaluator<LeakyRelu>, IShapeEvaluator<LeakyRelu>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, LeakyRelu leakyRelu)
@@ -144,6 +144,8 @@ public class LeakyReluEvaluator : IEvaluator<LeakyRelu>, ITypeInferencer<LeakyRe
         };
     }
 
+    public Expr Visit(IShapeEvaluateContext context, LeakyRelu target) => context.GetArgumentShape(target, LeakyRelu.Input);
+
     private IRType Visit(TensorType input)
     {
         return input;
@@ -153,7 +155,7 @@ public class LeakyReluEvaluator : IEvaluator<LeakyRelu>, ITypeInferencer<LeakyRe
 /// <summary>
 /// Evaluator for <see cref="Relu"/>.
 /// </summary>
-public class ReluEvaluator : IEvaluator<Relu>, ITypeInferencer<Relu>, ICostEvaluator<Relu>
+public class ReluEvaluator : IEvaluator<Relu>, ITypeInferencer<Relu>, ICostEvaluator<Relu>, IShapeEvaluator<Relu>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Relu relu)
@@ -174,6 +176,8 @@ public class ReluEvaluator : IEvaluator<Relu>, ITypeInferencer<Relu>, ICostEvalu
         var inputType = context.GetArgumentType<TensorType>(target, Relu.Input);
         return CostUtility.GetActivationCost(inputType, CostUtility.GetCPUCyclesOfMax());
     }
+
+    public Expr Visit(IShapeEvaluateContext context, Relu target) => context.GetArgumentShape(target, Relu.Input);
 
     private IRType Visit(TensorType input)
     {
@@ -254,7 +258,7 @@ public class SeluEvaluator : IEvaluator<Selu>, ITypeInferencer<Selu>, ICostEvalu
 /// <summary>
 /// Evaluator for <see cref="Sigmoid"/>.
 /// </summary>
-public class SigmoidEvaluator : IEvaluator<Sigmoid>, ITypeInferencer<Sigmoid>, ICostEvaluator<Sigmoid>
+public class SigmoidEvaluator : IEvaluator<Sigmoid>, ITypeInferencer<Sigmoid>, ICostEvaluator<Sigmoid>, IShapeEvaluator<Sigmoid>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Sigmoid sigmoid)
@@ -277,6 +281,8 @@ public class SigmoidEvaluator : IEvaluator<Sigmoid>, ITypeInferencer<Sigmoid>, I
         uint macPerElement = 3;
         return CostUtility.GetActivationCost(ret, macPerElement);
     }
+
+    public Expr Visit(IShapeEvaluateContext context, Sigmoid target) => context.GetArgumentShape(target, Sigmoid.Input);
 
     private IRType Visit(TensorType input)
     {
@@ -364,7 +370,7 @@ public class PReluEvaluator : IEvaluator<PRelu>, ITypeInferencer<PRelu>, ICostEv
 /// <summary>
 /// Evaluator for <see cref="Erf"/>.
 /// </summary>
-public class ErfEvaluator : IEvaluator<Erf>, ITypeInferencer<Erf>, ICostEvaluator<Erf>
+public class ErfEvaluator : IEvaluator<Erf>, ITypeInferencer<Erf>, ICostEvaluator<Erf>, IShapeEvaluator<Erf>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Erf erf)
@@ -391,6 +397,8 @@ public class ErfEvaluator : IEvaluator<Erf>, ITypeInferencer<Erf>, ICostEvaluato
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
         };
     }
+
+    public Expr Visit(IShapeEvaluateContext context, Erf target) => context.GetArgumentShape(target, Erf.Input);
 
     private IRType Visit(TensorType input)
     {
@@ -438,7 +446,7 @@ public class SwishEvaluator : IEvaluator<Swish>, ITypeInferencer<Swish>, ICostEv
 /// <summary>
 /// Evaluator for <see cref="Gelu"/>.
 /// </summary>
-public class GeluEvaluator : IEvaluator<Gelu>, ITypeInferencer<Gelu>, ICostEvaluator<Gelu>
+public class GeluEvaluator : IEvaluator<Gelu>, ITypeInferencer<Gelu>, ICostEvaluator<Gelu>, IShapeEvaluator<Gelu>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Gelu gelu)
@@ -468,6 +476,8 @@ public class GeluEvaluator : IEvaluator<Gelu>, ITypeInferencer<Gelu>, ICostEvalu
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
         };
     }
+
+    public Expr Visit(IShapeEvaluateContext context, Gelu target) => context.GetArgumentShape(target, Gelu.Input);
 
     private IRType Visit(TensorType input)
     {

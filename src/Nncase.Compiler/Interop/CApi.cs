@@ -12,6 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Newtonsoft.Json;
 using Nncase.Diagnostics;
 using Nncase.Hosting;
 using Nncase.IR;
@@ -58,6 +59,7 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr, float, void> CompileOptionsSetLetterBoxValuePtr;
     public delegate* unmanaged<IntPtr, byte*, nuint, void> CompileOptionsSetMeanPtr;
     public delegate* unmanaged<IntPtr, byte*, nuint, void> CompileOptionsSetStdPtr;
+    public delegate* unmanaged<IntPtr, IntPtr, void> CompileOptionsSetShapeBucketOptionsPtr;
     public delegate* unmanaged<IntPtr, IntPtr, IntPtr> CompileSessionCreatePtr;
     public delegate* unmanaged<IntPtr, IntPtr> CompileSessionGetCompilerPtr;
     public delegate* unmanaged<void> CompilerInitializePtr;
@@ -71,6 +73,7 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr, IntPtr> IRModuleGetEntryPtr;
     public delegate* unmanaged<void> LaunchDebuggerPtr;
     public delegate* unmanaged<IntPtr> QuantizeOptionsCreatePtr;
+    public delegate* unmanaged<IntPtr> ShapeBucketOptionsCreatePtr;
     public delegate* unmanaged<IntPtr, IntPtr, void> QuantizeOptionsSetCalibrationDatasetPtr;
     public delegate* unmanaged<IntPtr, CalibMethod, void> QuantizeOptionsSetCalibrationMethodPtr;
     public delegate* unmanaged<IntPtr, ModelQuantMode, void> QuantizeOptionsSetModelQuantModePtr;
@@ -81,6 +84,10 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr, byte*, nuint, void> QuantOptionsSetQuantSchemePtr;
     public delegate* unmanaged<IntPtr, byte, void> QuantOptionsSetExportQuantSchemePtr;
     public delegate* unmanaged<IntPtr, byte, void> QuantOptionsSetExportWeightRangeByChannelPtr;
+    public delegate* unmanaged<IntPtr, byte, void> ShapeBucketOptionsSetEnablePtr;
+    public delegate* unmanaged<IntPtr, byte*, nuint, void> ShapeBucketOptionsSetRangeInfoPtr;
+    public delegate* unmanaged<IntPtr, nuint, void> ShapeBucketOptionsSetSegmentsCountPtr;
+    public delegate* unmanaged<IntPtr, byte*, nuint, void> ShapeBucketOptionsSetFixVarMapPtr;
     public delegate* unmanaged<IntPtr, IntPtr> RTValueFromHandlePtr;
     public delegate* unmanaged<IntPtr, IntPtr> RTValueGetHandlePtr;
     public delegate* unmanaged<CStreamMT*, IntPtr, IntPtr> StreamCreatePtr;
@@ -118,6 +125,7 @@ public static unsafe class CApi
         mt->CompileOptionsSetLetterBoxValuePtr = &CompileOptionsSetLetterBoxValue;
         mt->CompileOptionsSetMeanPtr = &CompileOptionsSetMean;
         mt->CompileOptionsSetStdPtr = &CompileOptionsSetStd;
+        mt->CompileOptionsSetShapeBucketOptionsPtr = &CompileOptionsSetShapeBucketOptions;
         mt->CompileSessionCreatePtr = &CompileSessionCreate;
         mt->CompileSessionGetCompilerPtr = &CompileSessionGetCompiler;
         mt->CompilerInitializePtr = &CompilerInitialize;
@@ -131,6 +139,7 @@ public static unsafe class CApi
         mt->IRModuleGetEntryPtr = &IRModuleGetEntry;
         mt->LaunchDebuggerPtr = &LaunchDebugger;
         mt->QuantizeOptionsCreatePtr = &QuantizeOptionsCreate;
+        mt->ShapeBucketOptionsCreatePtr = &ShapeBucketOptionsCreate;
         mt->QuantizeOptionsSetCalibrationDatasetPtr = &QuantizeOptionsSetCalibrationDataset;
         mt->QuantizeOptionsSetCalibrationMethodPtr = &QuantizeOptionsSetCalibrationMethod;
         mt->QuantizeOptionsSetModelQuantModePtr = &QuantizeOptionsSetModelQuantMode;
@@ -141,6 +150,10 @@ public static unsafe class CApi
         mt->QuantOptionsSetQuantSchemePtr = &QuantizeOptionsSetQuantScheme;
         mt->QuantOptionsSetExportQuantSchemePtr = &QuantizeOptionsSetExportQuantScheme;
         mt->QuantOptionsSetExportWeightRangeByChannelPtr = &QuantizeOptionsSetExportWeightRangeByChannel;
+        mt->ShapeBucketOptionsSetEnablePtr = &ShapeBucketOptionsSetEnable;
+        mt->ShapeBucketOptionsSetRangeInfoPtr = &ShapeBucketOptionsSetRangeInfo;
+        mt->ShapeBucketOptionsSetSegmentsCountPtr = &ShapeBucketOptionsSetSegmentsCount;
+        mt->ShapeBucketOptionsSetFixVarMapPtr = &ShapeBucketOptionsSetFixVarMap;
         mt->RTValueFromHandlePtr = &RTValueFromHandle;
         mt->RTValueGetHandlePtr = &RTValueGetHandle;
         mt->StreamCreatePtr = &StreamCreate;
@@ -348,6 +361,12 @@ public static unsafe class CApi
     }
 
     [UnmanagedCallersOnly]
+    private static void CompileOptionsSetShapeBucketOptions(IntPtr compileOptionsHandle, IntPtr shapeBucketOptionsHandle)
+    {
+        Get<CompileOptions>(compileOptionsHandle).ShapeBucketOptions = Get<ShapeBucketOptions>(shapeBucketOptionsHandle);
+    }
+
+    [UnmanagedCallersOnly]
     private static IntPtr CompileSessionCreate(IntPtr targetHandle, IntPtr compileOptionsHandle)
     {
         var target = Get<ITarget>(targetHandle);
@@ -449,6 +468,12 @@ public static unsafe class CApi
     private static IntPtr QuantizeOptionsCreate()
     {
         return GCHandle.ToIntPtr(GCHandle.Alloc(new QuantizeOptions()));
+    }
+
+    [UnmanagedCallersOnly]
+    private static IntPtr ShapeBucketOptionsCreate()
+    {
+        return GCHandle.ToIntPtr(GCHandle.Alloc(ShapeBucketOptions.Default));
     }
 
     [UnmanagedCallersOnly]
@@ -581,6 +606,54 @@ public static unsafe class CApi
             default:
                 throw new ArgumentException("Invalid exportWeightRangeByChannel Flag");
         }
+    }
+
+    [UnmanagedCallersOnly]
+    private static void ShapeBucketOptionsSetEnable(IntPtr shapeBucketOptionsHandle, byte enable)
+    {
+        switch (enable)
+        {
+            case 0:
+                Get<ShapeBucketOptions>(shapeBucketOptionsHandle).Enable = false;
+                break;
+            case 1:
+                Get<ShapeBucketOptions>(shapeBucketOptionsHandle).Enable = true;
+                break;
+            default:
+                throw new ArgumentException("Invalid enable Flag");
+        }
+    }
+
+    [UnmanagedCallersOnly]
+    private static void ShapeBucketOptionsSetRangeInfo(IntPtr shapeBucketOptionsHandle, byte* rangeInfo, nuint rangeInfoSize)
+    {
+        byte[] rangeInfoByte = new byte[rangeInfoSize];
+        Marshal.Copy(new IntPtr(rangeInfo), rangeInfoByte, 0, (int)rangeInfoSize);
+        string jsonStr = Encoding.UTF8.GetString(rangeInfoByte);
+        Dictionary<string, List<int>> rangeInfoStructTmp = JsonConvert.DeserializeObject<Dictionary<string, List<int>>>(jsonStr)!;
+        Dictionary<string, (int, int)> rangeInfoStruct = new();
+        foreach (var element in rangeInfoStructTmp)
+        {
+            rangeInfoStruct.Add(element.Key, (element.Value[0], element.Value[1]));
+        }
+
+        Get<ShapeBucketOptions>(shapeBucketOptionsHandle).RangeInfo = rangeInfoStruct;
+    }
+
+    [UnmanagedCallersOnly]
+    private static void ShapeBucketOptionsSetSegmentsCount(IntPtr shapeBucketOptionsHandle, nuint segmentCount)
+    {
+        Get<ShapeBucketOptions>(shapeBucketOptionsHandle).SegmentsCount = (int)segmentCount;
+    }
+
+    [UnmanagedCallersOnly]
+    private static void ShapeBucketOptionsSetFixVarMap(IntPtr shapeBucketOptionsHandle, byte* fixVarMap, nuint fixVarMapSize)
+    {
+        byte[] fixVarMapByte = new byte[fixVarMapSize];
+        Marshal.Copy(new IntPtr(fixVarMap), fixVarMapByte, 0, (int)fixVarMapSize);
+        string jsonStr = Encoding.UTF8.GetString(fixVarMapByte);
+        Dictionary<string, int> fixVarMapStruct = JsonConvert.DeserializeObject<Dictionary<string, int>>(jsonStr)!;
+        Get<ShapeBucketOptions>(shapeBucketOptionsHandle).FixVarMap = fixVarMapStruct;
     }
 
     [UnmanagedCallersOnly]

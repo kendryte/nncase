@@ -32,14 +32,14 @@ internal partial class QuantizerAdaRound
     public async Task RunAsync()
     {
         var quantOptions = _compileSession.CompileOptions.QuantizeOptions;
-        if (quantOptions.CalibrationDataset == null)
+        if (quantOptions.UseAdaRound && quantOptions.CalibrationDataset == null)
         {
             throw new ArgumentNullException(nameof(quantOptions.CalibrationDataset));
         }
 
         if (quantOptions.UseAdaRound)
         {
-            await _compileSession.Target.AdaRoundWeights(quantOptions.CalibrationDataset, _rangeOfs, _childrenOfRangeOfs, quantOptions);
+            await _compileSession.Target.AdaRoundWeights(quantOptions.CalibrationDataset!, _rangeOfs, _childrenOfRangeOfs, quantOptions);
         }
 
         _graph.Rebuild();

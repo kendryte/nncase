@@ -76,7 +76,7 @@ public static class ValueDumper
         Directory.CreateDirectory(dir);
         for (var i = 0; i < tensorValue.Length; i++)
         {
-            using (var sr = new StreamWriter(Path.Join(dir, "{i}.txt")))
+            using (var sr = new StreamWriter(Path.Join(dir, $"{i}.txt")))
             {
                 DumpTensor(tensorValue[i], sr);
             }
@@ -177,7 +177,13 @@ public static class DumpUtility
         Directory.CreateDirectory(dumpDir);
         BinFileUtil.WriteBinInputs(inputs, dumpDir);
         BinFileUtil.WriteBinOutputs(outputs, dumpDir);
-        File.Copy(kmodelPath, Path.Join(dumpDir, "test.kmodel"));
+        var kmodel_path = Path.Join(dumpDir, "test.kmodel");
+        if (File.Exists(kmodel_path))
+        {
+            File.Delete(kmodel_path);
+        }
+
+        File.Copy(kmodelPath, kmodel_path);
         if (dynamic)
         {
             WriteKmodelDesc(inputs, outputs, dumpDir);
@@ -219,6 +225,16 @@ public static class BinFileUtil
         {
             var bytes = reader.ReadBytes(shape.Prod().FixedValue * dt.SizeInBytes);
             return Tensor.FromBytes(dt, bytes, shape);
+        }
+    }
+
+    public static Tensor ReadBinFile(string path, Func<byte[], Tensor> f)
+    {
+        using (var stream = new FileStream(Path.Join(path), FileMode.Open, FileAccess.Read, FileShare.None))
+        using (var reader = new BinaryReader(stream))
+        {
+            var bytes = reader.ReadBytes((int)stream.Length);
+            return f(bytes);
         }
     }
 }

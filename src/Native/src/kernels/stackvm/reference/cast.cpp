@@ -35,36 +35,36 @@ namespace {
 
 template <class TInput, class TOutput>
 result<void> cast_impl(const TInput *input, TOutput *output,
-                       const dims_t &in_shape, const strides_t &in_strides,
-                       const strides_t &out_strides,
+                       gsl::span<const size_t> in_shape,
+                       gsl::span<const size_t> in_strides,
+                       gsl::span<const size_t> out_strides,
                        NNCASE_UNUSED kernel_context &context) noexcept {
     SCALAR_CAST_IMPL(static_cast<TOutput>);
-    return apply(in_shape, [&](const dims_t &index) -> result<void> {
+    return apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
         auto value = input[offset(in_strides, index)];
         output[offset(out_strides, index)] = static_cast<TOutput>(value);
         return ok();
     });
 }
 
-result<void>
-cast_f32_to_bf16_impl(const float *input, bfloat16 *output,
-                      const dims_t &in_shape, const strides_t &in_strides,
-                      const strides_t &out_strides,
-                      NNCASE_UNUSED kernel_context &context) noexcept {
+result<void> cast_f32_to_bf16_impl(
+    const float *input, bfloat16 *output, gsl::span<const size_t> in_shape,
+    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
+    NNCASE_UNUSED kernel_context &context) noexcept {
     SCALAR_CAST_IMPL(bfloat16::round_to_bfloat16);
-    return apply(in_shape, [&](const dims_t &index) -> result<void> {
+    return apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
         auto value = input[offset(in_strides, index)];
         output[offset(out_strides, index)] = bfloat16::round_to_bfloat16(value);
         return ok();
     });
 }
 
-result<void>
-cast_f32_to_fp16_impl(const float *input, half *output, const dims_t &in_shape,
-                      const strides_t &in_strides, const strides_t &out_strides,
-                      NNCASE_UNUSED kernel_context &context) noexcept {
+result<void> cast_f32_to_fp16_impl(
+    const float *input, half *output, gsl::span<const size_t> in_shape,
+    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
+    NNCASE_UNUSED kernel_context &context) noexcept {
     SCALAR_CAST_IMPL(half::round_to_half);
-    return apply(in_shape, [&](const dims_t &index) -> result<void> {
+    return apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
         auto value = input[offset(in_strides, index)];
         output[offset(out_strides, index)] = half::round_to_half(value);
         return ok();
@@ -73,10 +73,17 @@ cast_f32_to_fp16_impl(const float *input, half *output, const dims_t &in_shape,
 } // namespace
 
 #define CAST_IMPL_LV2(input_t, output_t)                                       \
-    if (cmp_type<output_t>(out_type))                                          \
-    return cast_impl(reinterpret_cast<const input_t *>(input),                 \
-                     reinterpret_cast<output_t *>(output), in_shape,           \
-                     in_strides, out_strides, context)
+    if (cmp_type<output_t>(out_type)) {                                        \
+        if (contiguous) {                                                      \
+            return cast_impl(reinterpret_cast<const input_t *>(input),         \
+                             reinterpret_cast<output_t *>(output), in_shape,   \
+                             in_strides, out_strides, context);                \
+        } else {                                                               \
+            return cast_impl(reinterpret_cast<const input_t *>(input),         \
+                             reinterpret_cast<output_t *>(output), in_shape,   \
+                             in_strides, out_strides, context);                \
+        }                                                                      \
+    }
 
 #define CAST_IMPL_LV1(input_t)                                                 \
     if (cmp_type<input_t>(in_type)) {                                          \
@@ -94,8 +101,9 @@ cast_f32_to_fp16_impl(const float *input, half *output, const dims_t &in_shape,
 
 result<void> cast_impl(datatype_t in_type, datatype_t out_type,
                        const gsl::byte *input, gsl::byte *output,
-                       const dims_t &in_shape, const strides_t &in_strides,
-                       const strides_t &out_strides,
+                       gsl::span<const size_t> in_shape,
+                       gsl::span<const size_t> in_strides,
+                       gsl::span<const size_t> out_strides,
                        kernel_context &context) noexcept {
     if (cmp_dt(in_type, dt_float32) && cmp_dt(out_type, dt_bfloat16))
         return cast_f32_to_bf16_impl(reinterpret_cast<const float *>(input),
@@ -106,6 +114,7 @@ result<void> cast_impl(datatype_t in_type, datatype_t out_type,
         return cast_f32_to_fp16_impl(reinterpret_cast<const float *>(input),
                                      reinterpret_cast<half *>(output), in_shape,
                                      in_strides, out_strides, context);
+    bool contiguous = is_contiguous(in_shape, in_strides);
     CAST_IMPL_LV1(bool);
     CAST_IMPL_LV1(uint8_t);
     CAST_IMPL_LV1(uint16_t);
