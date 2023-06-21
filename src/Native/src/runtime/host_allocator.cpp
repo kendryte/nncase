@@ -31,7 +31,8 @@ class host_buffer_impl : public host_buffer_node {
     host_buffer_impl(gsl::byte *data, size_t bytes,
                      std::function<void(gsl::byte *)> deleter,
                      uintptr_t physical_address, buffer_allocator &allocator,
-                     host_sync_status_t host_sync_status, [[maybe_unused]]bool collect = false)
+                     host_sync_status_t host_sync_status,
+                     [[maybe_unused]] bool collect = false)
         : host_buffer_node(bytes, allocator, host_sync_status),
           data_(std::move(data)),
           physical_address_(physical_address),
