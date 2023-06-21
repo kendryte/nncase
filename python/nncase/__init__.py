@@ -64,6 +64,8 @@ class PTQTensorOptions:
     quant_scheme: str
     export_quant_scheme: bool
     export_weight_range_by_channel: bool
+    dump_quant_error: bool
+    dump_quant_error_symmetric_for_signed: bool
     cali_data: List[RuntimeTensor]
 
     def __init__(self) -> None:
@@ -78,6 +80,8 @@ class PTQTensorOptions:
         self.quant_scheme: str = ""
         self.export_quant_scheme: bool = False
         self.export_weight_range_by_channel: bool = False
+        self.dump_quant_error: bool = False
+        self.dump_quant_error_symmetric_for_signed: True
         self.cali_data: List[RuntimeTensor] = []
 
     def set_tensor_data(self, data: List[List[np.ndarray]]) -> None:
@@ -226,6 +230,8 @@ class Compiler:
         self._quantize_options.quant_scheme = ptq_dataset_options.quant_scheme
         self._quantize_options.export_quant_scheme = ptq_dataset_options.export_quant_scheme
         self._quantize_options.export_weight_range_by_channel = ptq_dataset_options.export_weight_range_by_channel
+        self._quantize_options.dump_quant_error = ptq_dataset_options.dump_quant_error
+        self._quantize_options.dump_quant_error_symmetric_for_signed = ptq_dataset_options.dump_quant_error_symmetric_for_signed
 
     def dump_range_options(self) -> DumpRangeTensorOptions:
         raise NotImplementedError("dump_range_options")

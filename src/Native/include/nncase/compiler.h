@@ -199,6 +199,12 @@ typedef struct {
     void (*quantize_options_set_export_weight_range_by_channel)(
         clr_object_handle_t quantize_options,
         bool export_weight_range_by_channel);
+    void (*quantize_options_set_dump_quant_error)(
+        clr_object_handle_t quantize_options,
+        bool dump_quant_error);
+    void (*quantize_options_set_dump_quant_error_symmetric_for_signed)(
+        clr_object_handle_t quantize_options,
+        bool dump_quant_error_symmetric_for_signed);
     void (*shape_bucket_options_set_enable)(
         clr_object_handle_t shape_bucket_options, bool enable);
     void (*shape_bucket_options_set_range_info)(
@@ -393,14 +399,23 @@ class quantize_options : public clr_object_base {
 
     bool export_quant_scheme() { return false; }
     void export_quant_scheme(bool value) {
-        nncase_clr_api()->quantize_options_set_export_quant_scheme(obj_.get(),
-                                                                   value);
+        nncase_clr_api()->quantize_options_set_export_quant_scheme(obj_.get(), value);
     }
 
     bool export_weight_range_by_channel() { return false; }
     void export_weight_range_by_channel(bool value) {
         nncase_clr_api()->quantize_options_set_export_weight_range_by_channel(
             obj_.get(), value);
+    }
+
+    bool dump_quant_error() { return false; }
+    void dump_quant_error(bool value) {
+        nncase_clr_api()->quantize_options_set_dump_quant_error(obj_.get(), value);
+    }
+
+    bool dump_quant_error_symmetric_for_signed() { return false; }
+    void dump_quant_error_symmetric_for_signed(bool value) {
+        nncase_clr_api()->quantize_options_set_dump_quant_error_symmetric_for_signed(obj_.get(), value);
     }
 };
 
