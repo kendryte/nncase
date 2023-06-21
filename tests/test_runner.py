@@ -527,8 +527,8 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
             ptq_options.quant_scheme = cfg.compile_opt.quant_scheme
             ptq_options.export_quant_scheme = cfg.compile_opt.export_quant_scheme
             ptq_options.export_weight_range_by_channel = cfg.compile_opt.export_weight_range_by_channel
-            ptq_options.dump_quant_error = cfg.dump_quant_error
-            ptq_options.dump_quant_error_symmetric_for_signed = cfg.dump_quant_error_symmetric_for_signed
+            ptq_options.dump_quant_error = cfg.compile_opt.dump_quant_error
+            ptq_options.dump_quant_error_symmetric_for_signed = cfg.compile_opt.dump_quant_error_symmetric_for_signed
             compiler.use_ptq(ptq_options)
 
     def write_preprocess_opt(self, dict_args):
