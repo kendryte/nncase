@@ -234,7 +234,7 @@ internal sealed class SatExprBuildVisitor
                 expr = mk.With(target: children[0], attribute: children[1]);
                 break;
             case IR.If @if:
-                expr = @if.With(condition: children[0], then: children[1], @else: children[2]);
+                expr = @if.With(condition: children[^3], then: children[^2], @else: children[^1], paramList: children[..^3].ToArray());
                 break;
             default:
                 throw new NotSupportedException(enode.Expr.GetType().Name);
