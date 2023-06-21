@@ -251,19 +251,12 @@ public sealed partial class FoldLayerNormPattern4 : RewriteRule<CallPattern>
                                             "sub",
                                             "subCall",
                                             BinaryOp.Sub,
-                                            IsBinary(
-                                                "addInput",
-                                                "addInputCall",
-                                                BinaryOp.Add,
-                                                IsWildcard("input")),
+                                            IsWildcard(),
                                             IsReduce(
                                                 "mean",
                                                 "meanCall",
                                                 ReduceOp.Mean)),
-                                        IsBinary(
-                                            "sub",
-                                            "subCall",
-                                            BinaryOp.Sub))),
+                                        IsWildcard())),
                             IsTensorConst("eps"))),
                     IsTensorConst("gamma"))),
             IsBinary(
@@ -275,19 +268,8 @@ public sealed partial class FoldLayerNormPattern4 : RewriteRule<CallPattern>
                     "mulMu",
                     "mulMuCall",
                     BinaryOp.Mul,
-                    IsReduce(
-                        "mean",
-                        "meanCall",
-                        ReduceOp.Mean,
-                        IsBinary(
-                            "addInput",
-                            "addInputCall",
-                            BinaryOp.Add,
-                            IsWildcard("input"))),
-                    IsBinary(
-                        "mulGamma",
-                        "mulGammaCall",
-                        BinaryOp.Mul))));
+                    IsWildcard(),
+                    IsWildcard())));
 
     private Expr? GetReplace(Call addAllCall, Call subCall, Call mulXCall, Call mulMuCall, Call subMulCall, TensorConst eps, TensorConst gamma, TensorConst beta, Expr input)
     {
