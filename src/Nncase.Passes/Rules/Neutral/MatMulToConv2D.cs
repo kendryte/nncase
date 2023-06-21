@@ -126,7 +126,8 @@ public sealed partial class SplitBatchMatMul : IRewriteRule
     {
         var aShape = a.CheckedShape;
         var bShape = b.CheckedShape;
-        if (aShape[2] != bShape[1] || aShape[0] != bShape[0])
+        if (aShape[2] != bShape[1] || aShape[0].FixedValue / bShape[0].FixedValue != 1 ||
+            (aShape[0] == 1 && bShape[0] == 1))
         {
             return null;
         }
@@ -139,17 +140,25 @@ public sealed partial class SplitBatchMatMul : IRewriteRule
         var if_shape = new Shape(new[] { aShape[1].FixedValue, aShape[2].FixedValue });
         var w_shape = new Shape(new[] { bShape[1].FixedValue, bShape[2].FixedValue });
 
-        for (var i = 0; i < aShape[0].FixedValue; i++)
+        if (aShape[0].FixedValue / bShape[0].FixedValue != 1)
         {
-            var begin = new[] { i };
-            var ifEnd = new[] { i + 1 };
-            var wEnd = new[] { i + 1 };
-            ifSlices[i] = Reshape(Slice(a, begin, ifEnd, new[] { 0 }, new[] { 1 }), if_shape);
-            wSlices[i] = Reshape(Slice(b, begin, wEnd, new[] { 0 }, new[] { 1 }), w_shape);
-            mmSlices[i] = MatMul(ifSlices[i], wSlices[i]);
-            ofSlices[i] = Reshape(mmSlices[i], new Shape(1, aShape[1].FixedValue, bShape[2].FixedValue));
+            
         }
+        else
+        {
+            for (var i = 0; i < aShape[0].FixedValue; i++)
+            {
+                var begin = new[] { i };
+                var ifEnd = new[] { i + 1 };
+                var wEnd = new[] { i + 1 };
+                ifSlices[i] = Reshape(Slice(a, begin, ifEnd, new[] { 0 }, new[] { 1 }), if_shape);
+                wSlices[i] = Reshape(Slice(b, begin, wEnd, new[] { 0 }, new[] { 1 }), w_shape);
+                mmSlices[i] = MatMul(ifSlices[i], wSlices[i]);
+                ofSlices[i] = Reshape(mmSlices[i], new Shape(1, aShape[1].FixedValue, bShape[2].FixedValue));
+            }
 
-        return Concat(new IR.Tuple(ofSlices), 0).InheritMetaData(matMulCall);
+            return Concat(new IR.Tuple(ofSlices), 0).InheritMetaData(matMulCall);
+        }
+        
     }
 }
