@@ -35,9 +35,13 @@ class host_buffer_impl : public host_buffer_node {
         : host_buffer_node(bytes, allocator, host_sync_status),
           data_(std::move(data)),
           physical_address_(physical_address),
-          deleter_(std::move(deleter)),
-          bytes_size_(bytes),
-          collect_(collect) {}
+          deleter_(std::move(deleter))
+    {
+#ifdef DUMP_MEM
+        bytes_size_ = bytes;
+        collect_ = collect;
+#endif
+    }
 
     ~host_buffer_impl()
     {
@@ -83,8 +87,10 @@ class host_buffer_impl : public host_buffer_node {
     gsl::byte *data_;
     uintptr_t physical_address_;
     std::function<void(gsl::byte *)> deleter_;
+#ifdef DUMP_MEM
     size_t bytes_size_;
     bool collect_;
+#endif
 };
 
 class host_buffer_allocator : public buffer_allocator {
