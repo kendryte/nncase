@@ -39,19 +39,16 @@ class host_buffer_impl : public host_buffer_node {
           bytes_size_(bytes),
           collect_(collect) {}
 
-    ~host_buffer_impl()
-    {
+    ~host_buffer_impl() {
         deleter_(data_);
 #ifdef DUMP_MEM
-        if(collect_)
-        {
+        if (collect_) {
             if (max_mem < used_mem)
                 max_mem = used_mem;
-            std::cout
-                << "[Used_mem]:" << std::setw(16) << std::setfill(' ')
-                << used_mem << "\t[deleter ]:" << std::setw(16)
-                << std::setfill(' ') << bytes_size_ << "\t[Max_mem]: " << max_mem
-                << std::endl;
+            std::cout << "[Used_mem]:" << std::setw(16) << std::setfill(' ')
+                      << used_mem << "\t[deleter ]:" << std::setw(16)
+                      << std::setfill(' ') << bytes_size_
+                      << "\t[Max_mem]: " << max_mem << std::endl;
             used_mem -= bytes_size_;
         }
 #endif
@@ -102,9 +99,8 @@ class host_buffer_allocator : public buffer_allocator {
         if (!data)
             return err(std::errc::not_enough_memory);
         return ok<buffer_t>(object_t<host_buffer_impl>(
-            std::in_place, data, bytes,
-            [](gsl::byte *p) { delete[] p; },
-            0, *this, host_sync_status_t::valid, true));
+            std::in_place, data, bytes, [](gsl::byte *p) { delete[] p; }, 0,
+            *this, host_sync_status_t::valid, true));
     }
 
     result<buffer_t>
