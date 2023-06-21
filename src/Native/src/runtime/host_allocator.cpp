@@ -23,7 +23,6 @@ using namespace nncase::runtime;
 #include <iostream>
 static uint64_t used_mem = 0;
 static uint64_t max_mem = 0;
-static std::unordered_map<gsl::byte *, size_t> mem_info;
 #endif
 namespace {
 class host_buffer_impl : public host_buffer_node {
