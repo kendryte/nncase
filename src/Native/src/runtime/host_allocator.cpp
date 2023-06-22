@@ -18,19 +18,44 @@
 using namespace nncase;
 using namespace nncase::runtime;
 
+#ifdef DUMP_MEM
+#include <iomanip>
+#include <iostream>
+static uint64_t used_mem = 0;
+static uint64_t max_mem = 0;
+#endif
 namespace {
 class host_buffer_impl : public host_buffer_node {
   public:
     host_buffer_impl(gsl::byte *data, size_t bytes,
                      std::function<void(gsl::byte *)> deleter,
                      uintptr_t physical_address, buffer_allocator &allocator,
-                     host_sync_status_t host_sync_status)
+                     host_sync_status_t host_sync_status,
+                     [[maybe_unused]] bool collect = false)
         : host_buffer_node(bytes, allocator, host_sync_status),
           data_(std::move(data)),
           physical_address_(physical_address),
-          deleter_(std::move(deleter)) {}
+          deleter_(std::move(deleter)) {
+#ifdef DUMP_MEM
+        bytes_size_ = bytes;
+        collect_ = collect;
+#endif
+    }
 
-    ~host_buffer_impl() { deleter_(data_); }
+    ~host_buffer_impl() {
+        deleter_(data_);
+#ifdef DUMP_MEM
+        if (collect_) {
+            if (max_mem < used_mem)
+                max_mem = used_mem;
+            std::cout << "[Used_mem]:" << std::setw(16) << std::setfill(' ')
+                      << used_mem << "\t[deleter ]:" << std::setw(16)
+                      << std::setfill(' ') << bytes_size_
+                      << "\t[Max_mem]: " << max_mem << std::endl;
+            used_mem -= bytes_size_;
+        }
+#endif
+    }
 
     bool has_physical_address() const noexcept override {
         return physical_address_;
@@ -58,6 +83,10 @@ class host_buffer_impl : public host_buffer_node {
     gsl::byte *data_;
     uintptr_t physical_address_;
     std::function<void(gsl::byte *)> deleter_;
+#ifdef DUMP_MEM
+    size_t bytes_size_;
+    bool collect_;
+#endif
 };
 
 class host_buffer_allocator : public buffer_allocator {
@@ -65,12 +94,18 @@ class host_buffer_allocator : public buffer_allocator {
     result<buffer_t>
     allocate([[maybe_unused]] size_t bytes,
              [[maybe_unused]] const buffer_allocate_options &options) override {
+#ifdef DUMP_MEM
+        std::cout << "[Used_mem]:" << std::setw(16) << std::setfill(' ')
+                  << used_mem << "\t[allocate]:" << std::setw(16)
+                  << std::setfill(' ') << bytes << std::endl;
+        used_mem += bytes;
+#endif
         auto data = new (std::nothrow) gsl::byte[bytes];
         if (!data)
             return err(std::errc::not_enough_memory);
         return ok<buffer_t>(object_t<host_buffer_impl>(
             std::in_place, data, bytes, [](gsl::byte *p) { delete[] p; }, 0,
-            *this, host_sync_status_t::valid));
+            *this, host_sync_status_t::valid, true));
     }
 
     result<buffer_t>
