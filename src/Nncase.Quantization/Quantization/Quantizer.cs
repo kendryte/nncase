@@ -77,6 +77,11 @@ internal partial class Quantizer
             var markerValues = markerEvaluator.Evaluate();
             foreach (var key in markerValues.Keys)
             {
+                if (key.Expr.Metadata.OutputNames == null)
+                {
+                    break;
+                }
+
                 var groundTruth = markerOutputGroundTruth[key][sampleIndex];
                 var quantedValue = markerValues[key];
                 var outputNames = key.Expr.Metadata.OutputNames![0];
@@ -284,7 +289,7 @@ internal partial class Quantizer
         {
             // 原本设计导入json功能将来会被集成在nncase studio中，在网页中交互直接复制粘贴json字符串到QuantScheme参数中比较合适，此时以下代码应走上面的分支，
             // 但是目前由于没有nncase studio，c#与python调试时不可能粘贴数万行的json，可在此处手动临时开启下面的分支，这样导入json时，QuantScheme填入json文件的路径即可。
-            // 若未来不再需要nncase studio，也可直接写死代码只保留下面的分支逻辑，但目前建议先用if的方式保留代码，另外注意，将来若进行修改，UnitTestExportQuantScheme也需要对齐。
+            // 若未来不再需要nncase studio，也可直接写死代码只保留下面的分支逻辑，但目前建议先用if的方式保留代码。另外注意，UnitTestExportQuantScheme等所有与QuantScheme有关的test也需要随之调整。
 #if true
             string readJson = _quantizeOptions.QuantScheme;
             var quantScheme = JsonConvert.DeserializeObject<QuantScheme>(readJson);
@@ -429,13 +434,26 @@ internal partial class Quantizer
                     }
                     else
                     {
-                        var valueRanges = new ValueRange<float>[quantScheme!.Outputs[i].DataRange!.Length];
-                        for (int j = 0; j < quantScheme!.Outputs[i].DataRange!.Length; j++)
+                        var call = rangeOf.Expr.Users.ToList()[0].Users.ToList()[0];
+                        if (call is Call && ((Call)call).Target is MatMul && call.CheckedShape.HasUnknownDimension && quantScheme!.Outputs[i].DataRangeMode == "by_channel")
                         {
-                            valueRanges[j] = FixUpRange(new ValueRange<float>((float)quantScheme!.Outputs[i].DataRange![j].Min, (float)quantScheme!.Outputs[i].DataRange![j].Max));
-                        }
+                            var min = ((TensorConst)rangeOf.Expr.Operands[1]).Value.ToArray<float>().Min();
+                            var max = ((TensorConst)rangeOf.Expr.Operands[1]).Value.ToArray<float>().Max();
+                            var valueRanges = new ValueRange<float>[1];
+                            valueRanges[0] = new ValueRange<float>(min, max);
 
-                        ranges.Add(rangeOf, valueRanges);
+                            ranges.Add(rangeOf, valueRanges);
+                        }
+                        else
+                        {
+                            var valueRanges = new ValueRange<float>[quantScheme!.Outputs[i].DataRange!.Length];
+                            for (int j = 0; j < quantScheme!.Outputs[i].DataRange!.Length; j++)
+                            {
+                                valueRanges[j] = FixUpRange(new ValueRange<float>((float)quantScheme!.Outputs[i].DataRange![j].Min, (float)quantScheme!.Outputs[i].DataRange![j].Max));
+                            }
+
+                            ranges.Add(rangeOf, valueRanges);
+                        }
                     }
                 }
             }
