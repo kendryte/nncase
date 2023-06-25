@@ -121,7 +121,7 @@ public sealed partial class BroadcastMatMul : IRewriteRule
             "matMulCall",
             _ => true,
             IsWildcard("a"),
-            IsTensorConst("b"));
+            IsWildcard("b"));
 
     private Expr? GetReplace(Call matMulCall, Expr a, Expr b)
     {
