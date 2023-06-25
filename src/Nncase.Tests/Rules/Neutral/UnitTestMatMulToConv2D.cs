@@ -102,7 +102,7 @@ public class UnitTestBroadcastMatMul : TransformTestBase
         SetupTestMethod(true);
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, aShape);
         var b = Random.Normal(DataTypes.Float32, 0, 1, 0, bShape).Evaluate().AsTensor();
-        var rootPre = IR.F.Tensors.Reshape(Math.MatMul(a, b), new int[] { (-1), aShape[^2], bShape[^1] });
+        var rootPre = IR.F.Tensors.Reshape(Math.MatMul(a, b), new int[] { -1, aShape[^2], bShape[^1] });
         TestMatched<BroadcastMatMul>(rootPre);
     }
 }

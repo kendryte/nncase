@@ -140,8 +140,8 @@ public sealed partial class BroadcastMatMul : IRewriteRule
         newBShape[^1] = bShape[^1].FixedValue;
         newBShape[^2] = bShape[^2].FixedValue;
 
-        var ifShape = new int[] { (-1), aShape[^2].FixedValue, aShape[^1].FixedValue };
-        var wShape = new int[] { (-1), newBShape[^2], newBShape[^1] };
+        var ifShape = new int[] { -1, aShape[^2].FixedValue, aShape[^1].FixedValue };
+        var wShape = new int[] { -1, newBShape[^2], newBShape[^1] };
         return MatMul(Reshape(a, ifShape), Reshape(IR.F.Tensors.Broadcast(b, newBShape), wShape));
     }
 }
