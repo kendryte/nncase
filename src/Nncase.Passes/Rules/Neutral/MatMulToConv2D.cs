@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Nncase.IR;
+using Nncase.IR.Math;
 using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
 using static Nncase.IR.F.NN;
@@ -108,6 +109,44 @@ public sealed partial class BroadcastMatMulToConv2D : IRewriteRule
 }
 
 /// <summary>
+/// Transform broadcast <see cref="IR.Math.MatMul"/> b to <see cref="IR.Math.MatMul"/> a and squeeze matmul to 3D.
+/// </summary>
+[RuleGenerator]
+public sealed partial class BroadcastMatMul : IRewriteRule
+{
+    /// <inheritdoc/>
+    public IPattern Pattern { get; } =
+        IsMatMul(
+            "matMul",
+            "matMulCall",
+            _ => true,
+            IsWildcard("a"),
+            IsTensorConst("b"));
+
+    private Expr? GetReplace(Call matMulCall, Expr a, Expr b)
+    {
+        var aShape = a.CheckedShape;
+        var bShape = b.CheckedShape;
+
+        var sizeA = aShape.Size;
+        var sizeB = bShape.Size;
+
+        if (sizeA / (aShape[^1].FixedValue * aShape[^2].FixedValue) == sizeB / (bShape[^1].FixedValue * bShape[^2].FixedValue))
+        {
+            return null;
+        }
+
+        var newBShape = aShape.ToValueArray();
+        newBShape[^1] = bShape[^1].FixedValue;
+        newBShape[^2] = bShape[^2].FixedValue;
+
+        var ifShape = new int[] { (-1), aShape[^2].FixedValue, aShape[^1].FixedValue };
+        var wShape = new int[] { (-1), newBShape[^2], newBShape[^1] };
+        return MatMul(Reshape(a, ifShape), Reshape(IR.F.Tensors.Broadcast(b, newBShape), wShape));
+    }
+}
+
+/// <summary>
 /// Transform non-broadcast multiple <see cref="IR.Math.MatMul"/>.
 /// </summary>
 [RuleGenerator]
@@ -126,8 +165,7 @@ public sealed partial class SplitBatchMatMul : IRewriteRule
     {
         var aShape = a.CheckedShape;
         var bShape = b.CheckedShape;
-        if (aShape[2] != bShape[1] || aShape[0].FixedValue / bShape[0].FixedValue != 1 ||
-            (aShape[0] == 1 && bShape[0] == 1))
+        if (aShape[2] != bShape[1] || aShape[0] != bShape[0])
         {
             return null;
         }
@@ -140,25 +178,17 @@ public sealed partial class SplitBatchMatMul : IRewriteRule
         var if_shape = new Shape(new[] { aShape[1].FixedValue, aShape[2].FixedValue });
         var w_shape = new Shape(new[] { bShape[1].FixedValue, bShape[2].FixedValue });
 
-        if (aShape[0].FixedValue / bShape[0].FixedValue != 1)
+        for (var i = 0; i < aShape[0].FixedValue; i++)
         {
-            
+            var begin = new[] { i };
+            var ifEnd = new[] { i + 1 };
+            var wEnd = new[] { i + 1 };
+            ifSlices[i] = Reshape(Slice(a, begin, ifEnd, new[] { 0 }, new[] { 1 }), if_shape);
+            wSlices[i] = Reshape(Slice(b, begin, wEnd, new[] { 0 }, new[] { 1 }), w_shape);
+            mmSlices[i] = MatMul(ifSlices[i], wSlices[i]);
+            ofSlices[i] = Reshape(mmSlices[i], new Shape(1, aShape[1].FixedValue, bShape[2].FixedValue));
         }
-        else
-        {
-            for (var i = 0; i < aShape[0].FixedValue; i++)
-            {
-                var begin = new[] { i };
-                var ifEnd = new[] { i + 1 };
-                var wEnd = new[] { i + 1 };
-                ifSlices[i] = Reshape(Slice(a, begin, ifEnd, new[] { 0 }, new[] { 1 }), if_shape);
-                wSlices[i] = Reshape(Slice(b, begin, wEnd, new[] { 0 }, new[] { 1 }), w_shape);
-                mmSlices[i] = MatMul(ifSlices[i], wSlices[i]);
-                ofSlices[i] = Reshape(mmSlices[i], new Shape(1, aShape[1].FixedValue, bShape[2].FixedValue));
-            }
 
-            return Concat(new IR.Tuple(ofSlices), 0).InheritMetaData(matMulCall);
-        }
-        
+        return Concat(new IR.Tuple(ofSlices), 0).InheritMetaData(matMulCall);
     }
 }
