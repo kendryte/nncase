@@ -328,7 +328,9 @@ void binary_impl_fv_i64(int64_t input_a, const int64_t *input_b, int64_t *out,
 }
 
 static int verify_shape_impl(gsl::span<const size_t> in_a_shape,
-                             gsl::span<const size_t> in_b_shape, int* outter_front_size_ptr, int* outter_current_size_ptr) {
+                             gsl::span<const size_t> in_b_shape,
+                             int *outter_front_size_ptr,
+                             int *outter_current_size_ptr) {
 
     int size_diff = in_a_shape.size() - in_b_shape.size();
     int outter_front_size = 1;
@@ -349,16 +351,13 @@ static int verify_shape_impl(gsl::span<const size_t> in_a_shape,
     if (index == (int)(in_b_shape.size() - 1)) {
         return 0;
     }
-    
-    if(in_b_shape[in_b_shape.size() - 1] == 1) 
-    {
+
+    if (in_b_shape[in_b_shape.size() - 1] == 1) {
         int len_b_leave = 1;
-        for(int i = index + 1; i < in_b_shape.size(); ++i)
-        {
-            len_b_leave *=  in_b_shape[i];
+        for (int i = index + 1; i < in_b_shape.size(); ++i) {
+            len_b_leave *= in_b_shape[i];
         }
-        if(len_b_leave != 1)
-        {
+        if (len_b_leave != 1) {
             printf("error ... in_b_shape_ptr[i] != 1");
             return -1;
         }
@@ -371,139 +370,141 @@ static int verify_shape_impl(gsl::span<const size_t> in_a_shape,
 
 static int verify_shape(gsl::span<const size_t> in_a_shape,
                         gsl::span<const size_t> in_b_shape, int a_len,
-                        int b_len, gsl::span<const size_t> out_shape, int* outter_front_size, int* outter_current_size) {
-    if((in_a_shape != out_shape) && (in_b_shape != out_shape))
-    {
+                        int b_len, gsl::span<const size_t> out_shape,
+                        int *outter_front_size, int *outter_current_size) {
+    if ((in_a_shape != out_shape) && (in_b_shape != out_shape)) {
         return -1;
     }
     if (a_len == 1 || b_len == 1)
         return 0;
     if (a_len > b_len) {
-        return verify_shape_impl(in_a_shape, in_b_shape, outter_front_size, outter_current_size);
+        return verify_shape_impl(in_a_shape, in_b_shape, outter_front_size,
+                                 outter_current_size);
     }
     if (a_len < b_len) {
-        return verify_shape_impl(in_b_shape, in_a_shape, outter_front_size, outter_current_size);
+        return verify_shape_impl(in_b_shape, in_a_shape, outter_front_size,
+                                 outter_current_size);
     }
-    if (in_a_shape.size() < in_b_shape.size())
-    {
-        return verify_shape_impl(in_b_shape, in_a_shape, outter_front_size, outter_current_size);
+    if (in_a_shape.size() < in_b_shape.size()) {
+        return verify_shape_impl(in_b_shape, in_a_shape, outter_front_size,
+                                 outter_current_size);
     }
-    return verify_shape_impl(in_a_shape, in_b_shape, outter_front_size, outter_current_size);
+    return verify_shape_impl(in_a_shape, in_b_shape, outter_front_size,
+                             outter_current_size);
 }
 
-static gsl::span<const size_t> get_sample_span(gsl::span<const size_t> in_shape)
-{
+static gsl::span<const size_t>
+get_sample_span(gsl::span<const size_t> in_shape) {
     int not_one_index = 0;
-    for(int i = 0; i < in_shape.size(); ++i)
-    {
-        if(in_shape[i] != 1)
-        {
+    for (int i = 0; i < in_shape.size(); ++i) {
+        if (in_shape[i] != 1) {
             not_one_index = i;
             break;
         }
     }
-    if(not_one_index != 0)
-    {
-        return gsl::span<const size_t>(in_shape.begin() + not_one_index, in_shape.end());
-    }
-    else
-    {
+    if (not_one_index != 0) {
+        return gsl::span<const size_t>(in_shape.begin() + not_one_index,
+                                       in_shape.end());
+    } else {
         return in_shape;
     }
 }
 
-#define REGISTER_BINARY_IMPL(data_type, function_ptr_vs, function_ptr_sv, function_ptr_vv) \
-template <typename Top>                                                                     \
-int optimized_binary_impl(                                                                  \
-    const data_type *input_a, const data_type *input_b, data_type *output,                              \
-    gsl::span<const size_t> in_a_shape, gsl::span<const size_t> in_b_shape,                 \
-    [[maybe_unused]] gsl::span<const size_t> out_shape) noexcept {                          \
-    in_a_shape = get_sample_span(in_a_shape);                                               \
-    in_b_shape = get_sample_span(in_b_shape);                                               \
-    out_shape = get_sample_span(out_shape);                                                 \
-    int len_a = in_a_shape.size() != 0 ? (int)compute_size(in_a_shape) : 1;                 \
-    int len_b = in_b_shape.size() != 0 ? (int)compute_size(in_b_shape) : 1;                 \
-    if (in_a_shape == in_b_shape) {                                                         \
-        function_ptr_vv<Top>(input_a, input_b, output, len_a);                           \
-        return 0;                                                                           \
-    }                                                                                       \
-    int outter_front_size, outter_current_size;                                             \
-    int index = verify_shape(in_a_shape, in_b_shape, len_a, len_b, out_shape, &outter_front_size, &outter_current_size); \
-    if(index == -1) return -1;                                                               \
-    if (len_a >= len_b) {                                                                    \
-        if (len_b == 1) {                                                                    \
-            function_ptr_vs <Top>(input_a, input_b[0], output, len_a);                     \
-        } else {                                                                             \
-            if(in_b_shape[in_b_shape.size() - 1] == 1)                                       \
-            {                                                                                \
-                int size_diff = in_a_shape.size() - in_b_shape.size();                       \
-                int len_a_leave = 1;                                                         \
-                for(int i = index + 1; i < in_b_shape.size(); ++i)                           \
-                {                                                                            \
-                    len_a_leave *= in_a_shape[i + size_diff];                                \
-                }                                                                            \
-                for(int j = 0; j < outter_front_size; ++j)                                   \
-                {                                                                            \
-                    for(int i = 0; i < outter_current_size; ++i)                             \
-                    {                                                                        \
-                        function_ptr_vs <Top>(input_a + len_a_leave * i + j * len_a_leave * outter_current_size, input_b[i], \
-                        output  + len_a_leave * i + j * len_a_leave * outter_current_size    \
-                        , len_a_leave);                                                      \
-                    }                                                                        \
-                }                                                                            \
-            }                                                                                \
-            else                                                                             \
-            {                                                                                \
-                int loop_n = len_a / len_b;                                                  \
-                for (int i = 0; i < loop_n; ++i) {                                           \
-                    function_ptr_vv<Top>(input_a, input_b, output, len_b);                \
-                    input_a += len_b;                                                        \
-                    output += len_b;                                                         \
-                }                                                                            \
-            }                                                                                \
-        }                                                                                    \
-    } else                                                                                   \
-    {                                                                                        \
-        if (len_a == 1) {                                                                    \
-            function_ptr_sv<Top>(input_a[0], input_b, output, len_b);                     \
-        } else {                                                                             \
-            if(in_a_shape[in_a_shape.size() - 1] == 1)                                       \
-            {                                                                                \
-                int size_diff = in_b_shape.size() - in_a_shape.size();                       \
-                int len_b_leave = 1;                                                         \
-                for(int i = index + 1; i < in_a_shape.size(); ++i)                           \
-                {                                                                            \
-                    len_b_leave *= in_b_shape[i + size_diff];                                \
-                }                                                                            \
-                for(int j = 0; j < outter_front_size; ++j)                                   \
-                {                                                                            \
-                    for(int i = 0; i < outter_current_size; ++i)                             \
-                    {                                                                        \
-                        function_ptr_sv<Top>(input_a[i] ,                                 \
-                        input_b + len_b_leave * i + j * len_b_leave * outter_current_size,   \
-                        output  + len_b_leave * i + j * len_b_leave * outter_current_size    \
-                        , len_b_leave);                                                      \
-                    }                                                                        \
-                }                                                                            \
-            }                                                                                \
-            else                                                                             \
-            {                                                                                \
-                int loop_n = len_b / len_a;                                                  \
-                for (int i = 0; i < loop_n; ++i) {                                           \
-                    function_ptr_vv<Top>(input_a, input_b, output, len_a);                \
-                    input_b += len_a;                                                        \
-                    output += len_a;                                                         \
-                }                                                                            \
-            }                                                                                \
-        }                                                                                    \
-    }                                                                                        \
-    return 0;                                                                                \
-}                                                                                            \
+#define REGISTER_BINARY_IMPL(data_type, function_ptr_vs, function_ptr_sv,      \
+                             function_ptr_vv)                                  \
+    template <typename Top>                                                    \
+    int optimized_binary_impl(                                                 \
+        const data_type *input_a, const data_type *input_b, data_type *output, \
+        gsl::span<const size_t> in_a_shape,                                    \
+        gsl::span<const size_t> in_b_shape,                                    \
+        [[maybe_unused]] gsl::span<const size_t> out_shape) noexcept {         \
+        in_a_shape = get_sample_span(in_a_shape);                              \
+        in_b_shape = get_sample_span(in_b_shape);                              \
+        out_shape = get_sample_span(out_shape);                                \
+        int len_a =                                                            \
+            in_a_shape.size() != 0 ? (int)compute_size(in_a_shape) : 1;        \
+        int len_b =                                                            \
+            in_b_shape.size() != 0 ? (int)compute_size(in_b_shape) : 1;        \
+        if (in_a_shape == in_b_shape) {                                        \
+            function_ptr_vv<Top>(input_a, input_b, output, len_a);             \
+            return 0;                                                          \
+        }                                                                      \
+        int outter_front_size, outter_current_size;                            \
+        int index =                                                            \
+            verify_shape(in_a_shape, in_b_shape, len_a, len_b, out_shape,      \
+                         &outter_front_size, &outter_current_size);            \
+        if (index == -1)                                                       \
+            return -1;                                                         \
+        if (len_a >= len_b) {                                                  \
+            if (len_b == 1) {                                                  \
+                function_ptr_vs<Top>(input_a, input_b[0], output, len_a);      \
+            } else {                                                           \
+                if (in_b_shape[in_b_shape.size() - 1] == 1) {                  \
+                    int size_diff = in_a_shape.size() - in_b_shape.size();     \
+                    int len_a_leave = 1;                                       \
+                    for (int i = index + 1; i < in_b_shape.size(); ++i) {      \
+                        len_a_leave *= in_a_shape[i + size_diff];              \
+                    }                                                          \
+                    for (int j = 0; j < outter_front_size; ++j) {              \
+                        for (int i = 0; i < outter_current_size; ++i) {        \
+                            function_ptr_vs<Top>(                              \
+                                input_a + len_a_leave * i +                    \
+                                    j * len_a_leave * outter_current_size,     \
+                                input_b[i],                                    \
+                                output + len_a_leave * i +                     \
+                                    j * len_a_leave * outter_current_size,     \
+                                len_a_leave);                                  \
+                        }                                                      \
+                    }                                                          \
+                } else {                                                       \
+                    int loop_n = len_a / len_b;                                \
+                    for (int i = 0; i < loop_n; ++i) {                         \
+                        function_ptr_vv<Top>(input_a, input_b, output, len_b); \
+                        input_a += len_b;                                      \
+                        output += len_b;                                       \
+                    }                                                          \
+                }                                                              \
+            }                                                                  \
+        } else {                                                               \
+            if (len_a == 1) {                                                  \
+                function_ptr_sv<Top>(input_a[0], input_b, output, len_b);      \
+            } else {                                                           \
+                if (in_a_shape[in_a_shape.size() - 1] == 1) {                  \
+                    int size_diff = in_b_shape.size() - in_a_shape.size();     \
+                    int len_b_leave = 1;                                       \
+                    for (int i = index + 1; i < in_a_shape.size(); ++i) {      \
+                        len_b_leave *= in_b_shape[i + size_diff];              \
+                    }                                                          \
+                    for (int j = 0; j < outter_front_size; ++j) {              \
+                        for (int i = 0; i < outter_current_size; ++i) {        \
+                            function_ptr_sv<Top>(                              \
+                                input_a[i],                                    \
+                                input_b + len_b_leave * i +                    \
+                                    j * len_b_leave * outter_current_size,     \
+                                output + len_b_leave * i +                     \
+                                    j * len_b_leave * outter_current_size,     \
+                                len_b_leave);                                  \
+                        }                                                      \
+                    }                                                          \
+                } else {                                                       \
+                    int loop_n = len_b / len_a;                                \
+                    for (int i = 0; i < loop_n; ++i) {                         \
+                        function_ptr_vv<Top>(input_a, input_b, output, len_a); \
+                        input_b += len_a;                                      \
+                        output += len_a;                                       \
+                    }                                                          \
+                }                                                              \
+            }                                                                  \
+        }                                                                      \
+        return 0;                                                              \
+    }
 
-
-REGISTER_BINARY_IMPL(float, binary_impl_vf_f32, binary_impl_fv_f32, binary_impl_vv_f32)
-REGISTER_BINARY_IMPL(int32_t, binary_impl_vf_i32, binary_impl_fv_i32, binary_impl_vv_i32)
-REGISTER_BINARY_IMPL(int64_t, binary_impl_vf_i64, binary_impl_fv_i64, binary_impl_vv_i64)
+REGISTER_BINARY_IMPL(float, binary_impl_vf_f32, binary_impl_fv_f32,
+                     binary_impl_vv_f32)
+REGISTER_BINARY_IMPL(int32_t, binary_impl_vf_i32, binary_impl_fv_i32,
+                     binary_impl_vv_i32)
+REGISTER_BINARY_IMPL(int64_t, binary_impl_vf_i64, binary_impl_fv_i64,
+                     binary_impl_vv_i64)
 
 #endif
 } // namespace
