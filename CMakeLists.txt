@@ -39,9 +39,14 @@ option(BUILD_TESTING "Build test programs" OFF)
 option(ENABLE_OP_PROFILE "Profile ops cast time" OFF)
 option(ENABLE_DUMP_MANAGER "Enable dump manager" OFF)
 option(ENABLE_RVV "Some kernel impl by rvv" OFF)
+option(ENABLE_DUMP_MEM "Dump mem usage" OFF)
 
 if (ENABLE_OP_PROFILE)
     add_definitions(-DENABLE_OP_PROFILE)
+endif()
+
+if(ENABLE_DUMP_MEM)
+    add_definitions(-DDUMP_MEM)
 endif()
 
 if(NOT CMAKE_TOOLCHAIN_FILE)
@@ -49,7 +54,7 @@ if(NOT CMAKE_TOOLCHAIN_FILE)
 endif()
 
 if (BUILDING_RUNTIME)
-    option(ENABLE_VULKAN_RUNTIME "Enable Vulkan runtime" ON)
+    option(ENABLE_VULKAN_RUNTIME "Enable Vulkan runtime" OFF)
     option(ENABLE_K210_RUNTIME "Enable k210 runtime" OFF)
     option(DEFAULT_BUILTIN_RUNTIMES "Use default builtin runtimes" ON)
     option(DEFAULT_SHARED_RUNTIME_TENSOR_PLATFORM_IMPL "Use default shared memory platform impl" ON)
@@ -58,7 +63,7 @@ endif()
 include(cmake/configure-conan.cmake)
 include(cmake/conan.cmake)
 
-if(NOT CONAN_EXPORTED) 
+if(NOT CONAN_EXPORTED)
     conan_check()
     conan_add_remote(NAME sunnycase URL https://conan.sunnycase.moe INDEX 0)
 endif()
@@ -84,7 +89,7 @@ if (BUILDING_RUNTIME)
     set(NNCASE_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/src/Native/include)
     set(THIRD_PARTY ${CMAKE_CURRENT_LIST_DIR}/third_party)
     set_property(GLOBAL PROPERTY POSITION_INDEPENDENT_CODE ON)
-    
+
     if (MSVC)
         add_definitions(/D_CRT_SECURE_NO_WARNINGS /DNOMINMAX)
         add_compile_options(/wd4267 /wd4251 /wd4244 /FC /utf-8 /W3 /WX /wd4297 -Wno-unused-function -Wno-unused-command-line-argument)
@@ -101,10 +106,10 @@ if (BUILDING_RUNTIME)
             endif()
         endif()
     endif()
-    
+
     include_directories(${NNCASE_MAIN_INCLUDE_DIR})
     include_directories(${NNCASE_INCLUDE_DIR})
-    
+
     add_subdirectory(src/Native/include/nncase)
     #    add_subdirectory(src/Native/src/kernels)
     #    add_subdirectory(src/Native/src/runtime)
@@ -113,7 +118,7 @@ if (BUILDING_RUNTIME)
     if(BUILD_BENCHMARK)
 #        add_subdirectory(benchmark)
     endif()
-    
+
     # Python binding
     if(BUILD_PYTHON_BINDING)
 #        add_subdirectory(python/nncaseruntime/native)
@@ -150,7 +155,7 @@ if (BUILDING_RUNTIME)
         PATTERN "*.inc"
         PATTERN "LICENSE.TXT"
         )
-    
+
     install(DIRECTORY src/Native/include/nncase/runtime
         DESTINATION include/nncase
         COMPONENT nncase-headers
@@ -176,7 +181,7 @@ else()
     else ()
         set(CMAKE_INSTALL_RPATH "$ORIGIN")
     endif()
-    
+
     if (MSVC)
         add_definitions(/D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS /D_CRT_SECURE_NO_WARNINGS /DNOMINMAX)
         add_compile_options(/wd4267 /wd4251 /wd4244 /FC /utf-8 /W3 /WX -Wno-unused-function -Wno-unused-command-line-argument)
@@ -193,10 +198,10 @@ else()
             add_link_options(-Wl,--exclude-libs,ALL)
         endif()
     endif()
-    
+
     include_directories(${NNCASE_MAIN_INCLUDE_DIR})
     include_directories(${NNCASE_INCLUDE_DIR})
-    
+
     add_subdirectory(src/Native/include/nncase)
     add_subdirectory(src/Native/src)
 
@@ -208,11 +213,11 @@ else()
     # Csharp binding
     if(BUILD_CSHARP_BINDING)
         #add_subdirectory(csharp)
-    endif()  
+    endif()
 
     # Thrid party
     # add_subdirectory(third_party/onnx)
-    
+
     install(DIRECTORY src/Native/include/nncase
         DESTINATION include
         COMPONENT nncase-headers
@@ -225,7 +230,7 @@ else()
         PATTERN "LICENSE.TXT"
         PATTERN "*.h"
         )
-        
+
     install(DIRECTORY ${NNCASE_INCLUDE_DIR}/nncase
         DESTINATION include
         COMPONENT nncase-headers
@@ -239,14 +244,14 @@ else()
         PATTERN "config.h" EXCLUDE
         PATTERN "*.h"
         )
-    
+
     install(DIRECTORY python/nncase
         DESTINATION python
         COMPONENT nncase-python
         FILES_MATCHING
         PATTERN "*.py"
         )
-    
+
     # Targets
     #add_subdirectory(targets/cpu)
     #add_subdirectory(targets/k210)
