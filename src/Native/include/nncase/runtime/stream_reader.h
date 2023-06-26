@@ -39,54 +39,24 @@ class stream_reader {
         return value;
     }
 
+    template <class T> T read_unaligned() { return read<T>(); }
+
+    template <class T> T peek() {
+        T value;
+        auto pos = tell();
+        read(value);
+        seek(pos);
+        return value;
+    }
+
+    template <class T> T peek_unaligned() { return peek<T>(); }
+
     template <class T> void read(T &value) {
         stream_.read(reinterpret_cast<char *>(&value), sizeof(value));
     }
 
-    template <class T> void read_span(gsl::span<const T> &span, size_t size) {
-        span = {reinterpret_cast<const T *>(begin_), size};
-        advance(sizeof(T) * size);
-    }
-
-    template <class T = gsl::byte> gsl::span<const T> read_span(size_t size) {
-        gsl::span<const T> span(reinterpret_cast<const T *>(begin_), size);
-        advance(sizeof(T) * size);
-        return span;
-    }
-
-    void read_avail(gsl::span<const gsl::byte> &span) {
-        span = {begin_, end_};
-        begin_ = end_;
-    }
-
-    gsl::span<const gsl::byte> read_until(gsl::byte value) {
-        auto it = std::find(begin_, end_, value);
-        return read_span((size_t)std::distance(begin_, it));
-    }
-
-    gsl::span<const gsl::byte> read_avail() {
-        gsl::span<const gsl::byte> span;
-        read_avail(span);
-        return span;
-    }
-
-    gsl::span<const gsl::byte> peek_avail() { return {begin_, end_}; }
-
-    template <class T> T peek_with_offset(size_t offset) {
-        auto value = *reinterpret_cast<const T *>(begin_ + offset);
-        return value;
-    }
-
-    template <class T> T peek() { return peek_with_offset<T>(0); }
-
-    template <class T> T peek_unaligned_with_offset(size_t offset) {
-        T value;
-        std::memcpy(&value, begin_ + offset, sizeof(T));
-        return value;
-    }
-
-    template <class T> T peek_unaligned() {
-        return peek_unaligned_with_offset<T>(0);
+    template <class T> void read_span(gsl::span<T> span) {
+        stream_.read(reinterpret_cast<char *>(span.data()), span.size_bytes());
     }
 
     void skip(size_t count) { stream_.seekg(count, std::ios::cur); }

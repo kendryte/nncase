@@ -23,34 +23,34 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 
-gsl::span<const gsl::byte> stackvm_runtime_module::rdata() const noexcept {
-    return rdata_;
-}
-
 result<void> stackvm_runtime_module::initialize_before_functions(
     runtime_module_init_context &context) noexcept {
-    assert(context.is_section_pinned());
-    rdata_ = context.section(".rdata");
+    try_set(text_, context.get_or_read_section(".text", text_storage_));
+    try_set(rdata_, context.get_or_read_section(".rdata", rdata_storage_));
+
     regs_[0] = (uintptr_t)rdata_.data();
 
     // register the external custom call.
-    auto custom_call_section = context.section(".custom_calls");
-    auto reader = span_reader(custom_call_section);
-    // custom call section layout:
-    // 1. used module numbers
-    //    - module_kind_t
-    //    - module_kind_t
-    auto used_module_counts = reader.read<uint32_t>();
-    for (size_t i = 0; i < used_module_counts; i++) {
-        auto kind = reader.read<module_kind_t>();
-        try_var(table, runtime_module::collect(kind));
-        for (auto &&p : table) {
-            if (custom_call_table_.find(p.first) != custom_call_table_.end()) {
-                return err(nncase_errc::stackvm_duplicate_custom_call);
+    try_(context.read_section(
+        ".custom_calls", [this](auto reader) -> result<void> {
+            // custom call section layout:
+            // 1. used module numbers
+            //    - module_kind_t
+            //    - module_kind_t
+            auto used_module_counts = reader.template read<uint32_t>();
+            for (size_t i = 0; i < used_module_counts; i++) {
+                auto kind = reader.template read<module_kind_t>();
+                try_var(table, runtime_module::collect(kind));
+                for (auto &&p : table) {
+                    if (custom_call_table_.find(p.first) !=
+                        custom_call_table_.end()) {
+                        return err(nncase_errc::stackvm_duplicate_custom_call);
+                    }
+                    custom_call_table_.insert(p);
+                }
             }
-            custom_call_table_.insert(p);
-        }
-    }
+            return ok();
+        }));
     return ok();
 }
 

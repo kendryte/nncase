@@ -58,3 +58,30 @@ gsl::span<const gsl::byte> runtime::read_sections(span_reader &sr,
 
     return sr.read_span(size);
 }
+
+result<std::streampos> runtime::find_section(const char *name,
+                                             stream_reader &reader,
+                                             size_t max_sections) noexcept {
+    const auto sections_pos = reader.tell();
+    for (size_t i = 0; i < max_sections; i++) {
+        auto pos = reader.tell();
+        auto header = reader.read<section_header>();
+        if (!strncmp(header.name, name, MAX_SECTION_NAME_LENGTH)) {
+            std::streampos body_pos;
+            if (header.flags & SECTION_MERGED_INTO_RDATA) {
+                reader.seek(sections_pos);
+                try_var(rdata_pos,
+                        find_section(".rdata", reader, max_sections));
+                body_pos = rdata_pos + std::streampos(header.body_start);
+            } else {
+                body_pos =
+                    pos + std::streampos(sizeof(header) + header.body_start);
+            }
+
+            reader.seek(pos);
+            return ok(body_pos);
+        }
+    }
+
+    return err(std::errc::no_such_file_or_directory);
+}
