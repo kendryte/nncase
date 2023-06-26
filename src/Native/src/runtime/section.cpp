@@ -80,6 +80,8 @@ result<std::streampos> runtime::find_section(const char *name,
 
             reader.seek(pos);
             return ok(body_pos);
+        } else {
+            reader.skip(header.size - sizeof(header));
         }
     }
 
