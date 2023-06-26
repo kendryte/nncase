@@ -29,8 +29,6 @@ using namespace nncase::kernels;
 using namespace nncase::kernels::stackvm;
 using namespace nncase::kernels::stackvm::optimized;
 
-// #include "../../debug_info.h"
-
 namespace {
 
 #if __riscv_vector
