@@ -61,7 +61,6 @@ TEST_P(UniformLikeTest, UniformLike) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
 
     // expected
-    int64_t shape_u_array[] = {1, 3, 16, 16};
     auto output_ort = ortki_RandomUniformLike(l_ort, 1, 1.0f, 0.0f, 1.0f);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
@@ -91,11 +90,6 @@ TEST_P(UniformLikeTest, UniformLike) {
                              sizeof(seed_array)},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
-    auto shape_u = hrt::create(dt_int64, {4},
-                               {reinterpret_cast<gsl::byte *>(shape_u_array),
-                                sizeof(shape_u_array)},
-                               true, host_runtime_tensor::pool_cpu_only)
-                       .expect("create tensor failed");
     auto output =
         kernels::stackvm::uniform_like(dt_float32, lhs.impl(), high.impl(),
                                        low.impl(), seed.impl())
