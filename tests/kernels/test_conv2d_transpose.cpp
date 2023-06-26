@@ -26,9 +26,10 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class Conv2DTest : public KernelTest,
-                   public ::testing::TestWithParam<
-                       std::tuple<nncase::typecode_t, dims_t, dims_t, dims_t>> {
+class Conv2DTransposeTest
+    : public KernelTest,
+      public ::testing::TestWithParam<
+          std::tuple<nncase::typecode_t, dims_t, dims_t, dims_t>> {
   public:
     void SetUp() override {
         auto &&[typecode, input_shape, weight_shape, bias_shape] = GetParam();
@@ -57,13 +58,13 @@ class Conv2DTest : public KernelTest,
     runtime_tensor bais;
 };
 
-INSTANTIATE_TEST_SUITE_P(Conv2D, Conv2DTest,
+INSTANTIATE_TEST_SUITE_P(conv2d_transpose, Conv2DTransposeTest,
                          testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 4, 5, 5}),
-                                          testing::Values(dims_t{8, 4, 3, 3}),
-                                          testing::Values(dims_t{8})));
+                                          testing::Values(dims_t{1, 1, 5, 5}),
+                                          testing::Values(dims_t{1, 2, 3, 3}),
+                                          testing::Values(dims_t{2})));
 
-TEST_P(Conv2DTest, conv2d) {
+TEST_P(Conv2DTransposeTest, conv2d_transpose) {
     auto input_ort = runtime_tensor_2_ort_tensor(input);
     auto weight_ort = runtime_tensor_2_ort_tensor(weight);
     auto bais_ort = runtime_tensor_2_ort_tensor(bais);
@@ -74,9 +75,12 @@ TEST_P(Conv2DTest, conv2d) {
     int64_t kernel_shape[] = {3, 3};
     int64_t pad[] = {1, 1, 1, 1};
     int64_t strides[] = {1, 1};
+    int64_t output_padding[] = {0, 0};
+    int64_t output_shape[] = {1, 2, 5, 5};
     auto output_ort =
-        ortki_Conv(input_ort, weight_ort, bais_ort, auto_pad, dilations, 2, 1,
-                   kernel_shape, 2, pad, 4, strides, 2);
+        ortki_ConvTranspose(input_ort, weight_ort, bais_ort, auto_pad,
+                            dilations, 2, 1, kernel_shape, 2, output_padding, 2,
+                            output_shape, 4, pad, 4, strides, 2);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
@@ -121,16 +125,29 @@ TEST_P(Conv2DTest, conv2d) {
             {reinterpret_cast<gsl::byte *>(fused_clamp), sizeof(fused_clamp)},
             true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
+    auto output_padding_ptr =
+        hrt::create(nncase::dt_int64, {2},
+                    {reinterpret_cast<gsl::byte *>(output_padding),
+                     sizeof(output_padding)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
+    auto output_shape_ptr =
+        hrt::create(
+            nncase::dt_int64, {4},
+            {reinterpret_cast<gsl::byte *>(output_shape), sizeof(output_shape)},
+            true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
     auto output =
-        kernels::stackvm::conv2d(
+        kernels::stackvm::conv2d_transpose(
             runtime::stackvm::pad_mode_t::constant, input.impl(), weight.impl(),
-            bais.impl(), strides_ptr.impl(), pad_ptr.impl(),
-            dilations_ptr.impl(), group_ptr.impl(), fused_clamp_ptr.impl())
-            .expect("conv2d failed");
+            bais.impl(), output_shape_ptr.impl(), strides_ptr.impl(),
+            pad_ptr.impl(), output_padding_ptr.impl(), dilations_ptr.impl(),
+            group_ptr.impl(), fused_clamp_ptr.impl())
+            .expect("conv2d_transpose failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_FALSE(is_same_tensor(expected, actual));
+    EXPECT_TRUE(is_same_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {

@@ -33,12 +33,10 @@ class SoftsignTest
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
 
-        float input_array[] = {1.0f};
-        input = hrt::create(typecode, l_shape,
-                            {reinterpret_cast<gsl::byte *>(input_array),
-                             sizeof(input_array)},
-                            true, host_runtime_tensor::pool_cpu_only)
-                    .expect("create tensor failed");
+        input =
+            hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
+                .expect("create tensor failed");
+        init_tensor(input);
     }
 
     void TearDown() override {}
@@ -50,8 +48,8 @@ class SoftsignTest
 INSTANTIATE_TEST_SUITE_P(
     Softsign, SoftsignTest,
     testing::Combine(testing::Values(dt_float32),
-                     testing::Values(dims_t{1}, dims_t{1, 1}, dims_t{1, 1, 1},
-                                     dims_t{1, 1, 1, 1})));
+                     testing::Values(dims_t{1}, dims_t{1, 3},
+                                     dims_t{1, 3, 16, 16}, dims_t{1, 3, 16})));
 
 TEST_P(SoftsignTest, Softsign) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);

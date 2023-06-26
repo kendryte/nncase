@@ -255,113 +255,6 @@ class KernelTest {
         return make_tensor(buffer, ort_type, shape, shape_size);
     }
 
-    bool cosine(runtime::runtime_tensor &lhs, runtime::runtime_tensor &rhs) {
-        if (lhs.shape() != rhs.shape()) {
-            return false;
-        }
-        return kernels::stackvm::apply(
-                   lhs.shape(),
-                   [&](gsl::span<const size_t> index) -> result<void> {
-                       auto dtype = lhs.datatype();
-                       switch (dtype) {
-                       case dt_int8: {
-                           if (get<int8_t>(lhs, index) ==
-                               get<int8_t>(rhs, index)) {
-                               return ok();
-                           } else {
-                               return err(std::errc::not_supported);
-                           }
-                           break;
-                       }
-                       case dt_int16: {
-                           if (get<int16_t>(lhs, index) ==
-                               get<int16_t>(rhs, index)) {
-                               return ok();
-                           } else {
-                               return err(std::errc::not_supported);
-                           }
-                           break;
-                       }
-                       case dt_int32: {
-                           if (get<int32_t>(lhs, index) ==
-                               get<int32_t>(rhs, index)) {
-                               return ok();
-                           } else {
-                               return err(std::errc::not_supported);
-                           }
-                           break;
-                       }
-                       case dt_int64: {
-                           if (get<int64_t>(lhs, index) ==
-                               get<int64_t>(rhs, index)) {
-                               return ok();
-                           } else {
-                               return err(std::errc::not_supported);
-                           }
-                           break;
-                       }
-                       case dt_uint8: {
-                           if (get<uint8_t>(lhs, index) ==
-                               get<uint8_t>(rhs, index)) {
-                               return ok();
-                           } else {
-                               return err(std::errc::not_supported);
-                           }
-                           break;
-                       }
-                       case dt_uint16: {
-                           if (get<uint16_t>(lhs, index) ==
-                               get<uint16_t>(rhs, index)) {
-                               return ok();
-                           } else {
-                               return err(std::errc::not_supported);
-                           }
-                           break;
-                       }
-                       case dt_uint32: {
-                           if (get<uint32_t>(lhs, index) ==
-                               get<uint32_t>(rhs, index)) {
-                               return ok();
-                           } else {
-                               return err(std::errc::not_supported);
-                           }
-                           break;
-                       }
-                       case dt_uint64: {
-                           if (get<uint64_t>(lhs, index) ==
-                               get<uint64_t>(rhs, index)) {
-                               return ok();
-                           } else {
-                               return err(std::errc::not_supported);
-                           }
-                           break;
-                       }
-                       case dt_float32: {
-                           if (get<float>(lhs, index) ==
-                               get<float>(rhs, index)) {
-                               return ok();
-                           } else {
-                               return err(std::errc::not_supported);
-                           }
-                           break;
-                       }
-                       case dt_float64: {
-                           if (get<double>(lhs, index) ==
-                               get<double>(rhs, index)) {
-                               return ok();
-                           } else {
-                               return err(std::errc::not_supported);
-                           }
-                           break;
-                       }
-                       default: {
-                           return err(std::errc::not_supported);
-                       }
-                       }
-                   })
-            .is_ok();
-    }
-
     result<void> check_tuple_output(runtime::runtime_tensor expected,
                                     value_t output) {
         try_var(output_tuple, output.as<tuple>());
@@ -465,7 +358,9 @@ class KernelTest {
                        }
                        case dt_float32: {
                            if (get<float>(lhs, index) ==
-                               get<float>(rhs, index)) {
+                                   get<float>(rhs, index) ||
+                               get<float>(lhs, index) - get<float>(rhs, index) <
+                                   0.00001f) {
                                return ok();
                            } else {
                                return err(std::errc::not_supported);

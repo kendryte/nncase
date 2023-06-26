@@ -33,12 +33,10 @@ class UnaryTest
     void SetUp() override {
         auto &&[typecode, i_shape] = GetParam();
 
-        float ptr_ort[] = {1.0f};
-        input = hrt::create(
-                    typecode, i_shape,
-                    {reinterpret_cast<gsl::byte *>(ptr_ort), sizeof(ptr_ort)},
-                    true, host_runtime_tensor::pool_cpu_only)
-                    .expect("create tensor failed");
+        input =
+            hrt::create(typecode, i_shape, host_runtime_tensor::pool_cpu_only)
+                .expect("create tensor failed");
+        init_tensor(input);
     }
 
     void TearDown() override {}
@@ -47,9 +45,13 @@ class UnaryTest
     runtime_tensor input;
 };
 
-INSTANTIATE_TEST_SUITE_P(Unary, UnaryTest,
-                         testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1})));
+INSTANTIATE_TEST_SUITE_P(
+    Unary, UnaryTest,
+    testing::Combine(testing::Values(dt_float32),
+                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{3, 16, 16},
+                                     dims_t{3, 16, 1}, dims_t{16, 16},
+                                     dims_t{16, 1}, dims_t{1, 16, 1},
+                                     dims_t{16}, dims_t{1}, dims_t{})));
 
 TEST_P(UnaryTest, ceil) {
     OrtKITensor *orts[1];
