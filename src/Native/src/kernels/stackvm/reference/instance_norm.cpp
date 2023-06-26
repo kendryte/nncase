@@ -63,8 +63,12 @@ result<void> nncase::kernels::stackvm::reference::instance_norm(
     // square and get var
     auto init_value = 0.f;
     auto init_value_addr = IN_CAST(gsl::byte, &init_value);
-    auto tmp_out_strides = strides_t{in_shape[1], 1, 1, 1};
-    auto tmp_out_shape = strides_t{in_shape[0], in_shape[1], 1, 1};
+    auto tmp_out_strides = strides_t{in_shape[1], 1};
+    auto tmp_out_shape = strides_t{in_shape[0], in_shape[1]};
+    for (auto i = 0; i < in_shape.size() - 2; ++i) {
+        tmp_out_shape.push_back(1);
+        tmp_out_strides.push_back(1);
+    }
     auto run_reduce = [&](auto &&input, auto &&output, auto &&in_shape,
                           auto &&in_strides) -> result<void> {
         try_(reference::reduce(dt_float32, reduce_op_t::mean, init_value_addr,

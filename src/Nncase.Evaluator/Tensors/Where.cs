@@ -9,6 +9,7 @@ using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
+using Nncase.Utilities;
 using OrtKISharp;
 
 namespace Nncase.Evaluator.Tensors;
@@ -16,7 +17,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Where"/>.
 /// </summary>
-public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEvaluator<Where>
+public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEvaluator<Where>, IShapeEvaluator<Where>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Where where)
@@ -67,6 +68,19 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
             [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(cond, CostUtility.GetCPUCyclesOfCompare()),
         };
+    }
+
+    public Expr Visit(IShapeEvaluateContext context, Where target)
+    {
+        if (target.IsTfWhere)
+        {
+            throw new NotImplementedException();
+        }
+
+        var x = context.GetArgumentShape(target, Where.X);
+        var y = context.GetArgumentShape(target, Where.Y);
+        var cond = context.GetArgumentShape(target, Where.Cond);
+        return ShapeExprUtility.BroadcastShape(x, y, cond);
     }
 
     private bool IsTFWhere(TensorType x, TensorType y)

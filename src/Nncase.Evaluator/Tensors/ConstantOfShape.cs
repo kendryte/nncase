@@ -13,7 +13,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="ConstantOfShape"/>.
 /// </summary>
-public class ConstantOfShapeEvaluator : IEvaluator<ConstantOfShape>, ITypeInferencer<ConstantOfShape>, ICostEvaluator<ConstantOfShape>
+public class ConstantOfShapeEvaluator : IEvaluator<ConstantOfShape>, ITypeInferencer<ConstantOfShape>, ICostEvaluator<ConstantOfShape>, IShapeEvaluator<ConstantOfShape>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, ConstantOfShape target)
@@ -50,5 +50,10 @@ public class ConstantOfShapeEvaluator : IEvaluator<ConstantOfShape>, ITypeInfere
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(ret),
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
         };
+    }
+
+    public Expr Visit(IShapeEvaluateContext context, ConstantOfShape target)
+    {
+        return context.GetArgument(target, ConstantOfShape.Shape);
     }
 }

@@ -63,7 +63,7 @@ public sealed partial class TFLiteImporter : BaseImporter
     }
 
     /// <inheritdoc/>
-    protected override IEnumerable<Var> CreateInputs()
+    protected override (IEnumerable<Var> Inputs, Dictionary<Var, Expr[]> VarMap) CreateInputs()
     {
         var inputsCount = _subGraph.InputsLength;
         var created_inputs = new Var[inputsCount];
@@ -76,7 +76,7 @@ public sealed partial class TFLiteImporter : BaseImporter
             _outputTensors.Add(inputId, input);
         }
 
-        return created_inputs;
+        return (created_inputs, new());
     }
 
     protected override void ConvertOp()

@@ -136,7 +136,12 @@ PYBIND11_MODULE(_nncase, m) {
             py::overload_cast<std::string_view>(&compile_options::mean))
         .def_property(
             "std", py::overload_cast<>(&compile_options::std),
-            py::overload_cast<std::string_view>(&compile_options::std));
+            py::overload_cast<std::string_view>(&compile_options::std))
+        .def_property(
+            "shape_bucket_options",
+            py::overload_cast<>(&compile_options::shape_bucket_options),
+            py::overload_cast<const shape_bucket_options &>(
+                &compile_options::shape_bucket_options));
 
     py::class_<target>(m, "Target")
         .def(py::init<std::string_view>())
@@ -186,6 +191,25 @@ PYBIND11_MODULE(_nncase, m) {
                           &quantize_options::export_weight_range_by_channel),
                       py::overload_cast<bool>(
                           &quantize_options::export_weight_range_by_channel));
+
+    py::class_<shape_bucket_options>(m, "ShapeBucketOptions")
+        .def(py::init())
+        .def_property("enable",
+                      py::overload_cast<>(&shape_bucket_options::enable),
+                      py::overload_cast<bool>(&shape_bucket_options::enable))
+        .def_property(
+            "range_info",
+            py::overload_cast<>(&shape_bucket_options::range_info),
+            py::overload_cast<std::map<std::string, std::tuple<int, int>>>(
+                &shape_bucket_options::range_info))
+        .def_property(
+            "segments_count",
+            py::overload_cast<>(&shape_bucket_options::segments_count),
+            py::overload_cast<int>(&shape_bucket_options::segments_count))
+        .def_property("fix_var_map",
+                      py::overload_cast<>(&shape_bucket_options::fix_var_map),
+                      py::overload_cast<std::map<std::string, int>>(
+                          &shape_bucket_options::fix_var_map));
 
     py::class_<calibration_dataset_provider>(m, "CalibrationDatasetProvider")
         .def(py::init([](py::list dataset, size_t samples_count,

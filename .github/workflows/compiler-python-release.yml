@@ -75,7 +75,7 @@ jobs:
       with:
         arch: ${{matrix.config.arch}}
       if: runner.os == 'Windows'
-      
+
     - name: Set up build environment (Macos)
       run: |
         brew install sunnycase/core/libomp@11.1.0
