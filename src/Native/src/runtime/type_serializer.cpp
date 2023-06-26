@@ -79,7 +79,7 @@ result<datatype_t> deserialize_datatype_impl(TReader &sr) noexcept {
         return ok<datatype_t>(pointer_type_t(std::in_place, elem_type));
     }
     case dt_valuetype: {
-        auto uuid = sr.template read_unaligned<uuid_t>();
+        auto uuid = sr.template read_unaligned<nncase::uuid_t>();
         auto size_bytes = sr.template read_unaligned<uint32_t>();
         return ok<datatype_t>(value_type_t(std::in_place, uuid, size_bytes));
     }
