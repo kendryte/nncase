@@ -12,10 +12,13 @@ using Nncase.Evaluator;
 using Nncase.Hosting;
 using Nncase.IR;
 using Nncase.Passes;
+using Nncase.Passes.Mutators;
 using Nncase.Passes.Rules.Lower;
 using Nncase.Passes.Rules.Neutral;
+using Nncase.Passes.Rules.ShapeExpr;
 using Nncase.Passes.Transforms;
 using Nncase.Quantization;
+using FoldConstCall = Nncase.Passes.Rules.Neutral.FoldConstCall;
 
 namespace Nncase.Compiler;
 
@@ -165,6 +168,18 @@ internal class Compiler : ICompiler
 
     public void RegisterShapeBucket(IPassManager p)
     {
+        void MergeOp(IPassManager iPassManager)
+        {
+            iPassManager.AddWithName<DataflowPass>("MergeNextCall").Configure(c =>
+            {
+                // todo: fix this
+                c.Add<MergeNextCallToFusion>();
+                // c.Add<MergeNextMarkerToFusion>();
+            });
+            iPassManager.AddWithName<DataflowPass>("MergePrevCall").Configure(c => { c.Add<MergePrevCallToFusion>(); });
+            // iPassManager.AddWithName<DataflowPass>("MergePrevMarker").Configure(c => { c.Add<MergePrevMarkerToFusion>(); });
+        }
+
         if (!_compileSession.CompileOptions.ShapeBucketOptions.Enable)
         {
             return;
@@ -177,24 +192,52 @@ internal class Compiler : ICompiler
             c.Add<Conv2DTransposeToFusion>();
         });
 
-        p.AddWithName<DataflowPass>("MergeNextCall").Configure(c =>
+        MergeOp(p);
+
+        var singleVar = _compileSession.CompileOptions.ShapeBucketOptions.VarMap.Values.OfType<Var>().ToHashSet().Count <= 1;
+        p.AddWithName<DataflowPass>("LostToFusion").Configure(c =>
         {
-            c.Add<MergeNextCallToFusion>();
-            c.Add<MergeNextMarkerToFusion>();
-        });
-        p.AddWithName<DataflowPass>("MergePrevCall").Configure(c =>
-        {
-            c.Add<MergePrevCallToFusion>();
+            c.Add<SigmoidToFusion>();
+            c.Add<LeakyReluToFusion>();
+            c.Add<TransposeToFusion>();
+            c.Add<UnaryToFusion>();
+            // if (singleVar)
+            // {
+                // c.Add<BinaryToFusion>();
+            // }
         });
 
-        p.AddWithName<DataflowPass>("MergeMarker").Configure(c =>
+        // MergeOp(p);
+
+        // 关掉各种marker的合并，留下两个merge
+        // 关掉这个以后还有一个重复，可以接受，但是其他模型会不会在有更严重的情况
+        // 前面有一个重复，经过这个以后重复扩大了
+        if (singleVar)
         {
-            c.Add<MergePrevMarkerToFusion>();
-        });
+            p.AddWithName<DataflowPass>("ClearSomeMarker").Configure(p =>
+            {
+                p.Add<ClearFusionOuterMarker>();
+            });
+            p.AddWithName<MergeBucketFusion>("MergeFusion");
+        }
 
         p.AddWithName<DataflowPass>("FusionBucket").Configure(c =>
         {
             c.Add<FusionBucket>();
+        });
+
+        p.AddWithName<DataflowPass>("Simplify").Configure(c =>
+        {
+            c.Add<FoldStackGetItem>();
+            c.Add<FoldConstCall>();
+            c.Add<FoldShapeOf>();
+            c.Add<FoldTwoReshapes>();
+            c.Add<FoldTwoCasts>();
+            c.Add<FoldTwoSlices>();
+            c.Add<FoldNopBinary>();
+            c.Add<FoldNopCast>();
+            c.Add<FoldNopReshape>();
+            c.Add<FoldNopSlice>();
         });
     }
 
