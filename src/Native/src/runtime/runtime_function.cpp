@@ -49,7 +49,8 @@ class runtime_function_init_context_span_impl
     }
 
     result<stream_reader *>
-    seek_section(const char *name, section_header &header) noexcept override {
+    seek_section([[maybe_unused]] const char *name,
+                 [[maybe_unused]] section_header &header) noexcept override {
         return err(std::errc::not_supported);
     }
 
@@ -80,7 +81,7 @@ class runtime_function_init_context_stream_impl
     bool is_section_pinned() const noexcept override { return false; }
 
     result<gsl::span<const gsl::byte>>
-    section(const char *name) noexcept override {
+    section([[maybe_unused]] const char *name) noexcept override {
         return err(std::errc::not_supported);
     }
 
