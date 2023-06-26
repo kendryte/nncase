@@ -33,7 +33,7 @@ using namespace nncase::runtime::stackvm;
 #ifdef NNCASE_DUMP_MANAGER
 #define dump_op(op) \
     auto dump_manager = module().interp().dump_manager(); \
-    dump_manager->dump_op(op.tensor_funct)
+    dump_manager->dump_op(op)
 #define dump_input(var) dump_manager->dump_input(var, #var)
 #define dump_output(var) dump_manager->dump_output(var)
 #else
@@ -47,7 +47,7 @@ using namespace nncase::runtime::stackvm;
     var name = inst.CppName.ToLowerInvariant().Replace('.', '_');
 @:
 @:result<void> stackvm_runtime_function::visit([[maybe_unused]] const tensor_@(name)_op_t &op) noexcept {
-@:    dump_op(op);
+@:    dump_op("@(name)");
 foreach(var input in inst.Inputs)
 {
 @:    try_var(@input.CppName, pop_value());
