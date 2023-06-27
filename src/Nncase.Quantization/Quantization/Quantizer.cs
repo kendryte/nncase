@@ -67,7 +67,7 @@ internal partial class Quantizer
         var mreError = new Dictionary<string, float[]>();
         var sampleIndex = 0;
 
-        // hardcode maxSamplesCount to be 5 to avoid export too much parameters for users and make them confused
+        // hardcoded maxSamplesCount to be 5 to avoid export too much parameters for users and make them confused
         int maxSamplesCount = Math.Min(samples.Count, 5);
         samples = samples.GetRange(0, maxSamplesCount);
         foreach (var sample in samples)
