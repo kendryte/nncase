@@ -170,14 +170,11 @@ internal class Compiler : ICompiler
     {
         void MergeOp(IPassManager iPassManager)
         {
-            iPassManager.AddWithName<DataflowPass>("MergeNextCall").Configure(c =>
+            iPassManager.AddWithName<DataflowPass>("MergeCallToFusion").Configure(c =>
             {
-                // todo: fix this
                 c.Add<MergeNextCallToFusion>();
-                // c.Add<MergeNextMarkerToFusion>();
+                c.Add<MergePrevCallToFusion>();
             });
-            iPassManager.AddWithName<DataflowPass>("MergePrevCall").Configure(c => { c.Add<MergePrevCallToFusion>(); });
-            // iPassManager.AddWithName<DataflowPass>("MergePrevMarker").Configure(c => { c.Add<MergePrevMarkerToFusion>(); });
         }
 
         if (!_compileSession.CompileOptions.ShapeBucketOptions.Enable)
@@ -201,17 +198,14 @@ internal class Compiler : ICompiler
             c.Add<LeakyReluToFusion>();
             c.Add<TransposeToFusion>();
             c.Add<UnaryToFusion>();
-            // if (singleVar)
-            // {
-                // c.Add<BinaryToFusion>();
-            // }
+            if (singleVar)
+            {
+                c.Add<BinaryToFusion>();
+            }
         });
 
-        // MergeOp(p);
+        MergeOp(p);
 
-        // 关掉各种marker的合并，留下两个merge
-        // 关掉这个以后还有一个重复，可以接受，但是其他模型会不会在有更严重的情况
-        // 前面有一个重复，经过这个以后重复扩大了
         if (singleVar)
         {
             p.AddWithName<DataflowPass>("ClearSomeMarker").Configure(p =>
@@ -248,7 +242,11 @@ internal class Compiler : ICompiler
             return;
         }
 
-        p.AddWithName<DataflowPass>("ClearFixShape").Configure(c => c.Add<FoldFixShape>());
+        p.AddWithName<DataflowPass>("ClearUnused").Configure(c =>
+        {
+            c.Add<FoldFixShape>();
+            c.Add<ClearRequire>();
+        });
     }
 
     public async Task CompileAsync()
