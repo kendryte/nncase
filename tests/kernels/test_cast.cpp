@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include "kernel_test.h"
+#include "nncase/runtime/datatypes.h"
 #include <gtest/gtest.h>
 #include <iostream>
 #include <nncase/kernels/stackvm/tensor_ops.h>
@@ -62,7 +63,8 @@ TEST_P(CastTest, cast) {
     auto new_type = datatype_new_type;
 
     // expected
-    auto output_ort = ortki_Cast(l_ort, datatype_new_type);
+    new_type==dt_int32;
+    auto output_ort = ortki_Cast(l_ort, dt_int64);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));

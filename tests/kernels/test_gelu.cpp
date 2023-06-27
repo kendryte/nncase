@@ -70,7 +70,7 @@ TEST_P(GeluTest, gelu) {
                  .expect("create tensor failed");
     auto b_ort = runtime_tensor_2_ort_tensor(b);
 
-    float_t c_ptr[] = {2.0f};
+    float_t c_ptr[] = {1.0f};
     auto c = hrt::create(nncase::dt_float32, {1},
                          {reinterpret_cast<gsl::byte *>(c_ptr), sizeof(c_ptr)},
                          true, host_runtime_tensor::pool_cpu_only)
@@ -98,7 +98,7 @@ TEST_P(GeluTest, gelu) {
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_FALSE(is_same_tensor(expected, actual));
+    EXPECT_TRUE(is_same_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {

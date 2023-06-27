@@ -80,6 +80,32 @@ TEST_P(PreluTest, Prelu) {
 
     // compare
     EXPECT_TRUE(is_same_tensor(expected, actual));
+
+//    // expected
+//    float_t slope_ptr1[] = {0.2f, 0.2f};
+//    auto slope1 = hrt::create(nncase::dt_float32, {2},
+//                             {reinterpret_cast<gsl::byte *>(slope_ptr1),
+//                              sizeof(slope_ptr1)},
+//                             true, host_runtime_tensor::pool_cpu_only)
+//                     .expect("create tensor failed");
+//    auto slope_ort1 = runtime_tensor_2_ort_tensor(slope1);
+//    auto output_ort = ortki_PRelu(l_ort, slope_ort1);
+//    size_t size = 0;
+//    void *ptr_ort = tensor_buffer(output_ort, &size);
+//    dims_t shape(tensor_rank(output_ort));
+//    tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
+//    auto expected = hrt::create(input.datatype(), shape,
+//                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+//                                true, host_runtime_tensor::pool_cpu_only)
+//                        .expect("create tensor failed");
+//
+//    // actual
+//    auto output = kernels::stackvm::prelu(input.impl(), slope1.impl())
+//                      .expect("prelu failed");
+//    runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
+//
+//    // compare
+//    EXPECT_TRUE(is_same_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {
