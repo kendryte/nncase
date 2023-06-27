@@ -79,7 +79,7 @@ internal partial class Quantizer
             {
                 if (key.Expr.Metadata.OutputNames == null)
                 {
-                    break;
+                    continue;
                 }
 
                 var groundTruth = markerOutputGroundTruth[key][sampleIndex];
