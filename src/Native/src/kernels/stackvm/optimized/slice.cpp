@@ -50,7 +50,8 @@ void _slice_contiguous_dim_copy(const axes_t &begins,
 
 // optimized for n c h 1
 unsigned long inline squeeze_dims(const gsl::span<const size_t> &in_shape) {
-    return in_shape[in_shape.size() - 1] == 1 ? in_shape.size() - 1 - 1 : in_shape.size() - 1;
+    return in_shape[in_shape.size() - 1] == 1 ? in_shape.size() - 1 - 1
+                                              : in_shape.size() - 1;
 }
 
 template <class T>
