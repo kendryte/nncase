@@ -45,7 +45,7 @@ internal partial class Quantizer
             var markerValues = markerEvaluator.Evaluate();
             foreach (var key in markerValues.Keys)
             {
-                if (markerOutputGroundTruth.TryGetValue(key, out var sampleKey))
+                if (markerOutputGroundTruth.TryGetValue(key, out _))
                 {
                     markerOutputGroundTruth[key].Add(markerValues[key]);
                 }
