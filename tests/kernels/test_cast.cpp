@@ -60,10 +60,8 @@ INSTANTIATE_TEST_SUITE_P(
 
 TEST_P(CastTest, cast) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
-    auto new_type = datatype_new_type;
 
     // expected
-    new_type==dt_int32;
     auto output_ort = ortki_Cast(l_ort, dt_int64);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
