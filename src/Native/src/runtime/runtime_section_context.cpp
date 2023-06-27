@@ -34,9 +34,11 @@ result<gsl::span<const gsl::byte>> runtime_section_context::get_or_read_section(
 
         // Try to attach if section is pinned
         if (is_section_pinned()) {
+            buffer_attach_options options{};
+            options.flags = allocate_shared ? HOST_BUFFER_ATTACH_SHARED : 0;
             auto buffer_r = buffer_allocator::host().attach(
                 {const_cast<gsl::byte *>(src_span.data()), src_span.size()},
-                {.flags = allocate_shared ? HOST_BUFFER_ATTACH_SHARED : 0});
+                options);
 
             if (buffer_r.is_ok()) {
                 storage = buffer_r.unwrap().as<host_buffer_t>().unwrap();
@@ -54,11 +56,10 @@ result<gsl::span<const gsl::byte>> runtime_section_context::get_or_read_section(
     }
 
     // Allocate buffer
-    try_var(buffer,
-            buffer_allocator::host().allocate(
-                body_size,
-                {.flags = allocate_shared ? HOST_BUFFER_ALLOCATE_SHARED
-                                          : HOST_BUFFER_ALLOCATE_CPU_ONLY}));
+    buffer_allocate_options options{};
+    options.flags = allocate_shared ? HOST_BUFFER_ALLOCATE_SHARED
+                                    : HOST_BUFFER_ALLOCATE_CPU_ONLY;
+    try_var(buffer, buffer_allocator::host().allocate(body_size, options));
     storage = buffer.as<host_buffer_t>().unwrap();
     gsl::span<const gsl::byte> span;
 
