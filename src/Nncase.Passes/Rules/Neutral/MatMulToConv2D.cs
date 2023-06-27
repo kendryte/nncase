@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
@@ -120,8 +121,8 @@ public sealed partial class BroadcastMatMul : IRewriteRule
             "matMul",
             "matMulCall",
             _ => true,
-            IsWildcard("a"),
-            IsWildcard("b"));
+            IsWildcard("a") with { TypePattern = HasRank(r => r > 2, "Rank > 2") },
+            IsWildcard("b") with { TypePattern = HasRank(r => r > 2, "Rank > 2") });
 
     private Expr? GetReplace(Call matMulCall, Expr a, Expr b)
     {
@@ -131,18 +132,66 @@ public sealed partial class BroadcastMatMul : IRewriteRule
         var sizeA = aShape.Size;
         var sizeB = bShape.Size;
 
-        if (sizeA / (aShape[^1].FixedValue * aShape[^2].FixedValue) == sizeB / (bShape[^1].FixedValue * bShape[^2].FixedValue))
+        if (sizeA / (aShape[^1].FixedValue * aShape[^2].FixedValue) == sizeB / (bShape[^1].FixedValue * bShape[^2].FixedValue) && aShape.Rank == 3 && bShape.Rank == 3)
         {
             return null;
         }
 
-        var newBShape = aShape.ToValueArray();
-        newBShape[^1] = bShape[^1].FixedValue;
-        newBShape[^2] = bShape[^2].FixedValue;
+        if (aShape.Rank > bShape.Rank)
+        {
+            var newBShape = aShape.ToValueArray();
+            newBShape[^1] = bShape[^1].FixedValue;
+            newBShape[^2] = bShape[^2].FixedValue;
 
-        var ifShape = new int[] { -1, aShape[^2].FixedValue, aShape[^1].FixedValue };
-        var wShape = new int[] { -1, newBShape[^2], newBShape[^1] };
-        return MatMul(Reshape(a, ifShape), Reshape(IR.F.Tensors.Broadcast(b, newBShape), wShape));
+            var newOutputShape = aShape.ToValueArray();
+            newOutputShape[^2] = aShape[^2].FixedValue;
+            newOutputShape[^1] = bShape[^1].FixedValue;
+
+            var ifShape = new int[] { (-1), aShape[^2].FixedValue, aShape[^1].FixedValue };
+            var wShape = new int[] { (-1), newBShape[^2], newBShape[^1] };
+            return Reshape(MatMul(Reshape(a, ifShape), Reshape(IR.F.Tensors.Broadcast(b, newBShape), wShape)), newOutputShape);
+        }
+        else if (aShape.Rank < bShape.Rank)
+        {
+            var newAShape = bShape.ToValueArray();
+            newAShape[^1] = aShape[^1].FixedValue;
+            newAShape[^2] = aShape[^2].FixedValue;
+
+            var newOutputShape = bShape.ToValueArray();
+            newOutputShape[^2] = aShape[^2].FixedValue;
+            newOutputShape[^1] = bShape[^1].FixedValue;
+
+            var ifShape = new int[] { (-1), newAShape[^2], newAShape[^1] };
+            var wShape = new int[] { (-1), bShape[^2].FixedValue, bShape[^1].FixedValue };
+            return Reshape(MatMul(Reshape(IR.F.Tensors.Broadcast(a, newAShape),  ifShape), Reshape(b, wShape)), newOutputShape);
+        }
+        else
+        {
+            var newAShape = aShape.ToValueArray();
+            var newBShape = bShape.ToValueArray();
+            var newOutputShape = aShape.ToValueArray();
+            newOutputShape[^2] = aShape[^2].FixedValue;
+            newOutputShape[^1] = bShape[^1].FixedValue;
+
+            for (int i = 0; i < aShape.Rank - 2; i++)
+            {
+                newAShape[i] = aShape[i].FixedValue == 1 ? bShape[i].FixedValue : aShape[i].FixedValue;
+                newBShape[i] = bShape[i].FixedValue == 1 ? aShape[i].FixedValue : bShape[i].FixedValue;
+                newOutputShape[i] = System.Math.Max(aShape[i].FixedValue, bShape[i].FixedValue);
+            }
+
+            var ifShape = new int[] { (-1), newAShape[^2], newAShape[^1] };
+            var wShape = new int[] { (-1), newBShape[^2], newBShape[^1] };
+            return Reshape(
+                        MatMul(
+                            Reshape(
+                                IR.F.Tensors.Broadcast(a, newAShape),
+                                ifShape),
+                            Reshape(
+                                IR.F.Tensors.Broadcast(b, newBShape),
+                                wShape)).InheritMetaData(matMulCall),
+                        newOutputShape);
+        }
     }
 }
 
