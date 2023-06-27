@@ -45,7 +45,7 @@ public class UnitTestDumpQuantError : TestClassBase
         conv.Metadata.OutputNames = new string[] { "conv" };
 
         var output = conv;
-        await TestDumpQuantErrorMainPassesAsync(input, output, null);
+        await TestDumpQuantErrorMainPassesAsync(input, output, string.Empty);
         Assert.True(File.Exists(CompileOptions.DumpDir + "/Passes/2_AssignRanges/" + "quant_error.csv"));
     }
 
@@ -96,7 +96,7 @@ public class UnitTestDumpQuantError : TestClassBase
 
         var assembly = Assembly.GetExecutingAssembly();
 
-        if (resourceName != null)
+        if (resourceName != string.Empty)
         {
             using (Stream stream = assembly.GetManifestResourceStream(resourceName)!)
             using (var reader = new StreamReader(stream))
