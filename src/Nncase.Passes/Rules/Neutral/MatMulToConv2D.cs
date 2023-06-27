@@ -121,8 +121,8 @@ public sealed partial class BroadcastMatMul : IRewriteRule
             "matMul",
             "matMulCall",
             _ => true,
-            IsWildcard("a") with { TypePattern = HasRank(r => r > 2, "Rank > 2") },
-            IsWildcard("b") with { TypePattern = HasRank(r => r > 2, "Rank > 2") });
+            IsWildcard("a") with { TypePattern = HasRank(r => r > 2, "Rank > 2") & HasFixedShape() },
+            IsWildcard("b") with { TypePattern = HasRank(r => r > 2, "Rank > 2") & HasFixedShape() });
 
     private Expr? GetReplace(Call matMulCall, Expr a, Expr b)
     {
