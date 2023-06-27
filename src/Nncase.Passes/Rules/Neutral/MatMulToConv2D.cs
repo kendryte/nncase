@@ -147,8 +147,8 @@ public sealed partial class BroadcastMatMul : IRewriteRule
             newOutputShape[^2] = aShape[^2].FixedValue;
             newOutputShape[^1] = bShape[^1].FixedValue;
 
-            var ifShape = new int[] { (-1), aShape[^2].FixedValue, aShape[^1].FixedValue };
-            var wShape = new int[] { (-1), newBShape[^2], newBShape[^1] };
+            var ifShape = new int[] { -1, aShape[^2].FixedValue, aShape[^1].FixedValue };
+            var wShape = new int[] { -1, newBShape[^2], newBShape[^1] };
             return Reshape(MatMul(Reshape(a, ifShape), Reshape(IR.F.Tensors.Broadcast(b, newBShape), wShape)), newOutputShape);
         }
         else if (aShape.Rank < bShape.Rank)
@@ -161,9 +161,9 @@ public sealed partial class BroadcastMatMul : IRewriteRule
             newOutputShape[^2] = aShape[^2].FixedValue;
             newOutputShape[^1] = bShape[^1].FixedValue;
 
-            var ifShape = new int[] { (-1), newAShape[^2], newAShape[^1] };
-            var wShape = new int[] { (-1), bShape[^2].FixedValue, bShape[^1].FixedValue };
-            return Reshape(MatMul(Reshape(IR.F.Tensors.Broadcast(a, newAShape),  ifShape), Reshape(b, wShape)), newOutputShape);
+            var ifShape = new int[] { -1, newAShape[^2], newAShape[^1] };
+            var wShape = new int[] { -1, bShape[^2].FixedValue, bShape[^1].FixedValue };
+            return Reshape(MatMul(Reshape(IR.F.Tensors.Broadcast(a, newAShape), ifShape), Reshape(b, wShape)), newOutputShape);
         }
         else
         {
@@ -180,8 +180,8 @@ public sealed partial class BroadcastMatMul : IRewriteRule
                 newOutputShape[i] = System.Math.Max(aShape[i].FixedValue, bShape[i].FixedValue);
             }
 
-            var ifShape = new int[] { (-1), newAShape[^2], newAShape[^1] };
-            var wShape = new int[] { (-1), newBShape[^2], newBShape[^1] };
+            var ifShape = new int[] { -1, newAShape[^2], newAShape[^1] };
+            var wShape = new int[] { -1, newBShape[^2], newBShape[^1] };
             return Reshape(
                         MatMul(
                             Reshape(
