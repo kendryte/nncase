@@ -33,10 +33,10 @@ class SeluTest
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
 
-        input = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
-                  .expect("create tensor failed");
+        input =
+            hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
+                .expect("create tensor failed");
         init_tensor(input);
-
     }
 
     void TearDown() override {}
@@ -47,7 +47,8 @@ class SeluTest
 
 INSTANTIATE_TEST_SUITE_P(Selu, SeluTest,
                          testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 3, 16, 16})));
+                                          testing::Values(dims_t{1, 3, 16,
+                                                                 16})));
 
 TEST_P(SeluTest, Selu) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);

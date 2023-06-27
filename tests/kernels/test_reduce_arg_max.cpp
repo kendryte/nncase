@@ -26,9 +26,9 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class ReduceArgMaxTest : public KernelTest,
-                         public ::testing::TestWithParam<
-                             std::tuple<nncase::typecode_t, dims_t>> {
+class ReduceArgMaxTest
+    : public KernelTest,
+      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
   public:
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
@@ -36,7 +36,6 @@ class ReduceArgMaxTest : public KernelTest,
         lhs = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
         init_tensor(lhs);
-
     }
 
     void TearDown() override {}
