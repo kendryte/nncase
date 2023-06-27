@@ -1,20 +1,9 @@
-using Nncase.PatternMatch;
-using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System.Linq;
-using Nncase.Evaluator;
 using Nncase.IR;
-using Nncase.IR.Math;
-using Nncase.IR.NN;
-using Nncase.Passes.Analysis;
 using Nncase.PatternMatch;
-using static Nncase.IR.F.Math;
-using static Nncase.IR.F.NN;
-using static Nncase.IR.F.Tensors;
-using static Nncase.IR.TypePatternUtility;
-using static Nncase.PatternMatch.F.Math;
-using static Nncase.PatternMatch.F.NN;
 using static Nncase.PatternMatch.F.Tensors;
 using static Nncase.PatternMatch.Utility;
 using GetItem = Nncase.IR.Tensors.GetItem;
@@ -22,7 +11,7 @@ using GetItem = Nncase.IR.Tensors.GetItem;
 namespace Nncase.Passes.Rules.ShapeExpr;
 
 /// <summary>
-/// (Stack(GetItem(input, i)), i) => GetItem(input, i)
+/// (Stack(GetItem(input, i)), i) => GetItem(input, i).
 /// </summary>
 [RuleGenerator]
 public partial class FoldStackGetItem : RewriteRule<Pattern>

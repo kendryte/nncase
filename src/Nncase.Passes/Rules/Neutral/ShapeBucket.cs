@@ -38,11 +38,6 @@ namespace Nncase.Passes.Rules.Neutral;
 
 public class BucketFusion : Fusion
 {
-    public static BucketFusion FromNormalFusion(Fusion f, Var[] effectVars)
-    {
-        return new BucketFusion(f.Name, "stackvm", f.Body, f.Parameters.ToArray(), effectVars);
-    }
-
     public BucketFusion(string name, string moduleKind, Expr body, ReadOnlySpan<Var> parameters, Var[] effectVar)
        : base(
             name, moduleKind, body, parameters)
@@ -73,9 +68,6 @@ public class BucketFusion : Fusion
 
     public Var[] EffectVar { get; set; }
 
-    public new BucketFusion With(string? name = null, string? moduleKind = null, Expr? body = null, Var[]? parameters = null)
-        => new BucketFusion(name ?? Name, moduleKind ?? ModuleKind, body ?? Body, parameters ?? Parameters, EffectVar);
-
     public bool IsSimple
     {
         get
@@ -84,6 +76,14 @@ public class BucketFusion : Fusion
             return names.Length == 2 && (names[0] == "Binary" || names[0] == "Unary");
         }
     }
+
+    public static BucketFusion FromNormalFusion(Fusion f, Var[] effectVars)
+    {
+        return new BucketFusion(f.Name, "stackvm", f.Body, f.Parameters.ToArray(), effectVars);
+    }
+
+    public new BucketFusion With(string? name = null, string? moduleKind = null, Expr? body = null, Var[]? parameters = null)
+        => new BucketFusion(name ?? Name, moduleKind ?? ModuleKind, body ?? Body, parameters ?? Parameters, EffectVar);
 }
 
 [RuleGenerator]
@@ -101,19 +101,19 @@ public partial class MarkerCallToFusion<T> : RewriteRule<Pattern>
         IsCallWildcard(null, IsOp<T>()),
         IsTensorConst());
 
+    protected virtual bool MustHaveMarker => true;
+
     private string Name => _currentCall!.Target.GetType().Name;
 
     private string RelPath => $"{_counter}_{_currentCall!.Target.GetType().Name}";
 
-    protected virtual bool MustHaveMarker => true;
+    public static Marker[] GetCallInputs(Call call) =>
+        call.Arguments.ToArray().OfType<Marker>().Where(x => x.Target is not TensorConst).ToArray();
 
     public virtual bool Check(Call call)
     {
         return true;
     }
-
-    public static Marker[] GetCallInputs(Call call) =>
-        call.Arguments.ToArray().OfType<Marker>().Where(x => x.Target is not TensorConst).ToArray();
 
     public Expr? GetReplace(Marker callMarker)
     {
@@ -149,6 +149,7 @@ public partial class MarkerCallToFusion<T> : RewriteRule<Pattern>
         });
 
         var f = new BucketFusion($"{Name}_{_counter}", ModuleKind, set, body, fusionVars);
+
         // PrintEffectVar(f.Name, set);
         Expr outerCall = newCallWithMarker.With(target: new Call(f, argsMarker));
         DumpIR(outerCall, "1_after", RelPath);
@@ -157,6 +158,7 @@ public partial class MarkerCallToFusion<T> : RewriteRule<Pattern>
         {
             throw new InvalidOperationException();
         }
+
         return outerCall;
     }
 }
@@ -190,9 +192,9 @@ public class TransposeToFusion : MarkerCallToFusion<Transpose>
 
 public class PadToFusion : MarkerCallToFusion<Pad>
 {
-    public override bool Check(Call call) => ((Pad)call.Target).PadMode == PadMode.Constant;
-
     protected override bool MustHaveMarker => false;
+
+    public override bool Check(Call call) => ((Pad)call.Target).PadMode == PadMode.Constant;
 }
 
 public class UnaryToFusion : MarkerCallToFusion<Unary>
@@ -252,12 +254,12 @@ public partial class FoldRepeatMarker : RewriteRule<Pattern>
 [RuleGenerator]
 public partial class ClearFusionOuterMarker : RewriteRule<Pattern>
 {
-    public override Pattern Pattern { get; } = IsRangeOfMarker("marker", CallerPattern, IsWildcard());
-
     public static Pattern CallerPattern => IsCall(
         "caller",
         IsFusion(null, "stackvm", IsWildcard(), GenerateParameters(null)),
         GenerateParameters(null));
+
+    public override Pattern Pattern { get; } = IsRangeOfMarker("marker", CallerPattern, IsWildcard());
 
     public Expr? GetReplace(Marker marker, Call caller)
     {
@@ -403,6 +405,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
                 return ReplaceExpr(sum, fusionVar, arg);
             });
         }
+
         // Console.WriteLine($"FusionBucketGetReplace {_counter} {fusion.Name}");
         _relPath = $"{_counter}";
         DumpIR(outerCall, $"BucketOriginFusion_{fusion.Name}", _relPath);
@@ -414,7 +417,6 @@ public partial class FusionBucket : RewriteRule<Pattern>
 
         // ensure alive in rewrite, release when return
         // using var pinner = new ExprPinner(fusionInputsShapeExpr.Values.SelectMany(x => x).ToArray());
-
         var options = CompileSession.CompileOptions.ShapeBucketOptions;
         var (minDict, maxDict) = GetBoundDict(varMap, options);
 
@@ -423,6 +425,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
         // compute fixed Shape
         var minFixedShapeList = ComputeFixedShape(fusionVars, minDict, varMap, fusionInputsShapeExpr);
         var maxFixedShapeList = ComputeFixedShape(fusionVars, maxDict, varMap, fusionInputsShapeExpr);
+
         // PrintMinMaxShape(minFixedShapeList, maxFixedShapeList, _relPath);
         // 2. get dim info(inputIndex, (dimIndex, range)
         var counts = ComputeCounts(minFixedShapeList, maxFixedShapeList, out int totalCount);
@@ -447,23 +450,25 @@ public partial class FusionBucket : RewriteRule<Pattern>
 
         var dimVarValues = MakeVarValuesForAllSegment(options);
         var info = ComputeSegmentInfo(counts, options);
-            var body = Split(fusionBody, fusionVars, info, 0, 1, dimVarValues, args, varMap, fusionInputsShapeExpr, fusionInputShapes);
-            body.InferenceType();
+        var body = Split(fusionBody, fusionVars, info, 0, 1, dimVarValues, args, varMap, fusionInputsShapeExpr, fusionInputShapes);
+        body.InferenceType();
 
-            if (body.Users.Count > 1)
-            {
-                throw new InvalidOperationException();
-            }
-            // FixInput Replace Var
-            var newBody = ReplaceFusionVarWithCallArgs(fusion, args, body);
-            // let bind
-            if (newBody is If @if)
-            {
-                newBody = IR.F.Math.Require(true, @if.With(paramList: args));
-            }
+        if (body.Users.Count > 1)
+        {
+            throw new InvalidOperationException();
+        }
 
-            _counter++;
-            return newBody;
+        // FixInput Replace Var
+        var newBody = ReplaceFusionVarWithCallArgs(fusion, args, body);
+
+        // let bind
+        if (newBody is If @if)
+        {
+            newBody = IR.F.Math.Require(true, @if.With(paramList: args));
+        }
+
+        _counter++;
+        return newBody;
     }
 
     private static void PrintMinMaxShape(int[][] minFixedShapeList, int[][] maxFixedShapeList, string relPath)
@@ -537,7 +542,6 @@ public partial class FusionBucket : RewriteRule<Pattern>
         return counts;
     }
 
-    static int counterV = 0;
     private static Expr ReplaceFusionVarWithCallArgs(BucketFusion fusion, Expr[] args, Expr newBody) =>
         fusion.Parameters.ToArray().Zip(args).Aggregate(newBody, (sum, pair) =>
         {
@@ -718,10 +722,10 @@ public abstract class MergeFusionBase : RewriteRule<Pattern>
 
     public bool ValidTarget(Expr target)
     {
-        // if (target is ActivationOp)
-        // {
-        //     return true;
-        // }
+        if (target is ActivationOp)
+        {
+            return true;
+        }
 
         if (OpList.TryGetValue(target.GetType().TypeHandle, out _))
         {
@@ -860,6 +864,7 @@ public partial class MergeNextCallToFusion : MergeFusionBase
         {
             throw new InvalidOperationException($"{newFusion.Name} is Invalid");
         }
+
         return call;
     }
 
@@ -978,8 +983,9 @@ public partial class MergePrevCallToFusion : MergeFusionBase
             });
 
         // 新的fusion的param更换为新的var
-        var newParams = ReplaceItems(fusion.Parameters.ToArray(),
-                newVars.Zip(prevCallsInfo).Select(tuple => (tuple.Second.Item2, (Expr)tuple.Item1)).ToArray())
+        var newParams = ReplaceItems(
+            fusion.Parameters.ToArray(),
+            newVars.Zip(prevCallsInfo).Select(tuple => (tuple.Second.Item2, (Expr)tuple.First)).ToArray())
             .OfType<Var>().ToArray();
         var newFusion = fusion.With(body: newBody, parameters: newParams);
 
@@ -994,11 +1000,6 @@ public partial class MergePrevCallToFusion : MergeFusionBase
         // 原始的fusion的call更换target为新的fusion，以及arg0替换为prevCall的arg0，其他不变
         var call = fusionOuterCall.With(target: newFusion, arguments: newArgs);
         DumpIR(call, $"{Counter++}_{prevCallStr}_{fusion.Name}_after");
-        // if (newBody.Users.Count > 1)
-        // {
-        //     throw new InvalidOperationException($"{newFusion.Name} is Invalid");
-        // }
-
         return call;
     }
 
@@ -1039,6 +1040,7 @@ public partial class MergePrevCallToFusion : MergeFusionBase
                 }
             }
         }
+
         return (prevCalls.ToArray(), maybeMarkers.ToArray());
     }
 
@@ -1065,28 +1067,6 @@ public partial class MergePrevCallToFusion : MergeFusionBase
 
 public class MergeBucketFusion : ModulePass
 {
-    public class SearchBucketFusion : ExprVisitor<Expr, Unit>
-    {
-        private HashSet<BucketFusion> FusionSet { get; set; } = new();
-
-        protected override Expr DefaultVisitLeaf(Expr expr) => expr;
-
-        protected override Expr VisitLeafCall(Call expr)
-        {
-            if (expr.Target is BucketFusion f)
-            {
-                FusionSet.Add(f);
-            }
-
-            return expr;
-        }
-
-        public Dictionary<string, Var[]> FusionEffectVars()
-        {
-            return FusionSet.ToDictionary(s => s.Name, s => s.EffectVar);
-        }
-    }
-
     protected override Task<IRModule> RunCoreAsync(IRModule input, RunPassContext context)
     {
         // 1. save effect var info
@@ -1096,10 +1076,10 @@ public class MergeBucketFusion : ModulePass
         var set = s.FusionEffectVars();
 
         // 2. merge
-        var AnalyzerMananger = CompileSession.GetRequiredService<IAnalyzerManager>();
+        var analyzerMananger = CompileSession.GetRequiredService<IAnalyzerManager>();
         var analysis = new Dictionary<Type, IAnalysisResult>
         {
-            [typeof(IExprUserAnalysisResult)] = AnalyzerMananger.GetAnaylsis<IExprUserAnalysisResult>(main),
+            [typeof(IExprUserAnalysisResult)] = analyzerMananger.GetAnaylsis<IExprUserAnalysisResult>(main),
         };
         var rewriter = new DataFlowMergeRewriter();
         var post = (Function)rewriter.Rewrite(
@@ -1116,7 +1096,6 @@ public class MergeBucketFusion : ModulePass
 
         DumpIR(post, "AfterMergeFusion");
 
-        int i = 0;
         // 3. translate fusion to BucketFusion
         var mutator = new Passes.Mutators.Substitutor(e =>
         {
@@ -1149,11 +1128,12 @@ internal sealed class BucketFusionGroupMutator : Passes.Mutators.FusionGroupMuta
     public override bool MergedFusionCheckCallBack(Fusion merged_fusion, HashSet<Fusion> candidate_fusions)
     {
         // 回避反卷积，反卷积的shape表达式目前会引起重复的计算
-        if (merged_fusion.Name.Contains("Conv2DTranspose") ||
-            candidate_fusions.Count(f => f.Name.Contains("Conv2DTranspose")) > 0)
+        if (merged_fusion.Name.Contains("Conv2DTranspose", StringComparison.Ordinal) ||
+            candidate_fusions.Any(f => f.Name.Contains("Conv2DTranspose", StringComparison.Ordinal)))
         {
             return false;
         }
+
         return true;
     }
 }
@@ -1173,7 +1153,7 @@ internal static class ShapeBucketHelper
 
     // avoid dup marker user
     public static T DupExpr<T>(T body)
-        where T: Expr
+        where T : Expr
     {
         T dupFusionBody = body switch
         {
@@ -1190,12 +1170,13 @@ internal static class ShapeBucketHelper
         args.ForEach(arg =>
         {
             var argShapeExpr = arg.EvaluateShapeExpr(varMap);
-            // DumpIR(argShapeExpr, "EffectShapeExpr");
             visitor.Visit(argShapeExpr);
         });
         var vars = visitor.Vars.ToHashSet();
+
         // PrintEffectVar("VisitorVars", vars.ToArray());
-        var inputAndDimVarMap = varMap.ToDictionary(pair => pair.Key, pair => pair.Value.OfType<Var>().ToHashSet().ToArray());
+        var inputAndDimVarMap =
+            varMap.ToDictionary(pair => pair.Key, pair => pair.Value.OfType<Var>().ToHashSet().ToArray());
         var allDimVars = varMap.Values.SelectMany(x => x).OfType<Var>();
         var afterProcessVars = vars.SelectMany(var =>
         {
@@ -1206,13 +1187,11 @@ internal static class ShapeBucketHelper
 
             if (allDimVars.Contains(var))
             {
-                return new[]{var};
+                return new[] { var };
             }
 
-            return new[]{var};
+            return new[] { var };
         }).ToHashSet();
-        // PrintEffectVar("DimVars", allDimVars.ToArray());
-        // var varMapKeys = varMap.Keys.ToHashSet();
         return afterProcessVars.Intersect(allDimVars).ToHashSet().ToArray();
     }
 
@@ -1222,5 +1201,27 @@ internal static class ShapeBucketHelper
         {
             DumpScope.Current.DumpIR(expr, prefix, reletivePath);
         }
+    }
+}
+
+internal class SearchBucketFusion : ExprVisitor<Expr, Unit>
+{
+    private HashSet<BucketFusion> FusionSet { get; set; } = new();
+
+    public Dictionary<string, Var[]> FusionEffectVars()
+    {
+        return FusionSet.ToDictionary(s => s.Name, s => s.EffectVar);
+    }
+
+    protected override Expr DefaultVisitLeaf(Expr expr) => expr;
+
+    protected override Expr VisitLeafCall(Call expr)
+    {
+        if (expr.Target is BucketFusion f)
+        {
+            FusionSet.Add(f);
+        }
+
+        return expr;
     }
 }
