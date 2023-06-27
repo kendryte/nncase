@@ -289,7 +289,7 @@ internal partial class Quantizer
         {
             // 原本设计导入json功能将来会被集成在nncase studio中，在网页中交互直接复制粘贴json字符串到QuantScheme参数中比较合适，此时以下代码应走上面的分支，
             // 但是目前由于没有nncase studio，c#与python调试时不可能粘贴数万行的json，可在此处手动临时开启下面的分支，这样导入json时，QuantScheme填入json文件的路径即可。
-            // 若未来不再需要nncase studio，也可直接写死代码只保留下面的分支逻辑，但目前建议先用if的方式保留代码。另外注意，UnitTestExportQuantScheme等所有与QuantScheme有关的test也需要随之调整。
+            // 若未来不再需要nncase studio，也可直接写死代码只保留下面的分支逻辑，但目前建议先用if的方式保留代码。另外注意，UnitTestExportQuantScheme,UnitTestDumpQuantError等所有与QuantScheme有关的test也需要随之调整。
 #if true
             string readJson = _quantizeOptions.QuantScheme;
             var quantScheme = JsonConvert.DeserializeObject<QuantScheme>(readJson);

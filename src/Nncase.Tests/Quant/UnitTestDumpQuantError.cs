@@ -45,6 +45,34 @@ public class UnitTestDumpQuantError : TestClassBase
         conv.Metadata.OutputNames = new string[] { "conv" };
 
         var output = conv;
+        await TestDumpQuantErrorMainPassesAsync(input, output, null);
+        Assert.True(File.Exists(CompileOptions.DumpDir + "/Passes/2_AssignRanges/" + "quant_error.csv"));
+    }
+
+    [Fact]
+    public async Task TestDumpQuantErrorFromConfig()
+    {
+        var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 224, 224 }));
+        input.Metadata.OutputNames = new string[] { "input" };
+
+        var weightsValue = new List<float>();
+        for (int i = 0; i < 32 * 3 * 3 * 3; i++)
+        {
+            weightsValue.Add(i * 1.0f / (32 * 3 * 3 * 3));
+        }
+
+        Expr weights = Tensor.From<float>(weightsValue.ToArray(), new[] { 32, 3, 3, 3 });
+        weights.Metadata.OutputNames = new string[] { "weight" };
+
+        var bias = Normal(DataTypes.Float32, new[] { 32 }).Evaluate().AsTensor();
+        var stride = Tensor.From(new[] { 1, 1 }, new[] { 2 });
+        var dilation = Tensor.From(new[] { 1, 1 }, new[] { 2 });
+        var padding = new[,] { { 0, 0 }, { 0, 0 } };
+
+        var conv = Conv2D(input, weights, bias, stride, padding, dilation, PadMode.Constant, 1);
+        conv.Metadata.OutputNames = new string[] { "conv" };
+
+        var output = conv;
         var resourceName = "Nncase.Tests.Quant.conv2d.quant.json";
         await TestDumpQuantErrorMainPassesAsync(input, output, resourceName);
         Assert.True(File.Exists(CompileOptions.DumpDir + "/Passes/2_AssignRanges/" + "quant_error.csv"));
@@ -68,10 +96,13 @@ public class UnitTestDumpQuantError : TestClassBase
 
         var assembly = Assembly.GetExecutingAssembly();
 
-        using (Stream stream = assembly.GetManifestResourceStream(resourceName)!)
-        using (var reader = new StreamReader(stream))
+        if (resourceName != null)
         {
-            CompileOptions.QuantizeOptions.QuantScheme = reader.ReadToEnd();
+            using (Stream stream = assembly.GetManifestResourceStream(resourceName)!)
+            using (var reader = new StreamReader(stream))
+            {
+                CompileOptions.QuantizeOptions.QuantScheme = reader.ReadToEnd();
+            }
         }
 
         // 0. TargetIndependentPass
