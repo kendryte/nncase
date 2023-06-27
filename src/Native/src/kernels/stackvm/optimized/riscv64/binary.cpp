@@ -28,7 +28,6 @@ using namespace nncase::runtime::stackvm;
 using namespace nncase::kernels;
 using namespace nncase::kernels::stackvm;
 using namespace nncase::kernels::stackvm::optimized;
-
 namespace {
 
 #if __riscv_vector
@@ -329,7 +328,6 @@ static int verify_shape_impl(gsl::span<const size_t> in_a_shape,
                              gsl::span<const size_t> in_b_shape,
                              int *outter_front_size_ptr,
                              int *outter_current_size_ptr) {
-
     int size_diff = in_a_shape.size() - in_b_shape.size();
     int outter_front_size = 1;
     int outter_current_size = 1;
@@ -347,7 +345,7 @@ static int verify_shape_impl(gsl::span<const size_t> in_a_shape,
     }
 
     if (index == (int)(in_b_shape.size() - 1)) {
-        return 0;
+        return index;
     }
 
     if (in_b_shape[in_b_shape.size() - 1] == 1) {
@@ -437,7 +435,7 @@ get_sample_span(gsl::span<const size_t> in_shape) {
             if (len_b == 1) {                                                  \
                 function_ptr_vs<Top>(input_a, input_b[0], output, len_a);      \
             } else {                                                           \
-                if (in_b_shape[in_b_shape.size() - 1] == 1) {                  \
+                if ((in_b_shape[in_b_shape.size() - 1] == 1) && (index != (int)(in_b_shape.size() - 1))) {                  \
                     int size_diff = in_a_shape.size() - in_b_shape.size();     \
                     int len_a_leave = 1;                                       \
                     for (int i = index + 1; i < in_b_shape.size(); ++i) {      \
@@ -467,7 +465,7 @@ get_sample_span(gsl::span<const size_t> in_shape) {
             if (len_a == 1) {                                                  \
                 function_ptr_sv<Top>(input_a[0], input_b, output, len_b);      \
             } else {                                                           \
-                if (in_a_shape[in_a_shape.size() - 1] == 1) {                  \
+                if ((in_a_shape[in_a_shape.size() - 1] == 1) && (index != (int)(in_a_shape.size() - 1))) {                  \
                     int size_diff = in_b_shape.size() - in_a_shape.size();     \
                     int len_b_leave = 1;                                       \
                     for (int i = index + 1; i < in_a_shape.size(); ++i) {      \
