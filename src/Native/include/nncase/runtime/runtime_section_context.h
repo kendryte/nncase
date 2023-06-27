@@ -16,7 +16,8 @@
 #include "host_buffer.h"
 #include "model.h"
 #include "result.h"
-#include <nncase/runtime/stream_reader.h>
+#include "span_reader.h"
+#include "stream_reader.h"
 #include <nncase/type.h>
 #include <nncase/value.h>
 

@@ -17,7 +17,6 @@
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/error.h>
 #include <nncase/runtime/runtime_section_context.h>
-#include <nncase/runtime/span_reader.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
