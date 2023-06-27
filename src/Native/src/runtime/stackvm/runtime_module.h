@@ -44,8 +44,8 @@ class stackvm_runtime_module : public runtime_module {
   private:
     gsl::span<const gsl::byte> text_;
     gsl::span<const gsl::byte> rdata_;
-    std::unique_ptr<gsl::byte[]> text_storage_;
-    std::unique_ptr<gsl::byte[]> rdata_storage_;
+    host_buffer_t text_storage_;
+    host_buffer_t rdata_storage_;
     std::unordered_map<std::string, custom_call_type> custom_call_table_;
     std::array<uintptr_t, MAX_GENERAL_REGS> regs_;
 };

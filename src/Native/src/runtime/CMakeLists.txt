@@ -6,6 +6,7 @@ set(SRCS buffer.cpp
 		 host_buffer.cpp
 		 host_runtime_tensor.cpp
          interpreter.cpp
+         runtime_section_context.cpp
          runtime_loader.cpp
          runtime_module.cpp
 		 runtime_function.cpp

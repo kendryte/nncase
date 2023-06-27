@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include "section.h"
+#include <nncase/runtime/allocator.h>
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/error.h>
 #include <nncase/runtime/runtime_module.h>
@@ -115,26 +116,6 @@ void skip_functions(stream_reader &sr, size_t functions) noexcept {
     }
 }
 } // namespace
-
-result<gsl::span<const gsl::byte>>
-runtime_module_init_context::get_or_read_section(
-    const char *name, std::unique_ptr<gsl::byte[]> &storage) noexcept {
-    gsl::span<const gsl::byte> span;
-
-    auto section_span_r = section(name);
-    if (section_span_r.is_ok()) {
-        span = std::move(section_span_r).unwrap();
-    } else {
-        section_header header;
-        try_var(sr, seek_section(name, header));
-        storage = std::make_unique<gsl::byte[]>(header.body_size);
-        gsl::span<gsl::byte> storage_span(storage.get(), header.body_size);
-        sr->read_span(storage_span);
-        span = storage_span;
-    }
-
-    return ok(span);
-}
 
 const module_kind_t &runtime_module::kind() const noexcept {
     return header_.kind;

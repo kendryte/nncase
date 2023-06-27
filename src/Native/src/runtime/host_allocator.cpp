@@ -111,10 +111,14 @@ class host_buffer_allocator : public buffer_allocator {
     result<buffer_t>
     attach([[maybe_unused]] gsl::span<gsl::byte> data,
            [[maybe_unused]] const buffer_attach_options &options) override {
+        auto paddr = options.flags & HOST_BUFFER_ATTACH_SHARED
+                         ? (options.physical_address ? options.physical_address
+                                                     : (uintptr_t)data.data())
+                         : 0;
         return ok<buffer_t>(object_t<host_buffer_impl>(
             std::in_place, data.data(), data.size_bytes(),
-            []([[maybe_unused]] gsl::byte *p) {}, options.physical_address,
-            *this, host_sync_status_t::valid));
+            []([[maybe_unused]] gsl::byte *p) {}, paddr, *this,
+            host_sync_status_t::valid));
     }
 };
 

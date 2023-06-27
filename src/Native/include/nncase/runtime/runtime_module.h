@@ -16,6 +16,7 @@
 #include "model.h"
 #include "result.h"
 #include "runtime_function.h"
+#include "runtime_section_context.h"
 #include "span_reader.h"
 #include "stream_reader.h"
 #include <nncase/kernels/kernel_context.h>
@@ -24,31 +25,9 @@ BEGIN_NS_NNCASE_RUNTIME
 
 class interpreter;
 
-struct NNCASE_API runtime_module_init_context {
-    virtual bool is_section_pinned() const noexcept = 0;
+struct NNCASE_API runtime_module_init_context : public runtime_section_context {
     virtual interpreter &interp() noexcept = 0;
     virtual const module_header &header() noexcept = 0;
-    virtual result<gsl::span<const gsl::byte>>
-    section(const char *name) noexcept = 0;
-    virtual result<stream_reader *>
-    seek_section(const char *name, section_header &header) noexcept = 0;
-
-    result<gsl::span<const gsl::byte>>
-    get_or_read_section(const char *name,
-                        std::unique_ptr<gsl::byte[]> &storage) noexcept;
-
-    template <class TCallable>
-    result<void> read_section(const char *name, TCallable &&callable) noexcept {
-        auto section_span_r = section(name);
-        if (section_span_r.is_ok()) {
-            span_reader sr(std::move(section_span_r).unwrap());
-            return callable(sr);
-        } else {
-            section_header header;
-            try_var(sr, seek_section(name, header));
-            return callable(*sr);
-        }
-    }
 };
 
 class NNCASE_API runtime_module {

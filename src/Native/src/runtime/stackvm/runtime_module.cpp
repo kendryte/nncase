@@ -25,14 +25,15 @@ using namespace nncase::runtime::stackvm;
 
 result<void> stackvm_runtime_module::initialize_before_functions(
     runtime_module_init_context &context) noexcept {
-    try_set(text_, context.get_or_read_section(".text", text_storage_));
-    try_set(rdata_, context.get_or_read_section(".rdata", rdata_storage_));
+    try_set(text_, context.get_or_read_section(".text", text_storage_, false));
+    try_set(rdata_,
+            context.get_or_read_section(".rdata", rdata_storage_, false));
 
     regs_[0] = (uintptr_t)rdata_.data();
 
     // register the external custom call.
     try_(context.read_section(
-        ".custom_calls", [this](auto reader) -> result<void> {
+        ".custom_calls", [this](auto reader, size_t) -> result<void> {
             // custom call section layout:
             // 1. used module numbers
             //    - module_kind_t

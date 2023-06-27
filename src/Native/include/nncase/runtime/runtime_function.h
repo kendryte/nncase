@@ -15,6 +15,7 @@
 #pragma once
 #include "model.h"
 #include "result.h"
+#include "runtime_section_context.h"
 #include <nncase/runtime/stream_reader.h>
 #include <nncase/type.h>
 #include <nncase/value.h>
@@ -25,14 +26,10 @@ class interpreter;
 class runtime_module;
 struct runtime_module_init_context;
 
-struct NNCASE_API runtime_function_init_context {
-    virtual bool is_section_pinned() const noexcept = 0;
+struct NNCASE_API runtime_function_init_context
+    : public runtime_section_context {
     virtual runtime_module_init_context &module_init_context() noexcept = 0;
     virtual const function_header &header() noexcept = 0;
-    virtual result<gsl::span<const gsl::byte>>
-    section(const char *name) noexcept = 0;
-    virtual result<stream_reader *>
-    seek_section(const char *name, section_header &header) noexcept = 0;
 };
 
 class NNCASE_API runtime_function {
