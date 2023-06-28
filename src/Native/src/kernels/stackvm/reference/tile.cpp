@@ -30,18 +30,19 @@ template <typename T> static void copy_data(T *dst, const T *src, int n) {
 }
 
 template <typename T>
-result<void>
-tile_apply_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
-          gsl::span<const size_t> out_shape, gsl::span<const size_t> in_strides,
-          gsl::span<const size_t> out_strides,
-          [[maybe_unused]] gsl::span<const size_t> repeats) {
+result<void> tile_apply_impl(const T *input, T *output,
+                             gsl::span<const size_t> in_shape,
+                             gsl::span<const size_t> out_shape,
+                             gsl::span<const size_t> in_strides,
+                             gsl::span<const size_t> out_strides,
+                             [[maybe_unused]] gsl::span<const size_t> repeats) {
     return apply(out_shape, [&](const auto &out_index) -> result<void> {
         auto in_index = dims_t(out_index.size());
         for (size_t i = 0; i < in_shape.size(); ++i) {
             in_index[i] = out_index[i] % in_shape[i];
         }
         output[offset(out_strides, out_index)] =
-                input[offset(in_strides, in_index)];
+            input[offset(in_strides, in_index)];
         return ok();
     });
 }
@@ -135,8 +136,8 @@ result<void> nncase::kernels::stackvm::reference::tile(
     gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
     gsl::span<const size_t> repeats) {
     if (in_shape.size() > 4) {
-        return tile_apply_impl(input, output, in_shape, out_shape,
-                                        in_strides, out_strides, repeats);
+        return tile_apply_impl(input, output, in_shape, out_shape, in_strides,
+                               out_strides, repeats);
     }
     try_var(tycode, to_typecode(dt));
     TYPE_SELECT(tycode, TILE_IMPL);
