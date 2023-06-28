@@ -14,10 +14,7 @@
  */
 #include "ref_ops.h"
 #include <nncase/kernels/kernel_utils.h>
-#include <nncase/runtime/allocator.h>
 #include <nncase/runtime/datatypes.h>
-#include <nncase/runtime/host_buffer.h>
-#include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/util.h>
 
 using namespace nncase;
@@ -33,17 +30,32 @@ template <typename T> static void copy_data(T *dst, const T *src, int n) {
 }
 
 template <typename T>
+result<void>
+tile_apply_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
+          gsl::span<const size_t> out_shape, gsl::span<const size_t> in_strides,
+          gsl::span<const size_t> out_strides,
+          [[maybe_unused]] gsl::span<const size_t> repeats) {
+    return apply(out_shape, [&](const auto &out_index) -> result<void> {
+        auto in_index = dims_t(out_index.size());
+        for (size_t i = 0; i < in_shape.size(); ++i) {
+            in_index[i] = out_index[i] % in_shape[i];
+        }
+        output[offset(out_strides, out_index)] =
+                input[offset(in_strides, in_index)];
+        return ok();
+    });
+}
+
+template <typename T>
 result<void> tile_impl(const T *input, T *output,
                        gsl::span<const size_t> in_shape,
                        gsl::span<const size_t> out_shape,
                        [[maybe_unused]] gsl::span<const size_t> in_strides,
                        [[maybe_unused]] gsl::span<const size_t> out_strides,
                        [[maybe_unused]] gsl::span<const size_t> &repeats) {
-    result<void> ret_v = ok();
-
-    int shape_size_in[4] = {1, 1, 1, 1};
-    int shape_size_out[4] = {1, 1, 1, 1};
-    int repeat_size[4] = {1, 1, 1, 1};
+    size_t shape_size_in[4] = {1, 1, 1, 1};
+    size_t shape_size_out[4] = {1, 1, 1, 1};
+    size_t repeat_size[4] = {1, 1, 1, 1};
     for (int i = in_shape.size() - 1, j = 0; i >= 0; --i, ++j) {
         shape_size_in[j] = in_shape[i];
         shape_size_out[j] = out_shape[i];
@@ -53,20 +65,19 @@ result<void> tile_impl(const T *input, T *output,
         repeat_size[j] = repeats[i];
     }
 
-    int w = shape_size_in[0];
-    int h = shape_size_in[1];
-    int d = shape_size_in[2];
-    int c = shape_size_in[3];
+    auto w = shape_size_in[0];
+    auto h = shape_size_in[1];
+    auto d = shape_size_in[2];
+    auto c = shape_size_in[3];
 
-    int wd = shape_size_out[0];
-    int hd = shape_size_out[1];
-    int dd = shape_size_out[2];
-    // int cd = shape_size_out[3];
+    auto wd = shape_size_out[0];
+    auto hd = shape_size_out[1];
+    auto dd = shape_size_out[2];
 
-    int repeat_w = repeat_size[0];
-    int repeat_h = repeat_size[1];
-    int repeat_d = repeat_size[2];
-    int repeat_c = repeat_size[3];
+    auto repeat_w = repeat_size[0];
+    auto repeat_h = repeat_size[1];
+    auto repeat_d = repeat_size[2];
+    auto repeat_c = repeat_size[3];
 
     for (int ci = 0; ci < c; ++ci) {
         // channel_step = ci * h * d * w;
@@ -83,7 +94,7 @@ result<void> tile_impl(const T *input, T *output,
         }
         for (int di = 0; di < d; ++di) {
             T *dst = output + ci * hd * dd * wd + di * hd * wd;
-            int size_x = h * wd;
+            auto size_x = h * wd;
             T *dst1 = dst + size_x;
             for (int i = 1; i < repeat_h; ++i) {
                 copy_data(dst1, dst, size_x);
@@ -92,7 +103,7 @@ result<void> tile_impl(const T *input, T *output,
         }
         {
             T *dst = output + ci * hd * dd * wd;
-            int size_x = d * hd * wd;
+            auto size_x = d * hd * wd;
             T *dst1 = dst + size_x;
             for (int i = 1; i < repeat_d; ++i) {
                 copy_data(dst1, dst, size_x);
@@ -103,7 +114,7 @@ result<void> tile_impl(const T *input, T *output,
 
     {
         T *dst = output;
-        int size_x = c * dd * hd * wd;
+        auto size_x = c * dd * hd * wd;
         T *dst1 = dst + size_x;
         for (int i = 1; i < repeat_c; ++i) {
             copy_data(dst1, dst, size_x);
@@ -111,7 +122,7 @@ result<void> tile_impl(const T *input, T *output,
         }
     }
 
-    return ret_v;
+    return ok();
 }
 
 #define TILE_IMPL(_ty)                                                         \
@@ -124,7 +135,7 @@ result<void> nncase::kernels::stackvm::reference::tile(
     gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
     gsl::span<const size_t> repeats) {
     if (in_shape.size() > 4) {
-        return stackvm::reference::tile(dt, input, output, in_shape, out_shape,
+        return tile_apply_impl(input, output, in_shape, out_shape,
                                         in_strides, out_strides, repeats);
     }
     try_var(tycode, to_typecode(dt));
