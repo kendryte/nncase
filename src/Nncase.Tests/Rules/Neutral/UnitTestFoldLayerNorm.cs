@@ -244,7 +244,7 @@ public class UnitTestFoldLayerNorm : TransformTestBase
 
         TestMatched<FoldLayerNormPattern4>(rootPre);
 
-        var input1 = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, new[]{1,1,2,2});
+        var input1 = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, new[] { 1, 1, 2, 2 });
         {
             var v1 = input1;
             var v2 = IR.F.Tensors.Reduce(ReduceOp.Mean, v1, Tensor.From(axes, new[] { 1 }), initValue, keepDims);
