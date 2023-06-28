@@ -244,7 +244,9 @@ public class UnitTestFoldLayerNorm : TransformTestBase
 
         TestMatched<FoldLayerNormPattern4>(rootPre);
 
-        var input1 = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, new[] { 1, 1, 2, 2 });
+        var input1 = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape);
+        var gamma = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape[^1]);
+        var beta = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape[^1]);
         {
             var v1 = input1;
             var v2 = IR.F.Tensors.Reduce(ReduceOp.Mean, v1, Tensor.From(axes, new[] { 1 }), initValue, keepDims);
@@ -253,10 +255,10 @@ public class UnitTestFoldLayerNorm : TransformTestBase
             var v5 = IR.F.Tensors.Reduce(ReduceOp.Mean, v4, Tensor.From(axes, new[] { 1 }), initValue, keepDims);
             var v6 = IR.F.Math.Binary(BinaryOp.Add, v5, 1e-05f);
             var v7 = IR.F.Math.Unary(UnaryOp.Rsqrt, v6);
-            var v8 = IR.F.Math.Binary(BinaryOp.Mul, v7, new[] { 0.05f, 0.05f });
+            var v8 = IR.F.Math.Binary(BinaryOp.Mul, v7, gamma.Evaluate().AsTensor());
             var v9 = IR.F.Math.Binary(BinaryOp.Mul, v1, v8);
             var v10 = IR.F.Math.Binary(BinaryOp.Mul, v2, v8);
-            var v11 = IR.F.Math.Binary(BinaryOp.Sub, new[] { 0.5f, 0.5f }, v10);
+            var v11 = IR.F.Math.Binary(BinaryOp.Sub, beta.Evaluate().AsTensor(), v10);
             var v12 = IR.F.Math.Binary(BinaryOp.Add, v9, v11);
             rootPre = v12;
         }
