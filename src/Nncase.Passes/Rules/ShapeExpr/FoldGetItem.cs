@@ -36,7 +36,7 @@ public partial class FoldStackGetItem : RewriteRule<Pattern>
         }
 
         var input = getItems[0].Arguments[GetItem.Input.Index];
-        if (input.CheckedShape.Rank != getItems.Length)
+        if (input.CheckedShape[0] != getItems.Length)
         {
             return null;
         }
