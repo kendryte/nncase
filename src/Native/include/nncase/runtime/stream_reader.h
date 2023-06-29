@@ -56,7 +56,14 @@ class stream_reader {
     }
 
     template <class T> void read_span(gsl::span<T> span) {
-        stream_.read(reinterpret_cast<char *>(span.data()), span.size_bytes());
+        size_t sub_data_size = 8388608;
+        for (size_t pos = 0; pos < span.size_bytes(); ) {
+            if( pos+sub_data_size >= span.size_bytes() )
+                sub_data_size = span.size_bytes() - pos;
+            stream_.read(reinterpret_cast<char *>(span.data()) + pos,
+                              sub_data_size);
+            pos += sub_data_size;
+        }
     }
 
     void skip(size_t count) { stream_.seekg(count, std::ios::cur); }
