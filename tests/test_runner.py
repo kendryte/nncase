@@ -248,11 +248,15 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         new_values = []
         for value in values:
             new_value = copy.deepcopy(value)
-            if(len(new_value.shape) == 4 and self.pre_process[0]['preprocess']):
+            if self.pre_process[0]['preprocess']:
                 if stage == "CPU":
                     # onnx \ caffe
                     if (self.model_type == "onnx" or self.model_type == "caffe"):
-                        new_value = np.transpose(new_value, [0, 3, 1, 2])
+                        if len(new_value.shape) == 4:
+                            new_value = np.transpose(new_value, [0, 3, 1, 2])
+                        else:
+                            new_value = np.transpose(
+                                new_value, [int(idx) for idx in self.pre_process[5]['input_layout'].split(",")])
 
                 if type == 'float32':
                     new_value = new_value.astype(np.float32)
@@ -264,6 +268,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                         new_value = (new_value * 255 - 128).astype(np.int8)
                 else:
                     raise TypeError(" Not support type for quant input")
+
             new_values.append(new_value)
         return np.array(new_values)
 
@@ -314,7 +319,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         for value in values:
             new_value = copy.deepcopy(value)
             if self.pre_process[0]['preprocess'] and len(value.shape) == 4:
-                if self.pre_process[-1]['input_layout'] == 'NCHW':
+                if self.pre_process[-1]['input_layout'] in ['NCHW', "0,2,3,1"]:
                     new_value = np.transpose(new_value, [0, 2, 3, 1])
 
                 for item in self.pre_process[1:]:

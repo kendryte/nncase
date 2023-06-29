@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "opt_common.h"
 #include "opt_ops.h"
 #include <cstring>
 #include <nncase/kernels/kernel_utils.h>
@@ -49,8 +50,9 @@ void _slice_contiguous_dim_copy(const axes_t &begins,
 
 template <class T>
 result<void> slice_contiguous_impl(
-    const T *input, T *output, const dims_t &in_shape, const dims_t &in_strides,
-    NNCASE_UNUSED const dims_t &out_strides, const axes_t &begins,
+    const T *input, T *output, gsl::span<const size_t> in_shape,
+    gsl::span<const size_t> in_strides,
+    NNCASE_UNUSED gsl::span<const size_t> out_strides, const axes_t &begins,
     const axes_t &ends, NNCASE_UNUSED const axes_t &strides) noexcept {
     size_t elemsize = sizeof(T);
     auto *out_ptr = output;
@@ -61,7 +63,7 @@ result<void> slice_contiguous_impl(
         const auto distance = static_cast<size_t>(ends[dims]) - begins[dims];
         const auto copy_size = distance * elemsize;
         const auto *in_ptr = input + offset(in_strides, in_index);
-        memcpy(out_ptr, in_ptr, copy_size);
+        opt_memcpy(out_ptr, in_ptr, copy_size);
         out_ptr += distance;
     };
 
@@ -109,7 +111,7 @@ void _slice_dim_copy(const axes_t &begins, const axes_t &ends,
 }
 
 template <class Callable>
-result<void> _slice_impl(const dims_t &in_shape, const axes_t &begins,
+result<void> _slice_impl(gsl::span<const size_t> in_shape, const axes_t &begins,
                          const axes_t &ends, const axes_t &strides,
                          Callable &&line_copy) noexcept {
     auto dims = in_shape.size() - 1;
@@ -140,10 +142,10 @@ result<void> _slice_impl(const dims_t &in_shape, const axes_t &begins,
 
 template <class T>
 result<void>
-slice_linecopy_impl(const T *input, T *output, const dims_t &in_shape,
-                    const dims_t &in_strides, const dims_t &out_strides,
-                    const axes_t &begins, const axes_t &ends,
-                    const axes_t &strides) noexcept {
+slice_linecopy_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
+                    gsl::span<const size_t> in_strides,
+                    gsl::span<const size_t> out_strides, const axes_t &begins,
+                    const axes_t &ends, const axes_t &strides) noexcept {
     auto dims = in_shape.size() - 1;
     return _slice_impl(in_shape, begins, ends, strides,
                        [&, dims](dims_t &in_index, dims_t &out_index) {
@@ -161,10 +163,10 @@ slice_linecopy_impl(const T *input, T *output, const dims_t &in_shape,
 
 template <class T>
 result<void>
-slice_strides_impl(const T *input, T *output, const dims_t &in_shape,
-                   const dims_t &in_strides, const dims_t &out_strides,
-                   const axes_t &begins, const axes_t &ends,
-                   const axes_t &strides) noexcept {
+slice_strides_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
+                   gsl::span<const size_t> in_strides,
+                   gsl::span<const size_t> out_strides, const axes_t &begins,
+                   const axes_t &ends, const axes_t &strides) noexcept {
     auto dims = in_shape.size() - 1;
     return _slice_impl(in_shape, begins, ends, strides,
                        [&, dims](dims_t &in_index, dims_t &out_index) {
@@ -204,9 +206,10 @@ slice_strides_impl(const T *input, T *output, const dims_t &in_shape,
 
 result<void> nncase::kernels::stackvm::optimized::slice(
     datatype_t type, const gsl::byte *input, gsl::byte *output,
-    const dims_t &in_shape, const strides_t &in_strides,
-    const strides_t &out_strides, const axes_t &begins, const axes_t &ends,
-    const axes_t &strides, NNCASE_UNUSED kernel_context &context) noexcept {
+    gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
+    gsl::span<const size_t> out_strides, const axes_t &begins,
+    const axes_t &ends, const axes_t &strides,
+    NNCASE_UNUSED kernel_context &context) noexcept {
     auto dims = begins.size();
     dims_t out_shape(dims);
     for (size_t i = 0; i < dims; ++i) {

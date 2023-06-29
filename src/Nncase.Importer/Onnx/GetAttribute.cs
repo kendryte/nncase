@@ -73,8 +73,13 @@ namespace Nncase.Importer
             return GetIntAttribute(n, attr, defaultValue ? 1 : 0) != 0;
         }
 
-        private Call ComputeDefaultAxes(Expr input)
+        private Expr ComputeDefaultAxes(Expr input)
         {
+            if (input.CheckedShape.IsRanked)
+            {
+                return Enumerable.Range(0, input.CheckedShape.Rank).Select(i => (long)i).ToArray();
+            }
+
             return F.Tensors.Range(0L, F.Tensors.Cast(F.Tensors.Rank(input), DataTypes.Int64), 1L);
         }
 

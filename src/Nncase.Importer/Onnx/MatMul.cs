@@ -2,9 +2,6 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Linq;
-using DryIoc.ImTools;
-using LanguageExt;
 using Nncase.IR;
 using Onnx;
 using F = Nncase.IR.F;
@@ -18,6 +15,11 @@ namespace Nncase.Importer
             var (a, b) = GetInputExprs(op, 0, 1);
             var shapeA = IR.F.Tensors.ShapeOf(a);
             var shapeB = IR.F.Tensors.ShapeOf(b);
+            if (a.CheckedShape.Rank > 2 && b.CheckedShape.Rank > 2)
+            {
+                return IR.F.Tensors.MatMul(a, b);
+            }
+
             var lhs = a;
             if (a.CheckedShape.Rank > 2)
             {

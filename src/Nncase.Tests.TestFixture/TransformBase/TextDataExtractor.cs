@@ -12,6 +12,11 @@ using static Nncase.Tests.DumpPathExtractor;
 
 namespace Nncase.Tests;
 
+/// <summary>
+/// Value with path.
+/// </summary>
+/// <param name="Value">Value.</param>
+/// <param name="Path">Path.</param>
 public record OriginValue(IValue Value, string Path)
 {
     public string FileName => System.IO.Path.GetFileName(Path);
@@ -21,20 +26,29 @@ public record OriginValue(IValue Value, string Path)
     public OriginTensor AsTensor() => new OriginTensor(Value.AsTensor(), Path);
 }
 
-public record OriginTensor(Tensor Tensor, string Path) : OriginValue(Nncase.Value.FromTensor(Tensor), Path)
-{
-}
+/// <summary>
+/// Tensor with path.
+/// </summary>
+/// <param name="Tensor">Tensor.</param>
+/// <param name="Path">Path.</param>
+public record OriginTensor(Tensor Tensor, string Path) : OriginValue(Nncase.Value.FromTensor(Tensor), Path);
 
+/// <summary>
+/// Used for extract info from file name.
+/// </summary>
 public static class DumpPathExtractor
 {
+    // todo: rename
     public static char Separator => '$';
 
     public static int GetCount(string file) => int.Parse(file.Split(Separator).First());
 
     public static string GetOpName(string file) => file.Split(Separator)[1];
 
-    // todo: is param
-    public static string GetParamName(string file) => file.Split(Separator).Last();
+    public static string GetParamName(string file) =>
+        IsParamFile(file)
+            ? file.Split(Separator).Last()
+            : throw new InvalidOperationException("file is not param");
 
     public static bool IsResultFile(string file) => file.Count(c => c == Separator) == 1;
 
@@ -74,7 +88,7 @@ public class TextDataExtractor
 
     public List<string> GetFilesByOrdered(string dir)
     {
-        var fs = Directory.GetFiles(dir).ToList();
+        var fs = Directory.GetFiles(dir).Where(x => FileFilter(Path.GetFileName(x))).ToList();
         fs.Sort(FileNumSorter);
 
         // remove out shape list
@@ -133,5 +147,10 @@ public class TextDataExtractor
     public OriginValue[] MatmulExtract(string dir)
     {
         return ExtractValues(dir, DynamicMatmulOnlyExtract).ToArray();
+    }
+
+    private bool FileFilter(string name)
+    {
+        return name != ".DS_Store" && !name.EndsWith("extcall");
     }
 }

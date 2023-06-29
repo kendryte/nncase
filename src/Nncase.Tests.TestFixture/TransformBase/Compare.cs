@@ -219,6 +219,10 @@ public static class Comparator
     }
 }
 
+/// <summary>
+/// Compare values with detail info.
+/// Use GenerateFullCompareInfo frequently.
+/// </summary>
 public static class DetailComparator
 {
     public static void DumpCompareDetailAnalysis(CompareResultByChannel[] resultByChannels, string path, int i)
@@ -312,11 +316,13 @@ public static class DetailComparator
         }
     }
 
-    // public static void GenerateFullCompareInfo(Tensor[] a, Tensor[] b, string resultRoot)
-    // {
-    //     GenerateFullCompareInfo(
-    //         a.Select(x => (IValue) Value.FromTensor(x)).Zip(b.Select(x => (IValue) Value.FromTensor(x))), resultRoot);
-    // }
+    /// <summary>
+    /// Compare and generate info.
+    /// </summary>
+    /// <param name="a">a.</param>
+    /// <param name="b">b.</param>
+    /// <param name="resultRoot">ResultRoot.</param>
+    /// <exception cref="InvalidOperationException">Exception.</exception>
     public static void GenerateFullCompareInfo(OriginValue[] a, OriginValue[] b, string resultRoot)
     {
         if (a.Length != b.Length)
@@ -327,7 +333,7 @@ public static class DetailComparator
         GenerateFullCompareInfo(a.Zip(b), resultRoot);
     }
 
-    public static void GenerateFullCompareInfo(IEnumerable<(OriginValue A, OriginValue B)> data, string resultRoot)
+    private static void GenerateFullCompareInfo(IEnumerable<(OriginValue A, OriginValue B)> data, string resultRoot)
     {
         int id = 0;
         foreach (var (originD, k230D) in data)
@@ -338,14 +344,14 @@ public static class DetailComparator
 
     private static CompareResultByChannel[] GenerateFullCompareInfo(string resultRoot, OriginValue originD, OriginValue k230D, int count)
     {
-        var result = DetailComparator.CompareDetail(originD, k230D);
+        var result = CompareDetail(originD, k230D);
 
         // cos_i
-        DetailComparator.DumpCompareDetail(result, PathJoinByCreate(resultRoot, "detail"), count);
-        var analysisResult = DetailComparator.CompareDetailAnalysis(result);
+        DumpCompareDetail(result, PathJoinByCreate(resultRoot, "detail"), count);
+        var analysisResult = CompareDetailAnalysis(result);
 
         // analysis_i
-        DetailComparator.DumpCompareDetailAnalysis(analysisResult, PathJoinByCreate(resultRoot, "Analysis"), count);
+        DumpCompareDetailAnalysis(analysisResult, PathJoinByCreate(resultRoot, "Analysis"), count);
         return analysisResult;
     }
 }

@@ -31,17 +31,18 @@ template <class T> struct identity {
 };
 
 template <class TReducer, class TPostProcess, class T>
-result<void> reduce_impl(TReducer &&reducer, TPostProcess &&post_process,
-                         T init_value, const T *input, T *output,
-                         const dims_t &in_shape, const dims_t &axis,
-                         const strides_t &in_strides, const dims_t &out_shape,
-                         const strides_t &out_strides, bool keep_dims,
-                         NNCASE_UNUSED kernel_context &context) noexcept {
-    try_(apply(out_shape, [&](const dims_t &index) -> result<void> {
+result<void>
+reduce_impl(TReducer &&reducer, TPostProcess &&post_process, T init_value,
+            const T *input, T *output, gsl::span<const size_t> in_shape,
+            gsl::span<const size_t> axis, gsl::span<const size_t> in_strides,
+            gsl::span<const size_t> out_shape,
+            gsl::span<const size_t> out_strides, bool keep_dims,
+            NNCASE_UNUSED kernel_context &context) noexcept {
+    try_(apply(out_shape, [&](gsl::span<const size_t> index) -> result<void> {
         output[offset(out_strides, index)] = init_value;
         return ok();
     }));
-    try_(apply(in_shape, [&](const dims_t &index) -> result<void> {
+    try_(apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
         const auto v = input[offset(in_strides, index)];
         const auto out_index =
             kernels::detail::get_reduced_offset(index, axis, keep_dims);
@@ -49,7 +50,7 @@ result<void> reduce_impl(TReducer &&reducer, TPostProcess &&post_process,
         dest = reducer(dest, v);
         return ok();
     }));
-    try_(apply(out_shape, [&](const dims_t &index) -> result<void> {
+    try_(apply(out_shape, [&](gsl::span<const size_t> index) -> result<void> {
         auto &dest = output[offset(out_strides, index)];
         dest = post_process(dest);
         return ok();
@@ -74,22 +75,23 @@ result<void> reduce_impl(TReducer &&reducer, TPostProcess &&post_process,
                            keep_dims, context)
 
 template <typename T>
-result<void> reduce_prod(const T *input, T *output, const dims_t &in_shape,
-                         const strides_t &in_strides,
-                         const strides_t &out_strides_origin,
-                         const dims_t &axes, bool keep_dims) noexcept {
+result<void>
+reduce_prod(const T *input, T *output, gsl::span<const size_t> in_shape,
+            gsl::span<const size_t> in_strides,
+            gsl::span<const size_t> out_strides_origin,
+            gsl::span<const size_t> axes, bool keep_dims) noexcept {
     auto out_shape =
         kernels::detail::get_reduced_shape(in_shape, axes, keep_dims);
     auto out_strides =
-        out_strides_origin.size() == 0 ? dims_t{1} : out_strides_origin;
+        out_strides_origin.size() == 0 ? dims_t{1} : dims_t(out_strides_origin);
     // init with init_value
-    try_(kernels::stackvm::apply(out_shape,
-                                 [&](const dims_t &index) -> result<void> {
-                                     output[offset(out_strides, index)] = 1;
-                                     return ok();
-                                 }));
+    try_(kernels::stackvm::apply(
+        out_shape, [&](gsl::span<const size_t> index) -> result<void> {
+            output[offset(out_strides, index)] = 1;
+            return ok();
+        }));
 
-    try_(apply(in_shape, [&](const dims_t &index) -> result<void> {
+    try_(apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
         const auto src = input[offset(in_strides, index)];
         auto out_idx =
             offset(out_strides,
@@ -103,22 +105,23 @@ result<void> reduce_prod(const T *input, T *output, const dims_t &in_shape,
 }
 
 template <>
-result<void> reduce_prod(const bool *input, bool *output,
-                         const dims_t &in_shape, const strides_t &in_strides,
-                         const strides_t &out_strides_origin,
-                         const dims_t &axes, bool keep_dims) noexcept {
+result<void>
+reduce_prod(const bool *input, bool *output, gsl::span<const size_t> in_shape,
+            gsl::span<const size_t> in_strides,
+            gsl::span<const size_t> out_strides_origin,
+            gsl::span<const size_t> axes, bool keep_dims) noexcept {
     auto out_shape =
         kernels::detail::get_reduced_shape(in_shape, axes, keep_dims);
     auto out_strides =
-        out_strides_origin.size() == 0 ? dims_t{1} : out_strides_origin;
+        out_strides_origin.size() == 0 ? dims_t{1} : dims_t(out_strides_origin);
     // init with init_value
-    try_(kernels::stackvm::apply(out_shape,
-                                 [&](const dims_t &index) -> result<void> {
-                                     output[offset(out_strides, index)] = 1;
-                                     return ok();
-                                 }));
+    try_(kernels::stackvm::apply(
+        out_shape, [&](gsl::span<const size_t> index) -> result<void> {
+            output[offset(out_strides, index)] = 1;
+            return ok();
+        }));
 
-    try_(apply(in_shape, [&](const dims_t &index) -> result<void> {
+    try_(apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
         const auto src = input[offset(in_strides, index)];
         auto out_idx =
             offset(out_strides,
@@ -131,10 +134,10 @@ result<void> reduce_prod(const bool *input, bool *output,
     return ok();
 }
 
-template NNCASE_API result<void>
-reduce_prod<float>(const float *input, float *output, const dims_t &in_shape,
-                   const strides_t &in_strides, const strides_t &out_strides,
-                   const dims_t &axis, bool keep_dims) noexcept;
+template NNCASE_API result<void> reduce_prod<float>(
+    const float *input, float *output, gsl::span<const size_t> in_shape,
+    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
+    gsl::span<const size_t> axis, bool keep_dims) noexcept;
 
 #define REDUCE_FULL_IMPL(_ty)                                                  \
     {                                                                          \
@@ -161,9 +164,9 @@ reduce_prod<float>(const float *input, float *output, const dims_t &in_shape,
 
 result<void> nncase::kernels::stackvm::reference::reduce(
     typecode_t typecode, reduce_op_t op, const gsl::byte *init_value,
-    const gsl::byte *input, gsl::byte *output, const dims_t &in_shape,
-    const dims_t &axis, const strides_t &in_strides,
-    const strides_t &out_strides, bool keep_dims,
+    const gsl::byte *input, gsl::byte *output, gsl::span<const size_t> in_shape,
+    gsl::span<const size_t> axis, gsl::span<const size_t> in_strides,
+    gsl::span<const size_t> out_strides, bool keep_dims,
     kernel_context &context) noexcept {
     TYPE_SELECT(typecode, REDUCE_FULL_IMPL);
 }

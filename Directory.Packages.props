@@ -12,6 +12,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
+    <PackageVersion Include="Google.OrTools" Version="9.4.1874" />
     <PackageVersion Include="AnyTensorFlow.NET" Version="0.70.1" />
     <PackageVersion Include="BitFields" Version="0.1.0" />
     <PackageVersion Include="coverlet.collector" Version="3.0.2" />
@@ -62,7 +63,7 @@
     <PackageVersion Include="xunit.core" Version="2.4.2" />
     <PackageVersion Include="Xunit.DependencyInjection" Version="8.3.0" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="2.4.3" />
-    <PackageVersion Include="xunit.v3.assert" Version="0.1.1-pre.121" />
+    <PackageVersion Include="xunit.v3.assert" Version="0.1.1-pre.239" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="StyleCop.Analyzers">

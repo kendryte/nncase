@@ -108,6 +108,7 @@ public class CalibrationEvaluator : IDisposable
             Op op => Visit(enode, op),
             Marker marker => Visit(enode, marker),
             None none => Visit(enode, none),
+            If @if => Visit(enode, @if),
             _ => throw new ArgumentException("Unsupported expression type."),
         };
     }
@@ -178,6 +179,16 @@ public class CalibrationEvaluator : IDisposable
         return NoneValue.Default;
     }
 
+    private IValue? Visit(ENode enode, If expr)
+    {
+        return Visit(enode, values =>
+        {
+            return values[^3].AsTensor().ToScalar<bool>()
+                ? values[^2]
+                : values[^1];
+        });
+    }
+
     private IValue? Visit(ENode enode, Call call)
     {
         return Visit(enode, costs =>
@@ -204,7 +215,8 @@ public class CalibrationEvaluator : IDisposable
                 else
                 {
                     Trace.Assert(targetEnode.Expr is Function);
-                    value = Visit(targetEnode.Children[0]);
+                    value = CompilerServices.Evaluate(((Function)targetEnode.Expr).Body, _inputs);
+                    return value;
                 }
 
                 if (value != null)

@@ -30,9 +30,9 @@ result<void> nncase::kernels::stackvm::reference::lstm(
     const float *input, const float *w_xc, const float *w_rc,
     [[maybe_unused]] const float *bias, const float *init_h,
     const float *init_c, float *output, float *output_h, float *output_c,
-    const dims_t &in_shape_3, const dims_t &init_h_shape_3,
-    const dims_t &init_c_shape_3, const dims_t &out_shape_3,
-    const dims_t &w_xc_shape_3, const dims_t &w_rc_shape_3,
+    gsl::span<const size_t> in_shape_3, gsl::span<const size_t> init_h_shape_3,
+    gsl::span<const size_t> init_c_shape_3, gsl::span<const size_t> out_shape_3,
+    gsl::span<const size_t> w_xc_shape_3, gsl::span<const size_t> w_rc_shape_3,
     lstmdirection_t direction) {
     auto in_shape = to_4d(in_shape_3);
     auto init_h_shape = to_4d(init_h_shape_3);

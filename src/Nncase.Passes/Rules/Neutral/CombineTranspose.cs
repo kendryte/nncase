@@ -220,7 +220,7 @@ public sealed partial class CombineTransposePad : IRewriteRule
         "padCall",
         x => true,
         IsTranspose(IsWildcard("input"), IsTensorConst("perm")),
-        IsWildcard("pads"),
+        IsTensorConst("pads"),
         IsWildcard("padValue"));
 
     private Expr GetReplace(Pad pad, Call padCall, Expr input, int[] perm, Expr pads, Expr padValue)
@@ -229,12 +229,12 @@ public sealed partial class CombineTransposePad : IRewriteRule
         var newPads = new List<Expr>();
         for (var i = 0; i < inv_perm.Length; i++)
         {
-            newPads.Add(pads[inv_perm[i].i]);
+            newPads.Add(Stack(new IR.Tuple(pads[inv_perm[i].i, 0], pads[inv_perm[i].i, 1]), 0));
 
             // newPads[i] = pads[perm[i]];
         }
 
-        var p = Pad(input, Stack(new IR.Tuple(newPads.ToArray()), 0), pad.PadMode, padValue).InheritMetaData(padCall);
+        var p = Pad(input, Stack(new IR.Tuple(newPads.ToArray()), 0).Evaluate().AsTensor(), pad.PadMode, padValue).InheritMetaData(padCall);
         return Transpose(p, perm);
     }
 }
@@ -350,15 +350,31 @@ public sealed partial class CombineTransposeActivations : IRewriteRule
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
         IsTranspose(
-            IsCall("actCall", IsOp<ActivationOp>("activation", op => true), IsVArgsRepeat("parameters", () => IsWildcard())),
-            IsWildcard("perm"));
+            IsCall("actCall", IsOp<ActivationOp>("activation", op => true), IsVArgsRepeat("arguments", () => IsWildcard() with { TypePattern = HasFixedShape() })),
+            IsTensorConst("perm"));
 
-    private Expr GetReplace(Call actCall, ActivationOp activation, IReadOnlyList<Expr> parameters, Expr perm)
+    private Expr? GetReplace(Call actCall, ActivationOp activation, IReadOnlyList<Expr> arguments, int[] perm)
     {
-        var newcall = new Call(
-            activation,
-            new Expr[] { Transpose(parameters[0], perm) }
-                .Concat(parameters.Skip(1)).ToArray());
+        var newArgs = new List<Expr>();
+        foreach (var arg in arguments)
+        {
+            if (arg.CheckedShape.IsScalar)
+            {
+                newArgs.Add(arg);
+                continue;
+            }
+            else if (arg.CheckedShape.Rank <= perm.Length)
+            {
+                newArgs.Add(Transpose(arg, perm.Select(p => p - (perm.Length - arg.CheckedShape.Rank)).Where(p => p >= 0).ToArray()));
+                continue;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        var newcall = new Call(activation, newArgs.ToArray());
         newcall.InheritMetaData(actCall);
         return newcall;
     }

@@ -32,7 +32,7 @@ internal partial class QuantizerConfigBind
     public async Task RunAsync()
     {
         var quantOptions = _compileSession.CompileOptions.QuantizeOptions;
-        if (quantOptions.CalibrationDataset == null)
+        if (quantOptions.BindQuantMethod && quantOptions.CalibrationDataset == null)
         {
             throw new ArgumentNullException(nameof(quantOptions.CalibrationDataset));
         }
@@ -40,7 +40,7 @@ internal partial class QuantizerConfigBind
         // Choose better quant method using cosine, and bind info with ir.
         if (quantOptions.BindQuantMethod)
         {
-            _ = await _compileSession.Target.BindQuantMethodCosine(quantOptions.CalibrationDataset, _rangeOfs, _childrenOfRangeOfs, quantOptions);
+            _ = await _compileSession.Target.BindQuantMethodCosine(quantOptions.CalibrationDataset!, _rangeOfs, _childrenOfRangeOfs, quantOptions);
         }
 
         _graph.Rebuild();

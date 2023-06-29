@@ -28,11 +28,12 @@ using namespace nncase::kernels::stackvm;
 namespace {
 template <class TFloat, class TQint>
 result<void> quantize_impl(const TFloat *input, TQint *output,
-                           const dims_t &in_shape, const strides_t &in_strides,
-                           const strides_t &out_strides, float scale,
+                           gsl::span<const size_t> in_shape,
+                           gsl::span<const size_t> in_strides,
+                           gsl::span<const size_t> out_strides, float scale,
                            float bias,
                            NNCASE_UNUSED kernel_context &context) noexcept {
-    return apply(in_shape, [&](const dims_t &index) -> result<void> {
+    return apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
         auto value = (float)input[offset(in_strides, index)];
         value = value / scale + bias;
         auto qvalue = (int32_t)lrintf(value);
@@ -53,9 +54,9 @@ result<void> quantize_impl(const TFloat *input, TQint *output,
 
 result<void> nncase::kernels::stackvm::reference::quantize(
     datatype_t in_type, datatype_t out_type, const gsl::byte *input,
-    gsl::byte *output, const dims_t &in_shape, const strides_t &in_strides,
-    const strides_t &out_strides, float scale, float bias,
-    kernel_context &context) noexcept {
+    gsl::byte *output, gsl::span<const size_t> in_shape,
+    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
+    float scale, float bias, kernel_context &context) noexcept {
     QUANTIZE_IMPL(float, uint8_t);
     QUANTIZE_IMPL(float, int8_t);
     return err(std::errc::not_supported);

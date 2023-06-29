@@ -6,10 +6,13 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Nncase.CostModel;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.NN;
+using Nncase.Utilities;
 using OrtKISharp;
 using static Nncase.Evaluator.EvaluatorUtil;
+using static Nncase.IR.F.Tensors;
 using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.Utility;
 
@@ -18,7 +21,7 @@ namespace Nncase.Evaluator.NN;
 /// <summary>
 /// Evaluator for <see cref="Pad"/>.
 /// </summary>
-public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluator<Pad>
+public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluator<Pad>, IShapeEvaluator<Pad>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Pad pad)
@@ -93,6 +96,24 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
             [CostFactorNames.MemoryStore] = outputType is TensorType outT ? CostUtility.GetMemoryAccess(outT) : CostUtility.GetMemoryAccess(inputType),
         };
+    }
+
+    public Expr Visit(IShapeEvaluateContext context, Pad target)
+    {
+        var inShape = context.GetArgumentShape(target, Pad.Input);
+        _ = context.GetArgumentRank(target, Pad.Input);
+        var pads = context.GetArgument(target, Pad.Pads);
+        var front = Slice(pads, new[] { 0 }, new[] { 1 }, new[] { 1 }, new[] { 1 });
+        var end = Slice(pads, new[] { 1 }, new[] { 2 }, new[] { 1 }, new[] { 1 });
+
+        // paddings = [4, 2] -> [4, 1] + [4, 1]
+        var paddings = front + end;
+
+        // outShape = inShape + paddings
+        var padsSumShape = StackScalar(Cast(ShapeOf(paddings)[0], DataTypes.Int32));
+        var outShape = inShape + Cast(Reshape(paddings, padsSumShape), DataTypes.Int32);
+        DumpScope.Current.DumpIR(outShape, "paddings");
+        return outShape;
     }
 
     private OrtKISharp.Tensor SymmetricPad(OrtKISharp.Tensor input, long[] pads, OrtKISharp.Tensor constValue)

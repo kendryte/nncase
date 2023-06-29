@@ -8,14 +8,18 @@ using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
+using Nncase.Utilities;
 using OrtKISharp;
+using static Nncase.IR.F.Tensors;
+using Concat = Nncase.IR.Tensors.Concat;
 
 namespace Nncase.Evaluator.Tensors;
 
 /// <summary>
 /// Evaluator for <see cref="Concat"/>.
 /// </summary>
-public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICostEvaluator<Concat>
+public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICostEvaluator<Concat>,
+    IShapeEvaluator<Concat>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Concat cat)
@@ -43,6 +47,17 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
             [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(ret),
         };
+    }
+
+    public Expr Visit(IShapeEvaluateContext context, Concat target)
+    {
+        var inShape = context.GetArgumentShape(target, Concat.Input);
+        var axis = context.GetArgument(target, Concat.Axis);
+        var axisV = ShapeExprUtility.Positive(axis, inShape[0]);
+        var inShapes = ((IR.Tuple)inShape).Fields.ToArray().Select(x => Cast(x, DataTypes.Int32)).ToArray();
+        var dim = inShapes.ToArray().Aggregate((Expr)0, (sum, shape) => sum + shape[axisV]);
+        var outShape = ShapeExprUtility.Replace(inShapes[0], axisV, dim);
+        return outShape;
     }
 
     private IRType? CheckType(TupleType inputs)
@@ -73,7 +88,8 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
             allDType ??= type.DType;
             if (allDType != type.DType)
             {
-                return new InvalidType($"The ConCat Item[{i}] Must Be {allDType} But Get {type.DType.GetDisplayName()}");
+                return new InvalidType(
+                    $"The ConCat Item[{i}] Must Be {allDType} But Get {type.DType.GetDisplayName()}");
             }
         }
 
@@ -91,6 +107,12 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
         if (result != null)
         {
             return result;
+        }
+
+        var sameRank = inputs.All(input => ((TensorType)input).Shape.Rank == ((TensorType)inputs[0]).Shape.Rank);
+        if (!sameRank)
+        {
+            return new InvalidType("Inputs of concat should be same rank");
         }
 
         var input0 = (TensorType)inputs[0];

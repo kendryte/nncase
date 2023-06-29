@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "opt_common.h"
 #include "opt_ops.h"
 #include <cstring>
 #include <nncase/kernels/kernel_utils.h>
@@ -25,15 +26,16 @@ using namespace nncase::kernels::stackvm::optimized;
 
 namespace {
 template <size_t Axis, size_t CurAxis = 0, class Callable = DefaultCallable>
-void _concat_contiguous_dim_copy(NNCASE_UNUSED const dims_t &in_shape,
+void _concat_contiguous_dim_copy(NNCASE_UNUSED gsl::span<const size_t> in_shape,
                                  NNCASE_UNUSED dims_t &in_index,
                                  Callable &&line_copy, std::false_type) {
     line_copy();
 }
 
 template <size_t Axis, size_t CurAxis = 0, class Callable = DefaultCallable>
-void _concat_contiguous_dim_copy(const dims_t &in_shape, dims_t &in_index,
-                                 Callable &&line_copy, std::true_type) {
+void _concat_contiguous_dim_copy(gsl::span<const size_t> in_shape,
+                                 dims_t &in_index, Callable &&line_copy,
+                                 std::true_type) {
     for (size_t i = 0; i < in_shape[CurAxis]; ++i) {
         in_index[CurAxis] = i;
         _concat_contiguous_dim_copy<Axis, CurAxis + 1>(
@@ -43,11 +45,13 @@ void _concat_contiguous_dim_copy(const dims_t &in_shape, dims_t &in_index,
 }
 
 template <class T>
-result<void> concat_contiguous_impl(
-    gsl::span<const gsl::byte *const> inputs, T *output,
-    const dims_t &out_shape, gsl::span<const dims_t> &in_strides,
-    NNCASE_UNUSED const dims_t &out_strides, size_t axis,
-    const dims_t &concat_dims, NNCASE_UNUSED kernel_context &context) noexcept {
+result<void>
+concat_contiguous_impl(gsl::span<const gsl::byte *const> inputs, T *output,
+                       gsl::span<const size_t> out_shape,
+                       gsl::span<const dims_t> &in_strides,
+                       NNCASE_UNUSED gsl::span<const size_t> out_strides,
+                       size_t axis, gsl::span<const size_t> concat_dims,
+                       NNCASE_UNUSED kernel_context &context) noexcept {
     dims_t in_shape(out_shape), in_index(out_shape.size());
     auto subsize =
         std::accumulate(in_shape.begin() + (axis + 1), in_shape.end(), 1,
@@ -58,7 +62,7 @@ result<void> concat_contiguous_impl(
             const auto dims_width = concat_dims[n] * subsize;
             const auto in_offset = offset(in_strides[n], in_index);
             auto *in_ptr = reinterpret_cast<const T *>(inputs[n]) + in_offset;
-            memcpy(out_ptr, in_ptr, dims_width * sizeof(T));
+            opt_memcpy(out_ptr, in_ptr, dims_width * sizeof(T));
             out_ptr += dims_width;
         }
     };
@@ -81,7 +85,7 @@ result<void> concat_contiguous_impl(
 }
 
 template <size_t N, size_t StartIndex = 0, class Callable = DefaultCallable>
-void dim_n_for(NNCASE_UNUSED const dims_t &in_shape,
+void dim_n_for(NNCASE_UNUSED gsl::span<const size_t> in_shape,
                NNCASE_UNUSED dims_t &in_index, NNCASE_UNUSED dims_t &out_index,
                Callable &&dim_concat, std::false_type) {
     dim_concat(N);
@@ -89,8 +93,8 @@ void dim_n_for(NNCASE_UNUSED const dims_t &in_shape,
 
 // end, start
 template <size_t N, size_t StartIndex = 0, class Callable = DefaultCallable>
-void dim_n_for(const dims_t &in_shape, dims_t &in_index, dims_t &out_index,
-               Callable &&callable, std::true_type) {
+void dim_n_for(gsl::span<const size_t> in_shape, dims_t &in_index,
+               dims_t &out_index, Callable &&callable, std::true_type) {
     for (size_t channel = 0; channel < in_shape[StartIndex]; ++channel) {
         in_index[StartIndex] = channel;
         out_index[StartIndex] = channel;
@@ -102,7 +106,7 @@ void dim_n_for(const dims_t &in_shape, dims_t &in_index, dims_t &out_index,
 
 template <size_t Axis, class Callable>
 void concat_inputs(gsl::span<const gsl::byte *const> inputs, dims_t &in_index,
-                   dims_t &out_index, const dims_t &concat_dims,
+                   dims_t &out_index, gsl::span<const size_t> concat_dims,
                    Callable &&copy_input_n) {
     out_index[Axis] = 0;
     for (size_t n = 0; n < inputs.size(); ++n) {
@@ -115,11 +119,12 @@ void concat_inputs(gsl::span<const gsl::byte *const> inputs, dims_t &in_index,
 }
 
 template <class T>
-result<void>
-concat_impl(gsl::span<const gsl::byte *const> inputs, T *output,
-            const dims_t &out_shape, gsl::span<const dims_t> &in_strides,
-            const dims_t &out_strides, size_t axis, const dims_t &concat_dims,
-            NNCASE_UNUSED kernel_context &context) noexcept {
+result<void> concat_impl(gsl::span<const gsl::byte *const> inputs, T *output,
+                         gsl::span<const size_t> out_shape,
+                         gsl::span<const dims_t> &in_strides,
+                         gsl::span<const size_t> out_strides, size_t axis,
+                         gsl::span<const size_t> concat_dims,
+                         NNCASE_UNUSED kernel_context &context) noexcept {
     dims_t in_shape(out_shape);
     auto *out_ptr = output;
     auto dims = in_strides[0].size();
@@ -235,10 +240,11 @@ concat_impl(gsl::span<const gsl::byte *const> inputs, T *output,
 
 result<void> optimized::concat(datatype_t type,
                                gsl::span<const gsl::byte *const> inputs,
-                               gsl::byte *output, const dims_t &out_shape,
+                               gsl::byte *output,
+                               gsl::span<const size_t> out_shape,
                                gsl::span<const dims_t> in_strides,
-                               const dims_t &out_strides, size_t axis,
-                               const dims_t &concat_dims,
+                               gsl::span<const size_t> out_strides, size_t axis,
+                               gsl::span<const size_t> concat_dims,
                                kernel_context &context) noexcept {
     dims_t in_shape(out_shape);
     if (!is_contiguous(out_shape, out_strides)) {

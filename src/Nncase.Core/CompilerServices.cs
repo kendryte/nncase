@@ -119,6 +119,10 @@ public interface ICompilerServicesProvider
     /// <returns>Evaluate result.</returns>
     Cost EvaluateOpCost(Op op, ICostEvaluateContext context);
 
+    Expr EvaluateShapeExpr(Expr expr, IReadOnlyDictionary<Var, Expr[]>? varsMap);
+
+    Expr EvaluateOpShapeExpr(Op expr, IShapeEvaluateContext context);
+
     /// <summary>
     /// Match expression.
     /// </summary>
@@ -281,6 +285,16 @@ public static class CompilerServices
     public static Cost EvaluateOpCost(Op op, ICostEvaluateContext context)
     {
         return Provider.EvaluateOpCost(op, context);
+    }
+
+    public static Expr EvaluateShapeExpr(this Expr expr, IReadOnlyDictionary<Var, Expr[]>? varsMap = null)
+    {
+        return Provider.EvaluateShapeExpr(expr, varsMap);
+    }
+
+    public static Expr EvaluateOpShapeExpr(Op op, IShapeEvaluateContext context)
+    {
+        return Provider.EvaluateOpShapeExpr(op, context);
     }
 
     /// <summary>
@@ -463,6 +477,7 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     private readonly IEGraphMatchProvider _eGraphMatchProvider;
     private readonly IEGraphRewriteProvider _eGraphrewriteProvider;
     private readonly ITargetProvider _targetProvider;
+    private readonly IShapeEvaluateProvider _shapeEvaluateProvider;
 
     public CompilerServicesProvider(
         IEvaluateProvider evaluateProvider,
@@ -474,7 +489,8 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
         IRewriteProvider rewriteProvider,
         IEGraphMatchProvider eGraphMatchProvider,
         IEGraphRewriteProvider eGraphrewriteProvider,
-        ITargetProvider targetProvider)
+        ITargetProvider targetProvider,
+        IShapeEvaluateProvider shapeEvaluateProvider)
     {
         // _compileOptions = compileOptions.Value;
         _evaluateProvider = evaluateProvider;
@@ -487,6 +503,7 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
         _eGraphMatchProvider = eGraphMatchProvider;
         _eGraphrewriteProvider = eGraphrewriteProvider;
         _targetProvider = targetProvider;
+        _shapeEvaluateProvider = shapeEvaluateProvider;
     }
 
     public IDataTypeServiceProvider DataTypeService { get; }
@@ -567,6 +584,18 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     public Cost EvaluateOpCost(Op op, ICostEvaluateContext context)
     {
         return _costEvaluateProvider.EvaluateOpCost(op, context);
+    }
+
+    /// <inheritdoc/>
+    public Expr EvaluateShapeExpr(Expr expr, IReadOnlyDictionary<Var, Expr[]>? varsMap = null)
+    {
+        return _shapeEvaluateProvider.EvaluateShapeExpr(expr, varsMap ?? new Dictionary<Var, Expr[]>());
+    }
+
+    /// <inheritdoc/>
+    public Expr EvaluateOpShapeExpr(Op op, IShapeEvaluateContext context)
+    {
+        return _shapeEvaluateProvider.EvaluateOpShapeExpr(op, context);
     }
 
     public bool TryMatchRoot(IEnumerable<ENode> enodes, IPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results)
