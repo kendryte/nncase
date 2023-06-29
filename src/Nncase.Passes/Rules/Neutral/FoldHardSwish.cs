@@ -135,3 +135,55 @@ public sealed partial class FoldHardSwish3 : RewriteRule<CallPattern>
         return null;
     }
 }
+
+[RuleGenerator]
+public sealed partial class FoldHardSwish4 : RewriteRule<CallPattern>
+{
+    /// <inheritdoc/>
+    public override CallPattern Pattern { get; } =
+        IsBinary(
+            "mul",
+            "mulCall",
+            BinaryOp.Mul,
+            IsWildcard(),
+            IsHardSigmoid(
+                "hardSigmoid",
+                "hardSigmoidCall",
+                IsWildcard("input")));
+
+    private Expr? GetReplace(Expr input, Call mulCall, Call hardSigmoidCall)
+    {
+        if (mulCall[Binary.Lhs] == input)
+        {
+            return HardSwish(input);
+        }
+
+        return null;
+    }
+}
+
+[RuleGenerator]
+public sealed partial class FoldHardSwish5 : RewriteRule<CallPattern>
+{
+    /// <inheritdoc/>
+    public override CallPattern Pattern { get; } =
+        IsBinary(
+            "mul",
+            "mulCall",
+            BinaryOp.Mul,
+            IsHardSigmoid(
+                "hardSigmoid",
+                "hardSigmoidCall",
+                IsWildcard("input")),
+            IsWildcard());
+
+    private Expr? GetReplace(Expr input, Call mulCall, Call hardSigmoidCall)
+    {
+        if (mulCall[Binary.Rhs] == input)
+        {
+            return HardSwish(input);
+        }
+
+        return null;
+    }
+}
