@@ -359,8 +359,8 @@ class KernelTest {
                        case dt_float32: {
                            if (get<float>(lhs, index) ==
                                    get<float>(rhs, index) ||
-                               get<float>(lhs, index) - get<float>(rhs, index) <
-                                   0.0001f) {
+                               fabs(get<float>(lhs, index) -
+                                    get<float>(rhs, index)) < 0.0001f) {
                                return ok();
                            } else {
                                return err(std::errc::not_supported);
