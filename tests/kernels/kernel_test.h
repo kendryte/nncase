@@ -357,7 +357,9 @@ class KernelTest {
                            break;
                        }
                        case dt_float32: {
-                           if (fabs(get<float>(lhs, index) -
+                           if (get<float>(lhs, index) ==
+                                   get<float>(rhs, index) ||
+                               fabs(get<float>(lhs, index) -
                                     get<float>(rhs, index)) < 0.0001f) {
                                return ok();
                            } else {
