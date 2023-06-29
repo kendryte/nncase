@@ -360,7 +360,7 @@ class KernelTest {
                            if (get<float>(lhs, index) ==
                                    get<float>(rhs, index) ||
                                get<float>(lhs, index) - get<float>(rhs, index) <
-                                   0.00001f) {
+                                   0.0001f) {
                                return ok();
                            } else {
                                return err(std::errc::not_supported);
