@@ -92,7 +92,7 @@ if (BUILDING_RUNTIME)
 
     if (MSVC)
         add_definitions(/D_CRT_SECURE_NO_WARNINGS /DNOMINMAX)
-        add_compile_options(/wd4267 /wd4251 /wd4244 /FC /utf-8 /W3 /WX /wd4297)
+        add_compile_options(/wd4267 /wd4251 /wd4244 /FC /utf-8 /W3 /WX /wd4297 -Wno-unused-function -Wno-unused-command-line-argument)
     else()
         add_compile_options(-Wall -Wextra -pedantic -Werror -Wno-multichar -Wno-missing-field-initializers -Wno-unused-function -Wno-type-limits)
         if (APPLE)
