@@ -125,7 +125,8 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
             {
                 if (!pairs.ContainsKey(callParams[i]))
                 {
-                    bool isWeights = (call.Target is Conv2D || call.Target is Conv2DTranspose) && (i == 1);
+                    bool isWeights = ((call.Target is Conv2D || call.Target is Conv2DTranspose) && (i == 1))
+                    || (call.Target is LSTM && i > 0);
 
                     if (!configExist && !useAutoMixQuant)
                     {
