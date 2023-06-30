@@ -50,11 +50,11 @@ jobs:
     - name: Configure CMake
       shell: bash
       run: |
-        cmake -B build -DCMAKE_BUILD_TYPE=${{matrix.config.buildType}} -DBUILDING_RUNTIME=TRUE -DBUILD_PYTHON_BINDING=OFF -DBUILD_TESTING=on       
+        conan install . -if build --build=missing -s build_type=${{matrix.config.buildType}} --profile=default -o runtime=True -o python=False -o tests=True -s compiler.cppstd=17
 
     - name: Build & Install
       run: |
-        cmake --build build --config ${{matrix.config.buildType}}
+        conan build . -if build -bf build
         cmake --install build --prefix install
 
     - name: Test
