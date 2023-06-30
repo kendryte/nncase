@@ -73,11 +73,16 @@ public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICos
 
     public Expr Visit(IShapeEvaluateContext context, Conv2D target)
     {
-        var inShape = context.GetArgumentShape(target, Conv2D.Input);
-        var wShape = context.GetArgumentShape(target, Conv2D.Weights);
+        var input = context.GetArgumentShape(target, Conv2D.Input);
+        var weights = context.GetArgumentShape(target, Conv2D.Weights);
         var pad = Cast(context.GetArgument(target, Conv2D.Padding), DataTypes.Int32);
         var stride = Cast(context.GetArgument(target, Conv2D.Stride), DataTypes.Int32);
         var dilation = Cast(context.GetArgument(target, Conv2D.Dilation), DataTypes.Int32);
+        var groups = Cast(context.GetArgument(target, Conv2D.Groups), DataTypes.Int32);
+        return IR.F.ShapeExpr.Conv2DShape(input, weights, pad, stride, dilation, groups);
+
+        var inShape = context.GetArgumentShape(target, Conv2D.Input);
+        var wShape = context.GetArgumentShape(target, Conv2D.Weights);
         var n = inShape[0];
         var oc = wShape[0];
         var h = Util.GetWindowedOutputSize(inShape[2] + pad[0, 0] + pad[0, 1], wShape[2], stride[0], dilation[0], false, false);

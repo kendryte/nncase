@@ -3,6 +3,7 @@
 
 using System.Runtime.InteropServices;
 using static Nncase.IR.F.Tensors;
+using Cast = Nncase.IR.Tensors.Cast;
 
 namespace Nncase.IR
 {
@@ -32,14 +33,14 @@ namespace Nncase.IR
             return same ? trueBranch : falseBranch;
         }
 
-        public static Expr GetConvTransposeOutputShape(Expr input, Expr weights, Expr strides, Expr outPadding, Expr paddings, Expr dilations, string autoPad, Expr group)
+        public static Expr GetConvTransposeOutputShape(Expr inShape, Expr wShape, Expr strides, Expr outPadding, Expr paddings, Expr dilations, string autoPad, Expr group)
         {
-            var inShape = ShapeOf(input);
+            inShape = Cast(inShape, DataTypes.Int64);
+            wShape = Cast(wShape, DataTypes.Int64);
             var iN = inShape[0];
             _ = inShape[1];
             var iH = inShape[2];
             var iW = inShape[3];
-            var wShape = ShapeOf(weights);
             var oc = wShape[0] * group;
             var wH = wShape[2];
             var wW = wShape[3];

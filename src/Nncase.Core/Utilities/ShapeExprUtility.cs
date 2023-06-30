@@ -13,10 +13,7 @@ public static class ShapeExprUtility
 {
     public static Expr BroadcastShape(Expr lhsShape, params Expr[] rhsShape)
     {
-        var tmpTensor = new[] { ConstantOfShape(lhsShape, 0) }
-            .Concat(rhsShape)
-            .Aggregate((sum, shape) => ConstantOfShape(shape, 0) * sum);
-        return Cast(IR.F.Tensors.ShapeOf(tmpTensor), DataTypes.Int32);
+        return IR.F.ShapeExpr.BroadcastShape(new[] { lhsShape }.Concat(rhsShape).ToArray());
     }
 
     public static Expr Positive(Expr axis, Expr inShape)
@@ -58,18 +55,26 @@ public static class ShapeExprUtility
         return Concat(new IR.Tuple(front, last), 0);
     }
 
-    public static Expr ShapeOf(Expr expr) => expr.EvaluateShapeExpr();
+    public static Expr RankOf(Expr expr)
+    {
+        if (!expr.InferenceType())
+        {
+            DumpScope.Current.DumpIR(expr, "BroadcastShape");
+            throw new NotImplementedException();
+        }
+        return new Call(new Rank(), expr);
+    }
+
+    public static Expr StackOne(Expr expr)
+    {
+        return Stack(new IR.Tuple(expr), 0);
+    }
 
     private static Expr SliceAndMerge(Expr shapeExpr, Expr index, Expr value, Expr indexOffset, bool valueIsList = true)
     {
         var front = Slice(shapeExpr, 0, index);
         var last = Slice(shapeExpr, Cast(index, DataTypes.Int32) + indexOffset, int.MaxValue);
         return Concat(new IR.Tuple(front, valueIsList ? StackOne(value) : value, last), 0);
-    }
-
-    private static Expr StackOne(Expr expr)
-    {
-        return Stack(new IR.Tuple(expr), 0);
     }
 
     private static Expr CheckShape(Expr shape)

@@ -76,13 +76,13 @@ public class Conv2DTransposeEvaluator : IEvaluator<Conv2DTranspose>, ITypeInfere
 
     public Expr Visit(IShapeEvaluateContext context, Conv2DTranspose target)
     {
-        var input = context.GetArgument(target, Conv2DTranspose.Input);
-        var weights = context.GetArgument(target, Conv2DTranspose.Weights);
+        var input = context.GetArgumentShape(target, Conv2DTranspose.Input);
+        var weights = context.GetArgumentShape(target, Conv2DTranspose.Weights);
         var stride = context.GetArgument(target, Conv2DTranspose.Stride);
         var dilation = context.GetArgument(target, Conv2DTranspose.Dilation);
         var padding = context.GetArgument(target, Conv2DTranspose.Padding);
         var outputPadding = context.GetArgument(target, Conv2DTranspose.OutputPadding);
         var groups = context.GetArgument(target, Conv2DTranspose.Groups);
-        return Util.GetConvTransposeOutputShape(input, weights, stride, outputPadding, padding, dilation, string.Empty, groups);
+        return IR.F.ShapeExpr.Conv2DTransposeShape(IR.F.Tensors.Cast(input, DataTypes.Int64), weights, stride, dilation, padding, outputPadding, groups);
     }
 }

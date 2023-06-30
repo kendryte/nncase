@@ -1,6 +1,7 @@
 ﻿cmake_minimum_required(VERSION 3.13)
 
 set(SRCS ../tensor_ops.cpp
+         ../shape_ops.cpp
          activation.cpp
          batchnorm.cpp
          batch_to_space.cpp
