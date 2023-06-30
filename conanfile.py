@@ -18,7 +18,7 @@ from conans import ConanFile, CMake, tools
 
 class nncaseConan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
-    generators = "CMakeToolchain", "cmake_find_package", "cmake_paths"
+    generators = "cmake", "cmake_find_package", "cmake_paths"
     options = {
         "shared": [True, False],
         "fPIC": [True, False],
