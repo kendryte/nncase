@@ -54,7 +54,7 @@ jobs:
 
     - name: Build & Install
       run: |
-        conan build . -if build -bf build
+        cmake --build build --config ${{matrix.config.buildType}}
         cmake --install build --prefix install
 
     - name: Test
