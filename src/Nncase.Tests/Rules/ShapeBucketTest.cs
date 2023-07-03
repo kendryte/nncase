@@ -58,3 +58,92 @@ public class ShapeBucketTest : TransformTestBase
 
     private Var Scalar(string name) => new Var(new TensorType(DataTypes.Int32, Shape.Scalar));
 }
+
+[AutoSetupTestMethod(InitSession = true)]
+public class TestMergePrevCallToFusion : TransformTestBase
+{
+    [Fact]
+    public void TestMergePrevCallSingleInput()
+    {
+        var input = Testing.Rand<float>(1, 3, 24, 24);
+        var inputVar = new Var(new TensorType(input.ElementType, input.Shape));
+        var transpose = Transpose(inputVar, new[] { 3, 2, 1, 0 });
+        var v = new Var(transpose.CheckedType);
+        var abs = Abs(v);
+        var f = new BucketFusion("stackvm", abs, new[] { v }, new Var[] { });
+        var c = new Call(f, transpose);
+        TestMatched<MergePrevCallToFusion>(c, new Dictionary<Var, IValue> { { inputVar, Value.FromTensor(input) } });
+    }
+
+    [Fact]
+    public void TestBodyMultiInputMergeLeft()
+    {
+        var mainInput0 = Testing.Rand<float>(1, 3, 24, 24);
+        var mainInput1 = Testing.Rand<float>(1, 3, 24, 24);
+        var mainVar0 = new Var(new TensorType(mainInput0.ElementType, mainInput0.Shape));
+        var mainVar1 = new Var(new TensorType(mainInput0.ElementType, mainInput0.Shape));
+        var fusionVar0 = new Var(new TensorType(mainInput0.ElementType, mainInput0.Shape));
+        var fusionVar1 = new Var(new TensorType(mainInput1.ElementType, mainInput1.Shape));
+        var concat = Concat(new IR.Tuple(fusionVar0, fusionVar1), 0);
+        var f = new BucketFusion("stackvm", concat, new[] { fusionVar0, fusionVar1 }, new Var[] { });
+        var abs = Abs(mainVar0);
+        var c = new Call(f, abs, mainVar1);
+        TestMatched<MergePrevCallToFusion>(c,
+            new Dictionary<Var, IValue>
+            {
+                { mainVar0, Value.FromTensor(mainInput0) }, { mainVar1, Value.FromTensor(mainInput1) },
+            });
+    }
+
+    [Fact]
+    public void TestBodyMultiInputMergeRight()
+    {
+        var mainInput0 = Testing.Rand<float>(1, 3, 24, 24);
+        var mainInput1 = Testing.Rand<float>(1, 3, 24, 24);
+        var mainVar0 = new Var(new TensorType(mainInput0.ElementType, mainInput0.Shape));
+        var mainVar1 = new Var(new TensorType(mainInput0.ElementType, mainInput0.Shape));
+        var fusionVar0 = new Var(new TensorType(mainInput0.ElementType, mainInput0.Shape));
+        var fusionVar1 = new Var(new TensorType(mainInput1.ElementType, mainInput1.Shape));
+        var concat = Concat(new IR.Tuple(fusionVar0, fusionVar1), 0);
+        var f = new BucketFusion("stackvm", concat, new[] { fusionVar0, fusionVar1 }, new Var[] { });
+        var abs = Abs(mainVar1);
+        var c = new Call(f, IR.F.NN.Sigmoid(mainInput0), abs);
+        TestMatched<MergePrevCallToFusion>(c,
+            new Dictionary<Var, IValue>
+            {
+                { mainVar0, Value.FromTensor(mainInput0) }, { mainVar1, Value.FromTensor(mainInput1) },
+            });
+    }
+
+    [Fact]
+    public void TestPrevMultiInputForDynamicReshape()
+    {
+        // fusion
+        var fusionVar = new Var(new TensorType(DataTypes.Float32, new[]{1, 3, 24, 24}));
+        var transpose = Transpose(fusionVar, new[] { 3, 2, 1, 0 });
+        var f = new BucketFusion("stackvm", transpose, new[] { fusionVar }, new Var[] { });
+
+        // input
+        var input = Testing.Rand<float>(3, 24, 24);
+        var inputVar = new Var(new TensorType(input.ElementType, input.Shape));
+        var newShape = Concat(new IR.Tuple(new[] { 1L }, ShapeOf(inputVar)), 0);
+        var reshape = Reshape(Abs(inputVar), newShape);
+        var c = new Call(f, reshape);
+        TestMatched<MergePrevCallToFusion>(c, new Dictionary<Var, IValue> { { inputVar, Value.FromTensor(input) } });
+    }
+
+    [Fact]
+    public void TestForConcat()
+    {
+        var input0 = Testing.Rand<float>(1, 3, 24, 24);
+        var input1 = Testing.Rand<float>(1, 3, 24, 24);
+        var inputVar0 = new Var(new TensorType(input0.ElementType, input0.Shape));
+        var inputVar1 = new Var(new TensorType(input1.ElementType, input1.Shape));
+        var concat = Concat(new IR.Tuple(inputVar0, inputVar1), 0);
+        var v = new Var(concat.CheckedType);
+        var abs = Abs(v);
+        var f = new BucketFusion("stackvm", abs, new[] { v }, new Var[] { });
+        var c = new Call(f, concat);
+        TestMatched<MergePrevCallToFusion>(c, new Dictionary<Var, IValue> { { inputVar0,  Value.FromTensor(input0)}, {inputVar1, Value.FromTensor(input1)} });
+    }
+}
