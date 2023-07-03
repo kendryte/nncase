@@ -22,11 +22,11 @@
 #include <nncase/runtime/stackvm/opcode.h>
 #include <ortki/operators.h>
 
- using namespace nncase;
- using namespace nncase::runtime;
- using namespace ortki;
+using namespace nncase;
+using namespace nncase::runtime;
+using namespace ortki;
 
- class BroadCastTest : public KernelTest,
+class BroadCastTest : public KernelTest,
                       public ::testing::TestWithParam<
                           std::tuple<nncase::typecode_t, dims_t, dims_t>> {
   public:
@@ -51,12 +51,12 @@
     runtime_tensor output_broadcast;
 };
 
- INSTANTIATE_TEST_SUITE_P(
+INSTANTIATE_TEST_SUITE_P(
     BroadCast, BroadCastTest,
     testing::Combine(testing::Values(dt_float32), testing::Values(dims_t{16}),
                      testing::Values(dims_t{1, 3, 16, 16})));
 
- TEST_P(BroadCastTest, BroadCast) {
+TEST_P(BroadCastTest, BroadCast) {
     //    auto l_ort = runtime_tensor_2_ort_tensor(input);
     // auto shape_ort = runtime_tensor_2_ort_tensor(input);
 
@@ -73,16 +73,16 @@
     //                        .expect("create tensor failed");
 
     // actual
-//        auto output = kernels::stackvm::broadcast(input.impl(),
-//    input.impl())
+    //        auto output = kernels::stackvm::broadcast(input.impl(),
+    //    input.impl())
     //                      .expect("broadcast failed");
     //    runtime_tensor actual(output.as<tensor>().expect("as tensor
-//    failed"));
+    //    failed"));
     //
     //    // compare
     //    EXPECT_TRUE(is_same_tensor(output_broadcast, actual));
 
-    std::vector<uint8_t> input = { 1, 2, 3 };
+    std::vector<uint8_t> input = {1, 2, 3};
     std::vector<uint8_t> output(9);
 
     kernels::stackvm::broadcast(input, input.data());
@@ -98,7 +98,7 @@
     EXPECT_EQ(output[8], 3);
 }
 
- int main(int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

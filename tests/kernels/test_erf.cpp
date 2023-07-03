@@ -45,11 +45,11 @@ class ErfTest
     runtime_tensor input;
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    Erf, ErfTest,
-    testing::Combine(testing::Values(dt_float32),
-                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 2, 16},
-                                     dims_t{8, 8})));
+INSTANTIATE_TEST_SUITE_P(Erf, ErfTest,
+                         testing::Combine(testing::Values(dt_float32),
+                                          testing::Values(dims_t{1, 3, 16, 16},
+                                                          dims_t{1, 2, 16},
+                                                          dims_t{8, 8})));
 
 TEST_P(ErfTest, erf) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
@@ -71,7 +71,7 @@ TEST_P(ErfTest, erf) {
 
     // compare
     EXPECT_TRUE(is_same_tensor(expected, actual) ||
-                 is_similarity_tensor(expected, actual));
+                is_similarity_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {

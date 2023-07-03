@@ -393,7 +393,7 @@ class KernelTest {
     }
 
     bool is_similarity_tensor(runtime::runtime_tensor &lhs,
-                         runtime::runtime_tensor &rhs) {
+                              runtime::runtime_tensor &rhs) {
         if (lhs.shape() != rhs.shape()) {
             return false;
         }

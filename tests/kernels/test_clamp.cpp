@@ -47,8 +47,8 @@ class ClampTest
 
 INSTANTIATE_TEST_SUITE_P(
     Clamp, ClampTest,
-    testing::Combine(testing::Values(dt_float32, dt_int32, dt_int16,
-                                     dt_int8, dt_uint8, dt_uint16),
+    testing::Combine(testing::Values(dt_float32, dt_int32, dt_int16, dt_int8,
+                                     dt_uint8, dt_uint16),
                      testing::Values(dims_t{1, 3, 16, 16}, dims_t{1},
                                      dims_t{1, 3}, dims_t{8, 8},
                                      dims_t{1, 3, 8})));
@@ -71,8 +71,8 @@ TEST_P(ClampTest, clamp) {
             .expect("create tensor failed");
 
     auto output1 = kernels::stackvm::clamp(input.impl(), min_tensor1.impl(),
-                                          max_tensor1.impl())
-                      .expect("clamp failed");
+                                           max_tensor1.impl())
+                       .expect("clamp failed");
     runtime_tensor expected(output1.as<tensor>().expect("as tensor failed"));
 
     // actual
