@@ -103,8 +103,10 @@ class host_buffer_allocator : public buffer_allocator {
         auto data = new (std::nothrow) gsl::byte[bytes];
         if (!data)
             return err(std::errc::not_enough_memory);
+        auto paddr =
+            options.flags & HOST_BUFFER_ALLOCATE_SHARED ? (uintptr_t)data : 0;
         return ok<buffer_t>(object_t<host_buffer_impl>(
-            std::in_place, data, bytes, [](gsl::byte *p) { delete[] p; }, 0,
+            std::in_place, data, bytes, [](gsl::byte *p) { delete[] p; }, paddr,
             *this, host_sync_status_t::valid, true));
     }
 

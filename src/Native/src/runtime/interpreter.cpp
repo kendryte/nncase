@@ -69,6 +69,8 @@ result<void> interpreter::load_model(std::istream &stream) noexcept {
 
     std::streampos module_pos = reader.tell();
     for (size_t i = 0; i < header.modules; i++) {
+        reader.seek(module_pos);
+
         auto mod_header = reader.read<module_header>();
         try_var(rt_module, runtime_module::create(mod_header.kind));
 
