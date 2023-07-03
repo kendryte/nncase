@@ -42,7 +42,7 @@ static float get_max_value(int n, const float *x) {
                    "slli t1, t0, 2;"
                    "sub a0, a0, t0;"
                    "add a1, a1, t1;"
-                   "vredmax.vs v16,v8,v16;"
+                   "vfredmax.vs v16,v8,v16;"
                    /////////////////
                    "bnez a0, loop_rvv_max_index%=;"
                    "vfmv.f.s %[value_index], v16;"
