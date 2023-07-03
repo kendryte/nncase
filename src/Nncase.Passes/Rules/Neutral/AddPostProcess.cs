@@ -53,7 +53,7 @@ public sealed class AddPostProcess : ModulePass
             }
             else
             {
-                newOutput = AddTranspose(outputLayout, modelLayout, entry);
+                newOutput = AddTranspose(outputLayout, modelLayout, entry.Body);
             }
 
             var newEntry = entry.With(body: newOutput);
