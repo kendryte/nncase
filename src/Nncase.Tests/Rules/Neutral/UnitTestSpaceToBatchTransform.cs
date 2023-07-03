@@ -12,8 +12,8 @@ using Nncase.Passes;
 using Nncase.Passes.Rules.Neutral;
 using Xunit;
 using Math = Nncase.IR.F.Math;
-using Random = Nncase.IR.F.Random;
 using NN = Nncase.IR.F.NN;
+using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
