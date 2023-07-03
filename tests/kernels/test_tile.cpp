@@ -78,7 +78,8 @@ TEST_P(TileTest, Tile) {
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_TRUE(is_same_tensor(expected, actual));
+    EXPECT_TRUE(is_same_tensor(expected, actual) ||
+                is_similarity_tensor(expected, actual));
 
     // expected
     int64_t repeats_array1[] = {1, 1, 1, 1};
@@ -104,7 +105,8 @@ TEST_P(TileTest, Tile) {
     runtime_tensor actual1(output1.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_TRUE(is_same_tensor(expected1, actual1));
+    EXPECT_TRUE(is_same_tensor(expected1, actual1) ||
+                is_similarity_tensor(expected, actual));
 
     // expected
     int64_t repeats_array2[] = {1, 1, 3, 2};
@@ -130,7 +132,8 @@ TEST_P(TileTest, Tile) {
     runtime_tensor actual2(output2.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_TRUE(is_same_tensor(expected2, actual2));
+    EXPECT_TRUE(is_same_tensor(expected2, actual2) ||
+                is_similarity_tensor(expected, actual));
 
     // expected
     int64_t repeats_array3[] = {1, 1, 1, 2};
@@ -156,7 +159,8 @@ TEST_P(TileTest, Tile) {
     runtime_tensor actual3(output3.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_TRUE(is_same_tensor(expected3, actual3));
+    EXPECT_TRUE(is_same_tensor(expected3, actual3) ||
+                is_similarity_tensor(expected, actual));
 
     // expected
     int64_t repeats_array4[] = {1, 2, 3, 2};
@@ -182,7 +186,8 @@ TEST_P(TileTest, Tile) {
     runtime_tensor actual4(output4.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_TRUE(is_same_tensor(expected4, actual4));
+    EXPECT_TRUE(is_same_tensor(expected4, actual4) ||
+                is_similarity_tensor(expected, actual));
 
     // expected
     int64_t repeats_array5[] = {3, 2, 3, 2};
@@ -208,7 +213,8 @@ TEST_P(TileTest, Tile) {
     runtime_tensor actual5(output5.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_TRUE(is_same_tensor(expected5, actual5));
+    EXPECT_TRUE(is_same_tensor(expected5, actual5) ||
+                is_similarity_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {

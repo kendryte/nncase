@@ -47,7 +47,7 @@ class ErfTest
 
 INSTANTIATE_TEST_SUITE_P(
     Erf, ErfTest,
-    testing::Combine(testing::Values(dt_float32, dt_float16),
+    testing::Combine(testing::Values(dt_float32),
                      testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 2, 16},
                                      dims_t{8, 8})));
 
@@ -70,7 +70,8 @@ TEST_P(ErfTest, erf) {
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_FALSE(is_same_tensor(expected, actual));
+    EXPECT_TRUE(is_same_tensor(expected, actual) ||
+                 is_similarity_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {

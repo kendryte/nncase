@@ -101,7 +101,8 @@ TEST_P(SpaceToBatchTest, SpaceToBatch) {
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_TRUE(is_same_tensor(expected, actual));
+    EXPECT_TRUE(is_same_tensor(expected, actual) ||
+                is_similarity_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {

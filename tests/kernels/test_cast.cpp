@@ -39,14 +39,16 @@ class CastTest : public KernelTest,
                     .expect("create tensor failed");
         init_tensor(input);
 
-        datatype_new_type = typecode_new_type;
+        data= hrt::create(typecode_new_type, l_shape,
+                           host_runtime_tensor::pool_cpu_only)
+                   .expect("create tensor failed");
     }
 
     void TearDown() override {}
 
   protected:
     runtime_tensor input;
-    datatype_t datatype_new_type;
+    runtime_tensor data;
 };
 
 INSTANTIATE_TEST_SUITE_P(
@@ -62,21 +64,21 @@ TEST_P(CastTest, cast) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
 
     // expected
-    auto output_ort = ortki_Cast(l_ort, dt_int64);
+    auto output_ort = ortki_Cast(l_ort, data.datatype());
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
     auto expected =
-        hrt::create(dt_int64, shape,
-                    {reinterpret_cast<gsl::byte *>(ptr_ort), 4 * size}, true,
+        hrt::create(data.datatype(), shape,
+                    {reinterpret_cast<gsl::byte *>(ptr_ort), size}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
     // actual
     auto output =
         kernels::stackvm::cast(
-            dt_int64, runtime::stackvm::cast_mode_t::kdefault, input.impl())
+            data.datatype(), runtime::stackvm::cast_mode_t::kdefault, input.impl())
             .expect("cast failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
