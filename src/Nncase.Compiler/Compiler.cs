@@ -141,6 +141,7 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.Relu6ToClamp>();
             p.Add<Passes.Rules.Neutral.FoldNopSlice>();
             p.Add<Passes.Rules.Neutral.FoldTwoSlices>();
+            p.Add<Passes.Rules.Neutral.SpaceToBatchToPad>();
         });
 
         // passManager.AddWithName<EGraphPass>("NeutralOptimizeClamp").Configure(p =>
