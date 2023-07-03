@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Imaging;
 using Nncase.IR.Math;
@@ -19,6 +20,7 @@ using static Nncase.IR.TypePatternUtility;
 using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.Utility;
 using Pad = Nncase.IR.NN.Pad;
+using Tuple = System.Tuple;
 
 namespace Nncase.Passes.Rules.Neutral;
 
@@ -44,16 +46,16 @@ public sealed class AddPostProcess : ModulePass
 
         if (preProcess && modelLayout != outputLayout && outputLayout != string.Empty)
         {
-            var newOutput = outputLayout switch
+            Expr newOutput;
+            if (entry.Body is IR.Tuple tuple)
             {
-                "NHWC" when modelLayout == "NCHW" => Transpose(entry.Body, new[] { 0, 2, 3, 1 }),
-                "NCHW" when modelLayout == "NHWC" => Transpose(entry.Body, new[] { 0, 3, 1, 2 }),
-                _ => Transpose(
-                    entry.Body,
-                    Array.ConvertAll(
-                        outputLayout.Replace(" ", string.Empty, StringComparison.OrdinalIgnoreCase).Split(","),
-                        int.Parse)),
-            };
+                newOutput = new IR.Tuple(tuple.Fields.ToArray().Select((field, i) => AddTranspose(outputLayout, modelLayout, field)).ToArray());
+            }
+            else
+            {
+                newOutput = AddTranspose(outputLayout, modelLayout, entry);
+            }
+
             var newEntry = entry.With(body: newOutput);
             module.Remove(entry);
             module.Add(newEntry);
@@ -61,5 +63,20 @@ public sealed class AddPostProcess : ModulePass
         }
 
         return Task.FromResult(module);
+    }
+
+    private static Expr AddTranspose(string outputLayout, string modelLayout, Expr entry)
+    {
+        var newOutput = outputLayout switch
+        {
+            "NHWC" when modelLayout == "NCHW" => Transpose(entry, new[] { 0, 2, 3, 1 }),
+            "NCHW" when modelLayout == "NHWC" => Transpose(entry, new[] { 0, 3, 1, 2 }),
+            _ => Transpose(
+                entry,
+                Array.ConvertAll(
+                    outputLayout.Replace(" ", string.Empty, StringComparison.OrdinalIgnoreCase).Split(","),
+                    int.Parse)),
+        };
+        return newOutput;
     }
 }
