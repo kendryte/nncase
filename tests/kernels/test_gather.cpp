@@ -58,7 +58,7 @@ class GatherTest
 
     void TearDown() override {}
 
-    void init_tensor(runtime::runtime_tensor &tensor) override {
+    /*void init_tensor(runtime::runtime_tensor &tensor) override {
         auto dtype = tensor.datatype();
         switch (dtype) {
         case dt_int8: {
@@ -135,7 +135,7 @@ class GatherTest
             break;
         }
         }
-    }
+    }*/
 
   protected:
     runtime_tensor input;

@@ -176,7 +176,8 @@ class KernelTest {
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](gsl::span<const size_t> index) -> result<void> {
-                    get<bool>(tensor, index) = static_cast<double>(dis(gen)) / 1==0;
+                    get<bool>(tensor, index) =
+                        static_cast<double>(dis(gen)) / 1 == 0;
                     return ok();
                 });
             break;
@@ -184,17 +185,6 @@ class KernelTest {
         default: {
         }
         }
-    }
-
-    virtual void init_tensor_pow_f32(runtime::runtime_tensor &tensor) {
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        std::uniform_real_distribution<float> dis(-6.0f, 6.0f);
-        NNCASE_UNUSED auto res = kernels::stackvm::apply(
-            tensor.shape(), [&](const dims_t &index) -> result<void> {
-                get<float>(tensor, index) = static_cast<int32_t>(dis(gen));
-                return ok();
-            });
     }
 
     ortki::OrtKITensor *
