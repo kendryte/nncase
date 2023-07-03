@@ -118,9 +118,9 @@ class GatherTest
             break;
         }
         case dt_float16: {
-            half fixed_values[] = {(half)1, (half)2, (half)3, (half)4, (half)5, (half)6, (half)7, (half)8, (half)9, (half)10};
-            NNCASE_UNUSED auto res = kernels::stackvm::apply(
-                tensor.shape(),
+            half fixed_values[] = {(half)1, (half)2, (half)3, (half)4, (half)5,
+    (half)6, (half)7, (half)8, (half)9, (half)10}; NNCASE_UNUSED auto res =
+    kernels::stackvm::apply( tensor.shape(),
                 [&](gsl::span<const size_t> index) -> result<void> {
                     size_t flat_index = 0;
                     for (size_t i = 0; i < index.size(); i++) {
