@@ -45,6 +45,7 @@ class ReduceArgMaxTest
     runtime_tensor rhs;
 };
 
+// todo make "a_array" gotten from here
 INSTANTIATE_TEST_SUITE_P(ReduceArgMax, ReduceArgMaxTest,
                          testing::Combine(testing::Values(dt_float32, dt_int32,
                                                           dt_int64),

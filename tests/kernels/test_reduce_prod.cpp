@@ -49,6 +49,7 @@ class ReduceProdTest : public KernelTest,
     runtime_tensor rhs;
 };
 
+// todo make "a_array" gotten from here
 INSTANTIATE_TEST_SUITE_P(ReduceProd, ReduceProdTest,
                          testing::Combine(testing::Values(dt_float32, dt_int32,
                                                           dt_int64),

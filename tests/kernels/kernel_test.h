@@ -169,6 +169,18 @@ class KernelTest {
                 });
             break;
         }
+        case dt_boolean: {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_real_distribution<double> dis(-1.0, 1.0);
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<bool>(tensor, index) = static_cast<double>(dis(gen)) / 1==0;
+                    return ok();
+                });
+            break;
+        }
         default: {
         }
         }

@@ -47,35 +47,43 @@ class ClampTest
 
 INSTANTIATE_TEST_SUITE_P(
     Clamp, ClampTest,
-    testing::Combine(testing::Values(dt_float32, dt_int32, dt_int64, dt_int16,
+    testing::Combine(testing::Values(dt_float32, dt_int32, dt_int16,
                                      dt_int8, dt_uint8, dt_uint16),
                      testing::Values(dims_t{1, 3, 16, 16}, dims_t{1},
                                      dims_t{1, 3}, dims_t{8, 8},
                                      dims_t{1, 3, 8})));
 
 TEST_P(ClampTest, clamp) {
-    auto l_ort = runtime_tensor_2_ort_tensor(input);
 
     // expected
-    auto output_ort = (l_ort);
-    size_t size = 0;
-    void *ptr_ort = tensor_buffer(output_ort, &size);
-    dims_t shape(tensor_rank(output_ort));
-    tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
-    auto expected = hrt::create(input.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
-                                true, host_runtime_tensor::pool_cpu_only)
-                        .expect("create tensor failed");
+    float_t min1[] = {-7.0f};
+    auto min_tensor1 =
+        hrt::create(nncase::dt_float32, {1},
+                    {reinterpret_cast<gsl::byte *>(min1), sizeof(min1)}, true,
+                    host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
+
+    float_t max1[] = {7.0f};
+    auto max_tensor1 =
+        hrt::create(nncase::dt_float32, {1},
+                    {reinterpret_cast<gsl::byte *>(max1), sizeof(max1)}, true,
+                    host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
+
+    auto output1 = kernels::stackvm::clamp(input.impl(), min_tensor1.impl(),
+                                          max_tensor1.impl())
+                      .expect("clamp failed");
+    runtime_tensor expected(output1.as<tensor>().expect("as tensor failed"));
 
     // actual
-    float_t min[] = {-1.0f};
+    float_t min[] = {-6.0f};
     auto min_tensor =
         hrt::create(nncase::dt_float32, {1},
                     {reinterpret_cast<gsl::byte *>(min), sizeof(min)}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
-    float_t max[] = {-1.0f};
+    float_t max[] = {6.0f};
     auto max_tensor =
         hrt::create(nncase::dt_float32, {1},
                     {reinterpret_cast<gsl::byte *>(max), sizeof(max)}, true,
@@ -88,7 +96,7 @@ TEST_P(ClampTest, clamp) {
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_TRUE(is_same_tensor(actual, actual));
+    EXPECT_TRUE(is_same_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {

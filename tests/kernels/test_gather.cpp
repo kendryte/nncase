@@ -58,6 +58,85 @@ class GatherTest
 
     void TearDown() override {}
 
+    void init_tensor(runtime::runtime_tensor &tensor) override {
+        auto dtype = tensor.datatype();
+        switch (dtype) {
+        case dt_int8: {
+            int8_t fixed_values[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    size_t flat_index = 0;
+                    for (size_t i = 0; i < index.size(); i++) {
+                        flat_index += index[i] * tensor.strides()[i];
+                    }
+                    get<int8_t>(tensor, index) = fixed_values[flat_index % 10];
+                    return ok();
+                });
+            break;
+        }
+        case dt_int16: {
+            int16_t fixed_values[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    size_t flat_index = 0;
+                    for (size_t i = 0; i < index.size(); i++) {
+                        flat_index += index[i] * tensor.strides()[i];
+                    }
+                    get<int16_t>(tensor, index) = fixed_values[flat_index % 10];
+                    return ok();
+                });
+            break;
+        }
+        case dt_int32: {
+            int32_t fixed_values[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    size_t flat_index = 0;
+                    for (size_t i = 0; i < index.size(); i++) {
+                        flat_index += index[i] * tensor.strides()[i];
+                    }
+                    get<int32_t>(tensor, index) = fixed_values[flat_index % 10];
+                    return ok();
+                });
+            break;
+        }
+        case dt_float32: {
+            float fixed_values[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    size_t flat_index = 0;
+                    for (size_t i = 0; i < index.size(); i++) {
+                        flat_index += index[i] * tensor.strides()[i];
+                    }
+                    get<float>(tensor, index) = fixed_values[flat_index % 10];
+                    return ok();
+                });
+            break;
+        }
+        case dt_float16: {
+            half fixed_values[] = {(half)1, (half)2, (half)3, (half)4, (half)5, (half)6, (half)7, (half)8, (half)9, (half)10};
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    size_t flat_index = 0;
+                    for (size_t i = 0; i < index.size(); i++) {
+                        flat_index += index[i] * tensor.strides()[i];
+                    }
+                    get<float>(tensor, index) = fixed_values[flat_index % 10];
+                    return ok();
+                });
+            break;
+        }
+        default: {
+            break;
+        }
+        }
+    }
+
   protected:
     runtime_tensor input;
     runtime_tensor indices;
