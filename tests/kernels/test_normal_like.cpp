@@ -91,7 +91,7 @@ TEST_P(NormalLikeTest, normal_like) {
 
     // compare
     EXPECT_TRUE(is_same_tensor(expected, actual) ||
-                is_similarity_tensor(expected, actual));
+                cosine_similarity_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {

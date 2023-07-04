@@ -130,7 +130,7 @@ TEST_P(FlattenTest, flatten) {
 
     // compare
     EXPECT_TRUE(is_same_tensor(expected2, actual2) ||
-                is_similarity_tensor(expected, actual));
+                cosine_similarity_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {

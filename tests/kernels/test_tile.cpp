@@ -79,7 +79,7 @@ TEST_P(TileTest, Tile) {
 
     // compare
     EXPECT_TRUE(is_same_tensor(expected, actual) ||
-                is_similarity_tensor(expected, actual));
+                cosine_similarity_tensor(expected, actual));
 
     // expected
     int64_t repeats_array1[] = {1, 1, 1, 1};
@@ -106,7 +106,7 @@ TEST_P(TileTest, Tile) {
 
     // compare
     EXPECT_TRUE(is_same_tensor(expected1, actual1) ||
-                is_similarity_tensor(expected, actual));
+                cosine_similarity_tensor(expected, actual));
 
     // expected
     int64_t repeats_array2[] = {1, 1, 3, 2};
@@ -133,7 +133,7 @@ TEST_P(TileTest, Tile) {
 
     // compare
     EXPECT_TRUE(is_same_tensor(expected2, actual2) ||
-                is_similarity_tensor(expected, actual));
+                cosine_similarity_tensor(expected, actual));
 
     // expected
     int64_t repeats_array3[] = {1, 1, 1, 2};
@@ -160,7 +160,7 @@ TEST_P(TileTest, Tile) {
 
     // compare
     EXPECT_TRUE(is_same_tensor(expected3, actual3) ||
-                is_similarity_tensor(expected, actual));
+                cosine_similarity_tensor(expected, actual));
 
     // expected
     int64_t repeats_array4[] = {1, 2, 3, 2};
@@ -187,7 +187,7 @@ TEST_P(TileTest, Tile) {
 
     // compare
     EXPECT_TRUE(is_same_tensor(expected4, actual4) ||
-                is_similarity_tensor(expected, actual));
+                cosine_similarity_tensor(expected, actual));
 
     // expected
     int64_t repeats_array5[] = {3, 2, 3, 2};
@@ -214,7 +214,7 @@ TEST_P(TileTest, Tile) {
 
     // compare
     EXPECT_TRUE(is_same_tensor(expected5, actual5) ||
-                is_similarity_tensor(expected, actual));
+                cosine_similarity_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {

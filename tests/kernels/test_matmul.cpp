@@ -78,7 +78,7 @@ TEST_P(MatMulTest, mat_mul) {
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_TRUE(is_similarity_tensor(expected, actual) ||
+    EXPECT_TRUE(cosine_similarity_tensor(expected, actual) ||
                 is_same_tensor(expected, actual));
 }
 

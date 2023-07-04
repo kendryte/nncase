@@ -80,7 +80,7 @@ TEST_P(PreluTest, Prelu) {
 
     // compare
     EXPECT_TRUE(is_same_tensor(expected, actual) ||
-                is_similarity_tensor(expected, actual));
+                cosine_similarity_tensor(expected, actual));
 
     //    // expected
     //    float_t slope_ptr1[] = {0.2f, 0.2f};

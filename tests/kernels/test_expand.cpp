@@ -163,7 +163,7 @@ TEST_P(ExpandTest, expand) {
 
     // compare
     EXPECT_TRUE(is_same_tensor(expected3, actual3) ||
-                is_similarity_tensor(expected, actual));
+                cosine_similarity_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {
