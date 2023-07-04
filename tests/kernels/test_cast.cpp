@@ -40,8 +40,8 @@ class CastTest : public KernelTest,
         init_tensor(input);
 
         expected = hrt::create(typecode_output, l_shape,
-                             host_runtime_tensor::pool_cpu_only)
-                     .expect("create tensor failed");
+                               host_runtime_tensor::pool_cpu_only)
+                       .expect("create tensor failed");
     }
 
     void TearDown() override {}
@@ -51,21 +51,22 @@ class CastTest : public KernelTest,
     runtime_tensor expected;
 };
 
-// todo There is a issue with converting fixed-point numbers to floating-point numbers.
+// todo There is a issue with converting fixed-point numbers to floating-point
+// numbers.
 INSTANTIATE_TEST_SUITE_P(
     Cast, CastTest,
-    testing::Combine(
-        testing::Values(dt_float32, dt_float16, dt_int32, dt_int8, dt_int16),
-        testing::Values(dt_int16, dt_int8, dt_int32, dt_int64),
-        testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 3, 8, 8},
-                        dims_t{1, 3, 1})));
+    testing::Combine(testing::Values(dt_float32, dt_float16, dt_int32, dt_int8,
+                                     dt_int16),
+                     testing::Values(dt_int16, dt_int8, dt_int32, dt_int64),
+                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 3, 8, 8},
+                                     dims_t{1, 3, 1})));
 
 TEST_P(CastTest, cast) {
     // actual
-    auto output =
-        kernels::stackvm::cast(
-            expected.datatype(), runtime::stackvm::cast_mode_t::kdefault, input.impl())
-            .expect("cast failed");
+    auto output = kernels::stackvm::cast(
+                      expected.datatype(),
+                      runtime::stackvm::cast_mode_t::kdefault, input.impl())
+                      .expect("cast failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // expected
@@ -77,6 +78,6 @@ TEST_P(CastTest, cast) {
 }
 
 int main(int argc, char *argv[]) {
-        ::testing::InitGoogleTest(&argc, argv);
-        return RUN_ALL_TESTS();
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

@@ -194,7 +194,7 @@ class KernelTest {
     }
 
     void cast_copy_tensor(runtime::runtime_tensor &source_tensor,
-                     runtime::runtime_tensor &destination_tensor) {
+                          runtime::runtime_tensor &destination_tensor) {
         auto destination_tensor_dtype = destination_tensor.datatype();
         auto source_tensor_dtype = source_tensor.datatype();
         switch (destination_tensor_dtype) {
