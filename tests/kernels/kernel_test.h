@@ -1212,6 +1212,10 @@ class KernelTest {
                     std::cout << static_cast<double>(get<double>(lhs, index))
                               << " ";
                     break;
+                case dt_float16:
+                    std::cout << static_cast<double>(get<half>(lhs, index))
+                              << " ";
+                    break;
                 default:
                     break;
                 }
