@@ -220,4 +220,33 @@ public class TestMergePrevCallToFusion : TransformTestBase
         var c = new Call(f, lhs, rhs);
         TestMatched<MergePrevCallToFusion>(c, new Dictionary<Var, IValue> { { lhs, Value.FromTensor(input) } });
     }
+
+    [Fact]
+    public void TestMergeStackWithConstant()
+    {
+        var input0 = Testing.Rand<float>(1, 3, 24, 24);
+        var input1 = Testing.Rand<float>(1, 3, 24, 24);
+        var lhs = new Var(new TensorType(input0.ElementType, input0.Shape));
+        var rhs = new Var(new TensorType(input1.ElementType, input1.Shape));
+
+        var scalarInput = Testing.Rand<float>();
+        var scalarInputVar = new Var(new TensorType(scalarInput.ElementType, scalarInput.Shape));
+        var other = Stack(new IR.Tuple(scalarInputVar, 1f, 2f), 0);
+
+        var lhsVar = new Var(new TensorType(input0.ElementType, input0.Shape));
+        var rhsVar = new Var(new TensorType(input1.ElementType, input1.Shape));
+        var otherVar = new Var(new TensorType(other.CheckedDataType, other.CheckedShape));
+        var mm = IR.F.Math.MatMul(lhsVar, rhsVar);
+        var f = new BucketFusion("stackvm", mm * otherVar[1], new Var[] { lhsVar, rhsVar, otherVar }, new Var[] { });
+        var c = new Call(f, lhs, rhs, other);
+        var result = TestMatched<MergePrevCallToFusion>(c, new Dictionary<Var, IValue>
+        {
+            { lhs, Value.FromTensor(input0) },
+            { rhs, Value.FromTensor(input1) },
+            { scalarInputVar, Value.FromTensor(scalarInput) },
+        });
+        var fusion = (BucketFusion)((Call)result).Target;
+        // constant should not be var
+        Assert.Equal(3, fusion.Parameters.Length);
+    }
 }

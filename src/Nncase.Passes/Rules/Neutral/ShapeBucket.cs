@@ -703,7 +703,7 @@ public abstract class MergeFusionBase : RewriteRule<Pattern>
         { typeof(Slice).TypeHandle, 0 },
         { typeof(Concat).TypeHandle, 0 },
         { typeof(Cast).TypeHandle, 0 },
-        // { typeof(IR.Tensors.Stack).TypeHandle, 0 },
+        { typeof(IR.Tensors.Stack).TypeHandle, 0 },
         { typeof(Expand).TypeHandle, 0 },
         { typeof(ConstantOfShape).TypeHandle, 0 },
         { typeof(Where).TypeHandle, 0 },
@@ -977,11 +977,14 @@ public partial class MergePrevCallToFusion : MergeFusionBase
         var newVarsMap = MakeNewFusionVarsMap(fusionArgsInfo);
         // 所有要被合并的call替换args为Fusion的Var
         var newPrevCalls = MakeNewPrevCalls(inputShouldBeMerge, newVarsMap);
+        DumpIR(new IR.Tuple(newPrevCalls), "newPrevCalls");
 
-        var newBody = MakeNewBody(fusion, newVarsMap.Select(v => v.InputIndex).ToHashSet().ToArray(), newPrevCalls);
-        var newParams = MakeNewParam(fusion, newVarsMap, newBody);
+        var newVarsMapFlatten = newVarsMap.SelectMany(x => x).ToArray();
+        var newBody = MakeNewBody(fusion, newVarsMapFlatten.Select(v => v.InputIndex).ToHashSet().ToArray(), newPrevCalls);
+        DumpIR(newBody, "newBody");
+        var newParams = MakeNewParam(fusion, newVarsMapFlatten, newBody);
         var newFusion = fusion.With(body: newBody, parameters: newParams);
-        var newArgs = MakeNewArgs(fusionOuterCall, newVarsMap, inputShouldBeMerge);
+        var newArgs = MakeNewArgs(fusionOuterCall, newVarsMapFlatten, inputShouldBeMerge);
 
         var call = MakeNewCall(fusionOuterCall, fusion, newFusion, newArgs);
 
@@ -1017,25 +1020,47 @@ public partial class MergePrevCallToFusion : MergeFusionBase
         return call;
     }
 
-    private static Expr[] MakeNewPrevCalls(Call[] inputsShouldBeMerge, VarReplaceInfo[] newVars)
+    private static Expr[] MakeNewPrevCalls(Call[] inputsShouldBeMerge, VarReplaceInfo[][] newVarsOrigin)
     {
         var tuple = new IR.Tuple(inputsShouldBeMerge);
-        DumpIR(tuple, "tuple");
 
-        // 使用Var替换掉InputArg
-        var newTuple = newVars.Aggregate((Expr)tuple, (sum, info) =>
+        return inputsShouldBeMerge.Zip(newVarsOrigin).Select(pair =>
         {
-            var arg = info.expr;
-            var fusionVar = info.vars;
-            if (fusionVar.Length == 1)
+            var (input, varsInfoList) = pair;
+            int outCounter = 0;
+            var newArgs = input.Arguments.ToArray().Select(x =>
             {
-                return ReplaceExpr(sum, arg, fusionVar[0]);
+                if (x is TensorConst)
+                {
+                    return x;
+                }
+
+                var newVar = varsInfoList[outCounter++].vars;
+                if (x is IR.Tuple tuple)
+                {
+                    int counter = 0;
+                    var newFields = tuple.Fields.ToArray().Select(field =>
+                    {
+                        if (field is TensorConst)
+                        {
+                            return field;
+                        }
+
+                        return newVar[counter++];
+                    }).ToArray();
+                    return new IR.Tuple(newFields);
+                }
+
+                return newVar.First();
+            }).ToArray();
+            var call = input.With(arguments: newArgs);
+            if (!call.InferenceType())
+            {
+                throw new InvalidOperationException();
             }
 
-            return ReplaceExpr(sum, arg, new IR.Tuple(fusionVar));
-        });
-        DumpIR(newTuple, "newTuple");
-        return ((IR.Tuple)newTuple).Fields.ToArray();
+            return call;
+        }).ToArray();
     }
 
     private static T[] FusionVarsOperation<T>(VarReplaceInfo[] newVars, T[] fusionVars, Func<VarReplaceInfo, T[]> f)
@@ -1060,7 +1085,7 @@ public partial class MergePrevCallToFusion : MergeFusionBase
         {
             if (newVar.expr is IR.Tuple tuple)
             {
-                return tuple.Fields.ToArray();
+                return tuple.Fields.ToArray().Where(field => field is not TensorConst).ToArray();
             }
 
             return new[] { newVar.expr };
@@ -1092,9 +1117,9 @@ public partial class MergePrevCallToFusion : MergeFusionBase
     // input: input1, input2, ...
     // call => [arg]
     // tuple => [arg1, arg2, ...]
-    private static VarReplaceInfo[] MakeNewFusionVarsMap((Call, int)[] fusionInputsInfo)
+    private static VarReplaceInfo[][] MakeNewFusionVarsMap((Call, int)[] fusionInputsInfo)
     {
-        var newVars = fusionInputsInfo.SelectMany(fusionInputInfo =>
+        var newVars = fusionInputsInfo.Select(fusionInputInfo =>
         {
             var (fusionInput, inputIndex) = fusionInputInfo;
             return fusionInput.Arguments.ToArray().Where(inputArg => inputArg is not TensorConst).Select((inputArg) =>
@@ -1103,7 +1128,7 @@ public partial class MergePrevCallToFusion : MergeFusionBase
                 var vars = new[] { new Var(inputArg.CheckedType)};
                 if (inputArg is IR.Tuple tuple)
                 {
-                    vars = tuple.Fields.ToArray().Select(field => new Var(field.CheckedType)).ToArray();
+                    vars = tuple.Fields.ToArray().Where(field => field is not TensorConst).Select(field => new Var(field.CheckedType)).ToArray();
                 }
 
                 return new VarReplaceInfo(inputArg, vars, inputIndex);
@@ -1198,6 +1223,7 @@ public class MergeBucketFusion : ModulePass
         {
             [typeof(IExprUserAnalysisResult)] = analyzerMananger.GetAnaylsis<IExprUserAnalysisResult>(main),
         };
+        CompilerServices.Rewrite(main, new[] { new ClearFusionOuterMarker() }, new());
         var rewriter = new DataFlowMergeRewriter();
         var post = (Function)rewriter.Rewrite(
             main,
@@ -1276,6 +1302,7 @@ internal static class ShapeBucketHelper
         {
             Marker m => (T)(object)m.With(target: DupExpr(m.Target)),
             Call c => (T)(object)c.With(),
+            IR.Tuple t => (T)(object)new IR.Tuple(t.Fields.ToArray().Select(DupExpr).ToArray()),
             _ => body,
         };
         return dupFusionBody;
