@@ -132,7 +132,7 @@ public static class TypeInference
                 var inDim = inDimIndex < 0 ? 1 : inShape[inDimIndex].Value!.Value;
                 if (inDim == 0)
                 {
-                    throw new InvalidOperationException("Input dimension should not be 0.");
+                    return new InvalidType("Input dimension should not be 0.");
                 }
 
                 inputDims[i] = inDim;

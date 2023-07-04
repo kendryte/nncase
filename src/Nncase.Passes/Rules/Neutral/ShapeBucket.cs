@@ -362,7 +362,6 @@ public partial class FusionBucket : RewriteRule<Pattern>
     public static Expr MakeSplitEntry(Expr originBody, Var[] fusionVars, Dictionary<Var, Expr[]> inputInfo, Dictionary<Var, IValue> varInfo, Dictionary<Var, Expr[]> fusionInputdata, Dictionary<Var, Expr[]> fusionInputsShape, Expr[] fusionInputs, string relPath, int seg)
     {
         // 避免这里的修改影响到原始的body，每个分支需要进行自己的修改
-        // todo: 但是或许是这里引起的复制
         var call = originBody.Clone();
 
         // 找到拷贝的call里面所有var，和fusion的原始var要对应上
@@ -535,7 +534,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
             pair => pair.Key,
             pair =>
             {
-                var shapeExpr = Stack(new IR.Tuple(pair.Value.Select(x => Cast(x, DataTypes.Int32)).ToArray()), 0);
+                var shapeExpr = pair.Key.CheckedShape.IsScalar ? (Expr)new int[] {} : Stack(new IR.Tuple(pair.Value.Select(x => Cast(x, DataTypes.Int32)).ToArray()), 0);
                 // DumpIR(shapeExpr, "DummyInputShapeExpr");
                 var shape = shapeExpr.Evaluate(varInfo).AsTensor();
                 return ConstantOfShape(
@@ -602,6 +601,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
     {
         var data = fusion.Parameters.ToArray().Zip(call.Arguments.ToArray().Select((arg, i) =>
         {
+            // DumpIR(arg, "MakeFusionInputShapeExprArg");
             var result = arg.EvaluateShapeExpr(varMap);
             return Enumerable.Range(0, arg.CheckedShape.Rank).Select(i =>
             {
@@ -694,6 +694,8 @@ public abstract class MergeFusionBase : RewriteRule<Pattern>
 {
     protected static readonly Dictionary<RuntimeTypeHandle, int> OpList = new()
     {
+        // todo: stack, binary
+        // todo: 一个连着多个相同输出的
         { typeof(Reshape).TypeHandle, 0 },
         { typeof(Unsqueeze).TypeHandle, 0 },
         { typeof(Squeeze).TypeHandle, 0 },
@@ -701,7 +703,7 @@ public abstract class MergeFusionBase : RewriteRule<Pattern>
         { typeof(Slice).TypeHandle, 0 },
         { typeof(Concat).TypeHandle, 0 },
         { typeof(Cast).TypeHandle, 0 },
-        { typeof(IR.Tensors.Stack).TypeHandle, 0 },
+        // { typeof(IR.Tensors.Stack).TypeHandle, 0 },
         { typeof(Expand).TypeHandle, 0 },
         { typeof(ConstantOfShape).TypeHandle, 0 },
         { typeof(Where).TypeHandle, 0 },
@@ -968,15 +970,34 @@ public partial class MergePrevCallToFusion : MergeFusionBase
 
         // FusionArgs
         var inputShouldBeMerge = CollectInputShouldBeMerge(fusionArgsInfo);
-        DumpIR(fusionOuterCall, $"{Counter}_{PrevCallStr}_{fusion.Name}_origin");
+        var prefix = $"{Counter}_{PrevCallStr}_{fusion.Name}_origin";
+
+        DumpIR(fusionOuterCall, prefix, printPrefix: "MergePrevCallToFusion");
         // (InputArg -> NewFusionVar[]), InputArg is part of newArgs.
-        var newVarsMap = MakeNewFusionVarsMap(inputShouldBeMerge);
+        var newVarsMap = MakeNewFusionVarsMap(fusionArgsInfo);
         // 所有要被合并的call替换args为Fusion的Var
         var newPrevCalls = MakeNewPrevCalls(inputShouldBeMerge, newVarsMap);
-        var newBody = MakeNewBody(fusion, fusionArgsInfo, newPrevCalls);
-        var newFusion = MakeNewParam(fusion, newVarsMap, fusionArgsInfo, newBody);
+
+        var newBody = MakeNewBody(fusion, newVarsMap.Select(v => v.InputIndex).ToHashSet().ToArray(), newPrevCalls);
+        var newParams = MakeNewParam(fusion, newVarsMap, newBody);
+        var newFusion = fusion.With(body: newBody, parameters: newParams);
         var newArgs = MakeNewArgs(fusionOuterCall, newVarsMap, inputShouldBeMerge);
+
         var call = MakeNewCall(fusionOuterCall, fusion, newFusion, newArgs);
+
+        // fusion var to arg
+        // 左边的arg的表达式是右边arg的一部分的时候，在将左边的arg替换为var的时候
+        // 右边的表达式中引用左边的arg的情况下右边的表达式也会被替换为fusion的var，参考TestMalMulReshape
+        newParams.Zip(newArgs).Aggregate((Expr)call, (sum, pair) =>
+        {
+            var (param, arg) = pair;
+            return ReplaceExpr(sum, param, arg);
+        });
+
+        if (!call.InferenceType())
+        {
+            Console.WriteLine();
+        }
         DumpIR(call, $"{Counter++}_{PrevCallStr}_{fusion.Name}_after");
         return call;
     }
@@ -1000,6 +1021,8 @@ public partial class MergePrevCallToFusion : MergeFusionBase
     {
         var tuple = new IR.Tuple(inputsShouldBeMerge);
         DumpIR(tuple, "tuple");
+
+        // 使用Var替换掉InputArg
         var newTuple = newVars.Aggregate((Expr)tuple, (sum, info) =>
         {
             var arg = info.expr;
@@ -1015,7 +1038,8 @@ public partial class MergePrevCallToFusion : MergeFusionBase
         return ((IR.Tuple)newTuple).Fields.ToArray();
     }
 
-    private static T[] FusionVarsOperation<T>(VarReplaceInfo[] newVars, T[] fusionVars, Func<VarReplaceInfo, T[]> f) where T: Expr
+    private static T[] FusionVarsOperation<T>(VarReplaceInfo[] newVars, T[] fusionVars, Func<VarReplaceInfo, T[]> f)
+        where T: Expr
     {
         var inputIndices = newVars.Select(v => v.InputIndex).ToArray();
         return fusionVars.ToArray().SelectMany((fusionArg, inputIndex) =>
@@ -1043,17 +1067,16 @@ public partial class MergePrevCallToFusion : MergeFusionBase
         });
     }
 
-    private static BucketFusion MakeNewParam(BucketFusion fusion, VarReplaceInfo[] newVars, (Call, int)[] fusionArgsInfo, Expr newBody)
+    private static Var[] MakeNewParam(BucketFusion fusion, VarReplaceInfo[] newVars, Expr newBody)
     {
         var newParams = FusionVarsOperation(newVars, fusion.Parameters.ToArray(), newVar => newVar.vars);
-        var newFusion = fusion.With(body: newBody, parameters: newParams);
-        return newFusion;
+        return newParams;
     }
 
-    private static Expr MakeNewBody(BucketFusion fusion, (Call, int)[] prevCallsInfo, Expr[] newPrevCalls)
+    private static Expr MakeNewBody(BucketFusion fusion, int[] inputIndices, Expr[] newPrevCalls)
     {
         // 新的fusion body将原来的var换成prevCall
-        var newBody = prevCallsInfo.Select(pair => fusion.Parameters[pair.Item2]).Zip(newPrevCalls).Aggregate(
+        var newBody = inputIndices.Select(index => fusion.Parameters[index]).Zip(newPrevCalls).Aggregate(
             fusion.Body, (sum, pair) =>
             {
                 // 此时prevCall携带新的var
@@ -1063,17 +1086,18 @@ public partial class MergePrevCallToFusion : MergeFusionBase
         return newBody;
     }
 
-    record VarReplaceInfo(Expr expr, Var[] vars, int InputIndex, int argIndex);
+    record VarReplaceInfo(Expr expr, Var[] vars, int InputIndex);
 
     // PrevCall(input1, input2, ...)
     // input: input1, input2, ...
     // call => [arg]
     // tuple => [arg1, arg2, ...]
-    private static VarReplaceInfo[] MakeNewFusionVarsMap(Call[] inputShouldBeReplace)
+    private static VarReplaceInfo[] MakeNewFusionVarsMap((Call, int)[] fusionInputsInfo)
     {
-        var newVars = inputShouldBeReplace.SelectMany((fusionInput, inputIndex) =>
+        var newVars = fusionInputsInfo.SelectMany(fusionInputInfo =>
         {
-            return fusionInput.Arguments.ToArray().Where(inputArg => inputArg is not TensorConst).Select((inputArg, argIndex) =>
+            var (fusionInput, inputIndex) = fusionInputInfo;
+            return fusionInput.Arguments.ToArray().Where(inputArg => inputArg is not TensorConst).Select((inputArg) =>
             {
                 // add condition to limit
                 var vars = new[] { new Var(inputArg.CheckedType)};
@@ -1082,7 +1106,7 @@ public partial class MergePrevCallToFusion : MergeFusionBase
                     vars = tuple.Fields.ToArray().Select(field => new Var(field.CheckedType)).ToArray();
                 }
 
-                return new VarReplaceInfo(inputArg, vars, inputIndex, argIndex);
+                return new VarReplaceInfo(inputArg, vars, inputIndex);
             }).ToArray();
         }).ToArray();
         return newVars;
@@ -1289,10 +1313,11 @@ internal static class ShapeBucketHelper
         return afterProcessVars.Intersect(allDimVars).ToHashSet().ToArray();
     }
 
-    internal static void DumpIR(Expr expr, string prefix, string? reletivePath = null)
+    internal static void DumpIR(Expr expr, string prefix, string? reletivePath = null, string? printPrefix = null)
     {
         // if (DumpScope.Current.IsEnabled(DumpFlags.Rewrite))
         {
+            Console.WriteLine($"{printPrefix} {prefix}");
             DumpScope.Current.DumpIR(expr, prefix, reletivePath);
         }
     }

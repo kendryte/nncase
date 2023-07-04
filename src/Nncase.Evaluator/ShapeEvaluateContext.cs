@@ -54,10 +54,16 @@ internal sealed class ShapeEvaluateContext : IShapeEvaluateContext
             return new Tuple(tuple.Fields.ToArray().Select(v => Cast(_memo[v], DataTypes.Int32)).ToArray());
         }
 
+        // call
         if (expr.CheckedType is TupleType)
         {
-            var tupleShapeExpr = (Tuple)expr.EvaluateShapeExpr(VarMap);
-            return new Tuple(tupleShapeExpr.Fields.ToArray().Select(expr => Cast(expr, DataTypes.Int32)).ToArray());
+            var shape = expr.EvaluateShapeExpr(VarMap);
+            if (shape is Call c && c.Target is IR.Math.Require && c.Arguments[IR.Math.Require.Value.Index] is Tuple tupleShapeExpr)
+            {
+                return new Tuple(tupleShapeExpr.Fields.ToArray().Select(expr => Cast(expr, DataTypes.Int32)).ToArray());
+            }
+
+            throw new NotImplementedException();
         }
 
         var shapeExpr = _memo[expr];
