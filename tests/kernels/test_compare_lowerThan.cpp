@@ -62,7 +62,7 @@ TEST_P(CompareTest, equal) {
     auto r_ort = runtime_tensor_2_ort_tensor(rhs);
 
     // expected
-    auto output_ort = ortki_LessOrEqual(l_ort, r_ort);
+    auto output_ort = ortki_Less(l_ort, r_ort);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
@@ -74,13 +74,13 @@ TEST_P(CompareTest, equal) {
 
     // actual
     auto output = kernels::stackvm::compare(
-                      nncase::runtime::stackvm::compare_op_t::lower_or_equal,
+                      nncase::runtime::stackvm::compare_op_t::lower_than,
                       lhs.impl(), rhs.impl())
                       .expect("compare failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_FALSE(is_same_tensor(expected, actual));
+    EXPECT_TRUE(is_same_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {
