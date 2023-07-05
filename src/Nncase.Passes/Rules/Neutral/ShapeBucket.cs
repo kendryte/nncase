@@ -117,8 +117,8 @@ public partial class MarkerCallToFusion<T> : RewriteRule<Pattern>
 
             return (arg, -1);
         }).Where(pair => pair.Item2 != -1).Select(pair => ((Marker)pair.arg, pair.Item2)).ToArray();
-            // )OfType<Marker>().Where(x => x.Target is not TensorConst).ToArray();
 
+    // )OfType<Marker>().Where(x => x.Target is not TensorConst).ToArray();
     public virtual bool Check(Call call)
     {
         return true;
@@ -534,7 +534,8 @@ public partial class FusionBucket : RewriteRule<Pattern>
             pair => pair.Key,
             pair =>
             {
-                var shapeExpr = pair.Key.CheckedShape.IsScalar ? (Expr)new int[] {} : Stack(new IR.Tuple(pair.Value.Select(x => Cast(x, DataTypes.Int32)).ToArray()), 0);
+                var shapeExpr = pair.Key.CheckedShape.IsScalar ? (Expr)Array.Empty<int>() : Stack(new IR.Tuple(pair.Value.Select(x => Cast(x, DataTypes.Int32)).ToArray()), 0);
+
                 // DumpIR(shapeExpr, "DummyInputShapeExpr");
                 var shape = shapeExpr.Evaluate(varInfo).AsTensor();
                 return ConstantOfShape(
@@ -699,7 +700,6 @@ public abstract class MergeFusionBase : RewriteRule<Pattern>
         { typeof(Reshape).TypeHandle, 0 },
         { typeof(Unsqueeze).TypeHandle, 0 },
         { typeof(Squeeze).TypeHandle, 0 },
-
         { typeof(Slice).TypeHandle, 0 },
         { typeof(Concat).TypeHandle, 0 },
         { typeof(Cast).TypeHandle, 0 },
@@ -854,6 +854,7 @@ public partial class MergeNextCallToFusion : MergeFusionBase
         {
             Console.WriteLine();
         }
+
         // todo: only for single input, effect var must be same
         if (MultiUser(maybeFusionCallMarker))
         {
@@ -937,6 +938,8 @@ public partial class MergeNextCallToFusion : MergeFusionBase
 [RuleGenerator]
 public partial class MergePrevCallToFusion : MergeFusionBase
 {
+    private string _prevCallStr = string.Empty;
+
     public override Pattern Pattern => IsCall(
         "fusionOuterCall",
         IsFusion(
@@ -969,18 +972,21 @@ public partial class MergePrevCallToFusion : MergeFusionBase
         {
             return null;
         }
+
         // FusionArgs
         var inputShouldBeMerge = CollectInputShouldBeMerge(fusionArgsInfo);
-        var prefix = $"{Counter}_{PrevCallStr}_{fusion.Name}_origin";
+        var prefix = $"{Counter}_{_prevCallStr}_{fusion.Name}_origin";
 
         DumpIR(fusionOuterCall, prefix, printPrefix: "MergePrevCallToFusion");
 
         var indices = fusionArgsInfo.Select(x => x.Item2).ToHashSet();
         var fusionDict = fusionOuterCall.Arguments.ToArray().Zip(fusion.Parameters.ToArray())
             .Where((expr, i) => !indices.Contains(i))
-            .ToDictionary(pair => pair.Item1, pair => pair.Item2);
+            .ToDictionary(pair => pair.First, pair => pair.Second);
+
         // (InputArg -> NewFusionVar[]), InputArg is part of newArgs.
         var newVarsMap = MakeNewFusionVarsMap(fusionArgsInfo, fusionDict);
+
         // 所有要被合并的call替换args为Fusion的Var
         var newPrevCalls = MakeNewPrevCalls(inputShouldBeMerge, newVarsMap);
         DumpIR(new IR.Tuple(newPrevCalls), "newPrevCalls");
@@ -1007,23 +1013,16 @@ public partial class MergePrevCallToFusion : MergeFusionBase
         {
             Console.WriteLine();
         }
-        DumpIR(call, $"{Counter++}_{PrevCallStr}_{fusion.Name}_after");
+
+        DumpIR(call, $"{Counter++}_{_prevCallStr}_{fusion.Name}_after");
         return call;
     }
 
     private Call[] CollectInputShouldBeMerge((Call, int)[] prevCallsInfo)
     {
         var prevCalls = prevCallsInfo.Select(x => x.Item1).ToArray();
-        PrevCallStr = string.Join("_", prevCalls.Select(call => call.Target.GetType().Name));
+        _prevCallStr = string.Join("_", prevCalls.Select(call => call.Target.GetType().Name));
         return prevCalls;
-    }
-
-    private string PrevCallStr = "";
-    private Call MakeNewCall(Call fusionOuterCall, BucketFusion fusion, BucketFusion newFusion, Expr[] newArgs)
-    {
-        // 原始的fusion的call更换target为新的fusion，以及arg0替换为prevCall的arg0，其他不变
-        var call = fusionOuterCall.With(target: newFusion, arguments: newArgs);
-        return call;
     }
 
     private static Expr[] MakeNewPrevCalls(Call[] inputsShouldBeMerge, VarReplaceInfo[][] newVarsOrigin)
@@ -1069,8 +1068,15 @@ public partial class MergePrevCallToFusion : MergeFusionBase
         }).ToArray();
     }
 
+    private Call MakeNewCall(Call fusionOuterCall, BucketFusion fusion, BucketFusion newFusion, Expr[] newArgs)
+    {
+        // 原始的fusion的call更换target为新的fusion，以及arg0替换为prevCall的arg0，其他不变
+        var call = fusionOuterCall.With(target: newFusion, arguments: newArgs);
+        return call;
+    }
+
     private static T[] FusionVarsOperation<T>(VarReplaceInfo[] newVars, T[] fusionVars, Func<VarReplaceInfo, T[]> f)
-        where T: Expr
+        where T : Expr
     {
         var inputIndices = newVars.Select(v => v.InputIndex).ToArray();
         return fusionVars.ToArray().SelectMany((fusionArg, inputIndex) =>
@@ -1117,29 +1123,8 @@ public partial class MergePrevCallToFusion : MergeFusionBase
         return newBody;
     }
 
-    record VarReplaceInfo(Expr expr, Var[] vars, int InputIndex);
+    private record VarReplaceInfo(Expr Expr, Var[] Vars, int InputIndex);
 
-    class VarReplaceInfoExprEqualityComparer : IEqualityComparer<VarReplaceInfo>
-    {
-        public bool Equals(VarReplaceInfo x, VarReplaceInfo y)
-        {
-            if (ReferenceEquals(x.expr, y.expr))
-            {
-                return true;
-            }
-
-            if (x.expr.GetHashCode() == y.expr.GetHashCode())
-            {
-                return true;
-            }
-            return false;
-        }
-
-        public int GetHashCode(VarReplaceInfo obj)
-        {
-            return HashCode.Combine(obj.expr);
-        }
-    }
     // PrevCall(input1, input2, ...)
     // input: input1, input2, ...
     // call => [arg]
@@ -1153,7 +1138,7 @@ public partial class MergePrevCallToFusion : MergeFusionBase
             return fusionInput.Arguments.ToArray().Where(inputArg => inputArg is not TensorConst).Select((inputArg) =>
             {
                 // add condition to limit
-                var vars = new[] { new Var(inputArg.CheckedType)};
+                var vars = new[] { new Var(inputArg.CheckedType) };
                 if (inputArg is IR.Tuple tuple)
                 {
                     vars = tuple.Fields.ToArray().Where(field => field is not TensorConst).Select(field => new Var(field.CheckedType)).ToArray();
@@ -1166,20 +1151,6 @@ public partial class MergePrevCallToFusion : MergeFusionBase
         return newVarsDeduplication;
     }
 
-    class KeyValuePairKeyComparer : IEqualityComparer<KeyValuePair<Expr, Var[]>>
-    {
-        public bool Equals(KeyValuePair<Expr, Var[]> x, KeyValuePair<Expr, Var[]> y)
-        {
-            // todo: fusion var优先级更高，var GlobalIndex
-            return Equals(x.Key, y.Key);
-        }
-
-        public int GetHashCode(KeyValuePair<Expr, Var[]> obj)
-        {
-            return HashCode.Combine(obj.Key);
-        }
-    }
-
     private static VarReplaceInfo[][] NewVarsDeduplication(VarReplaceInfo[][] newVars, Dictionary<Expr, Var> fusionDict)
     {
         var dict = newVars
@@ -1190,13 +1161,14 @@ public partial class MergePrevCallToFusion : MergeFusionBase
         var newVarsDeduplication = newVars.Select(list => list.Select(info =>
         {
             // todo: tuple的情况消除重复
-            var defaultVar = new Var[] { };
+            var defaultVar = Array.Empty<Var>();
             if (info.expr is IR.Tuple tuple)
             {
                 // FusionArg为tuple的时候，tuple中部分参数已经是fusion的参数的情况
                 // TestMergeInputWhichHadBeMerged
                 // TestMergeInputInTupleWhichHadBeMerged
                 var callFields = tuple.Fields.ToArray().Where(field => field is not TensorConst).ToArray();
+
                 // dict里有这个expr，也就是说其他FusionArg中出现过，有对应的vars
                 if (dict.TryGetValue(info.expr, out defaultVar))
                 {
@@ -1210,6 +1182,7 @@ public partial class MergePrevCallToFusion : MergeFusionBase
                     // dict中没有这个var，那么只需要info中的vars是否有在fusionVar中出现过的
                     defaultVar = info.vars;
                 }
+
                 var newVars = callFields.Zip(defaultVar).Select(pair =>
                 {
                     // 如果tuple中有的元素已经在FusionArg中，那么优先替换
@@ -1229,14 +1202,53 @@ public partial class MergePrevCallToFusion : MergeFusionBase
             {
                 return info with { vars = new[] { fusionVar } };
             }
+
             // TestSameInputMerge
             if (dict.TryGetValue(info.expr, out var vars))
             {
                 return info with { vars = vars };
             }
+
             return info;
         }).ToArray()).ToArray();
         return newVarsDeduplication;
+    }
+
+    private class VarReplaceInfoExprEqualityComparer : IEqualityComparer<VarReplaceInfo>
+    {
+        public bool Equals(VarReplaceInfo x, VarReplaceInfo y)
+        {
+            if (ReferenceEquals(x.expr, y.expr))
+            {
+                return true;
+            }
+
+            if (x.expr.GetHashCode() == y.expr.GetHashCode())
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public int GetHashCode(VarReplaceInfo obj)
+        {
+            return HashCode.Combine(obj.expr);
+        }
+    }
+
+    private class KeyValuePairKeyComparer : IEqualityComparer<KeyValuePair<Expr, Var[]>>
+    {
+        public bool Equals(KeyValuePair<Expr, Var[]> x, KeyValuePair<Expr, Var[]> y)
+        {
+            // todo: fusion var优先级更高，var GlobalIndex
+            return Equals(x.Key, y.Key);
+        }
+
+        public int GetHashCode(KeyValuePair<Expr, Var[]> obj)
+        {
+            return HashCode.Combine(obj.Key);
+        }
     }
 
     // 只需要替换被合并的call的args中的call，所以搜索和返回的都是Call
@@ -1267,6 +1279,7 @@ public partial class MergePrevCallToFusion : MergeFusionBase
                         Console.WriteLine("1065 Error");
                         throw new NotImplementedException();
                     }
+
                     prevCalls.Add((rhsPrevCall, i));
                     maybeMarkers.Add(marker);
                 }
@@ -1283,6 +1296,7 @@ public partial class MergePrevCallToFusion : MergeFusionBase
                         Console.WriteLine("1080 Error");
                         throw new NotImplementedException();
                     }
+
                     // var rhs = DupExpr(rhsCall);
                     prevCalls.Add((rhsCall, i));
                     maybeMarkers.Add((Expr)rhsCall);
@@ -1379,6 +1393,7 @@ internal sealed class BucketFusionGroupMutator : Passes.Mutators.FusionGroupMuta
         {
             Console.WriteLine(candidateFusion.Name);
         }
+
         Console.WriteLine("-----------------");
 
         // 回避反卷积，反卷积的shape表达式目前会引起重复的计算

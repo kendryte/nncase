@@ -42,7 +42,8 @@ public class IndexOfEvaluator : IEvaluator<IndexOf>, ITypeInferencer<IndexOf>, I
         };
     }
 
-    public Expr Visit(IShapeEvaluateContext context, IndexOf target) => new int[] { };
+    public Expr Visit(IShapeEvaluateContext context, IndexOf target) => System.Array.Empty<int>();
+
     private IRType Visit(ITypeInferenceContext context, IndexOf target, TensorType input)
     {
         return new TensorType(DataTypes.Int32, Shape.Scalar);

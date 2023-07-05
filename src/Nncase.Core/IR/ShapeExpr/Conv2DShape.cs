@@ -1,3 +1,6 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.IR.ShapeExpr;
@@ -33,5 +36,4 @@ public class Conv2DShape : ShapeExprOp
     /// Gets Groups.
     /// </summary>
     public static readonly ParameterInfo Groups = new(typeof(Conv2DShape), 5, "groups", IsScalar() & IsIntegral());
-
 }

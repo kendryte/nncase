@@ -25,6 +25,7 @@ public class BucketPadEvaluator : IEvaluator<BucketPad>, ITypeInferencer<BucketP
         {
             return Value.FromTensor(input);
         }
+
         var shape = context.GetArgumentValueAsArray<int>(bucketPad, BucketPad.Shape);
         var pads = shape - (Expr)input.Shape;
         var paddings = Transpose(

@@ -46,7 +46,6 @@ public partial class MatMulShapeEvaluator : IEvaluator<MatMulShape>, ITypeInfere
         //
         // var end = Stack(new IR.Tuple(lhsShape[lhsRank - 2], rhsShape[rhsRank - 1]), 0);
         // return Concat(new IR.Tuple(front, end), 0).Evaluate();
-
         var lhsShape = lhs.ToArray<int>();
         var rhsShape = rhs.ToArray<int>();
         var newLhs = To4D(lhsShape);
@@ -57,6 +56,7 @@ public partial class MatMulShapeEvaluator : IEvaluator<MatMulShape>, ITypeInfere
         {
             newShape.Add(System.Math.Max(newLhs[i + 4 - bigShapeSize], newRhs[i + 4 - bigShapeSize]));
         }
+
         newShape.Add(lhsShape[^2]);
         newShape.Add(rhsShape[^1]);
         return Value.FromTensor(newShape.Select(x => (long)x).ToArray());

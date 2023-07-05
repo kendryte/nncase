@@ -67,6 +67,7 @@ public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>, ICostEv
         {
             return new InvalidType("Tuple count should not be zero");
         }
+
         if (context.GetArgument(target, Stack.Axis) is TensorConst axis_con)
         {
             var axis_v = axis_con.Value.ToScalar<int>();

@@ -62,6 +62,7 @@ public static class ShapeExprUtility
             DumpScope.Current.DumpIR(expr, "BroadcastShape");
             throw new NotImplementedException();
         }
+
         return new Call(new Rank(), expr);
     }
 

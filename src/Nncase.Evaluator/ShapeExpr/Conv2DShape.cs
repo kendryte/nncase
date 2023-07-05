@@ -19,7 +19,7 @@ public partial class Conv2DShapeEvaluator : IEvaluator<Conv2DShape>, ITypeInfere
         var shape = ty switch
         {
             TensorType tensorType => tensorType.Shape,
-            _ => throw new ArgumentOutOfRangeException(nameof(ty))
+            _ => throw new ArgumentOutOfRangeException(nameof(ty)),
         };
         if (!shape.IsFixed)
         {
@@ -39,13 +39,13 @@ public partial class Conv2DShapeEvaluator : IEvaluator<Conv2DShape>, ITypeInfere
         return CostUtility.GetShapeExprCost();
     }
 
-    private TensorType GetTensorType(Tensor input)
-    {
-        return new TensorType(DataTypes.Float32, input.ToArray<int>());
-    }
-
     public Expr Visit(IShapeEvaluateContext context, Conv2DShape target)
     {
         return new[] { 4 };
+    }
+
+    private TensorType GetTensorType(Tensor input)
+    {
+        return new TensorType(DataTypes.Float32, input.ToArray<int>());
     }
 }
