@@ -284,12 +284,6 @@ public class TestMergePrevCallToFusion : TransformTestBase
         Assert.Equal(3, fusion.Parameters.Length);
     }
 
-    private static BucketFusion GetResultFusion(Expr result)
-    {
-        var fusion = (BucketFusion)((Call)result).Target;
-        return fusion;
-    }
-
     [Fact]
     public void TestMergeInputWhichHadBeMerged()
     {
@@ -333,5 +327,11 @@ public class TestMergePrevCallToFusion : TransformTestBase
         var fusion = (BucketFusion)call.Target;
         Assert.Equal(1, fusion.Parameters.Length);
         Assert.Equal(1, call.Arguments.Length);
+    }
+
+    private static BucketFusion GetResultFusion(Expr result)
+    {
+        var fusion = (BucketFusion)((Call)result).Target;
+        return fusion;
     }
 }

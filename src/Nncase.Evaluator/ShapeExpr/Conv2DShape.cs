@@ -19,7 +19,7 @@ public partial class Conv2DShapeEvaluator : IEvaluator<Conv2DShape>, ITypeInfere
         var shape = ty switch
         {
             TensorType tensorType => tensorType.Shape,
-            _ => throw new ArgumentOutOfRangeException(nameof(ty)),
+            _ => throw new InvalidOperationException(),
         };
         if (!shape.IsFixed)
         {
