@@ -183,7 +183,7 @@ class KernelTest {
                 tensor.shape(),
                 [&](gsl::span<const size_t> index) -> result<void> {
                     get<bool>(tensor, index) =
-                        static_cast<double>(dis(gen)) / 1 == 0;
+                        static_cast<double>(dis(gen)) >= 0;
                     return ok();
                 });
             break;
@@ -1054,6 +1054,14 @@ class KernelTest {
                            }
                            break;
                        }
+                       case dt_boolean: {
+                           if (get<bool>(lhs, index) == get<bool>(rhs, index)) {
+                               return ok();
+                           } else {
+                               return err(std::errc::not_supported);
+                           }
+                           break;
+                       }
                        default: {
                            return err(std::errc::not_supported);
                        }
@@ -1142,6 +1150,11 @@ class KernelTest {
                     vec2.push_back(static_cast<float>(get<double>(rhs, index)));
                     break;
                 }
+                case dt_boolean: {
+                    vec1.push_back(get<bool>(lhs, index) ? 2 : 1);
+                    vec2.push_back(get<bool>(rhs, index) ? 2 : 1);
+                    break;
+                }
                 default: {
                     return err(std::errc::not_supported);
                 }
@@ -1214,6 +1227,10 @@ class KernelTest {
                     break;
                 case dt_float16:
                     std::cout << static_cast<double>(get<half>(lhs, index))
+                              << " ";
+                    break;
+                case dt_boolean:
+                    std::cout << static_cast<bool>(get<bool>(lhs, index))
                               << " ";
                     break;
                 default:

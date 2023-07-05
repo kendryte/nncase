@@ -26,18 +26,18 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class BinaryTest : public KernelTest,
-                   public ::testing::TestWithParam<
-                       std::tuple<nncase::typecode_t, dims_t, dims_t>> {
+class BinaryTest
+    : public KernelTest,
+      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape, r_shape] = GetParam();
+        auto &&[typecode, shape] = GetParam();
 
-        lhs = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
+        lhs = hrt::create(typecode, shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
         init_tensor(lhs);
 
-        rhs = hrt::create(typecode, r_shape, host_runtime_tensor::pool_cpu_only)
+        rhs = hrt::create(typecode, shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
         init_tensor(rhs);
     }
@@ -49,10 +49,13 @@ class BinaryTest : public KernelTest,
     runtime_tensor rhs;
 };
 
-INSTANTIATE_TEST_SUITE_P(Binary, BinaryTest,
-                         testing::Combine(testing::Values(dt_boolean),
-                                          testing::Values(dims_t{2, 4}),
-                                          testing::Values(dims_t{2, 4})));
+INSTANTIATE_TEST_SUITE_P(
+    Binary, BinaryTest,
+    testing::Combine(testing::Values(dt_boolean),
+                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{3, 16, 16},
+                                     dims_t{3, 16, 1}, dims_t{16, 16},
+                                     dims_t{16, 1}, dims_t{1, 16, 1},
+                                     dims_t{16}, dims_t{1}, dims_t{})));
 
 TEST_P(BinaryTest, logical_or) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
@@ -77,7 +80,7 @@ TEST_P(BinaryTest, logical_or) {
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_FALSE(is_same_tensor(expected, actual));
+    EXPECT_TRUE(is_same_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {
