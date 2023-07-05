@@ -78,7 +78,8 @@ class BatchNormalizationTest
 
 INSTANTIATE_TEST_SUITE_P(batch_normalization, BatchNormalizationTest,
                          testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 8, 24, 24})));
+                                          testing::Values(dims_t{1, 8, 24,
+                                                                 24})));
 
 TEST_P(BatchNormalizationTest, batch_normalization) {
     auto input_ort = runtime_tensor_2_ort_tensor(input);
