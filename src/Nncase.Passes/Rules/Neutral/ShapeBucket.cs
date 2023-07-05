@@ -713,7 +713,7 @@ public abstract class MergeFusionBase : RewriteRule<Pattern>
         // compute
         { typeof(Transpose).TypeHandle, 1 },
         { typeof(Unary).TypeHandle, 1 },
-        // { typeof(Binary).TypeHandle, 2 },
+        { typeof(Binary).TypeHandle, 2 },
         { typeof(Clamp).TypeHandle, 2 },
         { typeof(Pad).TypeHandle, 2 },
 
@@ -973,8 +973,13 @@ public partial class MergePrevCallToFusion : MergeFusionBase
         var prefix = $"{Counter}_{PrevCallStr}_{fusion.Name}_origin";
 
         DumpIR(fusionOuterCall, prefix, printPrefix: "MergePrevCallToFusion");
+
+        var indices = fusionArgsInfo.Select(x => x.Item2).ToHashSet();
+        var fusionDict = fusionOuterCall.Arguments.ToArray().Zip(fusion.Parameters.ToArray())
+            .Where((expr, i) => !indices.Contains(i))
+            .ToDictionary(pair => pair.Item1, pair => new[] { pair.Item2 });
         // (InputArg -> NewFusionVar[]), InputArg is part of newArgs.
-        var newVarsMap = MakeNewFusionVarsMap(fusionArgsInfo);
+        var newVarsMap = MakeNewFusionVarsMap(fusionArgsInfo, fusionDict);
         // 所有要被合并的call替换args为Fusion的Var
         var newPrevCalls = MakeNewPrevCalls(inputShouldBeMerge, newVarsMap);
         DumpIR(new IR.Tuple(newPrevCalls), "newPrevCalls");
@@ -982,9 +987,9 @@ public partial class MergePrevCallToFusion : MergeFusionBase
         var newVarsMapFlatten = newVarsMap.SelectMany(x => x).ToArray();
         var newBody = MakeNewBody(fusion, newVarsMapFlatten.Select(v => v.InputIndex).ToHashSet().ToArray(), newPrevCalls);
         DumpIR(newBody, "newBody");
-        var newParams = MakeNewParam(fusion, newVarsMapFlatten, newBody);
+        var newParams = MakeNewParam(fusion, newVarsMapFlatten, newBody).ToHashSet().ToArray();
         var newFusion = fusion.With(body: newBody, parameters: newParams);
-        var newArgs = MakeNewArgs(fusionOuterCall, newVarsMapFlatten, inputShouldBeMerge);
+        var newArgs = MakeNewArgs(fusionOuterCall, newVarsMapFlatten, inputShouldBeMerge).ToHashSet().ToArray();
 
         var call = MakeNewCall(fusionOuterCall, fusion, newFusion, newArgs);
 
@@ -1113,11 +1118,33 @@ public partial class MergePrevCallToFusion : MergeFusionBase
 
     record VarReplaceInfo(Expr expr, Var[] vars, int InputIndex);
 
+    class VarReplaceInfoExprEqualityComparer : IEqualityComparer<VarReplaceInfo>
+    {
+        public bool Equals(VarReplaceInfo x, VarReplaceInfo y)
+        {
+            if (ReferenceEquals(x.expr, y.expr))
+            {
+                return true;
+            }
+
+            if (x.expr.GetHashCode() == y.expr.GetHashCode())
+            {
+                return true;
+            }
+            return false;
+        }
+
+        public int GetHashCode(VarReplaceInfo obj)
+        {
+            return HashCode.Combine(obj.expr);
+        }
+    }
     // PrevCall(input1, input2, ...)
     // input: input1, input2, ...
     // call => [arg]
     // tuple => [arg1, arg2, ...]
-    private static VarReplaceInfo[][] MakeNewFusionVarsMap((Call, int)[] fusionInputsInfo)
+    // VarReplaceInfo[InputIndex][InputArgIndex]
+    private static VarReplaceInfo[][] MakeNewFusionVarsMap((Call, int)[] fusionInputsInfo, Dictionary<Expr, Var[]> fusionDict)
     {
         var newVars = fusionInputsInfo.Select(fusionInputInfo =>
         {
@@ -1134,7 +1161,47 @@ public partial class MergePrevCallToFusion : MergeFusionBase
                 return new VarReplaceInfo(inputArg, vars, inputIndex);
             }).ToArray();
         }).ToArray();
-        return newVars;
+        var newVarsDeduplication = NewVarsDeduplication(newVars, fusionDict);
+        return newVarsDeduplication;
+    }
+
+    class KeyValuePairKeyComparer : IEqualityComparer<KeyValuePair<Expr, Var[]>>
+    {
+        public bool Equals(KeyValuePair<Expr, Var[]> x, KeyValuePair<Expr, Var[]> y)
+        {
+            // todo: fusion var优先级更高，var GlobalIndex
+            return Equals(x.Key, y.Key);
+        }
+
+        public int GetHashCode(KeyValuePair<Expr, Var[]> obj)
+        {
+            return HashCode.Combine(obj.Key);
+        }
+    }
+
+    private static VarReplaceInfo[][] NewVarsDeduplication(VarReplaceInfo[][] newVars, Dictionary<Expr, Var[]> fusionDict)
+    {
+        var dict = newVars
+            .SelectMany(x => x)
+            .Select(info => new KeyValuePair<Expr, Var[]>(info.expr, info.vars))
+            .ToHashSet(new KeyValuePairKeyComparer())
+            .ToDictionary(pair => pair.Key, pair => pair.Value);
+        var newVarsDeduplication = newVars.Select(list => list.Select(info =>
+        {
+            // TestMergeInputWhichHadBeMerged
+            if (fusionDict.TryGetValue(info.expr, out var fusionVars))
+            {
+                return info with { vars = fusionVars };
+            }
+
+            // TestSameInputMerge
+            if (dict.TryGetValue(info.expr, out var vars))
+            {
+                return info with { vars = vars };
+            }
+            return info;
+        }).ToArray()).ToArray();
+        return newVarsDeduplication;
     }
 
     // 只需要替换被合并的call的args中的call，所以搜索和返回的都是Call
@@ -1268,11 +1335,20 @@ internal sealed class BucketFusionGroupMutator : Passes.Mutators.FusionGroupMuta
     {
     }
 
-    public override bool MergedFusionCheckCallBack(Fusion merged_fusion, HashSet<Fusion> candidate_fusions)
+    public override bool MergedFusionCheckCallBack(Fusion mergedFusion, HashSet<Fusion> candidateFusions)
     {
+        Console.WriteLine("-----------------");
+        Console.WriteLine(mergedFusion.Name);
+        Console.WriteLine("-----------------");
+        foreach (var candidateFusion in candidateFusions)
+        {
+            Console.WriteLine(candidateFusion.Name);
+        }
+        Console.WriteLine("-----------------");
+
         // 回避反卷积，反卷积的shape表达式目前会引起重复的计算
-        if (merged_fusion.Name.Contains("Conv2DTranspose", StringComparison.Ordinal) ||
-            candidate_fusions.Any(f => f.Name.Contains("Conv2DTranspose", StringComparison.Ordinal)))
+        if (mergedFusion.Name.Contains("Conv2DTranspose", StringComparison.Ordinal) ||
+            candidateFusions.Any(f => f.Name.Contains("Conv2DTranspose", StringComparison.Ordinal)))
         {
             return false;
         }

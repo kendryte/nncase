@@ -245,8 +245,67 @@ public class TestMergePrevCallToFusion : TransformTestBase
             { rhs, Value.FromTensor(input1) },
             { scalarInputVar, Value.FromTensor(scalarInput) },
         });
-        var fusion = (BucketFusion)((Call)result).Target;
+        var fusion = GetResultFusion(result);
         // constant should not be var
         Assert.Equal(3, fusion.Parameters.Length);
+    }
+
+    private static BucketFusion GetResultFusion(Expr result)
+    {
+        var fusion = (BucketFusion)((Call)result).Target;
+        return fusion;
+    }
+
+    // v1:add(a1, an) v2:add(a2, an)
+    // fusion(v1, v2)
+    //    |
+    // fusion(a1, a2, an)
+    [Fact]
+    public void TestSameInputMerge()
+    {
+        var input0 = Testing.Rand<float>(1, 3, 24, 24);
+        var input1 = Testing.Rand<float>(1, 3, 24, 24);
+        var other = Testing.Rand<float>(1, 3, 24, 24);
+        var in0Var = new Var(new TensorType(input0.ElementType, input0.Shape));
+        var in1Var = new Var(new TensorType(input1.ElementType, input1.Shape));
+        var otherVar = new Var(new TensorType(other.ElementType, other.Shape));
+        var add0 = in0Var + otherVar;
+        var add1 = in1Var + otherVar;
+        var lhs = new Var(add0.CheckedType);
+        var rhs = new Var(add1.CheckedType);
+        var mm = IR.F.Math.MatMul(lhs, rhs);
+        var f = new BucketFusion("stackvm", mm, new Var[] { lhs, rhs }, new Var[] { });
+        var c = new Call(f, add0, add1);
+        var result = TestMatched<MergePrevCallToFusion>(c, new Dictionary<Var, IValue>
+        {
+            { in0Var, Value.FromTensor(input0) },
+            { in1Var, Value.FromTensor(input1) },
+            { otherVar, Value.FromTensor(other) },
+        });
+        var fusion = GetResultFusion(result);
+        Assert.Equal(3, fusion.Parameters.Length);
+    }
+
+    [Fact]
+    public void TestMergeInputWhichHadBeMerged()
+    {
+        // fusion(add(input, other), other)
+        var input0 = Testing.Rand<float>(1, 3, 24, 24);
+        var other = Testing.Rand<float>(1, 3, 24, 24);
+        var in0Var = new Var(new TensorType(input0.ElementType, input0.Shape));
+        var otherVar = new Var(new TensorType(other.ElementType, other.Shape));
+        var add0 = in0Var + otherVar;
+        var lhs = new Var(add0.CheckedType);
+        var rhs = new Var(otherVar.CheckedType);
+        var mm = IR.F.Math.MatMul(lhs, rhs);
+        var f = new BucketFusion("stackvm", mm, new Var[] { lhs, rhs }, new Var[] { });
+        var c = new Call(f, add0, otherVar);
+        var result = TestMatched<MergePrevCallToFusion>(c, new Dictionary<Var, IValue>
+        {
+            { in0Var, Value.FromTensor(input0) },
+            { otherVar, Value.FromTensor(other) },
+        });
+        var fusion = GetResultFusion(result);
+        Assert.Equal(2, fusion.Parameters.Length);
     }
 }
