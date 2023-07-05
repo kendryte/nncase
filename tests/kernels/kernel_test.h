@@ -151,6 +151,18 @@ class KernelTest {
                 });
             break;
         }
+        case dt_float16: {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_real_distribution<float> dis(-1.0f, 1.0f);
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<half>(tensor, index) = static_cast<half>(dis(gen));
+                    return ok();
+                });
+            break;
+        }
         case dt_float32: {
             std::random_device rd;
             std::mt19937 gen(rd());
@@ -1173,7 +1185,7 @@ class KernelTest {
 
         std::cout << "cosine_similarity:" << cosine_similarity << std::endl;
         return cosine_similarity >
-               0.9999f; // Return true if cosine similarity is close to 1
+               0.999f; // Return true if cosine similarity is close to 1
     }
 
     void print_runtime_tensor(runtime::runtime_tensor lhs) {

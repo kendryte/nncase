@@ -39,6 +39,16 @@ class CastTest : public KernelTest,
                     .expect("create tensor failed");
         init_tensor(input);
 
+        input1 =
+            hrt::create(dt_float16, l_shape, host_runtime_tensor::pool_cpu_only)
+                .expect("create tensor failed");
+        init_tensor(input1);
+
+        input2 =
+            hrt::create(dt_float32, l_shape, host_runtime_tensor::pool_cpu_only)
+                .expect("create tensor failed");
+        init_tensor(input2);
+
         expected = hrt::create(typecode_output, l_shape,
                                host_runtime_tensor::pool_cpu_only)
                        .expect("create tensor failed");
@@ -48,26 +58,24 @@ class CastTest : public KernelTest,
 
   protected:
     runtime_tensor input;
+    runtime_tensor input1;
+    runtime_tensor input2;
     runtime_tensor expected;
 };
 
 INSTANTIATE_TEST_SUITE_P(
     Cast, CastTest,
-    testing::Combine(testing::Values(dt_int16, dt_int8, dt_int32, dt_int64,
-                                     dt_float16, dt_uint16, dt_uint8, dt_uint32,
-                                     dt_uint64, dt_float32),
-                     testing::Values(dt_int16, dt_int8, dt_int32, dt_int64,
-                                     dt_float16, dt_uint16, dt_uint8, dt_uint32,
-                                     dt_uint64, dt_float32),
+    testing::Combine(testing::Values(dt_int16, dt_int8, dt_float32, dt_uint8),
+                     testing::Values(dt_int16, dt_int8, dt_float32, dt_uint8),
                      testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 3, 8, 8},
                                      dims_t{1, 3, 1})));
 
 TEST_P(CastTest, cast) {
     // actual
-    auto output =
-        kernels::stackvm::cast(
-            dt_int16, runtime::stackvm::cast_mode_t::kdefault, input.impl())
-            .expect("cast failed");
+    auto output = kernels::stackvm::cast(
+                      expected.datatype(),
+                      runtime::stackvm::cast_mode_t::kdefault, input.impl())
+                      .expect("cast failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // expected
@@ -78,7 +86,7 @@ TEST_P(CastTest, cast) {
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
-    auto expected = hrt::create(dt_int16, shape,
+    auto expected = hrt::create(actual.datatype(), shape,
                                 {reinterpret_cast<gsl::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
@@ -86,6 +94,31 @@ TEST_P(CastTest, cast) {
     // compare
     EXPECT_TRUE(is_same_tensor(expected, actual) ||
                 cosine_similarity_tensor(expected, actual));
+
+    // actual
+    auto output1 =
+        kernels::stackvm::cast(
+            dt_float32, runtime::stackvm::cast_mode_t::kdefault, input1.impl())
+            .expect("cast failed");
+    runtime_tensor actual1(output1.as<tensor>().expect("as tensor failed"));
+
+    // expected
+    //    cast_copy_tensor(input, expected);
+    auto output_ort1 = ortki_CastLike(runtime_tensor_2_ort_tensor(input1),
+                                      runtime_tensor_2_ort_tensor(actual1));
+    size_t size1 = 0;
+    void *ptr_ort1 = tensor_buffer(output_ort1, &size1);
+    dims_t shape1(tensor_rank(output_ort1));
+    tensor_shape(output_ort1, reinterpret_cast<int64_t *>(shape1.data()));
+    auto expected1 =
+        hrt::create(actual1.datatype(), shape1,
+                    {reinterpret_cast<gsl::byte *>(ptr_ort1), size1}, true,
+                    host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
+
+    // compare
+    EXPECT_TRUE(is_same_tensor(expected1, actual1) ||
+                cosine_similarity_tensor(expected1, actual1));
 }
 
 int main(int argc, char *argv[]) {

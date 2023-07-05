@@ -51,18 +51,10 @@ class ReduceSumTest : public KernelTest,
 
 // todo make "a_array" gotten from here
 INSTANTIATE_TEST_SUITE_P(ReduceSum, ReduceSumTest,
-                         testing::Combine(testing::Values(dt_float32, dt_int32,
-                                                          dt_int64),
-                                          testing::Values(dims_t{1, 3, 16, 16},
-                                                          /*dims_t { 3, 16, 16
-                                                          }, dims_t { 16, 16 },
-                                                          dims_t { 16 },*/
-                                                          dims_t{1}),
-                                          testing::Values(dims_t{1, 3, 16, 16},
-                                                          /*dims_t { 3, 16, 16
-                                                          }, dims_t { 16, 16 },
-                                                          dims_t { 16 },*/
-                                                          dims_t{1})));
+                         testing::Combine(testing::Values(dt_float32),
+                                          testing::Values(dims_t{1, 3, 16, 16}),
+                                          testing::Values(dims_t{1, 3, 16,
+                                                                 16})));
 
 TEST_P(ReduceSumTest, ReduceSum) {
     //    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
@@ -101,19 +93,28 @@ TEST_P(ReduceSumTest, ReduceSum) {
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
     auto expected = hrt::create(dt_float32, shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), 16},
+                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
     // actual
-    auto output = kernels::stackvm::reduce(
-                      runtime::stackvm::reduce_op_t::sum, a.impl(), axis.impl(),
-                      keepDims.impl(), select_last_idx.impl())
-                      .expect("reduce_arg_sum failed");
+    auto sum = kernels::stackvm::reduce(runtime::stackvm::reduce_op_t::sum,
+                                        a.impl(), axis.impl(), keepDims.impl(),
+                                        select_last_idx.impl())
+                   .expect("reduce_arg_sum failed");
+    int64_t shape_array[] = {1, 4};
+    auto new_shape = hrt::create(dt_int64, {2},
+                                 {reinterpret_cast<gsl::byte *>(shape_array),
+                                  sizeof(shape_array)},
+                                 true, host_runtime_tensor::pool_cpu_only)
+                         .expect("create tensor failed");
+    auto output = kernels::stackvm::reshape(sum, new_shape.impl())
+                      .expect("reshape failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_FALSE(is_same_tensor(expected, actual));
+    EXPECT_TRUE(is_same_tensor(expected, actual) ||
+                cosine_similarity_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {

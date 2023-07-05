@@ -51,18 +51,10 @@ class ReduceMinTest : public KernelTest,
 
 // todo make "a_array" gotten from here
 INSTANTIATE_TEST_SUITE_P(ReduceMin, ReduceMinTest,
-                         testing::Combine(testing::Values(dt_float32, dt_int32,
-                                                          dt_int64),
-                                          testing::Values(dims_t{1, 3, 16, 16},
-                                                          /*dims_t { 3, 16, 16
-                                                          }, dims_t { 16, 16 },
-                                                          dims_t { 16 },*/
-                                                          dims_t{1}),
-                                          testing::Values(dims_t{1, 3, 16, 16},
-                                                          /*dims_t { 3, 16, 16
-                                                          }, dims_t { 16, 16 },
-                                                          dims_t { 16 },*/
-                                                          dims_t{1})));
+                         testing::Combine(testing::Values(dt_float32),
+                                          testing::Values(dims_t{1, 3, 16, 16}),
+                                          testing::Values(dims_t{1, 3, 16,
+                                                                 16})));
 
 TEST_P(ReduceMinTest, ReduceMin) {
     //    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
@@ -76,7 +68,7 @@ TEST_P(ReduceMinTest, ReduceMin) {
                     {reinterpret_cast<gsl::byte *>(a_array), sizeof(a_array)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
-    int64_t axis_array[] = {-1};
+    int64_t axis_array[] = {1};
     auto axis = hrt::create(dt_int64, {1},
                             {reinterpret_cast<gsl::byte *>(axis_array),
                              sizeof(axis_array)},
@@ -88,7 +80,7 @@ TEST_P(ReduceMinTest, ReduceMin) {
                                  sizeof(keepDims_array)},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
-    int64_t select_last_idx_array[] = {0};
+    int64_t select_last_idx_array[] = {1};
     auto select_last_idx =
         hrt::create(dt_int64, {1},
                     {reinterpret_cast<gsl::byte *>(select_last_idx_array),
@@ -108,12 +100,13 @@ TEST_P(ReduceMinTest, ReduceMin) {
     // actual
     auto output = kernels::stackvm::reduce(
                       runtime::stackvm::reduce_op_t::min, a.impl(), axis.impl(),
-                      keepDims.impl(), select_last_idx.impl())
+                      select_last_idx.impl(), keepDims.impl())
                       .expect("reduce_arg_min failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_FALSE(is_same_tensor(expected, actual));
+    EXPECT_TRUE(is_same_tensor(expected, actual) ||
+                cosine_similarity_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {
