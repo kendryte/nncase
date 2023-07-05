@@ -170,11 +170,8 @@ internal class Compiler : ICompiler
     {
         void MergeOp(IPassManager iPassManager)
         {
-            iPassManager.AddWithName<DataflowPass>("MergeCallToFusion").Configure(c =>
-            {
-                c.Add<MergeNextCallToFusion>();
-                c.Add<MergePrevCallToFusion>();
-            });
+            iPassManager.AddWithName<DataflowPass>("MergeCallToFusion").Configure(c => { c.Add<MergeNextCallToFusion>(); });
+            iPassManager.AddWithName<DataflowPass>("MergePrevCall").Configure(c => { c.Add<MergePrevCallToFusion>(); });
         }
 
         if (!_compileSession.CompileOptions.ShapeBucketOptions.Enable)
@@ -191,7 +188,7 @@ internal class Compiler : ICompiler
 
         MergeOp(p);
 
-        var singleVar = _compileSession.CompileOptions.ShapeBucketOptions.VarMap.Values.OfType<Var>().ToHashSet().Count <= 1;
+        var singleVar = _compileSession.CompileOptions.ShapeBucketOptions.VarMap.Values.SelectMany(x => x).OfType<Var>().ToHashSet().Count <= 1;
         p.AddWithName<DataflowPass>("LostToFusion").Configure(c =>
         {
             c.Add<SigmoidToFusion>();
