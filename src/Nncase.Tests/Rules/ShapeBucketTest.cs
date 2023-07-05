@@ -289,7 +289,7 @@ public class TestMergePrevCallToFusion : TransformTestBase
     [Fact]
     public void TestMergeInputWhichHadBeMerged()
     {
-        // fusion(add(input, other), other)
+        // fusion(add(input, other), other) -> fusion(input, other)
         var input0 = Testing.Rand<float>(1, 3, 24, 24);
         var other = Testing.Rand<float>(1, 3, 24, 24);
         var in0Var = new Var(new TensorType(input0.ElementType, input0.Shape));
@@ -307,5 +307,27 @@ public class TestMergePrevCallToFusion : TransformTestBase
         });
         var fusion = GetResultFusion(result);
         Assert.Equal(2, fusion.Parameters.Length);
+    }
+
+    [Fact]
+    public void TestMergeInputInTupleWhichHadBeMerged()
+    {
+        var lhs = new Var(new TensorType(DataTypes.Int32, new[] { 1 }));
+        var rhs = new Var(new TensorType(DataTypes.Int32, new[] { 2 }));
+        var bn = lhs + rhs;
+        var f = new BucketFusion("stackvm", bn, new Var[] { lhs, rhs }, new Var[] { });
+
+        var input = new Var(new TensorType(DataTypes.Int32, Shape.Scalar));
+        var r = Reshape(input, new[] { 1 });
+        var concat = Concat(new IR.Tuple(r, (Expr)new[] { 1 }), 0);
+        var c = new Call(f, r, concat);
+        var result = TestMatched<MergePrevCallToFusion>(c, new Dictionary<Var, IValue>
+        {
+            { input, Value.FromTensor(2) },
+        });
+        var call = (Call)result;
+        var fusion = (BucketFusion)call.Target;
+        Assert.Equal(1, fusion.Parameters.Length);
+        Assert.Equal(1, call.Arguments.Length);
     }
 }

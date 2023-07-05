@@ -711,6 +711,8 @@ public abstract class MergeFusionBase : RewriteRule<Pattern>
         { typeof(Gather).TypeHandle, 0 },
 
         // compute
+        // maybe Reduce.Prod only, for eval shape
+        { typeof(Reduce).TypeHandle, 1 },
         { typeof(Transpose).TypeHandle, 1 },
         { typeof(Unary).TypeHandle, 1 },
         { typeof(Binary).TypeHandle, 2 },
@@ -967,7 +969,6 @@ public partial class MergePrevCallToFusion : MergeFusionBase
         {
             return null;
         }
-
         // FusionArgs
         var inputShouldBeMerge = CollectInputShouldBeMerge(fusionArgsInfo);
         var prefix = $"{Counter}_{PrevCallStr}_{fusion.Name}_origin";
@@ -977,7 +978,7 @@ public partial class MergePrevCallToFusion : MergeFusionBase
         var indices = fusionArgsInfo.Select(x => x.Item2).ToHashSet();
         var fusionDict = fusionOuterCall.Arguments.ToArray().Zip(fusion.Parameters.ToArray())
             .Where((expr, i) => !indices.Contains(i))
-            .ToDictionary(pair => pair.Item1, pair => new[] { pair.Item2 });
+            .ToDictionary(pair => pair.Item1, pair => pair.Item2);
         // (InputArg -> NewFusionVar[]), InputArg is part of newArgs.
         var newVarsMap = MakeNewFusionVarsMap(fusionArgsInfo, fusionDict);
         // 所有要被合并的call替换args为Fusion的Var
@@ -1144,7 +1145,7 @@ public partial class MergePrevCallToFusion : MergeFusionBase
     // call => [arg]
     // tuple => [arg1, arg2, ...]
     // VarReplaceInfo[InputIndex][InputArgIndex]
-    private static VarReplaceInfo[][] MakeNewFusionVarsMap((Call, int)[] fusionInputsInfo, Dictionary<Expr, Var[]> fusionDict)
+    private static VarReplaceInfo[][] MakeNewFusionVarsMap((Call, int)[] fusionInputsInfo, Dictionary<Expr, Var> fusionDict)
     {
         var newVars = fusionInputsInfo.Select(fusionInputInfo =>
         {
@@ -1179,7 +1180,7 @@ public partial class MergePrevCallToFusion : MergeFusionBase
         }
     }
 
-    private static VarReplaceInfo[][] NewVarsDeduplication(VarReplaceInfo[][] newVars, Dictionary<Expr, Var[]> fusionDict)
+    private static VarReplaceInfo[][] NewVarsDeduplication(VarReplaceInfo[][] newVars, Dictionary<Expr, Var> fusionDict)
     {
         var dict = newVars
             .SelectMany(x => x)
@@ -1188,12 +1189,46 @@ public partial class MergePrevCallToFusion : MergeFusionBase
             .ToDictionary(pair => pair.Key, pair => pair.Value);
         var newVarsDeduplication = newVars.Select(list => list.Select(info =>
         {
-            // TestMergeInputWhichHadBeMerged
-            if (fusionDict.TryGetValue(info.expr, out var fusionVars))
+            // todo: tuple的情况消除重复
+            var defaultVar = new Var[] { };
+            if (info.expr is IR.Tuple tuple)
             {
-                return info with { vars = fusionVars };
+                // FusionArg为tuple的时候，tuple中部分参数已经是fusion的参数的情况
+                // TestMergeInputWhichHadBeMerged
+                // TestMergeInputInTupleWhichHadBeMerged
+                var callFields = tuple.Fields.ToArray().Where(field => field is not TensorConst).ToArray();
+                // dict里有这个expr，也就是说其他FusionArg中出现过，有对应的vars
+                if (dict.TryGetValue(info.expr, out defaultVar))
+                {
+                    if (defaultVar.Length != callFields.Length)
+                    {
+                        throw new InvalidOperationException();
+                    }
+                }
+                else
+                {
+                    // dict中没有这个var，那么只需要info中的vars是否有在fusionVar中出现过的
+                    defaultVar = info.vars;
+                }
+                var newVars = callFields.Zip(defaultVar).Select(pair =>
+                {
+                    // 如果tuple中有的元素已经在FusionArg中，那么优先替换
+                    var (field, defaultVar) = pair;
+                    if (fusionDict.TryGetValue(field, out var fusionVar))
+                    {
+                        return fusionVar;
+                    }
+
+                    // 否则使用默认的var todo: 添加这种test
+                    return defaultVar;
+                }).ToArray();
+                return info with { vars = newVars };
             }
 
+            if (fusionDict.TryGetValue(info.expr, out var fusionVar))
+            {
+                return info with { vars = new[] { fusionVar } };
+            }
             // TestSameInputMerge
             if (dict.TryGetValue(info.expr, out var vars))
             {
