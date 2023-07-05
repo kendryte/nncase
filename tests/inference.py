@@ -82,7 +82,7 @@ class Inference:
                     output = np.transpose(output, [0, 3, 1, 2])
                 elif (preprocess['output_layout'] == 'NCHW' and self.model_type in ['tflite']):
                     output = np.transpose(output, [0, 2, 3, 1])
-                elif preprocess['output_layout'] not in ["NCHW", "NHWC"]:
+                elif preprocess['output_layout'] not in ["NCHW", "NHWC"] and preprocess['output_layout'] != "":
                     tmp_perm = [int(idx) for idx in preprocess['output_layout'].split(",")]
                     output = np.transpose(
                         output, preprocess_utils.get_source_transpose_index(tmp_perm))

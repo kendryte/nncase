@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.F;
+using Nncase.IR.Tensors;
 using Nncase.Passes;
 using Nncase.Passes.Rules.Neutral;
 using Nncase.Tests.TestFixture;
@@ -81,5 +82,27 @@ public class UnitTestSplitBatchMatMul : TransformTestBase
         var b = Random.Normal(DataTypes.Float32, 0, 1, 0, bShape).Evaluate().AsTensor();
         var rootPre = Math.MatMul(a, b);
         TestMatched<SplitBatchMatMul>(rootPre);
+    }
+}
+
+[AutoSetupTestMethod(InitSession = true)]
+public class UnitTestBroadcastMatMul : TransformTestBase
+{
+    public static IEnumerable<object[]> BroadcastMatMulPositiveData =>
+        new[]
+        {
+            new object[] { 1, new[] { 2, 6, 1, 7 }, new[] { 1, 6, 7, 12 } },
+            new object[] { 1, new[] { 3, 2, 6, 1, 7 }, new[] { 1, 1, 6, 7, 12 } },
+        };
+
+    [Theory]
+    [MemberData(nameof(BroadcastMatMulPositiveData))]
+    public void TestBroadcastMatMulPositive(int count, int[] aShape, int[] bShape)
+    {
+        SetupTestMethod(true);
+        var a = Random.Normal(DataTypes.Float32, 0, 1, 0, aShape);
+        var b = Random.Normal(DataTypes.Float32, 0, 1, 0, bShape).Evaluate().AsTensor();
+        var rootPre = IR.F.Tensors.Reshape(Math.MatMul(a, b), new int[] { -1, aShape[^2], bShape[^1] });
+        TestMatched<BroadcastMatMul>(rootPre);
     }
 }

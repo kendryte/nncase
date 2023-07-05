@@ -897,9 +897,11 @@ nncase::kernels::stackvm::size_of([[maybe_unused]] value_t input,
     KERNEL_FINISH;
 }
 
-inline bool is_nop_slice([[maybe_unused]] const axes_t &begin, [[maybe_unused]] const axes_t &end,
-                  [[maybe_unused]] const axes_t &axes, [[maybe_unused]] const axes_t &strides,
-                  [[maybe_unused]] const dims_t &in_shape) {
+inline bool is_nop_slice([[maybe_unused]] const axes_t &begin,
+                         [[maybe_unused]] const axes_t &end,
+                         [[maybe_unused]] const axes_t &axes,
+                         [[maybe_unused]] const axes_t &strides,
+                         [[maybe_unused]] const dims_t &in_shape) {
 #ifndef ENABLE_NOP
     return false;
 #else
@@ -1008,10 +1010,11 @@ result<value_t> nncase::kernels::stackvm::split(value_t input, value_t axis,
         split_shape_infer(input_tensor->shape(), axis_value, sections_value);
     try_tuple_output(outputs, output, input_tensor->dtype(), shapes);
     try_var(out_strides, get_strides(output_tuple));
-    if(is_contiguous(input_tensor)) {
+    if (is_contiguous(input_tensor)) {
         auto n = input_tensor->shape().size();
         auto begins = axes_t(n, 0);
-        auto ends = axes_t(input_tensor->shape().begin(), input_tensor->shape().end());
+        auto ends =
+            axes_t(input_tensor->shape().begin(), input_tensor->shape().end());
         auto strides = axes_t(n, 1);
         auto section_index = 0;
         for (int i = 0; i < outputs.size(); ++i) {
@@ -1019,7 +1022,10 @@ result<value_t> nncase::kernels::stackvm::split(value_t input, value_t axis,
             begins[axis_value] = section_index;
             ends[axis_value] = section_index + sections_value[i];
             section_index += sections_value[i];
-            try_(optimized::slice(input_tensor->dtype(), in_mem, out, input_tensor->shape(), input_tensor->strides(), out_strides[i], begins, ends, strides, context));
+            try_(optimized::slice(input_tensor->dtype(), in_mem, out,
+                                  input_tensor->shape(),
+                                  input_tensor->strides(), out_strides[i],
+                                  begins, ends, strides, context));
         }
     } else {
         try_ref(split, input_tensor->dtype(), in_mem, outputs,

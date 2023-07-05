@@ -142,4 +142,70 @@ public class UnitTestFoldHardSwish : TransformTestBase
 
         TestNotMatch<FoldHardSwish3>(rootPre);
     }
+
+    [Theory]
+    [MemberData(nameof(FoldGeneralHardSwishData))]
+    public void TestFoldHardSwish4Positive(int[] shape)
+    {
+        var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape);
+        Expr rootPre;
+        {
+            var v0 = input;
+            var v1 = IR.F.NN.HardSigmoid(v0, 0.2f, 0.5f);
+            var v2 = IR.F.Math.Binary(BinaryOp.Mul, v0, v1);
+            rootPre = v2;
+        }
+
+        TestMatched<FoldHardSwish4>(rootPre);
+    }
+
+    [Theory]
+    [MemberData(nameof(FoldGeneralHardSwishData))]
+    public void TestFoldHardSwish4Negative(int[] shape)
+    {
+        // note shape is nchw
+        var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape);
+        Expr rootPre;
+        {
+            var v0 = input;
+            var v1 = IR.F.NN.HardSigmoid(v0, 0.2f, 0.5f);
+            var v2 = IR.F.Math.Binary(BinaryOp.Mul, v1, v0);
+            rootPre = v2;
+        }
+
+        TestNotMatch<FoldHardSwish4>(rootPre);
+    }
+
+    [Theory]
+    [MemberData(nameof(FoldGeneralHardSwishData))]
+    public void TestFoldHardSwish5Positive(int[] shape)
+    {
+        var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape);
+        Expr rootPre;
+        {
+            var v0 = input;
+            var v1 = IR.F.NN.HardSigmoid(v0, 0.2f, 0.5f);
+            var v2 = IR.F.Math.Binary(BinaryOp.Mul, v1, v0);
+            rootPre = v2;
+        }
+
+        TestMatched<FoldHardSwish5>(rootPre);
+    }
+
+    [Theory]
+    [MemberData(nameof(FoldGeneralHardSwishData))]
+    public void TestFoldHardSwish5Negative(int[] shape)
+    {
+        // note shape is nchw
+        var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape);
+        Expr rootPre;
+        {
+            var v0 = input;
+            var v1 = IR.F.NN.HardSigmoid(v0, 0.2f, 0.5f);
+            var v2 = IR.F.Math.Binary(BinaryOp.Mul, v0, v1);
+            rootPre = v2;
+        }
+
+        TestNotMatch<FoldHardSwish5>(rootPre);
+    }
 }
