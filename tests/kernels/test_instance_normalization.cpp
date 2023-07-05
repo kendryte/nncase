@@ -81,7 +81,7 @@ TEST_P(InstanceNormalizationTest, instance_normalization) {
                         .expect("create tensor failed");
 
     // actual
-    float epsilon_ptr[] = {-1.0f};
+    float epsilon_ptr[] = {0.01f};
     auto epsilon = hrt::create(nncase::dt_float32, {1},
                                {reinterpret_cast<gsl::byte *>(epsilon_ptr),
                                 sizeof(epsilon_ptr)},
@@ -93,7 +93,8 @@ TEST_P(InstanceNormalizationTest, instance_normalization) {
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_FALSE(is_same_tensor(expected, actual));
+    EXPECT_TRUE(is_same_tensor(expected, actual) ||
+                cosine_similarity_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {
