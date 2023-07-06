@@ -33,10 +33,17 @@ class SliceTest
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
 
-        input =
-            hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
-                .expect("create tensor failed");
-        init_tensor(input);
+        int32_t input_array[120];
+
+        for (int i = 0; i < 120; ++i) {
+            input_array[i] = i;
+        }
+
+        input = hrt::create(typecode, l_shape,
+                            {reinterpret_cast<gsl::byte *>(input_array),
+                             sizeof(input_array)},
+                            true, host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
     }
 
     void TearDown() override {}
@@ -50,10 +57,8 @@ INSTANTIATE_TEST_SUITE_P(Slice, SliceTest,
                                           testing::Values(dims_t{2, 3, 4, 5})));
 
 TEST_P(SliceTest, Slice) {
-    //    auto l_ort = runtime_tensor_2_ort_tensor(input);
 
     // expected
-    //    size_t size = 0;
     int32_t result[] = {0, 1, 2, 3, 4};
     auto expected =
         hrt::create(input.datatype(), {1, 1, 1, 5},
@@ -93,7 +98,8 @@ TEST_P(SliceTest, Slice) {
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_FALSE(is_same_tensor(expected, actual));
+    EXPECT_TRUE(is_same_tensor(expected, actual) ||
+                cosine_similarity_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {
