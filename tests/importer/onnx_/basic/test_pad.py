@@ -29,6 +29,8 @@ def _make_module(in_shape, padding, constant_value, mode, op_version, value_form
     nodes = []
 
     out_shape = in_shape.copy()
+    out_shape[0] += padding[0] + padding[4]
+    out_shape[1] += padding[1] + padding[5]
     out_shape[2] += padding[2] + padding[6]
     out_shape[3] += padding[3] + padding[7]
 
