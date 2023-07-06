@@ -5,10 +5,15 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reactive;
+using System.Threading.Tasks;
+using System.Transactions;
+using DryIoc;
 using DryIoc.ImTools;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Toolkit.HighPerformance;
 using NetFabric.Hyperlinq;
 using Nncase.Diagnostics;
@@ -16,6 +21,8 @@ using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
 using Nncase.IR.Tensors;
+using Nncase.Passes.Analysis;
+using Nncase.Passes.Mutators;
 using Nncase.Passes.Transforms;
 using Nncase.PatternMatch;
 using Nncase.Utilities;
@@ -61,6 +68,20 @@ public class BucketFusion : Fusion
 
     public Var[] EffectVar { get; set; }
 
+    public bool IsSimple
+    {
+        get
+        {
+            var names = Name.Split("_");
+            return names.Length == 2 && (names[0] == "Binary" || names[0] == "Unary");
+        }
+    }
+
+    public static BucketFusion FromNormalFusion(Fusion f, Var[] effectVars)
+    {
+        return new BucketFusion(f.Name, "stackvm", f.Body, f.Parameters.ToArray(), effectVars);
+    }
+
     public new BucketFusion With(string? name = null, string? moduleKind = null, Expr? body = null, Var[]? parameters = null)
         => new BucketFusion(name ?? Name, moduleKind ?? ModuleKind, body ?? Body, parameters ?? Parameters, EffectVar);
 }
@@ -69,9 +90,9 @@ public class BucketFusion : Fusion
 public partial class MarkerCallToFusion<T> : RewriteRule<Pattern>
     where T : Op
 {
-    private Call? _currentCall;
+    private static int _counter;
 
-    private int _counter;
+    private Call? _currentCall;
 
     public string ModuleKind => "stackvm";
 
@@ -80,20 +101,30 @@ public partial class MarkerCallToFusion<T> : RewriteRule<Pattern>
         IsCallWildcard(null, IsOp<T>()),
         IsTensorConst());
 
+    protected virtual bool MustHaveMarker => true;
+
     private string Name => _currentCall!.Target.GetType().Name;
 
     private string RelPath => $"{_counter}_{_currentCall!.Target.GetType().Name}";
+
+    public static Marker[] GetCallInputs(Call call) =>
+        call.Arguments.ToArray().OfType<Marker>().Where(x => x.Target is not TensorConst).ToArray();
 
     public virtual bool Check(Call call)
     {
         return true;
     }
 
-    public Expr GetReplace(Marker callMarker)
+    public Expr? GetReplace(Marker callMarker)
     {
         var call = (Call)callMarker.Target;
         _currentCall = call;
-        DumpIR(callMarker, "origin", RelPath);
+        DumpIR(callMarker, "0_origin", RelPath);
+        if (!Check(call))
+        {
+            return null;
+        }
+
         var argsMarker = GetCallInputs(call);
         var args = argsMarker.Select(arg => arg.Target).ToArray();
         var varMap = CompileSession.CompileOptions.ShapeBucketOptions.VarMap;
@@ -107,15 +138,27 @@ public partial class MarkerCallToFusion<T> : RewriteRule<Pattern>
         // arguments用到其他input的地方就要replace对应的input
         var newCall = ReplaceUtility.ReplaceCallParams(call.Target, call.Arguments.ToArray(), pairs);
         var newCallWithMarker = callMarker.With(target: newCall);
+
+        // 处理其他的参数用到了分段的input的情况
+        // 即便body只有一个call,但这里是针对所有参数的表达式进行替换，比如反卷积的output shape是一个用到了需要分段的input的表达式
+        // 如果不加这个则output shape引用的原始的未分段的输入会再次塞进来
         var body = fusionVars.Zip(args).Aggregate((Expr)newCallWithMarker, (newBody, tuple) =>
         {
             var (fusionVar, arg) = tuple;
             return ReplaceUtility.ReplaceExpr(newBody, arg, fusionVar);
         });
+
         var f = new BucketFusion($"{Name}_{_counter}", ModuleKind, set, body, fusionVars);
-        var outerCall = new Call(f, args);
-        DumpIR(outerCall, "fusion", RelPath);
+
+        // PrintEffectVar(f.Name, set);
+        Expr outerCall = newCallWithMarker.With(target: new Call(f, argsMarker));
+        DumpIR(outerCall, "1_after", RelPath);
         _counter++;
+        if (body.Users.Count > 1)
+        {
+            throw new InvalidOperationException();
+        }
+
         return outerCall;
     }
 }
@@ -132,6 +175,96 @@ public class Conv2DTransposeToFusion : MarkerCallToFusion<Conv2DTranspose>
 
 public class MatmulToFusion : MarkerCallToFusion<MatMul>
 {
+}
+
+public class SigmoidToFusion : MarkerCallToFusion<Sigmoid>
+{
+}
+
+public class LeakyReluToFusion : MarkerCallToFusion<LeakyRelu>
+{
+}
+
+public class TransposeToFusion : MarkerCallToFusion<Transpose>
+{
+    protected override bool MustHaveMarker => false;
+}
+
+public class PadToFusion : MarkerCallToFusion<Pad>
+{
+    protected override bool MustHaveMarker => false;
+
+    public override bool Check(Call call) => ((Pad)call.Target).PadMode == PadMode.Constant;
+}
+
+public class UnaryToFusion : MarkerCallToFusion<Unary>
+{
+    public override bool Check(Call call)
+    {
+        var list = new[] { UnaryOp.Abs, UnaryOp.Neg, UnaryOp.Acos, UnaryOp.Asin };
+        var op = ((Unary)call.Target).UnaryOp;
+        return call.CheckedShape.Rank > 1 && list.Contains(op);
+    }
+}
+
+// todo: do more check for binary
+public class BinaryToFusion : MarkerCallToFusion<Binary>
+{
+    public override bool Check(Call call) => call.CheckedShape.Rank > 1;
+}
+
+[RuleGenerator]
+public partial class ClearRequire : RewriteRule<Pattern>
+{
+    public override Pattern Pattern { get; } = IsRequire(require => true, IsTensorConst("predicate"), IsWildcard("expr"));
+
+    public Expr? GetReplace(bool predicate, Expr expr)
+    {
+        if (expr is If && predicate)
+        {
+            return expr;
+        }
+
+        return null;
+    }
+}
+
+[RuleGenerator]
+public partial class FoldRepeatMarker : RewriteRule<Pattern>
+{
+    public override Pattern Pattern { get; } = IsRangeOfMarker(
+        "markerA",
+        IsRangeOfMarker(
+            "markerB",
+            IsWildcard(),
+            IsWildcard("rangeB")),
+        IsWildcard("rangeA"));
+
+    public Expr? GetReplace(Expr rangeA, Expr rangeB, Marker markerB)
+    {
+        if (rangeA == rangeB)
+        {
+            return markerB;
+        }
+
+        return null;
+    }
+}
+
+[RuleGenerator]
+public partial class ClearFusionOuterMarker : RewriteRule<Pattern>
+{
+    public static Pattern CallerPattern => IsCall(
+        "caller",
+        IsFusion(null, "stackvm", IsWildcard(), GenerateParameters(null)),
+        GenerateParameters(null));
+
+    public override Pattern Pattern { get; } = IsRangeOfMarker("marker", CallerPattern, IsWildcard());
+
+    public Expr? GetReplace(Marker marker, Call caller)
+    {
+        return caller;
+    }
 }
 
 [RuleGenerator]
@@ -211,6 +344,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
     public static Expr MakeSplitEntry(Expr originBody, Var[] fusionVars, Dictionary<Var, Expr[]> inputInfo, Dictionary<Var, IValue> varInfo, Dictionary<Var, Expr[]> fusionInputdata, Dictionary<Var, Expr[]> fusionInputsShape, Expr[] fusionInputs, string relPath, int seg)
     {
         // 避免这里的修改影响到原始的body，每个分支需要进行自己的修改
+        // todo: 但是或许是这里引起的复制
         var call = originBody.Clone();
 
         // 找到拷贝的call里面所有var，和fusion的原始var要对应上
@@ -231,6 +365,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
             });
         if (!call.InferenceType())
         {
+            DumpIR(call, "InvalidType");
             throw new InvalidOperationException();
         }
 
@@ -257,13 +392,21 @@ public partial class FusionBucket : RewriteRule<Pattern>
 
             return ReplaceExpr(sum, fusionVar, expr);
         });
-        DumpIR(result, "FixInput", _relPath);
         return result;
     }
 
     public Expr? GetReplace(Call outerCall, BucketFusion fusion, Expr fusionBody)
     {
-        Console.WriteLine($"FusionBucketGetReplace {_counter} {fusion.Name}");
+        if (fusion.IsSimple)
+        {
+            return fusion.Parameters.ToArray().Zip(outerCall.Arguments.ToArray()).Aggregate(fusion.Body, (sum, data) =>
+            {
+                var (fusionVar, arg) = data;
+                return ReplaceExpr(sum, fusionVar, arg);
+            });
+        }
+
+        // Console.WriteLine($"FusionBucketGetReplace {_counter} {fusion.Name}");
         _relPath = $"{_counter}";
         DumpIR(outerCall, $"BucketOriginFusion_{fusion.Name}", _relPath);
 
@@ -273,8 +416,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
         CheckAlive(fusionInputsShapeExpr);
 
         // ensure alive in rewrite, release when return
-        using var pinner = new ExprPinner(fusionInputsShapeExpr.Values.SelectMany(x => x).ToArray());
-
+        // using var pinner = new ExprPinner(fusionInputsShapeExpr.Values.SelectMany(x => x).ToArray());
         var options = CompileSession.CompileOptions.ShapeBucketOptions;
         var (minDict, maxDict) = GetBoundDict(varMap, options);
 
@@ -283,11 +425,10 @@ public partial class FusionBucket : RewriteRule<Pattern>
         // compute fixed Shape
         var minFixedShapeList = ComputeFixedShape(fusionVars, minDict, varMap, fusionInputsShapeExpr);
         var maxFixedShapeList = ComputeFixedShape(fusionVars, maxDict, varMap, fusionInputsShapeExpr);
-        PrintMinMaxShape(minFixedShapeList, maxFixedShapeList, _relPath);
 
+        // PrintMinMaxShape(minFixedShapeList, maxFixedShapeList, _relPath);
         // 2. get dim info(inputIndex, (dimIndex, range)
         var counts = ComputeCounts(minFixedShapeList, maxFixedShapeList, out int totalCount);
-
         if (totalCount == 0 || (minFixedShapeList[0].SequenceEqual(maxFixedShapeList[0]) &&
                                 minFixedShapeList[1].SequenceEqual(maxFixedShapeList[1])))
         {
@@ -295,6 +436,13 @@ public partial class FusionBucket : RewriteRule<Pattern>
             var fix = FixInput(fusionBody, minFixedShapeList, fusionVars, outerCall.Arguments.ToArray());
             _counter++;
             return fix;
+        }
+
+        // todo: process total count, matmul maybe multi count, but other should check this
+        if (totalCount > 1)
+        {
+            // Console.WriteLine($"{fusion.Name} totalCount > 1");
+            // return null;
         }
 
         var args = outerCall.Arguments.ToArray();
@@ -305,9 +453,20 @@ public partial class FusionBucket : RewriteRule<Pattern>
         var body = Split(fusionBody, fusionVars, info, 0, 1, dimVarValues, args, varMap, fusionInputsShapeExpr, fusionInputShapes);
         body.InferenceType();
 
+        if (body.Users.Count > 1)
+        {
+            throw new InvalidOperationException();
+        }
+
         // FixInput Replace Var
         var newBody = ReplaceFusionVarWithCallArgs(fusion, args, body);
-        DumpIR(newBody, "BucketResult", _relPath);
+
+        // let bind
+        if (newBody is If @if)
+        {
+            newBody = IR.F.Math.Require(true, @if.With(paramList: args));
+        }
+
         _counter++;
         return newBody;
     }
@@ -332,10 +491,6 @@ public partial class FusionBucket : RewriteRule<Pattern>
             str += s;
             Console.Write(s);
         }
-
-        Console.WriteLine();
-
-        // DumpUtility.WriteResult(Path.Join(relPath, "fixShape"), str);
     }
 
     // 计算出使用哪个位置的input进行分段
@@ -391,7 +546,8 @@ public partial class FusionBucket : RewriteRule<Pattern>
         fusion.Parameters.ToArray().Zip(args).Aggregate(newBody, (sum, pair) =>
         {
             var (param, arg) = pair;
-            return ReplaceExpr(sum, param, arg);
+            var result = ReplaceExpr(sum, param, arg);
+            return result;
         });
 
     // 计算shape，而不是shape表达式
@@ -474,6 +630,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
         // arg var -> bucket -> compute
         // arg -> bucket -> compute
         var (inputIndex, dimIndex, segments) = info;
+        var dim = ShapeOf(fusionInputs[inputIndex])[dimIndex];
         var sp = ConstantOfShape(new[] { 1 }, Cast(0, fusionBody.CheckedDataType));
         int i = 0;
 
@@ -482,7 +639,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
             (sum, seg) =>
             {
                 // 根据var，也就是target为这个fusion的call的参数来进行判断落在哪个段
-                var cond = Cast(ShapeOf(fusionInputs[inputIndex]), DataTypes.Int32)[dimIndex] <= seg;
+                var cond = dim <= (long)seg;
 
                 // select var value for current segment
                 var varInfo = varValues.ToDictionary(pair => pair.Key, pair => (IValue)Value.FromTensor(pair.Value[i]));
@@ -494,12 +651,6 @@ public partial class FusionBucket : RewriteRule<Pattern>
                 var result = new If(cond, thenBody, elseBody);
                 return result;
             });
-
-        // let args
-        if (body is If @if)
-        {
-            return @if.With(paramList: fusionInputs);
-        }
 
         return body;
     }
@@ -561,7 +712,7 @@ public abstract class MergeFusionBase : RewriteRule<Pattern>
         }
 
         var otherArgs = originCall.Arguments[1..].ToArray();
-        if (otherArgs.All(x => x is Const))
+        if (otherArgs.All(x => x is Const || x is Marker { Target: Const }))
         {
             return true;
         }
@@ -599,9 +750,14 @@ public partial class MergeNextMarkerToFusion : MergeFusionBase
             return null;
         }
 
+        // marker
+        if (fusionOuterCall.Users.Count > 1 || marker.Users.Count > 1)
+        {
+            return null;
+        }
+
         var result =
             marker.With(target: fusionOuterCall.With(target: fusion.With(body: marker.With(target: fusion.Body))));
-        DumpIR(result, $"{Counter++}_{fusion.Name}");
         return result;
     }
 }
@@ -665,13 +821,14 @@ public partial class MergeNextCallToFusion : MergeFusionBase
     // nextCall(marker(fusion(x))) -> fusion(nextCall(marker(x)))
     public Expr? GetReplace(Call nextCall, Expr maybeFusionCallMarker, Expr target, Call fusionOuterCall, BucketFusion fusion)
     {
+        // todo：next call and marker maybe cause dup
         if (!ValidTarget(target))
         {
             return null;
         }
 
         // todo: only for single input, effect var must be same
-        if (MultiUser(nextCall))
+        if (MultiUser(maybeFusionCallMarker))
         {
             return null;
         }
@@ -684,15 +841,11 @@ public partial class MergeNextCallToFusion : MergeFusionBase
         DumpIR(nextCall, $"{Counter}_{fusion.Name}_{target.GetType().Name}_origin");
 
         // 将call里面call fusion的部分替换为fusion的body
-        var oldBody = fusion.Body;
+        var oldBody = DupExpr(fusion.Body);
 
-        // 附加fusion call外面的marker
-        if (maybeFusionCallMarker is Marker fusionMarker)
-        {
-            oldBody = fusionMarker.With(target: oldBody);
-        }
-
-        var newBody = ReplaceExpr(nextCall, fusionOuterCall, oldBody);
+        // 这里必须新构建一个Expr，不能使用原始的nextCall Replace掉参数，不然如果外面有marker,那么replace以后的call还是会被外面的marker引用，因此会出现重复的情况
+        // arg0可能是marker，如果是marker的话不能替换marker的参数，而是重新构造marker
+        var newBody = ReplaceCallParams(nextCall.Target, nextCall.Arguments.ToArray(), (0, (Expr)oldBody));
 
         // 除了第一个参数的部分，其他参数可能会用到外面的东西，是不是可以作为var直接传进来??但是这会影响后面ToFusion的部分...
 
@@ -700,16 +853,22 @@ public partial class MergeNextCallToFusion : MergeFusionBase
         var newFusion = fusion.With(body: newBody);
 
         // 创建新的call，target为fusion，参数为fusion的参数 // todo:针对非const的情况要处理这里
-        // 但是第一个参数要注意，如果有marker那么需要处理marker
-        var newArgs = fusionOuterCall.Arguments.ToArray();
+        // 但是第一个参数要注意，如果有marker那么需要处理marker // 这里如果arg是marker的话则需要copy一份，不然会导致marker的user重复，进而复制了if
+        // var newArgs = fusionOuterCall.Arguments.ToArray().Select(arg => arg is Marker m ? m.With() : arg).ToArray();
+        var newArgs = fusionOuterCall.Arguments.ToArray().Select(DupExpr).ToArray();
         var call = (Expr)nextCall.With(target: newFusion, arguments: newArgs);
 
         // 附加next call的外面marker
         DumpIR(call, $"{Counter++}_{fusion.Name}_{target.GetType().Name}_after");
+        if (newBody.Users.Count > 1)
+        {
+            throw new InvalidOperationException($"{newFusion.Name} is Invalid");
+        }
+
         return call;
     }
 
-    private static bool MultiUser(Call nextCall)
+    private static bool MultiUser(Expr nextCall)
     {
         // Marker(LeakyRelu(Marker(Fusion)))
         // 如果user > 1
@@ -783,21 +942,23 @@ public partial class MergePrevCallToFusion : MergeFusionBase
     // xx(marker) | xx 可以
     public Expr? GetReplace(Call fusionOuterCall, BucketFusion fusion, Call lhsPrevCall, Expr lhsTarget, Expr lhsArg)
     {
-        if (IsInvalid(lhsPrevCall, lhsTarget))
+        // 从inputs中筛选出所有需要合并的
+        var (prevCallsInfo, prevOutputMaybeMarker) = CollectInputsInfo(fusionOuterCall);
+        if (prevCallsInfo.Length == 0)
         {
             return null;
         }
 
-        var (prevCalls, prevOutputMaybeMarker) = CollectInputsInfo(fusionOuterCall, lhsPrevCall, lhsArg);
+        // 要被合并的call
+        var prevCalls = prevCallsInfo.Select(x => x.Item1).ToArray();
+        var prevCallStr = string.Join("_", prevCalls.Select(call => call.Target.GetType().Name));
+        DumpIR(fusionOuterCall, $"{Counter}_{prevCallStr}_{fusion.Name}_origin");
 
-        DumpIR(fusionOuterCall, $"{Counter}_{lhsTarget.GetType().Name}_{fusion.Name}_origin");
-
-        // todo: 判断rhs的effect var才行
-        // 新的fusion var
+        // 新的fusion var，根据要被合并的call的argument来构建
         var newVars = prevCalls.Select(arg => new Var(arg.Arguments[0].CheckedType)).ToArray();
 
-        // 针对prevCall的所有argument进行替换, prevCall会带入原先var的位置，因此需要继续携带自己的marker。
-        // 包含输入1，输入2
+        // 被合并的call更新参数，arg0替换为新的fusion的var，创建新的被合并call
+        // 并且保存marker
         var newPrevCalls = prevCalls.Select((prevCall, i) =>
         {
             // 每个prevCall的arg0替换为fusionVar
@@ -810,45 +971,60 @@ public partial class MergePrevCallToFusion : MergeFusionBase
             return prevOutputMaybeMarker[i] is Marker m ? (Expr)m.With(target: newPrevCall) : newPrevCall;
         }).ToArray();
 
+        var dupFusionBody = fusion.Body;
+
         // 新的fusion body将原来的var换成prevCall
-        var newBody = fusion.Parameters.ToArray().Zip(newPrevCalls).Aggregate(fusion.Body, (sum, pair) =>
-        {
-            // 此时prevCall携带新的var
-            var (fusionVar, newPrevCall) = pair;
-            return ReplaceExpr(sum, fusionVar, newPrevCall);
-        });
+        var newBody = prevCallsInfo.Select(pair => fusion.Parameters[pair.Item2]).Zip(newPrevCalls).Aggregate(
+            (Expr)dupFusionBody, (sum, pair) =>
+            {
+                // 此时prevCall携带新的var
+                var (fusionVar, newPrevCall) = pair;
+                return ReplaceExpr(sum, fusionVar, newPrevCall);
+            });
 
         // 新的fusion的param更换为新的var
-        var newParams = ReplaceItems(fusion.Parameters.ToArray(), newVars.Select((v, i) => (i, (Expr)v)).ToArray())
+        var newParams = ReplaceItems(
+            fusion.Parameters.ToArray(),
+            newVars.Zip(prevCallsInfo).Select(tuple => (tuple.Second.Item2, (Expr)tuple.First)).ToArray())
             .OfType<Var>().ToArray();
         var newFusion = fusion.With(body: newBody, parameters: newParams);
 
         // 新的args为原来所有的prev call的arg[0]
         var newArgs = ReplaceItems(
             fusionOuterCall.Arguments.ToArray(),
-            prevCalls.Select((e, i) =>
+            prevCallsInfo.Select(pair =>
             {
-                return (i, e.Arguments[0]);
+                return (pair.Item2, DupExpr(pair.Item1.Arguments[0]));
             }).ToArray());
 
         // 原始的fusion的call更换target为新的fusion，以及arg0替换为prevCall的arg0，其他不变
         var call = fusionOuterCall.With(target: newFusion, arguments: newArgs);
-        DumpIR(call, $"{Counter++}_{lhsTarget.GetType().Name}_{fusion.Name}_after");
+        DumpIR(call, $"{Counter++}_{prevCallStr}_{fusion.Name}_after");
         return call;
     }
 
-    private (Call[] PrevCalls, Expr[] MayBeMarkers) CollectInputsInfo(Call fusionOuterCall)
+    private ((Call, int)[] PrevCalls, Expr[] MayBeMarkers) CollectInputsInfo(Call fusionOuterCall)
     {
-        var result = fusionOuterCall.Arguments.ToArray().Select(arg =>
+        // todo: 判断rhs的effect var才行
+        var prevCalls = new List<(Call, int)>();
+        var maybeMarkers = new List<Expr>();
+        var args = fusionOuterCall.Arguments.ToArray();
+        for (int i = 0; i < args.Length; ++i)
         {
-            var rhsArg = arg;
+            var rhsArg = args[i];
             if (rhsArg is Marker marker && marker.Target is Call rhsPrevCall)
             {
+                if (marker.Users.Count > 1)
+                {
+                    continue;
+                }
+
                 var rhsTarget = rhsPrevCall.Target;
 
                 if (!IsInvalid(rhsPrevCall, rhsTarget))
                 {
-                    return (rhsPrevCall, (Expr)marker);
+                    prevCalls.Add((DupExpr(rhsPrevCall), i));
+                    maybeMarkers.Add(DupExpr(marker));
                 }
             }
 
@@ -858,48 +1034,14 @@ public partial class MergePrevCallToFusion : MergeFusionBase
 
                 if (!IsInvalid(rhsCall, rhsTarget))
                 {
-                    return (rhsCall, rhsCall);
-                }
-            }
-
-            throw new NotImplementedException();
-        }).ToArray();
-        var prevCalls = result.Select(x => x.rhsPrevCall).ToArray();
-        var maybeMarkers = result.Select(x => x.Item2).ToArray();
-        return (prevCalls, maybeMarkers);
-    }
-
-    private (Call[] PrevCalls, Expr[] MayBeMarkers) CollectInputsInfo(Call fusionOuterCall, Call lhsPrevCall, Expr lhsArg)
-    {
-        var prevCalls = new[] { lhsPrevCall };
-        var argsMarker = new[] { lhsArg };
-        if (fusionOuterCall.Arguments.Length > 1)
-        {
-            var rhsArg = fusionOuterCall.Arguments[1];
-            if (rhsArg is Marker marker && marker.Target is Call rhsPrevCall)
-            {
-                var rhsTarget = rhsPrevCall.Target;
-
-                if (!IsInvalid(rhsPrevCall, rhsTarget))
-                {
-                    prevCalls = prevCalls.Append(rhsPrevCall).ToArray();
-                    argsMarker = argsMarker.Append(rhsArg).ToArray();
-                }
-            }
-
-            if (rhsArg is Call rhsCall)
-            {
-                var rhsTarget = rhsCall.Target;
-
-                if (!IsInvalid(rhsCall, rhsTarget))
-                {
-                    prevCalls = prevCalls.Append(rhsCall).ToArray();
-                    argsMarker = argsMarker.Append(rhsCall).ToArray();
+                    var rhs = DupExpr(rhsCall);
+                    prevCalls.Add((rhs, i));
+                    maybeMarkers.Add((Expr)rhs);
                 }
             }
         }
 
-        return (prevCalls, argsMarker);
+        return (prevCalls.ToArray(), maybeMarkers.ToArray());
     }
 
     private bool IsInvalid(Call lhsPrevCall, Expr lhsTarget)
@@ -923,12 +1065,104 @@ public partial class MergePrevCallToFusion : MergeFusionBase
     }
 }
 
+public class MergeBucketFusion : ModulePass
+{
+    protected override Task<IRModule> RunCoreAsync(IRModule input, RunPassContext context)
+    {
+        // 1. save effect var info
+        var main = (Function)input.Entry!;
+        var s = new SearchBucketFusion();
+        s.Visit(main);
+        var set = s.FusionEffectVars();
+
+        // 2. merge
+        var analyzerMananger = CompileSession.GetRequiredService<IAnalyzerManager>();
+        var analysis = new Dictionary<Type, IAnalysisResult>
+        {
+            [typeof(IExprUserAnalysisResult)] = analyzerMananger.GetAnaylsis<IExprUserAnalysisResult>(main),
+        };
+        var rewriter = new DataFlowMergeRewriter();
+        var post = (Function)rewriter.Rewrite(
+            main,
+            new IMergeRewriteRule[]
+            {
+                new SameInputFusionMergeRule(),
+                new MultiInputFusionMergeRule(),
+                new ShortCutFusionMergeRuleLeft(),
+                new ShortCutFusionMergeRuleRight(),
+            },
+            (rule, option) => new BucketFusionGroupMutator(rule, option),
+            new() { AnalysisResults = analysis });
+
+        DumpIR(post, "AfterMergeFusion");
+
+        // 3. translate fusion to BucketFusion
+        var mutator = new Passes.Mutators.Substitutor(e =>
+        {
+            if (e is Call c && c.Target is Fusion f)
+            {
+                CompilerServices.Rewrite(f.Body, new[] { new FoldRepeatMarker() }, new());
+                var effectVars = f.Name.Split("_").Chunk(2).SelectMany(list =>
+                {
+                    var originName = string.Join("_", list);
+                    return set[originName];
+                }).ToHashSet().ToArray();
+                return c.With(target: BucketFusion.FromNormalFusion(f, effectVars));
+            }
+
+            return null;
+        });
+        mutator.Visit(post, Unit.Default);
+        DumpIR(post, "AfterTranslateFusion");
+        return Task.FromResult(input);
+    }
+}
+
+internal sealed class BucketFusionGroupMutator : Passes.Mutators.FusionGroupMutator
+{
+    public BucketFusionGroupMutator(IMergeRewriteRule preOrderfusionRule, RunPassContext passOptions)
+        : base(preOrderfusionRule, passOptions)
+    {
+    }
+
+    public override bool MergedFusionCheckCallBack(Fusion merged_fusion, HashSet<Fusion> candidate_fusions)
+    {
+        // 回避反卷积，反卷积的shape表达式目前会引起重复的计算
+        if (merged_fusion.Name.Contains("Conv2DTranspose", StringComparison.Ordinal) ||
+            candidate_fusions.Any(f => f.Name.Contains("Conv2DTranspose", StringComparison.Ordinal)))
+        {
+            return false;
+        }
+
+        return true;
+    }
+}
+
 internal record SegmentInfo(int InputIndex, int DimIndex, int[] Segments);
 
 internal static class ShapeBucketHelper
 {
-    public static Marker[] GetCallInputs(Call call) =>
-        call.Arguments.ToArray().OfType<Marker>().Where(x => x.Target is not TensorConst).ToArray();
+    public static void PrintEffectVar(string name, Var[] set)
+    {
+        Console.WriteLine($"{name} EffectVar:");
+        foreach (var var in set)
+        {
+            Console.WriteLine(var.Name);
+        }
+    }
+
+    // avoid dup marker user
+    public static T DupExpr<T>(T body)
+        where T : Expr
+    {
+        T dupFusionBody = body switch
+        {
+            Marker m => (T)(object)m.With(target: DupExpr(m.Target)),
+            Call c => (T)(object)c.With(),
+            _ => body,
+        };
+        return dupFusionBody;
+    }
 
     public static Var[] MakeEffectVarArray(Dictionary<Var, Expr[]> varMap, params Expr[] args)
     {
@@ -938,7 +1172,27 @@ internal static class ShapeBucketHelper
             var argShapeExpr = arg.EvaluateShapeExpr(varMap);
             visitor.Visit(argShapeExpr);
         });
-        return visitor.Vars.ToHashSet().Except(varMap.Keys.ToHashSet()).ToHashSet().ToArray();
+        var vars = visitor.Vars.ToHashSet();
+
+        // PrintEffectVar("VisitorVars", vars.ToArray());
+        var inputAndDimVarMap =
+            varMap.ToDictionary(pair => pair.Key, pair => pair.Value.OfType<Var>().ToHashSet().ToArray());
+        var allDimVars = varMap.Values.SelectMany(x => x).OfType<Var>();
+        var afterProcessVars = vars.SelectMany(var =>
+        {
+            if (inputAndDimVarMap.TryGetValue(var, out var dimVars))
+            {
+                return dimVars;
+            }
+
+            if (allDimVars.Contains(var))
+            {
+                return new[] { var };
+            }
+
+            return new[] { var };
+        }).ToHashSet();
+        return afterProcessVars.Intersect(allDimVars).ToHashSet().ToArray();
     }
 
     internal static void DumpIR(Expr expr, string prefix, string? reletivePath = null)
@@ -947,5 +1201,27 @@ internal static class ShapeBucketHelper
         {
             DumpScope.Current.DumpIR(expr, prefix, reletivePath);
         }
+    }
+}
+
+internal class SearchBucketFusion : ExprVisitor<Expr, Unit>
+{
+    private HashSet<BucketFusion> FusionSet { get; set; } = new();
+
+    public Dictionary<string, Var[]> FusionEffectVars()
+    {
+        return FusionSet.ToDictionary(s => s.Name, s => s.EffectVar);
+    }
+
+    protected override Expr DefaultVisitLeaf(Expr expr) => expr;
+
+    protected override Expr VisitLeafCall(Call expr)
+    {
+        if (expr.Target is BucketFusion f)
+        {
+            FusionSet.Add(f);
+        }
+
+        return expr;
     }
 }

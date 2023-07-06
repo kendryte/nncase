@@ -59,23 +59,24 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         var rhsShape = context.GetArgumentShape(target, MatMul.Rhs);
 
         Expr lhs, rhs;
+        Expr front;
         if (lhsRank == rhsRank)
         {
             lhs = ShapeExprUtility.Slice(lhsShape, 0, lhsRank - 2);
             rhs = ShapeExprUtility.Slice(rhsShape, 0, rhsRank - 2);
+            front = IR.F.Math.Max(lhs, rhs);
         }
         else if (lhsRank > rhsRank)
         {
             lhs = ShapeExprUtility.Slice(lhsShape, 0, lhsRank - 2);
-            rhs = Enumerable.Repeat(1, lhsRank - rhsRank).ToArray();
+            front = lhs;
         }
         else
         {
             lhs = Enumerable.Repeat(1, rhsRank - lhsRank).ToArray();
-            rhs = ShapeExprUtility.Slice(rhsShape, 0, rhsRank - 2);
+            front = lhs;
         }
 
-        var front = IR.F.Math.Max(lhs, rhs);
         var end = Stack(new IR.Tuple(lhsShape[lhsRank - 2], rhsShape[rhsRank - 1]), 0);
         return Concat(new IR.Tuple(front, end), 0);
     }
