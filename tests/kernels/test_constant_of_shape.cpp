@@ -28,8 +28,7 @@ using namespace ortki;
 
 class ConstantOfShapeTest
     : public KernelTest,
-      public ::testing::TestWithParam<
-          std::tuple<nncase::typecode_t, dims_t>> {
+      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
   public:
     void SetUp() override {
         auto &&[typecode, shape] = GetParam();
@@ -37,7 +36,7 @@ class ConstantOfShapeTest
         const int size = 768;
         int32_t array[size];
 
-        for (int32_t & i : array) {
+        for (int32_t &i : array) {
             i = 1;
         }
 
@@ -56,7 +55,8 @@ class ConstantOfShapeTest
 
 INSTANTIATE_TEST_SUITE_P(ConstantOfShape, ConstantOfShapeTest,
                          testing::Combine(testing::Values(dt_int32),
-                                          testing::Values(dims_t{1, 3, 16, 16})));
+                                          testing::Values(dims_t{1, 3, 16,
+                                                                 16})));
 
 TEST_P(ConstantOfShapeTest, constant_of_shape) {
     //    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
