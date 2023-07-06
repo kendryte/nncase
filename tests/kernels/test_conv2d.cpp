@@ -88,7 +88,8 @@ TEST_P(Conv2DTest, conv2d) {
 
     // actual
     int64_t group[] = {1};
-    float_t fused_clamp[] = {-FLT_MAX, FLT_MAX};
+    float_t fused_clamp[] = {-std::numeric_limits<float>::infinity(),
+                             std::numeric_limits<float>::infinity()};
     auto dilations_ptr = hrt::create(nncase::dt_int64, {2},
                                      {reinterpret_cast<gsl::byte *>(dilations),
                                       sizeof(dilations)},
@@ -130,8 +131,13 @@ TEST_P(Conv2DTest, conv2d) {
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_TRUE(is_same_tensor(expected, actual) ||
-                cosine_similarity_tensor(expected, actual));
+    bool result = is_same_tensor(expected, actual) ||
+                  cosine_similarity_tensor(expected, actual);
+    if (!result) {
+        print_runtime_tensor(expected);
+        print_runtime_tensor(actual);
+    }
+    EXPECT_TRUE(result);
 }
 
 int main(int argc, char *argv[]) {
