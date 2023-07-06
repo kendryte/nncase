@@ -167,7 +167,10 @@ class OnnxTestRunner(TestRunner):
             output_dict = {}
             onnx_type = e.type.tensor_type
             output_dict['name'] = e.name
-            output_dict['dtype'] = onnx.mapping.TENSOR_TYPE_TO_NP_TYPE[onnx_type.elem_type]
+            if onnx_type.elem_type == 0:
+                output_dict['dtype'] = 'float32'
+            else:
+                output_dict['dtype'] = onnx.mapping.TENSOR_TYPE_TO_NP_TYPE[onnx_type.elem_type]
             output_dict['model_shape'] = [i.dim_value for i in onnx_type.shape.dim]
             self.outputs.append(output_dict)
 
