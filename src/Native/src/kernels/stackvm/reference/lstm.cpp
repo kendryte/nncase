@@ -29,7 +29,7 @@ using namespace nncase::kernels::stackvm;
 result<void> nncase::kernels::stackvm::reference::lstm(
     const float *input, const float *w_xc, const float *w_rc,
     [[maybe_unused]] const float *bias, const float *init_h,
-    const float *init_c, float *output, float *output_h, float *output_c,
+    const float *init_c, float *output, [[maybe_unused]]float *output_h, [[maybe_unused]]float *output_c,
     gsl::span<const size_t> in_shape_3, gsl::span<const size_t> init_h_shape_3,
     gsl::span<const size_t> init_c_shape_3, gsl::span<const size_t> out_shape_3,
     gsl::span<const size_t> w_xc_shape_3, gsl::span<const size_t> w_rc_shape_3,
@@ -40,6 +40,11 @@ result<void> nncase::kernels::stackvm::reference::lstm(
     auto w_xc_shape = to_4d(w_xc_shape_3);
     auto w_rc_shape = to_4d(w_rc_shape_3);
     auto out_shape = to_4d(out_shape_3);
+
+    printf("after get shape\n");
+    puts("");
+    printf("out_h:%f", output_h[0]);
+
 
     auto tanh = [&](float x) { return (1 - exp(-2 * x)) / (1 + exp(-2 * x)); };
     auto sigmoid = [&](float x) { return 1 / (1 + exp(-x)); };
@@ -99,6 +104,8 @@ result<void> nncase::kernels::stackvm::reference::lstm(
                         sigmoid(out_mul1[o + out_shape[3] * 2]);
                 }
 
+                printf("after ft\n");
+
                 // ct = init_c * ft
                 for (size_t o = 0; o < out_shape[3]; o++) {
                     out_mul1[o + out_shape[3] * 2] =
@@ -145,6 +152,8 @@ result<void> nncase::kernels::stackvm::reference::lstm(
                         output_c_tmp[o + d * out_shape[2] * out_shape[3]]));
                 }
 
+                printf("after_ct \n");
+
                 // ht = ot * tanh_ct
                 for (size_t o = 0; o < out_shape[3]; o++) {
                     output_h_tmp[o + d * out_shape[2] * out_shape[3]] =
@@ -158,12 +167,24 @@ result<void> nncase::kernels::stackvm::reference::lstm(
                                 d * out_shape[2] * out_shape[3],
                             sizeof(float) * out_shape[3]);
 
+                printf("%ld\n", out_shape[2]);
+
+                printf("after ht\n");
+                printf("%d,%d\n", l, seq_len_loop.back());
                 if (l == seq_len_loop.back()) {
+                    printf("%ld\n", out_shape.size());
+                    puts("");
+                    for(size_t iii=2;iii<4;iii++)
+                    {
+                        printf("%ld\n", out_shape[2]);
+                    }
                     std::memcpy(output_h + b * out_shape[3] +
                                     d * out_shape[2] * out_shape[3],
                                 output_h_tmp.get() +
                                     d * out_shape[2] * out_shape[3],
                                 sizeof(float) * out_shape[3]);
+                    printf("last \n");
+
                     std::memcpy(output_c + b * out_shape[3] +
                                     d * out_shape[2] * out_shape[3],
                                 output_c_tmp.get() +

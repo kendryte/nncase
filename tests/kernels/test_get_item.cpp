@@ -26,46 +26,53 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class ProdTest
+class GetItemTest
     : public KernelTest,
       public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
   public:
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
 
-        lhs = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
-                  .expect("create tensor failed");
-        init_tensor(lhs);
+        input =
+            hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
+                .expect("create tensor failed");
+        init_tensor(input);
     }
 
     void TearDown() override {}
 
   protected:
-    runtime_tensor lhs;
+    runtime_tensor input;
 };
 
-INSTANTIATE_TEST_SUITE_P(Prod, ProdTest,
+INSTANTIATE_TEST_SUITE_P(GetItem, GetItemTest,
                          testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 3, 16,
-                                                                 16})));
+                                          testing::Values(dims_t{1})));
 
-TEST_P(ProdTest, Prod) {
-    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
+TEST_P(GetItemTest, get_item) {
+    //    auto l_ort = runtime_tensor_2_ort_tensor(input);
 
     // expected
-    int64_t axis[] = {0, 1, 2, 3};
-    auto output_ort = ortki_ReduceProd(l_ort, axis, 4, 0);
-    size_t size = 0;
-    void *ptr_ort = tensor_buffer(output_ort, &size);
-    dims_t shape(tensor_rank(output_ort));
-    tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
-    auto expected = hrt::create(lhs.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
-                                true, host_runtime_tensor::pool_cpu_only)
-                        .expect("create tensor failed");
+    auto expected = input;
 
     // actual
-    auto output = kernels::stackvm::prod(lhs.impl()).expect("prod failed");
+    int64_t index_ptr[] = {0};
+    auto index = hrt::create(nncase::dt_int64, {1},
+                             {reinterpret_cast<gsl::byte *>(index_ptr),
+                              sizeof(index_ptr)},
+                             true, host_runtime_tensor::pool_cpu_only)
+                     .expect("create tensor failed");
+    int64_t shape_ort[] = {1};
+    auto shape = hrt::create(dt_int64, {1},
+                             {reinterpret_cast<gsl::byte *>(shape_ort),
+                              sizeof(shape_ort)},
+                             true, host_runtime_tensor::pool_cpu_only)
+                     .expect("create tensor failed");
+    auto get_item_output =
+        kernels::stackvm::get_item(input.impl(), index.impl())
+            .expect("get_item failed");
+    auto output = kernels::stackvm::reshape(get_item_output, shape.impl())
+                      .expect("get_item failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare

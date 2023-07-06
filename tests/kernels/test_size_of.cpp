@@ -26,7 +26,7 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class GetItemTest
+class SizeOfTest
     : public KernelTest,
       public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
   public:
@@ -45,29 +45,38 @@ class GetItemTest
     runtime_tensor input;
 };
 
-INSTANTIATE_TEST_SUITE_P(GetItem, GetItemTest,
+INSTANTIATE_TEST_SUITE_P(SizeOf, SizeOfTest,
                          testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1})));
+                                          testing::Values(dims_t{1, 3, 16, 16},
+                                                          dims_t{1, 3, 3, 3},
+                                                          dims_t{1, 3, 16})));
 
-TEST_P(GetItemTest, get_item) {
-    //    auto l_ort = runtime_tensor_2_ort_tensor(input);
+TEST_P(SizeOfTest, SizeOf) {
 
     // expected
-    auto expected = input;
-
-    // actual
-    float index_ptr[] = {0.5f};
-    auto index =
-        hrt::create(nncase::dt_float32, {1},
-                    {reinterpret_cast<gsl::byte *>(index_ptr), sizeof(float)},
+    int64_t ptr_ort[] = {sizeof(input.shape())};
+    auto expected =
+        hrt::create(dt_int64, {1},
+                    {reinterpret_cast<gsl::byte *>(ptr_ort), sizeof(ptr_ort)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
-    auto output = kernels::stackvm::get_item(input.impl(), index.impl())
-                      .expect("get_item failed");
+
+    // actual
+    int64_t shape_ort[] = {1};
+    auto shape = hrt::create(dt_int64, {1},
+                             {reinterpret_cast<gsl::byte *>(shape_ort),
+                              sizeof(shape_ort)},
+                             true, host_runtime_tensor::pool_cpu_only)
+                     .expect("create tensor failed");
+    auto size_of_output =
+        kernels::stackvm::size_of(input.impl()).expect("size_of failed");
+    auto output = kernels::stackvm::reshape(size_of_output, shape.impl())
+                      .expect("reshape failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_TRUE(is_same_tensor(expected, actual));
+    EXPECT_TRUE(is_same_tensor(expected, actual) ||
+                cosine_similarity_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {
