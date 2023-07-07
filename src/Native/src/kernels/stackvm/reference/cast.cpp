@@ -67,8 +67,6 @@ result<void> cast_f32_to_fp16_impl(
     return apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
         auto value = input[offset(in_strides, index)];
         output[offset(out_strides, index)] = half::round_to_half(value);
-        std::cout << half::round_to_half(value);
-        std::cout << std::endl;
         return ok();
     });
 }
