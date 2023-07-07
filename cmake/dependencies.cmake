@@ -1,4 +1,3 @@
-find_package(mpark_variant REQUIRED)
 find_package(gsl-lite REQUIRED)
 if (ENABLE_OPENMP)
     find_package(OpenMP COMPONENTS CXX REQUIRED)
