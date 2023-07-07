@@ -83,6 +83,11 @@ public static class ReplaceUtility
         return new Call(target, ReplaceItems(oldParams, pairs));
     }
 
+    public static Call ReplaceCallParams(Call call, params (int, Expr)[] pairs)
+    {
+        return new Call(call.Target, ReplaceItems(call.Arguments.ToArray(), pairs));
+    }
+
     /// <summary>
     /// replace the call params with parameter info.
     /// </summary>

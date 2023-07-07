@@ -30,8 +30,6 @@ public partial class FoldStackGetItem : RewriteRule<Pattern>
 
     private Expr? GetReplace(Call stack, IR.Tuple tuple)
     {
-        Console.WriteLine("Maybe Fold");
-        Console.WriteLine(stack.GetHashCode());
         var getItems = tuple.Fields.ToArray().Select(x => (Call)x).ToArray();
         var index = getItems.Select(x => ((TensorConst)x.Arguments[GetItem.Index.Index]).Value.ToScalar<int>());
         if (!Enumerable.Range(0, getItems.Length).SequenceEqual(index))
@@ -49,13 +47,9 @@ public partial class FoldStackGetItem : RewriteRule<Pattern>
         // slice for more, (2, 3) is ok, but is fast??
         if (input.CheckedShape[0] != getItems.Length)
         {
-            Console.WriteLine("Fold");
-            Console.WriteLine(stack.GetHashCode());
             return IR.F.Tensors.Slice(input, new[] { 0 }, new[] { getItems.Length }, 1);
         }
 
-        Console.WriteLine("Fold");
-        Console.WriteLine(stack.GetHashCode());
         return input;
     }
 }
