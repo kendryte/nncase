@@ -55,7 +55,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
     {
         var lhs = context.GetArgumentShape(target, MatMul.Lhs);
         var rhs = context.GetArgumentShape(target, MatMul.Rhs);
-        return IR.F.ShapeExpr.MatMulShape(lhs, rhs);
+        return Cast(IR.F.ShapeExpr.MatMulShape(lhs, rhs), DataTypes.Int32);
     }
 
     private IRType Visit(TensorType lhs, TensorType rhs)

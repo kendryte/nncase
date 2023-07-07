@@ -62,8 +62,11 @@ internal sealed class ShapeEvaluateContext : IShapeEvaluateContext
             {
                 return new Tuple(tupleShapeExpr.Fields.ToArray().Select(expr => Cast(expr, DataTypes.Int32)).ToArray());
             }
-
-            throw new NotImplementedException();
+            // for split
+            else
+            {
+                return new Tuple(((Tuple)shape).Fields.ToArray().Select(expr => Cast(expr, DataTypes.Int32)).ToArray());
+            }
         }
 
         var shapeExpr = _memo[expr];
