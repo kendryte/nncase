@@ -144,7 +144,7 @@ public sealed record TensorType(DataType DType, Shape Shape) : IRType
 /// <summary>
 /// Tuple type.
 /// </summary>
-public sealed record TupleType(IRArray<IRType> Fields) : IRType, IEnumerable<IRType>, IReadOnlyList<IRType>
+public sealed record TupleType(IRArray<IRType> Fields, bool IsVariadic = false) : IRType, IEnumerable<IRType>, IReadOnlyList<IRType>
 {
     /// <summary>
     /// Void type.
