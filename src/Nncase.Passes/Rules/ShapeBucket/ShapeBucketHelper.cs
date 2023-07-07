@@ -80,7 +80,7 @@ internal static class ShapeBucketHelper
 
 internal static class ExprArrayExtension
 {
-    public static IEnumerable<Expr> OfNoConst(this Expr[] args)
+    public static IEnumerable<Expr> OfNoConst(this IEnumerable<Expr> args)
     {
         return args.Where(x => x is not TensorConst);
     }

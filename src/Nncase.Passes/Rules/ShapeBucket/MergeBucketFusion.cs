@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reactive;
 using System.Threading.Tasks;
+using DryIoc.FastExpressionCompiler.LightExpression;
 using DryIoc.ImTools;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Toolkit.HighPerformance;
@@ -48,16 +49,33 @@ public class MergeBucketFusion : ModulePass
 
         // 2. merge
         var post = MergeFusion(main);
+        DumpIR(post, "AfterMergeFusion");
 
         // 3. translate fusion to BucketFusion
         TranslateFusionToBucket(set, post);
+        DumpIR(post, "AfterTranslateFusion");
+
+        IRHelpers.DCE(post);
+        var c = new ReplaceVisitor();
+        c.Replace(post);
         return Task.FromResult(input);
     }
 
     record UserInfo(Call User, int UserIndex, int FusionIndexInUserArg);
 
-    internal class CallVisitor : ExprVisitor<Expr, Unit>
+    internal class ReplaceVisitor : ExprVisitor<Expr, Unit>
     {
+        private static int counter = 0;
+
+        private Function _fn;
+        private Expr _root => _fn.Body;
+
+        public void Replace(Function fn)
+        {
+            _fn = fn;
+            Visit(_root);
+        }
+
         protected override Expr VisitLeafCall(Call expr)
         {
             var fusionPattern = new FusionBucket().Pattern;
@@ -65,58 +83,86 @@ public class MergeBucketFusion : ModulePass
             {
                 var outerCall = (Call)matchResult["outerCall"];
                 var fusion = (BucketFusion)matchResult["fusion"];
-                MergeMultiUserFusion(outerCall, fusion);
+                DumpIR(outerCall, $"{counter}_MergeBefore");
+                for (var i = 0; i < outerCall.Users.Count; i++)
+                {
+                    DumpIR(outerCall.Users.ToArray()[i], $"{counter}_User_{i}_MergeBefore");
+                }
+                var newCall = MergeMultiUserFusion(outerCall, fusion);
+                if (newCall != null)
+                {
+                    DumpIR(newCall, $"{counter++}_MergeAfter");
+                    DumpIR(_root, "rootBeforeMerge");
+                    var users = outerCall.Users.ToArray();
+                    for (var i = 0; i < users.Length; i++)
+                    {
+                        var newOperand = newCall.CheckedType is TupleType ? newCall[i] : newCall;
+                        ReplaceAllUsesWith(users[i], newOperand);
+                    }
+                    // ReplaceAllUsesWith(outerCall, newCall);
+                    DumpIR(_root, "rootAfterMerge");
+                    return newCall;
+                }
             }
-
             return expr;
         }
+
+        protected override Expr DefaultVisitLeaf(Expr expr) => expr;
     }
 
-    private static void MergeMultiUserFusion(Call outerCall, BucketFusion fusion)
+    private static Expr? MergeMultiUserFusion(Call outerCall, BucketFusion fusion)
     {
         var userInfos = CollectUsers(outerCall);
 
         // maybe a error
         if (userInfos.Length < 2)
         {
-            return;
+            return null;
         }
 
         // todo: with tuple
         // 1. all user are fusion
         // 2. some user are fusion
         // 3. no fusion
+
+        var oldUsers = userInfos.Select(x => x.User).ToArray();
+
         var newUsers = MakeNewUserExpr(userInfos, fusion.Body);
         var newBody = MakeNewBody(newUsers);
+        DumpIR(newBody, "newBody");
         var newParams = MakeNewParams(fusion, userInfos);
         var newArgs = MakeNewArgs(outerCall, userInfos);
         var newFusion = MakeNewFusion(newBody, fusion, newParams);
         var newCall = MakeNewCall(newFusion, newArgs);
-        UpdateUserOfUserExpr(newCall, userInfos);
+        return newCall;
     }
 
     // update user of user expr, replace call with getItem(call)
     private static void UpdateUserOfUserExpr(Call newCall, UserInfo[] userInfos)
     {
-        userInfos.ForEach(userInfo =>
-        {
-            userInfo.User.Users.Select(userOfUser =>
-            {
-                if (userOfUser is Call call)
-                {
-                    // todo: 会不会有其他情况
-                    return ReplaceExpr(call, userInfo.User, newCall[userInfo.UserIndex]);
-                }
-
-                throw new NotImplementedException();
-            });
-        });
+        // int counter = 0;
+        // userInfos.ForEach(userInfo =>
+        // {
+        //     userInfo.User.Users.ToArray().OfNoConst().ToArray().ForEach(userOfUser =>
+        //     {
+        //         if (userOfUser is Call call)
+        //         {
+        //             // todo: 会不会有其他情况
+        //             DumpIR(call, $"UpdateCall_{counter}_before");
+        //             ReplaceExpr(call, userInfo.User, newCall[userInfo.UserIndex]);
+        //             DumpIR(call, $"UpdateCall_{counter++}_after");
+        //             return;
+        //         }
+        //
+        //         throw new NotImplementedException();
+        //     });
+        // });
     }
 
     private static BucketFusion MakeNewFusion(Expr body, BucketFusion fusion, Var[] newParams)
     {
         // todo: EffectVar
-        return new BucketFusion("k230", body, newParams, fusion.EffectVar);
+        return new BucketFusion("stackvm", body, newParams, fusion.EffectVar);
     }
 
     private static Call MakeNewCall(BucketFusion fusion, Expr[] args)
@@ -130,7 +176,7 @@ public class MergeBucketFusion : ModulePass
         var newParams = userInfos.SelectMany(userInfo =>
         {
             var user = userInfo.User;
-            return user.Arguments.ToArray().OfNoConst().ToArray().RemoveAt(userInfo.FusionIndexInUserArg);
+            return user.Arguments.ToArray().RemoveAt(userInfo.FusionIndexInUserArg).OfNoConst().ToArray();
         }).ToArray();
         return fusionArgs.Concat(newParams).ToArray();
     }
@@ -141,23 +187,57 @@ public class MergeBucketFusion : ModulePass
         var newParams = userInfos.SelectMany(userInfo =>
         {
             // todo: process for Fusion
-            var usersArgs = userInfo.User.Arguments.ToArray().OfNoConst().ToArray();
+            var usersArgs = userInfo.User.Arguments.ToArray().RemoveAt(userInfo.FusionIndexInUserArg).OfNoConst().ToArray();
             return usersArgs.Select(arg => new Var(arg.CheckedType)).ToArray();
         }).ToArray();
         return fusionParams.Concat(newParams).ToArray();
     }
 
-    private static Expr MakeNewBody(Call[] newUsers)
+    private static Expr MakeNewBody(Expr[] newUsers)
     {
+        if (newUsers.Length == 1)
+        {
+            return newUsers.First();
+        }
         return new IR.Tuple(newUsers);
     }
 
-    private static Call[] MakeNewUserExpr(UserInfo[] userInfos, Expr body)
+    // clone origin Expr and Do replace for var
+    private static Expr ReplaceClone(Expr originBody, params (Var, Expr)[] originVarAndExpr)
+    {
+        var call = originBody.Clone();
+
+        var finder = new FindVar();
+        finder.Visit(call);
+        var newVars = finder.Vars;
+        originVarAndExpr.ForEach(pair =>
+        {
+            var (v, newExpr) = pair;
+            var varShouldBeReplaced = newVars.FindFirst(newVar => newVar.Name == v.Name);
+            ReplaceExpr(call, varShouldBeReplaced, newExpr);
+        });
+        return call;
+    }
+
+    private static Expr[] MakeNewUserExpr(UserInfo[] userInfos, Expr body)
     {
         // todo: fusion deconstruct
         // make user expr, replace call with fusion body
-        return userInfos.Select(userInfo => ReplaceCallParams(userInfo.User, (userInfo.FusionIndexInUserArg, body)))
-            .ToArray();
+        return userInfos.Select((userInfo, i) =>
+        {
+            var user = userInfo.User;
+
+            // maybe marker
+            Expr newUser = user.Target switch
+            {
+                BucketFusion fusion => ReplaceClone(fusion.Body, (fusion.Parameters.ToArray()[userInfo.FusionIndexInUserArg], body)),
+                Op op => ReplaceCallParams(userInfo.User, (userInfo.FusionIndexInUserArg, body)),
+                _ => throw new NotImplementedException(),
+            };
+
+            DumpIR(newUser, $"newUser_{i}");
+            return newUser;
+            }).ToArray();
     }
 
     private static UserInfo[] CollectUsers(Expr outerCall)
@@ -188,7 +268,7 @@ public class MergeBucketFusion : ModulePass
             .Select(pair =>
             {
                 var user = (Call)pair.user;
-                var argInUserArg = user.Arguments.IndexOf(outerCall);
+                var argInUserArg = user.Arguments.ToArray().IndexOf(outerCall);
                 return new UserInfo(user, pair.userIndex, argInUserArg);
             })
             .ToArray();
@@ -213,7 +293,6 @@ public class MergeBucketFusion : ModulePass
             return null;
         });
         mutator.Visit(post, Unit.Default);
-        DumpIR(post, "AfterTranslateFusion");
     }
 
     private Function MergeFusion(Function main)
@@ -235,7 +314,6 @@ public class MergeBucketFusion : ModulePass
             (rule, option) => new BucketFusionGroupMutator(rule, option),
             new() { AnalysisResults = analysis });
 
-        DumpIR(post, "AfterMergeFusion");
         return post;
     }
 }
