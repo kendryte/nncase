@@ -12,6 +12,7 @@ using Nncase.IR;
 using Nncase.IR.Tensors;
 using Nncase.Passes;
 using Nncase.Passes.Rules.Neutral;
+using Nncase.Passes.Rules.ShapeBucket;
 using Nncase.Quantization;
 using Nncase.Tests.TestFixture;
 using Nncase.Tests.TransformTest;

@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System;
 using System.Linq;
 using Nncase.IR;
 using Nncase.PatternMatch;
@@ -17,6 +18,7 @@ namespace Nncase.Passes.Rules.ShapeExpr;
 public partial class FoldStackGetItem : RewriteRule<Pattern>
 {
     public override Pattern Pattern => IsStack(
+        null,
         "stack",
         IsTuple("tuple", IsVArgsRepeat(list =>
             Enumerable.Range(0, list.Length)
@@ -26,8 +28,10 @@ public partial class FoldStackGetItem : RewriteRule<Pattern>
 
     private Pattern InputPattern => IsWildcard();
 
-    private Expr? GetReplace(IR.Tuple tuple)
+    private Expr? GetReplace(Call stack, IR.Tuple tuple)
     {
+        Console.WriteLine("Maybe Fold");
+        Console.WriteLine(stack.GetHashCode());
         var getItems = tuple.Fields.ToArray().Select(x => (Call)x).ToArray();
         var index = getItems.Select(x => ((TensorConst)x.Arguments[GetItem.Index.Index]).Value.ToScalar<int>());
         if (!Enumerable.Range(0, getItems.Length).SequenceEqual(index))
@@ -36,11 +40,22 @@ public partial class FoldStackGetItem : RewriteRule<Pattern>
         }
 
         var input = getItems[0].Arguments[GetItem.Input.Index];
-        if (input.CheckedShape[0] != getItems.Length)
+        if (input.Users.Count != getItems.Length)
         {
             return null;
         }
+        // [1, 2, 3, 4] -> Stack(1, 2, 3)
+        // todo: add test
+        // slice for more, (2, 3) is ok, but is fast??
+        if (input.CheckedShape[0] != getItems.Length)
+        {
+            Console.WriteLine("Fold");
+            Console.WriteLine(stack.GetHashCode());
+            return IR.F.Tensors.Slice(input, new[] { 0 }, new[] { getItems.Length }, 1);
+        }
 
+        Console.WriteLine("Fold");
+        Console.WriteLine(stack.GetHashCode());
         return input;
     }
 }
