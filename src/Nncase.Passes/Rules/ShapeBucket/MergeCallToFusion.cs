@@ -150,7 +150,12 @@ public partial class MergeNextCallToFusion : MergeFusionBase
 
         // 这里必须新构建一个Expr，不能使用原始的nextCall Replace掉参数，不然如果外面有marker,那么replace以后的call还是会被外面的marker引用，因此会出现重复的情况
         // arg0可能是marker，如果是marker的话不能替换marker的参数，而是重新构造marker
-        var newBody = ReplaceCallParams(nextCall.Target, nextCall.Arguments.ToArray(), (0, (Expr)oldBody));
+        Expr newBody = ReplaceCallParams(nextCall.Target, nextCall.Arguments.ToArray(), (0, (Expr)oldBody));
+        // todo: 针对marker的测试
+        if (nextCall.Users.Count == 1 && nextCall.Users.First() is Marker m)
+        {
+            newBody = m.With(target: newBody);
+        }
 
         // 除了第一个参数的部分，其他参数可能会用到外面的东西，是不是可以作为var直接传进来??但是这会影响后面ToFusion的部分...
 
