@@ -69,7 +69,7 @@ TEST_P(Conv2DTest, conv2d) {
     auto bais_ort = runtime_tensor_2_ort_tensor(bais);
 
     // expected
-    const char *auto_pad = "NOTSET";
+    const char auto_pad[7] = "NOTSET";
     int64_t dilations[] = {1, 1};
     int64_t kernel_shape[] = {3, 3};
     int64_t pad[] = {1, 1, 1, 1};

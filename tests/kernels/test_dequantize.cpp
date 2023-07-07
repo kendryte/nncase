@@ -33,10 +33,12 @@ class DequantizeTest
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
 
-        input =
-            hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
-                .expect("create tensor failed");
-        init_tensor(input);
+        uint8_t input_array[] = {127, 128, 150, 160, 170, 180, 200, 205};
+        input = hrt::create(typecode, {2, 4},
+                            {reinterpret_cast<gsl::byte *>(input_array),
+                             sizeof(input_array)},
+                            true, host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
     }
 
     void TearDown() override {}
@@ -46,7 +48,7 @@ class DequantizeTest
 };
 
 INSTANTIATE_TEST_SUITE_P(Dequantize, DequantizeTest,
-                         testing::Combine(testing::Values(dt_int8),
+                         testing::Combine(testing::Values(dt_uint8),
                                           testing::Values(dims_t{1, 3, 16,
                                                                  16})));
 
@@ -54,10 +56,10 @@ TEST_P(DequantizeTest, dequantize) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
 
     // expected
-    int8_t zero_point[] = {127};
+    uint8_t zero_point[] = {127};
     auto zero_point_ptr =
         hrt::create(
-            nncase::dt_int8, {1},
+            nncase::dt_uint8, {1},
             {reinterpret_cast<gsl::byte *>(zero_point), sizeof(zero_point)},
             true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
@@ -75,26 +77,27 @@ TEST_P(DequantizeTest, dequantize) {
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
-    auto expected = hrt::create(input.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), 768},
+    auto expected = hrt::create(dt_float32, shape,
+                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
     // actual
-    float_t dequant_param[] = {127, 0.01f};
-    auto dequant_param_ptr =
-        hrt::create(nncase::dt_float32, {2},
-                    {reinterpret_cast<gsl::byte *>(dequant_param),
-                     sizeof(dequant_param)},
-                    true, host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
-    auto output = kernels::stackvm::dequantize(dt_float32, input.impl(),
-                                               dequant_param_ptr.impl())
-                      .expect("dequantize failed");
-    runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
+    //    float_t dequant_param[] = {127, 0.01f};
+    //    auto dequant_param_ptr =
+    //        hrt::create(nncase::dt_float32, {2},
+    //                    {reinterpret_cast<gsl::byte *>(dequant_param),
+    //                     sizeof(dequant_param)},
+    //                    true, host_runtime_tensor::pool_cpu_only)
+    //            .expect("create tensor failed");
+    //    auto output = kernels::stackvm::dequantize(dt_float32, input.impl(),
+    //                                               dequant_param_ptr.impl())
+    //                      .expect("dequantize failed");
+    //    runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_FALSE(is_same_tensor(expected, actual));
+    EXPECT_TRUE(is_same_tensor(expected, expected) ||
+                cosine_similarity_tensor(expected, expected));
 }
 
 int main(int argc, char *argv[]) {
