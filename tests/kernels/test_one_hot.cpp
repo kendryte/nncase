@@ -100,7 +100,6 @@ TEST_P(OneHotTest, OneHot) {
                       .expect("one_hot failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
-
     // compare
     EXPECT_TRUE(is_same_tensor(expected, actual));
 }
