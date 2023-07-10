@@ -945,7 +945,7 @@ class KernelTest {
     }
 
     result<void> check_tuple_output(runtime::runtime_tensor expected,
-                                    const value_t& output) {
+                                    const value_t &output) {
         try_var(output_tuple, output.as<tuple>());
         for (size_t i = 0; i < output_tuple->fields().size(); i++) {
             try_var(output_tensor, output_tuple->fields()[i].as<tensor>());

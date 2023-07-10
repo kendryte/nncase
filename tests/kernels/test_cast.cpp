@@ -92,7 +92,7 @@ TEST_P(CastTest, cast) {
                         .expect("create tensor failed");
 
     bool result = is_same_tensor(expected, actual) ||
-                   cosine_similarity_tensor(expected, actual);
+                  cosine_similarity_tensor(expected, actual);
 
     if (!result) {
         print_runtime_tensor(actual);
@@ -124,7 +124,7 @@ TEST_P(CastTest, cast) {
             .expect("create tensor failed");
 
     bool result1 = is_same_tensor(expected1, actual1) ||
-                  cosine_similarity_tensor(expected1, actual1);
+                   cosine_similarity_tensor(expected1, actual1);
 
     if (!result1) {
         print_runtime_tensor(actual1);

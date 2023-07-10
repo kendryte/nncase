@@ -111,7 +111,7 @@ TEST_P(FlattenTest, flatten) {
     runtime_tensor actual1(output1.as<tensor>().expect("as tensor failed"));
 
     bool result1 = is_same_tensor(expected1, actual1) ||
-                  cosine_similarity_tensor(expected1, actual1);
+                   cosine_similarity_tensor(expected1, actual1);
 
     if (!result1) {
         print_runtime_tensor(actual1);
@@ -145,7 +145,7 @@ TEST_P(FlattenTest, flatten) {
     runtime_tensor actual2(output2.as<tensor>().expect("as tensor failed"));
 
     bool result2 = is_same_tensor(expected2, actual2) ||
-                  cosine_similarity_tensor(expected2, actual2);
+                   cosine_similarity_tensor(expected2, actual2);
 
     if (!result2) {
         print_runtime_tensor(actual2);
