@@ -83,20 +83,19 @@ TEST_P(DequantizeTest, dequantize) {
                         .expect("create tensor failed");
 
     // actual
-    //    float_t dequant_param[] = {127, 0.01f};
-    //    auto dequant_param_ptr =
-    //        hrt::create(nncase::dt_float32, {2},
-    //                    {reinterpret_cast<gsl::byte *>(dequant_param),
-    //                     sizeof(dequant_param)},
-    //                    true, host_runtime_tensor::pool_cpu_only)
-    //            .expect("create tensor failed");
-    //    auto output = kernels::stackvm::dequantize(dt_float32, input.impl(),
-    //                                               dequant_param_ptr.impl())
-    //                      .expect("dequantize failed");
-    //    runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
+    float_t dequant_param[] = {127, 0.01f};
+    auto dequant_param_ptr =
+        hrt::create(nncase::dt_float32, {2},
+                    {reinterpret_cast<gsl::byte *>(dequant_param),
+                     sizeof(dequant_param)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
+    auto output = kernels::stackvm::dequantize(dt_float32, input.impl(),
+                                               dequant_param_ptr.impl())
+                      .expect("dequantize failed");
+    runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
-    // todo the func of transfering quantparam to tensor hasn't been accomplished
-    /*bool result = is_same_tensor(expected, actual) ||
+    bool result = is_same_tensor(expected, actual) ||
                   cosine_similarity_tensor(expected, actual);
 
     if (!result) {
@@ -105,7 +104,7 @@ TEST_P(DequantizeTest, dequantize) {
     }
 
     // compare
-    EXPECT_TRUE(result);*/
+    EXPECT_TRUE(result);
 }
 
 int main(int argc, char *argv[]) {
