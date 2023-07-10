@@ -345,7 +345,7 @@ public partial class MergePrevCallToFusion : MergeFusionBase
         return call;
     }
 
-    private static T[] FusionVarsOperation<T>(VarReplaceInfo[] newVars, T[] fusionVars, Func<VarReplaceInfo, T[]> f)
+    internal static T[] FusionVarsOperation<T>(VarReplaceInfo[] newVars, T[] fusionVars, Func<VarReplaceInfo, T[]> f)
         where T : Expr
     {
         var inputIndices = newVars.Select(v => v.InputIndex).ToArray();
@@ -419,7 +419,7 @@ public partial class MergePrevCallToFusion : MergeFusionBase
         return newVarsDeduplication;
     }
 
-    private static VarReplaceInfo[][] NewVarsDeduplication(VarReplaceInfo[][] newVars, Dictionary<Expr, Var> fusionDict)
+    internal static VarReplaceInfo[][] NewVarsDeduplication(VarReplaceInfo[][] newVars, Dictionary<Expr, Var> fusionDict)
     {
         var dict = newVars
             .SelectMany(x => x)

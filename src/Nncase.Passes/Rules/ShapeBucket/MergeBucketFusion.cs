@@ -7,6 +7,7 @@ using DryIoc.FastExpressionCompiler.LightExpression;
 using DryIoc.ImTools;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Toolkit.HighPerformance;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.Passes.Analysis;
 using Nncase.Passes.Mutators;
@@ -76,6 +77,10 @@ public class MergeBucketFusion : ModulePass
             Visit(_root);
         }
 
+        // todo: 问题
+        // 1. getItem + getItem
+        // 2. 如何合并getItem的多个users
+        // 3. InputVar 去重？？？
         protected override Expr VisitLeafCall(Call expr)
         {
             var fusionPattern = new FusionBucket().Pattern;
@@ -127,42 +132,124 @@ public class MergeBucketFusion : ModulePass
 
         var oldUsers = userInfos.Select(x => x.User).ToArray();
 
-        var newUsers = MakeNewUserExpr(userInfos, fusion.Body);
+        var otherName = string.Join("\n", oldUsers.Select(x => x.Target switch
+        {
+            BucketFusion f => f.Name,
+            Op op => op.GetType().Name,
+            _ => ""
+        }));
+        Console.WriteLine($"Merge {fusion.Name}");
+        Console.WriteLine(otherName);
+        var fusionDict = outerCall.Arguments.ToArray().Zip(fusion.Parameters.ToArray()).ToArray();
+        // 这个vars用于确定output的args里面哪些要加入，哪些要消除，另外还要包含多个user的那个
+        // todo: 目前newParams已经去除重复
+        var (argMap, newParams) = MakeNewVarsMap(userInfos, fusionDict, outerCall);
+        for (int i = 0; i < argMap.Length; i++)
+        {
+            Console.WriteLine(argMap[i].Item1.GetHashCode());
+            Console.WriteLine(((Call)argMap[i].Item1).Target);
+            Console.WriteLine(argMap[i].Item2.Name);
+        }
+        var newUsers = MakeNewUserExpr(userInfos, fusion.Body, argMap);
         var newBody = MakeNewBody(newUsers);
         DumpIR(newBody, "newBody");
-        var newParams = MakeNewParams(fusion, userInfos);
-        var newArgs = MakeNewArgs(outerCall, userInfos);
-        var newFusion = MakeNewFusion(newBody, fusion, newParams);
+
+        // todo: args去除重复，在不需要更新的情况下不进行更新
+        var newArgs = argMap.Where(pair => newParams.Contains(pair.Item2)).Take(newParams.Length)
+            .Select(pair => pair.Item1).ToArray();
+
+        // var newParams = newArgs.Select(arg => new Var(arg.CheckedType)).ToArray();
+        // var newParams = MakeNewParams(fusion, userInfos, newVarsMap);
+        // var newArgs = MakeNewArgs(outerCall, userInfos, newVarsMap);
+        var newFusion = MakeNewFusion(newBody, fusion, newParams, oldUsers);
         var newCall = MakeNewCall(newFusion, newArgs);
         return newCall;
     }
 
-    // update user of user expr, replace call with getItem(call)
-    private static void UpdateUserOfUserExpr(Call newCall, UserInfo[] userInfos)
+    record VarReplInfo(Var[] vars, Expr[] exprs);
+    // params和args就通过这个来构建
+    // 通过引用的arg来判断是否重复，先有args,再生成对应的params，index已经不重要了
+
+    //
+
+    // 所有新的param
+    // 新的param与新的arg的对应关系
+    // 所有fusion的var和新的var的对应关系 （用于替换fusion中的var） todo：
+    record FusionVarMapper(Var[] NewParams, Dictionary<Var, Var> oldToNewParam, Dictionary<Var, Expr> paramToArg);
+
+    private static ((Expr, Var)[] ArgMap, Var[] NewVars) MakeNewVarsMap(UserInfo[] userInfos, (Expr, Var)[] fusionDict, Call outerCall)
     {
-        // int counter = 0;
-        // userInfos.ForEach(userInfo =>
+        var originArgs = fusionDict.Select(pair => pair.Item1).Concat(userInfos.SelectMany(info =>
+        {
+            var user = info.User;
+            return user.Arguments.ToArray().OfNoConst();
+        })).ToArray();
+
+        // 保证var顺序以及字典
+        // 初始param应该包含fusion的
+        var fusionParams = fusionDict.Select(pair => pair.Item2).ToArray();
+        var result = originArgs.Aggregate((new (Expr, Var)[]{}, fusionParams), (sum, arg) =>
+        {
+            var (totalDict, totalVars) = sum;
+            var fusionResult = FindFirst(fusionDict, arg);
+            // todo: 这里没有判断成功
+            if (fusionResult != null)
+            {
+                return (totalDict.Append((arg, fusionResult!)), totalVars);
+            }
+
+            var result = FindFirst(totalDict, arg);
+            if (result != null)
+            {
+                return (totalDict.Append((arg, result!)), totalVars);
+            }
+
+            // todo: maybe put fusion body in this is better?
+            if (arg == outerCall)
+            {
+                return (totalDict, totalVars);
+            }
+
+            var newVar = new Var(arg.CheckedType);
+            return (totalDict.Append((arg, newVar)), totalVars.Append(newVar));
+        });
+        // // 要保留每个user里面的argument对应的是新fusion的哪一个var
+        // var allArgs = userInfos.SelectMany(info =>
         // {
-        //     userInfo.User.Users.ToArray().OfNoConst().ToArray().ForEach(userOfUser =>
-        //     {
-        //         if (userOfUser is Call call)
-        //         {
-        //             // todo: 会不会有其他情况
-        //             DumpIR(call, $"UpdateCall_{counter}_before");
-        //             ReplaceExpr(call, userInfo.User, newCall[userInfo.UserIndex]);
-        //             DumpIR(call, $"UpdateCall_{counter++}_after");
-        //             return;
-        //         }
-        //
-        //         throw new NotImplementedException();
-        //     });
-        // });
+        //     var user = info.User;
+        //     // todo: tuple处理
+        //     var args = user.Arguments.ToArray().RemoveAt(info.FusionIndexInUserArg).OfNoConst();
+        //     return args.ToArray();
+        // }).ToHashSet().ToArray();
+        // return allArgs;
+        return result;
     }
 
-    private static BucketFusion MakeNewFusion(Expr body, BucketFusion fusion, Var[] newParams)
+    private static Var? FindFirst((Expr, Var)[] totalDict, Expr arg)
+    {
+        var result = totalDict.Where(pair => pair.Item1 == arg).ToArray();
+        if (result.Length > 0)
+        {
+            return result.First().Item2;
+        }
+
+        return null;
+    }
+
+    private static BucketFusion MakeNewFusion(Expr body, BucketFusion fusion, Var[] newParams, Call[] oldUsers)
     {
         // todo: EffectVar
-        return new BucketFusion("stackvm", body, newParams, fusion.EffectVar);
+        var name = fusion.Name + "_" + string.Join("_", oldUsers.Select(x => x.Target switch
+        {
+            BucketFusion f => f.Name,
+            Op op => op.GetType().Name,
+            _ => ""
+        }));
+        if (name.Length > 100)
+        {
+            name = name.Substring(0, 100);
+        }
+        return new BucketFusion(name, "stackvm", body, newParams, fusion.EffectVar);
     }
 
     private static Call MakeNewCall(BucketFusion fusion, Expr[] args)
@@ -170,28 +257,28 @@ public class MergeBucketFusion : ModulePass
         return new Call(fusion, args);
     }
 
-    private static Expr[] MakeNewArgs(Call outerCall, UserInfo[] userInfos)
+    private static Expr[] MakeNewArgs(Call outerCall, UserInfo[] userInfos, VarReplInfo[] newVarsMap)
     {
         var fusionArgs = outerCall.Arguments.ToArray();
-        var newParams = userInfos.SelectMany(userInfo =>
+        var newArgs = userInfos.SelectMany(userInfo =>
         {
             var user = userInfo.User;
             return user.Arguments.ToArray().RemoveAt(userInfo.FusionIndexInUserArg).OfNoConst().ToArray();
-        }).ToArray();
-        return fusionArgs.Concat(newParams).ToArray();
+        }).ToHashSet().ToArray();
+        return fusionArgs.Concat(newArgs).ToArray();
     }
 
-    private static Var[] MakeNewParams(BucketFusion fusion, UserInfo[] userInfos)
-    {
-        var fusionParams = fusion.Parameters.ToArray();
-        var newParams = userInfos.SelectMany(userInfo =>
-        {
-            // todo: process for Fusion
-            var usersArgs = userInfo.User.Arguments.ToArray().RemoveAt(userInfo.FusionIndexInUserArg).OfNoConst().ToArray();
-            return usersArgs.Select(arg => new Var(arg.CheckedType)).ToArray();
-        }).ToArray();
-        return fusionParams.Concat(newParams).ToArray();
-    }
+    // private static Var[] MakeNewParams(BucketFusion fusion, UserInfo[] userInfos, VarReplInfo[] newVarsMap)
+    // {
+        // return newVarsMap.SelectMany(newVar => newVar.Vars).ToArray();
+        // var fusionParams = fusion.Parameters.ToArray();
+        // var newParams = userInfos.SelectMany(userInfo =>
+        // {
+        // todo: process for Fusion
+        // var usersArgs = userInfo.User.Arguments.ToArray().RemoveAt(userInfo.FusionIndexInUserArg).OfNoConst().ToArray();
+        // return usersArgs.Select(arg => new Var(arg.CheckedType)).ToArray();
+        // }).ToHashSet().ToArray();
+    // }
 
     private static Expr MakeNewBody(Expr[] newUsers)
     {
@@ -205,7 +292,9 @@ public class MergeBucketFusion : ModulePass
     // clone origin Expr and Do replace for var
     private static Expr ReplaceClone(Expr originBody, params (Var, Expr)[] originVarAndExpr)
     {
+        DumpIR(originBody, "replace_begin");
         var call = originBody.Clone();
+        DumpIR(call, "replace_clone");
 
         var finder = new FindVar();
         finder.Visit(call);
@@ -216,24 +305,60 @@ public class MergeBucketFusion : ModulePass
             var varShouldBeReplaced = newVars.FindFirst(newVar => newVar.Name == v.Name);
             ReplaceExpr(call, varShouldBeReplaced, newExpr);
         });
+        DumpIR(originBody, "replace_end");
         return call;
     }
 
-    private static Expr[] MakeNewUserExpr(UserInfo[] userInfos, Expr body)
+    private static Expr[] MakeNewUserExpr(UserInfo[] userInfos, Expr body, (Expr, Var)[] argMap)
     {
-        // todo: fusion deconstruct
         // make user expr, replace call with fusion body
         return userInfos.Select((userInfo, i) =>
         {
             var user = userInfo.User;
 
+            // 两部分
+            // 被合并的fusion的body中，其中引用到fusion的部分的var替换为fusion的body 目前没有问题
+            // 其他的var使用ReplaceInfo来替换， replaceInfo应该包括所有fusion的var，以及对应的表达式
+
+            var argReplaceInfo = argMap.Select(pair => (pair.Item2, pair.Item1)).ToArray();
+            Expr newUser;
             // maybe marker
-            Expr newUser = user.Target switch
+            if (user.Target is BucketFusion fusion)
             {
-                BucketFusion fusion => ReplaceClone(fusion.Body, (fusion.Parameters.ToArray()[userInfo.FusionIndexInUserArg], body)),
-                Op op => ReplaceCallParams(userInfo.User, (userInfo.FusionIndexInUserArg, body)),
-                _ => throw new NotImplementedException(),
-            };
+                var replaceInfo = fusion.Parameters.ToArray().Zip(user.Arguments.ToArray()).Select((pair, i) =>
+                {
+                    // arg是fusion的话替换为fusion的body
+                    var (param, arg) = pair;
+                    if (i == userInfo.FusionIndexInUserArg)
+                    {
+                        return (param, body);
+                    }
+                    // 否则expr要换成新的var才行
+                    var newVar = FindFirst(argMap, arg);
+                    if (newVar != null)
+                    {
+                        return (param, newVar);
+                    }
+
+                    throw new NotImplementedException();
+                }).ToArray();
+                newUser = ReplaceClone(fusion.Body, replaceInfo);
+            }
+            else if (user.Target is Op op)
+            {
+                newUser = ReplaceCallParams(userInfo.User, (userInfo.FusionIndexInUserArg, body));
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
+            // Expr newUser = user.Target switch
+            // {
+            //     BucketFusion fusion => ReplaceClone(fusion.Body, argReplaceInfo.Append((fusion.Parameters.ToArray()[userInfo.FusionIndexInUserArg], body))),
+            //     // todo: fix this;
+            //     Op op => ReplaceCallParams(userInfo.User, (userInfo.FusionIndexInUserArg, body)),
+            //     _ => throw new NotImplementedException(),
+            // };
 
             DumpIR(newUser, $"newUser_{i}");
             return newUser;
