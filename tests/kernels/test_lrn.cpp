@@ -41,7 +41,7 @@ class LrnTest
 
     void TearDown() override {}
 
-    virtual void init_tensor(runtime::runtime_tensor &tensor) override{
+    virtual void init_tensor(runtime::runtime_tensor &tensor) override {
         auto dtype = tensor.datatype();
         switch (dtype) {
         case dt_int8: {
@@ -254,7 +254,7 @@ TEST_P(LrnTest, lrn) {
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     bool result = is_same_tensor(expected, actual) ||
-                    cosine_similarity_tensor(expected, actual);
+                  cosine_similarity_tensor(expected, actual);
 
     if (!result) {
         print_runtime_tensor(actual);
