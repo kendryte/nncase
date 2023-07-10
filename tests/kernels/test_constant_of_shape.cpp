@@ -59,20 +59,6 @@ INSTANTIATE_TEST_SUITE_P(ConstantOfShape, ConstantOfShapeTest,
                                                                  16})));
 
 TEST_P(ConstantOfShapeTest, constant_of_shape) {
-    //    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
-    //    auto r_ort = runtime_tensor_2_ort_tensor(rhs);
-
-    //    // expected
-    //    auto output_ort = ortki_Add(l_ort, r_ort);
-    //    size_t size = 0;
-    //    void *ptr_ort = tensor_buffer(output_ort, &size);
-    //    dims_t shape(tensor_rank(output_ort));
-    //    tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
-    //    auto expected = hrt::create(lhs.datatype(), shape,
-    //                                {reinterpret_cast<gsl::byte *>(ptr_ort),
-    //                                size}, true,
-    //                                host_runtime_tensor::pool_cpu_only)
-    //                        .expect("create tensor failed");
 
     // actual
     int64_t shape1[] = {1, 3, 16, 16};
