@@ -26,82 +26,69 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class ReduceMeanTest : public KernelTest,
-                       public ::testing::TestWithParam<
-                           std::tuple<nncase::typecode_t, dims_t, dims_t>> {
+class ReduceMeanTest
+    : public KernelTest,
+      public ::testing::TestWithParam<
+          std::tuple<nncase::typecode_t, typecode_t, dims_t, dims_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape, r_shape] = GetParam();
+        auto &&[typecode1, typecode2, l_shape, r_shape] = GetParam();
 
-        lhs = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
-                  .expect("create tensor failed");
-        init_tensor(lhs);
+        float_t a_array[] = {1, 2, 3, 4, 5, 6, 7, 8};
+        a = hrt::create(
+                typecode1, l_shape,
+                {reinterpret_cast<gsl::byte *>(a_array), sizeof(a_array)}, true,
+                host_runtime_tensor::pool_cpu_only)
+                .expect("create tensor failed");
 
-        rhs = hrt::create(typecode, r_shape, host_runtime_tensor::pool_cpu_only)
-                  .expect("create tensor failed");
-        init_tensor(rhs);
+        int64_t keepDims_array[] = {0};
+        keepDims = hrt::create(typecode2, r_shape,
+                               {reinterpret_cast<gsl::byte *>(keepDims_array),
+                                sizeof(keepDims_array)},
+                               true, host_runtime_tensor::pool_cpu_only)
+                       .expect("create tensor failed");
+        int64_t select_last_idx_array[] = {0};
+        select_last_idx =
+            hrt::create(typecode2, r_shape,
+                        {reinterpret_cast<gsl::byte *>(select_last_idx_array),
+                         sizeof(select_last_idx_array)},
+                        true, host_runtime_tensor::pool_cpu_only)
+                .expect("create tensor failed");
     }
 
     void TearDown() override {}
 
   protected:
-    runtime_tensor lhs;
-    runtime_tensor rhs;
+    runtime_tensor a;
+    runtime_tensor axis;
+    runtime_tensor keepDims;
+    runtime_tensor select_last_idx;
 };
 
-// todo make "a_array" gotten from here
-INSTANTIATE_TEST_SUITE_P(ReduceMean, ReduceMeanTest,
-                         testing::Combine(testing::Values(dt_float32, dt_int32,
-                                                          dt_int64),
-                                          testing::Values(dims_t{1, 3, 16, 16},
-                                                          /*dims_t { 3, 16, 16
-                                                          }, dims_t { 16, 16 },
-                                                          dims_t { 16 },*/
-                                                          dims_t{1}),
-                                          testing::Values(dims_t{1, 3, 16, 16},
-                                                          /*dims_t { 3, 16, 16
-                                                          }, dims_t { 16, 16 },
-                                                          dims_t { 16 },*/
-                                                          dims_t{1})));
+INSTANTIATE_TEST_SUITE_P(ReduceArgMax, ReduceMeanTest,
+                         testing::Combine(testing::Values(dt_float32),
+                                          testing::Values(dt_int64),
+                                          testing::Values(dims_t{8}),
+                                          testing::Values(dims_t{1})));
 
 TEST_P(ReduceMeanTest, ReduceMean) {
-    //    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
-    //    auto r_ort = runtime_tensor_2_ort_tensor(rhs);
 
     // expected
     size_t size = 0;
-    float_t a_array[] = {1, 2, 3, 4, 5, 6, 7, 8};
-    auto a =
-        hrt::create(dt_float32, {8},
-                    {reinterpret_cast<gsl::byte *>(a_array), sizeof(a_array)},
-                    true, host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
     int64_t axis_array[] = {-1};
-    auto axis = hrt::create(dt_int64, {1},
-                            {reinterpret_cast<gsl::byte *>(axis_array),
-                             sizeof(axis_array)},
-                            true, host_runtime_tensor::pool_cpu_only)
-                    .expect("create tensor failed");
-    int64_t keepDims_array[] = {0};
-    auto keepDims = hrt::create(dt_int64, {1},
-                                {reinterpret_cast<gsl::byte *>(keepDims_array),
-                                 sizeof(keepDims_array)},
-                                true, host_runtime_tensor::pool_cpu_only)
-                        .expect("create tensor failed");
-    int64_t select_last_idx_array[] = {0};
-    auto select_last_idx =
-        hrt::create(dt_int64, {1},
-                    {reinterpret_cast<gsl::byte *>(select_last_idx_array),
-                     sizeof(select_last_idx_array)},
-                    true, host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
+    axis = hrt::create(
+               dt_int64, {1},
+               {reinterpret_cast<gsl::byte *>(axis_array), sizeof(axis_array)},
+               true, host_runtime_tensor::pool_cpu_only)
+               .expect("create tensor failed");
+
     auto output_ort =
         ortki_ReduceMean(runtime_tensor_2_ort_tensor(a), axis_array, 1, 0);
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
     auto expected = hrt::create(dt_float32, shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), 4},
+                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
