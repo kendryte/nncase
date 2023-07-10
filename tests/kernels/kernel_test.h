@@ -14,8 +14,11 @@
  */
 #pragma once
 #include "nncase/shape.h"
+#include <algorithm>
+#include <cmath>
 #include <filesystem>
 #include <fstream>
+#include <gtest/gtest.h>
 #include <iostream>
 #include <nncase/kernels/apply.h>
 #include <nncase/kernels/kernel_utils.h>
@@ -23,10 +26,15 @@
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/runtime_tensor.h>
 #include <nncase/runtime/simple_types.h>
+#include <nncase/runtime/util.h>
+#include <numeric>
 #include <ortki/c_api.h>
 #include <random>
 #include <string>
+#include <vector>
 
+using namespace nncase::runtime;
+using namespace nncase::kernels;
 namespace nncase {
 class KernelTest {
   public:
@@ -143,6 +151,18 @@ class KernelTest {
                 });
             break;
         }
+        case dt_float16: {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_real_distribution<float> dis(-1.0f, 1.0f);
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<half>(tensor, index) = static_cast<half>(dis(gen));
+                    return ok();
+                });
+            break;
+        }
         case dt_float32: {
             std::random_device rd;
             std::mt19937 gen(rd());
@@ -167,6 +187,688 @@ class KernelTest {
                 });
             break;
         }
+        case dt_boolean: {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_real_distribution<double> dis(-1.0, 1.0);
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<bool>(tensor, index) =
+                        static_cast<double>(dis(gen)) >= 0;
+                    return ok();
+                });
+            break;
+        }
+        default: {
+        }
+        }
+    }
+
+    void cast_copy_tensor(runtime::runtime_tensor &source_tensor,
+                          runtime::runtime_tensor &destination_tensor) {
+        auto destination_tensor_dtype = destination_tensor.datatype();
+        auto source_tensor_dtype = source_tensor.datatype();
+        switch (destination_tensor_dtype) {
+        case dt_int8: {
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                destination_tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    switch (source_tensor_dtype) {
+                    case dt_int8: {
+                        get<int8_t>(destination_tensor, index) =
+                            static_cast<int8_t>(
+                                get<int8_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_int16: {
+                        get<int8_t>(destination_tensor, index) =
+                            static_cast<int8_t>(
+                                get<int16_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_int32: {
+                        get<int8_t>(destination_tensor, index) =
+                            static_cast<int8_t>(
+                                get<int32_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_int64: {
+                        get<int8_t>(destination_tensor, index) =
+                            static_cast<int8_t>(
+                                get<int64_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_uint16: {
+                        get<int8_t>(destination_tensor, index) =
+                            static_cast<int8_t>(
+                                get<uint16_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_uint32: {
+                        get<int8_t>(destination_tensor, index) =
+                            static_cast<int8_t>(
+                                get<uint32_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_uint64: {
+                        get<int8_t>(destination_tensor, index) =
+                            static_cast<int8_t>(
+                                get<uint64_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_float16: {
+                        get<int8_t>(destination_tensor, index) =
+                            static_cast<int8_t>(
+                                get<half>(source_tensor, index));
+                        break;
+                    }
+                    case dt_float32: {
+                        get<int8_t>(destination_tensor, index) =
+                            static_cast<int8_t>(
+                                get<float>(source_tensor, index));
+                        break;
+                    }
+                    default: {
+                    }
+                    }
+                    return ok();
+                });
+            break;
+        }
+        case dt_int16: {
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                destination_tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    switch (source_tensor_dtype) {
+                    case dt_int8: {
+                        get<int16_t>(destination_tensor, index) =
+                            static_cast<int16_t>(
+                                get<int8_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_int16: {
+                        get<int16_t>(destination_tensor, index) =
+                            static_cast<int16_t>(
+                                get<int16_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_int32: {
+                        get<int16_t>(destination_tensor, index) =
+                            static_cast<int16_t>(
+                                get<int32_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_int64: {
+                        get<int16_t>(destination_tensor, index) =
+                            static_cast<int16_t>(
+                                get<int64_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_uint16: {
+                        get<int16_t>(destination_tensor, index) =
+                            static_cast<int16_t>(
+                                get<uint16_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_uint32: {
+                        get<int16_t>(destination_tensor, index) =
+                            static_cast<int16_t>(
+                                get<uint32_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_uint64: {
+                        get<int16_t>(destination_tensor, index) =
+                            static_cast<int16_t>(
+                                get<uint64_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_float16: {
+                        get<int16_t>(destination_tensor, index) =
+                            static_cast<int16_t>(
+                                get<half>(source_tensor, index));
+                        break;
+                    }
+                    case dt_float32: {
+                        get<int16_t>(destination_tensor, index) =
+                            static_cast<int16_t>(
+                                get<float>(source_tensor, index));
+                        break;
+                    }
+                    default: {
+                    }
+                    }
+                    return ok();
+                });
+            break;
+        }
+        case dt_int32: {
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                destination_tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    switch (source_tensor_dtype) {
+                    case dt_int8: {
+                        get<int32_t>(destination_tensor, index) =
+                            static_cast<int32_t>(
+                                get<int8_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_int16: {
+                        get<int32_t>(destination_tensor, index) =
+                            static_cast<int32_t>(
+                                get<int16_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_int32: {
+                        get<int32_t>(destination_tensor, index) =
+                            static_cast<int32_t>(
+                                get<int32_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_int64: {
+                        get<int32_t>(destination_tensor, index) =
+                            static_cast<int32_t>(
+                                get<int64_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_uint16: {
+                        get<int32_t>(destination_tensor, index) =
+                            static_cast<int32_t>(
+                                get<uint16_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_uint32: {
+                        get<int32_t>(destination_tensor, index) =
+                            static_cast<int32_t>(
+                                get<uint32_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_uint64: {
+                        get<int32_t>(destination_tensor, index) =
+                            static_cast<int32_t>(
+                                get<uint64_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_float16: {
+                        get<int32_t>(destination_tensor, index) =
+                            static_cast<int32_t>(
+                                get<half>(source_tensor, index));
+                        break;
+                    }
+                    case dt_float32: {
+                        get<int32_t>(destination_tensor, index) =
+                            static_cast<int32_t>(
+                                get<float>(source_tensor, index));
+                        break;
+                    }
+                    default: {
+                    }
+                    }
+                    return ok();
+                });
+            break;
+        }
+        case dt_int64: {
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                destination_tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    switch (source_tensor_dtype) {
+                    case dt_int8: {
+                        get<int64_t>(destination_tensor, index) =
+                            static_cast<int64_t>(
+                                get<int8_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_int16: {
+                        get<int64_t>(destination_tensor, index) =
+                            static_cast<int64_t>(
+                                get<int16_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_int32: {
+                        get<int64_t>(destination_tensor, index) =
+                            static_cast<int64_t>(
+                                get<int32_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_int64: {
+                        get<int64_t>(destination_tensor, index) =
+                            static_cast<int64_t>(
+                                get<int64_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_uint16: {
+                        get<int64_t>(destination_tensor, index) =
+                            static_cast<int64_t>(
+                                get<uint16_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_uint32: {
+                        get<int64_t>(destination_tensor, index) =
+                            static_cast<int64_t>(
+                                get<uint32_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_uint64: {
+                        get<int64_t>(destination_tensor, index) =
+                            static_cast<int64_t>(
+                                get<uint64_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_float16: {
+                        get<int64_t>(destination_tensor, index) =
+                            static_cast<int64_t>(
+                                get<half>(source_tensor, index));
+                        break;
+                    }
+                    case dt_float32: {
+                        get<int64_t>(destination_tensor, index) =
+                            static_cast<int64_t>(
+                                get<float>(source_tensor, index));
+                        break;
+                    }
+                    default: {
+                    }
+                    }
+                    return ok();
+                });
+            break;
+        }
+        case dt_uint8: {
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                destination_tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    switch (source_tensor_dtype) {
+                    case dt_int8: {
+                        get<uint8_t>(destination_tensor, index) =
+                            static_cast<uint8_t>(
+                                get<int8_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_int16: {
+                        get<uint8_t>(destination_tensor, index) =
+                            static_cast<uint8_t>(
+                                get<int16_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_int32: {
+                        get<uint8_t>(destination_tensor, index) =
+                            static_cast<uint8_t>(
+                                get<int32_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_int64: {
+                        get<uint8_t>(destination_tensor, index) =
+                            static_cast<uint8_t>(
+                                get<int64_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_uint16: {
+                        get<uint8_t>(destination_tensor, index) =
+                            static_cast<uint8_t>(
+                                get<uint16_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_uint32: {
+                        get<uint8_t>(destination_tensor, index) =
+                            static_cast<uint8_t>(
+                                get<uint32_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_uint64: {
+                        get<uint8_t>(destination_tensor, index) =
+                            static_cast<uint8_t>(
+                                get<uint64_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_float16: {
+                        get<uint8_t>(destination_tensor, index) =
+                            static_cast<uint8_t>(
+                                get<half>(source_tensor, index));
+                        break;
+                    }
+                    case dt_float32: {
+                        get<uint8_t>(destination_tensor, index) =
+                            static_cast<uint8_t>(
+                                get<float>(source_tensor, index));
+                        break;
+                    }
+                    default: {
+                    }
+                    }
+                    return ok();
+                });
+            break;
+        }
+        case dt_uint16: {
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                destination_tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    switch (source_tensor_dtype) {
+                    case dt_int8: {
+                        get<uint16_t>(destination_tensor, index) =
+                            static_cast<uint16_t>(
+                                get<int8_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_int16: {
+                        get<uint16_t>(destination_tensor, index) =
+                            static_cast<uint16_t>(
+                                get<int16_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_int32: {
+                        get<uint16_t>(destination_tensor, index) =
+                            static_cast<uint16_t>(
+                                get<int32_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_int64: {
+                        get<uint16_t>(destination_tensor, index) =
+                            static_cast<uint16_t>(
+                                get<int64_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_uint16: {
+                        get<uint16_t>(destination_tensor, index) =
+                            static_cast<uint16_t>(
+                                get<uint16_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_uint32: {
+                        get<uint16_t>(destination_tensor, index) =
+                            static_cast<uint16_t>(
+                                get<uint32_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_uint64: {
+                        get<uint16_t>(destination_tensor, index) =
+                            static_cast<uint16_t>(
+                                get<uint64_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_float16: {
+                        get<uint16_t>(destination_tensor, index) =
+                            static_cast<uint16_t>(
+                                get<half>(source_tensor, index));
+                        break;
+                    }
+                    case dt_float32: {
+                        get<uint16_t>(destination_tensor, index) =
+                            static_cast<uint16_t>(
+                                get<float>(source_tensor, index));
+                        break;
+                    }
+                    default: {
+                    }
+                    }
+                    return ok();
+                });
+            break;
+        }
+        case dt_uint32: {
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                destination_tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    switch (source_tensor_dtype) {
+                    case dt_int8: {
+                        get<uint32_t>(destination_tensor, index) =
+                            static_cast<uint32_t>(
+                                get<int8_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_int16: {
+                        get<uint32_t>(destination_tensor, index) =
+                            static_cast<uint32_t>(
+                                get<int16_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_int32: {
+                        get<uint32_t>(destination_tensor, index) =
+                            static_cast<uint32_t>(
+                                get<int32_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_int64: {
+                        get<uint32_t>(destination_tensor, index) =
+                            static_cast<uint32_t>(
+                                get<int64_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_uint16: {
+                        get<uint32_t>(destination_tensor, index) =
+                            static_cast<uint32_t>(
+                                get<uint16_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_uint32: {
+                        get<uint32_t>(destination_tensor, index) =
+                            static_cast<uint32_t>(
+                                get<uint32_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_uint64: {
+                        get<uint32_t>(destination_tensor, index) =
+                            static_cast<uint32_t>(
+                                get<uint64_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_float16: {
+                        get<uint32_t>(destination_tensor, index) =
+                            static_cast<uint32_t>(
+                                get<half>(source_tensor, index));
+                        break;
+                    }
+                    case dt_float32: {
+                        get<uint32_t>(destination_tensor, index) =
+                            static_cast<uint32_t>(
+                                get<float>(source_tensor, index));
+                        break;
+                    }
+                    default: {
+                    }
+                    }
+                    return ok();
+                });
+            break;
+        }
+        case dt_uint64: {
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                destination_tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    switch (source_tensor_dtype) {
+                    case dt_int8: {
+                        get<uint64_t>(destination_tensor, index) =
+                            static_cast<uint64_t>(
+                                get<int8_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_int16: {
+                        get<uint64_t>(destination_tensor, index) =
+                            static_cast<uint64_t>(
+                                get<int16_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_int32: {
+                        get<uint64_t>(destination_tensor, index) =
+                            static_cast<uint64_t>(
+                                get<int32_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_int64: {
+                        get<uint64_t>(destination_tensor, index) =
+                            static_cast<uint64_t>(
+                                get<int64_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_uint16: {
+                        get<uint64_t>(destination_tensor, index) =
+                            static_cast<uint64_t>(
+                                get<uint16_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_uint32: {
+                        get<uint64_t>(destination_tensor, index) =
+                            static_cast<uint64_t>(
+                                get<uint32_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_uint64: {
+                        get<uint64_t>(destination_tensor, index) =
+                            static_cast<uint64_t>(
+                                get<uint64_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_float16: {
+                        get<uint64_t>(destination_tensor, index) =
+                            static_cast<uint64_t>(
+                                get<half>(source_tensor, index));
+                        break;
+                    }
+                    case dt_float32: {
+                        get<uint64_t>(destination_tensor, index) =
+                            static_cast<uint64_t>(
+                                get<float>(source_tensor, index));
+                        break;
+                    }
+                    default: {
+                    }
+                    }
+                    return ok();
+                });
+            break;
+        }
+        case dt_float32: {
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                destination_tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    switch (source_tensor_dtype) {
+                    case dt_int8: {
+                        get<float>(destination_tensor, index) =
+                            static_cast<float>(
+                                get<int8_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_int16: {
+                        get<float>(destination_tensor, index) =
+                            static_cast<float>(
+                                get<int16_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_int32: {
+                        get<float>(destination_tensor, index) =
+                            static_cast<float>(
+                                get<int32_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_int64: {
+                        get<float>(destination_tensor, index) =
+                            static_cast<float>(
+                                get<int64_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_uint16: {
+                        get<float>(destination_tensor, index) =
+                            static_cast<float>(
+                                get<uint16_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_uint32: {
+                        get<float>(destination_tensor, index) =
+                            static_cast<float>(
+                                get<uint32_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_uint64: {
+                        get<float>(destination_tensor, index) =
+                            static_cast<float>(
+                                get<uint64_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_float16: {
+                        get<float>(destination_tensor, index) =
+                            static_cast<float>(get<half>(source_tensor, index));
+                        break;
+                    }
+                    case dt_float32: {
+                        get<float>(destination_tensor, index) =
+                            static_cast<float>(
+                                get<float>(source_tensor, index));
+                        break;
+                    }
+                    default: {
+                    }
+                    }
+                    return ok();
+                });
+            break;
+        }
+        case dt_float64: {
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                destination_tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    switch (source_tensor_dtype) {
+                    case dt_int8: {
+                        get<double>(destination_tensor, index) =
+                            static_cast<double>(
+                                get<int8_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_int16: {
+                        get<double>(destination_tensor, index) =
+                            static_cast<double>(
+                                get<int16_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_int32: {
+                        get<double>(destination_tensor, index) =
+                            static_cast<double>(
+                                get<int32_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_int64: {
+                        get<double>(destination_tensor, index) =
+                            static_cast<double>(
+                                get<int64_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_uint16: {
+                        get<double>(destination_tensor, index) =
+                            static_cast<double>(
+                                get<uint16_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_uint32: {
+                        get<double>(destination_tensor, index) =
+                            static_cast<double>(
+                                get<uint32_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_uint64: {
+                        get<double>(destination_tensor, index) =
+                            static_cast<double>(
+                                get<uint64_t>(source_tensor, index));
+                        break;
+                    }
+                    case dt_float16: {
+                        get<double>(destination_tensor, index) =
+                            static_cast<double>(
+                                get<half>(source_tensor, index));
+                        break;
+                    }
+                    case dt_float32: {
+                        get<double>(destination_tensor, index) =
+                            static_cast<double>(
+                                get<float>(source_tensor, index));
+                        break;
+                    }
+                    default: {
+                    }
+                    }
+                    return ok();
+                });
+            break;
+        }
         default: {
         }
         }
@@ -181,6 +883,10 @@ class KernelTest {
         ortki::DataType ort_type = ortki::DataType_FLOAT;
         auto dtype = tensor.datatype();
         switch (dtype) {
+        case dt_boolean: {
+            ort_type = ortki::DataType_BOOL;
+            break;
+        }
         case dt_int8: {
             ort_type = ortki::DataType_INT8;
             break;
@@ -213,6 +919,10 @@ class KernelTest {
             ort_type = ortki::DataType_UINT64;
             break;
         }
+        case dt_float16: {
+            ort_type = ortki::DataType_FLOAT16;
+            break;
+        }
         case dt_float32: {
             ort_type = ortki::DataType_FLOAT;
             break;
@@ -232,6 +942,26 @@ class KernelTest {
             reinterpret_cast<const int64_t *>(tensor.shape().data());
         auto shape_size = tensor.shape().size();
         return make_tensor(buffer, ort_type, shape, shape_size);
+    }
+
+    result<void> check_tuple_output(runtime::runtime_tensor expected,
+                                    value_t output) {
+        try_var(output_tuple, output.as<tuple>());
+        for (size_t i = 0; i < output_tuple->fields().size(); i++) {
+            try_var(output_tensor, output_tuple->fields()[i].as<tensor>());
+            try_var(output_span,
+                    nncase::runtime::get_output_span(output_tensor));
+            auto output1 =
+                runtime::hrt::create(
+                    dt_int64, {1},
+                    {reinterpret_cast<gsl::byte *>(output_span.data()), 8},
+                    true, runtime::host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
+            EXPECT_TRUE(is_same_tensor(expected, output1) ||
+                        cosine_similarity_tensor(expected, output1));
+        }
+
+        return ok();
     }
 
     bool is_same_tensor(runtime::runtime_tensor &lhs,
@@ -318,7 +1048,9 @@ class KernelTest {
                        }
                        case dt_float32: {
                            if (get<float>(lhs, index) ==
-                               get<float>(rhs, index)) {
+                                   get<float>(rhs, index) ||
+                               fabs(get<float>(lhs, index) -
+                                    get<float>(rhs, index)) < 0.0001f) {
                                return ok();
                            } else {
                                return err(std::errc::not_supported);
@@ -334,12 +1066,193 @@ class KernelTest {
                            }
                            break;
                        }
+                       case dt_boolean: {
+                           if (get<bool>(lhs, index) == get<bool>(rhs, index)) {
+                               return ok();
+                           } else {
+                               return err(std::errc::not_supported);
+                           }
+                           break;
+                       }
                        default: {
                            return err(std::errc::not_supported);
                        }
                        }
                    })
             .is_ok();
+    }
+
+    bool cosine_similarity_tensor(runtime::runtime_tensor &lhs,
+                                  runtime::runtime_tensor &rhs) {
+        if (lhs.shape() != rhs.shape()) {
+            return false;
+        }
+
+        std::vector<float> vec1;
+        std::vector<float> vec2;
+        vec1.reserve(compute_size(lhs.shape()));
+        vec2.reserve(compute_size(rhs.shape()));
+
+        kernels::stackvm::apply(
+            lhs.shape(),
+            [&](gsl::span<const size_t> index) -> result<void> {
+                auto dtype = lhs.datatype();
+                switch (dtype) {
+                case dt_int8: {
+                    vec1.push_back(static_cast<float>(get<int8_t>(lhs, index)));
+                    vec2.push_back(static_cast<float>(get<int8_t>(rhs, index)));
+                    break;
+                }
+                case dt_int16: {
+                    vec1.push_back(
+                        static_cast<float>(get<int16_t>(lhs, index)));
+                    vec2.push_back(
+                        static_cast<float>(get<int16_t>(rhs, index)));
+                    break;
+                }
+                case dt_int32: {
+                    vec1.push_back(
+                        static_cast<float>(get<int32_t>(lhs, index)));
+                    vec2.push_back(
+                        static_cast<float>(get<int32_t>(rhs, index)));
+                    break;
+                }
+                case dt_int64: {
+                    vec1.push_back(
+                        static_cast<float>(get<int64_t>(lhs, index)));
+                    vec2.push_back(
+                        static_cast<float>(get<int64_t>(rhs, index)));
+                    break;
+                }
+                case dt_uint8: {
+                    vec1.push_back(
+                        static_cast<float>(get<uint8_t>(lhs, index)));
+                    vec2.push_back(
+                        static_cast<float>(get<uint8_t>(rhs, index)));
+                    break;
+                }
+                case dt_uint16: {
+                    vec1.push_back(
+                        static_cast<float>(get<uint16_t>(lhs, index)));
+                    vec2.push_back(
+                        static_cast<float>(get<uint16_t>(rhs, index)));
+                    break;
+                }
+                case dt_uint32: {
+                    vec1.push_back(
+                        static_cast<float>(get<uint32_t>(lhs, index)));
+                    vec2.push_back(
+                        static_cast<float>(get<uint32_t>(rhs, index)));
+                    break;
+                }
+                case dt_uint64: {
+                    vec1.push_back(
+                        static_cast<float>(get<uint64_t>(lhs, index)));
+                    vec2.push_back(
+                        static_cast<float>(get<uint64_t>(rhs, index)));
+                    break;
+                }
+                case dt_float32: {
+                    vec1.push_back(get<float>(lhs, index));
+                    vec2.push_back(get<float>(rhs, index));
+                    break;
+                }
+                case dt_float64: {
+                    vec1.push_back(static_cast<float>(get<double>(lhs, index)));
+                    vec2.push_back(static_cast<float>(get<double>(rhs, index)));
+                    break;
+                }
+                case dt_boolean: {
+                    vec1.push_back(get<bool>(lhs, index) ? 2 : 1);
+                    vec2.push_back(get<bool>(rhs, index) ? 2 : 1);
+                    break;
+                }
+                default: {
+                    return err(std::errc::not_supported);
+                }
+                }
+                return ok();
+            })
+            .is_ok();
+
+        float dotProduct =
+            std::inner_product(vec1.begin(), vec1.end(), vec2.begin(), 0.0f);
+        float norm1 = std::sqrt(
+            std::inner_product(vec1.begin(), vec1.end(), vec1.begin(), 0.0f));
+        float norm2 = std::sqrt(
+            std::inner_product(vec2.begin(), vec2.end(), vec2.begin(), 0.0f));
+        float cosine_similarity = dotProduct / (norm1 * norm2);
+
+        std::cout << "cosine_similarity:" << cosine_similarity << std::endl;
+        return cosine_similarity >
+               0.999f; // Return true if cosine similarity is close to 1
+    }
+
+    void print_runtime_tensor(runtime::runtime_tensor lhs) {
+        std::cout << "tensor:" << std::endl;
+        kernels::stackvm::apply(
+            lhs.shape(),
+            [&](gsl::span<const size_t> index) -> result<void> {
+                auto dtype = lhs.datatype();
+                switch (dtype) {
+                case dt_int8:
+                    std::cout << static_cast<int8_t>(get<int8_t>(lhs, index))
+                              << " ";
+                    break;
+                case dt_int16:
+                    std::cout << static_cast<int16_t>(get<int16_t>(lhs, index))
+                              << " ";
+                    break;
+                case dt_int32:
+                    std::cout << static_cast<int32_t>(get<int32_t>(lhs, index))
+                              << " ";
+                    break;
+                case dt_int64:
+                    std::cout << static_cast<int64_t>(get<int64_t>(lhs, index))
+                              << " ";
+                    break;
+                case dt_uint8:
+                    std::cout << static_cast<uint8_t>(get<uint8_t>(lhs, index))
+                              << " ";
+                    break;
+                case dt_uint16:
+                    std::cout
+                        << static_cast<uint16_t>(get<uint16_t>(lhs, index))
+                        << " ";
+                    break;
+                case dt_uint32:
+                    std::cout
+                        << static_cast<uint32_t>(get<uint32_t>(lhs, index))
+                        << " ";
+                    break;
+                case dt_uint64:
+                    std::cout
+                        << static_cast<uint64_t>(get<uint64_t>(lhs, index))
+                        << " ";
+                    break;
+                case dt_float32:
+                    std::cout << get<float>(lhs, index) << " ";
+                    break;
+                case dt_float64:
+                    std::cout << static_cast<double>(get<double>(lhs, index))
+                              << " ";
+                    break;
+                case dt_float16:
+                    std::cout << static_cast<double>(get<half>(lhs, index))
+                              << " ";
+                    break;
+                case dt_boolean:
+                    std::cout << static_cast<bool>(get<bool>(lhs, index))
+                              << " ";
+                    break;
+                default:
+                    break;
+                }
+                return ok();
+            })
+            .is_ok();
+
+        std::cout << std::endl;
     }
 
     void ort_tensor_dump(ortki::OrtKITensor *ort) {

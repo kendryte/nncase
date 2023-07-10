@@ -26,52 +26,46 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class UnaryTest
+class ShapeOfTest
     : public KernelTest,
       public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode, i_shape] = GetParam();
+        auto &&[typecode, shape] = GetParam();
 
-        input =
-            hrt::create(typecode, i_shape, host_runtime_tensor::pool_cpu_only)
-                .expect("create tensor failed");
-        init_tensor(input);
+        lhs = hrt::create(typecode, shape, host_runtime_tensor::pool_cpu_only)
+                  .expect("create tensor failed");
+        init_tensor(lhs);
     }
 
     void TearDown() override {}
 
   protected:
-    runtime_tensor input;
+    runtime_tensor lhs;
+    runtime_tensor rhs;
 };
 
-INSTANTIATE_TEST_SUITE_P(Unary, UnaryTest,
+INSTANTIATE_TEST_SUITE_P(ShapeOf, ShapeOfTest,
                          testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1})));
+                                          testing::Values(dims_t{1, 3, 16,
+                                                                 16})));
 
-TEST_P(UnaryTest, sqrt) {
-    OrtKITensor *orts[1];
-    orts[0] = runtime_tensor_2_ort_tensor(input);
+TEST_P(ShapeOfTest, ShapeOf) {
 
     // expected
-    auto output_ort = ortki_Sqrt(orts[0]);
-    size_t size = 0;
-    void *ptr_ort = tensor_buffer(output_ort, &size);
-    dims_t shape(tensor_rank(output_ort));
-    tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
-    auto expected = hrt::create(input.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+    int64_t expected_array[] = {1, 3, 16, 16};
+    auto expected = hrt::create(nncase::dt_int64, {4},
+                                {reinterpret_cast<gsl::byte *>(expected_array),
+                                 sizeof(expected_array)},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
     // actual
-    auto output = kernels::stackvm::unary(
-                      nncase::runtime::stackvm::unary_op_t::sqrt, input.impl())
-                      .expect("binary failed");
+    auto output = kernels::stackvm::shape_of(lhs.impl()).expect("selu failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_FALSE(is_same_tensor(expected, actual));
+    EXPECT_TRUE(is_same_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {
