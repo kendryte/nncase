@@ -26,9 +26,9 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class ResizeImageTest : public KernelTest,
-                        public ::testing::TestWithParam<
-                            std::tuple<nncase::typecode_t, dims_t>> {
+class ResizeImageTest
+    : public KernelTest,
+      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
   public:
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
@@ -44,20 +44,21 @@ class ResizeImageTest : public KernelTest,
     runtime_tensor lhs;
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    ResizeImage, ResizeImageTest,
-    testing::Combine(testing::Values(dt_float32),
-                     testing::Values(dims_t{1, 3, 224, 224})));
+INSTANTIATE_TEST_SUITE_P(ResizeImage, ResizeImageTest,
+                         testing::Combine(testing::Values(dt_float32),
+                                          testing::Values(dims_t{1, 3, 224,
+                                                                 224})));
 
 TEST_P(ResizeImageTest, ResizeImage) {
 
     // expected
     int32_t new_shape_array[] = {1, 3, 112, 112};
-    auto new_shape = hrt::create(dt_int32, {4},
-                                {reinterpret_cast<gsl::byte *>(new_shape_array),
-                                 sizeof(new_shape_array)},
-                                true, host_runtime_tensor::pool_cpu_only)
-                        .expect("create tensor failed");
+    auto new_shape =
+        hrt::create(dt_int32, {4},
+                    {reinterpret_cast<gsl::byte *>(new_shape_array),
+                     sizeof(new_shape_array)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
 
     // actual
     float_t roi_array[1];
@@ -95,9 +96,10 @@ TEST_P(ResizeImageTest, ResizeImage) {
         kernels::stackvm::resize_image(
             runtime::stackvm::image_resize_mode_t::bilinear,
             runtime::stackvm::image_resize_transformation_mode_t::half_pixel,
-            runtime::stackvm::image_resize_nearest_mode_t::round_prefer_floor, false,
-            lhs.impl(), roi.impl(), new_shape.impl(), cubic_coeff_a.impl(),
-            exclude_outside.impl(), extrapolation_value.impl())
+            runtime::stackvm::image_resize_nearest_mode_t::round_prefer_floor,
+            false, lhs.impl(), roi.impl(), new_shape.impl(),
+            cubic_coeff_a.impl(), exclude_outside.impl(),
+            extrapolation_value.impl())
             .expect("resize_image failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
