@@ -34,8 +34,7 @@ result<void> write_tensor_buffer(value_t value, std::ofstream &of) {
 }
 
 result<void> run_core(const std::string &kmodel_path,
-                      const std::vector<std::string> &input_bins,
-                      const std::string &output_bin) {
+                      const std::vector<std::string> &bins) {
     auto kmodel = read_file(kmodel_path);
     interpreter *interp = new interpreter();
     // auto dump_path =
@@ -47,16 +46,16 @@ result<void> run_core(const std::string &kmodel_path,
 
     try_var(entry, interp->entry_function());
 
-    if (entry->parameters_size() != input_bins.size())
+    if (entry->parameters_size() > bins.size())
         return err(std::errc::argument_list_too_long);
     /* create the input parameters tensor
        note the input tenosr must be contiguous
     */
     std::vector<value_t> parameters;
-    for (int i = 0; i < input_bins.size(); i++) {
+    for (int i = 0; i < entry->parameters_size(); i++) {
         try_var(type, entry->parameter_type(i));
         try_var(ts_type, type.as<tensor_type>());
-        auto input_pool = read_file(input_bins[i]);
+        auto input_pool = read_file(bins[i]);
         gsl::span<gsl::byte> input_pool_span = {
             reinterpret_cast<gsl::byte *>(input_pool.data()),
             input_pool.size()};
@@ -68,19 +67,22 @@ result<void> run_core(const std::string &kmodel_path,
 
     try_var(ret, entry->invoke({parameters.data(), parameters.size()}));
 
-    std::ofstream output_stream(output_bin, std::ios::binary);
-
-    if (ret.is_a<tensor>()) {
-        try_(write_tensor_buffer(ret, output_stream));
-    } else if (ret.is_a<tuple>()) {
-        try_var(tp, ret.as<tuple>());
-        for (auto &&ret_v : tp->fields()) {
-            try_(write_tensor_buffer(ret_v, output_stream));
+    if (entry->parameters_size() == (bins.size() - 1)) {
+        auto output_bin = *bins.end();
+        std::ofstream output_stream(output_bin, std::ios::binary);
+        if (ret.is_a<tensor>()) {
+            try_(write_tensor_buffer(ret, output_stream));
+        } else if (ret.is_a<tuple>()) {
+            try_var(tp, ret.as<tuple>());
+            for (auto &&ret_v : tp->fields()) {
+                try_(write_tensor_buffer(ret_v, output_stream));
+            }
+        } else {
+            return nncase::err(std::errc::bad_message);
         }
-    } else {
-        return nncase::err(std::errc::bad_message);
+        output_stream.close();
     }
-    output_stream.close();
+
     return ok();
 }
 
@@ -92,13 +94,12 @@ result<void> run_core(const std::string &kmodel_path,
  * @return int
  */
 int main(NNCASE_UNUSED int argc, char **argv) {
-    assert(argc >= 4);
-    std::vector<std::string> input_bins;
-    for (int i = 2; i < argc - 1; i++) {
-        input_bins.push_back(argv[i]);
+    assert(argc >= 3);
+    std::vector<std::string> bins;
+    for (int i = 2; i < argc; i++) {
+        bins.push_back(argv[i]);
     }
     std::string kmodel_bin(argv[1]);
-    std::string output_bin(argv[argc - 1]);
-    run_core(kmodel_bin, input_bins, output_bin).unwrap_or_throw();
+    run_core(kmodel_bin, bins).unwrap_or_throw();
     return 0;
 }
