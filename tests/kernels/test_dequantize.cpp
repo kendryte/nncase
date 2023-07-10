@@ -95,7 +95,8 @@ TEST_P(DequantizeTest, dequantize) {
     //                      .expect("dequantize failed");
     //    runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
-    // todo the func of transfering quantparam to tensor hasn't been accomplished
+    // todo the func of transfering quantparam to tensor hasn't been
+    // accomplished
     /*bool result = is_same_tensor(expected, actual) ||
                   cosine_similarity_tensor(expected, actual);
 

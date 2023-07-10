@@ -114,7 +114,7 @@ TEST_P(ExpandTest, expand) {
     runtime_tensor actual1(output.as<tensor>().expect("as tensor failed"));
 
     bool result1 = is_same_tensor(expected1, actual1) ||
-                  cosine_similarity_tensor(expected1, actual1);
+                   cosine_similarity_tensor(expected1, actual1);
 
     if (!result1) {
         print_runtime_tensor(actual1);
@@ -150,7 +150,7 @@ TEST_P(ExpandTest, expand) {
     runtime_tensor actual2(output2.as<tensor>().expect("as tensor failed"));
 
     bool result2 = is_same_tensor(expected2, actual2) ||
-                  cosine_similarity_tensor(expected2, actual2);
+                   cosine_similarity_tensor(expected2, actual2);
 
     if (!result) {
         print_runtime_tensor(actual2);
@@ -186,7 +186,7 @@ TEST_P(ExpandTest, expand) {
     runtime_tensor actual3(output3.as<tensor>().expect("as tensor failed"));
 
     bool result3 = is_same_tensor(expected3, actual3) ||
-                  cosine_similarity_tensor(expected3, actual3);
+                   cosine_similarity_tensor(expected3, actual3);
 
     if (!result3) {
         print_runtime_tensor(actual3);
