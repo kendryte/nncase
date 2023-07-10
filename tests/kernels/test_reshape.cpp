@@ -65,7 +65,7 @@ TEST_P(ReshapeTest, Reshape) {
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto output_ort =
-        ortki_Reshape(l_ort, runtime_tensor_2_ort_tensor(new_shape), (long)0);
+        ortki_Reshape(l_ort, runtime_tensor_2_ort_tensor(new_shape), 0);
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
