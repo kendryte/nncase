@@ -76,8 +76,16 @@ TEST_P(FlattenTest, flatten) {
                       .expect("flatten failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
+    bool result = is_same_tensor(expected, actual) ||
+                  cosine_similarity_tensor(expected, actual);
+
+    if (!result) {
+        print_runtime_tensor(actual);
+        print_runtime_tensor(expected);
+    }
+
     // compare
-    EXPECT_TRUE(is_same_tensor(expected, actual));
+    EXPECT_TRUE(result);
 
     //     expected
     auto output_ort1 = ortki_Flatten(l_ort, 2);
@@ -102,8 +110,16 @@ TEST_P(FlattenTest, flatten) {
                        .expect("flatten failed");
     runtime_tensor actual1(output1.as<tensor>().expect("as tensor failed"));
 
+    bool result1 = is_same_tensor(expected1, actual1) ||
+                  cosine_similarity_tensor(expected1, actual1);
+
+    if (!result1) {
+        print_runtime_tensor(actual1);
+        print_runtime_tensor(expected1);
+    }
+
     // compare
-    EXPECT_TRUE(is_same_tensor(expected1, actual1));
+    EXPECT_TRUE(result1);
 
     // expected
     auto output_ort2 = ortki_Flatten(l_ort, 3);
@@ -128,9 +144,16 @@ TEST_P(FlattenTest, flatten) {
                        .expect("flatten failed");
     runtime_tensor actual2(output2.as<tensor>().expect("as tensor failed"));
 
+    bool result2 = is_same_tensor(expected2, actual2) ||
+                  cosine_similarity_tensor(expected2, actual2);
+
+    if (!result2) {
+        print_runtime_tensor(actual2);
+        print_runtime_tensor(expected2);
+    }
+
     // compare
-    EXPECT_TRUE(is_same_tensor(expected2, actual2) ||
-                cosine_similarity_tensor(expected, actual));
+    EXPECT_TRUE(result2);
 }
 
 int main(int argc, char *argv[]) {

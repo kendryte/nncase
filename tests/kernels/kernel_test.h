@@ -1163,8 +1163,8 @@ class KernelTest {
                     break;
                 }
                 case dt_boolean: {
-                    vec1.push_back(get<bool>(lhs, index) ? 2 : 1);
-                    vec2.push_back(get<bool>(rhs, index) ? 2 : 1);
+                    vec1.push_back(static_cast<float>(get<bool>(lhs, index) ? 2 : 1));
+                    vec2.push_back(static_cast<float>(get<bool>(rhs, index) ? 2 : 1));
                     break;
                 }
                 default: {

@@ -133,10 +133,12 @@ TEST_P(Conv2DTest, conv2d) {
     // compare
     bool result = is_same_tensor(expected, actual) ||
                   cosine_similarity_tensor(expected, actual);
+
     if (!result) {
         print_runtime_tensor(expected);
         print_runtime_tensor(actual);
     }
+
     EXPECT_TRUE(result);
 }
 

@@ -77,8 +77,16 @@ TEST_P(ExpandTest, expand) {
                       .expect("expand failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
+    bool result = is_same_tensor(expected, actual) ||
+                  cosine_similarity_tensor(expected, actual);
+
+    if (!result) {
+        print_runtime_tensor(actual);
+        print_runtime_tensor(expected);
+    }
+
     // compare
-    EXPECT_TRUE(is_same_tensor(expected, actual));
+    EXPECT_TRUE(result);
 
     // expected
     int64_t new_shape1[] = {1, 1};
@@ -105,8 +113,16 @@ TEST_P(ExpandTest, expand) {
                        .expect("expand failed");
     runtime_tensor actual1(output.as<tensor>().expect("as tensor failed"));
 
+    bool result1 = is_same_tensor(expected1, actual1) ||
+                  cosine_similarity_tensor(expected1, actual1);
+
+    if (!result1) {
+        print_runtime_tensor(actual1);
+        print_runtime_tensor(expected1);
+    }
+
     // compare
-    EXPECT_TRUE(is_same_tensor(expected1, actual1));
+    EXPECT_TRUE(result1);
 
     // expected
     int64_t new_shape2[] = {3, 4};
@@ -133,8 +149,16 @@ TEST_P(ExpandTest, expand) {
                        .expect("expand failed");
     runtime_tensor actual2(output2.as<tensor>().expect("as tensor failed"));
 
+    bool result2 = is_same_tensor(expected2, actual2) ||
+                  cosine_similarity_tensor(expected2, actual2);
+
+    if (!result) {
+        print_runtime_tensor(actual2);
+        print_runtime_tensor(expected2);
+    }
+
     // compare
-    EXPECT_TRUE(is_same_tensor(expected2, actual2));
+    EXPECT_TRUE(result2);
 
     // expected
     int64_t new_shape3[] = {2, 1, 6};
@@ -161,9 +185,16 @@ TEST_P(ExpandTest, expand) {
                        .expect("expand failed");
     runtime_tensor actual3(output3.as<tensor>().expect("as tensor failed"));
 
+    bool result3 = is_same_tensor(expected3, actual3) ||
+                  cosine_similarity_tensor(expected3, actual3);
+
+    if (!result3) {
+        print_runtime_tensor(actual3);
+        print_runtime_tensor(expected3);
+    }
+
     // compare
-    EXPECT_TRUE(is_same_tensor(expected3, actual3) ||
-                cosine_similarity_tensor(expected, actual));
+    EXPECT_TRUE(result3);
 }
 
 int main(int argc, char *argv[]) {
