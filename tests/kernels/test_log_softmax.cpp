@@ -37,8 +37,8 @@ class LogSoftmaxTest : public KernelTest,
             hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
         init_tensor(input);
-
-        axis_value = value;
+        axis_value = value >= (long)l_shape.size() ? 0 : value;
+        axis_value = axis_value < -(long)l_shape.size() ? 0 : axis_value;
         int64_t axis_ptr[] = {axis_value};
         axis = hrt::create(
                    dt_int64, {1},
@@ -55,11 +55,12 @@ class LogSoftmaxTest : public KernelTest,
     int64_t axis_value;
 };
 
-INSTANTIATE_TEST_SUITE_P(LogSoftmax, LogSoftmaxTest,
-                         testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 3, 16, 16}),
-                                          testing::Values(0, 1, 2, 3, -4, -3,
-                                                          -2, -1)));
+INSTANTIATE_TEST_SUITE_P(
+    LogSoftmax, LogSoftmaxTest,
+    testing::Combine(testing::Values(dt_float32),
+                     testing::Values(dims_t{1}, dims_t{1, 3},
+                                     dims_t{1, 3, 16, 16}, dims_t{1, 3, 16}),
+                     testing::Values(0, 1, 2, 3, -4, -3, -2, -1)));
 
 TEST_P(LogSoftmaxTest, log_softmax) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
@@ -76,7 +77,6 @@ TEST_P(LogSoftmaxTest, log_softmax) {
                         .expect("create tensor failed");
 
     // actual
-
     auto output = kernels::stackvm::log_softmax(input.impl(), axis.impl())
                       .expect("log_softmax failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
