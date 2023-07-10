@@ -390,6 +390,20 @@ public partial class FusionBucket : RewriteRule<Pattern>
             throw new InvalidOperationException();
         }
 
+        if (call.CheckedType is TupleType tuple)
+        {
+            var fields = Enumerable.Range(0, tuple.Count)
+                .Select(i => MakeSlice(originBody[i], fusionInputsShape, call[i])).ToArray();
+            return new IR.Tuple(fields);
+        }
+        else
+        {
+            return MakeSlice(originBody, fusionInputsShape, call);
+        }
+    }
+
+    private static Expr MakeSlice(Expr originBody, Dictionary<Var, Expr[]> fusionInputsShape, Expr call)
+    {
         var originShape = originBody.EvaluateShapeExpr(fusionInputsShape);
         originShape.InferenceType();
 
@@ -436,14 +450,12 @@ public partial class FusionBucket : RewriteRule<Pattern>
         var fusionInputsShapeExpr = MakeFusionInputShapeExpr(outerCall, fusion, varMap);
         CheckAlive(fusionInputsShapeExpr);
 
-        // ensure alive in rewrite, release when return
-        // using var pinner = new ExprPinner(fusionInputsShapeExpr.Values.SelectMany(x => x).ToArray());
         var options = CompileSession.CompileOptions.ShapeBucketOptions;
         var (minDict, maxDict) = GetBoundDict(varMap, options);
 
         var fusionVars = fusion.Parameters.ToArray();
 
-        // compute fixed Shape
+        // compute fixed input Shape
         var minFixedShapeList = ComputeFixedShape(fusionVars, minDict, varMap, fusionInputsShapeExpr);
         var maxFixedShapeList = ComputeFixedShape(fusionVars, maxDict, varMap, fusionInputsShapeExpr);
 
@@ -650,6 +662,17 @@ public partial class FusionBucket : RewriteRule<Pattern>
 
     private Expr Split(Expr fusionBody, Var[] fusionVars, SegmentInfo info, int current, int limit, Dictionary<Var, int[]> varValues, Expr[] fusionInputs, Dictionary<Var, Expr[]> varMap, Dictionary<Var, Expr[]> fusionInputData, Dictionary<Var, Expr[]> fusionInputsShape)
     {
+        Call GetDefault(IRType x)
+        {
+            if (x is TupleType)
+            {
+                Console.WriteLine("TupleType");
+                Console.WriteLine(x);
+            }
+
+            return ConstantOfShape(new[] { 1 }, Cast(0, ((TensorType)x).DType));
+        }
+
         // do with marker
         // 分段是针对input做的，而不是替换了input。
         // arg var -> compute
@@ -657,7 +680,17 @@ public partial class FusionBucket : RewriteRule<Pattern>
         // arg -> bucket -> compute
         var (inputIndex, dimIndex, segments) = info;
         var dim = ShapeOf(fusionInputs[inputIndex])[dimIndex];
-        var sp = ConstantOfShape(new[] { 1 }, Cast(0, fusionBody.CheckedDataType));
+        var sp = fusionBody.CheckedType switch
+        {
+            TupleType tuple => new IR.Tuple(tuple.Fields.ToArray()
+                .Select(x =>
+                {
+                    return GetDefault(x);
+                }).ToArray()),
+            TensorType _ => (Expr)ConstantOfShape(new[] { 1 }, Cast(0, fusionBody.CheckedDataType)),
+        };
+
+        // var sp = ConstantOfShape(new[] { 1 }, Cast(0, fusionBody.CheckedDataType));
         int i = 0;
 
         var body = segments.OrderByDescending(x => x).Aggregate(
