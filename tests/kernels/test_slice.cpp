@@ -98,7 +98,7 @@ TEST_P(SliceTest, Slice) {
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     bool result1 = is_same_tensor(expected, actual) ||
-                  cosine_similarity_tensor(expected, actual);
+                   cosine_similarity_tensor(expected, actual);
 
     if (!result1) {
         print_runtime_tensor(actual);
