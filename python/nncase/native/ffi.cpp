@@ -115,6 +115,9 @@ PYBIND11_MODULE(_nncase, m) {
                       py::overload_cast<>(&compile_options::output_layout),
                       py::overload_cast<std::string_view>(
                           &compile_options::output_layout))
+        .def_property(
+            "input_file", py::overload_cast<>(&compile_options::input_file),
+            py::overload_cast<std::string_view>(&compile_options::input_file))        
         .def_property("input_type",
                       py::overload_cast<>(&compile_options::input_type),
                       py::overload_cast<nncase_input_type_t>(
