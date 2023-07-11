@@ -71,37 +71,32 @@ TEST_P(ConcatTest, Concat) {
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
-    //     actual
-    //        runtime_tensor input_ptr[2] = {lhs, rhs};
-    //        auto input = hrt::create(lhs.datatype(), {2},
-    //                                 {reinterpret_cast<gsl::byte
-    //                                 *>(input_ptr),
-    //                                  8},
-    //                                 true, host_runtime_tensor::pool_cpu_only)
-    //                         .expect("create tensor failed");
-    //        int64_t axis_ptr[] = {0};
-    //        auto axis =
-    //            hrt::create(dt_int64, {1},
-    //                        {reinterpret_cast<gsl::byte *>(axis_ptr),
-    //                        sizeof(axis_ptr)}, true,
-    //                        host_runtime_tensor::pool_cpu_only)
-    //                .expect("create tensor failed");
-    //        auto output = kernels::stackvm::concat(input.impl(), axis.impl())
-    //                          .expect("concat failed");
-    //        runtime_tensor actual(output.as<tensor>().expect("as tensor
-    //        failed"));
+    // actual
+    runtime_tensor input_ptr[2] = {lhs, rhs};
+    auto input = hrt::create(lhs.datatype(), {2},
+                             {reinterpret_cast<gsl::byte *>(input_ptr), 8},
+                             true, host_runtime_tensor::pool_cpu_only)
+                     .expect("create tensor failed");
+    int64_t axis_ptr[] = {0};
+    auto axis =
+        hrt::create(dt_int64, {1},
+                    {reinterpret_cast<gsl::byte *>(axis_ptr), sizeof(axis_ptr)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
+    auto output = kernels::stackvm::concat(input.impl(), axis.impl())
+                      .expect("concat failed");
+    runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
-    /*bool result = is_same_tensor(expected, actual) ||
+    bool result = is_same_tensor(expected, actual) ||
                   cosine_similarity_tensor(expected, actual);
 
-     // todo tuple input
     if (!result) {
         //        print_runtime_tensor(actual);
         print_runtime_tensor(expected);
     }
 
     // compare
-    EXPECT_TRUE(result);*/
+    EXPECT_TRUE(result);
 }
 
 int main(int argc, char *argv[]) {

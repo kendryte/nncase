@@ -964,6 +964,19 @@ class KernelTest {
         return ok();
     }
 
+    result<void> tensor_to_tuple(const value_t& input, const value_t &output) {
+        try_var(output_tensor, output.as<tensor>());
+        try_var(output_span, nncase::runtime::get_output_span(output_tensor));
+        auto output_tuple = tuple_node({output_tensor, input});
+        return ok();
+    }
+
+    result<void> tensor_to_quant_param(const value_t& quant_param){
+        try_input_with_value_type(qp, quant_param, quant_param_t);
+        auto a = qp->zero_point;
+        return ok();
+    }
+
     bool is_same_tensor(runtime::runtime_tensor &lhs,
                         runtime::runtime_tensor &rhs) {
         if (lhs.shape() != rhs.shape()) {

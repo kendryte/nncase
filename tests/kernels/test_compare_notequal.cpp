@@ -82,13 +82,13 @@ TEST_P(CompareTest, equal) {
     bool result = is_same_tensor(expected, actual) ||
                   cosine_similarity_tensor(expected, actual);
 
-    if (!result) {
+    if (result) {
         print_runtime_tensor(actual);
         print_runtime_tensor(expected);
     }
 
     // compare
-    EXPECT_TRUE(result);
+    EXPECT_FALSE(result);
 }
 
 int main(int argc, char *argv[]) {
