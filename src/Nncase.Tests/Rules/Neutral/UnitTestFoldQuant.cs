@@ -27,30 +27,17 @@ public class UnitTestFoldQuant : TransformTestBase
         { 2, false, new[] { 1, 2, 3, 4 }, DataTypes.UInt8, new QuantParam(0, 0.043f), DataTypes.UInt8, new QuantParam(0, 0.043f), DataTypes.Int8 },
     };
 
-    [Theory(Skip = "Quant loss threshold")]
+    [Theory]
     [MemberData(nameof(FoldQuantDequantData))]
     public void TestFoldQuantDequant(int count, bool is_pos, int[] shape, DataType input_dtype, QuantParam q_param, DataType quant_type, QuantParam deq_param, DataType dequant_type)
     {
         using var dumpScope = new DumpScope($"{count}");
-        var pre = IR.F.Math.Dequantize(IR.F.Math.Quantize(Random.Normal(input_dtype, 0, 1, 0, shape), q_param, quant_type), deq_param, dequant_type);
+        var pre = IR.F.Math.Dequantize(IR.F.Math.Quantize(Random.Uniform(DataTypes.Float32, 13, 0, 1, shape), q_param, quant_type), deq_param, dequant_type);
         if (is_pos)
         {
             TestMatched<FoldQuantDeQuant>(pre);
         }
         else
-        {
-            TestNotMatch<FoldQuantDeQuant>(pre);
-        }
-    }
-
-    // todo remove it when resolve the bug
-    [Theory]
-    [MemberData(nameof(FoldQuantDequantData))]
-    public void TestFoldQuantDequant1(int count, bool is_pos, int[] shape, DataType input_dtype, QuantParam q_param, DataType quant_type, QuantParam deq_param, DataType dequant_type)
-    {
-        using var dumpScope = new DumpScope($"{count}");
-        var pre = IR.F.Math.Dequantize(IR.F.Math.Quantize(Random.Normal(input_dtype, 0, 1, 0, shape), q_param, quant_type), deq_param, dequant_type);
-        if (!is_pos)
         {
             TestNotMatch<FoldQuantDeQuant>(pre);
         }

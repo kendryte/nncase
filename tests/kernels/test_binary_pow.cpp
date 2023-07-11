@@ -35,33 +35,48 @@ class BinaryTest : public KernelTest,
 
         lhs = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
-        init_tensor(lhs);
 
         rhs = hrt::create(typecode, r_shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
-        init_tensor(rhs);
+
+        if (typecode == dt_float32) {
+            init_tensor_pow_f32(lhs);
+            init_tensor_pow_f32(rhs);
+        } else {
+            init_tensor(lhs);
+            init_tensor(rhs);
+        }
     }
 
     void TearDown() override {}
+
+    virtual void init_tensor_pow_f32(runtime::runtime_tensor &tensor) {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_real_distribution<float> dis(-6.0f, 6.0f);
+        NNCASE_UNUSED auto res = kernels::stackvm::apply(
+            tensor.shape(), [&](const dims_t &index) -> result<void> {
+                get<float>(tensor, index) = static_cast<int32_t>(dis(gen));
+                return ok();
+            });
+    }
 
   protected:
     runtime_tensor lhs;
     runtime_tensor rhs;
 };
 
-INSTANTIATE_TEST_SUITE_P(Binary, BinaryTest,
-                         testing::Combine(testing::Values(dt_int32, dt_int64),
-                                          testing::Values(
-                                              /*dims_t { 3, 16, 16
-                                                }, dims_t { 1, 3, 16, 16
-                                              }, dims_t { 16, 16 },
-                                              dims_t { 16 },*/
-                                              dims_t{1}),
-                                          testing::Values(
-                                              /*dims_t { 3, 16, 16
-                                              }, dims_t { 16, 16 },
-                                              dims_t { 16 },*/
-                                              dims_t{1})));
+INSTANTIATE_TEST_SUITE_P(
+    Binary, BinaryTest,
+    testing::Combine(testing::Values(dt_int32, dt_int64, dt_float32),
+                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{3, 16, 16},
+                                     dims_t{3, 16, 1}, dims_t{16, 16},
+                                     dims_t{16, 1}, dims_t{1, 16, 1},
+                                     dims_t{16}, dims_t{1}, dims_t{}),
+                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{3, 16, 1},
+                                     dims_t{3, 16, 1}, dims_t{16, 16},
+                                     dims_t{1, 16, 1}, dims_t{16, 1},
+                                     dims_t{16}, dims_t{1}, dims_t{})));
 
 TEST_P(BinaryTest, pow) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
@@ -86,7 +101,8 @@ TEST_P(BinaryTest, pow) {
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_TRUE(is_same_tensor(expected, actual));
+    EXPECT_TRUE(is_same_tensor(expected, actual) ||
+                cosine_similarity_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {

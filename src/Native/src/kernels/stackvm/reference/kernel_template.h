@@ -20,8 +20,9 @@
     template <class T>                                                         \
     result<void> _name##_impl(                                                 \
         const T *input, T *output, gsl::span<const size_t> in_shape,           \
-        const strides_t &input_strides, gsl::span<const size_t> out_shape,     \
-        const strides_t &out_strides,                                          \
+        gsl::span<const size_t> input_strides,                                 \
+        gsl::span<const size_t> out_shape,                                     \
+        gsl::span<const size_t> out_strides,                                   \
         NNCASE_UNUSED kernel_context &context) noexcept {                      \
         return apply(                                                          \
             out_shape, [&](gsl::span<const size_t> index) -> result<void> {    \
@@ -37,9 +38,9 @@
     template <class T>                                                         \
     result<void> _name##_opt_impl(                                             \
         const T *input, T *output, gsl::span<const size_t> in_shape,           \
-        [[maybe_unused]] const strides_t &input_strides,                       \
+        [[maybe_unused]] gsl::span<const size_t> input_strides,                \
         [[maybe_unused]] gsl::span<const size_t> out_shape,                    \
-        [[maybe_unused]] const strides_t &out_strides,                         \
+        [[maybe_unused]] gsl::span<const size_t> out_strides,                  \
         NNCASE_UNUSED kernel_context &context) noexcept {                      \
         for (int i = 0; i < compute_size(in_shape); ++i) {                     \
             auto x = input[i];                                                 \
@@ -75,8 +76,10 @@
     template <class T>                                                         \
     result<void> _name##_impl(                                                 \
         const T *input, T *output, T _alpha_name,                              \
-        gsl::span<const size_t> in_shape, const strides_t &input_strides,      \
-        gsl::span<const size_t> out_shape, const strides_t &out_strides,       \
+        gsl::span<const size_t> in_shape,                                      \
+        gsl::span<const size_t> input_strides,                                 \
+        gsl::span<const size_t> out_shape,                                     \
+        gsl::span<const size_t> out_strides,                                   \
         NNCASE_UNUSED kernel_context &context) noexcept {                      \
         return apply(                                                          \
             out_shape, [&](gsl::span<const size_t> index) -> result<void> {    \
@@ -88,14 +91,29 @@
                 output[dst_idx] = _compute;                                    \
                 return ok();                                                   \
             });                                                                \
+    }                                                                          \
+    template <class T>                                                         \
+    result<void> _name##_contiguous_impl(                                      \
+        const T *input, T *output, T _alpha_name,                              \
+        gsl::span<const size_t> in_shape,                                      \
+        [[maybe_unused]] gsl::span<const size_t> input_strides,                \
+        [[maybe_unused]] gsl::span<const size_t> out_shape,                    \
+        [[maybe_unused]] gsl::span<const size_t> out_strides,                  \
+        NNCASE_UNUSED kernel_context &context) noexcept {                      \
+        for (int i = 0; i < compute_size(in_shape); ++i) {                     \
+            auto x = input[i];                                                 \
+            output[i] = _compute;                                              \
+        }                                                                      \
+        return ok();                                                           \
     }
 
 #define FLOAT_UNARY_WITH_MUL_OP_TEMPLATE(_name, _alpha_name)                   \
-    result<void> _name##_impl(                                                 \
-        const float *input, float *output,                                     \
-        gsl::span<const size_t> input_shape, const strides_t &input_strides,   \
-        gsl::span<const size_t> out_shape, const strides_t &out_strides,       \
-        NNCASE_UNUSED kernel_context &context);                                \
+    result<void> _name##_impl(const float *input, float *output,               \
+                              gsl::span<const size_t> input_shape,             \
+                              gsl::span<const size_t> input_strides,           \
+                              gsl::span<const size_t> out_shape,               \
+                              gsl::span<const size_t> out_strides,             \
+                              NNCASE_UNUSED kernel_context &context);          \
     result<value_t> nncase::kernels::stackvm::_name(                           \
         value_t input, value_t _alpha_name, value_t output,                    \
         kernel_context &context) {                                             \
@@ -103,10 +121,17 @@
         try_to_scalar(_alpha_name##_value, _alpha_name, float);                \
         auto dtype = input_tensor->dtype();                                    \
         try_f32_output(out_mem, output, input_tensor->shape());                \
-        try_(_name##_impl(input_mem, out_mem, _alpha_name##_value,             \
-                          input_tensor->shape(), input_tensor->strides(),      \
-                          output_tensor->shape(), output_tensor->strides(),    \
-                          context));                                           \
+        if (is_contiguous(input_tensor)) {                                     \
+            try_(_name##_contiguous_impl(                                      \
+                input_mem, out_mem, _alpha_name##_value,                       \
+                input_tensor->shape(), input_tensor->strides(),                \
+                output_tensor->shape(), output_tensor->strides(), context));   \
+        } else {                                                               \
+            try_(_name##_impl(input_mem, out_mem, _alpha_name##_value,         \
+                              input_tensor->shape(), input_tensor->strides(),  \
+                              output_tensor->shape(),                          \
+                              output_tensor->strides(), context));             \
+        }                                                                      \
         return ok(output);                                                     \
     }
 
@@ -138,8 +163,9 @@
     template <class T>                                                         \
     result<void> _name##_impl(                                                 \
         const T *input, T *output, gsl::span<const size_t> in_shape,           \
-        const strides_t &input_strides, gsl::span<const size_t> out_shape,     \
-        const strides_t &out_strides, FLOAT_ARGS_EXPAND(__VA_ARGS__),          \
+        gsl::span<const size_t> input_strides,                                 \
+        gsl::span<const size_t> out_shape,                                     \
+        gsl::span<const size_t> out_strides, FLOAT_ARGS_EXPAND(__VA_ARGS__),   \
         NNCASE_UNUSED kernel_context &context) noexcept {                      \
         return apply(                                                          \
             out_shape, [&](gsl::span<const size_t> index) -> result<void> {    \
@@ -217,12 +243,13 @@
 #define BASIC_PARAM                                                            \
     const gsl::byte *input, gsl::byte *output,                                 \
         gsl::span<const size_t> in_shape, gsl::span<const size_t> out_shape,   \
-        const strides_t &in_strides, const strides_t &out_strides
+        gsl::span<const size_t> in_strides,                                    \
+        gsl::span<const size_t> out_strides
 
 #define BASIC_PARAM_T                                                          \
     const T *input, T *output, gsl::span<const size_t> in_shape,               \
-        gsl::span<const size_t> out_shape, const strides_t &in_strides,        \
-        const strides_t &out_strides
+        gsl::span<const size_t> out_shape, gsl::span<const size_t> in_strides, \
+        gsl::span<const size_t> out_strides
 
 #define PASS_BASIC_ARG(_input, _output)                                        \
     _input##_mem, _output##_mem, _input##_tensor->shape(),                     \
@@ -232,14 +259,17 @@
 #define BASIC_BINARY_PARAM                                                     \
     const gsl::byte *lhs, const gsl::byte *rhs, gsl::byte *output,             \
         gsl::span<const size_t> lhs_shape, gsl::span<const size_t> rhs_shape,  \
-        gsl::span<const size_t> out_shape, const strides_t &lhs_strides,       \
-        const strides_t &rhs_strides, const strides_t &out_strides
+        gsl::span<const size_t> out_shape,                                     \
+        gsl::span<const size_t> lhs_strides,                                   \
+        gsl::span<const size_t> rhs_strides,                                   \
+        gsl::span<const size_t> out_strides
 
 #define BASIC_BINARY_PARAM_T                                                   \
     const T *lhs, const T *rhs, T *output, gsl::span<const size_t> in_shape,   \
         gsl::span<const size_t> rhs_shape, gsl::span<const size_t> out_shape,  \
-        const strides_t &lhs_strides, const strides_t &rhs_strides,            \
-        const strides_t &out_strides
+        gsl::span<const size_t> lhs_strides,                                   \
+        gsl::span<const size_t> rhs_strides,                                   \
+        gsl::span<const size_t> out_strides
 
 #define PASS_BASIC_BINARY_ARG(_lhs, _rhs, _output)                             \
     _lhs##_mem, _rhs##_mem, _output##_mem, _lhs##_tensor->shape(),             \
