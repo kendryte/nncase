@@ -19,7 +19,7 @@ namespace Nncase.Importer
             {
                 return IR.F.Tensors.MatMul(a, b);
             }
-            
+
             if (a.CheckedShape.Rank > 2 && b.CheckedShape.Rank > 2)
             {
                 return IR.F.Tensors.MatMul(a, b);
