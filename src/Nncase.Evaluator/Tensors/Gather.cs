@@ -64,7 +64,7 @@ public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>, ICos
         var ret_type = context.GetReturnType<TensorType>();
         return new()
         {
-            [MetricFactorNames.OnChipMemoryTraffic] = CostUtility.GetMemoryAccess(ret_type) * 2,
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(ret_type) * 2,
         };
     }
 

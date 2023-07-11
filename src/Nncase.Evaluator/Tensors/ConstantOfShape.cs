@@ -57,7 +57,7 @@ public class ConstantOfShapeEvaluator : IEvaluator<ConstantOfShape>, ITypeInfere
         var ret = context.GetReturnType<TensorType>();
         return new()
         {
-            [MetricFactorNames.OnChipMemoryTraffic] = CostUtility.GetMemoryAccess(ret),
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(ret),
         };
     }
 
