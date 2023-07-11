@@ -15,6 +15,7 @@
 #pragma once
 #include <nncase/runtime/result.h>
 #include <nncase/runtime/span_reader.h>
+#include <nncase/runtime/stream_reader.h>
 #include <nncase/type.h>
 
 BEGIN_NS_NNCASE_RUNTIME
@@ -30,5 +31,8 @@ typedef enum : uint8_t {
 
 result<type> deserialize_type(span_reader &sr) noexcept;
 result<datatype_t> deserialize_datatype(span_reader &sr) noexcept;
+
+result<type> deserialize_type(stream_reader &sr) noexcept;
+result<datatype_t> deserialize_datatype(stream_reader &sr) noexcept;
 
 END_NS_NNCASE_RUNTIME
