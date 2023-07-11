@@ -270,7 +270,7 @@ public partial class MergePrevCallToFusion : MergeFusionBase
         var newVarsMap = MakeNewFusionVarsMap(fusionArgsInfo, fusionDict);
 
         // 所有要被合并的call替换args为Fusion的Var
-        var newPrevCalls = MakeNewPrevCalls(inputShouldBeMerge, newVarsMap);
+        var newPrevCalls = MakeNewPrevCalls(inputShouldBeMerge, prevOutputMaybeMarker, newVarsMap);
         DumpIR(new IR.Tuple(newPrevCalls), "newPrevCalls");
 
         var newVarsMapFlatten = newVarsMap.SelectMany(x => x).ToArray();
@@ -295,11 +295,11 @@ public partial class MergePrevCallToFusion : MergeFusionBase
         return call;
     }
 
-    private static Expr[] MakeNewPrevCalls(Call[] inputsShouldBeMerge, VarReplaceInfo[][] newVarsOrigin)
+    private static Expr[] MakeNewPrevCalls(Call[] inputsShouldBeMerge, Expr[] prevOutputMaybeMarker, VarReplaceInfo[][] newVarsOrigin)
     {
         var tuple = new IR.Tuple(inputsShouldBeMerge);
 
-        return inputsShouldBeMerge.Zip(newVarsOrigin).Select(pair =>
+        return inputsShouldBeMerge.Zip(newVarsOrigin).Select((pair, i) =>
         {
             var (input, varsInfoList) = pair;
             int outCounter = 0;
@@ -328,7 +328,9 @@ public partial class MergePrevCallToFusion : MergeFusionBase
 
                 return newVar.First();
             }).ToArray();
-            var call = input.With(arguments: newArgs);
+            var newCall = input.With(arguments: newArgs);
+
+            var call = prevOutputMaybeMarker[i] is Marker m ? m.With(target: newCall) : (Expr)newCall;
             if (!call.InferenceType())
             {
                 throw new InvalidOperationException();
