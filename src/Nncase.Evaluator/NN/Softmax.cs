@@ -45,7 +45,7 @@ public class LogSoftmaxEvaluator : IEvaluator<LogSoftmax>, ITypeInferencer<LogSo
 
     public Metric Visit(IMetricEvaluateContext context, LogSoftmax target)
     {
-        var inputType = context.GetArgumentType<TensorType>(target, Softplus.Input);
+        var inputType = context.GetArgumentType<TensorType>(target, LogSoftmax.Input);
         var returnType = context.GetReturnType<TensorType>();
         var returnF = MetricUtility.GetFLOPs(returnType);
         var inputF = MetricUtility.GetFLOPs(inputType);
@@ -98,7 +98,7 @@ public class SoftmaxEvaluator : IEvaluator<Softmax>, ITypeInferencer<Softmax>, I
 
     public Metric Visit(IMetricEvaluateContext context, Softmax target)
     {
-        var inputType = context.GetArgumentType<TensorType>(target, Softplus.Input);
+        var inputType = context.GetArgumentType<TensorType>(target, Softmax.Input);
         var returnType = context.GetReturnType<TensorType>();
         var returnF = MetricUtility.GetFLOPs(returnType);
         var inputF = MetricUtility.GetFLOPs(inputType);
@@ -152,7 +152,7 @@ public class SoftplusEvaluator : IEvaluator<Softplus>, ITypeInferencer<Softplus>
 
     public Metric Visit(IMetricEvaluateContext context, Softplus target)
     {
-        var inputType = context.GetArgumentType<TensorType>(target, Softmax.Input);
+        var inputType = context.GetArgumentType<TensorType>(target, Softplus.Input);
         var returnType = context.GetReturnType<TensorType>();
         var r = MetricUtility.GetFLOPs(returnType);
         var i = MetricUtility.GetFLOPs(inputType);
@@ -204,7 +204,7 @@ public class SoftsignEvaluator : IEvaluator<Softsign>, ITypeInferencer<Softsign>
 
     public Metric Visit(IMetricEvaluateContext context, Softsign target)
     {
-        var inputType = context.GetArgumentType<TensorType>(target, Softplus.Input);
+        var inputType = context.GetArgumentType<TensorType>(target, Softsign.Input);
         var returnType = context.GetReturnType<TensorType>();
         var r = MetricUtility.GetFLOPs(returnType);
         var i = MetricUtility.GetFLOPs(inputType);
