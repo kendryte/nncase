@@ -106,7 +106,7 @@ public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>, ICostEv
         }
         else
         {
-            splitedShape = splitedShape.Select(s => Dimension.Unknown);
+            splitedShape = splitedShape.Select(s => Dimension.Unknown).ToArray();
         }
 
         return new TupleType(new IRType[] { input with { Shape = splitedShape } }, true);
