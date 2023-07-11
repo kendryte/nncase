@@ -19,9 +19,9 @@
 #include <nncase/ir/ops/binary.h>
 #include <nncase/ir/ops/bitcast.h>
 #include <nncase/ir/ops/constant.h>
+#include <nncase/ir/ops/instancenorm.h>
 #include <nncase/ir/ops/reduce.h>
 #include <nncase/ir/ops/unary.h>
-#include <nncase/ir/ops/instancenorm.h>
 
 using namespace nncase;
 using namespace nncase::importer;
@@ -58,7 +58,7 @@ void onnx_importer::convert_op_InstanceNormalization(const NodeProto &node)
     auto bias_new_shape = broadcast_shape(bias_shape, input_shape);
     auto bias_constant = graph_.emplace<constant>(get_datatype<float>(), bias_new_shape, bias_value);
     bias_constant->name(op_name + ".bias(InstanceNormalization)");
-    
+
     auto epsilon_attr = get_attribute<float>(node, "epsilon");
     auto epsilon = epsilon_attr ? epsilon_attr.value() : 1e-05f;
 
@@ -67,7 +67,7 @@ void onnx_importer::convert_op_InstanceNormalization(const NodeProto &node)
     instance_norm->bias().connect(bias_constant->output());
     input_tensors_.emplace(&instance_norm->input(), input);
     output_tensors_.emplace(output, &instance_norm->output());
-    
+
     // // mean
     // axis_t axes;
     // for (size_t i = 2; i < input_shape.size(); i++)
