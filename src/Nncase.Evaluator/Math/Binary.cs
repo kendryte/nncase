@@ -13,7 +13,7 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Evaluator for <see cref="Binary"/>.
 /// </summary>
-public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binary>, ICostEvaluator<Binary>, IOpPrinter<Binary>, IShapeEvaluator<Binary>
+public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binary>, ICostEvaluator<Binary>, IOpPrinter<Binary>, IShapeEvaluator<Binary>, IMetricEvaluator<Binary>
 {
     /// <inheritdoc />
     public IValue Visit(IEvaluateContext context, Binary binary)
@@ -71,6 +71,20 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(lhsType) + CostUtility.GetMemoryAccess(rhsType),
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
             [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, CostUtility.GetCPUCyclesOfBinary(target.BinaryOp)),
+        };
+    }
+
+    public Metric Visit(IMetricEvaluateContext context, Binary target)
+    {
+        var lhsType = context.GetArgumentType<TensorType>(target, Binary.Lhs);
+        var rhsType = context.GetArgumentType<TensorType>(target, Binary.Rhs);
+        var outputType = context.GetReturnType<TensorType>();
+
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(lhsType) + CostUtility.GetMemoryAccess(rhsType) + CostUtility.GetMemoryAccess(outputType),
+            [MetricFactorNames.FLOPs] = MetricUtility.GetFLOPs(outputType, (int)MetricUtility.GetBinaryFLOPs(target.BinaryOp)),
+            [MetricFactorNames.Parallel] = 4,
         };
     }
 

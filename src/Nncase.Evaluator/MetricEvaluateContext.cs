@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -28,7 +28,7 @@ internal sealed class MetricEvaluateContext : IMetricEvaluateContext
     }
 
     public T GetArgument<T>(Op op, ParameterInfo parameter)
-      where T : BaseFunction
+      where T : Expr
     {
         return (T)CurrentCall[parameter];
     }

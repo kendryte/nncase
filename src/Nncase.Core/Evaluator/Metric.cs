@@ -16,7 +16,9 @@ public static class MetricFactorNames
 
     public static readonly string OnChipMemoryTraffic = "OnChipMemoryTraffic";
 
-    public static readonly string OffMemoryTraffic = "OffChipMemoryTraffic";
+    public static readonly string OffChipMemoryTraffic = "OffChipMemoryTraffic";
+
+    public static readonly string Parallel = "Parallel";
 }
 
 /// <summary>
@@ -146,4 +148,89 @@ public static class MetricExtensions
 
 public static class MetricUtility
 {
+    public static UInt128 ATanhFLOPs => LogFLOPs + (2 * AddFLOPs) + DivFLOPs + MulFLOPs;
+
+    public static UInt128 AddFLOPs => 1;
+
+    public static UInt128 SubFLOPs => 1;
+
+    public static UInt128 CmpFLOPs => 1;
+
+    public static UInt128 MulFLOPs => 1;
+
+    public static UInt128 DivFLOPs => 4;
+
+    /// <summary>
+    /// Gets ref from https://github.com/reyoung/avx_mathfun.
+    /// </summary>
+    public static UInt128 ExpFLOPs => 32;
+
+    public static UInt128 PowFLOPs => ExpFLOPs;
+
+    public static UInt128 LogFLOPs => 43;
+
+    public static UInt128 SinFLOPs => 39;
+
+    public static UInt128 CosFLOPs => 39;
+
+    public static UInt128 SqrtFLOPs => 24;
+
+    public static UInt128 SigmoidFLOPs => DivFLOPs + 2 + ExpFLOPs;
+
+    public static UInt128 TanhFLOPs => ExpFLOPs + (2 * AddFLOPs) + DivFLOPs;
+
+    public static UInt128 ATanFLOPs => SqrtFLOPs + (3 * MulFLOPs) + MulFLOPs + DivFLOPs;
+
+    public static UInt128 ResizeLinearFLOPs => 4;
+
+    public static UInt128 ResizeCubicFLOPs => 8;
+
+    public static UInt128 GetFLOPs(IRType type, int scale = 1)
+    {
+        return type switch
+        {
+            TensorType t => (UInt128)t.Shape.Aggregate(scale, (acc, x) => acc * (x.IsFixed ? x.FixedValue : 1)),
+            TupleType t => t.Fields.Sum(f => GetFLOPs(f, scale)),
+            _ => 0,
+        };
+    }
+
+    public static UInt128 GetUnaryFLOPs(UnaryOp op) => op switch
+    {
+        UnaryOp.Abs => 1,
+        UnaryOp.Acosh or UnaryOp.Acos or UnaryOp.Cos or
+        UnaryOp.Cosh => CosFLOPs,
+        UnaryOp.Asin or UnaryOp.Asinh or UnaryOp.Sin or UnaryOp.Sinh => SinFLOPs,
+        UnaryOp.Sign or UnaryOp.Round or UnaryOp.Neg or UnaryOp.Floor or UnaryOp.Ceil => 1,
+        UnaryOp.Exp => ExpFLOPs,
+        UnaryOp.Log => LogFLOPs,
+        UnaryOp.Rsqrt or UnaryOp.Sqrt => SqrtFLOPs,
+        UnaryOp.Square => 2,
+        UnaryOp.Tanh => TanhFLOPs,
+        UnaryOp.BitwiseNot => 1,
+        UnaryOp.LogicalNot => 1,
+        _ => 1,
+    };
+
+    public static UInt128 GetBinaryFLOPs(BinaryOp op) => op switch
+    {
+        BinaryOp.Add => AddFLOPs,
+        BinaryOp.Sub => SubFLOPs,
+        BinaryOp.Mul => MulFLOPs,
+        BinaryOp.Div => DivFLOPs,
+        BinaryOp.Mod => 1,
+        BinaryOp.Min or BinaryOp.Max => CmpFLOPs,
+        BinaryOp.Pow => 1,
+        BinaryOp.BitwiseAnd => 1,
+        BinaryOp.BitwiseOr => 1,
+        BinaryOp.BitwiseXor => 1,
+        BinaryOp.LogicalAnd => 1,
+        BinaryOp.LogicalOr => 1,
+        BinaryOp.LogicalXor => 1,
+        BinaryOp.LeftShift => 1,
+        BinaryOp.RightShift => 1,
+        _ => 1,
+    };
+
+    public static UInt128 GetMatMulFLOPs(UInt128 m, UInt128 n, UInt128 k) => m * n * ((2 * k) - 1);
 }

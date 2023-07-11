@@ -16,7 +16,7 @@ namespace Nncase.Evaluator.NN;
 /// <summary>
 /// Evaluator for <see cref="Conv2DTranspose"/>.
 /// </summary>
-public class Conv2DTransposeEvaluator : IEvaluator<Conv2DTranspose>, ITypeInferencer<Conv2DTranspose>, ICostEvaluator<Conv2DTranspose>, IShapeEvaluator<Conv2DTranspose>
+public class Conv2DTransposeEvaluator : IEvaluator<Conv2DTranspose>, ITypeInferencer<Conv2DTranspose>, ICostEvaluator<Conv2DTranspose>, IShapeEvaluator<Conv2DTranspose>, IMetricEvaluator<Conv2DTranspose>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Conv2DTranspose conv)
@@ -72,6 +72,23 @@ public class Conv2DTransposeEvaluator : IEvaluator<Conv2DTranspose>, ITypeInfere
 
         var macPerElement = weightsShape[1] * weightsShape[2] * weightsShape[3];
         return new() { [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(weightsType) + CostUtility.GetMemoryAccess(biasType), [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType), [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, (uint)macPerElement.FixedValue * 2), };
+    }
+
+    public Metric Visit(IMetricEvaluateContext context, Conv2DTranspose target)
+    {
+        var returnType = context.GetReturnType<TensorType>();
+        _ = returnType.Shape.ToValueArray();
+
+        var inputType = context.GetArgumentType<TensorType>(target, Conv2DTranspose.Input);
+        var inputShape = inputType.Shape.ToValueArray();
+        var weightType = context.GetArgumentType<TensorType>(target, Conv2DTranspose.Weights);
+        var weightShape = weightType.Shape.ToValueArray();
+
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(weightType) + CostUtility.GetMemoryAccess(returnType),
+            [MetricFactorNames.FLOPs] = (UInt128)(inputShape[0] * weightShape[0] * weightShape[1] * inputShape[2] * inputShape[3] * weightShape[2] * weightShape[3]),
+        };
     }
 
     public Expr Visit(IShapeEvaluateContext context, Conv2DTranspose target)

@@ -17,7 +17,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Split"/>.
 /// </summary>
-public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>, ICostEvaluator<Split>, IShapeEvaluator<Split>
+public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>, ICostEvaluator<Split>, IShapeEvaluator<Split>, IMetricEvaluator<Split>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Split target)
@@ -53,6 +53,15 @@ public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>, ICostEv
         var sections = ((TensorConst)context.GetArgument(target, Split.Sections)).Value.ToArray<int>();
         var shapes = sections.Select(section => ShapeExprUtility.Replace(inShape, axis, section)).ToArray();
         return new IR.Tuple(shapes);
+    }
+
+    public Metric Visit(IMetricEvaluateContext context, Split target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, Split.Input);
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(inputType) * 2,
+        };
     }
 
     private IRType Visit(ITypeInferenceContext context, Split target, TensorType input)
