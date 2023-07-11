@@ -15,6 +15,8 @@
 #pragma once
 #include "model.h"
 #include "result.h"
+#include "runtime_section_context.h"
+#include <nncase/runtime/stream_reader.h>
 #include <nncase/type.h>
 #include <nncase/value.h>
 
@@ -24,10 +26,10 @@ class interpreter;
 class runtime_module;
 struct runtime_module_init_context;
 
-struct NNCASE_API runtime_function_init_context {
+struct NNCASE_API runtime_function_init_context
+    : public runtime_section_context {
     virtual runtime_module_init_context &module_init_context() noexcept = 0;
     virtual const function_header &header() noexcept = 0;
-    virtual gsl::span<const gsl::byte> section(const char *name) noexcept = 0;
 };
 
 class NNCASE_API runtime_function {
@@ -40,6 +42,10 @@ class NNCASE_API runtime_function {
     result<void>
     initialize(gsl::span<const gsl::byte> payload,
                runtime_module_init_context &module_init_context) noexcept;
+    result<void>
+    initialize(stream_reader &reader,
+               runtime_module_init_context &module_init_context) noexcept;
+
     runtime_module &module() const noexcept;
 
     uint32_t parameters_size() const noexcept;
