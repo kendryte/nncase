@@ -62,7 +62,7 @@ TEST_P(CompareTest, equal) {
     auto r_ort = runtime_tensor_2_ort_tensor(rhs);
 
     // expected
-    auto output_ort = ortki_Equal(l_ort, r_ort);
+    auto output_ort = ortki_Not(ortki_Equal(l_ort, r_ort));
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
