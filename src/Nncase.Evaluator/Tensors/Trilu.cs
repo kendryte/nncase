@@ -14,26 +14,25 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Trilu"/>.
 /// </summary>
-[EvaluatorGenerator]
-[TypeInferGenerator]
 public class TriluEvaluator : IEvaluator<Trilu>, ITypeInferencer<Trilu>, ICostEvaluator<Trilu>, IShapeEvaluator<Trilu>
 {
-    /// <inheritdoc/>
-    public IValue Visit(OrtKISharp.Tensor input, OrtKISharp.Tensor k, long upper)
+    public IValue Visit(IEvaluateContext context, Trilu target)
     {
+        var input = context.GetOrtArgumentValue(target, Trilu.Input);
+        var k = context.GetOrtArgumentValue(target, Trilu.K);
+        var upper = context.GetArgumentValueAsScalar<long>(target, Trilu.Upper);
         return OrtKI.Trilu(input, k, upper).ToValue();
     }
 
-    /// <inheritdoc/>
-    public IRType Visit(TensorType input)
+    public IRType Visit(ITypeInferenceContext context, Trilu target)
     {
-        return input;
+        return context.GetArgumentType(target, Trilu.Input);
     }
 
     /// <inheritdoc/>
     public Cost Visit(ICostEvaluateContext context, Trilu target)
     {
-        var inputType = context.GetArgumentType<TensorType>(target, Transpose.Input);
+        var inputType = context.GetArgumentType<TensorType>(target, Trilu.Input);
         var outputType = context.GetReturnType<TensorType>();
 
         return new()
