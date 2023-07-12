@@ -208,6 +208,7 @@ public sealed partial class OnnxImporter : BaseImporter
             "Sum" => VisitSum(op),
             "Tanh" => VisitUnary(op, UnaryOp.Tanh),
             "Tile" => VisitTile(op),
+            "Trilu" => VisitTrilu(op),
             "TopK" => VisitTopK(op),
             "Transpose" => VisitTranspose(op),
 
