@@ -13,6 +13,7 @@ using Nncase.Passes.Analysis;
 using Nncase.Passes.Mutators;
 using static Nncase.Utilities.ReplaceUtility;
 using static Nncase.Passes.Rules.ShapeBucket.ShapeBucketHelper;
+using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Passes.Rules.ShapeBucket;
 
@@ -51,6 +52,16 @@ public class MergeBucketFusion : ModulePass
         s.Visit(main);
         var set = s.FusionEffectVars();
 
+        var post = MergePrevFusion(main, set);
+
+        MergeMultiUsers(post);
+        // todo: multi merge
+        // post = MergePrevFusion(main, set);
+        return Task.FromResult(input);
+    }
+
+    private Function MergePrevFusion(Function main, Dictionary<string, Var[]> set)
+    {
         // 2. merge
         var post = MergeFusion(main);
         DumpIR(post, "AfterMergeFusion");
@@ -58,11 +69,15 @@ public class MergeBucketFusion : ModulePass
         // 3. translate fusion to BucketFusion
         TranslateFusionToBucket(set, post);
         DumpIR(post, "AfterTranslateFusion");
+        return post;
+    }
 
+    private static void MergeMultiUsers(Function post)
+    {
         IRHelpers.DCE(post);
+        DumpIR(post, "AfterDCE");
         var c = new ReplaceVisitor();
         c.Replace(post);
-        return Task.FromResult(input);
     }
 
     record UserInfo(Call User, int UserIndex, int FusionIndexInUserArg);
@@ -91,16 +106,18 @@ public class MergeBucketFusion : ModulePass
             {
                 var outerCall = (Call)matchResult["outerCall"];
                 var fusion = (BucketFusion)matchResult["fusion"];
-                MergeBucketFusion.counter++;
+
                 DumpIR(outerCall, $"{counter}_MergeBefore", relPath);
                 for (var i = 0; i < outerCall.Users.Count; i++)
                 {
                     DumpIR(outerCall.Users.ToArray()[i], $"{counter}_User_{i}_MergeBefore", relPath);
                 }
+                DumpIR(_root, "OriginRoot", relPath);
 
                 var newCall = MergeMultiUserFusion(outerCall, fusion);
                 if (newCall != null)
                 {
+                    DumpIR(outerCall, $"{counter}_OriginAfter", relPath);
                     DumpIR(newCall, $"{counter}_MergeAfter", relPath);
                     DumpIR(_root, "rootBeforeMerge", relPath);
                     var users = outerCall.Users.ToArray();
@@ -127,8 +144,42 @@ public class MergeBucketFusion : ModulePass
         protected override Expr DefaultVisitLeaf(Expr expr) => expr;
     }
 
+    private static bool detectedRing(Call outerCall)
+    {
+        var users = outerCall.Users.ToArray();
+        var userArgs = users.SelectMany(user => ((Call)user).Arguments.ToArray()).ToArray();
+        foreach (var arg in userArgs)
+        {
+            var list = new FindExpr().Run(arg, users.Append(outerCall).Concat(outerCall.Arguments.ToArray()).ToArray(), expr =>
+            {
+                if (expr is Const)
+                {
+                    return false;
+                }
+                return !users.Contains(expr);
+            });
+            if (list.Count > 0)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static Expr? MergeMultiUserFusion(Call outerCall, BucketFusion fusion)
     {
+        // todo: not support
+        if (outerCall.Users.ToArray().Count(user => user is Tuple) != 0)
+        {
+            return null;
+        }
+        if (detectedRing(outerCall))
+        {
+            return null;
+        }
+
+        // todo:如果不是所有的都是valid的，那么能合并吗？？
         var userInfos = CollectUsers(outerCall);
 
         // maybe a error
@@ -137,6 +188,11 @@ public class MergeBucketFusion : ModulePass
             return null;
         }
 
+        // has invalid
+        if (userInfos.Length != outerCall.Users.Count)
+        {
+            return null;
+        }
         // todo: with tuple
         // 1. all user are fusion
         // 2. some user are fusion
@@ -501,6 +557,7 @@ public class MergeBucketFusion : ModulePass
 
     private static UserInfo[] CollectUsers(Expr outerCall)
     {
+        var users = outerCall.Users.ToArray();
         var outputs = outerCall.Users
             .Select((user, userIndex) =>
             {
@@ -518,6 +575,13 @@ public class MergeBucketFusion : ModulePass
                     };
                     return (user, userIndex, valid);
                 }
+                else if (user is IR.Tuple)
+                {
+                    // tuple should in other merge rule
+                    var valid = false;
+                    return (user, userIndex, valid);
+                }
+                // todo: 需要避免环的出现，users里面的input有可能依赖于其他output的结果
                 else
                 {
                     throw new NotImplementedException();

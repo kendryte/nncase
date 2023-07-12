@@ -86,6 +86,43 @@ internal static class ExprArrayExtension
     }
 }
 
+public class FindExpr : ExprVisitor<Expr, Unit>
+{
+    private Func<Expr, bool> f;
+    private List<Expr> list = new();
+    private Expr[] limit = { };
+
+    public List<Expr> Run(Expr expr, Expr[] limit, Func<Expr, bool> checker)
+    {
+        f = checker;
+        this.limit = limit;
+        Visit(expr);
+        return list;
+    }
+
+    protected override Expr DefaultVisitLeaf(Expr expr)
+    {
+        if (f(expr))
+        {
+            list.Add(expr);
+        }
+
+        return expr;
+    }
+
+    protected override Expr DispatchVisit(Expr expr)
+    {
+        if (limit.Contains(expr))
+        {
+            return expr;
+        }
+        if (HasVisited(expr, out var result))
+        {
+            return result;
+        }
+        return MarkVisited(expr, base.DispatchVisit(expr));
+    }
+}
 public class FindVar : ExprVisitor<Expr, Unit>
 {
     public HashSet<Var> Vars { get; set; } = new();
