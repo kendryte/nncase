@@ -36,6 +36,7 @@ if (NOT BUILDING_RUNTIME)
 
     add_executable(nncasetest_dynamic_cli test_dynamic_cli.cpp)
     target_link_libraries(nncasetest_dynamic_cli PRIVATE nncaseruntime)
+    install(TARGETS nncasetest_cli nncasetest_dynamic_cli COMPONENT nncase-tools)
 endif()
 
 if(BUILDING_RUNTIME)

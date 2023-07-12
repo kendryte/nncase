@@ -106,30 +106,26 @@ internal sealed class SimulatorServer : IDisposable
             file.Data.CopyTo(of);
         }
 
-        var errMsg = new StringBuilder();
-        long ms = 0;
-        using (var errWriter = new StringWriter(errMsg))
+        var coutMsgBuilder = new StringBuilder();
+        int exitCode = -1;
+        using (var coutWriter = new StringWriter(coutMsgBuilder))
         {
-            var watch = System.Diagnostics.Stopwatch.StartNew();
             using (var proc = new Process())
             {
                 proc.StartInfo.FileName = "nncasetest_cli";
                 proc.StartInfo.Arguments = string.Join(" ", tempPaths);
-                proc.StartInfo.RedirectStandardError = true;
-                proc.ErrorDataReceived += (sender, e) => errWriter.WriteLine(e.Data);
+                proc.StartInfo.RedirectStandardOutput = true;
+                proc.OutputDataReceived += (sender, e) => coutWriter.WriteLine(e.Data);
                 proc.Start();
-                proc.BeginErrorReadLine();
+                proc.BeginOutputReadLine();
                 proc.WaitForExit();
-                if (proc.ExitCode != 0)
-                {
-                    throw new InvalidOperationException(errMsg.ToString());
-                }
+                exitCode = proc.ExitCode;
             }
-            watch.Stop();
-            ms = watch.ElapsedMilliseconds;
         }
 
-        if (errMsg.Length > 0)
+        var re = new System.Text.RegularExpressions.Regex(@"^interp run: (.*) ms");
+        var countMsg = coutMsgBuilder.ToString();
+        if (exitCode != 0 || re.Match(countMsg) is not System.Text.RegularExpressions.Match match)
         {
             byte[] data = Encoding.UTF8.GetBytes("-1");
             response.ContentType = "text/html";
@@ -140,7 +136,7 @@ internal sealed class SimulatorServer : IDisposable
         }
         else
         {
-            byte[] data = Encoding.UTF8.GetBytes(ms.ToString());
+            byte[] data = Encoding.UTF8.GetBytes(match.Groups[1].Value.ToString());
             response.ContentType = "text/html";
             response.ContentEncoding = Encoding.UTF8;
             response.ContentLength64 = data.LongLength;

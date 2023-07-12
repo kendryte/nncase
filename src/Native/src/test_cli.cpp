@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <chrono>
 #include <cstring>
 #include <iostream>
 #include <nncase/io_utils.h>
@@ -19,6 +20,7 @@
 
 using namespace nncase;
 using namespace nncase::runtime;
+constexpr size_t loop_count = 10;
 
 #define TRY(x)                                                                 \
     if (x)                                                                     \
@@ -65,23 +67,37 @@ result<void> run_core(const std::string &kmodel_path,
         parameters.push_back(_.impl());
     }
 
-    try_var(ret, entry->invoke({parameters.data(), parameters.size()}));
+    double total_time = 0.0;
+    for (size_t i = 0; i < loop_count; i++) {
+        auto start_time = std::chrono::steady_clock::now();
+        try_var(ret, entry->invoke({parameters.data(), parameters.size()}));
+        auto end_time = std::chrono::steady_clock::now();
+        total_time +=
+            (std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time)
+                 .count() /
+             1e6);
 
-    if (entry->parameters_size() == (bins.size() - 1)) {
-        auto output_bin = *bins.end();
-        std::ofstream output_stream(output_bin, std::ios::binary);
-        if (ret.is_a<tensor>()) {
-            try_(write_tensor_buffer(ret, output_stream));
-        } else if (ret.is_a<tuple>()) {
-            try_var(tp, ret.as<tuple>());
-            for (auto &&ret_v : tp->fields()) {
-                try_(write_tensor_buffer(ret_v, output_stream));
+        if (i == (loop_count - 1)) {
+            if (entry->parameters_size() == (bins.size() - 1)) {
+                auto output_bin = *bins.end();
+                std::ofstream output_stream(output_bin, std::ios::binary);
+                if (ret.is_a<tensor>()) {
+                    try_(write_tensor_buffer(ret, output_stream));
+                } else if (ret.is_a<tuple>()) {
+                    try_var(tp, ret.as<tuple>());
+                    for (auto &&ret_v : tp->fields()) {
+                        try_(write_tensor_buffer(ret_v, output_stream));
+                    }
+                } else {
+                    return nncase::err(std::errc::bad_message);
+                }
+                output_stream.close();
             }
-        } else {
-            return nncase::err(std::errc::bad_message);
         }
-        output_stream.close();
     }
+
+    std::cout << "interp run: " << (total_time / loop_count)
+              << " ms, fps = " << 1000 / (total_time / loop_count) << std::endl;
 
     return ok();
 }

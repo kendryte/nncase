@@ -222,6 +222,6 @@ public sealed class UnitTestOnlineCostModel : TestClassBase
 
         evaluator.Visit(expr);
 
-        // evaluator.ExprMemo[expr].Score
+        Assert.NotEqual(UInt128.MaxValue, evaluator.ExprMemo[expr].Score);
     }
 }
