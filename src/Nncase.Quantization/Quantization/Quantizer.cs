@@ -243,7 +243,7 @@ internal partial class Quantizer
             }
 
             var r = range.Max - range.Min;
-            if (r == 0)
+            if (r < 1e-6f)
             {
                 r = 0.1f;
             }

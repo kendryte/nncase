@@ -70,7 +70,7 @@ public static class Tensors
 
     public static Call Prod(Expr input)
     {
-        return Reduce(ReduceOp.Prod, input, Enumerable.Range(0, input.CheckedShape.Rank).Select(x => (long)x).ToArray(), 0, false);
+        return Reduce(ReduceOp.Prod, input, Enumerable.Range(0, input.CheckedShape.Rank).Select(x => (long)x).ToArray(), IR.F.Tensors.Cast(1, input.CheckedDataType, CastMode.KDefault), false);
     }
 
     public static Call Range(Expr begin, Expr end, Expr step) => new Call(new Range(), begin, end, step);
@@ -151,4 +151,6 @@ public static class Tensors
         new Call(new TopK(), x, k, axis, largest, sorted);
 
     public static Call IndexOf(Expr input, Expr value) => new Call(new IndexOf(), input, value);
+
+    public static Call Trilu(Expr input, Expr k, Expr upper) => new Call(new Trilu(), input, k, upper);
 }

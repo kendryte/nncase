@@ -6,6 +6,7 @@ set(SRCS buffer.cpp
 		 host_buffer.cpp
 		 host_runtime_tensor.cpp
          interpreter.cpp
+         runtime_section_context.cpp
          runtime_loader.cpp
          runtime_module.cpp
 		 runtime_function.cpp
@@ -21,7 +22,7 @@ endif()
 if (BUILDING_RUNTIME)
     add_library(runtime OBJECT ${SRCS})
     target_include_directories(runtime PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-    target_link_libraries(runtime PUBLIC gsl::gsl-lite mpark_variant::mpark_variant)
+    target_link_libraries(runtime PUBLIC gsl::gsl-lite)
     target_link_libraries(runtime PRIVATE kernels)
     if (DEFAULT_BUILTIN_RUNTIMES)
       target_compile_definitions(runtime PRIVATE -DNNCASE_DEFAULT_BUILTIN_RUNTIMES)
@@ -34,7 +35,7 @@ if (BUILDING_RUNTIME)
 
     add_library(nncaseruntime STATIC dummy.cpp)
     target_link_libraries(nncaseruntime PRIVATE nncasebase kernels runtime runtime_stackvm)
-    target_link_libraries(nncaseruntime PUBLIC gsl::gsl-lite mpark_variant::mpark_variant)
+    target_link_libraries(nncaseruntime PUBLIC gsl::gsl-lite)
     set_target_properties(nncaseruntime PROPERTIES
                                         OUTPUT_NAME "Nncase.Runtime.Native")
     install(TARGETS nncaseruntime EXPORT nncaseruntimeTargets
@@ -52,7 +53,7 @@ if (BUILDING_RUNTIME)
 else()
     add_library(simulator OBJECT ${SRCS})
     target_include_directories(simulator PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-    target_link_libraries(simulator PUBLIC gsl::gsl-lite mpark_variant::mpark_variant)
+    target_link_libraries(simulator PUBLIC gsl::gsl-lite)
     target_link_libraries(simulator PRIVATE kernels)
     target_compile_definitions(simulator PUBLIC -DNNCASE_DLL -DNNCASE_SIMULATOR)
     if (DEFAULT_BUILTIN_RUNTIMES)
@@ -65,7 +66,7 @@ else()
     
     add_library(nncaseruntime SHARED dummy.cpp)
     target_link_libraries(nncaseruntime PRIVATE nncasebase kernels simulator compiler simulator_stackvm fmt::fmt)
-    target_link_libraries(nncaseruntime PUBLIC gsl::gsl-lite mpark_variant::mpark_variant)
+    target_link_libraries(nncaseruntime PUBLIC gsl::gsl-lite)
     set_target_properties(nncaseruntime PROPERTIES
                                         OUTPUT_NAME "Nncase.Runtime.Native")
 

@@ -42,6 +42,7 @@ set(SRCS ../tensor_ops.cpp
          tile.cpp
          topk.cpp
          transpose.cpp
+         trilu.cpp
          unary.cpp
          where.cpp
          uninitialized.cpp

@@ -453,6 +453,11 @@ transpose(datatype_t type, const gsl::byte *src, gsl::byte *dest,
           kernel_context &context = default_kernel_context()) noexcept;
 
 NNCASE_API result<void>
+trilu(datatype_t type, const gsl::byte *input, gsl::byte *output,
+      gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
+      gsl::span<const size_t> out_strides, long k, bool upper) noexcept;
+
+NNCASE_API result<void>
 unary(typecode_t dtype, runtime::stackvm::unary_op_t op, const gsl::byte *input,
       gsl::byte *output, gsl::span<const size_t> input_shape,
       gsl::span<const size_t> input_strides, gsl::span<const size_t> out_shape,

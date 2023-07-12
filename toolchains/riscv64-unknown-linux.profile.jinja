@@ -5,6 +5,7 @@ cxx_compiler=g++
 
 [env]
 CONAN_CMAKE_FIND_ROOT_PATH=$toolchain/riscv64-unknown-linux-gnu  # Optional, for CMake to find things in that folder
+CONAN_CMAKE_SYSTEM_PROCESSOR=riscv64
 CHOST=$target_host
 AR=$toolchain/bin/$target_host-ar
 AS=$toolchain/bin/$target_host-as

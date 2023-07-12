@@ -122,6 +122,7 @@ public sealed partial class OnnxImporter : BaseImporter
             "DequantizeLinear" => VisitDequantizeLinear(op),
             "Div" => VisitBinary(op, BinaryOp.Div),
             "Dropout" => VisitDropout(op),
+            "Einsum" => VisitEinsum(op),
             "Elu" => VisitElu(op),
             "Equal" => VisitCompare(op, CompareOp.Equal),
             "Exp" => VisitUnary(op, UnaryOp.Exp),
@@ -207,6 +208,7 @@ public sealed partial class OnnxImporter : BaseImporter
             "Sum" => VisitSum(op),
             "Tanh" => VisitUnary(op, UnaryOp.Tanh),
             "Tile" => VisitTile(op),
+            "Trilu" => VisitTrilu(op),
             "TopK" => VisitTopK(op),
             "Transpose" => VisitTranspose(op),
 
