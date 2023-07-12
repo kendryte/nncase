@@ -86,22 +86,22 @@ template <typename T> struct Compare {
 };
 
 template <typename T>
-void topK(const T *input, T *output, int64_t *indices, size_t length,
-          int64_t k) {
-
-    std::vector<size_t> indices_vec(k);
-    std::priority_queue<size_t, std::vector<size_t>, Compare<T>> topK_index(
-        indices_vec.begin(), indices_vec.end(), Compare<T>{input});
+void topK(const T *input, T *output, int64_t *indices, size_t length, int64_t k) {
+    std::priority_queue<std::pair<T, size_t>, std::vector<std::pair<T, size_t> >, std::greater<> > topK_index;
     for (int i = 0; i < length; i++) {
-        if (input[i] >= input[topK_index.top()]) {
+        if (topK_index.size()>=k && input[i] > topK_index.top().first) {
             topK_index.pop();
-            topK_index.emplace(i);
+            topK_index.emplace(input[i], i);
+        }
+        else if(topK_index.size()<k){
+            topK_index.emplace(input[i], i);
         }
     }
-    for (int j = 0; j < k; j++) {
-        auto index = *(indices_vec.rbegin() + j);
-        output[j] = input[index];
-        indices[j] = index;
+    for (int j = k-1; j >= 0; j--) {
+        auto top = topK_index.top();
+        output[j] = top.first;
+        indices[j] = top.second;
+        topK_index.pop();
     }
 }
 
@@ -118,21 +118,18 @@ topk_impl(const T *input, T *output_values, int64_t *output_indices,
     (void)output_indices_shape;
     (void)output_indices_strides;
 
-    //        // naive implementation of default attributes
-    //        if (sorted && largest && (axis == -1 || axis == in_shape.size() -
-    //        1))
-    //        {
-    //            auto outer_loop_cnt = compute_size(in_shape) /
-    //            in_shape.back(); for (auto i = 0; i < outer_loop_cnt; ++i) {
-    //                auto input_ptr = input + i * in_shape.back();
-    //                int64_t *output_indices_ptr = output_indices + i *
-    //                output_indices_shape.back(); T *output_values_ptr =
-    //                    output_values + i * output_values_shape.back();
-    //                topK(input_ptr, output_values_ptr, output_indices_ptr,
-    //                in_shape.back(), k);
-    //            }
-    //            return ok();
-    //        }
+    // naive implementation of default attributes
+    if (sorted && largest && (axis == -1 || axis == in_shape.size() -1 ))
+    {
+        auto outer_loop_cnt = compute_size(in_shape) /in_shape.back();
+        for (auto i = 0; i < outer_loop_cnt; ++i) {
+            auto input_ptr = input + i * in_shape.back();
+            int64_t *output_indices_ptr = output_indices + i * output_indices_shape.back();
+            T *output_values_ptr = output_values + i * output_values_shape.back();
+            topK(input_ptr, output_values_ptr, output_indices_ptr, in_shape.back(), k);
+        }
+        return ok();
+    }
 
     std::map<size_t, std::vector<std::pair<T, size_t>>> map;
 
