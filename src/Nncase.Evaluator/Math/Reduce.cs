@@ -107,7 +107,7 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICos
             var keepDimsValue = keepDimsV.Value.ToScalar<int>();
             if (outShape.CheckedShape.IsFixed)
             {
-                if (axisValue.Value.Shape.Count == outShape.CheckedShape.Count && keepDimsValue == 0)
+                if (axes.Length == outShape.CheckedShape[0] && keepDimsValue == 0)
                 {
                     return new int[] { };
                 }
