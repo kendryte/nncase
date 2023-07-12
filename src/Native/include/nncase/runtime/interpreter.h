@@ -20,6 +20,7 @@
 #include "runtime_module.h"
 #include "runtime_tensor.h"
 #include <gsl/gsl-lite.hpp>
+#include <istream>
 #include <memory>
 #include <nncase/shape.h>
 #include <nncase/tensor.h>
@@ -68,6 +69,8 @@ class NNCASE_API interpreter {
     [[nodiscard]] result<void> load_model(gsl::span<const gsl::byte> buffer,
                                           bool copy_buffer = false) noexcept;
 
+    [[nodiscard]] result<void> load_model(std::istream &stream) noexcept;
+
     options_dict &options() noexcept;
     result<runtime_module *> find_module_by_id(size_t index) noexcept;
 
@@ -102,9 +105,10 @@ class NNCASE_API interpreter {
     tensor_type input_tensor_type(size_t index) const noexcept;
     tensor_type output_tensor_type(size_t index) const noexcept;
 
+    result<void> initialize_model(const model_header &header) noexcept;
+
   private:
     std::shared_ptr<nncase::runtime::dump_manager> dump_manager_;
-    std::unique_ptr<gsl::byte[]> model_data_;
     std::vector<std::unique_ptr<runtime_module>> modules_;
     runtime_function *entry_function_;
     options_dict options_;
