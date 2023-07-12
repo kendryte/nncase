@@ -105,6 +105,14 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICos
             var inShape = context.GetArgumentShape(target, Reduce.Input);
             var axes = axisValue.Value.Cast<int>();
             var keepDimsValue = keepDimsV.Value.ToScalar<int>();
+            if (outShape.CheckedShape.IsFixed)
+            {
+                if (axisValue.Value.Shape.Count == outShape.CheckedShape.Count && keepDimsValue == 0)
+                {
+                    return new int[] { };
+                }
+            }
+
             foreach (var axValue in axes)
             {
                 var ax = ShapeExprUtility.Positive(axValue, inShape);
