@@ -21,7 +21,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Range"/>.
 /// </summary>
-public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, ICostEvaluator<Reshape>, IShapeEvaluator<Reshape>
+public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, ICostEvaluator<Reshape>, IShapeEvaluator<Reshape>, IMetricEvaluator<Reshape>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Reshape reshape)
@@ -79,6 +79,11 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
         var negDimInfactValue = iSize / Abs(sSize);
         var index = IndexOf(shape, -1);
         return new If(sSize < 0, ShapeExprUtility.Replace(shape, index, negDimInfactValue), shape);
+    }
+
+    public Metric Visit(IMetricEvaluateContext context, Reshape target)
+    {
+        return Metric.Zero;
     }
 
     private IRType Visit(ITypeInferenceContext context, Reshape target, TensorType input)

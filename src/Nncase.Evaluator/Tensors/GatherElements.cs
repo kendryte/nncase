@@ -12,7 +12,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="GatherElements"/>.
 /// </summary>
-public class GatherElementsEvaluator : IEvaluator<GatherElements>, ITypeInferencer<GatherElements>, ICostEvaluator<GatherElements>
+public class GatherElementsEvaluator : IEvaluator<GatherElements>, ITypeInferencer<GatherElements>, ICostEvaluator<GatherElements>, IMetricEvaluator<GatherElements>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, GatherElements target)
@@ -50,6 +50,15 @@ public class GatherElementsEvaluator : IEvaluator<GatherElements>, ITypeInferenc
                 TensorType t => CostUtility.GetMemoryAccess(t),
                 _ => 1,
             },
+        };
+    }
+
+    public Metric Visit(IMetricEvaluateContext context, GatherElements target)
+    {
+        var returnType = context.GetReturnType<IRType>();
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(returnType),
         };
     }
 }

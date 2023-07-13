@@ -944,7 +944,8 @@ class KernelTest {
         return make_tensor(buffer, ort_type, shape, shape_size);
     }
 
-    result<void> check_tuple_output(runtime::runtime_tensor expected,
+    result<void> check_tuple_output(runtime::runtime_tensor expected[],
+                                    typecode_t dtypes[],
                                     const value_t &output) {
         try_var(output_tuple, output.as<tuple>());
         for (size_t i = 0; i < output_tuple->fields().size(); i++) {
@@ -953,12 +954,18 @@ class KernelTest {
                     nncase::runtime::get_output_span(output_tensor));
             auto output1 =
                 runtime::hrt::create(
-                    dt_int64, {1},
-                    {reinterpret_cast<gsl::byte *>(output_span.data()), 8},
+                    dtypes[i], expected[i].shape(),
+                    {reinterpret_cast<gsl::byte *>(output_span.data()),
+                     output_span.size_bytes()},
                     true, runtime::host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
-            EXPECT_TRUE(is_same_tensor(expected, output1) ||
-                        cosine_similarity_tensor(expected, output1));
+            bool result = is_same_tensor(expected[i], output1) ||
+                          cosine_similarity_tensor(expected[i], output1);
+            if (!result) {
+                print_runtime_tensor(expected[i]);
+                print_runtime_tensor(output1);
+            }
+            EXPECT_TRUE(result);
         }
 
         return ok();
@@ -971,11 +978,11 @@ class KernelTest {
         return ok();
     }
 
-    result<void> tensor_to_quant_param(const value_t &quant_param) {
-        try_input_with_value_type(qp, quant_param, quant_param_t);
-        auto a = qp->zero_point;
-        return ok();
-    }
+    //    result<void> tensor_to_quant_param(const value_t &quant_param) {
+    //        try_input_with_value_type(qp, quant_param, quant_param_t);
+    //        auto a = qp->zero_point;
+    //        return ok();
+    //    }
 
     bool is_same_tensor(runtime::runtime_tensor &lhs,
                         runtime::runtime_tensor &rhs) {
