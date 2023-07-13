@@ -16,7 +16,7 @@ namespace Nncase.Evaluator.NN;
 /// <summary>
 /// Evaluator for <see cref="LSTM"/>.
 /// </summary>
-public class LSTMEvaluator : IEvaluator<LSTM>, ITypeInferencer<LSTM>, ICostEvaluator<LSTM>
+public class LSTMEvaluator : IEvaluator<LSTM>, ITypeInferencer<LSTM>, ICostEvaluator<LSTM>, IMetricEvaluator<LSTM>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, LSTM target)
@@ -69,6 +69,45 @@ public class LSTMEvaluator : IEvaluator<LSTM>, ITypeInferencer<LSTM>, ICostEvalu
                 TensorType tensorType => CostUtility.GetMemoryAccess(tensorType),
                 _ => UInt128.One,
             }).Sum(),
+        };
+    }
+
+    public Metric Visit(IMetricEvaluateContext context, LSTM target)
+    {
+        var xType = context.GetArgumentType<TensorType>(target, LSTM.X);
+        var wType = context.GetArgumentType<TensorType>(target, LSTM.W);
+        var rType = context.GetArgumentType<TensorType>(target, LSTM.R);
+        var bType = context.GetArgumentType<TensorType>(target, LSTM.B);
+        var returnType = context.GetReturnType<TupleType>();
+        var outputYType = (TensorType)returnType[0];
+        var outputYShape = outputYType.Shape.ToValueArray().Select(s => (UInt128)s).ToArray();
+        var (sequence_len, num_directions, batch_size, hidden_size) = (outputYShape[0], outputYShape[1], outputYShape[2], outputYShape[3]);
+        var embbeding_size = (UInt128)xType.Shape[^1].FixedValue;
+
+        var flops = num_directions * batch_size * sequence_len * (
+            MetricUtility.GetMatMulFLOPs(1, 4 * hidden_size, embbeding_size)
+
+            // [1,embbeding_size] @ [embbeding_size, 4 * hidden_size]
+            + MetricUtility.GetMatMulFLOPs(1, 4 * hidden_size, hidden_size) // [1,hidden_size] @ [hidden_size, 4 * hidden_size]
+            + (4 * hidden_size)
+            + (MetricUtility.SigmoidFLOPs * hidden_size) // ft = sigmoid(g[2])
+            + hidden_size // ct = init_c * ft
+            + (MetricUtility.SigmoidFLOPs * hidden_size) // it = sigmoid(g[0])
+            + (MetricUtility.TanhFLOPs * hidden_size) // c_t = tanh(g[3])
+            + hidden_size // c_t_it = it * c_t
+            + hidden_size // ct = ct + c_t_it
+            + (MetricUtility.SigmoidFLOPs * hidden_size) // ot = sigmoid(g[1])
+            + (MetricUtility.TanhFLOPs * hidden_size) // tanh_ct = tanh(ct_o)
+            + hidden_size); // ht = tanh_ct * ot
+
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(xType) + CostUtility.GetMemoryAccess(wType) + CostUtility.GetMemoryAccess(rType) + CostUtility.GetMemoryAccess(bType) + returnType.Select(t => t switch
+            {
+                TensorType tensorType => CostUtility.GetMemoryAccess(tensorType),
+                _ => UInt128.One,
+            }).Sum(),
+            [MetricFactorNames.FLOPs] = flops,
         };
     }
 

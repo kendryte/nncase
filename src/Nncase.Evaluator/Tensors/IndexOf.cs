@@ -13,7 +13,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="IndexOf"/>.
 /// </summary>
-public class IndexOfEvaluator : IEvaluator<IndexOf>, ITypeInferencer<IndexOf>, ICostEvaluator<IndexOf>, IShapeEvaluator<IndexOf>
+public class IndexOfEvaluator : IEvaluator<IndexOf>, ITypeInferencer<IndexOf>, ICostEvaluator<IndexOf>, IShapeEvaluator<IndexOf>, IMetricEvaluator<IndexOf>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, IndexOf indexOf)
@@ -43,6 +43,16 @@ public class IndexOfEvaluator : IEvaluator<IndexOf>, ITypeInferencer<IndexOf>, I
     }
 
     public Expr Visit(IShapeEvaluateContext context, IndexOf target) => 1;
+
+    public Metric Visit(IMetricEvaluateContext context, IndexOf target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, IndexOf.Input);
+        _ = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(inputType),
+        };
+    }
 
     private IRType Visit(ITypeInferenceContext context, IndexOf target, TensorType input)
     {
