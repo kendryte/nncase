@@ -9,6 +9,7 @@ class CompileOptions:
     dump_dir: Path
     dump_ir: bool
     swapRB: bool
+    input_file: str
     input_range: List[float]
     input_shape: List[int]
     input_type: str

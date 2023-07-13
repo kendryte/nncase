@@ -159,6 +159,7 @@ public sealed partial class OnnxImporter : BaseImporter
             "Mul" => VisitBinary(op, BinaryOp.Mul),
             "Neg" => VisitUnary(op, UnaryOp.Neg),
             "Not" => VisitUnary(op, UnaryOp.LogicalNot),
+            "Or" => VisitBinary(op, BinaryOp.LogicalOr),
             "OneHot" => VisitOneHot(op),
             "Pad" => VisitPad(op),
             "Pow" => VisitBinary(op, BinaryOp.Pow),

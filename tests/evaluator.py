@@ -32,6 +32,7 @@ class Evaluator:
         compile_options.shape_bucket_options.range_info = {}
         compile_options.shape_bucket_options.segments_count = 2
         compile_options.shape_bucket_options.fix_var_map = {}
+        compile_options.input_file = cfg.compile_opt.input_file
         self.compiler = nncase.Compiler(compile_options)
         self.import_model(self.compiler, model_content, import_options)
         self.set_quant_opt(cfg, kwargs, preprocess, self.compiler)
