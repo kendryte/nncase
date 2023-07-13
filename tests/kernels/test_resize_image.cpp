@@ -51,16 +51,15 @@ INSTANTIATE_TEST_SUITE_P(ResizeImage, ResizeImageTest,
 
 TEST_P(ResizeImageTest, ResizeImage) {
 
-    // expected
-    int32_t new_shape_array[] = {1, 3, 112, 112};
+    // actual
+    int64_t new_shape_array[] = {1, 3, 112, 112};
     auto new_shape =
-        hrt::create(dt_int32, {4},
+        hrt::create(dt_int64, {4},
                     {reinterpret_cast<gsl::byte *>(new_shape_array),
                      sizeof(new_shape_array)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
-    // actual
     float_t roi_array[1];
     auto roi = hrt::create(dt_float32, {1},
                            {reinterpret_cast<gsl::byte *>(roi_array),
@@ -103,8 +102,25 @@ TEST_P(ResizeImageTest, ResizeImage) {
             .expect("resize_image failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
-    // todo expected
-    /*bool result = is_same_tensor(expected, actual) ||
+    const char *transformation_mode = "half_pixel";
+    const char *resize_mode_t = "linear";
+    const char *nearest_mode_t = "round_prefer_floor";
+
+    // expected
+    auto output_ort = ortki_ResizeWithSizes(
+        runtime_tensor_2_ort_tensor(lhs), runtime_tensor_2_ort_tensor(roi),
+        runtime_tensor_2_ort_tensor(new_shape), transformation_mode, -0.75f, 0l,
+        0.0f, resize_mode_t, nearest_mode_t);
+
+    size_t size = 0;
+    void *ptr_ort = tensor_buffer(output_ort, &size);
+    dims_t shape(tensor_rank(output_ort));
+    tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
+    auto expected = hrt::create(lhs.datatype(), shape,
+                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+                                true, host_runtime_tensor::pool_cpu_only)
+                        .expect("create tensor failed");
+    bool result = is_same_tensor(expected, actual) ||
                   cosine_similarity_tensor(expected, actual);
 
     if (!result) {
@@ -113,7 +129,7 @@ TEST_P(ResizeImageTest, ResizeImage) {
     }
 
     // compare
-    EXPECT_TRUE(result);*/
+    EXPECT_TRUE(result);
 }
 
 int main(int argc, char *argv[]) {
