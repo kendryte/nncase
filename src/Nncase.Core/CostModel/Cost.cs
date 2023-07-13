@@ -20,12 +20,12 @@ public static class CostFactorNames
 /// <summary>
 /// Cost.
 /// </summary>
-public sealed record Cost : IComparable<Cost>, IEquatable<Cost>
+public sealed record Cost(bool Freezed = false) : IComparable<Cost>, IEquatable<Cost>
 {
     /// <summary>
     /// Zero cost.
     /// </summary>
-    public static readonly Cost Zero = new();
+    public static readonly Cost Zero = new(true);
 
     /// <summary>
     /// Gets or sets factors.
@@ -40,7 +40,15 @@ public sealed record Cost : IComparable<Cost>, IEquatable<Cost>
     public UInt128 this[string name]
     {
         get => Factors[name];
-        set => Factors[name] = value;
+        set
+        {
+            if (Freezed)
+            {
+                throw new InvalidOperationException("Can't modify freezed cost!");
+            }
+
+            Factors[name] = value;
+        }
     }
 
     /// <summary>

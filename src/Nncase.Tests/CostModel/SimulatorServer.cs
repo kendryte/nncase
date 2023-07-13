@@ -26,6 +26,8 @@ internal sealed class SimulatorServer : IDisposable
 
     public string Url { get; }
 
+    public static string LocalHost = "127.0.0.1:5000";
+
     public void Dispose()
     {
         Stop();
@@ -102,24 +104,33 @@ internal sealed class SimulatorServer : IDisposable
         {
             var tempPath = Path.Join(tempDir, file.FileName);
             tempPaths.Add(tempPath);
-            var of = File.OpenWrite(tempPath);
-            file.Data.CopyTo(of);
+            using (var of = File.OpenWrite(tempPath))
+            {
+                file.Data.CopyTo(of);
+            }
         }
 
         var coutMsgBuilder = new StringBuilder();
+        var errMsgBuilder = new StringBuilder();
         int exitCode = -1;
-        using (var coutWriter = new StringWriter(coutMsgBuilder))
+        using (var errWriter = new StringWriter(errMsgBuilder))
         {
-            using (var proc = new Process())
+            using (var coutWriter = new StringWriter(coutMsgBuilder))
             {
-                proc.StartInfo.FileName = "nncasetest_cli";
-                proc.StartInfo.Arguments = string.Join(" ", tempPaths);
-                proc.StartInfo.RedirectStandardOutput = true;
-                proc.OutputDataReceived += (sender, e) => coutWriter.WriteLine(e.Data);
-                proc.Start();
-                proc.BeginOutputReadLine();
-                proc.WaitForExit();
-                exitCode = proc.ExitCode;
+                using (var proc = new Process())
+                {
+                    proc.StartInfo.FileName = "nncasetest_cli";
+                    proc.StartInfo.Arguments = string.Join(" ", tempPaths);
+                    proc.StartInfo.RedirectStandardOutput = true;
+                    proc.OutputDataReceived += (sender, e) => coutWriter.WriteLine(e.Data);
+                    proc.StartInfo.RedirectStandardError = true;
+                    proc.ErrorDataReceived += (sender, e) => errWriter.WriteLine(e.Data);
+                    proc.Start();
+                    proc.BeginOutputReadLine();
+                    proc.BeginErrorReadLine();
+                    proc.WaitForExit();
+                    exitCode = proc.ExitCode;
+                }
             }
         }
 
@@ -127,6 +138,7 @@ internal sealed class SimulatorServer : IDisposable
         var countMsg = coutMsgBuilder.ToString();
         if (exitCode != 0 || re.Match(countMsg) is not System.Text.RegularExpressions.Match match)
         {
+            Console.Write(errMsgBuilder);
             byte[] data = Encoding.UTF8.GetBytes("-1");
             response.ContentType = "text/html";
             response.ContentEncoding = Encoding.UTF8;
@@ -142,6 +154,11 @@ internal sealed class SimulatorServer : IDisposable
             response.ContentLength64 = data.LongLength;
             response.OutputStream.Write(data, 0, data.Length);
             response.Close();
+        }
+
+        foreach (var tempPath in tempPaths)
+        {
+            File.Delete(tempPath);
         }
     }
 }

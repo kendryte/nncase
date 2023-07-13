@@ -22,6 +22,11 @@ internal sealed class CostEvaluateProvider : ICostEvaluateProvider
         _serviceProvider = serviceProvider;
     }
 
+    public Cost EvaluateBaseFuncCost(BaseFunction baseFunction, ICostEvaluateContext context)
+    {
+        return Cost.Zero;
+    }
+
     public Cost EvaluateCost(Expr expr)
     {
         if (expr.CheckedType is null)

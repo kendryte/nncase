@@ -264,6 +264,10 @@ public abstract partial class Expr : IDisposable
     {
         if (!_disposedValue)
         {
+            if (this is Fusion { Name: "func_2_func_1" })
+            {
+                System.Console.WriteLine("fuck!");
+            }
             foreach (var operand in _operands)
             {
                 operand.RemoveUser(this);

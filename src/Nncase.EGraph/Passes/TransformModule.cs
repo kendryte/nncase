@@ -13,6 +13,7 @@ internal class TransformModule : IApplicationPart
 {
     public void ConfigureServices(IRegistrator registrator)
     {
+        registrator.Register<IEGraphExtractor, EGraphExtractors.SatExtractor>(reuse: Reuse.ScopedOrSingleton);
         registrator.Register<IEGraphRewriteProvider, EGraphRewriteProvider>(reuse: Reuse.ScopedOrSingleton);
     }
 }

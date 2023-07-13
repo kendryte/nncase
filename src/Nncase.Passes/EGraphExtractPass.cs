@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.CostModel;
 using Nncase.Diagnostics;
 using Nncase.Evaluator;
 using Nncase.IR;
@@ -15,16 +16,16 @@ namespace Nncase.Passes;
 
 public sealed class EGraphExtractPass : Pass<IEGraph, BaseFunction>
 {
-    private readonly IBaseFuncCostEvaluator? _costEvaluator;
+    private readonly IEGraphExtractor _extractor;
 
-    public EGraphExtractPass(IBaseFuncCostEvaluator? costEvaluator = null)
+    public EGraphExtractPass(IEGraphExtractor extractor)
     {
-        _costEvaluator = costEvaluator;
+        _extractor = extractor;
     }
 
     protected override Task<BaseFunction> RunCoreAsync(IEGraph input, RunPassContext context)
     {
-        var post = (BaseFunction)input.Extract(input.Root!, _costEvaluator);
+        var post = (BaseFunction)_extractor.Extract(input.Root!, input);
         IRHelpers.DCE(post);
         return Task.FromResult(post);
     }

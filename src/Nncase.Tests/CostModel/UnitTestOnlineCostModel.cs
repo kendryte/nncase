@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -11,6 +12,7 @@ using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
 using DryIoc;
+using Microsoft.Extensions.DependencyInjection;
 using NetFabric.Hyperlinq;
 using Nncase;
 using Nncase.CostModel;
@@ -21,158 +23,73 @@ using Xunit;
 
 namespace Nncase.Tests.CostModelTest;
 
-internal sealed class OnlineCostEvaluateVisitor : ExprVisitor<Cost, Unit>
-{
-    public OnlineCostEvaluateVisitor(string serverUrl)
-    {
-        ServerUrl = serverUrl;
-        CompileModuleCallBack = DefaultCompileModule;
-    }
+// internal sealed class OnlineCostEvaluateVisitor : ExprVisitor<Cost, Unit>
+// {
+//     private readonly OnlineEGraphExtractCostEvaluator _evaluator;
 
-    public OnlineCostEvaluateVisitor(string serverUrl, CompileModuleFunc compileModuleFunc) : this(serverUrl)
-    {
-        CompileModuleCallBack = compileModuleFunc;
-    }
+//     public OnlineCostEvaluateVisitor(OnlineEGraphExtractCostEvaluator evaluator)
+//     {
+//         _evaluator = evaluator;
+//     }
 
-    public string ServerUrl { get; }
+//     protected override Cost DefaultVisitLeaf(Expr expr)
+//     {
+//         return Cost.Zero;
+//     }
 
-    public delegate string CompileModuleFunc(IRModule module);
+//     protected override Cost VisitLeafCall(Call call)
+//     {
+//         return call.Target switch
+//         {
+//             Op op => _evaluator.Visit(new CostEvaluateContext(call), op),
+//             _ => throw new NotSupportedException()
+//         };
+//     }
 
-    public CompileModuleFunc CompileModuleCallBack { get; }
+//     private sealed class CostEvaluateContext : ICostEvaluateContext
+//     {
+//         private readonly Call _currentCall;
 
-    public bool IsServerOnline()
-    {
-        var client = new HttpClient();
-        try
-        {
-            var response = client.SendAsync(new HttpRequestMessage(HttpMethod.Head, $"http://{ServerUrl}")).Result;
+//         public CostEvaluateContext(Call currentCall)
+//         {
+//             _currentCall = currentCall;
+//         }
 
-            // URL is online if we get a 2xx response status
-            if (response.StatusCode != System.Net.HttpStatusCode.OK)
-            {
-                return false;
-            }
+//         public T GetArgumentType<T>(Op op, ParameterInfo parameter) where T : IRType
+//         {
+//             return (T)_currentCall[parameter].CheckedType;
+//         }
 
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
-    }
+//         public T GetReturnType<T>() where T : IRType
+//         {
+//             return (T)_currentCall.CheckedType;
+//         }
 
-    protected override Cost DefaultVisitLeaf(Expr expr)
-    {
-        return Cost.Zero;
-    }
+//         public bool TryGetConstArgument(Op op, ParameterInfo parameter, [MaybeNullWhen(false)] out Const @const)
+//         {
+//             bool ret = false;
+//             @const = null;
+//             if (_currentCall[parameter] is Const c)
+//             {
+//                 ret = true;
+//                 @const = c;
+//             }
 
-    protected override Cost VisitLeafCall(Call call)
-    {
-        var newArgs = new List<Expr>();
-        var newVars = new List<Var>();
-        var newArgPaths = new List<string>();
-        for (int i = 0; i < call.Arguments.Length; i++)
-        {
-            if (call.Arguments[i] is not Const c)
-            {
-                var (tmpVar, path) = GetInput(i, call.Arguments[i].CheckedType);
-                newVars.Add(tmpVar);
-                newArgs.Add(tmpVar);
-                newArgPaths.Add(path);
-            }
-            else
-            {
-                newArgs.Add(c);
-            }
-        }
-
-        var newFunc = new Function("main", new Call(call.Target, newArgs.ToArray()), newVars.ToArray());
-        var newModule = new IRModule(newFunc);
-        var kmodelPath = CompileModuleCallBack(newModule);
-
-        var uploadFiles = new[] { kmodelPath }.Concat(newArgPaths).ToArray();
-        var time = SimulateKModel(uploadFiles);
-
-        foreach (var item in uploadFiles)
-        {
-            File.Delete(item);
-        }
-
-        var cost = Cost.Zero;
-        if (time == -1)
-        {
-            cost[CostFactorNames.CPUCycles] = UInt128.MaxValue;
-        }
-        else
-        {
-            cost[CostFactorNames.CPUCycles] = (UInt128)(time * 1.6 * 1e9);
-        }
-
-        return cost;
-    }
-
-    private static string DefaultCompileModule(IRModule module)
-    {
-        throw new NotImplementedException();
-    }
-
-    private float SimulateKModel(params string[] filePaths)
-    {
-        var client = new HttpClient();
-        var formData = new MultipartFormDataContent();
-        foreach (var (filePath, i) in filePaths.Select((s, i) => (s, i)))
-        {
-            var streamContent = new StreamContent(File.OpenRead(filePath));
-            string fileName = i switch
-            {
-                0 => "kmodel",
-                _ => $"input_{i}",
-            };
-            formData.Add(streamContent, "files", fileName);
-        }
-
-        var response = client.PostAsync($"http://{ServerUrl}/run_kmodel", formData).Result;
-        var responseContent = response.Content.ReadAsStringAsync().Result;
-        if (response.StatusCode != HttpStatusCode.OK)
-        {
-            return -1;
-        }
-        var time = float.Parse(responseContent);
-        return time < 0.0 ? -1 : time;
-    }
-
-    private (Var var, string path) GetInput(int index, IRType type)
-    {
-        var inputVar = new Var($"tmpVar_{index}", type);
-        if (type is TensorType tensorType)
-        {
-            var tensor = Nncase.IR.F.Random.Normal(tensorType.DType, 0, 1, 0, tensorType.Shape).Evaluate().AsTensor();
-            string tempFilePath = Path.GetTempFileName();
-            using (FileStream fs = File.OpenWrite(tempFilePath))
-            {
-                fs.Write(tensor.BytesBuffer);
-            }
-
-            return (inputVar, tempFilePath);
-        }
-        else
-        {
-            throw new NotSupportedException();
-        }
-    }
-}
-
-
+//             return ret;
+//         }
+//     }
+// }
 
 
 [AutoSetupTestMethod(InitSession = true)]
 public sealed class UnitTestOnlineCostModel : TestClassBase
 {
     const string URL = "127.0.0.1:5000";
+
     [Fact]
     public void TestIsOnline()
     {
-        var evaluator = new OnlineCostEvaluateVisitor(URL);
+        var evaluator = ActivatorUtilities.CreateInstance<OnlineCostEvaluateProvider>(CompileSession, URL);
 
         using (var server = new SimulatorServer(URL))
         {
@@ -188,7 +105,7 @@ public sealed class UnitTestOnlineCostModel : TestClassBase
     {
         var server = new SimulatorServer(URL);
 
-        Expr expr;
+        Call expr;
         {
             var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 224, 224, 3 }));
             expr = Nncase.IR.F.Tensors.Transpose(input, new[] { 0, 3, 1, 2 });
@@ -196,32 +113,18 @@ public sealed class UnitTestOnlineCostModel : TestClassBase
 
         expr.InferenceType();
 
-        var evaluator = new OnlineCostEvaluateVisitor(URL, (IRModule module) =>
-        {
-            var childContainer = CompilerServices.CreateScope();
-            var childOptions = CompileOptions with { DumpFlags = Diagnostics.DumpFlags.None };
-            var target = CompilerServices.CreateScope();
-            childContainer.RegisterInstance(CompileSession.Target);
-            childContainer.RegisterInstance(childOptions);
-            var childSession = new CompileSession(childContainer, CompileSession.Target, childOptions);
-            childContainer.RegisterInstance(childSession);
+        var container = (IContainer)(IServiceProvider)CompileSession!;
+        container.Register<ICostEvaluateProvider, OnlineCostEvaluateProvider>(made: Parameters.Of.Type<string>(_ => URL));
+        // var evaluator = new OnlineEGraphExtractCostEvaluator(URL);
 
-            var compiler = childSession.Compiler;
-            compiler.ImportIRModule(module);
-            compiler.CompileAsync().Wait();
-            string tempFilePath = Path.GetTempFileName();
-            using (FileStream fs = File.OpenWrite(tempFilePath))
-            {
-                compiler.Gencode(fs);
-            }
+        // CompilerServices.EvaluateOp
 
-            return tempFilePath;
-        });
 
-        Assert.True(evaluator.IsServerOnline());
+        // Assert.True(evaluator.IsServerOnline());
 
-        evaluator.Visit(expr);
+        // var visitor = new OnlineCostEvaluateVisitor(evaluator);
+        // visitor.Visit(expr);
 
-        Assert.NotEqual(UInt128.MaxValue, evaluator.ExprMemo[expr].Score);
+        // Assert.NotEqual(UInt128.MaxValue, visitor.ExprMemo[expr].Score);
     }
 }

@@ -30,4 +30,12 @@ public interface ICostEvaluateProvider
     /// <param name="context">Evaluate context.</param>
     /// <returns>Evaluate result.</returns>
     Cost EvaluateOpCost(Op op, ICostEvaluateContext context);
+
+    /// <summary>
+    /// Evaluate cost of operator.
+    /// </summary>
+    /// <param name="baseFunction">Target baseFunction.</param>
+    /// <param name="context">Evaluate context.</param>
+    /// <returns>Evaluate result.</returns>
+    Cost EvaluateBaseFuncCost(BaseFunction baseFunction, ICostEvaluateContext context);
 }

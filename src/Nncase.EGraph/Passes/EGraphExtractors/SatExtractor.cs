@@ -9,21 +9,27 @@ using System.Text;
 using Google.OrTools.Sat;
 using Nncase.CostModel;
 using Nncase.Diagnostics;
+using Nncase.Evaluator;
 using Nncase.IR;
 
 namespace Nncase.Passes.EGraphExtractors;
 
-internal class SatExtractor : IExtractor
+internal class SatExtractor : IEGraphExtractor
 {
-    private readonly EGraphCostModel _costModel;
+    private readonly ICostEvaluateProvider _costEvaluateProvider;
 
-    public SatExtractor(EGraphCostModel costModel)
+    public SatExtractor(Evaluator.ICostEvaluateProvider costEvaluateProvider)
     {
-        _costModel = costModel;
+        _costEvaluateProvider = costEvaluateProvider;
     }
 
     public Expr Extract(EClass root, IEGraph eGraph)
     {
+        CheckTypes(eGraph);
+
+        var evaluator = new OneShotEGraphCostEvaluator(_costEvaluateProvider);
+        var costModel = evaluator.Evaluate(root);
+
         var cpmodel = new CpModel();
 
         // 0. create bool var for all enode.
@@ -69,7 +75,7 @@ internal class SatExtractor : IExtractor
         }
 
         // 3. add pick weights for all enode.
-        cpmodel.Minimize(LinearExpr.WeightedSum(eGraph.Nodes.Select(n => vars[n]), eGraph.Nodes.Select(n => checked((long)_costModel[n].Score))));
+        cpmodel.Minimize(LinearExpr.WeightedSum(eGraph.Nodes.Select(n => vars[n]), eGraph.Nodes.Select(n => checked((long)costModel[n].Score))));
 
         if (cpmodel.Validate().Any())
         {
@@ -84,7 +90,7 @@ internal class SatExtractor : IExtractor
         using (var dumpStream = enableDump ? DumpScope.Current.OpenFile("Costs/Solve.txt") : Stream.Null)
         {
             using var writer = new StreamWriter(dumpStream);
-            var cb = new PrintCostCallBack(vars, _costModel, writer, enableDump);
+            var cb = new PrintCostCallBack(vars, costModel, writer, enableDump);
             status = solver.Solve(cpmodel, cb);
             dumpStream.Flush();
         }
@@ -97,10 +103,25 @@ internal class SatExtractor : IExtractor
         var pick = eGraph.Nodes.ToDictionary(e => e, e => solver.BooleanValue(vars[e]));
         using (var dumpStream = enableDump ? DumpScope.Current.OpenFile("Costs/Pick.dot") : Stream.Null)
         {
-            EGraphPrinter.DumpEgraphAsDot(eGraph, _costModel, pick, root.Find(), dumpStream);
+            EGraphPrinter.DumpEgraphAsDot(eGraph, costModel, pick, root.Find(), dumpStream);
         }
 
         return new SatExprBuildVisitor(pick).Visit(root);
+    }
+
+    private void CheckTypes(IEGraph eGraph)
+    {
+        // 1. set the all expr checked shape
+        foreach (var eclass in eGraph.Classes)
+        {
+            foreach (var nodes in eclass.Nodes)
+            {
+                if (eclass.CheckedType.CompareTo(nodes.Expr.CheckedType) > 0)
+                {
+                    nodes.Expr.CheckedType = eclass.CheckedType;
+                }
+            }
+        }
     }
 
     private void EliminateAllCycles(EClass root, LinkedList<(EClass Class, ENode Node)> path, Dictionary<EClass, LinkedListNode<(EClass Class, ENode Node)>> pathMemo, Dictionary<ENode, bool> visited, CpModel cpModel, Dictionary<ENode, BoolVar> vars)
