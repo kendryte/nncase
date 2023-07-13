@@ -101,7 +101,14 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
                     }
                     else
                     {
-                        ret = new InvalidType($"The Input Tuple Count = {tupleType.Count}, But Index = {indexValue}");
+                        if (tupleType.IsVariadic)
+                        {
+                            ret = tupleType[0];
+                        }
+                        else
+                        {
+                            ret = new InvalidType($"The Input Tuple Count = {tupleType.Count}, But Index = {indexValue}");
+                        }
                     }
                 }
                 else
