@@ -19,7 +19,7 @@ namespace Nncase.Evaluator.Tensors;
 /// Evaluator for <see cref="Concat"/>.
 /// </summary>
 public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICostEvaluator<Concat>,
-    IShapeEvaluator<Concat>
+    IShapeEvaluator<Concat>, IMetricEvaluator<Concat>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Concat cat)
@@ -59,6 +59,8 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
         var outShape = ShapeExprUtility.Replace(inShapes[0], axisV, dim);
         return outShape;
     }
+
+    public Metric Visit(IMetricEvaluateContext context, Concat target) => Metric.Zero;
 
     private IRType? CheckType(TupleType inputs)
     {

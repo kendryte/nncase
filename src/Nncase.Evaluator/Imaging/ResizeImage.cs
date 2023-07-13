@@ -19,7 +19,7 @@ namespace Nncase.Evaluator.Imaging;
 /// <summary>
 /// Evaluator for <see cref="ResizeImage"/>.
 /// </summary>
-public class ResizeImageEvaluator : IEvaluator<ResizeImage>, ITypeInferencer<ResizeImage>, ICostEvaluator<ResizeImage>
+public class ResizeImageEvaluator : IEvaluator<ResizeImage>, ITypeInferencer<ResizeImage>, ICostEvaluator<ResizeImage>, IMetricEvaluator<ResizeImage>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, ResizeImage target)
@@ -124,6 +124,17 @@ public class ResizeImageEvaluator : IEvaluator<ResizeImage>, ITypeInferencer<Res
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType),
+        };
+    }
+
+    public Metric Visit(IMetricEvaluateContext context, ResizeImage target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, ResizeImage.Input);
+        var returnType = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(returnType),
+            [MetricFactorNames.FLOPs] = MetricUtility.GetFLOPs(returnType) * MetricUtility.ResizeLinearFLOPs,
         };
     }
 }

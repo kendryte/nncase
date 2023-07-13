@@ -17,7 +17,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="TopK"/>.
 /// </summary>
-public class TopKEvaluator : IEvaluator<TopK>, ITypeInferencer<TopK>, ICostEvaluator<TopK>
+public class TopKEvaluator : IEvaluator<TopK>, ITypeInferencer<TopK>, ICostEvaluator<TopK>, IMetricEvaluator<TopK>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, TopK topK)
@@ -48,6 +48,16 @@ public class TopKEvaluator : IEvaluator<TopK>, ITypeInferencer<TopK>, ICostEvalu
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(x) + CostUtility.GetMemoryAccess(k),
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
             [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType),
+        };
+    }
+
+    public Metric Visit(IMetricEvaluateContext context, TopK target)
+    {
+        var x = context.GetArgumentType<TensorType>(target, TopK.X);
+        var outputType = context.GetReturnType<TupleType>();
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(x) + CostUtility.GetMemoryAccess(outputType),
         };
     }
 

@@ -13,7 +13,7 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Evaluator for <see cref="Quantize"/>.
 /// </summary>
-public class QuantizeEvaluator : IEvaluator<Quantize>, ITypeInferencer<Quantize>, ICostEvaluator<Quantize>
+public class QuantizeEvaluator : IEvaluator<Quantize>, ITypeInferencer<Quantize>, ICostEvaluator<Quantize>, IMetricEvaluator<Quantize>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Quantize target)
@@ -54,6 +54,17 @@ public class QuantizeEvaluator : IEvaluator<Quantize>, ITypeInferencer<Quantize>
                                            CostUtility.GetMemoryAccess(quant_param),
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(output),
             [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(output, macPerElement) / macParallel,
+        };
+    }
+
+    public Metric Visit(IMetricEvaluateContext context, Quantize target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, Quantize.Input);
+        var outputType = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(outputType),
+            [MetricFactorNames.FLOPs] = MetricUtility.GetFLOPs(outputType, 2),
         };
     }
 

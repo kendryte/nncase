@@ -21,7 +21,7 @@ namespace Nncase.Evaluator.NN;
 /// <summary>
 /// Evaluator for <see cref="Pad"/>.
 /// </summary>
-public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluator<Pad>, IShapeEvaluator<Pad>
+public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluator<Pad>, IShapeEvaluator<Pad>, IMetricEvaluator<Pad>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Pad pad)
@@ -95,6 +95,17 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
             [CostFactorNames.MemoryStore] = outputType is TensorType outT ? CostUtility.GetMemoryAccess(outT) : CostUtility.GetMemoryAccess(inputType),
+        };
+    }
+
+    public Metric Visit(IMetricEvaluateContext context, Pad target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, Pad.Input);
+        var outputType = context.GetReturnType<TensorType>();
+
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(outputType),
         };
     }
 
