@@ -60,15 +60,30 @@ TEST_P(TopKTest, TopK) {
                     {reinterpret_cast<gsl::byte *>(k_array), sizeof(k_array)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
-    auto output_ort = tensor_seq_get_value(
+    auto output_ort1 = tensor_seq_get_value(
         ortki_TopK(l_ort, runtime_tensor_2_ort_tensor(k), -1, 1, 1), 0);
-    void *ptr_ort = tensor_buffer(output_ort, &size);
-    dims_t shape(tensor_rank(output_ort));
-    tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
-    auto expected = hrt::create(input.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
-                                true, host_runtime_tensor::pool_cpu_only)
-                        .expect("create tensor failed");
+    void *ptr_ort1 = tensor_buffer(output_ort1, &size);
+    dims_t shape1(tensor_rank(output_ort1));
+    tensor_shape(output_ort1, reinterpret_cast<int64_t *>(shape1.data()));
+    auto expected1 =
+        hrt::create(input.datatype(), shape1,
+                    {reinterpret_cast<gsl::byte *>(ptr_ort1), size}, true,
+                    host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
+
+    size = 0;
+    auto output_ort2 = tensor_seq_get_value(
+        ortki_TopK(l_ort, runtime_tensor_2_ort_tensor(k), -1, 1, 1), 1);
+    void *ptr_ort2 = tensor_buffer(output_ort2, &size);
+    dims_t shape2(tensor_rank(output_ort2));
+    tensor_shape(output_ort2, reinterpret_cast<int64_t *>(shape2.data()));
+    auto expected2 =
+        hrt::create(dt_int64, shape2,
+                    {reinterpret_cast<gsl::byte *>(ptr_ort2), size}, true,
+                    host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
+
+    runtime_tensor expected[] = {expected1, expected2};
 
     // actual
     int64_t axis_array[] = {-1};
@@ -94,16 +109,8 @@ TEST_P(TopKTest, TopK) {
                       .expect("topk failed");
     [[maybe_unused]] auto actual(output.as<tuple>().expect("as tensor failed"));
 
-    /*bool result = is_same_tensor(expected, actual) ||
-                  cosine_similarity_tensor(expected, actual);
-
-    if (!result) {
-        print_runtime_tensor(actual);
-        print_runtime_tensor(expected);
-    }
-
-    // compare
-    EXPECT_TRUE(result);*/
+    typecode_t dtypes []= {dt_float32, dt_int64};
+    [[maybe_unused]] auto result = check_tuple_output(expected, dtypes, output);
 }
 
 int main(int argc, char *argv[]) {
