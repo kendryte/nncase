@@ -57,7 +57,7 @@ INSTANTIATE_TEST_SUITE_P(
                      testing::Values(dims_t{1}, dims_t{16}, dims_t{1, 16},
                                      dims_t{1, 16, 16}, dims_t{3, 3, 1, 16})));
 
-TEST_P(CompareTest, equal) {
+TEST_P(CompareTest, notequal) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
     auto r_ort = runtime_tensor_2_ort_tensor(rhs);
 
