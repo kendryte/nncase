@@ -26,56 +26,34 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class SpaceToBatchTest : public KernelTest,
-                         public ::testing::TestWithParam<
-                             std::tuple<nncase::typecode_t, dims_t, dims_t>> {
+class SpaceToBatchTest
+    : public KernelTest,
+      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape, r_shape] = GetParam();
+        auto &&[typecode, l_shape] = GetParam();
 
-        lhs = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
-                  .expect("create tensor failed");
-        init_tensor(lhs);
-
-        rhs = hrt::create(typecode, r_shape, host_runtime_tensor::pool_cpu_only)
-                  .expect("create tensor failed");
-        init_tensor(rhs);
+        // expected
+        float_t expected_array[] = {1, 3, 9,  11, 2, 4, 10, 12,
+                                    5, 7, 13, 15, 6, 8, 14, 16};
+        expected = hrt::create(typecode, l_shape,
+                               {reinterpret_cast<gsl::byte *>(expected_array),
+                                sizeof(expected_array)},
+                               true, host_runtime_tensor::pool_cpu_only)
+                       .expect("create tensor failed");
     }
 
     void TearDown() override {}
 
   protected:
-    runtime_tensor lhs;
-    runtime_tensor rhs;
+    runtime_tensor expected;
 };
 
 INSTANTIATE_TEST_SUITE_P(SpaceToBatch, SpaceToBatchTest,
-                         testing::Combine(testing::Values(dt_float32, dt_int32,
-                                                          dt_int64),
-                                          testing::Values(dims_t{1, 3, 16, 16},
-                                                          /*dims_t { 3, 16, 16
-                                                          }, dims_t { 16, 16 },
-                                                          dims_t { 16 },*/
-                                                          dims_t{1}),
-                                          testing::Values(dims_t{1, 3, 16, 16},
-                                                          /*dims_t { 3, 16, 16
-                                                          }, dims_t { 16, 16 },
-                                                          dims_t { 16 },*/
-                                                          dims_t{1})));
+                         testing::Combine(testing::Values(dt_float32),
+                                          testing::Values(dims_t{4, 2, 2, 1})));
 
 TEST_P(SpaceToBatchTest, SpaceToBatch) {
-    //    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
-    //    auto r_ort = runtime_tensor_2_ort_tensor(rhs);
-
-    // expected
-    //    size_t size = 0;
-    float_t expected_array[] = {1, 3, 9,  11, 2, 4, 10, 12,
-                                5, 7, 13, 15, 6, 8, 14, 16};
-    auto expected = hrt::create(dt_float32, {4, 2, 2, 1},
-                                {reinterpret_cast<gsl::byte *>(expected_array),
-                                 sizeof(expected_array)},
-                                true, host_runtime_tensor::pool_cpu_only)
-                        .expect("create tensor failed");
 
     // actual
     float_t a[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
