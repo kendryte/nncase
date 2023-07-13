@@ -109,7 +109,7 @@ TEST_P(TopKTest, TopK) {
                       .expect("topk failed");
     [[maybe_unused]] auto actual(output.as<tuple>().expect("as tensor failed"));
 
-    typecode_t dtypes []= {dt_float32, dt_int64};
+    typecode_t dtypes[] = {dt_float32, dt_int64};
     [[maybe_unused]] auto result = check_tuple_output(expected, dtypes, output);
 }
 
