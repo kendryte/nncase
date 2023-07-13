@@ -11,7 +11,7 @@ namespace Nncase.Evaluator.NN;
 /// <summary>
 /// Evaluator for <see cref="L2Normalization"/>.
 /// </summary>
-public class L2NormalizationEvaluator : IEvaluator<L2Normalization>, ITypeInferencer<L2Normalization>, ICostEvaluator<L2Normalization>
+public class L2NormalizationEvaluator : IEvaluator<L2Normalization>, ITypeInferencer<L2Normalization>, ICostEvaluator<L2Normalization>, IMetricEvaluator<L2Normalization>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, L2Normalization norm)
@@ -59,6 +59,16 @@ public class L2NormalizationEvaluator : IEvaluator<L2Normalization>, ITypeInfere
         };
     }
 
+    public Metric Visit(IMetricEvaluateContext context, L2Normalization target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, L2Normalization.Input);
+        var returnType = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(returnType),
+        };
+    }
+
     private IRType Visit(TensorType input)
     {
         return input;
@@ -68,7 +78,7 @@ public class L2NormalizationEvaluator : IEvaluator<L2Normalization>, ITypeInfere
 /// <summary>
 /// Evaluator for <see cref="BatchNormalization"/>.
 /// </summary>
-public class BatchNormalizationEvaluator : IEvaluator<BatchNormalization>, ITypeInferencer<BatchNormalization>, ICostEvaluator<BatchNormalization>
+public class BatchNormalizationEvaluator : IEvaluator<BatchNormalization>, ITypeInferencer<BatchNormalization>, ICostEvaluator<BatchNormalization>, IMetricEvaluator<BatchNormalization>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, BatchNormalization batchNorm)
@@ -108,6 +118,17 @@ public class BatchNormalizationEvaluator : IEvaluator<BatchNormalization>, IType
         };
     }
 
+    public Metric Visit(IMetricEvaluateContext context, BatchNormalization target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, BatchNormalization.Input);
+        var returnType = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(returnType),
+            [MetricFactorNames.FLOPs] = MetricUtility.GetFLOPs(returnType, 5 + (int)MetricUtility.SqrtFLOPs),
+        };
+    }
+
     private IRType Visit(TensorType input)
     {
         return input;
@@ -117,7 +138,7 @@ public class BatchNormalizationEvaluator : IEvaluator<BatchNormalization>, IType
 /// <summary>
 /// Evaluator for <see cref="InstanceNormalization"/>.
 /// </summary>
-public class InstanceNormalizationEvaluator : IEvaluator<InstanceNormalization>, ITypeInferencer<InstanceNormalization>, ICostEvaluator<InstanceNormalization>
+public class InstanceNormalizationEvaluator : IEvaluator<InstanceNormalization>, ITypeInferencer<InstanceNormalization>, ICostEvaluator<InstanceNormalization>, IMetricEvaluator<InstanceNormalization>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, InstanceNormalization i)
@@ -148,6 +169,16 @@ public class InstanceNormalizationEvaluator : IEvaluator<InstanceNormalization>,
         };
     }
 
+    public Metric Visit(IMetricEvaluateContext context, InstanceNormalization target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, InstanceNormalization.Input);
+        var returnType = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(returnType),
+        };
+    }
+
     private IRType Visit(TensorType input)
     {
         return input;
@@ -157,7 +188,7 @@ public class InstanceNormalizationEvaluator : IEvaluator<InstanceNormalization>,
 /// <summary>
 /// Evaluator for <see cref="LpNormalization"/>.
 /// </summary>
-public class LpNormalizationEvaluator : IEvaluator<LpNormalization>, ITypeInferencer<LpNormalization>, ICostEvaluator<LpNormalization>
+public class LpNormalizationEvaluator : IEvaluator<LpNormalization>, ITypeInferencer<LpNormalization>, ICostEvaluator<LpNormalization>, IMetricEvaluator<LpNormalization>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, LpNormalization norm)
@@ -185,6 +216,16 @@ public class LpNormalizationEvaluator : IEvaluator<LpNormalization>, ITypeInfere
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType),
+        };
+    }
+
+    public Metric Visit(IMetricEvaluateContext context, LpNormalization target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, LpNormalization.Input);
+        var returnType = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(returnType),
         };
     }
 
