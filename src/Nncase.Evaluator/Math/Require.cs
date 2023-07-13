@@ -15,7 +15,7 @@ namespace Nncase.Evaluator.Math;
 [PatternMatch.PatternFunctionalGenerator]
 [TypeInferGenerator]
 [EvaluatorGenerator]
-public partial class RequireEvaluator : IEvaluator<Require>, ITypeInferencer<Require>, IOpPrinter<Require>, ICostEvaluator<Require>, IShapeEvaluator<Require>
+public partial class RequireEvaluator : IEvaluator<Require>, ITypeInferencer<Require>, IOpPrinter<Require>, ICostEvaluator<Require>, IShapeEvaluator<Require>, IMetricEvaluator<Require>
 {
     /// <inheritdoc/>
     public string Visit(IIRPrinterContext context, Require target, bool iLmode)
@@ -35,6 +35,8 @@ public partial class RequireEvaluator : IEvaluator<Require>, ITypeInferencer<Req
 
     public Expr Visit(IShapeEvaluateContext context, Require target) =>
         context.GetArgumentShape(target, Require.Value);
+
+    public Metric Visit(IMetricEvaluateContext context, Require target) => Metric.Zero;
 
     private IValue Visit(bool predicate, IValue value, Require target)
     {

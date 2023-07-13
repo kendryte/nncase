@@ -13,7 +13,7 @@ namespace Nncase.Evaluator.NN;
 /// <summary>
 /// Evaluator for <see cref="OneHot"/>.
 /// </summary>
-public class OneHotEvaluator : IEvaluator<OneHot>, ITypeInferencer<OneHot>, ICostEvaluator<OneHot>
+public class OneHotEvaluator : IEvaluator<OneHot>, ITypeInferencer<OneHot>, ICostEvaluator<OneHot>, IMetricEvaluator<OneHot>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, OneHot oneHot)
@@ -36,6 +36,15 @@ public class OneHotEvaluator : IEvaluator<OneHot>, ITypeInferencer<OneHot>, ICos
         return new()
         {
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType),
+        };
+    }
+
+    public Metric Visit(IMetricEvaluateContext context, OneHot target)
+    {
+        var returnType = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(returnType),
         };
     }
 

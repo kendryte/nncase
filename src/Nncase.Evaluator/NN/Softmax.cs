@@ -11,7 +11,7 @@ namespace Nncase.Evaluator.NN;
 /// <summary>
 /// Evaluator for <see cref="LogSoftmax"/>.
 /// </summary>
-public class LogSoftmaxEvaluator : IEvaluator<LogSoftmax>, ITypeInferencer<LogSoftmax>, ICostEvaluator<LogSoftmax>, IShapeEvaluator<LogSoftmax>
+public class LogSoftmaxEvaluator : IEvaluator<LogSoftmax>, ITypeInferencer<LogSoftmax>, ICostEvaluator<LogSoftmax>, IShapeEvaluator<LogSoftmax>, IMetricEvaluator<LogSoftmax>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, LogSoftmax logSoftMax)
@@ -43,6 +43,22 @@ public class LogSoftmaxEvaluator : IEvaluator<LogSoftmax>, ITypeInferencer<LogSo
 
     public Expr Visit(IShapeEvaluateContext context, LogSoftmax target) => context.GetArgumentShape(target, LogSoftmax.Input);
 
+    public Metric Visit(IMetricEvaluateContext context, LogSoftmax target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, LogSoftmax.Input);
+        var returnType = context.GetReturnType<TensorType>();
+        var returnF = MetricUtility.GetFLOPs(returnType);
+        var inputF = MetricUtility.GetFLOPs(inputType);
+        var inner = inputF / returnF;
+
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(returnType) * 2,
+            [MetricFactorNames.FLOPs] = (inner * 2) + (inputF * (MetricUtility.SubFLOPs + MetricUtility.ExpFLOPs + MetricUtility.DivFLOPs + MetricUtility.LogFLOPs)),
+            [MetricFactorNames.Parallel] = 4,
+        };
+    }
+
     private IRType Visit(TensorType input)
     {
         return input;
@@ -52,7 +68,7 @@ public class LogSoftmaxEvaluator : IEvaluator<LogSoftmax>, ITypeInferencer<LogSo
 /// <summary>
 /// Evaluator for <see cref="Softmax"/>.
 /// </summary>
-public class SoftmaxEvaluator : IEvaluator<Softmax>, ITypeInferencer<Softmax>, ICostEvaluator<Softmax>, IShapeEvaluator<Softmax>
+public class SoftmaxEvaluator : IEvaluator<Softmax>, ITypeInferencer<Softmax>, ICostEvaluator<Softmax>, IShapeEvaluator<Softmax>, IMetricEvaluator<Softmax>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Softmax softMax)
@@ -80,6 +96,22 @@ public class SoftmaxEvaluator : IEvaluator<Softmax>, ITypeInferencer<Softmax>, I
         };
     }
 
+    public Metric Visit(IMetricEvaluateContext context, Softmax target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, Softmax.Input);
+        var returnType = context.GetReturnType<TensorType>();
+        var returnF = MetricUtility.GetFLOPs(returnType);
+        var inputF = MetricUtility.GetFLOPs(inputType);
+        var inner = inputF / returnF;
+
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(returnType) * 2,
+            [MetricFactorNames.FLOPs] = (inner * 2) + (inputF * (MetricUtility.SubFLOPs + MetricUtility.ExpFLOPs + MetricUtility.DivFLOPs)),
+            [MetricFactorNames.Parallel] = 4,
+        };
+    }
+
     public Expr Visit(IShapeEvaluateContext context, Softmax target) => context.GetArgumentShape(target, Softmax.Input);
 
     private IRType Visit(TensorType input)
@@ -91,7 +123,7 @@ public class SoftmaxEvaluator : IEvaluator<Softmax>, ITypeInferencer<Softmax>, I
 /// <summary>
 /// Evaluator for <see cref="Softplus"/>.
 /// </summary>
-public class SoftplusEvaluator : IEvaluator<Softplus>, ITypeInferencer<Softplus>, ICostEvaluator<Softplus>
+public class SoftplusEvaluator : IEvaluator<Softplus>, ITypeInferencer<Softplus>, ICostEvaluator<Softplus>, IMetricEvaluator<Softplus>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Softplus softPlus)
@@ -118,6 +150,22 @@ public class SoftplusEvaluator : IEvaluator<Softplus>, ITypeInferencer<Softplus>
         };
     }
 
+    public Metric Visit(IMetricEvaluateContext context, Softplus target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, Softplus.Input);
+        var returnType = context.GetReturnType<TensorType>();
+        var r = MetricUtility.GetFLOPs(returnType);
+        var i = MetricUtility.GetFLOPs(inputType);
+
+        var reduced = r / i;
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(returnType) * 2,
+            [MetricFactorNames.FLOPs] = (i * ((MetricUtility.ExpFLOPs * 2) + 3)) + reduced,
+            [MetricFactorNames.Parallel] = 4,
+        };
+    }
+
     private IRType Visit(TensorType input)
     {
         return input;
@@ -127,7 +175,7 @@ public class SoftplusEvaluator : IEvaluator<Softplus>, ITypeInferencer<Softplus>
 /// <summary>
 /// Evaluator for <see cref="Softsign"/>.
 /// </summary>
-public class SoftsignEvaluator : IEvaluator<Softsign>, ITypeInferencer<Softsign>, ICostEvaluator<Softsign>
+public class SoftsignEvaluator : IEvaluator<Softsign>, ITypeInferencer<Softsign>, ICostEvaluator<Softsign>, IMetricEvaluator<Softsign>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Softsign softSign)
@@ -151,6 +199,22 @@ public class SoftsignEvaluator : IEvaluator<Softsign>, ITypeInferencer<Softsign>
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(ret),
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
+        };
+    }
+
+    public Metric Visit(IMetricEvaluateContext context, Softsign target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, Softsign.Input);
+        var returnType = context.GetReturnType<TensorType>();
+        var r = MetricUtility.GetFLOPs(returnType);
+        var i = MetricUtility.GetFLOPs(inputType);
+
+        var reduced = r / i;
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(returnType) * 2,
+            [MetricFactorNames.FLOPs] = (i * ((MetricUtility.ExpFLOPs * 2) + 3)) + reduced,
+            [MetricFactorNames.Parallel] = 4,
         };
     }
 
