@@ -39,7 +39,7 @@ public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>, ICostEv
     /// <inheritdoc/>
     public Cost Visit(ICostEvaluateContext context, Split target)
     {
-        _ = context.GetReturnType<TupleType>();
+        // _ = context.GetReturnType<TupleType>();
         return new()
         {
             [CostFactorNames.CPUCycles] = 1,
@@ -107,6 +107,17 @@ public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>, ICostEv
             }
         }
 
-        return input with { Shape = Shape.Unranked };
+        var splitedShape = input.Shape.ToArray();
+        if (context.GetArgument(target, Split.Axis) is TensorConst axisCon)
+        {
+            var axisV = Util.PositiveIndex(axisCon.Value.ToScalar<int>(), input.Shape.Rank);
+            splitedShape[axisV] = Dimension.Unknown;
+        }
+        else
+        {
+            splitedShape = splitedShape.Select(s => Dimension.Unknown).ToArray();
+        }
+
+        return new TupleType(new IRType[] { input with { Shape = splitedShape } }, true);
     }
 }
