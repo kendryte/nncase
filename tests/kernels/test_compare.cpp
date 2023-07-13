@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include "kernel_test.h"
+#include "macro_util.h"
 #include <gtest/gtest.h>
 #include <iostream>
 #include <nncase/kernels/stackvm/tensor_ops.h>
@@ -21,24 +22,34 @@
 #include <nncase/runtime/simple_types.h>
 #include <nncase/runtime/stackvm/opcode.h>
 #include <ortki/operators.h>
-#include "macro_util.h"
 
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 using namespace nncase::runtime::stackvm;
 
-
 NNCASE_TEST_CLASS(CompareTest)
 
-NNCASE_TESTSUITE_INIT(CompareTest, Compare, 3,  dt_float32, dt_int32, dt_int64, dims_t{1}, dims_t{16}, dims_t{1, 16}, dims_t{1, 16, 16}, dims_t{3, 3, 1, 16})
+NNCASE_TESTSUITE_INIT(CompareTest, Compare, 3, dt_float32, dt_int32, dt_int64,
+                      dims_t{1}, dims_t{16}, dims_t{1, 16}, dims_t{1, 16, 16},
+                      dims_t{3, 3, 1, 16})
 
-NNCASE_TEST_BODY(CompareTest, not_equal, kernels::stackvm::compare, compare_op_t::not_equal, 2, NORMAL, ortki_Not, ortki_Equal, l_ort, r_ort)
-NNCASE_TEST_BODY(CompareTest, equal, kernels::stackvm::compare, compare_op_t::equal, 1, NORMAL, ortki_Equal, l_ort, r_ort)
-NNCASE_TEST_BODY(CompareTest, greater_or_equal, kernels::stackvm::compare, compare_op_t::greater_or_equal, 1, NORMAL, ortki_GreaterOrEqual, l_ort, r_ort)
-NNCASE_TEST_BODY(CompareTest, greater_than, kernels::stackvm::compare, compare_op_t::greater_than, 1, NORMAL, ortki_Greater, l_ort, r_ort)
-NNCASE_TEST_BODY(CompareTest, lower_or_equal, kernels::stackvm::compare, compare_op_t::lower_or_equal, 1, NORMAL, ortki_LessOrEqual, l_ort, r_ort)
-NNCASE_TEST_BODY(CompareTest, lower_than, kernels::stackvm::compare, compare_op_t::lower_than, 1, NORMAL, ortki_Less, l_ort, r_ort)
+NNCASE_TEST_BODY(CompareTest, not_equal, kernels::stackvm::compare,
+                 compare_op_t::not_equal, 2, NORMAL, ortki_Not, ortki_Equal,
+                 l_ort, r_ort)
+NNCASE_TEST_BODY(CompareTest, equal, kernels::stackvm::compare,
+                 compare_op_t::equal, 1, NORMAL, ortki_Equal, l_ort, r_ort)
+NNCASE_TEST_BODY(CompareTest, greater_or_equal, kernels::stackvm::compare,
+                 compare_op_t::greater_or_equal, 1, NORMAL,
+                 ortki_GreaterOrEqual, l_ort, r_ort)
+NNCASE_TEST_BODY(CompareTest, greater_than, kernels::stackvm::compare,
+                 compare_op_t::greater_than, 1, NORMAL, ortki_Greater, l_ort,
+                 r_ort)
+NNCASE_TEST_BODY(CompareTest, lower_or_equal, kernels::stackvm::compare,
+                 compare_op_t::lower_or_equal, 1, NORMAL, ortki_LessOrEqual,
+                 l_ort, r_ort)
+NNCASE_TEST_BODY(CompareTest, lower_than, kernels::stackvm::compare,
+                 compare_op_t::lower_than, 1, NORMAL, ortki_Less, l_ort, r_ort)
 
 int main(int argc, char *argv[]) {
     ::testing::InitGoogleTest(&argc, argv);
