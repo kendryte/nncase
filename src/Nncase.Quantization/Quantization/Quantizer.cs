@@ -169,17 +169,29 @@ internal partial class Quantizer
                     }
                 }
 
-                var quantSchemeString = JsonConvert.SerializeObject(quantScheme);
+                var quantSchemeString = JsonConvert.SerializeObject(quantScheme, Newtonsoft.Json.Formatting.Indented);
                 _quantizeOptions.QuantScheme = quantSchemeString;
+                if(Path.Exists(DumpScope.Current.Directory))
+                {
+                    File.WriteAllText(Path.Join(DumpScope.Current.Directory,"..", "..", "QuantScheme.json"), _quantizeOptions.QuantScheme);
+                }
             }
         }
         else
         {
             string readJson = _quantizeOptions.QuantScheme;
-            var quantScheme = JsonConvert.DeserializeObject<QuantScheme>(readJson);
-            var ranges = GetRangesFromConfig(quantScheme!);
-            AssignByChannelRanges(ranges);
-            AssignDataTypeFromConfig(quantScheme!);
+            // var quantScheme = JsonConvert.DeserializeObject<QuantScheme>(readJson);
+            // var ranges = GetRangesFromConfig(quantScheme!);
+            // AssignByChannelRanges(ranges);
+            // AssignDataTypeFromConfig(quantScheme!);
+            using (StreamReader r = new StreamReader(readJson))
+            {
+                string json = r.ReadToEnd();
+                var quantScheme = JsonConvert.DeserializeObject<QuantScheme>(json);
+                var ranges = GetRangesFromConfig(quantScheme!);
+                AssignByChannelRanges(ranges);
+                AssignDataTypeFromConfig(quantScheme!);
+            }
         }
 
         // // 3. Choose better quant method using cosine, and bind info with ir.
