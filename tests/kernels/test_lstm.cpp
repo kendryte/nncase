@@ -119,30 +119,33 @@ TEST_P(LstmTest, lstm) {
     dims_t shape1(tensor_rank(tensor_seq_get_value(output_ort, 0)));
     tensor_shape(tensor_seq_get_value(output_ort, 0),
                  reinterpret_cast<int64_t *>(shape1.data()));
-    auto expected1 = hrt::create(dt_float32, shape1,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort1), size},
-                                true, host_runtime_tensor::pool_cpu_only)
-                        .expect("create tensor failed");
+    auto expected1 =
+        hrt::create(dt_float32, shape1,
+                    {reinterpret_cast<gsl::byte *>(ptr_ort1), size}, true,
+                    host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
 
     // output2
     void *ptr_ort2 = tensor_buffer(tensor_seq_get_value(output_ort, 1), &size);
     dims_t shape2(tensor_rank(tensor_seq_get_value(output_ort, 1)));
     tensor_shape(tensor_seq_get_value(output_ort, 1),
                  reinterpret_cast<int64_t *>(shape2.data()));
-    auto expected2 = hrt::create(dt_float32, shape2,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort2), size},
-                                true, host_runtime_tensor::pool_cpu_only)
-                        .expect("create tensor failed");
+    auto expected2 =
+        hrt::create(dt_float32, shape2,
+                    {reinterpret_cast<gsl::byte *>(ptr_ort2), size}, true,
+                    host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
 
     // output3
     void *ptr_ort3 = tensor_buffer(tensor_seq_get_value(output_ort, 2), &size);
     dims_t shape3(tensor_rank(tensor_seq_get_value(output_ort, 2)));
     tensor_shape(tensor_seq_get_value(output_ort, 2),
                  reinterpret_cast<int64_t *>(shape3.data()));
-    auto expected3 = hrt::create(dt_float32, shape3,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort3), size},
-                                true, host_runtime_tensor::pool_cpu_only)
-                        .expect("create tensor failed");
+    auto expected3 =
+        hrt::create(dt_float32, shape3,
+                    {reinterpret_cast<gsl::byte *>(ptr_ort3), size}, true,
+                    host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
 
     runtime_tensor expected[] = {expected1, expected2, expected3};
     typecode_t dtypes[] = {dt_float32, dt_float32, dt_float32};
@@ -195,7 +198,7 @@ TEST_P(LstmTest, lstm) {
                       .expect("lstm failed");
     tuple actual(output.as<tuple>().expect("as tensor failed"));
 
-    [[maybe_unused]]auto result = check_tuple_output(expected, dtypes, output);
+    [[maybe_unused]] auto result = check_tuple_output(expected, dtypes, output);
 }
 
 int main(int argc, char *argv[]) {
