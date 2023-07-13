@@ -86,7 +86,7 @@ TEST_P(GatherNDTest, gather_nd) {
     // actual
     auto output = kernels::stackvm::gather_nd(input.impl(), batchDims.impl(),
                                               indices.impl())
-                      .expect("gather failed");
+                      .expect("gather_nd failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     bool result = is_same_tensor(expected, actual) ||

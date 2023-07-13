@@ -77,7 +77,20 @@ internal class SatExtractor : IExtractor
         }
 
         var solver = new CpSolver();
-        solver.StringParameters = $"max_time_in_seconds:{10f},num_workers:0";
+        int max_time = 60;
+        if (System.Environment.GetEnvironmentVariable("SOLVE_MAX_TIME") is string s_solve_max_time)
+        {
+            try
+            {
+                var solve_max_time = int.Parse(s_solve_max_time);
+                max_time = solve_max_time;
+            }
+            catch (System.Exception)
+            {
+            }
+        }
+
+        solver.StringParameters = $"max_time_in_seconds:{max_time},num_workers:0";
 
         var enableDump = DumpScope.Current.IsEnabled(DumpFlags.EGraphCost);
         CpSolverStatus status;
@@ -86,6 +99,7 @@ internal class SatExtractor : IExtractor
             using var writer = new StreamWriter(dumpStream);
             var cb = new PrintCostCallBack(vars, _costModel, writer, enableDump);
             status = solver.Solve(cpmodel, cb);
+            writer.WriteLine($"Status : {status}");
             dumpStream.Flush();
         }
 
