@@ -14,7 +14,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Squeeze"/>.
 /// </summary>
-public class SqueezeEvaluator : IEvaluator<Squeeze>, ITypeInferencer<Squeeze>, ICostEvaluator<Squeeze>, IShapeEvaluator<Squeeze>
+public class SqueezeEvaluator : IEvaluator<Squeeze>, ITypeInferencer<Squeeze>, ICostEvaluator<Squeeze>, IShapeEvaluator<Squeeze>, IMetricEvaluator<Squeeze>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Squeeze squeeze)
@@ -55,6 +55,11 @@ public class SqueezeEvaluator : IEvaluator<Squeeze>, ITypeInferencer<Squeeze>, I
         }
 
         throw new NotImplementedException();
+    }
+
+    public Metric Visit(IMetricEvaluateContext context, Squeeze target)
+    {
+        return Metric.Zero;
     }
 
     private IRType Visit(ITypeInferenceContext context, Squeeze target, TensorType input)

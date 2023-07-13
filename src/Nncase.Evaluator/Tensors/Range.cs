@@ -11,7 +11,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Range"/>.
 /// </summary>
-public class RangeEvaluator : IEvaluator<Range>, ITypeInferencer<Range>, ICostEvaluator<Range>
+public class RangeEvaluator : IEvaluator<Range>, ITypeInferencer<Range>, ICostEvaluator<Range>, IMetricEvaluator<Range>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Range range)
@@ -76,6 +76,15 @@ public class RangeEvaluator : IEvaluator<Range>, ITypeInferencer<Range>, ICostEv
             [CostFactorNames.MemoryLoad] = 0,
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
             [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(ret),
+        };
+    }
+
+    public Metric Visit(IMetricEvaluateContext context, Range target)
+    {
+        var ret = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(ret),
         };
     }
 }

@@ -17,7 +17,7 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Evaluator for <see cref="MatMul"/>.
 /// </summary>
-public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICostEvaluator<MatMul>, IShapeEvaluator<MatMul>
+public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICostEvaluator<MatMul>, IShapeEvaluator<MatMul>, IMetricEvaluator<MatMul>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, MatMul matMul)
@@ -48,6 +48,22 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(lhs) + CostUtility.GetMemoryAccess(rhs),
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
             [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, macPerElement),
+        };
+    }
+
+    public Metric Visit(IMetricEvaluateContext context, MatMul target)
+    {
+        var lhs = context.GetArgumentType<TensorType>(target, MatMul.Lhs);
+        var rhs = context.GetArgumentType<TensorType>(target, MatMul.Rhs);
+        var outputType = context.GetReturnType<TensorType>();
+        var k = (UInt128)lhs.Shape[^1].FixedValue;
+        var m = MetricUtility.GetFLOPs(lhs) / k;
+        var n = MetricUtility.GetFLOPs(rhs) / k;
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(lhs) + CostUtility.GetMemoryAccess(rhs) + CostUtility.GetMemoryAccess(outputType),
+            [MetricFactorNames.FLOPs] = m * n * ((2 * k) - 1),
+            [MetricFactorNames.Parallel] = 4,
         };
     }
 
