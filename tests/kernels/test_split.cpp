@@ -61,15 +61,28 @@ TEST_P(SplitTest, Split) {
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
-    auto output_ort = tensor_seq_get_value(
+    auto output_ort1 = tensor_seq_get_value(
         ortki_Split(l_ort, runtime_tensor_2_ort_tensor(sextions), -3), 0);
-    void *ptr_ort = tensor_buffer(output_ort, &size);
-    dims_t shape(tensor_rank(output_ort));
-    tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
-    auto expected = hrt::create(input.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+    void *ptr_ort1 = tensor_buffer(output_ort1, &size);
+    dims_t shape1(tensor_rank(output_ort1));
+    tensor_shape(output_ort1, reinterpret_cast<int64_t *>(shape1.data()));
+    auto expected1 = hrt::create(input.datatype(), shape1,
+                                {reinterpret_cast<gsl::byte *>(ptr_ort1), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
+
+    auto output_ort2 = tensor_seq_get_value(
+        ortki_Split(l_ort, runtime_tensor_2_ort_tensor(sextions), -3), 1);
+    void *ptr_ort2 = tensor_buffer(output_ort2, &size);
+    dims_t shape2(tensor_rank(output_ort2));
+    tensor_shape(output_ort2, reinterpret_cast<int64_t *>(shape2.data()));
+    auto expected2 = hrt::create(input.datatype(), shape2,
+                                 {reinterpret_cast<gsl::byte *>(ptr_ort2), size},
+                                 true, host_runtime_tensor::pool_cpu_only)
+                         .expect("create tensor failed");
+
+    runtime_tensor expected[] = {expected1, expected2};
+    typecode_t type[] = {dt_float32, dt_float32};
 
     // actual
     int64_t axis_array[] = {-3};
@@ -82,22 +95,8 @@ TEST_P(SplitTest, Split) {
         kernels::stackvm::split(input.impl(), axis.impl(), sextions.impl())
             .expect("split failed");
     tuple actual(output.as<tuple>().expect("as tensor failed"));
-    // try_var(output_tensor, actual->fields()[0].as<tensor>());
-    //    [[maybe_unused]] auto ret = check_output(expected, output);
-    //        runtime_tensor actual1 = actual[0];
 
-    // compare
-    //        EXPECT_TRUE(is_same_tensor(expected, actual1));
-    /*bool result = is_same_tensor(expected, actual) ||
-                  cosine_similarity_tensor(expected, actual);
-
-    if (!result) {
-        print_runtime_tensor(actual);
-        print_runtime_tensor(expected);
-    }
-
-    // compare
-    EXPECT_TRUE(result);*/
+    [[maybe_unused]]auto result = check_tuple_output(expected,type,output);
 }
 
 int main(int argc, char *argv[]) {
