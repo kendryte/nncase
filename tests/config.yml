@@ -62,6 +62,7 @@ case: # case的配置，应该是一个多层次的
     shape_bucket_range_info: {}
     shape_bucket_segments_count: 2
     shape_bucket_fix_var_map: {}
+    input_file: ""
 
   ptq_opt:
     kwargs:

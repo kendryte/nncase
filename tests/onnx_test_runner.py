@@ -45,6 +45,8 @@ class OnnxTestRunner(TestRunner):
         if self.case_dir != os.path.dirname(model_file):
             new_file = os.path.join(self.case_dir, 'test.onnx')
             shutil.copy(model_file, new_file)
+            if os.path.exists(model_file + "_data"):
+                shutil.copy(model_file + "_data", self.case_dir)
             model_file = new_file
 
         if not self.inputs:
@@ -68,7 +70,8 @@ class OnnxTestRunner(TestRunner):
             old_onnx_model, fix_bn=False, convert_version=False, simplify=False)
         model_file = os.path.join(
             os.path.dirname(model_file), 'simplified.onnx')
-        onnx.save_model(onnx_model, model_file)
+        onnx.save_model(onnx_model, model_file,
+                        save_as_external_data=True if onnx_model.ByteSize() > 2097152 else False)
         return model_file
 
     def preprocess_model(self, onnx_model, fix_bn=True, convert_version=True, simplify=True, import_test=True):
@@ -119,7 +122,7 @@ class OnnxTestRunner(TestRunner):
             if dim_value is not digit, it should be fixed.
             dim_value range: [0, inf)
             """
-            if not str(d.dim_value).isdigit():
+            if d.dim_param != "":
                 if len(self.shape_vars):
                     # we should eval dim_param instead of get var value
                     # e.g. dim_param = dec_len - 1
