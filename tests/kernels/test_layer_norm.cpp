@@ -33,23 +33,34 @@ class LayerNormTest : public KernelTest,
     void SetUp() override {
         auto &&[typecode, l_shape, axis] = GetParam();
 
-        dims_t scale_shape = {l_shape[axis]};
+        axis_value = axis;
+
         input =
             hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
         init_tensor(input);
 
+        int64_t axis1 = axis;
+
+        if (axis < 0) {
+            axis1 = axis + l_shape.size();
+        }
+
+        size_t index = 1;
+        for (size_t i = axis1; i < l_shape.size(); i++) {
+            index = index * l_shape[i];
+        }
+
+        dims_t scale_shape = {index};
         scale = hrt::create(typecode, scale_shape,
                             host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
         init_tensor(scale);
 
-        dims_t b_shape = {l_shape[axis]};
+        dims_t b_shape = {index};
         b = hrt::create(typecode, b_shape, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
         init_tensor(b);
-
-        axis_value = axis;
     }
 
     void TearDown() override {}
