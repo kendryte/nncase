@@ -31,7 +31,12 @@ using namespace nncase::runtime::stackvm;
 
 NNCASE_TEST_CLASS(CompareTest)
 
-NNCASE_TESTSUITE_INIT(CompareTest, Compare, 3,  dt_float32, dt_int32, dt_int64, dims_t{1}, dims_t{16}, dims_t{1, 16}, dims_t{1, 16, 16}, dims_t{3, 3, 1, 16})
+NNCASE_TESTSUITE_INIT(CompareTest, Compare, 
+    3,  dt_float32, dt_int32, dt_int64, 
+    dims_t{1, 3, 16, 16}, dims_t{3, 16, 16},
+    dims_t{3, 16, 1}, dims_t{16, 16},
+    dims_t{16, 1}, dims_t{1, 16, 1},
+    dims_t{16}, dims_t{1}, dims_t{})
 
 NNCASE_TEST_BODY(CompareTest, not_equal, kernels::stackvm::compare, compare_op_t::not_equal, 2, NORMAL, ortki_Not, ortki_Equal, l_ort, r_ort)
 NNCASE_TEST_BODY(CompareTest, equal, kernels::stackvm::compare, compare_op_t::equal, 1, NORMAL, ortki_Equal, l_ort, r_ort)
