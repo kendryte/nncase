@@ -30,19 +30,20 @@ using namespace nncase::runtime::stackvm;
 
 // NNCASE_TEST_CLASS_ARGS_4(ReduceTest)
 
-// // NNCASE_TESTSUITE_INIT(ReduceTest, Reduce, 3, GET_DEFAULT_TEST_TYPE_3(), GET_DEFAULT_TEST_SHAPE())
+// // NNCASE_TESTSUITE_INIT(ReduceTest, Reduce, 3, GET_DEFAULT_TEST_TYPE_3(),
+// GET_DEFAULT_TEST_SHAPE())
 
-// NNCASE_TESTSUITE_INIT_COMBINE(ReduceTest, Reduce, 
-//     GET_DEFAULT_TEST_TYPE_3(), 
-//     GET_DEFAULT_TEST_INTTYPE(), 
-//     GET_DEFAULT_TEST_INTTYPE(), 
-//     GET_DEFAULT_TEST_INTTYPE(), 
-//     GET_DEFAULT_TEST_SHAPE(), 
-//     GET_DEFAULT_TEST_VECTOR_SHAPE(), 
+// NNCASE_TESTSUITE_INIT_COMBINE(ReduceTest, Reduce,
+//     GET_DEFAULT_TEST_TYPE_3(),
+//     GET_DEFAULT_TEST_INTTYPE(),
+//     GET_DEFAULT_TEST_INTTYPE(),
+//     GET_DEFAULT_TEST_INTTYPE(),
+//     GET_DEFAULT_TEST_SHAPE(),
+//     GET_DEFAULT_TEST_VECTOR_SHAPE(),
 //     GET_DEFAULT_TEST_SCALAR_SHAPE(),
-//     GET_DEFAULT_TEST_SCALAR_SHAPE(), 
+//     GET_DEFAULT_TEST_SCALAR_SHAPE(),
 //     )
 
-// NNCASE_TEST_BODY_ARGS_4(ReduceTest, reduce_max, kernels::stackvm::reduce, reduce_op_t::max, 1, NORMAL, ortki_ReduceMax, a_ort, b_ort, c_ort[0], d_ort[0])
-
-
+// NNCASE_TEST_BODY_ARGS_4(ReduceTest, reduce_max, kernels::stackvm::reduce,
+// reduce_op_t::max, 1, NORMAL, ortki_ReduceMax, a_ort, b_ort, c_ort[0],
+// d_ort[0])

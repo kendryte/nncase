@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 #pragma once
-#include "nncase/shape.h"
 #include "macro_util.h"
+#include "nncase/shape.h"
 #include <algorithm>
 #include <cmath>
 #include <filesystem>
@@ -945,9 +945,11 @@ class KernelTest {
         return make_tensor(buffer, ort_type, shape, shape_size);
     }
 
-    // static void * runtime_tensor_2_vector_type(runtime::runtime_tensor &tensor) {
+    // static void * runtime_tensor_2_vector_type(runtime::runtime_tensor
+    // &tensor) {
     //     // auto mapped =
-    //     //     std::move(runtime::hrt::map(tensor, runtime::map_read).unwrap());
+    //     //     std::move(runtime::hrt::map(tensor,
+    //     runtime::map_read).unwrap());
     //     // void *buffer = reinterpret_cast<void *>(mapped.buffer().data());
     //     // return buffer;
     //     void* arr;
@@ -961,18 +963,18 @@ class KernelTest {
     //         NNCASE_CONDITION(uint16)
     //         NNCASE_CONDITION(uint32)
     //         NNCASE_CONDITION(uint64)
-    //         case dt_float32: 
-    //             arr = new float[tensor.shape().size()]; 
-    //             break; 
-    //         case dt_float64: 
-    //             arr = new double[tensor.shape().size()]; 
+    //         case dt_float32:
+    //             arr = new float[tensor.shape().size()];
     //             break;
-    //         case dt_float16: 
-    //             arr = new half[tensor.shape().size()]; 
-    //             break; 
-    //         case dt_boolean: 
-    //             arr = new bool[tensor.shape().size()]; 
-    //             break;  
+    //         case dt_float64:
+    //             arr = new double[tensor.shape().size()];
+    //             break;
+    //         case dt_float16:
+    //             arr = new half[tensor.shape().size()];
+    //             break;
+    //         case dt_boolean:
+    //             arr = new bool[tensor.shape().size()];
+    //             break;
     //     default:
     //         break;
     //     }
@@ -989,27 +991,26 @@ class KernelTest {
     //                 NNCASE_CONDITION_GET(uint16)
     //                 NNCASE_CONDITION_GET(uint32)
     //                 NNCASE_CONDITION_GET(uint64)
-    //                 case dt_float32: 
-    //                     arr[index] = static_cast<float>(get<float>(tensor, index)); 
-    //                     break; 
-    //                 case dt_float64: 
-    //                     arr[index] = static_cast<double>(get<double>(tensor, index)); 
-    //                     break;
-    //                 case dt_float16: 
-    //                     arr[index] = static_cast<double>(get<half>(tensor, index)); 
-    //                     break; 
-    //                 case dt_boolean: 
-    //                     arr[index] = static_cast<bool>(get<bool>(tensor, index)); 
-    //                     break;  
+    //                 case dt_float32:
+    //                     arr[index] = static_cast<float>(get<float>(tensor,
+    //                     index)); break;
+    //                 case dt_float64:
+    //                     arr[index] = static_cast<double>(get<double>(tensor,
+    //                     index)); break;
+    //                 case dt_float16:
+    //                     arr[index] = static_cast<double>(get<half>(tensor,
+    //                     index)); break;
+    //                 case dt_boolean:
+    //                     arr[index] = static_cast<bool>(get<bool>(tensor,
+    //                     index)); break;
     //                 default:
     //                     break;
     //             }
     //             return ok();
     //         }).is_ok();
     //     return arr;
-        
-    // }
 
+    // }
 
     result<void> check_tuple_output(runtime::runtime_tensor expected[],
                                     typecode_t dtypes[],

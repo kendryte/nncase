@@ -30,19 +30,31 @@ using namespace nncase::runtime::stackvm;
 
 NNCASE_TEST_CLASS(BinaryTest)
 
-NNCASE_TESTSUITE_INIT(BinaryTest, Binary, 3, GET_DEFAULT_TEST_TYPE_3(), GET_DEFAULT_TEST_SHAPE())
+NNCASE_TESTSUITE_INIT(BinaryTest, Binary, 3, GET_DEFAULT_TEST_TYPE_3(),
+                      GET_DEFAULT_TEST_SHAPE())
 
-NNCASE_TEST_BODY(BinaryTest, add, kernels::stackvm::binary, binary_op_t::add, 1, NORMAL, ortki_Add, l_ort, r_ort)
-NNCASE_TEST_BODY(BinaryTest, sub, kernels::stackvm::binary, binary_op_t::sub, 1, NORMAL, ortki_Sub, l_ort, r_ort)
-NNCASE_TEST_BODY(BinaryTest, mul, kernels::stackvm::binary, binary_op_t::mul, 1, NORMAL, ortki_Mul, l_ort, r_ort)
-NNCASE_TEST_BODY(BinaryTest, div, kernels::stackvm::binary, binary_op_t::div, 1, NORMAL, ortki_Div, l_ort, r_ort)
-NNCASE_TEST_BODY(BinaryTest, mod, kernels::stackvm::binary, binary_op_t::mod, 1, NORMAL, ortki_Mod, l_ort, r_ort, (long)1)
-NNCASE_TEST_BODY(BinaryTest, min, kernels::stackvm::binary, binary_op_t::min, 1, VEC, ortki_Min, orts, sizeof(orts) / sizeof(orts[0]))
-NNCASE_TEST_BODY(BinaryTest, max, kernels::stackvm::binary, binary_op_t::max, 1, VEC, ortki_Max, orts, sizeof(orts) / sizeof(orts[0]))
-NNCASE_TEST_BODY(BinaryTest, pow, kernels::stackvm::binary, binary_op_t::pow, 1, NORMAL, ortki_Pow, l_ort, r_ort)
-NNCASE_TEST_BODY(BinaryTest, logical_and, kernels::stackvm::binary, binary_op_t::logical_and, 1, NORMAL, ortki_And, l_ort, r_ort)
-NNCASE_TEST_BODY(BinaryTest, logical_or, kernels::stackvm::binary, binary_op_t::logical_or, 1, NORMAL, ortki_Or, l_ort, r_ort)
-NNCASE_TEST_BODY(BinaryTest, logical_xor, kernels::stackvm::binary, binary_op_t::logical_xor, 1, NORMAL, ortki_Xor, l_ort, r_ort)
+NNCASE_TEST_BODY(BinaryTest, add, kernels::stackvm::binary, binary_op_t::add, 1,
+                 NORMAL, ortki_Add, l_ort, r_ort)
+NNCASE_TEST_BODY(BinaryTest, sub, kernels::stackvm::binary, binary_op_t::sub, 1,
+                 NORMAL, ortki_Sub, l_ort, r_ort)
+NNCASE_TEST_BODY(BinaryTest, mul, kernels::stackvm::binary, binary_op_t::mul, 1,
+                 NORMAL, ortki_Mul, l_ort, r_ort)
+NNCASE_TEST_BODY(BinaryTest, div, kernels::stackvm::binary, binary_op_t::div, 1,
+                 NORMAL, ortki_Div, l_ort, r_ort)
+NNCASE_TEST_BODY(BinaryTest, mod, kernels::stackvm::binary, binary_op_t::mod, 1,
+                 NORMAL, ortki_Mod, l_ort, r_ort, (long)1)
+NNCASE_TEST_BODY(BinaryTest, min, kernels::stackvm::binary, binary_op_t::min, 1,
+                 VEC, ortki_Min, orts, sizeof(orts) / sizeof(orts[0]))
+NNCASE_TEST_BODY(BinaryTest, max, kernels::stackvm::binary, binary_op_t::max, 1,
+                 VEC, ortki_Max, orts, sizeof(orts) / sizeof(orts[0]))
+NNCASE_TEST_BODY(BinaryTest, pow, kernels::stackvm::binary, binary_op_t::pow, 1,
+                 NORMAL, ortki_Pow, l_ort, r_ort)
+NNCASE_TEST_BODY(BinaryTest, logical_and, kernels::stackvm::binary,
+                 binary_op_t::logical_and, 1, NORMAL, ortki_And, l_ort, r_ort)
+NNCASE_TEST_BODY(BinaryTest, logical_or, kernels::stackvm::binary,
+                 binary_op_t::logical_or, 1, NORMAL, ortki_Or, l_ort, r_ort)
+NNCASE_TEST_BODY(BinaryTest, logical_xor, kernels::stackvm::binary,
+                 binary_op_t::logical_xor, 1, NORMAL, ortki_Xor, l_ort, r_ort)
 
 int main(int argc, char *argv[]) {
     ::testing::InitGoogleTest(&argc, argv);
