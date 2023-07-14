@@ -76,6 +76,12 @@ result<void> nncase::kernels::stackvm::reference::lrn(
                    out_strides, begins, ends, strides,
                    default_kernel_context()));
 
+        std::cout << "Slice Out: ";
+        for (size_t j = 0; j < runtime::compute_size(tmp_out_shape); ++j) {
+            std::cout << slice_out[j] << " ";
+        }
+        std::cout << std::endl;
+
         auto keep_dims = true;
         auto axes = dims_t{1};
         auto reduce_shape = reduce_infer_shape(tmp_out_shape, axes, keep_dims);
@@ -91,6 +97,13 @@ result<void> nncase::kernels::stackvm::reference::lrn(
             IN_CAST(gsl::byte, slice_out.get()),
             OUT_CAST(gsl::byte, tmpData[i].get()), tmp_out_shape, axes,
             tmp_out_strides, reduce_out_strides, keep_dims));
+        for (size_t k = 0; k < tmpData.size(); ++k) {
+            std::cout << "tmpData[" << k << "]: ";
+            for (size_t j = 0; j < runtime::compute_size(tmpShapes[k]); ++j) {
+                std::cout << tmpData[k][j] << " ";
+            }
+            std::cout << std::endl;
+        }
     }
 
     auto concat_output = std::make_unique<float[]>(concat_size);
