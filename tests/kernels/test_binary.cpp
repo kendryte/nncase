@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include "kernel_test.h"
+#include "macro_util.h"
 #include <gtest/gtest.h>
 #include <iostream>
 #include <nncase/kernels/stackvm/tensor_ops.h>
@@ -21,8 +22,6 @@
 #include <nncase/runtime/simple_types.h>
 #include <nncase/runtime/stackvm/opcode.h>
 #include <ortki/operators.h>
-#include "macro_util.h"
-
 
 using namespace nncase;
 using namespace nncase::runtime;
