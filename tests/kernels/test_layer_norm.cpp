@@ -73,8 +73,8 @@ TEST_P(LayerNormTest, layer_norm) {
     auto b_ort = runtime_tensor_2_ort_tensor(b);
 
     //     expected
-    auto output_ort =
-        ortki_LayerNormalization(l_ort, scale_ort, b_ort, axis_value, 1e-05f, 1L);
+    auto output_ort = ortki_LayerNormalization(l_ort, scale_ort, b_ort,
+                                               axis_value, 1e-05f, 1L);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(tensor_seq_get_value(output_ort, 0), &size);
     dims_t shape(tensor_rank(tensor_seq_get_value(output_ort, 0)));
