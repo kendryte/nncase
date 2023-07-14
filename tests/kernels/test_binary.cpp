@@ -27,13 +27,11 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 using namespace nncase::runtime::stackvm;
-// using namespace nncase::runtime::kernels::stackvm;
 
 NNCASE_TEST_CLASS(BinaryTest)
 
-NNCASE_TESTSUITE_INIT(BinaryTest, Binary, 3, dt_float32, dt_int32, dt_int64,
-                      dims_t{1}, dims_t{16}, dims_t{1, 16}, dims_t{1, 16, 16},
-                      dims_t{3, 3, 1, 16})
+NNCASE_TESTSUITE_INIT(BinaryTest, Binary, 3, GET_DEFAULT_TEST_TYPE_3(),
+                      GET_DEFAULT_TEST_SHAPE())
 
 NNCASE_TEST_BODY(BinaryTest, add, kernels::stackvm::binary, binary_op_t::add, 1,
                  NORMAL, ortki_Add, l_ort, r_ort)
@@ -51,21 +49,12 @@ NNCASE_TEST_BODY(BinaryTest, max, kernels::stackvm::binary, binary_op_t::max, 1,
                  VEC, ortki_Max, orts, sizeof(orts) / sizeof(orts[0]))
 NNCASE_TEST_BODY(BinaryTest, pow, kernels::stackvm::binary, binary_op_t::pow, 1,
                  NORMAL, ortki_Pow, l_ort, r_ort)
-// NNCASE_TEST_BODY(BinaryTest, bitwise_and, kernels::stackvm::binary,
-// binary_op_t::bitwise_and, 1, NORMAL, ortki_Mul) NNCASE_TEST_BODY(BinaryTest,
-// bitwise_or, kernels::stackvm::binary, binary_op_t::bitwise_or, 1, NORMAL,
-// ortki_Mul) NNCASE_TEST_BODY(BinaryTest, bitwise_xor,
-// kernels::stackvm::binary, binary_op_t::bitwise_xor, 1, NORMAL, ortki_Mul)
 NNCASE_TEST_BODY(BinaryTest, logical_and, kernels::stackvm::binary,
                  binary_op_t::logical_and, 1, NORMAL, ortki_And, l_ort, r_ort)
 NNCASE_TEST_BODY(BinaryTest, logical_or, kernels::stackvm::binary,
                  binary_op_t::logical_or, 1, NORMAL, ortki_Or, l_ort, r_ort)
 NNCASE_TEST_BODY(BinaryTest, logical_xor, kernels::stackvm::binary,
                  binary_op_t::logical_xor, 1, NORMAL, ortki_Xor, l_ort, r_ort)
-// NNCASE_TEST_BODY(BinaryTest, left_shift, kernels::stackvm::binary,
-// binary_op_t::left_shift, 1, NORMAL, ortki_Mul) NNCASE_TEST_BODY(BinaryTest,
-// right_shift, kernels::stackvm::binary, binary_op_t::right_shift, 1, NORMAL,
-// ortki_Mul)
 
 int main(int argc, char *argv[]) {
     ::testing::InitGoogleTest(&argc, argv);
