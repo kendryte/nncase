@@ -72,10 +72,10 @@ result<void> run_core(const std::string &kmodel_path,
         auto start_time = std::chrono::steady_clock::now();
         try_var(ret, entry->invoke({parameters.data(), parameters.size()}));
         auto end_time = std::chrono::steady_clock::now();
-        total_time +=
-            (std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time)
-                 .count() /
-             1e6);
+        total_time += (std::chrono::duration_cast<std::chrono::nanoseconds>(
+                           end_time - start_time)
+                           .count() /
+                       1e6);
 
         if (i == (loop_count - 1)) {
             if (entry->parameters_size() == (bins.size() - 1)) {
