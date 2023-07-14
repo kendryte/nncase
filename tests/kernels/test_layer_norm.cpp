@@ -46,18 +46,18 @@ class LayerNormTest : public KernelTest,
             axis1 = axis + l_shape.size();
         }
 
-        size_t index = 1;
+        size_t l_shape_sum = 1;
         for (size_t i = axis1; i < l_shape.size(); i++) {
-            index = index * l_shape[i];
+            l_shape_sum = l_shape_sum * l_shape[i];
         }
 
-        dims_t scale_shape = {index};
+        dims_t scale_shape = {l_shape_sum};
         scale = hrt::create(typecode, scale_shape,
                             host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
         init_tensor(scale);
 
-        dims_t b_shape = {index};
+        dims_t b_shape = {l_shape_sum};
         b = hrt::create(typecode, b_shape, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
         init_tensor(b);
