@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Nncase.Diagnostics\Nncase.Diagnostics.csproj" />
     <ProjectReference Include="..\..\src\Nncase.Passes\Nncase.Passes.csproj" />
     <ProjectReference Include="..\..\src\Nncase.CodeGen\Nncase.CodeGen.csproj" />
   </ItemGroup>

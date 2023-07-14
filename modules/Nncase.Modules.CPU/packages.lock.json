@@ -137,6 +137,12 @@
           "System.Reactive": "[5.0.0, )"
         }
       },
+      "nncase.diagnostics": {
+        "type": "Project",
+        "dependencies": {
+          "Nncase.Core": "[1.0.0, )"
+        }
+      },
       "nncase.egraph": {
         "type": "Project",
         "dependencies": {
