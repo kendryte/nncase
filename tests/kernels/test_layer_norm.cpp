@@ -29,10 +29,10 @@ using namespace ortki;
 class LayerNormTest
     : public KernelTest,
       public ::testing::TestWithParam<
-          std::tuple<nncase::typecode_t, dims_t, dims_t, dims_t>> {
+          std::tuple<nncase::typecode_t, dims_t, dims_t, dims_t, int64_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape, scale_shape, b_shape] = GetParam();
+        auto &&[typecode, l_shape, scale_shape, b_shape, axis] = GetParam();
 
         input =
             hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
@@ -47,6 +47,8 @@ class LayerNormTest
         b = hrt::create(typecode, b_shape, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
         init_tensor(b);
+
+        axis_value = axis;
     }
 
     void TearDown() override {}
@@ -55,13 +57,15 @@ class LayerNormTest
     runtime_tensor input;
     runtime_tensor scale;
     runtime_tensor b;
+    int64_t axis_value;
 };
 
 INSTANTIATE_TEST_SUITE_P(LayerNorm, LayerNormTest,
                          testing::Combine(testing::Values(dt_float32),
                                           testing::Values(dims_t{1, 3, 16, 16}),
                                           testing::Values(dims_t{16}),
-                                          testing::Values(dims_t{16})));
+                                          testing::Values(dims_t{16}),
+                                          testing::Values(0, 1, 2, 3)));
 
 TEST_P(LayerNormTest, layer_norm) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
@@ -70,7 +74,7 @@ TEST_P(LayerNormTest, layer_norm) {
 
     //     expected
     auto output_ort =
-        ortki_LayerNormalization(l_ort, scale_ort, b_ort, 3, 1e-05f, 1L);
+        ortki_LayerNormalization(l_ort, scale_ort, b_ort, axis_value, 1e-05f, 1L);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(tensor_seq_get_value(output_ort, 0), &size);
     dims_t shape(tensor_rank(tensor_seq_get_value(output_ort, 0)));
@@ -82,7 +86,7 @@ TEST_P(LayerNormTest, layer_norm) {
                         .expect("create tensor failed");
 
     // actual
-    auto output = kernels::stackvm::layer_norm(3, 1e-05f, input.impl(),
+    auto output = kernels::stackvm::layer_norm(axis_value, 1e-05f, input.impl(),
                                                scale.impl(), b.impl())
                       .expect("layer_norm failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
