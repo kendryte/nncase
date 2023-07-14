@@ -122,6 +122,7 @@ jobs:
                 <EnvironmentVariables>
                   <LD_LIBRARY_PATH>${{github.workspace}}/install/lib</LD_LIBRARY_PATH>
                   <DYLD_LIBRARY_PATH>${{github.workspace}}/install/lib</DYLD_LIBRARY_PATH>
+                  <PATH>${{github.workspace}}/install/bin</PATH>
                 </EnvironmentVariables>
               </RunConfiguration>
             </RunSettings>
