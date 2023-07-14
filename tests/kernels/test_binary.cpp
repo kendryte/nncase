@@ -30,12 +30,7 @@ using namespace nncase::runtime::stackvm;
 
 NNCASE_TEST_CLASS(BinaryTest)
 
-NNCASE_TESTSUITE_INIT(BinaryTest, Binary, 
-    3, dt_float32, dt_int32, dt_int64, 
-    dims_t{1, 3, 16, 16}, dims_t{3, 16, 16},
-    dims_t{3, 16, 1}, dims_t{16, 16},
-    dims_t{16, 1}, dims_t{1, 16, 1},
-    dims_t{16}, dims_t{1}, dims_t{})
+NNCASE_TESTSUITE_INIT(BinaryTest, Binary, 3, GET_DEFAULT_TEST_TYPE_3(), GET_DEFAULT_TEST_SHAPE())
 
 NNCASE_TEST_BODY(BinaryTest, add, kernels::stackvm::binary, binary_op_t::add, 1, NORMAL, ortki_Add, l_ort, r_ort)
 NNCASE_TEST_BODY(BinaryTest, sub, kernels::stackvm::binary, binary_op_t::sub, 1, NORMAL, ortki_Sub, l_ort, r_ort)
