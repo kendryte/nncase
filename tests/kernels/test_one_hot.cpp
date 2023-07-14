@@ -86,7 +86,7 @@ TEST_P(OneHotTest, OneHot) {
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
-    //    print_runtime_tensor(expected);
+    //        print_runtime_tensor(expected);
     // actual
     //    int axis_ptr[] = {-1};
     //    auto axis =
