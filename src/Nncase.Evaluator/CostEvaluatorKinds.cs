@@ -6,13 +6,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.CostModel;
 using Nncase.IR;
 
-namespace Nncase.Passes;
+namespace Nncase.Evaluator;
 
-public interface IEGraphExtractor
+
+public enum CostEvaluatorKinds : int
 {
-    public Evaluator.ICostEvaluateProvider CostEvaluateProvider { get; set; }
-
-    Expr Extract(EClass root, IEGraph eGraph);
+    Default,
+    Online,
+    DeepLearning
 }

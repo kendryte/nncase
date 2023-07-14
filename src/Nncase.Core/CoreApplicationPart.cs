@@ -20,6 +20,11 @@ namespace Nncase;
 public static class CoreApplicationPart
 {
     /// <summary>
+    /// Gets the Defalut service key.
+    /// </summary>
+    public const string DefalutServiceKey = "default";
+
+    /// <summary>
     /// Add core assembly.
     /// </summary>
     /// <param name="registrator">Service registrator.</param>

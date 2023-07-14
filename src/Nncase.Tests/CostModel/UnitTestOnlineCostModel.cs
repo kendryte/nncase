@@ -113,8 +113,8 @@ public sealed class UnitTestOnlineCostModel : TestClassBase
 
         expr.InferenceType();
 
-        var container = (IContainer)(IServiceProvider)CompileSession!;
-        container.Register<ICostEvaluateProvider, OnlineCostEvaluateProvider>(made: Parameters.Of.Type<string>(_ => URL));
+        // var container = (IContainer)(IServiceProvider)CompileSession!;
+        // container.Register<ICostEvaluateProvider, OnlineCostEvaluateProvider>(made: Parameters.Of.Type<string>(_ => URL));
         // var evaluator = new OnlineEGraphExtractCostEvaluator(URL);
 
         // CompilerServices.EvaluateOp

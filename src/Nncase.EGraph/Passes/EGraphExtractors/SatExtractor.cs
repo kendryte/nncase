@@ -16,18 +16,18 @@ namespace Nncase.Passes.EGraphExtractors;
 
 internal class SatExtractor : IEGraphExtractor
 {
-    private readonly ICostEvaluateProvider _costEvaluateProvider;
-
     public SatExtractor(Evaluator.ICostEvaluateProvider costEvaluateProvider)
     {
-        _costEvaluateProvider = costEvaluateProvider;
+        CostEvaluateProvider = costEvaluateProvider;
     }
+
+    public ICostEvaluateProvider CostEvaluateProvider { get; set; }
 
     public Expr Extract(EClass root, IEGraph eGraph)
     {
         CheckTypes(eGraph);
 
-        var evaluator = new OneShotEGraphCostEvaluator(_costEvaluateProvider);
+        var evaluator = new OneShotEGraphCostEvaluator(CostEvaluateProvider);
         var costModel = evaluator.Evaluate(root);
 
         var cpmodel = new CpModel();

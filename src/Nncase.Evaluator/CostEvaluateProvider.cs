@@ -24,6 +24,12 @@ internal sealed class CostEvaluateProvider : ICostEvaluateProvider
 
     public Cost EvaluateBaseFuncCost(BaseFunction baseFunction, ICostEvaluateContext context)
     {
+        if (baseFunction is Fusion fusion)
+        {
+            var evaluatorVisitor = new CostEvaluateVisitor();
+            return evaluatorVisitor.Visit(fusion.Body);
+        }
+
         return Cost.Zero;
     }
 

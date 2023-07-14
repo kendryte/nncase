@@ -14,6 +14,7 @@ internal class TransformModule : IApplicationPart
     public void ConfigureServices(IRegistrator registrator)
     {
         registrator.Register<IEGraphExtractor, EGraphExtractors.SatExtractor>(reuse: Reuse.ScopedOrSingleton);
+        registrator.Register<IEGraphExtractor, EGraphExtractors.SatExtractor>(reuse: Reuse.ScopedOrSingleton, made: Parameters.Of.Type<Evaluator.ICostEvaluateProvider>(serviceKey: Evaluator.CostEvaluatorKinds.Online), serviceKey: Evaluator.CostEvaluatorKinds.Online);
         registrator.Register<IEGraphRewriteProvider, EGraphRewriteProvider>(reuse: Reuse.ScopedOrSingleton);
     }
 }

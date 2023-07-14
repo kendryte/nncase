@@ -9,22 +9,24 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Nncase.CostModel;
 using Nncase.IR;
 
+[assembly: InternalsVisibleTo("Nncase.Tests")]
+
 namespace Nncase.Evaluator;
 
-
-public sealed class OnlineCostEvaluateProvider : ICostEvaluateProvider
+internal sealed class OnlineCostEvaluateProvider : ICostEvaluateProvider
 {
-    private readonly ICompiler _compiler;
+    private readonly Func<IRModule, string> _moduleCompiler;
 
-    public OnlineCostEvaluateProvider(string serverUrl, ICompiler compiler)
+    public OnlineCostEvaluateProvider(string serverUrl, Func<IRModule, string> moduleCompiler)
     {
         ServerUrl = serverUrl;
-        _compiler = compiler;
+        _moduleCompiler = moduleCompiler;
     }
 
     public string ServerUrl { get; }
@@ -99,7 +101,7 @@ public sealed class OnlineCostEvaluateProvider : ICostEvaluateProvider
 
     private Cost RunModule(IRModule module, List<string> argPaths)
     {
-        var kmodelPath = CompileModule(module);
+        var kmodelPath = _moduleCompiler(module);
         var uploadFiles = new[] { kmodelPath }.Concat(argPaths).ToArray();
         var time = RunKModel(uploadFiles);
         foreach (var item in uploadFiles)
@@ -120,22 +122,22 @@ public sealed class OnlineCostEvaluateProvider : ICostEvaluateProvider
         return cost;
     }
 
-    private string CompileModule(IRModule module)
-    {
-        using (var _ = new Nncase.Diagnostics.DumpScope(Nncase.Diagnostics.NullDumpper.Instance))
-        {
-            _compiler.ImportIRModule(module);
-        }
+    // private string CompileModule(IRModule module)
+    // {
+    //     using (var _ = new Nncase.Diagnostics.DumpScope(Nncase.Diagnostics.NullDumpper.Instance))
+    //     {
+    //         _compiler.ImportIRModule(module);
+    //     }
 
-        string tempFilePath = Path.GetTempFileName();
+    //     string tempFilePath = Path.GetTempFileName();
 
-        using (FileStream fs = File.OpenWrite(tempFilePath))
-        {
-            _compiler.Gencode(fs);
-        }
+    //     using (FileStream fs = File.OpenWrite(tempFilePath))
+    //     {
+    //         _compiler.Gencode(fs);
+    //     }
 
-        return tempFilePath;
-    }
+    //     return tempFilePath;
+    // }
 
     private float RunKModel(params string[] filePaths)
     {

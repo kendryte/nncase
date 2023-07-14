@@ -38,3 +38,29 @@ public sealed partial class FoldNopClamp : IRewriteRule
         return null;
     }
 }
+
+/// <summary>
+/// Fold nop <see cref="IR.Math.Clamp"/>.
+/// </summary>
+[RuleGenerator]
+public sealed partial class FoldTwoClamp : IRewriteRule
+{
+    /// <inheritdoc/>
+    public IPattern Pattern { get; } = IsClamp(
+        IsClamp(
+            IsWildcard("input"),
+            IsTensorConst("min1") with { TypePattern = IsFloatScalar() },
+            IsTensorConst("max1") with { TypePattern = IsFloatScalar() }),
+        IsTensorConst("min2") with { TypePattern = IsFloatScalar() },
+        IsTensorConst("max2") with { TypePattern = IsFloatScalar() });
+
+    private Expr? GetReplace(Expr input, float min1, float max1, float min2, float max2)
+    {
+        if (min1 == min2 && max1 == max2)
+        {
+            return input;
+        }
+
+        return null;
+    }
+}

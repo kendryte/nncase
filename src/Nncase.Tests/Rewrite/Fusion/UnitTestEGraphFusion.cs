@@ -9,6 +9,8 @@ using System.IO;
 using System.Linq;
 using System.Reactive;
 using System.Threading.Tasks;
+using DryIoc;
+using Microsoft.Extensions.DependencyInjection;
 using NetFabric.Hyperlinq;
 using Nncase.CostModel;
 using Nncase.Diagnostics;
@@ -62,38 +64,6 @@ public class UnitTestEGraphFusion : TestClassBase
         var post_number = tv.CountCallOp<Conv2D>();
         Assert.Equal(pre_number, post_number);
     }
-
-    // [Fact]
-    // public async Task TestResNet18FusionOnlineCost()
-    // {
-    //     var server = new CostModelTest.SimulatorServer(CostModelTest.SimulatorServer.LocalHost);
-    //     var evalutor = new CostModelTest.OnlineEGraphExtractCostEvaluator(CostModelTest.SimulatorServer.LocalHost);
-
-    //     // step 1. import
-    //     var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 3, 224, 224 }));
-    //     var model = new ResNet(typeof(BasicBlock), new[] { 2, 2, 2, 2 });
-    //     var body = model.Forward(input);
-    //     var main = new Function("main", body, input);
-
-    //     var tv = new TestVisitor();
-    //     tv.Visit(main);
-    //     var pre_number = tv.CountCallOp<Conv2D>();
-
-    //     var module = new IRModule(main);
-    //     var pmgr = CompileSession.CreatePassManager("pmgr");
-    //     pmgr.AddWithName<EGraphRulesPass>("AutoMergeFusion").Configure(p =>
-    //     {
-    //         p.Add<SingleInputFusionMergeRule>();
-    //     });
-    //     pmgr.Add<EGraphExtractPass>(evalutor);
-
-    //     await pmgr.RunAsync(module);
-
-    //     tv.Clear();
-    //     tv.Visit(module.Entry!);
-    //     var post_number = tv.CountCallOp<Conv2D>();
-    //     Assert.Equal(pre_number, post_number);
-    // }
 
     [Fact]
     public async Task TestResNet18FusionWithCycle()
@@ -228,201 +198,8 @@ public class UnitTestEGraphFusion : TestClassBase
         // note 这里他其实强行分成了两个分支, fusion_1_2_3 和 fusion_2_fusion_1, 虽然结果一致但是不合理.
         Assert.True(Comparator.AllEqual(pre_result, post_result));
     }
-
-    // [Fact]
-    // public async Task TestDataFlowFusionCycleFailedCaseOnline()
-    // {
-    //     var server = new CostModelTest.SimulatorServer(CostModelTest.SimulatorServer.LocalHost);
-    //     var evalutor = new CostModelTest.OnlineEGraphExtractCostEvaluator(CostModelTest.SimulatorServer.LocalHost);
-
-    //     // step 1. import
-    //     var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 224, 224, 3 }));
-    //     Function main;
-    //     {
-    //         var fusion_1_input = new Var("fusion_1_input", new TensorType(DataTypes.Float32, new int[] { 1, 224, 224, 3 }));
-    //         var fusion_1 = new Fusion("fusion_1", Callable.StackVMModuleKind, IR.F.Tensors.NHWCToNCHW(fusion_1_input), new[] { fusion_1_input });
-    //         var v_0 = new Call(fusion_1, input); // 1,3,224,224
-
-    //         var fusion_2_input = new Var("fusion_2_input", new TensorType(DataTypes.Float32, new int[] { 1, 3, 224, 224 }));
-    //         var fusion_2 = new Fusion(
-    //             "fusion_2",
-    //             Callable.StackVMModuleKind,
-    //             IR.F.NN.ReduceWindow2D(
-    //                 ReduceOp.Max,
-    //                 fusion_2_input,
-    //                 0.0f,
-    //                 new[] { 3, 3 },
-    //                 new[] { 2, 2 },
-    //                 new[,]
-    //                 {
-    //                     { 1, 1 },
-    //                     { 1, 1 },
-    //                 },
-    //                 new[] { 1, 1 },
-    //                 false,
-    //                 false),
-    //             new[] { fusion_2_input });
-    //         var v_1 = new Call(fusion_2, v_0); // 1,3,112,112
-
-    //         var fusion_3_input = new Var("fusion_3_input", new TensorType(DataTypes.Float32, new int[] { 1, 3, 112, 112 }));
-    //         var fusion_3 = new Fusion(
-    //             "fusion_3",
-    //             Callable.StackVMModuleKind,
-    //             IR.F.NN.ReduceWindow2D(
-    //                 ReduceOp.Mean,
-    //                 fusion_3_input,
-    //                 0.0f,
-    //                 new[] { 3, 3 },
-    //                 new[] { 1, 1 },
-    //                 new[,]
-    //                 {
-    //                     { 1, 1 },
-    //                     { 1, 1 },
-    //                 },
-    //                 new[] { 1, 1 },
-    //                 false,
-    //                 false),
-    //             new[] { fusion_3_input });
-    //         var v_2 = new Call(fusion_3, v_1); // 1,3,112,112
-
-    //         var fusion_4_input = new Var[] { new("fusion_4_input_0", new TensorType(DataTypes.Float32, new int[] { 1, 3, 112, 112 })), new("fusion_4_input_1", new TensorType(DataTypes.Float32, new int[] { 1, 3, 112, 112 })) };
-    //         var fusion_4 = new Fusion("fusion_4", Callable.StackVMModuleKind, IR.F.Math.Add(fusion_4_input[0], fusion_4_input[1]), fusion_4_input);
-    //         var v_3 = new Call(fusion_4, new[] { v_1, v_2 }); // 1,3,112,112
-    //         main = new Function("main", v_3, input);
-    //     }
-
-    //     Assert.True(CompilerServices.InferenceType(main));
-
-    //     var input_tensor = Testing.Rand<float>(1, 224, 224, 3);
-    //     var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
-    //     {
-    //       { input, Value.FromTensor(input_tensor) },
-    //     };
-    //     var pre_result = CompilerServices.Evaluate(main.Body, feed_dict);
-    //     var test_visitor = new TestVisitor(true);
-    //     var module = new IRModule(main);
-
-    //     var prmg = CompileSession.CreatePassManager("prmg");
-    //     prmg.Add<EGraphRulesPass>().Configure(p =>
-    //     {
-    //         p.Add<SingleInputFusionMergeRule>();
-    //     });
-    //     prmg.Add<EGraphExtractPass>(evalutor);
-
-    //     await prmg.RunAsync(module);
-
-    //     var post = (Function)module.Entry!;
-
-    //     var post_result = CompilerServices.Evaluate(post.Body, feed_dict);
-
-    //     // note 这里他其实强行分成了两个分支, fusion_1_2_3 和 fusion_2_fusion_1, 虽然结果一致但是不合理.
-    //     Assert.True(Comparator.AllEqual(pre_result, post_result));
-    // }
 }
 
-// internal sealed class FusionCostEvaluator : EGraphExtractCostEvaluator
-// {
-//     public override Cost Visit(BaseFunction target)
-//     {
-//         if (target is Fusion fusion && fusion.ModuleKind == Callable.StackVMModuleKind)
-//         {
-//             return new FusionGraphCostVisitor().Visit(fusion);
-//         }
-//         else
-//         {
-//             throw new NotSupportedException();
-//         }
-//     }
-
-//     public override Cost Visit(ICostEvaluateContext context, Op target) => CompilerServices.EvaluateOpCost(target, context);
-
-//     private sealed class GraphOpCostEvaluateContext : Evaluator.ICostEvaluateContext
-//     {
-//         private readonly IRType? _returnType;
-//         private readonly IRType?[] _argumentTypes;
-//         private readonly Expr[] _arguments;
-
-//         public GraphOpCostEvaluateContext(IRType? returnType, IRType?[] argumentTypes, ReadOnlySpan<Expr> arguments)
-//         {
-//             _returnType = returnType;
-//             _argumentTypes = argumentTypes;
-//             _arguments = arguments.ToArray();
-//         }
-
-//         public T GetArgumentType<T>(Op op, ParameterInfo parameter)
-//             where T : IRType
-//         {
-//             if (op.GetType() == parameter.OwnerType)
-//             {
-//                 return (T?)_argumentTypes[parameter.Index] ?? throw new InvalidOperationException("Run type infer first.");
-//             }
-//             else
-//             {
-//                 throw new ArgumentOutOfRangeException($"Operator {op} doesn't have parameter: {parameter.Name}.");
-//             }
-//         }
-
-//         public T GetReturnType<T>()
-//             where T : IRType
-//         {
-//             return (T?)_returnType ?? throw new InvalidOperationException("Run type infer first.");
-//         }
-
-//         public bool TryGetConstArgument(Op op, ParameterInfo parameter, [MaybeNullWhen(false)] out Const @const)
-//         {
-//             @const = null;
-//             if (_arguments[parameter.Index] is Const c)
-//             {
-//                 @const = c;
-//                 return true;
-//             }
-
-//             return false;
-//         }
-//     }
-
-//     private sealed class FusionGraphCostVisitor : ExprVisitor<Cost, IRType>
-//     {
-//         protected override Cost VisitLeafVar(Var var)
-//         {
-//             return new Cost()
-//             {
-//                 [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess((TensorType)var.CheckedType!),
-//             };
-//         }
-
-//         protected override Cost DefaultVisitLeaf(Expr expr)
-//         {
-//             return Cost.Zero;
-//         }
-
-//         protected override Cost VisitLeafCall(Call call)
-//         {
-//             Cost cost;
-//             if (call.Target is Op op)
-//             {
-//                 var context = new GraphOpCostEvaluateContext(call.CheckedType, call.Arguments.AsValueEnumerable().Select(p => p.CheckedType).ToArray(), call.Arguments);
-//                 cost = CompilerServices.EvaluateOpCost(op, context) ?? Cost.Zero;
-//             }
-//             else
-//             {
-//                 throw new NotSupportedException();
-//             }
-
-//             return cost;
-//         }
-
-//         protected override Cost VisitLeafFusion(Fusion fusion)
-//         {
-//             var cost = new Cost()
-//             {
-//                 [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess((TensorType)fusion.Body.CheckedType!),
-//             };
-//             cost += fusion.Parameters.AsValueEnumerable().Select(Visit).Sum() ?? Cost.Zero;
-//             return cost;
-//         }
-//     }
-// }
 
 internal sealed class SingleInputFusionMergeRule : IRewriteRule
 {
@@ -446,7 +223,7 @@ internal sealed class SingleInputFusionMergeRule : IRewriteRule
 
         // 1. replace the caller_fusion input_var with the callee_fusion body
         var new_fusion_body = new FusionMerger(new Dictionary<Var, Expr>(ReferenceEqualityComparer.Instance) { { caller_fusion.Parameters[0], callee_fusion.Body } }).Clone(caller_fusion.Body, default);
-
+        new_fusion_body = CompilerServices.Rewrite(new_fusion_body, new[] { new Passes.Rules.Neutral.FoldTwoClamp() }, passOptions);
         // 2. fold the store load
         // new_fusion_body = CompilerServices.Rewrite(new_fusion_body, new[] { new Passes.Rules.K510.FoldStoreLoad() }, passOptions.IndentDir("MergeSingleInputFusion"));
         var new_fusion = new Fusion(name, Callable.StackVMModuleKind, new_fusion_body, callee_fusion.Parameters);
@@ -558,6 +335,191 @@ internal sealed class TwoInputFusionMergeRule : IRewriteRule
         }
 
         return new_call;
+    }
+}
+
+sealed class SimpleClass
+{
+    CompileOptions Options { get; }
+
+    public SimpleClass(CompileOptions options)
+    {
+        Options = options;
+    }
+
+    public string CW()
+    {
+        return Options.DumpDir;
+    }
+}
+
+[AutoSetupTestMethod(InitSession = true)]
+public class UnitTestEGraphOnLineFusion : TestClassBase
+{
+    public UnitTestEGraphOnLineFusion()
+    {
+#if DEBUG
+        CompileOptions.DumpFlags = DumpFlags.PassIR | DumpFlags.EGraphCost | DumpFlags.Rewrite;
+#endif
+    }
+
+    [Fact]
+    public void TestResolve()
+    {
+        var e = CompileSession.Resolve<ICostEvaluateProvider>();
+        Assert.Equal("CostEvaluateProvider", e.GetType().Name);
+
+        var e1 = CompileSession.Resolve<ICostEvaluateProvider>(new object[] { CostModelTest.SimulatorServer.LocalHost, (IRModule _) => string.Empty }, serviceKey: Evaluator.CostEvaluatorKinds.Online);
+        Assert.Equal("OnlineCostEvaluateProvider", e1.GetType().Name);
+    }
+
+    [Fact]
+    public async Task TestResNet18FusionOnlineCost()
+    {
+        var server = new CostModelTest.SimulatorServer(CostModelTest.SimulatorServer.LocalHost);
+
+        // step 1. import
+        var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 3, 224, 224 }));
+        var model = new ResNet(typeof(BasicBlock), new[] { 2, 2, 2, 2 });
+        var body = model.Forward(input);
+        var main = new Function("main", body, input);
+
+        var tv = new TestVisitor();
+        tv.Visit(main);
+        var pre_number = tv.CountCallOp<Conv2D>();
+
+        var moduleCompile = (IRModule m) =>
+        {
+            var compiler = CompileSession.New<ICompiler>();
+            compiler.ImportIRModule(m);
+            var path = Path.GetTempFileName();
+            using (var fs = File.OpenWrite(path))
+            {
+                compiler.Gencode(fs);
+            }
+            return path;
+        };
+
+        var module = new IRModule(main);
+        var pmgr = CompileSession.CreatePassManager("pmgr");
+        pmgr.AddWithName<EGraphRulesPass>("AutoMergeFusion").Configure(p =>
+        {
+            p.Add<SingleInputFusionMergeRule>();
+        });
+        pmgr.Add<EGraphExtractPass>().Configure(p =>
+        {
+            p.Extractor.CostEvaluateProvider = CompileSession.Resolve<ICostEvaluateProvider>(new object[] { CostModelTest.SimulatorServer.LocalHost, moduleCompile }, serviceKey: CostEvaluatorKinds.Online);
+        });
+
+        await pmgr.RunAsync(module);
+
+        tv.Clear();
+        tv.Visit(module.Entry!);
+        var post_number = tv.CountCallOp<Conv2D>();
+        Assert.Equal(pre_number, post_number);
+    }
+
+    [Fact]
+    public async Task TestDataFlowFusionCycleFailedCase()
+    {
+        var server = new CostModelTest.SimulatorServer(CostModelTest.SimulatorServer.LocalHost);
+        var moduleCompile = (IRModule m) =>
+        {
+            var compiler = CompileSession.New<ICompiler>();
+            compiler.ImportIRModule(m);
+            var path = Path.GetTempFileName();
+            using (var fs = File.OpenWrite(path))
+            {
+                compiler.Gencode(fs);
+            }
+            return path;
+        };
+
+        // step 1. import
+        var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 224, 224, 3 }));
+        Function main;
+        {
+            var fusion_1_input = new Var("fusion_1_input", new TensorType(DataTypes.Float32, new int[] { 1, 224, 224, 3 }));
+            var fusion_1 = new Fusion("fusion_1", Callable.StackVMModuleKind, IR.F.Tensors.NHWCToNCHW(fusion_1_input), new[] { fusion_1_input });
+            var v_0 = new Call(fusion_1, input); // 1,3,224,224
+
+            var fusion_2_input = new Var("fusion_2_input", new TensorType(DataTypes.Float32, new int[] { 1, 3, 224, 224 }));
+            var fusion_2 = new Fusion(
+                "fusion_2",
+                Callable.StackVMModuleKind,
+                IR.F.NN.ReduceWindow2D(
+                    ReduceOp.Max,
+                    fusion_2_input,
+                    0.0f,
+                    new[] { 3, 3 },
+                    new[] { 2, 2 },
+                    new[,]
+                    {
+                        { 1, 1 },
+                        { 1, 1 },
+                    },
+                    new[] { 1, 1 },
+                    false,
+                    false),
+                new[] { fusion_2_input });
+            var v_1 = new Call(fusion_2, v_0); // 1,3,112,112
+
+            var fusion_3_input = new Var("fusion_3_input", new TensorType(DataTypes.Float32, new int[] { 1, 3, 112, 112 }));
+            var fusion_3 = new Fusion(
+                "fusion_3",
+                Callable.StackVMModuleKind,
+                IR.F.NN.ReduceWindow2D(
+                    ReduceOp.Mean,
+                    fusion_3_input,
+                    0.0f,
+                    new[] { 3, 3 },
+                    new[] { 1, 1 },
+                    new[,]
+                    {
+                        { 1, 1 },
+                        { 1, 1 },
+                    },
+                    new[] { 1, 1 },
+                    false,
+                    false),
+                new[] { fusion_3_input });
+            var v_2 = new Call(fusion_3, v_1); // 1,3,112,112
+
+            var fusion_4_input = new Var[] { new("fusion_4_input_0", new TensorType(DataTypes.Float32, new int[] { 1, 3, 112, 112 })), new("fusion_4_input_1", new TensorType(DataTypes.Float32, new int[] { 1, 3, 112, 112 })) };
+            var fusion_4 = new Fusion("fusion_4", Callable.StackVMModuleKind, IR.F.Math.Add(fusion_4_input[0], fusion_4_input[1]), fusion_4_input);
+            var v_3 = new Call(fusion_4, new[] { v_1, v_2 }); // 1,3,112,112
+            main = new Function("main", v_3, input);
+        }
+
+        Assert.True(CompilerServices.InferenceType(main));
+
+        var input_tensor = Testing.Rand<float>(1, 224, 224, 3);
+        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        {
+          { input, Value.FromTensor(input_tensor) },
+        };
+        var pre_result = CompilerServices.Evaluate(main.Body, feed_dict);
+        var test_visitor = new TestVisitor(true);
+        var module = new IRModule(main);
+
+        var prmg = CompileSession.CreatePassManager("prmg");
+        prmg.Add<EGraphRulesPass>().Configure(p =>
+        {
+            p.Add<SingleInputFusionMergeRule>();
+        });
+        prmg.Add<EGraphExtractPass>().Configure(p =>
+        {
+            p.Extractor.CostEvaluateProvider = CompileSession.Resolve<ICostEvaluateProvider>(new object[] { CostModelTest.SimulatorServer.LocalHost, moduleCompile }, serviceKey: CostEvaluatorKinds.Online);
+        });
+
+        await prmg.RunAsync(module);
+
+        var post = (Function)module.Entry!;
+
+        var post_result = CompilerServices.Evaluate(post.Body, feed_dict);
+
+        // note 这里他其实强行分成了两个分支, fusion_1_2_3 和 fusion_2_fusion_1, 虽然结果一致但是不合理.
+        Assert.True(Comparator.AllEqual(pre_result, post_result));
     }
 }
 
