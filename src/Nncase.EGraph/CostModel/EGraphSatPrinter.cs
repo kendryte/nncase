@@ -76,7 +76,11 @@ public partial class EGraphPrinter
                 ReColor(eclass, pick, paths);
             }
 
-            NodesMap[entry].Node.Color = Color.DeepSkyBlue;
+            if (NodesMap.TryGetValue(entry, out var dotNode))
+            {
+                dotNode.Node.Color = Color.DeepSkyBlue;
+            }
+
             paths.Add(entry);
         }
     }
