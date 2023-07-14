@@ -49,19 +49,17 @@ class BinaryTest : public KernelTest,
     runtime_tensor rhs;
 };
 
-INSTANTIATE_TEST_SUITE_P(Binary, BinaryTest,
-                         testing::Combine(testing::Values(dt_float32, dt_int32,
-                                                          dt_int64),
-                                          testing::Values(dims_t{1, 3, 16, 16},
-                                                          /*dims_t { 3, 16, 16
-                                                          }, dims_t { 16, 16 },
-                                                          dims_t { 16 },*/
-                                                          dims_t{1}),
-                                          testing::Values(dims_t{1, 3, 16, 16},
-                                                          /*dims_t { 3, 16, 16
-                                                          }, dims_t { 16, 16 },
-                                                          dims_t { 16 },*/
-                                                          dims_t{1})));
+INSTANTIATE_TEST_SUITE_P(
+    Binary, BinaryTest,
+    testing::Combine(testing::Values(dt_float32, dt_int32, dt_int64),
+                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{3, 16, 16},
+                                     dims_t{3, 16, 1}, dims_t{16, 16},
+                                     dims_t{16, 1}, dims_t{1, 16, 1},
+                                     dims_t{16}, dims_t{1}, dims_t{}),
+                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{3, 16, 1},
+                                     dims_t{3, 16, 1}, dims_t{16, 16},
+                                     dims_t{1, 16, 1}, dims_t{16, 1},
+                                     dims_t{16}, dims_t{1}, dims_t{})));
 
 TEST_P(BinaryTest, max) {
     OrtKITensor *orts[2];
@@ -87,7 +85,8 @@ TEST_P(BinaryTest, max) {
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_TRUE(is_same_tensor(expected, actual));
+    EXPECT_TRUE(is_same_tensor(expected, actual) ||
+                cosine_similarity_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {

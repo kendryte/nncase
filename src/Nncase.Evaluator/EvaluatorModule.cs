@@ -18,5 +18,6 @@ internal class EvaluatorModule : IApplicationPart
         registrator.Register<ICostEvaluateProvider, CostEvaluateProvider>();
         registrator.Register<ICostEvaluateProvider, OnlineCostEvaluateProvider>(serviceKey: CostEvaluatorKinds.Online);
         registrator.Register<IShapeEvaluateProvider, ShapeEvaluateProvider>(reuse: Reuse.Singleton);
+        registrator.Register<IMetricEvaluateProvider, MetricEvaluateProvider>(reuse: Reuse.Singleton);
     }
 }

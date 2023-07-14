@@ -41,13 +41,151 @@ class UnaryTest
 
     void TearDown() override {}
 
+    void init_tensor(runtime_tensor &tensor) override {
+        auto dtype = tensor.datatype();
+        switch (dtype) {
+        case dt_int8: {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_int_distribution<> dis(1, 6);
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<int8_t>(tensor, index) = static_cast<int8_t>(dis(gen));
+                    return ok();
+                });
+            break;
+        }
+        case dt_int16: {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_int_distribution<> dis(1, 6);
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<int16_t>(tensor, index) =
+                        static_cast<int16_t>(dis(gen));
+                    return ok();
+                });
+            break;
+        }
+        case dt_int32: {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_int_distribution<> dis(1, 6);
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<int32_t>(tensor, index) = dis(gen);
+                    return ok();
+                });
+            break;
+        }
+        case dt_int64: {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_int_distribution<> dis(1, 6);
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<int64_t>(tensor, index) =
+                        static_cast<int64_t>(dis(gen));
+                    return ok();
+                });
+            break;
+        }
+        case dt_uint8: {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_int_distribution<> dis(1, 127);
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<uint8_t>(tensor, index) =
+                        static_cast<uint8_t>(dis(gen));
+                    return ok();
+                });
+            break;
+        }
+        case dt_uint16: {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_int_distribution<> dis(1, 127);
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<uint16_t>(tensor, index) =
+                        static_cast<uint16_t>(dis(gen));
+                    return ok();
+                });
+            break;
+        }
+        case dt_uint32: {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_int_distribution<> dis(1, 127);
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<uint32_t>(tensor, index) =
+                        static_cast<uint32_t>(dis(gen));
+                    return ok();
+                });
+            break;
+        }
+        case dt_uint64: {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_int_distribution<uint64_t> dis(1, 127);
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<uint64_t>(tensor, index) =
+                        static_cast<uint64_t>(dis(gen));
+                    return ok();
+                });
+            break;
+        }
+        case dt_float32: {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_real_distribution<float> dis(1.0f, 2.0f);
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<float>(tensor, index) = static_cast<float>(dis(gen));
+                    return ok();
+                });
+            break;
+        }
+        case dt_float64: {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_real_distribution<double> dis(1.0, 2.0);
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<double>(tensor, index) = static_cast<double>(dis(gen));
+                    return ok();
+                });
+            break;
+        }
+        default: {
+        }
+        }
+    }
+
   protected:
     runtime_tensor input;
 };
 
-INSTANTIATE_TEST_SUITE_P(Unary, UnaryTest,
-                         testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1})));
+INSTANTIATE_TEST_SUITE_P(
+    Unary, UnaryTest,
+    testing::Combine(testing::Values(dt_float32),
+                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{3, 16, 16},
+                                     dims_t{3, 16, 1}, dims_t{16, 16},
+                                     dims_t{16, 1}, dims_t{1, 16, 1},
+                                     dims_t{16}, dims_t{1}, dims_t{})));
 
 TEST_P(UnaryTest, acosh) {
     OrtKITensor *orts[1];
@@ -67,11 +205,12 @@ TEST_P(UnaryTest, acosh) {
     // actual
     auto output = kernels::stackvm::unary(
                       nncase::runtime::stackvm::unary_op_t::acosh, input.impl())
-                      .expect("binary failed");
+                      .expect("unary failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
-    // compare todo: it's a issue
-    EXPECT_FALSE(is_same_tensor(expected, actual));
+    // compare
+    EXPECT_TRUE(is_same_tensor(expected, actual) ||
+                cosine_similarity_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {

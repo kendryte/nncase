@@ -4,7 +4,7 @@ find_package(ortki)
 
 macro(add_test_exec name)
     add_executable(${name} ${name}.cpp)
-    target_link_libraries(${name} PRIVATE GTest::gtest_main nncaseruntime ortki)
+    target_link_libraries(${name} PRIVATE GTest::gtest_main nncaseruntime ortki::ortki)
     add_test(NAME ${name} COMMAND ${CMAKE_COMMAND} -DTEST_EXECUTABLE=$<TARGET_FILE:${name}> -P ${CMAKE_CURRENT_SOURCE_DIR}/../../toolchains/run_test.cmake)
 endmacro()
 

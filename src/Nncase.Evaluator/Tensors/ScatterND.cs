@@ -12,7 +12,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="ScatterND"/>.
 /// </summary>
-public class ScatterNDEvaluator : IEvaluator<ScatterND>, ITypeInferencer<ScatterND>, ICostEvaluator<ScatterND>, IShapeEvaluator<ScatterND>
+public class ScatterNDEvaluator : IEvaluator<ScatterND>, ITypeInferencer<ScatterND>, ICostEvaluator<ScatterND>, IShapeEvaluator<ScatterND>, IMetricEvaluator<ScatterND>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, ScatterND target)
@@ -76,4 +76,14 @@ public class ScatterNDEvaluator : IEvaluator<ScatterND>, ITypeInferencer<Scatter
     }
 
     public Expr Visit(IShapeEvaluateContext context, ScatterND target) => context.GetArgumentShape(target, ScatterND.Input);
+
+    public Metric Visit(IMetricEvaluateContext context, ScatterND target)
+    {
+        var returnType = context.GetReturnType<IRType>();
+
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(returnType),
+        };
+    }
 }

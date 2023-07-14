@@ -497,6 +497,12 @@ class compile_options : public clr_object_base {
             obj_.get(), value.data(), value.length());
     }
 
+    std::string input_file() { return ""; }
+    void input_file(std::string_view value) {
+        nncase_clr_api()->compile_options_set_input_file(
+            obj_.get(), value.data(), value.length());
+    }
+
     nncase_input_type_t input_type() { return nncase_it_float32; }
     void input_type(nncase_input_type_t value) {
         nncase_clr_api()->compile_options_set_input_type(obj_.get(), value);

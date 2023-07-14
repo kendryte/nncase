@@ -12,7 +12,7 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Evaluator for <see cref="Dequantize"/>.
 /// </summary>
-public class DequantizeEvaluator : IEvaluator<Dequantize>, ITypeInferencer<Dequantize>, ICostEvaluator<Dequantize>
+public class DequantizeEvaluator : IEvaluator<Dequantize>, ITypeInferencer<Dequantize>, ICostEvaluator<Dequantize>, IMetricEvaluator<Dequantize>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Dequantize target)
@@ -42,6 +42,17 @@ public class DequantizeEvaluator : IEvaluator<Dequantize>, ITypeInferencer<Dequa
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
             [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, 2),
+        };
+    }
+
+    public Metric Visit(IMetricEvaluateContext context, Dequantize target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, Dequantize.Input);
+        var outputType = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(outputType),
+            [MetricFactorNames.FLOPs] = MetricUtility.GetFLOPs(outputType, 2),
         };
     }
 
