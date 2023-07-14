@@ -14,8 +14,6 @@ namespace Nncase.Tests.CostModelTest;
 
 internal sealed class SimulatorServer : IDisposable
 {
-    public const string LocalHost = "127.0.0.1:5000";
-
     private readonly HttpListener _listener;
 
     public SimulatorServer(string url)

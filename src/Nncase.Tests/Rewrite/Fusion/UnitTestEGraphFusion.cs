@@ -216,14 +216,15 @@ public class UnitTestEGraphOnLineFusion : TestClassBase
         var e = CompileSession.Resolve<ICostEvaluateProvider>();
         Assert.Equal("CostEvaluateProvider", e.GetType().Name);
 
-        var e1 = CompileSession.Resolve<ICostEvaluateProvider>(new object[] { CostModelTest.SimulatorServer.LocalHost, (IRModule _) => string.Empty }, serviceKey: Evaluator.CostEvaluatorKinds.Online);
+        var e1 = CompileSession.Resolve<ICostEvaluateProvider>(new object[] { CostModelTest.UnitTestOnlineCostModel.GetUrl(), (IRModule _) => string.Empty }, serviceKey: Evaluator.CostEvaluatorKinds.Online);
         Assert.Equal("OnlineCostEvaluateProvider", e1.GetType().Name);
     }
 
     [Fact]
     public async Task TestResNet18FusionOnlineCost()
     {
-        var server = new CostModelTest.SimulatorServer(CostModelTest.SimulatorServer.LocalHost);
+        var url = CostModelTest.UnitTestOnlineCostModel.GetUrl();
+        var server = new CostModelTest.SimulatorServer(url);
 
         // step 1. import
         var input = new Var("input", new TensorType(DataTypes.Float32, new int[] { 1, 3, 224, 224 }));
@@ -256,7 +257,7 @@ public class UnitTestEGraphOnLineFusion : TestClassBase
         });
         pmgr.Add<EGraphExtractPass>().Configure(p =>
         {
-            p.Extractor.CostEvaluateProvider = CompileSession.Resolve<ICostEvaluateProvider>(new object[] { CostModelTest.SimulatorServer.LocalHost, moduleCompile }, serviceKey: CostEvaluatorKinds.Online);
+            p.Extractor.CostEvaluateProvider = CompileSession.Resolve<ICostEvaluateProvider>(new object[] { url, moduleCompile }, serviceKey: CostEvaluatorKinds.Online);
         });
 
         await pmgr.RunAsync(module);
@@ -270,7 +271,8 @@ public class UnitTestEGraphOnLineFusion : TestClassBase
     [Fact]
     public async Task TestDataFlowFusionCycleFailedCase()
     {
-        var server = new CostModelTest.SimulatorServer(CostModelTest.SimulatorServer.LocalHost);
+        var url = CostModelTest.UnitTestOnlineCostModel.GetUrl();
+        var server = new CostModelTest.SimulatorServer(url);
         var moduleCompile = (IRModule m) =>
         {
             var compiler = CompileSession.New<ICompiler>();
@@ -358,7 +360,7 @@ public class UnitTestEGraphOnLineFusion : TestClassBase
         });
         prmg.Add<EGraphExtractPass>().Configure(p =>
         {
-            p.Extractor.CostEvaluateProvider = CompileSession.Resolve<ICostEvaluateProvider>(new object[] { CostModelTest.SimulatorServer.LocalHost, moduleCompile }, serviceKey: CostEvaluatorKinds.Online);
+            p.Extractor.CostEvaluateProvider = CompileSession.Resolve<ICostEvaluateProvider>(new object[] { url, moduleCompile }, serviceKey: CostEvaluatorKinds.Online);
         });
 
         await prmg.RunAsync(module);
