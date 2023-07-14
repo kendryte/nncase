@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
-
+#if false
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 using Nncase.Diagnostics;
@@ -249,3 +249,4 @@ internal sealed class MultiFusionChecker : IFusionChecker
         };
     }
 }
+#endif

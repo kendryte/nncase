@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
-
+#if false
 using System.Runtime.CompilerServices;
 using Nncase.IR;
 using Nncase.PatternMatch;
@@ -9,7 +9,7 @@ using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Passes.Tile;
 
-internal sealed class GNNESameInputFusionMergeRule : Mutators.SameInputFusionMergeRule
+internal sealed class CPUSameInputFusionMergeRule : Mutators.SameInputFusionMergeRule
 {
     public override string ModuleKind => CPUTarget.Kind;
 
@@ -57,11 +57,11 @@ internal sealed class CPUFusionGroupMutator<T> : Mutators.FusionGroupMutator
     public override bool MergedFusionCheckCallBack(Fusion mergedFusion, HashSet<Fusion> candidateFusions)
     {
         // note the gnne activate must be first layer.
-        if (mergedFusion.Body is Call { Target: IR.K510.GNNEStore } st_call &&
-          st_call[IR.K510.GNNEStore.Input] is Call { Target: IR.K510.GNNEActivation })
-        {
-            return false;
-        }
+        // if (mergedFusion.Body is Call { Target: IR.K510.GNNEStore } st_call &&
+        //   st_call[IR.K510.GNNEStore.Input] is Call { Target: IR.K510.GNNEActivation })
+        // {
+        //     return false;
+        // }
 
         var checker = (IFusionChecker)Activator.CreateInstance(typeof(T), new object[] { _tileOptions })!;
         var ret = checker.Check(mergedFusion, PassOptions);
@@ -103,7 +103,7 @@ internal sealed class CheckedConvertMutator : ExprRewriter
     /// <inheritdoc/>
     protected override Expr RewriteLeafFusion(Fusion expr)
     {
-        if (expr is Fusion { ModuleKind: K510Target.Kind } fusion)
+        if (expr is Fusion { ModuleKind: CPUTarget.Kind } fusion)
         {
             if (!_fusionConertedCache.TryGetValue(fusion, out _))
             {
@@ -114,28 +114,27 @@ internal sealed class CheckedConvertMutator : ExprRewriter
                 }
                 else
                 {
-                    if (CompilerServices.TryMatchRoot(fusion, Conv2DFusionConverter.Conv2DFusionPattern, out var matchResult))
-                    {
-                        prim_func = Conv2DFusionConverter.VisitToPrimFunc(_tileOptions, fusion, matchResult, out _, out _);
-                    }
-                    else if (CompilerServices.TryMatchRoot(fusion, Conv2DTransposeFusionConverter.Conv2DFusionPattern, out matchResult))
-                    {
-                        prim_func = Conv2DTransposeFusionConverter.VisitToPrimFunc(_tileOptions, fusion, matchResult, out _, out _);
-                    }
-                    else if (!_tileOptions.ForceMultiLayer && CompilerServices.TryMatchRoot(fusion, LSTMFusionConverter.FusionPattern, out matchResult))
-                    {
-                        prim_func = LSTMFusionConverter.VisitToPrimFunc(_tileOptions, fusion, matchResult, out _, out _);
-                    }
-                    else
-                    {
-                        var visitor = new MultiLayerFusionConverter(_tileOptions);
-                        prim_func = visitor.VisitToPrimFunc(fusion);
-                    }
+                    // if (CompilerServices.TryMatchRoot(fusion, Conv2DFusionConverter.Conv2DFusionPattern, out var matchResult))
+                    // {
+                    //     prim_func = Conv2DFusionConverter.VisitToPrimFunc(_tileOptions, fusion, matchResult, out _, out _);
+                    // }
+                    // else if (CompilerServices.TryMatchRoot(fusion, Conv2DTransposeFusionConverter.Conv2DFusionPattern, out matchResult))
+                    // {
+                    //     prim_func = Conv2DTransposeFusionConverter.VisitToPrimFunc(_tileOptions, fusion, matchResult, out _, out _);
+                    // }
+                    // else if (!_tileOptions.ForceMultiLayer && CompilerServices.TryMatchRoot(fusion, LSTMFusionConverter.FusionPattern, out matchResult))
+                    // {
+                    //     prim_func = LSTMFusionConverter.VisitToPrimFunc(_tileOptions, fusion, matchResult, out _, out _);
+                    // }
+                    // else
+                    // {
+                    //     var visitor = new MultiLayerFusionConverter(_tileOptions);
+                    //     prim_func = visitor.VisitToPrimFunc(fusion);
+                    // }
                 }
 
                 BaseFunction? convert_func = prim_func;
                 _fusionConertedCache.Add(fusion, convert_func);
-                new DDrMacCalcVisitor(_fusionMacsMap).Visit(fusion);
             }
         }
 
@@ -144,7 +143,7 @@ internal sealed class CheckedConvertMutator : ExprRewriter
 
     protected override Expr RewriteLeafCall(Call expr)
     {
-        if (expr.Target is Fusion { ModuleKind: K510Target.Kind } fusion)
+        if (expr.Target is Fusion { ModuleKind: CPUTarget.Kind } fusion)
         {
             var convert_func = _fusionConertedCache[fusion];
             PrimFunctionWrapper wrapper;
@@ -185,3 +184,5 @@ internal sealed class CheckedConvertMutator : ExprRewriter
         return expr;
     }
 }
+
+#endif

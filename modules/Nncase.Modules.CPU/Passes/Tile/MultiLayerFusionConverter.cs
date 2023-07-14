@@ -1,13 +1,14 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+#if false
 using System.Runtime.CompilerServices;
 using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.Passes.BufferSchedule;
 using Nncase.TIR;
 using Nncase.TIR.Builders;
-using Nncase.TIR.K510;
+using Nncase.TIR.CPU;
 using Nncase.TIR.K510.Builders;
 using MathF = Nncase.IR.F.Math;
 
@@ -226,3 +227,4 @@ internal class MultiLayerFusionConverter : LayerFusionConverter
         return changed;
     }
 }
+#endif

@@ -24,7 +24,7 @@ public class CPUTarget : ITarget
     /// <summary>
     /// Gets kind.
     /// </summary>
-    public static readonly string Kind = "cpu";
+    public const string Kind = "cpu";
 
     string ITarget.Kind => Kind;
 
