@@ -40,6 +40,6 @@ public interface ICostEvaluateContext
     /// <param name="op">target.</param>
     /// <param name="parameter">param info.</param>
     /// <param name="const">out const.</param>
-    /// <returns></returns>
+    /// <returns>bool.</returns>
     public bool TryGetConstArgument(Op op, ParameterInfo parameter, [System.Diagnostics.CodeAnalysis.MaybeNullWhen(false)] out Const @const);
 }

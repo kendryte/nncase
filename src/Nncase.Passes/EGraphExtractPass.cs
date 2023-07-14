@@ -16,12 +16,12 @@ namespace Nncase.Passes;
 
 public sealed class EGraphExtractPass : Pass<IEGraph, BaseFunction>
 {
-    public IEGraphExtractor Extractor { get; }
-
     public EGraphExtractPass(IEGraphExtractor extractor)
     {
         Extractor = extractor;
     }
+
+    public IEGraphExtractor Extractor { get; }
 
     protected override Task<BaseFunction> RunCoreAsync(IEGraph input, RunPassContext context)
     {

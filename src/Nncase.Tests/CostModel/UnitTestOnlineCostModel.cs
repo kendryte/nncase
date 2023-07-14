@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -23,68 +23,10 @@ using Xunit;
 
 namespace Nncase.Tests.CostModelTest;
 
-// internal sealed class OnlineCostEvaluateVisitor : ExprVisitor<Cost, Unit>
-// {
-//     private readonly OnlineEGraphExtractCostEvaluator _evaluator;
-
-//     public OnlineCostEvaluateVisitor(OnlineEGraphExtractCostEvaluator evaluator)
-//     {
-//         _evaluator = evaluator;
-//     }
-
-//     protected override Cost DefaultVisitLeaf(Expr expr)
-//     {
-//         return Cost.Zero;
-//     }
-
-//     protected override Cost VisitLeafCall(Call call)
-//     {
-//         return call.Target switch
-//         {
-//             Op op => _evaluator.Visit(new CostEvaluateContext(call), op),
-//             _ => throw new NotSupportedException()
-//         };
-//     }
-
-//     private sealed class CostEvaluateContext : ICostEvaluateContext
-//     {
-//         private readonly Call _currentCall;
-
-//         public CostEvaluateContext(Call currentCall)
-//         {
-//             _currentCall = currentCall;
-//         }
-
-//         public T GetArgumentType<T>(Op op, ParameterInfo parameter) where T : IRType
-//         {
-//             return (T)_currentCall[parameter].CheckedType;
-//         }
-
-//         public T GetReturnType<T>() where T : IRType
-//         {
-//             return (T)_currentCall.CheckedType;
-//         }
-
-//         public bool TryGetConstArgument(Op op, ParameterInfo parameter, [MaybeNullWhen(false)] out Const @const)
-//         {
-//             bool ret = false;
-//             @const = null;
-//             if (_currentCall[parameter] is Const c)
-//             {
-//                 ret = true;
-//                 @const = c;
-//             }
-
-//             return ret;
-//         }
-//     }
-// }
-
-
 [AutoSetupTestMethod(InitSession = true)]
 public sealed class UnitTestOnlineCostModel : TestClassBase
 {
-    const string URL = "127.0.0.1:5000";
+    private const string URL = "127.0.0.1:5000";
 
     [Fact]
     public void TestIsOnline()
@@ -113,18 +55,19 @@ public sealed class UnitTestOnlineCostModel : TestClassBase
 
         expr.InferenceType();
 
-        // var container = (IContainer)(IServiceProvider)CompileSession!;
-        // container.Register<ICostEvaluateProvider, OnlineCostEvaluateProvider>(made: Parameters.Of.Type<string>(_ => URL));
-        // var evaluator = new OnlineEGraphExtractCostEvaluator(URL);
+        var evaluator = new OnlineCostEvaluateProvider(URL, m =>
+        {
+            var compiler = CompileSession.New<ICompiler>();
+            compiler.ImportIRModule(m);
+            var path = Path.GetTempFileName();
+            using (var fs = File.OpenWrite(path))
+            {
+                compiler.Gencode(fs);
+            }
 
-        // CompilerServices.EvaluateOp
+            return path;
+        });
 
-
-        // Assert.True(evaluator.IsServerOnline());
-
-        // var visitor = new OnlineCostEvaluateVisitor(evaluator);
-        // visitor.Visit(expr);
-
-        // Assert.NotEqual(UInt128.MaxValue, visitor.ExprMemo[expr].Score);
+        Assert.True(evaluator.IsServerOnline());
     }
 }

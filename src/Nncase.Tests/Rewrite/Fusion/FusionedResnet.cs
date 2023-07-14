@@ -301,8 +301,10 @@ internal sealed class ResNet
             var v_input = new Var(input.CheckedType!);
             var weights = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, new[] { 64, v_input.CheckedShape[1].FixedValue, 7, 7 }).Evaluate().AsTensor();
             var bias = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, new[] { 64 }).Evaluate().AsTensor();
-            return new Fusion(Callable.StackVMModuleKind,
-                IForwardable.Identity(IR.F.NN.Conv2D(
+            return new Fusion(
+                Callable.StackVMModuleKind,
+                IForwardable.Identity(
+                    IR.F.NN.Conv2D(
                     IForwardable.Identity(v_input, _addLoadStore),
                     weights,
                     bias,
@@ -314,7 +316,8 @@ internal sealed class ResNet
                     },
                     new[] { 1, 1 },
                     PadMode.Constant,
-                    groups), _addLoadStore),
+                    groups),
+                    _addLoadStore),
                 new[] { v_input });
         };
         _conv1 = new(conv1_creator);

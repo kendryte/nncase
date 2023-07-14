@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -12,10 +12,11 @@ using HttpMultipartParser;
 
 namespace Nncase.Tests.CostModelTest;
 
-
 internal sealed class SimulatorServer : IDisposable
 {
-    private HttpListener _listener;
+    public const string LocalHost = "127.0.0.1:5000";
+
+    private readonly HttpListener _listener;
 
     public SimulatorServer(string url)
     {
@@ -25,8 +26,6 @@ internal sealed class SimulatorServer : IDisposable
     }
 
     public string Url { get; }
-
-    public static string LocalHost = "127.0.0.1:5000";
 
     public void Dispose()
     {
@@ -75,7 +74,6 @@ internal sealed class SimulatorServer : IDisposable
                 resp.Close();
             }
 
-
             Receive();
         }
     }
@@ -89,6 +87,7 @@ internal sealed class SimulatorServer : IDisposable
             response.ContentType = "text/html";
             response.ContentEncoding = Encoding.UTF8;
             response.ContentLength64 = data.LongLength;
+
             // Write out to the response stream (asynchronously), then close it
             response.OutputStream.Write(data, 0, data.Length);
             response.Close();

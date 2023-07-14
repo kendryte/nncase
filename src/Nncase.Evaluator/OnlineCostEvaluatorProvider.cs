@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -122,23 +122,6 @@ internal sealed class OnlineCostEvaluateProvider : ICostEvaluateProvider
         return cost;
     }
 
-    // private string CompileModule(IRModule module)
-    // {
-    //     using (var _ = new Nncase.Diagnostics.DumpScope(Nncase.Diagnostics.NullDumpper.Instance))
-    //     {
-    //         _compiler.ImportIRModule(module);
-    //     }
-
-    //     string tempFilePath = Path.GetTempFileName();
-
-    //     using (FileStream fs = File.OpenWrite(tempFilePath))
-    //     {
-    //         _compiler.Gencode(fs);
-    //     }
-
-    //     return tempFilePath;
-    // }
-
     private float RunKModel(params string[] filePaths)
     {
         var client = new HttpClient();
@@ -160,11 +143,12 @@ internal sealed class OnlineCostEvaluateProvider : ICostEvaluateProvider
         {
             return -1;
         }
+
         var time = float.Parse(responseContent);
         return time < 0.0 ? -1 : time;
     }
 
-    private (Var var, string path) CreateInput(int index, IRType type)
+    private (Var Var, string Path) CreateInput(int index, IRType type)
     {
         var inputVar = new Var($"tmpVar_{index}", type);
         if (type is TensorType tensorType)
