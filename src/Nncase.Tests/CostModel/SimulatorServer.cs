@@ -5,8 +5,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.NetworkInformation;
 using System.Text;
 using HttpMultipartParser;
 
@@ -14,6 +16,8 @@ namespace Nncase.Tests.CostModelTest;
 
 internal sealed class SimulatorServer : IDisposable
 {
+    public static readonly HashSet<int> UsedPorts = new();
+
     private readonly HttpListener _listener;
 
     public SimulatorServer(string url)
@@ -24,6 +28,31 @@ internal sealed class SimulatorServer : IDisposable
     }
 
     public string Url { get; }
+
+    public static bool GetUrl(out string url)
+    {
+        bool ret = false;
+        url = string.Empty;
+        lock (UsedPorts)
+        {
+            var ipProperties = IPGlobalProperties.GetIPGlobalProperties();
+            IPEndPoint[] endPoints = ipProperties.GetActiveTcpListeners();
+            UsedPorts.UnionWith(new HashSet<int>(endPoints.Select(p => p.Port)));
+            url = string.Empty;
+            for (int i = 49152; i < 65535; i++)
+            {
+                if (!UsedPorts.Contains(i))
+                {
+                    url = $"127.0.0.1:{i}";
+                    UsedPorts.Add(i);
+                    ret = true;
+                    break;
+                }
+            }
+        }
+
+        return ret;
+    }
 
     public void Dispose()
     {
@@ -54,25 +83,30 @@ internal sealed class SimulatorServer : IDisposable
         {
             var context = _listener.EndGetContext(result);
             var request = context.Request;
-            var resp = context.Response;
+            var response = context.Response;
 
             if (request.Url is { AbsolutePath: "/run_kmodel" } && request.HttpMethod == HttpMethod.Post.Method)
             {
-                DealRunKModel(request, resp);
+                DealRunKModel(request, response);
             }
             else
             {
-                byte[] data = Encoding.UTF8.GetBytes("Hello World!");
-                resp.ContentType = "text/html";
-                resp.ContentEncoding = Encoding.UTF8;
-                resp.ContentLength64 = data.LongLength;
-
-                // Write out to the response stream (asynchronously), then close it
-                resp.OutputStream.Write(data, 0, data.Length);
-                resp.Close();
+                WriteContent(response, "Hello World!");
+                response.Close();
             }
 
             Receive();
+        }
+    }
+
+    private void WriteContent(HttpListenerResponse response, string data)
+    {
+        response.ContentType = "text/html";
+        response.ContentEncoding = Encoding.ASCII;
+        response.ContentLength64 = Encoding.ASCII.GetByteCount(data);
+        using (var strWriter = new StreamWriter(response.OutputStream, Encoding.ASCII))
+        {
+            strWriter.Write(data);
         }
     }
 
@@ -81,13 +115,7 @@ internal sealed class SimulatorServer : IDisposable
         var contentType = request.ContentType;
         if (contentType is null)
         {
-            byte[] data = Encoding.UTF8.GetBytes("-1");
-            response.ContentType = "text/html";
-            response.ContentEncoding = Encoding.UTF8;
-            response.ContentLength64 = data.LongLength;
-
-            // Write out to the response stream (asynchronously), then close it
-            response.OutputStream.Write(data, 0, data.Length);
+            WriteContent(response, "-1");
             response.Close();
             return;
         }
@@ -136,20 +164,12 @@ internal sealed class SimulatorServer : IDisposable
         if (exitCode != 0 || re.Match(countMsg) is not System.Text.RegularExpressions.Match match)
         {
             Console.Write(errMsgBuilder);
-            byte[] data = Encoding.UTF8.GetBytes("-1");
-            response.ContentType = "text/html";
-            response.ContentEncoding = Encoding.UTF8;
-            response.ContentLength64 = data.LongLength;
-            response.OutputStream.Write(data, 0, data.Length);
+            WriteContent(response, "-1");
             response.Close();
         }
         else
         {
-            byte[] data = Encoding.UTF8.GetBytes(match.Groups[1].Value.ToString());
-            response.ContentType = "text/html";
-            response.ContentEncoding = Encoding.UTF8;
-            response.ContentLength64 = data.LongLength;
-            response.OutputStream.Write(data, 0, data.Length);
+            WriteContent(response, match.Groups[1].Value.ToString());
             response.Close();
         }
 

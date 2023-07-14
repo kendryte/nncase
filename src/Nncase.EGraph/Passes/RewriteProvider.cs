@@ -38,7 +38,7 @@ internal class EGraphRewriteProvider : IEGraphRewriteProvider
 
         var graph = new EGraph(expr);
         ERewrite(graph, rules, options);
-        var post = _extractor.Extract(graph.Root!, graph);
+        var post = _extractor.Extract(graph.Root!.Find(), graph);
         return post;
     }
 

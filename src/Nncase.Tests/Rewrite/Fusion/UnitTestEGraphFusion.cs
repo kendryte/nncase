@@ -216,14 +216,23 @@ public class UnitTestEGraphOnLineFusion : TestClassBase
         var e = CompileSession.Resolve<ICostEvaluateProvider>();
         Assert.Equal("CostEvaluateProvider", e.GetType().Name);
 
-        var e1 = CompileSession.Resolve<ICostEvaluateProvider>(new object[] { CostModelTest.UnitTestOnlineCostModel.GetUrl(), (IRModule _) => string.Empty }, serviceKey: Evaluator.CostEvaluatorKinds.Online);
+        if (!CostModelTest.SimulatorServer.GetUrl(out var url))
+        {
+            return;
+        }
+
+        var e1 = CompileSession.Resolve<ICostEvaluateProvider>(new object[] { url, (IRModule _) => string.Empty }, serviceKey: Evaluator.CostEvaluatorKinds.Online);
         Assert.Equal("OnlineCostEvaluateProvider", e1.GetType().Name);
     }
 
     [Fact]
     public async Task TestResNet18FusionOnlineCost()
     {
-        var url = CostModelTest.UnitTestOnlineCostModel.GetUrl();
+        if (!CostModelTest.SimulatorServer.GetUrl(out var url))
+        {
+            return;
+        }
+
         var server = new CostModelTest.SimulatorServer(url);
 
         // step 1. import
@@ -271,7 +280,11 @@ public class UnitTestEGraphOnLineFusion : TestClassBase
     [Fact]
     public async Task TestDataFlowFusionCycleFailedCase()
     {
-        var url = CostModelTest.UnitTestOnlineCostModel.GetUrl();
+        if (!CostModelTest.SimulatorServer.GetUrl(out var url))
+        {
+            return;
+        }
+
         var server = new CostModelTest.SimulatorServer(url);
         var moduleCompile = (IRModule m) =>
         {

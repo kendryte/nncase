@@ -27,31 +27,17 @@ namespace Nncase.Tests.CostModelTest;
 [AutoSetupTestMethod(InitSession = true)]
 public sealed class UnitTestOnlineCostModel : TestClassBase
 {
-    public static string GetUrl()
-    {
-        var ipProperties = IPGlobalProperties.GetIPGlobalProperties();
-        IPEndPoint[] endPoints = ipProperties.GetActiveTcpListeners();
-        var usedPorts = new HashSet<int>(endPoints.Select(p => p.Port));
-        var port = 0;
-        for (int i = 49152; i < 65535; i++)
-        {
-            if (!usedPorts.Contains(i))
-            {
-                port = i;
-                break;
-            }
-        }
-
-        return $"127.0.0.1:{port}";
-    }
-
     [Fact]
     public void TestIsOnline()
     {
-        var uRL = GetUrl();
-        var evaluator = ActivatorUtilities.CreateInstance<OnlineCostEvaluateProvider>(CompileSession, uRL);
+        if (!SimulatorServer.GetUrl(out var url))
+        {
+            return;
+        }
 
-        using (var server = new SimulatorServer(uRL))
+        var evaluator = new OnlineCostEvaluateProvider(url, m => string.Empty);
+
+        using (var server = new SimulatorServer(url))
         {
             Assert.True(evaluator.IsServerOnline());
         }
@@ -63,8 +49,12 @@ public sealed class UnitTestOnlineCostModel : TestClassBase
     [Fact]
     public void TestRunKModel()
     {
-        var uRL = GetUrl();
-        var server = new SimulatorServer(uRL);
+        if (!SimulatorServer.GetUrl(out var url))
+        {
+            return;
+        }
+
+        var server = new SimulatorServer(url);
 
         Call expr;
         {
@@ -74,7 +64,7 @@ public sealed class UnitTestOnlineCostModel : TestClassBase
 
         expr.InferenceType();
 
-        var evaluator = new OnlineCostEvaluateProvider(uRL, m =>
+        var evaluator = new OnlineCostEvaluateProvider(url, m =>
         {
             var compiler = CompileSession.New<ICompiler>();
             compiler.ImportIRModule(m);
