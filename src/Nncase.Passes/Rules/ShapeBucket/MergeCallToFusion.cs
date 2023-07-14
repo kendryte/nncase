@@ -199,6 +199,7 @@ public partial class MergeNextCallToFusion : MergeFusionBase
     private bool SameEffectVar(Call originCall, Fusion fusion)
     {
         var array = MakeEffectVarArray(
+            CompileSession,
             CompileSession.CompileOptions.ShapeBucketOptions.VarMap,
             originCall.Arguments[^1..].ToArray());
         if (fusion is BucketFusion varFusion)

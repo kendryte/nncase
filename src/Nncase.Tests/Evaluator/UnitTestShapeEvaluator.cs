@@ -82,6 +82,7 @@ public class UnitTestShapeEvaluator : TestClassBase
     public void UnitTestUnsqueeze()
     {
         TestOpShapeEval(input => Unsqueeze(input, new[] { 4 }));
+        TestOpShapeEval(input => Unsqueeze(input, new[] { -1 }));
     }
 
     [Fact]

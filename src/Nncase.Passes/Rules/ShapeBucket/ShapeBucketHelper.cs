@@ -22,6 +22,17 @@ internal static class ShapeBucketHelper
         }
     }
 
+    public static Var[] InputDimVars(CompileSession session)
+    {
+        return session.CompileOptions.ShapeBucketOptions.VarMap.Values.SelectMany(x => x).OfType<Var>()
+            .ToHashSet().ToArray();
+    }
+
+    public static bool IsSingleDimVar(CompileSession session)
+    {
+        return InputDimVars(session).Length == 1;
+    }
+
     // avoid dup marker user
     public static T DupExpr<T>(T body)
         where T : Expr
@@ -36,8 +47,14 @@ internal static class ShapeBucketHelper
         return dupFusionBody;
     }
 
-    public static Var[] MakeEffectVarArray(Dictionary<Var, Expr[]> varMap, params Expr[] args)
+    public static Var[] MakeEffectVarArray(CompileSession session, Dictionary<Var, Expr[]> varMap, params Expr[] args)
     {
+        var dimVars = InputDimVars(session);
+        if (dimVars.Length == 1)
+        {
+            return dimVars;
+        }
+
         var visitor = new FindVar();
         args.ForEach(arg =>
         {
@@ -141,16 +158,16 @@ public static class CallValidator
 {
     static readonly Dictionary<RuntimeTypeHandle, int> OpList = new()
     {
-        // { typeof(Reshape).TypeHandle, 0 },
+        { typeof(Reshape).TypeHandle, 0 },
         { typeof(Unsqueeze).TypeHandle, 0 },
         { typeof(Squeeze).TypeHandle, 0 },
         // btm
-        // { typeof(Slice).TypeHandle, 0 },
+        { typeof(Slice).TypeHandle, 0 },
         { typeof(Concat).TypeHandle, 0 },
         { typeof(Cast).TypeHandle, 0 },
         { typeof(Stack).TypeHandle, 0 },
         { typeof(Expand).TypeHandle, 0 },
-        // { typeof(ConstantOfShape).TypeHandle, 0 },
+        { typeof(ConstantOfShape).TypeHandle, 0 },
         { typeof(Where).TypeHandle, 0 },
         { typeof(Compare).TypeHandle, 0 },
         { typeof(Gather).TypeHandle, 0 },
