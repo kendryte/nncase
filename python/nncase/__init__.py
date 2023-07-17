@@ -238,6 +238,7 @@ class Compiler:
             dump_flags = _nncase.DumpFlags(dump_flags | _nncase.DumpFlags.CodeGen)
         self._compile_options.dump_flags = dump_flags
         self._compile_options.dump_dir = compile_options.dump_dir
+        self._compile_options.input_file = compile_options.input_file
         if compile_options.preprocess:
             self._compile_options.preprocess = compile_options.preprocess
             self._compile_options.input_layout = compile_options.input_layout
@@ -327,6 +328,7 @@ class CompileOptions:
     dump_dir: str
     dump_ir: bool
     swapRB: bool
+    input_file: str
     input_range: List[float]
     input_shape: List[int]
     input_type: str
@@ -358,6 +360,7 @@ class CompileOptions:
 
         self.preprocess = False
         self.swapRB = False
+        self.input_file = ""
         self.input_range = []
         self.input_shape = []
         self.input_type = "float32"
