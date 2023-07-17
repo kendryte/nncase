@@ -41,173 +41,13 @@ class LrnTest
 
     void TearDown() override {}
 
-    virtual void init_tensor(runtime::runtime_tensor &tensor) override {
-        auto dtype = tensor.datatype();
-        switch (dtype) {
-        case dt_int8: {
-            std::random_device rd;
-            std::mt19937 gen(rd());
-            std::uniform_int_distribution<> dis(-6, 6);
-            NNCASE_UNUSED auto res = kernels::stackvm::apply(
-                tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
-                    get<int8_t>(tensor, index) = static_cast<int8_t>(dis(gen));
-                    return ok();
-                });
-            break;
-        }
-        case dt_int16: {
-            std::random_device rd;
-            std::mt19937 gen(rd());
-            std::uniform_int_distribution<> dis(-6, 6);
-            NNCASE_UNUSED auto res = kernels::stackvm::apply(
-                tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
-                    get<int16_t>(tensor, index) =
-                        static_cast<int16_t>(dis(gen));
-                    return ok();
-                });
-            break;
-        }
-        case dt_int32: {
-            std::random_device rd;
-            std::mt19937 gen(rd());
-            std::uniform_int_distribution<> dis(-6, 6);
-            NNCASE_UNUSED auto res = kernels::stackvm::apply(
-                tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
-                    get<int32_t>(tensor, index) = dis(gen);
-                    return ok();
-                });
-            break;
-        }
-        case dt_int64: {
-            std::random_device rd;
-            std::mt19937 gen(rd());
-            std::uniform_int_distribution<> dis(-6, 6);
-            NNCASE_UNUSED auto res = kernels::stackvm::apply(
-                tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
-                    get<int64_t>(tensor, index) =
-                        static_cast<int64_t>(dis(gen));
-                    return ok();
-                });
-            break;
-        }
-        case dt_uint8: {
-            std::random_device rd;
-            std::mt19937 gen(rd());
-            std::uniform_int_distribution<> dis(0, 127);
-            NNCASE_UNUSED auto res = kernels::stackvm::apply(
-                tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
-                    get<uint8_t>(tensor, index) =
-                        static_cast<uint8_t>(dis(gen));
-                    return ok();
-                });
-            break;
-        }
-        case dt_uint16: {
-            std::random_device rd;
-            std::mt19937 gen(rd());
-            std::uniform_int_distribution<> dis(0, 127);
-            NNCASE_UNUSED auto res = kernels::stackvm::apply(
-                tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
-                    get<uint16_t>(tensor, index) =
-                        static_cast<uint16_t>(dis(gen));
-                    return ok();
-                });
-            break;
-        }
-        case dt_uint32: {
-            std::random_device rd;
-            std::mt19937 gen(rd());
-            std::uniform_int_distribution<> dis(0, 127);
-            NNCASE_UNUSED auto res = kernels::stackvm::apply(
-                tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
-                    get<uint32_t>(tensor, index) =
-                        static_cast<uint32_t>(dis(gen));
-                    return ok();
-                });
-            break;
-        }
-        case dt_uint64: {
-            std::random_device rd;
-            std::mt19937 gen(rd());
-            std::uniform_int_distribution<uint64_t> dis(0, 127);
-            NNCASE_UNUSED auto res = kernels::stackvm::apply(
-                tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
-                    get<uint64_t>(tensor, index) =
-                        static_cast<uint64_t>(dis(gen));
-                    return ok();
-                });
-            break;
-        }
-        case dt_float16: {
-            std::random_device rd;
-            std::mt19937 gen(rd());
-            std::uniform_real_distribution<float> dis(-1.0f, 1.0f);
-            NNCASE_UNUSED auto res = kernels::stackvm::apply(
-                tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
-                    get<half>(tensor, index) = static_cast<half>(dis(gen));
-                    return ok();
-                });
-            break;
-        }
-        case dt_float32: {
-            std::random_device rd;
-            std::mt19937 gen(rd());
-            std::uniform_real_distribution<float> dis(-100.0f, 100.0f);
-            NNCASE_UNUSED auto res = kernels::stackvm::apply(
-                tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
-                    get<float>(tensor, index) = static_cast<float>(dis(gen));
-                    return ok();
-                });
-            break;
-        }
-        case dt_float64: {
-            std::random_device rd;
-            std::mt19937 gen(rd());
-            std::uniform_real_distribution<double> dis(-1.0, 1.0);
-            NNCASE_UNUSED auto res = kernels::stackvm::apply(
-                tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
-                    get<double>(tensor, index) = static_cast<double>(dis(gen));
-                    return ok();
-                });
-            break;
-        }
-        case dt_boolean: {
-            std::random_device rd;
-            std::mt19937 gen(rd());
-            std::uniform_real_distribution<double> dis(-1.0, 1.0);
-            NNCASE_UNUSED auto res = kernels::stackvm::apply(
-                tensor.shape(),
-                [&](gsl::span<const size_t> index) -> result<void> {
-                    get<bool>(tensor, index) =
-                        static_cast<double>(dis(gen)) >= 0;
-                    return ok();
-                });
-            break;
-        }
-        default: {
-        }
-        }
-    }
-
   protected:
     runtime_tensor input;
 };
 
 INSTANTIATE_TEST_SUITE_P(lrn, LrnTest,
                          testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 3, 16,
-                                                                 16})));
+                                          testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 3, 8, 8})));
 
 TEST_P(LrnTest, lrn) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
@@ -253,18 +93,16 @@ TEST_P(LrnTest, lrn) {
                       .expect("lrn failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
-    print_runtime_tensor(actual);
+    bool result = is_same_tensor(expected, actual) ||
+                  cosine_similarity_tensor(expected, actual);
 
-//    bool result = is_same_tensor(expected, actual) ||
-//                  cosine_similarity_tensor(expected, actual);
-//
-//    if (!result) {
-//        print_runtime_tensor(actual);
-//        print_runtime_tensor(expected);
-//    }
-//
-//    // compare
-//    EXPECT_TRUE(result);
+    if (!result) {
+        print_runtime_tensor(actual);
+        print_runtime_tensor(expected);
+    }
+
+    // compare
+    EXPECT_TRUE(result);
 }
 
 int main(int argc, char *argv[]) {
