@@ -96,7 +96,8 @@ internal class SatExtractor : IEGraphExtractor
             }
         }
 
-        solver.StringParameters = $"max_time_in_seconds:{max_time},num_workers:0";
+        var workers = (int)((float)Environment.ProcessorCount * (2.0 / 3.0));
+        solver.StringParameters = $"max_time_in_seconds:{max_time},num_workers:{workers}";
 
         var enableDump = DumpScope.Current.IsEnabled(DumpFlags.EGraphCost);
         CpSolverStatus status;
