@@ -11,6 +11,8 @@ using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.Passes.Analysis;
 using Nncase.Passes.Mutators;
+using Nncase.PatternMatch;
+using static Nncase.PatternMatch.Utility;
 using static Nncase.Utilities.ReplaceUtility;
 using static Nncase.Passes.Rules.ShapeBucket.ShapeBucketHelper;
 using Tuple = Nncase.IR.Tuple;
@@ -36,6 +38,51 @@ internal class SearchBucketFusion : ExprVisitor<Expr, Unit>
         }
 
         return expr;
+    }
+}
+
+[RuleGenerator]
+public partial class MergeTupleFusion : RewriteRule<Pattern>
+{
+    public override Pattern Pattern => IsTuple("tuple", new VArgsPattern(
+        list =>
+        {
+            return Enumerable.Range(0, list.Length).Select(_ =>
+                IsWildcard(null, field => field is Call { Target: BucketFusion } && field.Users.Count == 1)).ToArray();
+        }, null));
+
+    // todo: merge these
+    Expr? GetReplace(Tuple tuple)
+    {
+        var fields = tuple.Fields.ToArray().OfType<Call>().ToArray();
+
+        // merge input
+        var newArgs = new List<Expr>();
+        var newParams = new List<Var>();
+        var oldParamsToNewArg = new List<(Var, Expr)>();
+        foreach (var field in fields)
+        {
+            var fieldArgs = field.Arguments.ToArray();
+            var fieldParams = ((BucketFusion)field.Target).Parameters;
+            for (var i = 0; i < fieldArgs.Length; i++)
+            {
+                var fieldArg = fieldArgs[i];
+                if (!newArgs.Contains(fieldArg))
+                {
+                    var newVar = new Var(fieldArg.CheckedType);
+                    newParams.Add(newVar);
+                    newArgs.Add(fieldArg);
+                    oldParamsToNewArg.Add((fieldParams[i], newVar));
+                }
+                oldParamsToNewArg.Add((fieldParams[i], newParams[newArgs.IndexOf(fieldArg)]));
+            }
+        }
+
+        var fieldBodys = fields.Select(c => c.Target).OfType<BucketFusion>().Select(x => x.Body).ToArray();
+        var newBody = MergeBucketFusion.ReplaceClone(new IR.Tuple(fieldBodys), oldParamsToNewArg.ToArray());
+        var newFusion = new BucketFusion("stackvm", newBody, newParams.ToArray(), new Var[] { });
+        var newCall = new Call(newFusion, newArgs.ToArray());
+        return newCall;
     }
 }
 
@@ -423,7 +470,7 @@ public class MergeBucketFusion : ModulePass
     }
 
     // clone origin Expr and Do replace for var
-    private static Expr ReplaceClone(Expr originBody, params (Var, Expr)[] originVarAndExpr)
+    internal static Expr ReplaceClone(Expr originBody, params (Var, Expr)[] originVarAndExpr)
     {
         var call = originBody.Clone();
         var finder = new FindVar();
@@ -433,6 +480,10 @@ public class MergeBucketFusion : ModulePass
         {
             var (v, newExpr) = pair;
             var varShouldBeReplaced = newVars.FindFirst(newVar => newVar.Name == v.Name);
+            if (varShouldBeReplaced == null)
+            {
+                throw new InvalidOperationException();
+            }
             ReplaceExpr(call, varShouldBeReplaced, newExpr);
         });
         return call;
