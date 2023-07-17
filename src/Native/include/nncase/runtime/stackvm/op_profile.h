@@ -30,21 +30,14 @@ class op_profile {
 
     ~op_profile() {
         end_ = get_ms_time();
-        auto cast_time = end_ - begin_;
-        if (op_timing_.find(op_type_) == op_timing_.end()) {
-            op_timing_.emplace(op_type_, cast_time);
-            op_count_.emplace(op_type_, 1);
-        } else {
-            op_timing_[op_type_] += cast_time;
-            op_count_[op_type_] += 1;
-        }
+        // auto cast_time = end_ - begin_;
+        op_timing_.emplace_back(std::make_tuple(op_type_, begin_, end_));
     }
 
     static void print();
 
   public:
-    static std::unordered_map<std::string, double> op_timing_;
-    static std::map<std::string, size_t> op_count_;
+    static std::vector<std::tuple<std::string, double, double>> op_timing_;
 
   private:
     double begin_;
