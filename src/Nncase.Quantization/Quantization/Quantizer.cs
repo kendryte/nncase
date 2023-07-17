@@ -181,10 +181,13 @@ internal partial class Quantizer
         {
             string readJson = _quantizeOptions.QuantScheme;
 
+            // load from stream
             // var quantScheme = JsonConvert.DeserializeObject<QuantScheme>(readJson);
             // var ranges = GetRangesFromConfig(quantScheme!);
             // AssignByChannelRanges(ranges);
             // AssignDataTypeFromConfig(quantScheme!);
+
+            // load from file
             using (var r = new StreamReader(readJson))
             {
                 string json = r.ReadToEnd();
