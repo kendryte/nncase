@@ -78,7 +78,7 @@ static void layernorm_step_not1(int inner_size, const float *src,
         div[i] = sub[i] / sqrt;
 
     for (auto i = 0; i < inner_size; i++)
-         dst[i * step] = div[i] * scale[i* step] + bias[i*step];
+        dst[i * step] = div[i] * scale[i * step] + bias[i * step];
 
     printf("mean1:%f, mean2:%f\n", mean1, mean2);
     (void)scale;
@@ -88,7 +88,6 @@ static void layernorm_step_not1(int inner_size, const float *src,
 result<void> nncase::kernels::stackvm::reference::layer_norm(
     const float *input, float *output, const float *scale, const float *bias,
     gsl::span<const size_t> in_shape, int32_t axis, float epsilon) {
-    
 
     int ndim = in_shape.size();
     int positive_axis = axis < 0 ? ndim + axis : axis;
@@ -102,8 +101,9 @@ result<void> nncase::kernels::stackvm::reference::layer_norm(
     for (size_t i = positive_axis + 1; i < ndim; i++) {
         in_side *= in_shape[i];
     }
-    printf("----------------layer norm axis: %d, dim:%d,inner:%d,outter: %d, %f\n", 
-    positive_axis, (int)axis_dim, (int)in_side, (int)out_side, epsilon);
+    printf(
+        "----------------layer norm axis: %d, dim:%d,inner:%d,outter: %d, %f\n",
+        positive_axis, (int)axis_dim, (int)in_side, (int)out_side, epsilon);
     if (positive_axis == (ndim - 1)) {
         for (size_t i = 0; i < out_side; i++) {
             layernorm_step1(axis_dim, input, scale, bias, epsilon, output);
@@ -116,8 +116,7 @@ result<void> nncase::kernels::stackvm::reference::layer_norm(
         for (size_t i = 0; i < out_side; i++) {
             const float *in = ptr_input;
             float *out = ptr_output;
-            for (int i = 0; i < in_side; ++i) 
-            {
+            for (int i = 0; i < in_side; ++i) {
                 layernorm_step_not1(axis_dim, in, scale, bias, epsilon, out,
                                     in_side);
                 in += 1;
