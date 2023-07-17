@@ -1138,7 +1138,8 @@ class KernelTest {
                            if (get<float>(lhs, index) ==
                                    get<float>(rhs, index) ||
                                fabs(get<float>(lhs, index) -
-                                    get<float>(rhs, index)) < 0.0001f) {
+                                    get<float>(rhs, index)) <=
+                                   std::numeric_limits<float>::epsilon()) {
                                return ok();
                            } else {
                                return err(std::errc::not_supported);
