@@ -108,10 +108,12 @@ public class FindExpr : ExprVisitor<Expr, Unit>
     private Func<Expr, bool> f;
     private List<Expr> list = new();
     private Expr[] limit = { };
+    private Expr outerCall;
 
-    public List<Expr> Run(Expr expr, Expr[] limit, Func<Expr, bool> checker)
+    public List<Expr> Run(Expr expr, Expr[] limit, Expr outerCall, Func<Expr, bool> checker)
     {
         f = checker;
+        this.outerCall = outerCall;
         this.limit = limit;
         Visit(expr);
         return list;
@@ -130,6 +132,12 @@ public class FindExpr : ExprVisitor<Expr, Unit>
     protected override Expr DispatchVisit(Expr expr)
     {
         if (limit.Contains(expr))
+        {
+            list.Add(expr);
+            return expr;
+        }
+
+        if (expr == outerCall)
         {
             return expr;
         }
@@ -171,6 +179,7 @@ public static class CallValidator
         { typeof(Where).TypeHandle, 0 },
         { typeof(Compare).TypeHandle, 0 },
         { typeof(Gather).TypeHandle, 0 },
+        { typeof(ShapeOf).TypeHandle, 0 },
 
         // compute
         // maybe Reduce.Prod only, for eval shape
@@ -186,6 +195,7 @@ public static class CallValidator
         { typeof(Conv2D).TypeHandle, 2 },
         { typeof(MatMul).TypeHandle, 2 },
         { typeof(Tile).TypeHandle, 0 },
+        { typeof(CumSum).TypeHandle, 0 },
     };
 
     public static bool ValidTarget(Expr target)

@@ -94,7 +94,20 @@ public class UnitTestMergeMultiUserFusion : TransformTestBase
         var binary = MakeSimpleFusionCall(args => args[0] - args[1], leakyRelu, data);
         var output = binary;
         var dict = new Dictionary<Var, IValue> { { inputVar, Value.FromTensor(input) } };
-        await RunTestNotMatch(output, new[] { inputVar }, dict);
+        await RunTest(output, new[] { inputVar }, dict);
+    }
+
+    [Fact]
+    public async Task TestSeqNoRing()
+    {
+        var input = Testing.Rand<float>(1, 3, 24, 24);
+        var con = Testing.Rand<float>(1, 3, 24, 24);
+        var inputVar = new Var(new TensorType(input.ElementType, input.Shape));
+        var abs0 = Softmax(new[] { 1f }, 0);
+        var abs1 = Softmax(new[] { 2f }, 0);
+        var mm1 = MakeSingleSimpleFusionCall(expr => IR.F.Math.MatMul(expr, con), Softmax(inputVar, 0));
+        var body = MakeSimpleFusionCall(expr => IR.F.Math.MatMul(expr[0], Testing.Rand<float>(1, 3, 24, 24)) * expr[1] * expr[2], mm1, abs0, abs1);
+        await RunTest(body, new[] { inputVar }, new Dictionary<Var, IValue> { { inputVar, Value.FromTensor(input) } });
     }
 
     private static async Task RunTestNotMatch(Expr body, Var[] inputVar, Dictionary<Var, IValue> dict)
@@ -115,9 +128,10 @@ public class UnitTestMergeMultiUserFusion : TransformTestBase
         var preHash = body.GetHashCode();
         var post = await new MergeBucketFusion().RunAsync(module, new());
         DumpScope.Current.DumpIR(post.Entry!, "post");
-        var postHash = ((Function)post.Entry!).Body.GetHashCode();
+        var newBody = ((Function)post.Entry!).Body;
+        var postHash = newBody.GetHashCode();
         Assert.NotEqual(postHash, preHash);
-        var postResult = body.Evaluate(dict);
+        var postResult = ((Function)(post.Entry!)).Body.Evaluate(dict);
         if (!Comparator.AllEqual(preResult, postResult))
         {
             ValueDumper.DumpTensors(preResult.AsTensors().Select(Value.FromTensor).ToArray(), Path.Join(DumpScope.Current.Directory, "preResult"));
@@ -131,7 +145,7 @@ public class UnitTestMergeMultiUserFusion : TransformTestBase
         }
 
         var visitor = new FusionCounterVisitor();
-        visitor.Visit(body);
+        visitor.Visit(newBody);
         Assert.Equal(1, visitor.Count);
     }
 
