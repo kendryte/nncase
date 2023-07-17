@@ -47,7 +47,8 @@ class LrnTest
 
 INSTANTIATE_TEST_SUITE_P(lrn, LrnTest,
                          testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 3, 8, 8})));
+                                          testing::Values(dims_t{1, 3, 16, 16},
+                                                          dims_t{1, 3, 8, 8})));
 
 TEST_P(LrnTest, lrn) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
