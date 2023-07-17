@@ -48,7 +48,7 @@
         hrt::create(dt_boolean, shape,                                         \
                     {reinterpret_cast<gsl::byte *>(ptr_ort), size}, true,      \
                     host_runtime_tensor::pool_cpu_only)                        \
-            .expect("create tensor failed");
+            .expect("create expected tensor failed");
 
 #define GET_ACTUAL(op_fn, op_name)                                             \
     auto output = op_fn(op_name, lhs.impl(), rhs.impl())                       \
@@ -96,10 +96,10 @@
             auto &&[typecode, l_shape, r_shape] = GetParam();                  \
             lhs = hrt::create(typecode, l_shape,                               \
                               host_runtime_tensor::pool_cpu_only)              \
-                      .expect("create tensor failed");                         \
+                      .expect("create lhs tensor failed");                     \
             rhs = hrt::create(typecode, r_shape,                               \
                               host_runtime_tensor::pool_cpu_only)              \
-                      .expect("create tensor failed");                         \
+                      .expect("create rhs tensor failed");                     \
             init_tensor(lhs);                                                  \
             init_tensor(rhs);                                                  \
         }                                                                      \

@@ -47,10 +47,12 @@ class GeluTest
 
 INSTANTIATE_TEST_SUITE_P(
     Gelu, GeluTest,
-    testing::Combine(testing::Values(dt_float32),
-                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{1},
-                                     dims_t{8, 8}, dims_t{1, 4, 16},
-                                     dims_t{1, 3, 24, 24})));
+    testing::Combine(
+        testing::Values(dt_float32),
+        testing::Values(
+            dims_t{1, 3, 16, 16}, dims_t{1}, dims_t{8, 8}, dims_t{1, 4, 16},
+            dims_t{1, 3, 24,
+                   24} /*, dims_t{}*/))); // todo no support the dims_t{} shape
 
 TEST_P(GeluTest, gelu) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
