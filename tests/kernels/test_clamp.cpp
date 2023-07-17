@@ -56,14 +56,14 @@ INSTANTIATE_TEST_SUITE_P(
 TEST_P(ClampTest, clamp) {
 
     // expected
-    float_t min1[] = {-7.0f};
+    float_t min1[] = {-1.0f};
     auto min_tensor1 =
         hrt::create(nncase::dt_float32, {1},
                     {reinterpret_cast<gsl::byte *>(min1), sizeof(min1)}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
-    float_t max1[] = {7.0f};
+    float_t max1[] = {1.0f};
     auto max_tensor1 =
         hrt::create(nncase::dt_float32, {1},
                     {reinterpret_cast<gsl::byte *>(max1), sizeof(max1)}, true,
@@ -76,14 +76,14 @@ TEST_P(ClampTest, clamp) {
     runtime_tensor expected(output1.as<tensor>().expect("as tensor failed"));
 
     // actual
-    float_t min[] = {-6.0f};
+    float_t min[] = {-1.0f};
     auto min_tensor =
         hrt::create(nncase::dt_float32, {1},
                     {reinterpret_cast<gsl::byte *>(min), sizeof(min)}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
-    float_t max[] = {6.0f};
+    float_t max[] = {1.0f};
     auto max_tensor =
         hrt::create(nncase::dt_float32, {1},
                     {reinterpret_cast<gsl::byte *>(max), sizeof(max)}, true,
