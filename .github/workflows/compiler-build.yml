@@ -145,7 +145,7 @@ jobs:
       - name: Set up test environment (Linux & Macos)
         shell: pwsh
         run: |
-          chmode +x ${env:GITHUB_WORKSPACE}/install/bin/nncasetest_cli
+          chmod +x ${env:GITHUB_WORKSPACE}/install/bin/nncasetest_cli
         if: runner.os != 'Windows'
       
       - name: Setup tmate session
