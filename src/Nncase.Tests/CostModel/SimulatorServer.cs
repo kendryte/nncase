@@ -102,9 +102,9 @@ internal sealed class SimulatorServer : IDisposable
     private void WriteContent(HttpListenerResponse response, string data)
     {
         response.ContentType = "text/html";
-        response.ContentEncoding = Encoding.ASCII;
-        response.ContentLength64 = Encoding.ASCII.GetByteCount(data);
-        using (var strWriter = new StreamWriter(response.OutputStream, Encoding.ASCII))
+        response.ContentEncoding = Encoding.UTF8;
+        response.ContentLength64 = Encoding.UTF8.GetByteCount(data);
+        using (var strWriter = new StreamWriter(response.OutputStream, Encoding.UTF8))
         {
             strWriter.Write(data);
         }

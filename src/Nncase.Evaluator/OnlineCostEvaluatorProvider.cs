@@ -128,13 +128,15 @@ internal sealed class OnlineCostEvaluateProvider : ICostEvaluateProvider
         var formData = new MultipartFormDataContent();
         foreach (var (filePath, i) in filePaths.Select((s, i) => (s, i)))
         {
-            var streamContent = new StreamContent(File.OpenRead(filePath));
-            string fileName = i switch
+            using (var streamContent = new StreamContent(File.OpenRead(filePath)))
             {
-                0 => "kmodel",
-                _ => $"input_{i}",
-            };
-            formData.Add(streamContent, "files", fileName);
+                string fileName = i switch
+                {
+                    0 => "kmodel",
+                    _ => $"input_{i}",
+                };
+                formData.Add(streamContent, "files", fileName);
+            }
         }
 
         var response = client.PostAsync($"http://{ServerUrl}/run_kmodel", formData).Result;
