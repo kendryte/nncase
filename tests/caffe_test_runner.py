@@ -4,17 +4,17 @@ import os
 import shutil
 import numpy as np
 # from typing import Dict, List, Tuple, Union
-
+from test_utils import *
 
 class CaffeTestRunner(TestRunner):
-    def __init__(self, case_name, targets=None, overwrite_configs: dict = None):
-        super().__init__(case_name, targets, overwrite_configs)
+    def __init__(self, case_name, overwrite_configs: dict = None):
+        super().__init__(case_name, overwrite_configs)
         self.model_type = "caffe"
 
     def run(self, model_file_list):
         super().run(model_file_list)
 
-    def parse_model_input_output(self, model_path: Union[List[str], str]):
+    def parse_model(self, model_path: Union[List[str], str]):
         caffe_model = caffe.Net(model_path[0], model_path[1], caffe.TEST)
         for i, name in enumerate(caffe_model._layer_names):
             if (caffe_model.layers[i].type == "Input"):
@@ -24,7 +24,7 @@ class CaffeTestRunner(TestRunner):
                 input_dict['model_shape'] = list(caffe_model.blobs[name].data.shape)
                 self.inputs.append(input_dict)
                 self.calibs.append(copy.deepcopy(input_dict))
-                self.dump_range_data.append(copy.deepcopy(input_dict))
+                # self.dump_range_data.append(copy.deepcopy(input_dict))
 
         used_inputs = set([name for _, l in caffe_model.bottom_names.items() for name in l])
         seen_outputs = set()
@@ -37,7 +37,7 @@ class CaffeTestRunner(TestRunner):
                 output_dict['model_shape'] = list(caffe_model.blobs[n].data.shape)
                 self.outputs.append(output_dict)
 
-    def cpu_infer(self, case_dir: str, model_file_list, type: str):
+    def cpu_infer(self, case_dir: str, model_file_list):
         caffe_model = caffe.Net(model_file_list[0], model_file_list[1], caffe.TEST)
 
         for input in self.inputs:
@@ -46,14 +46,15 @@ class CaffeTestRunner(TestRunner):
 
         outputs = caffe_model.forward()
 
+        results = []
         for i, output in enumerate(self.outputs):
             result = outputs[output['name']]
+            results.append(result)
+            if not test_utils.in_ci():
+                dump_bin_file(os.path.join(case_dir, f'cpu_result_{i}.bin'), result)
+                dump_txt_file(os.path.join(case_dir, f'cpu_result_{i}.txt'), result)
 
-            self.output_paths.append((
-                os.path.join(case_dir, f'cpu_result_{i}.bin'),
-                os.path.join(case_dir, f'cpu_result_{i}.txt')))
-            result.tofile(self.output_paths[-1][0])
-            self.totxtfile(self.output_paths[-1][1], result)
+        return results
 
     def import_model(self, compiler, model_content, import_options):
         compiler.import_caffe(model_content[1], model_content[0])

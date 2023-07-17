@@ -2,11 +2,11 @@ import tensorflow as tf
 from test_runner import *
 import os
 import shutil
-
+from test_utils import *
 
 class TfliteTestRunner(TestRunner):
-    def __init__(self, case_name, targets=None, overwrite_configs: dict = None):
-        super().__init__(case_name, targets, overwrite_configs)
+    def __init__(self, case_name, overwrite_configs: str = None):
+        super().__init__(case_name, overwrite_configs)
         self.model_type = "tflite"
 
     def from_tensorflow(self, module):
@@ -40,7 +40,7 @@ class TfliteTestRunner(TestRunner):
                 self.case_dir, os.path.basename(model_file))
         super().run(model_file)
 
-    def parse_model_input_output(self, model_path: str):
+    def parse_model(self, model_path: str):
         interp = tf.lite.Interpreter(model_path=model_path)
 
         def translate_shape(shape, default_shape):
@@ -65,7 +65,7 @@ class TfliteTestRunner(TestRunner):
                 input_dict['model_shape'] = shape
             self.inputs.append(input_dict)
             self.calibs.append(copy.deepcopy(input_dict))
-            self.dump_range_data.append(copy.deepcopy(input_dict))
+            # self.dump_range_data.append(copy.deepcopy(input_dict))
 
         for item in interp.get_output_details():
             output_dict = {}
@@ -75,32 +75,30 @@ class TfliteTestRunner(TestRunner):
             output_dict['model_shape'] = item['shape']
             self.outputs.append(output_dict)
 
-    def cpu_infer(self, case_dir: str, model_file: bytes, type: str):
+    def cpu_infer(self, case_dir: str, model_file: bytes):
         interp = tf.lite.Interpreter(model_path=model_file)
         interp.allocate_tensors()
         for idx, value in enumerate(self.inputs):
             new_value = self.transform_input(
                 self.data_pre_process(value['data']), "float32", "CPU")[0]
             interp.set_tensor(value["index"], new_value)
-            if self.pre_process[0]['preprocess']:
-                bin_file = os.path.join(case_dir, f'frame_input_{idx}.bin')
-                text_file = os.path.join(case_dir, f'frame_input_{idx}.txt')
-                new_value[0].tofile(bin_file)
-                if not test_utils.in_ci():
-                    self.totxtfile(text_file, new_value)
+            if self.cfg['compile_opt']['preprocess'] and not test_utils.in_ci():
+                dump_bin_file(os.path.join(case_dir, f'frame_input_{idx}.bin'), new_value)
+                dump_txt_file(os.path.join(case_dir, f'frame_input_{idx}.txt'), new_value)
 
         interp.invoke()
 
         i = 0
+        results = []
         for output in self.outputs:
             data = interp.get_tensor(output['index'])
-            self.output_paths.append((
-                os.path.join(case_dir, f'cpu_result_{i}.bin'),
-                os.path.join(case_dir, f'cpu_result_{i}.txt')))
-            data.tofile(self.output_paths[-1][0])
+            results.append(data)
             if not test_utils.in_ci():
-                self.totxtfile(self.output_paths[-1][1], data)
+                dump_bin_file(os.path.join(case_dir, f'cpu_result_{i}.bin'), data)
+                dump_txt_file(os.path.join(case_dir, f'cpu_result_{i}.txt'), data)
             i += 1
+
+        return results
 
     def import_model(self, compiler, model_content, import_options):
         compiler.import_tflite(model_content, import_options)

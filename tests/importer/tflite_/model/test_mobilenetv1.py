@@ -39,26 +39,9 @@ alphas = [
 @pytest.mark.parametrize('alpha', alphas)
 def test_mobilenetv1(in_shape, alpha, request):
     module = _make_module(in_shape, alpha)
-    overwrite_cfg = """
-     judge:
-       specifics:
-         - matchs:
-             target: [cpu, k510]
-             ptq: true
-           threshold: 0.98
-         - matchs:
-             target: [k210]
-             ptq: true
-           threshold: 0.94
-         - matchs:
-             target: [k510]
-             ptq: false
-           threshold: 0.99
-     """
-    runner = TfliteTestRunner(request.node.name, overwrite_configs=overwrite_cfg)
+    runner = TfliteTestRunner(request.node.name)
     model_file = runner.from_tensorflow(module)
     runner.run(model_file)
-
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_mobilenetv1.py'])
