@@ -64,7 +64,7 @@ TEST_P(QuantizeTest, quantize) {
             true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
-    float_t scale[] = {0.05f};
+    float_t scale[] = {0.01f};
     auto scale_ptr =
         hrt::create(nncase::dt_float32, {1},
                     {reinterpret_cast<gsl::byte *>(scale), sizeof(scale)}, true,
@@ -83,20 +83,23 @@ TEST_P(QuantizeTest, quantize) {
                         .expect("create tensor failed");
 
     // actual
-    float_t quant_param[] = {127, 0.01f};
+    quant_param_t quantParam;
+    quantParam.zero_point = 127;
+    quantParam.scale = 0.01f;
+    quant_param_t quant_param[] = {quantParam};
     auto quant_param_ptr =
         hrt::create(
-            nncase::dt_float32, {2},
+            dt_int64, {1},
             {reinterpret_cast<gsl::byte *>(quant_param), sizeof(quant_param)},
             true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
-    auto output = kernels::stackvm::quantize(dt_float32, input.impl(),
+    auto output = kernels::stackvm::quantize(dt_uint8, input.impl(),
                                              quant_param_ptr.impl())
                       .expect("quantize failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
-    bool result = cosine_similarity_tensor(expected, actual) ||
-                  is_same_tensor(expected, actual);
+    bool result = is_same_tensor(expected, actual) ||
+                  cosine_similarity_tensor(expected, actual);
 
     if (!result) {
         print_runtime_tensor(actual);
