@@ -103,7 +103,7 @@ internal sealed class SimulatorServer : IDisposable
     {
         response.ContentType = "text/html";
         response.ContentEncoding = Encoding.UTF8;
-        response.ContentLength64 = Encoding.UTF8.GetByteCount(data);
+        response.ContentLength64 = Encoding.UTF8.GetByteCount(data); // note in windows can't set length.
         using (var strWriter = new StreamWriter(response.OutputStream, Encoding.UTF8))
         {
             strWriter.Write(data);

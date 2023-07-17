@@ -147,10 +147,7 @@ jobs:
         run: |
           chmod +x ${env:GITHUB_WORKSPACE}/install/bin/nncasetest_cli
         if: runner.os != 'Windows'
-      
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        
+
       - name: Dotnet Test
         working-directory: ${{github.workspace}}
         run: |

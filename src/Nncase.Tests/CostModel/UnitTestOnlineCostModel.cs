@@ -30,6 +30,11 @@ public sealed class UnitTestOnlineCostModel : TestClassBase
     [Fact]
     public void TestIsOnline()
     {
+        if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+        {
+            return;
+        }
+
         if (!SimulatorServer.GetUrl(out var url))
         {
             return;
@@ -49,6 +54,11 @@ public sealed class UnitTestOnlineCostModel : TestClassBase
     [Fact]
     public void TestRunKModel()
     {
+        if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+        {
+            return;
+        }
+
         if (!SimulatorServer.GetUrl(out var url))
         {
             return;

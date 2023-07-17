@@ -228,6 +228,11 @@ public class UnitTestEGraphOnLineFusion : TestClassBase
     [Fact]
     public async Task TestResNet18FusionOnlineCost()
     {
+        if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+        {
+            return;
+        }
+
         if (!CostModelTest.SimulatorServer.GetUrl(out var url))
         {
             return;
@@ -280,6 +285,11 @@ public class UnitTestEGraphOnLineFusion : TestClassBase
     [Fact]
     public async Task TestDataFlowFusionCycleFailedCase()
     {
+        if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+        {
+            return;
+        }
+
         if (!CostModelTest.SimulatorServer.GetUrl(out var url))
         {
             return;
