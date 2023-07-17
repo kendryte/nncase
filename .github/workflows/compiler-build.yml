@@ -88,10 +88,6 @@ jobs:
           - {name: x86_64-windows, os: windows-latest, shell: bash, rid: win-x64, buildType: Release}
 
     steps:
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
-
       - uses: actions/checkout@v2
       - name: Setup .NET
         uses: actions/setup-dotnet@v1
@@ -145,7 +141,10 @@ jobs:
         run: |
           echo "PATH=${env:PATH};${env:GITHUB_WORKSPACE}/install/bin" >> $env:GITHUB_ENV
         if: runner.os == 'Windows'
-
+      
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        
       - name: Dotnet Test
         working-directory: ${{github.workspace}}
         run: |
