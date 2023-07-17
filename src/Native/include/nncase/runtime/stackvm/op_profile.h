@@ -15,8 +15,9 @@
 #pragma once
 #include <iomanip>
 #include <iostream>
-#include <map>
-#include <unordered_map>
+#include <vector>
+#include <tuple>
+#include "opcode.h"
 
 extern "C" {
 double get_ms_time();
@@ -24,23 +25,23 @@ double get_ms_time();
 
 class op_profile {
   public:
-    op_profile(const std::string &op_type = "op_profile") : op_type_(op_type) {
+    op_profile(const std::string &op_name, uint8_t op_type) : op_name_(op_name), op_type_(op_type) {
         begin_ = get_ms_time();
     }
 
     ~op_profile() {
         end_ = get_ms_time();
-        // auto cast_time = end_ - begin_;
-        op_timing_.emplace_back(std::make_tuple(op_type_, begin_, end_));
+        op_timing_.emplace_back(std::make_tuple(op_name_, op_type_, begin_, end_));
     }
 
     static void print();
 
   public:
-    static std::vector<std::tuple<std::string, double, double>> op_timing_;
+    static std::vector<std::tuple<std::string, uint8_t, double, double>> op_timing_;
 
   private:
     double begin_;
     double end_;
-    std::string op_type_;
+    std::string op_name_;
+    uint8_t op_type_;
 };

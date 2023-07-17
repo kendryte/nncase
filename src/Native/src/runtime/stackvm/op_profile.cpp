@@ -16,6 +16,8 @@
 #include <algorithm>
 #include <nncase/runtime/stackvm/op_profile.h>
 #include <vector>
+#include <unordered_map>
+#include <map>
 
 #ifdef NNCASE_BAREMETAL
 double get_ms_time();
@@ -23,37 +25,40 @@ double get_ms_time();
 double get_ms_time() { return (double)clock() / 1000; }
 #endif
 
-std::vector<std::tuple<std::string, double, double>> op_profile::op_timing_;
+std::vector<std::tuple<std::string, uint8_t, double, double>> op_profile::op_timing_;
 
 void op_profile::print() {
-
-    std::unordered_map<std::string, double> op_timing;
+    std::map<std::string, double> op_timing;
     std::unordered_map<std::string, size_t> op_count;
 
     std::cout << "stack OPs timeline" << std::endl;
     std::cout << "|" << std::setw(24) << std::left << "stackvm tensor op"
-          << "|" << std::setw(12) << std::left << "start timing(ms)"
-          << "|" << std::setw(12) << std::left << "end timing(ms)"
+          << "|" << std::setw(24) << std::left << "start timing(ms)"
+          << "|" << std::setw(24) << std::left << "end timing(ms)"
           << "|" << std::endl;
 
-   std::cout << "|" << std::setw(24) << std::left << "---"
-              << "|" << std::setw(12) << std::left << "---"
-              << "|" << std::setw(12) << std::left << "---"
+    std::cout << "|" << std::setw(24) << std::left << "---"
+              << "|" << std::setw(24) << std::left << "---"
+              << "|" << std::setw(24) << std::left << "---"
               << "|" << std::endl;
-
-    for(auto &&[op_type, begin, end] : op_timing_) {
-      auto cast_time = end - begin;
-      if (op_timing.find(op_type) == op_timing.end()) {
-          op_timing.emplace(op_type, cast_time);
-          op_count.emplace(op_type, 1);
-      } else {
-          op_timing[op_type] += cast_time;
-          op_count[op_type] += 1;
+    double init_timing = -1;
+    for(auto &&[op_name, op_type, begin, end] : op_timing_) {
+      if (init_timing == -1) {
+        init_timing = begin;
       }
-      std::cout << "|" << std::setw(24) << std::left << op_type
-                << "|" << std::setw(12) << begin
-                << "|" << std::setw(12) << end 
-                << "|" << std::endl;
+      auto cast_time = end - begin;
+      if (op_timing.find(op_name) == op_timing.end()) {
+          op_timing.emplace(op_name, cast_time);
+          op_count.emplace(op_name, 1);
+      } else {
+          op_timing[op_name] += cast_time;
+          op_count[op_name] += 1;
+      }
+      if (op_type == (uint8_t)nncase::runtime::stackvm::opcode_t::EXTCALL || op_type == (uint8_t)nncase::runtime::stackvm::opcode_t::TENSOR || op_type == (uint8_t)nncase::runtime::stackvm::opcode_t::CUSCALL)
+        std::cout << "|" << std::setw(24) << std::left << op_name
+                  << "|" << std::setw(24) << begin - init_timing
+                  << "|" << std::setw(24) << end - init_timing
+                  << "|" << std::endl;
     }
 
     double total = 0.f;
@@ -62,6 +67,7 @@ void op_profile::print() {
         total += e.second;
         v.push_back(e);
     }
+    std::cout << std::endl;
 
     std::sort(
         v.begin(), v.end(),
