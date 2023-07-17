@@ -4,6 +4,7 @@ import os
 import shutil
 from test_utils import *
 
+
 class TfliteTestRunner(TestRunner):
     def __init__(self, case_name, overwrite_configs: str = None):
         super().__init__(case_name, overwrite_configs)

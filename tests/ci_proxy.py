@@ -9,6 +9,7 @@ import logging
 import logging.handlers
 import time
 
+
 def recv_file(conn, target_root, mylogger):
     conn.sendall(f"pls send file info".encode())
     header = conn.recv(1024)
@@ -29,6 +30,7 @@ def recv_file(conn, target_root, mylogger):
     os.chmod(full_file, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
     return file_name
 
+
 def Consumer(target, q, nfs_root, ip, port):
     # create target root
     target_root = os.path.join(nfs_root, target)
@@ -38,7 +40,8 @@ def Consumer(target, q, nfs_root, ip, port):
     # logging
     mylogger = logging.getLogger()
     mylogger.setLevel(logging.DEBUG)
-    rf_handler = logging.handlers.RotatingFileHandler(f'ci_proxy_{target}.log', mode='a', maxBytes=32 * 1024 * 1024, backupCount=10)
+    rf_handler = logging.handlers.RotatingFileHandler(
+        f'ci_proxy_{target}.log', mode='a', maxBytes=32 * 1024 * 1024, backupCount=10)
     # rf_handler.setLevel(logging.INFO)
     mylogger.setLevel(logging.DEBUG)
     rf_handler.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(message)s'))
@@ -109,10 +112,12 @@ def Consumer(target, q, nfs_root, ip, port):
 def main():
     # args
     parser = argparse.ArgumentParser(prog="ci_proxy")
-    parser.add_argument("--ci_proxy_port", help='listening port of ci_proxy', type=int, default=10000)
+    parser.add_argument("--ci_proxy_port", help='listening port of ci_proxy',
+                        type=int, default=10000)
     parser.add_argument("--nfs_root", help='nfs root on pc', type=str, default='/data/nfs')
     parser.add_argument("--nuc_proxy_ip", help='ip of nuc_proxy', type=str, default='localhost')
-    parser.add_argument("--nuc_proxy_port", help='listening port of nuc_proxy', type=int, default=10001)
+    parser.add_argument("--nuc_proxy_port", help='listening port of nuc_proxy',
+                        type=int, default=10001)
 
     args = parser.parse_args()
 
@@ -133,11 +138,13 @@ def main():
 
         if target not in dict:
             q = queue.Queue(maxsize=size)
-            t_consumer = threading.Thread(target=Consumer, args=(target, q, args.nfs_root, args.nuc_proxy_ip, args.nuc_proxy_port))
+            t_consumer = threading.Thread(target=Consumer, args=(
+                target, q, args.nfs_root, args.nuc_proxy_ip, args.nuc_proxy_port))
             t_consumer.start()
             dict[target] = q
 
         dict[target].put(conn)
+
 
 if __name__ == '__main__':
     main()

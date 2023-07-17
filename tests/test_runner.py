@@ -22,6 +22,7 @@ from evaluator import *
 from compare_util import *
 from test_utils import *
 
+
 class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
     def __init__(self, case_name, override_cfg: str = None) -> None:
         config_root = os.path.dirname(__file__)
@@ -103,9 +104,10 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                         Q_max, Q_min = 255, 0
                     else:
                         continue
-                    scale = (compile_opt['input_range'][1] - compile_opt['input_range'][0]) / (Q_max - Q_min)
+                    scale = (compile_opt['input_range'][1] -
+                             compile_opt['input_range'][0]) / (Q_max - Q_min)
                     bias = round((compile_opt['input_range'][1] * Q_min - compile_opt['input_range'][0] *
-                                    Q_max) / (compile_opt['input_range'][1] - compile_opt['input_range'][0]))
+                                  Q_max) / (compile_opt['input_range'][1] - compile_opt['input_range'][0]))
                     new_value = new_value * scale
                     new_value = new_value - bias
 
@@ -123,7 +125,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                         model_shape: List = []
                         if self.model_type in ["onnx", "caffe"] and compile_opt['model_layout'] != 'NHWC':
                             model_shape = [compile_opt['model_shape'][0], compile_opt['model_shape'][2],
-                                            compile_opt['model_shape'][3], compile_opt['model_shape'][1]]
+                                           compile_opt['model_shape'][3], compile_opt['model_shape'][1]]
                         else:
                             model_shape = compile_opt['model_shape']
                         if model_shape[1] != new_value.shape[1] or model_shape[2] != new_value.shape[2]:
@@ -257,7 +259,8 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                         mode_dir = os.path.join(target_dir, k_mode)
                         shutil.move(tmp_dir, mode_dir)
 
-                        self.check_result(expected, actual, 'eval', k_target, v_target['simarity_name'], k_mode, v_mode['threshold'], mode_dir)
+                        self.check_result(expected, actual, 'eval', k_target,
+                                          v_target['simarity_name'], k_mode, v_mode['threshold'], mode_dir)
 
             # infer
             if v_target['infer']:
@@ -265,13 +268,15 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                     # print('{0} = {1}'.format(k_mode, v_mode))
                     if v_mode['enabled']:
                         os.makedirs(tmp_dir, exist_ok=True)
-                        actual = self.run_inference(compiler, k_target, v_mode['enabled'], case_dir, compile_options.dump_dir)
+                        actual = self.run_inference(
+                            compiler, k_target, v_mode['enabled'], case_dir, compile_options.dump_dir)
                         target_dir = os.path.join(case_dir, 'infer', k_target)
                         os.makedirs(target_dir, exist_ok=True)
                         mode_dir = os.path.join(target_dir, k_mode)
                         shutil.move(tmp_dir, os.path.join(target_dir, k_mode))
 
-                        self.check_result(expected, actual, 'infer', k_target, v_target['simarity_name'], k_mode, v_mode['threshold'], mode_dir)
+                        self.check_result(expected, actual, 'infer', k_target,
+                                          v_target['simarity_name'], k_mode, v_mode['threshold'], mode_dir)
 
     def translate_shape(self, shape):
         if reduce(lambda x, y: x * y, shape) == 0:
@@ -283,7 +288,8 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         self.shape_vars = dict
 
     def check_result(self, expected, actual, stage, target, simarity_name, mode, threshold, dump_dir):
-        judge, result = self.compare_results(expected, actual, stage, target, simarity_name, mode, threshold, self.cfg['dump_hist'], dump_dir)
+        judge, result = self.compare_results(
+            expected, actual, stage, target, simarity_name, mode, threshold, self.cfg['dump_hist'], dump_dir)
         assert(judge), f"Fault result in {stage} + {result}"
 
     def set_quant_opt(self, compiler: nncase.Compiler):
@@ -315,8 +321,10 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                 f.write("-------------------------\n")
 
     def generate_all_data(self, case_dir):
-        self.generate_data(case_dir, 'input', self.inputs, self.cfg['compile_opt'], self.cfg['generator']['inputs'])
-        self.generate_data(case_dir, 'calib', self.calibs, self.cfg['compile_opt'], self.cfg['generator']['calibs'])
+        self.generate_data(case_dir, 'input', self.inputs,
+                           self.cfg['compile_opt'], self.cfg['generator']['inputs'])
+        self.generate_data(case_dir, 'calib', self.calibs,
+                           self.cfg['compile_opt'], self.cfg['generator']['calibs'])
 
     def get_compile_options(self, target, dump_dir):
         compile_options = nncase.CompileOptions()
@@ -409,11 +417,12 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                     data = generator.from_constant_of_shape(args, dtype)
 
                 if not test_utils.in_ci():
-                    dump_bin_file(os.path.join(case_dir, name, f'{name}_{input_idx}_{batch_idx}.bin'), data)
-                    dump_txt_file(os.path.join(case_dir, name, f'{name}_{input_idx}_{batch_idx}.txt'), data)
+                    dump_bin_file(os.path.join(case_dir, name,
+                                               f'{name}_{input_idx}_{batch_idx}.bin'), data)
+                    dump_txt_file(os.path.join(case_dir, name,
+                                               f'{name}_{input_idx}_{batch_idx}.txt'), data)
                 samples.append(data)
             input['data'] = samples
-
 
     def compare_results(self,
                         ref_ouputs: List[np.ndarray],
@@ -423,8 +432,10 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         judges = []
         for expected, actual in zip(ref_ouputs, test_outputs):
             dump_file = os.path.join(dump_dir, 'nncase_result_{0}_hist.csv'.format(i))
-            judge, simarity_info = compare_ndarray(expected, actual, simarity_name, threshold, dump_hist, dump_file)
-            result_info = "\n{0} [ {1} {2} {3} ] Output: {4}!!\n".format('Pass' if judge else 'Fail', stage, target, mode, i)
+            judge, simarity_info = compare_ndarray(
+                expected, actual, simarity_name, threshold, dump_hist, dump_file)
+            result_info = "\n{0} [ {1} {2} {3} ] Output: {4}!!\n".format(
+                'Pass' if judge else 'Fail', stage, target, mode, i)
             result = simarity_info + result_info
             with open(os.path.join(self.case_dir, 'test_result.txt'), 'a+') as f:
                 f.write(result)

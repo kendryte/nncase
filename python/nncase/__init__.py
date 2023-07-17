@@ -360,6 +360,7 @@ class CompileOptions:
         self.dump_ir = False
         self.dump_dir = "tmp"
 
+
 class ShapeBucketOptions:
     enable: bool
     var_map: dict

@@ -10,6 +10,7 @@ from test_runner import *
 from test_utils import *
 from collections import ChainMap
 
+
 class OnnxTestRunner(TestRunner):
     def __init__(self, case_name, overwrite_configs: str = None):
         super().__init__(case_name, overwrite_configs)

@@ -8,13 +8,15 @@ import socket
 import json
 from test_utils import *
 
+
 class Inference:
     def run_inference(self, compiler, target, ptq_enabled, case_dir, infer_dir):
         in_ci = test_utils.in_ci()
         kpu_targets = test_utils.kpu_targets()
         port = test_utils.port()
         test_executable = test_utils.test_executable(target)
-        running_on_evb = in_ci and target in kpu_targets and port is not None and test_executable is not None and len(self.inputs) > 0 and len(self.outputs) > 0
+        running_on_evb = in_ci and target in kpu_targets and port is not None and test_executable is not None and len(
+            self.inputs) > 0 and len(self.outputs) > 0
 
         if ptq_enabled:
             self.set_quant_opt(compiler)
@@ -86,7 +88,7 @@ class Inference:
         header_dict = {}
         header_dict['case'] = os.path.basename(case_dir)
         header_dict['app'] = 1
-        header_dict['kmodel']= 1
+        header_dict['kmodel'] = 1
         header_dict['inputs'] = len(self.inputs)
         header_dict['outputs'] = len(self.outputs)
         client_socket.sendall(json.dumps(header_dict).encode())

@@ -6,6 +6,7 @@ import numpy as np
 # from typing import Dict, List, Tuple, Union
 from test_utils import *
 
+
 class CaffeTestRunner(TestRunner):
     def __init__(self, case_name, overwrite_configs: dict = None):
         super().__init__(case_name, overwrite_configs)

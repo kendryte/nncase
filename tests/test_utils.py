@@ -1,8 +1,10 @@
 import os
 import numpy as np
 
+
 def dump_bin_file(file: str, ndarray: np.array):
     ndarray.tofile(file)
+
 
 def dump_txt_file(save_path, ndarray: np.array, bit_16_represent=False):
     if bit_16_represent:
@@ -18,6 +20,7 @@ def dump_txt_file(save_path, ndarray: np.array, bit_16_represent=False):
 
     print("----> %s" % save_path)
 
+
 def _cast_bfloat16_then_float32(values: np.array):
     shape = values.shape
     values = values.reshape([-1])
@@ -29,14 +32,18 @@ def _cast_bfloat16_then_float32(values: np.array):
         value = struct.unpack('!f', bytes(integers))[0]
         values[i] = value
 
+
 def in_ci():
     return os.getenv('CI', False)
+
 
 def kpu_targets():
     return os.getenv('KPU_TARGETS', "").split(',')
 
+
 def port():
     return os.getenv('CI_PROXY_PORT')
+
 
 def test_executable(target):
     return os.getenv('TEST_EXECUTABLE_{0}'.format(target.upper()))

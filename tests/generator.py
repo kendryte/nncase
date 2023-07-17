@@ -3,6 +3,7 @@ import numpy as np
 import os
 import cv2
 
+
 class Generator:
 
     def from_random(self, shape: List[int], dtype: np.dtype, abs: bool = False) -> np.ndarray:

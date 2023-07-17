@@ -12,6 +12,7 @@ import time
 import serial
 import toml
 
+
 class TelnetClient():
     def __init__(self, mylogger):
         self.tn = telnetlib.Telnet()
@@ -61,6 +62,7 @@ class TelnetClient():
             else:
                 return cmd_result, True
 
+
 def recv_file(conn, target_root, mylogger):
     conn.sendall(f"pls send file info".encode())
     header = conn.recv(1024)
@@ -81,6 +83,7 @@ def recv_file(conn, target_root, mylogger):
     # conn.sendall(f"recv {file_name} succeed".encode())
     os.chmod(full_file, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
     return file_name
+
 
 class MySerial:
     def __init__(self, target, port, baudrate):
@@ -120,6 +123,7 @@ class MySerial:
         # print('read: {0}'.format(data), end='')
         return data
 
+
 def run_cmds(s, cmds):
     s.open()
 
@@ -131,11 +135,13 @@ def run_cmds(s, cmds):
 
     return data
 
+
 def Consumer(target, q, ip, username, password, working_dir, uart, baudrate):
     # logging
     mylogger = logging.getLogger()
     mylogger.setLevel(logging.DEBUG)
-    rf_handler = logging.handlers.RotatingFileHandler(f'nuc_proxy_{target}.log', mode='a', maxBytes=32 * 1024 * 1024, backupCount=10)
+    rf_handler = logging.handlers.RotatingFileHandler(
+        f'nuc_proxy_{target}.log', mode='a', maxBytes=32 * 1024 * 1024, backupCount=10)
     rf_handler.setLevel(logging.INFO)
     rf_handler.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(message)s'))
     mylogger.addHandler(rf_handler)
@@ -174,6 +180,7 @@ def Consumer(target, q, ip, username, password, working_dir, uart, baudrate):
             conn.sendall(f'infer succeed'.encode())
         conn.close()
 
+
 def main():
     # default config
     config = '''
@@ -203,7 +210,8 @@ def main():
     # create queue and thread
     for k in cfg:
         q = queue.Queue(maxsize=size)
-        t_consumer = threading.Thread(target=Consumer, args=(k, q, cfg[k]["ip"], cfg[k]['username'], cfg[k]['password'], cfg[k]['working_dir'], cfg[k]['uart'], cfg[k]['baudrate']))
+        t_consumer = threading.Thread(target=Consumer, args=(
+            k, q, cfg[k]["ip"], cfg[k]['username'], cfg[k]['password'], cfg[k]['working_dir'], cfg[k]['uart'], cfg[k]['baudrate']))
         t_consumer.start()
         cfg[k]['queue'] = q
 
@@ -219,6 +227,7 @@ def main():
         info = conn.recv(1024)
         dict = json.loads(info.decode())
         cfg[dict['target']]['queue'].put(conn)
+
 
 if __name__ == '__main__':
     main()

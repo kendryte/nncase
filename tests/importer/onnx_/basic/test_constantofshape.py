@@ -76,7 +76,7 @@ values = [
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('value', values)
 def test_constantofshape(in_shape, value, request):
-    cfg='''
+    cfg = '''
     [generator.inputs]
     method = 'constant_of_shape'
 
@@ -94,6 +94,7 @@ def test_constantofshape(in_shape, value, request):
     runner = OnnxTestRunner(request.node.name, overwrite_configs=cfg)
     model_file = runner.from_onnx_helper(model_def)
     runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_constantofshape.py'])

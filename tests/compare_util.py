@@ -46,11 +46,11 @@ simarity_func = {
 
 
 def compare_binfile(result_path: Tuple[str, str],
-            ground_truth_path: Tuple[str, str],
-            dtype,
-            simarity_name: str = 'cosine',
-            threshold: float = 0.99,
-            hist: bool = True) -> bool:
+                    ground_truth_path: Tuple[str, str],
+                    dtype,
+                    simarity_name: str = 'cosine',
+                    threshold: float = 0.99,
+                    hist: bool = True) -> bool:
     # NOTE the result_path is Tuple[ bin_path, txt_path ]
     ground_truth_path_bin, ground_truth_path_txt = result_path
     result_path_bin, result_path_txt = ground_truth_path
@@ -79,12 +79,13 @@ def compare_binfile(result_path: Tuple[str, str],
         return False, simarity_info
     return True, simarity_info
 
+
 def compare_ndarray(expected: np.ndarray,
-            actual: np.ndarray,
-            simarity_name: str = 'cosine',
-            threshold: float = 0.99,
-            dump_hist: bool = True,
-            dump_file: str = 'hist.csv') -> bool:
+                    actual: np.ndarray,
+                    simarity_name: str = 'cosine',
+                    threshold: float = 0.99,
+                    dump_hist: bool = True,
+                    dump_file: str = 'hist.csv') -> bool:
 
     if expected.size == actual.size:
         simarity = simarity_func[simarity_name](expected.flatten(), actual.flatten())

@@ -43,5 +43,6 @@ def test_mobilenetv1(in_shape, alpha, request):
     model_file = runner.from_tensorflow(module)
     runner.run(model_file)
 
+
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_mobilenetv1.py'])
