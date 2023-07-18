@@ -29,29 +29,33 @@ using namespace ortki;
 class OneHotTest
     : public KernelTest,
       public ::testing::TestWithParam<
-          std::tuple<nncase::typecode_t, typecode_t, dims_t, dims_t>> {
+          std::tuple<nncase::typecode_t, typecode_t, dims_t, dims_t, int32_t>> {
   public:
     void SetUp() override {
-        auto &&[value_typecode, index_typecode, l_shape, values_shape] =
-            GetParam();
+        auto &&[value_typecode, index_typecode, l_shape, values_shape,
+                axis_value] = GetParam();
 
         int64_t a[] = {3, 2, 4, 0};
         indices = hrt::create(index_typecode, l_shape,
                               {reinterpret_cast<gsl::byte *>(a), sizeof(a)},
                               true, host_runtime_tensor::pool_cpu_only)
                       .expect("create tensor failed");
+
         float_t values_ptr[] = {0, 1};
         values = hrt::create(value_typecode, values_shape,
                              {reinterpret_cast<gsl::byte *>(values_ptr),
                               sizeof(values_ptr)},
                              true, host_runtime_tensor::pool_cpu_only)
                      .expect("create tensor failed");
+
         int32_t depth_ptr[] = {5};
         depth = hrt::create(dt_int32, {1},
                             {reinterpret_cast<gsl::byte *>(depth_ptr),
                              sizeof(depth_ptr)},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
+
+        axis = axis_value;
     }
 
     void TearDown() override {}
@@ -60,13 +64,15 @@ class OneHotTest
     runtime_tensor indices;
     runtime_tensor values;
     runtime_tensor depth;
+    int32_t axis;
 };
 
 INSTANTIATE_TEST_SUITE_P(OneHot, OneHotTest,
                          testing::Combine(testing::Values(dt_float32),
                                           testing::Values(dt_int64),
                                           testing::Values(dims_t{4}),
-                                          testing::Values(dims_t{2})));
+                                          testing::Values(dims_t{2}),
+                                          testing::Values(0, 1)));
 
 TEST_P(OneHotTest, OneHot) {
     auto indices_ort = runtime_tensor_2_ort_tensor(indices);
@@ -74,7 +80,7 @@ TEST_P(OneHotTest, OneHot) {
     auto depth_ort = runtime_tensor_2_ort_tensor(depth);
 
     // expected
-    auto output_ort = ortki_OneHot(indices_ort, depth_ort, values_ort, 0);
+    auto output_ort = ortki_OneHot(indices_ort, depth_ort, values_ort, axis);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
@@ -84,10 +90,8 @@ TEST_P(OneHotTest, OneHot) {
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
-    print_runtime_tensor(expected);
-
     // actual
-    int axis_ptr[] = {0};
+    int axis_ptr[] = {axis};
     auto axis =
         hrt::create(dt_int32, {1},
                     {reinterpret_cast<gsl::byte *>(axis_ptr), sizeof(axis_ptr)},
@@ -98,8 +102,6 @@ TEST_P(OneHotTest, OneHot) {
                       indices.impl(), depth.impl(), values.impl(), axis.impl())
                       .expect("one_hot failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
-
-    print_runtime_tensor(actual);
 
     bool result = is_same_tensor(expected, actual) ||
                   cosine_similarity_tensor(expected, actual);

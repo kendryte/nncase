@@ -50,7 +50,7 @@ INSTANTIATE_TEST_SUITE_P(
     testing::Combine(testing::Values(dt_float32, dt_int32),
                      testing::Values(dims_t{1, 3, 16, 16}, dims_t{1},
                                      dims_t{8, 8}, dims_t{1, 4, 16},
-                                     dims_t{1, 3, 24, 24})));
+                                     dims_t{1, 3, 24, 24}, dims_t{})));
 
 TEST_P(ReluTest, Relu) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);

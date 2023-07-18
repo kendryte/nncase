@@ -51,7 +51,7 @@ INSTANTIATE_TEST_SUITE_P(
                                      dt_uint8, dt_uint16),
                      testing::Values(dims_t{1, 3, 16, 16}, dims_t{1},
                                      dims_t{1, 3}, dims_t{8, 8},
-                                     dims_t{1, 3, 8})));
+                                     dims_t{1, 3, 8}, dims_t{})));
 
 TEST_P(ClampTest, clamp) {
 
