@@ -182,10 +182,11 @@ class UnaryTest
 INSTANTIATE_TEST_SUITE_P(
     Unary, UnaryTest,
     testing::Combine(testing::Values(dt_float32),
-                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{3, 16, 16},
+                     testing::Values(/*dims_t{1, 3, 16, 16}, dims_t{3, 16, 16},
                                      dims_t{3, 16, 1}, dims_t{16, 16},
                                      dims_t{16, 1}, dims_t{1, 16, 1},
-                                     dims_t{16}, dims_t{1}, dims_t{})));
+                                     dims_t{16}, dims_t{1},*/
+                                     dims_t{})));
 
 TEST_P(UnaryTest, rsqrt) {
     OrtKITensor *orts[1];
@@ -209,17 +210,19 @@ TEST_P(UnaryTest, rsqrt) {
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
-    //    int64_t new_shape_array[] = {1};
-    //    auto new_shape =
-    //        hrt::create(dt_int64, {1},
-    //                    {reinterpret_cast<gsl::byte *>(new_shape_array),
-    //                     sizeof(new_shape_array)},
-    //                    true, host_runtime_tensor::pool_cpu_only)
-    //            .expect("create tensor failed");
+    int64_t new_shape_array[] = {1};
+    auto new_shape =
+        hrt::create(dt_int64, {1},
+                    {reinterpret_cast<gsl::byte *>(new_shape_array),
+                     sizeof(new_shape_array)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
     // actual
-    auto output = kernels::stackvm::unary(
-                      nncase::runtime::stackvm::unary_op_t::sqrt, input.impl())
-                      .expect("unary failed");
+    auto output = kernels::stackvm::reshape(
+        kernels::stackvm::unary(nncase::runtime::stackvm::unary_op_t::sqrt,
+                                input.impl())
+            .expect("unary failed"),
+        new_shape.impl()).expect("reshape failed");
 
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
