@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -73,7 +74,7 @@ public class UnitTestDumpQuantError : TestClassBase
         conv.Metadata.OutputNames = new string[] { "conv" };
 
         var output = conv;
-        var resourceName = "Nncase.Tests.Quant.conv2d.quant.json";
+        var resourceName = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "Quant", "conv2d.quant.json");
         await TestDumpQuantErrorMainPassesAsync(input, output, resourceName);
         Assert.True(File.Exists(CompileOptions.DumpDir + "/Passes/2_AssignRanges/" + "quant_error.csv"));
     }
@@ -98,11 +99,7 @@ public class UnitTestDumpQuantError : TestClassBase
 
         if (resourceName != string.Empty)
         {
-            using (Stream stream = assembly.GetManifestResourceStream(resourceName)!)
-            using (var reader = new StreamReader(stream))
-            {
-                CompileOptions.QuantizeOptions.QuantScheme = reader.ReadToEnd();
-            }
+            CompileOptions.QuantizeOptions.QuantScheme = resourceName;
         }
 
         // 0. TargetIndependentPass
