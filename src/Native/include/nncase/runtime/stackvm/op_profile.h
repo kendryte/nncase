@@ -13,11 +13,11 @@
  * limitations under the License.
  */
 #pragma once
+#include "opcode.h"
 #include <iomanip>
 #include <iostream>
-#include <vector>
 #include <tuple>
-#include "opcode.h"
+#include <vector>
 
 extern "C" {
 double get_ms_time();
@@ -25,7 +25,8 @@ double get_ms_time();
 
 class op_profile {
   public:
-    op_profile(const std::string &op_name, uint8_t op_type) : op_name_(op_name), op_type_(op_type) {
+    op_profile(const std::string &op_name, uint8_t op_type)
+        : op_name_(op_name), op_type_(op_type) {
         begin_ = get_ms_time();
     }
 
@@ -37,7 +38,8 @@ class op_profile {
     static void print();
 
   public:
-    static std::vector<std::tuple<std::string, uint8_t, double, double>> op_timing_;
+    static std::vector<std::tuple<std::string, uint8_t, double, double>>
+        op_timing_;
 
   private:
     double begin_;
