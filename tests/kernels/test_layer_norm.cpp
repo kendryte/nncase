@@ -81,7 +81,7 @@ INSTANTIATE_TEST_SUITE_P(
     testing::Combine(testing::Values(dt_float32),
                      testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 2, 4, 8},
                                      dims_t{2, 2, 4, 4}, dims_t{1, 3, 16},
-                                     dims_t{1, 16}),
+                                     dims_t{1, 16}, dims_t{16}),
                      testing::Values(-3, -2, -1, 0, 1, 2, 3)));
 
 TEST_P(LayerNormTest, layer_norm) {
