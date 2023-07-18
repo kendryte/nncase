@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Toolkit.HighPerformance;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
+using Nncase.IR.Tensors;
 using Nncase.Passes.Analysis;
 using Nncase.Passes.Mutators;
 using Nncase.PatternMatch;
@@ -159,7 +160,7 @@ public class MergeBucketFusion : ModulePass
         DumpIR(post, "AfterMergeUser", relPath);
     }
 
-    record UserInfo(Call User, int UserIndex, int FusionIndexInUserArg);
+    record UserInfo(Call User, int UserIndex, Expr? GetItem);
 
     internal class ReplaceVisitor : ExprVisitor<Expr, Unit>
     {
@@ -192,15 +193,15 @@ public class MergeBucketFusion : ModulePass
                 // {
                     // DumpIR(outerCall.Users.ToArray()[i], $"{counter}_User_{i}_MergeBefore", relPath);
                 // }
-                // DumpIR(_root, "OriginRoot", relPath);
+                DumpIR(_root, "OriginRoot", relPath);
 
-                var newCall = MergeMultiUserFusion(outerCall, fusion);
+                var (newCall, users) = MergeMultiUserFusion(outerCall, fusion);
                 if (newCall != null)
                 {
                     // DumpIR(outerCall, $"{counter}_OriginAfter", relPath);
                     // DumpIR(newCall, $"{counter}_MergeAfter", relPath);
                     // DumpIR(_root, "rootBeforeMerge", relPath);
-                    var users = outerCall.Users.ToArray();
+                    // var users = outerCall.Users.ToArray();
                     for (var i = 0; i < users.Length; i++)
                     {
                         // todo:这里计算的不对，不一定是按照顺序引用的，也可能某一个引用了多次，但是构造的时候是按照
@@ -213,7 +214,7 @@ public class MergeBucketFusion : ModulePass
 
                     Console.WriteLine();
                     // ReplaceAllUsesWith(outerCall, newCall);
-                    // DumpIR(_root, "rootAfterMerge", relPath);
+                    DumpIR(_root, "rootAfterMerge", relPath);
                     MergeBucketFusion.counter++;
                     return newCall;
                 }
@@ -250,18 +251,24 @@ public class MergeBucketFusion : ModulePass
         return false;
     }
 
-    private static Expr? MergeMultiUserFusion(Call outerCall, BucketFusion fusion)
+    private static (Expr?, Expr[]) MergeMultiUserFusion(Call outerCall, BucketFusion fusion)
     {
         var users = outerCall.Users.ToArray();
+
+        if (users.OfType<Call>().All(user => user.Target is GetItem))
+        {
+            users = users.SelectMany(user => user.Users.ToArray()).ToArray();
+        }
+
         // todo: not support
         if (users.Count(user => user is Tuple) != 0)
         {
             Console.WriteLine("HasTuple");
-            return null;
+            return (null, new Expr[]{});
         }
 
         // todo:如果不是所有的都是valid的，那么能合并吗？？
-        var userInfos = CollectUsers(outerCall);
+        var userInfos = CollectUsers(outerCall, users);
 
         // todo: support only one user, because merge fusion rule is not enough
         // maybe a error
@@ -271,16 +278,16 @@ public class MergeBucketFusion : ModulePass
         // }
 
         // has invalid
-        if (userInfos.Length != outerCall.Users.Count)
+        if (userInfos.Length != users.Length)
         {
             Console.WriteLine("not all call");
-            return null;
+            return (null, new Expr[]{});
         }
 
         if (detectedRing(outerCall))
         {
             Console.WriteLine("HasRing");
-            return null;
+            return (null, new Expr[]{});
         }
 
         // todo: with tuple
@@ -321,7 +328,7 @@ public class MergeBucketFusion : ModulePass
         // var newArgs = MakeNewArgs(outerCall, userInfos, newVarsMap);
         var newFusion = MakeNewFusion(newBody, fusion, newParams, oldUsers);
         var newCall = MakeNewCall(newFusion, newArgs);
-        return newCall;
+        return (newCall, users);
     }
 
     record VarReplInfo(Var[] vars, Expr[] exprs);
@@ -357,6 +364,13 @@ public class MergeBucketFusion : ModulePass
             var user = info.User;
             if (user.Target is BucketFusion fusion)
             {
+                if (info.GetItem != null)
+                {
+                    var args = user.Arguments.ToArray().OfNoConst().ToArray();
+                    var index = args.IndexOf(info.GetItem);
+                    return args.Zip(fusion.Parameters.ToArray()).ToArray().RemoveAt(index);
+                }
+
                 return user.Arguments.ToArray().OfNoConst().Zip(fusion.Parameters.ToArray());
             }
 
@@ -445,7 +459,7 @@ public class MergeBucketFusion : ModulePass
         var newArgs = userInfos.SelectMany(userInfo =>
         {
             var user = userInfo.User;
-            return user.Arguments.ToArray().RemoveAt(userInfo.FusionIndexInUserArg).OfNoConst().ToArray();
+            return user.Arguments.ToArray().Remove(outerCall).OfNoConst().ToArray();
         }).ToHashSet().ToArray();
         return fusionArgs.Concat(newArgs).ToArray();
     }
@@ -613,7 +627,8 @@ public class MergeBucketFusion : ModulePass
     //
     // }
 
-    private static (Var, Expr)[] MakeFusionReplaceInfo(UserInfo[] userInfos, Expr body, Call[] users, Dictionary<BucketFusion, Var> fusionMap) =>
+    private static (Var, Expr)[] MakeFusionReplaceInfo(UserInfo[] userInfos, Expr body, Call[] users,
+        Dictionary<BucketFusion, Var> fusionMap) =>
         userInfos.SelectMany((userInfo, i) =>
         {
             var user = userInfo.User;
@@ -624,10 +639,10 @@ public class MergeBucketFusion : ModulePass
                 {
                     var (param, arg) = pair;
                     // arg是多个user的call,替换对应的body
-                    if (i == userInfo.FusionIndexInUserArg)
-                    {
-                        return (param, body);
-                    }
+                    // if (i == userInfo.FusionIndexInUserArg)
+                    // {
+                    //     return (param, body);
+                    // }
 
                     // todo: arg是其他的fusion的话替换为其fusion的body，但是其中的var可能要后面才能替换了
                     if (users.Contains(arg))
@@ -646,12 +661,11 @@ public class MergeBucketFusion : ModulePass
                 }).ToArray();
                 return replaceInfo;
             }
+
             throw new NotImplementedException();
         }).ToArray();
-
-    private static UserInfo[] CollectUsers(Expr outerCall)
+    private static UserInfo[] CollectUsers(Call outerCall, Expr[] users)
     {
-        var users = outerCall.Users.ToArray();
         // todo: process for getItem multi user
         // if (outerCall.CheckedType is TupleType)
         // {
@@ -661,7 +675,8 @@ public class MergeBucketFusion : ModulePass
         //     }).ToArray();
         // }
 
-        var outputs = outerCall.Users
+        var originUsers = outerCall.Users.ToArray();
+        var outputs = users
             .Select((user, userIndex) =>
             {
                 // 找到fusion在user的arguments的哪个index
@@ -698,7 +713,9 @@ public class MergeBucketFusion : ModulePass
             {
                 var user = (Call)pair.user;
                 var argInUserArg = user.Arguments.ToArray().IndexOf(outerCall);
-                return new UserInfo(user, pair.userIndex, argInUserArg);
+                // todo: maybe error
+                var getItem = user.Arguments.ToArray().FindFirst(userArg => originUsers.Contains(userArg));
+                return new UserInfo(user, pair.userIndex, getItem);
             })
             .ToArray();
         return outputs;
