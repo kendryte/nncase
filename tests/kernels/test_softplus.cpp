@@ -74,7 +74,9 @@ TEST_P(SoftplusTest, Softplus) {
                   cosine_similarity_tensor(expected, actual);
 
     if (!result) {
+        std::cout<<"actual ";
         print_runtime_tensor(actual);
+        std::cout<<"expected ";
         print_runtime_tensor(expected);
     }
 

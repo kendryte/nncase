@@ -64,9 +64,11 @@
     bool result = is_same_tensor(expected, actual) ||                          \
                   cosine_similarity_tensor(expected, actual);                  \
     if (!result) {                                                             \
+        std::cout<<"actual ";                                                  \
         print_runtime_tensor(actual);                                          \
+        std::cout<<"expected ";                                                \
         print_runtime_tensor(expected);                                        \
-    }                                                                          \
+        }                                                                      \
     EXPECT_TRUE(result);
 
 #define NNCASE_TEST_BODY(test_class, test_name, op_fn, sub_op_name,            \
