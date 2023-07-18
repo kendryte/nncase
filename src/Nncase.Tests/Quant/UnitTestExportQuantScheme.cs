@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using NetFabric.Hyperlinq;
+using Newtonsoft.Json;
 using Nncase.IR;
 using Nncase.Passes;
 using Nncase.Passes.Rules.Neutral;
@@ -44,7 +45,9 @@ public class UnitTestExportQuantScheme : TestClassBase
         var output = conv;
         _ = await TestExportQuantSchemeMainPassesAsync(input, output, false);
 
-        var expectedQuantScheme = "{\"Version\":\"1.0\",\"Model\":null,\"Outputs\":[{\"Name\":\"weight\",\"DataType\":\"u8\",\"DataRange\":[{\"Min\":0.0,\"Max\":0.9988426,\"IsFull\":false}],\"DataRangeMode\":\"by_tensor\"}]}";
+        var readJson = "{\"Version\":\"1.0\",\"Model\":null,\"Outputs\":[{\"Name\":\"weight\",\"DataType\":\"u8\",\"DataRange\":[{\"Min\":0.0,\"Max\":0.9988426,\"IsFull\":false}],\"DataRangeMode\":\"by_tensor\"}]}";
+        var quantScheme = JsonConvert.DeserializeObject<QuantScheme>(readJson);
+        var expectedQuantScheme = JsonConvert.SerializeObject(quantScheme, Newtonsoft.Json.Formatting.Indented);
         Assert.Equal(expectedQuantScheme, CompileOptions.QuantizeOptions.QuantScheme);
     }
 
@@ -72,7 +75,9 @@ public class UnitTestExportQuantScheme : TestClassBase
         var output = conv;
         _ = await TestExportQuantSchemeMainPassesAsync(input, output, true);
 
-        var expectedQuantScheme = "{\"Version\":\"1.0\",\"Model\":null,\"Outputs\":[{\"Name\":\"weight\",\"DataType\":\"u8\",\"DataRange\":[{\"Min\":0.0,\"Max\":0.32098764,\"IsFull\":false},{\"Min\":0.33333334,\"Max\":0.654321,\"IsFull\":false},{\"Min\":0.6666667,\"Max\":0.9876543,\"IsFull\":false}],\"DataRangeMode\":\"by_channel\"}]}";
+        var readJson = "{\"Version\":\"1.0\",\"Model\":null,\"Outputs\":[{\"Name\":\"weight\",\"DataType\":\"u8\",\"DataRange\":[{\"Min\":0.0,\"Max\":0.32098764,\"IsFull\":false},{\"Min\":0.33333334,\"Max\":0.654321,\"IsFull\":false},{\"Min\":0.6666667,\"Max\":0.9876543,\"IsFull\":false}],\"DataRangeMode\":\"by_channel\"}]}";
+        var quantScheme = JsonConvert.DeserializeObject<QuantScheme>(readJson);
+        var expectedQuantScheme = JsonConvert.SerializeObject(quantScheme, Newtonsoft.Json.Formatting.Indented);
         Assert.Equal(expectedQuantScheme, CompileOptions.QuantizeOptions.QuantScheme);
     }
 
