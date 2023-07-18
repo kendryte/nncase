@@ -107,6 +107,7 @@ public class MergeBucketFusion : ModulePass
         {
             var mergePrevPost = MergePrevFusion(main);
             MergeMultiUsers(mergePrevPost);
+            MergeTupleFusion(mergePrevPost);
             var post = MergeMultiUsersSingleCall(mergePrevPost);
             var postHashCode = post.GetHashCode();
             if (hashcode != postHashCode)
@@ -124,6 +125,8 @@ public class MergeBucketFusion : ModulePass
         }
         return Task.FromResult(input);
     }
+
+    private static void MergeTupleFusion(Function mergePrevPost) => CompilerServices.Rewrite(mergePrevPost, new[] { new MergeTupleFusion() }, new());
 
     private Expr MergeMultiUsersSingleCall(Expr body)
     {
