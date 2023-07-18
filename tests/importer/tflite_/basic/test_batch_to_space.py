@@ -61,7 +61,7 @@ crops = [
 def test_batch_to_space(batch_coff, in_shape, block_shape, crops, request):
     module = _make_module(batch_coff, in_shape, block_shape, crops)
 
-    runner = TfliteTestRunner(request.node.name, ['cpu'])
+    runner = TfliteTestRunner(request.node.name)
     model_file = runner.from_tensorflow(module)
     runner.run(model_file)
 
