@@ -45,6 +45,18 @@
     dims_t shape(tensor_rank(output_ort));                                     \
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));       \
     auto expected =                                                            \
+        hrt::create(_typecode, shape,                                          \
+                    {reinterpret_cast<gsl::byte *>(ptr_ort), size}, true,      \
+                    host_runtime_tensor::pool_cpu_only)                        \
+            .expect("create tensor failed");
+
+#define GET_EXPECT_BOOL(ortop_num, ...)                                        \
+    auto output_ort = ORTKI_OP(ortop_num, __VA_ARGS__);                        \
+    size_t size = 0;                                                           \
+    void *ptr_ort = tensor_buffer(output_ort, &size);                          \
+    dims_t shape(tensor_rank(output_ort));                                     \
+    tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));       \
+    auto expected =                                                            \
         hrt::create(dt_boolean, shape,                                         \
                     {reinterpret_cast<gsl::byte *>(ptr_ort), size}, true,      \
                     host_runtime_tensor::pool_cpu_only)                        \
@@ -80,6 +92,15 @@
         CHECK_RESULT()                                                         \
     }
 
+#define NNCASE_TEST_BODY_BOOL(test_class, test_name, op_fn, sub_op_name,       \
+                              ortki_op_num, format, ...)                       \
+    TEST_P(test_class, test_name) {                                            \
+        READY_INPUT(format)                                                    \
+        GET_EXPECT_BOOL(ortki_op_num, __VA_ARGS__)                             \
+        GET_ACTUAL(op_fn, sub_op_name)                                         \
+        CHECK_RESULT()                                                         \
+    }
+
 #define NNCASE_TEST_BODY_ARGS_4(test_class, test_name, op_fn, sub_op_name,     \
                                 ortki_op_num, format, ...)                     \
     TEST_P(test_class, test_name) {                                            \
@@ -96,6 +117,7 @@
       public:                                                                  \
         void SetUp() override {                                                \
             auto &&[typecode, l_shape, r_shape] = GetParam();                  \
+            _typecode = typecode;                                              \
             lhs = hrt::create(typecode, l_shape,                               \
                               host_runtime_tensor::pool_cpu_only)              \
                       .expect("create lhs tensor failed");                     \
@@ -110,6 +132,7 @@
       protected:                                                               \
         runtime_tensor lhs;                                                    \
         runtime_tensor rhs;                                                    \
+        typecode_t _typecode;                                                  \
     };
 
 #define NNCASE_TEST_CLASS_ARGS_4(class_name)                                   \
@@ -158,6 +181,11 @@
 
 #define NNCASE_TEST_GENERATOR_TYPE_2(typea, typeb, ...)                        \
     testing::Combine(NNCASE_TEST_GENERATOR_VALUE(typea, typeb),                \
+                     NNCASE_TEST_GENERATOR_VALUE(__VA_ARGS__),                 \
+                     NNCASE_TEST_GENERATOR_VALUE(__VA_ARGS__))
+
+#define NNCASE_TEST_GENERATOR_TYPE_1(typea, ...)                               \
+    testing::Combine(NNCASE_TEST_GENERATOR_VALUE(typea),                       \
                      NNCASE_TEST_GENERATOR_VALUE(__VA_ARGS__),                 \
                      NNCASE_TEST_GENERATOR_VALUE(__VA_ARGS__))
 

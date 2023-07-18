@@ -63,7 +63,8 @@ TEST_P(ShapeOfTest, ShapeOf) {
                         .expect("create tensor failed");
 
     // actual
-    auto output = kernels::stackvm::shape_of(lhs.impl()).expect("ShapeOf failed");
+    auto output =
+        kernels::stackvm::shape_of(lhs.impl()).expect("ShapeOf failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     bool result = is_same_tensor(expected, actual) ||
