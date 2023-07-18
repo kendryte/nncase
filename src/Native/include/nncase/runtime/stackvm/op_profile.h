@@ -31,7 +31,7 @@ class op_profile {
 
     ~op_profile() {
         end_ = get_ms_time();
-        op_timing_.emplace_back(std::make_tuple(op_name_, op_type_, begin_, end_));
+        op_timing_.push_back(std::make_tuple(op_name_, op_type_, begin_, end_));
     }
 
     static void print();
