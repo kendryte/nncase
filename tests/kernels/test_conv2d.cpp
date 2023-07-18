@@ -136,9 +136,9 @@ TEST_P(Conv2DTest, conv2d) {
 
     if (!result) {
         if (!result) {
-            std::cout<<"actual ";
+            std::cout << "actual ";
             print_runtime_tensor(actual);
-            std::cout<<"expected ";
+            std::cout << "expected ";
             print_runtime_tensor(expected);
         }
     }

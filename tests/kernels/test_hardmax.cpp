@@ -80,9 +80,9 @@ TEST_P(HardmaxTest, hardmax) {
                   cosine_similarity_tensor(expected, actual);
 
     if (!result) {
-        std::cout<<"actual ";
+        std::cout << "actual ";
         print_runtime_tensor(actual);
-        std::cout<<"expected ";
+        std::cout << "expected ";
         print_runtime_tensor(expected);
     }
 

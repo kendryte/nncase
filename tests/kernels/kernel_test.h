@@ -1030,9 +1030,9 @@ class KernelTest {
             bool result = is_same_tensor(expected[i], output1) ||
                           cosine_similarity_tensor(expected[i], output1);
             if (!result) {
-                std::cout<<"expected ";
+                std::cout << "expected ";
                 print_runtime_tensor(expected[i]);
-                std::cout<<"actual ";
+                std::cout << "actual ";
                 print_runtime_tensor(output1);
             }
             EXPECT_TRUE(result);

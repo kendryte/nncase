@@ -81,9 +81,9 @@ TEST_P(MatMulTest, mat_mul) {
                   is_same_tensor(expected, actual);
 
     if (!result) {
-        std::cout<<"actual ";
+        std::cout << "actual ";
         print_runtime_tensor(actual);
-        std::cout<<"expected ";
+        std::cout << "expected ";
         print_runtime_tensor(expected);
     }
 
