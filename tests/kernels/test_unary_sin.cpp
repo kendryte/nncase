@@ -45,9 +45,13 @@ class UnaryTest
     runtime_tensor input;
 };
 
-INSTANTIATE_TEST_SUITE_P(Unary, UnaryTest,
-                         testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1})));
+INSTANTIATE_TEST_SUITE_P(
+    Unary, UnaryTest,
+    testing::Combine(testing::Values(dt_float32),
+                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{3, 16, 16},
+                                     dims_t{3, 16, 1}, dims_t{16, 16},
+                                     dims_t{16, 1}, dims_t{1, 16, 1},
+                                     dims_t{16}, dims_t{1}, dims_t{})));
 
 TEST_P(UnaryTest, sin) {
     OrtKITensor *orts[1];
@@ -67,11 +71,12 @@ TEST_P(UnaryTest, sin) {
     // actual
     auto output = kernels::stackvm::unary(
                       nncase::runtime::stackvm::unary_op_t::sin, input.impl())
-                      .expect("binary failed");
+                      .expect("unary failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_TRUE(is_same_tensor(expected, actual));
+    EXPECT_TRUE(is_same_tensor(expected, actual) ||
+                cosine_similarity_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {

@@ -48,6 +48,12 @@ void _slice_contiguous_dim_copy(const axes_t &begins,
     }
 }
 
+// optimized for n c h 1
+size_t inline squeeze_dims(const gsl::span<const size_t> &in_shape) {
+    return in_shape[in_shape.size() - 1] == 1 ? in_shape.size() - 1 - 1
+                                              : in_shape.size() - 1;
+}
+
 template <class T>
 result<void> slice_contiguous_impl(
     const T *input, T *output, gsl::span<const size_t> in_shape,
@@ -56,7 +62,7 @@ result<void> slice_contiguous_impl(
     const axes_t &ends, NNCASE_UNUSED const axes_t &strides) noexcept {
     size_t elemsize = sizeof(T);
     auto *out_ptr = output;
-    auto dims = in_shape.size() - 1;
+    auto dims = squeeze_dims(in_shape);
     dims_t in_index(in_shape.size());
 
     auto line_copy = [&]() {
@@ -114,7 +120,7 @@ template <class Callable>
 result<void> _slice_impl(gsl::span<const size_t> in_shape, const axes_t &begins,
                          const axes_t &ends, const axes_t &strides,
                          Callable &&line_copy) noexcept {
-    auto dims = in_shape.size() - 1;
+    auto dims = squeeze_dims(in_shape);
     dims_t in_index(in_shape.size());
     dims_t out_index(in_shape.size());
     if (dims == 0) {

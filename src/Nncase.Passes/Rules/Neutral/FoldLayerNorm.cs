@@ -222,11 +222,7 @@ public sealed partial class FoldLayerNormPattern4 : RewriteRule<CallPattern>
                 "mulX",
                 "mulXCall",
                 BinaryOp.Mul,
-                IsBinary(
-                    "addInput",
-                    "addInputCall",
-                    BinaryOp.Add,
-                    IsWildcard("input")),
+                IsWildcard("input"),
                 IsBinary(
                     "mulGamma",
                     "mulGammaCall",
@@ -271,10 +267,10 @@ public sealed partial class FoldLayerNormPattern4 : RewriteRule<CallPattern>
                     IsWildcard(),
                     IsWildcard())));
 
-    private Expr? GetReplace(Call addAllCall, Call subCall, Call mulXCall, Call mulMuCall, Call subMulCall, TensorConst eps, TensorConst gamma, TensorConst beta, Expr input)
+    private Expr? GetReplace(Call addAllCall, Call subCall, Call mulXCall, Call mulMuCall, Call subMulCall, Call meanCall, TensorConst eps, TensorConst gamma, TensorConst beta, Expr input)
     {
         if (subMulCall[Binary.Lhs] == subMulCall[Binary.Rhs] && mulXCall[Binary.Rhs] == mulMuCall[Binary.Rhs] &&
-            subCall[Binary.Lhs] == mulXCall[Binary.Lhs] && subCall[Binary.Rhs] == mulMuCall[Binary.Lhs])
+            subCall[Binary.Lhs] == mulXCall[Binary.Lhs] && subCall[Binary.Rhs] == mulMuCall[Binary.Lhs] && mulXCall[Binary.Lhs] == meanCall[Reduce.Input])
         {
             var axis = addAllCall.CheckedShape.Count - gamma.CheckedShape.Count;
             return LayerNorm(axis, eps.Value.Cast<float>()[0], input, gamma, beta);

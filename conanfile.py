@@ -18,7 +18,7 @@ from conans import ConanFile, CMake, tools
 
 class nncaseConan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
-    generators = "cmake", "cmake_find_package", "cmake_paths"
+    generators = "CMakeToolchain", "cmake_find_package", "cmake_paths"
     options = {
         "shared": [True, False],
         "fPIC": [True, False],
@@ -47,7 +47,6 @@ class nncaseConan(ConanFile):
 
     def requirements(self):
         self.requires('gsl-lite/0.37.0')
-        self.requires('mpark-variant/1.4.0')
         self.requires('hkg/0.0.1')
         if self.options.tests:
             self.requires('gtest/1.10.0')

@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include "section.h"
+#include <nncase/runtime/allocator.h>
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/error.h>
 #include <nncase/runtime/runtime_module.h>
@@ -22,9 +23,10 @@ using namespace nncase;
 using namespace nncase::runtime;
 
 namespace {
-class runtime_module_init_context_impl : public runtime_module_init_context {
+class runtime_module_init_context_span_impl
+    : public runtime_module_init_context {
   public:
-    runtime_module_init_context_impl(
+    runtime_module_init_context_span_impl(
         const module_header &header, interpreter &interp,
         gsl::span<const gsl::byte> sections) noexcept
         : header_(header), interp_(interp), sections_(sections) {}
@@ -35,8 +37,15 @@ class runtime_module_init_context_impl : public runtime_module_init_context {
 
     bool is_section_pinned() const noexcept override { return true; }
 
-    gsl::span<const gsl::byte> section(const char *name) noexcept override {
-        return find_section(name, sections_);
+    result<gsl::span<const gsl::byte>>
+    section(const char *name) noexcept override {
+        return ok(find_section(name, sections_));
+    }
+
+    result<stream_reader *>
+    seek_section([[maybe_unused]] const char *name,
+                 [[maybe_unused]] section_header &header) noexcept override {
+        return err(std::errc::not_supported);
     }
 
   private:
@@ -60,6 +69,52 @@ gsl::span<const gsl::byte> read_functions(span_reader &sr,
 
     return sr.read_span(size);
 }
+
+class runtime_module_init_context_stream_impl
+    : public runtime_module_init_context {
+  public:
+    runtime_module_init_context_stream_impl(const module_header &header,
+                                            interpreter &interp,
+                                            stream_reader &reader,
+                                            std::streampos sections) noexcept
+        : header_(header),
+          interp_(interp),
+          reader_(reader),
+          sections_(sections) {}
+
+    interpreter &interp() noexcept override { return interp_; }
+
+    const module_header &header() noexcept override { return header_; }
+
+    bool is_section_pinned() const noexcept override { return false; }
+
+    result<gsl::span<const gsl::byte>>
+    section([[maybe_unused]] const char *name) noexcept override {
+        return err(std::errc::not_supported);
+    }
+
+    result<stream_reader *>
+    seek_section(const char *name, section_header &header) noexcept override {
+        reader_.seek(sections_);
+        try_var(body_pos, find_section(name, reader_, header_.sections));
+        reader_.read(header);
+        reader_.seek(body_pos);
+        return ok(&reader_);
+    }
+
+  private:
+    const module_header &header_;
+    interpreter &interp_;
+    stream_reader &reader_;
+    std::streampos sections_;
+};
+
+void skip_functions(stream_reader &sr, size_t functions) noexcept {
+    for (size_t i = 0; i < functions; i++) {
+        auto header = sr.read<function_header>();
+        sr.skip(header.size - sizeof(header));
+    }
+}
 } // namespace
 
 const module_kind_t &runtime_module::kind() const noexcept {
@@ -79,7 +134,7 @@ result<void> runtime_module::initialize(gsl::span<const gsl::byte> payload,
     }
 
     span_reader func_reader(read_functions(reader, header_.functions));
-    runtime_module_init_context_impl init_context(
+    runtime_module_init_context_span_impl init_context(
         header_, interp, read_sections(reader, header_.sections));
     try_(initialize_before_functions(init_context));
 
@@ -91,6 +146,38 @@ result<void> runtime_module::initialize(gsl::span<const gsl::byte> payload,
         try_var(func, create_function());
         try_(func->initialize(payload, init_context));
         functions_[i] = std::move(func);
+    }
+
+    return initialize_after_functions(init_context);
+}
+
+result<void> runtime_module::initialize(stream_reader &reader,
+                                        interpreter &interp) noexcept {
+    interp_ = &interp;
+    reader.read(header_);
+
+    try {
+        functions_.resize(header_.functions);
+    } catch (...) {
+        return err(std::errc::not_enough_memory);
+    }
+
+    const auto functions_pos = reader.tell();
+    skip_functions(reader, header_.functions);
+    const auto sections_pos = reader.tell();
+    runtime_module_init_context_stream_impl init_context(header_, interp,
+                                                         reader, sections_pos);
+    try_(initialize_before_functions(init_context));
+
+    auto cnt_functions_pos = functions_pos;
+    for (size_t i = 0; i < header_.functions; i++) {
+        reader.seek(cnt_functions_pos);
+        auto func_header = reader.read<function_header>();
+        try_var(func, create_function());
+        reader.seek(cnt_functions_pos);
+        try_(func->initialize(reader, init_context));
+        functions_[i] = std::move(func);
+        cnt_functions_pos += func_header.size;
     }
 
     return initialize_after_functions(init_context);

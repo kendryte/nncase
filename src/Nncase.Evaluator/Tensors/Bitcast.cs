@@ -11,7 +11,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Bitcast"/>.
 /// </summary>
-public class BitcastEvaluator : IEvaluator<Bitcast>, ITypeInferencer<Bitcast>, ICostEvaluator<Bitcast>
+public class BitcastEvaluator : IEvaluator<Bitcast>, ITypeInferencer<Bitcast>, ICostEvaluator<Bitcast>, IMetricEvaluator<Bitcast>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Bitcast cast)
@@ -37,6 +37,15 @@ public class BitcastEvaluator : IEvaluator<Bitcast>, ITypeInferencer<Bitcast>, I
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(input.DType),
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(target.NewType),
             [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(target.NewType, 1),
+        };
+    }
+
+    public Metric Visit(IMetricEvaluateContext context, Bitcast target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, Bitcast.Input);
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(inputType) * 2,
         };
     }
 

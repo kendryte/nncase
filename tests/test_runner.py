@@ -130,7 +130,7 @@ def generate_random(shape: List[int], dtype: np.dtype,
         data = np.random.randint(0, 256, shape)
     elif dtype == np.int8:
         data = np.random.randint(-128, 128, shape)
-    elif dtype == bool:
+    elif dtype == np.bool:
         data = np.random.rand(*shape) > 0.5
     elif dtype == np.int32:
         data = np.random.randint(1, 5, size=shape, dtype='int32')
@@ -270,7 +270,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                     raise TypeError(" Not support type for quant input")
 
             new_values.append(new_value)
-        return np.array(new_values)
+        return new_values
 
     def get_process_config(self, config):
         # preprocess flag
@@ -516,7 +516,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         if kwargs['ptq']:
             ptq_options = nncase.PTQTensorOptions()
             data = [self.transform_input(
-                sample['data'], preprocess['input_type'], "infer") for sample in self.calibs]
+                input['data'], preprocess['input_type'], "infer") for input in self.calibs]
             ptq_options.set_tensor_data(data)
             ptq_options.samples_count = cfg.generate_calibs.numbers
             ptq_options.calibrate_method = cfg.compile_opt.calibrate_method
@@ -620,7 +620,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                     dtype = np.float32
             else:
                 shape = copy.deepcopy(input['model_shape'])
-            if shape[0] != cfg.batch_size:
+            if shape != [] and shape[0] != cfg.batch_size:
                 shape[0] *= cfg.batch_size
 
             for n in range(cfg.numbers):

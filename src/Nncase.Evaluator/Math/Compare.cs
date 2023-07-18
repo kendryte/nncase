@@ -13,7 +13,7 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Evaluator for <see cref="Compare"/>.
 /// </summary>
-public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, ICostEvaluator<Compare>, IOpPrinter<Compare>, IShapeEvaluator<Compare>
+public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, ICostEvaluator<Compare>, IOpPrinter<Compare>, IShapeEvaluator<Compare>, IMetricEvaluator<Compare>
 {
     /// <inheritdoc />
     public IValue Visit(IEvaluateContext context, Compare target)
@@ -51,6 +51,16 @@ public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, I
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(lhsType) + CostUtility.GetMemoryAccess(rhsType),
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
             [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, CostUtility.GetCPUCyclesOfCompare()),
+        };
+    }
+
+    public Metric Visit(IMetricEvaluateContext context, Compare target)
+    {
+        var outputType = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(outputType) * 2,
+            [MetricFactorNames.FLOPs] = MetricUtility.GetFLOPs(outputType, 2),
         };
     }
 

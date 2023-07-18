@@ -17,7 +17,7 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Evaluator for <see cref="MatMul"/>.
 /// </summary>
-public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICostEvaluator<MatMul>, IShapeEvaluator<MatMul>
+public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICostEvaluator<MatMul>, IShapeEvaluator<MatMul>, IMetricEvaluator<MatMul>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, MatMul matMul)
@@ -51,6 +51,22 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         };
     }
 
+    public Metric Visit(IMetricEvaluateContext context, MatMul target)
+    {
+        var lhs = context.GetArgumentType<TensorType>(target, MatMul.Lhs);
+        var rhs = context.GetArgumentType<TensorType>(target, MatMul.Rhs);
+        var outputType = context.GetReturnType<TensorType>();
+        var k = (UInt128)lhs.Shape[^1].FixedValue;
+        var m = MetricUtility.GetFLOPs(lhs) / k;
+        var n = MetricUtility.GetFLOPs(rhs) / k;
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(lhs) + CostUtility.GetMemoryAccess(rhs) + CostUtility.GetMemoryAccess(outputType),
+            [MetricFactorNames.FLOPs] = m * n * ((2 * k) - 1),
+            [MetricFactorNames.Parallel] = 4,
+        };
+    }
+
     public Expr Visit(IShapeEvaluateContext context, MatMul target)
     {
         var lhsRank = context.GetArgument(target, MatMul.Lhs).CheckedShape.Rank;
@@ -59,23 +75,24 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         var rhsShape = context.GetArgumentShape(target, MatMul.Rhs);
 
         Expr lhs, rhs;
+        Expr front;
         if (lhsRank == rhsRank)
         {
             lhs = ShapeExprUtility.Slice(lhsShape, 0, lhsRank - 2);
             rhs = ShapeExprUtility.Slice(rhsShape, 0, rhsRank - 2);
+            front = IR.F.Math.Max(lhs, rhs);
         }
         else if (lhsRank > rhsRank)
         {
             lhs = ShapeExprUtility.Slice(lhsShape, 0, lhsRank - 2);
-            rhs = Enumerable.Repeat(1, lhsRank - rhsRank).ToArray();
+            front = lhs;
         }
         else
         {
             lhs = Enumerable.Repeat(1, rhsRank - lhsRank).ToArray();
-            rhs = ShapeExprUtility.Slice(rhsShape, 0, rhsRank - 2);
+            front = lhs;
         }
 
-        var front = IR.F.Math.Max(lhs, rhs);
         var end = Stack(new IR.Tuple(lhsShape[lhsRank - 2], rhsShape[rhsRank - 1]), 0);
         return Concat(new IR.Tuple(front, end), 0);
     }

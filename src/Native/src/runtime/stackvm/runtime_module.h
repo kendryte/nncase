@@ -26,7 +26,8 @@ class stackvm_runtime_module : public runtime_module {
 
     kernels::kernel_context &kernel_context() noexcept;
 
-    gsl::span<const gsl::byte> rdata() const noexcept;
+    gsl::span<const gsl::byte> text() const noexcept { return text_; }
+    gsl::span<const gsl::byte> rdata() const noexcept { return rdata_; }
 
     result<uintptr_t> reg(size_t id) const noexcept;
     result<void> reg(size_t id, uintptr_t value) noexcept;
@@ -41,8 +42,10 @@ class stackvm_runtime_module : public runtime_module {
     create_function() noexcept override;
 
   private:
-    std::unique_ptr<gsl::byte[]> data_;
+    gsl::span<const gsl::byte> text_;
     gsl::span<const gsl::byte> rdata_;
+    host_buffer_t text_storage_;
+    host_buffer_t rdata_storage_;
     std::unordered_map<std::string, custom_call_type> custom_call_table_;
     std::array<uintptr_t, MAX_GENERAL_REGS> regs_;
 };

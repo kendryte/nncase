@@ -59,6 +59,7 @@ class Inference:
         compile_options.shape_bucket_options.range_info = {}
         compile_options.shape_bucket_options.segments_count = 2
         compile_options.shape_bucket_options.fix_var_map = {}
+        compile_options.input_file = cfg.compile_opt.input_file
         return compile_options
 
     def set_infer_input(self, preprocess, case_dir, sim):
@@ -82,7 +83,7 @@ class Inference:
                     output = np.transpose(output, [0, 3, 1, 2])
                 elif (preprocess['output_layout'] == 'NCHW' and self.model_type in ['tflite']):
                     output = np.transpose(output, [0, 2, 3, 1])
-                elif preprocess['output_layout'] not in ["NCHW", "NHWC"]:
+                elif preprocess['output_layout'] not in ["NCHW", "NHWC"] and preprocess['output_layout'] != "":
                     tmp_perm = [int(idx) for idx in preprocess['output_layout'].split(",")]
                     output = np.transpose(
                         output, preprocess_utils.get_source_transpose_index(tmp_perm))

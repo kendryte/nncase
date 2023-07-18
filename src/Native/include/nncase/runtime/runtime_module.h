@@ -16,17 +16,18 @@
 #include "model.h"
 #include "result.h"
 #include "runtime_function.h"
+#include "runtime_section_context.h"
+#include "span_reader.h"
+#include "stream_reader.h"
 #include <nncase/kernels/kernel_context.h>
 
 BEGIN_NS_NNCASE_RUNTIME
 
 class interpreter;
 
-struct NNCASE_API runtime_module_init_context {
-    virtual bool is_section_pinned() const noexcept = 0;
+struct NNCASE_API runtime_module_init_context : public runtime_section_context {
     virtual interpreter &interp() noexcept = 0;
     virtual const module_header &header() noexcept = 0;
-    virtual gsl::span<const gsl::byte> section(const char *name) noexcept = 0;
 };
 
 class NNCASE_API runtime_module {
@@ -48,6 +49,8 @@ class NNCASE_API runtime_module {
     runtime_module &operator=(const runtime_module &) = delete;
 
     result<void> initialize(gsl::span<const gsl::byte> payload,
+                            interpreter &interp) noexcept;
+    result<void> initialize(stream_reader &reader,
                             interpreter &interp) noexcept;
     const module_kind_t &kind() const noexcept;
 
