@@ -33,18 +33,22 @@ class LayerNormTest : public KernelTest,
     void SetUp() override {
         auto &&[typecode, l_shape, axis] = GetParam();
 
-        axis_value = axis;
+        axis_value = axis > (int64_t)l_shape.size() - 1
+                         ? (int64_t)l_shape.size() - 1
+                         : axis;
+
+        axis_value =
+            (axis_value < 0 && (-axis_value) > (int64_t)l_shape.size() - 1)
+                ? (1 - (int64_t)l_shape.size())
+                : axis_value;
 
         input =
             hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
         init_tensor(input);
 
-        int64_t axis1 = axis;
-
-        if (axis < 0) {
-            axis1 = axis + l_shape.size();
-        }
+        int64_t axis1 =
+            axis_value < 0 ? axis_value + (int64_t)l_shape.size() : axis_value;
 
         size_t l_shape_sum = 1;
         for (size_t i = axis1; i < l_shape.size(); i++) {
@@ -72,10 +76,13 @@ class LayerNormTest : public KernelTest,
     int64_t axis_value;
 };
 
-INSTANTIATE_TEST_SUITE_P(LayerNorm, LayerNormTest,
-                         testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 3, 16, 16}),
-                                          testing::Values(0, 1, 2, 3)));
+INSTANTIATE_TEST_SUITE_P(
+    LayerNorm, LayerNormTest,
+    testing::Combine(testing::Values(dt_float32),
+                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 2, 4, 8},
+                                     dims_t{2, 2, 4, 4}, dims_t{1, 3, 16},
+                                     dims_t{1, 16}),
+                     testing::Values(-3, -2, -1, 0, 1, 2, 3)));
 
 TEST_P(LayerNormTest, layer_norm) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
