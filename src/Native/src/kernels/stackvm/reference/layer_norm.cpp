@@ -21,9 +21,8 @@
 using namespace nncase;
 using namespace nncase::kernels::stackvm;
 
-static void layernorm_impl(int inner_size, const float *src,
-                            const float *scale, const float *bias,
-                            float epsilon, float *dst) {
+static void layernorm_impl(int inner_size, const float *src, const float *scale,
+                           const float *bias, float epsilon, float *dst) {
     float mean1 = 0.f;
     for (auto i = 0; i < inner_size; i++)
         mean1 += src[i] / inner_size;
