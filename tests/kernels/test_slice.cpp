@@ -101,7 +101,9 @@ TEST_P(SliceTest, Slice) {
                    cosine_similarity_tensor(expected, actual);
 
     if (!result1) {
+        std::cout << "actual ";
         print_runtime_tensor(actual);
+        std::cout << "expected ";
         print_runtime_tensor(expected);
     }
 

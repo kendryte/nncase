@@ -117,7 +117,9 @@ TEST_P(TileTest, Tile) {
                    cosine_similarity_tensor(expected1, actual1);
 
     if (!result1) {
+        std::cout << "actual1 ";
         print_runtime_tensor(actual1);
+        std::cout << "expected1 ";
         print_runtime_tensor(expected1);
     }
 
@@ -151,7 +153,9 @@ TEST_P(TileTest, Tile) {
                    cosine_similarity_tensor(expected2, actual2);
 
     if (!result2) {
+        std::cout << "actual2 ";
         print_runtime_tensor(actual2);
+        std::cout << "expected2 ";
         print_runtime_tensor(expected2);
     }
 
@@ -185,7 +189,9 @@ TEST_P(TileTest, Tile) {
                    cosine_similarity_tensor(expected3, actual3);
 
     if (!result3) {
+        std::cout << "actual3 ";
         print_runtime_tensor(actual3);
+        std::cout << "expected3 ";
         print_runtime_tensor(expected3);
     }
 
@@ -219,7 +225,9 @@ TEST_P(TileTest, Tile) {
                    cosine_similarity_tensor(expected4, actual4);
 
     if (!result4) {
+        std::cout << "actual4 ";
         print_runtime_tensor(actual4);
+        std::cout << "expected4 ";
         print_runtime_tensor(expected4);
     }
 
@@ -253,7 +261,9 @@ TEST_P(TileTest, Tile) {
                    cosine_similarity_tensor(expected5, actual5);
 
     if (!result5) {
+        std::cout << "actual5 ";
         print_runtime_tensor(actual5);
+        std::cout << "expected5 ";
         print_runtime_tensor(expected5);
     }
 
