@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -27,7 +28,7 @@ public class UnitTestImportQuantScheme : TestClassBase
         var leaky = LeakyRelu(input, 0.1);
         var output = leaky;
         output.Metadata.OutputNames = new string[] { "leaky_relu" };
-        var resourceName = "Nncase.Tests.Quant.leaky_relu.quant.json";
+        var resourceName = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "Quant", "leaky_relu.quant.json");
         var dumpVisitor = await TestImportQuantSchemeMainPassesAsync(input, output, resourceName);
 
         Assert.Equal(0.0f, ((TensorConst)dumpVisitor.ExprMemo.Keys.ToList()[7]).Value[0]);
@@ -57,7 +58,7 @@ public class UnitTestImportQuantScheme : TestClassBase
 
         var output = conv;
 
-        var resourceName = "Nncase.Tests.Quant.conv2d.quant.json";
+        var resourceName = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "Quant", "conv2d.quant.json");
         var dumpVisitor = await TestImportQuantSchemeMainPassesAsync(input, output, resourceName);
 
         var ranges = ((TensorConst)dumpVisitor.ExprMemo.Keys.ToList()[6]).Value;
@@ -82,14 +83,7 @@ public class UnitTestImportQuantScheme : TestClassBase
 
         CompileOptions.QuantizeOptions.CalibrationDataset = new SolidCalibrationDatasetProvider(new Var[] { input });
         CompileOptions.QuantizeOptions.CalibrationMethod = CalibMethod.Kld;
-
-        var assembly = Assembly.GetExecutingAssembly();
-
-        using (Stream stream = assembly.GetManifestResourceStream(resourceName)!)
-        using (var reader = new StreamReader(stream))
-        {
-            CompileOptions.QuantizeOptions.QuantScheme = reader.ReadToEnd();
-        }
+        CompileOptions.QuantizeOptions.QuantScheme = resourceName;
 
         // 0. TargetIndependentPass
         pmgr.AddWithName<DataflowPass>("TargetInDependent").Configure(p =>
