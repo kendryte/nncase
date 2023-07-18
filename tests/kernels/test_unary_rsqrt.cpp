@@ -218,11 +218,13 @@ TEST_P(UnaryTest, rsqrt) {
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     // actual
-    auto output = kernels::stackvm::reshape(
-        kernels::stackvm::unary(nncase::runtime::stackvm::unary_op_t::sqrt,
-                                input.impl())
-            .expect("unary failed"),
-        new_shape.impl()).expect("reshape failed");
+    auto output =
+        kernels::stackvm::reshape(
+            kernels::stackvm::unary(nncase::runtime::stackvm::unary_op_t::sqrt,
+                                    input.impl())
+                .expect("unary failed"),
+            new_shape.impl())
+            .expect("reshape failed");
 
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
