@@ -47,15 +47,15 @@ class PadTest
 
 INSTANTIATE_TEST_SUITE_P(Pad, PadTest,
                          testing::Combine(testing::Values(dt_uint8),
-                                          testing::Values(dims_t{2, 3})));
+                                          testing::Values(dims_t{1, 3, 24, 24})));
 
 TEST_P(PadTest, Pad) {
 
     // expected
     size_t size = 0;
-    int64_t pad_ptr[] = {0, 0, 0, 1};
+    int64_t pad_ptr[] = {0, 0, 0, 0, 0, 0, 0, 0};
     auto pad =
-        hrt::create(dt_int64, {4},
+        hrt::create(dt_int64, {8},
                     {reinterpret_cast<gsl::byte *>(pad_ptr), sizeof(pad_ptr)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");

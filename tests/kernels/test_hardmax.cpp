@@ -45,11 +45,12 @@ class HardmaxTest
     runtime_tensor input;
 };
 
-INSTANTIATE_TEST_SUITE_P(Hardmax, HardmaxTest,
-                         testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 3, 16, 16},
-                                                          dims_t{1, 3},
-                                                          dims_t{1, 3, 16})));
+INSTANTIATE_TEST_SUITE_P(
+    Hardmax, HardmaxTest,
+    testing::Combine(testing::Values(dt_float32),
+                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 3},
+                                     dims_t{1, 3, 16}, dims_t{1},
+                                     dims_t{3, 3})));
 
 TEST_P(HardmaxTest, hardmax) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);

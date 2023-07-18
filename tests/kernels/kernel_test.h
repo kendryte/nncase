@@ -1044,10 +1044,10 @@ class KernelTest {
     bool is_same_tensor(runtime::runtime_tensor &lhs,
                         runtime::runtime_tensor &rhs) {
         if (lhs.shape() != rhs.shape()) {
-            if (rhs.shape().size() == 0 && lhs.shape().size() == 1 &&
-                lhs.shape()[0] == 1)
-                return true;
-            return false;
+            if (rhs.shape().size() != 0 || lhs.shape().size() != 1 ||
+                lhs.shape()[0] != 1) {
+                return false;
+            }
         }
 
         return kernels::stackvm::apply(
@@ -1167,10 +1167,10 @@ class KernelTest {
     bool cosine_similarity_tensor(runtime::runtime_tensor &lhs,
                                   runtime::runtime_tensor &rhs) {
         if (lhs.shape() != rhs.shape()) {
-            if (rhs.shape().size() == 0 && lhs.shape().size() == 1 &&
-                lhs.shape()[0] == 1)
-                return true;
-            return false;
+            if (rhs.shape().size() != 0 || lhs.shape().size() != 1 ||
+                lhs.shape()[0] != 1) {
+                return false;
+            }
         }
 
         std::vector<float> vec1;

@@ -28,23 +28,23 @@ using namespace ortki;
 
 class InstanceNormalizationTest
     : public KernelTest,
-      public ::testing::TestWithParam<
-          std::tuple<nncase::typecode_t, dims_t, dims_t, dims_t>> {
+      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape, scale_shape, b_shape] = GetParam();
+        auto &&[typecode, l_shape] = GetParam();
 
         input =
             hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
         init_tensor(input);
 
-        scale = hrt::create(typecode, scale_shape,
+        scale = hrt::create(typecode, {l_shape[1]},
                             host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
         init_tensor(scale);
 
-        b = hrt::create(typecode, b_shape, host_runtime_tensor::pool_cpu_only)
+        b = hrt::create(typecode, {l_shape[1]},
+                        host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
         init_tensor(b);
     }
@@ -59,9 +59,8 @@ class InstanceNormalizationTest
 
 INSTANTIATE_TEST_SUITE_P(instance_normalization, InstanceNormalizationTest,
                          testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 3, 16, 16}),
-                                          testing::Values(dims_t{3}),
-                                          testing::Values(dims_t{3})));
+                                          testing::Values(dims_t{1, 3, 16, 16},
+                                                          dims_t{1, 2, 4, 8})));
 
 TEST_P(InstanceNormalizationTest, instance_normalization) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
@@ -70,7 +69,7 @@ TEST_P(InstanceNormalizationTest, instance_normalization) {
 
     // expected
     auto output_ort =
-        ortki_InstanceNormalization(l_ort, scale_ort, b_ort, 0.01f);
+        ortki_InstanceNormalization(l_ort, scale_ort, b_ort, 1e-4f);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
@@ -81,7 +80,7 @@ TEST_P(InstanceNormalizationTest, instance_normalization) {
                         .expect("create tensor failed");
 
     // actual
-    float epsilon_ptr[] = {0.01f};
+    float epsilon_ptr[] = {1e-4f};
     auto epsilon = hrt::create(nncase::dt_float32, {1},
                                {reinterpret_cast<gsl::byte *>(epsilon_ptr),
                                 sizeof(epsilon_ptr)},
