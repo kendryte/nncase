@@ -276,8 +276,12 @@ internal partial class Quantizer
                     }
                 }
 
-                var quantSchemeString = JsonConvert.SerializeObject(quantScheme);
+                var quantSchemeString = JsonConvert.SerializeObject(quantScheme, Newtonsoft.Json.Formatting.Indented);
                 _quantizeOptions.QuantScheme = quantSchemeString;
+                if (Path.Exists(DumpScope.Current.Directory))
+                {
+                    File.WriteAllText(Path.Join(DumpScope.Current.Directory, "..", "..", "QuantScheme.json"), _quantizeOptions.QuantScheme);
+                }
             }
 
             if (_quantizeOptions.DumpQuantError)
@@ -290,19 +294,16 @@ internal partial class Quantizer
             // 原本设计导入json功能将来会被集成在nncase studio中，在网页中交互直接复制粘贴json字符串到QuantScheme参数中比较合适，此时以下代码应走上面的分支，
             // 但是目前由于没有nncase studio，c#与python调试时不可能粘贴数万行的json，可在此处手动临时开启下面的分支，这样导入json时，QuantScheme填入json文件的路径即可。
             // 若未来不再需要nncase studio，也可直接写死代码只保留下面的分支逻辑，但目前建议先用if的方式保留代码。另外注意，UnitTestExportQuantScheme,UnitTestDumpQuantError等所有与QuantScheme有关的test也需要随之调整。
-#if true
             string readJson = _quantizeOptions.QuantScheme;
-            var quantScheme = JsonConvert.DeserializeObject<QuantScheme>(readJson);
-            var ranges = GetRangesFromConfig(quantScheme!);
-            AssignByChannelRanges(ranges);
-            AssignDataTypeFromConfig(quantScheme!);
-            if (_quantizeOptions.DumpQuantError)
-            {
-                await DumpQuantErrorFromConfig(ranges);
-            }
-#else
-            string readJson = _quantizeOptions.QuantScheme;
-            using (StreamReader r = new StreamReader(readJson))
+
+            // load from stream
+            // var quantScheme = JsonConvert.DeserializeObject<QuantScheme>(readJson);
+            // var ranges = GetRangesFromConfig(quantScheme!);
+            // AssignByChannelRanges(ranges);
+            // AssignDataTypeFromConfig(quantScheme!);
+
+            // load from file
+            using (var r = new StreamReader(readJson))
             {
                 string json = r.ReadToEnd();
                 var quantScheme = JsonConvert.DeserializeObject<QuantScheme>(json);
@@ -314,7 +315,6 @@ internal partial class Quantizer
                     await DumpQuantErrorFromConfig(ranges);
                 }
             }
-#endif
         }
 
         // // 3. Choose better quant method using cosine, and bind info with ir.
