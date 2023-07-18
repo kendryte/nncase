@@ -29,7 +29,6 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         default_cfg = toml.load(os.path.join(config_root, 'config.toml'))
 
         new_cfg = None
-        # print('override_cfg = {0}'.format(override_cfg))
         if override_cfg is not None:
             if os.path.isfile(override_cfg):
                 new_cfg = toml.load(override_cfg)
@@ -37,11 +36,11 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                 new_cfg = toml.loads(override_cfg)
         config = self.update_config(default_cfg, new_cfg)
         self.cfg = self.validte_config(config)
-        # print('self.cfg = {0}'.format(self.cfg))
 
         case_name = case_name.replace('[', '_').replace(']', '_')
         self.case_dir = os.path.join(self.cfg['root'], case_name)
         self.clear(self.case_dir)
+        os.makedirs(self.case_dir)
 
         self.inputs: List[Dict] = []
         self.calibs: List[Dict] = []
@@ -180,6 +179,12 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                 v['eval'] = False
                 v['infer'] = False
                 print("WARN: target[{0}] not found".format(k))
+
+        # disable cpu target in k230/k510 CI
+        if test_utils.in_ci() and len(test_utils.kpu_targets()) != 0:
+            config['target']['cpu']['eval'] = False
+            config['target']['cpu']['infer'] = False
+
         return config
 
     def update_config(self, config: Dict, override_cfg: Dict) -> Dict:
@@ -193,21 +198,9 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
 
         return config
 
-    def run(self, model_path: Union[List[str], str]):
-        if isinstance(model_path, str):
-            case_dir = os.path.dirname(model_path)
-        elif isinstance(model_path, list):
-            case_dir = os.path.dirname(model_path[0])
-        self.run_single(case_dir, model_path)
-
     def clear(self, case_dir):
-        if test_utils.in_ci():
-            if os.path.exists(self.cfg['root']):
-                shutil.rmtree(self.cfg['root'])
-        else:
-            if os.path.exists(case_dir):
-                shutil.rmtree(case_dir)
-        os.makedirs(case_dir)
+        if os.path.exists(case_dir):
+            shutil.rmtree(case_dir)
 
     @ abstractmethod
     def parse_model(self, model_path: Union[List[str], str]):
@@ -221,62 +214,51 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
     def import_model(self, compiler, model_content, import_options):
         pass
 
-    def run_single(self, case_dir: str, model_file: Union[List[str], str]):
+    def run(self, model_file: Union[List[str], str]):
         if not self.inputs:
             self.parse_model(model_file)
 
-        self.generate_all_data(case_dir)
+        self.generate_all_data()
         self.write_compile_opt()
 
-        expected = self.cpu_infer(case_dir, model_file)
+        expected = self.cpu_infer(model_file)
         targets = self.cfg['target']
         model_content = self.read_model_file(model_file)
         import_options = nncase.ImportOptions()
 
         compiler = None
-        # print('case_dir = {0}'.format(case_dir))
         dump_hist = self.cfg['dump_hist']
         for k_target, v_target in targets.items():
-            # print('{0} = {1}'.format(k_target, v_target))
-            tmp_dir = os.path.join(case_dir, 'tmp')
-            # os.makedirs(tmp_dir, exist_ok=True)
+            tmp_dir = os.path.join(self.case_dir, 'tmp')
             if v_target['eval'] or v_target['infer']:
                 compile_options = self.get_compile_options(k_target, tmp_dir)
                 compiler = nncase.Compiler(compile_options)
-                # print('compile_option.dump_dir = {0}, compiler.dump_dir = {1}'.format(compile_options.dump_dir, compiler._compile_options.dump_dir))
                 self.import_model(compiler, model_content, import_options)
 
-            # eval
-            if v_target['eval']:
-                # os.makedirs(os.path.join(case_dir, 'eval'), exist_ok=True)
-                for k_mode, v_mode in v_target['mode'].items():
-                    # print('{0} = {1}'.format(k_mode, v_mode))
-                    if v_mode['enabled']:
-                        os.makedirs(tmp_dir, exist_ok=True)
-                        actual = self.run_evaluator(compiler, compile_options.dump_dir)
-                        target_dir = os.path.join(case_dir, 'eval', k_target)
-                        os.makedirs(target_dir, exist_ok=True)
-                        mode_dir = os.path.join(target_dir, k_mode)
-                        shutil.move(tmp_dir, mode_dir)
+            for stage in ['eval', 'infer']:
+                if v_target[stage]:
+                    for k_mode, v_mode in v_target['mode'].items():
+                        if v_mode['enabled']:
+                            os.makedirs(tmp_dir, exist_ok=True)
+                            if stage == 'eval':
+                                actual = self.run_evaluator(compiler, tmp_dir)
+                            else:
+                                actual = self.run_inference(
+                                    compiler, k_target, v_mode['enabled'], tmp_dir)
+                            target_dir = os.path.join(self.case_dir, stage, k_target)
+                            os.makedirs(target_dir, exist_ok=True)
+                            mode_dir = os.path.join(target_dir, k_mode)
+                            shutil.move(tmp_dir, mode_dir)
+                            judge, result = self.compare_results(
+                                expected, actual, stage, k_target, v_target['simarity_name'], k_mode, v_mode['threshold'], self.cfg['dump_hist'], mode_dir)
 
-                        self.check_result(expected, actual, 'eval', k_target,
-                                          v_target['simarity_name'], k_mode, v_mode['threshold'], mode_dir)
+                            if not judge:
+                                if test_utils.in_ci():
+                                    self.clear(self.case_dir)
+                                assert f"Fault result in {stage} + {result}"
 
-            # infer
-            if v_target['infer']:
-                for k_mode, v_mode in v_target['mode'].items():
-                    # print('{0} = {1}'.format(k_mode, v_mode))
-                    if v_mode['enabled']:
-                        os.makedirs(tmp_dir, exist_ok=True)
-                        actual = self.run_inference(
-                            compiler, k_target, v_mode['enabled'], case_dir, compile_options.dump_dir)
-                        target_dir = os.path.join(case_dir, 'infer', k_target)
-                        os.makedirs(target_dir, exist_ok=True)
-                        mode_dir = os.path.join(target_dir, k_mode)
-                        shutil.move(tmp_dir, os.path.join(target_dir, k_mode))
-
-                        self.check_result(expected, actual, 'infer', k_target,
-                                          v_target['simarity_name'], k_mode, v_mode['threshold'], mode_dir)
+        if test_utils.in_ci():
+            self.clear(self.case_dir)
 
     def translate_shape(self, shape):
         if reduce(lambda x, y: x * y, shape) == 0:
@@ -320,10 +302,10 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                 f.write('\n'.join(pre_list[:]) + "\n")
                 f.write("-------------------------\n")
 
-    def generate_all_data(self, case_dir):
-        self.generate_data(case_dir, 'input', self.inputs,
+    def generate_all_data(self):
+        self.generate_data('input', self.inputs,
                            self.cfg['compile_opt'], self.cfg['generator']['inputs'])
-        self.generate_data(case_dir, 'calib', self.calibs,
+        self.generate_data('calib', self.calibs,
                            self.cfg['compile_opt'], self.cfg['generator']['calibs'])
 
     def get_compile_options(self, target, dump_dir):
@@ -364,8 +346,8 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                 model_content.append(f.read())
             return model_content
 
-    def generate_data(self, case_dir: str, name: str, inputs: List[Dict], compile_opt, generator_cfg):
-        os.mkdir(os.path.join(case_dir, name))
+    def generate_data(self, name: str, inputs: List[Dict], compile_opt, generator_cfg):
+        os.mkdir(os.path.join(self.case_dir, name))
         method = generator_cfg['method']
         batch_number = generator_cfg['number']
         args = generator_cfg[method]['args']
@@ -417,9 +399,9 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                     data = generator.from_constant_of_shape(args, dtype)
 
                 if not test_utils.in_ci():
-                    dump_bin_file(os.path.join(case_dir, name,
+                    dump_bin_file(os.path.join(self.case_dir, name,
                                                f'{name}_{input_idx}_{batch_idx}.bin'), data)
-                    dump_txt_file(os.path.join(case_dir, name,
+                    dump_txt_file(os.path.join(self.case_dir, name,
                                                f'{name}_{input_idx}_{batch_idx}.txt'), data)
                 samples.append(data)
             input['data'] = samples
@@ -431,6 +413,8 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         i = 0
         judges = []
         for expected, actual in zip(ref_ouputs, test_outputs):
+            expected = expected.astype(np.float32)
+            actual = actual.astype(np.float32)
             dump_file = os.path.join(dump_dir, 'nncase_result_{0}_hist.csv'.format(i))
             judge, simarity_info = compare_ndarray(
                 expected, actual, simarity_name, threshold, dump_hist, dump_file)

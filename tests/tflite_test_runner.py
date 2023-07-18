@@ -76,7 +76,7 @@ class TfliteTestRunner(TestRunner):
             output_dict['model_shape'] = item['shape']
             self.outputs.append(output_dict)
 
-    def cpu_infer(self, case_dir: str, model_file: bytes):
+    def cpu_infer(self, model_file: bytes):
         interp = tf.lite.Interpreter(model_path=model_file)
         interp.allocate_tensors()
         for idx, value in enumerate(self.inputs):
@@ -84,8 +84,8 @@ class TfliteTestRunner(TestRunner):
                 self.data_pre_process(value['data']), "float32", "CPU")[0]
             interp.set_tensor(value["index"], new_value)
             if self.cfg['compile_opt']['preprocess'] and not test_utils.in_ci():
-                dump_bin_file(os.path.join(case_dir, f'frame_input_{idx}.bin'), new_value)
-                dump_txt_file(os.path.join(case_dir, f'frame_input_{idx}.txt'), new_value)
+                dump_bin_file(os.path.join(self.case_dir, f'frame_input_{idx}.bin'), new_value)
+                dump_txt_file(os.path.join(self.case_dir, f'frame_input_{idx}.txt'), new_value)
 
         interp.invoke()
 
@@ -95,8 +95,8 @@ class TfliteTestRunner(TestRunner):
             data = interp.get_tensor(output['index'])
             results.append(data)
             if not test_utils.in_ci():
-                dump_bin_file(os.path.join(case_dir, f'cpu_result_{i}.bin'), data)
-                dump_txt_file(os.path.join(case_dir, f'cpu_result_{i}.txt'), data)
+                dump_bin_file(os.path.join(self.case_dir, f'cpu_result_{i}.bin'), data)
+                dump_txt_file(os.path.join(self.case_dir, f'cpu_result_{i}.txt'), data)
             i += 1
 
         return results

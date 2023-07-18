@@ -10,7 +10,7 @@ from test_utils import *
 
 
 class Inference:
-    def run_inference(self, compiler, target, ptq_enabled, case_dir, infer_dir):
+    def run_inference(self, compiler, target, ptq_enabled, infer_dir):
         in_ci = test_utils.in_ci()
         kpu_targets = test_utils.kpu_targets()
         port = test_utils.port()
@@ -29,24 +29,24 @@ class Inference:
 
         compile_opt = self.cfg['compile_opt']
         if running_on_evb:
-            outputs = self.run_evb(target, kmodel, compile_opt, case_dir)
+            outputs = self.run_evb(target, kmodel, compile_opt)
         else:
             sim = nncase.Simulator()
             sim.load_model(kmodel)
-            self.set_infer_input(sim, compile_opt, case_dir)
+            self.set_infer_input(sim, compile_opt)
             sim.run()
             outputs = self.dump_infer_output(sim, compile_opt, infer_dir)
         return outputs
 
-    def set_infer_input(self, sim, compile_opt, case_dir):
+    def set_infer_input(self, sim, compile_opt):
         for idx, value in enumerate(self.inputs):
             data = self.transform_input(
                 value['data'], compile_opt['input_type'], "infer")[0]
             dtype = compile_opt['input_type']
             if compile_opt['preprocess'] and dtype != 'float32':
                 if not test_utils.in_ci():
-                    dump_bin_file(os.path.join(case_dir, f'input_{idx}_{dtype}.bin'), data)
-                    dump_txt_file(os.path.join(case_dir, f'input_{idx}_{dtype}.txt'), data)
+                    dump_bin_file(os.path.join(self.case_dir, f'input_{idx}_{dtype}.bin'), data)
+                    dump_txt_file(os.path.join(self.case_dir, f'input_{idx}_{dtype}.txt'), data)
 
             sim.set_input_tensor(idx, nncase.RuntimeTensor.from_numpy(data))
 
@@ -69,7 +69,7 @@ class Inference:
                 dump_txt_file(os.path.join(infer_dir, f'nncase_result_{i}.txt'), output)
         return outputs
 
-    def run_evb(self, target, kmodel, compile_opt, case_dir):
+    def run_evb(self, target, kmodel, compile_opt):
         port = test_utils.port()
         test_executable = test_utils.test_executable(target)
 
@@ -86,7 +86,7 @@ class Inference:
         # send header
         dummy = client_socket.recv(1024)
         header_dict = {}
-        header_dict['case'] = os.path.basename(case_dir)
+        header_dict['case'] = os.path.basename(self.case_dir)
         header_dict['app'] = 1
         header_dict['kmodel'] = 1
         header_dict['inputs'] = len(self.inputs)

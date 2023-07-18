@@ -178,7 +178,7 @@ class OnnxTestRunner(TestRunner):
             output_dict['model_shape'] = [i.dim_value for i in onnx_type.shape.dim]
             self.outputs.append(output_dict)
 
-    def cpu_infer(self, case_dir: str, model_file: bytes):
+    def cpu_infer(self, model_file: bytes):
         # create session
         try:
             print('[onnx]: using simplified model')
@@ -187,14 +187,14 @@ class OnnxTestRunner(TestRunner):
             print(e)
             try:
                 print('[onnx]: using origin model')
-                model_file = os.path.join(case_dir, 'test.onnx')
+                model_file = os.path.join(self.case_dir, 'test.onnx')
                 sess = ort.InferenceSession(model_file)
             except Exception as e:
                 print(e)
                 print('[onnx]: using converted model')
                 onnx_model = onnx.load(model_file)
                 onnx_model = version_converter.convert_version(onnx_model, 8)
-                model_file = os.path.join(case_dir, 'converted.onnx')
+                model_file = os.path.join(self.case_dir, 'converted.onnx')
                 onnx.save_model(onnx_model, model_file)
                 sess = ort.InferenceSession(model_file)
 
@@ -204,15 +204,15 @@ class OnnxTestRunner(TestRunner):
                 self.data_pre_process(input['data']), "float32", "CPU")[0]
             input_dict[input['name']] = new_value
             if self.cfg['compile_opt']['preprocess'] and not test_utils.in_ci():
-                dump_bin_file(os.path.join(case_dir, f'frame_input_{i}.bin'), new_value)
-                dump_txt_file(os.path.join(case_dir, f'frame_input_{i}.txt'), new_value)
+                dump_bin_file(os.path.join(self.case_dir, f'frame_input_{i}.bin'), new_value)
+                dump_txt_file(os.path.join(self.case_dir, f'frame_input_{i}.txt'), new_value)
 
         outputs = sess.run(None, input_dict)
         if not test_utils.in_ci():
             i = 0
             for output in outputs:
-                dump_bin_file(os.path.join(case_dir, f'cpu_result_{i}.bin'), output)
-                dump_txt_file(os.path.join(case_dir, f'cpu_result_{i}.txt'), output)
+                dump_bin_file(os.path.join(self.case_dir, f'cpu_result_{i}.bin'), output)
+                dump_txt_file(os.path.join(self.case_dir, f'cpu_result_{i}.txt'), output)
                 i += 1
 
         return outputs

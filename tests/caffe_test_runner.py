@@ -38,7 +38,7 @@ class CaffeTestRunner(TestRunner):
                 output_dict['model_shape'] = list(caffe_model.blobs[n].data.shape)
                 self.outputs.append(output_dict)
 
-    def cpu_infer(self, case_dir: str, model_file_list):
+    def cpu_infer(self, model_file_list):
         caffe_model = caffe.Net(model_file_list[0], model_file_list[1], caffe.TEST)
 
         for input in self.inputs:
@@ -52,8 +52,8 @@ class CaffeTestRunner(TestRunner):
             result = outputs[output['name']]
             results.append(result)
             if not test_utils.in_ci():
-                dump_bin_file(os.path.join(case_dir, f'cpu_result_{i}.bin'), result)
-                dump_txt_file(os.path.join(case_dir, f'cpu_result_{i}.txt'), result)
+                dump_bin_file(os.path.join(self.case_dir, f'cpu_result_{i}.bin'), result)
+                dump_txt_file(os.path.join(self.case_dir, f'cpu_result_{i}.txt'), result)
 
         return results
 
