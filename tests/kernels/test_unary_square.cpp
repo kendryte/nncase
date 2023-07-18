@@ -203,9 +203,10 @@ TEST_P(UnaryTest, sqrt) {
                         .expect("create tensor failed");
 
     // actual
-    auto output = kernels::stackvm::unary(
-                      nncase::runtime::stackvm::unary_op_t::square, input.impl())
-                      .expect("unary failed");
+    auto output =
+        kernels::stackvm::unary(nncase::runtime::stackvm::unary_op_t::square,
+                                input.impl())
+            .expect("unary failed");
 
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
