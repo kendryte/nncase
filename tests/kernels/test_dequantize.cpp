@@ -83,15 +83,18 @@ TEST_P(DequantizeTest, dequantize) {
                         .expect("create tensor failed");
 
     // actual
-    float_t dequant_param[] = {127, 0.01f};
-    auto dequant_param_ptr =
-        hrt::create(nncase::dt_float32, {2},
-                    {reinterpret_cast<gsl::byte *>(dequant_param),
-                     sizeof(dequant_param)},
-                    true, host_runtime_tensor::pool_cpu_only)
+    quant_param_t quantParam;
+    quantParam.zero_point = 127;
+    quantParam.scale = 0.01f;
+    quant_param_t quant_param[] = {quantParam};
+    auto quant_param_ptr =
+        hrt::create(
+            dt_int64, {1},
+            {reinterpret_cast<gsl::byte *>(quant_param), sizeof(quant_param)},
+            true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto output = kernels::stackvm::dequantize(dt_float32, input.impl(),
-                                               dequant_param_ptr.impl())
+                                               quant_param_ptr.impl())
                       .expect("dequantize failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
@@ -99,7 +102,9 @@ TEST_P(DequantizeTest, dequantize) {
                   cosine_similarity_tensor(expected, actual);
 
     if (!result) {
+        std::cout << "actual ";
         print_runtime_tensor(actual);
+        std::cout << "expected ";
         print_runtime_tensor(expected);
     }
 

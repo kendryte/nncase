@@ -50,7 +50,7 @@ INSTANTIATE_TEST_SUITE_P(
     testing::Combine(testing::Values(dt_float32),
                      testing::Values(dims_t{1, 3, 16, 16}, dims_t{1},
                                      dims_t{8, 8}, dims_t{1, 4, 16},
-                                     dims_t{1, 3, 24, 24})));
+                                     dims_t{1, 3, 24, 24}, dims_t{})));
 
 TEST_P(EluTest, add) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
@@ -80,7 +80,9 @@ TEST_P(EluTest, add) {
                   cosine_similarity_tensor(expected, actual);
 
     if (!result) {
+        std::cout << "actual ";
         print_runtime_tensor(actual);
+        std::cout << "expected ";
         print_runtime_tensor(expected);
     }
 

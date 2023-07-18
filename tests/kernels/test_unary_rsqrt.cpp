@@ -187,12 +187,19 @@ INSTANTIATE_TEST_SUITE_P(
                                      dims_t{16, 1}, dims_t{1, 16, 1},
                                      dims_t{16}, dims_t{1}, dims_t{})));
 
-TEST_P(UnaryTest, log) {
+TEST_P(UnaryTest, rsqrt) {
     OrtKITensor *orts[1];
     orts[0] = runtime_tensor_2_ort_tensor(input);
 
     // expected
-    auto output_ort = ortki_Log(orts[0]);
+    float one_array[] = {1};
+    auto one = hrt::create(input.datatype(), {1},
+                           {reinterpret_cast<gsl::byte *>(one_array),
+                            sizeof(one_array)},
+                           true, host_runtime_tensor::pool_cpu_only)
+                   .expect("create tensor failed");
+    auto output_ort =
+        ortki_Sqrt(ortki_Div(runtime_tensor_2_ort_tensor(one), orts[0]));
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
@@ -204,8 +211,9 @@ TEST_P(UnaryTest, log) {
 
     // actual
     auto output = kernels::stackvm::unary(
-                      nncase::runtime::stackvm::unary_op_t::log, input.impl())
+                      nncase::runtime::stackvm::unary_op_t::rsqrt, input.impl())
                       .expect("unary failed");
+
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     bool result = is_same_tensor(expected, actual) ||

@@ -135,8 +135,10 @@ TEST_P(Conv2DTest, conv2d) {
                   cosine_similarity_tensor(expected, actual);
 
     if (!result) {
-        print_runtime_tensor(expected);
+        std::cout << "actual ";
         print_runtime_tensor(actual);
+        std::cout << "expected ";
+        print_runtime_tensor(expected);
     }
 
     EXPECT_TRUE(result);

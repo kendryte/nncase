@@ -78,11 +78,13 @@ TEST_P(PreluTest, Prelu) {
                       .expect("prelu failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
-    bool result = cosine_similarity_tensor(expected, actual) ||
-                  is_same_tensor(expected, actual);
+    bool result = is_same_tensor(expected, actual) ||
+                  cosine_similarity_tensor(expected, actual);
 
     if (!result) {
+        std::cout << "actual ";
         print_runtime_tensor(actual);
+        std::cout << "expected ";
         print_runtime_tensor(expected);
     }
 

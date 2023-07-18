@@ -45,11 +45,11 @@ class ErfTest
     runtime_tensor input;
 };
 
-INSTANTIATE_TEST_SUITE_P(Erf, ErfTest,
-                         testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 3, 16, 16},
-                                                          dims_t{1, 2, 16},
-                                                          dims_t{8, 8})));
+INSTANTIATE_TEST_SUITE_P(
+    Erf, ErfTest,
+    testing::Combine(testing::Values(dt_float32),
+                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 2, 16},
+                                     dims_t{8, 8}, dims_t{1}, dims_t{})));
 
 TEST_P(ErfTest, erf) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
@@ -69,11 +69,13 @@ TEST_P(ErfTest, erf) {
     auto output = kernels::stackvm::erf(input.impl()).expect("erf failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
-    bool result = cosine_similarity_tensor(expected, actual) ||
-                  is_same_tensor(expected, actual);
+    bool result = is_same_tensor(expected, actual) ||
+                  cosine_similarity_tensor(expected, actual);
 
     if (!result) {
+        std::cout << "actual ";
         print_runtime_tensor(actual);
+        std::cout << "expected ";
         print_runtime_tensor(expected);
     }
 

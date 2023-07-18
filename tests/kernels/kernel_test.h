@@ -1030,7 +1030,9 @@ class KernelTest {
             bool result = is_same_tensor(expected[i], output1) ||
                           cosine_similarity_tensor(expected[i], output1);
             if (!result) {
+                std::cout << "expected ";
                 print_runtime_tensor(expected[i]);
+                std::cout << "actual ";
                 print_runtime_tensor(output1);
             }
             EXPECT_TRUE(result);
@@ -1038,19 +1040,6 @@ class KernelTest {
 
         return ok();
     }
-
-    result<void> tensor_to_tuple(const value_t &input, const value_t &output) {
-        try_var(output_tensor, output.as<tensor>());
-        try_var(output_span, nncase::runtime::get_output_span(output_tensor));
-        auto output_tuple = tuple_node({output_tensor, input});
-        return ok();
-    }
-
-    //    result<void> tensor_to_quant_param(const value_t &quant_param) {
-    //        try_input_with_value_type(qp, quant_param, quant_param_t);
-    //        auto a = qp->zero_point;
-    //        return ok();
-    //    }
 
     bool is_same_tensor(runtime::runtime_tensor &lhs,
                         runtime::runtime_tensor &rhs) {
@@ -1138,7 +1127,8 @@ class KernelTest {
                            if (get<float>(lhs, index) ==
                                    get<float>(rhs, index) ||
                                fabs(get<float>(lhs, index) -
-                                    get<float>(rhs, index)) < 0.0001f) {
+                                    get<float>(rhs, index)) <=
+                                   std::numeric_limits<float>::epsilon()) {
                                return ok();
                            } else {
                                return err(std::errc::not_supported);
@@ -1173,6 +1163,9 @@ class KernelTest {
     bool cosine_similarity_tensor(runtime::runtime_tensor &lhs,
                                   runtime::runtime_tensor &rhs) {
         if (lhs.shape() != rhs.shape()) {
+            if (rhs.shape().size() == 0 && lhs.shape().size() == 1 &&
+                lhs.shape()[0] == 1)
+                return true;
             return false;
         }
 

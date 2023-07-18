@@ -59,6 +59,7 @@ class Inference:
         compile_options.shape_bucket_options.range_info = {}
         compile_options.shape_bucket_options.segments_count = 2
         compile_options.shape_bucket_options.fix_var_map = {}
+        compile_options.input_file = cfg.compile_opt.input_file
         return compile_options
 
     def set_infer_input(self, preprocess, case_dir, sim):

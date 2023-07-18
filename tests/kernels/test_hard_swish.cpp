@@ -48,7 +48,7 @@ INSTANTIATE_TEST_SUITE_P(
     HardSwish, HardSwishTest,
     testing::Combine(testing::Values(dt_float32),
                      testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 2},
-                                     dims_t{1}, dims_t{16, 16})));
+                                     dims_t{1}, dims_t{16, 16}, dims_t{})));
 
 TEST_P(HardSwishTest, hard_swish) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
@@ -88,7 +88,9 @@ TEST_P(HardSwishTest, hard_swish) {
                   cosine_similarity_tensor(expected, actual);
 
     if (!result) {
+        std::cout << "actual ";
         print_runtime_tensor(actual);
+        std::cout << "expected ";
         print_runtime_tensor(expected);
     }
 

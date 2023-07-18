@@ -80,7 +80,9 @@ TEST_P(FlattenTest, flatten) {
                   cosine_similarity_tensor(expected, actual);
 
     if (!result) {
+        std::cout << "actual ";
         print_runtime_tensor(actual);
+        std::cout << "expected ";
         print_runtime_tensor(expected);
     }
 
@@ -114,7 +116,9 @@ TEST_P(FlattenTest, flatten) {
                    cosine_similarity_tensor(expected1, actual1);
 
     if (!result1) {
+        std::cout << "actual1 ";
         print_runtime_tensor(actual1);
+        std::cout << "expected1 ";
         print_runtime_tensor(expected1);
     }
 
@@ -148,7 +152,9 @@ TEST_P(FlattenTest, flatten) {
                    cosine_similarity_tensor(expected2, actual2);
 
     if (!result2) {
+        std::cout << "actual2 ";
         print_runtime_tensor(actual2);
+        std::cout << "expected2 ";
         print_runtime_tensor(expected2);
     }
 
