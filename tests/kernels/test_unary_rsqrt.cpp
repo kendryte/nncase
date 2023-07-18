@@ -185,7 +185,7 @@ INSTANTIATE_TEST_SUITE_P(
                      testing::Values(dims_t{1, 3, 16, 16}, dims_t{3, 16, 16},
                                      dims_t{3, 16, 1}, dims_t{16, 16},
                                      dims_t{16, 1}, dims_t{1, 16, 1},
-                                     dims_t{16}, dims_t{1} /*, dims_t{}*/)));
+                                     dims_t{16}, dims_t{1}, dims_t{})));
 
 TEST_P(UnaryTest, rsqrt) {
     OrtKITensor *orts[1];
@@ -199,7 +199,7 @@ TEST_P(UnaryTest, rsqrt) {
                            true, host_runtime_tensor::pool_cpu_only)
                    .expect("create tensor failed");
     auto output_ort =
-        ortki_Sqrt(ortki_Div(orts[0], runtime_tensor_2_ort_tensor(one)));
+        ortki_Sqrt(ortki_Div(runtime_tensor_2_ort_tensor(one), orts[0]));
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
@@ -209,6 +209,13 @@ TEST_P(UnaryTest, rsqrt) {
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
+    //    int64_t new_shape_array[] = {1};
+    //    auto new_shape =
+    //        hrt::create(dt_int64, {1},
+    //                    {reinterpret_cast<gsl::byte *>(new_shape_array),
+    //                     sizeof(new_shape_array)},
+    //                    true, host_runtime_tensor::pool_cpu_only)
+    //            .expect("create tensor failed");
     // actual
     auto output = kernels::stackvm::unary(
                       nncase::runtime::stackvm::unary_op_t::sqrt, input.impl())
