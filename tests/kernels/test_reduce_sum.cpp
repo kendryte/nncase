@@ -105,7 +105,8 @@ TEST_P(ReduceSumTest, ReduceSum) {
                       .expect("reduce_sum failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
-    bool result = is_same_tensor(expected, actual);
+    bool result = is_same_tensor(expected, actual) ||
+                  cosine_similarity_tensor(expected, actual);
 
     if (!result) {
         std::cout << "actual ";

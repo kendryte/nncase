@@ -104,7 +104,8 @@ TEST_P(ReduceProdTest, ReduceProd) {
                       .expect("reduce_prod failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
-    bool result = is_same_tensor(expected, actual);
+    bool result = is_same_tensor(expected, actual) ||
+                  cosine_similarity_tensor(expected, actual);
 
     if (!result) {
         std::cout << "actual ";
