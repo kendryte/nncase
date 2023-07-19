@@ -193,7 +193,17 @@ PYBIND11_MODULE(_nncase, m) {
                       py::overload_cast<>(
                           &quantize_options::export_weight_range_by_channel),
                       py::overload_cast<bool>(
-                          &quantize_options::export_weight_range_by_channel));
+                          &quantize_options::export_weight_range_by_channel))
+        .def_property(
+            "dump_quant_error",
+            py::overload_cast<>(&quantize_options::dump_quant_error),
+            py::overload_cast<bool>(&quantize_options::dump_quant_error))
+        .def_property(
+            "dump_quant_error_symmetric_for_signed",
+            py::overload_cast<>(
+                &quantize_options::dump_quant_error_symmetric_for_signed),
+            py::overload_cast<bool>(
+                &quantize_options::dump_quant_error_symmetric_for_signed));
 
     py::class_<shape_bucket_options>(m, "ShapeBucketOptions")
         .def(py::init())
