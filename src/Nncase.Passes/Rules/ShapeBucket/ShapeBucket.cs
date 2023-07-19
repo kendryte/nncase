@@ -73,7 +73,16 @@ public class BucketFusion : Fusion
         get
         {
             var names = Name.Split("_");
-            return names.Length == 2 && (names[0] == "Binary" || names[0] == "Unary");
+            var list = new[] { "MatMul", "Conv2D", "Conv2DTranspose", "Transpose" };
+            foreach (string name in names)
+            {
+                if (list.Contains(name))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
     }
 
@@ -135,6 +144,7 @@ public partial class CallToFusion : RewriteRule<Pattern>
         }
         Init(matchResult);
 
+        // todo: process for tuple
         Console.WriteLine(call.Target.GetType().Name);
         var argsMarkerData = CollectInputs(call);
         var args = argsMarkerData.Select(pair => pair.Item1).ToArray();
@@ -146,6 +156,7 @@ public partial class CallToFusion : RewriteRule<Pattern>
         var newCall = MakeNewCall(call, fusionVars, argsMarkerData);
         var f = MakeNewFusion(fusionVars, args, newCall, set);
         var outerCall = MakeNewOuterCall(newCall, f, args);
+        ArgsChecker(args);
         _counter++;
 
         return outerCall;
@@ -231,21 +242,38 @@ public class MultiUserCallToFusion : CallToFusion
     {
         if (expr is Call c && c.Target is not BucketFusion)
         {
-            return CallValidator.ValidTarget(c.Target) && expr.Users.Count > 1;
+            // todo: user count > 1 is must?? maybe not
+            // && expr.Users.Count > 1;
+            return CallValidator.ValidTarget(c.Target);
         }
 
         return false;
     });
 
+    protected override (Expr, int)[] CollectInputs(Call call) =>
+        call.Arguments.ToArray().Select((arg, i) =>
+        {
+            if (arg is not TensorConst)
+            {
+                return (arg, i);
+            }
+
+            return (arg, -1);
+        }).Where(pair => pair.Item2 != -1).Select(pair => (pair.arg, pair.Item2)).ToArray();
+
     public override bool Check(Call call)
     {
-        var names = string.Join("\n", call.Users.ToArray().OfType<Call>().Select(c => ((BucketFusion)c.Target).Name).ToArray());
-        Console.WriteLine(names);
-        Console.WriteLine();
-        if (!call.Users.Where(x => x != body).All(user => user is Call c && c.Target is BucketFusion))
-        {
+        return !call.Users.ToArray().OfType<Var>().Any();
+        // call.Users.ToArray().OfType<Call>()
+        // var names = string.Join("\n", call.Users.ToArray().OfType<Call>().Select(c => ((BucketFusion)c.Target).Name).ToArray());
+        // Console.WriteLine(names);
+        // Console.WriteLine();
+
+        // if (!call.Users.Where(x => x != body).All(user => user is Call c && c.Target is BucketFusion))
+        // {
+            // return false;
             throw new NotImplementedException();
-        }
+        // }
 
         return true;
     }
@@ -302,7 +330,7 @@ public class UnaryToFusion : MarkerCallToFusion<Unary>
 // todo: do more check for binary
 public class BinaryToFusion : MarkerCallToFusion<Binary>
 {
-    public override bool Check(Call call) => call.CheckedShape.Rank > 1;
+    // public override bool Check(Call call) => call.CheckedShape.Rank > 1;
 }
 
 [RuleGenerator]
@@ -503,7 +531,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
 
     public Expr? GetReplace(Call outerCall, BucketFusion fusion, Expr fusionBody)
     {
-        if (fusion.IsSimple)
+        if (fusion.IsSimple || outerCall.CheckedType is TupleType || outerCall.CheckedShape.Rank == 0 || outerCall.Arguments.ToArray().Any(arg => arg.CheckedType is TupleType))
         {
             return fusion.Parameters.ToArray().Zip(outerCall.Arguments.ToArray()).Aggregate(fusion.Body, (sum, data) =>
             {

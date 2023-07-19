@@ -169,6 +169,7 @@ public class MergeBucketFusion : ModulePass
         private Function _fn;
         private Expr _root => _fn.Body;
 
+        private bool changed = false;
         public void Replace(Function fn)
         {
             _fn = fn;
@@ -181,6 +182,16 @@ public class MergeBucketFusion : ModulePass
         // 3. InputVar 去重？？？
         protected override Expr VisitLeafCall(Call expr)
         {
+            // 回避错误的user计数与visitor的访问
+            // visitor的逻辑会先访问叶子节点
+            // 因此如果VisitLeaf叶子改了其user
+            // 那么expr同级的其他operand即便被修改了也还是会访问到
+            // 因此一次只能做一个
+            if (changed)
+            {
+                return expr;
+            }
+
             // var fusionPattern = new FusionBucket().Pattern;
             if (expr is Call outerCall && outerCall.Target is BucketFusion fusion)
             {
@@ -216,6 +227,7 @@ public class MergeBucketFusion : ModulePass
                     // ReplaceAllUsesWith(outerCall, newCall);
                     DumpIR(_root, "rootAfterMerge", relPath);
                     MergeBucketFusion.counter++;
+                    changed = true;
                     return newCall;
                 }
             }
@@ -226,9 +238,9 @@ public class MergeBucketFusion : ModulePass
         protected override Expr DefaultVisitLeaf(Expr expr) => expr;
     }
 
-    private static bool detectedRing(Call outerCall)
+    private static bool detectedRing(Call outerCall, Expr[] users)
     {
-        var users = outerCall.Users.ToArray();
+        // var users = outerCall.Users.ToArray();
         var userArgs = users.SelectMany(user => ((Call)user).Arguments.ToArray()).ToArray();
         foreach (var arg in userArgs)
         {
@@ -255,8 +267,16 @@ public class MergeBucketFusion : ModulePass
     {
         var users = outerCall.Users.ToArray();
 
+        if (users.Count() == 0)
+        {
+            return (null, new Expr[]{});
+        }
         if (users.OfType<Call>().All(user => user.Target is GetItem))
         {
+            // todo: test
+            // 需要去重，可能一个getItem的user使用了多个getItem
+            // 但是去重的过程需要在collect info的时候做
+            // 不然被去重的user不能正确的被替换掉
             users = users.SelectMany(user => user.Users.ToArray()).ToArray();
         }
 
@@ -278,16 +298,34 @@ public class MergeBucketFusion : ModulePass
         // }
 
         // has invalid
-        if (userInfos.Length != users.Length)
+        if (userInfos.Length != users.Distinct().ToArray().Length)
         {
             Console.WriteLine("not all call");
             return (null, new Expr[]{});
         }
 
-        if (detectedRing(outerCall))
+        if (outerCall.Users.Any(user => user is Tuple) || users.Any(user => user.CheckedType is TupleType))
+        {
+            return (null, new Expr[]{});
+        }
+
+        if (users.Any(user =>
+                user is Call c && c.Arguments.ToArray().Any(arg => arg is Tuple || arg.CheckedType is TupleType)))
+        {
+            // todo: not implement
+            return (null, new Expr[]{});
+        }
+
+        if (detectedRing(outerCall, users))
         {
             Console.WriteLine("HasRing");
             return (null, new Expr[]{});
+        }
+
+        if (outerCall.Users.ToArray().OfType<Call>().All(user => user.Target is GetItem))
+        {
+            Console.WriteLine("MeregForGetItem");
+            Console.WriteLine(relPath);
         }
 
         // todo: with tuple
@@ -328,8 +366,10 @@ public class MergeBucketFusion : ModulePass
         // var newArgs = MakeNewArgs(outerCall, userInfos, newVarsMap);
         var newFusion = MakeNewFusion(newBody, fusion, newParams, oldUsers);
         var newCall = MakeNewCall(newFusion, newArgs);
+        ArgsChecker(newArgs);
         return (newCall, users);
     }
+
 
     record VarReplInfo(Var[] vars, Expr[] exprs);
     // params和args就通过这个来构建
@@ -337,9 +377,8 @@ public class MergeBucketFusion : ModulePass
 
     //
 
-    // 所有新的param
-    // 新的param与新的arg的对应关系
-    // 所有fusion的var和新的var的对应关系 （用于替换fusion中的var） todo：
+    // userArg -> oldVar 原始fusion的var
+    // oldVar -> RlativeNewVar 替换的过程
     record FusionVarMapper(Var[] NewParams, (Expr UserArg, Var RelativeNewVar, Var OldVar)[] ArgMap)
     {
         public Dictionary<Var, Var> oldToNewParam()
@@ -359,6 +398,7 @@ public class MergeBucketFusion : ModulePass
 
     private static FusionVarMapper MakeNewVarsMap(UserInfo[] userInfos, (Expr, Var)[] fusionDict, Call outerCall)
     {
+        var originUsers = outerCall.Users.ToArray();
         var originArgs = fusionDict.Concat(userInfos.SelectMany(info =>
         {
             var user = info.User;
@@ -367,8 +407,9 @@ public class MergeBucketFusion : ModulePass
                 if (info.GetItem != null)
                 {
                     var args = user.Arguments.ToArray().OfNoConst().ToArray();
+                    // 这里需要删除所有outerCall user里面的getItem，有可能一个call用了多个getItem
                     var index = args.IndexOf(info.GetItem);
-                    return args.Zip(fusion.Parameters.ToArray()).ToArray().RemoveAt(index);
+                    return args.Zip(fusion.Parameters.ToArray()).Where(pair => !originUsers.Contains(pair.Item1)).ToArray();
                 }
 
                 return user.Arguments.ToArray().OfNoConst().Zip(fusion.Parameters.ToArray());
@@ -376,6 +417,12 @@ public class MergeBucketFusion : ModulePass
 
             throw new NotImplementedException();
         })).ToArray();
+
+        var oldVars = originArgs.Select(item => item.Item2).ToArray();
+        if (oldVars.ToHashSet().Count != oldVars.Length)
+        {
+            throw new InvalidOperationException("oldVar has dup");
+        }
 
         var users = userInfos.Select(x => x.User).ToArray();
         // 保证var顺序以及字典
@@ -389,12 +436,13 @@ public class MergeBucketFusion : ModulePass
                 var (totalDict, totalVars) = sum;
                 var (arg, oldVar) = pair;
                 var fusionResult = FindFirst(fusionDict, arg);
-                // todo: 这里没有判断成功
+                // fusion的参数中查看是否有这个arg,有的话则用fusion对应的var来替代
                 if (fusionResult != null)
                 {
                     return (totalDict.Append((arg, fusionResult!, oldVar)), totalVars);
                 }
 
+                // 查看当前累积的参数中是否有这个arg,有的话用arg对应的新var来替代
                 var result = FindFirst(totalDict.Select(tuple => (tuple.UserArg, tuple.RelativeNewVar)).ToArray(), arg);
                 if (result != null)
                 {
@@ -402,7 +450,7 @@ public class MergeBucketFusion : ModulePass
                 }
 
                 // todo: maybe put fusion body in this is better?
-                // arg is outerCall or arg is otherOuterCall
+                // arg是outerCall那就不需要添加任何var，因为这个arg会被替换为fusion的body
                 if (arg == outerCall)
                 {
                     return (totalDict, totalVars);
@@ -414,6 +462,7 @@ public class MergeBucketFusion : ModulePass
                     return (totalDict, totalVars);
                 }
 
+                // 普通的其他输入，进行替换
                 var newVar = new Var(arg.CheckedType);
                 return (totalDict.Append((arg, newVar, oldVar)), totalVars.Append(newVar));
             });
@@ -664,6 +713,7 @@ public class MergeBucketFusion : ModulePass
 
             throw new NotImplementedException();
         }).ToArray();
+
     private static UserInfo[] CollectUsers(Call outerCall, Expr[] users)
     {
         // todo: process for getItem multi user
@@ -677,6 +727,8 @@ public class MergeBucketFusion : ModulePass
 
         var originUsers = outerCall.Users.ToArray();
         var outputs = users
+                // 去重，避免多个getItem被一个expr使用
+            .Distinct()
             .Select((user, userIndex) =>
             {
                 // 找到fusion在user的arguments的哪个index

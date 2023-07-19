@@ -146,17 +146,63 @@ public class UnitTestMergeMultiUserFusion : TransformTestBase
     }
 
     [Fact]
-    public async Task TestTupleGetItemFusion()
+    public async Task TestTupleGetItemFusionSimple()
     {
         var input0 = Testing.Rand<float>(1, 3, 24, 24);
         var inputVar0 = new Var(new TensorType(input0.ElementType, input0.Shape));
-        var call = MakeSingleSimpleFusionCall(expr => new IR.Tuple(expr + 1f, expr - 1f), inputVar0);
+        var call = MakeSingleSimpleFusionCall(expr => new IR.Tuple(expr + 1f, expr - 1f), Softmax(inputVar0, 0));
         var abs0 = MakeSingleSimpleFusionCall(Abs, call[0]);
         var abs1 = MakeSingleSimpleFusionCall(Abs, call[1]);
         await RunTest(new IR.Tuple(new[] { abs0, abs1 }), new[] { inputVar0 },
             new Dictionary<Var, IValue> { { inputVar0, Value.FromTensor(input0) } });
     }
 
+    [Fact]
+    public async Task TestTupleGetItemMultiUser()
+    {
+        var input0 = Testing.Rand<float>(1, 3, 24, 24);
+        var inputVar0 = new Var(new TensorType(input0.ElementType, input0.Shape));
+        var call = MakeSingleSimpleFusionCall(expr => new IR.Tuple(expr + 1f, expr - 1f), Softmax(inputVar0, 0));
+        var abs00 = MakeSingleSimpleFusionCall(Abs, call[0]);
+        var abs01 = MakeSingleSimpleFusionCall(Abs, call[0]);
+        var abs10 = MakeSingleSimpleFusionCall(Abs, call[1]);
+        var abs11 = MakeSingleSimpleFusionCall(Abs, call[1]);
+        await RunTest(new IR.Tuple(new[] { abs00, abs01, abs10, abs11 }), new[] { inputVar0 },
+            new Dictionary<Var, IValue> { { inputVar0, Value.FromTensor(input0) } });
+    }
+
+    [Fact]
+    public async Task TestGetItemWithRing()
+    {
+        // 29用到了28，所以其实是有环的
+        // %26 = %ShapeOf_269_Gather_270_Gather_272(%23) 2 -1002975247: // (i64, i64)
+        // %27 = GetItem(%26, const(i32 : 0)) 1 -1105276988: // i64
+        // %28 = %Reshape_271(%27) 2 761954617: // i64[1]
+        // %29 = GetItem(%26, const(i32 : 1)) 2 195526821: // i64
+        // %30 = %Binary_166_MatMul_1(%23) 2 1373803502: // f32[?,?,?]
+        // %31 = %Reshape_276_Binary_275_Gather_274_ShapeOf_273(%30) 1 1087046740: // i64[1]
+        // %32 = (const(i64[1] : {-1L}), %31, const(i64[1] : {24L})): // (i64[1], i64[1], i64[1])
+        // %33 = %Concat_277(%32) 2 708748629: // i64[3]
+        // %34 = %MatMul_0_MatMul_2(%23, %24, %25, %28, %29, %30, %33) 1 1042934643: // f32[?,?,?]
+        // %39 = %MatMul_3_MatMul_4_Binary_167_MatMul_5_Binary_168(%23, %37, %35, %38, %33, %28, %29) 1 274933965: // f32[?,?,?]
+        var input0 = Testing.Rand<float>(1, 3, 24, 24);
+        var inputVar0 = new Var(new TensorType(input0.ElementType, input0.Shape));
+        var s = Softmax(inputVar0, 0);
+        // 26
+        var call = MakeSingleSimpleFusionCall(expr => new IR.Tuple(expr + 1f, expr - 1f), s);
+        // 27
+        var a0 = call[0];
+        // 28
+        var abs = MakeSingleSimpleFusionCall(Abs, a0);
+        // 29
+        var a1 = call[1];
+        // 39
+        var compute0 = MakeSimpleFusionCall(expr => expr[0] * expr[1], a1, abs);
+        var compute1 = MakeSimpleFusionCall(expr => expr[0] * expr[1], a1, abs);
+        var res = MakeSimpleFusionCall(expr => expr[0] + expr[1], compute0, compute1);
+        await RunTest(res, new[] { inputVar0 },
+            new Dictionary<Var, IValue> { { inputVar0, Value.FromTensor(input0) } });
+    }
     private static async Task RunTestNotMatch(Expr body, Var[] inputVar, Dictionary<Var, IValue> dict)
     {
         var module = MakeModule(body, inputVar);

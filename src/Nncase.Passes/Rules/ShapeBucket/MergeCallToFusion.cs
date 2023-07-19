@@ -174,6 +174,7 @@ public partial class MergeNextCallToFusion : MergeFusionBase
         {
             throw new InvalidOperationException($"{newFusion.Name} is Invalid");
         }
+        ArgsChecker(newArgs);
 
         return call;
     }
@@ -293,6 +294,7 @@ public partial class MergePrevCallToFusion : MergeFusionBase
         });
 
         DumpIR(call, $"{Counter++}_{_prevCallStr}_{fusion.Name}_after");
+        ArgsChecker(newArgs);
         return call;
     }
 

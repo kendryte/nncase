@@ -13,6 +13,24 @@ namespace Nncase.Passes.Rules.ShapeBucket;
 
 internal static class ShapeBucketHelper
 {
+    public static void ArgsChecker(Expr[] newArgs)
+    {
+        if (newArgs.Any(arg => arg is Var v && v.Name.StartsWith("var_")))
+        {
+            throw new InvalidOperationException("Args has Var in fusion");
+        }
+
+        if (newArgs.Any(arg => arg is IR.Tuple))
+        {
+            throw new InvalidOperationException("Args has tuple");
+        }
+
+        if (newArgs.ToHashSet().Count() != newArgs.Length)
+        {
+            throw new InvalidOperationException("Has Repeat args");
+        }
+    }
+
     public static void PrintEffectVar(string name, Var[] set)
     {
         Console.WriteLine($"{name} EffectVar:");
@@ -169,11 +187,12 @@ public static class CallValidator
         { typeof(Reshape).TypeHandle, 0 },
         { typeof(Unsqueeze).TypeHandle, 0 },
         { typeof(Squeeze).TypeHandle, 0 },
-        // btm
         { typeof(Slice).TypeHandle, 0 },
-        { typeof(Concat).TypeHandle, 0 },
         { typeof(Cast).TypeHandle, 0 },
-        { typeof(Stack).TypeHandle, 0 },
+
+        // { typeof(Stack).TypeHandle, 0 },
+        // { typeof(Concat).TypeHandle, 0 },
+
         { typeof(Expand).TypeHandle, 0 },
         { typeof(ConstantOfShape).TypeHandle, 0 },
         { typeof(Where).TypeHandle, 0 },
