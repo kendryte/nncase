@@ -26,13 +26,14 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class ReduceArgMinTest
-    : public KernelTest,
-      public ::testing::TestWithParam<
-          std::tuple<nncase::typecode_t, typecode_t, dims_t, dims_t>> {
+class ReduceArgMinTest : public KernelTest,
+                         public ::testing::TestWithParam<
+                             std::tuple<nncase::typecode_t, typecode_t, dims_t,
+                                        dims_t, int64_t, int64_t, int64_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode1, typecode2, l_shape, r_shape] = GetParam();
+        auto &&[typecode1, typecode2, l_shape, r_shape, value1, value2,
+                value3] = GetParam();
 
         float_t a_array[] = {1, 2, 3, 4, 5, 6, 7, 8};
         a = hrt::create(
@@ -40,19 +41,22 @@ class ReduceArgMinTest
                 {reinterpret_cast<gsl::byte *>(a_array), sizeof(a_array)}, true,
                 host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
-        int64_t axis_array[] = {-1};
+        axis_value = value1;
+        int64_t axis_array[] = {axis_value};
         axis = hrt::create(typecode2, r_shape,
                            {reinterpret_cast<gsl::byte *>(axis_array),
                             sizeof(axis_array)},
                            true, host_runtime_tensor::pool_cpu_only)
                    .expect("create tensor failed");
-        int64_t keepDims_array[] = {0};
+        keepDims_value = value2;
+        int64_t keepDims_array[] = {keepDims_value};
         keepDims = hrt::create(typecode2, r_shape,
                                {reinterpret_cast<gsl::byte *>(keepDims_array),
                                 sizeof(keepDims_array)},
                                true, host_runtime_tensor::pool_cpu_only)
                        .expect("create tensor failed");
-        int64_t select_last_idx_array[] = {0};
+        select_last_idx_value = value3;
+        int64_t select_last_idx_array[] = {select_last_idx_value};
         select_last_idx =
             hrt::create(typecode2, r_shape,
                         {reinterpret_cast<gsl::byte *>(select_last_idx_array),
@@ -66,21 +70,26 @@ class ReduceArgMinTest
   protected:
     runtime_tensor a;
     runtime_tensor axis;
+    int64_t axis_value;
     runtime_tensor keepDims;
+    int64_t keepDims_value;
     runtime_tensor select_last_idx;
+    int64_t select_last_idx_value;
 };
 
-INSTANTIATE_TEST_SUITE_P(ReduceArgMax, ReduceArgMinTest,
-                         testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dt_int64),
-                                          testing::Values(dims_t{8}),
-                                          testing::Values(dims_t{1})));
+INSTANTIATE_TEST_SUITE_P(
+    ReduceArgMin, ReduceArgMinTest,
+    testing::Combine(testing::Values(dt_float32), testing::Values(dt_int64),
+                     testing::Values(dims_t{8}), testing::Values(dims_t{1}),
+                     testing::Values(-1, 0), testing::Values(1, 0),
+                     testing::Values(1, 0)));
 
 TEST_P(ReduceArgMinTest, ReduceArgMin) {
 
     // expected
     size_t size = 0;
-    auto output_ort = ortki_ArgMin(runtime_tensor_2_ort_tensor(a), 0, 0, 0);
+    auto output_ort = ortki_ArgMin(runtime_tensor_2_ort_tensor(a), axis_value,
+                                   keepDims_value, select_last_idx_value);
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
