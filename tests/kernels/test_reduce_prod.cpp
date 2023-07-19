@@ -26,21 +26,18 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class ReduceProdTest
-    : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<
-          nncase::typecode_t, typecode_t, dims_t, dims_t, int64_t, int64_t>> {
+class ReduceProdTest : public KernelTest,
+                       public ::testing::TestWithParam<
+                           std::tuple<nncase::typecode_t, typecode_t, dims_t,
+                                      dims_t, int64_t, int64_t, axes_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode1, typecode2, l_shape, r_shape, value1, value2] =
-            GetParam();
+        auto &&[typecode1, typecode2, l_shape, r_shape, value1, value2,
+                axis_arry] = GetParam();
 
-        float_t a_array[] = {1, 2, 3, 4, 5, 6, 7, 8};
-        a = hrt::create(
-                typecode1, l_shape,
-                {reinterpret_cast<gsl::byte *>(a_array), sizeof(a_array)}, true,
-                host_runtime_tensor::pool_cpu_only)
+        a = hrt::create(typecode1, l_shape, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
+        init_tensor(a);
 
         keepDims_value = value2;
         int64_t keepDims_array[] = {keepDims_value};
@@ -59,6 +56,7 @@ class ReduceProdTest
                 .expect("create tensor failed");
 
         axis_value = value1;
+        axis_arry1 = axis_arry;
     }
 
     void TearDown() override {}
@@ -66,6 +64,7 @@ class ReduceProdTest
   protected:
     runtime_tensor a;
     int64_t axis_value;
+    axes_t axis_arry1;
     int64_t keepDims_value;
     runtime_tensor keepDims;
     runtime_tensor init_value;
@@ -73,9 +72,13 @@ class ReduceProdTest
 
 INSTANTIATE_TEST_SUITE_P(
     ReduceProd, ReduceProdTest,
-    testing::Combine(testing::Values(dt_float32), testing::Values(dt_int64),
-                     testing::Values(dims_t{8}), testing::Values(dims_t{1}),
-                     testing::Values(0, -1), testing::Values(0, 1)));
+    testing::Combine(
+        testing::Values(dt_float32), testing::Values(dt_int64),
+        testing::Values(dims_t{1, 3, 16, 16}), testing::Values(dims_t{1}),
+        testing::Values(0, -1, -2, -3, 1, 2, 3), testing::Values(0, 1),
+        testing::Values(axes_t{2, 3}, axes_t{2, -1}, axes_t{1, 2, 3},
+                        axes_t{-1, -2, -3}, axes_t{0, 1, 2, 3},
+                        axes_t{-1, -2, -3, -4})));
 
 TEST_P(ReduceProdTest, ReduceProd) {
 
@@ -116,6 +119,133 @@ TEST_P(ReduceProdTest, ReduceProd) {
 
     // compare
     EXPECT_TRUE(result);
+
+    std::vector<int64_t> vec(axis_arry1.begin(), axis_arry1.end());
+    if (axis_arry1.size() == 2) {
+        int64_t axis_arr[2];
+        std::copy(vec.begin(), vec.end(), axis_arr);
+        // expected
+        size_t size1 = 0;
+        auto axis1 = hrt::create(dt_int64, {2},
+                                 {reinterpret_cast<gsl::byte *>(axis_arr),
+                                  sizeof(axis_arr)},
+                                 true, host_runtime_tensor::pool_cpu_only)
+                         .expect("create tensor failed");
+        auto output_ort1 = ortki_ReduceProd(runtime_tensor_2_ort_tensor(a),
+                                            axis_arr, 2, keepDims_value);
+        void *ptr_ort1 = tensor_buffer(output_ort1, &size1);
+        dims_t shape1(tensor_rank(output_ort1));
+        tensor_shape(output_ort1, reinterpret_cast<int64_t *>(shape1.data()));
+        auto expected1 =
+            hrt::create(dt_float32, shape1,
+                        {reinterpret_cast<gsl::byte *>(ptr_ort1), size1}, true,
+                        host_runtime_tensor::pool_cpu_only)
+                .expect("create tensor failed");
+
+        // actual
+        auto output1 = kernels::stackvm::reduce(
+                           runtime::stackvm::reduce_op_t::prod, a.impl(),
+                           axis1.impl(), init_value.impl(), keepDims.impl())
+                           .expect("reduce_max failed");
+        runtime_tensor actual1(output1.as<tensor>().expect("as tensor failed"));
+
+        bool result1 = is_same_tensor(expected1, actual1) ||
+                       cosine_similarity_tensor(expected1, actual1);
+
+        if (!result1) {
+            std::cout << "actual ";
+            print_runtime_tensor(actual1);
+            std::cout << "expected ";
+            print_runtime_tensor(expected1);
+        }
+
+        // compare
+        EXPECT_TRUE(result1);
+    }
+
+    if (axis_arry1.size() == 3) {
+        int64_t axis_arr[3];
+        std::copy(vec.begin(), vec.end(), axis_arr);
+        // expected
+        size_t size2 = 0;
+        auto axis2 = hrt::create(dt_int64, {3},
+                                 {reinterpret_cast<gsl::byte *>(axis_arr),
+                                  sizeof(axis_arr)},
+                                 true, host_runtime_tensor::pool_cpu_only)
+                         .expect("create tensor failed");
+        auto output_ort2 = ortki_ReduceProd(runtime_tensor_2_ort_tensor(a),
+                                            axis_arr, 3, keepDims_value);
+        void *ptr_ort2 = tensor_buffer(output_ort2, &size2);
+        dims_t shape2(tensor_rank(output_ort2));
+        tensor_shape(output_ort2, reinterpret_cast<int64_t *>(shape2.data()));
+        auto expected2 =
+            hrt::create(dt_float32, shape2,
+                        {reinterpret_cast<gsl::byte *>(ptr_ort2), size2}, true,
+                        host_runtime_tensor::pool_cpu_only)
+                .expect("create tensor failed");
+
+        // actual
+        auto output2 = kernels::stackvm::reduce(
+                           runtime::stackvm::reduce_op_t::prod, a.impl(),
+                           axis2.impl(), init_value.impl(), keepDims.impl())
+                           .expect("reduce_max failed");
+        runtime_tensor actual2(output2.as<tensor>().expect("as tensor failed"));
+
+        bool result2 = is_same_tensor(expected2, actual2) ||
+                       cosine_similarity_tensor(expected2, actual2);
+
+        if (!result2) {
+            std::cout << "actual ";
+            print_runtime_tensor(actual2);
+            std::cout << "expected ";
+            print_runtime_tensor(expected2);
+        }
+
+        // compare
+        EXPECT_TRUE(result2);
+    }
+
+    if (axis_arry1.size() == 4) {
+        int64_t axis_arr[4];
+        std::copy(vec.begin(), vec.end(), axis_arr);
+        // expected
+        size_t size3 = 0;
+        auto axis3 = hrt::create(dt_int64, {4},
+                                 {reinterpret_cast<gsl::byte *>(axis_arr),
+                                  sizeof(axis_arr)},
+                                 true, host_runtime_tensor::pool_cpu_only)
+                         .expect("create tensor failed");
+        auto output_ort3 = ortki_ReduceProd(runtime_tensor_2_ort_tensor(a),
+                                            axis_arr, 4, keepDims_value);
+        void *ptr_ort3 = tensor_buffer(output_ort3, &size3);
+        dims_t shape3(tensor_rank(output_ort3));
+        tensor_shape(output_ort3, reinterpret_cast<int64_t *>(shape3.data()));
+        auto expected3 =
+            hrt::create(dt_float32, shape3,
+                        {reinterpret_cast<gsl::byte *>(ptr_ort3), size3}, true,
+                        host_runtime_tensor::pool_cpu_only)
+                .expect("create tensor failed");
+
+        // actual
+        auto output3 = kernels::stackvm::reduce(
+                           runtime::stackvm::reduce_op_t::prod, a.impl(),
+                           axis3.impl(), init_value.impl(), keepDims.impl())
+                           .expect("reduce_max failed");
+        runtime_tensor actual3(output3.as<tensor>().expect("as tensor failed"));
+
+        bool result3 = is_same_tensor(expected3, actual3) ||
+                       cosine_similarity_tensor(expected3, actual3);
+
+        if (!result3) {
+            std::cout << "actual ";
+            print_runtime_tensor(actual3);
+            std::cout << "expected ";
+            print_runtime_tensor(expected3);
+        }
+
+        // compare
+        EXPECT_TRUE(result3);
+    }
 }
 
 int main(int argc, char *argv[]) {

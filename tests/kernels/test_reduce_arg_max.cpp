@@ -35,12 +35,9 @@ class ReduceArgMaxTest : public KernelTest,
         auto &&[typecode1, typecode2, l_shape, r_shape, value1, value2,
                 value3] = GetParam();
 
-        float_t a_array[] = {1, 2, 3, 4, 5, 6, 7, 8};
-        a = hrt::create(
-                typecode1, l_shape,
-                {reinterpret_cast<gsl::byte *>(a_array), sizeof(a_array)}, true,
-                host_runtime_tensor::pool_cpu_only)
+        a = hrt::create(typecode1, l_shape, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
+        init_tensor(a);
         axis_value = value1;
         int64_t axis_array[] = {axis_value};
         axis = hrt::create(typecode2, r_shape,

@@ -28,26 +28,62 @@ using namespace ortki;
 
 class TopKTest
     : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
+      public ::testing::TestWithParam<
+          std::tuple<nncase::typecode_t, dims_t, int64_t, int64_t, int64_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape] = GetParam();
+        auto &&[typecode, l_shape, value1, value2, value3] = GetParam();
 
         input =
             hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
         init_tensor(input);
+
+        axis_value = value1;
+        int64_t axis_array[] = {value1};
+        axis = hrt::create(dt_int64, {1},
+                           {reinterpret_cast<gsl::byte *>(axis_array),
+                            sizeof(axis_array)},
+                           true, host_runtime_tensor::pool_cpu_only)
+                   .expect("create tensor failed");
+
+        largest_value = value2;
+        int64_t largest_array[] = {value2};
+        largest = hrt::create(dt_int64, {1},
+                              {reinterpret_cast<gsl::byte *>(largest_array),
+                               sizeof(largest_array)},
+                              true, host_runtime_tensor::pool_cpu_only)
+                      .expect("create tensor failed");
+
+        sorted_value = value3;
+        int64_t sorted_array[] = {value3};
+        sorted = hrt::create(dt_int64, {1},
+                             {reinterpret_cast<gsl::byte *>(sorted_array),
+                              sizeof(sorted_array)},
+                             true, host_runtime_tensor::pool_cpu_only)
+                     .expect("create tensor failed");
     }
 
     void TearDown() override {}
 
   protected:
     runtime_tensor input;
+    int64_t axis_value;
+    runtime_tensor axis;
+    int64_t largest_value;
+    runtime_tensor largest;
+    int64_t sorted_value;
+    runtime_tensor sorted;
 };
 
-INSTANTIATE_TEST_SUITE_P(TopK, TopKTest,
-                         testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 2, 4, 8})));
+INSTANTIATE_TEST_SUITE_P(
+    TopK, TopKTest,
+    testing::Combine(testing::Values(dt_float32),
+                     testing::Values(dims_t{1, 2, 4, 8}, dims_t{1, 3, 16, 16},
+                                     dims_t{3, 3, 6}, dims_t{16, 16}, dims_t{1},
+                                     dims_t{1, 3}),
+                     testing::Values(0, -1), testing::Values(0, 1),
+                     testing::Values(0, 1)));
 
 TEST_P(TopKTest, TopK) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
@@ -61,7 +97,9 @@ TEST_P(TopKTest, TopK) {
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto output_ort1 = tensor_seq_get_value(
-        ortki_TopK(l_ort, runtime_tensor_2_ort_tensor(k), -1, 1, 1), 0);
+        ortki_TopK(l_ort, runtime_tensor_2_ort_tensor(k), axis_value,
+                   largest_value, sorted_value),
+        0);
     void *ptr_ort1 = tensor_buffer(output_ort1, &size);
     dims_t shape1(tensor_rank(output_ort1));
     tensor_shape(output_ort1, reinterpret_cast<int64_t *>(shape1.data()));
@@ -73,7 +111,9 @@ TEST_P(TopKTest, TopK) {
 
     size = 0;
     auto output_ort2 = tensor_seq_get_value(
-        ortki_TopK(l_ort, runtime_tensor_2_ort_tensor(k), -1, 1, 1), 1);
+        ortki_TopK(l_ort, runtime_tensor_2_ort_tensor(k), axis_value,
+                   largest_value, sorted_value),
+        1);
     void *ptr_ort2 = tensor_buffer(output_ort2, &size);
     dims_t shape2(tensor_rank(output_ort2));
     tensor_shape(output_ort2, reinterpret_cast<int64_t *>(shape2.data()));
@@ -86,24 +126,6 @@ TEST_P(TopKTest, TopK) {
     runtime_tensor expected[] = {expected1, expected2};
 
     // actual
-    int64_t axis_array[] = {-1};
-    auto axis = hrt::create(dt_int64, {1},
-                            {reinterpret_cast<gsl::byte *>(axis_array),
-                             sizeof(axis_array)},
-                            true, host_runtime_tensor::pool_cpu_only)
-                    .expect("create tensor failed");
-    int64_t largest_array[] = {1};
-    auto largest = hrt::create(dt_int64, {1},
-                               {reinterpret_cast<gsl::byte *>(largest_array),
-                                sizeof(largest_array)},
-                               true, host_runtime_tensor::pool_cpu_only)
-                       .expect("create tensor failed");
-    int64_t sorted_array[] = {1};
-    auto sorted = hrt::create(dt_int64, {1},
-                              {reinterpret_cast<gsl::byte *>(sorted_array),
-                               sizeof(sorted_array)},
-                              true, host_runtime_tensor::pool_cpu_only)
-                      .expect("create tensor failed");
     auto output = kernels::stackvm::top_k(input.impl(), k.impl(), axis.impl(),
                                           largest.impl(), sorted.impl())
                       .expect("topk failed");
