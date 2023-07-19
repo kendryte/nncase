@@ -84,7 +84,7 @@ TEST_P(ReduceSumTest, ReduceSum) {
 
     std::vector<int64_t> vec(axis_arry1.begin(), axis_arry1.end());
     // expected
-    if (axis_arry1.size() == 2) {
+    if (axis_arry1.size() == 1) {
         size_t size = 0;
         int64_t axis_array[1];
         std::copy(vec.begin(), vec.end(), axis_array);
