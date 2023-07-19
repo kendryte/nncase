@@ -137,14 +137,13 @@ public partial class CallToFusion : RewriteRule<Pattern>
     public Expr? GetReplace(Call call, IMatchResult matchResult)
     {
         _currentCall = call;
-        DumpIR((Expr)matchResult.Root, "0_origin", RelPath);
+        DumpIR((Expr)matchResult.Root, "origin", RelPath);
         if (!Check(call))
         {
             return null;
         }
         Init(matchResult);
 
-        // todo: process for tuple
         Console.WriteLine(call.Target.GetType().Name);
         var argsMarkerData = CollectInputs(call);
         var args = argsMarkerData.Select(pair => pair.Item1).ToArray();
@@ -156,6 +155,7 @@ public partial class CallToFusion : RewriteRule<Pattern>
         var newCall = MakeNewCall(call, fusionVars, argsMarkerData);
         var f = MakeNewFusion(fusionVars, args, newCall, set);
         var outerCall = MakeNewOuterCall(newCall, f, args);
+        DumpIR(outerCall, "after", RelPath);
         ArgsChecker(args);
         _counter++;
 
@@ -207,8 +207,29 @@ public partial class CallToFusion : RewriteRule<Pattern>
         // index should map to origin input, not inputsWithMarker index
         // var pairs = inputsWithMarkerAndIndex.Select((input, i) => (i, (Expr)input)).ToArray();
 
+        var indices = inputsWithMarkerAndIndex.Select(x => x.originIndex).ToArray();
+        var newArgs = call.Arguments.ToArray().Select((arg, i) =>
+        {
+            if (indices.Contains(i))
+            {
+                var fields = inputsWithMarkerAndIndex.Where(x => x.originIndex == i).Select(x => x.arg).ToArray();
+                if (arg.CheckedType is TupleType)
+                {
+                    return new IR.Tuple(fields);
+                }
+                if (fields.Length > 1)
+                {
+                    throw new InvalidOperationException();
+                }
+
+                return fields.First();
+            }
+
+            return arg;
+        }).ToArray();
         // arguments用到其他input的地方就要replace对应的input
-        var newCall = ReplaceUtility.ReplaceCallParams(call.Target, call.Arguments.ToArray(), inputsWithMarkerAndIndex);
+        var newCall = call.With(arguments: newArgs);
+        // var newCall = ReplaceUtility.ReplaceCallParams(call.Target, call.Arguments.ToArray(), inputsWithMarkerAndIndex);
         var newCallWithMarker = ProcessForOuterCall(newCall);
         return newCallWithMarker;
     }
@@ -251,15 +272,24 @@ public class MultiUserCallToFusion : CallToFusion
     });
 
     protected override (Expr, int)[] CollectInputs(Call call) =>
-        call.Arguments.ToArray().Select((arg, i) =>
+        call.Arguments.ToArray().SelectMany((arg, i) =>
         {
-            if (arg is not TensorConst)
+            if (arg is IR.Tuple tuple)
             {
-                return (arg, i);
+                return tuple.Fields
+                    .ToArray()
+                    .Where(field => field is not TensorConst)
+                    .Select(field => (field, i))
+                    .ToArray();
             }
 
-            return (arg, -1);
-        }).Where(pair => pair.Item2 != -1).Select(pair => (pair.arg, pair.Item2)).ToArray();
+            if (arg is not TensorConst)
+            {
+                return new[] { (arg, i) };
+            }
+
+            return new[] { (arg, -1) };
+        }).Where(pair => pair.Item2 != -1).Select(pair => (pair.Item1, pair.Item2)).ToArray();
 
     public override bool Check(Call call)
     {

@@ -190,8 +190,9 @@ public static class CallValidator
         { typeof(Slice).TypeHandle, 0 },
         { typeof(Cast).TypeHandle, 0 },
 
-        // { typeof(Stack).TypeHandle, 0 },
-        // { typeof(Concat).TypeHandle, 0 },
+        // tuple input
+        { typeof(Stack).TypeHandle, 0 },
+        { typeof(Concat).TypeHandle, 0 },
 
         { typeof(Expand).TypeHandle, 0 },
         { typeof(ConstantOfShape).TypeHandle, 0 },

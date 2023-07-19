@@ -50,7 +50,7 @@ public class UnitCallToFusionTest : TransformTestBase
     {
         var input = Testing.Rand<float>(1, 3, 24, 24);
         var inputVar = new Var(new TensorType(input.ElementType, input.Shape));
-        var abs = Abs(inputVar);
+        var abs = Abs(Softmax(inputVar, 0));
         var fusionVar1 = new Var(new TensorType(input.ElementType, input.Shape));
         var c1 = new Call(new BucketFusion("stackvm", fusionVar1 + 1f, new[] { fusionVar1 }, new Var[] { }), abs);
         var fusionVar2 = new Var(new TensorType(input.ElementType, input.Shape));
@@ -58,5 +58,39 @@ public class UnitCallToFusionTest : TransformTestBase
         var body = new IR.Tuple(c1, c2);
         Dumpper.DumpIR(body, "Body");
         TestMatched<MultiUserCallToFusion>(body, new Dictionary<Var, IValue> { { inputVar, Value.FromTensor(input) } });
+    }
+
+    [Fact]
+    public void TestConcatToFusion()
+    {
+        var input0 = Testing.Rand<float>(1, 3, 24, 24);
+        var inputVar0 = new Var(new TensorType(input0.ElementType, input0.Shape));
+        var input1 = Testing.Rand<float>(1, 3, 24, 24);
+        var inputVar1 = new Var(new TensorType(input1.ElementType, input1.Shape));
+        var input2 = Testing.Rand<float>(1, 3, 24, 24);
+        var inputVar2 = new Var(new TensorType(input2.ElementType, input2.Shape));
+        var inputs = new[] { inputVar0, inputVar1, inputVar2 }.Select(x => Softmax(x, 0)).ToArray();
+        var cat = Concat(new IR.Tuple(inputs), 0);
+        TestMatched<MultiUserCallToFusion>(cat,
+            new Dictionary<Var, IValue>
+            {
+                { inputVar0, Value.FromTensor(input0) },
+                { inputVar1, Value.FromTensor(input1) },
+                { inputVar2, Value.FromTensor(input2) },
+            });
+    }
+`
+    [Fact]
+    public void TestConcatSingleInputToFusion()
+    {
+        var input0 = Testing.Rand<float>(1, 3, 24, 24);
+        var inputVar0 = new Var(new TensorType(input0.ElementType, input0.Shape));
+        var inputs = new[] { inputVar0 }.Select(x => Softmax(x, 0)).ToArray();
+        var cat = Concat(new IR.Tuple(inputs), 0);
+        TestMatched<MultiUserCallToFusion>(cat,
+            new Dictionary<Var, IValue>
+            {
+                { inputVar0, Value.FromTensor(input0) }
+            });
     }
 }
