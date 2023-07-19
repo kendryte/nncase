@@ -23,6 +23,8 @@ use_mix_quant = false
 use_mse_quant_w = false
 export_quant_scheme = false
 export_weight_range_by_channel = true
+dump_quant_error = false
+dump_quant_error_symmetric_for_signed = true
 quant_type = "uint8"
 w_quant_type = "uint8"
 # ['NoClip', 'Kld']

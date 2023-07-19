@@ -57,6 +57,8 @@ class PTQTensorOptions:
     use_mse_quant_w: bool
     export_quant_scheme: bool
     export_weight_range_by_channel: bool
+    dump_quant_error: bool
+    dump_quant_error_symmetric_for_signed: bool
     quant_type: str
     w_quant_type: str
     calibrate_method: str
@@ -72,6 +74,8 @@ class PTQTensorOptions:
         self.use_mse_quant_w = False
         self.export_quant_scheme: bool = False
         self.export_weight_range_by_channel: bool = False
+        self.dump_quant_error: bool = False
+        self.dump_quant_error_symmetric_for_signed: True
         self.quant_type: str = "uint8"
         self.w_quant_type: str = "uint8"
         self.calibrate_method: str = "Kld"
@@ -228,6 +232,8 @@ class Compiler:
         self._quantize_options.quant_scheme = ptq_dataset_options.quant_scheme
         self._quantize_options.export_quant_scheme = ptq_dataset_options.export_quant_scheme
         self._quantize_options.export_weight_range_by_channel = ptq_dataset_options.export_weight_range_by_channel
+        self._quantize_options.dump_quant_error = ptq_dataset_options.dump_quant_error
+        self._quantize_options.dump_quant_error_symmetric_for_signed = ptq_dataset_options.dump_quant_error_symmetric_for_signed
 
     def dump_range_options(self) -> DumpRangeTensorOptions:
         raise NotImplementedError("dump_range_options")
