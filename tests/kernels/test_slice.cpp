@@ -52,9 +52,12 @@ class SliceTest
     runtime_tensor input;
 };
 
-INSTANTIATE_TEST_SUITE_P(Slice, SliceTest,
-                         testing::Combine(testing::Values(dt_int32),
-                                          testing::Values(dims_t{2, 3, 4, 5})));
+INSTANTIATE_TEST_SUITE_P(
+    Slice, SliceTest,
+    testing::Combine(testing::Values(dt_int32),
+                     testing::Values(dims_t{2, 3, 4, 5}, dims_t{1, 4, 5, 6},
+                                     dims_t{1, 1, 1, 120}, dims_t{2, 2, 5, 6},
+                                     dims_t{1, 1, 2, 60})));
 
 TEST_P(SliceTest, Slice) {
 

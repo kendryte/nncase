@@ -37,6 +37,7 @@ class LogSoftmaxTest : public KernelTest,
             hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
         init_tensor(input);
+
         axis_value = value >= (long)l_shape.size() ? 0 : value;
         axis_value = axis_value < -(long)l_shape.size() ? 0 : axis_value;
         int64_t axis_ptr[] = {axis_value};

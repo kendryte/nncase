@@ -73,7 +73,6 @@ TEST_P(RangeTest, Range) {
     auto step_ort = runtime_tensor_2_ort_tensor(step);
 
     // expected
-
     auto output_ort = ortki_Range(begin_ort, end_ort, step_ort);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);

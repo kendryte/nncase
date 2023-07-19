@@ -45,10 +45,12 @@ class NormalLikeTest
     runtime_tensor input;
 };
 
-INSTANTIATE_TEST_SUITE_P(NormalLike, NormalLikeTest,
-                         testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 3, 16,
-                                                                 16})));
+INSTANTIATE_TEST_SUITE_P(
+    NormalLike, NormalLikeTest,
+    testing::Combine(testing::Values(dt_float32),
+                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 2, 4, 8},
+                                     dims_t{1, 3, 16}, dims_t{1, 3}, dims_t{1},
+                                     dims_t{})));
 
 TEST_P(NormalLikeTest, normal_like) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
@@ -89,8 +91,8 @@ TEST_P(NormalLikeTest, normal_like) {
             .expect("normal_like failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
-    bool result = cosine_similarity_tensor(expected, actual) ||
-                  is_same_tensor(expected, actual);
+    bool result = is_same_tensor(expected, actual) ||
+                  cosine_similarity_tensor(expected, actual);
 
     if (!result) {
         std::cout << "actual ";

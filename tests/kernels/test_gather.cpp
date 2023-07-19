@@ -26,20 +26,16 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class GatherTest
-    : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
+class GatherTest : public KernelTest,
+                   public ::testing::TestWithParam<
+                       std::tuple<nncase::typecode_t, dims_t, int64_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode, shape] = GetParam();
+        auto &&[typecode, shape, value] = GetParam();
 
-        //        size_t size = 0;
-        int32_t input_array[] = {0, 1, 2, 3};
-        input = hrt::create(dt_int32, shape,
-                            {reinterpret_cast<gsl::byte *>(input_array),
-                             sizeof(input_array)},
-                            true, host_runtime_tensor::pool_cpu_only)
+        input = hrt::create(typecode, shape, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
+        init_tensor(input);
 
         int64_t indices_array[] = {0, 0, 1, 1};
         indices = hrt::create(dt_int64, shape,
@@ -48,7 +44,8 @@ class GatherTest
                               true, host_runtime_tensor::pool_cpu_only)
                       .expect("create tensor failed");
 
-        int64_t batchDims_array[1] = {0};
+        batchDims_value = value;
+        int64_t batchDims_array[1] = {value};
         batchDims = hrt::create(dt_int64, dims_t{1},
                                 {reinterpret_cast<gsl::byte *>(batchDims_array),
                                  sizeof(batchDims_array)},
@@ -62,18 +59,22 @@ class GatherTest
     runtime_tensor input;
     runtime_tensor indices;
     runtime_tensor batchDims;
+    int64_t batchDims_value;
 };
 
 INSTANTIATE_TEST_SUITE_P(Gather, GatherTest,
-                         testing::Combine(testing::Values(dt_int32, dt_int64),
-                                          testing::Values(dims_t{2, 2})));
+                         testing::Combine(testing::Values(dt_int32, dt_int64,
+                                                          dt_float32, dt_int64,
+                                                          dt_int8, dt_int16),
+                                          testing::Values(dims_t{2, 2}),
+                                          testing::Values(-1, 0, 1)));
 
 TEST_P(GatherTest, gather) {
     auto input_ort = runtime_tensor_2_ort_tensor(input);
     auto indices_ort = runtime_tensor_2_ort_tensor(indices);
 
     // expected
-    auto output_ort = ortki_Gather(input_ort, indices_ort, 0);
+    auto output_ort = ortki_Gather(input_ort, indices_ort, batchDims_value);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));

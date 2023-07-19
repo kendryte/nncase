@@ -58,7 +58,8 @@ INSTANTIATE_TEST_SUITE_P(
     Rank, RankTest,
     testing::Combine(testing::Values(dt_int16, dt_int8, dt_float32, dt_uint8),
                      testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 3, 8, 8},
-                                     dims_t{1, 3, 1})));
+                                     dims_t{1, 3, 1}, dims_t{1, 3, 16},
+                                     dims_t{1, 3}, dims_t{1}, dims_t{})));
 
 TEST_P(RankTest, rank) {
     // actual
@@ -76,8 +77,8 @@ TEST_P(RankTest, rank) {
             .expect("reshape failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
-    bool result = cosine_similarity_tensor(expected, actual) ||
-                  is_same_tensor(expected, actual);
+    bool result = is_same_tensor(expected, actual) ||
+                  cosine_similarity_tensor(expected, actual);
 
     if (!result) {
         std::cout << "actual ";
