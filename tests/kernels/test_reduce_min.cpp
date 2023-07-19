@@ -26,14 +26,14 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class ReduceMinTest : public KernelTest,
-                      public ::testing::TestWithParam<
-                          std::tuple<nncase::typecode_t, typecode_t, dims_t,
-                                     dims_t, int64_t, axes_t>> {
+class ReduceMinTest
+    : public KernelTest,
+      public ::testing::TestWithParam<std::tuple<
+          nncase::typecode_t, typecode_t, dims_t, dims_t, int64_t, axes_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode1, typecode2, l_shape, r_shape, value,
-                axis_arry] = GetParam();
+        auto &&[typecode1, typecode2, l_shape, r_shape, value, axis_arry] =
+            GetParam();
 
         a = hrt::create(typecode1, l_shape, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
@@ -70,14 +70,15 @@ class ReduceMinTest : public KernelTest,
 
 INSTANTIATE_TEST_SUITE_P(
     ReduceMin, ReduceMinTest,
-    testing::Combine(
-        testing::Values(dt_float32), testing::Values(dt_int64),
-        testing::Values(dims_t{1, 3, 16, 16}), testing::Values(dims_t{1}),
-        testing::Values(0, 1),
-        testing::Values(/*axes_t{0},*/ axes_t{-1}, axes_t{-2}, /*axes_t{-3}, axes_t{1},*/
-                        axes_t{2}, axes_t{3}, axes_t{2, 3}, axes_t{-2, -1},
-                        axes_t{1, 2, 3}, axes_t{-1, -2, -3}, axes_t{0, 1, 2, 3},
-                        axes_t{-1, -2, -3, -4})));
+    testing::Combine(testing::Values(dt_float32), testing::Values(dt_int64),
+                     testing::Values(dims_t{1, 3, 16, 16}),
+                     testing::Values(dims_t{1}), testing::Values(0, 1),
+                     testing::Values(/*axes_t{0},*/ axes_t{-1},
+                                     axes_t{-2}, /*axes_t{-3}, axes_t{1},*/
+                                     axes_t{2}, axes_t{3}, axes_t{2, 3},
+                                     axes_t{-2, -1}, axes_t{1, 2, 3},
+                                     axes_t{-1, -2, -3}, axes_t{0, 1, 2, 3},
+                                     axes_t{-1, -2, -3, -4})));
 
 TEST_P(ReduceMinTest, ReduceMin) {
 
