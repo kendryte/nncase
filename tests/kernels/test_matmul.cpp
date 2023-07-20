@@ -52,9 +52,8 @@ class MatMulTest : public KernelTest,
 INSTANTIATE_TEST_SUITE_P(
     MatMul, MatMulTest,
     testing::Combine(
-        testing::Values(
-            dt_int32, dt_int64
-            /*, dt_float32*/), // todo dt_float32 case have some issue
+        testing::Values(dt_int32, dt_int64,
+                        dt_float32), // todo dt_float32 case have some issue
         testing::Values(dims_t{1, 3}, dims_t{1, 3, 3}, dims_t{1, 2, 3, 3}),
         testing::Values(dims_t{3, 1}, dims_t{1, 3, 3}, dims_t{1, 2, 3, 3})));
 
@@ -78,11 +77,18 @@ TEST_P(MatMulTest, mat_mul) {
                       .expect("matmul failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
-    print_runtime_tensor(actual);
-    print_runtime_tensor(expected);
+    bool result = cosine_similarity_tensor(expected, actual) ||
+                  is_same_tensor(expected, actual);
+
+    if (!result) {
+        std::cout << "actual ";
+        print_runtime_tensor(actual);
+        std::cout << "expected ";
+        print_runtime_tensor(expected);
+    }
+
     // compare
-    EXPECT_TRUE(cosine_similarity_tensor(expected, actual) ||
-                is_same_tensor(expected, actual));
+    EXPECT_TRUE(result);
 }
 
 int main(int argc, char *argv[]) {

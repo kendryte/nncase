@@ -33,7 +33,6 @@ class GatherNDTest
     void SetUp() override {
         auto &&[typecode, shape] = GetParam();
 
-        //        size_t size = 0;
         int32_t input_array[] = {0, 1, 2, 3};
         input = hrt::create(dt_int32, shape,
                             {reinterpret_cast<gsl::byte *>(input_array),
@@ -86,12 +85,21 @@ TEST_P(GatherNDTest, gather_nd) {
     // actual
     auto output = kernels::stackvm::gather_nd(input.impl(), batchDims.impl(),
                                               indices.impl())
-                      .expect("gather failed");
+                      .expect("gather_nd failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
+    bool result = is_same_tensor(expected, actual) ||
+                  cosine_similarity_tensor(expected, actual);
+
+    if (!result) {
+        std::cout << "actual ";
+        print_runtime_tensor(actual);
+        std::cout << "expected ";
+        print_runtime_tensor(expected);
+    }
+
     // compare
-    EXPECT_TRUE(is_same_tensor(expected, actual) ||
-                cosine_similarity_tensor(expected, actual));
+    EXPECT_TRUE(result);
 }
 
 int main(int argc, char *argv[]) {

@@ -77,9 +77,18 @@ TEST_P(TileTest, Tile) {
                       .expect("tile failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
+    bool result = is_same_tensor(expected, actual) ||
+                  cosine_similarity_tensor(expected, actual);
+
+    if (!result) {
+        std::cout << "actual ";
+        print_runtime_tensor(actual);
+        std::cout << "expected ";
+        print_runtime_tensor(expected);
+    }
+
     // compare
-    EXPECT_TRUE(is_same_tensor(expected, actual) ||
-                cosine_similarity_tensor(expected, actual));
+    EXPECT_TRUE(result);
 
     // expected
     int64_t repeats_array1[] = {1, 1, 1, 1};
@@ -104,9 +113,18 @@ TEST_P(TileTest, Tile) {
                        .expect("tile failed");
     runtime_tensor actual1(output1.as<tensor>().expect("as tensor failed"));
 
+    bool result1 = is_same_tensor(expected1, actual1) ||
+                   cosine_similarity_tensor(expected1, actual1);
+
+    if (!result1) {
+        std::cout << "actual1 ";
+        print_runtime_tensor(actual1);
+        std::cout << "expected1 ";
+        print_runtime_tensor(expected1);
+    }
+
     // compare
-    EXPECT_TRUE(is_same_tensor(expected1, actual1) ||
-                cosine_similarity_tensor(expected, actual));
+    EXPECT_TRUE(result1);
 
     // expected
     int64_t repeats_array2[] = {1, 1, 3, 2};
@@ -131,9 +149,18 @@ TEST_P(TileTest, Tile) {
                        .expect("tile failed");
     runtime_tensor actual2(output2.as<tensor>().expect("as tensor failed"));
 
+    bool result2 = is_same_tensor(expected2, actual2) ||
+                   cosine_similarity_tensor(expected2, actual2);
+
+    if (!result2) {
+        std::cout << "actual2 ";
+        print_runtime_tensor(actual2);
+        std::cout << "expected2 ";
+        print_runtime_tensor(expected2);
+    }
+
     // compare
-    EXPECT_TRUE(is_same_tensor(expected2, actual2) ||
-                cosine_similarity_tensor(expected, actual));
+    EXPECT_TRUE(result2);
 
     // expected
     int64_t repeats_array3[] = {1, 1, 1, 2};
@@ -158,9 +185,18 @@ TEST_P(TileTest, Tile) {
                        .expect("tile failed");
     runtime_tensor actual3(output3.as<tensor>().expect("as tensor failed"));
 
+    bool result3 = is_same_tensor(expected3, actual3) ||
+                   cosine_similarity_tensor(expected3, actual3);
+
+    if (!result3) {
+        std::cout << "actual3 ";
+        print_runtime_tensor(actual3);
+        std::cout << "expected3 ";
+        print_runtime_tensor(expected3);
+    }
+
     // compare
-    EXPECT_TRUE(is_same_tensor(expected3, actual3) ||
-                cosine_similarity_tensor(expected, actual));
+    EXPECT_TRUE(result3);
 
     // expected
     int64_t repeats_array4[] = {1, 2, 3, 2};
@@ -185,9 +221,18 @@ TEST_P(TileTest, Tile) {
                        .expect("tile failed");
     runtime_tensor actual4(output4.as<tensor>().expect("as tensor failed"));
 
+    bool result4 = is_same_tensor(expected4, actual4) ||
+                   cosine_similarity_tensor(expected4, actual4);
+
+    if (!result4) {
+        std::cout << "actual4 ";
+        print_runtime_tensor(actual4);
+        std::cout << "expected4 ";
+        print_runtime_tensor(expected4);
+    }
+
     // compare
-    EXPECT_TRUE(is_same_tensor(expected4, actual4) ||
-                cosine_similarity_tensor(expected, actual));
+    EXPECT_TRUE(result4);
 
     // expected
     int64_t repeats_array5[] = {3, 2, 3, 2};
@@ -212,9 +257,18 @@ TEST_P(TileTest, Tile) {
                        .expect("tile failed");
     runtime_tensor actual5(output5.as<tensor>().expect("as tensor failed"));
 
+    bool result5 = is_same_tensor(expected5, actual5) ||
+                   cosine_similarity_tensor(expected5, actual5);
+
+    if (!result5) {
+        std::cout << "actual5 ";
+        print_runtime_tensor(actual5);
+        std::cout << "expected5 ";
+        print_runtime_tensor(expected5);
+    }
+
     // compare
-    EXPECT_TRUE(is_same_tensor(expected5, actual5) ||
-                cosine_similarity_tensor(expected, actual));
+    EXPECT_TRUE(result5);
 }
 
 int main(int argc, char *argv[]) {

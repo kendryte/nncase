@@ -26,18 +26,18 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class CompareTest : public KernelTest,
-                    public ::testing::TestWithParam<
-                        std::tuple<nncase::typecode_t, dims_t, dims_t>> {
+class ConcatTest
+    : public KernelTest,
+      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape, r_shape] = GetParam();
+        auto &&[typecode, shape] = GetParam();
 
-        lhs = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
+        lhs = hrt::create(typecode, shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
         init_tensor(lhs);
 
-        rhs = hrt::create(typecode, r_shape, host_runtime_tensor::pool_cpu_only)
+        rhs = hrt::create(typecode, shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
         init_tensor(rhs);
     }
@@ -50,37 +50,60 @@ class CompareTest : public KernelTest,
 };
 
 INSTANTIATE_TEST_SUITE_P(
-    compare, CompareTest,
-    testing::Combine(testing::Values(dt_boolean, dt_int64, dt_int32),
-                     testing::Values(dims_t{1, 3, 16, 16},
-                                     dims_t{1, 1, 16, 16}),
-                     testing::Values(dims_t{1}, dims_t{16}, dims_t{1, 16},
-                                     dims_t{1, 16, 16}, dims_t{3, 3, 1, 16})));
+    Concat, ConcatTest,
+    testing::Combine(testing::Values(dt_float32, dt_int64, dt_int32, dt_float64,
+                                     dt_int16, dt_uint32, dt_boolean),
+                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 3},
+                                     dims_t{1, 3, 16}, dims_t{1})));
 
-TEST_P(CompareTest, equal) {
+TEST_P(ConcatTest, Concat) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
     auto r_ort = runtime_tensor_2_ort_tensor(rhs);
+    OrtKITensor *ls_ort[2] = {l_ort, r_ort};
 
     // expected
-    auto output_ort = ortki_Equal(l_ort, r_ort);
+    auto output_ort = ortki_Concat(ls_ort, 2, 0);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
-    auto expected = hrt::create(dt_boolean, shape,
+    auto expected = hrt::create(lhs.datatype(), shape,
                                 {reinterpret_cast<gsl::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
     // actual
-    auto output = kernels::stackvm::compare(
-                      nncase::runtime::stackvm::compare_op_t::not_equal,
-                      lhs.impl(), rhs.impl())
-                      .expect("compare failed");
+    value_t field1 = lhs.impl();
+    value_t field2 = rhs.impl();
+    std::vector<value_t> fields;
+    fields.push_back(field1);
+    fields.push_back(field2);
+    auto output_tuple = tuple(std::in_place, std::move(fields));
+
+    int64_t axis_ptr[] = {0};
+    auto axis =
+        hrt::create(dt_int64, {1},
+                    {reinterpret_cast<gsl::byte *>(axis_ptr), sizeof(axis_ptr)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
+
+    auto output = kernels::stackvm::concat(output_tuple, axis.impl())
+                      .expect("concat failed");
+
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
+    bool result = is_same_tensor(expected, actual) ||
+                  cosine_similarity_tensor(expected, actual);
+
+    if (!result) {
+        std::cout << "actual ";
+        print_runtime_tensor(actual);
+        std::cout << "expected ";
+        print_runtime_tensor(expected);
+    }
+
     // compare
-    EXPECT_FALSE(is_same_tensor(expected, actual));
+    EXPECT_TRUE(result);
 }
 
 int main(int argc, char *argv[]) {

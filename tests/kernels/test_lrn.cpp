@@ -26,7 +26,7 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class TopKTest
+class LrnTest
     : public KernelTest,
       public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
   public:
@@ -45,23 +45,17 @@ class TopKTest
     runtime_tensor input;
 };
 
-INSTANTIATE_TEST_SUITE_P(TopK, TopKTest,
+INSTANTIATE_TEST_SUITE_P(lrn, LrnTest,
                          testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 2, 4, 8})));
+                                          testing::Values(dims_t{1, 3, 16, 16},
+                                                          dims_t{1, 3, 8, 8})));
 
-TEST_P(TopKTest, TopK) {
+TEST_P(LrnTest, lrn) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
 
     // expected
+    auto output_ort = ortki_LRN(l_ort, 0.22f, 0.20f, 0.75f, 3);
     size_t size = 0;
-    int64_t k_array[] = {1};
-    auto k =
-        hrt::create(dt_int64, {1},
-                    {reinterpret_cast<gsl::byte *>(k_array), sizeof(k_array)},
-                    true, host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
-    auto output_ort = tensor_seq_get_value(
-        ortki_TopK(l_ort, runtime_tensor_2_ort_tensor(k), -1, 1, 1), 0);
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
@@ -71,31 +65,47 @@ TEST_P(TopKTest, TopK) {
                         .expect("create tensor failed");
 
     // actual
-    int64_t axis_array[] = {-1};
-    auto axis = hrt::create(dt_int64, {1},
-                            {reinterpret_cast<gsl::byte *>(axis_array),
-                             sizeof(axis_array)},
-                            true, host_runtime_tensor::pool_cpu_only)
-                    .expect("create tensor failed");
-    int64_t largest_array[] = {1};
-    auto largest = hrt::create(dt_int64, {1},
-                               {reinterpret_cast<gsl::byte *>(largest_array),
-                                sizeof(largest_array)},
-                               true, host_runtime_tensor::pool_cpu_only)
-                       .expect("create tensor failed");
-    int64_t sorted_array[] = {1};
-    auto sorted = hrt::create(dt_int64, {1},
-                              {reinterpret_cast<gsl::byte *>(sorted_array),
-                               sizeof(sorted_array)},
-                              true, host_runtime_tensor::pool_cpu_only)
-                      .expect("create tensor failed");
-    auto output = kernels::stackvm::top_k(input.impl(), k.impl(), axis.impl(),
-                                          largest.impl(), sorted.impl())
-                      .expect("topk failed");
-    [[maybe_unused]] auto actual(output.as<tuple>().expect("as tensor failed"));
+    float_t alpha_ptr[] = {0.22f};
+    auto alpha = hrt::create(dt_float32, {1},
+                             {reinterpret_cast<gsl::byte *>(alpha_ptr),
+                              sizeof(alpha_ptr)},
+                             true, host_runtime_tensor::pool_cpu_only)
+                     .expect("create tensor failed");
+    float_t beta_ptr[] = {0.20f};
+    auto beta =
+        hrt::create(dt_float32, {1},
+                    {reinterpret_cast<gsl::byte *>(beta_ptr), sizeof(beta_ptr)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
+    float_t bias_ptr[] = {0.75f};
+    auto bias =
+        hrt::create(dt_float32, {1},
+                    {reinterpret_cast<gsl::byte *>(bias_ptr), sizeof(bias_ptr)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
+    int64_t size_ptr[] = {3l};
+    auto size0 =
+        hrt::create(dt_int64, {1},
+                    {reinterpret_cast<gsl::byte *>(size_ptr), sizeof(size_ptr)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
+    auto output = kernels::stackvm::lrn(input.impl(), alpha.impl(), beta.impl(),
+                                        bias.impl(), size0.impl())
+                      .expect("lrn failed");
+    runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
+
+    bool result = is_same_tensor(expected, actual) ||
+                  cosine_similarity_tensor(expected, actual);
+
+    if (!result) {
+        std::cout << "actual ";
+        print_runtime_tensor(actual);
+        std::cout << "expected ";
+        print_runtime_tensor(expected);
+    }
 
     // compare
-    //    EXPECT_TRUE(is_same_tensor(expected, actual));
+    EXPECT_TRUE(result);
 }
 
 int main(int argc, char *argv[]) {

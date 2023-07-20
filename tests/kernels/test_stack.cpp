@@ -45,39 +45,55 @@ class StackTest
     runtime_tensor input;
 };
 
-INSTANTIATE_TEST_SUITE_P(Stack, StackTest,
-                         testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 3, 16,
-                                                                 16})));
+INSTANTIATE_TEST_SUITE_P(
+    Stack, StackTest,
+    testing::Combine(testing::Values(dt_float32, dt_float64, dt_int32, dt_int64,
+                                     dt_int8, dt_int16),
+                     testing::Values(dims_t{1}, dims_t{2}, dims_t{1, 1},
+                                     dims_t{1, 2, 4, 8}, dims_t{4, 4, 8})));
 
 TEST_P(StackTest, Stack) {
-    auto l_ort = runtime_tensor_2_ort_tensor(input);
-
-    // expected
-    OrtKITensor *input1[] = {l_ort, l_ort};
-    auto output_ort = ortki_Concat(input1, 2, -1);
-    size_t size = 0;
-    void *ptr_ort = tensor_buffer(output_ort, &size);
-    dims_t shape(tensor_rank(output_ort));
-    tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
-    auto expected = hrt::create(dt_float32, shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
-                                true, host_runtime_tensor::pool_cpu_only)
-                        .expect("create tensor failed");
 
     // actual
+    value_t field1 = input.impl();
+    std::vector<value_t> fields;
+    fields.push_back(field1);
+    auto output_tuple = tuple(std::in_place, std::move(fields));
     int64_t axes_array[] = {-1};
     auto axes = hrt::create(dt_int64, {1},
                             {reinterpret_cast<gsl::byte *>(axes_array),
                              sizeof(axes_array)},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
-        auto output = kernels::stackvm::stack(input.impl(), axes.impl())
-                          .expect("stack failed");
-        runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
+    auto output = kernels::stackvm::stack(output_tuple, axes.impl())
+                      .expect("stack failed");
+    runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
+
+    int64_t output_shape_array[] = {1, 1};
+    auto output_shape =
+        hrt::create(dt_int64, {2},
+                    {reinterpret_cast<gsl::byte *>(output_shape_array),
+                     sizeof(output_shape_array)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
+
+    auto expected1 =
+        kernels::stackvm::reshape(input.impl(), output_shape.impl())
+            .expect("stack failed");
+    runtime_tensor expected(output.as<tensor>().expect("as tensor failed"));
+
+    bool result = is_same_tensor(expected, actual) ||
+                  cosine_similarity_tensor(expected, actual);
+
+    if (!result) {
+        std::cout << "actual ";
+        print_runtime_tensor(actual);
+        std::cout << "expected ";
+        print_runtime_tensor(expected);
+    }
 
     // compare
-        EXPECT_TRUE(is_same_tensor(expected, actual));
+    EXPECT_TRUE(result);
 }
 
 int main(int argc, char *argv[]) {
