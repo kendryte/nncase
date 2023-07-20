@@ -81,20 +81,19 @@ INSTANTIATE_TEST_SUITE_P(
                                      axes_t{-1, -2, -3, -4})));
 
 TEST_P(ReduceMaxTest, ReduceMax) {
-
-    std::vector<int64_t> vec(axis_arry1.begin(), axis_arry1.end());
-    if (axis_arry1.size() == 1) {
+    size_t axis_size = axis_arry1.size();
+    if (axis_size <= a.shape().size()) {
+        int64_t *axis_array = (int64_t *)malloc(axis_size * sizeof(int64_t));
         size_t size = 0;
-        int64_t axis_array[1];
-        std::copy(vec.begin(), vec.end(), axis_array);
-        // expected
-        auto axis = hrt::create(dt_int64, {1},
+        std::copy(axis_arry1.begin(), axis_arry1.end(), axis_array);
+        auto axis = hrt::create(dt_int64, {axis_size},
                                 {reinterpret_cast<gsl::byte *>(axis_array),
-                                 sizeof(axis_array)},
+                                 axis_size * sizeof(int64_t)},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
-        auto output_ort = ortki_ReduceMax(runtime_tensor_2_ort_tensor(a),
-                                          axis_array, 1, keepDims_value);
+        auto output_ort =
+            ortki_ReduceMax(runtime_tensor_2_ort_tensor(a), axis_array,
+                            axis_size, keepDims_value);
         void *ptr_ort = tensor_buffer(output_ort, &size);
         dims_t shape(tensor_rank(output_ort));
         tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
@@ -108,7 +107,7 @@ TEST_P(ReduceMaxTest, ReduceMax) {
         auto output = kernels::stackvm::reduce(
                           runtime::stackvm::reduce_op_t::max, a.impl(),
                           axis.impl(), init_value.impl(), keepDims.impl())
-                          .expect("reduce_min failed");
+                          .expect("reduce_mean failed");
         runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
         bool result = is_same_tensor(expected, actual) ||
@@ -123,132 +122,7 @@ TEST_P(ReduceMaxTest, ReduceMax) {
 
         // compare
         EXPECT_TRUE(result);
-    }
-
-    if (axis_arry1.size() == 2 && a.shape().size() >= 2) {
-        int64_t axis_arr[2];
-        std::copy(vec.begin(), vec.end(), axis_arr);
-        // expected
-        size_t size1 = 0;
-        auto axis1 = hrt::create(dt_int64, {2},
-                                 {reinterpret_cast<gsl::byte *>(axis_arr),
-                                  sizeof(axis_arr)},
-                                 true, host_runtime_tensor::pool_cpu_only)
-                         .expect("create tensor failed");
-        auto output_ort1 = ortki_ReduceMax(runtime_tensor_2_ort_tensor(a),
-                                           axis_arr, 2, keepDims_value);
-        void *ptr_ort1 = tensor_buffer(output_ort1, &size1);
-        dims_t shape1(tensor_rank(output_ort1));
-        tensor_shape(output_ort1, reinterpret_cast<int64_t *>(shape1.data()));
-        auto expected1 =
-            hrt::create(dt_float32, shape1,
-                        {reinterpret_cast<gsl::byte *>(ptr_ort1), size1}, true,
-                        host_runtime_tensor::pool_cpu_only)
-                .expect("create tensor failed");
-
-        // actual
-        auto output1 = kernels::stackvm::reduce(
-                           runtime::stackvm::reduce_op_t::max, a.impl(),
-                           axis1.impl(), init_value.impl(), keepDims.impl())
-                           .expect("reduce_max failed");
-        runtime_tensor actual1(output1.as<tensor>().expect("as tensor failed"));
-
-        bool result1 = is_same_tensor(expected1, actual1) ||
-                       cosine_similarity_tensor(expected1, actual1);
-
-        if (!result1) {
-            std::cout << "actual ";
-            print_runtime_tensor(actual1);
-            std::cout << "expected ";
-            print_runtime_tensor(expected1);
-        }
-
-        // compare
-        EXPECT_TRUE(result1);
-    }
-
-    if (axis_arry1.size() == 3 && a.shape().size() >= 3) {
-        int64_t axis_arr[3];
-        std::copy(vec.begin(), vec.end(), axis_arr);
-        // expected
-        size_t size2 = 0;
-        auto axis2 = hrt::create(dt_int64, {3},
-                                 {reinterpret_cast<gsl::byte *>(axis_arr),
-                                  sizeof(axis_arr)},
-                                 true, host_runtime_tensor::pool_cpu_only)
-                         .expect("create tensor failed");
-        auto output_ort2 = ortki_ReduceMax(runtime_tensor_2_ort_tensor(a),
-                                           axis_arr, 3, keepDims_value);
-        void *ptr_ort2 = tensor_buffer(output_ort2, &size2);
-        dims_t shape2(tensor_rank(output_ort2));
-        tensor_shape(output_ort2, reinterpret_cast<int64_t *>(shape2.data()));
-        auto expected2 =
-            hrt::create(dt_float32, shape2,
-                        {reinterpret_cast<gsl::byte *>(ptr_ort2), size2}, true,
-                        host_runtime_tensor::pool_cpu_only)
-                .expect("create tensor failed");
-
-        // actual
-        auto output2 = kernels::stackvm::reduce(
-                           runtime::stackvm::reduce_op_t::max, a.impl(),
-                           axis2.impl(), init_value.impl(), keepDims.impl())
-                           .expect("reduce_max failed");
-        runtime_tensor actual2(output2.as<tensor>().expect("as tensor failed"));
-
-        bool result2 = is_same_tensor(expected2, actual2) ||
-                       cosine_similarity_tensor(expected2, actual2);
-
-        if (!result2) {
-            std::cout << "actual ";
-            print_runtime_tensor(actual2);
-            std::cout << "expected ";
-            print_runtime_tensor(expected2);
-        }
-
-        // compare
-        EXPECT_TRUE(result2);
-    }
-
-    if (axis_arry1.size() == 4 && a.shape().size() >= 4) {
-        int64_t axis_arr[4];
-        std::copy(vec.begin(), vec.end(), axis_arr);
-        // expected
-        size_t size3 = 0;
-        auto axis3 = hrt::create(dt_int64, {4},
-                                 {reinterpret_cast<gsl::byte *>(axis_arr),
-                                  sizeof(axis_arr)},
-                                 true, host_runtime_tensor::pool_cpu_only)
-                         .expect("create tensor failed");
-        auto output_ort3 = ortki_ReduceMax(runtime_tensor_2_ort_tensor(a),
-                                           axis_arr, 4, keepDims_value);
-        void *ptr_ort3 = tensor_buffer(output_ort3, &size3);
-        dims_t shape3(tensor_rank(output_ort3));
-        tensor_shape(output_ort3, reinterpret_cast<int64_t *>(shape3.data()));
-        auto expected3 =
-            hrt::create(dt_float32, shape3,
-                        {reinterpret_cast<gsl::byte *>(ptr_ort3), size3}, true,
-                        host_runtime_tensor::pool_cpu_only)
-                .expect("create tensor failed");
-
-        // actual
-        auto output3 = kernels::stackvm::reduce(
-                           runtime::stackvm::reduce_op_t::max, a.impl(),
-                           axis3.impl(), init_value.impl(), keepDims.impl())
-                           .expect("reduce_max failed");
-        runtime_tensor actual3(output3.as<tensor>().expect("as tensor failed"));
-
-        bool result3 = is_same_tensor(expected3, actual3) ||
-                       cosine_similarity_tensor(expected3, actual3);
-
-        if (!result3) {
-            std::cout << "actual ";
-            print_runtime_tensor(actual3);
-            std::cout << "expected ";
-            print_runtime_tensor(expected3);
-        }
-
-        // compare
-        EXPECT_TRUE(result3);
+        free(axis_array);
     }
 }
 
