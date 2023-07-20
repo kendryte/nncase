@@ -1127,12 +1127,30 @@ class KernelTest {
                            }
                            break;
                        }
+                       case dt_float16: {
+                           if (get<half>(lhs, index) ==
+                                   get<half>(rhs, index) ||
+                               fabs(get<half>(lhs, index) -
+                                    get<half>(rhs, index)) <=
+                                   std::numeric_limits<float>::epsilon()) {
+                               return ok();
+                           } else if (std::isnan(get<half>(lhs, index)) &&
+                                      std::isnan(get<half>(rhs, index))) {
+                               return ok();
+                           } else {
+                               return err(std::errc::not_supported);
+                           }
+                           break;
+                       }
                        case dt_float32: {
                            if (get<float>(lhs, index) ==
                                    get<float>(rhs, index) ||
                                fabs(get<float>(lhs, index) -
                                     get<float>(rhs, index)) <=
                                    std::numeric_limits<float>::epsilon()) {
+                               return ok();
+                           } else if (std::isnan(get<float>(lhs, index)) &&
+                                      std::isnan(get<float>(rhs, index))) {
                                return ok();
                            } else {
                                return err(std::errc::not_supported);
@@ -1142,6 +1160,9 @@ class KernelTest {
                        case dt_float64: {
                            if (get<double>(lhs, index) ==
                                get<double>(rhs, index)) {
+                               return ok();
+                           } else if (std::isnan(get<double>(lhs, index)) &&
+                                      std::isnan(get<double>(rhs, index))) {
                                return ok();
                            } else {
                                return err(std::errc::not_supported);
@@ -1271,9 +1292,8 @@ class KernelTest {
         float cosine_similarity = dotProduct / (norm1 * norm2);
 
         std::cout << "cosine_similarity:" << cosine_similarity << std::endl;
-        return cosine_similarity > 0.99f ||
-               std::isnan(cosine_similarity); // Return true if cosine
-                                              // similarity is close to 1
+        return cosine_similarity > 0.99f; // Return true if cosine
+                                          // similarity is close to 1
     }
 
     void print_runtime_tensor(runtime::runtime_tensor lhs) {
