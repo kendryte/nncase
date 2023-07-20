@@ -75,7 +75,7 @@ class PTQTensorOptions:
         self.export_quant_scheme: bool = False
         self.export_weight_range_by_channel: bool = False
         self.dump_quant_error: bool = False
-        self.dump_quant_error_symmetric_for_signed: True
+        self.dump_quant_error_symmetric_for_signed: bool = True
         self.quant_type: str = "uint8"
         self.w_quant_type: str = "uint8"
         self.calibrate_method: str = "Kld"
