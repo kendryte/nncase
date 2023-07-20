@@ -54,7 +54,7 @@ TEST_P(HardmaxTest, hardmax) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
 
     // expected
-    auto output_ort = ortki_Hardmax(l_ort, 3);
+    auto output_ort = ortki_Hardmax(l_ort, -1);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
@@ -65,7 +65,7 @@ TEST_P(HardmaxTest, hardmax) {
                         .expect("create tensor failed");
 
     // actual
-    int64_t axis_ptr[] = {3};
+    int64_t axis_ptr[] = {-1};
     auto axis =
         hrt::create(nncase::dt_int64, {1},
                     {reinterpret_cast<gsl::byte *>(axis_ptr), sizeof(axis_ptr)},
