@@ -45,7 +45,6 @@ result<value_t> stackvm_runtime_function::invoke_core(
 
     //    module().interp().options().get<std::string>("dump_path");
     try_(run(text_));
-    try_(frames_.pop());
 
     auto ret = stack_.pop();
     CHECK_WITH_ERR(ret.is_object(), nncase_errc::stackvm_illegal_instruction);
