@@ -146,6 +146,28 @@ public class UnitTestMergeMultiUserFusion : TransformTestBase
     }
 
     [Fact]
+    public async Task MergeUserWithSameInput()
+    {
+        var input0 = Testing.Rand<float>(1, 3, 24, 24);
+        var inputVar0 = new Var(new TensorType(input0.ElementType, input0.Shape));
+        var input1 = Testing.Rand<float>(1, 3, 24, 24);
+        var inputVar1 = new Var(new TensorType(input1.ElementType, input1.Shape));
+        var s0 = Softmax(inputVar0, 0);
+        var s1 = Softmax(inputVar1, 0);
+        var s2 = Softmax(inputVar1, 1);
+        var call = MakeSimpleFusionCall(expr => expr[0] + expr[1], s0, s1);
+        var user = MakeSimpleFusionCall(expr => expr[0] / expr[1] + expr[2], call, s1, s2);
+        await RunTest(
+            user,
+            new[] { inputVar0, inputVar1 },
+            new Dictionary<Var, IValue>
+            {
+                { inputVar0, Value.FromTensor(input0) },
+                { inputVar1, Value.FromTensor(input1) }
+            });
+    }
+
+    [Fact]
     public async Task TestTupleGetItemFusionSimple()
     {
         var input0 = Testing.Rand<float>(1, 3, 24, 24);

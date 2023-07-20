@@ -80,7 +80,7 @@ public partial class MergeTupleFusion : RewriteRule<Pattern>
         }
 
         var fieldBodys = fields.Select(c => c.Target).OfType<BucketFusion>().Select(x => x.Body).ToArray();
-        var newBody = MergeBucketFusion.ReplaceClone(new IR.Tuple(fieldBodys), oldParamsToNewArg.ToArray());
+        var newBody = ReplaceClone(new IR.Tuple(fieldBodys), oldParamsToNewArg.ToArray());
         var newFusion = new BucketFusion("stackvm", newBody, newParams.ToArray(), new Var[] { });
         var newCall = new Call(newFusion, newArgs.ToArray());
         return newCall;
@@ -90,8 +90,7 @@ public partial class MergeTupleFusion : RewriteRule<Pattern>
 public class MergeBucketFusion : ModulePass
 {
     private static int counter = 0;
-
-    private static string relPath => counter.ToString();
+    private static string mergeRelPath => counter.ToString();
 
     protected override Task<IRModule> RunCoreAsync(IRModule input, RunPassContext context)
     {
@@ -104,7 +103,7 @@ public class MergeBucketFusion : ModulePass
 
         var hashcode = main.GetHashCode();
         int loop = 0;
-        while (loop < 20)
+        while (loop < 40)
         {
             var mergePrevPost = MergePrevFusion(main);
             MergeMultiUsers(mergePrevPost);
@@ -143,31 +142,37 @@ public class MergeBucketFusion : ModulePass
 
         // 2. merge
         var post = MergeFusion(main);
-        DumpIR(post, "AfterMergeFusion", relPath);
+        DumpIR(post, "AfterMergeFusion", mergeRelPath);
 
         // 3. translate fusion to BucketFusion
         TranslateFusionToBucket(set, post, CompileSession);
-        DumpIR(post, "AfterTranslateFusion", relPath);
+        DumpIR(post, "AfterTranslateFusion", mergeRelPath);
         return post;
     }
 
     private static void MergeMultiUsers(Function post)
     {
         IRHelpers.DCE(post);
-        DumpIR(post, "AfterDCE", relPath);
+        DumpIR(post, "AfterDCE", mergeRelPath);
         var c = new ReplaceVisitor();
         c.Replace(post);
-        DumpIR(post, "AfterMergeUser", relPath);
+        DumpIR(post, "AfterMergeUser", mergeRelPath);
     }
 
     record UserInfo(Call User, int UserIndex, Expr? GetItem);
 
     internal class ReplaceVisitor : ExprVisitor<Expr, Unit>
     {
-        private static int counter = 0;
-
         private Function _fn;
         private Expr _root => _fn.Body;
+
+        private static int counter => MultiUserCallToFusion._counter;
+        private void addCounter()
+        {
+            MultiUserCallToFusion._counter++;
+        }
+
+        private static string relPath => counter.ToString();
 
         private bool changed = false;
         public void Replace(Function fn)
@@ -226,7 +231,7 @@ public class MergeBucketFusion : ModulePass
                     Console.WriteLine();
                     // ReplaceAllUsesWith(outerCall, newCall);
                     DumpIR(_root, "rootAfterMerge", relPath);
-                    MergeBucketFusion.counter++;
+                    addCounter();
                     changed = true;
                     return newCall;
                 }
@@ -269,8 +274,9 @@ public class MergeBucketFusion : ModulePass
 
         if (users.Count() == 0)
         {
-            return (null, new Expr[]{});
+            return (null, new Expr[] { });
         }
+
         if (users.OfType<Call>().All(user => user.Target is GetItem))
         {
             // todo: test
@@ -284,7 +290,7 @@ public class MergeBucketFusion : ModulePass
         if (users.Count(user => user is Tuple) != 0)
         {
             Console.WriteLine("HasTuple");
-            return (null, new Expr[]{});
+            return (null, new Expr[] { });
         }
 
         // todo:如果不是所有的都是valid的，那么能合并吗？？
@@ -301,31 +307,31 @@ public class MergeBucketFusion : ModulePass
         if (userInfos.Length != users.Distinct().ToArray().Length)
         {
             Console.WriteLine("not all call");
-            return (null, new Expr[]{});
+            return (null, new Expr[] { });
         }
 
         if (outerCall.Users.Any(user => user is Tuple) || users.Any(user => user.CheckedType is TupleType))
         {
-            return (null, new Expr[]{});
+            return (null, new Expr[] { });
         }
 
         if (users.Any(user =>
                 user is Call c && c.Arguments.ToArray().Any(arg => arg is Tuple || arg.CheckedType is TupleType)))
         {
             // todo: not implement
-            return (null, new Expr[]{});
+            return (null, new Expr[] { });
         }
 
         if (detectedRing(outerCall, users))
         {
             Console.WriteLine("HasRing");
-            return (null, new Expr[]{});
+            return (null, new Expr[] { });
         }
 
         if (outerCall.Users.ToArray().OfType<Call>().All(user => user.Target is GetItem))
         {
             Console.WriteLine("MeregForGetItem");
-            Console.WriteLine(relPath);
+            Console.WriteLine(mergeRelPath);
         }
 
         // todo: with tuple
@@ -347,25 +353,18 @@ public class MergeBucketFusion : ModulePass
         // 这个vars用于确定output的args里面哪些要加入，哪些要消除，另外还要包含多个user的那个
         // todo: 目前newParams已经去除重复
         var argMap = MakeNewVarsMap(userInfos, fusionDict, outerCall);
-        // for (int i = 0; i < argMap.Length; i++)
-        // {
-        //     Console.WriteLine(argMap[i].Item1.GetHashCode());
-        //     // Console.WriteLine(((Call)argMap[i].Item1).Target);
-        //     Console.WriteLine(argMap[i].Item2.Name);
-        // }
         var newUsers = MakeNewUserExpr(userInfos, outerCall, argMap);
         var newBody = MakeNewBody(newUsers);
-        // DumpIR(newBody, "newBody", relPath);
 
         // todo: args去除重复，在不需要更新的情况下不进行更新
         var newArgs = argMap.NewArgs();
         var newParams = argMap.NewParams;
-
-        // var newParams = newArgs.Select(arg => new Var(arg.CheckedType)).ToArray();
-        // var newParams = MakeNewParams(fusion, userInfos, newVarsMap);
-        // var newArgs = MakeNewArgs(outerCall, userInfos, newVarsMap);
         var newFusion = MakeNewFusion(newBody, fusion, newParams, oldUsers);
         var newCall = MakeNewCall(newFusion, newArgs);
+        if (newArgs.ToHashSet().Count() != newArgs.Length)
+        {
+            throw new InvalidOperationException("Has Repeat args");
+        }
         ArgsChecker(newArgs);
         return (newCall, users);
     }
@@ -388,11 +387,14 @@ public class MergeBucketFusion : ModulePass
 
         public Expr[] NewArgs()
         {
-            return ArgMap
-                .Where(pair => NewParams.Contains(pair.RelativeNewVar))
-                .Take(NewParams.Length)
-                .Select(pair => pair.UserArg)
-                .ToArray();
+            // 多个arg指向相同的RelativeNewVar的情况，去重
+            var data = ArgMap.Where(pair => NewParams.Contains(pair.RelativeNewVar)).DistinctBy(x => x.RelativeNewVar).ToArray();
+            if (data.Length != NewParams.Length)
+            {
+                Console.WriteLine("error");
+            }
+
+            return data.Select(pair => pair.UserArg).ToArray();
         }
     }
 
@@ -439,6 +441,8 @@ public class MergeBucketFusion : ModulePass
                 // fusion的参数中查看是否有这个arg,有的话则用fusion对应的var来替代
                 if (fusionResult != null)
                 {
+                    // 这个时候会有多个arg指向同一个RelativeNewVar，但是为了把这个arg替换为oldvar, 暂时要保留，后面需要去重
+                    // 不能在这里就去重，会引发错误
                     return (totalDict.Append((arg, fusionResult!, oldVar)), totalVars);
                 }
 
@@ -533,26 +537,6 @@ public class MergeBucketFusion : ModulePass
         }
 
         return new IR.Tuple(newUsers);
-    }
-
-    // clone origin Expr and Do replace for var
-    internal static Expr ReplaceClone(Expr originBody, params (Var, Expr)[] originVarAndExpr)
-    {
-        var call = originBody.Clone();
-        var finder = new FindVar();
-        finder.Visit(call);
-        var newVars = finder.Vars;
-        originVarAndExpr.ForEach(pair =>
-        {
-            var (v, newExpr) = pair;
-            var varShouldBeReplaced = newVars.FindFirst(newVar => newVar.Name == v.Name);
-            if (varShouldBeReplaced == null)
-            {
-                throw new InvalidOperationException();
-            }
-            ReplaceExpr(call, varShouldBeReplaced, newExpr);
-        });
-        return call;
     }
 
     private static Expr[] MakeNewUserExpr(UserInfo[] userInfos, Call outerCall, FusionVarMapper argMap)

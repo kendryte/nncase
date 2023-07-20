@@ -8,13 +8,39 @@ using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
 using Nncase.IR.Tensors;
+using static Nncase.Utilities.ReplaceUtility;
 
 namespace Nncase.Passes.Rules.ShapeBucket;
 
 internal static class ShapeBucketHelper
 {
+    // clone origin Expr and Do replace for var
+    internal static Expr ReplaceClone(Expr originBody, params (Var, Expr)[] originVarAndExpr)
+    {
+        var call = originBody.Clone();
+        var finder = new FindVar();
+        finder.Visit(call);
+        var newVars = finder.Vars;
+        originVarAndExpr.ForEach(pair =>
+        {
+            var (v, newExpr) = pair;
+            var varShouldBeReplaced = newVars.FindFirst(newVar => newVar.Name == v.Name);
+            if (varShouldBeReplaced == null)
+            {
+                throw new InvalidOperationException();
+            }
+
+            ReplaceExpr(call, varShouldBeReplaced, newExpr);
+        });
+        return call;
+    }
+
     public static void ArgsChecker(Expr[] newArgs)
     {
+        if (newArgs.Length == 0)
+        {
+            throw new InvalidOperationException("Empty Arg");
+        }
         if (newArgs.Any(arg => arg is Var v && v.Name.StartsWith("var_")))
         {
             throw new InvalidOperationException("Args has Var in fusion");
@@ -184,22 +210,28 @@ public static class CallValidator
 {
     static readonly Dictionary<RuntimeTypeHandle, int> OpList = new()
     {
+        // tuple input
+        // { typeof(Concat).TypeHandle, 0 },
+        // { typeof(Stack).TypeHandle, 0 },
+        { typeof(Slice).TypeHandle, 0 },
+        { typeof(Gather).TypeHandle, 0 },
+        { typeof(ShapeOf).TypeHandle, 0 },
+
+
         { typeof(Reshape).TypeHandle, 0 },
         { typeof(Unsqueeze).TypeHandle, 0 },
         { typeof(Squeeze).TypeHandle, 0 },
-        { typeof(Slice).TypeHandle, 0 },
+
+
         { typeof(Cast).TypeHandle, 0 },
 
-        // tuple input
-        { typeof(Stack).TypeHandle, 0 },
-        { typeof(Concat).TypeHandle, 0 },
+
 
         { typeof(Expand).TypeHandle, 0 },
         { typeof(ConstantOfShape).TypeHandle, 0 },
         { typeof(Where).TypeHandle, 0 },
         { typeof(Compare).TypeHandle, 0 },
-        { typeof(Gather).TypeHandle, 0 },
-        { typeof(ShapeOf).TypeHandle, 0 },
+
 
         // compute
         // maybe Reduce.Prod only, for eval shape

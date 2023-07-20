@@ -98,7 +98,7 @@ public class BucketFusion : Fusion
 [RuleGenerator]
 public partial class CallToFusion : RewriteRule<Pattern>
 {
-    private static int _counter;
+    public static int _counter;
 
     private Call? _currentCall;
 
@@ -172,7 +172,6 @@ public partial class CallToFusion : RewriteRule<Pattern>
     {
         // PrintEffectVar(f.Name, set);
         Expr outerCall = ProcessForOuterCall(new Call(f, argsMarker));
-        DumpIR(outerCall, "1_after", RelPath);
         return outerCall;
     }
 
@@ -181,6 +180,10 @@ public partial class CallToFusion : RewriteRule<Pattern>
         // 处理其他的参数用到了分段的input的情况
         // 即便body只有一个call,但这里是针对所有参数的表达式进行替换，比如反卷积的output shape是一个用到了需要分段的input的表达式
         // 如果不加这个则output shape引用的原始的未分段的输入会再次塞进来
+
+        // todo: 如果其中一个arg有多个user,并且有在fusion之外的部分，如果被替换为var,那么fusion外的那部分表达式operand都会跟着变成var
+        // args是call的话重新构造就好了, 能够解决目前的情况，但是不知道更复杂的情况会不会出问题
+
         var body = fusionVars.Zip(args).Aggregate(newCall, (newBody, tuple) =>
         {
             var (fusionVar, arg) = tuple;
@@ -263,9 +266,25 @@ public class MultiUserCallToFusion : CallToFusion
     {
         if (expr is Call c && c.Target is not BucketFusion)
         {
+            // todo: 这个地方如果全开了容易爆炸，只开const的reshpae能好很多
             // todo: user count > 1 is must?? maybe not
             // && expr.Users.Count > 1;
-            return CallValidator.ValidTarget(c.Target);
+            if (c.Target is IR.Tensors.Reshape)
+            {
+                if (c.Arguments[IR.Tensors.Reshape.Shape.Index] is TensorConst)
+                {
+                    return CallValidator.ValidTarget(c.Target);
+                }
+            }
+
+            if (c.Target is IR.Tensors.Stack)
+            {
+                return true;
+            }
+            // else
+            // {
+            //     return CallValidator.ValidTarget(c.Target);
+            // }
         }
 
         return false;
