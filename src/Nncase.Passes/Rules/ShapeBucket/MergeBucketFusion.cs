@@ -365,6 +365,13 @@ public class MergeBucketFusion : ModulePass
         {
             throw new InvalidOperationException("Has Repeat args");
         }
+
+
+        if (!newCall.InferenceType())
+        {
+            DumpIR(newCall, "newCallInvalid");
+            throw new InvalidOperationException("InvalidNewCallInMergeMultiUser");
+        }
         ArgsChecker(newArgs);
         return (newCall, users);
     }

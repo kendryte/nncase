@@ -136,6 +136,7 @@ public partial class CallToFusion : RewriteRule<Pattern>
 
     public Expr? GetReplace(Call call, IMatchResult matchResult)
     {
+        var originType = call.CheckedType;
         _currentCall = call;
         DumpIR((Expr)matchResult.Root, "origin", RelPath);
         if (!Check(call))
@@ -159,6 +160,17 @@ public partial class CallToFusion : RewriteRule<Pattern>
         ArgsChecker(args);
         _counter++;
 
+        if (!outerCall.InferenceType())
+        {
+            DumpIR(outerCall, "InvalidType");
+            throw new InvalidOperationException();
+        }
+
+        if (outerCall.CheckedType != originType)
+        {
+            DumpIR(outerCall, "TypeChanged");
+            throw new InvalidOperationException();
+        }
         return outerCall;
     }
 
@@ -204,6 +216,7 @@ public partial class CallToFusion : RewriteRule<Pattern>
                 {
                     return (originIndex, m.With(target: pair.First));
                 }
+
                 return (originIndex, arg);
             }).ToArray();
 
@@ -215,17 +228,34 @@ public partial class CallToFusion : RewriteRule<Pattern>
         {
             if (indices.Contains(i))
             {
-                var fields = inputsWithMarkerAndIndex.Where(x => x.originIndex == i).Select(x => x.arg).ToArray();
-                if (arg.CheckedType is TupleType)
+                var fields = inputsWithMarkerAndIndex.Where(x => x.originIndex == i).ToArray();
+
+                // todo: tuple type(split) maybe error
+                if (arg is IR.Tuple tup)
                 {
-                    return new IR.Tuple(fields);
+                    // 包含tuple中所有元素，const以及非const
+                    var newFields = new List<Expr>();
+                    int inputCounter = 0;
+                    foreach (var inputField in tup.Fields.ToArray())
+                    {
+                        if (inputField is TensorConst)
+                        {
+                            newFields.Add(inputField);
+                        }
+                        else
+                        {
+                            newFields.Add(fields[inputCounter++].arg);
+                        }
+                    }
+                    // var newFields = inputsWithMarkerAndIndex.Select(x => x.originIndex == i ? x.arg : arg).ToArray();
+                    return new IR.Tuple(newFields.ToArray());
                 }
                 if (fields.Length > 1)
                 {
                     throw new InvalidOperationException();
                 }
 
-                return fields.First();
+                return fields.First().arg;
             }
 
             return arg;
@@ -277,7 +307,7 @@ public class MultiUserCallToFusion : CallToFusion
                 }
             }
 
-            if (c.Target is IR.Tensors.Stack)
+            if (c.Target is IR.Tensors.Stack || c.Target is IR.Tensors.Concat)
             {
                 return true;
             }

@@ -14,6 +14,7 @@ using Nncase.Passes;
 using Nncase.Passes.Rules.Neutral;
 using Nncase.Passes.Rules.ShapeBucket;
 using Nncase.Quantization;
+using Nncase.Tests.ReWrite.FusionTest;
 using Nncase.Tests.TestFixture;
 using Nncase.Tests.TransformTest;
 using Nncase.Utilities;
@@ -79,7 +80,25 @@ public class UnitCallToFusionTest : TransformTestBase
                 { inputVar2, Value.FromTensor(input2) },
             });
     }
-`
+
+    [Fact]
+    public void TestConcatToFusionWithConst()
+    {
+        var input0 = Testing.Rand<float>(1, 3, 24, 24);
+        var inputVar0 = new Var(new TensorType(input0.ElementType, input0.Shape));
+        var input1 = Testing.Rand<float>(1, 3, 24, 24);
+        var inputVar1 = new Var(new TensorType(input1.ElementType, input1.Shape));
+        var input2 = Testing.Rand<float>(1, 3, 24, 24);
+        var inputs = new Expr[] { inputVar0, inputVar1}.Select(x => (Expr)Softmax(x, 0)).Append(input2).ToArray();
+        var cat = Concat(new IR.Tuple(inputs), 0);
+        TestMatched<MultiUserCallToFusion>(cat,
+            new Dictionary<Var, IValue>
+            {
+                { inputVar0, Value.FromTensor(input0) },
+                { inputVar1, Value.FromTensor(input1) },
+            });
+    }
+
     [Fact]
     public void TestConcatSingleInputToFusion()
     {
@@ -92,5 +111,35 @@ public class UnitCallToFusionTest : TransformTestBase
             {
                 { inputVar0, Value.FromTensor(input0) }
             });
+    }
+
+    [Fact]
+    public void TestReshapeToFusion()
+    {
+        var input0 = Testing.Rand<float>(1, 3, 24, 24);
+        var inputVar0 = new Var(new TensorType(input0.ElementType, input0.Shape));
+        var s = Softmax(inputVar0, 0);
+        var r = Reshape(s, Require(true, ShapeOf(s)));
+        TestMatched<MultiUserCallToFusion>(r, new Dictionary<Var, IValue> { { inputVar0, Value.FromTensor(input0) } });
+    }
+
+    [Fact]
+    public void TestNoNest()
+    {
+        var input0 = Testing.Rand<float>(1, 3, 24, 24);
+        var inputVar0 = new Var(new TensorType(input0.ElementType, input0.Shape));
+        var after = TestMatched<MultiUserCallToFusion>(Sqrt(Abs(Softmax(inputVar0, 0))),
+            new Dictionary<Var, IValue> { { inputVar0, Value.FromTensor(input0) } });
+
+        var v = new FusionCounterVisitor();
+        v.Visit(after);
+        Assert.Equal(1, v.Count);
+        if (after is Call { Target: BucketFusion fusion } c)
+        {
+            Assert.Equal(1, c.Arguments.Length);
+            var n = new FusionCounterVisitor();
+            n.Visit(fusion.Body);
+            Assert.Equal(0, n.Count);
+        }
     }
 }

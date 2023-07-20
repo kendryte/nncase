@@ -336,6 +336,7 @@ public partial class MergePrevCallToFusion : MergeFusionBase
             var call = prevOutputMaybeMarker[i] is Marker m ? m.With(target: newCall) : (Expr)newCall;
             if (!call.InferenceType())
             {
+                DumpIR(call, "InvalidInMakeNewPrevCalls");
                 throw new InvalidOperationException();
             }
 
