@@ -1128,8 +1128,7 @@ class KernelTest {
                            break;
                        }
                        case dt_float16: {
-                           if (get<half>(lhs, index) ==
-                                   get<half>(rhs, index) ||
+                           if (get<half>(lhs, index) == get<half>(rhs, index) ||
                                fabs(get<half>(lhs, index) -
                                     get<half>(rhs, index)) <=
                                    std::numeric_limits<float>::epsilon()) {
