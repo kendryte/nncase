@@ -16,11 +16,11 @@ output_layout = 'NHWC'
 model_layout = 'NHWC'
 letterbox_value = 0
 dump_asm = true
-dump_ir = true
+dump_ir = false
 
 [ptq_opt]
 use_mix_quant = false
-use_mse_quant_w = false
+use_mse_quant_w = true
 export_quant_scheme = false
 export_weight_range_by_channel = true
 dump_quant_error = false

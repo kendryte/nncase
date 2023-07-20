@@ -181,7 +181,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                 print("WARN: target[{0}] not found".format(k))
 
         # disable cpu target in k230/k510 CI
-        if test_utils.in_ci() and len(test_utils.kpu_targets()) != 0:
+        if test_utils.in_ci() and test_utils.kpu_targets() != ['']:
             config['target']['cpu']['eval'] = False
             config['target']['cpu']['infer'] = False
 
