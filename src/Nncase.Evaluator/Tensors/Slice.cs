@@ -25,7 +25,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Slice"/>.
 /// </summary>
-public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEvaluator<Slice>, IShapeEvaluator<Slice>
+public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEvaluator<Slice>, IShapeEvaluator<Slice>, IMetricEvaluator<Slice>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Slice sl)
@@ -58,6 +58,15 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(outputType),
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
+        };
+    }
+
+    public Metric Visit(IMetricEvaluateContext context, Slice target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, Slice.Input);
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(inputType) * 2,
         };
     }
 

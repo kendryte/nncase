@@ -112,12 +112,27 @@ public interface ICompilerServicesProvider
     Cost EvaluateCost(Expr expr);
 
     /// <summary>
+    /// Evaluate metric of the expression tree.
+    /// </summary>
+    /// <param name="expr">Expression.</param>
+    /// <returns>Evaluate result.</returns>
+    Dictionary<Expr, Metric> EvaluateMetric(Expr expr);
+
+    /// <summary>
     /// Evaluate cost of operator.
     /// </summary>
     /// <param name="op">Target operator.</param>
     /// <param name="context">Evaluate context.</param>
     /// <returns>Evaluate result.</returns>
     Cost EvaluateOpCost(Op op, ICostEvaluateContext context);
+
+    /// <summary>
+    /// Evaluate metric of operator.
+    /// </summary>
+    /// <param name="op">Target operator.</param>
+    /// <param name="context">Evaluate context.</param>
+    /// <returns>Evaluate result.</returns>
+    Metric EvaluateOpMetric(Op op, IMetricEvaluateContext context);
 
     Expr EvaluateShapeExpr(Expr expr, IReadOnlyDictionary<Var, Expr[]>? varsMap);
 
@@ -275,6 +290,21 @@ public static class CompilerServices
     {
         return Provider.EvaluateCost(expr);
     }
+
+    /// <summary>
+    /// Evaluate operator metric.
+    /// </summary>
+    /// <param name="op">Target operator.</param>
+    /// <param name="context">Evaluate context.</param>
+    /// <returns>Evaluate result.</returns>
+    public static Metric EvaluateOpMetric(Op op, Evaluator.IMetricEvaluateContext context) => Provider.EvaluateOpMetric(op, context);
+
+    /// <summary>
+    /// Evaluate cost of the expression tree.
+    /// </summary>
+    /// <param name="expr">Expression.</param>
+    /// <returns>Evaluate result.</returns>
+    public static Dictionary<Expr, Metric> EvaluateMetric(Expr expr) => Provider.EvaluateMetric(expr);
 
     /// <summary>
     /// Evaluate cost of operator.
@@ -472,6 +502,7 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     private readonly ITypeInferenceProvider _typeInferenceProvider;
     private readonly IIRPrinterProvider _irprinterProvider;
     private readonly ICostEvaluateProvider _costEvaluateProvider;
+    private readonly IMetricEvaluateProvider _metricEvaluateProvider;
     private readonly IMatchProvider _matchProvider;
     private readonly IRewriteProvider _rewriteProvider;
     private readonly IEGraphMatchProvider _eGraphMatchProvider;
@@ -484,6 +515,7 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
         ITypeInferenceProvider typeInferenceProvider,
         IIRPrinterProvider irprinterProvider,
         ICostEvaluateProvider costEvaluateProvider,
+        IMetricEvaluateProvider metricEvaluateProvider,
         IDataTypeServiceProvider dataTypeServiceProvider,
         IMatchProvider matchProvider,
         IRewriteProvider rewriteProvider,
@@ -497,6 +529,7 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
         _typeInferenceProvider = typeInferenceProvider;
         _irprinterProvider = irprinterProvider;
         _costEvaluateProvider = costEvaluateProvider;
+        _metricEvaluateProvider = metricEvaluateProvider;
         DataTypeService = dataTypeServiceProvider;
         _matchProvider = matchProvider;
         _rewriteProvider = rewriteProvider;
@@ -585,6 +618,12 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     {
         return _costEvaluateProvider.EvaluateOpCost(op, context);
     }
+
+    /// <inheritdoc/>
+    public Dictionary<Expr, Metric> EvaluateMetric(Expr expr) => _metricEvaluateProvider.EvaluateMetric(expr);
+
+    /// <inheritdoc/>
+    public Metric EvaluateOpMetric(Op op, IMetricEvaluateContext context) => _metricEvaluateProvider.EvaluateOpMetric(op, context);
 
     /// <inheritdoc/>
     public Expr EvaluateShapeExpr(Expr expr, IReadOnlyDictionary<Var, Expr[]>? varsMap = null)

@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -12,6 +13,7 @@ using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.Passes;
 using Nncase.PatternMatch;
+using Nncase.Utilities;
 using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.Utility;
 
@@ -31,6 +33,111 @@ internal partial class Quantizer
         _quantizeOptions = quantizeOptions;
         MarkRangeOfs();
         MarkMarkers();
+    }
+
+    public Dictionary<ENode, List<Tensor>> GetMarkerOutputGroundTruth(List<IReadOnlyDictionary<Var, IValue>> samples)
+    {
+        var markerOutputGroundTruth = new Dictionary<ENode, List<Tensor>>(ReferenceEqualityComparer.Instance);
+        foreach (var sample in samples)
+        {
+            using var dumpScope = new DumpScope("eval_marker");
+            using var markerEvaluator = new CalibrationEvaluator(sample, _markers);
+            var markerValues = markerEvaluator.Evaluate();
+            foreach (var key in markerValues.Keys)
+            {
+                if (markerOutputGroundTruth.TryGetValue(key, out _))
+                {
+                    markerOutputGroundTruth[key].Add(markerValues[key]);
+                }
+                else
+                {
+                    var tensorList = new List<Tensor>();
+                    tensorList.Add(markerValues[key]);
+                    markerOutputGroundTruth.Add(key, tensorList);
+                }
+            }
+        }
+
+        return markerOutputGroundTruth;
+    }
+
+    public void DumpCosineAndMRE(Dictionary<ENode, List<Tensor>> markerOutputGroundTruth, List<IReadOnlyDictionary<Var, IValue>> samples)
+    {
+        var cosineError = new Dictionary<string, float[]>();
+        var mreError = new Dictionary<string, float[]>();
+        var sampleIndex = 0;
+
+        // hardcoded maxSamplesCount to be 5 to avoid export too much parameters for users and make them confused
+        int maxSamplesCount = Math.Min(samples.Count, 5);
+        samples = samples.GetRange(0, maxSamplesCount);
+        foreach (var sample in samples)
+        {
+            using var dumpScope = new DumpScope("eval_marker_with_accumulated_error");
+            using var markerEvaluator = new CalibrationEvaluator(sample, _markers);
+            var markerValues = markerEvaluator.Evaluate();
+            foreach (var key in markerValues.Keys)
+            {
+                if (key.Expr.Metadata.OutputNames == null)
+                {
+                    continue;
+                }
+
+                var groundTruth = markerOutputGroundTruth[key][sampleIndex];
+                var quantedValue = markerValues[key];
+                var outputNames = key.Expr.Metadata.OutputNames![0];
+                var sampleCosineError = Utility.GetCosineSimilarity(MemoryMarshal.Cast<byte, float>(groundTruth.BytesBuffer), MemoryMarshal.Cast<byte, float>(quantedValue.BytesBuffer));
+                var sampleMREError = Utility.GetMRESimilarity(MemoryMarshal.Cast<byte, float>(groundTruth.BytesBuffer), MemoryMarshal.Cast<byte, float>(quantedValue.BytesBuffer));
+                if (!File.Exists(DumpScope.Current.Directory + "/" + $"{outputNames}.csv"))
+                {
+                    using var tensorWriter = new StreamWriter(DumpScope.Current.OpenFile($"{outputNames}.csv"));
+                    tensorWriter.WriteLine($"ground_truth, simulate_output");
+                    for (int i = 0; i < MemoryMarshal.Cast<byte, float>(groundTruth.BytesBuffer).Length; i++)
+                    {
+                        tensorWriter.WriteLine($"{MemoryMarshal.Cast<byte, float>(groundTruth.BytesBuffer)[i]}, {MemoryMarshal.Cast<byte, float>(quantedValue.BytesBuffer)[i]}");
+                    }
+                }
+
+                if (cosineError.TryGetValue(outputNames, out var outputNamesOfKey))
+                {
+                    cosineError[outputNames][sampleIndex] = sampleCosineError;
+                    mreError[outputNames][sampleIndex] = sampleMREError;
+                }
+                else
+                {
+                    cosineError.Add(outputNames, new float[maxSamplesCount]);
+                    cosineError[outputNames][0] = sampleCosineError;
+                    mreError.Add(outputNames, new float[maxSamplesCount]);
+                    mreError[outputNames][0] = sampleMREError;
+                }
+            }
+
+            sampleIndex++;
+        }
+
+        var cosineErrorAvg = cosineError.ToDictionary(item => item.Key, item => item.Value.Average());
+        var mreErrorAvg = mreError.ToDictionary(item => item.Key, item => item.Value.Average());
+        using var writer = new StreamWriter(DumpScope.Current.OpenFile("quant_error.csv"));
+        writer.WriteLine($"name, cosine_error, mre_error");
+        foreach (var (name, err) in cosineErrorAvg)
+        {
+            writer.WriteLine($"{name}, {err}, {mreErrorAvg[name]}");
+        }
+    }
+
+    public async Task DumpQuantError(IDictionary<ENode, ValueRange<float>> ranges)
+    {
+        var samples = await _quantizeOptions.CalibrationDataset!.Samples.ToListAsync();
+        var markerOutputGroundTruth = GetMarkerOutputGroundTruth(samples);
+        AssignQuantParameters(ranges);
+        DumpCosineAndMRE(markerOutputGroundTruth, samples);
+    }
+
+    public async Task DumpQuantErrorFromConfig(IDictionary<ENode, ValueRange<float>[]> ranges)
+    {
+        var samples = await _quantizeOptions.CalibrationDataset!.Samples.ToListAsync();
+        var markerOutputGroundTruth = GetMarkerOutputGroundTruth(samples);
+        AssignQuantParametersFromConfig(ranges);
+        DumpCosineAndMRE(markerOutputGroundTruth, samples);
     }
 
     public async Task RunAsync(RunPassContext options)
@@ -169,17 +276,45 @@ internal partial class Quantizer
                     }
                 }
 
-                var quantSchemeString = JsonConvert.SerializeObject(quantScheme);
+                var quantSchemeString = JsonConvert.SerializeObject(quantScheme, Newtonsoft.Json.Formatting.Indented);
                 _quantizeOptions.QuantScheme = quantSchemeString;
+                if (Path.Exists(DumpScope.Current.Directory))
+                {
+                    File.WriteAllText(Path.Join(DumpScope.Current.Directory, "..", "..", "QuantScheme.json"), _quantizeOptions.QuantScheme);
+                }
+            }
+
+            if (_quantizeOptions.DumpQuantError)
+            {
+                await DumpQuantError(ranges);
             }
         }
         else
         {
+            // 原本设计导入json功能将来会被集成在nncase studio中，在网页中交互直接复制粘贴json字符串到QuantScheme参数中比较合适，此时以下代码应走上面的分支，
+            // 但是目前由于没有nncase studio，c#与python调试时不可能粘贴数万行的json，可在此处手动临时开启下面的分支，这样导入json时，QuantScheme填入json文件的路径即可。
+            // 若未来不再需要nncase studio，也可直接写死代码只保留下面的分支逻辑，但目前建议先用if的方式保留代码。另外注意，UnitTestExportQuantScheme,UnitTestDumpQuantError等所有与QuantScheme有关的test也需要随之调整。
             string readJson = _quantizeOptions.QuantScheme;
-            var quantScheme = JsonConvert.DeserializeObject<QuantScheme>(readJson);
-            var ranges = GetRangesFromConfig(quantScheme!);
-            AssignByChannelRanges(ranges);
-            AssignDataTypeFromConfig(quantScheme!);
+
+            // load from stream
+            // var quantScheme = JsonConvert.DeserializeObject<QuantScheme>(readJson);
+            // var ranges = GetRangesFromConfig(quantScheme!);
+            // AssignByChannelRanges(ranges);
+            // AssignDataTypeFromConfig(quantScheme!);
+
+            // load from file
+            using (var r = new StreamReader(readJson))
+            {
+                string json = r.ReadToEnd();
+                var quantScheme = JsonConvert.DeserializeObject<QuantScheme>(json);
+                var ranges = GetRangesFromConfig(quantScheme!);
+                AssignByChannelRanges(ranges);
+                AssignDataTypeFromConfig(quantScheme!);
+                if (_quantizeOptions.DumpQuantError)
+                {
+                    await DumpQuantErrorFromConfig(ranges);
+                }
+            }
         }
 
         // // 3. Choose better quant method using cosine, and bind info with ir.
@@ -299,13 +434,26 @@ internal partial class Quantizer
                     }
                     else
                     {
-                        var valueRanges = new ValueRange<float>[quantScheme!.Outputs[i].DataRange!.Length];
-                        for (int j = 0; j < quantScheme!.Outputs[i].DataRange!.Length; j++)
+                        var call = rangeOf.Expr.Users.ToList()[0].Users.ToList()[0];
+                        if (call is Call && ((Call)call).Target is MatMul && call.CheckedShape.HasUnknownDimension && quantScheme!.Outputs[i].DataRangeMode == "by_channel")
                         {
-                            valueRanges[j] = FixUpRange(new ValueRange<float>((float)quantScheme!.Outputs[i].DataRange![j].Min, (float)quantScheme!.Outputs[i].DataRange![j].Max));
-                        }
+                            var min = ((TensorConst)rangeOf.Expr.Operands[1]).Value.ToArray<float>().Min();
+                            var max = ((TensorConst)rangeOf.Expr.Operands[1]).Value.ToArray<float>().Max();
+                            var valueRanges = new ValueRange<float>[1];
+                            valueRanges[0] = new ValueRange<float>(min, max);
 
-                        ranges.Add(rangeOf, valueRanges);
+                            ranges.Add(rangeOf, valueRanges);
+                        }
+                        else
+                        {
+                            var valueRanges = new ValueRange<float>[quantScheme!.Outputs[i].DataRange!.Length];
+                            for (int j = 0; j < quantScheme!.Outputs[i].DataRange!.Length; j++)
+                            {
+                                valueRanges[j] = FixUpRange(new ValueRange<float>((float)quantScheme!.Outputs[i].DataRange![j].Min, (float)quantScheme!.Outputs[i].DataRange![j].Max));
+                            }
+
+                            ranges.Add(rangeOf, valueRanges);
+                        }
                     }
                 }
             }
@@ -432,6 +580,97 @@ internal partial class Quantizer
         }
 
         // _graph.Rebuild();
+    }
+
+    private int GetQuantBits(DataType dataType) => dataType switch
+    {
+        var x when x == DataTypes.UInt8 => 8,
+        var x when x == DataTypes.Int8 => 8,
+        var x when x == DataTypes.Int16 => 16,
+        _ => throw new ArgumentException("Invalid data type."),
+    };
+
+    private QuantMode GetQuantSymmetricMode(DataType dataType, bool dumpQuantErrorSymmetricForSigned) => dataType switch
+    {
+        var x when x == DataTypes.UInt8 => QuantMode.UnsignedMode,
+        var x when x == DataTypes.Int8 => dumpQuantErrorSymmetricForSigned == true ? QuantMode.SignedSymmetricMode : QuantMode.SignedAsymmetricMode,
+        var x when x == DataTypes.Int16 => dumpQuantErrorSymmetricForSigned == true ? QuantMode.SignedSymmetricMode : QuantMode.SignedAsymmetricMode,
+        _ => throw new ArgumentException("Invalid data type."),
+    };
+
+    private void AssignQuantParameters(IDictionary<ENode, ValueRange<float>> ranges)
+    {
+        var dumpQuantErrorSymmetricForSigned = _quantizeOptions.DumpQuantErrorSymmetricForSigned;
+        foreach (var range in ranges)
+        {
+            if (((RangeOf)((Call)range.Key.Expr).Target).IsRangeOfWeight)
+            {
+                var weights = (TensorConst)range.Key.Expr.Operands[1];
+                var oc = weights.CheckedShape[0].FixedValue;
+                var weightsValue = weights.Value.Cast<float>().Buffer;
+                var weightsSize = weightsValue.Length;
+                var eachChannelSize = weightsSize / oc;
+                var tmpMin = float.MaxValue;
+                var tmpMax = float.MinValue;
+                for (int i = 0; i < weightsSize; i++)
+                {
+                    if (weightsValue.Span[i] < tmpMin)
+                    {
+                        tmpMin = weightsValue.Span[i];
+                    }
+
+                    if (weightsValue.Span[i] > tmpMax)
+                    {
+                        tmpMax = weightsValue.Span[i];
+                    }
+
+                    if ((i + 1) % eachChannelSize == 0)
+                    {
+                        var quantParameter = new QuantParam(0, 1.0f);
+                        var quantType = DataTypes.FromShortName(((Nncase.IR.Marker)range.Key.Expr.Users.First()).MixQuantInfo!.MarkerQuantType.ToString());
+                        if (quantType == DataTypes.UInt8 || quantType == DataTypes.Int8 || quantType == DataTypes.Int16)
+                        {
+                            quantParameter = QuantUtility.GetQuantParam(new ValueRange<float> { Min = tmpMin, Max = tmpMax }, GetQuantBits(quantType), GetQuantSymmetricMode(quantType, dumpQuantErrorSymmetricForSigned));
+                        }
+
+                        ((Nncase.IR.Marker)range.Key.Expr.Users.First()).MixQuantInfo!.QuantParameter.Add(quantParameter);
+
+                        tmpMin = float.MaxValue;
+                        tmpMax = float.MinValue;
+                    }
+                }
+            }
+            else
+            {
+                var quantParameter = new QuantParam(0, 1.0f);
+                var quantType = DataTypes.FromShortName(((Nncase.IR.Marker)range.Key.Expr.Users.First()).MixQuantInfo!.MarkerQuantType.ToString());
+                if (quantType == DataTypes.UInt8 || quantType == DataTypes.Int8 || quantType == DataTypes.Int16)
+                {
+                    quantParameter = QuantUtility.GetQuantParam(range.Value, GetQuantBits(quantType), GetQuantSymmetricMode(quantType, dumpQuantErrorSymmetricForSigned));
+                }
+
+                ((Nncase.IR.Marker)range.Key.Expr.Users.First()).MixQuantInfo!.QuantParameter.Add(quantParameter);
+            }
+        }
+    }
+
+    private void AssignQuantParametersFromConfig(IDictionary<ENode, ValueRange<float>[]> ranges)
+    {
+        var dumpQuantErrorSymmetricForSigned = _quantizeOptions.DumpQuantErrorSymmetricForSigned;
+        foreach (var range in ranges)
+        {
+            for (int i = 0; i < range.Value.Length; i++)
+            {
+                var quantParameter = new QuantParam(0, 1.0f);
+                var quantType = DataTypes.FromShortName(((Nncase.IR.Marker)range.Key.Expr.Users.First()).MixQuantInfo!.MarkerQuantType.ToString());
+                if (quantType == DataTypes.UInt8 || quantType == DataTypes.Int8 || quantType == DataTypes.Int16)
+                {
+                    quantParameter = QuantUtility.GetQuantParam(range.Value[i], GetQuantBits(quantType), GetQuantSymmetricMode(quantType, dumpQuantErrorSymmetricForSigned));
+                }
+
+                ((Nncase.IR.Marker)range.Key.Expr.Users.First()).MixQuantInfo!.QuantParameter.Add(quantParameter);
+            }
+        }
     }
 
     private void AssignByChannelRanges(IDictionary<ENode, ValueRange<float>[]> ranges)

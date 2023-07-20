@@ -1,12 +1,13 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using NetFabric.Hyperlinq;
-using Newtonsoft.Json;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.Passes;
 using Nncase.Passes.Rules.Neutral;
@@ -19,12 +20,13 @@ using static Nncase.IR.F.Random;
 namespace Nncase.Tests.QuantTest;
 
 [AutoSetupTestMethod(InitSession = true)]
-public class UnitTestExportQuantScheme : TestClassBase
+public class UnitTestDumpQuantError : TestClassBase
 {
     [Fact]
-    public async Task TestExportQuantSchemeForWeightsByTensorConv2D()
+    public async Task TestDumpQuantError()
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 224, 224 }));
+        input.Metadata.OutputNames = new string[] { "input" };
 
         var weightsValue = new List<float>();
         for (int i = 0; i < 32 * 3 * 3 * 3; i++)
@@ -41,51 +43,48 @@ public class UnitTestExportQuantScheme : TestClassBase
         var padding = new[,] { { 0, 0 }, { 0, 0 } };
 
         var conv = Conv2D(input, weights, bias, stride, padding, dilation, PadMode.Constant, 1);
+        conv.Metadata.OutputNames = new string[] { "conv" };
 
         var output = conv;
-        _ = await TestExportQuantSchemeMainPassesAsync(input, output, false);
-
-        var readJson = "{\"Version\":\"1.0\",\"Model\":null,\"Outputs\":[{\"Name\":\"weight\",\"DataType\":\"u8\",\"DataRange\":[{\"Min\":0.0,\"Max\":0.9988426,\"IsFull\":false}],\"DataRangeMode\":\"by_tensor\"}]}";
-        var quantScheme = JsonConvert.DeserializeObject<QuantScheme>(readJson);
-        var expectedQuantScheme = JsonConvert.SerializeObject(quantScheme, Newtonsoft.Json.Formatting.Indented);
-        Assert.Equal(expectedQuantScheme, CompileOptions.QuantizeOptions.QuantScheme);
+        await TestDumpQuantErrorMainPassesAsync(input, output, string.Empty);
+        Assert.True(File.Exists(CompileOptions.DumpDir + "/Passes/2_AssignRanges/" + "quant_error.csv"));
     }
 
     [Fact]
-    public async Task TestExportQuantSchemeForWeightsByChannelConv2D()
+    public async Task TestDumpQuantErrorFromConfig()
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 3, 224, 224 }));
+        input.Metadata.OutputNames = new string[] { "input" };
 
         var weightsValue = new List<float>();
-        for (int i = 0; i < 3 * 3 * 3 * 3; i++)
+        for (int i = 0; i < 32 * 3 * 3 * 3; i++)
         {
-            weightsValue.Add(i * 1.0f / (3 * 3 * 3 * 3));
+            weightsValue.Add(i * 1.0f / (32 * 3 * 3 * 3));
         }
 
-        Expr weights = Tensor.From<float>(weightsValue.ToArray(), new[] { 3, 3, 3, 3 });
+        Expr weights = Tensor.From<float>(weightsValue.ToArray(), new[] { 32, 3, 3, 3 });
         weights.Metadata.OutputNames = new string[] { "weight" };
 
-        var bias = Normal(DataTypes.Float32, new[] { 3 }).Evaluate().AsTensor();
+        var bias = Normal(DataTypes.Float32, new[] { 32 }).Evaluate().AsTensor();
         var stride = Tensor.From(new[] { 1, 1 }, new[] { 2 });
         var dilation = Tensor.From(new[] { 1, 1 }, new[] { 2 });
         var padding = new[,] { { 0, 0 }, { 0, 0 } };
 
         var conv = Conv2D(input, weights, bias, stride, padding, dilation, PadMode.Constant, 1);
+        conv.Metadata.OutputNames = new string[] { "conv" };
 
         var output = conv;
-        _ = await TestExportQuantSchemeMainPassesAsync(input, output, true);
-
-        var readJson = "{\"Version\":\"1.0\",\"Model\":null,\"Outputs\":[{\"Name\":\"weight\",\"DataType\":\"u8\",\"DataRange\":[{\"Min\":0.0,\"Max\":0.32098764,\"IsFull\":false},{\"Min\":0.33333334,\"Max\":0.654321,\"IsFull\":false},{\"Min\":0.6666667,\"Max\":0.9876543,\"IsFull\":false}],\"DataRangeMode\":\"by_channel\"}]}";
-        var quantScheme = JsonConvert.DeserializeObject<QuantScheme>(readJson);
-        var expectedQuantScheme = JsonConvert.SerializeObject(quantScheme, Newtonsoft.Json.Formatting.Indented);
-        Assert.Equal(expectedQuantScheme, CompileOptions.QuantizeOptions.QuantScheme);
+        var resourceName = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "Quant", "conv2d.quant.json");
+        await TestDumpQuantErrorMainPassesAsync(input, output, resourceName);
+        Assert.True(File.Exists(CompileOptions.DumpDir + "/Passes/2_AssignRanges/" + "quant_error.csv"));
     }
 
-    private async Task<DumpVisitor> TestExportQuantSchemeMainPassesAsync(Var input, Expr output, bool exportWeightRangeByChannel)
+    private async Task TestDumpQuantErrorMainPassesAsync(Var input, Expr output, string resourceName)
     {
         CompileOptions.QuantizeOptions.ModelQuantMode = ModelQuantMode.UsePTQ;
         CompileOptions.QuantizeOptions.QuantType = DataTypes.UInt8;
         CompileOptions.QuantizeOptions.WQuantType = DataTypes.UInt8;
+        CompileOptions.DumpFlags = DumpFlags.ImportOps | DumpFlags.EGraphCost | DumpFlags.Compile | DumpFlags.PassIR | DumpFlags.Rewrite;
 
         var module = new IRModule(new Function("main", output, new Var[] { input }));
 
@@ -93,8 +92,15 @@ public class UnitTestExportQuantScheme : TestClassBase
 
         CompileOptions.QuantizeOptions.CalibrationDataset = new SolidCalibrationDatasetProvider(new Var[] { input });
         CompileOptions.QuantizeOptions.CalibrationMethod = CalibMethod.Kld;
-        CompileOptions.QuantizeOptions.ExportQuantScheme = true;
-        CompileOptions.QuantizeOptions.ExportWeightRangeByChannel = exportWeightRangeByChannel;
+        CompileOptions.QuantizeOptions.DumpQuantError = true;
+        CompileOptions.QuantizeOptions.DumpQuantErrorSymmetricForSigned = true;
+
+        var assembly = Assembly.GetExecutingAssembly();
+
+        if (resourceName != string.Empty)
+        {
+            CompileOptions.QuantizeOptions.QuantScheme = resourceName;
+        }
 
         // 0. TargetIndependentPass
         pmgr.AddWithName<DataflowPass>("TargetInDependent").Configure(p =>
@@ -106,15 +112,6 @@ public class UnitTestExportQuantScheme : TestClassBase
         pmgr.AddWithName<EGraphPassWithQuantize>("AssignRanges");
 
         await pmgr.RunAsync(module);
-
-        var dumpVisitor = new DumpVisitor();
-        dumpVisitor.Visit(module.Functions[0]);
-        return dumpVisitor;
-    }
-
-    public sealed class DumpVisitor : ExprVisitor<int, IRType>
-    {
-        protected override int DefaultVisitLeaf(Expr expr) => 0;
     }
 
     internal sealed class SolidCalibrationDatasetProvider : ICalibrationDatasetProvider

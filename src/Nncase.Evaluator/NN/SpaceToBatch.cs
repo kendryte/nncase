@@ -17,7 +17,7 @@ namespace Nncase.Evaluator.NN;
 /// <summary>
 /// Evaluator for <see cref="SpaceToBatch"/>.
 /// </summary>
-public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<SpaceToBatch>, ICostEvaluator<SpaceToBatch>
+public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<SpaceToBatch>, ICostEvaluator<SpaceToBatch>, IMetricEvaluator<SpaceToBatch>
 {
     /// <inheritdoc/>
     public Cost Visit(ICostEvaluateContext context, SpaceToBatch target)
@@ -27,6 +27,15 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(ret),
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
+        };
+    }
+
+    public Metric Visit(IMetricEvaluateContext context, SpaceToBatch target)
+    {
+        var ret = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(ret) * 2,
         };
     }
 

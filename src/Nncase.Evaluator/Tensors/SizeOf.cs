@@ -11,7 +11,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="SizeOf"/>.
 /// </summary>
-public class SizeOfEvaluator : IEvaluator<SizeOf>, ITypeInferencer<SizeOf>, ICostEvaluator<SizeOf>
+public class SizeOfEvaluator : IEvaluator<SizeOf>, ITypeInferencer<SizeOf>, ICostEvaluator<SizeOf>, IMetricEvaluator<SizeOf>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, SizeOf size)
@@ -33,5 +33,10 @@ public class SizeOfEvaluator : IEvaluator<SizeOf>, ITypeInferencer<SizeOf>, ICos
         {
             [CostFactorNames.CPUCycles] = 1,
         };
+    }
+
+    public Metric Visit(IMetricEvaluateContext context, SizeOf target)
+    {
+        return Metric.Zero;
     }
 }

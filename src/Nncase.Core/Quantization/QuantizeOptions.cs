@@ -149,6 +149,16 @@ public class QuantizeOptions
     public bool ExportWeightRangeByChannel { get; set; }
 
     /// <summary>
+    /// Gets or sets a value indicating whether dump quant error.
+    /// </summary>
+    public bool DumpQuantError { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether dump quant error using symmetric algorithm for signed mode.
+    /// </summary>
+    public bool DumpQuantErrorSymmetricForSigned { get; set; }
+
+    /// <summary>
     /// Creates no quantization options.
     /// </summary>
     /// <returns>No quant options.</returns>

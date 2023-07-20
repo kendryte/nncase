@@ -19,7 +19,7 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Evaluator for <see cref="Reduce"/>.
 /// </summary>
-public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICostEvaluator<Reduce>, IShapeEvaluator<Reduce>
+public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICostEvaluator<Reduce>, IShapeEvaluator<Reduce>, IMetricEvaluator<Reduce>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Reduce reduce)
@@ -130,6 +130,21 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICos
         }
 
         throw new NotImplementedException();
+    }
+
+    public Metric Visit(IMetricEvaluateContext context, Reduce target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, Reduce.Input);
+        var returnType = context.GetReturnType<TensorType>();
+        var rF = MetricUtility.GetFLOPs(returnType);
+        var iF = MetricUtility.GetFLOPs(inputType);
+        var inner = iF / rF;
+        _ = iF / inner;
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(returnType),
+            [MetricFactorNames.FLOPs] = iF,
+        };
     }
 
     private IRType Visit(ITypeInferenceContext context, Reduce target, TensorType input)
