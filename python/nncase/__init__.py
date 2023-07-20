@@ -81,7 +81,7 @@ class PTQTensorOptions:
         self.export_quant_scheme: bool = False
         self.export_weight_range_by_channel: bool = False
         self.dump_quant_error: bool = False
-        self.dump_quant_error_symmetric_for_signed: True
+        self.dump_quant_error_symmetric_for_signed: bool = True
         self.cali_data: List[RuntimeTensor] = []
 
     def set_tensor_data(self, data: List[List[np.ndarray]]) -> None:
