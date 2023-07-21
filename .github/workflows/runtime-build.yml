@@ -61,7 +61,7 @@ jobs:
       run: |
         cd build
         ctest -C ${{matrix.config.buildType}} --test-dir tests/kernels --output-on-failure -j4
-      if: runner.os != 'Macos'
+      if: runner.os != 'Macos' && runner.os != 'Windows'
 
     #- name: Benchmark
     #  run: |

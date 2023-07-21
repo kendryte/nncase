@@ -17,7 +17,7 @@ namespace Nncase.Evaluator.NN;
 /// <summary>
 /// Evaluator for <see cref="Conv2D"/>.
 /// </summary>
-public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICostEvaluator<Conv2D>, IShapeEvaluator<Conv2D>
+public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICostEvaluator<Conv2D>, IShapeEvaluator<Conv2D>, IMetricEvaluator<Conv2D>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Conv2D conv)
@@ -68,6 +68,23 @@ public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICos
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(weightsType) + CostUtility.GetMemoryAccess(biasType),
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
             [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, (uint)macPerElement.FixedValue),
+        };
+    }
+
+    public Metric Visit(IMetricEvaluateContext context, Conv2D target)
+    {
+        var returnType = context.GetReturnType<TensorType>();
+        var outputShape = returnType.Shape.ToValueArray();
+
+        var inputType = context.GetArgumentType<TensorType>(target, Conv2D.Input);
+        var inputShape = inputType.Shape.ToValueArray();
+        var weightType = context.GetArgumentType<TensorType>(target, Conv2D.Weights);
+        var weightShape = weightType.Shape.ToValueArray();
+
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(weightType) + CostUtility.GetMemoryAccess(returnType),
+            [MetricFactorNames.FLOPs] = (UInt128)(inputShape[0] * weightShape[0] * weightShape[1] * outputShape[2] * outputShape[3] * weightShape[2] * weightShape[3]),
         };
     }
 

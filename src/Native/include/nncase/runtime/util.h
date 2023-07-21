@@ -192,23 +192,6 @@ inline result<std::vector<gsl::byte *>> get_output_data(tuple outputs) {
         outputs, [](tensor &input) { return get_output_data(input); });
 }
 
-#ifndef NODEBUG
-// used for insert into some where for check nan value in DEBUG mode
-inline void nan_debug(const float *in, int size) {
-    auto f = *in;
-    if (f != f) {
-        for (int i = 1; i < size; ++i) {
-            auto fv = *(in + i);
-            if (fv != fv) {
-                [[maybe_unused]] auto a = 1;
-            }
-        }
-    }
-}
-#else
-inline void nan_debug(const float *in) {}
-#endif
-
 inline result<gsl::span<gsl::byte>> get_input_span(tensor input) {
     try_var(input_buffer, get_host_buffer(input));
     try_var(input_map, input_buffer.map(map_read));

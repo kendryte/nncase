@@ -13,7 +13,7 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Evaluator for <see cref="Unary"/>.
 /// </summary>
-public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEvaluator<Unary>, IOpPrinter<Unary>, IShapeEvaluator<Unary>
+public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEvaluator<Unary>, IOpPrinter<Unary>, IShapeEvaluator<Unary>, IMetricEvaluator<Unary>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Unary unary)
@@ -79,6 +79,19 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
             [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, CostUtility.GetCPUCyclesOfUnary(target.UnaryOp)),
+        };
+    }
+
+    public Metric Visit(IMetricEvaluateContext context, Unary target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, Unary.Input);
+        var outputType = context.GetReturnType<TensorType>();
+
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(outputType),
+            [MetricFactorNames.FLOPs] = MetricUtility.GetFLOPs(outputType),
+            [MetricFactorNames.Parallel] = 4,
         };
     }
 

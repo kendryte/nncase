@@ -13,7 +13,7 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Evaluator for <see cref="Reduce"/>.
 /// </summary>
-public class ReduceArgEvaluator : IEvaluator<ReduceArg>, ITypeInferencer<ReduceArg>, ICostEvaluator<ReduceArg>
+public class ReduceArgEvaluator : IEvaluator<ReduceArg>, ITypeInferencer<ReduceArg>, ICostEvaluator<ReduceArg>, IMetricEvaluator<ReduceArg>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, ReduceArg reduceArg)
@@ -52,6 +52,21 @@ public class ReduceArgEvaluator : IEvaluator<ReduceArg>, ITypeInferencer<ReduceA
         uint ret_elem = ret.Shape.Aggregate(1U, (acc, d) => acc * (d.IsFixed ? (uint)d.FixedValue : 1U));
         uint macPerElement = input_elem / ret_elem;
         return new() { [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(input), [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret), [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(ret, macPerElement), };
+    }
+
+    public Metric Visit(IMetricEvaluateContext context, ReduceArg target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, ReduceArg.Input);
+        var returnType = context.GetReturnType<TensorType>();
+        var rF = MetricUtility.GetFLOPs(returnType);
+        var iF = MetricUtility.GetFLOPs(inputType);
+        var inner = iF / rF;
+        _ = iF / inner;
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(returnType),
+            [MetricFactorNames.FLOPs] = iF,
+        };
     }
 
     private IRType Visit(ITypeInferenceContext context, ReduceArg target, TensorType input)

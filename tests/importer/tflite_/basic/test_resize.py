@@ -68,7 +68,7 @@ def test_resize(in_shape, size, align_corners, half_pixel_centers, mode, request
     if align_corners and half_pixel_centers:
         return
     module = _make_module(in_shape, size, align_corners, half_pixel_centers, mode)
-    runner = TfliteTestRunner(request.node.name, ['cpu', 'k210'])
+    runner = TfliteTestRunner(request.node.name)
     model_file = runner.from_tensorflow(module)
     runner.run(model_file)
 

@@ -84,6 +84,8 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr, byte*, nuint, void> QuantOptionsSetQuantSchemePtr;
     public delegate* unmanaged<IntPtr, byte, void> QuantOptionsSetExportQuantSchemePtr;
     public delegate* unmanaged<IntPtr, byte, void> QuantOptionsSetExportWeightRangeByChannelPtr;
+    public delegate* unmanaged<IntPtr, byte, void> QuantOptionsSetDumpQuantErrorPtr;
+    public delegate* unmanaged<IntPtr, byte, void> QuantOptionsSetDumpQuantErrorSymmetricForSignedPtr;
     public delegate* unmanaged<IntPtr, byte, void> ShapeBucketOptionsSetEnablePtr;
     public delegate* unmanaged<IntPtr, byte*, nuint, void> ShapeBucketOptionsSetRangeInfoPtr;
     public delegate* unmanaged<IntPtr, nuint, void> ShapeBucketOptionsSetSegmentsCountPtr;
@@ -150,6 +152,8 @@ public static unsafe class CApi
         mt->QuantOptionsSetQuantSchemePtr = &QuantizeOptionsSetQuantScheme;
         mt->QuantOptionsSetExportQuantSchemePtr = &QuantizeOptionsSetExportQuantScheme;
         mt->QuantOptionsSetExportWeightRangeByChannelPtr = &QuantizeOptionsSetExportWeightRangeByChannel;
+        mt->QuantOptionsSetDumpQuantErrorPtr = &QuantizeOptionsSetDumpQuantError;
+        mt->QuantOptionsSetDumpQuantErrorSymmetricForSignedPtr = &QuantizeOptionsSetDumpQuantErrorSymmetricForSigned;
         mt->ShapeBucketOptionsSetEnablePtr = &ShapeBucketOptionsSetEnable;
         mt->ShapeBucketOptionsSetRangeInfoPtr = &ShapeBucketOptionsSetRangeInfo;
         mt->ShapeBucketOptionsSetSegmentsCountPtr = &ShapeBucketOptionsSetSegmentsCount;
@@ -605,6 +609,38 @@ public static unsafe class CApi
                 break;
             default:
                 throw new ArgumentException("Invalid exportWeightRangeByChannel Flag");
+        }
+    }
+
+    [UnmanagedCallersOnly]
+    private static void QuantizeOptionsSetDumpQuantError(IntPtr quantizeOptionsHandle, byte dumpQuantError)
+    {
+        switch (dumpQuantError)
+        {
+            case 0:
+                Get<QuantizeOptions>(quantizeOptionsHandle).DumpQuantError = false;
+                break;
+            case 1:
+                Get<QuantizeOptions>(quantizeOptionsHandle).DumpQuantError = true;
+                break;
+            default:
+                throw new ArgumentException("Invalid dumpQuantError Flag");
+        }
+    }
+
+    [UnmanagedCallersOnly]
+    private static void QuantizeOptionsSetDumpQuantErrorSymmetricForSigned(IntPtr quantizeOptionsHandle, byte dumpQuantErrorSymmetricForSigned)
+    {
+        switch (dumpQuantErrorSymmetricForSigned)
+        {
+            case 0:
+                Get<QuantizeOptions>(quantizeOptionsHandle).DumpQuantErrorSymmetricForSigned = false;
+                break;
+            case 1:
+                Get<QuantizeOptions>(quantizeOptionsHandle).DumpQuantErrorSymmetricForSigned = true;
+                break;
+            default:
+                throw new ArgumentException("Invalid dumpQuantErrorSymmetricForSigned Flag");
         }
     }
 

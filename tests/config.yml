@@ -47,7 +47,6 @@ case: # case的配置，应该是一个多层次的
     is_fpga: false
     dump_asm: true
     dump_ir: false
-    dump_quant_error: false
     dump_import_op_range: false
     quant_type: 'uint8'
     w_quant_type: 'uint8'
@@ -58,10 +57,13 @@ case: # case的配置，应该是一个多层次的
     quant_scheme: ""
     export_quant_scheme: false
     export_weight_range_by_channel: true
+    dump_quant_error: false
+    dump_quant_error_symmetric_for_signed: true
     shape_bucket_enable: false
     shape_bucket_range_info: {}
     shape_bucket_segments_count: 2
     shape_bucket_fix_var_map: {}
+    input_file: ""
 
   ptq_opt:
     kwargs:

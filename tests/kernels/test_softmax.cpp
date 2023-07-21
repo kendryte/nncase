@@ -26,35 +26,47 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class UnaryTest
+class SoftmaxTest
     : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
+      public ::testing::TestWithParam<std::tuple<typecode_t, dims_t, int64_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode, i_shape] = GetParam();
+        auto &&[typecode, l_shape, value] = GetParam();
 
         input =
-            hrt::create(typecode, i_shape, host_runtime_tensor::pool_cpu_only)
+            hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
         init_tensor(input);
+        axis_value = value >= (long)l_shape.size() ? 0 : value;
+        axis_value = axis_value < -(long)l_shape.size() ? 0 : axis_value;
+        int64_t axis_ptr[] = {axis_value};
+        axis = hrt::create(
+                   dt_int64, {1},
+                   {reinterpret_cast<gsl::byte *>(axis_ptr), sizeof(axis_ptr)},
+                   true, host_runtime_tensor::pool_cpu_only)
+                   .expect("create tensor failed");
     }
 
     void TearDown() override {}
 
   protected:
     runtime_tensor input;
+    runtime_tensor axis;
+    int64_t axis_value;
 };
 
-INSTANTIATE_TEST_SUITE_P(Unary, UnaryTest,
-                         testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1})));
+INSTANTIATE_TEST_SUITE_P(
+    Softmax, SoftmaxTest,
+    testing::Combine(testing::Values(dt_float32),
+                     testing::Values(dims_t{1}, dims_t{1, 3},
+                                     dims_t{1, 3, 16, 16}, dims_t{1, 3, 16}),
+                     testing::Values(0, 1, 2, 3, -4, -3, -2, -1)));
 
-TEST_P(UnaryTest, log) {
-    OrtKITensor *orts[1];
-    orts[0] = runtime_tensor_2_ort_tensor(input);
+TEST_P(SoftmaxTest, Softmax) {
+    auto l_ort = runtime_tensor_2_ort_tensor(input);
 
     // expected
-    auto output_ort = ortki_Log(orts[0]);
+    auto output_ort = ortki_Softmax(l_ort, axis_value);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
@@ -65,13 +77,13 @@ TEST_P(UnaryTest, log) {
                         .expect("create tensor failed");
 
     // actual
-    auto output = kernels::stackvm::unary(
-                      nncase::runtime::stackvm::unary_op_t::log, input.impl())
-                      .expect("binary failed");
+    auto output = kernels::stackvm::softmax(input.impl(), axis.impl())
+                      .expect("softmax failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     // compare
-    EXPECT_TRUE(is_same_tensor(expected, actual));
+    EXPECT_TRUE(is_same_tensor(expected, actual) ||
+                cosine_similarity_tensor(expected, actual));
 }
 
 int main(int argc, char *argv[]) {

@@ -7,12 +7,13 @@ import shutil
 import os
 import numpy as np
 from test_runner import *
+from test_utils import *
 from collections import ChainMap
 
 
 class OnnxTestRunner(TestRunner):
-    def __init__(self, case_name, targets=None, overwrite_configs: dict = None):
-        super().__init__(case_name, targets, overwrite_configs)
+    def __init__(self, case_name, overwrite_configs: str = None):
+        super().__init__(case_name, overwrite_configs)
         self.model_type = "onnx"
 
     def from_torch(self, module, in_shape, opset_version=11):
@@ -45,10 +46,12 @@ class OnnxTestRunner(TestRunner):
         if self.case_dir != os.path.dirname(model_file):
             new_file = os.path.join(self.case_dir, 'test.onnx')
             shutil.copy(model_file, new_file)
+            if os.path.exists(model_file + "_data"):
+                shutil.copy(model_file + "_data", self.case_dir)
             model_file = new_file
 
         if not self.inputs:
-            self.parse_model_input_output(model_file)
+            self.parse_model(model_file)
 
         model_file = self.do_preprocess(model_file)
 
@@ -68,7 +71,8 @@ class OnnxTestRunner(TestRunner):
             old_onnx_model, fix_bn=False, convert_version=False, simplify=False)
         model_file = os.path.join(
             os.path.dirname(model_file), 'simplified.onnx')
-        onnx.save_model(onnx_model, model_file)
+        onnx.save_model(onnx_model, model_file,
+                        save_as_external_data=True if onnx_model.ByteSize() > 2147483648 else False)
         return model_file
 
     def preprocess_model(self, onnx_model, fix_bn=True, convert_version=True, simplify=True, import_test=True):
@@ -107,7 +111,7 @@ class OnnxTestRunner(TestRunner):
             # traceback.print_exc()
             return None
 
-    def parse_model_input_output(self, model_file: str):
+    def parse_model(self, model_file: str):
         onnx_model = onnx.load(model_file)
         input_all = [node.name for node in onnx_model.graph.input]
         input_initializer = [node.name for node in onnx_model.graph.initializer]
@@ -119,7 +123,7 @@ class OnnxTestRunner(TestRunner):
             if dim_value is not digit, it should be fixed.
             dim_value range: [0, inf)
             """
-            if not str(d.dim_value).isdigit():
+            if d.dim_param != "":
                 if len(self.shape_vars):
                     # we should eval dim_param instead of get var value
                     # e.g. dim_param = dec_len - 1
@@ -148,7 +152,7 @@ class OnnxTestRunner(TestRunner):
             input_dict['model_shape'] = shape
             self.inputs.append(input_dict)
             self.calibs.append(copy.deepcopy(input_dict))
-            self.dump_range_data.append(copy.deepcopy(input_dict))
+            # self.dump_range_data.append(copy.deepcopy(input_dict))
 
         def is_dynamic(output):
             dims = output.type.tensor_type.shape.dim
@@ -167,11 +171,14 @@ class OnnxTestRunner(TestRunner):
             output_dict = {}
             onnx_type = e.type.tensor_type
             output_dict['name'] = e.name
-            output_dict['dtype'] = onnx.mapping.TENSOR_TYPE_TO_NP_TYPE[onnx_type.elem_type]
+            if onnx_type.elem_type == 0:
+                output_dict['dtype'] = 'float32'
+            else:
+                output_dict['dtype'] = onnx.mapping.TENSOR_TYPE_TO_NP_TYPE[onnx_type.elem_type]
             output_dict['model_shape'] = [i.dim_value for i in onnx_type.shape.dim]
             self.outputs.append(output_dict)
 
-    def cpu_infer(self, case_dir: str, model_file: bytes, type: str):
+    def cpu_infer(self, model_file: bytes):
         # create session
         try:
             print('[onnx]: using simplified model')
@@ -180,14 +187,14 @@ class OnnxTestRunner(TestRunner):
             print(e)
             try:
                 print('[onnx]: using origin model')
-                model_file = os.path.join(case_dir, 'test.onnx')
+                model_file = os.path.join(self.case_dir, 'test.onnx')
                 sess = ort.InferenceSession(model_file)
             except Exception as e:
                 print(e)
                 print('[onnx]: using converted model')
                 onnx_model = onnx.load(model_file)
                 onnx_model = version_converter.convert_version(onnx_model, 8)
-                model_file = os.path.join(case_dir, 'converted.onnx')
+                model_file = os.path.join(self.case_dir, 'converted.onnx')
                 onnx.save_model(onnx_model, model_file)
                 sess = ort.InferenceSession(model_file)
 
@@ -196,23 +203,19 @@ class OnnxTestRunner(TestRunner):
             new_value = self.transform_input(
                 self.data_pre_process(input['data']), "float32", "CPU")[0]
             input_dict[input['name']] = new_value
-            if self.pre_process[0]['preprocess']:
-                bin_file = os.path.join(case_dir, f'frame_input_{i}.bin')
-                text_file = os.path.join(case_dir, f'frame_input_{i}.txt')
-                new_value[0].tofile(bin_file)
-                if not test_utils.in_ci():
-                    self.totxtfile(text_file, new_value)
+            if self.cfg['compile_opt']['preprocess'] and not test_utils.in_ci():
+                dump_bin_file(os.path.join(self.case_dir, f'frame_input_{i}.bin'), new_value)
+                dump_txt_file(os.path.join(self.case_dir, f'frame_input_{i}.txt'), new_value)
 
         outputs = sess.run(None, input_dict)
-        i = 0
-        for output in outputs:
-            bin_file = os.path.join(case_dir, f'cpu_result_{i}.bin')
-            text_file = os.path.join(case_dir, f'cpu_result_{i}.txt')
-            self.output_paths.append((bin_file, text_file))
-            output.tofile(bin_file)
-            if not test_utils.in_ci():
-                self.totxtfile(text_file, output)
-            i += 1
+        if not test_utils.in_ci():
+            i = 0
+            for output in outputs:
+                dump_bin_file(os.path.join(self.case_dir, f'cpu_result_{i}.bin'), output)
+                dump_txt_file(os.path.join(self.case_dir, f'cpu_result_{i}.txt'), output)
+                i += 1
+
+        return outputs
 
     def import_model(self, compiler, model_content, import_options):
         compiler.import_onnx(model_content, import_options)

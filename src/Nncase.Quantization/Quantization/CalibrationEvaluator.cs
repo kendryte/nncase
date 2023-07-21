@@ -265,6 +265,32 @@ public class CalibrationEvaluator : IDisposable
             }
         }
 
+        if (enode.Expr is Nncase.IR.Marker && ((Marker)enode.Expr).MixQuantInfo?.QuantParameter != null && ((Marker)enode.Expr).MixQuantInfo!.QuantParameter.Count != 0 && value != null)
+        {
+            var valueArray = value.AsTensor().ToArray<float>();
+            int index = 0;
+
+            int size = 0;
+            if (((Marker)enode.Expr).MixQuantInfo!.QuantParameter.Count != 1)
+            {
+                size = value.AsTensor().Shape[1].FixedValue * value.AsTensor().Shape[2].FixedValue * value.AsTensor().Shape[3].FixedValue;
+            }
+
+            for (int i = 0; i < valueArray.Length; i++)
+            {
+                if (((Marker)enode.Expr).MixQuantInfo!.QuantParameter.Count != 1)
+                {
+                    index = i / size;
+                }
+
+                var valueArrayQuant = Math.Round((valueArray[i] / (double)((Marker)enode.Expr).MixQuantInfo!.QuantParameter[index].Scale) + ((Marker)enode.Expr).MixQuantInfo!.QuantParameter[index].ZeroPoint);
+                var valueArrayDeQuant = ((float)valueArrayQuant - ((Marker)enode.Expr).MixQuantInfo!.QuantParameter[index].ZeroPoint) * (double)((Marker)enode.Expr).MixQuantInfo!.QuantParameter[index].Scale;
+                valueArray[i] = (float)valueArrayDeQuant;
+            }
+
+            value = Value.FromTensor(Tensor.From<float>(valueArray, value.AsTensor().Shape));
+        }
+
         return value;
     }
 

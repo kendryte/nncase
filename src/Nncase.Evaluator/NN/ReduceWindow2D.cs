@@ -17,7 +17,7 @@ namespace Nncase.Evaluator.NN;
 /// <summary>
 /// Evaluator for <see cref="ReduceWindow2D"/>.
 /// </summary>
-public class ReduceWindow2DEvaluator : IEvaluator<ReduceWindow2D>, ITypeInferencer<ReduceWindow2D>, ICostEvaluator<ReduceWindow2D>
+public class ReduceWindow2DEvaluator : IEvaluator<ReduceWindow2D>, ITypeInferencer<ReduceWindow2D>, ICostEvaluator<ReduceWindow2D>, IMetricEvaluator<ReduceWindow2D>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, ReduceWindow2D r)
@@ -85,6 +85,19 @@ public class ReduceWindow2DEvaluator : IEvaluator<ReduceWindow2D>, ITypeInferenc
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
             [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, macPerElement * 2),
+        };
+    }
+
+    public Metric Visit(IMetricEvaluateContext context, ReduceWindow2D target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, ReduceWindow2D.Input);
+        var outputType = context.GetReturnType<TensorType>();
+
+        var filter = context.GetArgument<TensorConst>(target, ReduceWindow2D.Filter).Value.ToArray<int>();
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(outputType),
+            [MetricFactorNames.FLOPs] = MetricUtility.GetFLOPs(outputType, filter[0] * filter[1]),
         };
     }
 

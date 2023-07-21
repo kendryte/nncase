@@ -42,7 +42,7 @@ shapes = [
 def test_broadcast(in_shape, out_shape, request):
     module = _make_module(in_shape, out_shape)
 
-    runner = TfliteTestRunner(request.node.name, ['cpu'])
+    runner = TfliteTestRunner(request.node.name)
     model_file = runner.from_tensorflow(module)
     runner.run(model_file)
 
