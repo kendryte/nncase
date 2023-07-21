@@ -54,70 +54,118 @@ Type "help", "copyright", "credits" or "license" for more information.
 
 CompileOptions类, 用于配置nncase编译选项各属性说明如下
 
-| 属性名称        | 类型        | 是否必须 | 描述                                                         |
-| --------------- | ----------- | -------- | ------------------------------------------------------------ |
-| target          | string      | 是       | 指定编译目标, 如'cpu', 'k230'                                |
-| dump_ir         | bool        | 否       | 指定是否dump IR, 默认为False                                 |
-| dump_asm        | bool        | 否       | 指定是否dump asm汇编文件, 默认为False                        |
-| dump_dir        | string      | 否       | 前面指定dump_ir等开关后, 这里指定dump的目录, 默认为空字符串  |
+| 属性名称        |    类型     | 是否必须 | 描述                                                         |
+| :-------------- | :---------: | :------: | ------------------------------------------------------------ |
+| target          |   string    |    是    | 指定编译目标, 如'cpu', 'k230'                                |
+| dump_ir         |    bool     |    否    | 指定是否dump IR, 默认为False                                 |
+| dump_asm        |    bool     |    否    | 指定是否dump asm汇编文件, 默认为False                        |
+| dump_dir        |   string    |    否    | 前面指定dump_ir等开关后, 这里指定dump的目录, 默认为空字符串  |
 |                 |             |          |                                                              |
-| preprocess      | bool        | 否       | 是否开启前处理，默认为False                                  |
-| input_type      | string      | 否       | 指定输入数据类型，默认为"float"                              |
-| input_shape     | list[int]   | 否       | 指定输入数据的shape，input_shape的layout需要与input layout保持一致，输入数据的input_shape与模型的input shape不一致时会进行letterbox操作(resize/pad等) |
-| input_range     | list[float] | 否       | 输入数据反量化后对应浮点数的范围，默认为[0，1]               |
-| input_layout    | string      | 否       | 指定输入数据的layout，现在可以用两种方式指定layout，详见后文 |
-| swapRB          | bool        | 否       | 是否在`channel`维度反转数据，默认为False                     |
-| mean            | list[float] | 否       | 前处理标准化参数均值，默认为[0, 0, 0]                        |
-| std             | list[float] | 否       | 前处理标准化参数方差，默认为[1, 1, 1]                        |
-| letterbox_value | float       | 否       | 指定前处理letterbox的填充值                                  |
-| output_layout   | string      | 否       | 指定输出数据的layout, 如'NCHW', 'NHWC'. 若输出数据layout与模型本身layout不同, nncase会插入transpose进行转换 |
+| preprocess      |    bool     |    否    | 是否开启前处理，默认为False                                  |
+| input_type      |   string    |    否    | 指定输入数据类型，默认为"float"                              |
+| input_shape     |  list[int]  |    否    | 指定输入数据的shape，input_shape的layout需要与input layout保持一致，输入数据的input_shape与模型的input shape不一致时会进行letterbox操作(resize/pad等) |
+| input_range     | list[float] |    否    | 输入数据反量化后对应浮点数的范围，默认为[0，1]               |
+| input_layout    |   string    |    否    | 指定输入数据的layout，现在可以用两种方式指定layout，详见后文 |
+| swapRB          |    bool     |    否    | 是否在`channel`维度反转数据，默认为False                     |
+| mean            | list[float] |    否    | 前处理标准化参数均值，默认为[0, 0, 0]                        |
+| std             | list[float] |    否    | 前处理标准化参数方差，默认为[1, 1, 1]                        |
+| letterbox_value |    float    |    否    | 指定前处理letterbox的填充值                                  |
+| output_layout   |   string    |    否    | 指定输出数据的layout, 如'NCHW', 'NHWC'. 若输出数据layout与模型本身layout不同, nncase会插入transpose进行转换 |
 
-> 1. mean和std为浮点数进行normalize的参数，用户可以自由指定.
-> 2. input range为浮点数的范围，即如果输入数据类型为uint8，则input range为反量化到浮点之后的范围（可以不为0~1），可以自由指定.
-> 3. input_shape需要按照input_layout进行指定，以[1，224，224，3]为例，如果input_layout为NCHW，则input_shape需指定为[1,3,224,224];input_layout为NHWC，则input_shape需指定为[1,224,224,3];
->
-> 例如:
->
-> 1. 输入数据类型为uint8，range为0~255，input_range为0~255，则反量化的作用只是进行类型转化，将uint8的数据转化为float32，mean和std参数仍然可以按照0~255的数据进行指定.
-> 2. 输入数据类型为uint8，range为0~255，input_range为0~1，则反量化会将定点数转化为浮点数0~1，mean和std参数需要按照0~1的数据进行指定。
+前处理流程：
+
+```mermaid
+graph TB;
+	NewInput("NewInput\n[shape = input_shape\ndtype = input_type]") --"input_layout != '' ''"-->Transpose --"SwapRB == True"-->SwapRB--"input_type != float32"-->Dequantize--"input_HW != model_HW"-->LetterBox -->Normalization-->OldInput;
+	
+	
+    d_0 --Y--> Transpose --> d_1["SwapRB == True,\n channel != 1"];
+    d_0 --N--> d_1;
+   
+ 	
+ 	d_1 --Y--> SwapRB --> d_2["input_type != float32"];
+ 	d_1 --N--> d_2;
+    
+   
+    d_2 --Y--> dequantize-->d_3;
+    d_2 --N-->d_3["input_HW != model_HW"];
+    
+    d_3 --Y-->LetterBox -->d_4;
+    d_3 --N-->d_4;
+    a--> Normalization --> OldInput
+```
+
+
+
+参数说明：
+
+ 1. input range为输入数据类型为定点时，反量化后的浮点数范围。
+    ```mermaid
+    graph TD;
+    	newInput_uint8("newInput_uint8 \n[input_type:uint8]") --input_range:0,255 -->dequant0--float range:0,255--> oldInput_float32
+    	newInput_uint81("newInput_uint8 \n[input_type:uint8]") --input_range:0,1 -->dequant1--float range:0,1--> oldInput_float32
+    ```
+
+    
+
+ 2. input_shape需要按照input_layout进行指定，以[1，224，224，3]为例，如果input_layout为NCHW，则input_shape需指定为[1,3,224,224];input_layout为NHWC，则input_shape需指定为[1,224,224,3];
+
+ 例如:
+
+ 1. 输入数据类型为uint8，range为0~255，input_range为0~255，则反量化的作用只是进行类型转化，将uint8的数据转化为float32，mean和std参数仍然可以按照0~255的数据进行指定.
+ 2. 输入数据类型为uint8，range为0~255，input_range为0~1，则反量化会将定点数转化为浮点数0~1，mean和std参数需要按照0~1的数据进行指定。
 
 
 
 ```mermaid
-graph TB
-	NewInput("NewInput\nNHWC") --"input_layout:"NHWC""--> Transpose0("NHWC2NCHW") --> OldInput("OldInput\nNCHW")
-	NewInput("NewInput\nNHWC") --"input_layout:"0,3,1,2""--> Transpose1("perm: 0,3,1,2") --> OldInput("OldInput\nNCHW")
+graph TD;
+    NewInput --"input_layout:"NHWC""--> Transpose0("Transpose: NHWC2NCHW") --> OldInput;
+    NewInput("NewInput: 1,224,224,3 (NHWC)") --"input_layout:"0,3,1,2""--> Transpose1("Transpose perm: 0,3,1,2") --> OldInput("OldInput: 1,3,224,224 (NCHW)");
 
-	OldOutput("OldOutput\n NCHW") --"output_layout: "NHWC""--> Transpose2("NCHW2NHWC") --> NewOutput("NewOutput\nNHWC")
-	OldOutput("OldOutput\n NCHW") --"output_layout: "0,2,3,1""--> Transpose3("perm: 0,2,3,1") --> NewOutput("NewOutput\nNHWC")
+    NewInput1("NewInput: 1,4,10") --"input_layout:"0,2,1""-->Transpose2("Transpose perm: 0,2,1") --> OldInput2("OldInput: 1,10,4");
+
+
+```
+
+```mermaid
+graph TD;
+    OldOutput --"output_layout: "NHWC""--> Transpose3("Transpose: NCHW2NHWC") --> NewOutput("NewOutput\nNHWC");
+    OldOutput("OldOutput: (NCHW)") --"output_layout: "0,2,3,1""--> Transpose4("Transpose perm: 0,2,3,1") --> NewOutput("NewOutput\nNHWC");
+    OldOutput1("OldOutput: 1,10,4,5,2") --"output_layout: "0,2,3,1,4""--> Transpose5("Transpose perm: 0,2,3,1,4") --> NewOutput1("NewOutput: 1,4,5,10,2");
+```
+
+
+
+```mermaid
+
 ```
 
 
 
 #### 代码示例
 
-实例化CompileOptions, 配置各属性的值
+实例化CompileOptions，配置各属性的值，
 
 ```python
-# compile_options
 compile_options = nncase.CompileOptions()
-compile_options.target = target
-compile_options.input_type = 'float32'  # or 'uint8' 'int8'
-compile_options.output_type = 'float32'  # or 'uint8' 'int8'. Only work in PTQ
-compile_options.output_range = []  # Only work in PTQ and output type is not "float32"
-compile_options.preprocess = True  # if False, the args below will unworked
-compile_options.swapRB = True
-compile_options.input_shape = [1, 224, 224, 3]  # keep layout same as input layout
-compile_options.input_layout = 'NHWC'
-compile_options.output_layout = 'NHWC'
-compile_options.model_layout = ''  # default is empty. Specific it when tflite model with "NCHW" layout and Onnx(Caffe) model with "NHWC" layout
-compile_options.mean = [0, 0, 0]
-compile_options.std = [1, 1, 1]
-compile_options.input_range = [0, 1]
-compile_options.letterbox_value = 114.  # pad what you want
-compile_options.dump_ir = True
+
+compile_options.target = "cpu" #"k230"
+compile_options.dump_ir = True  # if False, will not dump the compile-time result.
 compile_options.dump_asm = True
-compile_options.dump_dir = 'tmp'
+compile_options.dump_dir = "dump_path"
+
+# preprocess args
+compile_options.preprocess = False
+if compile_options.preprocess:
+    compile_options.input_type = "uint8" # "uint8" "float32"
+    compile_options.input_shape = [1,224,320,3]
+    compile_options.input_range = [0,1]
+    compile_options.input_layout = "NHWC" # "NHWC"
+    compile_options.swapRB = False
+    compile_options.mean = [0,0,0]
+    compile_options.std = [1,1,1]
+    compile_options.letterbox_value = 0
+    compile_options.output_layout = "NHWC" # "NHWC"
 ```
 
 ### ImportOptions
