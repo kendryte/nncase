@@ -265,5 +265,5 @@ if(BUILD_TESTING)
 endif()
 
 # Modules
-#add_subdirectory(modules/k210)
+add_subdirectory(modules/cpu)
 #add_subdirectory(modules/vulkan)
