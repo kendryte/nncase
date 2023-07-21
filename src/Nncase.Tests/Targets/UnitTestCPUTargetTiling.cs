@@ -43,9 +43,13 @@ public class UnitTestCPUTargetTiling : TestClassBase
         var compiler = CompileSession.Compiler;
         compiler.ImportIRModule(module);
         await compiler.CompileAsync();
-        using (var fs = new MemoryStream())
+        using (var fs = Dumpper.OpenFile("test.kmodel"))
         {
             compiler.Gencode(fs);
+        }
+        using (var fs = Dumpper.OpenFile("input_0.bin"))
+        {
+            fs.Write(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, new[] { 1, 2, 3, 4, 5 }).Evaluate().AsTensor().BytesBuffer);
         }
     }
 }

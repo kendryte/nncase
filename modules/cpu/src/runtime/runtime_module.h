@@ -33,6 +33,9 @@ class cpu_runtime_module : public runtime_module {
     gsl::span<gsl::byte> data_;
     gsl::span<const gsl::byte> text_;
     gsl::span<const gsl::byte> rdata_;
+    host_buffer_t text_storage_;
+    host_buffer_t rdata_storage_;
+    host_buffer_t data_storage_;
 };
 
 END_NS_NNCASE_RT_MODULE

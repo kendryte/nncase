@@ -27,24 +27,14 @@ cpu_runtime_module &cpu_runtime_function::module() const noexcept {
 
 result<void> cpu_runtime_function::initialize_core(
     NNCASE_UNUSED runtime_function_init_context &context) noexcept {
-
+    try_var(name, context.section(FUNCTION_NAME_SECTION_IDENTIFIER));
+    name_ = std::string(name.as_span<const char>().data());
     return ok();
 }
 
 result<value_t>
 cpu_runtime_function::invoke_core(NNCASE_UNUSED gsl::span<value_t> parameters,
                                   value_t return_value) noexcept {
-    // try_(preprocess_inputs());
-
-    // vk::SubmitInfo si({}, {}, cmd_buffer_, {});
-    // try_(vk::to_result(module().compute_queue().submit(si)));
-    // try_(vk::to_result(module().compute_queue().waitIdle()));
-    // try_(vk::to_result(module().device().waitIdle()));
-
-    // assert(buffer_refs_.empty());
-    // assert(buffer_copies_.empty());
-    // assert(buffer_barriers_.empty());
-
-    // try_(postprocess_outputs());
+    std::cout << "call " << name_ << std::endl;
     return ok(return_value);
 }
