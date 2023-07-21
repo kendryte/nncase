@@ -33,6 +33,13 @@ internal sealed class LinkableModule : ILinkableModule
 
         if (DumpScope.Current.IsEnabled(DumpFlags.CodeGen))
         {
+            using (var fs = DumpScope.Current.OpenFile("cpuModule.h"))
+            {
+                using (var writer = new StreamWriter(fs))
+                {
+                    writer.Write(CSourceBuiltn.Header);
+                }
+            }
             using (var fs = DumpScope.Current.OpenFile("cpuModule.c"))
             {
                 File.Open(csourcePath, FileMode.Open, FileAccess.Read).CopyTo(fs);
@@ -56,6 +63,7 @@ internal sealed class LinkableModule : ILinkableModule
             using (var writer = new StreamWriter(fs))
             {
                 writer.WriteLine(CSourceBuiltn.Header);
+
                 foreach (var func in _functions)
                 {
                     writer.WriteLine(func.FunctionCSource.Declaration);
@@ -65,6 +73,16 @@ internal sealed class LinkableModule : ILinkableModule
                 {
                     writer.WriteLine(func.FunctionCSource.Implementation);
                 }
+
+                writer.WriteLine(CSourceBuiltn.MainPrologue);
+                foreach (var func in _functions)
+                {
+                    writer.WriteLine($"  if (strcmp(name,\"{func.SourceFunction.Name}\") == 0) {{");
+                    writer.WriteLine($"    {func.SourceFunction.Name}({string.Join(",", Enumerable.Range(0, func.PrimFunction.Parameters.Length).Select(i => $"buffers[{i}]"))}, nncase_mt, data, rdata);");
+                    writer.WriteLine("  } else");
+                }
+                writer.WriteLine("  { }");
+                writer.WriteLine(CSourceBuiltn.MainEpilogue);
             }
         }
 

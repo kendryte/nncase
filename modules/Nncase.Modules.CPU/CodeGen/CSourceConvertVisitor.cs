@@ -123,7 +123,7 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             throw new NotSupportedException("The PrimFunction must return void!");
         }
 
-        var type = $"void {expr.Name}({string.Join(", ", expr.Parameters.AsValueEnumerable().Select(b => Visit(b).ToString()).ToArray())})";
+        var type = $"void {expr.Name}({string.Join(", ", expr.Parameters.AsValueEnumerable().Select(b => Visit(b).ToString()).ToArray())}, {CSourceBuiltn.FixedParameters})";
 
         using (var scope = new IndentScope(_implBuilder))
         {
@@ -169,10 +169,10 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                 str = CSourceUtilities.ContertUnary(op, arguments);
                 break;
             case Store:
-                str = $"((({arguments[2].Type} *){arguments[0].Name}->ptr)[{arguments[1].Name}] = {arguments[2].Name})";
+                str = $"((({arguments[2].Type} *){arguments[0].Name}->vaddr)[{arguments[1].Name}] = {arguments[2].Name})";
                 break;
             case Load:
-                str = $"((({type} *){arguments[0].Name}->ptr)[{arguments[1].Name}])";
+                str = $"((({type} *){arguments[0].Name}->vaddr)[{arguments[1].Name}])";
                 break;
             default:
                 throw new NotSupportedException();

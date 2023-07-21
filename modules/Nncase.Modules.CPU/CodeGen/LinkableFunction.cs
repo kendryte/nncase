@@ -7,20 +7,22 @@ namespace Nncase.CodeGen.CPU;
 
 internal sealed class LinkableFunction : ILinkableFunction
 {
-    private readonly byte[] _desc;
-
     public LinkableFunction(uint id, TIR.PrimFunction sourceFunction, FunctionCSource funcCSource)
     {
         Id = id;
         SourceFunction = sourceFunction;
+        PrimFunction = sourceFunction;
         FunctionCSource = funcCSource;
         Text = Array.Empty<byte>();
-        Sections = new LinkedSection[] { };
+        var desc = System.Text.Encoding.ASCII.GetBytes(sourceFunction.Name);
+        Sections = new LinkedSection[] { new(desc, ".desc", 0, 8, (uint)desc.Length) };
     }
 
     public uint Id { get; }
 
     public BaseFunction SourceFunction { get; }
+
+    public TIR.PrimFunction PrimFunction { get; }
 
     public FunctionCSource FunctionCSource { get; }
 

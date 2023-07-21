@@ -31,7 +31,7 @@ internal static class CSourceUtilities
                 str = ($"!{input}");
                 break;
             default:
-                str = ($"nncase_mt->{op.UnaryOp.ToString()}{input}");
+                str = ($"nncase_mt->{arguments[0].Type}_{nameof(Unary).ToLower()}_{op.UnaryOp.ToString().ToLower()}{input}");
                 break;
         }
 
