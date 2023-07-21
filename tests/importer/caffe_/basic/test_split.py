@@ -56,7 +56,7 @@ i_sizes = [
 @pytest.mark.parametrize('i_channel', i_channels)
 @pytest.mark.parametrize('i_size', i_sizes)
 def test_split(n, i_channel, i_size, request):
-    runner = CaffeTestRunner(request.node.name, ['cpu', 'k210'])
+    runner = CaffeTestRunner(request.node.name)
     model_path = os.path.join(os.getcwd(), 'tests_output',
                               request.node.name.replace('[', '_').replace(']', '_'))
     _make_module(model_path, n, i_channel, i_size)

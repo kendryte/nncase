@@ -60,7 +60,7 @@ modes = [
 def test_resize(in_shape, size, mode, request):
     module = _make_module(size, mode)
 
-    runner = OnnxTestRunner(request.node.name, ['cpu', 'k210'])
+    runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_torch(module, in_shape)
     runner.run(model_file)
 

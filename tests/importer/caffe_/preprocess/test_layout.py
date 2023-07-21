@@ -66,40 +66,18 @@ operations = [
 @pytest.mark.parametrize('operation', operations)
 def test_layout(n, i_channel, i_size, operation, request):
     overwrite_cfg = """
-case: 
-  preprocess_opt:
-    - name: preprocess
-      values:
-        - true
-    - name: swapRB
-      values:
-        - false
-    - name: input_shape
-      values:
-        - [1,224,224,3]
-    - name: mean
-      values:
-        - [0,0,0]
-    - name: std
-      values:
-        - [1,1,1]
-    - name: input_range
-      values:
-        - [0,255]
-    - name: input_type
-      values:
-        - uint8
-    - name: input_layout
-      values:
-        - NHWC
-    - name: output_layout
-      values:
-        - NHWC
-        - NCHW
-    - name: letter_value
-      values:
-        - 0.
-"""
+    [compile_opt]
+    preprocess = true
+    swapRB = false
+    input_type = 'uint8'
+    input_shape = [1, 224, 224, 3]
+    input_range = [0, 255]
+    mean = [0, 0, 0]
+    std = [1, 1, 1]
+    input_layout = 'NHWC'
+    output_layout = 'NCHW'
+    letterbox_value = 0
+    """
 
     runner = CaffeTestRunner(request.node.name, overwrite_configs=overwrite_cfg)
     model_path = os.path.join(os.getcwd(), 'tests_output',
