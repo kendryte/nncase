@@ -360,6 +360,7 @@ result<value_t> nncase::kernels::stackvm::scatter_nd(value_t input,
                                updates_tensor->shape(), context));
     return ok(output);
 }
+
 result<value_t> nncase::kernels::stackvm::get_item(
     [[maybe_unused]] value_t input, [[maybe_unused]] value_t index,
     [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {

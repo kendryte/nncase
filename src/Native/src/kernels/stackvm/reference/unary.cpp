@@ -53,27 +53,27 @@ result<void> unary_impl(unary_op_t op, const T *input, T *output,
                         gsl::span<const size_t> out_strides,
                         NNCASE_UNUSED kernel_context &context) noexcept {
     switch (op) {
-        UNARY_IMPL_OP(abs, fabsf);
-        UNARY_IMPL_OP(acos, acosf);
-        UNARY_IMPL_OP(acosh, acoshf);
-        UNARY_IMPL_OP(asin, asinf);
-        UNARY_IMPL_OP(asinh, asinhf);
-        UNARY_IMPL_OP(ceil, ceilf);
-        UNARY_IMPL_OP(cos, cosf);
-        UNARY_IMPL_OP(cosh, coshf);
-        UNARY_IMPL_OP(exp, expf);
-        UNARY_IMPL_OP(floor, floorf);
-        UNARY_IMPL_OP(log, logf);
+        UNARY_IMPL_OP(abs, fabs);
+        UNARY_IMPL_OP(acos, acos);
+        UNARY_IMPL_OP(acosh, acosh);
+        UNARY_IMPL_OP(asin, asin);
+        UNARY_IMPL_OP(asinh, asinh);
+        UNARY_IMPL_OP(ceil, ceil);
+        UNARY_IMPL_OP(cos, cos);
+        UNARY_IMPL_OP(cosh, cosh);
+        UNARY_IMPL_OP(exp, exp);
+        UNARY_IMPL_OP(floor, floor);
+        UNARY_IMPL_OP(log, log);
         UNARY_IMPL_OP(logical_not, [](float v) { return !v; });
         UNARY_IMPL_OP(neg, std::negate<float>());
-        UNARY_IMPL_OP(round, roundf);
+        UNARY_IMPL_OP(round, round);
         UNARY_IMPL_OP(rsqrt, [](float v) { return 1.f / sqrtf(v); });
         UNARY_IMPL_OP(sign, [](float v) { return (0.f < v) - (v < 0.f); });
-        UNARY_IMPL_OP(sin, sinf);
-        UNARY_IMPL_OP(sinh, sinhf);
-        UNARY_IMPL_OP(sqrt, sqrtf);
+        UNARY_IMPL_OP(sin, sin);
+        UNARY_IMPL_OP(sinh, sinh);
+        UNARY_IMPL_OP(sqrt, sqrt);
         UNARY_IMPL_OP(square, [](float v) { return v * v; });
-        UNARY_IMPL_OP(tanh, tanhf);
+        UNARY_IMPL_OP(tanh, tanh);
     default:
         return err(std::errc::not_supported);
     }
@@ -93,6 +93,9 @@ result<void> nncase::kernels::stackvm::reference::unary(
     kernel_context &context) noexcept {
     switch (dtype) {
         UNARY_IMPL_DTYPE(dt_float32, float)
+        UNARY_IMPL_DTYPE(dt_float64, double )
+        UNARY_IMPL_DTYPE(dt_int32, int32_t)
+        UNARY_IMPL_DTYPE(dt_int64, int64_t)
         // Not in onnx, input is bool
         UNARY_IMPL_DTYPE(dt_boolean, bool)
     default:

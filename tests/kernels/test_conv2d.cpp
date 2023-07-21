@@ -60,7 +60,8 @@ class Conv2DTest : public KernelTest,
 INSTANTIATE_TEST_SUITE_P(Conv2D, Conv2DTest,
                          testing::Combine(testing::Values(dt_float32),
                                           testing::Values(dims_t{1, 4, 5, 5}),
-                                          testing::Values(dims_t{8, 4, 3, 3}),
+                                          testing::Values(dims_t{8, 4, 3, 3},
+                                                          dims_t{8, 4, 1, 1}),
                                           testing::Values(dims_t{8})));
 
 TEST_P(Conv2DTest, conv2d) {
@@ -71,7 +72,8 @@ TEST_P(Conv2DTest, conv2d) {
     // expected
     const char auto_pad[7] = "NOTSET";
     int64_t dilations[] = {1, 1};
-    int64_t kernel_shape[] = {3, 3};
+    int64_t kernel_shape[] = {(int64_t)weight.shape()[2],
+                              (int64_t)weight.shape()[3]};
     int64_t pad[] = {1, 1, 1, 1};
     int64_t strides[] = {1, 1};
     auto output_ort =
