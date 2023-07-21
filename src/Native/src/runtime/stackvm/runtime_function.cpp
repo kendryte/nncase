@@ -30,8 +30,8 @@ stackvm_runtime_module &stackvm_runtime_function::module() const noexcept {
 
 result<void> stackvm_runtime_function::initialize_core(
     runtime_function_init_context &context) noexcept {
-    text_ = context.module_init_context().section(".text").subspan(
-        context.header().entrypoint, context.header().text_size);
+    text_ = module().text().subspan(context.header().entrypoint,
+                                    context.header().text_size);
     return ok();
 }
 

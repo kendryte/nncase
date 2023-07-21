@@ -1,4 +1,4 @@
-﻿cmake_minimum_required(VERSION 3.13)
+﻿cmake_minimum_required(VERSION 3.15)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/Modules)
 
@@ -70,8 +70,6 @@ endif()
 
 if(CONAN_EXPORTED) # in conan local cache
     message(STATUS "Standard Conan Installation")
-    include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-    conan_basic_setup() # NOTE need manmul set cppstd in conanfile.py
 else() # in user space
     message(STATUS "Auto Cmake Conan Installation")
     include(${CMAKE_SOURCE_DIR}/cmake/conan.cmake)

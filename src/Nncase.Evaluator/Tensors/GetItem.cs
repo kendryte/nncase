@@ -18,7 +18,7 @@ namespace Nncase.Evaluator.Tensors;
 /// </summary>
 [EvaluatorGenerator]
 [TypeInferGenerator]
-public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<GetItem>, IOpPrinter<GetItem>, ICostEvaluator<GetItem>, IShapeEvaluator<GetItem>
+public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<GetItem>, IOpPrinter<GetItem>, ICostEvaluator<GetItem>, IShapeEvaluator<GetItem>, IMetricEvaluator<GetItem>
 {
     public string Visit(IIRPrinterContext context, GetItem target, bool iLmode)
     {
@@ -31,6 +31,15 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
         return new()
         {
             [CostFactorNames.CPUCycles] = 1,
+        };
+    }
+
+    public Metric Visit(IMetricEvaluateContext context, GetItem target)
+    {
+        var returnType = context.GetReturnType<IRType>();
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(returnType),
         };
     }
 
@@ -101,7 +110,14 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
                     }
                     else
                     {
-                        ret = new InvalidType($"The Input Tuple Count = {tupleType.Count}, But Index = {indexValue}");
+                        if (tupleType.IsVariadic)
+                        {
+                            ret = tupleType[0];
+                        }
+                        else
+                        {
+                            ret = new InvalidType($"The Input Tuple Count = {tupleType.Count}, But Index = {indexValue}");
+                        }
                     }
                 }
                 else

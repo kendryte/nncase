@@ -11,7 +11,7 @@ namespace Nncase.Evaluator.Math;
 /// <summary>
 /// Evaluator for <see cref="CumSum"/>.
 /// </summary>
-public class CumSumEvaluator : IEvaluator<CumSum>, ITypeInferencer<CumSum>, ICostEvaluator<CumSum>, IShapeEvaluator<CumSum>
+public class CumSumEvaluator : IEvaluator<CumSum>, ITypeInferencer<CumSum>, ICostEvaluator<CumSum>, IShapeEvaluator<CumSum>, IMetricEvaluator<CumSum>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, CumSum cumSum)
@@ -45,6 +45,21 @@ public class CumSumEvaluator : IEvaluator<CumSum>, ITypeInferencer<CumSum>, ICos
     }
 
     public Expr Visit(IShapeEvaluateContext context, CumSum target) => context.GetArgumentShape(target, CumSum.Input);
+
+    public Metric Visit(IMetricEvaluateContext context, CumSum target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, CumSum.Input);
+        var returnType = context.GetReturnType<TensorType>();
+        var returnF = MetricUtility.GetFLOPs(returnType);
+        var inputF = MetricUtility.GetFLOPs(inputType);
+        var inner = inputF / returnF;
+        _ = inputF / inner;
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(returnType),
+            [MetricFactorNames.FLOPs] = inner * 2,
+        };
+    }
 
     private IRType Visit(TensorType input)
     {

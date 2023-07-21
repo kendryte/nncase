@@ -41,6 +41,19 @@ public static class Utility
         return (float)(dot / (Math.Sqrt(mag1) * Math.Sqrt(mag2)));
     }
 
+    public static float GetMRESimilarity(Span<float> v1, Span<float> v2)
+    {
+        float gtAbsSum = 0;
+        float errorAbsSum = 0;
+        for (int i = 0; i < v1.Length; i++)
+        {
+            errorAbsSum += Math.Abs(v1[i] - v2[i]);
+            gtAbsSum += Math.Abs(v1[i]);
+        }
+
+        return errorAbsSum / gtAbsSum;
+    }
+
     /// <summary>
     /// get fixed mul struct instance.
     /// </summary>

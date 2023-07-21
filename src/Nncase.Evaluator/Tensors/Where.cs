@@ -17,7 +17,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Where"/>.
 /// </summary>
-public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEvaluator<Where>, IShapeEvaluator<Where>
+public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEvaluator<Where>, IShapeEvaluator<Where>, IMetricEvaluator<Where>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Where where)
@@ -81,6 +81,16 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
         var y = context.GetArgumentShape(target, Where.Y);
         var cond = context.GetArgumentShape(target, Where.Cond);
         return ShapeExprUtility.BroadcastShape(x, y, cond);
+    }
+
+    public Metric Visit(IMetricEvaluateContext context, Where target)
+    {
+        var returnType = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(returnType) * 2,
+            [MetricFactorNames.FLOPs] = MetricUtility.GetFLOPs(returnType),
+        };
     }
 
     private bool IsTFWhere(TensorType x, TensorType y)
