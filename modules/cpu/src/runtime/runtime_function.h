@@ -31,7 +31,7 @@ class cpu_runtime_function : public runtime_function {
         value_t return_value) noexcept override;
 
   private:
-    gsl::span<const gsl::byte> text_;
+    std::string name_;
 };
 
 END_NS_NNCASE_RT_MODULE

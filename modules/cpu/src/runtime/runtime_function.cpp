@@ -26,9 +26,7 @@ cpu_runtime_module &cpu_runtime_function::module() const noexcept {
 }
 
 result<void> cpu_runtime_function::initialize_core(
-    runtime_function_init_context &context) noexcept {
-    text_ = context.module_init_context().section(".text").subspan(
-        context.header().entrypoint, context.header().text_size);
+    NNCASE_UNUSED runtime_function_init_context &context) noexcept {
 
     return ok();
 }
