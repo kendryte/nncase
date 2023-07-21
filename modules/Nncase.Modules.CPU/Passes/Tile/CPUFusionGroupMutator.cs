@@ -1,6 +1,5 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
-#if false
 using System.Runtime.CompilerServices;
 using Nncase.IR;
 using Nncase.PatternMatch;
@@ -56,45 +55,38 @@ internal sealed class CPUFusionGroupMutator<T> : Mutators.FusionGroupMutator
     /// <inheritdoc/>
     public override bool MergedFusionCheckCallBack(Fusion mergedFusion, HashSet<Fusion> candidateFusions)
     {
-        // note the gnne activate must be first layer.
-        // if (mergedFusion.Body is Call { Target: IR.K510.GNNEStore } st_call &&
-        //   st_call[IR.K510.GNNEStore.Input] is Call { Target: IR.K510.GNNEActivation })
+
+        // var checker = (IFusionChecker)Activator.CreateInstance(typeof(T), new object[] { _tileOptions })!;
+        // var ret = checker.Check(mergedFusion, PassOptions);
+        // if (ret)
         // {
-        //     return false;
+        //     FusioncheckerCache.Add(mergedFusion, checker);
+        //     foreach (var cand in candidateFusions)
+        //     { // release the merged fusion.
+        //         FusioncheckerCache.Remove(cand);
+        //     }
         // }
 
-        var checker = (IFusionChecker)Activator.CreateInstance(typeof(T), new object[] { _tileOptions })!;
-        var ret = checker.Check(mergedFusion, PassOptions);
-        if (ret)
-        {
-            FusioncheckerCache.Add(mergedFusion, checker);
-            foreach (var cand in candidateFusions)
-            { // release the merged fusion.
-                FusioncheckerCache.Remove(cand);
-            }
-        }
-
-        return ret;
+        // return ret;
+        return false;
     }
 
     public override Expr MergedFusionRewriteCallBack(Expr mergedFusionBody)
     {
-        return CompilerServices.Rewrite(mergedFusionBody, new[] { new Rules.GNNE.Opt.FoldLoadStore() }, new());
+        return mergedFusionBody;
     }
 }
 
 internal sealed class CheckedConvertMutator : ExprRewriter
 {
     private readonly Dictionary<Fusion, BaseFunction> _fusionConertedCache;
-    private readonly IDictionary<Fusion, ulong> _fusionMacsMap;
     private readonly IReadOnlyDictionary<Fusion, IFusionChecker> _fusionCheckerCache;
     private readonly TileOptions _tileOptions;
     private readonly RunPassContext _passOptions;
 
-    public CheckedConvertMutator(Dictionary<Fusion, BaseFunction> fusion_converted_cache, Dictionary<Fusion, ulong> fusionMacsMap, IReadOnlyDictionary<Fusion, IFusionChecker> fusionchecker_cache, TileOptions tileOptions, RunPassContext passOptions)
+    public CheckedConvertMutator(Dictionary<Fusion, BaseFunction> fusion_converted_cache, IReadOnlyDictionary<Fusion, IFusionChecker> fusionchecker_cache, TileOptions tileOptions, RunPassContext passOptions)
     {
         _fusionConertedCache = fusion_converted_cache;
-        _fusionMacsMap = fusionMacsMap;
         _fusionCheckerCache = fusionchecker_cache;
         _tileOptions = tileOptions;
         _passOptions = passOptions;
@@ -114,23 +106,8 @@ internal sealed class CheckedConvertMutator : ExprRewriter
                 }
                 else
                 {
-                    // if (CompilerServices.TryMatchRoot(fusion, Conv2DFusionConverter.Conv2DFusionPattern, out var matchResult))
-                    // {
-                    //     prim_func = Conv2DFusionConverter.VisitToPrimFunc(_tileOptions, fusion, matchResult, out _, out _);
-                    // }
-                    // else if (CompilerServices.TryMatchRoot(fusion, Conv2DTransposeFusionConverter.Conv2DFusionPattern, out matchResult))
-                    // {
-                    //     prim_func = Conv2DTransposeFusionConverter.VisitToPrimFunc(_tileOptions, fusion, matchResult, out _, out _);
-                    // }
-                    // else if (!_tileOptions.ForceMultiLayer && CompilerServices.TryMatchRoot(fusion, LSTMFusionConverter.FusionPattern, out matchResult))
-                    // {
-                    //     prim_func = LSTMFusionConverter.VisitToPrimFunc(_tileOptions, fusion, matchResult, out _, out _);
-                    // }
-                    // else
-                    // {
-                    //     var visitor = new MultiLayerFusionConverter(_tileOptions);
-                    //     prim_func = visitor.VisitToPrimFunc(fusion);
-                    // }
+                    var converter = new SingleCPUFusionConverter();
+                    prim_func = converter.Visit(fusion);
                 }
 
                 BaseFunction? convert_func = prim_func;
@@ -153,7 +130,7 @@ internal sealed class CheckedConvertMutator : ExprRewriter
                 int param_count = 0;
                 foreach (var b in prim_func.Parameters)
                 {
-                    if (b.MemLocation == Schedule.MemoryLocation.Input)
+                    if (b.MemLocation == TIR.MemoryLocation.Input)
                     {
                         if (is_input)
                         {
@@ -184,5 +161,3 @@ internal sealed class CheckedConvertMutator : ExprRewriter
         return expr;
     }
 }
-
-#endif

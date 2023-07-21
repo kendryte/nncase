@@ -30,9 +30,9 @@ public sealed class UnitTestMutators : TestClassBase
     [Fact]
     public async Task TestFoldConstCallWithTuple()
     {
-        T.PhysicalBuffer(DataTypes.BFloat16, Schedule.MemoryLocation.Input, new[] { 48 }, out var ddr_if);
-        T.PhysicalBuffer(DataTypes.BFloat16, Schedule.MemoryLocation.Data, new[] { 9 }, out var glb_if_ping);
-        T.PhysicalBuffer(DataTypes.BFloat16, Schedule.MemoryLocation.Data, new[] { 9 }, out var glb_if_pong);
+        T.PhysicalBuffer(DataTypes.BFloat16, MemoryLocation.Input, new[] { 48 }, out var ddr_if);
+        T.PhysicalBuffer(DataTypes.BFloat16, MemoryLocation.Data, new[] { 9 }, out var glb_if_ping);
+        T.PhysicalBuffer(DataTypes.BFloat16, MemoryLocation.Data, new[] { 9 }, out var glb_if_pong);
         PrimFunction main;
         {
             main = T.PrimFunc("main", Callable.StackVMModuleKind, ddr_if).Body(
@@ -118,8 +118,8 @@ public sealed class UnitTestMutators : TestClassBase
     [Fact]
     public async Task TestUnRollLoopSequential2()
     {
-        T.PhysicalBuffer(DataTypes.BFloat16, Schedule.MemoryLocation.Input, new[] { 3, 16, 24, 24 }, out var ddr_if);
-        T.PhysicalBuffer(DataTypes.BFloat16, Schedule.MemoryLocation.Data, new[] { 3, 10, 5, 9 }, out var glb_if);
+        T.PhysicalBuffer(DataTypes.BFloat16, MemoryLocation.Input, new[] { 3, 16, 24, 24 }, out var ddr_if);
+        T.PhysicalBuffer(DataTypes.BFloat16, MemoryLocation.Data, new[] { 3, 10, 5, 9 }, out var glb_if);
 
         PrimFunction main;
         {
@@ -201,8 +201,8 @@ public sealed class UnitTestMutators : TestClassBase
     [Fact]
     public async Task TestUnRollLoopSequential3()
     {
-        T.PhysicalBuffer(DataTypes.BFloat16, Schedule.MemoryLocation.Input, new[] { 3, 16, 24, 24 }, out var ddr_if);
-        T.PhysicalBuffer(DataTypes.BFloat16, Schedule.MemoryLocation.Data, new[] { 3, 10, 5, 9 }, out var glb_if);
+        T.PhysicalBuffer(DataTypes.BFloat16, MemoryLocation.Input, new[] { 3, 16, 24, 24 }, out var ddr_if);
+        T.PhysicalBuffer(DataTypes.BFloat16, MemoryLocation.Data, new[] { 3, 10, 5, 9 }, out var glb_if);
 
         PrimFunction main;
         {
@@ -362,9 +362,9 @@ public sealed class UnitTestMutators : TestClassBase
     [Fact]
     public async Task TestFoldBufferIndex()
     {
-        T.PhysicalBuffer(DataTypes.BFloat16, Schedule.MemoryLocation.Input, new[] { 3, 16, 24, 24 }, out var ddr_if);
-        T.PhysicalBuffer(DataTypes.BFloat16, Schedule.MemoryLocation.Output, new[] { 3, 16, 24, 24 }, out var ddr_of);
-        T.PhysicalBuffer(DataTypes.BFloat16, Schedule.MemoryLocation.Data, new[] { 3, 10, 5, 9 }, out var glb_if);
+        T.PhysicalBuffer(DataTypes.BFloat16, MemoryLocation.Input, new[] { 3, 16, 24, 24 }, out var ddr_if);
+        T.PhysicalBuffer(DataTypes.BFloat16, MemoryLocation.Output, new[] { 3, 16, 24, 24 }, out var ddr_of);
+        T.PhysicalBuffer(DataTypes.BFloat16, MemoryLocation.Data, new[] { 3, 10, 5, 9 }, out var glb_if);
         var bufferIndexMap = new Dictionary<TIR.PhysicalBuffer, int>() {
           { ddr_if, 2 },
           { ddr_of, 4 },

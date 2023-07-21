@@ -6,18 +6,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.IR.Math;
+using Nncase.PatternMatch;
 
-namespace Nncase.Runtime.CPU;
+namespace Nncase.IR.CPU;
 
-internal class CPURTModule
+[PatternFunctionalGenerator]
+public sealed partial class CPUKernelOp : Op
 {
     /// <summary>
-    /// KPU module kind.
+    /// Gets the target.
     /// </summary>
-    public static readonly string Kind = "cpu";
+    public Op Target { get; }
 
-    /// <summary>
-    /// KPU module version.
-    /// </summary>
-    public static readonly uint Version = 1;
+    public override string DisplayProperty() => Target.GetType().Name;
 }

@@ -37,7 +37,7 @@ internal partial class CPUSingleInputFusion<T> : FusionMaker
     }
 }
 
-internal sealed class CPUUnaryFusion : CPUSingleInputFusion<CPUUnary>
+internal sealed class CPUFusion : CPUSingleInputFusion<CPUKernelOp>
 {
-    public override string Name => "Unary";
+    public override string Name => nameof(CPUFusion);
 }

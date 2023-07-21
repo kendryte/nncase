@@ -28,6 +28,6 @@ public partial class LowerUnary : RewriteRule<Pattern>
 
     private Expr GetReplace(Unary unary, Expr input)
     {
-        return CPUUnary(unary.UnaryOp, input);
+        return CPUKernel(unary, input);
     }
 }

@@ -77,7 +77,15 @@ public class CPUTarget : ITarget
     {
         passManager.AddWithName<DataflowPass>("MakeFusion").Configure(p =>
         {
-            p.Add<CPUUnaryFusion>();
+            p.Add<CPUFusion>();
+        });
+
+        passManager.Add<CPUFusionToTirPass>(Passes.Tile.TileOptions.Default);
+
+        passManager.Add<PrimFuncPass>().Configure(p =>
+        {
+            p.Add<Passes.Mutators.UnFoldBlock>();
+            p.Add<Passes.Mutators.FlattenSequential>();
         });
     }
 
@@ -92,9 +100,11 @@ public class CPUTarget : ITarget
         {
             return new StackVMModuleBuilder();
         }
-        else
+        else if (moduleKind == CPUTarget.Kind)
         {
-            throw new NotSupportedException($"{moduleKind} module is not supported.");
+            return new CodeGen.CPU.ModuleBuilder(options);
         }
+
+        throw new NotSupportedException();
     }
 }

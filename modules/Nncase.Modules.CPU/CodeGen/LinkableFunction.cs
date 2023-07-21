@@ -9,18 +9,20 @@ internal sealed class LinkableFunction : ILinkableFunction
 {
     private readonly byte[] _desc;
 
-    public LinkableFunction(uint id, TIR.PrimFunction sourceFunction, byte[] text, byte[] desc)
+    public LinkableFunction(uint id, TIR.PrimFunction sourceFunction, FunctionCSource funcCSource)
     {
         Id = id;
         SourceFunction = sourceFunction;
-        Text = text;
-        _desc = desc;
-        Sections = new LinkedSection[] { new(_desc, ".desc", 0, 8, (uint)_desc.Length) };
+        FunctionCSource = funcCSource;
+        Text = Array.Empty<byte>();
+        Sections = new LinkedSection[] { };
     }
 
     public uint Id { get; }
 
     public BaseFunction SourceFunction { get; }
+
+    public FunctionCSource FunctionCSource { get; }
 
     public byte[] Text { get; }
 

@@ -24,7 +24,7 @@ public sealed class ModuleBuilder : IModuleBuilder, IDisposable
     public CompileOptions CompileOptions { get; }
 
     /// <inheritdoc/>
-    public string ModuleKind => Runtime.CPU.CPURTModule.Kind;
+    public string ModuleKind => Targets.CPUTarget.Kind;
 
     /// <inheritdoc/>
     public ILinkableModule Build(IReadOnlyList<BaseFunction> functions)

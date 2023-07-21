@@ -23,7 +23,7 @@ namespace Nncase.Passes;
 /// </summary>
 public sealed class DDrBufferSchdeulePass : ModulePass
 {
-    private readonly Dictionary<string, Dictionary<Schedule.MemoryLocation, int>> _module_usage = new();
+    private readonly Dictionary<string, Dictionary<MemoryLocation, int>> _module_usage = new();
 
     private readonly Dictionary<string, HashSet<TIR.Buffer>> _module_hashset = new();
 
@@ -106,12 +106,12 @@ public sealed class DDrBufferSchdeulePass : ModulePass
 /// </summary>
 internal sealed class DDrBufferAllocator : ExprVisitor<bool, bool>
 {
-    private readonly Dictionary<Schedule.MemoryLocation, int> _functionUsage;
+    private readonly Dictionary<MemoryLocation, int> _functionUsage;
     private readonly HashSet<TIR.Buffer> _functionHashset;
 
     private PrimFunction? _entry;
 
-    public DDrBufferAllocator(Dictionary<string, Dictionary<Schedule.MemoryLocation, int>> module_usage, Dictionary<string, HashSet<TIR.Buffer>> module_hashset)
+    public DDrBufferAllocator(Dictionary<string, Dictionary<MemoryLocation, int>> module_usage, Dictionary<string, HashSet<TIR.Buffer>> module_hashset)
     {
         ModuleUsage = module_usage;
         ModuleHashSet = module_hashset;
@@ -120,13 +120,13 @@ internal sealed class DDrBufferAllocator : ExprVisitor<bool, bool>
         Changed = false;
     }
 
-    public Dictionary<string, Dictionary<Schedule.MemoryLocation, int>> ModuleUsage { get; }
+    public Dictionary<string, Dictionary<MemoryLocation, int>> ModuleUsage { get; }
 
     public Dictionary<string, HashSet<TIR.Buffer>> ModuleHashSet { get; }
 
     public bool Changed { get; private set; }
 
-    public int DataUsage => _functionUsage.GetValueOrDefault(Schedule.MemoryLocation.Data, 0);
+    public int DataUsage => _functionUsage.GetValueOrDefault(MemoryLocation.Data, 0);
 
     /// <remarks>
     /// only visit one prim func.
@@ -138,7 +138,7 @@ internal sealed class DDrBufferAllocator : ExprVisitor<bool, bool>
         {
             foreach (var physical in primFunction.Parameters)
             {
-                if (physical.MemLocation is Schedule.MemoryLocation.Input or Schedule.MemoryLocation.Output)
+                if (physical.MemLocation is MemoryLocation.Input or MemoryLocation.Output)
                 {
                     // avoid visit same buffer
                     if (!_functionHashset.Contains(physical))
@@ -175,7 +175,7 @@ internal sealed class DDrBufferAllocator : ExprVisitor<bool, bool>
         }
 
         // rdata write into the moduleUsage
-        if (physical.MemLocation is Schedule.MemoryLocation.Rdata)
+        if (physical.MemLocation is MemoryLocation.Rdata)
         {
             if (!ModuleHashSet.TryGetValue(_entry!.ModuleKind, out var module_hashset))
             {
@@ -204,7 +204,7 @@ internal sealed class DDrBufferAllocator : ExprVisitor<bool, bool>
                 Changed = true;
             }
         }
-        else if (physical.MemLocation is Schedule.MemoryLocation.Data)
+        else if (physical.MemLocation is MemoryLocation.Data)
         {
             // data write into the FunctionUsage
             if (!_functionHashset.Contains(physical))
@@ -220,7 +220,7 @@ internal sealed class DDrBufferAllocator : ExprVisitor<bool, bool>
                 Changed = true;
             }
         }
-        else if (physical.MemLocation is Schedule.MemoryLocation.SharedData)
+        else if (physical.MemLocation is MemoryLocation.SharedData)
         {
             throw new NotSupportedException("Current Not Support!");
         }

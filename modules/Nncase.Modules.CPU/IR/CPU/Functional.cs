@@ -14,13 +14,13 @@ namespace Nncase.IR.F;
 public partial class CPU
 {
     /// <summary>
-    /// Call unary.
+    /// Call cpu kernel.
     /// </summary>
-    /// <param name="unaryOp">Unary operator.</param>
-    /// <param name="expr">Source expression.</param>
+    /// <param name="target">Unary operator.</param>
+    /// <param name="inputs">Source inputs.</param>
     /// <returns>Result expression.</returns>
-    public static Call CPUUnary(UnaryOp unaryOp, Expr expr)
+    public static Call CPUKernel(Op target, params Expr[] inputs)
     {
-        return new Call(new CPUUnary(unaryOp), expr);
+        return new Call(new CPUKernelOp(target), inputs);
     }
 }

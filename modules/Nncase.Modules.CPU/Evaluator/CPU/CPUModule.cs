@@ -13,6 +13,6 @@ internal class CPUModule : IApplicationPart
 {
     public void ConfigureServices(IRegistrator registrator)
     {
-        registrator.RegisterManyInterface<CPUUnaryEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<CPUKernelOpEvaluator>(reuse: Reuse.Singleton);
     }
 }

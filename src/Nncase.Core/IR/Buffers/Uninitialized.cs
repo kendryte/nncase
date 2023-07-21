@@ -19,11 +19,11 @@ public sealed partial class Uninitialized : Op
 
     public DataType DType { get; }
 
-    public Schedule.MemoryLocation MemoryLocation { get; }
+    public TIR.MemoryLocation MemoryLocation { get; }
 
     /// <inheritdoc/>
     public override bool CanFoldConstCall => false;
 
     /// <inheritdoc/>
-    public override string DisplayProperty() => $"{DType.GetCSharpName()}, Schedule.MemoryLocation.{MemoryLocation}";
+    public override string DisplayProperty() => $"{DType.GetCSharpName()}, MemoryLocation.{MemoryLocation}";
 }

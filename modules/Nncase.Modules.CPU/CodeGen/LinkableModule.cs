@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.Diagnostics;
 using Nncase.Runtime.StackVM;
 
 namespace Nncase.CodeGen.CPU;
@@ -26,20 +27,54 @@ internal sealed class LinkableModule : ILinkableModule
 
     public ILinkedModule Link(ILinkContext linkContext)
     {
-        var linkedFunctions = new List<LinkedFunction>();
-        var text = new MemoryStream();
-        using (var bw = new BinaryWriter(text, Encoding.UTF8, true))
+        var csourcePath = LinkCSources();
+        var elfPath = CompileCSource(csourcePath);
+        var text = File.ReadAllBytes(elfPath);
+
+        if (DumpScope.Current.IsEnabled(DumpFlags.CodeGen))
         {
-            foreach (var func in _functions)
+            using (var fs = DumpScope.Current.OpenFile("cpuModule.c"))
             {
-                // FixFunctionRefs(func, linkContext);
-                bw.AlignPosition(_textAlignment);
-                var textBegin = bw.Position();
-                bw.Write(func.Text);
-                linkedFunctions.Add(new LinkedFunction(func.Id, func.SourceFunction, (uint)textBegin, (uint)func.Text.Length, func.Sections));
+                File.Open(csourcePath, FileMode.Open, FileAccess.Read).CopyTo(fs);
             }
         }
 
-        return new LinkedModule(linkedFunctions, text.ToArray(), _rdata);
+        var linkedFunctions = new List<LinkedFunction>();
+        foreach (var func in _functions)
+        {
+            linkedFunctions.Add(new LinkedFunction(func.Id, func.SourceFunction, 0, 0, func.Sections));
+        }
+
+        return new LinkedModule(linkedFunctions, text, _rdata);
     }
+
+    private string LinkCSources()
+    {
+        var path = Path.GetTempFileName();
+        using (var fs = File.OpenWrite(path))
+        {
+            using (var writer = new StreamWriter(fs))
+            {
+                writer.WriteLine(CSourceBuiltn.Header);
+                foreach (var func in _functions)
+                {
+                    writer.WriteLine(func.FunctionCSource.Declaration);
+                }
+
+                foreach (var func in _functions)
+                {
+                    writer.WriteLine(func.FunctionCSource.Implementation);
+                }
+            }
+        }
+
+        return path;
+    }
+
+    private string CompileCSource(string sourcePath)
+    {
+        var compiler = new CSourceCompiler();
+        return compiler.Compile(sourcePath, Path.GetTempFileName());
+    }
+
 }
