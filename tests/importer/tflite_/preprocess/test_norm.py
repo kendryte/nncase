@@ -49,42 +49,19 @@ rhs_shapes = [
 def test_norm(lhs_shape, rhs_shape, request):
     module = _make_module(lhs_shape, rhs_shape)
     overwrite_cfg = """
-case:
-  preprocess_opt:
-    - name: preprocess
-      values:
-        - true
-    - name: swapRB
-      values:
-        - false
-    - name: mean
-      values:
-        - [123,114,109]
-    - name: std
-      values:
-        - [2,2,2]
-    - name: input_range
-      values:
-        - [0,255]
-    - name: input_type
-      values:
-        - uint8
-    - name: input_shape
-      values:
-        - [1,224,224,3]
-    - name: input_layout
-      values:
-        - NHWC
-    - name: output_layout
-      values:
-        - NHWC
-    - name: model_layout
-      values:
-        - NHWC
-    - name: letterbox_value
-      values:
-        - 0.
-"""
+    [compile_opt]
+    preprocess = true
+    swapRB = false
+    input_type = 'uint8'
+    input_shape = [1, 224, 224, 3]
+    input_range = [0, 255]
+    mean = [123, 114, 109]
+    std = [2, 2, 2]
+    input_layout = 'NHWC'
+    output_layout = 'NHWC'
+    model_layout = 'NHWC'
+    letterbox_value = 0
+    """
 
     runner = TfliteTestRunner(request.node.name, overwrite_configs=overwrite_cfg)
     model_file = runner.from_tensorflow(module)
