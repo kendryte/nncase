@@ -49,8 +49,8 @@ public sealed class UnitTestTIR
     {
         Expr value = 42;
         var physicalBuffer = new TIR.PhysicalBuffer("testInput", DataTypes.Float32, MemoryLocation.Input, new[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new[] { 1, 16, 64, 400 }), 0, 0);
-        var indices = new Expr[] { 0, 1 };
-        Call store = T.Store(physicalBuffer, 0, value);
+        _ = new Expr[] { 0, 1 };
+        _ = T.Store(physicalBuffer, 0, value);
     }
 
     [Fact]

@@ -27,7 +27,8 @@ result<void> cpu_runtime_module::initialize_before_functions(
     if (!context.is_section_pinned())
         return nncase::err(std::errc::bad_address);
     try_var(data_, context.get_or_read_section(".data", data_storage_, false));
-    try_var(rdata_,context.get_or_read_section(".rdata", rdata_storage_, true));
+    try_var(rdata_,
+            context.get_or_read_section(".rdata", rdata_storage_, true));
     try_var(text_, context.get_or_read_section(".text", text_storage_, true));
 
     return ok();

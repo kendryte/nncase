@@ -1,8 +1,10 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using Nncase;
 using Nncase.IR;
 
 namespace Nncase.TIR;
-
 
 /// <summary>
 /// the memory type.
@@ -52,12 +54,14 @@ public enum MemoryLocation : byte
 
 public sealed class MemSpan : Expr
 {
-    public MemSpan(Expr size, MemoryLocation location) : base(new[] { None.Default, size })
+    public MemSpan(Expr size, MemoryLocation location)
+        : base(new[] { None.Default, size })
     {
         Location = location;
     }
 
-    public MemSpan(Expr start, Expr size, MemoryLocation location) : base(new[] { start, size })
+    public MemSpan(Expr start, Expr size, MemoryLocation location)
+        : base(new[] { start, size })
     {
         Location = location;
     }
@@ -80,7 +84,6 @@ public sealed class MemSpan : Expr
     /// <inheritdoc/>
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
         => functor.VisitMemSpan(this, context);
-
 
     public MemSpan With(Expr? start = null, Expr? size = null, MemoryLocation? location = null) => new(start ?? Start, size ?? Size, location ?? Location);
 }

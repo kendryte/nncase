@@ -10,7 +10,6 @@ using Nncase.TIR;
 
 namespace Nncase.Schedule;
 
-
 /// <summary>
 /// the scheduler interface.
 /// </summary>

@@ -33,7 +33,6 @@ public class StoreEvaluator : ITypeInferencer<Store>, IOpPrinter<Store>
 
     private IRType Visit(Store target, TensorType handle, TensorType index, TensorType value)
     {
-        
         if (handle.DType != value.DType)
         {
             return new InvalidType($"You Can't Load The {value.DType} To {handle.DType}");

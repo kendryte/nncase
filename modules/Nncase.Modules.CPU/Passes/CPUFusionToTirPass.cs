@@ -43,7 +43,7 @@ internal sealed class CPUFusionToTirPass : ModulePass
 
                 var post = (Function)rewriter.Rewrite(
                     func,
-                    new Mutators.IMergeRewriteRule[] { new CPUSameInputFusionMergeRule() }, 
+                    new Mutators.IMergeRewriteRule[] { new CPUSameInputFusionMergeRule() },
                     (rule, option) => new CPUFusionGroupMutator<MultiFusionChecker>(fusionCheckCache, _tileOptions, rule, option),
                     new() { AnalysisResults = analysis, MatchOptions = new Mutators.FusionGroupMutator.GroupedMatchOptions() });
 

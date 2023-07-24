@@ -40,6 +40,7 @@ internal sealed class LinkableModule : ILinkableModule
                     writer.Write(CSourceBuiltn.Header);
                 }
             }
+
             using (var fs = DumpScope.Current.OpenFile("cpuModule.c"))
             {
                 File.Open(csourcePath, FileMode.Open, FileAccess.Read).CopyTo(fs);
@@ -81,6 +82,7 @@ internal sealed class LinkableModule : ILinkableModule
                     writer.WriteLine($"    {func.SourceFunction.Name}({string.Join(",", Enumerable.Range(0, func.PrimFunction.Parameters.Length).Select(i => $"buffers[{i}]"))}, nncase_mt, data, rdata);");
                     writer.WriteLine("  } else");
                 }
+
                 writer.WriteLine("  { }");
                 writer.WriteLine(CSourceBuiltn.MainEpilogue);
             }
@@ -94,5 +96,4 @@ internal sealed class LinkableModule : ILinkableModule
         var compiler = new CSourceCompiler();
         return compiler.Compile(sourcePath, Path.GetTempFileName());
     }
-
 }

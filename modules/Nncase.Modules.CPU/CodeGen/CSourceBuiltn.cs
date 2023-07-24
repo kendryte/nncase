@@ -1,11 +1,10 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 namespace Nncase.CodeGen.CPU;
 
 public static class CSourceBuiltn
 {
-
     public const string BufferType = "buffer_t";
 
     public const string BufferStruct = @"typedef struct buffer {
@@ -50,6 +49,4 @@ int strcmp(const char* s1,const char* s2) {{
 
 static nncase_mt_t *nncase_mt;
 ";
-
-
 }

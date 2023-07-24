@@ -1,6 +1,5 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
-
 
 using System;
 using System.Collections;
@@ -16,34 +15,40 @@ using Nncase.TIR;
 
 namespace Nncase.CodeGen;
 
-internal sealed class FunctionCSource
-{
-    public FunctionCSource(string declaration, string implementation)
-    {
-        Declaration = declaration;
-        Implementation = implementation;
-    }
-
-    public string Declaration { get; }
-    public string Implementation { get; }
-}
-
-
 /// <summary>
 /// the csource code compiler.
 /// </summary>
 public class CSourceCompiler
 {
     /// <summary>
-    /// compiler exe name
+    /// compiler exe name.
     /// </summary>
-    string _exe = "", _arch = "", _ext = "";
+    private string _exe = string.Empty;
+    /// <summary>
+    /// compiler exe name.
+    /// </summary>
+    private string _arch = string.Empty;
+    /// <summary>
+    /// compiler exe name.
+    /// </summary>
+    private string _ext = string.Empty;
+
+    public CSourceCompiler()
+    {
+        PlatformSpecific();
+        ArchSpecific();
+    }
+
+    protected string Exe
+    {
+        get => _exe;
+    }
 
     /// <summary>
-    /// select current pattern's exe
+    /// select current pattern's exe.
     /// </summary>
     /// <exception cref="NotSupportedException"></exception>
-    void PlatformSpecific()
+    private void PlatformSpecific()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
@@ -62,7 +67,7 @@ public class CSourceCompiler
         }
     }
 
-    void ArchSpecific()
+    private void ArchSpecific()
     {
         _arch = RuntimeInformation.OSArchitecture switch
         {
@@ -72,7 +77,7 @@ public class CSourceCompiler
         };
     }
 
-    string ArgumentsSpecific(string sourcePath, string outPath)
+    private string ArgumentsSpecific(string sourcePath, string outPath)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
@@ -88,12 +93,8 @@ public class CSourceCompiler
             var vcvardir = Path.Combine(vsdir, "..\\..\\VC\\Auxiliary\\Build\\vcvarsall.bat");
             return $"/C (\"{vcvardir}\" x64) && (cl /D_USRDLL /D_WINDLL \"{sourcePath}\" /MT /link /DLL /OUT:\"{outPath}\")";
         }
-        throw new System.ArgumentOutOfRangeException("Only Support Linux/Osx/Windows");
-    }
 
-    protected string Exe
-    {
-        get => _exe;
+        throw new System.ArgumentOutOfRangeException("Only Support Linux/Osx/Windows");
     }
 
     protected string Arch
@@ -106,18 +107,12 @@ public class CSourceCompiler
         get => _ext;
     }
 
-    public CSourceCompiler()
-    {
-        PlatformSpecific();
-        ArchSpecific();
-    }
-
     /// <summary>
-    /// compile the source txt, write to the out_path
+    /// compile the source txt, write to the out_path.
     /// </summary>
-    /// <param name="sourcePath"> c source code</param>
-    /// <param name="outPath"> out .so path </param>
-    /// <returns> outPath </returns>
+    /// <param name="sourcePath"> c source code.</param>
+    /// <param name="outPath"> out .so path. </param>
+    /// <returns> outPath. </returns>
     public string Compile(string sourcePath, string outPath)
     {
         var errMsg = new StringBuilder();
@@ -138,12 +133,26 @@ public class CSourceCompiler
                 }
             }
         }
+
         return outPath;
     }
 
     /// <summary>
     /// create the temp dll file and compile source
-    /// <see cref="Compile(string, string)"/>
+    /// <see cref="Compile(string, string)"/>.
     /// </summary>
     public string Compile(string sourcePath) => Compile(sourcePath, CodeGenUtil.GetTempFileName(Ext));
+}
+
+internal sealed class FunctionCSource
+{
+    public FunctionCSource(string declaration, string implementation)
+    {
+        Declaration = declaration;
+        Implementation = implementation;
+    }
+
+    public string Declaration { get; }
+
+    public string Implementation { get; }
 }

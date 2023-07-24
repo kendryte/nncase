@@ -55,7 +55,6 @@ internal sealed class CPUFusionGroupMutator<T> : Mutators.FusionGroupMutator
     /// <inheritdoc/>
     public override bool MergedFusionCheckCallBack(Fusion mergedFusion, HashSet<Fusion> candidateFusions)
     {
-
         // var checker = (IFusionChecker)Activator.CreateInstance(typeof(T), new object[] { _tileOptions })!;
         // var ret = checker.Check(mergedFusion, PassOptions);
         // if (ret)

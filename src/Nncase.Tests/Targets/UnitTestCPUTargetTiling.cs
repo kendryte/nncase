@@ -47,6 +47,7 @@ public class UnitTestCPUTargetTiling : TestClassBase
         {
             compiler.Gencode(fs);
         }
+
         using (var fs = Dumpper.OpenFile("input_0.bin"))
         {
             fs.Write(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, new[] { 1, 2, 3, 4, 5 }).Evaluate().AsTensor().BytesBuffer);

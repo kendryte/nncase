@@ -1,5 +1,9 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using Nncase.Diagnostics;
 using Nncase.IR.Math;
+
 namespace Nncase.CodeGen.CPU;
 
 internal static class CSourceUtilities
@@ -12,7 +16,7 @@ internal static class CSourceUtilities
         switch (binary.BinaryOp)
         {
             case BinaryOp.Add or BinaryOp.Sub or BinaryOp.Mul or BinaryOp.Div:
-                str = ($"({lhs} {binary.BinaryOp.ToC()} {rhs})");
+                str = $"({lhs} {binary.BinaryOp.ToC()} {rhs})";
                 break;
             default:
                 throw new NotSupportedException();
@@ -28,10 +32,10 @@ internal static class CSourceUtilities
         switch (op.UnaryOp)
         {
             case UnaryOp.Neg:
-                str = ($"!{input}");
+                str = $"!{input}";
                 break;
             default:
-                str = ($"nncase_mt->{arguments[0].Type}_{nameof(Unary).ToLower()}_{op.UnaryOp.ToString().ToLower()}{input}");
+                str = $"nncase_mt->{arguments[0].Type}_{nameof(Unary).ToLower()}_{op.UnaryOp.ToString().ToLower()}{input}";
                 break;
         }
 

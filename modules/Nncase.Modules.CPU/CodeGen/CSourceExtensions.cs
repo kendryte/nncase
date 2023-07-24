@@ -1,6 +1,5 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
-
 
 namespace Nncase.CodeGen.CPU;
 
@@ -40,6 +39,6 @@ internal static class CSourceExtensions
         BinaryOp.Sub => "-",
         BinaryOp.Mul => "*",
         BinaryOp.Div => "/",
-        _ => throw new NotSupportedException(binaryOp.ToString())
+        _ => throw new NotSupportedException(binaryOp.ToString()),
     };
 }

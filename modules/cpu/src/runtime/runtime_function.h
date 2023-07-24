@@ -26,9 +26,10 @@ class cpu_runtime_function : public runtime_function {
     cpu_runtime_module &module() const noexcept;
 
   protected:
-    result<void> initialize_core(runtime_function_init_context &context) noexcept override;
+    result<void>
+    initialize_core(runtime_function_init_context &context) noexcept override;
     result<value_t> invoke_core(gsl::span<value_t> parameters,
-        value_t return_value) noexcept override;
+                                value_t return_value) noexcept override;
 
   private:
     std::string name_;

@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -15,23 +15,6 @@ using Nncase.Runtime;
 using Nncase.TIR;
 
 namespace Nncase.CodeGen.CPU;
-
-/// <summary>
-/// the c symbol define.
-/// </summary>
-internal sealed class CSymbol
-{
-    public CSymbol(string type, string name)
-    {
-        Type = type;
-        Name = name;
-    }
-
-    public string Type { get; }
-    public string Name { get; }
-
-    public override string ToString() => $"{Type} {Name}";
-}
 
 internal struct IndentScope : IDisposable
 {
@@ -71,12 +54,30 @@ internal struct IndentScope : IDisposable
     }
 }
 
+/// <summary>
+/// the c symbol define.
+/// </summary>
+internal sealed class CSymbol
+{
+    public CSymbol(string type, string name)
+    {
+        Type = type;
+        Name = name;
+    }
+
+    public string Type { get; }
+
+    public string Name { get; }
+
+    public override string ToString() => $"{Type} {Name}";
+}
 
 internal sealed class IndentWriter : StringWriter
 {
     public int Indent;
 
-    public IndentWriter(StringBuilder sb, int indent = 0) : base(sb)
+    public IndentWriter(StringBuilder sb, int indent = 0)
+        : base(sb)
     {
         Indent = indent;
     }
@@ -85,19 +86,20 @@ internal sealed class IndentWriter : StringWriter
     {
         for (int i = 0; i < Indent; i++)
         {
-            this.Write(' ');
+            Write(' ');
         }
-        this.Write(value);
+
+        Write(value);
     }
 }
 
 /// <summary>
-/// convert single prim function to c source
+/// convert single prim function to c source.
 /// </summary>
 internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 {
-    private readonly StringBuilder _implBuilder;
     public readonly Dictionary<Expr, CSymbol> ExprMemo;
+    private readonly StringBuilder _implBuilder;
 
     public CSourceConvertVisitor()
     {
@@ -129,11 +131,13 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         {
             // 1. Function signature
             IndentScope.Writer.IndWrite($"{type} {{\n");
+
             // 2. Function body
             using (var _ = new IndentScope())
             {
                 Visit(expr.Body);
             }
+
             // 3. Function closing
             IndentScope.Writer.IndWrite("}\n");
         }
@@ -154,9 +158,9 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         var arguments = expr.Arguments.AsValueEnumerable().Select(Visit).ToArray();
         string type = expr.CheckedType switch
         {
-            TupleType x when x == TupleType.Void => "",
+            TupleType x when x == TupleType.Void => string.Empty,
             TensorType { IsScalar: true } x => x.DType.ToC(),
-            _ => throw new NotSupportedException()
+            _ => throw new NotSupportedException(),
         };
 
         string str;
@@ -190,6 +194,7 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         {
             return symbol;
         }
+
         string type;
         string str;
         if (expr is TensorConst { Value: Tensor { ElementType: PrimType ptype, Shape: { IsScalar: true } } scalar })
@@ -248,6 +253,7 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             // 2. For Body
             Visit(expr.Body);
         }
+
         // 3. For closing
         IndentScope.Writer.IndWrite("}\n");
 

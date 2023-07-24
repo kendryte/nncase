@@ -46,7 +46,7 @@ internal sealed class SingleCPUFusionConverter
             _mainBody = mainBody;
         }
 
-        public Fusion VisitRootFusion => (Fusion)(VisitRoot!);
+        public Fusion VisitRootFusion => (Fusion)VisitRoot!;
 
         public IEnumerable<TIR.PhysicalBuffer> OutputBuffers => _buffersMap.Values.OfType<TIR.PhysicalBuffer>().Where(b => b.MemLocation == MemoryLocation.Output);
 
@@ -54,7 +54,7 @@ internal sealed class SingleCPUFusionConverter
 
         protected override Unit DefaultVisitLeaf(Expr expr)
         {
-            return new();
+            return default(Unit);
         }
 
         protected override Unit VisitLeafCall(Call expr)
@@ -71,15 +71,16 @@ internal sealed class SingleCPUFusionConverter
                 default:
                     throw new NotSupportedException();
             }
-            return new();
+
+            return default(Unit);
         }
 
         private void GenerateUnary(Unary unary, ReadOnlySpan<Buffer> arguments, Buffer ret)
         {
             var input = arguments[Unary.Input.Index];
             var loops = Enumerable.Range(0, input.Rank).Select(i => (T.ForLoop(out var loopVar, (0, input.Dimensions[i]), LoopMode.Serial, $"loop_{i}"), loopVar)).ToArray();
-            var input_index = Enumerable.Range(0, input.Rank).Aggregate((Expr)0, (acc, i) => acc + input.Strides[i] * loops[i].Item2);
-            var output_index = Enumerable.Range(0, input.Rank).Aggregate((Expr)0, (acc, i) => acc + ret.Strides[i] * loops[i].Item2);
+            var input_index = Enumerable.Range(0, input.Rank).Aggregate((Expr)0, (acc, i) => acc + (input.Strides[i] * loops[i].loopVar));
+            var output_index = Enumerable.Range(0, input.Rank).Aggregate((Expr)0, (acc, i) => acc + (ret.Strides[i] * loops[i].loopVar));
             Expr stmt = T.Store(ret, output_index, IR.F.Math.Unary(unary.UnaryOp, T.Load(input, output_index)));
             var final = loops.Reverse().Aggregate(stmt, (acc, p) => p.Item1.Body(acc).Build());
             _mainBody.Add(T.Block(nameof(Unary)).Body(final).Build());
@@ -101,6 +102,7 @@ internal sealed class SingleCPUFusionConverter
                         {
                             buffer = T.Buffer(c.CheckedDataType, MemoryLocation.Data, c.CheckedShape.ToValueArray().Select(i => (Expr)i).ToArray(), out _, name);
                         }
+
                         break;
                     case Var v:
                         buffer = T.PhysicalBuffer(v.CheckedDataType, MemoryLocation.Input, v.CheckedShape.ToValueArray(), out _, name);
@@ -111,8 +113,10 @@ internal sealed class SingleCPUFusionConverter
                     default:
                         throw new NotSupportedException();
                 }
+
                 _buffersMap.Add(expr, buffer);
             }
+
             return buffer;
         }
     }
