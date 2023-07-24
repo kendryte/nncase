@@ -11,10 +11,12 @@ using Nncase.Diagnostics;
 using Nncase.Evaluator;
 using Nncase.Hosting;
 using Nncase.IR;
+using Nncase.IR.Tensors;
 using Nncase.Passes;
 using Nncase.Passes.Mutators;
 using Nncase.Passes.Rules.Lower;
 using Nncase.Passes.Rules.Neutral;
+using Nncase.Passes.Rules.ShapeBucket;
 using Nncase.Passes.Rules.ShapeExpr;
 using Nncase.Passes.Transforms;
 using Nncase.Quantization;
@@ -88,8 +90,13 @@ internal class Compiler : ICompiler
 
     public void TargetIndependentPass(IPassManager passManager)
     {
-        var quantMode = _compileSession.CompileOptions.QuantizeOptions.ModelQuantMode;
-        passManager.AddWithName<DataflowPass>("SqueezeShape").Configure(p =>
+        passManager.AddWithName<DataflowPass>("ReshapeMatMul").Configure(p =>
+            {
+                p.Add<Passes.Rules.Neutral.ReshapeMatMul>();
+            }
+        );
+
+    passManager.AddWithName<DataflowPass>("SqueezeShape").Configure(p =>
         {
             p.Add<Passes.Rules.Neutral.SqueezeTransposeShape>();
             p.Add<Passes.Rules.Neutral.Squeeze5DTranspose>();
@@ -158,7 +165,11 @@ internal class Compiler : ICompiler
         //     p.Add<Passes.Rules.Neutral.FoldNopClamp>();
         // });
         _compileSession.Target.RegisterTargetInDependentPass(passManager, _compileSession.CompileOptions);
+    }
 
+    private void RegisterTargetIndependQuantPass(IPassManager passManager)
+    {
+        var quantMode = _compileSession.CompileOptions.QuantizeOptions.ModelQuantMode;
         if (quantMode == ModelQuantMode.UsePTQ)
         {
             passManager.AddWithName<DataflowPass>("AddRangeOfMarker").Configure(p =>
@@ -173,8 +184,16 @@ internal class Compiler : ICompiler
     {
         void MergeOp(IPassManager iPassManager)
         {
-            iPassManager.AddWithName<DataflowPass>("MergeCallToFusion").Configure(c => { c.Add<MergeNextCallToFusion>(); });
-            iPassManager.AddWithName<DataflowPass>("MergePrevCall").Configure(c => { c.Add<MergePrevCallToFusion>(); });
+            iPassManager.AddWithName<DataflowPass>("MergeNextCall").Configure(c =>
+            {
+                c.Add<MergeNextCallToFusion>();
+                c.Add<MergeNextMarkerToFusion>();
+            });
+            iPassManager.AddWithName<DataflowPass>("MergePrevCall").Configure(c =>
+            {
+                c.Add<MergePrevCallToFusion>();
+                c.Add<MergePrevMarkerToFusion>();
+            });
         }
 
         if (!_compileSession.CompileOptions.ShapeBucketOptions.Enable)
@@ -196,6 +215,7 @@ internal class Compiler : ICompiler
         {
             c.Add<SigmoidToFusion>();
             c.Add<LeakyReluToFusion>();
+            c.Add<ReluToFusion>();
             c.Add<TransposeToFusion>();
             c.Add<UnaryToFusion>();
             if (singleVar)
@@ -206,13 +226,29 @@ internal class Compiler : ICompiler
 
         MergeOp(p);
 
+        p.AddWithName<DataflowPass>("ClearSomeMarker").Configure(p =>
+        {
+            p.Add<ClearFusionOuterMarker>();
+        });
+
         if (singleVar)
         {
-            p.AddWithName<DataflowPass>("ClearSomeMarker").Configure(p =>
-            {
-                p.Add<ClearFusionOuterMarker>();
-            });
             p.AddWithName<MergeBucketFusion>("MergeFusion");
+            MergeOp(p);
+            p.AddWithName<MergeBucketFusion>("MergeFusion");
+            MergeOp(p);
+            p.AddWithName<MergeBucketFusion>("MergeFusion");
+            MergeOp(p);
+            p.AddWithName<MergeBucketFusion>("MergeFusion");
+            MergeOp(p);
+            p.AddWithName<MergeBucketFusion>("MergeFusion");
+            MergeOp(p);
+            p.AddWithName<MergeBucketFusion>("MergeFusion");
+            MergeOp(p);
+            p.AddWithName<MergeBucketFusion>("MergeFusion");
+            MergeOp(p);
+            p.AddWithName<MergeBucketFusion>("MergeFusion");
+            MergeOp(p);
         }
 
         p.AddWithName<DataflowPass>("FusionBucket").Configure(c =>
@@ -232,6 +268,7 @@ internal class Compiler : ICompiler
             c.Add<FoldNopCast>();
             c.Add<FoldNopReshape>();
             c.Add<FoldNopSlice>();
+            c.Add<FoldIf>();
         });
     }
 
@@ -253,10 +290,11 @@ internal class Compiler : ICompiler
     {
         var target = _compileSession.Target;
         await RunPassAsync(p => TargetIndependentPass(p), "TargetIndependentPass");
+        await RunPassAsync(p => RegisterTargetIndependQuantPass(p), "TargetIndependentPass");
+
+        DumpScope.Current.DumpModule(_module, "AfterTargetIndenpendent");
         await RunPassAsync(p => RegisterShapeBucket(p), "ShapeBucket");
-        await RunPassAsync(
-            p => _compileSession.Target.RegisterTargetInDependentPass(p, _compileSession.CompileOptions),
-            "TargetIndependtPass");
+        await RunPassAsync(p => TargetIndependentPass(p), "TargetIndependentPass");
         await RunPassAsync(
             p => target.RegisterTargetDependentPass(p, _compileSession.CompileOptions),
             "TargetDependentPass");
