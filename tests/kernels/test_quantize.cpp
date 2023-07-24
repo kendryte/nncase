@@ -47,7 +47,7 @@ class QuantizeTest
     runtime_tensor input;
 };
 
-INSTANTIATE_TEST_SUITE_P(Quantize, QuantizeTest,
+INSTANTIATE_TEST_SUITE_P(quantize, QuantizeTest,
                          testing::Combine(testing::Values(dt_float32),
                                           testing::Values(dims_t{1, 3, 16,
                                                                  16})));

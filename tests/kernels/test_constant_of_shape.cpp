@@ -53,7 +53,7 @@ class ConstantOfShapeTest
     runtime_tensor expected;
 };
 
-INSTANTIATE_TEST_SUITE_P(ConstantOfShape, ConstantOfShapeTest,
+INSTANTIATE_TEST_SUITE_P(constant_of_shape, ConstantOfShapeTest,
                          testing::Combine(testing::Values(dt_int32),
                                           testing::Values(dims_t{1, 3, 16,
                                                                  16})));

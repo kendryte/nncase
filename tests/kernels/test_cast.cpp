@@ -64,7 +64,7 @@ class CastTest : public KernelTest,
 };
 
 INSTANTIATE_TEST_SUITE_P(
-    Cast, CastTest,
+    cast, CastTest,
     testing::Combine(testing::Values(dt_int16, dt_int8, dt_float32, dt_uint8),
                      testing::Values(dt_int16, dt_int8, dt_float32, dt_uint8),
                      testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 3, 8, 8},

@@ -50,7 +50,7 @@ class MatMulTest : public KernelTest,
 };
 
 INSTANTIATE_TEST_SUITE_P(
-    MatMul, MatMulTest,
+    mat_mul, MatMulTest,
     testing::Combine(
         testing::Values(dt_int32, dt_int64,
                         dt_float32), // todo dt_float32 case have some issue

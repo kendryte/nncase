@@ -55,7 +55,7 @@ class RankTest
 };
 
 INSTANTIATE_TEST_SUITE_P(
-    Rank, RankTest,
+    rank, RankTest,
     testing::Combine(testing::Values(dt_int16, dt_int8, dt_float32, dt_uint8),
                      testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 3, 8, 8},
                                      dims_t{1, 3, 1}, dims_t{1, 3, 16},

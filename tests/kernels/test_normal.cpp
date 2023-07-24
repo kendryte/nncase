@@ -63,7 +63,7 @@ class NormalTest : public KernelTest,
     axes_t shape_array;
 };
 
-INSTANTIATE_TEST_SUITE_P(Normal, NormalTest,
+INSTANTIATE_TEST_SUITE_P(normal, NormalTest,
                          testing::Combine(testing::Values(dt_float32),
                                           testing::Values(axes_t{1, 3, 16, 16}),
                                           testing::Values(dims_t{1, 3, 16,
