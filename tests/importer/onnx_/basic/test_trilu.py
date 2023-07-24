@@ -20,6 +20,7 @@ from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
 import numpy as np
 
+
 def _make_module(in_shape, kvalue, upper):
     inputs = []
     outputs = []
@@ -61,6 +62,7 @@ def _make_module(in_shape, kvalue, upper):
 
     return model_def
 
+
 in_shapes = [
     [1, 3, 16, 16]
 ]
@@ -76,6 +78,7 @@ uppers = [
     0,
     1
 ]
+
 
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('k', ks)

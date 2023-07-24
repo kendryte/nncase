@@ -24,19 +24,17 @@ using namespace nncase::kernels;
 using namespace nncase::kernels::stackvm;
 
 template <typename T>
-result<void> trilu_impl(const T *input, T *output, gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
-                        gsl::span<const size_t> out_strides, long k, bool upper)
-{
+result<void>
+trilu_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
+           gsl::span<const size_t> in_strides,
+           gsl::span<const size_t> out_strides, long k, bool upper) {
     return apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
         auto h = index.size() - 2;
         auto w = index.size() - 1;
-        if(upper)
-        {
+        if (upper) {
             auto value = w >= (h + k) ? 0 : input[offset(in_strides, index)];
             output[offset(out_strides, index)] = value;
-        }
-        else
-        {
+        } else {
             auto value = w >= (h + k) ? input[offset(in_strides, index)] : 0;
             output[offset(out_strides, index)] = value;
         }
@@ -44,15 +42,15 @@ result<void> trilu_impl(const T *input, T *output, gsl::span<const size_t> in_sh
     });
 }
 
-#define TRILU_IMPL(size, type) \
-    case size:\
-        return trilu_impl(IN_CAST(type, input), OUT_CAST(type, output), in_shape, in_strides, out_strides, k, upper)
+#define TRILU_IMPL(size, type)                                                 \
+    case size:                                                                 \
+        return trilu_impl(IN_CAST(type, input), OUT_CAST(type, output),        \
+                          in_shape, in_strides, out_strides, k, upper)
 
 result<void> nncase::kernels::stackvm::reference::trilu(
-        datatype_t type, const gsl::byte *input, gsl::byte *output,
-        gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
-        gsl::span<const size_t> out_strides, long k, bool upper) noexcept
-{
+    datatype_t type, const gsl::byte *input, gsl::byte *output,
+    gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
+    gsl::span<const size_t> out_strides, long k, bool upper) noexcept {
     switch (runtime::get_bytes(type)) {
         TRILU_IMPL(1, uint8_t);
         TRILU_IMPL(2, uint16_t);
