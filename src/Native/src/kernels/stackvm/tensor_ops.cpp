@@ -695,10 +695,6 @@ result<value_t> nncase::kernels::stackvm::reduce(
                            input_tensor->shape(), axes_value,
                            input_tensor->strides(), output_tensor->strides(),
                            keep_dims_value, context));
-    // try_(optimized::reduce(typecode, reduce_op, init_v, in_mem, out_mem,
-    //                    input_tensor->shape(), axes_value,
-    //                    input_tensor->strides(), output_tensor->strides(),
-    //                    keep_dims_value, context));
     CONTIGUOUS_KERNEL(reduce, input_tensor, typecode, reduce_op, init_v, in_mem, out_mem,
                         input_tensor->shape(), axes_value,
                         input_tensor->strides(), output_tensor->strides(),

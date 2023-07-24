@@ -152,7 +152,7 @@ optimized::reduce(typecode_t typecode, nncase::runtime::stackvm::reduce_op_t op,
        {
             #if __riscv_vector
             do{
-                if(op == reduce_op_t::mean)
+                if(op == reduce_op_t::mean && typecode == dt_float32)
                 {
                         int parameters[3];
                         int ret = get_parameter(in_shape, axis, parameters);
