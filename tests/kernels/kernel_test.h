@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 #pragma once
-#include "macro_util.h"
 #include "generated/generated_macro.h"
+#include "macro_util.h"
 #include "nncase/shape.h"
 #include <algorithm>
 #include <cmath>
