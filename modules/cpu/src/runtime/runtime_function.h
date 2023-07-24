@@ -30,6 +30,14 @@ class cpu_runtime_function : public runtime_function {
     initialize_core(runtime_function_init_context &context) noexcept override;
     result<value_t> invoke_core(gsl::span<value_t> parameters,
                                 value_t return_value) noexcept override;
+
+  private:
+    std::vector<uint32_t> input_ranks_;
+    std::vector<std::vector<uint32_t>> input_shapes_;
+    std::vector<std::vector<uint32_t>> input_strides_;
+    std::vector<uint32_t> output_ranks_;
+    std::vector<std::vector<uint32_t>> output_shapes_;
+    std::vector<std::vector<uint32_t>> output_strides_;
 };
 
 END_NS_NNCASE_RT_MODULE

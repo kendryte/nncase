@@ -26,10 +26,12 @@ result<void> cpu_runtime_module::initialize_before_functions(
     runtime_module_init_context &context) noexcept {
     if (!context.is_section_pinned())
         return nncase::err(std::errc::bad_address);
-    try_var(data_, context.get_or_read_section(".data", data_storage_, false));
-    try_var(rdata_,
+    try_var(data, context.get_or_read_section(".data", data_storage_, false));
+    try_var(rdata,
             context.get_or_read_section(".rdata", rdata_storage_, true));
-    try_var(text_, context.get_or_read_section(".text", text_storage_, true));
+    try_var(text, context.get_or_read_section(".text", text_storage_, true));
+
+    text_ = text.as_span<const gsl::byte>();
 
     return ok();
 }

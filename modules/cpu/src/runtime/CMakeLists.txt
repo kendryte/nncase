@@ -1,7 +1,13 @@
 ﻿cmake_minimum_required (VERSION 3.13)
 
 set(SRCS runtime_module.cpp
-         runtime_function.cpp)
+         runtime_function.cpp
+         elfload.cpp
+         elfloader.cpp
+         elfreloc_aarch64.cpp
+         elfreloc_amd64.cpp
+         elfreloc_i386.cpp
+         elfreloc_riscv64.cpp)
 
 if (BUILDING_RUNTIME)
     if (ENABLE_CPU_RUNTIME)

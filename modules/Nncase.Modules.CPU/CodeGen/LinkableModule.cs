@@ -58,7 +58,7 @@ internal sealed class LinkableModule : ILinkableModule
 
     private string LinkCSources()
     {
-        var path = Path.GetTempFileName();
+        var path = Path.GetTempFileName() + ".c";
         using (var fs = File.OpenWrite(path))
         {
             using (var writer = new StreamWriter(fs))
@@ -98,6 +98,6 @@ internal sealed class LinkableModule : ILinkableModule
     private string CompileCSource(string sourcePath)
     {
         var compiler = new CSourceCompiler();
-        return compiler.Compile(sourcePath, Path.GetTempFileName());
+        return compiler.Compile(sourcePath, Path.GetTempFileName() + ".elf");
     }
 }
