@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 #pragma once
-#include "macro_util.h"
 #include "generated_macro.h"
+#include "macro_util.h"
 #include "nncase/shape.h"
 #include <algorithm>
 #include <cmath>
@@ -38,12 +38,7 @@
 using namespace nncase::runtime;
 using namespace nncase::kernels;
 namespace nncase {
-    typedef enum {
-        RANDOM, 
-        NOZERO, 
-        NONEG, 
-        NOPOS
-    } initial_mode;
+typedef enum { RANDOM, NOZERO, NONEG, NOPOS } initial_mode;
 
 class KernelTest {
   public:
@@ -214,8 +209,7 @@ class KernelTest {
         }
     }
 
-    template <typename T>
-    T InitAttributeSCALAR(dims_t shape, T initvalue) {
+    template <typename T> T InitAttributeSCALAR(dims_t shape, T initvalue) {
         if (shape.size() == 1 && (shape[0] == 1)) {
             // Scalar attribute
             return initvalue;
@@ -226,11 +220,11 @@ class KernelTest {
     }
 
     template <typename T>
-    T* InitAttributeARRAYONEDIM(dims_t shape, std::vector<T> initvalue) {
+    T *InitAttributeARRAYONEDIM(dims_t shape, std::vector<T> initvalue) {
         if (shape.size() == 1 && (shape[0] == initvalue.size())) {
             // One dim array attribute
-            T* tmp = new T[shape[0]];
-            for (int i = 0 ; i < shape[0]; ++i) {
+            T *tmp = new T[shape[0]];
+            for (int i = 0; i < shape[0]; ++i) {
                 tmp[i] = initvalue[i];
             }
             return tmp;
@@ -261,7 +255,8 @@ class KernelTest {
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](gsl::span<const size_t> index) -> result<void> {
-                    SWITCH_INIT_MODE(uint8_t, int_random_dis, int_noneg_dis, int_noneg_dis, int_nopos_dis)
+                    SWITCH_INIT_MODE(uint8_t, int_random_dis, int_noneg_dis,
+                                     int_noneg_dis, int_nopos_dis)
                     return ok();
                 });
             break;
@@ -273,7 +268,8 @@ class KernelTest {
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](gsl::span<const size_t> index) -> result<void> {
-                    SWITCH_INIT_MODE(int16_t, int_random_dis, int_noneg_dis, int_noneg_dis, int_nopos_dis)
+                    SWITCH_INIT_MODE(int16_t, int_random_dis, int_noneg_dis,
+                                     int_noneg_dis, int_nopos_dis)
                     return ok();
                 });
             break;
@@ -285,7 +281,8 @@ class KernelTest {
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](gsl::span<const size_t> index) -> result<void> {
-                    SWITCH_INIT_MODE(int32_t, int_random_dis, int_noneg_dis, int_noneg_dis, int_nopos_dis)
+                    SWITCH_INIT_MODE(int32_t, int_random_dis, int_noneg_dis,
+                                     int_noneg_dis, int_nopos_dis)
 
                     return ok();
                 });
@@ -298,8 +295,9 @@ class KernelTest {
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](gsl::span<const size_t> index) -> result<void> {
-                    SWITCH_INIT_MODE(int64_t, int_random_dis, int_noneg_dis, int_noneg_dis, int_nopos_dis)
-                    
+                    SWITCH_INIT_MODE(int64_t, int_random_dis, int_noneg_dis,
+                                     int_noneg_dis, int_nopos_dis)
+
                     return ok();
                 });
             break;
@@ -311,7 +309,8 @@ class KernelTest {
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](gsl::span<const size_t> index) -> result<void> {
-                    SWITCH_INIT_MODE(uint8_t, uint_random_dis, int_noneg_dis, int_noneg_dis, uint_random_dis)
+                    SWITCH_INIT_MODE(uint8_t, uint_random_dis, int_noneg_dis,
+                                     int_noneg_dis, uint_random_dis)
                     return ok();
                 });
             break;
@@ -323,7 +322,8 @@ class KernelTest {
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](gsl::span<const size_t> index) -> result<void> {
-                    SWITCH_INIT_MODE(uint16_t, uint_random_dis, int_noneg_dis, int_noneg_dis, uint_random_dis)
+                    SWITCH_INIT_MODE(uint16_t, uint_random_dis, int_noneg_dis,
+                                     int_noneg_dis, uint_random_dis)
 
                     return ok();
                 });
@@ -336,8 +336,9 @@ class KernelTest {
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](gsl::span<const size_t> index) -> result<void> {
-                    SWITCH_INIT_MODE(uint32_t, uint_random_dis, int_noneg_dis, int_noneg_dis, uint_random_dis)
-                    
+                    SWITCH_INIT_MODE(uint32_t, uint_random_dis, int_noneg_dis,
+                                     int_noneg_dis, uint_random_dis)
+
                     return ok();
                 });
             break;
@@ -349,7 +350,8 @@ class KernelTest {
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](gsl::span<const size_t> index) -> result<void> {
-                    SWITCH_INIT_MODE(uint64_t, uint_random_dis, int_noneg_dis, int_noneg_dis, uint_random_dis)
+                    SWITCH_INIT_MODE(uint64_t, uint_random_dis, int_noneg_dis,
+                                     int_noneg_dis, uint_random_dis)
                     return ok();
                 });
             break;
@@ -361,7 +363,8 @@ class KernelTest {
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](gsl::span<const size_t> index) -> result<void> {
-                    SWITCH_INIT_MODE(half, real_random_dis, real_noneg_dis, real_noneg_dis, real_nopos_dis)
+                    SWITCH_INIT_MODE(half, real_random_dis, real_noneg_dis,
+                                     real_noneg_dis, real_nopos_dis)
                     return ok();
                 });
             break;
@@ -373,7 +376,8 @@ class KernelTest {
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](gsl::span<const size_t> index) -> result<void> {
-                    SWITCH_INIT_MODE(float, real_random_dis, real_noneg_dis, real_noneg_dis, real_nopos_dis)
+                    SWITCH_INIT_MODE(float, real_random_dis, real_noneg_dis,
+                                     real_noneg_dis, real_nopos_dis)
                     return ok();
                 });
             break;
@@ -385,7 +389,8 @@ class KernelTest {
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](gsl::span<const size_t> index) -> result<void> {
-                    SWITCH_INIT_MODE(double, real_random_dis, real_noneg_dis, real_noneg_dis, real_nopos_dis)
+                    SWITCH_INIT_MODE(double, real_random_dis, real_noneg_dis,
+                                     real_noneg_dis, real_nopos_dis)
                     return ok();
                 });
             break;
@@ -397,7 +402,8 @@ class KernelTest {
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](gsl::span<const size_t> index) -> result<void> {
-                    SWITCH_INIT_MODE(bool, bool_dis, bool_dis, bool_dis, bool_dis)
+                    SWITCH_INIT_MODE(bool, bool_dis, bool_dis, bool_dis,
+                                     bool_dis)
                     return ok();
                 });
             break;
