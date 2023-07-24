@@ -23,6 +23,12 @@ public class UnitTestReshapeMatMul : TransformTestBase
         new object[] { new[] { 3 }, new[] { 2, 3, 7 } },
     };
 
+    public static IEnumerable<object[]> NopMatMulShapeData => new[]
+    {
+        new object[] { new[] { 1, 3, 24, 24 }, new[] { 3, 24, 24 } },
+        new object[] { new[] { 7, 3 }, new[] { 3, 7 } },
+    };
+
     [Theory]
     [MemberData(nameof(MatMulShapeData))]
     public void TestTo3D(int[] shapeA, int[] shapeB)
@@ -32,12 +38,6 @@ public class UnitTestReshapeMatMul : TransformTestBase
         var mm = MatMul(lhs, rhs);
         TestMatched<ReshapeMatMul>(mm);
     }
-
-    public static IEnumerable<object[]> NopMatMulShapeData => new[]
-    {
-        new object[] { new[] { 1, 3, 24, 24 }, new[] { 3, 24, 24 } },
-        new object[] { new[] { 7, 3 }, new[] { 3, 7 } },
-    };
 
     [Fact]
     public void TestNop()
