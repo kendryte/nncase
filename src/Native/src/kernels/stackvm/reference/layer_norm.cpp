@@ -21,46 +21,55 @@
 using namespace nncase;
 using namespace nncase::kernels::stackvm;
 
+static void layernorm_impl(int inner_size, const float *src, const float *scale,
+                           const float *bias, float epsilon, float *dst) {
+    float mean1 = 0.f;
+    for (auto i = 0; i < inner_size; i++)
+        mean1 += src[i] / inner_size;
+
+    std::vector<float> sub(inner_size, 0.f);
+    for (auto i = 0; i < inner_size; i++)
+        sub[i] = src[i] - mean1;
+
+    std::vector<float> pow(inner_size, 0.f);
+    for (auto i = 0; i < inner_size; i++)
+        pow[i] = sub[i] * sub[i];
+
+    float mean2 = 0.f;
+    for (auto i = 0; i < inner_size; i++)
+        mean2 += pow[i] / inner_size;
+
+    float add = mean2 + epsilon;
+    float sqrt = std::sqrt(add);
+
+    std::vector<float> div(inner_size, 0.f);
+    for (auto i = 0; i < inner_size; i++)
+        div[i] = sub[i] / sqrt;
+
+    for (auto i = 0; i < inner_size; i++)
+        dst[i] = div[i] * scale[i] + bias[i];
+}
+
 result<void> nncase::kernels::stackvm::reference::layer_norm(
     const float *input, float *output, const float *scale, const float *bias,
     gsl::span<const size_t> in_shape, int32_t axis, float epsilon) {
-    auto outer_size = 1;
-    auto inner_size = 1;
-    for (auto i = 0; i < axis; i++)
-        outer_size *= in_shape[i];
-    for (auto i = axis; i < static_cast<int>(in_shape.size()); i++)
-        inner_size *= in_shape[i];
 
-    for (int32_t batch = 0; batch < outer_size; batch++) {
-        auto src = input + batch * inner_size;
-        auto dest = output + batch * inner_size;
+    int ndim = in_shape.size();
+    int positive_axis = axis < 0 ? ndim + axis : axis;
+    int axis_dim = 1; // in_shape[positive_axis];
 
-        float mean1 = 0.f;
-        for (auto i = 0; i < inner_size; i++)
-            mean1 += src[i] / inner_size;
+    size_t out_side = 1;
+    for (size_t i = 0; i < positive_axis; i++)
+        out_side *= in_shape[i];
 
-        std::vector<float> sub(inner_size, 0.f);
-        for (auto i = 0; i < inner_size; i++)
-            sub[i] = src[i] - mean1;
-
-        std::vector<float> pow(inner_size, 0.f);
-        for (auto i = 0; i < inner_size; i++)
-            pow[i] = sub[i] * sub[i];
-
-        float mean2 = 0.f;
-        for (auto i = 0; i < inner_size; i++)
-            mean2 += pow[i] / inner_size;
-
-        float add = mean2 + epsilon;
-        float sqrt = std::sqrt(add);
-
-        std::vector<float> div(inner_size, 0.f);
-        for (auto i = 0; i < inner_size; i++)
-            div[i] = sub[i] / sqrt;
-
-        for (auto i = 0; i < inner_size; i++)
-            dest[i] = div[i] * scale[i] + bias[i];
+    for (size_t i = positive_axis; i < ndim; i++) {
+        axis_dim *= in_shape[i];
     }
 
+    for (size_t i = 0; i < out_side; i++) {
+        layernorm_impl(axis_dim, input, scale, bias, epsilon, output);
+        input += axis_dim;
+        output += axis_dim;
+    }
     return ok();
 }

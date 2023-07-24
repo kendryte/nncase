@@ -17,7 +17,7 @@ using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Quantization;
 
-internal record class Output
+public record class Output
 {
     public string? Name { get; set; }
 
@@ -28,7 +28,7 @@ internal record class Output
     public string? DataRangeMode { get; set; }
 }
 
-internal record class QuantScheme
+public record class QuantScheme
 {
     public string? Version { get; set; }
 

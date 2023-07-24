@@ -37,10 +37,10 @@ stackvm_runtime_function::run(gsl::span<const gsl::byte> text) noexcept {
 
     while (!reader_.empty()) {
         pc_ = reader_.tell();
-        auto opcode = reader_.read<opcode_t>();
+        opcode_t opcode = reader_.read<opcode_t>();
         if (opcode != opcode_t::TENSOR) {
 #ifdef ENABLE_OP_PROFILE
-            op_profile p(to_string(opcode));
+            op_profile p(to_string(opcode), (uint8_t)opcode);
 #endif
             switch (opcode) {
 #include "ops/control.inl"
@@ -55,7 +55,7 @@ stackvm_runtime_function::run(gsl::span<const gsl::byte> text) noexcept {
         } else {
             auto tensor_func = reader_.read_unaligned<tensor_function_t>();
 #ifdef ENABLE_OP_PROFILE
-            op_profile p(to_string(tensor_func));
+            op_profile p(to_string(tensor_func), (uint8_t)opcode);
 #endif
             try_(visit(tensor_func, reader_))
         }

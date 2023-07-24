@@ -14,7 +14,9 @@
  */
 
 #include <algorithm>
+#include <map>
 #include <nncase/runtime/stackvm/op_profile.h>
+#include <unordered_map>
 #include <vector>
 
 #ifdef NNCASE_BAREMETAL
@@ -23,15 +25,51 @@ double get_ms_time();
 double get_ms_time() { return (double)clock() / 1000; }
 #endif
 
-std::unordered_map<std::string, double> op_profile::op_timing_;
-std::map<std::string, size_t> op_profile::op_count_;
+std::vector<std::tuple<std::string, uint8_t, double, double>>
+    op_profile::op_timing_;
+
 void op_profile::print() {
+    std::map<std::string, double> op_timing;
+    std::unordered_map<std::string, size_t> op_count;
+
+    std::cout << "stack OPs timeline" << std::endl;
+    std::cout << "|" << std::setw(24) << std::left << "stackvm tensor op"
+              << "|" << std::setw(24) << std::left << "start timing(ms)"
+              << "|" << std::setw(24) << std::left << "end timing(ms)"
+              << "|" << std::endl;
+
+    std::cout << "|" << std::setw(24) << std::left << "---"
+              << "|" << std::setw(24) << std::left << "---"
+              << "|" << std::setw(24) << std::left << "---"
+              << "|" << std::endl;
+    double init_timing = -1;
+    for (auto &&[op_name, op_type, begin, end] : op_timing_) {
+        if (init_timing == -1) {
+            init_timing = begin;
+        }
+        auto cast_time = end - begin;
+        if (op_timing.find(op_name) == op_timing.end()) {
+            op_timing.emplace(op_name, cast_time);
+            op_count.emplace(op_name, 1);
+        } else {
+            op_timing[op_name] += cast_time;
+            op_count[op_name] += 1;
+        }
+        if (op_type == (uint8_t)nncase::runtime::stackvm::opcode_t::EXTCALL ||
+            op_type == (uint8_t)nncase::runtime::stackvm::opcode_t::TENSOR ||
+            op_type == (uint8_t)nncase::runtime::stackvm::opcode_t::CUSCALL)
+            std::cout << "|" << std::setw(24) << std::left << op_name << "|"
+                      << std::setw(24) << begin - init_timing << "|"
+                      << std::setw(24) << end - init_timing << "|" << std::endl;
+    }
+
     double total = 0.f;
     std::vector<std::pair<std::string, double>> v;
-    for (auto e : op_timing_) {
+    for (auto e : op_timing) {
         total += e.second;
         v.push_back(e);
     }
+    std::cout << std::endl;
 
     std::sort(
         v.begin(), v.end(),
@@ -53,7 +91,7 @@ void op_profile::print() {
 
     auto total_count = 0;
     for (auto e : v) {
-        auto count = op_count_[e.first];
+        auto count = op_count[e.first];
         std::cout << "|" << std::setw(24) << std::left << e.first << "|"
                   << std::setw(6) << count << "|" << std::setw(12) << std::left
                   << e.second << "|" << std::setw(12) << std::left
@@ -67,5 +105,5 @@ void op_profile::print() {
               << std::left << total / total * 100 << "|" << std::endl
               << std::endl;
 
-    op_timing_.clear();
+    op_timing.clear();
 }

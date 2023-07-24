@@ -239,7 +239,9 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
     {
         if (ReferenceEquals(expr, _function))
         {
-            return Visit(expr.Body);
+            var bodySnippet = Visit(expr.Body);
+            bodySnippet.Emitter.Ret();
+            return bodySnippet;
         }
         else
         {
