@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 #include "kernel_test.h"
-#include "macro_util.h"
 #include <gtest/gtest.h>
 #include <iostream>
 #include <nncase/kernels/stackvm/tensor_ops.h>
@@ -30,15 +29,16 @@ using namespace nncase::runtime::stackvm;
 
 NNCASE_TEST_CLASS(BinaryTest)
 
-NNCASE_TESTSUITE_INIT(BinaryTest, Binary, 1, dt_boolean,
-                      GET_DEFAULT_TEST_SHAPE())
+NNCASE_TESTSUITE_INIT(BinaryTest, Binary, 1, dt_int32, dims_t{1, 3, 16, 16}, dims_t{3, 16, 16}, dims_t{3, 16, 1}, dims_t{16, 16}, 
+        dims_t{16, 1}, dims_t{1, 16, 1}, dims_t{16}, dims_t{1}, dims_t {})
 
-NNCASE_TEST_BODY(BinaryTest, logical_and, kernels::stackvm::binary,
-                 binary_op_t::logical_and, 1, NORMAL, ortki_And, l_ort, r_ort)
-NNCASE_TEST_BODY(BinaryTest, logical_or, kernels::stackvm::binary,
-                 binary_op_t::logical_or, 1, NORMAL, ortki_Or, l_ort, r_ort)
-NNCASE_TEST_BODY(BinaryTest, logical_xor, kernels::stackvm::binary,
-                 binary_op_t::logical_xor, 1, NORMAL, ortki_Xor, l_ort, r_ort)
+NNCASE_TEST_BODY(BinaryTest, min, kernels::stackvm::binary, binary_op_t::min, 1,
+                 VEC, ortki_Min, orts, sizeof(orts) / sizeof(orts[0]))
+NNCASE_TEST_BODY(BinaryTest, max, kernels::stackvm::binary, binary_op_t::max, 1,
+                 VEC, ortki_Max, orts, sizeof(orts) / sizeof(orts[0]))
+NNCASE_TEST_BODY(BinaryTest, mod, kernels::stackvm::binary, binary_op_t::mod, 1,
+                 NORMAL, ortki_Mod, l_ort, r_ort, (long)1)
+
 
 int main(int argc, char *argv[]) {
     ::testing::InitGoogleTest(&argc, argv);

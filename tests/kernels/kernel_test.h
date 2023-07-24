@@ -14,6 +14,7 @@
  */
 #pragma once
 #include "macro_util.h"
+#include "generated_macro.h"
 #include "nncase/shape.h"
 #include <algorithm>
 #include <cmath>
@@ -37,6 +38,13 @@
 using namespace nncase::runtime;
 using namespace nncase::kernels;
 namespace nncase {
+    typedef enum {
+        RANDOM, 
+        NOZERO, 
+        NONEG, 
+        NOPOS
+    } initial_mode;
+
 class KernelTest {
   public:
     template <typename T>
@@ -197,6 +205,199 @@ class KernelTest {
                 [&](gsl::span<const size_t> index) -> result<void> {
                     get<bool>(tensor, index) =
                         static_cast<double>(dis(gen)) >= 0;
+                    return ok();
+                });
+            break;
+        }
+        default: {
+        }
+        }
+    }
+
+    template <typename T>
+    T InitAttributeSCALAR(dims_t shape, T initvalue) {
+        if (shape.size() == 1 && (shape[0] == 1)) {
+            // Scalar attribute
+            return initvalue;
+        } else {
+            std::cout << "Shape is error, not a Scalar\n";
+            return 0;
+        }
+    }
+
+    template <typename T>
+    T* InitAttributeARRAYONEDIM(dims_t shape, std::vector<T> initvalue) {
+        if (shape.size() == 1 && (shape[0] == initvalue.size())) {
+            // One dim array attribute
+            T* tmp = new T[shape[0]];
+            for (int i = 0 ; i < shape[0]; ++i) {
+                tmp[i] = initvalue[i];
+            }
+            return tmp;
+        } else {
+            std::cout << "Shape is error, not a array with one dim\n";
+            return nullptr;
+        }
+    }
+
+    void InitTensor(runtime::runtime_tensor &tensor, initial_mode mode) {
+        auto dtype = tensor.datatype();
+        std::uniform_int_distribution<> int_random_dis(-6, 6);
+        std::uniform_int_distribution<> uint_random_dis(0, 6);
+        std::uniform_int_distribution<> int_noneg_dis(0, 6);
+        std::uniform_int_distribution<> int_nopos_dis(-6, 0);
+
+        std::uniform_real_distribution<> real_random_dis(-6, 6);
+        std::uniform_real_distribution<> real_noneg_dis(0, 6);
+        std::uniform_real_distribution<> real_nopos_dis(-6, 0);
+
+        std::bernoulli_distribution bool_dis(0.5);
+
+        switch (dtype) {
+        case dt_int8: {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_int_distribution<> dis(-6, 6);
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    SWITCH_INIT_MODE(uint8_t, int_random_dis, int_noneg_dis, int_noneg_dis, int_nopos_dis)
+                    return ok();
+                });
+            break;
+        }
+        case dt_int16: {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_int_distribution<> dis(-6, 6);
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    SWITCH_INIT_MODE(int16_t, int_random_dis, int_noneg_dis, int_noneg_dis, int_nopos_dis)
+                    return ok();
+                });
+            break;
+        }
+        case dt_int32: {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_int_distribution<> dis(-6, 6);
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    SWITCH_INIT_MODE(int32_t, int_random_dis, int_noneg_dis, int_noneg_dis, int_nopos_dis)
+
+                    return ok();
+                });
+            break;
+        }
+        case dt_int64: {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_int_distribution<> dis(-6, 6);
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    SWITCH_INIT_MODE(int64_t, int_random_dis, int_noneg_dis, int_noneg_dis, int_nopos_dis)
+                    
+                    return ok();
+                });
+            break;
+        }
+        case dt_uint8: {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_int_distribution<> dis(0, 127);
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    SWITCH_INIT_MODE(uint8_t, uint_random_dis, int_noneg_dis, int_noneg_dis, uint_random_dis)
+                    return ok();
+                });
+            break;
+        }
+        case dt_uint16: {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_int_distribution<> dis(0, 127);
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    SWITCH_INIT_MODE(uint16_t, uint_random_dis, int_noneg_dis, int_noneg_dis, uint_random_dis)
+
+                    return ok();
+                });
+            break;
+        }
+        case dt_uint32: {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_int_distribution<> dis(0, 127);
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    SWITCH_INIT_MODE(uint32_t, uint_random_dis, int_noneg_dis, int_noneg_dis, uint_random_dis)
+                    
+                    return ok();
+                });
+            break;
+        }
+        case dt_uint64: {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_int_distribution<uint64_t> dis(0, 127);
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    SWITCH_INIT_MODE(uint64_t, uint_random_dis, int_noneg_dis, int_noneg_dis, uint_random_dis)
+                    return ok();
+                });
+            break;
+        }
+        case dt_float16: {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_real_distribution<float> dis(-1.0f, 1.0f);
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    SWITCH_INIT_MODE(half, real_random_dis, real_noneg_dis, real_noneg_dis, real_nopos_dis)
+                    return ok();
+                });
+            break;
+        }
+        case dt_float32: {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_real_distribution<float> dis(-1.0f, 1.0f);
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    SWITCH_INIT_MODE(float, real_random_dis, real_noneg_dis, real_noneg_dis, real_nopos_dis)
+                    return ok();
+                });
+            break;
+        }
+        case dt_float64: {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_real_distribution<double> dis(-1.0, 1.0);
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    SWITCH_INIT_MODE(double, real_random_dis, real_noneg_dis, real_noneg_dis, real_nopos_dis)
+                    return ok();
+                });
+            break;
+        }
+        case dt_boolean: {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_real_distribution<double> dis(-1.0, 1.0);
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    SWITCH_INIT_MODE(bool, bool_dis, bool_dis, bool_dis, bool_dis)
                     return ok();
                 });
             break;
