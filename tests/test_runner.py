@@ -8,232 +8,43 @@ from itertools import product
 from functools import reduce
 from pathlib import Path
 from typing import Any, Dict, List, Tuple, Union
+import collections.abc
 
 import nncase
-import struct
-from compare_util import compare
 import copy
 import cv2
+from PIL import Image
 import numpy as np
-import yaml
-import test_utils
+import toml
+from generator import *
 from inference import *
 from evaluator import *
-
-
-class Edict:
-    def __init__(self, d: Dict[str, int]) -> None:
-        assert(isinstance(d, dict)), "the Edict only accepct Dict for init"
-        for name, value in d.items():
-            if isinstance(value, (list, tuple)):
-                setattr(self, name,
-                        [Edict(x) if isinstance(x, dict) else x for x in value])
-            else:
-                if 'kwargs' in name:
-                    setattr(self, name, value if value else dict())
-                else:
-                    if isinstance(value, dict):
-                        setattr(self, name, Edict(value))
-                    else:
-                        setattr(self, name, value)
-
-    def keys(self):
-        return self.__dict__.keys()
-
-    def items(self):
-        return self.__dict__.items()
-
-    def values(self):
-        return self.__dict__.values()
-
-    def __repr__(self, indent=0) -> str:
-        s: str = ''
-        for k, v in self.__dict__.items():
-            s += indent * ' ' + k + ' : '
-            if isinstance(v, Edict):
-                s += '\n' + v.__repr__(len(s) - s.rfind('\n'))
-            else:
-                s += v.__repr__().replace('\n', ' ')
-            s += '\n'
-        return s.rstrip('\n')
-
-    @property
-    def dict(self):
-        return self.__dict__
-
-    def update(self, d: Dict):
-        for name, new_value in d.items():
-            if name in self.keys():
-                if isinstance(new_value, dict) and name == 'case':
-                    old_value = getattr(self, name)
-                    if old_value is None:
-                        setattr(self, name, Edict(new_value))
-                    for new_key in new_value.keys():
-                        for old_key in new_value.keys():
-                            if new_key != old_key:
-                                continue
-                            if new_key == 'preprocess_opt':
-                                for i in range(len(new_value['preprocess_opt'])):
-                                    self.case.preprocess_opt[i].values = copy.deepcopy(
-                                        new_value['preprocess_opt'][i]['values'])
-                            else:
-                                setattr(self.case, new_key, Edict(new_value[new_key]))
-                elif isinstance(new_value, dict):
-                    old_value = getattr(self, name)
-                    if old_value is None:
-                        setattr(self, name, Edict(new_value))
-                    elif isinstance(old_value, (Edict, dict)):
-                        old_value.update(new_value)
-                elif isinstance(new_value, (list, tuple)) and name == 'specifics':
-                    setattr(self, name, [])
-                    assert(hasattr(self, 'common')
-                           ), "The specifics new_value need common dict to overload !"
-                    common = getattr(self, 'common')
-                    for specific in new_value:
-                        import_common = copy.deepcopy(common)
-                        import_common.update(specific)
-                        getattr(self, name).append(import_common)
-                # elif isinstance(new_value)
-                else:
-                    setattr(self, name, new_value)
-            else:
-                setattr(self, name, new_value)
-
-
-def generate_real_data(shape: List[int], dtype: np.dtype,
-                       number: int, batch_size: int, input_index: int,
-                       dir_path: str):
-    """
-    read data, file name with increase index and data type.
-    e.g. 0.bin, 1.bin, 2.bin
-
-    config:
-    generate_inputs:
-        name: generate_real_data
-        kwargs:
-            dir_path: "/home/curio/model/issue_model/baller/enzh/data/enc"
-        numbers: 1
-        batch_size: 1
-    """
-    data_list = os.listdir(dir_path)
-    data_list.sort()
-    file_name = data_list[input_index]
-    data = np.fromfile(os.path.join(dir_path, file_name), dtype)
-    data = np.reshape(data, shape)
-    return data
-
-
-def generate_random(shape: List[int], dtype: np.dtype,
-                    number: int, batch_size: int, input_index: int,
-                    abs: bool = False) -> np.ndarray:
-    if dtype == np.uint8:
-        data = np.random.randint(0, 256, shape)
-    elif dtype == np.int8:
-        data = np.random.randint(-128, 128, shape)
-    elif dtype == np.bool:
-        data = np.random.rand(*shape) > 0.5
-    elif dtype == np.int32:
-        data = np.random.randint(1, 5, size=shape, dtype='int32')
-    elif dtype == np.int64:
-        data = np.random.randint(1, 5, size=shape, dtype='int64')
-        # data = np.random.randint(1, 128, size=shape, dtype='int64')
-    else:
-        data = np.random.rand(*shape)
-    data = data.astype(dtype=dtype)
-    if abs:
-        return np.abs(data)
-    return data
-
-
-def _cast_bfloat16_then_float32(values: np.array):
-    shape = values.shape
-    values = values.reshape([-1])
-    for i, value in enumerate(values):
-        value = float(value)
-        value = 1
-        packed = struct.pack('!f', value)
-        integers = [c for c in packed][:2] + [0, 0]
-        value = struct.unpack('!f', bytes(integers))[0]
-        values[i] = value
-
-
-def generate_image_dataset(shape: List[int], dtype: np.dtype,
-                           batch_index: int, batch_size: int, input_index: int,
-                           dir_path: str) -> np.ndarray:
-    """ read image from folder, return the rgb image with padding, dtype = float32, range = [0,255]. same as k210 carmera.
-    """
-    assert(os.path.isdir(dir_path) or os.path.exists(dir_path))
-
-    def preproc(img, input_size, transpose=True):
-        # todo maybe need move this to postprocess
-        if len(img.shape) == 3:
-            padded_img = np.ones((input_size[0], input_size[1], 3), dtype=np.uint8) * 114
-        else:
-            padded_img = np.ones(input_size, dtype=np.uint8) * 114
-
-        r = min(input_size[0] / img.shape[0], input_size[1] / img.shape[1])
-        resized_img = cv2.resize(
-            img,
-            (int(img.shape[1] * r), int(img.shape[0] * r)),
-            interpolation=cv2.INTER_LINEAR,
-        ).astype(np.uint8)
-        padded_img[: int(img.shape[0] * r), : int(img.shape[1] * r)] = resized_img
-        padded_img = cv2.cvtColor(padded_img, cv2.COLOR_BGR2RGB)
-        if transpose:
-            padded_img = padded_img.transpose((2, 0, 1))
-        padded_img = np.ascontiguousarray(padded_img)
-        return padded_img
-    img_paths = []
-    if os.path.isdir(dir_path):
-        img_paths.extend([os.path.join(dir_path, p) for p in os.listdir(dir_path)])
-    else:
-        img_paths.append(dir_path)
-    imgs = []
-    for p in img_paths[batch_index * batch_size:
-                       (batch_index + 1) * batch_size]:
-        img = cv2.imread(p)
-        img = preproc(img, shape[1:3], False)  # img [h,w,c] rgb,
-        imgs.append(img)
-    return np.stack(imgs)
-
-
-def generate_constant_of_shape(shape: List[int], dtype: np.dtype,
-                               batch_index: int, batch_size: int, input_index: int,
-                               in_shape: List[int]) -> np.ndarray:
-    return np.array(in_shape, dtype=dtype)
-
-
-DataFactory = {
-    'generate_random': generate_random,
-    'generate_image_dataset': generate_image_dataset,
-    'generate_constant_of_shape': generate_constant_of_shape,
-    'generate_real_data': generate_real_data
-}
+from compare_util import *
+from test_utils import *
 
 
 class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
-    def __init__(self, case_name, targets=None, overwrite_configs: Union[Dict, str] = None) -> None:
+    def __init__(self, case_name, override_cfg: str = None) -> None:
         config_root = os.path.dirname(__file__)
-        with open(os.path.join(config_root, 'config.yml'), encoding='utf8') as f:
-            cfg: dict = yaml.safe_load(f)
-            config = Edict(cfg)
-        config = self.update_config(config, overwrite_configs)
+        default_cfg = toml.load(os.path.join(config_root, 'config.toml'))
+
+        new_cfg = None
+        if override_cfg is not None:
+            if os.path.isfile(override_cfg):
+                new_cfg = toml.load(override_cfg)
+            else:
+                new_cfg = toml.loads(override_cfg)
+        config = self.update_config(default_cfg, new_cfg)
         self.cfg = self.validte_config(config)
 
         case_name = case_name.replace('[', '_').replace(']', '_')
-        self.case_dir = os.path.join(self.cfg.setup.root, case_name)
+        self.case_dir = os.path.join(self.cfg['root'], case_name)
         self.clear(self.case_dir)
-
-        self.validate_targets(targets)
+        os.makedirs(self.case_dir)
 
         self.inputs: List[Dict] = []
         self.calibs: List[Dict] = []
-        self.dump_range_data: List[Dict] = []
         self.outputs: List[Dict] = []
-        self.input_paths: List[Tuple[str, str]] = []
-        self.calib_paths: List[Tuple[str, str]] = []
-        self.dump_range_data_paths: List[Tuple[str, str]] = []
-        self.output_paths: List[Tuple[str, str]] = []
         self.model_type: str = ""
         self.pre_process: List[Dict] = []
 
@@ -246,9 +57,10 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
 
     def transform_input(self, values: List[np.ndarray], type: str, stage: str) -> List[np.ndarray]:
         new_values = []
+        compile_opt = self.cfg['compile_opt']
         for value in values:
             new_value = copy.deepcopy(value)
-            if self.pre_process[0]['preprocess']:
+            if compile_opt['preprocess']:
                 if stage == "CPU":
                     # onnx \ caffe
                     if (self.model_type == "onnx" or self.model_type == "caffe"):
@@ -256,7 +68,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                             new_value = np.transpose(new_value, [0, 3, 1, 2])
                         else:
                             new_value = np.transpose(
-                                new_value, [int(idx) for idx in self.pre_process[5]['input_layout'].split(",")])
+                                new_value, [int(idx) for idx in compile_opt['input_layout'].split(",")])
 
                 if type == 'float32':
                     new_value = new_value.astype(np.float32)
@@ -272,119 +84,81 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
             new_values.append(new_value)
         return new_values
 
-    def get_process_config(self, config):
-        # preprocess flag
-        preprocess_flag = {}
-        preprocess_flag['preprocess'] = config['preprocess']
-
-        # dequant
-        process_deq = {}
-        process_deq['range'] = config['input_range']
-        process_deq['input_type'] = config['input_type']
-
-        # swapRB
-        process_format = {}
-        process_format['swapRB'] = config['swapRB']
-
-        # letter box
-        process_letterbox = {}
-        process_letterbox['input_range'] = config['input_range']
-        process_letterbox['model_shape'] = self.inputs[0]['model_shape'] if self.inputs else config['input_shape']
-        process_letterbox['input_type'] = config['input_type']
-        process_letterbox['input_shape'] = config['input_shape']
-        process_letterbox['letterbox_value'] = config['letterbox_value']
-        # norm
-        process_norm = {}
-        data = {}
-        data = {
-            'mean': config['mean'],
-            'std': config['std']
-        }
-        process_norm['norm'] = data
-
-        # get layout
-        process_layout = {}
-        process_layout['input_layout'] = config['input_layout']
-        process_layout['model_layout'] = config['model_layout']
-
-        self.pre_process.append(preprocess_flag)
-        self.pre_process.append(process_deq)
-        self.pre_process.append(process_format)
-        self.pre_process.append(process_letterbox)
-        self.pre_process.append(process_norm)
-        self.pre_process.append(process_layout)
-
     def data_pre_process(self, values: List[np.ndarray]) -> List[np.ndarray]:
         new_values = []
+        compile_opt = self.cfg['compile_opt']
+
+        compile_opt['model_shape'] = self.inputs[0]['model_shape'] if self.inputs else config['input_shape']
+
         for value in values:
             new_value = copy.deepcopy(value)
-            if self.pre_process[0]['preprocess'] and len(value.shape) == 4:
-                if self.pre_process[-1]['input_layout'] in ['NCHW', "0,2,3,1"]:
+            if compile_opt['preprocess'] and len(value.shape) == 4:
+                if compile_opt['input_layout'] in ['NCHW', "0,2,3,1"]:
                     new_value = np.transpose(new_value, [0, 2, 3, 1])
 
-                for item in self.pre_process[1:]:
-                    # dequantize
-                    if 'range' in item.keys() and 'input_type' in item.keys():
-                        Q_max, Q_min = 0, 0
-                        if item['input_type'] == 'uint8':
-                            Q_max, Q_min = 255, 0
+                # dequantize
+                if 'input_range' in compile_opt.keys() and 'input_type' in compile_opt.keys():
+                    Q_max, Q_min = 0, 0
+                    if compile_opt['input_type'] == 'uint8':
+                        Q_max, Q_min = 255, 0
+                    else:
+                        continue
+                    scale = (compile_opt['input_range'][1] -
+                             compile_opt['input_range'][0]) / (Q_max - Q_min)
+                    bias = round((compile_opt['input_range'][1] * Q_min - compile_opt['input_range'][0] *
+                                  Q_max) / (compile_opt['input_range'][1] - compile_opt['input_range'][0]))
+                    new_value = new_value * scale
+                    new_value = new_value - bias
+
+                # swapRB
+                if 'swapRB' in compile_opt.keys():
+                    if new_value.shape[-1] != 3:
+                        assert("Please confirm your input channel is 3.")
+                    if compile_opt['swapRB'] == True:
+                        new_value = new_value[:, :, :, ::-1]
+                        new_value = np.array(new_value)
+
+                # LetterBox
+                if 'input_range' in compile_opt.keys() and 'input_shape' in compile_opt.keys() and 'model_shape' in compile_opt.keys():
+                    if compile_opt['input_shape'] != []:
+                        model_shape: List = []
+                        if self.model_type in ["onnx", "caffe"] and compile_opt['model_layout'] != 'NHWC':
+                            model_shape = [compile_opt['model_shape'][0], compile_opt['model_shape'][2],
+                                           compile_opt['model_shape'][3], compile_opt['model_shape'][1]]
                         else:
-                            continue
-                        scale = (item['range'][1] - item['range'][0]) / (Q_max - Q_min)
-                        bias = round((item['range'][1] * Q_min - item['range'][0] *
-                                      Q_max) / (item['range'][1] - item['range'][0]))
-                        new_value = new_value * scale
-                        new_value = new_value - bias
+                            model_shape = compile_opt['model_shape']
+                        if model_shape[1] != new_value.shape[1] or model_shape[2] != new_value.shape[2]:
+                            in_h, in_w = new_value.shape[1], new_value.shape[2]
+                            model_h, model_w = model_shape[1], model_shape[2]
+                            ratio = min(model_h / in_h, model_w / in_w)
+                            resize_shape = new_value.shape[0], round(
+                                in_h * ratio), round(in_w * ratio), 3
+                            resize_data = np.random.rand(*model_shape)
+                            for batch_data in new_value:
+                                tmp = cv2.resize(
+                                    batch_data, (resize_shape[2], resize_shape[1]), interpolation=cv2.INTER_LINEAR)
 
-                    # swapRB
-                    if 'swapRB' in item.keys():
-                        if new_value.shape[-1] != 3:
-                            assert("Please confirm your input channel is 3.")
-                        if item['swapRB'] == True:
-                            new_value = new_value[:, :, :, ::-1]
-                            new_value = np.array(new_value)
+                                dh = model_shape[1] - resize_shape[1]
+                                dw = model_shape[2] - resize_shape[2]
+                                dh /= 2
+                                dw /= 2
+                                tmp = np.array(tmp, dtype=np.float32)
+                                tmp = cv2.copyMakeBorder(tmp, round(dh - 0.1), round(model_h - resize_shape[1] - round(dh - 0.1)), round(dw - 0.1), round(
+                                    model_w - resize_shape[2] - round(dw - 0.1)), cv2.BORDER_CONSTANT, value=(compile_opt['letterbox_value'], compile_opt['letterbox_value'], compile_opt['letterbox_value']))
+                                tmp = np.expand_dims(tmp, 0)
+                                # print("resize_data.shape = ", resize_data.shape)
+                                # print("tmp.shape = ", tmp.shape)
+                                resize_data = np.concatenate([resize_data, tmp], axis=0)
+                            new_value = np.array(resize_data[1:], dtype=np.float32)
 
-                    # LetterBox
-                    if 'input_range' in item.keys() and 'input_shape' in item.keys() and 'model_shape' in item.keys():
-                        if item['input_shape'] != []:
-                            model_shape: List = []
-                            if self.model_type in ["onnx", "caffe"] and self.pre_process[-1]['model_layout'] != 'NHWC':
-                                model_shape = [item['model_shape'][0], item['model_shape'][2],
-                                               item['model_shape'][3], item['model_shape'][1]]
-                            else:
-                                model_shape = item['model_shape']
-                            if model_shape[1] != new_value.shape[1] or model_shape[2] != new_value.shape[2]:
-                                in_h, in_w = new_value.shape[1], new_value.shape[2]
-                                model_h, model_w = model_shape[1], model_shape[2]
-                                ratio = min(model_h / in_h, model_w / in_w)
-                                resize_shape = new_value.shape[0], round(
-                                    in_h * ratio), round(in_w * ratio), 3
-                                resize_data = np.random.rand(*model_shape)
-                                for batch_data in new_value:
-                                    tmp = cv2.resize(
-                                        batch_data, (resize_shape[2], resize_shape[1]), interpolation=cv2.INTER_LINEAR)
-
-                                    dh = model_shape[1] - resize_shape[1]
-                                    dw = model_shape[2] - resize_shape[2]
-                                    dh /= 2
-                                    dw /= 2
-                                    tmp = np.array(tmp, dtype=np.float32)
-                                    tmp = cv2.copyMakeBorder(tmp, round(dh - 0.1), round(model_h - resize_shape[1] - round(dh - 0.1)), round(dw - 0.1), round(
-                                        model_w - resize_shape[2] - round(dw - 0.1)), cv2.BORDER_CONSTANT, value=(item['letterbox_value'], item['letterbox_value'], item['letterbox_value']))
-                                    tmp = np.expand_dims(tmp, 0)
-                                    print("resize_data.shape = ", resize_data.shape)
-                                    print("tmp.shape = ", tmp.shape)
-                                    resize_data = np.concatenate([resize_data, tmp], axis=0)
-                                new_value = np.array(resize_data[1:], dtype=np.float32)
-
-                    # Normalize
-                    if 'norm' in item.keys():
-                        for i in range(new_value.shape[-1]):
-                            k = i
-                            if new_value.shape[-1] > 3:
-                                k = 0
-                            new_value[:, :, :, i] = (new_value[:, :, :, i] - float(item['norm']['mean'][k])) / \
-                                float(item['norm']['std'][k])
+                # Normalize
+                if 'mean' in compile_opt.keys() and 'std' in compile_opt.keys():
+                    for i in range(new_value.shape[-1]):
+                        k = i
+                        if new_value.shape[-1] > 3:
+                            k = 0
+                        new_value[:, :, :, i] = (new_value[:, :, :, i] - float(compile_opt['mean'][k])) / \
+                            float(compile_opt['std'][k])
             else:
                 assert("Please confirm your input shape and model shape is 4D!")
             new_values.append(new_value)
@@ -392,62 +166,44 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         return new_values
 
     def validte_config(self, config):
+        # disable all dump in CI
         if test_utils.in_ci():
-            config.judge.common.log_hist = False
-            config.setup.log_txt = False
+            config['dump_hist'] = False
+            config['compile_opt']['dump_asm'] = False
+            config['compile_opt']['dump_ir'] = False
+            config['compile_opt']['dump_quant_error'] = False
+
+        # check target
+        for k, v in config['target'].items():
+            if not nncase.check_target(k):
+                v['eval'] = False
+                v['infer'] = False
+                print("WARN: target[{0}] not found".format(k))
+
+        # disable cpu target in k230/k510 CI
+        if test_utils.in_ci() and test_utils.kpu_targets() != ['']:
+            config['target']['cpu']['eval'] = False
+            config['target']['cpu']['infer'] = False
+
         return config
 
-    def update_config(self, config: Edict, overwirte_configs: Dict) -> Edict:
-        if overwirte_configs:
-            if isinstance(overwirte_configs, str):
-                overwirte_configs: dict = yaml.safe_load(overwirte_configs)
-            config.update(overwirte_configs)
-        return config
-
-    def validate_targets(self, targets: List[str]):
-        def _validate_targets(old_targets: List[str]):
-            new_targets = []
-            for t in old_targets:
-                if nncase.check_target(t):
-                    new_targets.append(t)
+    def update_config(self, config: Dict, override_cfg: Dict) -> Dict:
+        if override_cfg:
+            for k, v in override_cfg.items():
+                if isinstance(v, collections.abc.Mapping):
+                    config[k] = self.update_config(config.get(k, {}), v)
                 else:
-                    print("WARN: target[{0}] not found".format(t))
-            return new_targets
-        self.cfg.case.eval[0].values = _validate_targets(
-            targets if targets else self.cfg.case.eval[0].values)
-        self.cfg.case.infer[0].values = _validate_targets(
-            targets if targets else self.cfg.case.infer[0].values)
+                    config[k] = v
+            return config
 
-    def run(self, model_path: Union[List[str], str]):
-        # TODO add mulit process pool
-        # case_name = self.process_model_path_name(model_path)
-        # case_dir = os.path.join(self.cfg.setup.root, case_name)
-        # if not os.path.exists(case_dir):
-        #     os.makedirs(case_dir)
-        if isinstance(model_path, str):
-            case_dir = os.path.dirname(model_path)
-        elif isinstance(model_path, list):
-            case_dir = os.path.dirname(model_path[0])
-        self.run_single(self.cfg.case, case_dir, model_path)
-
-    def process_model_path_name(self, model_path: str) -> str:
-        if Path(model_path).is_file():
-            case_name = Path(model_path)
-            return '_'.join(str(case_name.parent).split('/') + [case_name.stem])
-        return model_path
+        return config
 
     def clear(self, case_dir):
-        in_ci = os.getenv('CI', False)
-        if in_ci:
-            if os.path.exists(self.cfg.setup.root):
-                shutil.rmtree(self.cfg.setup.root)
-        else:
-            if os.path.exists(case_dir):
-                shutil.rmtree(case_dir)
-        os.makedirs(case_dir)
+        if os.path.exists(case_dir):
+            shutil.rmtree(case_dir)
 
     @ abstractmethod
-    def parse_model_input_output(self, model_path: Union[List[str], str]):
+    def parse_model(self, model_path: Union[List[str], str]):
         pass
 
     @abstractmethod
@@ -458,26 +214,51 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
     def import_model(self, compiler, model_content, import_options):
         pass
 
-    def run_single(self, cfg, case_dir: str, model_file: Union[List[str], str]):
+    def run(self, model_file: Union[List[str], str]):
         if not self.inputs:
-            self.parse_model_input_output(model_file)
-        for dict_args in self.make_args(cfg.preprocess_opt):
-            self.get_process_config(dict_args)
-            self.generate_all_data(case_dir, cfg, dict_args)
-            self.write_preprocess_opt(dict_args)
+            self.parse_model(model_file)
 
-            self.cpu_infer(case_dir, model_file, dict_args['input_type'])
-            import_options, compile_options = self.get_compiler_options(dict_args, model_file)
-            model_content = self.read_model_file(model_file)
-            for eval_args in self.dispatch(cfg, cfg.eval):
-                eval_output_paths = self.run_evaluator(eval_args, cfg, case_dir, import_options,
-                                                       compile_options, model_content, dict_args)
-                self.check_result(eval_output_paths, eval_args, 'eval')
+        self.generate_all_data()
+        self.write_compile_opt()
 
-            for infer_args in self.dispatch(cfg, cfg.infer):
-                infer_output_paths = self.run_inference(infer_args, cfg, case_dir, import_options,
-                                                        compile_options, model_content, dict_args)
-                self.check_result(infer_output_paths, infer_args, 'infer')
+        expected = self.cpu_infer(model_file)
+        targets = self.cfg['target']
+        model_content = self.read_model_file(model_file)
+        import_options = nncase.ImportOptions()
+
+        compiler = None
+        dump_hist = self.cfg['dump_hist']
+        for k_target, v_target in targets.items():
+            tmp_dir = os.path.join(self.case_dir, 'tmp')
+            if v_target['eval'] or v_target['infer']:
+                compile_options = self.get_compile_options(k_target, tmp_dir)
+                compiler = nncase.Compiler(compile_options)
+                self.import_model(compiler, model_content, import_options)
+
+            for stage in ['eval', 'infer']:
+                if v_target[stage]:
+                    for k_mode, v_mode in v_target['mode'].items():
+                        if v_mode['enabled']:
+                            os.makedirs(tmp_dir, exist_ok=True)
+                            if stage == 'eval':
+                                actual = self.run_evaluator(compiler, tmp_dir)
+                            else:
+                                actual = self.run_inference(
+                                    compiler, k_target, v_mode['enabled'], tmp_dir)
+                            target_dir = os.path.join(self.case_dir, stage, k_target)
+                            os.makedirs(target_dir, exist_ok=True)
+                            mode_dir = os.path.join(target_dir, k_mode)
+                            shutil.move(tmp_dir, mode_dir)
+                            judge, result = self.compare_results(
+                                expected, actual, stage, k_target, v_target['simarity_name'], k_mode, v_mode['threshold'], self.cfg['dump_hist'], mode_dir)
+
+                            if not judge:
+                                if test_utils.in_ci():
+                                    self.clear(self.case_dir)
+                                assert f"Fault result in {stage} + {result}"
+
+        if test_utils.in_ci():
+            self.clear(self.case_dir)
 
     def translate_shape(self, shape):
         if reduce(lambda x, y: x * y, shape) == 0:
@@ -488,90 +269,61 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
     def set_shape_var(self, dict: Dict[str, int]):
         self.shape_vars = dict
 
-    def check_result(self, nncase_output_paths, dict_args, stage):
+    def check_result(self, expected, actual, stage, target, simarity_name, mode, threshold, dump_dir):
         judge, result = self.compare_results(
-            self.output_paths, nncase_output_paths, dict_args)
+            expected, actual, stage, target, simarity_name, mode, threshold, self.cfg['dump_hist'], dump_dir)
         assert(judge), f"Fault result in {stage} + {result}"
 
-    def make_args(self, cfg_detail):
-        names, args = self.split_value(cfg_detail)
-        for combine_args in product(*args):
-            yield dict(zip(names, combine_args))
+    def set_quant_opt(self, compiler: nncase.Compiler):
+        compile_opt = self.cfg['compile_opt']
+        ptq_opt = self.cfg['ptq_opt']
 
-    def dispatch(self, full_cfg, sub_cfg):
-        for dict_args in self.make_args(sub_cfg):
-            # if dict_args['ptq'] and len(self.inputs) != 1:
-            #     continue
-            # if full_cfg.compile_opt.dump_import_op_range and len(self.inputs) != 1:
-            #     continue
-            yield dict_args
+        ptq_options = nncase.PTQTensorOptions()
+        e = '"'
+        for k, v in ptq_opt.items():
+            exec(f"ptq_options.{k} = {e + v + e if isinstance(v, str) else v}")
 
-    def set_quant_opt(self, cfg, kwargs, preprocess, compiler: nncase.Compiler):
-        if cfg.compile_opt.dump_import_op_range:
-            dump_range_options = nncase.DumpRangeTensorOptions()
-            dump_range_options.set_tensor_data([self.transform_input(
-                sample['data'], preprocess['input_type'], "infer") for sample in self.dump_range_data])
-            dump_range_options.samples_count = cfg.generate_dump_range_data.numbers
-            # compiler.dump_range_options(dump_range_options)
-        if kwargs['ptq']:
-            ptq_options = nncase.PTQTensorOptions()
-            data = [self.transform_input(
-                input['data'], preprocess['input_type'], "infer") for input in self.calibs]
-            ptq_options.set_tensor_data(data)
-            ptq_options.samples_count = cfg.generate_calibs.numbers
-            ptq_options.calibrate_method = cfg.compile_opt.calibrate_method
-            ptq_options.quant_type = cfg.compile_opt.quant_type
-            ptq_options.w_quant_type = cfg.compile_opt.w_quant_type
-            ptq_options.finetune_weights_method = cfg.compile_opt.finetune_weights_method
-            ptq_options.use_mix_quant = cfg.compile_opt.use_mix_quant
-            ptq_options.quant_scheme = cfg.compile_opt.quant_scheme
-            ptq_options.export_quant_scheme = cfg.compile_opt.export_quant_scheme
-            ptq_options.export_weight_range_by_channel = cfg.compile_opt.export_weight_range_by_channel
-            ptq_options.dump_quant_error = cfg.compile_opt.dump_quant_error
-            ptq_options.dump_quant_error_symmetric_for_signed = cfg.compile_opt.dump_quant_error_symmetric_for_signed
-            compiler.use_ptq(ptq_options)
+        ptq_options.samples_count = self.cfg['generator']['calibs']['number']
+        data = [self.transform_input(
+            input['data'], compile_opt['input_type'], "infer") for input in self.calibs]
+        ptq_options.set_tensor_data(data)
 
-    def write_preprocess_opt(self, dict_args):
-        if dict_args['preprocess'] == True:
-            str_preprocess_opt = ""
+        compiler.use_ptq(ptq_options)
+
+    def write_compile_opt(self):
+        dict = self.cfg['compile_opt']
+        if dict['preprocess'] == True:
+            str_compile_opt = ""
             pre_list = []
-            for key, value in dict_args.items():
-                pre_list.append(str_preprocess_opt.join("{0}:{1}".format(key, value)))
+            for key, value in dict.items():
+                pre_list.append(str_compile_opt.join("{0}:{1}".format(key, value)))
             with open(os.path.join(self.case_dir, 'test_result.txt'), 'a+') as f:
-                f.write("\n----preprocess option----\n")
+                f.write("\n----compile option----\n")
                 f.write('\n'.join(pre_list[:]) + "\n")
                 f.write("-------------------------\n")
 
-    def generate_all_data(self, case_dir, cfg, dict_args):
-        self.generate_data(cfg.generate_inputs, case_dir,
-                           self.inputs, self.input_paths, 'input', dict_args)
-        self.generate_data(cfg.generate_calibs, case_dir,
-                           self.calibs, self.calib_paths, 'calib', dict_args)
-        self.generate_data(cfg.generate_dump_range_data, case_dir,
-                           self.dump_range_data, self.dump_range_data_paths, 'dump_range_data', dict_args)
+    def generate_all_data(self):
+        self.generate_data('input', self.inputs,
+                           self.cfg['compile_opt'], self.cfg['generator']['inputs'])
+        self.generate_data('calib', self.calibs,
+                           self.cfg['compile_opt'], self.cfg['generator']['calibs'])
 
-    def get_compiler_options(self, cfg, model_file):
-        import_options = nncase.ImportOptions()
+    def get_compile_options(self, target, dump_dir):
         compile_options = nncase.CompileOptions()
-        if isinstance(model_file, str):
-            if os.path.splitext(model_file)[-1] == ".tflite":
-                compile_options.input_layout = cfg['input_layout']
-                compile_options.output_layout = cfg['output_layout']
-            elif os.path.splitext(model_file)[-1] == ".onnx":
-                compile_options.input_layout = cfg['input_layout']
-                compile_options.output_layout = cfg['output_layout']
-        elif isinstance(model_file, list):
-            if os.path.splitext(model_file[1])[-1] == ".caffemodel":
-                compile_options.input_layout = cfg['input_layout']
-                compile_options.output_layout = cfg['output_layout']
 
-        for k, v in cfg.items():
+        # update preprocess option
+        compile_opt = self.cfg['compile_opt']
+        e = '"'
+        for k, v in compile_opt.items():
             # TODO: support model with unusual layout e.g.: onnx->NHWC
-            if k == "model_layout":
+            if k == "model_layout" or k == "model_shape":
                 continue
-            e = '"'
             exec(f"compile_options.{k} = {e + v + e if isinstance(v, str) else v}")
-        return import_options, compile_options
+
+        compile_options.target = target
+        compile_options.dump_dir = dump_dir
+
+        return compile_options
 
     @staticmethod
     def split_value(kwcfg: List[Dict[str, str]]) -> Tuple[List[str], List[str]]:
@@ -594,101 +346,83 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                 model_content.append(f.read())
             return model_content
 
-    @ staticmethod
-    def kwargs_to_path(path: str, kwargs: Dict[str, str]):
-        for k, v in kwargs.items():
-            if isinstance(v, str):
-                path = os.path.join(path, v)
-            elif isinstance(v, bool):
-                path = os.path.join(path, ('' if v else 'no') + k)
-        return path
+    def generate_data(self, name: str, inputs: List[Dict], compile_opt, generator_cfg):
+        os.mkdir(os.path.join(self.case_dir, name))
+        method = generator_cfg['method']
+        batch_number = generator_cfg['number']
+        args = generator_cfg[method]['args']
+        file_list = []
 
-    def on_test_start(self) -> None:
-        pass
+        if method == 'random':
+            assert args in (True, False)
+        elif method == 'bin':
+            assert(os.path.isdir(args))
+            for file in os.listdir(args):
+                if file.endswith('.bin'):
+                    file_list.append(os.path.join(args, file))
+            file_list.sort()
+        elif method == 'image':
+            file_list.extend([os.path.join(args, p) for p in os.listdir(args)])
+        elif method == 'constant_of_shape':
+            assert len(args) != 0
+        else:
+            assert '{0} : not supported generator method'.format(method)
 
-    def generate_data(self, cfg, case_dir: str, inputs: List[Dict], path_list: List[str], name: str, preprocess_opt):
-        os.mkdir(os.path.join(case_dir, name))
-        for idx, input in enumerate(inputs):
+        generator = Generator()
+        for input_idx, input in enumerate(inputs):
             samples = []
-            shape = []
+            input_shape = []
             dtype = input['dtype']
-            if preprocess_opt['preprocess'] and preprocess_opt['input_shape'] != []:
-                shape = copy.deepcopy(preprocess_opt['input_shape'])
-                if preprocess_opt['input_type'] == "uint8":
+            if compile_opt['preprocess'] and compile_opt['input_shape'] != []:
+                input_shape = copy.deepcopy(compile_opt['input_shape'])
+                if compile_opt['input_type'] == "uint8":
                     dtype = np.uint8
-                elif preprocess_opt['input_type'] == "float32":
+                elif compile_opt['input_type'] == "float32":
                     dtype = np.float32
             else:
-                shape = copy.deepcopy(input['model_shape'])
-            if shape != [] and shape[0] != cfg.batch_size:
-                shape[0] *= cfg.batch_size
+                input_shape = copy.deepcopy(input['model_shape'])
+            if input_shape != [] and input_shape[0] != generator_cfg['batch']:
+                input_shape[0] *= generator_cfg['batch']
 
-            for n in range(cfg.numbers):
-                data = DataFactory[cfg.name](shape, dtype, n,
-                                             cfg.batch_size, idx, **cfg.kwargs)
+            for batch_idx in range(batch_number):
+                if method == 'random':
+                    data = generator.from_random(input_shape, dtype, args)
+                elif method == 'bin':
+                    idx = input_idx * batch_number + batch_idx
+                    assert(idx < len(file_list))
+                    data = generator.from_bin(input_shape, dtype, file_list[idx])
+                elif method == 'image':
+                    idx = input_idx * batch_number + batch_idx
+                    assert(idx < len(file_list))
+                    data = generator.from_image(input_shape, dtype, file_list[idx])
+                elif method == 'constant_of_shape':
+                    data = generator.from_constant_of_shape(args, dtype)
+
                 if not test_utils.in_ci():
-                    path_list.append(
-                        (os.path.join(case_dir, name, f'{name}_{n}_{idx}.bin'),
-                         os.path.join(case_dir, name, f'{name}_{n}_{idx}.txt')))
-                    data.tofile(path_list[-1][0])
-                    self.totxtfile(path_list[-1][1], data)
+                    dump_bin_file(os.path.join(self.case_dir, name,
+                                               f'{name}_{input_idx}_{batch_idx}.bin'), data)
+                    dump_txt_file(os.path.join(self.case_dir, name,
+                                               f'{name}_{input_idx}_{batch_idx}.txt'), data)
                 samples.append(data)
             input['data'] = samples
 
-    def process_input(self, inputs: List[np.array], **kwargs) -> None:
-        pass
-
-    def process_output(self, outputs: List[np.array], **kwargs) -> None:
-        pass
-
-    def on_test_end(self) -> None:
-        pass
-
     def compare_results(self,
-                        ref_ouputs: List[Tuple[str]],
-                        test_outputs: List[Tuple[str]],
-                        kwargs: Dict[str, str]) -> Tuple[bool, str]:
-
-        judeg_cfg = copy.deepcopy(self.cfg.judge.common)
-        if self.cfg.judge.specifics:
-            for specific in self.cfg.judge.specifics:
-                if kwargs['target'] in specific.matchs.dict['target'] and kwargs['ptq'] == specific.matchs.dict['ptq']:
-                    judeg_cfg.update(specific)
-                    break
-
+                        ref_ouputs: List[np.ndarray],
+                        test_outputs: List[np.ndarray],
+                        stage, target, simarity_name, mode, threshold, dump_hist, dump_dir) -> Tuple[bool, str]:
         i = 0
         judges = []
-        for ref_file, test_file in zip(ref_ouputs, test_outputs):
-
-            judge, simarity_info = compare(test_file, ref_file,
-                                           self.outputs[i]['dtype'],
-                                           judeg_cfg.simarity_name,
-                                           judeg_cfg.threshold,
-                                           judeg_cfg.log_hist)
-            name_list = test_file[1].split(os.path.sep)
-            kw_names = ' '.join(name_list[-len(kwargs) - 2:-1])
-            j = self.num_pattern.findall(name_list[-1])
-            result_info = "\n{0} [ {1} ] Output: {2}!!\n".format(
-                'Pass' if judge else 'Fail', kw_names, j)
+        for expected, actual in zip(ref_ouputs, test_outputs):
+            expected = expected.astype(np.float32)
+            actual = actual.astype(np.float32)
+            dump_file = os.path.join(dump_dir, 'nncase_result_{0}_hist.csv'.format(i))
+            judge, simarity_info = compare_ndarray(
+                expected, actual, simarity_name, threshold, dump_hist, dump_file)
+            result_info = "\n{0} [ {1} {2} {3} ] Output: {4}!!\n".format(
+                'Pass' if judge else 'Fail', stage, target, mode, i)
             result = simarity_info + result_info
-            # print(result) temp disable
             with open(os.path.join(self.case_dir, 'test_result.txt'), 'a+') as f:
                 f.write(result)
             i = i + 1
             judges.append(judge)
         return sum(judges) == len(judges), result
-
-    def totxtfile(self, save_path, ndarray: np.array, bit_16_represent=False):
-        if self.cfg.setup.log_txt:
-            if bit_16_represent:
-                np.save(save_path, _cast_bfloat16_then_float32(ndarray))
-            else:
-                if ndarray.dtype == np.uint8:
-                    fmt = '%u'
-                elif ndarray.dtype == np.int8:
-                    fmt = '%d'
-                else:
-                    fmt = '%f'
-                np.savetxt(save_path, ndarray.flatten(), fmt=fmt, header=str(ndarray.shape))
-
-            print("----> %s" % save_path)

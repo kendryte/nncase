@@ -46,42 +46,19 @@ rhs_shapes = [
 def test_layout_2D(lhs_shape, rhs_shape, request):
     module = _make_module(rhs_shape)
     overwrite_cfg = """
-case:
-  preprocess_opt:
-    - name: preprocess
-      values:
-        - true
-    - name: swapRB
-      values:
-        - false
-    - name: mean
-      values:
-        - [0,0,0]
-    - name: std
-      values:
-        - [1,1,1]
-    - name: input_range
-      values:
-        - [0,255]
-    - name: input_type
-      values:
-        - uint8
-    - name: input_shape
-      values:
-        - [224, 1]
-    - name: input_layout
-      values:
-        - "1,0"
-    - name: output_layout
-      values:
-        - "1,0"
-    - name: model_layout
-      values:
-        - NCHW
-    - name: letterbox_value
-      values:
-        - 0.
-"""
+    [compile_opt]
+    preprocess = true
+    swapRB = false
+    input_type = 'uint8'
+    input_shape = [224, 1]
+    input_range = [0, 255]
+    mean = [0, 0, 0]
+    std = [1, 1, 1]
+    input_layout = '1,0'
+    output_layout = '1,0'
+    model_layout = 'NCHW'
+    letterbox_value = 0
+    """
 
     runner = OnnxTestRunner(request.node.name, overwrite_configs=overwrite_cfg)
     model_file = runner.from_torch(module, lhs_shape)

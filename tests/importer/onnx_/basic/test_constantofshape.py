@@ -76,10 +76,22 @@ values = [
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('value', values)
 def test_constantofshape(in_shape, value, request):
-    model_def = _make_module(in_shape, value)
+    cfg = '''
+    [generator.inputs]
+    method = 'constant_of_shape'
 
-    runner = OnnxTestRunner(request.node.name, overwrite_configs={"case": {"generate_inputs": {
-                            "name": "generate_constant_of_shape", "batch_size": 1, "numbers": 1, "kwargs": {"in_shape": in_shape}}}})
+    [generator.inputs.constant_of_shape]
+    args = {0}
+
+    [generator.calibs]
+    method = 'constant_of_shape'
+
+    [generator.calibs.constant_of_shape]
+    args = {1}
+    '''.format(in_shape, in_shape)
+
+    model_def = _make_module(in_shape, value)
+    runner = OnnxTestRunner(request.node.name, overwrite_configs=cfg)
     model_file = runner.from_onnx_helper(model_def)
     runner.run(model_file)
 
