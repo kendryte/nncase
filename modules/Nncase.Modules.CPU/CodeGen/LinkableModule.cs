@@ -76,14 +76,17 @@ internal sealed class LinkableModule : ILinkableModule
                 }
 
                 writer.WriteLine(CSourceBuiltn.MainPrologue);
+                writer.WriteLine($"  switch (func_id) {{");
+
                 foreach (var func in _functions)
                 {
-                    writer.WriteLine($"  if (strcmp(name,\"{func.SourceFunction.Name}\") == 0) {{");
-                    writer.WriteLine($"    {func.SourceFunction.Name}({string.Join(",", Enumerable.Range(0, func.PrimFunction.Parameters.Length).Select(i => $"buffers[{i}]"))}, nncase_mt, data, rdata);");
-                    writer.WriteLine("  } else");
+                    writer.WriteLine($"    case {func.Id}:");
+                    writer.WriteLine($"      {func.SourceFunction.Name}({string.Join(", ", Enumerable.Range(0, func.PrimFunction.Parameters.Length).Select(i => $"buffers[{i}]"))}, nncase_mt, data, rdata);");
+                    writer.WriteLine("    break;");
                 }
-
-                writer.WriteLine("  { }");
+                writer.WriteLine("    default: ");
+                writer.WriteLine("    break;");
+                writer.WriteLine("  }");
                 writer.WriteLine(CSourceBuiltn.MainEpilogue);
             }
         }

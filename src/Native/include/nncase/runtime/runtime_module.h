@@ -57,6 +57,8 @@ class NNCASE_API runtime_module {
     interpreter &interp() const noexcept { return *interp_; }
 
     result<runtime_function *> find_function_by_id(size_t index) noexcept;
+    
+    result<size_t> find_id_by_function(runtime_function * function) noexcept;
 
   protected:
     virtual result<void>

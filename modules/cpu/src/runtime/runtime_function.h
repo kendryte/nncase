@@ -31,8 +31,6 @@ class cpu_runtime_function : public runtime_function {
     result<value_t> invoke_core(gsl::span<value_t> parameters,
                                 value_t return_value) noexcept override;
 
-  private:
-    std::string name_;
 };
 
 END_NS_NNCASE_RT_MODULE

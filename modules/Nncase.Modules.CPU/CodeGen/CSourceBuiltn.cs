@@ -25,7 +25,7 @@ public static class CSourceBuiltn
 
     public const string FixedParameters = "nncase_mt_t* nncase_mt, void* data, void* rdata";
 
-    public const string MainPrologue = $@"void _start(char* name, buffer_t** buffers, {FixedParameters}) {{";
+    public const string MainPrologue = $@"void _start(size_t func_id, buffer_t** buffers, {FixedParameters}) {{";
 
     public const string MainEpilogue = @"}";
 
@@ -35,17 +35,6 @@ public static class CSourceBuiltn
 {MethodTable}
 
 {BufferStruct}
-
-int strcmp(const char* s1,const char* s2) {{
-  while(*s1 && *s2) {{
-    if(*s1 != *s2) {{
-      break;
-    }}
-    s1++;
-    s2++; 
-  }}
-  return (*s1 - *s2) || (*s1 - '\0') || (*s2 - '\0'); 
-}}
 
 static nncase_mt_t *nncase_mt;
 ";
