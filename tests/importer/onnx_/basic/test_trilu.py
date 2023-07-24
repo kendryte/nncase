@@ -16,38 +16,39 @@
 import pytest
 import onnx
 from onnx import helper
-from onnx import AttributeProto, TensorProto, GraphProto, numpy_helper
+from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
+import numpy as np
 
 
-def _make_module(in_shape, value):
+def _make_module(in_shape, kvalue, upper):
     inputs = []
     outputs = []
     initializers = []
     attributes_dict = {}
+    nodes = []
 
     # input
-    input = helper.make_tensor_value_info('input', TensorProto.INT64, [len(in_shape)])
+    input = helper.make_tensor_value_info('input', TensorProto.FLOAT, in_shape)
     inputs.append('input')
 
-    type = TensorProto.FLOAT
-    if value is not None:
-        type = value[0]
-        tensor = onnx.helper.make_tensor("value", type, [1], [value[1]])
-        attributes_dict['value'] = tensor
+    k = helper.make_tensor('k', TensorProto.INT64, np.array(
+        kvalue).shape, np.array(kvalue).flatten().tolist())
+    initializers.append(k)
 
-    # output
-    output = helper.make_tensor_value_info('output', type, in_shape)
+# output
+    output = helper.make_tensor_value_info('output', TensorProto.FLOAT, in_shape)
     outputs.append('output')
 
+    attributes_dict['upper'] = upper
+
     node = onnx.helper.make_node(
-        'ConstantOfShape',
-        inputs=inputs,
+        'Trilu',
+        inputs=['input', 'k'],
         outputs=outputs,
         **attributes_dict
     )
 
-    nodes = []
     nodes.append(node)
 
     graph_def = helper.make_graph(
@@ -66,35 +67,29 @@ in_shapes = [
     [1, 3, 16, 16]
 ]
 
-values = [
-    None,
-    [TensorProto.FLOAT, 0],
-    [TensorProto.FLOAT, 1],
+ks = [
+    1,
+    2,
+    -1,
+    -2
+]
+
+uppers = [
+    0,
+    1
 ]
 
 
 @pytest.mark.parametrize('in_shape', in_shapes)
-@pytest.mark.parametrize('value', values)
-def test_constantofshape(in_shape, value, request):
-    cfg = '''
-    [generator.inputs]
-    method = 'constant_of_shape'
+@pytest.mark.parametrize('k', ks)
+@pytest.mark.parametrize('upper', uppers)
+def test_erf(in_shape, upper, k, request):
+    model_def = _make_module(in_shape, k, upper)
 
-    [generator.inputs.constant_of_shape]
-    args = {0}
-
-    [generator.calibs]
-    method = 'constant_of_shape'
-
-    [generator.calibs.constant_of_shape]
-    args = {1}
-    '''.format(in_shape, in_shape)
-
-    model_def = _make_module(in_shape, value)
-    runner = OnnxTestRunner(request.node.name, overwrite_configs=cfg)
+    runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_onnx_helper(model_def)
     runner.run(model_file)
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_constantofshape.py'])
+    pytest.main(['-vv', 'test_trilu.py'])

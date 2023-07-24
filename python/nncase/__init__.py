@@ -53,35 +53,37 @@ class ImportOptions:
 
 
 class PTQTensorOptions:
-    calibrate_method: str
-    input_mean: float
-    input_std: float
-    samples_count: int
-    quant_type: str
-    w_quant_type: str
-    finetune_weights_method: str
     use_mix_quant: bool
-    quant_scheme: str
+    use_mse_quant_w: bool
     export_quant_scheme: bool
     export_weight_range_by_channel: bool
     dump_quant_error: bool
     dump_quant_error_symmetric_for_signed: bool
+    quant_type: str
+    w_quant_type: str
+    calibrate_method: str
+    finetune_weights_method: str
+    input_mean: float
+    input_std: float
+    quant_scheme: str
+    samples_count: int
     cali_data: List[RuntimeTensor]
 
     def __init__(self) -> None:
-        self.calibrate_method: str = "Kld"
-        self.input_mean: float = 0.5
-        self.input_std: float = 0.5
-        self.samples_count: int = 5
-        self.quant_type: str = "uint8"
-        self.w_quant_type: str = "uint8"
-        self.finetune_weights_method: str = "NoFineTuneWeights"
         self.use_mix_quant: bool = False
-        self.quant_scheme: str = ""
+        self.use_mse_quant_w = False
         self.export_quant_scheme: bool = False
         self.export_weight_range_by_channel: bool = False
         self.dump_quant_error: bool = False
-        self.dump_quant_error_symmetric_for_signed: True
+        self.dump_quant_error_symmetric_for_signed: bool = True
+        self.quant_type: str = "uint8"
+        self.w_quant_type: str = "uint8"
+        self.calibrate_method: str = "Kld"
+        self.finetune_weights_method: str = "NoFineTuneWeights"
+        self.input_mean: float = 0.5
+        self.input_std: float = 0.5
+        self.quant_scheme: str = ""
+        self.samples_count: int = 5
         self.cali_data: List[RuntimeTensor] = []
 
     def set_tensor_data(self, data: List[List[np.ndarray]]) -> None:
@@ -238,17 +240,9 @@ class Compiler:
 
     def __process_compile_options(self, compile_options: CompileOptions) -> ClCompileOptions:
         self._target = _nncase.Target(compile_options.target)
-        dump_flags = _nncase.DumpFlags.Nothing if not compile_options.dump_ir else _nncase.DumpFlags(
-            _nncase.DumpFlags.PassIR)
-        if (compile_options.dump_asm):
-            dump_flags = _nncase.DumpFlags(dump_flags | _nncase.DumpFlags.CodeGen)
-        self._compile_options.dump_flags = dump_flags
-        self._compile_options.dump_dir = compile_options.dump_dir
-        self._compile_options.input_file = compile_options.input_file
         if compile_options.preprocess:
             self._compile_options.preprocess = compile_options.preprocess
-            self._compile_options.input_layout = compile_options.input_layout
-            self._compile_options.output_layout = compile_options.output_layout
+            self._compile_options.swapRB = compile_options.swapRB
             if compile_options.input_type == "uint8":
                 self._compile_options.input_type = _nncase.InputType.Uint8
             elif compile_options.input_type == "int8":
@@ -257,10 +251,19 @@ class Compiler:
                 self._compile_options.input_type = _nncase.InputType.Float32
             self._compile_options.input_shape = str(compile_options.input_shape)[1:-1]
             self._compile_options.input_range = str(compile_options.input_range)[1:-1]
-            self._compile_options.swapRB = compile_options.swapRB
-            self._compile_options.letterbox_value = compile_options.letterbox_value
             self._compile_options.mean = str(compile_options.mean)[1:-1]
             self._compile_options.std = str(compile_options.std)[1:-1]
+            self._compile_options.input_layout = compile_options.input_layout
+            self._compile_options.output_layout = compile_options.output_layout
+            self._compile_options.letterbox_value = compile_options.letterbox_value
+
+        self._compile_options.input_file = compile_options.input_file
+        dump_flags = _nncase.DumpFlags.Nothing if not compile_options.dump_ir else _nncase.DumpFlags(
+            _nncase.DumpFlags.PassIR)
+        if (compile_options.dump_asm):
+            dump_flags = _nncase.DumpFlags(dump_flags | _nncase.DumpFlags.CodeGen)
+        self._compile_options.dump_flags = dump_flags
+        self._compile_options.dump_dir = compile_options.dump_dir
 
     def _import_module(self, model_content: bytes | io.RawIOBase) -> None:
         stream = io.BytesIO(model_content) if isinstance(model_content, bytes) else model_content
@@ -329,52 +332,39 @@ class ClCompileOptions():
 
 
 class CompileOptions:
-    benchmark_only: bool
-    dump_asm: bool
-    dump_dir: str
-    dump_ir: bool
+    target: str
+    preprocess: bool
     swapRB: bool
-    input_file: str
-    input_range: List[float]
-    input_shape: List[int]
     input_type: str
-    is_fpga: bool
+    input_shape: List[int]
+    input_range: List[float]
+    input_file: str
     mean: List[float]
     std: List[float]
-    output_type: str
-    preprocess: bool
-    quant_type: str
-    target: str
-    w_quant_type: str
-    use_mse_quant_w: bool
     input_layout: str
     output_layout: str
     letterbox_value: float
-    tcu_num: int
+    dump_asm: bool
+    dump_ir: bool
+    dump_dir: str
 
     def __init__(self) -> None:
-        self.benchmark_only = False
-        self.dump_asm = True
-        self.dump_dir = "tmp"
-        self.dump_ir = False
-        self.is_fpga = False
-        self.quant_type = "uint8"
-        self.target = "cpu"
-        self.w_quant_type = "uint8"
-        self.use_mse_quant_w = True
-        self.tcu_num = 0
 
+        self.target = "cpu"
         self.preprocess = False
         self.swapRB = False
-        self.input_file = ""
-        self.input_range = []
-        self.input_shape = []
         self.input_type = "float32"
+        self.input_shape = []
+        self.input_range = []
+        self.input_file = ""
         self.mean = [0, 0, 0]
         self.std = [1, 1, 1]
         self.input_layout = ""
         self.output_layout = ""
         self.letterbox_value = 0
+        self.dump_asm = True
+        self.dump_ir = False
+        self.dump_dir = "tmp"
 
 
 class ShapeBucketOptions:

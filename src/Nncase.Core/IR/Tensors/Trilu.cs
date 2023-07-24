@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -26,10 +26,10 @@ public sealed partial class Trilu : Op
     /// <summary>
     /// Gets k.
     /// </summary>
-    public static readonly ParameterInfo K = new(typeof(Trilu), 1, "k");
+    public static readonly ParameterInfo K = new(typeof(Trilu), 1, "k", IsIntegralScalar());
 
     /// <summary>
     /// Gets upper.
     /// </summary>
-    public static readonly ParameterInfo Upper = new(typeof(Trilu), 2, "upper");
+    public static readonly ParameterInfo Upper = new(typeof(Trilu), 2, "upper", IsIntegralScalar());
 }
