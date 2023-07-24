@@ -2,15 +2,14 @@
 #include <cstdio>
 #include <cstring>
 
-el_status el_pread(el_ctx *ctx, void *def, size_t nb, size_t offset)
-{
+el_status el_pread(el_ctx *ctx, void *def, size_t nb, size_t offset) {
     return ctx->pread(ctx, def, nb, offset) ? EL_OK : EL_EIO;
 }
 
-#define EL_PHOFF(ctx, num) (((ctx)->ehdr.e_phoff + (num) * (ctx)->ehdr.e_phentsize))
+#define EL_PHOFF(ctx, num)                                                     \
+    (((ctx)->ehdr.e_phoff + (num) * (ctx)->ehdr.e_phentsize))
 
-el_status el_findphdr(el_ctx *ctx, Elf_Phdr *phdr, uint32_t type, unsigned *i)
-{
+el_status el_findphdr(el_ctx *ctx, Elf_Phdr *phdr, uint32_t type, unsigned *i) {
     el_status rv = EL_OK;
     for (; *i < ctx->ehdr.e_phnum; (*i)++) {
         if ((rv = el_pread(ctx, phdr, sizeof *phdr, EL_PHOFF(ctx, *i))))
@@ -25,8 +24,7 @@ el_status el_findphdr(el_ctx *ctx, Elf_Phdr *phdr, uint32_t type, unsigned *i)
     return rv;
 }
 
-el_status el_init(el_ctx *ctx)
-{
+el_status el_init(el_ctx *ctx) {
     el_status rv = EL_OK;
     if ((rv = el_pread(ctx, &ctx->ehdr, sizeof ctx->ehdr, 0)))
         return rv;
@@ -35,7 +33,6 @@ el_status el_init(el_ctx *ctx)
 
     if (!IS_ELF(ctx->ehdr))
         return EL_NOTELF;
-
 
     if (ctx->ehdr.e_ident[EI_CLASS] != ELFCLASS)
         return EL_WRONGBITS;
@@ -74,11 +71,11 @@ el_status el_init(el_ctx *ctx)
     ctx->memsz = 0;
 
     unsigned i = 0;
-    for(;;) {
+    for (;;) {
         if ((rv = el_findphdr(ctx, &ph, PT_LOAD, &i)))
             return rv;
 
-        if (i == (unsigned) -1)
+        if (i == (unsigned)-1)
             break;
 
         Elf_Addr phend = ph.p_vaddr + ph.p_memsz;
@@ -97,13 +94,13 @@ el_status el_init(el_ctx *ctx)
         if ((rv = el_findphdr(ctx, &ph, PT_DYNAMIC, &i)))
             return rv;
 
-        if (i == (unsigned) -1)
+        if (i == (unsigned)-1)
             return EL_NODYN;
 
-        ctx->dynoff  = ph.p_offset;
+        ctx->dynoff = ph.p_offset;
         ctx->dynsize = ph.p_filesz;
     } else {
-        ctx->dynoff  = 0;
+        ctx->dynoff = 0;
         ctx->dynsize = 0;
     }
 
@@ -118,8 +115,7 @@ typedef void* (*el_alloc_cb)(
     Elf_Addr size);
 */
 
-el_status el_load(el_ctx *ctx, el_alloc_cb alloc)
-{
+el_status el_load(el_ctx *ctx, el_alloc_cb alloc) {
     el_status rv = EL_OK;
 
     /* address deltas */
@@ -129,11 +125,11 @@ el_status el_load(el_ctx *ctx, el_alloc_cb alloc)
     /* iterate paddrs */
     Elf_Phdr ph;
     unsigned i = 0;
-    for(;;) {
+    for (;;) {
         if ((rv = el_findphdr(ctx, &ph, PT_LOAD, &i)))
             return rv;
 
-        if (i == (unsigned) -1)
+        if (i == (unsigned)-1)
             break;
 
         Elf_Addr pload = ph.p_paddr + pdelta;
@@ -144,8 +140,8 @@ el_status el_load(el_ctx *ctx, el_alloc_cb alloc)
         if (!dest)
             return EL_ENOMEM;
 
-        printf("Loading seg fileoff %lx, vaddr %lx to %lx\n",
-            ph.p_offset, ph.p_vaddr, (uintptr_t)dest);
+        printf("Loading seg fileoff %lx, vaddr %lx to %lx\n", ph.p_offset,
+               ph.p_vaddr, (uintptr_t)dest);
 
         /* read loaded portion */
         if ((rv = el_pread(ctx, dest, ph.p_filesz, ph.p_offset)))
@@ -160,13 +156,13 @@ el_status el_load(el_ctx *ctx, el_alloc_cb alloc)
     return rv;
 }
 
-el_status el_finddyn(el_ctx *ctx, Elf_Dyn *dyn, uint32_t tag)
-{
+el_status el_finddyn(el_ctx *ctx, Elf_Dyn *dyn, uint32_t tag) {
     el_status rv = EL_OK;
-    size_t ndyn =  ctx->dynsize / sizeof(Elf_Dyn);
+    size_t ndyn = ctx->dynsize / sizeof(Elf_Dyn);
 
-    for(unsigned i = 0; i < ndyn; i++) {
-        if ((rv = el_pread(ctx, dyn, sizeof *dyn, ctx->dynoff + i * sizeof *dyn)))
+    for (unsigned i = 0; i < ndyn; i++) {
+        if ((rv = el_pread(ctx, dyn, sizeof *dyn,
+                           ctx->dynoff + i * sizeof *dyn)))
             return rv;
 
         if (dyn->d_tag == tag)
@@ -177,8 +173,7 @@ el_status el_finddyn(el_ctx *ctx, Elf_Dyn *dyn, uint32_t tag)
     return EL_OK;
 }
 
-el_status el_findrelocs(el_ctx *ctx, el_relocinfo *ri, uint32_t type)
-{
+el_status el_findrelocs(el_ctx *ctx, el_relocinfo *ri, uint32_t type) {
     el_status rv = EL_OK;
 
     Elf_Dyn rel, relsz, relent;
@@ -192,14 +187,13 @@ el_status el_findrelocs(el_ctx *ctx, el_relocinfo *ri, uint32_t type)
     if ((rv = el_finddyn(ctx, &relent, type + 2)))
         return rv;
 
-    if (rel.d_tag == DT_NULL
-            || relsz.d_tag == DT_NULL
-            || relent.d_tag == DT_NULL) {
+    if (rel.d_tag == DT_NULL || relsz.d_tag == DT_NULL ||
+        relent.d_tag == DT_NULL) {
         ri->entrysize = 0;
         ri->tablesize = 0;
-        ri->tableoff  = 0;
+        ri->tableoff = 0;
     } else {
-        ri->tableoff  = rel.d_un.d_ptr;
+        ri->tableoff = rel.d_un.d_ptr;
         ri->tablesize = relsz.d_un.d_val;
         ri->entrysize = relent.d_un.d_val;
     }
@@ -210,15 +204,14 @@ el_status el_findrelocs(el_ctx *ctx, el_relocinfo *ri, uint32_t type)
 extern el_status el_applyrel(el_ctx *ctx, Elf_Rel *rel);
 extern el_status el_applyrela(el_ctx *ctx, Elf_RelA *rela);
 
-el_status el_relocate(el_ctx *ctx)
-{
+el_status el_relocate(el_ctx *ctx) {
     el_status rv = EL_OK;
 
     // not dynamic
     if (ctx->ehdr.e_type != ET_DYN)
         return EL_OK;
 
-    char *base = (char *) ctx->base_load_paddr;
+    char *base = (char *)ctx->base_load_paddr;
 
     el_relocinfo ri;
 #ifdef EL_ARCH_USES_REL
@@ -226,8 +219,8 @@ el_status el_relocate(el_ctx *ctx)
         return rv;
 
     if (ri.entrysize != sizeof(Elf_Rel) && ri.tablesize) {
-        EL_DEBUG("Relocation size %u doesn't match expected %u\n",
-            ri.entrysize, sizeof(Elf_Rel));
+        EL_DEBUG("Relocation size %u doesn't match expected %u\n", ri.entrysize,
+                 sizeof(Elf_Rel));
         return EL_BADREL;
     }
 
@@ -246,8 +239,8 @@ el_status el_relocate(el_ctx *ctx)
         return rv;
 
     if (ri.entrysize != sizeof(Elf_RelA) && ri.tablesize) {
-        EL_DEBUG("Relocation size %u doesn't match expected %u\n",
-            ri.entrysize, sizeof(Elf_RelA));
+        EL_DEBUG("Relocation size %u doesn't match expected %u\n", ri.entrysize,
+                 sizeof(Elf_RelA));
         return EL_BADREL;
     }
 
@@ -262,7 +255,7 @@ el_status el_relocate(el_ctx *ctx)
 #endif
 
 #if !defined(EL_ARCH_USES_REL) && !defined(EL_ARCH_USES_RELA)
-    #error No relocation type defined!
+#error No relocation type defined!
 #endif
 
     return rv;

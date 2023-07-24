@@ -57,6 +57,36 @@ public class CSourceCompiler
     }
 
     /// <summary>
+    /// compile the source txt, write to the out_path.
+    /// </summary>
+    /// <param name="sourcePath"> c source code.</param>
+    /// <param name="outPath"> out .so path. </param>
+    /// <returns> outPath. </returns>
+    public string Compile(string sourcePath, string outPath)
+    {
+        var errMsg = new StringBuilder();
+        using (var errWriter = new StringWriter(errMsg))
+        {
+            using (var proc = new Process())
+            {
+                proc.StartInfo.FileName = Exe;
+                proc.StartInfo.Arguments = ArgumentsSpecific(sourcePath, outPath);
+                proc.StartInfo.RedirectStandardError = true;
+                proc.ErrorDataReceived += (sender, e) => errWriter.WriteLine(e.Data);
+                proc.Start();
+                proc.BeginErrorReadLine();
+                proc.WaitForExit();
+                if (proc.ExitCode != 0)
+                {
+                    throw new InvalidOperationException(errMsg.ToString());
+                }
+            }
+        }
+
+        return outPath;
+    }
+
+    /// <summary>
     /// select current pattern's exe.
     /// </summary>
     /// <exception cref="NotSupportedException"></exception>
@@ -107,36 +137,6 @@ public class CSourceCompiler
         }
 
         throw new System.ArgumentOutOfRangeException("Only Support Linux/Osx/Windows");
-    }
-
-    /// <summary>
-    /// compile the source txt, write to the out_path.
-    /// </summary>
-    /// <param name="sourcePath"> c source code.</param>
-    /// <param name="outPath"> out .so path. </param>
-    /// <returns> outPath. </returns>
-    public string Compile(string sourcePath, string outPath)
-    {
-        var errMsg = new StringBuilder();
-        using (var errWriter = new StringWriter(errMsg))
-        {
-            using (var proc = new Process())
-            {
-                proc.StartInfo.FileName = Exe;
-                proc.StartInfo.Arguments = ArgumentsSpecific(sourcePath, outPath);
-                proc.StartInfo.RedirectStandardError = true;
-                proc.ErrorDataReceived += (sender, e) => errWriter.WriteLine(e.Data);
-                proc.Start();
-                proc.BeginErrorReadLine();
-                proc.WaitForExit();
-                if (proc.ExitCode != 0)
-                {
-                    throw new InvalidOperationException(errMsg.ToString());
-                }
-            }
-        }
-
-        return outPath;
     }
 
     /// <summary>

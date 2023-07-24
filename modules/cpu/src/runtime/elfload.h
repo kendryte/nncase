@@ -1,19 +1,21 @@
 #ifndef ELFLOAD_H
 #define ELFLOAD_H
+#include "elf.h"
+#include "elfarch.h"
 #include <stdbool.h>
 #include <stddef.h>
-#include "elfarch.h"
-#include "elf.h"
 
 #ifdef DEBUG
 #include <stdio.h>
 #define EL_DEBUG(...) printf(__VA_ARGS__)
 #else
-#define EL_DEBUG(...) do {} while(0)
+#define EL_DEBUG(...)                                                          \
+    do {                                                                       \
+    } while (0)
 #endif
 
 typedef enum {
-    EL_OK         = 0,
+    EL_OK = 0,
 
     EL_EIO,
     EL_ENOMEM,
@@ -34,9 +36,7 @@ typedef struct el_ctx {
 
     /* base_load_* -> address we are actually going to load at
      */
-    Elf_Addr
-        base_load_paddr,
-        base_load_vaddr;
+    Elf_Addr base_load_paddr, base_load_vaddr;
 
     /* size in memory of binary */
     Elf_Addr memsz;
@@ -45,10 +45,10 @@ typedef struct el_ctx {
     Elf_Addr align;
 
     /* ELF header */
-    Elf_Ehdr  ehdr;
+    Elf_Ehdr ehdr;
 
     /* Offset of dynamic table (0 if not ET_DYN) */
-    Elf_Off  dynoff;
+    Elf_Off dynoff;
     /* Size of dynamic table (0 if not ET_DYN) */
     Elf_Addr dynsize;
 
@@ -58,11 +58,8 @@ typedef struct el_ctx {
 el_status el_pread(el_ctx *ctx, void *def, size_t nb, size_t offset);
 
 el_status el_init(el_ctx *ctx);
-typedef void* (*el_alloc_cb)(
-    el_ctx *ctx,
-    Elf_Addr phys,
-    Elf_Addr virt,
-    Elf_Addr size);
+typedef void *(*el_alloc_cb)(el_ctx *ctx, Elf_Addr phys, Elf_Addr virt,
+                             Elf_Addr size);
 
 el_status el_load(el_ctx *ctx, el_alloc_cb alloccb);
 
@@ -84,7 +81,7 @@ el_status el_relocate(el_ctx *ctx);
 el_status el_finddyn(el_ctx *ctx, Elf_Dyn *dyn, uint32_t type);
 
 typedef struct {
-    Elf_Off  tableoff;
+    Elf_Off tableoff;
     Elf_Addr tablesize;
     Elf_Addr entrysize;
 } el_relocinfo;
