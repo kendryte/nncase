@@ -189,9 +189,9 @@
                      NNCASE_TEST_GENERATOR_VALUE(__VA_ARGS__),                 \
                      NNCASE_TEST_GENERATOR_VALUE(__VA_ARGS__))
 
-#define NNCASE_TEST_GENERATOR_TYPE_11(typea, ...)                               \
+#define NNCASE_TEST_GENERATOR_TYPE_11(typea, ...)                              \
     testing::Combine(NNCASE_TEST_GENERATOR_VALUE(typea),                       \
-                    NNCASE_TEST_GENERATOR_VALUE(typea),                       \
+                     NNCASE_TEST_GENERATOR_VALUE(typea),                       \
                      NNCASE_TEST_GENERATOR_VALUE(__VA_ARGS__),                 \
                      NNCASE_TEST_GENERATOR_VALUE(__VA_ARGS__))
 
@@ -214,15 +214,14 @@
     dims_t{1, 3, 16, 16}, dims_t{3, 16, 16}, dims_t{3, 16, 1}, dims_t{16, 16}, \
         dims_t{16, 1}, dims_t{1, 16, 1}, dims_t{16}, dims_t{1}, dims_t {}
 
-#define GET_DEFAULT_TEST_SHAPE_()                                               \
-    testing::Values(dims_t{1, 3, 16, 16}, dims_t{3, 16, 16}, dims_t{3, 16, 1}, dims_t{16, 16}, \
-        dims_t{16, 1}, dims_t{1, 16, 1}, dims_t{16}, dims_t{1}, dims_t {})
+#define GET_DEFAULT_TEST_SHAPE_()                                              \
+    testing::Values(dims_t{1, 3, 16, 16}, dims_t{3, 16, 16}, dims_t{3, 16, 1}, \
+                    dims_t{16, 16}, dims_t{16, 1}, dims_t{1, 16, 1},           \
+                    dims_t{16}, dims_t{1}, dims_t{})
 
-#define GET_DEFAULT_TEST_TYPE_()                                               \
-    testing::Values(dt_int32)
+#define GET_DEFAULT_TEST_TYPE_() testing::Values(dt_int32)
 
-#define GET_DEFAULT_TEST_BOOL_TYPE_()                                               \
-    testing::Values(dt_boolean)
+#define GET_DEFAULT_TEST_BOOL_TYPE_() testing::Values(dt_boolean)
 
 #define GET_DEFAULT_TEST_VECTOR_SHAPE()                                        \
     dims_t { 4 }
@@ -244,54 +243,56 @@
             static_cast<condition##_t>(get<condition##_t>(tensor, index));     \
         break;
 
-
-
-
-
-#define CreateRtFromAttr_SCALAR(attr_rt_type, attr_shape, attr) \
-    hrt::create(attr_rt_type, attr_shape, \
-                {reinterpret_cast<gsl::byte *>(&attr), \
-                    _msize(attr)}, \
-                true, host_runtime_tensor::pool_cpu_only) \
+#define CreateRtFromAttr_SCALAR(attr_rt_type, attr_shape, attr)                \
+    hrt::create(attr_rt_type, attr_shape,                                      \
+                {reinterpret_cast<gsl::byte *>(&attr), _msize(attr)}, true,    \
+                host_runtime_tensor::pool_cpu_only)                            \
         .expect("create tensor failed");
 
-#define CreateRtFromAttr_ARRAYONEDIM(attr_rt_type, attr_shape, attr) \
-    hrt::create(attr_rt_type, attr_shape, \
-                {reinterpret_cast<gsl::byte *>(attr), \
-                    _msize(attr)}, \
-                true, host_runtime_tensor::pool_cpu_only) \
+#define CreateRtFromAttr_ARRAYONEDIM(attr_rt_type, attr_shape, attr)           \
+    hrt::create(attr_rt_type, attr_shape,                                      \
+                {reinterpret_cast<gsl::byte *>(attr), _msize(attr)}, true,     \
+                host_runtime_tensor::pool_cpu_only)                            \
         .expect("create tensor failed");
 
-#define DECLARE_ATTR(attr, attr_type_id, attr_type) \
+#define DECLARE_ATTR(attr, attr_type_id, attr_type)                            \
     DECLARE_ATTR_##attr_type_id(attr, attr_type)
 
 #define DECLARE_ATTR_SCALAR(attr, attr_type) attr_type attr;
-#define DECLARE_ATTR_ARRAYONEDIM(attr, attr_type) attr_type* attr;
-#define DECLARE_ATTR_ARRAYTWODIM(attr, attr_type) attr_type** attr;
+#define DECLARE_ATTR_ARRAYONEDIM(attr, attr_type) attr_type *attr;
+#define DECLARE_ATTR_ARRAYTWODIM(attr, attr_type) attr_type **attr;
 
-#define SWITCH_INIT_MODE(type, dis1, dis2, dis3, dis4) \
-    switch (mode) { \
-        case RANDOM : get<type>(tensor, index) = static_cast<type>(dis1(gen));break; \
-        case NOZERO : get<type>(tensor, index) = static_cast<type>(dis2(gen));break; \
-        case NONEG : get<type>(tensor, index) = static_cast<type>(dis3(gen));break; \
-        case NOPOS : get<type>(tensor, index) = static_cast<type>(dis4(gen));break; \
-        default: { get<type>(tensor, index) = static_cast<type>(dis1(gen));break; } \
+#define SWITCH_INIT_MODE(type, dis1, dis2, dis3, dis4)                         \
+    switch (mode) {                                                            \
+    case RANDOM:                                                               \
+        get<type>(tensor, index) = static_cast<type>(dis1(gen));               \
+        break;                                                                 \
+    case NOZERO:                                                               \
+        get<type>(tensor, index) = static_cast<type>(dis2(gen));               \
+        break;                                                                 \
+    case NONEG:                                                                \
+        get<type>(tensor, index) = static_cast<type>(dis3(gen));               \
+        break;                                                                 \
+    case NOPOS:                                                                \
+        get<type>(tensor, index) = static_cast<type>(dis4(gen));               \
+        break;                                                                 \
+    default: {                                                                 \
+        get<type>(tensor, index) = static_cast<type>(dis1(gen));               \
+        break;                                                                 \
+    }                                                                          \
     }
-
 
 #define INIT_TENSOR(a, init_mode) InitTensor(a, init_mode)
 
-#define INIT_ATTRIBUTE(attr_type_id, attr_type, attr_shape, attr_initf) \
+#define INIT_ATTRIBUTE(attr_type_id, attr_type, attr_shape, attr_initf)        \
     InitAttribute##attr_type_id<attr_type>(attr_shape, attr_initf)
 
-#define CreateRtFromAttr(attr_type_id, attr_rt_type, attr_shape, attr) \
+#define CreateRtFromAttr(attr_type_id, attr_rt_type, attr_shape, attr)         \
     CreateRtFromAttr_##attr_type_id(attr_rt_type, attr_shape, attr)
 
-  
-
-#define CONVERT_EXPECT_TO_RT(type) \
+#define CONVERT_EXPECT_TO_RT(type)                                             \
     auto expected =                                                            \
-        hrt::create(type, shape,                                         \
+        hrt::create(type, shape,                                               \
                     {reinterpret_cast<gsl::byte *>(ptr_ort), size}, true,      \
                     host_runtime_tensor::pool_cpu_only)                        \
             .expect("create expected tensor failed");
