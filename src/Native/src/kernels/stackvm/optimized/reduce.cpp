@@ -26,16 +26,14 @@ using namespace nncase::kernels;
 using namespace nncase::kernels::stackvm;
 using namespace nncase::kernels::stackvm::optimized;
 
-result<void>
-optimized::reduce(typecode_t typecode, nncase::runtime::stackvm::reduce_op_t op,
-       const gsl::byte *init_value, const gsl::byte *input, gsl::byte *output,
-       gsl::span<const size_t> in_shape, gsl::span<const size_t> axis,
-       gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
-       bool keep_dims,
-       kernel_context &context) noexcept
-       {
-            printf("!!!!!!!!!!call here... reduce \n");
-            return stackvm::reference::reduce(typecode, op, init_value, input, output, 
-                    in_shape, axis, in_strides,  out_strides, keep_dims, context);
-       }
-
+result<void> optimized::reduce(
+    typecode_t typecode, nncase::runtime::stackvm::reduce_op_t op,
+    const gsl::byte *init_value, const gsl::byte *input, gsl::byte *output,
+    gsl::span<const size_t> in_shape, gsl::span<const size_t> axis,
+    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
+    bool keep_dims, kernel_context &context) noexcept {
+    printf("!!!!!!!!!!call here... reduce \n");
+    return stackvm::reference::reduce(typecode, op, init_value, input, output,
+                                      in_shape, axis, in_strides, out_strides,
+                                      keep_dims, context);
+}
