@@ -30,21 +30,33 @@ using namespace nncase::runtime::stackvm;
 NNCASE_TEST_CLASS_ARGS_2_ATTR_0(BinaryTest, RANDOM, RANDOM)
 NNCASE_TEST_CLASS_ARGS_2_ATTR_0(BinaryLogicTest, RANDOM, RANDOM)
 
+NNCASE_TESTSUITE_INIT_ARGS_2(BinaryTest, Binary, GET_DEFAULT_TEST_TYPE_(),
+                             GET_DEFAULT_TEST_TYPE_(),
+                             GET_DEFAULT_TEST_SHAPE_(),
+                             GET_DEFAULT_TEST_SHAPE_())
+NNCASE_TESTSUITE_INIT_ARGS_2(BinaryLogicTest, BinaryLogic,
+                             GET_DEFAULT_TEST_BOOL_TYPE_(),
+                             GET_DEFAULT_TEST_BOOL_TYPE_(),
+                             GET_DEFAULT_TEST_SHAPE_(),
+                             GET_DEFAULT_TEST_SHAPE_())
 
-NNCASE_TESTSUITE_INIT_ARGS_2(BinaryTest, Binary, GET_DEFAULT_TEST_TYPE_(),GET_DEFAULT_TEST_TYPE_(),
-                      GET_DEFAULT_TEST_SHAPE_(), GET_DEFAULT_TEST_SHAPE_())
-NNCASE_TESTSUITE_INIT_ARGS_2(BinaryLogicTest, BinaryLogic, GET_DEFAULT_TEST_BOOL_TYPE_(),GET_DEFAULT_TEST_BOOL_TYPE_(),
-                      GET_DEFAULT_TEST_SHAPE_(), GET_DEFAULT_TEST_SHAPE_())
-
-
-NNCASE_TEST_BODY_ARGS_2_ATTR_0(BinaryTest, add, kernels::stackvm::binary, binary_op_t::add, ortki_Add, _typecode_0)
-NNCASE_TEST_BODY_ARGS_2_ATTR_0(BinaryTest, sub, kernels::stackvm::binary, binary_op_t::sub, ortki_Sub, _typecode_0)
-NNCASE_TEST_BODY_ARGS_2_ATTR_0(BinaryTest, mul, kernels::stackvm::binary, binary_op_t::mul, ortki_Mul, _typecode_0)
-NNCASE_TEST_BODY_ARGS_2_ATTR_0(BinaryTest, pow, kernels::stackvm::binary, binary_op_t::pow, ortki_Pow, _typecode_0)
-NNCASE_TEST_BODY_ARGS_2_ATTR_0(BinaryLogicTest, logical_and, kernels::stackvm::binary, binary_op_t::logical_and, ortki_And, _typecode_0)
-NNCASE_TEST_BODY_ARGS_2_ATTR_0(BinaryLogicTest, logical_or, kernels::stackvm::binary, binary_op_t::logical_or, ortki_Or, _typecode_0)
-NNCASE_TEST_BODY_ARGS_2_ATTR_0(BinaryLogicTest, logical_xor, kernels::stackvm::binary, binary_op_t::logical_xor, ortki_Xor, _typecode_0)
-
+NNCASE_TEST_BODY_ARGS_2_ATTR_0(BinaryTest, add, kernels::stackvm::binary,
+                               binary_op_t::add, ortki_Add, _typecode_0)
+NNCASE_TEST_BODY_ARGS_2_ATTR_0(BinaryTest, sub, kernels::stackvm::binary,
+                               binary_op_t::sub, ortki_Sub, _typecode_0)
+NNCASE_TEST_BODY_ARGS_2_ATTR_0(BinaryTest, mul, kernels::stackvm::binary,
+                               binary_op_t::mul, ortki_Mul, _typecode_0)
+NNCASE_TEST_BODY_ARGS_2_ATTR_0(BinaryTest, pow, kernels::stackvm::binary,
+                               binary_op_t::pow, ortki_Pow, _typecode_0)
+NNCASE_TEST_BODY_ARGS_2_ATTR_0(BinaryLogicTest, logical_and,
+                               kernels::stackvm::binary,
+                               binary_op_t::logical_and, ortki_And, _typecode_0)
+NNCASE_TEST_BODY_ARGS_2_ATTR_0(BinaryLogicTest, logical_or,
+                               kernels::stackvm::binary,
+                               binary_op_t::logical_or, ortki_Or, _typecode_0)
+NNCASE_TEST_BODY_ARGS_2_ATTR_0(BinaryLogicTest, logical_xor,
+                               kernels::stackvm::binary,
+                               binary_op_t::logical_xor, ortki_Xor, _typecode_0)
 
 int main(int argc, char *argv[]) {
     ::testing::InitGoogleTest(&argc, argv);
