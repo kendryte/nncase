@@ -30,7 +30,6 @@ class cpu_runtime_function : public runtime_function {
     initialize_core(runtime_function_init_context &context) noexcept override;
     result<value_t> invoke_core(gsl::span<value_t> parameters,
                                 value_t return_value) noexcept override;
-
 };
 
 END_NS_NNCASE_RT_MODULE

@@ -84,6 +84,7 @@ internal sealed class LinkableModule : ILinkableModule
                     writer.WriteLine($"      {func.SourceFunction.Name}({string.Join(", ", Enumerable.Range(0, func.PrimFunction.Parameters.Length).Select(i => $"buffers[{i}]"))}, nncase_mt, data, rdata);");
                     writer.WriteLine("    break;");
                 }
+
                 writer.WriteLine("    default: ");
                 writer.WriteLine("    break;");
                 writer.WriteLine("  }");

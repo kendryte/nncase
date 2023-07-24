@@ -54,7 +54,7 @@ internal sealed class SingleCPUFusionConverter
 
         protected override Unit DefaultVisitLeaf(Expr expr)
         {
-            return default(Unit);
+            return default;
         }
 
         protected override Unit VisitLeafCall(Call expr)
@@ -72,7 +72,7 @@ internal sealed class SingleCPUFusionConverter
                     throw new NotSupportedException();
             }
 
-            return default(Unit);
+            return default;
         }
 
         private void GenerateUnary(Unary unary, ReadOnlySpan<Buffer> arguments, Buffer ret)

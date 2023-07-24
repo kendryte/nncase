@@ -24,10 +24,12 @@ public class CSourceCompiler
     /// compiler exe name.
     /// </summary>
     private string _exe = string.Empty;
+
     /// <summary>
     /// compiler exe name.
     /// </summary>
     private string _arch = string.Empty;
+
     /// <summary>
     /// compiler exe name.
     /// </summary>
@@ -42,6 +44,11 @@ public class CSourceCompiler
     protected string Exe
     {
         get => _exe;
+    }
+
+    protected string Arch
+    {
+        get => _arch;
     }
 
     /// <summary>
@@ -95,11 +102,6 @@ public class CSourceCompiler
         }
 
         throw new System.ArgumentOutOfRangeException("Only Support Linux/Osx/Windows");
-    }
-
-    protected string Arch
-    {
-        get => _arch;
     }
 
     protected string Ext

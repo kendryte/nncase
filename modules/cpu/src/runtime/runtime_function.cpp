@@ -33,7 +33,7 @@ result<void> cpu_runtime_function::initialize_core(
 result<value_t>
 cpu_runtime_function::invoke_core(NNCASE_UNUSED gsl::span<value_t> parameters,
                                   value_t return_value) noexcept {
-                                    module().interp();
+    module().interp();
     try_var(id, module().find_id_by_function(this));
     std::cout << "call " << id << std::endl;
     return ok(return_value);
