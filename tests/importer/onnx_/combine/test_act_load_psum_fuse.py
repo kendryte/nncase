@@ -154,9 +154,25 @@ in_shapes = [
 
 @pytest.mark.parametrize('in_shape', in_shapes)
 def test_act_load_psum_fuse(in_shape, request):
+    cfg = '''
+    [target]
+
+    [target.cpu]
+    eval = false
+    infer = false
+
+    [target.k510]
+    eval = false
+    infer = true
+
+    [target.k230]
+    eval = false
+    infer = false
+    '''
+
     model_def = _make_module(in_shape)
 
-    runner = OnnxTestRunner(request.node.name, ['k510'])
+    runner = OnnxTestRunner(request.node.name, overwrite_configs=cfg)
     model_file = runner.from_onnx_helper(model_def)
     runner.run(model_file)
 

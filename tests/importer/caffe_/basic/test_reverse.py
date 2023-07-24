@@ -54,7 +54,7 @@ axes = [
 @pytest.mark.parametrize('axis', axes)
 def test_reverse(in_shape, axis, request):
     if axis < len(in_shape):
-        runner = CaffeTestRunner(request.node.name, ['cpu', 'k210'])
+        runner = CaffeTestRunner(request.node.name)
         model_path = os.path.join(os.getcwd(), 'tests_output',
                                   request.node.name.replace('[', '_').replace(']', '_'))
         _make_module(model_path, in_shape, axis)

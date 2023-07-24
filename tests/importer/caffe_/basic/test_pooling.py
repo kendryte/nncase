@@ -88,7 +88,7 @@ round_modes = [
 @pytest.mark.parametrize('pooling', poolings)
 @pytest.mark.parametrize('round_mode', round_modes)
 def test_pooling(n, i_channel, i_size, k_size, stride, padding, pooling, round_mode, request):
-    runner = CaffeTestRunner(request.node.name, ['cpu', 'k210'])
+    runner = CaffeTestRunner(request.node.name)
     model_path = os.path.join(os.getcwd(), 'tests_output',
                               request.node.name.replace('[', '_').replace(']', '_'))
     _make_module(model_path, n, i_channel, i_size, k_size, stride, padding, pooling, round_mode)
