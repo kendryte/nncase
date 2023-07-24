@@ -140,7 +140,7 @@ result<void> optimized::reduce(
     bool keep_dims, kernel_context &context) noexcept {
 #if __riscv_vector
     do {
-        if (op == reduce_op_t::mean) {
+        if (op == reduce_op_t::mean && typecode == dt_float32) {
             int parameters[3];
             int ret = get_parameter(in_shape, axis, parameters);
             if (ret) {
