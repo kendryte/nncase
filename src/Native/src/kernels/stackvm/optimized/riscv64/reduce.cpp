@@ -132,35 +132,37 @@ static int get_parameter(gsl::span<const size_t> in_shape,
 }
 #endif
 
-result<void> optimized::reduce(
-    typecode_t typecode, nncase::runtime::stackvm::reduce_op_t op,
-    const gsl::byte *init_value, const gsl::byte *input, gsl::byte *output,
-    gsl::span<const size_t> in_shape, gsl::span<const size_t> axis,
-    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
-    bool keep_dims, kernel_context &context) noexcept {
-#if __riscv_vector
-    do {
-        if (op == reduce_op_t::mean) {
-            int parameters[3];
-            int ret = get_parameter(in_shape, axis, parameters);
-            if (ret) {
-                break;
-            }
-            auto input_data = IN_CAST(float, input);
-            auto out_data = OUT_CAST(float, output);
-            int gap = parameters[2];
-            if (gap == 1) {
-                reduce_mean(input_data, out_data, parameters[0], parameters[1]);
-            } else {
-                reduce_mean_s(parameters[1], parameters[0], input_data,
-                              out_data, gap);
-            }
-            return ok();
-        }
-    } while (0);
-#endif
+result<void>
+optimized::reduce(typecode_t typecode, nncase::runtime::stackvm::reduce_op_t op,
+       const gsl::byte *init_value, const gsl::byte *input, gsl::byte *output,
+       gsl::span<const size_t> in_shape, gsl::span<const size_t> axis,
+       gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
+       bool keep_dims,
+       kernel_context &context) noexcept
+       {
+            #if __riscv_vector
+            do{
+                if(op == reduce_op_t::mean && typecode == dt_float32)
+                {
+                        int parameters[3];
+                        int ret = get_parameter(in_shape, axis, parameters);
+                        if(ret){break;}
+                        auto input_data = IN_CAST(float, input);
+                        auto out_data = OUT_CAST(float, output); 
+                        int gap = parameters[2];
+                        if(gap == 1)
+                        {
+                                reduce_mean(input_data, out_data, parameters[0], parameters[1]);
+                        }
+                        else
+                        {
+                                reduce_mean_s(parameters[1], parameters[0], input_data, out_data, gap);
+                        }
+                        return ok();
+                }
+            }while(0);
+            #endif
 
-    return stackvm::reference::reduce(typecode, op, init_value, input, output,
-                                      in_shape, axis, in_strides, out_strides,
-                                      keep_dims, context);
-}
+            return stackvm::reference::reduce(typecode, op, init_value, input, output, 
+                    in_shape, axis, in_strides,  out_strides, keep_dims, context);
+       }
