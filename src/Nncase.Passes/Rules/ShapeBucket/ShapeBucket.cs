@@ -306,15 +306,10 @@ public class MultiUserCallToFusion : CallToFusion
                     return CallValidator.ValidTarget(c.Target);
                 }
             }
-
-            if (c.Target is IR.Tensors.Stack || c.Target is IR.Tensors.Concat)
+            else
             {
-                return true;
+                return CallValidator.ValidTarget(c.Target);
             }
-            // else
-            // {
-            //     return CallValidator.ValidTarget(c.Target);
-            // }
         }
 
         return false;

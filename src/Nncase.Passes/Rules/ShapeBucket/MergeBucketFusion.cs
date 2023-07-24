@@ -103,7 +103,7 @@ public class MergeBucketFusion : ModulePass
 
         var hashcode = main.GetHashCode();
         int loop = 0;
-        while (loop < 40)
+        while (loop < 30)
         {
             var mergePrevPost = MergePrevFusion(main);
             MergeMultiUsers(mergePrevPost);
@@ -114,14 +114,8 @@ public class MergeBucketFusion : ModulePass
             {
                 counter++;
             }
-            else
-            {
-                break;
-            }
-
             hashcode = postHashCode;
             loop++;
-            // todo: multi merge
         }
         return Task.FromResult(input);
     }

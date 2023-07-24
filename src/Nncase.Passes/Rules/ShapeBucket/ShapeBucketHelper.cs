@@ -46,6 +46,11 @@ internal static class ShapeBucketHelper
             throw new InvalidOperationException("Args has Var in fusion");
         }
 
+        if (newArgs.Any(arg => arg is Marker m && m .Target is Const))
+        {
+            throw new InvalidOperationException("Args has tuple");
+        }
+
         if (newArgs.Any(arg => arg is IR.Tuple))
         {
             throw new InvalidOperationException("Args has tuple");
@@ -211,8 +216,8 @@ public static class CallValidator
     static readonly Dictionary<RuntimeTypeHandle, int> OpList = new()
     {
         // tuple input
-        // { typeof(Concat).TypeHandle, 0 },
-        // { typeof(Stack).TypeHandle, 0 },
+        { typeof(Concat).TypeHandle, 0 },
+        { typeof(Stack).TypeHandle, 0 },
         { typeof(Slice).TypeHandle, 0 },
         { typeof(Gather).TypeHandle, 0 },
         { typeof(ShapeOf).TypeHandle, 0 },

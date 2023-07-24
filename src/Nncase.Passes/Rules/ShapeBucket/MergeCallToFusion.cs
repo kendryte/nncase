@@ -302,6 +302,10 @@ public partial class MergePrevCallToFusion : MergeFusionBase
     {
         var tuple = new IR.Tuple(inputsShouldBeMerge);
 
+        if (inputsShouldBeMerge.Length != newVarsOrigin.Length)
+        {
+            Console.WriteLine();
+        }
         return inputsShouldBeMerge.Zip(newVarsOrigin).Select((pair, i) =>
         {
             var (input, varsInfoList) = pair;
@@ -313,6 +317,15 @@ public partial class MergePrevCallToFusion : MergeFusionBase
                     return x;
                 }
 
+                if (x is Marker m && m.Target is TensorConst)
+                {
+                    return m;
+                }
+
+                if (outCounter >= varsInfoList.Length)
+                {
+                    throw new InvalidOperationException();
+                }
                 var newVar = varsInfoList[outCounter++].Vars;
                 if (x is IR.Tuple tuple)
                 {
@@ -373,7 +386,7 @@ public partial class MergePrevCallToFusion : MergeFusionBase
         {
             if (newVar.Expr is IR.Tuple tuple)
             {
-                return tuple.Fields.ToArray().Where(field => field is not TensorConst).ToArray();
+                return tuple.Fields.ToArray().Where(shouldBeInput).ToArray();
             }
 
             return new[] { newVar.Expr };
@@ -399,6 +412,16 @@ public partial class MergePrevCallToFusion : MergeFusionBase
         return newBody;
     }
 
+    // todo: add test for this
+    private static bool shouldBeInput(Expr expr)
+    {
+        if (expr is Marker m)
+        {
+            return m.Target is not TensorConst;
+        }
+
+        return expr is not TensorConst;
+    }
     // PrevCall(input1, input2, ...)
     // input: input1, input2, ...
     // call => [arg]
@@ -409,13 +432,13 @@ public partial class MergePrevCallToFusion : MergeFusionBase
         var newVars = fusionInputsInfo.Select(fusionInputInfo =>
         {
             var (fusionInput, inputIndex) = fusionInputInfo;
-            return fusionInput.Arguments.ToArray().Where(inputArg => inputArg is not TensorConst).Select((inputArg) =>
+            return fusionInput.Arguments.ToArray().Where(shouldBeInput).Select((inputArg) =>
             {
                 // add condition to limit
                 var vars = new[] { new Var(inputArg.CheckedType) };
                 if (inputArg is IR.Tuple tuple)
                 {
-                    vars = tuple.Fields.ToArray().Where(field => field is not TensorConst).Select(field => new Var(field.CheckedType)).ToArray();
+                    vars = tuple.Fields.ToArray().Where(shouldBeInput).Select(field => new Var(field.CheckedType)).ToArray();
                 }
 
                 return new VarReplaceInfo(inputArg, vars, inputIndex);
@@ -441,7 +464,7 @@ public partial class MergePrevCallToFusion : MergeFusionBase
                 // FusionArg为tuple的时候，tuple中部分参数已经是fusion的参数的情况
                 // TestMergeInputWhichHadBeMerged
                 // TestMergeInputInTupleWhichHadBeMerged
-                var callFields = tuple.Fields.ToArray().Where(field => field is not TensorConst).ToArray();
+                var callFields = tuple.Fields.ToArray().Where(shouldBeInput).ToArray();
 
                 // dict里有这个expr，也就是说其他FusionArg中出现过，有对应的vars
                 if (dict.TryGetValue(info.Expr, out defaultVar))
