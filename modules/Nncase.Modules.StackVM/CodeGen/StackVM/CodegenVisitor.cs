@@ -176,7 +176,6 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
     {
         var visitor = new CodeGenVisitor(_function, _context);
         var subBlockFirst = visitor.CurrentBasicBlock;
-        Console.WriteLine($"SubBlock {subBlockFirst.GetHashCode()}");
 
         CurrentBasicBlock.AddNext(subBlockFirst);
         foreach (var (key, value) in ExprMemo)
@@ -186,7 +185,6 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
 
         visitor.Visit(expr);
         var refTextSnippets = visitor._refTextSnippets;
-        Console.WriteLine($"SubBlock {subBlockFirst.GetHashCode()} End");
         var subBlockEnd = visitor.CurrentBasicBlock;
         return (subBlockEnd, refTextSnippets);
     }
@@ -279,7 +277,6 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
 
     protected override TextSnippet VisitLeafCall(Call expr)
     {
-        Console.WriteLine(expr.Target);
         var snippet = BeginTextSnippet(expr);
         foreach (var param in expr.Arguments.ToArray().Reverse())
         {
@@ -507,14 +504,6 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
 
     private TextSnippet BeginTextSnippet(Expr expr)
     {
-        if (expr is If)
-        {
-            Console.WriteLine();
-        }
-        // if (expr is If i && i.Then is Call c && c.Target is Binary b && b.BinaryOp is BinaryOp.Mul)
-        // {
-        //     Console.WriteLine();
-        // }
         var snippet = new TextSnippet(
             expr,
             AddSymbol(WellknownSectionNames.Text),
