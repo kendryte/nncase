@@ -47,7 +47,7 @@ class ReduceMeanTest
                                true, host_runtime_tensor::pool_cpu_only)
                        .expect("create tensor failed");
 
-        float init_value_array[] = {-1}; // the min of input's range
+        float init_value_array[] = {0}; // the mean of input's range
         init_value =
             hrt::create(typecode1, r_shape,
                         {reinterpret_cast<gsl::byte *>(init_value_array),
