@@ -49,13 +49,16 @@ k230模型编译推理参考Jupyter脚本：[User_guide](../examples/user_guide/
 在执行脚本之前需要根据自身需求修改以下内容：
 
 1. `compile_kmodel`函数中`compile_options`,`ptq_options`相关信息
-   `compile_options`详细信息见[CompileOptions](#CompileOptions),
+
+   `compile_options`详细信息见[CompileOptions](#CompileOptions)
+
    `ptq_options`详细信息见[PTQTensorOptions](#PTQTensorOptions)
 
 2. `compile kmodel single input(multiple inputs)`部分
 
-   a. 修改`model_path`和`dump_path`，用于指定模型路径和编译期间文件生成路径。
-   b. 修改`calib_data`的实现，数据格式见注释。
+   修改`model_path`和`dump_path`，用于指定模型路径和编译期间文件生成路径。
+
+   修改`calib_data`的实现，数据格式见注释。
 
 3. `run kmodel(simulate)`部分，修改`input_data`的实现，数据格式见注释。
 
@@ -106,8 +109,8 @@ graph TD;
 参数说明：
 
  1. `input_range`为输入数据类型为定点时，反量化后的浮点数范围。
-    a. 输入数据类型为uint8，range为0~255，`input_range`为0~255，则反量化的作用只是进行类型转化，将uint8的数据转化为float32，`mean`和`std`参数仍然按照0~255的数据进行指定。
-    b. 输入数据类型为uint8，range为0~255，`input_range`为0~1，则反量化会将定点数转化为浮点数0~1，`mean`和`std`参数需要按照0~1的数据进行指定。
+    a. 输入数据类型为uint8，range为[0,255]，`input_range`为[0,255]，则反量化的作用只是进行类型转化，将uint8的数据转化为float32，`mean`和`std`参数仍然按照[0,255]的数据进行指定。
+    b. 输入数据类型为uint8，range为[0,255]，`input_range`为[0,1]，则反量化会将定点数转化为浮点数[0,1]，`mean`和`std`参数需要按照0~1的数据进行指定。
 
     ```mermaid
     graph TD;
