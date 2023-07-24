@@ -77,6 +77,8 @@ else() # in user space
                     BASIC_SETUP
                     OPTIONS ${CONAN_OPTS}
                     SETTINGS ${CONAN_SETTINGS}
+                    BUILD ortki
+                    BUILD onnxruntime
                     BUILD missing)
 endif()
 
