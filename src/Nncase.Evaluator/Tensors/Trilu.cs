@@ -1,4 +1,4 @@
-﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -26,12 +26,9 @@ public class TriluEvaluator : IEvaluator<Trilu>, ITypeInferencer<Trilu>, ICostEv
 
     public IRType Visit(ITypeInferenceContext context, Trilu target)
     {
-        return context.GetArgumentType(target, Trilu.Input);
-    }
-
-    /// <inheritdoc/>
-    public IRType Visit(TensorType input)
-    {
+        var input = context.CheckArgumentType<TensorType>(target, Trilu.Input);
+        context.CheckArgumentType<TensorType>(target, Trilu.Upper);
+        context.CheckArgumentType<TensorType>(target, Trilu.K);
         return input;
     }
 
