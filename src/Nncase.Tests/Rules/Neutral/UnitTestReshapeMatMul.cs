@@ -39,11 +39,12 @@ public class UnitTestReshapeMatMul : TransformTestBase
         TestMatched<ReshapeMatMul>(mm);
     }
 
-    [Fact]
-    public void TestNop()
+    [Theory]
+    [MemberData(nameof(NopMatMulShapeData))]
+    public void TestNop(int[] shapeA, int[] shapeB)
     {
-        var lhs = Testing.Rand<float>(1, 3, 24, 24);
-        var rhs = Testing.Rand<float>(3, 24, 24);
+        var lhs = Testing.Rand<float>(shapeA);
+        var rhs = Testing.Rand<float>(shapeB);
         var mm = MatMul(lhs, rhs);
         TestNotMatch<ReshapeMatMul>(mm);
     }
