@@ -51,6 +51,11 @@ public class CSourceCompiler
         get => _arch;
     }
 
+    protected string Ext
+    {
+        get => _ext;
+    }
+
     /// <summary>
     /// select current pattern's exe.
     /// </summary>
@@ -102,11 +107,6 @@ public class CSourceCompiler
         }
 
         throw new System.ArgumentOutOfRangeException("Only Support Linux/Osx/Windows");
-    }
-
-    protected string Ext
-    {
-        get => _ext;
     }
 
     /// <summary>
