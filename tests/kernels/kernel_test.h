@@ -14,7 +14,7 @@
  */
 #pragma once
 #include "macro_util.h"
-#include "generated_macro.h"
+#include "generated/generated_macro.h"
 #include "nncase/shape.h"
 #include <algorithm>
 #include <cmath>
