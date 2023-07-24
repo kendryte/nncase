@@ -30,6 +30,12 @@ public class TriluEvaluator : IEvaluator<Trilu>, ITypeInferencer<Trilu>, ICostEv
     }
 
     /// <inheritdoc/>
+    public IRType Visit(TensorType input)
+    {
+        return input;
+    }
+
+    /// <inheritdoc/>
     public Cost Visit(ICostEvaluateContext context, Trilu target)
     {
         var inputType = context.GetArgumentType<TensorType>(target, Trilu.Input);
