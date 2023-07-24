@@ -47,9 +47,9 @@ class ReduceSumTest
                                true, host_runtime_tensor::pool_cpu_only)
                        .expect("create tensor failed");
 
-        int64_t init_value_array[] = {0};
+        float init_value_array[] = {0}; // the min of input's range
         init_value =
-            hrt::create(typecode2, r_shape,
+            hrt::create(typecode1, r_shape,
                         {reinterpret_cast<gsl::byte *>(init_value_array),
                          sizeof(init_value_array)},
                         true, host_runtime_tensor::pool_cpu_only)
@@ -107,7 +107,7 @@ TEST_P(ReduceSumTest, ReduceSum) {
         auto output = kernels::stackvm::reduce(
                           runtime::stackvm::reduce_op_t::sum, a.impl(),
                           axis.impl(), init_value.impl(), keepDims.impl())
-                          .expect("reduce_mean failed");
+                          .expect("reduce_sum failed");
         runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
         bool result = is_same_tensor(expected, actual) ||
