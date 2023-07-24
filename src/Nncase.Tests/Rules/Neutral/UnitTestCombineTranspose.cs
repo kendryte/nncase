@@ -291,6 +291,18 @@ public class UnitTestCombineTranspose : TransformTestBase
     }
 
     [Theory]
+    [MemberData(nameof(CombineLConstBinaryTransposePositiveData))]
+    public void TestCombineLConstBinaryTransposeNotFloat(int[] lShape, int[] rShape, int[] perm)
+    {
+        var a = Random.Normal(DataTypes.Int64, 0, 1, 0, lShape).Evaluate().AsTensor();
+        var b = Random.Normal(DataTypes.Int64, 0, 1, 0, rShape);
+
+        Expr permExpr = perm;
+        var rootPre = Math.Binary(BinaryOp.Add, a, Tensors.Transpose(b, permExpr));
+        TestMatched<CombineConstBinaryTranspose>(rootPre);
+    }
+
+    [Theory]
     [MemberData(nameof(TestCombineTransposePadPositiveData))]
     public void TestCombineTransposePadPositive(int[] inShape, int[] perm, int[,] paddings, PadMode padM, float padValue)
     {
