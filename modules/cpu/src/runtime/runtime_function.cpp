@@ -21,12 +21,71 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::cpu;
 
+namespace {
+typedef struct memory_range {
+    uint32_t start;
+    uint32_t size;
+} memory_range_t;
+
+typedef struct desc_header {
+    uint32_t input_pool_size;
+
+    uint32_t output_pool_size;
+
+    uint32_t inputs;
+
+    uint32_t outputs;
+} desc_header_t;
+
+} // namespace
+
 cpu_runtime_module &cpu_runtime_function::module() const noexcept {
     return static_cast<cpu_runtime_module &>(runtime_function::module());
 }
 
 result<void> cpu_runtime_function::initialize_core(
     NNCASE_UNUSED runtime_function_init_context &context) noexcept {
+
+    try_(context.read_section(".desc", [this](auto sr, size_t) -> result<void> {
+        auto header = sr.template read<desc_header>();
+        if (parameters_size() != header.inputs + header.outputs)
+            return nncase::err(std::errc::invalid_argument);
+
+        for (uint32_t i = 0; i < header.inputs; i++) {
+            sr.template read<memory_range>();
+            auto rank = sr.template read<uint32_t>();
+            std::cout << "shape: ";
+            for (uint32_t j = 0; j < rank; j++) {
+                std::cout << sr.template read<uint32_t>() << ", ";
+            }
+            std::cout << std::endl;
+
+            std::cout << "stride: ";
+            for (uint32_t j = 0; j < rank; j++) {
+                std::cout << sr.template read<uint32_t>() << ", ";
+            }
+            std::cout << std::endl;
+        }
+
+        for (uint32_t i = 0; i < header.outputs; i++) {
+            sr.template read<memory_range>();
+            auto rank = sr.template read<uint32_t>();
+            std::cout << "shape: ";
+            for (uint32_t j = 0; j < rank; j++) {
+                std::cout << sr.template read<uint32_t>() << ", ";
+            }
+            std::cout << std::endl;
+
+            std::cout << "stride: ";
+            for (uint32_t j = 0; j < rank; j++) {
+                std::cout << sr.template read<uint32_t>() << ", ";
+            }
+            std::cout << std::endl;
+        }
+
+        return ok();
+    }));
+
     return ok();
 }
 

@@ -18,8 +18,6 @@
 
 BEGIN_NS_NNCASE_RT_MODULE(cpu)
 
-NNCASE_INLINE_VAR constexpr char FUNCTION_NAME_SECTION_IDENTIFIER[] = ".name";
-
 NNCASE_INLINE_VAR constexpr module_kind_t cpu_module_type =
     to_module_kind("cpu");
 NNCASE_INLINE_VAR constexpr uint32_t cpu_module_version = 0;

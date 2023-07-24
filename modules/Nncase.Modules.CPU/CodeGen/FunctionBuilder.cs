@@ -19,6 +19,43 @@ internal class FunctionBuilder : IDisposable
     private readonly BinaryWriter _textWriter;
     private readonly BinaryWriter _rdataWriter;
 
+    /// <summary>
+    /// NOTE sync with the k230 runtime function.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MemoryRange
+    {
+        public uint Start;
+        public uint Size;
+    }
+
+    /// <summary>
+    /// NOTE sync with the k230 runtime function.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    private unsafe struct DescHeader
+    {
+        /// <summary>
+        /// input pool size.
+        /// </summary>
+        public uint InputPoolSize;
+
+        /// <summary>
+        /// output pool size.
+        /// </summary>
+        public uint OutputPoolSize;
+
+        /// <summary>
+        /// input numbers.
+        /// </summary>
+        public uint Inputs;
+
+        /// <summary>
+        /// output numbers.
+        /// </summary>
+        public uint Outputs;
+    }
+
     public FunctionBuilder(uint id, BinaryWriter rdataWriter)
     {
         _id = id;
@@ -33,7 +70,54 @@ internal class FunctionBuilder : IDisposable
         visitor.Visit(function);
         var functionCSource = visitor.GetFunctionCSource();
 
-        // 2. write the rdata
+        // 2. write the desc
+        var descContent = new MemoryStream();
+        using (var descWriter = new BinaryWriter(descContent, Encoding.UTF8))
+        {
+            DescHeader header = new() { InputPoolSize = 0, OutputPoolSize = 0, Inputs = 0, Outputs = 0 };
+            long headerStart = descWriter.Position();
+            descWriter.Skip((ulong)sizeof(DescHeader));
+
+            foreach (var input in function.Parameters.AsValueEnumerable()
+                                .Where(buf => buf.MemLocation == TIR.MemoryLocation.Input))
+            {
+                header.Inputs++;
+                var rg = new MemoryRange { Start = checked((uint)input.Start), Size = checked((uint)input.Size) };
+                descWriter.Write(ref rg);
+                header.InputPoolSize = Math.Max(header.InputPoolSize, rg.Start + rg.Size);
+                descWriter.Write((uint)input.FixedDimensions.Length);
+                foreach (var dim in input.FixedDimensions)
+                {
+                    descWriter.Write((uint)dim);
+                }
+                foreach (var s in input.FixedStrides)
+                {
+                    descWriter.Write((uint)s);
+                }
+            }
+
+            foreach (var output in function.Parameters.AsValueEnumerable().Where(buf => buf.MemLocation == TIR.MemoryLocation.Output))
+            {
+                header.Outputs++;
+                var rg = new MemoryRange { Start = checked((uint)output.Start), Size = checked((uint)output.Size) };
+                descWriter.Write(ref rg);
+                header.OutputPoolSize = Math.Max(header.OutputPoolSize, rg.Start + rg.Size);
+                descWriter.Write((uint)output.FixedDimensions.Length);
+                foreach (var dim in output.FixedDimensions)
+                {
+                    descWriter.Write((uint)dim);
+                }
+                foreach (var s in output.FixedStrides)
+                {
+                    descWriter.Write((uint)s);
+                }
+            }
+
+            descWriter.Position(headerStart);
+            descWriter.Write(ref header);
+        }
+
+        // 3. write the rdata
         foreach (var buffer in function.SchedResult.Rdatas)
         {
             var bytes = buffer.Const!.Value.BytesBuffer;
@@ -46,7 +130,7 @@ internal class FunctionBuilder : IDisposable
             _rdataWriter.Write(bytes);
         }
 
-        return new LinkableFunction(_id, function, functionCSource);
+        return new LinkableFunction(_id, descContent.ToArray(), function, functionCSource);
     }
 
     public void Dispose()
