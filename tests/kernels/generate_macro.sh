@@ -1,6 +1,7 @@
 . ./functions.sh
 . ./kernel_op_config.sh
-generated_file=generated_macro.h
+mkdir -p generated
+generated_file=generated/generated_macro.h
 ARGS=0
 ATTR=0
 GenerateHeader

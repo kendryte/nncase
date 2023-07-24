@@ -300,3 +300,6 @@ nupkg
 *.runsettings
 cmake-build-*
 *gmodel_dump_dir*
+
+# Auto generated files
+generated/
