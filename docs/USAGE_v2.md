@@ -123,7 +123,9 @@ graph TD;
     
 
  2. `input_shape`为输入数据的shape，layout为`input_layout`，现在支持字符串（`"NHWC"`、`"NCHW"`）和index两种方式作为`input_layout`，并且支持非4D的数据处理。
+
     当按照字符串形式配置`input_layout`时，表示输入数据的layout；当按照index形式配置`input_layout`时，表示输入数据会按照当前配置的`input_layout`进行数据转置，即`input_layout`为`Transpose`的`perm`参数。
+
 
 ```mermaid
 graph TD;
