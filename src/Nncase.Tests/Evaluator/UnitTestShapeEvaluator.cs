@@ -21,6 +21,12 @@ public class UnitTestShapeEvaluator : TestClassBase
 {
     private readonly int _defaultDim = 4;
 
+    public static IEnumerable<object[]> RangeData => new[]
+    {
+        new object[] { 1, 7, 1 },
+        new object[] { 1, 7, 2 },
+    };
+
     [Fact]
     public void TestConstant1()
     {
@@ -213,6 +219,27 @@ public class UnitTestShapeEvaluator : TestClassBase
     public void UnitTestSqueeze()
     {
         TestOpShapeEval(input => Squeeze(input, new[] { 0 }));
+    }
+
+    [Theory]
+    [MemberData(nameof(RangeData))]
+    public void UnitTestRange(int beginV, int endV, int stepV)
+    {
+        var begin = new Var(new TensorType(DataTypes.Int32, Shape.Scalar));
+        var end = new Var(new TensorType(DataTypes.Int32, Shape.Scalar));
+        var step = new Var(new TensorType(DataTypes.Int32, Shape.Scalar));
+        var expr = Range(begin, end, step);
+        var shape = expr.EvaluateShapeExpr();
+        var varValues = new Dictionary<Var, IValue>
+        {
+            { begin, Value.FromTensor(beginV) },
+            { end, Value.FromTensor(endV) },
+            { step, Value.FromTensor(stepV) },
+        };
+
+        var shapeValue = shape.Evaluate(varValues).AsTensor().ToArray<int>();
+        var fixedShape = expr.Evaluate(varValues).AsTensor().Shape.ToValueArray();
+        Assert.Equal(fixedShape, shapeValue);
     }
 
     private Expr MakeDim() => new Var(new TensorType(DataTypes.Int32, Shape.Scalar));

@@ -3,15 +3,17 @@
 
 using Nncase.CostModel;
 using Nncase.IR;
+using Nncase.Utilities;
 using OrtKISharp;
 using Range = Nncase.IR.Tensors.Range;
+using static Nncase.Utilities.ShapeExprUtility;
 
 namespace Nncase.Evaluator.Tensors;
 
 /// <summary>
 /// Evaluator for <see cref="Range"/>.
 /// </summary>
-public class RangeEvaluator : IEvaluator<Range>, ITypeInferencer<Range>, ICostEvaluator<Range>, IMetricEvaluator<Range>
+public class RangeEvaluator : IEvaluator<Range>, ITypeInferencer<Range>, ICostEvaluator<Range>, IMetricEvaluator<Range>, IShapeEvaluator<Range>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Range range)
@@ -86,5 +88,13 @@ public class RangeEvaluator : IEvaluator<Range>, ITypeInferencer<Range>, ICostEv
         {
             [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(ret),
         };
+    }
+
+    public Expr Visit(IShapeEvaluateContext context, Range target)
+    {
+        var begin = context.GetArgument(target, Range.Begin);
+        var end = context.GetArgument(target, Range.End);
+        var step = context.GetArgument(target, Range.Step);
+        return ShapeExprUtility.StackOne((end - begin) / step);
     }
 }
