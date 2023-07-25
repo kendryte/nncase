@@ -64,6 +64,10 @@ k230模型编译推理参考Jupyter脚本：[User_guide](../examples/user_guide/
 
 推理结束后，会在`dump_path`路径下生成`kmodel`、输出结果和<u>编译期间的文件`dump_ir==True`</u>
 
+## 开发板推理相关流程
+
+详见[K230_docs](https://github.com/kendryte/k230_docs/blob/main/zh/01_software/board/ai/K230_nncase_%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97.md#4-kpu%E8%BF%90%E8%A1%8C%E6%97%B6apisc)
+
 ## nncase 编译模型APIs
 
 ### CompileOptions
