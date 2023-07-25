@@ -70,7 +70,7 @@ internal sealed class SingleCPUFusionConverter
                     break;
                 case Binary binary:
                     GenerateBinary(binary, arguments, ret, expr);
-                    break;                    
+                    break;
                 default:
                     throw new NotSupportedException();
             }
