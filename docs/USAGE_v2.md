@@ -1,6 +1,6 @@
 # 概述
 
-nncase仅提供Python APIs, 用于在PC上编译/推理深度学习模型.
+nncase仅提供Python APIs, 用于在PC上编译/推理深度学习模型。nncase-v2中将不再支持k210和k510，请使用nncase-v1 。
 
 # nncase-v2 python APIs
 
@@ -26,7 +26,7 @@ nncase工具链compiler部分包括nncase和KPU插件包
 
 ```shell
 $ cd /path/to/nncase_sdk
-$ docker pull registry.cn-hangzhou.aliyuncs.com/kendryte/nncase:latest
+$ docker pull ghcr.io/kendryte/k230_sdk
 $ docker run -it --rm -v `pwd`:/mnt -w /mnt registry.cn-hangzhou.aliyuncs.com/kendryte/nncase:latest /bin/bash -c "/bin/bash"
 ```
 
@@ -78,6 +78,7 @@ CompileOptions类, 用于配置nncase编译选项各属性说明如下
 | dump_ir         |    bool     |    否    | 指定是否dump IR, 默认为False                                 |
 | dump_asm        |    bool     |    否    | 指定是否dump asm汇编文件, 默认为False                        |
 | dump_dir        |   string    |    否    | 前面指定dump_ir等开关后, 这里指定dump的目录, 默认为空字符串  |
+| input_file      |   string    |    否    | onnx模型超过2GB时，用于指定参数文件路径，默认为" "           |
 |                 |             |          |                                                              |
 | preprocess      |    bool     |    否    | 是否开启前处理，默认为False                                  |
 | input_type      |   string    |    否    | 开启前处理时指定输入数据类型，默认为"float"。当`preprocess`为`True`时，必须指定为"uint8"或者"float32" |
