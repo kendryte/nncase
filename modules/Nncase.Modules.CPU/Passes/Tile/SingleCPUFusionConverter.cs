@@ -91,11 +91,7 @@ internal sealed class SingleCPUFusionConverter
                 T.Serial(out var m, (0, lhs.Dimensions[0])).Body(
                     T.Serial(out var n, (0, rhs.Dimensions[1])).Body(
                         T.Serial(out var k, (0, lhs.Dimensions[1])).Body(
-                            T.BufferStore(ret, new[] { m, n }, T.BufferLoad(ret, m, n) + (T.BufferLoad(lhs, m, k) * T.BufferLoad(rhs, k, n)))
-                        )
-                    )
-                )
-            );
+                            T.BufferStore(ret, new[] { m, n }, T.BufferLoad(ret, m, n) + (T.BufferLoad(lhs, m, k) * T.BufferLoad(rhs, k, n)))))));
 
             _mainBody.Add(body.Build());
         }
