@@ -98,8 +98,8 @@ TEST_P(BatchNormalizationTest, batch_normalization) {
     auto momentum = 0.9f;
 
     // expected
-    auto output_ort = ortki_BatchNormalization(input_ort, scale_ort, b_ort,
-                                               mean_ort, var_ort, eps, momentum);
+    auto output_ort = ortki_BatchNormalization(
+        input_ort, scale_ort, b_ort, mean_ort, var_ort, eps, momentum);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
