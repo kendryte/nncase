@@ -25,16 +25,15 @@ public partial class LowerBinary : RewriteRule<Pattern>
       target_name: "binary",
       _ => true,
       IsWildcard("lhs") with { TypePattern = IsFloat() },
-	  IsWildcard("rhs") with { TypePattern = IsFloat() }
-	  );
+      IsWildcard("rhs") with { TypePattern = IsFloat() });
 
     private Expr? GetReplace(Binary binary, Expr lhs, Expr rhs)
     {
-		if (lhs.CheckedShape.Rank != rhs.CheckedShape.Rank)
-		{
+        if (lhs.CheckedShape.Rank != rhs.CheckedShape.Rank)
+        {
             return null;
         }
-		
+
         return CPUKernel(binary, lhs, rhs);
     }
 }
