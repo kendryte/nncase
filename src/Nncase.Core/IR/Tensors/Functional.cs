@@ -151,4 +151,6 @@ public static class Tensors
         new Call(new TopK(), x, k, axis, largest, sorted);
 
     public static Call IndexOf(Expr input, Expr value) => new Call(new IndexOf(), input, value);
+
+    public static Call Trilu(Expr input, Expr k, Expr upper) => new Call(new Trilu(), input, k, upper);
 }
