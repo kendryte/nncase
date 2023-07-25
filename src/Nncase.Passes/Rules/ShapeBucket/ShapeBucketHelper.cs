@@ -41,10 +41,11 @@ internal static class ShapeBucketHelper
         {
             throw new InvalidOperationException("Empty Arg");
         }
-        if (newArgs.Any(arg => arg is Var v && v.Name.StartsWith("var_")))
-        {
-            throw new InvalidOperationException("Args has Var in fusion");
-        }
+
+        // if (newArgs.Any(arg => arg is Var v && v.Name.StartsWith("var_")))
+        // {
+        //     throw new InvalidOperationException("Args has Var in fusion");
+        // }
 
         if (newArgs.Any(arg => arg is Marker m && m .Target is Const))
         {
@@ -102,6 +103,12 @@ internal static class ShapeBucketHelper
         if (dimVars.Length == 1)
         {
             return dimVars;
+        }
+
+        if (dimVars.Length == 0)
+        {
+            // todo: process this
+            throw new InvalidOperationException("MaybeError");
         }
 
         var visitor = new FindVar();

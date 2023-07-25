@@ -14,6 +14,7 @@ using Nncase.Passes;
 using Nncase.Passes.Rules.Neutral;
 using Nncase.Passes.Rules.ShapeBucket;
 using Nncase.Quantization;
+using Nncase.Tests.ReWrite.FusionTest;
 using Nncase.Tests.TestFixture;
 using Nncase.Tests.TransformTest;
 using Nncase.Utilities;
@@ -22,6 +23,7 @@ using Xunit.Abstractions;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Tensors;
+using static Nncase.Tests.ShapeBucketTestHelper;
 
 namespace Nncase.Tests.Rules;
 
@@ -306,6 +308,28 @@ public class TestMergePrevCallToFusion : TransformTestBase
         });
         var fusion = GetResultFusion(result);
         Assert.Equal(2, fusion.Parameters.Length);
+    }
+
+    // avoid
+    // fusion -> nextCall -> nextCallUser -> user1
+    //                                    -> user2
+    // 这种情况在合并nextCall后，如果nextCallUser被匹配到了，那么此时只会有一个user，因此暂时不rewrite
+    [Fact]
+    public void TestMergeNextWithUserHasMultiUser()
+    {
+        var input0 = Testing.Rand<float>(1, 3, 24, 24);
+        var in0Var = new Var(new TensorType(input0.ElementType, input0.Shape));
+        var a = MakeSingleSimpleFusionCall(Abs, Softmax(in0Var, 0));
+        var s = Sqrt(a);
+        var sin = Sin(s);
+        var e = Exp(sin);
+        var f = Floor(sin);
+        var body = e + f;
+        var newBody = TestMatched<MergeNextCallToFusion>(body, new Dictionary<Var, IValue> { { in0Var, Value.FromTensor(input0) } });
+        var c = new FusionCounterVisitor();
+        c.Visit(newBody);
+        Assert.Equal(1, c.Count);
+        TestNotMatch<MergeNextCallToFusion>(newBody);
     }
 
     [Fact]

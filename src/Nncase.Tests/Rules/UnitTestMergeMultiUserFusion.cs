@@ -24,6 +24,7 @@ using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Tensors;
 using Tuple = Nncase.IR.Tuple;
+using static Nncase.Tests.ShapeBucketTestHelper;
 
 namespace Nncase.Tests.Rules;
 
@@ -264,25 +265,5 @@ public class UnitTestMergeMultiUserFusion : TransformTestBase
         var visitor = new FusionCounterVisitor();
         visitor.Visit(newBody);
         Assert.Equal(1, visitor.Count);
-    }
-
-    private static IRModule MakeModule(Expr output, Var[] inputVar) => new(new Function("main", output, inputVar));
-
-    private static Call MakeSingleSimpleFusionCall(Func<Expr, Expr> ctor, Expr arg)
-    {
-        var v = new Var(arg.CheckedType);
-        var abs = ctor(v);
-        var f = new BucketFusion("stackvm", abs, new[] { v }, new Var[] { });
-        var c = new Call(f, arg);
-        return c;
-    }
-
-    private static Call MakeSimpleFusionCall(Func<Expr[], Expr> ctor, params Expr[] args)
-    {
-        var paramList = args.Select(x => new Var(x.CheckedType)).ToArray();
-        var abs = ctor(paramList);
-        var f = new BucketFusion("stackvm", abs, paramList, new Var[] { });
-        var c = new Call(f, args);
-        return c;
     }
 }

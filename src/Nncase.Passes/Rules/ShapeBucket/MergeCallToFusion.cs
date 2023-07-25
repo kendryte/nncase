@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Xml;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
@@ -127,14 +129,16 @@ public partial class MergeNextCallToFusion : MergeFusionBase
             return null;
         }
 
-        if (fusion.Name == "Conv2D_1" && nextCall.Target is Slice)
-        {
-            Console.WriteLine();
-        }
-
         // todo: only for single input, effect var must be same
         if (MultiUser(maybeFusionCallMarker))
         {
+            return null;
+        }
+
+        // ref test TestMergeNextWithUserHasMultiUser
+        if (MultiUser(nextCall))
+        {
+            // 会复制
             return null;
         }
 
