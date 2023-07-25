@@ -1131,6 +1131,19 @@ nncase::kernels::stackvm::transpose(value_t input, value_t perm, value_t output,
     return ok(output);
 }
 
+result<value_t> nncase::kernels::stackvm::trilu(value_t input, value_t k,
+                                                value_t upper, value_t output,
+                                                kernel_context &) {
+    try_input(in_mem, input);
+    try_integer_v(k);
+    try_integer_v(upper);
+    try_output(out_mem, output, input_tensor->dtype(), input_tensor->shape());
+    try_(reference::trilu(input_tensor->dtype(), in_mem, out_mem,
+                          input_tensor->shape(), input_tensor->strides(),
+                          output_tensor->strides(), k_value, upper_value == 1))
+        KERNEL_FINISH;
+}
+
 result<value_t>
 nncase::kernels::stackvm::uniform(typecode_t type, value_t high, value_t low,
                                   value_t seed, value_t shape, value_t output,
