@@ -87,7 +87,10 @@ public class Scheduler
         } // TODO add assert total == (loop.Dom.Max - loop.Dom.Min)
 
         // Step 2. Replace all occurrences of the original loop var with new variables
-        Expr total = 1, substitute = 0;
+        _ = 1;
+
+        // Step 2. Replace all occurrences of the original loop var with new variables
+        Expr substitute = 0;
         var newloopVars = new Var[factors.Length];
         foreach (var i in Enumerable.Range(0, factors.Length))
         {
@@ -96,8 +99,9 @@ public class Scheduler
             newloopVars[i] = loopVar;
         }
 
-        Dictionary<Block, Block> opaque_block_reuse = new(); // TODO the opaque_block_reuse for what?
-        Sequential nbody = loop.Body;
+        _ = new
+        Dictionary<Block, Block>(); // TODO the opaque_block_reuse for what?
+        _ = loop.Body;
 
         // Step 3. create new for loop.
         var nFor = new For[factors.Length];

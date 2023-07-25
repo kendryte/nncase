@@ -105,6 +105,7 @@ internal sealed class SingleCPUFusionConverter
             var rhsScale = outShape.Zip(rhsShape).Select(s => s.First / s.Second).ToArray();
 
             var loops = Enumerable.Range(0, outShape.Length).Select(i => (T.ForLoop(out var loopVar, (0, outShape[i]), LoopMode.Serial, $"loop_{i}"), loopVar)).ToArray();
+
             // var ?final = loops.Reverse().Aggregate(stmt, (acc, p) => p.Item1.Body(acc).Build());
             // _mainBody.Add(T.Block(nameof(Unary)).Body(final).Build());
         }
