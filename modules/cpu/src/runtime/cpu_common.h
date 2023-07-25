@@ -57,15 +57,15 @@ inline float float_unary_square(float x) { return x * x; }
     .float_unary_exp = expf,
     .float_unary_floor = floorf,
     .float_unary_log = logf,
-    .float_unary_logical_not = &float_unary_logical_not,
-    .float_unary_neg = &float_unary_neg,
+    .float_unary_logical_not = float_unary_logical_not,
+    .float_unary_neg = float_unary_neg,
     .float_unary_round = roundf,
-    .float_unary_rsqrt = &float_unary_rsqrt,
-    .float_unary_sign = &float_unary_sign,
+    .float_unary_rsqrt = float_unary_rsqrt,
+    .float_unary_sign = float_unary_sign,
     .float_unary_sin = sinf,
     .float_unary_sinh = sinhf,
     .float_unary_sqrt = sqrtf,
-    .float_unary_square = &float_unary_square,
+    .float_unary_square = float_unary_square,
     .float_unary_tanh = tanhf};
 
 END_NS_NNCASE_RT_MODULE

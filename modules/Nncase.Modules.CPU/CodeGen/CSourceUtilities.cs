@@ -31,9 +31,6 @@ internal static class CSourceUtilities
         string str;
         switch (op.UnaryOp)
         {
-            case UnaryOp.Neg:
-                str = $"!{input}";
-                break;
             default:
                 str = $"nncase_mt->{arguments[0].Type}_{nameof(Unary).ToLower()}_{op.UnaryOp.ToString().ToLower()}{input}";
                 break;

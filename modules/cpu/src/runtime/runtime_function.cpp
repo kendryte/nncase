@@ -109,7 +109,7 @@ result<void> cpu_runtime_function::initialize_core(
 
 result<value_t>
 cpu_runtime_function::invoke_core(NNCASE_UNUSED gsl::span<value_t> parameters,
-                                  value_t return_value) noexcept {
+                                NNCASE_UNUSED value_t return_value) noexcept {
     try_var(id, module().find_id_by_function(this));
     std::cout << "call " << id << std::endl;
 
@@ -128,7 +128,7 @@ cpu_runtime_function::invoke_core(NNCASE_UNUSED gsl::span<value_t> parameters,
 
     // output buffer
     for (uint32_t i = 0; i < output_ranks_.size(); i++) {
-        auto output_tensor = parameters[i].as<tensor>().expect(
+        auto output_tensor = parameters[input_ranks_.size() + i].as<tensor>().expect(
             "output " + std::to_string(i) + " is not a tensor");
         try_var(output_span, get_output_span(output_tensor));
         buffer_t *output_buffer =
@@ -147,5 +147,5 @@ cpu_runtime_function::invoke_core(NNCASE_UNUSED gsl::span<value_t> parameters,
         delete buffers[i];
     }
 
-    return ok(return_value);
+    return ok<value_t>(tuple(std::in_place));
 }
