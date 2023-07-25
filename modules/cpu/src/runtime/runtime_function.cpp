@@ -121,8 +121,8 @@ cpu_runtime_function::invoke_core(NNCASE_UNUSED gsl::span<value_t> parameters,
             "input " + std::to_string(i) + " is not a tensor");
         try_var(input_span, get_input_span(input_tensor));
         buffer_t *input_buffer =
-            new buffer_t(input_span.data(), 0, input_shapes_[i].data(),
-                         input_strides_[i].data(), input_ranks_[i]);
+            new buffer_t{input_span.data(), 0, input_shapes_[i].data(),
+                         input_strides_[i].data(), input_ranks_[i]};
         buffers[i] = input_buffer;
     }
 
@@ -133,8 +133,8 @@ cpu_runtime_function::invoke_core(NNCASE_UNUSED gsl::span<value_t> parameters,
                 "output " + std::to_string(i) + " is not a tensor");
         try_var(output_span, get_output_span(output_tensor));
         buffer_t *output_buffer =
-            new buffer_t(output_span.data(), 0, output_shapes_[i].data(),
-                         output_strides_[i].data(), output_ranks_[i]);
+            new buffer_t{output_span.data(), 0, output_shapes_[i].data(),
+                         output_strides_[i].data(), output_ranks_[i]};
         buffers[input_ranks_.size() + i] = output_buffer;
     }
 

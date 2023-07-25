@@ -41,7 +41,7 @@ public class CPUTarget : ITarget
     /// <inheritdoc/>
     public void RegisterTargetDependentPass(IPassManager passManager, CompileOptions options)
     {
-        passManager.AddWithName<EGraphRulesPass>("LowerIR").Configure(p =>
+        passManager.AddWithName<DataflowPass>("LowerIR").Configure(p =>
         {
             p.Add<LowerUnary>();
         });

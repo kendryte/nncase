@@ -140,8 +140,8 @@ el_status el_load(el_ctx *ctx, el_alloc_cb alloc) {
         if (!dest)
             return EL_ENOMEM;
 
-        printf("Loading seg fileoff %lx, vaddr %lx to %lx\n", ph.p_offset,
-               ph.p_vaddr, (uintptr_t)dest);
+        // printf("Loading seg fileoff %lx, vaddr %lx to %lx\n", ph.p_offset,
+              //  ph.p_vaddr, (uintptr_t)dest);
 
         /* read loaded portion */
         if ((rv = el_pread(ctx, dest, ph.p_filesz, ph.p_offset)))
@@ -225,7 +225,7 @@ el_status el_relocate(el_ctx *ctx) {
     }
 
     size_t relcnt = ri.tablesize / sizeof(Elf_Rel);
-    Elf_Rel *reltab = base + ri.tableoff;
+    Elf_Rel *reltab = (Elf_Rel *)(base + ri.tableoff);
     for (size_t i = 0; i < relcnt; i++) {
         if ((rv = el_applyrel(ctx, &reltab[i])))
             return rv;

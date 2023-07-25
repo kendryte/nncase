@@ -55,7 +55,5 @@ public static class CSourceBuiltn
 {MethodTable}
 
 {BufferStruct}
-
-static nncase_mt_t *nncase_mt;
 ";
 }

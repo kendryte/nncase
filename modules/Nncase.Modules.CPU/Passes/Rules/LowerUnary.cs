@@ -24,7 +24,7 @@ public partial class LowerUnary : RewriteRule<Pattern>
     public override Pattern Pattern { get; } = IsUnary(
       target_name: "unary",
       _ => true,
-      IsWildcard("input"));
+      IsWildcard("input") with { TypePattern = IsFloat() });
 
     private Expr GetReplace(Unary unary, Expr input)
     {

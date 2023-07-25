@@ -31,9 +31,6 @@ internal sealed class LinkableModule : ILinkableModule
     public ILinkedModule Link(ILinkContext linkContext)
     {
         var csourcePath = LinkCSources();
-        var elfPath = CompileCSource(csourcePath);
-        var text = File.ReadAllBytes(elfPath);
-
         if (_options.DumpFlags.HasFlag(DumpFlags.CodeGen))
         {
             var dumpPath = _options.DumpDir;
@@ -48,6 +45,18 @@ internal sealed class LinkableModule : ILinkableModule
             using (var fs = File.Open(Path.Join(dumpPath, "cpuModule.c"), FileMode.Create))
             {
                 File.Open(csourcePath, FileMode.Open, FileAccess.Read).CopyTo(fs);
+            }
+        }
+
+        var elfPath = CompileCSource(csourcePath);
+        var text = File.ReadAllBytes(elfPath);
+
+        if (_options.DumpFlags.HasFlag(DumpFlags.CodeGen))
+        {
+            var dumpPath = _options.DumpDir;
+            using (var fs = File.Open(Path.Join(dumpPath, "cpuModule.elf"), FileMode.Create))
+            {
+                fs.Write(text);
             }
         }
 

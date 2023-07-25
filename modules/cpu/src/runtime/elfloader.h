@@ -18,7 +18,7 @@ typedef void (*entrypoint_t)(size_t id, buffer_t **buffers,
 
 class elfloader {
   public:
-    elfloader(char *elf) : elf_(elf) {
+    elfloader(char *elf) {
         ctx_.pread = bpread;
         ctx_.elf = elf;
     }
@@ -55,7 +55,6 @@ class elfloader {
   private:
     void *ptr_;
     void *buf_;
-    char *elf_;
     el_ctx ctx_;
 };
 
