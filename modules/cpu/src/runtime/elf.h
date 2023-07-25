@@ -29,8 +29,8 @@
 
 #ifndef ELF_H
 #define ELF_H
-#include <stdint.h>
 #include "elfarch.h"
+#include <stdint.h>
 
 typedef uint8_t Elf_Byte;
 
