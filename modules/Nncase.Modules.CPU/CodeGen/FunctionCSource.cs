@@ -95,7 +95,7 @@ public class CSourceCompiler
     /// <summary>
     /// select current pattern's exe.
     /// </summary>
-    /// <exception cref="NotSupportedException"></exception>
+    /// <exception cref="NotSupportedException">NotSupportedException.</exception>
     private void PlatformSpecific()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
@@ -142,7 +142,7 @@ public class CSourceCompiler
             return $"/C (\"{vcvardir}\" x64) && (cl /D_USRDLL /D_WINDLL \"{sourcePath}\" /MT /link /DLL /OUT:\"{outPath}\")";
         }
 
-        throw new System.ArgumentOutOfRangeException("Only Support Linux/Osx/Windows");
+        throw new System.NotSupportedException("Only Support Linux/Osx/Windows");
     }
 }
 

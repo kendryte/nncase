@@ -74,13 +74,13 @@ internal sealed class CSymbol
 
 internal sealed class IndentWriter : StringWriter
 {
-    public int Indent;
-
     public IndentWriter(StringBuilder sb, int indent = 0)
         : base(sb)
     {
         Indent = indent;
     }
+
+    public int Indent { get; set; }
 
     public void IndWrite(string? value)
     {
@@ -98,24 +98,24 @@ internal sealed class IndentWriter : StringWriter
 /// </summary>
 internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 {
-    public readonly Dictionary<Expr, CSymbol> ExprMemo;
+    private readonly Dictionary<Expr, CSymbol> _exprMemo;
     private readonly StringBuilder _implBuilder;
 
     public CSourceConvertVisitor()
     {
         _implBuilder = new StringBuilder();
-        ExprMemo = new(ReferenceEqualityComparer.Instance);
+        _exprMemo = new(ReferenceEqualityComparer.Instance);
     }
 
     public FunctionCSource GetFunctionCSource()
     {
-        return new(ExprMemo[VisitRoot!].Type + ";", _implBuilder.ToString());
+        return new(_exprMemo[VisitRoot!].Type + ";", _implBuilder.ToString());
     }
 
     /// <inheritdoc/>
     protected override CSymbol VisitPrimFunction(PrimFunction expr)
     {
-        if (ExprMemo.TryGetValue(expr, out var symbol))
+        if (_exprMemo.TryGetValue(expr, out var symbol))
         {
             return symbol;
         }
@@ -133,7 +133,7 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             IndentScope.Writer.IndWrite($"{type} {{\n");
 
             // 2. Function body
-            using (var _ = new IndentScope())
+            using (_ = new IndentScope())
             {
                 Visit(expr.Body);
             }
@@ -143,14 +143,14 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         }
 
         symbol = new(type, new(expr.Name));
-        ExprMemo.Add(expr, symbol);
+        _exprMemo.Add(expr, symbol);
         return symbol;
     }
 
     /// <inheritdoc/>
     protected override CSymbol VisitCall(Call expr)
     {
-        if (ExprMemo.TryGetValue(expr, out var symbol))
+        if (_exprMemo.TryGetValue(expr, out var symbol))
         {
             return symbol;
         }
@@ -183,14 +183,14 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         }
 
         symbol = new(type, str);
-        ExprMemo.Add(expr, symbol);
+        _exprMemo.Add(expr, symbol);
         return symbol;
     }
 
     /// <inheritdoc/>
     protected override CSymbol VisitConst(Const expr)
     {
-        if (ExprMemo.TryGetValue(expr, out var symbol))
+        if (_exprMemo.TryGetValue(expr, out var symbol))
         {
             return symbol;
         }
@@ -215,14 +215,14 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         }
 
         symbol = new(type, str);
-        ExprMemo.Add(expr, symbol);
+        _exprMemo.Add(expr, symbol);
         return symbol;
     }
 
     /// <inheritdoc/>
     protected override CSymbol VisitVar(Var expr)
     {
-        if (ExprMemo.TryGetValue(expr, out var symbol))
+        if (_exprMemo.TryGetValue(expr, out var symbol))
         {
             return symbol;
         }
@@ -233,14 +233,14 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         }
 
         symbol = new(ttype.DType.ToC(), new($"{expr.Name}_{expr.GlobalVarIndex}"));
-        ExprMemo.Add(expr, symbol);
+        _exprMemo.Add(expr, symbol);
         return symbol;
     }
 
     /// <inheritdoc/>
     protected override CSymbol VisitFor(For expr)
     {
-        if (ExprMemo.TryGetValue(expr, out var symbol))
+        if (_exprMemo.TryGetValue(expr, out var symbol))
         {
             return symbol;
         }
@@ -258,14 +258,14 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         IndentScope.Writer.IndWrite("}\n");
 
         symbol = new(string.Empty, string.Empty);
-        ExprMemo.Add(expr, symbol);
+        _exprMemo.Add(expr, symbol);
         return symbol;
     }
 
     /// <inheritdoc/>
     protected override CSymbol VisitSequential(Sequential expr)
     {
-        if (ExprMemo.TryGetValue(expr, out var symbol))
+        if (_exprMemo.TryGetValue(expr, out var symbol))
         {
             return symbol;
         }
@@ -284,26 +284,26 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         }
 
         symbol = new(string.Empty, string.Empty);
-        ExprMemo.Add(expr, symbol);
+        _exprMemo.Add(expr, symbol);
         return symbol;
     }
 
     /// <inheritdoc/>
     protected override CSymbol VisitIfThenElse(IfThenElse expr)
     {
-        if (ExprMemo.TryGetValue(expr, out var symbol))
+        if (_exprMemo.TryGetValue(expr, out var symbol))
         {
             return symbol;
         }
 
         IndentScope.Writer.IndWrite($"if({Visit(expr.Condition).Name}) {{\n");
-        using (var _ = new IndentScope())
+        using (_ = new IndentScope())
         {
             Visit(expr.Then);
         }
 
         IndentScope.Writer.IndWrite("} else {\n");
-        using (var _ = new IndentScope())
+        using (_ = new IndentScope())
         {
             Visit(expr.Else);
         }
@@ -311,19 +311,19 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         IndentScope.Writer.IndWrite("}\n");
 
         symbol = new(string.Empty, string.Empty);
-        ExprMemo.Add(expr, symbol);
+        _exprMemo.Add(expr, symbol);
         return symbol;
     }
 
     protected override CSymbol VisitPhysicalBuffer(PhysicalBuffer expr)
     {
-        if (ExprMemo.TryGetValue(expr, out var symbol))
+        if (_exprMemo.TryGetValue(expr, out var symbol))
         {
             return symbol;
         }
 
         symbol = new(CSourceBuiltn.BufferType + "*", expr.Name);
-        ExprMemo.Add(expr, symbol);
+        _exprMemo.Add(expr, symbol);
         return symbol;
     }
 }

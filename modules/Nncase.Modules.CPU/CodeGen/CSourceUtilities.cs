@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System.Globalization;
 using Nncase.Diagnostics;
 using Nncase.IR.Math;
 
@@ -32,7 +33,7 @@ internal static class CSourceUtilities
         switch (op.UnaryOp)
         {
             default:
-                str = $"nncase_mt->{arguments[0].Type}_{nameof(Unary).ToLower()}_{op.UnaryOp.ToString().ToLower()}{input}";
+                str = $"nncase_mt->{arguments[0].Type}_{nameof(Unary).ToLower(CultureInfo.CurrentCulture)}_{op.UnaryOp.ToString().ToLower(CultureInfo.CurrentCulture)}{input}";
                 break;
         }
 
