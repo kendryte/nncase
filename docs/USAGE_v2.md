@@ -81,19 +81,19 @@ CompileOptions类, 用于配置nncase编译选项各属性说明如下
 | target          |   string    |    是    | 指定编译目标, 如'cpu', 'k230'                                |
 | dump_ir         |    bool     |    否    | 指定是否dump IR, 默认为False                                 |
 | dump_asm        |    bool     |    否    | 指定是否dump asm汇编文件, 默认为False                        |
-| dump_dir        |   string    |    否    | 前面指定dump_ir等开关后, 这里指定dump的目录, 默认为空字符串  |
-| input_file      |   string    |    否    | onnx模型超过2GB时，用于指定参数文件路径，默认为" "           |
+| dump_dir        |   string    |    否    | 前面指定dump_ir等开关后, 这里指定dump的目录, 默认为""        |
+| input_file      |   string    |    否    | onnx模型超过2GB时，用于指定参数文件路径，默认为""            |
 |                 |             |          |                                                              |
-| preprocess      |    bool     |    否    | 是否开启前处理，默认为False                                  |
+| preprocess      |    bool     |    否    | 是否开启前处理，默认为False。以下参数仅在`preprocess=True`时生效 |
 | input_type      |   string    |    否    | 开启前处理时指定输入数据类型，默认为"float"。当`preprocess`为`True`时，必须指定为"uint8"或者"float32" |
 | input_shape     |  list[int]  |    否    | 开启前处理时指定输入数据的shape，默认为[]。当`preprocess`为`True`时，必须指定 |
 | input_range     | list[float] |    否    | 开启前处理时指定输入数据反量化后的浮点数范围，默认为[ ]。当`preprocess`为`True`且`input_type`为`uint8`时，必须指定 |
-| input_layout    |   string    |    否    | 指定输入数据的layout，默认为" "                              |
+| input_layout    |   string    |    否    | 指定输入数据的layout，默认为""                               |
 | swapRB          |    bool     |    否    | 是否在`channel`维度反转数据，默认为False                     |
 | mean            | list[float] |    否    | 前处理标准化参数均值，默认为[0,0,0]                          |
 | std             | list[float] |    否    | 前处理标准化参数方差，默认为[1,1,1]                          |
 | letterbox_value |    float    |    否    | 指定前处理letterbox的填充值，默认为0                         |
-| output_layout   |   string    |    否    | 指定输出数据的layout, 默认为" "                              |
+| output_layout   |   string    |    否    | 指定输出数据的layout, 默认为""                               |
 
 ##### 前处理流程说明
 
