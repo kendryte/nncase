@@ -32,7 +32,7 @@ public sealed class ModuleBuilder : IModuleBuilder, IDisposable
         var linkableFunctions = functions.OfType<TIR.PrimFunction>().Select((f, i) => new FunctionBuilder((uint)i, _rdataWriter).Build(f)).ToArray();
         _rdataWriter.Flush();
 
-        return new LinkableModule(_rdataContent.ToArray(), linkableFunctions);
+        return new LinkableModule(_rdataContent.ToArray(), linkableFunctions, CompileOptions);
     }
 
     public void Dispose() => ((IDisposable)_rdataContent).Dispose();

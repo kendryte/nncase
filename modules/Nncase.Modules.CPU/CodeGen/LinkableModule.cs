@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -18,11 +19,13 @@ internal sealed class LinkableModule : ILinkableModule
     private readonly byte[] _rdata;
 
     private readonly IReadOnlyList<LinkableFunction> _functions;
+    private readonly CompileOptions _options;
 
-    public LinkableModule(byte[] rdata, IReadOnlyList<LinkableFunction> functions)
+    public LinkableModule(byte[] rdata, IReadOnlyList<LinkableFunction> functions, CompileOptions options)
     {
         _rdata = rdata;
         _functions = functions;
+        _options = options;
     }
 
     public ILinkedModule Link(ILinkContext linkContext)
@@ -31,9 +34,10 @@ internal sealed class LinkableModule : ILinkableModule
         var elfPath = CompileCSource(csourcePath);
         var text = File.ReadAllBytes(elfPath);
 
-        if (DumpScope.Current.IsEnabled(DumpFlags.CodeGen))
+        if (_options.DumpFlags.HasFlag(DumpFlags.CodeGen))
         {
-            using (var fs = DumpScope.Current.OpenFile("cpuModule.h"))
+            var dumpPath = _options.DumpDir;
+            using (var fs = File.Open(Path.Join(dumpPath, "cpuModule.h"), FileMode.Create))
             {
                 using (var writer = new StreamWriter(fs))
                 {
@@ -41,7 +45,7 @@ internal sealed class LinkableModule : ILinkableModule
                 }
             }
 
-            using (var fs = DumpScope.Current.OpenFile("cpuModule.c"))
+            using (var fs = File.Open(Path.Join(dumpPath, "cpuModule.c"), FileMode.Create))
             {
                 File.Open(csourcePath, FileMode.Open, FileAccess.Read).CopyTo(fs);
             }
