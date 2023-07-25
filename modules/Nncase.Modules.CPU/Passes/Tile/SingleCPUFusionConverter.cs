@@ -68,6 +68,9 @@ internal sealed class SingleCPUFusionConverter
                 case Unary unary:
                     GenerateUnary(unary, arguments, ret);
                     break;
+                case Binary binary:
+                    GenerateBinary(binary, arguments, ret, expr);
+                    break;                    
                 default:
                     throw new NotSupportedException();
             }
@@ -79,6 +82,30 @@ internal sealed class SingleCPUFusionConverter
         {
             var input = arguments[Unary.Input.Index];
             var loops = Enumerable.Range(0, input.Rank).Select(i => (T.ForLoop(out var loopVar, (0, input.Dimensions[i]), LoopMode.Serial, $"loop_{i}"), loopVar)).ToArray();
+            var input_index = Enumerable.Range(0, input.Rank).Aggregate((Expr)0, (acc, i) => acc + (input.Strides[i] * loops[i].loopVar));
+            var output_index = Enumerable.Range(0, input.Rank).Aggregate((Expr)0, (acc, i) => acc + (ret.Strides[i] * loops[i].loopVar));
+            Expr stmt = T.Store(ret, output_index, IR.F.Math.Unary(unary.UnaryOp, T.Load(input, output_index)));
+            var final = loops.Reverse().Aggregate(stmt, (acc, p) => p.Item1.Body(acc).Build());
+            _mainBody.Add(T.Block(nameof(Unary)).Body(final).Build());
+        }
+
+        private void GenerateBinary(Binary binary, ReadOnlySpan<Buffer> arguments, Buffer ret, Call call)
+        {
+            var lhs = call[Binary.Lhs];
+            var rhs = call[Binary.Rhs];
+            var lhsBuffer = arguments[Binary.Lhs.Index];
+            var rhsBuffer = arguments[Binary.Rhs.Index];
+
+            var outShape = call.CheckedShape.ToValueArray();
+            var lhsShape = Enumerable.Repeat(1, outShape.Length).ToArray();
+            Array.Copy(lhs.CheckedShape.ToValueArray(), 0, lhsShape, lhsShape.Length - lhs.CheckedShape.Rank, lhs.CheckedShape.Rank);
+            var rhsShape = Enumerable.Repeat(1, outShape.Length).ToArray();
+            Array.Copy(rhs.CheckedShape.ToValueArray(), 0, rhsShape, rhsShape.Length - rhs.CheckedShape.Rank, rhs.CheckedShape.Rank);
+
+            var lhsScale = outShape.Zip(lhsShape).Select(s => s.First / s.Second).ToArray();
+            var rhsScale = outShape.Zip(rhsShape).Select(s => s.First / s.Second).ToArray();
+
+            var loops = Enumerable.Range(0, outShape.Length).Select(i => (T.ForLoop(out var loopVar, (0, outShape[i]), LoopMode.Serial, $"loop_{i}"), loopVar)).ToArray();
             var input_index = Enumerable.Range(0, input.Rank).Aggregate((Expr)0, (acc, i) => acc + (input.Strides[i] * loops[i].loopVar));
             var output_index = Enumerable.Range(0, input.Rank).Aggregate((Expr)0, (acc, i) => acc + (ret.Strides[i] * loops[i].loopVar));
             Expr stmt = T.Store(ret, output_index, IR.F.Math.Unary(unary.UnaryOp, T.Load(input, output_index)));
