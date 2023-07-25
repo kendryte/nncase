@@ -108,7 +108,7 @@ case: # case的配置，应该是一个多层次的
         - true
 judge:
   common: &judge_common
-    simarity_name:  cosine
+    similarity_name:  cosine
     threshold: 0.999
     log_hist: true
     matchs: null
