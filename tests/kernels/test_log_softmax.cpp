@@ -37,6 +37,7 @@ class LogSoftmaxTest : public KernelTest,
             hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
         init_tensor(input);
+
         axis_value = value >= (long)l_shape.size() ? 0 : value;
         axis_value = axis_value < -(long)l_shape.size() ? 0 : axis_value;
         int64_t axis_ptr[] = {axis_value};
@@ -56,7 +57,7 @@ class LogSoftmaxTest : public KernelTest,
 };
 
 INSTANTIATE_TEST_SUITE_P(
-    LogSoftmax, LogSoftmaxTest,
+    log_softmax, LogSoftmaxTest,
     testing::Combine(testing::Values(dt_float32),
                      testing::Values(dims_t{1}, dims_t{1, 3},
                                      dims_t{1, 3, 16, 16}, dims_t{1, 3, 16}),
@@ -81,9 +82,18 @@ TEST_P(LogSoftmaxTest, log_softmax) {
                       .expect("log_softmax failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
+    bool result = is_same_tensor(expected, actual) ||
+                  cosine_similarity_tensor(expected, actual);
+
+    if (!result) {
+        std::cout << "actual ";
+        print_runtime_tensor(actual);
+        std::cout << "expected ";
+        print_runtime_tensor(expected);
+    }
+
     // compare
-    EXPECT_TRUE(is_same_tensor(expected, actual) ||
-                cosine_similarity_tensor(expected, actual));
+    EXPECT_TRUE(result);
 }
 
 int main(int argc, char *argv[]) {

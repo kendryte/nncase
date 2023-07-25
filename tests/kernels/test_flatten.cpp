@@ -26,36 +26,52 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class FlattenTest
-    : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
+class FlattenTest : public KernelTest,
+                    public ::testing::TestWithParam<
+                        std::tuple<nncase::typecode_t, dims_t, int32_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape] = GetParam();
+        auto &&[typecode, l_shape, value] = GetParam();
 
         input =
             hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
         init_tensor(input);
+
+        axis_value = value > 0 ? value >= (int32_t)l_shape.size() ? 0 : value
+                     : -value > (int32_t)l_shape.size() ? 0
+                                                        : value;
+        int32_t axis_array[] = {axis_value};
+        axis = hrt::create(dt_int32, {1},
+                           {reinterpret_cast<gsl::byte *>(axis_array),
+                            sizeof(axis_array)},
+                           true, host_runtime_tensor::pool_cpu_only)
+                   .expect("create tensor failed");
     }
 
     void TearDown() override {}
 
   protected:
     runtime_tensor input;
+    runtime_tensor axis;
+    int32_t axis_value;
 };
 
 INSTANTIATE_TEST_SUITE_P(
     flatten, FlattenTest,
-    testing::Combine(
-        testing::Values(dt_float32, dt_int8, dt_int32, dt_uint8, dt_int16),
-        testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 3, 48, 48})));
+    testing::Combine(testing::Values(dt_float32, dt_int8, dt_int32, dt_uint8,
+                                     dt_int16, dt_uint16, dt_uint32, dt_uint64,
+                                     dt_int64, dt_float16, dt_float64,
+                                     dt_bfloat16, dt_boolean),
+                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 3, 48, 48},
+                                     dims_t{1, 2}, dims_t{1, 3, 16}),
+                     testing::Values(0, 1, -1, 2, 3, -2, -3, -4)));
 
 TEST_P(FlattenTest, flatten) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
 
     // expected
-    auto output_ort = ortki_Flatten(l_ort, 1);
+    auto output_ort = ortki_Flatten(l_ort, axis_value);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
@@ -66,71 +82,22 @@ TEST_P(FlattenTest, flatten) {
                         .expect("create tensor failed");
 
     // actual
-    int32_t axis[] = {1};
-    auto axis_ptr =
-        hrt::create(dt_int32, {1},
-                    {reinterpret_cast<gsl::byte *>(axis), sizeof(axis)}, true,
-                    host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
-    auto output = kernels::stackvm::flatten(input.impl(), axis_ptr.impl())
+    auto output = kernels::stackvm::flatten(input.impl(), axis.impl())
                       .expect("flatten failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
-    // compare
-    EXPECT_TRUE(is_same_tensor(expected, actual));
+    bool result = is_same_tensor(expected, actual) ||
+                  cosine_similarity_tensor(expected, actual);
 
-    //     expected
-    auto output_ort1 = ortki_Flatten(l_ort, 2);
-    size_t size1 = 0;
-    void *ptr_ort1 = tensor_buffer(output_ort1, &size1);
-    dims_t shape1(tensor_rank(output_ort1));
-    tensor_shape(output_ort1, reinterpret_cast<int64_t *>(shape1.data()));
-    auto expected1 =
-        hrt::create(input.datatype(), shape1,
-                    {reinterpret_cast<gsl::byte *>(ptr_ort1), size1}, true,
-                    host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
-
-    // actual
-    int32_t axis1[] = {2};
-    auto axis_ptr1 =
-        hrt::create(dt_int32, {1},
-                    {reinterpret_cast<gsl::byte *>(axis1), sizeof(axis1)}, true,
-                    host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
-    auto output1 = kernels::stackvm::flatten(input.impl(), axis_ptr1.impl())
-                       .expect("flatten failed");
-    runtime_tensor actual1(output1.as<tensor>().expect("as tensor failed"));
+    if (!result) {
+        std::cout << "actual ";
+        print_runtime_tensor(actual);
+        std::cout << "expected ";
+        print_runtime_tensor(expected);
+    }
 
     // compare
-    EXPECT_TRUE(is_same_tensor(expected1, actual1));
-
-    // expected
-    auto output_ort2 = ortki_Flatten(l_ort, 3);
-    size_t size2 = 0;
-    void *ptr_ort2 = tensor_buffer(output_ort2, &size2);
-    dims_t shape2(tensor_rank(output_ort2));
-    tensor_shape(output_ort2, reinterpret_cast<int64_t *>(shape2.data()));
-    auto expected2 =
-        hrt::create(input.datatype(), shape2,
-                    {reinterpret_cast<gsl::byte *>(ptr_ort2), size2}, true,
-                    host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
-
-    // actual
-    int32_t axis2[] = {3};
-    auto axis_ptr2 =
-        hrt::create(dt_int32, {1},
-                    {reinterpret_cast<gsl::byte *>(axis2), sizeof(axis2)}, true,
-                    host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
-    auto output2 = kernels::stackvm::flatten(input.impl(), axis_ptr2.impl())
-                       .expect("flatten failed");
-    runtime_tensor actual2(output2.as<tensor>().expect("as tensor failed"));
-
-    // compare
-    EXPECT_TRUE(is_same_tensor(expected2, actual2) ||
-                cosine_similarity_tensor(expected, actual));
+    EXPECT_TRUE(result);
 }
 
 int main(int argc, char *argv[]) {

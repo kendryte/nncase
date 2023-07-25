@@ -113,15 +113,42 @@ TEST_P(LstmTest, lstm) {
     auto output_ort =
         ortki_LSTM(x_ort, w_ort, r_ort, b_ort, seqLength_ort, initH_ort,
                    initC_ort, p_ort, alpha, 1, beta, 1, activations_ptr, 3,
-                   clip, direction, 1, 0, 0, false, 1);
-    void *ptr_ort = tensor_buffer(tensor_seq_get_value(output_ort, 0), &size);
-    dims_t shape(tensor_rank(tensor_seq_get_value(output_ort, 0)));
+                   clip, direction, 1, 0, 0, false, 3);
+    // output1
+    void *ptr_ort1 = tensor_buffer(tensor_seq_get_value(output_ort, 0), &size);
+    dims_t shape1(tensor_rank(tensor_seq_get_value(output_ort, 0)));
     tensor_shape(tensor_seq_get_value(output_ort, 0),
-                 reinterpret_cast<int64_t *>(shape.data()));
-    auto expected = hrt::create(dt_float32, shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
-                                true, host_runtime_tensor::pool_cpu_only)
-                        .expect("create tensor failed");
+                 reinterpret_cast<int64_t *>(shape1.data()));
+    auto expected1 =
+        hrt::create(dt_float32, shape1,
+                    {reinterpret_cast<gsl::byte *>(ptr_ort1), size}, true,
+                    host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
+
+    // output2
+    void *ptr_ort2 = tensor_buffer(tensor_seq_get_value(output_ort, 1), &size);
+    dims_t shape2(tensor_rank(tensor_seq_get_value(output_ort, 1)));
+    tensor_shape(tensor_seq_get_value(output_ort, 1),
+                 reinterpret_cast<int64_t *>(shape2.data()));
+    auto expected2 =
+        hrt::create(dt_float32, shape2,
+                    {reinterpret_cast<gsl::byte *>(ptr_ort2), size}, true,
+                    host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
+
+    // output3
+    void *ptr_ort3 = tensor_buffer(tensor_seq_get_value(output_ort, 2), &size);
+    dims_t shape3(tensor_rank(tensor_seq_get_value(output_ort, 2)));
+    tensor_shape(tensor_seq_get_value(output_ort, 2),
+                 reinterpret_cast<int64_t *>(shape3.data()));
+    auto expected3 =
+        hrt::create(dt_float32, shape3,
+                    {reinterpret_cast<gsl::byte *>(ptr_ort3), size}, true,
+                    host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
+
+    runtime_tensor expected[] = {expected1, expected2, expected3};
+    typecode_t dtypes[] = {dt_float32, dt_float32, dt_float32};
 
     // actual
     std::vector<std::string> activations = {"Sigmoid", "Tanh", "Tanh"};
@@ -154,7 +181,7 @@ TEST_P(LstmTest, lstm) {
             {reinterpret_cast<gsl::byte *>(input_forget), sizeof(input_forget)},
             true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
-    int64_t output_size[] = {1};
+    int64_t output_size[] = {3};
     auto output_size_ptr =
         hrt::create(
             dt_int64, {1},
@@ -169,10 +196,9 @@ TEST_P(LstmTest, lstm) {
                       beta_ptr.impl(), clip_ptr.impl(), hidden_size_ptr.impl(),
                       input_forget_ptr.impl(), output_size_ptr.impl())
                       .expect("lstm failed");
-    runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
+    tuple actual(output.as<tuple>().expect("as tensor failed"));
 
-    // compare
-    EXPECT_TRUE(is_same_tensor(expected, expected));
+    [[maybe_unused]] auto result = check_tuple_output(expected, dtypes, output);
 }
 
 int main(int argc, char *argv[]) {

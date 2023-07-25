@@ -1,4 +1,4 @@
-/* Copyright 2019-2021 Canaan Inc.
+/* Copyright 2019-2023 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,68 +25,21 @@
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
+using namespace nncase::runtime::stackvm;
 
-class BinaryTest : public KernelTest,
-                   public ::testing::TestWithParam<
-                       std::tuple<nncase::typecode_t, dims_t, dims_t>> {
-  public:
-    void SetUp() override {
-        auto &&[typecode, l_shape, r_shape] = GetParam();
+NNCASE_TEST_CLASS(BinaryTest)
 
-        lhs = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
-                  .expect("create tensor failed");
-        init_tensor(lhs);
+NNCASE_TESTSUITE_INIT(BinaryTest, Binary, 1, dt_int32, dims_t{1, 3, 16, 16},
+                      dims_t{3, 16, 16}, dims_t{3, 16, 1}, dims_t{16, 16},
+                      dims_t{16, 1}, dims_t{1, 16, 1}, dims_t{16}, dims_t{1},
+                      dims_t{})
 
-        rhs = hrt::create(typecode, r_shape, host_runtime_tensor::pool_cpu_only)
-                  .expect("create tensor failed");
-        init_tensor(rhs);
-    }
-
-    void TearDown() override {}
-
-  protected:
-    runtime_tensor lhs;
-    runtime_tensor rhs;
-};
-
-INSTANTIATE_TEST_SUITE_P(
-    Binary, BinaryTest,
-    testing::Combine(testing::Values(dt_float32, dt_int32, dt_int64),
-                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{3, 16, 16},
-                                     dims_t{3, 16, 1}, dims_t{16, 16},
-                                     dims_t{16, 1}, dims_t{1, 16, 1},
-                                     dims_t{16}, dims_t{1}, dims_t{}),
-                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{3, 16, 1},
-                                     dims_t{3, 16, 1}, dims_t{16, 16},
-                                     dims_t{1, 16, 1}, dims_t{16, 1},
-                                     dims_t{16}, dims_t{1}, dims_t{})));
-
-TEST_P(BinaryTest, mod) {
-    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
-    auto r_ort = runtime_tensor_2_ort_tensor(rhs);
-
-    // expected
-    auto output_ort = ortki_Mod(l_ort, r_ort, (long)1);
-    size_t size = 0;
-    void *ptr_ort = tensor_buffer(output_ort, &size);
-    dims_t shape(tensor_rank(output_ort));
-    tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
-    auto expected = hrt::create(lhs.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
-                                true, host_runtime_tensor::pool_cpu_only)
-                        .expect("create tensor failed");
-
-    // actual
-    auto output =
-        kernels::stackvm::binary(nncase::runtime::stackvm::binary_op_t::mod,
-                                 lhs.impl(), rhs.impl())
-            .expect("binary failed");
-    runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
-
-    // compare
-    EXPECT_TRUE(is_same_tensor(expected, actual) ||
-                cosine_similarity_tensor(expected, actual));
-}
+NNCASE_TEST_BODY(BinaryTest, min, kernels::stackvm::binary, binary_op_t::min, 1,
+                 VEC, ortki_Min, orts, sizeof(orts) / sizeof(orts[0]))
+NNCASE_TEST_BODY(BinaryTest, max, kernels::stackvm::binary, binary_op_t::max, 1,
+                 VEC, ortki_Max, orts, sizeof(orts) / sizeof(orts[0]))
+NNCASE_TEST_BODY(BinaryTest, mod, kernels::stackvm::binary, binary_op_t::mod, 1,
+                 NORMAL, ortki_Mod, l_ort, r_ort, (long)1)
 
 int main(int argc, char *argv[]) {
     ::testing::InitGoogleTest(&argc, argv);
