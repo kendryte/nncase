@@ -141,7 +141,7 @@ el_status el_load(el_ctx *ctx, el_alloc_cb alloc) {
             return EL_ENOMEM;
 
         // printf("Loading seg fileoff %lx, vaddr %lx to %lx\n", ph.p_offset,
-              //  ph.p_vaddr, (uintptr_t)dest);
+        //  ph.p_vaddr, (uintptr_t)dest);
 
         /* read loaded portion */
         if ((rv = el_pread(ctx, dest, ph.p_filesz, ph.p_offset)))
