@@ -158,30 +158,11 @@ public partial class ExprCloner<TContext>
     }
 
     /// <inheritdoc />
-    protected override Expr VisitLeafBufferLoad(TIR.BufferLoad expr, TContext context)
-    {
-        return expr.With(
-            buffer: Clone(expr.Buffer, context),
-            indices: CloneArray(expr.Indices, context)
-        );
-    }
-
-    /// <inheritdoc />
     protected override Expr VisitLeafBufferRegion(TIR.BufferRegion expr, TContext context)
     {
         return expr.With(
             buffer: Clone(expr.Buffer, context),
             region: CloneArray(expr.Region, context)
-        );
-    }
-
-    /// <inheritdoc />
-    protected override Expr VisitLeafBufferStore(TIR.BufferStore expr, TContext context)
-    {
-        return expr.With(
-            buffer: Clone(expr.Buffer, context),
-            indices: CloneArray(expr.Indices, context),
-            value: Clone(expr.Value, context)
         );
     }
 

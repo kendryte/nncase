@@ -313,4 +313,20 @@ public static class T
         value = creator();
         return Nop();
     }
+
+    /// <summary>
+    /// buffer load.
+    /// </summary>
+    /// <param name="buffer"> buffer. </param>
+    /// <param name="indices"> indices. </param>
+    /// <returns> call bufferload. </returns>
+    public static Call BufferLoad(TIR.Buffer buffer, params Expr[] indices) => new Call(new IR.Buffers.BufferLoad(), buffer, new IR.Tuple(indices));
+
+    /// <summary>
+    /// buffer store.
+    /// </summary>
+    /// <param name="buffer">buffer.</param>
+    /// <param name="indicesAndValue">indices and value.</param>
+    /// <returns>buffer store.</returns>
+    public static Call BufferStore(TIR.Buffer buffer, params Expr[] indicesAndValue) => new Call(new IR.Buffers.BufferLoad(), buffer, new IR.Tuple(indicesAndValue[..^1]), indicesAndValue[^1]);
 }

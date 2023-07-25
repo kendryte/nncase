@@ -27,8 +27,6 @@ public class StoreEvaluator : ITypeInferencer<Store>, IOpPrinter<Store>
         _ = context.GetArgument(target, Store.Value);
         var index = context.GetArgument(target, Store.Index);
         return $"{handle}[{index}] = {index}";
-
-        throw new System.NotImplementedException();
     }
 
     private IRType Visit(Store target, TensorType handle, TensorType index, TensorType value)

@@ -482,34 +482,6 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
     }
 
     /// <inheritdoc/>
-    protected override IPrintSymbol VisitBufferLoad(BufferLoad expr)
-    {
-        if (_exprMemo.TryGetValue(expr, out var doc))
-        {
-            return doc;
-        }
-
-        _scope.Push();
-        _scope.Append($"{expr.Buffer.Name}[{string.Join(", ", expr.Indices.ToArray().Select(Visit))}]");
-        doc = new(_scope.Pop());
-        return doc;
-    }
-
-    /// <inheritdoc/>
-    protected override IPrintSymbol VisitBufferStore(BufferStore expr)
-    {
-        if (_exprMemo.TryGetValue(expr, out var doc))
-        {
-            return doc;
-        }
-
-        _scope.Push();
-        _scope.Append($"{expr.Buffer.Name}[{string.Join(", ", expr.Indices.ToArray().Select(Visit))}] = {Visit(expr.Value)}");
-        doc = new(_scope.Pop());
-        return doc;
-    }
-
-    /// <inheritdoc/>
     protected override IPrintSymbol VisitIterVar(IterVar expr)
     {
         if (_exprMemo.TryGetValue(expr, out var doc))

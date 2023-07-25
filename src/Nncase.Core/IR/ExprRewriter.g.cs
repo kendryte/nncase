@@ -123,21 +123,9 @@ public partial class ExprRewriter<TContext>
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafBufferLoad(TIR.BufferLoad expr, TContext context)
-    {
-        return RewriteLeafBufferLoad(expr, context);
-    }
-
-    /// <inheritdoc/>
     protected sealed override Expr VisitLeafBufferRegion(TIR.BufferRegion expr, TContext context)
     {
         return RewriteLeafBufferRegion(expr, context);
-    }
-
-    /// <inheritdoc/>
-    protected sealed override Expr VisitLeafBufferStore(TIR.BufferStore expr, TContext context)
-    {
-        return RewriteLeafBufferStore(expr, context);
     }
 
     /// <inheritdoc/>
@@ -273,19 +261,9 @@ public partial class ExprRewriter<TContext>
     protected virtual Expr RewriteLeafPhysicalBuffer(TIR.PhysicalBuffer expr, TContext context) => RewriteLeafBuffer(expr, context);
 
     /// <summary>
-    /// Rewrite leaf <see cref="TIR.BufferLoad"/>.
-    /// </summary>
-    protected virtual Expr RewriteLeafBufferLoad(TIR.BufferLoad expr, TContext context) => DefaultRewriteLeaf(expr, context);
-
-    /// <summary>
     /// Rewrite leaf <see cref="TIR.BufferRegion"/>.
     /// </summary>
     protected virtual Expr RewriteLeafBufferRegion(TIR.BufferRegion expr, TContext context) => DefaultRewriteLeaf(expr, context);
-
-    /// <summary>
-    /// Rewrite leaf <see cref="TIR.BufferStore"/>.
-    /// </summary>
-    protected virtual Expr RewriteLeafBufferStore(TIR.BufferStore expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="TIR.For"/>.
@@ -475,28 +453,12 @@ public partial class ExprRewriter
     protected sealed override Expr RewriteLeafPhysicalBuffer(TIR.PhysicalBuffer expr, Unit context) => RewriteLeafPhysicalBuffer(expr);
 
     /// <summary>
-    /// Rewrite leaf <see cref="TIR.BufferLoad"/>.
-    /// </summary>
-    protected virtual Expr RewriteLeafBufferLoad(TIR.BufferLoad expr) => DefaultRewriteLeaf(expr);
-
-    /// <inheritdoc />
-    protected sealed override Expr RewriteLeafBufferLoad(TIR.BufferLoad expr, Unit context) => RewriteLeafBufferLoad(expr);
-
-    /// <summary>
     /// Rewrite leaf <see cref="TIR.BufferRegion"/>.
     /// </summary>
     protected virtual Expr RewriteLeafBufferRegion(TIR.BufferRegion expr) => DefaultRewriteLeaf(expr);
 
     /// <inheritdoc />
     protected sealed override Expr RewriteLeafBufferRegion(TIR.BufferRegion expr, Unit context) => RewriteLeafBufferRegion(expr);
-
-    /// <summary>
-    /// Rewrite leaf <see cref="TIR.BufferStore"/>.
-    /// </summary>
-    protected virtual Expr RewriteLeafBufferStore(TIR.BufferStore expr) => DefaultRewriteLeaf(expr);
-
-    /// <inheritdoc />
-    protected sealed override Expr RewriteLeafBufferStore(TIR.BufferStore expr, Unit context) => RewriteLeafBufferStore(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="TIR.For"/>.

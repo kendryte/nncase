@@ -53,28 +53,6 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
     }
 
     /// <inheritdoc/>
-    protected override IRType VisitLeafBufferLoad(BufferLoad expr)
-    {
-        IRType type;
-        VerifySubField(expr, expr.Buffer, TypePatternUtility.IsPointer());
-        for (int i = 0; i < expr.Indices.Length; i++)
-        {
-            VerifySubField(expr, expr.Indices[i], TypePatternUtility.IsIntegralScalar(), $"BufferLoad.Indices[{i}]");
-        }
-
-        if (expr.Buffer.CheckedType is TensorType { IsScalar: true, DType: PointerType { ElemType: PrimType pointedType } })
-        {
-            type = TensorType.Scalar(pointedType);
-        }
-        else
-        {
-            type = new InvalidType($"Can't load from {expr.Buffer.CheckedType}");
-        }
-
-        return type;
-    }
-
-    /// <inheritdoc/>
     protected override IRType VisitLeafBufferRegion(BufferRegion expr)
     {
         VerifySubField(expr, expr.Buffer, TypePatternUtility.IsTensor());
@@ -87,32 +65,6 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
 
         // TODO: need infer the sub region shape/stride
         var type = expr.Buffer.CheckedType;
-        return type;
-    }
-
-    /// <inheritdoc/>
-    protected override IRType VisitLeafBufferStore(BufferStore expr)
-    {
-        VerifySubField(expr, expr.Buffer, TypePatternUtility.IsPointer());
-        for (int i = 0; i < expr.Indices.Length; i++)
-        {
-            VerifySubField(expr, expr.Indices[i], TypePatternUtility.IsIntegralScalar(), $"BufferStore.Indices[{i}]");
-        }
-
-        VerifySubField(expr, expr.Value, TypePatternUtility.IsScalar());
-
-        IRType type;
-        if (expr.Value.CheckedType is TensorType { IsScalar: true, DType: PrimType valueType } &&
-            expr.Buffer.CheckedType is TensorType { IsScalar: true, DType: PointerType { ElemType: PrimType pointedType } }
-            && valueType == pointedType)
-        {
-            type = TupleType.Void;
-        }
-        else
-        {
-            type = new InvalidType($"Can't store {expr.Value.CheckedType} to {expr.Buffer.CheckedType}");
-        }
-
         return type;
     }
 

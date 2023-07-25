@@ -105,19 +105,9 @@ public partial class ExprFunctor<TExprResult, TTypeResult, TContext>
     internal protected virtual TExprResult VisitPhysicalBuffer(TIR.PhysicalBuffer expr, TContext context) => VisitBuffer(expr, context);
 
     /// <summary>
-    /// Visit <see cref="TIR.BufferLoad"/>.
-    /// </summary>
-    internal protected virtual TExprResult VisitBufferLoad(TIR.BufferLoad expr, TContext context) => DefaultVisit(expr, context);
-
-    /// <summary>
     /// Visit <see cref="TIR.BufferRegion"/>.
     /// </summary>
     internal protected virtual TExprResult VisitBufferRegion(TIR.BufferRegion expr, TContext context) => DefaultVisit(expr, context);
-
-    /// <summary>
-    /// Visit <see cref="TIR.BufferStore"/>.
-    /// </summary>
-    internal protected virtual TExprResult VisitBufferStore(TIR.BufferStore expr, TContext context) => DefaultVisit(expr, context);
 
     /// <summary>
     /// Visit <see cref="TIR.For"/>.
@@ -289,26 +279,12 @@ public partial class ExprFunctor<TExprResult, TTypeResult>
     /// <inheritdoc/>
     internal protected sealed override TExprResult VisitPhysicalBuffer(TIR.PhysicalBuffer expr, Unit context) => VisitPhysicalBuffer(expr);
     /// <summary>
-    /// Visit <see cref="TIR.BufferLoad"/>.
-    /// </summary>
-    internal protected virtual TExprResult VisitBufferLoad(TIR.BufferLoad expr) => base.VisitBufferLoad(expr, default);
-    
-    /// <inheritdoc/>
-    internal protected sealed override TExprResult VisitBufferLoad(TIR.BufferLoad expr, Unit context) => VisitBufferLoad(expr);
-    /// <summary>
     /// Visit <see cref="TIR.BufferRegion"/>.
     /// </summary>
     internal protected virtual TExprResult VisitBufferRegion(TIR.BufferRegion expr) => base.VisitBufferRegion(expr, default);
     
     /// <inheritdoc/>
     internal protected sealed override TExprResult VisitBufferRegion(TIR.BufferRegion expr, Unit context) => VisitBufferRegion(expr);
-    /// <summary>
-    /// Visit <see cref="TIR.BufferStore"/>.
-    /// </summary>
-    internal protected virtual TExprResult VisitBufferStore(TIR.BufferStore expr) => base.VisitBufferStore(expr, default);
-    
-    /// <inheritdoc/>
-    internal protected sealed override TExprResult VisitBufferStore(TIR.BufferStore expr, Unit context) => VisitBufferStore(expr);
     /// <summary>
     /// Visit <see cref="TIR.For"/>.
     /// </summary>

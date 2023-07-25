@@ -132,24 +132,10 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     }
 
     /// <inheritdoc />
-    protected internal override TExprResult VisitBufferLoad(TIR.BufferLoad expr, TContext context)
-    {
-        VisitOperands(expr, context);
-        return VisitLeafBufferLoad(expr, context);
-    }
-
-    /// <inheritdoc />
     protected internal override TExprResult VisitBufferRegion(TIR.BufferRegion expr, TContext context)
     {
         VisitOperands(expr, context);
         return VisitLeafBufferRegion(expr, context);
-    }
-
-    /// <inheritdoc />
-    protected internal override TExprResult VisitBufferStore(TIR.BufferStore expr, TContext context)
-    {
-        VisitOperands(expr, context);
-        return VisitLeafBufferStore(expr, context);
     }
 
     /// <inheritdoc />
@@ -303,19 +289,9 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected virtual TExprResult VisitLeafPhysicalBuffer(TIR.PhysicalBuffer expr, TContext context) => VisitLeafBuffer(expr, context);
 
     /// <summary>
-    /// Visit leaf <see cref="TIR.BufferLoad"/>.
-    /// </summary>
-    protected virtual TExprResult VisitLeafBufferLoad(TIR.BufferLoad expr, TContext context) => DefaultVisitLeaf(expr, context);
-
-    /// <summary>
     /// Visit leaf <see cref="TIR.BufferRegion"/>.
     /// </summary>
     protected virtual TExprResult VisitLeafBufferRegion(TIR.BufferRegion expr, TContext context) => DefaultVisitLeaf(expr, context);
-
-    /// <summary>
-    /// Visit leaf <see cref="TIR.BufferStore"/>.
-    /// </summary>
-    protected virtual TExprResult VisitLeafBufferStore(TIR.BufferStore expr, TContext context) => DefaultVisitLeaf(expr, context);
 
     /// <summary>
     /// Visit leaf <see cref="TIR.For"/>.
@@ -467,26 +443,12 @@ public partial class ExprVisitor<TExprResult, TTypeResult>
     /// <inheritdoc/>
     internal protected sealed override TExprResult VisitPhysicalBuffer(TIR.PhysicalBuffer expr, Unit context) => VisitPhysicalBuffer(expr);
     /// <summary>
-    /// Visit <see cref="TIR.BufferLoad"/>.
-    /// </summary>
-    internal protected virtual TExprResult VisitBufferLoad(TIR.BufferLoad expr) => base.VisitBufferLoad(expr, default);
-
-    /// <inheritdoc/>
-    internal protected sealed override TExprResult VisitBufferLoad(TIR.BufferLoad expr, Unit context) => VisitBufferLoad(expr);
-    /// <summary>
     /// Visit <see cref="TIR.BufferRegion"/>.
     /// </summary>
     internal protected virtual TExprResult VisitBufferRegion(TIR.BufferRegion expr) => base.VisitBufferRegion(expr, default);
 
     /// <inheritdoc/>
     internal protected sealed override TExprResult VisitBufferRegion(TIR.BufferRegion expr, Unit context) => VisitBufferRegion(expr);
-    /// <summary>
-    /// Visit <see cref="TIR.BufferStore"/>.
-    /// </summary>
-    internal protected virtual TExprResult VisitBufferStore(TIR.BufferStore expr) => base.VisitBufferStore(expr, default);
-
-    /// <inheritdoc/>
-    internal protected sealed override TExprResult VisitBufferStore(TIR.BufferStore expr, Unit context) => VisitBufferStore(expr);
     /// <summary>
     /// Visit <see cref="TIR.For"/>.
     /// </summary>
@@ -689,28 +651,12 @@ public partial class ExprVisitor<TExprResult, TTypeResult>
     protected sealed override TExprResult VisitLeafPhysicalBuffer(TIR.PhysicalBuffer expr, Unit context) => VisitLeafPhysicalBuffer(expr);
 
     /// <summary>
-    /// Visit leaf <see cref="TIR.BufferLoad"/>.
-    /// </summary>
-    protected virtual TExprResult VisitLeafBufferLoad(TIR.BufferLoad expr) => base.VisitLeafBufferLoad(expr, default);
-
-    /// <inheritdoc/>
-    protected sealed override TExprResult VisitLeafBufferLoad(TIR.BufferLoad expr, Unit context) => VisitLeafBufferLoad(expr);
-
-    /// <summary>
     /// Visit leaf <see cref="TIR.BufferRegion"/>.
     /// </summary>
     protected virtual TExprResult VisitLeafBufferRegion(TIR.BufferRegion expr) => base.VisitLeafBufferRegion(expr, default);
 
     /// <inheritdoc/>
     protected sealed override TExprResult VisitLeafBufferRegion(TIR.BufferRegion expr, Unit context) => VisitLeafBufferRegion(expr);
-
-    /// <summary>
-    /// Visit leaf <see cref="TIR.BufferStore"/>.
-    /// </summary>
-    protected virtual TExprResult VisitLeafBufferStore(TIR.BufferStore expr) => base.VisitLeafBufferStore(expr, default);
-
-    /// <inheritdoc/>
-    protected sealed override TExprResult VisitLeafBufferStore(TIR.BufferStore expr, Unit context) => VisitLeafBufferStore(expr);
 
     /// <summary>
     /// Visit leaf <see cref="TIR.For"/>.
