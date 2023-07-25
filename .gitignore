@@ -287,6 +287,7 @@ tests/private
 install/
 CMakeSettings.json
 CMakePresets.json
+CMakeUserPresets.json
 tests_output
 
 .DS_Store
@@ -302,4 +303,4 @@ cmake-build-*
 *gmodel_dump_dir*
 
 # Auto generated files
-generated/
+# generated/

@@ -32,7 +32,6 @@ result<void> optimized::reduce(
     gsl::span<const size_t> in_shape, gsl::span<const size_t> axis,
     gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
     bool keep_dims, kernel_context &context) noexcept {
-    printf("!!!!!!!!!!call here... reduce \n");
     return stackvm::reference::reduce(typecode, op, init_value, input, output,
                                       in_shape, axis, in_strides, out_strides,
                                       keep_dims, context);
