@@ -73,7 +73,7 @@ TEST_P(UnsqueezeTest, Unsqueeze) {
 
     // actual
     auto output = kernels::stackvm::unsqueeze(input.impl(), axes.impl())
-                      .expect("squeeze failed");
+                      .expect("unsqueeze failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     bool result = is_same_tensor(expected, actual) ||

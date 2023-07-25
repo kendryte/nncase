@@ -52,7 +52,7 @@ INSTANTIATE_TEST_SUITE_P(
                                      dims_t{8, 8}, dims_t{1, 4, 16},
                                      dims_t{1, 3, 24, 24}, dims_t{})));
 
-TEST_P(EluTest, add) {
+TEST_P(EluTest, elu) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
 
     // expected

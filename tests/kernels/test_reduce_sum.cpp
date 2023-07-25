@@ -71,7 +71,7 @@ class ReduceSumTest
 INSTANTIATE_TEST_SUITE_P(
     ReduceSum, ReduceSumTest,
     testing::Combine(testing::Values(dt_float32), testing::Values(dt_int64),
-                     testing::Values(dims_t{1, 3, 16, 16}),
+                     testing::Values(dims_t{1, 2, 3, 4}),
                      testing::Values(dims_t{1}), testing::Values(0, 1),
                      testing::Values(axes_t{0}, axes_t{-1}, axes_t{-2},
                                      axes_t{-3}, axes_t{1}, axes_t{2},
@@ -114,6 +114,8 @@ TEST_P(ReduceSumTest, ReduceSum) {
                       cosine_similarity_tensor(expected, actual);
 
         if (!result) {
+            std::cout << "input tensor:";
+            print_runtime_tensor(a);
             std::cout << "actual ";
             print_runtime_tensor(actual);
             std::cout << "expected ";

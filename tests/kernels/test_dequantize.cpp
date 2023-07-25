@@ -47,7 +47,7 @@ class DequantizeTest
     runtime_tensor input;
 };
 
-INSTANTIATE_TEST_SUITE_P(Dequantize, DequantizeTest,
+INSTANTIATE_TEST_SUITE_P(dequantize, DequantizeTest,
                          testing::Combine(testing::Values(dt_uint8),
                                           testing::Values(dims_t{1, 3, 16,
                                                                  16})));

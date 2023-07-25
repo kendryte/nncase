@@ -46,7 +46,7 @@ class GeluTest
 };
 
 INSTANTIATE_TEST_SUITE_P(
-    Gelu, GeluTest,
+    gelu, GeluTest,
     testing::Combine(testing::Values(dt_float32),
                      testing::Values(dims_t{1, 3, 16, 16}, dims_t{1},
                                      dims_t{8, 8}, dims_t{1, 4, 16},

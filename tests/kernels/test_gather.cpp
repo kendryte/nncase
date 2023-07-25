@@ -62,7 +62,7 @@ class GatherTest : public KernelTest,
     int64_t batchDims_value;
 };
 
-INSTANTIATE_TEST_SUITE_P(Gather, GatherTest,
+INSTANTIATE_TEST_SUITE_P(gather, GatherTest,
                          testing::Combine(testing::Values(dt_int32, dt_int64,
                                                           dt_float32, dt_int64,
                                                           dt_int8, dt_int16),

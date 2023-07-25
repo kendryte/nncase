@@ -45,7 +45,7 @@ class GetItemTest
     runtime_tensor input;
 };
 
-INSTANTIATE_TEST_SUITE_P(GetItem, GetItemTest,
+INSTANTIATE_TEST_SUITE_P(get_item, GetItemTest,
                          testing::Combine(testing::Values(dt_float32),
                                           testing::Values(dims_t{1})));
 

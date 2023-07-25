@@ -77,7 +77,7 @@ class LayerNormTest : public KernelTest,
 };
 
 INSTANTIATE_TEST_SUITE_P(
-    LayerNorm, LayerNormTest,
+    layer_norm, LayerNormTest,
     testing::Combine(testing::Values(dt_float32),
                      testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 2, 4, 8},
                                      dims_t{2, 2, 4, 4}, dims_t{1, 3, 16},

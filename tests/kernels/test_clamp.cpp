@@ -46,7 +46,7 @@ class ClampTest
 };
 
 INSTANTIATE_TEST_SUITE_P(
-    Clamp, ClampTest,
+    clamp, ClampTest,
     testing::Combine(testing::Values(dt_float32, dt_int32, dt_int16, dt_int8,
                                      dt_uint8, dt_uint16, dt_uint32, dt_uint64,
                                      dt_int64, dt_float64, dt_boolean),

@@ -57,7 +57,7 @@ class Conv2DTest : public KernelTest,
     runtime_tensor bais;
 };
 
-INSTANTIATE_TEST_SUITE_P(Conv2D, Conv2DTest,
+INSTANTIATE_TEST_SUITE_P(conv2d, Conv2DTest,
                          testing::Combine(testing::Values(dt_float32),
                                           testing::Values(dims_t{1, 4, 5, 5}),
                                           testing::Values(dims_t{8, 4, 3, 3},
