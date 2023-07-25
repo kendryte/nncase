@@ -154,6 +154,10 @@ public partial class ExprFunctor<TExprResult, TTypeResult, TContext>
     /// </summary>
     internal protected virtual TExprResult VisitIterVar(TIR.IterVar expr, TContext context) => DefaultVisit(expr, context);
 
+    /// <summary>
+    /// Visit <see cref="TIR.MemSpan"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitMemSpan(TIR.MemSpan expr, TContext context) => DefaultVisit(expr, context);
 }
 
 public partial class ExprFunctor<TExprResult, TTypeResult>
@@ -354,4 +358,11 @@ public partial class ExprFunctor<TExprResult, TTypeResult>
     
     /// <inheritdoc/>
     internal protected sealed override TExprResult VisitIterVar(TIR.IterVar expr, Unit context) => VisitIterVar(expr);
+    /// <summary>
+    /// Visit <see cref="TIR.MemSpan"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitMemSpan(TIR.MemSpan expr) => base.VisitMemSpan(expr, default);
+
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitMemSpan(TIR.MemSpan expr, Unit context) => VisitMemSpan(expr);
 }

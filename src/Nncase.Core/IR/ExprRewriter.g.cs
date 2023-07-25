@@ -322,6 +322,10 @@ public partial class ExprRewriter<TContext>
     /// </summary>
     protected virtual Expr RewriteLeafIterVar(TIR.IterVar expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
+    /// <summary>
+    /// Rewrite leaf <see cref="TIR.MemSpan"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafMemSpan(TIR.MemSpan expr, TContext context) => DefaultRewriteLeaf(expr, context);
 }
 
 public partial class ExprRewriter
@@ -550,4 +554,11 @@ public partial class ExprRewriter
     /// <inheritdoc />
     protected sealed override Expr RewriteLeafIterVar(TIR.IterVar expr, Unit context) => RewriteLeafIterVar(expr);
 
+    /// <summary>
+    /// Rewrite leaf <see cref="TIR.MemSpan"/>.
+    /// </summary>
+    protected virtual Expr RewriteLeafMemSpan(TIR.MemSpan expr) => DefaultRewriteLeaf(expr);
+
+    /// <inheritdoc />
+    protected sealed override Expr RewriteLeafMemSpan(TIR.MemSpan expr, Unit context) => RewriteLeafMemSpan(expr);
 }

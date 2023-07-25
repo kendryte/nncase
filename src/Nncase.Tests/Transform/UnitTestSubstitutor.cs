@@ -24,8 +24,9 @@ public sealed class UnitTestSubstitutor : TestClassBase
     public void TestSubstitutorFailed()
     {
         var loop_i = new Var("loop_i", TensorType.Scalar(DataTypes.Int32));
-        var prim_func_1 = T.PrimFunc("prim_func_1", "k?", T.PhysicalBuffer(DataTypes.Float32, Schedule.MemoryLocation.Input, new[] { 1, 2, 3, 4 }, out var input_a), T.PhysicalBuffer(DataTypes.Float32, Schedule.MemoryLocation.Output, new[] { 1, 2, 3, 4 }, out var input_b)).Body(
-          T.Load(T.Handle("hd", DataTypes.Float32), loop_i)).Build();
+        T.Buffer(DataTypes.Float32, MemoryLocation.Input, new Expr[] { 1, 2, 3, 4 }, out var hd);
+        var prim_func_1 = T.PrimFunc("prim_func_1", "k?", T.PhysicalBuffer(DataTypes.Float32, MemoryLocation.Input, new[] { 1, 2, 3, 4 }, out var input_a), T.PhysicalBuffer(DataTypes.Float32, MemoryLocation.Output, new[] { 1, 2, 3, 4 }, out var input_b)).Body(
+          T.Load(hd, loop_i)).Build();
 
         var prim_wrapper = new PrimFunctionWrapper(prim_func_1, 1);
 
@@ -48,8 +49,9 @@ public sealed class UnitTestSubstitutor : TestClassBase
     public void TestSubstitutorTrue()
     {
         var loop_i = new Var("loop_i", TensorType.Scalar(DataTypes.Int32));
-        var prim_func_1 = T.PrimFunc("prim_func_1", "k?", T.PhysicalBuffer(DataTypes.Float32, Schedule.MemoryLocation.Input, new[] { 1, 2, 3, 4 }, out var input_a), T.PhysicalBuffer(DataTypes.Float32, Schedule.MemoryLocation.Output, new[] { 1, 2, 3, 4 }, out var input_b)).Body(
-          T.Load(T.Handle("hd", DataTypes.Float32), loop_i)).Build();
+        T.Buffer(DataTypes.Float32, MemoryLocation.Input, new Expr[] { 1, 2, 3, 4 }, out var hd);
+        var prim_func_1 = T.PrimFunc("prim_func_1", "k?", T.PhysicalBuffer(DataTypes.Float32, MemoryLocation.Input, new[] { 1, 2, 3, 4 }, out var input_a), T.PhysicalBuffer(DataTypes.Float32, MemoryLocation.Output, new[] { 1, 2, 3, 4 }, out var input_b)).Body(
+          T.Load(hd, loop_i)).Build();
 
         Dictionary<Expr, Expr> vmap = new() { { loop_i, 1 } };
         var substitutor = Mutator.Substitute(e => vmap.TryGetValue(e, out var res) ? res : null)();
@@ -65,8 +67,9 @@ public sealed class UnitTestSubstitutor : TestClassBase
     public void TestSubstitutorTrue2()
     {
         var loop_i = new Var("loop_i", TensorType.Scalar(DataTypes.Int32));
-        var prim_func_1 = T.PrimFunc("prim_func_1", "k?", T.PhysicalBuffer(DataTypes.Float32, Schedule.MemoryLocation.Input, new[] { 1, 2, 3, 4 }, out var input_a), T.PhysicalBuffer(DataTypes.Int32, Schedule.MemoryLocation.Output, new[] { 1, 2, 3, 4 }, out var input_b)).Body(
-          T.Load(T.Handle("hd", DataTypes.Float32), loop_i)).Build();
+        T.Buffer(DataTypes.Float32, MemoryLocation.Input, new Expr[] { 1, 2, 3, 4 }, out var hd);
+        var prim_func_1 = T.PrimFunc("prim_func_1", "k?", T.PhysicalBuffer(DataTypes.Float32, MemoryLocation.Input, new[] { 1, 2, 3, 4 }, out var input_a), T.PhysicalBuffer(DataTypes.Int32, MemoryLocation.Output, new[] { 1, 2, 3, 4 }, out var input_b)).Body(
+          T.Load(hd, loop_i)).Build();
 
         var prim_wrapper = new PrimFunctionWrapper(prim_func_1, 1);
 

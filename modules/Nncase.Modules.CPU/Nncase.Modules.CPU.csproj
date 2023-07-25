@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Nncase</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Nncase.Diagnostics\Nncase.Diagnostics.csproj" />
+    <ProjectReference Include="..\..\src\Nncase.Passes\Nncase.Passes.csproj" />
+    <ProjectReference Include="..\..\src\Nncase.CodeGen\Nncase.CodeGen.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../tools/Nncase.SourceGenerator/Nncase.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Nncase.Modules.StackVM\Nncase.Modules.StackVM.csproj" />
+  </ItemGroup>
+
+</Project>

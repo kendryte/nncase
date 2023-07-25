@@ -269,7 +269,7 @@ public record SelectedRange(int Start, int End, Padding Padding)
 /// </summary>
 public abstract class Buffer : Expr
 {
-    public Buffer(string name, DataType elemType, Schedule.MemoryLocation memoryLocation, Expr[] operands)
+    public Buffer(string name, DataType elemType, MemoryLocation memoryLocation, Expr[] operands)
         : base(operands.ToArray())
     {
         Name = name;
@@ -281,7 +281,7 @@ public abstract class Buffer : Expr
 
     public DataType ElemType { get; }
 
-    public Schedule.MemoryLocation MemLocation { get; }
+    public MemoryLocation MemLocation { get; }
 
     /// <summary>
     /// Gets if this buffer from the constant !.
@@ -341,7 +341,7 @@ public sealed class LogicalBuffer : Buffer
     /// <param name="elemType">prim type.</param>
     /// <param name="dimensions">the shape.</param>
     /// <param name="strides">the strides.</param>
-    public LogicalBuffer(string name, DataType elemType, Schedule.MemoryLocation location, ReadOnlySpan<Expr> dimensions, ReadOnlySpan<Expr> strides)
+    public LogicalBuffer(string name, DataType elemType, MemoryLocation location, ReadOnlySpan<Expr> dimensions, ReadOnlySpan<Expr> strides)
         : base(name, elemType, location, ArrayUtility.Concat(dimensions, strides))
     {
         Rank = dimensions.Length;
@@ -351,7 +351,7 @@ public sealed class LogicalBuffer : Buffer
     /// Initializes a new instance of the <see cref="LogicalBuffer"/> class.
     /// <see cref="LogicalBuffer"/>.
     /// </summary>
-    public LogicalBuffer(string name, Schedule.MemoryLocation location, TensorConst tensor)
+    public LogicalBuffer(string name, MemoryLocation location, TensorConst tensor)
         : this(name, tensor.Value.ElementType, location, ArrayUtility.ToExprArray(tensor.Value.Dimensions), ArrayUtility.ToExprArray(tensor.Value.Strides))
     {
         Const = tensor;
@@ -361,7 +361,7 @@ public sealed class LogicalBuffer : Buffer
     /// Initializes a new instance of the <see cref="LogicalBuffer"/> class.
     /// <seealso cref="LogicalBuffer"/>
     /// </summary>
-    public LogicalBuffer(string name, DataType elemType, Schedule.MemoryLocation location, ReadOnlySpan<Expr> dimensions)
+    public LogicalBuffer(string name, DataType elemType, MemoryLocation location, ReadOnlySpan<Expr> dimensions)
         : this(name, elemType, location, dimensions, TensorUtilities.GetStrides(dimensions))
     {
     }
@@ -394,7 +394,7 @@ public sealed class LogicalBuffer : Buffer
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
         => functor.VisitLogicalBuffer(this, context);
 
-    public LogicalBuffer With(string? name = null, DataType? elemType = null, Schedule.MemoryLocation? location = null, Expr[]? dimensions = null, Expr[]? strides = null)
+    public LogicalBuffer With(string? name = null, DataType? elemType = null, MemoryLocation? location = null, Expr[]? dimensions = null, Expr[]? strides = null)
         => new LogicalBuffer(name ?? Name, elemType ?? ElemType, location ?? MemLocation, dimensions ?? Dimensions, strides ?? Strides) { Const = Const };
 }
 
@@ -410,7 +410,7 @@ public sealed class PhysicalBuffer : Buffer
     /// Initializes a new instance of the <see cref="PhysicalBuffer"/> class.
     /// ctor for physical buffer.
     /// </summary>
-    public PhysicalBuffer(string name, DataType elemType, Schedule.MemoryLocation location, ReadOnlySpan<int> dimensions, ReadOnlySpan<int> strides, int start, int size)
+    public PhysicalBuffer(string name, DataType elemType, MemoryLocation location, ReadOnlySpan<int> dimensions, ReadOnlySpan<int> strides, int start, int size)
         : base(name, elemType, location, Array.Empty<Expr>())
     {
         Start = start;
@@ -423,7 +423,7 @@ public sealed class PhysicalBuffer : Buffer
     /// Initializes a new instance of the <see cref="PhysicalBuffer"/> class.
     /// <see cref="PhysicalBuffer"/>.
     /// </summary>
-    public PhysicalBuffer(string name, DataType elemType, Schedule.MemoryLocation location, ReadOnlySpan<int> dimensions, int start, int size)
+    public PhysicalBuffer(string name, DataType elemType, MemoryLocation location, ReadOnlySpan<int> dimensions, int start, int size)
         : this(name, elemType, location, dimensions, TensorUtilities.GetStrides(dimensions), start, size)
     {
     }
@@ -432,7 +432,7 @@ public sealed class PhysicalBuffer : Buffer
     /// Initializes a new instance of the <see cref="PhysicalBuffer"/> class.
     /// <see cref="PhysicalBuffer"/>.
     /// </summary>
-    public PhysicalBuffer(string name, Schedule.MemoryLocation location, TensorConst tensor, int start, int size)
+    public PhysicalBuffer(string name, MemoryLocation location, TensorConst tensor, int start, int size)
         : this(name, tensor.Value.ElementType, location, tensor.Value.Dimensions, tensor.Value.Strides, start, size)
     {
         Const = tensor;
@@ -494,6 +494,6 @@ public sealed class PhysicalBuffer : Buffer
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
         => functor.VisitPhysicalBuffer(this, context);
 
-    public PhysicalBuffer With(string? name = null, DataType? elemType = null, Schedule.MemoryLocation? location = null, int[]? dimensions = null, int[]? strides = null, int? start = null, int? size = null)
+    public PhysicalBuffer With(string? name = null, DataType? elemType = null, MemoryLocation? location = null, int[]? dimensions = null, int[]? strides = null, int? start = null, int? size = null)
         => new PhysicalBuffer(name ?? Name, elemType ?? ElemType, location ?? MemLocation, dimensions ?? FixedDimensions, strides ?? FixedStrides, start ?? Start, size ?? Size) { Const = Const };
 }

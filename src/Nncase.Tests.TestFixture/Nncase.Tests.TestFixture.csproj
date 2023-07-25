@@ -22,6 +22,7 @@
     </ItemGroup>
     
     <ItemGroup>
+        <ProjectReference Include="..\..\modules\Nncase.Modules.CPU\Nncase.Modules.CPU.csproj" />
         <ProjectReference Include="..\..\modules\Nncase.Modules.StackVM\Nncase.Modules.StackVM.csproj" />
         <ProjectReference Include="..\Nncase.Core\Nncase.Core.csproj" />
         <ProjectReference Include="..\Nncase.CodeGen\Nncase.CodeGen.csproj" />

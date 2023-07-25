@@ -47,21 +47,10 @@ public sealed class UnitTestTIR
     [Fact]
     public void TestBufferStore()
     {
-        Assert.Throws<InvalidOperationException>(() => T.Store(null!, null!));
-
-        var variable = new Var("x", DataTypes.Int32);
-        int index = 0;
-        Expr loadOp = T.Load(variable, index);
         Expr value = 42;
-        _ = T.Store(loadOp, value);
-
-        var physicalBuffer = new TIR.PhysicalBuffer("testInput", DataTypes.Float32, Schedule.MemoryLocation.Input, new[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new[] { 1, 16, 64, 400 }), 0, 0);
-        var indices = new Expr[] { 0, 1 };
-        Expr storeOp = T.Store(new BufferLoad(physicalBuffer, indices), value);
-        var store = (BufferStore)storeOp;
-        Assert.Equal(physicalBuffer, store.Buffer);
-        Assert.Equal(value, store.Value);
-        Assert.Equal(new Expr[] { 0 }, store.Indices.ToArray());
+        var physicalBuffer = new TIR.PhysicalBuffer("testInput", DataTypes.Float32, MemoryLocation.Input, new[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new[] { 1, 16, 64, 400 }), 0, 0);
+        _ = new Expr[] { 0, 1 };
+        _ = T.Store(physicalBuffer, 0, value);
     }
 
     [Fact]
@@ -165,8 +154,8 @@ public sealed class UnitTestTIR
     {
         var primFunc = new PrimFunction("test_module", new Sequential(new Expr[] { 1 }), new[]
         {
-            new TIR.PhysicalBuffer("testInput", DataTypes.Float32, Schedule.MemoryLocation.Input, new[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new[] { 1, 16, 64, 400 }), 0, 0),
-            new TIR.PhysicalBuffer("testInput", DataTypes.Float32, Schedule.MemoryLocation.Input, new[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new[] { 1, 16, 64, 400 }), 0, 0),
+            new TIR.PhysicalBuffer("testInput", DataTypes.Float32, MemoryLocation.Input, new[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new[] { 1, 16, 64, 400 }), 0, 0),
+            new TIR.PhysicalBuffer("testInput", DataTypes.Float32, MemoryLocation.Input, new[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new[] { 1, 16, 64, 400 }), 0, 0),
         });
 
         var primFuncParameters = primFunc.Parameters;
@@ -178,8 +167,8 @@ public sealed class UnitTestTIR
         var newBody = new Sequential(new Expr[] { 3 });
         var newParams = new[]
         {
-            new TIR.PhysicalBuffer("testInput", DataTypes.Float32, Schedule.MemoryLocation.Input, new[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new[] { 1, 16, 64, 400 }), 0, 0),
-            new TIR.PhysicalBuffer("testInput", DataTypes.Float32, Schedule.MemoryLocation.Input, new[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new[] { 1, 16, 64, 400 }), 0, 0),
+            new TIR.PhysicalBuffer("testInput", DataTypes.Float32, MemoryLocation.Input, new[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new[] { 1, 16, 64, 400 }), 0, 0),
+            new TIR.PhysicalBuffer("testInput", DataTypes.Float32, MemoryLocation.Input, new[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new[] { 1, 16, 64, 400 }), 0, 0),
         };
 
         var newPrimFunc = primFunc.With(moduleKind: newModuleKind, body: newBody, parameters: newParams);

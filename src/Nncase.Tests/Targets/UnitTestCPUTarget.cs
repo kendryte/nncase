@@ -112,6 +112,16 @@ public class UnitTestCPUTarget : TestClassBase
     }
 
     [Fact]
+    public void TestSimpleUnary()
+    {
+        var x = new Var("x", new TensorType(DataTypes.Float32, new[] { 1 }));
+        var y = IR.F.Math.Log(x);
+        var main = new Function("main", y, new[] { x });
+        var module = new IRModule(main);
+        GenerateKModelAndRun(module, new[] { 1.0f }, new[] { MathF.Log(1.0f) });
+    }
+
+    [Fact]
     public void TestCodegenCallParamOrder()
     {
         // order is true: x - 3 = 2 - 3 = -1

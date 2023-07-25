@@ -256,4 +256,12 @@ public partial class ExprCloner<TContext>
         );
     }
 
+    /// <inheritdoc />
+    protected override Expr VisitLeafMemSpan(TIR.MemSpan expr, TContext context)
+    {
+        return expr.With(
+            start: Clone(expr.Start, context),
+            size: Clone(expr.Size, context)
+        );
+    }
 }

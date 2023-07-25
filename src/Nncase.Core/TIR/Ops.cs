@@ -12,7 +12,7 @@ using static Nncase.IR.TypePatternUtility;
 namespace Nncase.TIR;
 
 /// <summary>
-/// <see cref="T.Load(Var, Expr)"/>.
+/// Load op.
 /// </summary>
 public sealed partial class Load : Op
 {
@@ -24,7 +24,10 @@ public sealed partial class Load : Op
     /// <summary>
     /// Gets index.
     /// </summary>
-    public static readonly ParameterInfo Index = new(typeof(Load), 1, "index", HasDataType(DataTypes.Int32) & (IsScalar() | HasRank(1)));
+    public static readonly ParameterInfo Index = new(typeof(Load), 1, "index", IsIntegralScalar());
+
+    /// <inheritdoc/>
+    public override bool CanFoldConstCall => false;
 }
 
 /// <summary>
@@ -53,17 +56,20 @@ public sealed partial class Store : Op
     /// <summary>
     /// The buffer variable handle.
     /// </summary>
-    public static readonly ParameterInfo Handle = new(typeof(Store), 0, "handle", IsPointer());
+    public static readonly ParameterInfo Handle = new(typeof(Store), 0, "handle");
 
     /// <summary>
     /// The index locations to be stored.
     /// </summary>
-    public static readonly ParameterInfo Index = new(typeof(Store), 1, "index", HasDataType(DataTypes.Int32));
+    public static readonly ParameterInfo Index = new(typeof(Store), 1, "index", IsIntegralScalar());
 
     /// <summary>
     /// The value to be stored.
     /// </summary>
-    public static readonly ParameterInfo Value = new(typeof(Store), 2, "value");
+    public static readonly ParameterInfo Value = new(typeof(Store), 2, "value", IsScalar());
+
+    /// <inheritdoc/>
+    public override bool CanFoldConstCall => false;
 }
 
 /// <summary>

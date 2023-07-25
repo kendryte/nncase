@@ -52,7 +52,7 @@ public static class T
     /// </summary>
     /// <param name="handle">The buffer handle variable in the load expression.</param>
     /// <param name="index">The index in the load.</param>
-    public static Call Load(Var handle, Expr index) => new Call(new Load(), handle, index);
+    public static Call Load(TIR.Buffer handle, Expr index) => new Call(new Load(), handle, index);
 
     /// <summary>
     /// get the nop op.
@@ -76,25 +76,7 @@ public static class T
     /// <param name="handle">The buffer Variable.</param>
     /// <param name="index">The index in the store expression.</param>
     /// <param name="value">The value we want to store.</param>
-    public static Call Store(Var handle, Expr index, Expr value) => new Call(new Store(), handle, index, value);
-
-    /// <summary>
-    /// If the op is BufferLoad, it will return BufferStore
-    /// If the op is Load, it will return Store.
-    /// </summary>
-    /// <param name="op">the op call.</param>
-    /// <param name="value">update value.</param>
-    /// <returns>new store call.</returns>
-    public static Expr Store(Expr op, Expr value) => op switch
-    {
-        Call load => load.Target switch
-        {
-            TIR.Load => T.Store((Var)load[TIR.Load.Handle], load[TIR.Load.Index], value),
-            _ => throw new InvalidOperationException("Only Can build Store Op from Load!"),
-        },
-        TIR.BufferLoad bufload => new BufferStore(bufload.Buffer, bufload.Indices, value),
-        _ => throw new InvalidOperationException("Only Can build Store Op from Load!"),
-    };
+    public static Call Store(TIR.Buffer handle, Expr index, Expr value) => new Call(new Store(), handle, index, value);
 
     /// <summary>
     /// build for loop.
@@ -226,7 +208,7 @@ public static class T
     /// <summary>
     /// create the memRef by tensortype.
     /// </summary>
-    public static LogicalBuffer Buffer(DataType elem_type, Schedule.MemoryLocation location, ReadOnlySpan<Expr> dimensions, out LogicalBuffer buffer, [CallerArgumentExpression("buffer")] string name = "")
+    public static LogicalBuffer Buffer(DataType elem_type, MemoryLocation location, ReadOnlySpan<Expr> dimensions, out LogicalBuffer buffer, [CallerArgumentExpression("buffer")] string name = "")
     {
         if (name.StartsWith("var "))
         {
@@ -240,7 +222,7 @@ public static class T
     /// <summary>
     /// ctor for physical buffer.
     /// </summary>
-    public static PhysicalBuffer PhysicalBuffer(DataType elem_type, Schedule.MemoryLocation location, ReadOnlySpan<int> dimensions, out PhysicalBuffer buffer, [CallerArgumentExpression("buffer")] string name = "")
+    public static PhysicalBuffer PhysicalBuffer(DataType elem_type, MemoryLocation location, ReadOnlySpan<int> dimensions, out PhysicalBuffer buffer, [CallerArgumentExpression("buffer")] string name = "")
     {
         if (name.StartsWith("var "))
         {
@@ -271,7 +253,7 @@ public static class T
             throw new NotSupportedException();
         }
 
-        buffer = new PhysicalBuffer(name, Schedule.MemoryLocation.Rdata, (TensorConst)expr, 0, size);
+        buffer = new PhysicalBuffer(name, MemoryLocation.Rdata, (TensorConst)expr, 0, size);
         return buffer;
     }
 
@@ -294,7 +276,7 @@ public static class T
         {
             name = name[4..];
         }
-        buffer = new Buffer(name, Schedule.MemoryLocation.Rdata, (TensorType)expr.ValueType)
+        buffer = new Buffer(name, MemoryLocation.Rdata, (TensorType)expr.ValueType)
         {
             Const = expr,
         };

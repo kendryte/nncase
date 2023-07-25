@@ -189,6 +189,19 @@ runtime_module::find_function_by_id(size_t index) noexcept {
     return ok(functions_[index].get());
 }
 
+result<size_t>
+runtime_module::find_id_by_function(runtime_function *function) noexcept {
+    auto it =
+        std::find_if(functions_.begin(), functions_.end(),
+                     [&function](const std::unique_ptr<runtime_function> &p) {
+                         return p.get() == function;
+                     });
+    if (it == functions_.end()) {
+        return err(std::errc::result_out_of_range);
+    }
+    return ok((it - functions_.begin()));
+}
+
 result<void> runtime_module::initialize_before_functions(
     NNCASE_UNUSED runtime_module_init_context &context) noexcept {
     return ok();

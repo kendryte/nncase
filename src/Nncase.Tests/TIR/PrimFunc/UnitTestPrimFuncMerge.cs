@@ -121,11 +121,11 @@ internal sealed class PrimFuncEvaluateVisitor
     private static readonly int _pool_size = 1 * 4 * 8 * 9 * 4 * 30;
     private readonly PrimFunctionWrapper _wrapper;
     private readonly IValue[] _args;
-    private readonly Dictionary<Schedule.MemoryLocation, byte[]> _poolMap = new() {
-          { Schedule.MemoryLocation.Input, new byte[_pool_size] },
-          { Schedule.MemoryLocation.L2Data, new byte[_pool_size] },
-          { Schedule.MemoryLocation.Data, new byte[_pool_size] },
-          { Schedule.MemoryLocation.Output, new byte[_pool_size] },
+    private readonly Dictionary<TIR.MemoryLocation, byte[]> _poolMap = new() {
+          { TIR.MemoryLocation.Input, new byte[_pool_size] },
+          { TIR.MemoryLocation.L2Data, new byte[_pool_size] },
+          { TIR.MemoryLocation.Data, new byte[_pool_size] },
+          { TIR.MemoryLocation.Output, new byte[_pool_size] },
         };
 
     public PrimFuncEvaluateVisitor(PrimFunctionWrapper wrapper, params IValue[] args)

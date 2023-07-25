@@ -16,14 +16,14 @@ namespace Nncase.Tests.CoreTest;
 
 public static class TestExtensions
 {
-    public static ArrayExtensions.SpanWhereEnumerable<TIR.PhysicalBuffer, FunctionWrapper<TIR.PhysicalBuffer, bool>> InputOf(this ReadOnlySpan<TIR.PhysicalBuffer> arr) => arr.AsValueEnumerable().Where(b => b.MemLocation == Schedule.MemoryLocation.Input);
+    public static ArrayExtensions.SpanWhereEnumerable<TIR.PhysicalBuffer, FunctionWrapper<TIR.PhysicalBuffer, bool>> InputOf(this ReadOnlySpan<TIR.PhysicalBuffer> arr) => arr.AsValueEnumerable().Where(b => b.MemLocation == MemoryLocation.Input);
 
-    public static ArrayExtensions.SpanWhereEnumerable<TIR.PhysicalBuffer, FunctionWrapper<TIR.PhysicalBuffer, bool>> OutputOf(this ReadOnlySpan<TIR.PhysicalBuffer> arr) => arr.AsValueEnumerable().Where(b => b.MemLocation == Schedule.MemoryLocation.Output);
+    public static ArrayExtensions.SpanWhereEnumerable<TIR.PhysicalBuffer, FunctionWrapper<TIR.PhysicalBuffer, bool>> OutputOf(this ReadOnlySpan<TIR.PhysicalBuffer> arr) => arr.AsValueEnumerable().Where(b => b.MemLocation == MemoryLocation.Output);
 }
 
 public sealed class UnitTestStringUtility
 {
-    private readonly TIR.PrimFunction _entry = new("test_module", new Sequential(1), new TIR.PhysicalBuffer("testInput", DataTypes.Float32, Schedule.MemoryLocation.Input, new[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new[] { 1, 16, 64, 400 }), 0, 0), new TIR.PhysicalBuffer("testInput", DataTypes.Float32, Schedule.MemoryLocation.Input, new[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new[] { 1, 16, 64, 400 }), 0, 0));
+    private readonly TIR.PrimFunction _entry = new("test_module", new Sequential(1), new TIR.PhysicalBuffer("testInput", DataTypes.Float32, MemoryLocation.Input, new[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new[] { 1, 16, 64, 400 }), 0, 0), new TIR.PhysicalBuffer("testInput", DataTypes.Float32, MemoryLocation.Input, new[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new[] { 1, 16, 64, 400 }), 0, 0));
 
     [Fact]
     public void TestJoin()

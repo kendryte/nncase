@@ -33,12 +33,9 @@ public class StoreEvaluator : ITypeInferencer<Store>, IOpPrinter<Store>
 
     private IRType Visit(Store target, TensorType handle, TensorType index, TensorType value)
     {
-        _ = index.IsScalar ? 1 : index.Shape[0].FixedValue;
-
-        var elemType = ((PointerType)handle.DType).ElemType;
-        if (elemType != value.DType)
+        if (handle.DType != value.DType)
         {
-            return new InvalidType($"You Can't Load The {value.DType} To {elemType}");
+            return new InvalidType($"You Can't Load The {value.DType} To {handle.DType}");
         }
 
         return TupleType.Void;

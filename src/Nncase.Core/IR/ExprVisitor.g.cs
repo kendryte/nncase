@@ -205,6 +205,13 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
         return VisitLeafIterVar(expr, context);
     }
 
+    /// <inheritdoc />
+    protected internal override TExprResult VisitMemSpan(TIR.MemSpan expr, TContext context)
+    {
+        VisitOperands(expr, context);
+        return VisitLeafMemSpan(expr, context);
+    }
+
     /// <summary>
     /// Visit leaf <see cref="BaseFunction"/>.
     /// </summary>
@@ -344,6 +351,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     /// Visit leaf <see cref="TIR.IterVar"/>.
     /// </summary>
     protected virtual TExprResult VisitLeafIterVar(TIR.IterVar expr, TContext context) => DefaultVisitLeaf(expr, context);
+
+    /// <summary>
+    /// Visit leaf <see cref="TIR.MemSpan"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafMemSpan(TIR.MemSpan expr, TContext context) => DefaultVisitLeaf(expr, context);
 
 }
 
@@ -524,6 +536,14 @@ public partial class ExprVisitor<TExprResult, TTypeResult>
 
     /// <inheritdoc/>
     internal protected sealed override TExprResult VisitIterVar(TIR.IterVar expr, Unit context) => VisitIterVar(expr);
+    /// <summary>
+    /// Visit <see cref="TIR.IterVar"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitMemSpan(TIR.MemSpan expr) => base.VisitMemSpan(expr, default);
+
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitMemSpan(TIR.MemSpan expr, Unit context) => VisitMemSpan(expr);
+
     /// <summary>
     /// Visit leaf <see cref="BaseFunction"/>.
     /// </summary>
@@ -748,4 +768,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult>
     /// <inheritdoc/>
     protected sealed override TExprResult VisitLeafIterVar(TIR.IterVar expr, Unit context) => VisitLeafIterVar(expr);
 
+    /// <summary>
+    /// Visit leaf <see cref="TIR.MemSpan"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafMemSpan(TIR.MemSpan expr) => base.VisitLeafMemSpan(expr, default);
+
+    /// <inheritdoc/>
+    protected sealed override TExprResult VisitLeafMemSpan(TIR.MemSpan expr, Unit context) => VisitLeafMemSpan(expr);
 }
