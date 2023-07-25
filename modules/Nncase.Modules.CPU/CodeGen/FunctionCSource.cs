@@ -87,6 +87,12 @@ public class CSourceCompiler
     }
 
     /// <summary>
+    /// create the temp dll file and compile source
+    /// <see cref="Compile(string, string)"/>.
+    /// </summary>
+    public string Compile(string sourcePath) => Compile(sourcePath, CodeGenUtil.GetTempFileName(Ext));
+
+    /// <summary>
     /// select current pattern's exe.
     /// </summary>
     /// <exception cref="NotSupportedException"></exception>
@@ -138,12 +144,6 @@ public class CSourceCompiler
 
         throw new System.ArgumentOutOfRangeException("Only Support Linux/Osx/Windows");
     }
-
-    /// <summary>
-    /// create the temp dll file and compile source
-    /// <see cref="Compile(string, string)"/>.
-    /// </summary>
-    public string Compile(string sourcePath) => Compile(sourcePath, CodeGenUtil.GetTempFileName(Ext));
 }
 
 internal sealed class FunctionCSource
