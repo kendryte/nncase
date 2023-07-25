@@ -38,7 +38,9 @@ class FlattenTest : public KernelTest,
                 .expect("create tensor failed");
         init_tensor(input);
 
-        axis_value = value;
+        axis_value = value > 0 ? value >= (int32_t)l_shape.size() ? 0 : value
+                     : -value > (int32_t)l_shape.size() ? 0
+                                                        : value;
         int32_t axis_array[] = {axis_value};
         axis = hrt::create(dt_int32, {1},
                            {reinterpret_cast<gsl::byte *>(axis_array),
@@ -58,10 +60,12 @@ class FlattenTest : public KernelTest,
 INSTANTIATE_TEST_SUITE_P(
     flatten, FlattenTest,
     testing::Combine(testing::Values(dt_float32, dt_int8, dt_int32, dt_uint8,
-                                     dt_int16),
+                                     dt_int16, dt_uint16, dt_uint32, dt_uint64,
+                                     dt_int64, dt_float16, dt_float64,
+                                     dt_bfloat16, dt_boolean),
                      testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 3, 48, 48},
                                      dims_t{1, 2}, dims_t{1, 3, 16}),
-                     testing::Values(0, 1, -1)));
+                     testing::Values(0, 1, -1, 2, 3, -2, -3, -4)));
 
 TEST_P(FlattenTest, flatten) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);

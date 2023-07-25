@@ -63,9 +63,13 @@ class GatherNDTest
     runtime_tensor batchDims;
 };
 
-INSTANTIATE_TEST_SUITE_P(gather_nd, GatherNDTest,
-                         testing::Combine(testing::Values(dt_int32, dt_int64),
-                                          testing::Values(dims_t{2, 2})));
+INSTANTIATE_TEST_SUITE_P(
+    gather_nd, GatherNDTest,
+    testing::Combine(testing::Values(dt_int32, dt_int64, dt_float32, dt_uint64,
+                                     dt_int8, dt_int16, dt_uint8, dt_uint16,
+                                     dt_uint32, dt_float16, dt_float64,
+                                     dt_bfloat16, dt_boolean),
+                     testing::Values(dims_t{2, 2})));
 
 TEST_P(GatherNDTest, gather_nd) {
     auto input_ort = runtime_tensor_2_ort_tensor(input);

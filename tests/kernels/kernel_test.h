@@ -204,6 +204,19 @@ class KernelTest {
                 });
             break;
         }
+        case dt_bfloat16:{
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_real_distribution<> dis(-1.0, 1.0);
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<bool>(tensor, index) =
+                        static_cast<double>(dis(gen)) >= 0;
+                    return ok();
+                });
+            break;
+        }
         default: {
         }
         }
@@ -224,7 +237,7 @@ class KernelTest {
         if (shape.size() == 1 && (shape[0] == initvalue.size())) {
             // One dim array attribute
             T *tmp = new T[shape[0]];
-            for (int i = 0; i < shape[0]; ++i) {
+            for (int i = 0; i < (int)shape[0]; ++i) {
                 tmp[i] = initvalue[i];
             }
             return tmp;
@@ -1139,6 +1152,10 @@ class KernelTest {
             ort_type = ortki::DataType_DOUBLE;
             break;
         }
+        case dt_bfloat16:{
+            ort_type = ortki::DataType_BFLOAT16;
+            break;
+        }
         default: {
             std::cerr << "unsupported data type: dtype = " << dtype
                       << std::endl;
@@ -1348,6 +1365,20 @@ class KernelTest {
                            }
                            break;
                        }
+                       case dt_bfloat16: {
+                           if (get<bfloat16>(lhs, index) == get<bfloat16>(rhs, index) ||
+                               fabs(get<bfloat16>(lhs, index) -
+                                    get<bfloat16>(rhs, index)) <=
+                                   std::numeric_limits<float>::epsilon()) {
+                               return ok();
+                           } else if (std::isnan(get<bfloat16>(lhs, index)) &&
+                                      std::isnan(get<bfloat16>(rhs, index))) {
+                               return ok();
+                           } else {
+                               return err(std::errc::not_supported);
+                           }
+                           break;
+                       }
                        case dt_float32: {
                            if (get<float>(lhs, index) ==
                                    get<float>(rhs, index) ||
@@ -1464,6 +1495,16 @@ class KernelTest {
                         static_cast<float>(get<uint64_t>(rhs, index)));
                     break;
                 }
+                case dt_float16: {
+                    vec1.push_back(get<half>(lhs, index));
+                    vec2.push_back(get<half>(rhs, index));
+                    break;
+                }
+                case dt_bfloat16: {
+                    vec1.push_back(get<bfloat16>(lhs, index));
+                    vec2.push_back(get<bfloat16>(rhs, index));
+                    break;
+                }
                 case dt_float32: {
                     vec1.push_back(get<float>(lhs, index));
                     vec2.push_back(get<float>(rhs, index));
@@ -1558,6 +1599,10 @@ class KernelTest {
                     break;
                 case dt_boolean:
                     std::cout << static_cast<bool>(get<bool>(lhs, index))
+                              << " ";
+                    break;
+                case dt_bfloat16:
+                    std::cout << static_cast<double>(get<bfloat16>(lhs, index))
                               << " ";
                     break;
                 default:

@@ -48,7 +48,9 @@ class TileTest
 INSTANTIATE_TEST_SUITE_P(
     Tile, TileTest,
     testing::Combine(
-        testing::Values(dt_float32, dt_int8, dt_uint8, dt_int32, dt_int16),
+        testing::Values(dt_float32, dt_int32, dt_int16, dt_float64,
+                        dt_int8, dt_uint8, dt_uint16, dt_uint32,
+                        dt_uint64, dt_int64, dt_boolean),
         testing::Values(dims_t{1, 2, 4, 8}, dims_t{1, 3, 16, 16})));
 
 TEST_P(TileTest, Tile) {

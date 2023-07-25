@@ -33,12 +33,10 @@ class DequantizeTest
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
 
-        uint8_t input_array[] = {127, 128, 150, 160, 170, 180, 200, 205};
-        input = hrt::create(typecode, {2, 4},
-                            {reinterpret_cast<gsl::byte *>(input_array),
-                             sizeof(input_array)},
-                            true, host_runtime_tensor::pool_cpu_only)
-                    .expect("create tensor failed");
+        input =
+            hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
+                .expect("create tensor failed");
+        init_tensor(input);
     }
 
     void TearDown() override {}
@@ -48,7 +46,7 @@ class DequantizeTest
 };
 
 INSTANTIATE_TEST_SUITE_P(dequantize, DequantizeTest,
-                         testing::Combine(testing::Values(dt_uint8),
+                         testing::Combine(testing::Values(dt_uint8, dt_int8),
                                           testing::Values(dims_t{1, 3, 16,
                                                                  16})));
 
@@ -56,13 +54,22 @@ TEST_P(DequantizeTest, dequantize) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
 
     // expected
-    uint8_t zero_point[] = {127};
-    auto zero_point_ptr =
-        hrt::create(
-            nncase::dt_uint8, {1},
-            {reinterpret_cast<gsl::byte *>(zero_point), sizeof(zero_point)},
-            true, host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
+    runtime_tensor zero_point_ptr;
+    if (input.datatype() == dt_uint8) {
+        uint8_t zero_point[] = {127};
+        zero_point_ptr = hrt::create(nncase::dt_uint8, {1},
+                                     {reinterpret_cast<gsl::byte *>(zero_point),
+                                      sizeof(zero_point)},
+                                     true, host_runtime_tensor::pool_cpu_only)
+                             .expect("create tensor failed");
+    } else if (input.datatype() == dt_int8) {
+        int8_t zero_point[] = {127};
+        zero_point_ptr = hrt::create(nncase::dt_int8, {1},
+                                     {reinterpret_cast<gsl::byte *>(zero_point),
+                                      sizeof(zero_point)},
+                                     true, host_runtime_tensor::pool_cpu_only)
+                             .expect("create tensor failed");
+    }
 
     float_t scale[] = {0.01f};
     auto scale_ptr =

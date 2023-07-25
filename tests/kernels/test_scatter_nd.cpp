@@ -26,32 +26,31 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class ScatterNDTest : public KernelTest,
-                      public ::testing::TestWithParam<
-                          std::tuple<nncase::typecode_t, typecode_t, dims_t>> {
+class ScatterNDTest
+    : public KernelTest,
+      public ::testing::TestWithParam<
+          std::tuple<nncase::typecode_t, typecode_t, dims_t, dims_t, dims_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode1, typecode2, l_shape] = GetParam();
+        auto &&[typecode1, typecode2, input_shape, indices_shape,
+                updates_shape] = GetParam();
 
-        float_t input_array[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-        input = hrt::create(typecode1, {2, 1, 10},
-                            {reinterpret_cast<gsl::byte *>(input_array),
-                             sizeof(input_array)},
-                            true, host_runtime_tensor::pool_cpu_only)
+        input = hrt::create(typecode1, input_shape,
+                            host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
+        init_tensor(input);
+
         int64_t indices_array[] = {0, 0, 1, 1, 0, 1};
-        indices = hrt::create(typecode2, {2, 1, 1, 3},
+        indices = hrt::create(typecode2, indices_shape,
                               {reinterpret_cast<gsl::byte *>(indices_array),
                                sizeof(indices_array)},
                               true, host_runtime_tensor::pool_cpu_only)
                       .expect("create tensor failed");
-        float_t updates_array[] = {5.0f, 10.0f};
-        updates = hrt::create(typecode1, {2, 1, 1},
-                              {reinterpret_cast<gsl::byte *>(updates_array),
-                               sizeof(updates_array)},
-                              true, host_runtime_tensor::pool_cpu_only)
+
+        updates = hrt::create(typecode1, updates_shape,
+                              host_runtime_tensor::pool_cpu_only)
                       .expect("create tensor failed");
+        init_tensor(updates);
     }
 
     void TearDown() override {}
@@ -64,8 +63,12 @@ class ScatterNDTest : public KernelTest,
 
 INSTANTIATE_TEST_SUITE_P(
     ScatterND, ScatterNDTest,
-    testing::Combine(testing::Values(dt_float32), testing::Values(dt_int64),
-                     testing::Values(dims_t{1, 3, 16, 16})));
+    testing::Combine(
+        testing::Values(dt_float32, dt_uint8, dt_int8, dt_float16, dt_uint32,
+                        dt_uint64, dt_uint16, dt_int16, dt_int32, dt_int64,
+                        dt_float64, dt_boolean, dt_bfloat16),
+        testing::Values(dt_int64), testing::Values(dims_t{2, 1, 10}),
+        testing::Values(dims_t{2, 1, 1, 3}), testing::Values(dims_t{2, 1, 1})));
 
 TEST_P(ScatterNDTest, ScatterND) {
 

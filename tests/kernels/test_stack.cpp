@@ -47,8 +47,10 @@ class StackTest
 
 INSTANTIATE_TEST_SUITE_P(
     Stack, StackTest,
-    testing::Combine(testing::Values(dt_float32, dt_float64, dt_int32, dt_int64,
-                                     dt_int8, dt_int16),
+    testing::Combine(testing::Values(dt_float32, dt_int32, dt_int16, dt_float64,
+                                     dt_int8, dt_uint8, dt_uint16, dt_uint32,
+                                     dt_uint64, dt_int64, dt_bfloat16,
+                                     dt_float16, dt_boolean),
                      testing::Values(dims_t{1}, dims_t{2}, dims_t{1, 1},
                                      dims_t{1, 2, 4, 8}, dims_t{4, 4, 8})));
 

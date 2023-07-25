@@ -41,12 +41,10 @@ class OneHotTest
                               true, host_runtime_tensor::pool_cpu_only)
                       .expect("create tensor failed");
 
-        float_t values_ptr[] = {0, 1};
         values = hrt::create(value_typecode, values_shape,
-                             {reinterpret_cast<gsl::byte *>(values_ptr),
-                              sizeof(values_ptr)},
-                             true, host_runtime_tensor::pool_cpu_only)
+                             host_runtime_tensor::pool_cpu_only)
                      .expect("create tensor failed");
+        init_tensor(values);
 
         int32_t depth_ptr[] = {5};
         depth = hrt::create(dt_int32, {1},
@@ -67,12 +65,12 @@ class OneHotTest
     int32_t axis;
 };
 
-INSTANTIATE_TEST_SUITE_P(OneHot, OneHotTest,
-                         testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dt_int64),
-                                          testing::Values(dims_t{4}),
-                                          testing::Values(dims_t{2}),
-                                          testing::Values(0, 1)));
+INSTANTIATE_TEST_SUITE_P(
+    OneHot, OneHotTest,
+    testing::Combine(testing::Values(dt_float16, dt_float32, dt_uint32, dt_uint8, dt_int8,
+                                     dt_uint16, dt_int16),
+                     testing::Values(dt_int64), testing::Values(dims_t{4}),
+                     testing::Values(dims_t{2}), testing::Values(0, 1)));
 
 TEST_P(OneHotTest, OneHot) {
     auto indices_ort = runtime_tensor_2_ort_tensor(indices);
