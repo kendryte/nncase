@@ -72,5 +72,26 @@ def model_simplify(model_file):
         
     return model_file
 
+def run_kmodel(kmodel_path, input_data):
+    print("\n---------start run kmodel---------")
+    print("Load kmodel...")
+    model_sim = nncase.Simulator()
+    with open(kmodel_path, 'rb') as f:
+        model_sim.load_model(f.read())
+    
+    print("Set input data...")
+    for i, p_d in enumerate(input_data):
+        model_sim.set_input_tensor(i, nncase.RuntimeTensor.from_numpy(p_d))
+    
+    print("Run...")
+    model_sim.run()
+    
+    print("Get output result...")
+    all_result = []
+    for i in range(model_sim.outputs_size):
+        result = model_sim.get_output_tensor(i).to_numpy()
+        all_result.append(result)
+    print("----------------end-----------------")
+    return all_result
 
 

@@ -22,7 +22,7 @@ nncase工具链compiler部分包括nncase和KPU插件包
   sudo apt-get install -y dotnet-sdk-7.0
   ```
 
-用户若没有Ubuntu环境, 可使用[nncase docker](https://github.com/kendryte/nncase/blob/master/docs/build.md#docker)(Ubuntu 20.04 + Python 3.8)
+用户若没有Ubuntu环境, 可使用nncase docker(Ubuntu 20.04 + Python 3.8)
 
 ```shell
 $ cd /path/to/nncase_sdk
@@ -45,6 +45,8 @@ Type "help", "copyright", "credits" or "license" for more information.
 ## 编译模型和推理示例
 
 k230模型编译推理参考Jupyter脚本：[User_guide](../examples/user_guide/k230_simulate.ipynb)，脚本中包含了单输入和多输入的示例。
+
+如果在Docker中运行Jupyter脚本，可以参考[配置Jupyter lab](https://github.com/kunjing96/docker-jupyterlab#32-%E9%85%8D%E7%BD%AEjupyter-lab)进行配置。
 
 在执行脚本之前需要根据自身需求修改以下内容：
 
@@ -169,6 +171,7 @@ compile_options.target = "cpu" #"k230"
 compile_options.dump_ir = True  # if False, will not dump the compile-time result.
 compile_options.dump_asm = True
 compile_options.dump_dir = "dump_path"
+compile_options.input_file = ""
 
 # preprocess args
 compile_options.preprocess = False
