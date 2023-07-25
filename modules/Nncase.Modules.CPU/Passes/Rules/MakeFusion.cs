@@ -29,7 +29,7 @@ internal sealed partial class CPUFusion : FusionMaker
         var newInputs = new List<Expr>();
         for (int i = 0; i < callParams.Count; i++)
         {
-            if (callParams[i] is (Call or Var))
+            if (callParams[i] is Call or Var)
             {
                 newInputs.Add(new Var(callParams[i].CheckedType!));
             }
