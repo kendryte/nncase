@@ -67,8 +67,8 @@ class OneHotTest
 
 INSTANTIATE_TEST_SUITE_P(
     OneHot, OneHotTest,
-    testing::Combine(testing::Values(dt_float16, dt_float32, dt_uint32, dt_uint8, dt_int8,
-                                     dt_uint16, dt_int16),
+    testing::Combine(testing::Values(dt_float16, dt_float32, dt_uint32,
+                                     dt_uint8, dt_int8, dt_uint16, dt_int16),
                      testing::Values(dt_int64), testing::Values(dims_t{4}),
                      testing::Values(dims_t{2}), testing::Values(0, 1)));
 

@@ -204,7 +204,7 @@ class KernelTest {
                 });
             break;
         }
-        case dt_bfloat16:{
+        case dt_bfloat16: {
             std::random_device rd;
             std::mt19937 gen(rd());
             std::uniform_real_distribution<> dis(-1.0, 1.0);
@@ -1152,7 +1152,7 @@ class KernelTest {
             ort_type = ortki::DataType_DOUBLE;
             break;
         }
-        case dt_bfloat16:{
+        case dt_bfloat16: {
             ort_type = ortki::DataType_BFLOAT16;
             break;
         }
@@ -1366,7 +1366,8 @@ class KernelTest {
                            break;
                        }
                        case dt_bfloat16: {
-                           if (get<bfloat16>(lhs, index) == get<bfloat16>(rhs, index) ||
+                           if (get<bfloat16>(lhs, index) ==
+                                   get<bfloat16>(rhs, index) ||
                                fabs(get<bfloat16>(lhs, index) -
                                     get<bfloat16>(rhs, index)) <=
                                    std::numeric_limits<float>::epsilon()) {
