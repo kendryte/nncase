@@ -53,4 +53,26 @@ public class UnitTestCPUTargetTiling : TestClassBase
             fs.Write(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, new[] { 1, 2, 3, 4, 5 }).Evaluate().AsTensor().BytesBuffer);
         }
     }
+
+    [Fact]
+    public async Task TestCpuMatMul()
+    {
+        var lhs = new Var("lhs", new TensorType(DataTypes.Float32, new[] { 3, 4 }));
+        var rhs = new Var("rhs", new TensorType(DataTypes.Float32, new[] { 4, 6 }));
+        var main = new Function("main", IR.F.Tensors.MatMul(lhs, rhs), new[] { lhs, rhs });
+        var module = new IR.IRModule(main);
+
+        var compiler = CompileSession.Compiler;
+        compiler.ImportIRModule(module);
+        await compiler.CompileAsync();
+        using (var fs = Dumpper.OpenFile("test.kmodel"))
+        {
+            compiler.Gencode(fs);
+        }
+
+        using (var fs = Dumpper.OpenFile("input_0.bin"))
+        {
+            fs.Write(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, new[] { 1, 2, 3, 4, 5 }).Evaluate().AsTensor().BytesBuffer);
+        }
+    }
 }

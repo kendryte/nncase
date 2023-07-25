@@ -71,11 +71,33 @@ internal sealed class SingleCPUFusionConverter
                 case Binary binary:
                     GenerateBinary(binary, arguments, ret, expr);
                     break;
+                case MatMul matmul:
+                    GenerateMatMul(arguments, ret, expr);
+                    break;
                 default:
                     throw new NotSupportedException();
             }
 
             return default;
+        }
+
+        private void GenerateMatMul(Buffer[] arguments, Buffer ret, Call expr)
+        {
+            var lhs = arguments[0];
+            var rhs = arguments[1];
+
+            // [m,k] @ [k, n]
+            var body = T.Block(nameof(MatMul)).Body(
+                T.Serial(out var m, (0, lhs.Dimensions[0])).Body(
+                    T.Serial(out var n, (0, rhs.Dimensions[1])).Body(
+                        T.Serial(out var k, (0, lhs.Dimensions[1])).Body(
+                            T.BufferStore(ret, new[] { m, n }, T.BufferLoad(ret, m, n) + (T.BufferLoad(lhs, m, k) * T.BufferLoad(rhs, k, n)))
+                        )
+                    )
+                )
+            );
+
+            _mainBody.Add(body.Build());
         }
 
         private void GenerateUnary(Unary unary, ReadOnlySpan<Buffer> arguments, Buffer ret)
