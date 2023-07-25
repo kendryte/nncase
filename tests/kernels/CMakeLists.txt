@@ -2,12 +2,6 @@ enable_testing()
 
 find_package(ortki)
 
-execute_process(COMMAND bash "./generate_macro.sh"
-                WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests/kernels
-                TIMEOUT 3
-                OUTPUT_STRIP_TRAILING_WHITESPACE
-                ERROR_STRIP_TRAILING_WHITESPACE)
-
 macro(add_test_exec name)
     add_executable(${name} ${name}.cpp)
     target_link_libraries(${name} PRIVATE GTest::gtest_main nncaseruntime ortki::ortki)

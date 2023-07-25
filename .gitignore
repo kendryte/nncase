@@ -303,4 +303,4 @@ cmake-build-*
 *gmodel_dump_dir*
 
 # Auto generated files
-generated/
+# generated/
