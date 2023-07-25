@@ -18,26 +18,29 @@ using static Nncase.Utilities.ReplaceUtility;
 namespace Nncase.Passes.Rules;
 
 [RuleGenerator]
-internal partial class CPUSingleInputFusion<T> : FusionMaker
-    where T : Op
+internal sealed partial class CPUFusion : FusionMaker
 {
     public override string ModuleKind { get; } = CPUTarget.Kind;
 
-    public override Pattern Pattern { get; } = IsCallWildcard(
-            "call",
-            IsOp<T>("op"),
-            IsWildcard("input"));
+    public override Pattern Pattern => IsCallWildcard("call", IsOp<CPUKernelOp>("op"));
 
-    private Call? GetReplace(Call call, IReadOnlyList<Expr> callParams, Op op, Expr input)
+    private Call? GetReplace(Call call, CPUKernelOp op, IReadOnlyList<Expr> callParams)
     {
-        var newInput = new Var(input.CheckedType!);
-        var newCall = ReplaceCallParams(op, callParams, (input, newInput));
-        var fusion = new Call(new Fusion(FullName, ModuleKind, newCall, new[] { newInput }), input);
-        return fusion;
-    }
-}
+        var newInputs = new List<Expr>();
+        for (int i = 0; i < callParams.Count; i++)
+        {
+            if (callParams[i] is (Call or Var))
+            {
+                newInputs.Add(new Var(callParams[i].CheckedType!));
+            }
+            else
+            {
+                newInputs.Add(callParams[i]);
+            }
+        }
 
-internal sealed class CPUFusion : CPUSingleInputFusion<CPUKernelOp>
-{
-    public override string Name => nameof(CPUFusion);
+        var newCall = new Call(op, newInputs.ToArray());
+        var callFusion = new Call(new Fusion(FullName, ModuleKind, newCall, newInputs.OfType<Var>().ToArray()), newInputs.Select((e, i) => (e, i)).Where(p => p.e is Var).Select(p => callParams[p.i]).ToArray());
+        return callFusion;
+    }
 }
