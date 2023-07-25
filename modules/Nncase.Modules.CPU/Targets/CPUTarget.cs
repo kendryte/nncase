@@ -87,7 +87,9 @@ public class CPUTarget : ITarget
         passManager.Add<PrimFuncPass>().Configure(p =>
         {
             p.Add<Passes.Mutators.UnFoldBlock>();
+            p.Add<Passes.Mutators.FlattenBuffer>();
             p.Add<Passes.Mutators.FlattenSequential>();
+            p.Add<Passes.Mutators.FoldConstCall>();
         });
     }
 

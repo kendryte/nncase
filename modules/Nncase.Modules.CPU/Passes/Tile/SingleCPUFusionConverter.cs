@@ -82,9 +82,8 @@ internal sealed class SingleCPUFusionConverter
         {
             var input = arguments[Unary.Input.Index];
             var loops = Enumerable.Range(0, input.Rank).Select(i => (T.ForLoop(out var loopVar, (0, input.Dimensions[i]), LoopMode.Serial, $"loop_{i}"), loopVar)).ToArray();
-            var input_index = Enumerable.Range(0, input.Rank).Aggregate((Expr)0, (acc, i) => acc + (input.Strides[i] * loops[i].loopVar));
-            var output_index = Enumerable.Range(0, input.Rank).Aggregate((Expr)0, (acc, i) => acc + (ret.Strides[i] * loops[i].loopVar));
-            Expr stmt = T.Store(ret, output_index, IR.F.Math.Unary(unary.UnaryOp, T.Load(input, output_index)));
+            var loopVars = loops.Select(f => f.loopVar).ToArray();
+            Expr stmt = T.BufferStore(ret, loopVars, IR.F.Math.Unary(unary.UnaryOp, T.BufferLoad(input, loopVars)));
             var final = loops.Reverse().Aggregate(stmt, (acc, p) => p.Item1.Body(acc).Build());
             _mainBody.Add(T.Block(nameof(Unary)).Body(final).Build());
         }
@@ -106,11 +105,8 @@ internal sealed class SingleCPUFusionConverter
             var rhsScale = outShape.Zip(rhsShape).Select(s => s.First / s.Second).ToArray();
 
             var loops = Enumerable.Range(0, outShape.Length).Select(i => (T.ForLoop(out var loopVar, (0, outShape[i]), LoopMode.Serial, $"loop_{i}"), loopVar)).ToArray();
-            var input_index = Enumerable.Range(0, input.Rank).Aggregate((Expr)0, (acc, i) => acc + (input.Strides[i] * loops[i].loopVar));
-            var output_index = Enumerable.Range(0, input.Rank).Aggregate((Expr)0, (acc, i) => acc + (ret.Strides[i] * loops[i].loopVar));
-            Expr stmt = T.Store(ret, output_index, IR.F.Math.Unary(unary.UnaryOp, T.Load(input, output_index)));
-            var final = loops.Reverse().Aggregate(stmt, (acc, p) => p.Item1.Body(acc).Build());
-            _mainBody.Add(T.Block(nameof(Unary)).Body(final).Build());
+            // var ?final = loops.Reverse().Aggregate(stmt, (acc, p) => p.Item1.Body(acc).Build());
+            // _mainBody.Add(T.Block(nameof(Unary)).Body(final).Build());
         }
 
         private TIR.Buffer TryAllocateBuffer(Expr expr)

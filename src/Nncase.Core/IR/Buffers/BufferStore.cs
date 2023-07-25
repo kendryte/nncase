@@ -8,7 +8,7 @@ using static Nncase.IR.TypePatternUtility;
 namespace Nncase.IR.Buffers;
 
 /// <summary>
-/// BufferIndexOf expression.
+/// BufferStore op.
 /// </summary>
 [PatternFunctionalGenerator]
 public sealed partial class BufferStore : Op
@@ -18,7 +18,16 @@ public sealed partial class BufferStore : Op
     /// </summary>
     public static readonly ParameterInfo Input = new(typeof(BufferStore), 0, "input", IsTensor());
 
+    /// <summary>
+    /// Get the indices parameter.
+    /// </summary>
     public static readonly ParameterInfo Indices = new(typeof(BufferStore), 1, "indices", IsTuple());
 
-    public static readonly ParameterInfo Value = new(typeof(BufferStore), 2, "value", IsTensor());
+    /// <summary>
+    /// Get the value parameter.
+    /// </summary>
+    public static readonly ParameterInfo Value = new(typeof(BufferStore), 2, "value", IsScalar());
+
+    /// <inheritdoc/>
+    public override bool CanFoldConstCall => false;
 }

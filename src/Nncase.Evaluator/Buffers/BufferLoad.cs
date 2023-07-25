@@ -18,6 +18,7 @@ public partial class BufferLoadEvaluator : ITypeInferencer<BufferLoad>, IOpPrint
         {
             throw new System.NotSupportedException();
         }
+
         return $"{context.GetArgument(target, BufferLoad.Input)}[{context.GetArgument(target, BufferLoad.Indices)}]";
     }
 

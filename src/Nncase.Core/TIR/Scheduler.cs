@@ -101,16 +101,17 @@ public class Scheduler
 
         // Step 3. create new for loop.
         var nFor = new For[factors.Length];
-        nbody = (Sequential)new Passes.Mutators.SubstituteVarAndCollectOpaqueBlock(v => v == loop.LoopVar ? substitute : v, opaque_block_reuse).Rewrite(nbody);
-        for (int i = factors.Length - 1; i >= 0; i--)
-        {
-            var @for = new For(newloopVars[i], (0, factors[i]), LoopMode.Serial, nbody);
-            nbody = T.Sequential(@for);
-            nFor[i] = @for;
-        }
 
-        // Setp 4. update the function
-        Entry = (Function)new Passes.Mutators.Substitutor(expr => object.ReferenceEquals(expr, loop) ? nFor[0] : null).Rewrite(Entry);
+        // nbody = (Sequential)new Passes.Mutators.SubstituteVarAndCollectOpaqueBlock(v => v == loop.LoopVar ? substitute : v, opaque_block_reuse).Rewrite(nbody);
+        // for (int i = factors.Length - 1; i >= 0; i--)
+        // {
+        //     var @for = new For(newloopVars[i], (0, factors[i]), LoopMode.Serial, nbody);
+        //     nbody = T.Sequential(@for);
+        //     nFor[i] = @for;
+        // }
+
+        // // Setp 4. update the function
+        // Entry = (Function)new Passes.Mutators.Substitutor(expr => object.ReferenceEquals(expr, loop) ? nFor[0] : null).Rewrite(Entry);
         return nFor;
     }
 

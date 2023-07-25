@@ -326,7 +326,8 @@ public static class T
     /// buffer store.
     /// </summary>
     /// <param name="buffer">buffer.</param>
-    /// <param name="indicesAndValue">indices and value.</param>
-    /// <returns>buffer store.</returns>
-    public static Call BufferStore(TIR.Buffer buffer, params Expr[] indicesAndValue) => new Call(new IR.Buffers.BufferLoad(), buffer, new IR.Tuple(indicesAndValue[..^1]), indicesAndValue[^1]);
+    /// <param name="indices">indices.</param>
+    /// <param name="value">value.</param>
+    /// <returns> call bufferstore.</returns>
+    public static Call BufferStore(TIR.Buffer buffer, Expr[] indices, Expr value) => new Call(new IR.Buffers.BufferStore(), buffer, new IR.Tuple(indices), value);
 }
