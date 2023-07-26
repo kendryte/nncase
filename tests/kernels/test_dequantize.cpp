@@ -45,10 +45,12 @@ class DequantizeTest
     runtime_tensor input;
 };
 
-INSTANTIATE_TEST_SUITE_P(dequantize, DequantizeTest,
-                         testing::Combine(testing::Values(dt_uint8, dt_int8),
-                                          testing::Values(dims_t{1, 3, 16,
-                                                                 16})));
+INSTANTIATE_TEST_SUITE_P(
+    dequantize, DequantizeTest,
+    testing::Combine(testing::Values(dt_uint8, dt_int8),
+                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 3, 16},
+                                     dims_t{3, 16}, dims_t{16, 16}, dims_t{1},
+                                     dims_t{})));
 
 TEST_P(DequantizeTest, dequantize) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);

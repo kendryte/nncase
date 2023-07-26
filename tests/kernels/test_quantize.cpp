@@ -33,12 +33,10 @@ class QuantizeTest
     void SetUp() override {
         auto &&[typecode, l_shape] = GetParam();
 
-        float input_array[] = {1.0F, 1.2F, 1.4F, 1.5F, 1.6F, 1.8F, 1.9F, 2.0F};
-        input = hrt::create(typecode, {2, 4},
-                            {reinterpret_cast<gsl::byte *>(input_array),
-                             sizeof(input_array)},
-                            true, host_runtime_tensor::pool_cpu_only)
-                    .expect("create tensor failed");
+        input =
+            hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
+                .expect("create tensor failed");
+        init_tensor(input);
     }
 
     void TearDown() override {}
@@ -47,10 +45,12 @@ class QuantizeTest
     runtime_tensor input;
 };
 
-INSTANTIATE_TEST_SUITE_P(quantize, QuantizeTest,
-                         testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 3, 16,
-                                                                 16})));
+INSTANTIATE_TEST_SUITE_P(
+    quantize, QuantizeTest,
+    testing::Combine(testing::Values(dt_float32),
+                     testing::Values(dims_t{2, 4}, dims_t{1, 3, 16, 16},
+                                     dims_t{1, 3, 16}, dims_t{1, 3}, dims_t{1},
+                                     dims_t{}, dims_t{16, 16})));
 
 TEST_P(QuantizeTest, quantize) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
