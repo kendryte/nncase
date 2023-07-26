@@ -20,6 +20,7 @@
 #include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/runtime_loader.h>
 #include <nncase/runtime/runtime_op_utility.h>
+#include <nncase/runtime/stackvm/op_profile.h>
 #include <nncase/runtime/span_reader.h>
 #include <nncase/runtime/stream_reader.h>
 
@@ -237,6 +238,9 @@ result<void> interpreter::run() noexcept {
                         ? ret_fields[0]
                         : tuple(std::in_place, std::move(ret_fields))));
     }
+#ifdef ENABLE_OP_PROFILE
+    op_profile::print();
+#endif
 
     return ok();
 }
