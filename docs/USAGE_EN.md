@@ -767,10 +767,54 @@ if __name__ == '__main__':
 
 ## Deploy nncase runtime
 
-### K210
+### Inference on K210 development board
 
-1. Download `k210-runtime.zip` from [Release](https://github.com/kendryte/nncase/releases) page.
-2. Unzip to your [kendryte-standalone-sdk](https://github.com/kendryte/kendryte-standalone-sdk) 's `lib/nncase/v1` directory.
+1. Download [SDK](https://github.com/kendryte/kendryte-standalone-sdk)
+
+      ```shell
+      $ git clone https://github.com/kendryte/kendryte-standalone-sdk.git
+      $ cd kendryte-standalone-sdk
+      $ export KENDRYTE_WORKSPACE=`pwd`
+      ```
+
+2. Download the cross-compile toolchain and extract it
+
+   ```shell
+   $ wget https://github.com/kendryte/kendryte-gnu-toolchain/releases/download/v8.2.0-20190409/kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar.xz -O $KENDRYTE_WORKSPACE/kendryte-toolchain.tar.xz
+   $ cd $KENDRYTE_WORKSPACE
+   $ mkdir toolchain
+   $ tar -xf kendryte-toolchain.tar.xz -C ./toolchain
+   ```
+
+3. Update nncase runtime
+
+   Download `k210-runtime.zip` from [Release](https://github.com/kendryte/nncase/releases) and extract it into [kendryte-standalone-sdk](https://github.com/kendryte/kendryte-standalone-sdk) 's `lib/nncase/v1`.
+
+4. Compile App
+
+   ```shell
+   # 1.copy your programe into `$KENDRYTE_WORKSPACE/src`
+   # e.g. copy ($NNCASE_WORK_DIR/examples/facedetect_landmark/k210/facedetect_landmark_example) into PATH_TO_SDK/src.
+   $ cp -r $NNCASE_WORK_DIR/examples/facedetect_landmark/k210/facedetect_landmark_example $KENDRYTE_WORKSPACE/src/
+   
+   # 2. compile
+   $ cd $KENDRYTE_WORKSPACE
+   $ mkdir build
+   $ cmake .. -DPROJ=facedetect_landmark_example -DTOOLCHAIN=$KENDRYTE_WORKSPACE/toolchain/kendryte-toolchain/bin && make
+   ```
+
+   `facedetect_landmark_example` and`FaceDETECt_landmark_example.bin` will be generated.
+
+5. Write the program to the K210 development board
+
+   ```shell
+   # 1. Check available USB ports
+   $ ls /dev/ttyUSB*
+   # /dev/ttyUSB0 /dev/ttyUSB1
+   
+   # 2. Write your App by kflash
+   $ kflash -p /dev/ttyUSB0 -t facedetect_landmark_example.bin
+   ```
 
 ## nncase inference APIs
 

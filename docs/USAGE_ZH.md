@@ -769,10 +769,57 @@ if __name__ == '__main__':
 
 ## 部署 nncase runtime
 
-### K210
+### K210上板推理流程
 
-1. 从 [Release](https://github.com/kendryte/nncase/releases) 页面下载 `k210-runtime.zip`。
-2. 解压到 [kendryte-standalone-sdk](https://github.com/kendryte/kendryte-standalone-sdk) 's `lib/nncase/v1` 目录。
+1. 下载官方[SDK](https://github.com/kendryte/kendryte-standalone-sdk)
+
+   ```shell
+   git clone https://github.com/kendryte/kendryte-standalone-sdk.git
+   cd kendryte-standalone-sdk
+   export KENDRYTE_WORKSPACE=`pwd`
+   ```
+
+2. 下载交叉编译工具链，并解压
+
+   ```shell
+   wget https://github.com/kendryte/kendryte-gnu-toolchain/releases/download/v8.2.0-20190409/kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar.xz -O $KENDRYTE_WORKSPACE/kendryte-toolchain.tar.xz
+   cd $KENDRYTE_WORKSPACE
+   mkdir toolchain
+   tar -xf kendryte-toolchain.tar.xz -C ./toolchain
+   ```
+
+3. 更新runtime
+
+   从 [Release](https://github.com/kendryte/nncase/releases) 页面下载 `k210-runtime.zip`。解压到 [kendryte-standalone-sdk](https://github.com/kendryte/kendryte-standalone-sdk) 's `lib/nncase/v1` 目录。
+
+4. 编译App
+
+   ````shell
+   # 1.将自己的App工程放在`$KENDRYTE_WORKSPACE/src`目录下
+   # 例如，将[example的示例程序]($NNCASE_WORK_DIR/examples/facedetect_landmark/k210/facedetect_landmark_example)目录，拷贝到SDK的src目录下。
+   cp -r $NNCASE_WORK_DIR/examples/facedetect_landmark/k210/facedetect_landmark_example $KENDRYTE_WORKSPACE/src/
+   
+   # 2.cmake 编译App
+   cd $KENDRYTE_WORKSPACE
+   mkdir build
+   cmake .. -DPROJ=facedetect_landmark_example -DTOOLCHAIN=$KENDRYTE_WORKSPACE/toolchain/kendryte-toolchain/bin && make
+   ````
+
+   之后会在当前目录下生成`facedetect_landmark_example`和`facedetect_landmark_example.bin`
+
+5. 烧写App
+
+   ```shell
+   # 1. 检查可用的USB端口
+   ls /dev/ttyUSB*
+   # > /dev/ttyUSB0 /dev/ttyUSB1
+   # 2. 使用kflash进行烧录
+   kflash -p /dev/ttyUSB0 -t facedetect_landmark_example.bin
+   ```
+
+   烧写过程缓慢，需要耐心等待。
+
+
 
 ## nncase 推理模型APIs
 
