@@ -1,7 +1,7 @@
 . ./functions.sh
 . ./kernel_op_config.sh
 mkdir -p generated
-generated_file=generated/generated_macro.h
+generated_file=../../tests/kernels/generated/generated_macro.h
 ARGS=0
 ATTR=0
 GenerateHeader
