@@ -52,9 +52,12 @@ class SliceTest
     runtime_tensor input;
 };
 
-INSTANTIATE_TEST_SUITE_P(Slice, SliceTest,
-                         testing::Combine(testing::Values(dt_int32),
-                                          testing::Values(dims_t{2, 3, 4, 5})));
+INSTANTIATE_TEST_SUITE_P(
+    Slice, SliceTest,
+    testing::Combine(testing::Values(dt_int32),
+                     testing::Values(dims_t{2, 3, 4, 5}, dims_t{1, 4, 5, 6},
+                                     dims_t{1, 1, 1, 120}, dims_t{2, 2, 5, 6},
+                                     dims_t{1, 1, 2, 60})));
 
 TEST_P(SliceTest, Slice) {
 
@@ -97,9 +100,18 @@ TEST_P(SliceTest, Slice) {
             .expect("slice failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
+    bool result1 = is_same_tensor(expected, actual) ||
+                   cosine_similarity_tensor(expected, actual);
+
+    if (!result1) {
+        std::cout << "actual ";
+        print_runtime_tensor(actual);
+        std::cout << "expected ";
+        print_runtime_tensor(expected);
+    }
+
     // compare
-    EXPECT_TRUE(is_same_tensor(expected, actual) ||
-                cosine_similarity_tensor(expected, actual));
+    EXPECT_TRUE(result);
 }
 
 int main(int argc, char *argv[]) {

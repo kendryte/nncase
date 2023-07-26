@@ -46,24 +46,26 @@ class ClampTest
 };
 
 INSTANTIATE_TEST_SUITE_P(
-    Clamp, ClampTest,
+    clamp, ClampTest,
     testing::Combine(testing::Values(dt_float32, dt_int32, dt_int16, dt_int8,
-                                     dt_uint8, dt_uint16),
+                                     dt_uint8, dt_uint16, dt_uint32, dt_uint64,
+                                     dt_int64, dt_float64, dt_boolean),
                      testing::Values(dims_t{1, 3, 16, 16}, dims_t{1},
                                      dims_t{1, 3}, dims_t{8, 8},
-                                     dims_t{1, 3, 8})));
+                                     dims_t{1, 3, 8}, dims_t{16, 16}, dims_t{},
+                                     dims_t{16})));
 
 TEST_P(ClampTest, clamp) {
 
     // expected
-    float_t min1[] = {-7.0f};
+    float_t min1[] = {-1.0f};
     auto min_tensor1 =
         hrt::create(nncase::dt_float32, {1},
                     {reinterpret_cast<gsl::byte *>(min1), sizeof(min1)}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
-    float_t max1[] = {7.0f};
+    float_t max1[] = {1.0f};
     auto max_tensor1 =
         hrt::create(nncase::dt_float32, {1},
                     {reinterpret_cast<gsl::byte *>(max1), sizeof(max1)}, true,
@@ -76,14 +78,14 @@ TEST_P(ClampTest, clamp) {
     runtime_tensor expected(output1.as<tensor>().expect("as tensor failed"));
 
     // actual
-    float_t min[] = {-6.0f};
+    float_t min[] = {-1.0f};
     auto min_tensor =
         hrt::create(nncase::dt_float32, {1},
                     {reinterpret_cast<gsl::byte *>(min), sizeof(min)}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
-    float_t max[] = {6.0f};
+    float_t max[] = {1.0f};
     auto max_tensor =
         hrt::create(nncase::dt_float32, {1},
                     {reinterpret_cast<gsl::byte *>(max), sizeof(max)}, true,
@@ -95,9 +97,18 @@ TEST_P(ClampTest, clamp) {
                       .expect("clamp failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
+    bool result = is_same_tensor(expected, actual) ||
+                  cosine_similarity_tensor(expected, actual);
+
+    if (!result) {
+        std::cout << "actual ";
+        print_runtime_tensor(actual);
+        std::cout << "expected ";
+        print_runtime_tensor(expected);
+    }
+
     // compare
-    EXPECT_TRUE(is_same_tensor(expected, actual) ||
-                cosine_similarity_tensor(expected, actual));
+    EXPECT_TRUE(result);
 }
 
 int main(int argc, char *argv[]) {

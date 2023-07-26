@@ -26,58 +26,64 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class RequireTest : public KernelTest,
-                    public ::testing::TestWithParam<
-                        std::tuple<nncase::typecode_t, dims_t, dims_t>> {
+class RequireTest
+    : public KernelTest,
+      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape, r_shape] = GetParam();
+        auto &&[typecode, l_shape] = GetParam();
 
         lhs = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
         init_tensor(lhs);
-
-        rhs = hrt::create(typecode, r_shape, host_runtime_tensor::pool_cpu_only)
-                  .expect("create tensor failed");
-        init_tensor(rhs);
     }
 
     void TearDown() override {}
 
   protected:
     runtime_tensor lhs;
-    runtime_tensor rhs;
 };
 
-INSTANTIATE_TEST_SUITE_P(Require, RequireTest,
-                         testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 3, 16, 16}),
-                                          testing::Values(dims_t{1, 3, 16,
-                                                                 16})));
+INSTANTIATE_TEST_SUITE_P(
+    Require, RequireTest,
+    testing::Combine(testing::Values(dt_float32, dt_int32, dt_int64, dt_uint32,
+                                     dt_int8, dt_uint8, dt_int16, dt_uint16,
+                                     dt_uint64, dt_float16, dt_float64,
+                                     dt_boolean),
+                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{1},
+                                     dims_t{1, 3}, dims_t{16, 16},
+                                     dims_t{1, 3, 16}, dims_t{})));
 
 TEST_P(RequireTest, Require) {
-    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
-    auto r_ort = runtime_tensor_2_ort_tensor(rhs);
 
     // expected
-    auto output_ort = ortki_Add(l_ort, r_ort);
-    size_t size = 0;
-    void *ptr_ort = tensor_buffer(output_ort, &size);
-    dims_t shape(tensor_rank(output_ort));
-    tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
-    auto expected = hrt::create(lhs.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
-                                true, host_runtime_tensor::pool_cpu_only)
-                        .expect("create tensor failed");
+    auto expected = lhs;
 
+    bool predicate_array[] = {true};
+    auto predicate =
+        hrt::create(dt_boolean, {1},
+                    {reinterpret_cast<gsl::byte *>(predicate_array),
+                     sizeof(predicate_array)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
     // actual
-    auto output = kernels::stackvm::require("", lhs.impl(), rhs.impl())
+    auto output = kernels::stackvm::require("input dim large than limit", false,
+                                            predicate.impl(), lhs.impl())
                       .expect("require failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
+    bool result = is_same_tensor(expected, actual) ||
+                  cosine_similarity_tensor(expected, actual);
+
+    if (!result) {
+        std::cout << "actual ";
+        print_runtime_tensor(actual);
+        std::cout << "expected ";
+        print_runtime_tensor(expected);
+    }
+
     // compare
-    EXPECT_TRUE(is_same_tensor(expected, actual) ||
-                cosine_similarity_tensor(expected, actual));
+    EXPECT_TRUE(result);
 }
 
 int main(int argc, char *argv[]) {

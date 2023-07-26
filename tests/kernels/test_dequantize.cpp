@@ -26,7 +26,7 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class QuantizeTest
+class DequantizeTest
     : public KernelTest,
       public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
   public:
@@ -45,54 +45,78 @@ class QuantizeTest
     runtime_tensor input;
 };
 
-INSTANTIATE_TEST_SUITE_P(Quantize, QuantizeTest,
-                         testing::Combine(testing::Values(dt_float32),
+INSTANTIATE_TEST_SUITE_P(dequantize, DequantizeTest,
+                         testing::Combine(testing::Values(dt_uint8, dt_int8),
                                           testing::Values(dims_t{1, 3, 16,
                                                                  16})));
 
-TEST_P(QuantizeTest, quantize) {
+TEST_P(DequantizeTest, dequantize) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
 
     // expected
-    int8_t zero_point[] = {127};
-    auto zero_point_ptr =
-        hrt::create(nncase::dt_int8, {1},
-                    {reinterpret_cast<gsl::byte *>(zero_point), 1}, true,
-                    host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
+    runtime_tensor zero_point_ptr;
+    if (input.datatype() == dt_uint8) {
+        uint8_t zero_point[] = {127};
+        zero_point_ptr = hrt::create(nncase::dt_uint8, {1},
+                                     {reinterpret_cast<gsl::byte *>(zero_point),
+                                      sizeof(zero_point)},
+                                     true, host_runtime_tensor::pool_cpu_only)
+                             .expect("create tensor failed");
+    } else if (input.datatype() == dt_int8) {
+        int8_t zero_point[] = {127};
+        zero_point_ptr = hrt::create(nncase::dt_int8, {1},
+                                     {reinterpret_cast<gsl::byte *>(zero_point),
+                                      sizeof(zero_point)},
+                                     true, host_runtime_tensor::pool_cpu_only)
+                             .expect("create tensor failed");
+    }
 
     float_t scale[] = {0.01f};
     auto scale_ptr =
         hrt::create(nncase::dt_float32, {1},
-                    {reinterpret_cast<gsl::byte *>(scale), sizeof(float)}, true,
+                    {reinterpret_cast<gsl::byte *>(scale), sizeof(scale)}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
     auto output_ort =
-        ortki_QuantizeLinear(l_ort, runtime_tensor_2_ort_tensor(zero_point_ptr),
-                             runtime_tensor_2_ort_tensor(scale_ptr), 0);
+        ortki_DequantizeLinear(l_ort, runtime_tensor_2_ort_tensor(scale_ptr),
+                               runtime_tensor_2_ort_tensor(zero_point_ptr), 0);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
-    auto expected = hrt::create(input.datatype(), shape,
+    auto expected = hrt::create(dt_float32, shape,
                                 {reinterpret_cast<gsl::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
     // actual
-    float_t quant_param[] = {127, 0.01f};
+    quant_param_t quantParam;
+    quantParam.zero_point = 127;
+    quantParam.scale = 0.01f;
+    quant_param_t quant_param[] = {quantParam};
     auto quant_param_ptr =
-        hrt::create(nncase::dt_float32, {2},
-                    {reinterpret_cast<gsl::byte *>(quant_param), sizeof(float)},
-                    true, host_runtime_tensor::pool_cpu_only)
+        hrt::create(
+            dt_int64, {1},
+            {reinterpret_cast<gsl::byte *>(quant_param), sizeof(quant_param)},
+            true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
-    auto output = kernels::stackvm::quantize(dt_float32, input.impl(),
-                                             quant_param_ptr.impl())
-                      .expect("quantize failed");
+    auto output = kernels::stackvm::dequantize(dt_float32, input.impl(),
+                                               quant_param_ptr.impl())
+                      .expect("dequantize failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
+    bool result = is_same_tensor(expected, actual) ||
+                  cosine_similarity_tensor(expected, actual);
+
+    if (!result) {
+        std::cout << "actual ";
+        print_runtime_tensor(actual);
+        std::cout << "expected ";
+        print_runtime_tensor(expected);
+    }
+
     // compare
-    EXPECT_TRUE(is_same_tensor(expected, actual));
+    EXPECT_TRUE(result);
 }
 
 int main(int argc, char *argv[]) {

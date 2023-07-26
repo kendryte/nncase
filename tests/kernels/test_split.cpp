@@ -26,28 +26,39 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class SplitTest
-    : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
+class SplitTest : public KernelTest,
+                  public ::testing::TestWithParam<
+                      std::tuple<nncase::typecode_t, dims_t, int64_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape] = GetParam();
+        auto &&[typecode, l_shape, value] = GetParam();
 
         input =
             hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
         init_tensor(input);
+
+        axis_value = value;
+        int64_t axis_array[] = {axis_value};
+        axis = hrt::create(dt_int64, {1},
+                           {reinterpret_cast<gsl::byte *>(axis_array),
+                            sizeof(axis_array)},
+                           true, host_runtime_tensor::pool_cpu_only)
+                   .expect("create tensor failed");
     }
 
     void TearDown() override {}
 
   protected:
     runtime_tensor input;
+    int64_t axis_value;
+    runtime_tensor axis;
 };
 
 INSTANTIATE_TEST_SUITE_P(Split, SplitTest,
                          testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{4, 8, 8})));
+                                          testing::Values(dims_t{4, 8, 8}),
+                                          testing::Values(0, -3)));
 
 TEST_P(SplitTest, Split) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
@@ -61,33 +72,40 @@ TEST_P(SplitTest, Split) {
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
-    auto output_ort = tensor_seq_get_value(
-        ortki_Split(l_ort, runtime_tensor_2_ort_tensor(sextions), -3), 0);
-    void *ptr_ort = tensor_buffer(output_ort, &size);
-    dims_t shape(tensor_rank(output_ort));
-    tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
-    auto expected = hrt::create(input.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
-                                true, host_runtime_tensor::pool_cpu_only)
-                        .expect("create tensor failed");
+    auto output_ort1 = tensor_seq_get_value(
+        ortki_Split(l_ort, runtime_tensor_2_ort_tensor(sextions), axis_value),
+        0);
+    void *ptr_ort1 = tensor_buffer(output_ort1, &size);
+    dims_t shape1(tensor_rank(output_ort1));
+    tensor_shape(output_ort1, reinterpret_cast<int64_t *>(shape1.data()));
+    auto expected1 =
+        hrt::create(input.datatype(), shape1,
+                    {reinterpret_cast<gsl::byte *>(ptr_ort1), size}, true,
+                    host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
+
+    auto output_ort2 = tensor_seq_get_value(
+        ortki_Split(l_ort, runtime_tensor_2_ort_tensor(sextions), axis_value),
+        1);
+    void *ptr_ort2 = tensor_buffer(output_ort2, &size);
+    dims_t shape2(tensor_rank(output_ort2));
+    tensor_shape(output_ort2, reinterpret_cast<int64_t *>(shape2.data()));
+    auto expected2 =
+        hrt::create(input.datatype(), shape2,
+                    {reinterpret_cast<gsl::byte *>(ptr_ort2), size}, true,
+                    host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
+
+    runtime_tensor expected[] = {expected1, expected2};
+    typecode_t type[] = {dt_float32, dt_float32};
 
     // actual
-    int64_t axis_array[] = {-3};
-    auto axis = hrt::create(dt_int64, {1},
-                            {reinterpret_cast<gsl::byte *>(axis_array),
-                             sizeof(axis_array)},
-                            true, host_runtime_tensor::pool_cpu_only)
-                    .expect("create tensor failed");
     auto output =
         kernels::stackvm::split(input.impl(), axis.impl(), sextions.impl())
             .expect("split failed");
     tuple actual(output.as<tuple>().expect("as tensor failed"));
-    // try_var(output_tensor, actual->fields()[0].as<tensor>());
-    //    [[maybe_unused]] auto ret = check_output(expected, output);
-    //        runtime_tensor actual1 = actual[0];
 
-    // compare
-    //        EXPECT_TRUE(is_same_tensor(expected, actual1));
+    [[maybe_unused]] auto result = check_tuple_output(expected, type, output);
 }
 
 int main(int argc, char *argv[]) {

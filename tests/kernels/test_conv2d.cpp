@@ -57,10 +57,11 @@ class Conv2DTest : public KernelTest,
     runtime_tensor bais;
 };
 
-INSTANTIATE_TEST_SUITE_P(Conv2D, Conv2DTest,
+INSTANTIATE_TEST_SUITE_P(conv2d, Conv2DTest,
                          testing::Combine(testing::Values(dt_float32),
                                           testing::Values(dims_t{1, 4, 5, 5}),
-                                          testing::Values(dims_t{8, 4, 3, 3}),
+                                          testing::Values(dims_t{8, 4, 3, 3},
+                                                          dims_t{8, 4, 1, 1}),
                                           testing::Values(dims_t{8})));
 
 TEST_P(Conv2DTest, conv2d) {
@@ -69,9 +70,10 @@ TEST_P(Conv2DTest, conv2d) {
     auto bais_ort = runtime_tensor_2_ort_tensor(bais);
 
     // expected
-    const char *auto_pad = "NOTSET";
+    const char auto_pad[7] = "NOTSET";
     int64_t dilations[] = {1, 1};
-    int64_t kernel_shape[] = {3, 3};
+    int64_t kernel_shape[] = {(int64_t)weight.shape()[2],
+                              (int64_t)weight.shape()[3]};
     int64_t pad[] = {1, 1, 1, 1};
     int64_t strides[] = {1, 1};
     auto output_ort =
@@ -133,10 +135,14 @@ TEST_P(Conv2DTest, conv2d) {
     // compare
     bool result = is_same_tensor(expected, actual) ||
                   cosine_similarity_tensor(expected, actual);
+
     if (!result) {
-        print_runtime_tensor(expected);
+        std::cout << "actual ";
         print_runtime_tensor(actual);
+        std::cout << "expected ";
+        print_runtime_tensor(expected);
     }
+
     EXPECT_TRUE(result);
 }
 
