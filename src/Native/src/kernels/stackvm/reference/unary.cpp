@@ -93,6 +93,9 @@ result<void> nncase::kernels::stackvm::reference::unary(
     kernel_context &context) noexcept {
     switch (dtype) {
         UNARY_IMPL_DTYPE(dt_float32, float)
+        UNARY_IMPL_DTYPE(dt_float64, double)
+        UNARY_IMPL_DTYPE(dt_int32, int32_t)
+        UNARY_IMPL_DTYPE(dt_int64, int64_t)
         // Not in onnx, input is bool
         UNARY_IMPL_DTYPE(dt_boolean, bool)
     default:

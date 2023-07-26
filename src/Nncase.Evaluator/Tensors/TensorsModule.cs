@@ -38,6 +38,7 @@ internal class TensorsModule : IApplicationPart
         registrator.RegisterManyInterface<StackEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<TileEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<TopKEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<TriluEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<TransposeEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<UnsqueezeEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<WhereEvaluator>(reuse: Reuse.Singleton);

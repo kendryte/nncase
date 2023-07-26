@@ -28,14 +28,16 @@ using namespace nncase::kernels::stackvm;
 
 namespace {
 result<void> lrn_impl(const float *input, float alpha, float beta, float bias,
-                      float *output, gsl::span<const size_t> in_shape,
+                      int64_t size, float *output, const float *square_sum,
+                      gsl::span<const size_t> in_shape,
                       gsl::span<const size_t> in_strides,
                       gsl::span<const size_t> out_strides) {
     return apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
         auto off = offset(in_strides, index);
         const auto x = input[off];
+        const auto num = square_sum[off];
         output[offset(out_strides, index)] =
-            x / std::pow(x * alpha + bias, beta);
+            x / std::pow(num * alpha / size + bias, beta);
         return ok();
     });
 }
@@ -52,8 +54,8 @@ result<void> nncase::kernels::stackvm::reference::lrn(
     auto square_data =
         std::make_unique<float[]>(runtime::compute_size(in_shape));
     try_(reference::unary(dt_float32, runtime::stackvm::unary_op_t::square,
-                          IN_BYTE_CAST(input), OUT_BYTE_CAST(output), in_shape,
-                          in_strides, in_shape, in_strides));
+                          IN_BYTE_CAST(input), OUT_BYTE_CAST(square_data.get()),
+                          in_shape, in_strides, in_shape, in_strides));
     for (size_t i = 0; i < in_shape[1]; ++i) {
         auto beginV =
             std::max(static_cast<int64_t>(0),
@@ -108,7 +110,7 @@ result<void> nncase::kernels::stackvm::reference::lrn(
     try_(reference::concat(
         dt_float32, concat_inputs, OUT_CAST(gsl::byte, concat_output.get()),
         concat_shape, tmpStrides, concat_strides, axis, concat_dims))
-        try_(lrn_impl(concat_output.get(), alpha, beta, bias, output, in_shape,
-                      in_strides, out_strides));
+        try_(lrn_impl(input, alpha, beta, bias, size, output,
+                      concat_output.get(), in_shape, in_strides, out_strides));
     return ok();
 }

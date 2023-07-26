@@ -26,35 +26,41 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class HardmaxTest
-    : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
+class HardmaxTest : public KernelTest,
+                    public ::testing::TestWithParam<
+                        std::tuple<nncase::typecode_t, dims_t, int64_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape] = GetParam();
+        auto &&[typecode, shape, value] = GetParam();
 
-        input =
-            hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
-                .expect("create tensor failed");
+        input = hrt::create(typecode, shape, host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
         init_tensor(input);
+
+        axis_value = value > 0 ? value < (int64_t)shape.size() ? value : 0
+                     : -value <= (int64_t)shape.size() ? value
+                                                       : 0;
     }
 
     void TearDown() override {}
 
   protected:
     runtime_tensor input;
+    int64_t axis_value;
 };
 
-INSTANTIATE_TEST_SUITE_P(Hardmax, HardmaxTest,
-                         testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 3, 16,
-                                                                 16})));
+INSTANTIATE_TEST_SUITE_P(
+    hardmax, HardmaxTest,
+    testing::Combine(testing::Values(dt_float32),
+                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 3, 16},
+                                     dims_t{2, 6}, dims_t{1}),
+                     testing::Values(-4, -3, -2, -1, 0, 1, 2, 3)));
 
 TEST_P(HardmaxTest, hardmax) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
 
     // expected
-    auto output_ort = ortki_Hardmax(l_ort, -1);
+    auto output_ort = ortki_Hardmax(l_ort, axis_value);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
@@ -65,7 +71,7 @@ TEST_P(HardmaxTest, hardmax) {
                         .expect("create tensor failed");
 
     // actual
-    int64_t axis_ptr[] = {-1};
+    int64_t axis_ptr[] = {axis_value};
     auto axis =
         hrt::create(nncase::dt_int64, {1},
                     {reinterpret_cast<gsl::byte *>(axis_ptr), sizeof(axis_ptr)},
@@ -75,9 +81,18 @@ TEST_P(HardmaxTest, hardmax) {
                       .expect("hardmax failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
+    bool result = is_same_tensor(expected, actual) ||
+                  cosine_similarity_tensor(expected, actual);
+
+    if (!result) {
+        std::cout << "actual ";
+        print_runtime_tensor(actual);
+        std::cout << "expected ";
+        print_runtime_tensor(expected);
+    }
+
     // compare
-    EXPECT_TRUE(is_same_tensor(expected, actual) ||
-                cosine_similarity_tensor(expected, actual));
+    EXPECT_TRUE(result);
 }
 
 int main(int argc, char *argv[]) {

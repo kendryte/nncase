@@ -360,6 +360,7 @@ result<value_t> nncase::kernels::stackvm::scatter_nd(value_t input,
                                updates_tensor->shape(), context));
     return ok(output);
 }
+
 result<value_t> nncase::kernels::stackvm::get_item(
     [[maybe_unused]] value_t input, [[maybe_unused]] value_t index,
     [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
@@ -695,6 +696,12 @@ result<value_t> nncase::kernels::stackvm::reduce(
                            input_tensor->shape(), axes_value,
                            input_tensor->strides(), output_tensor->strides(),
                            keep_dims_value, context));
+
+    CONTIGUOUS_KERNEL(reduce, input_tensor, typecode, reduce_op, init_v, in_mem,
+                      out_mem, input_tensor->shape(), axes_value,
+                      input_tensor->strides(), output_tensor->strides(),
+                      keep_dims_value, context);
+
     return ok(output);
 }
 
@@ -1129,6 +1136,19 @@ nncase::kernels::stackvm::transpose(value_t input, value_t perm, value_t output,
                                   output_tensor->strides()));
     }
     return ok(output);
+}
+
+result<value_t> nncase::kernels::stackvm::trilu(value_t input, value_t k,
+                                                value_t upper, value_t output,
+                                                kernel_context &) {
+    try_input(in_mem, input);
+    try_integer_v(k);
+    try_integer_v(upper);
+    try_output(out_mem, output, input_tensor->dtype(), input_tensor->shape());
+    try_(reference::trilu(input_tensor->dtype(), in_mem, out_mem,
+                          input_tensor->shape(), input_tensor->strides(),
+                          output_tensor->strides(), k_value, upper_value == 1))
+        KERNEL_FINISH;
 }
 
 result<value_t>
