@@ -2,7 +2,7 @@
 <img src="docs/logo.png" width="400" alt="nncase" />
 </div>
 
-[![License](https://img.shields.io/badge/license-Apache%202-blue)](https://raw.githubusercontent.com/kendryte/nncase/master/LICENSE) 
+[![License](https://img.shields.io/badge/license-Apache%202-blue)](https://raw.githubusercontent.com/kendryte/nncase/master/LICENSE)
 [![compiler-build](https://github.com/kendryte/nncase/actions/workflows/compiler-build.yml/badge.svg)](https://github.com/kendryte/nncase/actions/workflows/compiler-build.yml)
 
 `nncase` is a neural network compiler for AI accelerators.
@@ -35,13 +35,13 @@ Download prebuilt binaries from [Release](https://github.com/kendryte/nncase/rel
 ## Usage
 ## 使用方法
 
-- [Usage(English)](./docs/USAGE_EN.md)
+- [Usage(English)](./docs/USAGE_v2_EN.md)
 - [FAQ(English)](./docs/FAQ_EN.md)
-- [使用说明(中文)](./docs/USAGE_ZH.md)
+- [使用说明(中文)](./docs/USAGE_v2.md)
 - [常见问题(中文)](./docs/FAQ_ZH.md)
 
 
-- [Examples 例子](./examples)
+- [Examples 例子](./examples/user_guide/)
 
 ## Resources
 ## 资源
