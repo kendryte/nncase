@@ -269,11 +269,6 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
     def set_shape_var(self, dict: Dict[str, int]):
         self.shape_vars = dict
 
-    def check_result(self, expected, actual, stage, target, similarity_name, mode, threshold, dump_dir):
-        judge, result = self.compare_results(
-            expected, actual, stage, target, similarity_name, mode, threshold, self.cfg['dump_hist'], dump_dir)
-        assert(judge), f"Fault result in {stage} + {result}"
-
     def set_quant_opt(self, compiler: nncase.Compiler):
         compile_opt = self.cfg['compile_opt']
         ptq_opt = self.cfg['ptq_opt']
