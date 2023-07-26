@@ -2,9 +2,13 @@
 
 # Overview
 
-nncase provides both python wheel package and ncc client to compile your neural models.
+nncase provides both python wheel package and ncc client to compile your neural models. The current documentation only works for nncase-v1. The available version are shown below.
 
-- nncase wheel package can be downloaded at [nncase release](https://github.com/kendryte/nncase/releases)
+```
+1.0.0.20211029, 1.1.0.20211203, 1.3.0.20220127, 1.4.0.20220303, 1.5.0.20220331, 1.6.0.20220505, 1.7.0.20220530, 1.7.1.20220701, 1.8.0.20220929, 1.9.0.20230322
+```
+
+- nncase wheel package can be downloaded at [nncase release](https://github.com/kendryte/nncase/releases). 
 - For ncc client, you should git clone nncase repository and then build it by yourself.
 
 # nncase python APIs

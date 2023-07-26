@@ -1,6 +1,10 @@
 # 概述
 
-nncase目前提供了python wheel包和ncc客户端两种方法编译模型.
+nncase目前提供了python wheel包和ncc客户端两种方法编译模型。当前文档仅适用于nncase-v1，可用版本号如下：
+
+```
+1.0.0.20211029, 1.1.0.20211203, 1.3.0.20220127, 1.4.0.20220303, 1.5.0.20220331, 1.6.0.20220505, 1.7.0.20220530, 1.7.1.20220701, 1.8.0.20220929, 1.9.0.20230322
+```
 
 - nncase wheel包需要去[nncase release](https://github.com/kendryte/nncase/releases)获取
 - ncc客户端需要用户下载并编译nncase
