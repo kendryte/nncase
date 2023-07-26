@@ -95,9 +95,10 @@ internal sealed class SingleCPUFusionConverter
                         T.BufferStore(ret, loopVars.Concat(new[] { m, n }).ToArray(), T.BufferLoad(ret, loopVars.Concat(new[] { m, n }).ToArray()) + (T.BufferLoad(lhs, loopVars.Concat(new[] { m, k }).ToArray()) * T.BufferLoad(rhs, loopVars.Concat(new[] { k, n }).ToArray())))))).
                 Build();
             var final = loops.Reverse().Aggregate(stmt, (acc, p) => p.Item1.Body(acc).Build());
-
             // [m,k] @ [k, n]
-            var body = T.Block(nameof(MatMul)).Body(final);
+            var body = T.Block(nameof(MatMul)).Body(
+                T.Sequential(arguments.OfType<PhysicalBuffer>().Where(p => p.Const != null).Select(b => T.MatchBuffer(b)).ToArray()),
+                final);
             _mainBody.Add(body.Build());
         }
 
@@ -158,7 +159,7 @@ internal sealed class SingleCPUFusionConverter
                         buffer = T.PhysicalBuffer(v.CheckedDataType, MemoryLocation.Input, v.CheckedShape.ToValueArray(), out _, name);
                         break;
                     case TensorConst c:
-                        buffer = T.PhysicalBuffer(c.Value.ElementType, MemoryLocation.Rdata, c.Value.Dimensions, out _, name);
+                        buffer = T.ConstBuffer(c, out _, name);
                         break;
                     default:
                         throw new NotSupportedException();

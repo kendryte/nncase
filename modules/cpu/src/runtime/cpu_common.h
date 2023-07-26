@@ -97,7 +97,11 @@ inline int32_t int32_binary_mul(int32_t x, int32_t y) { return x * y; }
 inline int32_t int32_binary_div(int32_t x, int32_t y) { return x / y; }
 inline int32_t int32_binary_min(int32_t x, int32_t y) { return std::min(x, y); }
 inline int32_t int32_binary_max(int32_t x, int32_t y) { return std::max(x, y); }
+#if defined (__arm64__)  && defined (__APPLE__)   
+inline int32_t int32_binary_pow(int32_t x, int32_t y) { return (int32_t)pow(x, y); }
+#else
 inline int32_t int32_binary_pow(int32_t x, int32_t y) { return std::pow(x, y); }
+#endif
 inline int32_t int32_binary_logical_and(int32_t x, int32_t y) { return x && y; }
 inline int32_t int32_binary_mod(int32_t x, int32_t y) { return x % y; }
 
@@ -107,7 +111,11 @@ inline int64_t int64_binary_mul(int64_t x, int64_t y) { return x * y; }
 inline int64_t int64_binary_div(int64_t x, int64_t y) { return x / y; }
 inline int64_t int64_binary_min(int64_t x, int64_t y) { return std::min(x, y); }
 inline int64_t int64_binary_max(int64_t x, int64_t y) { return std::max(x, y); }
+#if defined (__arm64__)  && defined (__APPLE__)   
+inline int64_t int64_binary_pow(int64_t x, int64_t y) { return (int64_t)pow(x, y); }
+#else
 inline int64_t int64_binary_pow(int64_t x, int64_t y) { return std::pow(x, y); }
+#endif
 inline int64_t int64_binary_logical_and(int64_t x, int64_t y) { return x && y; }
 inline int64_t int64_binary_mod(int64_t x, int64_t y) { return x % y; }
 

@@ -178,6 +178,20 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             case Load:
                 str = $"((({type} *){arguments[0].Name}->vaddr)[{arguments[1].Name}])";
                 break;
+            case IR.Buffers.MatchBuffer op:
+                var n = arguments[0].Name;
+                var pb = (TIR.PhysicalBuffer)expr[IR.Buffers.MatchBuffer.Input];
+                var ind = new String(Enumerable.Repeat<char>(' ', IndentScope.Writer.Indent).ToArray());
+                str = $@"uint32_t _{n}_shape[] = {{ {string.Join(", ", pb.FixedDimensions.ToArray())} }};
+{ind}uint32_t _{n}_stride[] = {{ {string.Join(", ", pb.FixedStrides.ToArray())} }};
+{ind}buffer_t _{n} = {{
+{ind}{ind}.vaddr = ((uint8_t*) rdata + {pb.Start}),
+{ind}{ind}.paddr = 0,
+{ind}{ind}.shape = _{n}_shape,
+{ind}{ind}.stride = _{n}_stride,
+{ind}{ind}.rank = {pb.FixedDimensions.Length} }};
+{ind}buffer_t *{n} = &_{n}";
+                break;
             default:
                 throw new NotSupportedException();
         }

@@ -91,6 +91,14 @@ public class CPUTarget : ITarget
             p.Add<Passes.Mutators.FlattenSequential>();
             p.Add<Passes.Mutators.FoldConstCall>();
         });
+
+        passManager.AddWithName<DDrBufferSchdeulePass>("DDrBufferSchdeule");
+
+        passManager.AddWithName<PrimFuncPass>("InstStage").Configure(p =>
+        {
+            p.Add<Passes.Mutators.FoldConstCall>();
+            p.Add<Passes.Mutators.FoldBufferSlot>(); // 折叠自定义op
+        });
     }
 
     public void RegisterTargetDependentBeforeCodeGen(IPassManager passManager, CompileOptions options)
