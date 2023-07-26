@@ -27,8 +27,13 @@ public partial class LowerMatMul : RewriteRule<Pattern>
       IsWildcard("inputA") with { TypePattern = IsFloat() },
       IsWildcard("inputB") with { TypePattern = IsFloat() });
 
-    private Expr GetReplace(MatMul matmul, Expr inputA, Expr inputB)
+    private Expr? GetReplace(MatMul matmul, Expr inputA, Expr inputB)
     {
-        return CPUKernel(matmul, inputA, inputB);
+        if (inputA.CheckedShape.Rank == inputB.CheckedShape.Rank && inputA.CheckedShape.Zip(inputB.CheckedShape).SkipLast(2).All(d => d.First == d.Second))
+        {
+            return CPUKernel(matmul, inputA, inputB);
+        }
+
+        return null;
     }
 }

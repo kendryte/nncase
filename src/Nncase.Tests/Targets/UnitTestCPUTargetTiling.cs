@@ -58,8 +58,9 @@ public class UnitTestCPUTargetTiling : TestClassBase
     public async Task TestCpuMatMul()
     {
         var lhs = new Var("lhs", new TensorType(DataTypes.Float32, new[] { 3, 4 }));
-        var rhs = new Var("rhs", new TensorType(DataTypes.Float32, new[] { 4, 6 }));
-        var main = new Function("main", IR.F.Tensors.MatMul(lhs, rhs), new[] { lhs, rhs });
+        var rhs = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 4, 6 });
+        //new Var("rhs", new TensorType(DataTypes.Float32, new[] { 4, 6 }));
+        var main = new Function("main", IR.F.Tensors.MatMul(lhs, rhs), new[] { lhs });
         var module = new IR.IRModule(main);
 
         var compiler = CompileSession.Compiler;

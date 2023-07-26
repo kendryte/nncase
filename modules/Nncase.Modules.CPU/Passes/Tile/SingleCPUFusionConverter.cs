@@ -86,13 +86,17 @@ internal sealed class SingleCPUFusionConverter
             var lhs = arguments[0];
             var rhs = arguments[1];
 
-            // [m,k] @ [k, n]
-            var body = T.Block(nameof(MatMul)).Body(
-                T.Serial(out var m, (0, lhs.Dimensions[0])).Body(
-                    T.Serial(out var n, (0, rhs.Dimensions[1])).Body(
-                        T.Serial(out var k, (0, lhs.Dimensions[1])).Body(
-                            T.BufferStore(ret, new[] { m, n }, T.BufferLoad(ret, m, n) + (T.BufferLoad(lhs, m, k) * T.BufferLoad(rhs, k, n)))))));
+            var loops = Enumerable.Range(0, lhs.Rank - 2).Select(i => (T.ForLoop(out var loopVar, (0, lhs.Dimensions[i]), LoopMode.Serial, $"loop_{i}"), loopVar)).ToArray();
+            var loopVars = loops.Select(f => f.loopVar).ToArray();
+            var stmt = T.Serial(out var m, (0, lhs.Dimensions[0])).Body(
+                T.Serial(out var n, (0, rhs.Dimensions[1])).Body(
+                    T.Serial(out var k, (0, lhs.Dimensions[1])).Body(
+                        T.BufferStore(ret, loopVars.Concat(new[] { m, n }).ToArray(), T.BufferLoad(ret, loopVars.Concat(new[] { m, n }).ToArray()) + (T.BufferLoad(lhs, loopVars.Concat(new[] { m, k }).ToArray()) * T.BufferLoad(rhs, loopVars.Concat(new[] { k, n }).ToArray())))))).
+                Build();
+            var final = loops.Reverse().Aggregate(stmt, (acc, p) => p.Item1.Body(acc).Build());
 
+            // [m,k] @ [k, n]
+            var body = T.Block(nameof(MatMul)).Body(final);
             _mainBody.Add(body.Build());
         }
 
