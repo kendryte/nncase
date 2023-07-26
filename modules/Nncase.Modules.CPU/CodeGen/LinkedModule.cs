@@ -15,7 +15,7 @@ internal sealed class LinkedModule : ILinkedModule
     public LinkedModule(IReadOnlyList<ILinkedFunction> functions, byte[] text, byte[] rdata)
     {
         Functions = functions;
-        Sections = new[] { new LinkedSection(text, ".text", 0, 8, (uint)text.Length) };
+        Sections = new[] { new LinkedSection(text, ".text", 0, 8, (uint)text.Length), new LinkedSection(rdata, ".rdata", 0, 8, (uint)rdata.Length) };
     }
 
     public string ModuleKind => Targets.CPUTarget.Kind;

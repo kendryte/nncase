@@ -14,7 +14,7 @@
 BEGIN_NS_NNCASE_RT_MODULE(cpu)
 
 typedef void (*entrypoint_t)(size_t id, buffer_t **buffers,
-                             nncase_mt_t *nncase_mt, void *data, void *rdata);
+                             nncase_mt_t *nncase_mt, void *data, const void *rdata);
 
 class elfloader {
   public:
@@ -50,7 +50,7 @@ class elfloader {
     }
 
     int invoke_elf(size_t id, buffer_t **buffers, nncase_mt_t *nncase_mt,
-                   void *data, void *rdata);
+                   void *data, const void *rdata);
 
   private:
     void *ptr_;

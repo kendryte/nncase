@@ -5,7 +5,7 @@ using namespace nncase::runtime;
 using namespace nncase::runtime::cpu;
 
 int elfloader::invoke_elf(size_t id, buffer_t **buffers, nncase_mt_t *nncase_mt,
-                          void *data, void *rdata) {
+                          void *data, const void *rdata) {
 
     check(el_init(&ctx_), "initialising");
 
