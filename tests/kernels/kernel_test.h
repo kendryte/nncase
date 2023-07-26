@@ -1516,13 +1516,6 @@ class KernelTest {
                     vec2.push_back(static_cast<float>(get<double>(rhs, index)));
                     break;
                 }
-                case dt_boolean: {
-                    vec1.push_back(
-                        static_cast<float>(get<bool>(lhs, index) ? 2 : 1));
-                    vec2.push_back(
-                        static_cast<float>(get<bool>(rhs, index) ? 2 : 1));
-                    break;
-                }
                 default: {
                     return err(std::errc::not_supported);
                 }

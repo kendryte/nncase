@@ -52,9 +52,14 @@ INSTANTIATE_TEST_SUITE_P(lrn, LrnTest,
 
 TEST_P(LrnTest, lrn) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
+    auto alpha_value = 0.22f;
+    auto beta_value = 0.20f;
+    auto bias_value = 0.75f;
+    auto output_size_value = 3L;
 
     // expected
-    auto output_ort = ortki_LRN(l_ort, 0.22f, 0.20f, 0.75f, 3);
+    auto output_ort = ortki_LRN(l_ort, alpha_value, beta_value, bias_value,
+                                output_size_value);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
@@ -65,32 +70,36 @@ TEST_P(LrnTest, lrn) {
                         .expect("create tensor failed");
 
     // actual
-    float_t alpha_ptr[] = {0.22f};
+    float_t alpha_ptr[] = {alpha_value};
     auto alpha = hrt::create(dt_float32, {1},
                              {reinterpret_cast<gsl::byte *>(alpha_ptr),
                               sizeof(alpha_ptr)},
                              true, host_runtime_tensor::pool_cpu_only)
                      .expect("create tensor failed");
-    float_t beta_ptr[] = {0.20f};
+
+    float_t beta_ptr[] = {beta_value};
     auto beta =
         hrt::create(dt_float32, {1},
                     {reinterpret_cast<gsl::byte *>(beta_ptr), sizeof(beta_ptr)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
-    float_t bias_ptr[] = {0.75f};
+
+    float_t bias_ptr[] = {bias_value};
     auto bias =
         hrt::create(dt_float32, {1},
                     {reinterpret_cast<gsl::byte *>(bias_ptr), sizeof(bias_ptr)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
-    int64_t size_ptr[] = {3l};
-    auto size0 =
+
+    int64_t size_ptr[] = {output_size_value};
+    auto output_size =
         hrt::create(dt_int64, {1},
                     {reinterpret_cast<gsl::byte *>(size_ptr), sizeof(size_ptr)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
+
     auto output = kernels::stackvm::lrn(input.impl(), alpha.impl(), beta.impl(),
-                                        bias.impl(), size0.impl())
+                                        bias.impl(), output_size.impl())
                       .expect("lrn failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 

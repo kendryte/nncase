@@ -66,10 +66,10 @@ TEST_P(InstanceNormalizationTest, instance_normalization) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
     auto scale_ort = runtime_tensor_2_ort_tensor(scale);
     auto b_ort = runtime_tensor_2_ort_tensor(b);
+    auto eps = 1e-4f;
 
     // expected
-    auto output_ort =
-        ortki_InstanceNormalization(l_ort, scale_ort, b_ort, 1e-4f);
+    auto output_ort = ortki_InstanceNormalization(l_ort, scale_ort, b_ort, eps);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
@@ -80,7 +80,7 @@ TEST_P(InstanceNormalizationTest, instance_normalization) {
                         .expect("create tensor failed");
 
     // actual
-    float epsilon_ptr[] = {1e-4f};
+    float epsilon_ptr[] = {eps};
     auto epsilon = hrt::create(nncase::dt_float32, {1},
                                {reinterpret_cast<gsl::byte *>(epsilon_ptr),
                                 sizeof(epsilon_ptr)},
