@@ -360,6 +360,7 @@ result<value_t> nncase::kernels::stackvm::scatter_nd(value_t input,
                                updates_tensor->shape(), context));
     return ok(output);
 }
+
 result<value_t> nncase::kernels::stackvm::get_item(
     [[maybe_unused]] value_t input, [[maybe_unused]] value_t index,
     [[maybe_unused]] value_t output, [[maybe_unused]] kernel_context &context) {
@@ -695,6 +696,12 @@ result<value_t> nncase::kernels::stackvm::reduce(
                            input_tensor->shape(), axes_value,
                            input_tensor->strides(), output_tensor->strides(),
                            keep_dims_value, context));
+
+    CONTIGUOUS_KERNEL(reduce, input_tensor, typecode, reduce_op, init_v, in_mem,
+                      out_mem, input_tensor->shape(), axes_value,
+                      input_tensor->strides(), output_tensor->strides(),
+                      keep_dims_value, context);
+
     return ok(output);
 }
 

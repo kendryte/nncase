@@ -45,12 +45,14 @@ class CumSumTest
     runtime_tensor input;
 };
 
-INSTANTIATE_TEST_SUITE_P(cum_sum, CumSumTest,
-                         testing::Combine(testing::Values(dt_float32, dt_int32,
-                                                          dt_int64, dt_float64),
-                                          testing::Values(dims_t{1, 3, 16, 16},
-                                                          dims_t{2, 2},
-                                                          dims_t{1, 3, 2})));
+INSTANTIATE_TEST_SUITE_P(
+    cum_sum, CumSumTest,
+    testing::Combine(testing::Values(dt_float32, dt_int32, dt_int64,
+                                     dt_float64 /*,
+      dt_uint32, dt_uint64, dt_float16,
+      dt_bfloat16*/),
+                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{2, 2},
+                                     dims_t{1, 3, 2})));
 
 TEST_P(CumSumTest, cum_sum) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
@@ -91,9 +93,18 @@ TEST_P(CumSumTest, cum_sum) {
             .expect("cum_sum failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
+    bool result = is_same_tensor(expected, actual) ||
+                  cosine_similarity_tensor(expected, actual);
+
+    if (!result) {
+        std::cout << "actual ";
+        print_runtime_tensor(actual);
+        std::cout << "expected ";
+        print_runtime_tensor(expected);
+    }
+
     // compare
-    EXPECT_TRUE(is_same_tensor(expected, actual) ||
-                cosine_similarity_tensor(expected, actual));
+    EXPECT_TRUE(result);
 }
 
 int main(int argc, char *argv[]) {

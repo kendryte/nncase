@@ -33,7 +33,6 @@ class GatherNDTest
     void SetUp() override {
         auto &&[typecode, shape] = GetParam();
 
-        //        size_t size = 0;
         int32_t input_array[] = {0, 1, 2, 3};
         input = hrt::create(dt_int32, shape,
                             {reinterpret_cast<gsl::byte *>(input_array),
@@ -64,9 +63,13 @@ class GatherNDTest
     runtime_tensor batchDims;
 };
 
-INSTANTIATE_TEST_SUITE_P(gather_nd, GatherNDTest,
-                         testing::Combine(testing::Values(dt_int32, dt_int64),
-                                          testing::Values(dims_t{2, 2})));
+INSTANTIATE_TEST_SUITE_P(
+    gather_nd, GatherNDTest,
+    testing::Combine(testing::Values(dt_int32, dt_int64, dt_float32, dt_uint64,
+                                     dt_int8, dt_int16, dt_uint8, dt_uint16,
+                                     dt_uint32, dt_float16, dt_float64,
+                                     dt_bfloat16, dt_boolean),
+                     testing::Values(dims_t{2, 2})));
 
 TEST_P(GatherNDTest, gather_nd) {
     auto input_ort = runtime_tensor_2_ort_tensor(input);
@@ -86,12 +89,21 @@ TEST_P(GatherNDTest, gather_nd) {
     // actual
     auto output = kernels::stackvm::gather_nd(input.impl(), batchDims.impl(),
                                               indices.impl())
-                      .expect("gather failed");
+                      .expect("gather_nd failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
+    bool result = is_same_tensor(expected, actual) ||
+                  cosine_similarity_tensor(expected, actual);
+
+    if (!result) {
+        std::cout << "actual ";
+        print_runtime_tensor(actual);
+        std::cout << "expected ";
+        print_runtime_tensor(expected);
+    }
+
     // compare
-    EXPECT_TRUE(is_same_tensor(expected, actual) ||
-                cosine_similarity_tensor(expected, actual));
+    EXPECT_TRUE(result);
 }
 
 int main(int argc, char *argv[]) {

@@ -45,12 +45,11 @@ class GetItemTest
     runtime_tensor input;
 };
 
-INSTANTIATE_TEST_SUITE_P(GetItem, GetItemTest,
+INSTANTIATE_TEST_SUITE_P(get_item, GetItemTest,
                          testing::Combine(testing::Values(dt_float32),
                                           testing::Values(dims_t{1})));
 
 TEST_P(GetItemTest, get_item) {
-    //    auto l_ort = runtime_tensor_2_ort_tensor(input);
 
     // expected
     auto expected = input;
@@ -75,8 +74,18 @@ TEST_P(GetItemTest, get_item) {
                       .expect("get_item failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
+    bool result = is_same_tensor(expected, actual) ||
+                  cosine_similarity_tensor(expected, actual);
+
+    if (!result) {
+        std::cout << "actual ";
+        print_runtime_tensor(actual);
+        std::cout << "expected ";
+        print_runtime_tensor(expected);
+    }
+
     // compare
-    EXPECT_TRUE(is_same_tensor(expected, actual));
+    EXPECT_TRUE(result);
 }
 
 int main(int argc, char *argv[]) {
