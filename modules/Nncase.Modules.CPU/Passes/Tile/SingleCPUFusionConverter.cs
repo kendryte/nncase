@@ -95,6 +95,7 @@ internal sealed class SingleCPUFusionConverter
                         T.BufferStore(ret, loopVars.Concat(new[] { m, n }).ToArray(), T.BufferLoad(ret, loopVars.Concat(new[] { m, n }).ToArray()) + (T.BufferLoad(lhs, loopVars.Concat(new[] { m, k }).ToArray()) * T.BufferLoad(rhs, loopVars.Concat(new[] { k, n }).ToArray())))))).
                 Build();
             var final = loops.Reverse().Aggregate(stmt, (acc, p) => p.Item1.Body(acc).Build());
+
             // [m,k] @ [k, n]
             var body = T.Block(nameof(MatMul)).Body(
                 T.Sequential(arguments.OfType<PhysicalBuffer>().Where(p => p.Const != null).Select(b => T.MatchBuffer(b)).ToArray()),

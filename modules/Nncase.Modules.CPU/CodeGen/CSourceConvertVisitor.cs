@@ -181,7 +181,7 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             case IR.Buffers.MatchBuffer op:
                 var n = arguments[0].Name;
                 var pb = (TIR.PhysicalBuffer)expr[IR.Buffers.MatchBuffer.Input];
-                var ind = new String(Enumerable.Repeat<char>(' ', IndentScope.Writer.Indent).ToArray());
+                var ind = new string(Enumerable.Repeat<char>(' ', IndentScope.Writer.Indent).ToArray());
                 str = $@"uint32_t _{n}_shape[] = {{ {string.Join(", ", pb.FixedDimensions.ToArray())} }};
 {ind}uint32_t _{n}_stride[] = {{ {string.Join(", ", pb.FixedStrides.ToArray())} }};
 {ind}buffer_t _{n} = {{
