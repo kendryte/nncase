@@ -40,8 +40,8 @@ class BroadCastTest : public KernelTest,
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
 
-        float output_ptr[] = {1, 2, 1, 11, 1, 1, 1, 1, 1};
-        output = hrt::create(typecode, r_shape,
+        float output_ptr[] = {3, 2, 1, 3, 2, 1, 3, 2, 1};
+        expected = hrt::create(typecode, r_shape,
                                {reinterpret_cast<gsl::byte *>(output_ptr),
                                 sizeof(output_ptr)},
                                true, host_runtime_tensor::pool_cpu_only)
@@ -52,7 +52,7 @@ class BroadCastTest : public KernelTest,
 
   protected:
     runtime_tensor input;
-    runtime_tensor output;
+    runtime_tensor expected;
 };
 
 INSTANTIATE_TEST_SUITE_P(BroadCast, BroadCastTest,
