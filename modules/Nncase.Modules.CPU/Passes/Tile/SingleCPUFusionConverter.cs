@@ -90,6 +90,7 @@ internal sealed class SingleCPUFusionConverter
             var loopVars = loops.Select(f => f.loopVar).ToArray();
             var stmt = T.Serial(out var m, (0, lhs.Dimensions[0])).Body(
                 T.Serial(out var n, (0, rhs.Dimensions[1])).Body(
+                    T.BufferStore(ret, loopVars.Concat(new[] { m, n }).ToArray(), 0f),
                     T.Serial(out var k, (0, lhs.Dimensions[1])).Body(
                         T.BufferStore(ret, loopVars.Concat(new[] { m, n }).ToArray(), T.BufferLoad(ret, loopVars.Concat(new[] { m, n }).ToArray()) + (T.BufferLoad(lhs, loopVars.Concat(new[] { m, k }).ToArray()) * T.BufferLoad(rhs, loopVars.Concat(new[] { k, n }).ToArray())))))).
                 Build();
@@ -112,8 +113,8 @@ internal sealed class SingleCPUFusionConverter
 
         private void GenerateBinary(Binary binary, ReadOnlySpan<Buffer> arguments, Buffer ret, Call call)
         {
-            var lhs = call[Binary.Lhs];
-            var rhs = call[Binary.Rhs];
+            var lhs = call.Arguments[Binary.Lhs.Index];
+            var rhs = call.Arguments[Binary.Rhs.Index];
             var lhsBuffer = arguments[Binary.Lhs.Index];
             var rhsBuffer = arguments[Binary.Rhs.Index];
 
@@ -127,9 +128,12 @@ internal sealed class SingleCPUFusionConverter
             var rhsScale = outShape.Zip(rhsShape).Select(s => s.First / s.Second).ToArray();
 
             var loops = Enumerable.Range(0, outShape.Length).Select(i => (T.ForLoop(out var loopVar, (0, outShape[i]), LoopMode.Serial, $"loop_{i}"), loopVar)).ToArray();
-
-            // var ?final = loops.Reverse().Aggregate(stmt, (acc, p) => p.Item1.Body(acc).Build());
-            // _mainBody.Add(T.Block(nameof(Unary)).Body(final).Build());
+            var loopVars = loops.Select(f => f.loopVar).ToArray();
+            var lhsLoopVars = loopVars.Zip(lhsScale).Select(v => v.First / v.Second).ToArray();
+            var rhsLoopVars = loopVars.Zip(rhsScale).Select(v => v.First / v.Second).ToArray();
+            Expr stmt = T.BufferStore(ret, loopVars, IR.F.Math.Binary(binary.BinaryOp, T.BufferLoad(lhsBuffer, lhsLoopVars), T.BufferLoad(rhsBuffer, rhsLoopVars)));
+            var final = loops.Reverse().Aggregate(stmt, (acc, p) => p.Item1.Body(acc).Build());
+            _mainBody.Add(T.Block(nameof(Binary)).Body(final).Build());
         }
 
         private TIR.Buffer TryAllocateBuffer(Expr expr)

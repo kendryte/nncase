@@ -140,9 +140,6 @@ cpu_runtime_function::invoke_core(NNCASE_UNUSED gsl::span<value_t> parameters,
 
     auto elfloader_ = elfloader{(char *)module().text_physical().data()};
     elfloader_.invoke_elf(id, buffers.data(), &nncase_mt, nullptr, nullptr);
-    for (int i = 0; i < 10; i++) {
-        printf("%f\n", ((float *)buffers[1]->vaddr)[i]);
-    }
 
     for (int i = 0; i < buffers.size(); i++) {
         delete buffers[i];
