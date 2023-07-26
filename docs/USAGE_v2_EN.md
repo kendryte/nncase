@@ -1,6 +1,6 @@
 # Overview
 
-Nncase only provides Python APIs for compiling/inferring deep learning models on PC. K210 and K510 will no longer be supported in nncase-v2, please use nncase-v1.
+`nncase` only provides Python APIs for compiling/inferring deep learning models on X86_64. K210 and K510 will no longer be supported in nncase-v2, please use nncase-v1.
 
 # nncase-v2 python APIs
 
@@ -17,7 +17,7 @@ The nncase toolchain compiler section includes the nncase and KPU plugin wheel p
   pip install --upgrade pip
   pip install nncase
   pip install nncase-kpu
-
+  
   # nncase-2.x need dotnet-7
   sudo apt-get install -y dotnet-sdk-7.0
   ```
