@@ -1,6 +1,6 @@
 # 概述
 
-nncase仅提供Python APIs, 用于在PC上编译/推理深度学习模型。nncase-v2中将不再支持k210和k510，请使用nncase-v1 。
+nncase仅提供Python APIs, 用于在x86_64、amd64平台上编译/推理深度学习模型。nncase-v2中将不再支持k210和k510的编译和推理，如有需要请使用nncase-v1。
 
 # nncase-v2 python APIs
 
@@ -8,26 +8,26 @@ nncase仅提供Python APIs, 用于在PC上编译/推理深度学习模型。nnca
 
 nncase工具链compiler部分包括nncase和KPU插件包
 
-- nncase 和KPU插件包均在[nncase github](https://github.com/kendryte/nncase/releases)发布
+- nncase 和KPU插件包均在[nncase github release](https://github.com/kendryte/nncase/releases)发布。
+- nncase-v2版本依赖dotnet-7.0。
+- `Linux`平台可以直接使用pip进行nncase和KPU插件包在线安装，Ubuntu环境下可使用 `apt`安装 `dotnet`。
 
-- V2版本依赖dotnet-7.0
-
-- 可以直接使用pip进行nncase和KPU插件包安装，Ubuntu环境下可使用`apt`安装`dotnet`
   ```
   pip install --upgrade pip
   pip install nncase
   pip install nncase-kpu
-  
+
   # nncase-2.x need dotnet-7
   sudo apt-get install -y dotnet-sdk-7.0
   ```
+- `Windows`平台仅支持nncase在线安装，nncase-kpu需要在[nncase github release](https://github.com/kendryte/nncase/releases)手动下载安装。
 
-用户若没有Ubuntu环境, 可使用nncase docker(Ubuntu 20.04 + Python 3.8)
+用户若没有Ubuntu环境, 可使用nncase docker(Ubuntu 20.04 + Python 3.8 + dotnet-7.0)
 
 ```shell
 $ cd /path/to/nncase_sdk
 $ docker pull ghcr.io/kendryte/k230_sdk
-$ docker run -it --rm -v `pwd`:/mnt -w /mnt registry.cn-hangzhou.aliyuncs.com/kendryte/nncase:latest /bin/bash -c "/bin/bash"
+$ docker run -it --rm -v `pwd`:/mnt -w /mnt ghcr.io/kendryte/k230_sdk /bin/bash -c "/bin/bash"
 ```
 
 ### 查看版本信息
@@ -50,21 +50,19 @@ k230模型编译推理参考Jupyter脚本：[User_guide](../examples/user_guide/
 
 在执行脚本之前需要根据自身需求修改以下内容：
 
-1. `compile_kmodel`函数中`compile_options`,`ptq_options`相关信息
+1. `compile_kmodel`函数中 `compile_options`,`ptq_options`相关信息
 
    `compile_options`详细信息见[CompileOptions](#CompileOptions)
 
    `ptq_options`详细信息见[PTQTensorOptions](#PTQTensorOptions)
-
 2. `compile kmodel single input(multiple inputs)`部分
 
-   修改`model_path`和`dump_path`，用于指定模型路径和编译期间文件生成路径。
+   修改 `model_path`和 `dump_path`，用于指定模型路径和编译期间文件生成路径。
 
-   修改`calib_data`的实现，数据格式见注释。
+   修改 `calib_data`的实现，数据格式见注释。
+3. `run kmodel(simulate)`部分，修改 `input_data`的实现，数据格式见注释。
 
-3. `run kmodel(simulate)`部分，修改`input_data`的实现，数据格式见注释。
-
-推理结束后，会在`dump_path`路径下生成`kmodel`、输出结果和<u>编译期间的文件`dump_ir==True`</u>
+推理结束后，会在 `dump_path`路径下生成 `kmodel`、输出结果和 `<u>`编译期间的文件 `dump_ir==True</u>`
 
 ## 开发板推理相关流程
 
@@ -78,61 +76,57 @@ k230模型编译推理参考Jupyter脚本：[User_guide](../examples/user_guide/
 
 CompileOptions类, 用于配置nncase编译选项各属性说明如下
 
-| 属性名称        |    类型     | 是否必须 | 描述                                                         |
-| :-------------- | :---------: | :------: | ------------------------------------------------------------ |
-| target          |   string    |    是    | 指定编译目标, 如'cpu', 'k230'                                |
-| dump_ir         |    bool     |    否    | 指定是否dump IR, 默认为False                                 |
-| dump_asm        |    bool     |    否    | 指定是否dump asm汇编文件, 默认为False                        |
-| dump_dir        |   string    |    否    | 前面指定dump_ir等开关后, 这里指定dump的目录, 默认为""        |
-| input_file      |   string    |    否    | onnx模型超过2GB时，用于指定参数文件路径，默认为""            |
-|                 |             |          |                                                              |
-| preprocess      |    bool     |    否    | 是否开启前处理，默认为False。以下参数仅在`preprocess=True`时生效 |
-| input_type      |   string    |    否    | 开启前处理时指定输入数据类型，默认为"float"。当`preprocess`为`True`时，必须指定为"uint8"或者"float32" |
-| input_shape     |  list[int]  |    否    | 开启前处理时指定输入数据的shape，默认为[]。当`preprocess`为`True`时，必须指定 |
-| input_range     | list[float] |    否    | 开启前处理时指定输入数据反量化后的浮点数范围，默认为[ ]。当`preprocess`为`True`且`input_type`为`uint8`时，必须指定 |
-| input_layout    |   string    |    否    | 指定输入数据的layout，默认为""                               |
-| swapRB          |    bool     |    否    | 是否在`channel`维度反转数据，默认为False                     |
-| mean            | list[float] |    否    | 前处理标准化参数均值，默认为[0,0,0]                          |
-| std             | list[float] |    否    | 前处理标准化参数方差，默认为[1,1,1]                          |
-| letterbox_value |    float    |    否    | 指定前处理letterbox的填充值，默认为0                         |
-| output_layout   |   string    |    否    | 指定输出数据的layout, 默认为""                               |
+| 属性名称        |    类型    | 是否必须 | 描述                                                                                                                           |
+| :-------------- | :---------: | :------: | ------------------------------------------------------------------------------------------------------------------------------ |
+| target          |   string   |    是    | 指定编译目标, 如'cpu', 'k230'                                                                                                  |
+| dump_ir         |    bool    |    否    | 指定是否dump IR, 默认为False                                                                                                   |
+| dump_asm        |    bool    |    否    | 指定是否dump asm汇编文件, 默认为False                                                                                          |
+| dump_dir        |   string   |    否    | 前面指定dump_ir等开关后, 这里指定dump的目录, 默认为""                                                                          |
+| input_file      |   string   |    否    | onnx模型超过2GB时，用于指定参数文件路径，默认为""                                                                              |
+|                 |            |          |                                                                                                                                |
+| preprocess      |    bool    |    否    | 是否开启前处理，默认为False。以下参数仅在 `preprocess=True`时生效                                                            |
+| input_type      |   string   |    否    | 开启前处理时指定输入数据类型，默认为"float"。当 `preprocess`为 `True`时，必须指定为"uint8"或者"float32"                    |
+| input_shape     |  list[int]  |    否    | 开启前处理时指定输入数据的shape，默认为[]。当 `preprocess`为 `True`时，必须指定                                            |
+| input_range     | list[float] |    否    | 开启前处理时指定输入数据反量化后的浮点数范围，默认为[ ]。当 `preprocess`为 `True`且 `input_type`为 `uint8`时，必须指定 |
+| input_layout    |   string   |    否    | 指定输入数据的layout，默认为""                                                                                                 |
+| swapRB          |    bool    |    否    | 是否在 `channel`维度反转数据，默认为False                                                                                    |
+| mean            | list[float] |    否    | 前处理标准化参数均值，默认为[0,0,0]                                                                                            |
+| std             | list[float] |    否    | 前处理标准化参数方差，默认为[1,1,1]                                                                                            |
+| letterbox_value |    float    |    否    | 指定前处理letterbox的填充值，默认为0                                                                                           |
+| output_layout   |   string   |    否    | 指定输出数据的layout, 默认为""                                                                                                 |
 
 ##### 前处理流程说明
 
-目前暂不支持自定义前处理顺序，你可以根据以下流程示意图选择需要的前处理参数进行配置。
+目前暂不支持自定义前处理顺序，可以根据以下流程示意图，选择所需要的前处理参数进行配置。
 
 ```mermaid
 graph TD;
-	
+
     NewInput("NewInput\n(shape = input_shape\ndtype = input_type)") -->a(input_layout != ' ')-.Y.->Transpose1["transpose"] -.->b("SwapRB == True")-.Y.->SwapRB["SwapRB"]-.->c("input_type != float32")-.Y.->Dequantize["Dequantize"]-.->d("input_HW != model_HW")-.Y.->LetterBox["LetterBox"] -.->e("std not empty\nmean not empty")-.Y.->Normalization["Normalization"]-.->OldInput-->Model_body-->OldOutput-->f("output_layout != ' '")-.Y.->Transpose2["Transpose"]-.-> NewOutput;
 	a--N-->b--N-->c--N-->d--N-->e--N-->OldInput; f--N-->NewOutput;
-	
+
 	subgraph origin_model
 		OldInput; Model_body ; OldOutput;
 	end
-   
+
 ```
 
 参数说明：
 
- 1. `input_range`为输入数据类型为定点时，反量化后的浮点数范围。
+1. `input_range`为输入数据类型为定点时，反量化后的浮点数范围。
 
-    a. 输入数据类型为uint8，range为[0,255]，`input_range`为[0,255]，则反量化的作用只是进行类型转化，将uint8的数据转化为float32，`mean`和`std`参数仍然按照[0,255]的数据进行指定。
+   a. 输入数据类型为uint8，range为[0,255]，`input_range`为[0,255]，则反量化的作用只是进行类型转化，将uint8的数据转化为float32，`mean`和 `std`参数仍然按照[0,255]的数据进行指定。
 
-    b. 输入数据类型为uint8，range为[0,255]，`input_range`为[0,1]，则反量化会将定点数转化为浮点数[0,1]，`mean`和`std`参数需要按照0~1的数据进行指定。
+   b. 输入数据类型为uint8，range为[0,255]，`input_range`为[0,1]，则反量化会将定点数转化为浮点数[0,1]，`mean`和 `std`参数需要按照0~1的数据进行指定。
 
-    ```mermaid
-    graph TD;
-    	NewInput_uint8("NewInput_uint8 \n[input_type:uint8]") --input_range:0,255 -->dequantize_0["Dequantize"]--float range:0,255--> OldInput_float32
-    	NewInput_uint81("NewInput_uint8 \n[input_type:uint8]") --input_range:0,1 -->dequantize_1["Dequantize"]--float range:0,1--> OldInput_float32
-    ```
+   ```mermaid
+   graph TD;
+   	NewInput_uint8("NewInput_uint8 \n[input_type:uint8]") --input_range:0,255 -->dequantize_0["Dequantize"]--float range:0,255--> OldInput_float32
+   	NewInput_uint81("NewInput_uint8 \n[input_type:uint8]") --input_range:0,1 -->dequantize_1["Dequantize"]--float range:0,1--> OldInput_float32
+   ```
+2. `input_shape`为输入数据的shape，layout为 `input_layout`，现在支持字符串（`"NHWC"`、`"NCHW"`）和index两种方式作为 `input_layout`，并且支持非4D的数据处理。
 
-    
-
- 2. `input_shape`为输入数据的shape，layout为`input_layout`，现在支持字符串（`"NHWC"`、`"NCHW"`）和index两种方式作为`input_layout`，并且支持非4D的数据处理。
-
-    当按照字符串形式配置`input_layout`时，表示输入数据的layout；当按照index形式配置`input_layout`时，表示输入数据会按照当前配置的`input_layout`进行数据转置，即`input_layout`为`Transpose`的`perm`参数。
-
+   当按照字符串形式配置 `input_layout`时，表示输入数据的layout；当按照index形式配置 `input_layout`时，表示输入数据会按照当前配置的 `input_layout`进行数据转置，即 `input_layout`为 `Transpose`的 `perm`参数。
 
 ```mermaid
 graph TD;
@@ -146,7 +140,7 @@ graph TD;
 
 ```
 
-​		`output_layout`同理
+    `output_layout`同理
 
 ```mermaid
 graph TD;
@@ -157,7 +151,7 @@ subgraph A
     OldOutput --"output_layout: "NHWC""--> Transpose3("Transpose: NCHW2NHWC") --> NewOutput("NewOutput\nNHWC");
     OldOutput("OldOutput: (NCHW)") --"output_layout: "0,2,3,1""--> Transpose4("Transpose perm: 0,2,3,1") --> NewOutput("NewOutput\nNHWC");
     end
-    
+
 ```
 
 #### 代码示例
@@ -213,19 +207,19 @@ import_options.output_arrays = 'output' # Your output node name
 
 PTQTensorOptions类, 用于配置nncase PTQ选项，各属性说明如下
 
-| 字段名称                              | 类型   | 是否必须 | 描述                                                         |
-| ------------------------------------- | ------ | -------- | ------------------------------------------------------------ |
-| calibrate_method                      | string | 否       | 量化校正方法，默认为'NoClip'，可选'Kld'。使用量化时必须配置  |
-| samples_count                         | int    | 否       | 校正集数量。使用量化时必须配置                               |
-| finetune_weights_method               | string | 否       | 微调权重方法，默认为'NoFineTuneWeights'。可选 'UseSquant'    |
-| quant_type                            | string | 否       | 数据量化类型，默认为'uint8'。可选'int8','int16'              |
-| w_quant_type                          | string | 否       | 权重量化类型，默认为'uint8'。可选'int8','int16'              |
-|                                       |        |          |                                                              |
-| dump_quant_error                      | bool   | 否       | 是否生成量化损失，默认为False。在`dump_ir=True`时生效        |
-| dump_quant_error_symmetric_for_signed | bool   | 否       | 是否生成使用范围对称的量化损失，默认为True。在`dump_ir=True`时生效 |
-| quant_scheme                          | string | 否       | 量化配置文件路径，默认为“ ”。在`dump_ir=True`时生效          |
-| export_quant_scheme                   | bool   | 否       | 是否导出量化配置文件，默认为False。在`dump_ir=True`时生效    |
-| export_weight_range_by_channel        | bool   | 否       | 导出量化配置文件时，是否按照channel统计权重的范围，默认为False。在`dump_ir=True`时生效 |
+| 字段名称                              | 类型   | 是否必须 | 描述                                                                                      |
+| ------------------------------------- | ------ | -------- | ----------------------------------------------------------------------------------------- |
+| calibrate_method                      | string | 否       | 量化校正方法，默认为'NoClip'，可选'Kld'。使用量化时必须配置                               |
+| samples_count                         | int    | 否       | 校正集数量。使用量化时必须配置                                                            |
+| finetune_weights_method               | string | 否       | 微调权重方法，默认为'NoFineTuneWeights'。可选 'UseSquant'                                 |
+| quant_type                            | string | 否       | 数据量化类型，默认为'uint8'。可选'int8','int16'                                           |
+| w_quant_type                          | string | 否       | 权重量化类型，默认为'uint8'。可选'int8','int16'                                           |
+|                                       |        |          |                                                                                           |
+| dump_quant_error                      | bool   | 否       | 是否生成量化损失，默认为False。在 `dump_ir=True`时生效                                  |
+| dump_quant_error_symmetric_for_signed | bool   | 否       | 是否生成使用范围对称的量化损失，默认为True。在 `dump_ir=True`时生效                     |
+| quant_scheme                          | string | 否       | 量化配置文件路径，默认为“ ”。在 `dump_ir=True`时生效                                  |
+| export_quant_scheme                   | bool   | 否       | 是否导出量化配置文件，默认为False。在 `dump_ir=True`时生效                              |
+| export_weight_range_by_channel        | bool   | 否       | 导出量化配置文件时，是否按照channel统计权重的范围，默认为False。在 `dump_ir=True`时生效 |
 
 量化配置文件相关详细信息见[Mix Quant](MixQuant.md)
 
@@ -419,8 +413,6 @@ with open(os.path.join(infer_dir, 'test.kmodel'), 'wb') as f:
     f.write(kmodel)
 ```
 
-
-
 ## nncase 推理模型APIs
 
 除了编译模型APIs, nncase还提供了推理模型的APIs, 在PC上可推理前面编译生成的kmodel,  用来验证nncase推理结果和相应深度学习框架的runtime的结果是否一致等.
@@ -431,12 +423,12 @@ with open(os.path.join(infer_dir, 'test.kmodel'), 'wb') as f:
 
 MemoryRange类, 用于表示内存范围，各属性说明如下
 
-| 属性名称 | 类型           | 是否必须 | 描述                                                         |
-| -------- | -------------- | -------- | ------------------------------------------------------------ |
+| 属性名称 | 类型           | 是否必须 | 描述                                                                       |
+| -------- | -------------- | -------- | -------------------------------------------------------------------------- |
 | location | int            | 否       | 内存位置, 0表示input, 1表示output, 2表示rdata, 3表示data, 4表示shared_data |
-| dtype    | python数据类型 | 否       | 数据类型                                                     |
-| start    | int            | 否       | 内存起始地址                                                 |
-| size     | int            | 否       | 内存大小                                                     |
+| dtype    | python数据类型 | 否       | 数据类型                                                                   |
+| start    | int            | 否       | 内存起始地址                                                               |
+| size     | int            | 否       | 内存大小                                                                   |
 
 #### 代码示例
 
@@ -783,4 +775,3 @@ N/A
 ```python
 sim.run()
 ```
-

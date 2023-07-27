@@ -1,6 +1,6 @@
 # Overview
 
-`nncase` only provides Python APIs for compiling/inferring deep learning models on X86_64. K210 and K510 will no longer be supported in nncase-v2, please use nncase-v1.
+`nncase` only provides Python APIs for compiling/inferring deep learning models on x86_64 and amd64 platforms. `nncase-v2` will no longer support k210 and k510 compilation and inference, if needed, please use `nncase-v1` instead.
 
 # nncase-v2 python APIs
 
@@ -8,26 +8,26 @@
 
 The nncase toolchain compiler section includes the nncase and KPU plugin wheel packages
 
-- nncase and KPU plugin wheel packages are released at[nncase github](https://github.com/kendryte/nncase/releases)
-
+- nncase and KPU plugin wheel packages are released at [nncase github release](https://github.com/kendryte/nncase/releases)
 - nncase-v2 depends on dotnet-7.0.
+- User can use `pip` to install nncase and KPU plugin wheel packages under `linux` platform directly, and `apt` to install `dotnet` under Ubuntu environment.
 
-- You can use `pip` to install nncase and KPU plugin wheel packages directly, and `apt` to install `dotnet` under Ubuntu environment.
   ```
   pip install --upgrade pip
   pip install nncase
   pip install nncase-kpu
-  
+
   # nncase-2.x need dotnet-7
   sudo apt-get install -y dotnet-sdk-7.0
   ```
+- `Windows` platform support nncase online installation, nncase-kpu need to manually download in [nncase github release](https://github.com/kendryte/nncase/releases) and install.
 
-Users without an Ubuntu environment can use the nncase docker (Ubuntu 20.04 + Python 3.8).
+Users without an Ubuntu environment can use the nncase docker (Ubuntu 20.04 + Python 3.8 + dotnet-7.0).
 
 ```shell
 $ cd /path/to/nncase_sdk
 $ docker pull ghcr.io/kendryte/k230_sdk
-$ docker run -it --rm -v `pwd`:/mnt -w /mnt registry.cn-hangzhou.aliyuncs.com/kendryte/nncase:latest /bin/bash -c "/bin/bash"
+$ docker run -it --rm -v `pwd`:/mnt -w /mnt ghcr.io/kendryte/k230_sdk /bin/bash -c "/bin/bash"
 ```
 
 ### Check nncase version
@@ -55,13 +55,11 @@ You need to modify the following to suit your needs before executing the script:
    See [CompileOptions](#CompileOptions) for details of `compile_options`.
 
    See [PTQTensorOptions](#PTQTensorOptions) for details of `ptq_options`.
-
 2. In the `compile kmodel single input (multiple inputs)` section
 
    Modify `model_path` and `dump_path` to specify the model path and the file generation path during compilation.
 
    Modify the implementation of `calib_data`, see comments for data format.
-
 3. In the `run kmodel(simulate)` section, modify the implementation of `input_data`, see comments for data format.
 
 At the end of inference, `kmodel`, `output result` and files during compilation are generated under the `dump_path` path.
@@ -78,28 +76,28 @@ At the end of inference, `kmodel`, `output result` and files during compilation 
 
 CompileOptions is used to configure the nncase compile options
 
-| Attribute       |    Data Type     | Required | Description                                                         |
-| :-------------- | :---------: | :------: | ------------------------------------------------------------ |
-| target          |   string    |    Y    | Specify the compile target, such as 'cpu', 'k230'                                |
-| dump_ir         |    bool     |    N    | Specify whether dump IR, False by default.                                 |
-| dump_asm        |    bool     |    N    | Specify whether dump asm file, False by default.                        |
-| dump_dir        |   string    |    N    | Specify dump directory        |
-| input_file      |   string    |    N    | Specify `.onnx_data` file path when the size of onnx model lager than 2GB.            |
-|                 |             |          |                                                              |
-| preprocess      |    bool     |    N    | Specify whether to enable pre-processing, False by default. The following parameters will work when `preprocess` is True |
-| input_type      |   string    |    N    | Specify the input data type when turning on preprocessing, defaults to `float`. When `preprocess` is True, it must be specified as "uint8" or "float32". |
-| input_shape     |  list[int]  |    N    | Specify the shape of the input data when turning on preprocessing, [] by default. It must be specified When `preprocess` is `True` |
-| input_range     | list[float] |    N    | Specify the range of floating-point numbers after inverse quantization of the input data when pre-processing is turned on, [] by default. |
-| input_layout    |   string    |    N    | Specify the layout of the input data, "" by default.                                |
-| swapRB          |    bool     |    N    | Specify whether swap the channel of "R,B", False by default.                     |
-| mean            | list[float] |    N    | Normalize mean value for preprocess, [0, 0, 0] by default                          |
-| std             | list[float] |    N    | Normalize std value for preprocess, [1, 1, 1] by default                          |
-| letterbox_value |    float    |    N    | Specify the pad value of letterbox during preprocess, 0 by default.                         |
-| output_layout   |   string    |    N    | Specify the layout of the output data, "" by default.                               |
+| Attribute       |  Data Type  | Required | Description                                                                                                                                                  |
+| :-------------- | :---------: | :------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| target          |   string   |    Y    | Specify the compile target, such as 'cpu', 'k230'                                                                                                            |
+| dump_ir         |    bool    |    N    | Specify whether dump IR, False by default.                                                                                                                   |
+| dump_asm        |    bool    |    N    | Specify whether dump asm file, False by default.                                                                                                             |
+| dump_dir        |   string   |    N    | Specify dump directory                                                                                                                                       |
+| input_file      |   string   |    N    | Specify `.onnx_data` file path when the size of onnx model lager than 2GB.                                                                                 |
+|                 |            |          |                                                                                                                                                              |
+| preprocess      |    bool    |    N    | Specify whether to enable pre-processing, False by default. The following parameters will work when `preprocess` is True                                   |
+| input_type      |   string   |    N    | Specify the input data type when turning on preprocessing, defaults to `float`. When `preprocess` is True, it must be specified as "uint8" or "float32". |
+| input_shape     |  list[int]  |    N    | Specify the shape of the input data when turning on preprocessing, [] by default. It must be specified When `preprocess` is `True`                       |
+| input_range     | list[float] |    N    | Specify the range of floating-point numbers after inverse quantization of the input data when pre-processing is turned on, [] by default.                    |
+| input_layout    |   string   |    N    | Specify the layout of the input data, "" by default.                                                                                                         |
+| swapRB          |    bool    |    N    | Specify whether swap the channel of "R,B", False by default.                                                                                                 |
+| mean            | list[float] |    N    | Normalize mean value for preprocess, [0, 0, 0] by default                                                                                                    |
+| std             | list[float] |    N    | Normalize std value for preprocess, [1, 1, 1] by default                                                                                                     |
+| letterbox_value |    float    |    N    | Specify the pad value of letterbox during preprocess, 0 by default.                                                                                          |
+| output_layout   |   string   |    N    | Specify the layout of the output data, "" by default.                                                                                                        |
 
 ##### The pipeline of preprocessing
 
-Currently does not support customized pre-processing orders, you can select the required pre-processing parameters to configure according to the following pipeline.
+At present, there is no support for custom pre-processing order. You can choose the required pre-processing parameters to configure according to the following flow diagram.
 
 ```mermaid
 graph TD;
@@ -115,24 +113,20 @@ graph TD;
 
 Parameter explanations:
 
- 1. `input_range` is the range of input data after be dequantized to "float32" when `input_type` is "uint8".
+1. `input_range` is the range of input data after be dequantized to "float32" when `input_type` is "uint8".
 
-    a. When input type is "uint8"，range is "[0,255]"，`input_range` is "[0,255]", the Dequantize_op only convert the type of input data to "float32". `mean`and`std` are still specificed according to data with range "[0,255]".
+   a. When input type is "uint8",range is "[0,255]",`input_range` is "[0,255]", the Dequantize_op only convert the type of input data to "float32". `mean`and `std` are still specificed according to data with range "[0,255]".
 
-    b.  When input type is "uint8"，range is "[0,255]"，`input_range` is [0,1]，the input data will be dequantized to "float32" with range "[0,1]"，`mean`and`std` need to specify according to data with range "[0,1]".
+   b.  When input type is "uint8",range is "[0,255]",`input_range` is [0,1],the input data will be dequantized to "float32" with range "[0,1]",`mean`and `std` need to specify according to data with range "[0,1]".
 
-    ```mermaid
-    graph TD;
-    	NewInput_uint8("NewInput_uint8 \n[input_type:uint8]") --input_range:0,255 -->dequantize_0["Dequantize"]--float range:0,255--> OldInput_float32
-    	NewInput_uint81("NewInput_uint8 \n[input_type:uint8]") --input_range:0,1 -->dequantize_1["Dequantize"]--float range:0,1--> OldInput_float32
-    ```
+   ```mermaid
+   graph TD;
+   	NewInput_uint8("NewInput_uint8 \n[input_type:uint8]") --input_range:0,255 -->dequantize_0["Dequantize"]--float range:0,255--> OldInput_float32
+   	NewInput_uint81("NewInput_uint8 \n[input_type:uint8]") --input_range:0,1 -->dequantize_1["Dequantize"]--float range:0,1--> OldInput_float32
+   ```
+2. `input_shape` is the shape of input data,`input_layout` is the layout of input data,Both strings (`"NHWC"`, `"NCHW"`) and indexes are now supported as `input_layout`, and non-4D data handling is supported.
 
-
-
- 2. `input_shape` is the shape of input data，`input_layout` is the layout of input data，Both strings (`"NHWC"`, `"NCHW"`) and indexes are now supported as `input_layout`, and non-4D data handling is supported.
-
-    When `input_layout` is configured in the form of a string, it indicates the layout of the input data; when `input_layout` is configured in the form of an index, it indicates that the input data will be transposed in accordance with the currently configured `input_layout`. `input_layout` is the `perm` parameter of `Transpose`.
-
+   When `input_layout` is configured in the form of a string, it indicates the layout of the input data; when `input_layout` is configured in the form of an index, it indicates that the input data will be transposed in accordance with the currently configured `input_layout`. `input_layout` is the `perm` parameter of `Transpose`.
 
 ```mermaid
 graph TD;
@@ -146,7 +140,7 @@ graph TD;
 
 ```
 
-​		`output_layout` is similar to `input_layout`
+    `output_layout` is similar to `input_layout`
 
 ```mermaid
 graph TD;
@@ -195,9 +189,7 @@ The details of all attributes are following.
 | ------------- | --------- | ------------ | ----------------- |
 | output_arrays | string    | N            | output array name |
 
-
 #### Example
-
 
 ```python
 # import_options
@@ -211,19 +203,19 @@ import_options.output_arrays = 'output' # Your output node name
 
 PTQTensorOptions is used to configure PTQ options. The details of all attributes are following.
 
-| Attribute        | Data Type | Required | Description                                                         |
-| ------------------------------------- | ------ | -------- | ------------------------------------------------------------ |
-| calibrate_method                      | string | N       |  Specify calibrate method, 'NoClip' by default. 'Kld' is optional. Must be configured when use quantification.  |
-| samples_count                         | int    | N       | The number of calibration data sets. Must be configured when use quantification.                               |
-| finetune_weights_method               | string | N       | Finetune weights method,'NoFineTuneWeights' by default. 'UseSquant' is optional.    |
-| quant_type                            | string | N       | Type of data quantification，'uint8' by default. 'int8','int16' are optional.              |
-| w_quant_type                          | string | N       | Type of weights quantification，'uint8' by default. 'int8','int16' are optional.              |
-|                                       |        |          |                                                              |
-| dump_quant_error                      | bool   | N       | Specify whether dump quantification error, False by default. The parameters following worked when `dump_ir=True`.        |
-| dump_quant_error_symmetric_for_signed | bool   | N       | Specify whether dump quantification error by symmetric for signed number，True by default。 |
-| quant_scheme                          | string | N       | specify the path of quantification scheme file，"" by default.           |
-| export_quant_scheme                   | bool   | N       | Specify whether export quantification scheme, False by default.     |
-| export_weight_range_by_channel        | bool   | N       | Specify whether export weights range by channel, False by default.  |
+| Attribute                             | Data Type | Required | Description                                                                                                         |
+| ------------------------------------- | --------- | -------- | ------------------------------------------------------------------------------------------------------------------- |
+| calibrate_method                      | string    | N        | Specify calibrate method, 'NoClip' by default. 'Kld' is optional. Must be configured when use quantification.       |
+| samples_count                         | int       | N        | The number of calibration data sets. Must be configured when use quantification.                                    |
+| finetune_weights_method               | string    | N        | Finetune weights method,'NoFineTuneWeights' by default. 'UseSquant' is optional.                                    |
+| quant_type                            | string    | N        | Type of data quantification,'uint8' by default. 'int8','int16' are optional.                                        |
+| w_quant_type                          | string    | N        | Type of weights quantification,'uint8' by default. 'int8','int16' are optional.                                     |
+|                                       |           |          |                                                                                                                     |
+| dump_quant_error                      | bool      | N        | Specify whether dump quantification error, False by default. The parameters following worked when `dump_ir=True`. |
+| dump_quant_error_symmetric_for_signed | bool      | N        | Specify whether dump quantification error by symmetric for signed number,True by default.                           |
+| quant_scheme                          | string    | N        | specify the path of quantification scheme file,"" by default.                                                       |
+| export_quant_scheme                   | bool      | N        | Specify whether export quantification scheme, False by default.                                                     |
+| export_weight_range_by_channel        | bool      | N        | Specify whether export weights range by channel, False by default.                                                  |
 
 Detailed information about quantitative profiles can be found at [Mix Quant](MixQuant.md)
 
@@ -413,8 +405,6 @@ with open(os.path.join(infer_dir, 'test.kmodel'), 'wb') as f:
     f.write(kmodel)
 ```
 
-
-
 ## nncase inference APIs
 
 Nncase provides inference APIs to inference kmodel. You can make use of it to check the result with runtime for deep learning frameworks.
@@ -431,7 +421,6 @@ MemoryRange is used to describe the range to memory.
 | dtype     | python data type | N        | data type                                                                                                        |
 | start     | int              | N        | The start of memory                                                                                              |
 | size      | int              | N        | The size of memory                                                                                               |
-
 
 #### Example
 
@@ -532,7 +521,6 @@ numpy.ndarray
 arr = sim.get_output_tensor(i).to_numpy()
 ```
 
-
 ### Simulator
 
 #### Description
@@ -543,7 +531,6 @@ Simulator is used to inference kmodel on PC. The details of all attributes are f
 | ------------ | --------- | -------- | ---------------------- |
 | inputs_size  | int       | N        | The number of inputs.  |
 | outputs_size | int       | N        | The number of outputs. |
-
 
 #### Example
 
