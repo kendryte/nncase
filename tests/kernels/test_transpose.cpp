@@ -27,8 +27,8 @@ using namespace nncase::runtime;
 using namespace ortki;
 
 class TransposeTest : public KernelTest,
-                       public ::testing::TestWithParam<
-                           std::tuple<nncase::typecode_t, dims_t, axes_t>> {
+                      public ::testing::TestWithParam<
+                          std::tuple<nncase::typecode_t, dims_t, axes_t>> {
   public:
     void SetUp() override {
         auto &&[typecode, l_shape, value] = GetParam();
