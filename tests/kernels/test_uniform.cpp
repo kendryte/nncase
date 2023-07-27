@@ -28,26 +28,31 @@ using namespace ortki;
 
 class UniformTest
     : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, axes_t>> {
+      public ::testing::TestWithParam<std::tuple<
+          nncase::typecode_t, dims_t, axes_t, float_t, float_t, float_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape] = GetParam();
-        float_t high_array[] = {1.0f};
-        high = hrt::create(dt_float32, {1},
+        auto &&[typecode, shape, l_shape, value1, value2, value3] = GetParam();
+
+        high_value = value1;
+        float_t high_array[] = {high_value};
+        high = hrt::create(typecode, shape,
                            {reinterpret_cast<gsl::byte *>(high_array),
                             sizeof(high_array)},
                            true, host_runtime_tensor::pool_cpu_only)
                    .expect("create tensor failed");
 
-        float_t low_array[] = {0.0f};
+        low_value = value2;
+        float_t low_array[] = {low_value};
         low = hrt::create(
-                  dt_float32, {1},
+                  typecode, shape,
                   {reinterpret_cast<gsl::byte *>(low_array), sizeof(low_array)},
                   true, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
 
-        float_t seed_array[] = {1.0f};
-        seed = hrt::create(dt_float32, {1},
+        seed_value = value3;
+        float_t seed_array[] = {seed_value};
+        seed = hrt::create(typecode, shape,
                            {reinterpret_cast<gsl::byte *>(seed_array),
                             sizeof(seed_array)},
                            true, host_runtime_tensor::pool_cpu_only)
@@ -63,23 +68,26 @@ class UniformTest
     runtime_tensor low;
     runtime_tensor seed;
     axes_t shape_array;
+    float_t high_value;
+    float_t low_value;
+    float_t seed_value;
 };
 
 INSTANTIATE_TEST_SUITE_P(
     Uniform, UniformTest,
-    testing::Combine(testing::Values(dt_float32, dt_int32, dt_int16, dt_float64,
-                                     dt_int8, dt_uint8, dt_uint16, dt_uint32,
-                                     dt_uint64, dt_int64, dt_float16,
-                                     dt_boolean),
-                     testing::Values(axes_t{1, 3, 16, 16})));
+    testing::Combine(testing::Values(dt_float32), testing::Values(dims_t{1}),
+                     testing::Values(axes_t{1, 3, 16, 16}),
+                     testing::Values(1.0f, 2.0f, 3.0f, 4.0f, 5.0f),
+                     testing::Values(0.0f, 0.5f, 0.8f, 1.0f),
+                     testing::Values(1.0f, 2.0f)));
 
 TEST_P(UniformTest, Uniform) {
     // expected
     std::vector<int64_t> vec(shape_array.begin(), shape_array.end());
     int64_t shape_u_array[4];
     std::copy(vec.begin(), vec.end(), shape_u_array);
-    auto output_ort =
-        ortki_RandomUniform(1, 1.0f, 0.0f, 1.0f, shape_u_array, 4);
+    auto output_ort = ortki_RandomUniform(1, high_value, low_value, seed_value,
+                                          shape_u_array, 4);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
