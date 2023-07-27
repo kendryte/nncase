@@ -211,8 +211,8 @@ class KernelTest {
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](gsl::span<const size_t> index) -> result<void> {
-                    get<bool>(tensor, index) =
-                        static_cast<double>(dis(gen)) >= 0;
+                    get<bfloat16>(tensor, index) =
+                        static_cast<bfloat16>(dis(gen));
                     return ok();
                 });
             break;
