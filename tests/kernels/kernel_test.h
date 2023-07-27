@@ -1623,5 +1623,18 @@ class KernelTest {
 
         std::cout << std::endl;
     }
+
+    template <class T>
+    result<void> clamp_impl(const T *input, T min, T max, T *output,
+                            gsl::span<const size_t> in_shape,
+                            gsl::span<const size_t> in_strides,
+                            gsl::span<const size_t> out_strides,
+                            NNCASE_UNUSED kernel_context &context) {
+        return apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
+            const auto v = input[offset(index, in_strides)];
+            output[offset(index, out_strides)] = std::min(std::max(v, min), max);
+            return ok();
+        });
+    }
 };
 } // namespace nncase

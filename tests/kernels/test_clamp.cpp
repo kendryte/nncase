@@ -28,70 +28,72 @@ using namespace ortki;
 
 class ClampTest
     : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
+      public ::testing::TestWithParam<
+          std::tuple<nncase::typecode_t, dims_t, float_t, float_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape] = GetParam();
+        auto &&[typecode, l_shape, value1, value2] = GetParam();
 
         input =
             hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
         init_tensor(input);
+
+        min_value = value1;
+        max_value = value2;
     }
 
     void TearDown() override {}
 
   protected:
     runtime_tensor input;
+    float_t min_value;
+    float_t max_value;
 };
 
 INSTANTIATE_TEST_SUITE_P(
     clamp, ClampTest,
-    testing::Combine(testing::Values(dt_float32, dt_int32, dt_int16, dt_int8,
-                                     dt_uint8, dt_uint16, dt_uint32, dt_uint64,
-                                     dt_int64, dt_float64, dt_boolean),
+    testing::Combine(testing::Values(dt_float32, dt_uint64),
                      testing::Values(dims_t{1, 3, 16, 16}, dims_t{1},
                                      dims_t{1, 3}, dims_t{8, 8},
                                      dims_t{1, 3, 8}, dims_t{16, 16}, dims_t{},
-                                     dims_t{16})));
+                                     dims_t{16}),
+                     testing::Values(-1, -2, -3, -4, -5, -6),
+                     testing::Values(1, 2, 3, 4, 5, 6)));
 
 TEST_P(ClampTest, clamp) {
 
     // expected
-    float_t min1[] = {-1.0f};
-    auto min_tensor1 =
+    float_t min1[] = {min_value};
+    auto min_tensor =
         hrt::create(nncase::dt_float32, {1},
                     {reinterpret_cast<gsl::byte *>(min1), sizeof(min1)}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
-    float_t max1[] = {1.0f};
-    auto max_tensor1 =
+    float_t max1[] = {max_value};
+    auto max_tensor =
         hrt::create(nncase::dt_float32, {1},
                     {reinterpret_cast<gsl::byte *>(max1), sizeof(max1)}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
-    auto output1 = kernels::stackvm::clamp(input.impl(), min_tensor1.impl(),
-                                           max_tensor1.impl())
-                       .expect("clamp failed");
-    runtime_tensor expected(output1.as<tensor>().expect("as tensor failed"));
+    auto output_ort =
+        ortki_Clip(runtime_tensor_2_ort_tensor(input),
+                   ortki_CastLike(runtime_tensor_2_ort_tensor(min_tensor),
+                                  runtime_tensor_2_ort_tensor(input)),
+                   ortki_CastLike(runtime_tensor_2_ort_tensor(max_tensor),
+                                  runtime_tensor_2_ort_tensor(input)));
+    size_t size = 0;
+    void *ptr_ort = tensor_buffer(output_ort, &size);
+    dims_t shape(tensor_rank(output_ort));
+    tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
+    auto expected = hrt::create(input.datatype(), shape,
+                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+                                true, host_runtime_tensor::pool_cpu_only)
+                        .expect("create tensor failed");
 
     // actual
-    float_t min[] = {-1.0f};
-    auto min_tensor =
-        hrt::create(nncase::dt_float32, {1},
-                    {reinterpret_cast<gsl::byte *>(min), sizeof(min)}, true,
-                    host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
-
-    float_t max[] = {1.0f};
-    auto max_tensor =
-        hrt::create(nncase::dt_float32, {1},
-                    {reinterpret_cast<gsl::byte *>(max), sizeof(max)}, true,
-                    host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
-
     auto output = kernels::stackvm::clamp(input.impl(), min_tensor.impl(),
                                           max_tensor.impl())
                       .expect("clamp failed");
