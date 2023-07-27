@@ -114,6 +114,8 @@ public class MergeBucketFusion : ModulePass
             {
                 counter++;
             }
+            CheckErrorVar(post, main.Parameters.ToArray());
+            CheckRepeat(post);
             hashcode = postHashCode;
             loop++;
         }
@@ -175,6 +177,16 @@ public class MergeBucketFusion : ModulePass
             Visit(_root);
         }
 
+        protected override Expr VisitCall(Call expr)
+        {
+            if (changed)
+            {
+                return expr;
+            }
+
+            return base.VisitCall(expr);
+        }
+
         // todo: 问题
         // 1. getItem + getItem
         // 2. 如何合并getItem的多个users
@@ -197,9 +209,9 @@ public class MergeBucketFusion : ModulePass
                 // var outerCall = (Call)matchResult["outerCall"];
                 // var fusion = (BucketFusion)matchResult["fusion"];
 
-                Console.WriteLine($"Match {fusion.Name}");
+                Console.WriteLine($"Match {fusion.Name} counter:{counter}");
                 // DumpIR(outerCall, $"{counter}_MergeBefore", relPath);
-                // for (var i = 0; i < outerCall.Users.Count; i++)
+                // for (var i = 0; i` < outerCall.Users.Count; i++)
                 // {
                     // DumpIR(outerCall.Users.ToArray()[i], $"{counter}_User_{i}_MergeBefore", relPath);
                 // }
@@ -208,24 +220,48 @@ public class MergeBucketFusion : ModulePass
                 var (newCall, users) = MergeMultiUserFusion(outerCall, fusion);
                 if (newCall != null)
                 {
-                    // DumpIR(outerCall, $"{counter}_OriginAfter", relPath);
-                    // DumpIR(newCall, $"{counter}_MergeAfter", relPath);
-                    // DumpIR(_root, "rootBeforeMerge", relPath);
-                    // var users = outerCall.Users.ToArray();
-                    for (var i = 0; i < users.Length; i++)
+                    var originUsersIndex = 0;
+                    var getItemMode = outerCall.Users.First() is Call c && c.Target is GetItem;
+                    if (getItemMode)
                     {
-                        // todo:这里计算的不对，不一定是按照顺序引用的，也可能某一个引用了多次，但是构造的时候是按照
-                        // 原始body, users的输出开始构造的
-                        // 第几个user的use，
-                        var newOperand = newCall.CheckedType is TupleType ? newCall[i] : newCall;
-                        // DumpIR(newOperand, $"newOperand_{i}", relPath);
-                        ReplaceAllUsesWith(users[i], newOperand);
+                        // 第几个GetItem对应的users用同一个operand
+                        for (int i = 0; i < outerCall.Users.Count; i++)
+                        {
+                            var newOperand = newCall[i];
+                            for (int j = 0; j < outerCall.Users.ToArray()[i].Users.Count; j++)
+                            {
+                                ReplaceAllUsesWith(users[originUsersIndex], newOperand);
+                                originUsersIndex++;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        for (var i = 0; i < users.Length; i++)
+                        {
+                            // todo:这里计算的不对，不一定是按照顺序引用的，也可能某一个引用了多次，但是构造的时候是按照
+                            // 原始body, users的输出开始构造的
+                            // 第几个user的use，
+                            // todo: 这里不能按照users的length来取，比如说getItem的user超过输出的数量就错了，但是要确保取到的是正确的
+                            // ref TestTupleGetItemUsersLargeThanOutputs
+                            var newOperand = newCall.CheckedType is TupleType ? newCall[i] : newCall;
+                            // DumpIR(newOperand, $"newOperand_{i}", relPath);
+                            ReplaceAllUsesWith(users[i], newOperand);
+                        }
                     }
 
                     Console.WriteLine();
                     // ReplaceAllUsesWith(outerCall, newCall);
                     DumpIR(_root, "rootAfterMerge", relPath);
+                    _root.InferenceType();
+                    if (_root.CheckedType is InvalidType)
+                    {
+                        throw new InvalidOperationException("InvalidRoot");
+                    }
+
+                    // todo: 检查已经被合并的fusion的名字是否还存在，存在就是错误
                     addCounter();
+                    CheckRepeat(_root);
                     changed = true;
                     return newCall;
                 }
@@ -235,6 +271,115 @@ public class MergeBucketFusion : ModulePass
         }
 
         protected override Expr DefaultVisitLeaf(Expr expr) => expr;
+    }
+
+    private static void CheckRepeat(Expr call)
+    {
+        // todo: 检查所有fusion里面的param有没有重复名字的
+        // todo: 检查有没有fusion名字重复的
+        var c = new CheckFusionCallVisitor();
+        c.Visit(call);
+        c.Check();
+    }
+
+    internal sealed class CheckFusionCallVisitor : ExprWalker
+    {
+        public HashSet<string> callName = new();
+        public Dictionary<string, (string, BucketFusion)> errorFusion = new();
+
+        public HashSet<string> fusionName = new();
+        public HashSet<string> repeatFusion = new();
+
+        public HashSet<string> fusionParamsName = new();
+        public HashSet<string> repeatParamFusion = new();
+
+        private void print(string name, HashSet<string> list)
+        {
+            Console.WriteLine(name);
+            foreach (string s in list)
+            {
+                Console.WriteLine(s);
+            }
+        }
+
+        public void Check()
+        {
+            var error = false;
+            if (errorFusion.Count != 0)
+            {
+                error = true;
+                Console.WriteLine("errorFusion");
+            }
+
+            if (repeatFusion.Count != 0)
+            {
+                error = true;
+                print("repeatFusion not zero", repeatFusion);
+            }
+
+            if (repeatParamFusion.Count != 0)
+            {
+                error = true;
+                print("repeatParamFusion not zero", repeatParamFusion);
+            }
+
+            if (error)
+            {
+                throw new InvalidOperationException();
+            }
+        }
+
+        protected override Unit VisitLeafFusion(Fusion fusion)
+        {
+            // 可能有多个user啊，每次进来访问
+            if (fusion is BucketFusion bf)
+            {
+                if (fusionName.Contains(bf.Name))
+                {
+                    repeatFusion.Add(bf.Name);
+                }
+                else
+                {
+                    fusionName.Add(bf.Name);
+                }
+
+                var parameters = bf.Parameters.ToArray();
+                foreach (var parameter in parameters)
+                {
+                    if (fusionParamsName.Contains(parameter.Name))
+                    {
+                        repeatParamFusion.Add(parameter.Name);
+                    }
+                }
+                fusionParamsName.UnionWith(parameters.Select(p => p.Name).ToArray());
+
+                // var nameList = bf.Name.Split("_").Chunk(2).Select(pair => $"{pair[0]}_{pair[1]}").ToArray();
+                // foreach (string s in nameList)
+                // {
+                //     if (callName.Contains(s))
+                //     {
+                //         errorFusion[bf.Name] = (s, bf);
+                //     }
+                //     else
+                //     {
+                //         callName.Add(s);
+                //     }
+                // }
+            }
+
+            return default;
+        }
+    }
+
+
+    private static void CheckErrorVar(Expr body, Var[] vars)
+    {
+        var f = new FindVar();
+        f.Visit(body);
+        if (!f.Vars.All(vars.Contains))
+        {
+            throw new InvalidOperationException("Has Invalid Var In Body");
+        }
     }
 
     private static bool detectedRing(Call outerCall, Expr[] users)
@@ -366,6 +511,7 @@ public class MergeBucketFusion : ModulePass
             DumpIR(newCall, "newCallInvalid");
             throw new InvalidOperationException("InvalidNewCallInMergeMultiUser");
         }
+        DumpIR(newCall, "newCall", mergeRelPath);
         ArgsChecker(newArgs);
         return (newCall, users);
     }
@@ -543,8 +689,8 @@ public class MergeBucketFusion : ModulePass
     private static Expr[] MakeNewUserExpr(UserInfo[] userInfos, Call outerCall, FusionVarMapper argMap)
     {
         var users = userInfos.Select(x => x.User).ToArray();
-        var usersName = users.Select(user => user.Target).OfType<BucketFusion>().Select(x => x.Name).ToArray();
         // 不能加入原始的body，因为所有的输出都被合并了，只有合并进来的输出了
+        // todo: 如果user是getItem，那么需要换成getItem的target才行
         var originBody = new IR.Tuple(users.ToArray());
         // var newOriginBody =
             // new IR.Tuple(new Expr[] { body }

@@ -35,7 +35,7 @@ public class UnitTestMergeMultiUserFusion : TransformTestBase
     public async Task TestSimple()
     {
         var input = Testing.Rand<float>(1, 3, 24, 24);
-        var inputVar = new Var(new TensorType(input.ElementType, input.Shape));
+        var inputVar = new Var("inputVar", new TensorType(input.ElementType, input.Shape));
 
         var callee = MakeSingleSimpleFusionCall(Abs, inputVar);
         var caller0 = MakeSingleSimpleFusionCall(Sqrt, callee);
@@ -52,7 +52,7 @@ public class UnitTestMergeMultiUserFusion : TransformTestBase
         // callee = Abs(tr)
         // callee + tr | callee - tr
         var input = Testing.Rand<float>(1, 3, 24, 24);
-        var inputVar = new Var(new TensorType(input.ElementType, input.Shape));
+        var inputVar = new Var("inputVar", new TensorType(input.ElementType, input.Shape));
         var tr = Transpose(inputVar, new[] { 3, 2, 1, 0 });
         var callee = MakeSingleSimpleFusionCall(Abs, tr);
         var caller0 = MakeSimpleFusionCall(args => args[0] + args[1], callee, tr);
@@ -72,7 +72,7 @@ public class UnitTestMergeMultiUserFusion : TransformTestBase
         // leakyRelu = LeakyRelu(f)
         // complexFusion(LeakyRelu, f)
         var input = Testing.Rand<float>(1, 3, 24, 24);
-        var inputVar = new Var(new TensorType(input.ElementType, input.Shape));
+        var inputVar = new Var("inputVar", new TensorType(input.ElementType, input.Shape));
         var tr = Transpose(inputVar, new[] { 3, 2, 1, 0 });
         var f = MakeSingleSimpleFusionCall(Abs, tr);
         var leakyRelu = MakeSingleSimpleFusionCall(expr => LeakyRelu(expr, 0.1), f);
@@ -163,8 +163,7 @@ public class UnitTestMergeMultiUserFusion : TransformTestBase
             new[] { inputVar0, inputVar1 },
             new Dictionary<Var, IValue>
             {
-                { inputVar0, Value.FromTensor(input0) },
-                { inputVar1, Value.FromTensor(input1) }
+                { inputVar0, Value.FromTensor(input0) }, { inputVar1, Value.FromTensor(input1) }
             });
     }
 
@@ -191,6 +190,27 @@ public class UnitTestMergeMultiUserFusion : TransformTestBase
         var abs10 = MakeSingleSimpleFusionCall(Abs, call[1]);
         var abs11 = MakeSingleSimpleFusionCall(Abs, call[1]);
         await RunTest(new IR.Tuple(new[] { abs00, abs01, abs10, abs11 }), new[] { inputVar0 },
+            new Dictionary<Var, IValue> { { inputVar0, Value.FromTensor(input0) } });
+    }
+
+    //     %91 = %Binary_156_Conv2D_76_Conv2D_75_Conv2D_83_Conv2D_82_Squeeze_265_Binary_157(%85, %90, %75) 2 -1614309361: // f32[?,?]
+    //     %92 = %Squeeze_272_Slice_271_Binary_277_ConstantOfShape_276_Slice_275_Cast_274_ShapeOf_273_Cast_305_Compare(%80, %91) 2 -1199809018: // (i32[?], i32[?,?])
+    //     %93 = GetItem(%92, const(i32 : 0)) 1 259791103: // i32[?]
+    //     %94 = GetItem(%92, const(i32 : 1)) 3 1708502831: // i32[?,?]
+    //     %95 = %Binary_279_Reduce_278_Tile_282_Unsqueeze_266_Cast_281_Stack_280_Reshape_293_Where_292_Reshape_291_Co(%93, %91, %94) 1 -1815551698: // f32[?,?,?]
+    //     %108 = %Binary_166_Binary_165(%94) 4 -1861428933: // f32[?,?,?,?]
+    [Fact]
+    public async Task TestTupleGetItemUsersLargeThanOutputs()
+    {
+        var input0 = Testing.Rand<float>(1, 3, 24, 24);
+        var inputVar0 = new Var("inputVar", new TensorType(input0.ElementType, input0.Shape));
+        var call = MakeSingleSimpleFusionCall(expr => new IR.Tuple(expr + 1f, expr - 1f), Softmax(inputVar0, 0));
+        var n93 = call[0];
+        var n94 = call[1];
+        var n95 = MakeSimpleFusionCall(expr => expr[0] * expr[1] * expr[2], n93, n94, inputVar0);
+        var n108 = MakeSimpleFusionCall(expr => expr[0] * expr[0], n94);
+        var n108User = MakeSingleSimpleFusionCall(Abs, n108);
+        await RunTest(new IR.Tuple(new[] { n95, n108User }), new[] { inputVar0 },
             new Dictionary<Var, IValue> { { inputVar0, Value.FromTensor(input0) } });
     }
 
@@ -226,6 +246,7 @@ public class UnitTestMergeMultiUserFusion : TransformTestBase
         await RunTest(res, new[] { inputVar0 },
             new Dictionary<Var, IValue> { { inputVar0, Value.FromTensor(input0) } });
     }
+
     private static async Task RunTestNotMatch(Expr body, Var[] inputVar, Dictionary<Var, IValue> dict)
     {
         var module = MakeModule(body, inputVar);
