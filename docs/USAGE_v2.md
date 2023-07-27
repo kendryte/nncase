@@ -62,7 +62,7 @@ k230模型编译推理参考Jupyter脚本：[User_guide](../examples/user_guide/
    修改 `calib_data`的实现，数据格式见注释。
 3. `run kmodel(simulate)`部分，修改 `input_data`的实现，数据格式见注释。
 
-推理结束后，会在 `dump_path`路径下生成 `kmodel`、输出结果和 `<u>`编译期间的文件 `dump_ir==True</u>`
+推理结束后，会在 `dump_path`路径下生成 `kmodel`、输出结果和编译期间的文件。
 
 ## 开发板推理相关流程
 

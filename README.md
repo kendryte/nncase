@@ -32,16 +32,19 @@ Download prebuilt binaries from [Release](https://github.com/kendryte/nncase/rel
 - [Caffe ops](./docs/caffe_ops.md)
 - [ONNX ops](./docs/onnx_ops.md)
 
-## Usage
-## 使用方法
 
-- [Usage(English)](./docs/USAGE_v2_EN.md)
-- [FAQ(English)](./docs/FAQ_EN.md)
-- [使用说明(中文)](./docs/USAGE_v2.md)
-- [常见问题(中文)](./docs/FAQ_ZH.md)
-
-
-- [Examples 例子](./examples/user_guide/)
+## K210/K510
+- [Usage](https://github.com/kendryte/nncase/blob/release/1.0/docs/USAGE_EN.md)
+- [FAQ](https://github.com/kendryte/nncase/blob/release/1.0/docs/FAQ_EN.md)
+- [使用说明](https://github.com/kendryte/nncase/blob/release/1.0/docs/USAGE_ZH.md)
+- [常见问题](https://github.com/kendryte/nncase/blob/release/1.0/docs/FAQ_ZH.md)
+- [Example](https://github.com/kendryte/nncase/blob/release/1.0/examples/user_guide/)
+## K230
+- [Usage](./docs/USAGE_v2_EN.md)
+- [FAQ](./docs/FAQ_EN.md)
+- [使用说明](./docs/USAGE_v2.md)
+- [常见问题](./docs/FAQ_ZH.md)
+- [Example](./examples/user_guide/)
 
 ## Resources
 ## 资源
