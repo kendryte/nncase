@@ -1,6 +1,6 @@
 # Overview
 
-`nncase` only provides Python APIs for compiling/inferring deep learning models on x86_64 and amd64 platforms. `nncase-v2` will no longer support k210 and k510 compilation and inference, if needed, please use `nncase-v1` instead.
+`nncase` only provides Python APIs for compiling/inferring deep learning models on x86_64 and amd64 platforms. `nncase-v2` will no longer support compilation and inference for k210 and k510, use `nncase-v1` instead if needed.
 
 # nncase-v2 python APIs
 
