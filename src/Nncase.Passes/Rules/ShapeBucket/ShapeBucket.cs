@@ -504,6 +504,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
         var shapeExpr =
             expr.EvaluateShapeExpr(info.Concat(fusionInfo).ToDictionary(pair => pair.Key, pair => pair.Value));
 
+        // DumpIR(shapeExpr, "shapeExpr", _relPath);
         if (!shapeExpr.InferenceType())
         {
             throw new InvalidOperationException();
@@ -526,6 +527,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
         // find vars in Input ShapeExpr
         var vars = inputInfo.Values.SelectMany(x => x).OfType<Var>().ToHashSet().ToArray();
 
+        // todo: check var is exist
         // DimVarName -> Dict.key -> Dict.Value
         var minDict = options.RangeInfo.ToDictionary(
             pair => vars.FindFirst(v => v.Name == pair.Key),
@@ -579,7 +581,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
     {
         var originShape = originBody.EvaluateShapeExpr(fusionInputsShape);
         originShape.InferenceType();
-        DumpIR(originShape, "OriginShapeExpr", _relPath);
+        // DumpIR(originShape, "OriginShapeExpr", _relPath);
         var rank = call.CheckedShape.Rank;
 
         // 对body的输出进行slice
@@ -589,18 +591,19 @@ public partial class FusionBucket : RewriteRule<Pattern>
 
     public Expr FixInput(Expr body, int[][] shapeList, Var[] fusionVars, Expr[] outerArgs)
     {
-        var result = fusionVars.Zip(outerArgs).Zip(shapeList).Aggregate(body, (sum, data) =>
-        {
-            var ((fusionVar, arg), fixShape) = data;
-            Expr expr = new Call(new FixShape(), arg, fixShape);
-            if (arg is Marker m)
-            {
-                expr = m.With(target: expr);
-            }
-
-            return ReplaceExpr(sum, fusionVar, expr);
-        });
-        return result;
+        return ReplaceClone(body, fusionVars.Zip(outerArgs).ToArray());
+        // var result = fusionVars.Zip(outerArgs).Zip(shapeList).Aggregate(body, (sum, data) =>
+        // {
+        //     var ((fusionVar, arg), fixShape) = data;
+        //     Expr expr = new Call(new FixShape(), arg, fixShape);
+        //     if (arg is Marker m)
+        //     {
+        //         expr = m.With(target: expr);
+        //     }
+        //
+        //     return ReplaceExpr(sum, fusionVar, expr);
+        // });
+        // return result;
     }
 
     public Expr? GetReplace(Call outerCall, BucketFusion fusion, Expr fusionBody)
@@ -675,6 +678,11 @@ public partial class FusionBucket : RewriteRule<Pattern>
 
         DumpIR(newBody, "BucketResult", _relPath);
         _counter++;
+        if (newBody.CheckedType is InvalidType)
+        {
+            throw new InvalidOperationException("InvalidBucketBody");
+        }
+
         return newBody;
         // todo :save if shape
     }
@@ -724,13 +732,14 @@ public partial class FusionBucket : RewriteRule<Pattern>
             pair => pair.Key,
             pair =>
             {
+                // todo: dummy input可能会有问题...
                 var shapeExpr = pair.Key.CheckedShape.IsScalar ? (Expr)Array.Empty<int>() : Stack(new IR.Tuple(pair.Value.Select(x => Cast(x, DataTypes.Int32)).ToArray()), 0);
-
+                // DumpIR(shapeExpr, "DummyInputShape", _relPath);
                 // DumpIR(shapeExpr, "DummyInputShapeExpr", _relPath);
                 var shape = shapeExpr.Evaluate(varInfo).AsTensor();
                 return ConstantOfShape(
                     shape,
-                    Cast(0, pair.Key.CheckedDataType)).Evaluate(varInfo);
+                    Cast(1, pair.Key.CheckedDataType)).Evaluate(varInfo);
             });
 
     private static (int InputIndex, (int First, (int First, int Second) Second)[] Range)[] ComputeCounts(
@@ -794,6 +803,11 @@ public partial class FusionBucket : RewriteRule<Pattern>
         {
             // DumpIR(arg, "MakeFusionInputShapeExprArg");
             var result = arg.EvaluateShapeExpr(varMap);
+            if (!result.InferenceType())
+            {
+                DumpIR(result, "InvalidInputShapeExpr");
+                throw new InvalidOperationException();
+            }
             return Enumerable.Range(0, arg.CheckedShape.Rank).Select(i =>
             {
                 var res = result[i];
@@ -860,7 +874,8 @@ public partial class FusionBucket : RewriteRule<Pattern>
                 {
                     return GetDefault(x);
                 }).ToArray()),
-            TensorType _ => (Expr)ConstantOfShape(new[] { 1 }, Cast(0, fusionBody.CheckedDataType)),
+            // todo: maybe error 这里就应该设置一个很容易错的数，引起报错
+            TensorType ts => (Expr)ConstantOfShape(new[]{1}, Cast(0, fusionBody.CheckedDataType)),
         };
 
         // var sp = ConstantOfShape(new[] { 1 }, Cast(0, fusionBody.CheckedDataType));

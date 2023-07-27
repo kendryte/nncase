@@ -169,7 +169,7 @@ public partial class MergeNextCallToFusion : MergeFusionBase
         // 创建新的call，target为fusion，参数为fusion的参数 // todo:针对非const的情况要处理这里
         // 但是第一个参数要注意，如果有marker那么需要处理marker // 这里如果arg是marker的话则需要copy一份，不然会导致marker的user重复，进而复制了if
         // var newArgs = fusionOuterCall.Arguments.ToArray().Select(arg => arg is Marker m ? m.With() : arg).ToArray();
-        var newArgs = fusionOuterCall.Arguments.ToArray().Select(DupExpr).ToArray();
+        var newArgs = fusionOuterCall.Arguments.ToArray().ToArray();
         var call = (Expr)nextCall.With(target: newFusion, arguments: newArgs);
 
         // 附加next call的外面marker
