@@ -33,21 +33,28 @@ class BroadCastTest : public KernelTest,
     void SetUp() override {
         auto &&[typecode, l_shape, r_shape] = GetParam();
 
-        float input_ptr[] = {3, 2, 1};
-        input = hrt::create(typecode, l_shape,
-                            {reinterpret_cast<gsl::byte *>(input_ptr),
-                             sizeof(input_ptr)},
-                            true, host_runtime_tensor::pool_cpu_only)
-                    .expect("create tensor failed");
+        input =
+            hrt::create(typecode, r_shape, host_runtime_tensor::pool_cpu_only)
+                .expect("create tensor failed");
+        init_tensor(input);
 
         one = hrt::create(typecode, r_shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
-        init_tensor(one);
+        init_tensor_one(one);
+
+        size_t shape_size = r_shape.size();
+        int64_t *shape_array = (int64_t *)malloc(shape_size * sizeof(int64_t));
+        std::copy(r_shape.begin(), r_shape.end(), shape_array);
+        new_shape = hrt::create(dt_int64, {shape_size},
+                                {reinterpret_cast<gsl::byte *>(shape_array),
+                                 shape_size * sizeof(int64_t)},
+                                true, host_runtime_tensor::pool_cpu_only)
+                        .expect("create tensor failed");
     }
 
     void TearDown() override {}
 
-    void init_tensor(runtime::runtime_tensor &tensor) override {
+    void init_tensor_one(runtime::runtime_tensor &tensor) {
         auto dtype = tensor.datatype();
         switch (dtype) {
         case dt_int8: {
@@ -166,12 +173,17 @@ class BroadCastTest : public KernelTest,
   protected:
     runtime_tensor input;
     runtime_tensor one;
+    runtime_tensor new_shape;
 };
 
-INSTANTIATE_TEST_SUITE_P(BroadCast, BroadCastTest,
-                         testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{3}),
-                                          testing::Values(dims_t{1, 3, 3})));
+INSTANTIATE_TEST_SUITE_P(
+    BroadCast, BroadCastTest,
+    testing::Combine(testing::Values(dt_float32, dt_float64, dt_int32, dt_int64,
+                                     dt_float16),
+                     testing::Values(dims_t{3}, dims_t{1, 3}, dims_t{3, 3},
+                                     dims_t{1}, dims_t{1, 3, 1}),
+                     testing::Values(dims_t{1, 3, 3}, dims_t{1, 3, 3, 3},
+                                     dims_t{1, 3, 16, 16})));
 
 TEST_P(BroadCastTest, BroadCast) {
 
@@ -188,12 +200,7 @@ TEST_P(BroadCastTest, BroadCast) {
                         .expect("create tensor failed");
 
     // actual
-    int64_t a_ptr[] = {1, 3, 3};
-    auto a = hrt::create(nncase::dt_int64, {3},
-                         {reinterpret_cast<gsl::byte *>(a_ptr), sizeof(a_ptr)},
-                         true, host_runtime_tensor::pool_cpu_only)
-                 .expect("create tensor failed");
-    auto output = kernels::stackvm::broadcast(input.impl(), a.impl())
+    auto output = kernels::stackvm::broadcast(input.impl(), new_shape.impl())
                       .expect("broadcast failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
