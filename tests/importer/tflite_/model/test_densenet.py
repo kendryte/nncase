@@ -38,12 +38,12 @@ in_shapes = [
 #     - matchs:
 #         target: k210
 #         ptq: true
-#       simarity_name: segment
+#       similarity_name: segment
 #       threshold: true
 #     - matchs:
 #         target: k510
 #         ptq: true
-#       simarity_name: segment
+#       similarity_name: segment
 #       threshold: true
 # """
 #     runner = TfliteTestRunner(request.node.name, overwirte_configs=overwrite_cfg)

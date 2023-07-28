@@ -82,7 +82,7 @@ args = []
 [target.cpu]
 eval = true
 infer = true
-simarity_name = 'cosine'
+similarity_name = 'cosine'
 
 [target.cpu.mode.noptq]
 enabled = false
@@ -95,7 +95,7 @@ threshold = 0.98
 [target.k510]
 eval = true
 infer = true
-simarity_name = 'cosine'
+similarity_name = 'cosine'
 
 [target.k510.mode.noptq]
 enabled = false
@@ -108,7 +108,7 @@ threshold = 0.98
 [target.k230]
 eval = true
 infer = true
-simarity_name = 'cosine'
+similarity_name = 'cosine'
 
 [target.k230.mode.noptq]
 enabled = false
