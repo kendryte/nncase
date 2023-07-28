@@ -65,7 +65,19 @@ internal sealed class ShapeEvaluateContext : IShapeEvaluateContext
             // for split
             else
             {
-                return new Tuple(((Tuple)shape).Fields.ToArray().Select(expr => Cast(expr, DataTypes.Int32)).ToArray());
+                // when it is if, it not tuple
+                if (shape is If @if && @if.CheckedType is TupleType tupleType)
+                {
+                    return new Tuple(
+                        Enumerable
+                            .Range(0, tupleType.Fields.Count)
+                            .Select(i => Cast(shape[i], DataTypes.Int32))
+                            .ToArray());
+                }
+                else
+                {
+                    return new Tuple(((Tuple)shape).Fields.ToArray().Select(expr => Cast(expr, DataTypes.Int32)).ToArray());
+                }
             }
         }
 
