@@ -247,6 +247,17 @@ public class UnitTestMergeMultiUserFusion : TransformTestBase
             new Dictionary<Var, IValue> { { inputVar0, Value.FromTensor(input0) } });
     }
 
+    [Fact]
+    public async Task TestTupleGetItemOutputIsSingle()
+    {
+        var input0 = Testing.Rand<float>(1, 3, 24, 24);
+        var inputVar0 = new Var("input", new TensorType(input0.ElementType, input0.Shape));
+        var abs = MakeSingleSimpleFusionCall(expr => new IR.Tuple(Abs(expr), Sqrt(expr)), inputVar0);
+        var bn = MakeSimpleFusionCall(expr => expr[0] + expr[1], abs[0], abs[1]);
+        var sf = Softmax(bn, 0);
+        await RunTest(sf, new[] { inputVar0 },
+            new Dictionary<Var, IValue> { { inputVar0, Value.FromTensor(input0) } });
+    }
     private static async Task RunTestNotMatch(Expr body, Var[] inputVar, Dictionary<Var, IValue> dict)
     {
         var module = MakeModule(body, inputVar);

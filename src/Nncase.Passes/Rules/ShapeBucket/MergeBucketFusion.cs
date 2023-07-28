@@ -220,35 +220,7 @@ public class MergeBucketFusion : ModulePass
                 var (newCall, users) = MergeMultiUserFusion(outerCall, fusion);
                 if (newCall != null)
                 {
-                    var originUsersIndex = 0;
-                    var getItemMode = outerCall.Users.First() is Call c && c.Target is GetItem;
-                    if (getItemMode)
-                    {
-                        // 第几个GetItem对应的users用同一个operand
-                        for (int i = 0; i < outerCall.Users.Count; i++)
-                        {
-                            var newOperand = newCall[i];
-                            for (int j = 0; j < outerCall.Users.ToArray()[i].Users.Count; j++)
-                            {
-                                ReplaceAllUsesWith(users[originUsersIndex], newOperand);
-                                originUsersIndex++;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        for (var i = 0; i < users.Length; i++)
-                        {
-                            // todo:这里计算的不对，不一定是按照顺序引用的，也可能某一个引用了多次，但是构造的时候是按照
-                            // 原始body, users的输出开始构造的
-                            // 第几个user的use，
-                            // todo: 这里不能按照users的length来取，比如说getItem的user超过输出的数量就错了，但是要确保取到的是正确的
-                            // ref TestTupleGetItemUsersLargeThanOutputs
-                            var newOperand = newCall.CheckedType is TupleType ? newCall[i] : newCall;
-                            // DumpIR(newOperand, $"newOperand_{i}", relPath);
-                            ReplaceAllUsesWith(users[i], newOperand);
-                        }
-                    }
+                    UpdateUse(users, newCall, outerCall);
 
                     Console.WriteLine();
                     // ReplaceAllUsesWith(outerCall, newCall);
@@ -268,6 +240,46 @@ public class MergeBucketFusion : ModulePass
             }
 
             return expr;
+        }
+
+        private static void UpdateUse(Expr[] users, Expr newCall, Call outerCall)
+        {
+            // ref TestTupleGetItemOutputIsSingle
+            if (users.Distinct().ToArray().Length == 1)
+            {
+                ReplaceAllUsesWith(users[0], newCall);
+                return;
+            }
+
+            var originUsersIndex = 0;
+            var getItemMode = outerCall.Users.First() is Call c && c.Target is GetItem;
+            if (getItemMode)
+            {
+                // 第几个GetItem对应的users用同一个operand
+                for (int i = 0; i < outerCall.Users.Count; i++)
+                {
+                    var newOperand = newCall[i];
+                    for (int j = 0; j < outerCall.Users.ToArray()[i].Users.Count; j++)
+                    {
+                        ReplaceAllUsesWith(users[originUsersIndex], newOperand);
+                        originUsersIndex++;
+                    }
+                }
+            }
+            else
+            {
+                for (var i = 0; i < users.Length; i++)
+                {
+                    // todo:这里计算的不对，不一定是按照顺序引用的，也可能某一个引用了多次，但是构造的时候是按照
+                    // 原始body, users的输出开始构造的
+                    // 第几个user的use，
+                    // todo: 这里不能按照users的length来取，比如说getItem的user超过输出的数量就错了，但是要确保取到的是正确的
+                    // ref TestTupleGetItemUsersLargeThanOutputs
+                    var newOperand = newCall.CheckedType is TupleType ? newCall[i] : newCall;
+                    // DumpIR(newOperand, $"newOperand_{i}", relPath);
+                    ReplaceAllUsesWith(users[i], newOperand);
+                }
+            }
         }
 
         protected override Expr DefaultVisitLeaf(Expr expr) => expr;
