@@ -455,7 +455,7 @@ transpose(datatype_t type, const gsl::byte *src, gsl::byte *dest,
 NNCASE_API result<void>
 trilu(datatype_t type, const gsl::byte *input, gsl::byte *output,
       gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
-      gsl::span<const size_t> out_strides, long k, bool upper) noexcept;
+      gsl::span<const size_t> out_strides, int64_t k, bool upper) noexcept;
 
 NNCASE_API result<void>
 unary(typecode_t dtype, runtime::stackvm::unary_op_t op, const gsl::byte *input,
