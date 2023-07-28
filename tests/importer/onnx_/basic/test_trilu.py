@@ -68,6 +68,7 @@ in_shapes = [
 ]
 
 ks = [
+    0,
     1,
     2,
     -1,
@@ -83,7 +84,7 @@ uppers = [
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('k', ks)
 @pytest.mark.parametrize('upper', uppers)
-def test_erf(in_shape, upper, k, request):
+def test_trilu(in_shape, upper, k, request):
     model_def = _make_module(in_shape, k, upper)
 
     runner = OnnxTestRunner(request.node.name)
@@ -92,4 +93,4 @@ def test_erf(in_shape, upper, k, request):
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_trilu.py'])
+    pytest.main(['-vv', 'test_trilu.py', '-s'])
