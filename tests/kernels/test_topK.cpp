@@ -28,11 +28,11 @@ using namespace ortki;
 
 class TopKTest
     : public KernelTest,
-      public ::testing::TestWithParam<
-          std::tuple<nncase::typecode_t, dims_t, int64_t, int64_t, int64_t>> {
+      public ::testing::TestWithParam<std::tuple<
+          nncase::typecode_t, dims_t, int64_t, int64_t, int64_t, int64_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape, value1, value2, value3] = GetParam();
+        auto &&[typecode, l_shape, value1, value2, value3, value4] = GetParam();
 
         input =
             hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
@@ -64,6 +64,8 @@ class TopKTest
                               sizeof(sorted_array)},
                              true, host_runtime_tensor::pool_cpu_only)
                      .expect("create tensor failed");
+
+        k_value = value4;
     }
 
     void TearDown() override {}
@@ -76,6 +78,7 @@ class TopKTest
     runtime_tensor largest;
     int64_t sorted_value;
     runtime_tensor sorted;
+    int64_t k_value;
 };
 
 INSTANTIATE_TEST_SUITE_P(
@@ -85,14 +88,15 @@ INSTANTIATE_TEST_SUITE_P(
                                      dims_t{3, 3, 6}, dims_t{16, 16}, dims_t{1},
                                      dims_t{1, 3}),
                      testing::Values(0, -1 /*, 1, 2, 3*/),
-                     testing::Values(0, 1), testing::Values(0, 1)));
+                     testing::Values(0, 1), testing::Values(0, 1),
+                     testing::Values(1 /*, 2, 4, 16*/)));
 
 TEST_P(TopKTest, TopK) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
 
     // expected
     size_t size = 0;
-    int64_t k_array[] = {1};
+    int64_t k_array[] = {k_value};
     auto k =
         hrt::create(dt_int64, {1},
                     {reinterpret_cast<gsl::byte *>(k_array), sizeof(k_array)},

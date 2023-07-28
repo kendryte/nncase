@@ -68,7 +68,10 @@ INSTANTIATE_TEST_SUITE_P(
                                      dt_int8, dt_int16, dt_uint8, dt_uint16,
                                      dt_uint32, dt_float16, dt_float64,
                                      dt_bfloat16, dt_boolean),
-                     testing::Values(dims_t{2, 2}), testing::Values(0)));
+                     testing::Values(dims_t{2, 2} /*, dims_t{3, 5},
+  dims_t{2, 3, 1}, dims_t{5, 7, 5},
+  dims_t{5, 4, 3, 2}, dims_t{5, 5, 7, 7},
+  dims_t{2, 3, 3, 5}*/), testing::Values(0 /*, -1, 1*/)));
 
 TEST_P(GatherNDTest, gather_nd) {
     auto input_ort = runtime_tensor_2_ort_tensor(input);
