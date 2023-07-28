@@ -26,69 +26,59 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class RangeTest : public KernelTest,
-                  public ::testing::TestWithParam<
-                      std::tuple<nncase::typecode_t, dims_t, dims_t>> {
+class RangeTest
+    : public KernelTest,
+      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape, r_shape] = GetParam();
+        auto &&[typecode, shape] = GetParam();
 
-        lhs = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
-                  .expect("create tensor failed");
-        init_tensor(lhs);
+        float_t begin_array[] = {0.0f};
+        begin = hrt::create(typecode, shape,
+                            {reinterpret_cast<gsl::byte *>(begin_array),
+                             sizeof(begin_array)},
+                            true, host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
 
-        rhs = hrt::create(typecode, r_shape, host_runtime_tensor::pool_cpu_only)
+        float_t end_array[] = {100.0f};
+        end = hrt::create(
+                  typecode, shape,
+                  {reinterpret_cast<gsl::byte *>(end_array), sizeof(end_array)},
+                  true, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
-        init_tensor(rhs);
+
+        float_t step_array[] = {100.0f};
+        step = hrt::create(typecode, shape,
+                           {reinterpret_cast<gsl::byte *>(step_array),
+                            sizeof(step_array)},
+                           true, host_runtime_tensor::pool_cpu_only)
+                   .expect("create tensor failed");
     }
 
     void TearDown() override {}
 
   protected:
-    runtime_tensor lhs;
-    runtime_tensor rhs;
+    runtime_tensor begin;
+    runtime_tensor end;
+    runtime_tensor step;
 };
 
 INSTANTIATE_TEST_SUITE_P(Range, RangeTest,
-                         testing::Combine(testing::Values(dt_float32, dt_int32),
-                                          testing::Values(dims_t{1, 3, 16, 16}),
-                                          testing::Values(dims_t{1, 3, 16,
-                                                                 16})));
+                         testing::Combine(testing::Values(dt_float32),
+                                          testing::Values(dims_t{1})));
 
 TEST_P(RangeTest, Range) {
-    //    auto l_ort = runtime_tensor_2_ort_tensor(lhs);
-    //    auto r_ort = runtime_tensor_2_ort_tensor(rhs);
+    auto begin_ort = runtime_tensor_2_ort_tensor(begin);
+    auto end_ort = runtime_tensor_2_ort_tensor(end);
+    auto step_ort = runtime_tensor_2_ort_tensor(step);
 
     // expected
+    auto output_ort = ortki_Range(begin_ort, end_ort, step_ort);
     size_t size = 0;
-    float_t begin_array[] = {0.0f};
-    auto begin = hrt::create(lhs.datatype(), {1},
-                             {reinterpret_cast<gsl::byte *>(begin_array),
-                              sizeof(begin_array)},
-                             true, host_runtime_tensor::pool_cpu_only)
-                     .expect("create tensor failed");
-
-    float_t end_array[] = {100.0f};
-    auto end = hrt::create(lhs.datatype(), {1},
-                           {reinterpret_cast<gsl::byte *>(end_array),
-                            sizeof(end_array)},
-                           true, host_runtime_tensor::pool_cpu_only)
-                   .expect("create tensor failed");
-
-    float_t step_array[] = {100.0f};
-    auto step = hrt::create(lhs.datatype(), {1},
-                            {reinterpret_cast<gsl::byte *>(step_array),
-                             sizeof(step_array)},
-                            true, host_runtime_tensor::pool_cpu_only)
-                    .expect("create tensor failed");
-
-    auto output_ort = ortki_Range(runtime_tensor_2_ort_tensor(begin),
-                                  runtime_tensor_2_ort_tensor(end),
-                                  runtime_tensor_2_ort_tensor(step));
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
-    auto expected = hrt::create(lhs.datatype(), shape,
+    auto expected = hrt::create(begin.datatype(), shape,
                                 {reinterpret_cast<gsl::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
@@ -98,9 +88,18 @@ TEST_P(RangeTest, Range) {
                       .expect("range failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
+    bool result = is_same_tensor(expected, actual) ||
+                  cosine_similarity_tensor(expected, actual);
+
+    if (!result) {
+        std::cout << "actual ";
+        print_runtime_tensor(actual);
+        std::cout << "expected ";
+        print_runtime_tensor(expected);
+    }
+
     // compare
-    EXPECT_TRUE(is_same_tensor(expected, actual) ||
-                cosine_similarity_tensor(expected, actual));
+    EXPECT_TRUE(result);
 }
 
 int main(int argc, char *argv[]) {

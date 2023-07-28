@@ -48,6 +48,14 @@ gather_nd(datatype_t type, const gsl::byte *input, gsl::byte *output,
           size_t batch_dims, kernel_context &context) noexcept;
 
 NNCASE_API result<void>
+reduce(typecode_t typecode, nncase::runtime::stackvm::reduce_op_t op,
+       const gsl::byte *init_value, const gsl::byte *input, gsl::byte *output,
+       gsl::span<const size_t> in_shape, gsl::span<const size_t> axis,
+       gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
+       bool keep_dims,
+       kernel_context &context = default_kernel_context()) noexcept;
+
+NNCASE_API result<void>
 concat(datatype_t type, gsl::span<const gsl::byte *const> inputs,
        gsl::byte *output, gsl::span<const size_t> out_shape,
        gsl::span<const dims_t> in_strides, gsl::span<const size_t> out_strides,

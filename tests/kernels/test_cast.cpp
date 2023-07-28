@@ -64,7 +64,7 @@ class CastTest : public KernelTest,
 };
 
 INSTANTIATE_TEST_SUITE_P(
-    Cast, CastTest,
+    cast, CastTest,
     testing::Combine(testing::Values(dt_int16, dt_int8, dt_float32, dt_uint8),
                      testing::Values(dt_int16, dt_int8, dt_float32, dt_uint8),
                      testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 3, 8, 8},
@@ -91,9 +91,18 @@ TEST_P(CastTest, cast) {
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
+    bool result = is_same_tensor(expected, actual) ||
+                  cosine_similarity_tensor(expected, actual);
+
+    if (!result) {
+        std::cout << "actual ";
+        print_runtime_tensor(actual);
+        std::cout << "expected ";
+        print_runtime_tensor(expected);
+    }
+
     // compare
-    EXPECT_TRUE(is_same_tensor(expected, actual) ||
-                cosine_similarity_tensor(expected, actual));
+    EXPECT_TRUE(result);
 
     // actual
     auto output1 =
@@ -116,9 +125,16 @@ TEST_P(CastTest, cast) {
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
+    bool result1 = is_same_tensor(expected1, actual1) ||
+                   cosine_similarity_tensor(expected1, actual1);
+
+    if (!result1) {
+        print_runtime_tensor(actual1);
+        print_runtime_tensor(expected1);
+    }
+
     // compare
-    EXPECT_TRUE(is_same_tensor(expected1, actual1) ||
-                cosine_similarity_tensor(expected1, actual1));
+    EXPECT_TRUE(result1);
 }
 
 int main(int argc, char *argv[]) {

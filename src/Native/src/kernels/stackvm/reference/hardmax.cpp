@@ -35,7 +35,7 @@ result<void> hardmax_impl(const T *input, gsl::span<const size_t> in_shape,
                           int32_t axis) noexcept {
     // init with init_value
     auto cmp = [](T a, T b) { return a > b; };
-    T init_value = std::numeric_limits<T>::min();
+    T init_value = std::numeric_limits<T>::lowest();
     bool keep_dims = true;
     dims_t axes{static_cast<size_t>(axis)};
     auto max_shape =

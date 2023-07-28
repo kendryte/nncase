@@ -27,15 +27,19 @@ template <typename T>
 result<void>
 trilu_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
            gsl::span<const size_t> in_strides,
-           gsl::span<const size_t> out_strides, long k, bool upper) {
+           gsl::span<const size_t> out_strides, int64_t k, bool upper) {
     return apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
-        auto h = index.size() - 2;
-        auto w = index.size() - 1;
+        int64_t h = index[index.size() - 2];
+        int64_t w = index[index.size() - 1];
+
         if (upper) {
-            auto value = w >= (h + k) ? 0 : input[offset(in_strides, index)];
+            auto wV = h + k;
+            auto value = wV <= w ? input[offset(in_strides, index)] : 0;
             output[offset(out_strides, index)] = value;
         } else {
-            auto value = w >= (h + k) ? input[offset(in_strides, index)] : 0;
+            auto wV = h + k + 1;
+            wV = wV < 0 ? 0 : wV;
+            auto value = w < wV ? input[offset(in_strides, index)] : 0;
             output[offset(out_strides, index)] = value;
         }
         return ok();
@@ -50,7 +54,7 @@ trilu_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
 result<void> nncase::kernels::stackvm::reference::trilu(
     datatype_t type, const gsl::byte *input, gsl::byte *output,
     gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
-    gsl::span<const size_t> out_strides, long k, bool upper) noexcept {
+    gsl::span<const size_t> out_strides, int64_t k, bool upper) noexcept {
     switch (runtime::get_bytes(type)) {
         TRILU_IMPL(1, uint8_t);
         TRILU_IMPL(2, uint16_t);

@@ -18,19 +18,19 @@ namespace Nncase.Tests.ImporterTest;
 public class UnitTestImporter : TestClassBase
 {
     [Fact]
-    public async Task TestImport20ClassesYolo()
+    public async Task TestImportOnnx()
     {
-        using var file = File.OpenRead(Path.Join(SolutionDirectory, "examples/20classes_yolo/model/20classes_yolo.tflite"));
-        var module = Importers.ImportTFLite(file, CompileSession);
+        using var file = File.OpenRead(Path.Join(SolutionDirectory, "examples/user_guide/test.onnx"));
+        var module = Importers.ImportOnnx(file, CompileSession);
         await InferShapeAsync(module);
         Assert.NotNull(module.Entry);
         Assert.True(module.Entry!.InferenceType());
     }
 
     [Fact]
-    public async Task TestImportFacedetectLandmark()
+    public async Task TestImportTFLite()
     {
-        using var file = File.OpenRead(Path.Combine(SolutionDirectory, "examples/facedetect_landmark/model/ulffd_landmark.tflite"));
+        using var file = File.OpenRead(Path.Combine(SolutionDirectory, "examples/user_guide/test.tflite"));
         var module = Importers.ImportTFLite(file, CompileSession);
         await InferShapeAsync(module);
         Assert.NotNull(module.Entry);

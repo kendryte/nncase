@@ -3,6 +3,7 @@
 
 using System;
 using System.Linq;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.PatternMatch;
 using static Nncase.IR.TypePatternUtility;
@@ -21,7 +22,7 @@ public partial class ReshapeMatMul : RewriteRule<Pattern>
         IsWildcard("a") with { TypePattern = HasFixedShape() },
         IsWildcard("b") with { TypePattern = HasFixedShape() });
 
-    private Expr? GetReplace(Expr a, Expr b)
+    private Expr? GetReplace(Expr matmul, Expr a, Expr b, RunPassContext context)
     {
         if (a.CheckedShape.Rank > 2 && b.CheckedShape.Rank > 2)
         {
@@ -30,14 +31,13 @@ public partial class ReshapeMatMul : RewriteRule<Pattern>
 
         var lhs = a;
         var shapeA = a.CheckedShape.ToValueArray();
-        if (a.CheckedShape.Rank > 2)
+        if (a.CheckedShape.Rank == 4)
         {
             var c = shapeA.Take(a.CheckedShape.Rank - 2).Aggregate(1, (sum, x) => x * sum);
             var newShapeA = new long[] { c, shapeA[^2], shapeA[^1] };
             lhs = IR.F.Tensors.Reshape(a, newShapeA);
         }
-
-        if (a.CheckedShape.Rank == 1)
+        else if (a.CheckedShape.Rank == 1)
         {
             var newShapeA = new long[] { 1L, shapeA[0] };
             lhs = IR.F.Tensors.Reshape(a, newShapeA);
@@ -45,17 +45,21 @@ public partial class ReshapeMatMul : RewriteRule<Pattern>
 
         var rhs = b;
         var shapeB = b.CheckedShape.ToValueArray();
-        if (b.CheckedShape.Rank > 2)
+        if (b.CheckedShape.Rank == 4)
         {
             var c = shapeB.Take(b.CheckedShape.Rank - 2).Aggregate(1, (sum, x) => x * sum);
             var newShapeB = new long[] { c, shapeB[^2], shapeB[^1] };
             rhs = IR.F.Tensors.Reshape(b, newShapeB);
         }
-
-        if (b.CheckedShape.Rank == 1)
+        else if (b.CheckedShape.Rank == 1)
         {
             var newShapeB = new long[] { shapeB[0], 1L };
             rhs = IR.F.Tensors.Reshape(b, newShapeB);
+        }
+
+        if (lhs == a && rhs == b)
+        {
+            return null;
         }
 
         var maxRank = Math.Max(a.CheckedShape.Rank, b.CheckedShape.Rank);
@@ -137,6 +141,7 @@ public partial class ReshapeMatMul : RewriteRule<Pattern>
             }
         }
 
-        return IR.F.Tensors.Reshape(IR.F.Tensors.MatMul(lhs, rhs), outputShape);
+        var end = IR.F.Tensors.Reshape(IR.F.Tensors.MatMul(lhs, rhs), outputShape);
+        return end;
     }
 }
