@@ -37,7 +37,7 @@ def segment_close(gt: np.ndarray, pred: np.ndarray):
     return ret
 
 
-simarity_func = {
+similarity_func = {
     'cosine': cosine,
     'euclidean': euclidean,
     'allclose': np.allclose,
@@ -45,12 +45,12 @@ simarity_func = {
 }
 
 
-def compare(result_path: Tuple[str, str],
-            ground_truth_path: Tuple[str, str],
-            dtype,
-            simarity_name: str = 'cosine',
-            threshold: float = 0.99,
-            hist: bool = True) -> bool:
+def compare_binfile(result_path: Tuple[str, str],
+                    ground_truth_path: Tuple[str, str],
+                    dtype,
+                    similarity_name: str = 'cosine',
+                    threshold: float = 0.99,
+                    hist: bool = True) -> bool:
     # NOTE the result_path is Tuple[ bin_path, txt_path ]
     ground_truth_path_bin, ground_truth_path_txt = result_path
     result_path_bin, result_path_txt = ground_truth_path
@@ -62,7 +62,7 @@ def compare(result_path: Tuple[str, str],
         gt_arr = np.fromfile(ground_truth_path_bin, dtype).astype(np.float32)
         pred_arr = np.fromfile(result_path_bin, dtype).astype(np.float32)
         if gt_arr.size == pred_arr.size:
-            simarity = simarity_func[simarity_name](gt_arr, pred_arr)
+            similarity = similarity_func[similarity_name](gt_arr, pred_arr)
         else:
             raise ValueError("The number of elements in gt and result not match\n")
         if hist and not test_utils.in_ci:
@@ -70,11 +70,38 @@ def compare(result_path: Tuple[str, str],
             p = Path(result_path_bin)
             np.savetxt(str(p.parent / (p.stem + '_hist.csv')),
                        np.stack((x[:-1], y)).T, fmt='%f', delimiter=',')
-        simarity_info = f"\n{simarity_name} similarity = {simarity}, threshold = {threshold}\n"
-    if simarity_name in ['cosine', 'euclidean', 'segment']:
+        similarity_info = f"\n{similarity_name} similarity = {similarity}, threshold = {threshold}\n"
+    if similarity_name in ['cosine', 'euclidean', 'segment']:
         compare_op = lt
     else:
         compare_op = gt
-    if compare_op(simarity, threshold):
-        return False, simarity_info
-    return True, simarity_info
+    if compare_op(similarity, threshold):
+        return False, similarity_info
+    return True, similarity_info
+
+
+def compare_ndarray(expected: np.ndarray,
+                    actual: np.ndarray,
+                    similarity_name: str = 'cosine',
+                    threshold: float = 0.99,
+                    dump_hist: bool = True,
+                    dump_file: str = 'hist.csv') -> bool:
+
+    if expected.size == actual.size:
+        similarity = similarity_func[similarity_name](expected.flatten(), actual.flatten())
+    else:
+        raise ValueError("The number of elements in gt and result not match\n")
+
+    if dump_hist:
+        y, x = np.histogram(expected - actual, 100)
+        np.savetxt(dump_file, np.stack((x[:-1], y)).T, fmt='%f', delimiter=',')
+    similarity_info = f"\n{similarity_name} similarity = {similarity}, threshold = {threshold}\n"
+
+    if similarity_name in ['cosine', 'euclidean', 'segment']:
+        compare_op = lt
+    else:
+        compare_op = gt
+
+    if compare_op(similarity, threshold):
+        return False, similarity_info
+    return True, similarity_info

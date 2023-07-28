@@ -37,34 +37,36 @@ class PadTest
             hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
         init_tensor(input);
+        value = hrt::create(typecode, {1}, host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
+        init_tensor(value);
     }
 
     void TearDown() override {}
 
   protected:
     runtime_tensor input;
+    runtime_tensor value;
 };
 
-INSTANTIATE_TEST_SUITE_P(Pad, PadTest,
-                         testing::Combine(testing::Values(dt_uint8),
-                                          testing::Values(dims_t{2, 3})));
+INSTANTIATE_TEST_SUITE_P(
+    Pad, PadTest,
+    testing::Combine(
+        testing::Values(dt_int32, dt_int8, dt_uint8, dt_float64, dt_uint64,
+                        dt_int64, dt_float32, dt_float16, dt_uint32),
+        testing::Values(dims_t{1, 3, 24, 24}, dims_t{1, 3, 16, 16})));
 
 TEST_P(PadTest, Pad) {
 
     // expected
     size_t size = 0;
-    int64_t pad_ptr[] = {0, 0, 0, 1};
+    int64_t pad_ptr[] = {1, 0, 0, 0, 0, 0, 0, 0};
     auto pad =
-        hrt::create(dt_int64, {4},
+        hrt::create(dt_int64, {8},
                     {reinterpret_cast<gsl::byte *>(pad_ptr), sizeof(pad_ptr)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
-    uint8_t value_ptr[] = {0};
-    auto value = hrt::create(dt_uint8, {1},
-                             {reinterpret_cast<gsl::byte *>(value_ptr),
-                              sizeof(value_ptr)},
-                             true, host_runtime_tensor::pool_cpu_only)
-                     .expect("create tensor failed");
+
     auto l_ort = runtime_tensor_2_ort_tensor(input);
     auto pad_ort = runtime_tensor_2_ort_tensor(pad);
     auto value_ort = runtime_tensor_2_ort_tensor(value);
@@ -83,9 +85,18 @@ TEST_P(PadTest, Pad) {
                       .expect("pad failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
+    bool result = is_same_tensor(expected, actual) ||
+                  cosine_similarity_tensor(expected, actual);
+
+    if (!result) {
+        std::cout << "actual ";
+        print_runtime_tensor(actual);
+        std::cout << "expected ";
+        print_runtime_tensor(expected);
+    }
+
     // compare
-    EXPECT_TRUE(is_same_tensor(expected, actual) ||
-                cosine_similarity_tensor(expected, actual));
+    EXPECT_TRUE(result);
 }
 
 int main(int argc, char *argv[]) {

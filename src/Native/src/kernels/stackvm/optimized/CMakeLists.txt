@@ -51,6 +51,7 @@ _TARGET_ARCH_FILES(TARGET kernels
                    unary.cpp
                    where.cpp
                    log_softmax.cpp
+                   reduce.cpp
 )
 
 if(NOT MSVC)

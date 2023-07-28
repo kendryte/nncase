@@ -108,6 +108,7 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FoldHardSwish5>();
             p.Add<Passes.Rules.Neutral.FoldTwoSlices>();
             p.Add<Passes.Rules.Neutral.FocusFull>();
+            p.Add<Passes.Rules.Neutral.ReshapeMatMul>();
         });
         passManager.AddWithName<EGraphRulesPass>("NeutralOptimizeTranspose").Configure(p =>
         {

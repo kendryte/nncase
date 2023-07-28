@@ -1,40 +1,64 @@
-## FAQ
+# FAQ
 
-### K210 and KPU
-1. What's the K210 hardware environment?
+[TOC]
 
-    K210 has 6MB general RAM and 2MB KPU dedicated RAM. Your model's input and output featuremaps are stored at 2MB KPU RAM. The weights and other parameters are stored at 6MB RAM.
+## 1. Error installing `whl` package
 
-2. What kinds of ops can be fully accelerated by KPU?
+### 1.1 Q: `xxx.whl is not a supported wheel on this platform`
 
-    All the following constraints must be met.
-    - Feature map shape: Input feature maps smaller than or equal to 320x240(WxH) and output features map larger than or equal to 4x4(WxH) and channels are between 1 to 1024 are supported.
-    - Same symmetric paddings (TensorFlow use asymmetric paddings when stride=2 and size is even).
-    - Normal Conv2D and DepthwiseConv2D of 1x1 or 3x3 filters and stride is 1 or 2.
-    - MaxPool(2x2 or 4x4) and AveragePool(2x2 or 4x4).
-    - Any elementwise activations (ReLU, ReLU6, LeakyRelu, Sigmoid...), PReLU is not supported by KPU.
+A: Upgrade pip >= 20.3 using `pip install --upgrade pip`
 
-3. What kinds of ops can be partially accelerated by KPU?
 
-    - Convolutions of asymmetric paddings or valid paddings, nncase will add necessary Pad   and Crop ops around it.
-    - Normal Conv2D and DepthwiseConv2D of 1x1 or 3x3 filters but stride is not 1 or 2.   nncase will divide it to KPUConv2D and a StridedSlice (Pad ops maybe necessary).
-    - MatMul, nncase will replace it with a Pad(to 4x4)+ KPUConv2D(1x1 filters) + Crop(to 1x1)  .
-    - TransposeConv2D, nncase will replace it with a SpaceToBatch + KPUConv2D + BatchToSpace.
 
-### Compile models
-1. Fatal: Not supported tflite opcode: DEQUANTIZE
+----
 
-    Use float tflite models, nncase will take care of quantization.
+## 2. Compile-time errors
 
-### Deploy models
-1. Should I normalize inputs when running the model?
+### 2.1 "System.NotSupportedException"
 
-    If it is a uint8 input (ofen quantized model), you don't need normalize instead provide uint8 input (e.g. RGB888 image). If it is a float input, youd should do preprocess.
+#### 2.1.1 Q: Compile model reported error "System.NotSupportedException: Not Supported *** op: XXX"
 
-2. Why I got "KPU allocator cannot allocate more memory"?
+A: This exception indicates that there are operators, `XXX`, that are not yet supported. You can create a issue in [nncase Github Issue](https://github.com/kendryte/nncase/issues). In the current directory `***_ops.md`, you can view the operators already supported in each inference framework. 
 
-    As said in the chapter "K210 and KPU", Your model's input and output featuremaps are stored at 2MB KPU RAM. Every single layer cannot exceed the limit. You can try to reduce the size of the feature maps.
+If 'XXX' belongs to quantization-related operators such as `FAKE_QUANT`, `DEQUANTIZE`, `QUANTIZE`, it indicates that the current model is a quantized model, and 'nncase' does not currently support such models, please compile `kmodel` using a floating point model.
 
-3. Why I got "Out of memory" when running the model?
+### 2.2 "System.IO.IOException"
 
-    When you compile models, nncase will print the working memory needed to run the model. Often the model is loaded to 6MB RAM, so the total main memory usage is the working memory + size of your model.
+#### 2.2.1 Q: Downloading the `nncase` repository and compiling it yourself and running test gives this error, `The configured user limit (128) on the number of inotify instances has been reached, or the per-process limit on the number of open file descriptors has been reached`.
+
+A: Use `sudo gedit /proc/sys/fs/inotify/max_user_instances` to change 128 to a larger value.
+
+
+
+----
+
+## 3. Runtime errors
+
+### 3.1 Q: Compiling `kmodel` is fine, but when inferring, the error `nncase.simulator.k230.sc: not found`occurs.
+
+A: You need to check whether the versions of `nncase` and `nncase-kpu` are the same.
+
+```shell
+root@a52f1cacf581:/mnt# pip list | grep nncase
+nncase 2.1.1.20230721
+nncase-kpu 2.1.1.20230721
+```
+
+If inconsistent, install the same version of the Python package `pip install nncase==x.x.x.x nncase-kpu==x.x.x.x`
+
+
+
+----
+
+## 4. Runtime error on k230 development board
+
+### 4.1 Q: `data.size_bytes() == size = false (bool)`
+
+A: The above situation is usually caused by an error in the input data file of the app inference, which does not match the model input shape or the model input type. Especially when pre-processing is configured, you need to check ` input_shape` and `input_type ` of input data, after adding pre-processing operation, relevant nodes are added to the model, and the input node will also be changed. If   `input_shape `, `input_type `are different from the original model, the newly configured `shape `, `type` should be used to generate input data.
+
+### 4.2 Q: `std::bad_alloc`
+
+A: Usually it is caused by memory allocation failure, you can do the following troubleshooting.
+
+- Check whether the generated `kmodel` exceeds the current available memory.
+- Check whether the generated `kmodel` exceeds the current available system memory.

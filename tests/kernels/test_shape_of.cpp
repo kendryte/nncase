@@ -42,13 +42,15 @@ class ShapeOfTest
 
   protected:
     runtime_tensor lhs;
-    runtime_tensor rhs;
 };
 
-INSTANTIATE_TEST_SUITE_P(ShapeOf, ShapeOfTest,
-                         testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 3, 16,
-                                                                 16})));
+INSTANTIATE_TEST_SUITE_P(
+    ShapeOf, ShapeOfTest,
+    testing::Combine(testing::Values(dt_float32, dt_int32, dt_int8, dt_uint8,
+                                     dt_float64, dt_int16, dt_uint32, dt_uint64,
+                                     dt_uint16, dt_boolean, dt_int64,
+                                     dt_float16),
+                     testing::Values(dims_t{1, 3, 16, 16})));
 
 TEST_P(ShapeOfTest, ShapeOf) {
 
@@ -61,11 +63,22 @@ TEST_P(ShapeOfTest, ShapeOf) {
                         .expect("create tensor failed");
 
     // actual
-    auto output = kernels::stackvm::shape_of(lhs.impl()).expect("selu failed");
+    auto output =
+        kernels::stackvm::shape_of(lhs.impl()).expect("ShapeOf failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
+    bool result = is_same_tensor(expected, actual) ||
+                  cosine_similarity_tensor(expected, actual);
+
+    if (!result) {
+        std::cout << "actual ";
+        print_runtime_tensor(actual);
+        std::cout << "expected ";
+        print_runtime_tensor(expected);
+    }
+
     // compare
-    EXPECT_TRUE(is_same_tensor(expected, actual));
+    EXPECT_TRUE(result);
 }
 
 int main(int argc, char *argv[]) {

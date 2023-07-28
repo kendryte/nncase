@@ -61,7 +61,19 @@ public sealed partial class CombineConstBinaryTranspose : IRewriteRule
     public CombineConstBinaryTranspose()
     {
         var perm = IsWildcard("perm");
-        Pattern = IsAlt(IsBinary("binary", "binaryCall", _ => true, IsTranspose(IsWildcard("x"), perm), IsConst("y") with { TypePattern = HasRank(1) | HasRank(0) }), IsBinary("binary", "binaryCall", _ => true, IsConst("x") with { TypePattern = HasRank(1) | HasRank(0) }, IsTranspose(IsWildcard("y"), perm)));
+        Pattern = IsAlt(
+            IsBinary(
+                "binary",
+                "binaryCall",
+                _ => true,
+                IsTranspose(IsWildcard("x"), perm),
+                IsConst("y") with { TypePattern = HasRank(1) | HasRank(0) }),
+            IsBinary(
+                "binary",
+                "binaryCall",
+                _ => true,
+                IsConst("x") with { TypePattern = HasRank(1) | HasRank(0) },
+                IsTranspose(IsWildcard("y"), perm)));
     }
 
     /// <inheritdoc/>
@@ -87,7 +99,7 @@ public sealed partial class CombineConstBinaryTranspose : IRewriteRule
                 }
             }
 
-            Expr newConst = Const.FromValue(((Expr)Tensor.From<float>(((TensorConst)x).Value.ToArray<float>(), new Nncase.IR.Shape(newShape))).Evaluate()).InheritMetaData(x);
+            var newConst = Reshape(x, newShape.ToArray());
             return Transpose(Binary(binary.BinaryOp, newConst, y).InheritMetaData(binaryCall), perm);
         }
 
@@ -107,7 +119,7 @@ public sealed partial class CombineConstBinaryTranspose : IRewriteRule
                 }
             }
 
-            var newConst = Const.FromValue(((Expr)Tensor.From<float>(((TensorConst)y).Value.ToArray<float>(), new Nncase.IR.Shape(newShape))).Evaluate()).InheritMetaData(y);
+            var newConst = Reshape(y, newShape.ToArray());
             return Transpose(Binary(binary.BinaryOp, x, newConst).InheritMetaData(binaryCall), perm);
         }
 
