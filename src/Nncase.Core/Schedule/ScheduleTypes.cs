@@ -215,7 +215,7 @@ public sealed class SchedFunctionResult
     /// <summary>
     /// Gets the buffer allocation.
     /// </summary>
-    public HashSet<TIR.PhysicalBuffer> Rdatas { get; }
+    public Dictionary<IR.Const, System.Range> Rdatas { get; }
 
     /// <summary>
     /// Gets or sets the data section length.
@@ -250,7 +250,7 @@ public sealed class SchedFunctionResult
             return true;
         }
 
-        return EqualityComparer<HashSet<TIR.PhysicalBuffer>>.Default.Equals(Rdatas, result.Rdatas) &&
+        return EqualityComparer<Dictionary<IR.Const, System.Range>>.Default.Equals(Rdatas, result.Rdatas) &&
                EqualityComparer<int>.Default.Equals(DataUsage, result.DataUsage);
     }
 

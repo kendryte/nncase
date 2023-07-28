@@ -68,6 +68,28 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
         return type;
     }
 
+    protected override IRType VisitLeafBuffer(Nncase.TIR.Buffer expr)
+    {
+        VerifySubField(expr, expr.MemSpan, TypePatternUtility.IsTuple());
+        foreach (var r in expr.Dimensions)
+        {
+            VerifySubField(expr, r, TypePatternUtility.IsIntegralScalar());
+        }
+
+        foreach (var r in expr.Strides)
+        {
+            VerifySubField(expr, r, TypePatternUtility.IsIntegralScalar());
+        }
+
+        var type = new TensorType(expr.ElemType, expr.Dimensions.AsValueEnumerable().Select(e => e switch
+        {
+            TensorConst { Value: { Shape: { IsScalar: true } } t } => new Dimension(t.ToScalar<int>()),
+            _ => Dimension.Unknown,
+        }).ToArray());
+
+        return type;
+    }
+
     /// <inheritdoc/>
     protected override IRType VisitLeafCall(Call expr)
     {
@@ -175,13 +197,6 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
     }
 
     /// <inheritdoc/>
-    protected override IRType VisitLeafLogicalBuffer(LogicalBuffer expr)
-    {
-        var type = new TensorType(expr.ElemType, Shape.Unknown(expr.Rank));
-        return type;
-    }
-
-    /// <inheritdoc/>
     protected override IRType VisitLeafMarker(Marker expr)
     {
         var type = expr.Target.CheckedType;
@@ -200,13 +215,6 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
     {
         var paramTypes = expr.Parameters.Select(_ => (IRType)AnyType.Default).ToArray();
         var type = new CallableType(AnyType.Default, ImmutableArray.Create(paramTypes));
-        return type;
-    }
-
-    /// <inheritdoc/>
-    protected override IRType VisitLeafPhysicalBuffer(PhysicalBuffer expr)
-    {
-        var type = new TensorType(expr.ElemType, new(expr.FixedDimensions));
         return type;
     }
 
@@ -268,6 +276,13 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
     {
         var type = expr.TypeAnnotation;
         return type;
+    }
+
+    protected override IRType VisitLeafMemSpan(MemSpan expr)
+    {
+        VerifySubField(expr, expr.Start, TypePatternUtility.IsNoneType() | TypePatternUtility.IsIntegralScalar() | TypePatternUtility.IsPointer());
+        VerifySubField(expr, expr.Size, TypePatternUtility.IsIntegralScalar());
+        return TupleType.Void;
     }
 
     /// <inheritdoc/>

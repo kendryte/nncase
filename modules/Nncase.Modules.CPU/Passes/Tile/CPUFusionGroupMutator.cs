@@ -129,7 +129,7 @@ internal sealed class CheckedConvertMutator : ExprRewriter
                 int param_count = 0;
                 foreach (var b in prim_func.Parameters)
                 {
-                    if (b.MemLocation == TIR.MemoryLocation.Input)
+                    if (b.MemSpan.Location == TIR.MemoryLocation.Input)
                     {
                         if (is_input)
                         {

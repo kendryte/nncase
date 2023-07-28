@@ -21,6 +21,7 @@ using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Passes.Rules.Neutral;
 
+#if false
 [RuleGenerator]
 public sealed partial class PrimFuncMergeRule : RewriteRule<PatternMatch.Pattern>
 {
@@ -191,3 +192,4 @@ public sealed partial class PrimFuncMergeRule : RewriteRule<PatternMatch.Pattern
         }
     }
 }
+#endif

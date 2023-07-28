@@ -144,8 +144,6 @@ public sealed class UnRollLoopSequential : ExprRewriter
             }
         }
 
-        protected override Expr VisitLeafPhysicalBuffer(PhysicalBuffer expr, Unit context) => expr;
-
         protected override Expr VisitLeafVar(Var expr, Unit context)
         {
             if (_vmap.TryGetValue(expr, out var result))
@@ -189,9 +187,10 @@ public sealed class UnRollLoopSequential : ExprRewriter
             return CSE(expr.With(start: Clone(expr.Start, context), stop: Clone(expr.Stop, context), step: Clone(expr.Step, context)));
         }
 
-        protected override Expr VisitLeafLogicalBuffer(LogicalBuffer expr, Unit context)
+        protected override Expr VisitLeafBuffer(TIR.Buffer expr, Unit context)
         {
             return expr.With(
+                memSpan: Clone<MemSpan>(expr.MemSpan, context),
                 dimensions: CloneArray(expr.Dimensions, context).Select(e => CSE(e)).ToArray(),
                 strides: CloneArray(expr.Strides, context));
         }

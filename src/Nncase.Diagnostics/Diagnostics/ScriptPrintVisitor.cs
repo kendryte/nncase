@@ -216,6 +216,22 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         return doc;
     }
 
+    protected override IPrintSymbol VisitMemSpan(MemSpan expr)
+    {
+        if (_exprMemo.TryGetValue(expr, out var doc))
+        {
+            return doc;
+        }
+
+        var start = Visit(expr.Start);
+        var size = Visit(expr.Size);
+        _scope.Push();
+        _scope.Append($"MemSpan({start}, {size})@{expr.Location}");
+        doc = new(_scope.Pop());
+        _exprMemo.Add(expr, doc);
+        return doc;
+    }
+
     /// <inheritdoc/>
     protected override IPrintSymbol VisitMarker(Marker expr)
     {
@@ -542,12 +558,8 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         }
 
         _scope.Push();
-        _scope.Append($"T.Buffer({expr.Name}, {expr.MemLocation}, {VisitType(expr.ElemType)})");
-        if (expr is TIR.PhysicalBuffer phy)
-        {
-            _scope.Append($"@({phy.Start}, {phy.Size})");
-        }
-
+        var memSpan = Visit(expr.MemSpan);
+        _scope.Append($"T.Buffer({expr.Name}, {VisitType(expr.ElemType)}, {memSpan.Span})");
         doc = new(_scope.Pop(), expr.Name, true);
         _exprMemo.Add(expr, doc);
         return doc;

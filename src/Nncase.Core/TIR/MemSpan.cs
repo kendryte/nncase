@@ -9,47 +9,48 @@ namespace Nncase.TIR;
 /// <summary>
 /// the memory type.
 /// </summary>
-public enum MemoryLocation : byte
+[Flags]
+public enum MemoryLocation
 {
     /// <summary>
     /// input.
     /// </summary>
-    Input = 0,
+    Input = 1 << 1,
 
     /// <summary>
     /// output.
     /// </summary>
-    Output = 1,
+    Output = 1 << 2,
 
     /// <summary>
     /// constant data.
     /// </summary>
-    Rdata = 2,
+    Rdata = 1 << 3,
 
     /// <summary>
     /// compute temp data.
     /// </summary>
-    Data = 3,
+    Data = 1 << 4,
 
     /// <summary>
     /// shared data.
     /// </summary>
-    SharedData = 4,
+    SharedData = 1 << 5,
 
     /// <summary>
     /// l2 data.
     /// </summary>
-    L2Data = 5,
+    L2Data = 1 << 6,
 
     /// <summary>
     /// L1 data.
     /// </summary>
-    L1Data = 6,
+    L1Data = 1 << 7,
 
     /// <summary>
     /// base addr.
     /// </summary>
-    PrivateBase = 64,
+    PrivateBase = 1 << 8,
 }
 
 public sealed class MemSpan : Expr
@@ -80,6 +81,8 @@ public sealed class MemSpan : Expr
     /// Gets the memory location.
     /// </summary>
     public MemoryLocation Location { get; }
+
+    public MemSpan SubSpan(Expr offset, Expr size) => new MemSpan((Start is None ? IR.F.Buffer.DDrOf(this) : Start) + offset, size, Location);
 
     /// <inheritdoc/>
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)

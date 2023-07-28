@@ -22,15 +22,6 @@ namespace Nncase.Tests.CoreTest;
 public sealed class UnitTestTIR
 {
     [Fact]
-    public void TestLogicalBuffer()
-    {
-        var logicalBuffer1 = new LogicalBuffer("logicalBuffer", default, new TensorConst(new Tensor<int>(new[] { 1 })));
-        var logicalBuffer2 = new LogicalBuffer("logicalBuffer", DataTypes.Int32, default, new[] { (Expr)new Tensor<int>(new[] { 1 }) });
-        Assert.Equal(logicalBuffer2.Length.ToString(), logicalBuffer1.Length.ToString());
-        Assert.Equal("LogicalBuffer(logicalBuffer, i32, MemLocation)", logicalBuffer1.ToString());
-    }
-
-    [Fact]
     public void TestScheduler()
     {
         var input = OrtKI.Random(new long[] { 1, 3, 16, 16 });
@@ -48,9 +39,9 @@ public sealed class UnitTestTIR
     public void TestBufferStore()
     {
         Expr value = 42;
-        var physicalBuffer = new TIR.PhysicalBuffer("testInput", DataTypes.Float32, MemoryLocation.Input, new[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new[] { 1, 16, 64, 400 }), 0, 0);
+        TIR.T.CreateBuffer(new TensorType(DataTypes.Float32, new[] { 1, 16, 64, 400 }), MemoryLocation.Input, out var testInput);
         _ = new Expr[] { 0, 1 };
-        _ = T.Store(physicalBuffer, 0, value);
+        _ = T.Store(testInput, 0, value);
     }
 
     [Fact]
@@ -96,15 +87,6 @@ public sealed class UnitTestTIR
     }
 
     [Fact]
-    public void TestBuffer()
-    {
-        var buffer = T.Buffer(DataTypes.Float32, MemoryLocation.Input, new Expr[] { 1, 16, 64, 400 }, out _);
-        Assert.Equal(DataTypes.Float32, buffer.ElemType);
-        var expect = new LogicalBuffer("_", DataTypes.Float32, MemoryLocation.Input, new Expr[] { 1, 16, 64, 400 });
-        Assert.Equal(expect, buffer);
-    }
-
-    [Fact]
     public void TestForSegment()
     {
         var count = IR.F.Tensors.Cast(2 / IR.F.Tensors.Cast(2, DataTypes.Float32), DataTypes.Int32);
@@ -132,7 +114,7 @@ public sealed class UnitTestTIR
     [Fact]
     public void TestBufferRegion()
     {
-        var buffer = T.Buffer(DataTypes.Float32, MemoryLocation.Input, new Expr[] { 1, 16, 64, 400 }, out _);
+        var buffer = T.CreateBuffer(new(DataTypes.Float32, new[] { 1, 16, 64, 400 }), MemoryLocation.Input, out _);
         var region = new Range[] { new Range(1, 2, 2), new Range(-1, 3, 2) };
         var bufferRegion = new BufferRegion(buffer, region);
 
@@ -154,8 +136,8 @@ public sealed class UnitTestTIR
     {
         var primFunc = new PrimFunction("test_module", new Sequential(new Expr[] { 1 }), new[]
         {
-            new TIR.PhysicalBuffer("testInput", DataTypes.Float32, MemoryLocation.Input, new[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new[] { 1, 16, 64, 400 }), 0, 0),
-            new TIR.PhysicalBuffer("testInput", DataTypes.Float32, MemoryLocation.Input, new[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new[] { 1, 16, 64, 400 }), 0, 0),
+            TIR.T.CreateBuffer(new(DataTypes.Float32, new[] { 1, 16, 64, 400 }), MemoryLocation.Input, out var _),
+            TIR.T.CreateBuffer(new(DataTypes.Float32, new[] { 1, 16, 64, 400 }), MemoryLocation.Input, out var _),
         });
 
         var primFuncParameters = primFunc.Parameters;
@@ -167,8 +149,8 @@ public sealed class UnitTestTIR
         var newBody = new Sequential(new Expr[] { 3 });
         var newParams = new[]
         {
-            new TIR.PhysicalBuffer("testInput", DataTypes.Float32, MemoryLocation.Input, new[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new[] { 1, 16, 64, 400 }), 0, 0),
-            new TIR.PhysicalBuffer("testInput", DataTypes.Float32, MemoryLocation.Input, new[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new[] { 1, 16, 64, 400 }), 0, 0),
+            TIR.T.CreateBuffer(new(DataTypes.Float32, new[] { 1, 16, 64, 400 }), MemoryLocation.Input, out var _),
+            TIR.T.CreateBuffer(new(DataTypes.Float32, new[] { 1, 16, 64, 400 }), MemoryLocation.Input, out var _),
         };
 
         var newPrimFunc = primFunc.With(moduleKind: newModuleKind, body: newBody, parameters: newParams);
@@ -179,7 +161,7 @@ public sealed class UnitTestTIR
         Assert.Equal(newParams, newPrimFunc.Parameters.ToArray());
         Assert.Equal(primFunc.Name, newPrimFunc.Name); // should not change the name
 
-        Assert.NotNull(new PrimFunction("test_module", new Sequential(new Expr[] { 1 }), default(ReadOnlySpan<PhysicalBuffer>)));
+        Assert.NotNull(new PrimFunction("test_module", new Sequential(new Expr[] { 1 }), default(ReadOnlySpan<Buffer>)));
     }
 
     [Fact]

@@ -22,7 +22,7 @@ public sealed class UnitTestPassManager : TestClassBase
     [Fact]
     public void TestPassMangerUpdateDependence()
     {
-        var prim_func_1 = T.PrimFunc("prim_func_1", "k?", T.PhysicalBuffer(DataTypes.Float32, MemoryLocation.Input, new[] { 1, 2, 3, 4 }, out _), T.PhysicalBuffer(DataTypes.Float32, MemoryLocation.Output, new[] { 1, 2, 3, 4 }, out _)).Body(T.Nop()).Build();
+        var prim_func_1 = T.PrimFunc("prim_func_1", "k?", T.CreateBuffer(new(DataTypes.Float32, new[] { 1, 2, 3, 4 }), MemoryLocation.Input, out _), T.CreateBuffer(new(DataTypes.Float32, new[] { 1, 2, 3, 4 }), MemoryLocation.Output, out _)).Body(T.Nop()).Build();
 
         var prim_wrapper = new PrimFunctionWrapper(prim_func_1, 1);
 
@@ -30,7 +30,7 @@ public sealed class UnitTestPassManager : TestClassBase
         var main_func = new Function("main", new Call(prim_wrapper, input), input);
 
         // prim_func_2 for update
-        var prim_func_2 = T.PrimFunc("prim_func_2", "k?", T.PhysicalBuffer(DataTypes.Float32, MemoryLocation.Input, new[] { 1, 2, 3, 4 }, out _), T.PhysicalBuffer(DataTypes.Float32, MemoryLocation.Output, new[] { 1, 2, 3, 4 }, out _)).Body(
+        var prim_func_2 = T.PrimFunc("prim_func_2", "k?", T.CreateBuffer(new(DataTypes.Float32, new[] { 1, 2, 3, 4 }), MemoryLocation.Input, out _), T.CreateBuffer(new(DataTypes.Float32, new[] { 1, 2, 3, 4 }), MemoryLocation.Output, out _)).Body(
           T.Nop(),
           T.Nop()).Build();
 
@@ -54,15 +54,15 @@ public sealed class UnitTestPassManager : TestClassBase
           %3 = %func_3(%2): // f16[1,23,30,16]
         */
 
-        var prim_func_0 = T.PrimFunc("prim_func_0", "k?", T.PhysicalBuffer(DataTypes.Float32, MemoryLocation.Input, new[] { 1, 24, 32, 3 }, out var _), T.PhysicalBuffer(DataTypes.Float32, MemoryLocation.Output, new[] { 1, 3, 24, 32 }, out var _)).Body(
+        var prim_func_0 = T.PrimFunc("prim_func_0", "k?", T.CreateBuffer(new(DataTypes.Float32, new[] { 1, 24, 32, 3 }), MemoryLocation.Input, out var _), T.CreateBuffer(new(DataTypes.Float32, new[] { 1, 3, 24, 32 }), MemoryLocation.Output, out var _)).Body(
           T.Nop()).Build();
         var func_0 = new PrimFunctionWrapper(prim_func_0, 1);
 
-        var prim_func_1 = T.PrimFunc("prim_func_1", "k?", T.PhysicalBuffer(DataTypes.Float32, MemoryLocation.Input, new[] { 1, 3, 24, 32 }, out var _), T.PhysicalBuffer(DataTypes.Float32, MemoryLocation.Output, new[] { 1, 3, 24, 32 }, out var _)).Body(
+        var prim_func_1 = T.PrimFunc("prim_func_1", "k?", T.CreateBuffer(new(DataTypes.Float32, new[] { 1, 3, 24, 32 }), MemoryLocation.Input, out var _), T.CreateBuffer(new(DataTypes.Float32, new[] { 1, 3, 24, 32 }), MemoryLocation.Output, out var _)).Body(
           T.Nop()).Build();
         var func_1 = new PrimFunctionWrapper(prim_func_1, 1);
 
-        var prim_func_2 = T.PrimFunc("prim_func_2", "k?", T.PhysicalBuffer(DataTypes.Float32, MemoryLocation.Input, new[] { 1, 3, 24, 32 }, out var _), T.PhysicalBuffer(DataTypes.Float32, MemoryLocation.Output, new[] { 1, 23, 30, 16 }, out var _)).Body(
+        var prim_func_2 = T.PrimFunc("prim_func_2", "k?", T.CreateBuffer(new(DataTypes.Float32, new[] { 1, 3, 24, 32 }), MemoryLocation.Input, out var _), T.CreateBuffer(new(DataTypes.Float32, new[] { 1, 23, 30, 16 }), MemoryLocation.Output, out var _)).Body(
           T.Nop()).Build();
         var func_2 = new PrimFunctionWrapper(prim_func_2, 1);
 
@@ -74,7 +74,7 @@ public sealed class UnitTestPassManager : TestClassBase
         Assert.True(CompilerServices.InferenceType(main_func));
 
         // prim_func_2 for update
-        var prim_func_1_update = T.PrimFunc("prim_func_1_update", "k?", T.PhysicalBuffer(DataTypes.Float32, MemoryLocation.Input, new[] { 1, 3, 24, 32 }, out var _), T.PhysicalBuffer(DataTypes.Float32, MemoryLocation.Output, new[] { 1, 3, 24, 32 }, out var _)).Body(
+        var prim_func_1_update = T.PrimFunc("prim_func_1_update", "k?", T.CreateBuffer(new(DataTypes.Float32, new[] { 1, 3, 24, 32 }), MemoryLocation.Input, out var _), T.CreateBuffer(new(DataTypes.Float32, new[] { 1, 3, 24, 32 }), MemoryLocation.Output, out var _)).Body(
           T.Nop(),
           T.Nop()).Build();
 

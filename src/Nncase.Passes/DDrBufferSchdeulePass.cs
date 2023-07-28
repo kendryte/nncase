@@ -23,9 +23,9 @@ namespace Nncase.Passes;
 /// </summary>
 public sealed class DDrBufferSchdeulePass : ModulePass
 {
-    private readonly Dictionary<string, Dictionary<MemoryLocation, int>> _module_usage = new();
+    private readonly Dictionary<string, Dictionary<MemoryLocation, int>> _moduleUsage = new();
 
-    private readonly Dictionary<string, HashSet<TIR.Buffer>> _module_hashset = new();
+    private readonly Dictionary<string, Dictionary<Const, System.Range>> _moduleRdataMaps = new();
 
     private readonly bool _enbaleMergeCall;
 
@@ -40,6 +40,7 @@ public sealed class DDrBufferSchdeulePass : ModulePass
     protected override async Task<IRModule> RunCoreAsync(IRModule module, RunPassContext options)
     {
         // 1. merge the all call prim func
+#if false
         if (_enbaleMergeCall)
         {
             HashSet<BaseFunction> mergedFuncs = new(ReferenceEqualityComparer.Instance);
@@ -78,6 +79,7 @@ public sealed class DDrBufferSchdeulePass : ModulePass
                 module.Remove(item);
             }
         }
+#endif
 
         // 4. schedule the prim funcs.
         for (int i = 0; i < module.Functions.Count; i++)
@@ -86,149 +88,115 @@ public sealed class DDrBufferSchdeulePass : ModulePass
             {
                 if (!prim_func.SchedResult.IsScheduled)
                 {
-                    var ddr_allocator = new DDrBufferAllocator(_module_usage, _module_hashset);
-                    ddr_allocator.Visit(prim_func); // changed ddr buffer.
-                    prim_func.SchedResult.DataUsage = ddr_allocator.DataUsage;
-                    prim_func.SchedResult.IsScheduled = ddr_allocator.Changed;
+                    var rewriter = new DDrBufferRewriter(_moduleUsage, _moduleRdataMaps);
+                    var post = (TIR.PrimFunction)rewriter.Rewrite(prim_func); // changed ddr buffer.
+                    if (rewriter.IsMutated)
+                    {
+                        post.SchedResult.DataUsage = rewriter.DataUsage;
+                        post.SchedResult.IsScheduled = true;
+                    }
+
+                    module.Replace(i, prim_func);
                 }
             }
         }
 
-        _module_hashset.Clear();
-        _module_usage.Clear();
+        _moduleRdataMaps.Clear();
+        _moduleUsage.Clear();
 
         return await Task.FromResult(module);
     }
 }
 
-/// <summary>
-/// collect and assgin the PhysicalBuffer.
-/// </summary>
-internal sealed class DDrBufferAllocator : ExprVisitor<bool, bool>
+internal sealed class DDrBufferRewriter : ExprRewriter
 {
     private readonly Dictionary<MemoryLocation, int> _functionUsage;
-    private readonly HashSet<TIR.Buffer> _functionHashset;
+    private readonly Dictionary<Const, System.Range> _functionRdatas;
 
-    private PrimFunction? _entry;
-
-    public DDrBufferAllocator(Dictionary<string, Dictionary<MemoryLocation, int>> module_usage, Dictionary<string, HashSet<TIR.Buffer>> module_hashset)
+    public DDrBufferRewriter(Dictionary<string, Dictionary<MemoryLocation, int>> moduleUsage, Dictionary<string, Dictionary<Const, System.Range>> moduleRdataMaps)
     {
-        ModuleUsage = module_usage;
-        ModuleHashSet = module_hashset;
+        ModuleUsage = moduleUsage;
+        ModuleRdataMaps = moduleRdataMaps;
         _functionUsage = new();
-        _functionHashset = new(ReferenceEqualityComparer.Instance);
+        _functionRdatas = new();
         Changed = false;
     }
 
     public Dictionary<string, Dictionary<MemoryLocation, int>> ModuleUsage { get; }
 
-    public Dictionary<string, HashSet<TIR.Buffer>> ModuleHashSet { get; }
+    public Dictionary<string, Dictionary<Const, System.Range>> ModuleRdataMaps { get; }
 
     public bool Changed { get; private set; }
 
     public int DataUsage => _functionUsage.GetValueOrDefault(MemoryLocation.Data, 0);
 
-    /// <remarks>
-    /// only visit one prim func.
-    /// </remarks>
-    protected override bool VisitPrimFunction(PrimFunction primFunction)
+    public PrimFunction Entry => (PrimFunction)VisitRoot!;
+
+    protected override TIR.MemSpan RewriteLeafMemSpan(TIR.MemSpan memSpan)
     {
-        _entry ??= primFunction;
-        if (object.ReferenceEquals(_entry, primFunction))
+        if (memSpan is { Location: MemoryLocation.Rdata, Start: Call { Target: IR.Buffers.DDrOf, Arguments: var arg } } && arg[0] is Const @const)
         {
-            foreach (var physical in primFunction.Parameters)
+            if (!ModuleRdataMaps.TryGetValue(Entry.ModuleKind, out var moduleRdataMap))
             {
-                if (physical.MemLocation is MemoryLocation.Input or MemoryLocation.Output)
-                {
-                    // avoid visit same buffer
-                    if (!_functionHashset.Contains(physical))
-                    {
-                        // input/output write into the FunctionUsage
-                        if (!_functionUsage.TryGetValue(physical.MemLocation, out var start))
-                        {
-                            start = 0;
-                        }
-
-                        physical.Start = start;
-                        _functionUsage[physical.MemLocation] = start + physical.Size;
-                        _functionHashset.Add(physical);
-                        Changed = true;
-                    }
-                }
-                else
-                {
-                    throw new NotSupportedException($"The prim function parameters mem location must be input/output but get {physical.MemLocation}!");
-                }
+                moduleRdataMap = new();
+                ModuleRdataMaps.Add(Entry.ModuleKind, moduleRdataMap);
             }
 
-            return base.VisitPrimFunction(_entry);
-        }
-
-        return true;
-    }
-
-    protected override bool VisitLeafBuffer(TIR.Buffer buffer)
-    {
-        if (buffer is not TIR.PhysicalBuffer physical)
-        {
-            return true;
-        }
-
-        // rdata write into the moduleUsage
-        if (physical.MemLocation is MemoryLocation.Rdata)
-        {
-            if (!ModuleHashSet.TryGetValue(_entry!.ModuleKind, out var module_hashset))
+            if (!ModuleUsage.TryGetValue(Entry.ModuleKind, out var moduleUsage))
             {
-                module_hashset = new(ReferenceEqualityComparer.Instance);
-                ModuleHashSet.Add(_entry!.ModuleKind, module_hashset);
+                moduleUsage = new();
+                ModuleUsage.Add(Entry.ModuleKind, moduleUsage);
             }
 
-            if (!ModuleUsage.TryGetValue(_entry!.ModuleKind, out var module_usage))
+            if (!moduleRdataMap.TryGetValue(@const, out var memRange))
             {
-                module_usage = new();
-                ModuleUsage.Add(_entry!.ModuleKind, module_usage);
-            }
-
-            if (!module_hashset.Contains(physical))
-            {
-                if (!module_usage.TryGetValue(physical.MemLocation, out var start))
+                if (!moduleUsage.TryGetValue(memSpan.Location, out var start))
                 {
                     start = 0;
                 }
 
-                physical.Start = start;
-                module_usage[physical.MemLocation] = start + physical.Size;
-                module_hashset.Add(physical);
-                _entry.SchedResult.Rdatas.Add(physical);
-
+                _ = ComputeSize(@const);
+                moduleUsage[memSpan.Location] = start + ComputeSize(@const);
+                memRange = start..(start + ComputeSize(@const));
+                moduleRdataMap.Add(@const, memRange);
+                Entry.SchedResult.Rdatas.Add(@const, memRange);
                 Changed = true;
             }
-        }
-        else if (physical.MemLocation is MemoryLocation.Data)
-        {
-            // data write into the FunctionUsage
-            if (!_functionHashset.Contains(physical))
-            {
-                if (!_functionUsage.TryGetValue(physical.MemLocation, out var start))
-                {
-                    start = 0;
-                }
 
-                physical.Start = start;
-                _functionUsage[physical.MemLocation] = start + physical.Size;
-                _functionHashset.Add(physical);
-                Changed = true;
-            }
-        }
-        else if (physical.MemLocation is MemoryLocation.SharedData)
-        {
-            throw new NotSupportedException("Current Not Support!");
+            return memSpan.With(memRange.Start.Value, memRange.End.Value - memRange.Start.Value);
         }
 
-        return true;
+        // else if (memSpan.Location is MemoryLocation.Data)
+        // {
+        //     data write into the FunctionUsage
+        //     if (!_functionRdatas.Contains(physical))
+        //     {
+        //         if (!_functionUsage.TryGetValue(physical.Location, out var start))
+        //         {
+        //             start = 0;
+        //         }
+
+        // physical.Start = start;
+        //         _functionUsage[physical.Location] = start + physical.Size;
+        //         _functionRdatas.Add(physical);
+        //         Changed = true;
+        //     }
+        // }
+        // else if (memSpan.Location is MemoryLocation.SharedData)
+        // {
+        //     throw new NotSupportedException("Current Not Support!");
+        // }
+        return memSpan;
     }
 
-    protected override bool DefaultVisitLeaf(Expr expr) => true;
+    private int ComputeSize(IValue v) => v.AsTensors().Select(t => t.BytesBuffer.Length).Sum();
+
+    private int ComputeSize(Const @const) => @const switch
+    {
+        TensorConst { Value: Tensor tc } => tc.BytesBuffer.Length,
+        TupleConst tc => ComputeSize(tc.Value),
+        _ => throw new NotSupportedException(),
+    };
 }
 
 internal sealed class ExternalFuncCollector : ExprWalker

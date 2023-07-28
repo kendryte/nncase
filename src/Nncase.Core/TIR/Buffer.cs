@@ -269,15 +269,12 @@ public record SelectedRange(int Start, int End, Padding Padding)
 /// </summary>
 public sealed class Buffer : Expr
 {
-    private static int _globalVarIndex;
-
     public Buffer(string name, DataType elemType, MemSpan memSpan, Expr[] dimensions, Expr[] strides)
         : base(new[] { memSpan }.Concat(dimensions).Concat(strides))
     {
         Name = name;
         ElemType = elemType;
         Rank = dimensions.Length;
-        GlobalVarIndex = Interlocked.Increment(ref _globalVarIndex);
     }
 
     public string Name { get; }
@@ -288,11 +285,6 @@ public sealed class Buffer : Expr
     /// Gets rank of the tensor: number of dimensions.
     /// </summary>
     public int Rank { get; }
-
-    /// <summary>
-    /// Gets the global var index.
-    /// </summary>
-    public int GlobalVarIndex { get; }
 
     /// <summary>
     /// Gets the shape.
@@ -312,5 +304,8 @@ public sealed class Buffer : Expr
     /// </summary>
     public ReadOnlySpan<Expr> Strides => Operands[(1 + Rank)..(1 + Rank + Rank)];
 
-    public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) => throw new NotImplementedException();
+    public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) => functor.VisitBuffer(this, context);
+
+    public Buffer With(MemSpan? memSpan = null, Expr[]? dimensions = null, Expr[]? strides = null)
+        => new Buffer(Name, ElemType, memSpan ?? MemSpan, dimensions ?? Dimensions.ToArray(), strides ?? Strides.ToArray());
 }

@@ -69,6 +69,14 @@ public abstract class TypeFunctor<TResult, TContext>
     public virtual TResult VisitType(TensorType type, TContext context) => DefaultVisitType(type, context);
 
     /// <summary>
+    /// Visit pointer type.
+    /// </summary>
+    /// <param name="type">Pointer type.</param>
+    /// <param name="context">Context.</param>
+    /// <returns>Result.</returns>
+    public virtual TResult VisitType(PointerType type, TContext context) => DefaultVisitType(type, context);
+
+    /// <summary>
     /// Visit tuple type.
     /// </summary>
     /// <param name="type">Tuple type.</param>

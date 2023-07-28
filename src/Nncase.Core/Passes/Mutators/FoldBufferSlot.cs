@@ -28,7 +28,7 @@ public sealed class FoldBufferSlot : ExprRewriter
     {
         if (expr.Target is IR.Buffers.BaseMentOf)
         {
-            var locate = ((TIR.PhysicalBuffer)expr.Arguments[0]).MemLocation;
+            var locate = ((TIR.MemSpan)expr.Arguments[0]).Location;
             return locate switch
             {
                 MemoryLocation.Input => 0,
@@ -40,7 +40,7 @@ public sealed class FoldBufferSlot : ExprRewriter
         }
         else if (expr.Target is IR.Buffers.DDrOf)
         {
-            if (expr.Arguments[0] is TIR.PhysicalBuffer buf)
+            if (expr.Arguments[0] is TIR.MemSpan buf)
             {
                 return buf.Start;
             }

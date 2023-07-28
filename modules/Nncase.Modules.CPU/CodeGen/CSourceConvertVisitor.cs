@@ -180,16 +180,16 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                 break;
             case IR.Buffers.MatchBuffer op:
                 var n = arguments[0].Name;
-                var pb = (TIR.PhysicalBuffer)expr[IR.Buffers.MatchBuffer.Input];
+                var pb = (TIR.Buffer)expr[IR.Buffers.MatchBuffer.Input];
                 var ind = new string(Enumerable.Repeat<char>(' ', IndentScope.Writer.Indent).ToArray());
-                str = $@"uint32_t _{n}_shape[] = {{ {string.Join(", ", pb.FixedDimensions.ToArray())} }};
-{ind}uint32_t _{n}_stride[] = {{ {string.Join(", ", pb.FixedStrides.ToArray())} }};
+                str = $@"uint32_t _{n}_shape[] = {{ {string.Join(", ", pb.Dimensions.AsValueEnumerable().Select(e => Visit(e).Name).ToArray())} }};
+{ind}uint32_t _{n}_stride[] = {{ {string.Join(", ", pb.Strides.AsValueEnumerable().Select(e => Visit(e).Name).ToArray())} }};
 {ind}buffer_t _{n} = {{
-{ind}{ind}.vaddr = ((uint8_t*) rdata + {pb.Start}),
+{ind}{ind}.vaddr = ((uint8_t*) rdata + {Visit(pb.MemSpan.Start).Name}),
 {ind}{ind}.paddr = 0,
 {ind}{ind}.shape = _{n}_shape,
 {ind}{ind}.stride = _{n}_stride,
-{ind}{ind}.rank = {pb.FixedDimensions.Length} }};
+{ind}{ind}.rank = {pb.Dimensions.Length} }};
 {ind}buffer_t *{n} = &_{n}";
                 break;
             default:
@@ -325,18 +325,6 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         IndentScope.Writer.IndWrite("}\n");
 
         symbol = new(string.Empty, string.Empty);
-        _exprMemo.Add(expr, symbol);
-        return symbol;
-    }
-
-    protected override CSymbol VisitPhysicalBuffer(PhysicalBuffer expr)
-    {
-        if (_exprMemo.TryGetValue(expr, out var symbol))
-        {
-            return symbol;
-        }
-
-        symbol = new(CSourceBuiltn.BufferType + "*", expr.Name);
         _exprMemo.Add(expr, symbol);
         return symbol;
     }

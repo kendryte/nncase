@@ -71,7 +71,7 @@ internal static class PrimFuncBuilder
     public static PrimFunctionWrapper MakeMultiInputFunc(int length, bool mask)
     {
         var allocator = new Allocator();
-        var fusion_inputs = new List<TIR.PhysicalBuffer>();
+        var fusion_inputs = new List<TIR.Buffer>();
         for (int i = 0; i < length; i++)
         {
             var fusion_input_i = allocator.Allocate($"fusion_{_count}_input_{i}", TIR.MemoryLocation.Input);
@@ -124,18 +124,19 @@ internal static class PrimFuncBuilder
 
     private sealed class Allocator
     {
-        private readonly Dictionary<TIR.MemoryLocation, int> _useage = new() {
+        private readonly Dictionary<TIR.MemoryLocation, int> _usage = new() {
           { TIR.MemoryLocation.Input, 0 },
           { TIR.MemoryLocation.Output, 0 },
           { TIR.MemoryLocation.L2Data, 0 },
         };
 
-        public TIR.PhysicalBuffer Allocate(string name, TIR.MemoryLocation location)
+        public TIR.Buffer Allocate(string name, TIR.MemoryLocation location)
         {
-            var strides = TensorUtilities.GetStrides(Dimensions);
-            var size = TensorUtilities.GetSize(Dimensions, strides, DataTypes.Float32.SizeInBytes);
-            var buffer = new TIR.PhysicalBuffer(name, DataTypes.Float32, location, Dimensions, strides, _useage[location], size);
-            _useage[location] += size;
+            var dims = Dimensions.Select(d => (Expr)d).ToArray();
+            var strides = TensorUtilities.GetStrides(Dimensions).Select(s => (Expr)s).ToArray();
+            var size = TensorUtilities.GetSize(Dimensions, TensorUtilities.GetStrides(Dimensions), DataTypes.Float32.SizeInBytes);
+            var buffer = new TIR.Buffer(name, DataTypes.Float32, new TIR.MemSpan(_usage[location], size, location), dims, strides);
+            _usage[location] += size;
             return buffer;
         }
     }

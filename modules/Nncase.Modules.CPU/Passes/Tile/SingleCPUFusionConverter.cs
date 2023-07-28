@@ -48,9 +48,9 @@ internal sealed class SingleCPUFusionConverter
 
         public Fusion VisitRootFusion => (Fusion)VisitRoot!;
 
-        public IEnumerable<TIR.PhysicalBuffer> OutputBuffers => _buffersMap.Values.OfType<TIR.PhysicalBuffer>().Where(b => b.MemLocation == MemoryLocation.Output);
+        public IEnumerable<TIR.Buffer> OutputBuffers => _buffersMap.Values.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location.HasFlag(MemoryLocation.Output));
 
-        public IEnumerable<TIR.PhysicalBuffer> InputBuffers => _buffersMap.Values.OfType<TIR.PhysicalBuffer>().Where(b => b.MemLocation == MemoryLocation.Input);
+        public IEnumerable<TIR.Buffer> InputBuffers => _buffersMap.Values.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location.HasFlag(MemoryLocation.Input));
 
         protected override Unit DefaultVisitLeaf(Expr expr)
         {
@@ -98,7 +98,9 @@ internal sealed class SingleCPUFusionConverter
 
             // [m,k] @ [k, n]
             var body = T.Block(nameof(MatMul)).Body(
-                T.Sequential(arguments.ToArray().OfType<PhysicalBuffer>().Where(p => p.Const != null).Select(b => T.MatchBuffer(b)).ToArray()),
+                T.MatchBuffer(arguments[0]),
+                T.MatchBuffer(arguments[1]),
+                T.MatchBuffer(ret),
                 final);
             _mainBody.Add(body.Build());
         }
@@ -110,7 +112,10 @@ internal sealed class SingleCPUFusionConverter
             var loopVars = loops.Select(f => f.loopVar).ToArray();
             Expr stmt = T.BufferStore(ret, loopVars, IR.F.Math.Unary(unary.UnaryOp, T.BufferLoad(input, loopVars)));
             var final = loops.Reverse().Aggregate(stmt, (acc, p) => p.Item1.Body(acc).Build());
-            _mainBody.Add(T.Block(nameof(Unary)).Body(final).Build());
+            _mainBody.Add(T.Block(nameof(Unary)).Body(
+                T.MatchBuffer(arguments[0]),
+                T.MatchBuffer(ret),
+                final).Build());
         }
 
         private void GenerateBinary(Binary binary, ReadOnlySpan<Buffer> arguments, Buffer ret, Call call)
@@ -136,7 +141,9 @@ internal sealed class SingleCPUFusionConverter
             Expr stmt = T.BufferStore(ret, loopVars, IR.F.Math.Binary(binary.BinaryOp, T.BufferLoad(lhsBuffer, lhsLoopVars), T.BufferLoad(rhsBuffer, rhsLoopVars)));
             var final = loops.Reverse().Aggregate(stmt, (acc, p) => p.Item1.Body(acc).Build());
             var body = T.Block(nameof(Binary)).Body(
-                T.Sequential(arguments.ToArray().OfType<PhysicalBuffer>().Where(p => p.Const != null).Select(b => T.MatchBuffer(b)).ToArray()),
+                T.MatchBuffer(arguments[0]),
+                T.MatchBuffer(arguments[1]),
+                T.MatchBuffer(ret),
                 final);
             _mainBody.Add(body.Build());
         }
@@ -151,19 +158,19 @@ internal sealed class SingleCPUFusionConverter
                     case Call c:
                         if (ReferenceEquals(c, VisitRootFusion.Body))
                         {
-                            buffer = T.PhysicalBuffer(c.CheckedDataType, MemoryLocation.Output, c.CheckedShape.ToValueArray(), out _, name);
+                            buffer = T.AttachBuffer((TensorType)c.CheckedType, MemoryLocation.Output, out _, out _, name);
                         }
                         else
                         {
-                            buffer = T.Buffer(c.CheckedDataType, MemoryLocation.Data, c.CheckedShape.ToValueArray().Select(i => (Expr)i).ToArray(), out _, name);
+                            buffer = T.CreateBuffer((TensorType)c.CheckedDataType, MemoryLocation.Data, out _, name);
                         }
 
                         break;
                     case Var v:
-                        buffer = T.PhysicalBuffer(v.CheckedDataType, MemoryLocation.Input, v.CheckedShape.ToValueArray(), out _, name);
+                        buffer = T.AttachBuffer((TensorType)v.CheckedType, MemoryLocation.Input, out _, out _, name);
                         break;
                     case TensorConst c:
-                        buffer = T.ConstBuffer(c, out _, name);
+                        buffer = T.AttachBuffer(c, out _, name);
                         break;
                     default:
                         throw new NotSupportedException();

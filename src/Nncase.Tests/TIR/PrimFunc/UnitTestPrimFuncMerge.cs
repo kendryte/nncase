@@ -139,8 +139,8 @@ internal sealed class PrimFuncEvaluateVisitor
         // 1. copy input into input pool
         foreach (var (arg, param) in _args.Zip(_wrapper.Target.Parameters[.._wrapper.ParametersCount].ToArray()))
         {
-            Assert.Equal(param.Size, arg.AsTensor().BytesBuffer.Length);
-            arg.AsTensor().BytesBuffer.CopyTo(_poolMap[param.MemLocation].AsSpan(param.Start));
+            Assert.Equal(param.MemSpan.Size.Evaluate().AsTensor().ToScalar<int>(), arg.AsTensor().BytesBuffer.Length);
+            arg.AsTensor().BytesBuffer.CopyTo(_poolMap[param.MemSpan.Location].AsSpan(param.MemSpan.Start.Evaluate().AsTensor().ToScalar<int>()));
         }
 
         // 2. start l2 computing
@@ -153,7 +153,7 @@ internal sealed class PrimFuncEvaluateVisitor
         var tensors = new List<Tensor>();
         foreach (var outputParam in _wrapper.Target.Parameters[_wrapper.ParametersCount..])
         {
-            tensors.Add(Tensor.FromBytes(outputParam.ElemType, GetBufferSpan(outputParam).ToArray(), outputParam.FixedDimensions.ToArray()));
+            tensors.Add(Tensor.FromBytes(outputParam.ElemType, GetBufferSpan(outputParam).ToArray(), outputParam.Dimensions.AsValueEnumerable().Select(e => e.Evaluate().AsTensor().ToScalar<int>()).ToArray()));
         }
 
         return tensors.Count == 1 ? Value.FromTensor(tensors[0]) : Value.FromTensors(tensors.ToArray());
@@ -208,7 +208,7 @@ internal sealed class PrimFuncEvaluateVisitor
 
     private Span<byte> GetBufferSpan(Expr expr)
     {
-        var buffer = Assert.IsType<TIR.PhysicalBuffer>(expr);
-        return _poolMap[buffer.MemLocation].AsSpan(buffer.Start, buffer.Size);
+        var buffer = Assert.IsType<TIR.Buffer>(expr);
+        return _poolMap[buffer.MemSpan.Location].AsSpan<byte>(buffer.MemSpan.Start.Evaluate().AsTensor().ToScalar<int>(), buffer.MemSpan.Size.Evaluate().AsTensor().ToScalar<int>());
     }
 }

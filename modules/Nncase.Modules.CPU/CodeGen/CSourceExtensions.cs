@@ -29,7 +29,6 @@ internal static class CSourceExtensions
     public static string ToC(this DataType dataType) => dataType switch
     {
         PrimType ptype => ptype.ToC(),
-        PointerType { ElemType: PrimType etype } => etype.ToC() + "*",
         _ => throw new NotSupportedException(dataType.ToString()),
     };
 

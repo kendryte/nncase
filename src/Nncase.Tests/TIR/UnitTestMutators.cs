@@ -30,9 +30,9 @@ public sealed class UnitTestMutators : TestClassBase
     [Fact]
     public async Task TestFoldConstCallWithTuple()
     {
-        T.PhysicalBuffer(DataTypes.BFloat16, MemoryLocation.Input, new[] { 48 }, out var ddr_if);
-        T.PhysicalBuffer(DataTypes.BFloat16, MemoryLocation.Data, new[] { 9 }, out var glb_if_ping);
-        T.PhysicalBuffer(DataTypes.BFloat16, MemoryLocation.Data, new[] { 9 }, out var glb_if_pong);
+        T.CreateBuffer(new TensorType(DataTypes.BFloat16, new[] { 48 }), MemoryLocation.Input, out var ddr_if);
+        T.CreateBuffer(new TensorType(DataTypes.BFloat16, new[] { 9 }), MemoryLocation.Data, out var glb_if_ping);
+        T.CreateBuffer(new TensorType(DataTypes.BFloat16, new[] { 9 }), MemoryLocation.Data, out var glb_if_pong);
         PrimFunction main;
         {
             main = T.PrimFunc("main", Callable.StackVMModuleKind, ddr_if).Body(
@@ -118,8 +118,8 @@ public sealed class UnitTestMutators : TestClassBase
     [Fact]
     public async Task TestUnRollLoopSequential2()
     {
-        T.PhysicalBuffer(DataTypes.BFloat16, MemoryLocation.Input, new[] { 3, 16, 24, 24 }, out var ddr_if);
-        T.PhysicalBuffer(DataTypes.BFloat16, MemoryLocation.Data, new[] { 3, 10, 5, 9 }, out var glb_if);
+        T.CreateBuffer(new TensorType(DataTypes.BFloat16, new[] { 3, 16, 24, 24 }), MemoryLocation.Input, out var ddr_if);
+        T.CreateBuffer(new TensorType(DataTypes.BFloat16, new[] { 3, 10, 5, 9 }), MemoryLocation.Data, out var glb_if);
 
         PrimFunction main;
         {
@@ -201,8 +201,8 @@ public sealed class UnitTestMutators : TestClassBase
     [Fact]
     public async Task TestUnRollLoopSequential3()
     {
-        T.PhysicalBuffer(DataTypes.BFloat16, MemoryLocation.Input, new[] { 3, 16, 24, 24 }, out var ddr_if);
-        T.PhysicalBuffer(DataTypes.BFloat16, MemoryLocation.Data, new[] { 3, 10, 5, 9 }, out var glb_if);
+        T.CreateBuffer(new TensorType(DataTypes.BFloat16, new[] { 3, 16, 24, 24 }), MemoryLocation.Input, out var ddr_if);
+        T.CreateBuffer(new TensorType(DataTypes.BFloat16, new[] { 3, 10, 5, 9 }), MemoryLocation.Data, out var glb_if);
 
         PrimFunction main;
         {
@@ -362,10 +362,10 @@ public sealed class UnitTestMutators : TestClassBase
     [Fact]
     public async Task TestFoldBufferIndex()
     {
-        T.PhysicalBuffer(DataTypes.BFloat16, MemoryLocation.Input, new[] { 3, 16, 24, 24 }, out var ddr_if);
-        T.PhysicalBuffer(DataTypes.BFloat16, MemoryLocation.Output, new[] { 3, 16, 24, 24 }, out var ddr_of);
-        T.PhysicalBuffer(DataTypes.BFloat16, MemoryLocation.Data, new[] { 3, 10, 5, 9 }, out var glb_if);
-        var bufferIndexMap = new Dictionary<TIR.PhysicalBuffer, int>() {
+        T.CreateBuffer(new(DataTypes.BFloat16, new[] { 3, 16, 24, 24 }), MemoryLocation.Input, out var ddr_if);
+        T.CreateBuffer(new(DataTypes.BFloat16, new[] { 3, 16, 24, 24 }), MemoryLocation.Output, out var ddr_of);
+        T.CreateBuffer(new(DataTypes.BFloat16, new[] { 3, 10, 5, 9 }), MemoryLocation.Data, out var glb_if);
+        var bufferIndexMap = new Dictionary<TIR.Buffer, int>() {
           { ddr_if, 2 },
           { ddr_of, 4 },
         };
@@ -386,7 +386,7 @@ public sealed class UnitTestMutators : TestClassBase
         pass.Add<UnRollLoopSequential>();
         pass.Add<Substitutor>(Expr? (Expr e) =>
         {
-            if (e is Call { } call && call.Arguments[0] is PhysicalBuffer physicalBuffer && bufferIndexMap.TryGetValue(physicalBuffer, out var index))
+            if (e is Call { } call && call.Arguments[0] is Buffer physicalBuffer && bufferIndexMap.TryGetValue(physicalBuffer, out var index))
             {
                 return index;
             }
