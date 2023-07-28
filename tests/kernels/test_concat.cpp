@@ -26,9 +26,9 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class ConcatTest
-    : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t, int64_t >> {
+class ConcatTest : public KernelTest,
+                   public ::testing::TestWithParam<
+                       std::tuple<nncase::typecode_t, dims_t, int64_t>> {
   public:
     void SetUp() override {
         auto &&[typecode, shape, value] = GetParam();
@@ -43,7 +43,7 @@ class ConcatTest
 
         axis_value = value > 0 ? value >= (int64_t)shape.size() ? 0 : value
                      : -value > (int64_t)shape.size() ? 0
-                                                         : value;
+                                                      : value;
     }
 
     void TearDown() override {}
