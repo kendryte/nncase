@@ -352,6 +352,10 @@ public static class TypeInference
             }
 
             var permt = permValue.Value.ToArray<int>();
+            if (input.Shape.Count != permt.Length)
+            {
+                return new InvalidType("Transpose shoud perm.size == inShape.size");
+            }
             var outShape = ApplyPerm(input.Shape, permt);
             return input with { Shape = outShape };
         }

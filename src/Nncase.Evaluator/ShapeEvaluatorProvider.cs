@@ -36,7 +36,7 @@ internal sealed class ShapeEvaluateProvider : IShapeEvaluateProvider
                 DumpScope.Current.DumpIR(expr, "EvaluateShapeExprInvalid");
             }
 
-            throw new InvalidOperationException("Expr in Evaluator need a valid type");
+            throw new InvalidOperationException("Expr in Shape Evaluator need a valid type");
         }
 
         if (expr.CheckedType is TensorType && expr.CheckedShape.IsFixed)
