@@ -19,7 +19,7 @@ public sealed partial class Load : Op
     /// <summary>
     /// Gets handle.
     /// </summary>
-    public static readonly ParameterInfo Handle = new(typeof(Load), 0, "handle");
+    public static readonly ParameterInfo Handle = new(typeof(Load), 0, "handle", IsPointer() | IsIntegralScalar());
 
     /// <summary>
     /// Gets index.
@@ -56,7 +56,7 @@ public sealed partial class Store : Op
     /// <summary>
     /// The buffer variable handle.
     /// </summary>
-    public static readonly ParameterInfo Handle = new(typeof(Store), 0, "handle");
+    public static readonly ParameterInfo Handle = new(typeof(Store), 0, "handle", IsPointer() | IsIntegralScalar());
 
     /// <summary>
     /// The index locations to be stored.

@@ -87,7 +87,6 @@ public class CPUTarget : ITarget
         passManager.Add<PrimFuncPass>().Configure(p =>
         {
             p.Add<Passes.Mutators.UnFoldBlock>();
-            p.Add<Passes.Mutators.FlattenBuffer>();
             p.Add<Passes.Mutators.FlattenSequential>();
             p.Add<Passes.Mutators.FoldConstCall>();
         });
@@ -96,8 +95,9 @@ public class CPUTarget : ITarget
 
         passManager.AddWithName<PrimFuncPass>("InstStage").Configure(p =>
         {
+            p.Add<Passes.Mutators.FlattenBuffer>();
             p.Add<Passes.Mutators.FoldConstCall>();
-            p.Add<Passes.Mutators.FoldBufferSlot>(); // 折叠自定义op
+            p.Add<Passes.Mutators.RemoveNop>();
         });
     }
 

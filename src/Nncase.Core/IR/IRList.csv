@@ -11,10 +11,10 @@ PrimFunctionWrapper,true,true,BaseFunction,,Target
 TensorConst,true,false,Const,,
 Tuple,true,false,Default,IR.,@Fields
 TupleConst,true,false,Const,,
-MemSpan,false,false,Default,TIR.,Start;Size;
+MemSpan,true,false,Default,TIR.,Start;Size;
 Var,true,false,Default,,
 Block,true,false,Default,TIR.,Body;InitBody;@IterVars;@Reads;@Writes;@AllocBuffers;Predicate
-Buffer,false,false,Default,TIR.,MemSpan;@Dimensions;@Strides
+Buffer,true,false,Default,TIR.,MemSpan;@Dimensions;@Strides;
 BufferRegion,true,false,Default,TIR.,Buffer;@Region
 For,true,false,Default,TIR.,LoopVar;Domain;Body
 IfThenElse,true,false,Default,TIR.,Condition;Then;Else

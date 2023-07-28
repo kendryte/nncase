@@ -79,9 +79,9 @@ public static class CSourceBuiltn
 #include <stddef.h>
 ";
 
-    public const string FixedParameters = "nncase_mt_t* nncase_mt, void* data, void* rdata";
+    public const string FixedParameters = "nncase_mt_t* nncase_mt, uint8_t* data, const uint8_t* rdata";
 
-    public const string MainPrologue = $@"void _start(size_t func_id, buffer_t** buffers, {FixedParameters}) {{";
+    public const string MainPrologue = $@"void _start(size_t func_id, uint8_t** buffers, {FixedParameters}) {{";
 
     public const string MainEpilogue = @"}";
 

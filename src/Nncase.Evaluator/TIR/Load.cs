@@ -30,6 +30,11 @@ public class LoadEvaluator : ITypeInferencer<Load>, IOpPrinter<Load>
 
     private IRType Visit(Load target, TensorType handle, TensorType index)
     {
-        return TensorType.Scalar(handle.DType);
+        if (handle is not TensorType { DType: PointerType { } p })
+        {
+            return new InvalidType("handle must be pointer type!");
+        }
+
+        return TensorType.Scalar(p.ElemType);
     }
 }

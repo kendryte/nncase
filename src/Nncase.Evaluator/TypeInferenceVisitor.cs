@@ -68,6 +68,7 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
         return type;
     }
 
+    /// <inheritdoc/>
     protected override IRType VisitLeafBuffer(Nncase.TIR.Buffer expr)
     {
         VerifySubField(expr, expr.MemSpan, TypePatternUtility.IsTuple());

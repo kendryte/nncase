@@ -48,61 +48,61 @@ cpu_runtime_module &cpu_runtime_function::module() const noexcept {
 result<void> cpu_runtime_function::initialize_core(
     NNCASE_UNUSED runtime_function_init_context &context) noexcept {
 
-    try_(context.read_section(".desc", [this](auto sr, size_t) -> result<void> {
-        auto header = sr.template read<desc_header>();
-        if (parameters_size() != header.inputs + header.outputs)
-            return nncase::err(std::errc::invalid_argument);
+    // try_(context.read_section(".desc", [this](auto sr, size_t) -> result<void> {
+    //     auto header = sr.template read<desc_header>();
+    //     if (parameters_size() != header.inputs + header.outputs)
+    //         return nncase::err(std::errc::invalid_argument);
 
-        for (uint32_t i = 0; i < header.inputs; i++) {
-            sr.template read<memory_range>();
-            auto rank = sr.template read<uint32_t>();
-            std::vector<uint32_t> shape(rank);
-            std::cout << "shape: ";
-            for (uint32_t j = 0; j < rank; j++) {
-                shape[j] = sr.template read<uint32_t>();
-                std::cout << shape[j] << ", ";
-            }
-            std::cout << std::endl;
+    //     for (uint32_t i = 0; i < header.inputs; i++) {
+    //         sr.template read<memory_range>();
+    //         auto rank = sr.template read<uint32_t>();
+    //         std::vector<uint32_t> shape(rank);
+    //         std::cout << "shape: ";
+    //         for (uint32_t j = 0; j < rank; j++) {
+    //             shape[j] = sr.template read<uint32_t>();
+    //             std::cout << shape[j] << ", ";
+    //         }
+    //         std::cout << std::endl;
 
-            std::vector<uint32_t> stride(rank);
-            std::cout << "stride: ";
-            for (uint32_t j = 0; j < rank; j++) {
-                stride[j] = sr.template read<uint32_t>();
-                std::cout << stride[j] << ", ";
-            }
-            std::cout << std::endl;
+    //         std::vector<uint32_t> stride(rank);
+    //         std::cout << "stride: ";
+    //         for (uint32_t j = 0; j < rank; j++) {
+    //             stride[j] = sr.template read<uint32_t>();
+    //             std::cout << stride[j] << ", ";
+    //         }
+    //         std::cout << std::endl;
 
-            input_ranks_.emplace_back(rank);
-            input_shapes_.emplace_back(shape);
-            input_strides_.emplace_back(stride);
-        }
+    //         input_ranks_.emplace_back(rank);
+    //         input_shapes_.emplace_back(shape);
+    //         input_strides_.emplace_back(stride);
+    //     }
 
-        for (uint32_t i = 0; i < header.outputs; i++) {
-            sr.template read<memory_range>();
-            auto rank = sr.template read<uint32_t>();
-            std::vector<uint32_t> shape(rank);
-            std::cout << "shape: ";
-            for (uint32_t j = 0; j < rank; j++) {
-                shape[j] = sr.template read<uint32_t>();
-                std::cout << shape[j] << ", ";
-            }
-            std::cout << std::endl;
+    //     for (uint32_t i = 0; i < header.outputs; i++) {
+    //         sr.template read<memory_range>();
+    //         auto rank = sr.template read<uint32_t>();
+    //         std::vector<uint32_t> shape(rank);
+    //         std::cout << "shape: ";
+    //         for (uint32_t j = 0; j < rank; j++) {
+    //             shape[j] = sr.template read<uint32_t>();
+    //             std::cout << shape[j] << ", ";
+    //         }
+    //         std::cout << std::endl;
 
-            std::vector<uint32_t> stride(rank);
-            std::cout << "stride: ";
-            for (uint32_t j = 0; j < rank; j++) {
-                stride[j] = sr.template read<uint32_t>();
-                std::cout << stride[j] << ", ";
-            }
-            std::cout << std::endl;
+    //         std::vector<uint32_t> stride(rank);
+    //         std::cout << "stride: ";
+    //         for (uint32_t j = 0; j < rank; j++) {
+    //             stride[j] = sr.template read<uint32_t>();
+    //             std::cout << stride[j] << ", ";
+    //         }
+    //         std::cout << std::endl;
 
-            output_ranks_.emplace_back(rank);
-            output_shapes_.emplace_back(shape);
-            output_strides_.emplace_back(stride);
-        }
+    //         output_ranks_.emplace_back(rank);
+    //         output_shapes_.emplace_back(shape);
+    //         output_strides_.emplace_back(stride);
+    //     }
 
-        return ok();
-    }));
+    //     return ok();
+    // }));
 
     return ok();
 }
@@ -111,38 +111,20 @@ result<value_t>
 cpu_runtime_function::invoke_core(NNCASE_UNUSED gsl::span<value_t> parameters,
                                   NNCASE_UNUSED value_t return_value) noexcept {
     try_var(id, module().find_id_by_function(this));
-    std::cout << "call " << id << std::endl;
 
-    std::vector<buffer_t *> buffers(input_ranks_.size() + output_ranks_.size());
-
+    uint8_t **buffers = new uint8_t*[parameters.size()];
     // input buffer
-    for (uint32_t i = 0; i < input_ranks_.size(); i++) {
-        auto input_tensor = parameters[i].as<tensor>().expect(
-            "input " + std::to_string(i) + " is not a tensor");
+    for (size_t i = 0; i < parameters.size(); i++) {
+        try_var(input_tensor, parameters[i].as<tensor>());
         try_var(input_span, get_input_span(input_tensor));
-        buffer_t *input_buffer =
-            new buffer_t{input_span.data(), 0, input_shapes_[i].data(),
-                         input_strides_[i].data(), input_ranks_[i]};
-        buffers[i] = input_buffer;
-    }
-
-    // output buffer
-    for (uint32_t i = 0; i < output_ranks_.size(); i++) {
-        auto output_tensor =
-            parameters[input_ranks_.size() + i].as<tensor>().expect(
-                "output " + std::to_string(i) + " is not a tensor");
-        try_var(output_span, get_output_span(output_tensor));
-        buffer_t *output_buffer =
-            new buffer_t{output_span.data(), 0, output_shapes_[i].data(),
-                         output_strides_[i].data(), output_ranks_[i]};
-        buffers[input_ranks_.size() + i] = output_buffer;
+        buffers[i] = (uint8_t *)(input_span.data());
     }
 
     auto elfloader_ = elfloader{(char *)module().text_physical().data()};
-    elfloader_.invoke_elf(id, buffers.data(), &nncase_mt, nullptr, (const void *)module().rdata_physical().data());
-    for (int i = 0; i < buffers.size(); i++) {
-        delete buffers[i];
-    }
+    elfloader_.invoke_elf(id, buffers, &nncase_mt, nullptr,
+                          (const uint8_t *)module().rdata_physical().data());
+
+    delete[] buffers;
 
     return ok<value_t>(tuple(std::in_place));
 }

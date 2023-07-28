@@ -15,7 +15,9 @@ internal sealed class LinkableFunction : ILinkableFunction
         PrimFunction = sourceFunction;
         FunctionCSource = funcCSource;
         Text = Array.Empty<byte>();
-        Sections = new ILinkedSection[] { new LinkedSection(descContents, ".desc", 0, 8, (uint)descContents.Length) };
+
+        // new LinkedSection(descContents, ".desc", 0, 8, (uint)descContents.Length)
+        Sections = new ILinkedSection[] {  };
     }
 
     public uint Id { get; }

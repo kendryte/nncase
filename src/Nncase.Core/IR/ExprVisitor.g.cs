@@ -103,6 +103,13 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     }
 
     /// <inheritdoc />
+    protected internal override TExprResult VisitMemSpan(TIR.MemSpan expr, TContext context)
+    {
+        VisitOperands(expr, context);
+        return VisitLeafMemSpan(expr, context);
+    }
+
+    /// <inheritdoc />
     protected internal override TExprResult VisitVar(Var expr, TContext context)
     {
         VisitOperands(expr, context);
@@ -114,6 +121,13 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     {
         VisitOperands(expr, context);
         return VisitLeafBlock(expr, context);
+    }
+
+    /// <inheritdoc />
+    protected internal override TExprResult VisitBuffer(TIR.Buffer expr, TContext context)
+    {
+        VisitOperands(expr, context);
+        return VisitLeafBuffer(expr, context);
     }
 
     /// <inheritdoc />
@@ -383,6 +397,13 @@ public partial class ExprVisitor<TExprResult, TTypeResult>
     /// <inheritdoc/>
     internal protected sealed override TExprResult VisitTupleConst(TupleConst expr, Unit context) => VisitTupleConst(expr);
     /// <summary>
+    /// Visit <see cref="TIR.MemSpan"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitMemSpan(TIR.MemSpan expr) => base.VisitMemSpan(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitMemSpan(TIR.MemSpan expr, Unit context) => VisitMemSpan(expr);
+    /// <summary>
     /// Visit <see cref="Var"/>.
     /// </summary>
     internal protected virtual TExprResult VisitVar(Var expr) => base.VisitVar(expr, default);
@@ -396,6 +417,13 @@ public partial class ExprVisitor<TExprResult, TTypeResult>
     
     /// <inheritdoc/>
     internal protected sealed override TExprResult VisitBlock(TIR.Block expr, Unit context) => VisitBlock(expr);
+    /// <summary>
+    /// Visit <see cref="TIR.Buffer"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitBuffer(TIR.Buffer expr) => base.VisitBuffer(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitBuffer(TIR.Buffer expr, Unit context) => VisitBuffer(expr);
     /// <summary>
     /// Visit <see cref="TIR.BufferRegion"/>.
     /// </summary>

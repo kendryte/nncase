@@ -52,7 +52,7 @@ public static class T
     /// </summary>
     /// <param name="handle">The buffer handle variable in the load expression.</param>
     /// <param name="index">The index in the load.</param>
-    public static Call Load(TIR.Buffer handle, Expr index) => new Call(new Load(), handle, index);
+    public static Call Load(Expr handle, Expr index) => new Call(new Load(), handle, index);
 
     /// <summary>
     /// get the nop op.
@@ -76,7 +76,7 @@ public static class T
     /// <param name="handle">The buffer Variable.</param>
     /// <param name="index">The index in the store expression.</param>
     /// <param name="value">The value we want to store.</param>
-    public static Call Store(TIR.Buffer handle, Expr index, Expr value) => new Call(new Store(), handle, index, value);
+    public static Call Store(Expr handle, Expr index, Expr value) => new Call(new Store(), handle, index, value);
 
     /// <summary>
     /// build for loop.
@@ -268,7 +268,7 @@ public static class T
             name = name[4..];
         }
 
-        @var = new Var(name, TensorType.Pointer(tensorType.DType));
+        @var = new Var(TensorType.Pointer(tensorType.DType));
         var dimensions = tensorType.Shape.ToValueArray();
         var strides = TensorUtilities.GetStrides(dimensions);
         var size = (int)TensorUtilities.GetProduct(dimensions.ToArray()) * tensorType.DType.SizeInBytes;

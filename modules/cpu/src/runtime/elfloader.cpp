@@ -4,8 +4,8 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::cpu;
 
-int elfloader::invoke_elf(size_t id, buffer_t **buffers, nncase_mt_t *nncase_mt,
-                          void *data, const void *rdata) {
+int elfloader::invoke_elf(size_t id, uint8_t **buffers, nncase_mt_t *nncase_mt,
+                          void *data, const uint8_t *rdata) {
 
     check(el_init(&ctx_), "initialising");
 
