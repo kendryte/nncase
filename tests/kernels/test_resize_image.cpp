@@ -132,6 +132,176 @@ TEST_P(ResizeImageTest, ResizeImage) {
 
     // compare
     EXPECT_TRUE(result);
+
+    // actual
+
+    // actual
+    int64_t new_shape_array1[] = {1, 3, 112, 112};
+    auto new_shape1 =
+        hrt::create(dt_int64, {4},
+                    {reinterpret_cast<gsl::byte *>(new_shape_array1),
+                     sizeof(new_shape_array1)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
+
+    float_t roi_array1[1];
+    auto roi1 = hrt::create(dt_float32, {1},
+                            {reinterpret_cast<gsl::byte *>(roi_array1),
+                             sizeof(roi_array1)},
+                            true, host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
+    int32_t exclude_outside_array1[] = {0};
+
+    auto exclude_outside1 =
+        hrt::create(dt_int32, {1},
+                    {reinterpret_cast<gsl::byte *>(exclude_outside_array1),
+                     sizeof(exclude_outside_array1)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
+
+    float_t cubic_coeff_a_array1[] = {-0.75f};
+    auto cubic_coeff_a1 =
+        hrt::create(dt_float32, {1},
+                    {reinterpret_cast<gsl::byte *>(cubic_coeff_a_array1),
+                     sizeof(cubic_coeff_a_array1)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
+
+    float_t extrapolation_value_array1[] = {0.0f};
+    auto extrapolation_value1 =
+        hrt::create(dt_float32, {1},
+                    {reinterpret_cast<gsl::byte *>(extrapolation_value_array1),
+                     sizeof(extrapolation_value_array1)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
+
+    auto output1 =
+        kernels::stackvm::resize_image(
+            runtime::stackvm::image_resize_mode_t::bilinear,
+            runtime::stackvm::image_resize_transformation_mode_t::
+                pytorch_half_pixel,
+            runtime::stackvm::image_resize_nearest_mode_t::round_prefer_ceil,
+            false, lhs.impl(), roi1.impl(), new_shape1.impl(),
+            cubic_coeff_a1.impl(), exclude_outside1.impl(),
+            extrapolation_value1.impl())
+            .expect("resize_image failed");
+    runtime_tensor actual1(output1.as<tensor>().expect("as tensor failed"));
+
+    const char *transformation_mode1 = "pytorch_half_pixel";
+    const char *resize_mode_t1 = "linear";
+    const char *nearest_mode_t1 = "round_prefer_floor";
+
+    // expected
+    auto output_ort1 = ortki_ResizeWithSizes(
+        runtime_tensor_2_ort_tensor(lhs), runtime_tensor_2_ort_tensor(roi1),
+        runtime_tensor_2_ort_tensor(new_shape1), transformation_mode1, -0.75f,
+        0l, 0.0f, resize_mode_t1, nearest_mode_t1);
+
+    size_t size1 = 0;
+    void *ptr_ort1 = tensor_buffer(output_ort1, &size1);
+    dims_t shape1(tensor_rank(output_ort1));
+    tensor_shape(output_ort1, reinterpret_cast<int64_t *>(shape1.data()));
+    auto expected1 =
+        hrt::create(lhs.datatype(), shape1,
+                    {reinterpret_cast<gsl::byte *>(ptr_ort1), size1}, true,
+                    host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
+    bool result1 = is_same_tensor(expected1, actual1) ||
+                   cosine_similarity_tensor(expected1, actual1);
+
+    if (!result1) {
+        std::cout << "actual ";
+        print_runtime_tensor(actual1);
+        std::cout << "expected ";
+        print_runtime_tensor(expected1);
+    }
+
+    // compare
+    EXPECT_TRUE(result1);
+
+    // actual
+    int64_t new_shape_array2[] = {1, 3, 112, 112};
+    auto new_shape2 =
+        hrt::create(dt_int64, {4},
+                    {reinterpret_cast<gsl::byte *>(new_shape_array2),
+                     sizeof(new_shape_array2)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
+
+    float_t roi_array2[1];
+    auto roi2 = hrt::create(dt_float32, {1},
+                            {reinterpret_cast<gsl::byte *>(roi_array2),
+                             sizeof(roi_array2)},
+                            true, host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
+    int32_t exclude_outside_array2[] = {0};
+
+    auto exclude_outside2 =
+        hrt::create(dt_int32, {1},
+                    {reinterpret_cast<gsl::byte *>(exclude_outside_array2),
+                     sizeof(exclude_outside_array2)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
+
+    float_t cubic_coeff_a_array2[] = {-0.75f};
+    auto cubic_coeff_a2 =
+        hrt::create(dt_float32, {1},
+                    {reinterpret_cast<gsl::byte *>(cubic_coeff_a_array2),
+                     sizeof(cubic_coeff_a_array2)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
+
+    float_t extrapolation_value_array2[] = {0.0f};
+    auto extrapolation_value2 =
+        hrt::create(dt_float32, {1},
+                    {reinterpret_cast<gsl::byte *>(extrapolation_value_array2),
+                     sizeof(extrapolation_value_array2)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
+
+    auto output2 =
+        kernels::stackvm::resize_image(
+            runtime::stackvm::image_resize_mode_t::bilinear,
+            runtime::stackvm::image_resize_transformation_mode_t::
+                pytorch_half_pixel,
+            runtime::stackvm::image_resize_nearest_mode_t::round_prefer_ceil,
+            false, lhs.impl(), roi2.impl(), new_shape2.impl(),
+            cubic_coeff_a2.impl(), exclude_outside2.impl(),
+            extrapolation_value2.impl())
+            .expect("resize_image failed");
+    runtime_tensor actual2(output2.as<tensor>().expect("as tensor failed"));
+
+    const char *transformation_mode2 = "pytorch_half_pixel";
+    const char *resize_mode_t2 = "linear";
+    const char *nearest_mode_t2 = "round_prefer_ceil";
+
+    // expected
+    auto output_ort2 = ortki_ResizeWithSizes(
+        runtime_tensor_2_ort_tensor(lhs), runtime_tensor_2_ort_tensor(roi2),
+        runtime_tensor_2_ort_tensor(new_shape2), transformation_mode2, -0.75f,
+        0l, 0.0f, resize_mode_t2, nearest_mode_t2);
+
+    size_t size2 = 0;
+    void *ptr_ort2 = tensor_buffer(output_ort2, &size2);
+    dims_t shape2(tensor_rank(output_ort2));
+    tensor_shape(output_ort2, reinterpret_cast<int64_t *>(shape2.data()));
+    auto expected2 =
+        hrt::create(lhs.datatype(), shape2,
+                    {reinterpret_cast<gsl::byte *>(ptr_ort2), size2}, true,
+                    host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
+    bool result2 = is_same_tensor(expected2, actual2) ||
+                   cosine_similarity_tensor(expected2, actual2);
+
+    if (!result2) {
+        std::cout << "actual ";
+        print_runtime_tensor(actual2);
+        std::cout << "expected ";
+        print_runtime_tensor(expected2);
+    }
+
+    // compare
+    EXPECT_TRUE(result2);
 }
 
 int main(int argc, char *argv[]) {
