@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reactive;
 using Nncase.IR;
+using Nncase.IR.Tensors;
 
 namespace Nncase.Evaluator;
 
@@ -31,7 +32,12 @@ internal sealed class ShapeEvaluateVisitor : ExprVisitor<Expr, Unit>
     /// <inheritdoc/>
     protected override Expr VisitLeafConst(Const expr)
     {
-        return expr.CheckedShape.ToValueArray();
+        var shape = expr.CheckedShape;
+        if (shape.IsScalar)
+        {
+            return 1;
+        }
+        return shape.ToValueArray();
     }
 
     /// <inheritdoc/>
@@ -79,8 +85,13 @@ internal sealed class ShapeEvaluateVisitor : ExprVisitor<Expr, Unit>
                 return shape.ToValueArray();
             }
 
-            // PrintNotExistVarMap(expr);
-            var shapeExpr = shape.Select((x, i) => x.IsFixed ? x.FixedValue : _context.VarMap[expr][i]).ToArray();
+            PrintNotExistVarMap(expr);
+            if (shape.Count != _context.VarMap[expr].Length)
+            {
+                throw new InvalidOperationException();
+            }
+
+            var shapeExpr = shape.Select((x, i) => x.IsFixed ? x.FixedValue : _context.VarMap[expr][i]).Select(x => IR.F.Tensors.Cast(x, DataTypes.Int32)).ToArray();
             return IR.F.Tensors.Stack(new IR.Tuple(shapeExpr), 0);
         }
 
