@@ -48,10 +48,13 @@ public class UnitTestCPUTargetTiling : TestClassBase
             compiler.Gencode(fs);
         }
 
+        var input_tensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, new[] { 1, 2, 3, 4, 5 }).Evaluate().AsTensor();
         using (var fs = Dumpper.OpenFile("input_0.bin"))
         {
-            fs.Write(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, new[] { 1, 2, 3, 4, 5 }).Evaluate().AsTensor().BytesBuffer);
+            fs.Write(input_tensor.BytesBuffer);
         }
+
+        Testing.RunKModel(File.ReadAllBytes(Path.Join(Dumpper.Directory, "test.kmodel")), Dumpper.Directory, new[] { input_tensor });
     }
 
     [Fact]
@@ -72,9 +75,12 @@ public class UnitTestCPUTargetTiling : TestClassBase
             compiler.Gencode(fs);
         }
 
+        var input_tensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, new[] { 3, 4 }).Evaluate().AsTensor();
         using (var fs = Dumpper.OpenFile("input_0.bin"))
         {
-            fs.Write(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, new[] { 1, 2, 3, 4, 5 }).Evaluate().AsTensor().BytesBuffer);
+            fs.Write(input_tensor.BytesBuffer);
         }
+
+        Testing.RunKModel(File.ReadAllBytes(Path.Join(Dumpper.Directory, "test.kmodel")), Dumpper.Directory, new[] { input_tensor });
     }
 }

@@ -111,7 +111,7 @@ public sealed class UnitTestTensor
         var p1 = new Pointer<int>(addr1);
         var p2 = new Pointer<int>(addr2);
 
-        var t = Tensor.FromPointer(addr1, DataTypes.Int32);
+        var t = Tensor.FromPointer(addr1, new PointerType(DataTypes.Int32, Shape.Scalar));
         Assert.Equal(p1, t.ToScalar<Pointer<int>>());
         Assert.Equal(addr1, t.ToScalar<Pointer<int>>().Value);
         Assert.NotEqual(p2, t.ToScalar<Pointer<int>>());

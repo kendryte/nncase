@@ -92,7 +92,7 @@ public sealed class Var : Expr, IEquatable<Var?>
     /// get handle var.
     /// </summary>
     /// <returns> var. </returns>
-    public static Var Handle(string name, DataType dtype, string scope = "") => new Var(name, TensorType.Scalar(new PointerType(dtype)));
+    public static Var Handle(string name, DataType dtype, string scope = "") => new Var(name, TensorType.Scalar(new PointerType(dtype, Shape.Scalar)));
 
     /// <summary>
     /// get the size var. it can be used in tensor shape. like n>=0, m>=0.

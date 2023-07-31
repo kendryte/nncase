@@ -295,18 +295,17 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         {
             doc = new(new($"{@const}"));
         }
-        else
-            if (@const.Value.ElementType.IsFloat())
+        else if (@const.Value.ElementType.IsFloat())
         {
-            doc = new(new($"{string.Join(",", @const.Value.ToArray<float>())}"));
+            doc = new(new(@const.Value.Length > 8 ? @const.CheckedShape.ToString() : $"{string.Join(",", @const.Value.ToArray<float>())}"));
         }
         else if (@const.Value.ElementType.IsIntegral())
         {
-            doc = new(new($"{string.Join(",", @const.Value.ToArray<int>())}"));
+            doc = new(new(@const.Value.Length > 8 ? @const.CheckedShape.ToString() : $"{string.Join(",", @const.Value.ToArray<int>())}"));
         }
-        else if (@const.Value.ElementType.IsPointer())
+        else if (@const.Value.ElementType is PointerType p)
         {
-            doc = new(new($"{string.Join(",", @const.Value.ToArray<int>().Select(i => "0x" + i.ToString("X")))}"));
+            doc = new(new($"*{p.ElemType.GetDisplayName()}@{@const.Value.Shape}"));
         }
 
         _exprMemo.Add(@const, doc!);

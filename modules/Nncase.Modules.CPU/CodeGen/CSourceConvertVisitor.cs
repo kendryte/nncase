@@ -148,6 +148,33 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
     }
 
     /// <inheritdoc/>
+    protected override CSymbol VisitMemSpan(MemSpan expr)
+    {
+        if (_exprMemo.TryGetValue(expr, out var symbol))
+        {
+            return symbol;
+        }
+
+        var start = Visit(expr.Start);
+        var size = Visit(expr.Size);
+        string name = start.Name;
+        if (expr.Start is (TensorConst or Call))
+        {
+            var loc = expr.Location switch
+            {
+                MemoryLocation.Rdata => "rdata",
+                MemoryLocation.Data => "data",
+                _ => throw new NotSupportedException(),
+            };
+            name = $"({loc} + {start.Name})";
+        }
+
+        symbol = new(start.Type, name);
+        _exprMemo.Add(expr, symbol);
+        return symbol;
+    }
+
+    /// <inheritdoc/>
     protected override CSymbol VisitCall(Call expr)
     {
         if (_exprMemo.TryGetValue(expr, out var symbol))
@@ -223,9 +250,14 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 
             type = ptype.ToC();
         }
+        else if (expr is TensorConst { Value: Tensor { ElementType: PointerType { ElemType: PrimType etype }, Shape: { IsScalar: true } } pointer })
+        {
+            str = pointer.ToScalar<ulong>().ToString();
+            type = "uint8_t *";
+        }
         else
         {
-            throw new NotSupportedException($"Not Support {expr.CheckedType} Const");
+            throw new NotSupportedException();
         }
 
         symbol = new(type, str);

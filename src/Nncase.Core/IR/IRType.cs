@@ -138,7 +138,7 @@ public sealed record TensorType(DataType DType, Shape Shape) : IRType
     /// </summary>
     /// <param name="elemType"> the Pointed Element Type.</param>
     /// <returns>the pointer tensor type.</returns>
-    public static TensorType Pointer(DataType elemType) => new(new PointerType(elemType), Shape.Scalar);
+    public static TensorType Pointer(DataType elemType) => new(new PointerType(elemType, Shape.Scalar), Shape.Scalar);
 }
 
 /// <summary>

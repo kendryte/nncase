@@ -134,7 +134,7 @@ internal sealed class DDrBufferRewriter : ExprRewriter
 
     protected override TIR.MemSpan RewriteLeafMemSpan(TIR.MemSpan memSpan)
     {
-        if (memSpan is { Location: MemoryLocation.Rdata, Start: Call { Target: IR.Buffers.DDrOf, Arguments: var arg } } && arg[0] is Const @const)
+        if (memSpan is { Location: MemoryLocation.Rdata, Start: Call { Target: IR.Buffers.DDrOf, Arguments: var arg } } && arg[0] is Const { ValueType: TensorType constType } @const)
         {
             if (!ModuleRdataMaps.TryGetValue(Entry.ModuleKind, out var moduleRdataMap))
             {
@@ -163,7 +163,7 @@ internal sealed class DDrBufferRewriter : ExprRewriter
                 Changed = true;
             }
 
-            return memSpan.With(memRange.Start.Value, memRange.End.Value - memRange.Start.Value);
+            return memSpan.With(new TensorConst(Tensor.FromPointer((ulong)memRange.Start.Value, new PointerType(constType.DType, constType.Shape))), memRange.End.Value - memRange.Start.Value);
         }
 
         // else if (memSpan.Location is MemoryLocation.Data)

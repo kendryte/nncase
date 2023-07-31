@@ -179,7 +179,7 @@ public sealed class UnitTestTensorConst
         var actual2 = TensorType.Invalid(DataTypes.Float32);
         Assert.Equal(expect2, actual2);
 
-        var expect3 = new TensorType(new PointerType(DataTypes.Float32), Shape.Scalar);
+        var expect3 = new TensorType(new PointerType(DataTypes.Float32, Shape.Scalar), Shape.Scalar);
         var actual3 = TensorType.Pointer(DataTypes.Float32);
         Assert.Equal(expect3, actual3);
     }

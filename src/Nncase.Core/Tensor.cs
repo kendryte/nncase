@@ -349,11 +349,11 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// Create tensor from a ulong address.
     /// </summary>
     /// <param name="value">addr value.</param>
-    /// <param name="elemType">Element type.</param>
+    /// <param name="pointerType">points type.</param>
     /// <returns>Created tensor.</returns>
-    public static Tensor FromPointer(ulong value, DataType elemType)
+    public static Tensor FromPointer(ulong value, PointerType pointerType)
     {
-        return Tensor.FromBytes(TensorType.Scalar(new PointerType(elemType)), BitConverter.GetBytes(value));
+        return Tensor.FromBytes(TensorType.Scalar(pointerType), BitConverter.GetBytes(value));
     }
 
     /// <summary>
