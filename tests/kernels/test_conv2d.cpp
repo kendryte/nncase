@@ -102,9 +102,9 @@ TEST_P(Conv2DTest, conv2d) {
     int64_t *strides = (int64_t *)malloc(strides_size * sizeof(int64_t));
     std::copy(strides_value.begin(), strides_value.end(), strides);
 
-    auto output_ort =
-        ortki_Conv(input_ort, weight_ort, bais_ort, auto_pad, dilations, 2, 1,
-                   kernel_shape, 2, pad, 4, strides, 2);
+    auto output_ort = ortki_Conv(
+        input_ort, weight_ort, bais_ort, auto_pad, dilations, dilations_size,
+        group_value, kernel_shape, 2, pad, pad_size, strides, strides_size);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
