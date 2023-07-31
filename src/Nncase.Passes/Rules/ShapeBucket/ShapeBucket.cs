@@ -296,9 +296,6 @@ public class MultiUserCallToFusion : CallToFusion
     {
         if (expr is Call c && c.Target is not BucketFusion)
         {
-            // todo: 这个地方如果全开了容易爆炸，只开const的reshpae能好很多
-            // todo: user count > 1 is must?? maybe not
-            // && expr.Users.Count > 1;
             if (c.Target is IR.Tensors.Reshape)
             {
                 if (c.Arguments[IR.Tensors.Reshape.Shape.Index] is TensorConst)
@@ -365,6 +362,11 @@ public class Conv2DTransposeToFusion : MarkerCallToFusion<Conv2DTranspose>
 
 public class MatmulToFusion : MarkerCallToFusion<MatMul>
 {
+}
+
+public class ActToFusion : MarkerCallToFusion<ActivationOp>
+{
+
 }
 
 public class SigmoidToFusion : MarkerCallToFusion<Sigmoid>
@@ -603,15 +605,25 @@ public partial class FusionBucket : RewriteRule<Pattern>
         return result;
     }
 
+    public Expr Rebuild(Call outerCall, BucketFusion fusion, Expr fusionBody)
+    {
+        var newBody = CompilerServices.Rewrite(fusionBody,
+            new IRewriteRule[]
+            {
+                new MatmulToFusion(),
+                new Conv2DToFusion(),
+                new Conv2DTransposeToFusion(),
+                new TransposeToFusion(),
+            },
+            new());
+        return RestoreBodyWithArgs(outerCall.Arguments.ToArray(), fusion.Parameters.ToArray(), newBody);
+    }
+
     public Expr? GetReplace(Call outerCall, BucketFusion fusion, Expr fusionBody)
     {
-        if (fusion.IsSimple || outerCall.CheckedType is TupleType || outerCall.CheckedShape.Rank == 0 || outerCall.Arguments.ToArray().Any(arg => arg.CheckedType is TupleType))
+        if (ShouldRestore(outerCall, fusion))
         {
-            return fusion.Parameters.ToArray().Zip(outerCall.Arguments.ToArray()).Aggregate(fusion.Body, (sum, data) =>
-            {
-                var (fusionVar, arg) = data;
-                return ReplaceExpr(sum, fusionVar, arg);
-            });
+            return RestoreBodyWithArgs(outerCall.Arguments.ToArray(), fusion.Parameters.ToArray(), fusion.Body);
         }
 
         Console.WriteLine($"FusionBucketGetReplace {_counter} {fusion.Name}");
@@ -632,11 +644,9 @@ public partial class FusionBucket : RewriteRule<Pattern>
         var minFixedShapeList = ComputeFixedShape(fusionVars, minDict, varMap, fusionInputsShapeExpr);
         var maxFixedShapeList = ComputeFixedShape(fusionVars, maxDict, varMap, fusionInputsShapeExpr);
 
-        // PrintMinMaxShape(minFixedShapeList, maxFixedShapeList, _relPath);
         // 2. get dim info(inputIndex, (dimIndex, range)
         var counts = ComputeCounts(minFixedShapeList, maxFixedShapeList, out int totalCount);
-        if (totalCount == 0 || (minFixedShapeList[0].SequenceEqual(maxFixedShapeList[0]) &&
-                                minFixedShapeList[1].SequenceEqual(maxFixedShapeList[1])))
+        if (IsFixed(totalCount, minFixedShapeList, maxFixedShapeList))
         {
             var fix = FixInput(fusionBody, minFixedShapeList, fusionVars, outerCall.Arguments.ToArray());
             DumpIR(fix, "BucketResultFix", _relPath);
@@ -656,7 +666,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
 
         var dimVarValues = MakeVarValuesForAllSegment(options);
         var info = ComputeSegmentInfo(counts, options);
-        var body = Split(fusionBody, fusionVars, info, 0, 1, dimVarValues, args, varMap, fusionInputsShapeExpr, fusionInputShapes);
+        var body = Split(outerCall, fusion, fusionBody, fusionVars, info, dimVarValues, args, varMap, fusionInputsShapeExpr, fusionInputShapes);
         body.InferenceType();
 
         if (body.Users.Count > 1)
@@ -678,6 +688,19 @@ public partial class FusionBucket : RewriteRule<Pattern>
         return newBody;
         // todo :save if shape
     }
+
+    private static bool IsFixed(int totalCount, int[][] minFixedShapeList, int[][] maxFixedShapeList) =>
+        totalCount == 0 || (minFixedShapeList[0].SequenceEqual(maxFixedShapeList[0]) &&
+                            minFixedShapeList[1].SequenceEqual(maxFixedShapeList[1]));
+
+    private static bool ShouldRestore(Call outerCall, BucketFusion fusion) => fusion.IsSimple || outerCall.CheckedType is TupleType || outerCall.CheckedShape.Rank == 0 || outerCall.Arguments.ToArray().Any(arg => arg.CheckedType is TupleType);
+
+    private static Expr RestoreBodyWithArgs(Expr[] args, Var[] parameters, Expr body) =>
+        parameters.ToArray().Zip(args).Aggregate(body, (sum, data) =>
+        {
+            var (fusionVar, arg) = data;
+            return ReplaceExpr(sum, fusionVar, arg);
+        });
 
     private static void PrintMinMaxShape(int[][] minFixedShapeList, int[][] maxFixedShapeList, string relPath)
     {
@@ -833,7 +856,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
         return varValues;
     }
 
-    private Expr Split(Expr fusionBody, Var[] fusionVars, SegmentInfo info, int current, int limit, Dictionary<Var, int[]> varValues, Expr[] fusionInputs, Dictionary<Var, Expr[]> varMap, Dictionary<Var, Expr[]> fusionInputData, Dictionary<Var, Expr[]> fusionInputsShape)
+    private Expr Split(Call outerCall, BucketFusion fusion, Expr fusionBody, Var[] fusionVars, SegmentInfo info, Dictionary<Var, int[]> varValues, Expr[] fusionInputs, Dictionary<Var, Expr[]> varMap, Dictionary<Var, Expr[]> fusionInputData, Dictionary<Var, Expr[]> fusionInputsShape)
     {
         Call GetDefault(IRType x)
         {
@@ -865,6 +888,13 @@ public partial class FusionBucket : RewriteRule<Pattern>
 
         // var sp = ConstantOfShape(new[] { 1 }, Cast(0, fusionBody.CheckedDataType));
         int i = 0;
+        var varInfo = varValues.ToDictionary(pair => pair.Key, pair => (IValue)Value.FromTensor(pair.Value[i]));
+        var entry = MakeSplitEntry(fusionBody, fusionVars, varMap, varInfo, fusionInputData, fusionInputsShape, fusionInputs,
+            _relPath, segments[0]);
+        if (!entry.CheckedShape.IsFixed)
+        {
+            return Rebuild(outerCall, fusion, fusionBody);
+        }
 
         var body = segments.OrderByDescending(x => x).Aggregate(
             (Expr)IR.F.Math.Require(false, sp, "input dim large than limit"),
@@ -875,9 +905,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
 
                 // select var value for current segment
                 var varInfo = varValues.ToDictionary(pair => pair.Key, pair => (IValue)Value.FromTensor(pair.Value[i]));
-                var thenBody = current + 1 < limit
-                    ? Split(fusionBody, fusionVars, info, current + 1, limit, varValues, fusionInputs, varMap, fusionInputData, fusionInputsShape)
-                    : MakeSplitEntry(fusionBody, fusionVars, varMap, varInfo, fusionInputData, fusionInputsShape, fusionInputs, _relPath, seg);
+                var thenBody = MakeSplitEntry(fusionBody, fusionVars, varMap, varInfo, fusionInputData, fusionInputsShape, fusionInputs, _relPath, seg);
                 var elseBody = sum;
                 i++;
                 var result = new If(cond, thenBody, elseBody);
