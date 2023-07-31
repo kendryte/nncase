@@ -54,9 +54,11 @@ INSTANTIATE_TEST_SUITE_P(
 
 TEST_P(QuantizeTest, quantize) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
+    auto zero_point_value = 127;
+    auto scale_value = 0.01f;
 
     // expected
-    uint8_t zero_point[] = {127};
+    uint8_t zero_point[] = {(uint8_t)zero_point_value};
     auto zero_point_ptr =
         hrt::create(
             nncase::dt_uint8, {1},
@@ -64,7 +66,7 @@ TEST_P(QuantizeTest, quantize) {
             true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
-    float_t scale[] = {0.01f};
+    float_t scale[] = {scale_value};
     auto scale_ptr =
         hrt::create(nncase::dt_float32, {1},
                     {reinterpret_cast<gsl::byte *>(scale), sizeof(scale)}, true,
@@ -84,8 +86,8 @@ TEST_P(QuantizeTest, quantize) {
 
     // actual
     quant_param_t quantParam;
-    quantParam.zero_point = 127;
-    quantParam.scale = 0.01f;
+    quantParam.zero_point = zero_point_value;
+    quantParam.scale = scale_value;
     quant_param_t quant_param[] = {quantParam};
     auto quant_param_ptr =
         hrt::create(
