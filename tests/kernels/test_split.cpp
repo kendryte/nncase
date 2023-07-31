@@ -66,14 +66,14 @@ TEST_P(SplitTest, Split) {
     // expected
     size_t size = 0;
     int64_t sections_array[] = {2, 2};
-    auto sextions = hrt::create(dt_int64, {2},
+    auto sections = hrt::create(dt_int64, {2},
                                 {reinterpret_cast<gsl::byte *>(sections_array),
                                  sizeof(sections_array)},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
     auto output_ort1 = tensor_seq_get_value(
-        ortki_Split(l_ort, runtime_tensor_2_ort_tensor(sextions), axis_value),
+        ortki_Split(l_ort, runtime_tensor_2_ort_tensor(sections), axis_value),
         0);
     void *ptr_ort1 = tensor_buffer(output_ort1, &size);
     dims_t shape1(tensor_rank(output_ort1));
@@ -85,7 +85,7 @@ TEST_P(SplitTest, Split) {
             .expect("create tensor failed");
 
     auto output_ort2 = tensor_seq_get_value(
-        ortki_Split(l_ort, runtime_tensor_2_ort_tensor(sextions), axis_value),
+        ortki_Split(l_ort, runtime_tensor_2_ort_tensor(sections), axis_value),
         1);
     void *ptr_ort2 = tensor_buffer(output_ort2, &size);
     dims_t shape2(tensor_rank(output_ort2));
@@ -101,7 +101,7 @@ TEST_P(SplitTest, Split) {
 
     // actual
     auto output =
-        kernels::stackvm::split(input.impl(), axis.impl(), sextions.impl())
+        kernels::stackvm::split(input.impl(), axis.impl(), sections.impl())
             .expect("split failed");
     tuple actual(output.as<tuple>().expect("as tensor failed"));
 
