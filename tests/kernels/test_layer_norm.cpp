@@ -88,10 +88,11 @@ TEST_P(LayerNormTest, layer_norm) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
     auto scale_ort = runtime_tensor_2_ort_tensor(scale);
     auto b_ort = runtime_tensor_2_ort_tensor(b);
+    auto eps = 1e-05f;
 
     //     expected
-    auto output_ort = ortki_LayerNormalization(l_ort, scale_ort, b_ort,
-                                               axis_value, 1e-05f, 1L);
+    auto output_ort =
+        ortki_LayerNormalization(l_ort, scale_ort, b_ort, axis_value, eps, 1L);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(tensor_seq_get_value(output_ort, 0), &size);
     dims_t shape(tensor_rank(tensor_seq_get_value(output_ort, 0)));
@@ -103,9 +104,10 @@ TEST_P(LayerNormTest, layer_norm) {
                         .expect("create tensor failed");
 
     // actual
-    auto output = kernels::stackvm::layer_norm(axis_value, 1e-05f, input.impl(),
-                                               scale.impl(), b.impl())
-                      .expect("layer_norm failed");
+    auto output =
+        kernels::stackvm::layer_norm((int32_t)axis_value, eps, input.impl(),
+                                     scale.impl(), b.impl())
+            .expect("layer_norm failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     bool result = is_same_tensor(expected, actual) ||

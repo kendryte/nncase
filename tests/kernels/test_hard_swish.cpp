@@ -52,16 +52,18 @@ INSTANTIATE_TEST_SUITE_P(
 
 TEST_P(HardSwishTest, hard_swish) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
+    auto alpha_value = 1.0f / 6.0f;
+    auto beta_value = 0.5f;
 
     // expected
-    float_t alpha_ptr[] = {1.0f / 6.0f};
+    float_t alpha_ptr[] = {alpha_value};
     auto alpha = hrt::create(nncase::dt_float32, {1},
                              {reinterpret_cast<gsl::byte *>(alpha_ptr),
                               sizeof(alpha_ptr)},
                              true, host_runtime_tensor::pool_cpu_only)
                      .expect("create tensor failed");
 
-    float_t beta_ptr[] = {0.5f};
+    float_t beta_ptr[] = {beta_value};
     auto beta =
         hrt::create(nncase::dt_float32, {1},
                     {reinterpret_cast<gsl::byte *>(beta_ptr), sizeof(beta_ptr)},
@@ -69,7 +71,7 @@ TEST_P(HardSwishTest, hard_swish) {
             .expect("create tensor failed");
 
     auto output_ort =
-        ortki_Mul(l_ort, ortki_HardSigmoid(l_ort, 1.0f / 6.0f, 0.5f));
+        ortki_Mul(l_ort, ortki_HardSigmoid(l_ort, alpha_value, beta_value));
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
