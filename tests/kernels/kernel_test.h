@@ -237,7 +237,7 @@ class KernelTest {
         if (shape.size() == 1 && (shape[0] == initvalue.size())) {
             // One dim array attribute
             T *tmp = new T[shape[0]];
-            for (size_t i = 0; i < (size_t)shape[0]; ++i) {
+            for (size_t i = 0; i < shape[0]; ++i) {
                 tmp[i] = initvalue[i];
             }
             return tmp;
