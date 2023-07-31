@@ -134,7 +134,7 @@ public interface ICompilerServicesProvider
     /// <returns>Evaluate result.</returns>
     Metric EvaluateOpMetric(Op op, IMetricEvaluateContext context);
 
-    Expr EvaluateShapeExpr(Expr expr, IReadOnlyDictionary<Var, Expr[]>? varsMap);
+    Expr EvaluateShapeExpr(Expr expr, ShapeExprCache cache);
 
     Expr EvaluateOpShapeExpr(Op expr, IShapeEvaluateContext context);
 
@@ -317,9 +317,9 @@ public static class CompilerServices
         return Provider.EvaluateOpCost(op, context);
     }
 
-    public static Expr EvaluateShapeExpr(this Expr expr, IReadOnlyDictionary<Var, Expr[]>? varsMap = null)
+    public static Expr EvaluateShapeExpr(this Expr expr, ShapeExprCache cache = null)
     {
-        return Provider.EvaluateShapeExpr(expr, varsMap);
+        return Provider.EvaluateShapeExpr(expr, cache);
     }
 
     public static Expr EvaluateOpShapeExpr(Op op, IShapeEvaluateContext context)
@@ -626,9 +626,9 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     public Metric EvaluateOpMetric(Op op, IMetricEvaluateContext context) => _metricEvaluateProvider.EvaluateOpMetric(op, context);
 
     /// <inheritdoc/>
-    public Expr EvaluateShapeExpr(Expr expr, IReadOnlyDictionary<Var, Expr[]>? varsMap = null)
+    public Expr EvaluateShapeExpr(Expr expr, ShapeExprCache? cache = null)
     {
-        return _shapeEvaluateProvider.EvaluateShapeExpr(expr, varsMap ?? new Dictionary<Var, Expr[]>());
+        return _shapeEvaluateProvider.EvaluateShapeExpr(expr, cache ?? ShapeExprCache.Default);
     }
 
     /// <inheritdoc/>

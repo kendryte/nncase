@@ -466,16 +466,6 @@ public partial class ClearFusionOuterMarker : RewriteRule<Pattern>
 }
 
 
-public class ShapeExprCache
-{
-    public Dictionary<Expr, Expr> Cache;
-
-    public void Add(Expr expr, Expr shape)
-    {
-        Cache[expr] = shape;
-    }
-}
-
 [RuleGenerator]
 public partial class FusionBucket : RewriteRule<Pattern>
 {
@@ -511,16 +501,16 @@ public partial class FusionBucket : RewriteRule<Pattern>
     // info:(InputVar -> DimVar)
     // VarInfo:(DimVar -> Value)
     // fusionInfo:(InputVar -> DimVar)
-    public static int[] ShapeEvaluate(Expr expr, Dictionary<Var, Expr[]> info, Dictionary<Var, IValue> varInfo, Dictionary<Var, Expr[]> fusionInfo)
+    public static int[] ShapeEvaluate(Expr expr, ShapeExprCache cache, Dictionary<Var, IValue> varInfo, Dictionary<Var, Expr[]> fusionInfo)
     {
         // var info is used for compute shape expr
-        var dummyInput = MakeDummyInput(info, varInfo);
+        var dummyInput = MakeDummyInput(cache.VarMap, varInfo);
         var fusionDummyInput =
             MakeDummyInput(
                 fusionInfo,
                 varInfo.Concat(dummyInput).ToDictionary(pair => pair.Key, pair => pair.Value));
         var shapeExpr =
-            expr.EvaluateShapeExpr(info.Concat(fusionInfo).ToDictionary(pair => pair.Key, pair => pair.Value));
+            expr.EvaluateShapeExpr(cache + fusionInfo);
 
         if (!shapeExpr.InferenceType())
         {
@@ -644,7 +634,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
 
         var options = CompileSession.CompileOptions.ShapeBucketOptions;
         var dimVarValues = MakeVarValuesForAllSegment(options);
-        var context = new FusionBucketContext(outerCall, fusion, VarMap, dimVarValues);
+        var context = new FusionBucketContext(outerCall, fusion, VarMap, dimVarValues, Cache);
 
         var (minDict, maxDict) = GetBoundDict(VarMap, options.RangeInfo);
 
@@ -687,7 +677,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
             newBody = IR.F.Math.Require(true, @if.With(paramList: context.Arguments));
         }
 
-        Cache.Add(newBody, newBody.EvaluateShapeExpr(VarMap));
+        Cache.Add(newBody, newBody.EvaluateShapeExpr(context.Cache));
         DumpIR(newBody, "BucketResult", _relPath);
         _counter++;
         return newBody;
@@ -747,7 +737,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
     // make dummy value from InputInfo
     // VarInfo:(DimVar -> Value)
     private static Dictionary<Var, IValue>
-        MakeDummyInput(Dictionary<Var, Expr[]> info, Dictionary<Var, IValue> varInfo) =>
+        MakeDummyInput(IReadOnlyDictionary<Var, Expr[]> info, Dictionary<Var, IValue> varInfo) =>
         info.ToDictionary(
             pair => pair.Key,
             pair =>
@@ -815,12 +805,12 @@ public partial class FusionBucket : RewriteRule<Pattern>
         }
     }
 
-    private static Dictionary<Var, Expr[]> MakeFusionInputShapeExpr(Call call, BucketFusion fusion, Dictionary<Var, Expr[]> varMap)
+    private static Dictionary<Var, Expr[]> MakeFusionInputShapeExpr(Call call, BucketFusion fusion, ShapeExprCache cache)
     {
         var data = fusion.Parameters.ToArray().Zip(call.Arguments.ToArray().Select((arg, i) =>
         {
             // DumpIR(arg, "MakeFusionInputShapeExprArg");
-            var result = arg.EvaluateShapeExpr(varMap);
+            var result = arg.EvaluateShapeExpr(cache);
             return Enumerable.Range(0, arg.CheckedShape.Rank).Select(i =>
             {
                 var res = result[i];
@@ -834,7 +824,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
     private int[][] ComputeFixedShape(FusionBucketContext context, Dictionary<Var, IValue> varInfo) =>
         context.Parameters.Select((arg, i) =>
         {
-            var fixedShape = ShapeEvaluate(arg, context.VarMap, varInfo, context.FusionInputShapeExpr);
+            var fixedShape = ShapeEvaluate(arg, context.Cache, varInfo, context.FusionInputShapeExpr);
             return fixedShape;
         }).ToArray();
 
@@ -869,13 +859,13 @@ public partial class FusionBucket : RewriteRule<Pattern>
         public readonly Dictionary<Var, int[]> DimVarValues;
         public readonly Expr[] Arguments;
         public readonly Var[] Parameters;
-
-        public FusionBucketContext(Call outerCall, BucketFusion fusion, Dictionary<Var, Expr[]> varMap, Dictionary<Var, int[]> dimVarValues)
+        public readonly ShapeExprCache Cache;
+        public FusionBucketContext(Call outerCall, BucketFusion fusion, Dictionary<Var, Expr[]> varMap, Dictionary<Var, int[]> dimVarValues, ShapeExprCache cache)
         {
             OuterCall = outerCall;
             Fusion = fusion;
             VarMap = varMap;
-            FusionInputShapeExpr = MakeFusionInputShapeExpr(outerCall, fusion, VarMap);
+            FusionInputShapeExpr = MakeFusionInputShapeExpr(outerCall, fusion, cache);
             CheckAlive(FusionInputShapeExpr);
             DimVarValues = dimVarValues;
             Arguments = OuterCall.Arguments.ToArray();
