@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -40,46 +41,14 @@ public sealed class DDrBufferSchdeulePass : ModulePass
     protected override async Task<IRModule> RunCoreAsync(IRModule module, RunPassContext options)
     {
         // 1. merge the all call prim func
-#if false
         if (_enbaleMergeCall)
         {
-            HashSet<BaseFunction> mergedFuncs = new(ReferenceEqualityComparer.Instance);
-            HashSet<BaseFunction> stackvmFuncs = new(ReferenceEqualityComparer.Instance);
-            for (int i = 0; i < module.Functions.Count; i++)
-            {
-                if (module.Functions[i] is Function { ModuleKind: "stackvm" } func)
-                {
-                    var analysis = new Dictionary<Type, IAnalysisResult>
-                    {
-                        [typeof(IExprUserAnalysisResult)] = AnalyzerManager.GetAnaylsis<IExprUserAnalysisResult>(func),
-                    };
-                    _ = new HashSet<BaseFunction>(ReferenceEqualityComparer.Instance);
-                    var mergePass = new DataflowPass();
-                    mergePass.Add<Rules.Neutral.PrimFuncMergeRule>(mergedFuncs);
-                    var post = await mergePass.RunAsync(func, new() { AnalysisResults = analysis, RewriteOnce = true });
-                    module.Replace(i, post);
-                    stackvmFuncs.Add(post);
-                }
-            }
-
-            // 2. add the ext func into module.
-            foreach (var func in stackvmFuncs)
-            {
-                var collector = new ExternalFuncCollector();
-                collector.Visit(func);
-                foreach (var ext_func in collector.GetExternalFuncs())
-                {
-                    module.Add(ext_func);
-                }
-            }
-
-            // 3. remove the all merged funcs
-            foreach (var item in mergedFuncs)
-            {
-                module.Remove(item);
-            }
+            // if (module.Entry is Function { ModuleKind: Callable.StackVMModuleKind, Body: Expr body } func && IsFixedType(body.CheckedType))
+            // {
+            //     var sorter = new TopSorter();
+            //     sorter.GetTimeLine(func);
+            // }
         }
-#endif
 
         // 4. schedule the prim funcs.
         for (int i = 0; i < module.Functions.Count; i++)
@@ -106,6 +75,13 @@ public sealed class DDrBufferSchdeulePass : ModulePass
 
         return await Task.FromResult(module);
     }
+
+    private bool IsFixedType(IRType type) => type switch
+    {
+        TensorType tensorType => tensorType.Shape.IsFixed,
+        TupleType tupleType => tupleType.Fields.All(IsFixedType),
+        _ => false,
+    };
 }
 
 internal sealed class DDrBufferRewriter : ExprRewriter

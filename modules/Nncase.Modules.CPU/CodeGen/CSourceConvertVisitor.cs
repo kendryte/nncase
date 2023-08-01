@@ -156,9 +156,9 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         }
 
         var start = Visit(expr.Start);
-        var size = Visit(expr.Size);
+        _ = Visit(expr.Size);
         string name = start.Name;
-        if (expr.Start is (TensorConst or Call))
+        if (expr.Start is TensorConst or Call)
         {
             var loc = expr.Location switch
             {
@@ -250,7 +250,7 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 
             type = ptype.ToC();
         }
-        else if (expr is TensorConst { Value: Tensor { ElementType: PointerType { ElemType: PrimType etype }, Shape: { IsScalar: true } } pointer })
+        else if (expr is TensorConst { Value: Tensor { ElementType: PointerType { ElemType: PrimType }, Shape: { IsScalar: true } } pointer })
         {
             str = pointer.ToScalar<ulong>().ToString();
             type = "uint8_t *";

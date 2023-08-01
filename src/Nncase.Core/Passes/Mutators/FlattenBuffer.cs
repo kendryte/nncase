@@ -43,7 +43,7 @@ public sealed class FlattenBuffer : ExprRewriter
             var input = (TIR.Buffer)expr[IR.Buffers.BufferStore.Input];
             return T.Store(input.MemSpan, Enumerable.Range(0, indices.Count).Aggregate((Expr)0, (acc, i) => acc + (input.Strides[i] * indices[i])), expr[IR.Buffers.BufferStore.Value]);
         }
-        else if (expr.Target is IR.Buffers.MatchBuffer && expr.Arguments[0] is TIR.Buffer { MemSpan: { Start: (Const or Var) } })
+        else if (expr.Target is IR.Buffers.MatchBuffer && expr.Arguments[0] is TIR.Buffer { MemSpan: { Start: Const or Var } })
         {
             // remove the all fixed match operation.
             return T.Nop();

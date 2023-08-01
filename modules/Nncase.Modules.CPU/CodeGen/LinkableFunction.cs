@@ -17,7 +17,7 @@ internal sealed class LinkableFunction : ILinkableFunction
         Text = Array.Empty<byte>();
 
         // new LinkedSection(descContents, ".desc", 0, 8, (uint)descContents.Length)
-        Sections = new ILinkedSection[] {  };
+        Sections = Array.Empty<ILinkedSection>();
     }
 
     public uint Id { get; }

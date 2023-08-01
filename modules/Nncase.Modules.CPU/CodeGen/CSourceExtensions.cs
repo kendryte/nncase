@@ -29,7 +29,7 @@ internal static class CSourceExtensions
     public static string ToC(this DataType dataType) => dataType switch
     {
         PrimType ptype => ptype.ToC(),
-        PointerType ptype => "uint8_t *",
+        PointerType => "uint8_t *",
         _ => throw new NotSupportedException(dataType.ToString()),
     };
 
