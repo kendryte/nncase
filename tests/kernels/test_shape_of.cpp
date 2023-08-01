@@ -36,12 +36,23 @@ class ShapeOfTest
         lhs = hrt::create(typecode, shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
         init_tensor(lhs);
+
+        // expected
+        size_t shape_size = shape.size();
+        int64_t *shape_array = (int64_t *)malloc(shape_size * sizeof(int64_t));
+        std::copy(shape.begin(), shape.end(), shape_array);
+        expected = hrt::create(nncase::dt_int64, {shape_size},
+                               {reinterpret_cast<gsl::byte *>(shape_array),
+                                shape_size * sizeof(int64_t)},
+                               true, host_runtime_tensor::pool_cpu_only)
+                       .expect("create tensor failed");
     }
 
     void TearDown() override {}
 
   protected:
     runtime_tensor lhs;
+    runtime_tensor expected;
 };
 
 INSTANTIATE_TEST_SUITE_P(
@@ -50,17 +61,11 @@ INSTANTIATE_TEST_SUITE_P(
                                      dt_float64, dt_int16, dt_uint32, dt_uint64,
                                      dt_uint16, dt_boolean, dt_int64,
                                      dt_float16),
-                     testing::Values(dims_t{1, 3, 16, 16})));
+                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{1},
+                                     dims_t{1, 3}, dims_t{1, 3, 16},
+                                     dims_t{1, 2, 3, 4, 5})));
 
 TEST_P(ShapeOfTest, ShapeOf) {
-
-    // expected
-    int64_t expected_array[] = {1, 3, 16, 16};
-    auto expected = hrt::create(nncase::dt_int64, {4},
-                                {reinterpret_cast<gsl::byte *>(expected_array),
-                                 sizeof(expected_array)},
-                                true, host_runtime_tensor::pool_cpu_only)
-                        .expect("create tensor failed");
 
     // actual
     auto output =

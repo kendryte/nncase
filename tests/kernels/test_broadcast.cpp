@@ -33,41 +33,174 @@ class BroadCastTest : public KernelTest,
     void SetUp() override {
         auto &&[typecode, l_shape, r_shape] = GetParam();
 
-        float input_ptr[] = {3, 2, 1};
-        input = hrt::create(typecode, l_shape,
-                            {reinterpret_cast<gsl::byte *>(input_ptr),
-                             sizeof(input_ptr)},
-                            true, host_runtime_tensor::pool_cpu_only)
-                    .expect("create tensor failed");
+        input =
+            hrt::create(typecode, r_shape, host_runtime_tensor::pool_cpu_only)
+                .expect("create tensor failed");
+        init_tensor(input);
 
-        float output_ptr[] = {3, 2, 1, 3, 2, 1, 3, 2, 1};
-        expected = hrt::create(typecode, r_shape,
-                               {reinterpret_cast<gsl::byte *>(output_ptr),
-                                sizeof(output_ptr)},
-                               true, host_runtime_tensor::pool_cpu_only)
-                       .expect("create tensor failed");
+        one = hrt::create(typecode, r_shape, host_runtime_tensor::pool_cpu_only)
+                  .expect("create tensor failed");
+        init_tensor_one(one);
+
+        size_t shape_size = r_shape.size();
+        int64_t *shape_array = (int64_t *)malloc(shape_size * sizeof(int64_t));
+        std::copy(r_shape.begin(), r_shape.end(), shape_array);
+        new_shape = hrt::create(dt_int64, {shape_size},
+                                {reinterpret_cast<gsl::byte *>(shape_array),
+                                 shape_size * sizeof(int64_t)},
+                                true, host_runtime_tensor::pool_cpu_only)
+                        .expect("create tensor failed");
     }
 
     void TearDown() override {}
 
+    void init_tensor_one(runtime::runtime_tensor &tensor) {
+        auto dtype = tensor.datatype();
+        switch (dtype) {
+        case dt_int8: {
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<int8_t>(tensor, index) = static_cast<int8_t>(1);
+                    return ok();
+                });
+            break;
+        }
+        case dt_int16: {
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<int16_t>(tensor, index) = static_cast<int16_t>(1);
+                    return ok();
+                });
+            break;
+        }
+        case dt_int32: {
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<int32_t>(tensor, index) = 1;
+                    return ok();
+                });
+            break;
+        }
+        case dt_int64: {
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<int64_t>(tensor, index) = static_cast<int64_t>(1);
+                    return ok();
+                });
+            break;
+        }
+        case dt_uint8: {
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<uint8_t>(tensor, index) = static_cast<uint8_t>(1);
+                    return ok();
+                });
+            break;
+        }
+        case dt_uint16: {
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<uint16_t>(tensor, index) = static_cast<uint16_t>(1);
+                    return ok();
+                });
+            break;
+        }
+        case dt_uint32: {
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<uint32_t>(tensor, index) = static_cast<uint32_t>(1);
+                    return ok();
+                });
+            break;
+        }
+        case dt_uint64: {
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<uint64_t>(tensor, index) = static_cast<uint64_t>(1);
+                    return ok();
+                });
+            break;
+        }
+        case dt_float16: {
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<half>(tensor, index) = static_cast<half>(1);
+                    return ok();
+                });
+            break;
+        }
+        case dt_float32: {
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<float>(tensor, index) = static_cast<float>(1);
+                    return ok();
+                });
+            break;
+        }
+        case dt_float64: {
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<double>(tensor, index) = static_cast<double>(1);
+                    return ok();
+                });
+            break;
+        }
+        case dt_bfloat16: {
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<bfloat16>(tensor, index) = static_cast<bfloat16>(1);
+                    return ok();
+                });
+            break;
+        }
+        default: {
+        }
+        }
+    }
+
   protected:
     runtime_tensor input;
-    runtime_tensor expected;
+    runtime_tensor one;
+    runtime_tensor new_shape;
 };
 
-INSTANTIATE_TEST_SUITE_P(BroadCast, BroadCastTest,
-                         testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{3}),
-                                          testing::Values(dims_t{1, 3, 3})));
+INSTANTIATE_TEST_SUITE_P(
+    BroadCast, BroadCastTest,
+    testing::Combine(testing::Values(dt_float32, dt_float64, dt_int32, dt_int64,
+                                     dt_float16),
+                     testing::Values(dims_t{3}, dims_t{1, 3}, dims_t{3, 3},
+                                     dims_t{1}, dims_t{1, 3, 1}),
+                     testing::Values(dims_t{1, 3, 3}, dims_t{1, 3, 3, 3},
+                                     dims_t{1, 3, 16, 16})));
 
 TEST_P(BroadCastTest, BroadCast) {
-    //     actual
-    int64_t a_ptr[] = {1, 3, 3};
-    auto a = hrt::create(nncase::dt_int64, {3},
-                         {reinterpret_cast<gsl::byte *>(a_ptr), sizeof(a_ptr)},
-                         true, host_runtime_tensor::pool_cpu_only)
-                 .expect("create tensor failed");
-    auto output = kernels::stackvm::broadcast(input.impl(), a.impl())
+
+    // expected
+    auto output_ort = ortki_Mul(runtime_tensor_2_ort_tensor(input),
+                                runtime_tensor_2_ort_tensor(one));
+    size_t size = 0;
+    void *ptr_ort = tensor_buffer(output_ort, &size);
+    dims_t shape(tensor_rank(output_ort));
+    tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
+    auto expected = hrt::create(input.datatype(), shape,
+                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+                                true, host_runtime_tensor::pool_cpu_only)
+                        .expect("create tensor failed");
+
+    // actual
+    auto output = kernels::stackvm::broadcast(input.impl(), new_shape.impl())
                       .expect("broadcast failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 

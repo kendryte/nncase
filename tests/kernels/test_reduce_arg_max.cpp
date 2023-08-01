@@ -38,7 +38,9 @@ class ReduceArgMaxTest : public KernelTest,
         a = hrt::create(typecode1, l_shape, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
         init_tensor(a);
-        axis_value = value1;
+        axis_value = value1 > 0 ? value1 >= (int64_t)l_shape.size() ? 0 : value1
+                     : -value1 > (int64_t)l_shape.size() ? 0
+                                                         : value1;
         int64_t axis_array[] = {axis_value};
         axis = hrt::create(typecode2, r_shape,
                            {reinterpret_cast<gsl::byte *>(axis_array),
@@ -77,8 +79,11 @@ class ReduceArgMaxTest : public KernelTest,
 INSTANTIATE_TEST_SUITE_P(
     ReduceArgMax, ReduceArgMaxTest,
     testing::Combine(testing::Values(dt_float32), testing::Values(dt_int64),
-                     testing::Values(dims_t{1, 3, 16, 16}),
-                     testing::Values(dims_t{1}), testing::Values(-1, 0),
+                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 2, 3, 4},
+                                     dims_t{1, 3, 16}, dims_t{3, 16},
+                                     dims_t{16}),
+                     testing::Values(dims_t{1}),
+                     testing::Values(-1, 0, 1, 2, 3, -2, -3, -4),
                      testing::Values(1, 0), testing::Values(1, 0)));
 
 TEST_P(ReduceArgMaxTest, ReduceArgMax) {

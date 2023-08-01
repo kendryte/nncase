@@ -61,9 +61,6 @@ stackvm_runtime_function::run(gsl::span<const gsl::byte> text) noexcept {
         }
     }
 
-#ifdef ENABLE_OP_PROFILE
-    op_profile::print();
-#endif
     return ok();
 }
 

@@ -1,41 +1,62 @@
-## 常见问题
+# 常见问题
 
-### K210 和 KPU
-1. K210 的硬件环境是什么?
+## 1. 安装 `whl`包出错
 
-    K210 有 6MB 通用 RAM 和 2MB KPU 专用 RAM。模型的输入和输出特征图存储在 2MB KPU RAM 中。权重和其他参数存储在 6MB 通用 RAM 中。
+### 1.1 Q：`xxx.whl is not a supported wheel on this platform.`
 
-2. 哪些算子可以被 KPU 完全加速？
+A：升级 pip >= 20.3 `pip install --upgrade pip`
 
-    下面的约束需要全部满足。
-    - 特征图尺寸：输入特征图小于等于 320x240(WxH) 同时输出特征图大于等于 4x4(WxH)，通道数在 1 到 1024。
-    - Same 对称 paddings (TensorFlow 在 stride=2 同时尺寸为偶数时使用非对称 paddings)。
-    - 普通 Conv2D 和 DepthwiseConv2D，卷积核为 1x1 或 3x3，stride 为 1 或 2。
-    - MaxPool(2x2 或 4x4) 和 AveragePool(2x2 或 4x4)。
-    - 任意逐元素激活函数 (ReLU, ReLU6, LeakyRelu, Sigmoid...), KPU 不支持 PReLU。
 
-3. 哪些算子可以被 KPU 部分加速？
 
-    - 非对称 paddings 或 valid paddings 卷积, nncase 会在其前后添加必要的 Pad 和 Crop。
-    - 普通 Conv2D 和 DepthwiseConv2D，卷积核为 1x1 或 3x3，但 stride 不是 1 或 2. nncase 会把它分解为 KPUConv2D 和一个 StridedSlice (可能还需要 Pad)。
-    - MatMul, nncase 会把它替换为一个 Pad(到 4x4)+ KPUConv2D(1x1 卷积和) + Crop(到 1x1)。
-    - TransposeConv2D, nncase 会把它替换为一个 SpaceToBatch + KPUConv2D + BatchToSpace。
+----
 
-### 编译模型
-1. Fatal: Not supported tflite opcode: DEQUANTIZE
+## 2.编译模型时报错
 
-    使用浮点 tflite 模型，nncase 会做量化。
+### 2.1 `System.NotSupportedException`
 
-### 部署模型
-1. 运行模型是我需要归一化输入吗？
+#### 2.1.1 Q：编译模型报错“System.NotSupportedException: Not Supported *** op: XXX”。
 
-    如果它是一个 uint8 输入 (通常是量化后的模型), 你不需要归一化，只需要提供 uint8 输入 (例如 RGB888 图像)。如果它是一个 float 输入，你需要做预处理。
+A：该异常表明`XXX`算子尚未支持，可以在[nncase Github Issue](https://github.com/kendryte/nncase/issues)中提需求。当前目录下 `***_ops.md`文档，可以查看各个推理框架中已经支持的算子。
 
-2. 为什么我看到 “KPU allocator cannot allocate more memory”？
+如果`XXX`属于 `FAKE_QUANT`、`DEQUANTIZE`、`QUANTIZE`等量化相关的算子，表明当前模型属于量化模型，`nncase`目前不支持这类模型，请使用浮点模型来编译`kmodel`。
 
-    如同 "K210 和 KPU" 章节所说, 模型的输入和输出特征图存储在 2MB KPU RAM 中。单层不能超过这个限制。你可以尝试减小特征图的尺寸。
+### 2.2 `System.IO.IOException`
 
-3. 为什么运行模型时我看到 “Out of memory“？
+#### 2.2.1 Q：下载`nncase`仓库自己编译后，运行test出现这个错误"The configured user limit (128) on the number of inotify instances has been reached, or the per-process limit on the number of open file descriptors has been reached"。
 
-    当你编译模型时，nncase 会打印运行模型时所需工作内存使用量 (working memory usage)。通常模型会被加载到 6MB RAM 中，所以总的主存使用量是 工作内存 + 模型的大小。
-  
+A1：使用 `sudo gedit /proc/sys/fs/inotify/max_user_instances`修改128为更大的值即可。
+
+
+
+----
+
+## 3. 推理时报错
+
+### 3.1 Q：在编译kmodel正常， 但是推理的时候出现`nncase.simulator.k230.sc: not found`的错误。
+
+A：需要检查`nncase`和`nncase-kpu`的版本是否一致。
+
+```shell
+root@a52f1cacf581:/mnt# pip list | grep nncase
+nncase                       2.1.1.20230721
+nncase-kpu                   2.1.1.20230721
+```
+
+如果不一致，请安装相同版本的Python包 `pip install nncase==x.x.x.x nncase-kpu==x.x.x.x`。
+
+
+
+----
+
+## 4. k230开发板推理时报错
+
+### 4.1 Q：`data.size_bytes() == size = false (bool)`
+
+A：以上这种情况通常有是app推理时的输入数据文件有错误，与模型输入shape不匹配或者与模型输入type不匹配。尤其当配置了前处理时需要检查这两个属性，添加前处理操作后，模型中增加了相关的节点，输入节点也会发生变化。如果 `input_shape`、`input_type`和原始模型不同，则需要以新配置的 `shape`，`type`为准来生成输入数据。
+
+### 4.2 Q：抛出 `std::bad_alloc`异常
+
+A：通常是因为内存分配失败导致的，可做如下排查。
+
+- 检查生成的kmodel是否超过当前系统可用内存
+- 检查App是否存在内存泄露

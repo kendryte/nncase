@@ -61,18 +61,21 @@ TEST_P(SpaceToBatchTest, SpaceToBatch) {
                              {reinterpret_cast<gsl::byte *>(a), sizeof(a)},
                              true, host_runtime_tensor::pool_cpu_only)
                      .expect("create tensor failed");
+
     int64_t shape_array[] = {2, 2};
     auto shape = hrt::create(dt_int64, {2},
                              {reinterpret_cast<gsl::byte *>(shape_array),
                               sizeof(shape_array)},
                              true, host_runtime_tensor::pool_cpu_only)
                      .expect("create tensor failed");
+
     int64_t crops_array[] = {0, 0, 0, 0};
     auto crops = hrt::create(dt_int64, {2, 2},
                              {reinterpret_cast<gsl::byte *>(crops_array),
                               sizeof(crops_array)},
                              true, host_runtime_tensor::pool_cpu_only)
                      .expect("create tensor failed");
+
     auto output = kernels::stackvm::space_to_batch(input.impl(), shape.impl(),
                                                    crops.impl())
                       .expect("space_to_batch failed");

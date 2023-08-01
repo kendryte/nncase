@@ -250,7 +250,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                             mode_dir = os.path.join(target_dir, k_mode)
                             shutil.move(tmp_dir, mode_dir)
                             judge, result = self.compare_results(
-                                expected, actual, stage, k_target, v_target['simarity_name'], k_mode, v_mode['threshold'], self.cfg['dump_hist'], mode_dir)
+                                expected, actual, stage, k_target, v_target['similarity_name'], k_mode, v_mode['threshold'], self.cfg['dump_hist'], mode_dir)
 
                             if not judge:
                                 if test_utils.in_ci():
@@ -268,11 +268,6 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
 
     def set_shape_var(self, dict: Dict[str, int]):
         self.shape_vars = dict
-
-    def check_result(self, expected, actual, stage, target, simarity_name, mode, threshold, dump_dir):
-        judge, result = self.compare_results(
-            expected, actual, stage, target, simarity_name, mode, threshold, self.cfg['dump_hist'], dump_dir)
-        assert(judge), f"Fault result in {stage} + {result}"
 
     def set_quant_opt(self, compiler: nncase.Compiler):
         compile_opt = self.cfg['compile_opt']
@@ -409,18 +404,18 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
     def compare_results(self,
                         ref_ouputs: List[np.ndarray],
                         test_outputs: List[np.ndarray],
-                        stage, target, simarity_name, mode, threshold, dump_hist, dump_dir) -> Tuple[bool, str]:
+                        stage, target, similarity_name, mode, threshold, dump_hist, dump_dir) -> Tuple[bool, str]:
         i = 0
         judges = []
         for expected, actual in zip(ref_ouputs, test_outputs):
             expected = expected.astype(np.float32)
             actual = actual.astype(np.float32)
             dump_file = os.path.join(dump_dir, 'nncase_result_{0}_hist.csv'.format(i))
-            judge, simarity_info = compare_ndarray(
-                expected, actual, simarity_name, threshold, dump_hist, dump_file)
+            judge, similarity_info = compare_ndarray(
+                expected, actual, similarity_name, threshold, dump_hist, dump_file)
             result_info = "\n{0} [ {1} {2} {3} ] Output: {4}!!\n".format(
                 'Pass' if judge else 'Fail', stage, target, mode, i)
-            result = simarity_info + result_info
+            result = similarity_info + result_info
             with open(os.path.join(self.case_dir, 'test_result.txt'), 'a+') as f:
                 f.write(result)
             i = i + 1

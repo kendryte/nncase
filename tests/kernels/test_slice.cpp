@@ -28,10 +28,11 @@ using namespace ortki;
 
 class SliceTest
     : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
+      public ::testing::TestWithParam<std::tuple<
+          nncase::typecode_t, dims_t, dims_t, dims_t, dims_t, dims_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape] = GetParam();
+        auto &&[typecode, l_shape, value1, value2, value3, value4] = GetParam();
 
         int32_t input_array[120];
 
@@ -44,12 +45,53 @@ class SliceTest
                              sizeof(input_array)},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
+
+        size_t begin_size = value1.size();
+        int64_t *begin_array = (int64_t *)malloc(begin_size * sizeof(int64_t));
+        std::copy(value1.begin(), value1.end(), begin_array);
+        begin = hrt::create(dt_int64, {begin_size},
+                            {reinterpret_cast<gsl::byte *>(begin_array),
+                             begin_size * sizeof(int64_t)},
+                            true, host_runtime_tensor::pool_cpu_only)
+                    .expect("create1 tensor failed");
+
+        size_t end_size = value2.size();
+        int64_t *end_array = (int64_t *)malloc(end_size * sizeof(int64_t));
+        std::copy(value2.begin(), value2.end(), end_array);
+        end = hrt::create(dt_int64, {begin_size},
+                          {reinterpret_cast<gsl::byte *>(end_array),
+                           end_size * sizeof(int64_t)},
+                          true, host_runtime_tensor::pool_cpu_only)
+                  .expect("create2 tensor failed");
+
+        size_t axes_size = value3.size();
+        int64_t *axes_array = (int64_t *)malloc(axes_size * sizeof(int64_t));
+        std::copy(value3.begin(), value3.end(), axes_array);
+        axes = hrt::create(dt_int64, {begin_size},
+                           {reinterpret_cast<gsl::byte *>(axes_array),
+                            axes_size * sizeof(int64_t)},
+                           true, host_runtime_tensor::pool_cpu_only)
+                   .expect("create3 tensor failed");
+
+        size_t strides_size = value4.size();
+        int64_t *strides_array =
+            (int64_t *)malloc(strides_size * sizeof(int64_t));
+        std::copy(value4.begin(), value4.end(), strides_array);
+        strides = hrt::create(dt_int64, {begin_size},
+                              {reinterpret_cast<gsl::byte *>(strides_array),
+                               strides_size * sizeof(int64_t)},
+                              true, host_runtime_tensor::pool_cpu_only)
+                      .expect("create4 tensor failed");
     }
 
     void TearDown() override {}
 
   protected:
     runtime_tensor input;
+    runtime_tensor begin;
+    runtime_tensor end;
+    runtime_tensor axes;
+    runtime_tensor strides;
 };
 
 INSTANTIATE_TEST_SUITE_P(
@@ -57,7 +99,11 @@ INSTANTIATE_TEST_SUITE_P(
     testing::Combine(testing::Values(dt_int32),
                      testing::Values(dims_t{2, 3, 4, 5}, dims_t{1, 4, 5, 6},
                                      dims_t{1, 1, 1, 120}, dims_t{2, 2, 5, 6},
-                                     dims_t{1, 1, 2, 60})));
+                                     dims_t{1, 1, 2, 60}),
+                     testing::Values(dims_t{0, 0, 0, 0}),
+                     testing::Values(dims_t{1, 1, 1, 5}),
+                     testing::Values(dims_t{0, 1, 2, 3}),
+                     testing::Values(dims_t{1, 1, 1, 1})));
 
 TEST_P(SliceTest, Slice) {
 
@@ -70,30 +116,6 @@ TEST_P(SliceTest, Slice) {
             .expect("create tensor failed");
 
     // actual
-    int32_t begin_array[] = {0, 0, 0, 0};
-    auto begin = hrt::create(input.datatype(), {4},
-                             {reinterpret_cast<gsl::byte *>(begin_array),
-                              sizeof(begin_array)},
-                             true, host_runtime_tensor::pool_cpu_only)
-                     .expect("create tensor failed");
-    int32_t end_array[] = {1, 1, 1, 5};
-    auto end = hrt::create(input.datatype(), {4},
-                           {reinterpret_cast<gsl::byte *>(end_array),
-                            sizeof(end_array)},
-                           true, host_runtime_tensor::pool_cpu_only)
-                   .expect("create tensor failed");
-    int32_t axes_array[] = {0, 1, 2, 3};
-    auto axes = hrt::create(input.datatype(), {4},
-                            {reinterpret_cast<gsl::byte *>(axes_array),
-                             sizeof(axes_array)},
-                            true, host_runtime_tensor::pool_cpu_only)
-                    .expect("create tensor failed");
-    int32_t strides_array[] = {1, 1, 1, 1};
-    auto strides = hrt::create(input.datatype(), {4},
-                               {reinterpret_cast<gsl::byte *>(strides_array),
-                                sizeof(strides_array)},
-                               true, host_runtime_tensor::pool_cpu_only)
-                       .expect("create tensor failed");
     auto output =
         kernels::stackvm::slice(input.impl(), begin.impl(), end.impl(),
                                 axes.impl(), strides.impl())

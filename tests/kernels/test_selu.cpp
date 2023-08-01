@@ -54,22 +54,24 @@ INSTANTIATE_TEST_SUITE_P(
 
 TEST_P(SeluTest, Selu) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
+    auto alpha_value = 1.5f;
+    auto gamma_value = 1.5f;
 
     // expected
-    float_t alpha_ptr[] = {1.5f};
+    float_t alpha_ptr[] = {alpha_value};
     auto alpha = hrt::create(nncase::dt_float32, {1},
                              {reinterpret_cast<gsl::byte *>(alpha_ptr),
                               sizeof(alpha_ptr)},
                              true, host_runtime_tensor::pool_cpu_only)
                      .expect("create tensor failed");
 
-    float_t gamma_ptr[] = {1.5f};
+    float_t gamma_ptr[] = {gamma_value};
     auto gamma = hrt::create(nncase::dt_float32, {1},
                              {reinterpret_cast<gsl::byte *>(gamma_ptr),
                               sizeof(gamma_ptr)},
                              true, host_runtime_tensor::pool_cpu_only)
                      .expect("create tensor failed");
-    auto output_ort = ortki_Selu(l_ort, 1.5f, 1.5f);
+    auto output_ort = ortki_Selu(l_ort, alpha_value, gamma_value);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));

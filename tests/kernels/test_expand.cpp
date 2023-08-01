@@ -26,23 +26,33 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class ExpandTest
-    : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
+class ExpandTest : public KernelTest,
+                   public ::testing::TestWithParam<
+                       std::tuple<nncase::typecode_t, dims_t, dims_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode, input_shape] = GetParam();
+        auto &&[typecode, input_shape, shape] = GetParam();
 
         input = hrt::create(typecode, input_shape,
                             host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
         init_tensor(input);
+
+        size_t shape_size = shape.size();
+        int64_t *shape_array = (int64_t *)malloc(shape_size * sizeof(int64_t));
+        std::copy(shape.begin(), shape.end(), shape_array);
+        new_shape = hrt::create(dt_int64, {shape_size},
+                                {reinterpret_cast<gsl::byte *>(shape_array),
+                                 shape_size * sizeof(int64_t)},
+                                true, host_runtime_tensor::pool_cpu_only)
+                        .expect("create tensor failed");
     }
 
     void TearDown() override {}
 
   protected:
     runtime_tensor input;
+    runtime_tensor new_shape;
 };
 
 INSTANTIATE_TEST_SUITE_P(
@@ -52,19 +62,16 @@ INSTANTIATE_TEST_SUITE_P(
                                      dt_uint64, dt_float16, dt_float64,
                                      dt_boolean),
                      testing::Values(dims_t{3, 1}, dims_t{1, 1},
-                                     dims_t{1, 1, 1}, dims_t{3, 1, 1, 1})));
+                                     dims_t{1, 1, 1}, dims_t{3, 1, 1, 1}),
+                     testing::Values(dims_t{1, 3, 3}, dims_t{1, 3, 3, 3},
+                                     dims_t{{3, 4}}, dims_t{1, 1},
+                                     dims_t{2, 1, 6})));
 
 TEST_P(ExpandTest, expand) {
     auto input_ort = runtime_tensor_2_ort_tensor(input);
 
     // expected
-    int64_t new_shape[] = {1};
-    auto new_shape_ptr = hrt::create(nncase::dt_int64, {1},
-                                     {reinterpret_cast<gsl::byte *>(new_shape),
-                                      sizeof(new_shape)},
-                                     true, host_runtime_tensor::pool_cpu_only)
-                             .expect("create tensor failed");
-    auto new_shape_ort = runtime_tensor_2_ort_tensor(new_shape_ptr);
+    auto new_shape_ort = runtime_tensor_2_ort_tensor(new_shape);
     auto output_ort = ortki_Expand(input_ort, new_shape_ort);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
@@ -76,7 +83,7 @@ TEST_P(ExpandTest, expand) {
                         .expect("create tensor failed");
 
     // actual
-    auto output = kernels::stackvm::expand(input.impl(), new_shape_ptr.impl())
+    auto output = kernels::stackvm::expand(input.impl(), new_shape.impl())
                       .expect("expand failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
@@ -92,120 +99,6 @@ TEST_P(ExpandTest, expand) {
 
     // compare
     EXPECT_TRUE(result);
-
-    // expected
-    int64_t new_shape1[] = {1, 1};
-    auto new_shape_ptr1 =
-        hrt::create(
-            nncase::dt_int64, {2},
-            {reinterpret_cast<gsl::byte *>(new_shape1), sizeof(new_shape1)},
-            true, host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
-    auto new_shape_ort1 = runtime_tensor_2_ort_tensor(new_shape_ptr1);
-    auto output_ort1 = ortki_Expand(input_ort, new_shape_ort1);
-    size_t size1 = 0;
-    void *ptr_ort1 = tensor_buffer(output_ort1, &size1);
-    dims_t shape1(tensor_rank(output_ort1));
-    tensor_shape(output_ort1, reinterpret_cast<int64_t *>(shape1.data()));
-    auto expected1 =
-        hrt::create(input.datatype(), shape1,
-                    {reinterpret_cast<gsl::byte *>(ptr_ort1), size1}, true,
-                    host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
-
-    // actual
-    auto output1 = kernels::stackvm::expand(input.impl(), new_shape_ptr1.impl())
-                       .expect("expand failed");
-    runtime_tensor actual1(output.as<tensor>().expect("as tensor failed"));
-
-    bool result1 = is_same_tensor(expected1, actual1) ||
-                   cosine_similarity_tensor(expected1, actual1);
-
-    if (!result1) {
-        std::cout << "actual1 ";
-        print_runtime_tensor(actual1);
-        std::cout << "expected1 ";
-        print_runtime_tensor(expected1);
-    }
-
-    // compare
-    EXPECT_TRUE(result1);
-
-    // expected
-    int64_t new_shape2[] = {3, 4};
-    auto new_shape_ptr2 =
-        hrt::create(
-            nncase::dt_int64, {2},
-            {reinterpret_cast<gsl::byte *>(new_shape2), sizeof(new_shape2)},
-            true, host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
-    auto new_shape_ort2 = runtime_tensor_2_ort_tensor(new_shape_ptr2);
-    auto output_ort2 = ortki_Expand(input_ort, new_shape_ort2);
-    size_t size2 = 0;
-    void *ptr_ort2 = tensor_buffer(output_ort2, &size2);
-    dims_t shape2(tensor_rank(output_ort2));
-    tensor_shape(output_ort2, reinterpret_cast<int64_t *>(shape2.data()));
-    auto expected2 =
-        hrt::create(input.datatype(), shape2,
-                    {reinterpret_cast<gsl::byte *>(ptr_ort2), size2}, true,
-                    host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
-
-    // actual
-    auto output2 = kernels::stackvm::expand(input.impl(), new_shape_ptr2.impl())
-                       .expect("expand failed");
-    runtime_tensor actual2(output2.as<tensor>().expect("as tensor failed"));
-
-    bool result2 = is_same_tensor(expected2, actual2) ||
-                   cosine_similarity_tensor(expected2, actual2);
-
-    if (!result) {
-        std::cout << "actual2 ";
-        print_runtime_tensor(actual2);
-        std::cout << "expected2 ";
-        print_runtime_tensor(expected2);
-    }
-
-    // compare
-    EXPECT_TRUE(result2);
-
-    // expected
-    int64_t new_shape3[] = {2, 1, 6};
-    auto new_shape_ptr3 =
-        hrt::create(
-            nncase::dt_int64, {3},
-            {reinterpret_cast<gsl::byte *>(new_shape3), sizeof(new_shape3)},
-            true, host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
-    auto new_shape_ort3 = runtime_tensor_2_ort_tensor(new_shape_ptr3);
-    auto output_ort3 = ortki_Expand(input_ort, new_shape_ort3);
-    size_t size3 = 0;
-    void *ptr_ort3 = tensor_buffer(output_ort3, &size3);
-    dims_t shape3(tensor_rank(output_ort3));
-    tensor_shape(output_ort3, reinterpret_cast<int64_t *>(shape3.data()));
-    auto expected3 =
-        hrt::create(input.datatype(), shape3,
-                    {reinterpret_cast<gsl::byte *>(ptr_ort3), size3}, true,
-                    host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
-
-    // actual
-    auto output3 = kernels::stackvm::expand(input.impl(), new_shape_ptr3.impl())
-                       .expect("expand failed");
-    runtime_tensor actual3(output3.as<tensor>().expect("as tensor failed"));
-
-    bool result3 = is_same_tensor(expected3, actual3) ||
-                   cosine_similarity_tensor(expected3, actual3);
-
-    if (!result3) {
-        std::cout << "actual3 ";
-        print_runtime_tensor(actual3);
-        std::cout << "expected3 ";
-        print_runtime_tensor(expected3);
-    }
-
-    // compare
-    EXPECT_TRUE(result3);
 }
 
 int main(int argc, char *argv[]) {
