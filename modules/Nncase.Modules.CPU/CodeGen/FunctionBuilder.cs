@@ -127,7 +127,7 @@ internal class FunctionBuilder : IDisposable
                 throw new InvalidDataException("The Buffer Szie Not Equal!");
             }
 
-            _rdataWriter.Position((uint)size);
+            _rdataWriter.Position(range.Start.Value);
             _rdataWriter.Write(bytes);
         }
 
