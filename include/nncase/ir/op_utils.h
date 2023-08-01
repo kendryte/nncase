@@ -385,6 +385,13 @@ inline bool is_simple_slice(const axis_t &begin, const axis_t &end, const axis_t
     return is_simple_slice;
 }
 
+inline shape_t get_instancenorm_const_shape(const shape_t &in_shape)
+{
+    shape_t const_shape(in_shape.size() - 1, 1);
+    const_shape[0] = in_shape[1];
+    return const_shape;
+}
+
 inline bool is_axis0_squeeze_or_expand_dim_bitcast(const shape_t &in_shape, const shape_t &out_shape)
 {
     auto in_begin = std::find_if_not(in_shape.begin(), in_shape.end(), [](size_t dim) { return dim == 1; });

@@ -19,6 +19,7 @@
 #include <nncase/ir/ops/binary.h>
 #include <nncase/ir/ops/bitcast.h>
 #include <nncase/ir/ops/constant.h>
+#include <nncase/ir/ops/instancenorm.h>
 #include <nncase/ir/ops/reduce.h>
 #include <nncase/ir/ops/unary.h>
 
@@ -58,76 +59,85 @@ void onnx_importer::convert_op_InstanceNormalization(const NodeProto &node)
     auto bias_constant = graph_.emplace<constant>(get_datatype<float>(), bias_new_shape, bias_value);
     bias_constant->name(op_name + ".bias(InstanceNormalization)");
 
-    // mean
-    axis_t axes;
-    for (size_t i = 2; i < input_shape.size(); i++)
-    {
-        axes.push_back(i);
-    }
-    float init_value = 0.f;
-    bool keepdims = true;
-    auto mean = graph_.emplace<reduce>(reduce_mean, input_type, input_shape, axes, init_value, keepdims);
-    mean->attributes(mean->attributes() | node_attributes::node_attr_skip_quantize);
-    mean->name(op_name + ".reduce_mean(InstanceNormalization)");
-
-    // x - mean
-    auto sub = graph_.emplace<binary>(binary_sub, input_type, input_shape, mean->output().shape(), value_range<float>::full());
-    sub->attributes(sub->attributes() | node_attributes::node_attr_skip_quantize);
-    sub->name(op_name + ".sub(InstanceNormalization)");
-
-    // scale * (x - mean)
-    auto mul = graph_.emplace<binary>(binary_mul, input_type, scale_new_shape, sub->output().shape(), value_range<float>::full());
-    mul->attributes(mul->attributes() | node_attributes::node_attr_skip_quantize);
-    mul->name(op_name + ".mul(InstanceNormalization)");
-
-    // variance
-    auto square = graph_.emplace<unary>(unary_square, sub->output().shape());
-    square->attributes(square->attributes() | node_attributes::node_attr_skip_quantize);
-    square->name(op_name + ".square(InstanceNormalization)");
-    auto variance = graph_.emplace<reduce>(reduce_mean, input_type, square->output().shape(), axes, init_value, keepdims);
-    variance->attributes(variance->attributes() | node_attributes::node_attr_skip_quantize);
-    variance->name(op_name + ".reduce(InstanceNormalization)");
-
-    // sqrt(variance + epsilon)
     auto epsilon_attr = get_attribute<float>(node, "epsilon");
     auto epsilon = epsilon_attr ? epsilon_attr.value() : 1e-05f;
-    auto eps_constant = graph_.emplace<constant>(epsilon);
-    eps_constant->name(op_name + ".eps(InstanceNormalization)");
-    auto add_eps = graph_.emplace<binary>(binary_add, input_type, variance->output().shape(), eps_constant->output().shape(), value_range<float>::full());
-    add_eps->attributes(add_eps->attributes() | node_attributes::node_attr_skip_quantize);
-    add_eps->name(op_name + ".add(InstanceNormalization)");
-    auto sqrt = graph_.emplace<unary>(unary_sqrt, add_eps->output().shape());
-    sqrt->attributes(sqrt->attributes() | node_attributes::node_attr_skip_quantize);
-    sqrt->name(op_name + ".sqrt(InstanceNormalization)");
 
-    // scale * (x - mean) / sqrt(variance + epsilon) + B
-    auto div = graph_.emplace<binary>(binary_div, input_type, mul->output().shape(), sqrt->output().shape(), value_range<float>::full());
-    div->attributes(div->attributes() | node_attributes::node_attr_skip_quantize);
-    div->name(op_name + ".scale(InstanceNormalization)");
-    auto add_bias = graph_.emplace<binary>(binary_add, input_type, div->output().shape(), bias_new_shape, value_range<float>::full());
-    add_bias->attributes(add_bias->attributes() | node_attributes::node_attr_skip_quantize);
-    add_bias->name(op_name + ".bias(InstanceNormalization)");
+    auto instance_norm = graph_.emplace<instancenorm>(input_type, input_shape, epsilon);
+    instance_norm->scale().connect(scale_constant->output());
+    instance_norm->bias().connect(bias_constant->output());
+    input_tensors_.emplace(&instance_norm->input(), input);
+    output_tensors_.emplace(output, &instance_norm->output());
 
-    sub->input_b().connect(mean->output());
+    // // mean
+    // axis_t axes;
+    // for (size_t i = 2; i < input_shape.size(); i++)
+    // {
+    //     axes.push_back(i);
+    // }
+    // float init_value = 0.f;
+    // bool keepdims = true;
+    // auto mean = graph_.emplace<reduce>(reduce_mean, input_type, input_shape, axes, init_value, keepdims);
+    // mean->attributes(mean->attributes() | node_attributes::node_attr_skip_quantize);
+    // mean->name(op_name + ".reduce_mean(InstanceNormalization)");
 
-    mul->input_a().connect(scale_constant->output());
-    mul->input_b().connect(sub->output());
+    // // x - mean
+    // auto sub = graph_.emplace<binary>(binary_sub, input_type, input_shape, mean->output().shape(), value_range<float>::full());
+    // sub->attributes(sub->attributes() | node_attributes::node_attr_skip_quantize);
+    // sub->name(op_name + ".sub(InstanceNormalization)");
 
-    square->input().connect(sub->output());
-    variance->input().connect(square->output());
+    // // scale * (x - mean)
+    // auto mul = graph_.emplace<binary>(binary_mul, input_type, scale_new_shape, sub->output().shape(), value_range<float>::full());
+    // mul->attributes(mul->attributes() | node_attributes::node_attr_skip_quantize);
+    // mul->name(op_name + ".mul(InstanceNormalization)");
 
-    add_eps->input_a().connect(variance->output());
-    add_eps->input_b().connect(eps_constant->output());
+    // // variance
+    // auto square = graph_.emplace<unary>(unary_square, sub->output().shape());
+    // square->attributes(square->attributes() | node_attributes::node_attr_skip_quantize);
+    // square->name(op_name + ".square(InstanceNormalization)");
+    // auto variance = graph_.emplace<reduce>(reduce_mean, input_type, square->output().shape(), axes, init_value, keepdims);
+    // variance->attributes(variance->attributes() | node_attributes::node_attr_skip_quantize);
+    // variance->name(op_name + ".reduce(InstanceNormalization)");
 
-    sqrt->input().connect(add_eps->output());
+    // // sqrt(variance + epsilon)
+    // auto epsilon_attr = get_attribute<float>(node, "epsilon");
+    // auto epsilon = epsilon_attr ? epsilon_attr.value() : 1e-05f;
+    // auto eps_constant = graph_.emplace<constant>(epsilon);
+    // eps_constant->name(op_name + ".eps(InstanceNormalization)");
+    // auto add_eps = graph_.emplace<binary>(binary_add, input_type, variance->output().shape(), eps_constant->output().shape(), value_range<float>::full());
+    // add_eps->attributes(add_eps->attributes() | node_attributes::node_attr_skip_quantize);
+    // add_eps->name(op_name + ".add(InstanceNormalization)");
+    // auto sqrt = graph_.emplace<unary>(unary_sqrt, add_eps->output().shape());
+    // sqrt->attributes(sqrt->attributes() | node_attributes::node_attr_skip_quantize);
+    // sqrt->name(op_name + ".sqrt(InstanceNormalization)");
 
-    div->input_a().connect(mul->output());
-    div->input_b().connect(sqrt->output());
+    // // scale * (x - mean) / sqrt(variance + epsilon) + B
+    // auto div = graph_.emplace<binary>(binary_div, input_type, mul->output().shape(), sqrt->output().shape(), value_range<float>::full());
+    // div->attributes(div->attributes() | node_attributes::node_attr_skip_quantize);
+    // div->name(op_name + ".scale(InstanceNormalization)");
+    // auto add_bias = graph_.emplace<binary>(binary_add, input_type, div->output().shape(), bias_new_shape, value_range<float>::full());
+    // add_bias->attributes(add_bias->attributes() | node_attributes::node_attr_skip_quantize);
+    // add_bias->name(op_name + ".bias(InstanceNormalization)");
 
-    add_bias->input_a().connect(div->output());
-    add_bias->input_b().connect(bias_constant->output());
+    // sub->input_b().connect(mean->output());
 
-    input_tensors_.emplace(&mean->input(), input);
-    input_tensors_.emplace(&sub->input_a(), input);
-    output_tensors_.emplace(output, &add_bias->output());
+    // mul->input_a().connect(scale_constant->output());
+    // mul->input_b().connect(sub->output());
+
+    // square->input().connect(sub->output());
+    // variance->input().connect(square->output());
+
+    // add_eps->input_a().connect(variance->output());
+    // add_eps->input_b().connect(eps_constant->output());
+
+    // sqrt->input().connect(add_eps->output());
+
+    // div->input_a().connect(mul->output());
+    // div->input_b().connect(sqrt->output());
+
+    // add_bias->input_a().connect(div->output());
+    // add_bias->input_b().connect(bias_constant->output());
+
+    // input_tensors_.emplace(&mean->input(), input);
+    // input_tensors_.emplace(&sub->input_a(), input);
+    // output_tensors_.emplace(output, &add_bias->output());
 }

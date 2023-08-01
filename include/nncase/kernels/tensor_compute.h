@@ -171,6 +171,9 @@ NNCASE_API result<void> gather_elements(const TI *input, const TK *indices, TI *
     const runtime_shape_t &indices_shape, const int axis) noexcept;
 
 template <typename T>
+NNCASE_API result<void> instancenorm(const T *input, T *output, T *scale, T *bias, const runtime_shape_t &in_shape, float epsilon) noexcept;
+
+template <typename T>
 NNCASE_API result<void> layernorm(const T *input, T *output, T *scale, T *bias, const runtime_shape_t &in_shape, int32_t axis, float epsilon) noexcept;
 
 template <typename T>

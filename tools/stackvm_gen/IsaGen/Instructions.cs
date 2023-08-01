@@ -187,7 +187,8 @@ namespace IsaGen
 		TFLITE_DETECTION_POSTPROCESS,
 		LAYER_NORMALIZATION,
 		COMPRESS,
-		GATHER_ELEMENTS
+		GATHER_ELEMENTS,
+		INSTANCE_NORMALIZATION
 	}
 
 	[BitLength(8)]
@@ -2437,6 +2438,26 @@ namespace IsaGen
             [DisplayName("axis")]
             [Description("Axis")]
             public int Axis { get; set; }
+        }
+
+        [DisplayName("TENSOR.INSTANCE_NORMALIZATION")]
+        [Category("Tensor Instructions")]
+        [Description("INSTANCE_NORMALIZATION")]
+        public class InstanceNormInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.INSTANCE_NORMALIZATION;
+
+            [DisplayName("datatype")]
+            [Description("Datatype")]
+            public DataType DataType { get; set; }
+
+            [DisplayName("input_shape")]
+            [Description("input_shape")]
+            public byte input_shape { get; set; }
+
+            [DisplayName("epsilon")]
+            [Description("epsilon")]
+            public float epsilon { get; set; }
         }
 	}
 }

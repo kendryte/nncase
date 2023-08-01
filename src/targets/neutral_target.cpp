@@ -28,6 +28,7 @@
 #include <nncase/transforms/neutral/fold_conv2d_binary.h>
 #include <nncase/transforms/neutral/fold_convert.h>
 #include <nncase/transforms/neutral/fold_dilated_conv2d.h>
+#include <nncase/transforms/neutral/fold_instancenorm.h>
 #include <nncase/transforms/neutral/fold_layernorm.h>
 #include <nncase/transforms/neutral/fold_matmul_add.h>
 #include <nncase/transforms/neutral/fold_pad.h>
@@ -191,6 +192,11 @@ void neutral_target::register_target_independent_passes(const module_type_t &typ
     using namespace nncase::ir;
     using namespace nncase::ir::transforms;
 
+    {
+        transform_pass p("fold_instancenorm");
+        p.emplace<fold_instancenorm_transform>();
+        pass_mgr.add_pass(std::move(p));
+    }
     // fix tflite_detection_postprocess shape error in tflite
     {
         transform_pass p("fix_shape_tdp");
