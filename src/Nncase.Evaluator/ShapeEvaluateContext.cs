@@ -19,9 +19,13 @@ internal sealed class ShapeEvaluateContext : IShapeEvaluateContext
 {
     private readonly Dictionary<Expr, Expr> _memo;
 
+    // memo used by reference, can't make new _memo with memo.concat(cache)
+    private Dictionary<Expr, Expr> _cache;
+
     public ShapeEvaluateContext(Dictionary<Expr, Expr> memo, ShapeExprCache cache)
     {
-        _memo = memo.Concat(cache.Cache).ToDictionary(pair => pair.Key, pair => pair.Value);
+        _memo = memo;
+        _cache = cache.Cache;
         VarMap = cache.VarMap;
     }
 
@@ -51,7 +55,7 @@ internal sealed class ShapeEvaluateContext : IShapeEvaluateContext
         var expr = GetArgument(op, parameter);
         if (expr is Tuple tuple)
         {
-            return new Tuple(tuple.Fields.ToArray().Select(v => Cast(_memo[v], DataTypes.Int32)).ToArray());
+            return new Tuple(tuple.Fields.ToArray().Select(v => Cast(GetResultFromMemo(v), DataTypes.Int32)).ToArray());
         }
 
         // call
@@ -81,7 +85,7 @@ internal sealed class ShapeEvaluateContext : IShapeEvaluateContext
             }
         }
 
-        var shapeExpr = _memo[expr];
+        var shapeExpr = GetResultFromMemo(expr);
         return Cast(shapeExpr, DataTypes.Int32);
     }
 
@@ -91,4 +95,19 @@ internal sealed class ShapeEvaluateContext : IShapeEvaluateContext
     }
 
     private Call GetCurrentCall() => CurrentCall ?? throw new InvalidOperationException("Current call is not set.");
+
+    private Expr GetResultFromMemo(Expr expr)
+    {
+        if (_memo.ContainsKey(expr))
+        {
+            return _memo[expr];
+        }
+
+        if (_cache.ContainsKey(expr))
+        {
+            return _cache[expr];
+        }
+
+        throw new InvalidOperationException("Expr not found in memo and cache");
+    }
 }
