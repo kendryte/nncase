@@ -124,6 +124,11 @@ public static class ReplaceUtility
     public static Call ReplaceCallFirstParam(Expr target, IReadOnlyList<Expr> oldParams, Expr expr) =>
         ReplaceCallParams(target, oldParams, (oldParams[0], expr));
 
+    public static Expr ReplaceCallFirstParam(Call call, Expr expr)
+    {
+        return ReplaceCallFirstParam(call.Target, call.Arguments.ToArray(), expr);
+    }
+
     /// <summary>
     /// Replace target in body with expr.
     /// </summary>

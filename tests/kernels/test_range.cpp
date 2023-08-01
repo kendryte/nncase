@@ -28,26 +28,28 @@ using namespace ortki;
 
 class RangeTest
     : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
+      public ::testing::TestWithParam<
+          std::tuple<nncase::typecode_t, dims_t, float_t, float_t, float_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode, shape] = GetParam();
+        auto &&[typecode, shape, begin_value, end_value, step_value] =
+            GetParam();
 
-        float_t begin_array[] = {0.0f};
+        float_t begin_array[] = {begin_value};
         begin = hrt::create(typecode, shape,
                             {reinterpret_cast<gsl::byte *>(begin_array),
                              sizeof(begin_array)},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
 
-        float_t end_array[] = {100.0f};
+        float_t end_array[] = {end_value};
         end = hrt::create(
                   typecode, shape,
                   {reinterpret_cast<gsl::byte *>(end_array), sizeof(end_array)},
                   true, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
 
-        float_t step_array[] = {100.0f};
+        float_t step_array[] = {step_value};
         step = hrt::create(typecode, shape,
                            {reinterpret_cast<gsl::byte *>(step_array),
                             sizeof(step_array)},
@@ -65,7 +67,10 @@ class RangeTest
 
 INSTANTIATE_TEST_SUITE_P(Range, RangeTest,
                          testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1})));
+                                          testing::Values(dims_t{1}),
+                                          testing::Values(0.0f, 10.0f, 20.0f),
+                                          testing::Values(100.0f, 90.0f, 80.0f),
+                                          testing::Values(1.0f, 10.0f, 5.0f)));
 
 TEST_P(RangeTest, Range) {
     auto begin_ort = runtime_tensor_2_ort_tensor(begin);

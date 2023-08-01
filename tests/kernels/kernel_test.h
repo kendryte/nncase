@@ -211,8 +211,8 @@ class KernelTest {
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](gsl::span<const size_t> index) -> result<void> {
-                    get<bool>(tensor, index) =
-                        static_cast<double>(dis(gen)) >= 0;
+                    get<bfloat16>(tensor, index) =
+                        static_cast<bfloat16>(dis(gen));
                     return ok();
                 });
             break;
@@ -237,7 +237,7 @@ class KernelTest {
         if (shape.size() == 1 && (shape[0] == initvalue.size())) {
             // One dim array attribute
             T *tmp = new T[shape[0]];
-            for (int i = 0; i < (int)shape[0]; ++i) {
+            for (size_t i = 0; i < shape[0]; ++i) {
                 tmp[i] = initvalue[i];
             }
             return tmp;
@@ -1516,13 +1516,6 @@ class KernelTest {
                     vec2.push_back(static_cast<float>(get<double>(rhs, index)));
                     break;
                 }
-                case dt_boolean: {
-                    vec1.push_back(
-                        static_cast<float>(get<bool>(lhs, index) ? 2 : 1));
-                    vec2.push_back(
-                        static_cast<float>(get<bool>(rhs, index) ? 2 : 1));
-                    break;
-                }
                 default: {
                     return err(std::errc::not_supported);
                 }
@@ -1629,6 +1622,21 @@ class KernelTest {
             std::cout << " " << shape[i];
 
         std::cout << std::endl;
+    }
+
+    template <class T>
+    result<void> clamp_impl(const T *input, T min, T max, T *output,
+                            gsl::span<const size_t> in_shape,
+                            gsl::span<const size_t> in_strides,
+                            gsl::span<const size_t> out_strides,
+                            NNCASE_UNUSED kernel_context &context) {
+        return apply(in_shape,
+                     [&](gsl::span<const size_t> index) -> result<void> {
+                         const auto v = input[offset(index, in_strides)];
+                         output[offset(index, out_strides)] =
+                             std::min(std::max(v, min), max);
+                         return ok();
+                     });
     }
 };
 } // namespace nncase

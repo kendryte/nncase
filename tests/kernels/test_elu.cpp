@@ -54,9 +54,10 @@ INSTANTIATE_TEST_SUITE_P(
 
 TEST_P(EluTest, elu) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
+    auto alpha = 0.8f;
 
     // expected
-    auto output_ort = ortki_Elu(l_ort, 0.8f);
+    auto output_ort = ortki_Elu(l_ort, alpha);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
@@ -67,7 +68,7 @@ TEST_P(EluTest, elu) {
                         .expect("create tensor failed");
 
     // actual
-    float_t a_ptr[] = {0.8f};
+    float_t a_ptr[] = {alpha};
     auto a = hrt::create(nncase::dt_float32, {1},
                          {reinterpret_cast<gsl::byte *>(a_ptr), sizeof(a_ptr)},
                          true, host_runtime_tensor::pool_cpu_only)

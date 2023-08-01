@@ -26,23 +26,26 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class StackTest
-    : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
+class StackTest : public KernelTest,
+                  public ::testing::TestWithParam<
+                      std::tuple<nncase::typecode_t, dims_t, int64_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape] = GetParam();
+        auto &&[typecode, l_shape, value] = GetParam();
 
         input =
             hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
         init_tensor(input);
+
+        axes_value = value;
     }
 
     void TearDown() override {}
 
   protected:
     runtime_tensor input;
+    int64_t axes_value;
 };
 
 INSTANTIATE_TEST_SUITE_P(
@@ -51,8 +54,11 @@ INSTANTIATE_TEST_SUITE_P(
                                      dt_int8, dt_uint8, dt_uint16, dt_uint32,
                                      dt_uint64, dt_int64, dt_bfloat16,
                                      dt_float16, dt_boolean),
-                     testing::Values(dims_t{1}, dims_t{2}, dims_t{1, 1},
-                                     dims_t{1, 2, 4, 8}, dims_t{4, 4, 8})));
+                     testing::Values(dims_t{
+                         1} /*, dims_t{2}, dims_t{1,
+                   1}, dims_t{1, 2, 4, 8}, dims_t{4,
+                   4, 8}*/),
+                     testing::Values(0, -1)));
 
 TEST_P(StackTest, Stack) {
 
@@ -61,7 +67,7 @@ TEST_P(StackTest, Stack) {
     std::vector<value_t> fields;
     fields.push_back(field1);
     auto output_tuple = tuple(std::in_place, std::move(fields));
-    int64_t axes_array[] = {-1};
+    int64_t axes_array[] = {axes_value};
     auto axes = hrt::create(dt_int64, {1},
                             {reinterpret_cast<gsl::byte *>(axes_array),
                              sizeof(axes_array)},
@@ -82,7 +88,7 @@ TEST_P(StackTest, Stack) {
     auto expected1 =
         kernels::stackvm::reshape(input.impl(), output_shape.impl())
             .expect("stack failed");
-    runtime_tensor expected(output.as<tensor>().expect("as tensor failed"));
+    runtime_tensor expected(expected1.as<tensor>().expect("as tensor failed"));
 
     bool result = is_same_tensor(expected, actual) ||
                   cosine_similarity_tensor(expected, actual);

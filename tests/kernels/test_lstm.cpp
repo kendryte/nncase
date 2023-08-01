@@ -73,14 +73,18 @@ class LstmTest
     runtime_tensor r;
 };
 
-INSTANTIATE_TEST_SUITE_P(lstm, LstmTest,
-                         testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 1, 2}),
-                                          testing::Values(dims_t{1, 1, 1}),
-                                          testing::Values(dims_t{1, 1, 1}),
-                                          testing::Values(dims_t{1, 8}),
-                                          testing::Values(dims_t{1, 4, 2}),
-                                          testing::Values(dims_t{1, 4, 1})));
+INSTANTIATE_TEST_SUITE_P(
+    lstm, LstmTest,
+    testing::Combine(testing::Values(dt_float32),
+                     testing::Values(dims_t{1, 1,
+                                            2} /*,
+                                dims_t{1, 1, 3} , dims_t{1, 1,
+                                8}*/),
+                     testing::Values(dims_t{1, 1, 1}),
+                     testing::Values(dims_t{1, 1, 1}),
+                     testing::Values(dims_t{1, 8}),
+                     testing::Values(dims_t{1, 4, 2} /*,dims_t{1,8,2}*/),
+                     testing::Values(dims_t{1, 4, 1} /*,dims_t{1,8,1}*/)));
 
 TEST_P(LstmTest, lstm) {
     auto x_ort = runtime_tensor_2_ort_tensor(x);
