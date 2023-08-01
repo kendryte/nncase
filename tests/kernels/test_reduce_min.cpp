@@ -81,10 +81,10 @@ INSTANTIATE_TEST_SUITE_P(
                                      axes_t{-1, -2, -3, -4})));
 
 TEST_P(ReduceMinTest, ReduceMin) {
+
     size_t axis_size = axis_arry1.size();
     if (axis_size <= a.shape().size()) {
         int64_t *axis_array = (int64_t *)malloc(axis_size * sizeof(int64_t));
-        size_t size = 0;
         std::copy(axis_arry1.begin(), axis_arry1.end(), axis_array);
         auto axis = hrt::create(dt_int64, {axis_size},
                                 {reinterpret_cast<gsl::byte *>(axis_array),
@@ -94,6 +94,9 @@ TEST_P(ReduceMinTest, ReduceMin) {
         auto output_ort =
             ortki_ReduceMax(runtime_tensor_2_ort_tensor(a), axis_array,
                             axis_size, keepDims_value);
+
+        // expected
+        size_t size = 0;
         void *ptr_ort = tensor_buffer(output_ort, &size);
         dims_t shape(tensor_rank(output_ort));
         tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));

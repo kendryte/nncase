@@ -28,21 +28,53 @@ using namespace ortki;
 
 class NormalLikeTest
     : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
+      public ::testing::TestWithParam<
+          std::tuple<nncase::typecode_t, dims_t, float_t, float_t, float_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape] = GetParam();
+        auto &&[typecode, l_shape, value1, value2, value3] = GetParam();
 
         input =
             hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
         init_tensor(input);
+
+        mean_value = value1;
+        float_t mean_ptr[] = {mean_value};
+        mean = hrt::create(
+                   typecode, {1},
+                   {reinterpret_cast<gsl::byte *>(mean_ptr), sizeof(mean_ptr)},
+                   true, host_runtime_tensor::pool_cpu_only)
+                   .expect("create tensor failed");
+
+        scale_value = value2;
+        float_t scale_ptr[] = {scale_value};
+        scale = hrt::create(typecode, {1},
+                            {reinterpret_cast<gsl::byte *>(scale_ptr),
+                             sizeof(scale_ptr)},
+                            true, host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
+
+        seed_value = value3;
+        float_t seed_ptr[] = {seed_value};
+        seed = hrt::create(
+                   typecode, {1},
+                   {reinterpret_cast<gsl::byte *>(seed_ptr), sizeof(seed_ptr)},
+                   true, host_runtime_tensor::pool_cpu_only)
+                   .expect("create tensor failed");
     }
 
     void TearDown() override {}
 
   protected:
     runtime_tensor input;
+    runtime_tensor mean;
+    runtime_tensor scale;
+    runtime_tensor seed;
+    axes_t shape_array;
+    float_t mean_value;
+    float_t scale_value;
+    float_t seed_value;
 };
 
 INSTANTIATE_TEST_SUITE_P(
@@ -50,13 +82,16 @@ INSTANTIATE_TEST_SUITE_P(
     testing::Combine(testing::Values(dt_float32),
                      testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 2, 4, 8},
                                      dims_t{1, 3, 16}, dims_t{1, 3}, dims_t{1},
-                                     dims_t{})));
+                                     dims_t{}),
+                     testing::Values(0.5f, 0.3f), testing::Values(1.0f, 2.0f),
+                     testing::Values(1.0f, 2.0f)));
 
 TEST_P(NormalLikeTest, normal_like) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
 
     // expected
-    auto output_ort = ortki_RandomNormalLike(l_ort, 1, 0.5f, 1.0f, 1.0f);
+    auto output_ort =
+        ortki_RandomNormalLike(l_ort, 1, mean_value, scale_value, seed_value);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
@@ -67,24 +102,6 @@ TEST_P(NormalLikeTest, normal_like) {
                         .expect("create tensor failed");
 
     // actual
-    float_t mean_ptr[] = {0.5f};
-    float_t scale_ptr[] = {1.0f};
-    float_t seed_ptr[] = {1.0f};
-    auto mean =
-        hrt::create(input.datatype(), {1},
-                    {reinterpret_cast<gsl::byte *>(mean_ptr), sizeof(mean_ptr)},
-                    true, host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
-    auto scale = hrt::create(input.datatype(), {1},
-                             {reinterpret_cast<gsl::byte *>(scale_ptr),
-                              sizeof(scale_ptr)},
-                             true, host_runtime_tensor::pool_cpu_only)
-                     .expect("create tensor failed");
-    auto seed =
-        hrt::create(input.datatype(), {1},
-                    {reinterpret_cast<gsl::byte *>(seed_ptr), sizeof(seed_ptr)},
-                    true, host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
     auto output =
         kernels::stackvm::normal_like(dt_float32, input.impl(), mean.impl(),
                                       scale.impl(), seed.impl())

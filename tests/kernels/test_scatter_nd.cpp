@@ -63,12 +63,14 @@ class ScatterNDTest
 
 INSTANTIATE_TEST_SUITE_P(
     ScatterND, ScatterNDTest,
-    testing::Combine(
-        testing::Values(dt_float32, dt_uint8, dt_int8, dt_float16, dt_uint32,
-                        dt_uint64, dt_uint16, dt_int16, dt_int32, dt_int64,
-                        dt_float64, dt_boolean, dt_bfloat16),
-        testing::Values(dt_int64), testing::Values(dims_t{2, 1, 10}),
-        testing::Values(dims_t{2, 1, 1, 3}), testing::Values(dims_t{2, 1, 1})));
+    testing::Combine(testing::Values(dt_float32, dt_uint8, dt_int8, dt_float16,
+                                     dt_uint32, dt_uint64, dt_uint16, dt_int16,
+                                     dt_int32, dt_int64, dt_float64, dt_boolean,
+                                     dt_bfloat16),
+                     testing::Values(dt_int64),
+                     testing::Values(dims_t{2, 1, 10}, dims_t{2, 5, 10}),
+                     testing::Values(dims_t{2, 1, 1, 3}),
+                     testing::Values(dims_t{2, 1, 1})));
 
 TEST_P(ScatterNDTest, ScatterND) {
 

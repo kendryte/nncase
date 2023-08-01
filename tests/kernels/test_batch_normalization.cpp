@@ -94,9 +94,12 @@ TEST_P(BatchNormalizationTest, batch_normalization) {
     auto mean_ort = runtime_tensor_2_ort_tensor(mean);
     auto var_ort = runtime_tensor_2_ort_tensor(var);
 
+    auto eps = 0.01f;
+    auto momentum = 0.9f;
+
     // expected
-    auto output_ort = ortki_BatchNormalization(input_ort, scale_ort, b_ort,
-                                               mean_ort, var_ort, 0.01f, 0.9f);
+    auto output_ort = ortki_BatchNormalization(
+        input_ort, scale_ort, b_ort, mean_ort, var_ort, eps, momentum);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
@@ -106,14 +109,14 @@ TEST_P(BatchNormalizationTest, batch_normalization) {
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
-    float epsilon_ptr[] = {0.01f};
+    float epsilon_ptr[] = {eps};
     auto epsilon = hrt::create(nncase::dt_float32, {1},
                                {reinterpret_cast<gsl::byte *>(epsilon_ptr),
                                 sizeof(epsilon_ptr)},
                                true, host_runtime_tensor::pool_cpu_only)
                        .expect("create tensor failed");
 
-    float monentum_ptr[] = {0.9f};
+    float monentum_ptr[] = {momentum};
     auto monentum = hrt::create(nncase::dt_float32, {1},
                                 {reinterpret_cast<gsl::byte *>(monentum_ptr),
                                  sizeof(monentum_ptr)},
