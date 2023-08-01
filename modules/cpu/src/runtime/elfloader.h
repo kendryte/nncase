@@ -14,7 +14,8 @@
 BEGIN_NS_NNCASE_RT_MODULE(cpu)
 
 typedef void (*entrypoint_t)(size_t id, uint8_t **buffers,
-                             nncase_mt_t *nncase_mt, void *data, const uint8_t *rdata);
+                             nncase_mt_t *nncase_mt, void *data,
+                             const uint8_t *rdata);
 
 class elfloader {
   public:

@@ -48,7 +48,8 @@ cpu_runtime_module &cpu_runtime_function::module() const noexcept {
 result<void> cpu_runtime_function::initialize_core(
     NNCASE_UNUSED runtime_function_init_context &context) noexcept {
 
-    // try_(context.read_section(".desc", [this](auto sr, size_t) -> result<void> {
+    // try_(context.read_section(".desc", [this](auto sr, size_t) ->
+    // result<void> {
     //     auto header = sr.template read<desc_header>();
     //     if (parameters_size() != header.inputs + header.outputs)
     //         return nncase::err(std::errc::invalid_argument);
@@ -112,7 +113,7 @@ cpu_runtime_function::invoke_core(NNCASE_UNUSED gsl::span<value_t> parameters,
                                   NNCASE_UNUSED value_t return_value) noexcept {
     try_var(id, module().find_id_by_function(this));
 
-    uint8_t **buffers = new uint8_t*[parameters.size()];
+    uint8_t **buffers = new uint8_t *[parameters.size()];
     // input buffer
     for (size_t i = 0; i < parameters.size(); i++) {
         try_var(input_tensor, parameters[i].as<tensor>());
