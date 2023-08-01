@@ -47,7 +47,7 @@ class DequantizeTest
 
 INSTANTIATE_TEST_SUITE_P(
     dequantize, DequantizeTest,
-    testing::Combine(testing::Values(dt_uint8, dt_int8),
+    testing::Combine(testing::Values(dt_uint8, dt_int8 /*, dt_int16*/),
                      testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 3, 16},
                                      dims_t{3, 16}, dims_t{16, 16}, dims_t{1},
                                      dims_t{})));
@@ -69,6 +69,13 @@ TEST_P(DequantizeTest, dequantize) {
     } else if (input.datatype() == dt_int8) {
         int8_t zero_point[] = {(int8_t)zero_point_value};
         zero_point_ptr = hrt::create(nncase::dt_int8, {1},
+                                     {reinterpret_cast<gsl::byte *>(zero_point),
+                                      sizeof(zero_point)},
+                                     true, host_runtime_tensor::pool_cpu_only)
+                             .expect("create tensor failed");
+    } else {
+        int16_t zero_point[] = {(int16_t)zero_point_value};
+        zero_point_ptr = hrt::create(nncase::dt_int16, {1},
                                      {reinterpret_cast<gsl::byte *>(zero_point),
                                       sizeof(zero_point)},
                                      true, host_runtime_tensor::pool_cpu_only)
