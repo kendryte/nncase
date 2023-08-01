@@ -14,9 +14,9 @@ class Generator:
         elif dtype == np.bool:
             data = np.random.rand(*shape) > 0.5
         elif dtype == np.int32:
-            data = np.random.randint(1, 2, size=shape, dtype='int32')
+            data = np.random.randint(1, 5, size=shape, dtype='int32')
         elif dtype == np.int64:
-            data = np.random.randint(1, 2, size=shape, dtype='int64')
+            data = np.random.randint(1, 5, size=shape, dtype='int64')
             # data = np.random.randint(1, 128, size=shape, dtype='int64')
         else:
             data = np.random.rand(*shape)

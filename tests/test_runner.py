@@ -255,7 +255,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                             if not judge:
                                 if test_utils.in_ci():
                                     self.clear(self.case_dir)
-                                assert (judge), f"Fault result in {stage} + {result}"
+                                assert f"Fault result in {stage} + {result}"
 
         if test_utils.in_ci():
             self.clear(self.case_dir)
