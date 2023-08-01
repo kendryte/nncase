@@ -25,6 +25,7 @@
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
+using slope_t = itlib::small_vector<float_t, 4>;
 
 class PreluTest : public KernelTest,
                   public ::testing::TestWithParam<

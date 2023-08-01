@@ -127,7 +127,6 @@ using dims_t = itlib::small_vector<size_t, 8>;
 using axes_t = itlib::small_vector<int64_t, 8>;
 using strides_t = itlib::small_vector<size_t, 8>;
 using paddings_t = itlib::small_vector<padding, 4>;
-using slope_t = itlib::small_vector<float_t, 4>;
 
 template <class... Ints>
 auto fixed_dims(Ints &&...values) -> std::array<size_t, sizeof...(Ints)> {
