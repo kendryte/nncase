@@ -48,8 +48,6 @@ cpu_runtime_module &cpu_runtime_function::module() const noexcept {
 result<void> cpu_runtime_function::initialize_core(
     NNCASE_UNUSED runtime_function_init_context &context) noexcept {
 
-    printf("Initializing Core\n");
-
     // try_(context.read_section(".desc", [this](auto sr, size_t) ->
     // result<void> {
     //     auto header = sr.template read<desc_header>();
@@ -114,8 +112,6 @@ result<value_t>
 cpu_runtime_function::invoke_core(NNCASE_UNUSED gsl::span<value_t> parameters,
                                   NNCASE_UNUSED value_t return_value) noexcept {
     try_var(id, module().find_id_by_function(this));
-
-    printf("InvokeCore\n");
 
     uint8_t **buffers = new uint8_t *[parameters.size()];
     // input buffer
