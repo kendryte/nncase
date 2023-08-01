@@ -19,10 +19,10 @@ internal sealed class ShapeEvaluateContext : IShapeEvaluateContext
 {
     private readonly Dictionary<Expr, Expr> _memo;
 
-    public ShapeEvaluateContext(Dictionary<Expr, Expr> memo, IReadOnlyDictionary<Var, Expr[]> varMap)
+    public ShapeEvaluateContext(Dictionary<Expr, Expr> memo, ShapeExprCache cache)
     {
-        _memo = memo;
-        VarMap = varMap;
+        _memo = memo.Concat(cache.Cache).ToDictionary(pair => pair.Key, pair => pair.Value);
+        VarMap = cache.VarMap;
     }
 
     public IReadOnlyDictionary<Var, Expr[]> VarMap { get; }
@@ -57,7 +57,7 @@ internal sealed class ShapeEvaluateContext : IShapeEvaluateContext
         // call
         if (expr.CheckedType is TupleType)
         {
-            var shape = expr.EvaluateShapeExpr(VarMap);
+            var shape = expr.EvaluateShapeExpr(new ShapeExprCache(VarMap));
             if (shape is Call c && c.Target is IR.Math.Require && c.Arguments[IR.Math.Require.Value.Index] is Tuple tupleShapeExpr)
             {
                 return new Tuple(tupleShapeExpr.Fields.ToArray().Select(expr => Cast(expr, DataTypes.Int32)).ToArray());

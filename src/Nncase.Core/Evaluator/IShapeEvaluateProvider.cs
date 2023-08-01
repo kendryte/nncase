@@ -21,7 +21,7 @@ public interface IShapeEvaluateProvider
     /// <param name="expr">Expression.</param>
     /// <param name="varMap">VarMap.</param>
     /// <returns>Evaluate result.</returns>
-    Expr EvaluateShapeExpr(Expr expr, IReadOnlyDictionary<Var, Expr[]> varMap);
+    Expr EvaluateShapeExpr(Expr expr, ShapeExprCache cache);
 
     /// <summary>
     /// Evaluate Shape of operator.

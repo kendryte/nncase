@@ -22,7 +22,7 @@ internal sealed class ShapeEvaluateProvider : IShapeEvaluateProvider
         _serviceProvider = serviceProvider;
     }
 
-    public Expr EvaluateShapeExpr(Expr expr, IReadOnlyDictionary<Var, Expr[]> varsMap)
+    public Expr EvaluateShapeExpr(Expr expr, ShapeExprCache cache)
     {
         if (expr.CheckedType is null)
         {
@@ -55,7 +55,7 @@ internal sealed class ShapeEvaluateProvider : IShapeEvaluateProvider
             }
         }
 
-        var evaluatorVisitor = new ShapeEvaluateVisitor(varsMap);
+        var evaluatorVisitor = new ShapeEvaluateVisitor(cache);
         return evaluatorVisitor.Visit(expr);
     }
 

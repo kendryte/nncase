@@ -220,48 +220,41 @@ public class FindVar : ExprVisitor<Expr, Unit>
 
 public static class CallValidator
 {
-    static readonly Dictionary<RuntimeTypeHandle, int> OpList = new()
+    private static readonly HashSet<RuntimeTypeHandle> ForceConvert = new()
     {
-        // tuple input
-        { typeof(Concat).TypeHandle, 0 },
-        { typeof(Stack).TypeHandle, 0 },
-        { typeof(Slice).TypeHandle, 0 },
-        { typeof(Gather).TypeHandle, 0 },
-        { typeof(ShapeOf).TypeHandle, 0 },
-        { typeof(IR.Tensors.Range).TypeHandle, 0 },
-
-
-        { typeof(Reshape).TypeHandle, 0 },
-        { typeof(Unsqueeze).TypeHandle, 0 },
-        { typeof(Squeeze).TypeHandle, 0 },
-
-
-        { typeof(Cast).TypeHandle, 0 },
-
-
-
-        { typeof(Expand).TypeHandle, 0 },
-        { typeof(ConstantOfShape).TypeHandle, 0 },
-        { typeof(Where).TypeHandle, 0 },
-        { typeof(Compare).TypeHandle, 0 },
-
-
-        // compute
-        // maybe Reduce.Prod only, for eval shape
-        { typeof(Reduce).TypeHandle, 1 },
-        { typeof(Transpose).TypeHandle, 1 },
-        // marker
-        { typeof(Unary).TypeHandle, 1 },
-        { typeof(Binary).TypeHandle, 2 },
-        { typeof(Clamp).TypeHandle, 2 },
-        { typeof(Pad).TypeHandle, 2 },
-
-        // ...
-        { typeof(Conv2D).TypeHandle, 2 },
-        { typeof(MatMul).TypeHandle, 2 },
-        { typeof(Tile).TypeHandle, 0 },
-        { typeof(CumSum).TypeHandle, 0 },
+        typeof(Conv2D).TypeHandle,
+        typeof(MatMul).TypeHandle,
+        typeof(Unsqueeze).TypeHandle,
+        typeof(Squeeze).TypeHandle,
+        typeof(Cast).TypeHandle,
+        typeof(Unary).TypeHandle,
+        typeof(Transpose).TypeHandle,
+        typeof(Pad).TypeHandle,
     };
+
+    static readonly HashSet<RuntimeTypeHandle> MaybeDynamic = new()
+    {
+        typeof(Concat).TypeHandle,
+        typeof(Stack).TypeHandle,
+        typeof(Binary).TypeHandle,
+        typeof(Slice).TypeHandle,
+        typeof(Gather).TypeHandle,
+        typeof(ShapeOf).TypeHandle,
+        typeof(Reshape).TypeHandle,
+        typeof(Expand).TypeHandle,
+        typeof(ConstantOfShape).TypeHandle,
+        typeof(Where).TypeHandle,
+        typeof(Compare).TypeHandle,
+        typeof(Reduce).TypeHandle,
+        typeof(Clamp).TypeHandle,
+        typeof(Tile).TypeHandle,
+        typeof(CumSum).TypeHandle,
+        typeof(IR.Tensors.Range).TypeHandle,
+    };
+
+    public static bool IsMaybeDynamic(Expr target) => MaybeDynamic.Contains(target.GetType().TypeHandle);
+
+    public static bool IsForceConvert(Expr target) => ForceConvert.Contains(target.GetType().TypeHandle);
 
     public static bool ValidTarget(Expr target)
     {
@@ -270,7 +263,7 @@ public static class CallValidator
             return true;
         }
 
-        if (OpList.TryGetValue(target.GetType().TypeHandle, out _))
+        if (IsMaybeDynamic(target) || IsForceConvert(target))
         {
             return true;
         }

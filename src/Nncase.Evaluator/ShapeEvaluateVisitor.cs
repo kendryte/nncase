@@ -14,9 +14,9 @@ internal sealed class ShapeEvaluateVisitor : ExprVisitor<Expr, Unit>
 {
     private readonly ShapeEvaluateContext _context;
 
-    public ShapeEvaluateVisitor(IReadOnlyDictionary<Var, Expr[]> varMap)
+    public ShapeEvaluateVisitor(ShapeExprCache cache)
     {
-        _context = new ShapeEvaluateContext(ExprMemo, varMap);
+        _context = new ShapeEvaluateContext(ExprMemo, cache);
     }
 
     protected override Expr VisitLeafBaseFunction(BaseFunction expr)
