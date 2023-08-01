@@ -590,7 +590,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
 
     public Expr FixInput(FusionBucketContext context, int[][] shapeList)
     {
-        return ReplaceClone(body, fusionVars.Zip(outerArgs).ToArray());
+        return ReplaceClone(context.FusionBody, context.Parameters.Zip(context.Arguments).ToArray());
         // var result = context.Parameters.Zip(context.Arguments).Zip(shapeList).Aggregate(context.FusionBody, (sum, data) =>
         // {
         //     var ((fusionVar, arg), fixShape) = data;
