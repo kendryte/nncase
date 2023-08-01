@@ -16,7 +16,7 @@ namespace Nncase.Evaluator.ShapeExpr;
 
 [EvaluatorGenerator]
 [TypeInferGenerator]
-public partial class MatMulShapeEvaluator : IEvaluator<MatMulShape>, ITypeInferencer<MatMulShape>, ICostEvaluator<MatMulShape>, IShapeEvaluator<MatMulShape>
+public partial class MatMulShapeEvaluator : IEvaluator<MatMulShape>, ITypeInferencer<MatMulShape>, ICostEvaluator<MatMulShape>, IShapeEvaluator<MatMulShape>, IMetricEvaluator<MatMulShape>
 {
     public IValue Visit(Tensor lhs, Tensor rhs)
     {
@@ -85,4 +85,12 @@ public partial class MatMulShapeEvaluator : IEvaluator<MatMulShape>, ITypeInfere
     {
         return Enumerable.Repeat(0, 4 - shape.Length).Concat(shape).ToArray();
     }
+
+    public Metric Visit(IMetricEvaluateContext context, MatMulShape target)
+    {
+        var returnType = context.GetReturnType<IRType>();
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(returnType),
+        };    }
 }

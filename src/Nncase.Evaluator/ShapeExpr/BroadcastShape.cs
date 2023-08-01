@@ -12,7 +12,7 @@ using Nncase.Utilities;
 
 namespace Nncase.Evaluator.ShapeExpr;
 
-public partial class BroadcastShapeEvaluator : IEvaluator<BroadcastShape>, ITypeInferencer<BroadcastShape>, ICostEvaluator<BroadcastShape>, IShapeEvaluator<BroadcastShape>
+public partial class BroadcastShapeEvaluator : IEvaluator<BroadcastShape>, ITypeInferencer<BroadcastShape>, ICostEvaluator<BroadcastShape>, IShapeEvaluator<BroadcastShape>, IMetricEvaluator<BroadcastShape>
 {
     public IValue Visit(IEvaluateContext context, BroadcastShape broadcastShape)
     {
@@ -56,5 +56,14 @@ public partial class BroadcastShapeEvaluator : IEvaluator<BroadcastShape>, IType
 
         // DumpScope.Current.DumpIR(bn, "binary");
         return bn;
+    }
+
+    public Metric Visit(IMetricEvaluateContext context, BroadcastShape target)
+    {
+        var returnType = context.GetReturnType<IRType>();
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(returnType),
+        };
     }
 }

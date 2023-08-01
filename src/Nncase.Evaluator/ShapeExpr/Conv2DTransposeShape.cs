@@ -14,7 +14,7 @@ namespace Nncase.Evaluator.ShapeExpr;
 
 [EvaluatorGenerator]
 [TypeInferGenerator]
-public partial class Conv2DTransposeShapeEvaluator : IEvaluator<Conv2DTransposeShape>, ITypeInferencer<Conv2DTransposeShape>, ICostEvaluator<Conv2DTransposeShape>, IShapeEvaluator<Conv2DTransposeShape>
+public partial class Conv2DTransposeShapeEvaluator : IEvaluator<Conv2DTransposeShape>, ITypeInferencer<Conv2DTransposeShape>, ICostEvaluator<Conv2DTransposeShape>, IShapeEvaluator<Conv2DTransposeShape>, IMetricEvaluator<Conv2DTransposeShape>
 {
     public IValue Visit(Tensor input, Tensor weights, Tensor stride, Tensor dilation, Tensor padding, Tensor outputPadding, int groups)
     {
@@ -35,5 +35,14 @@ public partial class Conv2DTransposeShapeEvaluator : IEvaluator<Conv2DTransposeS
     public Expr Visit(IShapeEvaluateContext context, Conv2DTransposeShape target)
     {
         return new[] { 4 };
+    }
+
+    public Metric Visit(IMetricEvaluateContext context, Conv2DTransposeShape target)
+    {
+        var returnType = context.GetReturnType<IRType>();
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(returnType),
+        };
     }
 }
