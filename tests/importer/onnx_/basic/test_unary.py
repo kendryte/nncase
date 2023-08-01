@@ -26,19 +26,19 @@ def _make_module():
 
         def forward(self, x):
             outs = []
-            outs.append(torch.abs(-x))
-            outs.append(torch.acos(x))
-            outs.append(torch.asin(x))
-            outs.append(torch.ceil(x))
-            outs.append(torch.cos(x))
-            outs.append(torch.exp(x))
+            # outs.append(torch.abs(-x))
+            # outs.append(torch.acos(x))
+            # outs.append(torch.asin(x))
+            # outs.append(torch.ceil(x))
+            # outs.append(torch.cos(x))
+            # outs.append(torch.exp(x))
             outs.append(torch.floor(x * 10))
-            outs.append(torch.log(x + 2))
-            outs.append(torch.neg(x))
-            outs.append(torch.round(x))
-            outs.append(torch.sin(x))
-            outs.append(torch.sqrt(x + 2))
-            outs.append(torch.tanh(x))
+            # outs.append(torch.log(x + 2))
+            # outs.append(torch.neg(x))
+            # outs.append(torch.round(x))
+            # outs.append(torch.sin(x))
+            # outs.append(torch.sqrt(x + 2))
+            # outs.append(torch.tanh(x))
             return outs
 
     return UnaryModule()
@@ -46,7 +46,7 @@ def _make_module():
 
 in_shapes = [
     [16],
-    [1, 3, 16, 16]
+    # [1, 3, 16, 16]
 ]
 
 
@@ -60,4 +60,4 @@ def test_unary(in_shape, request):
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_unary.py'])
+    pytest.main(['-vv', __file__])

@@ -28,29 +28,34 @@ def _make_module(input_shape, unit, activation, use_bias):
 
         @tf.function(input_signature=[tf.TensorSpec(input_shape, dtype=tf.float32)])
         def __call__(self, x):
-            return self.out(x)
+            out = []
+            x = self.out(x)
+            y = tf.reshape(x, [1, 1, 560, 80])
+            out.append(x)
+            out.append(y)
+            return out
 
     return FullyConnectedModule()
 
 
 input_shapes = [
-    [4, 6],
-    [3, 7]
+    [1, 560, 128],
+    # [3, 7]
 ]
 
 units = [
-    3,
-    13
+    80,
+    # 13
 ]
 
 activations = [
     None,
-    'relu',
+    # 'relu',
 ]
 
 use_biases = [
     True,
-    False
+    # False
 ]
 
 

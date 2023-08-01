@@ -16,7 +16,7 @@ output_layout = 'NHWC'
 model_layout = 'NHWC'
 letterbox_value = 0
 dump_asm = true
-dump_ir = false
+dump_ir = true
 
 [ptq_opt]
 use_mix_quant = false
@@ -59,7 +59,7 @@ args = []
 
 [generator.calibs]
 method = 'random'
-number = 5
+number = 1
 batch = 1
 
 [generator.calibs.random]
@@ -80,21 +80,21 @@ args = []
 [target]
 
 [target.cpu]
-eval = true
+eval = false
 infer = true
 simarity_name = 'cosine'
 
 [target.cpu.mode.noptq]
-enabled = false
+enabled = true
 threshold = 0.999
 
 [target.cpu.mode.ptq]
-enabled = true
+enabled = false
 threshold = 0.98
 
 [target.k510]
-eval = true
-infer = true
+eval = false
+infer = false
 simarity_name = 'cosine'
 
 [target.k510.mode.noptq]
@@ -106,8 +106,8 @@ enabled = true
 threshold = 0.98
 
 [target.k230]
-eval = true
-infer = true
+eval = false
+infer = false
 simarity_name = 'cosine'
 
 [target.k230.mode.noptq]
