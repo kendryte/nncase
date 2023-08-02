@@ -19,6 +19,7 @@ internal sealed class LifeTimeCollector : ExprVisitor<Unit, Unit>
     public IReadOnlyDictionary<Expr, ScheduleBuffer> Collect(Function entry)
     {
         Visit(entry.Body);
+        Update(entry.Body); // avoid final call time interval size == 1.
         Alias();
 
         var d = new Dictionary<Expr, ScheduleBuffer>(ReferenceEqualityComparer.Instance);
@@ -52,7 +53,8 @@ internal sealed class LifeTimeCollector : ExprVisitor<Unit, Unit>
 
         TimeStamp += 2;
 
-        foreach (var item in expr.GetUsers())
+        // note we will update tuple field on the next call.
+        foreach (var item in expr.Users.Where(e => e is not (BaseFunction or IR.Tuple)))
         {
             Update(item);
         }
@@ -105,7 +107,6 @@ internal sealed class LifeTimeCollector : ExprVisitor<Unit, Unit>
 
             foreach (var (expr, interval) in LifenessMap)
             {
-
                 if (expr is Call { Target: IR.Tensors.Concat } concatCall)
                 {
                     changed = AliasTime(concatCall, interval);
