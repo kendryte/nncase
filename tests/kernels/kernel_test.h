@@ -1624,6 +1624,34 @@ class KernelTest {
         std::cout << std::endl;
     }
 
+    virtual void quantize_to_int16(runtime::runtime_tensor &expected,
+                                   runtime::runtime_tensor &input, int16_t zero,
+                                   float_t scale) {
+        if (expected.datatype() != dt_int16)
+            return;
+        NNCASE_UNUSED auto res = kernels::stackvm::apply(
+            expected.shape(),
+            [&](gsl::span<const size_t> index) -> result<void> {
+                get<int16_t>(expected, index) = static_cast<int16_t>(
+                    get<float_t>(input, index) / scale + zero);
+                return ok();
+            });
+    }
+
+    virtual void int16_dequantize_to_float(runtime::runtime_tensor &expected,
+                                   runtime::runtime_tensor &input, int16_t zero,
+                                   float_t scale) {
+        if (input.datatype() != dt_int16)
+            return;
+        NNCASE_UNUSED auto res = kernels::stackvm::apply(
+            expected.shape(),
+            [&](gsl::span<const size_t> index) -> result<void> {
+                get<float_t>(expected, index) = static_cast<float_t>(
+                    (get<int16_t>(input, index) - zero) * scale);
+                return ok();
+            });
+    }
+
     template <class T>
     result<void> clamp_impl(const T *input, T min, T max, T *output,
                             gsl::span<const size_t> in_shape,

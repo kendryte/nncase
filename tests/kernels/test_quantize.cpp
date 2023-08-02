@@ -144,20 +144,19 @@ TEST_P(QuantizeTest, quantize) {
 
     } else {
 
-        // actual
-        auto output1 =
-            kernels::stackvm::quantize(zero_point_ptr.datatype(), input.impl(),
-                                       quant_param_ptr.impl())
-                .expect("quantize failed");
-        runtime_tensor actual(output1.as<tensor>().expect("as tensor failed"));
-
         // expected
-        auto output2 =
+        runtime_tensor expected;
+        expected = hrt::create(dt_int16, input.shape(),
+                            host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
+        quantize_to_int16(expected, input, 127, 0.01f);
+
+        // actual
+        auto output =
             kernels::stackvm::quantize(zero_point_ptr.datatype(), input.impl(),
                                        quant_param_ptr.impl())
                 .expect("quantize failed");
-        runtime_tensor expected(
-            output2.as<tensor>().expect("as tensor failed"));
+        runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
         bool result = is_same_tensor(expected, actual) ||
                       cosine_similarity_tensor(expected, actual);
