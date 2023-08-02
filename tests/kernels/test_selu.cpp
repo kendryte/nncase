@@ -26,23 +26,28 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class SeluTest
-    : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
+class SeluTest : public KernelTest,
+                 public ::testing::TestWithParam<
+                     std::tuple<nncase::typecode_t, dims_t, float_t, float_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape] = GetParam();
+        auto &&[typecode, l_shape, value1, value2] = GetParam();
 
         input =
             hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
         init_tensor(input);
+
+        alpha_value = value1;
+        gamma_value = value2;
     }
 
     void TearDown() override {}
 
   protected:
     runtime_tensor input;
+    float_t alpha_value;
+    float_t gamma_value;
 };
 
 INSTANTIATE_TEST_SUITE_P(
@@ -50,12 +55,12 @@ INSTANTIATE_TEST_SUITE_P(
     testing::Combine(testing::Values(dt_float32),
                      testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 3, 16},
                                      dims_t{1, 3}, dims_t{1}, dims_t{8, 8},
-                                     dims_t{})));
+                                     dims_t{}),
+                     testing::Values(1.2f, 0.8f, 0.5f, 0.6f, 1.5f),
+                     testing::Values(1.2f, 0.8f, 0.5f, 0.6f, 1.5f)));
 
 TEST_P(SeluTest, Selu) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
-    auto alpha_value = 1.5f;
-    auto gamma_value = 1.5f;
 
     // expected
     float_t alpha_ptr[] = {alpha_value};
