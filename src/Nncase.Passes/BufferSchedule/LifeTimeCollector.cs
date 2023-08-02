@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive;
@@ -15,12 +16,11 @@ internal sealed class LifeTimeCollector : ExprVisitor<Unit, Unit>
 
     public Dictionary<Expr, TimeInterval> LifenessMap { get; } = new(ReferenceEqualityComparer.Instance);
 
-    public List<ScheduleBuffer> Collect(Function entry)
+    public IReadOnlyDictionary<Expr, ScheduleBuffer> Collect(Function entry)
     {
         Visit(entry.Body);
-        Alias();
 
-        var l = new List<ScheduleBuffer>();
+        var d = new Dictionary<Expr, ScheduleBuffer>(ReferenceEqualityComparer.Instance);
         foreach (var (k, v) in LifenessMap)
         {
             var name = k switch
@@ -29,15 +29,12 @@ internal sealed class LifeTimeCollector : ExprVisitor<Unit, Unit>
                 Var va => va.Name,
                 _ => k.GetType().Name,
             };
+            var size = GetSize(k.CheckedType, out var shape, out var stride);
 
-            var shape = k.CheckedShape.ToValueArray();
-            var stride = TensorUtilities.GetStrides(shape);
-            var size = TensorUtilities.GetSize(shape, stride, k.CheckedDataType.SizeInBytes);
-
-            l.Add(new(name, v, new(0, size), shape, stride));
+            d.Add(k, new(name, v, new(0, size), shape, stride, IsInPlace(k)));
         }
 
-        return l;
+        return d;
     }
 
     protected override Unit DefaultVisitLeaf(Expr expr) => Unit.Default;
@@ -58,7 +55,7 @@ internal sealed class LifeTimeCollector : ExprVisitor<Unit, Unit>
 
     private void Update(Expr expr)
     {
-        if (expr is Const)
+        if (expr is (Const or None))
         {
             return;
         }
@@ -79,25 +76,53 @@ internal sealed class LifeTimeCollector : ExprVisitor<Unit, Unit>
         }
         else
         {
-            interval.End += 1;
-        }
-
-        // advance the getitem buffer.
-        if (expr is Call { Target: IR.Tensors.GetItem, Arguments: var args } call && args[0] is Call { CheckedType: TupleType })
-        {
-            interval.Start = LifenessMap[args[0]].Start;
+            interval.Death = TimeStamp + 1;
         }
 
         LifenessMap[expr] = interval;
     }
 
-    private void Alias()
+    private bool IsInPlace(Expr expr)
     {
-        // skip the call which output type is tuple.
-        var calls = LifenessMap.Select(kv => kv.Key is Call { CheckedType: TupleType }).ToArray();
-        foreach (var c in calls)
+        if (expr is Call { Target: IR.Tensors.Reshape } callReshape)
         {
-            LifenessMap.Remove(c);
+            return true;
         }
+
+        if (expr is Call { Target: IR.Tensors.Concat } concatCall && concatCall.Arguments[0] is IR.Tuple concatTuple)
+        {
+            return true;
+        }
+
+        if (expr is Call { Target: IR.Tensors.Split } splitCall)
+        {
+            return true;
+        }
+
+        return false;
     }
+
+    private int GetSize(IRType type, out int[] shape, out int[] stride)
+    {
+        shape = Array.Empty<int>();
+        stride = Array.Empty<int>();
+        var size = 0;
+        if (type is TensorType tensorType)
+        {
+            shape = tensorType.Shape.ToValueArray();
+            stride = TensorUtilities.GetStrides(shape);
+            size = TensorUtilities.GetSize(shape, stride, tensorType.DType.SizeInBytes);
+        }
+        else if (type is TupleType tupleType)
+        {
+            size = 0;
+            foreach (var item in tupleType)
+            {
+                size += GetSize(item, out _, out _);
+            }
+        }
+
+        return size;
+    }
+
 }

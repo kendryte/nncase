@@ -43,11 +43,16 @@ public sealed class DDrBufferSchdeulePass : ModulePass
         // 1. merge the all call prim func
         if (_enbaleMergeCall)
         {
-            // if (module.Entry is Function { ModuleKind: Callable.StackVMModuleKind, Body: Expr body } func && IsFixedType(body.CheckedType))
-            // {
-            //     var sorter = new TopSorter();
-            //     sorter.GetTimeLine(func);
-            // }
+            if (module.Entry is Function { ModuleKind: Callable.StackVMModuleKind, Body: Expr body } func && IsFixedType(body.CheckedType))
+            {
+                var sch = new BufferSchedule.BufferScheduler();
+                var buffers = sch.CollectLifeTime(func);
+                sch.Schedule(buffers);
+                using (var fs = Diagnostics.DumpScope.Current.OpenFile("draw_buffers.py"))
+                {
+                    sch.Dump(fs, buffers);
+                }
+            }
         }
 
         // 4. schedule the prim funcs.
