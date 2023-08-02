@@ -1639,8 +1639,8 @@ class KernelTest {
     }
 
     virtual void int16_dequantize_to_float(runtime::runtime_tensor &expected,
-                                   runtime::runtime_tensor &input, int16_t zero,
-                                   float_t scale) {
+                                           runtime::runtime_tensor &input,
+                                           int16_t zero, float_t scale) {
         if (input.datatype() != dt_int16)
             return;
         NNCASE_UNUSED auto res = kernels::stackvm::apply(
