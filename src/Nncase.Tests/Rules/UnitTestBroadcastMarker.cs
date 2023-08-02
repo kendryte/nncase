@@ -17,7 +17,9 @@ public class UnitTestBroadcastMarker : TransformTestBase
     public void TestBroadcastInputMarker()
     {
         var input = Testing.Rand<float>(1, 3, 24, 24);
-        var a = Abs(Reshape(new Marker(WellknownMarkerNames.RangeOf, input, new[] { -1f, 1f }), input.Shape));
+        var a = IR.F.Math.MatMul(
+            Reshape(new Marker(WellknownMarkerNames.RangeOf, input, new[] { -1f, 1f }), input.Shape),
+            Reshape(new Marker(WellknownMarkerNames.RangeOf, input, new[] { -2f, 2f }), input.Shape));
         var result = TestMatched<BroadcastInputMarker>(a);
         TestNotMatch<BroadcastInputMarker>(result);
     }
