@@ -302,68 +302,67 @@
 #define PARENT_DIR_1 "../../../tests/kernels/"
 #define PARENT_DIR_2 "../../../../tests/kernels/"
 
-#define SPLIT_ELEMENT(key, idx) \
-    rapidjson::Value copiedArray##key(rapidjson::kArrayType); \
-    copiedArray##key.CopyFrom(key[idx], write_doc.GetAllocator()); \
-    write_doc.AddMember(Value(#key, write_doc.GetAllocator()), copiedArray##key, write_doc.GetAllocator());
+#define SPLIT_ELEMENT(key, idx)                                                \
+    rapidjson::Value copiedArray##key(rapidjson::kArrayType);                  \
+    copiedArray##key.CopyFrom(key[idx], write_doc.GetAllocator());             \
+    write_doc.AddMember(Value(#key, write_doc.GetAllocator()),                 \
+                        copiedArray##key, write_doc.GetAllocator());
 
-#define FOR_LOOP(key, idx) \
-    assert(document[#key].IsArray()); \
-    Value& key = document[#key]; \
+#define FOR_LOOP(key, idx)                                                     \
+    assert(document[#key].IsArray());                                          \
+    Value &key = document[#key];                                               \
     for (SizeType idx = 0; idx < key.Size(); ++idx) {
 
 #define FOR_LOOP_END() }
 
+#define FILE_NAME_GEN(PARENT_DIR, name)                                        \
+    std::string(PARENT_DIR) + std::string(name) + std::string(ENDFIX)
 
-#define FILE_NAME_GEN(PARENT_DIR, name) \
-    std::string(PARENT_DIR) + std::string(name) +std::string(ENDFIX)
+#define FILE_NAME_GEN_SUBCASE(case_name, idx)                                  \
+    std::string(case_name) + "_" + std::to_string(idx) + std::string(ENDFIX)
 
-#define FILE_NAME_GEN_SUBCASE(case_name, idx) \
-    std::string(case_name) + "_" + std::to_string(idx) +std::string(ENDFIX)
-
-
-#define READY_TEST_CASE_GENERATE() \
-    std::string content; \
-    auto filename1 = FILE_NAME_GEN(PARENT_DIR_1, TEST_CASE_NAME); \
-    std::ifstream file1(filename1);  \
-    if (file1.fail()) {  \
-        file1.close(); \
-        auto filename2 = FILE_NAME_GEN(PARENT_DIR_2, TEST_CASE_NAME); \
-        std::ifstream file2(filename2);  \
-        if (file2.fail()) { \
-            file2.close(); \
-            std::cout << "File does not exist: " << filename2 << std::endl;  \
-        } else { \
-            content = KernelTest::ReadFromJsonFile(file2); \
-            std::cout << "File exists: " << filename2 << std::endl;  \
-        } \
-    } else { \
-        content = KernelTest::ReadFromJsonFile(file1); \
-        std::cout << "File exists: " << filename1 << std::endl;  \
-    }  \
-    Document document; \
-    KernelTest::ParseJson(document, content); \
-    unsigned case_num  = 0; \
-    Document write_doc; \
+#define READY_TEST_CASE_GENERATE()                                             \
+    std::string content;                                                       \
+    auto filename1 = FILE_NAME_GEN(PARENT_DIR_1, TEST_CASE_NAME);              \
+    std::ifstream file1(filename1);                                            \
+    if (file1.fail()) {                                                        \
+        file1.close();                                                         \
+        auto filename2 = FILE_NAME_GEN(PARENT_DIR_2, TEST_CASE_NAME);          \
+        std::ifstream file2(filename2);                                        \
+        if (file2.fail()) {                                                    \
+            file2.close();                                                     \
+            std::cout << "File does not exist: " << filename2 << std::endl;    \
+        } else {                                                               \
+            content = KernelTest::ReadFromJsonFile(file2);                     \
+            std::cout << "File exists: " << filename2 << std::endl;            \
+        }                                                                      \
+    } else {                                                                   \
+        content = KernelTest::ReadFromJsonFile(file1);                         \
+        std::cout << "File exists: " << filename1 << std::endl;                \
+    }                                                                          \
+    Document document;                                                         \
+    KernelTest::ParseJson(document, content);                                  \
+    unsigned case_num = 0;                                                     \
+    Document write_doc;                                                        \
     write_doc.SetObject();
 
-#define WRITE_SUB_CASE() \
-    std::ofstream ofs(FILE_NAME_GEN_SUBCASE(TEST_CASE_NAME, case_num)); \
-    OStreamWrapper osw(ofs); \
-    Writer<OStreamWrapper> writer(osw); \
-    write_doc.Accept(writer); \
-    case_num++; \
+#define WRITE_SUB_CASE()                                                       \
+    std::ofstream ofs(FILE_NAME_GEN_SUBCASE(TEST_CASE_NAME, case_num));        \
+    OStreamWrapper osw(ofs);                                                   \
+    Writer<OStreamWrapper> writer(osw);                                        \
+    write_doc.Accept(writer);                                                  \
+    case_num++;                                                                \
     write_doc.RemoveAllMembers();
 
-#define READY_SUBCASE() \
-    auto &&[idx] = GetParam(); \
-    auto filename = FILE_NAME_GEN_SUBCASE(TEST_CASE_NAME, idx); \
-    std::ifstream file(filename); \
-    if (file.is_open()) { \
-        std::cout << "打开文件: " << filename << std::endl; \
-        ParseJson(ReadFromJsonFile(file)); \
-    } else { \
-        std::cout << "无法打开文件: " << filename << std::endl; \
-        file.close(); \
-        GTEST_SKIP(); \
+#define READY_SUBCASE()                                                        \
+    auto &&[idx] = GetParam();                                                 \
+    auto filename = FILE_NAME_GEN_SUBCASE(TEST_CASE_NAME, idx);                \
+    std::ifstream file(filename);                                              \
+    if (file.is_open()) {                                                      \
+        std::cout << "打开文件: " << filename << std::endl;                    \
+        ParseJson(ReadFromJsonFile(file));                                     \
+    } else {                                                                   \
+        std::cout << "无法打开文件: " << filename << std::endl;                \
+        file.close();                                                          \
+        GTEST_SKIP();                                                          \
     }

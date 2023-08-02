@@ -29,8 +29,7 @@ using namespace ortki;
 #define TEST_CASE_NAME "test_matmul"
 
 class MatMulTest : public KernelTest,
-                   public ::testing::TestWithParam<
-                       std::tuple<int>> {
+                   public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
         READY_SUBCASE()
@@ -48,18 +47,15 @@ class MatMulTest : public KernelTest,
     }
 
     void TearDown() override {}
-    
+
   protected:
-  
     runtime_tensor lhs;
     runtime_tensor rhs;
 };
 
- INSTANTIATE_TEST_SUITE_P(
-     mat_mul, MatMulTest, 
-     testing::Combine(testing::Range(0, MAX_CASE_NUM)));
+INSTANTIATE_TEST_SUITE_P(mat_mul, MatMulTest,
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
-    
 TEST_P(MatMulTest, mat_mul) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
     auto r_ort = runtime_tensor_2_ort_tensor(rhs);
@@ -94,17 +90,15 @@ TEST_P(MatMulTest, mat_mul) {
     EXPECT_TRUE(result);
 }
 
-
-
 int main(int argc, char *argv[]) {
     READY_TEST_CASE_GENERATE()
     FOR_LOOP(lhs_type, i)
     FOR_LOOP(lhs_shape, j)
     FOR_LOOP(rhs_shape, k)
-        SPLIT_ELEMENT(lhs_type, i)
-        SPLIT_ELEMENT(lhs_shape, j)
-        SPLIT_ELEMENT(rhs_shape, k)
-        WRITE_SUB_CASE()
+    SPLIT_ELEMENT(lhs_type, i)
+    SPLIT_ELEMENT(lhs_shape, j)
+    SPLIT_ELEMENT(rhs_shape, k)
+    WRITE_SUB_CASE()
     FOR_LOOP_END()
     FOR_LOOP_END()
     FOR_LOOP_END()

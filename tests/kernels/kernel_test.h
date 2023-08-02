@@ -16,7 +16,7 @@
 #include "generated/generated_macro.h"
 #include "macro_util.h"
 #include "nncase/shape.h"
-#include "rapidjson/document.h"     // rapidjson's DOM-style API
+#include "rapidjson/document.h" // rapidjson's DOM-style API
 #include "rapidjson/error/en.h"
 #include "rapidjson/ostreamwrapper.h"
 #include "rapidjson/writer.h"
@@ -1644,25 +1644,28 @@ class KernelTest {
                      });
     }
 
-    static std::string ReadFromJsonFile(std::ifstream& file) {
-        std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    static std::string ReadFromJsonFile(std::ifstream &file) {
+        std::string content((std::istreambuf_iterator<char>(file)),
+                            std::istreambuf_iterator<char>());
         file.close();
         return content;
     }
 
-    static void ParseJson(Document& document, std::string js_str) {
+    static void ParseJson(Document &document, std::string js_str) {
         if (document.Parse(js_str.c_str()).HasParseError())
-            std::cout << "Parsing Error: " 
-                <<  (unsigned)document.GetErrorOffset() << " " 
-                << GetParseError_En(document.GetParseError()) << std::endl;
+            std::cout << "Parsing Error: "
+                      << (unsigned)document.GetErrorOffset() << " "
+                      << GetParseError_En(document.GetParseError())
+                      << std::endl;
         assert(document.IsObject());
     }
 
     void ParseJson(std::string js_str) {
         if (_document.Parse(js_str.c_str()).HasParseError())
-            std::cout << "Parsing Error: " 
-                <<  (unsigned)_document.GetErrorOffset() << " " 
-                << GetParseError_En(_document.GetParseError()) << std::endl;
+            std::cout << "Parsing Error: "
+                      << (unsigned)_document.GetErrorOffset() << " "
+                      << GetParseError_En(_document.GetParseError())
+                      << std::endl;
         assert(_document.IsObject());
     }
 
@@ -1675,43 +1678,38 @@ class KernelTest {
         }
     }
 
-    typecode_t GetDataType(const char* key) {
+    typecode_t GetDataType(const char *key) {
         assert(_document[key].IsString());
         return Str2DataType(_document[key].GetString());
     }
 
-    dims_t GetShapeArray(const char* key) {
+    dims_t GetShapeArray(const char *key) {
         assert(_document[key].IsArray());
 
-        Value& array = _document[key];
+        Value &array = _document[key];
         size_t arraySize = array.Size();
         dims_t cArray(arraySize);
         for (rapidjson::SizeType i = 0; i < arraySize; i++) {
             if (array[i].IsUint()) {
                 cArray[i] = array[i].GetUint();
             } else {
-                std::cout << "Invalid JSON format. Expected unsigned integer values in the array." << std::endl;
+                std::cout << "Invalid JSON format. Expected unsigned integer "
+                             "values in the array."
+                          << std::endl;
             }
         }
         return cArray;
     }
-  
-    private:
-        Document _document;
-        std::map<std::string, typecode_t> str_2_datatype = {
-                {"dt_int8", dt_int8},  
-                {"dt_int16", dt_int16},  
-                {"dt_int32", dt_int32},  
-                {"dt_int64", dt_int64},  
-                {"dt_uint8", dt_uint8},  
-                {"dt_uint16", dt_uint16},  
-                {"dt_uint32", dt_uint32},  
-                {"dt_uint64", dt_uint64},  
-                {"dt_float16", dt_float16},  
-                {"dt_float32", dt_float32},  
-                {"dt_float64", dt_float64},  
-                {"dt_bfloat16", dt_bfloat16},  
-                {"dt_boolean", dt_boolean}
-        };
+
+  private:
+    Document _document;
+    std::map<std::string, typecode_t> str_2_datatype = {
+        {"dt_int8", dt_int8},       {"dt_int16", dt_int16},
+        {"dt_int32", dt_int32},     {"dt_int64", dt_int64},
+        {"dt_uint8", dt_uint8},     {"dt_uint16", dt_uint16},
+        {"dt_uint32", dt_uint32},   {"dt_uint64", dt_uint64},
+        {"dt_float16", dt_float16}, {"dt_float32", dt_float32},
+        {"dt_float64", dt_float64}, {"dt_bfloat16", dt_bfloat16},
+        {"dt_boolean", dt_boolean}};
 };
 } // namespace nncase
