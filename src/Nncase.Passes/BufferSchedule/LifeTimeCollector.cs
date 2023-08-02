@@ -19,8 +19,10 @@ internal sealed class LifeTimeCollector : ExprVisitor<Unit, Unit>
     public IReadOnlyDictionary<Expr, ScheduleBuffer> Collect(Function entry)
     {
         Visit(entry.Body);
+        Alias();
 
         var d = new Dictionary<Expr, ScheduleBuffer>(ReferenceEqualityComparer.Instance);
+        int count = 0;
         foreach (var (k, v) in LifenessMap)
         {
             var name = k switch
@@ -31,7 +33,7 @@ internal sealed class LifeTimeCollector : ExprVisitor<Unit, Unit>
             };
             var size = GetSize(k.CheckedType, out var shape, out var stride);
 
-            d.Add(k, new(name, v, new(0, size), shape, stride, IsInPlace(k)));
+            d.Add(k, new(name, count++, v, new(0, size), shape, stride, false));
         }
 
         return d;
@@ -48,7 +50,12 @@ internal sealed class LifeTimeCollector : ExprVisitor<Unit, Unit>
 
         Update(expr);
 
-        TimeStamp += 1;
+        TimeStamp += 2;
+
+        foreach (var item in expr.GetUsers())
+        {
+            Update(item);
+        }
 
         return Unit.Default;
     }
@@ -82,24 +89,57 @@ internal sealed class LifeTimeCollector : ExprVisitor<Unit, Unit>
         LifenessMap[expr] = interval;
     }
 
-    private bool IsInPlace(Expr expr)
+    private void Alias()
     {
-        if (expr is Call { Target: IR.Tensors.Reshape } callReshape)
+        bool changed = true;
+        do
         {
-            return true;
+            changed = false;
+            foreach (var (expr, interval) in LifenessMap)
+            {
+                if (expr is Call { Target: IR.Tensors.Reshape } callReshape)
+                {
+                    changed = AliasTime(callReshape, interval);
+                }
+            }
+
+            foreach (var (expr, interval) in LifenessMap)
+            {
+
+                if (expr is Call { Target: IR.Tensors.Concat } concatCall)
+                {
+                    changed = AliasTime(concatCall, interval);
+                }
+            }
+
+            foreach (var (expr, interval) in LifenessMap)
+            {
+                if (expr is Call { Target: IR.Tensors.Split } splitCall)
+                {
+                    changed = AliasTime(splitCall, interval);
+                }
+            }
+        } while (!changed);
+    }
+
+    private bool AliasTime(Call call, TimeInterval interval)
+    {
+        var brith = call.GetArguments().Select(arg => LifenessMap[arg].Death).Concat(new[] { interval.Brith }).Max();
+        var death = call.GetUsers().Select(usr => LifenessMap[usr].Brith).Concat(new[] { interval.Death }).Min();
+
+        if (brith == interval.Brith && death == interval.Death)
+        {
+            return false;
         }
 
-        if (expr is Call { Target: IR.Tensors.Concat } concatCall && concatCall.Arguments[0] is IR.Tuple concatTuple)
+        if (brith >= death)
         {
-            return true;
+            throw new InvalidOperationException();
         }
 
-        if (expr is Call { Target: IR.Tensors.Split } splitCall)
-        {
-            return true;
-        }
-
-        return false;
+        interval.Brith = brith;
+        interval.Death = death;
+        return true;
     }
 
     private int GetSize(IRType type, out int[] shape, out int[] stride)

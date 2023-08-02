@@ -30,7 +30,7 @@ internal sealed class BufferScheduler
         var yStarts = new List<IntVar>();
         foreach (var (expr, item) in bufferMap)
         {
-            var xInterval = model.NewIntervalVar(model.NewConstant(item.Interval.Brith), model.NewConstant(item.Interval.Size), model.NewConstant(item.Interval.Death), item.Name + "_x");
+            var xInterval = model.NewIntervalVar(model.NewConstant(item.Interval.Brith), model.NewConstant(item.Interval.Size), model.NewConstant(item.Interval.Death), item.Name + $"{item.Number}_x");
 
             var upbound = 2147483648 - item.Span.End;
             if (upbound <= 0)
@@ -38,14 +38,9 @@ internal sealed class BufferScheduler
                 throw new System.NotSupportedException();
             }
 
-            var memStartVar = model.NewIntVar(0, upbound, $"{item.Name}_y_start");
-            var yInterval = model.NewFixedSizeIntervalVar(memStartVar, item.Span.End, $"{item.Name}_y");
-
-            if (!item.Inplace)
-            {
-                noOverlap.AddRectangle(xInterval, yInterval);
-            }
-
+            var memStartVar = model.NewIntVar(0, upbound, $"{item.Name}_{item.Number}_y_start");
+            var yInterval = model.NewFixedSizeIntervalVar(memStartVar, item.Span.End, $"{item.Name}_{item.Number}_y");
+            noOverlap.AddRectangle(xInterval, yInterval);
             yStarts.Add(memStartVar);
             boxs.Add(expr, (xInterval, yInterval));
 
@@ -136,6 +131,7 @@ class ConstraintsMode(Enum):
 @dataclass
 class ScheduledBuffer():
   name: str
+  number: int
   interval: TimeInterval
   location: MemSpan
   constraints: ConstraintsMode

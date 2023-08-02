@@ -43,9 +43,10 @@ internal sealed class MemSpan
 
 internal class ScheduleBuffer
 {
-    public ScheduleBuffer(string name, TimeInterval interval, MemSpan span, int[] shape, int[] strides, bool inplace)
+    public ScheduleBuffer(string name, int number, TimeInterval interval, MemSpan span, int[] shape, int[] strides, bool inplace)
     {
         Name = name;
+        Number = number;
         Interval = interval;
         Span = span;
         Shape = shape;
@@ -54,7 +55,7 @@ internal class ScheduleBuffer
     }
 
     public string Name { get; }
-
+    public int Number { get; }
     public TimeInterval Interval { get; }
 
     public MemSpan Span { get; }
@@ -67,6 +68,6 @@ internal class ScheduleBuffer
 
     public override string ToString()
     {
-        return $"ScheduledBuffer('{Name}', {Interval}, {Span}, ConstraintsMode.No, [{string.Join(",", Shape)}], [{string.Join(",", Strides)}], {Inplace})";
+        return $"ScheduledBuffer('{Name}', {Number}, {Interval}, {Span}, ConstraintsMode.No, [{string.Join(",", Shape)}], [{string.Join(",", Strides)}], {Inplace})";
     }
 }
