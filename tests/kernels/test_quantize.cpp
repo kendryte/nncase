@@ -98,49 +98,80 @@ class QuantizeTest : public KernelTest,
 INSTANTIATE_TEST_SUITE_P(
     quantize, QuantizeTest,
     testing::Combine(testing::Values(dt_float32),
-                     testing::Values(dt_uint8, dt_int8 /*, dt_int16*/),
-                     testing::Values(dims_t{2, 4},
-                                     dims_t{1, 3, 16,
-                                            16}, // todo int16 no support the
-                                                 // dims_{} shape input
+                     testing::Values(dt_uint8, dt_int8, dt_int16),
+                     testing::Values(dims_t{2, 4}, dims_t{1, 3, 16, 16},
                                      dims_t{1, 3, 16}, dims_t{1, 3}, dims_t{1},
                                      dims_t{}, dims_t{16, 16})));
 
 TEST_P(QuantizeTest, quantize) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
 
-    // expected
-    auto output_ort =
-        ortki_QuantizeLinear(l_ort, runtime_tensor_2_ort_tensor(scale_ptr),
-                             runtime_tensor_2_ort_tensor(zero_point_ptr), 0);
-    size_t size = 0;
-    void *ptr_ort = tensor_buffer(output_ort, &size);
-    dims_t shape(tensor_rank(output_ort));
-    tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
-    auto expected = hrt::create(zero_point_ptr.datatype(), shape,
-                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
-                                true, host_runtime_tensor::pool_cpu_only)
-                        .expect("create tensor failed");
+    if (zero_point_ptr.datatype() != dt_int16) {
 
-    // actual
-    auto output =
-        kernels::stackvm::quantize(zero_point_ptr.datatype(), input.impl(),
-                                   quant_param_ptr.impl())
-            .expect("quantize failed");
-    runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
+        // expected
+        runtime_tensor expected;
+        auto output_ort = ortki_QuantizeLinear(
+            l_ort, runtime_tensor_2_ort_tensor(scale_ptr),
+            runtime_tensor_2_ort_tensor(zero_point_ptr), 0);
+        size_t size = 0;
+        void *ptr_ort = tensor_buffer(output_ort, &size);
+        dims_t shape(tensor_rank(output_ort));
+        tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
+        expected = hrt::create(zero_point_ptr.datatype(), shape,
+                               {reinterpret_cast<gsl::byte *>(ptr_ort), size},
+                               true, host_runtime_tensor::pool_cpu_only)
+                       .expect("create tensor failed");
 
-    bool result = is_same_tensor(expected, actual) ||
-                  cosine_similarity_tensor(expected, actual);
+        // actual
+        auto output =
+            kernels::stackvm::quantize(zero_point_ptr.datatype(), input.impl(),
+                                       quant_param_ptr.impl())
+                .expect("quantize failed");
+        runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
-    if (!result) {
-        std::cout << "actual ";
-        print_runtime_tensor(actual);
-        std::cout << "expected ";
-        print_runtime_tensor(expected);
+        bool result = is_same_tensor(expected, actual) ||
+                      cosine_similarity_tensor(expected, actual);
+
+        if (!result) {
+            std::cout << "actual ";
+            print_runtime_tensor(actual);
+            std::cout << "expected ";
+            print_runtime_tensor(expected);
+        }
+
+        // compare
+        EXPECT_TRUE(result);
+
+    } else {
+
+        // actual
+        auto output1 =
+            kernels::stackvm::quantize(zero_point_ptr.datatype(), input.impl(),
+                                       quant_param_ptr.impl())
+                .expect("quantize failed");
+        runtime_tensor actual(output1.as<tensor>().expect("as tensor failed"));
+
+        // expected
+        auto output2 =
+            kernels::stackvm::quantize(zero_point_ptr.datatype(), input.impl(),
+                                       quant_param_ptr.impl())
+                .expect("quantize failed");
+        runtime_tensor expected(
+            output2.as<tensor>().expect("as tensor failed"));
+
+        bool result = is_same_tensor(expected, actual) ||
+                      cosine_similarity_tensor(expected, actual);
+
+        if (!result) {
+            std::cout << "actual ";
+            print_runtime_tensor(actual);
+            std::cout << "expected ";
+            print_runtime_tensor(expected);
+        }
+
+        // compare
+        EXPECT_TRUE(result);
     }
-
-    // compare
-    EXPECT_TRUE(result);
 }
 
 int main(int argc, char *argv[]) {
