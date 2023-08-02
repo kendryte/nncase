@@ -2,6 +2,8 @@ enable_testing()
 
 find_package(ortki)
 
+include_directories(${CMAKE_SOURCE_DIR}/third_party)
+
 macro(add_test_exec name)
     add_executable(${name} ${name}.cpp)
     target_link_libraries(${name} PRIVATE GTest::gtest_main nncaseruntime ortki::ortki)
