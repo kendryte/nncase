@@ -1639,8 +1639,8 @@ class KernelTest {
     }
 
     virtual void int16_dequantize_to_float(runtime::runtime_tensor &expected,
-                                   runtime::runtime_tensor &input, int16_t zero,
-                                   float_t scale) {
+                                           runtime::runtime_tensor &input,
+                                           int16_t zero, float_t scale) {
         if (input.datatype() != dt_int16)
             return;
         NNCASE_UNUSED auto res = kernels::stackvm::apply(
@@ -1650,21 +1650,6 @@ class KernelTest {
                     (get<int16_t>(input, index) - zero) * scale);
                 return ok();
             });
-    }
-
-    template <class T>
-    result<void> clamp_impl(const T *input, T min, T max, T *output,
-                            gsl::span<const size_t> in_shape,
-                            gsl::span<const size_t> in_strides,
-                            gsl::span<const size_t> out_strides,
-                            NNCASE_UNUSED kernel_context &context) {
-        return apply(in_shape,
-                     [&](gsl::span<const size_t> index) -> result<void> {
-                         const auto v = input[offset(index, in_strides)];
-                         output[offset(index, out_strides)] =
-                             std::min(std::max(v, min), max);
-                         return ok();
-                     });
     }
 };
 } // namespace nncase
