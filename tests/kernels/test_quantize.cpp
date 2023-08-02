@@ -147,8 +147,8 @@ TEST_P(QuantizeTest, quantize) {
         // expected
         runtime_tensor expected;
         expected = hrt::create(dt_int16, input.shape(),
-                            host_runtime_tensor::pool_cpu_only)
-                    .expect("create tensor failed");
+                               host_runtime_tensor::pool_cpu_only)
+                       .expect("create tensor failed");
         quantize_to_int16(expected, input, 127, 0.01f);
 
         // actual

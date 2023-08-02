@@ -147,15 +147,15 @@ TEST_P(DequantizeTest, dequantize) {
 
         // expected
         runtime_tensor expected;
-        expected =
-            hrt::create(dt_float32, input.shape(), host_runtime_tensor::pool_cpu_only)
-                .expect("create tensor failed");
+        expected = hrt::create(dt_float32, input.shape(),
+                               host_runtime_tensor::pool_cpu_only)
+                       .expect("create tensor failed");
         int16_dequantize_to_float(expected, input, 127, 0.01f);
 
         // actual
         auto output = kernels::stackvm::dequantize(dt_float32, input.impl(),
-                                                    quant_param_ptr.impl())
-                           .expect("dequantize failed");
+                                                   quant_param_ptr.impl())
+                          .expect("dequantize failed");
         runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
         bool result = is_same_tensor(expected, actual) ||
