@@ -34,9 +34,7 @@ result<void> clamp_impl(const T *input, T min, T max, T *output,
                         NNCASE_UNUSED kernel_context &context) {
     return apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
         const auto v = input[offset(index, in_strides)];
-        output[offset(index, out_strides)] = static_cast<T>(std::min(
-            std::max(static_cast<float_t>(v), static_cast<float_t>(min)),
-            static_cast<float_t>(max)));
+        output[offset(index, out_strides)] = std::min(std::max(v, min), max);
         return ok();
     });
 }
