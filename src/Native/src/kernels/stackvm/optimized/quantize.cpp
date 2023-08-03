@@ -88,5 +88,6 @@ result<void> optimized::quantize(
     NNCASE_UNUSED kernel_context &context) noexcept {
     QUANTIZE_IMPL(float, uint8_t)
     QUANTIZE_IMPL(float, int8_t)
+    QUANTIZE_IMPL(float, int16_t)
     return err(std::errc::not_supported);
 }

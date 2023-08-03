@@ -59,5 +59,6 @@ result<void> nncase::kernels::stackvm::reference::quantize(
     float scale, float bias, kernel_context &context) noexcept {
     QUANTIZE_IMPL(float, uint8_t);
     QUANTIZE_IMPL(float, int8_t);
+    QUANTIZE_IMPL(float, int16_t);
     return err(std::errc::not_supported);
 }
