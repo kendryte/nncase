@@ -359,16 +359,16 @@
     auto filename = FILE_NAME_GEN_SUBCASE(TEST_CASE_NAME, idx);                \
     std::ifstream file(filename);                                              \
     if (file.is_open()) {                                                      \
-        std::cout << "Open file: " << filename << std::endl;                    \
+        std::cout << "Open file: " << filename << std::endl;                   \
         ParseJson(ReadFromJsonFile(file));                                     \
     } else {                                                                   \
         file.close();                                                          \
         GTEST_SKIP();                                                          \
     }
 
-#define CLEAR_SUBCASE() \
-    auto &&[idx] = GetParam(); \
-    auto filename = FILE_NAME_GEN_SUBCASE(TEST_CASE_NAME, idx);  \
-    if (std::remove(filename.c_str()) == 0) { \
-        printf("File deleted successfully: %s\n", filename.c_str()); \
+#define CLEAR_SUBCASE()                                                        \
+    auto &&[idx] = GetParam();                                                 \
+    auto filename = FILE_NAME_GEN_SUBCASE(TEST_CASE_NAME, idx);                \
+    if (std::remove(filename.c_str()) == 0) {                                  \
+        printf("File deleted successfully: %s\n", filename.c_str());           \
     }
