@@ -117,8 +117,6 @@ TEST_P(ReduceSumTest, ReduceSum) {
                       cosine_similarity_tensor(expected, actual);
 
         if (!result) {
-            std::cout << "input tensor:";
-            print_runtime_tensor(a);
             std::cout << "actual ";
             print_runtime_tensor(actual);
             std::cout << "expected ";
