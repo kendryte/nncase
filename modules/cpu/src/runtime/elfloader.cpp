@@ -29,8 +29,8 @@ int elfloader::invoke_elf(size_t id, uint8_t **buffers, nncase_mt_t *nncase_mt,
 
     entrypoint_t ep = (entrypoint_t)epaddr;
 
-    printf("Binary entrypoint is %" PRIxPTR "; invoking %p\n",
-           (uintptr_t)ctx_.ehdr.e_entry, (void *)epaddr);
+    // printf("Binary entrypoint is %" PRIxPTR "; invoking %p\n",
+    //        (uintptr_t)ctx_.ehdr.e_entry, (void *)epaddr);
 
     ep(id, buffers, nncase_mt, data, rdata);
 

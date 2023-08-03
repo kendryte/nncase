@@ -134,11 +134,11 @@ public class CSourceCompiler
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
-            return $"{sourcePath} -nostdlib -static -no-pie -fPIC -fno-stack-protector -march={Arch} -o {outPath}";
+            return $"{sourcePath} -nostdlib -static -no-pie -fPIC -fno-stack-protector -o {outPath}";
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
-            return $"{sourcePath} -nostdlib -static -nopie -fPIC -arch {Arch} -o {outPath} -e__start";
+            return $"{sourcePath} -nostdlib -static -nopie -fPIC -o {outPath} -e__start";
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
