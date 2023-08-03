@@ -57,7 +57,9 @@ internal class ScheduleBuffer
     }
 
     public string Name { get; }
+
     public int Number { get; }
+
     public TimeInterval Interval { get; }
 
     public MemSpan Span { get; }

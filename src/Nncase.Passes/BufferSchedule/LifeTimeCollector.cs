@@ -64,7 +64,7 @@ internal sealed class LifeTimeCollector : ExprVisitor<Unit, Unit>
 
     private void Update(Expr expr)
     {
-        if (expr is (Const or None))
+        if (expr is Const or None)
         {
             return;
         }
@@ -93,7 +93,7 @@ internal sealed class LifeTimeCollector : ExprVisitor<Unit, Unit>
 
     private void Alias()
     {
-        bool changed = true;
+        bool changed;
         do
         {
             changed = false;
@@ -165,5 +165,4 @@ internal sealed class LifeTimeCollector : ExprVisitor<Unit, Unit>
 
         return size;
     }
-
 }
