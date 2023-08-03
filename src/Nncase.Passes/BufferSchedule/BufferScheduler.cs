@@ -151,7 +151,7 @@ colors = itertools.cycle(palette)
 
 buffers = [
 ");
-            foreach (var (k, v) in buffers)
+            foreach (var (_, v) in buffers)
             {
                 wr.WriteLine(v.ToString() + ",");
             }
