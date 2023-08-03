@@ -181,11 +181,13 @@ class UnaryTest
 
 INSTANTIATE_TEST_SUITE_P(
     Unary, UnaryTest,
-    testing::Combine(
-        testing::Values(dt_float32, /* dt_int32, dt_int64,*/ dt_float64, dt_float16),
-        testing::Values(dims_t{1, 3, 16, 16}, dims_t{3, 16, 16},
-                        dims_t{3, 16, 1}, dims_t{16, 16}, dims_t{16, 1},
-                        dims_t{1, 16, 1}, dims_t{16}, dims_t{1}, dims_t{})));
+    testing::Combine(testing::Values(dt_float32,
+                                     /* dt_int32, dt_int64,*/ dt_float64,
+                                     dt_float16),
+                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{3, 16, 16},
+                                     dims_t{3, 16, 1}, dims_t{16, 16},
+                                     dims_t{16, 1}, dims_t{1, 16, 1},
+                                     dims_t{16}, dims_t{1}, dims_t{})));
 
 TEST_P(UnaryTest, log) {
     OrtKITensor *orts[1];
