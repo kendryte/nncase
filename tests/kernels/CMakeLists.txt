@@ -1,8 +1,8 @@
 enable_testing()
 
 find_package(ortki)
-
-include_directories(${CMAKE_SOURCE_DIR}/third_party)
+find_package(rapidjson)
+include_directories(${rapidjson_INCLUDE_DIR})
 
 macro(add_test_exec name)
     add_executable(${name} ${name}.cpp)
