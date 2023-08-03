@@ -35,6 +35,8 @@ internal sealed class MemSpan
 
     public int End { get; set; }
 
+    public int Size => End - Start;
+
     public override string ToString()
     {
         return $"MemSpan({Start}, {End})";

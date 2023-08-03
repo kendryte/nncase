@@ -61,8 +61,12 @@ internal sealed class BufferScheduler
             if (expr is Call { Target: IR.Tensors.Concat } concatCall && concatCall.Arguments[0] is IR.Tuple tuple)
             {
                 // the concat inputs must contiguous
-                model.AddMinEquality(boxs[concatCall].Y.StartExpr(), tuple.Fields.ToArray().Select(arg => boxs[arg].Y.StartExpr()));
-                model.AddMaxEquality(boxs[concatCall].Y.EndExpr(), tuple.Fields.ToArray().Select(arg => boxs[arg].Y.EndExpr()));
+                int offset = 0;
+                for (int i = 0; i < tuple.Fields.Length; i++)
+                {
+                    model.Add((boxs[concatCall].Y.StartExpr() + offset) == boxs[tuple.Fields[i]].Y.StartExpr());
+                    offset += bufferMap[tuple.Fields[i]].Span.Size;
+                }
             }
             else if (expr is Call { Target: IR.Tensors.Split } splitCall)
             {
@@ -71,8 +75,12 @@ internal sealed class BufferScheduler
 
                 // the split outputs must contiguous
                 var users = splitCall.GetUsers();
-                model.AddMinEquality(boxs[splitCall].Y.StartExpr(), users.Select(e => boxs[e].Y.StartExpr()));
-                model.AddMaxEquality(boxs[splitCall].Y.EndExpr(), users.Select(e => boxs[e].Y.EndExpr()));
+                int offset = 0;
+                foreach (var user in users.OrderBy(e => ((Call)e).Arguments[1].Evaluate().AsTensor().ToScalar<int>()))
+                {
+                    model.Add((boxs[splitCall].Y.StartExpr() + offset) == boxs[user].Y.StartExpr());
+                    offset += bufferMap[user].Span.Size;
+                }
             }
             else if (expr is Call { Target: IR.Tensors.Reshape } reshapCall)
             {
