@@ -16,10 +16,6 @@
 #include "generated/generated_macro.h"
 #include "macro_util.h"
 #include "nncase/shape.h"
-#include <rapidjson/document.h> // rapidjson's DOM-style API
-#include <rapidjson/error/en.h>
-#include <rapidjson/ostreamwrapper.h>
-#include <rapidjson/writer.h>
 #include <algorithm>
 #include <cmath>
 #include <filesystem>
@@ -36,6 +32,10 @@
 #include <numeric>
 #include <ortki/c_api.h>
 #include <random>
+#include <rapidjson/document.h> // rapidjson's DOM-style API
+#include <rapidjson/error/en.h>
+#include <rapidjson/ostreamwrapper.h>
+#include <rapidjson/writer.h>
 #include <string>
 #include <vector>
 #include <cstdio>
@@ -1630,19 +1630,32 @@ class KernelTest {
         std::cout << std::endl;
     }
 
-    template <class T>
-    result<void> clamp_impl(const T *input, T min, T max, T *output,
-                            gsl::span<const size_t> in_shape,
-                            gsl::span<const size_t> in_strides,
-                            gsl::span<const size_t> out_strides,
-                            NNCASE_UNUSED kernel_context &context) {
-        return apply(in_shape,
-                     [&](gsl::span<const size_t> index) -> result<void> {
-                         const auto v = input[offset(index, in_strides)];
-                         output[offset(index, out_strides)] =
-                             std::min(std::max(v, min), max);
-                         return ok();
-                     });
+    virtual void quantize_to_int16(runtime::runtime_tensor &expected,
+                                   runtime::runtime_tensor &input, int16_t zero,
+                                   float_t scale) {
+        if (expected.datatype() != dt_int16)
+            return;
+        NNCASE_UNUSED auto res = kernels::stackvm::apply(
+            expected.shape(),
+            [&](gsl::span<const size_t> index) -> result<void> {
+                get<int16_t>(expected, index) = static_cast<int16_t>(
+                    get<float_t>(input, index) / scale + zero);
+                return ok();
+            });
+    }
+
+    virtual void int16_dequantize_to_float(runtime::runtime_tensor &expected,
+                                           runtime::runtime_tensor &input,
+                                           int16_t zero, float_t scale) {
+        if (input.datatype() != dt_int16)
+            return;
+        NNCASE_UNUSED auto res = kernels::stackvm::apply(
+            expected.shape(),
+            [&](gsl::span<const size_t> index) -> result<void> {
+                get<float_t>(expected, index) = static_cast<float_t>(
+                    (get<int16_t>(input, index) - zero) * scale);
+                return ok();
+            });
     }
 
     static std::string ReadFromJsonFile(std::ifstream &file) {
