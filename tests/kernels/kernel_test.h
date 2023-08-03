@@ -38,6 +38,7 @@
 #include <random>
 #include <string>
 #include <vector>
+#include <cstdio>
 
 using namespace nncase::runtime;
 using namespace nncase::kernels;

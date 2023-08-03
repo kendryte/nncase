@@ -46,7 +46,9 @@ class MatMulTest : public KernelTest,
         init_tensor(rhs);
     }
 
-    void TearDown() override {}
+    void TearDown() override {
+        CLEAR_SUBCASE()
+    }
 
   protected:
     runtime_tensor lhs;
