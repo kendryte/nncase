@@ -75,5 +75,6 @@ result<void> optimized::dequantize(
     NNCASE_UNUSED kernel_context &context) noexcept {
     DEQUANTIZE_IMPL(uint8_t, float)
     DEQUANTIZE_IMPL(int8_t, float)
+    DEQUANTIZE_IMPL(int16_t, float)
     return err(std::errc::not_supported);
 }
