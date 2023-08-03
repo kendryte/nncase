@@ -16,10 +16,6 @@
 #include "generated/generated_macro.h"
 #include "macro_util.h"
 #include "nncase/shape.h"
-#include <rapidjson/document.h> // rapidjson's DOM-style API
-#include <rapidjson/error/en.h>
-#include <rapidjson/ostreamwrapper.h>
-#include <rapidjson/writer.h>
 #include <algorithm>
 #include <cmath>
 #include <filesystem>
@@ -36,6 +32,10 @@
 #include <numeric>
 #include <ortki/c_api.h>
 #include <random>
+#include <rapidjson/document.h> // rapidjson's DOM-style API
+#include <rapidjson/error/en.h>
+#include <rapidjson/ostreamwrapper.h>
+#include <rapidjson/writer.h>
 #include <string>
 #include <vector>
 
