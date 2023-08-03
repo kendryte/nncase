@@ -45,6 +45,10 @@ if (BUILDING_RUNTIME)
 
         configure_file(${CMAKE_CURRENT_LIST_DIR}/cmake/nncase_rt_modules_cpuConfig.cmake.in nncase_rt_modules_cpuConfig.cmake @ONLY)
         install(FILES ${CMAKE_CURRENT_BINARY_DIR}/nncase_rt_modules_cpuConfig.cmake DESTINATION lib/cmake/nncaseruntime)
+
+        if (K230_LINUX_SDK_DIR)
+            add_subdirectory(examples)
+        endif()
     endif()
 else()
     add_library(nncase_modules_cpu SHARED ${SRCS})
