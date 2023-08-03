@@ -35,8 +35,9 @@ class MatMulTest : public KernelTest,
         READY_SUBCASE()
 
         auto typecode = GetDataType("lhs_type");
-        dims_t l_shape = GetShapeArray("lhs_shape");
+        auto l_shape = GetShapeArray("lhs_shape");
         auto r_shape = GetShapeArray("rhs_shape");
+
         lhs = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
         init_tensor(lhs);
