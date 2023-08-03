@@ -95,7 +95,7 @@ result<void> nncase::kernels::stackvm::reference::unary(
         UNARY_IMPL_DTYPE(dt_float32, float_t)
         UNARY_IMPL_DTYPE(dt_float16, half)
         UNARY_IMPL_DTYPE(dt_float64, double_t)
-        UNARY_IMPL_DTYPE(dt_int32, int32_t )
+        UNARY_IMPL_DTYPE(dt_int32, int32_t)
         UNARY_IMPL_DTYPE(dt_int64, int64_t)
         // Not in onnx, input is bool
         UNARY_IMPL_DTYPE(dt_boolean, bool)
