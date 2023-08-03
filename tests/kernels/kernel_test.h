@@ -18,6 +18,7 @@
 #include "nncase/shape.h"
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 #include <filesystem>
 #include <fstream>
 #include <gtest/gtest.h>
@@ -38,7 +39,6 @@
 #include <rapidjson/writer.h>
 #include <string>
 #include <vector>
-#include <cstdio>
 
 using namespace nncase::runtime;
 using namespace nncase::kernels;
