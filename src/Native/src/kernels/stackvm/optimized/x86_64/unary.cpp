@@ -104,7 +104,7 @@ struct unary_op_neg {
     }
 };
 
-float round_onnx(float v) {
+static float round_onnx(float v) {
     if (v > 0 && v - (int32_t)v == 0.5) {
         float result = (int32_t)v + 1.0;
         if ((int32_t)result % 2 == 0)

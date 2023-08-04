@@ -45,7 +45,7 @@ result<void> unary_impl(TOp &&op, const T *input, T *output,
         return unary_impl(funct, input, output, input_shape, input_strides,    \
                           out_shape, out_strides, context)
 
-float round_onnx(float v) {
+static float round_onnx(float v) {
     if (v > 0 && v - (int32_t)v == 0.5) {
         float result = (int32_t)v + 1.0;
         if ((int32_t)result % 2 == 0)
