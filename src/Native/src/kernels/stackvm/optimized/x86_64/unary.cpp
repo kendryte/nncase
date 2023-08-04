@@ -110,7 +110,7 @@ struct unary_op_round {
     void pack(const float *a, float *b) {
         __m256 vector_a = _mm256_loadu_ps(a);
         __m256 dst_a = _mm256_round_ps(
-            vector_a, (_MM_FROUND_CUR_DIRECTION | _MM_FROUND_NO_EXC));
+            vector_a, (_MM_FROUND_TO_NEAREST_INT  | _MM_FROUND_NO_EXC));
         _mm256_storeu_ps(b, dst_a);
     }
 };
