@@ -26,9 +26,10 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class GatherElementsTest : public KernelTest,
-                   public ::testing::TestWithParam<
-                       std::tuple<nncase::typecode_t, dims_t, int64_t>> {
+class GatherElementsTest
+    : public KernelTest,
+      public ::testing::TestWithParam<
+          std::tuple<nncase::typecode_t, dims_t, int64_t>> {
   public:
     void SetUp() override {
         auto &&[typecode, shape, value] = GetParam();
@@ -81,7 +82,8 @@ TEST_P(GatherElementsTest, gather_elements) {
     auto indices_ort = runtime_tensor_2_ort_tensor(indices);
 
     // expected
-    auto output_ort = ortki_GatherElements(input_ort, indices_ort, batchDims_value);
+    auto output_ort =
+        ortki_GatherElements(input_ort, indices_ort, batchDims_value);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
@@ -92,9 +94,9 @@ TEST_P(GatherElementsTest, gather_elements) {
                         .expect("create tensor failed");
 
     // actual
-    auto output =
-        kernels::stackvm::gather_elements(input.impl(), batchDims.impl(), indices.impl())
-            .expect("gather failed");
+    auto output = kernels::stackvm::gather_elements(
+                      input.impl(), batchDims.impl(), indices.impl())
+                      .expect("gather failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     bool result = is_same_tensor(expected, actual) ||
