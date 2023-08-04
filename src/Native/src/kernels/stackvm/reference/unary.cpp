@@ -96,20 +96,6 @@ result<void> unary_impl(unary_op_t op, const T *input, T *output,
     }
 }
 
-// float round_onnx(float v){
-//     if(v>0&&v-(int32_t)v==0.5){
-//         float result = (int32_t)v+1.0;
-//         if((int32_t)result%2==0) return result;
-//         else return result -1;
-//     }
-//     else if(v<0&&(int32_t)v-v==0.5){
-//         float result = (int32_t)v+1.0;
-//         if((int32_t)result%2==0) return result;
-//         else return result -1;
-//     }
-//     else return roundf(v);
-// }
-
 #define UNARY_IMPL_DTYPE(dtype, type)                                          \
     case dtype:                                                                \
         return unary_impl(op, reinterpret_cast<const type *>(input),           \
