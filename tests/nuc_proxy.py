@@ -11,6 +11,7 @@ import time
 import serial
 import toml
 
+
 class MySerial:
     def __init__(self, logger, port, baudrate):
         self.s = None
@@ -59,6 +60,7 @@ class MySerial:
         self.close()
         return data
 
+
 def Consumer(target, q, working_dir, uart0, baudrate0, uart1, baudrate1):
     # logging
     mylogger = logging.getLogger()
@@ -89,7 +91,7 @@ def Consumer(target, q, working_dir, uart0, baudrate0, uart1, baudrate1):
 
         # infer result
         if ret_str.find('terminate') != -1 or ret_str.find('Exception') != -1:
-            err=f'infer exception: {ret_str}'
+            err = f'infer exception: {ret_str}'
             mylogger.error('infer exception')
             conn.sendall(err[0:1024].encode())
         elif ret_str.find('}') == -1:
@@ -102,6 +104,7 @@ def Consumer(target, q, working_dir, uart0, baudrate0, uart1, baudrate1):
             conn.sendall(f'infer succeed'.encode())
             mylogger.debug('infer succeed')
         conn.close()
+
 
 def main():
     # default config
@@ -149,6 +152,7 @@ def main():
         info = conn.recv(1024)
         dict = json.loads(info.decode())
         cfg[dict['target']]['queue'].put(conn)
+
 
 if __name__ == '__main__':
     main()
