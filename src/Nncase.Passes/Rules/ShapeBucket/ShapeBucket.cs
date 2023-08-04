@@ -22,7 +22,8 @@ using Nncase.IR.Math;
 using Nncase.IR.NN;
 using Nncase.IR.Tensors;
 using Nncase.Passes.Analysis;
-using Nncase.Passes.Mutators;
+using Nncase.Passes.Rules.Neutral;
+using Nncase.Passes.Rules.ShapeExpr;
 using Nncase.Passes.Transforms;
 using Nncase.PatternMatch;
 using Nncase.Utilities;
@@ -32,6 +33,7 @@ using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.Utility;
 using static Nncase.Utilities.ReplaceUtility;
 using Dimension = Nncase.IR.Dimension;
+using FoldConstCall = Nncase.Passes.Mutators.FoldConstCall;
 using Tuple = System.Tuple;
 
 namespace Nncase.Passes.Rules.ShapeBucket;
@@ -375,8 +377,11 @@ public class Conv2DToFusion : MarkerCallToFusion<Conv2D>
 {
 }
 
-// transpose是input,但是shape那边是transpose前面的input
-// 也就是说左边根本不是右边的子表达式，但是实际两个input指向的是同一个东西
+
+// tflite相比于onnx的比较特殊，output shape是原图进行计算的，而不是自行创建表达式计算。
+// 如果采用一样的处理方法会导致复制输入中的function和call
+// 对于tflite的所有反卷积的通用性不能确保，暂且这样硬编码，另外tflite的动态shape也很少见
+// 这里本质的问题是因为output shape所指向的很可能并不是input，或者说是input并不是output shape所指向的表达式的子表达式
 public class TFConv2DTransposeToFusion : MarkerCallToFusion<Conv2DTranspose>
 {
     public override Pattern Pattern => IsRangeOfMarker(
@@ -388,21 +393,26 @@ public class TFConv2DTransposeToFusion : MarkerCallToFusion<Conv2DTranspose>
                 IsCallWildcard(
                     "transpose",
                     IsOp<Transpose>(),
-                    IsRangeOfMarker("transposeInputMarker", IsWildcard(), IsWildcard())),
+                    IsRangeOfMarker(
+                        "transposeInputMarker",
+                        IsCallWildcard("originCall", IsWildcard(), IsWildcard()),
+                        IsWildcard())),
                 IsWildcard())),
         IsTensorConst());
 
     protected override (Expr, int)[] CollectInputs(Call call)
     {
-        return new[] { (transposeInputMarker.Target, 0) };
+        return new[] { (originCall.Arguments[0], 0) };
     }
 
     private Call transpose;
+    private Call originCall;
     private Marker transposeInputMarker;
 
     protected override void Init(IMatchResult result)
     {
         transpose = (Call)result["transpose"];
+        originCall = (Call)result["originCall"];
         transposeInputMarker = (Marker)result["transposeInputMarker"];
         base.Init(result);
     }
@@ -410,8 +420,14 @@ public class TFConv2DTransposeToFusion : MarkerCallToFusion<Conv2DTranspose>
     protected override Expr ReplaceVarsWithArg(Var[] fusionVars, Expr[] args, Expr newCall)
     {
         var convTranspose = (Call)callMarker.Target;
-        var c = ReplaceCallFirstParam(convTranspose, ReplaceCallFirstParam(transpose, transposeInputMarker.With(target:fusionVars[0])));
-        return base.ReplaceVarsWithArg(fusionVars, args, c);
+        var c = ReplaceCallFirstParam(
+            convTranspose,
+            transposeInputMarker.With(target:
+                ReplaceCallFirstParam(
+                    transpose,
+                    transposeInputMarker.With(target:
+                        ReplaceCallFirstParam(originCall, fusionVars[0])))));
+        return callMarker.With(target: base.ReplaceVarsWithArg(fusionVars, args, c));
     }
 
     protected override Expr ProcessForNewBody(Var[] fusionVars, Expr[] args, Expr expr)
@@ -419,11 +435,12 @@ public class TFConv2DTransposeToFusion : MarkerCallToFusion<Conv2DTranspose>
         // 1. reconstruct new body
 
         // 2. replace
-        return fusionVars.Zip(args).Aggregate(expr, (newBody, tuple) =>
+        var newBody = fusionVars.Zip(args).Aggregate(expr, (newBody, tuple) =>
         {
             var (fusionVar, arg) = tuple;
             return ReplaceUtility.ReplaceExpr(newBody, arg, fusionVar);
         });
+        return callMarker.With(target: newBody);
         // return ReplaceClone(callMarker.With(target: newBody), fusionVars.Zip(args).ToArray());
     }
 }
@@ -452,28 +469,9 @@ public class ActToFusion : MarkerCallToFusion<ActivationOp>
 
 }
 
-public class SigmoidToFusion : MarkerCallToFusion<Sigmoid>
-{
-}
-
-public class LeakyReluToFusion : MarkerCallToFusion<LeakyRelu>
-{
-}
-
-public class ReluToFusion : MarkerCallToFusion<Relu>
-{
-}
-
 public class TransposeToFusion : MarkerCallToFusion<Transpose>
 {
     protected override bool MustHaveMarker => false;
-}
-
-public class PadToFusion : MarkerCallToFusion<Pad>
-{
-    protected override bool MustHaveMarker => false;
-
-    public override bool Check(Call call) => ((Pad)call.Target).PadMode == PadMode.Constant;
 }
 
 public class UnaryToFusion : MarkerCallToFusion<Unary>
@@ -650,6 +648,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
         // 替换逻辑：新的body中的var -> fusion原始的var -> target为fusion的call的input
         // 本质上只是对这个body的所有输入做替换
         // 避免这里的修改影响到原始的body，每个分支需要进行自己的修改，所以要clone处理
+        DumpIR(originBody ,"originBody", _relPath);
         var call = ReplaceClone(originBody, fusionVars.Zip(fixInputs).ToArray());
         if (!call.InferenceType())
         {
@@ -802,15 +801,15 @@ public partial class FusionBucket : RewriteRule<Pattern>
             throw new InvalidOperationException();
         }
 
-        // if (body is not If)
-        // {
-        //     Console.WriteLine("ShouldBeRebuild");
-        //     _counter++;
-        //     var rebuildEnd = System.DateTime.Now;
-        //     Console.WriteLine(rebuildEnd - begin);
-        //     DumpIR(body, "Rebuild", _relPath);
-        //     return body;
-        // }
+        if (body is not If)
+        {
+            Console.WriteLine("ShouldBeRebuild");
+            _counter++;
+            var rebuildEnd = System.DateTime.Now;
+            Console.WriteLine(rebuildEnd - begin);
+            DumpIR(body, "Rebuild", _relPath);
+            return body;
+        }
 
             // FixInput Replace Var
         var newBody = ReplaceFusionVarWithCallArgs(fusion, context.Arguments, body);
@@ -831,6 +830,20 @@ public partial class FusionBucket : RewriteRule<Pattern>
 
         var end = System.DateTime.Now;
         Console.WriteLine(end - begin);
+        CompilerServices.Rewrite(newBody, new IRewriteRule[]
+        {
+            new FoldStackGetItem(),
+            new FoldShapeOf(),
+            new FoldTwoReshapes(),
+            new FoldTwoCasts(),
+            new FoldTwoSlices(),
+            new FoldNopBinary(),
+            new FoldNopCast(),
+            new Neutral.FoldConstCall(),
+            new FoldNopReshape(),
+            new FoldNopSlice(),
+            new FoldIf(),
+        }, new());
         return newBody;
         // todo :save if shape
     }
@@ -1050,6 +1063,8 @@ public partial class FusionBucket : RewriteRule<Pattern>
 
         int i = 0;
 
+        // 1. 普通情况不应该rebuild
+        // 2. rebuild的正确性
         // if (ShouldBeRebuild(context))
         // {
         //     Console.WriteLine("Rebuild");
