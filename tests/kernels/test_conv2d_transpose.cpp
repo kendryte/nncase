@@ -133,7 +133,7 @@ TEST_P(Conv2DTransposeTest, conv2d_transpose) {
 
     // actual
     int64_t group[] = {group_value};
-    float_t fused_clamp[] = {-FLT_MAX, FLT_MAX};
+    float fused_clamp[] = {-FLT_MAX, FLT_MAX};
     auto dilations_ptr = hrt::create(nncase::dt_int64, {2},
                                      {reinterpret_cast<gsl::byte *>(dilations),
                                       dilations_size * sizeof(int64_t)},

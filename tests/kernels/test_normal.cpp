@@ -29,13 +29,13 @@ using namespace ortki;
 class NormalTest
     : public KernelTest,
       public ::testing::TestWithParam<
-          std::tuple<nncase::typecode_t, axes_t, float_t, float_t, float_t>> {
+          std::tuple<nncase::typecode_t, axes_t, float, float, float>> {
   public:
     void SetUp() override {
         auto &&[typecode, l_shape, value1, value2, value3] = GetParam();
 
         mean_value = value1;
-        float_t mean_ptr[] = {mean_value};
+        float mean_ptr[] = {mean_value};
         mean = hrt::create(
                    typecode, {1},
                    {reinterpret_cast<gsl::byte *>(mean_ptr), sizeof(mean_ptr)},
@@ -43,7 +43,7 @@ class NormalTest
                    .expect("create tensor failed");
 
         scale_value = value2;
-        float_t scale_ptr[] = {scale_value};
+        float scale_ptr[] = {scale_value};
         scale = hrt::create(typecode, {1},
                             {reinterpret_cast<gsl::byte *>(scale_ptr),
                              sizeof(scale_ptr)},
@@ -51,7 +51,7 @@ class NormalTest
                     .expect("create tensor failed");
 
         seed_value = value3;
-        float_t seed_ptr[] = {seed_value};
+        float seed_ptr[] = {seed_value};
         seed = hrt::create(
                    typecode, {1},
                    {reinterpret_cast<gsl::byte *>(seed_ptr), sizeof(seed_ptr)},

@@ -28,7 +28,7 @@ using namespace ortki;
 
 class LeakyReluTest : public KernelTest,
                       public ::testing::TestWithParam<
-                          std::tuple<nncase::typecode_t, dims_t, float_t>> {
+                          std::tuple<nncase::typecode_t, dims_t, float>> {
   public:
     void SetUp() override {
         auto &&[typecode, l_shape, value] = GetParam();
@@ -45,7 +45,7 @@ class LeakyReluTest : public KernelTest,
 
   protected:
     runtime_tensor input;
-    float_t alpha_value;
+    float alpha_value;
 };
 
 INSTANTIATE_TEST_SUITE_P(
@@ -72,7 +72,7 @@ TEST_P(LeakyReluTest, leaky_relu) {
                         .expect("create tensor failed");
 
     // actual
-    float_t alpha_ptr[] = {alpha_value};
+    float alpha_ptr[] = {alpha_value};
     auto alpha = hrt::create(nncase::dt_float32, {1},
                              {reinterpret_cast<gsl::byte *>(alpha_ptr),
                               sizeof(alpha_ptr)},

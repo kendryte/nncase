@@ -29,27 +29,27 @@ using namespace ortki;
 class RangeTest
     : public KernelTest,
       public ::testing::TestWithParam<
-          std::tuple<nncase::typecode_t, dims_t, float_t, float_t, float_t>> {
+          std::tuple<nncase::typecode_t, dims_t, float, float, float>> {
   public:
     void SetUp() override {
         auto &&[typecode, shape, begin_value, end_value, step_value] =
             GetParam();
 
-        float_t begin_array[] = {begin_value};
+        float begin_array[] = {begin_value};
         begin = hrt::create(typecode, shape,
                             {reinterpret_cast<gsl::byte *>(begin_array),
                              sizeof(begin_array)},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
 
-        float_t end_array[] = {end_value};
+        float end_array[] = {end_value};
         end = hrt::create(
                   typecode, shape,
                   {reinterpret_cast<gsl::byte *>(end_array), sizeof(end_array)},
                   true, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
 
-        float_t step_array[] = {step_value};
+        float step_array[] = {step_value};
         step = hrt::create(typecode, shape,
                            {reinterpret_cast<gsl::byte *>(step_array),
                             sizeof(step_array)},

@@ -29,7 +29,7 @@ using namespace ortki;
 class UniformLikeTest
     : public KernelTest,
       public ::testing::TestWithParam<std::tuple<
-          nncase::typecode_t, dims_t, dims_t, float_t, float_t, float_t>> {
+          nncase::typecode_t, dims_t, dims_t, float, float, float>> {
   public:
     void SetUp() override {
         auto &&[typecode, shape, l_shape, value1, value2, value3] = GetParam();
@@ -39,7 +39,7 @@ class UniformLikeTest
         init_tensor(lhs);
 
         high_value = value1;
-        float_t high_array[] = {high_value};
+        float high_array[] = {high_value};
         high = hrt::create(typecode, shape,
                            {reinterpret_cast<gsl::byte *>(high_array),
                             sizeof(high_array)},
@@ -47,7 +47,7 @@ class UniformLikeTest
                    .expect("create tensor failed");
 
         low_value = value2;
-        float_t low_array[] = {low_value};
+        float low_array[] = {low_value};
         low = hrt::create(
                   typecode, shape,
                   {reinterpret_cast<gsl::byte *>(low_array), sizeof(low_array)},
@@ -55,7 +55,7 @@ class UniformLikeTest
                   .expect("create tensor failed");
 
         seed_value = value3;
-        float_t seed_array[] = {seed_value};
+        float seed_array[] = {seed_value};
         seed = hrt::create(typecode, shape,
                            {reinterpret_cast<gsl::byte *>(seed_array),
                             sizeof(seed_array)},
@@ -70,9 +70,9 @@ class UniformLikeTest
     runtime_tensor high;
     runtime_tensor low;
     runtime_tensor seed;
-    float_t high_value;
-    float_t low_value;
-    float_t seed_value;
+    float high_value;
+    float low_value;
+    float seed_value;
 };
 
 INSTANTIATE_TEST_SUITE_P(

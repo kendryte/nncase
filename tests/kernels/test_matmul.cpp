@@ -51,7 +51,7 @@ class MatMulTest : public KernelTest,
 
 INSTANTIATE_TEST_SUITE_P(
     mat_mul, MatMulTest,
-    testing::Combine(testing::Values(dt_float16),
+    testing::Combine(testing::Values(dt_float16, dt_float32, dt_float64, dt_int32, dt_int64, dt_uint32, dt_uint64),
                      testing::Values(dims_t{1, 3}, dims_t{1, 3, 3},
                                      dims_t{1, 2, 3, 3}, dims_t{3, 3}/*,
                                      dims_t{6, 3, 3}, dims_t{6, 2, 3, 3}*/),// todo batch&&channel doesn't support other than 1.

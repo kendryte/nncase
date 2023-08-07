@@ -28,7 +28,7 @@ using namespace ortki;
 
 class EluTest : public KernelTest,
                 public ::testing::TestWithParam<
-                    std::tuple<nncase::typecode_t, dims_t, float_t>> {
+                    std::tuple<nncase::typecode_t, dims_t, float>> {
   public:
     void SetUp() override {
         auto &&[typecode, l_shape, alpha_value] = GetParam();
@@ -45,7 +45,7 @@ class EluTest : public KernelTest,
 
   protected:
     runtime_tensor input;
-    float_t alpha;
+    float alpha;
 };
 
 INSTANTIATE_TEST_SUITE_P(
@@ -71,7 +71,7 @@ TEST_P(EluTest, elu) {
                         .expect("create tensor failed");
 
     // actual
-    float_t a_ptr[] = {alpha};
+    float a_ptr[] = {alpha};
     auto a = hrt::create(nncase::dt_float32, {1},
                          {reinterpret_cast<gsl::byte *>(a_ptr), sizeof(a_ptr)},
                          true, host_runtime_tensor::pool_cpu_only)

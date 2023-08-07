@@ -57,7 +57,8 @@ class ConcatTest : public KernelTest,
 INSTANTIATE_TEST_SUITE_P(
     Concat, ConcatTest,
     testing::Combine(testing::Values(dt_float32, dt_int64, dt_int32, dt_float64,
-                                     dt_int16, dt_uint32, dt_boolean),
+                                     dt_float16, dt_int16, dt_uint32,
+                                     dt_boolean),
                      testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 3},
                                      dims_t{1, 3, 16}, dims_t{1}),
                      testing::Values(-1, 0, 1, 2, 3, -2, -3, -4)));

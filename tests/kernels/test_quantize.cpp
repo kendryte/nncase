@@ -67,7 +67,7 @@ class QuantizeTest : public KernelTest,
                     .expect("create tensor failed");
         }
 
-        float_t scale[] = {scale_value};
+        float scale[] = {scale_value};
         scale_ptr =
             hrt::create(nncase::dt_float32, {1},
                         {reinterpret_cast<gsl::byte *>(scale), sizeof(scale)},

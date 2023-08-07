@@ -117,7 +117,7 @@ TEST_P(Conv2DTest, conv2d) {
     // actual
     int64_t group[] = {group_value};
 
-    float_t fused_clamp[] = {-std::numeric_limits<float>::infinity(),
+    float fused_clamp[] = {-std::numeric_limits<float>::infinity(),
                              std::numeric_limits<float>::infinity()};
 
     auto dilations_ptr = hrt::create(nncase::dt_int64, {2},

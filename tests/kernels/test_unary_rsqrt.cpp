@@ -215,7 +215,7 @@ TEST_P(UnaryTest, rsqrt) {
                   true, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
     } else {
-        float_t one_array[] = {1};
+        float one_array[] = {1};
         one = hrt::create(
                   input.datatype(), {1},
                   {reinterpret_cast<gsl::byte *>(one_array), sizeof(one_array)},

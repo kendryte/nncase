@@ -47,10 +47,10 @@ class CumSumTest
 
 INSTANTIATE_TEST_SUITE_P(
     cum_sum, CumSumTest,
-    testing::Combine(testing::Values(dt_float32, dt_int32, dt_int64,
-                                     dt_float64 /*,
-      dt_uint32, dt_uint64, dt_float16,
-      dt_bfloat16*/),
+    testing::Combine(testing::Values(dt_float32, dt_int32, dt_int64, dt_float64,
+                                     dt_float16 /*,
+dt_uint32, dt_uint64,
+dt_bfloat16*/),
                      testing::Values(dims_t{1, 3, 16, 16}, dims_t{2, 2},
                                      dims_t{1, 3, 2})));
 
@@ -75,13 +75,13 @@ TEST_P(CumSumTest, cum_sum) {
                         .expect("create tensor failed");
 
     // actual
-    float_t exclusive[] = {0};
+    float exclusive[] = {0};
     auto exclusive_ptr = hrt::create(nncase::dt_float32, {1},
                                      {reinterpret_cast<gsl::byte *>(exclusive),
                                       sizeof(exclusive)},
                                      true, host_runtime_tensor::pool_cpu_only)
                              .expect("create tensor failed");
-    float_t reverse[] = {0};
+    float reverse[] = {0};
     auto reverse_ptr =
         hrt::create(nncase::dt_float32, {1},
                     {reinterpret_cast<gsl::byte *>(reverse), sizeof(reverse)},

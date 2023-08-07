@@ -25,7 +25,7 @@
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
-using slope_t = itlib::small_vector<float_t, 4>;
+using slope_t = itlib::small_vector<float, 4>;
 
 class PreluTest : public KernelTest,
                   public ::testing::TestWithParam<
@@ -65,11 +65,11 @@ TEST_P(PreluTest, Prelu) {
 
     // expected
     size_t slope_size = slope.size();
-    float_t *slope_array = (float_t *)malloc(slope_size * sizeof(float_t));
+    float *slope_array = (float *)malloc(slope_size * sizeof(float));
     std::copy(slope.begin(), slope.end(), slope_array);
     auto slope = hrt::create(dt_float32, {slope_size},
                              {reinterpret_cast<gsl::byte *>(slope_array),
-                              slope_size * sizeof(float_t)},
+                              slope_size * sizeof(float)},
                              true, host_runtime_tensor::pool_cpu_only)
                      .expect("create tensor failed");
     auto slope_ort = runtime_tensor_2_ort_tensor(slope);

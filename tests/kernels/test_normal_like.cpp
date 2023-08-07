@@ -29,7 +29,7 @@ using namespace ortki;
 class NormalLikeTest
     : public KernelTest,
       public ::testing::TestWithParam<
-          std::tuple<nncase::typecode_t, dims_t, float_t, float_t, float_t>> {
+          std::tuple<nncase::typecode_t, dims_t, float, float, float>> {
   public:
     void SetUp() override {
         auto &&[typecode, l_shape, value1, value2, value3] = GetParam();
@@ -40,7 +40,7 @@ class NormalLikeTest
         init_tensor(input);
 
         mean_value = value1;
-        float_t mean_ptr[] = {mean_value};
+        float mean_ptr[] = {mean_value};
         mean = hrt::create(
                    typecode, {1},
                    {reinterpret_cast<gsl::byte *>(mean_ptr), sizeof(mean_ptr)},
