@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Linq;
 using Nncase.IR;
 using Nncase.Passes.Rules.ShapeBucket;
@@ -13,7 +16,7 @@ public static class ShapeBucketTestHelper
     {
         var v = new Var(arg.CheckedType);
         var abs = ctor(v);
-        var f = new BucketFusion("stackvm", abs, new[] { v }, new Var[] { });
+        var f = new BucketFusion("stackvm", abs, new[] { v }, Array.Empty<Var>());
         var c = new Call(f, arg);
         return c;
     }
@@ -22,7 +25,7 @@ public static class ShapeBucketTestHelper
     {
         var paramList = args.Select(x => new Var(x.CheckedType)).ToArray();
         var abs = ctor(paramList);
-        var f = new BucketFusion("stackvm", abs, paramList, new Var[] { });
+        var f = new BucketFusion("stackvm", abs, paramList, Array.Empty<Var>());
         var c = new Call(f, args);
         return c;
     }

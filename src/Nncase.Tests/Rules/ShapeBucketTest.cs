@@ -66,7 +66,8 @@ public class ShapeBucketTest : TransformTestBase
         var input = new Var("input", new TensorType(DataTypes.Float32, new Shape(1, 3, 24, 24)));
         var shape = new Var("shape", new TensorType(DataTypes.Int64, new Shape(4)));
         var call = MakeSimpleFusionCall(expr => IR.F.Math.MatMul(Reshape(expr[0], expr[1]), expr[0]), input, shape);
-        TestMatched<FusionBucket>(call,
+        TestMatched<FusionBucket>(
+            call,
             new Dictionary<Var, IValue>
             {
                 { input, Value.FromTensor(Testing.Rand<float>(input.CheckedShape.ToValueArray())) },

@@ -134,7 +134,7 @@ public interface ICompilerServicesProvider
     /// <returns>Evaluate result.</returns>
     Metric EvaluateOpMetric(Op op, IMetricEvaluateContext context);
 
-    Expr EvaluateShapeExpr(Expr expr, ShapeExprCache cache);
+    Expr EvaluateShapeExpr(Expr expr, ShapeExprCache? cache);
 
     Expr EvaluateOpShapeExpr(Op expr, IShapeEvaluateContext context);
 
@@ -317,7 +317,7 @@ public static class CompilerServices
         return Provider.EvaluateOpCost(op, context);
     }
 
-    public static Expr EvaluateShapeExpr(this Expr expr, ShapeExprCache cache = null)
+    public static Expr EvaluateShapeExpr(this Expr expr, ShapeExprCache? cache = null)
     {
         return Provider.EvaluateShapeExpr(expr, cache);
     }

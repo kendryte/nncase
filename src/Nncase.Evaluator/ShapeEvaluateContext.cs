@@ -19,19 +19,19 @@ internal sealed class ShapeEvaluateContext : IShapeEvaluateContext
 {
     private readonly Dictionary<Expr, Expr> _memo;
 
-    // memo used by reference, can't make new _memo with memo.concat(cache)
-    public Dictionary<Expr, Expr> _cache;
-
     public ShapeEvaluateContext(Dictionary<Expr, Expr> memo, ShapeExprCache cache)
     {
         _memo = memo;
-        _cache = cache.Cache;
+        Cache = cache.Cache;
         VarMap = cache.VarMap;
     }
 
     public IReadOnlyDictionary<Var, Expr[]> VarMap { get; }
 
     public Call? CurrentCall { get; set; }
+
+    // memo used by reference, can't make new _memo with memo.concat(cache)
+    public Dictionary<Expr, Expr> Cache { get; set; }
 
     public Expr GetArgument(Op op, ParameterInfo parameter)
     {
@@ -66,6 +66,7 @@ internal sealed class ShapeEvaluateContext : IShapeEvaluateContext
             {
                 return new Tuple(tupleShapeExpr.Fields.ToArray().Select(expr => Cast(expr, DataTypes.Int32)).ToArray());
             }
+
             // for split
             else
             {

@@ -101,9 +101,7 @@ public class BucketFusion : Fusion
 [RuleGenerator]
 public partial class CallToFusion : RewriteRule<Pattern>
 {
-    public static int _counter;
-
-    private Call? _currentCall;
+    public static int Counter { get; set; }
 
     public string ModuleKind => "stackvm";
 
@@ -111,60 +109,38 @@ public partial class CallToFusion : RewriteRule<Pattern>
 
     protected virtual bool MustHaveMarker => true;
 
-    private string Name => _currentCall!.Target.GetType().Name;
+    private Call? CurrentCall { get; set; }
 
-    private string RelPath => $"{_counter}_{_currentCall!.Target.GetType().Name}";
+    private string Name => CurrentCall!.Target.GetType().Name;
 
-    protected virtual Expr ProcessForNewBody(Var[] fusionVars, Expr[] args, Expr expr) => expr;
-
-    protected virtual Expr ProcessForOuterCall(Expr expr) => expr;
-
-
-    protected virtual (Expr, int)[] CollectInputs(Call call) =>
-        call.Arguments.ToArray().Select((arg, i) =>
-        {
-            if (arg is Marker m && m.Target is not TensorConst)
-            {
-                return (m, i);
-            }
-
-            return (arg, -1);
-        }).Where(pair => pair.Item2 != -1).Select(pair => (pair.arg, pair.Item2)).ToArray();
+    private string RelPath => $"{Counter}_{CurrentCall!.Target.GetType().Name}";
 
     public virtual bool Check(Call call)
     {
         return true;
     }
 
-    protected virtual void Init(IMatchResult result) { }
-
     public Expr? GetReplace(Call call, IMatchResult matchResult)
     {
-        // if (call.CheckedShape.IsFixed)
-        // {
-        //     return null;
-        // }
-        // if (!(call.Target is MatMul && call.Arguments.ToArray().All(x => !x.CheckedShape.IsFixed)))
-        // {
-            // return null;
-        // }
+        if (call.CheckedShape.IsFixed)
+        {
+            return null;
+        }
 
-        // if (_counter > 4)
-        // {
-            // return null;
-        // }
         var originType = call.CheckedType;
-        _currentCall = call;
+        CurrentCall = call;
         DumpIR((Expr)matchResult.Root, "origin", RelPath);
         if (!Check(call))
         {
             return null;
         }
+
         Init(matchResult);
 
         Console.WriteLine(call.Target.GetType().Name);
         var argsMarkerData = CollectInputs(call);
         var args = argsMarkerData.Select(pair => pair.Item1).ToArray();
+
         // var argsMarker = argsMarkerData.Select(pair => pair.Item1).ToArray();
         // var args = argsMarker.Select(arg => arg.Target).ToArray();
         var varMap = CompileSession.CompileOptions.ShapeBucketOptions.VarMap;
@@ -175,7 +151,7 @@ public partial class CallToFusion : RewriteRule<Pattern>
         var outerCall = MakeNewOuterCall(newCall, f, args);
         DumpIR(outerCall, "after", RelPath);
         ArgsChecker(args);
-        _counter++;
+        Counter++;
 
         if (!outerCall.InferenceType())
         {
@@ -188,8 +164,35 @@ public partial class CallToFusion : RewriteRule<Pattern>
             DumpIR(outerCall, "TypeChanged");
             throw new InvalidOperationException();
         }
+
         return outerCall;
     }
+
+    protected virtual Expr ProcessForNewBody(Var[] fusionVars, Expr[] args, Expr expr) => expr;
+
+    protected virtual Expr ProcessForOuterCall(Expr expr) => expr;
+
+    protected virtual (Expr, int)[] CollectInputs(Call call) =>
+        call.Arguments.ToArray().Select((arg, i) =>
+        {
+            if (arg is Marker m && m.Target is not TensorConst)
+            {
+                return (m, i);
+            }
+
+            return (arg, -1);
+        }).Where(pair => pair.Item2 != -1).Select(pair => (pair.arg, pair.Item2)).ToArray();
+
+    protected virtual void Init(IMatchResult result)
+    {
+    }
+
+    protected virtual Expr ReplaceVarsWithArg(Var[] fusionVars, Expr[] args, Expr newCall) =>
+        fusionVars.Zip(args).Aggregate(newCall, (newBody, tuple) =>
+        {
+            var (fusionVar, arg) = tuple;
+            return ReplaceUtility.ReplaceExpr(newBody, arg, fusionVar);
+        });
 
     private static Var[] MakeNewParam(Expr[] args)
     {
@@ -212,19 +215,11 @@ public partial class CallToFusion : RewriteRule<Pattern>
 
         // todo: 如果其中一个arg有多个user,并且有在fusion之外的部分，如果被替换为var,那么fusion外的那部分表达式operand都会跟着变成var
         // args是call的话重新构造就好了, 能够解决目前的情况，但是不知道更复杂的情况会不会出问题
-
         var body = ReplaceVarsWithArg(fusionVars, args, newCall);
 
-        var f = new BucketFusion($"{Name}_{_counter}", ModuleKind, set, body, fusionVars);
+        var f = new BucketFusion($"{Name}_{Counter}", ModuleKind, set, body, fusionVars);
         return f;
     }
-
-    protected virtual Expr ReplaceVarsWithArg(Var[] fusionVars, Expr[] args, Expr newCall) =>
-        fusionVars.Zip(args).Aggregate(newCall, (newBody, tuple) =>
-        {
-            var (fusionVar, arg) = tuple;
-            return ReplaceUtility.ReplaceExpr(newBody, arg, fusionVar);
-        });
 
     private Expr MakeNewCall(Call call, Var[] fusionVars, (Expr, int)[] argsMarkerData)
     {
@@ -242,7 +237,6 @@ public partial class CallToFusion : RewriteRule<Pattern>
 
         // index should map to origin input, not inputsWithMarker index
         // var pairs = inputsWithMarkerAndIndex.Select((input, i) => (i, (Expr)input)).ToArray();
-
         var indices = inputsWithMarkerAndIndex.Select(x => x.originIndex).ToArray();
         var newArgs = call.Arguments.ToArray().Select((arg, i) =>
         {
@@ -267,9 +261,11 @@ public partial class CallToFusion : RewriteRule<Pattern>
                             newFields.Add(fields[inputCounter++].arg);
                         }
                     }
+
                     // var newFields = inputsWithMarkerAndIndex.Select(x => x.originIndex == i ? x.arg : arg).ToArray();
                     return new IR.Tuple(newFields.ToArray());
                 }
+
                 if (fields.Length > 1)
                 {
                     throw new InvalidOperationException();
@@ -280,8 +276,10 @@ public partial class CallToFusion : RewriteRule<Pattern>
 
             return arg;
         }).ToArray();
+
         // arguments用到其他input的地方就要replace对应的input
         var newCall = call.With(arguments: newArgs);
+
         // var newCall = ReplaceUtility.ReplaceCallParams(call.Target, call.Arguments.ToArray(), inputsWithMarkerAndIndex);
         var newCallWithMarker = ProcessForOuterCall(newCall);
         return newCallWithMarker;
@@ -296,22 +294,20 @@ public class MarkerCallToFusion<T> : CallToFusion
         IsCallWildcard("call", IsOp<T>()),
         IsTensorConst());
 
-    protected Marker callMarker;
+    protected Marker? CallMarker { get; set; }
 
-    protected override Expr ProcessForNewBody(Var[] fusionVars, Expr[] args, Expr expr) => callMarker.With(target: expr);
+    protected override Expr ProcessForNewBody(Var[] fusionVars, Expr[] args, Expr expr) => CallMarker!.With(target: expr);
 
-    protected override Expr ProcessForOuterCall(Expr expr) => callMarker.With(target: expr);
+    protected override Expr ProcessForOuterCall(Expr expr) => CallMarker!.With(target: expr);
 
     protected override void Init(IMatchResult result)
     {
-        callMarker = (Marker)result["callMarker"];
+        CallMarker = (Marker)result["callMarker"];
     }
 }
 
-
 public class MultiUserCallToFusion : CallToFusion
 {
-    private Expr body;
     public override Pattern Pattern => IsWildcard("call", expr =>
     {
         if (expr is Call c && c.Target is not BucketFusion)
@@ -342,6 +338,11 @@ public class MultiUserCallToFusion : CallToFusion
         return false;
     });
 
+    public override bool Check(Call call)
+    {
+        return !call.Users.ToArray().OfType<Var>().Any();
+    }
+
     protected override (Expr, int)[] CollectInputs(Call call) =>
         call.Arguments.ToArray().SelectMany((arg, i) =>
         {
@@ -361,29 +362,11 @@ public class MultiUserCallToFusion : CallToFusion
 
             return new[] { (arg, -1) };
         }).Where(pair => pair.Item2 != -1).Select(pair => (pair.Item1, pair.Item2)).ToArray();
-
-    public override bool Check(Call call)
-    {
-        return !call.Users.ToArray().OfType<Var>().Any();
-        // call.Users.ToArray().OfType<Call>()
-        // var names = string.Join("\n", call.Users.ToArray().OfType<Call>().Select(c => ((BucketFusion)c.Target).Name).ToArray());
-        // Console.WriteLine(names);
-        // Console.WriteLine();
-
-        // if (!call.Users.Where(x => x != body).All(user => user is Call c && c.Target is BucketFusion))
-        // {
-            // return false;
-            throw new NotImplementedException();
-        // }
-
-        return true;
-    }
 }
 
 public class Conv2DToFusion : MarkerCallToFusion<Conv2D>
 {
 }
-
 
 // tflite相比于onnx的比较特殊，output shape是原图进行计算的，而不是自行创建表达式计算。
 // 如果采用一样的处理方法会导致复制输入中的function和call
@@ -391,6 +374,12 @@ public class Conv2DToFusion : MarkerCallToFusion<Conv2D>
 // 这里本质的问题是因为output shape所指向的很可能并不是input，或者说是input并不是output shape所指向的表达式的子表达式
 public class TFConv2DTransposeToFusion : MarkerCallToFusion<Conv2DTranspose>
 {
+    private Call? _transpose;
+
+    private Call? _originCall;
+
+    private Marker? _transposeInputMarker;
+
     public override Pattern Pattern => IsRangeOfMarker(
         "callMarker",
         IsCallWildcard(
@@ -409,32 +398,28 @@ public class TFConv2DTransposeToFusion : MarkerCallToFusion<Conv2DTranspose>
 
     protected override (Expr, int)[] CollectInputs(Call call)
     {
-        return new[] { (originCall.Arguments[0], 0) };
+        return new[] { (_originCall!.Arguments[0], 0) };
     }
-
-    private Call transpose;
-    private Call originCall;
-    private Marker transposeInputMarker;
 
     protected override void Init(IMatchResult result)
     {
-        transpose = (Call)result["transpose"];
-        originCall = (Call)result["originCall"];
-        transposeInputMarker = (Marker)result["transposeInputMarker"];
+        _transpose = (Call)result["transpose"];
+        _originCall = (Call)result["originCall"];
+        _transposeInputMarker = (Marker)result["transposeInputMarker"];
         base.Init(result);
     }
 
     protected override Expr ReplaceVarsWithArg(Var[] fusionVars, Expr[] args, Expr newCall)
     {
-        var convTranspose = (Call)callMarker.Target;
+        var convTranspose = (Call)CallMarker!.Target;
         var c = ReplaceCallFirstParam(
             convTranspose,
-            transposeInputMarker.With(target:
+            _transposeInputMarker!.With(target:
                 ReplaceCallFirstParam(
-                    transpose,
-                    transposeInputMarker.With(target:
-                        ReplaceCallFirstParam(originCall, fusionVars[0])))));
-        return callMarker.With(target: base.ReplaceVarsWithArg(fusionVars, args, c));
+                    _transpose!,
+                    _transposeInputMarker.With(target:
+                        ReplaceCallFirstParam(_originCall!, fusionVars[0])))));
+        return CallMarker.With(target: base.ReplaceVarsWithArg(fusionVars, args, c));
     }
 
     protected override Expr ProcessForNewBody(Var[] fusionVars, Expr[] args, Expr expr)
@@ -447,10 +432,12 @@ public class TFConv2DTransposeToFusion : MarkerCallToFusion<Conv2DTranspose>
             var (fusionVar, arg) = tuple;
             return ReplaceUtility.ReplaceExpr(newBody, arg, fusionVar);
         });
-        return callMarker.With(target: newBody);
+        return CallMarker!.With(target: newBody);
+
         // return ReplaceClone(callMarker.With(target: newBody), fusionVars.Zip(args).ToArray());
     }
 }
+
 public class Conv2DTransposeToFusion : MarkerCallToFusion<Conv2DTranspose>
 {
     // when OutputShape is Const, it means output shape is not effected by input.
@@ -473,7 +460,6 @@ public class MatmulToFusion : MarkerCallToFusion<MatMul>
 
 public class ActToFusion : MarkerCallToFusion<ActivationOp>
 {
-
 }
 
 public class TransposeToFusion : MarkerCallToFusion<Transpose>
@@ -552,12 +538,92 @@ public partial class ClearFusionOuterMarker : RewriteRule<Pattern>
     }
 }
 
+public class FusionBucketContext
+{
+    public FusionBucketContext(Call outerCall, BucketFusion fusion, Dictionary<Var, Expr[]> varMap, Dictionary<Var, int[]> dimVarValues, ShapeExprCache cache)
+    {
+        OuterCall = outerCall;
+        Fusion = fusion;
+        VarMap = varMap;
+        Cache = cache;
+        Cache.VarMap = varMap;
+        FusionInputShapeExpr = MakeFusionInputShapeExpr(outerCall, fusion, cache);
+        CheckAlive(FusionInputShapeExpr);
+        DimVarValues = dimVarValues;
+        Arguments = OuterCall.Arguments.ToArray();
+        Parameters = Fusion.Parameters.ToArray();
+        FixedShapeCache = new();
+    }
+
+    public Call OuterCall { get; }
+
+    public BucketFusion Fusion { get; }
+
+    public Dictionary<Var, Expr[]> VarMap { get; }
+
+    public Dictionary<Var, Expr[]> FusionInputShapeExpr { get; }
+
+    public Dictionary<Var, int[]> DimVarValues { get; }
+
+    public Expr[] Arguments { get; }
+
+    public Var[] Parameters { get; }
+
+    public ShapeExprCache Cache { get; }
+
+    // segIndex -> fixed shape list
+    public Dictionary<int, int[][]> FixedShapeCache { get; }
+
+    public Expr FusionBody => Fusion.Body;
+
+    public Dictionary<Var, IValue> DimVarValue(int i) =>
+        DimVarValues.ToDictionary(pair => pair.Key, pair => (IValue)Value.FromTensor(pair.Value[i]));
+
+    private static Dictionary<Var, Expr[]> MakeFusionInputShapeExpr(Call call, BucketFusion fusion, ShapeExprCache cache)
+    {
+        var data = fusion.Parameters.ToArray().Zip(call.Arguments.ToArray().Select((arg, i) =>
+        {
+            // DumpIR(arg, "MakeFusionInputShapeExprArg");
+            var result = arg.EvaluateShapeExpr(cache);
+            if (!result.InferenceType())
+            {
+                DumpIR(result, "InvalidInputShapeExpr");
+                throw new InvalidOperationException();
+            }
+
+            return Enumerable.Range(0, arg.CheckedShape.Rank).Select(i =>
+            {
+                var res = result[i];
+                return res;
+            }).ToArray();
+        })).Select(pair => new KeyValuePair<Var, Expr[]>(pair.First, pair.Second));
+        var fusionInputData = data.ToDictionary(pair => pair.Key, pair => pair.Value);
+        return fusionInputData;
+    }
+
+    private static void CheckAlive(Dictionary<Var, Expr[]> fusionInputInfo)
+    {
+        foreach (var value in fusionInputInfo.Values)
+        {
+            foreach (var expr in value)
+            {
+                if (!expr.IsAlive)
+                {
+                    throw new NotImplementedException();
+                }
+            }
+        }
+    }
+}
+
 [RuleGenerator]
 public partial class FusionBucket : RewriteRule<Pattern>
 {
     private static int _counter;
 
     private static string _relPath = string.Empty;
+
+    private ShapeExprCache _cache = ShapeExprCache.Default;
 
     public override Pattern Pattern => IsCall(
         "outerCall",
@@ -567,8 +633,6 @@ public partial class FusionBucket : RewriteRule<Pattern>
             IsWildcard("fusionBody"),
             GenerateParameters(null)),
         GenerateParameters(null));
-
-    public ShapeExprCache Cache = ShapeExprCache.Default;
 
     internal Dictionary<Var, Expr[]> VarMap => CompileSession.CompileOptions.ShapeBucketOptions.VarMap;
 
@@ -584,7 +648,6 @@ public partial class FusionBucket : RewriteRule<Pattern>
         // {
         //     return new Call(new BucketPad(), input, cachedFixedShape[inputIndex]);
         // }
-
         var fixedShape = ShapeEvaluate(input, inputInfo, varValues, fusionInputData);
         return new Call(new BucketPad(), input, fixedShape);
     }
@@ -595,6 +658,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
     public static int[] ShapeEvaluate(Expr expr, ShapeExprCache cache, Dictionary<Var, IValue> varInfo, Dictionary<Var, Expr[]> fusionInfo)
     {
         var begin = System.DateTime.Now;
+
         // var info is used for compute shape expr
         var dummyInput = MakeDummyInput(cache.VarMap, varInfo);
         var fusionDummyInput =
@@ -620,6 +684,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
         DumpIR(shapeExpr, "ShapeExprInShapeEvaluate", _relPath);
         var shape = shapeExpr.Evaluate(newEvaluatorInfo);
         var evalShapeTime = System.DateTime.Now;
+
         // Console.WriteLine("make input");
         // Console.WriteLine(makeInputTime - begin);
         // Console.WriteLine("make shape");
@@ -655,7 +720,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
         // 替换逻辑：新的body中的var -> fusion原始的var -> target为fusion的call的input
         // 本质上只是对这个body的所有输入做替换
         // 避免这里的修改影响到原始的body，每个分支需要进行自己的修改，所以要clone处理
-        DumpIR(originBody ,"originBody", _relPath);
+        DumpIR(originBody, "originBody", _relPath);
         var call = ReplaceClone(originBody, fusionVars.Zip(fixInputs).ToArray());
         if (!call.InferenceType())
         {
@@ -666,113 +731,8 @@ public partial class FusionBucket : RewriteRule<Pattern>
         return MakeSlice(context, call, originBody);
     }
 
-    private static Expr MakeSlice(FusionBucketContext context, Expr call, Expr originBody)
-    {
-        var fusionInputsShape = MakeShapeOfFusionInput(context.Parameters, context.Arguments);
-
-        if (call.CheckedType is TupleType tuple)
-        {
-            var fields = Enumerable.Range(0, tuple.Count)
-                .Select(i => MakeSliceForTensor(originBody[i], fusionInputsShape, call[i])).ToArray();
-            return new IR.Tuple(fields);
-        }
-
-        return MakeSliceForTensor(originBody, fusionInputsShape, call);
-    }
-
-    private static Expr MakeSliceForTensor(Expr originBody, Dictionary<Var, Expr[]> fusionInputsShapeExpr, Expr call)
-    {
-        var originShape = originBody.EvaluateShapeExpr(fusionInputsShapeExpr);
-        originShape.InferenceType();
-        // DumpIR(originShape, "OriginShapeExpr", _relPath);
-        var rank = call.CheckedShape.Rank;
-
-        // 对body的输出进行slice
-        var body = (Expr)Slice(call, Enumerable.Repeat(0, rank).ToArray(), Cast(originShape, DataTypes.Int32), rank);
-        var simplifyBody = CompilerServices.Rewrite(body, new IRewriteRule[]
-        {
-            new FoldStackGetItem(),
-            new FoldShapeOf(),
-            new FoldTwoReshapes(),
-            new FoldTwoCasts(),
-            new FoldTwoSlices(),
-            new FoldNopBinary(),
-            new FoldNopCast(),
-            new Neutral.FoldConstCall(),
-            new FoldNopReshape(),
-            new FoldNopSlice(),
-            new FoldIf(),
-        }, new());
-        return simplifyBody;
-    }
-
-    public Expr FixInput(FusionBucketContext context, int[][] shapeList)
-    {
-        return ReplaceClone(context.FusionBody, context.Parameters.Zip(context.Arguments).ToArray());
-        // var result = context.Parameters.Zip(context.Arguments).Zip(shapeList).Aggregate(context.FusionBody, (sum, data) =>
-        // {
-        //     var ((fusionVar, arg), fixShape) = data;
-        //     Expr expr = new Call(new FixShape(), arg, fixShape);
-        //     if (arg is Marker m)
-        //     {
-        //         expr = m.With(target: expr);
-        //     }
-        //
-        //     return ReplaceExpr(sum, fusionVar, expr);
-        // });
-        // return result;
-    }
-
-    public void GreedyStrategy(IPassManager p)
-    {
-        p.AddWithName<DataflowPass>("ToFusion").Configure( c =>
-        {
-             c.Add<MatmulToFusion>();
-             c.Add<Conv2DToFusion>();
-             c.Add<Conv2DTransposeToFusion>();
-        });
-        p.AddWithName<DataflowPass>("Merge").Configure(c =>
-        {
-            c.Add<MergePrevCallToFusion>();
-            c.Add<MergeNextCallToFusion>();
-        });
-        p.AddWithName<DataflowPass>("LostToFusion").Configure(c =>
-        {
-            // maybe op
-        });
-
-        p.AddWithName<DataflowPass>("FusionBucket").Configure(c =>
-        {
-            c.Add<FusionBucket>();
-        });
-    }
-
-    private void NormalStrategy(IPassManager passManager)
-    {
-
-    }
-    // public Expr Rebuild(FusionBucketContext context)
-    // {
-    //     // todo: add some simple merge
-    //     var body = RestoreBodyWithArgs(context.Arguments, context.Parameters, context.FusionBody);
-    //     DumpIR(body, "RestoreBody");
-    //     var newBody = CompilerServices.Rewrite(body,
-    //         new IRewriteRule[]
-    //         {
-    //             new MatmulToFusion(),
-    //             new Conv2DToFusion(),
-    //             new Conv2DTransposeToFusion(),
-    //             new TransposeToFusion(),
-    //         },
-    //         new());
-    //     DumpIR(newBody, "RebuildNewBody");
-    //     return newBody;
-    // }
-
     public Expr? GetReplace(Call outerCall, BucketFusion fusion, Expr fusionBody)
     {
-        var begin = System.DateTime.Now;
-
         if (ShouldRestore(outerCall, fusion))
         {
             return RestoreBodyWithArgs(outerCall.Arguments.ToArray(), fusion.Parameters.ToArray(), fusion.Body);
@@ -784,7 +744,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
 
         var options = CompileSession.CompileOptions.ShapeBucketOptions;
         var dimVarValues = MakeVarValuesForAllSegment(options);
-        var context = new FusionBucketContext(outerCall, fusion, VarMap, dimVarValues, Cache);
+        var context = new FusionBucketContext(outerCall, fusion, VarMap, dimVarValues, _cache);
 
         var (minDict, maxDict) = GetBoundDict(VarMap, options.RangeInfo);
 
@@ -810,7 +770,6 @@ public partial class FusionBucket : RewriteRule<Pattern>
             // return null;
         }
 
-
         var info = ComputeSegmentInfo(counts, options);
         context.FixedShapeCache[0] = minFixedShapeList;
         context.FixedShapeCache[info.Segments.Length - 1] = maxFixedShapeList;
@@ -824,21 +783,20 @@ public partial class FusionBucket : RewriteRule<Pattern>
 
         if (body is not If)
         {
-            Console.WriteLine("ShouldBeRebuild");
+            // Console.WriteLine("ShouldBeRebuild");
             _counter++;
-            var rebuildEnd = System.DateTime.Now;
-            Console.WriteLine(rebuildEnd - begin);
             DumpIR(body, "Rebuild", _relPath);
             return body;
         }
 
-            // FixInput Replace Var
+        // FixInput Replace Var
         var newBody = ReplaceFusionVarWithCallArgs(fusion, context.Arguments, body);
 
         // let bind
         if (newBody is If @if)
         {
             newBody = IR.F.Math.Require(true, @if.With(paramList: context.Arguments));
+
             // Cache.Add(newBody, newBody.EvaluateShapeExpr(context.Cache));
         }
 
@@ -849,10 +807,69 @@ public partial class FusionBucket : RewriteRule<Pattern>
             throw new InvalidOperationException("InvalidBucketBody");
         }
 
-        var end = System.DateTime.Now;
-        Console.WriteLine(end - begin);
         return newBody;
-        // todo :save if shape
+    }
+
+    public Expr FixInput(FusionBucketContext context, int[][] shapeList)
+    {
+        return ReplaceClone(context.FusionBody, context.Parameters.Zip(context.Arguments).ToArray());
+
+        // var result = context.Parameters.Zip(context.Arguments).Zip(shapeList).Aggregate(context.FusionBody, (sum, data) =>
+        // {
+        //     var ((fusionVar, arg), fixShape) = data;
+        //     Expr expr = new Call(new FixShape(), arg, fixShape);
+        //     if (arg is Marker m)
+        //     {
+        //         expr = m.With(target: expr);
+        //     }
+        //
+        //     return ReplaceExpr(sum, fusionVar, expr);
+        // });
+        // return result;
+    }
+
+    private static Expr MakeSlice(FusionBucketContext context, Expr call, Expr originBody)
+    {
+        var fusionInputsShape = MakeShapeOfFusionInput(context.Parameters, context.Arguments);
+
+        if (call.CheckedType is TupleType tuple)
+        {
+            var fields = Enumerable.Range(0, tuple.Count)
+                .Select(i => MakeSliceForTensor(originBody[i], fusionInputsShape, call[i])).ToArray();
+            return new IR.Tuple(fields);
+        }
+
+        return MakeSliceForTensor(originBody, fusionInputsShape, call);
+    }
+
+    private static Expr MakeSliceForTensor(Expr originBody, Dictionary<Var, Expr[]> fusionInputsShapeExpr, Expr call)
+    {
+        var originShape = originBody.EvaluateShapeExpr(fusionInputsShapeExpr);
+        originShape.InferenceType();
+
+        // DumpIR(originShape, "OriginShapeExpr", _relPath);
+        var rank = call.CheckedShape.Rank;
+
+        // 对body的输出进行slice
+        var body = (Expr)Slice(call, Enumerable.Repeat(0, rank).ToArray(), Cast(originShape, DataTypes.Int32), rank);
+        var simplifyBody = CompilerServices.Rewrite(
+            body,
+            new IRewriteRule[]
+            {
+                new FoldStackGetItem(),
+                new FoldShapeOf(),
+                new FoldTwoReshapes(),
+                new FoldTwoCasts(),
+                new FoldTwoSlices(),
+                new FoldNopBinary(),
+                new FoldNopCast(),
+                new Neutral.FoldConstCall(),
+                new FoldNopReshape(),
+                new FoldNopSlice(),
+                new FoldIf(),
+            },
+            new());
+        return simplifyBody;
     }
 
     private static bool IsFixed(int totalCount, int[][] minFixedShapeList, int[][] maxFixedShapeList) =>
@@ -863,12 +880,12 @@ public partial class FusionBucket : RewriteRule<Pattern>
 
     private static Expr RestoreBodyWithArgs(Expr[] args, Var[] parameters, Expr body) =>
         ReplaceClone(body, parameters.Zip(args).ToArray());
-        // parameters.ToArray().Zip(args).Aggregate(body, (sum, data) =>
-        // {
-            // var (fusionVar, arg) = data;
-            // return ReplaceExpr(sum, fusionVar, arg);
-        // });
 
+    // parameters.ToArray().Zip(args).Aggregate(body, (sum, data) =>
+    // {
+    // var (fusionVar, arg) = data;
+    // return ReplaceExpr(sum, fusionVar, arg);
+    // });
     private static void PrintMinMaxShape(int[][] minFixedShapeList, int[][] maxFixedShapeList, string relPath)
     {
         string str = string.Empty;
@@ -964,42 +981,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
         return fusionInputShapes;
     }
 
-    private static void CheckAlive(Dictionary<Var, Expr[]> fusionInputInfo)
-    {
-        foreach (var value in fusionInputInfo.Values)
-        {
-            foreach (var expr in value)
-            {
-                if (!expr.IsAlive)
-                {
-                    throw new NotImplementedException();
-                }
-            }
-        }
-    }
-
-    private static Dictionary<Var, Expr[]> MakeFusionInputShapeExpr(Call call, BucketFusion fusion, ShapeExprCache cache)
-    {
-        var data = fusion.Parameters.ToArray().Zip(call.Arguments.ToArray().Select((arg, i) =>
-        {
-            // DumpIR(arg, "MakeFusionInputShapeExprArg");
-            var result = arg.EvaluateShapeExpr(cache);
-            if (!result.InferenceType())
-            {
-                DumpIR(result, "InvalidInputShapeExpr");
-                throw new InvalidOperationException();
-            }
-            return Enumerable.Range(0, arg.CheckedShape.Rank).Select(i =>
-            {
-                var res = result[i];
-                return res;
-            }).ToArray();
-        })).Select(pair => new KeyValuePair<Var, Expr[]>(pair.First, pair.Second));
-        var fusionInputData = data.ToDictionary(pair => pair.Key, pair => pair.Value);
-        return fusionInputData;
-    }
-
-    private int[][] ComputeFixedShape(FusionBucketContext context, Dictionary<Var, IValue> varInfo) =>
+    private static int[][] ComputeFixedShape(FusionBucketContext context, Dictionary<Var, IValue> varInfo) =>
         context.Parameters.Select((arg, i) =>
         {
             var fixedShape = ShapeEvaluate(arg, context.Cache, varInfo, context.FusionInputShapeExpr);
@@ -1007,7 +989,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
         }).ToArray();
 
     // 计算每个var在不同的段下的值
-    private Dictionary<Var, int[]> MakeVarValuesForAllSegment(ShapeBucketOptions options)
+    private static Dictionary<Var, int[]> MakeVarValuesForAllSegment(ShapeBucketOptions options)
     {
         int segmentCount = options.SegmentsCount;
         var varRange = options.RangeInfo;
@@ -1028,40 +1010,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
         return varValues;
     }
 
-    public class FusionBucketContext
-    {
-        public readonly Call OuterCall;
-        public readonly BucketFusion Fusion;
-        public readonly Dictionary<Var, Expr[]> VarMap;
-        public readonly Dictionary<Var, Expr[]> FusionInputShapeExpr;
-        public readonly Dictionary<Var, int[]> DimVarValues;
-        public readonly Expr[] Arguments;
-        public readonly Var[] Parameters;
-        public readonly ShapeExprCache Cache;
-        // segIndex -> fixed shape list
-        public Dictionary<int, int[][]> FixedShapeCache = new();
-
-        public FusionBucketContext(Call outerCall, BucketFusion fusion, Dictionary<Var, Expr[]> varMap, Dictionary<Var, int[]> dimVarValues, ShapeExprCache cache)
-        {
-            OuterCall = outerCall;
-            Fusion = fusion;
-            VarMap = varMap;
-            Cache = cache;
-            Cache.VarMap = varMap;
-            FusionInputShapeExpr = MakeFusionInputShapeExpr(outerCall, fusion, cache);
-            CheckAlive(FusionInputShapeExpr);
-            DimVarValues = dimVarValues;
-            Arguments = OuterCall.Arguments.ToArray();
-            Parameters = Fusion.Parameters.ToArray();
-        }
-
-        public Expr FusionBody => Fusion.Body;
-
-        public Dictionary<Var, IValue> DimVarValue(int i) =>
-            DimVarValues.ToDictionary(pair => pair.Key, pair => (IValue)Value.FromTensor(pair.Value[i]));
-    }
-
-    private Expr Split(FusionBucketContext context, SegmentInfo info)
+    private static Expr Split(FusionBucketContext context, SegmentInfo info)
     {
         var fusionInputs = context.Arguments;
         var (inputIndex, dimIndex, segments) = info;
@@ -1093,7 +1042,6 @@ public partial class FusionBucket : RewriteRule<Pattern>
 
                 // check body
                 // CompilerServices.Rewrite(thenBody, new[] { new ForceConvertOpChecker() }, new());
-
                 var result = new If(cond, thenBody, elseBody);
                 return result;
             });
@@ -1108,7 +1056,8 @@ public partial class FusionBucket : RewriteRule<Pattern>
         return entry switch
         {
             IR.Tuple tuple => tuple.Fields.ToArray().Any(ShouldBeRebuild),
-            Call => ShouldBeRebuild(entry)
+            Call => ShouldBeRebuild(entry),
+            _ => throw new ArgumentOutOfRangeException("context"),
         };
     }
 
@@ -1124,6 +1073,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
                     return ConstantOfShape(new[] { 1 }, Cast(0, ((TensorType)x).DType));
                 }).ToArray()),
             TensorType tensorType => (Expr)ConstantOfShape(new[] { 1 }, Cast(0, tensorType.DType)),
+            _ => throw new ArgumentOutOfRangeException("fusionBody"),
         };
         return IR.F.Math.Require(false, failure, "input dim large than limit");
     }

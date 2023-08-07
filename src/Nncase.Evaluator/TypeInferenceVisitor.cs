@@ -130,16 +130,6 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
         return type;
     }
 
-    private IRType BaseFunctionInfer(Call call, BaseFunction func)
-    {
-        if (func.CheckedType is InvalidType)
-        {
-            return func.CheckedType;
-        }
-
-        return ((CallableType)func.CheckedType).ReturnType;
-    }
-
     /// <inheritdoc/>
     protected override IRType VisitLeafConst(Const expr)
     {
@@ -402,5 +392,15 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
         //     new call[x,y] shape is [5,6,1,1] we can't compare the two ir type.
         IRHelpers.SetRawCheckedType(expr, type);
         IsFullyInferenced &= type is not InvalidType;
+    }
+
+    private IRType BaseFunctionInfer(Call call, BaseFunction func)
+    {
+        if (func.CheckedType is InvalidType)
+        {
+            return func.CheckedType;
+        }
+
+        return ((CallableType)func.CheckedType).ReturnType;
     }
 }

@@ -92,6 +92,44 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
         return Visit(context, target, input, blockShape, paddings);
     }
 
+    public Expr Visit(IShapeEvaluateContext context, SpaceToBatch target)
+    {
+        var inShape = context.GetArgumentShape(target, SpaceToBatch.Input);
+        var blockShape = context.GetArgument(target, SpaceToBatch.BlockShape);
+        var padding = context.GetArgument(target, SpaceToBatch.Paddings);
+        var input = context.GetArgument(target, SpaceToBatch.Input);
+        if (blockShape is TensorConst blockConst)
+        {
+            var blockShapeValue = blockConst.Value.ToArray<int>();
+            var m = blockShapeValue.Length;
+            var inRank = input.CheckedShape.Rank;
+
+            // todo: 这里没问题？？
+            var paddedShape = new[] { inShape[0] }
+                .Concat(Enumerable.Range(0, inRank)
+                .Select(i =>
+                {
+                    return inShape[i + 1] + padding[2 * i, 0] + padding[2 * i, 1];
+                }))
+                .ToArray();
+            var outFirst = new[] { paddedShape[0] * IR.F.Tensors.Prod(blockShapeValue) };
+
+            // var inRank = Cast(ShapeOf(inShape)[0], DataTypes.Int32);
+            var outMid = Enumerable.Range(0, m).Select(i =>
+            {
+                return paddedShape[i + 1] / blockShapeValue[i];
+            }).ToArray();
+
+            var remainSize = inRank - 1 - m;
+            var remainShape = new If(remainSize > 0, ShapeExprUtility.Slice(inShape, 1 + m, int.MaxValue), Array.Empty<int>());
+            var outLast = remainShape;
+            var outShape = Concat(new IR.Tuple(Stack(new IR.Tuple(outFirst.Concat(outMid).ToArray()), 0), outLast), 0);
+            return outShape;
+        }
+
+        throw new NotImplementedException();
+    }
+
     private T[] RangeExec<T>(long end, Func<int, T> f)
     {
         return EndRange(0, (int)end).Select(f).ToArray();

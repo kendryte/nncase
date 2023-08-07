@@ -99,6 +99,53 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
         };
     }
 
+    public Expr Visit(IShapeEvaluateContext context, BatchToSpace target)
+    {
+        var inShape = context.GetArgumentShape(target, BatchToSpace.Input);
+        var input = context.GetArgument(target, BatchToSpace.Input);
+        if (input.CheckedShape.Rank == 4)
+        {
+            inShape = Stack(new IR.Tuple(inShape[0], inShape[2], inShape[3], inShape[1]), 0);
+        }
+
+        if (input.CheckedShape.Rank == 3)
+        {
+            inShape = Stack(new IR.Tuple(inShape[1], inShape[2], inShape[0]), 0);
+        }
+
+        var blockShape = context.GetArgument(target, BatchToSpace.BlockShape);
+        if (!blockShape.CheckedShape.IsFixed)
+        {
+            throw new NotImplementedException();
+        }
+
+        var crops = context.GetArgument(target, BatchToSpace.Crops);
+        var blockSize = Prod(blockShape);
+        var batch = inShape[0];
+        var d0 = batch / blockSize;
+        var m = blockShape.CheckedShape[0].FixedValue;
+        var cropSection = Enumerable.Range(0, m).Select(
+            i => (inShape[i + 1] * blockShape[0]) - crops[i, 0] - crops[i, 1]).ToArray();
+
+        var inRank = Cast(ShapeOf(inShape)[0], DataTypes.Int32);
+        var remainSize = inRank - 1 - m;
+        var remainShape = new If(remainSize > 0, ShapeExprUtility.Slice(inShape, 1 + m, int.MaxValue), Array.Empty<int>());
+
+        var outShapeList = Concat(new IR.Tuple(Stack(new IR.Tuple(new[] { d0 }), 0), Stack(new IR.Tuple(cropSection), 0), remainShape), 0);
+
+        if (input.CheckedShape.Rank == 4)
+        {
+            return Stack(new IR.Tuple(outShapeList[0], outShapeList[3], outShapeList[1], outShapeList[2]), 0);
+        }
+
+        if (input.CheckedShape.Rank == 3)
+        {
+            return Stack(new IR.Tuple(outShapeList[2], outShapeList[0], outShapeList[1]), 0);
+        }
+
+        throw new NotImplementedException();
+    }
+
     private static IEnumerable<int> BoostRange(int start, int end, int step = 1)
     {
         int x = start;
@@ -163,7 +210,7 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
         }
         else
         {
-            return new InvalidType("BatchToSpace can't infer shape with dynamic crops");
+            return new TensorType(input.DType, Enumerable.Repeat(Dimension.Unknown, input.Shape.Count).ToArray());
         }
     }
 }

@@ -183,7 +183,7 @@ public class UnitTestShapeEvaluator : TestClassBase
         var expr = input[1];
         var dict = new Dictionary<Var, Expr[]> { { input, new[] { dimVar } } };
         var shape = expr.EvaluateShapeExpr(dict);
-        var varValues = new Dictionary<Var, IValue> { { input, Value.FromTensor(new[]{4}) } };
+        var varValues = new Dictionary<Var, IValue> { { input, Value.FromTensor(new[] { 4 }) } };
         var shapeValue = shape.Evaluate(varValues).AsTensor().ToArray<int>();
         var evalShape = expr
             .Evaluate(new Dictionary<Var, IValue> { { input, Value.FromTensor(new[] { 2, 3, 4, 5 }) } })
@@ -201,7 +201,7 @@ public class UnitTestShapeEvaluator : TestClassBase
         var expr = input[0];
         var dict = new Dictionary<Var, Expr[]> { { input, new[] { dimVar } } };
         var shape = expr.EvaluateShapeExpr(dict);
-        var varValues = new Dictionary<Var, IValue> { { input, Value.FromTensor(new[]{1}) } };
+        var varValues = new Dictionary<Var, IValue> { { input, Value.FromTensor(new[] { 1 }) } };
         var shapeValue = shape.Evaluate(varValues).AsTensor().ToArray<int>();
         var evalShape = expr
             .Evaluate(new Dictionary<Var, IValue> { { input, Value.FromTensor(new[] { 2 }) } })

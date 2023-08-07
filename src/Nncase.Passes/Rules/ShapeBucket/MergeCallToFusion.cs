@@ -1,3 +1,6 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,10 +9,10 @@ using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
+using static Nncase.Passes.Rules.ShapeBucket.ShapeBucketHelper;
 using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.Utility;
 using static Nncase.Utilities.ReplaceUtility;
-using static Nncase.Passes.Rules.ShapeBucket.ShapeBucketHelper;
 
 namespace Nncase.Passes.Rules.ShapeBucket;
 public abstract class MergeFusionBase : RewriteRule<Pattern>
@@ -155,6 +158,7 @@ public partial class MergeNextCallToFusion : MergeFusionBase
         // 这里必须新构建一个Expr，不能使用原始的nextCall Replace掉参数，不然如果外面有marker,那么replace以后的call还是会被外面的marker引用，因此会出现重复的情况
         // arg0可能是marker，如果是marker的话不能替换marker的参数，而是重新构造marker
         Expr newBody = ReplaceCallParams(nextCall.Target, nextCall.Arguments.ToArray(), (0, (Expr)oldBody));
+
         // todo: 针对marker的测试
         if (nextCall.Users.Count == 1 && nextCall.Users.First() is Marker m)
         {
@@ -178,6 +182,7 @@ public partial class MergeNextCallToFusion : MergeFusionBase
         {
             throw new InvalidOperationException($"{newFusion.Name} is Invalid");
         }
+
         ArgsChecker(newArgs);
 
         return call;
@@ -302,72 +307,6 @@ public partial class MergePrevCallToFusion : MergeFusionBase
         return call;
     }
 
-    private static Expr[] MakeNewPrevCalls(Call[] inputsShouldBeMerge, Expr[] prevOutputMaybeMarker, VarReplaceInfo[][] newVarsOrigin)
-    {
-        var tuple = new IR.Tuple(inputsShouldBeMerge);
-
-        if (inputsShouldBeMerge.Length != newVarsOrigin.Length)
-        {
-            Console.WriteLine();
-        }
-        return inputsShouldBeMerge.Zip(newVarsOrigin).Select((pair, i) =>
-        {
-            var (input, varsInfoList) = pair;
-            int outCounter = 0;
-            var newArgs = input.Arguments.ToArray().Select(x =>
-            {
-                if (x is TensorConst)
-                {
-                    return x;
-                }
-
-                if (x is Marker m && m.Target is TensorConst)
-                {
-                    return m;
-                }
-
-                if (outCounter >= varsInfoList.Length)
-                {
-                    throw new InvalidOperationException();
-                }
-                var newVar = varsInfoList[outCounter++].Vars;
-                if (x is IR.Tuple tuple)
-                {
-                    int counter = 0;
-                    var newFields = tuple.Fields.ToArray().Select(field =>
-                    {
-                        if (field is TensorConst)
-                        {
-                            return field;
-                        }
-
-                        return (Expr)newVar[counter++];
-                    }).ToArray();
-                    return new IR.Tuple(newFields);
-                }
-
-                return newVar.First();
-            }).ToArray();
-            var newCall = input.With(arguments: newArgs);
-
-            var call = prevOutputMaybeMarker[i] is Marker m ? m.With(target: newCall) : (Expr)newCall;
-            if (!call.InferenceType())
-            {
-                DumpIR(call, "InvalidInMakeNewPrevCalls");
-                throw new InvalidOperationException();
-            }
-
-            return call;
-        }).ToArray();
-    }
-
-    private static Call MakeNewCall(Call fusionOuterCall, BucketFusion fusion, BucketFusion newFusion, Expr[] newArgs)
-    {
-        // 原始的fusion的call更换target为新的fusion，以及arg0替换为prevCall的arg0，其他不变
-        var call = fusionOuterCall.With(target: newFusion, arguments: newArgs);
-        return call;
-    }
-
     internal static T[] FusionVarsOperation<T>(VarReplaceInfo[] newVars, T[] fusionVars, Func<VarReplaceInfo, T[]> f)
         where T : Expr
     {
@@ -382,74 +321,6 @@ public partial class MergePrevCallToFusion : MergeFusionBase
 
             return newVars.Where(v => v.InputIndex == inputIndex).SelectMany(f).ToArray();
         }).ToArray();
-    }
-
-    private static Expr[] MakeNewArgs(Call fusionOuterCall, VarReplaceInfo[] newVars, Call[] fusionArgs)
-    {
-        return FusionVarsOperation(newVars, fusionOuterCall.Arguments.ToArray(), newVar =>
-        {
-            if (newVar.Expr is IR.Tuple tuple)
-            {
-                return tuple.Fields.ToArray().Where(shouldBeInput).ToArray();
-            }
-
-            return new[] { newVar.Expr };
-        });
-    }
-
-    private static Var[] MakeNewParam(BucketFusion fusion, VarReplaceInfo[] newVars, Expr newBody)
-    {
-        var newParams = FusionVarsOperation(newVars, fusion.Parameters.ToArray(), newVar => newVar.Vars);
-        return newParams;
-    }
-
-    private static Expr MakeNewBody(BucketFusion fusion, int[] inputIndices, Expr[] newPrevCalls)
-    {
-        // 新的fusion body将原来的var换成prevCall
-        var newBody = inputIndices.Select(index => fusion.Parameters[index]).Zip(newPrevCalls).Aggregate(
-            fusion.Body, (sum, pair) =>
-            {
-                // 此时prevCall携带新的var
-                var (fusionVar, newPrevCall) = pair;
-                return ReplaceExpr(sum, fusionVar, newPrevCall);
-            });
-        return newBody;
-    }
-
-    // todo: add test for this
-    private static bool shouldBeInput(Expr expr)
-    {
-        if (expr is Marker m)
-        {
-            return m.Target is not TensorConst;
-        }
-
-        return expr is not TensorConst;
-    }
-    // PrevCall(input1, input2, ...)
-    // input: input1, input2, ...
-    // call => [arg]
-    // tuple => [arg1, arg2, ...]
-    // VarReplaceInfo[InputIndex][InputArgIndex]
-    private static VarReplaceInfo[][] MakeNewFusionVarsMap((Call, int)[] fusionInputsInfo, Dictionary<Expr, Var> fusionDict)
-    {
-        var newVars = fusionInputsInfo.Select(fusionInputInfo =>
-        {
-            var (fusionInput, inputIndex) = fusionInputInfo;
-            return fusionInput.Arguments.ToArray().Where(shouldBeInput).Select((inputArg) =>
-            {
-                // add condition to limit
-                var vars = new[] { new Var(inputArg.CheckedType) };
-                if (inputArg is IR.Tuple tuple)
-                {
-                    vars = tuple.Fields.ToArray().Where(shouldBeInput).Select(field => new Var(field.CheckedType)).ToArray();
-                }
-
-                return new VarReplaceInfo(inputArg, vars, inputIndex);
-            }).ToArray();
-        }).ToArray();
-        var newVarsDeduplication = NewVarsDeduplication(newVars, fusionDict);
-        return newVarsDeduplication;
     }
 
     internal static VarReplaceInfo[][] NewVarsDeduplication(VarReplaceInfo[][] newVars, Dictionary<Expr, Var> fusionDict)
@@ -468,7 +339,7 @@ public partial class MergePrevCallToFusion : MergeFusionBase
                 // FusionArg为tuple的时候，tuple中部分参数已经是fusion的参数的情况
                 // TestMergeInputWhichHadBeMerged
                 // TestMergeInputInTupleWhichHadBeMerged
-                var callFields = tuple.Fields.ToArray().Where(shouldBeInput).ToArray();
+                var callFields = tuple.Fields.ToArray().Where(ShouldBeInput).ToArray();
 
                 // dict里有这个expr，也就是说其他FusionArg中出现过，有对应的vars
                 if (dict.TryGetValue(info.Expr, out defaultVar))
@@ -512,6 +383,143 @@ public partial class MergePrevCallToFusion : MergeFusionBase
 
             return info;
         }).ToArray()).ToArray();
+        return newVarsDeduplication;
+    }
+
+    private static Expr[] MakeNewPrevCalls(Call[] inputsShouldBeMerge, Expr[] prevOutputMaybeMarker, VarReplaceInfo[][] newVarsOrigin)
+    {
+        var tuple = new IR.Tuple(inputsShouldBeMerge);
+
+        if (inputsShouldBeMerge.Length != newVarsOrigin.Length)
+        {
+            Console.WriteLine();
+        }
+
+        return inputsShouldBeMerge.Zip(newVarsOrigin).Select((pair, i) =>
+        {
+            var (input, varsInfoList) = pair;
+            int outCounter = 0;
+            var newArgs = input.Arguments.ToArray().Select(x =>
+            {
+                if (x is TensorConst)
+                {
+                    return x;
+                }
+
+                if (x is Marker m && m.Target is TensorConst)
+                {
+                    return m;
+                }
+
+                if (outCounter >= varsInfoList.Length)
+                {
+                    throw new InvalidOperationException();
+                }
+
+                var newVar = varsInfoList[outCounter++].Vars;
+                if (x is IR.Tuple tuple)
+                {
+                    int counter = 0;
+                    var newFields = tuple.Fields.ToArray().Select(field =>
+                    {
+                        if (field is TensorConst)
+                        {
+                            return field;
+                        }
+
+                        return (Expr)newVar[counter++];
+                    }).ToArray();
+                    return new IR.Tuple(newFields);
+                }
+
+                return newVar.First();
+            }).ToArray();
+            var newCall = input.With(arguments: newArgs);
+
+            var call = prevOutputMaybeMarker[i] is Marker m ? m.With(target: newCall) : (Expr)newCall;
+            if (!call.InferenceType())
+            {
+                DumpIR(call, "InvalidInMakeNewPrevCalls");
+                throw new InvalidOperationException();
+            }
+
+            return call;
+        }).ToArray();
+    }
+
+    private static Call MakeNewCall(Call fusionOuterCall, BucketFusion fusion, BucketFusion newFusion, Expr[] newArgs)
+    {
+        // 原始的fusion的call更换target为新的fusion，以及arg0替换为prevCall的arg0，其他不变
+        var call = fusionOuterCall.With(target: newFusion, arguments: newArgs);
+        return call;
+    }
+
+    private static Expr[] MakeNewArgs(Call fusionOuterCall, VarReplaceInfo[] newVars, Call[] fusionArgs)
+    {
+        return FusionVarsOperation(newVars, fusionOuterCall.Arguments.ToArray(), newVar =>
+        {
+            if (newVar.Expr is IR.Tuple tuple)
+            {
+                return tuple.Fields.ToArray().Where(ShouldBeInput).ToArray();
+            }
+
+            return new[] { newVar.Expr };
+        });
+    }
+
+    private static Var[] MakeNewParam(BucketFusion fusion, VarReplaceInfo[] newVars, Expr newBody)
+    {
+        var newParams = FusionVarsOperation(newVars, fusion.Parameters.ToArray(), newVar => newVar.Vars);
+        return newParams;
+    }
+
+    private static Expr MakeNewBody(BucketFusion fusion, int[] inputIndices, Expr[] newPrevCalls)
+    {
+        // 新的fusion body将原来的var换成prevCall
+        var newBody = inputIndices.Select(index => fusion.Parameters[index]).Zip(newPrevCalls).Aggregate(
+            fusion.Body, (sum, pair) =>
+            {
+                // 此时prevCall携带新的var
+                var (fusionVar, newPrevCall) = pair;
+                return ReplaceExpr(sum, fusionVar, newPrevCall);
+            });
+        return newBody;
+    }
+
+    // todo: add test for this
+    private static bool ShouldBeInput(Expr expr)
+    {
+        if (expr is Marker m)
+        {
+            return m.Target is not TensorConst;
+        }
+
+        return expr is not TensorConst;
+    }
+
+    // PrevCall(input1, input2, ...)
+    // input: input1, input2, ...
+    // call => [arg]
+    // tuple => [arg1, arg2, ...]
+    // VarReplaceInfo[InputIndex][InputArgIndex]
+    private static VarReplaceInfo[][] MakeNewFusionVarsMap((Call, int)[] fusionInputsInfo, Dictionary<Expr, Var> fusionDict)
+    {
+        var newVars = fusionInputsInfo.Select(fusionInputInfo =>
+        {
+            var (fusionInput, inputIndex) = fusionInputInfo;
+            return fusionInput.Arguments.ToArray().Where(ShouldBeInput).Select((inputArg) =>
+            {
+                // add condition to limit
+                var vars = new[] { new Var(inputArg.CheckedType) };
+                if (inputArg is IR.Tuple tuple)
+                {
+                    vars = tuple.Fields.ToArray().Where(ShouldBeInput).Select(field => new Var(field.CheckedType)).ToArray();
+                }
+
+                return new VarReplaceInfo(inputArg, vars, inputIndex);
+            }).ToArray();
+        }).ToArray();
+        var newVarsDeduplication = NewVarsDeduplication(newVars, fusionDict);
         return newVarsDeduplication;
     }
 

@@ -110,7 +110,7 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICos
             {
                 if (axes.Length == input.CheckedShape.Count && keepDimsValue == 0)
                 {
-                    return new int[] { };
+                    return Array.Empty<int>();
                 }
             }
 

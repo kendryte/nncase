@@ -58,7 +58,8 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
         }
         else
         {
-            Expr len = 0;
+            _ = 0;
+            Expr len;
             if (index.CheckedShape.IsScalar)
             {
                 len = 1;
@@ -67,6 +68,7 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
             {
                 len = context.GetArgumentShape(target, GetItem.Index)[0];
             }
+
             return ShapeExprUtility.Slice(input, len, int.MaxValue);
         }
     }

@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,10 +17,94 @@ using static Nncase.Utilities.ReplaceUtility;
 
 namespace Nncase.Passes.Rules.ShapeBucket;
 
-internal static class ShapeBucketHelper
+public static class CallValidator
 {
+    private static readonly HashSet<RuntimeTypeHandle> ForceConvert = new()
+    {
+        // typeof(Conv2D).TypeHandle,
+        typeof(MatMul).TypeHandle,
+        typeof(Unsqueeze).TypeHandle,
+        typeof(Squeeze).TypeHandle,
+        typeof(Cast).TypeHandle,
+        typeof(Unary).TypeHandle,
+        typeof(Transpose).TypeHandle,
+        typeof(Pad).TypeHandle,
+    };
+
+    private static readonly HashSet<RuntimeTypeHandle> MaybeDynamic = new()
+    {
+        typeof(SpaceToBatch).TypeHandle,
+        typeof(BatchToSpace).TypeHandle,
+        typeof(Concat).TypeHandle,
+        typeof(Stack).TypeHandle,
+        typeof(Binary).TypeHandle,
+        typeof(Slice).TypeHandle,
+        typeof(Gather).TypeHandle,
+        typeof(ShapeOf).TypeHandle,
+        typeof(Reshape).TypeHandle,
+        typeof(Expand).TypeHandle,
+        typeof(ConstantOfShape).TypeHandle,
+        typeof(Where).TypeHandle,
+        typeof(Compare).TypeHandle,
+        typeof(Reduce).TypeHandle,
+        typeof(Clamp).TypeHandle,
+        typeof(Tile).TypeHandle,
+        typeof(CumSum).TypeHandle,
+        typeof(IR.Tensors.Range).TypeHandle,
+    };
+
+    public static bool IsMaybeDynamic(Expr target) => MaybeDynamic.Contains(target.GetType().TypeHandle);
+
+    public static bool IsForceConvert(Expr target) => ForceConvert.Contains(target.GetType().TypeHandle);
+
+    public static bool ValidTarget(Expr target)
+    {
+        if (target is ActivationOp)
+        {
+            return true;
+        }
+
+        if (IsMaybeDynamic(target) || IsForceConvert(target))
+        {
+            return true;
+        }
+
+        return false;
+    }
+}
+
+public static class ShapeBucketHelper
+{
+    public static void ArgsChecker(Expr[] newArgs)
+    {
+        if (newArgs.Length == 0)
+        {
+            throw new InvalidOperationException("Empty Arg");
+        }
+
+        if (newArgs.Any(arg => arg is Var v && v.Name.StartsWith("var_")))
+        {
+            throw new InvalidOperationException("Args has Var in fusion");
+        }
+
+        if (newArgs.Any(arg => arg is Marker m && m.Target is Const))
+        {
+            throw new InvalidOperationException("Args has tuple");
+        }
+
+        if (newArgs.Any(arg => arg is IR.Tuple))
+        {
+            throw new InvalidOperationException("Args has tuple");
+        }
+
+        if (newArgs.ToHashSet().Count != newArgs.Length)
+        {
+            throw new InvalidOperationException("Has Repeat args");
+        }
+    }
+
     // clone origin Expr and Do replace for var
-    internal static Expr ReplaceClone(Expr originBody, params (Var, Expr)[] originVarAndExpr)
+    public static Expr ReplaceClone(Expr originBody, params (Var, Expr)[] originVarAndExpr)
     {
         var call = originBody.Clone();
         var finder = new FindVar();
@@ -35,34 +122,6 @@ internal static class ShapeBucketHelper
             ReplaceExpr(call, varShouldBeReplaced, newExpr);
         });
         return call;
-    }
-
-    public static void ArgsChecker(Expr[] newArgs)
-    {
-        if (newArgs.Length == 0)
-        {
-            throw new InvalidOperationException("Empty Arg");
-        }
-
-        if (newArgs.Any(arg => arg is Var v && v.Name.StartsWith("var_")))
-        {
-            throw new InvalidOperationException("Args has Var in fusion");
-        }
-
-        if (newArgs.Any(arg => arg is Marker m && m .Target is Const))
-        {
-            throw new InvalidOperationException("Args has tuple");
-        }
-
-        if (newArgs.Any(arg => arg is IR.Tuple))
-        {
-            throw new InvalidOperationException("Args has tuple");
-        }
-
-        if (newArgs.ToHashSet().Count() != newArgs.Length)
-        {
-            throw new InvalidOperationException("Has Repeat args");
-        }
     }
 
     public static void PrintEffectVar(string name, Var[] set)
@@ -143,7 +202,7 @@ internal static class ShapeBucketHelper
         return afterProcessVars.Intersect(allDimVars).ToHashSet().ToArray();
     }
 
-    internal static void DumpIR(Expr expr, string prefix, string? reletivePath = null, string? printPrefix = null)
+    public static void DumpIR(Expr expr, string prefix, string? reletivePath = null, string? printPrefix = null)
     {
         // if (DumpScope.Current.IsEnabled(DumpFlags.Rewrite))
         {
@@ -152,41 +211,34 @@ internal static class ShapeBucketHelper
             {
                 s = s[..80];
             }
+
             Console.WriteLine($"{printPrefix} {prefix}");
             DumpScope.Current.DumpIR(expr, s, reletivePath);
         }
     }
 }
 
-internal static class ExprArrayExtension
-{
-    public static IEnumerable<Expr> OfNoConst(this IEnumerable<Expr> args)
-    {
-        return args.Where(x => x is not TensorConst);
-    }
-}
-
 public class FindExpr : ExprVisitor<Expr, Unit>
 {
-    private Func<Expr, bool> f;
-    private List<Expr> list = new();
-    private Expr[] limit = { };
-    private Expr outerCall;
+    private readonly List<Expr> _list = new();
+    private Func<Expr, bool>? _f;
+    private Expr[] _limit = Array.Empty<Expr>();
+    private Expr? _outerCall;
 
     public List<Expr> Run(Expr expr, Expr[] limit, Expr outerCall, Func<Expr, bool> checker)
     {
-        f = checker;
-        this.outerCall = outerCall;
-        this.limit = limit;
+        _f = checker;
+        this._outerCall = outerCall;
+        this._limit = limit;
         Visit(expr);
-        return list;
+        return _list;
     }
 
     protected override Expr DefaultVisitLeaf(Expr expr)
     {
-        if (f(expr))
+        if (_f!(expr))
         {
-            list.Add(expr);
+            _list.Add(expr);
         }
 
         return expr;
@@ -194,23 +246,26 @@ public class FindExpr : ExprVisitor<Expr, Unit>
 
     protected override Expr DispatchVisit(Expr expr)
     {
-        if (limit.Contains(expr))
+        if (_limit.Contains(expr))
         {
-            list.Add(expr);
+            _list.Add(expr);
             return expr;
         }
 
-        if (expr == outerCall)
+        if (expr == _outerCall)
         {
             return expr;
         }
+
         if (HasVisited(expr, out var result))
         {
             return result;
         }
+
         return MarkVisited(expr, base.DispatchVisit(expr));
     }
 }
+
 public class FindVar : ExprVisitor<Expr, Unit>
 {
     public HashSet<Var> Vars { get; set; } = new();
@@ -223,75 +278,6 @@ public class FindVar : ExprVisitor<Expr, Unit>
     }
 
     protected override Expr DefaultVisitLeaf(Expr expr) => expr;
-}
-
-public static class CallValidator
-{
-    private static readonly HashSet<RuntimeTypeHandle> ForceConvert = new()
-    {
-        // typeof(Conv2D).TypeHandle,
-        typeof(MatMul).TypeHandle,
-        typeof(Unsqueeze).TypeHandle,
-        typeof(Squeeze).TypeHandle,
-        typeof(Cast).TypeHandle,
-        typeof(Unary).TypeHandle,
-        typeof(Transpose).TypeHandle,
-        typeof(Pad).TypeHandle,
-    };
-
-    static readonly HashSet<RuntimeTypeHandle> MaybeDynamic = new()
-    {
-        typeof(SpaceToBatch).TypeHandle,
-        typeof(BatchToSpace).TypeHandle,
-        typeof(Concat).TypeHandle,
-        typeof(Stack).TypeHandle,
-        typeof(Binary).TypeHandle,
-        typeof(Slice).TypeHandle,
-        typeof(Gather).TypeHandle,
-        typeof(ShapeOf).TypeHandle,
-        typeof(Reshape).TypeHandle,
-        typeof(Expand).TypeHandle,
-        typeof(ConstantOfShape).TypeHandle,
-        typeof(Where).TypeHandle,
-        typeof(Compare).TypeHandle,
-        typeof(Reduce).TypeHandle,
-        typeof(Clamp).TypeHandle,
-        typeof(Tile).TypeHandle,
-        typeof(CumSum).TypeHandle,
-        typeof(IR.Tensors.Range).TypeHandle,
-    };
-
-    public static bool IsMaybeDynamic(Expr target) => MaybeDynamic.Contains(target.GetType().TypeHandle);
-
-    public static bool IsForceConvert(Expr target) => ForceConvert.Contains(target.GetType().TypeHandle);
-
-    public static bool ValidTarget(Expr target)
-    {
-        if (target is ActivationOp)
-        {
-            return true;
-        }
-
-        if (IsMaybeDynamic(target) || IsForceConvert(target))
-        {
-            return true;
-        }
-
-        return false;
-    }
-}
-
-internal class KeyValuePairKeyComparer : IEqualityComparer<KeyValuePair<Expr, Var[]>>
-{
-    public bool Equals(KeyValuePair<Expr, Var[]> x, KeyValuePair<Expr, Var[]> y)
-    {
-        return Equals(x.Key, y.Key);
-    }
-
-    public int GetHashCode(KeyValuePair<Expr, Var[]> obj)
-    {
-        return HashCode.Combine(obj.Key);
-    }
 }
 
 [RuleGenerator]
@@ -311,5 +297,26 @@ public sealed partial class ForceConvertOpChecker : RewriteRule<Pattern>
         }
 
         return call;
+    }
+}
+
+internal static class ExprArrayExtension
+{
+    public static IEnumerable<Expr> OfNoConst(this IEnumerable<Expr> args)
+    {
+        return args.Where(x => x is not TensorConst);
+    }
+}
+
+internal class KeyValuePairKeyComparer : IEqualityComparer<KeyValuePair<Expr, Var[]>>
+{
+    public bool Equals(KeyValuePair<Expr, Var[]> x, KeyValuePair<Expr, Var[]> y)
+    {
+        return Equals(x.Key, y.Key);
+    }
+
+    public int GetHashCode(KeyValuePair<Expr, Var[]> obj)
+    {
+        return HashCode.Combine(obj.Key);
     }
 }

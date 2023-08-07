@@ -38,6 +38,16 @@ public partial class RequireEvaluator : IEvaluator<Require>, ITypeInferencer<Req
 
     public Metric Visit(IMetricEvaluateContext context, Require target) => Metric.Zero;
 
+    public IValue Visit(IEvaluateContext context, Require target)
+    {
+        // Console.WriteLine($"op: {target.Message}");
+        var result = context.GetArgumentValue(target, Require.Value);
+
+        // Console.WriteLine(string.Join(",", result.AsTensors()[0].ToArray<int>()));
+        // Console.WriteLine();
+        return result;
+    }
+
     private IValue Visit(bool predicate, IValue value, Require target)
     {
         if (!predicate)

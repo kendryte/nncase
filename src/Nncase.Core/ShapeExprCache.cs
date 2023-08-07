@@ -1,12 +1,23 @@
-﻿using Nncase.IR;
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using Nncase.IR;
 
 namespace Nncase;
 
 public class ShapeExprCache
 {
-    public Dictionary<Expr, Expr> Cache;
+    public ShapeExprCache(IReadOnlyDictionary<Var, Expr[]> varMap, Dictionary<Expr, Expr>? cache = null)
+    {
+        VarMap = varMap;
+        Cache = cache ?? new();
+    }
 
-    public IReadOnlyDictionary<Var, Expr[]> VarMap;
+    public static ShapeExprCache Default => new(new Dictionary<Var, Expr[]>(), new());
+
+    public Dictionary<Expr, Expr> Cache { get; set; }
+
+    public IReadOnlyDictionary<Var, Expr[]> VarMap { get; set; }
 
     public static implicit operator ShapeExprCache(Dictionary<Var, Expr[]> varMap) => new(varMap);
 
@@ -17,14 +28,6 @@ public class ShapeExprCache
     }
 
     public static ShapeExprCache operator +(Dictionary<Var, Expr[]> varMap, ShapeExprCache cache) => cache + varMap;
-
-    public ShapeExprCache(IReadOnlyDictionary<Var, Expr[]> varMap, Dictionary<Expr, Expr>? cache = null)
-    {
-        VarMap = varMap;
-        Cache = cache ?? new();
-    }
-
-    public static ShapeExprCache Default => new(new Dictionary<Var, Expr[]>(), new());
 
     public void Add(Expr expr, Expr shape)
     {

@@ -81,16 +81,17 @@ public partial class MatMulShapeEvaluator : IEvaluator<MatMulShape>, ITypeInfere
         return IR.F.Math.Max(lhsRank, rhsRank);
     }
 
-    private int[] To4D(int[] shape)
-    {
-        return Enumerable.Repeat(0, 4 - shape.Length).Concat(shape).ToArray();
-    }
-
     public Metric Visit(IMetricEvaluateContext context, MatMulShape target)
     {
         var returnType = context.GetReturnType<IRType>();
         return new()
         {
             [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(returnType),
-        };    }
+        };
+    }
+
+    private int[] To4D(int[] shape)
+    {
+        return Enumerable.Repeat(0, 4 - shape.Length).Concat(shape).ToArray();
+    }
 }

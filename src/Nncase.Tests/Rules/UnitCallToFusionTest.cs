@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -37,7 +37,8 @@ public class UnitCallToFusionTest : TransformTestBase
         var m1 = new Marker("RangeOf", inputVar, new[] { 0.1f, 0.2f });
         var abs = Abs(m1);
         var m2 = new Marker("RangeOf", abs, new[] { -0.1f, 0.2f });
-        var post = TestMatched<UnaryToFusion>(m2,
+        var post = TestMatched<UnaryToFusion>(
+            m2,
             new Dictionary<Var, IValue> { { inputVar, Value.FromTensor(input) } });
         Assert.True(post is Marker);
         var postCall = (Call)((Marker)post).Target;
@@ -53,9 +54,9 @@ public class UnitCallToFusionTest : TransformTestBase
         var inputVar = new Var(new TensorType(input.ElementType, input.Shape));
         var abs = Abs(Softmax(inputVar, 0));
         var fusionVar1 = new Var(new TensorType(input.ElementType, input.Shape));
-        var c1 = new Call(new BucketFusion("stackvm", fusionVar1 + 1f, new[] { fusionVar1 }, new Var[] { }), abs);
+        var c1 = new Call(new BucketFusion("stackvm", fusionVar1 + 1f, new[] { fusionVar1 }, Array.Empty<Var>()), abs);
         var fusionVar2 = new Var(new TensorType(input.ElementType, input.Shape));
-        var c2 = new Call(new BucketFusion("stackvm", fusionVar2 - 1f, new[] { fusionVar2 }, new Var[] { }), abs);
+        var c2 = new Call(new BucketFusion("stackvm", fusionVar2 - 1f, new[] { fusionVar2 }, Array.Empty<Var>()), abs);
         var body = new IR.Tuple(c1, c2);
         Dumpper.DumpIR(body, "Body");
         TestMatched<MultiUserCallToFusion>(body, new Dictionary<Var, IValue> { { inputVar, Value.FromTensor(input) } });
@@ -72,7 +73,8 @@ public class UnitCallToFusionTest : TransformTestBase
         var inputVar2 = new Var(new TensorType(input2.ElementType, input2.Shape));
         var inputs = new[] { inputVar0, inputVar1, inputVar2 }.Select(x => Softmax(x, 0)).ToArray();
         var cat = Concat(new IR.Tuple(inputs), 0);
-        TestMatched<MultiUserCallToFusion>(cat,
+        TestMatched<MultiUserCallToFusion>(
+            cat,
             new Dictionary<Var, IValue>
             {
                 { inputVar0, Value.FromTensor(input0) },
@@ -89,9 +91,10 @@ public class UnitCallToFusionTest : TransformTestBase
         var input1 = Testing.Rand<float>(1, 3, 24, 24);
         var inputVar1 = new Var(new TensorType(input1.ElementType, input1.Shape));
         var input2 = Testing.Rand<float>(1, 3, 24, 24);
-        var inputs = new Expr[] { inputVar0, inputVar1}.Select(x => (Expr)Softmax(x, 0)).Append(input2).ToArray();
+        var inputs = new Expr[] { inputVar0, inputVar1 }.Select(x => (Expr)Softmax(x, 0)).Append(input2).ToArray();
         var cat = Concat(new IR.Tuple(inputs), 0);
-        TestMatched<MultiUserCallToFusion>(cat,
+        TestMatched<MultiUserCallToFusion>(
+            cat,
             new Dictionary<Var, IValue>
             {
                 { inputVar0, Value.FromTensor(input0) },
@@ -106,10 +109,11 @@ public class UnitCallToFusionTest : TransformTestBase
         var inputVar0 = new Var(new TensorType(input0.ElementType, input0.Shape));
         var inputs = new[] { inputVar0 }.Select(x => Softmax(x, 0)).ToArray();
         var cat = Concat(new IR.Tuple(inputs), 0);
-        TestMatched<MultiUserCallToFusion>(cat,
+        TestMatched<MultiUserCallToFusion>(
+            cat,
             new Dictionary<Var, IValue>
             {
-                { inputVar0, Value.FromTensor(input0) }
+                { inputVar0, Value.FromTensor(input0) },
             });
     }
 
@@ -128,7 +132,8 @@ public class UnitCallToFusionTest : TransformTestBase
     {
         var input0 = Testing.Rand<float>(1, 3, 24, 24);
         var inputVar0 = new Var(new TensorType(input0.ElementType, input0.Shape));
-        var after = TestMatched<MultiUserCallToFusion>(Sqrt(Abs(Softmax(inputVar0, 0))),
+        var after = TestMatched<MultiUserCallToFusion>(
+            Sqrt(Abs(Softmax(inputVar0, 0))),
             new Dictionary<Var, IValue> { { inputVar0, Value.FromTensor(input0) } });
 
         var v = new FusionCounterVisitor();

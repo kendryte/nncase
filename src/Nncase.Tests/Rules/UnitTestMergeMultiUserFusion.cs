@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -23,8 +23,8 @@ using Xunit.Abstractions;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Tensors;
-using Tuple = Nncase.IR.Tuple;
 using static Nncase.Tests.ShapeBucketTestHelper;
+using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Tests.Rules;
 
@@ -62,7 +62,6 @@ public class UnitTestMergeMultiUserFusion : TransformTestBase
         await RunTest(output, new[] { inputVar }, dict);
     }
 
-
     // 被合并的几个call互为参数
     [Fact]
     public async Task TestComplexExpr()
@@ -81,7 +80,6 @@ public class UnitTestMergeMultiUserFusion : TransformTestBase
         var dict = new Dictionary<Var, IValue> { { inputVar, Value.FromTensor(input) } };
         await RunTest(output, new[] { inputVar }, dict);
     }
-
 
     [Fact]
     public async Task TestWithRing()
@@ -113,7 +111,7 @@ public class UnitTestMergeMultiUserFusion : TransformTestBase
     }
 
     [Fact]
-    public async Task MergeFusionTuple()
+    public void MergeFusionTuple()
     {
         var input0 = Testing.Rand<float>(1, 3, 24, 24);
         var inputVar0 = new Var(new TensorType(input0.ElementType, input0.Shape));
@@ -135,14 +133,15 @@ public class UnitTestMergeMultiUserFusion : TransformTestBase
     }
 
     [Fact]
-    public async Task MergeFusionTupleWithSameInput()
+    public void MergeFusionTupleWithSameInput()
     {
         var input0 = Testing.Rand<float>(1, 3, 24, 24);
         var inputVar0 = new Var(new TensorType(input0.ElementType, input0.Shape));
         var a1 = MakeSingleSimpleFusionCall(Abs, inputVar0);
         var a2 = MakeSingleSimpleFusionCall(Abs, inputVar0);
         var a3 = MakeSingleSimpleFusionCall(Abs, inputVar0);
-        TestMatched<MergeTupleFusion>(new IR.Tuple(a1, a2, a3),
+        TestMatched<MergeTupleFusion>(
+            new IR.Tuple(a1, a2, a3),
             new Dictionary<Var, IValue> { { inputVar0, Value.FromTensor(input0) } });
     }
 
@@ -157,13 +156,13 @@ public class UnitTestMergeMultiUserFusion : TransformTestBase
         var s1 = Softmax(inputVar1, 0);
         var s2 = Softmax(inputVar1, 1);
         var call = MakeSimpleFusionCall(expr => expr[0] + expr[1], s0, s1);
-        var user = MakeSimpleFusionCall(expr => expr[0] / expr[1] + expr[2], call, s1, s2);
+        var user = MakeSimpleFusionCall(expr => (expr[0] / expr[1]) + expr[2], call, s1, s2);
         await RunTest(
             user,
             new[] { inputVar0, inputVar1 },
             new Dictionary<Var, IValue>
             {
-                { inputVar0, Value.FromTensor(input0) }, { inputVar1, Value.FromTensor(input1) }
+                { inputVar0, Value.FromTensor(input0) }, { inputVar1, Value.FromTensor(input1) },
             });
     }
 
@@ -175,7 +174,10 @@ public class UnitTestMergeMultiUserFusion : TransformTestBase
         var call = MakeSingleSimpleFusionCall(expr => new IR.Tuple(expr + 1f, expr - 1f), Softmax(inputVar0, 0));
         var abs0 = MakeSingleSimpleFusionCall(Abs, call[0]);
         var abs1 = MakeSingleSimpleFusionCall(Abs, call[1]);
-        await RunTest(new IR.Tuple(new[] { abs0, abs1 }), new[] { inputVar0 },
+        await RunTest(
+            new IR.Tuple(
+                new[] { abs0, abs1 }),
+            new[] { inputVar0 },
             new Dictionary<Var, IValue> { { inputVar0, Value.FromTensor(input0) } });
     }
 
@@ -189,11 +191,14 @@ public class UnitTestMergeMultiUserFusion : TransformTestBase
         var abs01 = MakeSingleSimpleFusionCall(Abs, call[0]);
         var abs10 = MakeSingleSimpleFusionCall(Abs, call[1]);
         var abs11 = MakeSingleSimpleFusionCall(Abs, call[1]);
-        await RunTest(new IR.Tuple(new[] { abs00, abs01, abs10, abs11 }), new[] { inputVar0 },
+        await RunTest(
+            new IR.Tuple(
+                new[] { abs00, abs01, abs10, abs11 }),
+            new[] { inputVar0 },
             new Dictionary<Var, IValue> { { inputVar0, Value.FromTensor(input0) } });
     }
 
-    //     %91 = %Binary_156_Conv2D_76_Conv2D_75_Conv2D_83_Conv2D_82_Squeeze_265_Binary_157(%85, %90, %75) 2 -1614309361: // f32[?,?]
+    // %91 = %Binary_156_Conv2D_76_Conv2D_75_Conv2D_83_Conv2D_82_Squeeze_265_Binary_157(%85, %90, %75) 2 -1614309361: // f32[?,?]
     //     %92 = %Squeeze_272_Slice_271_Binary_277_ConstantOfShape_276_Slice_275_Cast_274_ShapeOf_273_Cast_305_Compare(%80, %91) 2 -1199809018: // (i32[?], i32[?,?])
     //     %93 = GetItem(%92, const(i32 : 0)) 1 259791103: // i32[?]
     //     %94 = GetItem(%92, const(i32 : 1)) 3 1708502831: // i32[?,?]
@@ -210,7 +215,9 @@ public class UnitTestMergeMultiUserFusion : TransformTestBase
         var n95 = MakeSimpleFusionCall(expr => expr[0] * expr[1] * expr[2], n93, n94, inputVar0);
         var n108 = MakeSimpleFusionCall(expr => expr[0] * expr[0], n94);
         var n108User = MakeSingleSimpleFusionCall(Abs, n108);
-        await RunTest(new IR.Tuple(new[] { n95, n108User }), new[] { inputVar0 },
+        await RunTest(
+            new IR.Tuple(new[] { n95, n108User }),
+            new[] { inputVar0 },
             new Dictionary<Var, IValue> { { inputVar0, Value.FromTensor(input0) } });
     }
 
@@ -231,19 +238,26 @@ public class UnitTestMergeMultiUserFusion : TransformTestBase
         var input0 = Testing.Rand<float>(1, 3, 24, 24);
         var inputVar0 = new Var(new TensorType(input0.ElementType, input0.Shape));
         var s = Softmax(inputVar0, 0);
+
         // 26
         var call = MakeSingleSimpleFusionCall(expr => new IR.Tuple(expr + 1f, expr - 1f), s);
+
         // 27
         var a0 = call[0];
+
         // 28
         var abs = MakeSingleSimpleFusionCall(Abs, a0);
+
         // 29
         var a1 = call[1];
+
         // 39
         var compute0 = MakeSimpleFusionCall(expr => expr[0] * expr[1], a1, abs);
         var compute1 = MakeSimpleFusionCall(expr => expr[0] * expr[1], a1, abs);
         var res = MakeSimpleFusionCall(expr => expr[0] + expr[1], compute0, compute1);
-        await RunTest(res, new[] { inputVar0 },
+        await RunTest(
+            res,
+            new[] { inputVar0 },
             new Dictionary<Var, IValue> { { inputVar0, Value.FromTensor(input0) } });
     }
 
@@ -255,13 +269,16 @@ public class UnitTestMergeMultiUserFusion : TransformTestBase
         var abs = MakeSingleSimpleFusionCall(expr => new IR.Tuple(Abs(expr), Sqrt(expr)), inputVar0);
         var bn = MakeSimpleFusionCall(expr => expr[0] + expr[1], abs[0], abs[1]);
         var sf = Softmax(bn, 0);
-        await RunTest(sf, new[] { inputVar0 },
+        await RunTest(
+            sf,
+            new[] { inputVar0 },
             new Dictionary<Var, IValue> { { inputVar0, Value.FromTensor(input0) } });
     }
+
     private static async Task RunTestNotMatch(Expr body, Var[] inputVar, Dictionary<Var, IValue> dict)
     {
         var module = MakeModule(body, inputVar);
-        var preResult = body.Evaluate(dict);
+        _ = body.Evaluate(dict);
         var preHash = body.GetHashCode();
         var post = await new MergeBucketFusion().RunAsync(module, new());
         var postHash = ((Function)post.Entry!).Body.GetHashCode();
@@ -279,18 +296,15 @@ public class UnitTestMergeMultiUserFusion : TransformTestBase
         var newBody = ((Function)post.Entry!).Body;
         var postHash = newBody.GetHashCode();
         Assert.NotEqual(postHash, preHash);
-        var postResult = ((Function)(post.Entry!)).Body.Evaluate(dict);
+        var postResult = ((Function)post.Entry!).Body.Evaluate(dict);
         if (!Comparator.AllEqual(preResult, postResult))
         {
-            ValueDumper.DumpTensors(preResult.AsTensors().Select(Value.FromTensor).ToArray(),
+            ValueDumper.DumpTensors(
+                preResult.AsTensors().Select(Value.FromTensor).ToArray(),
                 Path.Join(DumpScope.Current.Directory, "preResult"));
-            ValueDumper.DumpTensors(postResult.AsTensors().Select(Value.FromTensor).ToArray(),
+            ValueDumper.DumpTensors(
+                postResult.AsTensors().Select(Value.FromTensor).ToArray(),
                 Path.Join(DumpScope.Current.Directory, "postResult"));
-            // var list = preResult.AsTensors().Zip(postResult.AsTensors()).ToArray();
-            // for (int i = 0; i < list.Length; i++)
-            // {
-            //
-            // }
             Comparator.Compare(preResult, postResult);
         }
 

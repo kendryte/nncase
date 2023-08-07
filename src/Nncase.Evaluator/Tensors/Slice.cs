@@ -153,6 +153,7 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
                     return new InvalidType("Slice begin, end, strides should be same length");
                 }
             }
+
             if (stride.CheckedShape.IsFixed)
             {
                 if (begin.CheckedShape[0].FixedValue != stride.CheckedShape[0].FixedValue)

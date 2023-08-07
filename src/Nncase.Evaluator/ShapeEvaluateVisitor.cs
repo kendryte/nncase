@@ -26,7 +26,7 @@ internal sealed class ShapeEvaluateVisitor : ExprVisitor<Expr, Unit>
 
     protected override Expr DispatchVisit(Expr expr)
     {
-        if (_context._cache.TryGetValue(expr, out var value))
+        if (_context.Cache.TryGetValue(expr, out var value))
         {
             return value;
         }
@@ -47,6 +47,7 @@ internal sealed class ShapeEvaluateVisitor : ExprVisitor<Expr, Unit>
         {
             return 1;
         }
+
         return shape.ToValueArray();
     }
 

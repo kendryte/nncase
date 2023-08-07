@@ -44,11 +44,6 @@ public partial class Conv2DShapeEvaluator : IEvaluator<Conv2DShape>, ITypeInfere
         return new[] { 4 };
     }
 
-    private TensorType GetTensorType(Tensor input)
-    {
-        return new TensorType(DataTypes.Float32, input.ToArray<int>());
-    }
-
     public Metric Visit(IMetricEvaluateContext context, Conv2DShape target)
     {
         var returnType = context.GetReturnType<IRType>();
@@ -56,5 +51,10 @@ public partial class Conv2DShapeEvaluator : IEvaluator<Conv2DShape>, ITypeInfere
         {
             [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(returnType),
         };
+    }
+
+    private TensorType GetTensorType(Tensor input)
+    {
+        return new TensorType(DataTypes.Float32, input.ToArray<int>());
     }
 }

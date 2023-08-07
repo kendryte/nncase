@@ -356,6 +356,7 @@ public static class TypeInference
             {
                 return new InvalidType("Transpose shoud perm.size == inShape.size");
             }
+
             var outShape = ApplyPerm(input.Shape, permt);
             return input with { Shape = outShape };
         }

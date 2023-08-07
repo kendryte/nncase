@@ -5,8 +5,8 @@ using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.Utilities;
 using OrtKISharp;
-using Range = Nncase.IR.Tensors.Range;
 using static Nncase.Utilities.ShapeExprUtility;
+using Range = Nncase.IR.Tensors.Range;
 
 namespace Nncase.Evaluator.Tensors;
 
