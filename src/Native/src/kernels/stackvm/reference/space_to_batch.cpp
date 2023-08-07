@@ -50,12 +50,12 @@ template <typename Fn> std::vector<size_t> range_exec_flatten(int end, Fn &&f) {
 
 template <class T>
 result<void> space_to_batch_impl(
-        datatype_t dt, const T *input, T *output, gsl::span<const size_t> in_shape,
-        gsl::span<const size_t> block_shape, const paddings_t &paddings,
-        gsl::span<const size_t> in_strides,
-        [[maybe_unused]] gsl::span<const size_t> out_shape,
-        [[maybe_unused]] gsl::span<const size_t> out_strides,
-        NNCASE_UNUSED kernel_context &context) noexcept {
+    datatype_t dt, const T *input, T *output, gsl::span<const size_t> in_shape,
+    gsl::span<const size_t> block_shape, const paddings_t &paddings,
+    gsl::span<const size_t> in_strides,
+    [[maybe_unused]] gsl::span<const size_t> out_shape,
+    [[maybe_unused]] gsl::span<const size_t> out_strides,
+    NNCASE_UNUSED kernel_context &context) noexcept {
     auto spatial_size = block_shape.size();
     auto remain_shape_size = in_shape.size() - spatial_size - 1;
     auto new_paddings = paddings_t((1 + spatial_size + remain_shape_size));
@@ -63,15 +63,15 @@ result<void> space_to_batch_impl(
         new_paddings[1 + i] = paddings[i];
     }
     auto pad_out_shape =
-            kernels::stackvm::pad_infer_shape(in_shape, new_paddings);
+        kernels::stackvm::pad_infer_shape(in_shape, new_paddings);
     auto pad_output = std::make_unique<float[]>(compute_size(pad_out_shape));
     auto pad_out_strides = get_default_strides(pad_out_shape);
     int64_t pad_value = 0;
     try_(kernels::stackvm::reference::pad(
-            dt, IN_BYTE_CAST(input), OUT_BYTE_CAST(pad_output.get()), in_shape,
-            in_strides, pad_out_strides, new_paddings,
-            nncase::runtime::stackvm::pad_mode_t::constant,
-            IN_BYTE_CAST(&pad_value)));
+        dt, IN_BYTE_CAST(input), OUT_BYTE_CAST(pad_output.get()), in_shape,
+        in_strides, pad_out_strides, new_paddings,
+        nncase::runtime::stackvm::pad_mode_t::constant,
+        IN_BYTE_CAST(&pad_value)));
 
     auto batch_shape1 = std::vector{pad_out_shape[0]};
     auto spatial_shape1 = range_exec_flatten(spatial_size, [&](auto &&i) {
@@ -85,25 +85,25 @@ result<void> space_to_batch_impl(
 
     //    auto remain_shape1 = concat(remain_shape1_tmp);
     auto reshapeed_shape1 = concat(std::vector<std::vector<size_t>>{
-            batch_shape1, spatial_shape1, remain_shape1});
+        batch_shape1, spatial_shape1, remain_shape1});
     auto perm1 =
-            range_exec<size_t>(spatial_size, [&](auto &&i) { return i * 2 + 2; });
+        range_exec<size_t>(spatial_size, [&](auto &&i) { return i * 2 + 2; });
     auto perm2 = std::vector<size_t>{0};
     auto perm3 =
-            range_exec<size_t>(spatial_size, [&](auto &&i) { return i * 2 + 1; });
+        range_exec<size_t>(spatial_size, [&](auto &&i) { return i * 2 + 1; });
     auto perm4 = range_exec<size_t>(
-            remain_shape_size, [&](auto &&i) { return i + spatial_size * 2 + 1; });
+        remain_shape_size, [&](auto &&i) { return i + spatial_size * 2 + 1; });
     auto perms = std::vector<std::vector<size_t>>{perm1, perm2, perm3, perm4};
     auto perm = concat(perms);
     auto reshapeed_shape1_dims =
-            dims_t(reshapeed_shape1.begin(), reshapeed_shape1.end());
+        dims_t(reshapeed_shape1.begin(), reshapeed_shape1.end());
     auto perm_dims = dims_t(perm.begin(), perm.end());
     auto tr_out_shape = transpose_infer_shape(reshapeed_shape1_dims, perm_dims);
     auto tr_out_stride = get_default_strides(tr_out_shape);
     try_(kernels::stackvm::reference::transpose(
-            dt, IN_BYTE_CAST(pad_output.get()), OUT_BYTE_CAST(output),
-            reshapeed_shape1_dims, perm_dims,
-            get_default_strides(reshapeed_shape1_dims), tr_out_stride));
+        dt, IN_BYTE_CAST(pad_output.get()), OUT_BYTE_CAST(output),
+        reshapeed_shape1_dims, perm_dims,
+        get_default_strides(reshapeed_shape1_dims), tr_out_stride));
     return ok();
 }
 } // namespace
@@ -116,17 +116,17 @@ result<void> space_to_batch_impl(
                                    out_shape, out_strides, context)
 
 result<void> nncase::kernels::stackvm::reference::space_to_batch(
-        datatype_t dt, const gsl::byte *input, gsl::byte *output,
-        gsl::span<const size_t> in_shape, gsl::span<const size_t> block_shape,
-        const paddings_t &paddings, gsl::span<const size_t> in_strides,
-        gsl::span<const size_t> out_shape, gsl::span<const size_t> out_strides,
-        NNCASE_UNUSED kernel_context &context) {
+    datatype_t dt, const gsl::byte *input, gsl::byte *output,
+    gsl::span<const size_t> in_shape, gsl::span<const size_t> block_shape,
+    const paddings_t &paddings, gsl::span<const size_t> in_strides,
+    gsl::span<const size_t> out_shape, gsl::span<const size_t> out_strides,
+    NNCASE_UNUSED kernel_context &context) {
     switch (runtime::get_bytes(dt)) {
         SPACE_TO_BATCH_IMPL(1, uint8_t);
         SPACE_TO_BATCH_IMPL(2, uint16_t);
         SPACE_TO_BATCH_IMPL(4, uint32_t);
         SPACE_TO_BATCH_IMPL(8, uint64_t);
-        default:
-            return err(std::errc::not_supported);
+    default:
+        return err(std::errc::not_supported);
     }
 }
