@@ -106,7 +106,6 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
             var m = blockShapeValue.Length;
             var inRank = input.CheckedShape.Rank;
 
-            // todo: 这里没问题？？
             var paddedShape = new[] { inShape[0] }
                 .Concat(Enumerable.Range(0, inRank)
                 .Select(i =>
