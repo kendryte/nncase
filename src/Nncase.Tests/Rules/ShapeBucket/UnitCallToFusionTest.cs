@@ -24,7 +24,7 @@ using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Tensors;
 
-namespace Nncase.Tests.Rules;
+namespace Nncase.Tests.Rules.ShapeBucket;
 
 [AutoSetupTestMethod(InitSession = true)]
 public class UnitCallToFusionTest : TransformTestBase
@@ -138,7 +138,7 @@ public class UnitCallToFusionTest : TransformTestBase
 
         var v = new FusionCounterVisitor();
         v.Visit(after);
-        Assert.Equal(1, v.Count);
+        Assert.Equal(2, v.Count);
         if (after is Call { Target: BucketFusion fusion } c)
         {
             Assert.Equal(1, c.Arguments.Length);

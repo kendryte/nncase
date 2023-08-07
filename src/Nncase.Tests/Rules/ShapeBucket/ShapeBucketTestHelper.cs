@@ -6,7 +6,7 @@ using System.Linq;
 using Nncase.IR;
 using Nncase.Passes.Rules.ShapeBucket;
 
-namespace Nncase.Tests;
+namespace Nncase.Tests.Rules.ShapeBucket;
 
 public static class ShapeBucketTestHelper
 {

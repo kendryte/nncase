@@ -23,10 +23,10 @@ using Xunit.Abstractions;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Tensors;
-using static Nncase.Tests.ShapeBucketTestHelper;
+using static Nncase.Tests.Rules.ShapeBucket.ShapeBucketTestHelper;
 using Tuple = Nncase.IR.Tuple;
 
-namespace Nncase.Tests.Rules;
+namespace Nncase.Tests.Rules.ShapeBucket;
 
 [AutoSetupTestMethod(InitSession = true)]
 public class UnitTestMergeMultiUserFusion : TransformTestBase
