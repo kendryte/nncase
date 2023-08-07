@@ -45,6 +45,23 @@ result<void> unary_impl(TOp &&op, const T *input, T *output,
         return unary_impl(funct, input, output, input_shape, input_strides,    \
                           out_shape, out_strides, context)
 
+static float round_onnx(float v) {
+    if (v > 0 && v - (int32_t)v == 0.5) {
+        float result = (int32_t)v + 1.0;
+        if ((int32_t)result % 2 == 0)
+            return result;
+        else
+            return result - 1;
+    } else if (v < 0 && (int32_t)v - v == 0.5) {
+        float result = (int32_t)v + 1.0;
+        if ((int32_t)result % 2 == 0)
+            return result;
+        else
+            return result - 1;
+    } else
+        return roundf(v);
+}
+
 template <class T>
 result<void> unary_impl(unary_op_t op, const T *input, T *output,
                         gsl::span<const size_t> input_shape,
@@ -66,7 +83,7 @@ result<void> unary_impl(unary_op_t op, const T *input, T *output,
         UNARY_IMPL_OP(log, logf);
         UNARY_IMPL_OP(logical_not, [](float v) { return !v; });
         UNARY_IMPL_OP(neg, std::negate<float>());
-        UNARY_IMPL_OP(round, roundf);
+        UNARY_IMPL_OP(round, [](float v) { return round_onnx(v); });
         UNARY_IMPL_OP(rsqrt, [](float v) { return 1.f / sqrtf(v); });
         UNARY_IMPL_OP(sign, [](float v) { return (0.f < v) - (v < 0.f); });
         UNARY_IMPL_OP(sin, sinf);
@@ -93,6 +110,8 @@ result<void> nncase::kernels::stackvm::reference::unary(
     kernel_context &context) noexcept {
     switch (dtype) {
         UNARY_IMPL_DTYPE(dt_float32, float)
+        UNARY_IMPL_DTYPE(dt_float16, half)
+        //        UNARY_IMPL_DTYPE(dt_bfloat16, bfloat16)
         UNARY_IMPL_DTYPE(dt_float64, double)
         UNARY_IMPL_DTYPE(dt_int32, int32_t)
         UNARY_IMPL_DTYPE(dt_int64, int64_t)

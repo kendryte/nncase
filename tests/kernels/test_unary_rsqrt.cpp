@@ -158,6 +158,18 @@ class UnaryTest
                 });
             break;
         }
+        case dt_float16: {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_real_distribution<float> dis(1.0f, 2.0f);
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<half>(tensor, index) = static_cast<half>(dis(gen));
+                    return ok();
+                });
+            break;
+        }
         case dt_float64: {
             std::random_device rd;
             std::mt19937 gen(rd());
@@ -182,7 +194,9 @@ class UnaryTest
 INSTANTIATE_TEST_SUITE_P(
     Unary, UnaryTest,
     testing::Combine(
-        testing::Values(dt_float32 /*, dt_int32, dt_int64, dt_float64*/),
+        testing::Values(
+            dt_float32,
+            dt_float16 /*, dt_int32, dt_int64, dt_float64*/), // onnx no support
         testing::Values(dims_t{1, 3, 16, 16}, dims_t{3, 16, 16},
                         dims_t{3, 16, 1}, dims_t{16, 16}, dims_t{16, 1},
                         dims_t{1, 16, 1}, dims_t{16}, dims_t{1}, dims_t{})));
@@ -192,12 +206,23 @@ TEST_P(UnaryTest, rsqrt) {
     orts[0] = runtime_tensor_2_ort_tensor(input);
 
     // expected
-    float one_array[] = {1};
-    auto one = hrt::create(input.datatype(), {1},
-                           {reinterpret_cast<gsl::byte *>(one_array),
-                            sizeof(one_array)},
-                           true, host_runtime_tensor::pool_cpu_only)
-                   .expect("create tensor failed");
+    runtime_tensor one;
+    if (input.datatype() == dt_float16) {
+        half one_array[] = {(half)1};
+        one = hrt::create(
+                  input.datatype(), {1},
+                  {reinterpret_cast<gsl::byte *>(one_array), sizeof(one_array)},
+                  true, host_runtime_tensor::pool_cpu_only)
+                  .expect("create tensor failed");
+    } else {
+        float_t one_array[] = {1};
+        one = hrt::create(
+                  input.datatype(), {1},
+                  {reinterpret_cast<gsl::byte *>(one_array), sizeof(one_array)},
+                  true, host_runtime_tensor::pool_cpu_only)
+                  .expect("create tensor failed");
+    }
+
     auto output_ort =
         ortki_Sqrt(ortki_Div(runtime_tensor_2_ort_tensor(one), orts[0]));
     size_t size = 0;
@@ -220,6 +245,7 @@ TEST_P(UnaryTest, rsqrt) {
                   cosine_similarity_tensor(expected, actual);
 
     if (!result) {
+        print_runtime_tensor(input);
         std::cout << "actual ";
         print_runtime_tensor(actual);
         std::cout << "expected ";

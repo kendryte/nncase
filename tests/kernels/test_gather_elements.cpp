@@ -26,58 +26,64 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class HardSigmoidTest
+class GatherElementsTest
     : public KernelTest,
       public ::testing::TestWithParam<
-          std::tuple<nncase::typecode_t, dims_t, float_t, float_t>> {
+          std::tuple<nncase::typecode_t, dims_t, int64_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape, value1, value2] = GetParam();
+        auto &&[typecode, shape, value] = GetParam();
 
-        input =
-            hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
-                .expect("create tensor failed");
+        input = hrt::create(typecode, shape, host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
         init_tensor(input);
 
-        alpha_value = value1;
-        gamma_value = value2;
+        int64_t indices_array[] = {0, 0, 1, 1};
+        indices = hrt::create(dt_int64, {2, 2},
+                              {reinterpret_cast<gsl::byte *>(indices_array),
+                               sizeof(indices_array)},
+                              true, host_runtime_tensor::pool_cpu_only)
+                      .expect("create tensor failed");
+
+        batchDims_value = value;
+        int64_t batchDims_array[1] = {value};
+        batchDims = hrt::create(dt_int64, dims_t{1},
+                                {reinterpret_cast<gsl::byte *>(batchDims_array),
+                                 sizeof(batchDims_array)},
+                                true, host_runtime_tensor::pool_cpu_only)
+                        .expect("create tensor failed");
     }
 
     void TearDown() override {}
 
   protected:
     runtime_tensor input;
-    float_t alpha_value;
-    float_t gamma_value;
+    runtime_tensor indices;
+    runtime_tensor batchDims;
+    int64_t batchDims_value;
 };
 
 INSTANTIATE_TEST_SUITE_P(
-    hard_sigmoid, HardSigmoidTest,
-    testing::Combine(testing::Values(dt_float32),
-                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{1},
-                                     dims_t{1, 3}, dims_t{1, 3, 16}, dims_t{}),
-                     testing::Values(1.2f, 0.8f, 0.5f, 0.6f),
-                     testing::Values(1.2f, 0.8f, 0.5f, 0.6f)));
+    gather_elements, GatherElementsTest,
+    testing::Combine(testing::Values(dt_int32, dt_int64, dt_float32, dt_uint64,
+                                     dt_int8, dt_int16, dt_uint8, dt_uint16,
+                                     dt_uint32, dt_float16, dt_float64,
+                                     dt_bfloat16, dt_boolean),
+                     testing::Values(dims_t{
+                         2,
+                         2} /*, dims_t{3, 5},
+                dims_t{2, 3, 1}, dims_t{5, 7, 5},
+                dims_t{5, 4, 3, 2}, dims_t{5, 5, 7, 7},
+                dims_t{2, 3, 3, 5}*/),
+                     testing::Values(-1, 0, 1)));
 
-TEST_P(HardSigmoidTest, hard_sigmoid) {
-    auto l_ort = runtime_tensor_2_ort_tensor(input);
+TEST_P(GatherElementsTest, gather_elements) {
+    auto input_ort = runtime_tensor_2_ort_tensor(input);
+    auto indices_ort = runtime_tensor_2_ort_tensor(indices);
 
     // expected
-    float_t alpha_ptr[] = {alpha_value};
-    auto alpha = hrt::create(nncase::dt_float32, {1},
-                             {reinterpret_cast<gsl::byte *>(alpha_ptr),
-                              sizeof(alpha_ptr)},
-                             true, host_runtime_tensor::pool_cpu_only)
-                     .expect("create tensor failed");
-
-    float_t gamma_ptr[] = {gamma_value};
-    auto gamma = hrt::create(nncase::dt_float32, {1},
-                             {reinterpret_cast<gsl::byte *>(gamma_ptr),
-                              sizeof(gamma_ptr)},
-                             true, host_runtime_tensor::pool_cpu_only)
-                     .expect("create tensor failed");
-
-    auto output_ort = ortki_HardSigmoid(l_ort, alpha_value, gamma_value);
+    auto output_ort =
+        ortki_GatherElements(input_ort, indices_ort, batchDims_value);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
@@ -88,9 +94,9 @@ TEST_P(HardSigmoidTest, hard_sigmoid) {
                         .expect("create tensor failed");
 
     // actual
-    auto output =
-        kernels::stackvm::hard_sigmoid(input.impl(), alpha.impl(), gamma.impl())
-            .expect("hard_sigmoid failed");
+    auto output = kernels::stackvm::gather_elements(
+                      input.impl(), batchDims.impl(), indices.impl())
+                      .expect("gather failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     bool result = is_same_tensor(expected, actual) ||
