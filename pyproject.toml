@@ -51,7 +51,7 @@ before-all = [
   "tar xf vulkansdk.tar.gz",
   "cp -P 1.2.182.0/x86_64/lib/libvulkan.so* /usr/local/lib/"
 ]
-before-build = "pip install auditwheel git subprocess"
+before-build = "pip install auditwheel gitpython subprocess"
 repair-wheel-command = "LD_LIBRARY_PATH=/usr/lib64 auditwheel repair -w {dest_dir} {wheel} --exclude libvulkan.so.1,libgomp.so.1"
 
 [tool.cibuildwheel.macos]
