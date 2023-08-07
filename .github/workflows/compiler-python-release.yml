@@ -87,7 +87,7 @@ jobs:
         python-version: 3.7
 
     - name: Install cibuildwheel
-      run: pip install cibuildwheel
+      run: pip install cibuildwheel gitpython
 
     - name: Build wheel
       run: python -m cibuildwheel --output-dir wheelhouse
