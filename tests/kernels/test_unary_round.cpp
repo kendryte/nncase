@@ -47,13 +47,14 @@ class UnaryTest
 
 INSTANTIATE_TEST_SUITE_P(
     Unary, UnaryTest,
-    testing::Combine(
-        testing::Values(dt_float32 /*, dt_int32, dt_int64, dt_float64*/),
-        testing::Values(dims_t{1, 3, 16, 16}, dims_t{3, 16, 16},
-                        dims_t{3, 16, 1}, dims_t{16, 16}, dims_t{16, 1},
-                        dims_t{1, 16, 1}, dims_t{16}, dims_t{1}, dims_t{})));
+    testing::Combine(testing::Values(dt_float32 /*, dt_int32, dt_int64*/,
+                                     dt_float64, dt_float16), // onnx no support
+                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{3, 16, 16},
+                                     dims_t{3, 16, 1}, dims_t{16, 16},
+                                     dims_t{16, 1}, dims_t{1, 16, 1},
+                                     dims_t{16}, dims_t{1}, dims_t{})));
 
-TEST_P(UnaryTest, roound) {
+TEST_P(UnaryTest, round) {
     OrtKITensor *orts[1];
     orts[0] = runtime_tensor_2_ort_tensor(input);
 
@@ -78,6 +79,7 @@ TEST_P(UnaryTest, roound) {
                   cosine_similarity_tensor(expected, actual);
 
     if (!result) {
+        print_runtime_tensor(input);
         std::cout << "actual ";
         print_runtime_tensor(actual);
         std::cout << "expected ";

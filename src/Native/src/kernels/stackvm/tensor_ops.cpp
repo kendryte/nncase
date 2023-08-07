@@ -27,7 +27,7 @@ using namespace nncase::kernels::stackvm;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 
-//#define ENABLE_NOP
+// #define ENABLE_NOP
 
 result<value_t> nncase::kernels::stackvm::batch_normalization(
     value_t input, value_t scale, value_t bias, value_t input_mean,
@@ -1233,6 +1233,13 @@ result<value_t> kernels::stackvm::unary(unary_op_t unary_op, value_t input,
     auto dtype = input_tensor->dtype();
     try_output(out_mem, output, dtype, input_tensor->shape());
 
+    if (typoecode != dt_float32) {
+        try_(reference::unary(typoecode, unary_op, input_mem, out_mem,
+                              input_tensor->shape(), input_tensor->strides(),
+                              output_tensor->shape(), output_tensor->strides(),
+                              context));
+        return ok(output);
+    }
     CONTIGUOUS_KERNEL(unary, input_tensor, typoecode, unary_op, input_mem,
                       out_mem, input_tensor->shape(), input_tensor->strides(),
                       output_tensor->shape(), output_tensor->strides(),
