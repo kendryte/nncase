@@ -65,7 +65,7 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
             }
 
             var dim = Prod(inputShape) / System.Math.Abs(shapeArray.Aggregate((s, x) => x * s));
-            var rhs = Enumerable.Repeat((Expr)0, negIndex).Append(dim + 1).ToArray();
+            var rhs = shapeArray.Select((_, i) => i == negIndex ? dim + 1 : (Expr)0).ToArray();
             var newShape = Stack(new IR.Tuple(rhs), 0);
 
             // dim = Product(inShape) / Produce(Reshape.Shape)

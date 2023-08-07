@@ -9,6 +9,7 @@ using NetFabric.Hyperlinq;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Tensors;
+using Nncase.Utilities;
 using Tuple = System.Tuple;
 
 namespace Nncase.Evaluator.Tensors;
@@ -45,6 +46,10 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
 
     public Expr Visit(IShapeEvaluateContext context, GetItem target)
     {
+        // [n] 1-> 1
+        // [n, c] 1 -> c
+        // [n, c] 2 -> 1
+        // 前面n维度减去index的值的长度
         var input = context.GetArgumentShape(target, GetItem.Input);
         var index = context.GetArgument(target, GetItem.Index);
         if (input is IR.Tuple)
@@ -53,7 +58,16 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
         }
         else
         {
-            return IR.F.Tensors.ShapeOf(input[index]);
+            Expr len = 0;
+            if (index.CheckedShape.IsScalar)
+            {
+                len = 1;
+            }
+            else
+            {
+                len = context.GetArgumentShape(target, GetItem.Index)[0];
+            }
+            return ShapeExprUtility.Slice(input, len, int.MaxValue);
         }
     }
 
@@ -82,12 +96,33 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
     private IRType Visit(ITypeInferenceContext context, GetItem target, IRType input, TensorType index)
     {
         IRType ret = new InvalidType("Need Be Reset!");
+        var indexExpr = context.GetArgument(target, GetItem.Index);
         switch (input)
         {
             case TensorType tensorType:
                 if (tensorType.Shape.IsUnranked)
                 {
                     return input;
+                }
+
+                if (indexExpr is TensorConst indexV)
+                {
+                    var indices = indexV.Value.ToArray<int>();
+                    if (indices.Length > tensorType.Shape.Rank)
+                    {
+                        return new InvalidType("GetItem index count should smaller than in shape rank");
+                    }
+
+                    if (indices.Length == tensorType.Shape.Rank)
+                    {
+                        foreach (var (i, dim) in indices.Zip(tensorType.Shape))
+                        {
+                            if (dim.IsFixed && i >= dim.FixedValue)
+                            {
+                                return new InvalidType("GetItem index value shoud smaller than shape dim");
+                            }
+                        }
+                    }
                 }
 
                 var shape = index.Shape switch
@@ -101,7 +136,7 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
                 ret = new TensorType(tensorType.DType, shape);
                 break;
             case TupleType tupleType:
-                if (context.GetArgument(target, GetItem.Index) is TensorConst @const)
+                if (indexExpr is TensorConst @const)
                 {
                     var indexValue = @const.Value.ToScalar<int>();
                     if (indexValue < tupleType.Count)
