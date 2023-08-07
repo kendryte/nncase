@@ -46,8 +46,8 @@ namespace Nncase.Importer
                 .Match(
                     o => Tensor.From<long>(o),
                     () => IR.Util.GetConvTransposeOutputShape(
-                        input,
-                        weights,
+                        ShapeOf(input),
+                        ShapeOf(weights),
                         strides.ToArray(),
                         outputPadding,
                         pads,
@@ -56,8 +56,8 @@ namespace Nncase.Importer
                         group));
 
             var conv = F.NN.Conv2DTranspose(
-                ShapeOf(input),
-                ShapeOf(weights),
+                input,
+                weights,
                 bias,
                 outShape,
                 strides.ToArray(),
