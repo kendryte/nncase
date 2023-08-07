@@ -53,7 +53,7 @@ class ClampTest
 
 INSTANTIATE_TEST_SUITE_P(
     clamp, ClampTest,
-    testing::Combine(testing::Values(dt_float32),
+    testing::Combine(testing::Values(dt_float16),
                      testing::Values(dims_t{1, 3, 16, 16}, dims_t{1},
                                      dims_t{1, 3}, dims_t{8, 8},
                                      dims_t{1, 3, 8}, dims_t{16, 16}, dims_t{},
@@ -64,16 +64,16 @@ INSTANTIATE_TEST_SUITE_P(
 TEST_P(ClampTest, clamp) {
 
     // expected
-    float_t min1[] = {min_value};
+    half min1[] = {half(min_value)};
     auto min_tensor =
-        hrt::create(nncase::dt_float32, {1},
+        hrt::create(nncase::dt_float16, {1},
                     {reinterpret_cast<gsl::byte *>(min1), sizeof(min1)}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
-    float_t max1[] = {max_value};
+    half max1[] = {half(max_value)};
     auto max_tensor =
-        hrt::create(nncase::dt_float32, {1},
+        hrt::create(nncase::dt_float16, {1},
                     {reinterpret_cast<gsl::byte *>(max1), sizeof(max1)}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");

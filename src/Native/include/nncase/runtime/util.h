@@ -468,6 +468,8 @@ inline bool is_contiguous(tensor tensor) {
     switch (_typecode) {                                                       \
     case dt_float32:                                                           \
         _impl(float);                                                          \
+    case dt_float16:                                                           \
+        _impl(half);                                                          \
     case dt_int8:                                                              \
         _impl(int8_t);                                                         \
     case dt_int16:                                                             \
