@@ -20,7 +20,7 @@ internal sealed class ShapeEvaluateContext : IShapeEvaluateContext
     private readonly Dictionary<Expr, Expr> _memo;
 
     // memo used by reference, can't make new _memo with memo.concat(cache)
-    private Dictionary<Expr, Expr> _cache;
+    public Dictionary<Expr, Expr> _cache;
 
     public ShapeEvaluateContext(Dictionary<Expr, Expr> memo, ShapeExprCache cache)
     {
@@ -101,11 +101,6 @@ internal sealed class ShapeEvaluateContext : IShapeEvaluateContext
         if (_memo.ContainsKey(expr))
         {
             return _memo[expr];
-        }
-
-        if (_cache.ContainsKey(expr))
-        {
-            return _cache[expr];
         }
 
         throw new InvalidOperationException("Expr not found in memo and cache");

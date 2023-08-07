@@ -24,6 +24,16 @@ internal sealed class ShapeEvaluateVisitor : ExprVisitor<Expr, Unit>
         return None.Default;
     }
 
+    protected override Expr DispatchVisit(Expr expr)
+    {
+        if (_context._cache.TryGetValue(expr, out var value))
+        {
+            return value;
+        }
+
+        return base.DispatchVisit(expr);
+    }
+
     protected override Expr VisitLeafIf(If expr)
     {
         return new If(expr.Condition, Visit(expr.Then), Visit(expr.Else));
