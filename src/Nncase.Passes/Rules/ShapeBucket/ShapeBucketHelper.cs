@@ -8,6 +8,8 @@ using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
 using Nncase.IR.Tensors;
+using Nncase.PatternMatch;
+using static Nncase.PatternMatch.Utility;
 using static Nncase.Utilities.ReplaceUtility;
 
 namespace Nncase.Passes.Rules.ShapeBucket;
@@ -145,8 +147,13 @@ internal static class ShapeBucketHelper
     {
         // if (DumpScope.Current.IsEnabled(DumpFlags.Rewrite))
         {
+            var s = prefix;
+            if (prefix.Length > 80)
+            {
+                s = s[..80];
+            }
             Console.WriteLine($"{printPrefix} {prefix}");
-            DumpScope.Current.DumpIR(expr, prefix, reletivePath);
+            DumpScope.Current.DumpIR(expr, s, reletivePath);
         }
     }
 }
@@ -222,7 +229,7 @@ public static class CallValidator
 {
     private static readonly HashSet<RuntimeTypeHandle> ForceConvert = new()
     {
-        typeof(Conv2D).TypeHandle,
+        // typeof(Conv2D).TypeHandle,
         typeof(MatMul).TypeHandle,
         typeof(Unsqueeze).TypeHandle,
         typeof(Squeeze).TypeHandle,
@@ -234,6 +241,8 @@ public static class CallValidator
 
     static readonly HashSet<RuntimeTypeHandle> MaybeDynamic = new()
     {
+        typeof(SpaceToBatch).TypeHandle,
+        typeof(BatchToSpace).TypeHandle,
         typeof(Concat).TypeHandle,
         typeof(Stack).TypeHandle,
         typeof(Binary).TypeHandle,
@@ -282,5 +291,25 @@ internal class KeyValuePairKeyComparer : IEqualityComparer<KeyValuePair<Expr, Va
     public int GetHashCode(KeyValuePair<Expr, Var[]> obj)
     {
         return HashCode.Combine(obj.Key);
+    }
+}
+
+[RuleGenerator]
+public sealed partial class ForceConvertOpChecker : RewriteRule<Pattern>
+{
+    public override Pattern Pattern => IsCall(
+        "call",
+        IsOp<Op>(op => CallValidator.IsForceConvert(op)),
+        GenerateParameters(null, IsWildcard()));
+
+    // todo: is slice
+    public Expr? GetReplace(Call call)
+    {
+        if (!call.CheckedShape.IsFixed)
+        {
+            throw new InvalidOperationException("ForceConvertCall should has fixed shape after bucket");
+        }
+
+        return call;
     }
 }

@@ -34,6 +34,7 @@ using static Nncase.PatternMatch.Utility;
 using static Nncase.Utilities.ReplaceUtility;
 using Dimension = Nncase.IR.Dimension;
 using FoldConstCall = Nncase.Passes.Mutators.FoldConstCall;
+using Stack = Nncase.IR.Tensors.Stack;
 using Tuple = System.Tuple;
 
 namespace Nncase.Passes.Rules.ShapeBucket;
@@ -139,10 +140,10 @@ public partial class CallToFusion : RewriteRule<Pattern>
 
     public Expr? GetReplace(Call call, IMatchResult matchResult)
     {
-        if (call.CheckedShape.IsFixed)
-        {
-            return null;
-        }
+        // if (call.CheckedShape.IsFixed)
+        // {
+        //     return null;
+        // }
         // if (!(call.Target is MatMul && call.Arguments.ToArray().All(x => !x.CheckedShape.IsFixed)))
         // {
             // return null;
@@ -161,10 +162,6 @@ public partial class CallToFusion : RewriteRule<Pattern>
         }
         Init(matchResult);
 
-        if (call.Target is Conv2DTranspose)
-        {
-            Console.WriteLine();
-        }
         Console.WriteLine(call.Target.GetType().Name);
         var argsMarkerData = CollectInputs(call);
         var args = argsMarkerData.Select(pair => pair.Item1).ToArray();
@@ -319,6 +316,16 @@ public class MultiUserCallToFusion : CallToFusion
     {
         if (expr is Call c && c.Target is not BucketFusion)
         {
+            if (c.Target is Binary)
+            {
+                if (c.Arguments[0] is not Const && c.Arguments[1] is not Const)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+
             if (c.Target is IR.Tensors.Reshape)
             {
                 if (c.Arguments[IR.Tensors.Reshape.Shape.Index] is TensorConst)
@@ -682,7 +689,21 @@ public partial class FusionBucket : RewriteRule<Pattern>
 
         // 对body的输出进行slice
         var body = (Expr)Slice(call, Enumerable.Repeat(0, rank).ToArray(), Cast(originShape, DataTypes.Int32), rank);
-        return body;
+        var simplifyBody = CompilerServices.Rewrite(body, new IRewriteRule[]
+        {
+            new FoldStackGetItem(),
+            new FoldShapeOf(),
+            new FoldTwoReshapes(),
+            new FoldTwoCasts(),
+            new FoldTwoSlices(),
+            new FoldNopBinary(),
+            new FoldNopCast(),
+            new Neutral.FoldConstCall(),
+            new FoldNopReshape(),
+            new FoldNopSlice(),
+            new FoldIf(),
+        }, new());
+        return simplifyBody;
     }
 
     public Expr FixInput(FusionBucketContext context, int[][] shapeList)
@@ -830,20 +851,6 @@ public partial class FusionBucket : RewriteRule<Pattern>
 
         var end = System.DateTime.Now;
         Console.WriteLine(end - begin);
-        CompilerServices.Rewrite(newBody, new IRewriteRule[]
-        {
-            new FoldStackGetItem(),
-            new FoldShapeOf(),
-            new FoldTwoReshapes(),
-            new FoldTwoCasts(),
-            new FoldTwoSlices(),
-            new FoldNopBinary(),
-            new FoldNopCast(),
-            new Neutral.FoldConstCall(),
-            new FoldNopReshape(),
-            new FoldNopSlice(),
-            new FoldIf(),
-        }, new());
         return newBody;
         // todo :save if shape
     }
@@ -1065,11 +1072,11 @@ public partial class FusionBucket : RewriteRule<Pattern>
 
         // 1. 普通情况不应该rebuild
         // 2. rebuild的正确性
-        // if (ShouldBeRebuild(context))
-        // {
-        //     Console.WriteLine("Rebuild");
-        //     return RestoreBodyWithArgs(context.Arguments, context.Parameters, context.FusionBody);
-        // }
+        if (ShouldBeRebuild(context))
+        {
+            Console.WriteLine("Rebuild");
+            return RestoreBodyWithArgs(context.Arguments, context.Parameters, context.FusionBody);
+        }
 
         var body = segments.OrderByDescending(x => x).Aggregate(
             failure,
@@ -1105,7 +1112,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
         };
     }
 
-    private static bool ShouldBeRebuild(Expr entry) => entry is Call { Target: IR.Tensors.Slice } c && ! c.Arguments[IR.Tensors.Slice.Input.Index].CheckedShape.IsFixed;
+    private static bool ShouldBeRebuild(Expr entry) => entry is Call { Target: IR.Tensors.Slice } c && (!c.Arguments[IR.Tensors.Slice.Input.Index].CheckedShape.IsFixed);
 
     private static Expr MakeFailure(Expr fusionBody)
     {

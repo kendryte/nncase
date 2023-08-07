@@ -103,7 +103,7 @@ public class MergeBucketFusion : ModulePass
 
         var hashcode = main.GetHashCode();
         int loop = 0;
-        while (loop < 30)
+        while (true)
         {
             var mergePrevPost = MergePrevFusion(main);
             MergeMultiUsers(mergePrevPost);
@@ -114,6 +114,11 @@ public class MergeBucketFusion : ModulePass
             {
                 counter++;
             }
+            else
+            {
+                break;
+            }
+
             CheckErrorVar(post, main.Parameters.ToArray());
             CheckRepeat(post);
             hashcode = postHashCode;
@@ -126,7 +131,7 @@ public class MergeBucketFusion : ModulePass
 
     private Expr MergeMultiUsersSingleCall(Expr body)
     {
-        return CompilerServices.Rewrite(body, new[] { new MultiUserCallToFusion() }, new());
+        return CompilerServices.Rewrite(body, new IRewriteRule[] { new MultiUserCallToFusion() }, new());
     }
 
     private Function MergePrevFusion(Function main)
@@ -390,6 +395,7 @@ public class MergeBucketFusion : ModulePass
         f.Visit(body);
         if (!f.Vars.All(vars.Contains))
         {
+            Console.WriteLine(string.Join(", ", f.Vars.Select(x => x.Name).ToArray()));
             throw new InvalidOperationException("Has Invalid Var In Body");
         }
     }

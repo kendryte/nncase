@@ -20,6 +20,7 @@ using Nncase.Passes.Rules.ShapeBucket;
 using Nncase.Passes.Rules.ShapeExpr;
 using Nncase.Passes.Transforms;
 using Nncase.Quantization;
+using System.Text.Json;
 using FoldConstCall = Nncase.Passes.Rules.Neutral.FoldConstCall;
 
 namespace Nncase.Compiler;
@@ -155,6 +156,13 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.SpaceToBatchToPad>();
         });
 
+        _compileSession.Target.RegisterTargetInDependentPass(passManager, _compileSession.CompileOptions);
+
+        passManager.AddWithName<DataflowPass>("BroadcastMarker").Configure(p =>
+        {
+            p.Add<BroadcastInputMarker>();
+            p.Add<BroadcastOutputMarker>();
+        });
         // passManager.AddWithName<EGraphPass>("NeutralOptimizeClamp").Configure(p =>
         // {
         //     p.Add<Passes.Rules.Neutral.FoldConstCall>();
@@ -165,7 +173,6 @@ internal class Compiler : ICompiler
         //     p.Add<Passes.Rules.Neutral.CombineClampMul>();
         //     p.Add<Passes.Rules.Neutral.FoldNopClamp>();
         // });
-        _compileSession.Target.RegisterTargetInDependentPass(passManager, _compileSession.CompileOptions);
     }
 
     private void RegisterTargetIndependQuantPass(IPassManager passManager)
@@ -183,8 +190,14 @@ internal class Compiler : ICompiler
 
     public void RegisterShapeBucket(IPassManager p)
     {
+        var singleVar = _compileSession.CompileOptions.ShapeBucketOptions.VarMap.Values.SelectMany(x => x).OfType<Var>().ToHashSet().Count <= 1;
+
         void MergeOp(IPassManager iPassManager)
         {
+            if (!singleVar)
+            {
+                return;
+            }
             iPassManager.AddWithName<DataflowPass>("MergeNextCall").Configure(c =>
             {
                 c.Add<MergeNextCallToFusion>();
@@ -202,34 +215,27 @@ internal class Compiler : ICompiler
             return;
         }
 
-        p.AddWithName<DataflowPass>("ToFusion").Configure(c =>
-        {
-            c.Add<MatmulToFusion>();
-            c.Add<Conv2DToFusion>();
-            c.Add<Conv2DTransposeToFusion>();
-        });
+        ToFusion(p);
 
         MergeOp(p);
 
-        var singleVar = _compileSession.CompileOptions.ShapeBucketOptions.VarMap.Values.SelectMany(x => x).OfType<Var>().ToHashSet().Count <= 1;
         p.AddWithName<DataflowPass>("LostToFusion").Configure(c =>
         {
-            c.Add<SigmoidToFusion>();
-            c.Add<LeakyReluToFusion>();
-            c.Add<ReluToFusion>();
             c.Add<TransposeToFusion>();
             c.Add<UnaryToFusion>();
+            c.Add<ActToFusion>();
             if (singleVar)
             {
                 c.Add<BinaryToFusion>();
             }
         });
 
-        MergeOp(p);
+        // MergeOp(p);
 
         p.AddWithName<DataflowPass>("ClearSomeMarker").Configure(p =>
         {
             p.Add<ClearFusionOuterMarker>();
+            p.Add<RemoveMarker>();
         });
 
         if (singleVar)
@@ -238,19 +244,14 @@ internal class Compiler : ICompiler
             MergeOp(p);
             p.AddWithName<MergeBucketFusion>("MergeFusion");
             MergeOp(p);
-            p.AddWithName<MergeBucketFusion>("MergeFusion");
-            MergeOp(p);
-            p.AddWithName<MergeBucketFusion>("MergeFusion");
-            MergeOp(p);
-            p.AddWithName<MergeBucketFusion>("MergeFusion");
-            MergeOp(p);
-            p.AddWithName<MergeBucketFusion>("MergeFusion");
-            MergeOp(p);
-            p.AddWithName<MergeBucketFusion>("MergeFusion");
-            MergeOp(p);
-            p.AddWithName<MergeBucketFusion>("MergeFusion");
-            MergeOp(p);
         }
+
+        p.AddWithName<DataflowPass>("FusionBucket").Configure(c =>
+        {
+            c.Add<FusionBucket>();
+        });
+
+        ToFusion(p);
 
         p.AddWithName<DataflowPass>("FusionBucket").Configure(c =>
         {
@@ -273,6 +274,15 @@ internal class Compiler : ICompiler
         });
     }
 
+    private static void ToFusion(IPassManager p) =>
+        p.AddWithName<DataflowPass>("ToFusion").Configure(c =>
+        {
+            c.Add<MatmulToFusion>();
+            c.Add<Conv2DToFusion>();
+            c.Add<TFConv2DTransposeToFusion>();
+            c.Add<Conv2DTransposeToFusion>();
+        });
+
     public void ClearFixShape(IPassManager p)
     {
         if (!_compileSession.CompileOptions.ShapeBucketOptions.Enable)
@@ -291,9 +301,7 @@ internal class Compiler : ICompiler
     {
         var target = _compileSession.Target;
         await RunPassAsync(p => TargetIndependentPass(p), "TargetIndependentPass");
-        await RunPassAsync(p => RegisterTargetIndependQuantPass(p), "TargetIndependentPass");
-
-        DumpScope.Current.DumpModule(_module, "AfterTargetIndenpendent");
+        await RunPassAsync(p => RegisterTargetIndependQuantPass(p), "TargetIndependentQuantPass");
         await RunPassAsync(p => RegisterShapeBucket(p), "ShapeBucket");
         await RunPassAsync(p => TargetIndependentPass(p), "TargetIndependentPass");
         await RunPassAsync(
