@@ -277,8 +277,7 @@ def find_version():
     version_prefix = re.findall(r"NNCASE_VERSION \"(.+)\"", version_file)
 
     if version_prefix:
-        version_suffix = time.strftime("%Y%m%d", time.localtime())
-        return version_prefix[0] + "." + version_suffix
+        return version_prefix[0]
     raise RuntimeError("Unable to find version string.")
 
 
