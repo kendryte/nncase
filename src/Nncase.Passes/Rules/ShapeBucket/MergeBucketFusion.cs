@@ -86,7 +86,6 @@ public class MergeBucketFusion : ModulePass
         // MergeMultiUsers(post);
         // return Task.FromResult(input);
         var hashcode = main.GetHashCode();
-        int loop = 0;
         while (true)
         {
             var mergePrevPost = MergePrevFusion(main);
@@ -106,7 +105,6 @@ public class MergeBucketFusion : ModulePass
             CheckErrorVar(post, main.Parameters.ToArray());
             CheckRepeat(post);
             hashcode = postHashCode;
-            loop++;
         }
 
         return Task.FromResult(input);
@@ -287,7 +285,6 @@ public class MergeBucketFusion : ModulePass
                     var args = user.Arguments.ToArray().OfNoConst().ToArray();
 
                     // 这里需要删除所有outerCall user里面的getItem，有可能一个call用了多个getItem
-                    var index = args.IndexOf(info.GetItem);
                     return args.Zip(fusion.Parameters.ToArray()).Where(pair => !originUsers.Contains(pair.First)).ToArray();
                 }
 
@@ -386,28 +383,6 @@ public class MergeBucketFusion : ModulePass
         return new Call(fusion, args);
     }
 
-    private static Expr[] MakeNewArgs(Call outerCall, UserInfo[] userInfos, VarReplInfo[] newVarsMap)
-    {
-        var fusionArgs = outerCall.Arguments.ToArray();
-        var newArgs = userInfos.SelectMany(userInfo =>
-        {
-            var user = userInfo.User;
-            return user.Arguments.ToArray().Remove(outerCall).OfNoConst().ToArray();
-        }).ToHashSet().ToArray();
-        return fusionArgs.Concat(newArgs).ToArray();
-    }
-
-    // private static Var[] MakeNewParams(BucketFusion fusion, UserInfo[] userInfos, VarReplInfo[] newVarsMap)
-    // {
-    // return newVarsMap.SelectMany(newVar => newVar.Vars).ToArray();
-    // var fusionParams = fusion.Parameters.ToArray();
-    // var newParams = userInfos.SelectMany(userInfo =>
-    // {
-    // todo: process for Fusion
-    // var usersArgs = userInfo.User.Arguments.ToArray().RemoveAt(userInfo.FusionIndexInUserArg).OfNoConst().ToArray();
-    // return usersArgs.Select(arg => new Var(arg.CheckedType)).ToArray();
-    // }).ToHashSet().ToArray();
-    // }
     private static Expr MakeNewBody(Expr[] newUsers)
     {
         if (newUsers.Length == 1)
@@ -426,15 +401,10 @@ public class MergeBucketFusion : ModulePass
         // todo: 如果user是getItem，那么需要换成getItem的target才行
         var originBody = new IR.Tuple(users.ToArray());
 
-        // var newOriginBody =
-        // new IR.Tuple(new Expr[] { body }
-        // .Concat(users.Select(user => user.Target).OfType<BucketFusion>().Select(f => f.Body)).ToArray());
         var newOriginBody = originBody.Clone();
         var finder = new FindVar();
         finder.Visit(newOriginBody);
-        var newVars = finder.Vars;
 
-        // todo: this is unused
         var map = argMap.OldToNewParam();
 
         // replace
@@ -493,39 +463,6 @@ public class MergeBucketFusion : ModulePass
         return newOriginBody.Fields.ToArray();
     }
 
-    private static (Var, Expr)[] MakeFusionReplaceInfo(UserInfo[] userInfos, Expr body, Call[] users, Dictionary<BucketFusion, Var> fusionMap) =>
-        userInfos.SelectMany((userInfo, i) =>
-        {
-            var user = userInfo.User;
-
-            // 取出user的body
-            if (user.Target is BucketFusion fusion)
-            {
-                var replaceInfo = fusion.Parameters.ToArray().Zip(user.Arguments.ToArray()).Select((pair, i) =>
-                {
-                    var (param, arg) = pair;
-
-                    // arg是其他的fusion的话替换为其fusion的body，但是其中的var可能要后面才能替换了
-                    if (users.Contains(arg))
-                    {
-                        if (((Call)arg).Target is BucketFusion argFusion)
-                        {
-                            return (param, argFusion.Body);
-                        }
-                        else
-                        {
-                            throw new NotImplementedException();
-                        }
-                    }
-
-                    return pair;
-                }).ToArray();
-                return replaceInfo;
-            }
-
-            throw new NotImplementedException();
-        }).ToArray();
-
     private static UserInfo[] CollectUsers(Call outerCall, Expr[] users)
     {
         var originUsers = outerCall.Users.ToArray();
@@ -575,7 +512,6 @@ public class MergeBucketFusion : ModulePass
         {
             if (e is Call c && c.Target is Fusion f)
             {
-                // CompilerServices.Rewrite(f.Body, new[] { new FoldRepeatMarker() }, new());
                 var effectVars = Array.Empty<Var>();
                 if (inputDimsVars.Length <= 1)
                 {
@@ -788,10 +724,6 @@ internal sealed class BucketFusionGroupMutator : Passes.Mutators.FusionGroupMuta
         Console.WriteLine("-----------------");
     }
 }
-
-// params和args就通过这个来构建
-// 通过引用的arg来判断是否重复，先有args,再生成对应的params，index已经不重要了
-internal record VarReplInfo(Var[] Vars, Expr[] Exprs);
 
 // userArg -> oldVar 原始fusion的var
 // oldVar -> RelativeNewVar 替换的过程

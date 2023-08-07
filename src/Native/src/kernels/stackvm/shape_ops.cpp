@@ -26,11 +26,11 @@ result<value_t> nncase::kernels::stackvm::conv2d_shape(
     KERNEL_FINISH;
 }
 
-size_t ComputeOutSize(int inputSize, int weightSize, const strides_t &strides,
-                      dims_t outPaddings, paddings_t paddings,
+size_t compute_out_size(int input_size, int weights_size, const strides_t &strides,
+                      dims_t out_paddings, paddings_t paddings,
                       const strides_t &dilations, int offset) {
-    return (strides[offset] * (inputSize - 1L)) + outPaddings[offset] +
-           (((weightSize - 1L) * dilations[offset]) + 1L) -
+    return (strides[offset] * (input_size - 1L)) + out_paddings[offset] +
+           (((weights_size - 1L) * dilations[offset]) + 1L) -
            paddings[offset].before - paddings[offset].after;
 }
 
@@ -40,18 +40,18 @@ dims_t conv2d_transpose_infer_shape(gsl::span<const size_t> in_shape,
                                     paddings_t paddings,
                                     const dims_t &outPadding,
                                     const strides_t &dilations, int group) {
-    auto iN = in_shape[0];
-    auto iH = in_shape[2];
-    auto iW = in_shape[3];
+    auto in = in_shape[0];
+    auto ih = in_shape[2];
+    auto iw = in_shape[3];
     auto oc = w_shape[0] * group;
-    auto wH = w_shape[2];
-    auto wW = w_shape[3];
+    auto wh = w_shape[2];
+    auto ww = w_shape[3];
 
     auto oh =
-        ComputeOutSize(iH, wH, strides, outPadding, paddings, dilations, 0);
+        compute_out_size(ih, wh, strides, outPadding, paddings, dilations, 0);
     auto ow =
-        ComputeOutSize(iW, wW, strides, outPadding, paddings, dilations, 1);
-    auto out_shape = dims_t{iN, oc, oh, ow};
+        compute_out_size(iw, ww, strides, outPadding, paddings, dilations, 1);
+    auto out_shape = dims_t{in, oc, oh, ow};
     return out_shape;
 }
 

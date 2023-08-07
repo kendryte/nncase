@@ -44,7 +44,6 @@ public partial class FoldStackGetItem : RewriteRule<Pattern>
         }
 
         // [1, 2, 3, 4] -> Stack(1, 2, 3)
-        // todo: add test
         // slice for more, (2, 3) is ok, but is fast??
         if (input.CheckedShape[0] != getItems.Length)
         {

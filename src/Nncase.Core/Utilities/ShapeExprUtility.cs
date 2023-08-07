@@ -55,17 +55,6 @@ public static class ShapeExprUtility
         return Concat(new IR.Tuple(front, last), 0);
     }
 
-    public static Expr RankOf(Expr expr)
-    {
-        if (!expr.InferenceType())
-        {
-            DumpScope.Current.DumpIR(expr, "BroadcastShape");
-            throw new NotImplementedException();
-        }
-
-        return new Call(new Rank(), expr);
-    }
-
     public static Expr StackOne(Expr expr)
     {
         return Stack(new IR.Tuple(expr), 0);

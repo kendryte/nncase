@@ -40,12 +40,7 @@ public partial class RequireEvaluator : IEvaluator<Require>, ITypeInferencer<Req
 
     public IValue Visit(IEvaluateContext context, Require target)
     {
-        // Console.WriteLine($"op: {target.Message}");
-        var result = context.GetArgumentValue(target, Require.Value);
-
-        // Console.WriteLine(string.Join(",", result.AsTensors()[0].ToArray<int>()));
-        // Console.WriteLine();
-        return result;
+        return context.GetArgumentValue(target, Require.Value);
     }
 
     private IValue Visit(bool predicate, IValue value, Require target)

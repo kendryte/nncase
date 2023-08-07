@@ -30,12 +30,6 @@ public partial class BroadcastShapeEvaluator : IEvaluator<BroadcastShape>, IType
 
     public IRType Visit(ITypeInferenceContext context, BroadcastShape target)
     {
-        // var inputs = context.CheckArgumentType<TupleType>(target, BroadcastShape.Inputs);
-        // var field = inputs.Fields.ToArray().MaxBy(ty => ty switch
-        // {
-        // TensorType tensorType => tensorType.Shape.Rank,
-        // _ => throw new ArgumentOutOfRangeException(nameof(ty)),
-        // })!;
         return new TensorType(DataTypes.Int64, new[] { Dimension.Unknown });
     }
 
@@ -47,15 +41,8 @@ public partial class BroadcastShapeEvaluator : IEvaluator<BroadcastShape>, IType
     public Expr Visit(IShapeEvaluateContext context, BroadcastShape target)
     {
         var inShape = context.GetArgumentShape(target, BroadcastShape.Inputs);
-
-        // var ranks = ((IR.Tuple)inShape).Fields.ToArray().Select(shape =>
-        // {
-        //     return IR.F.Tensors.Cast(shape[0], DataTypes.Int32);
-        // }).ToArray();
         var len = ((IR.Tuple)inShape).Fields.ToArray().Aggregate((Expr)1, (i, call) => IR.F.Math.Max(i, call));
         var bn = IR.F.Tensors.Cast(len, DataTypes.Int32);
-
-        // DumpScope.Current.DumpIR(bn, "binary");
         return bn;
     }
 

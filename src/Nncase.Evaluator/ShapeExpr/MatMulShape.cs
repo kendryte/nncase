@@ -20,32 +20,6 @@ public partial class MatMulShapeEvaluator : IEvaluator<MatMulShape>, ITypeInfere
 {
     public IValue Visit(Tensor lhs, Tensor rhs)
     {
-        // var lhsRank = lhs.Shape.Rank;
-        // var rhsRank = rhs.Shape.Rank;
-        // var lhsShape = lhs.ToArray<int>();
-        // var rhsShape = rhs.ToArray<int>();
-        //
-        // Expr newLhs, newRhs;
-        // Expr front;
-        // if (lhsRank == rhsRank)
-        // {
-        //     newLhs = ShapeExprUtility.Slice(lhsShape, 0, lhsRank - 2);
-        //     newRhs = ShapeExprUtility.Slice(rhsShape, 0, rhsRank - 2);
-        //     front = IR.F.Math.Max(newLhs, newRhs);
-        // }
-        // else if (lhsRank > rhsRank)
-        // {
-        //     newLhs = ShapeExprUtility.Slice(lhsShape, 0, lhsRank - 2);
-        //     front = newLhs;
-        // }
-        // else
-        // {
-        //     newLhs = Enumerable.Repeat(1, rhsRank - lhsRank).ToArray();
-        //     front = newLhs;
-        // }
-        //
-        // var end = Stack(new IR.Tuple(lhsShape[lhsRank - 2], rhsShape[rhsRank - 1]), 0);
-        // return Concat(new IR.Tuple(front, end), 0).Evaluate();
         var lhsShape = lhs.ToArray<int>();
         var rhsShape = rhs.ToArray<int>();
         var newLhs = To4D(lhsShape);

@@ -139,25 +139,6 @@ public static class ShapeBucketHelper
             .ToHashSet().ToArray();
     }
 
-    public static bool IsSingleDimVar(CompileSession session)
-    {
-        return InputDimVars(session).Length == 1;
-    }
-
-    // avoid dup marker user
-    public static T DupExpr<T>(T body)
-        where T : Expr
-    {
-        T dupFusionBody = body switch
-        {
-            Marker m => (T)(object)m.With(target: DupExpr(m.Target)),
-            Call c => (T)(object)c.With(),
-            IR.Tuple t => (T)(object)new IR.Tuple(t.Fields.ToArray().Select(DupExpr).ToArray()),
-            _ => body,
-        };
-        return dupFusionBody;
-    }
-
     public static Var[] MakeEffectVarArray(CompileSession session, Dictionary<Var, Expr[]> varMap, params Expr[] args)
     {
         var dimVars = InputDimVars(session);
