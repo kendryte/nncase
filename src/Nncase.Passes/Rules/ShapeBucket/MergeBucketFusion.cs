@@ -146,7 +146,7 @@ public class MergeBucketFusion : ModulePass
     private static bool DetectedRing(Call outerCall, Expr[] users)
     {
         // var users = outerCall.Users.ToArray();
-        var userArgs = users.SelectMany(user => ((Call)user).Arguments.ToArray()).ToArray();
+        var userArgs = users.SelectMany(user => ((Call)user).Arguments.ToArray()).Except(users).ToArray();
         foreach (var arg in userArgs)
         {
             var list = new FindExpr().Run(arg, users, outerCall, expr =>
@@ -178,7 +178,6 @@ public class MergeBucketFusion : ModulePass
 
         if (users.OfType<Call>().All(user => user.Target is GetItem))
         {
-            // todo: test
             // 需要去重，可能一个getItem的user使用了多个getItem
             // 但是去重的过程需要在collect info的时候做
             // 不然被去重的user不能正确的被替换掉
@@ -188,11 +187,10 @@ public class MergeBucketFusion : ModulePass
         // todo: not support
         if (users.Any(user => user is Tuple))
         {
-            Console.WriteLine("HasTuple");
+            // Console.WriteLine("HasTuple");
             return (null, Array.Empty<Expr>());
         }
 
-        // todo:如果不是所有的都是valid的，那么能合并吗？？
         var userInfos = CollectUsers(outerCall, users);
 
         // todo: support only one user, because merge fusion rule is not enough
@@ -205,7 +203,7 @@ public class MergeBucketFusion : ModulePass
         // has invalid
         if (userInfos.Length != users.Distinct().ToArray().Length)
         {
-            Console.WriteLine("not all call");
+            // Console.WriteLine("not all fusion call");
             return (null, Array.Empty<Expr>());
         }
 
@@ -223,13 +221,13 @@ public class MergeBucketFusion : ModulePass
 
         if (DetectedRing(outerCall, users))
         {
-            Console.WriteLine("HasRing");
+            // Console.WriteLine("HasRing");
             return (null, Array.Empty<Expr>());
         }
 
         if (outerCall.Users.ToArray().OfType<Call>().All(user => user.Target is GetItem))
         {
-            Console.WriteLine("MeregForGetItem");
+            // Console.WriteLine("MeregForGetItem");
             Console.WriteLine(MergeRelPath);
         }
 

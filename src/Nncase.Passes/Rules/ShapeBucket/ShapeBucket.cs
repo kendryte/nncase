@@ -101,6 +101,13 @@ public class BucketFusion : Fusion
 [RuleGenerator]
 public partial class CallToFusion : RewriteRule<Pattern>
 {
+    private bool _onlyDynamic;
+
+    public CallToFusion()
+    {
+        _onlyDynamic = false;
+    }
+
     public static int Counter { get; set; }
 
     public string ModuleKind => "stackvm";
@@ -122,7 +129,8 @@ public partial class CallToFusion : RewriteRule<Pattern>
 
     public Expr? GetReplace(Call call, IMatchResult matchResult)
     {
-        if (call.CheckedShape.IsFixed)
+        // 第二轮的时候再开
+        if (_onlyDynamic && call.CheckedShape.IsFixed)
         {
             return null;
         }
