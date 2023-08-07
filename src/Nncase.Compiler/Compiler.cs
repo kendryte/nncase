@@ -227,6 +227,7 @@ internal class Compiler : ICompiler
 
         if (singleVar)
         {
+            // do twice
             p.AddWithName<MergeBucketFusion>("MergeFusion");
             MergeOp(p);
             p.AddWithName<MergeBucketFusion>("MergeFusion");
@@ -238,7 +239,8 @@ internal class Compiler : ICompiler
             c.Add<FusionBucket>();
         });
 
-        ToFusion(p);
+        // rebuild
+        ToFusion(p, true);
 
         p.AddWithName<DataflowPass>("FusionBucket").Configure(c =>
         {
@@ -309,13 +311,13 @@ internal class Compiler : ICompiler
         linkedModel.Serialize(output);
     }
 
-    private static void ToFusion(IPassManager p) =>
+    private static void ToFusion(IPassManager p, bool onlyDynamic = false) =>
         p.AddWithName<DataflowPass>("ToFusion").Configure(c =>
         {
-            c.Add<MatmulToFusion>();
-            c.Add<Conv2DToFusion>();
-            c.Add<TFConv2DTransposeToFusion>();
-            c.Add<Conv2DTransposeToFusion>();
+            c.Add<MatmulToFusion>(onlyDynamic);
+            c.Add<Conv2DToFusion>(onlyDynamic);
+            c.Add<TFConv2DTransposeToFusion>(onlyDynamic);
+            c.Add<Conv2DTransposeToFusion>(onlyDynamic);
         });
 
     private void RegisterTargetIndependQuantPass(IPassManager passManager)

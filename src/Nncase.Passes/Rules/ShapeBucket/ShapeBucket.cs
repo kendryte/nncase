@@ -103,6 +103,11 @@ public partial class CallToFusion : RewriteRule<Pattern>
 {
     private bool _onlyDynamic;
 
+    public CallToFusion(bool onlyDynamic)
+    {
+        _onlyDynamic = onlyDynamic;
+    }
+
     public CallToFusion()
     {
         _onlyDynamic = false;
@@ -297,6 +302,11 @@ public partial class CallToFusion : RewriteRule<Pattern>
 public class MarkerCallToFusion<T> : CallToFusion
     where T : Op
 {
+    public MarkerCallToFusion(bool isDynamic = false)
+        : base(isDynamic)
+    {
+    }
+
     public override Pattern Pattern => IsRangeOfMarker(
         "callMarker",
         IsCallWildcard("call", IsOp<T>()),
@@ -316,6 +326,15 @@ public class MarkerCallToFusion<T> : CallToFusion
 
 public class MultiUserCallToFusion : CallToFusion
 {
+    public MultiUserCallToFusion(bool onlyDynamic = false)
+        : base(onlyDynamic)
+    {
+    }
+
+    public MultiUserCallToFusion()
+    {
+    }
+
     public override Pattern Pattern => IsWildcard("call", expr =>
     {
         if (expr is Call c && c.Target is not BucketFusion)
