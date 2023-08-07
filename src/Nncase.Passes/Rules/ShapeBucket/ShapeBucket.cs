@@ -101,7 +101,7 @@ public class BucketFusion : Fusion
 [RuleGenerator]
 public partial class CallToFusion : RewriteRule<Pattern>
 {
-    private bool _onlyDynamic;
+    private readonly bool _onlyDynamic;
 
     public CallToFusion(bool onlyDynamic)
     {
@@ -650,7 +650,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
 
     private static string _relPath = string.Empty;
 
-    private ShapeExprCache _cache = ShapeExprCache.Default;
+    private readonly ShapeExprCache _cache = ShapeExprCache.Default;
 
     public override Pattern Pattern => IsCall(
         "outerCall",

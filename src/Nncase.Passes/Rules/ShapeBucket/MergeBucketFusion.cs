@@ -817,14 +817,14 @@ internal record FusionVarMapper(Var[] NewParams, (Expr UserArg, Var RelativeNewV
 
 internal sealed class CheckFusionCallVisitor : ExprWalker
 {
-    private HashSet<string> _callName = new();
-    private Dictionary<string, (string, BucketFusion)> _errorFusion = new();
+    private readonly HashSet<string> _callName = new();
+    private readonly Dictionary<string, (string, BucketFusion)> _errorFusion = new();
 
-    private HashSet<string> _fusionName = new();
-    private HashSet<string> _repeatFusion = new();
+    private readonly HashSet<string> _fusionName = new();
+    private readonly HashSet<string> _repeatFusion = new();
 
-    private HashSet<string> _fusionParamsName = new();
-    private HashSet<string> _repeatParamFusion = new();
+    private readonly HashSet<string> _fusionParamsName = new();
+    private readonly HashSet<string> _repeatParamFusion = new();
 
     public void Check()
     {

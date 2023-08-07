@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -228,8 +228,8 @@ public class FindExpr : ExprVisitor<Expr, Unit>
     public List<Expr> Run(Expr expr, Expr[] limit, Expr outerCall, Func<Expr, bool> checker)
     {
         _f = checker;
-        this._outerCall = outerCall;
-        this._limit = limit;
+        _outerCall = outerCall;
+        _limit = limit;
         Visit(expr);
         return _list;
     }
