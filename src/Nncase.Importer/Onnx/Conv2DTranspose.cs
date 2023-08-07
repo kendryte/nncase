@@ -56,8 +56,8 @@ namespace Nncase.Importer
                         group));
 
             var conv = F.NN.Conv2DTranspose(
-                input,
-                weights,
+                ShapeOf(input),
+                ShapeOf(weights),
                 bias,
                 outShape,
                 strides.ToArray(),
