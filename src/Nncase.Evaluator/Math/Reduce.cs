@@ -102,12 +102,13 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICos
             axis is TensorConst axisValue)
         {
             var outShape = context.GetArgumentShape(target, Reduce.Input);
+            var input = context.GetArgument(target, Reduce.Input);
             var inShape = context.GetArgumentShape(target, Reduce.Input);
             var axes = axisValue.Value.Cast<int>();
             var keepDimsValue = keepDimsV.Value.ToScalar<int>();
-            if (outShape.CheckedShape.IsFixed)
+            if (input.CheckedShape.IsRanked)
             {
-                if (axes.Length == outShape.CheckedShape[0] && keepDimsValue == 0)
+                if (axes.Length == input.CheckedShape.Count && keepDimsValue == 0)
                 {
                     return new int[] { };
                 }

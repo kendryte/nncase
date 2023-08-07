@@ -75,7 +75,13 @@ public static class ShapeExprUtility
     {
         var front = Slice(shapeExpr, 0, index);
         var last = Slice(shapeExpr, Cast(index, DataTypes.Int32) + indexOffset, int.MaxValue);
-        return Concat(new IR.Tuple(front, valueIsList ? StackOne(value) : value, last), 0);
+        var c = valueIsList ? StackOne(value) : value;
+        if (c.CheckedShape.IsScalar)
+        {
+            c = StackOne(c);
+        }
+
+        return Concat(new IR.Tuple(front, c, last), 0);
     }
 
     private static Expr CheckShape(Expr shape)

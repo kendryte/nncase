@@ -21,7 +21,8 @@ public partial class BroadcastShapeEvaluator : IEvaluator<BroadcastShape>, IType
         var shape = type switch
         {
             TensorType tt => tt.Shape.ToValueArray().Select(x => (long)x).ToArray(),
-            _ => throw new InvalidOperationException(),
+            InvalidType it => throw new InvalidOperationException(it.Reason),
+            _ => throw new InvalidOperationException("Unknown IRType"),
         };
 
         return Value.FromTensor(shape);
