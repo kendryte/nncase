@@ -37,6 +37,10 @@ namespace Nncase.IR
         {
             inShape = Cast(inShape, DataTypes.Int64);
             wShape = Cast(wShape, DataTypes.Int64);
+            strides = Cast(strides, DataTypes.Int64);
+            dilations = Cast(dilations, DataTypes.Int64);
+            paddings = Cast(paddings, DataTypes.Int64);
+            outPadding = Cast(outPadding, DataTypes.Int64);
             var iN = inShape[0];
             _ = inShape[1];
             var iH = inShape[2];

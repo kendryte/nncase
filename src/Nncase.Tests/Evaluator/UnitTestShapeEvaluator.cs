@@ -254,6 +254,46 @@ public class UnitTestShapeEvaluator : TestClassBase
     }
 
     [Fact]
+    public void TestSpaceTobatch()
+    {
+        var dimVar = new Var(new TensorType(DataTypes.Int32, Shape.Scalar));
+        var input = new Var(new TensorType(DataTypes.Float32, new[] { 1, Dimension.Unknown, 192 }));
+        var paddings = Tensor.From(new[] { 0, 1 }, new[] { 1, 2 });
+        var expr = SpaceToBatch(input, new[] { 3 }, paddings);
+        var dict = new Dictionary<Var, Expr[]> { { input, new Expr[] { 1, dimVar, 192 } } };
+        var shape = expr.EvaluateShapeExpr(dict);
+        var varValues = new Dictionary<Var, IValue> { { dimVar, Value.FromTensor(8) } };
+        Dumpper.DumpIR(shape, "Shape");
+        var shapeValue = shape.Evaluate(varValues).AsTensor().ToArray<int>();
+        var evalShape = expr
+            .Evaluate(new Dictionary<Var, IValue> { { input, Value.FromTensor(Testing.Rand<float>(1, 8, 192)) } })
+            .AsTensor()
+            .Shape;
+        var fixedShape = evalShape.ToValueArray();
+        Assert.Equal(fixedShape, shapeValue);
+    }
+
+    [Fact]
+    public void TestBatchToSpace()
+    {
+        var dimVar = new Var(new TensorType(DataTypes.Int32, Shape.Scalar));
+        var input = new Var(new TensorType(DataTypes.Float32, new[] { Dimension.Unknown, 69, 192 }));
+        var paddings = Tensor.From(new[] { 0, 1 }, new[] { 1, 2 });
+        var expr = BatchToSpace(input, new[] { 3 }, paddings);
+        var dict = new Dictionary<Var, Expr[]> { { input, new Expr[] { dimVar, 69, 192 } } };
+        var shape = expr.EvaluateShapeExpr(dict);
+        var varValues = new Dictionary<Var, IValue> { { dimVar, Value.FromTensor(3) } };
+        Dumpper.DumpIR(shape, "Shape");
+        var shapeValue = shape.Evaluate(varValues).AsTensor().ToArray<int>();
+        var evalShape = expr
+            .Evaluate(new Dictionary<Var, IValue> { { input, Value.FromTensor(Testing.Rand<float>(3, 69, 192)) } })
+            .AsTensor()
+            .Shape;
+        var fixedShape = evalShape.ToValueArray();
+        Assert.Equal(fixedShape, shapeValue);
+    }
+
+    [Fact]
     public void UnitTestSqueeze()
     {
         TestOpShapeEval(input => Squeeze(input, new[] { 0 }));

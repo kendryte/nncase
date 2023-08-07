@@ -9,7 +9,9 @@ using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.NN;
 using Nncase.IR.Tensors;
+using Nncase.Utilities;
 using OrtKISharp;
+using static Nncase.IR.F.Tensors;
 using Range = System.Range;
 
 namespace Nncase.Evaluator.NN;
@@ -17,7 +19,7 @@ namespace Nncase.Evaluator.NN;
 /// <summary>
 /// Evaluator for <see cref="SpaceToBatch"/>.
 /// </summary>
-public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<SpaceToBatch>, ICostEvaluator<SpaceToBatch>, IMetricEvaluator<SpaceToBatch>
+public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<SpaceToBatch>, ICostEvaluator<SpaceToBatch>, IMetricEvaluator<SpaceToBatch>, IShapeEvaluator<SpaceToBatch>
 {
     /// <inheritdoc/>
     public Cost Visit(ICostEvaluateContext context, SpaceToBatch target)
@@ -104,7 +106,6 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
             var m = blockShapeValue.Length;
             var inRank = input.CheckedShape.Rank;
 
-            // todo: 这里没问题？？
             var paddedShape = new[] { inShape[0] }
                 .Concat(Enumerable.Range(0, inRank)
                 .Select(i =>
@@ -180,6 +181,6 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
             return input with { Shape = new Shape(outshape) };
         }
 
-        return new InvalidType("Can't Infer Shape With Dynamic Input!");
+        return new TensorType(input.DType, Enumerable.Repeat(Dimension.Unknown, input.Shape.Count).ToArray());
     }
 }

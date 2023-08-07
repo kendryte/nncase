@@ -94,7 +94,8 @@ public sealed partial class CombineConstBinaryReshape : IRewriteRule
         {
             var significantInputShape = input.CheckedShape.ToValueArray().Where(x => x > 1).ToArray();
             var constSize = constInput.CheckedShape.ToValueArray()[0];
-            if (significantShape.SequenceEqual(significantInputShape) && oldShape[^1] == constSize)
+
+            if (significantShape.SequenceEqual(significantInputShape) && oldShape.Length > 0 && oldShape[^1] == constSize)
             {
                 var broadcastIndex = Array.LastIndexOf(input.CheckedShape.ToValueArray(), constSize);
                 var newConstShape = Enumerable.Repeat(1, input.CheckedShape.Rank - 1 - broadcastIndex).ToList();
