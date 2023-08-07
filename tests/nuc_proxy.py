@@ -13,11 +13,11 @@ import toml
 
 
 class MySerial:
-    def __init__(self, logger, port, baudrate):
+    def __init__(self, port, baudrate, logger):
         self.s = None
-        self.logger = logger
         self.port = port
         self.baudrate = baudrate
+        self.logger = logger
         self.timeout = 20
 
     def open(self):
@@ -72,8 +72,8 @@ def Consumer(target, q, working_dir, uart0, baudrate0, uart1, baudrate1):
     mylogger.addHandler(rf_handler)
 
     # serial
-    s0 = MySerial(mylogger, uart0, baudrate0)
-    s1 = MySerial(mylogger, uart1, baudrate1)
+    s0 = MySerial(uart0, baudrate0, mylogger)
+    s1 = MySerial(uart1, baudrate1, mylogger)
 
     while True:
         conn = q.get()
