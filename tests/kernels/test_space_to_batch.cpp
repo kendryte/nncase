@@ -35,7 +35,7 @@ class SpaceToBatchTest
 
         // expected
         float expected_array[] = {1, 3, 9,  11, 2, 4, 10, 12,
-                                    5, 7, 13, 15, 6, 8, 14, 16};
+                                  5, 7, 13, 15, 6, 8, 14, 16};
         expected = hrt::create(typecode, l_shape,
                                {reinterpret_cast<gsl::byte *>(expected_array),
                                 sizeof(expected_array)},

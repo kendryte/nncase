@@ -28,8 +28,8 @@ using namespace ortki;
 
 class UniformLikeTest
     : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<
-          nncase::typecode_t, dims_t, dims_t, float, float, float>> {
+      public ::testing::TestWithParam<
+          std::tuple<nncase::typecode_t, dims_t, dims_t, float, float, float>> {
   public:
     void SetUp() override {
         auto &&[typecode, shape, l_shape, value1, value2, value3] = GetParam();

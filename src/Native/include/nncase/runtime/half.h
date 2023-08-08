@@ -59,7 +59,7 @@ struct half {
                                        std::is_floating_point<T>::value>>
     explicit half(const T &val) noexcept : half(static_cast<float>(val)) {}
 
-    half(int&& val) noexcept : half(static_cast<float>(val)) {}
+    half(int &&val) noexcept : half(static_cast<float>(val)) {}
 
     constexpr half(fp16_from_raw_t, uint16_t value) noexcept : value_(value) {}
 
@@ -158,7 +158,7 @@ struct half {
         return (value_ & 0x7FFF) == ZERO_VALUE;
     }
 
-    void operator=(const float & v) noexcept {
+    void operator=(const float &v) noexcept {
         value_ = (round_to_half(v).value_);
     }
 
