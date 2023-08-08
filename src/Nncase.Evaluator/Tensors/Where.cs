@@ -72,12 +72,19 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
 
     public Expr Visit(IShapeEvaluateContext context, Where target)
     {
+        var x = context.GetArgumentShape(target, Where.X);
         if (target.IsTfWhere)
         {
+            var condValue = context.GetArgument(target, Where.Cond);
+            var condShape = context.GetArgumentShape(target, Where.Cond);
+            if (condValue.CheckedShape.Rank == 1)
+            {
+                return IR.F.Tensors.Stack(new IR.Tuple(new[] { condShape[0], x[0] }), 0);
+            }
+
             throw new NotImplementedException();
         }
 
-        var x = context.GetArgumentShape(target, Where.X);
         var y = context.GetArgumentShape(target, Where.Y);
         var cond = context.GetArgumentShape(target, Where.Cond);
         return ShapeExprUtility.BroadcastShape(x, y, cond);

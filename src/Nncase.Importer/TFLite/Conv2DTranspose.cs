@@ -17,13 +17,18 @@ namespace Nncase.Importer.TFLite
     {
         private Expr VisitConv2DTranspose(in tflite.Operator op)
         {
-            var outShape = ((TensorConst)GetInputExprs(op, 0)).Value.ToArray<int>();
+            var outShape = GetInputExprs(op, 0);
             var newOutShape = new[] { outShape[0], outShape[3], outShape[1], outShape[2] };
             var (input, weights) = GetInputExprs(op, 2, 1);
-            Expr bias = Enumerable.Repeat(0f, newOutShape[1]).ToArray();
+            Expr bias;
             if (op.InputsLength > 3)
             {
                 bias = GetInputExprs(op, 3);
+            }
+            else
+            {
+                var oc = IR.F.Tensors.ShapeOf(weights)[0];
+                bias = IR.F.Tensors.Expand(new[] { 0f }, IR.F.Tensors.StackScalar(oc));
             }
 
             var options = op.BuiltinOptionsAsTransposeConvOptions();
@@ -45,7 +50,7 @@ namespace Nncase.Importer.TFLite
                     F.Tensors.NHWCToNCHW(input),
                     F.Tensors.NHWCToNCHW(weights),
                     bias,
-                    newOutShape,
+                    IR.F.Tensors.Stack(new IR.Tuple(newOutShape), 0),
                     stride,
                     padding,
                     Tensor.From<long>(new long[] { 0, 0, 0, 0 }),
