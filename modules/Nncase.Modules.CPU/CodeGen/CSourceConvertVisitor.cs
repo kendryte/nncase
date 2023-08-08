@@ -65,17 +65,17 @@ internal sealed class CSymbol
         Name = name;
     }
 
-    public string Type { get; }
-
-    public string Name { get; }
-
-    public override string ToString() => $"{Type} {Name}";
-
     public static IReadOnlyList<CSymbol> Builtns => new CSymbol[] {
         new CSymbol("nncase_mt_t*", "nncase_mt"),
         new CSymbol("uint8_t*", "data"),
         new CSymbol("const uint8_t*", "rdata"),
     };
+
+    public string Type { get; }
+
+    public string Name { get; }
+
+    public override string ToString() => $"{Type} {Name}";
 }
 
 internal sealed class IndentWriter : StringWriter
