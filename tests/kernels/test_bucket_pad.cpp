@@ -53,11 +53,9 @@ class BucketPadTest
     runtime_tensor value;
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    BucketPad, BucketPadTest,
-    testing::Combine(testing::Values(dt_float32),
-                     testing::Values(/*dims_t{1, 3, 24, 24}, */ dims_t{1, 1, 1,
-                                                                       1})));
+INSTANTIATE_TEST_SUITE_P(BucketPad, BucketPadTest,
+                         testing::Combine(testing::Values(dt_float32),
+                                          testing::Values(dims_t{1, 3, 16, 16})));
 
 TEST_P(BucketPadTest, BucketPad) {
 
@@ -83,7 +81,7 @@ TEST_P(BucketPadTest, BucketPad) {
                         .expect("create tensor failed");
 
     // actual
-    int64_t new_shape_array[] = {1, 3, 24, 24};
+    int64_t new_shape_array[] = {1, 3, 16, 16};
     auto new_shape =
         hrt::create(dt_int64, {4},
                     {reinterpret_cast<gsl::byte *>(new_shape_array),
