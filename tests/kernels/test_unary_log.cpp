@@ -28,9 +28,8 @@ using namespace ortki;
 
 #define TEST_CASE_NAME "test_unary_other_type1"
 
-class UnaryTest
-    : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<int>> {
+class UnaryTest : public KernelTest,
+                  public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
         READY_SUBCASE()
