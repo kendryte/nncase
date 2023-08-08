@@ -46,8 +46,8 @@ namespace Nncase.Importer
                 .Match(
                     o => Tensor.From<long>(o),
                     () => IR.Util.GetConvTransposeOutputShape(
-                        input,
-                        weights,
+                        ShapeOf(input),
+                        ShapeOf(weights),
                         strides.ToArray(),
                         outputPadding,
                         pads,

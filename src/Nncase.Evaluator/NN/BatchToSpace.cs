@@ -4,11 +4,13 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.Linq;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.NN;
 using Nncase.IR.Tensors;
+using Nncase.Utilities;
 using OrtKISharp;
 using static Nncase.IR.F.Tensors;
 
@@ -17,15 +19,15 @@ namespace Nncase.Evaluator.NN;
 /// <summary>
 /// Evaluator for <see cref="BatchToSpace"/>.
 /// </summary>
-public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<BatchToSpace>, ICostEvaluator<BatchToSpace>, IMetricEvaluator<BatchToSpace>
+public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<BatchToSpace>, ICostEvaluator<BatchToSpace>, IMetricEvaluator<BatchToSpace>, IShapeEvaluator<BatchToSpace>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, BatchToSpace s)
     {
-        var input = context.GetOrtArgumentValue(s, BatchToSpace.Input);
+        var input = context.GetArgumentValue(s, BatchToSpace.Input);
 
         // to nhwc
-        var input0 = OrtKI.Transpose(input, new long[] { 0, 2, 3, 1 });
+        var input0 = NCHWToNHWC(input.AsTensor()).Evaluate().AsTensor().ToOrtTensor();
         var blockShape = context.GetArgumentValueAsArray<int>(s, BatchToSpace.BlockShape);
         var crop = context.GetOrtArgumentValue(s, BatchToSpace.Crops).Cast(OrtDataType.Int32);
 
@@ -65,8 +67,8 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
         var result = OrtKI.Slice(x3, cropStart, endRange, axesConst, strideConst);
 
         // to nchw
-        var transposeResult = OrtKI.Transpose(result, new long[] { 0, 3, 1, 2 });
-        return transposeResult.ToValue();
+        var transposeResult = NHWCToNCHW(result.ToTensor()).Evaluate();
+        return transposeResult;
     }
 
     /// <inheritdoc/>
@@ -97,6 +99,53 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
         {
             [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(returnType),
         };
+    }
+
+    public Expr Visit(IShapeEvaluateContext context, BatchToSpace target)
+    {
+        var inShape = context.GetArgumentShape(target, BatchToSpace.Input);
+        var input = context.GetArgument(target, BatchToSpace.Input);
+        if (input.CheckedShape.Rank == 4)
+        {
+            inShape = Stack(new IR.Tuple(inShape[0], inShape[2], inShape[3], inShape[1]), 0);
+        }
+
+        if (input.CheckedShape.Rank == 3)
+        {
+            inShape = Stack(new IR.Tuple(inShape[1], inShape[2], inShape[0]), 0);
+        }
+
+        var blockShape = context.GetArgument(target, BatchToSpace.BlockShape);
+        if (!blockShape.CheckedShape.IsFixed)
+        {
+            throw new NotImplementedException();
+        }
+
+        var crops = context.GetArgument(target, BatchToSpace.Crops);
+        var blockSize = Prod(blockShape);
+        var batch = inShape[0];
+        var d0 = batch / blockSize;
+        var m = blockShape.CheckedShape[0].FixedValue;
+        var cropSection = Enumerable.Range(0, m).Select(
+            i => (inShape[i + 1] * blockShape[0]) - crops[i, 0] - crops[i, 1]).ToArray();
+
+        var inRank = Cast(ShapeOf(inShape)[0], DataTypes.Int32);
+        var remainSize = inRank - 1 - m;
+        var remainShape = new If(remainSize > 0, ShapeExprUtility.Slice(inShape, 1 + m, int.MaxValue), Array.Empty<int>());
+
+        var outShapeList = Concat(new IR.Tuple(Stack(new IR.Tuple(new[] { d0 }), 0), Stack(new IR.Tuple(cropSection), 0), remainShape), 0);
+
+        if (input.CheckedShape.Rank == 4)
+        {
+            return Stack(new IR.Tuple(outShapeList[0], outShapeList[3], outShapeList[1], outShapeList[2]), 0);
+        }
+
+        if (input.CheckedShape.Rank == 3)
+        {
+            return Stack(new IR.Tuple(outShapeList[2], outShapeList[0], outShapeList[1]), 0);
+        }
+
+        throw new NotImplementedException();
     }
 
     private static IEnumerable<int> BoostRange(int start, int end, int step = 1)
@@ -135,8 +184,9 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
 
     private IRType Visit(ITypeInferenceContext context, BatchToSpace target, TensorType input, TensorType blockShape, TensorType crops)
     {
-        // todo:
-        var inShape = TypeInference.ApplyPerm(input.Shape, new[] { 0, 2, 3, 1 });
+        var inShape = input.Shape.Rank == 4
+            ? TypeInference.ApplyPerm(input.Shape, new[] { 0, 2, 3, 1 })
+            : TypeInference.ApplyPerm(input.Shape, new[] { 1, 2, 0 });
         var batch = inShape[0];
         if (context.GetArgument(target, BatchToSpace.BlockShape) is TensorConst blockShapeValue &&
             context.GetArgument(target, BatchToSpace.Crops) is TensorConst cropsValue)
@@ -158,12 +208,15 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
             var remainSize = inShape.Rank - 1 - m;
             var remainShape = remainSize > 0 ? inShape.Skip(1 + m) : Array.Empty<Dimension>();
             var outShapeList = new[] { d0 }.Concat(cropSection).Concat(remainShape).ToArray();
-            var outShape = TypeInference.ApplyPerm(outShapeList, new[] { 0, 3, 1, 2 });
+            var outShape =
+                outShapeList.Length == 4
+                ? TypeInference.ApplyPerm(outShapeList, new[] { 0, 3, 1, 2 })
+                : TypeInference.ApplyPerm(outShapeList, new[] { 2, 0, 1 });
             return input with { Shape = outShape };
         }
         else
         {
-            return new InvalidType("BatchToSpace can't infer shape with dynamic crops");
+            return new TensorType(input.DType, Enumerable.Repeat(Dimension.Unknown, input.Shape.Count).ToArray());
         }
     }
 }
