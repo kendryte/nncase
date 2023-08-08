@@ -86,8 +86,17 @@ jobs:
       with:
         python-version: 3.7
 
+    - name: Check latest commit for tag(windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        if (git tag --points-at HEAD) {
+          echo "HAS_TAG=true" | Out-File -Append -Encoding ascii $env:GITHUB_ENV
+        }
+
     - name: Check latest commit for tag
-      id: check_tag
+      if: runner.os != 'Windows'
+      shell: bash
       run: |
         if [[ $(git tag --points-at HEAD) ]]; then
           echo "HAS_TAG=true" >> $GITHUB_ENV
