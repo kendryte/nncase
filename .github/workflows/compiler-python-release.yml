@@ -106,6 +106,8 @@ jobs:
       run: pip install cibuildwheel
 
     - name: Build wheel
+      env:
+        HAS_TAG: ${{ env.HAS_TAG }}
       run: python -m cibuildwheel --output-dir wheelhouse
 
     - name: Upload nncase-python Build Artifact
