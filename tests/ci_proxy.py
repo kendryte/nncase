@@ -16,7 +16,7 @@ def recv_file(conn, target_root, mylogger):
     file_dict = json.loads(header.decode())
     file_name = file_dict['file_name']
     file_size = file_dict['file_size']
-    mylogger.debug('recv: file = {0}, size = {1}'.format(file_name, file_size))
+    mylogger.debug('recv begin: file = {0}, size = {1}'.format(file_name, file_size))
     conn.sendall(f"pls send {file_name}".encode())
 
     full_file = os.path.join(target_root, file_name)
@@ -28,6 +28,7 @@ def recv_file(conn, target_root, mylogger):
             recv_size += len(slice)
 
     os.chmod(full_file, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
+    mylogger.debug('recv end')
     return file_name
 
 
@@ -39,15 +40,13 @@ def Consumer(target, q, nfs_root, ip, port):
 
     # logging
     mylogger = logging.getLogger()
-    mylogger.setLevel(logging.DEBUG)
+    mylogger.setLevel(logging.INFO)
     rf_handler = logging.handlers.RotatingFileHandler(
         f'ci_proxy_{target}.log', mode='a', maxBytes=32 * 1024 * 1024, backupCount=10)
-    # rf_handler.setLevel(logging.INFO)
-    mylogger.setLevel(logging.DEBUG)
+    rf_handler.setLevel(logging.INFO)
     rf_handler.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(message)s'))
     mylogger.addHandler(rf_handler)
 
-    # telnet_client = TelnetClient(mylogger)
     while True:
         cmd = './'
         conn = q.get()
@@ -67,8 +66,6 @@ def Consumer(target, q, nfs_root, ip, port):
             else:
                 cmd = cmd + ' ' + file
 
-        # print('cmd = {0}'.format(cmd))
-
         # connect nuc_proxy server
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         client_socket.connect((ip, int(port)))
@@ -87,7 +84,6 @@ def Consumer(target, q, nfs_root, ip, port):
 
         infer_result = client_socket.recv(1024).decode()
         client_socket.close()
-        # print('infer_result = {0}'.format(infer_result))
         if infer_result.find('succeed') == -1:
             conn.sendall(f'infer failed on {target} board: {infer_result}'.encode())
         else:
@@ -101,10 +97,11 @@ def Consumer(target, q, nfs_root, ip, port):
                 conn.sendall(str(file_size).encode())
                 dummy = conn.recv(1024)
 
+                mylogger.debug('send begin: file = {0}, size = {1}'.format(file, file_size))
                 with open(file, 'rb') as f:
                     conn.sendall(f.read())
+                mylogger.debug('send end')
                 dummy = conn.recv(1024)
-                mylogger.debug('send: file = {0}, size = {1}'.format(file, file_size))
 
         conn.close()
 

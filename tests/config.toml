@@ -1,6 +1,6 @@
 name = 'default_config'
 root = 'tests_output'
-dump_hist = true
+dump_hist = false
 
 [compile_opt]
 preprocess = false
