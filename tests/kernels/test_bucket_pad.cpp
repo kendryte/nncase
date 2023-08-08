@@ -55,7 +55,8 @@ class BucketPadTest
 
 INSTANTIATE_TEST_SUITE_P(BucketPad, BucketPadTest,
                          testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 3, 16, 16})));
+                                          testing::Values(dims_t{1, 3, 16,
+                                                                 16})));
 
 TEST_P(BucketPadTest, BucketPad) {
 
