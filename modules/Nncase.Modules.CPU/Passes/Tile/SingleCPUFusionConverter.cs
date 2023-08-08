@@ -86,7 +86,7 @@ internal sealed class SingleCPUFusionConverter
             var lhs = arguments[0];
             var rhs = arguments[1];
 
-            var loops = Enumerable.Range(0, lhs.Rank - 2).Select(i => (T.ForLoop(out var loopVar, (0, lhs.Dimensions[i]), LoopMode.Serial, $"loop_{i}"), loopVar)).ToArray();
+            var loops = Enumerable.Range(0, lhs.Rank - 2).Select(i => (T.ForLoop(out var loopVar, (0, lhs.Dimensions[i]), i == 0 ? LoopMode.Parallel : LoopMode.Serial, $"loop_{i}"), loopVar)).ToArray();
             var loopVars = loops.Select(f => f.loopVar).ToArray();
             var stmt = T.Serial(out var m, (0, lhs.Dimensions[^2])).Body(
                 T.Serial(out var n, (0, rhs.Dimensions[^1])).Body(
@@ -108,7 +108,7 @@ internal sealed class SingleCPUFusionConverter
         private void GenerateUnary(Unary unary, ReadOnlySpan<Buffer> arguments, Buffer ret)
         {
             var input = arguments[Unary.Input.Index];
-            var loops = Enumerable.Range(0, input.Rank).Select(i => (T.ForLoop(out var loopVar, (0, input.Dimensions[i]), LoopMode.Serial, $"loop_{i}"), loopVar)).ToArray();
+            var loops = Enumerable.Range(0, input.Rank).Select(i => (T.ForLoop(out var loopVar, (0, input.Dimensions[i]), i == 0 ? LoopMode.Parallel : LoopMode.Serial, $"loop_{i}"), loopVar)).ToArray();
             var loopVars = loops.Select(f => f.loopVar).ToArray();
             Expr stmt = T.BufferStore(ret, loopVars, IR.F.Math.Unary(unary.UnaryOp, T.BufferLoad(input, loopVars)));
             var final = loops.Reverse().Aggregate(stmt, (acc, p) => p.Item1.Body(acc).Build());

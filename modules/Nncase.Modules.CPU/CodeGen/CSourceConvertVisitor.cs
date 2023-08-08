@@ -27,8 +27,8 @@ internal struct IndentScope : IDisposable
     public IndentScope(StringBuilder sb)
     {
         _initialized = true;
+        _originalWriter = _writer.Value;
         _writer.Value = new IndentWriter(sb);
-        _originalWriter = null;
     }
 
     public IndentScope()
@@ -70,6 +70,12 @@ internal sealed class CSymbol
     public string Name { get; }
 
     public override string ToString() => $"{Type} {Name}";
+
+    public static IReadOnlyList<CSymbol> Builtns => new CSymbol[] {
+        new CSymbol("nncase_mt_t*", "nncase_mt"),
+        new CSymbol("uint8_t*", "data"),
+        new CSymbol("const uint8_t*", "rdata"),
+    };
 }
 
 internal sealed class IndentWriter : StringWriter
@@ -100,16 +106,22 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 {
     private readonly Dictionary<Expr, CSymbol> _exprMemo;
     private readonly StringBuilder _implBuilder;
+    private readonly StringBuilder _declBuilder;
+    private readonly StringWriter _declWriter;
 
     public CSourceConvertVisitor()
     {
         _implBuilder = new StringBuilder();
+        _declBuilder = new StringBuilder();
+        _declWriter = new StringWriter(_declBuilder);
         _exprMemo = new(ReferenceEqualityComparer.Instance);
     }
 
+    public PrimFunction VisitEntry => (TIR.PrimFunction)VisitRoot!;
+
     public FunctionCSource GetFunctionCSource()
     {
-        return new(_exprMemo[VisitRoot!].Type + ";", _implBuilder.ToString());
+        return new(_declBuilder.ToString(), _implBuilder.ToString());
     }
 
     /// <inheritdoc/>
@@ -127,6 +139,9 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 
         var type = $"void {expr.Name}({string.Join(", ", expr.Parameters.AsValueEnumerable().Select(b => Visit(b.MemSpan.Start).ToString()).ToArray())}, {CSourceBuiltn.FixedParameters})";
 
+        _declWriter.WriteLine(type + ";");
+        _declWriter.WriteLine();
+
         using (var scope = new IndentScope(_implBuilder))
         {
             // 1. Function signature
@@ -142,7 +157,8 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             IndentScope.Writer.IndWrite("}\n");
         }
 
-        symbol = new(type, new(expr.Name));
+        var ctype = $"void (*{expr.Name})({string.Join(", ", expr.Parameters.AsValueEnumerable().Select(b => Visit(b.MemSpan.Start).ToString()).ToArray())}, {CSourceBuiltn.FixedParameters})";
+        symbol = new(ctype, expr.Name);
         _exprMemo.Add(expr, symbol);
         return symbol;
     }
@@ -294,10 +310,51 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         // 1. For Loop signature
         var loopVar = Visit(expr.LoopVar);
         IndentScope.Writer.IndWrite($"for ({loopVar.Type} {loopVar.Name} = {Visit(expr.Domain.Start).Name}; {loopVar.Name} < {Visit(expr.Domain.Stop).Name}; {loopVar.Name}+={Visit(expr.Domain.Step).Name}) {{\n");
-        using (_ = new IndentScope())
+
+        if (expr.Mode == LoopMode.Parallel)
         {
-            // 2. For Body
-            Visit(expr.Body);
+            // find the vars will be used and make new struct type.
+            var msg_fields = _exprMemo.Where(p => p.Key is MemSpan or TIR.Buffer or Var).Select(p => p.Value).Concat(CSymbol.Builtns);
+            var msg_type = DeclThreadMessageStruct(msg_fields);
+
+            using (new IndentScope(_declBuilder))
+            {
+                IndentScope.Writer.IndWrite($"void *{VisitEntry.Name}_inner(void *args) {{\n");
+                using (new IndentScope())
+                {
+                    IndentScope.Writer.IndWrite($"{msg_type}* _message = ({msg_type}*)args;\n");
+                    foreach (var sym in msg_fields)
+                    {
+                        IndentScope.Writer.IndWrite($"{sym.Type} {sym.Name} = _message->{sym.Name};\n");
+                    }
+
+                    Visit(expr.Body);
+                }
+
+                IndentScope.Writer.IndWrite(" return 0;\n");
+                IndentScope.Writer.IndWrite("}\n");
+            }
+
+            using (new IndentScope())
+            {
+                IndentScope.Writer.IndWrite($"{msg_type} _message = {{\n");
+                foreach (var sym in msg_fields)
+                {
+                    IndentScope.Writer.IndWrite($".{sym.Name} = {sym.Name},\n");
+                }
+
+                IndentScope.Writer.IndWrite("};\n");
+
+                IndentScope.Writer.IndWrite($"nncase_mt->thread_start({VisitEntry.Name}_inner, (void *)_message);\n");
+            }
+        }
+        else
+        {
+            using (_ = new IndentScope())
+            {
+                // 2. For Body
+                Visit(expr.Body);
+            }
         }
 
         // 3. For closing
@@ -359,5 +416,24 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         symbol = new(string.Empty, string.Empty);
         _exprMemo.Add(expr, symbol);
         return symbol;
+    }
+
+    private string DeclThreadMessageStruct(IEnumerable<CSymbol> keyValues)
+    {
+        var type = $"{VisitEntry.Name}_thread_message_t";
+        _declWriter.WriteLine("typedef struct {");
+        foreach (var sym in keyValues)
+        {
+            if (sym.Name == string.Empty)
+            {
+                throw new InvalidOperationException("empty name");
+            }
+
+            _declWriter.WriteLine("  " + sym.Type + " " + sym.Name + ";");
+        }
+
+        _declWriter.WriteLine($"}} {type};");
+        _declWriter.WriteLine();
+        return type;
     }
 }

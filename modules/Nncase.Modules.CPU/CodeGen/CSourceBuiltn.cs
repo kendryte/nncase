@@ -72,6 +72,9 @@ public static class CSourceBuiltn
     bool (*bool_binary_and)(bool, bool);
     bool (*bool_binary_or)(bool, bool);
     bool (*bool_binary_xor)(bool, bool);
+    // paralell 
+    void *thread_start(void *(*callable)(void *args), void *user);
+    void thread_end();
 } nncase_mt_t;";
 
     public const string Include = @"#include <stdbool.h>
