@@ -86,8 +86,15 @@ jobs:
       with:
         python-version: 3.7
 
+    - name: Check latest commit for tag
+      id: check_tag
+      run: |
+        if [[ $(git tag --points-at HEAD) ]]; then
+          echo "HAS_TAG=true" >> $GITHUB_ENV
+        fi
+
     - name: Install cibuildwheel
-      run: pip install cibuildwheel gitpython
+      run: pip install cibuildwheel
 
     - name: Build wheel
       run: python -m cibuildwheel --output-dir wheelhouse
