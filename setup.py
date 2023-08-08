@@ -12,8 +12,6 @@ import sys
 import io
 import re
 import time
-import subprocess
-from git.repo import Repo
 # See ref: https://stackoverflow.com/a/51575996
 
 
@@ -278,17 +276,10 @@ def find_version():
     version_prefix = re.findall(r"NNCASE_VERSION \"(.+)\"", version_file)
 
     if version_prefix:
-        repo_path = os.getcwd()
-        repo = Repo(repo_path)
-        latest_commit = subprocess.check_output(
-            ['git', 'rev-parse', 'HEAD']).decode('utf-8').strip()
-        tagged_commit = subprocess.check_output(
-            ['git', 'rev-list', '-n', '1', repo.tags[-1].name]).decode('utf-8').strip()
-
-        if latest_commit != tagged_commit:
-            version_suffix = time.strftime("%Y%m%d", time.localtime())
-            return version_prefix[0] + "." + version_suffix
-        return version_prefix[0]
+        if os.getenv('HAS_TAG'):
+            return version_prefix[0]
+        version_suffix = time.strftime("%Y%m%d", time.localtime())
+        return version_prefix[0] + "." + version_suffix
     raise RuntimeError("Unable to find version string.")
 
 
