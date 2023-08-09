@@ -68,7 +68,8 @@ typedef struct nncase_method_table {
     bool (*bool_binary_xor)(bool, bool);
 
     // multi-thread
-    void *(*thread_start)(void *(*callable)(void *), void *user, size_t user_size);
+    void *(*thread_start)(void *(*callable)(void *), void *user,
+                          size_t user_size);
     void *(*thread_end)();
 } nncase_mt_t;
 
