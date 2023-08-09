@@ -107,7 +107,7 @@
         return ok();                                                           \
     }
 
-#define UNARY_WITH_MUL_IMPL_TEMPLATE_V2(_name, _alpha_name, _compute)       \
+#define UNARY_WITH_MUL_IMPL_TEMPLATE_V2(_name, _alpha_name, _compute)          \
     template <class T>                                                         \
     result<void> _name##_impl(                                                 \
         const T *input, T *output, T _alpha_name,                              \
@@ -122,9 +122,9 @@
                     kernels::detail::get_reduced_offset(index, in_shape);      \
                 auto src_idx = offset(input_strides, in_index);                \
                 auto dst_idx = offset(out_strides, in_index);                  \
-                const auto alpha = static_cast<float>(_alpha_name); \
-                const auto x = static_cast<float>(input[src_idx]);                                       \
-                output[dst_idx] = static_cast<T>(_compute);                                    \
+                const auto alpha = static_cast<float>(_alpha_name);            \
+                const auto x = static_cast<float>(input[src_idx]);             \
+                output[dst_idx] = static_cast<T>(_compute);                    \
                 return ok();                                                   \
             });                                                                \
     }                                                                          \
@@ -137,9 +137,9 @@
         [[maybe_unused]] gsl::span<const size_t> out_strides,                  \
         NNCASE_UNUSED kernel_context &context) noexcept {                      \
         for (int i = 0; i < compute_size(in_shape); ++i) {                     \
-            const auto alpha = static_cast<float>(_alpha_name); \
-            const auto x = static_cast<float>(input[i]);                                                 \
-            output[i] = static_cast<T>(_compute);                                              \
+            const auto alpha = static_cast<float>(_alpha_name);                \
+            const auto x = static_cast<float>(input[i]);                       \
+            output[i] = static_cast<T>(_compute);                              \
         }                                                                      \
         return ok();                                                           \
     }
@@ -172,73 +172,70 @@
         return ok(output);                                                     \
     }
 
+#define UNARY_IMPL_FUNC_WRAPPER(_impl_func, type)                              \
+    return _impl_func(IN_CAST(type, input), OUT_CAST(type, output),            \
+                      *IN_CAST(type, _alpha), in_shape, in_strides, out_shape, \
+                      out_strides, context)
 
-#define UNARY_IMPL_FUNC_WRAPPER(_impl_func, type) \
-return _impl_func(IN_CAST(type, input), OUT_CAST(type, output), *IN_CAST(type, _alpha),               \
-                      in_shape, in_strides, \
-                      out_shape, out_strides, \
-                      context)
-
-#define TYPE_SELECT_WITH_IMPL(_typecode, _impl, _impl_func)                                          \
+#define TYPE_SELECT_WITH_IMPL(_typecode, _impl, _impl_func)                    \
     switch (_typecode) {                                                       \
     case dt_float32:                                                           \
-        _impl(_impl_func, float);                                                          \
+        _impl(_impl_func, float);                                              \
     case dt_float16:                                                           \
-        _impl(_impl_func, half);                                                           \
+        _impl(_impl_func, half);                                               \
     case dt_int8:                                                              \
-        _impl(_impl_func, int8_t);                                                         \
+        _impl(_impl_func, int8_t);                                             \
     case dt_int16:                                                             \
-        _impl(_impl_func, int16_t);                                                        \
+        _impl(_impl_func, int16_t);                                            \
     case dt_int32:                                                             \
-        _impl(_impl_func, int32_t);                                                        \
+        _impl(_impl_func, int32_t);                                            \
     case dt_int64:                                                             \
-        _impl(_impl_func, int64_t);                                                        \
+        _impl(_impl_func, int64_t);                                            \
     case dt_uint8:                                                             \
-        _impl(_impl_func, uint8_t);                                                        \
+        _impl(_impl_func, uint8_t);                                            \
     case dt_uint16:                                                            \
-        _impl(_impl_func, uint16_t);                                                       \
+        _impl(_impl_func, uint16_t);                                           \
     case dt_uint32:                                                            \
-        _impl(_impl_func, uint32_t);                                                       \
+        _impl(_impl_func, uint32_t);                                           \
     case dt_uint64:                                                            \
-        _impl(_impl_func, uint64_t);                                                       \
+        _impl(_impl_func, uint64_t);                                           \
     case dt_float64:                                                           \
-        _impl(_impl_func, double);                                                         \
+        _impl(_impl_func, double);                                             \
     case dt_boolean:                                                           \
-        _impl(_impl_func, bool);                                                           \
+        _impl(_impl_func, bool);                                               \
     default:                                                                   \
         return err(std::errc::not_supported);                                  \
     }
 
-#define UNARY_WITH_MUL_DISPTCH_OP_TEMPLATE_V2(_impl_func) \
-result<void> _impl_func##_disptch( \
-    typecode_t type, \
-    const gsl::byte *input, gsl::byte *output, const gsl::byte *_alpha, \
-    gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides, \
-    gsl::span<const size_t> out_shape, gsl::span<const size_t> out_strides, \
-    NNCASE_UNUSED kernel_context &context) noexcept { \
-    TYPE_SELECT_WITH_IMPL(type, UNARY_IMPL_FUNC_WRAPPER, _impl_func); \
-}
+#define UNARY_WITH_MUL_DISPTCH_OP_TEMPLATE_V2(_impl_func)                      \
+    result<void> _impl_func##_disptch(                                         \
+        typecode_t type, const gsl::byte *input, gsl::byte *output,            \
+        const gsl::byte *_alpha, gsl::span<const size_t> in_shape,             \
+        gsl::span<const size_t> in_strides, gsl::span<const size_t> out_shape, \
+        gsl::span<const size_t> out_strides,                                   \
+        NNCASE_UNUSED kernel_context &context) noexcept {                      \
+        TYPE_SELECT_WITH_IMPL(type, UNARY_IMPL_FUNC_WRAPPER, _impl_func);      \
+    }
 
-#define UNARY_WITH_MUL_DISPTCH(_impl_func) \
-    _impl_func##_disptch(typecode, \
-                input_mem, output_mem, _alpha_name_mem,                       \
-                input_tensor->shape(), input_tensor->strides(),                \
-                output_tensor->shape(), output_tensor->strides(), \
-                context)
+#define UNARY_WITH_MUL_DISPTCH(_impl_func)                                     \
+    _impl_func##_disptch(typecode, input_mem, output_mem, _alpha_name_mem,     \
+                         input_tensor->shape(), input_tensor->strides(),       \
+                         output_tensor->shape(), output_tensor->strides(),     \
+                         context)
 
-#define UNARY_WITH_MUL_OP_TEMPLATE_V2(_name, _alpha_name)                   \
+#define UNARY_WITH_MUL_OP_TEMPLATE_V2(_name, _alpha_name)                      \
     result<value_t> nncase::kernels::stackvm::_name(                           \
         value_t input, value_t _alpha_name, value_t output,                    \
         kernel_context &context) {                                             \
-        try_input(input_mem, input);                                       \
-        try_input(_alpha_name_mem, _alpha_name);                \
+        try_input(input_mem, input);                                           \
+        try_input(_alpha_name_mem, _alpha_name);                               \
         auto dtype = input_tensor->dtype();                                    \
-        try_output_like_input(output_mem, output, input_tensor);                \
-        try_var(typecode, to_typecode(input_tensor->dtype())); \
+        try_output_like_input(output_mem, output, input_tensor);               \
+        try_var(typecode, to_typecode(input_tensor->dtype()));                 \
         if (is_contiguous(input_tensor)) {                                     \
-            try_(UNARY_WITH_MUL_DISPTCH(_name##_contiguous_impl));   \
+            try_(UNARY_WITH_MUL_DISPTCH(_name##_contiguous_impl));             \
         } else {                                                               \
-            try_(UNARY_WITH_MUL_DISPTCH(_name##_impl));             \
+            try_(UNARY_WITH_MUL_DISPTCH(_name##_impl));                        \
         }                                                                      \
         return ok(output);                                                     \
     }
@@ -248,10 +245,10 @@ result<void> _impl_func##_disptch( \
     FLOAT_UNARY_WITH_MUL_IMPL_TEMPLATE(_name, _alpha_name, _compute)           \
     FLOAT_UNARY_WITH_MUL_OP_TEMPLATE(_name, _alpha_name)
 
-#define UNARY_WITH_MUL_TEMPLATE_V2(_name, _alpha_name, _compute)            \
-    UNARY_WITH_MUL_IMPL_TEMPLATE_V2(_name, _alpha_name##_arg, _compute)           \
-    UNARY_WITH_MUL_DISPTCH_OP_TEMPLATE_V2(_name##_contiguous_impl) \
-    UNARY_WITH_MUL_DISPTCH_OP_TEMPLATE_V2(_name##_impl) \
+#define UNARY_WITH_MUL_TEMPLATE_V2(_name, _alpha_name, _compute)               \
+    UNARY_WITH_MUL_IMPL_TEMPLATE_V2(_name, _alpha_name##_arg, _compute)        \
+    UNARY_WITH_MUL_DISPTCH_OP_TEMPLATE_V2(_name##_contiguous_impl)             \
+    UNARY_WITH_MUL_DISPTCH_OP_TEMPLATE_V2(_name##_impl)                        \
     UNARY_WITH_MUL_OP_TEMPLATE_V2(_name, _alpha_name)
 
 #define MKFNS(fn, ...)                                                         \
