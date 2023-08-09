@@ -265,7 +265,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
     public override string VisitType(TensorType type) => type.DType switch
     {
         PrimType ptype => ptype.GetDisplayName() + (type.Shape.IsScalar ? string.Empty : type.Shape.ToString()),
-        PointerType { ElemType: PrimType etype } ptype => $"*{etype.GetDisplayName()}",
+        PointerType { ElemType: PrimType etype } => $"*{etype.GetDisplayName()}",
         ValueType => $"{type.DType.ToString()}",
         _ => throw new NotSupportedException(type.DType.GetType().Name),
     };
