@@ -92,7 +92,6 @@ jobs:
       run: |
         if (git tag --points-at HEAD) {
           echo "HAS_TAG=true" | Out-File -Append -Encoding ascii $env:GITHUB_ENV
-          set HAS_TAG=true
         }
 
     - name: Check latest commit for tag
@@ -100,13 +99,14 @@ jobs:
       shell: bash
       run: |
         if [[ $(git tag --points-at HEAD) ]]; then
-          export HAS_TAG=${{ env.HAS_TAG }}
+          echo "HAS_TAG=true" >> $GITHUB_ENV
         fi
 
     - name: Install cibuildwheel
       run: pip install cibuildwheel
 
     - name: Build wheel
+      CIBW_ENVIRONMENT: HAS_TAG=${{ env.HAS_TAG }}
       run: |
         python -m cibuildwheel --output-dir wheelhouse
 
