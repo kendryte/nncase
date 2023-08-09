@@ -289,10 +289,6 @@ def find_version():
             version_suffix = time.strftime("%Y%m%d", time.localtime())
             return version_prefix[0] + "." + version_suffix
         return version_prefix[0]
-        # if os.getenv("HAS_TAG"):
-        #     return version_prefix[0]
-        # version_suffix = time.strftime("%Y%m%d", time.localtime())
-        # return version_prefix[0] + "." + version_suffix
     raise RuntimeError("Unable to find version string.")
 
 
