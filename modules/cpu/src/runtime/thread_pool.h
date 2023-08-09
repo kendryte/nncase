@@ -13,10 +13,9 @@ namespace thread_pool {
 
 using thread_func = void *(*)(void *);
 
-// static int threads_size = atoi(getenv("NNCASE_MAX_THREADS") ? getenv("NNCASE_MAX_THREADS") : "0");
-// static int threads_count;
-// static std::vector<pthread_t> threads;
-// static std::vector<void *> users;
+// static int threads_size = atoi(getenv("NNCASE_MAX_THREADS") ?
+// getenv("NNCASE_MAX_THREADS") : "0"); static int threads_count; static
+// std::vector<pthread_t> threads; static std::vector<void *> users;
 extern uintptr_t paddr_offset;
 
 void *thread_start(thread_func callable, void *user, size_t user_size);
