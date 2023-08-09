@@ -77,6 +77,8 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
         float[] inputArray = input.ToArray<float>();
         float[] outputArray = new float[inputArray.Length];
         int[] inShape = input.Shape.ToValueArray();
+        if(axis<0){
+        axis+=inShape.Length;}
         for (int i = 0; i < axis; i++)
         {
             outputSize *= inShape[i];
@@ -84,14 +86,7 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
 
         for (int i = axis; i < inShape.Length; i++)
         {
-            if (i < 0)
-            {
-                innerSize *= inShape[^System.Math.Abs(i)];
-            }
-            else
-            {
                 innerSize *= inShape[i];
-            }
         }
 
         for (int batch = 0; batch < outputSize; batch++)
