@@ -38,14 +38,14 @@ FLOAT_UNARY_TEMPLATE(hard_swish,
                      x *std::max(0.f, std::min((float)1.f,
                                                (float)(1.f / 6 * x + 0.5))))
 FLOAT_UNARY_TEMPLATE(erf, erff(x)) // for k510 toolchain
-FLOAT_UNARY_WITH_MUL_TEMPLATE(elu, alpha, x < 0 ? alpha * (exp(x) - 1) : x)
+UNARY_WITH_MUL_TEMPLATE_V2(elu, alpha, x < 0 ? alpha * (exp(x) - 1) : x)
 // FLOAT_UNARY_WITH_MUL_TEMPLATE(prelu, slope, x < 0 ? slope * x : x)
-FLOAT_UNARY_WITH_MUL_TEMPLATE(
+UNARY_WITH_MUL_TEMPLATE_V2(
     celu, alpha,
     std::max((float)0, x) +
         std::min((float)0, (float)(alpha *(exp(x / alpha) - 1))))
-FLOAT_UNARY_WITH_MUL_TEMPLATE(leaky_relu, alpha, x < 0 ? alpha * x : x)
-FLOAT_UNARY_WITH_MUL_TEMPLATE(gelu, alpha,
+UNARY_WITH_MUL_TEMPLATE_V2(leaky_relu, alpha, x < 0 ? alpha * x : x)
+UNARY_WITH_MUL_TEMPLATE_V2(gelu, alpha,
                               0.5f * (alpha * x) *
                                   (1.f + erff(alpha * x / sqrtf(2.f))))
 FLOAT_ACTIVATION_TEMPLATE(selu,
