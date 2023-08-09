@@ -204,7 +204,7 @@ return _impl_func(IN_CAST(type, input), OUT_CAST(type, output), *IN_CAST(type, _
     case dt_float64:                                                           \
         _impl(_impl_func, double);                                                         \
     case dt_boolean:                                                           \
-        _impl(_impl_func, bool);                                                           \
+        _impl(_impl_func, uint8_t);                                                           \
     default:                                                                   \
         return err(std::errc::not_supported);                                  \
     }
