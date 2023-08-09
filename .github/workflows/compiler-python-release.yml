@@ -106,7 +106,8 @@ jobs:
       run: pip install cibuildwheel
 
     - name: Build wheel
-      CIBW_ENVIRONMENT: HAS_TAG=${{ env.HAS_TAG }}
+      env:
+        CIBW_ENVIRONMENT: 'HAS_TAG=${{ env.HAS_TAG }}'
       run: |
         python -m cibuildwheel --output-dir wheelhouse
 
