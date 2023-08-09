@@ -29,8 +29,7 @@ using namespace ortki;
 #define TEST_CASE_NAME "test_transpose"
 
 class TransposeTest : public KernelTest,
-                      public ::testing::TestWithParam<
-                          std::tuple<int>> {
+                      public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
         READY_SUBCASE()
@@ -53,9 +52,8 @@ class TransposeTest : public KernelTest,
     axes_t perm_value;
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    Transpose, TransposeTest,
-    testing::Combine(testing::Range(0, 3744)));
+INSTANTIATE_TEST_SUITE_P(Transpose, TransposeTest,
+                         testing::Combine(testing::Range(0, 3744)));
 
 TEST_P(TransposeTest, Transpose) {
 
