@@ -33,7 +33,7 @@ int elfloader::invoke_elf(size_t id, uint8_t **buffers, nncase_mt_t *nncase_mt,
     // printf("Binary entrypoint is %" PRIxPTR "; invoking %p\n",
     //        (uintptr_t)ctx_.ehdr.e_entry, (void *)epaddr);
 
-    thread_pool::paddr_offset = (uintptr_t)buf_;
+    nncase::runtime::cpu::thread_pool::paddr_offset = (uintptr_t)buf_;
     nncase_mt->thread_start = thread_pool::thread_start;
     nncase_mt->thread_end = thread_pool::thread_end;
     ep(id, buffers, nncase_mt, data, rdata);
