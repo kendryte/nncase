@@ -1692,6 +1692,11 @@ class KernelTest {
         }
     }
 
+    int64_t GetNumber(const char *key) {
+        assert(_document[key].IsInt64());
+        return _document[key].GetInt64();
+    }
+
     typecode_t GetDataType(const char *key) {
         assert(_document[key].IsString());
         return Str2DataType(_document[key].GetString());
@@ -1703,6 +1708,24 @@ class KernelTest {
         Value &array = _document[key];
         size_t arraySize = array.Size();
         dims_t cArray(arraySize);
+        for (rapidjson::SizeType i = 0; i < arraySize; i++) {
+            if (array[i].IsUint()) {
+                cArray[i] = array[i].GetUint();
+            } else {
+                std::cout << "Invalid JSON format. Expected unsigned integer "
+                             "values in the array."
+                          << std::endl;
+            }
+        }
+        return cArray;
+    }
+
+    axes_t GetAxesArray(const char *key) {
+        assert(_document[key].IsArray());
+
+        Value &array = _document[key];
+        size_t arraySize = array.Size();
+        axes_t cArray(arraySize);
         for (rapidjson::SizeType i = 0; i < arraySize; i++) {
             if (array[i].IsUint()) {
                 cArray[i] = array[i].GetUint();
