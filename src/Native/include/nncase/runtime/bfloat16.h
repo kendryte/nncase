@@ -153,6 +153,10 @@ struct bfloat16 {
         return (value_ & 0x7FFF) == ZERO_VALUE;
     }
 
+    void operator=(const float &v) noexcept {
+        value_ = (round_to_bfloat16(v).value_);
+    }
+
   private:
     uint16_t value_;
 };
