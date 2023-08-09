@@ -18,6 +18,7 @@
 #include "nncase/shape.h"
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 #include <filesystem>
 #include <fstream>
 #include <gtest/gtest.h>
@@ -32,11 +33,16 @@
 #include <numeric>
 #include <ortki/c_api.h>
 #include <random>
+#include <rapidjson/document.h> // rapidjson's DOM-style API
+#include <rapidjson/error/en.h>
+#include <rapidjson/ostreamwrapper.h>
+#include <rapidjson/writer.h>
 #include <string>
 #include <vector>
 
 using namespace nncase::runtime;
 using namespace nncase::kernels;
+using namespace rapidjson;
 namespace nncase {
 typedef enum { RANDOM, NOZERO, NONEG, NOPOS } initial_mode;
 
@@ -1651,5 +1657,96 @@ class KernelTest {
                 return ok();
             });
     }
+
+    static std::string ReadFromJsonFile(std::ifstream &file) {
+        std::string content((std::istreambuf_iterator<char>(file)),
+                            std::istreambuf_iterator<char>());
+        file.close();
+        return content;
+    }
+
+    static void ParseJson(Document &document, std::string js_str) {
+        if (document.Parse(js_str.c_str()).HasParseError())
+            std::cout << "Parsing Error: "
+                      << (unsigned)document.GetErrorOffset() << " "
+                      << GetParseError_En(document.GetParseError())
+                      << std::endl;
+        assert(document.IsObject());
+    }
+
+    void ParseJson(std::string js_str) {
+        if (_document.Parse(js_str.c_str()).HasParseError())
+            std::cout << "Parsing Error: "
+                      << (unsigned)_document.GetErrorOffset() << " "
+                      << GetParseError_En(_document.GetParseError())
+                      << std::endl;
+        assert(_document.IsObject());
+    }
+
+    typecode_t Str2DataType(std::string type) {
+        std::cout << type << std::endl;
+        if (str_2_datatype.find(type) != str_2_datatype.end()) {
+            return str_2_datatype[type];
+        } else {
+            return dt_int8;
+        }
+    }
+
+    int64_t GetNumber(const char *key) {
+        assert(_document[key].IsInt64());
+        return _document[key].GetInt64();
+    }
+
+    typecode_t GetDataType(const char *key) {
+        assert(_document[key].IsString());
+        return Str2DataType(_document[key].GetString());
+    }
+
+    dims_t GetShapeArray(const char *key) {
+        assert(_document[key].IsArray());
+
+        Value &array = _document[key];
+        size_t arraySize = array.Size();
+        dims_t cArray(arraySize);
+        for (rapidjson::SizeType i = 0; i < arraySize; i++) {
+            if (array[i].IsUint()) {
+                cArray[i] = array[i].GetUint();
+            } else {
+                std::cout << "Invalid JSON format. Expected unsigned integer "
+                             "values in the array."
+                          << std::endl;
+            }
+        }
+        return cArray;
+    }
+
+    axes_t GetAxesArray(const char *key) {
+        assert(_document[key].IsArray());
+
+        Value &array = _document[key];
+        size_t arraySize = array.Size();
+        axes_t cArray(arraySize);
+        for (rapidjson::SizeType i = 0; i < arraySize; i++) {
+            if (array[i].IsUint()) {
+                cArray[i] = array[i].GetUint();
+            } else {
+                std::cout << "Invalid JSON format. Expected unsigned integer "
+                             "values in the array."
+                          << std::endl;
+            }
+        }
+        return cArray;
+    }
+
+  private:
+    Document _document;
+    std::map<std::string, typecode_t> str_2_datatype = {
+        {"dt_int8", dt_int8},       {"dt_int16", dt_int16},
+        {"dt_int32", dt_int32},     {"dt_int64", dt_int64},
+        {"dt_uint8", dt_uint8},     {"dt_uint16", dt_uint16},
+        {"dt_uint32", dt_uint32},   {"dt_uint64", dt_uint64},
+        {"dt_float16", dt_float16}, {"dt_float32", dt_float32},
+        {"dt_float64", dt_float64}, {"dt_bfloat16", dt_bfloat16},
+        {"dt_boolean", dt_boolean}};
 };
 } // namespace nncase
