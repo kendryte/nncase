@@ -1,4 +1,5 @@
 #pragma once
+#include "thread_pool.h"
 #include <functional>
 #include <math.h>
 #include <nncase/runtime/cpu/compiler_defs.h>
@@ -65,6 +66,10 @@ typedef struct nncase_method_table {
     bool (*bool_binary_and)(bool, bool);
     bool (*bool_binary_or)(bool, bool);
     bool (*bool_binary_xor)(bool, bool);
+
+    // multi-thread
+    void *(*thread_start)(void *(*callable)(void *), void *user, size_t user_size);
+    void *(*thread_end)();
 } nncase_mt_t;
 
 typedef struct buffer {

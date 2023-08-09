@@ -1,0 +1,53 @@
+#include "thread_pool.h"
+
+using namespace nncase::runtime::cpu::thread_pool;
+
+static int threads_size = atoi(getenv("NNCASE_MAX_THREADS") ? getenv("NNCASE_MAX_THREADS") : "0");
+static int threads_count;
+static std::vector<pthread_t> threads;
+static std::vector<void *> users;
+
+static void *thread_start(thread_func callable, void *user, size_t user_size) {
+    auto user_ = malloc(user_size);
+    std::memcpy(user_, user, user_size);
+    thread_func new_call = thread_func((char *)callable + paddr_offset);
+    if (threads_size == 0) {
+        new_call(user_);
+    } else {
+        auto idx = threads_count % threads_size;
+        if (threads_count >= threads_size) {
+            pthread_join(threads[idx], NULL);
+            free(users[idx]);
+        }
+        pthread_t pt;
+        auto ret = pthread_create(&pt, NULL, new_call, user_);
+        if (ret != 0) {
+            throw std::runtime_error("thread creation failed\n");
+        }
+
+        if (threads_count == 0) {
+            threads.resize(threads_size);
+            users.resize(threads_size);
+        }
+        threads[idx] = pt;
+        users[idx] = user_;
+        threads_count++;
+    }
+    return nullptr;
+}
+
+static void *thread_end() {
+    if (threads_size) {
+        for (int i = 0; i < std::min(threads_size, threads_count); i++) {
+            // if (threads[i].joinable()) {
+            pthread_join(threads[i], NULL);
+            free(users[i]);
+            // }
+        }
+        threads_count = 0;
+        threads.clear();
+        users.clear();
+    }
+    return nullptr;
+}
+
