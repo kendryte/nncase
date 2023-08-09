@@ -37,20 +37,23 @@ class MySerial:
     def write(self, cmd):
         self.logger.debug(f'write {cmd} begin')
         cmd = cmd + '\r'
-        self.s.write(cmd.lstrip().encode())
+        self.s.write(cmd.encode())
         self.s.flush()
         self.logger.debug('write end')
 
-    def read_until(self, expected=b'\n'):
+    def read_until(self, expected):
         self.logger.debug('read begin')
-        data = self.s.read_until(expected).decode()
+        data = self.s.read_until(expected.encode()).decode()
         self.logger.debug('read end: data = {0}'.format(data))
         return data
 
-    def run_cmd(self, cmd, expected=b'\n'):
+    def run_cmd(self, cmd, expected=''):
+        data = ''
         self.open()
         self.write(cmd)
-        data = self.read_until(expected)
+        if expected != '':
+            data = self.read_until(expected)
+
         self.close()
         return data
 
@@ -135,7 +138,7 @@ def infer_worker(target):
         separator = os.path.basename(case_dir) + target.separator
         ret = ''
         for cmd in cmds.split(';'):
-            ret = target.s1.run_cmd(cmd, bytes(separator, 'utf-8'))
+            ret = target.s1.run_cmd(cmd, separator)
             target.logger.debug("ret = {0}".format(ret))
 
         # infer result
