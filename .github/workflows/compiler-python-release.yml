@@ -108,6 +108,7 @@ jobs:
     - name: Build wheel
       env:
         CIBW_ENVIRONMENT: 'HAS_TAG=${{ env.HAS_TAG }}'
+        CIBW_ENVIRONMENT_MACOS: MACOSX_DEPLOYMENT_TARGET = "10.15"
       run: |
         python -m cibuildwheel --output-dir wheelhouse
 
