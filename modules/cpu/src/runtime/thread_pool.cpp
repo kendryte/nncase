@@ -2,12 +2,13 @@
 
 using namespace nncase::runtime::cpu::thread_pool;
 
-static int threads_size = atoi(getenv("NNCASE_MAX_THREADS") ? getenv("NNCASE_MAX_THREADS") : "0");
-static int threads_count;
-static std::vector<pthread_t> threads;
-static std::vector<void *> users;
+int threads_size = atoi(getenv("NNCASE_MAX_THREADS") ? getenv("NNCASE_MAX_THREADS") : "0");
+int threads_count;
+std::vector<pthread_t> threads;
+std::vector<void *> users;
+uintptr_t nncase::runtime::cpu::thread_pool::paddr_offset;
 
-static void *thread_start(thread_func callable, void *user, size_t user_size) {
+void *nncase::runtime::cpu::thread_pool::thread_start(thread_func callable, void *user, size_t user_size) {
     auto user_ = malloc(user_size);
     std::memcpy(user_, user, user_size);
     thread_func new_call = thread_func((char *)callable + paddr_offset);
@@ -36,7 +37,7 @@ static void *thread_start(thread_func callable, void *user, size_t user_size) {
     return nullptr;
 }
 
-static void *thread_end() {
+void *nncase::runtime::cpu::thread_pool::thread_end() {
     if (threads_size) {
         for (int i = 0; i < std::min(threads_size, threads_count); i++) {
             // if (threads[i].joinable()) {

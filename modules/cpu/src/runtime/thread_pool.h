@@ -17,7 +17,7 @@ using thread_func = void *(*)(void *);
 // static int threads_count;
 // static std::vector<pthread_t> threads;
 // static std::vector<void *> users;
-uintptr_t paddr_offset;
+extern uintptr_t paddr_offset;
 
 void *thread_start(thread_func callable, void *user, size_t user_size);
 void *thread_end();
