@@ -202,7 +202,7 @@
     case dt_float64:                                                           \
         _impl(_impl_func, double);                                             \
     case dt_boolean:                                                           \
-        _impl(_impl_func, uint8_t);                                                           \
+        _impl(_impl_func, uint8_t);                                            \
     default:                                                                   \
         return err(std::errc::not_supported);                                  \
     }
