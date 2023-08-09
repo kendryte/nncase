@@ -86,9 +86,9 @@ internal sealed class SingleCPUFusionConverter
             var lhs = arguments[0];
             var rhs = arguments[1];
 
-            var loops = Enumerable.Range(0, lhs.Rank - 2).Select(i => (T.ForLoop(out var loopVar, (0, lhs.Dimensions[i]), i == 0 ? LoopMode.Parallel : LoopMode.Serial, $"loop_{i}"), loopVar)).ToArray();
+            var loops = Enumerable.Range(0, lhs.Rank - 2).Select(i => (T.ForLoop(out var loopVar, (0, lhs.Dimensions[i]), LoopMode.Serial, $"loop_{i}"), loopVar)).ToArray();
             var loopVars = loops.Select(f => f.loopVar).ToArray();
-            var stmt = T.Serial(out var m, (0, lhs.Dimensions[^2])).Body(
+            var stmt = T.ForLoop(out var m, (0, lhs.Dimensions[^2]), LoopMode.Parallel).Body(
                 T.Serial(out var n, (0, rhs.Dimensions[^1])).Body(
                     T.BufferStore(ret, loopVars.Concat(new[] { m, n }).ToArray(), 0f),
                     T.Serial(out var k, (0, lhs.Dimensions[^1])).Body(

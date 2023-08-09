@@ -138,7 +138,7 @@ public class CSourceCompiler
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
-            return $"{sourcePath} -nostdlib -static -nopie -fPIC -o {outPath} -e__start";
+            return $"{sourcePath} -nostartfiles -pie -fPIC -o {outPath} -static -e__start";
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {

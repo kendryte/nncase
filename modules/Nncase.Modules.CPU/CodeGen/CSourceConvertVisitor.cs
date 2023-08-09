@@ -314,7 +314,7 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         if (expr.Mode == LoopMode.Parallel)
         {
             // find the vars will be used and make new struct type.
-            var msg_fields = _exprMemo.Where(p => p.Key is MemSpan or TIR.Buffer or Var).Select(p => p.Value).Concat(CSymbol.Builtns);
+            var msg_fields = _exprMemo.Where(p => p.Key is MemSpan or TIR.Buffer or Var).Select(p => p.Value).Concat(CSymbol.Builtns).ToArray();
             var msg_type = DeclThreadMessageStruct(msg_fields);
 
             using (new IndentScope(_declBuilder))
@@ -345,7 +345,7 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 
                 IndentScope.Writer.IndWrite("};\n");
 
-                IndentScope.Writer.IndWrite($"nncase_mt->thread_start({VisitEntry.Name}_inner, (void *)_message);\n");
+                IndentScope.Writer.IndWrite($"nncase_mt->thread_start({VisitEntry.Name}_inner, (void *)&_message, sizeof ({msg_type}));\n");
             }
         }
         else
@@ -359,6 +359,11 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 
         // 3. For closing
         IndentScope.Writer.IndWrite("}\n");
+
+        if (expr.Mode == LoopMode.Parallel)
+        {
+            IndentScope.Writer.IndWrite("nncase_mt->thread_end();\n");
+        }
 
         symbol = new(string.Empty, string.Empty);
         _exprMemo.Add(expr, symbol);
