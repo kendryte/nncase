@@ -38,6 +38,7 @@ class MySerial:
         self.logger.debug(f'write {cmd} begin')
         cmd = cmd + '\r'
         self.s.write(cmd.lstrip().encode())
+        self.s.flush()
         self.logger.debug('write end')
 
     def read_until(self, expected=b'\n'):
@@ -46,42 +47,40 @@ class MySerial:
         self.logger.debug('read end: data = {0}'.format(data))
         return data
 
-    def run_cmds(self, cmds, expected=b'\n'):
+    def run_cmd(self, cmd, expected=b'\n'):
         self.open()
-
-        for cmd in cmds.split(';'):
-            self.write(cmd)
-
+        self.write(cmd)
         data = self.read_until(expected)
         self.close()
         return data
 
 
 class Target:
-    def __init__(self, name, cfg, clear_queue):
+    def __init__(self, name, cfg, nfs, clear_queue):
         self.name = name
         self.infer_queue = queue.Queue(maxsize=clear_queue.maxsize)
         self.clear_queue = clear_queue
-        self.working_dir = cfg[name]['working_dir']
+        self.working_dir = cfg['working_dir']
+        self.separator = cfg['separator']
 
         # nfs_dir
-        self.nfs_dir = os.path.join(cfg['nfs'], name)
+        self.nfs_dir = os.path.join(nfs, name)
         if not os.path.exists(self.nfs_dir):
             os.makedirs(self.nfs_dir)
 
         # logging
         mylogger = logging.getLogger()
-        mylogger.setLevel(logging.DEBUG)
+        mylogger.setLevel(logging.INFO)
         rf_handler = logging.handlers.RotatingFileHandler(
             f'nuc_proxy_{name}.log', mode='a', maxBytes=32 * 1024 * 1024, backupCount=10)
-        rf_handler.setLevel(logging.DEBUG)
+        rf_handler.setLevel(logging.INFO)
         rf_handler.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(message)s'))
         mylogger.addHandler(rf_handler)
         self.logger = mylogger
 
         # serial
-        self.s0 = MySerial(cfg[name]['uart0'], cfg[name]['baudrate0'], self.logger)
-        self.s1 = MySerial(cfg[name]['uart1'], cfg[name]['baudrate1'], self.logger)
+        self.s0 = MySerial(cfg['uart0'], cfg['baudrate0'], self.logger)
+        self.s1 = MySerial(cfg['uart1'], cfg['baudrate1'], self.logger)
 
 
 def recv_file(conn, case_dir, logger):
@@ -126,30 +125,29 @@ def recv_worker(conn, target):
         else:
             cmds = cmds + ' ' + file
 
-    cmds = cmds + ';cd /'
     target.logger.debug("cmds = {0}".format(cmds))
-
-    # cp_cmd = f'cp -r /nfs/{target.name}/{new_case} {target.working_dir}'
-    # target.s0.run_cmds(cp_cmd, b'#')
-
     target.infer_queue.put((cmds, conn, case_dir, header_dict['outputs']))
 
 
 def infer_worker(target):
     while True:
         cmds, conn, case_dir, output_num = target.infer_queue.get()
-        ret_str = target.s1.run_cmds(cmds, b'}')
+        separator = os.path.basename(case_dir) + target.separator
+        ret = ''
+        for cmd in cmds.split(';'):
+            ret = target.s1.run_cmd(cmd, bytes(separator, 'utf-8'))
+            target.logger.debug("ret = {0}".format(ret))
 
         # infer result
-        if ret_str.find('terminate') != -1 or ret_str.find('Exception') != -1:
-            err = f'infer exception: {ret_str}'
+        if ret.find('terminate') != -1 or ret.find('Exception') != -1:
+            err = f'infer exception: {ret}'
             target.logger.error('infer exception')
             conn.sendall(err[0:1024].encode())
-        elif ret_str.find('}') == -1:
+        elif ret.find(separator) == -1:
             # reboot target when timeout
             conn.sendall(f'infer timeout'.encode())
             target.logger.error('reboot {0} for timeout'.format(target.name))
-            target.s0.run_cmds('reboot')
+            target.s0.run_cmd('reboot')
             time.sleep(20)
         else:
             conn.sendall(f'infer finish'.encode())
@@ -187,6 +185,7 @@ def main():
     nfs = '/data/nfs'
     [k230]
     working_dir = '/sharefs'
+    separator = '>'
     uart0 = '/dev/ttyUSB0'
     baudrate0 = 115200
     uart1 = '/dev/ttyUSB1'
@@ -227,7 +226,7 @@ def main():
 
         # create target instance
         if target_name not in dict:
-            target = Target(target_name, cfg, clear_queue)
+            target = Target(target_name, cfg[target_name], cfg['nfs'], clear_queue)
             infer_thread = threading.Thread(target=infer_worker, args=(target,))
             infer_thread.start()
             dict[target_name] = target
