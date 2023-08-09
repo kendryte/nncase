@@ -66,17 +66,40 @@ public sealed partial class TFLiteImporter : BaseImporter
     protected override (IEnumerable<Var> Inputs, Dictionary<Var, Expr[]> VarMap) CreateInputs()
     {
         var inputsCount = _subGraph.InputsLength;
-        var created_inputs = new Var[inputsCount];
+        var createdInputs = new Var[inputsCount];
+        var dynVarMap = Enumerable
+            .Range(0, inputsCount)
+            .SelectMany(i =>
+            {
+                var tensor = _subGraph.Tensors(_subGraph.Inputs(i))!.Value;
+                return Enumerable.Range(0, tensor.ShapeSignatureLength).Select(i => tensor.ShapeSignature(i)).Where(i => i < 0);
+            })
+            .ToHashSet()
+            .ToArray()
+            .Order()
+            .Select(i => new Var(i.ToString(), new TensorType(DataTypes.Int32, Shape.Scalar)))
+            .ToDictionary(v => v.Name, v => v);
+
+        if (dynVarMap.Count > 1)
+        {
+            throw new NotImplementedException();
+        }
+
+        var varMap = new Dictionary<Var, Expr[]>();
         for (int i = 0; i < inputsCount; i++)
         {
             var inputId = _subGraph.Inputs(i);
             var tensor = _subGraph.Tensors(inputId)!.Value;
             var input = new Var(tensor.Name, GetIRType(tensor));
-            created_inputs[i] = input;
+            var shape = input.CheckedShape.Select(x => x.IsFixed ? (Expr)x.FixedValue : dynVarMap.First().Value).ToArray();
+            varMap[input] = shape;
+            createdInputs[i] = input;
             _outputTensors.Add(inputId, input);
         }
 
-        return (created_inputs, new());
+        CompileSession.CompileOptions.ShapeBucketOptions =
+            CompileSession.CompileOptions.ShapeBucketOptions with { VarMap = varMap };
+        return (createdInputs, varMap);
     }
 
     protected override void ConvertOp()
@@ -133,7 +156,7 @@ public sealed partial class TFLiteImporter : BaseImporter
         }
 
         return Enumerable.Range(0, tensor.ShapeLength).Select(i =>
-            tensor.Shape(i) == -1 ? Dimension.Unknown : tensor.Shape(i)).ToArray();
+            tensor.ShapeSignature(i) < 0 ? Dimension.Unknown : tensor.Shape(i)).ToArray();
     }
 
     private void Visit(in tflite.Operator op)

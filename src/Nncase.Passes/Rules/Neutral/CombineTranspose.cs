@@ -81,7 +81,13 @@ public sealed partial class CombineConstBinaryTranspose : IRewriteRule
 
     private Expr? GetReplace(Binary binary, Call binaryCall, Expr x, Expr y, Expr perm)
     {
-        var expandDim = perm.CheckedShape.Size - ((TensorConst)perm).Value.ToArray<int>()[perm.CheckedShape.Size - 1] - 1;
+        var permV = ((TensorConst)perm).Value.ToArray<int>();
+        if (permV.Length == 0)
+        {
+            return null;
+        }
+
+        var expandDim = perm.CheckedShape.Size - permV[perm.CheckedShape.Size - 1] - 1;
 
         if (x is Const)
         {
