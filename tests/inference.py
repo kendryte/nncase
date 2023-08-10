@@ -13,9 +13,10 @@ class Inference:
     def run_inference(self, compiler, target, ptq_enabled, infer_dir):
         in_ci = test_utils.in_ci()
         kpu_targets = test_utils.kpu_targets()
-        port = test_utils.port()
+        nuc_ip = test_utils.nuc_ip()
+        nuc_port = test_utils.nuc_port()
         test_executable = test_utils.test_executable(target)
-        running_on_evb = in_ci and target in kpu_targets and port is not None and test_executable is not None and len(
+        running_on_evb = in_ci and target in kpu_targets and nuc_ip is not None and nuc_port is not None and test_executable is not None and len(
             self.inputs) > 0 and len(self.outputs) > 0
 
         if ptq_enabled:
@@ -70,12 +71,13 @@ class Inference:
         return outputs
 
     def run_evb(self, target, kmodel, compile_opt):
-        port = test_utils.port()
+        ip = test_utils.nuc_ip()
+        port = test_utils.nuc_port()
         test_executable = test_utils.test_executable(target)
 
         # connect server
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        client_socket.connect(('localhost', int(port)))
+        client_socket.connect((ip, int(port)))
 
         # send target
         dummy = client_socket.recv(1024)
@@ -125,7 +127,7 @@ class Inference:
         # get infer result
         outputs = []
         cmd_result = client_socket.recv(1024).decode()
-        if cmd_result.find('succeed') != -1:
+        if cmd_result.find('finish') != -1:
             client_socket.sendall(f"pls send outputs".encode())
 
             # recv outputs
