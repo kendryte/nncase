@@ -78,7 +78,7 @@ class ReduceArgMinTest : public KernelTest,
 
 INSTANTIATE_TEST_SUITE_P(
     ReduceArgMin, ReduceArgMinTest,
-    testing::Combine(testing::Values(dt_float64 /*dt_float32, dt_float16*/),
+    testing::Combine(testing::Values(dt_float64, dt_float32/*, dt_int32, dt_int64*/),
                      testing::Values(dt_int64),
                      testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 2, 3, 4},
                                      dims_t{1, 3, 16}, dims_t{3, 16},
@@ -96,7 +96,7 @@ TEST_P(ReduceArgMinTest, ReduceArgMin) {
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
-    auto expected = hrt::create(a.datatype(), shape,
+    auto expected = hrt::create(dt_int64, shape,
                                 {reinterpret_cast<gsl::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
@@ -104,7 +104,7 @@ TEST_P(ReduceArgMinTest, ReduceArgMin) {
     // actual
     auto output =
         kernels::stackvm::reduce_arg(runtime::stackvm::reduce_arg_op_t::arg_min,
-                                     a.datatype(), a.impl(), axis.impl(),
+                                     dt_int64, a.impl(), axis.impl(),
                                      keepDims.impl(), select_last_idx.impl())
             .expect("reduce_arg_max failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
