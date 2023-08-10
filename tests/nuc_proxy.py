@@ -7,8 +7,9 @@ import threading
 import queue
 import logging
 import logging.handlers
-import time
 import serial
+import shutil
+import time
 import toml
 
 
@@ -21,96 +22,173 @@ class MySerial:
         self.timeout = 20
 
     def open(self):
-        self.logger.debug('open serial begin')
+        self.logger.debug(f'open {self.port} begin')
         self.s = serial.Serial(port=self.port, baudrate=self.baudrate, timeout=self.timeout)
-        self.logger.debug('open serial end')
-        # if (self.s.isOpen()):
-        #     print('open {0} succeed'.format(self.port))
-        # else:
-        #     print('open {0} failed'.format(self.port))
+        if (self.s.isOpen()):
+            self.logger.debug(f'open {self.port} succeed end')
+        else:
+            self.logger.debug(f'open {self.port} failed end')
 
     def close(self):
-        self.logger.debug('close serial begin')
+        self.logger.debug(f'close {self.port} begin')
         self.s.close()
-        self.logger.debug('close serial end')
+        self.logger.debug(f'close {self.port} end')
 
     def write(self, cmd):
-        self.logger.debug('write begin')
+        self.logger.debug(f'write {cmd} begin')
+        cmd = cmd + '\r'
         self.s.write(cmd.encode())
+        self.s.flush()
         self.logger.debug('write end')
 
     def read_until(self, expected):
         self.logger.debug('read begin')
-        data = self.s.read_until(expected).decode()
+        data = self.s.read_until(expected.encode()).decode()
         self.logger.debug('read end: data = {0}'.format(data))
         return data
 
-    def run_cmd(self, cmd):
+    def run_cmd(self, cmd, expected=''):
+        data = ''
         self.open()
-        self.write(cmd + '\r')
-        self.close()
+        self.write(cmd)
+        if expected != '':
+            data = self.read_until(expected)
 
-    def run_cmds(self, cmds):
-        self.open()
-
-        for cmd in cmds.split('&&'):
-            self.write(cmd + '\r')
-
-        data = self.read_until(b'}')
         self.close()
         return data
 
 
-def Consumer(target, q, working_dir, uart0, baudrate0, uart1, baudrate1):
-    # logging
-    mylogger = logging.getLogger()
-    mylogger.setLevel(logging.INFO)
-    rf_handler = logging.handlers.RotatingFileHandler(
-        f'nuc_proxy_{target}.log', mode='a', maxBytes=32 * 1024 * 1024, backupCount=10)
-    rf_handler.setLevel(logging.INFO)
-    rf_handler.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(message)s'))
-    mylogger.addHandler(rf_handler)
+class Target:
+    def __init__(self, name, cfg, nfs, clear_queue):
+        self.name = name
+        self.infer_queue = queue.Queue(maxsize=clear_queue.maxsize)
+        self.clear_queue = clear_queue
+        self.working_dir = cfg['working_dir']
+        self.separator = cfg['separator']
 
-    # serial
-    s0 = MySerial(uart0, baudrate0, mylogger)
-    s1 = MySerial(uart1, baudrate1, mylogger)
+        # nfs_dir
+        self.nfs_dir = os.path.join(nfs, name)
+        if not os.path.exists(self.nfs_dir):
+            os.makedirs(self.nfs_dir)
 
+        # logging
+        mylogger = logging.getLogger()
+        mylogger.setLevel(logging.INFO)
+        rf_handler = logging.handlers.RotatingFileHandler(
+            f'nuc_proxy_{name}.log', mode='a', maxBytes=32 * 1024 * 1024, backupCount=10)
+        rf_handler.setLevel(logging.INFO)
+        rf_handler.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(message)s'))
+        mylogger.addHandler(rf_handler)
+        self.logger = mylogger
+
+        # serial
+        self.s0 = MySerial(cfg['uart0'], cfg['baudrate0'], self.logger)
+        self.s1 = MySerial(cfg['uart1'], cfg['baudrate1'], self.logger)
+
+
+def recv_file(conn, case_dir, logger):
+    conn.sendall(f"pls send file info".encode())
+    header = conn.recv(1024)
+    file_dict = json.loads(header.decode())
+    file_name = file_dict['file_name']
+    file_size = file_dict['file_size']
+    logger.debug('recv begin: file = {0}, size = {1}'.format(file_name, file_size))
+    conn.sendall(f"pls send {file_name}".encode())
+
+    full_file = os.path.join(case_dir, file_name)
+    with open(full_file, 'wb') as f:
+        recv_size = 0
+        while recv_size < file_size:
+            slice = conn.recv(4096)
+            f.write(slice)
+            recv_size += len(slice)
+
+    os.chmod(full_file, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
+    logger.debug('recv end')
+    return file_name
+
+
+def recv_worker(conn, target):
+    # recv header
+    conn.sendall(f"pls send header".encode())
+    header = conn.recv(1024)
+    header_dict = json.loads(header.decode())
+    new_case = header_dict['case'] + str(int(time.time()))
+    target.logger.info("test case = {0}".format(new_case))
+    case_dir = os.path.join(target.nfs_dir, new_case)
+    os.makedirs(case_dir)
+    file_num = header_dict['app'] + header_dict['kmodel'] + header_dict['inputs']
+
+    # recv all kinds of files(app + kmodel + inputs)
+    cmds = f'cd {target.working_dir}/{target.name}/{new_case};./'
+    for i in range(file_num):
+        file = recv_file(conn, case_dir, target.logger)
+        if i == 0:
+            cmds = cmds + file
+        else:
+            cmds = cmds + ' ' + file
+
+    target.logger.debug("cmds = {0}".format(cmds))
+    target.infer_queue.put((cmds, conn, case_dir, header_dict['outputs']))
+
+
+def infer_worker(target):
     while True:
-        conn = q.get()
-
-        # recv header
-        conn.sendall(f"pls send cmd".encode())
-        header = conn.recv(1024)
-        dict = json.loads(header.decode())
-        cmd = dict['cmd']
-        mylogger.debug("cmd = {0}".format(dict['cmd']))
-
-        # run cmds on device
-        cmds = 'cd {0}/{1} && {2}'.format(working_dir, target, cmd)
-        ret_str = s1.run_cmds(cmds)
+        cmds, conn, case_dir, output_num = target.infer_queue.get()
+        separator = os.path.basename(case_dir) + target.separator
+        ret = ''
+        for cmd in cmds.split(';'):
+            ret = target.s1.run_cmd(cmd, separator)
+            target.logger.debug("ret = {0}".format(ret))
 
         # infer result
-        if ret_str.find('terminate') != -1 or ret_str.find('Exception') != -1:
-            err = f'infer exception: {ret_str}'
-            mylogger.error('infer exception')
+        if ret.find('terminate') != -1 or ret.find('Exception') != -1:
+            err = f'infer exception: {ret}'
+            target.logger.error('infer exception')
             conn.sendall(err[0:1024].encode())
-        elif ret_str.find('}') == -1:
+        elif ret.find(separator) == -1:
             # reboot target when timeout
             conn.sendall(f'infer timeout'.encode())
-            mylogger.error('reboot {0} for timeout'.format(target))
-            s0.run_cmd('reboot')
+            target.logger.error('reboot {0} for timeout'.format(target.name))
+            target.s0.run_cmd('reboot')
             time.sleep(20)
         else:
-            conn.sendall(f'infer succeed'.encode())
-            mylogger.debug('infer succeed')
+            conn.sendall(f'infer finish'.encode())
+            dummy = conn.recv(1024)
+
+            # send outputs
+            for i in range(output_num):
+                file = os.path.join(case_dir, f'nncase_result_{i}.bin')
+                file_size = os.path.getsize(file)
+                conn.sendall(str(file_size).encode())
+                dummy = conn.recv(1024)
+
+                target.logger.debug('send begin: file = {0}, size = {1}'.format(file, file_size))
+                with open(file, 'rb') as f:
+                    conn.sendall(f.read())
+                target.logger.debug('send end')
+                dummy = conn.recv(1024)
+            target.logger.debug('infer finish')
         conn.close()
+        target.clear_queue.put(case_dir)
+
+
+def clear_worker(q):
+    while True:
+        case_dir = q.get()
+        if os.path.exists(case_dir):
+            shutil.rmtree(case_dir)
 
 
 def main():
     # default config
     config = '''
+    ip = '10.99.105.216'
+    port = 10000
+    nfs = '/data/nfs'
     [k230]
     working_dir = '/sharefs'
+    separator = '>'
     uart0 = '/dev/ttyUSB0'
     baudrate0 = 115200
     uart1 = '/dev/ttyUSB1'
@@ -119,39 +197,46 @@ def main():
 
     # args
     parser = argparse.ArgumentParser(prog="nuc_proxy")
-    parser.add_argument("--ip", help='ip to connect', type=str, default='10.99.105.216')
-    parser.add_argument("--port", help='listening port', type=int, default=10001)
-    parser.add_argument("--config", help='config str or file', type=str, default=config)
+    parser.add_argument("--config", help='config string or file', type=str, default=config)
     args = parser.parse_args()
     size = 256
+    cfg = {}
+    dict = {}
 
     # load config
-    cfg = {}
     if os.path.isfile(args.config):
         cfg = toml.load(args.config)
     else:
         cfg = toml.loads(args.config)
 
-    # create queue and thread
-    for k in cfg:
-        q = queue.Queue(maxsize=size)
-        t_consumer = threading.Thread(target=Consumer, args=(
-            k, q, cfg[k]['working_dir'], cfg[k]['uart0'], cfg[k]['baudrate0'], cfg[k]['uart1'], cfg[k]['baudrate1']))
-        t_consumer.start()
-        cfg[k]['queue'] = q
+    # clear thread
+    clear_queue = queue.Queue(maxsize=size)
+    clear_thread = threading.Thread(target=clear_worker, args=(clear_queue,))
+    clear_thread.start()
 
-    # server socket
+    # start server
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind((args.ip, args.port))
+    server_socket.bind((cfg['ip'], cfg['port']))
     server_socket.listen(size)
     while True:
         conn, addr = server_socket.accept()
 
-        # recv target
+        # recv target name
         conn.sendall(f"pls send your target".encode())
         info = conn.recv(1024)
-        dict = json.loads(info.decode())
-        cfg[dict['target']]['queue'].put(conn)
+        target_dict = json.loads(info.decode())
+        target_name = target_dict['target']
+
+        # create target instance
+        if target_name not in dict:
+            target = Target(target_name, cfg[target_name], cfg['nfs'], clear_queue)
+            infer_thread = threading.Thread(target=infer_worker, args=(target,))
+            infer_thread.start()
+            dict[target_name] = target
+
+        # start recv thread
+        recv_thread = threading.Thread(target=recv_worker, args=(conn, dict[target_name]))
+        recv_thread.start()
 
 
 if __name__ == '__main__':
