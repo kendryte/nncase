@@ -1,0 +1,5 @@
+{
+    "lhs_shape":[[1, 3], [3, 3], [1, 3, 3], [1, 2, 3, 3]],
+    "lhs_type":["dt_int32", "dt_int64", "dt_float32", "dt_float64", "dt_uint32", "dt_uint64"],
+    "rhs_shape":[[3, 1], [3, 3], [1, 3, 3], [1, 2, 3, 3]]
+}
