@@ -78,14 +78,13 @@ class ReduceArgMaxTest : public KernelTest,
 
 INSTANTIATE_TEST_SUITE_P(
     ReduceArgMax, ReduceArgMaxTest,
-    testing::Combine(testing::Values(dt_float64, dt_float32/*, dt_int32, dt_int64*/),
-                     testing::Values(dt_int64),
-                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 2, 3, 4},
-                                     dims_t{1, 3, 16}, dims_t{3, 16},
-                                     dims_t{16}),
-                     testing::Values(dims_t{1}),
-                     testing::Values(-1, 0, 1, 2, 3, -2, -3, -4),
-                     testing::Values(1, 0), testing::Values(1, 0)));
+    testing::Combine(
+        testing::Values(dt_float64, dt_float32 /*, dt_int32, dt_int64*/),
+        testing::Values(dt_int64),
+        testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 2, 3, 4},
+                        dims_t{1, 3, 16}, dims_t{3, 16}, dims_t{16}),
+        testing::Values(dims_t{1}), testing::Values(-1, 0, 1, 2, 3, -2, -3, -4),
+        testing::Values(1, 0), testing::Values(1, 0)));
 
 TEST_P(ReduceArgMaxTest, ReduceArgMax) {
 
