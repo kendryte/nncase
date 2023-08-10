@@ -79,7 +79,7 @@ class ReduceArgMinTest : public KernelTest,
 INSTANTIATE_TEST_SUITE_P(
     ReduceArgMin, ReduceArgMinTest,
     testing::Combine(
-        testing::Values(dt_float64, dt_float32 /*, dt_int32, dt_int64*/),
+        testing::Values(dt_float64, dt_float32, dt_int32 /*, dt_int64*/),
         testing::Values(dt_int64),
         testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 2, 3, 4},
                         dims_t{1, 3, 16}, dims_t{3, 16}, dims_t{16}),
@@ -112,6 +112,8 @@ TEST_P(ReduceArgMinTest, ReduceArgMin) {
                   cosine_similarity_tensor(expected, actual);
 
     if (!result) {
+        std::cout << "input ";
+        print_runtime_tensor(a);
         std::cout << "actual ";
         print_runtime_tensor(actual);
         std::cout << "expected ";
