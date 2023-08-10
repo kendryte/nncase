@@ -26,12 +26,16 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class ReshapeTest
-    : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
+#define TEST_CASE_NAME "test_reshape"
+
+class ReshapeTest : public KernelTest,
+                    public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape] = GetParam();
+        READY_SUBCASE()
+
+        auto typecode = GetDataType("lhs_type");
+        auto l_shape = GetShapeArray("i_shape");
 
         input =
             hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
@@ -45,15 +49,8 @@ class ReshapeTest
     runtime_tensor input;
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    Reshape, ReshapeTest,
-    testing::Combine(testing::Values(dt_float32, dt_int32, dt_int64, dt_boolean,
-                                     dt_float16, dt_int8, dt_uint16, dt_int16,
-                                     dt_uint8, dt_uint64, dt_float64,
-                                     dt_uint32),
-                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 16, 3, 16},
-                                     dims_t{3, 16, 16}, dims_t{768},
-                                     dims_t{48, 16})));
+INSTANTIATE_TEST_SUITE_P(Reshape, ReshapeTest,
+                         testing::Combine(testing::Range(0, 65)));
 
 TEST_P(ReshapeTest, Reshape) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
@@ -97,6 +94,15 @@ TEST_P(ReshapeTest, Reshape) {
 }
 
 int main(int argc, char *argv[]) {
+    READY_TEST_CASE_GENERATE()
+    FOR_LOOP(lhs_type, i)
+    FOR_LOOP(i_shape, j)
+    SPLIT_ELEMENT(lhs_type, i)
+    SPLIT_ELEMENT(i_shape, j)
+    WRITE_SUB_CASE()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
