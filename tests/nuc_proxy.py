@@ -137,6 +137,11 @@ def infer_worker(target):
         cmds, conn, case_dir, output_num = target.infer_queue.get()
         separator = os.path.basename(case_dir) + target.separator
         ret = ''
+
+        # exit from face_detect after rebooting
+        # target.s1.run_cmd('q')
+        target.s1.run_cmd('')
+
         for cmd in cmds.split(';'):
             ret = target.s1.run_cmd(cmd, separator)
             target.logger.debug("ret = {0}".format(ret))
@@ -150,6 +155,10 @@ def infer_worker(target):
             # reboot target when timeout
             conn.sendall(f'infer timeout'.encode())
             target.logger.error('reboot {0} for timeout'.format(target.name))
+
+            # reboot after login
+            target.s0.run_cmd('root')
+            target.s0.run_cmd('')
             target.s0.run_cmd('reboot')
             time.sleep(20)
         else:
