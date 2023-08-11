@@ -45,7 +45,7 @@ class TransposeTest : public KernelTest,
         perm_value = GetAxesArray("perm");
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
   protected:
     runtime_tensor input;

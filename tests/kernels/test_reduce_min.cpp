@@ -65,7 +65,7 @@ class ReduceMinTest : public KernelTest,
         axis_value_array = axis_value;
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
   protected:
     runtime_tensor a;
