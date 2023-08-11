@@ -26,14 +26,21 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class ReduceMinTest
-    : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<
-          nncase::typecode_t, typecode_t, dims_t, dims_t, int64_t, axes_t>> {
+#define TEST_CASE_NAME "test_reduce"
+
+class ReduceMinTest: public KernelTest,
+    public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
-        auto &&[typecode1, typecode2, l_shape, r_shape, value, axis_arry] =
-            GetParam();
+
+        READY_SUBCASE()
+
+        auto typecode1 = GetDataType("lhs_type");
+        auto typecode2 = GetDataType("rhs_type");
+        auto l_shape = GetShapeArray("lhs_shape");
+        auto r_shape = GetShapeArray("rhs_shape");
+        auto value = GetNumber("bool_value");
+        auto axis_value = GetAxesArray("axis_value");
 
         a = hrt::create(typecode1, l_shape, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
@@ -55,14 +62,14 @@ class ReduceMinTest
                         true, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
 
-        axis_arry1 = axis_arry;
+        axis_value_array = axis_value;
     }
 
     void TearDown() override {}
 
   protected:
     runtime_tensor a;
-    axes_t axis_arry1;
+    axes_t axis_value_array;
     int64_t keepDims_value;
     runtime_tensor keepDims;
     runtime_tensor init_value;
@@ -70,22 +77,14 @@ class ReduceMinTest
 
 INSTANTIATE_TEST_SUITE_P(
     ReduceMin, ReduceMinTest,
-    testing::Combine(testing::Values(dt_float32), testing::Values(dt_int64),
-                     testing::Values(dims_t{1, 3, 16, 16}),
-                     testing::Values(dims_t{1}), testing::Values(0, 1),
-                     testing::Values(axes_t{0}, axes_t{-1}, axes_t{-2},
-                                     axes_t{-3}, axes_t{1}, axes_t{2},
-                                     axes_t{3}, axes_t{2, 3}, axes_t{-2, -1},
-                                     axes_t{1, 2, 3}, axes_t{-1, -2, -3},
-                                     axes_t{0, 1, 2, 3},
-                                     axes_t{-1, -2, -3, -4})));
+    testing::Combine(testing::Range(0, 25)));
 
 TEST_P(ReduceMinTest, ReduceMin) {
 
-    size_t axis_size = axis_arry1.size();
+    size_t axis_size = axis_value_array.size();
     if (axis_size <= a.shape().size()) {
         int64_t *axis_array = (int64_t *)malloc(axis_size * sizeof(int64_t));
-        std::copy(axis_arry1.begin(), axis_arry1.end(), axis_array);
+        std::copy(axis_value_array.begin(), axis_value_array.end(), axis_array);
         auto axis = hrt::create(dt_int64, {axis_size},
                                 {reinterpret_cast<gsl::byte *>(axis_array),
                                  axis_size * sizeof(int64_t)},
@@ -130,6 +129,27 @@ TEST_P(ReduceMinTest, ReduceMin) {
 }
 
 int main(int argc, char *argv[]) {
+    READY_TEST_CASE_GENERATE()
+    FOR_LOOP(lhs_type, i)
+    FOR_LOOP(rhs_type, j)
+    FOR_LOOP(lhs_shape, k)
+    FOR_LOOP(rhs_shape, l)
+    FOR_LOOP(bool_value, m)
+    FOR_LOOP(axis_value, n)
+    SPLIT_ELEMENT(lhs_type, i)
+    SPLIT_ELEMENT(rhs_type, j)
+    SPLIT_ELEMENT(lhs_shape, k)
+    SPLIT_ELEMENT(rhs_shape, l)
+    SPLIT_ELEMENT(bool_value, m)
+    SPLIT_ELEMENT(axis_value, n)
+    WRITE_SUB_CASE()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
