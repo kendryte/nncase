@@ -28,8 +28,8 @@ using namespace ortki;
 
 #define TEST_CASE_NAME "test_reduce"
 
-class ReduceMinTest: public KernelTest,
-    public ::testing::TestWithParam<std::tuple<int>> {
+class ReduceMinTest : public KernelTest,
+                      public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
 
@@ -75,9 +75,8 @@ class ReduceMinTest: public KernelTest,
     runtime_tensor init_value;
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    ReduceMin, ReduceMinTest,
-    testing::Combine(testing::Range(0, 25)));
+INSTANTIATE_TEST_SUITE_P(ReduceMin, ReduceMinTest,
+                         testing::Combine(testing::Range(0, 25)));
 
 TEST_P(ReduceMinTest, ReduceMin) {
 
