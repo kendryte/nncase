@@ -78,13 +78,13 @@ class ReduceArgMaxTest : public KernelTest,
 
 INSTANTIATE_TEST_SUITE_P(
     ReduceArgMax, ReduceArgMaxTest,
-    testing::Combine(testing::Values(dt_float32), testing::Values(dt_int64),
-                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 2, 3, 4},
-                                     dims_t{1, 3, 16}, dims_t{3, 16},
-                                     dims_t{16}),
-                     testing::Values(dims_t{1}),
-                     testing::Values(-1, 0, 1, 2, 3, -2, -3, -4),
-                     testing::Values(1, 0), testing::Values(1, 0)));
+    testing::Combine(
+        testing::Values(dt_float64, dt_float32, dt_int32 /*, dt_int64*/),
+        testing::Values(dt_int64),
+        testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 2, 3, 4},
+                        dims_t{1, 3, 16}, dims_t{3, 16}, dims_t{16}),
+        testing::Values(dims_t{1}), testing::Values(-1, 0, 1, 2, 3, -2, -3, -4),
+        testing::Values(1, 0), testing::Values(1, 0)));
 
 TEST_P(ReduceArgMaxTest, ReduceArgMax) {
 
@@ -95,7 +95,7 @@ TEST_P(ReduceArgMaxTest, ReduceArgMax) {
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
-    auto expected = hrt::create(dt_float64, shape,
+    auto expected = hrt::create(dt_int64, shape,
                                 {reinterpret_cast<gsl::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
@@ -112,6 +112,8 @@ TEST_P(ReduceArgMaxTest, ReduceArgMax) {
                   cosine_similarity_tensor(expected, actual);
 
     if (!result) {
+        std::cout << "input ";
+        print_runtime_tensor(a);
         std::cout << "actual ";
         print_runtime_tensor(actual);
         std::cout << "expected ";
