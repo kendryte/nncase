@@ -287,11 +287,22 @@ inline dims_t onehot_infer_shape(gsl::span<const size_t> indices_shape,
     return new_shape;
 }
 
-inline result<dims_t> matmul_infer_shape(gsl::span<const size_t> lhs_shape,
-                                         gsl::span<const size_t> rhs_shape) {
+inline result<dims_t> matmul_infer_shape(gsl::span<const size_t> lhs_shape_,
+                                         gsl::span<const size_t> rhs_shape_) {
+    dims_t lhs_shape = lhs_shape_;
+    dims_t rhs_shape = rhs_shape_;
+
     if (lhs_shape.size() == 2 && rhs_shape.size() == 2) {
         auto new_shape = dims_t{lhs_shape[0], rhs_shape[1]};
         return ok(new_shape);
+    }
+
+    if (lhs_shape.size() == 1) {
+        lhs_shape.insert(lhs_shape.begin(), 1);
+    } 
+
+    if (rhs_shape.size() == 1) {
+        rhs_shape.insert(rhs_shape.end(), 1);
     }
 
     auto new_a_shape = runtime::to_4d(lhs_shape);
@@ -304,6 +315,14 @@ inline result<dims_t> matmul_infer_shape(gsl::span<const size_t> lhs_shape,
     }
     new_shape.push_back(lhs_shape[lhs_shape.size() - 2]);
     new_shape.push_back(rhs_shape.back());
+    if (lhs_shape_.size() == 1) {
+        new_shape.erase(new_shape.begin() + big_shape - 2);
+        big_shape--;
+    } 
+
+    if (rhs_shape_.size() == 1) {
+        new_shape.erase(new_shape.begin() + big_shape - 1);
+    }
     return ok(new_shape);
 }
 

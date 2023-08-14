@@ -52,8 +52,17 @@ result<void> matmul_unit_impl(const T *input_a, const T *input_b, T *output,
 
 template <typename T>
 result<void> matmul_impl(const T *input_a, const T *input_b, T *output,
-                         gsl::span<const size_t> in_a_shape,
-                         gsl::span<const size_t> in_b_shape) noexcept {
+                         gsl::span<const size_t> in_a_shape_,
+                         gsl::span<const size_t> in_b_shape_) noexcept {
+    dims_t in_a_shape = in_a_shape_;
+    dims_t in_b_shape = in_b_shape_;
+    if (in_a_shape.size() == 1) {
+        in_a_shape.insert(in_a_shape.begin(), 1);
+    } 
+
+    if (in_b_shape.size() == 1) {
+        in_b_shape.insert(in_b_shape.end(), 1);
+    }
     auto new_a_shape = to_4d(in_a_shape);
     auto new_b_shape = to_4d(in_b_shape);
     auto a_unit_size = new_a_shape[2] * new_a_shape[3];

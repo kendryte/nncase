@@ -1545,7 +1545,9 @@ class KernelTest {
     }
 
     void print_runtime_tensor(runtime::runtime_tensor lhs) {
-        std::cout << "tensor:" << std::endl;
+        std::cout << "tensor (shape:[ ";
+        for(auto a:lhs.shape()) std::cout << a << " ";
+        std::cout << "]):" << std::endl;
         kernels::stackvm::apply(
             lhs.shape(),
             [&](gsl::span<const size_t> index) -> result<void> {
