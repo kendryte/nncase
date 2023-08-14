@@ -31,14 +31,19 @@ public partial class MergeTupleFusion : RewriteRule<Pattern>
         new VArgsPattern(
             list =>
             {
-                return Enumerable.Range(0, list.Length).Select(_ =>
-                    IsWildcard(null, field => field is Call { Target: BucketFusion } && field.Users.Count == 1)).ToArray();
+                return Enumerable.Range(0, list.Length).Select(_ => IsWildcard()).ToArray();
             },
             null));
 
     private Expr? GetReplace(Tuple tuple)
     {
-        var fields = tuple.Fields.ToArray().OfType<Call>().ToArray();
+        var originFields = tuple.Fields.ToArray();
+        if (originFields.Where(x => x is Call{Target: BucketFusion}).ToArray().Length <= 1)
+        {
+            return null;
+        }
+
+        var fields = originFields.OfType<Call>().Where(x => x is { Target: BucketFusion, Users.Count: 1 }).ToArray();
 
         // merge input
         var newArgs = new List<Expr>();
@@ -67,7 +72,22 @@ public partial class MergeTupleFusion : RewriteRule<Pattern>
         var newBody = ReplaceClone(new IR.Tuple(fieldBodys), oldParamsToNewArg.ToArray());
         var newFusion = new BucketFusion("stackvm", newBody, newParams.ToArray(), Array.Empty<Var>());
         var newCall = new Call(newFusion, newArgs.ToArray());
-        return newCall;
+        DumpIR(newCall, "newTupCall");
+        if (originFields.Length == fieldBodys.Count())
+        {
+            return newCall;
+        }
+
+        int counter = 0;
+        return new IR.Tuple(originFields.Select(x =>
+        {
+            if (fields.Contains(x))
+            {
+                return newCall[counter++];
+            }
+
+            return x;
+        }).ToArray());
     }
 }
 
@@ -76,6 +96,8 @@ public class MergeBucketFusion : ModulePass
     private static int _counter;
 
     private static string MergeRelPath => _counter.ToString();
+
+    private static bool greedy = false;
 
     protected override Task<IRModule> RunCoreAsync(IRModule input, RunPassContext context)
     {
@@ -89,9 +111,18 @@ public class MergeBucketFusion : ModulePass
         while (true)
         {
             var mergePrevPost = MergePrevFusion(main);
-            MergeMultiUsers(mergePrevPost);
-            MergeTupleFusion(mergePrevPost);
-            var post = MergeMultiUsersSingleCall(mergePrevPost);
+            Expr post;
+            if (greedy)
+            {
+                MergeMultiUsers(mergePrevPost);
+                MergeTupleFusion(mergePrevPost);
+                post = MergeMultiUsersSingleCall(mergePrevPost);
+            }
+            else
+            {
+                post = mergePrevPost;
+            }
+
             var postHashCode = post.GetHashCode();
             if (hashcode != postHashCode)
             {
@@ -144,7 +175,9 @@ public class MergeBucketFusion : ModulePass
     private static bool DetectedRing(Call outerCall, Expr[] users)
     {
         // var users = outerCall.Users.ToArray();
-        var userArgs = users.SelectMany(user => ((Call)user).Arguments.ToArray()).Except(users).ToArray();
+        // todo: fix this
+        // var userArgs = users.SelectMany(user => ((Call)user).Arguments.ToArray()).Except(users).ToArray();
+        var userArgs = users.SelectMany(user => ((Call)user).Arguments.ToArray()).ToArray();
         foreach (var arg in userArgs)
         {
             var list = new FindExpr().Run(arg, users, outerCall, expr =>
