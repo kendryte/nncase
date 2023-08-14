@@ -60,10 +60,8 @@ result<void> reduce_arg_impl(TReducer &&reducer, T init_value, const T *input,
             out_map[out_idx].clear();
             out_map[out_idx].push_back(index[axes[0]]);
             dst = src;
-        } else if constexpr (std::is_same_v<T, float>) {
-            if (fabs(src - dst) < epsilon) {
-                out_map[out_idx].push_back(index[axes[0]]);
-            }
+        } else if (std::fabs(src - dst) < epsilon) {
+            out_map[out_idx].push_back(index[axes[0]]);
         }
         return ok();
     }));
