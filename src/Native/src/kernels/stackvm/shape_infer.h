@@ -299,7 +299,7 @@ inline result<dims_t> matmul_infer_shape(gsl::span<const size_t> lhs_shape_,
 
     if (lhs_shape.size() == 1) {
         lhs_shape.insert(lhs_shape.begin(), 1);
-    } 
+    }
 
     if (rhs_shape.size() == 1) {
         rhs_shape.insert(rhs_shape.end(), 1);
@@ -318,7 +318,7 @@ inline result<dims_t> matmul_infer_shape(gsl::span<const size_t> lhs_shape_,
     if (lhs_shape_.size() == 1) {
         new_shape.erase(new_shape.begin() + big_shape - 2);
         big_shape--;
-    } 
+    }
 
     if (rhs_shape_.size() == 1) {
         new_shape.erase(new_shape.begin() + big_shape - 1);

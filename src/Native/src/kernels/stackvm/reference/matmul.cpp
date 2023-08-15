@@ -58,7 +58,7 @@ result<void> matmul_impl(const T *input_a, const T *input_b, T *output,
     dims_t in_b_shape = in_b_shape_;
     if (in_a_shape.size() == 1) {
         in_a_shape.insert(in_a_shape.begin(), 1);
-    } 
+    }
 
     if (in_b_shape.size() == 1) {
         in_b_shape.insert(in_b_shape.end(), 1);
