@@ -1741,6 +1741,15 @@ class KernelTest {
         return cArray;
     }
 
+    static std::string GetFileNameFromMacro(const char* filePath) {
+        std::string fullFilePath(filePath);
+        size_t lastSlashIndex = fullFilePath.find_last_of("/\\");
+        if (lastSlashIndex != std::string::npos) {
+            return fullFilePath.substr(lastSlashIndex + 1);
+        }
+        return fullFilePath;
+    }
+
   private:
     Document _document;
     std::map<std::string, typecode_t> str_2_datatype = {
