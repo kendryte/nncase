@@ -1,5 +1,7 @@
 ﻿cmake_minimum_required (VERSION 3.13)
 
+add_subdirectory(cmodel)
+
 set(SRCS runtime_module.cpp
          runtime_function.cpp
          thread_pool.cpp
