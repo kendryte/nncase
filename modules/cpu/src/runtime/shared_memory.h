@@ -22,22 +22,18 @@
 
 BEGIN_NS_NNCASE_RT_MODULE(cpu)
 
-enum class shared_memory_openmode
-{
-    create,
-    open
-};
+enum class shared_memory_openmode { create, open };
 
-class shared_memory
-{
-public:
-    shared_memory(const std::filesystem::path &path, size_t size, shared_memory_openmode mode);
+class shared_memory {
+  public:
+    shared_memory(const std::filesystem::path &path, size_t size,
+                  shared_memory_openmode mode);
     ~shared_memory();
 
     gsl::byte *data() noexcept { return data_; };
     size_t size() const noexcept { return size_; }
 
-private:
+  private:
 #ifdef WIN32
     HANDLE handle_;
 #else

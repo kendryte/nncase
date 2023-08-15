@@ -20,31 +20,32 @@
 #else
 #include <cerrno>
 #include <cstring>
-#include <fcntl.h> // for O_* constants
+#include <fcntl.h>    // for O_* constants
 #include <sys/mman.h> // mmap, munmap
 #include <sys/stat.h> // for mode constants
-#include <unistd.h> // unlink
+#include <unistd.h>   // unlink
 #endif
 
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::cpu;
 
-shared_memory::shared_memory(const std::filesystem::path &path, size_t size, shared_memory_openmode mode)
+shared_memory::shared_memory(const std::filesystem::path &path, size_t size,
+                             shared_memory_openmode mode)
     :
 #ifdef WIN32
-    handle_(nullptr)
+      handle_(nullptr)
 #else
-    fd_(-1)
-    , path_(path.c_str())
+      fd_(-1),
+      path_(path.c_str())
 #endif
-    , data_(nullptr)
-    , size_(size)
-{
-    if (mode == shared_memory_openmode::create)
-    {
+      ,
+      data_(nullptr),
+      size_(size) {
+    if (mode == shared_memory_openmode::create) {
 #ifdef WIN32
-        handle_ = CreateFileMappingW(nullptr, nullptr, PAGE_READWRITE, 0, (DWORD)size, path.c_str());
+        handle_ = CreateFileMappingW(nullptr, nullptr, PAGE_READWRITE, 0,
+                                     (DWORD)size, path.c_str());
         if (!handle_)
             throw std::runtime_error("Failed to create shared memory.");
 #else
@@ -53,27 +54,32 @@ shared_memory::shared_memory(const std::filesystem::path &path, size_t size, sha
         // side, we unlink it beforehand.
         // TODO(amos) check errno while ignoring ENOENT?
         int ret = shm_unlink(path.c_str());
-        if (ret < 0)
-        {
+        if (ret < 0) {
             if (errno != ENOENT)
-                throw std::runtime_error("Failed to unlink shared memory when create : " + std::string(std::strerror(errno)));
+                throw std::runtime_error(
+                    "Failed to unlink shared memory when create : " +
+                    std::string(std::strerror(errno)));
         }
 
         fd_ = shm_open(path.c_str(), O_CREAT | O_RDWR, 0755);
         if (fd_ < 0)
-            throw std::runtime_error("Failed to open shared memory when create : " + std::string(std::strerror(errno)));
+            throw std::runtime_error(
+                "Failed to open shared memory when create : " +
+                std::string(std::strerror(errno)));
 
         // this is the only way to specify the size of a
         // newly-created POSIX shared memory object
         ret = ftruncate(fd_, size);
         if (ret != 0)
-            throw std::runtime_error("Failed to ftruncate shared memory when create : " + std::string(std::strerror(errno)) + " " + std::to_string(size_) + " " + std::to_string(fd_));
+            throw std::runtime_error(
+                "Failed to ftruncate shared memory when create : " +
+                std::string(std::strerror(errno)) + " " +
+                std::to_string(size_) + " " + std::to_string(fd_));
 #endif
-    }
-    else if (mode == shared_memory_openmode::open)
-    {
+    } else if (mode == shared_memory_openmode::open) {
 #ifdef WIN32
-        handle_ = OpenFileMappingW(FILE_MAP_READ | FILE_MAP_WRITE, FALSE, path.c_str());
+        handle_ = OpenFileMappingW(FILE_MAP_READ | FILE_MAP_WRITE, FALSE,
+                                   path.c_str());
         if (!handle_)
             throw std::runtime_error("Failed to open shared memory.");
 #else
@@ -81,21 +87,20 @@ shared_memory::shared_memory(const std::filesystem::path &path, size_t size, sha
         if (fd_ < 0)
             throw std::runtime_error("Failed to open shared memory.");
 #endif
-    }
-    else
-    {
+    } else {
         throw std::runtime_error("Invalid shared memory openmode.");
     }
 
 #ifdef WIN32
-    data_ = (gsl::byte *)MapViewOfFile(handle_, FILE_MAP_READ | FILE_MAP_WRITE, 0, 0, size);
+    data_ = (gsl::byte *)MapViewOfFile(handle_, FILE_MAP_READ | FILE_MAP_WRITE,
+                                       0, 0, size);
 #else
-    auto memory = mmap(nullptr, // addr
-        size, // length
-        PROT_READ | PROT_WRITE, // prot
-        MAP_SHARED, // flags
-        fd_, // fd
-        0 // offset
+    auto memory = mmap(nullptr,                // addr
+                       size,                   // length
+                       PROT_READ | PROT_WRITE, // prot
+                       MAP_SHARED,             // flags
+                       fd_,                    // fd
+                       0                       // offset
     );
 
     if (memory == MAP_FAILED)
@@ -104,10 +109,8 @@ shared_memory::shared_memory(const std::filesystem::path &path, size_t size, sha
 #endif
 }
 
-shared_memory ::~shared_memory()
-{
-    if (data_)
-    {
+shared_memory ::~shared_memory() {
+    if (data_) {
 #ifdef WIN32
         UnmapViewOfFile(data_);
 #else
