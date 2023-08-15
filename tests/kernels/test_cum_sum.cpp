@@ -22,16 +22,20 @@
 #include <nncase/runtime/stackvm/opcode.h>
 #include <ortki/operators.h>
 
+#define TEST_CASE_NAME "test_cum_sum"
+
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class CumSumTest
-    : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<int>> {
+class CumSumTest : public KernelTest,
+                   public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape] = GetParam();
+        READY_SUBCASE()
+
+        auto l_shape = GetShapeArray("lhs_shape");
+        auto typecode = GetDataType("lhs_type");
 
         input =
             hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
@@ -45,14 +49,8 @@ class CumSumTest
     runtime_tensor input;
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    cum_sum, CumSumTest,
-    testing::Combine(testing::Values(dt_float32, dt_int32, dt_int64,
-                                     dt_float64 /*,
-      dt_uint32, dt_uint64, dt_float16,
-      dt_bfloat16*/),
-                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{2, 2},
-                                     dims_t{1, 3, 2})));
+INSTANTIATE_TEST_SUITE_P(cum_sum, CumSumTest,
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(CumSumTest, cum_sum) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
@@ -111,12 +109,9 @@ int main(int argc, char *argv[]) {
     READY_TEST_CASE_GENERATE()
     FOR_LOOP(lhs_shape, i)
     FOR_LOOP(lhs_type, j)
-    FOR_LOOP(rhs_type, k)
     SPLIT_ELEMENT(lhs_shape, i)
     SPLIT_ELEMENT(lhs_type, j)
-    SPLIT_ELEMENT(rhs_type, k)
     WRITE_SUB_CASE()
-    FOR_LOOP_END()
     FOR_LOOP_END()
     FOR_LOOP_END()
 

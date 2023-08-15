@@ -1697,6 +1697,11 @@ class KernelTest {
         return _document[key].GetInt64();
     }
 
+    float GetFloatNumber(const char *key) {
+        assert(_document[key].IsDouble());
+        return _document[key].GetFloat();
+    }
+
     typecode_t GetDataType(const char *key) {
         assert(_document[key].IsString());
         return Str2DataType(_document[key].GetString());

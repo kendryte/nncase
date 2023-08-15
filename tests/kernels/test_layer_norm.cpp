@@ -22,16 +22,21 @@
 #include <nncase/runtime/stackvm/opcode.h>
 #include <ortki/operators.h>
 
+#define TEST_CASE_NAME "test_layer_norm"
+
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
 class LayerNormTest : public KernelTest,
-                      public ::testing::TestWithParam<
-                          std::tuple<nncase::typecode_t, dims_t, int64_t>> {
+                      public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape, axis] = GetParam();
+        READY_SUBCASE()
+
+        auto l_shape = GetShapeArray("lhs_shape");
+        auto axis = GetNumber("axis");
+        auto typecode = GetDataType("lhs_type");
 
         axis_value = axis > (int64_t)l_shape.size() - 1
                          ? (int64_t)l_shape.size() - 1
@@ -76,13 +81,8 @@ class LayerNormTest : public KernelTest,
     int64_t axis_value;
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    layer_norm, LayerNormTest,
-    testing::Combine(testing::Values(dt_float32),
-                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 2, 4, 8},
-                                     dims_t{2, 2, 4, 4}, dims_t{1, 3, 16},
-                                     dims_t{1, 16}, dims_t{16}),
-                     testing::Values(-3, -2, -1, 0, 1, 2, 3)));
+INSTANTIATE_TEST_SUITE_P(layer_norm, LayerNormTest,
+                         testing::Combine(testing::Range(0, 392)));
 
 TEST_P(LayerNormTest, layer_norm) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
@@ -125,11 +125,11 @@ TEST_P(LayerNormTest, layer_norm) {
 int main(int argc, char *argv[]) {
     READY_TEST_CASE_GENERATE()
     FOR_LOOP(lhs_shape, i)
-    FOR_LOOP(lhs_type, j)
-    FOR_LOOP(rhs_type, k)
+    FOR_LOOP(axis, j)
+    FOR_LOOP(lhs_type, k)
     SPLIT_ELEMENT(lhs_shape, i)
-    SPLIT_ELEMENT(lhs_type, j)
-    SPLIT_ELEMENT(rhs_type, k)
+    SPLIT_ELEMENT(axis, j)
+    SPLIT_ELEMENT(lhs_type, k)
     WRITE_SUB_CASE()
     FOR_LOOP_END()
     FOR_LOOP_END()
