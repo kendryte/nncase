@@ -6,12 +6,11 @@ using System.Linq;
 using Nncase.CostModel;
 using Nncase.IR;
 
-// using Nncase.IR.NN;
-using Nncase.IR.Tensors;
+using Nncase.IR.RNN;
 using OrtKISharp;
 using static Nncase.LSTMHelper;
 
-namespace Nncase.Evaluator.NN;
+namespace Nncase.Evaluator.RNN;
 
 /// <summary>
 /// Evaluator for <see cref="LSTM"/>.

@@ -205,7 +205,7 @@ internal partial class CodeGenVisitor
             case IR.Tensors.IndexOf top:
                 Emitter.T.IndexOf();
                 break;
-            case IR.Tensors.LSTM top:
+            case IR.RNN.LSTM top:
                 Emitter.T.LSTM(top.Direction, top.Layout, top.Activations);
                 break;
             case IR.Tensors.Prod top:
