@@ -58,6 +58,7 @@ void stage1_kernel(
     //     qih, kh.T); // [8, 384, 128] x [8, 128, 384] = [8, 384, 384]
 
     // set_sched_strategy(sched_strategy_t::normal);
+    
 }
 
 // // 8 head per block
