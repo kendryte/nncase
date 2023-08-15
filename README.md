@@ -9,6 +9,8 @@
 
 `nncase` 是一个为 AI 加速器设计的神经网络编译器。
 
+Git Mirrors: [Gitee](https://gitee.com/kendryte/nncase)
+
 技术交流 QQ 群：790699378
 
 Telegram: [nncase community](https://t.me/joinchat/PPcEPZMLaTViNDI1)
