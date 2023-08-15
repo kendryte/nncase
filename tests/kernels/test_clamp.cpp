@@ -26,10 +26,8 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class ClampTest
-    : public KernelTest,
-      public ::testing::TestWithParam<
-          std::tuple<int>> {
+class ClampTest : public KernelTest,
+                  public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
         auto &&[typecode, l_shape, value1, value2] = GetParam();

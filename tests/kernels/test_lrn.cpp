@@ -28,9 +28,8 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class LrnTest
-    : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<int>> {
+class LrnTest : public KernelTest,
+                public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
         READY_SUBCASE()
@@ -50,8 +49,7 @@ class LrnTest
     runtime_tensor input;
 };
 
-INSTANTIATE_TEST_SUITE_P(lrn, LrnTest,
-                         testing::Combine(testing::Range(0, 2)));
+INSTANTIATE_TEST_SUITE_P(lrn, LrnTest, testing::Combine(testing::Range(0, 2)));
 
 TEST_P(LrnTest, lrn) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);

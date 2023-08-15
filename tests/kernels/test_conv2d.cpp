@@ -28,8 +28,8 @@ using namespace ortki;
 
 class Conv2DTest : public KernelTest,
                    public ::testing::TestWithParam<
-                           std::tuple<nncase::typecode_t, dims_t, dims_t, dims_t,
-                                      dims_t, dims_t, dims_t, int64_t>> {
+                       std::tuple<nncase::typecode_t, dims_t, dims_t, dims_t,
+                                  dims_t, dims_t, dims_t, int64_t>> {
   public:
     void SetUp() override {
         auto &&[typecode, input_shape, weight_shape, bias_shape, value1, value2,
