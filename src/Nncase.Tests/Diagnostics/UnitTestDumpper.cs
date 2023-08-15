@@ -195,6 +195,17 @@ public sealed class UnitTestDumpper : TestClassBase
     }
 
     [Fact]
+    public void TestDumperPatternIRFunction()
+    {
+        var x = IR.F.Math.Quantize(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 2, 2, 2 }), new QuantParam(1, 2.0f), DataTypes.UInt8);
+        var y = new Var("y", new TensorType(DataTypes.UInt8, new int[] { 1, 2, 2, 2 }));
+        var z = IR.F.Random.Normal(DataTypes.UInt8, 0, 1, 0, new[] { 1, 2, 2, 2 });
+        var m = IR.F.Random.Normal(DataTypes.UInt8, 0, 1, 0, new[] { 1, 20, 2, 2 });
+        var main = new Function("main", IR.F.Tensors.Concat(new IR.Tuple(new Expr[] { x, y, z, m }), 1), new[] { y });
+        CompilerServices.DumpPatternIR(main, string.Empty, Dumpper.Directory);
+    }
+
+    [Fact]
     public void TestDumperCSharpIRFusion()
     {
         var x = IR.F.Math.RangeOfMarker(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 2, 2, 2 }), new Half[] { (Half)1, (Half)3 });
