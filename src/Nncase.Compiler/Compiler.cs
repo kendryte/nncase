@@ -148,6 +148,11 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.SpaceToBatchToPad>();
         });
 
+        passManager.AddWithName<DataflowPass>("MHAFusion").Configure(p =>
+        {
+            // p.Add<Passes.Rules.FuseMHA1>();
+        });
+
         // passManager.AddWithName<EGraphPass>("NeutralOptimizeClamp").Configure(p =>
         // {
         //     p.Add<Passes.Rules.Neutral.FoldConstCall>();
