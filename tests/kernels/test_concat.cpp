@@ -28,7 +28,7 @@ using namespace ortki;
 
 class ConcatTest : public KernelTest,
                    public ::testing::TestWithParam<
-                       std::tuple<nncase::typecode_t, dims_t, int64_t>> {
+                       std::tuple<int>> {
   public:
     void SetUp() override {
         auto &&[typecode, shape, value] = GetParam();
@@ -113,6 +113,18 @@ TEST_P(ConcatTest, Concat) {
 }
 
 int main(int argc, char *argv[]) {
+    READY_TEST_CASE_GENERATE()
+    FOR_LOOP(lhs_shape, i)
+    FOR_LOOP(lhs_type, j)
+    FOR_LOOP(rhs_type, k)
+    SPLIT_ELEMENT(lhs_shape, i)
+    SPLIT_ELEMENT(lhs_type, j)
+    SPLIT_ELEMENT(rhs_type, k)
+    WRITE_SUB_CASE()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
