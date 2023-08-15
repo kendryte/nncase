@@ -7,33 +7,35 @@
 // [8, 384, 128] tensor<float, tensor_loc_t::shared> qkh({8, 384, 384});    //
 // [8, 384, 384] tensor<float, tensor_loc_t::shared> qkh({8, 384, 384});    //
 // [8, 384, 384]
+#include "thread_context.h"
 using namespace shared;
 
 static bool w_loaded = false;
-static tensor<float> wqh({8, 2048, 128});
+// static tensor<float> wqh({8, 2048, 128});
 static tensor<float> wkh({8, 2048, 128});
-static tensor<float> wvh({8, 2048, 128}); // [8, 2048, 128]
-static tensor<float> wfc1ih({1024, 2752});
-static tensor<float> wfc2ih({1024, 2752}); // [1024, 2752]
-static tensor<float> yih({96, 1024});
+// static tensor<float> wvh({8, 2048, 128}); // [8, 2048, 128]
+// static tensor<float> wfc1ih({1024, 2752});
+// static tensor<float> wfc2ih({1024, 2752}); // [1024, 2752]
+// static tensor<float> yih({96, 1024});
 
 // 8 head per block
 // 2048 w-len per thread
-void stage1_kernel(tensor<float, tensor_loc_t::device> &WQ,  /* 64, 8192, 128 */
-                   tensor<float, tensor_loc_t::device> &WK,  /* 64, 8192, 128 */
-                   tensor<float, tensor_loc_t::device> &WV,  /* 64, 8192, 128 */
-                   tensor<float, tensor_loc_t::device> &WFC1 /* 384, 8192*/
+void stage1_kernel(
+    // tensor<float, tensor_loc_t::device> &WQ,  /* 64, 8192, 128 */
+    tensor<float, tensor_loc_t::device> &WK /* 64, 8192, 128 */
+    //  tensor<float, tensor_loc_t::device> &WV,  /* 64, 8192, 128 */
+    //  tensor<float, tensor_loc_t::device> &WFC1 /* 384, 8192*/
 ) {
     // 1. Get xi
     auto xi = X({0, tid * 2048}, {384, 2048}); // [384, 2048]
 
     // 2. load wqh wkh wvh
     if (!w_loaded) {
-        tdma_load_async(wqh, WQ({bid * 8, tid * 2048, 0}, {8, 2048, 128}));
+        // tdma_load_async(wqh, WQ({bid * 8, tid * 2048, 0}, {8, 2048, 128}));
         tdma_load_async(wkh, WK({bid * 8, tid * 2048, 0}, {8, 2048, 128}));
-        tdma_load_async(wvh, WV({bid * 8, tid * 2048, 0}, {8, 2048, 128}));
-        tdma_load_async(wfc1ih, WFC1({bid * 1024, tid * 8192}, {1024, 8192}));
-        tdma_wait(); // 等待 x, wqh, wkh, wvh ready
+        // tdma_load_async(wvh, WV({bid * 8, tid * 2048, 0}, {8, 2048, 128}));
+        // tdma_load_async(wfc1ih, WFC1({bid * 1024, tid * 8192}, {1024,
+        // 8192})); tdma_wait(); // 等待 x, wqh, wkh, wvh ready
         w_loaded = true;
     }
 
@@ -42,10 +44,9 @@ void stage1_kernel(tensor<float, tensor_loc_t::device> &WQ,  /* 64, 8192, 128 */
     //     sched_strategy_t::pin_block_tensor); // 仅在 block 内调度线程的
     //     tensor
     //                                          // 指令
-
-    // tensor_block_mma_sync(
-    //     xi, wkh,
-    //     shared::kh); // [384, 2048] x [8, 2048, 64] = [8, 384, 128]
+    thread_context ctx(tid, bid);
+    tensor_block_mma_sync(xi, wkh, kh, false,
+                          ctx); // [384, 2048] x [8, 2048, 64] = [8, 384, 128]
     // vh = tensor_block_mma_sync(
     //     xi, wvh); // [384, 2048] x [8, 2048, 64] = [8, 384, 128]
 

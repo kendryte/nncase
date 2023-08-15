@@ -15,7 +15,7 @@ install(TARGETS cpu_cmodel_cli COMPONENT nncase-runtime)
 
 function(add_test name test_path)
   add_executable(${name} "${test_path}/main.cpp")
-  target_include_directories(${name} PUBLIC include)
+  target_link_libraries(${name} cpu_cmodel)
 endfunction(add_test)
 
 add_test(demo1 tests/demo1)

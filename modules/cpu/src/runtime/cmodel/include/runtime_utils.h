@@ -4,12 +4,9 @@
 #include <cstddef>
 #include <gsl/gsl-lite.hpp>
 #include <iostream>
-#include <nncase/runtime/small_vector.hpp>
 #include <numeric>
+#include <runtime_types.h>
 #include <vector>
-
-using dims_t = itlib::small_vector<size_t, 8>;
-using strides_t = itlib::small_vector<size_t, 8>;
 
 void print_vec(itlib::small_vector<size_t, 8> vec) {
     for (const size_t v : vec) {
@@ -82,4 +79,45 @@ inline bool is_shape_equal(const dims_t &a, const dims_t &b) {
         }
     }
     return true;
+}
+
+inline dims_t to_nd(dims_t in_shape, size_t n) {
+    auto size = n - in_shape.size();
+    for (size_t i = 0; i < size; ++i) {
+        in_shape.insert(in_shape.begin(), 1);
+    }
+    return in_shape;
+}
+
+inline std::tuple<dims_t, strides_t> to_nd(dims_t in_shape, strides_t in_stride,
+                                           size_t n) {
+    auto size = n - in_shape.size();
+    auto stride = *in_stride.begin();
+    for (size_t i = 0; i < size; ++i) {
+        in_shape.insert(in_shape.begin(), 1);
+        in_stride.insert(in_stride.begin(), stride);
+    }
+    return std::make_tuple(in_shape, in_stride);
+}
+
+template <class T> inline bool is_contiguous(const T &shape, const T &strides) {
+    size_t data_size = 1;
+    for (std::size_t i = shape.size(); i != 0; --i) {
+        if (strides[i - 1] != data_size) {
+            return false;
+        }
+        data_size *= shape[i - 1];
+    }
+    return true;
+}
+
+inline int
+get_last_not_contiguous_index(gsl::span<const size_t> strides,
+                              gsl::span<const size_t> default_strides) {
+    for (int i = strides.size() - 1; i >= 0; --i) {
+        if (strides[i] != default_strides[i]) {
+            return i + 1;
+        }
+    }
+    return -1;
 }

@@ -23,3 +23,5 @@ class hardware_context {
 };
 
 extern std::unique_ptr<hardware_context> global_hardware_ctx;
+
+void global_hardware_init();

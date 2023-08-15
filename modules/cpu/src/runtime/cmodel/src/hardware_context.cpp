@@ -111,3 +111,9 @@ void hardware_context::wait_all_sync(int visited) {
     }
     pthread_mutex_unlock(&impl_->global_cond.mutex);
 }
+
+std::unique_ptr<hardware_context> global_hardware_ctx;
+
+void global_hardware_init() {
+    global_hardware_ctx = std::make_unique<hardware_context>();
+}

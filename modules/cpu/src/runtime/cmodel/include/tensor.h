@@ -29,16 +29,14 @@ template <typename T, tensor_loc_t Loc = tensor_loc_t::local> class tensor {
     const dims_t &dimension() { return dims_; }
     const strides_t &strides() { return strides_; }
 
-    gsl::span<T> data() {
-        if (Loc != tensor_loc_t::shared) {
-            return data_;
-        }
-        assert(false);
-    }
+    gsl::span<T> data() { return data_; }
+
+    gsl::span<const T> cdata() { return data_.template as_span<const T>(); }
 
     tensor<T, Loc> operator()(std::initializer_list<size_t> begins,
                               std::initializer_list<size_t> shapes) {
-        return tensor(this, begins, shapes);
+        return tensor(this, dims_t(begins.begin(), begins.end()),
+                      dims_t(shapes.begin(), shapes.end()));
     }
 
     ~tensor() {
@@ -48,8 +46,7 @@ template <typename T, tensor_loc_t Loc = tensor_loc_t::local> class tensor {
     }
 
   private:
-    tensor(tensor<T, Loc> *parent, std::vector<size_t> begins,
-           std::vector<size_t> shapes)
+    tensor(tensor<T, Loc> *parent, dims_t begins, dims_t shapes)
         : parent_(parent),
           dims_(shapes.begin(), shapes.end()),
           strides_(parent->strides().begin(), parent->strides().end()) {

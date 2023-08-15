@@ -2,6 +2,7 @@
 #include <apply.h>
 #include <cassert>
 #include <hardware_context.h>
+#include <matmul.h>
 #include <tensor.h>
 #include <thread_context.h>
 
@@ -39,17 +40,68 @@ void __tensor_copy_sync(TS<DT, tensor_loc_t::shared> &&dest,
           });
 }
 
-template <class T>
-void __tensor_add_sync(tensor<T, tensor_loc_t::local> &a,
-                       tensor<T, tensor_loc_t::local> &b,
-                       tensor<T, tensor_loc_t::local> &out) {
+template <class T, tensor_loc_t ALoc, tensor_loc_t BLoc, tensor_loc_t CLoc>
+void __tensor_binary_sync(tensor<T, ALoc> &a, tensor<T, BLoc> &b,
+                          tensor<T, CLoc> &out,
+                          std::function<T(T a, T b)> callable) {
     assert(a.dimension() == b.dimension());
     assert(a.dimension() == out.dimension());
-    apply(a.dimension(), [&](gsl::span<size_t> index) -> void {
-        out.data()[offset(out.strides(), index)] =
-            (a.data()[offset(a.strides(), index)] +
-             b.data()[offset(b.strides(), index)]);
-    });
+    apply(gsl::make_span(a.dimension()).template as_span<const size_t>(),
+          [&](gsl::span<const size_t> index) -> void {
+              out.data()[offset(out.strides(), index)] =
+                  callable(a.data()[offset(a.strides(), index)],
+                           b.data()[offset(b.strides(), index)]);
+          });
+}
+
+template <class T, tensor_loc_t ALoc, tensor_loc_t BLoc, tensor_loc_t CLoc>
+void __tensor_unary_sync(tensor<T, ALoc> &a, tensor<T, CLoc> &out,
+                         std::function<T(T a)> callable) {
+    assert(a.dimension() == out.dimension());
+    apply(gsl::make_span(a.dimension()).template as_span<const size_t>(),
+          [&](gsl::span<const size_t> index) -> void {
+              out.data()[offset(out.strides(), index)] =
+                  callable(a.data()[offset(a.strides(), index)]);
+          });
+}
+
+template <typename T, tensor_loc_t ALoc, tensor_loc_t BLoc>
+void tensor_mma_sync(tensor<T, ALoc> &a, tensor<T, BLoc> &b,
+                     tensor<T, tensor_loc_t::local> &c) {
+    matmul(a.cdata().data(), b.cdata().data(), c.data().data(), a.dimension(),
+           a.strides(), b.dimension(), b.strides(), c.dimension(), c.strides());
+}
+
+template <typename T, tensor_loc_t ALoc, tensor_loc_t BLoc>
+void tensor_block_mma_sync(tensor<T, ALoc> &a, tensor<T, BLoc> &b,
+                           tensor<T, tensor_loc_t::shared> &c, bool load_psum,
+                           thread_context &ctx) {
+    tensor<T> tmp(c.dimension());
+    tensor_mma_sync(a, b, tmp);
+
+    __tdma_block_sync_apply(
+        [&](int visited) -> void {
+            if (load_psum) {
+                __tensor_binary_sync<T, tensor_loc_t::local,
+                                     tensor_loc_t::shared,
+                                     tensor_loc_t::shared>(
+                    tmp, c, c, [](T _a, T _b) -> T { return _a + _b; });
+            } else {
+                if (visited == 1) {
+                    __tensor_binary_sync<T, tensor_loc_t::local,
+                                         tensor_loc_t::shared,
+                                         tensor_loc_t::shared>(
+                        tmp, c, c,
+                        [](T _a, [[maybe_unused]] T _b) -> T { return _a; });
+                } else {
+                    __tensor_binary_sync<T, tensor_loc_t::local,
+                                         tensor_loc_t::shared,
+                                         tensor_loc_t::shared>(
+                        tmp, c, c, [](T _a, T _b) -> T { return _a + _b; });
+                }
+            }
+        },
+        ctx);
 }
 
 template <class T>
@@ -79,8 +131,8 @@ void tdma_broadcast_async(tensor<T, tensor_loc_t::local> &src,
 
     global_hardware_ctx->lock_block(ctx.bid());
     __tensor_copy_sync(dest, src);
-    // int cnt = global_hardware_ctx->mark_block_visit(ctx.tid());
     global_hardware_ctx->unlock_block(ctx.bid());
+    // int cnt = global_hardware_ctx->mark_block_visit(ctx.tid());
     // global_hardware_ctx->wait_block_sync(ctx.bid(), cnt);
 }
 
@@ -138,3 +190,12 @@ void tdma_wait() {}
 void tdma_cancel() {}
 
 void tdma_status() {}
+
+void __tdma_block_sync_apply(std::function<void(int)> func,
+                             thread_context &ctx) {
+    global_hardware_ctx->lock_block(ctx.bid());
+    int visited = global_hardware_ctx->mark_block_visit(ctx.bid(), ctx.tid());
+    func(visited);
+    global_hardware_ctx->unlock_block(ctx.bid());
+    global_hardware_ctx->wait_block_sync(ctx.bid(), visited);
+}
