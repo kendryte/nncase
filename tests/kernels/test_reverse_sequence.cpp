@@ -28,9 +28,8 @@ using namespace ortki;
 
 #define TEST_CASE_NAME "test_reverse_sequence"
 
-class ReverseSequenceTest
-    : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<int>> {
+class ReverseSequenceTest : public KernelTest,
+                            public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
         READY_SUBCASE()

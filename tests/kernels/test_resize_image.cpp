@@ -28,9 +28,8 @@ using namespace ortki;
 
 #define TEST_CASE_NAME "test_resize_image"
 
-class ResizeImageTest
-    : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<int>> {
+class ResizeImageTest : public KernelTest,
+                        public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
         READY_SUBCASE()

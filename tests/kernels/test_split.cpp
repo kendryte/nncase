@@ -29,8 +29,7 @@ using namespace ortki;
 #define TEST_CASE_NAME "test_split"
 
 class SplitTest : public KernelTest,
-                  public ::testing::TestWithParam<
-                      std::tuple<int>> {
+                  public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
         READY_SUBCASE()
