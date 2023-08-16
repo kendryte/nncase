@@ -11,6 +11,11 @@ class condition_variable {
 
     pthread_mutex_t mutex;
     pthread_cond_t cond;
+
+    ~condition_variable() {
+        pthread_mutex_destroy(&mutex);
+        pthread_cond_destroy(&cond);
+    }
 };
 
 struct hardware_context_impl {
@@ -49,6 +54,13 @@ struct hardware_context_impl {
     pthread_mutex_t block_mutexs[BLOCKS];
     condition_variable block_conds[BLOCKS];
     bool block_visited[BLOCKS][CORES];
+
+    ~hardware_context_impl() {
+        pthread_mutex_destroy(&global_mutex);
+        for (size_t i = 0; i < BLOCKS; i++) {
+            pthread_mutex_destroy(&block_mutexs[i]);
+        }
+    }
 };
 
 hardware_context::hardware_context() {
@@ -112,7 +124,7 @@ void hardware_context::wait_all_sync(int visited) {
     pthread_mutex_unlock(&impl_->global_cond.mutex);
 }
 
-std::unique_ptr<hardware_context> global_hardware_ctx;
+std::unique_ptr<hardware_context> global_hardware_ctx = nullptr;
 
 void global_hardware_init() {
     global_hardware_ctx = std::make_unique<hardware_context>();

@@ -123,5 +123,10 @@ int main([[maybe_unused]] int argc, char **argv) {
     pthread_join(t_7_1, NULL);
     pthread_join(t_7_2, NULL);
     pthread_join(t_7_3, NULL);
+
+    auto cos =
+        cosine(K.data().begin(), gsl::make_span(src_K).as_span<float>().begin(),
+               K.data().size());
+    printf("K cosine %f\n", cos);
     return 0;
 }

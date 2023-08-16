@@ -126,3 +126,25 @@ template <typename T>
 inline void span_copy(gsl::span<T> dest, gsl::span<T> src) {
     std::copy(src.begin(), src.end(), dest.begin());
 }
+
+template <typename T>
+inline void span_equal(gsl::span<T> dest, gsl::span<T> src) {
+    std::copy(src.begin(), src.end(), dest.begin());
+}
+
+template <typename T> double dot(const T *v1, const T *v2, size_t size) {
+    double ret = 0.f;
+    for (size_t i = 0; i < size; i++) {
+        ret += v1[i] * v2[i];
+    }
+
+    return ret;
+}
+
+template <typename T> double cosine(const T *v1, const T *v2, size_t size) {
+    for (size_t i = 0; i < 10; i++) {
+        std::cout << v1[i] << " " << v2[i] << std::endl;
+    }
+    return dot(v1, v2, size) /
+           ((sqrt(dot(v1, v1, size)) * sqrt(dot(v2, v2, size))));
+}
