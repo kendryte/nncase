@@ -149,3 +149,51 @@ template <typename T> double cosine(const T *v1, const T *v2, size_t size) {
     return dot(v1, v2, size) /
            ((sqrt(dot(v1, v1, size)) * sqrt(dot(v2, v2, size))));
 }
+
+inline dims_t get_reduced_offset(gsl::span<const size_t> in_offset,
+                                 gsl::span<const size_t> axis, bool keep_dims) {
+    if (in_offset.size() == 0) {
+        return in_offset;
+    }
+    dims_t off;
+    off.reserve(in_offset.size() - (keep_dims ? 0 : axis.size()));
+    for (size_t i = 0; i < in_offset.size(); i++) {
+        if (std::find(axis.begin(), axis.end(), i) == axis.end()) {
+            off.push_back(in_offset[i]);
+        } else {
+            if (keep_dims)
+                off.push_back(0);
+        }
+    }
+
+    return off;
+}
+
+inline dims_t get_reduced_offset(gsl::span<const size_t> in_offset,
+                                 gsl::span<const size_t> reduced_shape) {
+    dims_t off(reduced_shape.size());
+    const auto dims_ext = in_offset.size() - reduced_shape.size();
+    for (size_t i = 0; i < reduced_shape.size(); i++) {
+        if (in_offset[i + dims_ext] >= reduced_shape[i])
+            off[i] = 0;
+        else
+            off[i] = in_offset[i + dims_ext];
+    }
+
+    return off;
+}
+
+inline dims_t get_reduced_shape(gsl::span<const size_t> in_shape,
+                                gsl::span<const size_t> axis, bool keep_dims) {
+    dims_t shape;
+    shape.reserve(in_shape.size() - (keep_dims ? 0 : axis.size()));
+    for (size_t i = 0; i < in_shape.size(); i++) {
+        if (std::find(axis.begin(), axis.end(), i) == axis.end()) {
+            shape.push_back(in_shape[i]);
+        } else {
+            if (keep_dims)
+                shape.push_back(1);
+        }
+    }
+    return shape;
+}

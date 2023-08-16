@@ -11,12 +11,14 @@ class hardware_context {
     void lock_block(int bid);
     int mark_block_visit(int bid, int tid);
     void unlock_block(int bid);
-    void wait_block_sync(int bid, int visited);
+    void wait_block_sync(
+        int bid, int visited, std::function<void()> callable = []() -> void {});
     void lock_all();
     int mark_all_visit(int bid, int tid);
     void unlock_all();
-    void wait_all_sync(int visited);
-    void *all_reduce_var = nullptr;
+    void wait_all_sync(
+        int visited, std::function<void()> callable = []() -> void {});
+    void *global_var = nullptr;
 
   private:
     std::unique_ptr<hardware_context_impl> impl_;

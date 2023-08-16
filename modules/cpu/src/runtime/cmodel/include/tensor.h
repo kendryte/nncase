@@ -22,8 +22,19 @@ template <typename T, loc_t Loc = loc_t::local> class tensor {
           strides_(get_default_strides(dims_)),
           size_(compute_size(dims_)) {
         parent_ = nullptr;
-        auto ptr = new T[size_];
+        auto ptr = new T[size_]();
         data_ = gsl::make_span(ptr, size_);
+    }
+
+    tensor(gsl::span<T> data, dims_t dims, strides_t strides)
+        : data_(data),
+          parent_(data.data()),
+          dims_(dims),
+          strides_(strides),
+          size_(compute_size(dims_, strides_)) {
+        if (size_ != data_.size()) {
+            throw std::errc::invalid_argument;
+        }
     }
 
     const dims_t &dimension() { return dims_; }
@@ -37,6 +48,10 @@ template <typename T, loc_t Loc = loc_t::local> class tensor {
                               std::initializer_list<size_t> shapes) {
         return tensor(this, dims_t(begins.begin(), begins.end()),
                       dims_t(shapes.begin(), shapes.end()));
+    }
+
+    tensor<T, Loc> operator()(dims_t begins, dims_t shapes) {
+        return tensor(this, begins, shapes);
     }
 
     ~tensor() {

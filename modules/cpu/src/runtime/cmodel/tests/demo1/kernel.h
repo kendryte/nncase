@@ -22,8 +22,9 @@ static tensor<float> wkh({8, 2048, 128});
 // 2048 w-len per thread
 void stage1_kernel(
     // tensor<float, loc_t::device> &WQ,  /* 64, 8192, 128 */
-    tensor<float, loc_t::device> &WK, /* 64, 8192, 128 */
-    tensor<float, loc_t::device> &K   /* 64, 384, 128 */
+    [[maybe_unused]] tensor<float, loc_t::device> &WK, /* 64, 8192, 128 */
+    [[maybe_unused]] tensor<float, loc_t::device> &K,  /* 64, 384, 128 */
+    [[maybe_unused]] tensor<float, loc_t::device> &Sum /* 128 */
     //  tensor<float, loc_t::device> &WV,  /* 64, 8192, 128 */
     //  tensor<float, loc_t::device> &WFC1 /* 384, 8192*/
 ) {
@@ -51,6 +52,15 @@ void stage1_kernel(
                           ctx); // [384, 2048] x [8, 2048, 64] = [8, 384, 128]
 
     tdma_store_async(kh, K({bid * 8, 0, 0}, {8, 384, 128}), ctx);
+
+    tensor<float> sum({128});
+    tensor_reduce_sync(wkh, sum, reduce_op_t::sum, 0.0f, dims_t({0, 1}), false);
+    tdma_all_reduce_async(sum, sum, reduce_op_t::sum, dims_t({0}), ctx);
+
+    if (bid == 0 && tid == 0) {
+        tdma_store_async(sum, std::move(Sum), ctx);
+    }
+
     // vh = tensor_block_mma_sync(
     //     xi, wvh); // [384, 2048] x [8, 2048, 64] = [8, 384, 128]
 

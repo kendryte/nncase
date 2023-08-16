@@ -5,7 +5,7 @@
 
 #define DEFINE_TFUNC(b, t)                                                     \
     void *f_##b##_##t(void *arg) {                                             \
-        block##b::thread##t::stage1_kernel(WK, K);                             \
+        block##b::thread##t::stage1_kernel(WK, K, Sum);                        \
         return arg;                                                            \
     }
 
@@ -17,6 +17,7 @@
 
 tensor<float, loc_t::device> WK({64, 8192, 128});
 tensor<float, loc_t::device> K({64, 384, 128});
+tensor<float, loc_t::device> Sum({128});
 
 DEFINE_BFUNC(0)
 DEFINE_BFUNC(1)
@@ -28,14 +29,14 @@ DEFINE_BFUNC(6)
 DEFINE_BFUNC(7)
 
 /**
- * @brief demo1 X.bin WK.bin K.bin
+ * @brief demo1 X.bin WK.bin K.bin Sum.bin
  *
  * @param argc
  * @param argv
  * @return int
  */
 int main([[maybe_unused]] int argc, char **argv) {
-    assert(argc == 4);
+    assert(argc == 5);
     spdlog::set_level(spdlog::level::debug);
     global_hardware_init();
 
@@ -43,6 +44,7 @@ int main([[maybe_unused]] int argc, char **argv) {
     auto src_X = read_file(std::string(argv[1]));
     auto src_WK = read_file(std::string(argv[2]));
     auto src_K = read_file(std::string(argv[3]));
+    auto src_Sum = read_file(std::string(argv[4]));
     span_copy(WK.data(), gsl::make_span(src_WK).as_span<float>());
     span_copy(block0::shared::X.data(), gsl::make_span(src_X).as_span<float>());
     span_copy(block1::shared::X.data(), gsl::make_span(src_X).as_span<float>());
@@ -128,5 +130,10 @@ int main([[maybe_unused]] int argc, char **argv) {
         cosine(K.data().begin(), gsl::make_span(src_K).as_span<float>().begin(),
                K.data().size());
     printf("K cosine %f\n", cos);
+
+    auto cos2 =
+        cosine(Sum.data().begin(), gsl::make_span(src_Sum).as_span<float>().begin(),
+               Sum.data().size());
+    printf("Sum cosine %f\n", cos2);
     return 0;
 }

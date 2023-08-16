@@ -5,82 +5,26 @@
 #include <hardware_context.h>
 #include <layernorm.h>
 #include <matmul.h>
+#include <reduce.h>
 #include <tensor.h>
 #include <thread_context.h>
 #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_DEBUG
 #include <spdlog/spdlog.h>
 
-template <template <class, loc_t> class TS, class DT>
-void __tensor_copy_sync(TS<DT, loc_t::local> &&dest, TS<DT, loc_t::local> &&src,
-                        [[maybe_unused]] thread_context &ctx) {
+template <class T, loc_t Loc> tensor<T, Loc> unsqueeze(tensor<T, Loc> &dest) {
+    auto new_dims = dims_t(dest.dimension());
+    new_dims.insert(new_dims.begin(), 1);
+    auto new_strides = strides_t(dest.strides());
+    new_strides.insert(new_strides.begin(), *new_strides.begin());
+    return tensor<T, Loc>(dest.data(), new_dims, new_strides);
+}
+
+template <class T, loc_t DestLoc, loc_t SrcLoc>
+void __tensor_copy_sync(tensor<T, DestLoc> &&dest, tensor<T, SrcLoc> &&src) {
     assert(dest.dimension() == src.dimension());
     apply(gsl::make_span(src.dimension()).template as_span<const size_t>(),
           [&](gsl::span<const size_t> index) -> void {
               dest.data()[offset(dest.strides(), index)] =
-                  src.data()[offset(src.strides(), index)];
-          });
-}
-
-template <template <class, loc_t> class TS, class DT>
-void __tensor_copy_sync(TS<DT, loc_t::local> &&dest,
-                        TS<DT, loc_t::device> &&src,
-                        [[maybe_unused]] thread_context &ctx) {
-    assert(dest.dimension() == src.dimension());
-    apply(gsl::make_span(src.dimension()).template as_span<const size_t>(),
-          [&](gsl::span<const size_t> index) -> void {
-              dest.data()[offset(dest.strides(), index)] =
-                  src.data()[offset(src.strides(), index)];
-          });
-}
-
-template <template <class, loc_t> class TS, class DT>
-void __tensor_copy_sync(TS<DT, loc_t::shared> &&dest,
-                        TS<DT, loc_t::device> &&src,
-                        [[maybe_unused]] thread_context &ctx) {
-
-    __tdma_block_sync_apply(
-        [&dest, &src](int visited) -> void {
-            if (visited == 1) {
-                assert(dest.dimension() == src.dimension());
-                apply(gsl::make_span(src.dimension())
-                          .template as_span<const size_t>(),
-                      [&](gsl::span<const size_t> index) -> void {
-                          dest.data()[offset(dest.strides(), index)] =
-                              src.data()[offset(src.strides(), index)];
-                      });
-            }
-        },
-        ctx);
-}
-
-template <template <class, loc_t> class TS, class DT>
-void __tensor_copy_sync(TS<DT, loc_t::device> &&dest,
-                        TS<DT, loc_t::shared> &&src,
-                        [[maybe_unused]] thread_context &ctx) {
-
-    __tdma_block_sync_apply(
-        [&dest, &src](int visited) -> void {
-            if (visited == 1) {
-                assert(dest.dimension() == src.dimension());
-                apply(gsl::make_span(src.dimension())
-                          .template as_span<const size_t>(),
-                      [&](gsl::span<const size_t> index) -> void {
-                          dest.data()[offset(dest.strides(), index)] =
-                              src.data()[offset(src.strides(), index)];
-                      });
-            }
-        },
-        ctx);
-}
-
-template <template <class, loc_t> class TS, class DT>
-void __tensor_copy_sync(TS<DT, loc_t::shared> &&dest,
-                        TS<DT, loc_t::local> &&src,
-                        [[maybe_unused]] thread_context &ctx) {
-    assert(dest.dimension() == src.dimension());
-    apply(gsl::make_span(src.dimension()).template as_span<const size_t>(),
-          [&](gsl::span<const size_t> index) -> void {
-              dest.data(ctx.bid())[offset(dest.strides(), index)] =
                   src.data()[offset(src.strides(), index)];
           });
 }
@@ -115,6 +59,15 @@ void tensor_mma_sync(tensor<T, ALoc> &a, tensor<T, BLoc> &b,
                      tensor<T, loc_t::local> &c) {
     matmul(a.cdata().data(), b.cdata().data(), c.data().data(), a.dimension(),
            a.strides(), b.dimension(), b.strides(), c.dimension(), c.strides());
+}
+
+template <typename T, loc_t ALoc, loc_t BLoc>
+void tensor_reduce_sync(tensor<T, ALoc> &input, tensor<T, BLoc> &output,
+                        reduce_op_t op, T init_value, dims_t axis,
+                        bool keep_dims) {
+    reduce(op, &init_value, input.cdata().data(), output.data().data(),
+           input.dimension(), axis, input.strides(), output.strides(),
+           keep_dims);
 }
 
 /**
@@ -159,18 +112,47 @@ void tensor_block_mma_sync(tensor<T, ALoc> &a, tensor<T, BLoc> &b,
         ctx);
 }
 
-template <class T, loc_t DestLoc>
-void tdma_load_async(tensor<T, DestLoc> &dest, tensor<T, loc_t::device> &&src,
-                     thread_context &ctx) {
-    __tensor_copy_sync(std::forward<tensor<T, DestLoc>>(dest),
-                       std::forward<tensor<T, loc_t::device>>(src), ctx);
+template <class T>
+void tdma_load_async(tensor<T, loc_t::shared> &dest,
+                     tensor<T, loc_t::device> &&src, thread_context &ctx) {
+    __tdma_block_sync_apply(
+        [&](int visited) -> void {
+            if (visited == 1) {
+                __tensor_copy_sync(std::forward<tensor<T, loc_t::shared>>(dest),
+                                   std::forward<tensor<T, loc_t::device>>(src),
+                                   ctx);
+            }
+        },
+        ctx);
 }
 
-template <class T, loc_t SrcLoc>
-void tdma_store_async(tensor<T, SrcLoc> &src, tensor<T, loc_t::device> &&dest,
-                      thread_context &ctx) {
+template <class T>
+void tdma_load_async(tensor<T, loc_t::local> &dest,
+                     tensor<T, loc_t::device> &&src,
+                     [[maybe_unused]] thread_context &ctx) {
+    __tensor_copy_sync(std::forward<tensor<T, loc_t::local>>(dest),
+                       std::forward<tensor<T, loc_t::device>>(src));
+}
+
+template <class T>
+void tdma_store_async(tensor<T, loc_t::local> &src,
+                      tensor<T, loc_t::device> &&dest,
+                      [[maybe_unused]] thread_context &ctx) {
     __tensor_copy_sync(std::forward<tensor<T, loc_t::device>>(dest),
-                       std::forward<tensor<T, SrcLoc>>(src), ctx);
+                       std::forward<tensor<T, loc_t::local>>(src));
+}
+
+template <class T>
+void tdma_store_async(tensor<T, loc_t::shared> &src,
+                      tensor<T, loc_t::device> &&dest, thread_context &ctx) {
+    __tdma_block_sync_apply(
+        [&](int visited) -> void {
+            if (visited == 1) {
+                __tensor_copy_sync(std::forward<tensor<T, loc_t::device>>(dest),
+                                   std::forward<tensor<T, loc_t::shared>>(src));
+            }
+        },
+        ctx);
 }
 
 template <class T> void tdma_fill_async(tensor<T, loc_t::local> &src, T data) {
@@ -201,35 +183,59 @@ void tdma_reduce_async() {
     throw std::system_error(std::make_error_code(std::errc::not_supported));
 }
 
-enum class reduce_op_t : uint8_t {
-    SUM,
-};
-
 template <class T>
-void tdma_all_reduce_async(tensor<T, loc_t::local> &src, thread_context &ctx,
-                           reduce_op_t reduce_op = reduce_op_t::SUM) {
-    switch (reduce_op) {
-    case reduce_op_t::SUM: {
-        global_hardware_ctx->lock_all();
-        int visited = global_hardware_ctx->mark_all_visit(ctx.bid(), ctx.tid());
-        if (global_hardware_ctx->all_reduce_var == nullptr) {
-            global_hardware_ctx->all_reduce_var =
-                (void *)malloc(sizeof(tensor<T>));
-            auto reduce_tensor = tensor<T>(src.dimension());
-            tdma_fill_async(reduce_tensor, (T)0);
-            memcpy(global_hardware_ctx->all_reduce_var, &reduce_tensor,
-                   sizeof(tensor<T>));
-        }
-        auto reduce_tensor = (tensor<T> *)global_hardware_ctx->all_reduce_var;
-        __tensor_add_sync(src, *reduce_tensor, *reduce_tensor);
-        global_hardware_ctx->unlock_all();
-        global_hardware_ctx->wait_all_sync(visited);
-        break;
-    }
-    default:
-        throw std::system_error(std::make_error_code(std::errc::not_supported));
-        break;
-    }
+void tdma_all_reduce_async(tensor<T, loc_t::local> &src,
+                           tensor<T, loc_t::local> &dest, reduce_op_t reduce_op,
+                           dims_t axis, thread_context &ctx) {
+    __tdma_all_sync_apply(
+        [&src, &ctx](int visited) -> void {
+            tensor<T> *gather_tensor = nullptr;
+            auto new_dims = dims_t(src.dimension());
+            new_dims.insert(new_dims.begin(), 32);
+            if (visited == 1) {
+                gather_tensor = new tensor<T>(new_dims);
+                global_hardware_ctx->global_var = (void *)gather_tensor;
+            } else {
+                gather_tensor =
+                    static_cast<tensor<T> *>(global_hardware_ctx->global_var);
+            }
+            dims_t begin(new_dims.size(), 0);
+            dims_t shape(new_dims);
+            begin[0] = ctx.bid() * CORES + ctx.tid();
+            shape[0] = 1;
+            __tensor_copy_sync<T, loc_t::local, loc_t::local>(
+                std::move((*gather_tensor)(begin, shape)),
+                std::move(unsqueeze(src)));
+        },
+        []() -> void {}, ctx);
+
+    __tdma_all_sync_apply(
+        [&]([[maybe_unused]] int visit) -> void {
+            tensor<T> *gather_tensor = nullptr;
+            tensor<T> *reduced_tensor = nullptr;
+            if (visit == 1) {
+                gather_tensor =
+                    static_cast<tensor<T> *>(global_hardware_ctx->global_var);
+                auto reduced_shape =
+                    get_reduced_shape(gather_tensor->dimension(), axis, false);
+                reduced_tensor = new tensor<T>(reduced_shape);
+                tensor_reduce_sync(*gather_tensor, *reduced_tensor, reduce_op,
+                                   (T)0, axis, false);
+                delete gather_tensor;
+                global_hardware_ctx->global_var = reduced_tensor;
+            } else {
+                reduced_tensor =
+                    static_cast<tensor<T> *>(global_hardware_ctx->global_var);
+                __tensor_copy_sync(std::move(dest), std::move(*reduced_tensor));
+            }
+        },
+        []() -> void {
+            auto reduced_tensor =
+                static_cast<tensor<T> *>(global_hardware_ctx->global_var);
+            delete reduced_tensor;
+            global_hardware_ctx->global_var = nullptr;
+        },
+        ctx);
 }
 
 void tdma_gather_async() {}
@@ -253,4 +259,16 @@ void __tdma_block_sync_apply(std::function<void(int)> func,
     func(visited);
     global_hardware_ctx->unlock_block(ctx.bid());
     global_hardware_ctx->wait_block_sync(ctx.bid(), visited);
+}
+
+void __tdma_all_sync_apply(std::function<void(int)> apply_func,
+                           std::function<void()> broadcast_func,
+                           thread_context &ctx) {
+    global_hardware_ctx->lock_all();
+    int visited = global_hardware_ctx->mark_all_visit(ctx.bid(), ctx.tid());
+    SPDLOG_DEBUG("__tdma_all_sync_apply bid {} tid {} visited {}\n", ctx.bid(),
+                 ctx.tid(), visited);
+    apply_func(visited);
+    global_hardware_ctx->unlock_all();
+    global_hardware_ctx->wait_all_sync(visited, broadcast_func);
 }

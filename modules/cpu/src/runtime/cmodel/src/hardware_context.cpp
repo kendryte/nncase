@@ -84,9 +84,11 @@ int hardware_context::mark_block_visit(int bid, int tid) {
     return visited;
 }
 
-void hardware_context::wait_block_sync(int bid, int visited) {
+void hardware_context::wait_block_sync(int bid, int visited,
+                                       std::function<void()> callable) {
     pthread_mutex_lock(&impl_->block_conds[bid].mutex);
     if (visited == CORES) {
+        callable();
         impl_->reset_block_visited(bid);
         pthread_cond_broadcast(&impl_->block_conds[bid].cond);
     } else {
@@ -113,9 +115,11 @@ int hardware_context::mark_all_visit(int bid, int tid) {
     return visited;
 }
 
-void hardware_context::wait_all_sync(int visited) {
+void hardware_context::wait_all_sync(int visited,
+                                     std::function<void()> callable) {
     pthread_mutex_lock(&impl_->global_cond.mutex);
     if (visited == BLOCKS * CORES) {
+        callable();
         impl_->reset_global_visited();
         pthread_cond_broadcast(&impl_->global_cond.cond);
     } else {
