@@ -72,7 +72,7 @@ class LayerNormTest : public KernelTest,
         init_tensor(b);
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
   protected:
     runtime_tensor input;

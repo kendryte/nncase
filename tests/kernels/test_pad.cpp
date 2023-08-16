@@ -46,7 +46,7 @@ class PadTest : public KernelTest,
         init_tensor(value);
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
   protected:
     runtime_tensor input;

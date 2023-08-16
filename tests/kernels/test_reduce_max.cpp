@@ -76,7 +76,7 @@ class ReduceMaxTest : public KernelTest,
 };
 
 INSTANTIATE_TEST_SUITE_P(ReduceMax, ReduceMaxTest,
-                         testing::Combine(testing::Range(0, 25)));
+                         testing::Combine(testing::Range(0, 100)));
 
 TEST_P(ReduceMaxTest, ReduceMax) {
 

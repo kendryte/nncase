@@ -57,7 +57,7 @@ class BroadCastTest : public KernelTest,
                         .expect("create tensor failed");
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
     void init_tensor_one(runtime::runtime_tensor &tensor) {
         auto dtype = tensor.datatype();

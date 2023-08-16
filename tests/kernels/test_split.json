@@ -1,5 +1,5 @@
 {
   "lhs_shape":[[4, 8, 8]],
-  "axis":[[0, -3]],
+  "axis":[0, -3],
   "lhs_type":["dt_float32"]
 }

@@ -26,16 +26,23 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class UniformTest
-    : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<
-          nncase::typecode_t, dims_t, axes_t, float_t, float_t, float_t>> {
+#define TEST_CASE_NAME "test_uniform"
+
+class UniformTest : public KernelTest,
+                    public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
-        auto &&[typecode, shape, l_shape, value1, value2, value3] = GetParam();
+        READY_SUBCASE()
+
+        auto typecode = GetDataType("lhs_type");
+        auto l_shape = GetAxesArray("l_shape");
+        auto shape = GetShapeArray("shape");
+        auto value1 = GetFloatNumber("value1");
+        auto value2 = GetFloatNumber("value2");
+        auto value3 = GetFloatNumber("value3");
 
         high_value = value1;
-        float_t high_array[] = {high_value};
+        float high_array[] = {high_value};
         high = hrt::create(typecode, shape,
                            {reinterpret_cast<gsl::byte *>(high_array),
                             sizeof(high_array)},
@@ -43,7 +50,7 @@ class UniformTest
                    .expect("create tensor failed");
 
         low_value = value2;
-        float_t low_array[] = {low_value};
+        float low_array[] = {low_value};
         low = hrt::create(
                   typecode, shape,
                   {reinterpret_cast<gsl::byte *>(low_array), sizeof(low_array)},
@@ -51,7 +58,7 @@ class UniformTest
                   .expect("create tensor failed");
 
         seed_value = value3;
-        float_t seed_array[] = {seed_value};
+        float seed_array[] = {seed_value};
         seed = hrt::create(typecode, shape,
                            {reinterpret_cast<gsl::byte *>(seed_array),
                             sizeof(seed_array)},
@@ -61,25 +68,20 @@ class UniformTest
         shape_array = l_shape;
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
   protected:
     runtime_tensor high;
     runtime_tensor low;
     runtime_tensor seed;
     axes_t shape_array;
-    float_t high_value;
-    float_t low_value;
-    float_t seed_value;
+    float high_value;
+    float low_value;
+    float seed_value;
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    Uniform, UniformTest,
-    testing::Combine(testing::Values(dt_float32), testing::Values(dims_t{1}),
-                     testing::Values(axes_t{1, 3, 16, 16}),
-                     testing::Values(1.0f, 2.0f, 3.0f, 4.0f, 5.0f),
-                     testing::Values(0.0f, 0.5f, 0.8f, 1.0f),
-                     testing::Values(1.0f, 2.0f)));
+INSTANTIATE_TEST_SUITE_P(Uniform, UniformTest,
+                         testing::Combine(testing::Range(0, 40)));
 
 TEST_P(UniformTest, Uniform) {
     // expected
@@ -123,6 +125,27 @@ TEST_P(UniformTest, Uniform) {
 }
 
 int main(int argc, char *argv[]) {
+    READY_TEST_CASE_GENERATE()
+    FOR_LOOP(lhs_type, i)
+    FOR_LOOP(shape, j)
+    FOR_LOOP(l_shape, k)
+    FOR_LOOP(value1, l)
+    FOR_LOOP(value2, m)
+    FOR_LOOP(value3, n)
+    SPLIT_ELEMENT(lhs_type, i)
+    SPLIT_ELEMENT(shape, j)
+    SPLIT_ELEMENT(l_shape, k)
+    SPLIT_ELEMENT(value1, l)
+    SPLIT_ELEMENT(value2, m)
+    SPLIT_ELEMENT(value3, n)
+    WRITE_SUB_CASE()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

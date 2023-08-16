@@ -67,7 +67,7 @@ class NormalTest : public KernelTest,
         shape_array = l_shape;
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
   protected:
     runtime_tensor mean;

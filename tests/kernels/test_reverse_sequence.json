@@ -1,4 +1,4 @@
 {
-  "lhs_shape":[[4, 2, 2, 1]],
+  "i_shape":[[4, 4]],
   "lhs_type":["dt_float32"]
 }

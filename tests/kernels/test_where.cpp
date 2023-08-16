@@ -26,12 +26,17 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
+#define TEST_CASE_NAME "test_where"
+
 class WhereTest : public KernelTest,
-                  public ::testing::TestWithParam<
-                      std::tuple<nncase::typecode_t, typecode_t, dims_t>> {
+                  public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
-        auto &&[typecode, typecode_bool, shape] = GetParam();
+        READY_SUBCASE()
+
+        auto typecode = GetDataType("lhs_type");
+        auto typecode_bool = GetDataType("rhs_type");
+        auto shape = GetShapeArray("i_shape");
 
         lhs = hrt::create(typecode, shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
@@ -47,7 +52,7 @@ class WhereTest : public KernelTest,
         init_tensor(con);
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
   protected:
     runtime_tensor lhs;
@@ -55,14 +60,8 @@ class WhereTest : public KernelTest,
     runtime_tensor con;
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    Where, WhereTest,
-    testing::Combine(
-        testing::Values(dt_float32, dt_int32, dt_float64, dt_uint8, dt_int64),
-        testing::Values(dt_boolean),
-        testing::Values(dims_t{4}, dims_t{1}, dims_t{1, 3}, dims_t{1, 3, 16},
-                        dims_t{1, 3, 16, 16}, dims_t{1, 16, 16}, dims_t{16, 16},
-                        dims_t{3, 16, 16}, dims_t{1, 16})));
+INSTANTIATE_TEST_SUITE_P(Where, WhereTest,
+                         testing::Combine(testing::Range(0, 1000)));
 
 TEST_P(WhereTest, Where) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
@@ -101,6 +100,18 @@ TEST_P(WhereTest, Where) {
 }
 
 int main(int argc, char *argv[]) {
+    READY_TEST_CASE_GENERATE()
+    FOR_LOOP(lhs_type, j)
+    FOR_LOOP(rhs_type, i)
+    FOR_LOOP(i_shape, k)
+    SPLIT_ELEMENT(lhs_type, j)
+    SPLIT_ELEMENT(rhs_type, i)
+    SPLIT_ELEMENT(i_shape, k)
+    WRITE_SUB_CASE()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

@@ -64,7 +64,7 @@ class BatchNormalizationTest
         init_tensor_var(var);
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
     virtual void init_tensor_var(runtime::runtime_tensor &tensor) {
         std::random_device rd;

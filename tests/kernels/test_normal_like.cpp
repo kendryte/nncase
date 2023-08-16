@@ -70,7 +70,7 @@ class NormalLikeTest : public KernelTest,
                    .expect("create tensor failed");
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
   protected:
     runtime_tensor input;
