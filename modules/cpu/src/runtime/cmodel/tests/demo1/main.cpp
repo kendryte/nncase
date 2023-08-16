@@ -131,9 +131,9 @@ int main([[maybe_unused]] int argc, char **argv) {
                K.data().size());
     printf("K cosine %f\n", cos);
 
-    auto cos2 =
-        cosine(Sum.data().begin(), gsl::make_span(src_Sum).as_span<float>().begin(),
-               Sum.data().size());
+    auto cos2 = cosine(Sum.data().begin(),
+                       gsl::make_span(src_Sum).as_span<float>().begin(),
+                       Sum.data().size());
     printf("Sum cosine %f\n", cos2);
     return 0;
 }
