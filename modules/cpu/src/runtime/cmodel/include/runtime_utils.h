@@ -121,3 +121,8 @@ get_last_not_contiguous_index(gsl::span<const size_t> strides,
     }
     return -1;
 }
+
+template <typename T>
+inline void span_copy(gsl::span<T> dest, gsl::span<T> src) {
+    std::copy(src.begin(), src.end(), dest.begin());
+}

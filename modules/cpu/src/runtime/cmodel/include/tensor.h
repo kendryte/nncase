@@ -6,13 +6,13 @@
 #include <hardware_def.h>
 #include <runtime_utils.h>
 
-enum class tensor_loc_t : uint8_t {
+enum class loc_t : uint8_t {
     shared,
     device,
     local,
 };
 
-template <typename T, tensor_loc_t Loc = tensor_loc_t::local> class tensor {
+template <typename T, loc_t Loc = loc_t::local> class tensor {
 
   public:
     using value_type = T;
