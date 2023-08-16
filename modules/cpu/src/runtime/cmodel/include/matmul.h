@@ -10,17 +10,16 @@ void matmul_unit_impl(const T *input_a, const T *input_b, T *output,
     int32_t b_cols = static_cast<int32_t>(in_b_shape[1]);
 
     for (int32_t oy = 0; oy < a_rows; oy++) {
-        for (int32_t ox = 0; ox < b_cols; ox++) {
-            T value = 0;
-
-            for (int32_t i = 0; i < a_cols; i++) {
+        T *values = new T[b_cols]();
+        for (int32_t i = 0; i < a_cols; i++) {
+            for (int32_t ox = 0; ox < b_cols; ox++) {
                 const auto a = input_a[oy * a_cols + i];
                 const auto b = input_b[i * b_cols + ox];
-                value += a * b;
+                values[ox] += a * b;
             }
-
-            output[oy * b_cols + ox] = value;
         }
+        std::copy_n(values, b_cols, output + oy * b_cols);
+        delete[] values;
     }
 }
 
@@ -94,14 +93,16 @@ void no_contiguous_matmul_impl(const T *input_a, const T *input_b, T *output,
                 T *out_ptr = output + n * new_out_stride[0] +
                              c * new_out_stride[1] + h * new_out_stride[2];
                 for (size_t m = 0; m < new_a_shape[3]; m++) {
-                    for (size_t n = 0; n < new_b_shape[4]; n++) {
-                        T value = 0;
-                        for (size_t k = 0; k < new_a_shape[4]; k++) {
-                            value += in_a_ptr[m * new_a_stride[3] + k] *
-                                     in_b_ptr[k * new_b_stride[3] + n];
+                    T *values = new T[new_b_shape[4]]();
+                    for (size_t k = 0; k < new_a_shape[4]; k++) {
+                        for (size_t n = 0; n < new_b_shape[4]; n++) {
+                            values[n] += in_a_ptr[m * new_a_stride[3] + k] *
+                                         in_b_ptr[k * new_b_stride[3] + n];
                         }
-                        out_ptr[m * new_out_stride[3] + n] = value;
                     }
+                    std::copy_n(values, new_b_shape[4],
+                                out_ptr + m * new_out_stride[3]);
+                    delete[] values;
                 }
             }
         }
