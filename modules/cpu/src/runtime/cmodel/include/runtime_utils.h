@@ -7,6 +7,7 @@
 #include <numeric>
 #include <runtime_types.h>
 #include <vector>
+#include <cmath>
 
 void print_vec(itlib::small_vector<size_t, 8> vec) {
     for (const size_t v : vec) {
