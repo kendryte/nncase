@@ -3,8 +3,8 @@
 #include <cassert>
 #include <functional>
 #include <hardware_context.h>
-#include <matmul.h>
 #include <layernorm.h>
+#include <matmul.h>
 #include <tensor.h>
 #include <thread_context.h>
 #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_DEBUG
