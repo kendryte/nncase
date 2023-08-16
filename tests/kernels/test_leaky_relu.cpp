@@ -41,7 +41,7 @@ class LeakyReluTest : public KernelTest,
         alpha_value = value;
     }
 
-    void TearDown() override { CLEAR_SUBCASE() }
+    void TearDown() override {}
 
   protected:
     runtime_tensor input;
