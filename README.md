@@ -2,14 +2,13 @@
 <img src="docs/logo.png" width="400" alt="nncase" />
 </div>
 
-[![License](https://img.shields.io/badge/license-Apache%202-blue)](https://raw.githubusercontent.com/kendryte/nncase/master/LICENSE)
-[![compiler-build](https://github.com/kendryte/nncase/actions/workflows/compiler-build.yml/badge.svg)](https://github.com/kendryte/nncase/actions/workflows/compiler-build.yml)
+[![GitHub repository](https://img.shields.io/badge/github-repository-blue?logo=github&style=plastic)](https://github.com/kendryte/nncase)
+[![Gitee repository](https://img.shields.io/badge/gitee-repository-blue?logo=gitee&style=plastic)](https://gitee.com/kendryte/nncase)
+[![GitHub release](https://img.shields.io/github/v/release/kendryte/nncase?color=brightgreen&display_name=tag&logo=github&style=plastic)](https://github.com/kendryte/nncase/releases)
 
 `nncase` is a neural network compiler for AI accelerators.
 
 `nncase` 是一个为 AI 加速器设计的神经网络编译器。
-
-Git Mirrors: [Gitee](https://gitee.com/kendryte/nncase)
 
 技术交流 QQ 群：790699378
 
