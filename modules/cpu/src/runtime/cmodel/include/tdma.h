@@ -9,10 +9,8 @@
 #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_DEBUG
 #include <spdlog/spdlog.h>
 
-
 template <template <class, loc_t> class TS, class DT>
-void __tensor_copy_sync(TS<DT, loc_t::local> &&dest,
-                        TS<DT, loc_t::local> &&src,
+void __tensor_copy_sync(TS<DT, loc_t::local> &&dest, TS<DT, loc_t::local> &&src,
                         [[maybe_unused]] thread_context &ctx) {
     assert(dest.dimension() == src.dimension());
     apply(gsl::make_span(src.dimension()).template as_span<const size_t>(),
@@ -141,20 +139,17 @@ void tensor_block_mma_sync(tensor<T, ALoc> &a, tensor<T, BLoc> &b,
     __tdma_block_sync_apply(
         [&](int visited) -> void {
             if (load_psum) {
-                __tensor_binary_sync<T, loc_t::local,
-                                     loc_t::shared,
+                __tensor_binary_sync<T, loc_t::local, loc_t::shared,
                                      loc_t::shared>(
                     tmp, c, c, [](T _a, T _b) -> T { return _a + _b; });
             } else {
                 if (visited == 1) {
-                    __tensor_binary_sync<T, loc_t::local,
-                                         loc_t::shared,
+                    __tensor_binary_sync<T, loc_t::local, loc_t::shared,
                                          loc_t::shared>(
                         tmp, c, c,
                         [](T _a, [[maybe_unused]] T _b) -> T { return _a; });
                 } else {
-                    __tensor_binary_sync<T, loc_t::local,
-                                         loc_t::shared,
+                    __tensor_binary_sync<T, loc_t::local, loc_t::shared,
                                          loc_t::shared>(
                         tmp, c, c, [](T _a, T _b) -> T { return _a + _b; });
                 }
@@ -164,23 +159,20 @@ void tensor_block_mma_sync(tensor<T, ALoc> &a, tensor<T, BLoc> &b,
 }
 
 template <class T, loc_t DestLoc>
-void tdma_load_async(tensor<T, DestLoc> &dest,
-                     tensor<T, loc_t::device> &&src,
+void tdma_load_async(tensor<T, DestLoc> &dest, tensor<T, loc_t::device> &&src,
                      thread_context &ctx) {
     __tensor_copy_sync(std::forward<tensor<T, DestLoc>>(dest),
                        std::forward<tensor<T, loc_t::device>>(src), ctx);
 }
 
 template <class T, loc_t SrcLoc>
-void tdma_store_async(tensor<T, SrcLoc> &src,
-                      tensor<T, loc_t::device> &&dest,
+void tdma_store_async(tensor<T, SrcLoc> &src, tensor<T, loc_t::device> &&dest,
                       thread_context &ctx) {
     __tensor_copy_sync(std::forward<tensor<T, loc_t::device>>(dest),
                        std::forward<tensor<T, SrcLoc>>(src), ctx);
 }
 
-template <class T>
-void tdma_fill_async(tensor<T, loc_t::local> &src, T data) {
+template <class T> void tdma_fill_async(tensor<T, loc_t::local> &src, T data) {
     apply(src.dimension(), [&](gsl::span<size_t> index) -> void {
         src.data()[offset(src.strides(), index)] = data;
     });
@@ -188,8 +180,7 @@ void tdma_fill_async(tensor<T, loc_t::local> &src, T data) {
 
 template <class T>
 void tdma_broadcast_async(tensor<T, loc_t::local> &src,
-                          tensor<T, loc_t::shared> &dest,
-                          thread_context &ctx) {
+                          tensor<T, loc_t::shared> &dest, thread_context &ctx) {
 
     global_hardware_ctx->lock_block(ctx.bid());
     __tensor_copy_sync(dest, src);
@@ -214,8 +205,7 @@ enum class reduce_op_t : uint8_t {
 };
 
 template <class T>
-void tdma_all_reduce_async(tensor<T, loc_t::local> &src,
-                           thread_context &ctx,
+void tdma_all_reduce_async(tensor<T, loc_t::local> &src, thread_context &ctx,
                            reduce_op_t reduce_op = reduce_op_t::SUM) {
     switch (reduce_op) {
     case reduce_op_t::SUM: {

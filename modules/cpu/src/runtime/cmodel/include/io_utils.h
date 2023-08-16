@@ -4,7 +4,6 @@
 #include <tensor.h>
 #include <vector>
 
-
 inline std::vector<uint8_t> read_stream(std::istream &stream) {
     stream.seekg(0, std::ios::end);
     size_t length = stream.tellg();

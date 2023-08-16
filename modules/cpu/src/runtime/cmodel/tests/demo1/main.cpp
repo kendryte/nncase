@@ -29,10 +29,10 @@ DEFINE_BFUNC(7)
 
 /**
  * @brief demo1 X.bin WK.bin K.bin
- * 
- * @param argc 
- * @param argv 
- * @return int 
+ *
+ * @param argc
+ * @param argv
+ * @return int
  */
 int main([[maybe_unused]] int argc, char **argv) {
     assert(argc == 4);
@@ -52,7 +52,6 @@ int main([[maybe_unused]] int argc, char **argv) {
     span_copy(block5::shared::X.data(), gsl::make_span(src_X).as_span<float>());
     span_copy(block6::shared::X.data(), gsl::make_span(src_X).as_span<float>());
     span_copy(block7::shared::X.data(), gsl::make_span(src_X).as_span<float>());
-    
 
     pthread_t t_0_0, t_1_0, t_2_0, t_3_0, t_4_0, t_5_0, t_6_0, t_7_0;
     pthread_t t_0_1, t_1_1, t_2_1, t_3_1, t_4_1, t_5_1, t_6_1, t_7_1;
