@@ -183,6 +183,18 @@ void tdma_reduce_async() {
     throw std::system_error(std::make_error_code(std::errc::not_supported));
 }
 
+/**
+ * @brief reduce across BLOCKS * CORES
+ *  1. stack the src to gather tensor
+ *  2. reduce gather tensor
+ *  3. broadcast gather tensor to local tensor.
+ * @tparam T
+ * @param src local tensor
+ * @param dest local tensor
+ * @param reduce_op op
+ * @param axis axis of gather tensor, note gather tensor dims = [32,...]
+ * @param ctx
+ */
 template <class T>
 void tdma_all_reduce_async(tensor<T, loc_t::local> &src,
                            tensor<T, loc_t::local> &dest, reduce_op_t reduce_op,
@@ -193,6 +205,9 @@ void tdma_all_reduce_async(tensor<T, loc_t::local> &src,
             auto new_dims = dims_t(src.dimension());
             new_dims.insert(new_dims.begin(), 32);
             if (visited == 1) {
+                if (global_hardware_ctx->global_var != nullptr) {
+                    throw std::runtime_error(" the global var has been used!");
+                }
                 gather_tensor = new tensor<T>(new_dims);
                 global_hardware_ctx->global_var = (void *)gather_tensor;
             } else {
