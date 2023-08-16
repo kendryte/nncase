@@ -5,6 +5,7 @@
 #include <matmul.h>
 #include <tensor.h>
 #include <thread_context.h>
+#include <functional>
 
 template <template <class, tensor_loc_t> class TS, class DT>
 void __tensor_copy_sync(TS<DT, tensor_loc_t::local> &&dest,
