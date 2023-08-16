@@ -90,9 +90,9 @@ TEST_P(UnaryTest, tanh) {
 
 int main(int argc, char *argv[]) {
     READY_TEST_CASE_GENERATE()
-    FOR_LOOP(lhs_type, i)
+    FOR_LOOP(other_type, i)
     FOR_LOOP(i_shape, j)
-    SPLIT_ELEMENT(lhs_type, i)
+    SPLIT_ELEMENT(other_type, i)
     SPLIT_ELEMENT(i_shape, j)
     WRITE_SUB_CASE()
     FOR_LOOP_END()

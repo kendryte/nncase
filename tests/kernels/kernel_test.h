@@ -1545,7 +1545,10 @@ class KernelTest {
     }
 
     void print_runtime_tensor(runtime::runtime_tensor lhs) {
-        std::cout << "tensor:" << std::endl;
+        std::cout << "tensor (shape:[ ";
+        for (auto a : lhs.shape())
+            std::cout << a << " ";
+        std::cout << "]):" << std::endl;
         kernels::stackvm::apply(
             lhs.shape(),
             [&](gsl::span<const size_t> index) -> result<void> {
@@ -1741,6 +1744,15 @@ class KernelTest {
             }
         }
         return cArray;
+    }
+
+    static std::string GetFileNameFromMacro(const char *filePath) {
+        std::string fullFilePath(filePath);
+        size_t lastSlashIndex = fullFilePath.find_last_of("/\\");
+        if (lastSlashIndex != std::string::npos) {
+            return fullFilePath.substr(lastSlashIndex + 1);
+        }
+        return fullFilePath;
     }
 
   private:
