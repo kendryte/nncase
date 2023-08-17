@@ -93,6 +93,7 @@ internal class Compiler : ICompiler
         {
             p.Add<Passes.Rules.Neutral.SqueezeTransposeShape>();
             p.Add<Passes.Rules.Neutral.Squeeze5DTranspose>();
+            p.Add<Passes.Rules.Neutral.SqueezeBinaryShape>();
             p.Add<Passes.Rules.Neutral.FoldLayerNormPattern1>();
             p.Add<Passes.Rules.Neutral.FoldLayerNormPattern2>();
             p.Add<Passes.Rules.Neutral.FoldLayerNormPattern3>();
