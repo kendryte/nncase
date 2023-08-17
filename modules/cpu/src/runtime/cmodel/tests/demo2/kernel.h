@@ -64,11 +64,12 @@ void stage1_kernel(
 // 8 head per block
 // 96 seq-len per thread
 void stage2_kernel(tensor<float> &qkh) {
+    thread_context ctx(bid, tid);
     // 5. compute softmax
     auto qkhi = qkh({bid * 8, tid * 96, 0}, {8, 96, 384});
 
     tensor<float> sih({8, 96, 384});
-    sih = softmax(qkhi, 2);
+    // sih = softmax(qkhi, 2);
 
     // 6. compute y
     tensor<float> yihT({8, 96, 128});
@@ -77,17 +78,20 @@ void stage2_kernel(tensor<float> &qkh) {
     // 下面的 transpose 可以在计算 yih 的过程中通过指定输出 stride
     // 无代价地做到。
     /* [96, 8, 128] -> [96, 1024] */
-    yih = reshape(view_transpose(yihT, dims_t({1, 0, 2})), {96, 1024});
+    tensor<float> yih({96, 8, 128});
+    transpose(yihT, yih, dims_t({1, 0, 2}));
+    [[maybe_unused]] auto yihv = view(yih, dims_t({96, 1024}));
+    // yih = reshape(, {96, 1024});
 
     // 7. Add and sum & sqr
-    tensor<float> sum({96});
-    tensor<float> sum_sqr({96});
-    auto xi = X({tid * 96, bid * 1024}, {96, 1024}); // [96, 1024]
-    yih = add_and_sum_sqr(yih, xi, sum, sum_sqr);
-    __tdma_all_reduce_async(sum, sum_sqr,
-                            reduce_op_t::SUM); // All blocks & threads reduce
-    __tdma_wait();
+    // tensor<float> sum({96});
+    // tensor<float> sum_sqr({96});
+    // auto xi = X({tid * 96, bid * 1024}, {96, 1024}); // [96, 1024]
+    // yih = add_and_sum_sqr(yih, xi, sum, sum_sqr);
+    // __tdma_all_reduce_async(sum, sum_sqr,
+    //                         reduce_op_t::SUM); // All blocks & threads reduce
+    tdma_wait(ctx);
 
     // 8. compute LayerNorm
-    yih = layer_norm(yih, sum, sum_sqr); // [96, 1024]
+    // yih = layer_norm(yih, sum, sum_sqr); // [96, 1024]
 }

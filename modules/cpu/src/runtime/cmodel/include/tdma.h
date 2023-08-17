@@ -8,6 +8,7 @@
 #include <reduce.h>
 #include <tensor.h>
 #include <thread_context.h>
+#include <transpose.h>
 #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_DEBUG
 #include <spdlog/spdlog.h>
 
@@ -20,14 +21,26 @@ template <class T, loc_t Loc> tensor<T, Loc> unsqueeze(tensor<T, Loc> &src) {
 }
 
 template <class T, loc_t Loc>
-tensor<T, Loc> view_transpose(tensor<T, Loc> &src, dims_t axes) {
+tensor<T, Loc> view_transpose(tensor<T, Loc> &src, dims_t perm) {
     auto new_dims = dims_t();
     auto new_strides = dims_t();
-    for (auto axis : axes) {
-      new_dims.push_back(src.dimension()[axis]);
-      new_strides.push_back(src.strides()[axis]);
+    for (auto axis : perm) {
+        new_dims.push_back(src.dimension()[axis]);
+        new_strides.push_back(src.strides()[axis]);
     }
     return tensor<T, Loc>(src.data(), new_dims, new_strides);
+}
+
+template <class T, loc_t Loc>
+tensor<T, Loc> view(tensor<T, Loc> &src, dims_t new_dims) {
+    return tensor<T, Loc>(src.data(), new_dims, get_default_strides(new_dims));
+}
+
+template <class T, loc_t Loc>
+void transpose(tensor<T, Loc> &src, tensor<T, Loc> &dest, dims_t perm) {
+    return kernels::transpose(src.cdata().data(), dest.data().data(),
+                              src.dimension(), perm, src.strides(),
+                              dest.strides());
 }
 
 template <class T, loc_t DestLoc, loc_t SrcLoc>
@@ -296,9 +309,6 @@ void tdma_cancel() {}
 
 void tdma_status() {}
 
-enum class sched_strategy_t:uint8_t{
-  pin_block_tensor,
-  normal
-};
+enum class sched_strategy_t : uint8_t { pin_block_tensor, normal };
 
 void set_sched_strategy([[maybe_unused]] sched_strategy_t sch) {}
