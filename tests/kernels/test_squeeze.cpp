@@ -54,7 +54,7 @@ class squeezeTest : public KernelTest,
 };
 
 INSTANTIATE_TEST_SUITE_P(squeeze, squeezeTest,
-                         testing::Combine(testing::Range(0, 156)));
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(squeezeTest, squeeze) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);

@@ -62,7 +62,7 @@ class ReduceWindow2DTest : public KernelTest,
 };
 
 INSTANTIATE_TEST_SUITE_P(ReduceWindow2D, ReduceWindow2DTest,
-                         testing::Combine(testing::Range(0, 2)));
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(ReduceWindow2DTest, ReduceWindow2D) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);

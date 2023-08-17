@@ -50,7 +50,7 @@ class ReverseSequenceTest : public KernelTest,
 };
 
 INSTANTIATE_TEST_SUITE_P(ReverseSequence, ReverseSequenceTest,
-                         testing::Combine(testing::Range(0, 1)));
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(ReverseSequenceTest, ReverseSequence) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);

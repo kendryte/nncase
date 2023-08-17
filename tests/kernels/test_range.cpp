@@ -71,7 +71,7 @@ class RangeTest : public KernelTest,
 };
 
 INSTANTIATE_TEST_SUITE_P(Range, RangeTest,
-                         testing::Combine(testing::Range(0, 100)));
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(RangeTest, Range) {
     auto begin_ort = runtime_tensor_2_ort_tensor(begin);

@@ -85,7 +85,7 @@ class ReduceArgMaxTest : public KernelTest,
 };
 
 INSTANTIATE_TEST_SUITE_P(ReduceArgMax, ReduceArgMaxTest,
-                         testing::Combine(testing::Range(0, 500)));
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(ReduceArgMaxTest, ReduceArgMax) {
 

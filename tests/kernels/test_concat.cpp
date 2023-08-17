@@ -60,7 +60,7 @@ class ConcatTest : public KernelTest,
 };
 
 INSTANTIATE_TEST_SUITE_P(Concat, ConcatTest,
-                         testing::Combine(testing::Range(0, 392)));
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(ConcatTest, Concat) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);

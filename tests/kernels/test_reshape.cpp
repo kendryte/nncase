@@ -50,7 +50,7 @@ class ReshapeTest : public KernelTest,
 };
 
 INSTANTIATE_TEST_SUITE_P(Reshape, ReshapeTest,
-                         testing::Combine(testing::Range(0, 65)));
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(ReshapeTest, Reshape) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);

@@ -54,7 +54,7 @@ class StackTest : public KernelTest,
 };
 
 INSTANTIATE_TEST_SUITE_P(Stack, StackTest,
-                         testing::Combine(testing::Range(0, 26)));
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(StackTest, Stack) {
 

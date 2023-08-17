@@ -46,8 +46,8 @@ class ClampTest : public KernelTest,
 
   protected:
     runtime_tensor input;
-    float_t min_value;
-    float_t max_value;
+    float min_value;
+    float max_value;
 };
 
 INSTANTIATE_TEST_SUITE_P(

@@ -76,7 +76,7 @@ class ReduceSumTest : public KernelTest,
 };
 
 INSTANTIATE_TEST_SUITE_P(ReduceMin, ReduceSumTest,
-                         testing::Combine(testing::Range(0, 25)));
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(ReduceSumTest, ReduceSum) {
 

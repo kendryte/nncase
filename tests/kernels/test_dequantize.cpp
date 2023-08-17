@@ -50,7 +50,7 @@ class DequantizeTest : public KernelTest,
 };
 
 INSTANTIATE_TEST_SUITE_P(dequantize, DequantizeTest,
-                         testing::Combine(testing::Range(0, 18)));
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(DequantizeTest, dequantize) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);

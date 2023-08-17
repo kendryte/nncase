@@ -50,7 +50,7 @@ class TileTest : public KernelTest,
 };
 
 INSTANTIATE_TEST_SUITE_P(Tile, TileTest,
-                         testing::Combine(testing::Range(0, 26)));
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(TileTest, Tile) {
     auto input_ort = runtime_tensor_2_ort_tensor(input);

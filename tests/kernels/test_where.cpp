@@ -61,7 +61,7 @@ class WhereTest : public KernelTest,
 };
 
 INSTANTIATE_TEST_SUITE_P(Where, WhereTest,
-                         testing::Combine(testing::Range(0, 1000)));
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(WhereTest, Where) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);

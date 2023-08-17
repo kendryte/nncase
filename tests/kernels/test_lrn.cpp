@@ -49,7 +49,8 @@ class LrnTest : public KernelTest,
     runtime_tensor input;
 };
 
-INSTANTIATE_TEST_SUITE_P(lrn, LrnTest, testing::Combine(testing::Range(0, 2)));
+INSTANTIATE_TEST_SUITE_P(lrn, LrnTest,
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(LrnTest, lrn) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);

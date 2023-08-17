@@ -176,7 +176,7 @@ class ConstantOfShapeTest : public KernelTest,
 };
 
 INSTANTIATE_TEST_SUITE_P(constant_of_shape, ConstantOfShapeTest,
-                         testing::Combine(testing::Range(0, 6)));
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(ConstantOfShapeTest, constant_of_shape) {
 

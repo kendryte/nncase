@@ -54,7 +54,7 @@ class UnsqueezeTest : public KernelTest,
 };
 
 INSTANTIATE_TEST_SUITE_P(Unsqueeze, UnsqueezeTest,
-                         testing::Combine(testing::Range(0, 1000)));
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 //    testing::Combine(
 //        testing::Values(dt_float32, dt_int32, dt_int16, dt_float64, dt_int8,

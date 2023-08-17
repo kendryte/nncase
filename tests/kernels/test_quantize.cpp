@@ -101,7 +101,7 @@ class QuantizeTest : public KernelTest,
 };
 
 INSTANTIATE_TEST_SUITE_P(quantize, QuantizeTest,
-                         testing::Combine(testing::Range(0, 18)));
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(QuantizeTest, quantize) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);

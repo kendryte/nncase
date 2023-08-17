@@ -182,7 +182,7 @@ class BroadCastTest : public KernelTest,
 };
 
 INSTANTIATE_TEST_SUITE_P(BroadCast, BroadCastTest,
-                         testing::Combine(testing::Range(0, 180)));
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(BroadCastTest, BroadCast) {
 

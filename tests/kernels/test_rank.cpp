@@ -59,7 +59,7 @@ class RankTest : public KernelTest,
 };
 
 INSTANTIATE_TEST_SUITE_P(rank, RankTest,
-                         testing::Combine(testing::Range(0, 100)));
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(RankTest, rank) {
     // actual

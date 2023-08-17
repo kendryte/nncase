@@ -54,7 +54,7 @@ class PadTest : public KernelTest,
 };
 
 INSTANTIATE_TEST_SUITE_P(Pad, PadTest,
-                         testing::Combine(testing::Range(0, 100)));
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(PadTest, Pad) {
 

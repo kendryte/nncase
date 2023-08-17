@@ -83,7 +83,7 @@ class UniformLikeTest : public KernelTest,
 };
 
 INSTANTIATE_TEST_SUITE_P(UniformLike, UniformLikeTest,
-                         testing::Combine(testing::Range(0, 1000)));
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(UniformLikeTest, UniformLike) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
