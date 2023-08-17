@@ -121,7 +121,7 @@ TEST_P(ReduceWindow2DTest, ReduceWindow2D) {
                                        true, host_runtime_tensor::pool_cpu_only)
                                .expect("create tensor failed");
 
-    float_t init_value[] = {0.0f};
+    float init_value[] = {0.0f};
     auto init_value_tensor =
         hrt::create(
             dt_float32, {1},

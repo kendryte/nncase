@@ -35,7 +35,7 @@ class SpaceToBatchTest
 
         // expected
         if (l_shape.size() == 3) {
-            float_t expected_array[] = {1, 5, 2, 6, 3, 7, 4, 8};
+            float expected_array[] = {1, 5, 2, 6, 3, 7, 4, 8};
             expected =
                 hrt::create(typecode, l_shape,
                             {reinterpret_cast<gsl::byte *>(expected_array),
@@ -43,7 +43,7 @@ class SpaceToBatchTest
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
         } else if (l_shape.size() == 4) {
-            float_t expected_array[] = {1, 3, 9,  11, 2, 4, 10, 12,
+            float expected_array[] = {1, 3, 9,  11, 2, 4, 10, 12,
                                         5, 7, 13, 15, 6, 8, 14, 16};
             expected =
                 hrt::create(typecode, l_shape,
@@ -70,13 +70,13 @@ TEST_P(SpaceToBatchTest, SpaceToBatch) {
     // actual
     runtime_tensor input;
     if (expected.shape().size() == 3) {
-        float_t a[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+        float a[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
         input = hrt::create(dt_float32, {1, 4, 3},
                             {reinterpret_cast<gsl::byte *>(a), sizeof(a)}, true,
                             host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
     } else if (expected.shape().size() == 4) {
-        float_t a[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+        float a[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
         input = hrt::create(dt_float32, {1, 4, 4, 1},
                             {reinterpret_cast<gsl::byte *>(a), sizeof(a)}, true,
                             host_runtime_tensor::pool_cpu_only)
