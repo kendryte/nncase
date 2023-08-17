@@ -71,7 +71,8 @@ void stage1_kernel(
     // }
 
     // X [384,8192] => separate to bid , tid
-    auto xj = X({0, (bid * CORES + tid) * 256}, {384, 256}); // [48,2048]
+    tensor<float> xj({384, 256});
+    __tensor_copy_sync(std::move(xj), X({0, (bid * CORES + tid) * 256}, {384, 256}));
     tensor<float> r_sum({384});
     tensor<float> r_sum_sqr({384});
     tensor_reduce_sum_sqr(xj, r_sum, r_sum_sqr);
