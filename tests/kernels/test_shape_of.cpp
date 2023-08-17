@@ -26,12 +26,17 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class ShapeOfTest
-    : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
+#define TEST_CASE_NAME "test_shape_of"
+
+class ShapeOfTest : public KernelTest,
+                    public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
-        auto &&[typecode, shape] = GetParam();
+
+        READY_SUBCASE()
+
+        auto typecode = GetDataType("lhs_type");
+        auto shape = GetShapeArray("i_shape");
 
         lhs = hrt::create(typecode, shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
@@ -48,22 +53,15 @@ class ShapeOfTest
                        .expect("create tensor failed");
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
   protected:
     runtime_tensor lhs;
     runtime_tensor expected;
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    ShapeOf, ShapeOfTest,
-    testing::Combine(testing::Values(dt_float32, dt_int32, dt_int8, dt_uint8,
-                                     dt_float64, dt_int16, dt_uint32, dt_uint64,
-                                     dt_uint16, dt_boolean, dt_int64,
-                                     dt_float16),
-                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{1},
-                                     dims_t{1, 3}, dims_t{1, 3, 16},
-                                     dims_t{1, 2, 3, 4, 5})));
+INSTANTIATE_TEST_SUITE_P(ShapeOf, ShapeOfTest,
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(ShapeOfTest, ShapeOf) {
 
@@ -87,6 +85,15 @@ TEST_P(ShapeOfTest, ShapeOf) {
 }
 
 int main(int argc, char *argv[]) {
+    READY_TEST_CASE_GENERATE()
+    FOR_LOOP(lhs_type, i)
+    FOR_LOOP(input_shape, k)
+    SPLIT_ELEMENT(lhs_type, i)
+    SPLIT_ELEMENT(input_shape, k)
+    WRITE_SUB_CASE()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

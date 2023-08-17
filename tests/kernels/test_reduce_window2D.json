@@ -1,0 +1,8 @@
+{
+  "lhs_type":["dt_float32"],
+  "lhs_shape":[[1, 3, 16, 16]],
+  "dilations":[[1, 1]],
+  "filter": [[3, 3]],
+  "stride": [[1, 1]],
+  "onnxPads":[[1, 1, 1, 1], [0, 0, 0, 0]]
+}

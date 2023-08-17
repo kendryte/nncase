@@ -43,7 +43,7 @@ class UnaryTest : public KernelTest,
         init_tensor(input);
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
     void init_tensor(runtime_tensor &tensor) override {
         auto dtype = tensor.datatype();
