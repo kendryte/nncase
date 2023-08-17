@@ -247,37 +247,25 @@ public sealed partial class SqueezeTransposeShape : IRewriteRule
     }
 }
 
-
 [RuleGenerator]
 public sealed partial class SqueezeBinaryShape : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } = IsBinary("binary", "binaryCall", x => true, IsWildcard("lhs") with { TypePattern = HasFixedShape() }, IsWildcard("rhs") with { TypePattern = HasFixedShape() });
 
-    private static List<int> SqueezeShape(List<int> shape)
-    {
-        var newShape = new List<int> { 1, 1, 1, 1 };
-
-        for (int i = shape.Count - 1, k = 3; i >= 0; i--)
-        {
-            newShape[k] *= shape[i];
-            if (k > 0)
-                k--;
-        }
-
-        return newShape;
-    }
-
     public static (bool, List<int>, List<int>) SqueezeInputShape(List<int> a, List<int> b)
     {
         var aSize = a.Count;
         var bSize = b.Count;
 
-        var squeezeTimes = Math.Max(aSize > 4 ? aSize - 4 : 0,
-                                    bSize > 4 ? bSize - 4 : 0);
+        var squeezeTimes = Math.Max(
+            aSize > 4 ? aSize - 4 : 0,
+            bSize > 4 ? bSize - 4 : 0);
 
         if (squeezeTimes <= 0)
+        {
             return (false, a, b);
+        }
 
         List<int> newA = a;
         List<int> newB = b;
@@ -298,13 +286,17 @@ public sealed partial class SqueezeBinaryShape : IRewriteRule
                 for (int i = 0; i < aSize; i++)
                 {
                     if (a[i] == b[i])
+                    {
                         canFold[i] = false;
+                    }
                 }
 
                 for (int i = aSize - 1; i > 0; i--)
                 {
                     if (canFold[i] && canFold[i - 1])
+                    {
                         foldIndexCouples.Add((i - 1, i));
+                    }
                 }
 
                 while (squeezeTimes > 0 && foldIndexCouples.Count > 0)
@@ -338,40 +330,68 @@ public sealed partial class SqueezeBinaryShape : IRewriteRule
                 }
 
                 if (newA.Count > 4)
+                {
                     return (false, newA, newB);
+                }
             }
         }
         else
         {
             if (aSize != 1)
+            {
                 newA = SqueezeShape(a);
+            }
 
             if (bSize != 1)
+            {
                 newB = SqueezeShape(b);
+            }
         }
 
         return (true, newA, newB);
     }
 
+    private static List<int> SqueezeShape(List<int> shape)
+    {
+        var newShape = new List<int> { 1, 1, 1, 1 };
+
+        for (int i = shape.Count - 1, k = 3; i >= 0; i--)
+        {
+            newShape[k] *= shape[i];
+            if (k > 0)
+            {
+                k--;
+            }
+        }
+
+        return newShape;
+    }
+
     private static List<int> GetOutputShape(List<int> a, List<int> b)
     {
         if (a.Count == 1)
+        {
             return b;
+        }
+
         if (b.Count == 1)
+        {
             return a;
+        }
 
         var outputShape = a;
         for (int i = 0; i < a.Count; i++)
         {
             outputShape[i] = Math.Max(a[i], b[i]);
         }
+
         return outputShape;
     }
 
     private Expr? GetReplace(Binary binary, Call binaryCall, Expr lhs, Expr rhs)
     {
-        var lShape = lhs.CheckedShape.Count == 0 ? new Shape(new List<int> {1}) : lhs.CheckedShape;
-        var rShape = rhs.CheckedShape.Count == 0 ? new Shape(new List<int> {1}) : rhs.CheckedShape;
+        var lShape = lhs.CheckedShape.Count == 0 ? new Shape(new List<int> { 1 }) : lhs.CheckedShape;
+        var rShape = rhs.CheckedShape.Count == 0 ? new Shape(new List<int> { 1 }) : rhs.CheckedShape;
         var (result, newLShape, newRShape) = SqueezeInputShape(lShape.ToValueList(), rShape.ToValueList());
         if (!result)
         {
@@ -381,6 +401,5 @@ public sealed partial class SqueezeBinaryShape : IRewriteRule
         var outputShape = GetOutputShape(lShape.ToValueList(), rShape.ToValueList());
 
         return Reshape(Binary(binary.BinaryOp, Reshape(lhs, newLShape.ToArray()), Reshape(rhs, newRShape.ToArray())), outputShape.ToArray());
-
     }
 }
