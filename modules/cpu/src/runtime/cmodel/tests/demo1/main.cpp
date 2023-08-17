@@ -5,7 +5,7 @@
 
 #define DEFINE_TFUNC(b, t)                                                     \
     void *f_##b##_##t(void *arg) {                                             \
-        block##b::thread##t::stage1_kernel(WK, K, Sum);                        \
+        block##b::thread##t::stage1_kernel(WK, K, Sum, RSum, RSumSqr, Norm);   \
         return arg;                                                            \
     }
 
@@ -17,6 +17,9 @@
 
 tensor<float, loc_t::device> WK({64, 8192, 128});
 tensor<float, loc_t::device> K({64, 384, 128});
+tensor<float, loc_t::device> Norm({384, 8192});
+tensor<float, loc_t::device> RSum({384});
+tensor<float, loc_t::device> RSumSqr({384});
 tensor<float, loc_t::device> Sum({128});
 
 DEFINE_BFUNC(0)
@@ -29,14 +32,14 @@ DEFINE_BFUNC(6)
 DEFINE_BFUNC(7)
 
 /**
- * @brief demo1 X.bin WK.bin K.bin Sum.bin
+ * @brief demo1 X.bin WK.bin K.bin Sum.bin Norm.bin
  *
  * @param argc
  * @param argv
  * @return int
  */
 int main([[maybe_unused]] int argc, char **argv) {
-    assert(argc == 5);
+    assert(argc == 8);
     spdlog::set_level(spdlog::level::debug);
     global_hardware_init();
 
@@ -45,6 +48,9 @@ int main([[maybe_unused]] int argc, char **argv) {
     auto src_WK = read_file(std::string(argv[2]));
     auto src_K = read_file(std::string(argv[3]));
     auto src_Sum = read_file(std::string(argv[4]));
+    auto src_RSum = read_file(std::string(argv[5]));
+    auto src_RSumSqr = read_file(std::string(argv[6]));
+    auto src_Norm = read_file(std::string(argv[7]));
     span_copy(WK.data(), gsl::make_span(src_WK).as_span<float>());
     span_copy(block0::shared::X.data(), gsl::make_span(src_X).as_span<float>());
     span_copy(block1::shared::X.data(), gsl::make_span(src_X).as_span<float>());
@@ -131,9 +137,24 @@ int main([[maybe_unused]] int argc, char **argv) {
                K.data().size());
     printf("K cosine %f\n", cos);
 
-    auto cos2 = cosine(Sum.data().begin(),
-                       gsl::make_span(src_Sum).as_span<float>().begin(),
-                       Sum.data().size());
-    printf("Sum cosine %f\n", cos2);
+    cos = cosine(Sum.data().begin(),
+                 gsl::make_span(src_Sum).as_span<float>().begin(),
+                 Sum.data().size());
+    printf("Sum cosine %f\n", cos);
+
+    cos = cosine(RSum.data().begin(),
+                 gsl::make_span(src_RSum).as_span<float>().begin(),
+                 Sum.data().size());
+    printf("src_RSum cosine %f\n", cos);
+
+    cos = cosine(RSumSqr.data().begin(),
+                 gsl::make_span(src_RSumSqr).as_span<float>().begin(),
+                 Sum.data().size());
+    printf("RSumSqr cosine %f\n", cos);
+
+    cos = cosine(Norm.data().begin(),
+                 gsl::make_span(src_Norm).as_span<float>().begin(),
+                 Sum.data().size());
+    printf("Norm cosine %f\n", cos);
     return 0;
 }

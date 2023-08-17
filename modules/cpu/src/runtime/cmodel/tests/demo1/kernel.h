@@ -22,9 +22,13 @@ static tensor<float> wkh({8, 2048, 128});
 // 2048 w-len per thread
 void stage1_kernel(
     // tensor<float, loc_t::device> &WQ,  /* 64, 8192, 128 */
-    [[maybe_unused]] tensor<float, loc_t::device> &WK, /* 64, 8192, 128 */
-    [[maybe_unused]] tensor<float, loc_t::device> &K,  /* 64, 384, 128 */
-    [[maybe_unused]] tensor<float, loc_t::device> &Sum /* 128 */
+    [[maybe_unused]] tensor<float, loc_t::device> &WK,     /* 64, 8192, 128 */
+    [[maybe_unused]] tensor<float, loc_t::device> &K,      /* 64, 384, 128 */
+    [[maybe_unused]] tensor<float, loc_t::device> &Sum,    /* 128 */
+    [[maybe_unused]] tensor<float, loc_t::device> &RSum,   /* 384 */
+    [[maybe_unused]] tensor<float, loc_t::device> &RSumSqr, /* 384 */
+    [[maybe_unused]] tensor<float, loc_t::device> &Norm /* 384, 8192 */
+    // [[maybe_unused]] tensor<float, loc_t::device> &Norm /* 384,8192 */
     //  tensor<float, loc_t::device> &WV,  /* 64, 8192, 128 */
     //  tensor<float, loc_t::device> &WFC1 /* 384, 8192*/
 ) {
@@ -48,18 +52,49 @@ void stage1_kernel(
     //     tensor
     //                                          // 指令
 
-    tensor_block_mma_sync(xi, wkh, kh, false,
-                          ctx); // [384, 2048] x [8, 2048, 64] = [8, 384, 128]
+    // tensor_block_mma_sync(xi, wkh, kh, false,
+    //                       ctx); // [384, 2048] x [8, 2048, 64] = [8, 384,
+    //                       128]
 
-    tdma_store_async(kh, K({bid * 8, 0, 0}, {8, 384, 128}), ctx);
+    // if (tid == 0) {
+    //     tdma_store_async(kh, K({bid * 8, 0, 0}, {8, 384, 128}), ctx);
+    // }
+    // tdma_wait(ctx);
 
-    tensor<float> sum({128});
-    tensor_reduce_sync(wkh, sum, reduce_op_t::sum, 0.0f, dims_t({0, 1}), false);
-    tdma_all_reduce_async(sum, sum, reduce_op_t::sum, dims_t({0}), ctx);
+    // tensor<float> sum({128});
+    // tensor_reduce_sync(wkh, sum, reduce_op_t::sum, 0.0f, dims_t({0, 1}),
+    // false); tdma_all_reduce_async(sum, sum, reduce_op_t::sum, dims_t({0}),
+    // ctx);
 
+    // if (bid == 0 && tid == 0) {
+    //     tdma_store_async(sum, std::move(Sum), ctx);
+    // }
+
+    // X [384,8192] => separate to bid , tid
+    auto xj = X({0, (bid * CORES + tid) * 256}, {384, 256}); // [48,2048]
+    tensor<float> r_sum({384});
+    tensor<float> r_sum_sqr({384});
+    tensor_reduce_sum_sqr(xj, r_sum, r_sum_sqr);
+    tdma_all_reduce_async(r_sum, r_sum, reduce_op_t::sum, dims_t({0}), ctx);
+    tdma_all_reduce_async(r_sum_sqr, r_sum_sqr, reduce_op_t::sum, dims_t({0}),
+                          ctx);
     if (bid == 0 && tid == 0) {
-        tdma_store_async(sum, std::move(Sum), ctx);
+        tdma_store_async(r_sum, std::move(RSum), ctx);
+        tdma_store_async(r_sum_sqr, std::move(RSumSqr), ctx);
     }
+
+    tensor<float> gamma({256});
+    tdma_fill_async(gamma, 1.0f);
+    tensor<float> beta({256});
+    tdma_fill_async(beta, 1.0f);
+    tensor_layernorm_sync(xj, r_sum, r_sum_sqr, gamma, beta, 1e-6f, 1, 8192);
+    tdma_store_async(xj, Norm({0, (bid * CORES + tid) * 256}, {384, 256}),
+                     ctx);
+
+    // tensor_sum_sqr(xj, r_sum, r_sum_sqr);
+
+    // tensor<float> layer_sum({8, 2048});
+    // tensor<float> layer_sum_sqr({8, 2048});
 
     // vh = tensor_block_mma_sync(
     //     xi, wvh); // [384, 2048] x [8, 2048, 64] = [8, 384, 128]

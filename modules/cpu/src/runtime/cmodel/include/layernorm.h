@@ -4,12 +4,14 @@
 #include <riscv_vector.h>
 #endif
 
+namespace kernels {
+
 namespace {
 template <typename T>
-void layernorm_naive_impl(const T *input, const T *sum, T *sum_sqr, T *gamma,
+void layernorm_naive_impl(T *input, const T *sum, T *sum_sqr, T *gamma,
                           T *beta, gsl::span<const size_t> input_shape,
                           [[maybe_unused]] gsl::span<const size_t> input_stride,
-                          T *eps, int32_t axis, int32_t norm_size) noexcept {
+                          T eps, int32_t axis, int32_t norm_size) noexcept {
     // only process continues tensor for now
     size_t outer_size = 1;
     for (auto i = 0; i < axis; i++) {
@@ -23,7 +25,7 @@ void layernorm_naive_impl(const T *input, const T *sum, T *sum_sqr, T *gamma,
 
     for (size_t o = 0; o < outer_size; o++) {
         auto mean = sum[o] / norm_size;
-        auto sigma = std::sqrt(sum_sqr[o] / norm_size + eps);
+        auto sigma = std::sqrt(sum_sqr[o] / static_cast<T>(norm_size) + eps);
         for (size_t i = 0; i < inner_size; i++) {
             auto x = input + o * inner_size + i;
             *x = (*x - mean) / sigma * gamma[i] + beta[i];
@@ -107,7 +109,7 @@ void layernorm_rvv_impl(const T *input, const T *sum, T *sum_sqr, T *gamma,
 
 template <class T>
 void layernorm(T *input, T *sum, T *sum_sqr, T *gamma, T *beta,
-               dims_t input_dims, strides_t input_strides, T *eps, int32_t axis,
+               dims_t input_dims, strides_t input_strides, T eps, int32_t axis,
                int32_t norm_size) {
 #ifdef __riscv_vector
     return layernorm_rvv_impl(
@@ -123,3 +125,4 @@ void layernorm(T *input, T *sum, T *sum_sqr, T *gamma, T *beta,
         axis, norm_size);
 #endif
 }
+} // namespace kernels

@@ -65,9 +65,29 @@ template <typename T, loc_t ALoc, loc_t BLoc>
 void tensor_reduce_sync(tensor<T, ALoc> &input, tensor<T, BLoc> &output,
                         reduce_op_t op, T init_value, dims_t axis,
                         bool keep_dims) {
-    reduce(op, &init_value, input.cdata().data(), output.data().data(),
-           input.dimension(), axis, input.strides(), output.strides(),
-           keep_dims);
+    kernels::reduce(op, &init_value, input.cdata().data(), output.data().data(),
+                    input.dimension(), axis, input.strides(), output.strides(),
+                    keep_dims);
+}
+
+template <typename T, loc_t Loc>
+void tensor_layernorm_sync(tensor<T, Loc> &input, tensor<T, loc_t::local> &sum,
+                           tensor<T, loc_t::local> &sum_sqr,
+                           tensor<T, loc_t::local> &gamma,
+                           tensor<T, loc_t::local> &beta, T eps, int32_t axis,
+                           int32_t norm_size) {
+    kernels::layernorm(input.data().data(), sum.data().data(),
+                       sum_sqr.data().data(), gamma.data().data(),
+                       beta.data().data(), input.dimension(), input.strides(),
+                       eps, axis, norm_size);
+}
+
+template <typename T, loc_t ALoc>
+void tensor_reduce_sum_sqr(tensor<T, ALoc> &a, tensor<T, loc_t::local> &sum,
+                           tensor<T, loc_t::local> &sum_sqr) {
+    kernels::reduce_sum_and_sum_sqr(a.cdata().data(), sum.data().data(),
+                                    sum_sqr.data().data(), a.dimension(),
+                                    a.strides(), sum.strides());
 }
 
 /**
@@ -112,53 +132,46 @@ void tensor_block_mma_sync(tensor<T, ALoc> &a, tensor<T, BLoc> &b,
         ctx);
 }
 
-template <class T>
-void tdma_load_async(tensor<T, loc_t::shared> &dest,
-                     tensor<T, loc_t::device> &&src, thread_context &ctx) {
-    __tdma_block_sync_apply(
-        [&](int visited) -> void {
-            if (visited == 1) {
-                __tensor_copy_sync(std::forward<tensor<T, loc_t::shared>>(dest),
-                                   std::forward<tensor<T, loc_t::device>>(src),
-                                   ctx);
-            }
-        },
-        ctx);
+void __tdma_block_sync_apply(std::function<void(int)> func,
+                             thread_context &ctx) {
+    global_hardware_ctx->lock_block(ctx.bid());
+    int visited = global_hardware_ctx->mark_block_visit(ctx.bid(), ctx.tid());
+    SPDLOG_DEBUG("__tdma_block_sync_apply bid {} tid {} visited {}\n",
+                 ctx.bid(), ctx.tid(), visited);
+    func(visited);
+    global_hardware_ctx->unlock_block(ctx.bid());
+    global_hardware_ctx->wait_block_sync(ctx.bid(), visited);
 }
 
-template <class T>
-void tdma_load_async(tensor<T, loc_t::local> &dest,
-                     tensor<T, loc_t::device> &&src,
+void __tdma_all_sync_apply(std::function<void(int)> apply_func,
+                           std::function<void()> broadcast_func,
+                           thread_context &ctx) {
+    global_hardware_ctx->lock_all();
+    int visited = global_hardware_ctx->mark_all_visit(ctx.bid(), ctx.tid());
+    SPDLOG_DEBUG("__tdma_all_sync_apply bid {} tid {} visited {}\n", ctx.bid(),
+                 ctx.tid(), visited);
+    apply_func(visited);
+    global_hardware_ctx->unlock_all();
+    global_hardware_ctx->wait_all_sync(visited, broadcast_func);
+}
+
+template <class T, loc_t DestLoc>
+void tdma_load_async(tensor<T, DestLoc> &dest, tensor<T, loc_t::device> &&src,
                      [[maybe_unused]] thread_context &ctx) {
-    __tensor_copy_sync(std::forward<tensor<T, loc_t::local>>(dest),
+    __tensor_copy_sync(std::forward<tensor<T, DestLoc>>(dest),
                        std::forward<tensor<T, loc_t::device>>(src));
 }
 
-template <class T>
-void tdma_store_async(tensor<T, loc_t::local> &src,
-                      tensor<T, loc_t::device> &&dest,
+template <class T, loc_t SrcLoc>
+void tdma_store_async(tensor<T, SrcLoc> &src, tensor<T, loc_t::device> &&dest,
                       [[maybe_unused]] thread_context &ctx) {
     __tensor_copy_sync(std::forward<tensor<T, loc_t::device>>(dest),
-                       std::forward<tensor<T, loc_t::local>>(src));
+                       std::forward<tensor<T, SrcLoc>>(src));
 }
 
-template <class T>
-void tdma_store_async(tensor<T, loc_t::shared> &src,
-                      tensor<T, loc_t::device> &&dest, thread_context &ctx) {
-    __tdma_block_sync_apply(
-        [&](int visited) -> void {
-            if (visited == 1) {
-                __tensor_copy_sync(std::forward<tensor<T, loc_t::device>>(dest),
-                                   std::forward<tensor<T, loc_t::shared>>(src));
-            }
-        },
-        ctx);
-}
-
-template <class T> void tdma_fill_async(tensor<T, loc_t::local> &src, T data) {
-    apply(src.dimension(), [&](gsl::span<size_t> index) -> void {
-        src.data()[offset(src.strides(), index)] = data;
-    });
+template <class T> void tdma_fill_async(tensor<T, loc_t::local> &src, T value) {
+    __tensor_unary_sync<T, loc_t::local, loc_t::local>(
+        src, src, [&value]([[maybe_unused]] T a) -> T { return value; });
 }
 
 template <class T>
@@ -259,31 +272,15 @@ void tdma_all_gather_async() {}
 
 void tdma_scatter_async() {}
 
-void tdma_wait() {}
+/**
+ * @brief tdma inner block wait.
+ * 
+ * @param ctx 
+ */
+void tdma_wait(thread_context &ctx) {
+    __tdma_block_sync_apply([]([[maybe_unused]] int visited) -> void {}, ctx);
+}
 
 void tdma_cancel() {}
 
 void tdma_status() {}
-
-void __tdma_block_sync_apply(std::function<void(int)> func,
-                             thread_context &ctx) {
-    global_hardware_ctx->lock_block(ctx.bid());
-    int visited = global_hardware_ctx->mark_block_visit(ctx.bid(), ctx.tid());
-    SPDLOG_DEBUG("__tdma_block_sync_apply bid {} tid {} visited {}\n",
-                 ctx.bid(), ctx.tid(), visited);
-    func(visited);
-    global_hardware_ctx->unlock_block(ctx.bid());
-    global_hardware_ctx->wait_block_sync(ctx.bid(), visited);
-}
-
-void __tdma_all_sync_apply(std::function<void(int)> apply_func,
-                           std::function<void()> broadcast_func,
-                           thread_context &ctx) {
-    global_hardware_ctx->lock_all();
-    int visited = global_hardware_ctx->mark_all_visit(ctx.bid(), ctx.tid());
-    SPDLOG_DEBUG("__tdma_all_sync_apply bid {} tid {} visited {}\n", ctx.bid(),
-                 ctx.tid(), visited);
-    apply_func(visited);
-    global_hardware_ctx->unlock_all();
-    global_hardware_ctx->wait_all_sync(visited, broadcast_func);
-}

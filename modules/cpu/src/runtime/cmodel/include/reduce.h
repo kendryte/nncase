@@ -23,17 +23,32 @@ enum class reduce_op_t : uint8_t {
     max = 2,
     sum = 3,
     prod = 4,
+    sum_sqr = 5,
 };
+
+namespace kernels {
 
 namespace {
 template <class T> struct identity {
     T operator()(const T &src) const noexcept { return src; }
 };
 
+template <class TShape>
+size_t get_reduce_block_size(const TShape &in_shape, const TShape &axis) {
+    size_t size = 1;
+    for (size_t i = 0; i < in_shape.size(); i++) {
+        if (std::find(axis.begin(), axis.end(), i) != axis.end()) {
+            size *= in_shape[i];
+        }
+    }
+
+    return size;
+}
+
 template <class TReducer, class TPostProcess, class T>
-void reduce_impl(TReducer &&reducer, TPostProcess &&post_process, T init_value,
-                 const T *input, T *output, gsl::span<const size_t> in_shape,
-                 gsl::span<const size_t> axis,
+void reduce_impl(TReducer &&reducer, TPostProcess &&post_process,
+                 const T init_value, const T *input, T *output,
+                 gsl::span<const size_t> in_shape, gsl::span<const size_t> axis,
                  gsl::span<const size_t> in_strides,
                  gsl::span<const size_t> out_shape,
                  gsl::span<const size_t> out_strides, bool keep_dims) noexcept {
@@ -53,12 +68,12 @@ void reduce_impl(TReducer &&reducer, TPostProcess &&post_process, T init_value,
 }
 } // namespace
 
-// #define REDUCE_IMPL(_ty, op, reducer, post_process)                            \
-//     case op:                                                                   \
-//         return reduce_impl(reducer, post_process,                              \
-//                            SCALAR_CAST(_ty, init_value), IN_CAST(_ty, input),  \
-//                            OUT_CAST(_ty, output), in_shape, axis, in_strides,  \
-//                            out_shape, out_strides, keep_dims, context)
+#define REDUCE_IMPL(op, reducer, post_process)                                 \
+    case op:                                                                   \
+        return reduce_impl(reducer, post_process,                              \
+                           *reinterpret_cast<const T *>(init_value), input,    \
+                           output, in_shape, axis, in_strides, out_shape,      \
+                           out_strides, keep_dims)
 
 #define REDUCE_IMPL_NO_POST(op, reducer)                                       \
     case op:                                                                   \
@@ -128,14 +143,16 @@ void reduce(reduce_op_t op, const T *init_value, const T *input, T *output,
             gsl::span<const size_t> out_strides, bool keep_dims) noexcept {
     auto out_shape = get_reduced_shape(in_shape, axis, keep_dims);
     switch (op) {
-        // REDUCE_IMPL(_ty, reduce_op_t::mean, std::plus<T>(),
-        //             [block_size = (T)get_reduce_block_size(in_shape, axis)](
-        //                 T v) { return v / block_size; });
+        REDUCE_IMPL(reduce_op_t::mean, std::plus<T>(),
+                    [block_size = (T)get_reduce_block_size(in_shape, axis)](
+                        T v) { return v / block_size; });
         REDUCE_IMPL_NO_POST(reduce_op_t::min,
                             [](T a, T b) { return std::min(a, b); });
         REDUCE_IMPL_NO_POST(reduce_op_t::max,
                             [](T a, T b) { return std::max(a, b); });
         REDUCE_IMPL_NO_POST(reduce_op_t::sum, std::plus<T>());
+        REDUCE_IMPL_NO_POST(reduce_op_t::sum_sqr,
+                            [](T a, T b) { return a + (b * b); });
     case reduce_op_t::prod:
         return reduce_prod(reinterpret_cast<const T *>(input),
                            reinterpret_cast<T *>(output), in_shape, in_strides,
@@ -144,3 +161,19 @@ void reduce(reduce_op_t op, const T *init_value, const T *input, T *output,
         return;
     }
 }
+
+template <class T>
+void reduce_sum_and_sum_sqr(const T *input, T *sum, T *sum_sqr,
+                            gsl::span<const size_t> in_shape,
+                            gsl::span<const size_t> in_strides,
+                            gsl::span<const size_t> out_strides) {
+    auto init_v = (T)0;
+    kernels::reduce(reduce_op_t::sum, &init_v, input, sum, in_shape,
+                    dims_t({in_shape.size() - 1}), in_strides, out_strides,
+                    false);
+    kernels::reduce(reduce_op_t::sum_sqr, &init_v, input, sum_sqr, in_shape,
+                    dims_t({in_shape.size() - 1}), in_strides, out_strides,
+                    false);
+}
+
+} // namespace kernels
