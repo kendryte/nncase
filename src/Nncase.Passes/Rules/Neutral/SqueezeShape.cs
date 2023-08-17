@@ -272,7 +272,7 @@ public sealed partial class SqueezeBinaryShape : IRewriteRule
 
         if (aSize == bSize)
         {
-            if (a == b)
+            if (a.SequenceEqual(b))
             {
                 newA = SqueezeShape(a);
                 newB = SqueezeShape(b);
@@ -280,12 +280,12 @@ public sealed partial class SqueezeBinaryShape : IRewriteRule
             else
             {
                 // 检查可以折叠的维度
-                var canFold = new bool[aSize];
+                var canFold = Enumerable.Repeat(true, aSize).ToArray();
                 var foldIndexCouples = new List<(int, int)>();
 
                 for (int i = 0; i < aSize; i++)
                 {
-                    if (a[i] == b[i])
+                    if (a[i] != b[i])
                     {
                         canFold[i] = false;
                     }
@@ -301,7 +301,7 @@ public sealed partial class SqueezeBinaryShape : IRewriteRule
 
                 while (squeezeTimes > 0 && foldIndexCouples.Count > 0)
                 {
-                    var indexes = foldIndexCouples[^1];
+                    var indexes = foldIndexCouples[0];
                     var front = indexes.Item1;
                     var back = indexes.Item2;
 
@@ -311,7 +311,7 @@ public sealed partial class SqueezeBinaryShape : IRewriteRule
                     newA.RemoveAt(back);
                     newB.RemoveAt(back);
 
-                    foldIndexCouples.RemoveAt(foldIndexCouples.Count - 1);
+                    foldIndexCouples.RemoveAt(0);
                     squeezeTimes--;
                 }
 
