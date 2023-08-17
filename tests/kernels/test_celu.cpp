@@ -28,7 +28,7 @@ using namespace ortki;
 
 class CeluTest : public KernelTest,
                  public ::testing::TestWithParam<
-                     std::tuple<nncase::typecode_t, dims_t, float_t>> {
+                     std::tuple<nncase::typecode_t, dims_t, float>> {
   public:
     void SetUp() override {
         auto &&[typecode, input_shape, alpha_value] = GetParam();
@@ -45,7 +45,7 @@ class CeluTest : public KernelTest,
 
   protected:
     runtime_tensor input;
-    float_t alpha;
+    float alpha;
 };
 
 INSTANTIATE_TEST_SUITE_P(
