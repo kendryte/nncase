@@ -1,8 +1,8 @@
 #pragma once
 
+#include <functional>
 #include <iostream>
 #include <memory>
-#include <functional>
 
 struct hardware_context_impl;
 
