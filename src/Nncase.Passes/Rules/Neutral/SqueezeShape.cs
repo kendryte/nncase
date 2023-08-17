@@ -253,7 +253,13 @@ public sealed partial class SqueezeBinaryShape : IRewriteRule
     /// <inheritdoc/>
     public IPattern Pattern { get; } = IsBinary("binary", "binaryCall", x => true, IsWildcard("lhs") with { TypePattern = HasFixedShape() }, IsWildcard("rhs") with { TypePattern = HasFixedShape() });
 
-    public static (bool, List<int>, List<int>) SqueezeInputShape(List<int> a, List<int> b)
+    /// <summary>
+    /// Squeeze input shape.
+    /// </summary>
+    /// <param name="a"></param>
+    /// <param name="b"></param>
+    /// <returns></returns>
+    public Tuple<bool, List<int>, List<int>> SqueezeInputShape(List<int> a, List<int> b)
     {
         var aSize = a.Count;
         var bSize = b.Count;
@@ -264,7 +270,7 @@ public sealed partial class SqueezeBinaryShape : IRewriteRule
 
         if (squeezeTimes <= 0)
         {
-            return (false, a, b);
+            return new Tuple<bool, List<int>, List<int>>(false, a, b);
         }
 
         List<int> newA = a;
@@ -331,7 +337,7 @@ public sealed partial class SqueezeBinaryShape : IRewriteRule
 
                 if (newA.Count > 4)
                 {
-                    return (false, newA, newB);
+                    return new Tuple<bool, List<int>, List<int>>(false, newA, newB);
                 }
             }
         }
@@ -348,7 +354,7 @@ public sealed partial class SqueezeBinaryShape : IRewriteRule
             }
         }
 
-        return (true, newA, newB);
+        return new Tuple<bool, List<int>, List<int>>(true, newA, newB);
     }
 
     private static List<int> SqueezeShape(List<int> shape)
