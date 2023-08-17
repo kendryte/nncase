@@ -274,8 +274,8 @@ void tdma_scatter_async() {}
 
 /**
  * @brief tdma inner block wait.
- * 
- * @param ctx 
+ *
+ * @param ctx
  */
 void tdma_wait(thread_context &ctx) {
     __tdma_block_sync_apply([]([[maybe_unused]] int visited) -> void {}, ctx);

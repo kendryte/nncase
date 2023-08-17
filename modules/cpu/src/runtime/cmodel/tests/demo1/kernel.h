@@ -22,12 +22,12 @@ static tensor<float> wkh({8, 2048, 128});
 // 2048 w-len per thread
 void stage1_kernel(
     // tensor<float, loc_t::device> &WQ,  /* 64, 8192, 128 */
-    [[maybe_unused]] tensor<float, loc_t::device> &WK,     /* 64, 8192, 128 */
-    [[maybe_unused]] tensor<float, loc_t::device> &K,      /* 64, 384, 128 */
-    [[maybe_unused]] tensor<float, loc_t::device> &Sum,    /* 128 */
-    [[maybe_unused]] tensor<float, loc_t::device> &RSum,   /* 384 */
+    [[maybe_unused]] tensor<float, loc_t::device> &WK,      /* 64, 8192, 128 */
+    [[maybe_unused]] tensor<float, loc_t::device> &K,       /* 64, 384, 128 */
+    [[maybe_unused]] tensor<float, loc_t::device> &Sum,     /* 128 */
+    [[maybe_unused]] tensor<float, loc_t::device> &RSum,    /* 384 */
     [[maybe_unused]] tensor<float, loc_t::device> &RSumSqr, /* 384 */
-    [[maybe_unused]] tensor<float, loc_t::device> &Norm /* 384, 8192 */
+    [[maybe_unused]] tensor<float, loc_t::device> &Norm     /* 384, 8192 */
     // [[maybe_unused]] tensor<float, loc_t::device> &Norm /* 384,8192 */
     //  tensor<float, loc_t::device> &WV,  /* 64, 8192, 128 */
     //  tensor<float, loc_t::device> &WFC1 /* 384, 8192*/
@@ -88,8 +88,7 @@ void stage1_kernel(
     tensor<float> beta({256});
     tdma_fill_async(beta, 1.0f);
     tensor_layernorm_sync(xj, r_sum, r_sum_sqr, gamma, beta, 1e-6f, 1, 8192);
-    tdma_store_async(xj, Norm({0, (bid * CORES + tid) * 256}, {384, 256}),
-                     ctx);
+    tdma_store_async(xj, Norm({0, (bid * CORES + tid) * 256}, {384, 256}), ctx);
 
     // tensor_sum_sqr(xj, r_sum, r_sum_sqr);
 

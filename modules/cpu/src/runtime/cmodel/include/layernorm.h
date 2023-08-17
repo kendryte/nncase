@@ -8,8 +8,8 @@ namespace kernels {
 
 namespace {
 template <typename T>
-void layernorm_naive_impl(T *input, const T *sum, T *sum_sqr, T *gamma,
-                          T *beta, gsl::span<const size_t> input_shape,
+void layernorm_naive_impl(T *input, const T *sum, T *sum_sqr, T *gamma, T *beta,
+                          gsl::span<const size_t> input_shape,
                           [[maybe_unused]] gsl::span<const size_t> input_stride,
                           T eps, int32_t axis, int32_t norm_size) noexcept {
     // only process continues tensor for now
