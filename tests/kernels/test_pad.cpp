@@ -22,16 +22,20 @@
 #include <nncase/runtime/stackvm/opcode.h>
 #include <ortki/operators.h>
 
+#define TEST_CASE_NAME "test_pad"
+
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class PadTest
-    : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
+class PadTest : public KernelTest,
+                public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape] = GetParam();
+        READY_SUBCASE()
+
+        auto l_shape = GetShapeArray("lhs_shape");
+        auto typecode = GetDataType("lhs_type");
 
         input =
             hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
@@ -42,19 +46,15 @@ class PadTest
         init_tensor(value);
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
   protected:
     runtime_tensor input;
     runtime_tensor value;
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    Pad, PadTest,
-    testing::Combine(
-        testing::Values(dt_int32, dt_int8, dt_uint8, dt_float64, dt_uint64,
-                        dt_int64, dt_float32, dt_float16, dt_uint32),
-        testing::Values(dims_t{1, 3, 24, 24}, dims_t{1, 3, 16, 16})));
+INSTANTIATE_TEST_SUITE_P(Pad, PadTest,
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(PadTest, Pad) {
 
@@ -100,6 +100,15 @@ TEST_P(PadTest, Pad) {
 }
 
 int main(int argc, char *argv[]) {
+    READY_TEST_CASE_GENERATE()
+    FOR_LOOP(lhs_shape, i)
+    FOR_LOOP(lhs_type, j)
+    SPLIT_ELEMENT(lhs_shape, i)
+    SPLIT_ELEMENT(lhs_type, j)
+    WRITE_SUB_CASE()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

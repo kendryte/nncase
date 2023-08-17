@@ -1,0 +1,7 @@
+{
+  "lhs_shape":[[4]],
+  "rhs_shape":[[2]],
+  "axis":[0, 1],
+  "lhs_type":["dt_float32", "dt_float16"],
+  "rhs_type":["dt_int64"]
+}

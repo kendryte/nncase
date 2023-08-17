@@ -26,13 +26,20 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class TopKTest
-    : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<
-          nncase::typecode_t, dims_t, int64_t, int64_t, int64_t, int64_t>> {
+#define TEST_CASE_NAME "test_topk"
+
+class TopKTest : public KernelTest,
+                 public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape, value1, value2, value3, value4] = GetParam();
+        READY_SUBCASE()
+
+        auto l_shape = GetShapeArray("lhs_shape");
+        auto typecode = GetDataType("lhs_type");
+        auto value1 = GetNumber("value1");
+        auto value2 = GetNumber("value2");
+        auto value3 = GetNumber("value3");
+        auto value4 = GetNumber("value4");
 
         input =
             hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
@@ -81,15 +88,16 @@ class TopKTest
     int64_t k_value;
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    TopK, TopKTest,
-    testing::Combine(testing::Values(dt_float32),
-                     testing::Values(dims_t{1, 2, 4, 8}, dims_t{1, 3, 16, 16},
-                                     dims_t{3, 3, 6}, dims_t{16, 16}, dims_t{1},
-                                     dims_t{1, 3}),
-                     testing::Values(0, -1 /*, 1, 2, 3*/),
-                     testing::Values(0, 1), testing::Values(0, 1),
-                     testing::Values(1 /*, 2, 4, 16*/)));
+INSTANTIATE_TEST_SUITE_P(TopK, TopKTest,
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
+
+//    testing::Combine(testing::Values(dt_float32),
+//                     testing::Values(dims_t{1, 2, 4, 8}, dims_t{1, 3, 16, 16},
+//                                     dims_t{3, 3, 6}, dims_t{16, 16},
+//                                     dims_t{1}, dims_t{1, 3}),
+//                     testing::Values(0, -1 /*, 1, 2, 3*/),
+//                     testing::Values(0, 1), testing::Values(0, 1),
+//                     testing::Values(1 /*, 2, 4, 16*/)));
 
 TEST_P(TopKTest, TopK) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
@@ -142,6 +150,27 @@ TEST_P(TopKTest, TopK) {
 }
 
 int main(int argc, char *argv[]) {
+    READY_TEST_CASE_GENERATE()
+    FOR_LOOP(lhs_shape, i)
+    FOR_LOOP(lhs_type, k)
+    FOR_LOOP(value1, l)
+    FOR_LOOP(value2, m)
+    FOR_LOOP(value3, n)
+    FOR_LOOP(value4, o)
+    SPLIT_ELEMENT(lhs_shape, i)
+    SPLIT_ELEMENT(lhs_type, k)
+    SPLIT_ELEMENT(value1, l)
+    SPLIT_ELEMENT(value2, m)
+    SPLIT_ELEMENT(value3, n)
+    SPLIT_ELEMENT(value4, o)
+    WRITE_SUB_CASE()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

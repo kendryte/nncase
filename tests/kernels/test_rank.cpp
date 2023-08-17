@@ -27,12 +27,16 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class RankTest
-    : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
+#define TEST_CASE_NAME "test_rank"
+
+class RankTest : public KernelTest,
+                 public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
-        auto &&[typecode_input, l_shape] = GetParam();
+        READY_SUBCASE()
+
+        auto l_shape = GetShapeArray("lhs_shape");
+        auto typecode_input = GetDataType("lhs_type");
 
         input = hrt::create(typecode_input, l_shape,
                             host_runtime_tensor::pool_cpu_only)
@@ -47,19 +51,15 @@ class RankTest
                        .expect("create tensor failed");
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
   protected:
     runtime_tensor input;
     runtime_tensor expected;
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    rank, RankTest,
-    testing::Combine(testing::Values(dt_int16, dt_int8, dt_float32, dt_uint8),
-                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 3, 8, 8},
-                                     dims_t{1, 3, 1}, dims_t{1, 3, 16},
-                                     dims_t{1, 3}, dims_t{1}, dims_t{})));
+INSTANTIATE_TEST_SUITE_P(rank, RankTest,
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(RankTest, rank) {
     // actual
@@ -92,6 +92,15 @@ TEST_P(RankTest, rank) {
 }
 
 int main(int argc, char *argv[]) {
+    READY_TEST_CASE_GENERATE()
+    FOR_LOOP(lhs_shape, i)
+    FOR_LOOP(lhs_type, m)
+    SPLIT_ELEMENT(lhs_shape, i)
+    SPLIT_ELEMENT(lhs_type, m)
+    WRITE_SUB_CASE()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
