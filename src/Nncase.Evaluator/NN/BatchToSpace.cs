@@ -112,7 +112,7 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
 
         if (input.CheckedShape.Rank == 3)
         {
-            inShape = Stack(new IR.Tuple(inShape[1], inShape[2], inShape[0]), 0);
+            inShape = Stack(new IR.Tuple(inShape[0], inShape[2], inShape[1]), 0);
         }
 
         var blockShape = context.GetArgument(target, BatchToSpace.BlockShape);
@@ -142,7 +142,7 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
 
         if (input.CheckedShape.Rank == 3)
         {
-            return Stack(new IR.Tuple(outShapeList[2], outShapeList[0], outShapeList[1]), 0);
+            return Stack(new IR.Tuple(outShapeList[0], outShapeList[2], outShapeList[1]), 0);
         }
 
         throw new NotImplementedException();
@@ -186,7 +186,7 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
     {
         var inShape = input.Shape.Rank == 4
             ? TypeInference.ApplyPerm(input.Shape, new[] { 0, 2, 3, 1 })
-            : TypeInference.ApplyPerm(input.Shape, new[] { 1, 2, 0 });
+            : TypeInference.ApplyPerm(input.Shape, new[] { 0, 2, 1 });
         var batch = inShape[0];
         if (context.GetArgument(target, BatchToSpace.BlockShape) is TensorConst blockShapeValue &&
             context.GetArgument(target, BatchToSpace.Crops) is TensorConst cropsValue)
@@ -211,7 +211,7 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
             var outShape =
                 outShapeList.Length == 4
                 ? TypeInference.ApplyPerm(outShapeList, new[] { 0, 3, 1, 2 })
-                : TypeInference.ApplyPerm(outShapeList, new[] { 2, 0, 1 });
+                : TypeInference.ApplyPerm(outShapeList, new[] { 0, 2, 1 });
             return input with { Shape = outShape };
         }
         else
