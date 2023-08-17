@@ -23,44 +23,43 @@ def _make_module(v_shape):
     class BinaryModule(torch.nn.Module):
         def __init__(self):
             super(BinaryModule, self).__init__()
-            # self.v = torch.from_numpy(np.random.rand(*v_shape).astype(np.float32))
-            self.v = torch.from_numpy(np.ones(v_shape).astype(np.float32))
+            self.v = torch.from_numpy(np.random.rand(*v_shape).astype(np.float32))
 
         def forward(self, x):
             outs = []
             outs.append(torch.add(x, self.v))
-            # outs.append(torch.mul(x, self.v))
-            # outs.append(torch.sub(x, self.v))
-            # outs.append(torch.max(x, self.v))
-            # outs.append(torch.div(x, self.v))
-            # outs.append(torch.min(x, self.v))
-            # outs.append(torch.fmod(x, self.v))
+            outs.append(torch.mul(x, self.v))
+            outs.append(torch.sub(x, self.v))
+            outs.append(torch.max(x, self.v))
+            outs.append(torch.div(x, self.v))
+            outs.append(torch.min(x, self.v))
+            outs.append(torch.fmod(x, self.v))
             return outs
 
     return BinaryModule()
 
 
 lhs_shapes = [
-    # [3],
-    # [64, 3],
-    # [3, 64, 3],
-    # [8, 3, 64, 3]
+    [3],
+    [64, 3],
+    [3, 64, 3],
+    [8, 3, 64, 3]
     [1, 3, 24, 24]
 ]
 
 rhs_shapes = [
-    # [1],
-    # [3],
-    # [1, 3],
-    # [64, 1],
-    # [64, 3],
-    # [3, 64, 1],
-    # [3, 64, 3],
-    # [8, 3, 64, 1],
-    # [8, 3, 64, 3],
-    # [8, 3, 1, 3],
-    # [8, 1, 64, 3],
-    # [1, 3, 64, 1]
+    [1],
+    [3],
+    [1, 3],
+    [64, 1],
+    [64, 3],
+    [3, 64, 1],
+    [3, 64, 3],
+    [8, 3, 64, 1],
+    [8, 3, 64, 3],
+    [8, 3, 1, 3],
+    [8, 1, 64, 3],
+    [1, 3, 64, 1]
     [1, 3, 24, 24]
 ]
 
