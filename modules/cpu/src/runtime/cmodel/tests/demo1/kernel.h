@@ -86,8 +86,8 @@ void stage1_kernel(
     tensor<float> gamma({256});
     tdma_fill_async(gamma, 1.0f);
     tensor<float> beta({256});
-    tdma_fill_async(beta, 1.0f);
-    tensor_layernorm_sync(xj, r_sum, r_sum_sqr, gamma, beta, 1e-6f, 1, 8192);
+    tdma_fill_async(beta, 0.0f);
+    tensor_layernorm_sync(xj, r_sum, r_sum_sqr, gamma, beta, 1e-5f, 1, 8192);
     tdma_store_async(xj, Norm({0, (bid * CORES + tid) * 256}, {384, 256}), ctx);
 
     // tensor_sum_sqr(xj, r_sum, r_sum_sqr);

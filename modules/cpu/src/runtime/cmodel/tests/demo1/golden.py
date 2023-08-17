@@ -2,7 +2,7 @@ import numpy as np
 from torch import nn
 import torch
     
-X = np.ones_like( np.random.rand(384, 8192).astype(np.float32)  )*1.1
+X = np.random.rand(384, 8192).astype(np.float32)
 WK = np.random.rand(64, 8192, 128).astype(np.float32) * 5 - 1
 
 K = X @ WK
