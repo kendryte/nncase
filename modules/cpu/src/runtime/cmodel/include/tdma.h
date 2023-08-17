@@ -11,12 +11,23 @@
 #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_DEBUG
 #include <spdlog/spdlog.h>
 
-template <class T, loc_t Loc> tensor<T, Loc> unsqueeze(tensor<T, Loc> &dest) {
-    auto new_dims = dims_t(dest.dimension());
+template <class T, loc_t Loc> tensor<T, Loc> unsqueeze(tensor<T, Loc> &src) {
+    auto new_dims = dims_t(src.dimension());
     new_dims.insert(new_dims.begin(), 1);
-    auto new_strides = strides_t(dest.strides());
+    auto new_strides = strides_t(src.strides());
     new_strides.insert(new_strides.begin(), *new_strides.begin());
-    return tensor<T, Loc>(dest.data(), new_dims, new_strides);
+    return tensor<T, Loc>(src.data(), new_dims, new_strides);
+}
+
+template <class T, loc_t Loc>
+tensor<T, Loc> view_transpose(tensor<T, Loc> &src, dims_t axes) {
+    auto new_dims = dims_t();
+    auto new_strides = dims_t();
+    for (auto axis : axes) {
+      new_dims.push_back(src.dimension()[axis]);
+      new_strides.push_back(src.strides()[axis]);
+    }
+    return tensor<T, Loc>(src.data(), new_dims, new_strides);
 }
 
 template <class T, loc_t DestLoc, loc_t SrcLoc>
@@ -284,3 +295,10 @@ void tdma_wait(thread_context &ctx) {
 void tdma_cancel() {}
 
 void tdma_status() {}
+
+enum class sched_strategy_t:uint8_t{
+  pin_block_tensor,
+  normal
+};
+
+void set_sched_strategy([[maybe_unused]] sched_strategy_t sch) {}

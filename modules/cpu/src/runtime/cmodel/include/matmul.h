@@ -96,12 +96,16 @@ void no_contiguous_matmul_impl(const T *input_a, const T *input_b, T *output,
                     T *values = new T[new_b_shape[4]]();
                     for (size_t k = 0; k < new_a_shape[4]; k++) {
                         for (size_t n = 0; n < new_b_shape[4]; n++) {
-                            values[n] += in_a_ptr[m * new_a_stride[3] + k] *
-                                         in_b_ptr[k * new_b_stride[3] + n];
+                            values[n] += in_a_ptr[m * new_a_stride[3] +
+                                                  k * new_a_stride[4]] *
+                                         in_b_ptr[k * new_b_stride[3] +
+                                                  n * new_b_stride[4]];
                         }
                     }
-                    std::copy_n(values, new_b_shape[4],
-                                out_ptr + m * new_out_stride[3]);
+                    for (size_t n = 0; n < new_b_shape[4]; n++) {
+                        out_ptr[m * new_out_stride[3] + n * new_out_stride[4]] =
+                            values[n];
+                    }
                     delete[] values;
                 }
             }

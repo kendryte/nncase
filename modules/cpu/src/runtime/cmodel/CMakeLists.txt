@@ -19,3 +19,4 @@ function(add_test name test_path)
 endfunction(add_test)
 
 add_test(demo1 tests/demo1)
+add_test(demo2 tests/demo2)
