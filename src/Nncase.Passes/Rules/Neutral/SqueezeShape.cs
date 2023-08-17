@@ -256,9 +256,9 @@ public sealed partial class SqueezeBinaryShape : IRewriteRule
     /// <summary>
     /// Squeeze input shape.
     /// </summary>
-    /// <param name="a"></param>
-    /// <param name="b"></param>
-    /// <returns></returns>
+    /// <param name="a"> left input shape.</param>
+    /// <param name="b"> right input shape.</param>
+    /// <returns> Squeeze flag, new lhs, new rhs. </returns>
     public Tuple<bool, List<int>, List<int>> SqueezeInputShape(List<int> a, List<int> b)
     {
         var aSize = a.Count;
