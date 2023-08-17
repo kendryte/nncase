@@ -22,17 +22,24 @@
 #include <nncase/runtime/stackvm/opcode.h>
 #include <ortki/operators.h>
 
+#define TEST_CASE_NAME "test_slice"
+
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class SliceTest
-    : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<
-          nncase::typecode_t, dims_t, dims_t, dims_t, dims_t, dims_t>> {
+class SliceTest : public KernelTest,
+                  public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape, value1, value2, value3, value4] = GetParam();
+        READY_SUBCASE()
+
+        auto typecode = GetDataType("lhs_type");
+        auto l_shape = GetShapeArray("input_shape");
+        auto value1 = GetShapeArray("value1");
+        auto value2 = GetShapeArray("value2");
+        auto value3 = GetShapeArray("value3");
+        auto value4 = GetShapeArray("value4");
 
         int32_t input_array[120];
 
@@ -94,16 +101,8 @@ class SliceTest
     runtime_tensor strides;
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    Slice, SliceTest,
-    testing::Combine(testing::Values(dt_int32),
-                     testing::Values(dims_t{2, 3, 4, 5}, dims_t{1, 4, 5, 6},
-                                     dims_t{1, 1, 1, 120}, dims_t{2, 2, 5, 6},
-                                     dims_t{1, 1, 2, 60}),
-                     testing::Values(dims_t{0, 0, 0, 0}),
-                     testing::Values(dims_t{1, 1, 1, 5}),
-                     testing::Values(dims_t{0, 1, 2, 3}),
-                     testing::Values(dims_t{1, 1, 1, 1})));
+INSTANTIATE_TEST_SUITE_P(Slice, SliceTest,
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(SliceTest, Slice) {
 
@@ -137,6 +136,27 @@ TEST_P(SliceTest, Slice) {
 }
 
 int main(int argc, char *argv[]) {
+    READY_TEST_CASE_GENERATE()
+    FOR_LOOP(lhs_type, i)
+    FOR_LOOP(input_shape, j)
+    FOR_LOOP(value1, k)
+    FOR_LOOP(value2, l)
+    FOR_LOOP(value3, m)
+    FOR_LOOP(value4, n)
+    SPLIT_ELEMENT(lhs_type, i)
+    SPLIT_ELEMENT(input_shape, j)
+    SPLIT_ELEMENT(value1, k)
+    SPLIT_ELEMENT(value2, l)
+    SPLIT_ELEMENT(value3, m)
+    SPLIT_ELEMENT(value4, n)
+    WRITE_SUB_CASE()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

@@ -29,7 +29,7 @@ using namespace ortki;
 class HardSigmoidTest
     : public KernelTest,
       public ::testing::TestWithParam<
-          std::tuple<nncase::typecode_t, dims_t, float_t, float_t>> {
+          std::tuple<nncase::typecode_t, dims_t, float, float>> {
   public:
     void SetUp() override {
         auto &&[typecode, l_shape, value1, value2] = GetParam();
@@ -47,8 +47,8 @@ class HardSigmoidTest
 
   protected:
     runtime_tensor input;
-    float_t alpha_value;
-    float_t gamma_value;
+    float alpha_value;
+    float gamma_value;
 };
 
 INSTANTIATE_TEST_SUITE_P(
@@ -63,14 +63,14 @@ TEST_P(HardSigmoidTest, hard_sigmoid) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
 
     // expected
-    float_t alpha_ptr[] = {alpha_value};
+    float alpha_ptr[] = {alpha_value};
     auto alpha = hrt::create(nncase::dt_float32, {1},
                              {reinterpret_cast<gsl::byte *>(alpha_ptr),
                               sizeof(alpha_ptr)},
                              true, host_runtime_tensor::pool_cpu_only)
                      .expect("create tensor failed");
 
-    float_t gamma_ptr[] = {gamma_value};
+    float gamma_ptr[] = {gamma_value};
     auto gamma = hrt::create(nncase::dt_float32, {1},
                              {reinterpret_cast<gsl::byte *>(gamma_ptr),
                               sizeof(gamma_ptr)},
