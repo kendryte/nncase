@@ -25,7 +25,7 @@ void layernorm_naive_impl(T *input, const T *sum, T *sum_sqr, T *gamma, T *beta,
 
     for (size_t o = 0; o < outer_size; o++) {
         auto mean = sum[o] / norm_size;
-        auto sigma = std::sqrt((sum_sqr[o] - sum[o] * mean) / norm_size + eps);
+        auto sigma = std::sqrt(sum_sqr[o] / norm_size - mean * mean + eps);
         for (size_t i = 0; i < inner_size; i++) {
             auto x = input + o * inner_size + i;
             *x = (*x - mean) / sigma * gamma[i] + beta[i];
@@ -51,11 +51,13 @@ void layernorm_rvv_impl(const T *input, const T *sum, T *sum_sqr, T *gamma,
     }
 
     size_t vl;
+    float r_norm_size = 1.f / norm_size;
     float *sum_ptr = sum;
     float *sum_sqr_ptr = sum_sqr;
     std::vector<float> mean(outer_size, 0);
     std::vector<float> sigma(outer_size, 0);
     vfloat32m8_t vmean;
+    vfloat32m8_t vmean_sqr;
     vfloat32m8_t vsigma;
     size_t offset = 0;
     for (size_t o = outer_size; o > 0; o -= vl) {
@@ -63,12 +65,14 @@ void layernorm_rvv_impl(const T *input, const T *sum, T *sum_sqr, T *gamma,
 
         // mean
         vmean = vle32_v_f32m8(sum_ptr, vl);
-        vmean = vfdiv_vf_f32m8(vmean, norm_size);
+        vmean = vfmul_vf_f32m8(vmean, r_norm_size);
+        vmean_sqr = vfmul_vv_f32m8(vmean, vmean);
         vse32_v_f32m8(mean.data() + offset, vmean, vl);
 
         // sigma
         vsigma = vle32_v_f32m8(sum_sqr_ptr, vl);
-        vsigma = vfdiv_vf_f32m8(vsigma, norm_size);
+        vsigma = vfmul_vf_f32m8(vsigma, r_norm_size);
+        vsigma = vfsub_vv_f32m8(vsigma, vmean_sqr);
         vsigma = vfadd_vf_f32m8(vsigma, eps);
         vsigma = vfsqrt_v_f32m8(vsigma);
         vse32_v_f32m8(sigma.data() + offset, vsigma, vl);
