@@ -21,6 +21,8 @@
 #include <nncase/runtime/simple_types.h>
 #include <nncase/runtime/stackvm/opcode.h>
 #include <ortki/operators.h>
+#define GROUP 2
+#define INCHANNEL 4
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -72,12 +74,14 @@ INSTANTIATE_TEST_SUITE_P(
     conv2d, Conv2DTest,
     testing::Combine(
         testing::Values(dt_float32),
-        testing::Values(dims_t{1, 4, 5, 5}, dims_t{1, 4, 16, 16}),
-        testing::Values(dims_t{8, 4, 3, 3}, dims_t{8, 4, 1, 1}),
+        testing::Values(dims_t{1, INCHANNEL, 5, 5},
+                        dims_t{1, INCHANNEL, 16, 16}),
+        testing::Values(dims_t{8, INCHANNEL / GROUP, 3, 3},
+                        dims_t{8, INCHANNEL / GROUP, 1, 1}),
         testing::Values(dims_t{8}), testing::Values(dims_t{2, 2}, dims_t{1, 1}),
-        testing::Values(dims_t{1, 1, 1, 1} /*, dims_t{0, 0, 1, 0}*/),
+        testing::Values(dims_t{0, 0, 1, 0} /*, dims_t{0, 0, 1, 0}*/),
         testing::Values(dims_t{1, 1}, dims_t{2, 2}),
-        testing::Values(1 /*, 2*/))); // todo result error
+        testing::Values(GROUP /*, 2*/))); // todo result error
 
 TEST_P(Conv2DTest, conv2d) {
     auto input_ort = runtime_tensor_2_ort_tensor(input);

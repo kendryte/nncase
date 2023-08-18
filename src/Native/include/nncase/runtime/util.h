@@ -442,11 +442,11 @@ inline result<paddings_t> value_as_paddings([[maybe_unused]] value_t value) {
     auto dt = value_tensor->dtype();
     for (size_t i = 0; i < dims; ++i) {
         if (cmp_type<int32_t>(dt)) {
-            pads[i].before = *(IN_CAST(int32_t, input) + 2 * i);
-            pads[i].after = *(IN_CAST(int32_t, input) + 2 * i + 1);
+            pads[i].before = *(IN_CAST(int32_t, input) + i);
+            pads[i].after = *(IN_CAST(int32_t, input) + i + dims);
         } else if (cmp_type<int64_t>(dt)) {
-            pads[i].before = *(IN_CAST(int64_t, input) + 2 * i);
-            pads[i].after = *(IN_CAST(int64_t, input) + 2 * i + 1);
+            pads[i].before = *(IN_CAST(int64_t, input) + i);
+            pads[i].after = *(IN_CAST(int64_t, input) + i + dims);
         } else {
             return err(nncase_errc::datatype_mismatch);
         }
