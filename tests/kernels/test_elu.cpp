@@ -52,7 +52,7 @@ class EluTest
 
 INSTANTIATE_TEST_SUITE_P(
     elu, EluTest,
-    testing::Combine(testing::Values(dt_float32, dt_float16),
+    testing::Combine(testing::Values(dt_float32, dt_float16, dt_float64),
                      testing::Values(dims_t{1, 3, 16, 16}, dims_t{1},
                                      dims_t{8, 8}, dims_t{1, 4, 16},
                                      dims_t{1, 3, 24, 24}, dims_t{})));
@@ -66,6 +66,8 @@ TEST_P(EluTest, elu) {
         output_ort = ortki_Elu(l_ort, tensor_to_array<half>(alpha)[0]);
     } else if (input.datatype() == dt_float32) {
         output_ort = ortki_Elu(l_ort, tensor_to_array<float>(alpha)[0]);
+    } else {
+        output_ort = ortki_Elu(l_ort, tensor_to_array<double>(alpha)[0]);
     }
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
