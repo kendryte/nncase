@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Nncase.Diagnostics;
@@ -25,13 +26,23 @@ public class UnitTestFoldGetItem : TransformTestBase
     }
 
     [Fact]
+    public void TestFoldStackGetItemDyn()
+    {
+        var input = Tensor.From(new[] { 1, 2, 3 });
+        var inputVar = new Var(new TensorType(input.ElementType, input.Shape));
+        var abs = IR.F.Math.Abs(inputVar);
+        var s = Stack(new IR.Tuple(new[] { abs[0], abs[1], abs[2] }), 0);
+        var body = new If(true, new[] { 3, 2, 1 }, s);
+        TestMatched<FoldStackGetItem>(body, new Dictionary<Var, IValue> { { inputVar, Value.FromTensor(input) } });
+    }
+
+    [Fact]
     public void TestFoldSqueezeGetItem()
     {
         var shape = new Expr[] { 1, 80, 4, 1 };
         var s = Stack(new IR.Tuple(shape), 0);
         var result = Stack(new IR.Tuple(s[0], s[1], s[2]), 0);
-        DumpScope.Current.DumpIR(result, "result");
-        TestNotMatch<FoldStackGetItem>(result);
+        TestMatched<FoldStackGetItem>(result);
     }
 
     [Fact]

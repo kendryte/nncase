@@ -31,7 +31,7 @@ internal sealed class CostEvaluateProvider : ICostEvaluateProvider
 
         if (expr.CheckedType is InvalidType)
         {
-            throw new InvalidOperationException("Expr in Evaluator need a valid type");
+            throw new InvalidOperationException("Expr in Cost Evaluator need a valid type");
         }
 
         var evaluatorVisitor = new CostEvaluateVisitor();
