@@ -5,7 +5,7 @@
 
 #define DEFINE_TFUNC(b, t)                                                     \
     void *f_##b##_##t(void *arg) {                                             \
-        block##b::thread##t::stage1_kernel(WQ, WK, WV, WM);                        \
+        block##b::thread##t::stage1_kernel(WQ, WK, WV, WM);                    \
         return arg;                                                            \
     }
 
@@ -131,7 +131,8 @@ int main([[maybe_unused]] int argc, char **argv) {
     pthread_join(t_7_3, NULL);
 
     // auto cos =
-    //     cosine(K.data().begin(), gsl::make_span(src_K).as_span<float>().begin(),
+    //     cosine(K.data().begin(),
+    //     gsl::make_span(src_K).as_span<float>().begin(),
     //            K.data().size());
     // printf("K cosine %f\n", cos);
 
