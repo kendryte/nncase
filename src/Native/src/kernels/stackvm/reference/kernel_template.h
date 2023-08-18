@@ -200,34 +200,6 @@
         return ok();                                                           \
     }
 
-#define FLOAT_UNARY_WITH_MUL_OP_TEMPLATE(_name, _alpha_name)                   \
-    result<void> _name##_impl(const float *input, float *output,               \
-                              gsl::span<const size_t> input_shape,             \
-                              gsl::span<const size_t> input_strides,           \
-                              gsl::span<const size_t> out_shape,               \
-                              gsl::span<const size_t> out_strides,             \
-                              NNCASE_UNUSED kernel_context &context);          \
-    result<value_t> nncase::kernels::stackvm::_name(                           \
-        value_t input, value_t _alpha_name, value_t output,                    \
-        kernel_context &context) {                                             \
-        try_f32_input(input_mem, input);                                       \
-        try_to_scalar(_alpha_name##_value, _alpha_name, float);                \
-        auto dtype = input_tensor->dtype();                                    \
-        try_f32_output(out_mem, output, input_tensor->shape());                \
-        if (is_contiguous(input_tensor)) {                                     \
-            try_(_name##_contiguous_impl(                                      \
-                input_mem, out_mem, _alpha_name##_value,                       \
-                input_tensor->shape(), input_tensor->strides(),                \
-                output_tensor->shape(), output_tensor->strides(), context));   \
-        } else {                                                               \
-            try_(_name##_impl(input_mem, out_mem, _alpha_name##_value,         \
-                              input_tensor->shape(), input_tensor->strides(),  \
-                              output_tensor->shape(),                          \
-                              output_tensor->strides(), context));             \
-        }                                                                      \
-        return ok(output);                                                     \
-    }
-
 #define UNARY_IMPL_FUNC_WRAPPER(_impl_func, type)                              \
     return _impl_func(IN_CAST(type, input), OUT_CAST(type, output),            \
                       *IN_CAST(type, _alpha), in_shape, in_strides, out_shape, \
@@ -299,10 +271,6 @@
     }
 
 // _alpha_name is a var used in kernel
-#define FLOAT_UNARY_WITH_MUL_TEMPLATE(_name, _alpha_name, _compute)            \
-    FLOAT_UNARY_WITH_MUL_IMPL_TEMPLATE(_name, _alpha_name, _compute)           \
-    FLOAT_UNARY_WITH_MUL_OP_TEMPLATE(_name, _alpha_name)
-
 #define UNARY_WITH_MUL_TEMPLATE_V2(_name, _alpha_name, _compute)               \
     UNARY_WITH_MUL_IMPL_TEMPLATE_V2(_name, _alpha_name##_arg, _compute)        \
     UNARY_WITH_MUL_DISPTCH_OP_TEMPLATE_V2(_name##_contiguous_impl)             \
@@ -348,7 +316,7 @@
             });                                                                \
     }
 
-#define FLOAT_ACTIVATION_IMPL_TEMPLATE_V2(_name, _compute, ...)                \
+#define ACTIVATION_IMPL_TEMPLATE_V2(_name, _compute, ...)                      \
     template <class T>                                                         \
     result<void> _name##_impl(                                                 \
         const T *input, T *output, gsl::span<const size_t> in_shape,           \
@@ -362,8 +330,8 @@
                     kernels::detail::get_reduced_offset(index, in_shape);      \
                 auto src_idx = offset(input_strides, in_index);                \
                 auto dst_idx = offset(out_strides, in_index);                  \
-                auto x = input[src_idx];                                       \
-                output[dst_idx] = _compute;                                    \
+                auto x = static_cast<float>(input[src_idx]);                   \
+                output[dst_idx] = static_cast<T>(_compute);                    \
                 return ok();                                                   \
             });                                                                \
     }
@@ -425,9 +393,28 @@
         return ok(output);                                                     \
     }
 
+#define ACTIVATION_OP_TEMPLATE_V2(_name, ...)                                  \
+    result<value_t> nncase::kernels::stackvm::_name(                           \
+        value_t input, VALUE_ARGS_EXPAND(__VA_ARGS__), value_t output,         \
+        kernel_context &context) {                                             \
+        try_f32_input(input_mem, input);                                           \
+        auto dtype = input_tensor->dtype();                                    \
+        READ_FLOAT_SCALAR_EXPAND(__VA_ARGS__);                                 \
+        try_f32_output(out_mem, output, input_tensor->shape());                    \
+        try_(_name##_impl(input_mem, out_mem, input_tensor->shape(),           \
+                          input_tensor->strides(), output_tensor->shape(),     \
+                          output_tensor->strides(),                            \
+                          SCALAR_VALUE_EXPAND(__VA_ARGS__), context));         \
+        return ok(output);                                                     \
+    }
+
 #define FLOAT_ACTIVATION_TEMPLATE(_name, _compute, ...)                        \
     FLOAT_ACTIVATION_IMPL_TEMPLATE(_name, _compute, __VA_ARGS__)               \
     FLOAT_ACTIVATION_OP_TEMPLATE(_name, __VA_ARGS__)
+
+#define ACTIVATION_TEMPLATE_V2(_name, _compute, ...)                           \
+    ACTIVATION_IMPL_TEMPLATE_V2(_name, _compute, __VA_ARGS__)                  \
+    ACTIVATION_OP_TEMPLATE_V2(_name, __VA_ARGS__)
 
 #define BASIC_PARAM                                                            \
     const gsl::byte *input, gsl::byte *output,                                 \
