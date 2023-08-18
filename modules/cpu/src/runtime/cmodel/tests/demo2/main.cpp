@@ -5,8 +5,8 @@
 
 #define DEFINE_TFUNC(b, t)                                                     \
     void *f_##b##_##t(void *arg) {                                             \
-        block##b::thread##t::stage1_kernel(WQ, WK, WV, WM);                    \
-        block##b::thread##t::stage2_kernel(Norm);                              \
+        block##b::thread##t::stage1_kernel(WQ, WK, WV, WM, QKH);               \
+        block##b::thread##t::stage2_kernel(Norm, Softmax, YM);                     \
         return arg;                                                            \
     }
 
@@ -20,6 +20,9 @@ tensor<float, loc_t::device> WQ({64, 8192, 128});
 tensor<float, loc_t::device> WK({64, 8192, 128});
 tensor<float, loc_t::device> WV({64, 8192, 128});
 tensor<float, loc_t::device> WM({8192, 8192});
+tensor<float, loc_t::device> QKH({64, 384, 384});
+tensor<float, loc_t::device> Softmax({64, 384, 384});
+tensor<float, loc_t::device> YM({384, 8192});
 tensor<float, loc_t::device> Norm({384, 8192});
 
 DEFINE_BFUNC(0)
@@ -49,6 +52,9 @@ int main([[maybe_unused]] int argc, char **argv) {
     auto src_WV = read_file(std::string(argv[4]));
     auto src_WM = read_file(std::string(argv[5]));
     auto src_Norm = read_file(std::string(argv[6]));
+    auto src_QKH = read_file(std::string(argv[7]));
+    auto src_Softmax = read_file(std::string(argv[8]));
+    auto src_YM = read_file(std::string(argv[9]));
     span_copy(WQ.data(), gsl::make_span(src_WQ).as_span<float>());
     span_copy(WK.data(), gsl::make_span(src_WK).as_span<float>());
     span_copy(WV.data(), gsl::make_span(src_WV).as_span<float>());
@@ -137,5 +143,20 @@ int main([[maybe_unused]] int argc, char **argv) {
                       gsl::make_span(src_Norm).as_span<float>().begin(),
                       Norm.data().size());
     printf("Norm cosine %f\n", cos);
+
+    cos = cosine(QKH.data().begin(),
+                 gsl::make_span(src_QKH).as_span<float>().begin(),
+                 QKH.data().size());
+    printf("QKH cosine %f\n", cos);
+
+    cos = cosine(Softmax.data().begin(),
+                 gsl::make_span(src_Softmax).as_span<float>().begin(),
+                 Softmax.data().size());
+    printf("Softmax cosine %f\n", cos);
+
+    cos = cosine(YM.data().begin(),
+                 gsl::make_span(src_YM).as_span<float>().begin(),
+                 YM.data().size());
+    printf("YM cosine %f\n", cos);
     return 0;
 }

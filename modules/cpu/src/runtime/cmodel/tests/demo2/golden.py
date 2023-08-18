@@ -23,29 +23,17 @@ V = X @ WV  # [64,384,128]
 
 QK = Q @ np.transpose(K, [0, 2, 1])  # [64,384,384]
 
-S = softmax(QK)  # [64,384,384]
+QK.tofile("QKH.bin")
+
+S = softmax(QK,-1)  # [64,384,384]
+
+S.tofile("Softmax.bin")
 
 Y = np.transpose(S @ V, [1, 0, 2]).reshape([384, -1])  # [64,384,128] ->  [64,8192]
 
-M = Y @ WM  # [384,8192]
+YM = Y @ WM  # [384,8192]
 
-Norm = nn.LayerNorm([8192], elementwise_affine=False)(torch.from_numpy(X + M))
+YM.tofile("YM.bin")
+
+Norm = nn.LayerNorm([8192], elementwise_affine=False)(torch.from_numpy(X + YM))
 Norm.detach().numpy().tofile('Norm.bin')
-
-
-# a = np.arange( 64 *384* 128).reshape([64, 384, 128])
-
-# b = np.transpose(a,[1,2,0])
-# fb = b.flatten()
-# fa = a.flatten()
-
-# newa = []
-# s0 = 384*128
-# s1 = 128
-# s2 = 1
-# for d1 in range(384):
-#   for d2 in range(128):
-#     for d0 in range(64):
-#       newa.append(fa[d0 * s0 + d1*s1 + d2*s2])
-
-# print(np.allclose(fb,np.array(newa) ))
