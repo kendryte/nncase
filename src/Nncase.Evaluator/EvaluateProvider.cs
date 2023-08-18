@@ -31,6 +31,11 @@ internal sealed class EvaluateProvider : IEvaluateProvider
 
         if (expr.CheckedType is InvalidType)
         {
+            if (DumpScope.Current.IsEnabled(DumpFlags.Compile))
+            {
+                DumpScope.Current.DumpIR(expr, "EvaluateInvalid");
+            }
+
             throw new InvalidOperationException("Expr in Evaluator need a valid type");
         }
 

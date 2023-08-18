@@ -123,7 +123,7 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
         var type = expr.Target switch
         {
             Op op => CompilerServices.InferenceOp(op, _context, _inferencer_cache),
-            BaseFunction func => ((CallableType)func.CheckedType).ReturnType,
+            BaseFunction func => BaseFunctionInfer(expr, func),
             _ => new InvalidType("Target of call expression should be either a function or an op."),
         };
         _context.CurrentCall = null;
@@ -392,5 +392,15 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
         //     new call[x,y] shape is [5,6,1,1] we can't compare the two ir type.
         IRHelpers.SetRawCheckedType(expr, type);
         IsFullyInferenced &= type is not InvalidType;
+    }
+
+    private IRType BaseFunctionInfer(Call call, BaseFunction func)
+    {
+        if (func.CheckedType is InvalidType)
+        {
+            return func.CheckedType;
+        }
+
+        return ((CallableType)func.CheckedType).ReturnType;
     }
 }
