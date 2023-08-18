@@ -43,7 +43,7 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
             UnaryOp.Cos => OrtKI.Cos(input),
             UnaryOp.Cosh => OrtKI.Cosh(input),
             UnaryOp.Exp => OrtKI.Exp(input),
-            UnaryOp.Floor => OrtKI.Floor(input),
+            UnaryOp.Floor => OrtKI.Floor(input.Cast(OrtDataType.Float)).Cast(input.DataType),
             UnaryOp.Log => OrtKI.Log(input),
             UnaryOp.Neg => OrtKI.Neg(input),
             UnaryOp.Round => OrtKI.Round(input),

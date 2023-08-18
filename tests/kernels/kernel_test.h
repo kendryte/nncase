@@ -618,38 +618,31 @@ class KernelTest {
                     break;
                 }
                 case dt_int16: {
-                    vec1.push_back(
-                        static_cast<T>(get<int16_t>(lhs, index)));
+                    vec1.push_back(static_cast<T>(get<int16_t>(lhs, index)));
                     break;
                 }
                 case dt_int32: {
-                    vec1.push_back(
-                        static_cast<T>(get<int32_t>(lhs, index)));
+                    vec1.push_back(static_cast<T>(get<int32_t>(lhs, index)));
                     break;
                 }
                 case dt_int64: {
-                    vec1.push_back(
-                        static_cast<T>(get<int64_t>(lhs, index)));
+                    vec1.push_back(static_cast<T>(get<int64_t>(lhs, index)));
                     break;
                 }
                 case dt_uint8: {
-                    vec1.push_back(
-                        static_cast<T>(get<uint8_t>(lhs, index)));
+                    vec1.push_back(static_cast<T>(get<uint8_t>(lhs, index)));
                     break;
                 }
                 case dt_uint16: {
-                    vec1.push_back(
-                        static_cast<T>(get<uint16_t>(lhs, index)));
+                    vec1.push_back(static_cast<T>(get<uint16_t>(lhs, index)));
                     break;
                 }
                 case dt_uint32: {
-                    vec1.push_back(
-                        static_cast<T>(get<uint32_t>(lhs, index)));
+                    vec1.push_back(static_cast<T>(get<uint32_t>(lhs, index)));
                     break;
                 }
                 case dt_uint64: {
-                    vec1.push_back(
-                        static_cast<T>(get<uint64_t>(lhs, index)));
+                    vec1.push_back(static_cast<T>(get<uint64_t>(lhs, index)));
                     break;
                 }
                 case dt_float16: {
