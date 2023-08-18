@@ -6,7 +6,7 @@
 #define DEFINE_TFUNC(b, t)                                                     \
     void *f_##b##_##t(void *arg) {                                             \
         block##b::thread##t::stage1_kernel(WQ, WK, WV, WM, QKH);               \
-        block##b::thread##t::stage2_kernel(Norm, Softmax, YM);                     \
+        block##b::thread##t::stage2_kernel(Norm, Softmax, YM);                 \
         return arg;                                                            \
     }
 

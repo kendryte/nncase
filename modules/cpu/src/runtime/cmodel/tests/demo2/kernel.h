@@ -71,9 +71,9 @@ void stage1_kernel(
 // 8 head per block
 // 96 seq-len per thread
 void stage2_kernel(
-    [[maybe_unused]] tensor<float, loc_t::device> &Norm,   /* 8192, 8192 */
+    [[maybe_unused]] tensor<float, loc_t::device> &Norm,    /* 8192, 8192 */
     [[maybe_unused]] tensor<float, loc_t::device> &Softmax, /* 64,384,384 */
-    [[maybe_unused]] tensor<float, loc_t::device> &YM      /* 384,8192 */
+    [[maybe_unused]] tensor<float, loc_t::device> &YM       /* 384,8192 */
 ) {
     thread_context ctx(bid, tid);
     // 5. compute softmax
