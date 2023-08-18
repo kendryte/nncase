@@ -23,7 +23,7 @@ def _make_module(v_shape):
     class BinaryModule(torch.nn.Module):
         def __init__(self):
             super(BinaryModule, self).__init__()
-            self.v = torch.from_numpy(np.random.rand(*v_shape).astype(np.float32))
+            self.v = torch.from_numpy(np.ones(v_shape).astype(np.float32))
 
         def forward(self, x):
             outs = []
