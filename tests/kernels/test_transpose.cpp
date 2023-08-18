@@ -26,49 +26,34 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
+#define TEST_CASE_NAME "test_transpose"
+
 class TransposeTest : public KernelTest,
-                      public ::testing::TestWithParam<
-                          std::tuple<nncase::typecode_t, dims_t, axes_t>> {
+                      public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape, value] = GetParam();
+        READY_SUBCASE()
+
+        auto typecode = GetDataType("lhs_type");
+        auto l_shape = GetShapeArray("i_shape");
 
         input =
             hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
         init_tensor(input);
 
-        perm_value = value;
+        perm_value = GetAxesArray("perm");
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
   protected:
     runtime_tensor input;
     axes_t perm_value;
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    Transpose, TransposeTest,
-    testing::Combine(
-        testing::Values(dt_float32, dt_int32, dt_int16, dt_float64, dt_int8,
-                        dt_uint8, dt_uint16, dt_uint32, dt_uint64, dt_int64,
-                        dt_bfloat16, dt_float16, dt_boolean),
-        testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 2, 4, 8},
-                        dims_t{2, 2, 4, 4}, dims_t{1, 3, 16}, dims_t{1, 2, 4},
-                        dims_t{2, 2, 4}, dims_t{16, 16}, dims_t{2, 4},
-                        dims_t{4, 4}),
-        testing::Values(
-            axes_t{0, 1, 2, 3}, axes_t{0, 1, 3, 2}, axes_t{0, 2, 1, 3},
-            axes_t{0, 2, 3, 1}, axes_t{0, 3, 1, 2}, axes_t{0, 3, 2, 1},
-            axes_t{1, 0, 3, 2}, axes_t{1, 3, 2, 0}, axes_t{1, 0, 2, 3},
-            axes_t{1, 2, 0, 3}, axes_t{1, 2, 3, 0}, axes_t{1, 3, 0, 2},
-            axes_t{2, 0, 1, 3}, axes_t{2, 0, 3, 1}, axes_t{2, 1, 0, 3},
-            axes_t{2, 1, 3, 0}, axes_t{2, 3, 0, 1}, axes_t{2, 3, 1, 0},
-            axes_t{3, 0, 1, 2}, axes_t{3, 0, 2, 1}, axes_t{3, 1, 2, 0},
-            axes_t{3, 1, 0, 2}, axes_t{3, 2, 1, 0}, axes_t{3, 2, 0, 1},
-            axes_t{0, 1, 2}, axes_t{0, 2, 1}, axes_t{1, 0, 2}, axes_t{1, 2, 0},
-            axes_t{2, 0, 1}, axes_t{2, 1, 0}, axes_t{0, 1}, axes_t{1, 0})));
+INSTANTIATE_TEST_SUITE_P(Transpose, TransposeTest,
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(TransposeTest, Transpose) {
 
@@ -124,6 +109,18 @@ TEST_P(TransposeTest, Transpose) {
 }
 
 int main(int argc, char *argv[]) {
+    READY_TEST_CASE_GENERATE()
+    FOR_LOOP(lhs_type, i)
+    FOR_LOOP(i_shape, j)
+    FOR_LOOP(perm, k)
+    SPLIT_ELEMENT(lhs_type, i)
+    SPLIT_ELEMENT(i_shape, j)
+    SPLIT_ELEMENT(perm, k)
+    WRITE_SUB_CASE()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

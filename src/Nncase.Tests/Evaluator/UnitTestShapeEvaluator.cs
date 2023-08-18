@@ -21,6 +21,12 @@ public class UnitTestShapeEvaluator : TestClassBase
 {
     private readonly int _defaultDim = 4;
 
+    public static IEnumerable<object[]> RangeData => new[]
+    {
+        new object[] { 1, 7, 1 },
+        new object[] { 1, 7, 2 },
+    };
+
     [Fact]
     public void TestConstant1()
     {
@@ -46,7 +52,10 @@ public class UnitTestShapeEvaluator : TestClassBase
         var dimVar = new Var(new TensorType(DataTypes.Int32, Shape.Scalar));
         var newShape = new Expr[] { 1, 3, dimVar, 6 };
         var varMap = new Dictionary<Var, Expr[]> { { input, newShape } };
-        Assert.Equal(Stack(new IR.Tuple(newShape), 0), input.EvaluateShapeExpr(varMap));
+        var dict = new Dictionary<Var, IValue> { { dimVar, Value.FromTensor(4) } };
+        var expect = Stack(new IR.Tuple(newShape), 0).Evaluate(dict);
+        var result = input.EvaluateShapeExpr(varMap).Evaluate(dict);
+        Assert.Equal(expect, result);
     }
 
     [Fact]
@@ -82,6 +91,7 @@ public class UnitTestShapeEvaluator : TestClassBase
     public void UnitTestUnsqueeze()
     {
         TestOpShapeEval(input => Unsqueeze(input, new[] { 4 }));
+        TestOpShapeEval(input => Unsqueeze(input, new[] { -1 }));
     }
 
     [Fact]
@@ -158,12 +168,50 @@ public class UnitTestShapeEvaluator : TestClassBase
     public void UnitTestTranspose()
     {
         TestOpShapeEval(input => Transpose(input, new[] { 0, 2, 3, 1 }));
+        TestOpShapeEval(input => Transpose(input, new[] { 0, 2, 1, 3 }));
     }
 
     [Fact]
     public void UnitTestReshape()
     {
         TestOpShapeEval(input => Reshape(input, new[] { 1, 3, 12, -1 }));
+        TestOpShapeEval(input => Reshape(input, new[] { 1, -1, 12, 3 }));
+    }
+
+    [Fact]
+    public void UnitTestGetItem()
+    {
+        var dimVar = new Var(new TensorType(DataTypes.Int32, Shape.Scalar));
+        var input = new Var(new TensorType(DataTypes.Int32, new[] { Dimension.Unknown }));
+        var expr = input[1];
+        var dict = new Dictionary<Var, Expr[]> { { input, new[] { dimVar } } };
+        var shape = expr.EvaluateShapeExpr(dict);
+        var varValues = new Dictionary<Var, IValue> { { input, Value.FromTensor(new[] { 4 }) } };
+        var shapeValue = shape.Evaluate(varValues).AsTensor().ToArray<int>();
+        var evalShape = expr
+            .Evaluate(new Dictionary<Var, IValue> { { input, Value.FromTensor(new[] { 2, 3, 4, 5 }) } })
+            .AsTensor()
+            .Shape;
+        var fixedShape = evalShape.ToValueArray();
+        Assert.Equal(fixedShape, shapeValue);
+    }
+
+    [Fact]
+    public void UnitTestGetItemSingle()
+    {
+        var dimVar = new Var(new TensorType(DataTypes.Int32, Shape.Scalar));
+        var input = new Var(new TensorType(DataTypes.Int32, new[] { Dimension.Unknown }));
+        var expr = input[0];
+        var dict = new Dictionary<Var, Expr[]> { { input, new[] { dimVar } } };
+        var shape = expr.EvaluateShapeExpr(dict);
+        var varValues = new Dictionary<Var, IValue> { { input, Value.FromTensor(new[] { 1 }) } };
+        var shapeValue = shape.Evaluate(varValues).AsTensor().ToArray<int>();
+        var evalShape = expr
+            .Evaluate(new Dictionary<Var, IValue> { { input, Value.FromTensor(new[] { 2 }) } })
+            .AsTensor()
+            .Shape;
+        var fixedShape = evalShape.ToValueArray();
+        Assert.Equal(fixedShape, shapeValue);
     }
 
     [Fact]
@@ -209,9 +257,71 @@ public class UnitTestShapeEvaluator : TestClassBase
     }
 
     [Fact]
+    public void TestSpaceTobatch()
+    {
+        var dimVar = new Var(new TensorType(DataTypes.Int32, Shape.Scalar));
+        var input = new Var(new TensorType(DataTypes.Float32, new[] { 1, Dimension.Unknown, 192 }));
+        var paddings = Tensor.From(new[] { 0, 1 }, new[] { 1, 2 });
+        var expr = SpaceToBatch(input, new[] { 3 }, paddings);
+        var dict = new Dictionary<Var, Expr[]> { { input, new Expr[] { 1, dimVar, 192 } } };
+        var shape = expr.EvaluateShapeExpr(dict);
+        var varValues = new Dictionary<Var, IValue> { { dimVar, Value.FromTensor(8) } };
+        Dumpper.DumpIR(shape, "Shape");
+        var shapeValue = shape.Evaluate(varValues).AsTensor().ToArray<int>();
+        var evalShape = expr
+            .Evaluate(new Dictionary<Var, IValue> { { input, Value.FromTensor(Testing.Rand<float>(1, 8, 192)) } })
+            .AsTensor()
+            .Shape;
+        var fixedShape = evalShape.ToValueArray();
+        Assert.Equal(fixedShape, shapeValue);
+    }
+
+    [Fact]
+    public void TestBatchToSpace()
+    {
+        var dimVar = new Var(new TensorType(DataTypes.Int32, Shape.Scalar));
+        var input = new Var(new TensorType(DataTypes.Float32, new[] { Dimension.Unknown, 69, 192 }));
+        var paddings = Tensor.From(new[] { 0, 1 }, new[] { 1, 2 });
+        var expr = BatchToSpace(input, new[] { 3 }, paddings);
+        var dict = new Dictionary<Var, Expr[]> { { input, new Expr[] { dimVar, 69, 192 } } };
+        var shape = expr.EvaluateShapeExpr(dict);
+        var varValues = new Dictionary<Var, IValue> { { dimVar, Value.FromTensor(3) } };
+        Dumpper.DumpIR(shape, "Shape");
+        var shapeValue = shape.Evaluate(varValues).AsTensor().ToArray<int>();
+        var evalShape = expr
+            .Evaluate(new Dictionary<Var, IValue> { { input, Value.FromTensor(Testing.Rand<float>(3, 69, 192)) } })
+            .AsTensor()
+            .Shape;
+        var fixedShape = evalShape.ToValueArray();
+        Assert.Equal(fixedShape, shapeValue);
+    }
+
+    [Fact]
     public void UnitTestSqueeze()
     {
         TestOpShapeEval(input => Squeeze(input, new[] { 0 }));
+        TestOpShapeEval(input => Squeeze(input, new[] { -4 }));
+    }
+
+    [Theory]
+    [MemberData(nameof(RangeData))]
+    public void UnitTestRange(int beginV, int endV, int stepV)
+    {
+        var begin = new Var(new TensorType(DataTypes.Int32, Shape.Scalar));
+        var end = new Var(new TensorType(DataTypes.Int32, Shape.Scalar));
+        var step = new Var(new TensorType(DataTypes.Int32, Shape.Scalar));
+        var expr = Range(begin, end, step);
+        var shape = expr.EvaluateShapeExpr();
+        var varValues = new Dictionary<Var, IValue>
+        {
+            { begin, Value.FromTensor(beginV) },
+            { end, Value.FromTensor(endV) },
+            { step, Value.FromTensor(stepV) },
+        };
+
+        var shapeValue = shape.Evaluate(varValues).AsTensor().ToArray<int>();
+        var fixedShape = expr.Evaluate(varValues).AsTensor().Shape.ToValueArray();
+        Assert.Equal(fixedShape, shapeValue);
     }
 
     private Expr MakeDim() => new Var(new TensorType(DataTypes.Int32, Shape.Scalar));

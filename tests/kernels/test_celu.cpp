@@ -26,23 +26,26 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class CeluTest
-    : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
+class CeluTest : public KernelTest,
+                 public ::testing::TestWithParam<
+                     std::tuple<nncase::typecode_t, dims_t, float>> {
   public:
     void SetUp() override {
-        auto &&[typecode, input_shape] = GetParam();
+        auto &&[typecode, input_shape, alpha_value] = GetParam();
 
         input = hrt::create(typecode, input_shape,
                             host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
         init_tensor(input);
+
+        alpha = alpha_value;
     }
 
     void TearDown() override {}
 
   protected:
     runtime_tensor input;
+    float alpha;
 };
 
 INSTANTIATE_TEST_SUITE_P(
@@ -51,11 +54,11 @@ INSTANTIATE_TEST_SUITE_P(
                      testing::Values(dims_t{1}, dims_t{1, 2},
                                      dims_t{1, 3, 16, 16}, dims_t{16, 16},
                                      dims_t{3, 16}, dims_t{1, 3, 16, 1},
-                                     dims_t{})));
+                                     dims_t{}),
+                     testing::Values(1.2f, 0.8f)));
 
 TEST_P(CeluTest, celu) {
     auto input_ort = runtime_tensor_2_ort_tensor(input);
-    auto alpha = 1.2f;
 
     // expected
     auto output_ort = ortki_Celu(input_ort, alpha);

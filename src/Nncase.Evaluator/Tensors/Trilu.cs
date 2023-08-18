@@ -14,7 +14,7 @@ namespace Nncase.Evaluator.Tensors;
 /// <summary>
 /// Evaluator for <see cref="Trilu"/>.
 /// </summary>
-public class TriluEvaluator : IEvaluator<Trilu>, ITypeInferencer<Trilu>, ICostEvaluator<Trilu>, IShapeEvaluator<Trilu>
+public class TriluEvaluator : IEvaluator<Trilu>, ITypeInferencer<Trilu>, ICostEvaluator<Trilu>, IShapeEvaluator<Trilu>, IMetricEvaluator<Trilu>
 {
     public IValue Visit(IEvaluateContext context, Trilu target)
     {
@@ -48,5 +48,14 @@ public class TriluEvaluator : IEvaluator<Trilu>, ITypeInferencer<Trilu>, ICostEv
     public Expr Visit(IShapeEvaluateContext context, Trilu target)
     {
         return context.GetArgumentShape(target, Trilu.Input);
+    }
+
+    public Metric Visit(IMetricEvaluateContext context, Trilu target)
+    {
+        var returnType = context.GetReturnType<IRType>();
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(returnType),
+        };
     }
 }

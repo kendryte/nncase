@@ -26,10 +26,9 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class ClampTest
-    : public KernelTest,
-      public ::testing::TestWithParam<
-          std::tuple<nncase::typecode_t, dims_t, float_t, float_t>> {
+class ClampTest : public KernelTest,
+                  public ::testing::TestWithParam<
+                      std::tuple<nncase::typecode_t, dims_t, float, float>> {
   public:
     void SetUp() override {
         auto &&[typecode, l_shape, value1, value2] = GetParam();
@@ -47,8 +46,8 @@ class ClampTest
 
   protected:
     runtime_tensor input;
-    float_t min_value;
-    float_t max_value;
+    float min_value;
+    float max_value;
 };
 
 INSTANTIATE_TEST_SUITE_P(
@@ -59,30 +58,30 @@ INSTANTIATE_TEST_SUITE_P(
                                      dims_t{1, 3, 8}, dims_t{16, 16}, dims_t{},
                                      dims_t{16}),
                      testing::Values(-1, -2, -3, -4, -5, -6),
-                     testing::Values(1, 2, 3, 4, 5, 6)));
+                     testing::Values(0, 1, 2, 3, 4, 5, 6)));
 
 TEST_P(ClampTest, clamp) {
 
     // expected
-    float_t min1[] = {min_value};
-    auto min_tensor =
+    float_t min[] = {min_value};
+    auto min_tensor_float =
         hrt::create(nncase::dt_float32, {1},
-                    {reinterpret_cast<gsl::byte *>(min1), sizeof(min1)}, true,
+                    {reinterpret_cast<gsl::byte *>(min), sizeof(min)}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
-    float_t max1[] = {max_value};
-    auto max_tensor =
+    float_t max[] = {max_value};
+    auto max_tensor_float =
         hrt::create(nncase::dt_float32, {1},
-                    {reinterpret_cast<gsl::byte *>(max1), sizeof(max1)}, true,
+                    {reinterpret_cast<gsl::byte *>(max), sizeof(max)}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
     auto output_ort =
         ortki_Clip(runtime_tensor_2_ort_tensor(input),
-                   ortki_CastLike(runtime_tensor_2_ort_tensor(min_tensor),
+                   ortki_CastLike(runtime_tensor_2_ort_tensor(min_tensor_float),
                                   runtime_tensor_2_ort_tensor(input)),
-                   ortki_CastLike(runtime_tensor_2_ort_tensor(max_tensor),
+                   ortki_CastLike(runtime_tensor_2_ort_tensor(max_tensor_float),
                                   runtime_tensor_2_ort_tensor(input)));
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
@@ -94,6 +93,22 @@ TEST_P(ClampTest, clamp) {
                         .expect("create tensor failed");
 
     // actual
+    runtime_tensor min_tensor(
+        kernels::stackvm::cast(input.datatype(),
+                               runtime::stackvm::cast_mode_t::kdefault,
+                               min_tensor_float.impl())
+            .expect("cast failed")
+            .as<tensor>()
+            .expect("as tensor failed"));
+
+    runtime_tensor max_tensor(
+        kernels::stackvm::cast(input.datatype(),
+                               runtime::stackvm::cast_mode_t::kdefault,
+                               max_tensor_float.impl())
+            .expect("cast failed")
+            .as<tensor>()
+            .expect("as tensor failed"));
+
     auto output = kernels::stackvm::clamp(input.impl(), min_tensor.impl(),
                                           max_tensor.impl())
                       .expect("clamp failed");

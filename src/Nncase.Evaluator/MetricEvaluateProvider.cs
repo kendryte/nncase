@@ -30,7 +30,7 @@ internal sealed class MetricEvaluateProvider : IMetricEvaluateProvider
 
         if (expr.CheckedType is InvalidType)
         {
-            throw new InvalidOperationException("Expr in Evaluator need a valid type");
+            throw new InvalidOperationException("Expr in Metric Evaluator need a valid type");
         }
 
         var evaluatorVisitor = new MetricEvaluateVisitor();

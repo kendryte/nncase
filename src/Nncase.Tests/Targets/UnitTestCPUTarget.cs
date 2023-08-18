@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Nncase.CodeGen;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using Nncase.Runtime.Interop;
@@ -205,6 +206,31 @@ public class UnitTestCPUTarget : TestClassBase
 
         var input = (Tensor)true;
         var output = (Tensor)128;
+        GenerateKModelAndRunFromFn(main, input, output);
+    }
+
+    [Fact]
+    public void TestNestIfWithThenBegin()
+    {
+        CompileOptions.DumpFlags = DumpFlags.CodeGen;
+        var condVar = new Var(new TensorType(DataTypes.Boolean, Shape.Scalar));
+        var cast = Cast(condVar, DataTypes.Int32);
+        var i = new If(condVar, cast * new If(condVar, 3 + cast, 2), 6);
+        var main = new Function("main", i, new[] { condVar });
+        Dumpper.DumpIR(main, "main");
+        var input = (Tensor)true;
+        var output = (Tensor)4;
+        GenerateKModelAndRunFromFn(main, input, output);
+    }
+
+    [Fact]
+    public void TestNestIfWithElseBegin()
+    {
+        var condVar = new Var(new TensorType(DataTypes.Boolean, Shape.Scalar));
+        var i = new If(condVar, 3, new If(condVar, 1, 2));
+        var main = new Function("main", i, new[] { condVar });
+        var input = (Tensor)false;
+        var output = (Tensor)2;
         GenerateKModelAndRunFromFn(main, input, output);
     }
 

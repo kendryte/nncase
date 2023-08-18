@@ -18,6 +18,7 @@
 #include "nncase/shape.h"
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 #include <filesystem>
 #include <fstream>
 #include <gtest/gtest.h>
@@ -32,11 +33,16 @@
 #include <numeric>
 #include <ortki/c_api.h>
 #include <random>
+#include <rapidjson/document.h> // rapidjson's DOM-style API
+#include <rapidjson/error/en.h>
+#include <rapidjson/ostreamwrapper.h>
+#include <rapidjson/writer.h>
 #include <string>
 #include <vector>
 
 using namespace nncase::runtime;
 using namespace nncase::kernels;
+using namespace rapidjson;
 namespace nncase {
 typedef enum { RANDOM, NOZERO, NONEG, NOPOS } initial_mode;
 
@@ -1539,7 +1545,10 @@ class KernelTest {
     }
 
     void print_runtime_tensor(runtime::runtime_tensor lhs) {
-        std::cout << "tensor:" << std::endl;
+        std::cout << "tensor (shape:[ ";
+        for (auto a : lhs.shape())
+            std::cout << a << " ";
+        std::cout << "]):" << std::endl;
         kernels::stackvm::apply(
             lhs.shape(),
             [&](gsl::span<const size_t> index) -> result<void> {
@@ -1624,19 +1633,137 @@ class KernelTest {
         std::cout << std::endl;
     }
 
-    template <class T>
-    result<void> clamp_impl(const T *input, T min, T max, T *output,
-                            gsl::span<const size_t> in_shape,
-                            gsl::span<const size_t> in_strides,
-                            gsl::span<const size_t> out_strides,
-                            NNCASE_UNUSED kernel_context &context) {
-        return apply(in_shape,
-                     [&](gsl::span<const size_t> index) -> result<void> {
-                         const auto v = input[offset(index, in_strides)];
-                         output[offset(index, out_strides)] =
-                             std::min(std::max(v, min), max);
-                         return ok();
-                     });
+    virtual void quantize_to_int16(runtime::runtime_tensor &expected,
+                                   runtime::runtime_tensor &input, int16_t zero,
+                                   float_t scale) {
+        if (expected.datatype() != dt_int16)
+            return;
+        NNCASE_UNUSED auto res = kernels::stackvm::apply(
+            expected.shape(),
+            [&](gsl::span<const size_t> index) -> result<void> {
+                get<int16_t>(expected, index) = static_cast<int16_t>(
+                    get<float_t>(input, index) / scale + zero);
+                return ok();
+            });
     }
+
+    virtual void int16_dequantize_to_float(runtime::runtime_tensor &expected,
+                                           runtime::runtime_tensor &input,
+                                           int16_t zero, float_t scale) {
+        if (input.datatype() != dt_int16)
+            return;
+        NNCASE_UNUSED auto res = kernels::stackvm::apply(
+            expected.shape(),
+            [&](gsl::span<const size_t> index) -> result<void> {
+                get<float_t>(expected, index) = static_cast<float_t>(
+                    (get<int16_t>(input, index) - zero) * scale);
+                return ok();
+            });
+    }
+
+    static std::string ReadFromJsonFile(std::ifstream &file) {
+        std::string content((std::istreambuf_iterator<char>(file)),
+                            std::istreambuf_iterator<char>());
+        file.close();
+        return content;
+    }
+
+    static void ParseJson(Document &document, std::string js_str) {
+        if (document.Parse(js_str.c_str()).HasParseError())
+            std::cout << "Parsing Error: "
+                      << (unsigned)document.GetErrorOffset() << " "
+                      << GetParseError_En(document.GetParseError())
+                      << std::endl;
+        assert(document.IsObject());
+    }
+
+    void ParseJson(std::string js_str) {
+        if (_document.Parse(js_str.c_str()).HasParseError())
+            std::cout << "Parsing Error: "
+                      << (unsigned)_document.GetErrorOffset() << " "
+                      << GetParseError_En(_document.GetParseError())
+                      << std::endl;
+        assert(_document.IsObject());
+    }
+
+    typecode_t Str2DataType(std::string type) {
+        std::cout << type << std::endl;
+        if (str_2_datatype.find(type) != str_2_datatype.end()) {
+            return str_2_datatype[type];
+        } else {
+            return dt_int8;
+        }
+    }
+
+    int64_t GetNumber(const char *key) {
+        assert(_document[key].IsInt64());
+        return _document[key].GetInt64();
+    }
+
+    float GetFloatNumber(const char *key) {
+        assert(_document[key].IsDouble());
+        return _document[key].GetFloat();
+    }
+
+    typecode_t GetDataType(const char *key) {
+        assert(_document[key].IsString());
+        return Str2DataType(_document[key].GetString());
+    }
+
+    dims_t GetShapeArray(const char *key) {
+        assert(_document[key].IsArray());
+
+        Value &array = _document[key];
+        size_t arraySize = array.Size();
+        dims_t cArray(arraySize);
+        for (rapidjson::SizeType i = 0; i < arraySize; i++) {
+            if (array[i].IsUint()) {
+                cArray[i] = array[i].GetUint();
+            } else {
+                std::cout << "Invalid JSON format. Expected unsigned integer "
+                             "values in the array."
+                          << std::endl;
+            }
+        }
+        return cArray;
+    }
+
+    axes_t GetAxesArray(const char *key) {
+        assert(_document[key].IsArray());
+
+        Value &array = _document[key];
+        size_t arraySize = array.Size();
+        axes_t cArray(arraySize);
+        for (rapidjson::SizeType i = 0; i < arraySize; i++) {
+            if (array[i].IsUint()) {
+                cArray[i] = array[i].GetUint();
+            } else {
+                std::cout << "Invalid JSON format. Expected unsigned integer "
+                             "values in the array."
+                          << std::endl;
+            }
+        }
+        return cArray;
+    }
+
+    static std::string GetFileNameFromMacro(const char *filePath) {
+        std::string fullFilePath(filePath);
+        size_t lastSlashIndex = fullFilePath.find_last_of("/\\");
+        if (lastSlashIndex != std::string::npos) {
+            return fullFilePath.substr(lastSlashIndex + 1);
+        }
+        return fullFilePath;
+    }
+
+  private:
+    Document _document;
+    std::map<std::string, typecode_t> str_2_datatype = {
+        {"dt_int8", dt_int8},       {"dt_int16", dt_int16},
+        {"dt_int32", dt_int32},     {"dt_int64", dt_int64},
+        {"dt_uint8", dt_uint8},     {"dt_uint16", dt_uint16},
+        {"dt_uint32", dt_uint32},   {"dt_uint64", dt_uint64},
+        {"dt_float16", dt_float16}, {"dt_float32", dt_float32},
+        {"dt_float64", dt_float64}, {"dt_bfloat16", dt_bfloat16},
+        {"dt_boolean", dt_boolean}};
 };
 } // namespace nncase

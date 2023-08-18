@@ -250,7 +250,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                             mode_dir = os.path.join(target_dir, k_mode)
                             shutil.move(tmp_dir, mode_dir)
                             judge, result = self.compare_results(
-                                expected, actual, stage, k_target, v_target['similarity_name'], k_mode, v_mode['threshold'], self.cfg['dump_hist'], mode_dir)
+                                expected, actual, stage, k_target, v_target['similarity_name'], k_mode, v_mode['threshold'], dump_hist, mode_dir)
 
                             if not judge:
                                 if test_utils.in_ci():

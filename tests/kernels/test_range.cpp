@@ -22,18 +22,23 @@
 #include <nncase/runtime/stackvm/opcode.h>
 #include <ortki/operators.h>
 
+#define TEST_CASE_NAME "test_range"
+
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class RangeTest
-    : public KernelTest,
-      public ::testing::TestWithParam<
-          std::tuple<nncase::typecode_t, dims_t, float_t, float_t, float_t>> {
+class RangeTest : public KernelTest,
+                  public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
-        auto &&[typecode, shape, begin_value, end_value, step_value] =
-            GetParam();
+        READY_SUBCASE()
+
+        auto shape = GetShapeArray("lhs_shape");
+        auto begin_value = GetFloatNumber("begin");
+        auto end_value = GetFloatNumber("end");
+        auto step_value = GetFloatNumber("step");
+        auto typecode = GetDataType("lhs_type");
 
         float_t begin_array[] = {begin_value};
         begin = hrt::create(typecode, shape,
@@ -57,7 +62,7 @@ class RangeTest
                    .expect("create tensor failed");
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
   protected:
     runtime_tensor begin;
@@ -66,11 +71,7 @@ class RangeTest
 };
 
 INSTANTIATE_TEST_SUITE_P(Range, RangeTest,
-                         testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1}),
-                                          testing::Values(0.0f, 10.0f, 20.0f),
-                                          testing::Values(100.0f, 90.0f, 80.0f),
-                                          testing::Values(1.0f, 10.0f, 5.0f)));
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(RangeTest, Range) {
     auto begin_ort = runtime_tensor_2_ort_tensor(begin);
@@ -108,6 +109,24 @@ TEST_P(RangeTest, Range) {
 }
 
 int main(int argc, char *argv[]) {
+    READY_TEST_CASE_GENERATE()
+    FOR_LOOP(lhs_shape, i)
+    FOR_LOOP(begin, j)
+    FOR_LOOP(end, k)
+    FOR_LOOP(step, l)
+    FOR_LOOP(lhs_type, m)
+    SPLIT_ELEMENT(lhs_shape, i)
+    SPLIT_ELEMENT(begin, j)
+    SPLIT_ELEMENT(end, k)
+    SPLIT_ELEMENT(step, l)
+    SPLIT_ELEMENT(lhs_type, m)
+    WRITE_SUB_CASE()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
