@@ -602,6 +602,83 @@ class KernelTest {
         return ok();
     }
 
+    template <typename T>
+    std::vector<T> tensor_to_array(runtime::runtime_tensor &lhs) {
+
+        std::vector<T> vec1;
+        vec1.reserve(compute_size(lhs.shape()));
+
+        kernels::stackvm::apply(
+            lhs.shape(),
+            [&](gsl::span<const size_t> index) -> result<void> {
+                auto dtype = lhs.datatype();
+                switch (dtype) {
+                case dt_int8: {
+                    vec1.push_back(static_cast<T>(get<int8_t>(lhs, index)));
+                    break;
+                }
+                case dt_int16: {
+                    vec1.push_back(
+                        static_cast<T>(get<int16_t>(lhs, index)));
+                    break;
+                }
+                case dt_int32: {
+                    vec1.push_back(
+                        static_cast<T>(get<int32_t>(lhs, index)));
+                    break;
+                }
+                case dt_int64: {
+                    vec1.push_back(
+                        static_cast<T>(get<int64_t>(lhs, index)));
+                    break;
+                }
+                case dt_uint8: {
+                    vec1.push_back(
+                        static_cast<T>(get<uint8_t>(lhs, index)));
+                    break;
+                }
+                case dt_uint16: {
+                    vec1.push_back(
+                        static_cast<T>(get<uint16_t>(lhs, index)));
+                    break;
+                }
+                case dt_uint32: {
+                    vec1.push_back(
+                        static_cast<T>(get<uint32_t>(lhs, index)));
+                    break;
+                }
+                case dt_uint64: {
+                    vec1.push_back(
+                        static_cast<T>(get<uint64_t>(lhs, index)));
+                    break;
+                }
+                case dt_float16: {
+                    vec1.push_back(static_cast<T>(get<half>(lhs, index)));
+                    break;
+                }
+                case dt_bfloat16: {
+                    vec1.push_back(static_cast<T>(get<bfloat16>(lhs, index)));
+                    break;
+                }
+                case dt_float32: {
+                    vec1.push_back(static_cast<T>(get<float>(lhs, index)));
+                    break;
+                }
+                case dt_float64: {
+                    vec1.push_back(static_cast<T>(get<double>(lhs, index)));
+                    break;
+                }
+                default: {
+                    return err(std::errc::not_supported);
+                }
+                }
+                return ok();
+            })
+            .is_ok();
+
+        return vec1;
+    }
+
     bool is_same_tensor(runtime::runtime_tensor &lhs,
                         runtime::runtime_tensor &rhs) {
         if (lhs.shape() != rhs.shape()) {
