@@ -259,7 +259,7 @@ public sealed partial class SqueezeBinaryShape : IRewriteRule
     /// <param name="a"> left input shape.</param>
     /// <param name="b"> right input shape.</param>
     /// <returns> Squeeze flag, new lhs, new rhs. </returns>
-    public Tuple<bool, List<int>, List<int>> SqueezeInputShape(List<int> a, List<int> b)
+    public (bool SqueezeOrNot, List<int> newAShape, List<int> newBShape) SqueezeInputShape(List<int> a, List<int> b)
     {
         var aSize = a.Count;
         var bSize = b.Count;
@@ -270,7 +270,7 @@ public sealed partial class SqueezeBinaryShape : IRewriteRule
 
         if (squeezeTimes <= 0)
         {
-            return new Tuple<bool, List<int>, List<int>>(false, a, b);
+            return (false, a, b);
         }
 
         List<int> newA = a;
@@ -285,7 +285,6 @@ public sealed partial class SqueezeBinaryShape : IRewriteRule
             }
             else
             {
-                // 检查可以折叠的维度
                 var canFold = Enumerable.Repeat(true, aSize).ToArray();
                 var foldIndexCouples = new List<(int, int)>();
 
@@ -307,10 +306,7 @@ public sealed partial class SqueezeBinaryShape : IRewriteRule
 
                 while (squeezeTimes > 0 && foldIndexCouples.Count > 0)
                 {
-                    var indexes = foldIndexCouples[0];
-                    var front = indexes.Item1;
-                    var back = indexes.Item2;
-
+                    var (front, back) = foldIndexCouples[0];
                     newA[front] *= newA[back];
                     newB[front] *= newB[back];
 
@@ -321,23 +317,19 @@ public sealed partial class SqueezeBinaryShape : IRewriteRule
                     squeezeTimes--;
                 }
 
-                if (newA.Count > 4)
+                for (int i = newA.Count - 1, count = newA.Count - 5; i >= 0 && count >= 0; i--)
                 {
-                    if (newA[0] == 1 && newB[0] == 1)
+                    if (newA[i] * newB[i] == 1)
                     {
-                        newA.RemoveAt(0);
-                        newB.RemoveAt(0);
-                    }
-                    else if (newA[^1] == 1 && newB[^1] == 1)
-                    {
-                        newA.RemoveAt(newA.Count - 1);
-                        newB.RemoveAt(newB.Count - 1);
+                        newA.RemoveAt(i);
+                        newB.RemoveAt(i);
+                        count--;
                     }
                 }
 
                 if (newA.Count > 4)
                 {
-                    return new Tuple<bool, List<int>, List<int>>(false, newA, newB);
+                    return (false, newA, newB);
                 }
             }
         }
@@ -354,7 +346,7 @@ public sealed partial class SqueezeBinaryShape : IRewriteRule
             }
         }
 
-        return new Tuple<bool, List<int>, List<int>>(true, newA, newB);
+        return (true, newA, newB);
     }
 
     private static List<int> SqueezeShape(List<int> shape)
