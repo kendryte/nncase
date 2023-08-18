@@ -4,6 +4,8 @@
 using System.Collections.Immutable;
 using System.Linq;
 using System.Reactive;
+using DryIoc.ImTools;
+using Microsoft.Toolkit.HighPerformance;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Fx = System.Func<Nncase.IR.Expr, Nncase.IR.Expr>;
@@ -146,5 +148,10 @@ public static class ReplaceUtility
             return null;
         });
         return mutator.Visit(body, Unit.Default);
+    }
+
+    public static void ReplaceAllUsesWith(Expr expr, Expr newOperand)
+    {
+        expr.ReplaceAllUsesWith(newOperand);
     }
 }

@@ -58,7 +58,13 @@ public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>, ICostEv
     public Expr Visit(IShapeEvaluateContext context, Stack target)
     {
         var inShape = context.GetArgumentShape(target, Stack.Inputs);
-        return IR.F.Tensors.Concat(new IR.Tuple(inShape[0], Tensor.From(new[] { 1 })), 0);
+        Expr one = new[] { 1 };
+        if (inShape[0].CheckedShape.IsScalar)
+        {
+            one = 1;
+        }
+
+        return IR.F.Tensors.Concat(new IR.Tuple(inShape[0], one), 0);
     }
 
     public Metric Visit(IMetricEvaluateContext context, Stack target)
@@ -72,6 +78,11 @@ public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>, ICostEv
 
     private IRType Visit(ITypeInferenceContext context, Stack target, TupleType inputs)
     {
+        if (inputs.Count == 0)
+        {
+            return new InvalidType("Tuple count should not be zero");
+        }
+
         if (context.GetArgument(target, Stack.Axis) is TensorConst axis_con)
         {
             var axis_v = axis_con.Value.ToScalar<int>();
