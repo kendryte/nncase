@@ -239,14 +239,6 @@ internal class Compiler : ICompiler
             c.Add<FusionBucket>();
         });
 
-        // rebuild
-        ToFusion(p, true);
-
-        p.AddWithName<DataflowPass>("FusionBucket").Configure(c =>
-        {
-            c.Add<FusionBucket>();
-        });
-
         p.AddWithName<DataflowPass>("Simplify").Configure(c =>
         {
             c.Add<FoldStackGetItem>();

@@ -1046,14 +1046,6 @@ public partial class FusionBucket : RewriteRule<Pattern>
 
         int i = 0;
 
-        // 1. 普通情况不应该rebuild
-        // 2. rebuild的正确性
-        if (ShouldBeRebuild(context))
-        {
-            Console.WriteLine("Rebuild");
-            return RestoreBodyWithArgs(context.Arguments, context.Parameters, context.FusionBody);
-        }
-
         var body = segments.OrderByDescending(x => x).Aggregate(
             failure,
             (sum, seg) =>
