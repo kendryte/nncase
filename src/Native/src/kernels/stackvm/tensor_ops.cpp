@@ -759,8 +759,8 @@ result<value_t> nncase::kernels::stackvm::bucket_pad(
     auto paddings = std::vector<int>(8);
     auto rank = shape_value.size();
     for (int i = 0; i < rank; ++i) {
-        paddings[2 * i + 0] = 0;
-        paddings[2 * i + 1] = shape_value[i] - in_shape[i];
+        paddings[i] = 0;
+        paddings[i + rank] = shape_value[i] - in_shape[i];
     }
     if (is_nop_pad(paddings)) {
         return ok(input);

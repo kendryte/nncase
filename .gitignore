@@ -34,6 +34,7 @@ bld/
 # NUNIT
 *.VisualState.xml
 TestResult.xml
+coverage.unit.xml
 
 # Build Results of an ATL Project
 [Dd]ebugPS/
@@ -43,6 +44,7 @@ dlldata.c
 # DNX
 project.lock.json
 project.fragment.lock.json
+**/packages.lock.json
 artifacts/
 
 *_i.c
