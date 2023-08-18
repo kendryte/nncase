@@ -22,7 +22,7 @@ internal sealed class ShapeEvaluateProvider : IShapeEvaluateProvider
         _serviceProvider = serviceProvider;
     }
 
-    public Expr EvaluateShapeExpr(Expr expr, IReadOnlyDictionary<Var, Expr[]> varsMap)
+    public Expr EvaluateShapeExpr(Expr expr, ShapeExprCache cache)
     {
         if (expr.CheckedType is null)
         {
@@ -36,7 +36,7 @@ internal sealed class ShapeEvaluateProvider : IShapeEvaluateProvider
                 DumpScope.Current.DumpIR(expr, "EvaluateShapeExprInvalid");
             }
 
-            throw new InvalidOperationException("Expr in Evaluator need a valid type");
+            throw new InvalidOperationException("Expr in Shape Evaluator need a valid type");
         }
 
         if (expr.CheckedType is TensorType && expr.CheckedShape.IsFixed)
@@ -55,7 +55,7 @@ internal sealed class ShapeEvaluateProvider : IShapeEvaluateProvider
             }
         }
 
-        var evaluatorVisitor = new ShapeEvaluateVisitor(varsMap);
+        var evaluatorVisitor = new ShapeEvaluateVisitor(cache);
         return evaluatorVisitor.Visit(expr);
     }
 
