@@ -26,9 +26,9 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class CeluTest : public KernelTest,
-                 public ::testing::TestWithParam<
-                     std::tuple<nncase::typecode_t, dims_t>> {
+class CeluTest
+    : public KernelTest,
+      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
   public:
     void SetUp() override {
         auto &&[typecode, input_shape] = GetParam();
@@ -78,8 +78,8 @@ TEST_P(CeluTest, celu) {
                         .expect("create tensor failed");
 
     // actual
-    auto output =
-        kernels::stackvm::celu(input.impl(), alpha.impl()).expect("celu failed");
+    auto output = kernels::stackvm::celu(input.impl(), alpha.impl())
+                      .expect("celu failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     bool result = is_same_tensor(expected, actual) ||
