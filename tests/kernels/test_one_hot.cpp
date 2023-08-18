@@ -26,14 +26,19 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class OneHotTest
-    : public KernelTest,
-      public ::testing::TestWithParam<
-          std::tuple<nncase::typecode_t, typecode_t, dims_t, dims_t, int32_t>> {
+#define TEST_CASE_NAME "test_one_hot"
+
+class OneHotTest : public KernelTest,
+                   public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
-        auto &&[value_typecode, index_typecode, l_shape, values_shape,
-                axis_value] = GetParam();
+
+        READY_SUBCASE()
+        auto l_shape = GetShapeArray("lhs_shape");
+        auto values_shape = GetShapeArray("rhs_shape");
+        auto axis_value = GetNumber("axis");
+        auto value_typecode = GetDataType("lhs_type");
+        auto index_typecode = GetDataType("rhs_type");
 
         int64_t a[] = {3, 2, 4, 0};
         indices = hrt::create(index_typecode, l_shape,
@@ -56,7 +61,7 @@ class OneHotTest
         axis = axis_value;
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
   protected:
     runtime_tensor indices;
@@ -65,11 +70,8 @@ class OneHotTest
     int32_t axis;
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    OneHot, OneHotTest,
-    testing::Combine(testing::Values(dt_float16, dt_float32),
-                     testing::Values(dt_int64), testing::Values(dims_t{4}),
-                     testing::Values(dims_t{2}), testing::Values(0, 1)));
+INSTANTIATE_TEST_SUITE_P(OneHot, OneHotTest,
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(OneHotTest, OneHot) {
     auto indices_ort = runtime_tensor_2_ort_tensor(indices);
@@ -115,6 +117,24 @@ TEST_P(OneHotTest, OneHot) {
 }
 
 int main(int argc, char *argv[]) {
+    READY_TEST_CASE_GENERATE()
+    FOR_LOOP(lhs_shape, i)
+    FOR_LOOP(rhs_shape, j)
+    FOR_LOOP(axis, k)
+    FOR_LOOP(lhs_type, l)
+    FOR_LOOP(rhs_type, m)
+    SPLIT_ELEMENT(lhs_shape, i)
+    SPLIT_ELEMENT(rhs_shape, j)
+    SPLIT_ELEMENT(axis, k)
+    SPLIT_ELEMENT(lhs_type, l)
+    SPLIT_ELEMENT(rhs_type, m)
+    WRITE_SUB_CASE()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

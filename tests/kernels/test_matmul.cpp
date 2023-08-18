@@ -26,12 +26,17 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
+#define TEST_CASE_NAME "test_matmul"
+
 class MatMulTest : public KernelTest,
-                   public ::testing::TestWithParam<
-                       std::tuple<nncase::typecode_t, dims_t, dims_t>> {
+                   public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape, r_shape] = GetParam();
+        READY_SUBCASE()
+
+        auto typecode = GetDataType("lhs_type");
+        auto l_shape = GetShapeArray("lhs_shape");
+        auto r_shape = GetShapeArray("rhs_shape");
 
         lhs = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
@@ -42,23 +47,15 @@ class MatMulTest : public KernelTest,
         init_tensor(rhs);
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
   protected:
     runtime_tensor lhs;
     runtime_tensor rhs;
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    mat_mul, MatMulTest,
-    testing::Combine(testing::Values(dt_int32, dt_int64, dt_float32, dt_float64,
-                                     dt_int32, dt_uint32, dt_uint64),
-                     testing::Values(dims_t{1, 3}, dims_t{1, 3, 3},
-                                     dims_t{1, 2, 3, 3}, dims_t{3, 3}/*,
-                                     dims_t{6, 3, 3}, dims_t{6, 2, 3, 3}*/),// todo batch&&channel doesn't support other than 1.
-                     testing::Values(dims_t{3, 1}, dims_t{1, 3, 3},
-                                     dims_t{1, 2, 3, 3}, dims_t{3, 3}/*,
-                                     dims_t{6, 3, 3}, dims_t{6, 2, 3, 3}*/)));
+INSTANTIATE_TEST_SUITE_P(mat_mul, MatMulTest,
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(MatMulTest, mat_mul) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
@@ -95,6 +92,18 @@ TEST_P(MatMulTest, mat_mul) {
 }
 
 int main(int argc, char *argv[]) {
+    READY_TEST_CASE_GENERATE()
+    FOR_LOOP(lhs_type, i)
+    FOR_LOOP(lhs_shape, j)
+    FOR_LOOP(rhs_shape, k)
+    SPLIT_ELEMENT(lhs_type, i)
+    SPLIT_ELEMENT(lhs_shape, j)
+    SPLIT_ELEMENT(rhs_shape, k)
+    WRITE_SUB_CASE()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

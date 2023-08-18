@@ -26,14 +26,22 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
+#define TEST_CASE_NAME "test_reduce_arg"
+
 class ReduceArgMaxTest : public KernelTest,
-                         public ::testing::TestWithParam<
-                             std::tuple<nncase::typecode_t, typecode_t, dims_t,
-                                        dims_t, int64_t, int64_t, int64_t>> {
+                         public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
-        auto &&[typecode1, typecode2, l_shape, r_shape, value1, value2,
-                value3] = GetParam();
+
+        READY_SUBCASE()
+
+        auto typecode1 = GetDataType("lhs_type");
+        auto typecode2 = GetDataType("rhs_type");
+        auto l_shape = GetShapeArray("lhs_shape");
+        auto r_shape = GetShapeArray("rhs_shape");
+        auto value1 = GetNumber("axis_value");
+        auto value2 = GetNumber("bool1_value");
+        auto value3 = GetNumber("bool2_value");
 
         a = hrt::create(typecode1, l_shape, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
@@ -64,7 +72,7 @@ class ReduceArgMaxTest : public KernelTest,
                 .expect("create tensor failed");
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
   protected:
     runtime_tensor a;
@@ -76,15 +84,8 @@ class ReduceArgMaxTest : public KernelTest,
     int64_t select_last_idx_value;
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    ReduceArgMax, ReduceArgMaxTest,
-    testing::Combine(testing::Values(dt_float32), testing::Values(dt_int64),
-                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 2, 3, 4},
-                                     dims_t{1, 3, 16}, dims_t{3, 16},
-                                     dims_t{16}),
-                     testing::Values(dims_t{1}),
-                     testing::Values(-1, 0, 1, 2, 3, -2, -3, -4),
-                     testing::Values(1, 0), testing::Values(1, 0)));
+INSTANTIATE_TEST_SUITE_P(ReduceArgMax, ReduceArgMaxTest,
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(ReduceArgMaxTest, ReduceArgMax) {
 
@@ -95,7 +96,7 @@ TEST_P(ReduceArgMaxTest, ReduceArgMax) {
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
-    auto expected = hrt::create(dt_float64, shape,
+    auto expected = hrt::create(dt_int64, shape,
                                 {reinterpret_cast<gsl::byte *>(ptr_ort), size},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
@@ -112,6 +113,8 @@ TEST_P(ReduceArgMaxTest, ReduceArgMax) {
                   cosine_similarity_tensor(expected, actual);
 
     if (!result) {
+        std::cout << "input ";
+        print_runtime_tensor(a);
         std::cout << "actual ";
         print_runtime_tensor(actual);
         std::cout << "expected ";
@@ -123,6 +126,30 @@ TEST_P(ReduceArgMaxTest, ReduceArgMax) {
 }
 
 int main(int argc, char *argv[]) {
+    READY_TEST_CASE_GENERATE()
+    FOR_LOOP(lhs_type, i)
+    FOR_LOOP(rhs_type, j)
+    FOR_LOOP(lhs_shape, k)
+    FOR_LOOP(rhs_shape, l)
+    FOR_LOOP(bool1_value, m)
+    FOR_LOOP(bool2_value, n)
+    FOR_LOOP(axis_value, o)
+    SPLIT_ELEMENT(lhs_type, i)
+    SPLIT_ELEMENT(rhs_type, j)
+    SPLIT_ELEMENT(lhs_shape, k)
+    SPLIT_ELEMENT(rhs_shape, l)
+    SPLIT_ELEMENT(bool1_value, m)
+    SPLIT_ELEMENT(bool2_value, n)
+    SPLIT_ELEMENT(axis_value, o)
+    WRITE_SUB_CASE()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

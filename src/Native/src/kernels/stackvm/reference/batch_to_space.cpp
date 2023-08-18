@@ -104,7 +104,7 @@ dims_t infer_shape(gsl::span<const size_t> origin_in_shape,
                    gsl::span<const size_t> block_shape,
                    const paddings_t &crops) {
     auto d4 = fixed_dims(0, 2, 3, 1);
-    auto d3 = fixed_dims(1, 2, 0);
+    auto d3 = fixed_dims(0, 2, 1);
     auto inPerm = origin_in_shape.size() == 4
                       ? gsl::span<const size_t>{d4.data(), d4.size()}
                       : gsl::span<const size_t>{d3.data(), d3.size()};
@@ -123,7 +123,7 @@ dims_t infer_shape(gsl::span<const size_t> origin_in_shape,
                          in_shape.end());
     }
     auto outd4 = fixed_dims(0, 3, 1, 2);
-    auto outd3 = fixed_dims(2, 0, 1);
+    auto outd3 = fixed_dims(0, 2, 1);
     auto outPerm = origin_in_shape.size() == 4
                        ? gsl::span<const size_t>{outd4.data(), outd4.size()}
                        : gsl::span<const size_t>{outd3.data(), outd3.size()};
