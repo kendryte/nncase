@@ -36,4 +36,6 @@ public sealed partial class LayerNorm : Op
     public int Axis { get; }
 
     public float Epsilon { get; }
+
+    public bool UseMean { get; }
 }
