@@ -104,9 +104,9 @@
 #define UNARY_OP_TEMPLATE(_name)                                               \
     result<value_t> nncase::kernels::stackvm::_name(                           \
         value_t input, value_t output, kernel_context &context) {              \
-        try_f32_input(input_mem, input);                                       \
+        try_input(input_mem, input);                                           \
         auto dtype = input_tensor->dtype();                                    \
-        try_f32_output(out_mem, output, input_tensor->shape());                \
+        try_output_like_input(out_mem, output, input_tensor);                  \
         if (is_contiguous(input_tensor)) {                                     \
             try_(_name##_opt_impl(input_mem, out_mem, input_tensor->shape(),   \
                                   input_tensor->strides(),                     \
