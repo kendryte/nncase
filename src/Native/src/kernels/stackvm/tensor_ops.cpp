@@ -231,6 +231,26 @@ result<value_t> nncase::kernels::stackvm::conv2d_transpose(
     try_f32_input(fused_clamp_value, fused_clamp);
     try_dims(out_shape, output_shape);
     try_f32_output(out_mem, output, out_shape);
+
+    /*
+        when output shape explictly set, pad should be compute
+        auto_pad is unused
+        The compute expression is come from onnx:
+        total_padding[i] = stride[i] * (input_size[i] - 1) + output_padding[i] +
+        ((kernel_shape[i] - 1) * dilations[i] + 1) - output_shape[i]
+
+        !Attention:  total_padding[i] is a multiple of 2, so the result will be
+        error when this condition is not satisfied
+    */
+    pads[0].before = strides[0] * (input_tensor->shape()[2] - 1) +
+                     (weights_tensor->shape()[2] - 1) * dilations[0] -
+                     output_tensor->shape()[2];
+    pads[0].before = pads[0].before >= 0 ? pads[0].before : 0;
+    pads[1].before = strides[1] * (input_tensor->shape()[3] - 1) +
+                     (weights_tensor->shape()[3] - 1) * dilations[1] -
+                     output_tensor->shape()[3];
+    pads[1].before = pads[1].before >= 0 ? pads[1].before : 0;
+
     try_(reference::conv2d_transpose(
         input_mem, out_mem, weights_mem, bias_mem, input_tensor->shape(),
         groups_value, output_tensor->shape(), weights_tensor->shape()[2],

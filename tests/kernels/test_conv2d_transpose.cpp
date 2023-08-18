@@ -82,7 +82,7 @@ INSTANTIATE_TEST_SUITE_P(
         testing::Values(dims_t{1, 1, 1, 1} /*, dims_t{0, 0, 1, 0}*/),
         testing::Values(dims_t{1, 1} /*, dims_t{2, 2}*/),
         testing::Values(1 /*, 2*/), testing::Values(dims_t{0, 0}),
-        testing::Values(dims_t{1, 2, 5, 5})));
+        testing::Values(dims_t{1, 2, 7, 7}, dims_t{1, 2, 5, 5})));
 
 TEST_P(Conv2DTransposeTest, conv2d_transpose) {
     auto input_ort = runtime_tensor_2_ort_tensor(input);
