@@ -42,8 +42,7 @@ public class UnitTestFoldGetItem : TransformTestBase
         var shape = new Expr[] { 1, 80, 4, 1 };
         var s = Stack(new IR.Tuple(shape), 0);
         var result = Stack(new IR.Tuple(s[0], s[1], s[2]), 0);
-        DumpScope.Current.DumpIR(result, "result");
-        TestNotMatch<FoldStackGetItem>(result);
+        TestMatched<FoldStackGetItem>(result);
     }
 
     [Fact]

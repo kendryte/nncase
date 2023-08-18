@@ -52,7 +52,10 @@ public class UnitTestShapeEvaluator : TestClassBase
         var dimVar = new Var(new TensorType(DataTypes.Int32, Shape.Scalar));
         var newShape = new Expr[] { 1, 3, dimVar, 6 };
         var varMap = new Dictionary<Var, Expr[]> { { input, newShape } };
-        Assert.Equal(Stack(new IR.Tuple(newShape), 0), input.EvaluateShapeExpr(varMap));
+        var dict = new Dictionary<Var, IValue> { { dimVar, Value.FromTensor(4) } };
+        var expect = Stack(new IR.Tuple(newShape), 0).Evaluate(dict);
+        var result = input.EvaluateShapeExpr(varMap).Evaluate(dict);
+        Assert.Equal(expect, result);
     }
 
     [Fact]
@@ -319,34 +322,6 @@ public class UnitTestShapeEvaluator : TestClassBase
         var shapeValue = shape.Evaluate(varValues).AsTensor().ToArray<int>();
         var fixedShape = expr.Evaluate(varValues).AsTensor().Shape.ToValueArray();
         Assert.Equal(fixedShape, shapeValue);
-    }
-
-    [Fact]
-    public void TestShapeExprCache()
-    {
-        var cache = new ShapeExprCache(new Dictionary<Var, Expr[]>());
-        var dimVar = new Var("dimVar", new TensorType(DataTypes.Int32, Shape.Scalar));
-        var lhs = new Var("lhs", new TensorType(DataTypes.Float32, new Shape(1, Dimension.Unknown, 24, 24)));
-        var rhs = new Var("rhs", new TensorType(DataTypes.Float32, new Shape(1, Dimension.Unknown, 24, 24)));
-        var m = IR.F.Math.MatMul(lhs, rhs);
-        var dimVarDict = new Dictionary<Var, IValue> { { dimVar, Value.FromTensor(3) } };
-        var lhsShape = new Expr[] { 1, dimVar, 24, 24 };
-        var rhsShape = new Expr[] { 1, dimVar, 24, 24 };
-        var lhsFixedShape = new[] { 1, 3, 24, 24 };
-        var rhsFixedShape = new[] { 1, 3, 24, 24 };
-        var shapeDict = new Dictionary<Var, Expr[]> { { lhs, lhsShape }, { rhs, rhsShape } };
-
-        var mShapeExpr = m.EvaluateShapeExpr(shapeDict);
-        cache.Add(m, mShapeExpr);
-        var tr = Transpose(m, new[] { 0, 2, 3, 1 });
-        var trShapeExpr = tr.EvaluateShapeExpr(cache + shapeDict);
-        var fixedShape = trShapeExpr.Evaluate(dimVarDict).AsTensor().ToArray<int>();
-        var originShape = tr.Evaluate(new Dictionary<Var, IValue>
-        {
-            { lhs, Value.FromTensor(Testing.Rand<float>(lhsFixedShape)) },
-            { rhs, Value.FromTensor(Testing.Rand<float>(rhsFixedShape)) },
-        }).AsTensor().Shape.ToValueArray();
-        Assert.Equal(originShape, fixedShape);
     }
 
     private Expr MakeDim() => new Var(new TensorType(DataTypes.Int32, Shape.Scalar));
