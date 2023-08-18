@@ -28,7 +28,9 @@ void layernorm_naive_impl(T *input, const T *sum, T *sum_sqr, T *gamma, T *beta,
         auto sigma = std::sqrt(sum_sqr[o] / norm_size - mean * mean + eps);
         for (size_t i = 0; i < inner_size; i++) {
             auto x = input + o * inner_size + i;
-            *x = (*x - mean) / sigma * gamma[i] + beta[i];
+            *x = (*x - mean) / sigma *
+                     (gamma == nullptr ? static_cast<T>(1) : gamma[i]) +
+                 (beta == nullptr ? static_cast<T>(0) : beta[i]);
         }
     }
 }

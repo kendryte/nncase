@@ -69,7 +69,7 @@ void stage2_kernel(tensor<float> &qkh) {
     auto qkhi = qkh({bid * 8, tid * 96, 0}, {8, 96, 384});
 
     tensor<float> sih({8, 96, 384});
-    // sih = softmax(qkhi, 2);
+    softmax(qkhi, sih, 2);
 
     // 6. compute y
     tensor<float> yihT({8, 96, 128});
@@ -80,17 +80,23 @@ void stage2_kernel(tensor<float> &qkh) {
     /* [96, 8, 128] -> [96, 1024] */
     tensor<float> yih({96, 8, 128});
     transpose(yihT, yih, dims_t({1, 0, 2}));
-    [[maybe_unused]] auto yihv = view(yih, dims_t({96, 1024}));
+    auto yihv = view(yih, dims_t({96, 1024}));
     // yih = reshape(, {96, 1024});
 
     // 7. Add and sum & sqr
-    // tensor<float> sum({96});
-    // tensor<float> sum_sqr({96});
-    // auto xi = X({tid * 96, bid * 1024}, {96, 1024}); // [96, 1024]
+    tensor<float> sum({96});
+    tensor<float> sum_sqr({96});
+    auto xi = X({tid * 96, bid * 1024}, {96, 1024}); // [96, 1024]
+    std::function<float(float, float)> f = [](float a, float b) -> float {
+        return a + b;
+    };
+    __tensor_binary_sync(xi, yihv, yihv, f);
     // yih = add_and_sum_sqr(yih, xi, sum, sum_sqr);
-    // __tdma_all_reduce_async(sum, sum_sqr,
-    //                         reduce_op_t::SUM); // All blocks & threads reduce
+    tensor_reduce_sum_sqr(yihv, sum, sum_sqr);
+    // __tdma_all_reduce_async(sum, sum_sqr); // All blocks & threads reduce
+    tdma_all_reduce_async(sum, sum, reduce_op_t::sum, dims_t({0}), ctx);
     tdma_wait(ctx);
+    tensor_layernorm_sync(yihv, sum, sum_sqr, 1, 8192);
 
     // 8. compute LayerNorm
     // yih = layer_norm(yih, sum, sum_sqr); // [96, 1024]

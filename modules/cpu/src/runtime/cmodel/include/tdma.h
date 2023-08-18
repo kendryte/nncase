@@ -6,6 +6,7 @@
 #include <layernorm.h>
 #include <matmul.h>
 #include <reduce.h>
+#include <softmax.h>
 #include <tensor.h>
 #include <thread_context.h>
 #include <transpose.h>
@@ -41,6 +42,13 @@ void transpose(tensor<T, Loc> &src, tensor<T, Loc> &dest, dims_t perm) {
     return kernels::transpose(src.cdata().data(), dest.data().data(),
                               src.dimension(), perm, src.strides(),
                               dest.strides());
+}
+
+template <loc_t SrcLoc, loc_t DestLoc>
+void softmax(tensor<float, SrcLoc> &src, tensor<float, DestLoc> &dest,
+             int axis) {
+    kernels::softmax(src.cdata().data(), dest.data().data(), src.dimension(),
+                     src.strides(), dest.strides(), axis, 1.0f, false);
 }
 
 template <class T, loc_t DestLoc, loc_t SrcLoc>
@@ -104,6 +112,16 @@ void tensor_layernorm_sync(tensor<T, Loc> &input, tensor<T, loc_t::local> &sum,
                        sum_sqr.data().data(), gamma.data().data(),
                        beta.data().data(), input.dimension(), input.strides(),
                        eps, axis, norm_size);
+}
+
+template <typename T, loc_t Loc>
+void tensor_layernorm_sync(tensor<T, Loc> &input, tensor<T, loc_t::local> &sum,
+                           tensor<T, loc_t::local> &sum_sqr, int32_t axis,
+                           int32_t norm_size) {
+    kernels::layernorm(input.data().data(), sum.data().data(),
+                       sum_sqr.data().data(), static_cast<T *>(nullptr),
+                       static_cast<T *>(nullptr), input.dimension(),
+                       input.strides(), static_cast<T>(1e-5), axis, norm_size);
 }
 
 template <typename T, loc_t ALoc>
