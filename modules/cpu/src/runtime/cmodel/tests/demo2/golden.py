@@ -25,7 +25,7 @@ QK = Q @ np.transpose(K, [0, 2, 1])  # [64,384,384]
 
 S = softmax(QK)  # [64,384,384]
 
-Y = np.transpose(S @ V, [1, 0, 2]).reshape([384, -1])  # [64,384,128]
+Y = np.transpose(S @ V, [1, 0, 2]).reshape([384, -1])  # [64,384,128] ->  [64,8192]
 
 M = Y @ WM  # [384,8192]
 

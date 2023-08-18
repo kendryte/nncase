@@ -14,8 +14,9 @@ static bool w_loaded;
 static tensor<float> wqh({8, 2048, 128});
 static tensor<float> wkh({8, 2048, 128});
 static tensor<float> wvh({8, 2048, 128}); // [8, 2048, 128]
-static tensor<float> wfc1ih({1024, 8192});
-static tensor<float> wfc2ih({1024, 8192}); // [1024, 8192]
+static tensor<float> wm({1024, 8192});    // []
+// static tensor<float> wfc1ih({1024, 8192});
+// static tensor<float> wfc2ih({1024, 8192}); // [1024, 8192]
 static tensor<float> yih({96, 1024});
 
 // 8 head per block
@@ -35,6 +36,7 @@ void stage1_kernel(
         tdma_load_async(wqh, WQ({bid * 8, tid * 2048, 0}, {8, 2048, 128}), ctx);
         tdma_load_async(wkh, WK({bid * 8, tid * 2048, 0}, {8, 2048, 128}), ctx);
         tdma_load_async(wvh, WV({bid * 8, tid * 2048, 0}, {8, 2048, 128}), ctx);
+        tdma_load_async(wm, WM({bid * 1024, 0}, {1024, 8192}), ctx);
         // tdma_load_async(wfc1ih, WFC1({bid * 1024, tid * 8192}, {1024,
         // 8192}));
         tdma_wait(ctx); // 等待 x, wqh, wkh, wvh ready
@@ -63,7 +65,9 @@ void stage1_kernel(
 
 // 8 head per block
 // 96 seq-len per thread
-void stage2_kernel(tensor<float> &qkh) {
+void stage2_kernel(
+    [[maybe_unused]] tensor<float, loc_t::device> &Norm /* 8192, 8192 */
+) {
     thread_context ctx(bid, tid);
     // 5. compute softmax
     auto qkhi = qkh({bid * 8, tid * 96, 0}, {8, 96, 384});
@@ -81,7 +85,16 @@ void stage2_kernel(tensor<float> &qkh) {
     tensor<float> yih({96, 8, 128});
     transpose(yihT, yih, dims_t({1, 0, 2}));
     auto yihv = view(yih, dims_t({96, 1024}));
-    // yih = reshape(, {96, 1024});
+
+    tensor<float> ym({96, 2048});
+
+    // [96,1024] * [1024,8192] -> [96, 8192]
+    //  @t, @b       @b, @l        @t, @l
+    // note 如添加上mm的, 此时wm的n不能在thread上切, 只能多算一部分,
+    // 计算结束后倒是可以继续在thread切.
+    tensor_mma_sync(yihv, wm, ym);
+    tdma_all_reduce_async(ym, ym, reduce_op_t::sum, reduce_strategy_t::by_block,
+                          ctx);
 
     // 7. Add and sum & sqr
     tensor<float> sum({96});
@@ -90,14 +103,17 @@ void stage2_kernel(tensor<float> &qkh) {
     std::function<float(float, float)> f = [](float a, float b) -> float {
         return a + b;
     };
-    __tensor_binary_sync(xi, yihv, yihv, f);
+    auto ym_b = ym({0, bid * 1024}, {96, 1024});
+    __tensor_binary_sync(xi, ym_b, ym_b, f);
     // yih = add_and_sum_sqr(yih, xi, sum, sum_sqr);
-    tensor_reduce_sum_sqr(yihv, sum, sum_sqr);
+    tensor_reduce_sum_sqr(ym_b, sum, sum_sqr);
     // __tdma_all_reduce_async(sum, sum_sqr); // All blocks & threads reduce
-    tdma_all_reduce_async(sum, sum, reduce_op_t::sum, dims_t({0}), ctx);
+    tdma_all_reduce_async(sum, sum, reduce_op_t::sum,
+                          reduce_strategy_t::by_block, ctx);
+    tdma_all_reduce_async(sum_sqr, sum_sqr, reduce_op_t::sum,
+                          reduce_strategy_t::by_block, ctx);
     tdma_wait(ctx);
-    tensor_layernorm_sync(yihv, sum, sum_sqr, 1, 8192);
+    tensor_layernorm_sync(ym_b, sum, sum_sqr, 1, 8192);
 
-    // 8. compute LayerNorm
-    // yih = layer_norm(yih, sum, sum_sqr); // [96, 1024]
+    tdma_store_async(ym_b, Norm({tid * 96, bid * 1024}, {96, 1024}), ctx);
 }

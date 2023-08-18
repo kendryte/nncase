@@ -6,6 +6,7 @@
 #define DEFINE_TFUNC(b, t)                                                     \
     void *f_##b##_##t(void *arg) {                                             \
         block##b::thread##t::stage1_kernel(WQ, WK, WV, WM);                    \
+        block##b::thread##t::stage2_kernel(Norm);                              \
         return arg;                                                            \
     }
 
@@ -19,6 +20,7 @@ tensor<float, loc_t::device> WQ({64, 8192, 128});
 tensor<float, loc_t::device> WK({64, 8192, 128});
 tensor<float, loc_t::device> WV({64, 8192, 128});
 tensor<float, loc_t::device> WM({8192, 8192});
+tensor<float, loc_t::device> Norm({384, 8192});
 
 DEFINE_BFUNC(0)
 DEFINE_BFUNC(1)
@@ -46,6 +48,7 @@ int main([[maybe_unused]] int argc, char **argv) {
     auto src_WK = read_file(std::string(argv[3]));
     auto src_WV = read_file(std::string(argv[4]));
     auto src_WM = read_file(std::string(argv[5]));
+    auto src_Norm = read_file(std::string(argv[6]));
     span_copy(WQ.data(), gsl::make_span(src_WQ).as_span<float>());
     span_copy(WK.data(), gsl::make_span(src_WK).as_span<float>());
     span_copy(WV.data(), gsl::make_span(src_WV).as_span<float>());
@@ -130,30 +133,9 @@ int main([[maybe_unused]] int argc, char **argv) {
     pthread_join(t_7_2, NULL);
     pthread_join(t_7_3, NULL);
 
-    // auto cos =
-    //     cosine(K.data().begin(),
-    //     gsl::make_span(src_K).as_span<float>().begin(),
-    //            K.data().size());
-    // printf("K cosine %f\n", cos);
-
-    // cos = cosine(Sum.data().begin(),
-    //              gsl::make_span(src_Sum).as_span<float>().begin(),
-    //              Sum.data().size());
-    // printf("Sum cosine %f\n", cos);
-
-    // cos = cosine(RSum.data().begin(),
-    //              gsl::make_span(src_RSum).as_span<float>().begin(),
-    //              Sum.data().size());
-    // printf("src_RSum cosine %f\n", cos);
-
-    // cos = cosine(RSumSqr.data().begin(),
-    //              gsl::make_span(src_RSumSqr).as_span<float>().begin(),
-    //              Sum.data().size());
-    // printf("RSumSqr cosine %f\n", cos);
-
-    // cos = cosine(Norm.data().begin(),
-    //              gsl::make_span(src_Norm).as_span<float>().begin(),
-    //              Sum.data().size());
-    // printf("Norm cosine %f\n", cos);
+    auto cos = cosine(Norm.data().begin(),
+                      gsl::make_span(src_Norm).as_span<float>().begin(),
+                      Norm.data().size());
+    printf("Norm cosine %f\n", cos);
     return 0;
 }

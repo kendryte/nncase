@@ -77,9 +77,10 @@ void stage1_kernel(
     tensor<float> r_sum({384});
     tensor<float> r_sum_sqr({384});
     tensor_reduce_sum_sqr(xj, r_sum, r_sum_sqr);
-    tdma_all_reduce_async(r_sum, r_sum, reduce_op_t::sum, dims_t({0}), ctx);
-    tdma_all_reduce_async(r_sum_sqr, r_sum_sqr, reduce_op_t::sum, dims_t({0}),
-                          ctx);
+    tdma_all_reduce_async(r_sum, r_sum, reduce_op_t::sum,
+                          reduce_strategy_t::all, ctx);
+    tdma_all_reduce_async(r_sum_sqr, r_sum_sqr, reduce_op_t::sum,
+                          reduce_strategy_t::all, ctx);
     if (bid == 0 && tid == 0) {
         tdma_store_async(r_sum, std::move(RSum), ctx);
         tdma_store_async(r_sum_sqr, std::move(RSumSqr), ctx);
