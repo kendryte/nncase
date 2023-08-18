@@ -834,13 +834,15 @@ class KernelTest {
                     break;
                 }
                 case dt_float16: {
-                    vec1.push_back(get<half>(lhs, index));
-                    vec2.push_back(get<half>(rhs, index));
+                    vec1.push_back(static_cast<float>(get<half>(lhs, index)));
+                    vec2.push_back(static_cast<float>(get<half>(rhs, index)));
                     break;
                 }
                 case dt_bfloat16: {
-                    vec1.push_back(get<bfloat16>(lhs, index));
-                    vec2.push_back(get<bfloat16>(rhs, index));
+                    vec1.push_back(
+                        static_cast<float>(get<bfloat16>(lhs, index)));
+                    vec2.push_back(
+                        static_cast<float>(get<bfloat16>(rhs, index)));
                     break;
                 }
                 case dt_float32: {
