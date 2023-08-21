@@ -125,8 +125,13 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
             {
                 if (!pairs.ContainsKey(callParams[i]))
                 {
+                    // 动态shape的情况下会先统计range再分段，matmul转conv2d则是需要知道shape才能做
+                    // 动态shape情况下执行的顺序是range -> 分段 -> matmul转conv2d
+                    // 这里必须要对matmul的rhs进行判断，如果matmul是动态的那么不会走量化，如果是静态的那么一定会转到conv2d
+                    // 因此认为matmul的rhs为const的情况下一定能转成conv2d
                     bool isWeights = ((call.Target is Conv2D || call.Target is Conv2DTranspose) && (i == 1))
-                    || (call.Target is LSTM && i > 0);
+                    || (call.Target is LSTM && i > 0)
+                    || (call.Target is MatMul && i == 1 && callParams[1] is TensorConst);
 
                     if (!configExist && !useAutoMixQuant)
                     {
