@@ -39,7 +39,12 @@ class PreluTest : public KernelTest,
                 .expect("create tensor failed");
         init_tensor(input);
 
-        slope = slope_value;
+        if (slope_value.size() == 1 ||
+            slope_value.size() == l_shape[l_shape.size() - 1]) {
+            slope = slope_value;
+        } else {
+            slope = slope_t{0.1};
+        }
     }
 
     void TearDown() override {}
@@ -51,14 +56,19 @@ class PreluTest : public KernelTest,
 
 INSTANTIATE_TEST_SUITE_P(
     Prelu, PreluTest,
-    testing::Combine(testing::Values(dt_float32),
-                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{1},
-                                     dims_t{8, 8}, dims_t{1, 4, 16},
-                                     dims_t{1, 3, 24, 24}),
-                     testing::Values(slope_t{0.2f}, slope_t{0.1f},
-                                     slope_t{0.3f}/*, slope_t{0.2f, 0.1f, 0.3f},
-                                     slope_t{0.1f, 0.2f}, slope_t{0.2f, 0.3f},
-                                     slope_t{0.1f, 0.2f, 0.3f}*/)));
+    testing::Combine(
+        testing::Values(dt_float32),
+        testing::Values(dims_t{1, 3, 16, 16}, dims_t{1}, dims_t{8, 8},
+                        dims_t{1, 4, 16}, dims_t{1, 3, 24, 24}),
+        testing::Values(
+            slope_t{0.2f}, slope_t{0.1f}, slope_t{0.3f},
+            slope_t{0.2f, 0.1f, 0.3f, 0.2f, 0.1f, 0.3f, 0.2f, 0.1f,
+                    0.3f, 0.2f, 0.1f, 0.3f, 0.2f, 0.1f, 0.3f, 0.2f,
+                    0.1f, 0.3f, 0.2f, 0.1f, 0.3f, 0.2f, 0.1f, 0.3f},
+            slope_t{0.1f, 0.2f, 0.2f, 0.4f, 0.2f, 0.2f, 0.3f, 0.8f},
+            slope_t{0.1f, 0.2f, 0.2f, 0.2f, 0.1f, 0.2f, 0.2f, 0.4f, 0.1f, 0.2f,
+                    0.2f, 0.8f, 0.2f, 0.12f, 0.2f, 0.21f},
+            slope_t{0.1f, 0.2f, 0.3f, 0.1f, 0.2f, 0.3f, 0.1f, 0.2f})));
 
 TEST_P(PreluTest, Prelu) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
