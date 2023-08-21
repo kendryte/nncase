@@ -9,6 +9,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.Diagnostics;
+using Nncase.IR.Math;
 using Nncase.Passes;
 using Nncase.Passes.Rules.Neutral;
 using Nncase.Tests.TestFixture;
@@ -58,5 +59,55 @@ public class UnitTestSqueezeTransposeShape : TransformTestBase
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Transpose(a, perm);
         TestNotMatch<SqueezeTransposeShape>(rootPre);
+    }
+}
+
+public class UnitTestSqueezeBinaryShape : TransformTestBase
+{
+    public static IEnumerable<object[]> TestSqueezeBinaryShapePosivateData =>
+        new[]
+        {
+            new object[] { new[] { 1 }, new[] { 1, 2, 4, 8, 3 } },
+            new object[] { new[] { 1, 2, 4, 8, 3 }, new[] { 1 } },
+            new object[] { new[] { 1, 2, 4, 8, 3 }, new[] { 1, 1, 4, 1, 1 } },
+            new object[] { new[] { 1, 2, 4, 8, 3 }, new[] { 1, 1, 4, 8, 1 } },
+            new object[] { new[] { 1, 2, 4, 8, 3 }, new[] { 1, 2, 4, 8, 3 } },
+            new object[] { new[] { 1, 2, 1, 8, 1 }, new[] { 3, 1, 6, 1, 1 } },
+            new object[] { new[] { 1, 2, 4, 1, 3, 1, 3 }, new[] { 1, 2, 4, 1, 1, 5, 1 } },
+            new object[] { new[] { 2, 3, 4, 8, 3, 5, 3, 5 }, new[] { 2, 3, 4, 8, 1, 5, 3, 5 } },
+        };
+
+    public static IEnumerable<object[]> TestSqueezeBinaryShapeNegativeData =>
+        new[]
+        {
+            new object[] { new[] { 2 }, new[] { 2 } },
+            new object[] { new[] { 1, 2 }, new[] { 1 } },
+            new object[] { new[] { 1, 2 }, new[] { 1, 2 } },
+            new object[] { new[] { 2 }, new[] { 1 } },
+            new object[] { new[] { 1, 2, 4 }, new[] { 1 } },
+            new object[] { new[] { 1, 2, 4 }, new[] { 1, 2, 1 } },
+            new object[] { new[] { 1, 2, 4 }, new[] { 1, 2, 4 } },
+            new object[] { new[] { 1, 2, 1, 5, 8 }, new[] { 3, 1, 4, 1, 8 } },
+            new object[] { new[] { 2, 3, 4, 8, 3, 5, 3, 5 }, new[] { 2, 1, 4, 8, 1, 5, 3, 5 } },
+        };
+
+    [Theory]
+    [MemberData(nameof(TestSqueezeBinaryShapePosivateData))]
+    public void TestSqueezeBinaryShapePositivate(int[] lShape, int[] rShape)
+    {
+        var a = Random.Normal(DataTypes.Float32, 0, 1, 0, lShape);
+        var b = Random.Normal(DataTypes.Float32, 0, 1, 0, rShape);
+        var rootPre = Math.Binary(BinaryOp.Add, a, b);
+        TestMatched<SqueezeBinaryShape>(rootPre);
+    }
+
+    [Theory]
+    [MemberData(nameof(TestSqueezeBinaryShapeNegativeData))]
+    public void TestSqueezeBinaryShapeNegative(int[] lShape, int[] rShape)
+    {
+        var a = Random.Normal(DataTypes.Float32, 0, 1, 0, lShape);
+        var b = Random.Normal(DataTypes.Float32, 0, 1, 0, rShape);
+        var rootPre = Math.Binary(BinaryOp.Add, a, b);
+        TestNotMatch<SqueezeBinaryShape>(rootPre);
     }
 }

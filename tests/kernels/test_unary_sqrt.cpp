@@ -177,6 +177,8 @@ class UnaryTest : public KernelTest,
         }
     }
 
+    void TearDown() override { CLEAR_SUBCASE() }
+
   protected:
     runtime_tensor input;
 };

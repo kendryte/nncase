@@ -28,7 +28,7 @@ using namespace ortki;
 
 class GeluTest : public KernelTest,
                  public ::testing::TestWithParam<
-                     std::tuple<nncase::typecode_t, dims_t, float_t>> {
+                     std::tuple<nncase::typecode_t, dims_t, float>> {
   public:
     void SetUp() override {
         auto &&[typecode, l_shape, a_value] = GetParam();
@@ -45,7 +45,7 @@ class GeluTest : public KernelTest,
 
   protected:
     runtime_tensor input;
-    float_t a;
+    float a;
 };
 
 INSTANTIATE_TEST_SUITE_P(
@@ -60,21 +60,21 @@ TEST_P(GeluTest, gelu) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
 
     // expected
-    float_t a_ptr[] = {a};
+    float a_ptr[] = {a};
     auto a = hrt::create(nncase::dt_float32, {1},
                          {reinterpret_cast<gsl::byte *>(a_ptr), sizeof(a_ptr)},
                          true, host_runtime_tensor::pool_cpu_only)
                  .expect("create tensor failed");
     auto a_ort = runtime_tensor_2_ort_tensor(a);
 
-    float_t b_ptr[] = {2.0f};
+    float b_ptr[] = {2.0f};
     auto b = hrt::create(nncase::dt_float32, {1},
                          {reinterpret_cast<gsl::byte *>(b_ptr), sizeof(b_ptr)},
                          true, host_runtime_tensor::pool_cpu_only)
                  .expect("create tensor failed");
     auto b_ort = runtime_tensor_2_ort_tensor(b);
 
-    float_t c_ptr[] = {1.0f};
+    float c_ptr[] = {1.0f};
     auto c = hrt::create(nncase::dt_float32, {1},
                          {reinterpret_cast<gsl::byte *>(c_ptr), sizeof(c_ptr)},
                          true, host_runtime_tensor::pool_cpu_only)

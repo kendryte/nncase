@@ -22,16 +22,21 @@
 #include <nncase/runtime/stackvm/opcode.h>
 #include <ortki/operators.h>
 
+#define TEST_CASE_NAME "test_broad_cast"
+
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
 class BroadCastTest : public KernelTest,
-                      public ::testing::TestWithParam<
-                          std::tuple<nncase::typecode_t, dims_t, dims_t>> {
+                      public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape, r_shape] = GetParam();
+        READY_SUBCASE()
+
+        auto typecode = GetDataType("lhs_type");
+        auto l_shape = GetShapeArray("lhs_shape");
+        auto r_shape = GetShapeArray("rhs_shape");
 
         input =
             hrt::create(typecode, r_shape, host_runtime_tensor::pool_cpu_only)
@@ -52,7 +57,7 @@ class BroadCastTest : public KernelTest,
                         .expect("create tensor failed");
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
     void init_tensor_one(runtime::runtime_tensor &tensor) {
         auto dtype = tensor.datatype();
@@ -176,14 +181,8 @@ class BroadCastTest : public KernelTest,
     runtime_tensor new_shape;
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    BroadCast, BroadCastTest,
-    testing::Combine(testing::Values(dt_float32, dt_float64, dt_int32, dt_int64,
-                                     dt_float16),
-                     testing::Values(dims_t{3}, dims_t{1, 3}, dims_t{3, 3},
-                                     dims_t{1}, dims_t{1, 3, 1}),
-                     testing::Values(dims_t{1, 3, 3}, dims_t{1, 3, 3, 3},
-                                     dims_t{1, 3, 16, 16})));
+INSTANTIATE_TEST_SUITE_P(BroadCast, BroadCastTest,
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(BroadCastTest, BroadCast) {
 
@@ -219,6 +218,18 @@ TEST_P(BroadCastTest, BroadCast) {
 }
 
 int main(int argc, char *argv[]) {
+    READY_TEST_CASE_GENERATE()
+    FOR_LOOP(lhs_type, i)
+    FOR_LOOP(lhs_shape, j)
+    FOR_LOOP(rhs_shape, k)
+    SPLIT_ELEMENT(lhs_type, i)
+    SPLIT_ELEMENT(lhs_shape, j)
+    SPLIT_ELEMENT(rhs_shape, k)
+    WRITE_SUB_CASE()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

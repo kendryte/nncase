@@ -118,7 +118,7 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
     {
         var lhs = context.GetArgumentShape(target, Binary.Lhs);
         var rhs = context.GetArgumentShape(target, Binary.Rhs);
-        return ShapeExprUtility.BroadcastShape(lhs, rhs);
+        return IR.F.Tensors.Cast(ShapeExprUtility.BroadcastShape(lhs, rhs), DataTypes.Int32);
     }
 
     private int Compute(BinaryOp op, int a, int b) => op switch
