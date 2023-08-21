@@ -92,9 +92,9 @@ internal class Compiler : ICompiler
     public void TargetIndependentPass(IPassManager passManager)
     {
         passManager.AddWithName<DataflowPass>("ReshapeMatMul").Configure(p =>
-            {
-                p.Add<Passes.Rules.Neutral.ReshapeMatMul>();
-            });
+        {
+            p.Add<Passes.Rules.Neutral.ReshapeMatMul>();
+        });
 
         passManager.AddWithName<DataflowPass>("SqueezeShape").Configure(p =>
         {
@@ -118,7 +118,6 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FocusFull>();
             p.Add<Passes.Rules.Neutral.ReshapeMatMul>();
         });
-
         passManager.AddWithName<EGraphRulesPass>("NeutralOptimizeTranspose").Configure(p =>
         {
             p.Add<Passes.Rules.Neutral.FoldConstCall>();
@@ -175,16 +174,6 @@ internal class Compiler : ICompiler
         //     p.Add<Passes.Rules.Neutral.CombineClampMul>();
         //     p.Add<Passes.Rules.Neutral.FoldNopClamp>();
         // });
-        _compileSession.Target.RegisterTargetInDependentPass(passManager, _compileSession.CompileOptions);
-
-        if (quantMode == ModelQuantMode.UsePTQ)
-        {
-            passManager.AddWithName<DataflowPass>("AddRangeOfMarker").Configure(p =>
-            {
-                p.Add<Passes.Rules.Neutral.AddRangeOfAndMarker>();
-            });
-            passManager.AddWithName<EGraphPassWithQuantize>("AssignRanges");
-        }
     }
 
     public void RegisterShapeBucket(IPassManager p)
