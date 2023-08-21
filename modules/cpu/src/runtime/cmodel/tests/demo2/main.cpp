@@ -139,12 +139,7 @@ int main([[maybe_unused]] int argc, char **argv) {
     pthread_join(t_7_2, NULL);
     pthread_join(t_7_3, NULL);
 
-    auto cos = cosine(Norm.data().begin(),
-                      gsl::make_span(src_Norm).as_span<float>().begin(),
-                      Norm.data().size());
-    printf("Norm cosine %f\n", cos);
-
-    cos = cosine(QKH.data().begin(),
+    auto cos = cosine(QKH.data().begin(),
                  gsl::make_span(src_QKH).as_span<float>().begin(),
                  QKH.data().size());
     printf("QKH cosine %f\n", cos);
@@ -158,5 +153,12 @@ int main([[maybe_unused]] int argc, char **argv) {
                  gsl::make_span(src_YM).as_span<float>().begin(),
                  YM.data().size());
     printf("YM cosine %f\n", cos);
+
+    to_file(Norm.data(),"ONorm.bin");
+
+    cos = cosine(Norm.data().begin(),
+                      gsl::make_span(src_Norm).as_span<float>().begin(),
+                      Norm.data().size());
+    printf("Norm cosine %f\n", cos);
     return 0;
 }

@@ -1,4 +1,5 @@
 #include "runtime_utils.h"
+#include <apply.h>
 #include <cmath>
 #ifdef __riscv_vector
 #include <riscv_vector.h>
@@ -10,29 +11,47 @@ namespace {
 template <typename T>
 void layernorm_naive_impl(T *input, const T *sum, T *sum_sqr, T *gamma, T *beta,
                           gsl::span<const size_t> input_shape,
-                          [[maybe_unused]] gsl::span<const size_t> input_stride,
-                          T eps, int32_t axis, int32_t norm_size) noexcept {
-    // only process continues tensor for now
-    size_t outer_size = 1;
-    for (auto i = 0; i < axis; i++) {
-        outer_size *= input_shape[i];
-    }
+                          gsl::span<const size_t> input_stride,
+                          [[maybe_unused]] gsl::span<const size_t> sum_strides,
+                          gsl::span<const size_t> gamma_strides, T eps,
+                          int32_t axis, int32_t norm_size) noexcept {
+    apply(input_shape, [&](gsl::span<const size_t> input_index) -> void {
+        //  input_index
+        auto o_offset = offset(sum_strides, input_index.subspan(0, axis));
+        // auto o_offset = input_index[0];
+        auto mean = sum[o_offset] / norm_size;
+        auto sigma =
+            std::sqrt(sum_sqr[o_offset] / norm_size - mean * mean + eps);
 
-    size_t inner_size = 1;
-    for (auto i = axis; i < input_shape.size(); i++) {
-        inner_size *= input_shape[i];
-    }
+        auto input_offset = offset(input_stride, input_index);
+        auto in_offset = offset(gamma_strides, input_index.subspan(axis));
+        input[input_offset] =
+            (input[input_offset] - mean) / sigma *
+                (gamma == nullptr ? static_cast<T>(1) : gamma[in_offset]) +
+            (beta == nullptr ? static_cast<T>(0) : beta[in_offset]);
+    });
 
-    for (size_t o = 0; o < outer_size; o++) {
-        auto mean = sum[o] / norm_size;
-        auto sigma = std::sqrt(sum_sqr[o] / norm_size - mean * mean + eps);
-        for (size_t i = 0; i < inner_size; i++) {
-            auto x = input + o * inner_size + i;
-            *x = (*x - mean) / sigma *
-                     (gamma == nullptr ? static_cast<T>(1) : gamma[i]) +
-                 (beta == nullptr ? static_cast<T>(0) : beta[i]);
-        }
-    }
+    // // only process continues tensor for now
+    // size_t outer_size = 1;
+    // for (auto i = 0; i < axis; i++) {
+    //     outer_size *= input_shape[i];
+    // }
+
+    // size_t inner_size = 1;
+    // for (auto i = axis; i < input_shape.size(); i++) {
+    //     inner_size *= input_shape[i];
+    // }
+
+    // for (size_t o = 0; o < outer_size; o++) {
+    //     auto mean = sum[o] / norm_size;
+    //     auto sigma = std::sqrt(sum_sqr[o] / norm_size - mean * mean + eps);
+    //     for (size_t i = 0; i < inner_size; i++) {
+    //         auto x = input + o * inner_size + i;
+    //         *x = (*x - mean) / sigma *
+    //                  (gamma == nullptr ? static_cast<T>(1) : gamma[i]) +
+    //              (beta == nullptr ? static_cast<T>(0) : beta[i]);
+    //     }
+    // }
 }
 
 #ifdef __riscv_vector
@@ -115,8 +134,9 @@ void layernorm_rvv_impl(const T *input, const T *sum, T *sum_sqr, T *gamma,
 
 template <class T>
 void layernorm(T *input, T *sum, T *sum_sqr, T *gamma, T *beta,
-               dims_t input_dims, strides_t input_strides, T eps, int32_t axis,
-               int32_t norm_size) {
+               dims_t input_dims, strides_t input_strides,
+               strides_t sum_strides, strides_t gamma_strides, T eps,
+               int32_t axis, int32_t norm_size) {
 #ifdef __riscv_vector
     return layernorm_rvv_impl(
         input, sum, sum_sqr, gamma, beta,
@@ -127,7 +147,9 @@ void layernorm(T *input, T *sum, T *sum_sqr, T *gamma, T *beta,
     return layernorm_naive_impl(
         input, sum, sum_sqr, gamma, beta,
         gsl::make_span(input_dims).template as_span<const size_t>(),
-        gsl::make_span(input_strides).template as_span<const size_t>(), eps,
+        gsl::make_span(input_strides).template as_span<const size_t>(),
+        gsl::make_span(sum_strides).template as_span<const size_t>(),
+        gsl::make_span(gamma_strides).template as_span<const size_t>(), eps,
         axis, norm_size);
 #endif
 }

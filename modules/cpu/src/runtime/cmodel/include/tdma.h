@@ -113,10 +113,14 @@ void tensor_layernorm_sync(tensor<T, Loc> &input, tensor<T, loc_t::local> &sum,
                            tensor<T, loc_t::local> &gamma,
                            tensor<T, loc_t::local> &beta, T eps, int32_t axis,
                            int32_t norm_size) {
+    assert(sum.strides() == sum_sqr.strides());
+    assert(is_contiguous(sum.dimension(), sum.strides()));
+    assert(gamma.strides() == beta.strides());
+    assert(is_contiguous(gamma.dimension(), gamma.strides()));
     kernels::layernorm(input.data().data(), sum.data().data(),
                        sum_sqr.data().data(), gamma.data().data(),
                        beta.data().data(), input.dimension(), input.strides(),
-                       eps, axis, norm_size);
+                       sum.strides(), gamma.strides(), eps, axis, norm_size);
 }
 
 template <typename T, loc_t Loc>
@@ -126,7 +130,8 @@ void tensor_layernorm_sync(tensor<T, Loc> &input, tensor<T, loc_t::local> &sum,
     kernels::layernorm(input.data().data(), sum.data().data(),
                        sum_sqr.data().data(), static_cast<T *>(nullptr),
                        static_cast<T *>(nullptr), input.dimension(),
-                       input.strides(), static_cast<T>(1e-5), axis, norm_size);
+                       input.strides(), sum.strides(), dims_t({}),
+                       static_cast<T>(1e-5), axis, norm_size);
 }
 
 template <typename T, loc_t ALoc>
