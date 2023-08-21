@@ -66,4 +66,4 @@ def test_executable(target):
 
 
 def infer_file():
-    return os.getenv('INFER_FILE')
+    return os.getenv('INFER_FILE', 'infer_report.json')

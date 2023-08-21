@@ -48,6 +48,7 @@ class Inference:
 
             if self.cfg['dump_infer']:
                 t1 = time.perf_counter()
+
             sim.run()
 
             if self.cfg['dump_infer']:
@@ -176,9 +177,11 @@ class Inference:
             client_socket.close()
         else:
             client_socket.close()
-            self.infer_dict['result'] = 'Fail'
-            self.infer_dict['remark'] = result_dict['error']
-            dump_dict_to_json(self.infer_dict, self.infer_file)
+
+            if self.cfg['dump_infer']:
+                self.infer_dict['result'] = 'Fail'
+                self.infer_dict['remark'] = result_dict['error']
+                dump_dict_to_json(self.infer_dict, self.infer_file)
             raise Exception(result_dict['error'])
 
         return outputs

@@ -54,17 +54,19 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         self.shape_vars = {}
         # used for tag dynamic model for onnx simplify
         self.dynamic = False
-        self.infer_file = test_utils.infer_file()
-        self.infer_dict = {
-            'case': 'unknown',
-            'target': 'cpu',
-            'if_quant_type': 'uint8',
-            'w_quant_type': 'uint8',
-            'time(ms)': 'N/A',
-            'fps': 'N/A',
-            'result': 'Pass',
-            'remark': 'N/A'
-        }
+
+        if self.cfg['dump_infer']:
+            self.infer_file = test_utils.infer_file()
+            self.infer_dict = {
+                'case': 'unknown',
+                'target': 'cpu',
+                'if_quant_type': 'uint8',
+                'w_quant_type': 'uint8',
+                'time(ms)': 'N/A',
+                'fps': 'N/A',
+                'result': 'Pass',
+                'remark': 'N/A'
+            }
 
     def transform_input(self, values: List[np.ndarray], type: str, stage: str) -> List[np.ndarray]:
         new_values = []
