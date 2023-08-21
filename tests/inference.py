@@ -7,6 +7,7 @@ import preprocess_utils
 import socket
 import json
 from test_utils import *
+import time
 
 
 class Inference:
@@ -19,8 +20,17 @@ class Inference:
         running_on_evb = in_ci and target in kpu_targets and nuc_ip is not None and nuc_port is not None and test_executable is not None and len(
             self.inputs) > 0 and len(self.outputs) > 0
 
+        if self.cfg['dump_infer']:
+            self.infer_dict['case'] = os.path.basename(self.case_dir)
+            self.infer_dict['target'] = target
         if ptq_enabled:
             self.set_quant_opt(compiler)
+
+            if self.cfg['dump_infer']:
+                case = os.path.basename(self.case_dir)
+                self.infer_dict['if_quant_type'] = self.cfg['ptq_opt']['quant_type']
+                self.infer_dict['w_quant_type'] = self.cfg['ptq_opt']['w_quant_type']
+
         compiler.compile()
         kmodel = compiler.gencode_tobytes()
         os.makedirs(infer_dir, exist_ok=True)
@@ -35,7 +45,16 @@ class Inference:
             sim = nncase.Simulator()
             sim.load_model(kmodel)
             self.set_infer_input(sim, compile_opt)
+
+            if self.cfg['dump_infer']:
+                t1 = time.perf_counter()
             sim.run()
+
+            if self.cfg['dump_infer']:
+                t = (time.perf_counter() - t1) * 1000
+                self.infer_dict['time(ms)'] = str(t)
+                self.infer_dict['fps'] = str(round(1000 / t, 2))
+
             outputs = self.dump_infer_output(sim, compile_opt, infer_dir)
         return outputs
 
@@ -126,8 +145,15 @@ class Inference:
 
         # get infer result
         outputs = []
-        cmd_result = client_socket.recv(1024).decode()
-        if cmd_result.find('finish') != -1:
+        result_dict = {}
+        ret = client_socket.recv(1024)
+        result_dict = json.loads(ret.decode())
+        if result_dict['type'].find('finish') != -1:
+            if self.cfg['dump_infer']:
+                t = result_dict['time']
+                self.infer_dict['time(ms)'] = str(t)
+                self.infer_dict['fps'] = str(round(1000 / t, 2))
+
             client_socket.sendall(f"pls send outputs".encode())
 
             # recv outputs
@@ -150,6 +176,9 @@ class Inference:
             client_socket.close()
         else:
             client_socket.close()
-            raise Exception(f'{cmd_result}')
+            self.infer_dict['result'] = 'Fail'
+            self.infer_dict['remark'] = result_dict['error']
+            dump_dict_to_json(self.infer_dict, self.infer_file)
+            raise Exception(result_dict['error'])
 
         return outputs
