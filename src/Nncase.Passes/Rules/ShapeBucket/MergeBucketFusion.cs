@@ -238,8 +238,9 @@ public class MergeMultiUsersFusion : FunctionPass
     public static bool DetectedRing(Call outerCall, Expr[] users)
     {
         // var users = outerCall.Users.ToArray();
-        // todo: fix this
+        // todo: fix this，TestComplexExpr
         // var userArgs = users.SelectMany(user => ((Call)user).Arguments.ToArray()).Except(users).ToArray();
+        // 用这个不过，但是好像会引起其他问题？？
         var userArgs = users.SelectMany(user => ((Call)user).Arguments.ToArray()).ToArray();
         foreach (var arg in userArgs)
         {
@@ -648,6 +649,11 @@ public class MergeMultiUsersFusion : FunctionPass
 
             if (expr is Call outerCall && outerCall.Target is BucketFusion fusion)
             {
+                if (outerCall.Users.Count == 1 && outerCall.Users.First() is Function)
+                {
+                    return expr;
+                }
+
                 // Console.WriteLine($"Match {fusion.Name} counter:{Counter}");
                 DumpIR(Root, "OriginRoot", RelPath);
 
@@ -689,15 +695,9 @@ public class MergeMultiUsersFusion : FunctionPass
             if (getItemMode)
             {
                 // todo: getItemMode + partial merge maybe error
-                // 第几个GetItem对应的users用同一个operand
-                for (int i = 0; i < outerCall.Users.Count; i++)
+                foreach ((var user, int userIndex, var _) in users)
                 {
-                    var newOperand = newCall[i];
-                    for (int j = 0; j < outerCall.Users.ToArray()[i].Users.Count; j++)
-                    {
-                        ReplaceAllUsesWith(users[originUsersIndex].User, newOperand);
-                        originUsersIndex++;
-                    }
+                    ReplaceAllUsesWith(user, newCall[userIndex]);
                 }
             }
             else
