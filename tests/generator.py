@@ -11,7 +11,7 @@ class Generator:
             data = np.random.randint(0, 256, shape)
         elif dtype == np.int8:
             data = np.random.randint(-128, 128, shape)
-        elif dtype == np.bool:
+        elif dtype == bool:
             data = np.random.rand(*shape) > 0.5
         elif dtype == np.int32:
             data = np.random.randint(1, 5, size=shape, dtype='int32')
