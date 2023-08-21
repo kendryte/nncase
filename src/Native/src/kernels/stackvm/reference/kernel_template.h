@@ -106,7 +106,7 @@
         value_t input, value_t output, kernel_context &context) {              \
         try_input(input_mem, input);                                           \
         auto dtype = input_tensor->dtype();                                    \
-        try_output_like_input(output_mem, output, input_tensor);                  \
+        try_output_like_input(output_mem, output, input_tensor);               \
         try_var(typecode, to_typecode(input_tensor->dtype()));                 \
         if (is_contiguous(input_tensor)) {                                     \
             try_(UNARY_WITH_DISPTCH(_name##_opt_impl));                        \
