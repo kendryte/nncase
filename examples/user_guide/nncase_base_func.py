@@ -15,7 +15,6 @@ def get_cosine(vec1, vec2):
     return cosine_similarity(vec1.reshape(1, -1), vec2.reshape(1, -1))
 
 
-
 def read_model_file(model_file):
     """
     read model
@@ -58,18 +57,18 @@ def model_simplify(model_file):
         input_shapes = {}
         for input in inputs:
             input_shapes[input['name']] = input['shape']
-    
+
         onnx_model, check = onnxsim.simplify(onnx_model, overwrite_input_shapes=input_shapes)
         assert check, "Simplified ONNX model could not be validated"
-    
+
         model_file = os.path.join(os.path.dirname(model_file), 'simplified.onnx')
         onnx.save_model(onnx_model, model_file)
         print("[ onnx done ]")
     elif model_file.split('.')[-1] == "tflite":
-        print("[ tflite pass ]")
+        print("[ tflite skip ]")
     else:
         raise Exception(f"Unsupport type {model_file.split('.')[-1]}")
-        
+
     return model_file
 
 def run_kmodel(kmodel_path, input_data):
@@ -78,14 +77,14 @@ def run_kmodel(kmodel_path, input_data):
     model_sim = nncase.Simulator()
     with open(kmodel_path, 'rb') as f:
         model_sim.load_model(f.read())
-    
+
     print("Set input data...")
     for i, p_d in enumerate(input_data):
         model_sim.set_input_tensor(i, nncase.RuntimeTensor.from_numpy(p_d))
-    
+
     print("Run...")
     model_sim.run()
-    
+
     print("Get output result...")
     all_result = []
     for i in range(model_sim.outputs_size):
