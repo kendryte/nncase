@@ -21,7 +21,7 @@ public static class CallValidator
 {
     private static readonly HashSet<RuntimeTypeHandle> ForceConvert = new()
     {
-        // typeof(Conv2D).TypeHandle,
+        typeof(Conv2D).TypeHandle,
         typeof(MatMul).TypeHandle,
         typeof(Unsqueeze).TypeHandle,
         typeof(Squeeze).TypeHandle,
@@ -30,18 +30,19 @@ public static class CallValidator
         typeof(Transpose).TypeHandle,
         typeof(Pad).TypeHandle,
     };
+    // todo: add debug mode
 
     private static readonly HashSet<RuntimeTypeHandle> MaybeDynamic = new()
     {
-        typeof(SpaceToBatch).TypeHandle,
-        typeof(BatchToSpace).TypeHandle,
+        // typeof(SpaceToBatch).TypeHandle,
+        // typeof(BatchToSpace).TypeHandle,
         typeof(Concat).TypeHandle,
         typeof(Stack).TypeHandle,
         typeof(Binary).TypeHandle,
         typeof(Slice).TypeHandle,
         typeof(Gather).TypeHandle,
         typeof(ShapeOf).TypeHandle,
-        typeof(Reshape).TypeHandle,
+        // typeof(Reshape).TypeHandle,
         typeof(Expand).TypeHandle,
         typeof(ConstantOfShape).TypeHandle,
         typeof(Where).TypeHandle,
@@ -185,7 +186,7 @@ public static class ShapeBucketHelper
 
     public static void DumpIR(Expr expr, string prefix, string? reletivePath = null, string? printPrefix = null)
     {
-        if (DumpScope.Current.IsEnabled(DumpFlags.Rewrite))
+        // if (DumpScope.Current.IsEnabled(DumpFlags.Rewrite))
         {
             var s = prefix;
             if (prefix.Length > 80)
@@ -194,7 +195,7 @@ public static class ShapeBucketHelper
             }
 
             Console.WriteLine($"{printPrefix} {prefix}");
-            DumpScope.Current.DumpIR(expr, s, reletivePath);
+            // DumpScope.Current.DumpIR(expr, s, reletivePath);
         }
     }
 }
@@ -299,5 +300,28 @@ internal class KeyValuePairKeyComparer : IEqualityComparer<KeyValuePair<Expr, Va
     public int GetHashCode(KeyValuePair<Expr, Var[]> obj)
     {
         return HashCode.Combine(obj.Key);
+    }
+}
+
+internal class OpCounter : ExprVisitor<Expr, Unit>
+{
+    private Dictionary<RuntimeTypeHandle, int> counter;
+
+    protected override Expr VisitCall(Call expr)
+    {
+        if (expr.Target is Op)
+        {
+            var handle = expr.Target.GetType().TypeHandle;
+            if (counter.ContainsKey(handle))
+            {
+                counter[handle] += 1;
+            }
+            else
+            {
+                counter[handle] = 1;
+            }
+        }
+
+        return base.VisitCall(expr);
     }
 }

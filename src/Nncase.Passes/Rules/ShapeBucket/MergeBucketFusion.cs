@@ -31,19 +31,14 @@ public partial class MergeTupleFusion : RewriteRule<Pattern>
         new VArgsPattern(
             list =>
             {
-                return Enumerable.Range(0, list.Length).Select(_ => IsWildcard()).ToArray();
+                return Enumerable.Range(0, list.Length).Select(_ =>
+                    IsWildcard(null, field => field is Call { Target: BucketFusion } && field.Users.Count == 1)).ToArray();
             },
             null));
 
     private Expr? GetReplace(Tuple tuple)
     {
-        var originFields = tuple.Fields.ToArray();
-        if (originFields.Where(x => x is Call{Target: BucketFusion}).ToArray().Length <= 1)
-        {
-            return null;
-        }
-
-        var fields = originFields.OfType<Call>().Where(x => x is { Target: BucketFusion, Users.Count: 1 }).ToArray();
+        var fields = tuple.Fields.ToArray().OfType<Call>().ToArray();
 
         // merge input
         var newArgs = new List<Expr>();
@@ -72,107 +67,175 @@ public partial class MergeTupleFusion : RewriteRule<Pattern>
         var newBody = ReplaceClone(new IR.Tuple(fieldBodys), oldParamsToNewArg.ToArray());
         var newFusion = new BucketFusion("stackvm", newBody, newParams.ToArray(), Array.Empty<Var>());
         var newCall = new Call(newFusion, newArgs.ToArray());
-        DumpIR(newCall, "newTupCall");
-        if (originFields.Length == fieldBodys.Count())
-        {
-            return newCall;
-        }
-
-        int counter = 0;
-        return new IR.Tuple(originFields.Select(x =>
-        {
-            if (fields.Contains(x))
-            {
-                return newCall[counter++];
-            }
-
-            return x;
-        }).ToArray());
+        return newCall;
     }
 }
 
-public class MergeBucketFusion : ModulePass
+// todo: fix
+// [RuleGenerator]
+// public partial class MergeTupleFusion : RewriteRule<Pattern>
+// {
+//     public override Pattern Pattern => IsTuple(
+//         "tuple",
+//         new VArgsPattern(
+//             list =>
+//             {
+//                 return Enumerable.Range(0, list.Length).Select(_ => IsWildcard()).ToArray();
+//             },
+//             null));
+//
+//     private Expr? GetReplace(Tuple tuple)
+//     {
+//         var originFields = tuple.Fields.ToArray();
+//         if (originFields.Where(x => x is Call{Target: BucketFusion}).ToArray().Length <= 1)
+//         {
+//             return null;
+//         }
+//
+//         var fields = originFields.OfType<Call>().Where(x => x is { Target: BucketFusion, Users.Count: 1 }).ToArray();
+//         // todo: avoid ring
+//         // if (MergeBucketFusion.DetectedRing(users))
+//         // {
+//         //     return null;
+//         // }
+//
+//         // merge input
+//         var newArgs = new List<Expr>();
+//         var newParams = new List<Var>();
+//         var oldParamsToNewArg = new List<(Var, Expr)>();
+//         foreach (var field in fields)
+//         {
+//             var fieldArgs = field.Arguments.ToArray();
+//             var fieldParams = ((BucketFusion)field.Target).Parameters;
+//             for (var i = 0; i < fieldArgs.Length; i++)
+//             {
+//                 var fieldArg = fieldArgs[i];
+//                 if (!newArgs.Contains(fieldArg))
+//                 {
+//                     var newVar = new Var(fieldArg.CheckedType);
+//                     newParams.Add(newVar);
+//                     newArgs.Add(fieldArg);
+//                     oldParamsToNewArg.Add((fieldParams[i], newVar));
+//                 }
+//
+//                 oldParamsToNewArg.Add((fieldParams[i], newParams[newArgs.IndexOf(fieldArg)]));
+//             }
+//         }
+//
+//         var fieldBodys = fields.Select(c => c.Target).OfType<BucketFusion>().Select(x => x.Body).ToArray();
+//         var newBody = ReplaceClone(new IR.Tuple(fieldBodys), oldParamsToNewArg.ToArray());
+//         var newFusion = new BucketFusion("stackvm", newBody, newParams.ToArray(), Array.Empty<Var>());
+//         var newCall = new Call(newFusion, newArgs.ToArray());
+//         DumpIR(newCall, "newTupCall");
+//         if (originFields.Length == fieldBodys.Count())
+//         {
+//             return newCall;
+//         }
+//
+//         int counter = 0;
+//         return new IR.Tuple(originFields.Select(x =>
+//         {
+//             if (fields.Contains(x))
+//             {
+//                 return newCall[counter++];
+//             }
+//
+//             return x;
+//         }).ToArray());
+//     }
+// }
+
+public class MergeSeqBucketFusion : FunctionPass
+{
+    private Function MergeFusion(Function main)
+    {
+        var analyzerMananger = CompileSession.GetRequiredService<IAnalyzerManager>();
+        var analysis = new Dictionary<Type, IAnalysisResult>
+        {
+            [typeof(IExprUserAnalysisResult)] = analyzerMananger.GetAnaylsis<IExprUserAnalysisResult>(main),
+        };
+        CompilerServices.Rewrite(main, new[] { new ClearFusionOuterMarker() }, new());
+        var rewriter = new DataFlowMergeRewriter();
+        var post = (Function)rewriter.Rewrite(
+            main,
+            new IMergeRewriteRule[]
+            {
+                new SameInputFusionMergeRule(), new MultiInputFusionMergeRule(), new ShortCutFusionMergeRuleLeft(),
+                new ShortCutFusionMergeRuleRight(),
+            },
+            (rule, option) => new BucketFusionGroupMutator(rule, option),
+            new() { AnalysisResults = analysis });
+
+        return post;
+    }
+
+    private static void TranslateFusionToBucket(Dictionary<string, Var[]> set, Function post, CompileSession seesion)
+    {
+        var inputDimsVars = InputDimVars(seesion);
+        var mutator = new Passes.Mutators.Substitutor(e =>
+        {
+            if (e is Call c && c.Target is Fusion f)
+            {
+                var effectVars = Array.Empty<Var>();
+                if (inputDimsVars.Length <= 1)
+                {
+                    effectVars = inputDimsVars;
+                }
+                else
+                {
+                    effectVars = f.Name.Split("_").Chunk(2).SelectMany(list =>
+                    {
+                        var originName = string.Join("_", list);
+                        return set[originName];
+                    }).ToHashSet().ToArray();
+                }
+
+                return c.With(target: BucketFusion.FromNormalFusion(f, effectVars));
+            }
+
+            return null;
+        });
+        mutator.Visit(post, Unit.Default);
+    }
+
+    protected override Task<BaseFunction> RunCoreAsync(BaseFunction input, RunPassContext context)
+    {
+        var main = (Function)input;
+        // todo: fix
+        var MergeRelPath = "";
+
+        // 1. get origin info
+        var s = new SearchBucketFusion();
+        s.Visit(main);
+        var set = s.FusionEffectVars();
+
+        // 2. merge
+        var post = MergeFusion(main);
+        DumpIR(post, "AfterMergeFusion", MergeRelPath);
+
+        // 3. translate fusion to BucketFusion
+        TranslateFusionToBucket(set, post, CompileSession);
+        DumpIR(post, "AfterTranslateFusion", MergeRelPath);
+        return Task.FromResult<BaseFunction>(post);
+    }
+}
+
+public class MergeMultiUsersFusion : FunctionPass
 {
     private static int _counter;
 
     private static string MergeRelPath => _counter.ToString();
 
-    private static bool greedy = false;
-
-    protected override Task<IRModule> RunCoreAsync(IRModule input, RunPassContext context)
+    protected override Task<BaseFunction> RunCoreAsync(BaseFunction input, RunPassContext context)
     {
-        // 1. save effect var info
-        var main = (Function)input.Entry!;
-
-        // var post = MergePrevFusion(main, set);
-        // MergeMultiUsers(post);
-        // return Task.FromResult(input);
-        var hashcode = main.GetHashCode();
-        while (true)
-        {
-            var mergePrevPost = MergePrevFusion(main);
-            Expr post;
-            if (greedy)
-            {
-                MergeMultiUsers(mergePrevPost);
-                MergeTupleFusion(mergePrevPost);
-                post = MergeMultiUsersSingleCall(mergePrevPost);
-            }
-            else
-            {
-                post = mergePrevPost;
-            }
-
-            var postHashCode = post.GetHashCode();
-            if (hashcode != postHashCode)
-            {
-                _counter++;
-            }
-            else
-            {
-                break;
-            }
-
-            CheckErrorVar(post, main.Parameters.ToArray());
-            CheckRepeat(post);
-            hashcode = postHashCode;
-        }
-
+        var main = (Function)input;
+        var c = new ReplaceVisitor();
+        c.Replace(main);
+        DumpIR(main, "AfterMergeUser", MergeRelPath);
         return Task.FromResult(input);
     }
 
-    private static void MergeTupleFusion(Function mergePrevPost) => CompilerServices.Rewrite(mergePrevPost, new[] { new MergeTupleFusion() }, new());
-
-    private static void MergeMultiUsers(Function post)
-    {
-        IRHelpers.DCE(post);
-        DumpIR(post, "AfterDCE", MergeRelPath);
-        var c = new ReplaceVisitor();
-        c.Replace(post);
-        DumpIR(post, "AfterMergeUser", MergeRelPath);
-    }
-
-    private static void CheckRepeat(Expr call)
-    {
-        // todo: 检查所有fusion里面的param有没有重复名字的
-        // todo: 检查有没有fusion名字重复的
-        var c = new CheckFusionCallVisitor();
-        c.Visit(call);
-        c.Check();
-    }
-
-    private static void CheckErrorVar(Expr body, Var[] vars)
-    {
-        var f = new FindVar();
-        f.Visit(body);
-        if (!f.Vars.All(vars.Contains))
-        {
-            Console.WriteLine(string.Join(", ", f.Vars.Select(x => x.Name).ToArray()));
-            throw new InvalidOperationException("Has Invalid Var In Body");
-        }
-    }
-
-    private static bool DetectedRing(Call outerCall, Expr[] users)
+    public static bool DetectedRing(Call outerCall, Expr[] users)
     {
         // var users = outerCall.Users.ToArray();
         // todo: fix this
@@ -198,28 +261,31 @@ public class MergeBucketFusion : ModulePass
         return false;
     }
 
-    private static (Expr? NewCall, Expr[] AllUsers) MergeMultiUserFusion(Call outerCall, BucketFusion fusion)
+    private static (Expr? NewCall, UserInfo[] AllUsers) MergeMultiUserFusion(Call outerCall, BucketFusion fusion)
     {
         var users = outerCall.Users.ToArray();
 
+        var notSupport = ((Expr)null, Array.Empty<UserInfo>());
         if (users.Length == 0)
         {
-            return (null, Array.Empty<Expr>());
+            return notSupport;
         }
 
+        var getItemMode = false;
         if (users.OfType<Call>().All(user => user.Target is GetItem))
         {
             // 需要去重，可能一个getItem的user使用了多个getItem
             // 但是去重的过程需要在collect info的时候做
             // 不然被去重的user不能正确的被替换掉
             users = users.SelectMany(user => user.Users.ToArray()).ToArray();
+            getItemMode = true;
         }
 
         // todo: not support
         if (users.Any(user => user is Tuple))
         {
             // Console.WriteLine("HasTuple");
-            return (null, Array.Empty<Expr>());
+            return notSupport;
         }
 
         var userInfos = CollectUsers(outerCall, users);
@@ -234,26 +300,26 @@ public class MergeBucketFusion : ModulePass
         // has invalid
         if (userInfos.Length != users.Distinct().ToArray().Length)
         {
-            // Console.WriteLine("not all fusion call");
-            return (null, Array.Empty<Expr>());
+            Console.WriteLine("not all fusion call and getItemMode");
+            return notSupport;
         }
 
         if (outerCall.Users.Any(user => user is Tuple) || users.Any(user => user.CheckedType is TupleType))
         {
-            return (null, Array.Empty<Expr>());
+            return notSupport;
         }
 
         if (users.Any(user =>
                 user is Call c && c.Arguments.ToArray().Any(arg => arg is Tuple || arg.CheckedType is TupleType)))
         {
             // todo: not implement
-            return (null, Array.Empty<Expr>());
+            return notSupport;
         }
 
         if (DetectedRing(outerCall, users))
         {
             // Console.WriteLine("HasRing");
-            return (null, Array.Empty<Expr>());
+            return notSupport;
         }
 
         if (outerCall.Users.ToArray().OfType<Call>().All(user => user.Target is GetItem))
@@ -302,7 +368,7 @@ public class MergeBucketFusion : ModulePass
 
         DumpIR(newCall, "newCall", MergeRelPath);
         ArgsChecker(newArgs);
-        return (newCall, users);
+        return (newCall, userInfos);
     }
 
     private static FusionVarMapper MakeNewVarsMap(UserInfo[] userInfos, (Expr, Var)[] fusionDict, Call outerCall)
@@ -538,79 +604,6 @@ public class MergeBucketFusion : ModulePass
         return outputs;
     }
 
-    private static void TranslateFusionToBucket(Dictionary<string, Var[]> set, Function post, CompileSession seesion)
-    {
-        var inputDimsVars = InputDimVars(seesion);
-        var mutator = new Passes.Mutators.Substitutor(e =>
-        {
-            if (e is Call c && c.Target is Fusion f)
-            {
-                var effectVars = Array.Empty<Var>();
-                if (inputDimsVars.Length <= 1)
-                {
-                    effectVars = inputDimsVars;
-                }
-                else
-                {
-                    effectVars = f.Name.Split("_").Chunk(2).SelectMany(list =>
-                    {
-                        var originName = string.Join("_", list);
-                        return set[originName];
-                    }).ToHashSet().ToArray();
-                }
-
-                return c.With(target: BucketFusion.FromNormalFusion(f, effectVars));
-            }
-
-            return null;
-        });
-        mutator.Visit(post, Unit.Default);
-    }
-
-    private Expr MergeMultiUsersSingleCall(Expr body)
-    {
-        return CompilerServices.Rewrite(body, new IRewriteRule[] { new MultiUserCallToFusion() }, new());
-    }
-
-    private Function MergePrevFusion(Function main)
-    {
-        // 1. get origin info
-        var s = new SearchBucketFusion();
-        s.Visit(main);
-        var set = s.FusionEffectVars();
-
-        // 2. merge
-        var post = MergeFusion(main);
-        DumpIR(post, "AfterMergeFusion", MergeRelPath);
-
-        // 3. translate fusion to BucketFusion
-        TranslateFusionToBucket(set, post, CompileSession);
-        DumpIR(post, "AfterTranslateFusion", MergeRelPath);
-        return post;
-    }
-
-    private Function MergeFusion(Function main)
-    {
-        var analyzerMananger = CompileSession.GetRequiredService<IAnalyzerManager>();
-        var analysis = new Dictionary<Type, IAnalysisResult>
-        {
-            [typeof(IExprUserAnalysisResult)] = analyzerMananger.GetAnaylsis<IExprUserAnalysisResult>(main),
-        };
-        CompilerServices.Rewrite(main, new[] { new ClearFusionOuterMarker() }, new());
-        var rewriter = new DataFlowMergeRewriter();
-        var post = (Function)rewriter.Rewrite(
-            main,
-            new IMergeRewriteRule[]
-            {
-                new SameInputFusionMergeRule(), new MultiInputFusionMergeRule(), new ShortCutFusionMergeRuleLeft(),
-                new ShortCutFusionMergeRuleRight(),
-            },
-            (rule, option) => new BucketFusionGroupMutator(rule, option),
-            new() { AnalysisResults = analysis });
-
-        return post;
-    }
-
     private record UserInfo(Call User, int UserIndex, Expr? GetItem);
 
     private class ReplaceVisitor : ExprVisitor<Expr, Unit>
@@ -671,7 +664,7 @@ public class MergeBucketFusion : ModulePass
 
                     // todo: 检查已经被合并的fusion的名字是否还存在，存在就是错误
                     AddCounter();
-                    CheckRepeat(Root);
+                    // CheckRepeat(Root);
                     _changed = true;
                     return newCall;
                 }
@@ -682,12 +675,12 @@ public class MergeBucketFusion : ModulePass
 
         protected override Expr DefaultVisitLeaf(Expr expr) => expr;
 
-        private static void UpdateUse(Expr[] users, Expr newCall, Call outerCall)
+        private static void UpdateUse(UserInfo[] users, Expr newCall, Call outerCall)
         {
             // ref TestTupleGetItemOutputIsSingle
             if (users.Distinct().ToArray().Length == 1)
             {
-                ReplaceAllUsesWith(users[0], newCall);
+                ReplaceAllUsesWith(users[0].User, newCall);
                 return;
             }
 
@@ -695,13 +688,14 @@ public class MergeBucketFusion : ModulePass
             var getItemMode = outerCall.Users.First() is Call c && c.Target is GetItem;
             if (getItemMode)
             {
+                // todo: getItemMode + partial merge maybe error
                 // 第几个GetItem对应的users用同一个operand
                 for (int i = 0; i < outerCall.Users.Count; i++)
                 {
                     var newOperand = newCall[i];
                     for (int j = 0; j < outerCall.Users.ToArray()[i].Users.Count; j++)
                     {
-                        ReplaceAllUsesWith(users[originUsersIndex], newOperand);
+                        ReplaceAllUsesWith(users[originUsersIndex].User, newOperand);
                         originUsersIndex++;
                     }
                 }
@@ -711,7 +705,7 @@ public class MergeBucketFusion : ModulePass
                 for (var i = 0; i < users.Length; i++)
                 {
                     var newOperand = newCall.CheckedType is TupleType ? newCall[i] : newCall;
-                    ReplaceAllUsesWith(users[i], newOperand);
+                    ReplaceAllUsesWith(users[i].User, newOperand);
                 }
             }
         }
@@ -777,83 +771,6 @@ internal record FusionVarMapper(Var[] NewParams, (Expr UserArg, Var RelativeNewV
         }
 
         return data.Select(pair => pair.UserArg).ToArray();
-    }
-}
-
-internal sealed class CheckFusionCallVisitor : ExprWalker
-{
-    private readonly HashSet<string> _callName = new();
-    private readonly Dictionary<string, (string, BucketFusion)> _errorFusion = new();
-
-    private readonly HashSet<string> _fusionName = new();
-    private readonly HashSet<string> _repeatFusion = new();
-
-    private readonly HashSet<string> _fusionParamsName = new();
-    private readonly HashSet<string> _repeatParamFusion = new();
-
-    public void Check()
-    {
-        var error = false;
-        if (_errorFusion.Count != 0)
-        {
-            error = true;
-            Console.WriteLine("errorFusion");
-        }
-
-        if (_repeatFusion.Count != 0)
-        {
-            error = true;
-            Print("repeatFusion not zero", _repeatFusion);
-        }
-
-        if (_repeatParamFusion.Count != 0)
-        {
-            error = true;
-            Print("repeatParamFusion not zero", _repeatParamFusion);
-        }
-
-        if (error)
-        {
-            throw new InvalidOperationException();
-        }
-    }
-
-    protected override Unit VisitLeafFusion(Fusion fusion)
-    {
-        // 可能有多个user啊，每次进来访问
-        if (fusion is BucketFusion bf)
-        {
-            if (_fusionName.Contains(bf.Name))
-            {
-                _repeatFusion.Add(bf.Name);
-            }
-            else
-            {
-                _fusionName.Add(bf.Name);
-            }
-
-            var parameters = bf.Parameters.ToArray();
-            foreach (var parameter in parameters)
-            {
-                if (_fusionParamsName.Contains(parameter.Name))
-                {
-                    _repeatParamFusion.Add(parameter.Name);
-                }
-            }
-
-            _fusionParamsName.UnionWith(parameters.Select(p => p.Name).ToArray());
-        }
-
-        return default;
-    }
-
-    private void Print(string name, HashSet<string> list)
-    {
-        Console.WriteLine(name);
-        foreach (string s in list)
-        {
-            Console.WriteLine(s);
-        }
     }
 }
 
