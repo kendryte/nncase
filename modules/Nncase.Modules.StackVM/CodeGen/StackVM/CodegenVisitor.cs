@@ -152,7 +152,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
 
     private readonly BaseFunction _function;
     private readonly CodeGenContext _context;
-    private readonly HashSet<TextSnippet> _refTextSnippets = new();
+    private readonly List<TextSnippet> _refTextSnippets = new();
 
     private TextSnippet? _currentTextSnippet;
     private BasicBlock? _currentBasicBlock;
@@ -172,7 +172,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
 
     private StackVMEmitter Emitter => CurrentTextSnippet.Emitter;
 
-    public (BasicBlock BB, HashSet<TextSnippet> SnippetSet) SubBlock(Expr expr)
+    public (BasicBlock BB, List<TextSnippet> SnippetSet) SubBlock(Expr expr)
     {
         var visitor = new CodeGenVisitor(_function, _context);
         var subBlockFirst = visitor.CurrentBasicBlock;
@@ -185,7 +185,8 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
 
         visitor.Visit(expr);
         var refTextSnippets = visitor._refTextSnippets;
-        return (subBlockFirst, refTextSnippets);
+        var subBlockEnd = visitor.CurrentBasicBlock;
+        return (subBlockEnd, refTextSnippets);
     }
 
     protected override TextSnippet VisitLeafConst(Const expr)
@@ -389,9 +390,9 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         return endSnippet;
     }
 
-    private void MergeSnippetSet(HashSet<TextSnippet> thenSet, HashSet<TextSnippet> elseSet, TextSnippet endSnippet)
+    private void MergeSnippetSet(List<TextSnippet> thenSet, List<TextSnippet> elseSet, TextSnippet endSnippet)
     {
-        var useSnippetSet = thenSet.Union(elseSet).ToHashSet();
+        var useSnippetSet = thenSet.Concat(elseSet).ToHashSet();
         foreach (var snippet in useSnippetSet)
         {
             snippet.AddUseCount();

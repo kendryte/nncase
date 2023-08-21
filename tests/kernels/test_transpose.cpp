@@ -45,7 +45,7 @@ class TransposeTest : public KernelTest,
         perm_value = GetAxesArray("perm");
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
   protected:
     runtime_tensor input;
@@ -53,7 +53,7 @@ class TransposeTest : public KernelTest,
 };
 
 INSTANTIATE_TEST_SUITE_P(Transpose, TransposeTest,
-                         testing::Combine(testing::Range(0, 3744)));
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(TransposeTest, Transpose) {
 

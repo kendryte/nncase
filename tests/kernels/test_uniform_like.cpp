@@ -26,20 +26,27 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class UniformLikeTest
-    : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<
-          nncase::typecode_t, dims_t, dims_t, float_t, float_t, float_t>> {
+#define TEST_CASE_NAME "test_uniform_like"
+
+class UniformLikeTest : public KernelTest,
+                        public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
-        auto &&[typecode, shape, l_shape, value1, value2, value3] = GetParam();
+        READY_SUBCASE()
+
+        auto typecode = GetDataType("lhs_type");
+        auto shape = GetShapeArray("shape");
+        auto l_shape = GetShapeArray("l_shape");
+        auto value1 = GetFloatNumber("value1");
+        auto value2 = GetFloatNumber("value2");
+        auto value3 = GetFloatNumber("value3");
 
         lhs = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
         init_tensor(lhs);
 
         high_value = value1;
-        float_t high_array[] = {high_value};
+        float high_array[] = {high_value};
         high = hrt::create(typecode, shape,
                            {reinterpret_cast<gsl::byte *>(high_array),
                             sizeof(high_array)},
@@ -47,7 +54,7 @@ class UniformLikeTest
                    .expect("create tensor failed");
 
         low_value = value2;
-        float_t low_array[] = {low_value};
+        float low_array[] = {low_value};
         low = hrt::create(
                   typecode, shape,
                   {reinterpret_cast<gsl::byte *>(low_array), sizeof(low_array)},
@@ -55,7 +62,7 @@ class UniformLikeTest
                   .expect("create tensor failed");
 
         seed_value = value3;
-        float_t seed_array[] = {seed_value};
+        float seed_array[] = {seed_value};
         seed = hrt::create(typecode, shape,
                            {reinterpret_cast<gsl::byte *>(seed_array),
                             sizeof(seed_array)},
@@ -63,29 +70,20 @@ class UniformLikeTest
                    .expect("create tensor failed");
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
   protected:
     runtime_tensor lhs;
     runtime_tensor high;
     runtime_tensor low;
     runtime_tensor seed;
-    float_t high_value;
-    float_t low_value;
-    float_t seed_value;
+    float high_value;
+    float low_value;
+    float seed_value;
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    UniformLike, UniformLikeTest,
-    testing::Combine(testing::Values(dt_float32/*, dt_int32, dt_int16, dt_float64,
-                                     dt_int8, dt_uint8, dt_uint16, dt_uint32,
-                                     dt_uint64, dt_int64, dt_float16*/),
-                     testing::Values(dims_t{1}),
-                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{3, 16, 16},
-                                     dims_t{16, 16}, dims_t{16}, dims_t{1}),
-                     testing::Values(1.0f, 2.0f, 3.0f, 4.0f, 5.0f),
-                     testing::Values(0.0f, 0.5f, 0.8f, 1.0f),
-                     testing::Values(1.0f, 2.0f)));
+INSTANTIATE_TEST_SUITE_P(UniformLike, UniformLikeTest,
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(UniformLikeTest, UniformLike) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
@@ -124,6 +122,27 @@ TEST_P(UniformLikeTest, UniformLike) {
 }
 
 int main(int argc, char *argv[]) {
+    READY_TEST_CASE_GENERATE()
+    FOR_LOOP(lhs_type, i)
+    FOR_LOOP(l_shape, k)
+    FOR_LOOP(shape, j)
+    FOR_LOOP(value1, l)
+    FOR_LOOP(value2, m)
+    FOR_LOOP(value3, n)
+    SPLIT_ELEMENT(lhs_type, i)
+    SPLIT_ELEMENT(l_shape, k)
+    SPLIT_ELEMENT(shape, j)
+    SPLIT_ELEMENT(value1, l)
+    SPLIT_ELEMENT(value2, m)
+    SPLIT_ELEMENT(value3, n)
+    WRITE_SUB_CASE()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

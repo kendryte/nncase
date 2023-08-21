@@ -31,7 +31,7 @@ public static class Tensors
         }
         else if (input.CheckedShape.Rank == 3)
         {
-            perm = new[] { 2, 0, 1 };
+            perm = new[] { 0, 2, 1 };
         }
         else
         {
@@ -50,7 +50,7 @@ public static class Tensors
         }
         else if (input.CheckedShape.Rank == 3)
         {
-            perm = new[] { 1, 2, 0 };
+            perm = new[] { 0, 2, 1 };
         }
         else
         {

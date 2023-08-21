@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using DryIoc.FastExpressionCompiler.LightExpression;
 using NetFabric.Hyperlinq;
+using Nncase.CodeGen;
 using Nncase.CostModel;
 using Nncase.Evaluator.Math;
 using Nncase.IR;
@@ -140,19 +141,45 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
             return new InvalidType("Slice Input should not scalar");
         }
 
+        var begin = context.GetArgument(target, Slice.Begins);
+        var end = context.GetArgument(target, Slice.Ends);
+        var stride = context.GetArgument(target, Slice.Strides);
+        if (begin.CheckedShape.IsFixed)
+        {
+            if (end.CheckedShape.IsFixed)
+            {
+                if (begin.CheckedShape[0].FixedValue != end.CheckedShape[0].FixedValue)
+                {
+                    return new InvalidType("Slice begin, end, strides should be same length");
+                }
+            }
+
+            if (stride.CheckedShape.IsFixed)
+            {
+                if (begin.CheckedShape[0].FixedValue != stride.CheckedShape[0].FixedValue)
+                {
+                    return new InvalidType("Slice begin, end, strides should be same length");
+                }
+            }
+        }
+
         if (context.GetArgument(target, Slice.Axes) is TensorConst axes_con)
         {
             if (input.Shape.IsRanked)
             {
-                if (context.GetArgument(target, Slice.Begins) is TensorConst begins_con &&
-                    context.GetArgument(target, Slice.Ends) is TensorConst ends_con &&
-                    context.GetArgument(target, Slice.Strides) is TensorConst strides_con)
+                if (begin is TensorConst begins_con &&
+                    end is TensorConst ends_con &&
+                    stride is TensorConst strides_con)
                 {
                     // end in onnx may be the maximum value of int64
                     // when use int, result value is -1
                     var ts_begins = begins_con.Value.Cast<long>();
                     var ts_ends = ends_con.Value.Cast<long>();
                     var ts_strides = strides_con.Value.Cast<long>();
+                    if (ts_begins.Length != ts_ends.Length || ts_begins.Length != ts_strides.Length)
+                    {
+                        return new InvalidType("Slice begin, end, strides should be same length");
+                    }
 
                     outShape = ApplyAxis(axes_con, input, (i, axis, inDim) =>
                     {

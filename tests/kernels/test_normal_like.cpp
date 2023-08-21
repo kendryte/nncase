@@ -22,17 +22,23 @@
 #include <nncase/runtime/stackvm/opcode.h>
 #include <ortki/operators.h>
 
+#define TEST_CASE_NAME "test_normal_like"
+
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class NormalLikeTest
-    : public KernelTest,
-      public ::testing::TestWithParam<
-          std::tuple<nncase::typecode_t, dims_t, float_t, float_t, float_t>> {
+class NormalLikeTest : public KernelTest,
+                       public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape, value1, value2, value3] = GetParam();
+        READY_SUBCASE()
+
+        auto l_shape = GetShapeArray("lhs_shape");
+        auto typecode = GetDataType("lhs_type");
+        auto value1 = GetFloatNumber("mean_value");
+        auto value2 = GetFloatNumber("scale_value");
+        auto value3 = GetFloatNumber("seed_value");
 
         input =
             hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
@@ -64,7 +70,7 @@ class NormalLikeTest
                    .expect("create tensor failed");
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
   protected:
     runtime_tensor input;
@@ -77,14 +83,8 @@ class NormalLikeTest
     float_t seed_value;
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    normal_like, NormalLikeTest,
-    testing::Combine(testing::Values(dt_float32),
-                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 2, 4, 8},
-                                     dims_t{1, 3, 16}, dims_t{1, 3}, dims_t{1},
-                                     dims_t{}),
-                     testing::Values(0.5f, 0.3f), testing::Values(1.0f, 2.0f),
-                     testing::Values(1.0f, 2.0f)));
+INSTANTIATE_TEST_SUITE_P(normal_like, NormalLikeTest,
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(NormalLikeTest, normal_like) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
@@ -123,6 +123,24 @@ TEST_P(NormalLikeTest, normal_like) {
 }
 
 int main(int argc, char *argv[]) {
+    READY_TEST_CASE_GENERATE()
+    FOR_LOOP(lhs_shape, i)
+    FOR_LOOP(lhs_type, j)
+    FOR_LOOP(mean_value, k)
+    FOR_LOOP(scale_value, l)
+    FOR_LOOP(seed_value, m)
+    SPLIT_ELEMENT(lhs_shape, i)
+    SPLIT_ELEMENT(lhs_type, j)
+    SPLIT_ELEMENT(mean_value, k)
+    SPLIT_ELEMENT(scale_value, l)
+    SPLIT_ELEMENT(seed_value, m)
+    WRITE_SUB_CASE()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

@@ -297,7 +297,7 @@
                     host_runtime_tensor::pool_cpu_only)                        \
             .expect("create expected tensor failed");
 
-#define MAX_CASE_NUM 100
+#define MAX_CASE_NUM 10000
 #define ENDFIX ".json"
 #define PARENT_DIR_1 "../../../tests/kernels/"
 #define PARENT_DIR_2 "../../../../tests/kernels/"
