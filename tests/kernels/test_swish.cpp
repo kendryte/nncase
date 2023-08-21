@@ -47,7 +47,7 @@ class SwishTest
 
 INSTANTIATE_TEST_SUITE_P(
     Swish, SwishTest,
-    testing::Combine(testing::Values(dt_float32),
+    testing::Combine(testing::Values(dt_float32, dt_float16, dt_float64),
                      testing::Values(dims_t{1}, dims_t{1, 3},
                                      dims_t{1, 3, 16, 16}, dims_t{1, 3, 16},
                                      dims_t{})));

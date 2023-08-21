@@ -53,7 +53,7 @@ class HardSigmoidTest
 
 INSTANTIATE_TEST_SUITE_P(
     hard_sigmoid, HardSigmoidTest,
-    testing::Combine(testing::Values(dt_float32),
+    testing::Combine(testing::Values(dt_float16),
                      testing::Values(dims_t{1, 3, 16, 16}, dims_t{1},
                                      dims_t{1, 3}, dims_t{1, 3, 16}, dims_t{}),
                      testing::Values(1.2f, 0.8f, 0.5f, 0.6f),
@@ -63,15 +63,15 @@ TEST_P(HardSigmoidTest, hard_sigmoid) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
 
     // expected
-    float alpha_ptr[] = {alpha_value};
-    auto alpha = hrt::create(nncase::dt_float32, {1},
+    half alpha_ptr[] = {(half)alpha_value};
+    auto alpha = hrt::create(nncase::dt_float16, {1},
                              {reinterpret_cast<gsl::byte *>(alpha_ptr),
                               sizeof(alpha_ptr)},
                              true, host_runtime_tensor::pool_cpu_only)
                      .expect("create tensor failed");
 
-    float gamma_ptr[] = {gamma_value};
-    auto gamma = hrt::create(nncase::dt_float32, {1},
+    half gamma_ptr[] = {(half)gamma_value};
+    auto gamma = hrt::create(nncase::dt_float16, {1},
                              {reinterpret_cast<gsl::byte *>(gamma_ptr),
                               sizeof(gamma_ptr)},
                              true, host_runtime_tensor::pool_cpu_only)

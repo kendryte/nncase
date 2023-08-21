@@ -106,27 +106,51 @@
         value_t input, value_t output, kernel_context &context) {              \
         try_input(input_mem, input);                                           \
         auto dtype = input_tensor->dtype();                                    \
-        try_output_like_input(out_mem, output, input_tensor);                  \
+        try_output_like_input(output_mem, output, input_tensor);                  \
+        try_var(typecode, to_typecode(input_tensor->dtype()));                 \
         if (is_contiguous(input_tensor)) {                                     \
-            try_(_name##_opt_impl(input_mem, out_mem, input_tensor->shape(),   \
-                                  input_tensor->strides(),                     \
-                                  output_tensor->shape(),                      \
-                                  output_tensor->strides(), context));         \
+            try_(UNARY_WITH_DISPTCH(_name##_opt_impl));                        \
         } else {                                                               \
-            try_(_name##_impl(input_mem, out_mem, input_tensor->shape(),       \
-                              input_tensor->strides(), output_tensor->shape(), \
-                              output_tensor->strides(), context));             \
+            try_(UNARY_WITH_DISPTCH(_name##_impl));                            \
         }                                                                      \
         return ok(output);                                                     \
     }
 
-#define FLOAT_UNARY_TEMPLATE(_name, _compute)                                  \
-    FLOAT_UNARY_IMPL_TEMPLATE(_name, _compute)                                 \
-    FLOAT_UNARY_OP_TEMPLATE(_name)
-
 #define UNARY_TEMPLATE(_name, _compute)                                        \
     UNARY_IMPL_TEMPLATE(_name, _compute)                                       \
+    UNARY_WITH_DISPTCH_OP_TEMPLATE_V2(_name##_opt_impl)                        \
+    UNARY_WITH_DISPTCH_OP_TEMPLATE_V2(_name##_impl)                            \
     UNARY_OP_TEMPLATE(_name)
+
+#define UNARY_WITH_DISPTCH(_impl_func)                                         \
+    _impl_func##_disptch(typecode, input_mem, output_mem,                      \
+                         input_tensor->shape(), input_tensor->strides(),       \
+                         output_tensor->shape(), output_tensor->strides(),     \
+                         context)
+
+#define UNARY_WITH_DISPTCH_OP_TEMPLATE_V2(_impl_func)                          \
+    result<void> _impl_func##_disptch(                                         \
+        typecode_t type, const gsl::byte *input, gsl::byte *output,            \
+        gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,  \
+        gsl::span<const size_t> out_shape,                                     \
+        gsl::span<const size_t> out_strides,                                   \
+        NNCASE_UNUSED kernel_context &context) noexcept {                      \
+        TYPE_SELECT_WITH_IMPL(type, UNARY_IMPL_FUNC_WRAPPER_V2, _impl_func);   \
+    }
+
+#define UNARY_WITH_DISPTCH_OP_TEMPLATE_V2(_impl_func)                          \
+    result<void> _impl_func##_disptch(                                         \
+        typecode_t type, const gsl::byte *input, gsl::byte *output,            \
+        gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,  \
+        gsl::span<const size_t> out_shape,                                     \
+        gsl::span<const size_t> out_strides,                                   \
+        NNCASE_UNUSED kernel_context &context) noexcept {                      \
+        TYPE_SELECT_WITH_IMPL(type, UNARY_IMPL_FUNC_WRAPPER_V2, _impl_func);   \
+    }
+
+#define UNARY_IMPL_FUNC_WRAPPER_V2(_impl_func, type)                           \
+    return _impl_func(IN_CAST(type, input), OUT_CAST(type, output), in_shape,  \
+                      in_strides, out_shape, out_strides, context)
 
 #define FLOAT_UNARY_WITH_MUL_IMPL_TEMPLATE(_name, _alpha_name, _compute)       \
     template <class T>                                                         \
@@ -397,10 +421,10 @@
     result<value_t> nncase::kernels::stackvm::_name(                           \
         value_t input, VALUE_ARGS_EXPAND(__VA_ARGS__), value_t output,         \
         kernel_context &context) {                                             \
-        try_f32_input(input_mem, input);                                       \
+        try_input(input_mem, input);                                           \
         auto dtype = input_tensor->dtype();                                    \
         READ_FLOAT_SCALAR_EXPAND(__VA_ARGS__);                                 \
-        try_f32_output(out_mem, output, input_tensor->shape());                \
+        try_output_like_input(out_mem, output, input_tensor);                  \
         try_(_name##_impl(input_mem, out_mem, input_tensor->shape(),           \
                           input_tensor->strides(), output_tensor->shape(),     \
                           output_tensor->strides(),                            \
