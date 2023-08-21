@@ -41,8 +41,12 @@ def kpu_targets():
     return os.getenv('KPU_TARGETS', "").split(',')
 
 
-def port():
-    return os.getenv('CI_PROXY_PORT')
+def nuc_ip():
+    return os.getenv('NUC_PROXY_IP')
+
+
+def nuc_port():
+    return os.getenv('NUC_PROXY_PORT')
 
 
 def test_executable(target):

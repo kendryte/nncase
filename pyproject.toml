@@ -24,7 +24,8 @@ dependencies = ["numpy"]
 homepage = "https://github.com/kendryte/nncase"
 
 [build-system]
-requires = ["setuptools>=42", "wheel", "conan<=1.59", "ninja"]
+requires = ["setuptools>=42", "wheel", "conan<=1.59", "ninja", "gitpython"]
+build-backend = "setuptools.build_meta"
 
 [tool.cibuildwheel]
 build = ["cp37*", "cp38*", "cp39*", "cp310*"]

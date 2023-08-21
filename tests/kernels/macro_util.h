@@ -297,7 +297,7 @@
                     host_runtime_tensor::pool_cpu_only)                        \
             .expect("create expected tensor failed");
 
-#define MAX_CASE_NUM 100
+#define MAX_CASE_NUM 10000
 #define ENDFIX ".json"
 #define PARENT_DIR_1 "../../../tests/kernels/"
 #define PARENT_DIR_2 "../../../../tests/kernels/"
@@ -318,8 +318,9 @@
 #define FILE_NAME_GEN(PARENT_DIR, name)                                        \
     std::string(PARENT_DIR) + std::string(name) + std::string(ENDFIX)
 
-#define FILE_NAME_GEN_SUBCASE(case_name, idx)                                  \
-    std::string(case_name) + "_" + std::to_string(idx) + std::string(ENDFIX)
+#define FILE_NAME_GEN_SUBCASE(case_name, filename, idx)                        \
+    std::string(case_name) + "_" + std::string(filename) + "_" +               \
+        std::to_string(idx) + std::string(ENDFIX)
 
 #define READY_TEST_CASE_GENERATE()                                             \
     std::string content;                                                       \
@@ -347,7 +348,9 @@
     write_doc.SetObject();
 
 #define WRITE_SUB_CASE()                                                       \
-    std::ofstream ofs(FILE_NAME_GEN_SUBCASE(TEST_CASE_NAME, case_num));        \
+    std::ofstream ofs(FILE_NAME_GEN_SUBCASE(                                   \
+        TEST_CASE_NAME, KernelTest::GetFileNameFromMacro(__FILE__),            \
+        case_num));                                                            \
     OStreamWrapper osw(ofs);                                                   \
     Writer<OStreamWrapper> writer(osw);                                        \
     write_doc.Accept(writer);                                                  \
@@ -356,7 +359,8 @@
 
 #define READY_SUBCASE()                                                        \
     auto &&[idx] = GetParam();                                                 \
-    auto filename = FILE_NAME_GEN_SUBCASE(TEST_CASE_NAME, idx);                \
+    auto filename = FILE_NAME_GEN_SUBCASE(                                     \
+        TEST_CASE_NAME, KernelTest::GetFileNameFromMacro(__FILE__), idx);      \
     std::ifstream file(filename);                                              \
     if (file.is_open()) {                                                      \
         std::cout << "Open file: " << filename << std::endl;                   \
@@ -368,7 +372,8 @@
 
 #define CLEAR_SUBCASE()                                                        \
     auto &&[idx] = GetParam();                                                 \
-    auto filename = FILE_NAME_GEN_SUBCASE(TEST_CASE_NAME, idx);                \
+    auto filename = FILE_NAME_GEN_SUBCASE(                                     \
+        TEST_CASE_NAME, KernelTest::GetFileNameFromMacro(__FILE__), idx);      \
     if (std::remove(filename.c_str()) == 0) {                                  \
         printf("File deleted successfully: %s\n", filename.c_str());           \
     }

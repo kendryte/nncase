@@ -26,9 +26,10 @@ result<value_t> nncase::kernels::stackvm::conv2d_shape(
     KERNEL_FINISH;
 }
 
-size_t compute_out_size(int input_size, int weights_size, const strides_t &strides,
-                      dims_t out_paddings, paddings_t paddings,
-                      const strides_t &dilations, int offset) {
+size_t compute_out_size(int input_size, int weights_size,
+                        const strides_t &strides, dims_t out_paddings,
+                        paddings_t paddings, const strides_t &dilations,
+                        int offset) {
     return (strides[offset] * (input_size - 1L)) + out_paddings[offset] +
            (((weights_size - 1L) * dilations[offset]) + 1L) -
            paddings[offset].before - paddings[offset].after;

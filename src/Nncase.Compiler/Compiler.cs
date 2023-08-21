@@ -97,26 +97,28 @@ internal class Compiler : ICompiler
             });
 
         passManager.AddWithName<DataflowPass>("SqueezeShape").Configure(p =>
-            {
-                p.Add<Passes.Rules.Neutral.SqueezeTransposeShape>();
-                p.Add<Passes.Rules.Neutral.Squeeze5DTranspose>();
-                p.Add<Passes.Rules.Neutral.FoldLayerNormPattern1>();
-                p.Add<Passes.Rules.Neutral.FoldLayerNormPattern2>();
-                p.Add<Passes.Rules.Neutral.FoldLayerNormPattern3>();
-                p.Add<Passes.Rules.Neutral.FoldLayerNormPattern4>();
-                p.Add<Passes.Rules.Neutral.FoldGeluWithScale>();
-                p.Add<Passes.Rules.Neutral.FoldGeneralGelu>();
-                p.Add<Passes.Rules.Neutral.FoldSwishPattern1>();
-                p.Add<Passes.Rules.Neutral.FoldSwishPattern2>();
-                p.Add<Passes.Rules.Neutral.FoldHardSwish1>();
-                p.Add<Passes.Rules.Neutral.FoldHardSwish2>();
-                p.Add<Passes.Rules.Neutral.FoldHardSwish3>();
-                p.Add<Passes.Rules.Neutral.FoldHardSwish4>();
-                p.Add<Passes.Rules.Neutral.FoldHardSwish5>();
-                p.Add<Passes.Rules.Neutral.FoldTwoSlices>();
-                p.Add<Passes.Rules.Neutral.FocusFull>();
-                p.Add<Passes.Rules.Neutral.ReshapeMatMul>();
-            });
+        {
+            p.Add<Passes.Rules.Neutral.SqueezeTransposeShape>();
+            p.Add<Passes.Rules.Neutral.Squeeze5DTranspose>();
+            p.Add<Passes.Rules.Neutral.SqueezeBinaryShape>();
+            p.Add<Passes.Rules.Neutral.FoldLayerNormPattern1>();
+            p.Add<Passes.Rules.Neutral.FoldLayerNormPattern2>();
+            p.Add<Passes.Rules.Neutral.FoldLayerNormPattern3>();
+            p.Add<Passes.Rules.Neutral.FoldLayerNormPattern4>();
+            p.Add<Passes.Rules.Neutral.FoldGeluWithScale>();
+            p.Add<Passes.Rules.Neutral.FoldGeneralGelu>();
+            p.Add<Passes.Rules.Neutral.FoldSwishPattern1>();
+            p.Add<Passes.Rules.Neutral.FoldSwishPattern2>();
+            p.Add<Passes.Rules.Neutral.FoldHardSwish1>();
+            p.Add<Passes.Rules.Neutral.FoldHardSwish2>();
+            p.Add<Passes.Rules.Neutral.FoldHardSwish3>();
+            p.Add<Passes.Rules.Neutral.FoldHardSwish4>();
+            p.Add<Passes.Rules.Neutral.FoldHardSwish5>();
+            p.Add<Passes.Rules.Neutral.FoldTwoSlices>();
+            p.Add<Passes.Rules.Neutral.FocusFull>();
+            p.Add<Passes.Rules.Neutral.ReshapeMatMul>();
+        });
+
         passManager.AddWithName<EGraphRulesPass>("NeutralOptimizeTranspose").Configure(p =>
         {
             p.Add<Passes.Rules.Neutral.FoldConstCall>();
@@ -173,6 +175,16 @@ internal class Compiler : ICompiler
         //     p.Add<Passes.Rules.Neutral.CombineClampMul>();
         //     p.Add<Passes.Rules.Neutral.FoldNopClamp>();
         // });
+        _compileSession.Target.RegisterTargetInDependentPass(passManager, _compileSession.CompileOptions);
+
+        if (quantMode == ModelQuantMode.UsePTQ)
+        {
+            passManager.AddWithName<DataflowPass>("AddRangeOfMarker").Configure(p =>
+            {
+                p.Add<Passes.Rules.Neutral.AddRangeOfAndMarker>();
+            });
+            passManager.AddWithName<EGraphPassWithQuantize>("AssignRanges");
+        }
     }
 
     public void RegisterShapeBucket(IPassManager p)
