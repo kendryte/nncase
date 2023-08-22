@@ -95,7 +95,7 @@ def compare_ndarray(expected: np.ndarray,
     if dump_hist:
         y, x = np.histogram(expected - actual, 100)
         np.savetxt(dump_file, np.stack((x[:-1], y)).T, fmt='%f', delimiter=',')
-    similarity_info = f"\n{similarity_name} similarity = {similarity}, threshold = {threshold}\n"
+    similarity_info = f"{similarity_name} similarity = {similarity}, threshold = {threshold}"
 
     if similarity_name in ['cosine', 'euclidean', 'segment']:
         compare_op = lt
