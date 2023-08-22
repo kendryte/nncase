@@ -48,10 +48,10 @@ UNARY_WITH_MUL_TEMPLATE_V2(leaky_relu, alpha, x < 0 ? alpha * x : x)
 UNARY_WITH_MUL_TEMPLATE_V2(gelu, alpha,
                            0.5f * (alpha * x) *
                                (1.f + erff(alpha * x / sqrtf(2.f))))
-ACTIVATION_TEMPLATE_V2(selu,
+FLOAT_ACTIVATION_TEMPLATE(selu,
                        x <= 0 ? gamma * (alpha * std::exp(x) - alpha)
                               : x * gamma,
                        alpha, gamma)
-ACTIVATION_TEMPLATE_V2(hard_sigmoid,
+FLOAT_ACTIVATION_TEMPLATE(hard_sigmoid,
                        std::max((float)0, std::min((float)1, x *alpha + beta)),
                        alpha, beta)

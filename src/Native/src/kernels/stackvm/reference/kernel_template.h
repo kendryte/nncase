@@ -16,58 +16,6 @@
 
 #include <nncase/runtime/util.h>
 
-#define FLOAT_UNARY_IMPL_TEMPLATE(_name, _compute)                             \
-    template <class T>                                                         \
-    result<void> _name##_impl(                                                 \
-        const T *input, T *output, gsl::span<const size_t> in_shape,           \
-        gsl::span<const size_t> input_strides,                                 \
-        gsl::span<const size_t> out_shape,                                     \
-        gsl::span<const size_t> out_strides,                                   \
-        NNCASE_UNUSED kernel_context &context) noexcept {                      \
-        return apply(                                                          \
-            out_shape, [&](gsl::span<const size_t> index) -> result<void> {    \
-                const auto in_index =                                          \
-                    kernels::detail::get_reduced_offset(index, in_shape);      \
-                auto src_idx = offset(input_strides, in_index);                \
-                auto dst_idx = offset(out_strides, in_index);                  \
-                auto x = input[src_idx];                                       \
-                output[dst_idx] = _compute;                                    \
-                return ok();                                                   \
-            });                                                                \
-    }                                                                          \
-    template <class T>                                                         \
-    result<void> _name##_opt_impl(                                             \
-        const T *input, T *output, gsl::span<const size_t> in_shape,           \
-        [[maybe_unused]] gsl::span<const size_t> input_strides,                \
-        [[maybe_unused]] gsl::span<const size_t> out_shape,                    \
-        [[maybe_unused]] gsl::span<const size_t> out_strides,                  \
-        NNCASE_UNUSED kernel_context &context) noexcept {                      \
-        for (int i = 0; i < compute_size(in_shape); ++i) {                     \
-            auto x = input[i];                                                 \
-            output[i] = _compute;                                              \
-        }                                                                      \
-        return ok();                                                           \
-    }
-
-#define FLOAT_UNARY_OP_TEMPLATE(_name)                                         \
-    result<value_t> nncase::kernels::stackvm::_name(                           \
-        value_t input, value_t output, kernel_context &context) {              \
-        try_f32_input(input_mem, input);                                       \
-        auto dtype = input_tensor->dtype();                                    \
-        try_f32_output(out_mem, output, input_tensor->shape());                \
-        if (is_contiguous(input_tensor)) {                                     \
-            try_(_name##_opt_impl(input_mem, out_mem, input_tensor->shape(),   \
-                                  input_tensor->strides(),                     \
-                                  output_tensor->shape(),                      \
-                                  output_tensor->strides(), context));         \
-        } else {                                                               \
-            try_(_name##_impl(input_mem, out_mem, input_tensor->shape(),       \
-                              input_tensor->strides(), output_tensor->shape(), \
-                              output_tensor->strides(), context));             \
-        }                                                                      \
-        return ok(output);                                                     \
-    }
-
 #define UNARY_IMPL_TEMPLATE(_name, _compute)                                   \
     template <class T>                                                         \
     result<void> _name##_impl(                                                 \
