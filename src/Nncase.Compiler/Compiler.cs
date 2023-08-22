@@ -178,8 +178,92 @@ internal class Compiler : ICompiler
 
     public void RegisterShapeBucket(IPassManager p)
     {
-        p.AddWithName<ShapeBucketPass>("ShapeBucketPass");
+        var options = _compileSession.CompileOptions.ShapeBucketOptions;
+        var singleVar = options.VarMap.Values.SelectMany(x => x).OfType<Var>().ToHashSet().Count <= 1;
+        if (!options.Enable)
+        {
+            return;
+        }
+
+        if(options.Enable)
+        {
+            if (options.SegmentsCount < 2)
+            {
+                throw new InvalidOperationException("SegmentsCount should >= 2");
+            }
+        }
+
+        ToFusion(p);
+        MergeOp(p);
+        LostToFusion(p, singleVar);
+        MergeOp(p);
+        ClearMarker(p);
+        // MergeFusion(p, singleVar);
+        Bucket(p);
+        // Rebuild(p);
+        Simplify(p);
     }
+
+    private static void Bucket(IPassManager p)
+    {
+        var shapeList = new Dictionary<BucketFusion, FusionShapeData[]>();
+        p.Add<RecordFusionShape>(shapeList);
+        p.AddWithName<DataflowPass>("FusionBucket").Configure(c =>
+        {
+            c.Add<FusionBucket>(shapeList);
+        });
+    }
+
+    private static void Rebuild(IPassManager p)
+    {
+        // rebuild
+        ToFusion(p, true);
+        Bucket(p);
+    }
+
+    private static void MergeFusion(IPassManager p, bool singleVar)
+    {
+        if (!singleVar)
+        {
+            return;
+        }
+        p.AddWithName<MergeBucketFusionPass>("MergeBucketFusionPass");
+    }
+
+    private static void LostToFusion(IPassManager p, bool singleVar) =>
+        p.AddWithName<DataflowPass>("LostToFusion").Configure(c =>
+        {
+            c.Add<TransposeToFusion>();
+            c.Add<UnaryToFusion>();
+            c.Add<ActToFusion>();
+            if (singleVar)
+            {
+                c.Add<BinaryToFusion>();
+            }
+        });
+
+    private static void ClearMarker(IPassManager p) =>
+        p.AddWithName<DataflowPass>("ClearSomeMarker").Configure(p =>
+        {
+            p.Add<ClearFusionOuterMarker>();
+            p.Add<RemoveMarker>();
+        });
+
+    private static void Simplify(IPassManager p) =>
+        p.AddWithName<DataflowPass>("Simplify").Configure(c =>
+        {
+            c.Add<FoldStackGetItem>();
+            c.Add<FoldConstCall>();
+            c.Add<FoldShapeOf>();
+            c.Add<FoldTwoReshapes>();
+            c.Add<FoldTwoCasts>();
+            c.Add<FoldTwoSlices>();
+            c.Add<FoldNopBinary>();
+            c.Add<FoldNopCast>();
+            c.Add<FoldNopReshape>();
+            c.Add<FoldNopSlice>();
+            c.Add<FoldIf>();
+        });
 
     public void ClearFixShape(IPassManager p)
     {
@@ -227,6 +311,20 @@ internal class Compiler : ICompiler
     {
         var linkedModel = _modelBuilder.Build(Module);
         linkedModel.Serialize(output);
+    }
+
+    private static void MergeOp(IPassManager iPassManager)
+    {
+        iPassManager.AddWithName<DataflowPass>("MergeNextCall").Configure(c =>
+        {
+            c.Add<MergeNextCallToFusion>();
+            c.Add<MergeNextMarkerToFusion>();
+        });
+        iPassManager.AddWithName<DataflowPass>("MergePrevCall").Configure(c =>
+        {
+            c.Add<MergePrevCallToFusion>();
+            c.Add<MergePrevMarkerToFusion>();
+        });
     }
 
     private static void ToFusion(IPassManager p, bool onlyDynamic = false) =>
