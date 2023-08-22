@@ -19,7 +19,7 @@ class MySerial:
         self.port = port
         self.baudrate = baudrate
         self.logger = logger
-        self.timeout = 20
+        self.timeout = 60
 
     def open(self):
         self.logger.debug(f'open {self.port} begin')
@@ -144,17 +144,21 @@ def infer_worker(target):
 
         for cmd in cmds.split(';'):
             ret = target.s1.run_cmd(cmd, separator)
-            target.logger.debug("ret = {0}".format(ret))
 
         # infer result
+        dict = {'type': 'finish', 'time': 0.0, 'error': ''}
         if ret.find('terminate') != -1 or ret.find('Exception') != -1:
-            err = f'infer exception: {ret}'
             target.logger.error('infer exception')
-            conn.sendall(err[0:1024].encode())
+            err = f'infer exception: {ret}'
+            dict['type'] = 'exception'
+            dict['error'] = err[0:1024]
+            conn.sendall(json.dumps(dict).encode())
         elif ret.find(separator) == -1:
             # reboot target when timeout
-            conn.sendall(f'infer timeout'.encode())
-            target.logger.error('reboot {0} for timeout'.format(target.name))
+            target.logger.error('reboot for timeout')
+            dict['type'] = 'timeout'
+            dict['error'] = 'infer timeout'
+            conn.sendall(json.dumps(dict).encode())
 
             # reboot after login
             target.s0.run_cmd('root')
@@ -162,7 +166,8 @@ def infer_worker(target):
             target.s0.run_cmd('reboot')
             time.sleep(20)
         else:
-            conn.sendall(f'infer finish'.encode())
+            dict['time'] = float(ret.split('\n')[1].split()[1])
+            conn.sendall(json.dumps(dict).encode())
             dummy = conn.recv(1024)
 
             # send outputs

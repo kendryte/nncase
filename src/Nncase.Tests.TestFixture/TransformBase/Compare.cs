@@ -128,10 +128,7 @@ public static class Comparator
 
     public static bool TupleValueCompare(TupleValue a, TupleValue b, float thresh = 0.99f)
     {
-        if (a.Count != b.Count)
-        {
-            return false;
-        }
+        Assert.Equal(a.Count, b.Count);
 
         foreach (var (t1, t2) in a.AsTensors().Zip(b.AsTensors()))
         {
