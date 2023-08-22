@@ -288,13 +288,13 @@
             });                                                                \
     }
 
-#define ACTIVATION_IMPL_TEMPLATE_V2(_name, _compute, ...)                      \
+#define ACTIVATION_IMPL_TEMPLATE_V2(_name, _compute, _alpha_name, _gamma_name) \
     template <class T>                                                         \
     result<void> _name##_impl(                                                 \
         const T *input, T *output, gsl::span<const size_t> in_shape,           \
         gsl::span<const size_t> input_strides,                                 \
         gsl::span<const size_t> out_shape,                                     \
-        gsl::span<const size_t> out_strides, FLOAT_ARGS_EXPAND(__VA_ARGS__),   \
+        gsl::span<const size_t> out_strides, T _alpha_name, T _gamma_name,     \
         NNCASE_UNUSED kernel_context &context) noexcept {                      \
         return apply(                                                          \
             out_shape, [&](gsl::span<const size_t> index) -> result<void> {    \
@@ -303,6 +303,8 @@
                 auto src_idx = offset(input_strides, in_index);                \
                 auto dst_idx = offset(out_strides, in_index);                  \
                 auto x = static_cast<float>(input[src_idx]);                   \
+                const auto alpha = static_cast<float>(_alpha_name);            \
+                const auto gamma = static_cast<float>(_gamma_name);            \
                 output[dst_idx] = static_cast<T>(_compute);                    \
                 return ok();                                                   \
             });                                                                \
@@ -365,28 +367,39 @@
         return ok(output);                                                     \
     }
 
-#define ACTIVATION_OP_TEMPLATE_V2(_name, ...)                                  \
+#define ACTIVATION_OP_TEMPLATE_V2(_name, _alpha_name, _gamma_name)             \
     result<value_t> nncase::kernels::stackvm::_name(                           \
-        value_t input, VALUE_ARGS_EXPAND(__VA_ARGS__), value_t output,         \
-        kernel_context &context) {                                             \
+        value_t input, value_t _alpha_name, value_t _gamma_name,               \
+        value_t output, kernel_context &context) {                             \
         try_input(input_mem, input);                                           \
         auto dtype = input_tensor->dtype();                                    \
-        READ_FLOAT_SCALAR_EXPAND(__VA_ARGS__);                                 \
+        try_input(_alpha_name_mem, _alpha_name);                               \
+        try_input(_gamma_name_mem, _gamma_name);                               \
         try_output_like_input(out_mem, output, input_tensor);                  \
         try_(_name##_impl(input_mem, out_mem, input_tensor->shape(),           \
                           input_tensor->strides(), output_tensor->shape(),     \
-                          output_tensor->strides(),                            \
-                          SCALAR_VALUE_EXPAND(__VA_ARGS__), context));         \
+                          output_tensor->strides(), context));                 \
         return ok(output);                                                     \
+    }
+
+#define UNARY_WITH_MUL_DISPTCH_OP_ACTIVATION_OP_TEMPLATE_V2(_impl_func)        \
+    result<void> _impl_func##_disptch(                                         \
+        typecode_t type, const gsl::byte *input, gsl::byte *output,            \
+        const gsl::byte *_alpha, const gsl::byte *_gamma,                      \
+        gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,  \
+        gsl::span<const size_t> out_shape,                                     \
+        gsl::span<const size_t> out_strides,                                   \
+        NNCASE_UNUSED kernel_context &context) noexcept {                      \
+        TYPE_SELECT_WITH_IMPL(type, UNARY_IMPL_FUNC_WRAPPER, _impl_func);      \
     }
 
 #define FLOAT_ACTIVATION_TEMPLATE(_name, _compute, ...)                        \
     FLOAT_ACTIVATION_IMPL_TEMPLATE(_name, _compute, __VA_ARGS__)               \
     FLOAT_ACTIVATION_OP_TEMPLATE(_name, __VA_ARGS__)
 
-#define ACTIVATION_TEMPLATE_V2(_name, _compute, ...)                           \
-    ACTIVATION_IMPL_TEMPLATE_V2(_name, _compute, __VA_ARGS__)                  \
-    ACTIVATION_OP_TEMPLATE_V2(_name, __VA_ARGS__)
+#define ACTIVATION_TEMPLATE_V2(_name, _compute, _alpha_name, _gamma_name)      \
+    ACTIVATION_IMPL_TEMPLATE_V2(_name, _compute, _alpha_name, _gamma_name)     \
+    ACTIVATION_OP_TEMPLATE_V2(_name, _alpha_name, _gamma_name)
 
 #define BASIC_PARAM                                                            \
     const gsl::byte *input, gsl::byte *output,                                 \
