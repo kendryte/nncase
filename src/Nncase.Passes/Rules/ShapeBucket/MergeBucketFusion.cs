@@ -224,7 +224,7 @@ public class MergeMultiUsersFusion : FunctionPass
 {
     private static int _counter;
 
-    private static string MergeRelPath => _counter.ToString();
+    private static string MergeRelPath => MultiUserCallToFusion.Counter.ToString();
 
     protected override Task<BaseFunction> RunCoreAsync(BaseFunction input, RunPassContext context)
     {
@@ -793,5 +793,28 @@ internal class SearchBucketFusion : ExprVisitor<Expr, Unit>
         }
 
         return expr;
+    }
+}
+
+public class MergeBucketFusionPass : FunctionPass
+{
+    protected override async Task<BaseFunction> RunCoreAsync(BaseFunction input, RunPassContext context)
+    {
+        var main = (Function)input;
+        while (true)
+        {
+            var preHash = main.GetHashCode();
+            CompilerServices.Rewrite(main, new IRewriteRule[] { new MultiUserCallToFusion(), new MergeTupleFusion() }, new());
+            await new MergeSeqBucketFusion().RunAsync(main, context);
+            IRHelpers.DCE(main);
+            await new MergeMultiUsersFusion().RunAsync(main, context);
+            var postHash = main.GetHashCode();
+            if (preHash == postHash)
+            {
+                break;
+            }
+        }
+
+        return main;
     }
 }

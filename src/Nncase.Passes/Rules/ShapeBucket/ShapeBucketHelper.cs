@@ -34,8 +34,8 @@ public static class CallValidator
 
     private static readonly HashSet<RuntimeTypeHandle> MaybeDynamic = new()
     {
-        // typeof(SpaceToBatch).TypeHandle,
-        // typeof(BatchToSpace).TypeHandle,
+        typeof(SpaceToBatch).TypeHandle,
+        typeof(BatchToSpace).TypeHandle,
         typeof(Concat).TypeHandle,
         typeof(Stack).TypeHandle,
         typeof(Binary).TypeHandle,
@@ -186,7 +186,7 @@ public static class ShapeBucketHelper
 
     public static void DumpIR(Expr expr, string prefix, string? reletivePath = null, string? printPrefix = null)
     {
-        // if (DumpScope.Current.IsEnabled(DumpFlags.Rewrite))
+        if (DumpScope.Current.IsEnabled(DumpFlags.Rewrite))
         {
             var s = prefix;
             if (prefix.Length > 80)
@@ -195,7 +195,7 @@ public static class ShapeBucketHelper
             }
 
             Console.WriteLine($"{printPrefix} {prefix}");
-            // DumpScope.Current.DumpIR(expr, s, reletivePath);
+            DumpScope.Current.DumpIR(expr, s, reletivePath);
         }
     }
 }

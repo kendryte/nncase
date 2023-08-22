@@ -23,6 +23,7 @@ using Nncase.IR.Math;
 using Nncase.IR.NN;
 using Nncase.IR.Tensors;
 using Nncase.Passes.Analysis;
+using Nncase.Passes.Rules.Lower;
 using Nncase.Passes.Rules.Neutral;
 using Nncase.Passes.Rules.ShapeExpr;
 using Nncase.Passes.Transforms;
@@ -358,24 +359,24 @@ public class MultiUserCallToFusion : CallToFusion
     {
         if (expr is Call c && c.Target is not BucketFusion)
         {
-            if (c.Target is Binary)
-            {
-                if (c.Arguments[0] is not Const && c.Arguments[1] is not Const)
-                {
-                    return false;
-                }
-
-                return true;
-            }
-
-            if (c.Target is IR.Tensors.Reshape)
-            {
-                if (c.Arguments[IR.Tensors.Reshape.Shape.Index] is TensorConst)
-                {
-                    return CallValidator.ValidTarget(c.Target);
-                }
-            }
-            else
+            // if (c.Target is Binary)
+            // {
+            //     if (c.Arguments[0] is not Const && c.Arguments[1] is not Const)
+            //     {
+            //         return false;
+            //     }
+            //
+            //     return true;
+            // }
+            //
+            // if (c.Target is IR.Tensors.Reshape)
+            // {
+            //     if (c.Arguments[IR.Tensors.Reshape.Shape.Index] is TensorConst)
+            //     {
+            //         return CallValidator.ValidTarget(c.Target);
+            //     }
+            // }
+            // else
             {
                 return CallValidator.ValidTarget(c.Target);
             }
@@ -547,6 +548,7 @@ public class UnaryToFusion : MarkerCallToFusion<Unary>
 
     public override bool Check(Call call)
     {
+        return true;
         var list = new[] { UnaryOp.Abs, UnaryOp.Neg, UnaryOp.Acos, UnaryOp.Asin };
         var op = ((Unary)call.Target).UnaryOp;
         return call.CheckedShape.Rank > 1 && list.Contains(op);
@@ -635,6 +637,16 @@ public class FusionBucketContext
         Arguments = OuterCall.Arguments.ToArray();
         Parameters = Fusion.Parameters.ToArray();
         FixedShapeCache = new();
+        SliceShape = ComputeSliceShape();
+    }
+
+    private Expr ComputeSliceShape()
+    {
+        var originBody = FusionBody;
+        var fusionInputsShape = MakeShapeOfFusionInput(Parameters, Arguments);
+        var originShape = originBody.EvaluateShapeExpr(FusionInputShapeExpr);
+        originShape.InferenceType();
+        return originShape;
     }
 
     public Call OuterCall { get; }
@@ -660,6 +672,21 @@ public class FusionBucketContext
 
     public Dictionary<Var, IValue> DimVarValue(int i) =>
         DimVarValues.ToDictionary(pair => pair.Key, pair => (IValue)Value.FromTensor(pair.Value[i]));
+
+    public Expr SliceShape;
+
+    // ShapeOf而不是shape表达式，用于计算Slice的shape
+    private static Dictionary<Var, Expr[]> MakeShapeOfFusionInput(Var[] parameters, Expr[] args)
+    {
+        var fusionInputShapes = parameters
+            .Zip(args)
+            .ToDictionary(pair => pair.First, pair =>
+            {
+                var shape = Cast((Expr)ShapeOf(pair.Second), DataTypes.Int32);
+                return Enumerable.Range(0, pair.Second.CheckedShape.Rank).Select(i => shape[i]).ToArray();
+            });
+        return fusionInputShapes;
+    }
 
     private static Dictionary<Var, Expr[]> MakeFusionInputShapeExpr(Call call, BucketFusion fusion,
         ShapeExprCache cache)
@@ -926,37 +953,22 @@ public partial class FusionBucket : RewriteRule<Pattern>
 
     private static Expr MakeSlice(FusionBucketContext context, Expr call, Expr originBody)
     {
-        var fusionInputsShape = MakeShapeOfFusionInput(context.Parameters, context.Arguments);
-
         if (call.CheckedType is TupleType tuple)
         {
             var fields = Enumerable.Range(0, tuple.Count)
-                .Select(i => MakeSliceForTensor(originBody[i], fusionInputsShape, call[i])).ToArray();
+                .Select(i => MakeSliceForTensor(originBody[i], call[i], context)).ToArray();
             return new IR.Tuple(fields);
         }
 
-        return MakeSliceForTensor(originBody, fusionInputsShape, call);
+        return MakeSliceForTensor(originBody, call, context);
     }
 
-    private static Expr MakeSliceForTensor(Expr originBody, Dictionary<Var, Expr[]> fusionInputsShapeExpr, Expr call)
+    private static Expr MakeSliceForTensor(Expr originBody, Expr call, FusionBucketContext context)
     {
-        var originShape = originBody.EvaluateShapeExpr(fusionInputsShapeExpr);
-        originShape.InferenceType();
-
-        // DumpIR(originShape, "OriginShapeExpr", _relPath);
+        var sliceShape = context.SliceShape;
         var rank = call.CheckedShape.Rank;
-
-        var body = (Expr)Slice(call, Enumerable.Repeat(0, rank).ToArray(), Cast(originShape, DataTypes.Int32), rank);
-        var simplifyBody = CompilerServices.Rewrite(
-            body,
-            new IRewriteRule[]
-            {
-                new FoldStackGetItem(), new FoldShapeOf(), new FoldTwoReshapes(), new FoldTwoCasts(),
-                new FoldTwoSlices(), new FoldNopBinary(), new FoldNopCast(), new Neutral.FoldConstCall(),
-                new FoldNopReshape(), new FoldNopSlice(), new FoldIf(),
-            },
-            new());
-        return simplifyBody;
+        var body = (Expr)Slice(call, Enumerable.Repeat(0, rank).ToArray(), Cast(sliceShape, DataTypes.Int32), rank);
+        return body;
     }
 
     private static bool IsFixed(int totalCount, int[][] minFixedShapeList, int[][] maxFixedShapeList) =>
@@ -1040,19 +1052,6 @@ public partial class FusionBucket : RewriteRule<Pattern>
             return result;
         });
 
-    // ShapeOf而不是shape表达式，用于计算Slice的shape
-    private static Dictionary<Var, Expr[]> MakeShapeOfFusionInput(Var[] parameters, Expr[] args)
-    {
-        var fusionInputShapes = parameters
-            .Zip(args)
-            .ToDictionary(pair => pair.First, pair =>
-            {
-                var shape = Cast((Expr)ShapeOf(pair.Second), DataTypes.Int32);
-                return Enumerable.Range(0, pair.Second.CheckedShape.Rank).Select(i => shape[i]).ToArray();
-            });
-        return fusionInputShapes;
-    }
-
     private static Expr Split(FusionBucketContext context, SegmentInfo info)
     {
         var fusionInputs = context.Arguments;
@@ -1119,54 +1118,6 @@ public partial class FusionBucket : RewriteRule<Pattern>
             _ => throw new ArgumentOutOfRangeException("fusionBody"),
         };
         return IR.F.Math.Require(false, failure, "input dim large than limit");
-    }
-}
-
-[RuleGenerator]
-public partial class ShapeOfTOShapeExpr : RewriteRule<Pattern>
-{
-    public override Pattern Pattern => IsShapeOf(IsWildcard("input"));
-
-    private Dictionary<Var, Expr[]> _fusionInputShapeExpr;
-
-    private bool changed = false;
-
-    public ShapeOfTOShapeExpr(Dictionary<Var, Expr[]> fusionInputShapeExpr)
-    {
-        _fusionInputShapeExpr = fusionInputShapeExpr;
-    }
-
-    private static int counter = 0;
-
-    public Expr? GetReplace(Expr input)
-    {
-        // if (changed)
-        // {
-        //     return null;
-        // }
-        Console.WriteLine("GetReplace");
-        // ShapeOf(ShapeOf(call)), only rewrite for inner
-        if (input.CheckedShape.Rank > 2)
-        {
-            changed = true;
-            Console.WriteLine("DoGetReplace");
-            DumpIR(input, counter.ToString() + "_before", "ShapeOfToShapeExpr");
-            if (input is Marker m)
-            {
-                var shapeExpr = input.EvaluateShapeExpr(_fusionInputShapeExpr);
-                shapeExpr = m.With(target: shapeExpr);
-                DumpIR(shapeExpr, counter.ToString() + "_after", "ShapeOfToShapeExpr");
-                counter++;
-                return shapeExpr;
-            }
-
-            var spExpr = input.EvaluateShapeExpr(_fusionInputShapeExpr);
-            DumpIR(spExpr, counter.ToString() + "_after", "ShapeOfToShapeExpr");
-            counter++;
-            return spExpr;
-        }
-
-        return null;
     }
 }
 
