@@ -98,6 +98,7 @@ internal class Compiler : ICompiler
 
         passManager.AddWithName<DataflowPass>("SqueezeShape").Configure(p =>
             {
+                p.Add<Passes.Rules.Neutral.FoldNopCast>();
                 p.Add<Passes.Rules.Neutral.SqueezeTransposeShape>();
                 p.Add<Passes.Rules.Neutral.Squeeze5DTranspose>();
                 p.Add<Passes.Rules.Neutral.FoldLayerNormPattern1>();
@@ -158,7 +159,8 @@ internal class Compiler : ICompiler
 
         passManager.AddWithName<DataflowPass>("MHAFusion").Configure(p =>
         {
-            // p.Add<Passes.Rules.FuseMHA1>();
+            p.Add<Passes.Rules.FuseMHA1>();
+            p.Add<Passes.Rules.FuseMHA2>();
         });
 
         _compileSession.Target.RegisterTargetInDependentPass(passManager, _compileSession.CompileOptions);
