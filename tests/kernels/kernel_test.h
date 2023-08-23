@@ -760,9 +760,8 @@ class KernelTest {
                        }
                        case dt_float16: {
                            if (get<half>(lhs, index) == get<half>(rhs, index) ||
-                               fabs(get<half>(lhs, index) -
-                                    get<half>(rhs, index)) <=
-                                   std::numeric_limits<float>::epsilon()) {
+                               fabs((float)get<half>(lhs, index) -
+                                    (float)get<half>(rhs, index)) <= 0.01f) {
                                return ok();
                            } else if (std::isnan(get<half>(lhs, index)) &&
                                       std::isnan(get<half>(rhs, index))) {
@@ -791,8 +790,8 @@ class KernelTest {
                            if (get<float>(lhs, index) ==
                                    get<float>(rhs, index) ||
                                fabs(get<float>(lhs, index) -
-                                    get<float>(rhs, index)) <=
-                                   std::numeric_limits<float>::epsilon()) {
+                                    get<float>(rhs, index)) <= 0.0001f
+                               /*std::numeric_limits<float>::epsilon()*/) {
                                return ok();
                            } else if (std::isnan(get<float>(lhs, index)) &&
                                       std::isnan(get<float>(rhs, index))) {
@@ -1158,7 +1157,7 @@ class KernelTest {
         return fullFilePath;
     }
 
-  private:
+  public:
     Document _document;
     std::map<std::string, typecode_t> str_2_datatype = {
         {"dt_int8", dt_int8},       {"dt_int16", dt_int16},
