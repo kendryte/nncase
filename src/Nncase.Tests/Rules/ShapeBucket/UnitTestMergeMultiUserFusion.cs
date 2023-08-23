@@ -277,34 +277,6 @@ public class UnitTestMergeMultiUserFusion : TransformTestBase
             new Dictionary<Var, IValue> { { inputVar0, Value.FromTensor(input0) } });
     }
 
-    // todo: 还没改回来
-    // [Fact]
-    // public void TestMergeTuplePartial()
-    // {
-    //     var input0 = Testing.Rand<float>(1, 3, 24, 24);
-    //     var inputVar = new Var("input", new TensorType(input0.ElementType, input0.Shape));
-    //     var s = Softmax(inputVar, 0);
-    //     var a = Abs(inputVar);
-    //     var sq = Sqrt(inputVar);
-    //     var t = new IR.Tuple(a, s, sq);
-    //     var newT = CompilerServices.Rewrite(t, new[] { new MultiUserCallToFusion() }, new());
-    //     TestMatched<MergeTupleFusion>(newT, new Dictionary<Var, IValue> { { inputVar, Value.FromTensor(input0) } });
-    // }
-
-    // todo：这个有问题，之前就没过
-    // [Fact]
-    // public async Task TestMergeUsersPartial()
-    // {
-    //     var input0 = Testing.Rand<float>(1, 3, 24, 24);
-    //     var inputVar = new Var("input", new TensorType(input0.ElementType, input0.Shape));
-    //     var a = Abs(inputVar);
-    //     var s = Softmax(a, 1);
-    //     var sq = Sqrt(a);
-    //     var bn = a + 1f;
-    //     var t = new IR.Tuple(Softmax(sq, 1), Softmax(s, 1), Softmax(bn, 1));
-    //     var newT = CompilerServices.Rewrite(t, new[] { new MultiUserCallToFusion() }, new());
-    //     await RunTest(newT, new[] { inputVar }, new Dictionary<Var, IValue> { { inputVar, Value.FromTensor(input0) } });
-    // }
     private static async Task RunTestNotMatch(Expr body, Var[] inputVar, Dictionary<Var, IValue> dict)
     {
         var module = MakeFun(body, inputVar);

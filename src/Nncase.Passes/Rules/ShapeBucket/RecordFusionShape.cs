@@ -32,10 +32,8 @@ public class FusionShapeUpdater : ExprVisitor<Expr, Unit>
 
     protected override Expr VisitLeafCall(Call expr)
     {
-        // todo: shapeof的处理
         if (expr.Target is BucketFusion f)
         {
-            // 这里算的是value
             var argShape = expr.Arguments.ToArray().Select(arg => GetShape(_memo[arg])).ToArray();
             var shape = GetShape(_memo[expr]);
             FusionShape[f] = new FusionShapeData(shape, argShape);
@@ -84,7 +82,6 @@ public class RecordFusionShape : FunctionPass
         FusionShapeInfo = shapeList;
     }
 
-    // fusion / info()
     public Dictionary<BucketFusion, FusionShapeData[]> FusionShapeInfo { get; set; }
 
     protected override Task<BaseFunction> RunCoreAsync(BaseFunction main, RunPassContext context)

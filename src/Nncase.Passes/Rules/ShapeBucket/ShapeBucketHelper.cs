@@ -80,6 +80,17 @@ public static class CallValidator
 
 public static class ShapeBucketRegister
 {
+    public static void CheckShapeBucketOptions(ShapeBucketOptions options)
+    {
+        if (options.Enable)
+        {
+            if (options.SegmentsCount < 2)
+            {
+                throw new InvalidOperationException("SegmentsCount should >= 2");
+            }
+        }
+    }
+
     public static void MergeOp(IPassManager iPassManager)
     {
         iPassManager.AddWithName<DataflowPass>("MergeNextCall").Configure(c =>

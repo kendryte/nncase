@@ -186,14 +186,7 @@ internal class Compiler : ICompiler
             return;
         }
 
-        if (options.Enable)
-        {
-            if (options.SegmentsCount < 2)
-            {
-                throw new InvalidOperationException("SegmentsCount should >= 2");
-            }
-        }
-
+        CheckShapeBucketOptions(options);
         ToFusion(p);
         MergeOp(p);
         LostToFusion(p, singleVar);
