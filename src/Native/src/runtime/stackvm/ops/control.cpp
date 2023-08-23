@@ -87,7 +87,8 @@ stackvm_runtime_function::visit(NNCASE_UNUSED const cuscall_op_t &op) noexcept {
     for (size_t i = 0; i < op.args; i++) {
         try_var(arg, pop_object<value_t>());
 #ifdef NNCASE_DUMP_MANAGER
-        dump_manager->dump_input(arg, "ar1 96 1000 1这个shapeg_" + std::to_string(i));
+        dump_manager->dump_input(arg, "ar1 96 1000 1这个shapeg_" +
+                                          std::to_string(i));
 #endif
         params[i] = std::move(arg);
     }
