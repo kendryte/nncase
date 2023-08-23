@@ -11,6 +11,9 @@ using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
 using Nncase.IR.Tensors;
+using Nncase.Passes.Rules.Lower;
+using Nncase.Passes.Rules.Neutral;
+using Nncase.Passes.Rules.ShapeExpr;
 using Nncase.PatternMatch;
 using static Nncase.PatternMatch.Utility;
 using static Nncase.Utilities.ReplaceUtility;
@@ -30,8 +33,8 @@ public static class CallValidator
         typeof(Transpose).TypeHandle,
         typeof(Pad).TypeHandle,
     };
-    // todo: add debug mode
 
+    // todo: add debug mode
     private static readonly HashSet<RuntimeTypeHandle> MaybeDynamic = new()
     {
         typeof(SpaceToBatch).TypeHandle,
@@ -42,6 +45,7 @@ public static class CallValidator
         typeof(Slice).TypeHandle,
         typeof(Gather).TypeHandle,
         typeof(ShapeOf).TypeHandle,
+
         // typeof(Reshape).TypeHandle,
         typeof(Expand).TypeHandle,
         typeof(ConstantOfShape).TypeHandle,
@@ -74,8 +78,123 @@ public static class CallValidator
     }
 }
 
+public static class ShapeBucketRegister
+{
+    public static void MergeOp(IPassManager iPassManager)
+    {
+        iPassManager.AddWithName<DataflowPass>("MergeNextCall").Configure(c =>
+        {
+            c.Add<MergeNextCallToFusion>();
+            c.Add<MergeNextMarkerToFusion>();
+        });
+        iPassManager.AddWithName<DataflowPass>("MergePrevCall").Configure(c =>
+        {
+            c.Add<MergePrevCallToFusion>();
+            c.Add<MergePrevMarkerToFusion>();
+        });
+    }
+
+    public static void ToFusion(IPassManager p, bool onlyDynamic = false) =>
+        p.AddWithName<DataflowPass>("ToFusion").Configure(c =>
+        {
+            c.Add<MatmulToFusion>(onlyDynamic);
+            c.Add<Conv2DToFusion>(onlyDynamic);
+            c.Add<TFConv2DTransposeToFusion>(onlyDynamic);
+            c.Add<Conv2DTransposeToFusion>(onlyDynamic);
+        });
+
+    public static void Bucket(IPassManager p)
+    {
+        var shapeList = new Dictionary<BucketFusion, FusionShapeData[]>();
+        p.Add<RecordFusionShape>(shapeList);
+        p.AddWithName<DataflowPass>("FusionBucket").Configure(c =>
+        {
+            c.Add<FusionBucket>(shapeList);
+        });
+    }
+
+    public static void Rebuild(IPassManager p)
+    {
+        // rebuild
+        ToFusion(p, true);
+        Bucket(p);
+    }
+
+    public static void MergeFusion(IPassManager p, bool singleVar)
+    {
+        if (!singleVar)
+        {
+            return;
+        }
+
+        p.AddWithName<MergeBucketFusionPass>("MergeBucketFusionPass");
+    }
+
+    public static void LostToFusion(IPassManager p, bool singleVar) =>
+        p.AddWithName<DataflowPass>("LostToFusion").Configure(c =>
+        {
+            c.Add<TransposeToFusion>();
+            c.Add<UnaryToFusion>();
+            c.Add<ActToFusion>();
+            if (singleVar)
+            {
+                c.Add<BinaryToFusion>();
+            }
+        });
+
+    public static void ClearMarker(IPassManager p) =>
+        p.AddWithName<DataflowPass>("ClearSomeMarker").Configure(p =>
+        {
+            p.Add<ClearFusionOuterMarker>();
+            p.Add<RemoveMarker>();
+        });
+
+    public static void Simplify(IPassManager p) =>
+        p.AddWithName<DataflowPass>("Simplify").Configure(c =>
+        {
+            c.Add<FoldStackGetItem>();
+            c.Add<FoldConstCall>();
+            c.Add<FoldShapeOf>();
+            c.Add<FoldTwoReshapes>();
+            c.Add<FoldTwoCasts>();
+            c.Add<FoldTwoSlices>();
+            c.Add<FoldNopBinary>();
+            c.Add<FoldNopCast>();
+            c.Add<FoldNopReshape>();
+            c.Add<FoldNopSlice>();
+            c.Add<FoldIf>();
+        });
+}
+
 public static class ShapeBucketHelper
 {
+    public static Dictionary<Var, int[]> MakeVarValuesForAllSegment(ShapeBucketOptions options)
+    {
+        int segmentCount = options.SegmentsCount;
+        var varRange = options.RangeInfo;
+        var varMap = options.VarMap;
+        var varAndInputAllSegment = varRange.ToDictionary(pair => pair.Key, pair =>
+        {
+            var (min, max) = pair.Value;
+            var segments = ComputeSegmentList(segmentCount, min, max);
+            return segments;
+        });
+
+        var vars = varMap.Values.SelectMany(x => x).OfType<Var>().ToHashSet().ToArray();
+
+        // DimVarName -> Dict.key -> Dict.Value
+        var varValues = varAndInputAllSegment.ToDictionary(
+            pair => vars.FindFirst(v => v.Name == pair.Key),
+            pair => { return pair.Value.OrderByDescending(x => x).ToArray(); });
+        return varValues;
+    }
+
+    public static int[] ComputeSegmentList(int segmentCount, int min, int max)
+    {
+        var size = (max - min) / segmentCount;
+        return Enumerable.Range(0, segmentCount - 1).Select(i => min + (i * size)).Append(max).ToArray();
+    }
+
     public static void ArgsChecker(Expr[] newArgs)
     {
         if (newArgs.Length == 0)
@@ -305,20 +424,20 @@ internal class KeyValuePairKeyComparer : IEqualityComparer<KeyValuePair<Expr, Va
 
 internal class OpCounter : ExprVisitor<Expr, Unit>
 {
-    private Dictionary<RuntimeTypeHandle, int> counter;
+    private readonly Dictionary<RuntimeTypeHandle, int> _counter = new();
 
     protected override Expr VisitCall(Call expr)
     {
         if (expr.Target is Op)
         {
             var handle = expr.Target.GetType().TypeHandle;
-            if (counter.ContainsKey(handle))
+            if (_counter.ContainsKey(handle))
             {
-                counter[handle] += 1;
+                _counter[handle] += 1;
             }
             else
             {
-                counter[handle] = 1;
+                _counter[handle] = 1;
             }
         }
 

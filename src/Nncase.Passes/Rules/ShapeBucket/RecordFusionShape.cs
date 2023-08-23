@@ -1,3 +1,6 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,14 +19,14 @@ public record FusionShapeData(IValue Outshape, IValue[] InputShapes);
 
 public class FusionShapeUpdater : ExprVisitor<Expr, Unit>
 {
-    private Dictionary<Expr, IValue> Memo;
-
-    public Dictionary<BucketFusion, FusionShapeData> FusionShape = new();
+    private readonly Dictionary<Expr, IValue> _memo;
 
     public FusionShapeUpdater(Dictionary<Expr, IValue> memo)
     {
-        Memo = memo;
+        _memo = memo;
     }
+
+    public Dictionary<BucketFusion, FusionShapeData> FusionShape { get; set; } = new();
 
     protected override Expr DefaultVisitLeaf(Expr expr) => expr;
 
@@ -33,8 +36,8 @@ public class FusionShapeUpdater : ExprVisitor<Expr, Unit>
         if (expr.Target is BucketFusion f)
         {
             // 这里算的是value
-            var argShape = expr.Arguments.ToArray().Select(arg => GetShape(Memo[arg])).ToArray();
-            var shape = GetShape(Memo[expr]);
+            var argShape = expr.Arguments.ToArray().Select(arg => GetShape(_memo[arg])).ToArray();
+            var shape = GetShape(_memo[expr]);
             FusionShape[f] = new FusionShapeData(shape, argShape);
         }
 
@@ -55,8 +58,8 @@ public class FusionShapeUpdater : ExprVisitor<Expr, Unit>
 
 public class SimpleTimer : IDisposable
 {
-    private DateTime _startTime;
-    private string _name;
+    private readonly DateTime _startTime;
+    private readonly string _name;
 
     public SimpleTimer(string name)
     {
@@ -74,27 +77,27 @@ public class SimpleTimer : IDisposable
 
 public class RecordFusionShape : FunctionPass
 {
+    private Dictionary<Var, int[]> _dimVarValues = new();
+
     public RecordFusionShape(Dictionary<BucketFusion, FusionShapeData[]> shapeList)
     {
         FusionShapeInfo = shapeList;
     }
 
-    private Dictionary<Var, int[]> DimVarValues;
-
     // fusion / info()
-    public Dictionary<BucketFusion, FusionShapeData[]> FusionShapeInfo;
+    public Dictionary<BucketFusion, FusionShapeData[]> FusionShapeInfo { get; set; }
 
     protected override Task<BaseFunction> RunCoreAsync(BaseFunction main, RunPassContext context)
     {
-        var t = new SimpleTimer("record fusion shape");
         var options = CompileSession.CompileOptions.ShapeBucketOptions;
         var varMap = options.VarMap;
-        DimVarValues = ShapeBucketPassContext.MakeVarValuesForAllSegment(options);
+        _dimVarValues = ShapeBucketHelper.MakeVarValuesForAllSegment(options);
+
         // 一共有多组key seg
-        var list = Enumerable.Range(0, DimVarValues.First().Value.Length).Select(i =>
+        var list = Enumerable.Range(0, _dimVarValues.First().Value.Length).Select(i =>
         {
             // 一组里面多个key seg
-            return DimVarValues.Select(pair => (pair.Key, Value: pair.Value[i])).ToArray();
+            return _dimVarValues.Select(pair => (pair.Key, Value: pair.Value[i])).ToArray();
         }).ToArray();
         var tmpFusionShapeList = list.Select((seg, i) =>
             {
@@ -102,7 +105,7 @@ public class RecordFusionShape : FunctionPass
                 var exprValues = seg.ToDictionary(pair => (Expr)pair.Key, pair => (IValue)Value.FromTensor(pair.Value));
                 var input = MakeDummyInput(varMap, varValues);
                 var body = ((Function)main).Body;
-                var memo = GetMemo(body, input);
+                var memo = EvaluatorUtil.GetMemo(body, input);
                 var f = new FusionShapeUpdater(ConcatDictionary(memo, exprValues));
                 f.Visit(main);
                 return f.FusionShape;
@@ -122,21 +125,10 @@ public class RecordFusionShape : FunctionPass
     {
         foreach (var (key, value) in exprValues)
         {
-            if (memo.ContainsKey(key))
-            {
-                Console.WriteLine();
-            }
             memo[key] = value;
         }
 
         return memo;
-    }
-
-    private static Dictionary<Expr, IValue> GetMemo(Expr input, Dictionary<Var, IValue> varValues)
-    {
-        var visitor = new EvaluateVisitor(varValues, new());
-        visitor.Visit(input);
-        return visitor.ExprMemo;
     }
 
     // make dummy value from InputInfo

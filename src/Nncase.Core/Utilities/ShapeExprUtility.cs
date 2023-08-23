@@ -44,6 +44,7 @@ public static class ShapeExprUtility
         {
             return SliceAndMerge(StackScalar(shapeExpr), index, value, 0);
         }
+
         return SliceAndMerge(shapeExpr, index, value, 0);
     }
 

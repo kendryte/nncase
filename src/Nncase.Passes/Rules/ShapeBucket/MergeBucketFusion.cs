@@ -23,6 +23,29 @@ using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Passes.Rules.ShapeBucket;
 
+public class MergeBucketFusionPass : FunctionPass
+{
+    protected override async Task<BaseFunction> RunCoreAsync(BaseFunction input, RunPassContext context)
+    {
+        var main = (Function)input;
+        while (true)
+        {
+            var preHash = main.GetHashCode();
+            CompilerServices.Rewrite(main, new IRewriteRule[] { new MultiUserCallToFusion(), new MergeTupleFusion() }, new());
+            await new MergeSeqBucketFusion().RunAsync(main, context);
+            IRHelpers.DCE(main);
+            await new MergeMultiUsersFusion().RunAsync(main, context);
+            var postHash = main.GetHashCode();
+            if (preHash == postHash)
+            {
+                break;
+            }
+        }
+
+        return main;
+    }
+}
+
 [RuleGenerator]
 public partial class MergeTupleFusion : RewriteRule<Pattern>
 {
@@ -144,29 +167,28 @@ public partial class MergeTupleFusion : RewriteRule<Pattern>
 //         }).ToArray());
 //     }
 // }
-
 public class MergeSeqBucketFusion : FunctionPass
 {
-    private Function MergeFusion(Function main)
+    protected override Task<BaseFunction> RunCoreAsync(BaseFunction input, RunPassContext context)
     {
-        var analyzerMananger = CompileSession.GetRequiredService<IAnalyzerManager>();
-        var analysis = new Dictionary<Type, IAnalysisResult>
-        {
-            [typeof(IExprUserAnalysisResult)] = analyzerMananger.GetAnaylsis<IExprUserAnalysisResult>(main),
-        };
-        CompilerServices.Rewrite(main, new[] { new ClearFusionOuterMarker() }, new());
-        var rewriter = new DataFlowMergeRewriter();
-        var post = (Function)rewriter.Rewrite(
-            main,
-            new IMergeRewriteRule[]
-            {
-                new SameInputFusionMergeRule(), new MultiInputFusionMergeRule(), new ShortCutFusionMergeRuleLeft(),
-                new ShortCutFusionMergeRuleRight(),
-            },
-            (rule, option) => new BucketFusionGroupMutator(rule, option),
-            new() { AnalysisResults = analysis });
+        var main = (Function)input;
 
-        return post;
+        // todo: fix
+        var mergeRelPath = string.Empty;
+
+        // 1. get origin info
+        var s = new SearchBucketFusion();
+        s.Visit(main);
+        var set = s.FusionEffectVars();
+
+        // 2. merge
+        var post = MergeFusion(main);
+        DumpIR(post, "AfterMergeFusion", mergeRelPath);
+
+        // 3. translate fusion to BucketFusion
+        TranslateFusionToBucket(set, post, CompileSession);
+        DumpIR(post, "AfterTranslateFusion", mergeRelPath);
+        return Task.FromResult<BaseFunction>(post);
     }
 
     private static void TranslateFusionToBucket(Dictionary<string, Var[]> set, Function post, CompileSession seesion)
@@ -198,42 +220,32 @@ public class MergeSeqBucketFusion : FunctionPass
         mutator.Visit(post, Unit.Default);
     }
 
-    protected override Task<BaseFunction> RunCoreAsync(BaseFunction input, RunPassContext context)
+    private Function MergeFusion(Function main)
     {
-        var main = (Function)input;
-        // todo: fix
-        var MergeRelPath = "";
+        var analyzerMananger = CompileSession.GetRequiredService<IAnalyzerManager>();
+        var analysis = new Dictionary<Type, IAnalysisResult>
+        {
+            [typeof(IExprUserAnalysisResult)] = analyzerMananger.GetAnaylsis<IExprUserAnalysisResult>(main),
+        };
+        CompilerServices.Rewrite(main, new[] { new ClearFusionOuterMarker() }, new());
+        var rewriter = new DataFlowMergeRewriter();
+        var post = (Function)rewriter.Rewrite(
+            main,
+            new IMergeRewriteRule[]
+            {
+                new SameInputFusionMergeRule(), new MultiInputFusionMergeRule(), new ShortCutFusionMergeRuleLeft(),
+                new ShortCutFusionMergeRuleRight(),
+            },
+            (rule, option) => new BucketFusionGroupMutator(rule, option),
+            new() { AnalysisResults = analysis });
 
-        // 1. get origin info
-        var s = new SearchBucketFusion();
-        s.Visit(main);
-        var set = s.FusionEffectVars();
-
-        // 2. merge
-        var post = MergeFusion(main);
-        DumpIR(post, "AfterMergeFusion", MergeRelPath);
-
-        // 3. translate fusion to BucketFusion
-        TranslateFusionToBucket(set, post, CompileSession);
-        DumpIR(post, "AfterTranslateFusion", MergeRelPath);
-        return Task.FromResult<BaseFunction>(post);
+        return post;
     }
 }
 
 public class MergeMultiUsersFusion : FunctionPass
 {
-    private static int _counter;
-
     private static string MergeRelPath => MultiUserCallToFusion.Counter.ToString();
-
-    protected override Task<BaseFunction> RunCoreAsync(BaseFunction input, RunPassContext context)
-    {
-        var main = (Function)input;
-        var c = new ReplaceVisitor();
-        c.Replace(main);
-        DumpIR(main, "AfterMergeUser", MergeRelPath);
-        return Task.FromResult(input);
-    }
 
     public static bool DetectedRing(Call outerCall, Expr[] users)
     {
@@ -262,24 +274,31 @@ public class MergeMultiUsersFusion : FunctionPass
         return false;
     }
 
+    protected override Task<BaseFunction> RunCoreAsync(BaseFunction input, RunPassContext context)
+    {
+        var main = (Function)input;
+        var c = new ReplaceVisitor();
+        c.Replace(main);
+        DumpIR(main, "AfterMergeUser", MergeRelPath);
+        return Task.FromResult(input);
+    }
+
     private static (Expr? NewCall, UserInfo[] AllUsers) MergeMultiUserFusion(Call outerCall, BucketFusion fusion)
     {
         var users = outerCall.Users.ToArray();
 
-        var notSupport = ((Expr)null, Array.Empty<UserInfo>());
+        var notSupport = ((Expr?)null, Array.Empty<UserInfo>());
         if (users.Length == 0)
         {
             return notSupport;
         }
 
-        var getItemMode = false;
         if (users.OfType<Call>().All(user => user.Target is GetItem))
         {
             // 需要去重，可能一个getItem的user使用了多个getItem
             // 但是去重的过程需要在collect info的时候做
             // 不然被去重的user不能正确的被替换掉
             users = users.SelectMany(user => user.Users.ToArray()).ToArray();
-            getItemMode = true;
         }
 
         // todo: not support
@@ -670,6 +689,7 @@ public class MergeMultiUsersFusion : FunctionPass
 
                     // todo: 检查已经被合并的fusion的名字是否还存在，存在就是错误
                     AddCounter();
+
                     // CheckRepeat(Root);
                     _changed = true;
                     return newCall;
@@ -690,7 +710,6 @@ public class MergeMultiUsersFusion : FunctionPass
                 return;
             }
 
-            var originUsersIndex = 0;
             var getItemMode = outerCall.Users.First() is Call c && c.Target is GetItem;
             if (getItemMode)
             {
@@ -793,28 +812,5 @@ internal class SearchBucketFusion : ExprVisitor<Expr, Unit>
         }
 
         return expr;
-    }
-}
-
-public class MergeBucketFusionPass : FunctionPass
-{
-    protected override async Task<BaseFunction> RunCoreAsync(BaseFunction input, RunPassContext context)
-    {
-        var main = (Function)input;
-        while (true)
-        {
-            var preHash = main.GetHashCode();
-            CompilerServices.Rewrite(main, new IRewriteRule[] { new MultiUserCallToFusion(), new MergeTupleFusion() }, new());
-            await new MergeSeqBucketFusion().RunAsync(main, context);
-            IRHelpers.DCE(main);
-            await new MergeMultiUsersFusion().RunAsync(main, context);
-            var postHash = main.GetHashCode();
-            if (preHash == postHash)
-            {
-                break;
-            }
-        }
-
-        return main;
     }
 }

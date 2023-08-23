@@ -305,7 +305,6 @@ public class UnitTestMergeMultiUserFusion : TransformTestBase
     //     var newT = CompilerServices.Rewrite(t, new[] { new MultiUserCallToFusion() }, new());
     //     await RunTest(newT, new[] { inputVar }, new Dictionary<Var, IValue> { { inputVar, Value.FromTensor(input0) } });
     // }
-
     private static async Task RunTestNotMatch(Expr body, Var[] inputVar, Dictionary<Var, IValue> dict)
     {
         var module = MakeFun(body, inputVar);

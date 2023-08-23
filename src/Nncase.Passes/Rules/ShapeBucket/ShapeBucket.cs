@@ -98,14 +98,23 @@ public class BucketFusion : Fusion, IEquatable<BucketFusion>
         return new BucketFusion(f.Name, "stackvm", f.Body, f.Parameters.ToArray(), effectVars);
     }
 
-    public new BucketFusion With(string? name = null, string? moduleKind = null, Expr? body = null,
-        Var[]? parameters = null)
+    public new BucketFusion With(string? name = null, string? moduleKind = null, Expr? body = null, Var[]? parameters = null)
         => new BucketFusion(name ?? Name, moduleKind ?? ModuleKind, body ?? Body, parameters ?? Parameters, EffectVar);
 
     public bool Equals(BucketFusion? other)
     {
+        if (other == null)
+        {
+            return false;
+        }
+
         return Name == other.Name && ModuleKind == other.ModuleKind && Body.GetHashCode() == other.Body.GetHashCode() &&
             Parameters.SequenceEqual(other.Parameters) && EffectVar.SequenceEqual(other.EffectVar);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return Equals(obj as BucketFusion);
     }
 }
 
@@ -322,7 +331,8 @@ public class MarkerCallToFusion<T> : CallToFusion
     {
     }
 
-    public MarkerCallToFusion() : base(false)
+    public MarkerCallToFusion()
+        : base(false)
     {
     }
 
@@ -429,16 +439,16 @@ public class Conv2DToFusion : MarkerCallToFusion<Conv2D>
 // 这里本质的问题是因为output shape所指向的很可能并不是input，或者说是input并不是output shape所指向的表达式的子表达式
 public class TFConv2DTransposeToFusion : MarkerCallToFusion<Conv2DTranspose>
 {
-    public TFConv2DTransposeToFusion(bool isDynamic = false)
-        : base(isDynamic)
-    {
-    }
-
     private Call? _transpose;
 
     private Call? _originCall;
 
     private Marker? _transposeInputMarker;
+
+    public TFConv2DTransposeToFusion(bool isDynamic = false)
+        : base(isDynamic)
+    {
+    }
 
     public override Pattern Pattern => IsRangeOfMarker(
         "callMarker",
@@ -527,12 +537,12 @@ public class ActToFusion : MarkerCallToFusion<ActivationOp>
 
 public class TransposeToFusion : MarkerCallToFusion<Transpose>
 {
-    protected override bool MustHaveMarker => false;
-
     public TransposeToFusion(bool isDynamic = false)
         : base(isDynamic)
     {
     }
+
+    protected override bool MustHaveMarker => false;
 }
 
 public class UnaryToFusion : MarkerCallToFusion<Unary>
@@ -545,14 +555,6 @@ public class UnaryToFusion : MarkerCallToFusion<Unary>
     public UnaryToFusion()
     {
     }
-
-    public override bool Check(Call call)
-    {
-        return true;
-        var list = new[] { UnaryOp.Abs, UnaryOp.Neg, UnaryOp.Acos, UnaryOp.Asin };
-        var op = ((Unary)call.Target).UnaryOp;
-        return call.CheckedShape.Rank > 1 && list.Contains(op);
-    }
 }
 
 // todo: do more check for binary
@@ -562,6 +564,7 @@ public class BinaryToFusion : MarkerCallToFusion<Binary>
         : base(isDynamic)
     {
     }
+
     // public override bool Check(Call call) => call.CheckedShape.Rank > 1;
 }
 
@@ -623,8 +626,7 @@ public partial class ClearFusionOuterMarker : RewriteRule<Pattern>
 
 public class FusionBucketContext
 {
-    public FusionBucketContext(Call outerCall, BucketFusion fusion, Dictionary<Var, Expr[]> varMap,
-        Dictionary<Var, int[]> dimVarValues, ShapeExprCache cache)
+    public FusionBucketContext(Call outerCall, BucketFusion fusion, Dictionary<Var, Expr[]> varMap, Dictionary<Var, int[]> dimVarValues, ShapeExprCache cache)
     {
         OuterCall = outerCall;
         Fusion = fusion;
@@ -640,14 +642,7 @@ public class FusionBucketContext
         SliceShape = ComputeSliceShape();
     }
 
-    private Expr ComputeSliceShape()
-    {
-        var originBody = FusionBody;
-        var fusionInputsShape = MakeShapeOfFusionInput(Parameters, Arguments);
-        var originShape = originBody.EvaluateShapeExpr(FusionInputShapeExpr);
-        originShape.InferenceType();
-        return originShape;
-    }
+    public Expr SliceShape { get; }
 
     public Call OuterCall { get; }
 
@@ -673,8 +668,6 @@ public class FusionBucketContext
     public Dictionary<Var, IValue> DimVarValue(int i) =>
         DimVarValues.ToDictionary(pair => pair.Key, pair => (IValue)Value.FromTensor(pair.Value[i]));
 
-    public Expr SliceShape;
-
     // ShapeOf而不是shape表达式，用于计算Slice的shape
     private static Dictionary<Var, Expr[]> MakeShapeOfFusionInput(Var[] parameters, Expr[] args)
     {
@@ -688,8 +681,7 @@ public class FusionBucketContext
         return fusionInputShapes;
     }
 
-    private static Dictionary<Var, Expr[]> MakeFusionInputShapeExpr(Call call, BucketFusion fusion,
-        ShapeExprCache cache)
+    private static Dictionary<Var, Expr[]> MakeFusionInputShapeExpr(Call call, BucketFusion fusion, ShapeExprCache cache)
     {
         var data = fusion.Parameters.ToArray().Zip(call.Arguments.ToArray().Select((arg, i) =>
         {
@@ -724,6 +716,15 @@ public class FusionBucketContext
             }
         }
     }
+
+    private Expr ComputeSliceShape()
+    {
+        var originBody = FusionBody;
+        _ = MakeShapeOfFusionInput(Parameters, Arguments);
+        var originShape = originBody.EvaluateShapeExpr(FusionInputShapeExpr);
+        originShape.InferenceType();
+        return originShape;
+    }
 }
 
 [RuleGenerator]
@@ -734,6 +735,13 @@ public partial class FusionBucket : RewriteRule<Pattern>
     private static string _relPath = string.Empty;
 
     private readonly ShapeExprCache _cache = ShapeExprCache.Default;
+
+    public FusionBucket(Dictionary<BucketFusion, FusionShapeData[]> list)
+    {
+        FusionShapeInfo = list;
+    }
+
+    public Dictionary<BucketFusion, FusionShapeData[]> FusionShapeInfo { get; set; }
 
     public override Pattern Pattern => IsCall(
         "outerCall",
@@ -746,34 +754,18 @@ public partial class FusionBucket : RewriteRule<Pattern>
 
     internal Dictionary<Var, Expr[]> VarMap => CompileSession.CompileOptions.ShapeBucketOptions.VarMap;
 
-    public Dictionary<BucketFusion, FusionShapeData[]> FusionShapeInfo;
-
-    public FusionBucket(Dictionary<BucketFusion, FusionShapeData[]> list)
+    public static Expr PreProcess(FusionBucketContext context, Var param, Dictionary<Var, Expr[]> inputInfo, Dictionary<Var, IValue> varValues, Dictionary<Var, Expr[]> fusionInputData, int segIndex, int inputIndex)
     {
-        FusionShapeInfo = list;
-    }
-
-    public static int[] ComputeSegmentList(int segmentCount, int min, int max)
-    {
-        var size = (max - min) / segmentCount;
-        return Enumerable.Range(0, segmentCount - 1).Select(i => min + (i * size)).Append(max).ToArray();
-    }
-
-    public static Expr PreProcess(FusionBucketContext context, Var param, Dictionary<Var, Expr[]> inputInfo,
-        Dictionary<Var, IValue> varValues, Dictionary<Var, Expr[]> fusionInputData, int segIndex, int inputIndex)
-    {
-        Console.WriteLine($"seg index{segIndex}");
+        // Console.WriteLine($"seg index{segIndex}");
         if (context.FixedShapeCache.TryGetValue(segIndex, out var cachedFixedShape))
         {
-            var cachedShape = cachedFixedShape[inputIndex];
-            Console.WriteLine(string.Join(",", cachedShape));
-            Console.WriteLine("Cache ok");
+            // var cachedShape = cachedFixedShape[inputIndex];
+            // Console.WriteLine(string.Join(",", cachedShape));
+            // Console.WriteLine("Cache ok");
             return new Call(new BucketPad(), param, cachedFixedShape[inputIndex]);
         }
-        else
-        {
-            throw new InvalidDataException("Shape Cache not found");
-        }
+
+        throw new InvalidDataException("Shape Cache not found");
     }
 
     public static (Dictionary<Var, IValue> MinDict, Dictionary<Var, IValue> MaxDict) GetBoundDict(
@@ -838,10 +830,10 @@ public partial class FusionBucket : RewriteRule<Pattern>
         DumpIR(outerCall, $"BucketOriginFusion_{fusion.Name}", _relPath);
 
         var options = CompileSession.CompileOptions.ShapeBucketOptions;
-        var dimVarValues = ShapeBucketPassContext.MakeVarValuesForAllSegment(options);
+        var dimVarValues = MakeVarValuesForAllSegment(options);
         var context = new FusionBucketContext(outerCall, fusion, VarMap, dimVarValues, _cache);
 
-        var shapeInfos = new FusionShapeData[] { };
+        var shapeInfos = Array.Empty<FusionShapeData>();
         if (!FusionShapeInfo.TryGetValue(fusion, out shapeInfos))
         {
             // todo: 不知道为什么有的时候无法从key中获取
@@ -884,6 +876,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
         var maxFixedShapeList = allFixedShapes[0];
 
         PrintMinMaxShape(minFixedShapeList, maxFixedShapeList, _relPath);
+
         // 2. get dim info(inputIndex, (dimIndex, range)
         var counts = ComputeCounts(minFixedShapeList, maxFixedShapeList, out int totalCount);
         if (IsFixed(totalCount, minFixedShapeList, maxFixedShapeList))
@@ -898,6 +891,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
         if (totalCount > 1)
         {
             Console.WriteLine($"{fusion.Name} totalCount > 1");
+
             // return null;
         }
 
@@ -927,6 +921,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
         {
             // DumpIR(newBody, "newBody", _relPath);
             newBody = IR.F.Math.Require(true, @if.With(paramList: context.Arguments));
+
             // Cache.Add(newBody, newBody.EvaluateShapeExpr(context.Cache));
         }
 
@@ -1068,7 +1063,6 @@ public partial class FusionBucket : RewriteRule<Pattern>
         //     Console.WriteLine("Rebuild");
         //     return RestoreBodyWithArgs(context.Arguments, context.Parameters, context.FusionBody);
         // }
-
         var body = segments.OrderByDescending(x => x).Aggregate(
             failure,
             (sum, seg) =>
