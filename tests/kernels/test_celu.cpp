@@ -62,11 +62,7 @@ TEST_P(CeluTest, celu) {
 
     // expected
     OrtKITensor *output_ort;
-    if (input.datatype() == dt_float16) {
-        output_ort = ortki_Celu(input_ort, tensor_to_array<half>(alpha)[0]);
-    } else if (input.datatype() == dt_float32) {
-        output_ort = ortki_Celu(input_ort, tensor_to_array<float>(alpha)[0]);
-    }
+    output_ort = ortki_Celu(input_ort, tensor_to_array<float>(alpha)[0]);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
