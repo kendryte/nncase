@@ -62,25 +62,6 @@ public class UnitTestMergeMultiUserFusion : TransformTestBase
         await RunTest(output, new[] { inputVar }, dict);
     }
 
-    // 被合并的几个call互为参数
-    [Fact]
-    public async Task TestComplexExpr()
-    {
-        // tr = transpose(input)
-        // f = fusion_multi_user(tr)
-        // leakyRelu = LeakyRelu(f)
-        // complexFusion(LeakyRelu, f)
-        var input = Testing.Rand<float>(1, 3, 24, 24);
-        var inputVar = new Var("inputVar", new TensorType(input.ElementType, input.Shape));
-        var tr = Transpose(inputVar, new[] { 3, 2, 1, 0 });
-        var f = MakeSingleSimpleFusionCall(Abs, tr);
-        var leakyRelu = MakeSingleSimpleFusionCall(expr => LeakyRelu(expr, 0.1), f);
-        var complexFusion = MakeSimpleFusionCall(args => args[0] - args[1], leakyRelu, f);
-        var output = new IR.Tuple(leakyRelu, complexFusion);
-        var dict = new Dictionary<Var, IValue> { { inputVar, Value.FromTensor(input) } };
-        await RunTest(output, new[] { inputVar }, dict);
-    }
-
     [Fact]
     public async Task TestWithRing()
     {

@@ -154,11 +154,6 @@ public partial class CallToFusion : RewriteRule<Pattern>
 
     public Expr? GetReplace(Call call, IMatchResult matchResult)
     {
-        if (Counter > 4)
-        {
-            // return null;
-        }
-
         // 第二轮的时候再开
         if (_onlyDynamic && call.CheckedShape.IsFixed)
         {
@@ -369,24 +364,24 @@ public class MultiUserCallToFusion : CallToFusion
     {
         if (expr is Call c && c.Target is not BucketFusion)
         {
-            // if (c.Target is Binary)
-            // {
-            //     if (c.Arguments[0] is not Const && c.Arguments[1] is not Const)
-            //     {
-            //         return false;
-            //     }
-            //
-            //     return true;
-            // }
-            //
-            // if (c.Target is IR.Tensors.Reshape)
-            // {
-            //     if (c.Arguments[IR.Tensors.Reshape.Shape.Index] is TensorConst)
-            //     {
-            //         return CallValidator.ValidTarget(c.Target);
-            //     }
-            // }
-            // else
+            if (c.Target is Binary)
+            {
+                if (c.Arguments[0] is not Const && c.Arguments[1] is not Const)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+
+            if (c.Target is IR.Tensors.Reshape)
+            {
+                if (c.Arguments[IR.Tensors.Reshape.Shape.Index] is TensorConst)
+                {
+                    return CallValidator.ValidTarget(c.Target);
+                }
+            }
+            else
             {
                 return CallValidator.ValidTarget(c.Target);
             }
@@ -837,12 +832,10 @@ public partial class FusionBucket : RewriteRule<Pattern>
         if (!FusionShapeInfo.TryGetValue(fusion, out shapeInfos))
         {
             // todo: 不知道为什么有的时候无法从key中获取
-            var data = FusionShapeInfo.ToArray();
-            var list = data.Where(x => x.Key == fusion).ToArray();
+            var list = FusionShapeInfo.Where(x => x.Key == fusion).ToArray();
             if (list.Length != 1)
             {
-                Console.WriteLine($"NoKey{fusion.Name}");
-                throw new InvalidOperationException();
+                throw new InvalidOperationException($"NoKey{fusion.Name}");
             }
 
             shapeInfos = list[0].Value;
@@ -856,18 +849,6 @@ public partial class FusionBucket : RewriteRule<Pattern>
             for (int j = 0; j < allFixedShapes.Length; j++)
             {
                 context.FixedShapeCache[j] = allFixedShapes[j];
-            }
-        }
-
-        for (var i = 0; i < shapeInfos.Length; i++)
-        {
-            Console.WriteLine($"Segment Index {i}");
-            var inShapes = shapeInfos[i].InputShapes;
-            for (int j = 0; j < inShapes.Length; j++)
-            {
-                var shape = inShapes[j].AsTensor().ToArray<int>();
-                Console.WriteLine($"Input {j} shape:");
-                Console.WriteLine(string.Join(",", shape));
             }
         }
 
@@ -890,9 +871,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
         // todo: process total count, matmul maybe multi count, but other should check this
         if (totalCount > 1)
         {
-            Console.WriteLine($"{fusion.Name} totalCount > 1");
-
-            // return null;
+            // Console.WriteLine($"{fusion.Name} totalCount > 1");
         }
 
         var info = ComputeSegmentInfo(counts, options);
@@ -906,7 +885,6 @@ public partial class FusionBucket : RewriteRule<Pattern>
 
         if (body is not If)
         {
-            Console.WriteLine("ShouldBeRebuild");
             _counter++;
             DumpIR(body, "Rebuild", _relPath);
             return body;
@@ -919,10 +897,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
         // let bind
         if (newBody is If @if)
         {
-            // DumpIR(newBody, "newBody", _relPath);
             newBody = IR.F.Math.Require(true, @if.With(paramList: context.Arguments));
-
-            // Cache.Add(newBody, newBody.EvaluateShapeExpr(context.Cache));
         }
 
         DumpIR(newBody, "BucketResult", _relPath);
@@ -932,8 +907,22 @@ public partial class FusionBucket : RewriteRule<Pattern>
             throw new InvalidOperationException("InvalidBucketBody");
         }
 
-        // Context.AddCache(newBody);
         return newBody;
+    }
+
+    private static void PrintShapeInfos(FusionShapeData[] shapeInfos)
+    {
+        for (var i = 0; i < shapeInfos.Length; i++)
+        {
+            Console.WriteLine($"Segment Index {i}");
+            var inShapes = shapeInfos[i].InputShapes;
+            for (int j = 0; j < inShapes.Length; j++)
+            {
+                var shape = inShapes[j].AsTensor().ToArray<int>();
+                Console.WriteLine($"Input {j} shape:");
+                Console.WriteLine(string.Join(",", shape));
+            }
+        }
     }
 
     public Expr FixInput(FusionBucketContext context, int[][] shapeList)
