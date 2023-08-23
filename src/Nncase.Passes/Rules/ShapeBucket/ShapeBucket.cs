@@ -910,6 +910,16 @@ public partial class FusionBucket : RewriteRule<Pattern>
         return newBody;
     }
 
+    public Expr FixInput(FusionBucketContext context, int[][] shapeList)
+    {
+        var fixedShapeInput = context.Arguments.Zip(shapeList).Select(pair =>
+        {
+            var (arg, fixedShape) = pair;
+            return (Expr)new Call(new FixShape(), arg, fixedShape);
+        }).ToArray();
+        return ReplaceClone(context.FusionBody, context.Parameters.Zip(fixedShapeInput).ToArray());
+    }
+
     private static void PrintShapeInfos(FusionShapeData[] shapeInfos)
     {
         for (var i = 0; i < shapeInfos.Length; i++)
@@ -923,16 +933,6 @@ public partial class FusionBucket : RewriteRule<Pattern>
                 Console.WriteLine(string.Join(",", shape));
             }
         }
-    }
-
-    public Expr FixInput(FusionBucketContext context, int[][] shapeList)
-    {
-        var fixedShapeInput = context.Arguments.Zip(shapeList).Select(pair =>
-        {
-            var (arg, fixedShape) = pair;
-            return (Expr)new Call(new FixShape(), arg, fixedShape);
-        }).ToArray();
-        return ReplaceClone(context.FusionBody, context.Parameters.Zip(fixedShapeInput).ToArray());
     }
 
     private static Expr MakeSlice(FusionBucketContext context, Expr call, Expr originBody)
