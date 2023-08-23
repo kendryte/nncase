@@ -22,6 +22,12 @@ template <class T, loc_t Loc> tensor<T, Loc> unsqueeze(tensor<T, Loc> &src) {
 }
 
 template <class T, loc_t Loc>
+tensor<T, Loc> reshape(tensor<T, Loc> &src, gsl::span<size_t> new_shape) {
+    assert(compute_size(src.dimension()) == compute_size(new_shape));
+    return tensor<T, Loc>(src.data(), new_shape, get_default_strides(new_shape));
+}
+
+template <class T, loc_t Loc>
 tensor<T, Loc> view_transpose(tensor<T, Loc> &src, dims_t perm) {
     auto new_dims = dims_t();
     auto new_strides = dims_t();

@@ -82,6 +82,8 @@ inline bool is_shape_equal(const dims_t &a, const dims_t &b) {
     return true;
 }
 
+inline bool is_scalar(gsl::span<const size_t> t) noexcept { return t.empty(); }
+
 inline dims_t to_nd(dims_t in_shape, size_t n) {
     auto size = n - in_shape.size();
     for (size_t i = 0; i < size; ++i) {
