@@ -58,7 +58,7 @@ def model_simplify(model_file):
         for input in inputs:
             input_shapes[input['name']] = input['shape']
 
-        onnx_model, check = onnxsim.simplify(onnx_model, overwrite_input_shapes=input_shapes)
+        onnx_model, check = onnxsim.simplify(onnx_model, input_shapes=input_shapes)
         assert check, "Simplified ONNX model could not be validated"
 
         model_file = os.path.join(os.path.dirname(model_file), 'simplified.onnx')

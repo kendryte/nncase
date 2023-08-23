@@ -1,6 +1,6 @@
 # FAQ
 
-[TOC]
+[toc]
 
 ## 1. Error installing `whl` package
 
@@ -8,9 +8,7 @@
 
 A: Upgrade pip >= 20.3 using `pip install --upgrade pip`
 
-
-
-----
+---
 
 ## 2. Compile-time errors
 
@@ -18,7 +16,7 @@ A: Upgrade pip >= 20.3 using `pip install --upgrade pip`
 
 #### 2.1.1 Q: Compile model reported error "System.NotSupportedException: Not Supported *** op: XXX"
 
-A: This exception indicates that there are operators, `XXX`, that are not yet supported. You can create a issue in [nncase Github Issue](https://github.com/kendryte/nncase/issues). In the current directory `***_ops.md`, you can view the operators already supported in each inference framework. 
+A: This exception indicates that there are operators, `XXX`, that are not yet supported. You can create a issue in [nncase Github Issue](https://github.com/kendryte/nncase/issues). In the current directory `***_ops.md`, you can view the operators already supported in each inference framework.
 
 If 'XXX' belongs to quantization-related operators such as `FAKE_QUANT`, `DEQUANTIZE`, `QUANTIZE`, it indicates that the current model is a quantized model, and 'nncase' does not currently support such models, please compile `kmodel` using a floating point model.
 
@@ -28,15 +26,19 @@ If 'XXX' belongs to quantization-related operators such as `FAKE_QUANT`, `DEQUAN
 
 A: Use `sudo gedit /proc/sys/fs/inotify/max_user_instances` to change 128 to a larger value.
 
+### 2.3 `initialize` error
 
+#### 2.3.1 Q："RuntimeError: Failed to initialize hostfxr" appears when compiling the kmodel.
 
-----
+A1：Need to install dotnet-7.0.
+
+---
 
 ## 3. Runtime errors
 
 ### 3.1 Q: Compiling `kmodel` is fine, but when inferring, the error `nncase.simulator.k230.sc: not found`occurs.
 
-A: You need to check whether the versions of `nncase` and `nncase-kpu` are the same.
+A: First, make sure that the path of the nncase installation is added to the PATH environment variable. You need to check whether the versions of `nncase` and `nncase-kpu` are the same.
 
 ```shell
 root@a52f1cacf581:/mnt# pip list | grep nncase
@@ -46,9 +48,7 @@ nncase-kpu 2.1.1.20230721
 
 If inconsistent, install the same version of the Python package `pip install nncase==x.x.x.x nncase-kpu==x.x.x.x`
 
-
-
-----
+---
 
 ## 4. Runtime error on k230 development board
 
