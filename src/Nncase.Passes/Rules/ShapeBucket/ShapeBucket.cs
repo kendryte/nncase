@@ -715,9 +715,10 @@ public class FusionBucketContext
     private Expr ComputeSliceShape()
     {
         var originBody = FusionBody;
-        _ = MakeShapeOfFusionInput(Parameters, Arguments);
-        var originShape = originBody.EvaluateShapeExpr(FusionInputShapeExpr);
+        var shapeOfFusionInput = MakeShapeOfFusionInput(Parameters, Arguments);
+        var originShape = originBody.EvaluateShapeExpr(shapeOfFusionInput);
         originShape.InferenceType();
+
         return originShape;
     }
 }
@@ -951,7 +952,25 @@ public partial class FusionBucket : RewriteRule<Pattern>
     {
         var sliceShape = context.SliceShape;
         var rank = call.CheckedShape.Rank;
-        var body = (Expr)Slice(call, Enumerable.Repeat(0, rank).ToArray(), Cast(sliceShape, DataTypes.Int32), rank);
+        var simplifyCall = CompilerServices.Rewrite(
+            call,
+            new IRewriteRule[]
+            {
+                new FoldStackGetItem(),
+                new FoldShapeOf(),
+                new FoldTwoReshapes(),
+                new FoldTwoCasts(),
+                new FoldTwoSlices(),
+                new FoldNopBinary(),
+                new FoldNopCast(),
+                new Neutral.FoldConstCall(),
+                new FoldNopReshape(),
+                new FoldNopSlice(),
+                new FoldIf(),
+            },
+            new());
+
+        var body = (Expr)Slice(simplifyCall, Enumerable.Repeat(0, rank).ToArray(), Cast(sliceShape, DataTypes.Int32), rank);
         return body;
     }
 
