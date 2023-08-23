@@ -55,6 +55,19 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         # used for tag dynamic model for onnx simplify
         self.dynamic = False
 
+        if self.cfg['dump_infer']:
+            self.infer_file = test_utils.infer_file()
+            self.infer_dict = {
+                'case': 'unknown',
+                'target': 'cpu',
+                'if_quant_type': 'uint8',
+                'w_quant_type': 'uint8',
+                'time(ms)': 'N/A',
+                'fps': 'N/A',
+                'result': 'Pass',
+                'remark': 'N/A'
+            }
+
     def transform_input(self, values: List[np.ndarray], type: str, stage: str) -> List[np.ndarray]:
         new_values = []
         compile_opt = self.cfg['compile_opt']
@@ -252,6 +265,10 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                             judge, result = self.compare_results(
                                 expected, actual, stage, k_target, v_target['similarity_name'], k_mode, v_mode['threshold'], dump_hist, mode_dir)
 
+                            if stage == 'infer' and self.cfg['dump_infer']:
+                                self.infer_dict['result'] = 'Pass' if judge else 'Fail'
+                                self.infer_dict['remark'] = result.replace('\n', ' ')
+                                dump_dict_to_json(self.infer_dict, self.infer_file)
                             if not judge:
                                 if test_utils.in_ci():
                                     self.clear(self.case_dir)
@@ -407,17 +424,19 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                         stage, target, similarity_name, mode, threshold, dump_hist, dump_dir) -> Tuple[bool, str]:
         i = 0
         judges = []
+        result = ''
         for expected, actual in zip(ref_ouputs, test_outputs):
             expected = expected.astype(np.float32)
             actual = actual.astype(np.float32)
             dump_file = os.path.join(dump_dir, 'nncase_result_{0}_hist.csv'.format(i))
             judge, similarity_info = compare_ndarray(
                 expected, actual, similarity_name, threshold, dump_hist, dump_file)
-            result_info = "\n{0} [ {1} {2} {3} ] Output: {4}!!\n".format(
+            result_info = "{0} [ {1} {2} {3} ] Output {4}:".format(
                 'Pass' if judge else 'Fail', stage, target, mode, i)
-            result = similarity_info + result_info
-            with open(os.path.join(self.case_dir, 'test_result.txt'), 'a+') as f:
-                f.write(result)
+            result += result_info + similarity_info
             i = i + 1
             judges.append(judge)
+
+        with open(os.path.join(self.case_dir, 'test_result.txt'), 'a+') as f:
+            f.write(result)
         return sum(judges) == len(judges), result
