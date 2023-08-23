@@ -49,10 +49,9 @@ UNARY_WITH_MUL_TEMPLATE_V2(gelu, alpha,
                            0.5f * (alpha * x) *
                                (1.f + erff(alpha * x / sqrtf(2.f))))
 ACTIVATION_TEMPLATE_V2(selu,
-                          x <= 0 ? gamma * (alpha * std::exp(x) - alpha)
-                                 : x * gamma,
-                          alpha, gamma)
+                       x <= 0 ? gamma * (alpha * std::exp(x) - alpha)
+                              : x * gamma,
+                       alpha, gamma)
 ACTIVATION_TEMPLATE_V2(hard_sigmoid,
-                          std::max((float)0,
-                                   std::min((float)1, x *alpha + gamma)),
-                          alpha, gamma)
+                       std::max((float)0, std::min((float)1, x *alpha + gamma)),
+                       alpha, gamma)
