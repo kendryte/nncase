@@ -291,10 +291,11 @@
 #define ACTIVATION_IMPL_TEMPLATE_V2(_name, _compute, _alpha_name, _gamma_name) \
     template <class T>                                                         \
     result<void> _name##_impl(                                                 \
-        const T *input, T *output, gsl::span<const size_t> in_shape,           \
+        const T *input, T *output, T _alpha_name, T _gamma_name,               \
+        gsl::span<const size_t> in_shape,                                      \
         gsl::span<const size_t> input_strides,                                 \
         gsl::span<const size_t> out_shape,                                     \
-        gsl::span<const size_t> out_strides, T _alpha_name, T _gamma_name,     \
+        gsl::span<const size_t> out_strides,                                   \
         NNCASE_UNUSED kernel_context &context) noexcept {                      \
         return apply(                                                          \
             out_shape, [&](gsl::span<const size_t> index) -> result<void> {    \
@@ -367,6 +368,12 @@
         return ok(output);                                                     \
     }
 
+#define UNARY_WITH_DISPTCH_V2(_impl_func)                                      \
+    _impl_func##_disptch(typecode, input_mem, output_mem, _alpha_name_mem,     \
+                         _gamma_name_mem, input_tensor->shape(),               \
+                         input_tensor->strides(), output_tensor->shape(),      \
+                         output_tensor->strides(), context)
+
 #define ACTIVATION_OP_TEMPLATE_V2(_name, _alpha_name, _gamma_name)             \
     result<value_t> nncase::kernels::stackvm::_name(                           \
         value_t input, value_t _alpha_name, value_t _gamma_name,               \
@@ -375,12 +382,16 @@
         auto dtype = input_tensor->dtype();                                    \
         try_input(_alpha_name_mem, _alpha_name);                               \
         try_input(_gamma_name_mem, _gamma_name);                               \
-        try_output_like_input(out_mem, output, input_tensor);                  \
-        try_(_name##_impl(input_mem, out_mem, input_tensor->shape(),           \
-                          input_tensor->strides(), output_tensor->shape(),     \
-                          output_tensor->strides(), context));                 \
+        try_var(typecode, to_typecode(input_tensor->dtype()));                 \
+        try_output_like_input(output_mem, output, input_tensor);               \
+        try_(UNARY_WITH_DISPTCH_V2(_name##_impl));                             \
         return ok(output);                                                     \
     }
+
+#define UNARY_IMPL_FUNC_WRAPPER_V3(_impl_func, type)                           \
+    return _impl_func(IN_CAST(type, input), OUT_CAST(type, output),            \
+                      *IN_CAST(type, _alpha), *IN_CAST(type, _gamma),          \
+                      in_shape, in_strides, out_shape, out_strides, context)
 
 #define UNARY_WITH_MUL_DISPTCH_OP_ACTIVATION_OP_TEMPLATE_V2(_impl_func)        \
     result<void> _impl_func##_disptch(                                         \
@@ -390,7 +401,7 @@
         gsl::span<const size_t> out_shape,                                     \
         gsl::span<const size_t> out_strides,                                   \
         NNCASE_UNUSED kernel_context &context) noexcept {                      \
-        TYPE_SELECT_WITH_IMPL(type, UNARY_IMPL_FUNC_WRAPPER, _impl_func);      \
+        TYPE_SELECT_WITH_IMPL(type, UNARY_IMPL_FUNC_WRAPPER_V3, _impl_func);   \
     }
 
 #define FLOAT_ACTIVATION_TEMPLATE(_name, _compute, ...)                        \
@@ -398,7 +409,9 @@
     FLOAT_ACTIVATION_OP_TEMPLATE(_name, __VA_ARGS__)
 
 #define ACTIVATION_TEMPLATE_V2(_name, _compute, _alpha_name, _gamma_name)      \
-    ACTIVATION_IMPL_TEMPLATE_V2(_name, _compute, _alpha_name, _gamma_name)     \
+    ACTIVATION_IMPL_TEMPLATE_V2(_name, _compute, _alpha_name##arg,             \
+                                _gamma_name##arg)                              \
+    UNARY_WITH_MUL_DISPTCH_OP_ACTIVATION_OP_TEMPLATE_V2(_name##_impl)          \
     ACTIVATION_OP_TEMPLATE_V2(_name, _alpha_name, _gamma_name)
 
 #define BASIC_PARAM                                                            \

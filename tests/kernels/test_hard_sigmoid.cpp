@@ -53,7 +53,7 @@ class HardSigmoidTest
 
 INSTANTIATE_TEST_SUITE_P(
     hard_sigmoid, HardSigmoidTest,
-    testing::Combine(testing::Values(dt_float32 /*, dt_float16, dt_float64*/),
+    testing::Combine(testing::Values(dt_float32, dt_float16, dt_float64),
                      testing::Values(dims_t{1, 3, 16, 16}, dims_t{1},
                                      dims_t{1, 3}, dims_t{1, 3, 16}, dims_t{}),
                      testing::Values(1.2f, 0.8f, 0.5f, 0.6f),
