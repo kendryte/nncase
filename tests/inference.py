@@ -10,6 +10,19 @@ from test_utils import *
 import time
 
 
+def data_shape_list_string(data):
+    return '\n'.join(map(lambda d: ' '.join(map(lambda x: str(x), d['model_shape'])), data))
+
+
+def generate_kmodel_data_info(inputs, outputs, infer_dir):
+    input_shapes = data_shape_list_string(inputs)
+    output_shapes = data_shape_list_string(outputs)
+#         input_shapes = '\n'.join(map(lambda input: ' '.join(map(lambda x: str(x), input['model_shape'])), inputs))
+    s = f"{len(inputs)} {len(outputs)}\n{input_shapes}\n{output_shapes}"
+    with open(os.path.join(infer_dir, "kmodel.desc"), "w+") as f:
+        f.write(s)
+
+
 class Inference:
     def run_inference(self, compiler, target, ptq_enabled, infer_dir):
         in_ci = test_utils.in_ci()
@@ -33,6 +46,8 @@ class Inference:
 
         compiler.compile()
         kmodel = compiler.gencode_tobytes()
+        if self.dynamic:
+            generate_kmodel_data_info(self.inputs, self.outputs, infer_dir)
         os.makedirs(infer_dir, exist_ok=True)
         if not in_ci:
             with open(os.path.join(infer_dir, 'test.kmodel'), 'wb') as f:
