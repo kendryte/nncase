@@ -91,7 +91,10 @@ template <class T>
 result<void> resize_nearest_neighbor_impl(
     const T *input, T *output, gsl::span<const size_t> in_shape,
     gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
-    int32_t out_h, int32_t out_w, bool align_corners, bool half_pixel_centers,
+    int32_t out_h, int32_t out_w, NNCASE_UNUSED bool align_corners,
+    NNCASE_UNUSED bool half_pixel_centers,
+    get_coordinate_func_t get_coordinate_func,
+    get_nearest_pixel_func_t get_nearset_func,
     NNCASE_UNUSED kernel_context &context) noexcept {
     auto scales = kernels::detail::get_resize_scales(in_shape, out_h, out_w,
                                                      align_corners);
@@ -106,16 +109,15 @@ result<void> resize_nearest_neighbor_impl(
             in_index[1] = oc;
             out_index[1] = oc;
             for (size_t oy = 0; oy < (size_t)out_h; oy++) {
-                auto in_y = kernels::detail::get_nearest_neighbor(
-                    oy, in_shape[2], height_scale, align_corners,
-                    half_pixel_centers);
+                auto iy = get_coordinate_func(oy, height_scale, out_h, 0, 0, 0);
+                int64_t in_y = get_nearset_func(iy);
                 in_index[2] = in_y;
                 out_index[2] = oy;
 
                 for (size_t ox = 0; ox < (size_t)out_w; ox++) {
-                    auto in_x = kernels::detail::get_nearest_neighbor(
-                        ox, in_shape[3], width_scale, align_corners,
-                        half_pixel_centers);
+                    auto ix =
+                        get_coordinate_func(ox, width_scale, out_w, 0, 0, 0);
+                    int64_t in_x = get_nearset_func(ix);
                     in_index[3] = in_x;
                     out_index[3] = ox;
                     output[offset(out_strides, out_index)] =
@@ -154,10 +156,11 @@ result<void> resize_nearest_neighbor_impl(
                          half_pixel_centers, context);
 
 #define RESIZE_NEAREST_NEIGHBOR_IMPL(type)                                     \
-    resize_nearest_neighbor_impl(reinterpret_cast<const type *>(input),        \
-                                 reinterpret_cast<type *>(output), in_shape,   \
-                                 in_strides, out_strides, out_h, out_w,        \
-                                 align_corners, half_pixel_centers, context);
+    resize_nearest_neighbor_impl(                                              \
+        reinterpret_cast<const type *>(input),                                 \
+        reinterpret_cast<type *>(output), in_shape, in_strides, out_strides,   \
+        out_h, out_w, align_corners, half_pixel_centers, get_coordinate_func,  \
+        get_nearset_func, context);
 } // namespace
 
 result<void> nncase::kernels::stackvm::reference::resize_bilinear(
@@ -174,6 +177,8 @@ result<void> nncase::kernels::stackvm::reference::resize_nearest_neighbor(
     gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
     gsl::span<const size_t> out_strides, int32_t out_h, int32_t out_w,
     bool align_corners, bool half_pixel_centers,
+    get_coordinate_func_t get_coordinate_func,
+    get_nearest_pixel_func_t get_nearset_func,
     kernel_context &context) noexcept {
     FP_OR_Q_IMPL(type, RESIZE_NEAREST_NEIGHBOR_IMPL);
 }
