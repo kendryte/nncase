@@ -1,6 +1,7 @@
 name = 'default_config'
 root = 'tests_output'
 dump_hist = false
+dump_infer = false
 
 [compile_opt]
 preprocess = false
@@ -17,7 +18,6 @@ model_layout = 'NHWC'
 letterbox_value = 0
 dump_asm = true
 dump_ir = false
-dump_infer = false
 shape_bucket_enable = false
 shape_bucket_range_info = { }
 shape_bucket_segments_count = 4
