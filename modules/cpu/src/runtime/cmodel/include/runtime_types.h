@@ -47,4 +47,5 @@ enum class binary_op_t : uint8_t {
     logical_xor = 13,
     left_shift = 14,
     right_shift = 15,
+    idenity_a = 16,
 };

@@ -60,16 +60,17 @@ void binary_impl(binary_op_t op, const T *lhs, const T *rhs, T *output,
         BINARY_IMPL_OP(sub, std::minus<T>());
         BINARY_IMPL_OP(mul, std::multiplies<T>());
         BINARY_IMPL_OP(div, std::divides<T>());
+        BINARY_IMPL_OP(idenity_a, [](T a, [[maybe_unused]] T b) { return a; });
         BINARY_IMPL_OP(min, [](T a, T b) { return std::min(a, b); });
         BINARY_IMPL_OP(max, [](T a, T b) { return std::max(a, b); });
         BINARY_IMPL_OP(pow, [](T a, T b) { return std::pow(a, b); });
         BINARY_IMPL_OP(mod, [](T a, T b) { return std::fmod(a, b); });
-        BINARY_IMPL_OP(logical_and,
-                       [](T a, T b) { return static_cast<T>(a && b); });
-        BINARY_IMPL_OP(logical_or,
-                       [](T a, T b) { return static_cast<T>(a || b); });
-        BINARY_IMPL_OP(logical_xor,
-                       [](T a, T b) { return static_cast<T>(a ^ b); });
+        // BINARY_IMPL_OP(logical_and,
+        //                [](T a, T b) { return static_cast<T>(a && b); });
+        // BINARY_IMPL_OP(logical_or,
+        //                [](T a, T b) { return static_cast<T>(a || b); });
+        // BINARY_IMPL_OP(logical_xor,
+        //                [](T a, T b) { return static_cast<T>(a ^ b); });
     default:
         throw "Unsupported Binary Op!";
     }

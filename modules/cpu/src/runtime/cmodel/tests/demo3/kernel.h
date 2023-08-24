@@ -2,22 +2,10 @@
 // seq-len = 384, w-len = 8192, heads = 64, head-len = 128
 // 1 chips, 8 blocks per chip, 4 threads per block
 
-// tensor<float, loc_t::shared> X({384, 8192});
-// tensor<float, loc_t::shared> kh({8, 384, 128}), vh({8, 384, 128}); //
-// [8, 384, 128] tensor<float, loc_t::shared> qkh({8, 384, 384});    //
-// [8, 384, 384] tensor<float, loc_t::shared> qkh({8, 384, 384});    //
-// [8, 384, 384]
 #include "thread_context.h"
 using namespace shared;
 
 static bool w_loaded;
-static tensor<float> wqh({8, 2048, 128});
-static tensor<float> wkh({8, 2048, 128});
-static tensor<float> wvh({8, 2048, 128}); // [8, 2048, 128]
-static tensor<float> wm({1024, 8192});    // []
-// static tensor<float> wfc1ih({1024, 8192});
-// static tensor<float> wfc2ih({1024, 8192}); // [1024, 8192]
-static tensor<float> yih({96, 1024});
 
 // 8 head per block
 // 2048 w-len per thread

@@ -1,6 +1,8 @@
 #pragma once
 #include <apply.h>
+#include <binary.h>
 #include <cassert>
+#include <concat.h>
 #include <functional>
 #include <hardware_context.h>
 #include <layernorm.h>
@@ -10,6 +12,7 @@
 #include <tensor.h>
 #include <thread_context.h>
 #include <transpose.h>
+#include <unary.h>
 #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_DEBUG
 #include <spdlog/spdlog.h>
 
@@ -19,12 +22,6 @@ template <class T, loc_t Loc> tensor<T, Loc> unsqueeze(tensor<T, Loc> &src) {
     auto new_strides = strides_t(src.strides());
     new_strides.insert(new_strides.begin(), *new_strides.begin());
     return tensor<T, Loc>(src.data(), new_dims, new_strides);
-}
-
-template <class T, loc_t Loc>
-tensor<T, Loc> reshape(tensor<T, Loc> &src, gsl::span<size_t> new_shape) {
-    assert(compute_size(src.dimension()) == compute_size(new_shape));
-    return tensor<T, Loc>(src.data(), new_shape, get_default_strides(new_shape));
 }
 
 template <class T, loc_t Loc>
@@ -73,52 +70,47 @@ void __tensor_copy_sync(tensor<T, DestLoc> &&dest, tensor<T, SrcLoc> &&src) {
 }
 
 template <class T, loc_t ALoc, loc_t BLoc, loc_t CLoc>
-void __tensor_binary_sync(tensor<T, ALoc> &a, tensor<T, BLoc> &b,
-                          tensor<T, CLoc> &out,
-                          std::function<T(T a, T b)> callable) {
-    assert(a.dimension() == b.dimension());
-    assert(a.dimension() == out.dimension());
-    apply(gsl::make_span(a.dimension()).template as_span<const size_t>(),
-          [&](gsl::span<const size_t> index) -> void {
-              out.data()[offset(out.strides(), index)] =
-                  callable(a.data()[offset(a.strides(), index)],
-                           b.data()[offset(b.strides(), index)]);
-          });
+void binary(tensor<T, ALoc> &a, tensor<T, BLoc> &b, tensor<T, CLoc> &out,
+            binary_op_t op) {
+    kernels::binary(
+        op, a.cdata().data(), b.cdata().data(), out.data().data(),
+        gsl::make_span(a.dimension()).template as_span<const size_t>(),
+        gsl::make_span(a.strides()).template as_span<const size_t>(),
+        gsl::make_span(b.dimension()).template as_span<const size_t>(),
+        gsl::make_span(b.strides()).template as_span<const size_t>(),
+        gsl::make_span(out.dimension()).template as_span<const size_t>(),
+        gsl::make_span(out.strides()).template as_span<const size_t>());
 }
 
 template <class T, loc_t ALoc, loc_t BLoc, loc_t CLoc>
-void __tensor_unary_sync(tensor<T, ALoc> &a, tensor<T, CLoc> &out,
-                         std::function<T(T a)> callable) {
-    assert(a.dimension() == out.dimension());
-    apply(gsl::make_span(a.dimension()).template as_span<const size_t>(),
-          [&](gsl::span<const size_t> index) -> void {
-              out.data()[offset(out.strides(), index)] =
-                  callable(a.data()[offset(a.strides(), index)]);
-          });
+void unary(tensor<T, ALoc> &a, tensor<T, CLoc> &out, unary_op_t op) {
+    kernels::unary(
+        op, a.cdata().data(), out.data().data(),
+        gsl::make_span(a.strides()).template as_span<const size_t>(),
+        gsl::make_span(out.dimension()).template as_span<const size_t>(),
+        gsl::make_span(out.strides()).template as_span<const size_t>());
 }
 
 template <typename T, loc_t ALoc, loc_t BLoc>
-void tensor_mma_sync(tensor<T, ALoc> &a, tensor<T, BLoc> &b,
-                     tensor<T, loc_t::local> &c) {
+void matmul(tensor<T, ALoc> &a, tensor<T, BLoc> &b,
+            tensor<T, loc_t::local> &c) {
     matmul(a.cdata().data(), b.cdata().data(), c.data().data(), a.dimension(),
            a.strides(), b.dimension(), b.strides(), c.dimension(), c.strides());
 }
 
 template <typename T, loc_t ALoc, loc_t BLoc>
-void tensor_reduce_sync(tensor<T, ALoc> &input, tensor<T, BLoc> &output,
-                        reduce_op_t op, T init_value, dims_t axis,
-                        bool keep_dims) {
+void reduce(tensor<T, ALoc> &input, tensor<T, BLoc> &output, reduce_op_t op,
+            T init_value, dims_t axis, bool keep_dims) {
     kernels::reduce(op, &init_value, input.cdata().data(), output.data().data(),
                     input.dimension(), axis, input.strides(), output.strides(),
                     keep_dims);
 }
 
 template <typename T, loc_t Loc>
-void tensor_layernorm_sync(tensor<T, Loc> &input, tensor<T, loc_t::local> &sum,
-                           tensor<T, loc_t::local> &sum_sqr,
-                           tensor<T, loc_t::local> &gamma,
-                           tensor<T, loc_t::local> &beta, T eps, int32_t axis,
-                           int32_t norm_size) {
+void layernorm(tensor<T, Loc> &input, tensor<T, loc_t::local> &sum,
+               tensor<T, loc_t::local> &sum_sqr, tensor<T, loc_t::local> &gamma,
+               tensor<T, loc_t::local> &beta, T eps, int32_t axis,
+               int32_t norm_size) {
     assert(sum.strides() == sum_sqr.strides());
     assert(is_contiguous(sum.dimension(), sum.strides()));
     assert(gamma.strides() == beta.strides());
@@ -130,9 +122,9 @@ void tensor_layernorm_sync(tensor<T, Loc> &input, tensor<T, loc_t::local> &sum,
 }
 
 template <typename T, loc_t Loc>
-void tensor_layernorm_sync(tensor<T, Loc> &input, tensor<T, loc_t::local> &sum,
-                           tensor<T, loc_t::local> &sum_sqr, int32_t axis,
-                           int32_t norm_size) {
+void layernorm(tensor<T, Loc> &input, tensor<T, loc_t::local> &sum,
+               tensor<T, loc_t::local> &sum_sqr, int32_t axis,
+               int32_t norm_size) {
     kernels::layernorm(input.data().data(), sum.data().data(),
                        sum_sqr.data().data(), static_cast<T *>(nullptr),
                        static_cast<T *>(nullptr), input.dimension(),
@@ -141,11 +133,32 @@ void tensor_layernorm_sync(tensor<T, Loc> &input, tensor<T, loc_t::local> &sum,
 }
 
 template <typename T, loc_t ALoc>
-void tensor_reduce_sum_sqr(tensor<T, ALoc> &a, tensor<T, loc_t::local> &sum,
-                           tensor<T, loc_t::local> &sum_sqr) {
+void reduce_sum_sqr(tensor<T, ALoc> &a, tensor<T, loc_t::local> &sum,
+                    tensor<T, loc_t::local> &sum_sqr) {
     kernels::reduce_sum_and_sum_sqr(a.cdata().data(), sum.data().data(),
                                     sum_sqr.data().data(), a.dimension(),
                                     a.strides(), sum.strides());
+}
+
+template <typename T, loc_t BLoc>
+void concat(std::initializer_list<tensor<T, loc_t::local>> inits,
+            tensor<T, BLoc> &output, size_t axis) {
+    std::vector<const gsl::byte *const> inputs(inits.size());
+    std::vector<strides_t> in_strides(inits.size());
+    auto concat_dims = dims_t(inits.size(), 1);
+    for (size_t i = 0; i < inits.size(); ++i) {
+        if (inits[i].dimension().size() != 0) {
+            concat_dims[i] = inits[i].dimension()[axis];
+        }
+    }
+
+    for (auto &in : inits) {
+        inputs.push_back((const gsl::byte *const)(in.data().data()));
+        in_strides.push_back(in.strides());
+    }
+
+    kernels::concat(inputs, output.data().data(), output.dimension(),
+                    in_strides, output.strides(), axis, concat_dims);
 }
 
 /**
@@ -166,24 +179,20 @@ void tensor_block_mma_sync(tensor<T, ALoc> &a, tensor<T, BLoc> &b,
                            tensor<T, loc_t::shared> &c, bool load_psum,
                            thread_context &ctx) {
     tensor<T> tmp(c.dimension());
-    tensor_mma_sync(a, b, tmp);
+    matmul(a, b, tmp);
 
     __tdma_block_sync_apply(
         [&](int visited) -> void {
             if (load_psum) {
-                __tensor_binary_sync<T, loc_t::local, loc_t::shared,
-                                     loc_t::shared>(
-                    tmp, c, c, [](T _a, T _b) -> T { return _a + _b; });
+                binary<T, loc_t::local, loc_t::shared, loc_t::shared>(
+                    tmp, c, c, binary_op_t::add);
             } else {
                 if (visited == 1) {
-                    __tensor_binary_sync<T, loc_t::local, loc_t::shared,
-                                         loc_t::shared>(
-                        tmp, c, c,
-                        [](T _a, [[maybe_unused]] T _b) -> T { return _a; });
+                    binary<T, loc_t::local, loc_t::shared, loc_t::shared>(
+                        tmp, c, c, binary_op_t::add);
                 } else {
-                    __tensor_binary_sync<T, loc_t::local, loc_t::shared,
-                                         loc_t::shared>(
-                        tmp, c, c, [](T _a, T _b) -> T { return _a + _b; });
+                    binary<T, loc_t::local, loc_t::shared, loc_t::shared>(
+                        tmp, c, c, binary_op_t::add);
                 }
             }
         },
@@ -228,8 +237,10 @@ void tdma_store_async(tensor<T, SrcLoc> &src, tensor<T, loc_t::device> &&dest,
 }
 
 template <class T> void tdma_fill_async(tensor<T, loc_t::local> &src, T value) {
-    __tensor_unary_sync<T, loc_t::local, loc_t::local>(
-        src, src, [&value]([[maybe_unused]] T a) -> T { return value; });
+    apply(gsl::make_span(src.dimension()).template as_span<const size_t>(),
+          [&](gsl::span<const size_t> index) -> void {
+              src.data()[offset(src.strides(), index)] = value;
+          });
 }
 
 template <class T>
@@ -312,8 +323,8 @@ void tdma_all_reduce_async(tensor<T, loc_t::local> &src,
                     auto reduced_shape = get_reduced_shape(
                         gather_tensor->dimension(), dims_t({0}), false);
                     reduced_tensor = new tensor<T>(reduced_shape);
-                    tensor_reduce_sync(*gather_tensor, *reduced_tensor,
-                                       reduce_op, (T)0, dims_t({0}), false);
+                    reduce(*gather_tensor, *reduced_tensor, reduce_op, (T)0,
+                           dims_t({0}), false);
                     delete gather_tensor;
                     global_hardware_ctx->global_var = reduced_tensor;
                 } else {
@@ -343,8 +354,8 @@ void tdma_all_reduce_async(tensor<T, loc_t::local> &src,
                 auto viewed_gather_tensor =
                     view(*gather_tensor, new_dims, new_strides);
 
-                tensor_reduce_sync(viewed_gather_tensor, dest, reduce_op,
-                                   static_cast<T>(0), dims_t({0}), false);
+                reduce(viewed_gather_tensor, dest, reduce_op, static_cast<T>(0),
+                       dims_t({0}), false);
             },
             []() -> void {
                 auto reduced_tensor =
