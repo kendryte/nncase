@@ -10,7 +10,7 @@ namespace Nncase.Tests.Rules.ShapeBucket;
 
 public static class ShapeBucketTestHelper
 {
-    internal static IRModule MakeModule(Expr output, Var[] inputVar) => new(new Function("main", output, inputVar));
+    internal static Function MakeFun(Expr output, Var[] inputVar) => new Function("main", output, inputVar);
 
     internal static Call MakeSingleSimpleFusionCall(Func<Expr, Expr> ctor, Expr arg)
     {

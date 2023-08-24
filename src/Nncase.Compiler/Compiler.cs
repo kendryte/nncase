@@ -21,6 +21,7 @@ using Nncase.Passes.Rules.ShapeBucket;
 using Nncase.Passes.Rules.ShapeExpr;
 using Nncase.Passes.Transforms;
 using Nncase.Quantization;
+using static Nncase.Passes.Rules.ShapeBucket.ShapeBucketRegister;
 using FoldConstCall = Nncase.Passes.Rules.Neutral.FoldConstCall;
 
 namespace Nncase.Compiler;
@@ -92,9 +93,9 @@ internal class Compiler : ICompiler
     public void TargetIndependentPass(IPassManager passManager)
     {
         passManager.AddWithName<DataflowPass>("ReshapeMatMul").Configure(p =>
-            {
-                p.Add<Passes.Rules.Neutral.ReshapeMatMul>();
-            });
+        {
+            p.Add<Passes.Rules.Neutral.ReshapeMatMul>();
+        });
 
         passManager.AddWithName<DataflowPass>("SqueezeShape").Configure(p =>
         {
@@ -118,7 +119,6 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FocusFull>();
             p.Add<Passes.Rules.Neutral.ReshapeMatMul>();
         });
-
         passManager.AddWithName<EGraphRulesPass>("NeutralOptimizeTranspose").Configure(p =>
         {
             p.Add<Passes.Rules.Neutral.FoldConstCall>();
@@ -179,82 +179,25 @@ internal class Compiler : ICompiler
 
     public void RegisterShapeBucket(IPassManager p)
     {
-        var singleVar = _compileSession.CompileOptions.ShapeBucketOptions.VarMap.Values.SelectMany(x => x).OfType<Var>().ToHashSet().Count <= 1;
-
-        void MergeOp(IPassManager iPassManager)
-        {
-            if (!singleVar)
-            {
-                return;
-            }
-
-            iPassManager.AddWithName<DataflowPass>("MergeNextCall").Configure(c =>
-            {
-                c.Add<MergeNextCallToFusion>();
-                c.Add<MergeNextMarkerToFusion>();
-            });
-            iPassManager.AddWithName<DataflowPass>("MergePrevCall").Configure(c =>
-            {
-                c.Add<MergePrevCallToFusion>();
-                c.Add<MergePrevMarkerToFusion>();
-            });
-        }
-
-        if (!_compileSession.CompileOptions.ShapeBucketOptions.Enable)
+        var options = _compileSession.CompileOptions.ShapeBucketOptions;
+        var singleVar = options.VarMap.Values.SelectMany(x => x).OfType<Var>().ToHashSet().Count <= 1;
+        if (!options.Enable)
         {
             return;
         }
 
+        CheckShapeBucketOptions(options);
         ToFusion(p);
-
         MergeOp(p);
+        LostToFusion(p, singleVar);
+        MergeOp(p);
+        ClearMarker(p);
 
-        p.AddWithName<DataflowPass>("LostToFusion").Configure(c =>
-        {
-            c.Add<TransposeToFusion>();
-            c.Add<UnaryToFusion>();
-            c.Add<ActToFusion>();
-            if (singleVar)
-            {
-                c.Add<BinaryToFusion>();
-            }
-        });
+        // MergeFusion(p, singleVar);
+        Bucket(p);
 
-        // MergeOp(p);
-        p.AddWithName<DataflowPass>("ClearSomeMarker").Configure(p =>
-        {
-            p.Add<ClearFusionOuterMarker>();
-            p.Add<RemoveMarker>();
-        });
-
-        if (singleVar)
-        {
-            // do twice
-            p.AddWithName<MergeBucketFusion>("MergeFusion");
-            MergeOp(p);
-            p.AddWithName<MergeBucketFusion>("MergeFusion");
-            MergeOp(p);
-        }
-
-        p.AddWithName<DataflowPass>("FusionBucket").Configure(c =>
-        {
-            c.Add<FusionBucket>();
-        });
-
-        p.AddWithName<DataflowPass>("Simplify").Configure(c =>
-        {
-            c.Add<FoldStackGetItem>();
-            c.Add<FoldConstCall>();
-            c.Add<FoldShapeOf>();
-            c.Add<FoldTwoReshapes>();
-            c.Add<FoldTwoCasts>();
-            c.Add<FoldTwoSlices>();
-            c.Add<FoldNopBinary>();
-            c.Add<FoldNopCast>();
-            c.Add<FoldNopReshape>();
-            c.Add<FoldNopSlice>();
-            c.Add<FoldIf>();
-        });
+        // Rebuild(p);
+        Simplify(p);
     }
 
     public void ClearFixShape(IPassManager p)
@@ -304,15 +247,6 @@ internal class Compiler : ICompiler
         var linkedModel = _modelBuilder.Build(Module);
         linkedModel.Serialize(output);
     }
-
-    private static void ToFusion(IPassManager p, bool onlyDynamic = false) =>
-        p.AddWithName<DataflowPass>("ToFusion").Configure(c =>
-        {
-            c.Add<MatmulToFusion>(onlyDynamic);
-            c.Add<Conv2DToFusion>(onlyDynamic);
-            c.Add<TFConv2DTransposeToFusion>(onlyDynamic);
-            c.Add<Conv2DTransposeToFusion>(onlyDynamic);
-        });
 
     private void RegisterTargetIndependQuantPass(IPassManager passManager)
     {
