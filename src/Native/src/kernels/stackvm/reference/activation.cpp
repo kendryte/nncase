@@ -53,5 +53,6 @@ ACTIVATION_TEMPLATE_V2(selu,
                               : x * gamma,
                        alpha, gamma)
 ACTIVATION_TEMPLATE_V2(hard_sigmoid,
-                       std::max((double)0, std::min((double)1, x *alpha + gamma)),
+                       std::max((double)0,
+                                std::min((double)1, x *alpha + gamma)),
                        alpha, gamma)
