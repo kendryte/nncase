@@ -30,7 +30,7 @@
                     kernels::detail::get_reduced_offset(index, in_shape);      \
                 auto src_idx = offset(input_strides, in_index);                \
                 auto dst_idx = offset(out_strides, in_index);                  \
-                auto x = static_cast<float>(input[src_idx]);                   \
+                auto x = static_cast<double>(input[src_idx]);                   \
                 output[dst_idx] = static_cast<T>(_compute);                    \
                 return ok();                                                   \
             });                                                                \
@@ -43,7 +43,7 @@
         [[maybe_unused]] gsl::span<const size_t> out_strides,                  \
         NNCASE_UNUSED kernel_context &context) noexcept {                      \
         for (int i = 0; i < compute_size(in_shape); ++i) {                     \
-            auto x = static_cast<float>(input[i]);                             \
+            auto x = static_cast<double>(input[i]);                             \
             output[i] = static_cast<T>(_compute);                              \
         }                                                                      \
         return ok();                                                           \
@@ -150,8 +150,8 @@
                     kernels::detail::get_reduced_offset(index, in_shape);      \
                 auto src_idx = offset(input_strides, in_index);                \
                 auto dst_idx = offset(out_strides, in_index);                  \
-                const auto alpha = static_cast<float>(_alpha_name);            \
-                const auto x = static_cast<float>(input[src_idx]);             \
+                const auto alpha = static_cast<double>(_alpha_name);            \
+                const auto x = static_cast<double>(input[src_idx]);             \
                 output[dst_idx] = static_cast<T>(_compute);                    \
                 return ok();                                                   \
             });                                                                \
@@ -165,8 +165,8 @@
         [[maybe_unused]] gsl::span<const size_t> out_strides,                  \
         NNCASE_UNUSED kernel_context &context) noexcept {                      \
         for (int i = 0; i < compute_size(in_shape); ++i) {                     \
-            const auto alpha = static_cast<float>(_alpha_name);                \
-            const auto x = static_cast<float>(input[i]);                       \
+            const auto alpha = static_cast<double>(_alpha_name);                \
+            const auto x = static_cast<double>(input[i]);                       \
             output[i] = static_cast<T>(_compute);                              \
         }                                                                      \
         return ok();                                                           \
@@ -304,8 +304,8 @@
                 auto src_idx = offset(input_strides, in_index);                \
                 auto dst_idx = offset(out_strides, in_index);                  \
                 auto x = static_cast<float>(input[src_idx]);                   \
-                const auto alpha = static_cast<float>(_alpha_name);            \
-                const auto gamma = static_cast<float>(_gamma_name);            \
+                const auto alpha = static_cast<double>(_alpha_name);            \
+                const auto gamma = static_cast<double>(_gamma_name);            \
                 output[dst_idx] = static_cast<T>(_compute);                    \
                 return ok();                                                   \
             });                                                                \
