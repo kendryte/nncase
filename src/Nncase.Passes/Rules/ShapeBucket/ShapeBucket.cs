@@ -857,7 +857,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
         var minFixedShapeList = allFixedShapes[^1];
         var maxFixedShapeList = allFixedShapes[0];
 
-        PrintMinMaxShape(minFixedShapeList, maxFixedShapeList, _relPath);
+        // PrintMinMaxShape(minFixedShapeList, maxFixedShapeList, _relPath);
 
         // 2. get dim info(inputIndex, (dimIndex, range)
         var counts = ComputeCounts(minFixedShapeList, maxFixedShapeList, out int totalCount);
