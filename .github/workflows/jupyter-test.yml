@@ -1,0 +1,31 @@
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  test:
+    name: test-notebook-${{matrix.config.name}}
+    runs-on: ${{matrix.config.os}}
+    strategy:
+      matrix:
+        config:
+          - {name: x86_64-macos, os: macos-latest}
+          - {name: x86_64-linux, os: ubuntu-latest}
+          - {name: x86_64-windows, os: windows-latest}
+    
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with: 
+        python-version: 3.7
+        
+    - name: Install dependencies
+      run: pip install --upgrade pip && pip install jupyterlab pytest nbmake
+          
+    - name: Run tests
+      run: pytest --nbmake examples/user_guide
+      env:
+        PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION: python
