@@ -128,6 +128,16 @@ public class UnitCallToFusionTest : TransformTestBase
     }
 
     [Fact]
+    public void TestComplexReshapeToFusion()
+    {
+        var input0 = Testing.Rand<float>(1, 3, 24, 24);
+        var inputVar0 = new Var(new TensorType(input0.ElementType, input0.Shape));
+        var s = Softmax(inputVar0, 0);
+        var r = Reshape(s, Require(true, ShapeOf(s)));
+        TestMatched<MultiUserCallToFusion>(r, new Dictionary<Var, IValue> { { inputVar0, Value.FromTensor(input0) } });
+    }
+
+    [Fact]
     public void TestNoNest()
     {
         var input0 = Testing.Rand<float>(1, 3, 24, 24);
