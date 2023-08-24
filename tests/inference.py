@@ -9,8 +9,10 @@ import json
 from test_utils import *
 import time
 
+
 def data_shape_list_string(data):
     return '\n'.join(map(lambda d: ' '.join(map(lambda x: str(x), d['model_shape'])), data))
+
 
 def generate_kmodel_data_info(inputs, outputs, infer_dir):
     input_shapes = data_shape_list_string(inputs)
@@ -19,6 +21,7 @@ def generate_kmodel_data_info(inputs, outputs, infer_dir):
     s = f"{len(inputs)} {len(outputs)}\n{input_shapes}\n{output_shapes}"
     with open(os.path.join(infer_dir, "kmodel.desc"), "w+") as f:
         f.write(s)
+
 
 class Inference:
     def run_inference(self, compiler, target, ptq_enabled, infer_dir):
