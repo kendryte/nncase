@@ -159,6 +159,8 @@ internal class Compiler : ICompiler
 
         passManager.AddWithName<DataflowPass>("MHAFusion").Configure(p =>
         {
+            p.Add<Passes.Rules.MHACombine>();
+            p.Add<Passes.Rules.Neutral.FoldConstCall>();
             p.Add<Passes.Rules.FuseMHA1>();
             p.Add<Passes.Rules.FuseMHA2>();
         });
