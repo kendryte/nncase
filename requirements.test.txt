@@ -22,3 +22,4 @@ pandas
 tabulate
 nbmake
 jupyterlab
+scikit-learn
