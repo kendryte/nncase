@@ -470,6 +470,8 @@ inline bool is_contiguous(tensor tensor) {
         _impl(float);                                                          \
     case dt_float16:                                                           \
         _impl(half);                                                           \
+    case dt_bfloat16:                                                          \
+        _impl(bfloat16);                                                       \
     case dt_int8:                                                              \
         _impl(int8_t);                                                         \
     case dt_int16:                                                             \

@@ -46,7 +46,7 @@ result<void> resize_bilinear_impl(
         auto *begin_output_ptr = output + batch * in_shape[1] * out_w * out_h;
 #ifdef NNCASE_OPENMP
 #pragma omp parallel for num_threads(                                          \
-    kernels::default_kernel_context().num_threads)
+        kernels::default_kernel_context().num_threads)
 #endif
         for (int oc = 0; oc < in_shape[1]; oc++) {
             auto in_c = in_batch + (size_t)oc * in_img_size;
@@ -103,7 +103,7 @@ result<void> resize_nearest_neighbor_impl(
         auto *begin_output_ptr = output + batch * in_shape[1] * out_image_size;
 #ifdef NNCASE_OPENMP
 #pragma omp parallel for num_threads(                                          \
-    kernels::default_kernel_context().num_threads)
+        kernels::default_kernel_context().num_threads)
 #endif
         for (int oc = 0; oc < in_shape[1]; oc++) {
             auto *input_ptr = begin_input_ptr + oc * in_image_size;
@@ -148,7 +148,7 @@ inline result<void> gnne_resize_nearest_neighbor(
         auto *begin_output_ptr = output + batch * in_shape[1] * out_image_size;
 #ifdef NNCASE_OPENMP
 #pragma omp parallel for num_threads(                                          \
-    kernels::default_kernel_context().num_threads)
+        kernels::default_kernel_context().num_threads)
 #endif
         for (int oc = 0; oc < in_shape[1]; oc++) {
             auto *input_ptr = begin_input_ptr + oc * in_image_size;
@@ -195,7 +195,7 @@ inline result<void> resize_bilinear_impl(
         auto *begin_output_ptr = output + batch * in_shape[1] * out_w * out_h;
 #ifdef NNCASE_OPENMP
 #pragma omp parallel for num_threads(                                          \
-    kernels::default_kernel_context().num_threads)
+        kernels::default_kernel_context().num_threads)
 #endif
         for (int oc = 0; oc < in_shape[1]; oc++) {
             auto in_c = in_batch + (size_t)oc * in_img_size;
@@ -221,7 +221,10 @@ inline result<void> resize_bilinear_impl(
                     auto a3 = (in_y - in_y0) * (in_x - in_x0);
 
                     *output_ptr = bfloat16::round_to_bfloat16(
-                        v0 * a0 + v1 * a1 + v2 * a2 + v3 * a3);
+                        static_cast<float>(v0) * a0 +
+                        static_cast<float>(v1) * a1 +
+                        static_cast<float>(v2) * a2 +
+                        static_cast<float>(v3) * a3);
                     ++output_ptr;
                 }
             }

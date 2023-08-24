@@ -61,6 +61,8 @@ struct bfloat16 {
     explicit bfloat16(const T &val) noexcept
         : bfloat16(static_cast<float>(val)) {}
 
+    bfloat16(int &&val) noexcept : bfloat16(static_cast<float>(val)) {}
+
     constexpr bfloat16(from_raw_t, uint16_t value) noexcept : value_(value) {}
 
     operator float() const noexcept {
