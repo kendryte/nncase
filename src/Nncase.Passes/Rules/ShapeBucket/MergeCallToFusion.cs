@@ -127,6 +127,12 @@ public partial class MergeNextCallToFusion : MergeFusionBase
     // nextCall(marker(fusion(x))) -> fusion(nextCall(marker(x)))
     public Expr? GetReplace(Call nextCall, Expr maybeFusionCallMarker, Expr target, Call fusionOuterCall, BucketFusion fusion)
     {
+        var singleVar = CompileSession.CompileOptions.ShapeBucketOptions.VarMap.Values.SelectMany(x => x).OfType<Var>().ToHashSet().Count <= 1;
+        if (!singleVar && nextCall.Arguments.ToArray().OfType<Call>().Count() > 1)
+        {
+            return null;
+        }
+
         if (!ValidTarget(target))
         {
             return null;
@@ -260,6 +266,7 @@ public partial class MergePrevCallToFusion : MergeFusionBase
     // xx(marker) | xx 可以
     public Expr? GetReplace(Call fusionOuterCall, BucketFusion fusion)
     {
+        // multi var的情况下，matmul的var一定是由输入构成，所以一定可以合并
         var (fusionArgsInfo, prevOutputMaybeMarker) = CollectInputsInfo(fusionOuterCall);
         if (fusionArgsInfo.Length == 0)
         {

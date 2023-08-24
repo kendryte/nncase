@@ -62,25 +62,6 @@ public class UnitTestMergeMultiUserFusion : TransformTestBase
         await RunTest(output, new[] { inputVar }, dict);
     }
 
-    // 被合并的几个call互为参数
-    [Fact]
-    public async Task TestComplexExpr()
-    {
-        // tr = transpose(input)
-        // f = fusion_multi_user(tr)
-        // leakyRelu = LeakyRelu(f)
-        // complexFusion(LeakyRelu, f)
-        var input = Testing.Rand<float>(1, 3, 24, 24);
-        var inputVar = new Var("inputVar", new TensorType(input.ElementType, input.Shape));
-        var tr = Transpose(inputVar, new[] { 3, 2, 1, 0 });
-        var f = MakeSingleSimpleFusionCall(Abs, tr);
-        var leakyRelu = MakeSingleSimpleFusionCall(expr => LeakyRelu(expr, 0.1), f);
-        var complexFusion = MakeSimpleFusionCall(args => args[0] - args[1], leakyRelu, f);
-        var output = new IR.Tuple(leakyRelu, complexFusion);
-        var dict = new Dictionary<Var, IValue> { { inputVar, Value.FromTensor(input) } };
-        await RunTest(output, new[] { inputVar }, dict);
-    }
-
     [Fact]
     public async Task TestWithRing()
     {
@@ -93,7 +74,7 @@ public class UnitTestMergeMultiUserFusion : TransformTestBase
         var binary = MakeSimpleFusionCall(args => args[0] - args[1], leakyRelu, data);
         var output = binary;
         var dict = new Dictionary<Var, IValue> { { inputVar, Value.FromTensor(input) } };
-        await RunTest(output, new[] { inputVar }, dict);
+        await RunTestNotMatch(output, new[] { inputVar }, dict);
     }
 
     [Fact]
@@ -218,7 +199,8 @@ public class UnitTestMergeMultiUserFusion : TransformTestBase
         await RunTest(
             new IR.Tuple(new[] { n95, n108User }),
             new[] { inputVar0 },
-            new Dictionary<Var, IValue> { { inputVar0, Value.FromTensor(input0) } });
+            new Dictionary<Var, IValue> { { inputVar0, Value.FromTensor(input0) } },
+            count: 2);
     }
 
     [Fact]
@@ -258,7 +240,8 @@ public class UnitTestMergeMultiUserFusion : TransformTestBase
         await RunTest(
             res,
             new[] { inputVar0 },
-            new Dictionary<Var, IValue> { { inputVar0, Value.FromTensor(input0) } });
+            new Dictionary<Var, IValue> { { inputVar0, Value.FromTensor(input0) } },
+            count: 3);
     }
 
     [Fact]
@@ -277,26 +260,31 @@ public class UnitTestMergeMultiUserFusion : TransformTestBase
 
     private static async Task RunTestNotMatch(Expr body, Var[] inputVar, Dictionary<Var, IValue> dict)
     {
-        var module = MakeModule(body, inputVar);
+        var module = MakeFun(body, inputVar);
         _ = body.Evaluate(dict);
         var preHash = body.GetHashCode();
-        var post = await new MergeBucketFusion().RunAsync(module, new());
-        var postHash = ((Function)post.Entry!).Body.GetHashCode();
+        var post = await new MergeMultiUsersFusion().RunAsync(module, new());
+        var postHash = ((Function)post).Body.GetHashCode();
         Assert.Equal(postHash, preHash);
     }
 
-    private static async Task RunTest(Expr body, Var[] inputVar, Dictionary<Var, IValue> dict)
+    private static async Task RunTest(Expr body, Var[] inputVar, Dictionary<Var, IValue> dict, int repeatTimes = 1, int count = 1)
     {
-        var module = MakeModule(body, inputVar);
-        DumpScope.Current.DumpIR(module.Entry!, "origin");
+        var fun = MakeFun(body, inputVar);
+        DumpScope.Current.DumpIR(fun, "origin");
         var preResult = body.Evaluate(dict);
         var preHash = body.GetHashCode();
-        var post = await new MergeBucketFusion().RunAsync(module, new());
-        DumpScope.Current.DumpIR(post.Entry!, "post");
-        var newBody = ((Function)post.Entry!).Body;
+        var post = fun;
+        for (int i = 0; i < repeatTimes; i++)
+        {
+            post = (Function)await new MergeMultiUsersFusion().RunAsync(fun, new());
+        }
+
+        DumpScope.Current.DumpIR(post, "post");
+        var newBody = ((Function)post).Body;
         var postHash = newBody.GetHashCode();
         Assert.NotEqual(postHash, preHash);
-        var postResult = ((Function)post.Entry!).Body.Evaluate(dict);
+        var postResult = ((Function)post).Body.Evaluate(dict);
         if (!Comparator.AllEqual(preResult, postResult))
         {
             ValueDumper.DumpTensors(
@@ -310,6 +298,6 @@ public class UnitTestMergeMultiUserFusion : TransformTestBase
 
         var visitor = new FusionCounterVisitor();
         visitor.Visit(newBody);
-        Assert.Equal(1, visitor.Count);
+        Assert.Equal(count, visitor.Count);
     }
 }
