@@ -305,11 +305,11 @@ void tdma_reduce_async(tensor<T, loc_t::local> &src,
         [&]([[maybe_unused]] int visit) -> void {
             tensor<T> *gather_tensor =
                 static_cast<tensor<T> *>(global_hardware_ctx->global_var);
-            auto new_dims = dims_t(src.dimension());
+            auto new_dims = dims_t(gather_tensor->dimension());
             new_dims[0] = CORES;
             auto viewed_gather_tensor =
                 tensor<T>(gather_tensor->data().subspan(
-                              ctx.bid() * CORES * gather_tensor->strides()[0]),
+                              ctx.bid() * CORES * gather_tensor->strides()[0], CORES * gather_tensor->strides()[0]),
                           new_dims, gather_tensor->strides());
 
             reduce(viewed_gather_tensor, dest, reduce_op, static_cast<T>(0),
