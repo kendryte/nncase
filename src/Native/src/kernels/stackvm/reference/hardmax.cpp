@@ -77,8 +77,8 @@ result<void> hardmax_impl(const T *input, gsl::span<const size_t> in_shape,
 result<value_t>
 nncase::kernels::stackvm::hardmax(value_t input, value_t axis, value_t output,
                                   [[maybe_unused]] kernel_context &context) {
-    try_f32_input(input_mem, input);
-    try_f32_output(out_mem, output, input_tensor->shape());
+    try_input(input_mem, input);
+    try_output_like_input(out_mem, output, input_tensor);
     try_positive_axis(axis_value, axis, input_tensor);
     try_(hardmax_impl(input_mem, input_tensor->shape(), input_tensor->strides(),
                       out_mem, axis_value));
