@@ -83,8 +83,8 @@ void binary(tensor<T, ALoc> &a, tensor<T, BLoc> &b, tensor<T, CLoc> &out,
         gsl::make_span(out.strides()).template as_span<const size_t>());
 }
 
-template <class T, loc_t ALoc, loc_t BLoc, loc_t CLoc>
-void unary(tensor<T, ALoc> &a, tensor<T, CLoc> &out, unary_op_t op) {
+template <class T, loc_t ALoc, loc_t BLoc>
+void unary(tensor<T, ALoc> &a, tensor<T, BLoc> &out, unary_op_t op) {
     kernels::unary(
         op, a.cdata().data(), out.data().data(),
         gsl::make_span(a.strides()).template as_span<const size_t>(),
@@ -92,9 +92,9 @@ void unary(tensor<T, ALoc> &a, tensor<T, CLoc> &out, unary_op_t op) {
         gsl::make_span(out.strides()).template as_span<const size_t>());
 }
 
-template <typename T, loc_t ALoc, loc_t BLoc>
+template <typename T, loc_t ALoc, loc_t BLoc, loc_t CLoc>
 void matmul(tensor<T, ALoc> &a, tensor<T, BLoc> &b,
-            tensor<T, loc_t::local> &c) {
+            tensor<T, CLoc> &c) {
     kernels::matmul(a.cdata().data(), b.cdata().data(), c.data().data(),
                     a.dimension(), a.strides(), b.dimension(), b.strides(),
                     c.dimension(), c.strides());

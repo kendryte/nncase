@@ -6,7 +6,8 @@
 #define DEFINE_TFUNC(b, t)                                                     \
     void *f_##b##_##t(void *arg) {                                             \
         block##b::thread##t::stage1_kernel(Hidden_in, V0_gamma, V0_beta, V2_w, \
-                                           V3_data, Position_ids);             \
+                                           V16_w, V31_w, V35_w, V3_data,       \
+                                           V11_data, Attn_mask, Position_ids); \
         return arg;                                                            \
     }
 
@@ -16,12 +17,17 @@
     DEFINE_TFUNC(b, 2)                                                         \
     DEFINE_TFUNC(b, 3)
 
-tensor<float, loc_t::device> Hidden_in({1, 384, 8192});
-tensor<float, loc_t::device> V0_gamma({8192});
-tensor<float, loc_t::device> V0_beta({8192});
-tensor<float, loc_t::device> V2_w({64, 8192, 128});
-tensor<float, loc_t::device> V3_data({384, 128});
-tensor<int64_t, loc_t::device> Position_ids({1, 384});
+static tensor<float, loc_t::device> Hidden_in({1, 384, 8192});
+static tensor<float, loc_t::device> V0_gamma({8192});
+static tensor<float, loc_t::device> V0_beta({8192});
+static tensor<float, loc_t::device> V2_w({64, 8192, 128});
+static tensor<float, loc_t::device> V16_w({64, 8192, 128});
+static tensor<float, loc_t::device> V31_w({64, 8192, 128});
+static tensor<float, loc_t::device> V35_w({8192, 8192});
+static tensor<float, loc_t::device> V3_data({384, 128});
+static tensor<float, loc_t::device> V11_data({384, 128});
+static tensor<float, loc_t::device> Attn_mask({1, 1, 384, 384});
+static tensor<int64_t, loc_t::device> Position_ids({1, 384});
 
 DEFINE_BFUNC(0)
 DEFINE_BFUNC(1)
@@ -35,7 +41,7 @@ DEFINE_BFUNC(7)
 #define LOAD_FILE(name, i, type)                                               \
     {                                                                          \
         auto src_##name = read_file(std::string(argv[(i)]));                   \
-        span_copy(name.data(), gsl::make_span(src_##name).as_span<type>());  \
+        span_copy(name.data(), gsl::make_span(src_##name).as_span<type>());    \
     }
 
 /**
@@ -49,12 +55,17 @@ int main([[maybe_unused]] int argc, char **argv) {
     // spdlog::set_level(spdlog::level::debug);
     global_hardware_init();
 
-    LOAD_FILE(Hidden_in, 1, float);
-    LOAD_FILE(V0_gamma, 2, float);
-    LOAD_FILE(V0_beta, 3, float);
-    LOAD_FILE(V2_w, 4, float);
-    LOAD_FILE(V3_data, 5, float);
-    LOAD_FILE(Position_ids, 6, int64_t);
+    LOAD_FILE(Hidden_in, 0, float)
+    LOAD_FILE(V0_gamma, 1, float)
+    LOAD_FILE(V0_beta, 2, float)
+    LOAD_FILE(V2_w, 3, float)
+    LOAD_FILE(V16_w, 4, float)
+    LOAD_FILE(V31_w, 5, float)
+    LOAD_FILE(V35_w, 6, float)
+    LOAD_FILE(V3_data, 7, float)
+    LOAD_FILE(V11_data, 8, float)
+    LOAD_FILE(Attn_mask, 9, float)
+    LOAD_FILE(Position_ids, 10, int64_t)
 
     pthread_t t_0_0, t_1_0, t_2_0, t_3_0, t_4_0, t_5_0, t_6_0, t_7_0;
     pthread_t t_0_1, t_1_1, t_2_1, t_3_1, t_4_1, t_5_1, t_6_1, t_7_1;
