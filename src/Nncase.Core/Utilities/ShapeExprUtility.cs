@@ -40,6 +40,11 @@ public static class ShapeExprUtility
 
     public static Expr Insert(Expr shapeExpr, Expr index, Expr value)
     {
+        if (shapeExpr.CheckedShape.IsScalar)
+        {
+            return SliceAndMerge(StackScalar(shapeExpr), index, value, 0);
+        }
+
         return SliceAndMerge(shapeExpr, index, value, 0);
     }
 
