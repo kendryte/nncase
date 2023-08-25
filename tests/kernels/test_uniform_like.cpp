@@ -26,44 +26,71 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
+#define TEST_CASE_NAME "test_uniform_like"
+
 class UniformLikeTest : public KernelTest,
-                        public ::testing::TestWithParam<
-                            std::tuple<nncase::typecode_t, dims_t, dims_t>> {
+                        public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape, r_shape] = GetParam();
+        READY_SUBCASE()
+
+        auto typecode = GetDataType("lhs_type");
+        auto shape = GetShapeArray("shape");
+        auto l_shape = GetShapeArray("l_shape");
+        auto value1 = GetFloatNumber("value1");
+        auto value2 = GetFloatNumber("value2");
+        auto value3 = GetFloatNumber("value3");
 
         lhs = hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
         init_tensor(lhs);
 
-        rhs = hrt::create(typecode, r_shape, host_runtime_tensor::pool_cpu_only)
+        high_value = value1;
+        float high_array[] = {high_value};
+        high = hrt::create(typecode, shape,
+                           {reinterpret_cast<gsl::byte *>(high_array),
+                            sizeof(high_array)},
+                           true, host_runtime_tensor::pool_cpu_only)
+                   .expect("create tensor failed");
+
+        low_value = value2;
+        float low_array[] = {low_value};
+        low = hrt::create(
+                  typecode, shape,
+                  {reinterpret_cast<gsl::byte *>(low_array), sizeof(low_array)},
+                  true, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
-        init_tensor(rhs);
+
+        seed_value = value3;
+        float seed_array[] = {seed_value};
+        seed = hrt::create(typecode, shape,
+                           {reinterpret_cast<gsl::byte *>(seed_array),
+                            sizeof(seed_array)},
+                           true, host_runtime_tensor::pool_cpu_only)
+                   .expect("create tensor failed");
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
   protected:
     runtime_tensor lhs;
-    runtime_tensor rhs;
+    runtime_tensor high;
+    runtime_tensor low;
+    runtime_tensor seed;
+    float high_value;
+    float low_value;
+    float seed_value;
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    UniformLike, UniformLikeTest,
-    testing::Combine(testing::Values(dt_float32, dt_int32/*, dt_int16, dt_float64,
-                                     dt_int8, dt_uint8, dt_uint16, dt_uint32,
-                                     dt_uint64, dt_int64, dt_float16*/),
-                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{3, 16, 16},
-                                     dims_t{16, 16}, dims_t{16}, dims_t{1}),
-                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{3, 16, 16},
-                                     dims_t{16, 16}, dims_t{16}, dims_t{1})));
+INSTANTIATE_TEST_SUITE_P(UniformLike, UniformLikeTest,
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(UniformLikeTest, UniformLike) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
 
     // expected
-    auto output_ort = ortki_RandomUniformLike(l_ort, 1, 1.0f, 0.0f, 1.0f);
+    auto output_ort =
+        ortki_RandomUniformLike(l_ort, 1, high_value, low_value, seed_value);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
@@ -74,26 +101,8 @@ TEST_P(UniformLikeTest, UniformLike) {
                         .expect("create tensor failed");
 
     // actual
-    float_t high_array[] = {1.0f};
-    auto high = hrt::create(dt_float32, {1},
-                            {reinterpret_cast<gsl::byte *>(high_array),
-                             sizeof(high_array)},
-                            true, host_runtime_tensor::pool_cpu_only)
-                    .expect("create tensor failed");
-    float_t low_array[] = {0.0f};
-    auto low = hrt::create(dt_float32, {1},
-                           {reinterpret_cast<gsl::byte *>(low_array),
-                            sizeof(low_array)},
-                           true, host_runtime_tensor::pool_cpu_only)
-                   .expect("create tensor failed");
-    float_t seed_array[] = {1.0f};
-    auto seed = hrt::create(dt_float32, {1},
-                            {reinterpret_cast<gsl::byte *>(seed_array),
-                             sizeof(seed_array)},
-                            true, host_runtime_tensor::pool_cpu_only)
-                    .expect("create tensor failed");
     auto output =
-        kernels::stackvm::uniform_like(dt_float32, lhs.impl(), high.impl(),
+        kernels::stackvm::uniform_like(lhs.datatype(), lhs.impl(), high.impl(),
                                        low.impl(), seed.impl())
             .expect("uniform_like failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
@@ -113,6 +122,27 @@ TEST_P(UniformLikeTest, UniformLike) {
 }
 
 int main(int argc, char *argv[]) {
+    READY_TEST_CASE_GENERATE()
+    FOR_LOOP(lhs_type, i)
+    FOR_LOOP(l_shape, k)
+    FOR_LOOP(shape, j)
+    FOR_LOOP(value1, l)
+    FOR_LOOP(value2, m)
+    FOR_LOOP(value3, n)
+    SPLIT_ELEMENT(lhs_type, i)
+    SPLIT_ELEMENT(l_shape, k)
+    SPLIT_ELEMENT(shape, j)
+    SPLIT_ELEMENT(value1, l)
+    SPLIT_ELEMENT(value2, m)
+    SPLIT_ELEMENT(value3, n)
+    WRITE_SUB_CASE()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

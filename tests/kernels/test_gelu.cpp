@@ -22,59 +22,145 @@
 #include <nncase/runtime/stackvm/opcode.h>
 #include <ortki/operators.h>
 
+#define TEST_CASE_NAME "test_gelu"
+
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class GeluTest
-    : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
+class GeluTest : public KernelTest,
+                 public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape] = GetParam();
+        READY_SUBCASE()
+
+        auto l_shape = GetShapeArray("lhs_shape");
+        auto typecode = GetDataType("lhs_type");
 
         input =
             hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
         init_tensor(input);
+
+        alpha = hrt::create(typecode, {1}, host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
+        init_tensor_alpha(alpha);
     }
 
     void TearDown() override {}
 
+    virtual void init_tensor_alpha(runtime::runtime_tensor &tensor) {
+        auto dtype = tensor.datatype();
+        switch (dtype) {
+        case dt_float16: {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_real_distribution<float> dis(0.0f, 2.0f);
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<half>(tensor, index) = static_cast<half>(dis(gen));
+                    return ok();
+                });
+            break;
+        }
+        case dt_float32: {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_real_distribution<float> dis(0.0f, 2.0f);
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<float>(tensor, index) = static_cast<float>(dis(gen));
+                    return ok();
+                });
+            break;
+        }
+        case dt_float64: {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_real_distribution<double> dis(0.0, 2.0);
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<double>(tensor, index) = static_cast<double>(dis(gen));
+                    return ok();
+                });
+            break;
+        }
+        case dt_bfloat16: {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_real_distribution<> dis(0.0, 2.0);
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<bfloat16>(tensor, index) =
+                        static_cast<bfloat16>(dis(gen));
+                    return ok();
+                });
+            break;
+        }
+        default: {
+        }
+        }
+    }
+
   protected:
     runtime_tensor input;
+    runtime_tensor alpha;
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    gelu, GeluTest,
-    testing::Combine(testing::Values(dt_float32),
-                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{1},
-                                     dims_t{8, 8}, dims_t{1, 4, 16},
-                                     dims_t{1, 3, 24, 24}, dims_t{})));
+INSTANTIATE_TEST_SUITE_P(gelu, GeluTest,
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(GeluTest, gelu) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
 
     // expected
-    float_t a_ptr[] = {0.5f};
-    auto a = hrt::create(nncase::dt_float32, {1},
-                         {reinterpret_cast<gsl::byte *>(a_ptr), sizeof(a_ptr)},
-                         true, host_runtime_tensor::pool_cpu_only)
-                 .expect("create tensor failed");
-    auto a_ort = runtime_tensor_2_ort_tensor(a);
+    auto a_ort = runtime_tensor_2_ort_tensor(alpha);
 
-    float_t b_ptr[] = {2.0f};
-    auto b = hrt::create(nncase::dt_float32, {1},
-                         {reinterpret_cast<gsl::byte *>(b_ptr), sizeof(b_ptr)},
-                         true, host_runtime_tensor::pool_cpu_only)
-                 .expect("create tensor failed");
+    runtime_tensor b;
+    runtime_tensor c;
+    if (input.datatype() == dt_float16) {
+        half b_ptr[] = {(half)2.0f};
+        b = hrt::create(nncase::dt_float16, {1},
+                        {reinterpret_cast<gsl::byte *>(b_ptr), sizeof(b_ptr)},
+                        true, host_runtime_tensor::pool_cpu_only)
+                .expect("create tensor failed");
+
+        half c_ptr[] = {(half)1.0f};
+        c = hrt::create(nncase::dt_float16, {1},
+                        {reinterpret_cast<gsl::byte *>(c_ptr), sizeof(c_ptr)},
+                        true, host_runtime_tensor::pool_cpu_only)
+                .expect("create tensor failed");
+    } else if (input.datatype() == dt_float32) {
+        float b_ptr[] = {2.0f};
+        b = hrt::create(nncase::dt_float32, {1},
+                        {reinterpret_cast<gsl::byte *>(b_ptr), sizeof(b_ptr)},
+                        true, host_runtime_tensor::pool_cpu_only)
+                .expect("create tensor failed");
+
+        float c_ptr[] = {1.0f};
+        c = hrt::create(nncase::dt_float32, {1},
+                        {reinterpret_cast<gsl::byte *>(c_ptr), sizeof(c_ptr)},
+                        true, host_runtime_tensor::pool_cpu_only)
+                .expect("create tensor failed");
+    } else if (input.datatype() == dt_float64) {
+        double b_ptr[] = {2.0f};
+        b = hrt::create(nncase::dt_float64, {1},
+                        {reinterpret_cast<gsl::byte *>(b_ptr), sizeof(b_ptr)},
+                        true, host_runtime_tensor::pool_cpu_only)
+                .expect("create tensor failed");
+
+        double c_ptr[] = {1.0f};
+        c = hrt::create(nncase::dt_float64, {1},
+                        {reinterpret_cast<gsl::byte *>(c_ptr), sizeof(c_ptr)},
+                        true, host_runtime_tensor::pool_cpu_only)
+                .expect("create tensor failed");
+    }
+
     auto b_ort = runtime_tensor_2_ort_tensor(b);
-
-    float_t c_ptr[] = {1.0f};
-    auto c = hrt::create(nncase::dt_float32, {1},
-                         {reinterpret_cast<gsl::byte *>(c_ptr), sizeof(c_ptr)},
-                         true, host_runtime_tensor::pool_cpu_only)
-                 .expect("create tensor failed");
     auto c_ort = runtime_tensor_2_ort_tensor(c);
 
     auto scaledInput = ortki_Mul(a_ort, l_ort);
@@ -93,8 +179,8 @@ TEST_P(GeluTest, gelu) {
                         .expect("create tensor failed");
 
     // actual
-    auto output =
-        kernels::stackvm::gelu(input.impl(), a.impl()).expect("gelu failed");
+    auto output = kernels::stackvm::gelu(input.impl(), alpha.impl())
+                      .expect("gelu failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     bool result = is_same_tensor(expected, actual) ||
@@ -112,6 +198,15 @@ TEST_P(GeluTest, gelu) {
 }
 
 int main(int argc, char *argv[]) {
+    READY_TEST_CASE_GENERATE()
+    FOR_LOOP(lhs_shape, j)
+    FOR_LOOP(lhs_type, i)
+    SPLIT_ELEMENT(lhs_shape, j)
+    SPLIT_ELEMENT(lhs_type, i)
+    WRITE_SUB_CASE()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

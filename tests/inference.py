@@ -7,21 +7,47 @@ import preprocess_utils
 import socket
 import json
 from test_utils import *
+import time
+
+
+def data_shape_list_string(data):
+    return '\n'.join(map(lambda d: ' '.join(map(lambda x: str(x), d['model_shape'])), data))
+
+
+def generate_kmodel_data_info(inputs, outputs, infer_dir):
+    input_shapes = data_shape_list_string(inputs)
+    output_shapes = data_shape_list_string(outputs)
+#         input_shapes = '\n'.join(map(lambda input: ' '.join(map(lambda x: str(x), input['model_shape'])), inputs))
+    s = f"{len(inputs)} {len(outputs)}\n{input_shapes}\n{output_shapes}"
+    with open(os.path.join(infer_dir, "kmodel.desc"), "w+") as f:
+        f.write(s)
 
 
 class Inference:
     def run_inference(self, compiler, target, ptq_enabled, infer_dir):
         in_ci = test_utils.in_ci()
         kpu_targets = test_utils.kpu_targets()
-        port = test_utils.port()
+        nuc_ip = test_utils.nuc_ip()
+        nuc_port = test_utils.nuc_port()
         test_executable = test_utils.test_executable(target)
-        running_on_evb = in_ci and target in kpu_targets and port is not None and test_executable is not None and len(
+        running_on_evb = in_ci and target in kpu_targets and nuc_ip is not None and nuc_port is not None and test_executable is not None and len(
             self.inputs) > 0 and len(self.outputs) > 0
 
+        if self.cfg['dump_infer']:
+            self.infer_dict['case'] = os.path.basename(self.case_dir)
+            self.infer_dict['target'] = target
         if ptq_enabled:
             self.set_quant_opt(compiler)
+
+            if self.cfg['dump_infer']:
+                case = os.path.basename(self.case_dir)
+                self.infer_dict['if_quant_type'] = self.cfg['ptq_opt']['quant_type']
+                self.infer_dict['w_quant_type'] = self.cfg['ptq_opt']['w_quant_type']
+
         compiler.compile()
         kmodel = compiler.gencode_tobytes()
+        if self.dynamic:
+            generate_kmodel_data_info(self.inputs, self.outputs, infer_dir)
         os.makedirs(infer_dir, exist_ok=True)
         if not in_ci:
             with open(os.path.join(infer_dir, 'test.kmodel'), 'wb') as f:
@@ -34,7 +60,17 @@ class Inference:
             sim = nncase.Simulator()
             sim.load_model(kmodel)
             self.set_infer_input(sim, compile_opt)
+
+            if self.cfg['dump_infer']:
+                t1 = time.perf_counter()
+
             sim.run()
+
+            if self.cfg['dump_infer']:
+                t = (time.perf_counter() - t1) * 1000
+                self.infer_dict['time(ms)'] = str(t)
+                self.infer_dict['fps'] = str(round(1000 / t, 2))
+
             outputs = self.dump_infer_output(sim, compile_opt, infer_dir)
         return outputs
 
@@ -70,12 +106,13 @@ class Inference:
         return outputs
 
     def run_evb(self, target, kmodel, compile_opt):
-        port = test_utils.port()
+        ip = test_utils.nuc_ip()
+        port = test_utils.nuc_port()
         test_executable = test_utils.test_executable(target)
 
         # connect server
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        client_socket.connect(('localhost', int(port)))
+        client_socket.connect((ip, int(port)))
 
         # send target
         dummy = client_socket.recv(1024)
@@ -124,8 +161,15 @@ class Inference:
 
         # get infer result
         outputs = []
-        cmd_result = client_socket.recv(1024).decode()
-        if cmd_result.find('succeed') != -1:
+        result_dict = {}
+        ret = client_socket.recv(1024)
+        result_dict = json.loads(ret.decode())
+        if result_dict['type'].find('finish') != -1:
+            if self.cfg['dump_infer']:
+                t = result_dict['time']
+                self.infer_dict['time(ms)'] = str(t)
+                self.infer_dict['fps'] = str(round(1000 / t, 2))
+
             client_socket.sendall(f"pls send outputs".encode())
 
             # recv outputs
@@ -148,6 +192,11 @@ class Inference:
             client_socket.close()
         else:
             client_socket.close()
-            raise Exception(f'{cmd_result}')
+
+            if self.cfg['dump_infer']:
+                self.infer_dict['result'] = 'Fail'
+                self.infer_dict['remark'] = result_dict['error']
+                dump_dict_to_json(self.infer_dict, self.infer_file)
+            raise Exception(result_dict['error'])
 
         return outputs

@@ -22,16 +22,21 @@
 #include <nncase/runtime/stackvm/opcode.h>
 #include <ortki/operators.h>
 
+#define TEST_CASE_NAME "test_concat"
+
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class ConcatTest
-    : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
+class ConcatTest : public KernelTest,
+                   public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
-        auto &&[typecode, shape] = GetParam();
+        READY_SUBCASE()
+
+        auto shape = GetShapeArray("lhs_shape");
+        auto value = GetNumber("axis");
+        auto typecode = GetDataType("lhs_type");
 
         lhs = hrt::create(typecode, shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
@@ -40,21 +45,22 @@ class ConcatTest
         rhs = hrt::create(typecode, shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
         init_tensor(rhs);
+
+        axis_value = value > 0 ? value >= (int64_t)shape.size() ? 0 : value
+                     : -value > (int64_t)shape.size() ? 0
+                                                      : value;
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
   protected:
     runtime_tensor lhs;
     runtime_tensor rhs;
+    int64_t axis_value;
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    Concat, ConcatTest,
-    testing::Combine(testing::Values(dt_float32, dt_int64, dt_int32, dt_float64,
-                                     dt_int16, dt_uint32, dt_boolean),
-                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 3},
-                                     dims_t{1, 3, 16}, dims_t{1})));
+INSTANTIATE_TEST_SUITE_P(Concat, ConcatTest,
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(ConcatTest, Concat) {
     auto l_ort = runtime_tensor_2_ort_tensor(lhs);
@@ -62,7 +68,7 @@ TEST_P(ConcatTest, Concat) {
     OrtKITensor *ls_ort[2] = {l_ort, r_ort};
 
     // expected
-    auto output_ort = ortki_Concat(ls_ort, 2, 0);
+    auto output_ort = ortki_Concat(ls_ort, 2, axis_value);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
@@ -80,7 +86,7 @@ TEST_P(ConcatTest, Concat) {
     fields.push_back(field2);
     auto output_tuple = tuple(std::in_place, std::move(fields));
 
-    int64_t axis_ptr[] = {0};
+    int64_t axis_ptr[] = {axis_value};
     auto axis =
         hrt::create(dt_int64, {1},
                     {reinterpret_cast<gsl::byte *>(axis_ptr), sizeof(axis_ptr)},
@@ -107,6 +113,18 @@ TEST_P(ConcatTest, Concat) {
 }
 
 int main(int argc, char *argv[]) {
+    READY_TEST_CASE_GENERATE()
+    FOR_LOOP(lhs_shape, i)
+    FOR_LOOP(axis, j)
+    FOR_LOOP(lhs_type, k)
+    SPLIT_ELEMENT(lhs_shape, i)
+    SPLIT_ELEMENT(axis, j)
+    SPLIT_ELEMENT(lhs_type, k)
+    WRITE_SUB_CASE()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

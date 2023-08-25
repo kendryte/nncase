@@ -26,12 +26,17 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
+#define TEST_CASE_NAME "test_split"
+
 class SplitTest : public KernelTest,
-                  public ::testing::TestWithParam<
-                      std::tuple<nncase::typecode_t, dims_t, int64_t>> {
+                  public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape, value] = GetParam();
+        READY_SUBCASE()
+
+        auto l_shape = GetShapeArray("lhs_shape");
+        auto value = GetNumber("axis");
+        auto typecode = GetDataType("lhs_type");
 
         input =
             hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
@@ -47,7 +52,7 @@ class SplitTest : public KernelTest,
                    .expect("create tensor failed");
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
   protected:
     runtime_tensor input;
@@ -56,9 +61,7 @@ class SplitTest : public KernelTest,
 };
 
 INSTANTIATE_TEST_SUITE_P(Split, SplitTest,
-                         testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{4, 8, 8}),
-                                          testing::Values(0, -3)));
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(SplitTest, Split) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
@@ -66,14 +69,14 @@ TEST_P(SplitTest, Split) {
     // expected
     size_t size = 0;
     int64_t sections_array[] = {2, 2};
-    auto sextions = hrt::create(dt_int64, {2},
+    auto sections = hrt::create(dt_int64, {2},
                                 {reinterpret_cast<gsl::byte *>(sections_array),
                                  sizeof(sections_array)},
                                 true, host_runtime_tensor::pool_cpu_only)
                         .expect("create tensor failed");
 
     auto output_ort1 = tensor_seq_get_value(
-        ortki_Split(l_ort, runtime_tensor_2_ort_tensor(sextions), axis_value),
+        ortki_Split(l_ort, runtime_tensor_2_ort_tensor(sections), axis_value),
         0);
     void *ptr_ort1 = tensor_buffer(output_ort1, &size);
     dims_t shape1(tensor_rank(output_ort1));
@@ -85,7 +88,7 @@ TEST_P(SplitTest, Split) {
             .expect("create tensor failed");
 
     auto output_ort2 = tensor_seq_get_value(
-        ortki_Split(l_ort, runtime_tensor_2_ort_tensor(sextions), axis_value),
+        ortki_Split(l_ort, runtime_tensor_2_ort_tensor(sections), axis_value),
         1);
     void *ptr_ort2 = tensor_buffer(output_ort2, &size);
     dims_t shape2(tensor_rank(output_ort2));
@@ -101,7 +104,7 @@ TEST_P(SplitTest, Split) {
 
     // actual
     auto output =
-        kernels::stackvm::split(input.impl(), axis.impl(), sextions.impl())
+        kernels::stackvm::split(input.impl(), axis.impl(), sections.impl())
             .expect("split failed");
     tuple actual(output.as<tuple>().expect("as tensor failed"));
 
@@ -109,6 +112,18 @@ TEST_P(SplitTest, Split) {
 }
 
 int main(int argc, char *argv[]) {
+    READY_TEST_CASE_GENERATE()
+    FOR_LOOP(lhs_shape, i)
+    FOR_LOOP(axis, j)
+    FOR_LOOP(lhs_type, k)
+    SPLIT_ELEMENT(lhs_shape, i)
+    SPLIT_ELEMENT(axis, j)
+    SPLIT_ELEMENT(lhs_type, k)
+    WRITE_SUB_CASE()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

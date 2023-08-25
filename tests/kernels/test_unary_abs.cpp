@@ -26,32 +26,31 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class UnaryTest
-    : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
+#define TEST_CASE_NAME "test_unary"
+
+class UnaryTest : public KernelTest,
+                  public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
-        auto &&[typecode, i_shape] = GetParam();
+        READY_SUBCASE()
+
+        auto typecode = GetDataType("lhs_type");
+        auto l_shape = GetShapeArray("i_shape");
 
         input =
-            hrt::create(typecode, i_shape, host_runtime_tensor::pool_cpu_only)
+            hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
         init_tensor(input);
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
   protected:
     runtime_tensor input;
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    Unary, UnaryTest,
-    testing::Combine(testing::Values(dt_float32),
-                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{3, 16, 16},
-                                     dims_t{3, 16, 1}, dims_t{16, 16},
-                                     dims_t{16, 1}, dims_t{1, 16, 1},
-                                     dims_t{16}, dims_t{1}, dims_t{})));
+INSTANTIATE_TEST_SUITE_P(Unary, UnaryTest,
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(UnaryTest, abs) {
     OrtKITensor *orts[1];
@@ -89,6 +88,15 @@ TEST_P(UnaryTest, abs) {
 }
 
 int main(int argc, char *argv[]) {
+    READY_TEST_CASE_GENERATE()
+    FOR_LOOP(lhs_type, i)
+    FOR_LOOP(i_shape, j)
+    SPLIT_ELEMENT(lhs_type, i)
+    SPLIT_ELEMENT(i_shape, j)
+    WRITE_SUB_CASE()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

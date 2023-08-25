@@ -61,15 +61,18 @@ TEST_P(GetItemTest, get_item) {
                               sizeof(index_ptr)},
                              true, host_runtime_tensor::pool_cpu_only)
                      .expect("create tensor failed");
+
     int64_t shape_ort[] = {1};
     auto shape = hrt::create(dt_int64, {1},
                              {reinterpret_cast<gsl::byte *>(shape_ort),
                               sizeof(shape_ort)},
                              true, host_runtime_tensor::pool_cpu_only)
                      .expect("create tensor failed");
+
     auto get_item_output =
         kernels::stackvm::get_item(input.impl(), index.impl())
             .expect("get_item failed");
+
     auto output = kernels::stackvm::reshape(get_item_output, shape.impl())
                       .expect("get_item failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));

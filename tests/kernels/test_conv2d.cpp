@@ -28,10 +28,12 @@ using namespace ortki;
 
 class Conv2DTest : public KernelTest,
                    public ::testing::TestWithParam<
-                       std::tuple<nncase::typecode_t, dims_t, dims_t, dims_t>> {
+                       std::tuple<nncase::typecode_t, dims_t, dims_t, dims_t,
+                                  dims_t, dims_t, dims_t, int64_t>> {
   public:
     void SetUp() override {
-        auto &&[typecode, input_shape, weight_shape, bias_shape] = GetParam();
+        auto &&[typecode, input_shape, weight_shape, bias_shape, value1, value2,
+                value3, value4] = GetParam();
 
         input = hrt::create(typecode, input_shape,
                             host_runtime_tensor::pool_cpu_only)
@@ -47,6 +49,11 @@ class Conv2DTest : public KernelTest,
                            host_runtime_tensor::pool_cpu_only)
                    .expect("create tensor failed");
         init_tensor(bais);
+
+        dilations_value = value1;
+        pad_value = value2;
+        strides_value = value3;
+        group_value = value4;
     }
 
     void TearDown() override {}
@@ -55,14 +62,22 @@ class Conv2DTest : public KernelTest,
     runtime_tensor input;
     runtime_tensor weight;
     runtime_tensor bais;
+    dims_t dilations_value;
+    dims_t pad_value;
+    dims_t strides_value;
+    int64_t group_value;
 };
 
-INSTANTIATE_TEST_SUITE_P(conv2d, Conv2DTest,
-                         testing::Combine(testing::Values(dt_float32),
-                                          testing::Values(dims_t{1, 4, 5, 5}),
-                                          testing::Values(dims_t{8, 4, 3, 3},
-                                                          dims_t{8, 4, 1, 1}),
-                                          testing::Values(dims_t{8})));
+INSTANTIATE_TEST_SUITE_P(
+    conv2d, Conv2DTest,
+    testing::Combine(
+        testing::Values(dt_float32),
+        testing::Values(dims_t{1, 4, 5, 5}, dims_t{1, 4, 16, 16}),
+        testing::Values(dims_t{8, 4, 3, 3}, dims_t{8, 4, 1, 1}),
+        testing::Values(dims_t{8}), testing::Values(dims_t{2, 2}, dims_t{1, 1}),
+        testing::Values(dims_t{1, 1, 1, 1} /*, dims_t{0, 0, 1, 0}*/),
+        testing::Values(dims_t{1, 1}, dims_t{2, 2}),
+        testing::Values(1 /*, 2*/))); // todo result error
 
 TEST_P(Conv2DTest, conv2d) {
     auto input_ort = runtime_tensor_2_ort_tensor(input);
@@ -71,14 +86,25 @@ TEST_P(Conv2DTest, conv2d) {
 
     // expected
     const char auto_pad[7] = "NOTSET";
-    int64_t dilations[] = {1, 1};
+
+    size_t dilations_size = dilations_value.size();
+    int64_t *dilations = (int64_t *)malloc(dilations_size * sizeof(int64_t));
+    std::copy(dilations_value.begin(), dilations_value.end(), dilations);
+
     int64_t kernel_shape[] = {(int64_t)weight.shape()[2],
                               (int64_t)weight.shape()[3]};
-    int64_t pad[] = {1, 1, 1, 1};
-    int64_t strides[] = {1, 1};
-    auto output_ort =
-        ortki_Conv(input_ort, weight_ort, bais_ort, auto_pad, dilations, 2, 1,
-                   kernel_shape, 2, pad, 4, strides, 2);
+
+    size_t pad_size = pad_value.size();
+    int64_t *pad = (int64_t *)malloc(pad_size * sizeof(int64_t));
+    std::copy(pad_value.begin(), pad_value.end(), pad);
+
+    size_t strides_size = strides_value.size();
+    int64_t *strides = (int64_t *)malloc(strides_size * sizeof(int64_t));
+    std::copy(strides_value.begin(), strides_value.end(), strides);
+
+    auto output_ort = ortki_Conv(
+        input_ort, weight_ort, bais_ort, auto_pad, dilations, dilations_size,
+        group_value, kernel_shape, 2, pad, pad_size, strides, strides_size);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
@@ -89,41 +115,49 @@ TEST_P(Conv2DTest, conv2d) {
                         .expect("create tensor failed");
 
     // actual
-    int64_t group[] = {1};
-    float_t fused_clamp[] = {-std::numeric_limits<float>::infinity(),
-                             std::numeric_limits<float>::infinity()};
+    int64_t group[] = {group_value};
+
+    float fused_clamp[] = {-std::numeric_limits<float>::infinity(),
+                           std::numeric_limits<float>::infinity()};
+
     auto dilations_ptr = hrt::create(nncase::dt_int64, {2},
                                      {reinterpret_cast<gsl::byte *>(dilations),
-                                      sizeof(dilations)},
+                                      dilations_size * sizeof(int64_t)},
                                      true, host_runtime_tensor::pool_cpu_only)
                              .expect("create tensor failed");
+
     auto kernel_shape_ptr =
         hrt::create(
             nncase::dt_int64, {2},
             {reinterpret_cast<gsl::byte *>(kernel_shape), sizeof(kernel_shape)},
             true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
-    auto pad_ptr =
-        hrt::create(nncase::dt_int64, {4},
-                    {reinterpret_cast<gsl::byte *>(pad), sizeof(pad)}, true,
-                    host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
-    auto strides_ptr =
-        hrt::create(nncase::dt_int64, {2},
-                    {reinterpret_cast<gsl::byte *>(strides), sizeof(strides)},
-                    true, host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
+
+    auto pad_ptr = hrt::create(nncase::dt_int64, {4},
+                               {reinterpret_cast<gsl::byte *>(pad),
+                                pad_size * sizeof(int64_t)},
+                               true, host_runtime_tensor::pool_cpu_only)
+                       .expect("create tensor failed");
+
+    auto strides_ptr = hrt::create(nncase::dt_int64, {2},
+                                   {reinterpret_cast<gsl::byte *>(strides),
+                                    strides_size * sizeof(int64_t)},
+                                   true, host_runtime_tensor::pool_cpu_only)
+                           .expect("create tensor failed");
+
     auto group_ptr =
         hrt::create(nncase::dt_int64, {1},
                     {reinterpret_cast<gsl::byte *>(group), sizeof(group)}, true,
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
+
     auto fused_clamp_ptr =
         hrt::create(
             nncase::dt_float32, {2},
             {reinterpret_cast<gsl::byte *>(fused_clamp), sizeof(fused_clamp)},
             true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
+
     auto output =
         kernels::stackvm::conv2d(
             runtime::stackvm::pad_mode_t::constant, input.impl(), weight.impl(),

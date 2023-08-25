@@ -22,42 +22,47 @@
 #include <nncase/runtime/stackvm/opcode.h>
 #include <ortki/operators.h>
 
+#define TEST_CASE_NAME "test_celu"
+
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class CeluTest
-    : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
+class CeluTest : public KernelTest,
+                 public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
-        auto &&[typecode, input_shape] = GetParam();
+        READY_SUBCASE()
+
+        auto input_shape = GetShapeArray("lhs_shape");
+        auto typecode = GetDataType("lhs_type");
 
         input = hrt::create(typecode, input_shape,
                             host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
         init_tensor(input);
+
+        alpha = hrt::create(typecode, {1}, host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
+        init_tensor(alpha);
     }
 
     void TearDown() override {}
 
   protected:
     runtime_tensor input;
+    runtime_tensor alpha;
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    celu, CeluTest,
-    testing::Combine(testing::Values(dt_float32),
-                     testing::Values(dims_t{1}, dims_t{1, 2},
-                                     dims_t{1, 3, 16, 16}, dims_t{16, 16},
-                                     dims_t{3, 16}, dims_t{1, 3, 16, 1},
-                                     dims_t{})));
+INSTANTIATE_TEST_SUITE_P(celu, CeluTest,
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(CeluTest, celu) {
     auto input_ort = runtime_tensor_2_ort_tensor(input);
 
     // expected
-    auto output_ort = ortki_Celu(input_ort, 1.2f);
+    OrtKITensor *output_ort;
+    output_ort = ortki_Celu(input_ort, tensor_to_array<float>(alpha)[0]);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
@@ -68,13 +73,8 @@ TEST_P(CeluTest, celu) {
                         .expect("create tensor failed");
 
     // actual
-    float_t a_ptr[] = {1.2f};
-    auto a = hrt::create(nncase::dt_float32, {1},
-                         {reinterpret_cast<gsl::byte *>(a_ptr), sizeof(a_ptr)},
-                         true, host_runtime_tensor::pool_cpu_only)
-                 .expect("create tensor failed");
-    auto output =
-        kernels::stackvm::celu(input.impl(), a.impl()).expect("celu failed");
+    auto output = kernels::stackvm::celu(input.impl(), alpha.impl())
+                      .expect("celu failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     bool result = is_same_tensor(expected, actual) ||
@@ -92,6 +92,15 @@ TEST_P(CeluTest, celu) {
 }
 
 int main(int argc, char *argv[]) {
+    READY_TEST_CASE_GENERATE()
+    FOR_LOOP(lhs_shape, i)
+    FOR_LOOP(lhs_type, j)
+    SPLIT_ELEMENT(lhs_shape, i)
+    SPLIT_ELEMENT(lhs_type, j)
+    WRITE_SUB_CASE()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

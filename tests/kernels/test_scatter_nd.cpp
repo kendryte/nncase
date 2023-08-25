@@ -26,14 +26,19 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class ScatterNDTest
-    : public KernelTest,
-      public ::testing::TestWithParam<
-          std::tuple<nncase::typecode_t, typecode_t, dims_t, dims_t, dims_t>> {
+#define TEST_CASE_NAME "test_scatter_nd"
+
+class ScatterNDTest : public KernelTest,
+                      public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
-        auto &&[typecode1, typecode2, input_shape, indices_shape,
-                updates_shape] = GetParam();
+        READY_SUBCASE()
+
+        auto typecode1 = GetDataType("lhs_type");
+        auto typecode2 = GetDataType("rhs_type");
+        auto input_shape = GetShapeArray("input_shape");
+        auto indices_shape = GetShapeArray("indices_shape");
+        auto updates_shape = GetShapeArray("updates_shape");
 
         input = hrt::create(typecode1, input_shape,
                             host_runtime_tensor::pool_cpu_only)
@@ -53,7 +58,7 @@ class ScatterNDTest
         init_tensor(updates);
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
   protected:
     runtime_tensor input;
@@ -61,14 +66,8 @@ class ScatterNDTest
     runtime_tensor updates;
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    ScatterND, ScatterNDTest,
-    testing::Combine(
-        testing::Values(dt_float32, dt_uint8, dt_int8, dt_float16, dt_uint32,
-                        dt_uint64, dt_uint16, dt_int16, dt_int32, dt_int64,
-                        dt_float64, dt_boolean, dt_bfloat16),
-        testing::Values(dt_int64), testing::Values(dims_t{2, 1, 10}),
-        testing::Values(dims_t{2, 1, 1, 3}), testing::Values(dims_t{2, 1, 1})));
+INSTANTIATE_TEST_SUITE_P(ScatterND, ScatterNDTest,
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(ScatterNDTest, ScatterND) {
 
@@ -108,6 +107,24 @@ TEST_P(ScatterNDTest, ScatterND) {
 }
 
 int main(int argc, char *argv[]) {
+    READY_TEST_CASE_GENERATE()
+    FOR_LOOP(lhs_type, i)
+    FOR_LOOP(rhs_type, j)
+    FOR_LOOP(input_shape, k)
+    FOR_LOOP(indices_shape, l)
+    FOR_LOOP(updates_shape, m)
+    SPLIT_ELEMENT(lhs_type, i)
+    SPLIT_ELEMENT(rhs_type, j)
+    SPLIT_ELEMENT(input_shape, k)
+    SPLIT_ELEMENT(indices_shape, l)
+    SPLIT_ELEMENT(updates_shape, m)
+    WRITE_SUB_CASE()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

@@ -22,9 +22,43 @@ public static class Tensors
 {
     public static Call Transpose(Expr input, Expr perm) => new Call(new Transpose(), input, perm);
 
-    public static Expr NHWCToNCHW(Expr input) => Transpose(input, new[] { 0, 3, 1, 2 });
+    public static Expr NHWCToNCHW(Expr input)
+    {
+        int[] perm;
+        if (input.CheckedShape.Rank == 4)
+        {
+            perm = new[] { 0, 3, 1, 2 };
+        }
+        else if (input.CheckedShape.Rank == 3)
+        {
+            perm = new[] { 0, 2, 1 };
+        }
+        else
+        {
+            throw new InvalidOperationException();
+        }
 
-    public static Expr NCHWToNHWC(Expr input) => Transpose(input, new[] { 0, 2, 3, 1 });
+        return Transpose(input, perm);
+    }
+
+    public static Expr NCHWToNHWC(Expr input)
+    {
+        int[] perm;
+        if (input.CheckedShape.Rank == 4)
+        {
+            perm = new[] { 0, 2, 3, 1 };
+        }
+        else if (input.CheckedShape.Rank == 3)
+        {
+            perm = new[] { 0, 2, 1 };
+        }
+        else
+        {
+            throw new InvalidOperationException();
+        }
+
+        return Transpose(input, perm);
+    }
 
     public static Expr NHWCToWNCH(Expr input) => Transpose(input, new[] { 2, 0, 3, 1 });
 

@@ -22,52 +22,165 @@
 #include <nncase/runtime/stackvm/opcode.h>
 #include <ortki/operators.h>
 
+#define TEST_CASE_NAME "test_constant_of_shape"
+
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class ConstantOfShapeTest
-    : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
+class ConstantOfShapeTest : public KernelTest,
+                            public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
-        auto &&[typecode, shape] = GetParam();
+        READY_SUBCASE()
 
-        const int size = 768;
-        int32_t array[size];
-
-        for (int32_t &i : array) {
-            i = 1;
-        }
+        auto shape = GetShapeArray("lhs_shape");
+        auto typecode = GetDataType("lhs_type");
 
         expected =
-            hrt::create(dt_int32, shape,
-                        {reinterpret_cast<gsl::byte *>(array), sizeof(array)},
-                        true, host_runtime_tensor::pool_cpu_only)
+            hrt::create(typecode, shape, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
+        init_tensor_one(expected);
+
+        size_t shape_size = shape.size();
+        int64_t *shape_array = (int64_t *)malloc(shape_size * sizeof(int64_t));
+        std::copy(shape.begin(), shape.end(), shape_array);
+        shape_tensor = hrt::create(dt_int64, {shape_size},
+                                   {reinterpret_cast<gsl::byte *>(shape_array),
+                                    shape_size * sizeof(int64_t)},
+                                   true, host_runtime_tensor::pool_cpu_only)
+                           .expect("create tensor failed");
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
+
+    void init_tensor_one(runtime::runtime_tensor &tensor) {
+        auto dtype = tensor.datatype();
+        switch (dtype) {
+        case dt_int8: {
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<int8_t>(tensor, index) = static_cast<int8_t>(1);
+                    return ok();
+                });
+            break;
+        }
+        case dt_int16: {
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<int16_t>(tensor, index) = static_cast<int16_t>(1);
+                    return ok();
+                });
+            break;
+        }
+        case dt_int32: {
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<int32_t>(tensor, index) = 1;
+                    return ok();
+                });
+            break;
+        }
+        case dt_int64: {
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<int64_t>(tensor, index) = static_cast<int64_t>(1);
+                    return ok();
+                });
+            break;
+        }
+        case dt_uint8: {
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<uint8_t>(tensor, index) = static_cast<uint8_t>(1);
+                    return ok();
+                });
+            break;
+        }
+        case dt_uint16: {
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<uint16_t>(tensor, index) = static_cast<uint16_t>(1);
+                    return ok();
+                });
+            break;
+        }
+        case dt_uint32: {
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<uint32_t>(tensor, index) = static_cast<uint32_t>(1);
+                    return ok();
+                });
+            break;
+        }
+        case dt_uint64: {
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<uint64_t>(tensor, index) = static_cast<uint64_t>(1);
+                    return ok();
+                });
+            break;
+        }
+        case dt_float16: {
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<half>(tensor, index) = static_cast<half>(1);
+                    return ok();
+                });
+            break;
+        }
+        case dt_float32: {
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<float>(tensor, index) = static_cast<float>(1);
+                    return ok();
+                });
+            break;
+        }
+        case dt_float64: {
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<double>(tensor, index) = static_cast<double>(1);
+                    return ok();
+                });
+            break;
+        }
+        case dt_bfloat16: {
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<bfloat16>(tensor, index) = static_cast<bfloat16>(1);
+                    return ok();
+                });
+            break;
+        }
+        default: {
+        }
+        }
+    }
 
   protected:
     runtime_tensor expected;
+    runtime_tensor shape_tensor;
 };
 
 INSTANTIATE_TEST_SUITE_P(constant_of_shape, ConstantOfShapeTest,
-                         testing::Combine(testing::Values(dt_int32),
-                                          testing::Values(dims_t{1, 3, 16,
-                                                                 16})));
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(ConstantOfShapeTest, constant_of_shape) {
 
     // actual
-    int64_t shape1[] = {1, 3, 16, 16};
-    auto shape_ptr =
-        hrt::create(dt_int64, {4},
-                    {reinterpret_cast<gsl::byte *>(shape1), sizeof(shape1)},
-                    true, host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
-
     int32_t value[] = {1};
     auto value_ptr =
         hrt::create(dt_int32, {1},
@@ -75,9 +188,9 @@ TEST_P(ConstantOfShapeTest, constant_of_shape) {
                     host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
-    auto output =
-        kernels::stackvm::constant_of_shape(shape_ptr.impl(), value_ptr.impl())
-            .expect("constant_of_shape failed");
+    auto output = kernels::stackvm::constant_of_shape(shape_tensor.impl(),
+                                                      value_ptr.impl())
+                      .expect("constant_of_shape failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     bool result = is_same_tensor(expected, actual) ||
@@ -95,6 +208,15 @@ TEST_P(ConstantOfShapeTest, constant_of_shape) {
 }
 
 int main(int argc, char *argv[]) {
+    READY_TEST_CASE_GENERATE()
+    FOR_LOOP(lhs_shape, i)
+    FOR_LOOP(lhs_type, j)
+    SPLIT_ELEMENT(lhs_shape, i)
+    SPLIT_ELEMENT(lhs_type, j)
+    WRITE_SUB_CASE()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

@@ -1,0 +1,5 @@
+{
+  "lhs_shape":[[1, 8, 24, 24], [1, 3, 3, 16], [2, 4, 8, 8], [8, 8], [1, 3, 16, 1], [1, 1], [16]],
+  "axis":[-1, 0, 1, 2, 3, -2, -3, -4],
+  "lhs_type":["dt_float32", "dt_int64", "dt_int32", "dt_float64", "dt_int16", "dt_uint32", "dt_boolean", "dt_float16"]
+}

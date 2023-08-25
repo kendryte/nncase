@@ -1,4 +1,5 @@
 import os
+import json
 import numpy as np
 
 
@@ -33,6 +34,17 @@ def _cast_bfloat16_then_float32(values: np.array):
         values[i] = value
 
 
+def dump_dict_to_json(dict, json_file):
+    json_list = []
+    if os.path.exists(json_file):
+        with open(json_file, 'r') as f:
+            json_list = json.load(f)
+
+    json_list.append(dict)
+    with open(json_file, 'w') as f:
+        json.dump(json_list, f)
+
+
 def in_ci():
     return os.getenv('CI', False)
 
@@ -41,9 +53,17 @@ def kpu_targets():
     return os.getenv('KPU_TARGETS', "").split(',')
 
 
-def port():
-    return os.getenv('CI_PROXY_PORT')
+def nuc_ip():
+    return os.getenv('NUC_PROXY_IP')
+
+
+def nuc_port():
+    return os.getenv('NUC_PROXY_PORT')
 
 
 def test_executable(target):
     return os.getenv('TEST_EXECUTABLE_{0}'.format(target.upper()))
+
+
+def infer_file():
+    return os.getenv('INFER_FILE', 'infer_report.json')

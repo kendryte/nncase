@@ -55,5 +55,6 @@ result<void> nncase::kernels::stackvm::reference::dequantize(
     float scale, float bias, kernel_context &context) noexcept {
     DEQUANTIZE_IMPL(uint8_t, float);
     DEQUANTIZE_IMPL(int8_t, float);
+    DEQUANTIZE_IMPL(int16_t, float);
     return err(std::errc::not_supported);
 }

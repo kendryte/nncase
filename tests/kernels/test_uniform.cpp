@@ -26,28 +26,40 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class UniformTest
-    : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, axes_t>> {
+#define TEST_CASE_NAME "test_uniform"
+
+class UniformTest : public KernelTest,
+                    public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape] = GetParam();
-        float_t high_array[] = {1.0f};
-        high = hrt::create(dt_float32, {1},
+        READY_SUBCASE()
+
+        auto typecode = GetDataType("lhs_type");
+        auto l_shape = GetAxesArray("l_shape");
+        auto shape = GetShapeArray("shape");
+        auto value1 = GetFloatNumber("value1");
+        auto value2 = GetFloatNumber("value2");
+        auto value3 = GetFloatNumber("value3");
+
+        high_value = value1;
+        float high_array[] = {high_value};
+        high = hrt::create(typecode, shape,
                            {reinterpret_cast<gsl::byte *>(high_array),
                             sizeof(high_array)},
                            true, host_runtime_tensor::pool_cpu_only)
                    .expect("create tensor failed");
 
-        float_t low_array[] = {0.0f};
+        low_value = value2;
+        float low_array[] = {low_value};
         low = hrt::create(
-                  dt_float32, {1},
+                  typecode, shape,
                   {reinterpret_cast<gsl::byte *>(low_array), sizeof(low_array)},
                   true, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
 
-        float_t seed_array[] = {1.0f};
-        seed = hrt::create(dt_float32, {1},
+        seed_value = value3;
+        float seed_array[] = {seed_value};
+        seed = hrt::create(typecode, shape,
                            {reinterpret_cast<gsl::byte *>(seed_array),
                             sizeof(seed_array)},
                            true, host_runtime_tensor::pool_cpu_only)
@@ -56,30 +68,28 @@ class UniformTest
         shape_array = l_shape;
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
   protected:
     runtime_tensor high;
     runtime_tensor low;
     runtime_tensor seed;
     axes_t shape_array;
+    float high_value;
+    float low_value;
+    float seed_value;
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    Uniform, UniformTest,
-    testing::Combine(testing::Values(dt_float32, dt_int32, dt_int16, dt_float64,
-                                     dt_int8, dt_uint8, dt_uint16, dt_uint32,
-                                     dt_uint64, dt_int64, dt_float16,
-                                     dt_boolean),
-                     testing::Values(axes_t{1, 3, 16, 16})));
+INSTANTIATE_TEST_SUITE_P(Uniform, UniformTest,
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(UniformTest, Uniform) {
     // expected
     std::vector<int64_t> vec(shape_array.begin(), shape_array.end());
     int64_t shape_u_array[4];
     std::copy(vec.begin(), vec.end(), shape_u_array);
-    auto output_ort =
-        ortki_RandomUniform(1, 1.0f, 0.0f, 1.0f, shape_u_array, 4);
+    auto output_ort = ortki_RandomUniform(1, high_value, low_value, seed_value,
+                                          shape_u_array, 4);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
@@ -115,6 +125,27 @@ TEST_P(UniformTest, Uniform) {
 }
 
 int main(int argc, char *argv[]) {
+    READY_TEST_CASE_GENERATE()
+    FOR_LOOP(lhs_type, i)
+    FOR_LOOP(shape, j)
+    FOR_LOOP(l_shape, k)
+    FOR_LOOP(value1, l)
+    FOR_LOOP(value2, m)
+    FOR_LOOP(value3, n)
+    SPLIT_ELEMENT(lhs_type, i)
+    SPLIT_ELEMENT(shape, j)
+    SPLIT_ELEMENT(l_shape, k)
+    SPLIT_ELEMENT(value1, l)
+    SPLIT_ELEMENT(value2, m)
+    SPLIT_ELEMENT(value3, n)
+    WRITE_SUB_CASE()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

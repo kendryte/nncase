@@ -46,7 +46,16 @@ Type "help", "copyright", "credits" or "license" for more information.
 
 Model compilation, inference for k230 can be found in the Jupyter script [User_guide](../examples/user_guide/k230_simulate.ipynb), this script contains single and multiple input examples.
 
-If you run Jupyter scripts in Docker, you can refer to [Configure Jupyter lab](https://github.com/kunjing96/docker-jupyterlab#32-%E9%85%8D%E7%BD%AEjupyter-lab) to configure them.
+If you run the Jupyter script in Docker, you can refer to the command and then open it in your browser.
+
+```shell
+docker run -it --rm --privileged=true -p 8889:8889 --name Kendryte -v `pwd`:/mnt -w /mnt ghcr.io/kendryte/k230_sdk  /bin/bash -c "/bin/bash
+
+pip install jupyterlab
+
+jupyter-lab --ip 0.0.0.0 --allow-root
+```
+
 
 You need to modify the following to suit your needs before executing the script:
 
@@ -153,6 +162,9 @@ subgraph A
     end
 
 ```
+
+##### Dynamice shape args
+Refer to[Dynamic shape args description](./shape_bucket.md)
 
 #### Example
 

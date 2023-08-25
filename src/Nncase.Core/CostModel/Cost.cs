@@ -309,6 +309,14 @@ public static class CostUtility
         };
     }
 
+    public static Cost GetShapeExprCost()
+    {
+        return new()
+        {
+            [CostFactorNames.CPUCycles] = 1,
+        };
+    }
+
     public static Cost GetActivationCost(TensorType ret, uint macPerElement)
     {
         return new()

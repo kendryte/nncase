@@ -103,8 +103,13 @@ batch_to_space_impl(datatype_t type, const gsl::byte *input, gsl::byte *output,
 dims_t infer_shape(gsl::span<const size_t> origin_in_shape,
                    gsl::span<const size_t> block_shape,
                    const paddings_t &crops) {
-    auto in_shape = kernels::stackvm::transpose_infer_shape(
-        origin_in_shape, fixed_dims(0, 2, 3, 1));
+    auto d4 = fixed_dims(0, 2, 3, 1);
+    auto d3 = fixed_dims(0, 2, 1);
+    auto inPerm = origin_in_shape.size() == 4
+                      ? gsl::span<const size_t>{d4.data(), d4.size()}
+                      : gsl::span<const size_t>{d3.data(), d3.size()};
+    auto in_shape =
+        kernels::stackvm::transpose_infer_shape(origin_in_shape, inPerm);
     auto batch = in_shape[0] / compute_size(block_shape);
     auto out_shape = dims_t{batch};
     auto m = block_shape.size();
@@ -117,8 +122,12 @@ dims_t infer_shape(gsl::span<const size_t> origin_in_shape,
         out_shape.insert(out_shape.end(), in_shape.end() - remain_size,
                          in_shape.end());
     }
-    return kernels::stackvm::transpose_infer_shape(out_shape,
-                                                   fixed_dims(0, 3, 1, 2));
+    auto outd4 = fixed_dims(0, 3, 1, 2);
+    auto outd3 = fixed_dims(0, 2, 1);
+    auto outPerm = origin_in_shape.size() == 4
+                       ? gsl::span<const size_t>{outd4.data(), outd4.size()}
+                       : gsl::span<const size_t>{outd3.data(), outd3.size()};
+    return kernels::stackvm::transpose_infer_shape(out_shape, outPerm);
 }
 
 result<value_t> kernels::stackvm::batch_to_space(value_t input,
