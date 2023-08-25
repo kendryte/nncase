@@ -161,6 +161,9 @@ internal class Compiler : ICompiler
         {
             p.Add<Passes.Rules.MHACombine>();
             p.Add<Passes.Rules.Neutral.FoldConstCall>();
+            // p.Add<Passes.Rules.DumpMM>();
+            // p.Add<Passes.Rules.DumpLayerNorm>();
+            // p.Add<Passes.Rules.DumpGather>();
             p.Add<Passes.Rules.FuseMHA1>();
             p.Add<Passes.Rules.FuseMHA2>();
         });
