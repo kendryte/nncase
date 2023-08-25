@@ -113,13 +113,13 @@ result<void> resize_nearest_neighbor_impl(
             auto *output_ptr = begin_output_ptr + oc * out_image_size;
 
             for (int oy = 0; oy < out_h; oy++) {
-                auto iy = get_coordinate_func(oy, height_scale, out_h, 0, 0, 0);
+                auto iy = get_coordinate_func(oy, height_scale, out_h, in_shape[2], 0, 0);
                 int64_t in_y = get_nearset_func(iy);
                 auto *in_row = input_ptr + in_y * in_shape[3];
 
                 for (int ox = 0; ox < out_w; ox++) {
                     auto ix =
-                        get_coordinate_func(ox, width_scale, out_w, 0, 0, 0);
+                        get_coordinate_func(ox, width_scale, out_w, in_shape[3], 0, 0);
                     int64_t in_x = get_nearset_func(ix);
                     *output_ptr++ = in_row[in_x];
                 }

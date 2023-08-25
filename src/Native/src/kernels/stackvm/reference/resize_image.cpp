@@ -109,14 +109,14 @@ result<void> resize_nearest_neighbor_impl(
             in_index[1] = oc;
             out_index[1] = oc;
             for (size_t oy = 0; oy < (size_t)out_h; oy++) {
-                auto iy = get_coordinate_func(oy, height_scale, out_h, 0, 0, 0);
+                auto iy = get_coordinate_func(oy, height_scale, out_h, in_shape[2], 0, 0);
                 int64_t in_y = get_nearset_func(iy);
                 in_index[2] = in_y;
                 out_index[2] = oy;
 
                 for (size_t ox = 0; ox < (size_t)out_w; ox++) {
                     auto ix =
-                        get_coordinate_func(ox, width_scale, out_w, 0, 0, 0);
+                        get_coordinate_func(ox, width_scale, out_w, in_shape[3], 0, 0);
                     int64_t in_x = get_nearset_func(ix);
                     in_index[3] = in_x;
                     out_index[3] = ox;
