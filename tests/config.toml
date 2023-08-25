@@ -18,6 +18,10 @@ model_layout = 'NHWC'
 letterbox_value = 0
 dump_asm = true
 dump_ir = false
+shape_bucket_enable = false
+shape_bucket_range_info = { }
+shape_bucket_segments_count = 4
+shape_bucket_fix_var_map = { }
 
 [ptq_opt]
 use_mix_quant = false

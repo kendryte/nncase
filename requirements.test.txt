@@ -20,6 +20,3 @@ clr_loader==0.2.4
 toml==0.10.2
 pandas
 tabulate
-nbmake
-jupyterlab
-scikit-learn
