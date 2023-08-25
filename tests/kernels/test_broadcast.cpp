@@ -22,7 +22,7 @@
 #include <nncase/runtime/stackvm/opcode.h>
 #include <ortki/operators.h>
 
-#define TEST_CASE_NAME "test_broad_cast"
+#define TEST_CASE_NAME "test_broadcast"
 
 using namespace nncase;
 using namespace nncase::runtime;

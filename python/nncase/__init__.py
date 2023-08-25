@@ -152,6 +152,16 @@ class Compiler:
         self._compiler = self._session.compiler
         self._quantize_options = None
         self._shape_bucket_options = _nncase.ShapeBucketOptions()
+        self.init_shape_bucket_options(compile_options)
+
+    def init_shape_bucket_options(self, compile_options: CompileOptions) -> None:
+        self._shape_bucket_options = _nncase.ShapeBucketOptions()
+        self._shape_bucket_options.segments_count = compile_options.shape_bucket_segments_count
+        self._shape_bucket_options.enable = compile_options.shape_bucket_enable
+        self._shape_bucket_options.range_info = compile_options.shape_bucket_range_info
+        self._shape_bucket_options.segments_count = compile_options.shape_bucket_segments_count
+        self._shape_bucket_options.fix_var_map = compile_options.shape_bucket_fix_var_map
+        self._compile_options.shape_bucket_options = self._shape_bucket_options
 
     def compile(self) -> None:
         self._compiler.compile()

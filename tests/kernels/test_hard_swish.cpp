@@ -22,16 +22,20 @@
 #include <nncase/runtime/stackvm/opcode.h>
 #include <ortki/operators.h>
 
+#define TEST_CASE_NAME "test_hard_swish"
+
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class HardSwishTest
-    : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
+class HardSwishTest : public KernelTest,
+                      public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape] = GetParam();
+        READY_SUBCASE()
+
+        auto l_shape = GetShapeArray("lhs_shape");
+        auto typecode = GetDataType("lhs_type");
 
         input =
             hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
@@ -44,34 +48,14 @@ class HardSwishTest
     runtime_tensor input;
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    hard_swish, HardSwishTest,
-    testing::Combine(testing::Values(dt_float32),
-                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 2},
-                                     dims_t{1}, dims_t{16, 16}, dims_t{})));
+INSTANTIATE_TEST_SUITE_P(hard_swish, HardSwishTest,
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(HardSwishTest, hard_swish) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
-    auto alpha_value = 1.0f / 6.0f;
-    auto beta_value = 0.5f;
 
     // expected
-    float_t alpha_ptr[] = {alpha_value};
-    auto alpha = hrt::create(nncase::dt_float32, {1},
-                             {reinterpret_cast<gsl::byte *>(alpha_ptr),
-                              sizeof(alpha_ptr)},
-                             true, host_runtime_tensor::pool_cpu_only)
-                     .expect("create tensor failed");
-
-    float_t beta_ptr[] = {beta_value};
-    auto beta =
-        hrt::create(nncase::dt_float32, {1},
-                    {reinterpret_cast<gsl::byte *>(beta_ptr), sizeof(beta_ptr)},
-                    true, host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
-
-    auto output_ort =
-        ortki_Mul(l_ort, ortki_HardSigmoid(l_ort, alpha_value, beta_value));
+    auto output_ort = ortki_HardSwish(l_ort);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
@@ -90,6 +74,8 @@ TEST_P(HardSwishTest, hard_swish) {
                   cosine_similarity_tensor(expected, actual);
 
     if (!result) {
+        std::cout << "input ";
+        print_runtime_tensor(input);
         std::cout << "actual ";
         print_runtime_tensor(actual);
         std::cout << "expected ";
@@ -101,6 +87,15 @@ TEST_P(HardSwishTest, hard_swish) {
 }
 
 int main(int argc, char *argv[]) {
+    READY_TEST_CASE_GENERATE()
+    FOR_LOOP(lhs_shape, i)
+    FOR_LOOP(lhs_type, j)
+    SPLIT_ELEMENT(lhs_shape, i)
+    SPLIT_ELEMENT(lhs_type, j)
+    WRITE_SUB_CASE()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
