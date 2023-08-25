@@ -15,6 +15,7 @@
 Telegram: [nncase community](https://t.me/joinchat/PPcEPZMLaTViNDI1)
 
 ## Install from binaries
+
 ## 从二进制安装
 
 Download prebuilt binaries from [Release](https://github.com/kendryte/nncase/releases).
@@ -22,40 +23,47 @@ Download prebuilt binaries from [Release](https://github.com/kendryte/nncase/rel
 下载预编译的二进制文件 [Release](https://github.com/kendryte/nncase/releases)。
 
 ## Build from source
+
 ## 从源码编译
 
 [Build from source](./docs/build.md)
 
 ## Supported operators
+
 ## 支持的算子
 
 - [TFLite ops](./docs/tflite_ops.md)
 - [Caffe ops](./docs/caffe_ops.md)
 - [ONNX ops](./docs/onnx_ops.md)
 
-
 ## K210/K510
+
 - [Usage](https://github.com/kendryte/nncase/blob/release/1.0/docs/USAGE_EN.md)
 - [FAQ](https://github.com/kendryte/nncase/blob/release/1.0/docs/FAQ_EN.md)
 - [使用说明](https://github.com/kendryte/nncase/blob/release/1.0/docs/USAGE_ZH.md)
 - [常见问题](https://github.com/kendryte/nncase/blob/release/1.0/docs/FAQ_ZH.md)
 - [Example](https://github.com/kendryte/nncase/blob/release/1.0/examples/user_guide/)
+
 ## K230
+
 - [Usage](./docs/USAGE_v2_EN.md)
 - [FAQ](./docs/FAQ_EN.md)
+- [Example](./examples/user_guide/k230_simulate-EN.ipynb)
 - [使用说明](./docs/USAGE_v2.md)
 - [常见问题](./docs/FAQ_ZH.md)
-- [Example](./examples/user_guide/)
+- [示例](./examples/user_guide/k230_simulate-ZH.ipynb)
 
 ## Resources
-## 资源
 
+## 资源
+### K210
 - [K210_Yolo_framework](https://github.com/zhen8838/K210_Yolo_framework)
-- [Shts! 's Blog (Japanese)](https://www.shtsno24.tokyo/2020/03/nncase-v020.html)
+- [Shts!'s Blog (Japanese)](https://www.shtsno24.tokyo/2020/03/nncase-v020.html)
 
 ---
 
 ## Architecture
+
 ## 架构
 
 <div align="center">
