@@ -112,6 +112,10 @@ result<void> resize_nearest_neighbor_impl(
                 auto iy = get_coordinate_func(oy, height_scale, out_h,
                                               in_shape[2], 0, 0);
                 int64_t in_y = get_nearset_func(iy);
+                if (in_y < 0)
+                    in_y = 0;
+                if (in_y >= in_shape[2])
+                    in_y = in_shape[2] - 1;
                 in_index[2] = in_y;
                 out_index[2] = oy;
 
@@ -119,6 +123,10 @@ result<void> resize_nearest_neighbor_impl(
                     auto ix = get_coordinate_func(ox, width_scale, out_w,
                                                   in_shape[3], 0, 0);
                     int64_t in_x = get_nearset_func(ix);
+                    if (in_x < 0)
+                        in_x = 0;
+                    if (in_x >= in_shape[3])
+                        in_x = in_shape[3] - 1;
                     in_index[3] = in_x;
                     out_index[3] = ox;
                     output[offset(out_strides, out_index)] =
