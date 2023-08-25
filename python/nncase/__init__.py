@@ -357,6 +357,10 @@ class CompileOptions:
     dump_asm: bool
     dump_ir: bool
     dump_dir: str
+    shape_bucket_enable: bool
+    shape_bucket_range_info: dict
+    shape_bucket_segments_count: int
+    shape_bucket_fix_var_map: dict
 
     def __init__(self) -> None:
 
