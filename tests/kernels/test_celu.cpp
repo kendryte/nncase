@@ -55,7 +55,7 @@ class CeluTest : public KernelTest,
         case dt_float16: {
             std::random_device rd;
             std::mt19937 gen(rd());
-            std::uniform_real_distribution<float> dis(0.0f, 1.0f);
+            std::uniform_real_distribution<float> dis(0.0f, 5.0f);
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](gsl::span<const size_t> index) -> result<void> {
@@ -67,7 +67,7 @@ class CeluTest : public KernelTest,
         case dt_float32: {
             std::random_device rd;
             std::mt19937 gen(rd());
-            std::uniform_real_distribution<float> dis(0.0f, 1.0f);
+            std::uniform_real_distribution<float> dis(0.0f, 5.0f);
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](gsl::span<const size_t> index) -> result<void> {
@@ -79,7 +79,7 @@ class CeluTest : public KernelTest,
         case dt_bfloat16: {
             std::random_device rd;
             std::mt19937 gen(rd());
-            std::uniform_real_distribution<> dis(0.0, 1.0);
+            std::uniform_real_distribution<> dis(0.0, 5.0);
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](gsl::span<const size_t> index) -> result<void> {
