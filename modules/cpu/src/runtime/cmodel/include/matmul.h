@@ -1,5 +1,7 @@
 #include "runtime_utils.h"
 
+namespace kernels {
+
 namespace {
 template <typename T>
 void matmul_unit_impl(const T *input_a, const T *input_b, T *output,
@@ -139,3 +141,4 @@ void matmul(const T *input_a, const T *input_b, T *output, dims_t in_a_dims,
             gsl::make_span(output_strides).template as_span<const size_t>());
     }
 }
+} // namespace kernels

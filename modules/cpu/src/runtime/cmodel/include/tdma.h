@@ -4,6 +4,7 @@
 #include <cassert>
 #include <concat.h>
 #include <functional>
+#include <gather.h>
 #include <hardware_context.h>
 #include <layernorm.h>
 #include <matmul.h>
@@ -94,8 +95,9 @@ void unary(tensor<T, ALoc> &a, tensor<T, CLoc> &out, unary_op_t op) {
 template <typename T, loc_t ALoc, loc_t BLoc>
 void matmul(tensor<T, ALoc> &a, tensor<T, BLoc> &b,
             tensor<T, loc_t::local> &c) {
-    matmul(a.cdata().data(), b.cdata().data(), c.data().data(), a.dimension(),
-           a.strides(), b.dimension(), b.strides(), c.dimension(), c.strides());
+    kernels::matmul(a.cdata().data(), b.cdata().data(), c.data().data(),
+                    a.dimension(), a.strides(), b.dimension(), b.strides(),
+                    c.dimension(), c.strides());
 }
 
 template <typename T, loc_t ALoc, loc_t BLoc>
@@ -104,6 +106,15 @@ void reduce(tensor<T, ALoc> &input, tensor<T, BLoc> &output, reduce_op_t op,
     kernels::reduce(op, &init_value, input.cdata().data(), output.data().data(),
                     input.dimension(), axis, input.strides(), output.strides(),
                     keep_dims);
+}
+
+template <typename T, loc_t ALoc, loc_t BLoc, loc_t CLoc>
+void gather(tensor<T, ALoc> &input, tensor<int64_t, BLoc> &indices,
+            tensor<T, CLoc> &output, int axis) {
+    kernels::gather<T, int64_t>(
+        input.cdata().data(), output.data().data(), input.dimension(),
+        input.strides(), output.dimension(), output.strides(),
+        indices.data().data(), indices.dimension(), axis);
 }
 
 template <typename T, loc_t Loc>
@@ -261,8 +272,56 @@ void tdma_load_broadcast_async([[maybe_unused]] tensor<T, Dest> &dest,
     throw std::system_error(std::make_error_code(std::errc::not_supported));
 }
 
-void tdma_reduce_async() {
-    throw std::system_error(std::make_error_code(std::errc::not_supported));
+template <class T>
+void tdma_reduce_async(tensor<T, loc_t::local> &src,
+                       tensor<T, loc_t::local> &dest, reduce_op_t reduce_op,
+                       thread_context &ctx) {
+    __tdma_all_sync_apply(
+        [&src, &ctx](int visited) -> void {
+            tensor<T> *gather_tensor = nullptr;
+            auto new_dims = dims_t(src.dimension());
+            new_dims.insert(new_dims.begin(), BLOCKS * CORES);
+            if (visited == 1) {
+                if (global_hardware_ctx->global_var != nullptr) {
+                    throw std::runtime_error(" the global var has been used!");
+                }
+                gather_tensor = new tensor<T>(new_dims);
+                global_hardware_ctx->global_var = (void *)gather_tensor;
+            } else {
+                gather_tensor =
+                    static_cast<tensor<T> *>(global_hardware_ctx->global_var);
+            }
+            dims_t begin(new_dims.size(), 0);
+            dims_t shape(new_dims);
+            begin[0] = ctx.bid() * CORES + ctx.tid();
+            shape[0] = 1;
+            __tensor_copy_sync<T, loc_t::local, loc_t::local>(
+                std::move((*gather_tensor)(begin, shape)),
+                std::move(unsqueeze(src)));
+        },
+        []() -> void {}, ctx);
+
+    __tdma_all_sync_apply(
+        [&]([[maybe_unused]] int visit) -> void {
+            tensor<T> *gather_tensor =
+                static_cast<tensor<T> *>(global_hardware_ctx->global_var);
+            auto new_dims = dims_t(src.dimension());
+            new_dims[0] = CORES;
+            auto viewed_gather_tensor =
+                tensor<T>(gather_tensor->data().subspan(
+                              ctx.bid() * CORES * gather_tensor->strides()[0]),
+                          new_dims, gather_tensor->strides());
+
+            reduce(viewed_gather_tensor, dest, reduce_op, static_cast<T>(0),
+                   dims_t({0}), false);
+        },
+        []() -> void {
+            auto reduced_tensor =
+                static_cast<tensor<T> *>(global_hardware_ctx->global_var);
+            delete reduced_tensor;
+            global_hardware_ctx->global_var = nullptr;
+        },
+        ctx);
 }
 
 enum class reduce_strategy_t : uint8_t {
@@ -279,7 +338,8 @@ enum class reduce_strategy_t : uint8_t {
  * @param src local tensor
  * @param dest local tensor
  * @param reduce_op op
- * @param strategy  all = reduce [8*4], pre_block = reduce [8*1] .
+ * @param strategy  all = reduce [8*4], out=[0], pre_block = reduce [8*1],
+ * out=[4] .
  * @param axis axis of gather tensor, note gather tensor dims = [32,...]
  * @param ctx
  */
@@ -348,7 +408,7 @@ void tdma_all_reduce_async(tensor<T, loc_t::local> &src,
                 tensor<T> *gather_tensor =
                     static_cast<tensor<T> *>(global_hardware_ctx->global_var);
                 auto new_dims = dims_t(src.dimension());
-                new_dims.insert(new_dims.begin(), 8);
+                new_dims.insert(new_dims.begin(), BLOCKS);
                 auto new_strides = dims_t(gather_tensor->strides());
                 new_strides[0] *= CORES;
                 auto viewed_gather_tensor =

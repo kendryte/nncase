@@ -23,3 +23,4 @@ endfunction(add_test)
 
 add_test(demo1 tests/demo1)
 add_test(demo2 tests/demo2)
+add_test(demo3 tests/demo3)
