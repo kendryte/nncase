@@ -154,7 +154,7 @@ void reduce_sum_sqr(tensor<T, ALoc> &a, tensor<T, loc_t::local> &sum,
 template <typename T, loc_t BLoc>
 void concat(std::initializer_list<tensor<T, loc_t::local>> inits,
             tensor<T, BLoc> &output, size_t axis) {
-    std::vector<const gsl::byte *const> inputs(inits.size());
+    itlib::small_vector<const gsl::byte *const, 8> inputs(inits.size());
     std::vector<strides_t> in_strides(inits.size());
     auto concat_dims = dims_t(inits.size(), 1);
     for (size_t i = 0; i < inits.size(); ++i) {
