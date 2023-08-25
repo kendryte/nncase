@@ -22,16 +22,22 @@
 #include <nncase/runtime/stackvm/opcode.h>
 #include <ortki/operators.h>
 
+#define TEST_CASE_NAME "test_selu"
+
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
 class SeluTest : public KernelTest,
-                 public ::testing::TestWithParam<
-                     std::tuple<nncase::typecode_t, dims_t, float_t, float_t>> {
+                 public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape, value1, value2] = GetParam();
+        READY_SUBCASE()
+
+        auto l_shape = GetShapeArray("lhs_shape");
+        auto typecode = GetDataType("lhs_type");
+        auto value1 = GetFloatNumber("alpha");
+        auto value2 = GetFloatNumber("gamma");
 
         input =
             hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
@@ -46,36 +52,62 @@ class SeluTest : public KernelTest,
 
   protected:
     runtime_tensor input;
-    float_t alpha_value;
-    float_t gamma_value;
+    float alpha_value;
+    float gamma_value;
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    Selu, SeluTest,
-    testing::Combine(testing::Values(dt_float32),
-                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 3, 16},
-                                     dims_t{1, 3}, dims_t{1}, dims_t{8, 8},
-                                     dims_t{}),
-                     testing::Values(1.2f, 0.8f, 0.5f, 0.6f, 1.5f),
-                     testing::Values(1.2f, 0.8f, 0.5f, 0.6f, 1.5f)));
+INSTANTIATE_TEST_SUITE_P(Selu, SeluTest,
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(SeluTest, Selu) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
 
     // expected
-    float_t alpha_ptr[] = {alpha_value};
-    auto alpha = hrt::create(nncase::dt_float32, {1},
-                             {reinterpret_cast<gsl::byte *>(alpha_ptr),
-                              sizeof(alpha_ptr)},
-                             true, host_runtime_tensor::pool_cpu_only)
-                     .expect("create tensor failed");
+    runtime_tensor alpha;
+    runtime_tensor gamma;
+    if (input.datatype() == dt_float32) {
+        float alpha_ptr[] = {alpha_value};
+        alpha = hrt::create(nncase::dt_float32, {1},
+                            {reinterpret_cast<gsl::byte *>(alpha_ptr),
+                             sizeof(alpha_ptr)},
+                            true, host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
 
-    float_t gamma_ptr[] = {gamma_value};
-    auto gamma = hrt::create(nncase::dt_float32, {1},
-                             {reinterpret_cast<gsl::byte *>(gamma_ptr),
-                              sizeof(gamma_ptr)},
-                             true, host_runtime_tensor::pool_cpu_only)
-                     .expect("create tensor failed");
+        float gamma_ptr[] = {gamma_value};
+        gamma = hrt::create(nncase::dt_float32, {1},
+                            {reinterpret_cast<gsl::byte *>(gamma_ptr),
+                             sizeof(gamma_ptr)},
+                            true, host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
+    } else if (input.datatype() == dt_float16) {
+        half alpha_ptr[] = {(half)alpha_value};
+        alpha = hrt::create(nncase::dt_float16, {1},
+                            {reinterpret_cast<gsl::byte *>(alpha_ptr),
+                             sizeof(alpha_ptr)},
+                            true, host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
+
+        half gamma_ptr[] = {(half)gamma_value};
+        gamma = hrt::create(nncase::dt_float16, {1},
+                            {reinterpret_cast<gsl::byte *>(gamma_ptr),
+                             sizeof(gamma_ptr)},
+                            true, host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
+    } else {
+        double alpha_ptr[] = {(double)alpha_value};
+        alpha = hrt::create(nncase::dt_float64, {1},
+                            {reinterpret_cast<gsl::byte *>(alpha_ptr),
+                             sizeof(alpha_ptr)},
+                            true, host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
+
+        double gamma_ptr[] = {(double)gamma_value};
+        gamma = hrt::create(nncase::dt_float64, {1},
+                            {reinterpret_cast<gsl::byte *>(gamma_ptr),
+                             sizeof(gamma_ptr)},
+                            true, host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
+    }
     auto output_ort = ortki_Selu(l_ort, alpha_value, gamma_value);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
@@ -107,6 +139,21 @@ TEST_P(SeluTest, Selu) {
 }
 
 int main(int argc, char *argv[]) {
+    READY_TEST_CASE_GENERATE()
+    FOR_LOOP(lhs_shape, i)
+    FOR_LOOP(lhs_type, j)
+    FOR_LOOP(alpha, k)
+    FOR_LOOP(gamma, l)
+    SPLIT_ELEMENT(lhs_shape, i)
+    SPLIT_ELEMENT(lhs_type, j)
+    SPLIT_ELEMENT(alpha, k)
+    SPLIT_ELEMENT(gamma, l)
+    WRITE_SUB_CASE()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

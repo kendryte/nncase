@@ -130,8 +130,10 @@ TEST_P(CastTest, cast) {
                    cosine_similarity_tensor(expected1, actual1);
 
     if (!result1) {
-        print_runtime_tensor(actual1);
-        print_runtime_tensor(expected1);
+        std::cout << "actual ";
+        print_runtime_tensor(actual);
+        std::cout << "expected ";
+        print_runtime_tensor(expected);
     }
 
     // compare

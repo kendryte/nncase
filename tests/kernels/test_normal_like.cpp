@@ -46,7 +46,7 @@ class NormalLikeTest : public KernelTest,
         init_tensor(input);
 
         mean_value = value1;
-        float_t mean_ptr[] = {mean_value};
+        float mean_ptr[] = {mean_value};
         mean = hrt::create(
                    typecode, {1},
                    {reinterpret_cast<gsl::byte *>(mean_ptr), sizeof(mean_ptr)},
@@ -54,7 +54,7 @@ class NormalLikeTest : public KernelTest,
                    .expect("create tensor failed");
 
         scale_value = value2;
-        float_t scale_ptr[] = {scale_value};
+        float scale_ptr[] = {scale_value};
         scale = hrt::create(typecode, {1},
                             {reinterpret_cast<gsl::byte *>(scale_ptr),
                              sizeof(scale_ptr)},
@@ -62,7 +62,7 @@ class NormalLikeTest : public KernelTest,
                     .expect("create tensor failed");
 
         seed_value = value3;
-        float_t seed_ptr[] = {seed_value};
+        float seed_ptr[] = {seed_value};
         seed = hrt::create(
                    typecode, {1},
                    {reinterpret_cast<gsl::byte *>(seed_ptr), sizeof(seed_ptr)},
@@ -78,9 +78,9 @@ class NormalLikeTest : public KernelTest,
     runtime_tensor scale;
     runtime_tensor seed;
     axes_t shape_array;
-    float_t mean_value;
-    float_t scale_value;
-    float_t seed_value;
+    float mean_value;
+    float scale_value;
+    float seed_value;
 };
 
 INSTANTIATE_TEST_SUITE_P(normal_like, NormalLikeTest,
