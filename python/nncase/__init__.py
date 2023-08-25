@@ -379,6 +379,10 @@ class CompileOptions:
         self.dump_asm = True
         self.dump_ir = False
         self.dump_dir = "tmp"
+        self.shape_bucket_enable = False
+        self.shape_bucket_range_info = {}
+        self.shape_bucket_segments_count = 2
+        self.shape_bucket_fix_var_map = {}
 
 
 class ShapeBucketOptions:
