@@ -44,12 +44,12 @@ class CeluTest : public KernelTest,
 
         alpha = hrt::create(typecode, {1}, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
-        init_tensor(alpha);
+        init_tensor_alpha(alpha);
     }
 
     void TearDown() override {}
 
-    virtual void init_tensor(runtime::runtime_tensor &tensor) override {
+    virtual void init_tensor_alpha(runtime::runtime_tensor &tensor) {
         auto dtype = tensor.datatype();
         switch (dtype) {
         case dt_float16: {
