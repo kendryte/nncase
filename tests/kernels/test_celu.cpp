@@ -49,7 +49,7 @@ class CeluTest : public KernelTest,
 
     void TearDown() override {}
 
-    virtual void init_tensor(runtime::runtime_tensor &tensor) override{
+    virtual void init_tensor(runtime::runtime_tensor &tensor) override {
         auto dtype = tensor.datatype();
         switch (dtype) {
         case dt_float16: {
