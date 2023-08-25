@@ -221,7 +221,10 @@ inline result<void> resize_bilinear_impl(
                     auto a3 = (in_y - in_y0) * (in_x - in_x0);
 
                     *output_ptr = bfloat16::round_to_bfloat16(
-                        v0 * a0 + v1 * a1 + v2 * a2 + v3 * a3);
+                        static_cast<float>(v0) * a0 +
+                        static_cast<float>(v1) * a1 +
+                        static_cast<float>(v2) * a2 +
+                        static_cast<float>(v3) * a3);
                     ++output_ptr;
                 }
             }
