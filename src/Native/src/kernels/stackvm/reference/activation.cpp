@@ -29,30 +29,30 @@ using namespace nncase::runtime::stackvm;
 using namespace nncase::kernels;
 using namespace nncase::kernels::stackvm;
 
-FLOAT_UNARY_TEMPLATE(relu, std::max((float)0, x))
-FLOAT_UNARY_TEMPLATE(softsign, x / (1 + std::abs(x)))
-FLOAT_UNARY_TEMPLATE(softplus, std::log(1 + std::exp(x)))
-FLOAT_UNARY_TEMPLATE(sigmoid, 1 / (1 + exp(-x)))
-FLOAT_UNARY_TEMPLATE(swish, x / (1 + exp(-x)))
-FLOAT_UNARY_TEMPLATE(hard_swish,
-                     x *std::max(0.f, std::min((float)1.f,
-                                               (float)(1.f / 6 * x + 0.5))))
-FLOAT_UNARY_TEMPLATE(erf, erff(x)) // for k510 toolchain
-FLOAT_UNARY_WITH_MUL_TEMPLATE(elu, alpha, x < 0 ? alpha * (exp(x) - 1) : x)
+UNARY_TEMPLATE(relu, std::max((double)0, x))
+UNARY_TEMPLATE(softsign, x / (1 + std::abs(x)))
+UNARY_TEMPLATE(softplus, std::log(1 + std::exp(x)))
+UNARY_TEMPLATE(sigmoid, 1 / (1 + exp(-x)))
+UNARY_TEMPLATE(swish, x / (1 + exp(-x)))
+UNARY_TEMPLATE(hard_swish,
+               x *std::max((double)0.f,
+                           std::min((double)1.f, (double)(1.f / 6 * x + 0.5))))
+UNARY_TEMPLATE(erf, erff(x)) // for k510 toolchain
+UNARY_WITH_MUL_TEMPLATE_V2(elu, alpha, x < 0 ? alpha * (exp(x) - 1) : x)
 // FLOAT_UNARY_WITH_MUL_TEMPLATE(prelu, slope, x < 0 ? slope * x : x)
-FLOAT_UNARY_WITH_MUL_TEMPLATE(
-    celu, alpha,
-    std::max((float)0, x) +
-        std::min((float)0, (float)(alpha *(exp(x / alpha) - 1))))
-FLOAT_UNARY_WITH_MUL_TEMPLATE(leaky_relu, alpha, x < 0 ? alpha * x : x)
-FLOAT_UNARY_WITH_MUL_TEMPLATE(gelu, alpha,
-                              0.5f * (alpha * x) *
-                                  (1.f + erff(alpha * x / sqrtf(2.f))))
-FLOAT_ACTIVATION_TEMPLATE(selu,
-                          x <= 0 ? gamma * (alpha * std::exp(x) - alpha)
-                                 : x * gamma,
-                          alpha, gamma)
-FLOAT_ACTIVATION_TEMPLATE(hard_sigmoid,
-                          std::max((float)0,
-                                   std::min((float)1, x *alpha + beta)),
-                          alpha, beta)
+UNARY_WITH_MUL_TEMPLATE_V2(celu, alpha,
+                           std::max((double)0, x) +
+                               std::min((double)0,
+                                        (double)(alpha *(exp(x / alpha) - 1))))
+UNARY_WITH_MUL_TEMPLATE_V2(leaky_relu, alpha, x < 0 ? alpha * x : x)
+UNARY_WITH_MUL_TEMPLATE_V2(gelu, alpha,
+                           0.5f * (alpha * x) *
+                               (1.f + erff(alpha * x / sqrtf(2.f))))
+ACTIVATION_TEMPLATE_V2(selu,
+                       x <= 0 ? gamma * (alpha * std::exp(x) - alpha)
+                              : x * gamma,
+                       alpha, gamma)
+ACTIVATION_TEMPLATE_V2(hard_sigmoid,
+                       std::max((double)0,
+                                std::min((double)1, x *alpha + gamma)),
+                       alpha, gamma)

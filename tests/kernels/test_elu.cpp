@@ -22,45 +22,53 @@
 #include <nncase/runtime/stackvm/opcode.h>
 #include <ortki/operators.h>
 
+#define TEST_CASE_NAME "test_elu"
+
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
 class EluTest : public KernelTest,
-                public ::testing::TestWithParam<
-                    std::tuple<nncase::typecode_t, dims_t, float_t>> {
+                public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape, alpha_value] = GetParam();
+        READY_SUBCASE()
+
+        auto l_shape = GetShapeArray("lhs_shape");
+        auto typecode = GetDataType("lhs_type");
 
         input =
             hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
         init_tensor(input);
 
-        alpha = alpha_value;
+        alpha = hrt::create(typecode, {1}, host_runtime_tensor::pool_cpu_only)
+                    .expect("create tensor failed");
+        init_tensor(alpha);
     }
 
     void TearDown() override {}
 
   protected:
     runtime_tensor input;
-    float_t alpha;
+    runtime_tensor alpha;
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    elu, EluTest,
-    testing::Combine(testing::Values(dt_float32),
-                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{1},
-                                     dims_t{8, 8}, dims_t{1, 4, 16},
-                                     dims_t{1, 3, 24, 24}, dims_t{}),
-                     testing::Values(1.2f, 0.8f)));
+INSTANTIATE_TEST_SUITE_P(elu, EluTest,
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(EluTest, elu) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
 
     // expected
-    auto output_ort = ortki_Elu(l_ort, alpha);
+    OrtKITensor *output_ort;
+    if (input.datatype() == dt_float16) {
+        output_ort = ortki_Elu(l_ort, tensor_to_array<half>(alpha)[0]);
+    } else if (input.datatype() == dt_float32) {
+        output_ort = ortki_Elu(l_ort, tensor_to_array<float>(alpha)[0]);
+    } else {
+        output_ort = ortki_Elu(l_ort, tensor_to_array<double>(alpha)[0]);
+    }
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
@@ -71,13 +79,8 @@ TEST_P(EluTest, elu) {
                         .expect("create tensor failed");
 
     // actual
-    float_t a_ptr[] = {alpha};
-    auto a = hrt::create(nncase::dt_float32, {1},
-                         {reinterpret_cast<gsl::byte *>(a_ptr), sizeof(a_ptr)},
-                         true, host_runtime_tensor::pool_cpu_only)
-                 .expect("create tensor failed");
     auto output =
-        kernels::stackvm::elu(input.impl(), a.impl()).expect("elu failed");
+        kernels::stackvm::elu(input.impl(), alpha.impl()).expect("elu failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     bool result = is_same_tensor(expected, actual) ||
@@ -95,6 +98,15 @@ TEST_P(EluTest, elu) {
 }
 
 int main(int argc, char *argv[]) {
+    READY_TEST_CASE_GENERATE()
+    FOR_LOOP(lhs_shape, j)
+    FOR_LOOP(lhs_type, i)
+    SPLIT_ELEMENT(lhs_shape, j)
+    SPLIT_ELEMENT(lhs_type, i)
+    WRITE_SUB_CASE()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

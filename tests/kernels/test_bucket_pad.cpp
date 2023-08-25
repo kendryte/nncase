@@ -22,13 +22,13 @@
 #include <nncase/runtime/stackvm/opcode.h>
 #include <ortki/operators.h>
 
-#define TEST_CASE_NAME "test_leaky_relu"
+#define TEST_CASE_NAME "test_bucket_pad"
 
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class LeakyReluTest : public KernelTest,
+class BucketPadTest : public KernelTest,
                       public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
@@ -42,37 +42,39 @@ class LeakyReluTest : public KernelTest,
                 .expect("create tensor failed");
         init_tensor(input);
 
-        alpha = hrt::create(typecode, {1}, host_runtime_tensor::pool_cpu_only)
+        float value_array[] = {0};
+        value = hrt::create(dt_float32, {1},
+                            {reinterpret_cast<gsl::byte *>(value_array),
+                             sizeof(value_array)},
+                            true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
-        init_tensor(alpha);
     }
 
     void TearDown() override {}
 
   protected:
     runtime_tensor input;
-    runtime_tensor alpha;
+    runtime_tensor value;
 };
 
-INSTANTIATE_TEST_SUITE_P(leaky_relu, LeakyReluTest,
+INSTANTIATE_TEST_SUITE_P(BucketPad, BucketPadTest,
                          testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
-TEST_P(LeakyReluTest, leaky_relu) {
-    auto l_ort = runtime_tensor_2_ort_tensor(input);
+TEST_P(BucketPadTest, BucketPad) {
 
     // expected
-    OrtKITensor *output_ort;
-    if (input.datatype() == dt_float16) {
-        output_ort = ortki_LeakyRelu(l_ort, tensor_to_array<half>(alpha)[0]);
-    } else if (input.datatype() == dt_float32) {
-        output_ort = ortki_LeakyRelu(l_ort, tensor_to_array<float>(alpha)[0]);
-    } else if (input.datatype() == dt_bfloat16) {
-        output_ort =
-            ortki_LeakyRelu(l_ort, tensor_to_array<bfloat16>(alpha)[0]);
-    } else {
-        output_ort = ortki_LeakyRelu(l_ort, tensor_to_array<double>(alpha)[0]);
-    }
     size_t size = 0;
+    int64_t pad_ptr[] = {0, 0, 0, 0, 0, 0, 0, 0};
+    auto pad =
+        hrt::create(dt_int64, {8},
+                    {reinterpret_cast<gsl::byte *>(pad_ptr), sizeof(pad_ptr)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
+
+    auto l_ort = runtime_tensor_2_ort_tensor(input);
+    auto pad_ort = runtime_tensor_2_ort_tensor(pad);
+    auto value_ort = runtime_tensor_2_ort_tensor(value);
+    auto output_ort = ortki_Pad(l_ort, pad_ort, value_ort, "constant");
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
@@ -82,8 +84,15 @@ TEST_P(LeakyReluTest, leaky_relu) {
                         .expect("create tensor failed");
 
     // actual
-    auto output = kernels::stackvm::leaky_relu(input.impl(), alpha.impl())
-                      .expect("leaky_relu failed");
+    int64_t new_shape_array[] = {1, 3, 16, 16};
+    auto new_shape =
+        hrt::create(dt_int64, {4},
+                    {reinterpret_cast<gsl::byte *>(new_shape_array),
+                     sizeof(new_shape_array)},
+                    true, host_runtime_tensor::pool_cpu_only)
+            .expect("create tensor failed");
+    auto output = kernels::stackvm::bucket_pad(input.impl(), new_shape.impl())
+                      .expect("pad failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     bool result = is_same_tensor(expected, actual) ||
@@ -102,10 +111,10 @@ TEST_P(LeakyReluTest, leaky_relu) {
 
 int main(int argc, char *argv[]) {
     READY_TEST_CASE_GENERATE()
-    FOR_LOOP(lhs_shape, i)
-    FOR_LOOP(lhs_type, j)
-    SPLIT_ELEMENT(lhs_shape, i)
-    SPLIT_ELEMENT(lhs_type, j)
+    FOR_LOOP(lhs_shape, j)
+    FOR_LOOP(lhs_type, i)
+    SPLIT_ELEMENT(lhs_shape, j)
+    SPLIT_ELEMENT(lhs_type, i)
     WRITE_SUB_CASE()
     FOR_LOOP_END()
     FOR_LOOP_END()
