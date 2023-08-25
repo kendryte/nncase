@@ -49,6 +49,51 @@ class CeluTest : public KernelTest,
 
     void TearDown() override {}
 
+    virtual void init_tensor(runtime::runtime_tensor &tensor) override{
+        auto dtype = tensor.datatype();
+        switch (dtype) {
+        case dt_float16: {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_real_distribution<float> dis(0.0f, 1.0f);
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<half>(tensor, index) = static_cast<half>(dis(gen));
+                    return ok();
+                });
+            break;
+        }
+        case dt_float32: {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_real_distribution<float> dis(0.0f, 1.0f);
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<float>(tensor, index) = static_cast<float>(dis(gen));
+                    return ok();
+                });
+            break;
+        }
+        case dt_bfloat16: {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_real_distribution<> dis(0.0, 1.0);
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<bfloat16>(tensor, index) =
+                        static_cast<bfloat16>(dis(gen));
+                    return ok();
+                });
+            break;
+        }
+        default: {
+        }
+        }
+    }
+
   protected:
     runtime_tensor input;
     runtime_tensor alpha;
