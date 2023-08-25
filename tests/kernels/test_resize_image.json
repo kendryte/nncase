@@ -1,4 +1,10 @@
 {
   "i_shape":[[1, 3, 224, 224]],
-  "lhs_type":["dt_float32"]
+  "o_shape":[[1, 3, 112, 112]],
+  "lhs_type":["dt_float32"], 
+  // "resize_mode": ["linear", "nearest"], 
+  "resize_mode": ["nearest"], 
+  "transform_mode": ["align_corners"], 
+  // "transform_mode": ["half_pixel", "pytorch_half_pixel", "asymmetric", "align_corners"], 
+  "nearest_mode": ["ceil", "floor", "round_prefer_ceil", "round_prefer_floor"]
 }
