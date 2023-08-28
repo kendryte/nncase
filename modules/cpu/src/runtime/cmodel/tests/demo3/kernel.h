@@ -13,6 +13,9 @@ static tensor<float> v35_w({1024, 2048});
 static tensor<float> v3_data({384, 128});
 static tensor<float> v11_data({384, 128});
 static tensor<int64_t> position_ids({1, 384});
+static tensor<float> v38_w({2048, 22016});
+static tensor<float> v40_w({2048, 22016});
+static tensor<float> v42_w({5504, 8192});
 
 void stage1_kernel(tensor<float, loc_t::device> &Hidden_in, /* [1, 384, 8192] */
                    tensor<float, loc_t::device> &V0_gamma,  /* [8192] */
@@ -24,12 +27,17 @@ void stage1_kernel(tensor<float, loc_t::device> &Hidden_in, /* [1, 384, 8192] */
                    tensor<float, loc_t::device> &V3_data,  /* [384, 128] */
                    tensor<float, loc_t::device> &V11_data, /* [384, 128] */
                    tensor<float, loc_t::device> &Attn_mask, /* [1,1,384,384] */
-                   tensor<int64_t, loc_t::device> &Position_ids /* [1,384] */
+                   tensor<float, loc_t::device> &V38_w,     /* [8192, 22016] */
+                   tensor<float, loc_t::device> &V40_w,     /* [8192, 22016] */
+                   tensor<float, loc_t::device> &V42_w,     /* [22016, 8192] */
+                   tensor<int64_t, loc_t::device> &Position_ids, /* [1,384] */
+                   tensor<float, loc_t::device> &Output /* [1,384,8192] */
 ) {
     thread_context ctx(bid, tid);
     tensor<float> v0_gamma({2048});
     tensor<float> v0_beta({2048});
-    tensor<float> v0({1, 48, 2048}); /* [1, 384, 8192] [1, 48@b, 2048@t]  */
+    tensor<float> v0({1, 48, 2048});    /* [1, 384, 8192] [1, 48@b, 2048@t]  */
+    tensor<float> var_5({1, 48, 2048}); /* [1, 384, 8192] [1, 48@b, 2048@t]  */
 
     tensor<float> attn_mask(
         {1, 1, 384, 384}); /* [1,1,384,384] [1,1,96@t,96@t] */
@@ -45,6 +53,9 @@ void stage1_kernel(tensor<float, loc_t::device> &Hidden_in, /* [1, 384, 8192] */
                         ctx);
         tdma_load_async(v35_w, V35_w({1024 * bid, 2048 * tid}, {1024, 2048}),
                         ctx);
+        tdma_load_async(v38_w, V38_w({2048 * tid, 22016}, {2048, 22016}), ctx);
+        tdma_load_async(v40_w, V40_w({2048 * tid, 22016}, {2048, 22016}), ctx);
+        tdma_load_async(v42_w, V42_w({5504 * tid, 8192}, {5504, 8192}), ctx);
         tdma_load_async(v3_data, std::move(V3_data), ctx);
         tdma_load_async(v11_data, std::move(V11_data), ctx);
         tdma_load_async(position_ids, std::move(Position_ids), ctx);
@@ -63,7 +74,7 @@ void stage1_kernel(tensor<float, loc_t::device> &Hidden_in, /* [1, 384, 8192] */
         reduce_sum_sqr(v0, v0_sum, v0_sum_sqr);
         tdma_reduce_async(v0_sum, v0_sum, reduce_op_t::sum, ctx);
         tdma_reduce_async(v0_sum_sqr, v0_sum_sqr, reduce_op_t::sum, ctx);
-        layernorm(v0, v0_sum, v0_sum_sqr, 2, 8192);
+        layernorm(v0, v0_sum, v0_sum_sqr, v0, 2, 8192);
     } // v0 [1, 384, 8192] [1, 48@b, 8192]
 
     auto v1 = unsqueeze(v0); // [1, 1, 384, 8192] [1, 1, 48@b, 2048@t]
@@ -166,5 +177,66 @@ void stage1_kernel(tensor<float, loc_t::device> &Hidden_in, /* [1, 384, 8192] */
         transpose(V32, V33, dims_t({0, 2, 1, 3}));
     }
     tdma_wait(ctx);
-    // auto v34 =
+    // [1, 384, 8192] [1, 96@t, 1024@b] @shared
+    auto v34 = view(V33, {1, 384, 1024})({0, tid * 96, 0}, {1, 96, 1024});
+
+    //[1, 96@t, 1024@b]@shared x [1024@b, 2048@t]@shared -> [1, 96@t,
+    // 2048@t]@shared.
+    auto v35 = V35({0, tid * 96, tid * 2048}, {1, 96, 2048});
+    matmul(v34, v35_w, v35);
+    /* need a all reduce for each block shared tensor */
+    tdma_all_reduce_async(v35, v35, reduce_op_t::sum,
+                          reduce_strategy_t::by_block, ctx);
+    //  note now resplit V35 here.
+    tdma_load_async(var_5, Hidden_in({0, bid * 48, tid * 2048}, {1, 48, 2048}),
+                    ctx);
+    tensor<float> v36({1, 48, 2048}); /* [1, 384, 8192] [1, 48@b, 2048@t] */
+    auto v35_1 = V35({0, bid * 48, tid * 2048}, {1, 48, 2048});
+    binary(var_5, v35_1, v36, binary_op_t::add);
+
+    tensor<float> v37({1, 48, 2048}); /* [1, 384, 8192] [1, 48@b, 2048@t] */
+    {
+        tensor<float> v36_sum({1, 48});
+        tensor<float> v36_sum_sqr({1, 48});
+        reduce_sum_sqr(v36, v36_sum, v36_sum_sqr);
+        tdma_reduce_async(v36_sum, v36_sum, reduce_op_t::sum, ctx);
+        tdma_reduce_async(v36_sum_sqr, v36_sum_sqr, reduce_op_t::sum, ctx);
+        layernorm(v36, v36_sum, v36_sum_sqr, v37, 2, 8192);
+    }
+    /* [1, 48@b, 2048@t] @ [2048@t, 22016] ->  v38 [1, 384, 22016] [1, 48@b,
+     * 22016]@shared */
+    tensor_block_mma_sync(v37, v38_w, V38, false, ctx);
+
+    /*  [1, 384, 22016] [1, 48@b, 5504@t] @ shared */
+    auto v39 = V38({0, 0, 5504 * tid}, {1, 48, 5504});
+    unary(v39, v39, unary_op_t::swish);
+
+    /* [1, 384, 8192]    @ [8192, 22016] -> [1, 384, 22016]
+       [1, 48@b, 2048@t] @  [2048@t, 22016] -> [1, 48@b, 22016] @shared
+    */
+    tensor_block_mma_sync(v37, v40_w, V40, false, ctx);
+    /*
+    [1, 384, 22016] X  [1, 384, 22016] -> [1, 384, 22016]
+    [1, 48@b, 5504@t] @ shared X [1, 48@b, 5504@t] @shared -> [1, 48@b, 5504@t]
+    @local
+    */
+    tensor<float> v41({1, 48, 5504});
+    auto v40 = V40({0, 0, 5504 * tid}, {1, 48, 5504});
+    binary(v39, v40, v41, binary_op_t::mul);
+
+    /*
+      [1, 384, 22016] @ [22016, 8192] -> [1, 384, 8192]
+      [1, 48@b, 5504@t] @ [5504@t, 8192] -> [1, 48@b, 8192] @shared
+    */
+    tensor_block_mma_sync(v41, v42_w, V42, false, ctx);
+
+    /*
+      [1, 384, 8192] + [1, 384, 8192] -> [1, 384, 8192]
+      [1, 48@b, 2048@t] + [1, 48@b, 2048@t] @shared -> [1, 48@b, 2048@t]
+    */
+    tensor<float> v43({1, 48, 2048});
+    auto v42 = V42({0, 0, 2048 * tid}, {0, 0, 2048});
+    binary(v36, v42, v43, binary_op_t::add);
+    tdma_store_async(v42, Output({0, 48 * bid, 2048 * tid}, {1, 48, 2048}),
+                     ctx);
 }

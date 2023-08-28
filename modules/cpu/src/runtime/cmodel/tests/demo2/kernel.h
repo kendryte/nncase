@@ -123,7 +123,7 @@ void stage2_kernel(
     tdma_all_reduce_async(sum_sqr, sum_sqr, reduce_op_t::sum,
                           reduce_strategy_t::by_block, ctx);
     tdma_wait(ctx);
-    layernorm(ym_b, sum, sum_sqr, 1, 8192);
+    layernorm(ym_b, sum, sum_sqr, ym_b, 1, 8192);
 
     tdma_store_async(ym_b, Norm({tid * 96, bid * 1024}, {96, 1024}), ctx);
 }

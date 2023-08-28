@@ -93,8 +93,7 @@ void unary(tensor<T, ALoc> &a, tensor<T, BLoc> &out, unary_op_t op) {
 }
 
 template <typename T, loc_t ALoc, loc_t BLoc, loc_t CLoc>
-void matmul(tensor<T, ALoc> &a, tensor<T, BLoc> &b,
-            tensor<T, CLoc> &c) {
+void matmul(tensor<T, ALoc> &a, tensor<T, BLoc> &b, tensor<T, CLoc> &c) {
     kernels::matmul(a.cdata().data(), b.cdata().data(), c.data().data(),
                     a.dimension(), a.strides(), b.dimension(), b.strides(),
                     c.dimension(), c.strides());
@@ -117,30 +116,32 @@ void gather(tensor<T, ALoc> &input, tensor<int64_t, BLoc> &indices,
         indices.data().data(), indices.dimension(), axis);
 }
 
-template <typename T, loc_t Loc>
-void layernorm(tensor<T, Loc> &input, tensor<T, loc_t::local> &sum,
-               tensor<T, loc_t::local> &sum_sqr, tensor<T, loc_t::local> &gamma,
-               tensor<T, loc_t::local> &beta, T eps, int32_t axis,
-               int32_t norm_size) {
+template <typename T, loc_t ALoc, loc_t BLoc>
+void layernorm(tensor<T, ALoc> &input, tensor<T, loc_t::local> &sum,
+               tensor<T, loc_t::local> &sum_sqr, tensor<T, BLoc> &output,
+               tensor<T, loc_t::local> &gamma, tensor<T, loc_t::local> &beta,
+               T eps, int32_t axis, int32_t norm_size) {
     assert(sum.strides() == sum_sqr.strides());
     assert(is_contiguous(sum.dimension(), sum.strides()));
     assert(gamma.strides() == beta.strides());
     assert(is_contiguous(gamma.dimension(), gamma.strides()));
-    kernels::layernorm(input.data().data(), sum.data().data(),
-                       sum_sqr.data().data(), gamma.data().data(),
-                       beta.data().data(), input.dimension(), input.strides(),
+    kernels::layernorm(input.cdata().data(), sum.data().data(),
+                       sum_sqr.data().data(), output.data().data(),
+                       gamma.data().data(), beta.data().data(),
+                       input.dimension(), input.strides(), output.strides(),
                        sum.strides(), gamma.strides(), eps, axis, norm_size);
 }
 
-template <typename T, loc_t Loc>
-void layernorm(tensor<T, Loc> &input, tensor<T, loc_t::local> &sum,
-               tensor<T, loc_t::local> &sum_sqr, int32_t axis,
-               int32_t norm_size) {
-    kernels::layernorm(input.data().data(), sum.data().data(),
-                       sum_sqr.data().data(), static_cast<T *>(nullptr),
-                       static_cast<T *>(nullptr), input.dimension(),
-                       input.strides(), sum.strides(), dims_t({}),
-                       static_cast<T>(1e-5), axis, norm_size);
+template <typename T, loc_t ALoc, loc_t BLoc>
+void layernorm(tensor<T, ALoc> &input, tensor<T, loc_t::local> &sum,
+               tensor<T, loc_t::local> &sum_sqr, tensor<T, BLoc> &output,
+               int32_t axis, int32_t norm_size) {
+    kernels::layernorm(input.cdata().data(), sum.data().data(),
+                       sum_sqr.data().data(), output.data().data(),
+                       static_cast<T *>(nullptr), static_cast<T *>(nullptr),
+                       input.dimension(), input.strides(), output.strides(),
+                       sum.strides(), dims_t({}), static_cast<T>(1e-5), axis,
+                       norm_size);
 }
 
 template <typename T, loc_t ALoc>
@@ -343,10 +344,10 @@ enum class reduce_strategy_t : uint8_t {
  * @param axis axis of gather tensor, note gather tensor dims = [32,...]
  * @param ctx
  */
-template <class T>
-void tdma_all_reduce_async(tensor<T, loc_t::local> &src,
-                           tensor<T, loc_t::local> &dest, reduce_op_t reduce_op,
-                           reduce_strategy_t strategy, thread_context &ctx) {
+template <class T, loc_t ALoc, loc_t BLoc>
+void tdma_all_reduce_async(tensor<T, ALoc> &src, tensor<T, BLoc> &dest,
+                           reduce_op_t reduce_op, reduce_strategy_t strategy,
+                           thread_context &ctx) {
     __tdma_all_sync_apply(
         [&src, &ctx](int visited) -> void {
             tensor<T> *gather_tensor = nullptr;
@@ -366,7 +367,7 @@ void tdma_all_reduce_async(tensor<T, loc_t::local> &src,
             dims_t shape(new_dims);
             begin[0] = ctx.bid() * CORES + ctx.tid();
             shape[0] = 1;
-            __tensor_copy_sync<T, loc_t::local, loc_t::local>(
+            __tensor_copy_sync<T, loc_t::local, ALoc>(
                 std::move((*gather_tensor)(begin, shape)),
                 std::move(unsqueeze(src)));
         },

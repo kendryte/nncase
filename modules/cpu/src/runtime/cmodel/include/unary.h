@@ -63,6 +63,7 @@ void unary_impl(unary_op_t op, const T *input, T *output,
         UNARY_IMPL_OP(sqrt, sqrtf);
         UNARY_IMPL_OP(square, [](float v) { return v * v; });
         UNARY_IMPL_OP(tanh, tanhf);
+        UNARY_IMPL_OP(swish, [](float x) { return x / (1 + exp(-x)); });
     default:
         return;
     }
