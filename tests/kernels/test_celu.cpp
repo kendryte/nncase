@@ -44,10 +44,55 @@ class CeluTest : public KernelTest,
 
         alpha = hrt::create(typecode, {1}, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
-        init_tensor(alpha);
+        init_tensor_alpha(alpha);
     }
 
     void TearDown() override {}
+
+    virtual void init_tensor_alpha(runtime::runtime_tensor &tensor) {
+        auto dtype = tensor.datatype();
+        switch (dtype) {
+        case dt_float16: {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_real_distribution<float> dis(-5.0f, 5.0f);
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<half>(tensor, index) = static_cast<half>(dis(gen));
+                    return ok();
+                });
+            break;
+        }
+        case dt_float32: {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_real_distribution<float> dis(-5.0f, 5.0f);
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<float>(tensor, index) = static_cast<float>(dis(gen));
+                    return ok();
+                });
+            break;
+        }
+        case dt_bfloat16: {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_real_distribution<> dis(-5.0f, 5.0);
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<bfloat16>(tensor, index) =
+                        static_cast<bfloat16>(dis(gen));
+                    return ok();
+                });
+            break;
+        }
+        default: {
+        }
+        }
+    }
 
   protected:
     runtime_tensor input;
