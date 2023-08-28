@@ -17,21 +17,23 @@ static tensor<float> v38_w({2048, 22016});
 static tensor<float> v40_w({2048, 22016});
 static tensor<float> v42_w({5504, 8192});
 
-void stage1_kernel(tensor<float, loc_t::device> &Hidden_in, /* [1, 384, 8192] */
-                   tensor<float, loc_t::device> &V0_gamma,  /* [8192] */
-                   tensor<float, loc_t::device> &V0_beta,   /* [8192] */
-                   tensor<float, loc_t::device> &V2_w,     /* [64, 8192, 128] */
-                   tensor<float, loc_t::device> &V16_w,    /* [64, 8192, 128] */
-                   tensor<float, loc_t::device> &V31_w,    /* [64, 8192, 128] */
-                   tensor<float, loc_t::device> &V35_w,    /* [8192, 8192] */
-                   tensor<float, loc_t::device> &V3_data,  /* [384, 128] */
-                   tensor<float, loc_t::device> &V11_data, /* [384, 128] */
-                   tensor<float, loc_t::device> &Attn_mask, /* [1,1,384,384] */
-                   tensor<float, loc_t::device> &V38_w,     /* [8192, 22016] */
-                   tensor<float, loc_t::device> &V40_w,     /* [8192, 22016] */
-                   tensor<float, loc_t::device> &V42_w,     /* [22016, 8192] */
-                   tensor<int64_t, loc_t::device> &Position_ids, /* [1,384] */
-                   tensor<float, loc_t::device> &Output /* [1,384,8192] */
+void stage1_kernel(
+    tensor<float, loc_t::device> &Hidden_in,              /* [1, 384, 8192] */
+    tensor<float, loc_t::device> &V0_gamma,               /* [8192] */
+    tensor<float, loc_t::device> &V0_beta,                /* [8192] */
+    tensor<float, loc_t::device> &V2_w,                   /* [64, 8192, 128] */
+    tensor<float, loc_t::device> &V16_w,                  /* [64, 8192, 128] */
+    tensor<float, loc_t::device> &V31_w,                  /* [64, 8192, 128] */
+    tensor<float, loc_t::device> &V35_w,                  /* [8192, 8192] */
+    tensor<float, loc_t::device> &V3_data,                /* [384, 128] */
+    tensor<float, loc_t::device> &V11_data,               /* [384, 128] */
+    tensor<float, loc_t::device> &Attn_mask,              /* [1,1,384,384] */
+    tensor<float, loc_t::device> &V38_w,                  /* [8192, 22016] */
+    tensor<float, loc_t::device> &V40_w,                  /* [8192, 22016] */
+    tensor<float, loc_t::device> &V42_w,                  /* [22016, 8192] */
+    tensor<int64_t, loc_t::device> &Position_ids,         /* [1,384] */
+    tensor<float, loc_t::device> &Output,                 /* [1,384,8192] */
+    [[maybe_unused]] std::vector<tensor<float, loc_t::device>> &ImmOutputs /* [1,384,8192] */
 ) {
     thread_context ctx(bid, tid);
     tensor<float> v0_gamma({2048});
@@ -75,6 +77,8 @@ void stage1_kernel(tensor<float, loc_t::device> &Hidden_in, /* [1, 384, 8192] */
         tdma_reduce_async(v0_sum, v0_sum, reduce_op_t::sum, ctx);
         tdma_reduce_async(v0_sum_sqr, v0_sum_sqr, reduce_op_t::sum, ctx);
         layernorm(v0, v0_sum, v0_sum_sqr, v0, 2, 8192);
+        tdma_store_async(v0, ImmOutputs[0]({0, 48 * bid, 2048 * tid}, {1, 48, 2048}),
+                     ctx);
     } // v0 [1, 384, 8192] [1, 48@b, 8192]
 
     auto v1 = unsqueeze(v0); // [1, 1, 384, 8192] [1, 1, 48@b, 2048@t]
