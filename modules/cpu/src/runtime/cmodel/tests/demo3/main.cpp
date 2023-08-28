@@ -34,9 +34,11 @@ static tensor<float, loc_t::device> V42_w({22016, 8192});
 static tensor<int64_t, loc_t::device> Position_ids({1, 384});
 static tensor<float, loc_t::device> Output({1, 384, 8192});
 
-static std::vector<tensor<float, loc_t::device>> goldenImmOutputs;
+const int OutNum = 1;
+static tensor<float, loc_t::device> goldenImmOutputs[OutNum] = {
+    tensor<float, loc_t::device>({1, 384, 8192})};
 
-static std::vector<tensor<float, loc_t::device>> ImmOutputs{
+static tensor<float, loc_t::device> ImmOutputs[OutNum] = {
     tensor<float, loc_t::device>({1, 384, 8192})};
 
 DEFINE_BFUNC(0)
@@ -80,10 +82,10 @@ int main([[maybe_unused]] int argc, char **argv) {
     LOAD_FILE(V42_w, 13, float);
     LOAD_FILE(Position_ids, 14, int64_t);
 
-    goldenImmOutputs.push_back(tensor<float, loc_t::device>({1, 384, 8192}));
-    for (auto o = 0; o < goldenImmOutputs.size(); o++) {
-        auto output = goldenImmOutputs[o];
-        LOAD_FILE(output, 15 + o, float);
+    for (auto o = 0; o < OutNum; o++) {
+        auto src_output = read_file(std::string(argv[(15 + o)]));
+        span_copy(goldenImmOutputs[o].data(),
+                  gsl::make_span(src_output).as_span<float>());
     }
 
     pthread_t t_0_0, t_1_0, t_2_0, t_3_0, t_4_0, t_5_0, t_6_0, t_7_0;
@@ -157,8 +159,9 @@ int main([[maybe_unused]] int argc, char **argv) {
     pthread_join(t_7_2, NULL);
     pthread_join(t_7_3, NULL);
 
-    for (auto o = 0; o < ImmOutputs.size(); o++) {
-        auto cos = cosine(ImmOutputs[o].data().begin(), goldenImmOutputs[o].data().begin(),
+    for (auto o = 0; o < OutNum; o++) {
+        auto cos = cosine(ImmOutputs[o].data().begin(),
+                          goldenImmOutputs[o].data().begin(),
                           goldenImmOutputs[o].data().size());
         printf("input layernorm cosine %f\n", cos);
     }

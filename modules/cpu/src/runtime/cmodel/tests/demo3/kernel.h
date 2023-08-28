@@ -18,23 +18,22 @@ static tensor<float> v40_w({2048, 22016});
 static tensor<float> v42_w({5504, 8192});
 
 void stage1_kernel(
-    tensor<float, loc_t::device> &Hidden_in,              /* [1, 384, 8192] */
-    tensor<float, loc_t::device> &V0_gamma,               /* [8192] */
-    tensor<float, loc_t::device> &V0_beta,                /* [8192] */
-    tensor<float, loc_t::device> &V2_w,                   /* [64, 8192, 128] */
-    tensor<float, loc_t::device> &V16_w,                  /* [64, 8192, 128] */
-    tensor<float, loc_t::device> &V31_w,                  /* [64, 8192, 128] */
-    tensor<float, loc_t::device> &V35_w,                  /* [8192, 8192] */
-    tensor<float, loc_t::device> &V3_data,                /* [384, 128] */
-    tensor<float, loc_t::device> &V11_data,               /* [384, 128] */
-    tensor<float, loc_t::device> &Attn_mask,              /* [1,1,384,384] */
-    tensor<float, loc_t::device> &V38_w,                  /* [8192, 22016] */
-    tensor<float, loc_t::device> &V40_w,                  /* [8192, 22016] */
-    tensor<float, loc_t::device> &V42_w,                  /* [22016, 8192] */
-    tensor<int64_t, loc_t::device> &Position_ids,         /* [1,384] */
-    tensor<float, loc_t::device> &Output,                 /* [1,384,8192] */
-    [[maybe_unused]] std::vector<tensor<float, loc_t::device>> &ImmOutputs /* [1,384,8192] */
-) {
+    tensor<float, loc_t::device> &Hidden_in,               /* [1, 384, 8192] */
+    tensor<float, loc_t::device> &V0_gamma,                /* [8192] */
+    tensor<float, loc_t::device> &V0_beta,                 /* [8192] */
+    tensor<float, loc_t::device> &V2_w,                    /* [64, 8192, 128] */
+    tensor<float, loc_t::device> &V16_w,                   /* [64, 8192, 128] */
+    tensor<float, loc_t::device> &V31_w,                   /* [64, 8192, 128] */
+    tensor<float, loc_t::device> &V35_w,                   /* [8192, 8192] */
+    tensor<float, loc_t::device> &V3_data,                 /* [384, 128] */
+    tensor<float, loc_t::device> &V11_data,                /* [384, 128] */
+    tensor<float, loc_t::device> &Attn_mask,               /* [1,1,384,384] */
+    tensor<float, loc_t::device> &V38_w,                   /* [8192, 22016] */
+    tensor<float, loc_t::device> &V40_w,                   /* [8192, 22016] */
+    tensor<float, loc_t::device> &V42_w,                   /* [22016, 8192] */
+    tensor<int64_t, loc_t::device> &Position_ids,          /* [1,384] */
+    [[maybe_unused]] tensor<float, loc_t::device> &Output, /* [1,384,8192] */
+    [[maybe_unused]] tensor<float, loc_t::device> *ImmOutputs) {
     thread_context ctx(bid, tid);
     tensor<float> v0_gamma({2048});
     tensor<float> v0_beta({2048});
@@ -42,7 +41,7 @@ void stage1_kernel(
     tensor<float> var_5({1, 48, 2048}); /* [1, 384, 8192] [1, 48@b, 2048@t]  */
 
     tensor<float> attn_mask(
-        {1, 1, 384, 384}); /* [1,1,384,384] [1,1,96@t,96@t] */
+        {1, 1, 96, 96}); /* [1,1,384,384] [1,1,96@t,96@t] */
 
     if (!w_loaded) {
         tdma_load_async(v0_gamma, V0_gamma({tid * 2048}, {2048}), ctx);
@@ -55,9 +54,9 @@ void stage1_kernel(
                         ctx);
         tdma_load_async(v35_w, V35_w({1024 * bid, 2048 * tid}, {1024, 2048}),
                         ctx);
-        tdma_load_async(v38_w, V38_w({2048 * tid, 22016}, {2048, 22016}), ctx);
-        tdma_load_async(v40_w, V40_w({2048 * tid, 22016}, {2048, 22016}), ctx);
-        tdma_load_async(v42_w, V42_w({5504 * tid, 8192}, {5504, 8192}), ctx);
+        tdma_load_async(v38_w, V38_w({2048 * tid, 0}, {2048, 22016}), ctx);
+        tdma_load_async(v40_w, V40_w({2048 * tid, 0}, {2048, 22016}), ctx);
+        tdma_load_async(v42_w, V42_w({5504 * tid, 0}, {5504, 8192}), ctx);
         tdma_load_async(v3_data, std::move(V3_data), ctx);
         tdma_load_async(v11_data, std::move(V11_data), ctx);
         tdma_load_async(position_ids, std::move(Position_ids), ctx);
@@ -77,10 +76,11 @@ void stage1_kernel(
         tdma_reduce_async(v0_sum, v0_sum, reduce_op_t::sum, ctx);
         tdma_reduce_async(v0_sum_sqr, v0_sum_sqr, reduce_op_t::sum, ctx);
         layernorm(v0, v0_sum, v0_sum_sqr, v0, 2, 8192);
-        tdma_store_async(v0, ImmOutputs[0]({0, 48 * bid, 2048 * tid}, {1, 48, 2048}),
-                     ctx);
+        tdma_store_async(
+            v0, ImmOutputs[0]({0, 48 * bid, 2048 * tid}, {1, 48, 2048}), ctx);
     } // v0 [1, 384, 8192] [1, 48@b, 8192]
 
+#if 0
     auto v1 = unsqueeze(v0); // [1, 1, 384, 8192] [1, 1, 48@b, 2048@t]
     /* 这里如果V2不shared的话可以只做thread间的reduce */
     tensor_block_mma_sync(v1, v2_w, V2, false, ctx);
@@ -243,4 +243,5 @@ void stage1_kernel(
     binary(v36, v42, v43, binary_op_t::add);
     tdma_store_async(v42, Output({0, 48 * bid, 2048 * tid}, {1, 48, 2048}),
                      ctx);
+#endif
 }
