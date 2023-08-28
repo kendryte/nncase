@@ -60,8 +60,9 @@ class InstanceNormalizationTest
 INSTANTIATE_TEST_SUITE_P(
     instance_normalization, InstanceNormalizationTest,
     testing::Combine(testing::Values(dt_float32),
-                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 2, 4, 8},
-                                     dims_t{1, 3,
+                     testing::Values(dims_t{3, 3, 16, 16}, dims_t{64, 2, 4, 8},
+                                     dims_t{1, 2, 4, 8},
+                                     dims_t{24, 3,
                                             16} /*, dims_t{24, 16, 16}*/)));
 // todo when in_shape[0] is not 1,cos is about 0.96
 
