@@ -6,7 +6,7 @@
 using namespace shared;
 
 static bool w_loaded;
-static tensor<float> v2_w({8, 2048, 128});
+static tensor<float> v2_w({64, 2048, 128});
 static tensor<float> v16_w({8, 2048, 128});
 static tensor<float> v31_w({8, 2048, 128});
 static tensor<float> v35_w({1024, 2048});
@@ -46,7 +46,7 @@ void stage1_kernel(
     if (!w_loaded) {
         tdma_load_async(v0_gamma, V0_gamma({tid * 2048}, {2048}), ctx);
         tdma_load_async(v0_beta, V0_beta({tid * 2048}, {2048}), ctx);
-        tdma_load_async(v2_w, V2_w({8 * bid, 2048 * tid, 0}, {8, 2048, 128}),
+        tdma_load_async(v2_w, V2_w({0, 2048 * tid, 0}, {64, 2048, 128}),
                         ctx);
         tdma_load_async(v16_w, V16_w({8 * bid, 2048 * tid, 0}, {8, 2048, 128}),
                         ctx);
@@ -80,11 +80,14 @@ void stage1_kernel(
             v0, ImmOutputs[0]({0, 48 * bid, 2048 * tid}, {1, 48, 2048}), ctx);
     } // v0 [1, 384, 8192] [1, 48@b, 8192]
 
-#if 0
     auto v1 = unsqueeze(v0); // [1, 1, 384, 8192] [1, 1, 48@b, 2048@t]
     /* 这里如果V2不shared的话可以只做thread间的reduce */
     tensor_block_mma_sync(v1, v2_w, V2, false, ctx);
+    if (tid ==0 )
+    tdma_store_async(
+            V2, ImmOutputs[1]({0, 0, 48 * bid, 0}, {1, 64, 48, 128}), ctx);
 
+#if 0
     tensor<float> v3({1, 384, 128}); //
     gather(v3_data, position_ids, v3, 0);
 

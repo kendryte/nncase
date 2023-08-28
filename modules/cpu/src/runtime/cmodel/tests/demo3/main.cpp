@@ -34,12 +34,14 @@ static tensor<float, loc_t::device> V42_w({22016, 8192});
 static tensor<int64_t, loc_t::device> Position_ids({1, 384});
 static tensor<float, loc_t::device> Output({1, 384, 8192});
 
-const int OutNum = 1;
+const int OutNum = 2;
 static tensor<float, loc_t::device> goldenImmOutputs[OutNum] = {
-    tensor<float, loc_t::device>({1, 384, 8192})};
+    tensor<float, loc_t::device>({1, 384, 8192}),
+    tensor<float, loc_t::device>({1, 64, 384, 128})};
 
 static tensor<float, loc_t::device> ImmOutputs[OutNum] = {
-    tensor<float, loc_t::device>({1, 384, 8192})};
+    tensor<float, loc_t::device>({1, 384, 8192}),
+    tensor<float, loc_t::device>({1, 64, 384, 128})};
 
 DEFINE_BFUNC(0)
 DEFINE_BFUNC(1)
