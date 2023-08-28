@@ -52,7 +52,7 @@ class PreluTest : public KernelTest,
         }
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
     slope_t GetSlopeArray(const char *key) {
         assert(_document[key].IsArray());
