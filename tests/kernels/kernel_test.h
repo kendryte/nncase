@@ -936,18 +936,18 @@ class KernelTest {
             })
             .is_ok();
 
-        double dotProduct =
-            std::inner_product(vec1.begin(), vec1.end(), vec2.begin(), 0.0f);
-        double norm1 = std::sqrt(
-            std::inner_product(vec1.begin(), vec1.end(), vec1.begin(), 0.0f));
-        double norm2 = std::sqrt(
-            std::inner_product(vec2.begin(), vec2.end(), vec2.begin(), 0.0f));
+        double dotProduct = std::inner_product(vec1.begin(), vec1.end(),
+                                               vec2.begin(), (double)0.0);
+        double norm1 = std::sqrt(std::inner_product(vec1.begin(), vec1.end(),
+                                                    vec1.begin(), (double)0.0));
+        double norm2 = std::sqrt(std::inner_product(vec2.begin(), vec2.end(),
+                                                    vec2.begin(), (double)0.0));
         double cosine_similarity = dotProduct / (norm1 * norm2);
 
         std::cout << "cosine_similarity:" << cosine_similarity << std::endl;
 
         // Return true if cosine similarity is close to 1
-        return cosine_similarity > 0.99;
+        return cosine_similarity > 0.99f;
     }
 
     void print_runtime_tensor(runtime::runtime_tensor lhs) {
@@ -1075,7 +1075,7 @@ class KernelTest {
     }
 
     static void ParseJson(Document &document, std::string js_str) {
-        if (document.Parse(js_str.c_str()).HasParseError())
+        if (document.Parse<kParseCommentsFlag>(js_str.c_str()).HasParseError())
             std::cout << "Parsing Error: "
                       << (unsigned)document.GetErrorOffset() << " "
                       << GetParseError_En(document.GetParseError())
@@ -1084,7 +1084,7 @@ class KernelTest {
     }
 
     void ParseJson(std::string js_str) {
-        if (_document.Parse(js_str.c_str()).HasParseError())
+        if (_document.Parse<kParseCommentsFlag>(js_str.c_str()).HasParseError())
             std::cout << "Parsing Error: "
                       << (unsigned)_document.GetErrorOffset() << " "
                       << GetParseError_En(_document.GetParseError())
@@ -1116,12 +1116,35 @@ class KernelTest {
         return Str2DataType(_document[key].GetString());
     }
 
+    std::string GetString(const char *key) {
+        assert(_document[key].IsString());
+        return _document[key].GetString();
+    }
+
     dims_t GetShapeArray(const char *key) {
         assert(_document[key].IsArray());
 
         Value &array = _document[key];
         size_t arraySize = array.Size();
         dims_t cArray(arraySize);
+        for (rapidjson::SizeType i = 0; i < arraySize; i++) {
+            if (array[i].IsUint()) {
+                cArray[i] = array[i].GetUint();
+            } else {
+                std::cout << "Invalid JSON format. Expected unsigned integer "
+                             "values in the array."
+                          << std::endl;
+            }
+        }
+        return cArray;
+    }
+
+    std::vector<int64_t> GetDataArray(const char *key) {
+        assert(_document[key].IsArray());
+
+        Value &array = _document[key];
+        size_t arraySize = array.Size();
+        std::vector<int64_t> cArray(arraySize);
         for (rapidjson::SizeType i = 0; i < arraySize; i++) {
             if (array[i].IsUint()) {
                 cArray[i] = array[i].GetUint();
