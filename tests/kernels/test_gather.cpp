@@ -37,15 +37,19 @@ class GatherTest : public KernelTest,
                     .expect("create tensor failed");
         init_tensor(input);
 
-        int64_t indices_array[] = {0, 0, 1, 1};
-        indices = hrt::create(dt_int64, {2, 2},
+        int64_t indices_array[] = {0, 0, -1, -1};
+        indices = hrt::create(dt_int64, {4},
                               {reinterpret_cast<gsl::byte *>(indices_array),
                                sizeof(indices_array)},
                               true, host_runtime_tensor::pool_cpu_only)
                       .expect("create tensor failed");
 
-        batchDims_value = value;
-        int64_t batchDims_array[1] = {value};
+        batchDims_value = value >= 0
+                              ? (size_t)value >= shape.size() ? -1 : value
+                          : -(size_t)value > shape.size() ? -1
+                                                          : value;
+
+        int64_t batchDims_array[1] = {batchDims_value};
         batchDims = hrt::create(dt_int64, dims_t{1},
                                 {reinterpret_cast<gsl::byte *>(batchDims_array),
                                  sizeof(batchDims_array)},
@@ -68,13 +72,10 @@ INSTANTIATE_TEST_SUITE_P(
                                      dt_int8, dt_int16, dt_uint8, dt_uint16,
                                      dt_uint32, dt_float16, dt_float64,
                                      dt_bfloat16, dt_boolean),
-                     testing::Values(dims_t{
-                         2,
-                         2} /*, dims_t{3, 5},
-                dims_t{2, 3, 1}, dims_t{5, 7, 5},
-                dims_t{5, 4, 3, 2}, dims_t{5, 5, 7, 7},
-                dims_t{2, 3, 3, 5}*/),
-                     testing::Values(-1, 0, 1)));
+                     testing::Values(dims_t{2, 3, 5, 7}, dims_t{2, 2},
+                                     dims_t{2, 3, 1}, dims_t{5, 5, 7, 7},
+                                     dims_t{11}),
+                     testing::Values(-1, 0, 1, -2, -3, 2, 3, -4)));
 
 TEST_P(GatherTest, gather) {
     auto input_ort = runtime_tensor_2_ort_tensor(input);
