@@ -961,58 +961,43 @@ class KernelTest {
                 auto dtype = lhs.datatype();
                 switch (dtype) {
                 case dt_int8:
-                    std::cout << static_cast<int8_t>(get<int8_t>(lhs, index))
-                              << " ";
+                    std::cout << get<int8_t>(lhs, index) << " ";
                     break;
                 case dt_int16:
-                    std::cout << static_cast<int16_t>(get<int16_t>(lhs, index))
-                              << " ";
+                    std::cout << get<int16_t>(lhs, index) << " ";
                     break;
                 case dt_int32:
-                    std::cout << static_cast<int32_t>(get<int32_t>(lhs, index))
-                              << " ";
+                    std::cout << get<int32_t>(lhs, index) << " ";
                     break;
                 case dt_int64:
-                    std::cout << static_cast<int64_t>(get<int64_t>(lhs, index))
-                              << " ";
+                    std::cout << get<int64_t>(lhs, index) << " ";
                     break;
                 case dt_uint8:
-                    std::cout << static_cast<uint8_t>(get<uint8_t>(lhs, index))
-                              << " ";
+                    std::cout << get<uint8_t>(lhs, index) << " ";
                     break;
                 case dt_uint16:
-                    std::cout
-                        << static_cast<uint16_t>(get<uint16_t>(lhs, index))
-                        << " ";
+                    std::cout << get<uint16_t>(lhs, index) << " ";
                     break;
                 case dt_uint32:
-                    std::cout
-                        << static_cast<uint32_t>(get<uint32_t>(lhs, index))
-                        << " ";
+                    std::cout << get<uint32_t>(lhs, index) << " ";
                     break;
                 case dt_uint64:
-                    std::cout
-                        << static_cast<uint64_t>(get<uint64_t>(lhs, index))
-                        << " ";
+                    std::cout << get<uint64_t>(lhs, index) << " ";
                     break;
                 case dt_float32:
                     std::cout << get<float>(lhs, index) << " ";
                     break;
                 case dt_float64:
-                    std::cout << static_cast<double>(get<double>(lhs, index))
-                              << " ";
+                    std::cout << get<double>(lhs, index) << " ";
                     break;
                 case dt_float16:
-                    std::cout << static_cast<double>(get<half>(lhs, index))
-                              << " ";
+                    std::cout << get<half>(lhs, index) << " ";
                     break;
                 case dt_boolean:
-                    std::cout << static_cast<bool>(get<bool>(lhs, index))
-                              << " ";
+                    std::cout << get<bool>(lhs, index) << " ";
                     break;
                 case dt_bfloat16:
-                    std::cout << static_cast<double>(get<bfloat16>(lhs, index))
-                              << " ";
+                    std::cout << get<bfloat16>(lhs, index) << " ";
                     break;
                 default:
                     break;
