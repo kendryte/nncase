@@ -37,7 +37,7 @@ class CastTest : public KernelTest,
 
         auto typecode_input = GetDataType("lhs_type");
         auto typecode_output = GetDataType("rhs_type");
-        auto l_shape = GetShapeArray("i_shape");
+        auto l_shape = GetShapeArray("lhs_shape");
 
         input = hrt::create(typecode_input, l_shape,
                             host_runtime_tensor::pool_cpu_only)

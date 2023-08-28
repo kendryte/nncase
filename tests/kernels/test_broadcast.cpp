@@ -34,9 +34,9 @@ class BroadCastTest : public KernelTest,
     void SetUp() override {
         READY_SUBCASE()
 
-        auto typecode = GetDataType("lhs_type");
         auto l_shape = GetShapeArray("lhs_shape");
         auto r_shape = GetShapeArray("rhs_shape");
+        auto typecode = GetDataType("lhs_type");
 
         input =
             hrt::create(typecode, r_shape, host_runtime_tensor::pool_cpu_only)
@@ -219,12 +219,12 @@ TEST_P(BroadCastTest, BroadCast) {
 
 int main(int argc, char *argv[]) {
     READY_TEST_CASE_GENERATE()
-    FOR_LOOP(lhs_type, i)
     FOR_LOOP(lhs_shape, j)
     FOR_LOOP(rhs_shape, k)
-    SPLIT_ELEMENT(lhs_type, i)
+    FOR_LOOP(lhs_type, i)
     SPLIT_ELEMENT(lhs_shape, j)
     SPLIT_ELEMENT(rhs_shape, k)
+    SPLIT_ELEMENT(lhs_type, i)
     WRITE_SUB_CASE()
     FOR_LOOP_END()
     FOR_LOOP_END()
