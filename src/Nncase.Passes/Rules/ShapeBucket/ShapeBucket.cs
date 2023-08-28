@@ -1055,6 +1055,20 @@ public partial class FusionBucket : RewriteRule<Pattern>
             return result;
         });
 
+    private static Expr GetVar(FusionBucketContext context)
+    {
+        var varList = context.VarMap.Where(pair => pair.Value.Any(x => x is Var)).Select(pair =>
+        {
+            var (v, dims) = pair;
+            var i = dims.IndexOf(x => x is Var);
+            return ShapeOf(v)[i];
+        }).ToArray();
+        return varList.Aggregate((sum, x) =>
+        {
+            return IR.F.Math.Max(sum, x);
+        });
+    }
+
     private static Expr Split(FusionBucketContext context, SegmentInfo info)
     {
         var fusionInputs = context.Arguments;
@@ -1063,6 +1077,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
         var failure = MakeFailure(context.FusionBody);
 
         int i = 0;
+        var v = GetVar(context);
 
         // 1. 普通情况不应该rebuild
         // 2. rebuild的正确性
@@ -1076,7 +1091,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
             (sum, seg) =>
             {
                 // 根据var，也就是target为这个fusion的call的参数来进行判断落在哪个段
-                var cond = dim <= (long)seg;
+                var cond = v <= (long)seg;
 
                 // select var value for current segment
                 var varInfo = context.DimVarValue(i);
