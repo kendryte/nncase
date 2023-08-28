@@ -841,11 +841,15 @@ result<value_t> nncase::kernels::stackvm::resize_image(
                           new_size_value[2], new_size_value[3], align_corner,
                           half_pixel, context);
     } else if (resize_mode == image_resize_mode_t::nearest_neighbor) {
+        auto get_coordinate_func =
+            get_coordinate_from_resized(transformation_mode);
+        auto get_nearset_func = get_nearest_pixel_from_origin(nearest_mode);
         CONTIGUOUS_KERNEL(resize_nearest_neighbor, input_tensor, tycode, in_mem,
                           out_mem, input_tensor->shape(),
                           input_tensor->strides(), output_tensor->strides(),
                           new_size_value[2], new_size_value[3], align_corner,
-                          half_pixel, context);
+                          half_pixel, get_coordinate_func, get_nearset_func,
+                          context);
     } else {
         return err(nncase_errc::runtime_not_found);
     }
