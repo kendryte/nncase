@@ -21,6 +21,7 @@ using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
+using Nncase.IR.ShapeExpr;
 using Nncase.IR.Tensors;
 using Nncase.Passes.Analysis;
 using Nncase.Passes.Rules.Lower;
@@ -364,27 +365,7 @@ public class MultiUserCallToFusion : CallToFusion
     {
         if (expr is Call c && c.Target is not BucketFusion)
         {
-            if (c.Target is Binary)
-            {
-                if (c.Arguments[0] is not Const && c.Arguments[1] is not Const)
-                {
-                    return false;
-                }
-
-                return true;
-            }
-
-            if (c.Target is IR.Tensors.Reshape)
-            {
-                if (c.Arguments[IR.Tensors.Reshape.Shape.Index] is TensorConst)
-                {
-                    return CallValidator.ValidTarget(c.Target);
-                }
-            }
-            else
-            {
-                return CallValidator.ValidTarget(c.Target);
-            }
+            return CallValidator.ValidTarget(c.Target);
         }
 
         return false;
@@ -719,7 +700,182 @@ public class FusionBucketContext
         var originShape = originBody.EvaluateShapeExpr(shapeOfFusionInput);
         originShape.InferenceType();
 
-        return originShape;
+        return ReplaceShapeOf(shapeOfFusionInput, originShape, this);
+    }
+
+    public static Expr ReplaceShapeOf(Dictionary<Var, Expr[]> fusionInputsShapeExpr, Expr originShape, FusionBucketContext context)
+    {
+        // return originShape;
+        // 拷贝shape表达式，以免被原始的计算引用
+        var cloneShape = originShape.Clone();
+        CompilerServices.Rewrite(cloneShape, new[] { new RemoveMarker() }, new());
+        var f = new FindVar();
+        f.Visit(cloneShape);
+        var newVars = f.Vars;
+        var newDict = fusionInputsShapeExpr
+            .Concat(context.VarMap)
+            .ToDictionary(
+                pair => newVars.FindFirst(newVar => newVar.Name == pair.Key.Name),
+                pair => pair.Value)
+            .Concat(context.VarMap)
+            .ToDictionary(x => x.Key, x => x.Value);
+
+        var originVars = context.Parameters
+            .ToArray()
+            .Concat(context.VarMap.Keys)
+            .Concat(context.DimVarValues.Keys)
+            .ToDictionary(
+                v => v.Name, v => v);
+
+        DumpIR(cloneShape, "cloneShapeOrigin");
+        Task.Run(() => new FoldNopTuple().RunAsync(new Function(cloneShape), new())).Wait();
+        DumpIR(cloneShape, "cloneShape");
+        Expr sliceShape = cloneShape;
+        int i = 0;
+
+        var p = new OpVisitor();
+        p.Visit(cloneShape);
+        var processList = p.list;
+        processList.Reverse();
+        foreach (var call in processList)
+        {
+            ReplaceUtility.ReplaceAllUsesWith(call, call.Arguments[0].EvaluateShapeExpr(newDict));
+        }
+        DumpIR(sliceShape, $"{i}_origin", "funShape");
+
+
+        // // var preHash = sliceShape.GetHashCode();
+        // // var v = new RepVisitor(newDict);
+        // // sliceShape = v.Visit(sliceShape, default);
+        // // var afterHash = sliceShape.GetHashCode();
+        //
+        // DumpIR(cloneShape, $"{i++}_after", "funShape");
+        //
+        //
+        // DumpIR(sliceShape, "SliceShpae");
+        newVars.ToArray().ForEach(newVar =>
+        {
+            if (originVars.TryGetValue(newVar.Name, out var originVar))
+            {
+                ReplaceExpr(sliceShape, newVar, originVar);
+                return;
+            }
+
+            throw new InvalidOperationException();
+        });
+
+        var pm = CompileSessionScope.GetCurrentThrowIfNull().CreatePassManager("pm");
+        pm.AddWithName<EGraphRulesPass>("CSE");
+        var m = new IRModule(new Function(sliceShape, newDict.Keys.ToArray()));
+        pm.RunAsync(m).Wait();
+        var body = ((Function)(m.Entry!)).Body;
+        DumpIR(body, "SliceShapeAfterReplace");
+
+        var simplifySliceShape = CompilerServices.Rewrite(
+            body,
+            new IRewriteRule[]
+            {
+                new FoldStackGetItem(), new FoldShapeOf(), new FoldTwoReshapes(), new FoldTwoCasts(),
+                new FoldTwoSlices(), new FoldNopBinary(), new FoldNopCast(), new Neutral.FoldConstCall(),
+                new FoldNopReshape(), new FoldNopSlice(), new FoldIf(),
+            },
+            new());
+        DumpIR(simplifySliceShape, "SliceShapeAfterSimplify");
+
+        return simplifySliceShape;
+    }
+}
+
+public class OpVisitor : ExprVisitor<Expr, Unit>
+{
+    public List<Call> list = new();
+    protected override Expr VisitLeafCall(Call expr)
+    {
+        var input = expr.Arguments[0];
+        if (expr.Target is ShapeOf && input is Call c && input.CheckedShape.Rank > 2)
+        {
+            list.Add(expr);
+        }
+
+        return expr;
+    }
+
+    protected override Expr DefaultVisitLeaf(Expr expr) => expr;
+}
+public class RepVisitor : ExprRewriter<Unit>
+{
+    public Pattern Pattern => IsShapeOf("shapeOf", IsCallWildcard("conv", IsOp<Conv2D>()));
+
+    public bool Changed;
+
+    public Dictionary<Var, Expr[]> VarMap { get; set; } = new();
+
+    public RepVisitor(Dictionary<Var, Expr[]> map)
+    {
+        VarMap = map;
+    }
+
+    protected override Expr VisitCall(Call expr, Unit context)
+    {
+        if (Changed)
+        {
+            return expr;
+        }
+
+        return base.VisitCall(expr, context);
+    }
+
+    private static int counter = 0;
+
+    protected override Expr RewriteLeafCall(Call expr, Unit context)
+    {
+        var input = expr.Arguments[0];
+        // if (input is Var)
+        // {
+        //     return expr;
+        // }
+        // todo: more target or other condition
+        var list = new[]
+        {
+            // (typeof(Conv2D), Conv2D.Padding.Index),
+            // (typeof(Conv2DTranspose), Conv2DTranspose.Padding.Index),
+            (typeof(Conv2DShape), Conv2DShape.Padding.Index),
+            (typeof(Conv2DTransposeShape), Conv2DTransposeShape.Padding.Index),
+            // (typeof(SpaceToBatch), SpaceToBatch.Paddings.Index),
+            // (typeof(BatchToSpace), BatchToSpace.Crops.Index),
+        };
+        foreach ((var item1, int index) in list)
+        {
+            if (expr.Target.GetType() == item1)
+            {
+                var arg = expr.Arguments[index];
+                if (arg is Var)
+                {
+                    return expr;
+                }
+
+                var type = arg.CheckedType;
+                return ReplaceCallParams(expr, (index, new Var(type)));
+            }
+        }
+
+        if (expr.Target is ShapeOf && input is Call c && input.CheckedShape.Rank > 2)
+        {
+            var result = input.EvaluateShapeExpr(VarMap);
+            return result;
+        }
+        return expr;
+
+        // if (expr.Target is ShapeOf && input.Users.All(x => x is Call { Target: IR.Tensors.ShapeOf }) && input.CheckedShape.Rank > 2)
+        // {
+        //     DumpScope.Current.DumpIR(expr, $"{counter}_origin", "ShapeOf");
+        //     var result = input.EvaluateShapeExpr(VarMap);
+        //     DumpScope.Current.DumpIR(result, $"{counter++}", "ShapeOf");
+        //     Changed = true;
+        //     input.RemoveUser(expr);
+        //     return result;
+        // }
+
     }
 }
 

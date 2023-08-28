@@ -28,6 +28,7 @@ public class MergeBucketFusionPass : FunctionPass
     protected override async Task<BaseFunction> RunCoreAsync(BaseFunction input, RunPassContext context)
     {
         var main = (Function)input;
+        int i = 0;
         while (true)
         {
             var preHash = main.GetHashCode();
@@ -35,6 +36,14 @@ public class MergeBucketFusionPass : FunctionPass
             await new MergeSeqBucketFusion().RunAsync(main, context);
             IRHelpers.DCE(main);
             await new MergeMultiUsersFusion().RunAsync(main, context);
+            DumpIR(main, $"{i}_before", "FoldNopTuple");
+            var before = main.GetHashCode();
+            await new FoldNopTuple().RunAsync(main, context);
+            var after = main.GetHashCode();
+            if (before != after)
+            {
+                DumpIR(main, $"{i++}_after", "FoldNopTuple");
+            }
             var postHash = main.GetHashCode();
             if (preHash == postHash)
             {
@@ -46,6 +55,7 @@ public class MergeBucketFusionPass : FunctionPass
     }
 }
 
+// todo: test for enc
 [RuleGenerator]
 public partial class MergeTupleFusion : RewriteRule<Pattern>
 {

@@ -37,8 +37,8 @@ public static class CallValidator
     // todo: add debug mode
     private static readonly HashSet<RuntimeTypeHandle> MaybeDynamic = new()
     {
-        // typeof(SpaceToBatch).TypeHandle,
-        // typeof(BatchToSpace).TypeHandle,
+        typeof(SpaceToBatch).TypeHandle,
+        typeof(BatchToSpace).TypeHandle,
         typeof(Concat).TypeHandle,
         typeof(Stack).TypeHandle,
         typeof(Binary).TypeHandle,
@@ -46,7 +46,7 @@ public static class CallValidator
         typeof(Gather).TypeHandle,
         typeof(ShapeOf).TypeHandle,
 
-        // typeof(Reshape).TypeHandle,
+        typeof(Reshape).TypeHandle,
         typeof(Expand).TypeHandle,
         typeof(ConstantOfShape).TypeHandle,
         typeof(Where).TypeHandle,

@@ -1,0 +1,62 @@
+using System.Linq;
+using System.Reactive;
+using System.Threading.Tasks;
+using Nncase.Diagnostics;
+using Nncase.IR;
+using Nncase.IR.Tensors;
+using Nncase.PatternMatch;
+using Nncase.Utilities;
+using static Nncase.PatternMatch.Utility;
+using static Nncase.Utilities.ReplaceUtility;
+
+namespace Nncase.Passes.Rules.ShapeBucket;
+
+public class FoldNopTuple : FunctionPass
+{
+    protected override Task<BaseFunction> RunCoreAsync(BaseFunction input, RunPassContext context)
+    {
+        int i = 0;
+        while (true)
+        {
+            var preHash = input.GetHashCode();
+            DumpScope.Current.DumpIR(input, $"{i}_before");
+            // IRHelpers.DCE(input);
+            // DumpScope.Current.DumpIR(input, $"{i}_after_dce");
+            new TupleVisitor().Visit(input);
+            DumpScope.Current.DumpIR(input, $"{i++}_after_convert");
+            var afterHash = input.GetHashCode();
+            if (preHash == afterHash)
+            {
+                return Task.FromResult(input);
+            }
+        }
+    }
+
+    internal class TupleVisitor : ExprVisitor<Expr, Unit>
+    {
+        protected bool changed = false;
+
+        public TupleVisitor()
+            : base(true)
+        {
+        }
+
+        protected override Expr DefaultVisitLeaf(Expr expr) => expr;
+
+        protected override Expr VisitLeafTuple(Tuple expr)
+        {
+            if (!changed && expr.Users.All(user => user is Call { Target: GetItem }))
+            {
+                foreach (var user in expr.Users)
+                {
+                    var index = ((TensorConst)((Call)user).Arguments[GetItem.Index.Index]).Value.ToScalar<int>();
+                    ReplaceUtility.ReplaceAllUsesWith(user, expr.Fields[index]);
+                }
+
+                changed = true;
+            }
+
+            return expr;
+        }
+    }
+}
