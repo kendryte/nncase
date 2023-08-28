@@ -82,15 +82,25 @@ void stage1_kernel(
 
 #if 0
     auto v1 = unsqueeze(v0); // [1, 1, 384, 8192] [1, 1, 48@b, 2048@t]
-    /* 这里如果V2不shared的话可以只做thread间的reduce */
+    /* 
+      [1, 1, 384, 8192]    @ [64, 8192, 128]  -> [1, 64, 384, 128]
+      [1, 1, 48@b, 2048@t] @ [64, 2048@t, 128] -> [1, 64, 48@b, 128] @ shared
+     */
     tensor_block_mma_sync(v1, v2_w, V2, false, ctx);
 
-    tensor<float> v3({1, 384, 128}); //
+    tensor<float> v3({1, 384, 128});
+    /* 
+      [384, 128][[1, 384]]  -> [1, 384, 128]
+    */
     gather(v3_data, position_ids, v3, 0);
 
     auto v4 = unsqueeze(v3); /* 1, 1, 384, 128 */
 
     tensor<float> v5({1, 8, 384, 128}); // [1, 64, 384, 128] [1, 8@b, 384, 128]
+    /*
+      [1, 64, 384, 128]           X   [1, 1, 384, 128] ->  [1, 64, 384, 128]
+      [1, 64, 48@b, 128] @ shared X   [1, 1, 384, 128] ->  [1, 64, 384, 128]
+    */
     binary(V2, v4, v5, binary_op_t::mul);
 
     auto v6 =
