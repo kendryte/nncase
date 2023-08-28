@@ -99,7 +99,7 @@ INSTANTIATE_TEST_SUITE_P(ResizeImage, ResizeImageTest,
                          testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(ResizeImageTest, ResizeImage) {
-    float_t roi_array[1];
+    float roi_array[1];
     auto roi = hrt::create(dt_float32, {1},
                            {reinterpret_cast<gsl::byte *>(roi_array),
                             sizeof(roi_array)},
