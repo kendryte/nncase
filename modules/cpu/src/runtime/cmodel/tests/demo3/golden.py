@@ -13,7 +13,7 @@ def swish(x:np.ndarray):
 def gather(data:np.ndarray, axis:int, indices:np.ndarray):
     return torch.gather(torch.from_numpy(data), axis, torch.from_numpy(indices)).detach().numpy()
 
-const_dir = "/compiler/huochenghai/GNNE/rebuild-ir/nncase/modules/cpu/src/runtime/cmodel/tests/demo3/golden/"
+const_dir = "/root/workspace/golden"
 
 hidden_in = np.reshape(np.fromfile(os.path.join(const_dir,"input_0_0.bin"), dtype=np.float32), (1, 384, 8192))
 attn_mask = np.reshape(np.fromfile(os.path.join(const_dir,"input_1_0.bin"), dtype=np.float32), (1, 1, 384, 384))
@@ -42,9 +42,12 @@ v0 = layernorm(hidden_in, input_ln_gamma, input_ln_beta) # f32[1,384,8192]
 v0.tofile("v0.bin")
 v1 = np.reshape(v0, [1,1,384, 8192]) # f32[1,1,384,8192]
 v2 = (v1 @ WQ) # f32[1,64,384,128]
+v2.tofile("v2.bin")
 v3 = gather1_data[position_ids] # f32[1,384,128]
+v3.tofile("v3.bin")
 v4 = np.reshape(v3, (1,1,384,128))
 v5 = v2 * v4 # f32[1,64,384,128]
+v5.tofile("v5.bin")
 v6 = v2[:,:,:,64:] # Slice(v3, const(i64[1] : {64L}), const(i64[1] : {9223372036854775807}), 3, 1) # f32[1,64,384,64]
 v7 = -(v6) # f32[1,64,384,64]
 v8 = v2[:,:,:,0:64] # Slice(v3, 0, 64, 3, 1) # f32[1,64,384,64]
@@ -55,6 +58,7 @@ v11 = gather2_data[position_ids] # f32[1,384,128]
 v12 = np.reshape(v11, (1,1,384,128))
 v13 = v10 * v12 # f32[1,64,384,128]
 v14 = v5 + v13 # f32[1,64,384,128]
+v14.tofile("v14.bin")
 v15 = np.reshape(v0, [1,1,384, 8192]) # f32[1,1,384,8192]
 v16 = (v15 @ WK) # f32[1,64,384,128]
 v17 = v16 * v4 # f32[1,64,384,128]
@@ -68,6 +72,7 @@ v23 = v22 * v12 # f32[1,64,384,128]
 v24 = v17 + v23 # f32[1,64,384,128]
 v25 = np.transpose(v24, [0,1,3,2]) # f32[1,64,128,384]
 v26 = v14 @ v25 # f32[1,64,384,384]
+v26.tofile("v26.bin")
 v27 = (v26/ 11.31370) # f32[1,64,384,384]
 v28 = v27 + attn_mask # f32[1,64,384,384]
 v29 = softmax(v28, -1) # f32[1,64,384,384]

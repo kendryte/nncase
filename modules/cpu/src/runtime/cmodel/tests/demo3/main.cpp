@@ -8,7 +8,7 @@
         block##b::thread##t::stage1_kernel(                                    \
             Hidden_in, V0_gamma, V0_beta, V2_w, V16_w, V31_w, V35_w, V3_data,  \
             V11_data, Attn_mask, V38_w, V40_w, V42_w, Position_ids, Output,    \
-            ImmOutputs);                                                       \
+            V25, ImmOutputs);                                                   \
         return arg;                                                            \
     }
 
@@ -33,15 +33,26 @@ static tensor<float, loc_t::device> V40_w({8192, 22016});
 static tensor<float, loc_t::device> V42_w({22016, 8192});
 static tensor<int64_t, loc_t::device> Position_ids({1, 384});
 static tensor<float, loc_t::device> Output({1, 384, 8192});
+static tensor<float, loc_t::device> V25({1, 64, 128, 384});
 
-const int OutNum = 2;
+constexpr int OutNum = 6;
 static tensor<float, loc_t::device> goldenImmOutputs[OutNum] = {
     tensor<float, loc_t::device>({1, 384, 8192}),
-    tensor<float, loc_t::device>({1, 64, 384, 128})};
+    tensor<float, loc_t::device>({1, 64, 384, 128}),
+    tensor<float, loc_t::device>({1, 64, 384, 128}),
+    tensor<float, loc_t::device>({1, 64, 384, 128}),
+    tensor<float, loc_t::device>({1, 384, 128}),
+    tensor<float, loc_t::device>({1, 64, 384, 384}),
+};
 
 static tensor<float, loc_t::device> ImmOutputs[OutNum] = {
     tensor<float, loc_t::device>({1, 384, 8192}),
-    tensor<float, loc_t::device>({1, 64, 384, 128})};
+    tensor<float, loc_t::device>({1, 64, 384, 128}),
+    tensor<float, loc_t::device>({1, 64, 384, 128}),
+    tensor<float, loc_t::device>({1, 64, 384, 128}),
+    tensor<float, loc_t::device>({1, 384, 128}),
+    tensor<float, loc_t::device>({1, 64, 384, 384}),
+};
 
 DEFINE_BFUNC(0)
 DEFINE_BFUNC(1)
@@ -165,7 +176,7 @@ int main([[maybe_unused]] int argc, char **argv) {
         auto cos = cosine(ImmOutputs[o].data().begin(),
                           goldenImmOutputs[o].data().begin(),
                           goldenImmOutputs[o].data().size());
-        printf("input layernorm cosine %f\n", cos);
+        printf("%s cosine %f\n", argv[15 + o], cos);
     }
 
     return 0;

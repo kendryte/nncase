@@ -7,12 +7,12 @@ using namespace shared;
 
 static bool w_loaded;
 static tensor<float> v2_w({64, 2048, 128});
-static tensor<float> v16_w({8, 2048, 128});
+static tensor<float> v16_w({64, 2048, 128});
 static tensor<float> v31_w({8, 2048, 128});
 static tensor<float> v35_w({1024, 2048});
-static tensor<float> v3_data({384, 128});
-static tensor<float> v11_data({384, 128});
-static tensor<int64_t> position_ids({1, 384});
+static tensor<float> v3_data({384, 32});
+static tensor<float> v11_data({384, 32});
+static tensor<int64_t> position_ids({1, 48});
 static tensor<float> v38_w({2048, 22016});
 static tensor<float> v40_w({2048, 22016});
 static tensor<float> v42_w({5504, 8192});
@@ -33,6 +33,7 @@ void stage1_kernel(
     tensor<float, loc_t::device> &V42_w,                   /* [22016, 8192] */
     tensor<int64_t, loc_t::device> &Position_ids,          /* [1,384] */
     [[maybe_unused]] tensor<float, loc_t::device> &Output, /* [1,384,8192] */
+    tensor<float, loc_t::device> &V25,
     [[maybe_unused]] tensor<float, loc_t::device> *ImmOutputs) {
     thread_context ctx(bid, tid);
     tensor<float> v0_gamma({2048});
@@ -40,16 +41,13 @@ void stage1_kernel(
     tensor<float> v0({1, 48, 2048});    /* [1, 384, 8192] [1, 48@b, 2048@t]  */
     tensor<float> var_5({1, 48, 2048}); /* [1, 384, 8192] [1, 48@b, 2048@t]  */
 
-    tensor<float> attn_mask(
-        {1, 1, 96, 96}); /* [1,1,384,384] [1,1,96@t,96@t] */
+    tensor<float> attn_mask({1, 1, 96, 96}); /* [1,1,384,384] [1,1,96@t,96@t] */
 
     if (!w_loaded) {
         tdma_load_async(v0_gamma, V0_gamma({tid * 2048}, {2048}), ctx);
         tdma_load_async(v0_beta, V0_beta({tid * 2048}, {2048}), ctx);
-        tdma_load_async(v2_w, V2_w({0, 2048 * tid, 0}, {64, 2048, 128}),
-                        ctx);
-        tdma_load_async(v16_w, V16_w({8 * bid, 2048 * tid, 0}, {8, 2048, 128}),
-                        ctx);
+        tdma_load_async(v2_w, V2_w({0, 2048 * tid, 0}, {64, 2048, 128}), ctx);
+        tdma_load_async(v16_w, V16_w({0, 2048 * tid, 0}, {64, 2048, 128}), ctx);
         tdma_load_async(v31_w, V31_w({8 * bid, 2048 * tid, 0}, {8, 2048, 128}),
                         ctx);
         tdma_load_async(v35_w, V35_w({1024 * bid, 2048 * tid}, {1024, 2048}),
@@ -57,9 +55,10 @@ void stage1_kernel(
         tdma_load_async(v38_w, V38_w({2048 * tid, 0}, {2048, 22016}), ctx);
         tdma_load_async(v40_w, V40_w({2048 * tid, 0}, {2048, 22016}), ctx);
         tdma_load_async(v42_w, V42_w({5504 * tid, 0}, {5504, 8192}), ctx);
-        tdma_load_async(v3_data, std::move(V3_data), ctx);
-        tdma_load_async(v11_data, std::move(V11_data), ctx);
-        tdma_load_async(position_ids, std::move(Position_ids), ctx);
+        tdma_load_async(v3_data, V3_data({0, 32 * tid}, {384, 32}), ctx);
+        tdma_load_async(v11_data, V11_data({0, 32 * tid}, {384, 32}), ctx);
+        tdma_load_async(position_ids, Position_ids({0, 48 * bid}, {1, 48}),
+                        ctx);
         tdma_load_async(attn_mask,
                         Attn_mask({0, 0, tid * 96, tid * 96}, {1, 1, 96, 96}),
                         ctx);
@@ -81,86 +80,136 @@ void stage1_kernel(
     } // v0 [1, 384, 8192] [1, 48@b, 8192]
 
     auto v1 = unsqueeze(v0); // [1, 1, 384, 8192] [1, 1, 48@b, 2048@t]
-    /* 
+    /*
       [1, 1, 384, 8192]    @ [64, 8192, 128]  -> [1, 64, 384, 128]
       [1, 1, 48@b, 2048@t] @ [64, 2048@t, 128] -> [1, 64, 48@b, 128] @ shared
      */
     tensor_block_mma_sync(v1, v2_w, V2, false, ctx);
-    if (tid ==0 )
-    tdma_store_async(
+    if (tid == 0) {
+        tdma_store_async(
             V2, ImmOutputs[1]({0, 0, 48 * bid, 0}, {1, 64, 48, 128}), ctx);
+    }
+    __tdma_all_sync_apply([]([[maybe_unused]] int v) -> void {},
+                          []() -> void {}, ctx); /* for store */
 
-#if 0
-    tensor<float> v3({1, 384, 128}); //
+    /*
+      [384, 128][[1, 384]] -> [1, 384, 128]
+      [384, 32@t][[1, 48@b]] -> [1, 48@b, 32@t]
+    */
+    tensor<float> v3({1, 48, 32});
     gather(v3_data, position_ids, v3, 0);
+    tdma_store_async(v3, ImmOutputs[4]({0, 48 * bid, 32 * tid}, {1, 48, 32}),
+                     ctx);
 
-    auto v4 = unsqueeze(v3); /* 1, 1, 384, 128 */
+    auto v4 = unsqueeze(v3); /* 1, 1, 48, 32 */
 
-    tensor<float> v5({1, 8, 384, 128}); // [1, 64, 384, 128] [1, 8@b, 384, 128]
     /*
       [1, 64, 384, 128]           X   [1, 1, 384, 128] ->  [1, 64, 384, 128]
-      [1, 64, 48@b, 128] @ shared X   [1, 1, 384, 128] ->  [1, 64, 384, 128]
+      [1, 64, 48@b, 32@t] @ shared X   [1, 1, 48@b, 32@t] ->  [1, 64, 48@b,
+      32@t] @ shared
     */
-    binary(V2, v4, v5, binary_op_t::mul);
+    auto v5_ = V5({0, 0, 0, 32 * tid}, {1, 64, 48, 32});
+    auto v2_ = V2({0, 0, 0, 32 * tid}, {1, 64, 48, 32});
+    binary(v2_, v4, v5_, binary_op_t::mul);
+    __tdma_all_sync_apply([]([[maybe_unused]] int v) -> void {},
+                          []() -> void {}, ctx); /* for store */
+    tdma_store_async(
+        v5_, ImmOutputs[2]({0, 0, 48 * bid, 32 * tid}, {1, 64, 48, 32}), ctx);
 
-    auto v6 =
-        V2({0, 0, 0, 64}, {1, 8, 384, 64}); //[1, 64, 384, 64] [1, 8@b, 384, 64]
+    auto v6 = V2({0, 16 * tid, 0, 64}, {1, 16, 48, 64});
     auto v7 = v6;
-    if (tid == 0) {
-        /* V2 is shared, so don't need perfrom on each thread. */
-        unary(v6, v7, unary_op_t::neg);
-    }
-    tdma_wait(ctx);
+    /*
+      [1, 64, 384, 64:] -> [1, 64, 384, 64:]
+      [1, 64, 48@b, 64] ->  [1, 16@t, 48@b, 64]
+    */
+    unary(v6, v7, unary_op_t::neg);
 
-    // auto v8 = v2({0, 0, 0, 0}, {1, 8, 384, 64}); //[1, 64, 384, 64] [1, 8@b,
-    // 384, 64]@shared
     /* v10 为concat(v7,v8), 实际来源于V2，因此无需实际动作 */
-    // [1, 64, 384, 128] [1, 8@b, 384, 128]@shared ->
-    // [1, 8@b, 96@t, 128]@shared here can resplit .
-    auto v10 = V2({0, 0, tid * 96, 0}, {1, 8, 96, 128});
+    auto v10 = V2({0, 0, 0, 32 * tid}, {1, 64, 48, 32});
 
-    tensor<float> v11({1, 384, 128}); //[1, 384, 128] [1, 384, 128]
+    /*
+      [384, 128][[1, 384]] -> [1, 384, 128]
+      [384, 32@t][[1, 48@b]] -> [1, 48@b, 32@t]
+    */
+    tensor<float> v11({1, 48, 32});
     gather(v11_data, position_ids, v11, 0);
-    auto v12 = unsqueeze(v11); // [1, 1, 384, 128] [1, 1, 384, 128]
+    auto v12 = unsqueeze(v11); // [1, 1, 384, 128] [1, 1, 48@b, 32@t]
 
-    tensor<float> v13({1, 8, 96, 128}); // [1, 64, 384, 128] [1, 8@b, 96@t, 128]
-    binary(v10, v12, v13, binary_op_t::mul);
+    /*
+      [1, 64, 384, 128]           X   [1, 1, 384, 128] ->  [1, 64, 384, 128]
+      [1, 64, 48@b, 32@t] @ shared X   [1, 1, 48@b, 32@t] ->  [1, 64, 48@b,
+      32@t] @ shared
+    */
+    auto v13_ = V13({0, 0, 0, 32 * tid}, {1, 64, 48, 32});
+    // auto v2_ = V2({0, 0, 0, 32 * tid}, {1, 64, 48, 32});
+    binary(v2_, v12, v13_, binary_op_t::mul);
 
-    tensor<float> v14({1, 8, 96, 128}); // [1, 64, 384, 128] [1, 8@b, 96@t, 128]
-    binary(v5, v13, v14, binary_op_t::add);
+    __tdma_all_sync_apply([]([[maybe_unused]] int v) -> void {},
+                          []() -> void {}, ctx); /* wait v5,v13 */
+    /*
+    [1, 64, 384, 128] + [1, 64, 384, 128] -> [1, 64, 384, 128]
+    [1, 64, 48@b, 32@t] + [1, 64, 48@b, 32@t] -> [1, 64, 48@b, 32@t]
+    */
+    tensor<float> v14({1, 16, 48, 32});
+    auto v5__ = V5({0, 0, 0, 32 * tid}, {1, 64, 48, 32});
+    auto v13__ = V13({0, 0, 0, 32 * tid}, {1, 64, 48, 32});
+    binary(v5__, v13__, v14, binary_op_t::add);
+    tdma_store_async(
+        v14, ImmOutputs[3]({0, 0, 48 * bid, 32 * tid}, {1, 64, 48, 32}), ctx);
 
-    // [1, 1, 384, 8192] [1, 1, 48@b, 2048@t]
-    tensor<float> v15 = v0({0, bid * 48, tid * 2048}, {1, 48, 2048});
-
+    tensor<float> v15 = v0;
+    /*
+      [1,1,384,8192] @ [64, 8192, 128] -> [1,64,384,128]
+      [1, 1, 48@b, 2048@t] @ [64, 2048@t, 128] -> [1,64,48@b,128]@shared
+    */
     tensor_block_mma_sync(v15, v16_w, V16, false, ctx);
-    tensor<float> v17({1, 8, 384, 128}); // [1, 64, 384, 128] [1, 8@b, 384, 128]
+
+    /*
+      [1,64,384,128] X [1,64,384,128] -> [1,64,384,128]
+      [1,64,48@b,32@t]@shared X [1,1,48@b,32@t] ->  [1,64,48@b,32@t]
+    */
+    tensor<float> v17({1, 64, 48, 32});
     binary(V16, v4, v17, binary_op_t ::mul);
 
-    // [1, 64, 384, 64] [1, 8@b, 384, 64]@shared
-    auto v18 = V16({0, 0, 0, 64}, {1, 8, 384, 64});
-    if (tid == 0) {
-        unary(v18, v18, unary_op_t::neg);
-    }
-    tdma_wait(ctx);
+    auto v18 = V16({0, 16 * tid, 0, 64}, {1, 16, 48, 64});
+    /*
+      [1, 64, 384, 64:] -> [1, 64, 384, 64:]
+      [1, 64, 48@b, 64]@shared ->  [1, 16@t, 48@b, 64]@shared
+    */
+    unary(v18, v18, unary_op_t::neg);
 
-    //[1, 64, 384, 128] [1, 8@b, 96@t, 128]@shared
-    auto v22 = V16({0, 0, tid * 96, 0}, {1, 8, 96, 128});
-
-    // [1, 64, 384, 128] [1, 8@b, 96@t, 128]@shared
-    tensor<float> v23({1, 8, 96, 128});
+    /*
+      [1,64,384,128] x [1,1,384,128] ->  [1,64,384,128]
+      [1, 64, 48@b, 32@t]@shared x [1, 1, 48@b, 32@t] -> [1, 64, 48@b, 32@t]
+    */
+    tensor<float> v23({1, 64, 48, 32});
+    auto v22 = V16({0, 0, 0, 32 * tid}, {1, 64, 48, 32});
     binary(v22, v12, v23, binary_op_t::mul);
 
-    // [1, 64, 384, 128] [1, 8@b, 96@t, 128]
-    tensor<float> v24({1, 8, 96, 128});
+    tensor<float> v24({1, 64, 48, 32});
+    /*
+      [1,64,384,128] + [1,1,384,128] ->  [1,64,384,128]
+      [1, 64, 48@b, 32@t] + [1, 1, 48@b, 32@t] -> [1, 64, 48@b, 32@t]
+    */
     binary(v17, v23, v24, binary_op_t::add);
 
-    // [1, 64, 128, 384] [1, 8@b, 128, 96@t]
-    tensor<float> v25({1, 8, 128, 96});
+    tensor<float> v25({1, 64, 32, 48});
     transpose(v24, v25, dims_t({0, 1, 3, 2}));
+    tdma_store_async(v25, V25({0, 0, 32 * tid, 48 * bid}, {1, 64, 32, 48}),
+                     ctx);
+    __tdma_all_sync_apply([]([[maybe_unused]] int v) -> void {},
+                          []() -> void {}, ctx); /* for store */
 
-    // [1, 8@b, 96@t, 128] @  [1, 8@b, 128, 96@t] => [1, 8@b, 96@t, 96@t]
-    auto v26 = V26({0, 0, tid * 96, tid * 96}, {1, 8, 96, 96});
-    matmul(v14, v25, v26);
+    /*
+      [1, 64, 384, 128] @ [1, 64, 128, 384] -> [1, 64, 384, 384]
+      [1, 64, 48@b, 32@t] @ [1, 64, 32@t, 384] -> [1, 64, 48@b, 384]
+    */
+    tensor<float> v25_1({1, 64, 32, 384});
+    tdma_load_async(v25_1, V25({0, 0, 32 * tid, 384}, {1, 64, 32, 384}), ctx);
+    tensor_block_mma_sync(v14, v25_1, V26, false, ctx);
+    tdma_store_async(V26, ImmOutputs[5]({0, 0, 0, 96 * tid}, {1, 64, 48, 96}),
+                     ctx);
+#if 0
 
     // [1, 64, 384, 384] [1, 8@b, 96@t, 96@t] @shared
     auto v27 = v26;
