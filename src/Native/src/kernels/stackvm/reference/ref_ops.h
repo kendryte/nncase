@@ -18,6 +18,7 @@
 #pragma once
 #include <nncase/kernels/apply.h>
 #include <nncase/kernels/kernel_context.h>
+#include <nncase/kernels/kernel_utils.h>
 #include <nncase/runtime/datatypes.h>
 #include <nncase/runtime/error.h>
 #include <nncase/runtime/result.h>
@@ -345,6 +346,8 @@ NNCASE_API result<void> resize_nearest_neighbor(
     gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
     gsl::span<const size_t> out_strides, int32_t out_h, int32_t out_w,
     bool align_corners, bool half_pixel_centers,
+    get_coordinate_func_t get_coordinate_func,
+    get_nearest_pixel_func_t get_nearset_func,
     kernel_context &context) noexcept;
 
 NNCASE_API result<void> reverse_sequence(
