@@ -8,7 +8,7 @@
         block##b::thread##t::stage1_kernel(                                    \
             Hidden_in, V0_gamma, V0_beta, V2_w, V16_w, V31_w, V35_w, V3_data,  \
             V11_data, Attn_mask, V38_w, V40_w, V42_w, Position_ids, Output,    \
-            V25, ImmOutputs);                                                   \
+            V25, GV31,ImmOutputs);                                                  \
         return arg;                                                            \
     }
 
@@ -34,6 +34,7 @@ static tensor<float, loc_t::device> V42_w({22016, 8192});
 static tensor<int64_t, loc_t::device> Position_ids({1, 384});
 static tensor<float, loc_t::device> Output({1, 384, 8192});
 static tensor<float, loc_t::device> V25({1, 64, 128, 384});
+static tensor<float, loc_t::device> GV31({1, 64, 384, 128});
 
 constexpr int OutNum = 6;
 static tensor<float, loc_t::device> goldenImmOutputs[OutNum] = {
