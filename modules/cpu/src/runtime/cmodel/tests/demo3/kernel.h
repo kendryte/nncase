@@ -166,7 +166,9 @@ void stage1_kernel(
       [1,64,48@b,32@t]@shared X [1,1,48@b,32@t] ->  [1,64,48@b,32@t]
     */
     tensor<float> v17({1, 64, 48, 32});
-    binary(V16, v4, v17, binary_op_t ::mul);
+    auto v16 = V16({0, 0, 0, 32 * tid}, {1, 64, 48, 32});
+    binary(v16, v4, v17, binary_op_t ::mul);
+    tdma_wait(ctx);
 
     auto v18 = V16({0, 16 * tid, 0, 64}, {1, 16, 48, 64});
     /*
