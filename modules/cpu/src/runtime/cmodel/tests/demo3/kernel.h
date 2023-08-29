@@ -117,7 +117,7 @@ void stage1_kernel(
         v5_, ImmOutputs[2]({0, 0, 48 * bid, 32 * tid}, {1, 64, 48, 32}), ctx);
 
     auto v6 = V2({0, 16 * tid, 0, 64}, {1, 16, 48, 64});
-    auto v7 = v6;
+    auto &v7 = v6;
     /*
       [1, 64, 384, 64:] -> [1, 64, 384, 64:]
       [1, 64, 48@b, 64] ->  [1, 16@t, 48@b, 64]
@@ -157,7 +157,7 @@ void stage1_kernel(
     tdma_store_async(
         v14, ImmOutputs[3]({0, 0, 48 * bid, 32 * tid}, {1, 64, 48, 32}), ctx);
 
-    tensor<float> v15 = v0;
+    tensor<float> &v15 = v0;
     /*
       [1,1,384,8192] @ [64, 8192, 128] -> [1,64,384,128]
       [1, 1, 48@b, 2048@t] @ [64, 2048@t, 128] -> [1,64,48@b,128]@shared

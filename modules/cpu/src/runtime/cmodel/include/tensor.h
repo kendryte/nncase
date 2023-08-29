@@ -16,6 +16,8 @@ template <typename T, loc_t Loc = loc_t::local> class tensor {
 
   public:
     using value_type = T;
+    tensor(tensor<T, Loc> &) = delete;
+    tensor &operator=(tensor<T, Loc> &) = delete;
 
     tensor(dims_t dims)
         : dims_(dims),
