@@ -36,7 +36,7 @@ static tensor<float, loc_t::device> Output({1, 384, 8192});
 static tensor<float, loc_t::device> V25({1, 64, 128, 384});
 static tensor<float, loc_t::device> GV31({1, 64, 384, 128});
 
-constexpr int OutNum = 7;
+constexpr int OutNum = 11;
 static tensor<float, loc_t::device> goldenImmOutputs[OutNum] = {
     tensor<float, loc_t::device>({1, 384, 8192}),    // v0
     tensor<float, loc_t::device>({1, 64, 384, 128}), // v2
@@ -45,6 +45,10 @@ static tensor<float, loc_t::device> goldenImmOutputs[OutNum] = {
     tensor<float, loc_t::device>({1, 384, 128}),     // v3
     tensor<float, loc_t::device>({1, 64, 384, 128}), // v16
     tensor<float, loc_t::device>({1, 64, 384, 384}), // v28
+    tensor<float, loc_t::device>({1, 64, 384, 128}), // v32
+    tensor<float, loc_t::device>({1,384,8192}), // v35
+    tensor<float, loc_t::device>({1,384,22016}), // v38
+    tensor<float, loc_t::device>({1,384,8192}), // v43
 };
 
 static tensor<float, loc_t::device> ImmOutputs[OutNum] = {
@@ -55,6 +59,10 @@ static tensor<float, loc_t::device> ImmOutputs[OutNum] = {
     tensor<float, loc_t::device>({1, 384, 128}),
     tensor<float, loc_t::device>({1, 64, 384, 128}),
     tensor<float, loc_t::device>({1, 64, 384, 384}),
+    tensor<float, loc_t::device>({1, 64, 384, 128}),
+    tensor<float, loc_t::device>({1,384,8192}),
+    tensor<float, loc_t::device>({1,384,22016}),
+    tensor<float, loc_t::device>({1,384,8192}),
 };
 
 DEFINE_BFUNC(0)
