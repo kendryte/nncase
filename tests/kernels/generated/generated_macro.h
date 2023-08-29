@@ -30,7 +30,7 @@
                      .expect("create tensor failed");                          \
             INIT_TENSOR(a1, init_f1);                                          \
         }                                                                      \
-        void TearDown() override {}                                            \
+        void TearDown() override { CLEAR_SUBCASE() }                                            \
                                                                                \
       protected:                                                               \
         runtime_tensor a0;                                                     \

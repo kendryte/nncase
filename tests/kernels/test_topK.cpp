@@ -75,7 +75,7 @@ class TopKTest : public KernelTest,
         k_value = value4;
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
   protected:
     runtime_tensor input;

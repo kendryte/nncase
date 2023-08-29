@@ -39,7 +39,7 @@ class GetItemTest
         init_tensor(input);
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
   protected:
     runtime_tensor input;
