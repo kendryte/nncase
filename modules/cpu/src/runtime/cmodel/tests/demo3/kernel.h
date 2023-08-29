@@ -271,16 +271,15 @@ void stage1_kernel(
     auto v34 = V34({0, 0, 2048 * tid}, {1, 48, 2048});
     tensor_block_mma_sync(v34, v35_w, V35, false, ctx);
 
-#if 0
-    /* need a all reduce for each block shared tensor */
-    tdma_all_reduce_async(v35, v35, reduce_op_t::sum,
-                          reduce_strategy_t::by_block, ctx);
-    //  note now resplit V35 here.
+    /*
+    [1,384,8192] +  [1,384,8192]  -> [1,384,8192]
+    [1, 48@b, 2048@tid]@shared +  [1, 48@b, 2048@tid] -> [1, 48@b, 2048@tid]
+     */
     tdma_load_async(var_5, Hidden_in({0, bid * 48, tid * 2048}, {1, 48, 2048}),
                     ctx);
+    auto v35 = V35({0, bid * 48, tid * 2048}, {1, 48, 2048});
     tensor<float> v36({1, 48, 2048}); /* [1, 384, 8192] [1, 48@b, 2048@t] */
-    auto v35_1 = V35({0, bid * 48, tid * 2048}, {1, 48, 2048});
-    binary(var_5, v35_1, v36, binary_op_t::add);
+    binary(var_5, v35, v36, binary_op_t::add);
 
     tensor<float> v37({1, 48, 2048}); /* [1, 384, 8192] [1, 48@b, 2048@t] */
     {
@@ -291,11 +290,16 @@ void stage1_kernel(
         tdma_reduce_async(v36_sum_sqr, v36_sum_sqr, reduce_op_t::sum, ctx);
         layernorm(v36, v36_sum, v36_sum_sqr, v37, 2, 8192);
     }
-    /* [1, 48@b, 2048@t] @ [2048@t, 22016] ->  v38 [1, 384, 22016] [1, 48@b,
-     * 22016]@shared */
+    /*
+      [1,384,8192] @ [8192, 22016] -> [1,384, 22016]
+      [1, 48@b, 2048@t] @ [2048@t, 22016] -> [1, 48@b, 22016]@shared
+    */
     tensor_block_mma_sync(v37, v38_w, V38, false, ctx);
 
-    /*  [1, 384, 22016] [1, 48@b, 5504@t] @ shared */
+    /*
+      [1,384, 22016] -> [1,384, 22016]
+      [1, 48@b, 5504@t]@shared -> [1, 48@b, 5504@t]@shared
+    */
     auto v39 = V38({0, 0, 5504 * tid}, {1, 48, 5504});
     unary(v39, v39, unary_op_t::swish);
 
@@ -305,8 +309,7 @@ void stage1_kernel(
     tensor_block_mma_sync(v37, v40_w, V40, false, ctx);
     /*
     [1, 384, 22016] X  [1, 384, 22016] -> [1, 384, 22016]
-    [1, 48@b, 5504@t] @ shared X [1, 48@b, 5504@t] @shared -> [1, 48@b, 5504@t]
-    @local
+    [1, 48@b, 5504@t]@shared X [1,48@b,5504@t]@shared -> [1, 48@b, 5504@t]@local
     */
     tensor<float> v41({1, 48, 5504});
     auto v40 = V40({0, 0, 5504 * tid}, {1, 48, 5504});
@@ -327,5 +330,6 @@ void stage1_kernel(
     binary(v36, v42, v43, binary_op_t::add);
     tdma_store_async(v42, Output({0, 48 * bid, 2048 * tid}, {1, 48, 2048}),
                      ctx);
+#if 0
 #endif
 }
