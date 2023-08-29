@@ -108,21 +108,25 @@ void stage1_kernel(
     auto v5_ = V5({0, 0, 0, 32 * tid}, {1, 64, 48, 32});
     auto v2_ = V2({0, 0, 0, 32 * tid}, {1, 64, 48, 32});
     binary(v2_, v4, v5_, binary_op_t::mul);
-    __tdma_all_sync_apply([]([[maybe_unused]] int v) -> void {},
-                          []() -> void {}, ctx); /* for store */
-    tdma_store_async(
-        v5_, ImmOutputs[2]({0, 0, 48 * bid, 32 * tid}, {1, 64, 48, 32}), ctx);
 
-    auto v6 = V2({0, 16 * tid, 0, 64}, {1, 16, 48, 64});
-    auto &v7 = v6;
     /*
       [1, 64, 384, 64:] -> [1, 64, 384, 64:]
-      [1, 64, 48@b, 64] ->  [1, 16@t, 48@b, 64]
+      [1, 64, 48@b, 16@t]@shared ->  [1, 16@t, 48@b, 16@t]
     */
+    auto v6 = V2({0, 0, 0, 64 + 16 * tid}, {1, 64, 48, 16});
+    tensor<float> v7({1, 64, 48, 16});
+    tdma_wait(ctx);
     unary(v6, v7, unary_op_t::neg);
+
+    __tensor_copy_sync(V2({0, 0, 0, 64 + 16 * tid}, {1, 64, 48, 16}),
+                       V2({0, 0, 0, 16 * tid}, {1, 64, 48, 16}));
+    __tensor_copy_sync(V2({0, 0, 0, 16 * tid}, {1, 64, 48, 16}), std::move(v7));
+    tdma_wait(ctx);
 
     /* v10 为concat(v7,v8), 实际来源于V2，因此无需实际动作 */
     auto v10 = V2({0, 0, 0, 32 * tid}, {1, 64, 48, 32});
+    tdma_store_async(
+        v10, ImmOutputs[2]({0, 0, 48 * bid, 32 * tid}, {1, 64, 48, 32}), ctx);
 
     /*
       [384, 128][[1, 384]] -> [1, 384, 128]
@@ -175,11 +179,12 @@ void stage1_kernel(
     */
     tensor<float> v19({1, 64, 48, 16});
     auto v18 = V16({0, 0, 0, 64 + 16 * tid}, {1, 64, 48, 16});
-    unary(v18, v19, unary_op_t::neg);
     tdma_wait(ctx);
+    unary(v18, v19, unary_op_t::neg);
+    __tensor_copy_sync(V16({0, 0, 0, 64 + 16 * tid}, {1, 64, 48, 16}),
+                       V16({0, 0, 0, 16 * tid}, {1, 64, 48, 16}));
     __tensor_copy_sync(V16({0, 0, 0, 16 * tid}, {1, 64, 48, 16}),
-                       V16({0, 0, 0, 64 + 16 * tid}, {1, 64, 48, 16}));
-    __tensor_copy_sync(std::move(v19), V16({0, 0, 0, 16 * tid}, {1, 64, 48, 16}));
+                       std::move(v19));
 
     /*
       [1,64,384,128] x [1,1,384,128] ->  [1,64,384,128]
@@ -187,6 +192,7 @@ void stage1_kernel(
     */
     tensor<float> v23({1, 64, 48, 32});
     auto v22 = V16({0, 0, 0, 32 * tid}, {1, 64, 48, 32});
+    tdma_wait(ctx);
     binary(v22, v12, v23, binary_op_t::mul);
     tdma_store_async(
         v22, ImmOutputs[5]({0, 0, 48 * bid, 32 * tid}, {1, 64, 48, 32}), ctx);
