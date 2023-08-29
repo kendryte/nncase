@@ -37,12 +37,12 @@ static tensor<float, loc_t::device> V25({1, 64, 128, 384});
 
 constexpr int OutNum = 6;
 static tensor<float, loc_t::device> goldenImmOutputs[OutNum] = {
-    tensor<float, loc_t::device>({1, 384, 8192}),
-    tensor<float, loc_t::device>({1, 64, 384, 128}),
-    tensor<float, loc_t::device>({1, 64, 384, 128}),
-    tensor<float, loc_t::device>({1, 64, 384, 128}),
-    tensor<float, loc_t::device>({1, 384, 128}),
-    tensor<float, loc_t::device>({1, 64, 384, 384}),
+    tensor<float, loc_t::device>({1, 384, 8192}),    // v0
+    tensor<float, loc_t::device>({1, 64, 384, 128}), // v2
+    tensor<float, loc_t::device>({1, 64, 384, 128}), // v5
+    tensor<float, loc_t::device>({1, 64, 384, 128}), // v14
+    tensor<float, loc_t::device>({1, 384, 128}),     // v3
+    tensor<float, loc_t::device>({1, 64, 384, 384}), // v26
 };
 
 static tensor<float, loc_t::device> ImmOutputs[OutNum] = {

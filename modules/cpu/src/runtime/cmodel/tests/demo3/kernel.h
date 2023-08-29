@@ -150,7 +150,7 @@ void stage1_kernel(
     [1, 64, 384, 128] + [1, 64, 384, 128] -> [1, 64, 384, 128]
     [1, 64, 48@b, 32@t] + [1, 64, 48@b, 32@t] -> [1, 64, 48@b, 32@t]
     */
-    tensor<float> v14({1, 16, 48, 32});
+    tensor<float> v14({1, 64, 48, 32});
     auto v5__ = V5({0, 0, 0, 32 * tid}, {1, 64, 48, 32});
     auto v13__ = V13({0, 0, 0, 32 * tid}, {1, 64, 48, 32});
     binary(v5__, v13__, v14, binary_op_t::add);
@@ -205,10 +205,12 @@ void stage1_kernel(
       [1, 64, 48@b, 32@t] @ [1, 64, 32@t, 384] -> [1, 64, 48@b, 384]
     */
     tensor<float> v25_1({1, 64, 32, 384});
-    tdma_load_async(v25_1, V25({0, 0, 32 * tid, 384}, {1, 64, 32, 384}), ctx);
+    tdma_load_async(v25_1, V25({0, 0, 32 * tid, 0}, {1, 64, 32, 384}), ctx);
     tensor_block_mma_sync(v14, v25_1, V26, false, ctx);
-    tdma_store_async(V26, ImmOutputs[5]({0, 0, 0, 96 * tid}, {1, 64, 48, 96}),
-                     ctx);
+    if (tid == 0) {
+        tdma_store_async(
+            V26, ImmOutputs[5]({0, 0, 48 * bid, 0}, {1, 64, 48, 384}), ctx);
+    }
 #if 0
 
     // [1, 64, 384, 384] [1, 8@b, 96@t, 96@t] @shared
