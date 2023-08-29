@@ -4,6 +4,12 @@ import torch
 from scipy.special import softmax
 import os
 
+def rmsnorm(x:np.ndarray, gamma:np.ndarray, beta:np.ndarray, eps=1e-05):
+    x = torch.from_numpy(x)
+    output = x * torch.rsqrt(x.pow(2).mean(-1, keepdim=True) + eps)
+    output = output * torch.from_numpy(gamma) + torch.from_numpy(beta)
+    return output.detach().numpy()
+
 def layernorm(x:np.ndarray, gamma:np.ndarray, beta:np.ndarray):
     return nn.functional.layer_norm(torch.from_numpy(x), [x.shape[-1]], torch.from_numpy(gamma), torch.from_numpy(beta)).detach().numpy()
 
@@ -13,7 +19,7 @@ def swish(x:np.ndarray):
 def gather(data:np.ndarray, axis:int, indices:np.ndarray):
     return torch.gather(torch.from_numpy(data), axis, torch.from_numpy(indices)).detach().numpy()
 
-const_dir = "/root/workspace/golden"
+const_dir = "/compiler/huochenghai/GNNE/rebuild-ir/nncase/modules/cpu/src/runtime/cmodel/tests/demo3/golden"
 
 hidden_in = np.reshape(np.fromfile(os.path.join(const_dir,"input_0_0.bin"), dtype=np.float32), (1, 384, 8192))
 attn_mask = np.reshape(np.fromfile(os.path.join(const_dir,"input_1_0.bin"), dtype=np.float32), (1, 1, 384, 384))
@@ -38,7 +44,7 @@ mlp_up_weights = np.reshape(np.fromfile(os.path.join(const_dir,"_mlp_up_proj_Mat
 mlp_down_weights = np.reshape(np.fromfile(os.path.join(const_dir,"_mlp_down_proj_MatMul_output_0_weights.bin"), dtype=np.float32), (22016, 8192))
 
 # np.random.rand(8192).astype(np.float32), np.random.rand(8192).astype(np.float32)
-v0 = layernorm(hidden_in, input_ln_gamma, input_ln_beta) # f32[1,384,8192]
+v0 = rmsnorm(hidden_in, input_ln_gamma, input_ln_beta) # f32[1,384,8192]
 v0.tofile("v0.bin")
 v1 = np.reshape(v0, [1,1,384, 8192]) # f32[1,1,384,8192]
 v2 = (v1 @ WQ) # f32[1,64,384,128]
@@ -83,7 +89,7 @@ v33 = np.transpose(v32, [0,2,1,3]) # f32[1,384,64,128]
 v34 = np.reshape(v33, [1,384,8192]) # f32[1,384,8192]
 v35 = v34 @ WO # f32[1,384,8192]
 v36 = (hidden_in + v35) # f32[1,384,8192]
-v37 = layernorm(v36, post_ln_gamma, post_ln_beta) # f32[1,384,8192]
+v37 = rmsnorm(v36, post_ln_gamma, post_ln_beta) # f32[1,384,8192]
 v38 = v37 @ mlp_gate_weights # f32[1,384,22016]
 v39 = swish(v38) # f32[1,384,22016]
 v40 = v37 @ mlp_up_weights # f32[1,384,22016]
@@ -91,4 +97,4 @@ v41 = v39 * v40 # f32[1,384,22016]
 v42 = v41 @ mlp_down_weights # f32[1,384,8192]
 v43 = v36 + v42 # f32[1,384,8192]
 
-# v46.tofile("")
+v43.tofile("v43.bin")

@@ -74,7 +74,7 @@ void stage1_kernel(
         reduce_sum_sqr(v0, v0_sum, v0_sum_sqr);
         tdma_reduce_async(v0_sum, v0_sum, reduce_op_t::sum, ctx);
         tdma_reduce_async(v0_sum_sqr, v0_sum_sqr, reduce_op_t::sum, ctx);
-        layernorm(v0, v0_sum, v0_sum_sqr, v0, 2, 8192);
+        layernorm(v0, v0_sum, v0_sum_sqr, v0, 2, 8192, true);
         tdma_store_async(
             v0, ImmOutputs[0]({0, 48 * bid, 2048 * tid}, {1, 48, 2048}), ctx);
     } // v0 [1, 384, 8192] [1, 48@b, 8192]
@@ -268,7 +268,7 @@ void stage1_kernel(
         reduce_sum_sqr(v36, v36_sum, v36_sum_sqr);
         tdma_reduce_async(v36_sum, v36_sum, reduce_op_t::sum, ctx);
         tdma_reduce_async(v36_sum_sqr, v36_sum_sqr, reduce_op_t::sum, ctx);
-        layernorm(v36, v36_sum, v36_sum_sqr, v37, 2, 8192);
+        layernorm(v36, v36_sum, v36_sum_sqr, v37, 2, 8192, true);
     }
     /* [1, 48@b, 2048@t] @ [2048@t, 22016] ->  v38 [1, 384, 22016] [1, 48@b,
      * 22016]@shared */

@@ -16,12 +16,16 @@ void layernorm_naive_impl(const T *input, const T *sum, T *sum_sqr, T *output,
                           gsl::span<const size_t> output_stride,
                           [[maybe_unused]] gsl::span<const size_t> sum_strides,
                           gsl::span<const size_t> gamma_strides, T eps,
-                          int32_t axis, int32_t norm_size) noexcept {
+                          int32_t axis, int32_t norm_size,
+                          bool rms_norm = false) noexcept {
     apply(input_shape, [&](gsl::span<const size_t> input_index) -> void {
         //  input_index
         auto o_offset = offset(sum_strides, input_index.subspan(0, axis));
         // auto o_offset = input_index[0];
         auto mean = sum[o_offset] / norm_size;
+        if (rms_norm) {
+            mean = 0;
+        }
         auto sigma =
             std::sqrt(sum_sqr[o_offset] / norm_size - mean * mean + eps);
 
@@ -139,7 +143,7 @@ void layernorm(const T *input, T *sum, T *sum_sqr, T *output, T *gamma, T *beta,
                dims_t input_dims, strides_t input_strides,
                strides_t output_strides, strides_t sum_strides,
                strides_t gamma_strides, T eps, int32_t axis,
-               int32_t norm_size) {
+               int32_t norm_size, bool rms_norm = false) {
 #ifdef __riscv_vector
     return layernorm_rvv_impl(
         input, sum, sum_sqr, gamma, beta,
@@ -154,7 +158,7 @@ void layernorm(const T *input, T *sum, T *sum_sqr, T *output, T *gamma, T *beta,
         gsl::make_span(output_strides).template as_span<const size_t>(),
         gsl::make_span(sum_strides).template as_span<const size_t>(),
         gsl::make_span(gamma_strides).template as_span<const size_t>(), eps,
-        axis, norm_size);
+        axis, norm_size, rms_norm);
 #endif
 }
 } // namespace kernels
