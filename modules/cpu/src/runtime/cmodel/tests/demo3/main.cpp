@@ -44,7 +44,7 @@ static tensor<float, loc_t::device> goldenImmOutputs[OutNum] = {
     tensor<float, loc_t::device>({1, 64, 384, 128}), // v14
     tensor<float, loc_t::device>({1, 384, 128}),     // v3
     tensor<float, loc_t::device>({1, 64, 384, 128}), // v16
-    tensor<float, loc_t::device>({1, 64, 384, 384}), // v26
+    tensor<float, loc_t::device>({1, 64, 384, 384}), // v28
 };
 
 static tensor<float, loc_t::device> ImmOutputs[OutNum] = {
