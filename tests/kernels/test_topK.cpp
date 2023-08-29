@@ -49,7 +49,7 @@ class TopKTest : public KernelTest,
         axis_value = value1 > 0 ? value1 >= (int64_t)l_shape.size() ? 0 : value1
                      : -value1 > (int64_t)l_shape.size() ? 0
                                                          : value1;
-        int64_t axis_array[] = {value1};
+        int64_t axis_array[] = {axis_value};
         axis = hrt::create(dt_int64, {1},
                            {reinterpret_cast<gsl::byte *>(axis_array),
                             sizeof(axis_array)},
