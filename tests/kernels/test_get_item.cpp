@@ -28,9 +28,8 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class GetItemTest
-    : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<int>> {
+class GetItemTest : public KernelTest,
+                    public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
         READY_SUBCASE()
