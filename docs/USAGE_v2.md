@@ -46,7 +46,15 @@ Type "help", "copyright", "credits" or "license" for more information.
 
 k230模型编译推理参考Jupyter脚本：[User_guide](../examples/user_guide/k230_simulate.ipynb)，脚本中包含了单输入和多输入的示例。
 
-如果在Docker中运行Jupyter脚本，可以参考[配置Jupyter lab](https://github.com/kunjing96/docker-jupyterlab#32-%E9%85%8D%E7%BD%AEjupyter-lab)进行配置。
+如果在Docker中运行Jupyter脚本，可以参考以下命令，之后在浏览器窗口打开即可。
+
+```shell
+docker run -it --rm --privileged=true -p 8889:8889 --name Kendryte -v `pwd`:/mnt -w /mnt ghcr.io/kendryte/k230_sdk  /bin/bash -c "/bin/bash
+
+pip install jupyterlab
+
+jupyter-lab --ip 0.0.0.0 --allow-root
+```
 
 在执行脚本之前需要根据自身需求修改以下内容：
 
@@ -153,6 +161,8 @@ subgraph A
     end
 
 ```
+##### 动态shape参数
+详见[动态shape参数说明](./shape_bucket.md)
 
 #### 代码示例
 
