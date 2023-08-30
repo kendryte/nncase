@@ -47,7 +47,7 @@ class EluTest : public KernelTest,
         init_tensor(alpha);
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
   protected:
     runtime_tensor input;

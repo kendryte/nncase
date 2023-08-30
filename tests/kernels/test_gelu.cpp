@@ -47,7 +47,7 @@ class GeluTest : public KernelTest,
         init_tensor_alpha(alpha);
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
     virtual void init_tensor_alpha(runtime::runtime_tensor &tensor) {
         auto dtype = tensor.datatype();
