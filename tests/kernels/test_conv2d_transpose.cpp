@@ -22,19 +22,28 @@
 #include <nncase/runtime/stackvm/opcode.h>
 #include <ortki/operators.h>
 
+#define TEST_CASE_NAME "test_conv2d_transpose"
+
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class Conv2DTransposeTest
-    : public KernelTest,
-      public ::testing::TestWithParam<
-          std::tuple<nncase::typecode_t, dims_t, dims_t, dims_t, dims_t, dims_t,
-                     dims_t, int64_t, dims_t, dims_t>> {
+class Conv2DTransposeTest : public KernelTest,
+                            public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
-        auto &&[typecode, input_shape, weight_shape, bias_shape, value1, value2,
-                value3, value4, value5, value6] = GetParam();
+        READY_SUBCASE()
+
+        auto typecode = GetDataType("lhs_type");
+        auto input_shape = GetShapeArray("lhs_shape");
+        auto weight_shape = GetShapeArray("weight_shape");
+        auto bias_shape = GetShapeArray("bias_shape");
+        dilations_value = GetShapeArray("dilations_value");
+        pad_value = GetShapeArray("pad_value");
+        strides_value = GetShapeArray("strides_value");
+        group_value = GetNumber("group_value");
+        output_padding_value = GetShapeArray("output_padding_value");
+        output_shape_value = GetShapeArray("output_shape_value");
 
         input = hrt::create(typecode, input_shape,
                             host_runtime_tensor::pool_cpu_only)
@@ -50,16 +59,9 @@ class Conv2DTransposeTest
                            host_runtime_tensor::pool_cpu_only)
                    .expect("create tensor failed");
         init_tensor(bais);
-
-        dilations_value = value1;
-        pad_value = value2;
-        strides_value = value3;
-        group_value = value4;
-        output_padding_value = value5;
-        output_shape_value = value6;
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
   protected:
     runtime_tensor input;
@@ -73,16 +75,8 @@ class Conv2DTransposeTest
     int64_t group_value;
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    conv2d_transpose, Conv2DTransposeTest,
-    testing::Combine(
-        testing::Values(dt_float32), testing::Values(dims_t{1, 1, 5, 5}),
-        testing::Values(dims_t{1, 2, 3, 3}), testing::Values(dims_t{2}),
-        testing::Values(/*dims_t{2, 2} ,*/ dims_t{1, 1}),
-        testing::Values(dims_t{1, 1, 1, 1} /*, dims_t{0, 0, 1, 0}*/),
-        testing::Values(dims_t{1, 1} /*, dims_t{2, 2}*/),
-        testing::Values(1 /*, 2*/), testing::Values(dims_t{0, 0}),
-        testing::Values(dims_t{1, 2, 5, 5})));
+INSTANTIATE_TEST_SUITE_P(conv2d_transpose, Conv2DTransposeTest,
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(Conv2DTransposeTest, conv2d_transpose) {
     auto input_ort = runtime_tensor_2_ort_tensor(input);
@@ -210,17 +204,38 @@ TEST_P(Conv2DTransposeTest, conv2d_transpose) {
 }
 
 int main(int argc, char *argv[]) {
-    //    READY_TEST_CASE_GENERATE()
-    //    FOR_LOOP(lhs_shape, i)
-    //    FOR_LOOP(lhs_type, j)
-    //    FOR_LOOP(rhs_type, k)
-    //    SPLIT_ELEMENT(lhs_shape, i)
-    //    SPLIT_ELEMENT(lhs_type, j)
-    //    SPLIT_ELEMENT(rhs_type, k)
-    //    WRITE_SUB_CASE()
-    //    FOR_LOOP_END()
-    //    FOR_LOOP_END()
-    //    FOR_LOOP_END()
+    READY_TEST_CASE_GENERATE()
+    FOR_LOOP(lhs_type, i)
+    FOR_LOOP(lhs_shape, j)
+    FOR_LOOP(weight_shape, k)
+    FOR_LOOP(bias_shape, l)
+    FOR_LOOP(dilations_value, m)
+    FOR_LOOP(pad_value, n)
+    FOR_LOOP(strides_value, o)
+    FOR_LOOP(group_value, p)
+    FOR_LOOP(output_padding_value, r)
+    FOR_LOOP(output_shape_value, s)
+    SPLIT_ELEMENT(lhs_type, i)
+    SPLIT_ELEMENT(lhs_shape, j)
+    SPLIT_ELEMENT(weight_shape, k)
+    SPLIT_ELEMENT(bias_shape, l)
+    SPLIT_ELEMENT(dilations_value, m)
+    SPLIT_ELEMENT(pad_value, n)
+    SPLIT_ELEMENT(strides_value, o)
+    SPLIT_ELEMENT(group_value, p)
+    SPLIT_ELEMENT(output_padding_value, r)
+    SPLIT_ELEMENT(output_shape_value, s)
+    WRITE_SUB_CASE()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
 
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
