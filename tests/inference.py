@@ -39,7 +39,7 @@ class Inference:
         kmodel = compiler.gencode_tobytes()
         os.makedirs(infer_dir, exist_ok=True)
         if self.dynamic:
-            dump_kmodel_desc(os.path.join(infer_dir, self.cfg['desc_name']))
+            self.dump_kmodel_desc(os.path.join(infer_dir, self.cfg['desc_name']))
         if not in_ci:
             with open(os.path.join(infer_dir, self.cfg['kmodel_name']), 'wb') as f:
                 f.write(kmodel)
@@ -77,7 +77,7 @@ class Inference:
 
             sim.set_input_tensor(idx, nncase.RuntimeTensor.from_numpy(data))
 
-    def dump_kmodel_desc(file):
+    def dump_kmodel_desc(self, file):
         input_shapes = data_shape_list_string(self.inputs)
         output_shapes = data_shape_list_string(self.outputs)
         s = f"{len(self.inputs)} {len(self.outputs)}\n{input_shapes}\n{output_shapes}"
