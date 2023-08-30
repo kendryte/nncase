@@ -26,11 +26,14 @@ using namespace nncase::kernels;
 using namespace nncase::kernels::stackvm;
 
 result<void> nncase::kernels::stackvm::reference::prelu(
-    const float *input, const float *slope_mem, float *output,
-    gsl::span<const size_t> in_shape, gsl::span<const size_t> input_strides,
-    gsl::span<const size_t> slope_shape, gsl::span<const size_t> slope_strides,
-    gsl::span<const size_t> out_shape, gsl::span<const size_t> out_strides,
+    typecode_t typecode, gsl::byte *input, gsl::byte *slope_mem,
+    gsl::byte *output, gsl::span<const size_t> in_shape,
+    gsl::span<const size_t> input_strides, gsl::span<const size_t> slope_shape,
+    gsl::span<const size_t> slope_strides, gsl::span<const size_t> out_shape,
+    gsl::span<const size_t> out_strides,
     NNCASE_UNUSED kernel_context &context) {
+    IN_CAST(type, input);
+    OUT_CAST(type, output);
     return apply(out_shape, [&](gsl::span<const size_t> index) -> result<void> {
         const auto in_index =
             kernels::detail::get_reduced_offset(index, in_shape);

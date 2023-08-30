@@ -78,9 +78,14 @@ result<value_t>
 nncase::kernels::stackvm::hardmax(value_t input, value_t axis, value_t output,
                                   [[maybe_unused]] kernel_context &context) {
     try_input(input_mem, input);
+    auto dtype = input_tensor->dtype();
+    try_var(typecode, to_typecode(dtype));
     try_output_like_input(out_mem, output, input_tensor);
     try_positive_axis(axis_value, axis, input_tensor);
-    try_(hardmax_impl(input_mem, input_tensor->shape(), input_tensor->strides(),
-                      out_mem, axis_value));
+    if (typecode==dt_float32){
+        try_(hardmax_impl(IN_CAST(float, input_mem), input_tensor->shape(), input_tensor->strides(),
+                          IN_CAST(float, input_mem), axis_value));
+    }
+
     return ok(output);
 }

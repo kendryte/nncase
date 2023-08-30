@@ -253,8 +253,9 @@ pad(datatype_t type, const gsl::byte *input, gsl::byte *output,
     kernel_context &context = default_kernel_context()) noexcept;
 
 NNCASE_API result<void>
-prelu(const float *input, const float *slope, float *output,
-      gsl::span<const size_t> in_shape, gsl::span<const size_t> input_strides,
+prelu(datatype_t type, const gsl::byte *input, gsl::byte *slope,
+      gsl::byte *output, gsl::span<const size_t> in_shape,
+      gsl::span<const size_t> input_strides,
       gsl::span<const size_t> slope_shape,
       gsl::span<const size_t> slope_strides, gsl::span<const size_t> out_shape,
       gsl::span<const size_t> out_strides,
