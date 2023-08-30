@@ -21,28 +21,29 @@
 using namespace nncase;
 using namespace nncase::kernels::stackvm;
 
+template <class T>
 static void layernorm_impl(int inner_size, const float *src, const float *scale,
-                           const float *bias, float epsilon, float *dst) {
-    float mean1 = 0.f;
+                           const T *bias, float epsilon, T *dst) {
+    T mean1 = 0;
     for (auto i = 0; i < inner_size; i++)
         mean1 += src[i] / inner_size;
 
-    std::vector<float> sub(inner_size, 0.f);
+    std::vector<T> sub(inner_size, 0);
     for (auto i = 0; i < inner_size; i++)
         sub[i] = src[i] - mean1;
 
-    std::vector<float> pow(inner_size, 0.f);
+    std::vector<T> pow(inner_size, 0);
     for (auto i = 0; i < inner_size; i++)
         pow[i] = sub[i] * sub[i];
 
-    float mean2 = 0.f;
+    T mean2 = 0;
     for (auto i = 0; i < inner_size; i++)
         mean2 += pow[i] / inner_size;
 
-    float add = mean2 + epsilon;
-    float sqrt = std::sqrt(add);
+    T add = mean2 + epsilon;
+    T sqrt = std::sqrt(add);
 
-    std::vector<float> div(inner_size, 0.f);
+    std::vector<T> div(inner_size, 0);
     for (auto i = 0; i < inner_size; i++)
         div[i] = sub[i] / sqrt;
 

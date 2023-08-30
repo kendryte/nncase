@@ -90,7 +90,7 @@ TEST_P(LayerNormTest, layer_norm) {
     auto b_ort = runtime_tensor_2_ort_tensor(b);
     auto eps = 1e-05f;
 
-    //     expected
+    // expected
     auto output_ort =
         ortki_LayerNormalization(l_ort, scale_ort, b_ort, axis_value, eps, 1L);
     size_t size = 0;
