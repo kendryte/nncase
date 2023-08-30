@@ -70,6 +70,9 @@ template <typename T, loc_t Loc = loc_t::local> class tensor {
         size_ = compute_size(shapes);
         strides_ = parent->strides();
         data_ = parent->data_.subspan(offset(strides_, begins));
+        if (data_.size() < size_) {
+            throw std::errc::invalid_argument;
+        }
     }
 
     gsl::span<T> data_;
