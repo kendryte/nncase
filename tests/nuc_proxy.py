@@ -117,7 +117,8 @@ def recv_worker(conn, target):
     target.logger.info("test case = {0}".format(new_case))
     case_dir = os.path.join(target.nfs_dir, new_case)
     os.makedirs(case_dir)
-    file_num = header_dict['app'] + header_dict['kmodel'] + header_dict['inputs']
+    file_num = header_dict['app'] + header_dict['kmodel'] + \
+        header_dict['inputs'] + header_dict['description']
 
     # recv all kinds of files(app + kmodel + inputs)
     cmds = f'cd {target.working_dir}/{target.name}/{new_case};./'
@@ -166,7 +167,7 @@ def infer_worker(target):
             target.s0.run_cmd('reboot')
             time.sleep(20)
         else:
-            dict['time'] = float(ret.split('\n')[1].split()[1])
+            dict['time'] = float(ret.split('\n')[-2].split()[1])
             conn.sendall(json.dumps(dict).encode())
             dummy = conn.recv(1024)
 

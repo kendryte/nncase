@@ -14,15 +14,6 @@ def data_shape_list_string(data):
     return '\n'.join(map(lambda d: ' '.join(map(lambda x: str(x), d['model_shape'])), data))
 
 
-def generate_kmodel_data_info(inputs, outputs, infer_dir):
-    input_shapes = data_shape_list_string(inputs)
-    output_shapes = data_shape_list_string(outputs)
-#         input_shapes = '\n'.join(map(lambda input: ' '.join(map(lambda x: str(x), input['model_shape'])), inputs))
-    s = f"{len(inputs)} {len(outputs)}\n{input_shapes}\n{output_shapes}"
-    with open(os.path.join(infer_dir, "kmodel.desc"), "w+") as f:
-        f.write(s)
-
-
 class Inference:
     def run_inference(self, compiler, target, ptq_enabled, infer_dir):
         in_ci = test_utils.in_ci()
@@ -30,7 +21,7 @@ class Inference:
         nuc_ip = test_utils.nuc_ip()
         nuc_port = test_utils.nuc_port()
         test_executable = test_utils.test_executable(target)
-        running_on_evb = in_ci and target in kpu_targets and nuc_ip is not None and nuc_port is not None and test_executable is not None and len(
+        running_on_evb = target in kpu_targets and nuc_ip is not None and nuc_port is not None and test_executable is not None and len(
             self.inputs) > 0 and len(self.outputs) > 0
 
         if self.cfg['dump_infer']:
@@ -46,16 +37,16 @@ class Inference:
 
         compiler.compile()
         kmodel = compiler.gencode_tobytes()
-        if self.dynamic:
-            generate_kmodel_data_info(self.inputs, self.outputs, infer_dir)
         os.makedirs(infer_dir, exist_ok=True)
+        if self.dynamic:
+            dump_kmodel_desc(os.path.join(infer_dir, self.cfg['desc_name']))
         if not in_ci:
-            with open(os.path.join(infer_dir, 'test.kmodel'), 'wb') as f:
+            with open(os.path.join(infer_dir, self.cfg['kmodel_name']), 'wb') as f:
                 f.write(kmodel)
 
         compile_opt = self.cfg['compile_opt']
         if running_on_evb:
-            outputs = self.run_evb(target, kmodel, compile_opt)
+            outputs = self.run_evb(target, kmodel, compile_opt, infer_dir)
         else:
             sim = nncase.Simulator()
             sim.load_model(kmodel)
@@ -86,6 +77,13 @@ class Inference:
 
             sim.set_input_tensor(idx, nncase.RuntimeTensor.from_numpy(data))
 
+    def dump_kmodel_desc(file):
+        input_shapes = data_shape_list_string(self.inputs)
+        output_shapes = data_shape_list_string(self.outputs)
+        s = f"{len(self.inputs)} {len(self.outputs)}\n{input_shapes}\n{output_shapes}"
+        with open(file, "w+") as f:
+            f.write(s)
+
     def dump_infer_output(self, sim, compile_opt, infer_dir):
         outputs = []
         for i in range(sim.outputs_size):
@@ -105,7 +103,7 @@ class Inference:
                 dump_txt_file(os.path.join(infer_dir, f'nncase_result_{i}.txt'), output)
         return outputs
 
-    def run_evb(self, target, kmodel, compile_opt):
+    def run_evb(self, target, kmodel, compile_opt, infer_dir):
         ip = test_utils.nuc_ip()
         port = test_utils.nuc_port()
         test_executable = test_utils.test_executable(target)
@@ -127,6 +125,7 @@ class Inference:
         header_dict['app'] = 1
         header_dict['kmodel'] = 1
         header_dict['inputs'] = len(self.inputs)
+        header_dict['description'] = 1 if self.dynamic else 0
         header_dict['outputs'] = len(self.outputs)
         client_socket.sendall(json.dumps(header_dict).encode())
 
@@ -142,7 +141,7 @@ class Inference:
 
         # send kmodel
         dummy = client_socket.recv(1024)
-        file_dict['file_name'] = 'test.kmodel'
+        file_dict['file_name'] = self.cfg['kmodel_name']
         file_dict['file_size'] = len(kmodel)
         client_socket.sendall(json.dumps(file_dict).encode())
         dummy = client_socket.recv(1024)
@@ -158,6 +157,17 @@ class Inference:
             client_socket.sendall(json.dumps(file_dict).encode())
             dummy = client_socket.recv(1024)
             client_socket.sendall(data.tobytes())
+
+        # send kmodel.desc
+        if self.dynamic:
+            dummy = client_socket.recv(1024)
+            desc_file = os.path.join(infer_dir, self.cfg['desc_name'])
+            file_dict['file_name'] = os.path.basename(desc_file)
+            file_dict['file_size'] = os.path.getsize(desc_file)
+            client_socket.sendall(json.dumps(file_dict).encode())
+            dummy = client_socket.recv(1024)
+            with open(desc_file, 'rb') as f:
+                client_socket.sendall(f.read())
 
         # get infer result
         outputs = []
@@ -187,6 +197,9 @@ class Inference:
 
                 output = np.frombuffer(buffer, dtype=self.outputs[i]['dtype'])
                 outputs.append(output)
+                if not test_utils.in_ci():
+                    dump_bin_file(os.path.join(infer_dir, f'nncase_result_{i}.bin'), output)
+                    dump_txt_file(os.path.join(infer_dir, f'nncase_result_{i}.txt'), output)
                 client_socket.sendall(f"recv nncase_result_{i}.bin succeed".encode())
 
             client_socket.close()
