@@ -58,7 +58,7 @@ class SpaceToBatchTest : public KernelTest,
         }
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
   protected:
     runtime_tensor expected;

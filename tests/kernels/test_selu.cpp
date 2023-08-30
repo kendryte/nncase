@@ -48,7 +48,7 @@ class SeluTest : public KernelTest,
         gamma_value = value2;
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
   protected:
     runtime_tensor input;
