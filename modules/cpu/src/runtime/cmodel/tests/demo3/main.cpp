@@ -8,7 +8,7 @@
         block##b::thread##t::stage1_kernel(                                    \
             Hidden_in, V0_gamma, V0_beta, V2_w, V16_w, V31_w, V35_w, V3_data,  \
             V11_data, Attn_mask, V38_w, V40_w, V42_w, Position_ids, Output,    \
-            V25, GV31,ImmOutputs);                                                  \
+            V25, GV31, ImmOutputs);                                            \
         return arg;                                                            \
     }
 
@@ -46,9 +46,9 @@ static tensor<float, loc_t::device> goldenImmOutputs[OutNum] = {
     tensor<float, loc_t::device>({1, 64, 384, 128}), // v16
     tensor<float, loc_t::device>({1, 64, 384, 384}), // v28
     tensor<float, loc_t::device>({1, 64, 384, 128}), // v32
-    tensor<float, loc_t::device>({1,384,8192}), // v35
-    tensor<float, loc_t::device>({1,384,22016}), // v38
-    tensor<float, loc_t::device>({1,384,8192}), // v43
+    tensor<float, loc_t::device>({1, 384, 8192}),    // v35
+    tensor<float, loc_t::device>({1, 384, 22016}),   // v38
+    tensor<float, loc_t::device>({1, 384, 8192}),    // v43
 };
 
 static tensor<float, loc_t::device> ImmOutputs[OutNum] = {
@@ -60,9 +60,9 @@ static tensor<float, loc_t::device> ImmOutputs[OutNum] = {
     tensor<float, loc_t::device>({1, 64, 384, 128}),
     tensor<float, loc_t::device>({1, 64, 384, 384}),
     tensor<float, loc_t::device>({1, 64, 384, 128}),
-    tensor<float, loc_t::device>({1,384,8192}),
-    tensor<float, loc_t::device>({1,384,22016}),
-    tensor<float, loc_t::device>({1,384,8192}),
+    tensor<float, loc_t::device>({1, 384, 8192}),
+    tensor<float, loc_t::device>({1, 384, 22016}),
+    tensor<float, loc_t::device>({1, 384, 8192}),
 };
 
 DEFINE_BFUNC(0)
@@ -106,8 +106,8 @@ int main([[maybe_unused]] int argc, char **argv) {
     LOAD_FILE(V42_w, 13, float);
     LOAD_FILE(Position_ids, 14, int64_t);
 
-    for (auto o = 0; o < OutNum; o++) {
-        auto src_output = read_file(std::string(argv[(15 + o)]));
+    for (auto o = 0; o < argc - 16; o++) {
+        auto src_output = read_file(std::string(argv[(16 + o)]));
         span_copy(goldenImmOutputs[o].data(),
                   gsl::make_span(src_output).as_span<float>());
     }
@@ -183,11 +183,18 @@ int main([[maybe_unused]] int argc, char **argv) {
     pthread_join(t_7_2, NULL);
     pthread_join(t_7_3, NULL);
 
-    for (auto o = 0; o < OutNum; o++) {
+    for (auto o = 0; o < argc - 16; o++) {
         auto cos = cosine(ImmOutputs[o].data().begin(),
                           goldenImmOutputs[o].data().begin(),
                           goldenImmOutputs[o].data().size());
-        printf("%s cosine %f\n", argv[15 + o], cos);
+        printf("%s cosine %f\n", argv[16 + o], cos);
+    }
+    {
+        auto src_output = read_file(std::string(argv[15]));
+        auto src_span = gsl::make_span(src_output).as_span<float>();
+        auto cos =
+            cosine(Output.data().data(), src_span.data(), src_span.size());
+        printf("Output cosine %f\n", cos);
     }
 
     return 0;

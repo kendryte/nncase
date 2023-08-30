@@ -16,6 +16,7 @@ static tensor<int64_t> position_ids({1, 48});
 static tensor<float> v38_w({2048, 22016});
 static tensor<float> v40_w({2048, 22016});
 static tensor<float> v42_w({5504, 8192});
+#define DUMP 0
 
 void stage1_kernel(
     tensor<float, loc_t::device> &Hidden_in,               /* [1, 384, 8192] */
@@ -72,8 +73,13 @@ void stage1_kernel(
         tdma_reduce_async(v0_sum, v0_sum, reduce_op_t::sum, ctx);
         tdma_reduce_async(v0_sum_sqr, v0_sum_sqr, reduce_op_t::sum, ctx);
         layernorm(v0, v0_sum, v0_sum_sqr, v0, 2, 8192, true);
-        tdma_store_async(
-            v0, ImmOutputs[0]({0, 48 * bid, 2048 * tid}, {1, 48, 2048}), ctx);
+#if DUMP
+        {
+            tdma_store_async(
+                v0, ImmOutputs[0]({0, 48 * bid, 2048 * tid}, {1, 48, 2048}),
+                ctx);
+        }
+#endif
     } // v0 [1, 384, 8192] [1, 48@b, 8192]
 
     auto v1 = unsqueeze(v0); // [1, 1, 384, 8192] [1, 1, 48@b, 2048@t]
@@ -82,12 +88,13 @@ void stage1_kernel(
       [1, 1, 48@b, 2048@t] @ [64, 2048@t, 128] -> [1, 64, 48@b, 128] @ shared
      */
     tensor_block_mma_sync(v1, v2_w, V2, false, ctx);
+#if DUMP
     if (tid == 0) {
         tdma_store_async(
             V2, ImmOutputs[1]({0, 0, 48 * bid, 0}, {1, 64, 48, 128}), ctx);
     }
-    __tdma_all_sync_apply([]([[maybe_unused]] int v) -> void {},
-                          []() -> void {}, ctx); /* for store */
+    tdma_all_wait(ctx);
+#endif
 
     /*
       [384, 128][[1, 384]] -> [1, 384, 128]
@@ -95,9 +102,12 @@ void stage1_kernel(
     */
     tensor<float> v3({1, 48, 32});
     gather(v3_data, position_ids, v3, 0);
-    tdma_store_async(v3, ImmOutputs[4]({0, 48 * bid, 32 * tid}, {1, 48, 32}),
-                     ctx);
-
+#if DUMP
+    {
+        tdma_store_async(
+            v3, ImmOutputs[4]({0, 48 * bid, 32 * tid}, {1, 48, 32}), ctx);
+    }
+#endif
     auto v4 = unsqueeze(v3); /* 1, 1, 48, 32 */
 
     /*
@@ -125,8 +135,13 @@ void stage1_kernel(
 
     /* v10 为concat(v7,v8), 实际来源于V2，因此无需实际动作 */
     auto v10 = V2({0, 0, 0, 32 * tid}, {1, 64, 48, 32});
-    tdma_store_async(
-        v10, ImmOutputs[2]({0, 0, 48 * bid, 32 * tid}, {1, 64, 48, 32}), ctx);
+#if DUMP
+    {
+        tdma_store_async(
+            v10, ImmOutputs[2]({0, 0, 48 * bid, 32 * tid}, {1, 64, 48, 32}),
+            ctx);
+    }
+#endif
 
     /*
       [384, 128][[1, 384]] -> [1, 384, 128]
@@ -145,8 +160,8 @@ void stage1_kernel(
     // auto v2_ = V2({0, 0, 0, 32 * tid}, {1, 64, 48, 32});
     binary(v2_, v12, v13_, binary_op_t::mul);
 
-    __tdma_all_sync_apply([]([[maybe_unused]] int v) -> void {},
-                          []() -> void {}, ctx); /* wait v5,v13 */
+    tdma_all_wait(ctx); /* wait v5,v13 */
+
     /*
     [1, 64, 384, 128] + [1, 64, 384, 128] -> [1, 64, 384, 128]
     [1, 64, 48@b, 32@t] + [1, 64, 48@b, 32@t] -> [1, 64, 48@b, 32@t]
@@ -155,9 +170,13 @@ void stage1_kernel(
     auto v5__ = V5({0, 0, 0, 32 * tid}, {1, 64, 48, 32});
     auto v13__ = V13({0, 0, 0, 32 * tid}, {1, 64, 48, 32});
     binary(v5__, v13__, v14, binary_op_t::add);
-    tdma_store_async(
-        v14, ImmOutputs[3]({0, 0, 48 * bid, 32 * tid}, {1, 64, 48, 32}), ctx);
-
+#if DUMP
+    {
+        tdma_store_async(
+            v14, ImmOutputs[3]({0, 0, 48 * bid, 32 * tid}, {1, 64, 48, 32}),
+            ctx);
+    }
+#endif
     tensor<float> &v15 = v0;
     /*
       [1,1,384,8192] @ [64, 8192, 128] -> [1,64,384,128]
@@ -194,8 +213,13 @@ void stage1_kernel(
     auto v22 = V16({0, 0, 0, 32 * tid}, {1, 64, 48, 32});
     tdma_wait(ctx);
     binary(v22, v12, v23, binary_op_t::mul);
-    tdma_store_async(
-        v22, ImmOutputs[5]({0, 0, 48 * bid, 32 * tid}, {1, 64, 48, 32}), ctx);
+#if DUMP
+    {
+        tdma_store_async(
+            v22, ImmOutputs[5]({0, 0, 48 * bid, 32 * tid}, {1, 64, 48, 32}),
+            ctx);
+    }
+#endif
 
     tensor<float> v24({1, 64, 48, 32});
     /*
@@ -234,9 +258,13 @@ void stage1_kernel(
     */
     auto &v28 = v27;
     binary(v27, attn_mask, v28, binary_op_t::add);
-    tdma_store_async(
-        v28, ImmOutputs[6]({0, 16 * tid, 48 * bid, 0}, {1, 16, 48, 384}), ctx);
-
+#if DUMP
+    {
+        tdma_store_async(
+            v28, ImmOutputs[6]({0, 16 * tid, 48 * bid, 0}, {1, 16, 48, 384}),
+            ctx);
+    }
+#endif
     /*
       [1, 64, 384, 384] -> [1, 64, 384, 384]
       [1, 16@t, 48@b, 384]@shared -> [1, 16@t, 48@b, 384]
@@ -267,8 +295,13 @@ void stage1_kernel(
     auto v32 = V32({0, 16 * tid, 0, 0}, {1, 16, 48, 128});
     matmul(v29, v31_resplit, v32);
     tdma_wait(ctx);
-    tdma_store_async(
-        v32, ImmOutputs[7]({0, 16 * tid, 48 * bid, 0}, {1, 16, 48, 128}), ctx);
+#if DUMP
+    {
+        tdma_store_async(
+            v32, ImmOutputs[7]({0, 16 * tid, 48 * bid, 0}, {1, 16, 48, 128}),
+            ctx);
+    }
+#endif
     /*
       [1, 64, 384, 128] -> [1, 384, 64, 128]
       [1, 64, 48@b, 128]@shared -> [1, 48@b, 64, 128]@shared
@@ -284,11 +317,13 @@ void stage1_kernel(
     auto v34 = V34({0, 0, 2048 * tid}, {1, 48, 2048});
     tdma_wait(ctx);
     tensor_block_mma_sync(v34, v35_w, V35, false, ctx);
+#if DUMP
     {
         auto v35 = V35({0, 0, tid * 2048}, {1, 48, 2048});
         tdma_store_async(
             v35, ImmOutputs[8]({0, 48 * bid, 2048 * tid}, {1, 48, 2048}), ctx);
     }
+#endif
 
     /*
     [1,384,8192] +  [1,384,8192]  -> [1,384,8192]
@@ -314,11 +349,13 @@ void stage1_kernel(
       [1, 48@b, 2048@t] @ [2048@t, 22016] -> [1, 48@b, 22016]@shared
     */
     tensor_block_mma_sync(v37, v38_w, V38, false, ctx);
+#if DUMP
     {
         auto v38 = V38({0, 0, 5504 * tid}, {1, 48, 5504});
         tdma_store_async(
             v38, ImmOutputs[9]({0, 48 * bid, 5504 * tid}, {1, 48, 5504}), ctx);
     }
+#endif
 
     /*
       [1,384, 22016] -> [1,384, 22016]
@@ -352,10 +389,12 @@ void stage1_kernel(
     tensor<float> v43({1, 48, 2048});
     auto v42 = V42({0, 0, 2048 * tid}, {1, 48, 2048});
     binary(v36, v42, v43, binary_op_t::add);
+    tdma_store_async(v43, Output({0, 48 * bid, 2048 * tid}, {1, 48, 2048}),
+                     ctx);
+#if DUMP
     {
         tdma_store_async(
             v43, ImmOutputs[10]({0, 48 * bid, 2048 * tid}, {1, 48, 2048}), ctx);
     }
-#if 0
 #endif
 }
