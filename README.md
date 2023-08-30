@@ -52,6 +52,7 @@ Download prebuilt binaries from [Release](https://github.com/kendryte/nncase/rel
 - [使用说明](./docs/USAGE_v2.md)
 - [常见问题](./docs/FAQ_ZH.md)
 - [示例](./examples/user_guide/k230_simulate-ZH.ipynb)
+- [Colab run](https://colab.research.google.com/drive/1m8TTree096m5VHmq-Uc60gXyltVCgnRb?usp=sharing)
 
 ## Resources
 
