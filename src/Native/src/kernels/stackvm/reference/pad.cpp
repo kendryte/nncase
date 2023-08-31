@@ -56,10 +56,15 @@ dims_t get_in_index(gsl::span<const size_t> index,
             auto cnt_idx = (int32_t)index[i] - padding.before;
             if (cnt_idx > (int32_t)in_shape[i] - 1) {
                 pad_element = true;
-                if (mode == pad_mode_t::reflect)
-                    in_index[i] =
-                        in_shape[i] - 2 - ((size_t)cnt_idx - in_shape[i]);
-                else if (mode == pad_mode_t::symmetric)
+                if (mode == pad_mode_t::reflect) {
+                    auto idx = (int32_t)in_shape[i] - 2 -
+                               (cnt_idx - (int32_t)in_shape[i]);
+                    if (idx < 0) {
+                        in_index[i] = std::abs(idx);
+                    } else {
+                        in_index[i] = idx;
+                    }
+                } else if (mode == pad_mode_t::symmetric)
                     in_index[i] =
                         in_shape[i] - 1 - ((size_t)cnt_idx - in_shape[i]);
                 else if (mode == pad_mode_t::edge)
