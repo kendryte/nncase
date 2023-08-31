@@ -14,8 +14,10 @@
 #include <thread_context.h>
 #include <transpose.h>
 #include <unary.h>
+#ifndef __riscv_vector
 #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_DEBUG
 #include <spdlog/spdlog.h>
+#endif
 
 template <class T, loc_t Loc> tensor<T, Loc> unsqueeze(tensor<T, Loc> &src) {
     auto new_dims = dims_t(src.dimension());
@@ -215,8 +217,10 @@ void __tdma_block_sync_apply(std::function<void(int)> func,
                              thread_context &ctx) {
     global_hardware_ctx->lock_block(ctx.bid());
     int visited = global_hardware_ctx->mark_block_visit(ctx.bid(), ctx.tid());
+#ifndef __riscv_vector
     SPDLOG_DEBUG("__tdma_block_sync_apply bid {} tid {} visited {}\n",
                  ctx.bid(), ctx.tid(), visited);
+#endif
     func(visited);
     global_hardware_ctx->unlock_block(ctx.bid());
     global_hardware_ctx->wait_block_sync(ctx.bid(), visited);
@@ -227,8 +231,10 @@ void __tdma_all_sync_apply(std::function<void(int)> apply_func,
                            thread_context &ctx) {
     global_hardware_ctx->lock_all();
     int visited = global_hardware_ctx->mark_all_visit(ctx.bid(), ctx.tid());
+#ifndef __riscv_vector
     SPDLOG_DEBUG("__tdma_all_sync_apply bid {} tid {} visited {}\n", ctx.bid(),
                  ctx.tid(), visited);
+#endif
     apply_func(visited);
     global_hardware_ctx->unlock_all();
     global_hardware_ctx->wait_all_sync(visited, broadcast_func);
@@ -249,6 +255,14 @@ void tdma_store_async(tensor<T, SrcLoc> &src, tensor<T, loc_t::device> &&dest,
 }
 
 template <class T> void tdma_fill_async(tensor<T, loc_t::local> &src, T value) {
+    apply(gsl::make_span(src.dimension()).template as_span<const size_t>(),
+          [&](gsl::span<const size_t> index) -> void {
+              src.data()[offset(src.strides(), index)] = value;
+          });
+}
+
+template <class T>
+void tdma_fill_async(tensor<T, loc_t::shared> &src, T value) {
     apply(gsl::make_span(src.dimension()).template as_span<const size_t>(),
           [&](gsl::span<const size_t> index) -> void {
               src.data()[offset(src.strides(), index)] = value;

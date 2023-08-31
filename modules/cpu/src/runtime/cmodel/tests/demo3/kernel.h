@@ -389,7 +389,7 @@ void stage1_kernel(
     tensor<float> v43({1, 48, 2048});
     auto v42 = V42({0, 0, 2048 * tid}, {1, 48, 2048});
     binary(v36, v42, v43, binary_op_t::add);
-    tdma_store_async(v43, Output({0, 48 * bid, 2048 * tid}, {1, 48, 2048}),
+    tdma_store_async(v43, Hidden_in({0, 48 * bid, 2048 * tid}, {1, 48, 2048}),
                      ctx);
 #if DUMP
     {
