@@ -4,8 +4,9 @@ on: [push, pull_request]
 env:
   NUGET_CERT_REVOCATION_MODE: offline
   NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
-  
+
 concurrency:
+  group: compiler-build
   cancel-in-progress: true
 
 jobs:

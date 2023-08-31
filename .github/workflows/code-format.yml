@@ -1,8 +1,7 @@
 name: code-format
 
 on: [pull_request]
-concurrency:
-  cancel-in-progress: true
+
 jobs:
   code-format:
     runs-on: ubuntu-20.04

@@ -2,6 +2,7 @@ name: compiler-python-release
 
 on: [push, pull_request]
 concurrency:
+  group: compiler-python-release
   cancel-in-progress: true
 jobs:
   build-compiler:

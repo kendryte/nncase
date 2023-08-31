@@ -2,6 +2,7 @@ name: runtime-build
 
 on: [push, pull_request]
 concurrency:
+  group: runtime-build
   cancel-in-progress: true
 jobs:
   build-native-runtime:
