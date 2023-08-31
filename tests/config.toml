@@ -1,5 +1,8 @@
 name = 'default_config'
 root = 'tests_output'
+kmodel_name = 'test.kmodel'
+desc_name = 'kmodel.desc'
+infer_name = 'infer_report.json'
 dump_hist = false
 dump_infer = false
 

@@ -56,7 +56,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         self.dynamic = False
 
         if self.cfg['dump_infer']:
-            self.infer_file = test_utils.infer_file()
+            self.infer_file = test_utils.infer_file(self.cfg['infer_name'])
             self.infer_dict = {
                 'case': 'unknown',
                 'target': 'cpu',
