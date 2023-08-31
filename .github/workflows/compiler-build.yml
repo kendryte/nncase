@@ -15,8 +15,6 @@ env:
   NUGET_CERT_REVOCATION_MODE: offline
   NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
 
-
-
 jobs:
   build-native:
     name: build-native-${{matrix.config.name}}
