@@ -82,7 +82,7 @@ public sealed class UnitTestTIR
         var name = "test";
         var actual = T.SizeVar(name);
         var expected = Var.SizeVar(name);
-        Assert.True(actual.ToString().Equals(expected.ToString(), StringComparison.Ordinal));
+        Assert.Equal(expected.ToString(), actual.ToString());
     }
 
     [Fact]
