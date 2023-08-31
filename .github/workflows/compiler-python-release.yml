@@ -1,7 +1,8 @@
 name: compiler-python-release
 
 on: [push, pull_request]
-
+concurrency:
+  cancel-in-progress: true
 jobs:
   build-compiler:
     name: build-${{matrix.config.name}}
