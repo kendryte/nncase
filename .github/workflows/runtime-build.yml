@@ -1,9 +1,16 @@
 name: runtime-build
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [master, release/1.0, release/2.0]
+  pull_request:
+    branches: ['*']
+    types: [opened, synchronize]
+
 concurrency:
-  group: runtime-build
+  group: ${{ github.workflow }}
   cancel-in-progress: true
+
 jobs:
   build-native-runtime:
     name: build-runtime-${{matrix.config.name}}

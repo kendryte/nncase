@@ -1,13 +1,21 @@
 ﻿name: compiler-build
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [master, release/1.0, release/2.0]
+  pull_request:
+    branches: ['*']
+    types: [opened, synchronize]
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
 env:
   NUGET_CERT_REVOCATION_MODE: offline
   NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
 
-concurrency:
-  group: compiler-build
-  cancel-in-progress: true
+
 
 jobs:
   build-native:
