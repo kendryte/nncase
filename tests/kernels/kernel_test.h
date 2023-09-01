@@ -1081,7 +1081,7 @@ class KernelTest {
                       << GetParseError_En(document.GetParseError())
                       << std::endl;
 
-        if(!document.IsObject()){
+        if (!document.IsObject()) {
             throw std::runtime_error("type error! it should be Object.");
         }
     }
@@ -1093,7 +1093,7 @@ class KernelTest {
                       << GetParseError_En(_document.GetParseError())
                       << std::endl;
 
-        if(!_document.IsObject()){
+        if (!_document.IsObject()) {
             throw std::runtime_error("type error! it should be Object.");
         }
     }
@@ -1108,7 +1108,7 @@ class KernelTest {
     }
 
     int64_t GetNumber(const char *key) {
-        if(!_document[key].IsInt64()){
+        if (!_document[key].IsInt64()) {
             throw std::runtime_error("type error! it should be int64.");
         }
 
@@ -1116,7 +1116,7 @@ class KernelTest {
     }
 
     float GetFloatNumber(const char *key) {
-        if(!_document[key].IsDouble()){
+        if (!_document[key].IsDouble()) {
             throw std::runtime_error("type error! it should be double.");
         }
 
@@ -1124,7 +1124,7 @@ class KernelTest {
     }
 
     typecode_t GetDataType(const char *key) {
-        if(!_document[key].IsString()){
+        if (!_document[key].IsString()) {
             throw std::runtime_error("type error! it should be string.");
         }
 
@@ -1132,7 +1132,7 @@ class KernelTest {
     }
 
     std::string GetString(const char *key) {
-        if(!_document[key].IsString()){
+        if (!_document[key].IsString()) {
             throw std::runtime_error("type error! it should be string.");
         }
 
@@ -1140,7 +1140,7 @@ class KernelTest {
     }
 
     dims_t GetShapeArray(const char *key) {
-        if(!_document[key].IsArray()){
+        if (!_document[key].IsArray()) {
             throw std::runtime_error("type error! it should be array.");
         }
 
@@ -1160,7 +1160,7 @@ class KernelTest {
     }
 
     std::vector<int64_t> GetDataArray(const char *key) {
-        if(!_document[key].IsArray()){
+        if (!_document[key].IsArray()) {
             throw std::runtime_error("type error! it should be array.");
         }
 
@@ -1180,7 +1180,7 @@ class KernelTest {
     }
 
     axes_t GetAxesArray(const char *key) {
-        if(!_document[key].IsArray()){
+        if (!_document[key].IsArray()) {
             throw std::runtime_error("type error! it should be array.");
         }
 
