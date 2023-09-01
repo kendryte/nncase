@@ -242,6 +242,7 @@ TEST_P(UnaryTest, rsqrt) {
                   cosine_similarity_tensor(expected, actual);
 
     if (!result) {
+        std::cout << "input ";
         print_runtime_tensor(input);
         std::cout << "actual ";
         print_runtime_tensor(actual);
