@@ -148,6 +148,18 @@ class UnaryTest : public KernelTest,
                 });
             break;
         }
+        case dt_float16: {
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_real_distribution<float> dis(1.0f, 2.0f);
+            NNCASE_UNUSED auto res = kernels::stackvm::apply(
+                tensor.shape(),
+                [&](gsl::span<const size_t> index) -> result<void> {
+                    get<half>(tensor, index) = static_cast<half>(dis(gen));
+                    return ok();
+                });
+            break;
+        }
         case dt_float32: {
             std::random_device rd;
             std::mt19937 gen(rd());
@@ -212,6 +224,8 @@ TEST_P(UnaryTest, sqrt) {
                   cosine_similarity_tensor(expected, actual);
 
     if (!result) {
+        std::cout << "input ";
+        print_runtime_tensor(input);
         std::cout << "actual ";
         print_runtime_tensor(actual);
         std::cout << "expected ";
