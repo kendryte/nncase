@@ -72,7 +72,7 @@ get_nearest_pixel_from_origin(image_resize_nearest_mode_t nearest_mode) {
     switch (nearest_mode) {
     case image_resize_nearest_mode_t::round_prefer_ceil:
         return [](float x_original) {
-            return static_cast<int64_t>(std::round(x_original));
+            return static_cast<int64_t>(roundf(x_original));
         };
     case image_resize_nearest_mode_t::floor:
         return [](float x_original) {
@@ -88,7 +88,7 @@ get_nearest_pixel_from_origin(image_resize_nearest_mode_t nearest_mode) {
             if (x_original == static_cast<int64_t>(x_original) + 0.5f) {
                 return static_cast<int64_t>(std::floor(x_original));
             }
-            return static_cast<int64_t>(std::round(x_original));
+            return static_cast<int64_t>(roundf(x_original));
         };
     }
 }
