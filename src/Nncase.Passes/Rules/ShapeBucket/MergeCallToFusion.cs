@@ -35,11 +35,6 @@ public abstract class MergeFusionBase : RewriteRule<Pattern>
 
         return false;
     }
-
-    public bool ValidTarget(Expr target)
-    {
-        return CallValidator.ValidTarget(target);
-    }
 }
 
 [RuleGenerator]
@@ -123,6 +118,17 @@ public partial class MergeNextCallToFusion : MergeFusionBase
             FusionCall,
             IsRangeOfMarker(FusionCall, IsWildcard())));
 
+    private bool _greedy;
+
+    public MergeNextCallToFusion(bool greedy = false)
+    {
+        _greedy = greedy;
+    }
+
+    public MergeNextCallToFusion()
+    {
+    }
+
     // nextCall(fusion(x)) -> fusion(nextCall(x))
     // nextCall(marker(fusion(x))) -> fusion(nextCall(marker(x)))
     public Expr? GetReplace(Call nextCall, Expr maybeFusionCallMarker, Expr target, Call fusionOuterCall, BucketFusion fusion)
@@ -133,7 +139,7 @@ public partial class MergeNextCallToFusion : MergeFusionBase
             return null;
         }
 
-        if (!ValidTarget(target))
+        if (!CallValidator.ValidTarget(nextCall, _greedy))
         {
             return null;
         }
@@ -260,6 +266,18 @@ public partial class MergePrevCallToFusion : MergeFusionBase
     // 输入必须匹配marker，因为即便合并marker也是要在外面保留一份副本
     // fusion(marker(prevCall()) { var } -> fusion(var) { marker(prevCall()) }
     // fusion((prevCall()) { var } -> fusion(var) { prevCall() }
+
+    private bool _greedy;
+
+    public MergePrevCallToFusion()
+    {
+
+    }
+
+    public MergePrevCallToFusion(bool greedy = false)
+    {
+        _greedy = greedy;
+    }
 
     // dfs
     // xx | marker(xx)不行, 会先匹配到xx
@@ -600,7 +618,7 @@ public partial class MergePrevCallToFusion : MergeFusionBase
             return true;
         }
 
-        if (!ValidTarget(lhsTarget))
+        if (!CallValidator.ValidTarget(lhsPrevCall, _greedy))
         {
             return true;
         }

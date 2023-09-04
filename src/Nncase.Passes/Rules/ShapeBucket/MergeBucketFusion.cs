@@ -25,25 +25,40 @@ namespace Nncase.Passes.Rules.ShapeBucket;
 
 public class MergeBucketFusionPass : FunctionPass
 {
+    private bool _greedy;
+
+    public MergeBucketFusionPass(bool greedy)
+    {
+        _greedy = greedy;
+    }
+
     protected override async Task<BaseFunction> RunCoreAsync(BaseFunction input, RunPassContext context)
     {
+        // bool greedy and dynamic
         var main = (Function)input;
         int i = 0;
         while (true)
         {
             var preHash = main.GetHashCode();
-            CompilerServices.Rewrite(main, new IRewriteRule[] { new MultiUserCallToFusion(), new MergeTupleFusion() }, new());
-            await new MergeSeqBucketFusion().RunAsync(main, context);
-            IRHelpers.DCE(main);
-            await new MergeMultiUsersFusion().RunAsync(main, context);
-            DumpIR(main, $"{i}_before", "FoldNopTuple");
-            var before = main.GetHashCode();
-            await new FoldNopTuple().RunAsync(main, context);
-            var after = main.GetHashCode();
-            if (before != after)
+            if (_greedy)
             {
-                DumpIR(main, $"{i++}_after", "FoldNopTuple");
+                CompilerServices.Rewrite(main, new IRewriteRule[] { new MultiUserCallToFusion(), new MergeTupleFusion() }, new());
+                await new MergeSeqBucketFusion().RunAsync(main, context);
+                IRHelpers.DCE(main);
+                await new MergeMultiUsersFusion().RunAsync(main, context);
+                DumpIR(main, $"{i}_before", "FoldNopTuple");
+                await new FoldNopTuple().RunAsync(main, context);
             }
+            else
+            {
+
+                await new MergeSeqBucketFusion().RunAsync(main, context);
+                IRHelpers.DCE(main);
+            }
+
+            // CheckIRRing(main);
+            // CheckRepeat(main);
+            // CheckErrorVar(main, main.Parameters.ToArray());
             var postHash = main.GetHashCode();
             if (preHash == postHash)
             {

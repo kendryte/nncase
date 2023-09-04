@@ -12,10 +12,21 @@ using Nncase.Diagnostics;
 using Nncase.Evaluator;
 using Nncase.IR;
 using static Nncase.IR.F.Tensors;
+using static Nncase.Passes.Rules.ShapeBucket.ShapeBucketHelper;
 
 namespace Nncase.Passes.Rules.ShapeBucket;
 
-public record FusionShapeData(IValue Outshape, IValue[] InputShapes);
+public class FusionShapeData
+{
+    public IValue Outshape;
+    public IValue[] InputShapes;
+
+    public FusionShapeData(IValue outshape, IValue[] inputShapes)
+    {
+        Outshape = outshape;
+        InputShapes = inputShapes;
+    }
+}
 
 public class FusionShapeUpdater : ExprVisitor<Expr, Unit>
 {
@@ -27,11 +38,27 @@ public class FusionShapeUpdater : ExprVisitor<Expr, Unit>
     }
 
     public Dictionary<BucketFusion, FusionShapeData> FusionShape { get; set; } = new();
+    public Dictionary<string, FusionShapeData> FusionNameShape { get; set; } = new();
 
     protected override Expr DefaultVisitLeaf(Expr expr) => expr;
 
     protected override Expr VisitLeafCall(Call expr)
     {
+        // if (expr.Target is IR.Math.Require require)
+        // {
+        //     var msg = require.Message;
+        //     if (msg.Contains("_input_", StringComparison.Ordinal))
+        //     {
+        //         var name = msg.Split("_input_")[0];
+        //         var index = int.Parse(msg.Split("_input_")[1]);
+        //         FusionNameShape[name].InputShapes[index] = GetShape(_memo[expr]);
+        //     }
+        //     else
+        //     {
+        //         FusionNameShape[msg].Outshape = GetShape(_memo[expr]);
+        //     }
+        // }
+
         if (expr.Target is BucketFusion f)
         {
             var argShape = expr.Arguments.ToArray().Select(arg => GetShape(_memo[arg])).ToArray();
@@ -88,7 +115,7 @@ public class RecordFusionShape : FunctionPass
     {
         var options = CompileSession.CompileOptions.ShapeBucketOptions;
         var varMap = options.VarMap;
-        _dimVarValues = ShapeBucketHelper.MakeVarValuesForAllSegment(options);
+        _dimVarValues = MakeVarValuesForAllSegment(options);
 
         // 一共有多组key seg
         var list = Enumerable.Range(0, _dimVarValues.First().Value.Length).Select(i =>
@@ -96,36 +123,44 @@ public class RecordFusionShape : FunctionPass
             // 一组里面多个key seg
             return _dimVarValues.Select(pair => (pair.Key, Value: pair.Value[i])).ToArray();
         }).ToArray();
+        var mainFun = (Function)main;
+        // var body = mainFun.Body.EvaluateShapeExpr(varMap);
+        // // var bodyShape = FusionBucketContext.ReplaceShapeOf(new(), varMap, body, mainFun.Parameters.ToArray(),
+        // //     _dimVarValues.Keys.ToArray());
+        // ShapeBucketHelper.DumpIR(((Function)main).Body, "bodyExpr");
+        // ShapeBucketHelper.DumpIR(body, "ShapeExpr");
+
+        // 算出输入的大致规模，如果太大就不能并行，否则可以，但是要考虑到内存的限制，目前只有melgan需要这样特殊处理
+
+        var body = ((Function)main).Body;
         var tmpFusionShapeList = list.Select((seg, i) =>
             {
+                Console.WriteLine("RunStart");
+                // GC.Collect();
+                // GC.WaitForPendingFinalizers();
+                Console.WriteLine("AfterGC");
                 var varValues = seg.ToDictionary(pair => pair.Key, pair => (IValue)Value.FromTensor(pair.Value));
                 var exprValues = seg.ToDictionary(pair => (Expr)pair.Key, pair => (IValue)Value.FromTensor(pair.Value));
                 var input = MakeDummyInput(varMap, varValues);
-                var body = ((Function)main).Body;
-                var memo = EvaluatorUtil.GetMemo(body, input);
+                Console.WriteLine("Dummy");
+                var memo = EvaluatorUtil.GetMemo(body, ConcatDictionary(input, varValues));
+                Console.WriteLine("memo");
                 var f = new FusionShapeUpdater(ConcatDictionary(memo, exprValues));
+                Console.WriteLine("fusion");
                 f.Visit(main);
+                Console.WriteLine("end");
                 return f.FusionShape;
             }).SelectMany(x => x)
             .ToLookup(x => x.Key, x => x.Value)
             .ToDictionary(pair => pair.Key, pair => pair.ToArray());
 
+        GC.Collect();
         foreach (var (f, shapeInfo) in tmpFusionShapeList)
         {
             FusionShapeInfo[f] = shapeInfo;
         }
 
         return Task.FromResult(main);
-    }
-
-    private static Dictionary<Expr, IValue> ConcatDictionary(Dictionary<Expr, IValue> memo, Dictionary<Expr, IValue> exprValues)
-    {
-        foreach (var (key, value) in exprValues)
-        {
-            memo[key] = value;
-        }
-
-        return memo;
     }
 
     // make dummy value from InputInfo

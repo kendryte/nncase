@@ -22,8 +22,12 @@ internal sealed class ShapeEvaluateContext : IShapeEvaluateContext
     public ShapeEvaluateContext(Dictionary<Expr, Expr> memo, ShapeExprCache cache)
     {
         _memo = memo;
-        Cache = cache.Cache;
+        foreach (var (key, value) in cache.Cache)
+        {
+            _memo[key] = value;
+        }
         VarMap = cache.VarMap;
+        Cache = new();
     }
 
     public IReadOnlyDictionary<Var, Expr[]> VarMap { get; }
