@@ -82,8 +82,7 @@ template <typename T, loc_t Loc = loc_t::local> class tensor {
         auto subspan_offset = offset(strides_, begins);
         data_ = parent->data_.subspan(subspan_offset);
         if (data_.size() < size_) {
-            // std::errc 也不能使用
-            // throw std::errc::invalid_argument;
+            runtime_util.rt_assert(false, (char*)"Invalid tensor size");
         }
     }
 

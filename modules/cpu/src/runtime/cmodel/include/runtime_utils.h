@@ -18,6 +18,7 @@ struct runtime_util_mt {
     float (*sqrt)(float x);
     void (*create_thread)(pthread_t &pt, void *param_, void *(*call)(void *));
     void (*join_thread)(pthread_t &pt);
+    void (*rt_assert)(bool condition, char* message);
 };
 
 static runtime_util_mt runtime_util;            
@@ -86,8 +87,7 @@ inline size_t offset(gsl::span<const size_t> strides,
     if (strides.size() == 0 || index.size() == 0) {
         return 0;
     }
-    // elf loader 不支持
-    // assert(strides.size() == index.size());
+    runtime_util.rt_assert(strides.size() == index.size(), (char*)"strides and index must have the same rank");
     return element_offset<size_t>(strides, index.begin(), index.end());
     // return 0;
 }

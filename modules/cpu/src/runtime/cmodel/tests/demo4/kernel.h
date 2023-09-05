@@ -14,16 +14,12 @@ void stage1_kernel(
 ) {
     thread_context ctx(bid, tid);
     tensor<int64_t> position_ids({1, 384});
-    tensor<float> gather_data({32000, 256});
+    tensor<float> gather_data({384, 256});
     tensor<float> output({1, 384, 256});
 
     tdma_load_async(position_ids, std::move(Position_ids), ctx);
-    dims_t begins{0, 256 * (CORES * bid + tid)};
-    dims_t ends{32000, 256};
-    runtime_util.printf("t+b %d %d\n", bid, tid);
-    GatherData(begins, ends);
     tdma_load_async(gather_data,
-                    GatherData(begins, ends),
+                    GatherData({0, 256 * (CORES * bid + tid)}, {384, 256}),
                     ctx);
     gather(gather_data, position_ids, output, 0);
 
