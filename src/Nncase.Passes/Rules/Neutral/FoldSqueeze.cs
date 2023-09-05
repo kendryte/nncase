@@ -20,7 +20,7 @@ namespace Nncase.Passes.Rules.Neutral;
 // used for dynamic shape
 internal static class FoldSqueezeCommon
 {
-    internal static bool CanFold(int[] sqAxes, int[] unsqAxes, int sqRank, int unsqRank)
+    internal static bool CanFold(int[] sqAxes, int[] unsqAxes, int rank)
     {
         // now only support same axes for dynamic shape
         if (sqAxes.Length != unsqAxes.Length)
@@ -29,8 +29,8 @@ internal static class FoldSqueezeCommon
         }
 
         // positive
-        var positiveSqAxes = sqAxes.Select(x => x < 0 ? x + sqRank : x).ToArray();
-        var positiveUnsqAxes = unsqAxes.Select(x => x < 0 ? x + unsqRank : x).ToArray();
+        var positiveSqAxes = sqAxes.Select(x => x < 0 ? x + rank : x).ToArray();
+        var positiveUnsqAxes = unsqAxes.Select(x => x < 0 ? x + rank : x).ToArray();
         return positiveSqAxes.SequenceEqual(positiveUnsqAxes);
     }
 }
@@ -46,7 +46,7 @@ public partial class FoldUnsqueezeSqueeze : RewriteRule<Pattern>
     Expr? GetReplace(Expr input, int[] sqAxes, int[] unsqAxes)
     {
         var r = input.CheckedShape.Rank;
-        if (!CanFold(sqAxes, unsqAxes, r, r - 1))
+        if (!CanFold(sqAxes, unsqAxes, r))
         {
             return null;
         }
@@ -63,10 +63,11 @@ public partial class FoldSqueezeUnsqueeze : RewriteRule<Pattern>
         IsUnsqueeze(IsWildcard("input"), IsTensorConst("unsqAxes")),
         IsTensorConst("sqAxes"));
 
+    // todo: maybe error
     Expr? GetReplace(Expr input, int[] sqAxes, int[] unsqAxes)
     {
         var r = input.CheckedShape.Rank;
-        if (!CanFold(sqAxes, unsqAxes, r + 1, r))
+        if (!CanFold(sqAxes, unsqAxes, r))
         {
             return null;
         }
