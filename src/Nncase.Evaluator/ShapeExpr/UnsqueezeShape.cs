@@ -38,7 +38,7 @@ public partial class UnsqueezeShapeEvaluator : IEvaluator<UnsqueezeShape>, IType
     {
         var input = context.GetArgument(target, UnsqueezeShape.Input);
         var dims = context.GetArgument(target, UnsqueezeShape.Dim);
-        return new[] { input.CheckedShape.Rank + dims.CheckedShape[0] };
+        return new[] { input.CheckedShape.Rank + dims.CheckedShape[0].FixedValue };
     }
 
     public Metric Visit(IMetricEvaluateContext context, UnsqueezeShape target)

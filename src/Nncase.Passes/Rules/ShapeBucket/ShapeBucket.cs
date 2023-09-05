@@ -905,7 +905,7 @@ public class FusionBucketContext
             {
                 new FoldStackGetItem(), new FoldShapeOf(), new FoldTwoReshapes(), new FoldTwoCasts(),
                 new FoldTwoSlices(), new FoldNopBinary(), new FoldNopCast(), new Neutral.FoldConstCall(),
-                new FoldNopReshape(), new FoldNopSlice(), new FoldIf(),
+                new FoldNopReshape(), new FoldNopSlice(), new FoldIf(), new FoldBroadcastShape()
             },
             new());
         DumpIR(simplifySliceShape, "SliceShapeAfterSimplify");
@@ -1257,6 +1257,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
                 new FoldNopReshape(),
                 new FoldNopSlice(),
                 new FoldIf(),
+                new FoldBroadcastShape()
             },
             new());
 

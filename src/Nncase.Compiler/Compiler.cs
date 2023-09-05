@@ -195,10 +195,10 @@ internal class Compiler : ICompiler
         CheckShapeBucketOptions(options);
         ToFusion(p);
         MergeOp(p, true);
-        LostToFusion(p, singleVar);
-        MergeOp(p, true);
+        // LostToFusion(p, singleVar);
+        // MergeOp(p, true);
         ClearMarker(p);
-        MergeFusion(p, singleVar, false);
+        // MergeFusion(p, singleVar, false);
         Bucket(p);
         // Rebuild(p, singleVar);
         Simplify(p);
@@ -221,7 +221,7 @@ internal class Compiler : ICompiler
     public async Task CompileAsync()
     {
         var target = _compileSession.Target;
-        await RunPassAsync(p => TargetIndependentPass(p), "TargetIndependentPass");
+        // await RunPassAsync(p => TargetIndependentPass(p), "TargetIndependentPass");
         await RunPassAsync(p => RegisterTargetIndependQuantPass(p), "TargetIndependentQuantPass");
         if (_compileSession.CompileOptions.ShapeBucketOptions.Enable)
         {

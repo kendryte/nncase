@@ -38,7 +38,7 @@ public partial class SqueezeShapeEvaluator : IEvaluator<SqueezeShape>, ITypeInfe
     {
         var input = context.GetArgument(target, SqueezeShape.Input);
         var dims = context.GetArgument(target, SqueezeShape.Dim);
-        return new[] { input.CheckedShape.Rank - dims.CheckedShape[0] };
+        return new[] { input.CheckedShape.Rank - dims.CheckedShape[0].FixedValue };
     }
 
     public Metric Visit(IMetricEvaluateContext context, SqueezeShape target)

@@ -104,7 +104,7 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
             return Ceil(Abs(end - begin) / Abs(stride));
         }).ToArray();
 
-        return Stack(new IR.Tuple(outDims), 0);
+        return Cast(Stack(new IR.Tuple(outDims), 0), DataTypes.Int64);
     }
 
     /// <param name="axisConst">Axis.</param>

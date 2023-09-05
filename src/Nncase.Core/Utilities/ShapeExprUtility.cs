@@ -19,8 +19,8 @@ public static class ShapeExprUtility
     public static Expr Positive(Expr axis, Expr inShape)
     {
         var rank = new Call(new Rank(), inShape);
-        var i32Axis = Cast(axis, DataTypes.Int32);
-        return new If(i32Axis < 0, i32Axis + rank, i32Axis);
+        var i64Axis = Cast(axis, DataTypes.Int64);
+        return new If(i64Axis < 0L, i64Axis + rank, i64Axis);
     }
 
     public static Expr Slice(Expr shape, int begin, int end)
@@ -35,28 +35,28 @@ public static class ShapeExprUtility
 
     public static Expr Replace(Expr shapeExpr, Expr index, Expr value)
     {
-        return SliceAndMerge(shapeExpr, index, value, 1);
+        return SliceAndMerge(shapeExpr, index, value, 1L);
     }
 
     public static Expr Insert(Expr shapeExpr, Expr index, Expr value)
     {
         if (shapeExpr.CheckedShape.IsScalar)
         {
-            return SliceAndMerge(StackScalar(shapeExpr), index, value, 0);
+            return SliceAndMerge(StackScalar(shapeExpr), index, value, 0L);
         }
 
-        return SliceAndMerge(shapeExpr, index, value, 0);
+        return SliceAndMerge(shapeExpr, index, value, 0L);
     }
 
     public static Expr ReplaceList(Expr shapeExpr, Expr list, Expr value)
     {
-        return SliceAndMerge(shapeExpr, list, value, 1, false);
+        return SliceAndMerge(shapeExpr, list, value, 1L, false);
     }
 
     public static Expr Remove(Expr shapeExpr, Expr index)
     {
         var front = Slice(shapeExpr, 0, index);
-        var last = Slice(shapeExpr, index + 1, int.MaxValue);
+        var last = Slice(shapeExpr, index + 1L, int.MaxValue);
         return Concat(new IR.Tuple(front, last), 0);
     }
 
@@ -65,10 +65,11 @@ public static class ShapeExprUtility
         return Stack(new IR.Tuple(expr), 0);
     }
 
-    private static Expr SliceAndMerge(Expr shapeExpr, Expr index, Expr value, Expr indexOffset, bool valueIsList = true)
+    private static Expr SliceAndMerge(Expr originShapeExpr, Expr index, Expr value, Expr indexOffset, bool valueIsList = true)
     {
+        var shapeExpr = Cast(originShapeExpr, DataTypes.Int64);
         var front = Slice(shapeExpr, 0, index);
-        var last = Slice(shapeExpr, Cast(index, DataTypes.Int32) + indexOffset, int.MaxValue);
+        var last = Slice(shapeExpr, Cast(index, DataTypes.Int64) + indexOffset, int.MaxValue);
         var c = valueIsList ? StackOne(value) : value;
         if (c.CheckedShape.IsScalar)
         {
@@ -92,5 +93,11 @@ public static class ShapeExprUtility
         }
 
         return shape;
+    }
+
+    public static IValue GetShapeValue(Call call)
+    {
+        call.InferenceType();
+        return Value.FromTensor(call.CheckedShape.ToValueArray().Select(x => (long)x).ToArray());
     }
 }

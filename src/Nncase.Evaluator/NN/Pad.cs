@@ -121,8 +121,8 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
         var paddings = front + end;
 
         // outShape = inShape + paddings
-        var padsSumShape = StackScalar(Cast(ShapeOf(paddings)[0], DataTypes.Int32));
-        var outShape = inShape + Cast(Reshape(paddings, padsSumShape), DataTypes.Int32);
+        var padsSumShape = StackScalar(ShapeOf(paddings)[0]);
+        var outShape = inShape + Reshape(paddings, padsSumShape);
         return outShape;
     }
 

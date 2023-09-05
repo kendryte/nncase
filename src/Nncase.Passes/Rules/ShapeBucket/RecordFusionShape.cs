@@ -175,7 +175,7 @@ public class RecordFusionShape : FunctionPass
                 // todo: dummy input可能会有问题...
                 var shapeExpr = pair.Key.CheckedShape.IsScalar
                     ? (Expr)Array.Empty<int>()
-                    : Stack(new IR.Tuple(pair.Value.Select(x => Cast(x, DataTypes.Int32)).ToArray()), 0);
+                    : Stack(new IR.Tuple(pair.Value.Select(x => Cast(x, DataTypes.Int64)).ToArray()), 0);
 
                 var shape = shapeExpr.Evaluate(varInfo).AsTensor();
                 return ConstantOfShape(
