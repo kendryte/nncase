@@ -17,6 +17,8 @@
 #include <gsl/gsl-lite.hpp>
 #include <runtime_utils.h>
 
+using namespace nncase::runtime::cpu;
+
 namespace kernels {
 
 namespace {
@@ -55,24 +57,72 @@ void binary_impl(binary_op_t op, const T *lhs, const T *rhs, T *output,
                  gsl::span<const size_t> rhs_strides,
                  gsl::span<const size_t> out_shape,
                  gsl::span<const size_t> out_strides) {
-    switch (op) {
-        BINARY_IMPL_OP(add, std::plus<T>());
-        BINARY_IMPL_OP(sub, std::minus<T>());
-        BINARY_IMPL_OP(mul, std::multiplies<T>());
-        BINARY_IMPL_OP(div, std::divides<T>());
-        BINARY_IMPL_OP(idenity_a, [](T a, [[maybe_unused]] T b) { return a; });
-        BINARY_IMPL_OP(min, [](T a, T b) { return std::min(a, b); });
-        BINARY_IMPL_OP(max, [](T a, T b) { return std::max(a, b); });
-        BINARY_IMPL_OP(pow, [](T a, T b) { return std::pow(a, b); });
-        BINARY_IMPL_OP(mod, [](T a, T b) { return std::fmod(a, b); });
-        // BINARY_IMPL_OP(logical_and,
-        //                [](T a, T b) { return static_cast<T>(a && b); });
-        // BINARY_IMPL_OP(logical_or,
-        //                [](T a, T b) { return static_cast<T>(a || b); });
-        // BINARY_IMPL_OP(logical_xor,
-        //                [](T a, T b) { return static_cast<T>(a ^ b); });
-    default:
-        throw "Unsupported Binary Op!";
+    // TODO: only support float for now
+    if (std::is_same_v<T, float>) {
+        switch (op) {
+            BINARY_IMPL_OP(add, nncase_mt.float_binary_add);
+            BINARY_IMPL_OP(sub, nncase_mt.float_binary_sub);
+            BINARY_IMPL_OP(mul, nncase_mt.float_binary_mul);
+            BINARY_IMPL_OP(div, nncase_mt.float_binary_div);
+            BINARY_IMPL_OP(idenity_a,
+                           [](T a, [[maybe_unused]] T b) { return a; });
+            BINARY_IMPL_OP(min, nncase_mt.float_binary_min);
+            BINARY_IMPL_OP(max, nncase_mt.float_binary_max);
+            BINARY_IMPL_OP(pow, nncase_mt.float_binary_pow);
+            BINARY_IMPL_OP(mod, nncase_mt.float_binary_mod);
+            // BINARY_IMPL_OP(logical_and,
+            //                [](T a, T b) { return static_cast<T>(a && b); });
+            // BINARY_IMPL_OP(logical_or,
+            //                [](T a, T b) { return static_cast<T>(a || b); });
+            // BINARY_IMPL_OP(logical_xor,
+            //                [](T a, T b) { return static_cast<T>(a ^ b); });
+        default:
+            runtime_util.rt_assert(false, (char *)"Unsupported Binary Op!");
+        }
+    } else if (std::is_same_v<T, int32_t>) {
+        switch (op) {
+            BINARY_IMPL_OP(add, nncase_mt.int32_binary_add);
+            BINARY_IMPL_OP(sub, nncase_mt.int32_binary_sub);
+            BINARY_IMPL_OP(mul, nncase_mt.int32_binary_mul);
+            BINARY_IMPL_OP(div, nncase_mt.int32_binary_div);
+            BINARY_IMPL_OP(idenity_a,
+                           [](T a, [[maybe_unused]] T b) { return a; });
+            BINARY_IMPL_OP(min, nncase_mt.int32_binary_min);
+            BINARY_IMPL_OP(max, nncase_mt.int32_binary_max);
+            BINARY_IMPL_OP(pow, nncase_mt.int32_binary_pow);
+            BINARY_IMPL_OP(mod, nncase_mt.int32_binary_mod);
+            // BINARY_IMPL_OP(logical_and,
+            //                [](T a, T b) { return static_cast<T>(a && b); });
+            // BINARY_IMPL_OP(logical_or,
+            //                [](T a, T b) { return static_cast<T>(a || b); });
+            // BINARY_IMPL_OP(logical_xor,
+            //                [](T a, T b) { return static_cast<T>(a ^ b); });
+        default:
+            runtime_util.rt_assert(false, (char *)"Unsupported Binary Op!");
+        }
+    } else if (std::is_same_v<T, int64_t>) {
+        switch (op) {
+            BINARY_IMPL_OP(add, nncase_mt.int64_binary_add);
+            BINARY_IMPL_OP(sub, nncase_mt.int64_binary_sub);
+            BINARY_IMPL_OP(mul, nncase_mt.int64_binary_mul);
+            BINARY_IMPL_OP(div, nncase_mt.int64_binary_div);
+            BINARY_IMPL_OP(idenity_a,
+                           [](T a, [[maybe_unused]] T b) { return a; });
+            BINARY_IMPL_OP(min, nncase_mt.int64_binary_min);
+            BINARY_IMPL_OP(max, nncase_mt.int64_binary_max);
+            BINARY_IMPL_OP(pow, nncase_mt.int64_binary_pow);
+            BINARY_IMPL_OP(mod, nncase_mt.int64_binary_mod);
+            // BINARY_IMPL_OP(logical_and,
+            //                [](T a, T b) { return static_cast<T>(a && b); });
+            // BINARY_IMPL_OP(logical_or,
+            //                [](T a, T b) { return static_cast<T>(a || b); });
+            // BINARY_IMPL_OP(logical_xor,
+            //                [](T a, T b) { return static_cast<T>(a ^ b); });
+        default:
+            runtime_util.rt_assert(false, (char *)"Unsupported Binary Op!");
+        }
+    } else {
+        runtime_util.rt_assert(false, (char *)"Unsupported Binary Type!");
     }
 }
 

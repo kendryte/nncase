@@ -1,15 +1,9 @@
 #pragma once
 
-// #include <array>
-// #include <cmath>
 #include <cstddef>
 #include <gsl/gsl-lite.hpp>
-// #include <iostream>
-// #include <numeric>
 #include <runtime_types.h>
-// #include <vector>
-
-
+#include "../../cpu_common.h"
 
 struct runtime_util_mt {
     int (*printf)(const char *__restrict __format, ...);
@@ -18,10 +12,10 @@ struct runtime_util_mt {
     float (*sqrt)(float x);
     void (*create_thread)(pthread_t &pt, void *param_, void *(*call)(void *));
     void (*join_thread)(pthread_t &pt);
-    void (*rt_assert)(bool condition, char* message);
+    void (*rt_assert)(bool condition, char *message);
 };
 
-static runtime_util_mt runtime_util;            
+static runtime_util_mt runtime_util;
 
 void print_vec(itlib::small_vector<size_t, 8> vec) {
     for (const size_t v : vec) {
@@ -52,13 +46,11 @@ inline size_t compute_size(const TShape &shape, const TShape &strides) {
 }
 
 template <class shape_type, class strides_type>
-inline size_t compute_strides(const shape_type &shape,
-                                   strides_type &strides) {
+inline size_t compute_strides(const shape_type &shape, strides_type &strides) {
     size_t data_size = 1;
     for (std::size_t i = shape.size(); i != 0; --i) {
         strides[i - 1] = data_size;
-        data_size =
-            strides[i - 1] * static_cast<size_t>(shape[i - 1]);
+        data_size = strides[i - 1] * static_cast<size_t>(shape[i - 1]);
     }
     return static_cast<size_t>(data_size);
 }
@@ -69,16 +61,13 @@ inline strides_t get_default_strides(dims_t shape) {
     return strides;
 }
 
-template <class offset_type, class S, class It>
-inline offset_type element_offset(const S &strides, It first,
-                                  It last) noexcept {
-    // using difference_type = typename
-    // std::iterator_traits<It>::difference_type; auto size =
-    // static_cast<difference_type>((std::min)(
-    //     static_cast<size_t>(std::distance(first, last)), strides.size()));
-    // return std::inner_product(last - size, last, strides.cend() - size,
-    //                           offset_type(0));
-    return 0;
+template <class offset_type, class S>
+inline offset_type element_offset(const S &strides, const S &index) noexcept {
+    offset_type size = 0;
+    for (auto i = 0; i < strides.size(); i++) {
+        size += strides[i] * index[i];
+    }
+    return size;
 }
 
 inline size_t offset(gsl::span<const size_t> strides,
@@ -87,9 +76,9 @@ inline size_t offset(gsl::span<const size_t> strides,
     if (strides.size() == 0 || index.size() == 0) {
         return 0;
     }
-    runtime_util.rt_assert(strides.size() == index.size(), (char*)"strides and index must have the same rank");
-    return element_offset<size_t>(strides, index.begin(), index.end());
-    // return 0;
+    runtime_util.rt_assert(strides.size() == index.size(),
+                           (char *)"strides and index must have the same rank");
+    return element_offset<size_t>(strides, index);
 }
 
 inline bool is_shape_equal(const dims_t &a, const dims_t &b) {
@@ -165,10 +154,11 @@ template <typename T> double dot(const T *v1, const T *v2, size_t size) {
 
 template <typename T> double cosine(const T *v1, const T *v2, size_t size) {
     for (size_t i = 0; i < 10; i++) {
-        runtime_util.printf("%f, %f\n", (float)v1[i], (float)v2[i]);;
+        runtime_util.printf("%f, %f\n", (float)v1[i], (float)v2[i]);
+        ;
     }
-    return dot(v1, v2, size) /
-           ((runtime_util.sqrt(dot(v1, v1, size)) * runtime_util.sqrt(dot(v2, v2, size))));
+    return dot(v1, v2, size) / ((runtime_util.sqrt(dot(v1, v1, size)) *
+                                 runtime_util.sqrt(dot(v2, v2, size))));
 }
 
 inline dims_t get_reduced_offset(gsl::span<const size_t> in_offset,
