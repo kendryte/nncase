@@ -120,6 +120,9 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.ReshapeMatMul>();
             p.Add<Passes.Rules.Neutral.SplitSpaceToBatch>();
             p.Add<Passes.Rules.Neutral.SplitBatchToSpace>();
+            p.Add<Passes.Rules.Neutral.FoldSqueezeUnsqueeze>();
+            p.Add<Passes.Rules.Neutral.FoldUnsqueezeSqueeze>();
+            p.Add<Passes.Rules.Neutral.FoldTwoTransposes>();
             p.Add<Passes.Rules.Neutral.FoldNopClamp>();
         });
         passManager.AddWithName<EGraphRulesPass>("NeutralOptimizeTranspose").Configure(p =>
