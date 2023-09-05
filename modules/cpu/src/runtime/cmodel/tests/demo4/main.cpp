@@ -31,21 +31,20 @@ DEFINE_BFUNC(6)
 DEFINE_BFUNC(7)
 
 void _start(hardware_context_mt *hw_impl, runtime_util_mt *rt_util_mt,
-            uint8_t *position_ids, uint8_t *gather_data, uint8_t *output) {
+            uint8_t **inputs) {
     global_hardware_init(hw_impl);
     runtime_util = *rt_util_mt;
-    runtime_util.printf("%p\t%p\n", gather_data, output);
 
     auto Position_ids_ = tensor<int64_t, loc_t::device>(
-        gsl::make_span((int64_t *)position_ids, 384), {1, 384});
+        gsl::make_span((int64_t *)inputs[0], 384), {1, 384});
     runtime_util.printf("1\n");
 
     auto GatherData_ = tensor<float, loc_t::device>(
-        gsl::make_span((float *)gather_data, 384*8192), {384, 8192});
+        gsl::make_span((float *)inputs[1], 384 * 8192), {384, 8192});
 
     runtime_util.printf("2\n");
     auto Output_ = tensor<float, loc_t::device>(
-        gsl::make_span((float *)output, 384*8192), {1, 384, 8192});
+        gsl::make_span((float *)inputs[2], 384 * 8192), {1, 384, 8192});
 
     runtime_util.printf("3\n");
     Position_ids = &Position_ids_;
