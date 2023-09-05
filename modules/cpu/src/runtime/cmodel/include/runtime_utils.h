@@ -1,24 +1,40 @@
 #pragma once
 
-#include <array>
-#include <cmath>
+// #include <array>
+// #include <cmath>
 #include <cstddef>
 #include <gsl/gsl-lite.hpp>
-#include <iostream>
-#include <numeric>
+// #include <iostream>
+// #include <numeric>
 #include <runtime_types.h>
-#include <vector>
+// #include <vector>
+
+
+
+struct runtime_util_mt {
+    int (*printf)(const char *__restrict __format, ...);
+    void *(*malloc)(size_t size);
+    int (*free)(void *ptr);
+    float (*sqrt)(float x);
+    void (*create_thread)(pthread_t &pt, void *param_, void *(*call)(void *));
+    void (*join_thread)(pthread_t &pt);
+};
+
+static runtime_util_mt runtime_util;            
 
 void print_vec(itlib::small_vector<size_t, 8> vec) {
     for (const size_t v : vec) {
-        std::cout << std::to_string(v) << ", ";
+        runtime_util.printf("%zu, ", v);
     }
-    std::cout << std::endl;
+    runtime_util.printf("\n");
 }
 
 template <class TShape> inline size_t compute_size(const TShape &shape) {
-    return std::accumulate(shape.begin(), shape.end(), 1,
-                           std::multiplies<size_t>());
+    size_t size = 1;
+    for (size_t i = 0; i < shape.size(); ++i) {
+        size *= shape[i];
+    }
+    return size;
 }
 
 template <class TShape>
@@ -35,16 +51,15 @@ inline size_t compute_size(const TShape &shape, const TShape &strides) {
 }
 
 template <class shape_type, class strides_type>
-inline std::size_t compute_strides(const shape_type &shape,
+inline size_t compute_strides(const shape_type &shape,
                                    strides_type &strides) {
-    using strides_value_type = typename std::decay_t<strides_type>::value_type;
-    strides_value_type data_size = 1;
+    size_t data_size = 1;
     for (std::size_t i = shape.size(); i != 0; --i) {
         strides[i - 1] = data_size;
         data_size =
-            strides[i - 1] * static_cast<strides_value_type>(shape[i - 1]);
+            strides[i - 1] * static_cast<size_t>(shape[i - 1]);
     }
-    return static_cast<std::size_t>(data_size);
+    return static_cast<size_t>(data_size);
 }
 
 inline strides_t get_default_strides(dims_t shape) {
@@ -56,11 +71,13 @@ inline strides_t get_default_strides(dims_t shape) {
 template <class offset_type, class S, class It>
 inline offset_type element_offset(const S &strides, It first,
                                   It last) noexcept {
-    using difference_type = typename std::iterator_traits<It>::difference_type;
-    auto size = static_cast<difference_type>((std::min)(
-        static_cast<size_t>(std::distance(first, last)), strides.size()));
-    return std::inner_product(last - size, last, strides.cend() - size,
-                              offset_type(0));
+    // using difference_type = typename
+    // std::iterator_traits<It>::difference_type; auto size =
+    // static_cast<difference_type>((std::min)(
+    //     static_cast<size_t>(std::distance(first, last)), strides.size()));
+    // return std::inner_product(last - size, last, strides.cend() - size,
+    //                           offset_type(0));
+    return 0;
 }
 
 inline size_t offset(gsl::span<const size_t> strides,
@@ -69,8 +86,10 @@ inline size_t offset(gsl::span<const size_t> strides,
     if (strides.size() == 0 || index.size() == 0) {
         return 0;
     }
-    assert(strides.size() == index.size());
+    // elf loader 不支持
+    // assert(strides.size() == index.size());
     return element_offset<size_t>(strides, index.begin(), index.end());
+    // return 0;
 }
 
 inline bool is_shape_equal(const dims_t &a, const dims_t &b) {
@@ -125,15 +144,15 @@ get_last_not_contiguous_index(gsl::span<const size_t> strides,
     return -1;
 }
 
-template <typename T>
-inline void span_copy(gsl::span<T> dest, gsl::span<T> src) {
-    std::copy(src.begin(), src.end(), dest.begin());
-}
+// template <typename T>
+// inline void span_copy(gsl::span<T> dest, gsl::span<T> src) {
+//     std::copy(src.data(), src.data()+src.size(), dest.data());
+// }
 
-template <typename T>
-inline void span_equal(gsl::span<T> dest, gsl::span<T> src) {
-    std::copy(src.begin(), src.end(), dest.begin());
-}
+// template <typename T>
+// inline void span_equal(gsl::span<T> dest, gsl::span<T> src) {
+//     std::copy(src.begin(), src.end(), dest.begin());
+// }
 
 template <typename T> double dot(const T *v1, const T *v2, size_t size) {
     double ret = 0.f;
@@ -146,10 +165,10 @@ template <typename T> double dot(const T *v1, const T *v2, size_t size) {
 
 template <typename T> double cosine(const T *v1, const T *v2, size_t size) {
     for (size_t i = 0; i < 10; i++) {
-        std::cout << v1[i] << " " << v2[i] << std::endl;
+        runtime_util.printf("%f, %f\n", (float)v1[i], (float)v2[i]);;
     }
     return dot(v1, v2, size) /
-           ((sqrt(dot(v1, v1, size)) * sqrt(dot(v2, v2, size))));
+           ((runtime_util.sqrt(dot(v1, v1, size)) * runtime_util.sqrt(dot(v2, v2, size))));
 }
 
 inline dims_t get_reduced_offset(gsl::span<const size_t> in_offset,

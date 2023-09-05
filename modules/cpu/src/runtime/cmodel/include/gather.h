@@ -42,21 +42,21 @@ void gather_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
         }
 
         // which index to be used in indices
-        dims_t indices_index(out_index.begin() + axis,
-                             out_index.begin() + axis + indices_shape.size());
-        auto indices_offset =
-            offset(get_default_strides(indices_shape), indices_index);
+        // dims_t indices_index(out_index.begin() + axis,
+        //                      out_index.begin() + axis + indices_shape.size());
+        // auto indices_offset =
+        //     offset((indices_shape), indices_index);
         // select sub block in dim axis
-        in_index[i_index] = indices[indices_offset];
-        ++i_index;
+        // in_index[i_index] = indices[indices_offset];
+        // ++i_index;
 
         // select position in sub block
         for (auto o_index = axis + indices_shape.size();
              o_index < out_index.size(); ++o_index, ++i_index) {
             in_index[i_index] = out_index[o_index];
         }
-        output[offset(out_strides, out_index)] =
-            input[offset(in_strides, in_index)];
+        // output[offset(out_strides, out_index)] =
+        //     input[offset(in_strides, in_index)];
     });
 }
 } // namespace
