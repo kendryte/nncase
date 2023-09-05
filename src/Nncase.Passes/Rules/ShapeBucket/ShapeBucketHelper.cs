@@ -197,6 +197,7 @@ public static class ShapeBucketRegister
     public static void Simplify(IPassManager p) =>
         p.AddWithName<DataflowPass>("Simplify").Configure(c =>
         {
+            c.Add<FoldRepeatMarker>();
             c.Add<FoldStackGetItem>();
             c.Add<FoldConstCall>();
             c.Add<FoldShapeOf>();

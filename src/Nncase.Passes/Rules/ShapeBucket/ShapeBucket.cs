@@ -93,7 +93,10 @@ public class BucketFusion : Fusion, IEquatable<BucketFusion>
 
             if (names.Count(x => x.Contains("Binary", StringComparison.Ordinal)) > 1)
             {
-                return false;
+                if (Body.CheckedShape.Rank > 2)
+                {
+                    return false;
+                }
             }
 
             return true;
