@@ -118,6 +118,9 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FoldTwoSlices>();
             p.Add<Passes.Rules.Neutral.FocusFull>();
             p.Add<Passes.Rules.Neutral.ReshapeMatMul>();
+            p.Add<Passes.Rules.Neutral.SplitSpaceToBatch>();
+            p.Add<Passes.Rules.Neutral.SplitBatchToSpace>();
+            p.Add<Passes.Rules.Neutral.FoldNopClamp>();
         });
         passManager.AddWithName<EGraphRulesPass>("NeutralOptimizeTranspose").Configure(p =>
         {
@@ -188,15 +191,13 @@ internal class Compiler : ICompiler
 
         CheckShapeBucketOptions(options);
         ToFusion(p);
-        MergeOp(p);
+        MergeOp(p, true);
         LostToFusion(p, singleVar);
-        MergeOp(p);
+        MergeOp(p, true);
         ClearMarker(p);
-
-        // MergeFusion(p, singleVar);
+        MergeFusion(p, singleVar, false);
         Bucket(p);
-
-        // Rebuild(p);
+        // Rebuild(p, singleVar);
         Simplify(p);
     }
 
