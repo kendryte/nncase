@@ -60,7 +60,78 @@ public class ShapeBucketTest : TransformTestBase
         Assert.True(cos > 0.999);
     }
 
-    private Var Scalar(string name) => new Var(new TensorType(DataTypes.Int32, Shape.Scalar));
+    [Fact]
+    public async Task TestSingleVarFusionBucket()
+    {
+        var mainVar = new Var(new TensorType(DataTypes.Float32, new[] { 1, Dimension.Unknown, 24, 24 }));
+        var dimVar = Scalar("dimVar");
+        CompileOptions.ShapeBucketOptions.Enable = true;
+        CompileOptions.ShapeBucketOptions.SegmentsCount = 2;
+        CompileOptions.ShapeBucketOptions.RangeInfo =
+            new Dictionary<string, (int Min, int Max)> { { "dimVar", (1, 20) } };
+        CompileOptions.ShapeBucketOptions.VarMap = new Dictionary<Var, Expr[]>{{mainVar, new Expr[]{1, dimVar, 24, 24}}};
+
+        var input = Testing.Rand<float>(1, 3, 24, 24);
+        var fusionVar = new Var(new TensorType(DataTypes.Float32, new[] { 1, Dimension.Unknown, 24, 24 }));
+        var f = new BucketFusion("MatMul_0", "stackvm", IR.F.Math.MatMul(fusionVar, fusionVar), new[] { fusionVar }, new[] { dimVar });
+        var main = new Function("main", new Call(f, mainVar), mainVar);
+        var shape = new Dictionary<BucketFusion, FusionShapeData[]>();
+        await new RecordFusionShape(shape).RunAsync(main, new());
+        TestMatchedCore(main.Body!,
+            new Dictionary<Var, IValue> { { mainVar, Value.FromTensor(input) } },
+            new FusionBucket(shape));
+    }
+
+    // todo: test this
+    // todo: 添加dimvar影响多个维度的情况
+    [Fact]
+    public async Task TestDoubleVarFusionBucket()
+    {
+        var mainVarLhs = new Var(new TensorType(DataTypes.Float32, new[] { 1, Dimension.Unknown, 24, 24 }));
+        var mainVarRhs = new Var(new TensorType(DataTypes.Float32, new[] { 1, Dimension.Unknown, 24, 24 }));
+        var dimVar1 = Scalar("dimVar1");
+        var dimVar2 = Scalar("dimVar2");
+        CompileOptions.ShapeBucketOptions.Enable = true;
+        CompileOptions.ShapeBucketOptions.SegmentsCount = 5;
+        CompileOptions.ShapeBucketOptions.RangeInfo =
+            new Dictionary<string, (int Min, int Max)>
+            {
+                { "dimVar1", (1, 20) },
+                { "dimVar2", (1, 20) },
+            };
+        CompileOptions.ShapeBucketOptions.VarMap = new Dictionary<Var, Expr[]>
+        {
+            {mainVarLhs, new Expr[]{1, dimVar1, 24, 24}},
+            {mainVarRhs, new Expr[]{1, dimVar2, 24, 24}}
+        };
+
+        var inputLhs = Testing.Rand<float>(1, 3, 24, 24);
+        var inputRhs = Testing.Rand<float>(1, 3, 24, 24);
+        var fusionVar = new Var(new TensorType(DataTypes.Float32, new[] { 1, Dimension.Unknown, 24, 24 }));
+        var f = new BucketFusion("MatMul_0", "stackvm", IR.F.Math.MatMul(fusionVar, fusionVar), new[] { fusionVar }, new[] { dimVar1 });
+        var main = new Function("main", new Call(f, mainVarLhs, mainVarRhs), mainVarLhs, mainVarRhs);
+        var shape = new Dictionary<BucketFusion, FusionShapeData[]>();
+        await new RecordFusionShape(shape).RunAsync(main, new());
+        TestMatchedCore(main.Body!,
+            new Dictionary<Var, IValue>
+            {
+                { mainVarLhs, Value.FromTensor(inputLhs) },
+                { mainVarRhs, Value.FromTensor(inputRhs) },
+            },
+            new FusionBucket(shape));
+    }
+
+
+    public void RunBucket(int range, Expr body, Var mainVar)
+    {
+        for (int i = 1; i <= range; i++)
+        {
+            var input = Testing.Rand<float>(1, i, 24, 24);
+            body.Evaluate(new Dictionary<Var, IValue> { { mainVar, Value.FromTensor(input) } });
+        }
+    }
+
+    private Var Scalar(string name) => new Var(name, new TensorType(DataTypes.Int32, Shape.Scalar));
 }
 
 [AutoSetupTestMethod(InitSession = true)]
@@ -356,8 +427,20 @@ public class TestMergePrevCallToFusion : TransformTestBase
 
     private static BucketFusion GetResultFusion(Expr result)
     {
+
         var fusion = (BucketFusion)((Call)result).Target;
         return fusion;
+    }
+
+    [Fact]
+    public async Task TestFoldNopTuple()
+    {
+        var input = (Expr)new[] { 1, 3, 24, 48 };
+        var t = new IR.Tuple(new []{input[0], input[1]});
+        var b = t[0] + t[1];
+        Dumpper.DumpIR(b, "b");
+        var result = await new FoldNopTuple().RunAsync(new Function(b), new());
+        Dumpper.DumpIR(result, "result");
     }
 
     private static Var MakeVar(Tensor<float> mainInput0) => new("input", new TensorType(mainInput0.ElementType, mainInput0.Shape));

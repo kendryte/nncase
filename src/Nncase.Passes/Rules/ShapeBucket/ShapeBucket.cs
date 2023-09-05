@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using System.Transactions;
 using DryIoc;
 using DryIoc.ImTools;
+using GiGraph.Dot.Types.Geometry;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Toolkit.HighPerformance;
 using NetFabric.Hyperlinq;
@@ -88,6 +89,11 @@ public class BucketFusion : Fusion, IEquatable<BucketFusion>
                 {
                     return false;
                 }
+            }
+
+            if (names.Count(x => x.Contains("Binary", StringComparison.Ordinal)) > 1)
+            {
+                return false;
             }
 
             return true;
