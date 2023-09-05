@@ -29,17 +29,15 @@ namespace Nncase.Importer.TFLite
             weights = F.Tensors.NHWCToNCHW(weights);
             var bias = GetInputExprs(op, 2);
             var options = op.BuiltinOptionsAsConv2DOptions();
-            var (inH, inW) = Util.GetHW(input);
-            var (fH, fW) = Util.GetHW(weights);
             var strideH = options.StrideH;
             var strideW = options.StrideW;
             var dilationH = options.DilationHFactor;
             var dilationW = options.DilationWFactor;
-            var padH = Util.GetWindowedPadding(inH, fH, strideH, dilationH, options.Padding == tflite.Padding.SAME);
-            var padW = Util.GetWindowedPadding(inW, fW, strideW, dilationW, options.Padding == tflite.Padding.SAME);
             var stride = Tensor.From<int>(new[] { strideH, strideW }, new[] { 2 });
             var dilation = Tensor.From<int>(new[] { dilationH, dilationW }, new[] { 2 });
-            var padding = Util.ConcatPadding(padH, padW);
+            var padding = Util.GetPaddings(input, weights, stride,
+                dilation, options.Padding == tflite.Padding.SAME, false);
+
             var clamp = ToFloatClampRange(options.FusedActivationFunction);
 
             var inputQuantParams = GetInputQuantParams(op, 0);
@@ -123,19 +121,16 @@ namespace Nncase.Importer.TFLite
             var bias = GetInputExprs(op, 2);
             input = F.Tensors.NHWCToNCHW(input);
             weights = F.Tensors.Transpose(weights, new[] { 3, 0, 1, 2 });
-            _ = GetTensorShape(GetInputTensor(op, 1));
             var options = op.BuiltinOptionsAsDepthwiseConv2DOptions();
-            var (inH, inW) = Util.GetHW(input);
-            var (fH, fW) = Util.GetHW(weights);
             var strideH = options.StrideH;
             var strideW = options.StrideW;
             var dilationH = options.DilationHFactor;
             var dilationW = options.DilationWFactor;
-            var padH = Util.GetWindowedPadding(inH, fH, strideH, dilationH, options.Padding == tflite.Padding.SAME);
-            var padW = Util.GetWindowedPadding(inW, fW, strideW, dilationW, options.Padding == tflite.Padding.SAME);
             var stride = Tensor.From<int>(new[] { strideH, strideW }, new[] { 2 });
             var dilation = Tensor.From<int>(new[] { dilationH, dilationW }, new[] { 2 });
-            var padding = Util.ConcatPadding(padH, padW);
+            var padding = Util.GetPaddings(input, weights, stride,
+                dilation, options.Padding == tflite.Padding.SAME, false);
+
             var depthMul = options.DepthMultiplier;
             if (depthMul != 1)
             {
