@@ -15,6 +15,8 @@
 #include <cmath>
 #include <runtime_utils.h>
 
+using namespace nncase::runtime::cpu;
+
 namespace kernels {
 
 namespace {
@@ -30,7 +32,10 @@ void softmax_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
     auto reduced_shape = get_reduced_shape(in_shape, axes, true);
     auto reduced_strides = get_default_strides(reduced_shape);
     auto reduced_size = compute_size(reduced_shape);
-    std::vector<T> tmp(reduced_size, std::numeric_limits<T>::lowest());
+    auto tmp = (T *)runtime_util.malloc(reduced_size * sizeof(T));
+    for (size_t i = 0; i < reduced_size; i++) {
+        tmp[i] = std::numeric_limits<T>().lowest();
+    }
 
     // reduce_max
     (apply(in_shape, [&](gsl::span<const size_t> index) -> void {
@@ -41,7 +46,7 @@ void softmax_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
         auto out_idx = offset(reduced_strides, out_index);
         auto &out = tmp[out_idx];
 
-        out = std::max(in, out);
+        out = in > out ? in : out;
     }));
 
     // x - reduce_max
@@ -57,7 +62,9 @@ void softmax_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
     }));
 
     // exp(x - reduce_max) and sum
-    tmp.assign(tmp.size(), static_cast<T>(0));
+    for (size_t i = 0; i < reduced_size; i++) {
+        tmp[i] = static_cast<T>(0);
+    }
     (apply(in_shape, [&](gsl::span<const size_t> index) -> void {
         auto in_idx = offset(out_strides, index);
         const auto in = output[in_idx];
@@ -78,7 +85,12 @@ void softmax_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
         auto &out = output[out_idx];
         out /= in;
         if (needLog) {
-            out = std::log(out);
+            if (std::is_same_v<T, float>) {
+                out = nncase_mt.float_unary_log(out);
+            } else {
+                runtime_util.rt_assert(
+                    false, (char *)"Not supported Type in softmax!");
+            }
         }
     }));
 }

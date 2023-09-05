@@ -34,7 +34,7 @@ template <typename T, loc_t Loc = loc_t::local> class tensor {
           strides_(get_default_strides(dims_)),
           size_(compute_size(dims_)) {
         if (size_ != data_.size()) {
-            throw std::errc::invalid_argument;
+            runtime_util.rt_assert(false, (char*)"Invalid tensor size");
         }
     }
 
@@ -45,7 +45,7 @@ template <typename T, loc_t Loc = loc_t::local> class tensor {
           strides_(strides),
           size_(compute_size(dims_, strides_)) {
         if (size_ != data_.size()) {
-            throw std::errc::invalid_argument;
+            runtime_util.rt_assert(false, (char*)"Invalid tensor size");
         }
     }
 

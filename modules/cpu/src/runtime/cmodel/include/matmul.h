@@ -35,9 +35,9 @@ void contiguous_matmul_impl(const T *input_a, const T *input_b, T *output,
     auto b_unit_size = new_b_shape[3] * new_b_shape[4];
     auto out_unit_size = new_a_shape[3] * new_b_shape[4];
 
-    auto dim0 = std::max(new_a_shape[0], new_b_shape[0]);
-    auto dim1 = std::max(new_a_shape[1], new_b_shape[1]);
-    auto dim2 = std::max(new_a_shape[2], new_b_shape[2]);
+    auto dim0 = new_a_shape[0]> new_b_shape[0]? new_a_shape[0] : new_b_shape[0];
+    auto dim1 = new_a_shape[1]> new_b_shape[1]? new_a_shape[1] : new_b_shape[1];
+    auto dim2 = new_a_shape[2]> new_b_shape[2]? new_a_shape[2] : new_b_shape[2];
     auto ah_size = a_unit_size * new_a_shape[2];
     auto bh_size = b_unit_size * new_b_shape[2];
     auto oh_size = out_unit_size * dim2;

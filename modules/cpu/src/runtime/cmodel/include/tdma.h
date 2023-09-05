@@ -155,7 +155,7 @@ template <typename T, loc_t BLoc>
 void concat(std::initializer_list<tensor<T, loc_t::local>> inits,
             tensor<T, BLoc> &output, size_t axis) {
     itlib::small_vector<const gsl::byte *const, 8> inputs(inits.size());
-    std::vector<strides_t> in_strides(inits.size());
+    itlib::small_vector<strides_t> in_strides(inits.size());
     auto concat_dims = dims_t(inits.size(), 1);
     for (size_t i = 0; i < inits.size(); ++i) {
         if (inits[i].dimension().size() != 0) {
@@ -273,7 +273,8 @@ template <class T, loc_t Src, loc_t Dest>
 void tdma_load_broadcast_async([[maybe_unused]] tensor<T, Dest> &dest,
                                [[maybe_unused]] tensor<T, Src> &src,
                                [[maybe_unused]] thread_context &ctx) {
-    throw std::system_error(std::make_error_code(std::errc::not_supported));
+    // throw std::system_error(std::make_error_code(std::errc::not_supported));
+    runtime_util.rt_assert(false, (char*)"not_supported");
 }
 
 template <class T>
@@ -287,7 +288,7 @@ void tdma_reduce_async(tensor<T, loc_t::local> &src,
             new_dims.insert(new_dims.begin(), BLOCKS * CORES);
             if (visited == 1) {
                 if (global_hardware_ctx.global_var != nullptr) {
-                    throw std::runtime_error(" the global var has been used!");
+                    runtime_util.rt_assert(false, (char*)"the global var has been used!");
                 }
                 gather_tensor = new tensor<T>(new_dims);
                 global_hardware_ctx.global_var = (void *)gather_tensor;
@@ -359,7 +360,7 @@ void tdma_all_reduce_async(tensor<T, ALoc> &src, tensor<T, BLoc> &dest,
             new_dims.insert(new_dims.begin(), BLOCKS * CORES);
             if (visited == 1) {
                 if (global_hardware_ctx.global_var != nullptr) {
-                    throw std::runtime_error(" the global var has been used!");
+                    runtime_util.rt_assert(false, (char*)"the global var has been used!");
                 }
                 gather_tensor = new tensor<T>(new_dims);
                 global_hardware_ctx.global_var = (void *)gather_tensor;

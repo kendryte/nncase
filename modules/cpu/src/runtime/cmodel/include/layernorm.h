@@ -5,6 +5,7 @@
 #include <riscv_vector.h>
 #endif
 
+using namespace nncase::runtime::cpu;
 namespace kernels {
 
 namespace {
@@ -26,8 +27,8 @@ void layernorm_naive_impl(const T *input, const T *sum, T *sum_sqr, T *output,
         if (rms_norm) {
             mean = 0;
         }
-        auto sigma =
-            std::sqrt(sum_sqr[o_offset] / norm_size - mean * mean + eps);
+        auto sigma = nncase_mt.float_unary_sqrt(sum_sqr[o_offset] / norm_size -
+                                                mean * mean + eps);
 
         auto input_offset = offset(input_stride, input_index);
         auto in_offset = offset(gamma_strides, input_index.subspan(axis));
@@ -142,8 +143,8 @@ template <class T>
 void layernorm(const T *input, T *sum, T *sum_sqr, T *output, T *gamma, T *beta,
                dims_t input_dims, strides_t input_strides,
                strides_t output_strides, strides_t sum_strides,
-               strides_t gamma_strides, T eps, int32_t axis,
-               int32_t norm_size, bool rms_norm = false) {
+               strides_t gamma_strides, T eps, int32_t axis, int32_t norm_size,
+               bool rms_norm = false) {
 #ifdef __riscv_vector
     return layernorm_rvv_impl(
         input, sum, sum_sqr, gamma, beta,
