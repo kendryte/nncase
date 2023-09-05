@@ -92,17 +92,9 @@ public class TransposeEvaluator : IEvaluator<Transpose>, ITypeInferencer<Transpo
 
     public Expr Visit(IShapeEvaluateContext context, Transpose target)
     {
+        var input = context.GetArgument(target, Transpose.Input);
         var perm = context.GetArgument(target, Transpose.Perm);
-        var rank = context.GetArgument(target, Transpose.Input).CheckedShape.Rank;
-        var permValue = IR.F.Tensors.Cast(perm, DataTypes.Int32);
-        var inShape = context.GetArgumentShape(target, Transpose.Input);
-        var outShape = Enumerable.Range(0, rank).Select(i => inShape[i]).ToArray();
-        for (int i = 0; i < rank; i++)
-        {
-            outShape[i] = inShape[permValue[i]];
-        }
-
-        return IR.F.Tensors.Stack(new IR.Tuple(outShape), 0);
+        return IR.F.ShapeExpr.TransposeShape(input, perm);
     }
 
     private IRType Visit(ITypeInferenceContext context, Transpose target, TensorType input)

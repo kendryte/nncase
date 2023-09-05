@@ -53,32 +53,9 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
 
     public Expr Visit(IShapeEvaluateContext context, Reshape target)
     {
+        var input = context.GetArgument(target, Reshape.Input);
         var shape = context.GetArgument(target, Reshape.Shape);
-        var inputShape = Cast(context.GetArgumentShape(target, Reshape.Input), DataTypes.Int32);
-        if (shape is TensorConst shapeConst)
-        {
-            var shapeArray = shapeConst.Value.ToArray<int>();
-            var negIndex = shapeArray.IndexOf(-1);
-            if (negIndex < 0)
-            {
-                return shapeArray;
-            }
-
-            var dim = Prod(inputShape) / System.Math.Abs(shapeArray.Aggregate((s, x) => x * s));
-            var rhs = shapeArray.Select((_, i) => i == negIndex ? dim + 1 : (Expr)0).ToArray();
-            var newShape = Stack(new IR.Tuple(rhs), 0);
-
-            // dim = Product(inShape) / Produce(Reshape.Shape)
-            // e.g. [1, 3, -1, 24] + [dim + 1, 0] = [1, 3, dim, 24]
-            return newShape + shapeArray;
-        }
-
-        shape = Cast(shape, DataTypes.Int32);
-        var iSize = Prod(inputShape);
-        var sSize = Prod(shape);
-        var negDimInfactValue = iSize / Abs(sSize);
-        var index = IndexOf(shape, -1);
-        return new If(sSize < 0, ShapeExprUtility.Replace(shape, index, negDimInfactValue), shape);
+        return IR.F.ShapeExpr.ReshapeShape(input, shape);
     }
 
     public Metric Visit(IMetricEvaluateContext context, Reshape target)

@@ -43,29 +43,9 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
 
     public Expr Visit(IShapeEvaluateContext context, Unsqueeze target)
     {
+        var input = context.GetArgument(target, Unsqueeze.Input);
         var dims = context.GetArgument(target, Unsqueeze.Dim);
-        if (dims is TensorConst dimsConst)
-        {
-            var dimsValue = dimsConst.Value.ToArray<int>();
-            var outShape = context.GetArgumentShape(target, Unsqueeze.Input);
-
-            foreach (var dimVal in dimsValue)
-            {
-                if (dimVal >= 0)
-                {
-                    outShape = ShapeExprUtility.Insert(outShape, dimVal, 1);
-                }
-                else
-                {
-                    var index = IR.F.Math.Max(IR.F.Tensors.Cast(IR.F.Tensors.ShapeOf(outShape)[0], DataTypes.Int32) + dimVal + 1, 0);
-                    outShape = ShapeExprUtility.Insert(outShape, index, 1);
-                }
-            }
-
-            return outShape;
-        }
-
-        throw new NotImplementedException();
+        return IR.F.ShapeExpr.UnsqueezeShape(input, dims);
     }
 
     public Metric Visit(IMetricEvaluateContext context, Unsqueeze target) => Metric.Zero;
