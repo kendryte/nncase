@@ -151,7 +151,7 @@ class UnaryTest : public KernelTest,
         case dt_float16: {
             std::random_device rd;
             std::mt19937 gen(rd());
-            std::uniform_real_distribution<float> dis(0.0f, 100000.0f);
+            std::uniform_real_distribution<float> dis(0.0f, 10000.0f);
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](gsl::span<const size_t> index) -> result<void> {
