@@ -144,11 +144,7 @@ public sealed class Compile : Command
         var target = CompilerServices.GetTarget(cliOptions.Target);
         using var compileSession = CompileSession.Create(target, compileOptions);
         var compiler = compileSession.Compiler;
-        IRModule module;
-        using (var model_stream = File.OpenRead(compileOptions.InputFile))
-        {
-            module = await compiler.ImportModuleAsync(model_stream);
-        }
+        var module = await compiler.ImportModuleAsync(compileOptions.InputFormat, compileOptions.InputFile);
 
         // 3. create the calib dataset
         if (compileOptions.QuantizeOptions.ModelQuantMode == Quantization.ModelQuantMode.UsePTQ)

@@ -15,6 +15,7 @@ using static Nncase.PatternMatch.Utility;
 using static Nncase.Utilities.ReplaceUtility;
 
 namespace Nncase.Passes.Rules.ShapeBucket;
+
 public abstract class MergeFusionBase : RewriteRule<Pattern>
 {
     protected int Counter { get; set; }
