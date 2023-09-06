@@ -15,12 +15,8 @@ using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Passes.EGraphExtractors;
 
-internal interface IExtractor
-{
-    Expr Extract(EClass root, IEGraph eGraph);
-}
-
-internal class Extractor : IExtractor
+#if false
+internal class Extractor : IEGraphExtractor
 {
     private readonly EGraphCostModel _costModel;
     private readonly Dictionary<EClass, Expr> _eclassMemo = new();
@@ -187,3 +183,4 @@ internal class Extractor : IExtractor
         return call.With(target: target, arguments: arguments.ToArray(), call.Metadata);
     }
 }
+#endif

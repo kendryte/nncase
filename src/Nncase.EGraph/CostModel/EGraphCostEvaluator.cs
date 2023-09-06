@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Nncase.CostModel;
 using Nncase.Evaluator;
@@ -12,21 +13,110 @@ using Nncase.Passes;
 
 namespace Nncase.CostModel;
 
-internal sealed class EGraphCostEvaluator
+internal sealed class OneShotEGraphCostEvaluator
 {
-    private readonly EClass _root;
     private readonly Dictionary<ENode, Cost> _costs = new(ReferenceEqualityComparer.Instance);
     private readonly Dictionary<EClass, Cost> _eclassCosts = new();
     private readonly HashSet<EClass> _allEclasses = new();
-    private readonly IBaseFuncCostEvaluator? _baseFuncCostEvaluator;
+    private EClass? _root;
+
+    public OneShotEGraphCostEvaluator(ICostEvaluateProvider provider)
+    {
+        CostEvaluateProvider = provider;
+    }
+
+    public ICostEvaluateProvider CostEvaluateProvider { get; }
+
+    public EGraphCostModel Evaluate(EClass root)
+    {
+        if (_root is null)
+        {
+            _root = root;
+            PopulateAllEclasses(root);
+        }
+
+        var pinner = new ExprPinner(_allEclasses.Select(e => e.Nodes).SelectMany(e => e).Select(e => e.Expr).ToArray());
+
+        foreach (var eclass in _allEclasses)
+        {
+            foreach (var enode in eclass.Nodes)
+            {
+                if (!_costs.TryGetValue(enode, out var cost))
+                {
+                    cost = enode.Expr switch
+                    {
+                        Call call => Visit(enode, call, eclass.CheckedType),
+                        _ => Cost.Zero,
+                    };
+                    _costs.Add(enode, cost);
+                }
+            }
+        }
+
+        return new(_costs);
+    }
+
+    private Cost Visit(ENode enode, Call call, IRType returnType)
+    {
+        Cost cost = Cost.Zero;
+        foreach (var targetEnode in enode.Children[0].Nodes)
+        {
+            if (targetEnode.Expr is Op op)
+            {
+                var context = new EGraphCallCostEvaluateContext(returnType, enode.Children.Skip(1).Select(x => x.CheckedType).ToArray(), enode.Children.Skip(1).ToArray());
+                cost = CostEvaluateProvider.EvaluateOpCost(op, context);
+            }
+            else if (targetEnode.Expr is BaseFunction baseFunction)
+            {
+                var context = new EGraphCallCostEvaluateContext(returnType, enode.Children.Skip(1).Select(x => x.CheckedType).ToArray(), enode.Children.Skip(1).ToArray());
+                cost = CostEvaluateProvider.EvaluateBaseFuncCost(baseFunction, context);
+            }
+        }
+
+        return cost;
+    }
+
+    private void PopulateAllEclasses(EClass eClass)
+    {
+        if (!_allEclasses.Contains(eClass))
+        {
+            _allEclasses.Add(eClass);
+            foreach (var node in eClass.Nodes)
+            {
+                foreach (var child in node.Children)
+                {
+                    PopulateAllEclasses(child);
+                }
+            }
+        }
+    }
+}
+
+#if false
+internal sealed class EGraphCostEvaluator : IEGraphCostEvaluator
+{
+    private EClass _root;
+    private readonly Dictionary<ENode, Cost> _costs = new(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<EClass, Cost> _eclassCosts = new();
+    private readonly HashSet<EClass> _allEclasses = new();
+    private IBaseFuncCostEvaluator? _baseFuncCostEvaluator;
+    private ICostEvaluator? _costEvaluator;
     private readonly bool _accumulate;
     private bool _changed;
 
-    public EGraphCostEvaluator(EClass root, IBaseFuncCostEvaluator? basefunc_cost_evaluator, bool accumulate = true)
+    public EGraphCostEvaluator()
+    {
+        _root = null!;
+        _accumulate = true;
+        _baseFuncCostEvaluator = null;
+        _costEvaluator = null;
+    }
+
+    public void SetUp(EClass root, IBaseFuncCostEvaluator? basefuncCostEvaluator, ICostEvaluator? costEvaluator)
     {
         _root = root;
-        _accumulate = accumulate;
-        _baseFuncCostEvaluator = basefunc_cost_evaluator;
+        _baseFuncCostEvaluator = basefuncCostEvaluator;
+        _costEvaluator = costEvaluator;
         PopulateAllEclasses(_root);
     }
 
@@ -161,10 +251,11 @@ internal sealed class EGraphCostEvaluator
             foreach (var targetEnode in enode.Children[0].Nodes)
             {
                 Cost? newCost;
+                var pinner = new ExprPinner(call);
                 if (targetEnode.Expr is Op op)
                 {
-                    var context = new EGraphOpCostEvaluateContext(returnType, enode.Children.Skip(1).Select(x => x.CheckedType).ToArray(), enode.Children.Skip(1).ToArray());
-                    newCost = CompilerServices.EvaluateOpCost(op, context);
+                    var context = new EGraphCallCostEvaluateContext(returnType, enode.Children.Skip(1).Select(x => x.CheckedType).ToArray(), enode.Children.Skip(1).ToArray());
+                    newCost = _costEvaluator?.Visit(context, op) ?? CompilerServices.EvaluateOpCost(op, context);
                 }
                 else
                 {
@@ -184,7 +275,7 @@ internal sealed class EGraphCostEvaluator
 
     private Cost? Visit(ENode enode, BaseFunction baseFunction)
     {
-        return VisitLeaf(enode, () => _baseFuncCostEvaluator?.VisitLeaf(baseFunction) ?? Cost.Zero);
+        return VisitLeaf(enode, () => _baseFuncCostEvaluator?.Visit(baseFunction) ?? Cost.Zero);
     }
 
     private Cost? UpdateCost(ENode enode, Cost? cost)
@@ -278,25 +369,19 @@ internal sealed class EGraphCostEvaluator
         return UpdateCost(enode, cost);
     }
 }
+#endif
 
-internal sealed class EGraphOpCostEvaluateContext : ICostEvaluateContext
+internal sealed class EGraphCallCostEvaluateContext : ICostEvaluateContext
 {
     private readonly IRType? _returnType;
     private readonly IRType?[] _argumentTypes;
     private readonly EClass[] _arguments;
 
-    public EGraphOpCostEvaluateContext(IRType? returnType, IRType?[] argumentTypes, EClass[] arguments)
+    public EGraphCallCostEvaluateContext(IRType? returnType, IRType?[] argumentTypes, EClass[] arguments)
     {
         _returnType = returnType;
         _argumentTypes = argumentTypes;
         _arguments = arguments;
-    }
-
-    public T GetArgument<T>(Op op, ParameterInfo parameter)
-      where T : BaseFunction
-    {
-        System.Diagnostics.Trace.Assert(_arguments[parameter.Index].Nodes.Count == 1);
-        return (T)_arguments[parameter.Index].Nodes[0].Expr;
     }
 
     public T GetArgumentType<T>(Op op, ParameterInfo parameter)
@@ -316,5 +401,22 @@ internal sealed class EGraphOpCostEvaluateContext : ICostEvaluateContext
         where T : IRType
     {
         return (T?)_returnType ?? throw new InvalidOperationException("Run type infer first.");
+    }
+
+    public bool TryGetConstArgument(Op op, ParameterInfo parameter, [MaybeNullWhen(false)] out Const @const)
+    {
+        var ret = false;
+        @const = null;
+        foreach (var node in _arguments[parameter.Index].Nodes)
+        {
+            if (node.Expr is Const c)
+            {
+                @const = c;
+                ret = true;
+                break;
+            }
+        }
+
+        return ret;
     }
 }

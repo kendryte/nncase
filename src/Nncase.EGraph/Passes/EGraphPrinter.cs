@@ -149,7 +149,7 @@ public partial class EGraphPrinter
                         IR.Const => new DotStyledFont(DotFontStyles.Normal, Color.DarkOrange),
                         IR.Call => new DotStyledFont(DotFontStyles.Normal, Color.DarkBlue),
                         IR.Var => new DotStyledFont(DotFontStyles.Normal, Color.BlueViolet),
-                        IR.Fusion => new DotStyledFont(DotFontStyles.Normal, Color.MediumSeaGreen),
+                        IR.Fusion => new DotStyledFont(DotFontStyles.Normal, Color.Maroon),
                         _ => new DotStyledFont(DotFontStyles.Normal),
                     };
                     row.AddCell(_visitor.Visit(enode.Expr), font); // key wrods type.

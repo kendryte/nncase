@@ -28,11 +28,11 @@ public partial class EGraphPrinter
     {
         var printer = new EGraphPrinter(eGraph);
         printer.ConvertEGraphAsDot();
-        printer.AttachEGraphCostPick(costModel, pick);
+        printer.AttachEGraphCostPick(costModel, entry, pick);
         return printer.SaveToStream(file);
     }
 
-    private DotGraph AttachEGraphCostPick(CostModel.EGraphCostModel costModel, IReadOnlyDictionary<ENode, bool> pick)
+    private DotGraph AttachEGraphCostPick(CostModel.EGraphCostModel costModel, EClass entry, IReadOnlyDictionary<ENode, bool> pick)
     {
         // 1. display each enode costs.
         foreach (var (enode, (dotnode, table)) in NodesMap)
@@ -54,14 +54,34 @@ public partial class EGraphPrinter
             dotnode.ToPlainHtmlNode(table);
         }
 
-        foreach (var (enode, picked) in pick)
-        {
-            if (picked && NodesMap.TryGetValue(enode, out var p))
-            {
-                p.Node.Color = Color.DeepSkyBlue;
-            }
-        }
+        ReColor(entry, pick, new());
 
         return _dotGraph;
+    }
+
+    private void ReColor(EClass entry, IReadOnlyDictionary<ENode, bool> pick, HashSet<ENode> paths)
+    {
+        foreach (var pickedNode in entry.Nodes.Where(n => pick.TryGetValue(n, out var picked) && picked))
+        {
+            ReColor(pickedNode, pick, paths);
+        }
+    }
+
+    private void ReColor(ENode entry, IReadOnlyDictionary<ENode, bool> pick, HashSet<ENode> paths)
+    {
+        if (!paths.Contains(entry))
+        {
+            foreach (var eclass in entry.Children)
+            {
+                ReColor(eclass, pick, paths);
+            }
+
+            if (NodesMap.TryGetValue(entry, out var dotNode))
+            {
+                dotNode.Node.Color = Color.DeepSkyBlue;
+            }
+
+            paths.Add(entry);
+        }
     }
 }

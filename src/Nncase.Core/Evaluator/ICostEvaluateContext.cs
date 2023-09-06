@@ -35,12 +35,11 @@ public interface ICostEvaluateContext
      where T : IRType;
 
     /// <summary>
-    /// Get base function argument.
+    /// Try Get the const argument.
     /// </summary>
-    /// <typeparam name="T">Argument type.</typeparam>
-    /// <param name="op">Operator.</param>
-    /// <param name="parameter">Parameter.</param>
-    /// <returns>Casted argument type.</returns>
-    public T GetArgument<T>(Op op, ParameterInfo parameter)
-      where T : BaseFunction;
+    /// <param name="op">target.</param>
+    /// <param name="parameter">param info.</param>
+    /// <param name="const">out const.</param>
+    /// <returns>bool.</returns>
+    public bool TryGetConstArgument(Op op, ParameterInfo parameter, [System.Diagnostics.CodeAnalysis.MaybeNullWhen(false)] out Const @const);
 }

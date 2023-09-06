@@ -14,6 +14,16 @@
         "resolved": "6.6.4",
         "contentHash": "vLZS+oa+ndUHYPlx/8n9bBTT3dHkCF0riml4paKq4D663+cZd47x1uagQo32D/gKFZ/sfmV1oqKaLmH0elxq4A=="
       },
+      "HttpMultipartParser": {
+        "type": "Direct",
+        "requested": "[8.2.0, )",
+        "resolved": "8.2.0",
+        "contentHash": "XpM0qTUm5WDtPwPA9JUsqzco1XNLGoxHK/aMgmgbULVUhGJ9OT/ZDu7QQbSIrIWLARcad0b9LqaPMr1lOCGbAw==",
+        "dependencies": {
+          "Microsoft.IO.RecyclableMemoryStream": "2.2.1",
+          "System.Buffers": "4.5.1"
+        }
+      },
       "MethodBoundaryAspect.Fody": {
         "type": "Direct",
         "requested": "[2.0.148, )",
@@ -441,6 +451,11 @@
         "dependencies": {
           "System.Runtime.CompilerServices.Unsafe": "6.0.0"
         }
+      },
+      "Microsoft.IO.RecyclableMemoryStream": {
+        "type": "Transitive",
+        "resolved": "2.2.1",
+        "contentHash": "T5ahjOqWFMTSb9wFHKFNAcGXm35BxbUbwARtAPLSSPPFehcLz5mwDsKO1RR9R2aZ2Lk1BNQC7Ja63onOBE6rpA=="
       },
       "Microsoft.NETCore.Platforms": {
         "type": "Transitive",

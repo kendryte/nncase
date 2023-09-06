@@ -21,10 +21,12 @@ namespace Nncase.Passes;
 internal class EGraphRewriteProvider : IEGraphRewriteProvider
 {
     private readonly ILogger _logger;
+    private readonly IEGraphExtractor _extractor;
 
-    public EGraphRewriteProvider(ILogger<EGraphRewriteProvider> logger)
+    public EGraphRewriteProvider(ILogger<EGraphRewriteProvider> logger, IEGraphExtractor extractor)
     {
         _logger = logger;
+        _extractor = extractor;
     }
 
     public Expr ERewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassContext options)
@@ -36,7 +38,7 @@ internal class EGraphRewriteProvider : IEGraphRewriteProvider
 
         var graph = new EGraph(expr);
         ERewrite(graph, rules, options);
-        var post = graph.Extract(graph.Root!, null);
+        var post = _extractor.Extract(graph.Root!.Find(), graph);
         return post;
     }
 

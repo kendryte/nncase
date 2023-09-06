@@ -21,39 +21,6 @@ namespace Nncase.Passes;
 public static class EGraphExtractExtensions
 {
     /// <summary>
-    /// Extract egraph.
-    /// </summary>
-    /// <param name="eGraph">eGraph.</param>
-    /// <param name="root">Root eclass.</param>
-    /// <param name="basefunc_cost_evaluator">base func cost evaluator.</param>
-    /// <returns>Extracted root expression.</returns>
-    public static Expr Extract(this IEGraph eGraph, EClass root, Evaluator.IBaseFuncCostEvaluator? basefunc_cost_evaluator)
-    {
-        // 1. set the all expr checked shape
-        foreach (var eclass in eGraph.Classes)
-        {
-            foreach (var nodes in eclass.Nodes)
-            {
-                if (eclass.CheckedType.CompareTo(nodes.Expr.CheckedType) > 0)
-                {
-                    nodes.Expr.CheckedType = eclass.CheckedType;
-                }
-            }
-        }
-
-        // 2. start the cost evaluator
-        var costModel = new EGraphCostEvaluator(root.Find(), basefunc_cost_evaluator, false).Evaluate();
-
-        // if (DumpScope.Current.IsEnabled(DumpFlags.EGraphCost))
-        // {
-        //     using var fs = DumpScope.Current.OpenFile(Path.Combine("Costs", $"V{eGraph.Version}.dot"));
-        //     EGraphPrinter.DumpEgraphAsDot(eGraph, costModel, root.Find(), fs);
-        // }
-        // return new EGraphExtractor(costModel).Extract(root.Find(), eGraph);
-        return new EGraphExtractors.SatExtractor(costModel).Extract(root.Find(), eGraph);
-    }
-
-    /// <summary>
     /// find the minCostEnode in eclass.
     /// <remarks>
     /// the marker first.

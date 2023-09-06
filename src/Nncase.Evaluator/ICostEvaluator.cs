@@ -35,7 +35,7 @@ public interface IBaseFuncCostEvaluator
     /// </summary>
     /// <param name="target">Target Fusion/Primfunc/PrimfuncWrapper.</param>
     /// <returns>The base function costs.</returns>
-    Cost VisitLeaf(BaseFunction target);
+    Cost Visit(BaseFunction target);
 }
 
 /// <summary>

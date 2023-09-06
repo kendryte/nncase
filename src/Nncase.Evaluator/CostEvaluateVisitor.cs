@@ -42,6 +42,7 @@ internal sealed class CostEvaluateVisitor : ExprVisitor<Cost, Unit>
         {
             Op op => CompilerServices.EvaluateOpCost(op, _context),
             Function func => CompilerServices.EvaluateCost(func.Body),
+            Fusion fusion => CompilerServices.EvaluateCost(fusion.Body),
             _ => throw new NotImplementedException(expr.Target.ToString()),
         };
         return argumentsCost + targetCost;

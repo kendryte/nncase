@@ -11,6 +11,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="HttpMultipartParser" />
     <PackageReference Include="MethodBoundaryAspect.Fody" />
     <PackageReference Include="Tomlyn.Extensions.Configuration" />
     <PackageReference Include="System.Linq.Async" />

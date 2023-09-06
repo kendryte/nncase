@@ -1,6 +1,15 @@
 ﻿name: compiler-build
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      debug_enabled:
+        type: boolean
+        description: 'Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'
+        required: false
+        default: false
 env:
   NUGET_CERT_REVOCATION_MODE: offline
   NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
@@ -122,6 +131,7 @@ jobs:
                 <EnvironmentVariables>
                   <LD_LIBRARY_PATH>${{github.workspace}}/install/lib</LD_LIBRARY_PATH>
                   <DYLD_LIBRARY_PATH>${{github.workspace}}/install/lib</DYLD_LIBRARY_PATH>
+                  <PATH>${{github.workspace}}/install/bin</PATH>
                 </EnvironmentVariables>
               </RunConfiguration>
             </RunSettings>
@@ -131,6 +141,12 @@ jobs:
         run: |
           echo "PATH=${env:PATH};${env:GITHUB_WORKSPACE}/install/bin" >> $env:GITHUB_ENV
         if: runner.os == 'Windows'
+
+      - name: Set up test environment (Linux & Macos)
+        shell: pwsh
+        run: |
+          chmod +x ${env:GITHUB_WORKSPACE}/install/bin/nncasetest_cli
+        if: runner.os != 'Windows'
 
       - name: Dotnet Test
         working-directory: ${{github.workspace}}

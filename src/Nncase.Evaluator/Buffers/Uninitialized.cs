@@ -12,7 +12,7 @@ namespace Nncase.Evaluator.Buffers;
 /// <summary>
 /// Evaluator for <see cref="Uninitialized"/>.
 /// </summary>
-public class UninitializedEvaluator : IEvaluator<Uninitialized>, ITypeInferencer<Uninitialized>, ICostEvaluator<Uninitialized>
+public sealed class UninitializedEvaluator : IEvaluator<Uninitialized>, ITypeInferencer<Uninitialized>, ICostEvaluator<Uninitialized>
 {
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Uninitialized target)
