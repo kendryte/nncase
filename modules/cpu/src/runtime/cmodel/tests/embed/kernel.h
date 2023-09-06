@@ -8,18 +8,18 @@ using namespace shared;
 #define DUMP 0
 
 void stage1_kernel(
-    tensor<int64_t, loc_t::device> &Position_ids, /* [1, 384] */
-    tensor<float, loc_t::device> &GatherData,   /* [32000, 8192] */
-    tensor<float, loc_t::device> &Output          /* [1, 384, 8192] */
+    [[maybe_unused]] tensor<int64_t, loc_t::device> &Position_ids, /* [1, 384] */
+    [[maybe_unused]] tensor<float, loc_t::device> &GatherData,   /* [32000, 8192] */
+    [[maybe_unused]] tensor<float, loc_t::device> &Output          /* [1, 384, 8192] */
 ) {
     thread_context ctx(bid, tid);
     tensor<int64_t> position_ids({1, 384});
-    tensor<float> gather_data({32000, 256});
+    tensor<float> gather_data({384, 256});
     tensor<float> output({1, 384, 256});
 
     tdma_load_async(position_ids, std::move(Position_ids), ctx);
     tdma_load_async(gather_data,
-                    GatherData({0, 256 * (CORES * bid + tid)}, {32000, 256}),
+                    GatherData({0, 256 * (CORES * bid + tid)}, {384, 256}),
                     ctx);
     gather(gather_data, position_ids, output, 0);
 
