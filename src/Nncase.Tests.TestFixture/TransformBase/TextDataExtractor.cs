@@ -151,6 +151,6 @@ public class TextDataExtractor
 
     private bool FileFilter(string name)
     {
-        return name != ".DS_Store" && !name.EndsWith("extcall");
+        return name != ".DS_Store" && !name.EndsWith("extcalll");
     }
 }
