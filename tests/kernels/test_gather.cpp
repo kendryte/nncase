@@ -44,7 +44,7 @@ class GatherTest : public KernelTest,
         init_tensor(input);
 
         int64_t indices_array[] = {0, 0, -1, -1};
-        indices = hrt::create(dt_int64, {4},
+        indices = hrt::create(dt_int64, indices_shape,
                               {reinterpret_cast<gsl::byte *>(indices_array),
                                sizeof(indices_array)},
                               true, host_runtime_tensor::pool_cpu_only)
