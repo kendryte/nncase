@@ -35,6 +35,7 @@ class GatherElementsTest : public KernelTest,
         READY_SUBCASE()
 
         auto shape = GetShapeArray("lhs_shape");
+        auto indices_shape = GetShapeArray("indices_shape");
         auto value = GetNumber("axis");
         auto typecode = GetDataType("lhs_type");
 
@@ -43,7 +44,7 @@ class GatherElementsTest : public KernelTest,
         init_tensor(input);
 
         int64_t indices_array[] = {0, 0, 1, 1};
-        indices = hrt::create(dt_int64, {2, 2},
+        indices = hrt::create(dt_int64, indices_shape,
                               {reinterpret_cast<gsl::byte *>(indices_array),
                                sizeof(indices_array)},
                               true, host_runtime_tensor::pool_cpu_only)
@@ -110,12 +111,15 @@ TEST_P(GatherElementsTest, gather_elements) {
 int main(int argc, char *argv[]) {
     READY_TEST_CASE_GENERATE()
     FOR_LOOP(lhs_shape, i)
+    FOR_LOOP(indices_shape, l)
     FOR_LOOP(axis, j)
     FOR_LOOP(lhs_type, k)
     SPLIT_ELEMENT(lhs_shape, i)
+    SPLIT_ELEMENT(indices_shape, l)
     SPLIT_ELEMENT(axis, j)
     SPLIT_ELEMENT(lhs_type, k)
     WRITE_SUB_CASE()
+    FOR_LOOP_END()
     FOR_LOOP_END()
     FOR_LOOP_END()
     FOR_LOOP_END()
