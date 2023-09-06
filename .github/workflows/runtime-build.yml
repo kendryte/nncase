@@ -1,14 +1,9 @@
 name: runtime-build
 
-on:
-  push:
-    branches: [master, release/1.0, release/2.0]
-  pull_request:
-    branches: ['*']
-    types: [opened, synchronize]
+on: [push, pull_request]
 
 concurrency:
-  group: ${{ github.workflow }}
+  group: ${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
