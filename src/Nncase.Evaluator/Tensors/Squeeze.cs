@@ -38,7 +38,7 @@ public class SqueezeEvaluator : IEvaluator<Squeeze>, ITypeInferencer<Squeeze>, I
 
     public Expr Visit(IShapeEvaluateContext context, Squeeze target)
     {
-        var input = context.GetArgument(target, Squeeze.Input);
+        var input = context.GetArgumentShape(target, Squeeze.Input);
         var dims = context.GetArgument(target, Squeeze.Dim);
         return IR.F.ShapeExpr.SqueezeShape(input, dims);
     }

@@ -43,7 +43,7 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
 
     public Expr Visit(IShapeEvaluateContext context, Unsqueeze target)
     {
-        var input = context.GetArgument(target, Unsqueeze.Input);
+        var input = context.GetArgumentShape(target, Unsqueeze.Input);
         var dims = context.GetArgument(target, Unsqueeze.Dim);
         return IR.F.ShapeExpr.UnsqueezeShape(input, dims);
     }

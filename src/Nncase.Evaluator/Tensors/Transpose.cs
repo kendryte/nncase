@@ -92,9 +92,9 @@ public class TransposeEvaluator : IEvaluator<Transpose>, ITypeInferencer<Transpo
 
     public Expr Visit(IShapeEvaluateContext context, Transpose target)
     {
-        var input = context.GetArgument(target, Transpose.Input);
+        var inShape = context.GetArgumentShape(target, Transpose.Input);
         var perm = context.GetArgument(target, Transpose.Perm);
-        return IR.F.ShapeExpr.TransposeShape(input, perm);
+        return IR.F.ShapeExpr.TransposeShape(inShape, perm);
     }
 
     private IRType Visit(ITypeInferenceContext context, Transpose target, TensorType input)

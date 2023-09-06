@@ -16,9 +16,9 @@ public partial class ReshapeShapeEvaluator : IEvaluator<ReshapeShape>, ITypeInfe
 {
     public IValue Visit(IEvaluateContext context, ReshapeShape target)
     {
-        var input = context.GetArgumentValueAsTensor(target, ReshapeShape.Input);
+        var inShape = context.GetArgumentValueAsArray<int>(target, ReshapeShape.InputShape);
         var shape = context.GetArgumentValueAsTensor(target, ReshapeShape.Shape);
-        var t = IR.F.Tensors.Reshape(input, shape);
+        var t = IR.F.Tensors.Reshape(new Var(new TensorType(DataTypes.Float32, inShape)), shape);
         return ShapeExprUtility.GetShapeValue(t);
     }
 

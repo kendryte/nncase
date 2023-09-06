@@ -91,13 +91,13 @@ public class BucketFusion : Fusion, IEquatable<BucketFusion>
                 }
             }
 
-            if (names.Count(x => x.Contains("Binary", StringComparison.Ordinal)) > 1)
-            {
-                if (Body.CheckedShape.Rank > 2)
-                {
-                    return false;
-                }
-            }
+            // if (names.Count(x => x.Contains("Binary", StringComparison.Ordinal)) > 1)
+            // {
+            //     if (Body.CheckedShape.Rank > 2)
+            //     {
+            //         return false;
+            //     }
+            // }
 
             return true;
         }
@@ -1161,7 +1161,13 @@ public partial class FusionBucket : RewriteRule<Pattern>
         var body = Split(context, info);
         body.InferenceType();
 
-        if (body.Users.Count > 1 || body.CheckedType is InvalidType)
+        if (body.CheckedType is InvalidType)
+        {
+            DumpIR(body, "InvalidBody");
+            throw new InvalidOperationException();
+        }
+
+        if (body.Users.Count > 1)
         {
             throw new InvalidOperationException();
         }

@@ -53,9 +53,9 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
 
     public Expr Visit(IShapeEvaluateContext context, Reshape target)
     {
-        var input = context.GetArgument(target, Reshape.Input);
+        var inShape = context.GetArgumentShape(target, Reshape.Input);
         var shape = context.GetArgument(target, Reshape.Shape);
-        return IR.F.ShapeExpr.ReshapeShape(input, shape);
+        return IR.F.ShapeExpr.ReshapeShape(inShape, shape);
     }
 
     public Metric Visit(IMetricEvaluateContext context, Reshape target)

@@ -16,17 +16,21 @@ public partial class UnsqueezeShapeEvaluator : IEvaluator<UnsqueezeShape>, IType
 {
     public IValue Visit(IEvaluateContext context, UnsqueezeShape target)
     {
-        var input = context.GetArgumentValueAsTensor(target, UnsqueezeShape.Input);
+        var inShape = context.GetArgumentValueAsArray<int>(target, UnsqueezeShape.InputShape);
         var dims = context.GetArgumentValueAsTensor(target, UnsqueezeShape.Dim);
-        var t = IR.F.Tensors.Unsqueeze(input, dims);
+        var t = IR.F.Tensors.Unsqueeze(new Var(new TensorType(DataTypes.Float32, inShape)), dims);
         return ShapeExprUtility.GetShapeValue(t);
     }
 
     public IRType Visit(ITypeInferenceContext context, UnsqueezeShape target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, UnsqueezeShape.Input);
+        var input = context.GetArgument(target, UnsqueezeShape.InputShape);
         var dims = context.CheckArgumentType<TensorType>(target, UnsqueezeShape.Dim);
-        return new TensorType(DataTypes.Int64, new[] { input.Shape.Rank + dims.Shape[0] });
+        if (!input.CheckedShape.IsFixed)
+        {
+            return new TensorType(DataTypes.Int64, new[] { Dimension.Unknown });
+        }
+        return new TensorType(DataTypes.Int64, new[] { input.CheckedShape.Size + dims.Shape[0] });
     }
 
     public Cost Visit(ICostEvaluateContext context, UnsqueezeShape target)
@@ -36,9 +40,9 @@ public partial class UnsqueezeShapeEvaluator : IEvaluator<UnsqueezeShape>, IType
 
     public Expr Visit(IShapeEvaluateContext context, UnsqueezeShape target)
     {
-        var input = context.GetArgument(target, UnsqueezeShape.Input);
+        var input = context.GetArgument(target, UnsqueezeShape.InputShape);
         var dims = context.GetArgument(target, UnsqueezeShape.Dim);
-        return new[] { input.CheckedShape.Rank + dims.CheckedShape[0].FixedValue };
+        return IR.F.Tensors.Stack(new IR.Tuple(new[] { IR.F.Tensors.ShapeOf(input)[0] + (long)dims.CheckedShape[0].FixedValue }), 0);
     }
 
     public Metric Visit(IMetricEvaluateContext context, UnsqueezeShape target)

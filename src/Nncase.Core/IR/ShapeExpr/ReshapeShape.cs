@@ -10,9 +10,9 @@ namespace Nncase.IR.ShapeExpr;
 public sealed partial class ReshapeShape : Op
 {
     /// <summary>
-    /// Gets input.
+    /// Gets input shape.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(ReshapeShape), 0, "input");
+    public static readonly ParameterInfo InputShape = new(typeof(ReshapeShape), 0, "input_shape");
 
     /// <summary>
     /// Gets shape.

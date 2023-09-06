@@ -15,7 +15,7 @@ public sealed partial class TransposeShape : Op
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(TransposeShape), 0, "input");
+    public static readonly ParameterInfo InputShape = new(typeof(TransposeShape), 0, "input");
 
     /// <summary>
     /// Gets perm.

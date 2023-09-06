@@ -17,16 +17,16 @@ public partial class TransposeShapeEvaluator : IEvaluator<TransposeShape>, IType
 {
     public IValue Visit(IEvaluateContext context, TransposeShape target)
     {
-        var input = context.GetArgumentValueAsTensor(target, TransposeShape.Input);
+        var inShape = context.GetArgumentValueAsArray<int>(target, TransposeShape.InputShape);
         var perm = context.GetArgumentValueAsTensor(target, TransposeShape.Perm);
-        var t = IR.F.Tensors.Transpose(input, perm);
+        var t = IR.F.Tensors.Transpose(new Var(new TensorType(DataTypes.Float32, inShape)), perm);
         return ShapeExprUtility.GetShapeValue(t);
     }
 
     public IRType Visit(ITypeInferenceContext context, TransposeShape target)
     {
-        var tt = context.CheckArgumentType<TensorType>(target, TransposeShape.Input);
-        return new TensorType(DataTypes.Int64, new[] { tt.Shape.Rank });
+        var tt = context.CheckArgumentType<TensorType>(target, TransposeShape.InputShape);
+        return new TensorType(DataTypes.Int64, new[] { tt.Shape[0] });
     }
 
     public Cost Visit(ICostEvaluateContext context, TransposeShape target)
@@ -36,12 +36,8 @@ public partial class TransposeShapeEvaluator : IEvaluator<TransposeShape>, IType
 
     public Expr Visit(IShapeEvaluateContext context, TransposeShape target)
     {
-        var input = context.GetArgument(target, TransposeShape.Input);
-        if (input.CheckedShape.IsUnranked)
-        {
-            return IR.F.Tensors.Rank(input);
-        }
-        return input.CheckedShape.Rank;
+        var input = context.GetArgument(target, TransposeShape.Perm);
+        return input.CheckedShape[0].FixedValue;
     }
 
     public Metric Visit(IMetricEvaluateContext context, TransposeShape target)

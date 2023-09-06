@@ -7,9 +7,9 @@ namespace Nncase.IR.ShapeExpr;
 public sealed partial class UnsqueezeShape : Op
 {
     /// <summary>
-    /// Gets input.
+    /// Gets input_shape.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(UnsqueezeShape), 0, "input");
+    public static readonly ParameterInfo InputShape = new(typeof(UnsqueezeShape), 0, "input_shape");
 
     /// <summary>
     /// Gets dimension.

@@ -16,17 +16,21 @@ public partial class SqueezeShapeEvaluator : IEvaluator<SqueezeShape>, ITypeInfe
 {
     public IValue Visit(IEvaluateContext context, SqueezeShape target)
     {
-        var input = context.GetArgumentValueAsTensor(target, SqueezeShape.Input);
+        var inShape = context.GetArgumentValueAsArray<int>(target, SqueezeShape.InputShape);
         var dims = context.GetArgumentValueAsTensor(target, SqueezeShape.Dim);
-        var t = IR.F.Tensors.Squeeze(input, dims);
+        var t = IR.F.Tensors.Squeeze(new Var(new TensorType(DataTypes.Float32, inShape)), dims);
         return ShapeExprUtility.GetShapeValue(t);
     }
 
     public IRType Visit(ITypeInferenceContext context, SqueezeShape target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, SqueezeShape.Input);
+        var input = context.GetArgument(target, SqueezeShape.InputShape);
         var dims = context.CheckArgumentType<TensorType>(target, SqueezeShape.Dim);
-        return new TensorType(DataTypes.Int64, new[] { input.Shape.Rank - dims.Shape[0] });
+        if (!input.CheckedShape.IsFixed)
+        {
+            return new TensorType(DataTypes.Int64, new[] { Dimension.Unknown });
+        }
+        return new TensorType(DataTypes.Int64, new[] { input.CheckedShape.Size - dims.Shape[0] });
     }
 
     public Cost Visit(ICostEvaluateContext context, SqueezeShape target)
@@ -36,9 +40,9 @@ public partial class SqueezeShapeEvaluator : IEvaluator<SqueezeShape>, ITypeInfe
 
     public Expr Visit(IShapeEvaluateContext context, SqueezeShape target)
     {
-        var input = context.GetArgument(target, SqueezeShape.Input);
+        var input = context.GetArgument(target, SqueezeShape.InputShape);
         var dims = context.GetArgument(target, SqueezeShape.Dim);
-        return new[] { input.CheckedShape.Rank - dims.CheckedShape[0].FixedValue };
+        return new[] { input.CheckedShape.Size - dims.CheckedShape[0].FixedValue };
     }
 
     public Metric Visit(IMetricEvaluateContext context, SqueezeShape target)

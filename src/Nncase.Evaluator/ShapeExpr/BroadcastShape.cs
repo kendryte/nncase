@@ -41,7 +41,7 @@ public partial class BroadcastShapeEvaluator : IEvaluator<BroadcastShape>, IType
     public Expr Visit(IShapeEvaluateContext context, BroadcastShape target)
     {
         var inShape = context.GetArgumentShape(target, BroadcastShape.Inputs);
-        var len = ((IR.Tuple)inShape).Fields.ToArray().Aggregate((Expr)1, (i, call) => IR.F.Math.Max(i, call));
+        var len = ((IR.Tuple)inShape).Fields.ToArray().Aggregate((Expr)1L, (i, call) => IR.F.Math.Max(i, call));
         return len;
     }
 
