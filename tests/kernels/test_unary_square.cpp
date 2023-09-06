@@ -127,7 +127,7 @@ class UnaryTest : public KernelTest,
         case dt_uint32: {
             std::random_device rd;
             std::mt19937 gen(rd());
-            std::uniform_int_distribution<> dis(-1000, 1000);
+            std::uniform_int_distribution<> dis(-100000, 100000);
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](gsl::span<const size_t> index) -> result<void> {
@@ -140,7 +140,7 @@ class UnaryTest : public KernelTest,
         case dt_uint64: {
             std::random_device rd;
             std::mt19937 gen(rd());
-            std::uniform_int_distribution<uint64_t> dis(-1000, 1000);
+            std::uniform_int_distribution<uint64_t> dis(-100000, 100000);
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](gsl::span<const size_t> index) -> result<void> {
@@ -165,7 +165,7 @@ class UnaryTest : public KernelTest,
         case dt_float32: {
             std::random_device rd;
             std::mt19937 gen(rd());
-            std::uniform_real_distribution<float> dis(-1000.0f, 1000.0f);
+            std::uniform_real_distribution<float> dis(-100000.0f, 100000.0f);
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](gsl::span<const size_t> index) -> result<void> {
@@ -177,7 +177,7 @@ class UnaryTest : public KernelTest,
         case dt_float64: {
             std::random_device rd;
             std::mt19937 gen(rd());
-            std::uniform_real_distribution<double> dis(-1000.0, 1000.0);
+            std::uniform_real_distribution<double> dis(-100000.0, 100000.0);
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](gsl::span<const size_t> index) -> result<void> {
