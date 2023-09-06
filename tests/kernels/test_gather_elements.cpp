@@ -35,6 +35,8 @@ class GatherElementsTest : public KernelTest,
         READY_SUBCASE()
 
         auto shape = GetShapeArray("lhs_shape");
+        auto indices_shape = GetShapeArray("indices_shape");
+        auto indices_value = GetDataArray("indices_value");
         auto value = GetNumber("axis");
         auto typecode = GetDataType("lhs_type");
 
@@ -42,10 +44,13 @@ class GatherElementsTest : public KernelTest,
                     .expect("create tensor failed");
         init_tensor(input);
 
-        int64_t indices_array[] = {0, 0, 1, 1};
-        indices = hrt::create(dt_int64, {2, 2},
+        size_t indices_value_size = indices_value.size();
+        auto *indices_array =
+            (int64_t *)malloc(indices_value_size * sizeof(int64_t));
+        std::copy(indices_value.begin(), indices_value.end(), indices_array);
+        indices = hrt::create(dt_int64, indices_shape,
                               {reinterpret_cast<gsl::byte *>(indices_array),
-                               sizeof(indices_array)},
+                               indices_value_size * sizeof(int64_t)},
                               true, host_runtime_tensor::pool_cpu_only)
                       .expect("create tensor failed");
 
@@ -110,12 +115,18 @@ TEST_P(GatherElementsTest, gather_elements) {
 int main(int argc, char *argv[]) {
     READY_TEST_CASE_GENERATE()
     FOR_LOOP(lhs_shape, i)
+    FOR_LOOP(indices_shape, l)
+    FOR_LOOP(indices_value, h)
     FOR_LOOP(axis, j)
     FOR_LOOP(lhs_type, k)
     SPLIT_ELEMENT(lhs_shape, i)
+    SPLIT_ELEMENT(indices_shape, l)
+    SPLIT_ELEMENT(indices_value, h)
     SPLIT_ELEMENT(axis, j)
     SPLIT_ELEMENT(lhs_type, k)
     WRITE_SUB_CASE()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
     FOR_LOOP_END()
     FOR_LOOP_END()
     FOR_LOOP_END()
