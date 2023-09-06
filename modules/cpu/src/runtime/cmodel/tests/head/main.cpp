@@ -37,11 +37,11 @@ void _start(hardware_context_mt *hw_ctx_impl, runtime_util_mt *rt_util_mt,
     Hidden_in = &input0;
 
     auto input1 = tensor<float, loc_t::device>(
-        gsl::make_span((float *)inputs[0], 8192 * 32000), {8192, 32000});
+        gsl::make_span((float *)inputs[1], 8192 * 32000), {8192, 32000});
     W = &input0;
 
     auto input2 = tensor<float, loc_t::device>(
-        gsl::make_span((float *)inputs[0], 384 * 32000), {1, 384, 32000});
+        gsl::make_span((float *)inputs[2], 384 * 32000), {1, 384, 32000});
     Output = &input0;
 
     pthread_t t_0_0, t_1_0, t_2_0, t_3_0, t_4_0, t_5_0, t_6_0, t_7_0;
