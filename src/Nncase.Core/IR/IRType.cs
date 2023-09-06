@@ -139,6 +139,15 @@ public sealed record TensorType(DataType DType, Shape Shape) : IRType
     /// <param name="elemType"> the Pointed Element Type.</param>
     /// <returns>the pointer tensor type.</returns>
     public static TensorType Pointer(DataType elemType) => new(new PointerType(elemType, Shape.Scalar), Shape.Scalar);
+
+    /// <inheritdoc/>
+    public override string ToString() => DType switch
+    {
+        PrimType ptype => ptype.GetDisplayName() + (Shape.IsScalar ? string.Empty : Shape.ToString()),
+        PointerType { ElemType: PrimType etype } => $"*{etype.GetDisplayName()}",
+        ValueType => $"{DType}",
+        _ => throw new NotSupportedException(DType.GetType().Name),
+    };
 }
 
 /// <summary>

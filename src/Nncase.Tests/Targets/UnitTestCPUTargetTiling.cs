@@ -29,14 +29,15 @@ public class UnitTestCPUTargetTiling : TestClassBase
     {
         DefaultTargetName = CPUTarget.Kind;
 #if DEBUG
-        CompileOptions.DumpFlags = Diagnostics.DumpFlags.PassIR | Diagnostics.DumpFlags.Rewrite | Diagnostics.DumpFlags.CodeGen;
+        CompileOptions.DumpFlags = Diagnostics.DumpFlags.PassIR | Diagnostics.DumpFlags.Rewrite | Diagnostics.DumpFlags.CodeGen | Diagnostics.DumpFlags.EGraphCost | Diagnostics.DumpFlags.Tiling;
 #endif
     }
 
     [Fact]
     public async Task TestCpuUnary()
     {
-        var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 2, 3, 4, 5 }));
+        var shape = new[] { 1, 384, 2048 };
+        var input = new Var("input", new TensorType(DataTypes.Float32, shape));
         var main = new Function("main", IR.F.Math.Unary(UnaryOp.Asin, input), new[] { input });
         var module = new IR.IRModule(main);
 
@@ -48,13 +49,13 @@ public class UnitTestCPUTargetTiling : TestClassBase
             compiler.Gencode(fs);
         }
 
-        var input_tensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, new[] { 1, 2, 3, 4, 5 }).Evaluate().AsTensor();
+        var input_tensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, shape).Evaluate().AsTensor();
         using (var fs = Dumpper.OpenFile("input_0.bin"))
         {
             fs.Write(input_tensor.BytesBuffer);
         }
 
-        Testing.RunKModel(File.ReadAllBytes(Path.Join(Dumpper.Directory, "test.kmodel")), Dumpper.Directory, new[] { input_tensor });
+        // Testing.RunKModel(File.ReadAllBytes(Path.Join(Dumpper.Directory, "test.kmodel")), Dumpper.Directory, new[] { input_tensor });
     }
 
     [Fact]

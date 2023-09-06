@@ -124,6 +124,13 @@ public partial class ExprFunctor<TExprResult, TTypeResult> : ExprFunctor<TExprRe
     public virtual TTypeResult VisitType(CallableType type) => base.VisitType(type, default);
 
     /// <summary>
+    /// Visit callable type.
+    /// </summary>
+    /// <param name="type">Callable type.</param>
+    /// <returns>Result.</returns>
+    public virtual TTypeResult VisitType(DistTensorType type) => base.VisitType(type, default);
+
+    /// <summary>
     /// Default visit routine.
     /// </summary>
     /// <param name="type">Type.</param>
@@ -150,6 +157,9 @@ public partial class ExprFunctor<TExprResult, TTypeResult> : ExprFunctor<TExprRe
 
     /// <inheritdoc/>
     public sealed override TTypeResult VisitType(CallableType type, Unit context) => VisitType(type);
+
+    /// <inheritdoc/>
+    public sealed override TTypeResult VisitType(DistTensorType type, Unit context) => VisitType(type);
 
     /// <inheritdoc/>
     public sealed override TTypeResult DefaultVisitType(IRType type, Unit context) => DefaultVisitType(type);

@@ -90,7 +90,7 @@ public abstract class Op : Expr
     /// <summary>
     /// Gets get the parameters.
     /// </summary>
-    public IEnumerable<ParameterInfo> Parameters =>
+    public virtual IEnumerable<ParameterInfo> Parameters =>
         _parameters ??= (from p in GetType().GetFields(BindingFlags.Public | BindingFlags.Static)
                          where p.FieldType == typeof(ParameterInfo)
                          let param = (ParameterInfo)(p.GetValue(null) ?? throw new InvalidOperationException())

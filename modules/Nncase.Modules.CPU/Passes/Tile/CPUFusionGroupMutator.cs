@@ -105,8 +105,8 @@ internal sealed class CheckedConvertMutator : ExprRewriter
                 }
                 else
                 {
-                    var converter = new SingleCPUFusionConverter();
-                    prim_func = converter.Visit(fusion);
+                    var converter = new SingleCPUFusionConverter(_tileOptions);
+                    prim_func = converter.Convert(fusion);
                 }
 
                 BaseFunction? convert_func = prim_func;

@@ -15,6 +15,21 @@ namespace Nncase;
 public static class LinqExtensions
 {
     /// <summary>
+    /// Get the ranges from range desc.
+    /// </summary>
+    /// <param name="stride">stride.</param>
+    /// <param name="start">start.</param>
+    /// <param name="stop">stop.</param>
+    /// <returns>Ranges.</returns>
+    public static IEnumerable<Range> Ranges(this int stride, int start, int stop)
+    {
+        for (int i = start; i < stop; i += stride)
+        {
+            yield return new Range(i, Math.Min(stop, i + stride));
+        }
+    }
+
+    /// <summary>
     /// Get cartesian product.
     /// </summary>
     /// <typeparam name="T">Element type.</typeparam>

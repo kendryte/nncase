@@ -149,7 +149,7 @@ public sealed partial class FuseMHA2 : FusionMaker
         var v17 = IsTensorConst("v17");
         var v18 = IsTensorConst("v18");
         var v19 = IsCall("v19", IsOp<Slice>(), IsVArgs(v7, v15, v16, v17, v18));
-        var v20 = IsCall("v20", IsOp<Unary>(), IsVArgs(v19));
+        var v20 = IsCall("v20", IsOp<IR.Math.Unary>(), IsVArgs(v19));
         var v21 = IsTensorConst("v21");
         var v22 = IsCall("v22", IsOp<Slice>(), IsVArgs(v7, v21, v15, v17, v18));
         var v23 = IsTuple("v23", IsVArgs(v20, v22));
@@ -167,7 +167,7 @@ public sealed partial class FuseMHA2 : FusionMaker
         var v34 = IsCall("v34", IsOp<MatMul>(), IsVArgs(v32, v33));
         var v35 = IsCall("v35", IsOp<Binary>(), IsVArgs(v34, v13));
         var v36 = IsCall("v36", IsOp<Slice>(), IsVArgs(v34, v15, v16, v17, v18));
-        var v37 = IsCall("v37", IsOp<Unary>(), IsVArgs(v36));
+        var v37 = IsCall("v37", IsOp<IR.Math.Unary>(), IsVArgs(v36));
         var v38 = IsCall("v38", IsOp<Slice>(), IsVArgs(v34, v21, v15, v17, v18));
         var v39 = IsTuple("v39", IsVArgs(v37, v38));
 

@@ -275,6 +275,33 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         $"({string.Join(", ", type.Fields.Select(VisitType))})";
 
     /// <inheritdoc/>
+    public override string VisitType(DistTensorType type)
+    {
+        var shape = type.TensorType.Shape.ToArray();
+        foreach (var (s, r) in type.NdSbp.Select((s, r) => (s, r)))
+        {
+            if (s is SBPSplit split)
+            {
+                if (shape[split.Axis].IsFixed)
+                {
+                    shape[split.Axis] = shape[split.Axis] / type.Placement.Hierarchy[r];
+                }
+            }
+        }
+
+        var sshape = shape.Select(s => s.ToString()).ToArray();
+        foreach (var (s, r) in type.NdSbp.Select((s, r) => (s, r)))
+        {
+            if (s is SBPSplit split)
+            {
+                sshape[split.Axis] += $"@{type.Placement.Name[r]}";
+            }
+        }
+
+        return $"{{{VisitType(type.TensorType)}, ({string.Join(',', type.NdSbp)}), [{string.Join(',', sshape)}]}}";
+    }
+
+    /// <inheritdoc/>
     protected override string VisitCall(Call expr)
     {
         if (_names.TryGetValue(expr, out var name))

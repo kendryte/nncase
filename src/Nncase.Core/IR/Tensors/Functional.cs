@@ -70,6 +70,9 @@ public static class Tensors
     public static Call Cast(Expr input, DataType newType, CastMode castMode = CastMode.KDefault) =>
         new Call(new Cast(newType, castMode), input);
 
+    public static Call Boxing(Expr input, IRType type) =>
+        new Call(new Boxing(type), input);
+
     public static Call Concat(Expr input, Expr axis) => new Call(new Concat(), input, axis);
 
     public static Call ConstantOfShape(Expr shape, Expr value) => new Call(new ConstantOfShape(), shape, value);

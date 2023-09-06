@@ -71,7 +71,7 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
     /// <inheritdoc/>
     protected override IRType VisitLeafBuffer(Nncase.TIR.Buffer expr)
     {
-        VerifySubField(expr, expr.MemSpan, TypePatternUtility.IsPointer());
+        VerifySubField(expr, expr.MemSpan, TypePatternUtility.IsPointer() | TypePatternUtility.IsNoneType());
         foreach (var r in expr.Dimensions)
         {
             VerifySubField(expr, r, TypePatternUtility.IsIntegralScalar());

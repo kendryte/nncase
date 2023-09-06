@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
+using Nncase.TIR;
 using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.Evaluator;
@@ -459,5 +460,23 @@ public static class TypeInference
                 : new TupleType(then.Zip(@else).Select(tuple => CommonType(tuple.First, tuple.Second))),
             _ => new InvalidType($"Inputs of if should be same IRType Kind, but then:{thenType}, else: {elseType}"),
         };
+    }
+
+    public static TensorType GetPartedTensorType(DistTensorType distTensorType, out int notContiguous)
+    {
+        var shape = distTensorType.TensorType.Shape.ToValueArray();
+        var tiles = distTensorType.TensorType.Shape.ToValueArray();
+        foreach (var axis in distTensorType.NdSbp.OfType<SBPSplit>().Select(s => s.Axis))
+        {
+            tiles[axis] /= axis;
+        }
+
+        notContiguous = Enumerable.Range(0, tiles.Length).
+           Select(i => tiles[i].Ranges(0, shape[i])).
+           CartesianProduct().
+           Select(rgs => TensorUtilities.IsContiguousSlice(shape, rgs.ToArray())).
+           Count(b => b == false);
+
+        return distTensorType.TensorType with { Shape = shape };
     }
 }

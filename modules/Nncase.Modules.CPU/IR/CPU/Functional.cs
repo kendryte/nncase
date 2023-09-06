@@ -7,7 +7,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR.CPU;
-using Nncase.IR.Math;
 
 namespace Nncase.IR.F;
 
@@ -22,5 +21,20 @@ public partial class CPU
     public static Call CPUKernel(Op target, params Expr[] inputs)
     {
         return new Call(new CPUKernelOp(target), inputs);
+    }
+
+    public static Call TDMALoad(Expr input, Expr output)
+    {
+        return new Call(new TDMALoad(), input, output);
+    }
+
+    public static Call TDMAStore(Expr input, Expr output)
+    {
+        return new Call(new TDMAStore(), input, output);
+    }
+
+    public static Call Unary(UnaryOp unaryOp, Expr input, Expr output)
+    {
+        return new Call(new Unary(unaryOp), input, output);
     }
 }

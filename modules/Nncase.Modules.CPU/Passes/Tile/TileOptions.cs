@@ -13,8 +13,9 @@ namespace Nncase.Passes.Tile;
 /// TileOptions.
 /// </summary>
 /// <param name="TargetTileSize">TargetTileSize.</param>
-/// <param name="CacheSize">the cache size.</param>
-public sealed record TileOptions(int[] TargetTileSize, int CacheSize)
+/// <param name="Hierarchy">the hierarchy shapes.</param>
+/// <param name="HierarchySizes">each hierarchy ram size.</param>
+public sealed record TileOptions(int[] TargetTileSize, int[] Hierarchy, int[] HierarchySizes)
 {
-    public static TileOptions Default { get; } = new(Array.Empty<int>(), 4 * 1024 * 1024 * 8);
+    public static TileOptions Default { get; } = new(Array.Empty<int>(), new[] { 8, 4 }, new[] { 30 * (int)MathF.Pow(2, 30), 10 * (int)MathF.Pow(2, 30) });
 }

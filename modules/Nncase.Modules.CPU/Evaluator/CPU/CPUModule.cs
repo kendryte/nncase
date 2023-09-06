@@ -14,5 +14,8 @@ internal class CPUModule : IApplicationPart
     public void ConfigureServices(IRegistrator registrator)
     {
         registrator.RegisterManyInterface<CPUKernelOpEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<TDMALoadEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<TDMAStoreEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<UnaryEvaluator>(reuse: Reuse.Singleton);
     }
 }

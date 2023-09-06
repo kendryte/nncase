@@ -19,5 +19,8 @@ public sealed partial class CPUKernelOp : Op
     /// </summary>
     public Op Target { get; }
 
+    /// <inheritdoc/>
+    public override IEnumerable<ParameterInfo> Parameters => Target.Parameters;
+
     public override string DisplayProperty() => Target.GetType().Name;
 }

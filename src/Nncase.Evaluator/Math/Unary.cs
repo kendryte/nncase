@@ -64,21 +64,26 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Unary target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, Unary.Input);
-        return Visit(input);
+        var inputType = context.GetArgumentType(target, Unary.Input);
+
+        return inputType switch
+        {
+            TensorType tensorType => Visit(tensorType),
+            DistTensorType distTensorType => Visit(distTensorType),
+            _ => new InvalidType($"Not support {inputType.GetType().Name}"),
+        };
     }
 
     /// <inheritdoc/>
     public Cost Visit(ICostEvaluateContext context, Unary target)
     {
-        var inputType = context.GetArgumentType<TensorType>(target, Unary.Input);
-        var outputType = context.GetReturnType<TensorType>();
-
-        return new()
+        var inputType = context.GetArgumentType<IRType>(target, Unary.Input);
+        var outputType = context.GetReturnType<IRType>();
+        return (inputType, outputType) switch
         {
-            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
-            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
-            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, CostUtility.GetCPUCyclesOfUnary(target.UnaryOp)),
+            (TensorType tensorType, TensorType tensorType1) => Visit(tensorType, tensorType1, target),
+            (DistTensorType distTensorType, DistTensorType distTensorType1) => Visit(distTensorType, distTensorType1, target),
+            _ => throw new NotSupportedException(string.Empty),
         };
     }
 
@@ -115,6 +120,11 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
     public Expr Visit(IShapeEvaluateContext context, Unary target)
     {
         return context.GetArgumentShape(target, Unary.Input);
+    }
+
+    private IRType Visit(DistTensorType distTensorType)
+    {
+        return distTensorType;
     }
 
     private int Compute_int(int input, UnaryOp op) => op switch
@@ -155,5 +165,27 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
     private IRType Visit(TensorType input)
     {
         return input;
+    }
+
+    private Cost Visit(DistTensorType inType, DistTensorType outType, Unary target)
+    {
+        var inPartType = TypeInference.GetPartedTensorType(inType, out int inScale);
+        var outPartType = TypeInference.GetPartedTensorType(outType, out int outScale);
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inPartType) * (UInt128)inScale,
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outPartType, CostUtility.GetCPUCyclesOfUnary(target.UnaryOp)),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outPartType) * (UInt128)outScale,
+        };
+    }
+
+    private Cost Visit(TensorType inputType, TensorType outputType, Unary target)
+    {
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, CostUtility.GetCPUCyclesOfUnary(target.UnaryOp)),
+        };
     }
 }
