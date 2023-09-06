@@ -4,6 +4,7 @@
 #include <gsl/gsl-lite.hpp>
 #include <hardware_def.h>
 #include <runtime_utils.h>
+#include "../../method_table_def.h"
 
 enum class loc_t : uint8_t {
     shared,

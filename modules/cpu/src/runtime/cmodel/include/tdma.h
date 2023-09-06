@@ -14,7 +14,7 @@
 #include <thread_context.h>
 #include <transpose.h>
 #include <unary.h>
-#include "../../cpu_common.h"
+#include "runtime_utils.h"
 
 template <class T, loc_t Loc> tensor<T, Loc> unsqueeze(tensor<T, Loc> &src) {
     auto new_dims = dims_t(src.dimension());

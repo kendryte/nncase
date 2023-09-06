@@ -1,21 +1,9 @@
 #pragma once
 
+#include "../../method_table_def.h"
 #include <functional>
-// #include <memory>
 
-struct hardware_context_mt {
-    void (*lock_block)(int bid);
-    int (*mark_block_visit)(int bid, int tid);
-    void (*unlock_block)(int bid);
-    void (*wait_block_sync)(int bid, int visited,
-                            std::function<void()> callable);
-    void (*lock_all)();
-    int (*mark_all_visit)(int bid, int tid);
-    void (*unlock_all)();
-    void (*wait_all_sync)(int visited, std::function<void()> callable);
-    void (*init)();
-};
-
+using namespace nncase::runtime::cpu;
 class hardware_context {
   public:
     // hardware_context(hardware_context_mt *impl) : impl_(impl){};
@@ -45,7 +33,7 @@ class hardware_context {
 
 static hardware_context global_hardware_ctx;
 
-void global_hardware_init(hardware_context_mt *impl) {
+inline void global_hardware_init(hardware_context_mt *impl) {
     global_hardware_ctx.impl_ = impl;
     impl->init();
 }

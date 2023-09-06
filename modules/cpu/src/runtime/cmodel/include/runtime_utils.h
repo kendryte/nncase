@@ -3,18 +3,11 @@
 #include <cstddef>
 #include <gsl/gsl-lite.hpp>
 #include <runtime_types.h>
-#include "../../cpu_common.h"
+#include "../../method_table_def.h"
 
-struct runtime_util_mt {
-    int (*printf)(const char *__restrict __format, ...);
-    void *(*malloc)(size_t size);
-    int (*free)(void *ptr);
-    float (*sqrt)(float x);
-    void (*create_thread)(pthread_t &pt, void *param_, void *(*call)(void *));
-    void (*join_thread)(pthread_t &pt);
-    void (*rt_assert)(bool condition, char *message);
-};
+using namespace nncase::runtime::cpu;
 
+static nncase_mt_t nncase_mt;
 static runtime_util_mt runtime_util;
 
 void print_vec(itlib::small_vector<size_t, 8> vec) {
@@ -157,8 +150,8 @@ template <typename T> double cosine(const T *v1, const T *v2, size_t size) {
         runtime_util.printf("%f, %f\n", (float)v1[i], (float)v2[i]);
         ;
     }
-    return dot(v1, v2, size) / ((runtime_util.sqrt(dot(v1, v1, size)) *
-                                 runtime_util.sqrt(dot(v2, v2, size))));
+    return dot(v1, v2, size) / ((nncase_mt.float_unary_sqrt(dot(v1, v1, size)) *
+                                 nncase_mt.float_unary_sqrt(dot(v2, v2, size))));
 }
 
 inline dims_t get_reduced_offset(gsl::span<const size_t> in_offset,
