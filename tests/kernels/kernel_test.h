@@ -1065,7 +1065,10 @@ class KernelTest {
                       << (unsigned)document.GetErrorOffset() << " "
                       << GetParseError_En(document.GetParseError())
                       << std::endl;
-        assert(document.IsObject());
+
+        if (!document.IsObject()) {
+            throw std::runtime_error("type error! it should be Object.");
+        }
     }
 
     void ParseJson(std::string js_str) {
@@ -1074,7 +1077,10 @@ class KernelTest {
                       << (unsigned)_document.GetErrorOffset() << " "
                       << GetParseError_En(_document.GetParseError())
                       << std::endl;
-        assert(_document.IsObject());
+
+        if (!_document.IsObject()) {
+            throw std::runtime_error("type error! it should be Object.");
+        }
     }
 
     typecode_t Str2DataType(std::string type) {
@@ -1087,27 +1093,41 @@ class KernelTest {
     }
 
     int64_t GetNumber(const char *key) {
-        assert(_document[key].IsInt64());
+        if (!_document[key].IsInt64()) {
+            throw std::runtime_error("type error! it should be int64.");
+        }
+
         return _document[key].GetInt64();
     }
 
     float GetFloatNumber(const char *key) {
-        assert(_document[key].IsDouble());
+        if (!_document[key].IsDouble()) {
+            throw std::runtime_error("type error! it should be double.");
+        }
+
         return _document[key].GetFloat();
     }
 
     typecode_t GetDataType(const char *key) {
-        assert(_document[key].IsString());
+        if (!_document[key].IsString()) {
+            throw std::runtime_error("type error! it should be string.");
+        }
+
         return Str2DataType(_document[key].GetString());
     }
 
     std::string GetString(const char *key) {
-        assert(_document[key].IsString());
+        if (!_document[key].IsString()) {
+            throw std::runtime_error("type error! it should be string.");
+        }
+
         return _document[key].GetString();
     }
 
     dims_t GetShapeArray(const char *key) {
-        assert(_document[key].IsArray());
+        if (!_document[key].IsArray()) {
+            throw std::runtime_error("type error! it should be array.");
+        }
 
         Value &array = _document[key];
         size_t arraySize = array.Size();
@@ -1125,7 +1145,9 @@ class KernelTest {
     }
 
     std::vector<int64_t> GetDataArray(const char *key) {
-        assert(_document[key].IsArray());
+        if (!_document[key].IsArray()) {
+            throw std::runtime_error("type error! it should be array.");
+        }
 
         Value &array = _document[key];
         size_t arraySize = array.Size();
@@ -1143,7 +1165,9 @@ class KernelTest {
     }
 
     axes_t GetAxesArray(const char *key) {
-        assert(_document[key].IsArray());
+        if (!_document[key].IsArray()) {
+            throw std::runtime_error("type error! it should be array.");
+        }
 
         Value &array = _document[key];
         size_t arraySize = array.Size();

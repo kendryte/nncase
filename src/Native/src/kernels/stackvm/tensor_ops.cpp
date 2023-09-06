@@ -590,6 +590,19 @@ nncase::kernels::stackvm::pad(runtime::stackvm::pad_mode_t pad_mode,
     if (is_nop_pad(paddings)) {
         return ok(input);
     }
+    if (pad_mode == runtime::stackvm::pad_mode_t::reflect) {
+        // 在tensorflow和onnxruntime中，pad在reflect mode下
+        // 当before_pad/after_pad > in_dim - 1时
+        // 均会出现未定义的行为，因此需要约束输入pad大小
+        // 针对in_dim-1 < after_pad  <= in_dim-1+before_pad的情况
+        // 此处实现结果与onnxruntime对齐
+        for (size_t i = 0; i < paddings.size(); ++i) {
+            if (paddings[i].before > (input_tensor->shape()[i] - 1) ||
+                (paddings[i].after >
+                 (input_tensor->shape()[i] + paddings[i].before - 1)))
+                return err(std::errc::invalid_argument);
+        }
+    }
     auto out_shape = pad_infer_shape(input_tensor->shape(), paddings);
     try_output(out_mem, output, input_tensor->dtype(), out_shape);
 
