@@ -768,7 +768,7 @@ public class FusionBucketContext
         // conv2d / conv2dtranspose
         if (!Fusion.Name.Contains("Conv2D", StringComparison.OrdinalIgnoreCase))
         {
-            return originShape;
+            return SimplifyShape(originShape);
         }
         // complex check
         // 判断是否需要replace,里面是否存在满足条件的shapeof
@@ -899,19 +899,22 @@ public class FusionBucketContext
         var body = sliceShape;
         DumpIR(body, "SliceShapeAfterReplace");
 
-        var simplifySliceShape = CompilerServices.Rewrite(
+        var simplifySliceShape = SimplifyShape(body);
+        DumpIR(simplifySliceShape, "SliceShapeAfterSimplify");
+
+        return simplifySliceShape;
+    }
+
+    private static Expr SimplifyShape(Expr body) =>
+        CompilerServices.Rewrite(
             body,
             new IRewriteRule[]
             {
                 new FoldStackGetItem(), new FoldShapeOf(), new FoldTwoReshapes(), new FoldTwoCasts(),
                 new FoldTwoSlices(), new FoldNopBinary(), new FoldNopCast(), new Neutral.FoldConstCall(),
-                new FoldNopReshape(), new FoldNopSlice(), new FoldIf(), new FoldBroadcastShape()
+                new FoldNopReshape(), new FoldNopSlice(), new FoldIf(), new FoldBroadcastShape(), new FoldSplitShapeOf(),
             },
             new());
-        DumpIR(simplifySliceShape, "SliceShapeAfterSimplify");
-
-        return simplifySliceShape;
-    }
 }
 
 public class OpVisitor : ExprVisitor<Expr, Unit>
@@ -1263,11 +1266,13 @@ public partial class FusionBucket : RewriteRule<Pattern>
                 new FoldNopReshape(),
                 new FoldNopSlice(),
                 new FoldIf(),
-                new FoldBroadcastShape()
+                new FoldBroadcastShape(),
             },
             new());
 
-        var body = (Expr)Slice(simplifyCall, Enumerable.Repeat(0, rank).ToArray(), Cast(sliceShape, DataTypes.Int32), rank);
+        var axes = Tensor.From(Enumerable.Range(0, rank).Select(x => (long)x).ToArray());
+        var strides = Tensor.FromScalar(1L, rank);
+        var body = (Expr)Slice(simplifyCall, Enumerable.Repeat(0L, rank).ToArray(), Cast(sliceShape, DataTypes.Int64), axes, strides);
         return body;
     }
 

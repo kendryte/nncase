@@ -209,6 +209,7 @@ public static class ShapeBucketRegister
             c.Add<FoldNopReshape>();
             c.Add<FoldNopSlice>();
             c.Add<FoldIf>();
+            c.Add<FoldSplitShapeOf>();
         });
 }
 
