@@ -82,9 +82,10 @@ nncase::kernels::stackvm::hardmax(value_t input, value_t axis, value_t output,
     try_var(typecode, to_typecode(dtype));
     try_output_like_input(out_mem, output, input_tensor);
     try_positive_axis(axis_value, axis, input_tensor);
-    if (typecode==dt_float32){
-        try_(hardmax_impl(IN_CAST(float, input_mem), input_tensor->shape(), input_tensor->strides(),
-                          IN_CAST(float, input_mem), axis_value));
+    if (typecode == dt_float32) {
+        try_(hardmax_impl(IN_CAST(float, input_mem), input_tensor->shape(),
+                          input_tensor->strides(), IN_CAST(float, input_mem),
+                          axis_value));
     }
 
     return ok(output);
