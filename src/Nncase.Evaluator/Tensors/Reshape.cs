@@ -75,7 +75,6 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
 
             var shapeValue = shapeConst.Value.ToArray<int>();
             var negCount = shapeValue.Count(IsMinus1);
-            var inputSize = input.Shape.Prod().FixedValue;
             var shapeSize = shapeValue.Aggregate(1, (x, y) => x * y);
             if (negCount > 1)
             {
@@ -86,9 +85,9 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
 
             if (input.Shape.IsFixed)
             {
+                var inputSize = input.Shape.Prod().FixedValue;
                 if (negCount < 1)
                 {
-
                     if (inputSize != shapeSize)
                     {
                         return new InvalidType("Reshape input shape size and param shape size must be same," +
