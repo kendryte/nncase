@@ -169,13 +169,13 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
 
     private Cost Visit(DistTensorType inType, DistTensorType outType, Unary target)
     {
-        var inPartType = TypeInference.GetPartedTensorType(inType, out int inScale);
-        var outPartType = TypeInference.GetPartedTensorType(outType, out int outScale);
+        var inPartType = DistributeUtilities.GetPartedDistTensorType(inType, out float inScale);
+        var outPartType = DistributeUtilities.GetPartedDistTensorType(outType, out float outScale);
         return new()
         {
-            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inPartType) * (UInt128)inScale,
+            [CostFactorNames.MemoryLoad] = (UInt128)((float)CostUtility.GetMemoryAccess(inPartType) * inScale),
             [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outPartType, CostUtility.GetCPUCyclesOfUnary(target.UnaryOp)),
-            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outPartType) * (UInt128)outScale,
+            [CostFactorNames.MemoryStore] = (UInt128)((float)CostUtility.GetMemoryAccess(outPartType) * outScale),
         };
     }
 

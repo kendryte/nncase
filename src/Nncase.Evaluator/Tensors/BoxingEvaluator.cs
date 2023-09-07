@@ -20,33 +20,29 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
     {
         var inType = context.GetArgumentType<IRType>(target, Boxing.Input);
         var returnType = context.GetReturnType<IRType>();
-
-        return (inType, returnType) switch
+        Cost cost;
+        switch (inType, returnType)
         {
-            (TensorType tensorType, DistTensorType distTensorType) => Visit(tensorType, distTensorType),
-            (DistTensorType distTensorType, TensorType tensorType) => Visit(tensorType, distTensorType),
-            _ => throw new NotImplementedException(),
-        };
-    }
-
-    /// <summary>
-    /// calc the cost for load/store to distribute.
-    /// </summary>
-    /// <param name="tensorType">device tensor.</param>
-    /// <param name="distTensorType">distribute tensor.</param>
-    /// <returns>cost.</returns>
-    private Cost Visit(TensorType tensorType, DistTensorType distTensorType)
-    {
-        var shape = distTensorType.TensorType.Shape.ToValueArray();
-        foreach (var axis in distTensorType.NdSbp.OfType<SBPSplit>().Select(s => s.Axis))
-        {
-            shape[axis] /= axis;
+            case (TensorType tensorType, DistTensorType distTensorType):
+                var partedOutType = DistributeUtilities.GetPartedDistTensorType(distTensorType, out _);
+                cost = new Cost()
+                {
+                    [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(tensorType),
+                    [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(partedOutType),
+                };
+                break;
+            case (DistTensorType distTensorType, TensorType tensorType):
+                var partedInType = DistributeUtilities.GetPartedDistTensorType(distTensorType, out _);
+                cost = new Cost()
+                {
+                    [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(partedInType),
+                    [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(tensorType),
+                };
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(context));
         }
 
-        return new Cost()
-        {
-            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(tensorType),
-            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(distTensorType.TensorType with { Shape = shape }),
-        };
+        return cost;
     }
 }

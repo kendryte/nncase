@@ -68,4 +68,24 @@ public static class DistributeUtilities
 
         return false;
     }
+
+    public static TensorType GetPartedDistTensorType(DistTensorType distTensorType, out float notContiguousScale)
+    {
+        var shape = distTensorType.TensorType.Shape.ToValueArray();
+        var tiles = distTensorType.TensorType.Shape.ToValueArray();
+        foreach (var (s, i) in distTensorType.NdSbp.OfType<SBPSplit>().Select((s, i) => (s, i)))
+        {
+            tiles[s.Axis] /= distTensorType.Placement.Hierarchy[i];
+        }
+
+        var isIsContiguous = Enumerable.Range(0, tiles.Length).
+                  Select(i => tiles[i].Ranges(0, shape[i])).
+                  CartesianProduct().
+                  Select(rgs => TensorUtilities.IsContiguousSlice(shape, rgs.ToArray()));
+        var allTiles = isIsContiguous.Count();
+        int notContiguous = isIsContiguous.Count(b => b == false);
+        notContiguousScale = ((float)notContiguous / allTiles) + 1.0f;
+
+        return distTensorType.TensorType with { Shape = tiles };
+    }
 }

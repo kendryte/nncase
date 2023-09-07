@@ -462,21 +462,4 @@ public static class TypeInference
         };
     }
 
-    public static TensorType GetPartedTensorType(DistTensorType distTensorType, out int notContiguous)
-    {
-        var shape = distTensorType.TensorType.Shape.ToValueArray();
-        var tiles = distTensorType.TensorType.Shape.ToValueArray();
-        foreach (var axis in distTensorType.NdSbp.OfType<SBPSplit>().Select(s => s.Axis))
-        {
-            tiles[axis] /= axis;
-        }
-
-        notContiguous = Enumerable.Range(0, tiles.Length).
-           Select(i => tiles[i].Ranges(0, shape[i])).
-           CartesianProduct().
-           Select(rgs => TensorUtilities.IsContiguousSlice(shape, rgs.ToArray())).
-           Count(b => b == false);
-
-        return distTensorType.TensorType with { Shape = shape };
-    }
 }
