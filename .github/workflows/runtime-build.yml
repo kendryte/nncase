@@ -144,3 +144,12 @@ jobs:
        name: nncaseruntime-${{matrix.config.name}}
        path: ${{github.workspace}}/install
        if-no-files-found: error
+
+   - name: Upload coverage to codecov
+     uses: codecov/codecov-action@v1
+     with:
+       token: a6b9eccd-af2d-4036-8a11-a78d7797dcc6
+       flags: unittest
+       file: coverage/coverage.integration.xml
+       name: kerneltests
+       paths: ${{github.workspace}}/src/Native/src/kernels/stackvm
