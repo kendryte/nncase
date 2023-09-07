@@ -2,6 +2,10 @@ name: runtime-build
 
 on: [push, pull_request]
 
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-native-runtime:
     name: build-runtime-${{matrix.config.name}}
