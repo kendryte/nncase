@@ -43,7 +43,7 @@ mlp_gate_weights = np.reshape(np.fromfile(os.path.join(const_dir,"_mlp_gate_proj
 mlp_up_weights = np.reshape(np.fromfile(os.path.join(const_dir,"_mlp_up_proj_MatMul_output_0_weights.bin"), dtype=np.float32), (8192, 22016))
 mlp_down_weights = np.reshape(np.fromfile(os.path.join(const_dir,"_mlp_down_proj_MatMul_output_0_weights.bin"), dtype=np.float32), (22016, 8192))
 
-for index in range(80):
+for index in range(1):
     # np.random.rand(8192).astype(np.float32), np.random.rand(8192).astype(np.float32)
     v0 = rmsnorm(hidden_in, input_ln_gamma, input_ln_beta) # f32[1,384,8192]
     # v0.tofile("v0.bin")

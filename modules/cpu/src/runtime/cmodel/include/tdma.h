@@ -354,12 +354,12 @@ void tdma_reduce_async(tensor<T, loc_t::local> &src,
                                  ctx, src, dest)}
 
     {
-        __tdma_all_sync_apply_macro(
-            reduce_async_visit_func2, ([]() -> void {
-                free(global_hardware_ctx.global_var);
-                global_hardware_ctx.global_var = nullptr;
-            }),
-            ctx, src, dest, reduce_op)
+        __tdma_all_sync_apply_macro(reduce_async_visit_func2, ([]() -> void {
+                                        free(global_hardware_ctx.global_var);
+                                        global_hardware_ctx.global_var =
+                                            nullptr;
+                                    }),
+                                    ctx, src, dest, reduce_op)
     }
 }
 
@@ -367,6 +367,89 @@ enum class reduce_strategy_t : uint8_t {
     all,
     by_block,
 };
+
+template <class T, loc_t ALoc>
+void all_reduce_async_visit_func1(int visited, thread_context &ctx,
+                                  tensor<T, ALoc> &src) {
+
+    T *gather_span = nullptr;
+    auto new_dims = dims_t(src.dimension());
+    new_dims.insert(new_dims.begin(), BLOCKS * CORES);
+    if (visited == 1) {
+        if (global_hardware_ctx.global_var != nullptr) {
+            runtime_util.rt_assert(false,
+                                   (char *)"the global var has been used!");
+        }
+        gather_span =
+            (T *)runtime_util.malloc(sizeof(T) * compute_size(new_dims));
+        global_hardware_ctx.global_var = (void *)gather_span;
+    }
+    dims_t begin(new_dims.size(), 0);
+    dims_t shape(new_dims);
+    begin[0] = ctx.bid() * CORES + ctx.tid();
+    shape[0] = 1;
+    tensor<T> gather_tensor =
+        tensor<T>(gsl::make_span((T *)global_hardware_ctx.global_var,
+                                 compute_size(new_dims)),
+                  new_dims);
+    __tensor_copy_sync<T, loc_t::local, ALoc>(
+        std::move((gather_tensor)(begin, shape)), std::move(unsqueeze(src)));
+}
+
+template <class T, loc_t ALoc, loc_t BLoc>
+void all_reduce_async_visit_func2_all(int visit, tensor<T, ALoc> &src,
+                                      tensor<T, BLoc> &dest,
+                                      reduce_op_t reduce_op) {
+
+    T *gather_span = nullptr;
+    T *reduced_span = nullptr;
+    auto new_dims = dims_t(src.dimension());
+    new_dims.insert(new_dims.begin(), BLOCKS * CORES);
+    auto reduced_shape = get_reduced_shape(new_dims, dims_t({0}), false);
+
+    if (visit == 1) {
+        gather_span = global_hardware_ctx.global_var;
+        tensor<T> gather_tensor =
+            tensor<T>(gsl::make_span((T *)global_hardware_ctx.global_var,
+                                     compute_size(new_dims)),
+                      new_dims);
+        reduced_span =
+            (T *)runtime_util.malloc(sizeof(T) * compute_size(reduced_shape));
+        tensor<T> reduced_tensor = tensor<T>(reduced_shape);
+        reduce(gather_tensor, reduced_tensor, reduce_op, (T)0, dims_t({0}),
+               false);
+        free(gather_span);
+        global_hardware_ctx.global_var = reduced_span;
+    } else {
+        tensor<T> reduced_tensor =
+            tensor<T>(gsl::make_span((T *)global_hardware_ctx.global_var,
+                                     compute_size(reduced_shape)),
+                      reduced_shape);
+        __tensor_copy_sync(std::move(dest), std::move(reduced_tensor));
+    }
+}
+
+template <class T, loc_t ALoc, loc_t BLoc>
+void all_reduce_async_visit_func2_by_block(int visit, tensor<T, ALoc> &src,
+                                           tensor<T, BLoc> &dest,
+                                           reduce_op_t reduce_op) {
+    auto new_dims = dims_t(src.dimension());
+    new_dims.insert(new_dims.begin(), CORES * BLOCKS);
+
+    tensor<T> gather_tensor =
+        tensor<T>(gsl::make_span((T *)global_hardware_ctx.global_var,
+                                 compute_size(new_dims)),
+                  new_dims);
+
+    auto new_strides = dims_t(gather_tensor.strides());
+    new_dims[0] = BLOCKS;
+    new_strides[0] *= CORES;
+
+    auto viewed_gather_tensor = view(gather_tensor, new_dims, new_strides);
+
+    reduce(viewed_gather_tensor, dest, reduce_op, static_cast<T>(0),
+           dims_t({0}), false);
+}
 
 /**
  * @brief reduce across BLOCKS * CORES
@@ -386,85 +469,33 @@ template <class T, loc_t ALoc, loc_t BLoc>
 void tdma_all_reduce_async(tensor<T, ALoc> &src, tensor<T, BLoc> &dest,
                            reduce_op_t reduce_op, reduce_strategy_t strategy,
                            thread_context &ctx) {
-    __tdma_all_sync_apply(
-        [&src, &ctx](int visited) -> void {
-            tensor<T> *gather_tensor = nullptr;
-            auto new_dims = dims_t(src.dimension());
-            new_dims.insert(new_dims.begin(), BLOCKS * CORES);
-            if (visited == 1) {
-                if (global_hardware_ctx.global_var != nullptr) {
-                    runtime_util.rt_assert(
-                        false, (char *)"the global var has been used!");
-                }
-                gather_tensor = new tensor<T>(new_dims);
-                global_hardware_ctx.global_var = (void *)gather_tensor;
-            } else {
-                gather_tensor =
-                    static_cast<tensor<T> *>(global_hardware_ctx.global_var);
-            }
-            dims_t begin(new_dims.size(), 0);
-            dims_t shape(new_dims);
-            begin[0] = ctx.bid() * CORES + ctx.tid();
-            shape[0] = 1;
-            __tensor_copy_sync<T, loc_t::local, ALoc>(
-                std::move((*gather_tensor)(begin, shape)),
-                std::move(unsqueeze(src)));
-        },
-        []() -> void {}, ctx);
+    {
+        __tdma_all_sync_apply_macro(
+            all_reduce_async_visit_func1, []() -> void {}, ctx, src)
+    }
     switch (strategy) {
-    case reduce_strategy_t::all:
-        __tdma_all_sync_apply(
-            [&]([[maybe_unused]] int visit) -> void {
-                tensor<T> *gather_tensor = nullptr;
-                tensor<T> *reduced_tensor = nullptr;
-                if (visit == 1) {
-                    gather_tensor = static_cast<tensor<T> *>(
-                        global_hardware_ctx.global_var);
-                    auto reduced_shape = get_reduced_shape(
-                        gather_tensor->dimension(), dims_t({0}), false);
-                    reduced_tensor = new tensor<T>(reduced_shape);
-                    reduce(*gather_tensor, *reduced_tensor, reduce_op, (T)0,
-                           dims_t({0}), false);
-                    delete gather_tensor;
-                    global_hardware_ctx.global_var = reduced_tensor;
-                } else {
-                    reduced_tensor = static_cast<tensor<T> *>(
-                        global_hardware_ctx.global_var);
-                    __tensor_copy_sync(std::move(dest),
-                                       std::move(*reduced_tensor));
-                }
-            },
+    case reduce_strategy_t::all: {
+        __tdma_all_sync_apply_macro(
+            all_reduce_async_visit_func2_all,
             []() -> void {
                 auto reduced_tensor =
                     static_cast<tensor<T> *>(global_hardware_ctx.global_var);
                 delete reduced_tensor;
                 global_hardware_ctx.global_var = nullptr;
             },
-            ctx);
-        break;
-    case reduce_strategy_t::by_block:
+            src, dest, reduce_op);
+    } break;
+    case reduce_strategy_t::by_block: {
         __tdma_all_sync_apply(
-            [&]([[maybe_unused]] int visit) -> void {
-                tensor<T> *gather_tensor =
-                    static_cast<tensor<T> *>(global_hardware_ctx.global_var);
-                auto new_dims = dims_t(src.dimension());
-                new_dims.insert(new_dims.begin(), BLOCKS);
-                auto new_strides = dims_t(gather_tensor->strides());
-                new_strides[0] *= CORES;
-                auto viewed_gather_tensor =
-                    view(*gather_tensor, new_dims, new_strides);
-
-                reduce(viewed_gather_tensor, dest, reduce_op, static_cast<T>(0),
-                       dims_t({0}), false);
-            },
+            all_reduce_async_visit_func2_by_block,
             []() -> void {
                 auto reduced_tensor =
                     static_cast<tensor<T> *>(global_hardware_ctx.global_var);
                 delete reduced_tensor;
                 global_hardware_ctx.global_var = nullptr;
             },
-            ctx);
-        break;
+            src, dest, reduce_op);
+    } break;
     default:
         break;
     }

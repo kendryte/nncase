@@ -88,8 +88,8 @@ void stage1_kernel(
         tensor<float> v0_sum_sqr({1, 48});
         reduce_sum_sqr(v0, v0_sum, v0_sum_sqr);
         tdma_reduce_async(v0_sum, v0_sum, reduce_op_t::sum, ctx);
-        // tdma_reduce_async(v0_sum_sqr, v0_sum_sqr, reduce_op_t::sum, ctx);
-        // layernorm(v0, v0_sum, v0_sum_sqr, v0, 2, 8192, true);
+        tdma_reduce_async(v0_sum_sqr, v0_sum_sqr, reduce_op_t::sum, ctx);
+        layernorm(v0, v0_sum, v0_sum_sqr, v0, 2, 8192, true);
 #if DUMP
         {
             tdma_store_async(
@@ -99,7 +99,6 @@ void stage1_kernel(
 #endif
     } // v0 [1, 384, 8192] [1, 48@b, 8192]
 
-#if 0
     auto v1 = unsqueeze(v0); // [1, 1, 384, 8192] [1, 1, 48@b, 2048@t]
     /*
       [1, 1, 384, 8192]    @ [64, 8192, 128]  -> [1, 64, 384, 128]
@@ -289,7 +288,7 @@ void stage1_kernel(
       [1, 16@t, 48@b, 384]@shared -> [1, 16@t, 48@b, 384]
     */
     tensor<float> v29({1, 16, 48, 384}); //[1, 64, 384, 384] [1, 8@b, 96@t, 384]
-    softmax(v28, v29, 3);
+    // softmax(v28, v29, 3);
 
     /*
       [1,1,384,8192] @ [64, 8192, 128] -> [1,64,384,128]
@@ -297,6 +296,7 @@ void stage1_kernel(
     */
     auto &v30 = v1;
     tensor_block_mma_sync(v30, *v31_w, *V31, false, ctx);
+#if 0
 
     /* need resplit V */
     auto v31 = (*V31)({0, 16 * tid, 0, 0}, {1, 16, 48, 128});

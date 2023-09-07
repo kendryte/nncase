@@ -196,8 +196,8 @@ inline dims_t get_reduced_offset(gsl::span<const size_t> in_offset,
 
 inline dims_t get_reduced_shape(gsl::span<const size_t> in_shape,
                                 gsl::span<const size_t> axis, bool keep_dims) {
-    dims_t shape;
-    shape.reserve(in_shape.size() - (keep_dims ? 0 : axis.size()));
+    dims_t shape(in_shape.size() - (keep_dims ? 0 : axis.size()));
+    auto count = 0;
     for (size_t i = 0; i < in_shape.size(); i++) {
         bool found = false;
         for (size_t j = 0; j < axis.size(); j++) {
@@ -207,10 +207,10 @@ inline dims_t get_reduced_shape(gsl::span<const size_t> in_shape,
             }
         }
         if (!found) {
-            shape.push_back(in_shape[i]);
+            shape[count++] = in_shape[i];
         } else {
             if (keep_dims)
-                shape.push_back(1);
+                shape[count++] = 1;
         }
     }
     return shape;
