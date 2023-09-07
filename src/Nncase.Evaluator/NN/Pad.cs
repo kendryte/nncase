@@ -118,7 +118,7 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
         var end = Slice(pads, new[] { 1 }, new[] { 2 }, new[] { 1 }, new[] { 1 });
 
         // paddings = [4, 2] -> [4, 1] + [4, 1]
-        var paddings = front + end;
+        var paddings = Cast(front + end, DataTypes.Int64);
 
         // outShape = inShape + paddings
         var padsSumShape = StackScalar(ShapeOf(paddings)[0]);

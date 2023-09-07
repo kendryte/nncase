@@ -67,7 +67,7 @@ internal sealed class ShapeEvaluateProvider : IShapeEvaluateProvider
         var s = op.GetType().Name + "_" + op.DisplayProperty();
         if (!result.InferenceType())
         {
-            // if (DumpScope.Current.IsEnabled(DumpFlags.Compile))
+            if (DumpScope.Current.IsEnabled(DumpFlags.Compile))
             {
                 DumpScope.Current.DumpIR(result, "EvaluateOpShapeExprInvalidResult");
             }
@@ -75,8 +75,6 @@ internal sealed class ShapeEvaluateProvider : IShapeEvaluateProvider
             throw new InvalidOperationException(s);
         }
 
-        return IR.F.Math.Require(true, result, s);
-
-        // return result;
+        return result;
     }
 }
