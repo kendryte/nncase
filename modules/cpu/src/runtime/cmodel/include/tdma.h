@@ -1,4 +1,5 @@
 #pragma once
+#include "runtime_utils.h"
 #include <apply.h>
 #include <binary.h>
 #include <cassert>
@@ -14,7 +15,13 @@
 #include <thread_context.h>
 #include <transpose.h>
 #include <unary.h>
-#include "runtime_utils.h"
+
+#define __tdma_block_sync_apply_macro(func, ctx, ...)                          \
+    global_hardware_ctx.lock_block(ctx.bid());                                 \
+    int visited = global_hardware_ctx.mark_block_visit(ctx.bid(), ctx.tid());  \
+    func(visited, __VA_ARGS__);                                                \
+    global_hardware_ctx.unlock_block(ctx.bid());                               \
+    global_hardware_ctx.wait_block_sync(ctx.bid(), visited);
 
 template <class T, loc_t Loc> tensor<T, Loc> unsqueeze(tensor<T, Loc> &src) {
     auto new_dims = dims_t(src.dimension());
@@ -172,6 +179,23 @@ void concat(std::initializer_list<tensor<T, loc_t::local>> inits,
                     in_strides, output.strides(), axis, concat_dims);
 }
 
+template <typename T>
+void mma_visit(int visited, tensor<T, loc_t::shared> &c, tensor<T> &tmp,
+               bool &load_psum) {
+    if (load_psum) {
+        binary<T, loc_t::local, loc_t::shared, loc_t::shared>(tmp, c, c,
+                                                              binary_op_t::add);
+    } else {
+        if (visited == 1) {
+            binary<T, loc_t::local, loc_t::shared, loc_t::shared>(
+                tmp, c, c, binary_op_t::add);
+        } else {
+            binary<T, loc_t::local, loc_t::shared, loc_t::shared>(
+                tmp, c, c, binary_op_t::add);
+        }
+    }
+}
+
 /**
  * @brief Block 级别的 mma，每个 thread 执行自己的 mma，最终 psum 累加写入
  * shared memory
@@ -192,22 +216,7 @@ void tensor_block_mma_sync(tensor<T, ALoc> &a, tensor<T, BLoc> &b,
     tensor<T> tmp(c.dimension());
     matmul(a, b, tmp);
 
-    __tdma_block_sync_apply(
-        [&](int visited) -> void {
-            if (load_psum) {
-                binary<T, loc_t::local, loc_t::shared, loc_t::shared>(
-                    tmp, c, c, binary_op_t::add);
-            } else {
-                if (visited == 1) {
-                    binary<T, loc_t::local, loc_t::shared, loc_t::shared>(
-                        tmp, c, c, binary_op_t::add);
-                } else {
-                    binary<T, loc_t::local, loc_t::shared, loc_t::shared>(
-                        tmp, c, c, binary_op_t::add);
-                }
-            }
-        },
-        ctx);
+    __tdma_block_sync_apply_macro(mma_visit, ctx, c, tmp, load_psum);
 }
 
 void __tdma_block_sync_apply(std::function<void(int)> func,
@@ -274,7 +283,7 @@ void tdma_load_broadcast_async([[maybe_unused]] tensor<T, Dest> &dest,
                                [[maybe_unused]] tensor<T, Src> &src,
                                [[maybe_unused]] thread_context &ctx) {
     // throw std::system_error(std::make_error_code(std::errc::not_supported));
-    runtime_util.rt_assert(false, (char*)"not_supported");
+    runtime_util.rt_assert(false, (char *)"not_supported");
 }
 
 template <class T>
@@ -288,7 +297,8 @@ void tdma_reduce_async(tensor<T, loc_t::local> &src,
             new_dims.insert(new_dims.begin(), BLOCKS * CORES);
             if (visited == 1) {
                 if (global_hardware_ctx.global_var != nullptr) {
-                    runtime_util.rt_assert(false, (char*)"the global var has been used!");
+                    runtime_util.rt_assert(
+                        false, (char *)"the global var has been used!");
                 }
                 gather_tensor = new tensor<T>(new_dims);
                 global_hardware_ctx.global_var = (void *)gather_tensor;
@@ -360,7 +370,8 @@ void tdma_all_reduce_async(tensor<T, ALoc> &src, tensor<T, BLoc> &dest,
             new_dims.insert(new_dims.begin(), BLOCKS * CORES);
             if (visited == 1) {
                 if (global_hardware_ctx.global_var != nullptr) {
-                    runtime_util.rt_assert(false, (char*)"the global var has been used!");
+                    runtime_util.rt_assert(
+                        false, (char *)"the global var has been used!");
                 }
                 gather_tensor = new tensor<T>(new_dims);
                 global_hardware_ctx.global_var = (void *)gather_tensor;

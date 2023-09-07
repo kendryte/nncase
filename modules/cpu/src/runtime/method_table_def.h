@@ -3,7 +3,6 @@
 #include <functional>
 #include <nncase/runtime/cpu/compiler_defs.h>
 
-
 BEGIN_NS_NNCASE_RT_MODULE(cpu)
 
 typedef struct nncase_method_table {
@@ -78,23 +77,22 @@ typedef struct buffer {
     uint32_t rank;
 } buffer_t;
 
-struct runtime_util_mt
-{
+struct runtime_util_mt {
     int (*printf)(const char *__restrict __format, ...);
     void *(*malloc)(size_t size);
     void (*free)(void *ptr);
     void (*create_thread)(pthread_t &pt, void *param_, void *(*call)(void *));
     void (*join_thread)(pthread_t &pt);
     void (*rt_assert)(bool condition, char *message);
+    void *(*memcpy)(void *dest, const void *src, size_t n);
 };
 
-struct hardware_context_mt
-{
+struct hardware_context_mt {
     void (*lock_block)(int bid);
     int (*mark_block_visit)(int bid, int tid);
     void (*unlock_block)(int bid);
-    void (*wait_block_sync)(
-        int bid, int visited, std::function<void()> callable);
+    void (*wait_block_sync)(int bid, int visited,
+                            std::function<void()> callable);
     void (*lock_all)();
     int (*mark_all_visit)(int bid, int tid);
     void (*unlock_all)();

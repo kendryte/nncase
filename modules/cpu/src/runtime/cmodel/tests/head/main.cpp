@@ -7,6 +7,10 @@
         return arg;                                                            \
     }
 
+#define MALLOC_SHARED(b, name, shape)                                                \
+    auto shared##b = tensor<float, loc_t::shared>(shape);                      \
+    block##b::shared::name = &shared##b;
+
 #define DEFINE_BFUNC(b)                                                        \
     DEFINE_TFUNC(b, 0)                                                         \
     DEFINE_TFUNC(b, 1)                                                         \
@@ -32,17 +36,26 @@ void _start(hardware_context_mt *hw_ctx_impl, runtime_util_mt *rt_util_mt,
     runtime_util = *rt_util_mt;
     nncase_mt = *nncase_mt_impl;
 
+    MALLOC_SHARED(0, output, dims_t({1, 48, 32000}));
+    MALLOC_SHARED(1, output, dims_t({1, 48, 32000}));
+    MALLOC_SHARED(2, output, dims_t({1, 48, 32000}));
+    MALLOC_SHARED(3, output, dims_t({1, 48, 32000}));
+    MALLOC_SHARED(4, output, dims_t({1, 48, 32000}));
+    MALLOC_SHARED(5, output, dims_t({1, 48, 32000}));
+    MALLOC_SHARED(6, output, dims_t({1, 48, 32000}));
+    MALLOC_SHARED(7, output, dims_t({1, 48, 32000}));
+
     auto input0 = tensor<float, loc_t::device>(
         gsl::make_span((float *)inputs[0], 384 * 8192), {1, 384, 8192});
     Hidden_in = &input0;
 
     auto input1 = tensor<float, loc_t::device>(
         gsl::make_span((float *)inputs[1], 8192 * 32000), {8192, 32000});
-    W = &input0;
+    W = &input1;
 
     auto input2 = tensor<float, loc_t::device>(
         gsl::make_span((float *)inputs[2], 384 * 32000), {1, 384, 32000});
-    Output = &input0;
+    Output = &input2;
 
     pthread_t t_0_0, t_1_0, t_2_0, t_3_0, t_4_0, t_5_0, t_6_0, t_7_0;
     pthread_t t_0_1, t_1_1, t_2_1, t_3_1, t_4_1, t_5_1, t_6_1, t_7_1;

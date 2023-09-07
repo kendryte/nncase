@@ -1,4 +1,6 @@
 #pragma once
+#include "hardware_context.h"
+#include "method_table_def.h"
 #include "runtime_utils.h"
 #include "thread_pool.h"
 #include <functional>
@@ -7,8 +9,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include "method_table_def.h"
-#include "hardware_context.h"
 
 BEGIN_NS_NNCASE_RT_MODULE(cpu)
 
@@ -117,23 +117,23 @@ static nncase_mt_t nncase_mt = {fabsf,
                                 bool_binary_logical_xor};
 
 static runtime_util_mt runtime_util = {
-    printf, malloc,
-    free,
-    create_thread,
-    join_thread,
-    rt_assert
-};
+    printf, malloc, 
+    free, 
+    create_thread, 
+    join_thread, 
+    rt_assert, 
+    memcpy};
 
 static hardware_context_mt hw_ctx_mt = {
-    hardware_context::lock_block,
+    hardware_context::lock_block,   
     hardware_context::mark_block_visit,
-    hardware_context::unlock_block,
+    hardware_context::unlock_block, 
     hardware_context::wait_block_sync,
-    hardware_context::lock_all,
+    hardware_context::lock_all,     
     hardware_context::mark_all_visit,
-    hardware_context::unlock_all,
+    hardware_context::unlock_all,   
     hardware_context::wait_all_sync,
     hardware_context::init
-};
+    };
 
 END_NS_NNCASE_RT_MODULE
