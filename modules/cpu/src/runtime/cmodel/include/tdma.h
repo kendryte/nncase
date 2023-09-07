@@ -68,7 +68,7 @@ void softmax(tensor<float, SrcLoc> &src, tensor<float, DestLoc> &dest,
 
 template <class T, loc_t DestLoc, loc_t SrcLoc>
 void __tensor_copy_sync(tensor<T, DestLoc> &&dest, tensor<T, SrcLoc> &&src) {
-    assert(dest.dimension() == src.dimension());
+    runtime_util.rt_assert(dest.dimension() == src.dimension(), (char*)"Dest and Src dimension mismatch in __tensor_copy_sync");
     apply(gsl::make_span(src.dimension()).template as_span<const size_t>(),
           [&](gsl::span<const size_t> index) -> void {
               dest.data()[offset(dest.strides(), index)] =
