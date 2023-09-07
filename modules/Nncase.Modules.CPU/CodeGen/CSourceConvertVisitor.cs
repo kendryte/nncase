@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+#define MULTI_CORE_CPU
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -99,6 +101,251 @@ internal sealed class IndentWriter : StringWriter
     }
 }
 
+#if MULTI_CORE_CPU
+/// <summary>
+/// convert single prim function to c source.
+/// </summary>
+internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
+{
+    private readonly Dictionary<Expr, CSymbol> _exprMemo;
+    private readonly StringBuilder _kernelBuilder;
+
+    private readonly StringBuilder _sharedBuilder;
+    private readonly StringWriter _sharedWriter;
+
+    public CSourceConvertVisitor()
+    {
+        _kernelBuilder = new StringBuilder();
+        _sharedBuilder = new StringBuilder();
+        _sharedWriter = new StringWriter(_sharedBuilder);
+        _exprMemo = new(ReferenceEqualityComparer.Instance);
+    }
+
+    public PrimFunction VisitEntry => (TIR.PrimFunction)VisitRoot!;
+
+    public FunctionCSource GetFunctionCSource()
+    {
+        _exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location == MemoryLocation.L2Data).ToList().ForEach(b =>
+        {
+            _sharedWriter.Write(_exprMemo[b]);
+            _sharedWriter.WriteLine(";");
+        });
+        return new(_sharedBuilder.ToString(), _kernelBuilder.ToString());
+    }
+
+    /// <inheritdoc/>
+    protected override CSymbol VisitPrimFunction(PrimFunction expr)
+    {
+        if (_exprMemo.TryGetValue(expr, out var symbol))
+        {
+            return symbol;
+        }
+
+        if (expr.CheckedType is not CallableType { ReturnType: TupleType r } || r != TupleType.Void)
+        {
+            throw new NotSupportedException("The PrimFunction must return void!");
+        }
+
+        var ctype = $"void {expr.Name}({string.Join(", ", expr.Parameters.AsValueEnumerable().Select(Visit).Select(s => s.ToString()).ToArray())})";
+
+        _sharedWriter.WriteLine(ctype + ";");
+        _sharedWriter.WriteLine();
+
+        using (var scope = new IndentScope(_kernelBuilder))
+        {
+            // 1. Function signature
+            IndentScope.Writer.IndWrite($"{ctype} {{\n");
+
+            // 2. Function body
+            using (_ = new IndentScope())
+            {
+                Visit(expr.Body);
+            }
+
+            // 3. Function closing
+            IndentScope.Writer.IndWrite("}\n");
+        }
+
+        symbol = new(ctype, expr.Name);
+        _exprMemo.Add(expr, symbol);
+        return symbol;
+    }
+
+    /// <inheritdoc/>
+    protected override CSymbol VisitMemSpan(MemSpan expr)
+    {
+        if (_exprMemo.TryGetValue(expr, out var symbol))
+        {
+            return symbol;
+        }
+
+        var start = Visit(expr.Start);
+        _ = Visit(expr.Size);
+        string name = start.Name;
+        if (expr.Start is TensorConst or Call)
+        {
+            var loc = expr.Location switch
+            {
+                MemoryLocation.Rdata => "rdata",
+                MemoryLocation.Data => "data",
+                _ => throw new NotSupportedException(),
+            };
+            name = $"({loc} + {start.Name})";
+        }
+
+        symbol = new(start.Type, name);
+        _exprMemo.Add(expr, symbol);
+        return symbol;
+    }
+
+    protected override CSymbol VisitBuffer(TIR.Buffer expr)
+    {
+        if (_exprMemo.TryGetValue(expr, out var symbol))
+        {
+            return symbol;
+        }
+
+        var type = $"tensor<{expr.ElemType.ToC()}, {expr.MemSpan.Location.ToC()}> ";
+
+        symbol = new(type, expr.Name);
+        _exprMemo.Add(expr, symbol);
+        return symbol;
+    }
+
+    /// <inheritdoc/>
+    protected override CSymbol VisitCall(Call expr)
+    {
+        if (_exprMemo.TryGetValue(expr, out var symbol))
+        {
+            return symbol;
+        }
+
+        string type = expr.CheckedType switch
+        {
+            TupleType x when x == TupleType.Void => string.Empty,
+            TensorType { IsScalar: true } x => x.DType.ToC(),
+            _ => throw new NotSupportedException(),
+        };
+
+        string str = string.Empty;
+        if (expr.Target is IR.XPU.XPUKernelOp xpuOp)
+        {
+            foreach (var item in expr.Arguments.ToArray().OfType<TIR.Buffer>())
+            {
+                DeclBuffer(item);
+            }
+
+            var args = expr.Arguments.ToArray().OfType<TIR.Buffer>().ToArray();
+            switch (xpuOp)
+            {
+                case IR.XPU.TDMALoad load:
+                    IndentScope.Writer.Write($"tdma_load_async({Visit(args[0]).Name}, {Visit(args[1]).Name}{((TensorType)args[0].CheckedType).ToSlicing(load.NdSbp, load.Placement)})");
+                    break;
+                case IR.XPU.TDMAStore store:
+                    IndentScope.Writer.Write($"tdma_store_async({Visit(args[0]).Name}, {Visit(args[1]).Name}{((TensorType)args[1].CheckedType).ToSlicing(store.NdSbp, store.Placement)})");
+                    break;
+                case IR.XPU.Unary unary:
+                    IndentScope.Writer.Write($"unary({Visit(args[0]).Name}, {Visit(args[1]).Name}, unary_op_t::{unary.UnaryOp.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)})");
+                    break;
+            }
+        }
+        else
+        {
+            var arguments = expr.Arguments.AsValueEnumerable().Select(Visit).ToArray();
+            switch (expr.Target)
+            {
+                case IR.Math.Binary op:
+                    str = CSourceUtilities.ContertBinary(op, arguments);
+                    break;
+                case IR.Math.Unary op:
+                    str = CSourceUtilities.ContertUnary(op, arguments);
+                    break;
+                default:
+                    throw new NotSupportedException();
+            }
+        }
+
+        symbol = new(type, str);
+        _exprMemo.Add(expr, symbol);
+        return symbol;
+    }
+
+    /// <inheritdoc/>
+    protected override CSymbol VisitConst(Const expr)
+    {
+        if (_exprMemo.TryGetValue(expr, out var symbol))
+        {
+            return symbol;
+        }
+
+        string type;
+        string str;
+        if (expr is TensorConst { Value: Tensor { ElementType: PrimType ptype, Shape: { IsScalar: true } } scalar })
+        {
+            str = scalar[0].ToString() switch
+            {
+                "True" => "1",
+                "False" => "0",
+                null => string.Empty,
+                var x => x,
+            };
+
+            type = ptype.ToC();
+        }
+        else if (expr is TensorConst { Value: Tensor { ElementType: PointerType { ElemType: PrimType }, Shape: { IsScalar: true } } pointer })
+        {
+            str = pointer.ToScalar<ulong>().ToString();
+            type = "uint8_t *";
+        }
+        else
+        {
+            throw new NotSupportedException();
+        }
+
+        symbol = new(type, str);
+        _exprMemo.Add(expr, symbol);
+        return symbol;
+    }
+
+    /// <inheritdoc/>
+    protected override CSymbol VisitSequential(Sequential expr)
+    {
+        if (_exprMemo.TryGetValue(expr, out var symbol))
+        {
+            return symbol;
+        }
+
+        foreach (var field in expr.Fields)
+        {
+            if (field is Call call)
+            {
+                IndentScope.Writer.IndWrite(Visit(call).Name);
+                IndentScope.Writer.Write(";\n");
+            }
+            else
+            {
+                Visit(field);
+            }
+        }
+
+        symbol = new(string.Empty, string.Empty);
+        _exprMemo.Add(expr, symbol);
+        return symbol;
+    }
+
+    private void DeclBuffer(TIR.Buffer buffer)
+    {
+        if (_exprMemo.ContainsKey(buffer))
+        {
+            return;
+        }
+
+        var symbol = Visit(buffer);
+
+        IndentScope.Writer.IndWrite($"{symbol.Type} {symbol.Name}({{{string.Join(',', buffer.Dimensions.AsValueEnumerable().Select(Visit).Select(s => s.Name).ToArray())}}});\n");
+    }
+}
+#else
 /// <summary>
 /// convert single prim function to c source.
 /// </summary>
@@ -442,3 +689,4 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         return type;
     }
 }
+#endif

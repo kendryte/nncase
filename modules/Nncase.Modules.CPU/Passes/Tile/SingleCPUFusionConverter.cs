@@ -170,13 +170,13 @@ internal sealed class SingleCPUFusionConverter
             {
                 case (TensorType tensorType, DistTensorType distTensorType):
                     {
-                        _mainBody.Add(T.Block(nameof(Boxing)).Body(IR.F.CPU.TDMALoad(arguments[0], ret)).Build());
+                        _mainBody.Add(T.Block(nameof(Boxing)).Body(IR.F.XPU.TDMALoad(ret, arguments[0], distTensorType.NdSbp, distTensorType.Placement)).Build());
                     }
 
                     break;
                 case (DistTensorType distTensorType, TensorType tensorType):
                     {
-                        _mainBody.Add(T.Block(nameof(Boxing)).Body(IR.F.CPU.TDMAStore(arguments[0], ret)).Build());
+                        _mainBody.Add(T.Block(nameof(Boxing)).Body(IR.F.XPU.TDMAStore(arguments[0], ret, distTensorType.NdSbp, distTensorType.Placement)).Build());
                     }
 
                     break;
@@ -188,7 +188,7 @@ internal sealed class SingleCPUFusionConverter
         private void GenerateUnary(IR.Math.Unary unary, ReadOnlySpan<Buffer> arguments, Buffer ret)
         {
             var input = arguments[IR.Math.Unary.Input.Index];
-            _mainBody.Add(T.Block(nameof(IR.Math.Unary)).Body(IR.F.CPU.Unary(unary.UnaryOp, input, ret)).Build());
+            _mainBody.Add(T.Block(nameof(IR.Math.Unary)).Body(IR.F.XPU.Unary(unary.UnaryOp, input, ret)).Build());
         }
 
 #if false
@@ -291,7 +291,7 @@ internal sealed class SingleCPUFusionConverter
 
         private (TensorType, MemoryLocation) GetTypeAndLocation(IRType type)
         {
-            MemoryLocation location;
+            MemoryLocation location = MemoryLocation.Data;
             if (type is DistTensorType distTensorType)
             {
                 if (distTensorType.Placement.Rank == 2)
@@ -304,7 +304,6 @@ internal sealed class SingleCPUFusionConverter
                 }
             }
 
-            location = MemoryLocation.Data;
             TensorType tensorType;
             if (type is DistTensorType distTensor)
             {

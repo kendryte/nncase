@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
-
+#define MULTI_CORE_CPU
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -15,6 +15,11 @@ using Nncase.TIR;
 
 namespace Nncase.CodeGen;
 
+#if MULTI_CORE_CPU
+internal sealed record FunctionCSource(string Shared, string Kernel)
+{
+}
+#else
 internal sealed class FunctionCSource
 {
     public FunctionCSource(string declaration, string implementation)
@@ -27,3 +32,4 @@ internal sealed class FunctionCSource
 
     public string Implementation { get; }
 }
+#endif

@@ -25,6 +25,7 @@ public static class CPUApplicationPart
     public static IRegistrator AddCPU(this IRegistrator registrator)
     {
         return registrator.RegisterModule<CPUModule>()
-            .RegisterModule<Evaluator.CPU.CPUModule>();
+            .RegisterModule<Evaluator.CPU.CPUModule>()
+            .RegisterModule<Evaluator.XPU.XPUModule>();
     }
 }

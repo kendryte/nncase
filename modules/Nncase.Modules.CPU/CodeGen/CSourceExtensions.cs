@@ -1,6 +1,9 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using Nncase.IR;
+using Nncase.TIR;
+
 namespace Nncase.CodeGen.CPU;
 
 /// <summary>
@@ -32,6 +35,29 @@ internal static class CSourceExtensions
         PointerType => "uint8_t *",
         _ => throw new NotSupportedException(dataType.ToString()),
     };
+
+    public static string ToC(this MemoryLocation location) => location switch
+    {
+        MemoryLocation.Output or MemoryLocation.Input => "loc_t::device",
+        MemoryLocation.L2Data => "loc_t::shared",
+        MemoryLocation.L1Data => "loc_t::local",
+        _ => throw new NotSupportedException(location.ToString()),
+    };
+
+    public static string ToSlicing(this TensorType tensorType, IRArray<SBP> ndsbp, Placement placement)
+    {
+        var begins = Enumerable.Repeat("0", tensorType.Shape.Rank).ToArray();
+        var hstrides = TensorUtilities.GetStrides(placement.Hierarchy.ToArray());
+        foreach (var (sbp, i) in ndsbp.Select((s, i) => (s, i)))
+        {
+            if (sbp is SBPSplit { Axis: int axis })
+            {
+                begins[axis] += $" + ({tensorType.Shape[axis]} * {hstrides[i]} * {placement.Name[i]}id)";
+            }
+        }
+
+        return $"({{{string.Join(',', begins)}}}, {{{string.Join(",", tensorType.Shape)}}})";
+    }
 
     public static string ToC(this BinaryOp binaryOp) => binaryOp switch
     {

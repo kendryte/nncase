@@ -3,7 +3,7 @@
 
 using Nncase.Evaluator;
 using Nncase.IR;
-using Nncase.IR.CPU;
+using Nncase.IR.XPU;
 
 namespace Nncase;
 

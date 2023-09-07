@@ -22,19 +22,4 @@ public partial class CPU
     {
         return new Call(new CPUKernelOp(target), inputs);
     }
-
-    public static Call TDMALoad(Expr input, Expr output)
-    {
-        return new Call(new TDMALoad(), input, output);
-    }
-
-    public static Call TDMAStore(Expr input, Expr output)
-    {
-        return new Call(new TDMAStore(), input, output);
-    }
-
-    public static Call Unary(UnaryOp unaryOp, Expr input, Expr output)
-    {
-        return new Call(new Unary(unaryOp), input, output);
-    }
 }
