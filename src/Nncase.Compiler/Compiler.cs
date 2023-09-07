@@ -124,7 +124,12 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FoldUnsqueezeSqueeze>();
             p.Add<Passes.Rules.Neutral.FoldTwoTransposes>();
             p.Add<Passes.Rules.Neutral.FoldNopClamp>();
+            p.Add<GatherToGetItem>();
+            p.Add<FoldNopReduce>();
+            p.Add<SliceToGetItem>();
+            p.Add<FoldGetItemShapeOf>();
         });
+
         passManager.AddWithName<EGraphRulesPass>("NeutralOptimizeTranspose").Configure(p =>
         {
             p.Add<Passes.Rules.Neutral.FoldConstCall>();
@@ -200,7 +205,7 @@ internal class Compiler : ICompiler
         ClearMarker(p);
         MergeFusion(p, singleVar, false);
         Bucket(p);
-        // Rebuild(p, singleVar);
+        Rebuild(p, singleVar);
         Simplify(p);
     }
 

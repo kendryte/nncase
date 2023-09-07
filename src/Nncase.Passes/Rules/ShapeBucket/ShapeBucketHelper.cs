@@ -33,11 +33,19 @@ public static class CallValidator
         typeof(Tile).TypeHandle,
     };
 
+    private static readonly HashSet<RuntimeTypeHandle> CauseDynamic = new()
+    {
+        typeof(Reshape).TypeHandle, typeof(IR.Tensors.Range).TypeHandle
+    };
+
+    private static readonly HashSet<RuntimeTypeHandle> ComputeCanBeMerge = new()
+    {
+        typeof(Unary).TypeHandle, typeof(Tile).TypeHandle, typeof(Binary).TypeHandle,
+    };
+
     // todo: add debug mode
     private static readonly HashSet<RuntimeTypeHandle> MaybeDynamic = new()
     {
-        // typeof(SpaceToBatch).TypeHandle,
-        // typeof(BatchToSpace).TypeHandle,
         typeof(Concat).TypeHandle,
         typeof(Stack).TypeHandle,
         typeof(Binary).TypeHandle,
@@ -50,7 +58,7 @@ public static class CallValidator
         typeof(Cast).TypeHandle,
         typeof(Unary).TypeHandle,
 
-        // typeof(Reshape).TypeHandle,
+        typeof(Reshape).TypeHandle,
         typeof(Expand).TypeHandle,
         typeof(ConstantOfShape).TypeHandle,
         typeof(Where).TypeHandle,
@@ -69,38 +77,28 @@ public static class CallValidator
     public static bool ValidTarget(Call call, bool greedy)
     {
         var target = call.Target;
+
         if (target is Reshape)
         {
             return false;
         }
 
-        if (target is Squeeze || target is Unsqueeze)
-        {
-            return true;
-        }
-
+        var singleVar = true;
         if (IsForceConvert(target))
         {
             return true;
         }
 
-        var singleVar = false;
-        // if ((singleVar || greedy) && IsDynamicReshape(call))
-        // {
-        //     return true;
-        // }
-
-        // todo: maybe problem
-        if (singleVar && target is Binary && call.Arguments[Binary.Lhs.Index] is not Const &&
-            call.Arguments[Binary.Lhs.Index] is not Const)
+        // dynamic reshape cause dynamic shape call
+        if (!greedy && IsDynamicReshape(call))
         {
             return false;
         }
 
-        // if (greedy && IsMaybeDynamic(target))
-        // {
-        //     return true;
-        // }
+        if (greedy && IsMaybeDynamic(target))
+        {
+            return true;
+        }
 
         return false;
     }
@@ -138,6 +136,7 @@ public static class ShapeBucketRegister
     public static void ToFusion(IPassManager p, bool onlyDynamic = false) =>
         p.AddWithName<DataflowPass>("ToFusion").Configure(c =>
         {
+            c.Add<FoldRepeatMarker>();
             c.Add<MatmulToFusion>(onlyDynamic);
             c.Add<Conv2DToFusion>(onlyDynamic);
             c.Add<TFConv2DTransposeToFusion>(onlyDynamic);
@@ -159,6 +158,14 @@ public static class ShapeBucketRegister
         // rebuild
         ToFusion(p, true);
         MergeOp(p, false);
+        // todo: lost to fusion
+        p.AddWithName<DataflowPass>("LostToFusion").Configure(p =>
+        {
+            p.Add<TransposeToFusion>(true);
+            p.Add<ActToFusion>(true);
+            p.Add<PadToFusion>(true);
+        });
+
         MergeFusion(p, singleVar, false);
         Bucket(p);
     }
@@ -179,8 +186,7 @@ public static class ShapeBucketRegister
             c.Add<TransposeToFusion>();
             c.Add<UnaryToFusion>();
             c.Add<ActToFusion>();
-            c.Add<SpaceToBatchToFusion>();
-            c.Add<BatchToSpaceToFusion>();
+            c.Add<PadToFusion>();
             if (singleVar)
             {
                 c.Add<BinaryToFusion>();
@@ -210,6 +216,8 @@ public static class ShapeBucketRegister
             c.Add<FoldNopSlice>();
             c.Add<FoldIf>();
             c.Add<FoldSplitShapeOf>();
+            c.Add<FoldBroadcastShape>();
+            c.Add<FoldBroadcastShapeConst>();
         });
 }
 

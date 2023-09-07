@@ -42,7 +42,7 @@ public class MergeBucketFusionPass : FunctionPass
             var preHash = main.GetHashCode();
             if (_greedy)
             {
-                CompilerServices.Rewrite(main, new IRewriteRule[] { new MultiUserCallToFusion(), new MergeTupleFusion() }, new());
+                CompilerServices.Rewrite(main, new IRewriteRule[] { new MultiUserCallToFusion(false, _greedy), new MergeTupleFusion() }, new());
                 await new MergeSeqBucketFusion().RunAsync(main, context);
                 IRHelpers.DCE(main);
                 await new MergeMultiUsersFusion().RunAsync(main, context);
@@ -51,14 +51,12 @@ public class MergeBucketFusionPass : FunctionPass
             }
             else
             {
-
                 await new MergeSeqBucketFusion().RunAsync(main, context);
                 IRHelpers.DCE(main);
             }
 
-            // CheckIRRing(main);
-            // CheckRepeat(main);
-            // CheckErrorVar(main, main.Parameters.ToArray());
+            CheckRepeat(main);
+            CheckErrorVar(main, main.Parameters.ToArray());
             var postHash = main.GetHashCode();
             if (preHash == postHash)
             {
@@ -66,6 +64,7 @@ public class MergeBucketFusionPass : FunctionPass
             }
         }
 
+        DumpIR(main, "MergeBucketFusionEnd");
         return main;
     }
 }
