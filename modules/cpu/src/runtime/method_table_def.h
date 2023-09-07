@@ -85,6 +85,7 @@ struct runtime_util_mt {
     void (*join_thread)(pthread_t &pt);
     void (*rt_assert)(bool condition, char *message);
     void *(*memcpy)(void *dest, const void *src, size_t n);
+    void *(*memset)(void *ptr, int value, size_t num);
 };
 
 struct hardware_context_mt {

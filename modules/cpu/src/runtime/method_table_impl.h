@@ -122,7 +122,9 @@ static runtime_util_mt runtime_util = {
     create_thread, 
     join_thread, 
     rt_assert, 
-    memcpy};
+    memcpy, 
+    memset
+};
 
 static hardware_context_mt hw_ctx_mt = {
     hardware_context::lock_block,   
@@ -134,6 +136,6 @@ static hardware_context_mt hw_ctx_mt = {
     hardware_context::unlock_all,   
     hardware_context::wait_all_sync,
     hardware_context::init
-    };
+};
 
 END_NS_NNCASE_RT_MODULE
