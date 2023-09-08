@@ -23,8 +23,19 @@ public partial class FoldBroadcastShapeConst : RewriteRule<Pattern>
             return null;
         }
 
+        if (constFields.Length == 1)
+        {
+            return null;
+        }
+
         var shape = IR.F.ShapeExpr.BroadcastShape(constFields.Select(x => (Expr)x.Value).ToArray()).Evaluate().AsTensor();
         var exprFields = input.Fields.ToArray().Where(x => x is not TensorConst).ToArray();
+
+        if(exprFields.Length == 0)
+        {
+            return shape;
+        }
+
         if ((shape.Shape.Count == 0 || (shape.Shape.Count == 1 && shape.Shape[0] == 1)) && exprFields.Length != 0)
         {
             return IR.F.ShapeExpr.BroadcastShape(exprFields);
