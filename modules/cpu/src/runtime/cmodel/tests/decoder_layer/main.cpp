@@ -107,6 +107,19 @@ void _start(hardware_context_mt *hw_ctx_impl, runtime_util_mt *rt_util_mt,
                dims_t({1, 64, 384, 128}))
     MALLOC_IMM(21, ImmOutputs[6], float, (1 * 64 * 384 * 384),
                dims_t({1, 64, 384, 384}))
+    // v32
+    MALLOC_IMM(22, ImmOutputs[7], float, (1 * 64 * 384 * 128),
+               dims_t({1, 64, 384, 128}))
+    // v35
+    MALLOC_IMM(23, ImmOutputs[8], float, (1 * 384 * 8192),
+               dims_t({1, 384, 8192}))
+    // v38
+    MALLOC_IMM(24, ImmOutputs[9], float, (1 * 384 * 22016),
+               dims_t({1, 384, 22016}))
+
+    // v43
+    MALLOC_IMM(25, ImmOutputs[10], float, (1 * 384 * 8192),
+               dims_t({1, 384, 8192}))
 
     MALLOC_GLOBAL(0, Hidden_in, float, (1 * 384 * 8192), dims_t({1, 384, 8192}))
     MALLOC_GLOBAL(1, V0_gamma, float, (8192), dims_t({8192}))
