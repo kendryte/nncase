@@ -40,7 +40,7 @@ public partial class SplitSpaceToBatch : RewriteRule<Pattern>
         }
 
         var tmpPaddings = Stack(new IR.Tuple(newPaddings), 0);
-        var newPaddingsTensor = Transpose(Reshape(tmpPaddings, new long[]{(1 + spatialSize + remainShapeSize), 2}), new long[]{1, 0});
+        var newPaddingsTensor = Transpose(Reshape(tmpPaddings, new long[]{2, (1 + spatialSize + remainShapeSize)}), new long[]{1, 0});
         var p = Pad(input, newPaddingsTensor, PadMode.Constant, 0f);
 
         var padShape = Cast(ShapeOf(p), DataTypes.Int32);
