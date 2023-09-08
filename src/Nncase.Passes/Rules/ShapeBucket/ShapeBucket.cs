@@ -559,6 +559,29 @@ public class TransposeToFusion : MarkerCallToFusion<Transpose>
     protected override bool MustHaveMarker => false;
 }
 
+public class ReshapeToFusion : CallToFusion
+{
+    public ReshapeToFusion(bool isDynamic = false)
+        : base(isDynamic)
+    {
+    }
+
+    public override Pattern Pattern => IsCallWildcard("call", IsOp<Reshape>());
+
+    protected override (Expr, int)[] CollectInputs(Call call)
+    {
+        var input = call.Arguments[IR.Tensors.Reshape.Input.Index];
+        var inputPair = (input, IR.Tensors.Reshape.Input.Index);
+        var padPair = (call.Arguments[IR.Tensors.Reshape.Shape.Index], IR.Tensors.Reshape.Shape.Index);
+        if (padPair.Item1 is TensorConst)
+        {
+            return new[] { inputPair };
+        }
+
+        return new[] { inputPair, padPair };
+    }
+}
+
 public class PadToFusion : CallToFusion
 {
     public PadToFusion(bool isDynamic = false)

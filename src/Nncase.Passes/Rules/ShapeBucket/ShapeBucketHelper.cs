@@ -84,6 +84,11 @@ public static class CallValidator
             return true;
         }
 
+        if (greedy && target is GetItem && call.Arguments[GetItem.Input.Index] is not IR.Tuple && call.Users.Count == 1)
+        {
+            return true;
+        }
+
         // dynamic reshape cause dynamic shape call
         if (!greedy && IsDynamicReshape(call))
         {

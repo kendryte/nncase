@@ -7,6 +7,7 @@ using System.Linq;
 using System.Xml;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
+using Nncase.IR.Math;
 using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
 using static Nncase.Passes.Rules.ShapeBucket.ShapeBucketHelper;
@@ -268,15 +269,17 @@ public partial class MergePrevCallToFusion : MergeFusionBase
     // fusion((prevCall()) { var } -> fusion(var) { prevCall() }
 
     private bool _greedy;
+    private bool _mergeFusion;
 
     public MergePrevCallToFusion()
     {
 
     }
 
-    public MergePrevCallToFusion(bool greedy = false)
+    public MergePrevCallToFusion(bool greedy = false, bool mergeFusion = false)
     {
         _greedy = greedy;
+        _mergeFusion = mergeFusion;
     }
 
     // dfs
@@ -613,6 +616,51 @@ public partial class MergePrevCallToFusion : MergeFusionBase
 
     private bool IsInvalid(Call lhsPrevCall, Expr lhsTarget)
     {
+        if (lhsTarget is ShapeOf || lhsTarget is Reshape)
+        {
+            return !_mergeFusion;
+        }
+
+        if (lhsTarget is GetItem && lhsPrevCall.Arguments[GetItem.Input.Index] is not IR.Tuple)
+        {
+            return !_mergeFusion;
+        }
+
+        if (lhsTarget is Reduce && lhsPrevCall.Arguments[Reduce.Input.Index].CheckedShape.Rank == 1)
+        {
+            return !_mergeFusion;
+        }
+
+        if (lhsTarget is Cast && lhsPrevCall.Arguments[Cast.Input.Index].CheckedShape.Rank <= 1)
+        {
+            return !_mergeFusion;
+        }
+
+        if (lhsTarget is Reduce && lhsPrevCall.Arguments[Reduce.Input.Index].CheckedShape.Rank == 1)
+        {
+            return !_mergeFusion;
+        }
+
+        if (lhsTarget is Compare && lhsPrevCall.CheckedShape.Rank <= 1)
+        {
+            return !_mergeFusion;
+        }
+
+        if (lhsTarget is Concat && lhsPrevCall.CheckedShape.Rank <= 2)
+        {
+            return !_mergeFusion;
+        }
+
+        if (lhsTarget is Reduce && lhsPrevCall.Arguments[Reduce.Input.Index].CheckedShape.Rank == 1)
+        {
+            return !_mergeFusion;
+        }
+
+        if (lhsTarget is Slice && lhsPrevCall.Arguments[Slice.Input.Index].CheckedShape.Rank <= 1)
+        {
+            return !_mergeFusion;
+        }
+
         if (lhsPrevCall.Users.Count > 1)
         {
             return true;

@@ -37,6 +37,20 @@ public class MergeBucketFusionPass : FunctionPass
         // bool greedy and dynamic
         var main = (Function)input;
         int i = 0;
+        if (_greedy)
+        {// reshape出发，之后合并shape表达式，允许复制shapeof，getitem等计算,直到合并到shaoepf一个compute的过程
+            // merge shape of
+            CompilerServices.Rewrite(main, new[] { new ReshapeToFusion() }, context);
+            CompilerServices.Rewrite(main, new[] { new MergePrevCallToFusion(_greedy, true),}, context);
+            DumpIR(main, "AfterMergePrevCall1");
+            IRHelpers.DCE(main);
+            DumpIR(main, "AfterDCE1");
+            CompilerServices.Rewrite(main, new[] { new MergePrevCallToFusion(_greedy, true), }, context);
+            DumpIR(main, "AfterMergePrevCall2");
+            IRHelpers.DCE(main);
+            DumpIR(main, "AfterDCE2");await new MergeSeqBucketFusion().RunAsync(main, context);
+        }
+
         while (true)
         {
             var preHash = main.GetHashCode();
@@ -271,7 +285,7 @@ public class MergeMultiUsersFusion : FunctionPass
         // has invalid
         if (userInfos.Length != users.Distinct().ToArray().Length)
         {
-            Console.WriteLine("not all fusion call and getItemMode");
+            // Console.WriteLine("not all fusion call and getItemMode");
             return notSupport;
         }
 
@@ -283,6 +297,7 @@ public class MergeMultiUsersFusion : FunctionPass
         if (users.Any(user =>
                 user is Call c && c.Arguments.ToArray().Any(arg => arg is Tuple || arg.CheckedType is TupleType)))
         {
+            DumpIR(users[0], "Users0");
             // todo: not implement
             return notSupport;
         }
@@ -619,13 +634,19 @@ public class MergeMultiUsersFusion : FunctionPass
 
             if (expr is Call outerCall && outerCall.Target is BucketFusion fusion)
             {
+                Console.WriteLine(fusion.Name);
+                if (fusion.Name == "Reshape_524" || fusion.Name == "Reshape_514" || fusion.Name == "Reshape_504" || fusion.Name == "Reshape_494" || fusion.Name == "Reshape_484" || fusion.Name == "Reshape_474" || fusion.Name == "Reshape_464")
+                {
+                    Console.WriteLine();
+                }
+
                 if (outerCall.Users.Count == 1 && outerCall.Users.First() is Function)
                 {
                     return expr;
                 }
 
                 // Console.WriteLine($"Match {fusion.Name} counter:{Counter}");
-                DumpIR(Root, "OriginRoot", RelPath);
+                // DumpIR(Root, "OriginRoot", RelPath);
 
                 var (newCall, users) = MergeMultiUserFusion(outerCall, fusion);
                 if (newCall != null)
