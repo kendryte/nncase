@@ -78,11 +78,6 @@ public static class CallValidator
     {
         var target = call.Target;
 
-        if (target is Reshape)
-        {
-            return false;
-        }
-
         var singleVar = true;
         if (IsForceConvert(target))
         {

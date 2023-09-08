@@ -17,6 +17,7 @@ using GiGraph.Dot.Types.Geometry;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Toolkit.HighPerformance;
 using NetFabric.Hyperlinq;
+using Nncase.CodeGen;
 using Nncase.Diagnostics;
 using Nncase.Evaluator;
 using Nncase.IR;
@@ -82,7 +83,7 @@ public class BucketFusion : Fusion, IEquatable<BucketFusion>
         {
             // todo: change list
             var names = Name.Split("_");
-            var list = new[] { "MatMul", "Conv2D", "Conv2DTranspose", "Transpose" };
+            var list = new[] { "MatMul", "Conv2D", "Conv2DTranspose", "Transpose", "LeakyRelu", "Pad" };
             foreach (string name in names)
             {
                 if (list.Contains(name))
@@ -553,37 +554,31 @@ public class TransposeToFusion : MarkerCallToFusion<Transpose>
     {
     }
 
+    // todo: remove this??
     protected override bool MustHaveMarker => false;
 }
 
-public class PadToFusion : MarkerCallToFusion<Transpose>
+public class PadToFusion : CallToFusion
 {
     public PadToFusion(bool isDynamic = false)
         : base(isDynamic)
     {
     }
 
-    protected override bool MustHaveMarker => false;
-}
+    public override Pattern Pattern => IsCallWildcard("call", IsOp<Pad>());
 
-public class SpaceToBatchToFusion : MarkerCallToFusion<SpaceToBatch>
-{
-    public SpaceToBatchToFusion(bool isDynamic = false)
-        : base(isDynamic)
+    protected override (Expr, int)[] CollectInputs(Call call)
     {
+        var input = call.Arguments[Pad.Input.Index];
+        var inputPair = (input, Pad.Input.Index);
+        var padPair = (call.Arguments[Pad.Pads.Index], Pad.Pads.Index);
+        if (padPair.Item1 is TensorConst)
+        {
+            return new[] { inputPair };
+        }
+
+        return new[] { inputPair, padPair };
     }
-
-    protected override bool MustHaveMarker => false;
-}
-
-public class BatchToSpaceToFusion : MarkerCallToFusion<BatchToSpace>
-{
-    public BatchToSpaceToFusion(bool isDynamic = false)
-        : base(isDynamic)
-    {
-    }
-
-    protected override bool MustHaveMarker => false;
 }
 
 public class UnaryToFusion : MarkerCallToFusion<Unary>
@@ -1074,7 +1069,8 @@ public partial class FusionBucket : RewriteRule<Pattern>
         return (minDict, maxDict);
     }
 
-    public static Expr MakeSplitEntry(FusionBucketContext context, Dictionary<Var, IValue> varInfo, int segIndex)
+    public static Expr MakeSplitEntry(FusionBucketContext context, Dictionary<Var, IValue> varInfo, int segIndex,
+        Expr sameCond, bool sameOpt = true)
     {
         var originBody = context.FusionBody;
         var fusionVars = context.Parameters;
@@ -1095,7 +1091,9 @@ public partial class FusionBucket : RewriteRule<Pattern>
 
         var slice = MakeSlice(context, call, originBody);
         DumpIR(slice, $"slice_{segIndex}", _relPath);
-        return slice;
+        return sameOpt
+            ? new If(sameCond, call, slice)
+            : slice;
     }
 
     public Expr? GetReplace(Call outerCall, BucketFusion fusion, Expr fusionBody)
@@ -1425,10 +1423,10 @@ public partial class FusionBucket : RewriteRule<Pattern>
             {
                 // 根据var，也就是target为这个fusion的call的参数来进行判断落在哪个段
                 var cond = value <= (long)seg;
-
+                var sameCond = IR.F.Math.Equal(value, (long)seg);
                 // select var value for current segment
                 var varInfo = context.DimVarValue(i);
-                var thenBody = MakeSplitEntry(context, varInfo, i);
+                var thenBody = MakeSplitEntry(context, varInfo, i, sameCond);
                 var elseBody = sum;
                 i++;
 
@@ -1442,13 +1440,19 @@ public partial class FusionBucket : RewriteRule<Pattern>
     private static bool ShouldBeRebuild(FusionBucketContext context)
     {
         var varInfo = context.DimVarValue(0);
-        var entry = MakeSplitEntry(context, varInfo, 0);
+        var entry = MakeSplitEntry(context, varInfo, 0, false, false);
         return entry switch
         {
             IR.Tuple tuple => tuple.Fields.ToArray().Any(ShouldBeRebuild),
             Call => ShouldBeRebuild(entry),
-            _ => throw new ArgumentOutOfRangeException("context"),
+            _ => DumpError(entry),
         };
+    }
+
+    private static bool DumpError(Expr entry)
+    {
+        DumpIR(entry, "FailedEntry");
+        throw new ArgumentOutOfRangeException("context");
     }
 
     private static bool ShouldBeRebuild(Expr entry) => entry is Call { Target: IR.Tensors.Slice } c &&
