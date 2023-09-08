@@ -37,8 +37,11 @@ template <class TShape>
 size_t get_reduce_block_size(const TShape &in_shape, const TShape &axis) {
     size_t size = 1;
     for (size_t i = 0; i < in_shape.size(); i++) {
-        if (std::find(axis.begin(), axis.end(), i) != axis.end()) {
-            size *= in_shape[i];
+        for (size_t j = 0; j < axis.size(); j++) {
+            if (i == axis[j]) {
+                size *= in_shape[i];
+                break;
+            }
         }
     }
 
@@ -143,14 +146,14 @@ void reduce(reduce_op_t op, const T *init_value, const T *input, T *output,
             gsl::span<const size_t> out_strides, bool keep_dims) noexcept {
     auto out_shape = get_reduced_shape(in_shape, axis, keep_dims);
     switch (op) {
-        REDUCE_IMPL(reduce_op_t::mean, std::plus<T>(),
+        REDUCE_IMPL(reduce_op_t::mean, [](T a, T b) { return a + b; },
                     [block_size = (T)get_reduce_block_size(in_shape, axis)](
                         T v) { return v / block_size; });
         REDUCE_IMPL_NO_POST(reduce_op_t::min,
-                            [](T a, T b) { return std::min(a, b); });
+                            [](T a, T b) { return a > b ? b : a; });
         REDUCE_IMPL_NO_POST(reduce_op_t::max,
-                            [](T a, T b) { return std::max(a, b); });
-        REDUCE_IMPL_NO_POST(reduce_op_t::sum, std::plus<T>());
+                            [](T a, T b) { return a > b ? a : b; });
+        REDUCE_IMPL_NO_POST(reduce_op_t::sum, [](T a, T b) { return a + b; });
         REDUCE_IMPL_NO_POST(reduce_op_t::sum_sqr,
                             [](T a, T b) { return a + (b * b); });
     case reduce_op_t::prod:

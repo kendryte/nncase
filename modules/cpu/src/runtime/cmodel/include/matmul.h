@@ -12,7 +12,8 @@ void matmul_unit_impl(const T *input_a, const T *input_b, T *output,
     int32_t b_cols = static_cast<int32_t>(in_b_shape[1]);
 
     for (int32_t oy = 0; oy < a_rows; oy++) {
-        T *values = new T[b_cols]();
+        T *values = (T *)runtime_util.malloc(sizeof(T) * b_cols);
+        // runtime_util.memset(values, 0, sizeof(T) * b_cols);
         for (int32_t i = 0; i < a_cols; i++) {
             for (int32_t ox = 0; ox < b_cols; ox++) {
                 const auto a = input_a[oy * a_cols + i];
@@ -20,8 +21,8 @@ void matmul_unit_impl(const T *input_a, const T *input_b, T *output,
                 values[ox] += a * b;
             }
         }
-        std::copy_n(values, b_cols, output + oy * b_cols);
-        delete[] values;
+        runtime_util.memcpy(output + oy * b_cols, values, sizeof(T) * b_cols);
+        runtime_util.free(values);
     }
 }
 
@@ -35,9 +36,12 @@ void contiguous_matmul_impl(const T *input_a, const T *input_b, T *output,
     auto b_unit_size = new_b_shape[3] * new_b_shape[4];
     auto out_unit_size = new_a_shape[3] * new_b_shape[4];
 
-    auto dim0 = std::max(new_a_shape[0], new_b_shape[0]);
-    auto dim1 = std::max(new_a_shape[1], new_b_shape[1]);
-    auto dim2 = std::max(new_a_shape[2], new_b_shape[2]);
+    auto dim0 =
+        new_a_shape[0] > new_b_shape[0] ? new_a_shape[0] : new_b_shape[0];
+    auto dim1 =
+        new_a_shape[1] > new_b_shape[1] ? new_a_shape[1] : new_b_shape[1];
+    auto dim2 =
+        new_a_shape[2] > new_b_shape[2] ? new_a_shape[2] : new_b_shape[2];
     auto ah_size = a_unit_size * new_a_shape[2];
     auto bh_size = b_unit_size * new_b_shape[2];
     auto oh_size = out_unit_size * dim2;
@@ -95,7 +99,7 @@ void no_contiguous_matmul_impl(const T *input_a, const T *input_b, T *output,
                 T *out_ptr = output + n * new_out_stride[0] +
                              c * new_out_stride[1] + h * new_out_stride[2];
                 for (size_t m = 0; m < new_a_shape[3]; m++) {
-                    T *values = new T[new_b_shape[4]]();
+                    T *values = (T*)runtime_util.malloc(new_b_shape[4] * sizeof(T));
                     for (size_t k = 0; k < new_a_shape[4]; k++) {
                         for (size_t n = 0; n < new_b_shape[4]; n++) {
                             values[n] += in_a_ptr[m * new_a_stride[3] +
@@ -108,7 +112,7 @@ void no_contiguous_matmul_impl(const T *input_a, const T *input_b, T *output,
                         out_ptr[m * new_out_stride[3] + n * new_out_stride[4]] =
                             values[n];
                     }
-                    delete[] values;
+                    runtime_util.free(values);
                 }
             }
         }

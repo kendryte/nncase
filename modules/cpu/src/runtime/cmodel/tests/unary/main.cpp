@@ -3,7 +3,7 @@
 
 #define DEFINE_TFUNC(b, t)                                                     \
     void *f_##b##_##t(void *arg) {                                             \
-        block##b::thread##t::stage1_kernel(*Hidden_in, *Output);               \
+        block##b::thread##t::Unary_0(*buffer_0, *buffer_3);                    \
         return arg;                                                            \
     }
 
@@ -13,8 +13,8 @@
     DEFINE_TFUNC(b, 2)                                                         \
     DEFINE_TFUNC(b, 3)
 
-static tensor<float, loc_t::device> *Hidden_in; // {1, 384, 8192}
-static tensor<float, loc_t::device> *Output;    // {1, 384, 8192}
+static tensor<float, loc_t::device> *buffer_0;
+static tensor<float, loc_t::device> *buffer_3;
 
 DEFINE_BFUNC(0)
 DEFINE_BFUNC(1)
@@ -31,13 +31,12 @@ void _start(hardware_context_mt *hw_ctx_impl, runtime_util_mt *rt_util_mt,
     runtime_util = *rt_util_mt;
     nncase_mt = *nncase_mt_impl;
 
-    auto input0 = tensor<float, loc_t::device>(
-        gsl::make_span((float *)inputs[0], 384 * 8192), {1, 384, 8192});
-    Hidden_in = &input0;
-
-    auto input1 = tensor<float, loc_t::device>(
-        gsl::make_span((float *)inputs[1], 384 * 8192), {1, 384, 8192});
-    Output = &input1;
+    auto buffer_0_ = tensor<float, loc_t::device>(
+        gsl::make_span((float *)inputs[0], 786432), {1, 384, 2048});
+    buffer_0 = &buffer_0_;
+    auto buffer_3_ = tensor<float, loc_t::device>(
+        gsl::make_span((float *)inputs[1], 786432), {1, 384, 2048});
+    buffer_3 = &buffer_3_;
 
     pthread_t t_0_0, t_1_0, t_2_0, t_3_0, t_4_0, t_5_0, t_6_0, t_7_0;
     pthread_t t_0_1, t_1_1, t_2_1, t_3_1, t_4_1, t_5_1, t_6_1, t_7_1;

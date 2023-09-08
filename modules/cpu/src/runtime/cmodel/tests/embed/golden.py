@@ -24,10 +24,8 @@ def gather(data: np.ndarray, axis: int, indices: np.ndarray):
     return torch.gather(torch.from_numpy(data), axis, torch.from_numpy(indices)).detach().numpy()
 
 
-position_ids = np.random.randint(0, 384, (1, 384), np.int64)
-position_ids.tofile('position_ids.bin')
-data = np.random.rand(32000,8192).astype(np.float32)
-data.tofile('data.bin')
-output = data[position_ids]
+hidden_in = np.random.rand(1, 384, 8192).astype(np.float32)
+hidden_in.tofile('hidden_in.bin')
+output = rmsnorm(hidden_in, np.ones([8192], np.float32), np.zeros([8192], np.float32))
 # f32[1,384,8192]
 output.tofile("output.bin")

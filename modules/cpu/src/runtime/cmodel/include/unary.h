@@ -17,6 +17,7 @@
 #include <gsl/gsl-lite.hpp>
 #include <runtime_utils.h>
 
+using namespace nncase::runtime::cpu;
 namespace kernels {
 
 namespace {
@@ -41,33 +42,39 @@ void unary_impl(unary_op_t op, const T *input, T *output,
                 gsl::span<const size_t> input_strides,
                 gsl::span<const size_t> out_shape,
                 gsl::span<const size_t> out_strides) noexcept {
-    switch (op) {
-        UNARY_IMPL_OP(abs, fabsf);
-        UNARY_IMPL_OP(acos, acosf);
-        UNARY_IMPL_OP(acosh, acoshf);
-        UNARY_IMPL_OP(asin, asinf);
-        UNARY_IMPL_OP(asinh, asinhf);
-        UNARY_IMPL_OP(ceil, ceilf);
-        UNARY_IMPL_OP(cos, cosf);
-        UNARY_IMPL_OP(cosh, coshf);
-        UNARY_IMPL_OP(exp, expf);
-        UNARY_IMPL_OP(floor, floorf);
-        UNARY_IMPL_OP(log, logf);
-        UNARY_IMPL_OP(logical_not, [](float v) { return !v; });
-        UNARY_IMPL_OP(neg, std::negate<float>());
-        UNARY_IMPL_OP(round, [](float v) { return round(v); });
-        UNARY_IMPL_OP(rsqrt, [](float v) { return 1.f / sqrtf(v); });
-        UNARY_IMPL_OP(sign, [](float v) { return (0.f < v) - (v < 0.f); });
-        UNARY_IMPL_OP(sin, sinf);
-        UNARY_IMPL_OP(sinh, sinhf);
-        UNARY_IMPL_OP(sqrt, sqrtf);
-        UNARY_IMPL_OP(square, [](float v) { return v * v; });
-        UNARY_IMPL_OP(tanh, tanhf);
-        UNARY_IMPL_OP(swish, [](float x) { return x / (1 + exp(-x)); });
-    default:
-        return;
+    if (std::is_same_v<T, float>) {
+        switch (op) {
+            UNARY_IMPL_OP(abs, nncase_mt.float_unary_abs);
+            UNARY_IMPL_OP(acos, nncase_mt.float_unary_cos);
+            UNARY_IMPL_OP(acosh, nncase_mt.float_unary_cosh);
+            UNARY_IMPL_OP(asin, nncase_mt.float_unary_asin);
+            UNARY_IMPL_OP(asinh, nncase_mt.float_unary_asinh);
+            UNARY_IMPL_OP(ceil, nncase_mt.float_unary_ceil);
+            UNARY_IMPL_OP(cos, nncase_mt.float_unary_cos);
+            UNARY_IMPL_OP(cosh, nncase_mt.float_unary_cosh);
+            UNARY_IMPL_OP(exp, nncase_mt.float_unary_exp);
+            UNARY_IMPL_OP(floor, nncase_mt.float_unary_floor);
+            UNARY_IMPL_OP(log, nncase_mt.float_unary_log);
+            UNARY_IMPL_OP(logical_not, nncase_mt.float_unary_logical_not);
+            UNARY_IMPL_OP(neg, nncase_mt.float_unary_neg);
+            UNARY_IMPL_OP(round, nncase_mt.float_unary_round);
+            UNARY_IMPL_OP(rsqrt, nncase_mt.float_unary_rsqrt);
+            UNARY_IMPL_OP(sign, nncase_mt.float_unary_sign);
+            UNARY_IMPL_OP(sin, nncase_mt.float_unary_sin);
+            UNARY_IMPL_OP(sinh, nncase_mt.float_unary_sinh);
+            UNARY_IMPL_OP(sqrt, nncase_mt.float_unary_sqrt);
+            UNARY_IMPL_OP(square, nncase_mt.float_unary_square);
+            UNARY_IMPL_OP(tanh, nncase_mt.float_unary_tanh);
+            UNARY_IMPL_OP(swish, [](float x) {
+                return x / (1 + nncase_mt.float_unary_exp(-x));
+            });
+        default:
+            runtime_util.rt_assert(false, (char *)"Unsupported Unary Op!");
+        }
+    } else {
+        runtime_util.rt_assert(false, (char *)"Unsupported Unary Type!");
     }
-}
+} // namespace
 
 } // namespace
 
