@@ -875,15 +875,8 @@ public class FusionBucketContext
             mutator.Visit(sliceShape, Unit.Default);
         }
 
-        // // var preHash = sliceShape.GetHashCode();
-        // // var v = new RepVisitor(newDict);
-        // // sliceShape = v.Visit(sliceShape, default);
-        // // var afterHash = sliceShape.GetHashCode();
-        //
         DumpIR(sliceShape, $"{i++}_after", "funShape");
-        //
-        //
-        // DumpIR(sliceShape, "SliceShpae");
+
         newVars.ToArray().ForEach(newVar =>
         {
             if (originVars.TryGetValue(newVar.Name, out var originVar))
@@ -931,82 +924,6 @@ public class ReplaceOfCollector : ExprVisitor<Expr, Unit>
     }
 
     protected override Expr DefaultVisitLeaf(Expr expr) => expr;
-}
-public class RepVisitor : ExprRewriter<Unit>
-{
-    public Pattern Pattern => IsShapeOf("shapeOf", IsCallWildcard("conv", IsOp<Conv2D>()));
-
-    public bool Changed;
-
-    public Dictionary<Var, Expr[]> VarMap { get; set; } = new();
-
-    public RepVisitor(Dictionary<Var, Expr[]> map)
-    {
-        VarMap = map;
-    }
-
-    protected override Expr VisitCall(Call expr, Unit context)
-    {
-        if (Changed)
-        {
-            return expr;
-        }
-
-        return base.VisitCall(expr, context);
-    }
-
-    private static int counter = 0;
-
-    protected override Expr RewriteLeafCall(Call expr, Unit context)
-    {
-        var input = expr.Arguments[0];
-        // if (input is Var)
-        // {
-        //     return expr;
-        // }
-        // todo: more target or other condition
-        var list = new[]
-        {
-            // (typeof(Conv2D), Conv2D.Padding.Index),
-            // (typeof(Conv2DTranspose), Conv2DTranspose.Padding.Index),
-            (typeof(Conv2DShape), Conv2DShape.Padding.Index),
-            (typeof(Conv2DTransposeShape), Conv2DTransposeShape.Padding.Index),
-            // (typeof(SpaceToBatch), SpaceToBatch.Paddings.Index),
-            // (typeof(BatchToSpace), BatchToSpace.Crops.Index),
-        };
-        foreach ((var item1, int index) in list)
-        {
-            if (expr.Target.GetType() == item1)
-            {
-                var arg = expr.Arguments[index];
-                if (arg is Var)
-                {
-                    return expr;
-                }
-
-                var type = arg.CheckedType;
-                return ReplaceCallParams(expr, (index, new Var(type)));
-            }
-        }
-
-        if (expr.Target is ShapeOf && input is Call c && input.CheckedShape.Rank > 2)
-        {
-            var result = input.EvaluateShapeExpr(VarMap);
-            return result;
-        }
-        return expr;
-
-        // if (expr.Target is ShapeOf && input.Users.All(x => x is Call { Target: IR.Tensors.ShapeOf }) && input.CheckedShape.Rank > 2)
-        // {
-        //     DumpScope.Current.DumpIR(expr, $"{counter}_origin", "ShapeOf");
-        //     var result = input.EvaluateShapeExpr(VarMap);
-        //     DumpScope.Current.DumpIR(result, $"{counter++}", "ShapeOf");
-        //     Changed = true;
-        //     input.RemoveUser(expr);
-        //     return result;
-        // }
-
-    }
 }
 
 [RuleGenerator]
