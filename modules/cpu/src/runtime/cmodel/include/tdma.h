@@ -44,7 +44,7 @@ tensor<T, Loc> view_transpose(tensor<T, Loc> &src, dims_t perm) {
 
 template <class T, loc_t Loc>
 tensor<T, Loc> view(tensor<T, Loc> &src, dims_t new_dims) {
-    return tensor<T, Loc>(src.data(), new_dims, (new_dims));
+    return tensor<T, Loc>(src.data(), new_dims, get_default_strides(new_dims));
 }
 
 template <class T, loc_t Loc>
