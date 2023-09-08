@@ -35,19 +35,20 @@ static tensor<float, loc_t::device> *V25;            // ({1, 64, 128, 384})
 static tensor<float, loc_t::device> *GV31;           // ({1, 64, 384, 128})
 
 constexpr int OutNum = 11;
-static tensor<float, loc_t::device> ImmOutputs[OutNum] = {
-    tensor<float, loc_t::device>({1, 384, 8192}),
-    tensor<float, loc_t::device>({1, 64, 384, 128}),
-    tensor<float, loc_t::device>({1, 64, 384, 128}),
-    tensor<float, loc_t::device>({1, 64, 384, 128}),
-    tensor<float, loc_t::device>({1, 384, 128}),
-    tensor<float, loc_t::device>({1, 64, 384, 128}),
-    tensor<float, loc_t::device>({1, 64, 384, 384}),
-    tensor<float, loc_t::device>({1, 64, 384, 128}),
-    tensor<float, loc_t::device>({1, 384, 8192}),
-    tensor<float, loc_t::device>({1, 384, 22016}),
-    tensor<float, loc_t::device>({1, 384, 8192}),
-};
+// static tensor<float, loc_t::device> ImmOutputs[OutNum] = {
+//     tensor<float, loc_t::device>({1, 384, 8192}),
+//     tensor<float, loc_t::device>({1, 64, 384, 128}),
+//     tensor<float, loc_t::device>({1, 64, 384, 128}),
+//     tensor<float, loc_t::device>({1, 64, 384, 128}),
+//     tensor<float, loc_t::device>({1, 384, 128}),
+//     tensor<float, loc_t::device>({1, 64, 384, 128}),
+//     tensor<float, loc_t::device>({1, 64, 384, 384}),
+//     tensor<float, loc_t::device>({1, 64, 384, 128}),
+//     tensor<float, loc_t::device>({1, 384, 8192}),
+//     tensor<float, loc_t::device>({1, 384, 22016}),
+//     tensor<float, loc_t::device>({1, 384, 8192}),
+// };
+static tensor<float, loc_t::device> *ImmOutputs[OutNum];
 
 DEFINE_BFUNC(0)
 DEFINE_BFUNC(1)
@@ -63,23 +64,28 @@ DEFINE_BFUNC(7)
         gsl::make_span((type *)inputs[i], size), shape);                       \
     name = &g_##name;
 
+#define MALLOC_IMM(i, name, type, size, shape)                                 \
+    auto g_##i = tensor<type, loc_t::device>(                                  \
+        gsl::make_span((type *)inputs[i], size), shape);                       \
+    name = &g_##i;
+
 #define MALLOC_SHARED(name, b, type, size, shape)                              \
     auto shared##b##name = tensor<type, loc_t::shared>(shape);                 \
     block##b::shared::name = &shared##b##name;
 
 #define CLEAR_SHARED(i)                                                        \
-    tdma_fill_async<float>(*block##i::shared::V2, 0);                           \
-    tdma_fill_async<float>(*block##i::shared::V5, 0);                           \
-    tdma_fill_async<float>(*block##i::shared::V13, 0);                          \
-    tdma_fill_async<float>(*block##i::shared::V16, 0);                          \
-    tdma_fill_async<float>(*block##i::shared::V25, 0);                          \
-    tdma_fill_async<float>(*block##i::shared::V26, 0);                          \
-    tdma_fill_async<float>(*block##i::shared::V31, 0);                          \
-    tdma_fill_async<float>(*block##i::shared::V32, 0);                          \
-    tdma_fill_async<float>(*block##i::shared::V33, 0);                          \
-    tdma_fill_async<float>(*block##i::shared::V35, 0);                          \
-    tdma_fill_async<float>(*block##i::shared::V38, 0);                          \
-    tdma_fill_async<float>(*block##i::shared::V40, 0);                          \
+    tdma_fill_async<float>(*block##i::shared::V2, 0);                          \
+    tdma_fill_async<float>(*block##i::shared::V5, 0);                          \
+    tdma_fill_async<float>(*block##i::shared::V13, 0);                         \
+    tdma_fill_async<float>(*block##i::shared::V16, 0);                         \
+    tdma_fill_async<float>(*block##i::shared::V25, 0);                         \
+    tdma_fill_async<float>(*block##i::shared::V26, 0);                         \
+    tdma_fill_async<float>(*block##i::shared::V31, 0);                         \
+    tdma_fill_async<float>(*block##i::shared::V32, 0);                         \
+    tdma_fill_async<float>(*block##i::shared::V33, 0);                         \
+    tdma_fill_async<float>(*block##i::shared::V35, 0);                         \
+    tdma_fill_async<float>(*block##i::shared::V38, 0);                         \
+    tdma_fill_async<float>(*block##i::shared::V40, 0);                         \
     tdma_fill_async<float>(*block##i::shared::V42, 0);
 
 void _start(hardware_context_mt *hw_ctx_impl, runtime_util_mt *rt_util_mt,
@@ -87,6 +93,20 @@ void _start(hardware_context_mt *hw_ctx_impl, runtime_util_mt *rt_util_mt,
     global_hardware_init(hw_ctx_impl);
     runtime_util = *rt_util_mt;
     nncase_mt = *nncase_mt_impl;
+
+    MALLOC_IMM(15, ImmOutputs[0], float, (1 * 384 * 8192),
+               dims_t({1, 384, 8192}))
+    MALLOC_IMM(16, ImmOutputs[1], float, (1 * 64 * 384 * 128),
+               dims_t({1, 64, 384, 128}))
+    MALLOC_IMM(17, ImmOutputs[2], float, (1 * 64 * 384 * 128),
+               dims_t({1, 64, 384, 128}))
+    MALLOC_IMM(18, ImmOutputs[3], float, (1 * 64 * 384 * 128),
+               dims_t({1, 64, 384, 128}))
+    MALLOC_IMM(19, ImmOutputs[4], float, (1 * 384 * 128), dims_t({1, 384, 128}))
+    MALLOC_IMM(20, ImmOutputs[5], float, (1 * 64 * 384 * 128),
+               dims_t({1, 64, 384, 128}))
+    MALLOC_IMM(21, ImmOutputs[6], float, (1 * 64 * 384 * 384),
+               dims_t({1, 64, 384, 384}))
 
     MALLOC_GLOBAL(0, Hidden_in, float, (1 * 384 * 8192), dims_t({1, 384, 8192}))
     MALLOC_GLOBAL(1, V0_gamma, float, (8192), dims_t({8192}))
@@ -97,7 +117,8 @@ void _start(hardware_context_mt *hw_ctx_impl, runtime_util_mt *rt_util_mt,
     MALLOC_GLOBAL(6, V35_w, float, (8192 * 8192), dims_t({8192, 8192}))
     MALLOC_GLOBAL(7, V3_data, float, (384 * 128), dims_t({384, 128}))
     MALLOC_GLOBAL(8, V11_data, float, (384 * 128), dims_t({384, 128}))
-    MALLOC_GLOBAL(9, Attn_mask, float, (1 * 1 * 384 * 384), dims_t({1, 1, 384, 384}))
+    MALLOC_GLOBAL(9, Attn_mask, float, (1 * 1 * 384 * 384),
+                  dims_t({1, 1, 384, 384}))
     MALLOC_GLOBAL(10, V38_w, float, (8192 * 22016), dims_t({8192, 22016}))
     MALLOC_GLOBAL(11, V40_w, float, (8192 * 22016), dims_t({8192, 22016}))
     MALLOC_GLOBAL(12, V42_w, float, (22016 * 8192), dims_t({22016, 8192}))
@@ -107,7 +128,7 @@ void _start(hardware_context_mt *hw_ctx_impl, runtime_util_mt *rt_util_mt,
     auto GV31_tmp = tensor<float, loc_t::device>(dims_t({1, 64, 384, 128}));
     V25 = &V25_tmp;
     GV31 = &GV31_tmp;
-    
+
     MALLOC_SHARED(V2, 0, float, (1 * 64 * 48 * 128), dims_t({1, 64, 48, 128}))
     MALLOC_SHARED(V2, 1, float, (1 * 64 * 48 * 128), dims_t({1, 64, 48, 128}))
     MALLOC_SHARED(V2, 2, float, (1 * 64 * 48 * 128), dims_t({1, 64, 48, 128}))

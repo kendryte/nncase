@@ -16,7 +16,7 @@ static tensor<int64_t> *position_ids; // {1, 48}
 static tensor<float> *v38_w;          // {2048, 22016}
 static tensor<float> *v40_w;          // {2048, 22016}
 static tensor<float> *v42_w;          // {5504, 8192}
-#define DUMP 0
+#define DUMP 1
 
 #define MALLOC_STATIC(name, type, shape)                                       \
     auto name##_tmp = tensor<type>(shape);                                     \
@@ -39,7 +39,7 @@ void stage1_kernel(
     tensor<int64_t, loc_t::device> &Position_ids,          /* [1,384] */
     [[maybe_unused]] tensor<float, loc_t::device> &Output, /* [1,384,8192] */
     tensor<float, loc_t::device> &V25, tensor<float, loc_t::device> &GV31,
-    [[maybe_unused]] tensor<float, loc_t::device> *ImmOutputs) {
+    [[maybe_unused]] tensor<float, loc_t::device> **ImmOutputs) {
     thread_context ctx(bid, tid);
     tensor<float> v0_gamma({2048});
     tensor<float> v0_beta({2048});
@@ -93,7 +93,7 @@ void stage1_kernel(
 #if DUMP
         {
             tdma_store_async(
-                v0, ImmOutputs[0]({0, 48 * bid, 2048 * tid}, {1, 48, 2048}),
+                v0, (*ImmOutputs[0])({0, 48 * bid, 2048 * tid}, {1, 48, 2048}),
                 ctx);
         }
 #endif
@@ -108,10 +108,11 @@ void stage1_kernel(
 #if DUMP
     if (tid == 0) {
         tdma_store_async(
-            V2, ImmOutputs[1]({0, 0, 48 * bid, 0}, {1, 64, 48, 128}), ctx);
+            *V2, (*ImmOutputs[1])({0, 0, 48 * bid, 0}, {1, 64, 48, 128}), ctx);
     }
     tdma_all_wait(ctx);
 #endif
+    // #if 0
 
     /*
       [384, 128][[1, 384]] -> [1, 384, 128]
@@ -122,7 +123,7 @@ void stage1_kernel(
 #if DUMP
     {
         tdma_store_async(
-            v3, ImmOutputs[4]({0, 48 * bid, 32 * tid}, {1, 48, 32}), ctx);
+            v3, (*ImmOutputs[4])({0, 48 * bid, 32 * tid}, {1, 48, 32}), ctx);
     }
 #endif
     auto v4 = unsqueeze(v3); /* 1, 1, 48, 32 */
@@ -156,7 +157,7 @@ void stage1_kernel(
 #if DUMP
     {
         tdma_store_async(
-            v10, ImmOutputs[2]({0, 0, 48 * bid, 32 * tid}, {1, 64, 48, 32}),
+            v10, (*ImmOutputs[2])({0, 0, 48 * bid, 32 * tid}, {1, 64, 48, 32}),
             ctx);
     }
 #endif
@@ -191,7 +192,7 @@ void stage1_kernel(
 #if DUMP
     {
         tdma_store_async(
-            v14, ImmOutputs[3]({0, 0, 48 * bid, 32 * tid}, {1, 64, 48, 32}),
+            v14, (*ImmOutputs[3])({0, 0, 48 * bid, 32 * tid}, {1, 64, 48, 32}),
             ctx);
     }
 #endif
@@ -234,7 +235,7 @@ void stage1_kernel(
 #if DUMP
     {
         tdma_store_async(
-            v22, ImmOutputs[5]({0, 0, 48 * bid, 32 * tid}, {1, 64, 48, 32}),
+            v22, (*ImmOutputs[5])({0, 0, 48 * bid, 32 * tid}, {1, 64, 48, 32}),
             ctx);
     }
 #endif
@@ -279,7 +280,7 @@ void stage1_kernel(
 #if DUMP
     {
         tdma_store_async(
-            v28, ImmOutputs[6]({0, 16 * tid, 48 * bid, 0}, {1, 16, 48, 384}),
+            v28, (*ImmOutputs[6])({0, 16 * tid, 48 * bid, 0}, {1, 16, 48, 384}),
             ctx);
     }
 #endif
