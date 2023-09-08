@@ -519,10 +519,10 @@ internal class KeyValuePairKeyComparer : IEqualityComparer<KeyValuePair<Expr, Va
     }
 }
 
-internal class OpCounter : ExprVisitor<Expr, Unit>
+public class OpCounter : ExprVisitor<Expr, Unit>
 {
     public readonly Dictionary<RuntimeTypeHandle, int> _counter = new();
-    public readonly HashSet<Op> OpSet;
+    public readonly HashSet<Op> OpSet = new();
 
     protected override Expr VisitCall(Call expr)
     {
@@ -543,6 +543,8 @@ internal class OpCounter : ExprVisitor<Expr, Unit>
 
         return base.VisitCall(expr);
     }
+
+    protected override Expr DefaultVisitLeaf(Expr expr) => expr;
 }
 
 public class CheckRing : ExprVisitor<Expr, Unit>

@@ -104,6 +104,8 @@ public class RecordFusionShape : FunctionPass
 {
     private Dictionary<Var, int[]> _dimVarValues = new();
 
+    public FusionShapeData[] OutShapeList = Array.Empty<FusionShapeData>();
+
     public RecordFusionShape(Dictionary<BucketFusion, FusionShapeData[]> shapeList)
     {
         FusionShapeInfo = shapeList;
@@ -123,15 +125,8 @@ public class RecordFusionShape : FunctionPass
             // 一组里面多个key seg
             return _dimVarValues.Select(pair => (pair.Key, Value: pair.Value[i])).ToArray();
         }).ToArray();
-        var mainFun = (Function)main;
-        // var body = mainFun.Body.EvaluateShapeExpr(varMap);
-        // // var bodyShape = FusionBucketContext.ReplaceShapeOf(new(), varMap, body, mainFun.Parameters.ToArray(),
-        // //     _dimVarValues.Keys.ToArray());
-        // ShapeBucketHelper.DumpIR(((Function)main).Body, "bodyExpr");
-        // ShapeBucketHelper.DumpIR(body, "ShapeExpr");
 
         // 算出输入的大致规模，如果太大就不能并行，否则可以，但是要考虑到内存的限制，目前只有melgan需要这样特殊处理
-
         var body = ((Function)main).Body;
         var tmpFusionShapeList = list.Select((seg, i) =>
             {
@@ -165,7 +160,7 @@ public class RecordFusionShape : FunctionPass
 
     // make dummy value from InputInfo
     // VarInfo:(DimVar -> Value)
-    private static Dictionary<Var, IValue>
+    public static Dictionary<Var, IValue>
         MakeDummyInput(IReadOnlyDictionary<Var, Expr[]> info, Dictionary<Var, IValue> varInfo)
     {
         return info.ToDictionary(
