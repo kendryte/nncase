@@ -116,26 +116,23 @@ static nncase_mt_t nncase_mt = {fabsf,
                                 bool_binary_logical_or,
                                 bool_binary_logical_xor};
 
+inline void *rt_malloc(size_t size) { return (void *)new uint8_t[size]; }
+
 static runtime_util_mt runtime_util = {
-    printf, malloc, 
-    free, 
-    create_thread, 
-    join_thread, 
-    rt_assert, 
-    memcpy, 
-    memset
-};
+    printf,
+    rt_malloc,
+    free,
+    create_thread,
+    join_thread,
+    rt_assert,
+    memcpy,
+    memset};
 
 static hardware_context_mt hw_ctx_mt = {
-    hardware_context::lock_block,   
-    hardware_context::mark_block_visit,
-    hardware_context::unlock_block, 
-    hardware_context::wait_block_sync,
-    hardware_context::lock_all,     
-    hardware_context::mark_all_visit,
-    hardware_context::unlock_all,   
-    hardware_context::wait_all_sync,
-    hardware_context::init
-};
+    hardware_context::lock_block,   hardware_context::mark_block_visit,
+    hardware_context::unlock_block, hardware_context::wait_block_sync,
+    hardware_context::lock_all,     hardware_context::mark_all_visit,
+    hardware_context::unlock_all,   hardware_context::wait_all_sync,
+    hardware_context::init};
 
 END_NS_NNCASE_RT_MODULE

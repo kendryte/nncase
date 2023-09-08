@@ -14,6 +14,7 @@
  */
 #include <cmath>
 #include <runtime_utils.h>
+#include <type_traits>
 
 using namespace nncase::runtime::cpu;
 
@@ -71,7 +72,13 @@ void softmax_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
 
         const auto out_index = get_reduced_offset(index, axes, true);
         auto out_idx = offset(reduced_strides, out_index);
-        output[in_idx] = expf(in);
+        if (std::is_same_v<T, float>) {
+            output[in_idx] = nncase_mt.float_unary_exp(in);
+        } else {
+            runtime_util.rt_assert(false,
+                                   (char *)"Not supported Type in softmax!");
+        }
+
         tmp[out_idx] += output[in_idx];
     }));
 
@@ -93,6 +100,8 @@ void softmax_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
             }
         }
     }));
+
+    runtime_util.free(tmp);
 }
 } // namespace
 void softmax(const float *input, float *output,

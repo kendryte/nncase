@@ -355,7 +355,7 @@ void tdma_reduce_async(tensor<T, loc_t::local> &src,
 
     {
         __tdma_all_sync_apply_macro(reduce_async_visit_func2, ([]() -> void {
-                                        free(global_hardware_ctx.global_var);
+                                        runtime_util.free(global_hardware_ctx.global_var);
                                         global_hardware_ctx.global_var =
                                             nullptr;
                                     }),
@@ -418,7 +418,7 @@ void all_reduce_async_visit_func2_all(int visit, tensor<T, ALoc> &src,
         tensor<T> reduced_tensor = tensor<T>(reduced_shape);
         reduce(gather_tensor, reduced_tensor, reduce_op, (T)0, dims_t({0}),
                false);
-        free(gather_span);
+        runtime_util.free(gather_span);
         global_hardware_ctx.global_var = reduced_span;
     } else {
         tensor<T> reduced_tensor =

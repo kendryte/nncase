@@ -68,18 +68,18 @@ DEFINE_BFUNC(7)
     block##b::shared::name = &shared##b##name;
 
 #define CLEAR_SHARED(i)                                                        \
-    tdma_fill_async<float>(*block##i::shared::V2, 0);                           \
-    tdma_fill_async<float>(*block##i::shared::V5, 0);                           \
-    tdma_fill_async<float>(*block##i::shared::V13, 0);                          \
-    tdma_fill_async<float>(*block##i::shared::V16, 0);                          \
-    tdma_fill_async<float>(*block##i::shared::V25, 0);                          \
-    tdma_fill_async<float>(*block##i::shared::V26, 0);                          \
-    tdma_fill_async<float>(*block##i::shared::V31, 0);                          \
-    tdma_fill_async<float>(*block##i::shared::V32, 0);                          \
-    tdma_fill_async<float>(*block##i::shared::V33, 0);                          \
-    tdma_fill_async<float>(*block##i::shared::V35, 0);                          \
-    tdma_fill_async<float>(*block##i::shared::V38, 0);                          \
-    tdma_fill_async<float>(*block##i::shared::V40, 0);                          \
+    tdma_fill_async<float>(*block##i::shared::V2, 0);                          \
+    tdma_fill_async<float>(*block##i::shared::V5, 0);                          \
+    tdma_fill_async<float>(*block##i::shared::V13, 0);                         \
+    tdma_fill_async<float>(*block##i::shared::V16, 0);                         \
+    tdma_fill_async<float>(*block##i::shared::V25, 0);                         \
+    tdma_fill_async<float>(*block##i::shared::V26, 0);                         \
+    tdma_fill_async<float>(*block##i::shared::V31, 0);                         \
+    tdma_fill_async<float>(*block##i::shared::V32, 0);                         \
+    tdma_fill_async<float>(*block##i::shared::V33, 0);                         \
+    tdma_fill_async<float>(*block##i::shared::V35, 0);                         \
+    tdma_fill_async<float>(*block##i::shared::V38, 0);                         \
+    tdma_fill_async<float>(*block##i::shared::V40, 0);                         \
     tdma_fill_async<float>(*block##i::shared::V42, 0);
 
 void _start(hardware_context_mt *hw_ctx_impl, runtime_util_mt *rt_util_mt,
@@ -97,7 +97,8 @@ void _start(hardware_context_mt *hw_ctx_impl, runtime_util_mt *rt_util_mt,
     MALLOC_GLOBAL(6, V35_w, float, (8192 * 8192), dims_t({8192, 8192}))
     MALLOC_GLOBAL(7, V3_data, float, (384 * 128), dims_t({384, 128}))
     MALLOC_GLOBAL(8, V11_data, float, (384 * 128), dims_t({384, 128}))
-    MALLOC_GLOBAL(9, Attn_mask, float, (1 * 1 * 384 * 384), dims_t({1, 1, 384, 384}))
+    MALLOC_GLOBAL(9, Attn_mask, float, (1 * 1 * 384 * 384),
+                  dims_t({1, 1, 384, 384}))
     MALLOC_GLOBAL(10, V38_w, float, (8192 * 22016), dims_t({8192, 22016}))
     MALLOC_GLOBAL(11, V40_w, float, (8192 * 22016), dims_t({8192, 22016}))
     MALLOC_GLOBAL(12, V42_w, float, (22016 * 8192), dims_t({22016, 8192}))
@@ -107,7 +108,7 @@ void _start(hardware_context_mt *hw_ctx_impl, runtime_util_mt *rt_util_mt,
     auto GV31_tmp = tensor<float, loc_t::device>(dims_t({1, 64, 384, 128}));
     V25 = &V25_tmp;
     GV31 = &GV31_tmp;
-    
+
     MALLOC_SHARED(V2, 0, float, (1 * 64 * 48 * 128), dims_t({1, 64, 48, 128}))
     MALLOC_SHARED(V2, 1, float, (1 * 64 * 48 * 128), dims_t({1, 64, 48, 128}))
     MALLOC_SHARED(V2, 2, float, (1 * 64 * 48 * 128), dims_t({1, 64, 48, 128}))
@@ -144,126 +145,94 @@ void _start(hardware_context_mt *hw_ctx_impl, runtime_util_mt *rt_util_mt,
     MALLOC_SHARED(V16, 6, float, (1 * 64 * 48 * 128), dims_t({1, 64, 48, 128}))
     MALLOC_SHARED(V16, 7, float, (1 * 64 * 48 * 128), dims_t({1, 64, 48, 128}))
 
-    MALLOC_SHARED(V25, 0, float, (1 * 64 * 384 * 128),
-                  dims_t({1, 64, 384, 128}))
-    MALLOC_SHARED(V25, 1, float, (1 * 64 * 384 * 128),
-                  dims_t({1, 64, 384, 128}))
-    MALLOC_SHARED(V25, 2, float, (1 * 64 * 384 * 128),
-                  dims_t({1, 64, 384, 128}))
-    MALLOC_SHARED(V25, 3, float, (1 * 64 * 384 * 128),
-                  dims_t({1, 64, 384, 128}))
-    MALLOC_SHARED(V25, 4, float, (1 * 64 * 384 * 128),
-                  dims_t({1, 64, 384, 128}))
-    MALLOC_SHARED(V25, 5, float, (1 * 64 * 384 * 128),
-                  dims_t({1, 64, 384, 128}))
-    MALLOC_SHARED(V25, 6, float, (1 * 64 * 384 * 128),
-                  dims_t({1, 64, 384, 128}))
-    MALLOC_SHARED(V25, 7, float, (1 * 64 * 384 * 128),
-                  dims_t({1, 64, 384, 128}))
+    MALLOC_SHARED(V25, 0, float, (1 * 64 * 128 * 384),
+                  dims_t({1, 64, 128, 384}))
+    MALLOC_SHARED(V25, 1, float, (1 * 64 * 128 * 384),
+                  dims_t({1, 64, 128, 384}))
+    MALLOC_SHARED(V25, 2, float, (1 * 64 * 128 * 384),
+                  dims_t({1, 64, 128, 384}))
+    MALLOC_SHARED(V25, 3, float, (1 * 64 * 128 * 384),
+                  dims_t({1, 64, 128, 384}))
+    MALLOC_SHARED(V25, 4, float, (1 * 64 * 128 * 384),
+                  dims_t({1, 64, 128, 384}))
+    MALLOC_SHARED(V25, 5, float, (1 * 64 * 128 * 384),
+                  dims_t({1, 64, 128, 384}))
+    MALLOC_SHARED(V25, 6, float, (1 * 64 * 128 * 384),
+                  dims_t({1, 64, 128, 384}))
+    MALLOC_SHARED(V25, 7, float, (1 * 64 * 128 * 384),
+                  dims_t({1, 64, 128, 384}))
 
-    MALLOC_SHARED(V26, 0, float, (1 * 64 * 384 * 128),
-                  dims_t({1, 64, 384, 384}))
-    MALLOC_SHARED(V26, 1, float, (1 * 64 * 384 * 128),
-                  dims_t({1, 64, 384, 384}))
-    MALLOC_SHARED(V26, 2, float, (1 * 64 * 384 * 128),
-                  dims_t({1, 64, 384, 384}))
-    MALLOC_SHARED(V26, 3, float, (1 * 64 * 384 * 128),
-                  dims_t({1, 64, 384, 384}))
-    MALLOC_SHARED(V26, 4, float, (1 * 64 * 384 * 128),
-                  dims_t({1, 64, 384, 384}))
-    MALLOC_SHARED(V26, 5, float, (1 * 64 * 384 * 128),
-                  dims_t({1, 64, 384, 384}))
-    MALLOC_SHARED(V26, 6, float, (1 * 64 * 384 * 128),
-                  dims_t({1, 64, 384, 384}))
-    MALLOC_SHARED(V26, 7, float, (1 * 64 * 384 * 128),
-                  dims_t({1, 64, 384, 384}))
+    MALLOC_SHARED(V26, 0, float, (1 * 64 * 48 * 384), dims_t({1, 64, 48, 384}))
+    MALLOC_SHARED(V26, 1, float, (1 * 64 * 48 * 384), dims_t({1, 64, 48, 384}))
+    MALLOC_SHARED(V26, 2, float, (1 * 64 * 48 * 384), dims_t({1, 64, 48, 384}))
+    MALLOC_SHARED(V26, 3, float, (1 * 64 * 48 * 384), dims_t({1, 64, 48, 384}))
+    MALLOC_SHARED(V26, 4, float, (1 * 64 * 48 * 384), dims_t({1, 64, 48, 384}))
+    MALLOC_SHARED(V26, 5, float, (1 * 64 * 48 * 384), dims_t({1, 64, 48, 384}))
+    MALLOC_SHARED(V26, 6, float, (1 * 64 * 48 * 384), dims_t({1, 64, 48, 384}))
+    MALLOC_SHARED(V26, 7, float, (1 * 64 * 48 * 384), dims_t({1, 64, 48, 384}))
 
-    MALLOC_SHARED(V31, 0, float, (1 * 64 * 384 * 128),
-                  dims_t({1, 64, 384, 384}))
-    MALLOC_SHARED(V31, 1, float, (1 * 64 * 384 * 128),
-                  dims_t({1, 64, 384, 384}))
-    MALLOC_SHARED(V31, 2, float, (1 * 64 * 384 * 128),
-                  dims_t({1, 64, 384, 384}))
-    MALLOC_SHARED(V31, 3, float, (1 * 64 * 384 * 128),
-                  dims_t({1, 64, 384, 384}))
-    MALLOC_SHARED(V31, 4, float, (1 * 64 * 384 * 128),
-                  dims_t({1, 64, 384, 384}))
-    MALLOC_SHARED(V31, 5, float, (1 * 64 * 384 * 128),
-                  dims_t({1, 64, 384, 384}))
-    MALLOC_SHARED(V31, 6, float, (1 * 64 * 384 * 128),
-                  dims_t({1, 64, 384, 384}))
-    MALLOC_SHARED(V31, 7, float, (1 * 64 * 384 * 128),
-                  dims_t({1, 64, 384, 384}))
+    MALLOC_SHARED(V31, 0, float, (1 * 64 * 48 * 128), dims_t({1, 64, 48, 128}))
+    MALLOC_SHARED(V31, 1, float, (1 * 64 * 48 * 128), dims_t({1, 64, 48, 128}))
+    MALLOC_SHARED(V31, 2, float, (1 * 64 * 48 * 128), dims_t({1, 64, 48, 128}))
+    MALLOC_SHARED(V31, 3, float, (1 * 64 * 48 * 128), dims_t({1, 64, 48, 128}))
+    MALLOC_SHARED(V31, 4, float, (1 * 64 * 48 * 128), dims_t({1, 64, 48, 128}))
+    MALLOC_SHARED(V31, 5, float, (1 * 64 * 48 * 128), dims_t({1, 64, 48, 128}))
+    MALLOC_SHARED(V31, 6, float, (1 * 64 * 48 * 128), dims_t({1, 64, 48, 128}))
+    MALLOC_SHARED(V31, 7, float, (1 * 64 * 48 * 128), dims_t({1, 64, 48, 128}))
 
-    MALLOC_SHARED(V32, 0, float, (1 * 64 * 384 * 128),
-                  dims_t({1, 64, 384, 384}))
-    MALLOC_SHARED(V32, 1, float, (1 * 64 * 384 * 128),
-                  dims_t({1, 64, 384, 384}))
-    MALLOC_SHARED(V32, 2, float, (1 * 64 * 384 * 128),
-                  dims_t({1, 64, 384, 384}))
-    MALLOC_SHARED(V32, 3, float, (1 * 64 * 384 * 128),
-                  dims_t({1, 64, 384, 384}))
-    MALLOC_SHARED(V32, 4, float, (1 * 64 * 384 * 128),
-                  dims_t({1, 64, 384, 384}))
-    MALLOC_SHARED(V32, 5, float, (1 * 64 * 384 * 128),
-                  dims_t({1, 64, 384, 384}))
-    MALLOC_SHARED(V32, 6, float, (1 * 64 * 384 * 128),
-                  dims_t({1, 64, 384, 384}))
-    MALLOC_SHARED(V32, 7, float, (1 * 64 * 384 * 128),
-                  dims_t({1, 64, 384, 384}))
+    MALLOC_SHARED(V32, 0, float, (1 * 64 * 48 * 128), dims_t({1, 64, 48, 128}))
+    MALLOC_SHARED(V32, 1, float, (1 * 64 * 48 * 128), dims_t({1, 64, 48, 128}))
+    MALLOC_SHARED(V32, 2, float, (1 * 64 * 48 * 128), dims_t({1, 64, 48, 128}))
+    MALLOC_SHARED(V32, 3, float, (1 * 64 * 48 * 128), dims_t({1, 64, 48, 128}))
+    MALLOC_SHARED(V32, 4, float, (1 * 64 * 48 * 128), dims_t({1, 64, 48, 128}))
+    MALLOC_SHARED(V32, 5, float, (1 * 64 * 48 * 128), dims_t({1, 64, 48, 128}))
+    MALLOC_SHARED(V32, 6, float, (1 * 64 * 48 * 128), dims_t({1, 64, 48, 128}))
+    MALLOC_SHARED(V32, 7, float, (1 * 64 * 48 * 128), dims_t({1, 64, 48, 128}))
 
-    MALLOC_SHARED(V33, 0, float, (1 * 384 * 64 * 128),
-                  dims_t({1, 384, 64, 384}))
-    MALLOC_SHARED(V33, 1, float, (1 * 384 * 64 * 128),
-                  dims_t({1, 384, 64, 384}))
-    MALLOC_SHARED(V33, 2, float, (1 * 384 * 64 * 128),
-                  dims_t({1, 384, 64, 384}))
-    MALLOC_SHARED(V33, 3, float, (1 * 384 * 64 * 128),
-                  dims_t({1, 384, 64, 384}))
-    MALLOC_SHARED(V33, 4, float, (1 * 384 * 64 * 128),
-                  dims_t({1, 384, 64, 384}))
-    MALLOC_SHARED(V33, 5, float, (1 * 384 * 64 * 128),
-                  dims_t({1, 384, 64, 384}))
-    MALLOC_SHARED(V33, 6, float, (1 * 384 * 64 * 128),
-                  dims_t({1, 384, 64, 384}))
-    MALLOC_SHARED(V33, 7, float, (1 * 384 * 64 * 128),
-                  dims_t({1, 384, 64, 384}))
+    MALLOC_SHARED(V33, 0, float, (1 * 48 * 64 * 128), dims_t({1, 48, 64, 128}))
+    MALLOC_SHARED(V33, 1, float, (1 * 48 * 64 * 128), dims_t({1, 48, 64, 128}))
+    MALLOC_SHARED(V33, 2, float, (1 * 48 * 64 * 128), dims_t({1, 48, 64, 128}))
+    MALLOC_SHARED(V33, 3, float, (1 * 48 * 64 * 128), dims_t({1, 48, 64, 128}))
+    MALLOC_SHARED(V33, 4, float, (1 * 48 * 64 * 128), dims_t({1, 48, 64, 128}))
+    MALLOC_SHARED(V33, 5, float, (1 * 48 * 64 * 128), dims_t({1, 48, 64, 128}))
+    MALLOC_SHARED(V33, 6, float, (1 * 48 * 64 * 128), dims_t({1, 48, 64, 128}))
+    MALLOC_SHARED(V33, 7, float, (1 * 48 * 64 * 128), dims_t({1, 48, 64, 128}))
 
-    MALLOC_SHARED(V35, 0, float, (1 * 384 * 8192), dims_t({1, 384, 8192}))
-    MALLOC_SHARED(V35, 1, float, (1 * 384 * 8192), dims_t({1, 384, 8192}))
-    MALLOC_SHARED(V35, 2, float, (1 * 384 * 8192), dims_t({1, 384, 8192}))
-    MALLOC_SHARED(V35, 3, float, (1 * 384 * 8192), dims_t({1, 384, 8192}))
-    MALLOC_SHARED(V35, 4, float, (1 * 384 * 8192), dims_t({1, 384, 8192}))
-    MALLOC_SHARED(V35, 5, float, (1 * 384 * 8192), dims_t({1, 384, 8192}))
-    MALLOC_SHARED(V35, 6, float, (1 * 384 * 8192), dims_t({1, 384, 8192}))
-    MALLOC_SHARED(V35, 7, float, (1 * 384 * 8192), dims_t({1, 384, 8192}))
+    MALLOC_SHARED(V35, 0, float, (1 * 48 * 8192), dims_t({1, 48, 8192}))
+    MALLOC_SHARED(V35, 1, float, (1 * 48 * 8192), dims_t({1, 48, 8192}))
+    MALLOC_SHARED(V35, 2, float, (1 * 48 * 8192), dims_t({1, 48, 8192}))
+    MALLOC_SHARED(V35, 3, float, (1 * 48 * 8192), dims_t({1, 48, 8192}))
+    MALLOC_SHARED(V35, 4, float, (1 * 48 * 8192), dims_t({1, 48, 8192}))
+    MALLOC_SHARED(V35, 5, float, (1 * 48 * 8192), dims_t({1, 48, 8192}))
+    MALLOC_SHARED(V35, 6, float, (1 * 48 * 8192), dims_t({1, 48, 8192}))
+    MALLOC_SHARED(V35, 7, float, (1 * 48 * 8192), dims_t({1, 48, 8192}))
 
-    MALLOC_SHARED(V38, 0, float, (1 * 384 * 8192), dims_t({1, 384, 8192}))
-    MALLOC_SHARED(V38, 1, float, (1 * 384 * 8192), dims_t({1, 384, 8192}))
-    MALLOC_SHARED(V38, 2, float, (1 * 384 * 8192), dims_t({1, 384, 8192}))
-    MALLOC_SHARED(V38, 3, float, (1 * 384 * 8192), dims_t({1, 384, 8192}))
-    MALLOC_SHARED(V38, 4, float, (1 * 384 * 8192), dims_t({1, 384, 8192}))
-    MALLOC_SHARED(V38, 5, float, (1 * 384 * 8192), dims_t({1, 384, 8192}))
-    MALLOC_SHARED(V38, 6, float, (1 * 384 * 8192), dims_t({1, 384, 8192}))
-    MALLOC_SHARED(V38, 7, float, (1 * 384 * 8192), dims_t({1, 384, 8192}))
+    MALLOC_SHARED(V38, 0, float, (1 * 48 * 22016), dims_t({1, 48, 22016}))
+    MALLOC_SHARED(V38, 1, float, (1 * 48 * 22016), dims_t({1, 48, 22016}))
+    MALLOC_SHARED(V38, 2, float, (1 * 48 * 22016), dims_t({1, 48, 22016}))
+    MALLOC_SHARED(V38, 3, float, (1 * 48 * 22016), dims_t({1, 48, 22016}))
+    MALLOC_SHARED(V38, 4, float, (1 * 48 * 22016), dims_t({1, 48, 22016}))
+    MALLOC_SHARED(V38, 5, float, (1 * 48 * 22016), dims_t({1, 48, 22016}))
+    MALLOC_SHARED(V38, 6, float, (1 * 48 * 22016), dims_t({1, 48, 22016}))
+    MALLOC_SHARED(V38, 7, float, (1 * 48 * 22016), dims_t({1, 48, 22016}))
 
-    MALLOC_SHARED(V40, 0, float, (1 * 384 * 22016), dims_t({1, 384, 22016}))
-    MALLOC_SHARED(V40, 1, float, (1 * 384 * 22016), dims_t({1, 384, 22016}))
-    MALLOC_SHARED(V40, 2, float, (1 * 384 * 22016), dims_t({1, 384, 22016}))
-    MALLOC_SHARED(V40, 3, float, (1 * 384 * 22016), dims_t({1, 384, 22016}))
-    MALLOC_SHARED(V40, 4, float, (1 * 384 * 22016), dims_t({1, 384, 22016}))
-    MALLOC_SHARED(V40, 5, float, (1 * 384 * 22016), dims_t({1, 384, 22016}))
-    MALLOC_SHARED(V40, 6, float, (1 * 384 * 22016), dims_t({1, 384, 22016}))
-    MALLOC_SHARED(V40, 7, float, (1 * 384 * 22016), dims_t({1, 384, 22016}))
+    MALLOC_SHARED(V40, 0, float, (1 * 48 * 22016), dims_t({1, 48, 22016}))
+    MALLOC_SHARED(V40, 1, float, (1 * 48 * 22016), dims_t({1, 48, 22016}))
+    MALLOC_SHARED(V40, 2, float, (1 * 48 * 22016), dims_t({1, 48, 22016}))
+    MALLOC_SHARED(V40, 3, float, (1 * 48 * 22016), dims_t({1, 48, 22016}))
+    MALLOC_SHARED(V40, 4, float, (1 * 48 * 22016), dims_t({1, 48, 22016}))
+    MALLOC_SHARED(V40, 5, float, (1 * 48 * 22016), dims_t({1, 48, 22016}))
+    MALLOC_SHARED(V40, 6, float, (1 * 48 * 22016), dims_t({1, 48, 22016}))
+    MALLOC_SHARED(V40, 7, float, (1 * 48 * 22016), dims_t({1, 48, 22016}))
 
-    MALLOC_SHARED(V42, 0, float, (1 * 384 * 8192), dims_t({1, 384, 8192}))
-    MALLOC_SHARED(V42, 1, float, (1 * 384 * 8192), dims_t({1, 384, 8192}))
-    MALLOC_SHARED(V42, 2, float, (1 * 384 * 8192), dims_t({1, 384, 8192}))
-    MALLOC_SHARED(V42, 3, float, (1 * 384 * 8192), dims_t({1, 384, 8192}))
-    MALLOC_SHARED(V42, 4, float, (1 * 384 * 8192), dims_t({1, 384, 8192}))
-    MALLOC_SHARED(V42, 5, float, (1 * 384 * 8192), dims_t({1, 384, 8192}))
-    MALLOC_SHARED(V42, 6, float, (1 * 384 * 8192), dims_t({1, 384, 8192}))
-    MALLOC_SHARED(V42, 7, float, (1 * 384 * 8192), dims_t({1, 384, 8192}))
+    MALLOC_SHARED(V42, 0, float, (1 * 48 * 8192), dims_t({1, 48, 8192}))
+    MALLOC_SHARED(V42, 1, float, (1 * 48 * 8192), dims_t({1, 48, 8192}))
+    MALLOC_SHARED(V42, 2, float, (1 * 48 * 8192), dims_t({1, 48, 8192}))
+    MALLOC_SHARED(V42, 3, float, (1 * 48 * 8192), dims_t({1, 48, 8192}))
+    MALLOC_SHARED(V42, 4, float, (1 * 48 * 8192), dims_t({1, 48, 8192}))
+    MALLOC_SHARED(V42, 5, float, (1 * 48 * 8192), dims_t({1, 48, 8192}))
+    MALLOC_SHARED(V42, 6, float, (1 * 48 * 8192), dims_t({1, 48, 8192}))
+    MALLOC_SHARED(V42, 7, float, (1 * 48 * 8192), dims_t({1, 48, 8192}))
 
     pthread_t t_0_0, t_1_0, t_2_0, t_3_0, t_4_0, t_5_0, t_6_0, t_7_0;
     pthread_t t_0_1, t_1_1, t_2_1, t_3_1, t_4_1, t_5_1, t_6_1, t_7_1;
