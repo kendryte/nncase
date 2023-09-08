@@ -72,7 +72,6 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
 
         if (context.GetArgument(target, Reshape.Shape) is TensorConst shapeConst)
         {
-
             var shapeValue = shapeConst.Value.ToArray<int>();
             var negCount = shapeValue.Count(IsMinus1);
             var shapeSize = shapeValue.Aggregate(1, (x, y) => x * y);

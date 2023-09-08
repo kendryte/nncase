@@ -24,13 +24,14 @@ public partial class UnsqueezeShapeEvaluator : IEvaluator<UnsqueezeShape>, IType
 
     public IRType Visit(ITypeInferenceContext context, UnsqueezeShape target)
     {
-        var input = context.GetArgument(target, UnsqueezeShape.InputShape);
+        var input = context.CheckArgumentType<TensorType>(target, UnsqueezeShape.InputShape);
         var dims = context.CheckArgumentType<TensorType>(target, UnsqueezeShape.Dim);
-        if (!input.CheckedShape.IsFixed)
+        if (!input.Shape.IsFixed)
         {
             return new TensorType(DataTypes.Int64, new[] { Dimension.Unknown });
         }
-        return new TensorType(DataTypes.Int64, new[] { input.CheckedShape.Size + dims.Shape[0] });
+
+        return new TensorType(DataTypes.Int64, new[] { input.Shape.Size + dims.Shape[0] });
     }
 
     public Cost Visit(ICostEvaluateContext context, UnsqueezeShape target)
