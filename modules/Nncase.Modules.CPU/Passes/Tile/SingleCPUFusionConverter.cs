@@ -85,15 +85,15 @@ internal sealed class SingleCPUFusionConverter
         protected override IReadOnlyList<Expr> VisitLeafVar(Var expr)
         {
             var type = (TensorType)expr.TypeAnnotation;
-            return DistributeUtilities.GetLeafCandidateNDSBPs(type, Placement).
-                Select(ndsbp => IR.F.Tensors.Boxing(expr, new DistTensorType(type, ndsbp, Placement))).
+            return DistributedUtilities.GetLeafCandidateNDSBPs(type, Placement).
+                Select(ndsbp => IR.F.Tensors.Boxing(expr, new DistributedType(type, ndsbp, Placement))).
                 ToArray();
         }
 
         protected override IReadOnlyList<Expr> VisitLeafConst(Const expr)
         {
-            return DistributeUtilities.GetLeafCandidateNDSBPs((TensorType)expr.CheckedType, Placement)
-                .Select(ndsbp => IR.F.Tensors.Boxing(expr, new DistTensorType((TensorType)expr.CheckedType, ndsbp, Placement))).
+            return DistributedUtilities.GetLeafCandidateNDSBPs((TensorType)expr.CheckedType, Placement)
+                .Select(ndsbp => IR.F.Tensors.Boxing(expr, new DistributedType((TensorType)expr.CheckedType, ndsbp, Placement))).
                 ToArray();
         }
 
@@ -139,16 +139,15 @@ internal sealed class SingleCPUFusionConverter
                 case CPUKernelOp kernelOp:
                     switch (kernelOp.Target)
                     {
-                        case IR.Math.Unary unary:
+                        case Unary unary:
                             GenerateUnary(unary, arguments, ret);
                             break;
-
-                        // case Binary binary:
-                        //     GenerateBinary(binary, arguments, ret, expr);
-                        //     break;
-                        // case MatMul matmul:
-                        //     GenerateMatMul(arguments, ret, expr);
-                        //     break;
+                        case Binary binary:
+                            GenerateBinary(binary, arguments, ret);
+                            break;
+                        case MatMul matmul:
+                            GenerateMatmul(matmul, arguments, ret);
+                            break;
                         default:
                             throw new NotSupportedException();
                     }
@@ -168,13 +167,13 @@ internal sealed class SingleCPUFusionConverter
         {
             switch (expr.Arguments[0].CheckedType, boxing.NewType)
             {
-                case (TensorType tensorType, DistTensorType distTensorType):
+                case (TensorType tensorType, DistributedType distTensorType):
                     {
                         _mainBody.Add(T.Block(nameof(Boxing)).Body(IR.F.XPU.TDMALoad(ret, arguments[0], distTensorType.NdSbp, distTensorType.Placement)).Build());
                     }
 
                     break;
-                case (DistTensorType distTensorType, TensorType tensorType):
+                case (DistributedType distTensorType, TensorType tensorType):
                     {
                         _mainBody.Add(T.Block(nameof(Boxing)).Body(IR.F.XPU.TDMAStore(arguments[0], ret, distTensorType.NdSbp, distTensorType.Placement)).Build());
                     }
@@ -189,6 +188,23 @@ internal sealed class SingleCPUFusionConverter
         {
             var input = arguments[IR.Math.Unary.Input.Index];
             _mainBody.Add(T.Block(nameof(IR.Math.Unary)).Body(IR.F.XPU.Unary(unary.UnaryOp, input, ret)).Build());
+        }
+
+        private void GenerateBinary(Binary binary, Buffer[] arguments, Buffer ret)
+        {
+            _mainBody.Add(T.Block(nameof(IR.Math.Unary)).Body(IR.F.XPU.Binary(binary.BinaryOp, arguments[0], arguments[1], ret)).Build());
+        }
+
+        private void GenerateMatmul(MatMul matmul, Buffer[] arguments, Buffer ret)
+        {
+            if (ret.MemSpan.Location == MemoryLocation.L2Data)
+            {
+                _mainBody.Add(T.Block(nameof(XPU.BlockMMA)).Body(IR.F.XPU.Matmul(arguments[0], arguments[1], ret)).Build());
+            }
+            else
+            {
+                _mainBody.Add(T.Block(nameof(XPU.Matmul)).Body(IR.F.XPU.Matmul(arguments[0], arguments[1], ret)).Build());
+            }
         }
 
 #if false
@@ -255,7 +271,7 @@ internal sealed class SingleCPUFusionConverter
                 final);
             _mainBody.Add(body.Build());
         }
-#endif 
+#endif
 
         private TIR.Buffer TryAllocateBuffer(Expr expr)
         {
@@ -292,7 +308,7 @@ internal sealed class SingleCPUFusionConverter
         private (TensorType, MemoryLocation) GetTypeAndLocation(IRType type)
         {
             MemoryLocation location = MemoryLocation.Data;
-            if (type is DistTensorType distTensorType)
+            if (type is DistributedType distTensorType)
             {
                 if (distTensorType.Placement.Rank == 2)
                 {
@@ -305,9 +321,12 @@ internal sealed class SingleCPUFusionConverter
             }
 
             TensorType tensorType;
-            if (type is DistTensorType distTensor)
+            if (type is DistributedType distTensor)
             {
-                DistributeUtilities.IsDistributable(distTensor.TensorType, distTensor.NdSbp.ToArray(), distTensor.Placement, out tensorType);
+                if (!DistributedUtilities.IsDistributable(distTensor.TensorType, distTensor.NdSbp.ToArray(), distTensor.Placement, out tensorType))
+                {
+                    throw new NotSupportedException();
+                }
             }
             else if (type is TensorType ttype)
             {

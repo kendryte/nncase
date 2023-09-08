@@ -10,8 +10,8 @@ public sealed class TDMAStoreEvaluator : ITypeInferencer<TDMAStore>
 {
     public IRType Visit(ITypeInferenceContext context, TDMAStore target)
     {
-        var inType = context.CheckArgumentType<TensorType>(target, TDMAStore.Src);
-        var outType = context.CheckArgumentType<TensorType>(target, TDMAStore.Dest);
+        _ = context.CheckArgumentType<TensorType>(target, TDMAStore.Src);
+        _ = context.CheckArgumentType<TensorType>(target, TDMAStore.Dest);
         return TupleType.Void;
     }
 }

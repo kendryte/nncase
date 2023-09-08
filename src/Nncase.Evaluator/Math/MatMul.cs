@@ -30,9 +30,14 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, MatMul target)
     {
-        var lhs = context.CheckArgumentType<TensorType>(target, MatMul.Lhs);
-        var rhs = context.CheckArgumentType<TensorType>(target, MatMul.Rhs);
-        return Visit(lhs, rhs);
+        var lhs = context.CheckArgumentType<IRType>(target, MatMul.Lhs);
+        var rhs = context.CheckArgumentType<IRType>(target, MatMul.Rhs);
+        return (lhs, rhs) switch
+        {
+            (DistributedType a, DistributedType b) => Visit(a, b),
+            (TensorType a, TensorType b) => Visit(a, b),
+            _ => new InvalidType(string.Empty),
+        };
     }
 
     /// <inheritdoc/>
@@ -72,6 +77,70 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         var lhs = context.GetArgumentShape(target, MatMul.Lhs);
         var rhs = context.GetArgumentShape(target, MatMul.Rhs);
         return Cast(IR.F.ShapeExpr.MatMulShape(lhs, rhs), DataTypes.Int32);
+    }
+
+    private IRType Visit(DistributedType a, DistributedType b)
+    {
+        if (Visit(a.TensorType, b.TensorType) is not TensorType outType)
+        {
+            return new InvalidType(string.Empty);
+        }
+
+        if (a.Placement != b.Placement)
+        {
+            return new InvalidType("placement not equal");
+        }
+
+        var aRank = a.TensorType.Shape.Rank;
+        var bRank = a.TensorType.Shape.Rank;
+
+        var ndsbp = new SBP[a.Placement.Rank];
+        for (int i = 0; i < a.Placement.Rank; i++)
+        {
+            var invalid = new InvalidType($"({a.NdSbp[i]}, {b.NdSbp[i]}) not support");
+            switch (a.NdSbp[i], b.NdSbp[i])
+            {
+                // split on k
+                case (SBPSplit { Axis: int ax }, SBPSplit { Axis: int bx }):
+                    if (ax == (aRank - 1) && bx == (bRank - 2))
+                    {
+                        ndsbp[i] = SBP.P;
+                    }
+                    else
+                    {
+                        if (ax == bx)
+                        {
+                            ndsbp[i] = SBP.S(ax);
+                        }
+                        else
+                        {
+                            return invalid;
+                        }
+                    }
+
+                    break;
+                case (SBPSplit { Axis: int ax }, SBPBroadCast):
+                    if (ax == aRank - 1)
+                    {
+                        return invalid;
+                    }
+
+                    ndsbp[i] = SBP.S(ax);
+                    break;
+                case (SBPBroadCast, SBPSplit { Axis: int bx }):
+                    if (bx == bRank - 2)
+                    {
+                        return invalid;
+                    }
+
+                    ndsbp[i] = SBP.S(bx);
+                    break;
+                default:
+                    return invalid;
+            }
+        }
+
+        return new DistributedType(outType, ndsbp, a.Placement);
     }
 
     private IRType Visit(TensorType lhs, TensorType rhs)

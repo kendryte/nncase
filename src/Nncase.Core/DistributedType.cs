@@ -15,11 +15,11 @@ namespace Nncase.IR;
 
 public abstract record SBP
 {
-    public static SBPSumParallel P => SBPSumParallel.Instance;
-
-    public static SBPSplit S(int axis) => new SBPSplit(axis);
+    public static SBPPartialSum P => SBPPartialSum.Instance;
 
     public static SBPBroadCast B => SBPBroadCast.Instance;
+
+    public static SBPSplit S(int axis) => new SBPSplit(axis);
 }
 
 public sealed record SBPSplit(int Axis) : SBP
@@ -27,11 +27,11 @@ public sealed record SBPSplit(int Axis) : SBP
     public override string ToString() => $"S({Axis})";
 }
 
-public sealed record SBPSumParallel : SBP
+public sealed record SBPPartialSum : SBP
 {
-    public static readonly SBPSumParallel Instance = new SBPSumParallel();
+    public static readonly SBPPartialSum Instance = new SBPPartialSum();
 
-    private SBPSumParallel()
+    private SBPPartialSum()
     {
     }
 
@@ -77,9 +77,9 @@ public sealed record Placement
     public override string ToString() => $"@{Kind} [{string.Join(',', Hierarchy.Zip(Name).Select(t => t.First.ToString() + '@' + t.Second.ToString()))}]";
 }
 
-public sealed record DistTensorType : IRType
+public sealed record DistributedType : IRType
 {
-    public DistTensorType(TensorType tensorType, IRArray<SBP> ndsbp, Placement placement)
+    public DistributedType(TensorType tensorType, IRArray<SBP> ndsbp, Placement placement)
     {
         if (placement.Hierarchy.Count != ndsbp.Count)
         {

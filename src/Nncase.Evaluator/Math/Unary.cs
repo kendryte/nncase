@@ -69,7 +69,7 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
         return inputType switch
         {
             TensorType tensorType => Visit(tensorType),
-            DistTensorType distTensorType => Visit(distTensorType),
+            DistributedType distTensorType => Visit(distTensorType),
             _ => new InvalidType($"Not support {inputType.GetType().Name}"),
         };
     }
@@ -82,7 +82,7 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
         return (inputType, outputType) switch
         {
             (TensorType tensorType, TensorType tensorType1) => Visit(tensorType, tensorType1, target),
-            (DistTensorType distTensorType, DistTensorType distTensorType1) => Visit(distTensorType, distTensorType1, target),
+            (DistributedType distTensorType, DistributedType distTensorType1) => Visit(distTensorType, distTensorType1, target),
             _ => throw new NotSupportedException(string.Empty),
         };
     }
@@ -122,7 +122,7 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
         return context.GetArgumentShape(target, Unary.Input);
     }
 
-    private IRType Visit(DistTensorType distTensorType)
+    private IRType Visit(DistributedType distTensorType)
     {
         return distTensorType;
     }
@@ -167,10 +167,10 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
         return input;
     }
 
-    private Cost Visit(DistTensorType inType, DistTensorType outType, Unary target)
+    private Cost Visit(DistributedType inType, DistributedType outType, Unary target)
     {
-        var inPartType = DistributeUtilities.GetPartedDistTensorType(inType, out float inScale);
-        var outPartType = DistributeUtilities.GetPartedDistTensorType(outType, out float outScale);
+        var inPartType = DistributedUtilities.GetDividedTensorType(inType, out float inScale);
+        var outPartType = DistributedUtilities.GetDividedTensorType(outType, out float outScale);
         return new()
         {
             [CostFactorNames.MemoryLoad] = (UInt128)((float)CostUtility.GetMemoryAccess(inPartType) * inScale),

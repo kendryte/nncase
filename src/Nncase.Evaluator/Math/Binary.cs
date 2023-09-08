@@ -2,9 +2,11 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using DryIoc;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
+using Nncase.IR.Tensors;
 using Nncase.Utilities;
 using OrtKISharp;
 
@@ -54,17 +56,22 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Binary target)
     {
-        var lhs = context.CheckArgumentType<TensorType>(target, Binary.Lhs);
-        var rhs = context.CheckArgumentType<TensorType>(target, Binary.Rhs);
-        return Visit(target, lhs, rhs);
+        var lhs = context.CheckArgumentType<IRType>(target, Binary.Lhs);
+        var rhs = context.CheckArgumentType<IRType>(target, Binary.Rhs);
+        return (lhs, rhs) switch
+        {
+            (TensorType a, TensorType b) => Visit(target, a, b),
+            (DistributedType a, DistributedType b) => Visit(target, a, b),
+            _ => new InvalidType("invalid binary type"),
+        };
     }
 
     /// <inheritdoc/>
     public Cost Visit(ICostEvaluateContext context, Binary target)
     {
-        var lhsType = context.GetArgumentType<TensorType>(target, Binary.Lhs);
-        var rhsType = context.GetArgumentType<TensorType>(target, Binary.Rhs);
-        var outputType = context.GetReturnType<TensorType>();
+        var lhsType = context.GetArgumentType<IRType>(target, Binary.Lhs);
+        var rhsType = context.GetArgumentType<IRType>(target, Binary.Rhs);
+        var outputType = context.GetReturnType<IRType>();
 
         return new()
         {
@@ -119,6 +126,59 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
         var lhs = context.GetArgumentShape(target, Binary.Lhs);
         var rhs = context.GetArgumentShape(target, Binary.Rhs);
         return IR.F.Tensors.Cast(ShapeExprUtility.BroadcastShape(lhs, rhs), DataTypes.Int32);
+    }
+
+    private IRType Visit(Binary target, DistributedType a, DistributedType b)
+    {
+        if (a.Placement != b.Placement)
+        {
+            return new InvalidType("lhs rhs have different placement");
+        }
+
+        var ndsbp = new SBP[a.Placement.Rank];
+        for (int i = 0; i < a.Placement.Rank; i++)
+        {
+            switch (a.NdSbp[i], b.NdSbp[i])
+            {
+                case (SBPSplit sa, SBPSplit sb):
+                    if (sa != sb)
+                    {
+                        return new InvalidType("lhs rhs sbp at {i} not equal");
+                    }
+
+                    ndsbp[i] = sa;
+                    break;
+                case (SBPSplit s1, SBPBroadCast):
+                    ndsbp[i] = s1;
+                    break;
+                case (SBPBroadCast, SBPSplit s2):
+                    ndsbp[i] = s2;
+                    break;
+                case (SBPBroadCast, SBPBroadCast):
+                    ndsbp[i] = SBP.B;
+                    break;
+                case (SBPPartialSum, _):
+                case (_, SBPPartialSum):
+                    if (target.BinaryOp == BinaryOp.Add)
+                    {
+                        ndsbp[i] = SBP.P;
+                    }
+                    else
+                    {
+                        return new InvalidType("lhs rhs have partialsum only can add");
+                    }
+
+                    break;
+            }
+        }
+
+        var rType = Visit(target, a.TensorType, b.TensorType);
+        if (rType is not TensorType tensorType)
+        {
+            return rType;
+        }
+
+        return new DistributedType(tensorType, ndsbp, a.Placement);
     }
 
     private int Compute(BinaryOp op, int a, int b) => op switch

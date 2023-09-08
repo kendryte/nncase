@@ -40,34 +40,44 @@ public class UnitTestCPUTargetTiling : TestClassBase
         var input = new Var("input", new TensorType(DataTypes.Float32, shape));
         var main = new Function("main", IR.F.Math.Unary(UnaryOp.Asin, input), new[] { input });
         var module = new IR.IRModule(main);
-
-        var compiler = CompileSession.Compiler;
-        compiler.ImportIRModule(module);
-        await compiler.CompileAsync();
-        using (var fs = Dumpper.OpenFile("test.kmodel"))
-        {
-            compiler.Gencode(fs);
-        }
-
-        var input_tensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, shape).Evaluate().AsTensor();
-        using (var fs = Dumpper.OpenFile("input_0.bin"))
-        {
-            fs.Write(input_tensor.BytesBuffer);
-        }
+        await Compile(module);
 
         // Testing.RunKModel(File.ReadAllBytes(Path.Join(Dumpper.Directory, "test.kmodel")), Dumpper.Directory, new[] { input_tensor });
     }
 
     [Fact]
+    public async Task TestCpuBinary()
+    {
+        var lhsShape = new[] { 1, 64, 384, 128 };
+        var lhs = new Var("lhs", new TensorType(DataTypes.Float32, lhsShape));
+        var rhsShape = new[] { 1, 1, 384, 128 };
+        var rhs = new Var("lhs", new TensorType(DataTypes.Float32, rhsShape));
+        var main = new Function("main", lhs * rhs, new[] { lhs, rhs });
+        var module = new IR.IRModule(main);
+        await Compile(module);
+    }
+
+    [Fact]
     public async Task TestCpuMatMul()
     {
-        var lhs = new Var("lhs", new TensorType(DataTypes.Float32, new[] { 3, 4 }));
-        var rhs = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 4, 6 });
+        var lhs = new Var("lhs", new TensorType(DataTypes.Float32, new[] { 1, 1, 384, 8192 }));
+        var rhs = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 64, 8192, 128 });
 
-        // new Var("rhs", new TensorType(DataTypes.Float32, new[] { 4, 6 }));
         var main = new Function("main", IR.F.Tensors.MatMul(lhs, rhs), new[] { lhs });
         var module = new IR.IRModule(main);
+        await Compile(module);
 
+        // var input_tensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, new[] { 3, 4 }).Evaluate().AsTensor();
+        // using (var fs = Dumpper.OpenFile("input_0.bin"))
+        // {
+        //     fs.Write(input_tensor.BytesBuffer);
+        // }
+
+        // Testing.RunKModel(File.ReadAllBytes(Path.Join(Dumpper.Directory, "test.kmodel")), Dumpper.Directory, new[] { input_tensor });
+    }
+
+    private async Task Compile(IRModule module)
+    {
         var compiler = CompileSession.Compiler;
         compiler.ImportIRModule(module);
         await compiler.CompileAsync();
@@ -75,13 +85,5 @@ public class UnitTestCPUTargetTiling : TestClassBase
         {
             compiler.Gencode(fs);
         }
-
-        var input_tensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, new[] { 3, 4 }).Evaluate().AsTensor();
-        using (var fs = Dumpper.OpenFile("input_0.bin"))
-        {
-            fs.Write(input_tensor.BytesBuffer);
-        }
-
-        Testing.RunKModel(File.ReadAllBytes(Path.Join(Dumpper.Directory, "test.kmodel")), Dumpper.Directory, new[] { input_tensor });
     }
 }

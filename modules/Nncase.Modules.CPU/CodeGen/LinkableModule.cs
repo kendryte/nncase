@@ -83,7 +83,7 @@ internal sealed class LinkableModule : ILinkableModule
 
         // var elfPath = CompileCSource(csourcePath);
         // var text = File.ReadAllBytes(elfPath);
-        var text = new byte[] { };
+        var text = Array.Empty<byte>();
 
         // if (_options.DumpFlags.HasFlag(DumpFlags.CodeGen))
         // {
@@ -93,13 +93,12 @@ internal sealed class LinkableModule : ILinkableModule
         //         fs.Write(text);
         //     }
         // }
-
         var linkedFunctions = new List<LinkedFunction>();
+
         // foreach (var func in _functions)
         // {
         //     linkedFunctions.Add(new LinkedFunction(func.Id, func.SourceFunction, 0, 0, func.Sections));
         // }
-
         return new LinkedModule(linkedFunctions, text, _rdata);
     }
 

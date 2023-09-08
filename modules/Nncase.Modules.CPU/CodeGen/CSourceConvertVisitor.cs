@@ -242,11 +242,16 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                     IndentScope.Writer.Write($"tdma_load_async({Visit(args[0]).Name}, {Visit(args[1]).Name}{((TensorType)args[0].CheckedType).ToSlicing(load.NdSbp, load.Placement)})");
                     break;
                 case IR.XPU.TDMAStore store:
-                    IndentScope.Writer.Write($"tdma_store_async({Visit(args[0]).Name}, {Visit(args[1]).Name}{((TensorType)args[1].CheckedType).ToSlicing(store.NdSbp, store.Placement)})");
+                    IndentScope.Writer.Write($"tdma_store_async({Visit(args[0]).Name}, {Visit(args[1]).Name}{((TensorType)args[0].CheckedType).ToSlicing(store.NdSbp, store.Placement)})");
                     break;
                 case IR.XPU.Unary unary:
                     IndentScope.Writer.Write($"unary({Visit(args[0]).Name}, {Visit(args[1]).Name}, unary_op_t::{unary.UnaryOp.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)})");
                     break;
+                case IR.XPU.Binary binary:
+                    IndentScope.Writer.Write($"binary({Visit(args[0]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name}, binary_op_t::{binary.BinaryOp.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)})");
+                    break;
+                default:
+                    throw new NotSupportedException(xpuOp.ToString());
             }
         }
         else

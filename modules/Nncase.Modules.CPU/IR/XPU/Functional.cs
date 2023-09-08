@@ -26,4 +26,19 @@ public partial class XPU
     {
         return new Call(new Unary(unaryOp), input, output);
     }
+
+    public static Call Binary(BinaryOp binaryOp, Expr lhs, Expr rhs, Expr output)
+    {
+        return new Call(new Binary(binaryOp), lhs, rhs, output);
+    }
+
+    public static Call Matmul(Expr lhs, Expr rhs, Expr output)
+    {
+        return new Call(new Matmul(), lhs, rhs, output);
+    }
+
+    public static Call BlockMMA(Expr lhs, Expr rhs, Expr output)
+    {
+        return new Call(new Matmul(), lhs, rhs, output);
+    }
 }

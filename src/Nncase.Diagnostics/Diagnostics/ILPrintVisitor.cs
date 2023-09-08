@@ -275,7 +275,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         $"({string.Join(", ", type.Fields.Select(VisitType))})";
 
     /// <inheritdoc/>
-    public override string VisitType(DistTensorType type)
+    public override string VisitType(DistributedType type)
     {
         var shape = type.TensorType.Shape.ToArray();
         foreach (var (s, r) in type.NdSbp.Select((s, r) => (s, r)))

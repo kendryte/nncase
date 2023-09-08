@@ -137,7 +137,6 @@ namespace shared {
 } // namespace shared";
     }
 
-
 #else
     public const string BufferType = "buffer_t";
 

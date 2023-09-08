@@ -461,5 +461,4 @@ public static class TypeInference
             _ => new InvalidType($"Inputs of if should be same IRType Kind, but then:{thenType}, else: {elseType}"),
         };
     }
-
 }

@@ -6,7 +6,7 @@ using Nncase.IR;
 
 namespace Nncase;
 
-public static class DistributeUtilities
+public static class DistributedUtilities
 {
     public static IReadOnlyList<IRArray<SBP>> GetLeafCandidateNDSBPs(TensorType tensorType, Placement placement)
     {
@@ -69,7 +69,7 @@ public static class DistributeUtilities
         return false;
     }
 
-    public static TensorType GetPartedDistTensorType(DistTensorType distTensorType, out float notContiguousScale)
+    public static TensorType GetDividedTensorType(DistributedType distTensorType, out float notContiguousScale)
     {
         var shape = distTensorType.TensorType.Shape.ToValueArray();
         var tiles = distTensorType.TensorType.Shape.ToValueArray();

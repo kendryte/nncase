@@ -32,7 +32,7 @@ public abstract class TypeFunctor<TResult, TContext>
             TensorType t => VisitType(t, context),
             TupleType t => VisitType(t, context),
             CallableType t => VisitType(t, context),
-            DistTensorType t => VisitType(t, context),
+            DistributedType t => VisitType(t, context),
             _ => DefaultVisitType(type, context),
         };
     }
@@ -99,7 +99,7 @@ public abstract class TypeFunctor<TResult, TContext>
     /// <param name="type">dist tensor type.</param>
     /// <param name="context">Context.</param>
     /// <returns>Result.</returns>
-    public virtual TResult VisitType(DistTensorType type, TContext context) => DefaultVisitType(type, context);
+    public virtual TResult VisitType(DistributedType type, TContext context) => DefaultVisitType(type, context);
 
     /// <summary>
     /// Default visit routine.

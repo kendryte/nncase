@@ -531,8 +531,8 @@ public class UnitTestExpression
     {
         Placement placement = new(Placement.DeviceKind.CPU, new int[] { 4, 2 }, "bt");
         var ttype = new TensorType(DataTypes.Float32, new[] { 1, 384, 8192 });
-        var a = new DistTensorType(ttype, new[] { SBP.S(1), SBP.S(2) }, placement);
-        var b = new DistTensorType(ttype, new[] { SBP.S(1), SBP.S(2) }, placement);
+        var a = new DistributedType(ttype, new[] { SBP.S(1), SBP.S(2) }, placement);
+        var b = new DistributedType(ttype, new[] { SBP.S(1), SBP.S(2) }, placement);
 
         var input = new Var(ttype);
         var ea = IR.F.Tensors.Boxing(input, a);

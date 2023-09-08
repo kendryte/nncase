@@ -23,16 +23,16 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
         Cost cost;
         switch (inType, returnType)
         {
-            case (TensorType tensorType, DistTensorType distTensorType):
-                var partedOutType = DistributeUtilities.GetPartedDistTensorType(distTensorType, out _);
+            case (TensorType tensorType, DistributedType distTensorType):
+                var partedOutType = DistributedUtilities.GetDividedTensorType(distTensorType, out _);
                 cost = new Cost()
                 {
                     [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(tensorType),
                     [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(partedOutType),
                 };
                 break;
-            case (DistTensorType distTensorType, TensorType tensorType):
-                var partedInType = DistributeUtilities.GetPartedDistTensorType(distTensorType, out _);
+            case (DistributedType distTensorType, TensorType tensorType):
+                var partedInType = DistributedUtilities.GetDividedTensorType(distTensorType, out _);
                 cost = new Cost()
                 {
                     [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(partedInType),
