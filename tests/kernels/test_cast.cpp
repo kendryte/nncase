@@ -113,7 +113,6 @@ TEST_P(CastTest, cast) {
     runtime_tensor actual1(output1.as<tensor>().expect("as tensor failed"));
 
     // expected
-    //    cast_copy_tensor(input, expected);
     auto output_ort1 = ortki_CastLike(runtime_tensor_2_ort_tensor(input1),
                                       runtime_tensor_2_ort_tensor(actual1));
     size_t size1 = 0;
