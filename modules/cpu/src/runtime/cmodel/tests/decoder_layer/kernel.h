@@ -289,15 +289,14 @@ void stage1_kernel(
       [1, 16@t, 48@b, 384]@shared -> [1, 16@t, 48@b, 384]
     */
     tensor<float> v29({1, 16, 48, 384}); //[1, 64, 384, 384] [1, 8@b, 96@t, 384]
-    // softmax(v28, v29, 3);
-
+    softmax(v28, v29, 3);
+    
     /*
       [1,1,384,8192] @ [64, 8192, 128] -> [1,64,384,128]
       [1, 1, 48@b, 2048@t] @ [64, 2048@t, 128] -> [1, 64, 48@b, 128]@shared
     */
     auto &v30 = v1;
     tensor_block_mma_sync(v30, *v31_w, *V31, false, ctx);
-#if 0
 
     /* need resplit V */
     auto v31 = (*V31)({0, 16 * tid, 0, 0}, {1, 16, 48, 128});
@@ -337,6 +336,7 @@ void stage1_kernel(
     auto v34 = V34({0, 0, 2048 * tid}, {1, 48, 2048});
     tdma_wait(ctx);
     tensor_block_mma_sync(v34, *v35_w, *V35, false, ctx);
+#if 0
 #if DUMP
     {
         auto v35 = V35({0, 0, tid * 2048}, {1, 48, 2048});
