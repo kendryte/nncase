@@ -335,7 +335,6 @@ void stage1_kernel(
     auto v34 = V34({0, 0, 2048 * tid}, {1, 48, 2048});
     tdma_wait(ctx);
     tensor_block_mma_sync(v34, *v35_w, *V35, false, ctx);
-#if 0
 #if DUMP
     {
         auto v35 = V35({0, 0, tid * 2048}, {1, 48, 2048});
@@ -415,6 +414,5 @@ void stage1_kernel(
         tdma_store_async(
             v43, ImmOutputs[10]({0, 48 * bid, 2048 * tid}, {1, 48, 2048}), ctx);
     }
-#endif
 #endif
 }
