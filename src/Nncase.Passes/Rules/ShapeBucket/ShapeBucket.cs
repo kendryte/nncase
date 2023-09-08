@@ -773,7 +773,7 @@ public class FusionBucketContext
         var args = Arguments.ToDictionary(x => x, x => new Var(x.CheckedType));
         var input = MakeShapeOfFusionInput(Parameters, args.Values.ToArray());
         var varShape = originBody.EvaluateShapeExpr(input);
-        var p = new OpVisitor();
+        var p = new ReplaceOfCollector();
         p.Visit(originBody);
         if (p.list.Count == 0)
         {
@@ -839,7 +839,7 @@ public class FusionBucketContext
         Expr sliceShape = cloneShape;
         int i = 0;
 
-        var p = new OpVisitor();
+        var p = new ReplaceOfCollector();
         p.Visit(cloneShape);
         var processList = p.list;
         processList.Reverse();
@@ -915,7 +915,7 @@ public class FusionBucketContext
             new());
 }
 
-public class OpVisitor : ExprVisitor<Expr, Unit>
+public class ReplaceOfCollector : ExprVisitor<Expr, Unit>
 {
     public List<Call> list = new();
     protected override Expr VisitLeafCall(Call expr)
