@@ -116,7 +116,7 @@ static nncase_mt_t nncase_mt = {fabsf,
                                 bool_binary_logical_or,
                                 bool_binary_logical_xor};
 
-inline void *rt_malloc(size_t size) { return (void *)new uint8_t[size]; }
+inline void *rt_malloc(size_t size) { return (void *)new uint8_t[size](); }
 
 static runtime_util_mt runtime_util = {
     printf,
