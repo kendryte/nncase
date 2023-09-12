@@ -217,6 +217,7 @@ public class ShapeBucketTest : TransformTestBase
             new FusionBucket(shape));
     }
 
+    [Theory]
     public void RunBucketTest(Expr body, int range, Dictionary<Var, IValue> dict, Dictionary<BucketFusion, FusionShapeData[]> shape, params Var[] vars)
     {
         TestMatchedCore(body, dict, new FusionBucket(shape));

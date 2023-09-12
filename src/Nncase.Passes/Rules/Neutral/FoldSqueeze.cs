@@ -40,24 +40,6 @@ public partial class FoldUnsqueezeSqueeze : RewriteRule<Pattern>
     }
 }
 
-// used for dynamic shape
-internal static class FoldSqueezeCommon
-{
-    internal static bool CanFold(int[] sqAxes, int[] unsqAxes, int rank)
-    {
-        // now only support same axes for dynamic shape
-        if (sqAxes.Length != unsqAxes.Length)
-        {
-            return false;
-        }
-
-        // positive
-        var positiveSqAxes = sqAxes.Select(x => x < 0 ? x + rank : x).ToArray();
-        var positiveUnsqAxes = unsqAxes.Select(x => x < 0 ? x + rank : x).ToArray();
-        return positiveSqAxes.SequenceEqual(positiveUnsqAxes);
-    }
-}
-
 [RuleGenerator]
 public partial class FoldSqueezeUnsqueeze : RewriteRule<Pattern>
 {
@@ -76,5 +58,23 @@ public partial class FoldSqueezeUnsqueeze : RewriteRule<Pattern>
         }
 
         return input;
+    }
+}
+
+// used for dynamic shape
+internal static class FoldSqueezeCommon
+{
+    internal static bool CanFold(int[] sqAxes, int[] unsqAxes, int rank)
+    {
+        // now only support same axes for dynamic shape
+        if (sqAxes.Length != unsqAxes.Length)
+        {
+            return false;
+        }
+
+        // positive
+        var positiveSqAxes = sqAxes.Select(x => x < 0 ? x + rank : x).ToArray();
+        var positiveUnsqAxes = unsqAxes.Select(x => x < 0 ? x + rank : x).ToArray();
+        return positiveSqAxes.SequenceEqual(positiveUnsqAxes);
     }
 }

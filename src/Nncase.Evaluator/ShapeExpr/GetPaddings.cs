@@ -26,6 +26,15 @@ public partial class GetPaddingsEvaluator : IEvaluator<GetPaddings>, ITypeInfere
             0);
     }
 
+    public static Expr[] GetWindowedPadding(Expr inputSize, Expr filter, Expr stride, Expr dilation, bool same, bool lower = false)
+    {
+        var i32InputSize = Cast(inputSize, DataTypes.Int32);
+        var i32Filter = Cast(filter, DataTypes.Int32);
+        var i32Stride = Cast(stride, DataTypes.Int32);
+        var i32Dilation = Cast(dilation, DataTypes.Int32);
+        var outputSize = IR.Util.GetWindowedOutputSize(i32InputSize, i32Filter, i32Stride, i32Dilation, same, false);
+        return GetWindowedPaddingValue(i32InputSize, outputSize, i32Filter, i32Stride, i32Dilation, lower);
+    }
 
     public IValue Visit(IEvaluateContext context, GetPaddings target)
     {
@@ -40,19 +49,14 @@ public partial class GetPaddingsEvaluator : IEvaluator<GetPaddings>, ITypeInfere
         return ConcatPadding(padH, padW).Evaluate();
     }
 
-    public static Expr[] GetWindowedPadding(Expr inputSize, Expr filter, Expr stride, Expr dilation, bool same, bool lower = false)
-    {
-        var i32InputSize = Cast(inputSize, DataTypes.Int32);
-        var i32Filter = Cast(filter, DataTypes.Int32);
-        var i32Stride = Cast(stride, DataTypes.Int32);
-        var i32Dilation = Cast(dilation, DataTypes.Int32);
-        var outputSize = IR.Util.GetWindowedOutputSize(i32InputSize, i32Filter, i32Stride, i32Dilation, same, false);
-        return GetWindowedPaddingValue(i32InputSize, outputSize, i32Filter, i32Stride, i32Dilation, lower);
-    }
-
     public IRType Visit(ITypeInferenceContext context, GetPaddings target)
     {
         return new TensorType(DataTypes.Int64, new[] { 2, 2 });
+    }
+
+    public Cost Visit(ICostEvaluateContext context, GetPaddings target)
+    {
+        return CostUtility.GetShapeExprCost();
     }
 
     private static Expr[] GetWindowedPaddingValue(Expr inputSize, Expr outputSize, Expr filter, Expr stride, Expr dilation, bool lower)
@@ -67,11 +71,6 @@ public partial class GetPaddingsEvaluator : IEvaluator<GetPaddings>, ITypeInfere
         }
 
         return new[] { before, after };
-    }
-
-    public Cost Visit(ICostEvaluateContext context, GetPaddings target)
-    {
-        return CostUtility.GetShapeExprCost();
     }
 
     public Expr Visit(IShapeEvaluateContext context, GetPaddings target)

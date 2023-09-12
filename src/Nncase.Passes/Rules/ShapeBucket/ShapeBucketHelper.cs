@@ -77,8 +77,6 @@ public static class CallValidator
     public static bool ValidTarget(Call call, bool greedy)
     {
         var target = call.Target;
-
-        var singleVar = true;
         if (IsForceConvert(target))
         {
             return true;
@@ -122,7 +120,6 @@ public static class ShapeBucketRegister
         var canFullBucket = invalid.Any(x => counter._counter.Keys.Contains(x.TypeHandle));
         return canFullBucket;
     }
-
 
     public static void MergeOp(IPassManager iPassManager, bool greedy)
     {
@@ -538,6 +535,21 @@ public class OpCounter : ExprVisitor<Expr, Unit>
     protected override Expr DefaultVisitLeaf(Expr expr) => expr;
 }
 
+public class CheckRing : ExprVisitor<Expr, Unit>
+{
+    public List<Expr> ErrList = new();
+
+    protected override Expr DefaultVisitLeaf(Expr expr)
+    {
+        if (expr.Users.Any(user => user.Users.Contains(expr)))
+        {
+            ErrList.Add(expr);
+        }
+
+        return expr;
+    }
+}
+
 internal static class ExprArrayExtension
 {
     public static IEnumerable<Expr> OfNoConst(this IEnumerable<Expr> args)
@@ -556,21 +568,6 @@ internal class KeyValuePairKeyComparer : IEqualityComparer<KeyValuePair<Expr, Va
     public int GetHashCode(KeyValuePair<Expr, Var[]> obj)
     {
         return HashCode.Combine(obj.Key);
-    }
-}
-
-public class CheckRing : ExprVisitor<Expr, Unit>
-{
-    public List<Expr> ErrList = new();
-
-    protected override Expr DefaultVisitLeaf(Expr expr)
-    {
-        if (expr.Users.Any(user => user.Users.Contains(expr)))
-        {
-            ErrList.Add(expr);
-        }
-
-        return expr;
     }
 }
 
