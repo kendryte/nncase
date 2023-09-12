@@ -286,7 +286,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         var property = expr.Target is Op op && op.DisplayProperty() is string prop && prop != string.Empty ? (prop + ", ") : string.Empty;
         var args = expr.Arguments.AsValueEnumerable().Select(Visit).ToArray();
         name = AllocateTempVar(expr);
-        _scope.IndWrite($"{name} = {target}({property}{string.Join(", ", args)}) {expr.GetHashCode()}");
+        _scope.IndWrite($"{name} = {target}({property}{string.Join(", ", args)})");
         AppendCheckedType(expr.CheckedType);
         return name;
     }
