@@ -579,29 +579,6 @@ public class ReshapeToFusion : CallToFusion
     }
 }
 
-public class PadToFusion : CallToFusion
-{
-    public PadToFusion(bool isDynamic = false)
-        : base(isDynamic)
-    {
-    }
-
-    public override Pattern Pattern => IsCallWildcard("call", IsOp<Pad>());
-
-    protected override (Expr, int)[] CollectInputs(Call call)
-    {
-        var input = call.Arguments[Pad.Input.Index];
-        var inputPair = (input, Pad.Input.Index);
-        var padPair = (call.Arguments[Pad.Pads.Index], Pad.Pads.Index);
-        if (padPair.Item1 is TensorConst)
-        {
-            return new[] { inputPair };
-        }
-
-        return new[] { inputPair, padPair };
-    }
-}
-
 public class UnaryToFusion : MarkerCallToFusion<Unary>
 {
     public UnaryToFusion(bool isDynamic = false)

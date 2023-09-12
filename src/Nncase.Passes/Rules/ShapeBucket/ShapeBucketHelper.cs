@@ -157,7 +157,6 @@ public static class ShapeBucketRegister
         {
             p.Add<TransposeToFusion>(true);
             p.Add<ActToFusion>(true);
-            p.Add<PadToFusion>(true);
         });
 
         MergeFusion(p, singleVar, false);
@@ -180,7 +179,6 @@ public static class ShapeBucketRegister
             c.Add<TransposeToFusion>();
             c.Add<UnaryToFusion>();
             c.Add<ActToFusion>();
-            c.Add<PadToFusion>();
             if (singleVar)
             {
                 c.Add<BinaryToFusion>();
