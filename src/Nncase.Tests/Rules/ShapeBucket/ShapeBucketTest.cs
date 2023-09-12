@@ -111,11 +111,6 @@ public class ShapeBucketTest : TransformTestBase
     }
 
     [Fact]
-    public void TestEliminateCompute()
-    {
-    }
-
-    [Fact]
     public async Task TestTupleOutput()
     {
         var mainVar = new Var(new TensorType(DataTypes.Float32, new[] { 1, Dimension.Unknown, 24, 24 }));
@@ -140,7 +135,6 @@ public class ShapeBucketTest : TransformTestBase
             new FusionBucket(shape));
     }
 
-    // todo: fix input test
     [Fact]
     public async Task TestDoubleVarFusionBucket()
     {
@@ -215,19 +209,6 @@ public class ShapeBucketTest : TransformTestBase
                 { mainVarRhs, Value.FromTensor(inputRhs) },
             },
             new FusionBucket(shape));
-    }
-
-    public void RunBucketTest(Expr body, int range, Dictionary<Var, IValue> dict, Dictionary<BucketFusion, FusionShapeData[]> shape, params Var[] vars)
-    {
-        TestMatchedCore(body, dict, new FusionBucket(shape));
-
-        // run evaluator and runtime
-        for (int i = 1; i <= range; i++)
-        {
-            _ = Testing.Rand<float>(1, i, 24, 24);
-
-            // body.Evaluate(new Dictionary<Var, IValue> { { mainVar, Value.FromTensor(input) } });
-        }
     }
 
     private Var Scalar(string name) => new Var(name, new TensorType(DataTypes.Int32, Shape.Scalar));
