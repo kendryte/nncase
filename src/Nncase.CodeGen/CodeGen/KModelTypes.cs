@@ -30,11 +30,10 @@ public struct ModelHeader
 public struct FunctionHeader
 {
     public uint Parameters;
-    public uint Entrypoint;
-    public uint TextSize;
-    public uint Size;
     public uint Sections;
-    public uint Reserved0;
+    public ulong Entrypoint;
+    public ulong TextSize;
+    public ulong Size;
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -42,9 +41,10 @@ public unsafe struct ModuleHeader
 {
     public fixed byte Kind[ModelInfo.MaxModuleKindLength];
     public uint Version;
-    public uint Size;
     public uint Sections;
     public uint Functions;
+    public uint Reserved0;
+    public ulong Size;
 }
 
 /// <summary>
@@ -55,11 +55,11 @@ public unsafe struct SectionHeader
 {
     public fixed byte Name[ModelInfo.MaxSectionNameLength];
     public uint Flags;
-    public uint Size;
-    public uint BodyStart;
-    public uint BodySize;
-    public uint MemorySize;
     public uint Reserved0;
+    public ulong Size;
+    public ulong BodyStart;
+    public ulong BodySize;
+    public ulong MemorySize;
 }
 
 [StructLayout(LayoutKind.Sequential)]
