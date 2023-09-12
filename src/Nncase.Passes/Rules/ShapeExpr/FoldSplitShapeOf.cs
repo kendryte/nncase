@@ -17,27 +17,29 @@ namespace Nncase.Passes.Rules.ShapeExpr;
 [RuleGenerator]
 public partial class FoldSplitShapeOf : RewriteRule<Pattern>
 {
+
     public override Pattern Pattern => IsStack(
         null,
         "stack",
-        IsTuple("tuple", IsVArgsRepeat(list =>
+        IsTuple("tuple",
+            new VArgsPattern(list =>
             Enumerable.Range(0, list.Length)
-                .Select(_ => (Pattern)IsCast(null, _ => true, IsGetItem(InputPattern, IsTensorConst())))
-                .ToArray())),
+            .Select(_ => IsGetItem(InputPattern, IsTensorConst()))
+            .ToArray(), "args")),
         IsTensorConst(tensor => tensor.Value.ToScalar<int>() == 0));
 
-    public Pattern InputPattern => IsCast("cast", _ => true, IsShapeOf("shapeOf", IsWildcard()));
+    public Pattern InputPattern => IsShapeOf(IsWildcard());
 
     private Expr? GetReplace(IR.Tuple tuple)
     {
-        var getItemList = tuple.Fields.ToArray().OfType<Call>().Select(c => c.Arguments[Cast.Input.Index]).OfType<Call>().ToArray();
+        var getItemList = tuple.Fields.ToArray().OfType<Call>().ToArray();
         var getItemIndices = getItemList.Select(x => x.Arguments[GetItem.Index.Index]).OfType<TensorConst>().Select(x => x.Value.ToScalar<int>()).ToArray();
         if (getItemIndices.Length == 0)
         {
             return null;
         }
 
-        var shapeOf = ((Call)getItemList[0].Arguments[GetItem.Input.Index]).Arguments[Cast.Input.Index];
+        var shapeOf = getItemList[0].Arguments[GetItem.Input.Index];
         if (!shapeOf.CheckedShape[0].IsFixed)
         {
             return null;
