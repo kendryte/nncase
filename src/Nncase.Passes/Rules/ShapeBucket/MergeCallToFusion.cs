@@ -102,7 +102,7 @@ public partial class MergePrevMarkerToFusion : MergeFusionBase
 [RuleGenerator]
 public partial class MergeNextCallToFusion : MergeFusionBase
 {
-    private readonly bool _greedy;
+    private readonly bool _greedy = true;
 
     public Pattern FusionCall => IsCall(
         "fusionOuterCall",
@@ -121,7 +121,7 @@ public partial class MergeNextCallToFusion : MergeFusionBase
             FusionCall,
             IsRangeOfMarker(FusionCall, IsWildcard())));
 
-    public MergeNextCallToFusion(bool greedy = false)
+    public MergeNextCallToFusion(bool greedy = true)
     {
         _greedy = greedy;
     }
@@ -247,7 +247,7 @@ public partial class MergePrevCallToFusion : MergeFusionBase
     // 输入必须匹配marker，因为即便合并marker也是要在外面保留一份副本
     // fusion(marker(prevCall()) { var } -> fusion(var) { marker(prevCall()) }
     // fusion((prevCall()) { var } -> fusion(var) { prevCall() }
-    private readonly bool _greedy;
+    private readonly bool _greedy = true;
 
     private string _prevCallStr = string.Empty;
 
@@ -274,7 +274,7 @@ public partial class MergePrevCallToFusion : MergeFusionBase
     {
     }
 
-    public MergePrevCallToFusion(bool greedy = false, bool mergeFusion = false)
+    public MergePrevCallToFusion(bool greedy = true, bool mergeFusion = false)
     {
         _greedy = greedy;
         _mergeFusion = mergeFusion;

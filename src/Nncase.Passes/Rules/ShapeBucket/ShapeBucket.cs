@@ -383,9 +383,9 @@ public class MarkerCallToFusion<T> : CallToFusion
 
 public class MultiUserCallToFusion : CallToFusion
 {
-    private readonly bool _greedy;
+    private readonly bool _greedy = true;
 
-    public MultiUserCallToFusion(bool onlyDynamic = false, bool greedy = false)
+    public MultiUserCallToFusion(bool onlyDynamic = false, bool greedy = true)
         : base(onlyDynamic)
     {
         _greedy = greedy;

@@ -13,7 +13,6 @@ using Nncase.PatternMatch;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.Tensors;
 using static Nncase.IR.TypePatternUtility;
-using static Nncase.Passes.Rules.Neutral.FoldSqueezeCommon;
 using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.F.Tensors;
 using static Nncase.PatternMatch.Utility;
@@ -25,36 +24,18 @@ public partial class FoldUnsqueezeSqueeze : RewriteRule<Pattern>
 {
     /// <inheritdoc/>
     public override Pattern Pattern => IsUnsqueeze(
+        "unsqu", "output",
         IsSqueeze(IsWildcard("input"), IsTensorConst("sqAxes")),
         IsTensorConst("unsqAxes"));
 
-    private Expr? GetReplace(Expr input, int[] sqAxes, int[] unsqAxes)
+    private Expr? GetReplace(Call output, Expr input)
     {
-        var r = input.CheckedShape.Rank;
-        if (!CanFold(sqAxes, unsqAxes, r))
+        if (output.CheckedShape.SequenceEqual(input.CheckedShape))
         {
-            return null;
+            return input;
         }
 
-        return input;
-    }
-}
-
-// used for dynamic shape
-internal static class FoldSqueezeCommon
-{
-    internal static bool CanFold(int[] sqAxes, int[] unsqAxes, int rank)
-    {
-        // now only support same axes for dynamic shape
-        if (sqAxes.Length != unsqAxes.Length)
-        {
-            return false;
-        }
-
-        // positive
-        var positiveSqAxes = sqAxes.Select(x => x < 0 ? x + rank : x).ToArray();
-        var positiveUnsqAxes = unsqAxes.Select(x => x < 0 ? x + rank : x).ToArray();
-        return positiveSqAxes.SequenceEqual(positiveUnsqAxes);
+        return null;
     }
 }
 
@@ -63,18 +44,17 @@ public partial class FoldSqueezeUnsqueeze : RewriteRule<Pattern>
 {
     /// <inheritdoc/>
     public override Pattern Pattern => IsSqueeze(
+        "sqOp", "output",
         IsUnsqueeze(IsWildcard("input"), IsTensorConst("unsqAxes")),
         IsTensorConst("sqAxes"));
 
-    // todo: maybe error
-    private Expr? GetReplace(Expr input, int[] sqAxes, int[] unsqAxes)
+    private Expr? GetReplace(Call output, Expr input)
     {
-        var r = input.CheckedShape.Rank;
-        if (!CanFold(sqAxes, unsqAxes, r))
+        if (output.CheckedShape.SequenceEqual(input.CheckedShape))
         {
-            return null;
+            return input;
         }
 
-        return input;
+        return null;
     }
 }

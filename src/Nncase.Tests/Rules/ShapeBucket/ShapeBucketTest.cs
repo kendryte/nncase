@@ -291,7 +291,7 @@ public class TestMergePrevCallToFusion : TransformTestBase
             });
     }
 
-    [Fact(Skip = "Reshape is not stable")]
+    [Fact]
     public void TestPrevMultiInputForDynamicReshape()
     {
         // fusion
@@ -369,7 +369,7 @@ public class TestMergePrevCallToFusion : TransformTestBase
         TestMatched<MergePrevCallToFusion>(c, new Dictionary<Var, IValue> { { inputVar, Value.FromTensor(input) } });
     }
 
-    [Fact(Skip = "Reshape is not stable")]
+    [Fact]
     public void TestMatMulReshape()
     {
         // 左边的表达式是右边表达式的一部分

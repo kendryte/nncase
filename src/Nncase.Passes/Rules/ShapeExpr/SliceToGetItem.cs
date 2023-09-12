@@ -13,7 +13,6 @@ using Nncase.PatternMatch;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.Tensors;
 using static Nncase.IR.TypePatternUtility;
-using static Nncase.Passes.Rules.Neutral.FoldSqueezeCommon;
 using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.F.Tensors;
 using static Nncase.PatternMatch.Utility;

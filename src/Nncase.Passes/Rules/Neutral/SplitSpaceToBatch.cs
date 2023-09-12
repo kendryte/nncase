@@ -77,14 +77,6 @@ public partial class SplitSpaceToBatch : RewriteRule<Pattern>
         var reshape1 = Reshape(p, reshappedShape1);
         var rt = Transpose(reshape1, perm);
         var reshape2 = Reshape(rt, reshappedShape2);
-        CompilerServices.Rewrite(
-            reshape2,
-            new IRewriteRule[]
-            {
-                new FoldStackGetItem(), new FoldConstCall(), new FoldShapeOf(), new FoldTwoReshapes(),
-                new FoldTwoCasts(), new FoldTwoSlices(), new FoldNopBinary(), new FoldNopCast(),
-                new FoldNopReshape(), new FoldNopSlice(), new FoldIf(),
-            }, new());
         return reshape2;
     }
 
@@ -149,14 +141,6 @@ public partial class SplitBatchToSpace : RewriteRule<Pattern>
 
         // to nchw
         var transposeResult = NHWCToNCHW(result);
-        CompilerServices.Rewrite(
-            transposeResult,
-            new IRewriteRule[]
-            {
-                new FoldStackGetItem(), new FoldConstCall(), new FoldShapeOf(), new FoldTwoReshapes(),
-                new FoldTwoCasts(), new FoldTwoSlices(), new FoldNopBinary(), new FoldNopCast(),
-                new FoldNopReshape(), new FoldNopSlice(), new FoldIf(),
-            }, new());
         return transposeResult;
     }
 
