@@ -12,7 +12,6 @@ using GetItem = Nncase.IR.Tensors.GetItem;
 
 namespace Nncase.Passes.Rules.ShapeExpr;
 
-// todo: add test
 // shape = ShapeOf(input)
 // Stack(cast(shape[0]), cast(shape[1])) -> shape
 [RuleGenerator]

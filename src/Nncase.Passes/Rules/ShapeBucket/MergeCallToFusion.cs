@@ -134,7 +134,7 @@ public partial class MergeNextCallToFusion : MergeFusionBase
     // nextCall(marker(fusion(x))) -> fusion(nextCall(marker(x)))
     public Expr? GetReplace(Call nextCall, Expr maybeFusionCallMarker, Expr target, Call fusionOuterCall, BucketFusion fusion)
     {
-        var singleVar = CompileSession.CompileOptions.ShapeBucketOptions.VarMap.Values.SelectMany(x => x).OfType<Var>().ToHashSet().Count <= 1;
+        var singleVar = SingleDimVar(CompileSession.CompileOptions.ShapeBucketOptions);
         if (!singleVar && nextCall.Arguments.ToArray().OfType<Call>().Count() > 1)
         {
             return null;

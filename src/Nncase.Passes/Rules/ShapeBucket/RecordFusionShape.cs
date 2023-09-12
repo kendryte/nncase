@@ -70,25 +70,6 @@ public class FusionShapeUpdater : ExprVisitor<Expr, Unit>
     }
 }
 
-public class SimpleTimer : IDisposable
-{
-    private readonly DateTime _startTime;
-    private readonly string _name;
-
-    public SimpleTimer(string name)
-    {
-        _startTime = System.DateTime.Now;
-        _name = name;
-    }
-
-    public void Dispose()
-    {
-        var endTime = System.DateTime.Now;
-        var time = endTime - _startTime;
-        Console.WriteLine($"{_name} tooks {time.Seconds}");
-    }
-}
-
 public class RecordFusionShape : FunctionPass
 {
     private Dictionary<Var, int[]> _dimVarValues = new();

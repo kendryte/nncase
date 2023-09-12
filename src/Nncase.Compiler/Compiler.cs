@@ -195,16 +195,15 @@ internal class Compiler : ICompiler
     public void RegisterShapeBucket(IPassManager p)
     {
         var options = _compileSession.CompileOptions.ShapeBucketOptions;
-        var singleVar = options.VarMap.Values.SelectMany(x => x).OfType<Var>().ToHashSet().Count <= 1;
         if (!options.Enable)
         {
             return;
         }
 
+        var singleVar = options.VarMap.Values.SelectMany(x => x).OfType<Var>().ToHashSet().Count <= 1;
         CheckShapeBucketOptions(options);
 
-        bool canFullBucket = CanFullBucket(_module!.Entry!);
-        if (canFullBucket)
+        if (HasNotBucketOp(_module!.Entry!) || singleVar)
         {
             ToFusion(p);
             MergeOp(p, true);

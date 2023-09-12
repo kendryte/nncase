@@ -24,8 +24,7 @@ public class FoldNopTuple : FunctionPass
             var preHash = input.GetHashCode();
             DumpScope.Current.DumpIR(input, $"{i}_before");
 
-            // IRHelpers.DCE(input);
-            // DumpScope.Current.DumpIR(input, $"{i}_after_dce");
+            IRHelpers.DCE(input);
             new FoldNopTupleVisitior().Visit(input);
             DumpScope.Current.DumpIR(input, $"{i++}_after_convert");
             var afterHash = input.GetHashCode();

@@ -33,16 +33,6 @@ public static class CallValidator
         typeof(Tile).TypeHandle,
     };
 
-    private static readonly HashSet<RuntimeTypeHandle> CauseDynamic = new()
-    {
-        typeof(Reshape).TypeHandle, typeof(IR.Tensors.Range).TypeHandle,
-    };
-
-    private static readonly HashSet<RuntimeTypeHandle> ComputeCanBeMerge = new()
-    {
-        typeof(Unary).TypeHandle, typeof(Tile).TypeHandle, typeof(Binary).TypeHandle,
-    };
-
     // todo: add debug mode
     private static readonly HashSet<RuntimeTypeHandle> MaybeDynamic = new()
     {
@@ -113,7 +103,7 @@ public static class ShapeBucketRegister
         }
     }
 
-    public static bool CanFullBucket(Expr entry)
+    public static bool HasNotBucketOp(Expr entry)
     {
         var counter = new OpCounter();
         counter.Visit(entry);
@@ -413,6 +403,11 @@ public static class ShapeBucketHelper
             throw new InvalidOperationException("Has Invalid Var In Body");
         }
     }
+
+    public static bool SingleDimVar(ShapeBucketOptions options)
+    {
+        return options.VarMap.Values.SelectMany(x => x).OfType<Var>().ToHashSet().Count <= 1;
+    }
 }
 
 public class FindExpr : ExprVisitor<Expr, Unit>
@@ -515,8 +510,6 @@ public class OpCounter : ExprVisitor<Expr, Unit>
             else
             {
                 Counter[handle] = 1;
-
-                // todo: op能去重吗
                 OpSet.Add(op);
             }
         }

@@ -69,7 +69,6 @@ public class MergeBucketFusionPass : FunctionPass
     }
 }
 
-// todo: test for enc
 [RuleGenerator]
 public partial class MergeTupleFusion : RewriteRule<Pattern>
 {
@@ -200,10 +199,6 @@ public class MergeMultiUsersFusion : FunctionPass
 
     public static bool DetectedRing(Call outerCall, Expr[] users)
     {
-        // var users = outerCall.Users.ToArray();
-        // todo: fix this，TestComplexExpr
-        // var userArgs = users.SelectMany(user => ((Call)user).Arguments.ToArray()).Except(users).ToArray();
-        // 用这个不过，但是好像会引起其他问题？？
         var userArgs = users.SelectMany(user => ((Call)user).Arguments.ToArray()).ToArray();
         foreach (var arg in userArgs)
         {
@@ -255,18 +250,10 @@ public class MergeMultiUsersFusion : FunctionPass
         // todo: not support
         if (users.Any(user => user is Tuple))
         {
-            // Console.WriteLine("HasTuple");
             return notSupport;
         }
 
         var userInfos = CollectUsers(outerCall, users);
-
-        // todo: support only one user, because merge fusion rule is not enough
-        // maybe a error
-        // if (userInfos.Length < 2)
-        // {
-        //     return null;
-        // }
 
         // has invalid
         if (userInfos.Length != users.Distinct().ToArray().Length)

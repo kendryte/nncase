@@ -1202,8 +1202,6 @@ public partial class FusionBucket : RewriteRule<Pattern>
 
     private static bool ShouldRestore(Call outerCall, BucketFusion fusion)
     {
-        // outerCall.CheckedType is TupleType ||
-        // todo: suppport input is tuple
         if (fusion.IsSimple)
         {
             return true;
@@ -1334,13 +1332,8 @@ public partial class FusionBucket : RewriteRule<Pattern>
             var body = c.Arguments[IR.Tensors.Slice.Input.Index];
             if (body.CheckedShape.IsFixed)
             {
-                var visitor = new CallVisitor();
+                var visitor = new DynamicCheckVisitor();
                 visitor.Visit(body);
-                if (visitor.HasDynamic)
-                {
-                    Console.WriteLine();
-                }
-
                 return visitor.HasDynamic;
             }
         }
@@ -1348,7 +1341,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
         return true;
     }
 
-    public class CallVisitor : ExprVisitor<Expr, Unit>
+    public class DynamicCheckVisitor : ExprVisitor<Expr, Unit>
     {
         private bool _hasDynamic;
 
@@ -1377,6 +1370,11 @@ public class FullBucket : FunctionPass
 {
     protected override Task<BaseFunction> RunCoreAsync(BaseFunction input, RunPassContext ctx)
     {
+        if (!SingleDimVar(CompileSession.CompileOptions.ShapeBucketOptions))
+        {
+            throw new NotImplementedException("Not Implement multi DimVar for FullBucket");
+        }
+
         var main = (Function)input;
         var replaceItem = main.Parameters.ToArray().Select(param => (param, (Expr)new Var(param.CheckedType))).ToArray();
         var cloneMain = (Function)ReplaceClone(main, replaceItem);
@@ -1385,22 +1383,8 @@ public class FullBucket : FunctionPass
         var call = new Call(tmpFusion, main.Parameters.ToArray());
         var dimVarValues = MakeVarValuesForAllSegment(options);
         var list = InputConfList(dimVarValues);
-        var shapeData = list.Select(seg =>
-        {
-            var varValues = seg.ToDictionary(pair => pair.Key, pair => (IValue)Value.FromTensor(pair.Value));
-            var inShape = options.VarMap.Select(pair =>
-            {
-                var shapeExpr = pair.Key.CheckedShape.IsScalar
-                    ? (Expr)Array.Empty<int>()
-                    : Stack(new IR.Tuple(pair.Value.Select(x => Cast(x, DataTypes.Int64)).ToArray()), 0);
+        var shapeData = MakeShapeData(list, options);
 
-                var shape = shapeExpr.Evaluate(varValues).AsTensor();
-                return shape;
-            }).ToArray();
-            return new FusionShapeData(Value.None, inShape.Select(Value.FromTensor).ToArray());
-        }).ToArray();
-
-        // todo: repeat var
         var context = new FusionBucketContext(call, tmpFusion, options, new ShapeExprCache(options.VarMap), 0, shapeData);
 
         var allFixedShapes = shapeData
@@ -1422,6 +1406,22 @@ public class FullBucket : FunctionPass
 
         return Task.FromResult((BaseFunction)main.With(body: newBody));
     }
+
+    private static FusionShapeData[] MakeShapeData((Var Key, int Value)[][] list, ShapeBucketOptions options) =>
+        list.Select(seg =>
+        {
+            var varValues = seg.ToDictionary(pair => pair.Key, pair => (IValue)Value.FromTensor(pair.Value));
+            var inShape = options.VarMap.Select(pair =>
+            {
+                var shapeExpr = pair.Key.CheckedShape.IsScalar
+                    ? (Expr)Array.Empty<int>()
+                    : Stack(new IR.Tuple(pair.Value.Select(x => Cast(x, DataTypes.Int64)).ToArray()), 0);
+
+                var shape = shapeExpr.Evaluate(varValues).AsTensor();
+                return shape;
+            }).ToArray();
+            return new FusionShapeData(Value.None, inShape.Select(Value.FromTensor).ToArray());
+        }).ToArray();
 
     private static (Var Key, int Value)[][] InputConfList(Dictionary<Var, int[]> dimVarValues) =>
         Enumerable.Range(0, dimVarValues.First().Value.Length).Select(i =>
