@@ -65,6 +65,12 @@ public static class ShapeExprUtility
         return Stack(new IR.Tuple(expr), 0);
     }
 
+    public static IValue GetShapeValue(Call call)
+    {
+        call.InferenceType();
+        return Value.FromTensor(call.CheckedShape.ToValueArray().Select(x => (long)x).ToArray());
+    }
+
     private static Expr SliceAndMerge(Expr originShapeExpr, Expr index, Expr value, Expr indexOffset, bool valueIsList = true)
     {
         var shapeExpr = Cast(originShapeExpr, DataTypes.Int64);
@@ -93,11 +99,5 @@ public static class ShapeExprUtility
         }
 
         return shape;
-    }
-
-    public static IValue GetShapeValue(Call call)
-    {
-        call.InferenceType();
-        return Value.FromTensor(call.CheckedShape.ToValueArray().Select(x => (long)x).ToArray());
     }
 }

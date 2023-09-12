@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Linq;
@@ -15,7 +15,7 @@ public sealed partial class GatherToGetItem : RewriteRule<Pattern>
 {
     // (Gather(input, 0, 0) -> GetItem(input)
     public override Pattern Pattern => IsGather(
-        IsWildcard("input"), IsTensorConst("axis"), IsTensorConst("index") with {TypePattern = IsScalar()});
+        IsWildcard("input"), IsTensorConst("axis"), IsTensorConst("index") with { TypePattern = IsScalar() });
 
     private Expr? GetReplace(Expr input, int axis, int index)
     {

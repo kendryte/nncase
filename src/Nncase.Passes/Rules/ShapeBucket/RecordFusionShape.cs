@@ -90,9 +90,9 @@ public class SimpleTimer : IDisposable
 
 public class RecordFusionShape : FunctionPass
 {
-    private Dictionary<Var, int[]> _dimVarValues = new();
-
     public FusionShapeData[] OutShapeList = Array.Empty<FusionShapeData>();
+
+    private Dictionary<Var, int[]> _dimVarValues = new();
 
     public RecordFusionShape(Dictionary<BucketFusion, FusionShapeData[]> shapeList)
     {
@@ -100,6 +100,27 @@ public class RecordFusionShape : FunctionPass
     }
 
     public Dictionary<BucketFusion, FusionShapeData[]> FusionShapeInfo { get; set; }
+
+    // make dummy value from InputInfo
+    // VarInfo:(DimVar -> Value)
+    public static Dictionary<Var, IValue>
+        MakeDummyInput(IReadOnlyDictionary<Var, Expr[]> info, Dictionary<Var, IValue> varInfo)
+    {
+        return info.ToDictionary(
+            pair => pair.Key,
+            pair =>
+            {
+                // todo: dummy input可能会有问题...
+                var shapeExpr = pair.Key.CheckedShape.IsScalar
+                    ? (Expr)Array.Empty<int>()
+                    : Stack(new IR.Tuple(pair.Value.Select(x => Cast(x, DataTypes.Int64)).ToArray()), 0);
+
+                var shape = shapeExpr.Evaluate(varInfo).AsTensor();
+                return ConstantOfShape(
+                    shape,
+                    Cast(1, pair.Key.CheckedDataType)).Evaluate(varInfo);
+            });
+    }
 
     protected override Task<BaseFunction> RunCoreAsync(BaseFunction main, RunPassContext context)
     {
@@ -119,6 +140,7 @@ public class RecordFusionShape : FunctionPass
         var tmpFusionShapeList = list.Select((seg, i) =>
             {
                 Console.WriteLine("RunStart");
+
                 // GC.Collect();
                 // GC.WaitForPendingFinalizers();
                 Console.WriteLine("AfterGC");
@@ -144,26 +166,5 @@ public class RecordFusionShape : FunctionPass
         }
 
         return Task.FromResult(main);
-    }
-
-    // make dummy value from InputInfo
-    // VarInfo:(DimVar -> Value)
-    public static Dictionary<Var, IValue>
-        MakeDummyInput(IReadOnlyDictionary<Var, Expr[]> info, Dictionary<Var, IValue> varInfo)
-    {
-        return info.ToDictionary(
-            pair => pair.Key,
-            pair =>
-            {
-                // todo: dummy input可能会有问题...
-                var shapeExpr = pair.Key.CheckedShape.IsScalar
-                    ? (Expr)Array.Empty<int>()
-                    : Stack(new IR.Tuple(pair.Value.Select(x => Cast(x, DataTypes.Int64)).ToArray()), 0);
-
-                var shape = shapeExpr.Evaluate(varInfo).AsTensor();
-                return ConstantOfShape(
-                    shape,
-                    Cast(1, pair.Key.CheckedDataType)).Evaluate(varInfo);
-            });
     }
 }

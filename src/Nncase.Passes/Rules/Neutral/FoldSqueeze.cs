@@ -1,3 +1,6 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -10,12 +13,32 @@ using Nncase.PatternMatch;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.Tensors;
 using static Nncase.IR.TypePatternUtility;
+using static Nncase.Passes.Rules.Neutral.FoldSqueezeCommon;
 using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.F.Tensors;
 using static Nncase.PatternMatch.Utility;
-using static Nncase.Passes.Rules.Neutral.FoldSqueezeCommon;
 
 namespace Nncase.Passes.Rules.Neutral;
+
+[RuleGenerator]
+public partial class FoldUnsqueezeSqueeze : RewriteRule<Pattern>
+{
+    /// <inheritdoc/>
+    public override Pattern Pattern => IsUnsqueeze(
+        IsSqueeze(IsWildcard("input"), IsTensorConst("sqAxes")),
+        IsTensorConst("unsqAxes"));
+
+    private Expr? GetReplace(Expr input, int[] sqAxes, int[] unsqAxes)
+    {
+        var r = input.CheckedShape.Rank;
+        if (!CanFold(sqAxes, unsqAxes, r))
+        {
+            return null;
+        }
+
+        return input;
+    }
+}
 
 // used for dynamic shape
 internal static class FoldSqueezeCommon
@@ -36,26 +59,6 @@ internal static class FoldSqueezeCommon
 }
 
 [RuleGenerator]
-public partial class FoldUnsqueezeSqueeze : RewriteRule<Pattern>
-{
-    /// <inheritdoc/>
-    public override Pattern Pattern => IsUnsqueeze(
-        IsSqueeze(IsWildcard("input"), IsTensorConst("sqAxes")),
-        IsTensorConst("unsqAxes"));
-
-    Expr? GetReplace(Expr input, int[] sqAxes, int[] unsqAxes)
-    {
-        var r = input.CheckedShape.Rank;
-        if (!CanFold(sqAxes, unsqAxes, r))
-        {
-            return null;
-        }
-
-        return input;
-    }
-}
-
-[RuleGenerator]
 public partial class FoldSqueezeUnsqueeze : RewriteRule<Pattern>
 {
     /// <inheritdoc/>
@@ -64,7 +67,7 @@ public partial class FoldSqueezeUnsqueeze : RewriteRule<Pattern>
         IsTensorConst("sqAxes"));
 
     // todo: maybe error
-    Expr? GetReplace(Expr input, int[] sqAxes, int[] unsqAxes)
+    private Expr? GetReplace(Expr input, int[] sqAxes, int[] unsqAxes)
     {
         var r = input.CheckedShape.Rank;
         if (!CanFold(sqAxes, unsqAxes, r))
@@ -75,5 +78,3 @@ public partial class FoldSqueezeUnsqueeze : RewriteRule<Pattern>
         return input;
     }
 }
-
-

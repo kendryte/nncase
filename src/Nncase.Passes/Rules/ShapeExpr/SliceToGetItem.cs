@@ -1,3 +1,6 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -10,10 +13,10 @@ using Nncase.PatternMatch;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.Tensors;
 using static Nncase.IR.TypePatternUtility;
+using static Nncase.Passes.Rules.Neutral.FoldSqueezeCommon;
 using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.F.Tensors;
 using static Nncase.PatternMatch.Utility;
-using static Nncase.Passes.Rules.Neutral.FoldSqueezeCommon;
 
 namespace Nncase.Passes.Rules.Neutral;
 
@@ -30,7 +33,7 @@ public partial class SliceToGetItem : RewriteRule<Pattern>
             IsTensorConst("strides", strides => strides.Value.ToArray<int>()[0] == 1)),
         IsTensorConst("dims"));
 
-    Expr? GetReplace(Expr input, int[] begins, int[] ends)
+    private Expr? GetReplace(Expr input, int[] begins, int[] ends)
     {
         if ((ends[0] - begins[0]) == 1)
         {

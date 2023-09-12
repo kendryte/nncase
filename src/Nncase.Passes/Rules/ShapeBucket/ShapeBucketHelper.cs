@@ -35,7 +35,7 @@ public static class CallValidator
 
     private static readonly HashSet<RuntimeTypeHandle> CauseDynamic = new()
     {
-        typeof(Reshape).TypeHandle, typeof(IR.Tensors.Range).TypeHandle
+        typeof(Reshape).TypeHandle, typeof(IR.Tensors.Range).TypeHandle,
     };
 
     private static readonly HashSet<RuntimeTypeHandle> ComputeCanBeMerge = new()
@@ -153,6 +153,7 @@ public static class ShapeBucketRegister
         // rebuild
         ToFusion(p, true);
         MergeOp(p, false);
+
         // todo: lost to fusion
         p.AddWithName<DataflowPass>("LostToFusion").Configure(p =>
         {
@@ -219,7 +220,7 @@ public static class ShapeBucketRegister
 public static class ShapeBucketHelper
 {
     public static Dictionary<T, IValue> ConcatDictionary<T>(Dictionary<T, IValue> memo, Dictionary<T, IValue> exprValues)
-        where T: Expr
+        where T : Expr
     {
         foreach (var (key, value) in exprValues)
         {
@@ -498,6 +499,35 @@ public sealed partial class ForceConvertOpChecker : RewriteRule<Pattern>
     }
 }
 
+public class OpCounter : ExprVisitor<Expr, Unit>
+{
+    public readonly Dictionary<RuntimeTypeHandle, int> _counter = new();
+    public readonly HashSet<Op> OpSet = new();
+
+    protected override Expr VisitCall(Call expr)
+    {
+        if (expr.Target is Op op)
+        {
+            var handle = expr.Target.GetType().TypeHandle;
+            if (_counter.ContainsKey(handle))
+            {
+                _counter[handle] += 1;
+            }
+            else
+            {
+                _counter[handle] = 1;
+
+                // todo: op能去重吗
+                OpSet.Add(op);
+            }
+        }
+
+        return base.VisitCall(expr);
+    }
+
+    protected override Expr DefaultVisitLeaf(Expr expr) => expr;
+}
+
 internal static class ExprArrayExtension
 {
     public static IEnumerable<Expr> OfNoConst(this IEnumerable<Expr> args)
@@ -517,34 +547,6 @@ internal class KeyValuePairKeyComparer : IEqualityComparer<KeyValuePair<Expr, Va
     {
         return HashCode.Combine(obj.Key);
     }
-}
-
-public class OpCounter : ExprVisitor<Expr, Unit>
-{
-    public readonly Dictionary<RuntimeTypeHandle, int> _counter = new();
-    public readonly HashSet<Op> OpSet = new();
-
-    protected override Expr VisitCall(Call expr)
-    {
-        if (expr.Target is Op op)
-        {
-            var handle = expr.Target.GetType().TypeHandle;
-            if (_counter.ContainsKey(handle))
-            {
-                _counter[handle] += 1;
-            }
-            else
-            {
-                _counter[handle] = 1;
-                // todo: op能去重吗
-                OpSet.Add(op);
-            }
-        }
-
-        return base.VisitCall(expr);
-    }
-
-    protected override Expr DefaultVisitLeaf(Expr expr) => expr;
 }
 
 public class CheckRing : ExprVisitor<Expr, Unit>

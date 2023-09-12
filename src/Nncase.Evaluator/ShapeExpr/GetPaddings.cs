@@ -15,6 +15,18 @@ namespace Nncase.Evaluator.ShapeExpr;
 
 public partial class GetPaddingsEvaluator : IEvaluator<GetPaddings>, ITypeInferencer<GetPaddings>, ICostEvaluator<GetPaddings>, IShapeEvaluator<GetPaddings>, IMetricEvaluator<GetPaddings>
 {
+    public static Expr ConcatPadding(Expr[] padH, Expr[] padW)
+    {
+        // return [[padh_before, padh_after],
+        //         [padw_before, padw_after]]
+        return Stack(
+            new IR.Tuple(
+                Stack(new IR.Tuple(padH), 0),
+                Stack(new IR.Tuple(padW), 0)),
+            0);
+    }
+
+
     public IValue Visit(IEvaluateContext context, GetPaddings target)
     {
         var inShape = context.GetArgumentValueAsArray<int>(target, GetPaddings.InputShape);
@@ -28,17 +40,6 @@ public partial class GetPaddingsEvaluator : IEvaluator<GetPaddings>, ITypeInfere
         return ConcatPadding(padH, padW).Evaluate();
     }
 
-    public static Expr ConcatPadding(Expr[] padH, Expr[] padW)
-    {
-        // return [[padh_before, padh_after],
-        //         [padw_before, padw_after]]
-        return Stack(
-            new IR.Tuple(
-                Stack(new IR.Tuple(padH), 0),
-                Stack(new IR.Tuple(padW), 0)),
-            0);
-    }
-
     public static Expr[] GetWindowedPadding(Expr inputSize, Expr filter, Expr stride, Expr dilation, bool same, bool lower = false)
     {
         var i32InputSize = Cast(inputSize, DataTypes.Int32);
@@ -47,6 +48,11 @@ public partial class GetPaddingsEvaluator : IEvaluator<GetPaddings>, ITypeInfere
         var i32Dilation = Cast(dilation, DataTypes.Int32);
         var outputSize = IR.Util.GetWindowedOutputSize(i32InputSize, i32Filter, i32Stride, i32Dilation, same, false);
         return GetWindowedPaddingValue(i32InputSize, outputSize, i32Filter, i32Stride, i32Dilation, lower);
+    }
+
+    public IRType Visit(ITypeInferenceContext context, GetPaddings target)
+    {
+        return new TensorType(DataTypes.Int64, new[] { 2, 2 });
     }
 
     private static Expr[] GetWindowedPaddingValue(Expr inputSize, Expr outputSize, Expr filter, Expr stride, Expr dilation, bool lower)
@@ -61,11 +67,6 @@ public partial class GetPaddingsEvaluator : IEvaluator<GetPaddings>, ITypeInfere
         }
 
         return new[] { before, after };
-    }
-
-    public IRType Visit(ITypeInferenceContext context, GetPaddings target)
-    {
-        return new TensorType(DataTypes.Int64, new[] { 2, 2 });
     }
 
     public Cost Visit(ICostEvaluateContext context, GetPaddings target)

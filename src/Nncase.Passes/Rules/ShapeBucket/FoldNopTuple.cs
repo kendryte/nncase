@@ -1,3 +1,6 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System.Linq;
 using System.Reactive;
 using System.Threading.Tasks;
@@ -20,6 +23,7 @@ public class FoldNopTuple : FunctionPass
         {
             var preHash = input.GetHashCode();
             DumpScope.Current.DumpIR(input, $"{i}_before");
+
             // IRHelpers.DCE(input);
             // DumpScope.Current.DumpIR(input, $"{i}_after_dce");
             new TupleVisitor().Visit(input);
@@ -34,7 +38,7 @@ public class FoldNopTuple : FunctionPass
 
     internal class TupleVisitor : ExprVisitor<Expr, Unit>
     {
-        protected bool changed = false;
+        protected bool changed;
 
         public TupleVisitor()
             : base(true)

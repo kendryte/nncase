@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -22,7 +22,7 @@ public class UnitTestSliceToGetItem : TransformTestBase
     public void TestSliceToGetItem()
     {
         var input = new[] { 1, 2, 3, 4 };
-        var gather = Squeeze(Slice(input, new[] { 1 }, new[] { 2 }, 1), new[]{0});
+        var gather = Squeeze(Slice(input, new[] { 1 }, new[] { 2 }, 1), new[] { 0 });
         TestMatched<SliceToGetItem>(gather);
     }
 

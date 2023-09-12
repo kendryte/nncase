@@ -1,11 +1,11 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
-using Nncase.PatternMatch;
 using System;
 using System.Linq;
 using Nncase.IR;
 using Nncase.IR.Tensors;
+using Nncase.PatternMatch;
 using Nncase.PatternMatch;
 using static Nncase.PatternMatch.F.Tensors;
 using static Nncase.PatternMatch.Utility;
@@ -30,7 +30,7 @@ public partial class FoldSplitShapeOf : RewriteRule<Pattern>
 
     public Pattern InputPattern => IsCast(null, _ => true, IsShapeOf((string)null, IsWildcard()));
 
-    Expr? GetReplace(IR.Tuple tuple)
+    private Expr? GetReplace(IR.Tuple tuple)
     {
         var getItemList = tuple.Fields.ToArray().OfType<Call>().Select(c => c.Arguments[Cast.Input.Index]).OfType<Call>().ToArray();
         var getItemIndices = getItemList.Select(x => x.Arguments[GetItem.Index.Index]).OfType<TensorConst>().Select(x => x.Value.ToScalar<int>()).ToArray();

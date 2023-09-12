@@ -1,3 +1,6 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using Nncase.IR;
 using Nncase.Passes.Rules.ShapeExpr;
@@ -22,7 +25,7 @@ public class UnitTestFoldBroadcastShape : TransformTestBase
     public void TestFoldBroadcastShapeConst()
     {
         var input = Testing.Rand<float>(1, 3, 1, 1);
-        var b = BroadcastShape(new Expr[] { new[] { 1, 3 }, Array.Empty<int>(), IR.F.Tensors.ShapeOf(input)});
+        var b = BroadcastShape(new Expr[] { new[] { 1, 3 }, Array.Empty<int>(), IR.F.Tensors.ShapeOf(input) });
         TestMatched<FoldBroadcastShapeConst>(b);
     }
 }

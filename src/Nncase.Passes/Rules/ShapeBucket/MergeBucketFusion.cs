@@ -25,7 +25,7 @@ namespace Nncase.Passes.Rules.ShapeBucket;
 
 public class MergeBucketFusionPass : FunctionPass
 {
-    private bool _greedy;
+    private readonly bool _greedy;
 
     public MergeBucketFusionPass(bool greedy)
     {
@@ -626,7 +626,6 @@ public class MergeMultiUsersFusion : FunctionPass
 
                 // Console.WriteLine($"Match {fusion.Name} counter:{Counter}");
                 // DumpIR(Root, "OriginRoot", RelPath);
-
                 var (newCall, users) = MergeMultiUserFusion(outerCall, fusion);
                 if (newCall != null)
                 {

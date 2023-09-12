@@ -30,6 +30,7 @@ public partial class SqueezeShapeEvaluator : IEvaluator<SqueezeShape>, ITypeInfe
         {
             return new TensorType(DataTypes.Int64, new[] { Dimension.Unknown });
         }
+
         return new TensorType(DataTypes.Int64, new[] { input.CheckedShape.Size - dims.Shape[0] });
     }
 

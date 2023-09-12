@@ -1,3 +1,6 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,7 +28,7 @@ public partial class SplitSpaceToBatch : RewriteRule<Pattern>
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = IsSpaceToBatch(
         IsWildcard("input") with { TypePattern = HasRank() },
-        IsWildcard("blockShape") with {TypePattern = HasFixedShape()},
+        IsWildcard("blockShape") with { TypePattern = HasFixedShape() },
         IsWildcard("paddings"));
 
     public Expr? GetReplace(Expr input, Expr blockShape, Expr paddings)
@@ -40,7 +43,7 @@ public partial class SplitSpaceToBatch : RewriteRule<Pattern>
         }
 
         var tmpPaddings = Stack(new IR.Tuple(newPaddings), 0);
-        var newPaddingsTensor = Transpose(Reshape(tmpPaddings, new long[]{2, (1 + spatialSize + remainShapeSize)}), new long[]{1, 0});
+        var newPaddingsTensor = Transpose(Reshape(tmpPaddings, new long[] { 2, 1 + spatialSize + remainShapeSize }), new long[] { 1, 0 });
         var p = Pad(input, newPaddingsTensor, PadMode.Constant, 0f);
 
         var padShape = Cast(ShapeOf(p), DataTypes.Int32);
@@ -50,7 +53,8 @@ public partial class SplitSpaceToBatch : RewriteRule<Pattern>
                 i => Stack(new IR.Tuple(padShape[i + 1] / blockShape[i], blockShape[i]), 0))
             .Aggregate((x, y) => Concat(new IR.Tuple(x, y), 0));
         var remainShape1 = Stack(new IR.Tuple(RangeExec(remainShapeSize, i => padShape[1 + spatialSize + i])), 0);
-        var reshappedShape1 = Concat(new IR.Tuple(
+        var reshappedShape1 = Concat(
+            new IR.Tuple(
             batchShape1,
             spatialShape1,
             remainShape1),
@@ -66,14 +70,15 @@ public partial class SplitSpaceToBatch : RewriteRule<Pattern>
         var reshappedShape2 = Concat(
             input: new IR.Tuple(
                 StackScalar(padShape[0] * Prod(blockShape)),
-            Stack(new IR.Tuple(RangeExec(spatialSize, i => padShape[i + 1] / blockShape[i])), 0),
-            Stack(new IR.Tuple(RangeExec(remainShapeSize, i => padShape[1 + spatialSize + i])), 0)),
+                Stack(new IR.Tuple(RangeExec(spatialSize, i => padShape[i + 1] / blockShape[i])), 0),
+                Stack(new IR.Tuple(RangeExec(remainShapeSize, i => padShape[1 + spatialSize + i])), 0)),
             0);
 
         var reshape1 = Reshape(p, reshappedShape1);
         var rt = Transpose(reshape1, perm);
         var reshape2 = Reshape(rt, reshappedShape2);
-        CompilerServices.Rewrite(reshape2,
+        CompilerServices.Rewrite(
+            reshape2,
             new IRewriteRule[]
             {
                 new FoldStackGetItem(), new FoldConstCall(), new FoldShapeOf(), new FoldTwoReshapes(),
@@ -92,7 +97,6 @@ public partial class SplitSpaceToBatch : RewriteRule<Pattern>
     {
         return Enumerable.Range(begin, end - begin);
     }
-
 }
 
 [RuleGenerator]
@@ -111,13 +115,13 @@ public partial class SplitBatchToSpace : RewriteRule<Pattern>
         var blockLen = blockShape.CheckedShape.Size;
         var xLen = input0.CheckedShape.Rank;
         var xShape = Cast(ShapeOf(input0), DataTypes.Int32);
-        var spatial = ShapeExprUtility.Slice(xShape, 1, (blockLen + 1));
-        var depth = ShapeExprUtility.Slice(xShape, (blockLen + 1), xLen);
+        var spatial = ShapeExprUtility.Slice(xShape, 1, blockLen + 1);
+        var depth = ShapeExprUtility.Slice(xShape, blockLen + 1, xLen);
         var targetSpatial = spatial * blockShape;
 
         var ccat1 = Concat(new IR.Tuple(spatial, blockShape), 0);
         var re1 = Reshape(ccat1, new[] { ccat1.CheckedShape[0].FixedValue / blockLen, blockLen });
-        var interLeave = Reshape(Transpose(re1, new long[] { 1, 0 }), new long[]{-1});
+        var interLeave = Reshape(Transpose(re1, new long[] { 1, 0 }), new long[] { -1 });
         var shape1 = Concat(new IR.Tuple(new int[] { -1 }, interLeave, depth), 0);
 
         var g1 = BoostRange(2, (2 * blockLen) + 1, 2);
@@ -145,7 +149,8 @@ public partial class SplitBatchToSpace : RewriteRule<Pattern>
 
         // to nchw
         var transposeResult = NHWCToNCHW(result);
-        CompilerServices.Rewrite(transposeResult,
+        CompilerServices.Rewrite(
+            transposeResult,
             new IRewriteRule[]
             {
                 new FoldStackGetItem(), new FoldConstCall(), new FoldShapeOf(), new FoldTwoReshapes(),
@@ -153,20 +158,6 @@ public partial class SplitBatchToSpace : RewriteRule<Pattern>
                 new FoldNopReshape(), new FoldNopSlice(), new FoldIf(),
             }, new());
         return transposeResult;
-    }
-
-    private long[] GetPerm(int xLen, int blockLen)
-    {
-        var perm = Enumerable.Range(0, xLen + blockLen).ToArray();
-        perm[0] = blockLen;
-        perm[1] = blockLen + 1;
-        perm[2] = 0;
-        foreach (var i in BoostRange(3, (blockLen * 2) + 1))
-        {
-            perm[i] = perm[i - 2] + 1;
-        }
-
-        return perm.Select(x => (long)x).ToArray();
     }
 
     private static IEnumerable<int> BoostRange(int start, int end, int step = 1)
@@ -182,6 +173,20 @@ public partial class SplitBatchToSpace : RewriteRule<Pattern>
             }
         }
         while (true);
+    }
+
+    private long[] GetPerm(int xLen, int blockLen)
+    {
+        var perm = Enumerable.Range(0, xLen + blockLen).ToArray();
+        perm[0] = blockLen;
+        perm[1] = blockLen + 1;
+        perm[2] = 0;
+        foreach (var i in BoostRange(3, (blockLen * 2) + 1))
+        {
+            perm[i] = perm[i - 2] + 1;
+        }
+
+        return perm.Select(x => (long)x).ToArray();
     }
 
     private T[] ZipExec<T>(T[] a, T[] b, Func<T, T, T> f)
