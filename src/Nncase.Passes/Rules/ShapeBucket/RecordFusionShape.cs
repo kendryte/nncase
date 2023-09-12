@@ -37,31 +37,19 @@ public class FusionShapeUpdater : ExprVisitor<Expr, Unit>
         _memo = memo;
     }
 
-    public Dictionary<BucketFusion, FusionShapeData> FusionShape { get; set; } = new();
-    public Dictionary<string, FusionShapeData> FusionNameShape { get; set; } = new();
+    public Dictionary<BucketFusion, FusionShapeData> FusionShape { get; } = new();
 
     protected override Expr DefaultVisitLeaf(Expr expr) => expr;
 
     protected override Expr VisitLeafCall(Call expr)
     {
-        // if (expr.Target is IR.Math.Require require)
-        // {
-        //     var msg = require.Message;
-        //     if (msg.Contains("_input_", StringComparison.Ordinal))
-        //     {
-        //         var name = msg.Split("_input_")[0];
-        //         var index = int.Parse(msg.Split("_input_")[1]);
-        //         FusionNameShape[name].InputShapes[index] = GetShape(_memo[expr]);
-        //     }
-        //     else
-        //     {
-        //         FusionNameShape[msg].Outshape = GetShape(_memo[expr]);
-        //     }
-        // }
-
         if (expr.Target is BucketFusion f)
         {
-            var argShape = expr.Arguments.ToArray().Select(arg => GetShape(_memo[arg])).ToArray();
+            var argShape = expr.Arguments.ToArray().Select(arg =>
+            {
+                var exp = arg is Marker m ? m.Target : arg;
+                return GetShape(_memo[exp]);
+            }).ToArray();
             var shape = GetShape(_memo[expr]);
             FusionShape[f] = new FusionShapeData(shape, argShape);
         }

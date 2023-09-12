@@ -616,51 +616,6 @@ public partial class MergePrevCallToFusion : MergeFusionBase
 
     private bool IsInvalid(Call lhsPrevCall, Expr lhsTarget)
     {
-        if (lhsTarget is ShapeOf || lhsTarget is Reshape)
-        {
-            return !_mergeFusion;
-        }
-
-        if (lhsTarget is GetItem && lhsPrevCall.Arguments[GetItem.Input.Index] is not IR.Tuple)
-        {
-            return !_mergeFusion;
-        }
-
-        if (lhsTarget is Reduce && lhsPrevCall.Arguments[Reduce.Input.Index].CheckedShape.Rank == 1)
-        {
-            return !_mergeFusion;
-        }
-
-        if (lhsTarget is Cast && lhsPrevCall.Arguments[Cast.Input.Index].CheckedShape.Rank <= 1)
-        {
-            return !_mergeFusion;
-        }
-
-        if (lhsTarget is Reduce && lhsPrevCall.Arguments[Reduce.Input.Index].CheckedShape.Rank == 1)
-        {
-            return !_mergeFusion;
-        }
-
-        if (lhsTarget is Compare && lhsPrevCall.CheckedShape.Rank <= 1)
-        {
-            return !_mergeFusion;
-        }
-
-        if (lhsTarget is Concat && lhsPrevCall.CheckedShape.Rank <= 2)
-        {
-            return !_mergeFusion;
-        }
-
-        if (lhsTarget is Reduce && lhsPrevCall.Arguments[Reduce.Input.Index].CheckedShape.Rank == 1)
-        {
-            return !_mergeFusion;
-        }
-
-        if (lhsTarget is Slice && lhsPrevCall.Arguments[Slice.Input.Index].CheckedShape.Rank <= 1)
-        {
-            return !_mergeFusion;
-        }
-
         if (lhsPrevCall.Users.Count > 1)
         {
             return true;
