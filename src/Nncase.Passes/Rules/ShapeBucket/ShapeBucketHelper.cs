@@ -33,7 +33,6 @@ public static class CallValidator
         typeof(Tile).TypeHandle,
     };
 
-    // todo: add debug mode
     private static readonly HashSet<RuntimeTypeHandle> MaybeDynamic = new()
     {
         typeof(Concat).TypeHandle,
@@ -88,6 +87,29 @@ public static class CallValidator
     }
 
     private static bool IsDynamicReshape(Call call) => call.Target is Reshape && call.Arguments[Reshape.Shape.Index] is not Const;
+
+    public static bool IsSimple(BucketFusion fusion)
+    {
+        var v = new OpCollector();
+        v.Visit(fusion.Body);
+        foreach (var type in v.Counter.Keys)
+        {
+            if (CallValidator.ForceConvert.Contains(type))
+            {
+                return false;
+            }
+        }
+
+        foreach (var op in v.OpSet)
+        {
+            if (op is ActivationOp)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
 }
 
 public static class ShapeBucketRegister
@@ -105,7 +127,7 @@ public static class ShapeBucketRegister
 
     public static bool HasNotBucketOp(Expr entry)
     {
-        var counter = new OpCounter();
+        var counter = new OpCollector();
         counter.Visit(entry);
         var invalid = new[] { typeof(Softmax), typeof(LayerNorm) };
         var canFullBucket = invalid.Any(x => counter.Counter.Keys.Contains(x.TypeHandle));
@@ -490,7 +512,7 @@ public sealed partial class ForceConvertOpChecker : RewriteRule<Pattern>
     }
 }
 
-public class OpCounter : ExprVisitor<Expr, Unit>
+public class OpCollector : ExprVisitor<Expr, Unit>
 {
     public Dictionary<RuntimeTypeHandle, int> Counter { get; } = new();
 

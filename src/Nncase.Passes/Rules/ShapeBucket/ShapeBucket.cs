@@ -78,56 +78,6 @@ public class BucketFusion : Fusion, IEquatable<BucketFusion>
 
     public Var[] EffectVar { get; set; }
 
-    public bool IsSimple
-    {
-        get
-        {
-            // todo: change list
-            var names = Name.Split("_");
-            var list = new[] { "MatMul", "Conv2D", "Conv2DTranspose", "Transpose", "LeakyRelu", "Pad" };
-            foreach (string name in names)
-            {
-                if (list.Contains(name))
-                {
-                    return false;
-                }
-            }
-
-            // if (names.Count(x => x.Contains("Binary", StringComparison.Ordinal)) > 1)
-            // {
-            //     if (Body.CheckedShape.Rank > 2)
-            //     {
-            //         return false;
-            //     }
-            // }
-            return true;
-        }
-
-        // get
-        // {
-        //     // 包含NotSimple的Op就可以分段，否则不分段
-        //     var v = new OpCounter();
-        //     v.Visit(Body);
-        //     foreach (var type in v._counter.Keys)
-        //     {
-        //         if (CallValidator.NotSimple.Contains(type))
-        //         {
-        //             return false;
-        //         }
-        //     }
-        //
-        //     foreach (var op in v.OpSet)
-        //     {
-        //         if (op is ActivationOp)
-        //         {
-        //             return false;
-        //         }
-        //     }
-        //
-        //     return true;
-        // }
-    }
-
     public static BucketFusion FromNormalFusion(Fusion f, Var[] effectVars)
     {
         return new BucketFusion(f.Name, "stackvm", f.Body, f.Parameters.ToArray(), effectVars);
@@ -173,8 +123,6 @@ public partial class CallToFusion : RewriteRule<Pattern>
     public string ModuleKind => "stackvm";
 
     public override Pattern Pattern => throw new InvalidOperationException();
-
-    protected virtual bool MustHaveMarker => true;
 
     private Call? CurrentCall { get; set; }
 
@@ -551,9 +499,6 @@ public class TransposeToFusion : MarkerCallToFusion<Transpose>
         : base(isDynamic)
     {
     }
-
-    // todo: remove this??
-    protected override bool MustHaveMarker => false;
 }
 
 public class ReshapeToFusion : CallToFusion
@@ -1179,7 +1124,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
 
     private static bool ShouldRestore(Call outerCall, BucketFusion fusion)
     {
-        if (fusion.IsSimple)
+        if (CallValidator.IsSimple(fusion))
         {
             return true;
         }
