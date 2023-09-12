@@ -114,6 +114,16 @@ public static class ShapeBucketRegister
         }
     }
 
+    public static bool CanFullBucket(Expr entry)
+    {
+        var counter = new OpCounter();
+        counter.Visit(entry);
+        var invalid = new[] { typeof(Softmax), typeof(LayerNorm) };
+        var canFullBucket = invalid.Any(x => counter._counter.Keys.Contains(x.TypeHandle));
+        return canFullBucket;
+    }
+
+
     public static void MergeOp(IPassManager iPassManager, bool greedy)
     {
         iPassManager.AddWithName<DataflowPass>("MergeNextCall").Configure(c =>

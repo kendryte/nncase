@@ -12,6 +12,7 @@ using Nncase.Diagnostics;
 using Nncase.Evaluator;
 using Nncase.Hosting;
 using Nncase.IR;
+using Nncase.IR.NN;
 using Nncase.IR.Tensors;
 using Nncase.Passes;
 using Nncase.Passes.Mutators;
@@ -124,10 +125,13 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FoldUnsqueezeSqueeze>();
             p.Add<Passes.Rules.Neutral.FoldTwoTransposes>();
             p.Add<Passes.Rules.Neutral.FoldNopClamp>();
-            p.Add<GatherToGetItem>();
-            p.Add<FoldNopReduce>();
-            p.Add<SliceToGetItem>();
-            p.Add<FoldGetItemShapeOf>();
+            p.Add<Passes.Rules.Neutral.SqueezeToReshape>();
+            p.Add<Passes.Rules.Neutral.UnSqueezeToReshape>();
+            p.Add<Passes.Rules.ShapeExpr.GatherToGetItem>();
+            p.Add<Passes.Rules.ShapeExpr.FoldGetItemShapeOf>();
+            p.Add<Passes.Rules.Neutral.FoldNopReduce>();
+            p.Add<Passes.Rules.Neutral.SliceToGetItem>();
+            p.Add<Passes.Rules.Neutral.FoldTwoPads>();
         });
 
         passManager.AddWithName<EGraphRulesPass>("NeutralOptimizeTranspose").Configure(p =>
@@ -198,15 +202,24 @@ internal class Compiler : ICompiler
         }
 
         CheckShapeBucketOptions(options);
-        ToFusion(p);
-        MergeOp(p, true);
-        LostToFusion(p, singleVar);
-        MergeOp(p, true);
-        ClearMarker(p);
-        MergeFusion(p, singleVar, false);
-        Bucket(p);
-        Rebuild(p, singleVar);
-        Simplify(p);
+
+        bool canFullBucket = CanFullBucket(_module.Entry);
+        if (canFullBucket)
+        {
+            ToFusion(p);
+            MergeOp(p, true);
+            LostToFusion(p, singleVar);
+            MergeOp(p, true);
+            ClearMarker(p);
+            MergeFusion(p, singleVar, true);
+            Bucket(p);
+            Rebuild(p, singleVar);
+            Simplify(p);
+        }
+        else
+        {
+            p.AddWithName<FullBucket>("FullBucket");
+        }
     }
 
     public void ClearFixShape(IPassManager p)
