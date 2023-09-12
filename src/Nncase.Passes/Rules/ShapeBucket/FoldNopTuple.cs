@@ -26,7 +26,7 @@ public class FoldNopTuple : FunctionPass
 
             // IRHelpers.DCE(input);
             // DumpScope.Current.DumpIR(input, $"{i}_after_dce");
-            new TupleVisitor().Visit(input);
+            new FoldNopTupleVisitior().Visit(input);
             DumpScope.Current.DumpIR(input, $"{i++}_after_convert");
             var afterHash = input.GetHashCode();
             if (preHash == afterHash)
@@ -36,11 +36,11 @@ public class FoldNopTuple : FunctionPass
         }
     }
 
-    internal class TupleVisitor : ExprVisitor<Expr, Unit>
+    internal class FoldNopTupleVisitior : ExprVisitor<Expr, Unit>
     {
-        protected bool changed;
+        private bool _changed;
 
-        public TupleVisitor()
+        public FoldNopTupleVisitior()
             : base(true)
         {
         }
@@ -49,7 +49,7 @@ public class FoldNopTuple : FunctionPass
 
         protected override Expr VisitLeafTuple(Tuple expr)
         {
-            if (!changed && expr.Users.All(user => user is Call { Target: GetItem }))
+            if (!_changed && expr.Users.All(user => user is Call { Target: GetItem }))
             {
                 foreach (var user in expr.Users)
                 {
@@ -57,7 +57,7 @@ public class FoldNopTuple : FunctionPass
                     ReplaceUtility.ReplaceAllUsesWith(user, expr.Fields[index]);
                 }
 
-                changed = true;
+                _changed = true;
             }
 
             return expr;

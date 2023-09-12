@@ -6,7 +6,6 @@ using System.Linq;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
-using Nncase.PatternMatch;
 using static Nncase.PatternMatch.F.Tensors;
 using static Nncase.PatternMatch.Utility;
 using GetItem = Nncase.IR.Tensors.GetItem;
@@ -28,7 +27,7 @@ public partial class FoldSplitShapeOf : RewriteRule<Pattern>
                 .ToArray())),
         IsTensorConst(tensor => tensor.Value.ToScalar<int>() == 0));
 
-    public Pattern InputPattern => IsCast(null, _ => true, IsShapeOf((string)null, IsWildcard()));
+    public Pattern InputPattern => IsCast("cast", _ => true, IsShapeOf("shapeOf", IsWildcard()));
 
     private Expr? GetReplace(IR.Tuple tuple)
     {

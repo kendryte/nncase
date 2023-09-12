@@ -203,7 +203,7 @@ internal class Compiler : ICompiler
 
         CheckShapeBucketOptions(options);
 
-        bool canFullBucket = CanFullBucket(_module.Entry);
+        bool canFullBucket = CanFullBucket(_module!.Entry!);
         if (canFullBucket)
         {
             ToFusion(p);

@@ -24,7 +24,8 @@ public partial class FoldUnsqueezeSqueeze : RewriteRule<Pattern>
 {
     /// <inheritdoc/>
     public override Pattern Pattern => IsUnsqueeze(
-        "unsqu", "output",
+        "unsqu",
+        "output",
         IsSqueeze(IsWildcard("input"), IsTensorConst("sqAxes")),
         IsTensorConst("unsqAxes"));
 
@@ -44,7 +45,8 @@ public partial class FoldSqueezeUnsqueeze : RewriteRule<Pattern>
 {
     /// <inheritdoc/>
     public override Pattern Pattern => IsSqueeze(
-        "sqOp", "output",
+        "sqOp",
+        "output",
         IsUnsqueeze(IsWildcard("input"), IsTensorConst("unsqAxes")),
         IsTensorConst("sqAxes"));
 

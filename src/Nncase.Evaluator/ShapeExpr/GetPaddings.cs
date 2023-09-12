@@ -26,7 +26,6 @@ public partial class GetPaddingsEvaluator : IEvaluator<GetPaddings>, ITypeInfere
             0);
     }
 
-
     public IValue Visit(IEvaluateContext context, GetPaddings target)
     {
         var inShape = context.GetArgumentValueAsArray<int>(target, GetPaddings.InputShape);
@@ -40,33 +39,9 @@ public partial class GetPaddingsEvaluator : IEvaluator<GetPaddings>, ITypeInfere
         return ConcatPadding(padH, padW).Evaluate();
     }
 
-    public static Expr[] GetWindowedPadding(Expr inputSize, Expr filter, Expr stride, Expr dilation, bool same, bool lower = false)
-    {
-        var i32InputSize = Cast(inputSize, DataTypes.Int32);
-        var i32Filter = Cast(filter, DataTypes.Int32);
-        var i32Stride = Cast(stride, DataTypes.Int32);
-        var i32Dilation = Cast(dilation, DataTypes.Int32);
-        var outputSize = IR.Util.GetWindowedOutputSize(i32InputSize, i32Filter, i32Stride, i32Dilation, same, false);
-        return GetWindowedPaddingValue(i32InputSize, outputSize, i32Filter, i32Stride, i32Dilation, lower);
-    }
-
     public IRType Visit(ITypeInferenceContext context, GetPaddings target)
     {
         return new TensorType(DataTypes.Int64, new[] { 2, 2 });
-    }
-
-    private static Expr[] GetWindowedPaddingValue(Expr inputSize, Expr outputSize, Expr filter, Expr stride, Expr dilation, bool lower)
-    {
-        var effectiveFilterSize = ((filter - 1) * dilation) + 1;
-        var padding = IR.F.Math.Max(0, ((outputSize - 1) * stride) + effectiveFilterSize - inputSize);
-        var before = Cast(padding / 2, DataTypes.Int32);
-        var after = Cast(padding - (padding / 2), DataTypes.Int32);
-        if (lower)
-        {
-            return new[] { IR.F.Math.Max(before, after), IR.F.Math.Min(before, after) };
-        }
-
-        return new[] { before, after };
     }
 
     public Cost Visit(ICostEvaluateContext context, GetPaddings target)
@@ -86,5 +61,29 @@ public partial class GetPaddingsEvaluator : IEvaluator<GetPaddings>, ITypeInfere
         {
             [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(returnType),
         };
+    }
+
+    private static Expr[] GetWindowedPadding(Expr inputSize, Expr filter, Expr stride, Expr dilation, bool same, bool lower = false)
+    {
+        var i32InputSize = Cast(inputSize, DataTypes.Int32);
+        var i32Filter = Cast(filter, DataTypes.Int32);
+        var i32Stride = Cast(stride, DataTypes.Int32);
+        var i32Dilation = Cast(dilation, DataTypes.Int32);
+        var outputSize = IR.Util.GetWindowedOutputSize(i32InputSize, i32Filter, i32Stride, i32Dilation, same, false);
+        return GetWindowedPaddingValue(i32InputSize, outputSize, i32Filter, i32Stride, i32Dilation, lower);
+    }
+
+    private static Expr[] GetWindowedPaddingValue(Expr inputSize, Expr outputSize, Expr filter, Expr stride, Expr dilation, bool lower)
+    {
+        var effectiveFilterSize = ((filter - 1) * dilation) + 1;
+        var padding = IR.F.Math.Max(0, ((outputSize - 1) * stride) + effectiveFilterSize - inputSize);
+        var before = Cast(padding / 2, DataTypes.Int32);
+        var after = Cast(padding - (padding / 2), DataTypes.Int32);
+        if (lower)
+        {
+            return new[] { IR.F.Math.Max(before, after), IR.F.Math.Min(before, after) };
+        }
+
+        return new[] { before, after };
     }
 }

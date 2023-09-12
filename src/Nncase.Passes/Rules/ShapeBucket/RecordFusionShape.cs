@@ -18,14 +18,15 @@ namespace Nncase.Passes.Rules.ShapeBucket;
 
 public class FusionShapeData
 {
-    public IValue Outshape;
-    public IValue[] InputShapes;
-
     public FusionShapeData(IValue outshape, IValue[] inputShapes)
     {
         Outshape = outshape;
         InputShapes = inputShapes;
     }
+
+    public IValue Outshape { get; }
+
+    public IValue[] InputShapes { get; }
 }
 
 public class FusionShapeUpdater : ExprVisitor<Expr, Unit>
@@ -90,8 +91,6 @@ public class SimpleTimer : IDisposable
 
 public class RecordFusionShape : FunctionPass
 {
-    public FusionShapeData[] OutShapeList = Array.Empty<FusionShapeData>();
-
     private Dictionary<Var, int[]> _dimVarValues = new();
 
     public RecordFusionShape(Dictionary<BucketFusion, FusionShapeData[]> shapeList)
@@ -135,25 +134,15 @@ public class RecordFusionShape : FunctionPass
             return _dimVarValues.Select(pair => (pair.Key, Value: pair.Value[i])).ToArray();
         }).ToArray();
 
-        // 算出输入的大致规模，如果太大就不能并行，否则可以，但是要考虑到内存的限制，目前只有melgan需要这样特殊处理
         var body = ((Function)main).Body;
         var tmpFusionShapeList = list.Select((seg, i) =>
             {
-                Console.WriteLine("RunStart");
-
-                // GC.Collect();
-                // GC.WaitForPendingFinalizers();
-                Console.WriteLine("AfterGC");
                 var varValues = seg.ToDictionary(pair => pair.Key, pair => (IValue)Value.FromTensor(pair.Value));
                 var exprValues = seg.ToDictionary(pair => (Expr)pair.Key, pair => (IValue)Value.FromTensor(pair.Value));
                 var input = MakeDummyInput(varMap, varValues);
-                Console.WriteLine("Dummy");
                 var memo = EvaluatorUtil.GetMemo(body, ConcatDictionary(input, varValues));
-                Console.WriteLine("memo");
                 var f = new FusionShapeUpdater(ConcatDictionary(memo, exprValues));
-                Console.WriteLine("fusion");
                 f.Visit(main);
-                Console.WriteLine("end");
                 return f.FusionShape;
             }).SelectMany(x => x)
             .ToLookup(x => x.Key, x => x.Value)

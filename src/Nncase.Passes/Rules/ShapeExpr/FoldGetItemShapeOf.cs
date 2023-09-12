@@ -5,7 +5,6 @@ using System;
 using System.Linq;
 using Nncase.IR;
 using Nncase.PatternMatch;
-using Nncase.PatternMatch;
 using static Nncase.PatternMatch.F.Tensors;
 using static Nncase.PatternMatch.Utility;
 using GetItem = Nncase.IR.Tensors.GetItem;

@@ -78,7 +78,6 @@ public static class CallValidator
     {
         var target = call.Target;
 
-        var singleVar = true;
         if (IsForceConvert(target))
         {
             return true;
@@ -119,10 +118,9 @@ public static class ShapeBucketRegister
         var counter = new OpCounter();
         counter.Visit(entry);
         var invalid = new[] { typeof(Softmax), typeof(LayerNorm) };
-        var canFullBucket = invalid.Any(x => counter._counter.Keys.Contains(x.TypeHandle));
+        var canFullBucket = invalid.Any(x => counter.Counter.Keys.Contains(x.TypeHandle));
         return canFullBucket;
     }
-
 
     public static void MergeOp(IPassManager iPassManager, bool greedy)
     {
@@ -415,16 +413,6 @@ public static class ShapeBucketHelper
             throw new InvalidOperationException("Has Invalid Var In Body");
         }
     }
-
-    public static void CheckIRRing(Expr expr)
-    {
-        var c = new CheckRing();
-        c.Visit(expr);
-        if (c.ErrList.Count != 0)
-        {
-            throw new InvalidOperationException("IR has ring");
-        }
-    }
 }
 
 public class FindExpr : ExprVisitor<Expr, Unit>
@@ -511,21 +499,22 @@ public sealed partial class ForceConvertOpChecker : RewriteRule<Pattern>
 
 public class OpCounter : ExprVisitor<Expr, Unit>
 {
-    public readonly Dictionary<RuntimeTypeHandle, int> _counter = new();
-    public readonly HashSet<Op> OpSet = new();
+    public Dictionary<RuntimeTypeHandle, int> Counter { get; } = new();
+
+    public HashSet<Op> OpSet { get; } = new();
 
     protected override Expr VisitCall(Call expr)
     {
         if (expr.Target is Op op)
         {
             var handle = expr.Target.GetType().TypeHandle;
-            if (_counter.ContainsKey(handle))
+            if (Counter.ContainsKey(handle))
             {
-                _counter[handle] += 1;
+                Counter[handle] += 1;
             }
             else
             {
-                _counter[handle] = 1;
+                Counter[handle] = 1;
 
                 // todo: op能去重吗
                 OpSet.Add(op);
@@ -556,21 +545,6 @@ internal class KeyValuePairKeyComparer : IEqualityComparer<KeyValuePair<Expr, Va
     public int GetHashCode(KeyValuePair<Expr, Var[]> obj)
     {
         return HashCode.Combine(obj.Key);
-    }
-}
-
-public class CheckRing : ExprVisitor<Expr, Unit>
-{
-    public List<Expr> ErrList = new();
-
-    protected override Expr DefaultVisitLeaf(Expr expr)
-    {
-        if (expr.Users.Any(user => user.Users.Contains(expr)))
-        {
-            ErrList.Add(expr);
-        }
-
-        return expr;
     }
 }
 

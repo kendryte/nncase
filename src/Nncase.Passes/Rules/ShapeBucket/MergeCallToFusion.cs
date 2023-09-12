@@ -104,6 +104,15 @@ public partial class MergeNextCallToFusion : MergeFusionBase
 {
     private readonly bool _greedy = true;
 
+    public MergeNextCallToFusion(bool greedy = true)
+    {
+        _greedy = greedy;
+    }
+
+    public MergeNextCallToFusion()
+    {
+    }
+
     public Pattern FusionCall => IsCall(
         "fusionOuterCall",
         IsFusion(
@@ -120,15 +129,6 @@ public partial class MergeNextCallToFusion : MergeFusionBase
             "maybeFusionCallMarker",
             FusionCall,
             IsRangeOfMarker(FusionCall, IsWildcard())));
-
-    public MergeNextCallToFusion(bool greedy = true)
-    {
-        _greedy = greedy;
-    }
-
-    public MergeNextCallToFusion()
-    {
-    }
 
     // nextCall(fusion(x)) -> fusion(nextCall(x))
     // nextCall(marker(fusion(x))) -> fusion(nextCall(marker(x)))
@@ -249,7 +249,19 @@ public partial class MergePrevCallToFusion : MergeFusionBase
     // fusion((prevCall()) { var } -> fusion(var) { prevCall() }
     private readonly bool _greedy = true;
 
+    private readonly bool _mergeFusion;
+
     private string _prevCallStr = string.Empty;
+
+    public MergePrevCallToFusion()
+    {
+    }
+
+    public MergePrevCallToFusion(bool greedy = true, bool mergeFusion = false)
+    {
+        _greedy = greedy;
+        _mergeFusion = mergeFusion;
+    }
 
     public override Pattern Pattern => IsCall(
         "fusionOuterCall",
@@ -268,17 +280,6 @@ public partial class MergePrevCallToFusion : MergeFusionBase
         exprName,
         IsRangeOfMarker(exprPatten, IsWildcard()),
         exprPatten);
-    private readonly bool _mergeFusion;
-
-    public MergePrevCallToFusion()
-    {
-    }
-
-    public MergePrevCallToFusion(bool greedy = true, bool mergeFusion = false)
-    {
-        _greedy = greedy;
-        _mergeFusion = mergeFusion;
-    }
 
     // dfs
     // xx | marker(xx)不行, 会先匹配到xx

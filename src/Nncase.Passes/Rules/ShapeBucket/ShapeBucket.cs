@@ -728,21 +728,6 @@ public class FusionBucketContext
     public Dictionary<Var, IValue> DimVarValue(int i) =>
         DimVarValues.ToDictionary(pair => pair.Key, pair => (IValue)Value.FromTensor(pair.Value[i]));
 
-    // private Expr GetOutputShape(FusionShapeData[] shapeInfos)
-    // {
-    //     // todo: support tuple
-    //     var outIndex = 0;
-    //     var seg = 10;
-    //     var fullOutShape = shapeInfos.Select(x => new[] { x.Outshape }[outIndex]).ToArray();
-    //     return fullOutShape[10].AsTensor();
-    // }
-    public Expr ReplaceShapeOf(Dictionary<Var, Expr[]> fusionInputsShapeExpr, Expr originShape,
-        FusionBucketContext context, Dictionary<Expr, Var> dict)
-    {
-        return ReplaceShapeOf(fusionInputsShapeExpr, VarMap, originShape, context.Parameters, context.DimVarValues.Keys.ToArray(), context, dict);
-    }
-
-
     // ShapeOf而不是shape表达式，用于计算Slice的shape
     private static Dictionary<Var, Expr[]> MakeShapeOfFusionInput(Var[] parameters, Expr[] args)
     {
@@ -777,51 +762,7 @@ public class FusionBucketContext
         return fusionInputData;
     }
 
-    private static void CheckAlive(Dictionary<Var, Expr[]> fusionInputInfo)
-    {
-        foreach (var value in fusionInputInfo.Values)
-        {
-            foreach (var expr in value)
-            {
-                if (!expr.IsAlive)
-                {
-                    throw new NotImplementedException();
-                }
-            }
-        }
-    }
-
-    private Expr ComputeSliceShape(FusionShapeData[] shapeInfos)
-    {
-        var staticShape = true;
-
-        // if (staticShape)
-        // {
-        //     return GetOutputShape(shapeInfos);
-        // }
-        var originBody = FusionBody;
-        var shapeOfFusionInput = MakeShapeOfFusionInput(Parameters, Arguments);
-        var originShape = originBody.EvaluateShapeExpr(shapeOfFusionInput);
-        originShape.InferenceType();
-
-        // return originShape;
-
-        // complex check
-        // 判断是否需要replace,里面是否存在满足条件的shapeof
-        var args = Arguments.ToDictionary(x => x, x => new Var(x.CheckedType));
-        var input = MakeShapeOfFusionInput(Parameters, args.Values.ToArray());
-        var varShape = originBody.EvaluateShapeExpr(input);
-        var p = new ReplaceOfCollector();
-        p.Visit(originBody);
-        if (p.List.Count == 0)
-        {
-            return SimplifyShape(originShape);
-        }
-
-        return ReplaceShapeOf(shapeOfFusionInput, varShape, this, args);
-    }
-
-    public static Expr ReplaceShapeOf(Dictionary<Var, Expr[]> fusionInputsShapeExpr, Dictionary<Var, Expr[]> VarMap, Expr originShape, Var[] parameters, Var[] DimVarKeys, FusionBucketContext context, Dictionary<Expr, Var> dict)
+    private static Expr ReplaceShapeOf(Dictionary<Var, Expr[]> fusionInputsShapeExpr, Dictionary<Var, Expr[]> varMap, Expr originShape, Var[] parameters, Var[] dimVarKeys, FusionBucketContext context, Dictionary<Expr, Var> dict)
     {
         // return originShape;
         // 拷贝shape表达式，以免被原始的计算引用
@@ -833,7 +774,7 @@ public class FusionBucketContext
 
         // 可能在VarMap里面有，但是newVar中没有，所以把newVar转换为oldVar
         var newDict = fusionInputsShapeExpr
-            .Concat(VarMap)
+            .Concat(varMap)
             .Where(pair => newVars.FindFirst(newVar => newVar.Name == pair.Key.Name) != null)
             .ToDictionary(
                 pair =>
@@ -850,15 +791,12 @@ public class FusionBucketContext
 
         var originVars = parameters
             .ToArray()
-            .Concat(VarMap.Keys)
-            .Concat(DimVarKeys)
-            .ToDictionary(
-                v => v.Name, v => v);
+            .Concat(varMap.Keys)
+            .Concat(dimVarKeys)
+            .ToDictionary(v => v.Name, v => v);
 
         Task.Run(() => new FoldNopTuple().RunAsync(new Function(cloneShape), new())).Wait();
         Expr sliceShape = cloneShape;
-        int i = 0;
-
         var p = new ReplaceOfCollector();
         p.Visit(cloneShape);
         var processList = p.List;
@@ -866,7 +804,7 @@ public class FusionBucketContext
 
         var argCache = context.Arguments.ToDictionary(arg => arg, arg => (Expr)ShapeOf(arg));
         var exprs = argCache.SelectMany(pair => new[] { pair.Key, pair.Value }).ToArray();
-        new ExprPinner(exprs);
+        var pinner = new ExprPinner(exprs);
         var cache = new ShapeExprCache(newDict, argCache);
 
         foreach (var call in processList)
@@ -912,11 +850,33 @@ public class FusionBucketContext
                 new FoldNopReshape(), new FoldNopSlice(), new FoldIf(), new FoldBroadcastShape(), new FoldSplitShapeOf(),
             },
             new());
+
+    private Expr ComputeSliceShape(FusionShapeData[] shapeInfos)
+    {
+        var originBody = FusionBody;
+        var shapeOfFusionInput = MakeShapeOfFusionInput(Parameters, Arguments);
+        var originShape = originBody.EvaluateShapeExpr(shapeOfFusionInput);
+        originShape.InferenceType();
+
+        // complex check
+        // 判断是否需要replace,里面是否存在满足条件的shapeof
+        var args = Arguments.ToDictionary(x => x, x => new Var(x.CheckedType));
+        var input = MakeShapeOfFusionInput(Parameters, args.Values.ToArray());
+        var varShape = originBody.EvaluateShapeExpr(input);
+        var p = new ReplaceOfCollector();
+        p.Visit(originBody);
+        if (p.List.Count == 0)
+        {
+            return SimplifyShape(originShape);
+        }
+
+        return ReplaceShapeOf(shapeOfFusionInput, VarMap, varShape, Parameters, DimVarValues.Keys.ToArray(), this, args);
+    }
 }
 
 public class ReplaceOfCollector : ExprVisitor<Expr, Unit>
 {
-    public List<Call> List = new();
+    public List<Call> List { get; } = new();
 
     protected override Expr VisitLeafCall(Call expr)
     {
@@ -992,8 +952,38 @@ public partial class FusionBucket : RewriteRule<Pattern>
         return (minDict, maxDict);
     }
 
-    public static Expr MakeSplitEntry(FusionBucketContext context, Dictionary<Var, IValue> varInfo, int segIndex,
-        Expr sameCond, bool sameOpt = false)
+    public static Expr Split(FusionBucketContext context)
+    {
+        var failure = MakeFailure(context.FusionBody);
+
+        // todo: test this
+        var value = GetVarValue(context);
+
+        int i = 0;
+
+        // todo: only used for same range
+        var body = context.DimVarValues.First().Value.OrderByDescending(x => x).Aggregate(
+            failure,
+            (sum, seg) =>
+            {
+                // 根据var，也就是target为这个fusion的call的参数来进行判断落在哪个段
+                var cond = value <= (long)seg;
+                var sameCond = IR.F.Math.Equal(value, (long)seg);
+
+                // select var value for current segment
+                var varInfo = context.DimVarValue(i);
+                var thenBody = MakeSplitEntry(context, varInfo, i, sameCond);
+                var elseBody = sum;
+                i++;
+
+                var result = new If(cond, thenBody, elseBody);
+                return result;
+            });
+
+        return body;
+    }
+
+    public static Expr MakeSplitEntry(FusionBucketContext context, Dictionary<Var, IValue> varInfo, int segIndex, Expr sameCond, bool sameOpt = false)
     {
         var originBody = context.FusionBody;
         var fusionVars = context.Parameters;
@@ -1304,38 +1294,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
             return result;
         });
 
-    public static Expr Split(FusionBucketContext context)
-    {
-        var failure = MakeFailure(context.FusionBody);
-
-        // todo: test this
-        var value = GetVarValue(context);
-
-        int i = 0;
-
-        // todo: only used for same range
-        var body = context.DimVarValues.First().Value.OrderByDescending(x => x).Aggregate(
-            failure,
-            (sum, seg) =>
-            {
-                // 根据var，也就是target为这个fusion的call的参数来进行判断落在哪个段
-                var cond = value <= (long)seg;
-                var sameCond = IR.F.Math.Equal(value, (long)seg);
-
-                // select var value for current segment
-                var varInfo = context.DimVarValue(i);
-                var thenBody = MakeSplitEntry(context, varInfo, i, sameCond);
-                var elseBody = sum;
-                i++;
-
-                var result = new If(cond, thenBody, elseBody);
-                return result;
-            });
-
-        return body;
-    }
-
-    public static Expr MakeFailure(Expr fusionBody)
+    private static Expr MakeFailure(Expr fusionBody)
     {
         var failure = fusionBody.CheckedType switch
         {
@@ -1365,7 +1324,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
     private static bool DumpError(Expr entry)
     {
         DumpIR(entry, "FailedEntry");
-        throw new ArgumentOutOfRangeException("context");
+        throw new InvalidOperationException();
     }
 
     private static bool ShouldBeRebuild(Expr entry)
@@ -1391,7 +1350,9 @@ public partial class FusionBucket : RewriteRule<Pattern>
 
     public class CallVisitor : ExprVisitor<Expr, Unit>
     {
-        public bool HasDynamic;
+        private bool _hasDynamic;
+
+        public bool HasDynamic => _hasDynamic;
 
         protected override Expr DefaultVisitLeaf(Expr expr) => expr;
 
@@ -1401,7 +1362,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
             {
                 if (!expr.CheckedShape.IsFixed)
                 {
-                    HasDynamic = true;
+                    _hasDynamic = true;
                 }
             }
 
@@ -1414,7 +1375,7 @@ internal record SegmentInfo(int InputIndex, int DimIndex, int[] Segments);
 
 public class FullBucket : FunctionPass
 {
-    protected override Task<BaseFunction> RunCoreAsync(BaseFunction input, RunPassContext _)
+    protected override Task<BaseFunction> RunCoreAsync(BaseFunction input, RunPassContext ctx)
     {
         var main = (Function)input;
         var replaceItem = main.Parameters.ToArray().Select(param => (param, (Expr)new Var(param.CheckedType))).ToArray();
@@ -1454,9 +1415,9 @@ public class FullBucket : FunctionPass
         }
 
         var newBody = FusionBucket.Split(context);
-        foreach (var (item1, item2) in replaceItem)
+        foreach (var (oldVar, tmpVar) in replaceItem)
         {
-            ReplaceExpr(newBody, item2, item1);
+            ReplaceExpr(newBody, tmpVar, oldVar);
         }
 
         return Task.FromResult((BaseFunction)main.With(body: newBody));
