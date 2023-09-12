@@ -45,26 +45,31 @@ public record FunctionRef(long Position, int Length, BaseFunction Callable, Func
 
 public class SectionManager
 {
-    private readonly Dictionary<string, (MemoryStream Stream, BinaryWriter Writer)> _sections = new();
+    private readonly Dictionary<string, (Stream Stream, BinaryWriter Writer)> _sections = new();
 
     public BinaryWriter GetWriter(string name)
     {
         if (!_sections.TryGetValue(name, out var section))
         {
-            var stream = new MemoryStream();
-            section = (stream, new BinaryWriter(stream, Encoding.UTF8, true));
+            var tmpFile = File.Open(Path.GetTempFileName(), new FileStreamOptions
+            {
+                Access = FileAccess.ReadWrite,
+                Mode = FileMode.Create,
+                Options = FileOptions.Asynchronous | FileOptions.DeleteOnClose,
+            });
+            section = (tmpFile, new BinaryWriter(tmpFile, Encoding.UTF8, true));
             _sections.Add(name, section);
         }
 
         return section.Writer;
     }
 
-    public byte[]? GetContent(string name)
+    public Stream? GetContent(string name)
     {
         if (_sections.TryGetValue(name, out var section))
         {
             section.Writer.Flush();
-            return section.Stream.ToArray();
+            return section.Stream;
         }
 
         return null;

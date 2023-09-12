@@ -56,7 +56,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         self.dynamic = False
 
         if self.cfg['dump_infer']:
-            self.infer_file = test_utils.infer_file()
+            self.infer_file = test_utils.infer_file(self.cfg['infer_name'])
             self.infer_dict = {
                 'case': 'unknown',
                 'target': 'cpu',
@@ -267,7 +267,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
 
                             if stage == 'infer' and self.cfg['dump_infer']:
                                 self.infer_dict['result'] = 'Pass' if judge else 'Fail'
-                                self.infer_dict['remark'] = result.replace('\n', ' ')
+                                self.infer_dict['remark'] = result.replace('\n', '<br/>')
                                 dump_dict_to_json(self.infer_dict, self.infer_file)
                             if not judge:
                                 if test_utils.in_ci():

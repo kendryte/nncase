@@ -36,7 +36,10 @@ class PadTest : public KernelTest,
 
         auto l_shape = GetShapeArray("lhs_shape");
         auto typecode = GetDataType("lhs_type");
-
+        mode_str = GetString("mode");
+        mode = Str2Mode(mode_str, str_2_padmode);
+        padding = GetDataArray("padding");
+        padding_nncaseformat = ToNncaseFormat(padding);
         input =
             hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
@@ -45,12 +48,41 @@ class PadTest : public KernelTest,
                     .expect("create tensor failed");
         init_tensor(value);
     }
+    template <typename T>
+    T Str2Mode(std::string type, std::map<std::string, T> &str_2_mode) {
+        std::cout << type << std::endl;
+        if (str_2_mode.find(type) != str_2_mode.end()) {
+            return str_2_mode[type];
+        } else {
+            // should not be here
+            return static_cast<T>(0);
+        }
+    }
+
+    std::vector<int64_t> ToNncaseFormat(std::vector<int64_t> &padding) {
+        // int64_t before_pad;
+        // int64_t after_pad;
+        std::vector<int64_t> padding_nncase;
+        for (size_t i = 0; i < padding.size() / 2; ++i) {
+            padding_nncase.push_back(padding[i]);
+            padding_nncase.push_back(padding[i + padding.size() / 2]);
+        }
+        return padding_nncase;
+    }
 
     void TearDown() override { CLEAR_SUBCASE() }
 
   protected:
     runtime_tensor input;
     runtime_tensor value;
+    runtime::stackvm::pad_mode_t mode;
+    std::string mode_str;
+    std::vector<int64_t> padding;
+    std::vector<int64_t> padding_nncaseformat;
+    std::map<std::string, runtime::stackvm::pad_mode_t> str_2_padmode = {
+        {"constant", runtime::stackvm::pad_mode_t::constant},
+        {"reflect", runtime::stackvm::pad_mode_t::reflect},
+        {"edge", runtime::stackvm::pad_mode_t::edge}};
 };
 
 INSTANTIATE_TEST_SUITE_P(Pad, PadTest,
@@ -60,17 +92,17 @@ TEST_P(PadTest, Pad) {
 
     // expected
     size_t size = 0;
-    int64_t pad_ptr[] = {1, 0, 0, 0, 0, 0, 0, 0};
-    auto pad =
-        hrt::create(dt_int64, {8},
-                    {reinterpret_cast<gsl::byte *>(pad_ptr), sizeof(pad_ptr)},
-                    true, host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
+    // int64_t pad_ptr[] = {1, 0, 0, 0, 0, 0, 0, 0};
+    auto pad = hrt::create(dt_int64, {padding.size()},
+                           {reinterpret_cast<gsl::byte *>(padding.data()),
+                            sizeof(padding[0]) * padding.size()},
+                           true, host_runtime_tensor::pool_cpu_only)
+                   .expect("create tensor failed");
 
     auto l_ort = runtime_tensor_2_ort_tensor(input);
     auto pad_ort = runtime_tensor_2_ort_tensor(pad);
     auto value_ort = runtime_tensor_2_ort_tensor(value);
-    auto output_ort = ortki_Pad(l_ort, pad_ort, value_ort, "constant");
+    auto output_ort = ortki_Pad(l_ort, pad_ort, value_ort, mode_str.c_str());
     void *ptr_ort = tensor_buffer(output_ort, &size);
     dims_t shape(tensor_rank(output_ort));
     tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
@@ -80,9 +112,15 @@ TEST_P(PadTest, Pad) {
                         .expect("create tensor failed");
 
     // actual
-    auto output = kernels::stackvm::pad(runtime::stackvm::pad_mode_t::constant,
-                                        input.impl(), pad.impl(), value.impl())
-                      .expect("pad failed");
+    pad = hrt::create(
+              dt_int64, {padding_nncaseformat.size()},
+              {reinterpret_cast<gsl::byte *>(padding_nncaseformat.data()),
+               sizeof(padding_nncaseformat[0]) * padding_nncaseformat.size()},
+              true, host_runtime_tensor::pool_cpu_only)
+              .expect("create tensor failed");
+    auto output =
+        kernels::stackvm::pad(mode, input.impl(), pad.impl(), value.impl())
+            .expect("pad failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     bool result = is_same_tensor(expected, actual) ||
@@ -103,9 +141,15 @@ int main(int argc, char *argv[]) {
     READY_TEST_CASE_GENERATE()
     FOR_LOOP(lhs_shape, i)
     FOR_LOOP(lhs_type, j)
+    FOR_LOOP(mode, k)
+    FOR_LOOP(padding, l)
     SPLIT_ELEMENT(lhs_shape, i)
     SPLIT_ELEMENT(lhs_type, j)
+    SPLIT_ELEMENT(mode, k)
+    SPLIT_ELEMENT(padding, l)
     WRITE_SUB_CASE()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
     FOR_LOOP_END()
     FOR_LOOP_END()
 
