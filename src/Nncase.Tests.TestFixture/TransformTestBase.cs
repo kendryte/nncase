@@ -89,19 +89,16 @@ public partial class TransformTestBase : TestClassBase
     public Expr TestMatchedCore(Expr pre, IReadOnlyDictionary<Var, IValue>? feeds = null, params IRewriteRule[] rules)
     {
         pre.InferenceType();
-        DumpScope.Current.DumpIR(pre, "infer");
         Assert.True(pre.InferenceType(), "TestInferFailed:" + pre.CheckedType);
         if (rules.Length == 0)
         {
             throw new InvalidOperationException("Rules should not be empty");
         }
 
-        DumpScope.Current.DumpIR(pre, "pre");
         var preHashCode = pre.GetHashCode();
         var v1 = pre.Evaluate(feeds);
         var post = CompilerServices.Rewrite(pre, rules, new());
         Assert.NotEqual(preHashCode, post.GetHashCode());
-        DumpScope.Current.DumpIR(post, "post");
         var v2 = post.Evaluate(feeds);
         if (!Comparator.AllEqual(v1, v2))
         {
