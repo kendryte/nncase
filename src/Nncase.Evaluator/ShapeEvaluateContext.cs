@@ -26,6 +26,7 @@ internal sealed class ShapeEvaluateContext : IShapeEvaluateContext
         {
             _memo[key] = value;
         }
+
         VarMap = cache.VarMap;
         Cache = new();
     }
