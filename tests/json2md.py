@@ -1,24 +1,65 @@
 import argparse
 import json
-import pandas as pd
+import os
+from pathlib import Path
 
 
 def json2md(json_file):
+    file_list = []
+    for path in Path(os.path.dirname(json_file)).glob(f'{json_file}*.json'):
+        file_list.append(path)
+
     json_list = []
-    with open(json_file, 'r') as f:
-        json_list = json.load(f)
+    for f in file_list:
+        with open(f, 'r') as f:
+            json_list.extend(json.load(f))
+    assert(len(json_list) > 0)
 
-    json_list = sorted(json_list, key=lambda d: d['case'])
-    df = pd.DataFrame.from_records(json_list)
-    md = df.to_markdown()
-    md_file = json_file.split('/')[-1].split('.')[0] + '.md'
+    # generate dict after sorting
+    json_list = sorted(json_list, key=lambda d: (d['priority'], d['kind'], d['model']))
+    dict = {}
+    for e in json_list:
+        kind = e['kind']
+        if kind not in dict:
+            dict[kind] = []
+        dict[kind].append(e)
 
+    # generate html table
+    md = '<table>\n'
+
+    # table head
+    md += '\t<tr>\n'
+    for key in json_list[0]:
+        if key != 'priority':
+            md += f'\t\t<th>{key}</th>\n'
+    md += '\t</tr>\n'
+
+    # table row
+    for value in dict.values():
+        length = len(value)
+        for i in range(length):
+            md += '\t<tr>\n'
+            if i == 0:
+                for k, v in value[i].items():
+                    if k == 'kind':
+                        md += f'\t\t<td rowspan=\'{length}\'>{v}</td>\n'
+                    elif k != 'priority':
+                        md += f'\t\t<td>{v}</td>\n'
+            else:
+                for k, v in value[i].items():
+                    if k != 'kind' and k != 'priority':
+                        md += f'\t\t<td>{v}</td>\n'
+            md += '\t</tr>\n'
+
+    md += '</table>\n'
+
+    md_file = os.path.splitext(json_file)[0] + '.md'
     with open(md_file, 'w') as f:
         f.write(md)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog="json2md")
-    parser.add_argument("--json", help='json file', type=str)
+    parser.add_argument("--json", help='json file or json file prefix', type=str)
     args = parser.parse_args()
     json2md(args.json)
