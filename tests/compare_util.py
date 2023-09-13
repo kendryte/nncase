@@ -32,7 +32,11 @@ def cosine(gt: np.ndarray, pred: np.ndarray, *args):
     if np.isnan(pred).any():
         pred = remove_nan(pred)
 
-    # exclude situation of all zeros in ndarray
+    # return -1 if gt.size !=pred.size after remove the nan number.
+    if gt.size != pred.size:
+        return -1
+
+    # exclude the situation of all zeros in ndarray.
     if compare_arrays(gt, pred):
         return 1
 
