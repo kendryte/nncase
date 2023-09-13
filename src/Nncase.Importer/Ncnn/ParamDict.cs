@@ -38,6 +38,8 @@ internal class ParamDict
 {
     public static readonly int NcnnMaxParamCount = 32;
 
+    private readonly Dictionary<int, ParamValue> _values = new();
+
     public void LoadFrom(ReadOnlySpan<string> fields)
     {
         foreach (var field in fields)
@@ -58,6 +60,7 @@ internal class ParamDict
             var isFloat = valueStr.AsSpan().IndexOfAny('.', 'e', 'E') != -1;
             if (isArray)
             {
+                id = -id - 23300;
                 var elements = valueStr.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
                 if (elements == null || elements.Length == 0)
                 {
@@ -68,7 +71,7 @@ internal class ParamDict
                 if (isFloat)
                 {
                     var value = new Tensor<float>(length);
-                    for (var i = 1; i < length; i++)
+                    for (var i = 0; i < length; i++)
                     {
                         value[i] = float.Parse(elements[i + 1]);
                     }
@@ -101,6 +104,16 @@ internal class ParamDict
                     paramValue.IntValue = int.Parse(valueStr);
                 }
             }
+
+            _values.Add(id, paramValue);
         }
     }
+
+    public int Get(int id, int defaultValue) => _values.TryGetValue(id, out var value) ? value.IntValue : defaultValue;
+
+    public float Get(int id, float defaultValue) => _values.TryGetValue(id, out var value) ? value.FloatValue : defaultValue;
+
+    public Tensor<T> Get<T>(int id, Tensor<T> defaultValue)
+        where T : unmanaged, IEquatable<T>
+        => _values.TryGetValue(id, out var value) ? value.TensorValue!.Cast<T>() : defaultValue;
 }

@@ -6,13 +6,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.IO;
 using Nncase.IR;
 
 namespace Nncase;
 
 public static class CompilerExtensions
 {
-    public static async Task<IRModule> ImportModuleAsync(this ICompiler compiler, string modelFormat, string fileName)
+    public static async Task<IRModule> ImportModuleAsync(this ICompiler compiler, string modelFormat, string fileName, bool isBenchmarkOnly = false)
     {
         using var fileStream = File.OpenRead(fileName);
         switch (modelFormat.ToUpperInvariant())
@@ -23,7 +24,7 @@ public static class CompilerExtensions
                 return await compiler.ImportOnnxModuleAsync(fileStream);
             case "NCNN":
                 {
-                    using var binStream = File.OpenRead(Path.ChangeExtension(fileName, "bin"));
+                    using var binStream = isBenchmarkOnly ? (Stream)new ZeroStream() : File.OpenRead(Path.ChangeExtension(fileName, "bin"));
                     return await compiler.ImportNcnnModuleAsync(fileStream, binStream);
                 }
 

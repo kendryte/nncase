@@ -42,7 +42,8 @@ public sealed partial class NcnnImporter : BaseImporter
     };
 
     private readonly NcnnModel _model;
-    private readonly Dictionary<int, Expr> _outputTensors = new Dictionary<int, Expr>();
+    private readonly NcnnModelBin _modelBin;
+    private readonly Dictionary<string, Expr> _outputTensors = new Dictionary<string, Expr>();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="NcnnImporter"/> class.
@@ -54,17 +55,31 @@ public sealed partial class NcnnImporter : BaseImporter
         : base(compileSession)
     {
         _model = NcnnModel.ParseFromStream(ncnnParam);
+        _modelBin = new NcnnModelBin(ncnnBin);
     }
 
     /// <inheritdoc/>
     protected override (IEnumerable<Var> Inputs, Dictionary<Var, Expr[]> VarMap) CreateInputs()
     {
-        throw new NotImplementedException();
+        var inputs = new List<Var>();
+        var varMap = new Dictionary<Var, Expr[]>();
+
+        foreach (var layer in _model.Layers.Where(x => x.Type == "Input"))
+        {
+            var input = new Var(layer.Name);
+            inputs.Add(input);
+            _outputTensors.Add(layer.Name, input);
+        }
+
+        return (inputs, varMap);
     }
 
     protected override void ConvertOp()
     {
-        throw new NotImplementedException();
+        foreach (var layer in _model.Layers.Where(x => x.Type != "Input"))
+        {
+            Visit(layer);
+        }
     }
 
     protected override Expr CreateOutputs()
@@ -72,86 +87,44 @@ public sealed partial class NcnnImporter : BaseImporter
         throw new NotImplementedException();
     }
 
-    /// <summary>
-    /// Create IR type from tflite shape and tensor type.
-    /// </summary>
-    /// <param name="tensor">Tensor.</param>
-    /// <returns>Created IR type.</returns>
-    private static TensorType GetIRType(tflite.Tensor tensor)
-    {
-        var shape = GetShapeArray(tensor);
-        var dataType = GetDataType(tensor.Type);
-        if (shape.Length == 0)
+    private static Expr CHWToNCHW(Expr expr) =>
+        Tensors.Unsqueeze(expr, 0);
+
+    private static Expr NCHWToCHW(Expr expr) =>
+        Tensors.Squeeze(expr, 0);
+
+    private static ValueRange<float> ToFloatClampRange(int activationType, ReadOnlySpan<float> activationParams) =>
+        activationType switch
         {
-            return TensorType.Scalar(dataType);
-        }
-        else
+            1 => new(0, float.PositiveInfinity),
+            3 => new(activationParams[0], activationParams[1]),
+            _ => ValueRange<float>.Full,
+        };
+
+    private void Visit(NcnnLayer layer)
+    {
+        var output = layer.Type switch
         {
-            return new TensorType(dataType, new Shape(shape));
-        }
+            "Concat" => VisitConcat(layer),
+            "Convolution" => VisitConvolution(layer),
+            "ConvolutionDepthWise" => VisitConvolution(layer),
+            "Pooling" => VisitPooling(layer),
+            "ShuffleChannel" => VisitShuffleChannel(layer),
+            "Split" => VisitSplit(layer),
+            _ => UnSupportedOp(layer.Type),
+        };
+
+        var outputNames = layer.Tops.Select(x => x.Name).ToArray();
+        output.Metadata.OutputNames = outputNames;
+        AddToOutputs(_outputTensors, outputNames, output);
     }
 
-    private static DataType GetDataType(tflite.TensorType type)
-    {
-        if (_typeMap.TryGetValue(type, out var dataType))
-        {
-            return dataType;
-        }
+    private Expr GetInputExprs(NcnnLayer layer, int index) =>
+        _outputTensors[layer.Bottoms[index].Name];
 
-        throw new NotSupportedException($"Unsupported tflite tensor type: {type}.");
-    }
+    private (Expr Expr0, Expr Expr1) GetInputExprs(NcnnLayer layer, int index0, int index1) =>
+        (GetInputExprs(layer, index0), GetInputExprs(layer, index1));
 
-    private static Dimension[] GetShapeArray(tflite.Tensor tensor)
-    {
-        if (tensor.ShapeSignatureLength == 0)
-        {
-            return tensor.GetShapeArray().Select(x => new Dimension(x)).ToArray();
-        }
-
-        return Enumerable.Range(0, tensor.ShapeLength).Select(i =>
-            tensor.ShapeSignature(i) < 0 ? Dimension.Unknown : tensor.Shape(i)).ToArray();
-    }
-
-    private void Visit(in tflite.Operator op)
-    {
-        throw new NotImplementedException();
-    }
-
-    private List<QuantParam>? GetInputQuantParams(in tflite.Operator op, int index)
-    {
-        throw new NotImplementedException();
-    }
-
-    private List<QuantParam>? GetOutputQuantParams(in tflite.Operator op, int index)
-    {
-        throw new NotImplementedException();
-    }
-
-    private Expr GetInputExprs(in tflite.Operator op, int index)
-    {
-        throw new NotImplementedException();
-    }
-
-    private (Expr Expr0, Expr Expr1) GetInputExprs(in tflite.Operator op, int index0, int index1) =>
-        (GetInputExprs(op, index0), GetInputExprs(op, index1));
-
-    private tflite.Tensor GetTfliteTensor(int id)
-    {
-        throw new NotImplementedException();
-    }
-
-    private tflite.Tensor GetInputTensor(in tflite.Operator op, int index)
-    {
-        return GetTfliteTensor(op.Inputs(index));
-    }
-
-    private tflite.Tensor GetOutputTensor(in tflite.Operator op, int index)
-    {
-        return GetTfliteTensor(op.Outputs(index));
-    }
-
-    private Shape GetTensorShape(in tflite.Tensor tensor)
-    {
-        return GetShapeArray(tensor);
-    }
+    private IEnumerable<Expr> GetInputExprs(NcnnLayer layer) =>
+        layer.Bottoms.Select(x => _outputTensors[x.Name]);
 }
