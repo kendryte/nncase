@@ -34,15 +34,19 @@ def cosine(gt: np.ndarray, pred: np.ndarray, *args):
         return 1
     return (gt @ pred) / (np.linalg.norm(gt, 2) * np.linalg.norm(pred, 2))
 
+
 def remove_nan(array):
     mask = np.isnan(array)
     return array[~mask]
 
+
 def compare_arrays(arr1, arr2):
     return np.array_equal(arr1, arr2)
 
+
 def euclidean(gt: np.ndarray, pred: np.ndarray, *args):
     return np.linalg.norm(gt - pred, 2)**2
+
 
 def allclose(gt: np.ndarray, pred: np.ndarray, thresh: float):
     return np.allclose(gt, pred, atol=thresh)
