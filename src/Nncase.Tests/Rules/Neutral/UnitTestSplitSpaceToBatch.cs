@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using Nncase.Diagnostics;
+using Nncase.IR;
 using Nncase.IR.NN;
 using Nncase.Passes.Rules.Neutral;
 using Nncase.Tests.TestFixture;
@@ -16,9 +17,17 @@ public class UnitTestSpaceToBatch : TransformTestBase
     [Fact]
     public void TestSplitSpaceToBatch()
     {
-        CompileOptions.DumpFlags = DumpFlags.Evaluator;
         var i = SpaceToBatch(Testing.Rand<float>(1, 206, 192), new[] { 3 }, new[,] { { 0, 1 } });
-        TestMatched<SplitSpaceToBatch>(i);
+        var originEvaluateResult = i.Evaluate();
+        var newBody = TestMatched<SplitSpaceToBatch>(i);
+        var ev = newBody.Evaluate();
+        var c1 = Comparator.CosSimilarity(originEvaluateResult, ev);
+        var dumpDir = Dumpper.Directory;
+        var (kmodelPath, kmodel) = Testing.BuildKModel("kmodel", new IRModule(new Function(newBody, System.Array.Empty<Var>())), CompileSession);
+        var inputs = System.Array.Empty<Tensor>();
+        var result = Testing.RunKModel(kmodel, dumpDir, inputs);
+        var v = Comparator.CosSimilarity(ev, result);
+        Assert.True(v[0] > 0.99f);
     }
 
     [Fact]
