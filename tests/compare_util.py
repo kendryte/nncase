@@ -1,3 +1,18 @@
+# Copyright 2019-2021 Canaan Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# pylint: disable=invalid-name, unused-argument, import-outside-toplevel
+
 import enum
 import math
 import os
@@ -11,12 +26,23 @@ import test_utils
 
 
 def cosine(gt: np.ndarray, pred: np.ndarray, *args):
+    if np.isnan(gt).any():
+        gt = remove_nan(gt)
+    if np.isnan(pred).any():
+        pred = remove_nan(gt)
+    if compare_arrays(gt, pred):
+        return 1
     return (gt @ pred) / (np.linalg.norm(gt, 2) * np.linalg.norm(pred, 2))
 
+def remove_nan(array):
+    mask = np.isnan(array)
+    return array[~mask]
+
+def compare_arrays(arr1, arr2):
+    return np.array_equal(arr1, arr2)
 
 def euclidean(gt: np.ndarray, pred: np.ndarray, *args):
     return np.linalg.norm(gt - pred, 2)**2
-
 
 def allclose(gt: np.ndarray, pred: np.ndarray, thresh: float):
     return np.allclose(gt, pred, atol=thresh)
