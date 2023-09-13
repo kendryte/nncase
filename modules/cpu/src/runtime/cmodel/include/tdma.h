@@ -248,15 +248,13 @@ void __tdma_all_sync_apply(std::function<void(int)> apply_func,
 }
 
 template <class T, loc_t DestLoc>
-void tdma_load_async(tensor<T, DestLoc> &dest, tensor<T, loc_t::device> &&src,
-                     [[maybe_unused]] thread_context &ctx) {
+void tdma_load_async(tensor<T, DestLoc> &dest, tensor<T, loc_t::device> &&src) {
     __tensor_copy_sync(std::forward<tensor<T, DestLoc>>(dest),
                        std::forward<tensor<T, loc_t::device>>(src));
 }
 
 template <class T, loc_t SrcLoc>
-void tdma_store_async(tensor<T, SrcLoc> &src, tensor<T, loc_t::device> &&dest,
-                      [[maybe_unused]] thread_context &ctx) {
+void tdma_store_async(tensor<T, SrcLoc> &src, tensor<T, loc_t::device> &&dest) {
     __tensor_copy_sync(std::forward<tensor<T, loc_t::device>>(dest),
                        std::forward<tensor<T, SrcLoc>>(src));
 }
@@ -298,7 +296,7 @@ void tdma_load_broadcast_async([[maybe_unused]] tensor<T, Dest> &dest,
 template <class T>
 void reduce_async_visit_func1(int visited, thread_context &ctx,
                               tensor<T, loc_t::local> &src,
-                              tensor<T, loc_t::local> &dest) {
+                              [[maybe_unused]] tensor<T, loc_t::local> &dest) {
     T *gather_span = nullptr;
     auto new_dims = dims_t(src.dimension());
     new_dims.insert(new_dims.begin(), BLOCKS * CORES);
@@ -324,7 +322,7 @@ void reduce_async_visit_func1(int visited, thread_context &ctx,
 }
 
 template <class T>
-void reduce_async_visit_func2(int visit, thread_context &ctx,
+void reduce_async_visit_func2([[maybe_unused]] int visit, thread_context &ctx,
                               tensor<T, loc_t::local> &src,
                               tensor<T, loc_t::local> &dest,
                               reduce_op_t reduce_op) {

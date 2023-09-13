@@ -14,7 +14,7 @@
  */
 
 #include <apply.h>
-#include <gsl/gsl-lite.hpp>
+#include "../../gsl-lite.hpp"
 #include <runtime_utils.h>
 
 namespace kernels {

@@ -17,12 +17,11 @@ void stage1_kernel(
     tensor<float> gather_data({384, 256});
     tensor<float> output({1, 384, 256});
 
-    tdma_load_async(position_ids, std::move(Position_ids), ctx);
+    tdma_load_async(position_ids, std::move(Position_ids));
     tdma_load_async(gather_data,
-                    GatherData({0, 256 * (CORES * bid + tid)}, {384, 256}),
-                    ctx);
+                    GatherData({0, 256 * (CORES * bid + tid)}, {384, 256}));
     gather(gather_data, position_ids, output, 0);
 
     tdma_store_async(
-        output, Output({0, 0, 256 * (CORES * bid + tid)}, {1, 384, 256}), ctx);
+        output, Output({0, 0, 256 * (CORES * bid + tid)}, {1, 384, 256}));
 }

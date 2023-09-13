@@ -1,7 +1,7 @@
 #pragma once
 #include <filesystem>
 #include <fstream>
-#include <gsl/gsl-lite.hpp>
+#include "gsl-lite.hpp"
 #include <vector>
 
 inline std::vector<uint8_t> read_stream(std::istream &stream) {

@@ -1,5 +1,5 @@
 #pragma once
-#include <gsl/gsl-lite.hpp>
+#include "../../gsl-lite.hpp"
 
 namespace detail {
 #define APPLY_IMPL_FOR(i) for (index[i] = 0; index[i] < shape[i]; index[i]++)

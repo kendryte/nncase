@@ -60,29 +60,25 @@ void stage1_kernel(
     MALLOC_STATIC(v42_w, float, dims_t({5504, 8192}))
 
     if (!w_loaded) {
-        tdma_load_async(v0_gamma, V0_gamma({tid * 2048}, {2048}), ctx);
-        tdma_load_async(v0_beta, V0_beta({tid * 2048}, {2048}), ctx);
-        tdma_load_async(*v2_w, V2_w({0, 2048 * tid, 0}, {64, 2048, 128}), ctx);
-        tdma_load_async(*v16_w, V16_w({0, 2048 * tid, 0}, {64, 2048, 128}),
-                        ctx);
-        tdma_load_async(*v31_w, V31_w({0, 2048 * tid, 0}, {64, 2048, 128}),
-                        ctx);
-        tdma_load_async(*v35_w, V35_w({2048 * tid, 0}, {2048, 8192}), ctx);
-        tdma_load_async(*v38_w, V38_w({2048 * tid, 0}, {2048, 22016}), ctx);
-        tdma_load_async(*v40_w, V40_w({2048 * tid, 0}, {2048, 22016}), ctx);
-        tdma_load_async(*v42_w, V42_w({5504 * tid, 0}, {5504, 8192}), ctx);
-        tdma_load_async(*v3_data, V3_data({0, 32 * tid}, {384, 32}), ctx);
-        tdma_load_async(*v11_data, V11_data({0, 32 * tid}, {384, 32}), ctx);
-        tdma_load_async(*position_ids, Position_ids({0, 48 * bid}, {1, 48}),
-                        ctx);
+        tdma_load_async(v0_gamma, V0_gamma({tid * 2048}, {2048}));
+        tdma_load_async(v0_beta, V0_beta({tid * 2048}, {2048}));
+        tdma_load_async(*v2_w, V2_w({0, 2048 * tid, 0}, {64, 2048, 128}));
+        tdma_load_async(*v16_w, V16_w({0, 2048 * tid, 0}, {64, 2048, 128}));
+        tdma_load_async(*v31_w, V31_w({0, 2048 * tid, 0}, {64, 2048, 128}));
+        tdma_load_async(*v35_w, V35_w({2048 * tid, 0}, {2048, 8192}));
+        tdma_load_async(*v38_w, V38_w({2048 * tid, 0}, {2048, 22016}));
+        tdma_load_async(*v40_w, V40_w({2048 * tid, 0}, {2048, 22016}));
+        tdma_load_async(*v42_w, V42_w({5504 * tid, 0}, {5504, 8192}));
+        tdma_load_async(*v3_data, V3_data({0, 32 * tid}, {384, 32}));
+        tdma_load_async(*v11_data, V11_data({0, 32 * tid}, {384, 32}));
+        tdma_load_async(*position_ids, Position_ids({0, 48 * bid}, {1, 48}));
         tdma_load_async(attn_mask,
-                        Attn_mask({0, 0, 48 * bid, 0}, {1, 1, 48, 384}), ctx);
+                        Attn_mask({0, 0, 48 * bid, 0}, {1, 1, 48, 384}));
 
         tdma_wait(ctx);
     }
 
-    tdma_load_async(v0, Hidden_in({0, bid * 48, tid * 2048}, {1, 48, 2048}),
-                    ctx);
+    tdma_load_async(v0, Hidden_in({0, bid * 48, tid * 2048}, {1, 48, 2048}));
     {
         tensor<float> v0_sum({1, 48});
         tensor<float> v0_sum_sqr({1, 48});
@@ -93,8 +89,7 @@ void stage1_kernel(
 #if DUMP
         {
             tdma_store_async(
-                v0, (*ImmOutputs[0])({0, 48 * bid, 2048 * tid}, {1, 48, 2048}),
-                ctx);
+                v0, (*ImmOutputs[0])({0, 48 * bid, 2048 * tid}, {1, 48, 2048}));
         }
 #endif
     } // v0 [1, 384, 8192] [1, 48@b, 8192]
@@ -108,7 +103,7 @@ void stage1_kernel(
 #if DUMP
     if (tid == 0) {
         tdma_store_async(
-            *V2, (*ImmOutputs[1])({0, 0, 48 * bid, 0}, {1, 64, 48, 128}), ctx);
+            *V2, (*ImmOutputs[1])({0, 0, 48 * bid, 0}, {1, 64, 48, 128}));
     }
     tdma_all_wait(ctx);
 #endif
@@ -123,7 +118,7 @@ void stage1_kernel(
 #if DUMP
     {
         tdma_store_async(
-            v3, (*ImmOutputs[4])({0, 48 * bid, 32 * tid}, {1, 48, 32}), ctx);
+            v3, (*ImmOutputs[4])({0, 48 * bid, 32 * tid}, {1, 48, 32}));
     }
 #endif
     auto v4 = unsqueeze(v3); /* 1, 1, 48, 32 */
@@ -157,8 +152,7 @@ void stage1_kernel(
 #if DUMP
     {
         tdma_store_async(
-            v10, (*ImmOutputs[2])({0, 0, 48 * bid, 32 * tid}, {1, 64, 48, 32}),
-            ctx);
+            v10, (*ImmOutputs[2])({0, 0, 48 * bid, 32 * tid}, {1, 64, 48, 32}));
     }
 #endif
 
@@ -192,8 +186,7 @@ void stage1_kernel(
 #if DUMP
     {
         tdma_store_async(
-            v14, (*ImmOutputs[3])({0, 0, 48 * bid, 32 * tid}, {1, 64, 48, 32}),
-            ctx);
+            v14, (*ImmOutputs[3])({0, 0, 48 * bid, 32 * tid}, {1, 64, 48, 32}));
     }
 #endif
     tensor<float> &v15 = v0;
@@ -235,8 +228,7 @@ void stage1_kernel(
 #if DUMP
     {
         tdma_store_async(
-            v22, (*ImmOutputs[5])({0, 0, 48 * bid, 32 * tid}, {1, 64, 48, 32}),
-            ctx);
+            v22, (*ImmOutputs[5])({0, 0, 48 * bid, 32 * tid}, {1, 64, 48, 32}));
     }
 #endif
 
@@ -254,11 +246,10 @@ void stage1_kernel(
       [1, 64, 384, 128] @ [1, 64, 128, 384] -> [1, 64, 384, 384]
       [1, 64, 48@b, 32@t] @ [1, 64, 32@t, 384] -> [1, 64, 48@b, 384]@shared
     */
-    tdma_store_async(v25, V25({0, 0, 32 * tid, 48 * bid}, {1, 64, 32, 48}),
-                     ctx);
+    tdma_store_async(v25, V25({0, 0, 32 * tid, 48 * bid}, {1, 64, 32, 48}));
     tdma_all_wait(ctx); /* for store */
     tensor<float> v25_1({1, 64, 32, 384});
-    tdma_load_async(v25_1, V25({0, 0, 32 * tid, 0}, {1, 64, 32, 384}), ctx);
+    tdma_load_async(v25_1, V25({0, 0, 32 * tid, 0}, {1, 64, 32, 384}));
     tdma_all_wait(ctx);
     tensor_block_mma_sync(v14, v25_1, *V26, false, ctx);
 
@@ -280,8 +271,7 @@ void stage1_kernel(
 #if DUMP
     {
         tdma_store_async(
-            v28, (*ImmOutputs[6])({0, 16 * tid, 48 * bid, 0}, {1, 16, 48, 384}),
-            ctx);
+            v28, (*ImmOutputs[6])({0, 16 * tid, 48 * bid, 0}, {1, 16, 48, 384}));
     }
 #endif
     /*
@@ -300,8 +290,7 @@ void stage1_kernel(
 
     /* need resplit V */
     auto v31 = (*V31)({0, 16 * tid, 0, 0}, {1, 16, 48, 128});
-    tdma_store_async(v31, GV31({0, 16 * tid, 48 * bid, 0}, {1, 16, 48, 128}),
-                     ctx);
+    tdma_store_async(v31, GV31({0, 16 * tid, 48 * bid, 0}, {1, 16, 48, 128}));
 
     /*
       [1,64,384,384] @ [1,64,384,128] ->  [1,64,384,128]
@@ -309,16 +298,14 @@ void stage1_kernel(
     */
     tdma_all_wait(ctx);
     tensor<float> v31_resplit({1, 16, 384, 128});
-    tdma_load_async(v31_resplit, GV31({0, 16 * tid, 0, 0}, {1, 16, 384, 128}),
-                    ctx);
+    tdma_load_async(v31_resplit, GV31({0, 16 * tid, 0, 0}, {1, 16, 384, 128}));
     auto v32 = (*V32)({0, 16 * tid, 0, 0}, {1, 16, 48, 128});
     matmul(v29, v31_resplit, v32);
     tdma_wait(ctx);
 #if DUMP
     {
         tdma_store_async(
-            v32, (*ImmOutputs[7])({0, 16 * tid, 48 * bid, 0}, {1, 16, 48, 128}),
-            ctx);
+            v32, (*ImmOutputs[7])({0, 16 * tid, 48 * bid, 0}, {1, 16, 48, 128}));
     }
 #endif
     // #if 0
@@ -342,8 +329,7 @@ void stage1_kernel(
     {
         auto v35 = (*V35)({0, 0, tid * 2048}, {1, 48, 2048});
         tdma_store_async(
-            v35, (*ImmOutputs[8])({0, 48 * bid, 2048 * tid}, {1, 48, 2048}),
-            ctx);
+            v35, (*ImmOutputs[8])({0, 48 * bid, 2048 * tid}, {1, 48, 2048}));
     }
 #endif
 
@@ -351,8 +337,7 @@ void stage1_kernel(
     [1,384,8192] +  [1,384,8192]  -> [1,384,8192]
     [1, 48@b, 2048@tid]@shared +  [1, 48@b, 2048@tid] -> [1, 48@b, 2048@tid]
      */
-    tdma_load_async(var_5, Hidden_in({0, bid * 48, tid * 2048}, {1, 48, 2048}),
-                    ctx);
+    tdma_load_async(var_5, Hidden_in({0, bid * 48, tid * 2048}, {1, 48, 2048}));
     auto v35 = (*V35)({0, 0, tid * 2048}, {1, 48, 2048});
     tensor<float> v36({1, 48, 2048}); /* [1, 384, 8192] [1, 48@b, 2048@t] */
     binary(var_5, v35, v36, binary_op_t::add);
@@ -375,8 +360,7 @@ void stage1_kernel(
     {
         auto v38 = (*V38)({0, 0, 5504 * tid}, {1, 48, 5504});
         tdma_store_async(
-            v38, (*ImmOutputs[9])({0, 48 * bid, 5504 * tid}, {1, 48, 5504}),
-            ctx);
+            v38, (*ImmOutputs[9])({0, 48 * bid, 5504 * tid}, {1, 48, 5504}));
     }
 #endif
 
@@ -412,13 +396,11 @@ void stage1_kernel(
     tensor<float> v43({1, 48, 2048});
     auto v42 = (*V42)({0, 0, 2048 * tid}, {1, 48, 2048});
     binary(v36, v42, v43, binary_op_t::add);
-    tdma_store_async(v43, Hidden_in({0, 48 * bid, 2048 * tid}, {1, 48, 2048}),
-                     ctx);
+    tdma_store_async(v43, Hidden_in({0, 48 * bid, 2048 * tid}, {1, 48, 2048}));
 #if DUMP
     {
         tdma_store_async(
-            v43, (*ImmOutputs[10])({0, 48 * bid, 2048 * tid}, {1, 48, 2048}),
-            ctx);
+            v43, (*ImmOutputs[10])({0, 48 * bid, 2048 * tid}, {1, 48, 2048}));
     }
 #endif
 }

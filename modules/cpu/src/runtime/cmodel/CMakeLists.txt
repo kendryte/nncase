@@ -9,10 +9,10 @@ add_library(cpu_cmodel STATIC
 set(CMAKE_CXX_STANDARD 20)
 
 target_include_directories(cpu_cmodel PUBLIC include)
-target_include_directories(cpu_cmodel PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../src/Native/include)
+# target_include_directories(cpu_cmodel PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../src/Native/include)
 target_include_directories(cpu_cmodel PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../../include)
 target_include_directories(cpu_cmodel PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../runtime)
-target_include_directories(cpu_cmodel PUBLIC /root/.conan/data/gsl-lite/0.37.0/_/_/package/5ab84d6acfe1f23c4fae0ab88f26e3a396351ac9/include/)
+# target_include_directories(cpu_cmodel PUBLIC /root/.conan/data/gsl-lite/0.37.0/_/_/package/5ab84d6acfe1f23c4fae0ab88f26e3a396351ac9/include/)
 # target_link_libraries(cpu_cmodel PUBLIC gsl::gsl-lite)
 # if(NOT APPLE AND NOT MSVC)
 #   target_link_libraries(cpu_cmodel PRIVATE rt)

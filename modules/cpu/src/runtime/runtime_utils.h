@@ -1,10 +1,10 @@
 #pragma once
 
-#include "runtime_types.h"
 #include <array>
+#include <cassert>
 #include <cmath>
 #include <cstddef>
-#include <gsl/gsl-lite.hpp>
+#include "gsl-lite.hpp"
 #include <iostream>
 #include <linux/limits.h>
 #include <numeric>
@@ -28,7 +28,7 @@ inline void join_thread(pthread_t &pt)
     pthread_join(pt, NULL);
 }
 
-inline void rt_assert(bool condition, char *message)
+inline void rt_assert([[maybe_unused]] bool condition, [[maybe_unused]] char *message)
 {
     assert(condition && message);
 }

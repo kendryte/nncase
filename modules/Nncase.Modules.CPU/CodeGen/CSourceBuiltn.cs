@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 #define MULTI_CORE_CPU
+using System.Runtime.CompilerServices;
 using NetFabric.Hyperlinq;
 
 namespace Nncase.CodeGen.CPU;
@@ -8,6 +9,224 @@ namespace Nncase.CodeGen.CPU;
 public static class CSourceBuiltn
 {
 #if MULTI_CORE_CPU
+    public static string ClusterDef()
+    {
+        return @"#pragma once
+#include <hardware_context.h>
+#include <tdma.h>
+
+namespace block0 {
+#include ""shared.h""
+constexpr size_t bid = 0;
+namespace thread0 {
+constexpr size_t tid = 0;
+#include ""kernel.h""
+} // namespace thread0
+namespace thread1 {
+constexpr size_t tid = 1;
+#include ""kernel.h""
+} // namespace thread1
+namespace thread2 {
+constexpr size_t tid = 2;
+#include ""kernel.h""
+} // namespace thread2
+namespace thread3 {
+constexpr size_t tid = 3;
+#include ""kernel.h""
+} // namespace thread3
+} // namespace block0
+
+namespace block1 {
+#include ""shared.h""
+constexpr size_t bid = 1;
+namespace thread0 {
+constexpr size_t tid = 0;
+#include ""kernel.h""
+} // namespace thread0
+namespace thread1 {
+constexpr size_t tid = 1;
+#include ""kernel.h""
+} // namespace thread1
+namespace thread2 {
+constexpr size_t tid = 2;
+#include ""kernel.h""
+} // namespace thread2
+namespace thread3 {
+constexpr size_t tid = 3;
+#include ""kernel.h""
+} // namespace thread3
+} // namespace block1
+
+namespace block2 {
+#include ""shared.h""
+constexpr size_t bid = 2;
+namespace thread0 {
+constexpr size_t tid = 0;
+#include ""kernel.h""
+} // namespace thread0
+namespace thread1 {
+constexpr size_t tid = 1;
+#include ""kernel.h""
+} // namespace thread1
+namespace thread2 {
+constexpr size_t tid = 2;
+#include ""kernel.h""
+} // namespace thread2
+namespace thread3 {
+constexpr size_t tid = 3;
+#include ""kernel.h""
+} // namespace thread3
+} // namespace block2
+
+namespace block3 {
+#include ""shared.h""
+constexpr size_t bid = 3;
+namespace thread0 {
+constexpr size_t tid = 0;
+#include ""kernel.h""
+} // namespace thread0
+namespace thread1 {
+constexpr size_t tid = 1;
+#include ""kernel.h""
+} // namespace thread1
+namespace thread2 {
+constexpr size_t tid = 2;
+#include ""kernel.h""
+} // namespace thread2
+namespace thread3 {
+constexpr size_t tid = 3;
+#include ""kernel.h""
+} // namespace thread3
+} // namespace block3
+
+namespace block4 {
+#include ""shared.h""
+constexpr size_t bid = 4;
+namespace thread0 {
+constexpr size_t tid = 0;
+#include ""kernel.h""
+} // namespace thread0
+namespace thread1 {
+constexpr size_t tid = 1;
+#include ""kernel.h""
+} // namespace thread1
+namespace thread2 {
+constexpr size_t tid = 2;
+#include ""kernel.h""
+} // namespace thread2
+namespace thread3 {
+constexpr size_t tid = 3;
+#include ""kernel.h""
+} // namespace thread3
+} // namespace block4
+
+namespace block5 {
+#include ""shared.h""
+constexpr size_t bid = 5;
+namespace thread0 {
+constexpr size_t tid = 0;
+#include ""kernel.h""
+} // namespace thread0
+namespace thread1 {
+constexpr size_t tid = 1;
+#include ""kernel.h""
+} // namespace thread1
+namespace thread2 {
+constexpr size_t tid = 2;
+#include ""kernel.h""
+} // namespace thread2
+namespace thread3 {
+constexpr size_t tid = 3;
+#include ""kernel.h""
+} // namespace thread3
+} // namespace block5
+
+namespace block6 {
+#include ""shared.h""
+constexpr size_t bid = 6;
+namespace thread0 {
+constexpr size_t tid = 0;
+#include ""kernel.h""
+} // namespace thread0
+namespace thread1 {
+constexpr size_t tid = 1;
+#include ""kernel.h""
+} // namespace thread1
+namespace thread2 {
+constexpr size_t tid = 2;
+#include ""kernel.h""
+} // namespace thread2
+namespace thread3 {
+constexpr size_t tid = 3;
+#include ""kernel.h""
+} // namespace thread3
+} // namespace block6
+
+namespace block7 {
+#include ""shared.h""
+constexpr size_t bid = 7;
+namespace thread0 {
+constexpr size_t tid = 0;
+#include ""kernel.h""
+} // namespace thread0
+namespace thread1 {
+constexpr size_t tid = 1;
+#include ""kernel.h""
+} // namespace thread1
+namespace thread2 {
+constexpr size_t tid = 2;
+#include ""kernel.h""
+} // namespace thread2
+namespace thread3 {
+constexpr size_t tid = 3;
+#include ""kernel.h""
+} // namespace thread3
+} // namespace block7
+";
+    }
+
+    public static string CMakeDef(string name, [CallerFilePath] string? callerFilePath = null)
+    {
+        var solutionPath = Path.GetFullPath(Path.Join(callerFilePath!, "../../../.."));
+        return $@"project(cpu)
+cmake_minimum_required(VERSION 3.13)
+
+add_library(
+  cpu_cmodel STATIC
+  {solutionPath}/modules/cpu/src/runtime/cmodel/src/dummy.cpp
+  {solutionPath}/modules/cpu/src/runtime/hardware_context.cpp)
+
+set(CMAKE_CXX_STANDARD 20)
+
+target_include_directories(
+  cpu_cmodel
+  PUBLIC
+    {solutionPath}/modules/cpu/src/runtime/cmodel/include
+)
+target_include_directories(
+  cpu_cmodel
+  PUBLIC {solutionPath}/modules/cpu/include)
+target_include_directories(
+  cpu_cmodel
+  PUBLIC {solutionPath}/modules/cpu/src/runtime/)
+set_target_properties(cpu_cmodel PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+if(CMAKE_BUILD_TYPE STREQUAL ""Release"")
+  add_compile_options(-O1)
+endif()
+add_link_options(
+  -no-pie
+  -nostartfiles
+  -fPIC
+  -fno-stack-protector
+  -static
+  -Wl,-e,_Z6_startPN6nncase7runtime3cpu19hardware_context_mtEPNS1_15runtime_util_mtEPNS1_19nncase_method_tableEPPh
+)
+add_executable({name} ""main.cpp"")
+target_link_libraries({name} cpu_cmodel)
+";
+    }
+
     public const string KernelHeader = @"#include ""thread_context.h""
 using namespace shared;
 ";
@@ -20,7 +239,7 @@ using namespace shared;
         {
             var size = TensorUtilities.GetSize(b.CheckedShape.ToValueArray(), TensorUtilities.GetStrides(b.CheckedShape.ToValueArray()), 1);
             return $@"auto {b.Name}_ = tensor<{b.ElemType.ToC()}, {b.MemSpan.Location.ToC()}>(gsl::make_span(({b.ElemType.ToC()}*)inputs[{i}], {size}), {{{string.Join(',', b.CheckedShape)}}});
-    Output = &{b.Name}_;";
+    {b.Name} = &{b.Name}_;";
         }));
 
         return @$"#include ""cluster_def.h""

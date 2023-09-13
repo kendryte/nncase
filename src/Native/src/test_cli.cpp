@@ -79,7 +79,7 @@ result<void> run_core(const std::string &kmodel_path,
 
         if (i == (loop_count - 1)) {
             if (entry->parameters_size() == (bins.size() - 1)) {
-                auto output_bin = *bins.end();
+                auto output_bin = bins.back();
                 std::ofstream output_stream(output_bin, std::ios::binary);
                 if (ret.is_a<tensor>()) {
                     try_(write_tensor_buffer(ret, output_stream));

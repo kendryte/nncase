@@ -32,6 +32,7 @@ class cpu_runtime_function : public runtime_function {
                                 value_t return_value) noexcept override;
 
   private:
+    gsl::span<const gsl::byte> text_;
     // std::vector<uint32_t> input_ranks_;
     // std::vector<std::vector<uint32_t>> input_shapes_;
     // std::vector<std::vector<uint32_t>> input_strides_;

@@ -1,4 +1,5 @@
 #include "thread_pool.h"
+#include <stdexcept>
 
 using namespace nncase::runtime::cpu::thread_pool;
 

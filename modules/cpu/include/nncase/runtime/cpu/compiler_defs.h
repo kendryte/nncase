@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 #pragma once
-#include <nncase/compiler_defs.h>
+#include <cstdint>
 
 #if defined(_MSC_VER)
 #ifdef NNCASE_MODULES_CPU_DLL
@@ -26,3 +26,13 @@
 #else
 #define NNCASE_MODULES_CPU_API __attribute__((visibility("default")))
 #endif
+
+#define BEGIN_NS_NNCASE_RT_MODULE(MODULE)                                      \
+    namespace nncase {                                                         \
+    namespace runtime {                                                        \
+    namespace MODULE {
+
+#define END_NS_NNCASE_RT_MODULE                                                \
+    }                                                                          \
+    }                                                                          \
+    }

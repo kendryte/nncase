@@ -90,7 +90,7 @@ public class CSourceCompiler
     /// create the temp dll file and compile source
     /// <see cref="Compile(string, string)"/>.
     /// </summary>
-    public string Compile(string sourcePath) => Compile(sourcePath, CodeGenUtil.GetTempFileName(Ext));
+    public string Compile(string sourcePath) => Compile(sourcePath, Path.Join(sourcePath, "build", Path.GetFileName(sourcePath)));
 
     /// <summary>
     /// select current pattern's exe.
@@ -100,7 +100,7 @@ public class CSourceCompiler
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
-            _exe = "gcc";
+            _exe = "/bin/bash";
             _ext = "so";
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
@@ -134,7 +134,7 @@ public class CSourceCompiler
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
-            return $"{sourcePath} -nostdlib -static -no-pie -fPIC -fno-stack-protector -o {outPath}";
+            return $"-c \"cd {sourcePath} && mkdir build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Debug && cmake --build .\"";
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {

@@ -41,6 +41,14 @@ internal sealed class LinkableModule : ILinkableModule
                     Directory.CreateDirectory(dumpPath);
                 }
 
+                using (var fs = File.Open(Path.Join(dumpPath, "cluster_def.h"), FileMode.Create))
+                {
+                    using (var writer = new StreamWriter(fs))
+                    {
+                        writer.Write(CSourceBuiltn.ClusterDef());
+                    }
+                }
+
                 using (var fs = File.Open(Path.Join(dumpPath, "main.cpp"), FileMode.Create))
                 {
                     using (var writer = new StreamWriter(fs))
@@ -65,6 +73,14 @@ internal sealed class LinkableModule : ILinkableModule
                         writer.Write(func.FunctionCSource.Kernel);
                     }
                 }
+
+                using (var fs = File.Open(Path.Join(dumpPath, "CMakeLists.txt"), FileMode.Create))
+                {
+                    using (var writer = new StreamWriter(fs))
+                    {
+                        writer.Write(CSourceBuiltn.CMakeDef(func.PrimFunction.Name));
+                    }
+                }
             }
 
             // using (var fs = File.Open(Path.Join(dumpPath, "cpuModule.h"), FileMode.Create))
@@ -81,25 +97,21 @@ internal sealed class LinkableModule : ILinkableModule
             // }
         }
 
-        // var elfPath = CompileCSource(csourcePath);
-        // var text = File.ReadAllBytes(elfPath);
-        var text = Array.Empty<byte>();
-
-        // if (_options.DumpFlags.HasFlag(DumpFlags.CodeGen))
-        // {
-        //     var dumpPath = _options.DumpDir;
-        //     using (var fs = File.Open(Path.Join(dumpPath, "cpuModule.elf"), FileMode.Create))
-        //     {
-        //         fs.Write(text);
-        //     }
-        // }
+        var text = new List<byte>();
         var linkedFunctions = new List<LinkedFunction>();
+        int offset = 0;
+        foreach (var func in _functions)
+        {
+            var dumpPath = Path.Join(_options.DumpDir, func.PrimFunction.Name);
+            var elfPath = CompileCSource(dumpPath);
 
-        // foreach (var func in _functions)
-        // {
-        //     linkedFunctions.Add(new LinkedFunction(func.Id, func.SourceFunction, 0, 0, func.Sections));
-        // }
-        return new LinkedModule(linkedFunctions, text, _rdata);
+            var func_text = File.ReadAllBytes(elfPath);
+            text.AddRange(func_text);
+            linkedFunctions.Add(new LinkedFunction(func.Id, func.SourceFunction, (uint)offset, (uint)func_text.Length, func.Sections));
+            offset += func_text.Length;
+        }
+
+        return new LinkedModule(linkedFunctions, text.ToArray(), _rdata);
     }
 
     // private string LinkCSources()
@@ -121,6 +133,6 @@ internal sealed class LinkableModule : ILinkableModule
     private string CompileCSource(string sourcePath)
     {
         var compiler = new CSourceCompiler();
-        return compiler.Compile(sourcePath, Path.GetTempFileName() + ".elf");
+        return compiler.Compile(sourcePath, Path.Join(sourcePath, "build", Path.GetFileName(sourcePath)));
     }
 }

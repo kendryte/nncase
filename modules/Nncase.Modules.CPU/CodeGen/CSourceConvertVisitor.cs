@@ -146,7 +146,7 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             throw new NotSupportedException("The PrimFunction must return void!");
         }
 
-        var ctype = $"void {expr.Name}({string.Join(", ", expr.Parameters.AsValueEnumerable().Select(Visit).Select(s => s.ToString()).ToArray())})";
+        var ctype = $"void {expr.Name}({string.Join(", ", expr.Parameters.AsValueEnumerable().Select(Visit).Select(s => $"{s.Type} &{s.Name}").ToArray())})";
 
         _sharedWriter.WriteLine(ctype + ";");
         _sharedWriter.WriteLine();

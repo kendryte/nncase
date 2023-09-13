@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstddef>
-#include <gsl/gsl-lite.hpp>
+#include "../../gsl-lite.hpp"
 #include <hardware_def.h>
 #include <runtime_utils.h>
 #include "../../method_table_def.h"

@@ -38,11 +38,17 @@ public class UnitTestCPUTargetTiling : TestClassBase
     {
         var shape = new[] { 1, 384, 2048 };
         var input = new Var("input", new TensorType(DataTypes.Float32, shape));
-        var main = new Function("main", IR.F.Math.Unary(UnaryOp.Asin, input), new[] { input });
+        var main = new Function("main", IR.F.Math.Unary(UnaryOp.Neg, input), new[] { input });
         var module = new IR.IRModule(main);
         await Compile(module);
 
-        // Testing.RunKModel(File.ReadAllBytes(Path.Join(Dumpper.Directory, "test.kmodel")), Dumpper.Directory, new[] { input_tensor });
+        var input_tensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, shape).Evaluate().AsTensor();
+        using (var fs = Dumpper.OpenFile("input_0.bin"))
+        {
+            fs.Write(input_tensor.BytesBuffer);
+        }
+
+        Testing.RunKModel(File.ReadAllBytes(Path.Join(Dumpper.Directory, "test.kmodel")), Dumpper.Directory, new[] { input_tensor });
     }
 
     [Fact]
