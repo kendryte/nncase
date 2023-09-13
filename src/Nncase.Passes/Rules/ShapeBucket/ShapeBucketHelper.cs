@@ -86,8 +86,6 @@ public static class CallValidator
         return false;
     }
 
-    private static bool IsDynamicReshape(Call call) => call.Target is Reshape && call.Arguments[Reshape.Shape.Index] is not Const;
-
     public static bool IsSimple(BucketFusion fusion)
     {
         var v = new OpCollector();
@@ -110,6 +108,8 @@ public static class CallValidator
 
         return true;
     }
+
+    private static bool IsDynamicReshape(Call call) => call.Target is Reshape && call.Arguments[Reshape.Shape.Index] is not Const;
 }
 
 public static class ShapeBucketRegister

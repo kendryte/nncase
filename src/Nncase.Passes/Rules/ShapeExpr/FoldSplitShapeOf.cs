@@ -17,15 +17,17 @@ namespace Nncase.Passes.Rules.ShapeExpr;
 [RuleGenerator]
 public partial class FoldSplitShapeOf : RewriteRule<Pattern>
 {
-
     public override Pattern Pattern => IsStack(
         null,
         "stack",
-        IsTuple("tuple",
-            new VArgsPattern(list =>
-            Enumerable.Range(0, list.Length)
-            .Select(_ => IsGetItem(InputPattern, IsTensorConst()))
-            .ToArray(), "args")),
+        IsTuple(
+            "tuple",
+            new VArgsPattern(
+                list =>
+                    Enumerable.Range(0, list.Length)
+                    .Select(_ => IsGetItem(InputPattern, IsTensorConst()))
+                    .ToArray(),
+                "args")),
         IsTensorConst(tensor => tensor.Value.ToScalar<int>() == 0));
 
     public Pattern InputPattern => IsShapeOf(IsWildcard());
