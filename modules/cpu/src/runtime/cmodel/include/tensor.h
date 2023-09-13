@@ -24,7 +24,7 @@ template <typename T, loc_t Loc = loc_t::local> class tensor {
           strides_(get_default_strides(dims_)),
           size_(compute_size(dims_)) {
         parent_ = nullptr;
-        auto ptr = (T *)runtime_util.malloc(size_ * sizeof(T));
+        auto ptr = (T *)runtime_util->malloc(size_ * sizeof(T));
         data_ = gsl::make_span(ptr, size_);
     }
 
@@ -35,7 +35,7 @@ template <typename T, loc_t Loc = loc_t::local> class tensor {
           strides_(get_default_strides(dims_)),
           size_(compute_size(dims_)) {
         if (size_ != data_.size()) {
-            runtime_util.rt_assert(false, (char*)"Invalid tensor size");
+            runtime_util->rt_assert(false, (char*)"Invalid tensor size");
         }
     }
 
@@ -46,7 +46,7 @@ template <typename T, loc_t Loc = loc_t::local> class tensor {
           strides_(strides),
           size_(compute_size(dims_, strides_)) {
         if (size_ != data_.size()) {
-            runtime_util.rt_assert(false, (char*)"Invalid tensor size");
+            runtime_util->rt_assert(false, (char*)"Invalid tensor size");
         }
     }
 
@@ -69,7 +69,7 @@ template <typename T, loc_t Loc = loc_t::local> class tensor {
 
     ~tensor() {
         if (parent_ == nullptr) {
-            runtime_util.free(data_.data());
+            runtime_util->free(data_.data());
         }
     }
 
@@ -83,7 +83,7 @@ template <typename T, loc_t Loc = loc_t::local> class tensor {
         auto subspan_offset = offset(strides_, begins);
         data_ = parent->data_.subspan(subspan_offset);
         if (data_.size() < size_) {
-            runtime_util.rt_assert(false, (char*)"Invalid tensor size");
+            runtime_util->rt_assert(false, (char*)"Invalid tensor size");
         }
     }
 

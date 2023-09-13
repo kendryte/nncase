@@ -68,7 +68,7 @@ void softmax(tensor<float, SrcLoc> &src, tensor<float, DestLoc> &dest,
 
 template <class T, loc_t DestLoc, loc_t SrcLoc>
 void __tensor_copy_sync(tensor<T, DestLoc> &&dest, tensor<T, SrcLoc> &&src) {
-    runtime_util.rt_assert(
+    runtime_util->rt_assert(
         dest.dimension() == src.dimension(),
         (char *)"Dest and Src dimension mismatch in __tensor_copy_sync");
     apply(gsl::make_span(src.dimension()).template as_span<const size_t>(),
@@ -290,7 +290,7 @@ void tdma_load_broadcast_async([[maybe_unused]] tensor<T, Dest> &dest,
                                [[maybe_unused]] tensor<T, Src> &src,
                                [[maybe_unused]] thread_context &ctx) {
     // throw std::system_error(std::make_error_code(std::errc::not_supported));
-    runtime_util.rt_assert(false, (char *)"not_supported");
+    runtime_util->rt_assert(false, (char *)"not_supported");
 }
 
 template <class T>
@@ -302,11 +302,11 @@ void reduce_async_visit_func1(int visited, thread_context &ctx,
     new_dims.insert(new_dims.begin(), BLOCKS * CORES);
     if (visited == 1) {
         if (global_hardware_ctx.global_var != nullptr) {
-            runtime_util.rt_assert(false,
+            runtime_util->rt_assert(false,
                                    (char *)"the global var has been used!");
         }
         gather_span =
-            (T *)runtime_util.malloc(sizeof(T) * compute_size(new_dims));
+            (T *)runtime_util->malloc(sizeof(T) * compute_size(new_dims));
         global_hardware_ctx.global_var = gather_span;
     }
     dims_t begin(new_dims.size(), 0);
@@ -353,7 +353,7 @@ void tdma_reduce_async(tensor<T, loc_t::local> &src,
 
     {
         __tdma_all_sync_apply_macro(reduce_async_visit_func2, ([]() -> void {
-                                        runtime_util.free(global_hardware_ctx.global_var);
+                                        runtime_util->free(global_hardware_ctx.global_var);
                                         global_hardware_ctx.global_var =
                                             nullptr;
                                     }),
@@ -375,11 +375,11 @@ void all_reduce_async_visit_func1(int visited, thread_context &ctx,
     new_dims.insert(new_dims.begin(), BLOCKS * CORES);
     if (visited == 1) {
         if (global_hardware_ctx.global_var != nullptr) {
-            runtime_util.rt_assert(false,
+            runtime_util->rt_assert(false,
                                    (char *)"the global var has been used!");
         }
         gather_span =
-            (T *)runtime_util.malloc(sizeof(T) * compute_size(new_dims));
+            (T *)runtime_util->malloc(sizeof(T) * compute_size(new_dims));
         global_hardware_ctx.global_var = (void *)gather_span;
     }
     dims_t begin(new_dims.size(), 0);
@@ -412,11 +412,11 @@ void all_reduce_async_visit_func2_all(int visit, tensor<T, ALoc> &src,
                                      compute_size(new_dims)),
                       new_dims);
         reduced_span =
-            (T *)runtime_util.malloc(sizeof(T) * compute_size(reduced_shape));
+            (T *)runtime_util->malloc(sizeof(T) * compute_size(reduced_shape));
         tensor<T> reduced_tensor = tensor<T>(reduced_shape);
         reduce(gather_tensor, reduced_tensor, reduce_op, (T)0, dims_t({0}),
                false);
-        runtime_util.free(gather_span);
+        runtime_util->free(gather_span);
         global_hardware_ctx.global_var = reduced_span;
     } else {
         tensor<T> reduced_tensor =
@@ -428,7 +428,7 @@ void all_reduce_async_visit_func2_all(int visit, tensor<T, ALoc> &src,
 }
 
 template <class T, loc_t ALoc, loc_t BLoc>
-void all_reduce_async_visit_func2_by_block(int visit, tensor<T, ALoc> &src,
+void all_reduce_async_visit_func2_by_block([[maybe_unused]] int visit, tensor<T, ALoc> &src,
                                            tensor<T, BLoc> &dest,
                                            reduce_op_t reduce_op) {
     auto new_dims = dims_t(src.dimension());

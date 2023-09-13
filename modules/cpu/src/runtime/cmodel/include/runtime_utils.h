@@ -7,14 +7,14 @@
 
 using namespace nncase::runtime::cpu;
 
-static nncase_mt_t nncase_mt;
-static runtime_util_mt runtime_util;
+static nncase_mt_t *nncase_mt;
+static runtime_util_mt *runtime_util;
 
 void print_vec(itlib::small_vector<size_t, 8> vec) {
     for (const size_t v : vec) {
-        runtime_util.printf("%zu, ", v);
+        runtime_util->printf("%zu, ", v);
     }
-    runtime_util.printf("\n");
+    runtime_util->printf("\n");
 }
 
 template <class TShape> inline size_t compute_size(const TShape &shape) {
@@ -57,7 +57,7 @@ inline strides_t get_default_strides(dims_t shape) {
 template <class offset_type, class S>
 inline offset_type element_offset(const S &strides, const S &index) noexcept {
     offset_type size = 0;
-    for (auto i = 0; i < strides.size(); i++) {
+    for (auto i = 0; i < (int)strides.size(); i++) {
         size += strides[i] * index[i];
     }
     return size;
@@ -69,7 +69,7 @@ inline size_t offset(gsl::span<const size_t> strides,
     if (strides.size() == 0 || index.size() == 0) {
         return 0;
     }
-    runtime_util.rt_assert(strides.size() == index.size(),
+    runtime_util->rt_assert(strides.size() == index.size(),
                            (char *)"strides and index must have the same rank");
     return element_offset<size_t>(strides, index);
 }
@@ -147,11 +147,10 @@ template <typename T> double dot(const T *v1, const T *v2, size_t size) {
 
 template <typename T> double cosine(const T *v1, const T *v2, size_t size) {
     for (size_t i = 0; i < 10; i++) {
-        runtime_util.printf("%f, %f\n", (float)v1[i], (float)v2[i]);
-        ;
+        runtime_util->printf("%f, %f\n", (float)v1[i], (float)v2[i]);
     }
-    return dot(v1, v2, size) / ((nncase_mt.float_unary_sqrt(dot(v1, v1, size)) *
-                                 nncase_mt.float_unary_sqrt(dot(v2, v2, size))));
+    return dot(v1, v2, size) / ((nncase_mt->float_unary_sqrt(dot(v1, v1, size)) *
+                                 nncase_mt->float_unary_sqrt(dot(v2, v2, size))));
 }
 
 inline dims_t get_reduced_offset(gsl::span<const size_t> in_offset,

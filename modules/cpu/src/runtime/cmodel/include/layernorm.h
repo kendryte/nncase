@@ -1,7 +1,7 @@
 #include "runtime_utils.h"
 #include <apply.h>
 #include <cmath>
-#ifdef __riscv_vector
+#ifdef __riscv_vector_
 #include <riscv_vector.h>
 #endif
 
@@ -27,7 +27,7 @@ void layernorm_naive_impl(const T *input, const T *sum, T *sum_sqr, T *output,
         if (rms_norm) {
             mean = 0;
         }
-        auto sigma = nncase_mt.float_unary_sqrt(sum_sqr[o_offset] / norm_size -
+        auto sigma = nncase_mt->float_unary_sqrt(sum_sqr[o_offset] / norm_size -
                                                 mean * mean + eps);
 
         auto input_offset = offset(input_stride, input_index);
@@ -61,7 +61,7 @@ void layernorm_naive_impl(const T *input, const T *sum, T *sum_sqr, T *output,
     // }
 }
 
-#ifdef __riscv_vector
+#ifdef __riscv_vector_
 template <typename T>
 void layernorm_rvv_impl(const T *input, const T *sum, T *sum_sqr, T *gamma,
                         T *beta, gsl::span<const size_t> input_shape,
@@ -145,7 +145,7 @@ void layernorm(const T *input, T *sum, T *sum_sqr, T *output, T *gamma, T *beta,
                strides_t output_strides, strides_t sum_strides,
                strides_t gamma_strides, T eps, int32_t axis, int32_t norm_size,
                bool rms_norm = false) {
-#ifdef __riscv_vector
+#ifdef __riscv_vector_
     return layernorm_rvv_impl(
         input, sum, sum_sqr, gamma, beta,
         gsl::make_span(input_dims).template as_span<const size_t>(),

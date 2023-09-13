@@ -33,7 +33,7 @@ void softmax_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
     auto reduced_shape = get_reduced_shape(in_shape, axes, true);
     auto reduced_strides = get_default_strides(reduced_shape);
     auto reduced_size = compute_size(reduced_shape);
-    auto tmp = (T *)runtime_util.malloc(reduced_size * sizeof(T));
+    auto tmp = (T *)runtime_util->malloc(reduced_size * sizeof(T));
     for (size_t i = 0; i < reduced_size; i++) {
         tmp[i] = std::numeric_limits<T>().lowest();
     }
@@ -73,9 +73,9 @@ void softmax_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
         const auto out_index = get_reduced_offset(index, axes, true);
         auto out_idx = offset(reduced_strides, out_index);
         if (std::is_same_v<T, float>) {
-            output[in_idx] = nncase_mt.float_unary_exp(in);
+            output[in_idx] = nncase_mt->float_unary_exp(in);
         } else {
-            runtime_util.rt_assert(false,
+            runtime_util->rt_assert(false,
                                    (char *)"Not supported Type in softmax!");
         }
 
@@ -93,15 +93,15 @@ void softmax_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
         out /= in;
         if (needLog) {
             if (std::is_same_v<T, float>) {
-                out = nncase_mt.float_unary_log(out);
+                out = nncase_mt->float_unary_log(out);
             } else {
-                runtime_util.rt_assert(
+                runtime_util->rt_assert(
                     false, (char *)"Not supported Type in softmax!");
             }
         }
     }));
 
-    runtime_util.free(tmp);
+    runtime_util->free(tmp);
 }
 } // namespace
 void softmax(const float *input, float *output,
