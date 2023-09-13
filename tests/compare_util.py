@@ -26,12 +26,16 @@ import test_utils
 
 
 def cosine(gt: np.ndarray, pred: np.ndarray, *args):
+    # remove the nan number.
     if np.isnan(gt).any():
         gt = remove_nan(gt)
     if np.isnan(pred).any():
         pred = remove_nan(pred)
+
+    # exclude situation of all zeros in ndarray
     if compare_arrays(gt, pred):
         return 1
+
     return (gt @ pred) / (np.linalg.norm(gt, 2) * np.linalg.norm(pred, 2))
 
 
@@ -45,7 +49,7 @@ def compare_arrays(gt: np.ndarray, pred: np.ndarray):
 
 
 def euclidean(gt: np.ndarray, pred: np.ndarray, *args):
-    return np.linalg.norm(gt - pred, 2)**2
+    return np.linalg.norm(gt - pred, 2) ** 2
 
 
 def allclose(gt: np.ndarray, pred: np.ndarray, thresh: float):
@@ -116,7 +120,6 @@ def compare_ndarray(expected: np.ndarray,
                     threshold: float = 0.99,
                     dump_hist: bool = True,
                     dump_file: str = 'hist.csv') -> bool:
-
     if expected.size == actual.size:
         similarity = similarity_func[similarity_name](expected.flatten(), actual.flatten())
     else:
