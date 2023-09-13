@@ -29,7 +29,7 @@ def cosine(gt: np.ndarray, pred: np.ndarray, *args):
     if np.isnan(gt).any():
         gt = remove_nan(gt)
     if np.isnan(pred).any():
-        pred = remove_nan(gt)
+        pred = remove_nan(pred)
     if compare_arrays(gt, pred):
         return 1
     return (gt @ pred) / (np.linalg.norm(gt, 2) * np.linalg.norm(pred, 2))
@@ -40,8 +40,8 @@ def remove_nan(array):
     return array[~mask]
 
 
-def compare_arrays(arr1, arr2):
-    return np.array_equal(arr1, arr2)
+def compare_arrays(gt: np.ndarray, pred: np.ndarray):
+    return np.array_equal(gt, pred)
 
 
 def euclidean(gt: np.ndarray, pred: np.ndarray, *args):
