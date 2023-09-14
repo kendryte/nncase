@@ -26,8 +26,8 @@ import test_utils
 
 def cosine(gt: np.ndarray, pred: np.ndarray, *args):
 
-    gt = np.reshape(gt,-1)
-    pred = np.reshape(pred,-1)
+    gt = np.reshape(gt, -1)
+    pred = np.reshape(pred, -1)
     for i in range(gt.size):
         print(gt[i])
     print()
