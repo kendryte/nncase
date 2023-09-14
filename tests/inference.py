@@ -8,6 +8,8 @@ import socket
 import json
 from test_utils import *
 import time
+import subprocess
+from update_trace_info import *
 
 
 def data_shape_list_string(data):
@@ -24,16 +26,19 @@ class Inference:
         running_on_evb = target in kpu_targets and nuc_ip is not None and nuc_port is not None and test_executable is not None and len(
             self.inputs) > 0 and len(self.outputs) > 0
 
-        if self.cfg['dump_infer']:
-            self.infer_dict['case'] = os.path.basename(self.case_dir)
-            self.infer_dict['target'] = target
+        if self.cfg['infer_report_opt']['enabled']:
+            self.infer_report_dict['priority'] = self.cfg['infer_report_opt']['priority']
+            self.infer_report_dict['kind'] = self.cfg['infer_report_opt']['kind']
+            self.infer_report_dict['model'] = self.cfg['infer_report_opt']['model_name']
+            self.infer_report_dict['shape'] = ',<br/>'.join(
+                map(lambda d: '[' + ','.join(map(lambda x: str(x), d['model_shape'])) + ']', self.inputs))
         if ptq_enabled:
             self.set_quant_opt(compiler)
 
-            if self.cfg['dump_infer']:
+            if self.cfg['infer_report_opt']['enabled']:
                 case = os.path.basename(self.case_dir)
-                self.infer_dict['if_quant_type'] = self.cfg['ptq_opt']['quant_type']
-                self.infer_dict['w_quant_type'] = self.cfg['ptq_opt']['w_quant_type']
+                self.infer_report_dict['if_quant_type'] = self.cfg['ptq_opt']['quant_type']
+                self.infer_report_dict['w_quant_type'] = self.cfg['ptq_opt']['w_quant_type']
 
         compiler.compile()
         kmodel = compiler.gencode_tobytes()
@@ -52,15 +57,14 @@ class Inference:
             sim.load_model(kmodel)
             self.set_infer_input(sim, compile_opt)
 
-            if self.cfg['dump_infer']:
+            if self.cfg['infer_report_opt']['enabled']:
                 t1 = time.perf_counter()
 
             sim.run()
 
-            if self.cfg['dump_infer']:
+            if self.cfg['infer_report_opt']['enabled']:
                 t = (time.perf_counter() - t1) * 1000
-                self.infer_dict['time(ms)'] = str(t)
-                self.infer_dict['fps'] = str(round(1000 / t, 2))
+                self.infer_report_dict['actual_fps'] = str(round(1000 / t, 3))
 
             outputs = self.dump_infer_output(sim, compile_opt, infer_dir)
         return outputs
@@ -171,14 +175,74 @@ class Inference:
 
         # get infer result
         outputs = []
-        result_dict = {}
+        header_dict = {}
         ret = client_socket.recv(1024)
-        result_dict = json.loads(ret.decode())
-        if result_dict['type'].find('finish') != -1:
-            if self.cfg['dump_infer']:
-                t = result_dict['time']
-                self.infer_dict['time(ms)'] = str(t)
-                self.infer_dict['fps'] = str(round(1000 / t, 2))
+        header_dict = json.loads(ret.decode())
+        length = header_dict['len']
+
+        # recv result
+        count = length // 1024
+        left = length % 1024
+
+        client_socket.sendall(f"pls send detail".encode())
+        recv_data = b''
+        for i in range(count):
+            data = client_socket.recv(1024, socket.MSG_WAITALL)
+            recv_data += data
+
+        if left:
+            recv_data += client_socket.recv(left, socket.MSG_WAITALL)
+
+        detail = recv_data.decode()
+
+        if header_dict['type'].find('finish') != -1:
+            if self.cfg['infer_report_opt']['enabled']:
+
+                # update trace info
+                model_name = self.cfg['infer_report_opt']['model_name']
+                infer_result = f'0:{model_name} :\n' + detail
+                trace_file = search_file(infer_dir, 'trace_info.py')
+                assert(trace_file != '')
+                update_trace_info(infer_result, trace_file)
+
+                # roofline fps/mac usage
+                estimate_file = search_file(infer_dir, 'estimate_fps.py')
+                assert(estimate_file != '')
+
+                mac_file = search_file(infer_dir, 'mac.csv')
+                assert(mac_file != '')
+
+                cmd_status, cmd_result = subprocess.getstatusoutput(
+                    f'python3 {estimate_file} {mac_file}')
+                assert(cmd_status == 0)
+                data = cmd_result.split(',')
+                assert(len(data) >= 3)
+                self.infer_report_dict['roofline_fps'] = data[1].split(':')[-1].strip()
+                self.infer_report_dict['roofline_mac_usage'] = data[2].split(':')[-1].strip()
+
+                # actual fps
+                fps_pattern = re.compile(
+                    r"^\|total\s+\|(\d+|\d+.\d+)\s+\|(\d+|\d+.\d+)\s+\|(\d+|\d+.\d+)\s+\|")
+                buf = io.StringIO(detail)
+                while True:
+                    line = buf.readline()
+                    if not line:
+                        break
+                    match = fps_pattern.match(line)
+                    if match is not None:
+                        self.infer_report_dict['actual_fps'] = str(
+                            round(1000 / float(match.group(2)), 3))
+                        break
+
+                # actual mac usage
+                draw_trace_file = search_file(infer_dir, 'draw_trace.py')
+                assert(draw_trace_file != '')
+                cmd_status, cmd_result = subprocess.getstatusoutput(
+                    f'python3 {draw_trace_file} {mac_file}')
+                assert(cmd_status == 0)
+                data = cmd_result.split(',')
+                assert(len(data) >= 1)
+                self.infer_report_dict['actual_mac_usage'] = data[0].split(':')[-1].strip()
 
             client_socket.sendall(f"pls send outputs".encode())
 
@@ -206,10 +270,14 @@ class Inference:
         else:
             client_socket.close()
 
-            if self.cfg['dump_infer']:
-                self.infer_dict['result'] = 'Fail'
-                self.infer_dict['remark'] = result_dict['error']
-                dump_dict_to_json(self.infer_dict, self.infer_file)
-            raise Exception(result_dict['error'])
+            if self.cfg['infer_report_opt']['enabled']:
+                self.infer_report_dict['result'] = 'Fail'
+                self.infer_report_dict['remark'] = detail.replace('\n', '<br/>')
+                # self.infer_report_dict['remark'] = detail
+                prefix, suffix = os.path.splitext(self.infer_report_file)
+                json_file = f'{prefix}_{os.path.basename(self.case_dir)}{suffix}'
+                dump_dict_to_json(self.infer_report_dict, json_file)
+
+            raise Exception(detail)
 
         return outputs
