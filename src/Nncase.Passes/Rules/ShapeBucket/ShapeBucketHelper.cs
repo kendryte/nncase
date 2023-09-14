@@ -67,6 +67,15 @@ public static class CallValidator
     {
         var target = call.Target;
 
+        var singleVar =
+            ShapeBucketHelper.SingleDimVar(
+                CompileSessionScope.GetCurrentThrowIfNull().CompileOptions.ShapeBucketOptions);
+
+        if (target is Binary && call.Arguments.ToArray().OfType<TensorConst>().Any())
+        {
+            return true;
+        }
+
         if (IsForceConvert(target))
         {
             return true;
@@ -78,7 +87,7 @@ public static class CallValidator
             return false;
         }
 
-        if (greedy && IsMaybeDynamic(target))
+        if (singleVar && greedy && IsMaybeDynamic(target))
         {
             return true;
         }
