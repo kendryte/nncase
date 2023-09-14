@@ -36,10 +36,10 @@ public class UnitTestCPUTargetTiling : TestClassBase
     [Theory]
 
     // [ClassData(typeof(TilingCaseMHA))]
-    // [ClassData(typeof(TilingCaseBinaryMul))]
-    // [ClassData(typeof(TilingCaseUnary))]
+    [ClassData(typeof(TilingCaseBinaryMul))]
+    [ClassData(typeof(TilingCaseUnary))]
     [ClassData(typeof(TilingCaseMatmul))]
-    // [ClassData(typeof(TilingCaseMatmulUnary))]
+    [ClassData(typeof(TilingCaseMatmulUnary))]
     public async Task TestCpuFunction(Function main, Tensor[] inputs)
     {
         var module = new IR.IRModule(main);

@@ -134,7 +134,7 @@ public class CSourceCompiler
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
-            return $"-c \"cd {sourcePath} && mkdir build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Debug && cmake --build .\"";
+            return $"-c \"cd {sourcePath} && mkdir -p build && cd build && rm -rf * && cmake .. -DCMAKE_BUILD_TYPE=Debug && cmake --build .\"";
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {

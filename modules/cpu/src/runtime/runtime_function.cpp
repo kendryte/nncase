@@ -47,7 +47,9 @@ cpu_runtime_module &cpu_runtime_function::module() const noexcept {
 
 result<void> cpu_runtime_function::initialize_core(
     NNCASE_UNUSED runtime_function_init_context &context) noexcept {
-    text_ = module().text_physical().subspan(context.header().entrypoint, context.header().text_size);
+    text_ = module().text_physical().subspan(context.header().entrypoint,
+                                             context.header().text_size);
+    rdata_ = module().rdata_physical();
     // try_(context.read_section(".desc", [this](auto sr, size_t) ->
     // result<void> {
     //     auto header = sr.template read<desc_header>();
@@ -122,7 +124,8 @@ cpu_runtime_function::invoke_core(NNCASE_UNUSED gsl::span<value_t> parameters,
     }
 
     auto elfloader_ = elfloader{(char *)text_.data()};
-    elfloader_.invoke_elf(&hw_ctx_mt, &runtime_util, &nncase_mt, buffers);
+    elfloader_.invoke_elf(&hw_ctx_mt, &runtime_util, &nncase_mt, buffers,
+                          (uint8_t *)rdata_.data());
 
     delete[] buffers;
 

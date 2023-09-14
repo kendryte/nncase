@@ -33,6 +33,7 @@ class cpu_runtime_function : public runtime_function {
 
   private:
     gsl::span<const gsl::byte> text_;
+    gsl::span<const gsl::byte> rdata_;
     // std::vector<uint32_t> input_ranks_;
     // std::vector<std::vector<uint32_t>> input_shapes_;
     // std::vector<std::vector<uint32_t>> input_strides_;

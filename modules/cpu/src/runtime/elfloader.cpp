@@ -6,7 +6,7 @@ using namespace nncase::runtime;
 using namespace nncase::runtime::cpu;
 
 int elfloader::invoke_elf(hardware_context_mt *hw_ctx_impl, runtime_util_mt *rt_util_mt,
-            nncase_mt_t *nncase_mt_impl, uint8_t **inputs) {
+            nncase_mt_t *nncase_mt_impl, uint8_t **inputs, uint8_t *rdata) {
 
     check(el_init(&ctx_), "initialising");
 
@@ -33,7 +33,7 @@ int elfloader::invoke_elf(hardware_context_mt *hw_ctx_impl, runtime_util_mt *rt_
     // printf("Binary entrypoint is %" PRIxPTR "; invoking %p\n",
     //        (uintptr_t)ctx_.ehdr.e_entry, (void *)epaddr);
 
-    ep(hw_ctx_impl, rt_util_mt, nncase_mt_impl, inputs);
+    ep(hw_ctx_impl, rt_util_mt, nncase_mt_impl, inputs, rdata);
 
     free(ptr_);
 

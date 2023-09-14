@@ -15,7 +15,7 @@
 BEGIN_NS_NNCASE_RT_MODULE(cpu)
 
 typedef void (*entrypoint_t)(hardware_context_mt *hw_ctx_impl, runtime_util_mt *rt_util_mt,
-            nncase_mt_t *nncase_mt_impl, uint8_t **inputs);
+            nncase_mt_t *nncase_mt_impl, uint8_t **inputs, uint8_t *rdata);
 
 class elfloader {
   public:
@@ -51,7 +51,7 @@ class elfloader {
     }
 
     int invoke_elf(hardware_context_mt *hw_ctx_impl, runtime_util_mt *rt_util_mt,
-            nncase_mt_t *nncase_mt_impl, uint8_t **inputs);
+            nncase_mt_t *nncase_mt_impl, uint8_t **inputs, uint8_t *rdata);
 
   private:
     void *ptr_;

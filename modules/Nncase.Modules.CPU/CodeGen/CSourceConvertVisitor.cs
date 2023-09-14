@@ -131,10 +131,11 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             _sharedWriter.WriteLine(";");
         });
 
+        var ctype = $"void {VisitEntry.Name}({string.Join(", ", VisitEntry.Parameters.AsValueEnumerable().Select(Visit).Select(s => $"{s.Type} &{s.Name}").ToArray().Concat(_exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location == MemoryLocation.Rdata).Select(Visit).Select(s => $" {s.Type} &{s.Name}").ToArray()))})";
         return new(
             CSourceBuiltn.MakeMain(VisitEntry, _exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location == MemoryLocation.Rdata)),
             CSourceBuiltn.MakeShared(_sharedBuilder.ToString()),
-            CSourceBuiltn.MakeKernel(_kernelBuilder.ToString()));
+            CSourceBuiltn.MakeKernel(ctype, _kernelBuilder.ToString()));
     }
 
     /// <inheritdoc/>
@@ -152,13 +153,10 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 
         var ctype = $"void {expr.Name}({string.Join(", ", expr.Parameters.AsValueEnumerable().Select(Visit).Select(s => $"{s.Type} &{s.Name}").ToArray())})";
 
-        _sharedWriter.WriteLine(ctype + ";");
-        _sharedWriter.WriteLine();
-
         using (var scope = new IndentScope(_kernelBuilder))
         {
             // 1. Function signature
-            IndentScope.Writer.IndWrite($"{ctype} {{\n");
+            IndentScope.Writer.IndWrite($"{{\n");
 
             // 2. Function body
             using (_ = new IndentScope())

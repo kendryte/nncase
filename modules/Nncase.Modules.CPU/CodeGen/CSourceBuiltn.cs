@@ -224,16 +224,16 @@ add_link_options(
   -fPIC
   -fno-stack-protector
   -static
-  -Wl,-e,_Z6_startPN6nncase7runtime3cpu19hardware_context_mtEPNS1_15runtime_util_mtEPNS1_19nncase_method_tableEPPh
+  -Wl,-e,_Z6_startPN6nncase7runtime3cpu19hardware_context_mtEPNS1_15runtime_util_mtEPNS1_19nncase_method_tableEPPhS8_
 )
 add_executable({name} ""main.cpp"")
 target_link_libraries({name} cpu_cmodel)
 ";
     }
 
-    public static string MakeKernel(string kernelImpl)
+    public static string MakeKernel(string ctype, string kernelImpl)
     {
-        return KernelHeader + kernelImpl;
+        return KernelHeader + ctype + kernelImpl;
     }
 
     public static string MakeMain(TIR.PrimFunction primFunction, IEnumerable<TIR.Buffer> rdataBuffers)
@@ -257,7 +257,7 @@ target_link_libraries({name} cpu_cmodel)
 
 #define DEFINE_TFUNC(b, t)                                                     \
     void *f_##b##_##t(void *arg) {{                                             \
-        block##b::thread##t::{primFunction.Name}({string.Join(',', primFunction.Parameters.AsValueEnumerable().Select(b => '*' + b.Name).ToArray())});               \
+        block##b::thread##t::{primFunction.Name}({string.Join(',', primFunction.Parameters.AsValueEnumerable().Select(b => '*' + b.Name).ToArray().Concat(rdataBuffers.Select(b => '*' + b.Name)).ToArray())});               \
         return arg;                                                            \
     }}
 
