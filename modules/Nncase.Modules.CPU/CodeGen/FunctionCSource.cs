@@ -16,9 +16,10 @@ using Nncase.TIR;
 namespace Nncase.CodeGen;
 
 #if MULTI_CORE_CPU
-internal sealed record FunctionCSource(string Shared, string Kernel)
+internal sealed record FunctionCSource(string Main, string Shared, string Kernel)
 {
 }
+
 #else
 internal sealed class FunctionCSource
 {

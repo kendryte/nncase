@@ -9,6 +9,10 @@ namespace Nncase.CodeGen.CPU;
 public static class CSourceBuiltn
 {
 #if MULTI_CORE_CPU
+    public const string KernelHeader = @"#include ""thread_context.h""
+using namespace shared;
+";
+
     public static string ClusterDef()
     {
         return @"#pragma once
@@ -227,20 +231,26 @@ target_link_libraries({name} cpu_cmodel)
 ";
     }
 
-    public const string KernelHeader = @"#include ""thread_context.h""
-using namespace shared;
-";
-
-    public static string MakeMain(TIR.PrimFunction primFunction)
+    public static string MakeKernel(string kernelImpl)
     {
-        string device_tensors = string.Join('\n', primFunction.Parameters.AsValueEnumerable().Select(b => $"static tensor<{b.ElemType.ToC()},{b.MemSpan.Location.ToC()}> *{b.Name};").ToArray());
+        return KernelHeader + kernelImpl;
+    }
 
-        string init_tensors = string.Join('\n', primFunction.Parameters.ToArray().Select((b, i) =>
+    public static string MakeMain(TIR.PrimFunction primFunction, IEnumerable<TIR.Buffer> rdataBuffers)
+    {
+        string device_tensors = string.Join('\n', primFunction.Parameters.ToArray().Concat(rdataBuffers).Select(b => $"static tensor<{b.ElemType.ToC()},{b.MemSpan.Location.ToC()}> *{b.Name};").ToArray());
+
+        string init_tensors = string.Join("\n", primFunction.Parameters.ToArray().Select((b, i) =>
         {
             var size = TensorUtilities.GetSize(b.CheckedShape.ToValueArray(), TensorUtilities.GetStrides(b.CheckedShape.ToValueArray()), 1);
-            return $@"auto {b.Name}_ = tensor<{b.ElemType.ToC()}, {b.MemSpan.Location.ToC()}>(gsl::make_span(({b.ElemType.ToC()}*)inputs[{i}], {size}), {{{string.Join(',', b.CheckedShape)}}});
+            return $@"    auto {b.Name}_ = tensor<{b.ElemType.ToC()}, {b.MemSpan.Location.ToC()}>(gsl::make_span(({b.ElemType.ToC()}*)inputs[{i}], {size}), {{{string.Join(',', b.CheckedShape)}}});
     {b.Name} = &{b.Name}_;";
-        }));
+        }).Concat(rdataBuffers.Select(b =>
+        {
+            var size = TensorUtilities.GetSize(b.CheckedShape.ToValueArray(), TensorUtilities.GetStrides(b.CheckedShape.ToValueArray()), 1);
+            return $@"    auto {b.Name}_ = tensor<{b.ElemType.ToC()}, {b.MemSpan.Location.ToC()}>(gsl::make_span(({b.ElemType.ToC()}*)(rdata + {((IR.TensorConst)b.MemSpan.Start).Value.ToScalar<ulong>()}), {size}), {{{string.Join(',', b.CheckedShape)}}});
+    {b.Name} = &{b.Name}_;";
+        })));
 
         return @$"#include ""cluster_def.h""
 #include <runtime_utils.h>
@@ -269,12 +279,12 @@ DEFINE_BFUNC(6)
 DEFINE_BFUNC(7)
 
 void _start(hardware_context_mt *hw_ctx_impl, runtime_util_mt *rt_util_mt,
-            nncase_mt_t *nncase_mt_impl, uint8_t **inputs) {{
+            nncase_mt_t *nncase_mt_impl, uint8_t **inputs, uint8_t *rdata) {{
     runtime_util = rt_util_mt;
     nncase_mt = nncase_mt_impl;
     global_hardware_init(hw_ctx_impl);
 
-    {init_tensors}
+{init_tensors}
 
     pthread_t t_0_0, t_1_0, t_2_0, t_3_0, t_4_0, t_5_0, t_6_0, t_7_0;
     pthread_t t_0_1, t_1_1, t_2_1, t_3_1, t_4_1, t_5_1, t_6_1, t_7_1;
@@ -349,12 +359,13 @@ void _start(hardware_context_mt *hw_ctx_impl, runtime_util_mt *rt_util_mt,
 }}";
     }
 
-    public static string MakeShared()
+    public static string MakeShared(string shareds)
     {
-        return @"#include <tdma.h>
+        return @$"#include <tdma.h>
 
-namespace shared {
-} // namespace shared";
+namespace shared {{
+{shareds}
+}} // namespace shared";
     }
 
 #else

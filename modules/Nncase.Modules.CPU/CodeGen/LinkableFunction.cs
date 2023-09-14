@@ -8,15 +8,13 @@ namespace Nncase.CodeGen.CPU;
 
 internal sealed class LinkableFunction : ILinkableFunction
 {
-    public LinkableFunction(uint id, byte[] descContents, TIR.PrimFunction sourceFunction, FunctionCSource funcCSource)
+    public LinkableFunction(uint id, TIR.PrimFunction sourceFunction, FunctionCSource funcCSource)
     {
         Id = id;
         SourceFunction = sourceFunction;
         PrimFunction = sourceFunction;
         FunctionCSource = funcCSource;
         Text = Array.Empty<byte>();
-
-        // new LinkedSection(descContents, ".desc", 0, 8, (uint)descContents.Length)
         Sections = Array.Empty<ILinkedSection>();
     }
 

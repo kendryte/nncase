@@ -53,7 +53,7 @@ internal sealed class LinkableModule : ILinkableModule
                 {
                     using (var writer = new StreamWriter(fs))
                     {
-                        writer.Write(CSourceBuiltn.MakeMain(func.PrimFunction));
+                        writer.Write(func.FunctionCSource.Main);
                     }
                 }
 
@@ -61,7 +61,7 @@ internal sealed class LinkableModule : ILinkableModule
                 {
                     using (var writer = new StreamWriter(fs))
                     {
-                        writer.Write(CSourceBuiltn.MakeShared());
+                        writer.Write(func.FunctionCSource.Shared);
                     }
                 }
 
@@ -69,7 +69,6 @@ internal sealed class LinkableModule : ILinkableModule
                 {
                     using (var writer = new StreamWriter(fs))
                     {
-                        writer.Write(CSourceBuiltn.KernelHeader);
                         writer.Write(func.FunctionCSource.Kernel);
                     }
                 }

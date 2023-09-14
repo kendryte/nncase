@@ -44,19 +44,18 @@ internal sealed class SingleCPUFusionConverter
         var candidatebodys = distConverter.Convert(fusion.Body, out var stagesMap);
         var graph = new EGraph();
         var bodyEclasses = candidatebodys.Select(graph.Add).ToArray();
-        foreach (var (b, i) in candidatebodys.Select((b, i) => (b, i)))
-        {
-            DumpScope.Current.DumpDotIR(b, "body_" + i.ToString(), "Distribute");
-        }
 
+        // foreach (var (b, i) in candidatebodys.Select((b, i) => (b, i)))
+        // {
+        //     DumpScope.Current.DumpDotIR(b, "body_" + i.ToString(), "Distribute");
+        // }
         // 2. union stages
         foreach (var ((_, equivals), i) in stagesMap.Select((k, i) => (k, i)))
         {
-            foreach (var (b, j) in equivals.Select((b, j) => (b, j)))
-            {
-                DumpScope.Current.DumpDotIR(b, $"eq_{i}_{j}", "Distribute");
-            }
-
+            // foreach (var (b, j) in equivals.Select((b, j) => (b, j)))
+            // {
+            //     DumpScope.Current.DumpDotIR(b, $"eq_{i}_{j}", "Distribute");
+            // }
             var equivalEclasses = equivals.Select(graph.Add).ToArray();
 
             foreach (var cls in equivalEclasses.Skip(1))
@@ -229,8 +228,8 @@ internal sealed class SingleCPUFusionConverter
 
         protected override Unit VisitLeafCall(Call expr)
         {
-            var arguments = expr.Arguments.AsValueEnumerable().Select(TryAllocateBuffer).ToArray();
-            var ret = TryAllocateBuffer(expr);
+            var arguments = expr.Arguments.AsValueEnumerable().Select(AllocOrGetBuffer).ToArray();
+            var ret = AllocOrGetBuffer(expr);
             switch (expr.Target)
             {
                 case CPUKernelOp kernelOp:
@@ -266,13 +265,13 @@ internal sealed class SingleCPUFusionConverter
             {
                 case (TensorType tensorType, DistributedType distTensorType):
                     {
-                        _mainBody.Add(T.Block(nameof(Boxing)).Body(IR.F.XPU.TDMALoad(ret, arguments[0], distTensorType.NdSbp, distTensorType.Placement)).Build());
+                        _mainBody.Add(IR.F.XPU.TDMALoad(ret, arguments[0], distTensorType.NdSbp, distTensorType.Placement));
                     }
 
                     break;
                 case (DistributedType distTensorType, TensorType tensorType):
                     {
-                        _mainBody.Add(T.Block(nameof(Boxing)).Body(IR.F.XPU.TDMAStore(arguments[0], ret, distTensorType.NdSbp, distTensorType.Placement)).Build());
+                        _mainBody.Add(IR.F.XPU.TDMAStore(arguments[0], ret, distTensorType.NdSbp, distTensorType.Placement));
                     }
 
                     break;
@@ -284,24 +283,17 @@ internal sealed class SingleCPUFusionConverter
         private void GenerateUnary(IR.Math.Unary unary, ReadOnlySpan<Buffer> arguments, Buffer ret)
         {
             var input = arguments[IR.Math.Unary.Input.Index];
-            _mainBody.Add(T.Block(nameof(IR.Math.Unary)).Body(IR.F.XPU.Unary(unary.UnaryOp, input, ret)).Build());
+            _mainBody.Add(IR.F.XPU.Unary(unary.UnaryOp, input, ret));
         }
 
         private void GenerateBinary(Binary binary, Buffer[] arguments, Buffer ret)
         {
-            _mainBody.Add(T.Block(nameof(IR.Math.Unary)).Body(IR.F.XPU.Binary(binary.BinaryOp, arguments[0], arguments[1], ret)).Build());
+            _mainBody.Add(IR.F.XPU.Binary(binary.BinaryOp, arguments[0], arguments[1], ret));
         }
 
         private void GenerateMatmul(MatMul matmul, Buffer[] arguments, Buffer ret)
         {
-            if (ret.MemSpan.Location == MemoryLocation.L2Data)
-            {
-                _mainBody.Add(T.Block(nameof(XPU.BlockMMA)).Body(IR.F.XPU.Matmul(arguments[0], arguments[1], ret)).Build());
-            }
-            else
-            {
-                _mainBody.Add(T.Block(nameof(XPU.Matmul)).Body(IR.F.XPU.Matmul(arguments[0], arguments[1], ret)).Build());
-            }
+            _mainBody.Add(IR.F.XPU.Matmul(arguments[0], arguments[1], ret));
         }
 
 #if false
@@ -370,7 +362,7 @@ internal sealed class SingleCPUFusionConverter
         }
 #endif
 
-        private TIR.Buffer TryAllocateBuffer(Expr expr)
+        private TIR.Buffer AllocOrGetBuffer(Expr expr)
         {
             var name = $"buffer_{_buffersMap.Keys.Count}";
             if (!_buffersMap.TryGetValue(expr, out var buffer))
