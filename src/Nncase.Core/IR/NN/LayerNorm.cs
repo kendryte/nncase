@@ -21,17 +21,17 @@ public sealed partial class LayerNorm : Op
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(LayerNorm), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(LayerNorm), 0, "input", ParameterKind.Input);
 
     /// <summary>
     /// Gets scale.
     /// </summary>
-    public static readonly ParameterInfo Scale = new(typeof(LayerNorm), 1, "scale");
+    public static readonly ParameterInfo Scale = new(typeof(LayerNorm), 1, "scale", ParameterKind.Input);
 
     /// <summary>
     /// Gets bias.
     /// </summary>
-    public static readonly ParameterInfo Bias = new(typeof(LayerNorm), 2, "bias");
+    public static readonly ParameterInfo Bias = new(typeof(LayerNorm), 2, "bias", ParameterKind.Input);
 
     public int Axis { get; }
 

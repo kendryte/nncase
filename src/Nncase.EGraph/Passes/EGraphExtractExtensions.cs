@@ -29,7 +29,7 @@ public static class EGraphExtractExtensions
     /// <returns>Extracted root expression.</returns>
     public static Expr Extract(this IEGraph eGraph, EClass root, Evaluator.IBaseFuncCostEvaluator? basefunc_cost_evaluator)
     {
-        // 1. set the all expr checked shape
+        // 1. set enode expr with more accuracy type.
         foreach (var eclass in eGraph.Classes)
         {
             foreach (var nodes in eclass.Nodes)

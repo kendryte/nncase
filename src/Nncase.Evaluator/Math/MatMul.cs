@@ -19,69 +19,9 @@ namespace Nncase.Evaluator.Math;
 /// </summary>
 public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICostEvaluator<MatMul>, IShapeEvaluator<MatMul>, IMetricEvaluator<MatMul>
 {
-    /// <inheritdoc/>
-    public IValue Visit(IEvaluateContext context, MatMul matMul)
+    public static IRType VisitDistributedType(DistributedType a, DistributedType b)
     {
-        var input = context.GetOrtArgumentValue(matMul, MatMul.Lhs);
-        var other = context.GetOrtArgumentValue(matMul, MatMul.Rhs);
-        return OrtKI.MatMul(input, other).ToValue();
-    }
-
-    /// <inheritdoc/>
-    public IRType Visit(ITypeInferenceContext context, MatMul target)
-    {
-        var lhs = context.CheckArgumentType<IRType>(target, MatMul.Lhs);
-        var rhs = context.CheckArgumentType<IRType>(target, MatMul.Rhs);
-        return (lhs, rhs) switch
-        {
-            (DistributedType a, DistributedType b) => Visit(a, b),
-            (TensorType a, TensorType b) => Visit(a, b),
-            _ => new InvalidType(string.Empty),
-        };
-    }
-
-    /// <inheritdoc/>
-    public Cost Visit(ICostEvaluateContext context, MatMul target)
-    {
-        var lhs = context.GetArgumentType<TensorType>(target, MatMul.Lhs);
-        var rhs = context.GetArgumentType<TensorType>(target, MatMul.Rhs);
-        var outputType = context.GetReturnType<TensorType>();
-
-        uint macPerElement = lhs.Shape[^1].IsFixed ? (uint)lhs.Shape[^1].FixedValue : 1U;
-        return new()
-        {
-            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(lhs) + CostUtility.GetMemoryAccess(rhs),
-            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
-            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, macPerElement),
-        };
-    }
-
-    public Metric Visit(IMetricEvaluateContext context, MatMul target)
-    {
-        var lhs = context.GetArgumentType<TensorType>(target, MatMul.Lhs);
-        var rhs = context.GetArgumentType<TensorType>(target, MatMul.Rhs);
-        var outputType = context.GetReturnType<TensorType>();
-        var k = (UInt128)lhs.Shape[^1].FixedValue;
-        var m = MetricUtility.GetFLOPs(lhs) / k;
-        var n = MetricUtility.GetFLOPs(rhs) / k;
-        return new()
-        {
-            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(lhs) + CostUtility.GetMemoryAccess(rhs) + CostUtility.GetMemoryAccess(outputType),
-            [MetricFactorNames.FLOPs] = m * n * ((2 * k) - 1),
-            [MetricFactorNames.Parallel] = 4,
-        };
-    }
-
-    public Expr Visit(IShapeEvaluateContext context, MatMul target)
-    {
-        var lhs = context.GetArgumentShape(target, MatMul.Lhs);
-        var rhs = context.GetArgumentShape(target, MatMul.Rhs);
-        return Cast(IR.F.ShapeExpr.MatMulShape(lhs, rhs), DataTypes.Int32);
-    }
-
-    private IRType Visit(DistributedType a, DistributedType b)
-    {
-        if (Visit(a.TensorType, b.TensorType) is not TensorType outType)
+        if (VisitTensorType(a.TensorType, b.TensorType) is not TensorType outType)
         {
             return new InvalidType(string.Empty);
         }
@@ -143,7 +83,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         return new DistributedType(outType, ndsbp, a.Placement);
     }
 
-    private IRType Visit(TensorType lhs, TensorType rhs)
+    public static IRType VisitTensorType(TensorType lhs, TensorType rhs)
     {
         if (lhs.Shape.IsUnranked || rhs.Shape.IsUnranked)
         {
@@ -181,5 +121,75 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         var front = bigShape;
         var end = new[] { lhs.Shape[^2], rhs.Shape[^1] };
         return new TensorType(lhs.DType, front.Concat(end).ToArray());
+    }
+
+    /// <inheritdoc/>
+    public IValue Visit(IEvaluateContext context, MatMul matMul)
+    {
+        var input = context.GetOrtArgumentValue(matMul, MatMul.Lhs);
+        var other = context.GetOrtArgumentValue(matMul, MatMul.Rhs);
+        return OrtKI.MatMul(input, other).ToValue();
+    }
+
+    /// <inheritdoc/>
+    public IRType Visit(ITypeInferenceContext context, MatMul target)
+    {
+        var lhs = context.CheckArgumentType<IRType>(target, MatMul.Lhs);
+        var rhs = context.CheckArgumentType<IRType>(target, MatMul.Rhs);
+        return (lhs, rhs) switch
+        {
+            (DistributedType a, DistributedType b) => VisitDistributedType(a, b),
+            (TensorType a, TensorType b) => VisitTensorType(a, b),
+            _ => new InvalidType(string.Empty),
+        };
+    }
+
+    /// <inheritdoc/>
+    public Cost Visit(ICostEvaluateContext context, MatMul target)
+    {
+        var lhs = context.GetArgumentType<IRType>(target, MatMul.Lhs);
+        var rhs = context.GetArgumentType<IRType>(target, MatMul.Rhs);
+        var outputType = context.GetReturnType<IRType>();
+
+        uint macPerElement = 1;
+        if (lhs is TensorType { Shape: Shape lhsShape })
+        {
+            macPerElement = lhsShape[^1].IsFixed ? (uint)lhsShape[^1].FixedValue : 1U;
+        }
+        else if (lhs is DistributedType distributedType)
+        {
+            var lhsType = DistributedUtilities.GetDividedTensorType(distributedType, out var _);
+            macPerElement = lhsType.Shape[^1].IsFixed ? (uint)lhsType.Shape[^1].FixedValue : 1U;
+        }
+
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(lhs) + CostUtility.GetMemoryAccess(rhs),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, macPerElement),
+        };
+    }
+
+    public Metric Visit(IMetricEvaluateContext context, MatMul target)
+    {
+        var lhs = context.GetArgumentType<TensorType>(target, MatMul.Lhs);
+        var rhs = context.GetArgumentType<TensorType>(target, MatMul.Rhs);
+        var outputType = context.GetReturnType<TensorType>();
+        var k = (UInt128)lhs.Shape[^1].FixedValue;
+        var m = MetricUtility.GetFLOPs(lhs) / k;
+        var n = MetricUtility.GetFLOPs(rhs) / k;
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(lhs) + CostUtility.GetMemoryAccess(rhs) + CostUtility.GetMemoryAccess(outputType),
+            [MetricFactorNames.FLOPs] = m * n * ((2 * k) - 1),
+            [MetricFactorNames.Parallel] = 4,
+        };
+    }
+
+    public Expr Visit(IShapeEvaluateContext context, MatMul target)
+    {
+        var lhs = context.GetArgumentShape(target, MatMul.Lhs);
+        var rhs = context.GetArgumentShape(target, MatMul.Rhs);
+        return Cast(IR.F.ShapeExpr.MatMulShape(lhs, rhs), DataTypes.Int32);
     }
 }

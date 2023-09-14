@@ -2072,7 +2072,7 @@ public sealed class GatherCase : IRewriteCase
             var input = new Tensor<int>(new[] { 0, 1, 2, 3 }, shape);
             var indices = new Tensor<long>(new[] { 0L, 0L, 1L, 1L }, shape);
             long batchDims = 0L;
-            var expr = IR.F.Tensors.Gather(input, batchDims, indices);
+            var expr = IR.F.Tensors.Gather(input, (int)batchDims, indices);
             return new Function(expr, new Var[] { _input });
         }
     }

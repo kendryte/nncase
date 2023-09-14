@@ -3,6 +3,7 @@
 
 using Nncase.IR;
 using Nncase.IR.XPU;
+
 namespace Nncase.Evaluator.XPU;
 
 public sealed class MatmulEvaluator : ITypeInferencer<Matmul>

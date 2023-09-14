@@ -33,6 +33,11 @@ public static class DistributedUtilities
            ToArray();
     }
 
+    public static IReadOnlyList<Expr> GetLeafCandidateBoxings(Expr expr, Placement placement)
+    {
+        return GetLeafCandidateNDSBPs((TensorType)expr.CheckedType, placement).Select(ndsbp => IR.F.Tensors.Boxing(expr, new DistributedType((TensorType)expr.CheckedType, ndsbp, placement))).ToArray();
+    }
+
     public static bool IsDistributable(TensorType tensorType, ReadOnlySpan<SBP> ndsbp, Placement placement, [MaybeNullWhen(false)] out TensorType distType)
     {
         distType = null;

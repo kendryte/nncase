@@ -41,10 +41,36 @@ internal sealed class SingleCPUFusionConverter
     {
         // 1. convert to distribute graph
         var distConverter = new DistributeConvertVisitor(TileOptions);
-        var candidatebodys = distConverter.Convert(fusion.Body);
+        var candidatebodys = distConverter.Convert(fusion.Body, out var stagesMap);
         var graph = new EGraph();
         var bodyEclasses = candidatebodys.Select(graph.Add).ToArray();
-        _ = bodyEclasses.Skip(1).Select(cls => graph.Union(bodyEclasses[0], cls)).ToArray(); // must keep this.
+        foreach (var (b, i) in candidatebodys.Select((b, i) => (b, i)))
+        {
+            DumpScope.Current.DumpDotIR(b, "body_" + i.ToString(), "Distribute");
+        }
+
+        // 2. union stages
+        foreach (var ((_, equivals), i) in stagesMap.Select((k, i) => (k, i)))
+        {
+            foreach (var (b, j) in equivals.Select((b, j) => (b, j)))
+            {
+                DumpScope.Current.DumpDotIR(b, $"eq_{i}_{j}", "Distribute");
+            }
+
+            var equivalEclasses = equivals.Select(graph.Add).ToArray();
+
+            foreach (var cls in equivalEclasses.Skip(1))
+            {
+                graph.Union(equivalEclasses[0], cls);
+            }
+        }
+
+        // 3. union final body
+        foreach (var cls in bodyEclasses.Skip(1))
+        {
+            graph.Union(bodyEclasses[0], cls);
+        }
+
         graph.Rebuild();
         var body = graph.Extract(bodyEclasses[0], null);
         var newFusion = fusion.With(body: body);
@@ -62,18 +88,22 @@ internal sealed class SingleCPUFusionConverter
 
     private sealed class DistributeConvertVisitor : ExprVisitor<IReadOnlyList<Expr>, Unit>
     {
+        private readonly Dictionary<Expr, List<Expr>> _stagesMap;
+
         public DistributeConvertVisitor(TileOptions tileOptions)
         {
             TileOptions = tileOptions;
             Placement = new Placement(Placement.DeviceKind.CPU, tileOptions.Hierarchy, "bt");
+            _stagesMap = new Dictionary<Expr, List<Expr>>(ReferenceEqualityComparer.Instance);
         }
 
         public TileOptions TileOptions { get; }
 
         public Placement Placement { get; }
 
-        public IReadOnlyList<Expr> Convert(Expr body)
+        public IReadOnlyList<Expr> Convert(Expr body, out IReadOnlyDictionary<Expr, List<Expr>> stagesMap)
         {
+            stagesMap = _stagesMap;
             return Visit(body).Select(newbody => IR.F.Tensors.Boxing(newbody, body.CheckedType)).ToArray();
         }
 
@@ -82,31 +112,98 @@ internal sealed class SingleCPUFusionConverter
             return new[] { expr };
         }
 
+        protected override IReadOnlyList<Expr> VisitLeafTuple(Tuple expr)
+        {
+            return expr.Fields.ToArray().Select(Visit).CartesianProduct().Select(e => new IR.Tuple(e.ToArray())).ToArray();
+        }
+
         protected override IReadOnlyList<Expr> VisitLeafVar(Var expr)
         {
-            var type = (TensorType)expr.TypeAnnotation;
-            return DistributedUtilities.GetLeafCandidateNDSBPs(type, Placement).
-                Select(ndsbp => IR.F.Tensors.Boxing(expr, new DistributedType(type, ndsbp, Placement))).
-                ToArray();
+            return Array.Empty<Expr>();
         }
 
         protected override IReadOnlyList<Expr> VisitLeafConst(Const expr)
         {
-            return DistributedUtilities.GetLeafCandidateNDSBPs((TensorType)expr.CheckedType, Placement)
-                .Select(ndsbp => IR.F.Tensors.Boxing(expr, new DistributedType((TensorType)expr.CheckedType, ndsbp, Placement))).
-                ToArray();
+            return Array.Empty<Expr>();
         }
 
         protected override IReadOnlyList<Expr> VisitLeafCall(Call expr)
         {
-            return expr.Arguments.ToArray().
-                Select(arg => ExprMemo[arg]).
-                CartesianProduct<Expr>().
+            if (expr.Target is not Op op)
+            {
+                throw new NotSupportedException("not support auto distributed call function");
+            }
+
+            var equivalArgs = op.Parameters.
+                Select(param => (param.ParameterKind, expr.Arguments[param.Index]) switch
+                {
+                    (ParameterKind.Input, Expr e) when e is Const or Var => DistributedUtilities.GetLeafCandidateBoxings(e, Placement),
+                    (ParameterKind.Attribute, Expr e) when e is Const or Var => new[] { e },
+                    (_, Expr arg) => ExprMemo[arg],
+                }).ToArray();
+            var equivalCalls = equivalArgs.
+                CartesianProduct().
                 Select(args => args.ToArray()).
-                Select(args => new Call(expr.Target, args)).
-                Where(c => c.InferenceType()).
-                ToArray();
+                Select(args => BuildEqualityCalls(op, args)).
+                SelectMany(i => i).
+                Select(c => (c.InferenceType(), c)).ToArray();
+
+            if (equivalCalls.Any(t => t.Item1))
+            {
+                return equivalCalls.Where(t => t.Item1).Select(t => t.c).ToArray();
+            }
+
+            var boxingArgs = new List<IReadOnlyList<Expr>>();
+            foreach (var (info, newArgs) in op.Parameters.Zip(equivalArgs))
+            {
+                var oldArg = expr.Arguments[info.Index];
+                if (!_stagesMap.TryGetValue(oldArg, out var equivals))
+                {
+                    equivals = new List<Expr>();
+                    _stagesMap.Add(oldArg, equivals);
+                }
+
+                equivals.AddRange(newArgs);
+                var tensorType = (TensorType)oldArg.CheckedType;
+                boxingArgs.Add(info.ParameterKind switch
+                {
+                    ParameterKind.Input => DistributedUtilities.GetLeafCandidateNDSBPs(tensorType, Placement).Select(ndsbp => IR.F.Tensors.Boxing(newArgs[0], new DistributedType(tensorType, ndsbp, Placement))).ToList(),
+                    ParameterKind.Attribute => new Expr[] { newArgs[0] },
+                    _ => throw new ArgumentOutOfRangeException(info.ParameterKind.ToString()),
+                });
+            }
+
+            equivalCalls = boxingArgs.CartesianProduct().
+                Select(Enumerable.ToArray<Expr>).
+                Select(args => BuildEqualityCalls(op, args)).
+                SelectMany(i => i).
+                Select(c => (c.InferenceType(), c)).ToArray();
+
+            if (!equivalCalls.Any(t => t.Item1))
+            {
+                throw new InvalidOperationException("after boxing still invalid!");
+            }
+
+            return equivalCalls.Where(t => t.Item1).Select(t => t.c).ToArray();
         }
+
+        private IEnumerable<Call> BuildEqualityCalls(Op target, Expr[] args)
+        {
+            if (!target.Parameters.Where(p => p.ParameterKind == ParameterKind.Input).All(p => IsDistributed(args[p.Index].CheckedType)))
+            {
+                throw new InvalidDataException();
+            }
+
+            IEnumerable<Call> calls = new[] { new Call(target, args) };
+            return calls;
+        }
+
+        private bool IsDistributed(IRType type) => type switch
+        {
+            DistributedType => true,
+            TupleType t => t.All(IsDistributed),
+            _ => false,
+        };
     }
 
     private sealed class ConvertVisitor : ExprVisitor<Unit, Unit>
@@ -305,7 +402,7 @@ internal sealed class SingleCPUFusionConverter
             return buffer;
         }
 
-        private (TensorType, MemoryLocation) GetTypeAndLocation(IRType type)
+        private Tuple<TensorType, MemoryLocation> GetTypeAndLocation(IRType type)
         {
             MemoryLocation location = MemoryLocation.Data;
             if (type is DistributedType distTensorType)
@@ -323,9 +420,13 @@ internal sealed class SingleCPUFusionConverter
             TensorType tensorType;
             if (type is DistributedType distTensor)
             {
-                if (!DistributedUtilities.IsDistributable(distTensor.TensorType, distTensor.NdSbp.ToArray(), distTensor.Placement, out tensorType))
+                if (!DistributedUtilities.IsDistributable(distTensor.TensorType, distTensor.NdSbp.ToArray(), distTensor.Placement, out var tType))
                 {
                     throw new NotSupportedException();
+                }
+                else
+                {
+                    tensorType = tType;
                 }
             }
             else if (type is TensorType ttype)
@@ -337,7 +438,7 @@ internal sealed class SingleCPUFusionConverter
                 throw new NotSupportedException();
             }
 
-            return (tensorType, location);
+            return new Tuple<TensorType, MemoryLocation>(tensorType, location);
         }
     }
 }

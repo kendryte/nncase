@@ -34,12 +34,14 @@ public sealed partial class CombineQuantizeConcat : RewriteRule<Pattern>
       "quantize",
       _ => true,
       IsConcat(
-        IsTuple(IsVArgsRepeat("tupleInputs", () => IsWildcard())),
-        IsWildcard("axis")),
+        "concat",
+        _ => true,
+        IsTuple(IsVArgsRepeat("tupleInputs", () => IsWildcard()))),
       IsWildcard("quantParam"));
 
-    private Expr? GetReplace(Quantize quantize, IReadOnlyList<Expr> tupleInputs, Expr axis, Expr quantParam, RunPassContext options)
+    private Expr? GetReplace(Quantize quantize, IReadOnlyList<Expr> tupleInputs, IR.Tensors.Concat concat, Expr quantParam, RunPassContext options)
     {
+        int axis = concat.Axis;
         var userAnalysis = options.GetAnalysis<IExprUserAnalysisResult>();
 
         // see UnitTestCombineQuantize.TestCombineQuantizeConcatNegative

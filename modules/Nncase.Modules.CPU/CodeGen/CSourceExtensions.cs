@@ -38,7 +38,7 @@ internal static class CSourceExtensions
 
     public static string ToC(this MemoryLocation location) => location switch
     {
-        MemoryLocation.Output or MemoryLocation.Input => "loc_t::device",
+        MemoryLocation.Output or MemoryLocation.Input or MemoryLocation.Rdata => "loc_t::device",
         MemoryLocation.L2Data => "loc_t::shared",
         MemoryLocation.L1Data => "loc_t::local",
         _ => throw new NotSupportedException(location.ToString()),

@@ -62,7 +62,7 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
         {
             (TensorType a, TensorType b) => Visit(target, a, b),
             (DistributedType a, DistributedType b) => Visit(target, a, b),
-            _ => new InvalidType("invalid binary type"),
+            _ => new InvalidType($"{lhs} {rhs}"),
         };
     }
 

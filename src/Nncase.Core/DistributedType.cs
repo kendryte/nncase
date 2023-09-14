@@ -97,5 +97,5 @@ public sealed record DistributedType : IRType
 
     public Placement Placement { get; }
 
-    public override string ToString() => $"{TensorType} ({string.Join(',', NdSbp)}) {Placement}";
+    public override string ToString() => $"{TensorType}, ({string.Join(',', NdSbp)}), {Placement}";
 }

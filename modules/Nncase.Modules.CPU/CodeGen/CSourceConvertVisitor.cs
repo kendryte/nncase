@@ -250,6 +250,9 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                 case IR.XPU.Binary binary:
                     IndentScope.Writer.Write($"binary({Visit(args[0]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name}, binary_op_t::{binary.BinaryOp.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)})");
                     break;
+                case IR.XPU.Matmul matmul:
+                    IndentScope.Writer.Write($"matmul({Visit(args[0]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name})");
+                    break;
                 default:
                     throw new NotSupportedException(xpuOp.ToString());
             }

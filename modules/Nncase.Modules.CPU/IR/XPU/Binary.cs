@@ -6,7 +6,7 @@ namespace Nncase.IR.XPU;
 public sealed partial class Binary : XPUKernelOp
 {
     public static readonly ParameterInfo Lhs = new(typeof(Binary), 0, "input");
-    
+
     public static readonly ParameterInfo Rhs = new(typeof(Binary), 1, "input");
 
     public static readonly ParameterInfo Output = new(typeof(Binary), 2, "output");

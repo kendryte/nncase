@@ -22,15 +22,15 @@ public sealed partial class Gather : Op
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Gather), 0, "input");
-
-    /// <summary>
-    /// Gets axis.
-    /// </summary>
-    public static readonly ParameterInfo Axis = new(typeof(Gather), 1, "axis", IsIntegralScalar());
+    public static readonly ParameterInfo Input = new(typeof(Gather), 0, "input", ParameterKind.Input);
 
     /// <summary>
     /// Gets index.
     /// </summary>
-    public static readonly ParameterInfo Index = new(typeof(Gather), 2, "index", IsIntegral());
+    public static readonly ParameterInfo Index = new(typeof(Gather), 1, "index", IsIntegral(), ParameterKind.Input);
+
+    /// <summary>
+    /// Gets axis.
+    /// </summary>
+    public int Axis { get; }
 }

@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using NetFabric.Hyperlinq;
 using Nncase.CostModel;
@@ -25,7 +26,7 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
     public IValue Visit(IEvaluateContext context, Concat cat)
     {
         var inputs = context.GetArgumentValueAsTensors(cat, Concat.Input);
-        var axis = context.GetArgumentValueAsScalar<int>(cat, Concat.Axis);
+        var axis = cat.Axis;
         return OrtKI.Concat(inputs.Select(t => t.ToOrtTensor()).ToArray(), axis).ToValue();
     }
 
@@ -33,14 +34,13 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
     public IRType Visit(ITypeInferenceContext context, Concat target)
     {
         var inputs = context.CheckArgumentType<TupleType>(target, Concat.Input);
-        var axis = context.CheckArgumentType<TensorType>(target, Concat.Axis);
-        return Visit(context, target, inputs, axis);
+        return Visit(inputs, target.Axis);
     }
 
     /// <inheritdoc/>
     public Cost Visit(ICostEvaluateContext context, Concat target)
     {
-        var ret = context.GetReturnType<TensorType>();
+        var ret = context.GetReturnType<IRType>();
         return new()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(ret),
@@ -52,8 +52,7 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
     public Expr Visit(IShapeEvaluateContext context, Concat target)
     {
         var inShape = context.GetArgumentShape(target, Concat.Input);
-        var axis = context.GetArgument(target, Concat.Axis);
-        var axisV = ShapeExprUtility.Positive(axis, inShape[0]);
+        var axisV = ShapeExprUtility.Positive(target.Axis, inShape[0]);
         var inShapes = ((IR.Tuple)inShape).Fields.ToArray().Select(x => Cast(x, DataTypes.Int32)).ToArray();
         var dim = inShapes.ToArray().Aggregate((Expr)0, (sum, shape) => sum + shape[axisV]);
         var outShape = ShapeExprUtility.Replace(inShapes[0], axisV, dim);
@@ -68,17 +67,18 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
         DataType? allDType = null;
         foreach (var (i, input) in Enumerable.Range(0, inputs.Count).Select(i => (i, inputs[i])))
         {
-            var type = input as TensorType;
-            if (type is null)
+            TensorType type;
+            if (input is TensorType a)
             {
-                if (input is InvalidType)
-                {
-                    return input;
-                }
-                else
-                {
-                    return new InvalidType($"The ConCat Item[{i}] Must Be TensorType But Get {input.GetType().Name}");
-                }
+                type = a;
+            }
+            else if (input is DistributedType { TensorType: TensorType b })
+            {
+                type = b;
+            }
+            else
+            {
+                return new InvalidType($"The ConCat Item[{i}] Must Have TensorType But Get {input}");
             }
 
             if (type.Shape.IsUnranked)
@@ -103,7 +103,14 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
         return null;
     }
 
-    private IRType Visit(ITypeInferenceContext context, Concat target, TupleType inputs, TensorType axis)
+    private TensorType GetTensorType(IRType input) => input switch
+    {
+        TensorType t => t,
+        DistributedType d => d.TensorType,
+        _ => throw new InvalidCastException(),
+    };
+
+    private IRType Visit(TupleType inputs, int axis)
     {
         var result = CheckType(inputs);
         if (result != null)
@@ -111,15 +118,15 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
             return result;
         }
 
-        var sameRank = inputs.All(input => ((TensorType)input).Shape.Rank == ((TensorType)inputs[0]).Shape.Rank);
+        var sameRank = inputs.All(input => GetTensorType(input).Shape.Rank == GetTensorType(inputs[0]).Shape.Rank);
         if (!sameRank)
         {
             return new InvalidType("Inputs of concat should be same rank");
         }
 
-        var input0 = (TensorType)inputs[0];
+        var input0 = GetTensorType(inputs[0]);
         InvalidType? invalidType = null;
-        var axisV = ((TensorConst)context.GetArgument(target, Concat.Axis)).Value.ToScalar<int>();
+        var axisV = axis;
         var axisValue = Util.PositiveIndex(axisV, input0.Shape.Rank);
         var shapeValue = Enumerable.Range(0, input0.Shape.Rank).Select(i =>
         {
@@ -134,18 +141,18 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
                 var allAxisDimIsSame = true;
                 foreach (var inType in inputs.Fields)
                 {
-                    if (((TensorType)inType).Shape.IsUnranked)
+                    if (GetTensorType(inType).Shape.IsUnranked)
                     {
                         continue;
                     }
 
-                    var d = ((TensorType)inType).Shape[i];
+                    var d = GetTensorType(inType).Shape[i];
                     if (d.IsUnknown)
                     {
                         return Dimension.Unknown;
                     }
 
-                    if (d.FixedValue != ((TensorType)inputs[0]).Shape[i])
+                    if (d.FixedValue != GetTensorType(inputs[0]).Shape[i])
                     {
                         allAxisDimIsSame = false;
                     }
@@ -153,7 +160,7 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
 
                 if (allAxisDimIsSame)
                 {
-                    return ((TensorType)inputs[0]).Shape[i];
+                    return GetTensorType(inputs[0]).Shape[i];
                 }
                 else
                 {
@@ -163,7 +170,55 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
             }
         });
         var shape = new Shape(shapeValue);
-        return (invalidType as IRType) ?? new TensorType(input0.DType, shape);
+        if (invalidType is InvalidType invalid)
+        {
+            return invalid;
+        }
+
+        var tensorType = new TensorType(input0.DType, shape);
+
+        if (inputs[0] is not DistributedType distributedType)
+        {
+            return tensorType;
+        }
+
+        if (inputs.OfType<DistributedType>().Select(d => d.Placement).ToHashSet().Count != 1)
+        {
+            return new InvalidType("the inputs have different placement");
+        }
+
+        var ndsbp = new SBP[distributedType.Placement.Rank];
+
+        for (int i = 0; i < distributedType.Placement.Rank; i++)
+        {
+            var sbps = inputs.OfType<DistributedType>().Select(d => d.NdSbp[i]).ToArray();
+            if (sbps.Any(sbp => sbp is SBPSplit { Axis: int x } && x == axis))
+            {
+                return new InvalidType("not support distribute on concat axis");
+            }
+
+            if (sbps.Any(sbp => sbp is SBPPartialSum))
+            {
+                return new InvalidType("not support distribute with partialsum");
+            }
+
+            if (sbps.OfType<SBPSplit>().ToHashSet() is HashSet<SBPSplit> set)
+            {
+                switch (set.Count)
+                {
+                    case 0:
+                        ndsbp[i] = SBP.B;
+                        break;
+                    case 1:
+                        ndsbp[i] = set.First();
+                        break;
+                    default:
+                        return new InvalidType("not support distribute with different axis");
+                }
+            }
+        }
+
+        return new DistributedType(tensorType, ndsbp, distributedType.Placement);
     }
 
     // axis: if one of inputs shape[axis] is unknown
@@ -173,12 +228,12 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
     {
         var allAxisDimIsFixed = inputs.Fields.Aggregate(
             true,
-            (prod, next) => prod && ((TensorType)next).Shape[axisValue].IsFixed);
+            (prod, next) => prod && (next switch { TensorType t => t, DistributedType d => d.TensorType, _ => throw new NotSupportedException() }).Shape[axisValue].IsFixed);
         if (allAxisDimIsFixed)
         {
             return inputs.Fields.Aggregate(
                 0,
-                (prod, next) => prod + ((TensorType)next).Shape[axisValue].FixedValue);
+                (prod, next) => prod + (next switch { TensorType t => t, DistributedType d => d.TensorType, _ => throw new NotSupportedException() }).Shape[axisValue].FixedValue);
         }
         else
         {

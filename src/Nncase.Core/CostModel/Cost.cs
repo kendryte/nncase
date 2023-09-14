@@ -198,6 +198,20 @@ public static class CostExtensions
 
 public static class CostUtility
 {
+    public static UInt128 GetRingReduceCommunicate(DistributedType distributedType, int[] axes)
+    {
+        var ttype = DistributedUtilities.GetDividedTensorType(distributedType, out _);
+        var splits = axes.Where(i => distributedType.NdSbp[i] is SBPSplit);
+        if (!splits.Any())
+        {
+            return 0;
+        }
+
+        var p = (UInt128)splits.Select(i => distributedType.Placement.Hierarchy[i]).Aggregate(1, (acc, i) => acc * i);
+        var v = GetMemoryAccess(distributedType.TensorType);
+        return (p - 1) * (v / p);
+    }
+
     public static UInt128 GetMemoryAccess(IRType type)
     {
         return type switch

@@ -70,10 +70,16 @@ public static class Tensors
     public static Call Cast(Expr input, DataType newType, CastMode castMode = CastMode.KDefault) =>
         new Call(new Cast(newType, castMode), input);
 
-    public static Call Boxing(Expr input, IRType type) =>
-        new Call(new Boxing(type), input);
+    public static Call Boxing(Expr input, IRType type) {
+        if (input.CheckedType == type)
+        {
+            throw new NotSupportedException();
+        }
 
-    public static Call Concat(Expr input, Expr axis) => new Call(new Concat(), input, axis);
+        return new Call(new Boxing(type), input);
+    }
+
+    public static Call Concat(Expr input, int axis) => new Call(new Concat(axis), input);
 
     public static Call ConstantOfShape(Expr shape, Expr value) => new Call(new ConstantOfShape(), shape, value);
 
@@ -92,7 +98,7 @@ public static class Tensors
 
     public static Call Flatten(Expr input, Expr axis) => new Call(new Flatten(), input, axis);
 
-    public static Call Gather(Expr input, Expr axis, Expr index) => new Call(new Gather(), input, axis, index);
+    public static Call Gather(Expr input, int axis, Expr index) => new Call(new Gather(axis), input, index);
 
     public static Call GatherElements(Expr input, Expr axis, Expr indices) =>
         new Call(new GatherElements(), input, axis, indices);

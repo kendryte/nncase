@@ -187,6 +187,7 @@ public static partial class TypePatternUtility
       x => x switch
       {
           TensorType ttype => DataTypes.IsIntegral(ttype.DType),
+          DistributedType distributedType => DataTypes.IsIntegral(distributedType.TensorType.DType),
           _ => false,
       },
       "IsIntegral");

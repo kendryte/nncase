@@ -194,6 +194,7 @@ public sealed partial class CombineTransposeConcat : IRewriteRule
     public IPattern Pattern { get; } = IsConcat(
                "concat",
                "concatCall",
+               _ => true,
                PatternMatch.Utility.IsTuple(null, IsVArgsRepeat("tupleInputs", exprs =>
                {
                    var patterns = new Pattern[exprs.Length];
@@ -203,11 +204,11 @@ public sealed partial class CombineTransposeConcat : IRewriteRule
                    }
 
                    return patterns;
-               })),
-               IsTensorConst("axis"));
+               })));
 
-    private Expr? GetReplace(Expr concat, Call concatCall, IReadOnlyList<Expr> tupleInputs, int axis, IMatchResult matchResult)
+    private Expr? GetReplace(IR.Tensors.Concat concat, Call concatCall, IReadOnlyList<Expr> tupleInputs, IMatchResult matchResult)
     {
+        int axis = concat.Axis;
         var inputs = Enumerable.Range(0, tupleInputs.Count).Select(i => (Expr)matchResult[$"input_{i}"]);
         var perms = new HashSet<Tensor<int>>(Enumerable.Range(0, tupleInputs.Count).Select(i => ((TensorConst)matchResult[$"perm_{i}"]).Value.Cast<int>(CastMode.KDefault)));
 

@@ -12,6 +12,12 @@ using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.IR;
 
+public enum ParameterKind : int
+{
+    Input,
+    Attribute,
+}
+
 /// <summary>
 /// Parameter information.
 /// </summary>
@@ -24,11 +30,13 @@ public sealed class ParameterInfo
     /// <param name="ownerType">this op type.</param>
     /// <param name="index">param index.</param>
     /// <param name="name">param name.</param>
-    public ParameterInfo(Type ownerType, int index, string name)
+    /// <param name="parameterKind">kind.</param>
+    public ParameterInfo(Type ownerType, int index, string name, ParameterKind parameterKind = ParameterKind.Attribute)
     {
         OwnerType = ownerType;
         Index = index;
         Name = name;
+        ParameterKind = parameterKind;
     }
 
     /// <summary>
@@ -39,8 +47,9 @@ public sealed class ParameterInfo
     /// <param name="index">param index.</param>
     /// <param name="name">param name.</param>
     /// <param name="pattern">the param condition.</param>
-    public ParameterInfo(Type ownerType, int index, string name, TypePattern pattern)
-        : this(ownerType, index, name)
+    /// <param name="parameterKind">kind.</param>
+    public ParameterInfo(Type ownerType, int index, string name, TypePattern pattern, ParameterKind parameterKind = ParameterKind.Attribute)
+        : this(ownerType, index, name, parameterKind)
     {
         Pattern = pattern;
     }
@@ -59,6 +68,11 @@ public sealed class ParameterInfo
     /// Gets name.
     /// </summary>
     public string Name { get; }
+
+    /// <summary>
+    /// Gets parameter kind.
+    /// </summary>
+    public ParameterKind ParameterKind { get; }
 
     /// <summary>
     /// Gets this paramter's type condition.

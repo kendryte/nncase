@@ -18,6 +18,5 @@ internal class XPUModule : IApplicationPart
         registrator.RegisterManyInterface<UnaryEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<BinaryEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<MatmulEvaluator>(reuse: Reuse.Singleton);
-        registrator.RegisterManyInterface<BlockMMAEvaluator>(reuse: Reuse.Singleton);
     }
 }

@@ -29,20 +29,45 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, LayerNorm target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, LayerNorm.Input);
-        return Visit(input);
+        var input = context.CheckArgumentType<IRType>(target, LayerNorm.Input);
+        var scale = context.CheckArgumentType<IRType>(target, LayerNorm.Scale);
+        var bias = context.CheckArgumentType<IRType>(target, LayerNorm.Bias);
+
+        return (input, scale, bias) switch
+        {
+            (DistributedType a, DistributedType b, DistributedType c) => Visit(a, b, c, target.Axis),
+            (TensorType a, TensorType, TensorType) => Visit(a),
+            _ => new InvalidType(input.GetType().ToString()),
+        };
     }
 
     /// <inheritdoc/>
     public Cost Visit(ICostEvaluateContext context, LayerNorm target)
     {
-        var inputType = context.GetArgumentType<TensorType>(target, LayerNorm.Input);
-        var returnType = context.GetReturnType<TensorType>();
-        return new()
+        var inputType = context.GetArgumentType<IRType>(target, LayerNorm.Input);
+        var returnType = context.GetReturnType<IRType>();
+        switch (inputType, returnType)
         {
-            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
-            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType),
-        };
+            case (TensorType, TensorType):
+                return new()
+                {
+                    [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
+                    [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType),
+                };
+
+            case (DistributedType, DistributedType):
+                var scaleType = context.GetArgumentType<DistributedType>(target, LayerNorm.Scale);
+                var biasType = context.GetArgumentType<DistributedType>(target, LayerNorm.Bias);
+                var ring = CostUtility.GetRingReduceCommunicate(scaleType, new[] { 0, 1 }) + CostUtility.GetRingReduceCommunicate(biasType, new[] { 0, 1 });
+                return new()
+                {
+                    [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType) + ring,
+                    [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(inputType, 1),
+                    [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType) + ring,
+                };
+            default:
+                throw new NotSupportedException();
+        }
     }
 
     public Metric Visit(IMetricEvaluateContext context, LayerNorm target)
@@ -68,6 +93,37 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
     private IRType Visit(TensorType input)
     {
         return input;
+    }
+
+    private IRType Visit(DistributedType input, DistributedType scale, DistributedType bias, int raxis)
+    {
+        var invalid = new InvalidType($"{input}, {scale}, {bias} not support");
+        if (input.Placement != scale.Placement || scale.Placement != bias.Placement)
+        {
+            return invalid;
+        }
+
+        var ndsbp = new SBP[input.Placement.Rank];
+
+        for (int i = 0; i < input.Placement.Rank; i++)
+        {
+            switch (input.NdSbp[i], scale.NdSbp[i], bias.NdSbp[i])
+            {
+                case (SBPSplit { Axis: int ix }, SBPSplit { Axis: int sx }, SBPSplit { Axis: int bx }) when ix >= raxis && sx == (ix - raxis) && bx == sx:
+                    ndsbp[i] = SBP.S(ix);
+                    break;
+                case (SBPSplit { Axis: int ix }, SBPBroadCast, SBPBroadCast) when ix < raxis:
+                    ndsbp[i] = SBP.S(ix);
+                    break;
+                case (SBPBroadCast, SBPBroadCast, SBPBroadCast):
+                    ndsbp[i] = SBP.B;
+                    break;
+                default:
+                    return invalid;
+            }
+        }
+
+        return new DistributedType(input.TensorType, ndsbp, input.Placement);
     }
 
 #if true
