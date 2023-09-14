@@ -28,15 +28,19 @@ import test_utils
 def cosine(gt: np.ndarray, pred: np.ndarray, *args):
     # remove the NaN values in the same location.
     if np.isnan(gt).any() and np.isnan(pred).any():
-        gt_temp = gt
-        gt = remove_nan(gt, pred, gt)
-        pred = remove_nan(gt_temp, pred, pred)
+        gt_mask = np.isnan(gt)
+        pred_mask = np.isnan(pred)
+        mask = gt_mask & pred_mask
+        gt = gt[~mask]
+        pred = pred[~mask]
 
     # remove the INF values in the same location.
     if np.isinf(gt).any() and np.isinf(pred).any():
-        gt_temp = gt
-        gt = remove_inf(gt, pred, gt)
-        pred = remove_inf(gt_temp, pred, pred)
+        gt_mask = np.isinf(gt)
+        pred_mask = np.isinf(pred)
+        mask = gt_mask & pred_mask
+        gt = gt[~mask]
+        pred = pred[~mask]
 
     # return -1 if the nan/inf value is still in the array.
     if np.isnan(gt).any() or np.isnan(pred).any() or np.isinf(gt).any() or np.isinf(pred).any():
@@ -49,18 +53,6 @@ def cosine(gt: np.ndarray, pred: np.ndarray, *args):
     result = (gt @ pred) / (np.linalg.norm(gt, 2) * np.linalg.norm(pred, 2))
 
     return -1 if math.isnan(result) else result
-
-
-def remove_nan(gt: np.ndarray, pred: np.ndarray, target: np.ndarray):
-    gt_mask = np.isnan(gt)
-    pred_mask = np.isnan(pred)
-    return target[~(gt_mask & pred_mask)]
-
-
-def remove_inf(gt: np.ndarray, pred: np.ndarray, target: np.ndarray):
-    gt_mask = np.isinf(gt)
-    pred_mask = np.isinf(pred)
-    return target[~(gt_mask & pred_mask)]
 
 
 def compare_arrays(gt: np.ndarray, pred: np.ndarray):
