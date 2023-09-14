@@ -59,7 +59,7 @@ class MySerial:
     def read_until(self, expected):
         self.logger.debug('read begin')
         data = self.s.read_until(expected.encode()).decode()
-        self.logger.debug('read end: data = {0}'.format(data))
+        self.logger.debug('read end: data = {0}, size = {1}'.format(data, len(data)))
         return data
 
     def run_cmd(self, cmd, expected=''):
@@ -78,6 +78,8 @@ class Target:
         self.name = name
         self.infer_queue = queue.Queue(maxsize=clear_queue.maxsize)
         self.clear_queue = clear_queue
+        self.username = cfg['username']
+        self.password = cfg['password']
         self.working_dir = cfg['working_dir']
         self.separator = cfg['separator']
 
@@ -88,10 +90,10 @@ class Target:
 
         # logging
         mylogger = logging.getLogger()
-        mylogger.setLevel(logging.INFO)
+        mylogger.setLevel(logging.DEBUG)
         rf_handler = logging.handlers.RotatingFileHandler(
             f'nuc_proxy_{name}.log', mode='a', maxBytes=32 * 1024 * 1024, backupCount=10)
-        rf_handler.setLevel(logging.INFO)
+        rf_handler.setLevel(logging.DEBUG)
         rf_handler.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(message)s'))
         mylogger.addHandler(rf_handler)
         self.logger = mylogger
@@ -99,6 +101,13 @@ class Target:
         # serial
         self.s0 = MySerial(cfg['uart0'], cfg['baudrate0'], self.logger)
         self.s1 = MySerial(cfg['uart1'], cfg['baudrate1'], self.logger)
+
+    def reboot(self):
+        # reboot after login
+        self.s0.run_cmd(self.username)
+        self.s0.run_cmd(self.password)
+        self.s0.run_cmd('reboot')
+        time.sleep(20)
 
 
 def recv_file(conn, case_dir, logger):
@@ -162,28 +171,38 @@ def infer_worker(target):
             ret = target.s1.run_cmd(cmd, separator)
 
         # infer result
-        dict = {'type': 'finish', 'time': 0.0, 'error': ''}
+        dict = {'type': 'finish', 'len': 0}
         if ret.find('terminate') != -1 or ret.find('Exception') != -1:
-            target.logger.error('infer exception')
-            err = f'infer exception: {ret}'
+            err = 'infer exception'
+            target.logger.error(err)
+            msg = f'{err}: {ret}'.encode()
             dict['type'] = 'exception'
-            dict['error'] = err[0:1024]
+            dict['len'] = len(msg)
             conn.sendall(json.dumps(dict).encode())
-        elif ret.find(separator) == -1:
-            # reboot target when timeout
-            target.logger.error('reboot for timeout')
-            dict['type'] = 'timeout'
-            dict['error'] = 'infer timeout'
-            conn.sendall(json.dumps(dict).encode())
+            dummy = conn.recv(1024)
+            conn.sendall(msg)
 
-            # reboot after login
-            target.s0.run_cmd('root')
-            target.s0.run_cmd('')
-            target.s0.run_cmd('reboot')
-            time.sleep(20)
-        else:
-            dict['time'] = float(ret.split('\n')[-2].split()[1])
+            # reboot target when exception(it is likely that next test case will fail)
+            target.reboot()
+        elif ret.find(separator) == -1:
+            err = 'infer timeout'
+            target.logger.error(err)
+            msg = f'{err}'.encode()
+            dict['type'] = 'timeout'
+            dict['len'] = len(msg)
             conn.sendall(json.dumps(dict).encode())
+            dummy = conn.recv(1024)
+            conn.sendall(msg)
+
+            # reboot target when timeout
+            target.reboot()
+        else:
+            msg = ret.encode()
+            dict['type'] = 'finish'
+            dict['len'] = len(msg)
+            conn.sendall(json.dumps(dict).encode())
+            dummy = conn.recv(1024)
+            conn.sendall(msg)
             dummy = conn.recv(1024)
 
             # send outputs
@@ -217,6 +236,8 @@ def main():
     port = 10000
     nfs = '/data/nfs'
     [k230]
+    username = 'root'
+    password = ''
     working_dir = '/sharefs'
     separator = '>'
     uart0 = '/dev/ttyUSB0'
