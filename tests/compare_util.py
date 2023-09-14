@@ -28,13 +28,15 @@ import test_utils
 def cosine(gt: np.ndarray, pred: np.ndarray, *args):
     # remove the NaN values in the same location.
     if np.isnan(gt).any() and np.isnan(pred).any():
+        gt_temp = gt
         gt = remove_nan(gt, pred, gt)
-        pred = remove_nan(gt, pred, pred)
+        pred = remove_nan(gt_temp, pred, pred)
 
     # remove the INF values in the same location.
     if np.isinf(gt).any() and np.isinf(pred).any():
+        gt_temp = gt
         gt = remove_inf(gt, pred, gt)
-        pred = remove_inf(gt, pred, pred)
+        pred = remove_inf(gt_temp, pred, pred)
 
     # return -1 if the nan/inf value is still in the array.
     if np.isnan(gt).any() or np.isnan(pred).any() or np.isinf(gt).any() or np.isinf(pred).any():
