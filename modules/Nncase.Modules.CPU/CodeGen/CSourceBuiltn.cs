@@ -193,8 +193,7 @@ cmake_minimum_required(VERSION 3.13)
 
 add_library(
   cpu_cmodel STATIC
-  {solutionPath}/modules/cpu/src/runtime/cmodel/src/dummy.cpp
-  {solutionPath}/modules/cpu/src/runtime/hardware_context.cpp)
+  {solutionPath}/modules/cpu/src/runtime/cmodel/src/dummy.cpp)
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -270,9 +269,10 @@ DEFINE_BFUNC(6)
 DEFINE_BFUNC(7)
 
 void _start(hardware_context_mt *hw_ctx_impl, runtime_util_mt *rt_util_mt,
-            nncase_mt_t *nncase_mt_impl, uint8_t **inputs) {{global_hardware_init(hw_ctx_impl);
+            nncase_mt_t *nncase_mt_impl, uint8_t **inputs) {{
     runtime_util = rt_util_mt;
     nncase_mt = nncase_mt_impl;
+    global_hardware_init(hw_ctx_impl);
 
     {init_tensors}
 

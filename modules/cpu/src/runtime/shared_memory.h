@@ -15,6 +15,7 @@
 #pragma once
 #include <filesystem>
 #include <nncase/runtime/cpu/compiler_defs.h>
+#include "gsl-lite.hpp"
 
 #ifdef WIN32
 #include <Windows.h>
