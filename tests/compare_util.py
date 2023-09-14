@@ -13,7 +13,6 @@
 # limitations under the License.
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
 
-import enum
 import math
 import os
 import re
