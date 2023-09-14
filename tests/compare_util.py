@@ -25,14 +25,14 @@ import test_utils
 
 
 def cosine(gt: np.ndarray, pred: np.ndarray, *args):
+    # gt = np.reshape(gt,-1)
+    # pred = np.reshape(pred,-1)
+    # for i in range(gt.size):
+    #     print(gt[i])
+    # print()
+    # for i in range(pred.size):
+    #     print(pred[i])
 
-    gt = np.reshape(gt,-1)
-    pred = np.reshape(pred,-1)
-    for i in range(gt.size):
-        print(gt[i])
-    print()
-    for i in range(pred.size):
-        print(pred[i])
     # remove the NaN values in the same location.
     if np.isnan(gt).any() and np.isnan(pred).any():
         gt_mask = np.isnan(gt)
