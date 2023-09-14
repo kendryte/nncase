@@ -36,15 +36,19 @@ public class UnitTestCPUTargetTiling : TestClassBase
     [Theory]
 
     // [ClassData(typeof(TilingCaseMHA))]
-    [ClassData(typeof(TilingCaseBinaryMul))]
-    [ClassData(typeof(TilingCaseUnary))]
-    [ClassData(typeof(TilingCaseMatmulUnary))]
-    public async Task TestCpuFunction(Function main)
+    // [ClassData(typeof(TilingCaseBinaryMul))]
+    // [ClassData(typeof(TilingCaseUnary))]
+    [ClassData(typeof(TilingCaseMatmul))]
+    // [ClassData(typeof(TilingCaseMatmulUnary))]
+    public async Task TestCpuFunction(Function main, Tensor[] inputs)
     {
         var module = new IR.IRModule(main);
         using (var _ = new Diagnostics.DumpScope(main.Name, CompileOptions.DumpFlags))
         {
             await Compile(module);
+            var output = Testing.RunKModel(File.ReadAllBytes(Path.Join(Diagnostics.DumpScope.Current.Directory, "test.kmodel")), Diagnostics.DumpScope.Current.Directory, inputs);
+            var cos = Tests.Comparator.CosSimilarity(output, Value.FromTensor(inputs[^1]))[0];
+            Assert.True(cos > 0.999);
         }
     }
 
@@ -99,7 +103,7 @@ internal sealed class TilingCaseMHA : TheoryData<Function>
     }
 }
 
-internal sealed class TilingCaseBinaryMul : TheoryData<Function>
+internal sealed class TilingCaseBinaryMul : TheoryData<Function, Tensor[]>
 {
     public TilingCaseBinaryMul()
     {
@@ -108,37 +112,112 @@ internal sealed class TilingCaseBinaryMul : TheoryData<Function>
         var rhsShape = new[] { 1, 1, 384, 128 };
         var rhs = new Var("lhs", new TensorType(DataTypes.Float32, rhsShape));
         var main = new Function("binary_mul", lhs * rhs, new[] { lhs, rhs });
-        Add(main);
+
+        var lhs_tensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, lhsShape).Evaluate().AsTensor();
+        using (var fs = Diagnostics.DumpScope.Current.OpenFile("input_0.bin"))
+        {
+            fs.Write(lhs_tensor.BytesBuffer);
+        }
+
+        var rhs_tensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, rhsShape).Evaluate().AsTensor();
+        using (var fs = Diagnostics.DumpScope.Current.OpenFile("input_1.bin"))
+        {
+            fs.Write(rhs_tensor.BytesBuffer);
+        }
+
+        var feedDict = new Dictionary<Var, IValue>
+        {
+            { lhs, Value.FromTensor(lhs_tensor) },
+            { rhs, Value.FromTensor(rhs_tensor) },
+        };
+        var output = main.Body.Evaluate(feedDict).AsTensor();
+
+        Add(main, new[] { lhs_tensor, rhs_tensor, output });
     }
 }
 
-internal sealed class TilingCaseUnary : TheoryData<Function>
+internal sealed class TilingCaseUnary : TheoryData<Function, Tensor[]>
 {
     public TilingCaseUnary()
     {
         var shape = new[] { 1, 384, 2048 };
         var input = new Var("input", new TensorType(DataTypes.Float32, shape));
         var main = new Function("unary", IR.F.Math.Unary(UnaryOp.Asin, input), new[] { input });
-        Add(main);
+
+        var input_tensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, shape).Evaluate().AsTensor();
+        using (var fs = Diagnostics.DumpScope.Current.OpenFile("input_0.bin"))
+        {
+            fs.Write(input_tensor.BytesBuffer);
+        }
+
+        var feedDict = new Dictionary<Var, IValue>
+        {
+            { input, Value.FromTensor(input_tensor) },
+        };
+        var output = main.Body.Evaluate(feedDict).AsTensor();
+
+        Add(main, new[] { input_tensor, output });
     }
 }
 
-internal sealed class TilingCaseMatmulUnary : TheoryData<Function>
+internal sealed class TilingCaseMatmul : TheoryData<Function, Tensor[]>
+{
+    public TilingCaseMatmul()
+    {
+        var lhsShape = new[] { 1, 64, 384, 8192 };
+        var lhs = new Var("lhs", new TensorType(DataTypes.Float32, lhsShape));
+        var rhsShape = new[] { 1, 64, 8192, 128 };
+        var rhs = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, rhsShape).Evaluate().AsTensor().Cast<float>();
+
+        var main = new Function("matmul", IR.F.Math.MatMul(lhs, rhs), new[] { lhs });
+
+        var lhs_tensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, lhsShape).Evaluate().AsTensor();
+        using (var fs = Diagnostics.DumpScope.Current.OpenFile("input_0.bin"))
+        {
+            fs.Write(lhs_tensor.BytesBuffer);
+        }
+
+        var feedDict = new Dictionary<Var, IValue>
+        {
+            { lhs, Value.FromTensor(lhs_tensor) },
+        };
+        var output = main.Body.Evaluate(feedDict).AsTensor();
+
+        Add(main, new[] { lhs_tensor, output });
+    }
+}
+
+internal sealed class TilingCaseMatmulUnary : TheoryData<Function, Tensor[]>
 {
     public TilingCaseMatmulUnary()
     {
-        var lhs = new Var("lhs", new TensorType(DataTypes.Float32, new[] { 1, 64, 384, 8192 }));
-        var rhs = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 64, 8192, 128 }).Evaluate().AsTensor().Cast<float>();
+        var lhsShape = new[] { 1, 64, 384, 8192 };
+        var lhs = new Var("lhs", new TensorType(DataTypes.Float32, lhsShape));
+        var rhsShape = new[] { 1, 64, 8192, 128 };
+        var rhs = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, rhsShape).Evaluate().AsTensor().Cast<float>();
         Fusion fusion;
+        Var fin;
         {
-            var fin = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 64, 384, 8192 }));
+            fin = new Var("input", new TensorType(DataTypes.Float32, lhsShape));
             var v0 = new Call(new IR.CPU.CPUKernelOp(new IR.Math.MatMul()), fin, rhs);
             var v1 = new Call(new IR.CPU.CPUKernelOp(new IR.Math.Unary(UnaryOp.Neg)), v0);
             fusion = new Fusion("cpu", v1, fin);
         }
 
         var main = new Function("matmul_unary", new Call(fusion, lhs), new[] { lhs });
-        Add(main);
+
+        var lhs_tensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, lhsShape).Evaluate().AsTensor();
+        using (var fs = Diagnostics.DumpScope.Current.OpenFile("input_0.bin"))
+        {
+            fs.Write(lhs_tensor.BytesBuffer);
+        }
+
+        var feedDict = new Dictionary<Var, IValue>
+        {
+            { fin, Value.FromTensor(lhs_tensor) },
+        };
+        var output = fusion.Body.Evaluate(feedDict).AsTensor();
+
+        Add(main, new[] { lhs_tensor, output });
     }
 }
-
