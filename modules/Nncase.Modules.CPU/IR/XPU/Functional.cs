@@ -36,9 +36,4 @@ public partial class XPU
     {
         return new Call(new Matmul(), lhs, rhs, output);
     }
-
-    public static Call BlockMMA(Expr lhs, Expr rhs, Expr output)
-    {
-        return new Call(new Matmul(), lhs, rhs, output);
-    }
 }

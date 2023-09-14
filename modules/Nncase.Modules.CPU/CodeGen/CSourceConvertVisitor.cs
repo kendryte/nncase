@@ -130,7 +130,11 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             _sharedWriter.Write(_exprMemo[b]);
             _sharedWriter.WriteLine(";");
         });
-        return new(_sharedBuilder.ToString(), _kernelBuilder.ToString());
+
+        return new(
+            CSourceBuiltn.MakeMain(VisitEntry, _exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location == MemoryLocation.Rdata)),
+            CSourceBuiltn.MakeShared(_sharedBuilder.ToString()),
+            CSourceBuiltn.MakeKernel(_kernelBuilder.ToString()));
     }
 
     /// <inheritdoc/>
@@ -349,6 +353,11 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         }
 
         var symbol = Visit(buffer);
+
+        if (buffer.MemSpan.Location == MemoryLocation.Rdata)
+        {
+            return;
+        }
 
         IndentScope.Writer.IndWrite($"{symbol.Type} {symbol.Name}({{{string.Join(',', buffer.Dimensions.AsValueEnumerable().Select(Visit).Select(s => s.Name).ToArray())}}});\n");
     }

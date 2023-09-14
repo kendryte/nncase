@@ -70,9 +70,6 @@ internal class FunctionBuilder : IDisposable
         visitor.Visit(function);
         var functionCSource = visitor.GetFunctionCSource();
 
-        // 2. write the desc
-        var descContent = new MemoryStream();
-
         // 3. write the rdata
         foreach (var (@const, range) in function.SchedResult.Rdatas)
         {
@@ -87,7 +84,7 @@ internal class FunctionBuilder : IDisposable
             _rdataWriter.Write(bytes);
         }
 
-        return new LinkableFunction(_id, descContent.ToArray(), function, functionCSource);
+        return new LinkableFunction(_id, function, functionCSource);
     }
 
     public void Dispose()
