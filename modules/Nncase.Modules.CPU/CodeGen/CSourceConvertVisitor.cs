@@ -11,6 +11,7 @@ using System.Linq;
 using System.Reactive;
 using System.Runtime.InteropServices;
 using System.Text;
+using DryIoc.ImTools;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.Runtime;
@@ -161,6 +162,7 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             // 2. Function body
             using (_ = new IndentScope())
             {
+                IndentScope.Writer.IndWrite($"thread_context ctx(bid, tid);\n");
                 Visit(expr.Body);
             }
 
@@ -254,6 +256,51 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                     break;
                 case IR.XPU.Matmul matmul:
                     IndentScope.Writer.Write($"matmul({Visit(args[0]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name})");
+                    break;
+                case IR.XPU.LayerNorm layernorm:
+                    using (_ = new IndentScope())
+                    {
+                        IndentScope.Writer.IndWrite($"{{\n");
+
+                        var dividedType = DistributedUtilities.GetDividedTensorType(layernorm.DistType);
+                        var sbpOnAxis = layernorm.DistType.NdSbp.Where(sbp => sbp is SBPSplit s && s.Axis >= layernorm.Axis).ToArray();
+                        switch (sbpOnAxis.Length)
+                        {
+                            case 0:
+                                IndentScope.Writer.IndWrite($"tensor<{args[0].CheckedDataType.ToC()}, loc_t::local> sum({{{string.Join(",", dividedType.Shape.ToArray().Take(layernorm.Axis))}}});\n");
+                                IndentScope.Writer.IndWrite($"tensor<{args[0].CheckedDataType.ToC()}, loc_t::local> sum_sqr({{{string.Join(",", dividedType.Shape.ToArray().Take(layernorm.Axis))}}});\n");
+                                IndentScope.Writer.IndWrite($"reduce_sum_sqr({Visit(args[0]).Name}, sum, sum_sqr);\n");
+                                IndentScope.Writer.IndWrite($"layernorm({Visit(args[0]).Name}, sum, sum_sqr,{Visit(args[3]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name}, static_cast<{args[0].CheckedDataType.ToC()}>({layernorm.Epsilon}), {layernorm.Axis}, {layernorm.DistType.TensorType.Shape[layernorm.Axis]}, {(!layernorm.UseMean).ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)});\n");
+                                break;
+                            case 1:
+                                IndentScope.Writer.IndWrite($"tensor<{args[0].CheckedDataType.ToC()}, loc_t::local> sum({{{string.Join(",", dividedType.Shape.ToArray().Take(layernorm.Axis))}}});\n");
+                                IndentScope.Writer.IndWrite($"tensor<{args[0].CheckedDataType.ToC()}, loc_t::local> sum_sqr({{{string.Join(",", dividedType.Shape.ToArray().Take(layernorm.Axis))}}});\n");
+                                IndentScope.Writer.IndWrite($"reduce_sum_sqr({Visit(args[0]).Name}, sum, sum_sqr);\n");
+                                if (sbpOnAxis[0] == layernorm.DistType.NdSbp[1])
+                                {
+                                    IndentScope.Writer.IndWrite($"tdma_reduce_async(sum, sum, reduce_op_t::sum, ctx);\n");
+                                    IndentScope.Writer.IndWrite($"tdma_reduce_async(sum_sqr, sum_sqr, reduce_op_t::sum, ctx);\n");
+                                }
+                                else
+                                {
+                                    IndentScope.Writer.IndWrite($"tdma_all_reduce_async(sum, sum, reduce_op_t::sum, reduce_strategy_t::by_block, ctx);\n");
+                                    IndentScope.Writer.IndWrite($"tdma_all_reduce_async(sum_sqr, sum_sqr, reduce_op_t::sum, reduce_strategy_t::by_block, ctx);\n");
+                                }
+
+                                IndentScope.Writer.IndWrite($"layernorm({Visit(args[0]).Name}, sum, sum_sqr,{Visit(args[3]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name}, static_cast<{args[0].CheckedDataType.ToC()}>({layernorm.Epsilon}), {layernorm.Axis}, {layernorm.DistType.TensorType.Shape[layernorm.Axis]}, {(!layernorm.UseMean).ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)});\n"); break;
+                            case 2:
+                                IndentScope.Writer.IndWrite($"tensor<{args[0].CheckedDataType.ToC()}, loc_t::local> sum({{{string.Join(",", dividedType.Shape.ToArray().Take(layernorm.Axis))}}});\n");
+                                IndentScope.Writer.IndWrite($"tensor<{args[0].CheckedDataType.ToC()}, loc_t::local> sum_sqr({{{string.Join(",", dividedType.Shape.ToArray().Take(layernorm.Axis))}}});\n");
+                                IndentScope.Writer.IndWrite($"reduce_sum_sqr({Visit(args[0]).Name}, sum, sum_sqr);\n");
+                                IndentScope.Writer.IndWrite($"tdma_all_reduce_async(sum, sum, reduce_op_t::sum, reduce_strategy_t::all, ctx);\n");
+                                IndentScope.Writer.IndWrite($"tdma_all_reduce_async(sum_sqr, sum_sqr, reduce_op_t::sum, reduce_strategy_t::all, ctx);\n");
+                                IndentScope.Writer.IndWrite($"layernorm({Visit(args[0]).Name}, sum, sum_sqr,{Visit(args[3]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name}, static_cast<{args[0].CheckedDataType.ToC()}>({layernorm.Epsilon}), {layernorm.Axis}, {layernorm.DistType.TensorType.Shape[layernorm.Axis]}, {(!layernorm.UseMean).ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)});\n");
+                                break;
+                        }
+
+                        IndentScope.Writer.IndWrite("}\n");
+                    }
+
                     break;
                 default:
                     throw new NotSupportedException(xpuOp.ToString());

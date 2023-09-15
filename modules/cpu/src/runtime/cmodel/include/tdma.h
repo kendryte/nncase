@@ -352,12 +352,12 @@ void tdma_reduce_async(tensor<T, loc_t::local> &src,
                                  ctx, src, dest)}
 
     {
-        __tdma_all_sync_apply_macro(reduce_async_visit_func2, ([]() -> void {
-                                        runtime_util->free(global_hardware_ctx.global_var);
-                                        global_hardware_ctx.global_var =
-                                            nullptr;
-                                    }),
-                                    ctx, src, dest, reduce_op)
+        __tdma_all_sync_apply_macro(
+            reduce_async_visit_func2, ([]() -> void {
+                runtime_util->free(global_hardware_ctx.global_var);
+                global_hardware_ctx.global_var = nullptr;
+            }),
+            ctx, src, dest, reduce_op)
     }
 }
 
@@ -395,10 +395,11 @@ void all_reduce_async_visit_func1(int visited, thread_context &ctx,
 }
 
 template <class T, loc_t ALoc, loc_t BLoc>
-void all_reduce_async_visit_func2_all(int visit, tensor<T, ALoc> &src,
+void all_reduce_async_visit_func2_all(int visit,
+                                      [[maybe_unused]] thread_context ctx,
+                                      tensor<T, ALoc> &src,
                                       tensor<T, BLoc> &dest,
                                       reduce_op_t reduce_op) {
-
     T *gather_span = nullptr;
     T *reduced_span = nullptr;
     auto new_dims = dims_t(src.dimension());
@@ -406,29 +407,30 @@ void all_reduce_async_visit_func2_all(int visit, tensor<T, ALoc> &src,
     auto reduced_shape = get_reduced_shape(new_dims, dims_t({0}), false);
 
     if (visit == 1) {
-        gather_span = global_hardware_ctx.global_var;
-        tensor<T> gather_tensor =
-            tensor<T>(gsl::make_span((T *)global_hardware_ctx.global_var,
-                                     compute_size(new_dims)),
-                      new_dims);
+        gather_span = (T *)global_hardware_ctx.global_var;
+        tensor<T> gather_tensor = tensor<T>(
+            gsl::make_span(gather_span, compute_size(new_dims)), new_dims);
         reduced_span =
             (T *)runtime_util->malloc(sizeof(T) * compute_size(reduced_shape));
-        tensor<T> reduced_tensor = tensor<T>(reduced_shape);
+        tensor<T> reduced_tensor =
+            tensor<T>(gsl::make_span(reduced_span, compute_size(reduced_shape)),
+                      reduced_shape);
         reduce(gather_tensor, reduced_tensor, reduce_op, (T)0, dims_t({0}),
                false);
         runtime_util->free(gather_span);
         global_hardware_ctx.global_var = reduced_span;
-    } else {
-        tensor<T> reduced_tensor =
-            tensor<T>(gsl::make_span((T *)global_hardware_ctx.global_var,
-                                     compute_size(reduced_shape)),
-                      reduced_shape);
-        __tensor_copy_sync(std::move(dest), std::move(reduced_tensor));
     }
+    tensor<T> reduced_tensor =
+        tensor<T>(gsl::make_span((T *)global_hardware_ctx.global_var,
+                                 compute_size(reduced_shape)),
+                  reduced_shape);
+    __tensor_copy_sync(std::move(dest), std::move(reduced_tensor));
 }
 
 template <class T, loc_t ALoc, loc_t BLoc>
-void all_reduce_async_visit_func2_by_block([[maybe_unused]] int visit, tensor<T, ALoc> &src,
+void all_reduce_async_visit_func2_by_block([[maybe_unused]] int visit,
+                                           [[maybe_unused]] thread_context ctx,
+                                           tensor<T, ALoc> &src,
                                            tensor<T, BLoc> &dest,
                                            reduce_op_t reduce_op) {
     auto new_dims = dims_t(src.dimension());
@@ -468,31 +470,25 @@ void tdma_all_reduce_async(tensor<T, ALoc> &src, tensor<T, BLoc> &dest,
                            reduce_op_t reduce_op, reduce_strategy_t strategy,
                            thread_context &ctx) {
     {
-        __tdma_all_sync_apply_macro(
-            all_reduce_async_visit_func1, []() -> void {}, ctx, src)
+        __tdma_all_sync_apply_macro(all_reduce_async_visit_func1,
+                                    ([]() -> void {}), ctx, src)
     }
     switch (strategy) {
     case reduce_strategy_t::all: {
         __tdma_all_sync_apply_macro(
-            all_reduce_async_visit_func2_all,
-            []() -> void {
-                auto reduced_tensor =
-                    static_cast<tensor<T> *>(global_hardware_ctx.global_var);
-                delete reduced_tensor;
+            all_reduce_async_visit_func2_all, ([]() -> void {
+                runtime_util->free(global_hardware_ctx.global_var);
                 global_hardware_ctx.global_var = nullptr;
-            },
-            src, dest, reduce_op);
+            }),
+            ctx, src, dest, reduce_op);
     } break;
     case reduce_strategy_t::by_block: {
-        __tdma_all_sync_apply(
-            all_reduce_async_visit_func2_by_block,
-            []() -> void {
-                auto reduced_tensor =
-                    static_cast<tensor<T> *>(global_hardware_ctx.global_var);
-                delete reduced_tensor;
+        __tdma_all_sync_apply_macro(
+            all_reduce_async_visit_func2_by_block, ([]() -> void {
+                runtime_util->free(global_hardware_ctx.global_var);
                 global_hardware_ctx.global_var = nullptr;
-            },
-            src, dest, reduce_op);
+            }),
+            ctx, src, dest, reduce_op);
     } break;
     default:
         break;
