@@ -48,29 +48,29 @@ struct model_header {
 
 struct function_header {
     uint32_t parameters;
-    uint32_t entrypoint;
-    uint32_t text_size;
-    uint32_t size;
     uint32_t sections;
-    uint32_t reserved0;
+    uint64_t entrypoint;
+    uint64_t text_size;
+    uint64_t size;
 };
 
 struct module_header {
     module_kind_t kind;
     uint32_t version;
-    uint32_t size;
     uint32_t sections;
     uint32_t functions;
+    uint32_t reserved0;
+    uint64_t size;
 };
 
 struct section_header {
     char name[MAX_SECTION_NAME_LENGTH];
     uint32_t flags;
-    uint32_t size;
-    uint32_t body_start;
-    uint32_t body_size;
-    uint32_t memory_size;
     uint32_t reserved0;
+    uint64_t size;
+    uint64_t body_start;
+    uint64_t body_size;
+    uint64_t memory_size;
 };
 
 NNCASE_INLINE_VAR constexpr uint32_t SECTION_MERGED_INTO_RDATA = 1;
@@ -96,6 +96,6 @@ struct shape_header {
 };
 
 NNCASE_INLINE_VAR constexpr uint32_t MODEL_IDENTIFIER = 'KMDL';
-NNCASE_INLINE_VAR constexpr uint32_t MODEL_VERSION = 6;
+NNCASE_INLINE_VAR constexpr uint32_t MODEL_VERSION = 7;
 
 END_NS_NNCASE_RUNTIME

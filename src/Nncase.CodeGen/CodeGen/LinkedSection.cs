@@ -11,16 +11,16 @@ namespace Nncase.CodeGen;
 
 public class LinkedSection : ILinkedSection
 {
-    private readonly byte[]? _content;
+    private readonly Stream? _content;
 
-    public LinkedSection(byte[]? content, string name, uint flags, uint alignment, uint sizeInMemory)
+    public LinkedSection(Stream? content, string name, uint flags, uint alignment, ulong sizeInMemory)
     {
         if (alignment == 0)
         {
             throw new ArgumentOutOfRangeException(nameof(alignment));
         }
 
-        SizeInFile = (uint?)content?.Length ?? 0;
+        SizeInFile = (ulong?)content?.Length ?? 0;
         if (sizeInMemory < SizeInFile)
         {
             throw new ArgumentOutOfRangeException(nameof(sizeInMemory));
@@ -39,15 +39,16 @@ public class LinkedSection : ILinkedSection
 
     public uint Alignment { get; }
 
-    public uint SizeInFile { get; }
+    public ulong SizeInFile { get; }
 
-    public uint SizeInMemory { get; }
+    public ulong SizeInMemory { get; }
 
     public void Serialize(Stream output)
     {
         if (_content != null)
         {
-            output.Write(_content);
+            _content.Seek(0, SeekOrigin.Begin);
+            _content.CopyTo(output);
         }
     }
 }

@@ -7,6 +7,7 @@ using System.Linq;
 using System.Xml;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
+using Nncase.IR.Math;
 using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
 using static Nncase.Passes.Rules.ShapeBucket.ShapeBucketHelper;
@@ -35,11 +36,6 @@ public abstract class MergeFusionBase : RewriteRule<Pattern>
         }
 
         return false;
-    }
-
-    public bool ValidTarget(Expr target)
-    {
-        return CallValidator.ValidTarget(target);
     }
 }
 
@@ -107,6 +103,17 @@ public partial class MergePrevMarkerToFusion : MergeFusionBase
 [RuleGenerator]
 public partial class MergeNextCallToFusion : MergeFusionBase
 {
+    private readonly bool _greedy = true;
+
+    public MergeNextCallToFusion(bool greedy = true)
+    {
+        _greedy = greedy;
+    }
+
+    public MergeNextCallToFusion()
+    {
+    }
+
     public Pattern FusionCall => IsCall(
         "fusionOuterCall",
         IsFusion(
@@ -128,13 +135,13 @@ public partial class MergeNextCallToFusion : MergeFusionBase
     // nextCall(marker(fusion(x))) -> fusion(nextCall(marker(x)))
     public Expr? GetReplace(Call nextCall, Expr maybeFusionCallMarker, Expr target, Call fusionOuterCall, BucketFusion fusion)
     {
-        var singleVar = CompileSession.CompileOptions.ShapeBucketOptions.VarMap.Values.SelectMany(x => x).OfType<Var>().ToHashSet().Count <= 1;
+        var singleVar = SingleDimVar(CompileSession.CompileOptions.ShapeBucketOptions);
         if (!singleVar && nextCall.Arguments.ToArray().OfType<Call>().Count() > 1)
         {
             return null;
         }
 
-        if (!ValidTarget(target))
+        if (!CallValidator.ValidTarget(nextCall, _greedy))
         {
             return null;
         }
@@ -238,7 +245,24 @@ public partial class MergeNextCallToFusion : MergeFusionBase
 [RuleGenerator]
 public partial class MergePrevCallToFusion : MergeFusionBase
 {
+    // 输入必须匹配marker，因为即便合并marker也是要在外面保留一份副本
+    // fusion(marker(prevCall()) { var } -> fusion(var) { marker(prevCall()) }
+    // fusion((prevCall()) { var } -> fusion(var) { prevCall() }
+    private readonly bool _greedy = true;
+
+    private readonly bool _mergeFusion;
+
     private string _prevCallStr = string.Empty;
+
+    public MergePrevCallToFusion()
+    {
+    }
+
+    public MergePrevCallToFusion(bool greedy = true, bool mergeFusion = false)
+    {
+        _greedy = greedy;
+        _mergeFusion = mergeFusion;
+    }
 
     public override Pattern Pattern => IsCall(
         "fusionOuterCall",
@@ -257,10 +281,6 @@ public partial class MergePrevCallToFusion : MergeFusionBase
         exprName,
         IsRangeOfMarker(exprPatten, IsWildcard()),
         exprPatten);
-
-    // 输入必须匹配marker，因为即便合并marker也是要在外面保留一份副本
-    // fusion(marker(prevCall()) { var } -> fusion(var) { marker(prevCall()) }
-    // fusion((prevCall()) { var } -> fusion(var) { prevCall() }
 
     // dfs
     // xx | marker(xx)不行, 会先匹配到xx
@@ -601,7 +621,7 @@ public partial class MergePrevCallToFusion : MergeFusionBase
             return true;
         }
 
-        if (!ValidTarget(lhsTarget))
+        if (!CallValidator.ValidTarget(lhsPrevCall, _greedy))
         {
             return true;
         }

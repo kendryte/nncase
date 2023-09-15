@@ -55,15 +55,20 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         # used for tag dynamic model for onnx simplify
         self.dynamic = False
 
-        if self.cfg['dump_infer']:
-            self.infer_file = test_utils.infer_file(self.cfg['infer_name'])
-            self.infer_dict = {
-                'case': 'unknown',
-                'target': 'cpu',
+        if self.cfg['infer_report_opt']['enabled']:
+            self.infer_report_file = test_utils.infer_report_file(
+                self.cfg['infer_report_opt']['report_name'])
+            self.infer_report_dict = {
+                'priority': 100,
+                'kind': 'N/A',
+                'model': 'N/A',
+                'shape': 'N/A',
                 'if_quant_type': 'uint8',
                 'w_quant_type': 'uint8',
-                'time(ms)': 'N/A',
-                'fps': 'N/A',
+                'roofline_fps': 'N/A',
+                'actual_fps': 'N/A',
+                'roofline_mac_usage': 'N/A',
+                'actual_mac_usage': 'N/A',
                 'result': 'Pass',
                 'remark': 'N/A'
             }
@@ -183,7 +188,6 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         if test_utils.in_ci():
             config['dump_hist'] = False
             config['compile_opt']['dump_asm'] = False
-            config['compile_opt']['dump_ir'] = False
             config['compile_opt']['dump_quant_error'] = False
 
         # check target
@@ -265,10 +269,12 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                             judge, result = self.compare_results(
                                 expected, actual, stage, k_target, v_target['similarity_name'], k_mode, v_mode['threshold'], dump_hist, mode_dir)
 
-                            if stage == 'infer' and self.cfg['dump_infer']:
-                                self.infer_dict['result'] = 'Pass' if judge else 'Fail'
-                                self.infer_dict['remark'] = result.replace('\n', '<br>')
-                                dump_dict_to_json(self.infer_dict, self.infer_file)
+                            if stage == 'infer' and self.cfg['infer_report_opt']['enabled']:
+                                self.infer_report_dict['result'] = 'Pass' if judge else 'Fail'
+                                self.infer_report_dict['remark'] = result.replace('\n', '<br/>')
+                                prefix, suffix = os.path.splitext(self.infer_report_file)
+                                json_file = f'{prefix}_{os.path.basename(self.case_dir)}{suffix}'
+                                dump_dict_to_json(self.infer_report_dict, json_file)
                             if not judge:
                                 if test_utils.in_ci():
                                     self.clear(self.case_dir)

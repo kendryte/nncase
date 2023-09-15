@@ -304,6 +304,6 @@ nupkg
 *.runsettings
 cmake-build-*
 *gmodel_dump_dir*
-
+*.ipynb_checkpoints*
 # Auto generated files
 # generated/
