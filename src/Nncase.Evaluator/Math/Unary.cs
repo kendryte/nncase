@@ -69,7 +69,7 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
         return inputType switch
         {
             TensorType tensorType => Visit(tensorType),
-            DistributedType distTensorType => Visit(distTensorType),
+            DistributedType distTensorType => Visit(distTensorType, target.UnaryOp),
             _ => new InvalidType($"Not support {inputType.GetType().Name}"),
         };
     }
@@ -122,9 +122,21 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
         return context.GetArgumentShape(target, Unary.Input);
     }
 
-    private IRType Visit(DistributedType distTensorType)
+    private IRType Visit(DistributedType inType, UnaryOp unaryOp)
     {
-        return distTensorType;
+        var invalid = new InvalidType(inType.ToString());
+        var ndsbp = new SBP[inType.Placement.Rank];
+        for (int i = 0; i < inType.Placement.Rank; i++)
+        {
+            if (inType.NdSbp[i] is SBPPartialSum && unaryOp != UnaryOp.Neg)
+            {
+                return invalid;
+            }
+
+            ndsbp[i] = inType.NdSbp[i];
+        }
+
+        return new DistributedType(inType.TensorType, ndsbp, inType.Placement);
     }
 
     private int Compute_int(int input, UnaryOp op) => op switch
