@@ -20,5 +20,10 @@ internal class ShapeExprModule : IApplicationPart
         registrator.RegisterManyInterface<Conv2DShapeEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<Conv2DTransposeShapeEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<MatMulShapeEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<GetPaddingsEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<ReshapeShapeEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<SqueezeShapeEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<UnsqueezeShapeEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<TransposeShapeEvaluator>(reuse: Reuse.Singleton);
     }
 }
