@@ -10,10 +10,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using FlatBuffers;
+using LanguageExt;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.F;
 using Nncase.IR.Math;
+using Nncase.IR.NN;
 using Nncase.IR.Tensors;
 using Math = System.Math;
 using Tuple = Nncase.IR.Tuple;
@@ -66,7 +68,7 @@ public sealed partial class NcnnImporter : BaseImporter
 
         foreach (var layer in _model.Layers.Where(x => x.Type == "Input"))
         {
-            var input = new Var(layer.Name);
+            var input = new Var(layer.Name, TensorType.Unranked(DataTypes.Float32));
             inputs.Add(input);
             _outputTensors.Add(layer.Name, input);
         }
@@ -84,14 +86,24 @@ public sealed partial class NcnnImporter : BaseImporter
 
     protected override Expr CreateOutputs()
     {
-        throw new NotImplementedException();
+        var outputTensors = (from l in _model.Layers
+                             from t in l.Tops
+                             select t).Select((x, i) => (x.Name, i)).ToDictionary(x => x.Name, x => x.i);
+        var unusedTensors = (from t in outputTensors.Keys.Except(from l in _model.Layers
+                                                                 from t in l.Bottoms
+                                                                 select t.Name)
+                             orderby outputTensors[t]
+                             select t).ToArray();
+        var outputs = unusedTensors.Select(x => _outputTensors[x]).ToArray();
+        var body = outputs.Length > 1 ? new IR.Tuple(outputs) : outputs[0];
+        return body;
     }
 
     private static Expr CHWToNCHW(Expr expr) =>
-        Tensors.Unsqueeze(expr, 0);
+        Tensors.Unsqueeze(expr, new[] { 0 });
 
     private static Expr NCHWToCHW(Expr expr) =>
-        Tensors.Squeeze(expr, 0);
+        Tensors.Squeeze(expr, new[] { 0 });
 
     private static ValueRange<float> ToFloatClampRange(int activationType, ReadOnlySpan<float> activationParams) =>
         activationType switch
@@ -101,6 +113,18 @@ public sealed partial class NcnnImporter : BaseImporter
             _ => ValueRange<float>.Full,
         };
 
+    private static Expr ApplyActivation(Expr input, int activationType, ReadOnlySpan<float> activationParams) =>
+        activationType switch
+        {
+            0 => input,
+            1 => NN.Relu(input),
+            2 => NN.LeakyRelu(input, activationParams[0]),
+            3 => IR.F.Math.Clamp(input, activationParams[0], activationParams[1]),
+            4 => NN.Sigmoid(input),
+            5 => NN.Mish(input),
+            _ => throw new NotSupportedException($"Unsupported activation type: {activationType}."),
+        };
+
     private void Visit(NcnnLayer layer)
     {
         var output = layer.Type switch
@@ -108,8 +132,10 @@ public sealed partial class NcnnImporter : BaseImporter
             "Concat" => VisitConcat(layer),
             "Convolution" => VisitConvolution(layer),
             "ConvolutionDepthWise" => VisitConvolution(layer),
+            "InnerProduct" => VisitInnerProduct(layer),
             "Pooling" => VisitPooling(layer),
             "ShuffleChannel" => VisitShuffleChannel(layer),
+            "Softmax" => VisitSoftmax(layer),
             "Split" => VisitSplit(layer),
             _ => UnSupportedOp(layer.Type),
         };

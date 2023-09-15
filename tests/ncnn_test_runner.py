@@ -97,8 +97,9 @@ class Net:
 
 
 class NcnnTestRunner(TestRunner):
-    def __init__(self, case_name, targets=None, overwirte_configs: dict = None):
-        super().__init__(case_name, targets, overwirte_configs)
+    def __init__(self, case_name, overwrite_configs: str = None):
+        super().__init__(case_name, overwrite_configs)
+        self.model_type = "ncnn"
 
     def from_ncnn(self, net: Net):
         param_file = os.path.join(self.case_dir, 'test.param')
@@ -125,11 +126,11 @@ class NcnnTestRunner(TestRunner):
             bin_file = new_file
 
         if not self.inputs:
-            self.parse_model_input_output(param_file)
+            self.parse_model(param_file)
 
         super().run([param_file, bin_file])
 
-    def parse_model_input_output(self, param_file: str):
+    def parse_model(self, param_file: str):
         all_inputs = []
         all_outputs = []
         with open(param_file, 'r') as fp:
@@ -158,14 +159,11 @@ class NcnnTestRunner(TestRunner):
                 input_dict = {}
                 input_dict['name'] = outputs[0]
                 input_dict['dtype'] = np.float32
-                input_dict['shape'] = [1, params[2], params[1], params[0]]
+                shape = [params[2], params[1], params[0]]
+                input_dict['shape'] = shape
+                input_dict['model_shape'] = shape
                 self.inputs.append(input_dict)
-
-                input_dict = {}
-                input_dict['name'] = tokens[1]
-                input_dict['dtype'] = np.float32
-                input_dict['shape'] = [1, params[2], params[1], params[0]]
-                self.calibs.append(input_dict)
+                self.calibs.append(copy.deepcopy(input_dict))
 
         used_inputs = set(inputs)
         seen_outputs = set()
@@ -176,7 +174,8 @@ class NcnnTestRunner(TestRunner):
                 input_dict['name'] = n
                 self.outputs.append(input_dict)
 
-    def cpu_infer(self, case_dir: str, model_file: List[str]):
+    def cpu_infer(self, model_file: List[str]):
+        outputs = []
         with ncnn.Net() as net:
             ret = net.load_param(model_file[0])
             assert ret == 0
@@ -185,21 +184,26 @@ class NcnnTestRunner(TestRunner):
 
             with net.create_extractor() as ex:
                 for input in self.inputs:
-                    in_mat = ncnn.Mat(np.squeeze(input['data'], 0))
+                    new_value = self.transform_input(
+                        self.data_pre_process(input['data']), "float32", "CPU")[0]
+                    in_mat = ncnn.Mat(new_value)
                     ex.input(input['name'], in_mat)
+                    if self.cfg['compile_opt']['preprocess'] and not test_utils.in_ci():
+                        dump_bin_file(os.path.join(self.case_dir, f'frame_input_{i}.bin'), new_value)
+                        dump_txt_file(os.path.join(self.case_dir, f'frame_input_{i}.txt'), new_value)
 
                 i = 0
                 for output in self.outputs:
-                    bin_file = os.path.join(case_dir, f'cpu_result_{i}.bin')
-                    text_file = os.path.join(case_dir, f'cpu_result_{i}.txt')
-                    self.output_paths.append((bin_file, text_file))
                     out_mat = ncnn.Mat()
                     ex.extract(output['name'], out_mat)
                     out_arr = np.array(out_mat)
                     out_mat.release()
-                    out_arr.tofile(bin_file)
-                    self.totxtfile(text_file, out_arr)
+                    outputs.append(out_arr)
+                    if not test_utils.in_ci():
+                        dump_bin_file(os.path.join(self.case_dir, f'cpu_result_{i}.bin'), out_arr)
+                        dump_txt_file(os.path.join(self.case_dir, f'cpu_result_{i}.txt'), out_arr)
                     i += 1
+        return outputs
 
     def import_model(self, compiler, model_content, import_options):
         compiler.import_ncnn(model_content[0], model_content[1], import_options)

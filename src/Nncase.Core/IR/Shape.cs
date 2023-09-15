@@ -316,6 +316,29 @@ namespace Nncase.IR
             return other is Shape shape && Equals(shape);
         }
 
+        public bool IsAssignableFrom(Shape shape)
+        {
+            if (IsUnranked)
+            {
+                return true;
+            }
+
+            if (shape.IsUnranked || Rank != shape.Rank)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < _dimensions.Length; i++)
+            {
+                if (!_dimensions[i].IsAssignableFrom(shape[i]))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         private static ShapeKind KindOf(ReadOnlySpan<Dimension> dimensions)
         {
             return dimensions.AsValueEnumerable().Any(x => x.IsUnknown) ? ShapeKind.HasUnknownDimension : ShapeKind.Fixed;

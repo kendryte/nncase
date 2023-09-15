@@ -159,8 +159,13 @@ typedef struct {
     clr_object_handle_t (*compile_session_get_compiler)(
         clr_object_handle_t compile_session);
     void (*compiler_initialize)();
-    clr_object_handle_t (*compiler_import_module)(clr_object_handle_t compiler,
-                                                  clr_object_handle_t stream);
+    clr_object_handle_t (*compiler_import_tflite_module)(
+        clr_object_handle_t compiler, clr_object_handle_t stream);
+    clr_object_handle_t (*compiler_import_onnx_module)(
+        clr_object_handle_t compiler, clr_object_handle_t stream);
+    clr_object_handle_t (*compiler_import_ncnn_module)(
+        clr_object_handle_t compiler, clr_object_handle_t param_stream,
+        clr_object_handle_t bin_stream);
     void (*compiler_compile)(clr_object_handle_t compiler);
     void (*compiler_gencode)(clr_object_handle_t compiler,
                              clr_object_handle_t stream);
@@ -642,9 +647,20 @@ class compiler : public clr_object_base {
   public:
     using clr_object_base::clr_object_base;
 
-    ir_module import_module(cstream &stream) {
+    ir_module import_tflite_module(cstream &stream) {
+        return {std::in_place, nncase_clr_api()->compiler_import_tflite_module(
+                                   get(), stream.get())};
+    }
+
+    ir_module import_onnx_module(cstream &stream) {
+        return {std::in_place, nncase_clr_api()->compiler_import_onnx_module(
+                                   get(), stream.get())};
+    }
+
+    ir_module import_ncnn_module(cstream &param_stream, cstream &bin_stream) {
         return {std::in_place,
-                nncase_clr_api()->compiler_import_module(get(), stream.get())};
+                nncase_clr_api()->compiler_import_ncnn_module(
+                    get(), param_stream.get(), bin_stream.get())};
     }
 
     void compile() { nncase_clr_api()->compiler_compile(obj_.get()); }

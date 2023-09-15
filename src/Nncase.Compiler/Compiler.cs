@@ -245,6 +245,8 @@ internal class Compiler : ICompiler
 
     private async Task<IRModule> InitializeModuleAsync(IRModule module)
     {
+        _module = module;
+
         if (_dumpper.IsEnabled(DumpFlags.Compile))
         {
             _dumpper.DumpModule(module, "IRImport");
