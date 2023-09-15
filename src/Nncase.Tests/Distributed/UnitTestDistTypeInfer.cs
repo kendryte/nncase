@@ -14,21 +14,31 @@ namespace Nncase.Tests.DistributedTest;
 [TestFixture.AutoSetupTestMethod(InitSession = true)]
 public sealed class UnitTestDistTypeInfer : TestClassBase
 {
-    public static TheoryData<UnaryOp, DistributedType, DistributedType> InferUnaryData => new() {
+    public static TheoryData<UnaryOp, DistributedType, IRType> InferUnaryData => new() {
         { UnaryOp.Exp,
           new(new(DataTypes.Float32, new[] { 48, 32 }), new[] { SBP.B, SBP.B }, new(Placement.DeviceKind.CPU, new[] { 2, 4 }, "bt")),
-          new(new(DataTypes.Float32, new[] { 48, 32 }), new[] { SBP.B, SBP.B }, new(Placement.DeviceKind.CPU, new[] { 2, 4 }, "bt"))
+          new DistributedType(new(DataTypes.Float32, new[] { 48, 32 }), new[] { SBP.B, SBP.B }, new(Placement.DeviceKind.CPU, new[] { 2, 4 }, "bt"))
+        },
+        { UnaryOp.Exp,
+          new(new(DataTypes.Float32, new[] { 384, 128 }), new SBP[] { SBP.S(0), SBP.P }, new(Placement.DeviceKind.CPU, new[] { 2, 4 }, "bt")),
+          new InvalidType(string.Empty)
         },
     };
 
     [Theory]
     [MemberData(nameof(InferUnaryData))]
-    public void TestInferUnary(UnaryOp unaryOp, DistributedType inputType, DistributedType outputType)
+    public void TestInferUnary(UnaryOp unaryOp, DistributedType inputType, IRType outType)
     {
         var input = new Var(inputType);
         var unary = IR.F.Math.Unary(unaryOp, input);
         CompilerServices.InferenceType(unary);
-        Assert.Equal(outputType, unary.CheckedType);
+        if (outType is InvalidType && unary.CheckedType is InvalidType)
+        {
+        }
+        else
+        {
+            Assert.Equal(outType, unary.CheckedType);
+        }
     }
 
     [Theory]
@@ -93,6 +103,10 @@ internal sealed class InferMatmulData : TheoryData<DistributedType, DistributedT
         var rhs = new[] { 1, 64, 8192, 384 };
         var o = new[] { 1, 64, 384, 384 };
 
+        Add(
+            new(new(DataTypes.Float32, new[] { 1, 1, 384, 8192 }), new[] { SBP.S(2), SBP.S(2) }, placement),
+            new(new(DataTypes.Float32, new[] { 1, 64, 8192, 128 }), new SBP[] { SBP.S(2), SBP.S(2) }, placement),
+            new InvalidType(string.Empty));
         Add(
             new(new(DataTypes.Float32, lhs), new[] { SBP.S(1), SBP.S(2) }, placement),
             new(new(DataTypes.Float32, rhs), new SBP[] { SBP.S(1), SBP.B }, placement),

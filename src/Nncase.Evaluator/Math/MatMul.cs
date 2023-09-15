@@ -162,7 +162,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         }
         else if (lhs is DistributedType distributedType)
         {
-            var lhsType = DistributedUtilities.GetDividedTensorType(distributedType, out var _);
+            var lhsType = DistributedUtilities.GetDividedTensorType(distributedType);
             macPerElement = lhsType.Shape[^1].IsFixed ? (uint)lhsType.Shape[^1].FixedValue : 1U;
         }
 

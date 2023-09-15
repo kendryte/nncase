@@ -11,6 +11,8 @@ namespace Nncase.Evaluator.Tensors;
 
 public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Boxing>
 {
+    private const int _burstLength = 256;
+
     public IRType Visit(ITypeInferenceContext context, Boxing target)
     {
         return target.NewType;
@@ -24,26 +26,24 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
         switch (inType, returnType)
         {
             case (TensorType tensorType, DistributedType distTensorType):
-                var partedOutType = DistributedUtilities.GetDividedTensorType(distTensorType, out _);
                 cost = new Cost()
                 {
                     [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(tensorType),
-                    [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(partedOutType),
+                    [CostFactorNames.MemoryStore] = (UInt128)((float)CostUtility.GetMemoryAccess(distTensorType) / DistributedUtilities.GetDividedTensorEfficiency(distTensorType, _burstLength)),
                 };
                 break;
             case (DistributedType distTensorType, TensorType tensorType):
-                var partedInType = DistributedUtilities.GetDividedTensorType(distTensorType, out _);
                 cost = new Cost()
                 {
-                    [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(partedInType),
+                    [CostFactorNames.MemoryLoad] = (UInt128)((float)CostUtility.GetMemoryAccess(distTensorType) / DistributedUtilities.GetDividedTensorEfficiency(distTensorType, _burstLength)),
                     [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(tensorType),
                 };
                 break;
             case (DistributedType { Placement: { Rank: 1 } } din, DistributedType { Placement: { Rank: 2 } } dout):
                 {
                     // shared tensor broadcast to local.
-                    var a = DistributedUtilities.GetDividedTensorType(din, out _);
-                    var b = DistributedUtilities.GetDividedTensorType(dout, out _);
+                    var a = DistributedUtilities.GetDividedTensorType(din);
+                    var b = DistributedUtilities.GetDividedTensorType(dout);
                     cost = new Cost()
                     {
                         [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(a),
@@ -56,7 +56,7 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
                   DistributedType { NdSbp: [(SBPSplit or SBPBroadCast), SBPBroadCast], Placement.Rank: 2 }):
                 {
                     // reduce scater and broadcast (ring reduce)
-                    _ = DistributedUtilities.GetDividedTensorType(din, out _);
+                    _ = DistributedUtilities.GetDividedTensorType(din);
                     var v = (int)CostUtility.GetMemoryAccess(din.TensorType);
                     var comm = (din.Placement.Hierarchy[1] - 1) * (v / din.Placement.Hierarchy[1]) * 2; // reduce-scatter + gather
                     cost = new Cost()

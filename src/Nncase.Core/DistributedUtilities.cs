@@ -38,6 +38,26 @@ public static class DistributedUtilities
         return GetLeafCandidateNDSBPs((TensorType)expr.CheckedType, placement).Select(ndsbp => IR.F.Tensors.Boxing(expr, new DistributedType((TensorType)expr.CheckedType, ndsbp, placement))).ToArray();
     }
 
+    public static IReadOnlyList<Expr> GetBroadCastBoxings(Expr expr)
+    {
+        var getNonPartialNDSbps = (IRArray<SBP> ndsbp) => new IRArray<SBP>(ndsbp.Select(sbp => sbp is SBPPartialSum ? SBP.B : sbp).ToArray());
+
+        if (expr is IR.Tuple tuple)
+        {
+            throw new NotSupportedException("current not support!");
+        }
+
+        var type = (DistributedType)expr.CheckedType;
+        var ndsbp = getNonPartialNDSbps(type.NdSbp);
+
+        if (ndsbp != type.NdSbp)
+        {
+            return new[] { IR.F.Tensors.Boxing(expr, type with { NdSbp = ndsbp }) };
+        }
+
+        return Array.Empty<Expr>();
+    }
+
     public static bool IsDistributable(TensorType tensorType, ReadOnlySpan<SBP> ndsbp, Placement placement, [MaybeNullWhen(false)] out TensorType distType)
     {
         distType = null;
@@ -74,23 +94,37 @@ public static class DistributedUtilities
         return false;
     }
 
-    public static TensorType GetDividedTensorType(DistributedType distTensorType, out float notContiguousScale)
+    public static float GetDividedTensorEfficiency(DistributedType distributedType, int burstLength)
     {
-        var shape = distTensorType.TensorType.Shape.ToValueArray();
-        var tiles = distTensorType.TensorType.Shape.ToValueArray();
-        foreach (var (s, i) in distTensorType.NdSbp.OfType<SBPSplit>().Select((s, i) => (s, i)))
-        {
-            tiles[s.Axis] /= distTensorType.Placement.Hierarchy[i];
-        }
-
-        var isIsContiguous = Enumerable.Range(0, tiles.Length).
+        var (tiles, shape) = GetDividedTile(distributedType);
+        return Enumerable.Range(0, tiles.Count).
                   Select(i => tiles[i].Ranges(0, shape[i])).
                   CartesianProduct().
-                  Select(rgs => TensorUtilities.IsContiguousSlice(shape, rgs.ToArray()));
-        var allTiles = isIsContiguous.Count();
-        int notContiguous = isIsContiguous.Count(b => b == false);
-        notContiguousScale = ((float)notContiguous / allTiles) + 1.0f;
+                  Select(rgs =>
+                  {
+                      var slice = rgs.ToArray();
+                      var iscontiguous = TensorUtilities.IsContiguousSlice(shape.ToArray(), slice, out var contiguousStart);
+                      var size = TensorUtilities.GetProduct(tiles.ToArray(), contiguousStart) * distributedType.TensorType.DType.SizeInBytes;
+                      var (div, rem) = Math.DivRem(size, burstLength);
+                      return ((div * 1.0f) + ((float)rem / burstLength)) / (div + 1);
+                  }).Average();
+    }
 
-        return distTensorType.TensorType with { Shape = tiles };
+    public static TensorType GetDividedTensorType(DistributedType distributedType)
+    {
+        var (tiles, _) = GetDividedTile(distributedType);
+        return distributedType.TensorType with { Shape = new Shape(tiles) };
+    }
+
+    private static (IReadOnlyList<int> Tile, IReadOnlyList<int> Shape) GetDividedTile(DistributedType distributedType)
+    {
+        var shape = distributedType.TensorType.Shape.ToValueArray();
+        var tiles = distributedType.TensorType.Shape.ToValueArray();
+        foreach (var (s, i) in distributedType.NdSbp.OfType<SBPSplit>().Select((s, i) => (s, i)))
+        {
+            tiles[s.Axis] /= distributedType.Placement.Hierarchy[i];
+        }
+
+        return (tiles, shape);
     }
 }
