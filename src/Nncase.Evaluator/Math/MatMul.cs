@@ -46,6 +46,10 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
                     {
                         ndsbp[i] = SBP.P;
                     }
+                    else if ((ax == (aRank - 1) && bx != (bRank - 2)) || (ax != (aRank - 1) && bx == (bRank - 2)))
+                    {
+                        return invalid;
+                    }
                     else
                     {
                         if (ax == bx)
