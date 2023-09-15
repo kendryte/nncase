@@ -22,8 +22,13 @@ internal sealed class ShapeEvaluateContext : IShapeEvaluateContext
     public ShapeEvaluateContext(Dictionary<Expr, Expr> memo, ShapeExprCache cache)
     {
         _memo = memo;
-        Cache = cache.Cache;
+        foreach (var (key, value) in cache.Cache)
+        {
+            _memo[key] = value;
+        }
+
         VarMap = cache.VarMap;
+        Cache = new();
     }
 
     public IReadOnlyDictionary<Var, Expr[]> VarMap { get; }
@@ -55,7 +60,7 @@ internal sealed class ShapeEvaluateContext : IShapeEvaluateContext
         var expr = GetArgument(op, parameter);
         if (expr is Tuple tuple)
         {
-            return new Tuple(tuple.Fields.ToArray().Select(v => Cast(GetResultFromMemo(v), DataTypes.Int32)).ToArray());
+            return new Tuple(tuple.Fields.ToArray().Select(v => Cast(GetResultFromMemo(v), DataTypes.Int64)).ToArray());
         }
 
         // call
@@ -64,7 +69,7 @@ internal sealed class ShapeEvaluateContext : IShapeEvaluateContext
             var shape = expr.EvaluateShapeExpr(new ShapeExprCache(VarMap));
             if (shape is Call c && c.Target is IR.Math.Require && c.Arguments[IR.Math.Require.Value.Index] is Tuple tupleShapeExpr)
             {
-                return new Tuple(tupleShapeExpr.Fields.ToArray().Select(expr => Cast(expr, DataTypes.Int32)).ToArray());
+                return new Tuple(tupleShapeExpr.Fields.ToArray().Select(expr => Cast(expr, DataTypes.Int64)).ToArray());
             }
 
             // for split
@@ -76,23 +81,23 @@ internal sealed class ShapeEvaluateContext : IShapeEvaluateContext
                     return new Tuple(
                         Enumerable
                             .Range(0, tupleType.Fields.Count)
-                            .Select(i => Cast(shape[i], DataTypes.Int32))
+                            .Select(i => Cast(shape[i], DataTypes.Int64))
                             .ToArray());
                 }
                 else
                 {
-                    return new Tuple(((Tuple)shape).Fields.ToArray().Select(expr => Cast(expr, DataTypes.Int32)).ToArray());
+                    return new Tuple(((Tuple)shape).Fields.ToArray().Select(expr => Cast(expr, DataTypes.Int64)).ToArray());
                 }
             }
         }
 
         var shapeExpr = GetResultFromMemo(expr);
-        return Cast(shapeExpr, DataTypes.Int32);
+        return Cast(shapeExpr, DataTypes.Int64);
     }
 
     public Expr GetArgumentRank(Op op, ParameterInfo parameter)
     {
-        return StackScalar(Cast(GetArgumentShape(op, parameter)[0], DataTypes.Int32));
+        return StackScalar(Cast(GetArgumentShape(op, parameter)[0], DataTypes.Int64));
     }
 
     private Call GetCurrentCall() => CurrentCall ?? throw new InvalidOperationException("Current call is not set.");
