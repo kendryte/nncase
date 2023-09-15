@@ -11,6 +11,7 @@ using Nncase.IR.Buffers;
 using Nncase.IR.CPU;
 using Nncase.IR.F;
 using Nncase.IR.Math;
+using Nncase.IR.NN;
 using Nncase.IR.Tensors;
 using Nncase.Passes.Mutators;
 using Nncase.PatternMatch;
@@ -244,6 +245,9 @@ internal sealed class SingleCPUFusionConverter
                         case MatMul matmul:
                             GenerateMatmul(matmul, arguments, ret);
                             break;
+                        case LayerNorm layernorm:
+                            GenerateLayerNorm(layernorm, arguments, ret, (DistributedType)expr.Arguments[0].CheckedType);
+                            break;
                         default:
                             throw new NotSupportedException();
                     }
@@ -294,6 +298,11 @@ internal sealed class SingleCPUFusionConverter
         private void GenerateMatmul(MatMul matmul, Buffer[] arguments, Buffer ret)
         {
             _mainBody.Add(IR.F.XPU.Matmul(arguments[0], arguments[1], ret));
+        }
+
+        private void GenerateLayerNorm(LayerNorm layerNorm, Buffer[] arguments, Buffer ret, DistributedType distributedType)
+        {
+            _mainBody.Add(IR.F.XPU.LayerNorm(layerNorm.Axis, layerNorm.Epsilon, layerNorm.UseMean, arguments[0], arguments[1], arguments[2], ret, distributedType));
         }
 
 #if false

@@ -36,4 +36,9 @@ public partial class XPU
     {
         return new Call(new Matmul(), lhs, rhs, output);
     }
+
+    public static Call LayerNorm(int axis, float eps, bool useMean, Expr input, Expr scale, Expr bias, Expr output, DistributedType distributedType)
+    {
+        return new Call(new LayerNorm(axis, eps, useMean, distributedType), input, scale, bias, output);
+    }
 }

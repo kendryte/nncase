@@ -40,6 +40,7 @@ public class UnitTestCPUTargetTiling : TestClassBase
     [ClassData(typeof(TilingCaseUnary))]
     [ClassData(typeof(TilingCaseMatmul))]
     [ClassData(typeof(TilingCaseMatmulUnary))]
+    // [ClassData(typeof(TilingCaseLayerNorm))]
     public async Task TestCpuFunction(Function main, Tensor[] inputs)
     {
         var module = new IR.IRModule(main);
@@ -169,7 +170,15 @@ internal sealed class TilingCaseMatmul : TheoryData<Function, Tensor[]>
         var rhsShape = new[] { 1, 64, 8192, 128 };
         var rhs = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, rhsShape).Evaluate().AsTensor().Cast<float>();
 
-        var main = new Function("matmul", IR.F.Math.MatMul(lhs, rhs), new[] { lhs });
+        Fusion fusion;
+        Var fin;
+        {
+            fin = new Var("input", new TensorType(DataTypes.Float32, lhsShape));
+            var v0 = new Call(new IR.CPU.CPUKernelOp(new IR.Math.MatMul()), fin, rhs);
+            fusion = new Fusion("cpu", v0, fin);
+        }
+
+        var main = new Function("matmul", new Call(fusion, lhs), new[] { lhs });
 
         var lhs_tensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, lhsShape).Evaluate().AsTensor();
         using (var fs = Diagnostics.DumpScope.Current.OpenFile("input_0.bin"))
@@ -179,9 +188,9 @@ internal sealed class TilingCaseMatmul : TheoryData<Function, Tensor[]>
 
         var feedDict = new Dictionary<Var, IValue>
         {
-            { lhs, Value.FromTensor(lhs_tensor) },
+            { fin, Value.FromTensor(lhs_tensor) },
         };
-        var output = main.Body.Evaluate(feedDict).AsTensor();
+        var output = fusion.Body.Evaluate(feedDict).AsTensor();
 
         Add(main, new[] { lhs_tensor, output });
     }
@@ -219,5 +228,40 @@ internal sealed class TilingCaseMatmulUnary : TheoryData<Function, Tensor[]>
         var output = fusion.Body.Evaluate(feedDict).AsTensor();
 
         Add(main, new[] { lhs_tensor, output });
+    }
+}
+
+internal sealed class TilingCaseLayerNorm : TheoryData<Function, Tensor[]>
+{
+    public TilingCaseLayerNorm()
+    {
+        var shape = new[] { 1, 384, 8192 };
+        int axis = 2;
+        var input = new Var("input", new TensorType(DataTypes.Float32, shape));
+        var scale = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, new[] { shape[2] }).Evaluate().AsTensor();
+        var bias = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, new[] { shape[2] }).Evaluate().AsTensor();
+
+        Fusion fusion;
+        Var fin;
+        {
+            fin = new Var("input", new TensorType(DataTypes.Float32, shape));
+            var v0 = new Call(new IR.CPU.CPUKernelOp(new IR.NN.LayerNorm(axis, 1e-5f, false)), fin, scale, bias);
+            fusion = new Fusion("cpu", v0, fin);
+        }
+        var main = new Function("layernorm", new Call(fusion, input), new[] { input });
+
+        var input_tensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, shape).Evaluate().AsTensor();
+        using (var fs = Diagnostics.DumpScope.Current.OpenFile("input_0.bin"))
+        {
+            fs.Write(input_tensor.BytesBuffer);
+        }
+
+        var feedDict = new Dictionary<Var, IValue>
+        {
+            { fin, Value.FromTensor(input_tensor) },
+        };
+        var output = fusion.Body.Evaluate(feedDict).AsTensor();
+
+        Add(main, new[] { input_tensor, output });
     }
 }
