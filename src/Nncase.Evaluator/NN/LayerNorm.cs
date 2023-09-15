@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Linq;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.NN;
@@ -55,14 +56,15 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
                     [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType),
                 };
 
-            case (DistributedType, DistributedType):
+            case (DistributedType inputDistributedType, DistributedType):
                 var scaleType = context.GetArgumentType<DistributedType>(target, LayerNorm.Scale);
                 var biasType = context.GetArgumentType<DistributedType>(target, LayerNorm.Bias);
                 var ring = CostUtility.GetRingReduceCommunicate(scaleType, new[] { 0, 1 }) + CostUtility.GetRingReduceCommunicate(biasType, new[] { 0, 1 });
+                var reCompute = inputDistributedType.NdSbp.Select((sbp, i) => sbp is SBPSplit ? 1 : inputDistributedType.Placement.Hierarchy[i]).ToArray().Aggregate(1, (acc, rep) => acc * rep);
                 return new()
                 {
                     [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType) + ring,
-                    [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(inputType, 1),
+                    [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(inputType, 1) * (UInt128)reCompute,
                     [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType) + ring,
                 };
             default:
