@@ -41,4 +41,9 @@ public partial class XPU
     {
         return new Call(new LayerNorm(axis, eps, useMean, distributedType), input, scale, bias, output);
     }
+
+    public static Call Gather(int axis, Expr input, Expr indices, Expr output)
+    {
+        return new Call(new IR.XPU.Gather(axis), input, indices, output);
+    }
 }

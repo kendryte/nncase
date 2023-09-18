@@ -41,6 +41,7 @@ public class UnitTestCPUTargetTiling : TestClassBase
     [ClassData(typeof(TilingCaseMatmul))]
     [ClassData(typeof(TilingCaseMatmulUnary))]
     [ClassData(typeof(TilingCaseLayerNorm))]
+    [ClassData(typeof(TilingCaseGather))]
     public async Task TestCpuFunction(Function main, Tensor[] inputs)
     {
         var module = new IR.IRModule(main);
@@ -272,6 +273,37 @@ internal sealed class TilingCaseLayerNorm : TheoryData<Function, Tensor[]>
             fs.Write(input_tensor.BytesBuffer);
         }
 
+        var feedDict = new Dictionary<Var, IValue>
+        {
+            { fin, Value.FromTensor(input_tensor) },
+        };
+        var output = fusion.Body.Evaluate(feedDict).AsTensor();
+
+        Add(main, new[] { input_tensor, output });
+    }
+}
+
+internal sealed class TilingCaseGather : TheoryData<Function, Tensor[]>
+{
+    public TilingCaseGather()
+    {
+        var inputShape = new[] { 32000, 8192 };
+        var axisShape = new[] { 1, 384 };
+        int axis = 0;
+        var input = new Var("input", new TensorType(DataTypes.Float32, inputShape));
+        var indices = IR.F.Random.Uniform(DataTypes.Int64, 384, 0, 2, axisShape).Evaluate().AsTensor();
+
+        Fusion fusion;
+        Var fin;
+        {
+            fin = new Var("input", new TensorType(DataTypes.Float32, inputShape));
+            var v0 = new Call(new IR.CPU.CPUKernelOp(new IR.Tensors.Gather(axis)), fin, indices);
+            fusion = new Fusion("cpu", v0, fin);
+        }
+
+        var main = new Function("gather", new Call(fusion, input), new[] { input });
+
+        var input_tensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, inputShape).Evaluate().AsTensor();
         var feedDict = new Dictionary<Var, IValue>
         {
             { fin, Value.FromTensor(input_tensor) },

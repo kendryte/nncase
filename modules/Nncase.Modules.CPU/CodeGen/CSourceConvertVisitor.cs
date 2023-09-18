@@ -302,6 +302,9 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                     }
 
                     break;
+                case IR.XPU.Gather gather:
+                    IndentScope.Writer.Write($"gather({Visit(args[0]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name}, {gather.Axis})");
+                    break;
                 default:
                     throw new NotSupportedException(xpuOp.ToString());
             }
