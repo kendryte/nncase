@@ -262,7 +262,7 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                     {
                         IndentScope.Writer.IndWrite($"{{\n");
 
-                        var dividedType = DistributedUtilities.GetDividedTensorType(layernorm.DistType);
+                        var dividedType = DistributedUtility.GetDividedTensorType(layernorm.DistType);
                         var sbpOnAxis = layernorm.DistType.NdSbp.Where(sbp => sbp is SBPSplit s && s.Axis >= layernorm.Axis).ToArray();
                         switch (sbpOnAxis.Length)
                         {

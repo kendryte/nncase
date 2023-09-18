@@ -137,7 +137,7 @@ internal sealed class SingleCPUFusionConverter
             var equivalArgs = op.Parameters.
                 Select(param => (param.ParameterKind, expr.Arguments[param.Index]) switch
                 {
-                    (ParameterKind.Input, Expr e) when e is Const or Var => DistributedUtilities.GetLeafCandidateBoxings(e, Placement),
+                    (ParameterKind.Input, Expr e) when e is Const or Var => DistributedUtility.GetLeafCandidateBoxings(e, Placement),
                     (ParameterKind.Attribute, Expr e) when e is Const or Var => new[] { e },
                     (_, Expr arg) => ExprMemo[arg],
                 }).ToArray();
@@ -146,11 +146,11 @@ internal sealed class SingleCPUFusionConverter
                 Select(args => args.ToArray()).
                 Select(args => BuildEqualityCalls(op, args)).
                 SelectMany(i => i).
-                Select(c => (c.InferenceType(), c)).ToArray();
+                ToArray();
 
-            if (equivalCalls.Any(t => t.Item1))
+            if (equivalCalls.Any(t => t.Valid))
             {
-                return equivalCalls.Where(t => t.Item1).Select(t => t.c).ToArray();
+                return equivalCalls.Where(t => t.Valid).Select(t => t.Call).ToArray();
             }
 
             var boxingArgs = new List<IReadOnlyList<Expr>>();
@@ -167,7 +167,7 @@ internal sealed class SingleCPUFusionConverter
                 var tensorType = (TensorType)oldArg.CheckedType;
                 boxingArgs.Add(info.ParameterKind switch
                 {
-                    ParameterKind.Input => DistributedUtilities.GetLeafCandidateNDSBPs(tensorType, Placement).Select(ndsbp => IR.F.Tensors.Boxing(newArgs[0], new DistributedType(tensorType, ndsbp, Placement))).ToList(),
+                    ParameterKind.Input => DistributedUtility.GetLeafCandidateNDSBPs(tensorType, Placement).Select(ndsbp => IR.F.Tensors.Boxing(newArgs[0], new DistributedType(tensorType, ndsbp, Placement))).ToList(),
                     ParameterKind.Attribute => new Expr[] { newArgs[0] },
                     _ => throw new ArgumentOutOfRangeException(info.ParameterKind.ToString()),
                 });
@@ -177,24 +177,41 @@ internal sealed class SingleCPUFusionConverter
                 Select(Enumerable.ToArray<Expr>).
                 Select(args => BuildEqualityCalls(op, args)).
                 SelectMany(i => i).
-                Select(c => (c.InferenceType(), c)).ToArray();
+                ToArray();
 
-            if (!equivalCalls.Any(t => t.Item1))
+            if (!equivalCalls.Any(t => t.Valid))
             {
                 throw new InvalidOperationException("after boxing still invalid!");
             }
 
-            return equivalCalls.Where(t => t.Item1).Select(t => t.c).ToArray();
+            return equivalCalls.Where(t => t.Valid).Select(t => t.Call).ToArray();
         }
 
-        private IEnumerable<Call> BuildEqualityCalls(Op target, Expr[] args)
+        private IEnumerable<(bool Valid, Call Call)> BuildEqualityCalls(Op target, Expr[] args)
         {
             if (!target.Parameters.Where(p => p.ParameterKind == ParameterKind.Input).All(p => IsDistributed(args[p.Index].CheckedType)))
             {
                 throw new InvalidDataException();
             }
 
-            IEnumerable<Call> calls = new[] { new Call(target, args) };
+            var calls = new List<(bool, Call)>();
+            var call = new Call(target, args);
+            var valid = call.InferenceType();
+            calls.Add((valid, call));
+            if (!valid)
+            {
+                var broadcastArgs = args.Select(DistributedUtility.GetPartialCandidateBoxings).ToArray();
+
+                if (broadcastArgs.All(bargs => bargs.Count >= 0))
+                {
+                    calls.AddRange(broadcastArgs.Select((bargs, i) => bargs.Any() ? bargs : bargs.Concat(new[] { args[i] })).
+                        CartesianProduct().
+                        Select(bargs => bargs.ToArray()).
+                        Select(bargs => new Call(target, bargs)).
+                        Select(c => (c.InferenceType(), c)));
+                }
+            }
+
             return calls;
         }
 
@@ -421,7 +438,7 @@ internal sealed class SingleCPUFusionConverter
             TensorType tensorType;
             if (type is DistributedType distTensor)
             {
-                if (!DistributedUtilities.IsDistributable(distTensor.TensorType, distTensor.NdSbp.ToArray(), distTensor.Placement, out var tType))
+                if (!DistributedUtility.IsDistributable(distTensor.TensorType, distTensor.NdSbp.ToArray(), distTensor.Placement, out var tType))
                 {
                     throw new NotSupportedException();
                 }

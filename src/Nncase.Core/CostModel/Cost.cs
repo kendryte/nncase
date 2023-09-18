@@ -198,27 +198,13 @@ public static class CostExtensions
 
 public static class CostUtility
 {
-    public static UInt128 GetRingReduceCommunicate(DistributedType distributedType, int[] axes)
-    {
-        var ttype = DistributedUtilities.GetDividedTensorType(distributedType);
-        var splits = axes.Where(i => distributedType.NdSbp[i] is SBPSplit);
-        if (!splits.Any())
-        {
-            return 0;
-        }
-
-        var p = (UInt128)splits.Select(i => distributedType.Placement.Hierarchy[i]).Aggregate(1, (acc, i) => acc * i);
-        var v = GetMemoryAccess(distributedType.TensorType);
-        return (p - 1) * (v / p);
-    }
-
     public static UInt128 GetMemoryAccess(IRType type)
     {
         return type switch
         {
             TensorType t => (UInt128)(t.Shape.Aggregate(1D, (acc, x) => acc * (x.IsFixed ? x.FixedValue : 1)) * t.DType.SizeInBytes),
             TupleType t => t.Fields.Sum(GetMemoryAccess),
-            DistributedType t => GetMemoryAccess(DistributedUtilities.GetDividedTensorType(t)),
+            DistributedType t => GetMemoryAccess(DistributedUtility.GetDividedTensorType(t)),
             _ => 0,
         };
     }
@@ -244,7 +230,7 @@ public static class CostUtility
         {
             TensorType t => (UInt128)(t.Shape.Aggregate(1D, (acc, x) => acc * (x.IsFixed ? x.FixedValue : 1)) * cyclesPerElement),
             TupleType t => t.Fields.Sum(GetMemoryAccess),
-            DistributedType t => GetCPUCycles(DistributedUtilities.GetDividedTensorType(t)),
+            DistributedType t => GetCPUCycles(DistributedUtility.GetDividedTensorType(t)),
             _ => 0,
         };
     }

@@ -15,7 +15,7 @@ using Xunit;
 namespace Nncase.Tests.DistributedTest;
 
 [TestFixture.AutoSetupTestMethod(InitSession = true)]
-public sealed class UnitTestDistTensor : TestClassBase
+public sealed class UnitTestConstruct : TestClassBase
 {
     [Fact]
     public void TestCreate()
@@ -61,7 +61,7 @@ public sealed class UnitTestDistTensor : TestClassBase
         Placement placement = new(Placement.DeviceKind.CPU, new int[] { 4, 2 }, "bt");
         var ttype = new TensorType(DataTypes.Float32, new[] { 1, 384, 8192 });
         var input = new Var(ttype);
-        var set = new HashSet<DistributedType>(DistributedUtilities.GetLeafCandidateNDSBPs(ttype, placement).Select(ndsbp => new DistributedType(ttype, ndsbp, placement)));
+        var set = new HashSet<DistributedType>(DistributedUtility.GetLeafCandidateNDSBPs(ttype, placement).Select(ndsbp => new DistributedType(ttype, ndsbp, placement)));
         Assert.Equal(9, set.Count);
     }
 

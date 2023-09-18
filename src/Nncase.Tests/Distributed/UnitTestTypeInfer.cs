@@ -12,7 +12,7 @@ using Xunit;
 namespace Nncase.Tests.DistributedTest;
 
 [TestFixture.AutoSetupTestMethod(InitSession = true)]
-public sealed class UnitTestDistTypeInfer : TestClassBase
+public sealed class UnitTestTypeInfer : TestClassBase
 {
     public static TheoryData<UnaryOp, DistributedType, IRType> InferUnaryData => new() {
         { UnaryOp.Exp,
@@ -67,8 +67,8 @@ public sealed class UnitTestDistTypeInfer : TestClassBase
         var lhsType = new TensorType(DataTypes.Float32, lhsShape);
         var rhsType = new TensorType(DataTypes.Float32, rhsShape);
         var candiateArgs = new[] {
-            DistributedUtilities.GetLeafCandidateNDSBPs(lhsType, placement).Select(ndsbp => new DistributedType(lhsType, ndsbp, placement)),
-            DistributedUtilities.GetLeafCandidateNDSBPs(rhsType, placement).Select(ndsbp => new DistributedType(rhsType, ndsbp, placement)),
+            DistributedUtility.GetLeafCandidateNDSBPs(lhsType, placement).Select(ndsbp => new DistributedType(lhsType, ndsbp, placement)),
+            DistributedUtility.GetLeafCandidateNDSBPs(rhsType, placement).Select(ndsbp => new DistributedType(rhsType, ndsbp, placement)),
             }.
             CartesianProduct().
             Select(argTypes => argTypes.Select(type => new Var(type)).ToArray());

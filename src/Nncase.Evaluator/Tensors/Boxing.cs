@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 #pragma warning disable SA1010, SA1008
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Nncase.CostModel;
 using Nncase.IR;
@@ -22,58 +23,97 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
     {
         var inType = context.GetArgumentType<IRType>(target, Boxing.Input);
         var returnType = context.GetReturnType<IRType>();
-        Cost cost;
+        var cost = new Cost() { [CostFactorNames.MemoryLoad] = 0, [CostFactorNames.MemoryStore] = 0 };
         switch (inType, returnType)
         {
             case (TensorType tensorType, DistributedType distTensorType):
                 cost = new Cost()
                 {
                     [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(tensorType),
-                    [CostFactorNames.MemoryStore] = (UInt128)((float)CostUtility.GetMemoryAccess(distTensorType) / DistributedUtilities.GetDividedTensorEfficiency(distTensorType, _burstLength)),
+                    [CostFactorNames.MemoryStore] = (UInt128)((float)CostUtility.GetMemoryAccess(distTensorType) / DistributedUtility.GetDividedTensorEfficiency(distTensorType, _burstLength)),
                 };
                 break;
             case (DistributedType distTensorType, TensorType tensorType):
                 cost = new Cost()
                 {
-                    [CostFactorNames.MemoryLoad] = (UInt128)((float)CostUtility.GetMemoryAccess(distTensorType) / DistributedUtilities.GetDividedTensorEfficiency(distTensorType, _burstLength)),
+                    [CostFactorNames.MemoryLoad] = (UInt128)((float)CostUtility.GetMemoryAccess(distTensorType) / DistributedUtility.GetDividedTensorEfficiency(distTensorType, _burstLength)),
                     [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(tensorType),
                 };
                 break;
-            case (DistributedType { Placement: { Rank: 1 } } din, DistributedType { Placement: { Rank: 2 } } dout):
-                {
-                    // shared tensor broadcast to local.
-                    var a = DistributedUtilities.GetDividedTensorType(din);
-                    var b = DistributedUtilities.GetDividedTensorType(dout);
-                    cost = new Cost()
-                    {
-                        [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(a),
-                        [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(b),
-                    };
-                }
 
-                break;
-            case (DistributedType { NdSbp: [(SBPSplit or SBPBroadCast), SBPPartialSum], Placement.Rank: 2 } din,
-                  DistributedType { NdSbp: [(SBPSplit or SBPBroadCast), SBPBroadCast], Placement.Rank: 2 }):
-                {
-                    // reduce scater and broadcast (ring reduce)
-                    _ = DistributedUtilities.GetDividedTensorType(din);
-                    var v = (int)CostUtility.GetMemoryAccess(din.TensorType);
-                    var comm = (din.Placement.Hierarchy[1] - 1) * (v / din.Placement.Hierarchy[1]) * 2; // reduce-scatter + gather
-                    cost = new Cost()
-                    {
-                        [CostFactorNames.MemoryLoad] = (UInt128)comm,
-                        [CostFactorNames.MemoryStore] = (UInt128)comm,
-                    };
-                }
-
-                break;
             case (DistributedType a, DistributedType b) when a.Placement == b.Placement && a.NdSbp != b.NdSbp:
                 {
-                    cost = new Cost()
+                    var fullLoadStore = new Cost()
                     {
-                        [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(a) + CostUtility.GetMemoryAccess(b),
-                        [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(a.TensorType),
+                        [CostFactorNames.MemoryStore] = (UInt128)((float)CostUtility.GetMemoryAccess(a) / DistributedUtility.GetDividedTensorEfficiency(a, _burstLength)),
+                        [CostFactorNames.MemoryLoad] = (UInt128)((float)CostUtility.GetMemoryAccess(b) / DistributedUtility.GetDividedTensorEfficiency(b, _burstLength)),
                     };
+
+                    float scatterPart = 1;
+                    float gatherPart = 1;
+                    for (int i = 0; i < a.Placement.Rank; i++)
+                    {
+                        switch (a.NdSbp[i], b.NdSbp[i])
+                        {
+                            case (SBPSplit { Axis: int ax }, SBP sbpout):
+                                switch (sbpout)
+                                {
+                                    case SBPSplit { Axis: int bx }:
+                                        if (ax != bx)
+                                        {
+                                            // when split different axis, need global load store.
+                                            return fullLoadStore;
+                                        }
+
+                                        break;
+                                    case SBPBroadCast:
+                                        scatterPart *= a.Placement.Hierarchy[i];
+                                        gatherPart *= a.Placement.Hierarchy[i];
+                                        break;
+                                    default:
+                                        throw new NotSupportedException("split to partial");
+                                }
+
+                                break;
+                            case (SBPBroadCast, SBPBroadCast or SBPSplit):
+                                // no cost.
+                                break;
+                            case (SBPPartialSum, SBP sbpout):
+                                switch (sbpout)
+                                {
+                                    case SBPPartialSum:
+                                        break;
+                                    case SBPBroadCast or SBPSplit:
+                                        gatherPart *= a.Placement.Hierarchy[i];
+                                        if (i == 0)
+                                        {
+                                            scatterPart *= a.Placement.Hierarchy[i];
+                                        }
+
+                                        break;
+                                }
+
+                                break;
+                            default:
+                                throw new NotSupportedException($"{a} to {b}");
+                        }
+                    }
+
+                    if (gatherPart > 1f)
+                    {
+                        cost += new Cost()
+                        {
+                            [CostFactorNames.MemoryStore] = (UInt128)((gatherPart - 1) * (float)CostUtility.GetMemoryAccess(DistributedUtility.GetDividedTensorType(a)) / gatherPart),
+                        };
+                    }
+
+                    if (scatterPart > 1f)
+                    {
+                        cost += new Cost()
+                        {
+                            [CostFactorNames.MemoryLoad] = (UInt128)((scatterPart - 1) * (float)CostUtility.GetMemoryAccess(DistributedUtility.GetDividedTensorType(b)) / scatterPart),
+                        };
+                    }
                 }
 
                 break;

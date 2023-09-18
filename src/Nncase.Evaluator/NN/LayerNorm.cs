@@ -59,7 +59,7 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
             case (DistributedType inputDistributedType, DistributedType):
                 var scaleType = context.GetArgumentType<DistributedType>(target, LayerNorm.Scale);
                 var biasType = context.GetArgumentType<DistributedType>(target, LayerNorm.Bias);
-                var ring = CostUtility.GetRingReduceCommunicate(scaleType, new[] { 0, 1 }) + CostUtility.GetRingReduceCommunicate(biasType, new[] { 0, 1 });
+                var ring = GetRingReduceCommunicate(scaleType, new[] { 0, 1 }) + GetRingReduceCommunicate(biasType, new[] { 0, 1 });
                 var reCompute = inputDistributedType.NdSbp.Select((sbp, i) => sbp is SBPSplit ? 1 : inputDistributedType.Placement.Hierarchy[i]).ToArray().Aggregate(1, (acc, rep) => acc * rep);
                 return new()
                 {
@@ -126,6 +126,20 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
         }
 
         return new DistributedType(input.TensorType, ndsbp, input.Placement);
+    }
+
+    private UInt128 GetRingReduceCommunicate(DistributedType distributedType, int[] axes)
+    {
+        var ttype = DistributedUtility.GetDividedTensorType(distributedType);
+        var splits = axes.Where(i => distributedType.NdSbp[i] is SBPSplit);
+        if (!splits.Any())
+        {
+            return 0;
+        }
+
+        var p = (UInt128)splits.Select(i => distributedType.Placement.Hierarchy[i]).Aggregate(1, (acc, i) => acc * i);
+        var v = CostUtility.GetMemoryAccess(distributedType.TensorType);
+        return (p - 1) * (v / p);
     }
 
 #if true
