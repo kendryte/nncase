@@ -38,28 +38,9 @@ public class SqueezeEvaluator : IEvaluator<Squeeze>, ITypeInferencer<Squeeze>, I
 
     public Expr Visit(IShapeEvaluateContext context, Squeeze target)
     {
-        var inShape = context.GetArgumentShape(target, Squeeze.Input);
-        var input = context.GetArgument(target, Squeeze.Input);
+        var input = context.GetArgumentShape(target, Squeeze.Input);
         var dims = context.GetArgument(target, Squeeze.Dim);
-        if (dims is TensorConst dimConst)
-        {
-            var rank = input.CheckedShape.Count;
-            var dimValue = dimConst.Value.ToArray<int>().Select(x => x < 0 ? x + rank : x).ToArray();
-            var outDims = Enumerable.Range(0, rank).Where(i => !dimValue.Contains(i)).Select(i => inShape[i]).ToArray();
-            if (outDims.Length == 0)
-            {
-                return 1;
-            }
-
-            if (outDims.Length == input.CheckedShape.Rank)
-            {
-                throw new InvalidOperationException("Bad Squeeze Shape Expr");
-            }
-
-            return IR.F.Tensors.Stack(new IR.Tuple(outDims), 0);
-        }
-
-        throw new NotImplementedException();
+        return IR.F.ShapeExpr.SqueezeShape(input, dims);
     }
 
     public Metric Visit(IMetricEvaluateContext context, Squeeze target)
