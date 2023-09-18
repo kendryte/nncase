@@ -47,7 +47,7 @@ public abstract class FunctionBuilder : IDisposable
         // 3. Fix addrs
         FixAddrs();
         TextWriter.Flush();
-        return CreateLinkableFunction(Id, callable, FunctionRefs, _textContent.ToArray());
+        return CreateLinkableFunction(Id, callable, FunctionRefs, _textContent);
     }
 
     public void Dispose()
@@ -59,7 +59,7 @@ public abstract class FunctionBuilder : IDisposable
 
     protected abstract void WriteText();
 
-    protected abstract ILinkableFunction CreateLinkableFunction(uint id, BaseFunction callable, IReadOnlyList<FunctionRef> functionRefs, byte[] text);
+    protected abstract ILinkableFunction CreateLinkableFunction(uint id, BaseFunction callable, IReadOnlyList<FunctionRef> functionRefs, Stream text);
 
     private void FixAddrs()
     {

@@ -90,13 +90,9 @@ namespace Nncase
         }
 
         // lower used for onnx when auto_pad attr is SAME_LOWER
-        public static Expr GetPaddings(Expr input, Expr weights, long[] stride, long[] dilation, bool same, bool lower = false)
+        public static Expr GetPaddings(Expr input, Expr weights, Expr stride, Expr dilation, bool same, bool lower = false)
         {
-            var (inH, inW) = GetHW(input);
-            var (fH, fW) = GetHW(weights);
-            var padH = GetWindowedPadding(inH, fH, (int)stride[0], (int)dilation[0], same, lower);
-            var padW = GetWindowedPadding(inW, fW, (int)stride[1], (int)dilation[1], same, lower);
-            return ConcatPadding(padH, padW);
+            return IR.F.ShapeExpr.GetPaddings(ShapeOf(input), ShapeOf(weights), stride, dilation, same, lower);
         }
 
         public static Expr ComputeSplit(Expr input, long outputSize, long axis)

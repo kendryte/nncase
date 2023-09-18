@@ -46,7 +46,7 @@ public class TileEvaluator : IEvaluator<Tile>, ITypeInferencer<Tile>, ICostEvalu
     {
         var inShape = context.GetArgumentShape(target, Tile.Input);
         var repeats = context.GetArgument(target, Tile.Repeats);
-        return inShape * IR.F.Tensors.Cast(repeats, DataTypes.Int32);
+        return inShape * IR.F.Tensors.Cast(repeats, DataTypes.Int64);
     }
 
     public Metric Visit(IMetricEvaluateContext context, Tile target)

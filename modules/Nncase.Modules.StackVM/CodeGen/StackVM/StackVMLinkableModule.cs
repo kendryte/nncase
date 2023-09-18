@@ -30,7 +30,7 @@ internal class StackVMLinkableModule : LinkableModule
         }
     }
 
-    protected override ILinkedModule CreateLinkedModule(IReadOnlyList<LinkedFunction> linkedFunctions, byte[] text)
+    protected override ILinkedModule CreateLinkedModule(IReadOnlyList<LinkedFunction> linkedFunctions, Stream text)
     {
         return new StackVMLinkedModule(
             linkedFunctions,

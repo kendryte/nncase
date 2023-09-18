@@ -18,7 +18,7 @@ public interface ILinkableFunction
 
     public IEnumerable<FunctionRef> FunctionRefs { get; }
 
-    public byte[] Text { get; }
+    public Stream Text { get; }
 
     public IReadOnlyList<ILinkedSection> Sections { get; }
 }

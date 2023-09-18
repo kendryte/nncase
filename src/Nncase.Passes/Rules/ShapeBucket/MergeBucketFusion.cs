@@ -25,16 +25,38 @@ namespace Nncase.Passes.Rules.ShapeBucket;
 
 public class MergeBucketFusionPass : FunctionPass
 {
+    private readonly bool _greedy;
+
+    public MergeBucketFusionPass(bool greedy)
+    {
+        _greedy = greedy;
+    }
+
     protected override async Task<BaseFunction> RunCoreAsync(BaseFunction input, RunPassContext context)
     {
+        // bool greedy and dynamic
         var main = (Function)input;
+        int i = 0;
         while (true)
         {
             var preHash = main.GetHashCode();
-            CompilerServices.Rewrite(main, new IRewriteRule[] { new MultiUserCallToFusion(), new MergeTupleFusion() }, new());
-            await new MergeSeqBucketFusion().RunAsync(main, context);
-            IRHelpers.DCE(main);
-            await new MergeMultiUsersFusion().RunAsync(main, context);
+            if (_greedy)
+            {
+                CompilerServices.Rewrite(main, new IRewriteRule[] { new MultiUserCallToFusion(false, _greedy), new MergeTupleFusion() }, new());
+                await new MergeSeqBucketFusion().RunAsync(main, context);
+                IRHelpers.DCE(main);
+                await new MergeMultiUsersFusion().RunAsync(main, context);
+                DumpIR(main, $"{i}_before", "FoldNopTuple");
+                await new FoldNopTuple().RunAsync(main, context);
+            }
+            else
+            {
+                await new MergeSeqBucketFusion().RunAsync(main, context);
+                IRHelpers.DCE(main);
+            }
+
+            CheckRepeat(main);
+            CheckErrorVar(main, main.Parameters.ToArray());
             var postHash = main.GetHashCode();
             if (preHash == postHash)
             {
@@ -42,6 +64,7 @@ public class MergeBucketFusionPass : FunctionPass
             }
         }
 
+        DumpIR(main, "MergeBucketFusionEnd");
         return main;
     }
 }
@@ -176,10 +199,6 @@ public class MergeMultiUsersFusion : FunctionPass
 
     public static bool DetectedRing(Call outerCall, Expr[] users)
     {
-        // var users = outerCall.Users.ToArray();
-        // todo: fix this，TestComplexExpr
-        // var userArgs = users.SelectMany(user => ((Call)user).Arguments.ToArray()).Except(users).ToArray();
-        // 用这个不过，但是好像会引起其他问题？？
         var userArgs = users.SelectMany(user => ((Call)user).Arguments.ToArray()).ToArray();
         foreach (var arg in userArgs)
         {
@@ -231,23 +250,15 @@ public class MergeMultiUsersFusion : FunctionPass
         // todo: not support
         if (users.Any(user => user is Tuple))
         {
-            // Console.WriteLine("HasTuple");
             return notSupport;
         }
 
         var userInfos = CollectUsers(outerCall, users);
 
-        // todo: support only one user, because merge fusion rule is not enough
-        // maybe a error
-        // if (userInfos.Length < 2)
-        // {
-        //     return null;
-        // }
-
         // has invalid
         if (userInfos.Length != users.Distinct().ToArray().Length)
         {
-            Console.WriteLine("not all fusion call and getItemMode");
+            // Console.WriteLine("not all fusion call and getItemMode");
             return notSupport;
         }
 
@@ -601,8 +612,7 @@ public class MergeMultiUsersFusion : FunctionPass
                 }
 
                 // Console.WriteLine($"Match {fusion.Name} counter:{Counter}");
-                DumpIR(Root, "OriginRoot", RelPath);
-
+                // DumpIR(Root, "OriginRoot", RelPath);
                 var (newCall, users) = MergeMultiUserFusion(outerCall, fusion);
                 if (newCall != null)
                 {

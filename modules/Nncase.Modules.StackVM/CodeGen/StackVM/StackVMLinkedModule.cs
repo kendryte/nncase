@@ -12,7 +12,7 @@ namespace Nncase.CodeGen.StackVM;
 
 internal class StackVMLinkedModule : ILinkedModule
 {
-    public StackVMLinkedModule(IReadOnlyList<LinkedFunction> functions, byte[] text, byte[]? rdata, byte[]? custom_calls)
+    public StackVMLinkedModule(IReadOnlyList<LinkedFunction> functions, Stream text, Stream? rdata, Stream? custom_calls)
     {
         Functions = functions;
         Sections = new[]
