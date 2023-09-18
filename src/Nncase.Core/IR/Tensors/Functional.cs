@@ -70,7 +70,8 @@ public static class Tensors
     public static Call Cast(Expr input, DataType newType, CastMode castMode = CastMode.KDefault) =>
         new Call(new Cast(newType, castMode), input);
 
-    public static Call Boxing(Expr input, IRType type) {
+    public static Call Boxing(Expr input, IRType type)
+    {
         if (input.CheckedType == type)
         {
             throw new NotSupportedException();

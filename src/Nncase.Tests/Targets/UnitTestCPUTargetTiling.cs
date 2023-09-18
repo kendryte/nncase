@@ -47,7 +47,6 @@ public class UnitTestCPUTargetTiling : TestClassBase
         var module = new IR.IRModule(main);
         using (new Diagnostics.DumpScope(main.Name, CompileOptions.DumpFlags))
         {
-
 #if DEBUG
             for (var i = 0; i < inputs.Length - 1; i++)
             {
@@ -131,7 +130,7 @@ internal sealed class TilingCaseMatmulLayerNorm : TheoryData<Function, Tensor[]>
             var scale = IR.F.Tensors.ConstantOfShape(new[] { 8192 }, 1.0f).Evaluate().AsTensor();
             var bias = IR.F.Tensors.ConstantOfShape(new[] { 8192 }, 0.0f).Evaluate().AsTensor();
             var weights = IR.F.Random.Normal(DataTypes.Float32, new[] { 1, 64, 8192, 128 }).Evaluate().AsTensor();
-            var gdata = IR.F.Random.Normal(DataTypes.Float32, new[] { 384, 128 }).Evaluate().AsTensor();
+            _ = IR.F.Random.Normal(DataTypes.Float32, new[] { 384, 128 }).Evaluate().AsTensor();
 
             var fin = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 384, 8192 }));
             var v0 = new Call(new IR.CPU.CPUKernelOp(new IR.NN.LayerNorm(2, 1e-6f, false)), fin, scale, bias);
@@ -143,7 +142,7 @@ internal sealed class TilingCaseMatmulLayerNorm : TheoryData<Function, Tensor[]>
         }
 
         var main = new Function("matmul_layernorm", new Call(fusion, hid_in), new[] { hid_in });
-        Add(main, new Tensor[] { });
+        Add(main, Array.Empty<Tensor>());
     }
 }
 
@@ -330,6 +329,7 @@ internal sealed class TilingCaseLayerNorm : TheoryData<Function, Tensor[]>
             var v0 = new Call(new IR.CPU.CPUKernelOp(new IR.NN.LayerNorm(axis, 1e-5f, false)), fin, scale, bias);
             fusion = new Fusion("cpu", v0, fin);
         }
+
         var main = new Function("layernorm", new Call(fusion, input), new[] { input });
 
         var input_tensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, shape).Evaluate().AsTensor();

@@ -57,54 +57,64 @@ public sealed class UnitTestTensorUtilities
         int start;
         Assert.True(TensorUtilities.IsContiguousSlice(
           dim1,
-          new[] { 0..1, 0..512, 0..14, 0..14 }, out start));
+          new[] { 0..1, 0..512, 0..14, 0..14 },
+          out start));
         Assert.Equal(0, start);
 
         Assert.True(TensorUtilities.IsContiguousSlice(
           dim1,
-          new[] { 0..1, 0..1, 0..1, 0..14 }, out start));
+          new[] { 0..1, 0..1, 0..1, 0..14 },
+          out start));
         Assert.Equal(0, start);
 
         Assert.True(TensorUtilities.IsContiguousSlice(
           dim1,
-          new[] { 0..1, 0..1, 0..1, 7..14 }, out start));
+          new[] { 0..1, 0..1, 0..1, 7..14 },
+          out start));
         Assert.Equal(0, start);
 
         Assert.True(TensorUtilities.IsContiguousSlice(
           dim1,
-          new[] { 0..1, 0..1, 7..14, 0..14 }, out start));
+          new[] { 0..1, 0..1, 7..14, 0..14 },
+          out start));
         Assert.Equal(0, start);
 
         Assert.False(TensorUtilities.IsContiguousSlice(
           dim1,
-          new[] { 0..1, 0..512, 0..7, 0..14 }, out start));
+          new[] { 0..1, 0..512, 0..7, 0..14 },
+          out start));
         Assert.Equal(2, start);
 
         Assert.False(TensorUtilities.IsContiguousSlice(
             dim1,
-            new[] { 0..1, 0..512, 0..7, 0..14, 0..1 }, out start));
+            new[] { 0..1, 0..512, 0..7, 0..14, 0..1 },
+            out start));
         Assert.Equal(4, start);
 
         Assert.False(TensorUtilities.IsContiguousSlice(
           dim1,
-          new[] { 0..1, 10..512, 0..1, 0..1 }, out start));
+          new[] { 0..1, 10..512, 0..1, 0..1 },
+          out start));
         Assert.Equal(2, start);
 
         Assert.False(TensorUtilities.IsContiguousSlice(
           dim1,
-          new[] { 0..1, 0..512, 0..7, 0..1 }, out start));
+          new[] { 0..1, 0..512, 0..7, 0..1 },
+          out start));
         Assert.Equal(3, start);
 
         var dim2 = new[] { 1, 512, 1, 196 };
 
         Assert.True(TensorUtilities.IsContiguousSlice(
               dim2,
-              new[] { 0..1, 0..128, 0..1, 0..196 }, out start));
+              new[] { 0..1, 0..128, 0..1, 0..196 },
+              out start));
         Assert.Equal(0, start);
 
         Assert.True(TensorUtilities.IsContiguousSlice(
               dim2,
-              new[] { 0..1, 0..1, 0..1, 10..15 }, out start));
+              new[] { 0..1, 0..1, 0..1, 10..15 },
+              out start));
         Assert.Equal(0, start);
     }
 

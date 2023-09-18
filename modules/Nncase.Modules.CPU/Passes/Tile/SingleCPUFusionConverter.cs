@@ -270,6 +270,7 @@ internal sealed class SingleCPUFusionConverter
                             break;
                         case Gather gather:
                             GenerateGather(gather, arguments, ret);
+                            break;
                         case Concat concat:
                             GenerateConcat(concat, ((IR.Tuple)expr.Arguments[0]).Fields.AsValueEnumerable().Select(AllocOrGetBuffer).ToArray(), ret);
                             break;
@@ -305,13 +306,13 @@ internal sealed class SingleCPUFusionConverter
         {
             switch (expr.Arguments[0].CheckedType, boxing.NewType)
             {
-                case (TensorType tensorType, DistributedType distTensorType):
+                case (TensorType, DistributedType distTensorType):
                     {
                         _mainBody.Add(IR.F.XPU.TDMALoad(ret, arguments[0], distTensorType.NdSBP, distTensorType.Placement));
                     }
 
                     break;
-                case (DistributedType distTensorType, TensorType tensorType):
+                case (DistributedType distTensorType, TensorType):
                     {
                         _mainBody.Add(IR.F.XPU.TDMAStore(arguments[0], ret, distTensorType.NdSBP, distTensorType.Placement));
                     }

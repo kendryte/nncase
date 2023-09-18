@@ -335,7 +335,7 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                         }
                     }
 
-                    IndentScope.Writer.Write($"__tensor_copy_sync({Visit(expr.Arguments[1]).Name}, {Visit(expr.Arguments[0]).Name}({{{string.Join(',', newbegins.Select(e => e.ToString()))}}},{{{string.Join(',', newends.Select(e => e.ToString()))}}}))");
+                    IndentScope.Writer.Write($"__tensor_copy_sync(std::move({Visit(expr.Arguments[1]).Name}), {Visit(expr.Arguments[0]).Name}({{{string.Join(',', newbegins.Select(e => e.ToString()))}}},{{{string.Join(',', newends.Select(e => e.ToString()))}}}))");
                     break;
                 default:
                     throw new NotSupportedException(xpuOp.ToString());
