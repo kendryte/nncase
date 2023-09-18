@@ -41,7 +41,7 @@ class NormalTest : public KernelTest,
         auto value3 = GetFloatNumber("seed_value");
 
         mean_value = value1;
-        float_t mean_ptr[] = {mean_value};
+        float mean_ptr[] = {mean_value};
         mean = hrt::create(
                    typecode, {1},
                    {reinterpret_cast<gsl::byte *>(mean_ptr), sizeof(mean_ptr)},
@@ -49,7 +49,7 @@ class NormalTest : public KernelTest,
                    .expect("create tensor failed");
 
         scale_value = value2;
-        float_t scale_ptr[] = {scale_value};
+        float scale_ptr[] = {scale_value};
         scale = hrt::create(typecode, {1},
                             {reinterpret_cast<gsl::byte *>(scale_ptr),
                              sizeof(scale_ptr)},
@@ -57,7 +57,7 @@ class NormalTest : public KernelTest,
                     .expect("create tensor failed");
 
         seed_value = value3;
-        float_t seed_ptr[] = {seed_value};
+        float seed_ptr[] = {seed_value};
         seed = hrt::create(
                    typecode, {1},
                    {reinterpret_cast<gsl::byte *>(seed_ptr), sizeof(seed_ptr)},

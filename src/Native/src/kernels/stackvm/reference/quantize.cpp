@@ -46,8 +46,8 @@ result<void> quantize_impl(const TFloat *input, TQint *output,
 }
 } // namespace
 
-#define QUANTIZE_IMPL(float, qint_t)                                           \
-    if (cmp_type<float>(in_type) && cmp_type<qint_t>(out_type))                \
+#define QUANTIZE_IMPL(float_t, qint_t)                                           \
+    if (cmp_type<float_t>(in_type) && cmp_type<qint_t>(out_type))                \
     return quantize_impl(reinterpret_cast<const float_t *>(input),             \
                          reinterpret_cast<qint_t *>(output), in_shape,         \
                          in_strides, out_strides, scale, bias, context)
