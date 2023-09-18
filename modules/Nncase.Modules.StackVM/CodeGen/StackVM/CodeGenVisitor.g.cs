@@ -292,6 +292,18 @@ internal partial class CodeGenVisitor
             case IR.Random.Normal top:
                 Emitter.T.Normal(top.Type);
                 break;
+            case IR.Random.NormalLike top:
+                Emitter.T.NormalLike(top.Type);
+                break;
+            case IR.Random.Uniform top:
+                Emitter.T.Uniform(top.Type);
+                break;
+            case IR.Random.UniformLike top:
+                Emitter.T.UniformLike(top.Type);
+                break;
+            case IR.Imaging.ResizeImage top:
+                Emitter.T.ResizeImage(top.ResizeMode, top.TransformationMode, top.NearestMode, top.IsTFResize);
+                break;
             default:
                 throw new ArgumentException($"Unsupported op: {op}");
         }
