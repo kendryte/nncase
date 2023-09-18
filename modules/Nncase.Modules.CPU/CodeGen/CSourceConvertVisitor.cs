@@ -11,7 +11,6 @@ using System.Linq;
 using System.Reactive;
 using System.Runtime.InteropServices;
 using System.Text;
-using DryIoc.ImTools;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.Runtime;
@@ -263,7 +262,7 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                         IndentScope.Writer.IndWrite($"{{\n");
 
                         var dividedType = DistributedUtility.GetDividedTensorType(layernorm.DistType);
-                        var sbpOnAxis = layernorm.DistType.NdSbp.Where(sbp => sbp is SBPSplit s && s.Axis >= layernorm.Axis).ToArray();
+                        var sbpOnAxis = layernorm.DistType.NdSBP.Where(sbp => sbp is SBPSplit s && s.Axis >= layernorm.Axis).ToArray();
                         switch (sbpOnAxis.Length)
                         {
                             case 0:
@@ -276,7 +275,7 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                                 IndentScope.Writer.IndWrite($"tensor<{args[0].CheckedDataType.ToC()}, loc_t::local> sum({{{string.Join(",", dividedType.Shape.ToArray().Take(layernorm.Axis))}}});\n");
                                 IndentScope.Writer.IndWrite($"tensor<{args[0].CheckedDataType.ToC()}, loc_t::local> sum_sqr({{{string.Join(",", dividedType.Shape.ToArray().Take(layernorm.Axis))}}});\n");
                                 IndentScope.Writer.IndWrite($"reduce_sum_sqr({Visit(args[0]).Name}, sum, sum_sqr);\n");
-                                if (sbpOnAxis[0] == layernorm.DistType.NdSbp[1])
+                                if (sbpOnAxis[0] == layernorm.DistType.NdSBP[1])
                                 {
                                     IndentScope.Writer.IndWrite($"tdma_reduce_async(sum, sum, reduce_op_t::sum, ctx);\n");
                                     IndentScope.Writer.IndWrite($"tdma_reduce_async(sum_sqr, sum_sqr, reduce_op_t::sum, ctx);\n");
@@ -304,6 +303,39 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                     break;
                 case IR.XPU.Gather gather:
                     IndentScope.Writer.Write($"gather({Visit(args[0]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name}, {gather.Axis})");
+                    break;
+                case IR.XPU.Concat concat:
+                    IndentScope.Writer.Write($"concat({{{string.Join(",", args.SkipLast(1).Select(Visit).Select(s => s.Name))}}}, {Visit(args[^1]).Name}, {concat.Axis})");
+                    break;
+                case IR.XPU.Slice slice:
+                    var begins = ((TensorConst)expr.Arguments[2]).Value.ToArray<int>();
+                    var ends = ((TensorConst)expr.Arguments[3]).Value.ToArray<int>();
+                    var axes = ((TensorConst)expr.Arguments[4]).Value.ToArray<int>().ToList();
+                    var retType = (TensorType)expr.Arguments[1].CheckedType;
+
+                    var newbegins = Enumerable.Repeat(0, retType.Shape.Rank).ToArray();
+                    var newends = retType.Shape.ToArray();
+                    for (int i = 0; i < slice.DistributedType.Placement.Rank; i++)
+                    {
+                        var sbp = slice.DistributedType.NdSBP[i];
+                        if (sbp is SBPSplit { Axis: int axis })
+                        {
+                            if (axes.IndexOf(axis) is int j && j != -1)
+                            {
+                                begins[j] /= slice.DistributedType.Placement.Hierarchy[i];
+                            }
+                        }
+                    }
+
+                    for (int i = 0; i < newbegins.Length; i++)
+                    {
+                        if (axes.IndexOf(i) is int j && j != -1)
+                        {
+                            newbegins[i] += begins[j];
+                        }
+                    }
+
+                    IndentScope.Writer.Write($"__tensor_copy_sync({Visit(expr.Arguments[1]).Name}, {Visit(expr.Arguments[0]).Name}({{{string.Join(',', newbegins.Select(e => e.ToString()))}}},{{{string.Join(',', newends.Select(e => e.ToString()))}}}))");
                     break;
                 default:
                     throw new NotSupportedException(xpuOp.ToString());

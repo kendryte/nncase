@@ -48,7 +48,12 @@ public static class DistributedUtility
     {
         if (expr is IR.Tuple tuple)
         {
-            throw new NotSupportedException("current not support!");
+            var candidates = tuple.Fields.ToArray().
+                Select(GetPartialCandidateBoxings).
+                CartesianProduct();
+            return candidates.Any() ? candidates.
+                Select(fs => new IR.Tuple(fs.ToArray())).
+                ToArray() : Array.Empty<Expr>();
         }
 
         var type = (DistributedType)expr.CheckedType;
@@ -57,7 +62,7 @@ public static class DistributedUtility
         for (int i = 0; i < type.Placement.Rank; i++)
         {
             candidateNdsbps[i] = new List<SBP>();
-            if (type.NdSbp[i] is SBPPartialSum)
+            if (type.NdSBP[i] is SBPPartialSum)
             {
                 candidateNdsbps[i].Add(SBP.B);
                 for (int axis = 0; axis < tensorType.Shape.Rank; axis++)
@@ -137,7 +142,7 @@ public static class DistributedUtility
     {
         var shape = distributedType.TensorType.Shape.ToValueArray();
         var tiles = distributedType.TensorType.Shape.ToValueArray();
-        foreach (var (s, i) in distributedType.NdSbp.OfType<SBPSplit>().Select((s, i) => (s, i)))
+        foreach (var (s, i) in distributedType.NdSBP.OfType<SBPSplit>().Select((s, i) => (s, i)))
         {
             tiles[s.Axis] /= distributedType.Placement.Hierarchy[i];
         }

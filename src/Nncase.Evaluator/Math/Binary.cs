@@ -138,7 +138,7 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
         var ndsbp = new SBP[a.Placement.Rank];
         for (int i = 0; i < a.Placement.Rank; i++)
         {
-            switch (a.NdSbp[i], b.NdSbp[i])
+            switch (a.NdSBP[i], b.NdSBP[i])
             {
                 case (SBPSplit sa, SBPSplit sb):
                     if (sa != sb)

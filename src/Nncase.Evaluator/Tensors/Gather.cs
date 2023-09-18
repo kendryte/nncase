@@ -106,7 +106,7 @@ public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>, ICos
 
         for (int i = 0; i < input.Placement.Rank; i++)
         {
-            switch (input.NdSbp[i], index.NdSbp[i])
+            switch (input.NdSBP[i], index.NdSBP[i])
             {
                 case (SBPSplit { Axis: int ix }, _) when ix == axis:
                     return new InvalidType($"the input can't split on {axis}");

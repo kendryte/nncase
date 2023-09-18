@@ -77,7 +77,7 @@ public sealed record Placement
     public override string ToString() => $"@{Kind} [{string.Join(',', Hierarchy.Zip(Name).Select(t => t.First.ToString() + '@' + t.Second.ToString()))}]";
 }
 
-public sealed record DistributedType(TensorType TensorType, IRArray<SBP> NdSbp, Placement Placement) : IRType
+public sealed record DistributedType(TensorType TensorType, IRArray<SBP> NdSBP, Placement Placement) : IRType
 {
-    public override string ToString() => $"{TensorType}, ({string.Join(',', NdSbp)}), {Placement}";
+    public override string ToString() => $"{TensorType}, ({string.Join(',', NdSBP)}), {Placement}";
 }

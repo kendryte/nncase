@@ -60,7 +60,7 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
                 var scaleType = context.GetArgumentType<DistributedType>(target, LayerNorm.Scale);
                 var biasType = context.GetArgumentType<DistributedType>(target, LayerNorm.Bias);
                 var ring = GetRingReduceCommunicate(scaleType, new[] { 0, 1 }) + GetRingReduceCommunicate(biasType, new[] { 0, 1 });
-                var reCompute = inputDistributedType.NdSbp.Select((sbp, i) => sbp is SBPSplit ? 1 : inputDistributedType.Placement.Hierarchy[i]).ToArray().Aggregate(1, (acc, rep) => acc * rep);
+                var reCompute = inputDistributedType.NdSBP.Select((sbp, i) => sbp is SBPSplit ? 1 : inputDistributedType.Placement.Hierarchy[i]).ToArray().Aggregate(1, (acc, rep) => acc * rep);
                 return new()
                 {
                     [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType) + ring,
@@ -109,7 +109,7 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
 
         for (int i = 0; i < input.Placement.Rank; i++)
         {
-            switch (input.NdSbp[i], scale.NdSbp[i], bias.NdSbp[i])
+            switch (input.NdSBP[i], scale.NdSBP[i], bias.NdSBP[i])
             {
                 case (SBPSplit { Axis: int ix }, SBPSplit { Axis: int sx }, SBPSplit { Axis: int bx }) when ix >= raxis && sx == (ix - raxis) && bx == sx:
                     ndsbp[i] = SBP.S(ix);
@@ -131,7 +131,7 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
     private UInt128 GetRingReduceCommunicate(DistributedType distributedType, int[] axes)
     {
         var ttype = DistributedUtility.GetDividedTensorType(distributedType);
-        var splits = axes.Where(i => distributedType.NdSbp[i] is SBPSplit);
+        var splits = axes.Where(i => distributedType.NdSBP[i] is SBPSplit);
         if (!splits.Any())
         {
             return 0;

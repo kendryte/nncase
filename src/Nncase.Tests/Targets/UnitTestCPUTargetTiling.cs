@@ -45,7 +45,7 @@ public class UnitTestCPUTargetTiling : TestClassBase
     public async Task TestCpuFunction(Function main, Tensor[] inputs)
     {
         var module = new IR.IRModule(main);
-        using (var _ = new Diagnostics.DumpScope(main.Name, CompileOptions.DumpFlags))
+        using (new Diagnostics.DumpScope(main.Name, CompileOptions.DumpFlags))
         {
 
 #if DEBUG
@@ -79,6 +79,71 @@ public class UnitTestCPUTargetTiling : TestClassBase
         {
             compiler.Gencode(fs);
         }
+    }
+}
+
+internal sealed class TilingCaseSlice : TheoryData<Function, Tensor[]>
+{
+    public TilingCaseSlice()
+    {
+        var in_a = new Var("in_a", new TensorType(DataTypes.Float32, new[] { 1, 1, 1, 128 }));
+
+        Fusion fusion;
+        {
+            var fin_a = new Var("fin_a", new TensorType(DataTypes.Float32, new[] { 1, 1, 1, 128 }));
+            var v1 = new Call(new IR.CPU.CPUKernelOp(new IR.Tensors.Slice()), fin_a, new[] { 64 }, new[] { 128 }, new[] { 3 }, new[] { 1 });
+            fusion = new Fusion("cpu", v1, fin_a);
+        }
+
+        var main = new Function("slice", new Call(fusion, in_a), new[] { in_a });
+        Add(main, Array.Empty<Tensor>());
+    }
+}
+
+internal sealed class TilingCaseConcat : TheoryData<Function, Tensor[]>
+{
+    public TilingCaseConcat()
+    {
+        var in_a = new Var("in_a", new TensorType(DataTypes.Float32, new[] { 1, 64, 384, 64 }));
+        var in_b = new Var("in_b", new TensorType(DataTypes.Float32, new[] { 1, 64, 384, 64 }));
+
+        Fusion fusion;
+        {
+            var fin_a = new Var("fin_a", new TensorType(DataTypes.Float32, new[] { 1, 64, 384, 64 }));
+            var fin_b = new Var("fin_b", new TensorType(DataTypes.Float32, new[] { 1, 64, 384, 64 }));
+            var v1 = new Call(new IR.CPU.CPUKernelOp(new IR.Tensors.Concat(3)), new IR.Tuple(fin_a, fin_b));
+            fusion = new Fusion("cpu", v1, fin_a, fin_b);
+        }
+
+        var main = new Function("concat", new Call(fusion, in_a, in_b), new[] { in_a, in_b });
+        Add(main, Array.Empty<Tensor>());
+    }
+}
+
+internal sealed class TilingCaseMatmulLayerNorm : TheoryData<Function, Tensor[]>
+{
+    public TilingCaseMatmulLayerNorm()
+    {
+        var hid_in = new Var("hidden_in", new TensorType(DataTypes.Float32, new[] { 1, 384, 8192 }));
+
+        Fusion fusion;
+        {
+            var scale = IR.F.Tensors.ConstantOfShape(new[] { 8192 }, 1.0f).Evaluate().AsTensor();
+            var bias = IR.F.Tensors.ConstantOfShape(new[] { 8192 }, 0.0f).Evaluate().AsTensor();
+            var weights = IR.F.Random.Normal(DataTypes.Float32, new[] { 1, 64, 8192, 128 }).Evaluate().AsTensor();
+            var gdata = IR.F.Random.Normal(DataTypes.Float32, new[] { 384, 128 }).Evaluate().AsTensor();
+
+            var fin = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 384, 8192 }));
+            var v0 = new Call(new IR.CPU.CPUKernelOp(new IR.NN.LayerNorm(2, 1e-6f, false)), fin, scale, bias);
+            var v1 = new Call(new IR.CPU.CPUKernelOp(new IR.Tensors.Unsqueeze()), v0, new[] { 0 });
+            var v2 = new Call(new IR.CPU.CPUKernelOp(new IR.Math.MatMul()), v1, weights);
+            var v3 = new Call(new IR.CPU.CPUKernelOp(new IR.Math.Unary(UnaryOp.Exp)), v2);
+
+            fusion = new Fusion("cpu", v3, fin);
+        }
+
+        var main = new Function("matmul_layernorm", new Call(fusion, hid_in), new[] { hid_in });
+        Add(main, new Tensor[] { });
     }
 }
 

@@ -46,4 +46,11 @@ public partial class XPU
     {
         return new Call(new IR.XPU.Gather(axis), input, indices, output);
     }
+
+    public static Call Concat(int axis, Expr[] inputs, Expr output)
+    {
+        return new Call(new Concat(axis), inputs.Concat(new[] { output }).ToArray());
+    }
+
+    internal static Expr Slice(TIR.Buffer input, TIR.Buffer output, Expr begins, Expr ends, Expr axes, DistributedType distributedType) => new Call(new Slice(distributedType), input, output, begins, ends, axes);
 }

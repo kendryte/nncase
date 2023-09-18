@@ -37,8 +37,8 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         var ndsbp = new SBP[a.Placement.Rank];
         for (int i = 0; i < a.Placement.Rank; i++)
         {
-            var invalid = new InvalidType($"({a.NdSbp[i]}, {b.NdSbp[i]}) not support");
-            switch (a.NdSbp[i], b.NdSbp[i])
+            var invalid = new InvalidType($"({a.NdSBP[i]}, {b.NdSBP[i]}) not support");
+            switch (a.NdSBP[i], b.NdSBP[i])
             {
                 // split on k
                 case (SBPSplit { Axis: int ax }, SBPSplit { Axis: int bx }):

@@ -44,9 +44,8 @@ internal static class CSourceExtensions
         _ => throw new NotSupportedException(location.ToString()),
     };
 
-    public static string ToSlicing(this TensorType tensorType, IRArray<SBP> ndsbp, Placement placement)
+    public static string ToSlicing(this TensorType tensorType, string[] begins, IRArray<SBP> ndsbp, Placement placement)
     {
-        var begins = Enumerable.Repeat("0", tensorType.Shape.Rank).ToArray();
         var hstrides = TensorUtilities.GetStrides(placement.Hierarchy.ToArray());
         foreach (var (sbp, i) in ndsbp.Select((s, i) => (s, i)))
         {
@@ -58,6 +57,8 @@ internal static class CSourceExtensions
 
         return $"({{{string.Join(',', begins)}}}, {{{string.Join(",", tensorType.Shape)}}})";
     }
+
+    public static string ToSlicing(this TensorType tensorType, IRArray<SBP> ndsbp, Placement placement) => ToSlicing(tensorType, Enumerable.Repeat("0", tensorType.Shape.Rank).ToArray(), ndsbp, placement);
 
     public static string ToC(this BinaryOp binaryOp) => binaryOp switch
     {

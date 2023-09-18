@@ -278,7 +278,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
     public override string VisitType(DistributedType type)
     {
         var shape = type.TensorType.Shape.ToArray();
-        foreach (var (s, r) in type.NdSbp.Select((s, r) => (s, r)))
+        foreach (var (s, r) in type.NdSBP.Select((s, r) => (s, r)))
         {
             if (s is SBPSplit split)
             {
@@ -290,7 +290,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         }
 
         var sshape = shape.Select(s => s.ToString()).ToArray();
-        foreach (var (s, r) in type.NdSbp.Select((s, r) => (s, r)))
+        foreach (var (s, r) in type.NdSBP.Select((s, r) => (s, r)))
         {
             if (s is SBPSplit split)
             {
@@ -298,7 +298,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
             }
         }
 
-        return $"{{{VisitType(type.TensorType)}, ({string.Join(',', type.NdSbp)}), [{string.Join(',', sshape)}]}}";
+        return $"{{{VisitType(type.TensorType)}, ({string.Join(',', type.NdSBP)}), [{string.Join(',', sshape)}]}}";
     }
 
     /// <inheritdoc/>

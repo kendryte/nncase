@@ -41,7 +41,7 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
                 };
                 break;
 
-            case (DistributedType a, DistributedType b) when a.Placement == b.Placement && a.NdSbp != b.NdSbp:
+            case (DistributedType a, DistributedType b) when a.Placement == b.Placement && a.NdSBP != b.NdSBP:
                 {
                     var fullLoadStore = new Cost()
                     {
@@ -53,7 +53,7 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
                     float gatherPart = 1;
                     for (int i = 0; i < a.Placement.Rank; i++)
                     {
-                        switch (a.NdSbp[i], b.NdSbp[i])
+                        switch (a.NdSBP[i], b.NdSBP[i])
                         {
                             case (SBPSplit { Axis: int ax }, SBP sbpout):
                                 switch (sbpout)

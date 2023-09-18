@@ -135,12 +135,7 @@ internal sealed class SingleCPUFusionConverter
             }
 
             var equivalArgs = op.Parameters.
-                Select(param => (param.ParameterKind, expr.Arguments[param.Index]) switch
-                {
-                    (ParameterKind.Input, Expr e) when e is Const or Var => DistributedUtility.GetLeafCandidateBoxings(e, Placement),
-                    (ParameterKind.Attribute, Expr e) when e is Const or Var => new[] { e },
-                    (_, Expr arg) => ExprMemo[arg],
-                }).ToArray();
+                Select(param => GetLeafArgCandidates(param.ParameterKind, expr.Arguments[param.Index])).ToArray();
             var equivalCalls = equivalArgs.
                 CartesianProduct().
                 Select(args => args.ToArray()).
@@ -187,6 +182,14 @@ internal sealed class SingleCPUFusionConverter
             return equivalCalls.Where(t => t.Valid).Select(t => t.Call).ToArray();
         }
 
+        private IReadOnlyList<Expr> GetLeafArgCandidates(ParameterKind parameterKind, Expr expr) => (parameterKind, expr) switch
+        {
+            (ParameterKind.Input, Expr e) when e is Const or Var => DistributedUtility.GetLeafCandidateBoxings(e, Placement),
+            (ParameterKind.Input, Expr e) when e is IR.Tuple tp => tp.Fields.ToArray().Select(f => GetLeafArgCandidates(parameterKind, f)).CartesianProduct().Select(e => new IR.Tuple(e.ToArray())).ToArray(),
+            (ParameterKind.Attribute, Expr e) when e is Const or Var => new[] { e },
+            (_, Expr arg) => ExprMemo[arg],
+        };
+
         private IEnumerable<(bool Valid, Call Call)> BuildEqualityCalls(Op target, Expr[] args)
         {
             if (!target.Parameters.Where(p => p.ParameterKind == ParameterKind.Input).All(p => IsDistributed(args[p.Index].CheckedType)))
@@ -202,7 +205,7 @@ internal sealed class SingleCPUFusionConverter
             {
                 var broadcastArgs = args.Select(DistributedUtility.GetPartialCandidateBoxings).ToArray();
 
-                if (broadcastArgs.All(bargs => bargs.Count >= 0))
+                if (!broadcastArgs.All(bargs => bargs.Count == 0))
                 {
                     calls.AddRange(broadcastArgs.Select((bargs, i) => bargs.Any() ? bargs : bargs.Concat(new[] { args[i] })).
                         CartesianProduct().
@@ -267,6 +270,11 @@ internal sealed class SingleCPUFusionConverter
                             break;
                         case Gather gather:
                             GenerateGather(gather, arguments, ret);
+                        case Concat concat:
+                            GenerateConcat(concat, ((IR.Tuple)expr.Arguments[0]).Fields.AsValueEnumerable().Select(AllocOrGetBuffer).ToArray(), ret);
+                            break;
+                        case Slice slice:
+                            GenerateSlice(slice, arguments[0], ret, expr.Arguments[1], expr.Arguments[2], expr.Arguments[3], (DistributedType)expr.CheckedType);
                             break;
                         default:
                             throw new NotSupportedException();
@@ -283,19 +291,29 @@ internal sealed class SingleCPUFusionConverter
             return default;
         }
 
+        private void GenerateConcat(Concat concat, Buffer[] inputs, Buffer ret)
+        {
+            _mainBody.Add(IR.F.XPU.Concat(concat.Axis, inputs, ret));
+        }
+
+        private void GenerateSlice(Slice slice, Buffer input, Buffer output, Expr begins, Expr ends, Expr axes, DistributedType distributedType)
+        {
+            _mainBody.Add(IR.F.XPU.Slice(input, output, begins, ends, axes, distributedType));
+        }
+
         private void GenerateBoxing(Boxing boxing, Buffer[] arguments, Buffer ret, Call expr)
         {
             switch (expr.Arguments[0].CheckedType, boxing.NewType)
             {
                 case (TensorType tensorType, DistributedType distTensorType):
                     {
-                        _mainBody.Add(IR.F.XPU.TDMALoad(ret, arguments[0], distTensorType.NdSbp, distTensorType.Placement));
+                        _mainBody.Add(IR.F.XPU.TDMALoad(ret, arguments[0], distTensorType.NdSBP, distTensorType.Placement));
                     }
 
                     break;
                 case (DistributedType distTensorType, TensorType tensorType):
                     {
-                        _mainBody.Add(IR.F.XPU.TDMAStore(arguments[0], ret, distTensorType.NdSbp, distTensorType.Placement));
+                        _mainBody.Add(IR.F.XPU.TDMAStore(arguments[0], ret, distTensorType.NdSBP, distTensorType.Placement));
                     }
 
                     break;
@@ -418,6 +436,8 @@ internal sealed class SingleCPUFusionConverter
                     case TensorConst c:
                         buffer = T.AttachBuffer(c, out _, name);
                         break;
+                    case IR.Tuple:
+                        return null!;
                     default:
                         throw new NotSupportedException();
                 }
@@ -446,7 +466,7 @@ internal sealed class SingleCPUFusionConverter
             TensorType tensorType;
             if (type is DistributedType distTensor)
             {
-                if (!DistributedUtility.IsDistributable(distTensor.TensorType, distTensor.NdSbp.ToArray(), distTensor.Placement, out var tType))
+                if (!DistributedUtility.IsDistributable(distTensor.TensorType, distTensor.NdSBP.ToArray(), distTensor.Placement, out var tType))
                 {
                     throw new NotSupportedException();
                 }

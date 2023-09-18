@@ -240,6 +240,6 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
             return new InvalidType("not support input tensor type infer");
         }
 
-        return new DistributedType(tensorType, input.NdSbp, input.Placement);
+        return new DistributedType(tensorType, input.NdSBP, input.Placement);
     }
 }
