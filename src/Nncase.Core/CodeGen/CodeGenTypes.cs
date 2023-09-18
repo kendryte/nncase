@@ -47,7 +47,7 @@ public static class ModelInfo
     /// <summary>
     /// kmodel version.
     /// </summary>
-    public const int Version = 6;
+    public const int Version = 7;
 
     /// <summary>
     /// merged rdata flag.

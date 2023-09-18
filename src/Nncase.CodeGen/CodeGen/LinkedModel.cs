@@ -103,7 +103,7 @@ internal sealed class LinkedModel : ILinkedModel
         var endPos = writer.Position();
 
         // Write header
-        header.Size = (uint)(endPos - headerPos);
+        header.Size = (ulong)(endPos - headerPos);
         writer.Position(headerPos);
         writer.Write(ref header);
         writer.Position(endPos);
@@ -138,7 +138,7 @@ internal sealed class LinkedModel : ILinkedModel
         var endPos = writer.Position();
 
         // Write header
-        funcHeader.Size = (uint)(endPos - headerPos);
+        funcHeader.Size = (ulong)(endPos - headerPos);
         writer.Position(headerPos);
         writer.Write(ref funcHeader);
         writer.Position(endPos);
@@ -157,7 +157,7 @@ internal sealed class LinkedModel : ILinkedModel
         var headerPos = writer.Position();
         writer.Skip((ulong)sizeof(SectionHeader));
 
-        header.BodyStart = (uint)writer.AlignPosition(section.Alignment);
+        header.BodyStart = (ulong)writer.AlignPosition(section.Alignment);
         writer.Flush();
         section.Serialize(writer.BaseStream);
 
@@ -165,7 +165,7 @@ internal sealed class LinkedModel : ILinkedModel
         var endPos = writer.Position();
 
         // Write header
-        header.Size = (uint)(endPos - headerPos);
+        header.Size = (ulong)(endPos - headerPos);
         writer.Position(headerPos);
         writer.Write(ref header);
         writer.Position(endPos);

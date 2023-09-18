@@ -33,7 +33,7 @@ internal class StackVMFunctionBuilder : FunctionBuilder
         _textEmitter = new StackVMEmitter(TextWriter);
     }
 
-    protected override ILinkableFunction CreateLinkableFunction(uint id, BaseFunction callable, IReadOnlyList<FunctionRef> functionRefs, byte[] text)
+    protected override ILinkableFunction CreateLinkableFunction(uint id, BaseFunction callable, IReadOnlyList<FunctionRef> functionRefs, Stream text)
     {
         return new StackVMLinkableFunction(id, callable, functionRefs, _localsAllocator.MaxCount, text, _context.CustomCallModules);
     }

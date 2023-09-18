@@ -32,17 +32,15 @@ namespace Nncase.Importer.TFLite
             }
 
             var options = op.BuiltinOptionsAsTransposeConvOptions();
-            var (_, _) = Util.GetHW(input);
-            var (fH, fW) = Util.GetHW(weights, true);
             var strideH = options.StrideH;
             var strideW = options.StrideW;
             var dilationH = 1;
             var dilationW = 1;
-            var padH = Util.GetWindowedPadding(newOutShape[2], fH, strideH, dilationH, options.Padding == tflite.Padding.SAME);
-            var padW = Util.GetWindowedPadding(newOutShape[3], fW, strideW, dilationW, options.Padding == tflite.Padding.SAME);
             var stride = Tensor.From<int>(new[] { strideH, strideW }, new[] { 2 });
             var dilation = Tensor.From<int>(new[] { dilationH, dilationW }, new[] { 2 });
-            var padding = Util.ConcatPadding(padH, padW);
+            var oldWShape = F.Tensors.ShapeOf(weights);
+            var wShape = F.Tensors.Stack(new IR.Tuple(oldWShape[0], oldWShape[3], oldWShape[1], oldWShape[2]), 0);
+            var padding = F.ShapeExpr.GetPaddings(F.Tensors.Stack(new IR.Tuple(newOutShape), 0), wShape, stride, dilation, options.Padding == tflite.Padding.SAME, false);
             var clamp = ValueRange<float>.Full;
 
             return F.Tensors.NCHWToNHWC(F.Math.Clamp(

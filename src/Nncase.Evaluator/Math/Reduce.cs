@@ -110,7 +110,7 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICos
             {
                 if (axes.Length == input.CheckedShape.Count && keepDimsValue == 0)
                 {
-                    return Array.Empty<int>();
+                    return Array.Empty<long>();
                 }
             }
 
@@ -119,7 +119,7 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICos
                 var ax = ShapeExprUtility.Positive(axValue, inShape);
                 if (keepDimsValue == 1)
                 {
-                    outShape = ShapeExprUtility.Replace(outShape, ax, 1);
+                    outShape = ShapeExprUtility.Replace(outShape, ax, 1L);
                 }
                 else
                 {
@@ -127,7 +127,7 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICos
                 }
             }
 
-            return outShape;
+            return Cast(outShape, DataTypes.Int64);
         }
 
         throw new NotImplementedException();
