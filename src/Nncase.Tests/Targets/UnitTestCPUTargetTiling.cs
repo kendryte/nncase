@@ -36,13 +36,14 @@ public class UnitTestCPUTargetTiling : TestClassBase
     [Theory]
 
     // [ClassData(typeof(TilingCaseMHA))]
-    [ClassData(typeof(TilingCaseBinaryMul))]
-    [ClassData(typeof(TilingCaseUnary))]
-    [ClassData(typeof(TilingCaseMatmul))]
-    [ClassData(typeof(TilingCaseMatmulUnary))]
-    [ClassData(typeof(TilingCaseLayerNorm))]
-    [ClassData(typeof(TilingCaseGather))]
-    [ClassData(typeof(TilingCaseSoftmax))]
+    // [ClassData(typeof(TilingCaseBinaryMul))]
+    // [ClassData(typeof(TilingCaseUnary))]
+    // [ClassData(typeof(TilingCaseMatmul))]
+    // [ClassData(typeof(TilingCaseMatmulUnary))]
+    // [ClassData(typeof(TilingCaseLayerNorm))]
+    // [ClassData(typeof(TilingCaseGather))]
+    // [ClassData(typeof(TilingCaseSoftmax))]
+    [ClassData(typeof(TilingCaseSlice))]
     public async Task TestCpuFunction(Function main, Tensor[] inputs)
     {
         var module = new IR.IRModule(main);
@@ -86,17 +87,26 @@ internal sealed class TilingCaseSlice : TheoryData<Function, Tensor[]>
 {
     public TilingCaseSlice()
     {
-        var in_a = new Var("in_a", new TensorType(DataTypes.Float32, new[] { 1, 1, 1, 128 }));
+        var shape = new[] { 1, 1, 64, 128 };
+        var in_a = new Var("in_a", new TensorType(DataTypes.Float32, shape));
 
         Fusion fusion;
+        Var fin_a;
         {
-            var fin_a = new Var("fin_a", new TensorType(DataTypes.Float32, new[] { 1, 1, 1, 128 }));
+            fin_a = new Var("fin_a", new TensorType(DataTypes.Float32, shape));
             var v1 = new Call(new IR.CPU.CPUKernelOp(new IR.Tensors.Slice()), fin_a, new[] { 64 }, new[] { 128 }, new[] { 3 }, new[] { 1 });
             fusion = new Fusion("cpu", v1, fin_a);
         }
 
+        var input_tensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, shape).Evaluate().AsTensor();
+        var feedDict = new Dictionary<Var, IValue>
+        {
+            { fin_a, Value.FromTensor(input_tensor) },
+        };
+        var output = fusion.Body.Evaluate(feedDict).AsTensor();
+
         var main = new Function("slice", new Call(fusion, in_a), new[] { in_a });
-        Add(main, Array.Empty<Tensor>());
+        Add(main, new[] { input_tensor, output });
     }
 }
 

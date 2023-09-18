@@ -235,11 +235,18 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
 
     private IRType Visit(ITypeInferenceContext context, Slice target, DistributedType input)
     {
-        if (Visit(context, target, input.TensorType) is not TensorType tensorType)
+        var outType = Visit(context, target, input.TensorType);
+        if (outType is not TensorType tensorType)
         {
             return new InvalidType("not support input tensor type infer");
         }
 
-        return new DistributedType(tensorType, input.NdSBP, input.Placement);
+        var axes = ((TensorConst)context.GetArgument(target, Slice.Axes)).Value.ToArray<int>();
+        if (input.NdSBP.Any(sbp => sbp is SBPSplit s && axes.Contains(s.Axis)))
+        {
+            return new InvalidType("not support input tensor type infer");
+        }
+
+        return new DistributedType((TensorType)outType, input.NdSBP, input.Placement);
     }
 }
