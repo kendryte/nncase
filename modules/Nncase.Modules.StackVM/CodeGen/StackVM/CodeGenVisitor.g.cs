@@ -271,23 +271,26 @@ internal partial class CodeGenVisitor
             case IR.ShapeExpr.Conv2DTransposeShape top:
                 Emitter.T.Conv2DTransposeShape();
                 break;
+            case IR.ShapeExpr.GetPaddings top:
+                Emitter.T.GetPaddings();
+                break;
             case IR.ShapeExpr.MatMulShape top:
                 Emitter.T.MatMulShape();
                 break;
+            case IR.ShapeExpr.ReshapeShape top:
+                Emitter.T.ReshapeShape();
+                break;
+            case IR.ShapeExpr.SqueezeShape top:
+                Emitter.T.SqueezeShape();
+                break;
+            case IR.ShapeExpr.TransposeShape top:
+                Emitter.T.TransposeShape();
+                break;
+            case IR.ShapeExpr.UnsqueezeShape top:
+                Emitter.T.UnsqueezeShape();
+                break;
             case IR.Random.Normal top:
                 Emitter.T.Normal(top.Type);
-                break;
-            case IR.Random.NormalLike top:
-                Emitter.T.NormalLike(top.Type);
-                break;
-            case IR.Random.Uniform top:
-                Emitter.T.Uniform(top.Type);
-                break;
-            case IR.Random.UniformLike top:
-                Emitter.T.UniformLike(top.Type);
-                break;
-            case IR.Imaging.ResizeImage top:
-                Emitter.T.ResizeImage(top.ResizeMode, top.TransformationMode, top.NearestMode, top.IsTFResize);
                 break;
             default:
                 throw new ArgumentException($"Unsupported op: {op}");
