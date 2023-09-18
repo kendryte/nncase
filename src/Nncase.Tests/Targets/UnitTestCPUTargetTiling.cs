@@ -40,12 +40,28 @@ public class UnitTestCPUTargetTiling : TestClassBase
     [ClassData(typeof(TilingCaseUnary))]
     [ClassData(typeof(TilingCaseMatmul))]
     [ClassData(typeof(TilingCaseMatmulUnary))]
-    // [ClassData(typeof(TilingCaseLayerNorm))]
+    [ClassData(typeof(TilingCaseLayerNorm))]
     public async Task TestCpuFunction(Function main, Tensor[] inputs)
     {
         var module = new IR.IRModule(main);
         using (var _ = new Diagnostics.DumpScope(main.Name, CompileOptions.DumpFlags))
         {
+
+#if DEBUG
+            for (var i = 0; i < inputs.Length - 1; i++)
+            {
+                using (var fs = Diagnostics.DumpScope.Current.OpenFile($"input_{i}.bin"))
+                {
+                    fs.Write(inputs[i].BytesBuffer);
+                }
+            }
+
+            using (var fs = Diagnostics.DumpScope.Current.OpenFile($"output_0.bin"))
+            {
+                fs.Write(inputs[^1].BytesBuffer);
+            }
+#endif
+
             await Compile(module);
             var output = Testing.RunKModel(File.ReadAllBytes(Path.Join(Diagnostics.DumpScope.Current.Directory, "test.kmodel")), Diagnostics.DumpScope.Current.Directory, inputs);
             var cos = Tests.Comparator.CosSimilarity(output, Value.FromTensor(inputs[^1]))[0];

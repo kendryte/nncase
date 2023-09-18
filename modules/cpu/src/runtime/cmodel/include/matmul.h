@@ -59,12 +59,21 @@ void contiguous_matmul_impl(const T *input_a, const T *input_b, T *output,
             for (size_t h = 0; h < dim2; ++h) {
                 auto ah = new_a_shape[2] == 1 ? 0 : h;
                 auto bh = new_b_shape[2] == 1 ? 0 : h;
+#ifdef __riscv_vector
+                nncase_mt->matmul_unit_impl(
+                    input_a + an * ab_size + ac * ah_size + ah * a_unit_size,
+                    input_b + bn * bb_size + bc * bh_size + bh * b_unit_size,
+                    output + n * ob_size + c * oh_size + h * out_unit_size,
+                    new_a_shape[3], new_a_shape[4], new_b_shape[4],
+                    new_a_shape[4], new_b_shape[4], new_b_shape[4]);
+#else
                 matmul_unit_impl(
                     input_a + an * ab_size + ac * ah_size + ah * a_unit_size,
                     input_b + bn * bb_size + bc * bh_size + bh * b_unit_size,
                     output + n * ob_size + c * oh_size + h * out_unit_size,
                     std::array<size_t, 2>{new_a_shape[3], new_a_shape[4]},
                     std::array<size_t, 2>{new_b_shape[3], new_b_shape[4]});
+#endif
             }
         }
     }
@@ -98,8 +107,15 @@ void no_contiguous_matmul_impl(const T *input_a, const T *input_b, T *output,
                                     bc * new_b_stride[1] + bh * new_b_stride[2];
                 T *out_ptr = output + n * new_out_stride[0] +
                              c * new_out_stride[1] + h * new_out_stride[2];
+#ifdef __riscv_vector
+                nncase_mt->matmul_unit_impl(in_a_ptr, in_b_ptr, out_ptr, new_a_shape[3],
+                                            new_a_shape[4], new_b_shape[4],
+                                            new_a_stride[3], new_b_stride[3],
+                                            new_b_stride[3]);
+#else
                 for (size_t m = 0; m < new_a_shape[3]; m++) {
-                    T *values = (T*)runtime_util->malloc(new_b_shape[4] * sizeof(T));
+                    T *values =
+                        (T *)runtime_util->malloc(new_b_shape[4] * sizeof(T));
                     for (size_t k = 0; k < new_a_shape[4]; k++) {
                         for (size_t n = 0; n < new_b_shape[4]; n++) {
                             values[n] += in_a_ptr[m * new_a_stride[3] +
@@ -114,6 +130,7 @@ void no_contiguous_matmul_impl(const T *input_a, const T *input_b, T *output,
                     }
                     runtime_util->free(values);
                 }
+#endif
             }
         }
     }

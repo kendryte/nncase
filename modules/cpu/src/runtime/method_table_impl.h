@@ -9,6 +9,9 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#ifdef __riscv_vector
+#include <riscv_vector.h>
+#endif
 
 BEGIN_NS_NNCASE_RT_MODULE(cpu)
 
@@ -64,69 +67,108 @@ inline bool bool_binary_logical_and(bool x, bool y) { return x && y; }
 inline bool bool_binary_logical_or(bool x, bool y) { return x || y; }
 inline bool bool_binary_logical_xor(bool x, bool y) { return x ^ y; }
 
-[[maybe_unused]] static nncase_mt_t nncase_mt = {fabsf,
-                                acosf,
-                                acoshf,
-                                asinf,
-                                asinhf,
-                                ceilf,
-                                cosf,
-                                coshf,
-                                expf,
-                                floorf,
-                                logf,
-                                float_unary_logical_not,
-                                float_unary_neg,
-                                roundf,
-                                float_unary_rsqrt,
-                                float_unary_sign,
-                                sinf,
-                                sinhf,
-                                sqrtf,
-                                float_unary_square,
-                                tanhf,
-                                float_binary_add,
-                                float_binary_sub,
-                                float_binary_mul,
-                                float_binary_div,
-                                float_binary_min,
-                                float_binary_max,
-                                float_binary_pow,
-                                float_binary_logical_and,
-                                float_binary_mod,
-                                int32_binary_add,
-                                int32_binary_sub,
-                                int32_binary_mul,
-                                int32_binary_div,
-                                int32_binary_min,
-                                int32_binary_max,
-                                int32_binary_pow,
-                                int32_binary_logical_and,
-                                int32_binary_mod,
-                                int64_binary_add,
-                                int64_binary_sub,
-                                int64_binary_mul,
-                                int64_binary_div,
-                                int64_binary_min,
-                                int64_binary_max,
-                                int64_binary_pow,
-                                int64_binary_logical_and,
-                                int64_binary_mod,
-                                bool_binary_logical_and,
-                                bool_binary_logical_or,
-                                bool_binary_logical_xor};
+#ifdef __riscv_vector
+inline void matmul_unit_impl(const float *input_a, const float *input_b,
+                             float *output, size_t size_m, size_t size_k,
+                             size_t size_n, size_t lda, size_t ldb,
+                             size_t ldc) {
+    size_t vl;
+    for (size_t m = 0; m < size_m; ++m) {
+        const float *b_n_ptr = input_b;
+        float *c_n_ptr = output;
+        for (size_t c_n_count = size_n; c_n_count; c_n_count -= vl) {
+            vl = vsetvl_e32m1(c_n_count);
+            const float *a_k_ptr = input_a;
+            const float *b_k_ptr = b_n_ptr;
+            vfloat32m1_t acc = vle32_v_f32m1(c_n_ptr, vl);
+            for (size_t k = 0; k < size_k; ++k) {
+                vfloat32m1_t b_n_data = vle32_v_f32m1(b_k_ptr, vl);
+                acc = vfmacc_vf_f32m1(acc, *a_k_ptr, b_n_data, vl);
+                b_k_ptr += ldb;
+                a_k_ptr++;
+            }
+            vse32_v_f32m1(c_n_ptr, acc, vl);
+            c_n_ptr += vl;
+            b_n_ptr += vl;
+        }
+        input_a += lda;
+        output += ldc;
+    }
+}
+#else
+inline void
+matmul_unit_impl([[maybe_unused]] const float *input_a,
+                 [[maybe_unused]] const float *input_b,
+                 [[maybe_unused]] float *output, [[maybe_unused]] size_t size_m,
+                 [[maybe_unused]] size_t size_k, [[maybe_unused]] size_t size_n,
+                 [[maybe_unused]] size_t lda, [[maybe_unused]] size_t ldb,
+                 [[maybe_unused]] size_t ldc) {
+    throw std::runtime_error("not supported");
+}
+#endif
+
+[[maybe_unused]] static nncase_mt_t nncase_mt = {
+    fabsf,
+    acosf,
+    acoshf,
+    asinf,
+    asinhf,
+    ceilf,
+    cosf,
+    coshf,
+    expf,
+    floorf,
+    logf,
+    float_unary_logical_not,
+    float_unary_neg,
+    roundf,
+    float_unary_rsqrt,
+    float_unary_sign,
+    sinf,
+    sinhf,
+    sqrtf,
+    float_unary_square,
+    tanhf,
+    float_binary_add,
+    float_binary_sub,
+    float_binary_mul,
+    float_binary_div,
+    float_binary_min,
+    float_binary_max,
+    float_binary_pow,
+    float_binary_logical_and,
+    float_binary_mod,
+    int32_binary_add,
+    int32_binary_sub,
+    int32_binary_mul,
+    int32_binary_div,
+    int32_binary_min,
+    int32_binary_max,
+    int32_binary_pow,
+    int32_binary_logical_and,
+    int32_binary_mod,
+    int64_binary_add,
+    int64_binary_sub,
+    int64_binary_mul,
+    int64_binary_div,
+    int64_binary_min,
+    int64_binary_max,
+    int64_binary_pow,
+    int64_binary_logical_and,
+    int64_binary_mod,
+    bool_binary_logical_and,
+    bool_binary_logical_or,
+    bool_binary_logical_xor,
+    thread_pool::thread_start,
+    thread_pool::thread_end,
+    matmul_unit_impl,
+};
 
 inline void *rt_malloc(size_t size) { return (void *)new uint8_t[size](); }
 
 [[maybe_unused]] static runtime_util_mt runtime_util = {
-    printf,
-    rt_malloc,
-    free,
-    create_thread,
-    join_thread,
-    rt_assert,
-    memcpy,
-    memset};
+    printf,      rt_malloc, free,   create_thread,
+    join_thread, rt_assert, memcpy, memset};
 
 [[maybe_unused]] static hardware_context_mt hw_ctx_mt = {
     hardware_context::lock_block,   hardware_context::mark_block_visit,
