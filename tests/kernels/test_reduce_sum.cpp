@@ -99,7 +99,7 @@ TEST_P(ReduceSumTest, ReduceSum) {
         dims_t shape(tensor_rank(output_ort));
         tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
         auto expected =
-            hrt::create(dt_float32, shape,
+            hrt::create(a.datatype(), shape,
                         {reinterpret_cast<gsl::byte *>(ptr_ort), size}, true,
                         host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
