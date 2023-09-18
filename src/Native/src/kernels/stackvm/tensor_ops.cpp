@@ -621,10 +621,10 @@ result<value_t> kernels::stackvm::prelu(value_t input, value_t slope,
     try_f32_in_mem(input);
     try_f32_in_mem(slope);
     try_f32_output(out_mem, output, input_tensor->shape());
-    try_(reference::prelu(
-        input_mem, slope_mem, out_mem, input_tensor->shape(),
-        input_tensor->strides(), slope_tensor->shape(), slope_tensor->strides(),
-        output_tensor->shape(), output_tensor->strides(), context));
+    try_(reference::prelu(input_mem, slope_mem, out_mem, input_tensor->shape(),
+                          input_tensor->strides(), slope_tensor->shape(),
+                          slope_tensor->strides(), output_tensor->shape(),
+                          output_tensor->strides(), context));
     return ok(output);
 }
 
