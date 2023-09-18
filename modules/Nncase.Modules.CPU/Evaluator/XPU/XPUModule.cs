@@ -24,5 +24,6 @@ internal class XPUModule : IApplicationPart
         registrator.RegisterManyInterface<GatherEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<ConcatEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<SliceEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<SoftmaxEvaluator>(reuse: Reuse.Singleton);
     }
 }

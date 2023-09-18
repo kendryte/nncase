@@ -42,6 +42,7 @@ public class UnitTestCPUTargetTiling : TestClassBase
     [ClassData(typeof(TilingCaseMatmulUnary))]
     [ClassData(typeof(TilingCaseLayerNorm))]
     [ClassData(typeof(TilingCaseGather))]
+    [ClassData(typeof(TilingCaseSoftmax))]
     public async Task TestCpuFunction(Function main, Tensor[] inputs)
     {
         var module = new IR.IRModule(main);
@@ -367,6 +368,35 @@ internal sealed class TilingCaseGather : TheoryData<Function, Tensor[]>
         }
 
         var main = new Function("gather", new Call(fusion, input), new[] { input });
+
+        var input_tensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, inputShape).Evaluate().AsTensor();
+        var feedDict = new Dictionary<Var, IValue>
+        {
+            { fin, Value.FromTensor(input_tensor) },
+        };
+        var output = fusion.Body.Evaluate(feedDict).AsTensor();
+
+        Add(main, new[] { input_tensor, output });
+    }
+}
+
+internal sealed class TilingCaseSoftmax : TheoryData<Function, Tensor[]>
+{
+    public TilingCaseSoftmax()
+    {
+        var inputShape = new[] { 1, 64, 384, 384 };
+        int axis = 3;
+        var input = new Var("input", new TensorType(DataTypes.Float32, inputShape));
+
+        Fusion fusion;
+        Var fin;
+        {
+            fin = new Var("input", new TensorType(DataTypes.Float32, inputShape));
+            var v0 = new Call(new IR.CPU.CPUKernelOp(new IR.NN.Softmax()), fin, axis);
+            fusion = new Fusion("cpu", v0, fin);
+        }
+
+        var main = new Function("softmax", new Call(fusion, input), new[] { input });
 
         var input_tensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, inputShape).Evaluate().AsTensor();
         var feedDict = new Dictionary<Var, IValue>

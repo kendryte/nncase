@@ -277,6 +277,9 @@ internal sealed class SingleCPUFusionConverter
                         case Slice slice:
                             GenerateSlice(slice, arguments[0], ret, expr.Arguments[1], expr.Arguments[2], expr.Arguments[3], (DistributedType)expr.CheckedType);
                             break;
+                        case Softmax softmax:
+                            GenerateSoftmax(softmax, ((TensorConst)expr.Arguments[1]).Value.ToScalar<int>(), arguments, ret);
+                            break;
                         default:
                             throw new NotSupportedException();
                     }
@@ -347,6 +350,11 @@ internal sealed class SingleCPUFusionConverter
         private void GenerateGather(Gather gahter, Buffer[] arguments, Buffer ret)
         {
             _mainBody.Add(IR.F.XPU.Gather(gahter.Axis, arguments[0], arguments[1], ret));
+        }
+
+        private void GenerateSoftmax(Softmax softmax, int axis, Buffer[] arguments, Buffer ret)
+        {
+            _mainBody.Add(IR.F.XPU.Softmax(axis, arguments[0], ret));
         }
 
 #if false

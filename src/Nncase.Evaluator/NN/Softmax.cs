@@ -81,14 +81,19 @@ public class SoftmaxEvaluator : IEvaluator<Softmax>, ITypeInferencer<Softmax>, I
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Softmax target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, Softmax.Input);
-        return Visit(input);
+        var input = context.CheckArgumentType<IRType>(target, Softmax.Input);
+        return input switch
+        {
+            TensorType t => Visit(t),
+            DistributedType d => Visit(d),
+            _ => new InvalidType(input.GetType().Name),
+        };
     }
 
     /// <inheritdoc/>
     public Cost Visit(ICostEvaluateContext context, Softmax target)
     {
-        var ret = context.GetReturnType<TensorType>();
+        var ret = context.GetReturnType<IRType>();
         return new()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(ret),
@@ -115,6 +120,11 @@ public class SoftmaxEvaluator : IEvaluator<Softmax>, ITypeInferencer<Softmax>, I
     public Expr Visit(IShapeEvaluateContext context, Softmax target) => context.GetArgumentShape(target, Softmax.Input);
 
     private IRType Visit(TensorType input)
+    {
+        return input;
+    }
+
+    private IRType Visit(DistributedType input)
     {
         return input;
     }

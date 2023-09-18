@@ -337,6 +337,9 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 
                     IndentScope.Writer.Write($"__tensor_copy_sync(std::move({Visit(expr.Arguments[1]).Name}), {Visit(expr.Arguments[0]).Name}({{{string.Join(',', newbegins.Select(e => e.ToString()))}}},{{{string.Join(',', newends.Select(e => e.ToString()))}}}))");
                     break;
+                case IR.XPU.Softmax softmax:
+                    IndentScope.Writer.Write($"softmax({Visit(args[0]).Name}, {Visit(args[1]).Name}, {softmax.Axis})");
+                    break;
                 default:
                     throw new NotSupportedException(xpuOp.ToString());
             }
