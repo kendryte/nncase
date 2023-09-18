@@ -103,7 +103,9 @@ result<void> softmax_impl(const T *input, T *output,
 
     return ok();
 }
+
 } // namespace
+
 result<void> nncase::kernels::stackvm::reference::softmax(
     const float *input, float *output, gsl::span<const size_t> in_shape,
     gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
