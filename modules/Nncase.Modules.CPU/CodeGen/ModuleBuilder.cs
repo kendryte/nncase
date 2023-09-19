@@ -10,14 +10,15 @@ namespace Nncase.CodeGen.CPU;
 /// <summary>
 /// K230CoreModule builder.
 /// </summary>
-public sealed class ModuleBuilder : IModuleBuilder, IDisposable
+public sealed class ModuleBuilder : IModuleBuilder
 {
-    private readonly MemoryStream _rdataContent = new MemoryStream();
+    private readonly SectionManager _sectionManager;
     private readonly BinaryWriter _rdataWriter;
 
     public ModuleBuilder(CompileOptions options)
     {
-        _rdataWriter = new BinaryWriter(_rdataContent, Encoding.UTF8, leaveOpen: true);
+        _sectionManager = new();
+        _rdataWriter = _sectionManager.GetWriter(WellknownSectionNames.Rdata);
         CompileOptions = options;
     }
 
@@ -32,8 +33,6 @@ public sealed class ModuleBuilder : IModuleBuilder, IDisposable
         var linkableFunctions = functions.OfType<TIR.PrimFunction>().Select((f, i) => new FunctionBuilder((uint)i, _rdataWriter).Build(f)).ToArray();
         _rdataWriter.Flush();
 
-        return new LinkableModule(_rdataContent.ToArray(), linkableFunctions, CompileOptions);
+        return new LinkableModule(_sectionManager.GetContent(WellknownSectionNames.Rdata)!, linkableFunctions, CompileOptions);
     }
-
-    public void Dispose() => ((IDisposable)_rdataContent).Dispose();
 }

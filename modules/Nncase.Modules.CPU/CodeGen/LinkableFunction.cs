@@ -8,13 +8,13 @@ namespace Nncase.CodeGen.CPU;
 
 internal sealed class LinkableFunction : ILinkableFunction
 {
-    public LinkableFunction(uint id, TIR.PrimFunction sourceFunction, FunctionCSource funcCSource)
+    public LinkableFunction(uint id, TIR.PrimFunction sourceFunction, FunctionCSource funcCSource, Stream text)
     {
         Id = id;
         SourceFunction = sourceFunction;
         PrimFunction = sourceFunction;
         FunctionCSource = funcCSource;
-        Text = Array.Empty<byte>();
+        Text = text;
         Sections = Array.Empty<ILinkedSection>();
     }
 
@@ -26,7 +26,7 @@ internal sealed class LinkableFunction : ILinkableFunction
 
     public FunctionCSource FunctionCSource { get; }
 
-    public byte[] Text { get; }
+    public Stream Text { get; }
 
     public IEnumerable<FunctionRef> FunctionRefs => Enumerable.Empty<FunctionRef>();
 

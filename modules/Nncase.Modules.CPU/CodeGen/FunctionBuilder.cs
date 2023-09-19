@@ -15,7 +15,7 @@ namespace Nncase.CodeGen.CPU;
 internal class FunctionBuilder : IDisposable
 {
     private readonly uint _id;
-    private readonly MemoryStream _textContent = new MemoryStream();
+    private readonly SectionManager _sectionManager;
     private readonly BinaryWriter _textWriter;
     private readonly BinaryWriter _rdataWriter;
 
@@ -59,7 +59,8 @@ internal class FunctionBuilder : IDisposable
     public FunctionBuilder(uint id, BinaryWriter rdataWriter)
     {
         _id = id;
-        _textWriter = new BinaryWriter(_textContent, Encoding.UTF8, leaveOpen: true);
+        _sectionManager = new();
+        _textWriter = _sectionManager.GetWriter(WellknownSectionNames.Text);
         _rdataWriter = rdataWriter;
     }
 
@@ -84,7 +85,7 @@ internal class FunctionBuilder : IDisposable
             _rdataWriter.Write(bytes);
         }
 
-        return new LinkableFunction(_id, function, functionCSource);
+        return new LinkableFunction(_id, function, functionCSource, _sectionManager.GetContent(WellknownSectionNames.Text));
     }
 
     public void Dispose()

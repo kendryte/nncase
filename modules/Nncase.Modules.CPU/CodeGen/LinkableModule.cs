@@ -16,12 +16,12 @@ internal sealed class LinkableModule : ILinkableModule
 {
     private const int _textAlignment = 8;
 
-    private readonly byte[] _rdata;
+    private readonly Stream _rdata;
 
     private readonly IReadOnlyList<LinkableFunction> _functions;
     private readonly CompileOptions _options;
 
-    public LinkableModule(byte[] rdata, IReadOnlyList<LinkableFunction> functions, CompileOptions options)
+    public LinkableModule(Stream rdata, IReadOnlyList<LinkableFunction> functions, CompileOptions options)
     {
         _rdata = rdata;
         _functions = functions;
@@ -96,7 +96,8 @@ internal sealed class LinkableModule : ILinkableModule
             // }
         }
 
-        var text = new List<byte>();
+        var manager = new SectionManager();
+        var textWriter = manager.GetWriter(WellknownSectionNames.Text);
         var linkedFunctions = new List<LinkedFunction>();
         int offset = 0;
         foreach (var func in _functions)
@@ -105,12 +106,12 @@ internal sealed class LinkableModule : ILinkableModule
             var elfPath = CompileCSource(dumpPath);
 
             var func_text = File.ReadAllBytes(elfPath);
-            text.AddRange(func_text);
+            textWriter.Write(func_text);
             linkedFunctions.Add(new LinkedFunction(func.Id, func.SourceFunction, (uint)offset, (uint)func_text.Length, func.Sections));
             offset += func_text.Length;
         }
 
-        return new LinkedModule(linkedFunctions, text.ToArray(), _rdata);
+        return new LinkedModule(linkedFunctions, manager.GetContent(WellknownSectionNames.Text)!, _rdata);
     }
 
     // private string LinkCSources()
