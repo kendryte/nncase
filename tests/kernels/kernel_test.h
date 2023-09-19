@@ -1133,8 +1133,8 @@ class KernelTest {
         size_t arraySize = array.Size();
         dims_t cArray(arraySize);
         for (rapidjson::SizeType i = 0; i < arraySize; i++) {
-            if (array[i].IsUint()) {
-                cArray[i] = array[i].GetUint();
+            if (array[i].IsInt()) {
+                cArray[i] = array[i].GetInt();
             } else {
                 std::cout << "Invalid JSON format. Expected unsigned integer "
                              "values in the array."
@@ -1153,8 +1153,8 @@ class KernelTest {
         size_t arraySize = array.Size();
         std::vector<int64_t> cArray(arraySize);
         for (rapidjson::SizeType i = 0; i < arraySize; i++) {
-            if (array[i].IsUint()) {
-                cArray[i] = array[i].GetUint();
+            if (array[i].IsInt()) {
+                cArray[i] = array[i].GetInt();
             } else {
                 std::cout << "Invalid JSON format. Expected unsigned integer "
                              "values in the array."
@@ -1173,8 +1173,8 @@ class KernelTest {
         size_t arraySize = array.Size();
         axes_t cArray(arraySize);
         for (rapidjson::SizeType i = 0; i < arraySize; i++) {
-            if (array[i].IsUint()) {
-                cArray[i] = array[i].GetUint();
+            if (array[i].IsInt()) {
+                cArray[i] = array[i].GetInt();
             } else {
                 std::cout << "Invalid JSON format. Expected unsigned integer "
                              "values in the array."
