@@ -178,7 +178,8 @@ void concat(itlib::small_vector<tensor<T, loc_t::local> *> inits,
     }
 
     kernels::concat(inputs, output.data().data(), output.dimension(),
-                    gsl::make_span(in_strides).as_span<const strides_t>(), output.strides(), axis, concat_dims);
+                    gsl::make_span(in_strides).as_span<const strides_t>(),
+                    output.strides(), axis, concat_dims);
 }
 
 template <typename T>
@@ -303,7 +304,7 @@ void reduce_async_visit_func1(int visited, thread_context &ctx,
     if (visited == 1) {
         if (global_hardware_ctx.global_var != nullptr) {
             runtime_util->rt_assert(false,
-                                   (char *)"the global var has been used!");
+                                    (char *)"the global var has been used!");
         }
         gather_span =
             (T *)runtime_util->malloc(sizeof(T) * compute_size(new_dims));
@@ -376,7 +377,7 @@ void all_reduce_async_visit_func1(int visited, thread_context &ctx,
     if (visited == 1) {
         if (global_hardware_ctx.global_var != nullptr) {
             runtime_util->rt_assert(false,
-                                   (char *)"the global var has been used!");
+                                    (char *)"the global var has been used!");
         }
         gather_span =
             (T *)runtime_util->malloc(sizeof(T) * compute_size(new_dims));

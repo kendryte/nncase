@@ -108,10 +108,10 @@ void no_contiguous_matmul_impl(const T *input_a, const T *input_b, T *output,
                 T *out_ptr = output + n * new_out_stride[0] +
                              c * new_out_stride[1] + h * new_out_stride[2];
 #ifdef __riscv_vector
-                nncase_mt->matmul_unit_impl(in_a_ptr, in_b_ptr, out_ptr, new_a_shape[3],
-                                            new_a_shape[4], new_b_shape[4],
-                                            new_a_stride[3], new_b_stride[3],
-                                            new_b_stride[3]);
+                nncase_mt->matmul_unit_impl(in_a_ptr, in_b_ptr, out_ptr,
+                                            new_a_shape[3], new_a_shape[4],
+                                            new_b_shape[4], new_a_stride[3],
+                                            new_b_stride[3], new_b_stride[3]);
 #else
                 for (size_t m = 0; m < new_a_shape[3]; m++) {
                     T *values =

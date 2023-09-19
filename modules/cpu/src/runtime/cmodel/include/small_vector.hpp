@@ -134,8 +134,8 @@
 //
 #pragma once
 
-#include <cstddef>
 #include "gsl-lite.hpp"
+#include <cstddef>
 #include <memory>
 #include <type_traits>
 

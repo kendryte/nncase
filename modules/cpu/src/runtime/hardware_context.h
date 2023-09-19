@@ -7,8 +7,7 @@
 struct hardware_context_impl;
 
 BEGIN_NS_NNCASE_RT_MODULE(cpu)
-namespace hardware_context
-{
+namespace hardware_context {
 void init();
 
 void lock_block(int bid);
@@ -23,5 +22,5 @@ void wait_all_sync(
     int visited, std::function<void()> callable = []() -> void {});
 
 extern std::unique_ptr<hardware_context_impl> impl_;
-}
+} // namespace hardware_context
 END_NS_NNCASE_RT_MODULE

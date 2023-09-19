@@ -1,6 +1,6 @@
 #pragma once
-#include "hardware_def.h"
 #include "elfload.h"
+#include "hardware_def.h"
 #include <inttypes.h>
 #include <math.h>
 #include <nncase/runtime/cpu/compiler_defs.h>
@@ -8,14 +8,16 @@
 #include <stdlib.h>
 #include <string.h>
 #if defined(__linux__)
-#include <sys/mman.h>
 #include "method_table_impl.h"
+#include <sys/mman.h>
 #endif
 
 BEGIN_NS_NNCASE_RT_MODULE(cpu)
 
-typedef void (*entrypoint_t)(hardware_context_mt *hw_ctx_impl, runtime_util_mt *rt_util_mt,
-            nncase_mt_t *nncase_mt_impl, uint8_t **inputs, uint8_t *rdata);
+typedef void (*entrypoint_t)(hardware_context_mt *hw_ctx_impl,
+                             runtime_util_mt *rt_util_mt,
+                             nncase_mt_t *nncase_mt_impl, uint8_t **inputs,
+                             uint8_t *rdata);
 
 class elfloader {
   public:
@@ -50,8 +52,9 @@ class elfloader {
         }
     }
 
-    int invoke_elf(hardware_context_mt *hw_ctx_impl, runtime_util_mt *rt_util_mt,
-            nncase_mt_t *nncase_mt_impl, uint8_t **inputs, uint8_t *rdata);
+    int invoke_elf(hardware_context_mt *hw_ctx_impl,
+                   runtime_util_mt *rt_util_mt, nncase_mt_t *nncase_mt_impl,
+                   uint8_t **inputs, uint8_t *rdata);
 
   private:
     void *ptr_;

@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#include <apply.h>
 #include "../../gsl-lite.hpp"
+#include <apply.h>
 #include <runtime_utils.h>
 
 enum class reduce_op_t : uint8_t {
@@ -146,9 +146,11 @@ void reduce(reduce_op_t op, const T *init_value, const T *input, T *output,
             gsl::span<const size_t> out_strides, bool keep_dims) noexcept {
     auto out_shape = get_reduced_shape(in_shape, axis, keep_dims);
     switch (op) {
-        REDUCE_IMPL(reduce_op_t::mean, [](T a, T b) { return a + b; },
-                    [block_size = (T)get_reduce_block_size(in_shape, axis)](
-                        T v) { return v / block_size; });
+        REDUCE_IMPL(
+            reduce_op_t::mean, [](T a, T b) { return a + b; },
+            [block_size = (T)get_reduce_block_size(in_shape, axis)](T v) {
+                return v / block_size;
+            });
         REDUCE_IMPL_NO_POST(reduce_op_t::min,
                             [](T a, T b) { return a > b ? b : a; });
         REDUCE_IMPL_NO_POST(reduce_op_t::max,

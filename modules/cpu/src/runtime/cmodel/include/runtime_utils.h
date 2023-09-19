@@ -1,9 +1,9 @@
 #pragma once
 
-#include <cstddef>
 #include "../../gsl-lite.hpp"
-#include <runtime_types.h>
 #include "../../method_table_def.h"
+#include <cstddef>
+#include <runtime_types.h>
 
 using namespace nncase::runtime::cpu;
 
@@ -69,8 +69,9 @@ inline size_t offset(gsl::span<const size_t> strides,
     if (strides.size() == 0 || index.size() == 0) {
         return 0;
     }
-    runtime_util->rt_assert(strides.size() == index.size(),
-                           (char *)"strides and index must have the same rank");
+    runtime_util->rt_assert(
+        strides.size() == index.size(),
+        (char *)"strides and index must have the same rank");
     return element_offset<size_t>(strides, index);
 }
 
@@ -149,8 +150,9 @@ template <typename T> double cosine(const T *v1, const T *v2, size_t size) {
     for (size_t i = 0; i < 10; i++) {
         runtime_util->printf("%f, %f\n", (float)v1[i], (float)v2[i]);
     }
-    return dot(v1, v2, size) / ((nncase_mt->float_unary_sqrt(dot(v1, v1, size)) *
-                                 nncase_mt->float_unary_sqrt(dot(v2, v2, size))));
+    return dot(v1, v2, size) /
+           ((nncase_mt->float_unary_sqrt(dot(v1, v1, size)) *
+             nncase_mt->float_unary_sqrt(dot(v2, v2, size))));
 }
 
 inline dims_t get_reduced_offset(gsl::span<const size_t> in_offset,

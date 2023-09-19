@@ -270,8 +270,8 @@ void stage1_kernel(
     binary(v27, attn_mask, v28, binary_op_t::add);
 #if DUMP
     {
-        tdma_store_async(
-            v28, (*ImmOutputs[6])({0, 16 * tid, 48 * bid, 0}, {1, 16, 48, 384}));
+        tdma_store_async(v28, (*ImmOutputs[6])({0, 16 * tid, 48 * bid, 0},
+                                               {1, 16, 48, 384}));
     }
 #endif
     /*
@@ -304,8 +304,8 @@ void stage1_kernel(
     tdma_wait(ctx);
 #if DUMP
     {
-        tdma_store_async(
-            v32, (*ImmOutputs[7])({0, 16 * tid, 48 * bid, 0}, {1, 16, 48, 128}));
+        tdma_store_async(v32, (*ImmOutputs[7])({0, 16 * tid, 48 * bid, 0},
+                                               {1, 16, 48, 128}));
     }
 #endif
     // #if 0

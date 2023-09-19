@@ -7,7 +7,7 @@
         return arg;                                                            \
     }
 
-#define MALLOC_SHARED(b, name, shape)                                                \
+#define MALLOC_SHARED(b, name, shape)                                          \
     auto shared##b = tensor<float, loc_t::shared>(shape);                      \
     block##b::shared::name = &shared##b;
 

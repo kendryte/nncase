@@ -19,6 +19,6 @@ void stage1_kernel(tensor<float, loc_t::device> &Hidden_in, /* [1, 384, 8192] */
     tensor<float> sum_sqr({1, 12});
     reduce_sum_sqr(hidden_in, sum, sum_sqr);
     layernorm(hidden_in, sum, sum_sqr, output, 2, 8192, true);
-    tdma_store_async(
-        output, Output({0, 12 * (CORES * bid + tid), 0}, {1, 12, 8192}));
+    tdma_store_async(output,
+                     Output({0, 12 * (CORES * bid + tid), 0}, {1, 12, 8192}));
 }

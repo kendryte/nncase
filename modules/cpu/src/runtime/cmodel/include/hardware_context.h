@@ -28,7 +28,7 @@ class hardware_context {
     }
     void *global_var = nullptr;
 
-    hardware_context_mt* impl_;
+    hardware_context_mt *impl_;
 };
 
 static hardware_context global_hardware_ctx;

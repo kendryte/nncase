@@ -27,8 +27,8 @@ DEFINE_BFUNC(5)
 DEFINE_BFUNC(6)
 DEFINE_BFUNC(7)
 
-void _start(hardware_context_mt *hw_ctx_impl, runtime_util_mt *rt_util_mt, nncase_mt_t *nncase_mt_impl,
-            uint8_t **inputs) {
+void _start(hardware_context_mt *hw_ctx_impl, runtime_util_mt *rt_util_mt,
+            nncase_mt_t *nncase_mt_impl, uint8_t **inputs) {
     global_hardware_init(hw_ctx_impl);
     runtime_util = rt_util_mt;
     nncase_mt = nncase_mt_impl;

@@ -69,9 +69,9 @@ typedef struct nncase_method_table {
     void *(*thread_end)();
 
     // rvv impl
-    void (*matmul_unit_impl)(const float *input_a, const float *input_b, float *output,
-                      size_t size_m, size_t size_k, size_t size_n, size_t lda,
-                      size_t ldb, size_t ldc);
+    void (*matmul_unit_impl)(const float *input_a, const float *input_b,
+                             float *output, size_t size_m, size_t size_k,
+                             size_t size_n, size_t lda, size_t ldb, size_t ldc);
 } nncase_mt_t;
 
 typedef struct buffer {

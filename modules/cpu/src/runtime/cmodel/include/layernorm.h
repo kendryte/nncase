@@ -28,7 +28,7 @@ void layernorm_naive_impl(const T *input, const T *sum, T *sum_sqr, T *output,
             mean = 0;
         }
         auto sigma = nncase_mt->float_unary_sqrt(sum_sqr[o_offset] / norm_size -
-                                                mean * mean + eps);
+                                                 mean * mean + eps);
 
         auto input_offset = offset(input_stride, input_index);
         auto in_offset = offset(gamma_strides, input_index.subspan(axis));

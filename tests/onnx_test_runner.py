@@ -46,11 +46,12 @@ class OnnxTestRunner(TestRunner):
         if self.case_dir != os.path.dirname(model_file):
             new_file = os.path.join(self.case_dir, 'test.onnx')
             shutil.copy(model_file, new_file)
-            for tensor in external_data_helper._get_all_tensors(onnx.load(model_file, load_external_data = False)):
+            for tensor in external_data_helper._get_all_tensors(onnx.load(model_file, load_external_data=False)):
                 if external_data_helper.uses_external_data(tensor):
                     info = external_data_helper.ExternalDataInfo(tensor)
                     file_location = external_data_helper._sanitize_path(info.location)
-                    external_data_file_path = os.path.join(os.path.dirname(model_file), file_location)
+                    external_data_file_path = os.path.join(
+                        os.path.dirname(model_file), file_location)
                     shutil.copy(external_data_file_path, self.case_dir)
             model_file = new_file
 

@@ -21,5 +21,6 @@ void stage1_kernel(tensor<float, loc_t::device> &Hidden_in, /* [1, 384, 8192] */
     tensor_block_mma_sync(hidden_in, w, *output, false, ctx);
 
     auto output_1 = (*output)({0, 0, 8000 * tid}, {1, 48, 8000});
-    tdma_store_async(output_1, Output({0, 48 * bid, 8000 * tid}, {1, 48, 8000}));
+    tdma_store_async(output_1,
+                     Output({0, 48 * bid, 8000 * tid}, {1, 48, 8000}));
 }

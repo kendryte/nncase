@@ -76,7 +76,7 @@ void softmax_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
             output[in_idx] = nncase_mt->float_unary_exp(in);
         } else {
             runtime_util->rt_assert(false,
-                                   (char *)"Not supported Type in softmax!");
+                                    (char *)"Not supported Type in softmax!");
         }
 
         tmp[out_idx] += output[in_idx];

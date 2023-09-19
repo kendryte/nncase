@@ -5,11 +5,9 @@
 using namespace nncase::runtime::cpu;
 std::unique_ptr<hardware_context_impl> hardware_context::impl_;
 
-class condition_variable
-{
-public:
-    condition_variable()
-    {
+class condition_variable {
+  public:
+    condition_variable() {
         pthread_cond_init(&cond, NULL);
         pthread_mutex_init(&mutex, NULL);
     }
@@ -17,47 +15,37 @@ public:
     pthread_mutex_t mutex;
     pthread_cond_t cond;
 
-    ~condition_variable()
-    {
+    ~condition_variable() {
         pthread_mutex_destroy(&mutex);
         pthread_cond_destroy(&cond);
     }
 };
 
-struct hardware_context_impl
-{
-public:
-    hardware_context_impl()
-    {
+struct hardware_context_impl {
+  public:
+    hardware_context_impl() {
         global_cond = condition_variable();
         pthread_mutex_init(&global_mutex, NULL);
 
-        for (size_t i = 0; i < BLOCKS; i++)
-        {
+        for (size_t i = 0; i < BLOCKS; i++) {
             pthread_mutex_init(&block_mutexs[i], NULL);
             block_conds[i] = condition_variable();
-            for (size_t j = 0; j < CORES; j++)
-            {
+            for (size_t j = 0; j < CORES; j++) {
                 block_visited[i][j] = false;
                 global_visited[i][j] = false;
             }
         }
     }
 
-    void reset_block_visited(int bid)
-    {
-        for (size_t i = 0; i < CORES; i++)
-        {
+    void reset_block_visited(int bid) {
+        for (size_t i = 0; i < CORES; i++) {
             block_visited[bid][i] = false;
         }
     }
 
-    void reset_global_visited()
-    {
-        for (size_t i = 0; i < BLOCKS; i++)
-        {
-            for (size_t j = 0; j < CORES; j++)
-            {
+    void reset_global_visited() {
+        for (size_t i = 0; i < BLOCKS; i++) {
+            for (size_t j = 0; j < CORES; j++) {
                 global_visited[i][j] = false;
             }
         }
@@ -70,75 +58,60 @@ public:
     condition_variable block_conds[BLOCKS];
     bool block_visited[BLOCKS][CORES];
 
-    ~hardware_context_impl()
-    {
+    ~hardware_context_impl() {
         pthread_mutex_destroy(&global_mutex);
-        for (size_t i = 0; i < BLOCKS; i++)
-        {
+        for (size_t i = 0; i < BLOCKS; i++) {
             pthread_mutex_destroy(&block_mutexs[i]);
         }
     }
 };
 
-void hardware_context::init()
-{
+void hardware_context::init() {
     impl_ = std::make_unique<hardware_context_impl>();
 }
 
-void hardware_context::lock_block(int bid)
-{
+void hardware_context::lock_block(int bid) {
     pthread_mutex_lock(&impl_->block_mutexs[bid]);
 }
 
-void hardware_context::unlock_block(int bid)
-{
+void hardware_context::unlock_block(int bid) {
     pthread_mutex_unlock(&impl_->block_mutexs[bid]);
 }
 
-int hardware_context::mark_block_visit(int bid, int tid)
-{
+int hardware_context::mark_block_visit(int bid, int tid) {
     impl_->block_visited[bid][tid] = true;
     int visited = 0;
-    for (size_t i = 0; i < CORES; i++)
-    {
+    for (size_t i = 0; i < CORES; i++) {
         visited += impl_->block_visited[bid][i] == true ? 1 : 0;
     }
     return visited;
 }
 
 void hardware_context::wait_block_sync(int bid, int visited,
-    std::function<void()> callable)
-{
+                                       std::function<void()> callable) {
     pthread_mutex_lock(&impl_->block_conds[bid].mutex);
-    if (visited == CORES)
-    {
+    if (visited == CORES) {
         callable();
         impl_->reset_block_visited(bid);
         pthread_cond_broadcast(&impl_->block_conds[bid].cond);
-    }
-    else
-    {
+    } else {
         pthread_cond_wait(&impl_->block_conds[bid].cond,
-            &impl_->block_conds[bid].mutex);
+                          &impl_->block_conds[bid].mutex);
     }
     pthread_mutex_unlock(&impl_->block_conds[bid].mutex);
 }
 
 void hardware_context::lock_all() { pthread_mutex_lock(&impl_->global_mutex); }
 
-void hardware_context::unlock_all()
-{
+void hardware_context::unlock_all() {
     pthread_mutex_unlock(&impl_->global_mutex);
 }
 
-int hardware_context::mark_all_visit(int bid, int tid)
-{
+int hardware_context::mark_all_visit(int bid, int tid) {
     impl_->global_visited[bid][tid] = true;
     int visited = 0;
-    for (size_t i = 0; i < BLOCKS; i++)
-    {
-        for (size_t j = 0; j < CORES; j++)
-        {
+    for (size_t i = 0; i < BLOCKS; i++) {
+        for (size_t j = 0; j < CORES; j++) {
             visited += impl_->global_visited[i][j] == true ? 1 : 0;
         }
     }
@@ -146,17 +119,13 @@ int hardware_context::mark_all_visit(int bid, int tid)
 }
 
 void hardware_context::wait_all_sync(int visited,
-    std::function<void()> callable)
-{
+                                     std::function<void()> callable) {
     pthread_mutex_lock(&impl_->global_cond.mutex);
-    if (visited == BLOCKS * CORES)
-    {
+    if (visited == BLOCKS * CORES) {
         callable();
         impl_->reset_global_visited();
         pthread_cond_broadcast(&impl_->global_cond.cond);
-    }
-    else
-    {
+    } else {
         pthread_cond_wait(&impl_->global_cond.cond, &impl_->global_cond.mutex);
     }
     pthread_mutex_unlock(&impl_->global_cond.mutex);

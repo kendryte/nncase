@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#include <apply.h>
 #include "../../gsl-lite.hpp"
+#include <apply.h>
 #include <runtime_utils.h>
 
 using namespace nncase::runtime::cpu;
