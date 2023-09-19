@@ -192,7 +192,7 @@ class Compiler:
         self._compile_options.input_format = "tflite"
         self._import_tflite_module(model_content)
 
-    def import_ncnn(self, model_param: bytes, model_bin : bytes, options: ImportOptions) -> None:
+    def import_ncnn(self, model_param: bytes, model_bin: bytes, options: ImportOptions) -> None:
         self._compile_options.input_format = "ncnn"
         self._import_ncnn_module(model_param, model_bin)
 
