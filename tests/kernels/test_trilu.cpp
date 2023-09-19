@@ -62,19 +62,20 @@ INSTANTIATE_TEST_SUITE_P(trilu, TriluTest,
                                           testing::Values(1)));
 
 TEST_P(TriluTest, trilu) {
-//    auto l_ort = runtime_tensor_2_ort_tensor(input);
-//    auto k_ort = runtime_tensor_2_ort_tensor(k);
-//
-//    // expected
-//    auto output_ort = ortki_Trilu(l_ort, k_ort, upper);
-//    size_t size = 0;
-//    void *ptr_ort = tensor_buffer(output_ort, &size);
-//    dims_t shape(tensor_rank(output_ort));
-//    tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
-//    auto expected = hrt::create(input.datatype(), shape,
-//                                {reinterpret_cast<gsl::byte *>(ptr_ort), size},
-//                                true, host_runtime_tensor::pool_cpu_only)
-//                        .expect("create tensor failed");
+    //    auto l_ort = runtime_tensor_2_ort_tensor(input);
+    //    auto k_ort = runtime_tensor_2_ort_tensor(k);
+    //
+    //    // expected
+    //    auto output_ort = ortki_Trilu(l_ort, k_ort, upper);
+    //    size_t size = 0;
+    //    void *ptr_ort = tensor_buffer(output_ort, &size);
+    //    dims_t shape(tensor_rank(output_ort));
+    //    tensor_shape(output_ort, reinterpret_cast<int64_t *>(shape.data()));
+    //    auto expected = hrt::create(input.datatype(), shape,
+    //                                {reinterpret_cast<gsl::byte *>(ptr_ort),
+    //                                size}, true,
+    //                                host_runtime_tensor::pool_cpu_only)
+    //                        .expect("create tensor failed");
 
     // actual
     int32_t upper_ptr[] = {upper};
@@ -88,18 +89,18 @@ TEST_P(TriluTest, trilu) {
                       .expect("trilu failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
-//    bool result = is_same_tensor(expected, actual) ||
-//                  cosine_similarity_tensor(expected, actual);
-//
-//    if (!result) {
-//        std::cout << "actual ";
-//        print_runtime_tensor(actual);
-//        std::cout << "expected ";
-//        print_runtime_tensor(expected);
-//    }
-//
-//    // compare
-//    EXPECT_TRUE(result);
+    //    bool result = is_same_tensor(expected, actual) ||
+    //                  cosine_similarity_tensor(expected, actual);
+    //
+    //    if (!result) {
+    //        std::cout << "actual ";
+    //        print_runtime_tensor(actual);
+    //        std::cout << "expected ";
+    //        print_runtime_tensor(expected);
+    //    }
+    //
+    //    // compare
+    //    EXPECT_TRUE(result);
 }
 
 int main(int argc, char *argv[]) {
