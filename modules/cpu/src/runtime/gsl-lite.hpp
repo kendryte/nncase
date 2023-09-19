@@ -733,9 +733,11 @@
 
 #if gsl_HAVE(TYPE_TRAITS)
 #include <type_traits> // for enable_if<>,
-    // add_const<>, add_pointer<>, common_type<>, make_signed<>, remove_cv<>, remove_const<>, remove_volatile<>, remove_reference<>, remove_cvref<>, remove_pointer<>, underlying_type<>,
-    // is_assignable<>, is_constructible<>, is_const<>, is_convertible<>, is_integral<>, is_pointer<>, is_signed<>,
-    // integral_constant<>, declval()
+// add_const<>, add_pointer<>, common_type<>, make_signed<>, remove_cv<>,
+// remove_const<>, remove_volatile<>, remove_reference<>, remove_cvref<>,
+// remove_pointer<>, underlying_type<>, is_assignable<>, is_constructible<>,
+// is_const<>, is_convertible<>, is_integral<>, is_pointer<>, is_signed<>,
+// integral_constant<>, declval()
 #elif gsl_HAVE(TR1_TYPE_TRAITS)
 #include <tr1/type_traits> // for add_const<>, remove_cv<>, remove_const<>, remove_volatile<>, remove_reference<>, integral_constant<>
 #endif
@@ -1975,9 +1977,9 @@ gsl_DISABLE_MSVC_WARNINGS(
        // DEFAULT_FUNCTION_TEMPLATE_ARG ) && !gsl_BETWEEN(
        // gsl_COMPILER_CLANG_VERSION, 1, 400 ) && !gsl_BETWEEN(
        // gsl_COMPILER_APPLECLANG_VERSION, 1, 1001 )
-        // If type_traits are not available, then we can't distinguish
-        // `is_convertible<>` and `is_constructible<>`, so we unconditionally
-        // permit implicit construction.
+       // If type_traits are not available, then we can't distinguish
+       // `is_convertible<>` and `is_constructible<>`, so we unconditionally
+       // permit implicit construction.
         template <class U>
         gsl_constexpr14 not_null(U other) : data_(T(std::move(other))) {
             gsl_Expects(data_.ptr_ != gsl_nullptr);
@@ -2027,9 +2029,9 @@ gsl_DISABLE_MSVC_WARNINGS(
        // DEFAULT_FUNCTION_TEMPLATE_ARG ) && !gsl_BETWEEN(
        // gsl_COMPILER_CLANG_VERSION, 1, 400 ) && !gsl_BETWEEN(
        // gsl_COMPILER_APPLECLANG_VERSION, 1, 1001 )
-        // If type_traits are not available, then we can't distinguish
-        // `is_convertible<>` and `is_constructible<>`, so we unconditionally
-        // permit implicit construction.
+       // If type_traits are not available, then we can't distinguish
+       // `is_convertible<>` and `is_constructible<>`, so we unconditionally
+       // permit implicit construction.
         template <class U>
         gsl_constexpr14 not_null(not_null<U> other)
             : data_(T(std::move(other.data_.ptr_))) {
