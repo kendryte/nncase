@@ -305,7 +305,7 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                     IndentScope.Writer.Write($"gather({Visit(args[0]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name}, {gather.Axis})");
                     break;
                 case IR.XPU.Concat concat:
-                    IndentScope.Writer.Write($"concat({{{string.Join(",", args.SkipLast(1).Select(Visit).Select(s => s.Name))}}}, {Visit(args[^1]).Name}, {concat.Axis})");
+                    IndentScope.Writer.Write($"concat({{{string.Join(",", args.SkipLast(1).Select(Visit).Select(s => "&" + s.Name))}}}, {Visit(args[^1]).Name}, {concat.Axis})");
                     break;
                 case IR.XPU.Slice slice:
                     var begins = ((TensorConst)expr.Arguments[2]).Value.ToArray<int>();

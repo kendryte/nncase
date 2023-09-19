@@ -43,7 +43,8 @@ public class UnitTestCPUTargetTiling : TestClassBase
     // [ClassData(typeof(TilingCaseLayerNorm))]
     // [ClassData(typeof(TilingCaseGather))]
     // [ClassData(typeof(TilingCaseSoftmax))]
-    [ClassData(typeof(TilingCaseSlice))]
+    // [ClassData(typeof(TilingCaseSlice))]
+    [ClassData(typeof(TilingCaseConcat))]
     public async Task TestCpuFunction(Function main, Tensor[] inputs)
     {
         var module = new IR.IRModule(main);
@@ -114,19 +115,31 @@ internal sealed class TilingCaseConcat : TheoryData<Function, Tensor[]>
 {
     public TilingCaseConcat()
     {
-        var in_a = new Var("in_a", new TensorType(DataTypes.Float32, new[] { 1, 64, 384, 64 }));
-        var in_b = new Var("in_b", new TensorType(DataTypes.Float32, new[] { 1, 64, 384, 64 }));
+        var in_a_shape = new[] { 1, 64, 384, 64 };
+        var in_b_shape = new[] { 1, 64, 384, 64 };
+        var in_a = new Var("in_a", new TensorType(DataTypes.Float32, in_a_shape));
+        var in_b = new Var("in_b", new TensorType(DataTypes.Float32, in_b_shape));
 
         Fusion fusion;
+        Var fin_a, fin_b;
         {
-            var fin_a = new Var("fin_a", new TensorType(DataTypes.Float32, new[] { 1, 64, 384, 64 }));
-            var fin_b = new Var("fin_b", new TensorType(DataTypes.Float32, new[] { 1, 64, 384, 64 }));
+            fin_a = new Var("fin_a", new TensorType(DataTypes.Float32, in_a_shape));
+            fin_b = new Var("fin_b", new TensorType(DataTypes.Float32, in_b_shape));
             var v1 = new Call(new IR.CPU.CPUKernelOp(new IR.Tensors.Concat(3)), new IR.Tuple(fin_a, fin_b));
             fusion = new Fusion("cpu", v1, fin_a, fin_b);
         }
 
+        var input_a_tensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, in_a_shape).Evaluate().AsTensor();
+        var input_b_tensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, in_b_shape).Evaluate().AsTensor();
+        var feedDict = new Dictionary<Var, IValue>
+        {
+            { fin_a, Value.FromTensor(input_a_tensor) },
+            { fin_b, Value.FromTensor(input_b_tensor) },
+        };
+        var output = fusion.Body.Evaluate(feedDict).AsTensor();
+
         var main = new Function("concat", new Call(fusion, in_a, in_b), new[] { in_a, in_b });
-        Add(main, Array.Empty<Tensor>());
+        Add(main, new[] { input_a_tensor, input_b_tensor, output });
     }
 }
 

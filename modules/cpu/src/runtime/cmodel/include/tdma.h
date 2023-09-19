@@ -161,24 +161,24 @@ void reduce_sum_sqr(tensor<T, ALoc> &a, tensor<T, loc_t::local> &sum,
 }
 
 template <typename T, loc_t BLoc>
-void concat(std::initializer_list<tensor<T, loc_t::local>> inits,
+void concat(std::initializer_list<tensor<T, loc_t::local>*> inits,
             tensor<T, BLoc> &output, size_t axis) {
-    itlib::small_vector<const gsl::byte *const, 8> inputs(inits.size());
+    itlib::small_vector<const gsl::byte *, 8> inputs(inits.size());
     itlib::small_vector<strides_t> in_strides(inits.size());
     auto concat_dims = dims_t(inits.size(), 1);
     for (size_t i = 0; i < inits.size(); ++i) {
-        if (inits[i].dimension().size() != 0) {
-            concat_dims[i] = inits[i].dimension()[axis];
+        if ((*(inits.begin()+i))->dimension().size() != 0) {
+            concat_dims[i] = (*(inits.begin() + i))->dimension()[axis];
         }
     }
 
     for (auto &in : inits) {
-        inputs.push_back((const gsl::byte *const)(in.data().data()));
-        in_strides.push_back(in.strides());
+        inputs.push_back((const gsl::byte *)(in->data().data()));
+        in_strides.push_back(in->strides());
     }
 
     kernels::concat(inputs, output.data().data(), output.dimension(),
-                    in_strides, output.strides(), axis, concat_dims);
+                    gsl::make_span(in_strides).as_span<const strides_t>(), output.strides(), axis, concat_dims);
 }
 
 template <typename T>

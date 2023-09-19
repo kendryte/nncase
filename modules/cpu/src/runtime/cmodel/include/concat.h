@@ -34,9 +34,9 @@ find_input_id_and_index(size_t index,
 } // namespace
 
 template <class T>
-void concat(gsl::span<const gsl::byte *const> inputs, T *output,
+void concat(gsl::span<const gsl::byte *> inputs, T *output,
                  gsl::span<const size_t> out_shape,
-                 gsl::span<const strides_t> &in_strides,
+                 gsl::span<const strides_t> in_strides,
                  gsl::span<const size_t> out_strides, size_t axis,
                  gsl::span<const size_t> concat_dims) noexcept {
     return apply(out_shape, [&](gsl::span<const size_t> out_index) -> void {
