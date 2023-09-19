@@ -242,10 +242,28 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             switch (xpuOp)
             {
                 case IR.XPU.TDMALoad load:
-                    IndentScope.Writer.Write($"tdma_load_async({Visit(args[0]).Name}, {Visit(args[1]).Name}{((TensorType)args[0].CheckedType).ToSlicing(load.NdSbp, load.Placement)})");
+                    if (args.Length == 1)
+                    {
+                        var tensorType = (TensorType)args[0].CheckedType;
+                        IndentScope.Writer.Write($"tdma_boxing_load_sync({Visit(args[0]).Name}, {{{string.Join(',', tensorType.Shape)}}}, {tensorType.ToSlicing(load.NdSbp, load.Placement)[1..^1]})");
+                    }
+                    else
+                    {
+                        IndentScope.Writer.Write($"tdma_load_async({Visit(args[0]).Name}, {Visit(args[1]).Name}{((TensorType)args[0].CheckedType).ToSlicing(load.NdSbp, load.Placement)})");
+                    }
+
                     break;
                 case IR.XPU.TDMAStore store:
-                    IndentScope.Writer.Write($"tdma_store_async({Visit(args[0]).Name}, {Visit(args[1]).Name}{((TensorType)args[0].CheckedType).ToSlicing(store.NdSbp, store.Placement)})");
+                    if (args.Length == 1)
+                    {
+                        var tensorType = (TensorType)args[0].CheckedType;
+                        IndentScope.Writer.Write($"tdma_boxing_store_sync({Visit(args[0]).Name}, {{{string.Join(',', tensorType.Shape)}}}, {tensorType.ToSlicing(store.NdSbp, store.Placement)[1..^1]})");
+                    }
+                    else
+                    {
+                        IndentScope.Writer.Write($"tdma_store_async({Visit(args[0]).Name}, {Visit(args[1]).Name}{((TensorType)args[0].CheckedType).ToSlicing(store.NdSbp, store.Placement)})");
+                    }
+
                     break;
                 case IR.XPU.Unary unary:
                     IndentScope.Writer.Write($"unary({Visit(args[0]).Name}, {Visit(args[1]).Name}, unary_op_t::{unary.UnaryOp.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)})");
@@ -342,6 +360,9 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                     break;
                 case IR.XPU.Transpose transpose:
                     IndentScope.Writer.Write($"transpose({Visit(args[0]).Name}, {Visit(args[1]).Name}, {{{string.Join(",", transpose.Perm.Select(p => p.ToString()))}}})");
+                    break;
+                case IR.XPU.ReShape reshape:
+                    IndentScope.Writer.Write($"__tensor_copy_sync(std::move({Visit(args[1]).Name}),std::move(view({Visit(args[0]).Name},{{{args[1].CheckedShape.ToString()[1..^1]}}})))");
                     break;
                 default:
                     throw new NotSupportedException(xpuOp.ToString());

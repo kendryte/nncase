@@ -33,4 +33,7 @@ public sealed partial class Gather : Op
     /// Gets axis.
     /// </summary>
     public int Axis { get; }
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => $"Axis: {Axis}";
 }

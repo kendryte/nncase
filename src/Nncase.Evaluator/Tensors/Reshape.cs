@@ -3,7 +3,6 @@
 
 using System;
 using System.Linq;
-using DryIoc.ImTools;
 using NetFabric.Hyperlinq;
 using Nncase.CostModel;
 using Nncase.IR;
@@ -34,8 +33,12 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Reshape target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, Reshape.Input);
-        return Visit(context, target, input);
+        var input = context.CheckArgumentType<IRType>(target, Reshape.Input);
+        return input switch
+        {
+            TensorType tensorType => Visit(context, target, tensorType),
+            DistributedType distributedType => Visit(context, target, distributedType),
+        };
     }
 
     public Cost Visit(ICostEvaluateContext context, Reshape target)
@@ -120,5 +123,82 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
         var targetType = context.CheckArgumentType<TensorType>(target, Reshape.Shape);
         var outShape = ReshapeTo(targetType);
         return input with { Shape = outShape };
+    }
+
+    private IRType Visit(ITypeInferenceContext context, Reshape target, DistributedType inputType)
+    {
+        var outType = Visit(context, target, inputType.TensorType);
+        if (outType is not TensorType outTensorType)
+        {
+            return outType;
+        }
+
+        var invalid = new InvalidType(inputType.ToString());
+        if (outTensorType.Shape.IsUnranked)
+        {
+            return invalid;
+        }
+
+        var newShape = outTensorType.Shape.ToValueArray();
+        var oldShape = inputType.TensorType.Shape.ToValueArray();
+
+        // check is unsequeeze/sequeeze
+        if (Enumerable.SequenceEqual(oldShape.Where(i => i != 1).ToArray(), newShape.Where(i => i != 1).ToArray()))
+        {
+            if (oldShape.Length < newShape.Length)
+            {
+                var upAxis = 0;
+                foreach (var axis in Enumerable.Range(0, oldShape.Rank + 1))
+                {
+                    var oldShapeList = oldShape.ToList();
+                    oldShapeList.Insert(axis, 1);
+                    if (Enumerable.SequenceEqual(oldShapeList, newShape))
+                    {
+                        upAxis = axis;
+                        break;
+                    }
+                }
+
+                var ndsbp = new SBP[inputType.Placement.Rank];
+                for (int i = 0; i < inputType.Placement.Rank; i++)
+                {
+                    ndsbp[i] = inputType.NdSBP[i] switch
+                    {
+                        SBPSplit { Axis: int sx } => sx >= upAxis ? SBPSplit.S(sx + 1) : SBPSplit.S(sx),
+                        SBP sbp => sbp,
+                    };
+                }
+
+                return inputType with { TensorType = outTensorType, NdSBP = new(ndsbp) };
+            }
+            else if (oldShape.Length > newShape.Length)
+            {
+                var downAxis = 0;
+                foreach (var axis in Enumerable.Range(0, oldShape.Rank + 1))
+                {
+                    var oldShapeList = oldShape.ToList();
+                    oldShapeList.RemoveAt(axis);
+                    if (Enumerable.SequenceEqual(oldShapeList, newShape))
+                    {
+                        downAxis = axis;
+                        break;
+                    }
+                }
+
+                var ndsbp = new SBP[inputType.Placement.Rank];
+                for (int i = 0; i < inputType.Placement.Rank; i++)
+                {
+                    ndsbp[i] = inputType.NdSBP[i] switch
+                    {
+                        SBPSplit { Axis: int sx } => sx >= downAxis ? SBPSplit.S(sx - 1) : SBPSplit.S(sx),
+                        SBP sbp => sbp,
+                    };
+                }
+
+                return inputType with { TensorType = outTensorType, NdSBP = new(ndsbp) };
+            }
+        }
+
+        return invalid;
     }
 }

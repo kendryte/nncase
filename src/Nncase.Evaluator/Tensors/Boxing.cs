@@ -117,6 +117,13 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
                 }
 
                 break;
+            case (DistributedType a, DistributedType b) when a.TensorType != b.TensorType && a.Placement == b.Placement:
+                cost = new Cost()
+                {
+                    [CostFactorNames.MemoryStore] = (UInt128)((float)CostUtility.GetMemoryAccess(a) / DistributedUtility.GetDividedTensorEfficiency(a, _burstLength)),
+                    [CostFactorNames.MemoryLoad] = (UInt128)((float)CostUtility.GetMemoryAccess(b) / DistributedUtility.GetDividedTensorEfficiency(b, _burstLength)),
+                };
+                break;
             case (DistributedType a, DistributedType b) when a == b:
                 throw new InvalidOperationException($"the boxing inType == outType");
             default:

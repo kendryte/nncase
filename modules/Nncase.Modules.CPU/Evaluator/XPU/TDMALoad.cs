@@ -11,7 +11,7 @@ public class TDMALoadEvaluator : ITypeInferencer<TDMALoad>
     public IRType Visit(ITypeInferenceContext context, TDMALoad target)
     {
         _ = context.CheckArgumentType<TensorType>(target, TDMALoad.Dest);
-        _ = context.CheckArgumentType<TensorType>(target, TDMALoad.Src);
+        _ = context.CheckArgumentType<IRType>(target, TDMALoad.Src);
         return TupleType.Void;
     }
 }

@@ -44,8 +44,8 @@ public class UnitTestCPUTargetTiling : TestClassBase
     // [ClassData(typeof(TilingCaseGather))]
     // [ClassData(typeof(TilingCaseSoftmax))]
     // [ClassData(typeof(TilingCaseSlice))]
-    [ClassData(typeof(TilingCaseTranspose))]
     // [ClassData(typeof(TilingCaseConcat))]
+    [ClassData(typeof(TilingCaseTranspose))]
     public async Task TestCpuFunction(Function main, Tensor[] inputs)
     {
         var module = new IR.IRModule(main);
@@ -457,6 +457,63 @@ internal sealed class TilingCaseTranspose : TheoryData<Function, Tensor[]>
         var output = fusion.Body.Evaluate(feedDict).AsTensor();
 
         var main = new Function("transpose", new Call(fusion, in_a), new[] { in_a });
+    }
+}
+
+internal sealed class TilingCaseReshape1 : TheoryData<Function, Tensor[]>
+{
+    public TilingCaseReshape1()
+    {
+        var inputShape = new[] { 1, 384, 128 };
+        var input = new Var("input", new TensorType(DataTypes.Float32, inputShape));
+        var newShape = new[] { 1, 1, 384, 128 };
+
+        Fusion fusion;
+        Var fin;
+        {
+            fin = new Var("input", new TensorType(DataTypes.Float32, inputShape));
+            var v0 = new Call(new IR.CPU.CPUKernelOp(new IR.Tensors.Reshape()), fin, newShape);
+            fusion = new Fusion("cpu", v0, fin);
+        }
+
+        var main = new Function("reshape1", new Call(fusion, input), new[] { input });
+
+        var input_tensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, inputShape).Evaluate().AsTensor();
+        var feedDict = new Dictionary<Var, IValue>
+        {
+            { fin, Value.FromTensor(input_tensor) },
+        };
+        var output = fusion.Body.Evaluate(feedDict).AsTensor();
+
+        Add(main, new[] { input_tensor, output });
+    }
+}
+
+internal sealed class TilingCaseReshape2 : TheoryData<Function, Tensor[]>
+{
+    public TilingCaseReshape2()
+    {
+        var inputShape = new[] { 1, 384, 64, 128 };
+        var input = new Var("input", new TensorType(DataTypes.Float32, inputShape));
+        var newShape = new[] { 1, 384, 8192 };
+
+        Fusion fusion;
+        Var fin;
+        {
+            fin = new Var("input", new TensorType(DataTypes.Float32, inputShape));
+            var v0 = new Call(new IR.CPU.CPUKernelOp(new IR.Tensors.Reshape()), fin, newShape);
+            fusion = new Fusion("cpu", v0, fin);
+        }
+
+        var main = new Function("reshape2", new Call(fusion, input), new[] { input });
+
+        var input_tensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, inputShape).Evaluate().AsTensor();
+        var feedDict = new Dictionary<Var, IValue>
+        {
+            { fin, Value.FromTensor(input_tensor) },
+        };
+        var output = fusion.Body.Evaluate(feedDict).AsTensor();
+
         Add(main, new[] { input_tensor, output });
     }
 }

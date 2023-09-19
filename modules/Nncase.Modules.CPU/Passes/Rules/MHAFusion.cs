@@ -140,7 +140,7 @@ public sealed partial class FuseMHA2 : FusionMaker
         var v9 = IsTensorConst("v9");
         var v10 = IsWildcard("position_ids");
 
-        var v11 = IsCall("v11", IsOp<Gather>(), IsVArgs(v8, v9, v10));
+        var v11 = IsCall("v11", IsOp<Gather>(_ => true), IsVArgs(v8, v10));
         var v12 = IsTensorConst("v12");
         var v13 = IsCall("v13", IsOp<Reshape>(), IsVArgs(v11, v12));
         var v14 = IsCall("v14", IsOp<Binary>(), IsVArgs(v7, v13));
@@ -155,9 +155,9 @@ public sealed partial class FuseMHA2 : FusionMaker
         var v23 = IsTuple("v23", IsVArgs(v20, v22));
 
         var v24 = IsTensorConst("v24");
-        var v25 = IsCall("v25", IsOp<Concat>(), IsVArgs(v23, v24));
+        var v25 = IsCall("v25", IsOp<Concat>(_ => true), IsVArgs(v23));
         var v26 = IsTensorConst("v26");
-        var v27 = IsCall("v27", IsOp<Gather>(), IsVArgs(v26, v9, v10));
+        var v27 = IsCall("v27", IsOp<Gather>(_ => true), IsVArgs(v26, v10));
         var v28 = IsCall("v28", IsOp<Reshape>(), IsVArgs(v27, v12));
         var v29 = IsCall("v29", IsOp<Binary>(), IsVArgs(v25, v28));
         var v30 = IsCall("v30", IsOp<Binary>(), IsVArgs(v14, v29));
@@ -171,7 +171,7 @@ public sealed partial class FuseMHA2 : FusionMaker
         var v38 = IsCall("v38", IsOp<Slice>(), IsVArgs(v34, v21, v15, v17, v18));
         var v39 = IsTuple("v39", IsVArgs(v37, v38));
 
-        var v40 = IsCall("v40", IsOp<Concat>(), IsVArgs(v39, v24));
+        var v40 = IsCall("v40", IsOp<Concat>(_ => true), IsVArgs(v39));
         var v41 = IsCall("v41", IsOp<Binary>(), IsVArgs(v40, v28));
         var v42 = IsCall("v42", IsOp<Binary>(), IsVArgs(v35, v41));
         var v43 = IsTensorConst("v43");

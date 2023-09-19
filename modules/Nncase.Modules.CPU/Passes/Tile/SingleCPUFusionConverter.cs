@@ -203,15 +203,28 @@ internal sealed class SingleCPUFusionConverter
             calls.Add((valid, call));
             if (!valid)
             {
-                var broadcastArgs = args.Zip(target.Parameters).Select(t => t.Second.ParameterKind == ParameterKind.Input ? DistributedUtility.GetPartialCandidateBoxings(t.First) : Array.Empty<Expr>()).ToArray();
-
-                if (!broadcastArgs.All(bargs => bargs.Count == 0))
+                if (target is CPUKernelOp { Target: Op })
                 {
-                    calls.AddRange(broadcastArgs.Select((bargs, i) => bargs.Any() ? bargs : bargs.Concat(new[] { args[i] })).
-                        CartesianProduct().
-                        Select(bargs => bargs.ToArray()).
-                        Select(bargs => new Call(target, bargs)).
+                    // the reshape need force boxing.
+                    var newShape = ((TensorConst)args[1]).Value.ToArray<int>();
+                    var inType = (DistributedType)args[0].CheckedType;
+                    var tensorType = inType.TensorType with { Shape = newShape };
+                    calls.AddRange(DistributedUtility.GetLeafCandidateNDSBPs(tensorType, inType.Placement).
+                        Select(ndsbp => IR.F.Tensors.Boxing(args[0], new DistributedType(tensorType, ndsbp, inType.Placement))).
                         Select(c => (c.InferenceType(), c)));
+                }
+                else
+                {
+                    var broadcastArgs = args.Zip(target.Parameters).Select(t => t.Second.ParameterKind == ParameterKind.Input ? DistributedUtility.GetPartialCandidateBoxings(t.First) : Array.Empty<Expr>()).ToArray();
+
+                    if (!broadcastArgs.All(bargs => bargs.Count == 0))
+                    {
+                        calls.AddRange(broadcastArgs.Select((bargs, i) => bargs.Any() ? bargs : bargs.Concat(new[] { args[i] })).
+                            CartesianProduct().
+                            Select(bargs => bargs.ToArray()).
+                            Select(bargs => new Call(target, bargs)).
+                            Select(c => (c.InferenceType(), c)));
+                    }
                 }
             }
 
@@ -283,6 +296,9 @@ internal sealed class SingleCPUFusionConverter
                         case Transpose transpose:
                             GenerateTranspose(transpose, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), arguments, ret);
                             break;
+                        case Reshape reshape:
+                            GenerateReshape(reshape, arguments[0], ret);
+                            break;
                         default:
                             throw new NotSupportedException();
                     }
@@ -296,6 +312,11 @@ internal sealed class SingleCPUFusionConverter
             }
 
             return default;
+        }
+
+        private void GenerateReshape(Reshape reshape, Buffer input, Buffer ret)
+        {
+            _mainBody.Add(IR.F.XPU.ReShape(input, ret));
         }
 
         private void GenerateConcat(Concat concat, Buffer[] inputs, Buffer ret)
@@ -321,6 +342,13 @@ internal sealed class SingleCPUFusionConverter
                 case (DistributedType distTensorType, TensorType):
                     {
                         _mainBody.Add(IR.F.XPU.TDMAStore(arguments[0], ret, distTensorType.NdSBP, distTensorType.Placement));
+                    }
+
+                    break;
+                case (DistributedType inType, DistributedType outType):
+                    {
+                        _mainBody.Add(IR.F.XPU.TDMAStore(arguments[0], None.Default, inType.NdSBP, inType.Placement));
+                        _mainBody.Add(IR.F.XPU.TDMALoad(ret, None.Default, outType.NdSBP, outType.Placement));
                     }
 
                     break;
