@@ -12,6 +12,7 @@ using Nncase.Diagnostics;
 using Nncase.Evaluator;
 using Nncase.Hosting;
 using Nncase.IR;
+using Nncase.IR.NN;
 using Nncase.IR.Tensors;
 using Nncase.Passes;
 using Nncase.Passes.Mutators;
@@ -21,6 +22,7 @@ using Nncase.Passes.Rules.ShapeBucket;
 using Nncase.Passes.Rules.ShapeExpr;
 using Nncase.Passes.Transforms;
 using Nncase.Quantization;
+using static Nncase.Passes.Rules.ShapeBucket.ShapeBucketRegister;
 using FoldConstCall = Nncase.Passes.Rules.Neutral.FoldConstCall;
 
 namespace Nncase.Compiler;
@@ -92,33 +94,54 @@ internal class Compiler : ICompiler
     public void TargetIndependentPass(IPassManager passManager)
     {
         passManager.AddWithName<DataflowPass>("ReshapeMatMul").Configure(p =>
-            {
-                p.Add<Passes.Rules.Neutral.ReshapeMatMul>();
-            });
+        {
+            p.Add<Passes.Rules.Neutral.ReshapeMatMul>();
+        });
 
         passManager.AddWithName<DataflowPass>("SqueezeShape").Configure(p =>
-            {
-                p.Add<Passes.Rules.Neutral.FoldNopCast>();
-                p.Add<Passes.Rules.Neutral.SqueezeTransposeShape>();
-                p.Add<Passes.Rules.Neutral.Squeeze5DTranspose>();
-                p.Add<Passes.Rules.Neutral.FoldLayerNormPattern1>();
-                p.Add<Passes.Rules.Neutral.FoldLayerNormPattern2>();
-                p.Add<Passes.Rules.Neutral.FoldLayerNormPattern3>();
-                p.Add<Passes.Rules.Neutral.FoldLayerNormPattern4>();
-                p.Add<Passes.Rules.Neutral.FoldLayerNormPattern5>();
-                p.Add<Passes.Rules.Neutral.FoldGeluWithScale>();
-                p.Add<Passes.Rules.Neutral.FoldGeneralGelu>();
-                p.Add<Passes.Rules.Neutral.FoldSwishPattern1>();
-                p.Add<Passes.Rules.Neutral.FoldSwishPattern2>();
-                p.Add<Passes.Rules.Neutral.FoldHardSwish1>();
-                p.Add<Passes.Rules.Neutral.FoldHardSwish2>();
-                p.Add<Passes.Rules.Neutral.FoldHardSwish3>();
-                p.Add<Passes.Rules.Neutral.FoldHardSwish4>();
-                p.Add<Passes.Rules.Neutral.FoldHardSwish5>();
-                p.Add<Passes.Rules.Neutral.FoldTwoSlices>();
-                p.Add<Passes.Rules.Neutral.FocusFull>();
-                p.Add<Passes.Rules.Neutral.ReshapeMatMul>();
-            });
+        {
+            p.Add<Passes.Rules.Neutral.SqueezeTransposeShape>();
+            p.Add<Passes.Rules.Neutral.Squeeze5DTranspose>();
+            p.Add<Passes.Rules.Neutral.SqueezeBinaryShape>();
+            p.Add<Passes.Rules.Neutral.FoldLayerNormPattern1>();
+            p.Add<Passes.Rules.Neutral.FoldLayerNormPattern2>();
+            p.Add<Passes.Rules.Neutral.FoldLayerNormPattern3>();
+            p.Add<Passes.Rules.Neutral.FoldLayerNormPattern4>();
+            p.Add<Passes.Rules.Neutral.FoldGeluWithScale>();
+            p.Add<Passes.Rules.Neutral.FoldGeneralGelu>();
+            p.Add<Passes.Rules.Neutral.FoldSwishPattern1>();
+            p.Add<Passes.Rules.Neutral.FoldSwishPattern2>();
+            p.Add<Passes.Rules.Neutral.FoldHardSwish1>();
+            p.Add<Passes.Rules.Neutral.FoldHardSwish2>();
+            p.Add<Passes.Rules.Neutral.FoldHardSwish3>();
+            p.Add<Passes.Rules.Neutral.FoldHardSwish4>();
+            p.Add<Passes.Rules.Neutral.FoldHardSwish5>();
+            p.Add<Passes.Rules.Neutral.FoldTwoSlices>();
+            p.Add<Passes.Rules.Neutral.FocusFull>();
+            p.Add<Passes.Rules.Neutral.ReshapeMatMul>();
+            p.Add<Passes.Rules.Neutral.SplitSpaceToBatch>();
+            p.Add<Passes.Rules.Neutral.SplitBatchToSpace>();
+            p.Add<Passes.Rules.Neutral.FoldConstCall>();
+            p.Add<Passes.Rules.Neutral.FoldShapeOf>();
+            p.Add<Passes.Rules.Neutral.FoldTwoReshapes>();
+            p.Add<Passes.Rules.Neutral.FoldTwoSlices>();
+            p.Add<Passes.Rules.Neutral.FoldNopBinary>();
+            p.Add<Passes.Rules.Neutral.FoldNopCast>();
+            p.Add<Passes.Rules.Neutral.FoldNopReshape>();
+            p.Add<Passes.Rules.Neutral.FoldNopSlice>();
+            p.Add<Passes.Rules.Neutral.FoldSqueezeUnsqueeze>();
+            p.Add<Passes.Rules.Neutral.FoldUnsqueezeSqueeze>();
+            p.Add<Passes.Rules.Neutral.FoldTwoTransposes>();
+            p.Add<Passes.Rules.Neutral.FoldNopClamp>();
+            p.Add<Passes.Rules.Neutral.SqueezeToReshape>();
+            p.Add<Passes.Rules.Neutral.UnSqueezeToReshape>();
+            p.Add<Passes.Rules.ShapeExpr.GatherToGetItem>();
+            p.Add<Passes.Rules.ShapeExpr.FoldGetItemShapeOf>();
+            p.Add<Passes.Rules.Neutral.FoldNopReduce>();
+            p.Add<Passes.Rules.Neutral.SliceToGetItem>();
+            p.Add<Passes.Rules.Neutral.FoldTwoPads>();
+        });
+
         passManager.AddWithName<EGraphRulesPass>("NeutralOptimizeTranspose").Configure(p =>
         {
             p.Add<Passes.Rules.Neutral.FoldConstCall>();
@@ -191,82 +214,31 @@ internal class Compiler : ICompiler
 
     public void RegisterShapeBucket(IPassManager p)
     {
-        var singleVar = _compileSession.CompileOptions.ShapeBucketOptions.VarMap.Values.SelectMany(x => x).OfType<Var>().ToHashSet().Count <= 1;
-
-        void MergeOp(IPassManager iPassManager)
-        {
-            if (!singleVar)
-            {
-                return;
-            }
-
-            iPassManager.AddWithName<DataflowPass>("MergeNextCall").Configure(c =>
-            {
-                c.Add<MergeNextCallToFusion>();
-                c.Add<MergeNextMarkerToFusion>();
-            });
-            iPassManager.AddWithName<DataflowPass>("MergePrevCall").Configure(c =>
-            {
-                c.Add<MergePrevCallToFusion>();
-                c.Add<MergePrevMarkerToFusion>();
-            });
-        }
-
-        if (!_compileSession.CompileOptions.ShapeBucketOptions.Enable)
+        var options = _compileSession.CompileOptions.ShapeBucketOptions;
+        if (!options.Enable)
         {
             return;
         }
 
-        ToFusion(p);
+        var singleVar = options.VarMap.Values.SelectMany(x => x).OfType<Var>().ToHashSet().Count <= 1;
+        CheckShapeBucketOptions(options);
 
-        MergeOp(p);
-
-        p.AddWithName<DataflowPass>("LostToFusion").Configure(c =>
+        if (HasNotBucketOp(_module!.Entry!) || !singleVar)
         {
-            c.Add<TransposeToFusion>();
-            c.Add<UnaryToFusion>();
-            c.Add<ActToFusion>();
-            if (singleVar)
-            {
-                c.Add<BinaryToFusion>();
-            }
-        });
-
-        // MergeOp(p);
-        p.AddWithName<DataflowPass>("ClearSomeMarker").Configure(p =>
-        {
-            p.Add<ClearFusionOuterMarker>();
-            p.Add<RemoveMarker>();
-        });
-
-        if (singleVar)
-        {
-            // do twice
-            p.AddWithName<MergeBucketFusion>("MergeFusion");
-            MergeOp(p);
-            p.AddWithName<MergeBucketFusion>("MergeFusion");
-            MergeOp(p);
+            ToFusion(p);
+            MergeOp(p, true);
+            LostToFusion(p, singleVar);
+            MergeOp(p, true);
+            ClearMarker(p);
+            MergeFusion(p, singleVar, true);
+            Bucket(p);
+            Rebuild(p, singleVar);
+            Simplify(p);
         }
-
-        p.AddWithName<DataflowPass>("FusionBucket").Configure(c =>
+        else
         {
-            c.Add<FusionBucket>();
-        });
-
-        p.AddWithName<DataflowPass>("Simplify").Configure(c =>
-        {
-            c.Add<FoldStackGetItem>();
-            c.Add<FoldConstCall>();
-            c.Add<FoldShapeOf>();
-            c.Add<FoldTwoReshapes>();
-            c.Add<FoldTwoCasts>();
-            c.Add<FoldTwoSlices>();
-            c.Add<FoldNopBinary>();
-            c.Add<FoldNopCast>();
-            c.Add<FoldNopReshape>();
-            c.Add<FoldNopSlice>();
-            c.Add<FoldIf>();
-        });
+            p.AddWithName<FullBucket>("FullBucket");
+        }
     }
 
     public void ClearFixShape(IPassManager p)
@@ -316,15 +288,6 @@ internal class Compiler : ICompiler
         var linkedModel = _modelBuilder.Build(Module);
         linkedModel.Serialize(output);
     }
-
-    private static void ToFusion(IPassManager p, bool onlyDynamic = false) =>
-        p.AddWithName<DataflowPass>("ToFusion").Configure(c =>
-        {
-            c.Add<MatmulToFusion>(onlyDynamic);
-            c.Add<Conv2DToFusion>(onlyDynamic);
-            c.Add<TFConv2DTransposeToFusion>(onlyDynamic);
-            c.Add<Conv2DTransposeToFusion>(onlyDynamic);
-        });
 
     private void RegisterTargetIndependQuantPass(IPassManager passManager)
     {

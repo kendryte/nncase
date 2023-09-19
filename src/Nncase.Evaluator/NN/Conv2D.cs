@@ -92,10 +92,10 @@ public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICos
     {
         var input = context.GetArgumentShape(target, Conv2D.Input);
         var weights = context.GetArgumentShape(target, Conv2D.Weights);
-        var pad = Cast(context.GetArgument(target, Conv2D.Padding), DataTypes.Int32);
-        var stride = Cast(context.GetArgument(target, Conv2D.Stride), DataTypes.Int32);
-        var dilation = Cast(context.GetArgument(target, Conv2D.Dilation), DataTypes.Int32);
-        var groups = Cast(context.GetArgument(target, Conv2D.Groups), DataTypes.Int32);
+        var pad = context.GetArgument(target, Conv2D.Padding);
+        var stride = context.GetArgument(target, Conv2D.Stride);
+        var dilation = context.GetArgument(target, Conv2D.Dilation);
+        var groups = context.GetArgument(target, Conv2D.Groups);
         return IR.F.ShapeExpr.Conv2DShape(input, weights, pad, stride, dilation, groups);
     }
 

@@ -41,9 +41,8 @@ public partial class BroadcastShapeEvaluator : IEvaluator<BroadcastShape>, IType
     public Expr Visit(IShapeEvaluateContext context, BroadcastShape target)
     {
         var inShape = context.GetArgumentShape(target, BroadcastShape.Inputs);
-        var len = ((IR.Tuple)inShape).Fields.ToArray().Aggregate((Expr)1, (i, call) => IR.F.Math.Max(i, call));
-        var bn = IR.F.Tensors.Cast(len, DataTypes.Int32);
-        return bn;
+        var len = ((IR.Tuple)inShape).Fields.ToArray().Aggregate((Expr)1L, (i, call) => IR.F.Math.Max(i, call));
+        return len;
     }
 
     public Metric Visit(IMetricEvaluateContext context, BroadcastShape target)

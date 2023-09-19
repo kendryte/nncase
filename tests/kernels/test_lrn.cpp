@@ -72,21 +72,21 @@ TEST_P(LrnTest, lrn) {
                         .expect("create tensor failed");
 
     // actual
-    float_t alpha_ptr[] = {alpha_value};
+    float alpha_ptr[] = {alpha_value};
     auto alpha = hrt::create(dt_float32, {1},
                              {reinterpret_cast<gsl::byte *>(alpha_ptr),
                               sizeof(alpha_ptr)},
                              true, host_runtime_tensor::pool_cpu_only)
                      .expect("create tensor failed");
 
-    float_t beta_ptr[] = {beta_value};
+    float beta_ptr[] = {beta_value};
     auto beta =
         hrt::create(dt_float32, {1},
                     {reinterpret_cast<gsl::byte *>(beta_ptr), sizeof(beta_ptr)},
                     true, host_runtime_tensor::pool_cpu_only)
             .expect("create tensor failed");
 
-    float_t bias_ptr[] = {bias_value};
+    float bias_ptr[] = {bias_value};
     auto bias =
         hrt::create(dt_float32, {1},
                     {reinterpret_cast<gsl::byte *>(bias_ptr), sizeof(bias_ptr)},

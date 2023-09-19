@@ -56,10 +56,15 @@ dims_t get_in_index(gsl::span<const size_t> index,
             auto cnt_idx = (int32_t)index[i] - padding.before;
             if (cnt_idx > (int32_t)in_shape[i] - 1) {
                 pad_element = true;
-                if (mode == pad_mode_t::reflect)
-                    in_index[i] =
-                        in_shape[i] - 2 - ((size_t)cnt_idx - in_shape[i]);
-                else if (mode == pad_mode_t::symmetric)
+                if (mode == pad_mode_t::reflect) {
+                    auto idx = (int32_t)in_shape[i] - 2 -
+                               (cnt_idx - (int32_t)in_shape[i]);
+                    if (idx < 0) {
+                        in_index[i] = std::abs(idx);
+                    } else {
+                        in_index[i] = idx;
+                    }
+                } else if (mode == pad_mode_t::symmetric)
                     in_index[i] =
                         in_shape[i] - 1 - ((size_t)cnt_idx - in_shape[i]);
                 else if (mode == pad_mode_t::edge)
@@ -157,7 +162,7 @@ void padding_impl_opt(T *in, T *out, gsl::span<const size_t> in_shape,
         dh = out_shape[0];
         hh = out_shape[1];
         wh = out_shape[2];
-    } else {
+    } else if (in_shape.size() == 4) {
         cl = in_shape[0];
         dl = in_shape[1];
         hl = in_shape[2];
@@ -166,6 +171,16 @@ void padding_impl_opt(T *in, T *out, gsl::span<const size_t> in_shape,
         dh = out_shape[1];
         hh = out_shape[2];
         wh = out_shape[3];
+    } else // size ==2
+    {
+        cl = 1;
+        dl = 1;
+        hl = in_shape[0];
+        wl = in_shape[1];
+        ch = 1;
+        dh = 1;
+        hh = out_shape[0];
+        wh = out_shape[1];
     }
 
     pad_data2(in, out, cl, dl, hl, wl, ch, dh, hh, wh, value);
@@ -211,7 +226,7 @@ result<void> nncase::kernels::stackvm::reference::pad(
         std::all_of(
             paddings.begin(), paddings.end(),
             [](const padding &p) { return p.before == 0 && p.after >= 0; }) &&
-        mode == pad_mode_t::constant && in_shape.size() >= 3;
+        mode == pad_mode_t::constant && in_shape.size() >= 2;
 
     if (std::all_of(paddings.begin(), paddings.end(),
                     [](const padding &p) { return p.interior == 0; })) {

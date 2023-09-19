@@ -55,6 +55,24 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         # used for tag dynamic model for onnx simplify
         self.dynamic = False
 
+        if self.cfg['infer_report_opt']['enabled']:
+            self.infer_report_file = test_utils.infer_report_file(
+                self.cfg['infer_report_opt']['report_name'])
+            self.infer_report_dict = {
+                'priority': 100,
+                'kind': 'N/A',
+                'model': 'N/A',
+                'shape': 'N/A',
+                'if_quant_type': 'uint8',
+                'w_quant_type': 'uint8',
+                'roofline_fps': 'N/A',
+                'actual_fps': 'N/A',
+                'roofline_mac_usage': 'N/A',
+                'actual_mac_usage': 'N/A',
+                'result': 'Pass',
+                'remark': 'N/A'
+            }
+
     def transform_input(self, values: List[np.ndarray], type: str, stage: str) -> List[np.ndarray]:
         new_values = []
         compile_opt = self.cfg['compile_opt']
@@ -170,7 +188,6 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         if test_utils.in_ci():
             config['dump_hist'] = False
             config['compile_opt']['dump_asm'] = False
-            config['compile_opt']['dump_ir'] = False
             config['compile_opt']['dump_quant_error'] = False
 
         # check target
@@ -252,6 +269,12 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                             judge, result = self.compare_results(
                                 expected, actual, stage, k_target, v_target['similarity_name'], k_mode, v_mode['threshold'], dump_hist, mode_dir)
 
+                            if stage == 'infer' and self.cfg['infer_report_opt']['enabled']:
+                                self.infer_report_dict['result'] = 'Pass' if judge else 'Fail'
+                                self.infer_report_dict['remark'] = result.replace('\n', '<br/>')
+                                prefix, suffix = os.path.splitext(self.infer_report_file)
+                                json_file = f'{prefix}_{os.path.basename(self.case_dir)}{suffix}'
+                                dump_dict_to_json(self.infer_report_dict, json_file)
                             if not judge:
                                 if test_utils.in_ci():
                                     self.clear(self.case_dir)
@@ -407,17 +430,19 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                         stage, target, similarity_name, mode, threshold, dump_hist, dump_dir) -> Tuple[bool, str]:
         i = 0
         judges = []
+        result = ''
         for expected, actual in zip(ref_ouputs, test_outputs):
             expected = expected.astype(np.float32)
             actual = actual.astype(np.float32)
             dump_file = os.path.join(dump_dir, 'nncase_result_{0}_hist.csv'.format(i))
             judge, similarity_info = compare_ndarray(
                 expected, actual, similarity_name, threshold, dump_hist, dump_file)
-            result_info = "\n{0} [ {1} {2} {3} ] Output: {4}!!\n".format(
+            result_info = "{0} [ {1} {2} {3} ] Output {4}:".format(
                 'Pass' if judge else 'Fail', stage, target, mode, i)
-            result = similarity_info + result_info
-            with open(os.path.join(self.case_dir, 'test_result.txt'), 'a+') as f:
-                f.write(result)
+            result += result_info + similarity_info
             i = i + 1
             judges.append(judge)
+
+        with open(os.path.join(self.case_dir, 'test_result.txt'), 'a+') as f:
+            f.write(result)
         return sum(judges) == len(judges), result

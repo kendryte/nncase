@@ -36,7 +36,7 @@ class ShapeOfTest : public KernelTest,
         READY_SUBCASE()
 
         auto typecode = GetDataType("lhs_type");
-        auto shape = GetShapeArray("i_shape");
+        auto shape = GetShapeArray("input_shape");
 
         lhs = hrt::create(typecode, shape, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");

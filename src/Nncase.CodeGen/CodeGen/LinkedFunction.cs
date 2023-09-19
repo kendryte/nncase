@@ -12,7 +12,7 @@ namespace Nncase.CodeGen;
 
 public class LinkedFunction : ILinkedFunction
 {
-    public LinkedFunction(uint id, Callable sourceFunction, uint textBegin, uint textLength, IReadOnlyList<ILinkedSection> sections)
+    public LinkedFunction(uint id, Callable sourceFunction, ulong textBegin, ulong textLength, IReadOnlyList<ILinkedSection> sections)
     {
         Id = id;
         ParameterTypes = ((CallableType)sourceFunction.CheckedType).Parameters.ToArray();
@@ -28,9 +28,9 @@ public class LinkedFunction : ILinkedFunction
 
     public IRType ReturnType { get; }
 
-    public uint TextBegin { get; }
+    public ulong TextBegin { get; }
 
-    public uint TextLength { get; }
+    public ulong TextLength { get; }
 
     public IReadOnlyList<ILinkedSection> Sections { get; }
 }

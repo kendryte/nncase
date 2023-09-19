@@ -22,54 +22,73 @@
 #include <nncase/runtime/stackvm/opcode.h>
 #include <ortki/operators.h>
 
+#define TEST_CASE_NAME "test_prelu"
+
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
-using slope_t = itlib::small_vector<float_t, 4>;
+using slope_t = itlib::small_vector<float, 4>;
 
 class PreluTest : public KernelTest,
-                  public ::testing::TestWithParam<
-                      std::tuple<nncase::typecode_t, dims_t, slope_t>> {
+                  public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape, slope_value] = GetParam();
+        READY_SUBCASE()
+
+        auto l_shape = GetShapeArray("lhs_shape");
+        auto typecode = GetDataType("lhs_type");
+        auto slope_value = GetSlopeArray("slope");
 
         input =
             hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
         init_tensor(input);
 
-        slope = slope_value;
+        if (slope_value.size() == 1 ||
+            slope_value.size() == l_shape[l_shape.size() - 1]) {
+            slope = slope_value;
+        } else {
+            slope = slope_t{0.1};
+        }
     }
 
-    void TearDown() override {}
+    void TearDown() override{CLEAR_SUBCASE()}
+
+    slope_t GetSlopeArray(const char *key) {
+        assert(_document[key].IsArray());
+        Value &array = _document[key];
+        size_t arraySize = array.Size();
+        slope_t cArray(arraySize);
+        for (rapidjson::SizeType i = 0; i < arraySize; i++) {
+            if (array[i].IsFloat()) {
+                cArray[i] = array[i].GetFloat();
+            } else {
+                std::cout << "Invalid JSON format. Expected unsigned float "
+                             "values in the array."
+                          << std::endl;
+            }
+        }
+        return cArray;
+    }
 
   protected:
     runtime_tensor input;
     slope_t slope;
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    Prelu, PreluTest,
-    testing::Combine(testing::Values(dt_float32),
-                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{1},
-                                     dims_t{8, 8}, dims_t{1, 4, 16},
-                                     dims_t{1, 3, 24, 24}),
-                     testing::Values(slope_t{0.2f}, slope_t{0.1f},
-                                     slope_t{0.3f}/*, slope_t{0.2f, 0.1f, 0.3f},
-                                     slope_t{0.1f, 0.2f}, slope_t{0.2f, 0.3f},
-                                     slope_t{0.1f, 0.2f, 0.3f}*/)));
+INSTANTIATE_TEST_SUITE_P(Prelu, PreluTest,
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(PreluTest, Prelu) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
 
     // expected
     size_t slope_size = slope.size();
-    float_t *slope_array = (float_t *)malloc(slope_size * sizeof(float_t));
+    float *slope_array = (float *)malloc(slope_size * sizeof(float));
     std::copy(slope.begin(), slope.end(), slope_array);
     auto slope = hrt::create(dt_float32, {slope_size},
                              {reinterpret_cast<gsl::byte *>(slope_array),
-                              slope_size * sizeof(float_t)},
+                              slope_size * sizeof(float)},
                              true, host_runtime_tensor::pool_cpu_only)
                      .expect("create tensor failed");
     auto slope_ort = runtime_tensor_2_ort_tensor(slope);
@@ -103,6 +122,18 @@ TEST_P(PreluTest, Prelu) {
 }
 
 int main(int argc, char *argv[]) {
+    READY_TEST_CASE_GENERATE()
+    FOR_LOOP(lhs_shape, i)
+    FOR_LOOP(lhs_type, j)
+    FOR_LOOP(slope, k)
+    SPLIT_ELEMENT(lhs_shape, i)
+    SPLIT_ELEMENT(lhs_type, j)
+    SPLIT_ELEMENT(slope, k)
+    WRITE_SUB_CASE()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

@@ -37,7 +37,7 @@ class CastTest : public KernelTest,
 
         auto typecode_input = GetDataType("lhs_type");
         auto typecode_output = GetDataType("rhs_type");
-        auto l_shape = GetShapeArray("i_shape");
+        auto l_shape = GetShapeArray("lhs_shape");
 
         input = hrt::create(typecode_input, l_shape,
                             host_runtime_tensor::pool_cpu_only)
@@ -113,7 +113,6 @@ TEST_P(CastTest, cast) {
     runtime_tensor actual1(output1.as<tensor>().expect("as tensor failed"));
 
     // expected
-    //    cast_copy_tensor(input, expected);
     auto output_ort1 = ortki_CastLike(runtime_tensor_2_ort_tensor(input1),
                                       runtime_tensor_2_ort_tensor(actual1));
     size_t size1 = 0;
@@ -130,8 +129,10 @@ TEST_P(CastTest, cast) {
                    cosine_similarity_tensor(expected1, actual1);
 
     if (!result1) {
-        print_runtime_tensor(actual1);
-        print_runtime_tensor(expected1);
+        std::cout << "actual ";
+        print_runtime_tensor(actual);
+        std::cout << "expected ";
+        print_runtime_tensor(expected);
     }
 
     // compare

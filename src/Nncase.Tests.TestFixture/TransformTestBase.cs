@@ -88,6 +88,7 @@ public partial class TransformTestBase : TestClassBase
 
     public Expr TestMatchedCore(Expr pre, IReadOnlyDictionary<Var, IValue>? feeds = null, params IRewriteRule[] rules)
     {
+        pre.InferenceType();
         Assert.True(pre.InferenceType(), "TestInferFailed:" + pre.CheckedType);
         if (rules.Length == 0)
         {

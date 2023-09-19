@@ -22,31 +22,41 @@
 #include <nncase/runtime/stackvm/opcode.h>
 #include <ortki/operators.h>
 
+#define TEST_CASE_NAME "test_gather_elements"
+
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-class GatherElementsTest
-    : public KernelTest,
-      public ::testing::TestWithParam<
-          std::tuple<nncase::typecode_t, dims_t, int64_t>> {
+class GatherElementsTest : public KernelTest,
+                           public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
-        auto &&[typecode, shape, value] = GetParam();
+        READY_SUBCASE()
+
+        auto shape = GetShapeArray("lhs_shape");
+        auto indices_shape = GetShapeArray("indices_shape");
+        auto indices_value = GetDataArray("indices_value");
+        auto value = GetNumber("axis");
+        auto typecode = GetDataType("lhs_type");
 
         input = hrt::create(typecode, shape, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
         init_tensor(input);
 
-        int64_t indices_array[] = {0, 0, 1, 1};
-        indices = hrt::create(dt_int64, {2, 2},
+        size_t indices_value_size = indices_value.size();
+        auto *indices_array =
+            (int64_t *)malloc(indices_value_size * sizeof(int64_t));
+        std::copy(indices_value.begin(), indices_value.end(), indices_array);
+        indices = hrt::create(dt_int64, indices_shape,
                               {reinterpret_cast<gsl::byte *>(indices_array),
-                               sizeof(indices_array)},
+                               indices_value_size * sizeof(int64_t)},
                               true, host_runtime_tensor::pool_cpu_only)
                       .expect("create tensor failed");
 
         batchDims_value = value;
-        int64_t batchDims_array[1] = {value};
+
+        int64_t batchDims_array[1] = {batchDims_value};
         batchDims = hrt::create(dt_int64, dims_t{1},
                                 {reinterpret_cast<gsl::byte *>(batchDims_array),
                                  sizeof(batchDims_array)},
@@ -54,7 +64,7 @@ class GatherElementsTest
                         .expect("create tensor failed");
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
   protected:
     runtime_tensor input;
@@ -63,19 +73,8 @@ class GatherElementsTest
     int64_t batchDims_value;
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    gather_elements, GatherElementsTest,
-    testing::Combine(testing::Values(dt_int32, dt_int64, dt_float32, dt_uint64,
-                                     dt_int8, dt_int16, dt_uint8, dt_uint16,
-                                     dt_uint32, dt_float16, dt_float64,
-                                     dt_bfloat16, dt_boolean),
-                     testing::Values(dims_t{
-                         2,
-                         2} /*, dims_t{3, 5},
-                dims_t{2, 3, 1}, dims_t{5, 7, 5},
-                dims_t{5, 4, 3, 2}, dims_t{5, 5, 7, 7},
-                dims_t{2, 3, 3, 5}*/),
-                     testing::Values(-1, 0, 1)));
+INSTANTIATE_TEST_SUITE_P(gather_elements, GatherElementsTest,
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(GatherElementsTest, gather_elements) {
     auto input_ort = runtime_tensor_2_ort_tensor(input);
@@ -114,6 +113,24 @@ TEST_P(GatherElementsTest, gather_elements) {
 }
 
 int main(int argc, char *argv[]) {
+    READY_TEST_CASE_GENERATE()
+    FOR_LOOP(lhs_shape, i)
+    FOR_LOOP(indices_shape, l)
+    FOR_LOOP(indices_value, h)
+    FOR_LOOP(axis, j)
+    FOR_LOOP(lhs_type, k)
+    SPLIT_ELEMENT(lhs_shape, i)
+    SPLIT_ELEMENT(indices_shape, l)
+    SPLIT_ELEMENT(indices_value, h)
+    SPLIT_ELEMENT(axis, j)
+    SPLIT_ELEMENT(lhs_type, k)
+    WRITE_SUB_CASE()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

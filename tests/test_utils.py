@@ -1,5 +1,7 @@
 import os
+import json
 import numpy as np
+from pathlib import Path
 
 
 def dump_bin_file(file: str, ndarray: np.array):
@@ -33,6 +35,17 @@ def _cast_bfloat16_then_float32(values: np.array):
         values[i] = value
 
 
+def dump_dict_to_json(dict, json_file):
+    json_list = []
+    if os.path.exists(json_file):
+        with open(json_file, 'r') as f:
+            json_list = json.load(f)
+
+    json_list.append(dict)
+    with open(json_file, 'w') as f:
+        json.dump(json_list, f)
+
+
 def in_ci():
     return os.getenv('CI', False)
 
@@ -49,5 +62,17 @@ def nuc_port():
     return os.getenv('NUC_PROXY_PORT')
 
 
-def test_executable(target):
+def test_executable(target: str):
     return os.getenv('TEST_EXECUTABLE_{0}'.format(target.upper()))
+
+
+def infer_report_file(default: str):
+    return os.getenv('INFER_REPORT_FILE', default)
+
+
+def search_file(dir: str, file: str):
+    p = ''
+    for path in Path(dir).rglob(file):
+        p = path
+        break
+    return p

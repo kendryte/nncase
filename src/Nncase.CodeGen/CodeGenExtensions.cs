@@ -54,7 +54,14 @@ public static class BinaryWriterExtensions
     /// <returns>The current position.</returns>
     public static long Position(this BinaryWriter writer, long pos)
     {
-        return writer.Seek((int)pos, SeekOrigin.Begin);
+        writer.Seek(0, SeekOrigin.Begin);
+        var segs = Math.DivRem(pos, int.MaxValue, out var rem);
+        for (long l = 0; l < segs; l++)
+        {
+            writer.Seek(int.MaxValue, SeekOrigin.Current);
+        }
+
+        return writer.Seek(checked((int)rem), SeekOrigin.Current);
     }
 
     /// <summary>
@@ -64,7 +71,7 @@ public static class BinaryWriterExtensions
     /// <param name="len">Bytes to skip.</param>
     public static void Skip(this BinaryWriter writer, ulong len)
     {
-        writer.Seek((int)len, SeekOrigin.Current);
+        writer.Seek(checked((int)len), SeekOrigin.Current);
     }
 
     public static unsafe void Write<T>(this BinaryWriter writer, ref T value)

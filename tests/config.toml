@@ -1,5 +1,7 @@
 name = 'default_config'
 root = 'tests_output'
+kmodel_name = 'test.kmodel'
+desc_name = 'kmodel.desc'
 dump_hist = false
 
 [compile_opt]
@@ -17,6 +19,10 @@ model_layout = 'NHWC'
 letterbox_value = 0
 dump_asm = true
 dump_ir = false
+shape_bucket_enable = false
+shape_bucket_range_info = { }
+shape_bucket_segments_count = 4
+shape_bucket_fix_var_map = { }
 
 [ptq_opt]
 use_mix_quant = false
@@ -34,6 +40,13 @@ finetune_weights_method = 'NoFineTuneWeights'
 input_mean = 0.5
 input_std = 0.5
 quant_scheme = ""
+
+[infer_report_opt]
+enabled = false
+priority = 100
+kind = 'N/A'
+model_name = 'N/A'
+report_name = 'infer_report.json'
 
 [generator]
 [generator.inputs]

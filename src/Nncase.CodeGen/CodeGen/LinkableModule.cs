@@ -32,21 +32,23 @@ public abstract class LinkableModule : ILinkableModule
             foreach (var func in _functions)
             {
                 FixFunctionRefs(func, linkContext);
+                bw.Flush();
                 bw.AlignPosition(_textAlignment);
                 var textBegin = bw.Position();
-                bw.Write(func.Text);
-                linkedFunctions.Add(new LinkedFunction(func.Id, func.SourceFunction, (uint)textBegin, (uint)func.Text.Length, func.Sections));
+                func.Text.Position = 0;
+                func.Text.CopyTo(bw.BaseStream);
+                linkedFunctions.Add(new LinkedFunction(func.Id, func.SourceFunction, (ulong)textBegin, (ulong)func.Text.Length, func.Sections));
             }
         }
 
-        return CreateLinkedModule(linkedFunctions, text.ToArray());
+        return CreateLinkedModule(linkedFunctions, text);
     }
 
-    protected abstract ILinkedModule CreateLinkedModule(IReadOnlyList<LinkedFunction> linkedFunctions, byte[] text);
+    protected abstract ILinkedModule CreateLinkedModule(IReadOnlyList<LinkedFunction> linkedFunctions, Stream text);
 
     private void FixFunctionRefs(ILinkableFunction func, ILinkContext linkContext)
     {
-        using var writer = new BinaryWriter(new MemoryStream(func.Text));
+        using var writer = new BinaryWriter(func.Text, Encoding.UTF8, leaveOpen: true);
         foreach (var funcRef in func.FunctionRefs)
         {
             var id = linkContext.GetFunctionId(funcRef.Callable);

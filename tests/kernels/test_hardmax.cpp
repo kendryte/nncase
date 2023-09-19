@@ -22,39 +22,41 @@
 #include <nncase/runtime/stackvm/opcode.h>
 #include <ortki/operators.h>
 
+#define TEST_CASE_NAME "test_hardmax"
+
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
 class HardmaxTest : public KernelTest,
-                    public ::testing::TestWithParam<
-                        std::tuple<nncase::typecode_t, dims_t, int64_t>> {
+                    public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
-        auto &&[typecode, shape, value] = GetParam();
+        READY_SUBCASE()
 
-        input = hrt::create(typecode, shape, host_runtime_tensor::pool_cpu_only)
-                    .expect("create tensor failed");
+        auto l_shape = GetShapeArray("lhs_shape");
+        auto typecode = GetDataType("lhs_type");
+        auto value = GetNumber("axis_value");
+
+        input =
+            hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
+                .expect("create tensor failed");
         init_tensor(input);
 
-        axis_value = value > 0 ? value < (int64_t)shape.size() ? value : 0
-                     : -value <= (int64_t)shape.size() ? value
-                                                       : 0;
+        axis_value = value > 0 ? value < (int64_t)l_shape.size() ? value : 0
+                     : -value <= (int64_t)l_shape.size() ? value
+                                                         : 0;
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
   protected:
     runtime_tensor input;
     int64_t axis_value;
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    hardmax, HardmaxTest,
-    testing::Combine(testing::Values(dt_float32),
-                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 3, 16},
-                                     dims_t{2, 6}, dims_t{1}),
-                     testing::Values(-4, -3, -2, -1, 0, 1, 2, 3)));
+INSTANTIATE_TEST_SUITE_P(hardmax, HardmaxTest,
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(HardmaxTest, hardmax) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
@@ -96,6 +98,18 @@ TEST_P(HardmaxTest, hardmax) {
 }
 
 int main(int argc, char *argv[]) {
+    READY_TEST_CASE_GENERATE()
+    FOR_LOOP(lhs_shape, i)
+    FOR_LOOP(lhs_type, j)
+    FOR_LOOP(axis_value, k)
+    SPLIT_ELEMENT(lhs_shape, i)
+    SPLIT_ELEMENT(lhs_type, j)
+    SPLIT_ELEMENT(axis_value, k)
+    WRITE_SUB_CASE()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
