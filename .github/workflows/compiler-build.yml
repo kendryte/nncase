@@ -3,8 +3,8 @@
 on: [push, pull_request]
 
 concurrency:
-  group: ${{ github.ref }}
-  cancel-in-progress: true
+  group: compiler-build-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' && !startsWith(github.ref, 'refs/heads/release/') }}
 
 env:
   NUGET_CERT_REVOCATION_MODE: offline
