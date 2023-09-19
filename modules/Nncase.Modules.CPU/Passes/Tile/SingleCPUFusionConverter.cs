@@ -203,7 +203,7 @@ internal sealed class SingleCPUFusionConverter
             calls.Add((valid, call));
             if (!valid)
             {
-                var broadcastArgs = args.Select(DistributedUtility.GetPartialCandidateBoxings).ToArray();
+                var broadcastArgs = args.Zip(target.Parameters).Select(t => t.Second.ParameterKind == ParameterKind.Input ? DistributedUtility.GetPartialCandidateBoxings(t.First) : Array.Empty<Expr>()).ToArray();
 
                 if (!broadcastArgs.All(bargs => bargs.Count == 0))
                 {
