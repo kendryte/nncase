@@ -52,7 +52,7 @@ public partial class XPU
         return new Call(new Concat(axis), inputs.Concat(new[] { output }).ToArray());
     }
 
-    internal static Expr Slice(TIR.Buffer input, TIR.Buffer output, Expr begins, Expr ends, Expr axes, DistributedType distributedType) => new Call(new Slice(distributedType), input, output, begins, ends, axes);
+    public static Expr Slice(TIR.Buffer input, TIR.Buffer output, Expr begins, Expr ends, Expr axes, DistributedType distributedType) => new Call(new Slice(distributedType), input, output, begins, ends, axes);
 
     public static Call Softmax(int axis, Expr input, Expr output)
     {
