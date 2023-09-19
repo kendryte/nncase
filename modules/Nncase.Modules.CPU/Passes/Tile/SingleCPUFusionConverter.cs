@@ -280,6 +280,9 @@ internal sealed class SingleCPUFusionConverter
                         case Softmax softmax:
                             GenerateSoftmax(softmax, ((TensorConst)expr.Arguments[1]).Value.ToScalar<int>(), arguments, ret);
                             break;
+                        case Transpose transpose:
+                            GenerateTranspose(transpose, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), arguments, ret);
+                            break;
                         default:
                             throw new NotSupportedException();
                     }
@@ -355,6 +358,11 @@ internal sealed class SingleCPUFusionConverter
         private void GenerateSoftmax(Softmax softmax, int axis, Buffer[] arguments, Buffer ret)
         {
             _mainBody.Add(IR.F.XPU.Softmax(axis, arguments[0], ret));
+        }
+
+        private void GenerateTranspose(Transpose transpose, int[] perm, Buffer[] arguments, Buffer ret)
+        {
+            _mainBody.Add(IR.F.XPU.Transpose(perm, arguments[0], ret));
         }
 
 #if false

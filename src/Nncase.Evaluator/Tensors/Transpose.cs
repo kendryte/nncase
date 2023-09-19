@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using DryIoc.ImTools;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Tensors;
@@ -64,15 +65,21 @@ public class TransposeEvaluator : IEvaluator<Transpose>, ITypeInferencer<Transpo
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Transpose target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, Transpose.Input);
-        return Visit(context, target, input);
+        var input = context.CheckArgumentType<IRType>(target, Transpose.Input);
+
+        return input switch
+        {
+            DistributedType d => Visit(context, target, d),
+            TensorType t => Visit(context, target, t),
+            _ => new InvalidType(input.GetType().ToString()),
+        };
     }
 
     /// <inheritdoc/>
     public Cost Visit(ICostEvaluateContext context, Transpose target)
     {
-        var inputType = context.GetArgumentType<TensorType>(target, Transpose.Input);
-        var outputType = context.GetReturnType<TensorType>();
+        var inputType = context.GetArgumentType<IRType>(target, Transpose.Input);
+        var outputType = context.GetReturnType<IRType>();
 
         return new()
         {
@@ -101,5 +108,37 @@ public class TransposeEvaluator : IEvaluator<Transpose>, ITypeInferencer<Transpo
     {
         var permExpr = context.GetArgument(target, Transpose.Perm);
         return TypeInference.TransposeType(input, permExpr);
+    }
+
+    private IRType Visit(ITypeInferenceContext context, Transpose target, DistributedType input)
+    {
+        if (Visit(context, target, input.TensorType) is not TensorType tensorType)
+        {
+            throw new InvalidOperationException();
+        }
+
+        var permExpr = context.GetArgument(target, Transpose.Perm);
+        if (permExpr is TensorConst permValue)
+        {
+            var perm = permValue.Value.ToArray<int>();
+            var ndsbp = new SBP[input.Placement.Rank];
+
+            for (int i = 0; i < input.Placement.Rank; i++)
+            {
+                switch (input.NdSBP[i])
+                {
+                    case SBPSplit { Axis: int ix }:
+                        ndsbp[i] = SBP.S(perm.IndexOf(ix));
+                        break;
+                    default:
+                        ndsbp[i] = input.NdSBP[i];
+                        break;
+                }
+            }
+
+            return new DistributedType(tensorType, ndsbp, input.Placement);
+        }
+
+        return new InvalidType(input.ToString());
     }
 }

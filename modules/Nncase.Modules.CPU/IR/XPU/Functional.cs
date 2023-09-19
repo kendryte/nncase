@@ -58,4 +58,9 @@ public partial class XPU
     {
         return new Call(new IR.XPU.Softmax(axis), input, output);
     }
+
+    public static Call Transpose(int[] perm, Expr input, Expr output)
+    {
+        return new Call(new IR.XPU.Transpose(perm), input, output);
+    }
 }

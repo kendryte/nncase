@@ -340,6 +340,9 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                 case IR.XPU.Softmax softmax:
                     IndentScope.Writer.Write($"softmax({Visit(args[0]).Name}, {Visit(args[1]).Name}, {softmax.Axis})");
                     break;
+                case IR.XPU.Transpose transpose:
+                    IndentScope.Writer.Write($"transpose({Visit(args[0]).Name}, {Visit(args[1]).Name}, {{{string.Join(",", transpose.Perm.Select(p => p.ToString()))}}})");
+                    break;
                 default:
                     throw new NotSupportedException(xpuOp.ToString());
             }

@@ -44,7 +44,8 @@ public class UnitTestCPUTargetTiling : TestClassBase
     // [ClassData(typeof(TilingCaseGather))]
     // [ClassData(typeof(TilingCaseSoftmax))]
     // [ClassData(typeof(TilingCaseSlice))]
-    [ClassData(typeof(TilingCaseConcat))]
+    [ClassData(typeof(TilingCaseTranspose))]
+    // [ClassData(typeof(TilingCaseConcat))]
     public async Task TestCpuFunction(Function main, Tensor[] inputs)
     {
         var module = new IR.IRModule(main);
@@ -428,6 +429,34 @@ internal sealed class TilingCaseSoftmax : TheoryData<Function, Tensor[]>
         };
         var output = fusion.Body.Evaluate(feedDict).AsTensor();
 
+        Add(main, new[] { input_tensor, output });
+    }
+}
+
+internal sealed class TilingCaseTranspose : TheoryData<Function, Tensor[]>
+{
+    public TilingCaseTranspose()
+    {
+        var shape = new[] { 1, 1, 64, 128 };
+        var in_a = new Var("in_a", new TensorType(DataTypes.Float32, shape));
+        var perm = new[] { 0, 2, 3, 1 };
+
+        Fusion fusion;
+        Var fin_a;
+        {
+            fin_a = new Var("fin_a", new TensorType(DataTypes.Float32, shape));
+            var v1 = new Call(new IR.CPU.CPUKernelOp(new IR.Tensors.Transpose()), fin_a, perm);
+            fusion = new Fusion("cpu", v1, fin_a);
+        }
+
+        var input_tensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, shape).Evaluate().AsTensor();
+        var feedDict = new Dictionary<Var, IValue>
+        {
+            { fin_a, Value.FromTensor(input_tensor) },
+        };
+        var output = fusion.Body.Evaluate(feedDict).AsTensor();
+
+        var main = new Function("transpose", new Call(fusion, in_a), new[] { in_a });
         Add(main, new[] { input_tensor, output });
     }
 }
