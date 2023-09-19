@@ -4,13 +4,15 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <RootNamespace>Nncase.Tests</RootNamespace>
     </PropertyGroup>
-    
+
     <ItemGroup>
+        <PackageVersion Include="NETStandard.Library" Version="2.0.3" />
         <PackageReference Include="Fody">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="MethodBoundaryAspect.Fody" />
+        <PackageReference Include="NETStandard.Library" />
         <PackageReference Include="Xunit.Combinatorial" />
         <PackageReference Include="Xunit.DependencyInjection" />
         <PackageReference Include="System.Linq.Async" />
@@ -20,7 +22,7 @@
         </PackageReference>
         <PackageReference Include="xunit.v3.assert" />
     </ItemGroup>
-    
+
     <ItemGroup>
         <ProjectReference Include="..\..\modules\Nncase.Modules.StackVM\Nncase.Modules.StackVM.csproj" />
         <ProjectReference Include="..\Nncase.Compiler\Nncase.Compiler.csproj" />
