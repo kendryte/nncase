@@ -27,8 +27,9 @@ using namespace nncase::kernels::stackvm::reference;
 using namespace nncase::kernels::stackvm;
 
 namespace {
-result<void> lrn_impl(const float *input, float alpha, float beta, float bias,
-                      int64_t size, float *output, const float *square_sum,
+template <typename T>
+result<void> lrn_impl(const T *input, float alpha, float beta, float bias,
+                      int64_t size, T *output, const float *square_sum,
                       gsl::span<const size_t> in_shape,
                       gsl::span<const size_t> in_strides,
                       gsl::span<const size_t> out_strides) {

@@ -17,6 +17,7 @@
 #include <iostream>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/runtime/runtime_op_utility.h>
+#include <nncase/runtime/util.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -104,12 +105,17 @@ result<void> softmax_impl(const T *input, T *output,
     return ok();
 }
 
+#define SOFTMAX_IMPL(type)                                                     \
+    return softmax_impl(IN_CAST(type, input), OUT_CAST(type, output),          \
+                        in_shape, in_strides, out_strides, axis, beta,         \
+                        needLog);
+
 } // namespace
 
 result<void> nncase::kernels::stackvm::reference::softmax(
-    const float *input, float *output, gsl::span<const size_t> in_shape,
-    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
-    int64_t axis, float beta, bool needLog) noexcept {
-    return softmax_impl(input, output, in_shape, in_strides, out_strides, axis,
-                        beta, needLog);
+    typecode_t typecode, const gsl::byte *input, gsl::byte *output,
+    gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
+    gsl::span<const size_t> out_strides, int64_t axis, float beta,
+    bool needLog) noexcept {
+    TYPE_SELECT(typecode, SOFTMAX_IMPL);
 }

@@ -33,17 +33,18 @@ result<value_t> nncase::kernels::stackvm::batch_normalization(
     value_t input, value_t scale, value_t bias, value_t input_mean,
     value_t input_var, value_t epsilon, [[maybe_unused]] value_t momentum,
     value_t output, [[maybe_unused]] kernel_context &context) {
-    try_f32_input(input_mem, input);
-    try_f32_input(scale_mem, scale);
-    try_f32_input(bias_mem, bias);
-    try_f32_input(mean_mem, input_mean);
-    try_f32_input(var_mem, input_var);
+    try_input(input_mem, input);
+    try_input(scale_mem, scale);
+    try_input(bias_mem, bias);
+    try_input(mean_mem, input_mean);
+    try_input(var_mem, input_var);
     try_float_scalar(eps, epsilon);
-    try_f32_output(output_mem, output, input_tensor->shape());
-    try_(reference::batchnorm(input_mem, scale_mem, bias_mem, mean_mem, var_mem,
-                              output_mem, input_tensor->shape(),
-                              input_tensor->strides(), output_tensor->strides(),
-                              eps));
+    try_output_like_input(output_mem, output, input_tensor);
+    try_typecode(typecode, input_tensor);
+    try_(reference::batchnorm(typecode, input_mem, scale_mem, bias_mem,
+                              mean_mem, var_mem, output_mem,
+                              input_tensor->shape(), input_tensor->strides(),
+                              output_tensor->strides(), eps));
     KERNEL_FINISH;
 }
 

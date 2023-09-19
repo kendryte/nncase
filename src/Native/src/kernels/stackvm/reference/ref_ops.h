@@ -30,8 +30,9 @@ BEGIN_NS_NNCASE_KERNELS_MODULE(stackvm)
 namespace reference {
 
 NNCASE_API result<void>
-batchnorm(const float *input, const float *scale, const float *bias,
-          const float *input_mean, const float *input_var, float *output,
+batchnorm(typecode_t typecode, const gsl::byte *input, const gsl::byte *scale,
+          const gsl::byte *bias, const gsl::byte *input_mean,
+          const gsl::byte *input_var, gsl::byte *output,
           gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
           gsl::span<const size_t> out_strides, float epsilon);
 
@@ -110,6 +111,7 @@ conv2d_transpose(const float *input, float *output, const float *weights,
                  int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
                  const padding &padding_h, const padding &padding_w,
                  const value_range<float> &fused_activation) noexcept;
+
 NNCASE_API result<void>
 cum_sum(tensor input, tensor axis, tensor exclusive, tensor reverse,
         tensor output = nullptr,

@@ -22,7 +22,7 @@ using namespace nncase;
 using namespace nncase::kernels::stackvm;
 
 template <class T>
-static void layernorm_impl(int inner_size, const T *src, const float *scale,
+static void layernorm_impl(int inner_size, const T *src, const T *scale,
                            const T *bias, float epsilon, T *dst) {
     T mean1 = 0;
     for (auto i = 0; i < inner_size; i++)
