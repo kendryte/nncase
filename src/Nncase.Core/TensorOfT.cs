@@ -60,6 +60,8 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
         Buffer = buffer;
     }
 
+    public static Tensor<T> Empty { get; } = new Tensor<T>(0);
+
     /// <summary>
     /// Gets memory storing backing values of this tensor.
     /// </summary>

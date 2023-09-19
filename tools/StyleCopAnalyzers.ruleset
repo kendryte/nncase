@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<RuleSet Name="StyleCop.Analyzers rules with default action" Description="StyleCop.Analyzers with default action. Rules with IsEnabledByDefault = false are disabled." ToolsVersion="16.0">
+<RuleSet Name="StyleCop.Analyzers rules with default action" Description="StyleCop.Analyzers with default action. Rules with IsEnabledByDefault = false are disabled." ToolsVersion="17.0">
   <Rules AnalyzerId="StyleCop.Analyzers" RuleNamespace="StyleCop.Analyzers.DocumentationRules">
     <Rule Id="SA1600" Action="Hidden" />
     <Rule Id="SA1601" Action="Hidden" />
@@ -86,7 +86,7 @@
     <Rule Id="SA1404" Action="Warning" />
     <Rule Id="SA1405" Action="Warning" />
     <Rule Id="SA1406" Action="Warning" />
-    <Rule Id="SA1407" Action="Warning" />
+    <Rule Id="SA1407" Action="None" />
     <Rule Id="SA1408" Action="Warning" />
     <Rule Id="SA1409" Action="None" />
     <Rule Id="SA1410" Action="Warning" />
@@ -177,6 +177,7 @@
     <Rule Id="SA1101" Action="None" />
     <Rule Id="SA1309" Action="None" />
     <Rule Id="SA1402" Action="None" />
+    <Rule Id="SA1407" Action="None" />
     <Rule Id="SA1600" Action="Hidden" />
     <Rule Id="SA1601" Action="Hidden" />
     <Rule Id="SA1649" Action="None" />

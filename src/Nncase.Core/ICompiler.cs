@@ -16,11 +16,26 @@ namespace Nncase;
 public interface ICompiler
 {
     /// <summary>
-    /// Import DL model as ir module.
+    /// Import TFLite model as ir module.
     /// </summary>
     /// <param name="content">Model content.</param>
     /// <returns>Imported ir module.</returns>
-    Task<IRModule> ImportModuleAsync(Stream content);
+    Task<IRModule> ImportTFLiteModuleAsync(Stream content);
+
+    /// <summary>
+    /// Import Onnx model as ir module.
+    /// </summary>
+    /// <param name="content">Model content.</param>
+    /// <returns>Imported ir module.</returns>
+    Task<IRModule> ImportOnnxModuleAsync(Stream content);
+
+    /// <summary>
+    /// Import Ncnn model as ir module.
+    /// </summary>
+    /// <param name="ncnnParam">Ncnn param stream.</param>
+    /// <param name="ncnnBin">Ncnn bin stream.</param>
+    /// <returns>Imported ir module.</returns>
+    Task<IRModule> ImportNcnnModuleAsync(Stream ncnnParam, Stream ncnnBin);
 
     /// <summary>
     /// import ir module into compiler.

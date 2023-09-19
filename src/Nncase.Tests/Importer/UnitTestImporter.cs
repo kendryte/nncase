@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.IO;
 using Nncase.IR;
 using Nncase.Passes.Transforms;
 using Nncase.Tests.TestFixture;
@@ -32,6 +33,16 @@ public class UnitTestImporter : TestClassBase
     {
         using var file = File.OpenRead(Path.Combine(SolutionDirectory, "examples/user_guide/test.tflite"));
         var module = Importers.ImportTFLite(file, CompileSession);
+        await InferShapeAsync(module);
+        Assert.NotNull(module.Entry);
+        Assert.True(module.Entry!.InferenceType());
+    }
+
+    [Fact]
+    public async Task TestImportNcnn()
+    {
+        using var file = File.OpenRead(Path.Combine(SolutionDirectory, "examples/user_guide/test.param"));
+        var module = Importers.ImportNcnn(file, new ZeroStream(), CompileSession);
         await InferShapeAsync(module);
         Assert.NotNull(module.Entry);
         Assert.True(module.Entry!.InferenceType());
