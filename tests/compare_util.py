@@ -90,7 +90,7 @@ def compare_ndarray(expected: np.ndarray,
     if expected.size == actual.size:
         similarity = similarity_func[similarity_name](expected.flatten(), actual.flatten())
     else:
-        raise ValueError("The number of elements in gt and result not match\n")
+        return False, f"The numbers of elements in gt({expected.size}) and result({actual.size}) are not match\n"
 
     if dump_hist:
         y, x = np.histogram(expected - actual, 100)
