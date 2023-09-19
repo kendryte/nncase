@@ -150,5 +150,15 @@ namespace Nncase.IR
         {
             return Value.HasValue && predicate(Value.Value);
         }
+
+        public bool IsAssignableFrom(Dimension dimension)
+        {
+            if (IsUnknown)
+            {
+                return true;
+            }
+
+            return dimension.Kind == DimensionKind.Fixed && Value == dimension.Value;
+        }
     }
 }
