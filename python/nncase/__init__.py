@@ -186,11 +186,15 @@ class Compiler:
 
     def import_onnx(self, model_content: bytes, options: ImportOptions) -> None:
         self._compile_options.input_format = "onnx"
-        self._import_module(model_content)
+        self._import_onnx_module(model_content)
 
     def import_tflite(self, model_content: bytes, options: ImportOptions) -> None:
         self._compile_options.input_format = "tflite"
-        self._import_module(model_content)
+        self._import_tflite_module(model_content)
+
+    def import_ncnn(self, model_param: bytes, model_bin : bytes, options: ImportOptions) -> None:
+        self._compile_options.input_format = "ncnn"
+        self._import_ncnn_module(model_param, model_bin)
 
     def use_ptq(self, ptq_dataset_options: PTQTensorOptions) -> None:
         dataset = [_nncase.RTValue.from_runtime_tensor(
@@ -275,9 +279,18 @@ class Compiler:
         self._compile_options.dump_flags = dump_flags
         self._compile_options.dump_dir = compile_options.dump_dir
 
-    def _import_module(self, model_content: bytes | io.RawIOBase) -> None:
+    def _import_onnx_module(self, model_content: bytes | io.RawIOBase) -> None:
         stream = io.BytesIO(model_content) if isinstance(model_content, bytes) else model_content
-        self._module = IRModule(self._compiler.import_module(stream))
+        self._module = IRModule(self._compiler.import_onnx_module(stream))
+
+    def _import_tflite_module(self, model_content: bytes | io.RawIOBase) -> None:
+        stream = io.BytesIO(model_content) if isinstance(model_content, bytes) else model_content
+        self._module = IRModule(self._compiler.import_tflite_module(stream))
+
+    def _import_ncnn_module(self, model_param: bytes | io.RawIOBase, model_bin: bytes | io.RawIOBase) -> None:
+        param_stream = io.BytesIO(model_param) if isinstance(model_param, bytes) else model_param
+        bin_stream = io.BytesIO(model_bin) if isinstance(model_bin, bytes) else model_bin
+        self._module = IRModule(self._compiler.import_ncnn_module(param_stream, bin_stream))
 
 
 def check_target(target: str):
