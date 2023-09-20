@@ -74,7 +74,11 @@ public sealed class UnitTestTypeInfer : TestClassBase
             Select(argTypes => argTypes.Select(type => new Var(type)).ToArray());
 
         int count = 0;
+#if DEBUG
         using (var f = Dumpper.OpenFile("types.txt"))
+#else
+        using (var f = new StreamWriter(MemoryStream.Null))
+#endif
         {
             using var wr = new StreamWriter(f);
             foreach (var args in candiateArgs)
@@ -91,6 +95,44 @@ public sealed class UnitTestTypeInfer : TestClassBase
         }
 
         Assert.Equal(64, count);
+    }
+
+    [Fact]
+    public void TestInferGather()
+    {
+        var inputType = new TensorType(DataTypes.Float32, new[] { 384, 128 });
+        var indexType = new TensorType(DataTypes.Int64, new[] { 1, 384 });
+        var placement = new Placement(Placement.DeviceKind.CPU, new[] { 8, 4 }, "bt");
+
+        var candiateArgs = new[] {
+            DistributedUtility.GetLeafCandidateNDSBPs(inputType, placement).Select(ndsbp => new DistributedType(inputType, ndsbp, placement)),
+            DistributedUtility.GetLeafCandidateNDSBPs(indexType, placement).Select(ndsbp => new DistributedType(indexType, ndsbp, placement)),
+            }.
+            CartesianProduct().
+            Select(argTypes => argTypes.Select(type => new Var(type)).ToArray());
+
+        int count = 0;
+#if DEBUG
+        using (var f = Dumpper.OpenFile("types.txt"))
+#else
+        using (var f = new StreamWriter(MemoryStream.Null))
+#endif
+        {
+            using var wr = new StreamWriter(f);
+            foreach (var args in candiateArgs)
+            {
+                var call = IR.F.Tensors.Gather(args[0], 0, args[1]);
+                call.InferenceType();
+                if (call.CheckedType is not InvalidType)
+                {
+                    count++;
+                }
+
+                wr.WriteLine($"{args[0].CheckedType} {args[1].CheckedType} => {call.CheckedType}");
+            }
+        }
+
+        Assert.Equal(9, count);
     }
 }
 

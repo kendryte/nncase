@@ -532,14 +532,14 @@ public class SwishEvaluator : IEvaluator<Swish>, ITypeInferencer<Swish>, ICostEv
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Swish target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, Swish.Input);
+        var input = context.CheckArgumentType<IRType>(target, Swish.Input);
         return Visit(input);
     }
 
     /// <inheritdoc/>
     public Cost Visit(ICostEvaluateContext context, Swish target)
     {
-        var outputType = context.GetReturnType<TensorType>();
+        var outputType = context.GetReturnType<IRType>();
         return new()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(outputType),
@@ -558,7 +558,7 @@ public class SwishEvaluator : IEvaluator<Swish>, ITypeInferencer<Swish>, ICostEv
         };
     }
 
-    private IRType Visit(TensorType input)
+    private IRType Visit(IRType input)
     {
         return input;
     }

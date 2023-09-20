@@ -116,6 +116,9 @@ public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>, ICos
                 case (SBPSplit { Axis: int ix }, SBPBroadCast):
                     ndsbp[i] = SBP.S(ix - axis + index.TensorType.Shape.Rank - 1);
                     break;
+                case (SBPBroadCast, SBPBroadCast):
+                    ndsbp[i] = SBP.B;
+                    break;
                 default:
                     return invalid;
             }

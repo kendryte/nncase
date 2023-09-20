@@ -143,7 +143,7 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
                 case (SBPSplit sa, SBPSplit sb):
                     if (sa != sb)
                     {
-                        return new InvalidType("lhs rhs sbp at {i} not equal");
+                        return new InvalidType($"lhs rhs sbp at {i} not equal");
                     }
 
                     ndsbp[i] = sa;

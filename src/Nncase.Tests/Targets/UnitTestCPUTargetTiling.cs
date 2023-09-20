@@ -41,7 +41,7 @@ public class UnitTestCPUTargetTiling : TestClassBase
     // [ClassData(typeof(TilingCaseMatmul))]
     // [ClassData(typeof(TilingCaseMatmulUnary))]
     // [ClassData(typeof(TilingCaseLayerNorm))]
-    // [ClassData(typeof(TilingCaseGather))]
+    [ClassData(typeof(TilingCaseGather))]
     // [ClassData(typeof(TilingCaseSoftmax))]
     // [ClassData(typeof(TilingCaseSlice))]
     // [ClassData(typeof(TilingCaseConcat))]
@@ -379,7 +379,7 @@ internal sealed class TilingCaseGather : TheoryData<Function, Tensor[]>
 {
     public TilingCaseGather()
     {
-        var inputShape = new[] { 32000, 8192 };
+        var inputShape = new[] { 384, 128 };
         var axisShape = new[] { 1, 384 };
         int axis = 0;
         var input = new Var("input", new TensorType(DataTypes.Float32, inputShape));
