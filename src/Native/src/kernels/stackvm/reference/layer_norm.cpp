@@ -51,9 +51,10 @@ static void layernorm_impl(int inner_size, const T *src, const T *scale,
         dst[i] = div[i] * scale[i] + bias[i];
 }
 
-result<void> nncase::kernels::stackvm::reference::layer_norm(
-    const float *input, float *output, const float *scale, const float *bias,
-    gsl::span<const size_t> in_shape, int32_t axis, float epsilon) {
+template <class T>
+result<void> layer_norm_impl2(const T *input, T *output, const T *scale,
+                              const T *bias, gsl::span<const size_t> in_shape,
+                              int32_t axis, float epsilon) {
 
     int ndim = in_shape.size();
     int positive_axis = axis < 0 ? ndim + axis : axis;
@@ -73,4 +74,11 @@ result<void> nncase::kernels::stackvm::reference::layer_norm(
         output += axis_dim;
     }
     return ok();
+}
+
+result<void> nncase::kernels::stackvm::reference::layer_norm(
+    const float *input, float *output, const float *scale, const float *bias,
+    gsl::span<const size_t> in_shape, int32_t axis, float epsilon) {
+    return layer_norm_impl2(input, output, scale, bias, in_shape, axis,
+                            epsilon);
 }

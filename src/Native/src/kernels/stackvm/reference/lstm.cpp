@@ -26,14 +26,18 @@ using namespace nncase::runtime::stackvm;
 using namespace nncase::kernels;
 using namespace nncase::kernels::stackvm;
 #include <iostream>
-result<void> nncase::kernels::stackvm::reference::lstm(
-    const float *input, const float *w_xc, const float *w_rc,
-    [[maybe_unused]] const float *bias, const float *init_h,
-    const float *init_c, float *output, float *output_h, float *output_c,
-    gsl::span<const size_t> in_shape_3, gsl::span<const size_t> init_h_shape_3,
-    gsl::span<const size_t> init_c_shape_3, gsl::span<const size_t> out_shape_3,
-    gsl::span<const size_t> w_xc_shape_3, gsl::span<const size_t> w_rc_shape_3,
-    lstmdirection_t direction) {
+
+template <typename T>
+result<void> lstm_impl(const T *input, const T *w_xc, const T *w_rc,
+                       [[maybe_unused]] const T *bias, const T *init_h,
+                       const T *init_c, T *output, T *output_h, T *output_c,
+                       gsl::span<const size_t> in_shape_3,
+                       gsl::span<const size_t> init_h_shape_3,
+                       gsl::span<const size_t> init_c_shape_3,
+                       gsl::span<const size_t> out_shape_3,
+                       gsl::span<const size_t> w_xc_shape_3,
+                       gsl::span<const size_t> w_rc_shape_3,
+                       lstmdirection_t direction) {
     auto in_shape = to_4d(in_shape_3);
     auto init_h_shape = to_4d(init_h_shape_3);
     auto init_c_shape = to_4d(init_c_shape_3);
@@ -174,4 +178,17 @@ result<void> nncase::kernels::stackvm::reference::lstm(
         }
     }
     return ok();
+}
+
+result<void> nncase::kernels::stackvm::reference::lstm(
+    const float *input, const float *w_xc, const float *w_rc,
+    [[maybe_unused]] const float *bias, const float *init_h,
+    const float *init_c, float *output, float *output_h, float *output_c,
+    gsl::span<const size_t> in_shape_3, gsl::span<const size_t> init_h_shape_3,
+    gsl::span<const size_t> init_c_shape_3, gsl::span<const size_t> out_shape_3,
+    gsl::span<const size_t> w_xc_shape_3, gsl::span<const size_t> w_rc_shape_3,
+    lstmdirection_t direction) {
+    return lstm_impl(input, w_xc, w_rc, bias, init_h, init_c, output, output_h,
+                     output_c, in_shape_3, init_h_shape_3, init_c_shape_3,
+                     out_shape_3, w_xc_shape_3, w_rc_shape_3, direction);
 }

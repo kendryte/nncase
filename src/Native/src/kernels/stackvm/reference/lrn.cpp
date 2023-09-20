@@ -44,19 +44,21 @@ result<void> lrn_impl(const T *input, float alpha, float beta, float bias,
 }
 } // namespace
 
-result<void> nncase::kernels::stackvm::reference::lrn(
-    const float *input, float alpha, float beta, float bias, int size,
-    float *output, gsl::span<const size_t> in_shape,
-    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides) {
+template <typename T>
+result<void> lrn_impl2(const T *input, float alpha, float beta, float bias,
+                       int size, T *output, gsl::span<const size_t> in_shape,
+                       gsl::span<const size_t> in_strides,
+                       gsl::span<const size_t> out_strides) {
     std::vector<std::unique_ptr<float[]>> tmpData;
     std::vector<dims_t> tmpShapes;
     std::vector<dims_t> tmpStrides;
     auto concat_size = 0;
     auto square_data =
         std::make_unique<float[]>(runtime::compute_size(in_shape));
-    try_(reference::unary(dt_float32, runtime::stackvm::unary_op_t::square,
-                          IN_BYTE_CAST(input), OUT_BYTE_CAST(square_data.get()),
-                          in_shape, in_strides, in_shape, in_strides));
+    try_(nncase::kernels::stackvm::reference::unary(
+        dt_float32, runtime::stackvm::unary_op_t::square, IN_BYTE_CAST(input),
+        OUT_BYTE_CAST(square_data.get()), in_shape, in_strides, in_shape,
+        in_strides));
     for (size_t i = 0; i < in_shape[1]; ++i) {
         auto beginV =
             std::max(static_cast<int64_t>(0),
@@ -89,7 +91,7 @@ result<void> nncase::kernels::stackvm::reference::lrn(
         auto reduce_out_strides = runtime::get_default_strides(reduce_shape);
         tmpStrides.push_back(reduce_out_strides);
         auto init_value = 0.f;
-        try_(reference::reduce(
+        try_(nncase::kernels::stackvm::reference::reduce(
             dt_float32, reduce_op_t::sum, IN_CAST(gsl::byte, &init_value),
             IN_CAST(gsl::byte, slice_out.get()),
             OUT_CAST(gsl::byte, tmpData[i].get()), tmp_out_shape, axes,
@@ -108,10 +110,18 @@ result<void> nncase::kernels::stackvm::reference::lrn(
     for (auto &i : tmpData) {
         concat_inputs.push_back(IN_CAST(gsl::byte, i.get()));
     }
-    try_(reference::concat(
+    try_(nncase::kernels::stackvm::reference::concat(
         dt_float32, concat_inputs, OUT_CAST(gsl::byte, concat_output.get()),
         concat_shape, tmpStrides, concat_strides, axis, concat_dims))
         try_(lrn_impl(input, alpha, beta, bias, size, output,
                       concat_output.get(), in_shape, in_strides, out_strides));
     return ok();
+}
+
+result<void> nncase::kernels::stackvm::reference::lrn(
+    const float *input, float alpha, float beta, float bias, int size,
+    float *output, gsl::span<const size_t> in_shape,
+    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides) {
+    return lrn_impl2(input, alpha, beta, bias, size, output, in_shape,
+                     in_strides, out_strides);
 }

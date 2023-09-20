@@ -23,8 +23,9 @@ using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 using namespace nncase::kernels;
 
-result<void> nncase::kernels::stackvm::reference::conv2d(
-    const float *input, const float *weights, const float *bias, float *output,
+template <typename T>
+result<void> conv2d_impl(
+    const T *input, const T *weights, const T *bias, T *output,
     gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
     gsl::span<const size_t> w_shape, gsl::span<const size_t> w_strides,
     gsl::span<const size_t> bias_strides, gsl::span<const size_t> out_strides,
@@ -107,8 +108,24 @@ result<void> nncase::kernels::stackvm::reference::conv2d(
     return ok();
 }
 
-result<void> nncase::kernels::stackvm::reference::conv2d_transpose(
-    const float *input, float *output, const float *weights, const float *bias,
+result<void> nncase::kernels::stackvm::reference::conv2d(
+    const float *input, const float *weights, const float *bias, float *output,
+    gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
+    gsl::span<const size_t> w_shape, gsl::span<const size_t> w_strides,
+    gsl::span<const size_t> bias_strides, gsl::span<const size_t> out_strides,
+    const padding &padding_h, const padding &padding_w, int32_t groups,
+    int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
+    value_range<float> fused_activation,
+    NNCASE_UNUSED kernel_context &context) noexcept {
+    return conv2d_impl(input, weights, bias, output, in_shape, in_strides,
+                       w_shape, w_strides, bias_strides, out_strides, padding_h,
+                       padding_w, groups, stride_h, stride_w, dilation_h,
+                       dilation_w, fused_activation, context);
+}
+
+template <typename T>
+result<void> conv2d_transpose_impl(
+    const T *input, T *output, const T *weights, const T *bias,
     gsl::span<const size_t> in_shape, int32_t groups,
     gsl::span<const size_t> out_shape, int32_t filter_h, int32_t filter_w,
     int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
@@ -194,4 +211,17 @@ result<void> nncase::kernels::stackvm::reference::conv2d_transpose(
     //            fused_activation);
     //    }
     return ok();
+}
+
+result<void> nncase::kernels::stackvm::reference::conv2d_transpose(
+    const float *input, float *output, const float *weights, const float *bias,
+    gsl::span<const size_t> in_shape, int32_t groups,
+    gsl::span<const size_t> out_shape, int32_t filter_h, int32_t filter_w,
+    int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
+    const padding &padding_h, const padding &padding_w,
+    [[maybe_unused]] const value_range<float> &fused_activation) noexcept {
+    return conv2d_transpose_impl(input, output, weights, bias, in_shape, groups,
+                                 out_shape, filter_h, filter_w, stride_h,
+                                 stride_w, dilation_h, dilation_w, padding_h,
+                                 padding_w, fused_activation);
 }

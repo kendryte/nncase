@@ -26,10 +26,10 @@ using namespace nncase::kernels::stackvm::reference;
 using namespace nncase::kernels::stackvm;
 
 namespace {
-result<void> instance_norm_impl(const float *input, const float *scale,
-                                const float *bias, const float *input_mean,
-                                const float *input_var, float *output,
-                                gsl::span<const size_t> in_shape,
+template <typename T>
+result<void> instance_norm_impl(const T *input, const T *scale, const T *bias,
+                                const float *input_mean, const float *input_var,
+                                T *output, gsl::span<const size_t> in_shape,
                                 gsl::span<const size_t> in_strides,
                                 gsl::span<const size_t> out_strides,
                                 float epsilon) {
@@ -47,10 +47,12 @@ result<void> instance_norm_impl(const float *input, const float *scale,
 }
 } // namespace
 
-result<void> nncase::kernels::stackvm::reference::instance_norm(
-    const float *input, const float *scale, const float *bias, float *output,
-    gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
-    gsl::span<const size_t> out_strides, float epsilon) {
+template <typename T>
+result<void> instance_norm_impl2(const T *input, const T *scale, const T *bias,
+                                 T *output, gsl::span<const size_t> in_shape,
+                                 gsl::span<const size_t> in_strides,
+                                 gsl::span<const size_t> out_strides,
+                                 float epsilon) {
     auto axes = dims_t{};
     for (size_t i = 2; i < in_shape.size(); ++i) {
         axes.push_back(i);
@@ -73,11 +75,11 @@ result<void> nncase::kernels::stackvm::reference::instance_norm(
     }
     auto run_reduce = [&](auto &&input, auto &&output, auto &&in_shape,
                           auto &&in_strides) -> result<void> {
-        try_(reference::reduce(dt_float32, reduce_op_t::mean, init_value_addr,
-                               IN_CAST(gsl::byte, input),
-                               OUT_CAST(gsl::byte, output), in_shape, axes,
-                               in_strides, tmp_out_strides, true,
-                               kernels::default_kernel_context()));
+        try_(nncase::kernels::stackvm::reference::reduce(
+            dt_float32, reduce_op_t::mean, init_value_addr,
+            IN_CAST(gsl::byte, input), OUT_CAST(gsl::byte, output), in_shape,
+            axes, in_strides, tmp_out_strides, true,
+            kernels::default_kernel_context()));
         return ok();
     };
     // mean -> reduce_mean(input)
@@ -86,20 +88,28 @@ result<void> nncase::kernels::stackvm::reference::instance_norm(
     auto sub_out_shape =
         kernels::detail::get_binary_output_shape(in_shape, tmp_out_shape);
     auto sub_out_strides = runtime::get_default_strides(sub_out_shape);
-    try_(reference::binary(
+    try_(nncase::kernels::stackvm::reference::binary(
         dt_float32, runtime::stackvm::binary_op_t::sub,
         IN_CAST(gsl::byte, input), IN_CAST(gsl::byte, mean.get()),
         OUT_CAST(gsl::byte, sub_output.get()), in_shape, in_strides,
         tmp_out_shape, tmp_out_strides, sub_out_shape, sub_out_strides));
-    try_(reference::unary(dt_float32, unary_op_t::square,
-                          IN_CAST(gsl::byte, sub_output.get()),
-                          OUT_CAST(gsl::byte, square_output.get()),
-                          sub_out_shape, sub_out_strides, sub_out_shape,
-                          sub_out_strides, kernels::default_kernel_context()));
+    try_(nncase::kernels::stackvm::reference::unary(
+        dt_float32, unary_op_t::square, IN_CAST(gsl::byte, sub_output.get()),
+        OUT_CAST(gsl::byte, square_output.get()), sub_out_shape,
+        sub_out_strides, sub_out_shape, sub_out_strides,
+        kernels::default_kernel_context()));
     // var = reduce_mean(square(input - mean))
     try_(run_reduce(square_output.get(), var.get(), sub_out_shape,
                     sub_out_strides));
     try_(instance_norm_impl(input, scale, bias, mean.get(), var.get(), output,
                             in_shape, in_strides, out_strides, epsilon));
     return ok();
+}
+
+result<void> nncase::kernels::stackvm::reference::instance_norm(
+    const float *input, const float *scale, const float *bias, float *output,
+    gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
+    gsl::span<const size_t> out_strides, float epsilon) {
+    return instance_norm_impl2(input, scale, bias, output, in_shape, in_strides,
+                               out_strides, epsilon);
 }
