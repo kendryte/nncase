@@ -239,7 +239,7 @@ result<void> conv2d_transpose_impl(
         stride_h, stride_w, dilation_h, dilation_w, padding_h, padding_w,      \
         fused_activation);
 
-#define TYPE_SELECT_CONV_TRANSPOSE(_typecode, _impl)                                     \
+#define TYPE_SELECT_CONV_TRANSPOSE(_typecode, _impl)                           \
     switch (_typecode) {                                                       \
     case dt_float32:                                                           \
         _impl(float);                                                          \
