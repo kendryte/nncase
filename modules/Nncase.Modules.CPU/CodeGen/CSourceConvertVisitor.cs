@@ -245,7 +245,14 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                     if (args.Length == 1)
                     {
                         var tensorType = (TensorType)args[0].CheckedType;
-                        IndentScope.Writer.Write($"tdma_boxing_load_sync({Visit(args[0]).Name}, {{{string.Join(',', tensorType.Shape)}}}, {tensorType.ToSlicing(load.NdSbp, load.Placement)[1..^1]})");
+                        var splitAxisAndScale = load.NdSbp.Select((sbp, i) => sbp is SBPSplit s ? (s.Axis, load.Placement.Hierarchy[i]) : (0, 1)).ToArray();
+                        var fullShape = tensorType.Shape.ToValueArray();
+                        foreach (var s in splitAxisAndScale)
+                        {
+                            fullShape[s.Item1] *= s.Item2;
+                        }
+
+                        IndentScope.Writer.Write($"tdma_boxing_load_sync({Visit(args[0]).Name}, {{{string.Join(',', fullShape)}}}, {tensorType.ToSlicing(load.NdSbp, load.Placement)[1..^1]}, ctx)");
                     }
                     else
                     {
@@ -257,7 +264,14 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                     if (args.Length == 1)
                     {
                         var tensorType = (TensorType)args[0].CheckedType;
-                        IndentScope.Writer.Write($"tdma_boxing_store_sync({Visit(args[0]).Name}, {{{string.Join(',', tensorType.Shape)}}}, {tensorType.ToSlicing(store.NdSbp, store.Placement)[1..^1]})");
+                        var splitAxisAndScale = store.NdSbp.Select((sbp, i) => sbp is SBPSplit s ? (s.Axis, store.Placement.Hierarchy[i]) : (0, 1)).ToArray();
+                        var fullShape = tensorType.Shape.ToValueArray();
+                        foreach (var s in splitAxisAndScale)
+                        {
+                            fullShape[s.Item1] *= s.Item2;
+                        }
+
+                        IndentScope.Writer.Write($"tdma_boxing_store_sync({Visit(args[0]).Name}, {{{string.Join(',', fullShape)}}}, {tensorType.ToSlicing(store.NdSbp, store.Placement)[1..^1]}, ctx)");
                     }
                     else
                     {

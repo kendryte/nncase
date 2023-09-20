@@ -45,7 +45,9 @@ public class UnitTestCPUTargetTiling : TestClassBase
     // [ClassData(typeof(TilingCaseSoftmax))]
     // [ClassData(typeof(TilingCaseSlice))]
     // [ClassData(typeof(TilingCaseConcat))]
-    [ClassData(typeof(TilingCaseTranspose))]
+    // [ClassData(typeof(TilingCaseTranspose))]
+    // [ClassData(typeof(TilingCaseReshape1))]
+    [ClassData(typeof(TilingCaseReshape2))]
     public async Task TestCpuFunction(Function main, Tensor[] inputs)
     {
         var module = new IR.IRModule(main);

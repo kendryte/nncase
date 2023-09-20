@@ -260,6 +260,64 @@ void tdma_store_async(tensor<T, SrcLoc> &src, tensor<T, loc_t::device> &&dest) {
                        std::forward<tensor<T, SrcLoc>>(src));
 }
 
+template <class T>
+void boxing_store_sync_visit_func(int visited,
+                                  [[maybe_unused]] thread_context &ctx,
+                                  tensor<T, loc_t::local> &src,
+                                  dims_t global_dims, dims_t starts,
+                                  dims_t dims) {
+    T *global_span = nullptr;
+    if (visited == 1) {
+        if (global_hardware_ctx.global_var != nullptr) {
+            runtime_util->rt_assert(false,
+                                    (char *)"the global var has been used!");
+        }
+        global_span =
+            (T *)runtime_util->malloc(sizeof(T) * compute_size(global_dims));
+        global_hardware_ctx.global_var = global_span;
+    }
+
+    tensor<T> global_tensor =
+        tensor<T>(gsl::make_span((T *)global_hardware_ctx.global_var,
+                                 compute_size(global_dims)),
+                  global_dims);
+    __tensor_copy_sync<T, loc_t::local, loc_t::local>(
+        std::move(global_tensor(starts, dims)), std::move(src));
+}
+
+template <class T>
+void boxing_load_sync_visit_func([[maybe_unused]] int visited,
+                                 [[maybe_unused]] thread_context &ctx,
+                                 tensor<T, loc_t::local> &dest,
+                                 dims_t global_dims, dims_t starts,
+                                 dims_t dims) {
+    T *global_span = nullptr;
+    tensor<T> global_tensor =
+        tensor<T>(gsl::make_span((T *)global_hardware_ctx.global_var,
+                                 compute_size(global_dims)),
+                  global_dims);
+    __tensor_copy_sync<T, loc_t::local, loc_t::local>(
+        std::move(dest), std::move(global_tensor(starts, dims)));
+}
+
+template <class T, loc_t DestLoc>
+void tdma_boxing_load_sync(tensor<T, DestLoc> &dest, dims_t global_dims,
+                           dims_t starts, dims_t dims, thread_context &ctx) {
+    __tdma_all_sync_apply_macro(boxing_load_sync_visit_func, ([]() -> void {
+                                    runtime_util->free(
+                                        global_hardware_ctx.global_var);
+                                    global_hardware_ctx.global_var = nullptr;
+                                }),
+                                ctx, dest, global_dims, starts, dims)
+}
+
+template <class T, loc_t SrcLoc>
+void tdma_boxing_store_sync(tensor<T, SrcLoc> &src, dims_t global_dims,
+                            dims_t starts, dims_t dims, thread_context &ctx) {
+    __tdma_all_sync_apply_macro(boxing_store_sync_visit_func, ([]() -> void {}),
+                                ctx, src, global_dims, starts, dims)
+}
+
 template <class T> void tdma_fill_async(tensor<T, loc_t::local> &src, T value) {
     apply(gsl::make_span(src.dimension()).template as_span<const size_t>(),
           [&](gsl::span<const size_t> index) -> void {
