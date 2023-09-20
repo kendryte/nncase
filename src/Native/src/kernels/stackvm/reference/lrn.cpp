@@ -118,10 +118,28 @@ result<void> lrn_impl2(const T *input, float alpha, float beta, float bias,
     return ok();
 }
 
+#define LRN_IMPL(type)                                                         \
+    return lrn_impl2(IN_CAST(type, input), alpha, beta, bias, size,            \
+                     OUT_CAST(type, output), in_shape, in_strides,             \
+                     out_strides);
+
+#define TYPE_SELECT_LRN(_typecode, _impl)                                      \
+    switch (_typecode) {                                                       \
+    case dt_float32:                                                           \
+        _impl(float);                                                          \
+    case dt_float16:                                                           \
+        _impl(half);                                                           \
+    case dt_bfloat16:                                                          \
+        _impl(bfloat16);                                                       \
+    case dt_float64:                                                           \
+        _impl(double);                                                         \
+    default:                                                                   \
+        return err(std::errc::not_supported);                                  \
+    }
+
 result<void> nncase::kernels::stackvm::reference::lrn(
-    const float *input, float alpha, float beta, float bias, int size,
-    float *output, gsl::span<const size_t> in_shape,
+    typecode_t type, const gsl::byte *input, float alpha, float beta,
+    float bias, int size, gsl::byte *output, gsl::span<const size_t> in_shape,
     gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides) {
-    return lrn_impl2(input, alpha, beta, bias, size, output, in_shape,
-                     in_strides, out_strides);
+    TYPE_SELECT_LRN(type, LRN_IMPL);
 }

@@ -180,15 +180,34 @@ result<void> lstm_impl(const T *input, const T *w_xc, const T *w_rc,
     return ok();
 }
 
+#define LSTM_IMPL(type)                                                        \
+    return lstm_impl(                                                          \
+        IN_CAST(type, input), IN_CAST(type, w_xc), IN_CAST(type, w_rc),        \
+        IN_CAST(type, bias), IN_CAST(type, init_h), IN_CAST(type, init_c),     \
+        OUT_CAST(type, output), OUT_CAST(type, output_h),                      \
+        OUT_CAST(type, output_c), in_shape_3, init_h_shape_3, init_c_shape_3,  \
+        out_shape_3, w_xc_shape_3, w_rc_shape_3, direction);
+
+#define TYPE_SELECT_LSTM(_typecode, _impl)                                     \
+    switch (_typecode) {                                                       \
+    case dt_float32:                                                           \
+        _impl(float);                                                          \
+    case dt_float16:                                                           \
+        _impl(half);                                                           \
+    case dt_float64:                                                           \
+        _impl(double);                                                         \
+    default:                                                                   \
+        return err(std::errc::not_supported);                                  \
+    }
+
 result<void> nncase::kernels::stackvm::reference::lstm(
-    const float *input, const float *w_xc, const float *w_rc,
-    [[maybe_unused]] const float *bias, const float *init_h,
-    const float *init_c, float *output, float *output_h, float *output_c,
+    typecode_t type, const gsl::byte *input, const gsl::byte *w_xc,
+    const gsl::byte *w_rc, [[maybe_unused]] const gsl::byte *bias,
+    const gsl::byte *init_h, const gsl::byte *init_c, gsl::byte *output,
+    gsl::byte *output_h, gsl::byte *output_c,
     gsl::span<const size_t> in_shape_3, gsl::span<const size_t> init_h_shape_3,
     gsl::span<const size_t> init_c_shape_3, gsl::span<const size_t> out_shape_3,
     gsl::span<const size_t> w_xc_shape_3, gsl::span<const size_t> w_rc_shape_3,
     lstmdirection_t direction) {
-    return lstm_impl(input, w_xc, w_rc, bias, init_h, init_c, output, output_h,
-                     output_c, in_shape_3, init_h_shape_3, init_c_shape_3,
-                     out_shape_3, w_xc_shape_3, w_rc_shape_3, direction);
+    TYPE_SELECT_LSTM(type, LSTM_IMPL);
 }

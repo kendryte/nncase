@@ -95,23 +95,24 @@ NNCASE_API result<void> constant_of_shape(datatype_t dt, const gsl::byte *value,
                                           gsl::span<const size_t> shape);
 
 NNCASE_API result<void> conv2d(
-    const float *input, const float *weights, const float *bias, float *output,
-    gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
-    gsl::span<const size_t> w_shape, gsl::span<const size_t> w_strides,
-    gsl::span<const size_t> bias_strides, gsl::span<const size_t> out_strides,
-    const padding &padding_h, const padding &padding_w, int32_t groups,
-    int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
+    typecode_t typecode, const gsl::byte *input, const gsl::byte *weights,
+    const gsl::byte *bias, gsl::byte *output, gsl::span<const size_t> in_shape,
+    gsl::span<const size_t> in_strides, gsl::span<const size_t> w_shape,
+    gsl::span<const size_t> w_strides, gsl::span<const size_t> bias_strides,
+    gsl::span<const size_t> out_strides, const padding &padding_h,
+    const padding &padding_w, int32_t groups, int32_t stride_h,
+    int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
     value_range<float> fused_activation,
     NNCASE_UNUSED kernel_context &context = default_kernel_context()) noexcept;
 
-NNCASE_API result<void>
-conv2d_transpose(const float *input, float *output, const float *weights,
-                 const float *bias, gsl::span<const size_t> in_shape,
-                 int32_t groups, gsl::span<const size_t> out_shape,
-                 int32_t filter_h, int32_t filter_w, int32_t stride_h,
-                 int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
-                 const padding &padding_h, const padding &padding_w,
-                 const value_range<float> &fused_activation) noexcept;
+NNCASE_API result<void> conv2d_transpose(
+    typecode_t typecode, const gsl::byte *input, gsl::byte *output,
+    const gsl::byte *weights, const gsl::byte *bias,
+    gsl::span<const size_t> in_shape, int32_t groups,
+    gsl::span<const size_t> out_shape, int32_t filter_h, int32_t filter_w,
+    int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
+    const padding &padding_h, const padding &padding_w,
+    [[maybe_unused]] const value_range<float> &fused_activation) noexcept;
 
 NNCASE_API result<void>
 cum_sum(tensor input, tensor axis, tensor exclusive, tensor reverse,
@@ -208,16 +209,17 @@ NNCASE_API result<void>
 lp_normalization(tensor input, tensor axis, tensor p, tensor output = nullptr,
                  kernel_context &context = default_kernel_context());
 
-NNCASE_API result<void> lrn(const float *input, float alpha, float beta,
-                            float bias, int size, float *output,
-                            gsl::span<const size_t> in_shape,
+NNCASE_API result<void> lrn(typecode_t typecode, const gsl::byte *input,
+                            float alpha, float beta, float bias, int size,
+                            gsl::byte *output, gsl::span<const size_t> in_shape,
                             gsl::span<const size_t> in_strides,
                             gsl::span<const size_t> out_strides);
 
 NNCASE_API result<void>
-lstm(const float *input, const float *w_xc, const float *w_rc,
-     const float *bias, const float *init_h, const float *init_c, float *output,
-     float *output_h, float *output_c, gsl::span<const size_t> in_shape,
+lstm(typecode_t typecode, const gsl::byte *input, const gsl::byte *w_xc,
+     const gsl::byte *w_rc, const gsl::byte *bias, const gsl::byte *init_h,
+     const gsl::byte *init_c, gsl::byte *output, gsl::byte *output_h,
+     gsl::byte *output_c, gsl::span<const size_t> in_shape,
      gsl::span<const size_t> init_h_shape, gsl::span<const size_t> init_c_shape,
      gsl::span<const size_t> out_shape, gsl::span<const size_t> w_xc_shape,
      gsl::span<const size_t> w_rc_shape,
