@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Nncase.PatternMatch;
 
-namespace Nncase.IR.Tensors;
+namespace Nncase.IR.CPU;
 
 /// <summary>
 /// Boxing expression.

@@ -16,7 +16,6 @@ internal class TensorsModule : IApplicationPart
     public void ConfigureServices(IRegistrator registrator)
     {
         registrator.RegisterManyInterface<BroadcastEvaluator>(reuse: Reuse.Singleton);
-        registrator.RegisterManyInterface<BoxingEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<BitcastEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<CastEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<ConcatEvaluator>(reuse: Reuse.Singleton);

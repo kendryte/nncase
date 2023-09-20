@@ -22,4 +22,14 @@ public partial class CPU
     {
         return new Call(new CPUKernelOp(target), inputs);
     }
+
+    public static Call Boxing(Expr input, IRType type)
+    {
+        if (input.CheckedType == type)
+        {
+            throw new NotSupportedException();
+        }
+
+        return new Call(new Boxing(type), input);
+    }
 }

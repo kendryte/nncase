@@ -6,9 +6,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Nncase.CostModel;
 using Nncase.IR;
-using Nncase.IR.Tensors;
+using Nncase.IR.CPU;
 
-namespace Nncase.Evaluator.Tensors;
+namespace Nncase.Evaluator.CPU;
 
 public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Boxing>
 {

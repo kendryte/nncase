@@ -33,53 +33,6 @@ public static class DistributedUtility
            ToArray();
     }
 
-    public static IReadOnlyList<Expr> GetLeafCandidateBoxings(Expr expr, Placement placement)
-    {
-        return GetLeafCandidateNDSBPs((TensorType)expr.CheckedType, placement).Select(ndsbp => IR.F.Tensors.Boxing(expr, new DistributedType((TensorType)expr.CheckedType, ndsbp, placement))).ToArray();
-    }
-
-    /// <summary>
-    /// when input expression sbp is partial, get the new candidate boxings.
-    /// </summary>
-    /// <param name="expr">input expression.</param>
-    /// <returns>the boxings.</returns>
-    /// <exception cref="NotSupportedException">when expr is tuple.</exception>
-    public static IReadOnlyList<Expr> GetPartialCandidateBoxings(Expr expr)
-    {
-        if (expr is IR.Tuple tuple)
-        {
-            var candidates = tuple.Fields.ToArray().
-                Select(GetPartialCandidateBoxings).
-                CartesianProduct();
-            return candidates.Any() ? candidates.
-                Select(fs => new IR.Tuple(fs.ToArray())).
-                ToArray() : Array.Empty<Expr>();
-        }
-
-        var type = (DistributedType)expr.CheckedType;
-        var tensorType = type.TensorType;
-        var candidateNdsbps = new List<SBP>[type.Placement.Rank];
-        for (int i = 0; i < type.Placement.Rank; i++)
-        {
-            candidateNdsbps[i] = new List<SBP>();
-            if (type.NdSBP[i] is SBPPartialSum)
-            {
-                candidateNdsbps[i].Add(SBP.B);
-                for (int axis = 0; axis < tensorType.Shape.Rank; axis++)
-                {
-                    if (tensorType.Shape[axis] is { IsFixed: true, Value: int s } && IsDivisible(s, type.Placement.Hierarchy[i]))
-                    {
-                        candidateNdsbps[i].Add(SBP.S(axis));
-                    }
-                }
-            }
-        }
-
-        return candidateNdsbps.CartesianProduct().
-            Select(ndsbp => new DistributedType(tensorType, new IRArray<SBP>(ndsbp), type.Placement)).
-            Select(disttype => IR.F.Tensors.Boxing(expr, disttype)).ToArray();
-    }
-
     public static bool IsDistributable(TensorType tensorType, ReadOnlySpan<SBP> ndsbp, Placement placement, [MaybeNullWhen(false)] out TensorType distType)
     {
         distType = null;

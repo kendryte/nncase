@@ -24,6 +24,8 @@ using MathF = Nncase.IR.F.Math;
 using Range = Nncase.TIR.Range;
 using Tuple = Nncase.IR.Tuple;
 
+[assembly: InternalsVisibleTo("Nncase.Tests")]
+
 namespace Nncase.Passes.Tile;
 
 /// <summary>
@@ -86,6 +88,53 @@ internal sealed class SingleCPUFusionConverter
         return T.PrimFunc(newFusion.Name, newFusion.ModuleKind, visitor.InputBuffers.Concat(visitor.OutputBuffers).ToArray()).Body(primBody.ToArray()).Build();
     }
 
+    public static IReadOnlyList<Expr> GetLeafCandidateBoxings(Expr expr, Placement placement)
+    {
+        return DistributedUtility.GetLeafCandidateNDSBPs((TensorType)expr.CheckedType, placement).Select(ndsbp => IR.F.CPU.Boxing(expr, new DistributedType((TensorType)expr.CheckedType, ndsbp, placement))).ToArray();
+    }
+
+    /// <summary>
+    /// when input expression sbp is partial, get the new candidate boxings.
+    /// </summary>
+    /// <param name="expr">input expression.</param>
+    /// <returns>the boxings.</returns>
+    /// <exception cref="NotSupportedException">when expr is tuple.</exception>
+    public static IReadOnlyList<Expr> GetPartialCandidateBoxings(Expr expr)
+    {
+        if (expr is IR.Tuple tuple)
+        {
+            var candidates = tuple.Fields.ToArray().
+                Select(GetPartialCandidateBoxings).
+                CartesianProduct();
+            return candidates.Any() ? candidates.
+                Select(fs => new IR.Tuple(fs.ToArray())).
+                ToArray() : Array.Empty<Expr>();
+        }
+
+        var type = (DistributedType)expr.CheckedType;
+        var tensorType = type.TensorType;
+        var candidateNdsbps = new List<SBP>[type.Placement.Rank];
+        for (int i = 0; i < type.Placement.Rank; i++)
+        {
+            candidateNdsbps[i] = new List<SBP>();
+            if (type.NdSBP[i] is SBPPartialSum)
+            {
+                candidateNdsbps[i].Add(SBP.B);
+                for (int axis = 0; axis < tensorType.Shape.Rank; axis++)
+                {
+                    if (tensorType.Shape[axis] is { IsFixed: true, Value: int s } && DistributedUtility.IsDivisible(s, type.Placement.Hierarchy[i]))
+                    {
+                        candidateNdsbps[i].Add(SBP.S(axis));
+                    }
+                }
+            }
+        }
+
+        return candidateNdsbps.CartesianProduct().
+            Select(ndsbp => new DistributedType(tensorType, new IRArray<SBP>(ndsbp), type.Placement)).
+            Select(disttype => IR.F.CPU.Boxing(expr, disttype)).ToArray();
+    }
+
     private sealed class DistributeConvertVisitor : ExprVisitor<IReadOnlyList<Expr>, Unit>
     {
         private readonly Dictionary<Expr, List<Expr>> _stagesMap;
@@ -104,7 +153,7 @@ internal sealed class SingleCPUFusionConverter
         public IReadOnlyList<Expr> Convert(Expr body, out IReadOnlyDictionary<Expr, List<Expr>> stagesMap)
         {
             stagesMap = _stagesMap;
-            return Visit(body).Select(newbody => IR.F.Tensors.Boxing(newbody, body.CheckedType)).ToArray();
+            return Visit(body).Select(newbody => IR.F.CPU.Boxing(newbody, body.CheckedType)).ToArray();
         }
 
         protected override IReadOnlyList<Expr> DefaultVisitLeaf(Expr expr)
@@ -162,7 +211,7 @@ internal sealed class SingleCPUFusionConverter
                 var tensorType = (TensorType)oldArg.CheckedType;
                 boxingArgs.Add(info.ParameterKind switch
                 {
-                    ParameterKind.Input => DistributedUtility.GetLeafCandidateNDSBPs(tensorType, Placement).Select(ndsbp => IR.F.Tensors.Boxing(newArgs[0], new DistributedType(tensorType, ndsbp, Placement))).ToList(),
+                    ParameterKind.Input => DistributedUtility.GetLeafCandidateNDSBPs(tensorType, Placement).Select(ndsbp => IR.F.CPU.Boxing(newArgs[0], new DistributedType(tensorType, ndsbp, Placement))).ToList(),
                     ParameterKind.Attribute => new Expr[] { newArgs[0] },
                     _ => throw new ArgumentOutOfRangeException(info.ParameterKind.ToString()),
                 });
@@ -184,7 +233,7 @@ internal sealed class SingleCPUFusionConverter
 
         private IReadOnlyList<Expr> GetLeafArgCandidates(ParameterKind parameterKind, Expr expr) => (parameterKind, expr) switch
         {
-            (ParameterKind.Input, Expr e) when e is Const or Var => DistributedUtility.GetLeafCandidateBoxings(e, Placement),
+            (ParameterKind.Input, Expr e) when e is Const or Var => GetLeafCandidateBoxings(e, Placement),
             (ParameterKind.Input, Expr e) when e is IR.Tuple tp => tp.Fields.ToArray().Select(f => GetLeafArgCandidates(parameterKind, f)).CartesianProduct().Select(e => new IR.Tuple(e.ToArray())).ToArray(),
             (ParameterKind.Attribute, Expr e) when e is Const or Var => new[] { e },
             (_, Expr arg) => ExprMemo[arg],
@@ -210,12 +259,12 @@ internal sealed class SingleCPUFusionConverter
                     var inType = (DistributedType)args[0].CheckedType;
                     var tensorType = inType.TensorType with { Shape = newShape };
                     calls.AddRange(DistributedUtility.GetLeafCandidateNDSBPs(tensorType, inType.Placement).
-                        Select(ndsbp => IR.F.Tensors.Boxing(args[0], new DistributedType(tensorType, ndsbp, inType.Placement))).
+                        Select(ndsbp => IR.F.CPU.Boxing(args[0], new DistributedType(tensorType, ndsbp, inType.Placement))).
                         Select(c => (c.InferenceType(), c)));
                 }
                 else
                 {
-                    var broadcastArgs = args.Zip(target.Parameters).Select(t => t.Second.ParameterKind == ParameterKind.Input ? DistributedUtility.GetPartialCandidateBoxings(t.First) : Array.Empty<Expr>()).ToArray();
+                    var broadcastArgs = args.Zip(target.Parameters).Select(t => t.Second.ParameterKind == ParameterKind.Input ? GetPartialCandidateBoxings(t.First) : Array.Empty<Expr>()).ToArray();
 
                     if (!broadcastArgs.All(bargs => bargs.Count == 0))
                     {
