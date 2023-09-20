@@ -7,6 +7,8 @@ using System.Linq;
 using System.Reactive;
 using System.Threading.Tasks;
 using Google.OrTools.Algorithms;
+using Google.OrTools.Graph;
+using Microsoft.Toolkit.HighPerformance;
 using NetFabric.Hyperlinq;
 using Nncase.Diagnostics;
 using Nncase.Evaluator;
@@ -74,9 +76,12 @@ public class RecordFusionShape : FunctionPass
 {
     private Dictionary<Var, int[]> _dimVarValues = new();
 
-    public RecordFusionShape(Dictionary<BucketFusion, FusionShapeData[]> shapeList)
+    private bool _once;
+
+    public RecordFusionShape(Dictionary<BucketFusion, FusionShapeData[]> shapeList, bool once = false)
     {
         FusionShapeInfo = shapeList;
+        _once = once;
     }
 
     public Dictionary<BucketFusion, FusionShapeData[]> FusionShapeInfo { get; set; }
@@ -84,7 +89,7 @@ public class RecordFusionShape : FunctionPass
     // make dummy value from InputInfo
     // VarInfo:(DimVar -> Value)
     public static Dictionary<Var, IValue>
-        MakeDummyInput(IReadOnlyDictionary<Var, Expr[]> info, Dictionary<Var, IValue> varInfo)
+        MakeDummyInput(IReadOnlyDictionary<Var, Expr[]> info, Dictionary<Var, IValue> varInfo, int i)
     {
         return info.ToDictionary(
             pair => pair.Key,
@@ -98,7 +103,7 @@ public class RecordFusionShape : FunctionPass
                 var shape = shapeExpr.Evaluate(varInfo).AsTensor();
                 return ConstantOfShape(
                     shape,
-                    Cast(1, pair.Key.CheckedDataType)).Evaluate(varInfo);
+                    Cast(i, pair.Key.CheckedDataType)).Evaluate(varInfo);
             });
     }
 
@@ -106,28 +111,50 @@ public class RecordFusionShape : FunctionPass
     {
         var options = CompileSession.CompileOptions.ShapeBucketOptions;
         var varMap = options.VarMap;
-        _dimVarValues = MakeVarValuesForAllSegment(options);
+
+        var staticShape = IsStaticShpae;
+        var segmentCount = staticShape
+                           && SingleDimVar(options)
+            ? options.RangeInfo.First().Value.Max
+            : options.SegmentsCount;
+        // var segmentCount = options.SegmentsCount;
+        _dimVarValues = MakeVarValuesForAllSegment(options, segmentCount, staticShape);
 
         // 一共有多组key seg
-        var list = Enumerable.Range(0, _dimVarValues.First().Value.Length).Select(i =>
+        var tmpList = Enumerable.Range(0, _dimVarValues.First().Value.Length).Select(i =>
         {
             // 一组里面多个key seg
             return _dimVarValues.Select(pair => (pair.Key, Value: pair.Value[i])).ToArray();
-        }).ToArray();
+        });
+        var list = _once ? tmpList.TakeLast(1).ToArray() : tmpList.ToArray();
 
+        var begin = System.DateTime.Now;
         var body = ((Function)main).Body;
         var tmpFusionShapeList = list.Select((seg, i) =>
             {
+                Console.WriteLine($"Record {i}");
+                for (var i1 = 0; i1 < seg.Length; i1++)
+                {
+                    Console.WriteLine($"{seg[i1]}");
+                }
+
+                var start = System.DateTime.Now;
                 var varValues = seg.ToDictionary(pair => pair.Key, pair => (IValue)Value.FromTensor(pair.Value));
                 var exprValues = seg.ToDictionary(pair => (Expr)pair.Key, pair => (IValue)Value.FromTensor(pair.Value));
-                var input = MakeDummyInput(varMap, varValues);
+                // todo: 根据值来确定shape的？？？
+                var input = MakeDummyInput(varMap, varValues, 2);
                 var memo = EvaluatorUtil.GetMemo(body, ConcatDictionary(input, varValues));
                 var f = new FusionShapeUpdater(ConcatDictionary(memo, exprValues));
                 f.Visit(main);
+                var stop = System.DateTime.Now;
+                Console.WriteLine($"time = {stop - start}");
                 return f.FusionShape;
             }).SelectMany(x => x)
             .ToLookup(x => x.Key, x => x.Value)
             .ToDictionary(pair => pair.Key, pair => pair.ToArray());
+
+        var end = System.DateTime.Now;
+        Console.WriteLine($"FullTime{end - begin}");
 
         GC.Collect();
         foreach (var (f, shapeInfo) in tmpFusionShapeList)

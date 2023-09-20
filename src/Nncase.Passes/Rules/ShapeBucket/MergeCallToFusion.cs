@@ -136,7 +136,7 @@ public partial class MergeNextCallToFusion : MergeFusionBase
     public Expr? GetReplace(Call nextCall, Expr maybeFusionCallMarker, Expr target, Call fusionOuterCall, BucketFusion fusion)
     {
         var singleVar = SingleDimVar(CompileSession.CompileOptions.ShapeBucketOptions);
-        if (!singleVar && nextCall.Arguments.ToArray().OfType<Call>().Count() > 1)
+        if (!AllConst(nextCall))
         {
             return null;
         }
@@ -156,11 +156,6 @@ public partial class MergeNextCallToFusion : MergeFusionBase
         if (MultiUser(nextCall))
         {
             // 会复制
-            return null;
-        }
-
-        if (!AllConst(nextCall))
-        {
             return null;
         }
 

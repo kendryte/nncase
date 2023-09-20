@@ -71,7 +71,7 @@ public static class CallValidator
             ShapeBucketHelper.SingleDimVar(
                 CompileSessionScope.GetCurrentThrowIfNull().CompileOptions.ShapeBucketOptions);
 
-        if (target is Binary && call.Arguments.ToArray().OfType<TensorConst>().Any())
+        if (target is Binary && call.Arguments.ToArray().Any(arg => arg is TensorConst || arg is Marker { Target: TensorConst }))
         {
             return true;
         }
@@ -179,7 +179,13 @@ public static class ShapeBucketRegister
 
     public static void Rebuild(IPassManager p, bool singleVar)
     {
-        // rebuild
+        var shapeList = new Dictionary<BucketFusion, FusionShapeData[]>();
+        p.Add<RecordFusionShape>(shapeList, true);
+        p.AddWithName<DataflowPass>("RestoreDynamic").Configure(p =>
+        {
+            p.Add<RebuildBucket>(shapeList);
+        });
+
         ToFusion(p, true);
         MergeOp(p, false);
 
@@ -191,7 +197,6 @@ public static class ShapeBucketRegister
         });
 
         MergeFusion(p, singleVar, false);
-        Bucket(p);
     }
 
     public static void MergeFusion(IPassManager p, bool singleVar, bool greedy)
@@ -226,9 +231,9 @@ public static class ShapeBucketRegister
     public static void Simplify(IPassManager p) =>
         p.AddWithName<DataflowPass>("Simplify").Configure(c =>
         {
+            c.Add<FoldConstCall>();
             c.Add<FoldRepeatMarker>();
             c.Add<FoldStackGetItem>();
-            c.Add<FoldConstCall>();
             c.Add<FoldShapeOf>();
             c.Add<FoldTwoReshapes>();
             c.Add<FoldTwoCasts>();
@@ -257,18 +262,34 @@ public static class ShapeBucketHelper
         return memo;
     }
 
-    public static Dictionary<Var, int[]> MakeVarValuesForAllSegment(ShapeBucketOptions options)
+    // todo: fix this
+    public static bool IsStaticShpae
     {
-        int segmentCount = options.SegmentsCount;
+        get
+        {
+            var options = CompileSessionScope.GetCurrentThrowIfNull().CompileOptions.ShapeBucketOptions;
+            return options.VarMap.Keys.Count !=
+                   5 &&
+                   SingleDimVar(options);
+        }
+    }
+
+    public static Dictionary<Var, int[]> MakeVarValuesForAllSegment(ShapeBucketOptions options, bool staticShape = false)
+    {
+        return MakeVarValuesForAllSegment(options, options.SegmentsCount, staticShape);
+    }
+
+    public static Dictionary<Var, int[]> MakeVarValuesForAllSegment(ShapeBucketOptions options, int segmentCount, bool staticShape)
+    {
+        // todo: fix this
         var varRange = options.RangeInfo;
         var varMap = options.VarMap;
-        var staticShape = false;
         var varAndInputAllSegment = varRange.ToDictionary(pair => pair.Key, pair =>
         {
             var (min, max) = pair.Value;
             if (staticShape)
             {
-                return Enumerable.Range(min, max - min).ToArray();
+                return Enumerable.Range(min, max - min + 1).ToArray();
             }
 
             var segments = ComputeSegmentList(segmentCount, min, max);
@@ -280,7 +301,10 @@ public static class ShapeBucketHelper
         // DimVarName -> Dict.key -> Dict.Value
         var varValues = varAndInputAllSegment.ToDictionary(
             pair => vars.FindFirst(v => v.Name == pair.Key),
-            pair => { return pair.Value.OrderByDescending(x => x).ToArray(); });
+            pair =>
+            {
+                return pair.Value.OrderByDescending(x => x).ToArray();
+            });
         return varValues;
     }
 
@@ -300,11 +324,6 @@ public static class ShapeBucketHelper
         if (newArgs.Any(arg => arg is Var v && v.Name.StartsWith("var_")))
         {
             throw new InvalidOperationException("Args has Var in fusion");
-        }
-
-        if (newArgs.Any(arg => arg is Marker m && m.Target is Const))
-        {
-            throw new InvalidOperationException("Args has tuple");
         }
 
         if (newArgs.Any(arg => arg is IR.Tuple))
