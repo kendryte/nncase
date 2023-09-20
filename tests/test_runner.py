@@ -21,6 +21,7 @@ from inference import *
 from evaluator import *
 from compare_util import *
 from test_utils import *
+from html import escape
 
 
 class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
@@ -271,7 +272,8 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
 
                             if stage == 'infer' and self.cfg['infer_report_opt']['enabled']:
                                 self.infer_report_dict['result'] = 'Pass' if judge else 'Fail'
-                                self.infer_report_dict['remark'] = result.replace('\n', '<br/>')
+                                self.infer_report_dict['remark'] = escape(
+                                    result).replace('\n', '<br/>')
                                 prefix, suffix = os.path.splitext(self.infer_report_file)
                                 json_file = f'{prefix}_{os.path.basename(self.case_dir)}{suffix}'
                                 dump_dict_to_json(self.infer_report_dict, json_file)

@@ -10,6 +10,7 @@ from test_utils import *
 import time
 import subprocess
 from update_trace_info import *
+from html import escape
 
 
 def data_shape_list_string(data):
@@ -273,7 +274,7 @@ class Inference:
 
             if self.cfg['infer_report_opt']['enabled']:
                 self.infer_report_dict['result'] = 'Fail'
-                self.infer_report_dict['remark'] = detail.replace('\n', '<br/>')
+                self.infer_report_dict['remark'] = escape(detail).replace('\n', '<br/>')
                 prefix, suffix = os.path.splitext(self.infer_report_file)
                 json_file = f'{prefix}_{os.path.basename(self.case_dir)}{suffix}'
                 dump_dict_to_json(self.infer_report_dict, json_file)
