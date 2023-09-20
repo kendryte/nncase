@@ -66,7 +66,8 @@ result<void> softmax_impl(const T *input, T *output,
         auto max_idx = offset(reduced_strides, out_index);
 
         auto out_idx = offset(out_strides, index);
-        output[out_idx] = (in - tmp[max_idx]) * beta;
+        output[out_idx] =
+            static_cast<T>(static_cast<float>(in - tmp[max_idx]) * beta);
 
         return ok();
     }));
@@ -110,6 +111,36 @@ result<void> softmax_impl(const T *input, T *output,
                         in_shape, in_strides, out_strides, axis, beta,         \
                         needLog);
 
+#define TYPE_SELECT_SOFTMAX(_typecode, _impl)                                  \
+    switch (_typecode) {                                                       \
+    case dt_float32:                                                           \
+        _impl(float);                                                          \
+    case dt_float16:                                                           \
+        _impl(half);                                                           \
+    case dt_bfloat16:                                                          \
+        _impl(bfloat16);                                                       \
+    case dt_int8:                                                              \
+        _impl(int8_t);                                                         \
+    case dt_int16:                                                             \
+        _impl(int16_t);                                                        \
+    case dt_int32:                                                             \
+        _impl(int32_t);                                                        \
+    case dt_int64:                                                             \
+        _impl(int64_t);                                                        \
+    case dt_uint8:                                                             \
+        _impl(uint8_t);                                                        \
+    case dt_uint16:                                                            \
+        _impl(uint16_t);                                                       \
+    case dt_uint32:                                                            \
+        _impl(uint32_t);                                                       \
+    case dt_uint64:                                                            \
+        _impl(uint64_t);                                                       \
+    case dt_float64:                                                           \
+        _impl(double);                                                         \
+    default:                                                                   \
+        return err(std::errc::not_supported);                                  \
+    }
+
 } // namespace
 
 result<void> nncase::kernels::stackvm::reference::softmax(
@@ -117,5 +148,5 @@ result<void> nncase::kernels::stackvm::reference::softmax(
     gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
     gsl::span<const size_t> out_strides, int64_t axis, float beta,
     bool needLog) noexcept {
-    TYPE_SELECT(typecode, SOFTMAX_IMPL);
+    TYPE_SELECT_SOFTMAX(typecode, SOFTMAX_IMPL);
 }

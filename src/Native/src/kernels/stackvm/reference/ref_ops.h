@@ -36,8 +36,9 @@ batchnorm(typecode_t typecode, const gsl::byte *input, const gsl::byte *scale,
           gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
           gsl::span<const size_t> out_strides, float epsilon);
 
-NNCASE_API result<void> layer_norm(const float *input, float *output,
-                                   const float *scale, const float *bias,
+NNCASE_API result<void> layer_norm(typecode_t type, const float *input,
+                                   float *output, const float *scale,
+                                   const float *bias,
                                    gsl::span<const size_t> in_shape,
                                    int32_t axis, float epsilon);
 
@@ -388,11 +389,13 @@ slice(datatype_t type, const gsl::byte *input, gsl::byte *output,
       kernel_context &context = default_kernel_context()) noexcept;
 
 NNCASE_API result<void>
-softmax(const float *input, float *output, gsl::span<const size_t> in_shape,
-        gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
-        int64_t axis, float beta, bool needLog = false) noexcept;
+softmax(typecode_t type, const gsl::byte *input, gsl::byte *output,
+        gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
+        gsl::span<const size_t> out_strides, int64_t axis, float beta,
+        bool needLog = false) noexcept;
 
-NNCASE_API result<void> log_softmax(const float *input, float *output,
+NNCASE_API result<void> log_softmax(typecode_t type, const gsl::byte *input,
+                                    gsl::byte *output,
                                     gsl::span<const size_t> in_shape,
                                     gsl::span<const size_t> in_strides,
                                     gsl::span<const size_t> out_strides,
