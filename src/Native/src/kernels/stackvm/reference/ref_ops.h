@@ -36,9 +36,9 @@ batchnorm(typecode_t typecode, const gsl::byte *input, const gsl::byte *scale,
           gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
           gsl::span<const size_t> out_strides, float epsilon);
 
-NNCASE_API result<void> layer_norm(typecode_t type, const float *input,
-                                   float *output, const float *scale,
-                                   const float *bias,
+NNCASE_API result<void> layer_norm(typecode_t type, const gsl::byte *input,
+                                   gsl::byte *output, const gsl::byte *scale,
+                                   const gsl::byte *bias,
                                    gsl::span<const size_t> in_shape,
                                    int32_t axis, float epsilon);
 
@@ -190,12 +190,12 @@ NNCASE_API result<void>
 hardmax(tensor input, tensor axis, tensor output = nullptr,
         kernel_context &context = default_kernel_context());
 
-NNCASE_API result<void> instance_norm(const float *input, const float *scale,
-                                      const float *bias, float *output,
-                                      gsl::span<const size_t> in_shape,
-                                      gsl::span<const size_t> in_strides,
-                                      gsl::span<const size_t> out_strides,
-                                      float epsilon);
+NNCASE_API result<void>
+instance_norm(typecode_t typecode, const gsl::byte *input,
+              const gsl::byte *scale, const gsl::byte *bias, gsl::byte *output,
+              gsl::span<const size_t> in_shape,
+              gsl::span<const size_t> in_strides,
+              gsl::span<const size_t> out_strides, float epsilon);
 
 NNCASE_API result<void>
 l2_normalization(tensor input, tensor output = nullptr,
@@ -258,8 +258,9 @@ pad(datatype_t type, const gsl::byte *input, gsl::byte *output,
     kernel_context &context = default_kernel_context()) noexcept;
 
 NNCASE_API result<void>
-prelu(const float *input, const float *slope, float *output,
-      gsl::span<const size_t> in_shape, gsl::span<const size_t> input_strides,
+prelu(typecode_t type, const gsl::byte *input, const gsl::byte *slope,
+      gsl::byte *output, gsl::span<const size_t> in_shape,
+      gsl::span<const size_t> input_strides,
       gsl::span<const size_t> slope_shape,
       gsl::span<const size_t> slope_strides, gsl::span<const size_t> out_shape,
       gsl::span<const size_t> out_strides,
@@ -396,7 +397,7 @@ softmax(typecode_t type, const gsl::byte *input, gsl::byte *output,
         gsl::span<const size_t> out_strides, int64_t axis, float beta,
         bool needLog = false) noexcept;
 
-NNCASE_API result<void> log_softmax(typecode_t type, const gsl::byte *input,
+NNCASE_API result<void> log_softmax(typecode_t typecode, const gsl::byte *input,
                                     gsl::byte *output,
                                     gsl::span<const size_t> in_shape,
                                     gsl::span<const size_t> in_strides,

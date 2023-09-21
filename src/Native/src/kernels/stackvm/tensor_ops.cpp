@@ -51,11 +51,12 @@ result<value_t> nncase::kernels::stackvm::batch_normalization(
 result<value_t> nncase::kernels::stackvm::layer_norm(
     int32_t axis, float epsilon, value_t input, value_t scale, value_t bias,
     value_t output, [[maybe_unused]] kernel_context &context) {
-    try_f32_input(input_mem, input);
-    try_f32_input(scale_mem, scale);
-    try_f32_input(bias_mem, bias);
-    try_f32_output(output_mem, output, input_tensor->shape());
-    CONTIGUOUS_KERNEL(layer_norm, input_tensor, input_mem, output_mem,
+    try_input(input_mem, input);
+    try_input(scale_mem, scale);
+    try_input(bias_mem, bias);
+    try_output_like_input(output_mem, output, input_tensor);
+    try_typecode(typecode, input_tensor);
+    CONTIGUOUS_KERNEL(layer_norm, input_tensor, typecode, input_mem, output_mem,
                       scale_mem, bias_mem, input_tensor->shape(), axis,
                       epsilon);
     KERNEL_FINISH;
@@ -179,19 +180,20 @@ result<value_t> nncase::kernels::stackvm::conv2d(
     if (pad_mode != pad_mode_t::constant) {
         return err(nncase_errc::runtime_not_found);
     }
-    try_f32_input(input_mem, input);
-    try_f32_input(weights_mem, weights);
-    try_f32_input(bias_mem, bias);
+    try_input(input_mem, input);
+    try_input(weights_mem, weights);
+    try_input(bias_mem, bias);
     try_strides(strides_value, stride);
     try_paddings(pads, padding);
     try_to_integer(groups_value, groups);
     try_strides(strides, stride);
     try_strides(dilations, dilation);
     try_f32_input(fused_clamp_value, fused_clamp);
+    try_typecode(typecode, input_tensor);
     auto out_shape =
         conv2d_infer_shape(input_tensor->shape(), weights_tensor->shape(),
                            strides_value, dilations, pads);
-    try_f32_output(out_mem, output, out_shape);
+    try_output(out_mem, output, typecode, out_shape);
 
     // CONTIGUOUS_KERNEL(
     //     conv2d, input_tensor, input_mem, weights_mem, bias_mem, out_mem,
@@ -202,8 +204,8 @@ result<value_t> nncase::kernels::stackvm::conv2d(
     //     dilations[1], value_range<float>{fused_clamp_value[0],
     //     fused_clamp_value[1]}, context);
     try_(reference::conv2d(
-        input_mem, weights_mem, bias_mem, out_mem, input_tensor->shape(),
-        input_tensor->strides(), weights_tensor->shape(),
+        typecode, input_mem, weights_mem, bias_mem, out_mem,
+        input_tensor->shape(), input_tensor->strides(), weights_tensor->shape(),
         weights_tensor->strides(), bias_tensor->strides(),
         output_tensor->strides(), pads[0], pads[1], groups_value, strides[0],
         strides[1], dilations[0], dilations[1],
@@ -221,9 +223,9 @@ result<value_t> nncase::kernels::stackvm::conv2d_transpose(
     if (pad_mode != pad_mode_t::constant) {
         return err(nncase_errc::runtime_not_found);
     }
-    try_f32_input(input_mem, input);
-    try_f32_input(weights_mem, weights);
-    try_f32_input(bias_mem, bias);
+    try_input(input_mem, input);
+    try_input(weights_mem, weights);
+    try_input(bias_mem, bias);
     try_strides(strides_value, stride);
     try_paddings(pads, padding);
     try_to_integer(groups_value, groups);
@@ -231,12 +233,13 @@ result<value_t> nncase::kernels::stackvm::conv2d_transpose(
     try_strides(dilations, dilation);
     try_f32_input(fused_clamp_value, fused_clamp);
     try_dims(out_shape, output_shape);
-    try_f32_output(out_mem, output, out_shape);
+    try_typecode(typecode, input_tensor);
+    try_output(out_mem, output, typecode, out_shape);
     try_(reference::conv2d_transpose(
-        input_mem, out_mem, weights_mem, bias_mem, input_tensor->shape(),
-        groups_value, output_tensor->shape(), weights_tensor->shape()[2],
-        weights_tensor->shape()[3], strides[0], strides[1], dilations[0],
-        dilations[1], pads[0], pads[1],
+        typecode, input_mem, out_mem, weights_mem, bias_mem,
+        input_tensor->shape(), groups_value, output_tensor->shape(),
+        weights_tensor->shape()[2], weights_tensor->shape()[3], strides[0],
+        strides[1], dilations[0], dilations[1], pads[0], pads[1],
         value_range<float>{fused_clamp_value[0], fused_clamp_value[1]}));
     return ok(output);
 }
@@ -421,13 +424,14 @@ result<value_t> nncase::kernels::stackvm::get_item(
 result<value_t> nncase::kernels::stackvm::instance_normalization(
     value_t input, value_t scale, value_t bias, value_t epsilon, value_t output,
     [[maybe_unused]] kernel_context &context) {
-    try_f32_input(input_mem, input);
-    try_f32_input(scale_mem, scale);
-    try_f32_input(bias_mem, bias);
+    try_input(input_mem, input);
+    try_input(scale_mem, scale);
+    try_input(bias_mem, bias);
     try_float_scalar(eps, epsilon);
-    try_f32_output(output_mem, output, input_tensor->shape());
+    try_output_like_input(output_mem, output, input_tensor);
+    try_typecode(type, input_tensor);
     try_(reference::instance_norm(
-        input_mem, scale_mem, bias_mem, output_mem, input_tensor->shape(),
+        type, input_mem, scale_mem, bias_mem, output_mem, input_tensor->shape(),
         input_tensor->strides(), output_tensor->strides(), eps));
     KERNEL_FINISH;
 }
@@ -441,10 +445,12 @@ result<value_t> nncase::kernels::stackvm::l2_normalization(
 result<value_t> nncase::kernels::stackvm::log_softmax(
     value_t input, value_t axis, value_t output,
     [[maybe_unused]] kernel_context &context) {
-    try_f32_input(in_mem, input);
-    try_f32_output(out_mem, output, input_tensor->shape());
+    try_input(in_mem, input);
+    try_output_like_input(out_mem, output, input_tensor);
     try_positive_axis(axis_value, axis, input_tensor);
-    CONTIGUOUS_KERNEL(log_softmax, input_tensor, in_mem, out_mem,
+    try_typecode(type, input_tensor);
+
+    CONTIGUOUS_KERNEL(log_softmax, input_tensor, type, in_mem, out_mem,
                       input_tensor->shape(), input_tensor->strides(),
                       output_tensor->strides(), axis_value);
     return ok(output);
@@ -461,16 +467,17 @@ result<value_t>
 nncase::kernels::stackvm::lrn(value_t input, value_t alpha, value_t beta,
                               value_t bias, value_t size, value_t output,
                               [[maybe_unused]] kernel_context &context) {
-    try_f32_in_mem(input);
+    try_in_mem(input);
     try_float_scalar_v(alpha);
     try_float_scalar_v(beta);
     try_float_scalar_v(bias);
     try_to_integer(size_value, size);
     auto out_shape = input_tensor->shape();
-    try_f32_out_mem(output, out_shape);
-    try_(reference::lrn(input_mem, alpha_value, beta_value, bias_value,
-                        size_value, output_mem, input_tensor->shape(),
-                        input_tensor->strides(),
+    try_typecode(typecode, input_tensor);
+    try_out_mem(output, typecode, out_shape);
+    try_(reference::lrn(typecode, input_mem, alpha_value, beta_value,
+                        bias_value, size_value, output_mem,
+                        input_tensor->shape(), input_tensor->strides(),
                         runtime::get_default_strides(out_shape)));
     KERNEL_FINISH;
 }
@@ -485,25 +492,25 @@ result<value_t> nncase::kernels::stackvm::lstm(
     value_t hidden_size, [[maybe_unused]] value_t input_forget,
     value_t output_size, value_t output,
     [[maybe_unused]] kernel_context &context) {
-    try_f32_in_mem(x);
-    try_f32_in_mem(w);
-    try_f32_in_mem(r);
-    try_f32_in_mem(b);
+    try_in_mem(x);
+    try_in_mem(w);
+    try_in_mem(r);
+    try_in_mem(b);
     try_dims_v(sequence_lens);
-    try_f32_in_mem(initial_h);
-    try_f32_in_mem(initial_c);
+    try_in_mem(initial_h);
+    try_in_mem(initial_c);
     // todo:p
     //    try_f32_in_mem(p);
     try_integer_v(hidden_size);
     try_integer_v(output_size);
+    try_typecode(type, x_tensor);
     auto output_shapes = lstm_infer_shape(
         x_tensor->shape(), initial_h_tensor->shape(), initial_c_tensor->shape(),
         direction, layout, hidden_size_value, output_size_value);
     try_tuple_output(out_tuple, output, dt_float32, output_shapes);
     try_(reference::lstm(
-        x_mem, w_mem, r_mem, b_mem, initial_h_mem, initial_c_mem,
-        OUT_CAST(float, out_tuple[0]), OUT_CAST(float, out_tuple[1]),
-        OUT_CAST(float, out_tuple[2]), x_tensor->shape(),
+        type, x_mem, w_mem, r_mem, b_mem, initial_h_mem, initial_c_mem,
+        out_tuple[0], out_tuple[1], out_tuple[2], x_tensor->shape(),
         initial_h_tensor->shape(), initial_c_tensor->shape(), output_shapes[0],
         w_tensor->shape(), r_tensor->shape(), direction));
     KERNEL_FINISH;
@@ -619,13 +626,14 @@ nncase::kernels::stackvm::pad(runtime::stackvm::pad_mode_t pad_mode,
 result<value_t> kernels::stackvm::prelu(value_t input, value_t slope,
                                         value_t output,
                                         kernel_context &context) {
-    try_f32_in_mem(input);
-    try_f32_in_mem(slope);
-    try_f32_output(out_mem, output, input_tensor->shape());
-    try_(reference::prelu(input_mem, slope_mem, out_mem, input_tensor->shape(),
-                          input_tensor->strides(), slope_tensor->shape(),
-                          slope_tensor->strides(), output_tensor->shape(),
-                          output_tensor->strides(), context));
+    try_in_mem(input);
+    try_in_mem(slope);
+    try_output_like_input(out_mem, output, input_tensor);
+    try_typecode(type, input_tensor);
+    try_(reference::prelu(
+        type, input_mem, slope_mem, out_mem, input_tensor->shape(),
+        input_tensor->strides(), slope_tensor->shape(), slope_tensor->strides(),
+        output_tensor->shape(), output_tensor->strides(), context));
     return ok(output);
 }
 
@@ -991,11 +999,11 @@ result<value_t> nncase::kernels::stackvm::slice(value_t input, value_t begins,
 result<value_t>
 nncase::kernels::stackvm::softmax(value_t input, value_t axis, value_t output,
                                   [[maybe_unused]] kernel_context &context) {
-    try_f32_input(in_mem, input);
-    try_f32_output(out_mem, output, input_tensor->shape());
+    try_input(in_mem, input);
+    try_output_like_input(out_mem, output, input_tensor);
     try_positive_axis(axis_value, axis, input_tensor);
-
-    CONTIGUOUS_KERNEL(softmax, input_tensor, in_mem, out_mem,
+    try_typecode(type, input_tensor);
+    CONTIGUOUS_KERNEL(softmax, input_tensor, type, in_mem, out_mem,
                       input_tensor->shape(), input_tensor->strides(),
                       output_tensor->strides(), axis_value, 1.f);
     return ok(output);

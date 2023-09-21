@@ -112,8 +112,8 @@ result<void> layer_norm_impl2(const T *input, T *output, const T *scale,
     }
 
 result<void> nncase::kernels::stackvm::reference::layer_norm(
-    typecode_t typecode, const float *input, float *output, const float *scale,
-    const float *bias, gsl::span<const size_t> in_shape, int32_t axis,
-    float epsilon) {
+    typecode_t typecode, const gsl::byte *input, gsl::byte *output,
+    const gsl::byte *scale, const gsl::byte *bias,
+    gsl::span<const size_t> in_shape, int32_t axis, float epsilon) {
     TYPE_SELECT_LAYER_NORM(typecode, LAYER_NORM_IMPL);
 }

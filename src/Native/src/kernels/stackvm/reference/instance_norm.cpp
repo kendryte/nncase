@@ -39,8 +39,8 @@ result<void> instance_norm_impl(const T *input, const T *scale, const T *bias,
         auto off = offset(in_strides, index);
         const auto x = input[off];
         output[offset(out_strides, index)] =
-            scale[c] * (x - input_mean[offi]) /
-                std::sqrt(input_var[offi] + epsilon) +
+            scale[c] * (x - static_cast<T>(input_mean[offi])) /
+                static_cast<T>(std::sqrt(input_var[offi] + epsilon)) +
             bias[c];
         return ok();
     });
@@ -106,10 +106,45 @@ result<void> instance_norm_impl2(const T *input, const T *scale, const T *bias,
     return ok();
 }
 
+#define INSTANCE_NORM_IMPL(type)                                               \
+    return instance_norm_impl2(IN_CAST(type, input), IN_CAST(type, scale),     \
+                               IN_CAST(type, bias), OUT_CAST(type, output),    \
+                               in_shape, in_strides, out_strides, epsilon);
+
+#define TYPE_SELECT_INSTANCE_NORM(_typecode, _impl)                            \
+    switch (_typecode) {                                                       \
+    case dt_float32:                                                           \
+        _impl(float);                                                          \
+    case dt_float16:                                                           \
+        _impl(half);                                                           \
+    case dt_bfloat16:                                                          \
+        _impl(bfloat16);                                                       \
+    case dt_int8:                                                              \
+        _impl(int8_t);                                                         \
+    case dt_int16:                                                             \
+        _impl(int16_t);                                                        \
+    case dt_int32:                                                             \
+        _impl(int32_t);                                                        \
+    case dt_int64:                                                             \
+        _impl(int64_t);                                                        \
+    case dt_uint8:                                                             \
+        _impl(uint8_t);                                                        \
+    case dt_uint16:                                                            \
+        _impl(uint16_t);                                                       \
+    case dt_uint32:                                                            \
+        _impl(uint32_t);                                                       \
+    case dt_uint64:                                                            \
+        _impl(uint64_t);                                                       \
+    case dt_float64:                                                           \
+        _impl(double);                                                         \
+    default:                                                                   \
+        return err(std::errc::not_supported);                                  \
+    }
+
 result<void> nncase::kernels::stackvm::reference::instance_norm(
-    const float *input, const float *scale, const float *bias, float *output,
-    gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
-    gsl::span<const size_t> out_strides, float epsilon) {
-    return instance_norm_impl2(input, scale, bias, output, in_shape, in_strides,
-                               out_strides, epsilon);
+    typecode_t typecode, const gsl::byte *input, const gsl::byte *scale,
+    const gsl::byte *bias, gsl::byte *output, gsl::span<const size_t> in_shape,
+    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
+    float epsilon) {
+    TYPE_SELECT_INSTANCE_NORM(typecode, INSTANCE_NORM_IMPL);
 }
