@@ -204,7 +204,7 @@ public static class CostUtility
         {
             TensorType t => (UInt128)(t.Shape.Aggregate(1D, (acc, x) => acc * (x.IsFixed ? x.FixedValue : 1)) * t.DType.SizeInBytes),
             TupleType t => t.Fields.Sum(GetMemoryAccess),
-            DistributedType t => GetMemoryAccess(DistributedUtility.GetDividedTensorType(t)),
+            DistributedType t => GetMemoryAccess(Utilities.DistributedUtility.GetDividedTensorType(t)),
             _ => 0,
         };
     }
@@ -230,7 +230,7 @@ public static class CostUtility
         {
             TensorType t => (UInt128)(t.Shape.Aggregate(1D, (acc, x) => acc * (x.IsFixed ? x.FixedValue : 1)) * cyclesPerElement),
             TupleType t => t.Fields.Sum(GetMemoryAccess),
-            DistributedType t => GetCPUCycles(DistributedUtility.GetDividedTensorType(t)),
+            DistributedType t => GetCPUCycles(Utilities.DistributedUtility.GetDividedTensorType(t)),
             _ => 0,
         };
     }

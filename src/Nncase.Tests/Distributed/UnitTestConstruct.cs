@@ -4,12 +4,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Metadata;
-using Microsoft.Extensions.FileSystemGlobbing.Internal;
 using NetFabric.Hyperlinq;
 using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.Passes;
+using Nncase.Utilities;
 using Xunit;
 
 namespace Nncase.Tests.DistributedTest;

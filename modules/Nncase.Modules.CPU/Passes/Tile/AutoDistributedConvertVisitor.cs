@@ -2,9 +2,12 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Reactive;
+using System.Runtime.CompilerServices;
 using Nncase.IR;
 using Nncase.IR.CPU;
 using Nncase.IR.Tensors;
+
+[assembly: InternalsVisibleTo("Nncase.Tests")]
 
 namespace Nncase.Passes.Tile;
 
@@ -23,9 +26,61 @@ internal sealed class AutoDistributedConvertVisitor : ExprVisitor<IReadOnlyList<
 
     public Placement Placement { get; }
 
+    public static IReadOnlyList<Expr> GetLeafCandidateBoxings(Expr expr, Placement placement)
+    {
+        return Utilities.DistributedUtility.GetLeafCandidateNDSBPs((TensorType)expr.CheckedType, placement).Select(ndsbp => IR.F.CPU.Boxing(expr, new DistributedType((TensorType)expr.CheckedType, ndsbp, placement))).ToArray();
+    }
+
+    /// <summary>
+    /// when input expression sbp is partial, get the new candidate boxings.
+    /// </summary>
+    /// <param name="expr">input expression.</param>
+    /// <returns>the boxings.</returns>
+    /// <exception cref="NotSupportedException">when expr is tuple.</exception>
+    public static IReadOnlyList<Expr> GetPartialCandidateBoxings(Expr expr)
+    {
+        if (expr is IR.Tuple tuple)
+        {
+            var candidates = tuple.Fields.ToArray().
+                Select(GetPartialCandidateBoxings).
+                CartesianProduct();
+            return candidates.Any() ? candidates.
+                Select(fs => new IR.Tuple(fs.ToArray())).
+                ToArray() : Array.Empty<Expr>();
+        }
+
+        var type = (DistributedType)expr.CheckedType;
+        if (!type.NdSBP.Any(sbp => sbp is SBPBroadCast))
+        {
+            return Array.Empty<Expr>();
+        }
+
+        var tensorType = type.TensorType;
+        var candidateNdsbps = new List<SBP>[type.Placement.Rank];
+        for (int i = 0; i < type.Placement.Rank; i++)
+        {
+            candidateNdsbps[i] = new List<SBP>();
+            if (type.NdSBP[i] is SBPPartialSum)
+            {
+                candidateNdsbps[i].Add(SBP.B);
+                for (int axis = 0; axis < tensorType.Shape.Rank; axis++)
+                {
+                    if (tensorType.Shape[axis] is { IsFixed: true, Value: int s } && Utilities.DistributedUtility.IsDivisible(s, type.Placement.Hierarchy[i]))
+                    {
+                        candidateNdsbps[i].Add(SBP.S(axis));
+                    }
+                }
+            }
+        }
+
+        return candidateNdsbps.CartesianProduct().
+            Select(ndsbp => new DistributedType(tensorType, new IRArray<SBP>(ndsbp), type.Placement)).
+            Select(disttype => IR.F.CPU.Boxing(expr, disttype)).ToArray();
+    }
+
     public Expr Convert(Expr body)
     {
-        var equivalents = Visit(body).Select(newbody => IR.F.Tensors.Boxing(newbody, body.CheckedType)).ToArray();
+        var equivalents = Visit(body).Select(newbody => IR.F.CPU.Boxing(newbody, body.CheckedType)).ToArray();
         var graph = new EGraph();
         var bodyEclasses = equivalents.Select(graph.Add).ToArray();
         foreach (var cls in bodyEclasses.Skip(1))
@@ -97,7 +152,7 @@ internal sealed class AutoDistributedConvertVisitor : ExprVisitor<IReadOnlyList<
         {
             equivalents = (parameterKind, expr) switch
             {
-                (ParameterKind.Input, Expr e) when e is Const or Var => DistributedUtility.GetLeafCandidateBoxings(e, Placement),
+                (ParameterKind.Input, Expr e) when e is Const or Var => GetLeafCandidateBoxings(e, Placement),
                 (ParameterKind.Input, Expr e) when e is IR.Tuple tp => tp.Fields.ToArray().Select(f => VisitLeafArgument(parameterKind, f)).CartesianProduct().Select(e => new IR.Tuple(e.ToArray())).ToArray(),
                 (ParameterKind.Attribute, Expr e) when e is Const or Var => new[] { e },
                 _ => throw new InvalidOperationException(),
@@ -133,7 +188,7 @@ internal sealed class AutoDistributedConvertVisitor : ExprVisitor<IReadOnlyList<
             candidateNdsbps[i] = new List<SBP> { SBP.B };
             for (int axis = 0; axis < tensorType.Shape.Rank; axis++)
             {
-                if (tensorType.Shape[axis] is { IsFixed: true, Value: int s } && DistributedUtility.IsDivisible(s, type.Placement.Hierarchy[i]))
+                if (tensorType.Shape[axis] is { IsFixed: true, Value: int s } && Utilities.DistributedUtility.IsDivisible(s, type.Placement.Hierarchy[i]))
                 {
                     candidateNdsbps[i].Add(SBP.S(axis));
                 }
@@ -144,7 +199,7 @@ internal sealed class AutoDistributedConvertVisitor : ExprVisitor<IReadOnlyList<
             Select(ndsbp => new IRArray<SBP>(ndsbp)).
             Where(ndsbp => ndsbp != type.NdSBP).
             Select(ndsbp => new DistributedType(tensorType, new IRArray<SBP>(ndsbp), type.Placement)).
-            Select(disttype => IR.F.Tensors.Boxing(expr, disttype)).ToArray();
+            Select(disttype => IR.F.CPU.Boxing(expr, disttype)).ToArray();
     }
 
     private IEnumerable<(bool Valid, Call Call)> BuildEquivalCalls(Op target, Expr[] args)
@@ -166,14 +221,14 @@ internal sealed class AutoDistributedConvertVisitor : ExprVisitor<IReadOnlyList<
                 var newShape = ((TensorConst)args[1]).Value.ToArray<int>();
                 var inType = (DistributedType)args[0].CheckedType;
                 var tensorType = inType.TensorType with { Shape = newShape };
-                calls.AddRange(DistributedUtility.GetLeafCandidateNDSBPs(tensorType, inType.Placement).
-                    Select(ndsbp => IR.F.Tensors.Boxing(args[0], new DistributedType(tensorType, ndsbp, inType.Placement))).
+                calls.AddRange(Utilities.DistributedUtility.GetLeafCandidateNDSBPs(tensorType, inType.Placement).
+                    Select(ndsbp => IR.F.CPU.Boxing(args[0], new DistributedType(tensorType, ndsbp, inType.Placement))).
                     Select(c => (c.InferenceType(), c)));
             }
             else
             {
                 // when args have partial, we need boxing args.
-                var broadcastArgs = args.Zip(target.Parameters).Select(t => t.Second.ParameterKind == ParameterKind.Input ? DistributedUtility.GetPartialCandidateBoxings(t.First) : Array.Empty<Expr>()).ToArray();
+                var broadcastArgs = args.Zip(target.Parameters).Select(t => t.Second.ParameterKind == ParameterKind.Input ? GetPartialCandidateBoxings(t.First) : Array.Empty<Expr>()).ToArray();
 
                 if (!broadcastArgs.All(bargs => bargs.Count == 0))
                 {

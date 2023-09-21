@@ -7,6 +7,7 @@ using System.Linq;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.CPU;
+using Nncase.Utilities;
 
 namespace Nncase.Evaluator.CPU;
 

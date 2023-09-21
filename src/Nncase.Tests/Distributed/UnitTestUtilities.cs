@@ -6,6 +6,7 @@ using System.Linq;
 using NetFabric.Hyperlinq;
 using Nncase.Diagnostics;
 using Nncase.IR;
+using Nncase.Utilities;
 using Xunit;
 
 namespace Nncase.Tests.DistributedTest;

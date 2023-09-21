@@ -8,6 +8,7 @@ using Nncase.IR.Math;
 using Nncase.IR.NN;
 using Nncase.IR.Tensors;
 using Nncase.TIR;
+using Nncase.Utilities;
 using Buffer = Nncase.TIR.Buffer;
 
 namespace Nncase.Passes.Tile;
@@ -77,7 +78,7 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
                 }
 
                 break;
-            case Boxing boxing:
+            case IR.CPU.Boxing boxing:
                 GenerateBoxing(boxing, arguments, ret, expr);
                 break;
             default:
@@ -102,7 +103,7 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
         _mainBody.Add(IR.F.XPU.Slice(input, output, begins, ends, axes, distributedType));
     }
 
-    private void GenerateBoxing(Boxing boxing, Buffer[] arguments, Buffer ret, Call expr)
+    private void GenerateBoxing(IR.CPU.Boxing boxing, Buffer[] arguments, Buffer ret, Call expr)
     {
         switch (expr.Arguments[0].CheckedType, boxing.NewType)
         {

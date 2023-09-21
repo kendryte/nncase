@@ -130,7 +130,7 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
 
     private UInt128 GetRingReduceCommunicate(DistributedType distributedType, int[] axes)
     {
-        var ttype = DistributedUtility.GetDividedTensorType(distributedType);
+        var ttype = Utilities.DistributedUtility.GetDividedTensorType(distributedType);
         var splits = axes.Where(i => distributedType.NdSBP[i] is SBPSplit);
         if (!splits.Any())
         {

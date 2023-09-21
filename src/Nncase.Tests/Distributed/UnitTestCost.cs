@@ -31,7 +31,7 @@ public sealed class UnitTestCost
          })
         {
             var input0 = new Var(new DistributedType(tensorType, ndsbp, placement));
-            var candidates = Nncase.Passes.Tile.SingleCPUFusionConverter.GetPartialCandidateBoxings(input0);
+            var candidates = Nncase.Passes.Tile.AutoDistributedConvertVisitor.GetPartialCandidateBoxings(input0);
             foreach (var item in candidates)
             {
                 var cost = CompilerServices.EvaluateCost(item);

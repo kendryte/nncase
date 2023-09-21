@@ -7,6 +7,7 @@ using Nncase;
 using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.Math;
+using Nncase.Utilities;
 using Xunit;
 
 namespace Nncase.Tests.DistributedTest;
