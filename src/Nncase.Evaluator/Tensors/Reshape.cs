@@ -38,6 +38,7 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
         {
             TensorType tensorType => Visit(context, target, tensorType),
             DistributedType distributedType => Visit(context, target, distributedType),
+            _ => throw new NotImplementedException(),
         };
     }
 

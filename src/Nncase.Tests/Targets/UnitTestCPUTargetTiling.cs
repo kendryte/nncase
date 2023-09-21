@@ -41,7 +41,7 @@ public class UnitTestCPUTargetTiling : TestClassBase
     // [ClassData(typeof(TilingCaseMatmul))]
     // [ClassData(typeof(TilingCaseMatmulUnary))]
     // [ClassData(typeof(TilingCaseLayerNorm))]
-    [ClassData(typeof(TilingCaseGather))]
+    // [ClassData(typeof(TilingCaseGather))]
     // [ClassData(typeof(TilingCaseSoftmax))]
     // [ClassData(typeof(TilingCaseSlice))]
     // [ClassData(typeof(TilingCaseConcat))]

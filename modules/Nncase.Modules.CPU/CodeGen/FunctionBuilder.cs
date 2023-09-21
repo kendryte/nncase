@@ -75,13 +75,13 @@ internal class FunctionBuilder : IDisposable
         foreach (var (@const, range) in function.SchedResult.Rdatas)
         {
             var bytes = ((TensorConst)@const).Value.BytesBuffer;
-            var size = range.End.Value - range.Start.Value;
+            var size = range.Max - range.Min;
             if ((uint)bytes.Length != size)
             {
                 throw new InvalidDataException("The Buffer Szie Not Equal!");
             }
 
-            _rdataWriter.Position(range.Start.Value);
+            _rdataWriter.Position(range.Min);
             _rdataWriter.Write(bytes);
         }
 

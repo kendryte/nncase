@@ -22,7 +22,7 @@ public partial class XPU
         return new Call(new TDMAStore(ndsbp, placement), src, dest);
     }
 
-    public static Call Unary(UnaryOp unaryOp, Expr input, Expr output)
+    public static Call Unary(string unaryOp, Expr input, Expr output)
     {
         return new Call(new Unary(unaryOp), input, output);
     }

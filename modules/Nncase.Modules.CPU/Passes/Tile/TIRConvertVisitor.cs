@@ -38,45 +38,41 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
     {
         var arguments = expr.Arguments.AsValueEnumerable().Select(AllocOrGetBuffer).ToArray();
         var ret = AllocOrGetBuffer(expr);
-        switch (expr.Target)
+        var op = expr.Target is IR.CPU.CPUKernelOp kop ? kop.Target : expr.Target;
+        switch (op)
         {
-            case IR.CPU.CPUKernelOp kernelOp:
-                switch (kernelOp.Target)
-                {
-                    case Unary unary:
-                        GenerateUnary(unary, arguments, ret);
-                        break;
-                    case Binary binary:
-                        GenerateBinary(binary, arguments, ret);
-                        break;
-                    case MatMul matmul:
-                        GenerateMatmul(matmul, arguments, ret);
-                        break;
-                    case LayerNorm layernorm:
-                        GenerateLayerNorm(layernorm, arguments, ret, (DistributedType)expr.Arguments[0].CheckedType);
-                        break;
-                    case Gather gather:
-                        GenerateGather(gather, arguments, ret);
-                        break;
-                    case Concat concat:
-                        GenerateConcat(concat, ((IR.Tuple)expr.Arguments[0]).Fields.AsValueEnumerable().Select(AllocOrGetBuffer).ToArray(), ret);
-                        break;
-                    case Slice slice:
-                        GenerateSlice(slice, arguments[0], ret, expr.Arguments[1], expr.Arguments[2], expr.Arguments[3], (DistributedType)expr.CheckedType);
-                        break;
-                    case Softmax softmax:
-                        GenerateSoftmax(softmax, ((TensorConst)expr.Arguments[1]).Value.ToScalar<int>(), arguments, ret);
-                        break;
-                    case Transpose transpose:
-                        GenerateTranspose(transpose, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), arguments, ret);
-                        break;
-                    case Reshape reshape:
-                        GenerateReshape(reshape, arguments[0], ret);
-                        break;
-                    default:
-                        throw new NotSupportedException();
-                }
-
+            case Unary unary:
+                GenerateUnary(unary.UnaryOp.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture), arguments, ret);
+                break;
+            case Binary binary:
+                GenerateBinary(binary, arguments, ret);
+                break;
+            case MatMul matmul:
+                GenerateMatmul(matmul, arguments, ret);
+                break;
+            case LayerNorm layernorm:
+                GenerateLayerNorm(layernorm, arguments, ret, (DistributedType)expr.Arguments[0].CheckedType);
+                break;
+            case Gather gather:
+                GenerateGather(gather, arguments, ret);
+                break;
+            case Concat concat:
+                GenerateConcat(concat, ((IR.Tuple)expr.Arguments[0]).Fields.AsValueEnumerable().Select(AllocOrGetBuffer).ToArray(), ret);
+                break;
+            case Slice slice:
+                GenerateSlice(slice, arguments[0], ret, expr.Arguments[1], expr.Arguments[2], expr.Arguments[3], (DistributedType)expr.CheckedType);
+                break;
+            case Softmax softmax:
+                GenerateSoftmax(softmax, ((TensorConst)expr.Arguments[1]).Value.ToScalar<int>(), arguments, ret);
+                break;
+            case Transpose transpose:
+                GenerateTranspose(transpose, ((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), arguments, ret);
+                break;
+            case Reshape or Unsqueeze:
+                GenerateReshape(arguments[0], ret);
+                break;
+            case Swish:
+                GenerateUnary("swish", arguments, ret);
                 break;
             case IR.CPU.Boxing boxing:
                 GenerateBoxing(boxing, arguments, ret, expr);
@@ -88,7 +84,7 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
         return default;
     }
 
-    private void GenerateReshape(Reshape reshape, Buffer input, Buffer ret)
+    private void GenerateReshape(Buffer input, Buffer ret)
     {
         _mainBody.Add(IR.F.XPU.ReShape(input, ret));
     }
@@ -131,10 +127,10 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
         }
     }
 
-    private void GenerateUnary(IR.Math.Unary unary, ReadOnlySpan<Buffer> arguments, Buffer ret)
+    private void GenerateUnary(string unaryOp, ReadOnlySpan<Buffer> arguments, Buffer ret)
     {
         var input = arguments[IR.Math.Unary.Input.Index];
-        _mainBody.Add(IR.F.XPU.Unary(unary.UnaryOp, input, ret));
+        _mainBody.Add(IR.F.XPU.Unary(unaryOp, input, ret));
     }
 
     private void GenerateBinary(Binary binary, Buffer[] arguments, Buffer ret)

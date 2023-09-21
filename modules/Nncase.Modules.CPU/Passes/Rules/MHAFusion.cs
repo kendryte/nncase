@@ -33,6 +33,18 @@ public sealed class MHAMerger : ExprCloner<Unit>
         _multiVarMap = multiVarMap;
     }
 
+    protected override Expr VisitLeafCall(Call expr, Unit context)
+    {
+        var target = Clone(expr.Target, context);
+        var arguments = CloneArray(expr.Arguments, context);
+        if (target is Binary)
+        {
+            arguments = arguments.Select(e => e switch { TensorConst { Value: Tensor { Shape.IsScalar: true } } tc => Const.FromTensor(Tensor.FromBytes(tc.ValueType.DType, tc.Value.BytesBuffer.ToArray(), new[] { 1 })), _ => e }).ToArray();
+        }
+
+        return expr.With(target: target, arguments: arguments);
+    }
+
     protected override Expr VisitLeafVar(Var expr, Unit context)
     {
         if (_multiVarMap.TryGetValue(expr, out var newVar))

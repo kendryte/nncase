@@ -215,12 +215,12 @@ public sealed class SchedFunctionResult
     /// <summary>
     /// Gets the buffer allocation.
     /// </summary>
-    public Dictionary<IR.Const, System.Range> Rdatas { get; }
+    public Dictionary<IR.Const, ValueRange<long>> Rdatas { get; }
 
     /// <summary>
     /// Gets or sets the data section length.
     /// </summary>
-    public int DataUsage { get; set; }
+    public long DataUsage { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the Scheduled status.
@@ -250,8 +250,8 @@ public sealed class SchedFunctionResult
             return true;
         }
 
-        return EqualityComparer<Dictionary<IR.Const, System.Range>>.Default.Equals(Rdatas, result.Rdatas) &&
-               EqualityComparer<int>.Default.Equals(DataUsage, result.DataUsage);
+        return EqualityComparer<Dictionary<IR.Const, ValueRange<long>>>.Default.Equals(Rdatas, result.Rdatas) &&
+               EqualityComparer<long>.Default.Equals(DataUsage, result.DataUsage);
     }
 
     /// <inheritdoc/>

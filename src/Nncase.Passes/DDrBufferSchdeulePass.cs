@@ -24,9 +24,9 @@ namespace Nncase.Passes;
 /// </summary>
 public sealed class DDrBufferSchdeulePass : ModulePass
 {
-    private readonly Dictionary<string, Dictionary<MemoryLocation, int>> _moduleUsage = new();
+    private readonly Dictionary<string, Dictionary<MemoryLocation, long>> _moduleUsage = new();
 
-    private readonly Dictionary<string, Dictionary<Const, System.Range>> _moduleRdataMaps = new();
+    private readonly Dictionary<string, Dictionary<Const, ValueRange<long>>> _moduleRdataMaps = new();
 
     private readonly bool _enbaleMergeCall;
 
@@ -91,10 +91,10 @@ public sealed class DDrBufferSchdeulePass : ModulePass
 
 internal sealed class DDrBufferRewriter : ExprRewriter
 {
-    private readonly Dictionary<MemoryLocation, int> _functionUsage;
-    private readonly Dictionary<Const, System.Range> _functionRdatas;
+    private readonly Dictionary<MemoryLocation, long> _functionUsage;
+    private readonly Dictionary<Const, ValueRange<long>> _functionRdatas;
 
-    public DDrBufferRewriter(Dictionary<string, Dictionary<MemoryLocation, int>> moduleUsage, Dictionary<string, Dictionary<Const, System.Range>> moduleRdataMaps)
+    public DDrBufferRewriter(Dictionary<string, Dictionary<MemoryLocation, long>> moduleUsage, Dictionary<string, Dictionary<Const, ValueRange<long>>> moduleRdataMaps)
     {
         ModuleUsage = moduleUsage;
         ModuleRdataMaps = moduleRdataMaps;
@@ -103,13 +103,13 @@ internal sealed class DDrBufferRewriter : ExprRewriter
         Changed = false;
     }
 
-    public Dictionary<string, Dictionary<MemoryLocation, int>> ModuleUsage { get; }
+    public Dictionary<string, Dictionary<MemoryLocation, long>> ModuleUsage { get; }
 
-    public Dictionary<string, Dictionary<Const, System.Range>> ModuleRdataMaps { get; }
+    public Dictionary<string, Dictionary<Const, ValueRange<long>>> ModuleRdataMaps { get; }
 
     public bool Changed { get; private set; }
 
-    public int DataUsage => _functionUsage.GetValueOrDefault(MemoryLocation.Data, 0);
+    public long DataUsage => _functionUsage.GetValueOrDefault(MemoryLocation.Data, 0);
 
     public PrimFunction Entry => (PrimFunction)VisitRoot!;
 
@@ -138,13 +138,13 @@ internal sealed class DDrBufferRewriter : ExprRewriter
 
                 _ = ComputeSize(@const);
                 moduleUsage[memSpan.Location] = start + ComputeSize(@const);
-                memRange = start..(start + ComputeSize(@const));
+                memRange = new(start, start + ComputeSize(@const));
                 moduleRdataMap.Add(@const, memRange);
                 Entry.SchedResult.Rdatas.Add(@const, memRange);
                 Changed = true;
             }
 
-            return memSpan.With(new TensorConst(Tensor.FromPointer((ulong)memRange.Start.Value, new PointerType(constType.DType, constType.Shape))), memRange.End.Value - memRange.Start.Value);
+            return memSpan.With(new TensorConst(Tensor.FromPointer((ulong)memRange.Min, new PointerType(constType.DType, constType.Shape))), memRange.Max - memRange.Min);
         }
 
         // else if (memSpan.Location is MemoryLocation.Data)
@@ -170,9 +170,9 @@ internal sealed class DDrBufferRewriter : ExprRewriter
         return memSpan;
     }
 
-    private int ComputeSize(IValue v) => v.AsTensors().Select(t => t.BytesBuffer.Length).Sum();
+    private long ComputeSize(IValue v) => v.AsTensors().Select(t => t.BytesBuffer.Length).Sum();
 
-    private int ComputeSize(Const @const) => @const switch
+    private long ComputeSize(Const @const) => @const switch
     {
         TensorConst { Value: Tensor tc } => tc.BytesBuffer.Length,
         TupleConst tc => ComputeSize(tc.Value),

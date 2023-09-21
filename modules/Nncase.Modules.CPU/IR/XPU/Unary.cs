@@ -9,7 +9,7 @@ public sealed partial class Unary : XPUKernelOp
 
     public static readonly ParameterInfo Output = new(typeof(Unary), 1, "output");
 
-    public UnaryOp UnaryOp { get; }
+    public string UnaryOp { get; }
 
     /// <inheritdoc/>
     public override string DisplayProperty()

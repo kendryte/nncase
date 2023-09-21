@@ -280,7 +280,7 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 
                     break;
                 case IR.XPU.Unary unary:
-                    IndentScope.Writer.Write($"unary({Visit(args[0]).Name}, {Visit(args[1]).Name}, unary_op_t::{unary.UnaryOp.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)})");
+                    IndentScope.Writer.Write($"unary({Visit(args[0]).Name}, {Visit(args[1]).Name}, unary_op_t::{unary.UnaryOp})");
                     break;
                 case IR.XPU.Binary binary:
                     IndentScope.Writer.Write($"binary({Visit(args[0]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name}, binary_op_t::{binary.BinaryOp.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)})");

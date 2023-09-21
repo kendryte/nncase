@@ -54,10 +54,9 @@ public sealed class Compile : Command
           aliases: new[] { "-i", "--input-format" },
           description: "input format, e.g. tflite",
           getDefaultValue: () => "tflite"));
-        AddOption(new Option<int>(
-          alias: "--dump-level",
-          description: $"dump ir to .il, default is {0}",
-          getDefaultValue: () => 0));
+        AddOption(new Option<IEnumerable<DumpFlags>>(
+          alias: "--dump-flags",
+          description: "dump ir flags. \n available value: None,ImportOps,PassIR,EGraphCost,Rewrite,Calibration,Evaluator,Compile,Tiling,Schedule,CodeGen."));
         AddOption(new Option<string>(
           alias: "--dump-dir",
           description: "dump to directory, default is .",
@@ -86,26 +85,17 @@ public sealed class Compile : Command
           alias: "--calib-method",
           description: $"model quant options, default is {Quantization.CalibMethod.Kld}",
           getDefaultValue: () => Quantization.CalibMethod.Kld));
+        AddOption(new Option<IEnumerable<(string, int)>>(
+          alias: "--fixed-vars",
+          description: $"dynamic shape fixed vars, default is empty. \nset by `n:123`",
+          parseArgument: result =>
+            {
+                return result.Tokens.
+                    Select(tk => tk.Value.Split(":").ToArray()).
+                    Select(tp => (tp[0].Trim(), int.Parse(tp[1].Trim())));
+            }));
 
         Handler = CommandHandler.Create<CliCompileOptions, IHost>(RunAsync);
-    }
-
-    private static DumpFlags DumpLevelToFlags(int dumpLevel)
-    {
-        return dumpLevel switch
-        {
-            0 => DumpFlags.None,
-            1 => DumpLevelToFlags(0) | DumpFlags.Compile,
-            2 => DumpLevelToFlags(1) | DumpFlags.PassIR,
-            3 => DumpLevelToFlags(2) | DumpFlags.Rewrite,
-            4 => DumpLevelToFlags(3) | DumpFlags.EGraphCost,
-            5 => DumpLevelToFlags(4) | DumpFlags.Evaluator,
-            6 => DumpLevelToFlags(5) | DumpFlags.Calibration,
-            7 => DumpLevelToFlags(6) | DumpFlags.Tiling,
-            8 => DumpLevelToFlags(7) | DumpFlags.Schedule,
-            >= 9 => DumpLevelToFlags(8) | DumpFlags.CodeGen,
-            _ => throw new ArgumentOutOfRangeException(nameof(dumpLevel)),
-        };
     }
 
     private async Task RunAsync(CliCompileOptions cliOptions, IHost host)
@@ -117,7 +107,7 @@ public sealed class Compile : Command
         {
             InputFile = cliOptions.InputFile,
             InputFormat = cliOptions.InputFormat,
-            DumpFlags = DumpLevelToFlags(cliOptions.DumpLevel),
+            DumpFlags = cliOptions.DumpFlags.Aggregate(DumpFlags.None, (a, b) => a | b),
             DumpDir = cliOptions.DumpDir,
             QuantizeOptions = new()
             {
@@ -139,6 +129,11 @@ public sealed class Compile : Command
                 ModelQuantMode = cliOptions.ModelQuantMode,
             },
         };
+
+        foreach (var item in cliOptions.FixedVars)
+        {
+            compileOptions.ShapeBucketOptions.FixVarMap.Add(item.Name, item.Value);
+        }
 
         // 2. import the model
         var target = CompilerServices.GetTarget(cliOptions.Target);
@@ -189,7 +184,7 @@ internal sealed class CliCompileOptions
 
     public string Target { get; set; }
 
-    public int DumpLevel { get; set; }
+    public IEnumerable<DumpFlags> DumpFlags { get; set; }
 
     public string DumpDir { get; set; }
 
@@ -206,6 +201,8 @@ internal sealed class CliCompileOptions
     public string Dataset { get; set; }
 
     public DatasetFormat DatasetFormat { get; set; }
+
+    public IEnumerable<(string Name, int Value)> FixedVars { get; set; }
 }
 
 #pragma warning restore CS8618
