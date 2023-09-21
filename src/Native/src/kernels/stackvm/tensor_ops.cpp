@@ -27,8 +27,6 @@ using namespace nncase::kernels::stackvm;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 
-// #define ENABLE_NOP
-
 result<value_t> nncase::kernels::stackvm::batch_normalization(
     value_t input, value_t scale, value_t bias, value_t input_mean,
     value_t input_var, value_t epsilon, [[maybe_unused]] value_t momentum,
@@ -573,11 +571,11 @@ result<value_t> nncase::kernels::stackvm::one_hot(one_hot_mode_t one_hot_mode,
 }
 
 inline bool is_nop_pad([[maybe_unused]] const paddings_t &paddings) {
-#ifdef ENABLE_NOP
+#ifdef SKIP_NOP
+        return false;
+#else
     return std::all_of(paddings.begin(), paddings.end(),
                        [](const padding &p) { return p.sum() == 0; });
-#else
-    return false;
 #endif
 }
 
@@ -735,11 +733,11 @@ result<value_t> nncase::kernels::stackvm::require(
 }
 
 inline bool is_nop_pad([[maybe_unused]] const std::vector<int> &paddings) {
-#ifdef ENABLE_NOP
+#ifdef SKIP_NOP
+    return false;
+#else
     return std::all_of(paddings.begin(), paddings.end(),
                        [](auto &p) { return p == 0; });
-#else
-    return false;
 #endif
 }
 
@@ -921,7 +919,7 @@ inline bool is_nop_slice([[maybe_unused]] const axes_t &begin,
                          [[maybe_unused]] const axes_t &axes,
                          [[maybe_unused]] const axes_t &strides,
                          [[maybe_unused]] const dims_t &in_shape) {
-#ifndef ENABLE_NOP
+#ifdef SKIP_NOP
     return false;
 #else
     if (begin.size() != in_shape.size()) {
