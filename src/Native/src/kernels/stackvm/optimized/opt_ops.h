@@ -148,17 +148,18 @@ unary(typecode_t dtype, runtime::stackvm::unary_op_t op, const gsl::byte *in,
 //                               gsl::span<const size_t> out_strides,
 //                               value_range<float> fused_activation) noexcept;
 
-//template <typename T>
+// template <typename T>
 NNCASE_API result<void>
 softmax(typecode_t typecode, const gsl::byte *input, gsl::byte *output,
         gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
         gsl::span<const size_t> out_strides, int32_t axis, float beta) noexcept;
 
-NNCASE_API result<void>
-log_softmax(typecode_t typecode, const gsl::byte *input, gsl::byte *output,
-            gsl::span<const size_t> in_shape,
-            gsl::span<const size_t> in_strides,
-            gsl::span<const size_t> out_strides, int32_t axis) noexcept;
+NNCASE_API result<void> log_softmax(typecode_t typecode, const gsl::byte *input,
+                                    gsl::byte *output,
+                                    gsl::span<const size_t> in_shape,
+                                    gsl::span<const size_t> in_strides,
+                                    gsl::span<const size_t> out_strides,
+                                    int32_t axis) noexcept;
 
 template <typename T>
 NNCASE_API result<void>

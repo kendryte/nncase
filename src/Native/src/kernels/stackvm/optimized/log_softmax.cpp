@@ -26,7 +26,7 @@ using namespace nncase::kernels::stackvm::optimized;
 
 #include <math.h>
 
-//template result<void> optimized::log_softmax<float>(
+// template result<void> optimized::log_softmax<float>(
 //    typecode_t typecode, const gsl::byte *input, gsl::byte *output,
 //    gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
 //    gsl::span<const size_t> out_strides, int32_t axis) noexcept;

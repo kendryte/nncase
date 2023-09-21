@@ -24,12 +24,12 @@ using namespace nncase::kernels;
 using namespace nncase::kernels::stackvm;
 using namespace nncase::kernels::stackvm::optimized;
 
-//template result<void> optimized::softmax<float>(
+// template result<void> optimized::softmax<float>(
 //    typecode_t typecode, const gsl::byte *input, gsl::byte *output,
 //    gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
 //    gsl::span<const size_t> out_strides, int32_t axis, float beta) noexcept;
 
-//template <typename T>
+// template <typename T>
 result<void> optimized::softmax(typecode_t typecode, const gsl::byte *input,
                                 gsl::byte *output,
                                 gsl::span<const size_t> in_shape,
