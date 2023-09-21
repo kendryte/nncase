@@ -572,7 +572,7 @@ result<value_t> nncase::kernels::stackvm::one_hot(one_hot_mode_t one_hot_mode,
 
 inline bool is_nop_pad([[maybe_unused]] const paddings_t &paddings) {
 #ifdef SKIP_NOP
-        return false;
+    return false;
 #else
     return std::all_of(paddings.begin(), paddings.end(),
                        [](const padding &p) { return p.sum() == 0; });
