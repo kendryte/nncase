@@ -9,6 +9,7 @@ class TfliteTestRunner(TestRunner):
     def __init__(self, case_name, overwrite_configs: str = None):
         super().__init__(case_name, overwrite_configs)
         self.model_type = "tflite"
+        self.interp = None
 
     def from_tensorflow(self, module):
         # export model
@@ -42,33 +43,38 @@ class TfliteTestRunner(TestRunner):
         super().run(model_file)
 
     def parse_model(self, model_path: str):
-        interp = tf.lite.Interpreter(model_path=model_path)
+        self.interp = tf.lite.Interpreter(model_path=model_path)
 
-        def translate_shape(shape, default_shape):
-            return [(i if i > 0 else d) for i, d in zip(shape, default_shape)]
+        def translate_shape(shape):
+            return [i if i > 0 else self.shape_vars["-1"] for i in shape]
 
-        for item in interp.get_input_details():
+        for item in self.interp.get_input_details():
             input_dict = {}
             input_dict['index'] = item['index']
             input_dict['name'] = item['name']
             input_dict['dtype'] = item['dtype']
-            if item['shape_signature'].size == 0:
+
+            if len(self.shape_vars) == 0:
+                # fixed shape
                 shape = item['shape']
             else:
+                # dynamic shape
                 shape = item['shape_signature']
-            # todo: tflite not support set shape var for model with dynamic shape
-            # don't have model with shape var to debug this feature
+
             if len(shape) <= 4:
-                input_dict['model_shape'] = translate_shape(shape, self.default_shape)
+                input_dict['model_shape'] = translate_shape(shape)
             else:
                 if -1 in shape:
                     raise "tflite test_runner not supported dynamic shape which rank > 4"
                 input_dict['model_shape'] = shape
+
+            if -1 in shape:
+                self.dynamic = True
+                self.interp.resize_tensor_input(item['index'], input_dict['model_shape'])
             self.inputs.append(input_dict)
             self.calibs.append(copy.deepcopy(input_dict))
-            # self.dump_range_data.append(copy.deepcopy(input_dict))
 
-        for item in interp.get_output_details():
+        for item in self.interp.get_output_details():
             output_dict = {}
             output_dict['index'] = item['index']
             output_dict['name'] = item['name']
@@ -77,22 +83,21 @@ class TfliteTestRunner(TestRunner):
             self.outputs.append(output_dict)
 
     def cpu_infer(self, model_file: bytes):
-        interp = tf.lite.Interpreter(model_path=model_file)
-        interp.allocate_tensors()
+        self.interp.allocate_tensors()
         for idx, value in enumerate(self.inputs):
             new_value = self.transform_input(
                 self.data_pre_process(value['data']), "float32", "CPU")[0]
-            interp.set_tensor(value["index"], new_value)
+            self.interp.set_tensor(value["index"], new_value)
             if self.cfg['compile_opt']['preprocess'] and not test_utils.in_ci():
                 dump_bin_file(os.path.join(self.case_dir, f'frame_input_{idx}.bin'), new_value)
                 dump_txt_file(os.path.join(self.case_dir, f'frame_input_{idx}.txt'), new_value)
 
-        interp.invoke()
+        self.interp.invoke()
 
         i = 0
         results = []
         for output in self.outputs:
-            data = interp.get_tensor(output['index'])
+            data = self.interp.get_tensor(output['index'])
             results.append(data)
             if not test_utils.in_ci():
                 dump_bin_file(os.path.join(self.case_dir, f'cpu_result_{i}.bin'), data)

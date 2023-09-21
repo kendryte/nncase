@@ -3,8 +3,8 @@ name: compiler-python-release
 on: [push, pull_request]
 
 concurrency:
-  group: ${{ github.ref }}
-  cancel-in-progress: true
+  group: compiler-python-release-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' && !startsWith(github.ref, 'refs/heads/release/') }}
 
 jobs:
   build-compiler:

@@ -162,7 +162,7 @@ void padding_impl_opt(T *in, T *out, gsl::span<const size_t> in_shape,
         dh = out_shape[0];
         hh = out_shape[1];
         wh = out_shape[2];
-    } else {
+    } else if (in_shape.size() == 4) {
         cl = in_shape[0];
         dl = in_shape[1];
         hl = in_shape[2];
@@ -171,6 +171,16 @@ void padding_impl_opt(T *in, T *out, gsl::span<const size_t> in_shape,
         dh = out_shape[1];
         hh = out_shape[2];
         wh = out_shape[3];
+    } else // size ==2
+    {
+        cl = 1;
+        dl = 1;
+        hl = in_shape[0];
+        wl = in_shape[1];
+        ch = 1;
+        dh = 1;
+        hh = out_shape[0];
+        wh = out_shape[1];
     }
 
     pad_data2(in, out, cl, dl, hl, wl, ch, dh, hh, wh, value);
@@ -216,7 +226,7 @@ result<void> nncase::kernels::stackvm::reference::pad(
         std::all_of(
             paddings.begin(), paddings.end(),
             [](const padding &p) { return p.before == 0 && p.after >= 0; }) &&
-        mode == pad_mode_t::constant && in_shape.size() >= 3;
+        mode == pad_mode_t::constant && in_shape.size() >= 2;
 
     if (std::all_of(paddings.begin(), paddings.end(),
                     [](const padding &p) { return p.interior == 0; })) {

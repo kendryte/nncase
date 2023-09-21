@@ -35,23 +35,6 @@ public class UnitTestUtil
     }
 
     [Fact]
-    public void TestGetPaddings()
-    {
-        var input = OrtKI.Random(1, 2, 4, 8).ToTensor();
-        var weights = OrtKI.Random(3, 3, 2, 2).ToTensor();
-        var stride = new long[] { 1, 1, 1, 1 };
-        var dilation = new long[] { 1, 1 };
-        var expr = Util.GetPaddings(input, weights, stride, dilation, true);
-
-        var (inH, inW) = Util.GetHW(input);
-        var (fH, fW) = Util.GetHW(weights);
-        var padH = Util.GetWindowedPadding(inH, fH, (int)stride[0], (int)dilation[0], true);
-        var padW = Util.GetWindowedPadding(inW, fW, (int)stride[1], (int)dilation[1], true);
-        var expect = Util.ConcatPadding(padH, padW);
-        Assert.Equal(expect, expr);
-    }
-
-    [Fact]
     public void TestComputeSplit()
     {
         var input = OrtKI.Random(1, 2, 4, 8).ToTensor();

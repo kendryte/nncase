@@ -53,32 +53,9 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
 
     public Expr Visit(IShapeEvaluateContext context, Reshape target)
     {
+        var inShape = context.GetArgumentShape(target, Reshape.Input);
         var shape = context.GetArgument(target, Reshape.Shape);
-        var inputShape = Cast(context.GetArgumentShape(target, Reshape.Input), DataTypes.Int32);
-        if (shape is TensorConst shapeConst)
-        {
-            var shapeArray = shapeConst.Value.ToArray<int>();
-            var negIndex = shapeArray.IndexOf(-1);
-            if (negIndex < 0)
-            {
-                return shapeArray;
-            }
-
-            var dim = Prod(inputShape) / System.Math.Abs(shapeArray.Aggregate((s, x) => x * s));
-            var rhs = shapeArray.Select((_, i) => i == negIndex ? dim + 1 : (Expr)0).ToArray();
-            var newShape = Stack(new IR.Tuple(rhs), 0);
-
-            // dim = Product(inShape) / Produce(Reshape.Shape)
-            // e.g. [1, 3, -1, 24] + [dim + 1, 0] = [1, 3, dim, 24]
-            return newShape + shapeArray;
-        }
-
-        shape = Cast(shape, DataTypes.Int32);
-        var iSize = Prod(inputShape);
-        var sSize = Prod(shape);
-        var negDimInfactValue = iSize / Abs(sSize);
-        var index = IndexOf(shape, -1);
-        return new If(sSize < 0, ShapeExprUtility.Replace(shape, index, negDimInfactValue), shape);
+        return IR.F.ShapeExpr.ReshapeShape(inShape, shape);
     }
 
     public Metric Visit(IMetricEvaluateContext context, Reshape target)
@@ -93,12 +70,10 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
             return input;
         }
 
-        if (context.GetArgument(target, Reshape.Shape) is TensorConst shapeConst &&
-            input.Shape.IsFixed)
+        if (context.GetArgument(target, Reshape.Shape) is TensorConst shapeConst)
         {
             var shapeValue = shapeConst.Value.ToArray<int>();
             var negCount = shapeValue.Count(IsMinus1);
-            var inputSize = input.Shape.Prod().FixedValue;
             var shapeSize = shapeValue.Aggregate(1, (x, y) => x * y);
             if (negCount > 1)
             {
@@ -106,27 +81,39 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
                     $"Reshape at most one dimension of the new shape can be -1," +
                     $" shape:{shapeValue}");
             }
-            else if (negCount < 1)
-            {
-                if (inputSize != shapeSize)
-                {
-                    return new InvalidType("Reshape input shape size and param shape size must be same," +
-                                           $" shape:{shapeValue.ToArray().Aggregate(string.Empty, (s, i) => s + i + " ")}, input shape${string.Join(",", input.Shape)}");
-                }
 
-                return input with { Shape = new Shape(shapeValue) };
+            if (input.Shape.IsFixed)
+            {
+                var inputSize = input.Shape.Prod().FixedValue;
+                if (negCount < 1)
+                {
+                    if (inputSize != shapeSize)
+                    {
+                        return new InvalidType("Reshape input shape size and param shape size must be same," +
+                                               $" shape:{shapeValue.ToArray().Aggregate(string.Empty, (s, i) => s + i + " ")}, input shape${string.Join(",", input.Shape)}");
+                    }
+
+                    return input with { Shape = new Shape(shapeValue) };
+                }
+                else
+                {
+                    shapeSize = -shapeSize;
+                    var negIndex = shapeValue.Select((dim, index) => (dim, index)).First(x => IsMinus1(x.dim)).index;
+                    if (inputSize % shapeSize != 0)
+                    {
+                        return new InvalidType("Reshape input size must be divisible by shapeSize when has -1");
+                    }
+
+                    shapeValue[negIndex] = inputSize / shapeSize;
+                    return input with { Shape = new Shape(shapeValue) };
+                }
             }
             else
             {
-                shapeSize = -shapeSize;
-                var negIndex = shapeValue.Select((dim, index) => (dim, index)).First(x => IsMinus1(x.dim)).index;
-                if (inputSize % shapeSize != 0)
+                return input with
                 {
-                    return new InvalidType("Reshape input size must be divisible by shapeSize when has -1");
-                }
-
-                shapeValue[negIndex] = inputSize / shapeSize;
-                return input with { Shape = new Shape(shapeValue) };
+                    Shape = new Shape(shapeValue.Select(x => x == -1 ? Dimension.Unknown : x).ToArray()),
+                };
             }
         }
 
