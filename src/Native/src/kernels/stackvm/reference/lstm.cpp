@@ -45,15 +45,15 @@ result<void> lstm_impl(const T *input, const T *w_xc, const T *w_rc,
     auto w_rc_shape = to_4d(w_rc_shape_3);
     auto out_shape = to_4d(out_shape_3);
 
-    auto tanh = [&](float x) { return (1 - exp(-2 * x)) / (1 + exp(-2 * x)); };
-    auto sigmoid = [&](float x) { return 1 / (1 + exp(-x)); };
+    auto tanh = [&](T x) { return (1 - exp(-2 * (float)x)) / (1 + exp(-2 * (float)x)); };
+    auto sigmoid = [&](T x) { return 1 / (1 + exp(-x)); };
 
-    auto output_h_tmp = std::make_unique<float[]>(compute_size(init_h_shape));
-    auto output_c_tmp = std::make_unique<float[]>(compute_size(init_c_shape));
+    auto output_h_tmp = std::make_unique<T[]>(compute_size(init_h_shape));
+    auto output_c_tmp = std::make_unique<T[]>(compute_size(init_c_shape));
     std::memcpy(output_h_tmp.get(), init_h,
-                sizeof(float) * compute_size(init_h_shape));
+                sizeof(T) * compute_size(init_h_shape));
     std::memcpy(output_c_tmp.get(), init_c,
-                sizeof(float) * compute_size(init_c_shape));
+                sizeof(T) * compute_size(init_c_shape));
 
     auto hidden_size = w_xc_shape[2];
     std::vector<uint32_t> seq_len_loop;
@@ -68,8 +68,8 @@ result<void> lstm_impl(const T *input, const T *w_xc, const T *w_rc,
         for (uint32_t b = 0; b < in_shape[2]; b++) {
             for (auto &l : seq_len_loop) {
                 // g = w_xc_x + w_xc_x
-                auto out_mul1 = std::vector<float>(out_shape[3] * 4);
-                auto out_mul2 = std::vector<float>(out_shape[3] * 4);
+                auto out_mul1 = std::vector<T>(out_shape[3] * 4);
+                auto out_mul2 = std::vector<T>(out_shape[3] * 4);
                 for (size_t o = 0; o < out_mul1.size(); o++) {
                     for (size_t i = 0; i < in_shape[3]; i++) {
                         auto in_idx =
@@ -78,7 +78,7 @@ result<void> lstm_impl(const T *input, const T *w_xc, const T *w_rc,
                                      d * w_xc_shape[2] * w_xc_shape[3];
 
                         out_mul1[o] +=
-                            float(input[in_idx]) * float(w_xc[w_idx]);
+                            T(input[in_idx]) * T(w_xc[w_idx]);
                     }
                     auto b_idx1 = d * w_rc_shape[2] + o;
                     out_mul1[o] += bias[b_idx1];
@@ -89,7 +89,7 @@ result<void> lstm_impl(const T *input, const T *w_xc, const T *w_rc,
                         auto w_idx = i + o * w_rc_shape[3] +
                                      d * w_rc_shape[2] * w_rc_shape[3];
                         out_mul2[o] +=
-                            float(output_h_tmp[in_idx]) * float(w_rc[w_idx]);
+                            T(output_h_tmp[in_idx]) * T(w_rc[w_idx]);
                     }
                     auto b_idx2 = d * w_rc_shape[2] + hidden_size + o;
                     out_mul2[o] += bias[b_idx2];
@@ -133,7 +133,7 @@ result<void> lstm_impl(const T *input, const T *w_xc, const T *w_rc,
                 // ct = ct + c_t_it
                 for (size_t o = 0; o < out_shape[3]; o++) {
                     output_c_tmp[o + d * out_shape[2] * out_shape[3]] =
-                        float(out_mul1[o + out_shape[3] * 2] +
+                        T(out_mul1[o + out_shape[3] * 2] +
                               out_mul1[o + out_shape[3] * 0]);
                 }
 
@@ -152,7 +152,7 @@ result<void> lstm_impl(const T *input, const T *w_xc, const T *w_rc,
                 // ht = ot * tanh_ct
                 for (size_t o = 0; o < out_shape[3]; o++) {
                     output_h_tmp[o + d * out_shape[2] * out_shape[3]] =
-                        float(out_mul1[o + out_shape[3] * 3] *
+                        T(out_mul1[o + out_shape[3] * 3] *
                               out_mul1[o + out_shape[3] * 1]);
                 }
                 std::memcpy(output + b * out_shape[3] +
@@ -160,19 +160,19 @@ result<void> lstm_impl(const T *input, const T *w_xc, const T *w_rc,
                                 l * out_shape[1] * out_shape[2] * out_shape[3],
                             output_h_tmp.get() +
                                 d * out_shape[2] * out_shape[3],
-                            sizeof(float) * out_shape[3]);
+                            sizeof(T) * out_shape[3]);
 
                 if (l == seq_len_loop.back()) {
                     std::memcpy(output_h + b * out_shape[3] +
                                     d * out_shape[2] * out_shape[3],
                                 output_h_tmp.get() +
                                     d * out_shape[2] * out_shape[3],
-                                sizeof(float) * out_shape[3]);
+                                sizeof(T) * out_shape[3]);
                     std::memcpy(output_c + b * out_shape[3] +
                                     d * out_shape[2] * out_shape[3],
                                 output_c_tmp.get() +
                                     d * out_shape[2] * out_shape[3],
-                                sizeof(float) * out_shape[3]);
+                                sizeof(T) * out_shape[3]);
                 }
             }
         }

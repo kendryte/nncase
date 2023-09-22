@@ -28,9 +28,10 @@ BEGIN_NS_NNCASE_KERNELS_MODULE(stackvm)
 namespace optimized {
 
 NNCASE_API result<void>
-conv2d(const float *input, const float *weights, const float *bias,
-       float *output, gsl::span<const size_t> in_shape,
-       gsl::span<const size_t> in_strides, gsl::span<const size_t> w_shape,
+conv2d(typecode_t typecode, const gsl::byte *input, const gsl::byte *weights,
+       const gsl::byte *bias, gsl::byte *output,
+       gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
+       gsl::span<const size_t> w_shape,
        NNCASE_UNUSED gsl::span<const size_t> w_strides,
        NNCASE_UNUSED gsl::span<const size_t> bias_strides,
        NNCASE_UNUSED gsl::span<const size_t> out_strides,

@@ -29,7 +29,7 @@ using namespace nncase::kernels::stackvm;
 namespace {
 template <typename T>
 result<void> lrn_impl(const T *input, float alpha, float beta, float bias,
-                      int64_t size, T *output, const float *square_sum,
+                      int64_t size, T *output, const T *square_sum,
                       gsl::span<const size_t> in_shape,
                       gsl::span<const size_t> in_strides,
                       gsl::span<const size_t> out_strides) {
@@ -38,7 +38,7 @@ result<void> lrn_impl(const T *input, float alpha, float beta, float bias,
         const auto x = input[off];
         const auto num = square_sum[off];
         output[offset(out_strides, index)] =
-            x / std::pow(num * alpha / size + bias, beta);
+            x / static_cast<T>(std::pow(static_cast<float>(num) * alpha / size + bias, beta));
         return ok();
     });
 }
@@ -98,7 +98,7 @@ result<void> lrn_impl2(const T *input, float alpha, float beta, float bias,
             tmp_out_strides, reduce_out_strides, keep_dims));
     }
 
-    auto concat_output = std::make_unique<float[]>(concat_size);
+    auto concat_output = std::make_unique<T[]>(concat_size);
     auto concat_shape = concat_infer_shape(tmpShapes, 1);
     auto concat_strides = runtime::get_default_strides(concat_shape);
     auto concat_dims = dims_t();

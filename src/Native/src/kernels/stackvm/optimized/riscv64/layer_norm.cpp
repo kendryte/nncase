@@ -155,12 +155,13 @@ result<void> layernorm_impl(const float *input, float *output,
 #endif
 
 result<void> nncase::kernels::stackvm::optimized::layer_norm(
-    const float *input, float *output, const float *scale, const float *bias,
+    typecode_t typecode, const gsl::byte *input, gsl::byte *output,
+    const gsl::byte *scale, const gsl::byte *bias,
     gsl::span<const size_t> in_shape, int32_t axis, float epsilon) {
 #if __riscv_vector
     return layernorm_impl(input, output, scale, bias, in_shape, axis, epsilon);
 #else
-    return reference::layer_norm(input, output, scale, bias, in_shape, axis,
-                                 epsilon);
+    return reference::layer_norm(typecode, input, output, scale, bias, in_shape,
+                                 axis, epsilon);
 #endif
 }

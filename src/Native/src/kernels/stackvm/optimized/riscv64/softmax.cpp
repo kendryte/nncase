@@ -52,7 +52,8 @@ vfloat32m8_t exp_ps2_opt(vfloat32m8_t _p, const float c0, const float c1,
     return _p;
 }
 
-result<void> optimized_softmax_impl_opt(const float *input, float *output,
+template <typename T>
+result<void> optimized_softmax_impl_opt(const T *input, T *output,
                                         gsl::span<const size_t> in_shape,
                                         int32_t axis, float beta) noexcept {
     size_t ndim = in_shape.size();
@@ -221,7 +222,8 @@ result<void> optimized_softmax_impl_opt(const float *input, float *output,
     return ok();
 }
 
-result<void> optimized_softmax_impl(const float *input, float *output,
+template <typename T>
+result<void> optimized_softmax_impl(const T *input, T *output,
                                     gsl::span<const size_t> in_shape,
                                     int32_t axis, float beta) noexcept {
     size_t ndim = in_shape.size();
@@ -392,21 +394,37 @@ result<void> optimized_softmax_impl(const float *input, float *output,
 #endif
 } // namespace
 
-template result<void> optimized::softmax<float>(
-    const float *input, float *output, gsl::span<const size_t> in_shape,
-    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
-    int32_t axis, float beta) noexcept;
+#define IN_CAST(_ty, _name) reinterpret_cast<const _ty *>(_name)
+#define OUT_CAST(_ty, _name) reinterpret_cast<_ty *>(_name)
 
-template <typename T>
-result<void> optimized::softmax(const T *input, T *output,
+// template result<void> optimized::softmax<float>(
+//     const float *input, float *output, gsl::span<const size_t> in_shape,
+//     gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
+//     int32_t axis, float beta) noexcept;
+
+//#define SOFTMAX_IMPL(type)                                                     \
+//    return optimized_softmax_impl(                                             \
+//        IN_CAST(type, input), OUT_CAST(type, output), in_shape, axis, beta);
+//
+//#define TYPE_SELECT_SOFTMAX(_typecode, _impl)                                  \
+//    switch (_typecode) {                                                       \
+//    case dt_float32:                                                           \
+//        _impl(float);                                                          \
+//    default:                                                                   \
+//        return err(std::errc::not_supported);                                  \
+//    }
+
+// template <typename T>
+result<void> optimized::softmax(typecode_t typecode, const gsl::byte *input,
+                                gsl::byte *output,
                                 gsl::span<const size_t> in_shape,
                                 gsl::span<const size_t> in_strides,
                                 gsl::span<const size_t> out_strides,
                                 int32_t axis, float beta) noexcept {
 #if __riscv_vector
-    return optimized_softmax_impl(input, output, in_shape, axis, beta);
+    return optimized_softmax_impl(IN_CAST(float, input), OUT_CAST(float, output), in_shape, axis, beta);
+//    TYPE_SELECT_SOFTMAX(typecode, SOFTMAX_IMPL);
 #endif
-
-    return stackvm::reference::softmax(input, output, in_shape, in_strides,
-                                       out_strides, axis, beta);
+    return stackvm::reference::softmax(typecode, input, output, in_shape,
+                                       in_strides, out_strides, axis, beta);
 }
