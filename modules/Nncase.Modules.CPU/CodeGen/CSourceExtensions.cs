@@ -58,7 +58,7 @@ internal static class CSourceExtensions
 
         foreach (var splist in splits)
         {
-            splist.Sort((a, b) => a.H.CompareTo(b.H));
+            splist.Sort((a, b) => -a.H.CompareTo(b.H));
         }
 
         for (int i = 0; i < begins.Length; i++)
@@ -66,7 +66,7 @@ internal static class CSourceExtensions
             var sp = splits[i];
             if (sp.Count > 0)
             {
-                begins[i] += " + " + sp.Skip(1).Aggregate($"{placement.Name[sp[0].H]}id", (acc, p) => $"({acc} + {placement.Hierarchy[p.H]} * {placement.Name[p.H]}id)");
+                begins[i] += " + " + sp.Skip(1).Aggregate($"{placement.Name[sp[0].H]}id", (acc, p) => $"({acc} + {TensorUtilities.GetProduct(placement.Hierarchy[(p.H + 1)..])} * {placement.Name[p.H]}id)");
             }
         }
 
