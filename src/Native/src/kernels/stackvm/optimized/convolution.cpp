@@ -28,7 +28,7 @@
 #endif
 
 #define CONV_ARGS                                                              \
-    input1, weights1, bias1, output1, in_shape, in_strides, w_shape,           \
+    input, weights, bias, output, in_shape, in_strides, w_shape,           \
         w_strides, bias_strides, out_strides, padding_h, padding_w, groups,    \
         stride_h, stride_w, dilation_h, dilation_w, fused_activation, context
 
@@ -609,8 +609,8 @@ result<void> conv2d_depthwise_nxm(
 #endif
 
 result<void> optimized::conv2d(
-    [[maybe_unused]] typecode_t typecode, const gsl::byte *input,
-    const gsl::byte *weights, const gsl::byte *bias, gsl::byte *output,
+    [[maybe_unused]] typecode_t typecode, const gsl::byte *input1,
+    const gsl::byte *weights1, const gsl::byte *bias1, gsl::byte *output1,
     gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
     gsl::span<const size_t> w_shape,
     NNCASE_UNUSED gsl::span<const size_t> w_strides,
@@ -620,10 +620,10 @@ result<void> optimized::conv2d(
     int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
     value_range<float> fused_activation,
     NNCASE_UNUSED kernels::kernel_context &context) noexcept {
-    auto input1 = IN_CAST(float, input);
-    auto weights1 = IN_CAST(float, weights);
-    auto bias1 = IN_CAST(float, bias);
-    auto output1 = OUT_CAST(float, output);
+    [[maybe_unused]] auto input = IN_CAST(float, input1);
+    [[maybe_unused]] auto weights = IN_CAST(float, weights1);
+    [[maybe_unused]] auto bias = IN_CAST(float, bias1);
+    [[maybe_unused]] auto output = OUT_CAST(float, output1);
     const auto filter_h = w_shape[2];
     const auto filter_w = w_shape[3];
 
@@ -679,7 +679,7 @@ result<void> optimized::conv2d(
     }
 #endif
     try_(nncase::kernels::stackvm::reference::conv2d(
-        typecode, input, weights, bias, output, in_shape, in_strides, w_shape,
+        typecode, input1, weights1, bias1, output1, in_shape, in_strides, w_shape,
         w_strides, bias_strides, out_strides, padding_h, padding_w, groups,
         stride_h, stride_w, dilation_h, dilation_w, fused_activation));
     return ok();
