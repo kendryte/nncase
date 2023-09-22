@@ -70,15 +70,12 @@ def update_trace_info(infer_result: str, info_file: str):
         line = buf.readline()
         if not line:
             break
-        print('line = {0}'.format(line))
 
         if status == Status.find_titile:
             title = find_titile(line)
-            print('title = {0}'.format(title))
             if title:
                 status = Status.find_time
                 item_num = find_items(info_file)
-                print('item_num = {0}'.format(item_num))
                 if item_num == -1 or item_num == 0:
                     item_num = -1
                     status = Status.find_titile
@@ -86,12 +83,10 @@ def update_trace_info(infer_result: str, info_file: str):
 
         if status is Status.find_time:
             time = find_time(line)
-            print('time = {0}'.format(time))
             if time:
                 times.append(time)
             if (len(times) == item_num):
                 update_items(info_file, times)
-                print('time updated!')
                 times.clear()
                 status = Status.find_titile
             continue
