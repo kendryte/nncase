@@ -47,11 +47,26 @@ internal static class CSourceExtensions
     public static string ToSlicing(this TensorType tensorType, string[] begins, IRArray<SBP> ndsbp, Placement placement)
     {
         var hstrides = TensorUtilities.GetStrides(placement.Hierarchy.ToArray());
+        var splits = Enumerable.Range(0, begins.Length).Select(_ => new List<(int H, SBPSplit S)>()).ToArray();
         foreach (var (sbp, i) in ndsbp.Select((s, i) => (s, i)))
         {
-            if (sbp is SBPSplit { Axis: int axis })
+            if (sbp is SBPSplit { Axis: int axis } split)
             {
-                begins[axis] += $" + ({tensorType.Shape[axis]} * {hstrides[i]} * {placement.Name[i]}id)";
+                splits[axis].Add((i, split));
+            }
+        }
+
+        foreach (var splist in splits)
+        {
+            splist.Sort((a, b) => a.H.CompareTo(b.H));
+        }
+
+        for (int i = 0; i < begins.Length; i++)
+        {
+            var sp = splits[i];
+            if (sp.Count > 0)
+            {
+                begins[i] += " + " + sp.Skip(1).Aggregate($"{placement.Name[sp[0].H]}id", (acc, p) => $"({acc} + {placement.Hierarchy[p.H]} * {placement.Name[p.H]}id)");
             }
         }
 

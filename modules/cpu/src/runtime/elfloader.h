@@ -7,8 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#if defined(__linux__)
 #include "method_table_impl.h"
+#if defined(__linux__)
 #include <sys/mman.h>
 #endif
 

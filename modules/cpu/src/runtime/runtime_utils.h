@@ -6,7 +6,11 @@
 #include <cmath>
 #include <cstddef>
 #include <iostream>
+#if defined(__linux__)
 #include <linux/limits.h>
+#elif defined(__APPLE__)
+#include <pthread.h>
+#endif
 #include <nncase/runtime/cpu/compiler_defs.h>
 #include <numeric>
 #include <vector>
