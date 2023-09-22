@@ -32,7 +32,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         }
 
         var aRank = a.TensorType.Shape.Rank;
-        var bRank = a.TensorType.Shape.Rank;
+        var bRank = b.TensorType.Shape.Rank;
 
         var ndsbp = new SBP[a.Placement.Rank];
         for (int i = 0; i < a.Placement.Rank; i++)

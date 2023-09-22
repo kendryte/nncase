@@ -142,21 +142,31 @@ internal sealed class InferMatmulData : TheoryData<DistributedType, DistributedT
     public InferMatmulData()
     {
         var placement = new Placement(Placement.DeviceKind.CPU, new[] { 8, 4 }, "bt");
-        var lhs = new[] { 1, 64, 384, 8192 };
-        var rhs = new[] { 1, 64, 8192, 384 };
-        var o = new[] { 1, 64, 384, 384 };
+        {
+            var lhs = new[] { 1, 384, 8192 };
+            var rhs = new[] { 8192, 8192 };
+            Add(
+                new(new(DataTypes.Float32, lhs), new SBP[] { SBP.S(1), SBP.B }, placement),
+                new(new(DataTypes.Float32, rhs), new SBP[] { SBP.B, SBP.S(0) }, placement),
+                new InvalidType(string.Empty));
+        }
 
-        Add(
-            new(new(DataTypes.Float32, new[] { 1, 1, 384, 8192 }), new[] { SBP.S(2), SBP.S(2) }, placement),
-            new(new(DataTypes.Float32, new[] { 1, 64, 8192, 128 }), new SBP[] { SBP.S(2), SBP.S(2) }, placement),
-            new InvalidType(string.Empty));
-        Add(
-            new(new(DataTypes.Float32, lhs), new[] { SBP.S(1), SBP.S(2) }, placement),
-            new(new(DataTypes.Float32, rhs), new SBP[] { SBP.S(1), SBP.B }, placement),
-            new DistributedType(new(DataTypes.Float32, o), new[] { SBP.S(1), SBP.S(2) }, placement));
-        Add(
-            new(new(DataTypes.Float32, lhs), new[] { SBP.S(1), SBP.S(3) }, placement),
-            new(new(DataTypes.Float32, rhs), new SBP[] { SBP.S(1), SBP.S(2) }, placement),
-            new DistributedType(new(DataTypes.Float32, o), new SBP[] { SBP.S(1), SBP.P }, placement));
+        {
+            var lhs = new[] { 1, 64, 384, 8192 };
+            var rhs = new[] { 1, 64, 8192, 384 };
+            var o = new[] { 1, 64, 384, 384 };
+            Add(
+                new(new(DataTypes.Float32, new[] { 1, 1, 384, 8192 }), new[] { SBP.S(2), SBP.S(2) }, placement),
+                new(new(DataTypes.Float32, new[] { 1, 64, 8192, 128 }), new SBP[] { SBP.S(2), SBP.S(2) }, placement),
+                new InvalidType(string.Empty));
+            Add(
+                new(new(DataTypes.Float32, lhs), new[] { SBP.S(1), SBP.S(2) }, placement),
+                new(new(DataTypes.Float32, rhs), new SBP[] { SBP.S(1), SBP.B }, placement),
+                new DistributedType(new(DataTypes.Float32, o), new[] { SBP.S(1), SBP.S(2) }, placement));
+            Add(
+                new(new(DataTypes.Float32, lhs), new[] { SBP.S(1), SBP.S(3) }, placement),
+                new(new(DataTypes.Float32, rhs), new SBP[] { SBP.S(1), SBP.S(2) }, placement),
+                new DistributedType(new(DataTypes.Float32, o), new SBP[] { SBP.S(1), SBP.P }, placement));
+        }
     }
 }
