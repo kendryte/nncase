@@ -93,13 +93,12 @@ internal class Compiler : ICompiler
 
     public void TargetIndependentPass(IPassManager passManager)
     {
-        passManager.AddWithName<DataflowPass>("ReshapeMatMul").Configure(p =>
+        passManager.AddWithName<DataflowPass>("NormAxisAndShape").Configure(p =>
         {
             p.Add<Passes.Rules.Neutral.ReshapeMatMul>();
-        });
-
-        passManager.AddWithName<DataflowPass>("SqueezeShape").Configure(p =>
-        {
+            p.Add<Passes.Rules.Neutral.NormAxisGather>();
+            p.Add<Passes.Rules.Neutral.NormAxisConcat>();
+            p.Add<Passes.Rules.Neutral.NormAxisReduce>();
             p.Add<Passes.Rules.Neutral.SqueezeTransposeShape>();
             p.Add<Passes.Rules.Neutral.Squeeze5DTranspose>();
             p.Add<Passes.Rules.Neutral.SqueezeBinaryShape>();
