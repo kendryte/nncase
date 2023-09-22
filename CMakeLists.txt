@@ -12,12 +12,23 @@ endif()
 
 if(NOT DEFINED NNCASE_VERSION_SUFFIX)
     find_package (Git)
+
     execute_process(
-        COMMAND ${GIT_EXECUTABLE} describe --always --dirty
+        COMMAND ${GIT_EXECUTABLE} describe --always --dirty --tag
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        OUTPUT_VARIABLE GIT_DESC
+        OUTPUT_VARIABLE GIT_TAG
         OUTPUT_STRIP_TRAILING_WHITESPACE)
-    set(NNCASE_VERSION_SUFFIX "-${GIT_DESC}")
+
+    if ("v${NNCASE_VERSION}" STREQUAL ${GIT_TAG})
+        set(NNCASE_VERSION_SUFFIX "")
+    else()
+        execute_process(
+            COMMAND ${GIT_EXECUTABLE} describe --always --dirty
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+            OUTPUT_VARIABLE GIT_DESC
+            OUTPUT_STRIP_TRAILING_WHITESPACE)
+        set(NNCASE_VERSION_SUFFIX "-${GIT_DESC}")
+    endif()
 endif()
 
 if (NOT PACKAGE_VERSION)
