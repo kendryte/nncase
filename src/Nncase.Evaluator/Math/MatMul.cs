@@ -33,6 +33,9 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
 
         var aRank = a.TensorType.Shape.Rank;
         var bRank = b.TensorType.Shape.Rank;
+        var oRank = outType.Shape.Rank;
+        var aPad = oRank - aRank;
+        var bPad = oRank - bRank;
 
         var ndsbp = new SBP[a.Placement.Rank];
         for (int i = 0; i < a.Placement.Rank; i++)
@@ -52,9 +55,9 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
                     }
                     else
                     {
-                        if (ax == bx)
+                        if ((ax + aPad) == (bx + bPad))
                         {
-                            ndsbp[i] = SBP.S(ax);
+                            ndsbp[i] = SBP.S(ax + aPad);
                         }
                         else
                         {
@@ -69,7 +72,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
                         return invalid;
                     }
 
-                    ndsbp[i] = SBP.S(ax);
+                    ndsbp[i] = SBP.S(ax + aPad);
                     break;
                 case (SBPBroadCast, SBPSplit { Axis: int bx }):
                     if (bx == bRank - 2)
@@ -77,7 +80,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
                         return invalid;
                     }
 
-                    ndsbp[i] = SBP.S(bx);
+                    ndsbp[i] = SBP.S(bx + bPad);
                     break;
                 default:
                     return invalid;

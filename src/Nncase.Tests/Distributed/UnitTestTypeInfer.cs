@@ -143,6 +143,26 @@ internal sealed class InferMatmulData : TheoryData<DistributedType, DistributedT
     {
         var placement = new Placement(Placement.DeviceKind.CPU, new[] { 8, 4 }, "bt");
         {
+            var lhs = new[] { 1, 1, 384, 8192 };
+            var rhs = new[] { 64, 8192, 128 };
+            var o = new[] { 1, 64, 384, 128 };
+            Add(
+                new(new(DataTypes.Float32, lhs), new SBP[] { SBP.B, SBP.B }, placement),
+                new(new(DataTypes.Float32, rhs), new SBP[] { SBP.S(0), SBP.S(0) }, placement),
+                new DistributedType(new(DataTypes.Float32, o), new SBP[] { SBP.S(1), SBP.S(1) }, placement));
+        }
+
+        {
+            var lhs = new[] { 1, 64, 384, 8192 };
+            var rhs = new[] { 64, 8192, 128 };
+            var o = new[] { 1, 64, 384, 128 };
+            Add(
+                new(new(DataTypes.Float32, lhs), new SBP[] { SBP.S(1), SBP.S(1) }, placement),
+                new(new(DataTypes.Float32, rhs), new SBP[] { SBP.S(0), SBP.S(0) }, placement),
+                new DistributedType(new(DataTypes.Float32, o), new SBP[] { SBP.S(1), SBP.S(1) }, placement));
+        }
+
+        {
             var lhs = new[] { 1, 384, 8192 };
             var rhs = new[] { 8192, 8192 };
             Add(
