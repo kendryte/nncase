@@ -761,13 +761,30 @@ result<value_t> nncase::kernels::stackvm::bucket_pad(
                           compute_size(pads_shape) * sizeof(int));
     try_var(pads, hrt::create(dt_int32, pads_shape, span, false,
                               host_runtime_tensor::pool_cpu_only));
-    auto pad_value = 0;
-    auto data = gsl::span(reinterpret_cast<gsl::byte *>(&pad_value),
-                          in_tensor->dtype()->size_bytes());
-    try_var(pad_v, hrt::create(in_tensor->dtype()->typecode(), dims_t{}, data,
-                               false, host_runtime_tensor::pool_cpu_only));
-    return nncase::kernels::stackvm::pad(pad_mode_t::constant, input,
+#define RUN_PAD                                                                \
+    auto data = gsl::span(reinterpret_cast<gsl::byte *>(&pad_value),           \
+                          in_tensor->dtype()->size_bytes());                   \
+    try_var(pad_v, hrt::create(in_tensor->dtype()->typecode(), dims_t{}, data, \
+                               false, host_runtime_tensor::pool_cpu_only));    \
+    return nncase::kernels::stackvm::pad(pad_mode_t::constant, input,          \
                                          pads.impl(), pad_v.impl(), output);
+
+    if (runtime::get_bytes(in_tensor->dtype()) == 1) {
+        auto pad_value = (int8_t)0;
+        RUN_PAD;
+    } else if (runtime::get_bytes(in_tensor->dtype()) == 2) {
+        auto pad_value = (int16_t)0;
+        RUN_PAD;
+    }
+    if (runtime::get_bytes(in_tensor->dtype()) == 4) {
+        auto pad_value = (int32_t)0;
+        RUN_PAD;
+    }
+    if (runtime::get_bytes(in_tensor->dtype()) == 8) {
+        auto pad_value = (int64_t)0;
+        RUN_PAD;
+    }
+    return err(std::errc::not_supported);
 }
 
 result<value_t>
