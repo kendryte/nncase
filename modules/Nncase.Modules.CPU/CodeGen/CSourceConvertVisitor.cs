@@ -380,6 +380,21 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                 case IR.XPU.ReShape reshape:
                     IndentScope.Writer.Write($"__tensor_copy_sync(std::move({Visit(args[1]).Name}),std::move(view({Visit(args[0]).Name},{{{args[1].CheckedShape.ToString()[1..^1]}}})))");
                     break;
+                case IR.XPU.GatherReduceScatter grs:
+                    if (grs.ReducePosition.Count == 2)
+                    {
+                        IndentScope.Writer.IndWrite($"tdma_all_reduce_async({Visit(args[0]).Name}, {Visit(args[1]).Name}, reduce_op_t::sum, reduce_strategy_t::all, ctx);\n");
+                    }
+                    else if (grs.ReducePosition[0] == 0)
+                    {
+                        IndentScope.Writer.IndWrite($"tdma_all_reduce_async({Visit(args[0]).Name}, {Visit(args[1]).Name}, reduce_op_t::sum, reduce_strategy_t::by_block, ctx);\n");
+                    }
+                    else
+                    {
+                        IndentScope.Writer.IndWrite($"tdma_reduce_async({Visit(args[0]).Name}, {Visit(args[1]).Name}, reduce_op_t::sum, ctx);\n");
+                    }
+
+                    break;
                 default:
                     throw new NotSupportedException(xpuOp.ToString());
             }

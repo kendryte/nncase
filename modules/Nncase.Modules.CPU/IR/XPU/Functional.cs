@@ -71,4 +71,9 @@ public partial class XPU
     {
         return new Call(new IR.XPU.ReShape(), input, output);
     }
+
+    public static Call GatherReduceScatter(Expr input, Expr output, int[] reducePosition)
+    {
+        return new Call(new GatherReduceScatter(reducePosition), input, output);
+    }
 }

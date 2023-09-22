@@ -117,8 +117,16 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
                 break;
             case (DistributedType inType, DistributedType outType):
                 {
-                    _mainBody.Add(IR.F.XPU.TDMAStore(arguments[0], None.Default, inType.NdSBP, inType.Placement));
-                    _mainBody.Add(IR.F.XPU.TDMALoad(ret, None.Default, outType.NdSBP, outType.Placement));
+                    var partialSumPos = Enumerable.Range(0, inType.NdSBP.Count).Where(i => inType.NdSBP[i] is SBPPartialSum).ToArray();
+                    if (partialSumPos.Length > 0)
+                    {
+                        _mainBody.Add(IR.F.XPU.GatherReduceScatter(arguments[0], ret, partialSumPos));
+                    }
+                    else
+                    {
+                        _mainBody.Add(IR.F.XPU.TDMAStore(arguments[0], None.Default, inType.NdSBP, inType.Placement));
+                        _mainBody.Add(IR.F.XPU.TDMALoad(ret, None.Default, outType.NdSBP, outType.Placement));
+                    }
                 }
 
                 break;
