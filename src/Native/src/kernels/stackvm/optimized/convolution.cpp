@@ -28,9 +28,9 @@
 #endif
 
 #define CONV_ARGS                                                              \
-    input, weights, bias, output, in_shape, in_strides, w_shape,           \
-        w_strides, bias_strides, out_strides, padding_h, padding_w, groups,    \
-        stride_h, stride_w, dilation_h, dilation_w, fused_activation, context
+    input, weights, bias, output, in_shape, in_strides, w_shape, w_strides,    \
+        bias_strides, out_strides, padding_h, padding_w, groups, stride_h,     \
+        stride_w, dilation_h, dilation_w, fused_activation, context
 
 #define CONV2D_NXM_S1_S2(n, m)                                                 \
     if (filter_h == n && filter_w == m) {                                      \
@@ -679,9 +679,9 @@ result<void> optimized::conv2d(
     }
 #endif
     try_(nncase::kernels::stackvm::reference::conv2d(
-        typecode, input1, weights1, bias1, output1, in_shape, in_strides, w_shape,
-        w_strides, bias_strides, out_strides, padding_h, padding_w, groups,
-        stride_h, stride_w, dilation_h, dilation_w, fused_activation));
+        typecode, input1, weights1, bias1, output1, in_shape, in_strides,
+        w_shape, w_strides, bias_strides, out_strides, padding_h, padding_w,
+        groups, stride_h, stride_w, dilation_h, dilation_w, fused_activation));
     return ok();
 }
 
