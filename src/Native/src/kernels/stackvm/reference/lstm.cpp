@@ -45,7 +45,9 @@ result<void> lstm_impl(const T *input, const T *w_xc, const T *w_rc,
     auto w_rc_shape = to_4d(w_rc_shape_3);
     auto out_shape = to_4d(out_shape_3);
 
-    auto tanh = [&](T x) { return (1 - exp(-2 * (float)x)) / (1 + exp(-2 * (float)x)); };
+    auto tanh = [&](T x) {
+        return (1 - exp(-2 * (float)x)) / (1 + exp(-2 * (float)x));
+    };
     auto sigmoid = [&](T x) { return 1 / (1 + exp(-x)); };
 
     auto output_h_tmp = std::make_unique<T[]>(compute_size(init_h_shape));
@@ -77,8 +79,7 @@ result<void> lstm_impl(const T *input, const T *w_xc, const T *w_rc,
                         auto w_idx = i + o * w_xc_shape[3] +
                                      d * w_xc_shape[2] * w_xc_shape[3];
 
-                        out_mul1[o] +=
-                            T(input[in_idx]) * T(w_xc[w_idx]);
+                        out_mul1[o] += T(input[in_idx]) * T(w_xc[w_idx]);
                     }
                     auto b_idx1 = d * w_rc_shape[2] + o;
                     out_mul1[o] += bias[b_idx1];
@@ -88,8 +89,7 @@ result<void> lstm_impl(const T *input, const T *w_xc, const T *w_rc,
                                       d * out_shape[2] * out_shape[3];
                         auto w_idx = i + o * w_rc_shape[3] +
                                      d * w_rc_shape[2] * w_rc_shape[3];
-                        out_mul2[o] +=
-                            T(output_h_tmp[in_idx]) * T(w_rc[w_idx]);
+                        out_mul2[o] += T(output_h_tmp[in_idx]) * T(w_rc[w_idx]);
                     }
                     auto b_idx2 = d * w_rc_shape[2] + hidden_size + o;
                     out_mul2[o] += bias[b_idx2];
@@ -134,7 +134,7 @@ result<void> lstm_impl(const T *input, const T *w_xc, const T *w_rc,
                 for (size_t o = 0; o < out_shape[3]; o++) {
                     output_c_tmp[o + d * out_shape[2] * out_shape[3]] =
                         T(out_mul1[o + out_shape[3] * 2] +
-                              out_mul1[o + out_shape[3] * 0]);
+                          out_mul1[o + out_shape[3] * 0]);
                 }
 
                 // ot = sigmoid(g[1])
@@ -153,7 +153,7 @@ result<void> lstm_impl(const T *input, const T *w_xc, const T *w_rc,
                 for (size_t o = 0; o < out_shape[3]; o++) {
                     output_h_tmp[o + d * out_shape[2] * out_shape[3]] =
                         T(out_mul1[o + out_shape[3] * 3] *
-                              out_mul1[o + out_shape[3] * 1]);
+                          out_mul1[o + out_shape[3] * 1]);
                 }
                 std::memcpy(output + b * out_shape[3] +
                                 d * out_shape[2] * out_shape[3] +

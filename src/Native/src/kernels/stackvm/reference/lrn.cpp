@@ -38,7 +38,8 @@ result<void> lrn_impl(const T *input, float alpha, float beta, float bias,
         const auto x = input[off];
         const auto num = square_sum[off];
         output[offset(out_strides, index)] =
-            x / static_cast<T>(std::pow(static_cast<float>(num) * alpha / size + bias, beta));
+            x / static_cast<T>(std::pow(
+                    static_cast<float>(num) * alpha / size + bias, beta));
         return ok();
     });
 }
