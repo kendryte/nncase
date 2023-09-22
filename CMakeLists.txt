@@ -19,7 +19,7 @@ if(NOT DEFINED NNCASE_VERSION_SUFFIX)
         OUTPUT_VARIABLE GIT_TAG
         OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-    if ("v${NNCASE_VERSION}" STREQUAL ${GIT_TAG})
+    if ("v${NNCASE_VERSION}" STREQUAL "${GIT_TAG}")
         set(NNCASE_VERSION_SUFFIX "")
     else()
         execute_process(
