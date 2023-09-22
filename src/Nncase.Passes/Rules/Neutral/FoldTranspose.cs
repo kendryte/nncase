@@ -101,6 +101,11 @@ public sealed partial class TransposeToReshape : IRewriteRule
 
     private Expr? GetReplace(Expr input, Expr tp, Tensor<int> perm, RunPassContext context)
     {
+        if (input.CheckedShape.Rank <= 1)
+        {
+            return null;
+        }
+
         // If all significant dims remains ascending order, it can be converted to a reshape.
         var inShape = input.CheckedShape;
         var sigAxes = new HashSet<int>();

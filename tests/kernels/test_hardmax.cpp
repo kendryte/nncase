@@ -48,7 +48,7 @@ class HardmaxTest : public KernelTest,
                                                          : 0;
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
   protected:
     runtime_tensor input;

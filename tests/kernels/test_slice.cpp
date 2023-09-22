@@ -91,7 +91,7 @@ class SliceTest : public KernelTest,
                       .expect("create4 tensor failed");
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
   protected:
     runtime_tensor input;

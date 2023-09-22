@@ -49,7 +49,7 @@ class TopKTest : public KernelTest,
         axis_value = value1 > 0 ? value1 >= (int64_t)l_shape.size() ? 0 : value1
                      : -value1 > (int64_t)l_shape.size() ? 0
                                                          : value1;
-        int64_t axis_array[] = {value1};
+        int64_t axis_array[] = {axis_value};
         axis = hrt::create(dt_int64, {1},
                            {reinterpret_cast<gsl::byte *>(axis_array),
                             sizeof(axis_array)},
@@ -75,7 +75,7 @@ class TopKTest : public KernelTest,
         k_value = value4;
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
   protected:
     runtime_tensor input;
@@ -90,14 +90,6 @@ class TopKTest : public KernelTest,
 
 INSTANTIATE_TEST_SUITE_P(TopK, TopKTest,
                          testing::Combine(testing::Range(0, MAX_CASE_NUM)));
-
-//    testing::Combine(testing::Values(dt_float32),
-//                     testing::Values(dims_t{1, 2, 4, 8}, dims_t{1, 3, 16, 16},
-//                                     dims_t{3, 3, 6}, dims_t{16, 16},
-//                                     dims_t{1}, dims_t{1, 3}),
-//                     testing::Values(0, -1 /*, 1, 2, 3*/),
-//                     testing::Values(0, 1), testing::Values(0, 1),
-//                     testing::Values(1 /*, 2, 4, 16*/)));
 
 TEST_P(TopKTest, TopK) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);

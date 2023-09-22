@@ -46,12 +46,12 @@ public interface ILinkedSection
     /// <summary>
     /// Gets size in file.
     /// </summary>
-    uint SizeInFile { get; }
+    ulong SizeInFile { get; }
 
     /// <summary>
     /// Gets size in memory.
     /// </summary>
-    uint SizeInMemory { get; }
+    ulong SizeInMemory { get; }
 
     /// <summary>
     /// Serialize payload.
@@ -83,12 +83,12 @@ public interface ILinkedFunction
     /// <summary>
     /// Gets text begin.
     /// </summary>
-    uint TextBegin { get; }
+    ulong TextBegin { get; }
 
     /// <summary>
     /// Gets text length.
     /// </summary>
-    uint TextLength { get; }
+    ulong TextLength { get; }
 
     /// <summary>
     /// Gets sections.

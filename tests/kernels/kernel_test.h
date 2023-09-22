@@ -838,8 +838,8 @@ class KernelTest {
             }
         }
 
-        std::vector<float> vec1;
-        std::vector<float> vec2;
+        std::vector<double> vec1;
+        std::vector<double> vec2;
         vec1.reserve(compute_size(lhs.shape()));
         vec2.reserve(compute_size(rhs.shape()));
 
@@ -849,79 +849,83 @@ class KernelTest {
                 auto dtype = lhs.datatype();
                 switch (dtype) {
                 case dt_int8: {
-                    vec1.push_back(static_cast<float>(get<int8_t>(lhs, index)));
-                    vec2.push_back(static_cast<float>(get<int8_t>(rhs, index)));
+                    vec1.push_back(
+                        static_cast<double>(get<int8_t>(lhs, index)));
+                    vec2.push_back(
+                        static_cast<double>(get<int8_t>(rhs, index)));
                     break;
                 }
                 case dt_int16: {
                     vec1.push_back(
-                        static_cast<float>(get<int16_t>(lhs, index)));
+                        static_cast<double>(get<int16_t>(lhs, index)));
                     vec2.push_back(
-                        static_cast<float>(get<int16_t>(rhs, index)));
+                        static_cast<double>(get<int16_t>(rhs, index)));
                     break;
                 }
                 case dt_int32: {
                     vec1.push_back(
-                        static_cast<float>(get<int32_t>(lhs, index)));
+                        static_cast<double>(get<int32_t>(lhs, index)));
                     vec2.push_back(
-                        static_cast<float>(get<int32_t>(rhs, index)));
+                        static_cast<double>(get<int32_t>(rhs, index)));
                     break;
                 }
                 case dt_int64: {
                     vec1.push_back(
-                        static_cast<float>(get<int64_t>(lhs, index)));
+                        static_cast<double>(get<int64_t>(lhs, index)));
                     vec2.push_back(
-                        static_cast<float>(get<int64_t>(rhs, index)));
+                        static_cast<double>(get<int64_t>(rhs, index)));
                     break;
                 }
                 case dt_uint8: {
                     vec1.push_back(
-                        static_cast<float>(get<uint8_t>(lhs, index)));
+                        static_cast<double>(get<uint8_t>(lhs, index)));
                     vec2.push_back(
-                        static_cast<float>(get<uint8_t>(rhs, index)));
+                        static_cast<double>(get<uint8_t>(rhs, index)));
                     break;
                 }
                 case dt_uint16: {
                     vec1.push_back(
-                        static_cast<float>(get<uint16_t>(lhs, index)));
+                        static_cast<double>(get<uint16_t>(lhs, index)));
                     vec2.push_back(
-                        static_cast<float>(get<uint16_t>(rhs, index)));
+                        static_cast<double>(get<uint16_t>(rhs, index)));
                     break;
                 }
                 case dt_uint32: {
                     vec1.push_back(
-                        static_cast<float>(get<uint32_t>(lhs, index)));
+                        static_cast<double>(get<uint32_t>(lhs, index)));
                     vec2.push_back(
-                        static_cast<float>(get<uint32_t>(rhs, index)));
+                        static_cast<double>(get<uint32_t>(rhs, index)));
                     break;
                 }
                 case dt_uint64: {
                     vec1.push_back(
-                        static_cast<float>(get<uint64_t>(lhs, index)));
+                        static_cast<double>(get<uint64_t>(lhs, index)));
                     vec2.push_back(
-                        static_cast<float>(get<uint64_t>(rhs, index)));
+                        static_cast<double>(get<uint64_t>(rhs, index)));
                     break;
                 }
                 case dt_float16: {
-                    vec1.push_back(static_cast<float>(get<half>(lhs, index)));
-                    vec2.push_back(static_cast<float>(get<half>(rhs, index)));
+                    vec1.push_back(static_cast<double>(get<half>(lhs, index)));
+                    vec2.push_back(static_cast<double>(get<half>(rhs, index)));
                     break;
                 }
                 case dt_bfloat16: {
                     vec1.push_back(
-                        static_cast<float>(get<bfloat16>(lhs, index)));
+                        static_cast<double>(get<bfloat16>(lhs, index)));
                     vec2.push_back(
-                        static_cast<float>(get<bfloat16>(rhs, index)));
+                        static_cast<double>(get<bfloat16>(rhs, index)));
                     break;
                 }
                 case dt_float32: {
-                    vec1.push_back(get<float>(lhs, index));
-                    vec2.push_back(get<float>(rhs, index));
+                    vec1.push_back(static_cast<double>(get<float>(lhs, index)));
+                    vec2.push_back(static_cast<double>(get<float>(rhs, index)));
                     break;
                 }
                 case dt_float64: {
-                    vec1.push_back(static_cast<float>(get<double>(lhs, index)));
-                    vec2.push_back(static_cast<float>(get<double>(rhs, index)));
+                    vec1.push_back(
+                        static_cast<double>(get<double>(lhs, index)));
+                    vec2.push_back(
+                        static_cast<double>(get<double>(rhs, index)));
                     break;
                 }
                 default: {
@@ -932,13 +936,13 @@ class KernelTest {
             })
             .is_ok();
 
-        float dotProduct =
-            std::inner_product(vec1.begin(), vec1.end(), vec2.begin(), 0.0f);
-        float norm1 = std::sqrt(
-            std::inner_product(vec1.begin(), vec1.end(), vec1.begin(), 0.0f));
-        float norm2 = std::sqrt(
-            std::inner_product(vec2.begin(), vec2.end(), vec2.begin(), 0.0f));
-        float cosine_similarity = dotProduct / (norm1 * norm2);
+        double dotProduct = std::inner_product(vec1.begin(), vec1.end(),
+                                               vec2.begin(), (double)0.0);
+        double norm1 = std::sqrt(std::inner_product(vec1.begin(), vec1.end(),
+                                                    vec1.begin(), (double)0.0));
+        double norm2 = std::sqrt(std::inner_product(vec2.begin(), vec2.end(),
+                                                    vec2.begin(), (double)0.0));
+        double cosine_similarity = dotProduct / (norm1 * norm2);
 
         std::cout << "cosine_similarity:" << cosine_similarity << std::endl;
 
@@ -1071,21 +1075,27 @@ class KernelTest {
     }
 
     static void ParseJson(Document &document, std::string js_str) {
-        if (document.Parse(js_str.c_str()).HasParseError())
+        if (document.Parse<kParseCommentsFlag>(js_str.c_str()).HasParseError())
             std::cout << "Parsing Error: "
                       << (unsigned)document.GetErrorOffset() << " "
                       << GetParseError_En(document.GetParseError())
                       << std::endl;
-        assert(document.IsObject());
+
+        if (!document.IsObject()) {
+            throw std::runtime_error("type error! it should be Object.");
+        }
     }
 
     void ParseJson(std::string js_str) {
-        if (_document.Parse(js_str.c_str()).HasParseError())
+        if (_document.Parse<kParseCommentsFlag>(js_str.c_str()).HasParseError())
             std::cout << "Parsing Error: "
                       << (unsigned)_document.GetErrorOffset() << " "
                       << GetParseError_En(_document.GetParseError())
                       << std::endl;
-        assert(_document.IsObject());
+
+        if (!_document.IsObject()) {
+            throw std::runtime_error("type error! it should be Object.");
+        }
     }
 
     typecode_t Str2DataType(std::string type) {
@@ -1098,22 +1108,41 @@ class KernelTest {
     }
 
     int64_t GetNumber(const char *key) {
-        assert(_document[key].IsInt64());
+        if (!_document[key].IsInt64()) {
+            throw std::runtime_error("type error! it should be int64.");
+        }
+
         return _document[key].GetInt64();
     }
 
     float GetFloatNumber(const char *key) {
-        assert(_document[key].IsDouble());
+        if (!_document[key].IsDouble()) {
+            throw std::runtime_error("type error! it should be double.");
+        }
+
         return _document[key].GetFloat();
     }
 
     typecode_t GetDataType(const char *key) {
-        assert(_document[key].IsString());
+        if (!_document[key].IsString()) {
+            throw std::runtime_error("type error! it should be string.");
+        }
+
         return Str2DataType(_document[key].GetString());
     }
 
+    std::string GetString(const char *key) {
+        if (!_document[key].IsString()) {
+            throw std::runtime_error("type error! it should be string.");
+        }
+
+        return _document[key].GetString();
+    }
+
     dims_t GetShapeArray(const char *key) {
-        assert(_document[key].IsArray());
+        if (!_document[key].IsArray()) {
+            throw std::runtime_error("type error! it should be array.");
+        }
 
         Value &array = _document[key];
         size_t arraySize = array.Size();
@@ -1130,8 +1159,30 @@ class KernelTest {
         return cArray;
     }
 
+    std::vector<int64_t> GetDataArray(const char *key) {
+        if (!_document[key].IsArray()) {
+            throw std::runtime_error("type error! it should be array.");
+        }
+
+        Value &array = _document[key];
+        size_t arraySize = array.Size();
+        std::vector<int64_t> cArray(arraySize);
+        for (rapidjson::SizeType i = 0; i < arraySize; i++) {
+            if (array[i].IsUint()) {
+                cArray[i] = array[i].GetUint();
+            } else {
+                std::cout << "Invalid JSON format. Expected unsigned integer "
+                             "values in the array."
+                          << std::endl;
+            }
+        }
+        return cArray;
+    }
+
     axes_t GetAxesArray(const char *key) {
-        assert(_document[key].IsArray());
+        if (!_document[key].IsArray()) {
+            throw std::runtime_error("type error! it should be array.");
+        }
 
         Value &array = _document[key];
         size_t arraySize = array.Size();

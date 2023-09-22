@@ -1,0 +1,10 @@
+{
+  "lhs_type":["dt_float32"],
+  "lhs_shape":[[1, 4, 5, 5], [1, 4, 16, 16]],
+  "weight_shape":[[8, 4, 3, 3], [8, 4, 1, 1]],
+  "bias_shape":[[8]],
+  "dilations_value":[[2, 2], [1, 1]],
+  "pad_value":[[1, 1, 1, 1]],
+  "strides_value":[[1, 1], [2, 2]],
+  "group_value":[1]
+}

@@ -113,19 +113,9 @@ public class CalibrationEvaluator : IDisposable
         };
     }
 
-    private bool ShapeChecker(Shape current, Shape target)
-    {
-        if (current.Count != target.Count)
-        {
-            return false;
-        }
-
-        return current.Zip(target).All(p => p.Second.IsUnknown ? true : p.Second.FixedValue == p.First.FixedValue);
-    }
-
     private bool TypeChecker(IRType cur_type, IRType target_type) => (cur_type, target_type) switch
     {
-        (TensorType a, TensorType b) => a.DType == b.DType && ShapeChecker(a.Shape, b.Shape),
+        (TensorType a, TensorType b) => a.DType == b.DType && b.Shape.IsAssignableFrom(a.Shape),
         (TupleType a, TupleType b) => a.Zip(b).All(p => TypeChecker(p.First, p.Second)),
         (_, _) => true,
     };

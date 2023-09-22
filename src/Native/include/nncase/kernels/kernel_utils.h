@@ -17,6 +17,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstddef>
+#include <nncase/kernels/stackvm/resize_image.h>
 #include <nncase/runtime/datatypes.h>
 #include <numeric>
 

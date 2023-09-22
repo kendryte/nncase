@@ -22,16 +22,21 @@
 #include <nncase/runtime/stackvm/opcode.h>
 #include <ortki/operators.h>
 
+#define TEST_CASE_NAME "test_instance_normalization"
+
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
 class InstanceNormalizationTest
     : public KernelTest,
-      public ::testing::TestWithParam<std::tuple<nncase::typecode_t, dims_t>> {
+      public ::testing::TestWithParam<std::tuple<int>> {
   public:
     void SetUp() override {
-        auto &&[typecode, l_shape] = GetParam();
+        READY_SUBCASE()
+
+        auto l_shape = GetShapeArray("lhs_shape");
+        auto typecode = GetDataType("lhs_type");
 
         input =
             hrt::create(typecode, l_shape, host_runtime_tensor::pool_cpu_only)
@@ -49,7 +54,7 @@ class InstanceNormalizationTest
         init_tensor(b);
     }
 
-    void TearDown() override {}
+    void TearDown() override { CLEAR_SUBCASE() }
 
   protected:
     runtime_tensor input;
@@ -57,13 +62,8 @@ class InstanceNormalizationTest
     runtime_tensor b;
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    instance_normalization, InstanceNormalizationTest,
-    testing::Combine(testing::Values(dt_float32),
-                     testing::Values(dims_t{1, 3, 16, 16}, dims_t{1, 2, 4, 8},
-                                     dims_t{1, 3,
-                                            16} /*, dims_t{24, 16, 16}*/)));
-// todo when in_shape[0] is not 1,cos is about 0.96
+INSTANTIATE_TEST_SUITE_P(instance_normalization, InstanceNormalizationTest,
+                         testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
 TEST_P(InstanceNormalizationTest, instance_normalization) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
@@ -109,6 +109,15 @@ TEST_P(InstanceNormalizationTest, instance_normalization) {
 }
 
 int main(int argc, char *argv[]) {
+    READY_TEST_CASE_GENERATE()
+    FOR_LOOP(lhs_shape, i)
+    FOR_LOOP(lhs_type, j)
+    SPLIT_ELEMENT(lhs_shape, i)
+    SPLIT_ELEMENT(lhs_type, j)
+    WRITE_SUB_CASE()
+    FOR_LOOP_END()
+    FOR_LOOP_END()
+
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

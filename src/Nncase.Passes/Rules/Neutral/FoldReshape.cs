@@ -78,6 +78,11 @@ public sealed partial class ReshapeToTranspose : IRewriteRule
 
     private Expr? GetReplace(Expr input, Call call)
     {
+        if (input.CheckedShape.Rank <= 1)
+        {
+            return null;
+        }
+
         var newShape = call.CheckedShape.ToValueArray();
         var inShape = input.CheckedShape.ToValueArray();
         var sigNewShape = newShape.Where(x => x != 1).ToArray();

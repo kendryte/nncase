@@ -35,10 +35,12 @@ result<void> instance_norm_impl(const float *input, const float *scale,
                                 float epsilon) {
     return apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
         auto c = index[1];
+        auto offi = index[0] * in_shape[1] + index[1];
         auto off = offset(in_strides, index);
         const auto x = input[off];
         output[offset(out_strides, index)] =
-            scale[c] * (x - input_mean[c]) / std::sqrt(input_var[c] + epsilon) +
+            scale[c] * (x - input_mean[offi]) /
+                std::sqrt(input_var[offi] + epsilon) +
             bias[c];
         return ok();
     });

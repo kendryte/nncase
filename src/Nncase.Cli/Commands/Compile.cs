@@ -86,6 +86,10 @@ public sealed class Compile : Command
           alias: "--calib-method",
           description: $"model quant options, default is {Quantization.CalibMethod.Kld}",
           getDefaultValue: () => Quantization.CalibMethod.Kld));
+        AddOption(new Option<bool>(
+          alias: "--benchmark-only",
+          description: $"benchmark only",
+          getDefaultValue: () => false));
 
         Handler = CommandHandler.Create<CliCompileOptions, IHost>(RunAsync);
     }
@@ -138,17 +142,14 @@ public sealed class Compile : Command
                 },
                 ModelQuantMode = cliOptions.ModelQuantMode,
             },
+            IsBenchmarkOnly = cliOptions.BenchmarkOnly,
         };
 
         // 2. import the model
         var target = CompilerServices.GetTarget(cliOptions.Target);
         using var compileSession = CompileSession.Create(target, compileOptions);
         var compiler = compileSession.Compiler;
-        IRModule module;
-        using (var model_stream = File.OpenRead(compileOptions.InputFile))
-        {
-            module = await compiler.ImportModuleAsync(model_stream);
-        }
+        var module = await compiler.ImportModuleAsync(compileOptions.InputFormat, compileOptions.InputFile, compileOptions.IsBenchmarkOnly);
 
         // 3. create the calib dataset
         if (compileOptions.QuantizeOptions.ModelQuantMode == Quantization.ModelQuantMode.UsePTQ)
@@ -206,6 +207,8 @@ internal sealed class CliCompileOptions
     public string Dataset { get; set; }
 
     public DatasetFormat DatasetFormat { get; set; }
+
+    public bool BenchmarkOnly { get; set; }
 }
 
 #pragma warning restore CS8618

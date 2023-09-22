@@ -1,7 +1,8 @@
 name = 'default_config'
 root = 'tests_output'
+kmodel_name = 'test.kmodel'
+desc_name = 'kmodel.desc'
 dump_hist = false
-dump_infer = false
 
 [compile_opt]
 preprocess = false
@@ -39,6 +40,13 @@ finetune_weights_method = 'NoFineTuneWeights'
 input_mean = 0.5
 input_std = 0.5
 quant_scheme = ""
+
+[infer_report_opt]
+enabled = false
+priority = 100
+kind = 'N/A'
+model_name = 'N/A'
+report_name = 'infer_report.json'
 
 [generator]
 [generator.inputs]
