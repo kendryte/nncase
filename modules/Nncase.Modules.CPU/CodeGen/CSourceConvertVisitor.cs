@@ -337,7 +337,8 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                     IndentScope.Writer.Write($"gather({Visit(args[0]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name}, {gather.Axis})");
                     break;
                 case IR.XPU.Concat concat:
-                    IndentScope.Writer.Write($"concat({{{string.Join(",", args.SkipLast(1).Select(Visit).Select(s => "&" + s.Name))}}}, {Visit(args[^1]).Name}, {concat.Axis})");
+                    var positiveAxis = concat.Axis > 0 ? concat.Axis : concat.Axis + ((TensorType)args[0].CheckedType).Shape.Rank;
+                    IndentScope.Writer.Write($"concat({{{string.Join(",", args.SkipLast(1).Select(Visit).Select(s => "&" + s.Name))}}}, {Visit(args[^1]).Name}, {positiveAxis})");
                     break;
                 case IR.XPU.Slice slice:
                     var begins = ((TensorConst)expr.Arguments[2]).Value.ToArray<int>();
@@ -370,7 +371,8 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                     IndentScope.Writer.Write($"__tensor_copy_sync(std::move({Visit(expr.Arguments[1]).Name}), {Visit(expr.Arguments[0]).Name}({{{string.Join(',', newbegins.Select(e => e.ToString()))}}},{{{string.Join(',', newends.Select(e => e.ToString()))}}}))");
                     break;
                 case IR.XPU.Softmax softmax:
-                    IndentScope.Writer.Write($"softmax({Visit(args[0]).Name}, {Visit(args[1]).Name}, {softmax.Axis})");
+                    positiveAxis = softmax.Axis > 0 ? softmax.Axis : softmax.Axis + ((TensorType)args[0].CheckedType).Shape.Rank;
+                    IndentScope.Writer.Write($"softmax({Visit(args[0]).Name}, {Visit(args[1]).Name}, {positiveAxis})");
                     break;
                 case IR.XPU.Transpose transpose:
                     IndentScope.Writer.Write($"transpose({Visit(args[0]).Name}, {Visit(args[1]).Name}, {{{string.Join(",", transpose.Perm.Select(p => p.ToString()))}}})");

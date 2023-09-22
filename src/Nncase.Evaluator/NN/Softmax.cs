@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System.Linq;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.NN;
@@ -82,10 +83,11 @@ public class SoftmaxEvaluator : IEvaluator<Softmax>, ITypeInferencer<Softmax>, I
     public IRType Visit(ITypeInferenceContext context, Softmax target)
     {
         var input = context.CheckArgumentType<IRType>(target, Softmax.Input);
+        var axis = context.GetArgument(target, Softmax.Axis);
         return input switch
         {
             TensorType t => Visit(t),
-            DistributedType d => Visit(d),
+            DistributedType d => Visit(d, axis),
             _ => new InvalidType(input.GetType().Name),
         };
     }
@@ -124,8 +126,14 @@ public class SoftmaxEvaluator : IEvaluator<Softmax>, ITypeInferencer<Softmax>, I
         return input;
     }
 
-    private IRType Visit(DistributedType input)
+    private IRType Visit(DistributedType input, Expr axisExpr)
     {
+        var axis = ((TensorConst)axisExpr).Value.ToScalar<int>();
+        if (input.NdSBP.Any(sbp => sbp is SBPSplit s && s.Axis == axis switch { >= 0 => axis, _ => axis + input.TensorType.Shape.Rank }))
+        {
+            return new InvalidType("Not support split on Axis for Softmax now.");
+        }
+
         return input;
     }
 }
