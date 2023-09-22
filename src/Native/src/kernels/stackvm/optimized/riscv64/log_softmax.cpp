@@ -124,8 +124,7 @@ void log_softmax_step_not1(int32_t len, const float *x, float *dx, int step) {
     }
 }
 
-template <typename T>
-static void log_softmax_impl(const T *input, T *output,
+static void log_softmax_impl(const float *input, float *output,
                              gsl::span<const size_t> in_shape, int axis) {
     size_t ndim = in_shape.size();
     size_t positive_axis = axis < 0 ? ndim + axis : axis;
@@ -170,26 +169,27 @@ static void log_softmax_impl(const T *input, T *output,
 #define IN_CAST(_ty, _name) reinterpret_cast<const _ty *>(_name)
 #define OUT_CAST(_ty, _name) reinterpret_cast<_ty *>(_name)
 
-//template result<void> optimized::log_softmax<float>(
-//    const float *input, float *output, gsl::span<const size_t> in_shape,
-//    [[maybe_unused]] gsl::span<const size_t> in_strides,
-//    [[maybe_unused]] gsl::span<const size_t> out_strides,
-//    int32_t axis) noexcept;
+// template result<void> optimized::log_softmax<float>(
+//     const float *input, float *output, gsl::span<const size_t> in_shape,
+//     [[maybe_unused]] gsl::span<const size_t> in_strides,
+//     [[maybe_unused]] gsl::span<const size_t> out_strides,
+//     int32_t axis) noexcept;
 
-//template <typename T>
+// template <typename T>
 result<void>
-optimized::log_softmax(typecode_t typecode, const gsl::byte *input,
-                       gsl::byte *output,
+optimized::log_softmax([[maybe_unused]] typecode_t typecode,
+                       const gsl::byte *input, gsl::byte *output,
                        gsl::span<const size_t> in_shape,
                        [[maybe_unused]] gsl::span<const size_t> in_strides,
                        [[maybe_unused]] gsl::span<const size_t> out_strides,
                        int32_t axis) noexcept {
     result<void> ret_value = ok();
 #if __riscv_vector
-    log_softmax_impl(IN_CAST(float, input), OUT_CAST(float, output), in_shape, axis);
+    log_softmax_impl(IN_CAST(float, input), OUT_CAST(float, output), in_shape,
+                     axis);
 #else
-    ret_value = reference::softmax(typecode, input, output, in_shape, in_strides,
-                                   out_strides, axis, 1.f, true);
+    ret_value = reference::softmax(typecode, input, output, in_shape,
+                                   in_strides, out_strides, axis, 1.f, true);
 #endif
     return ret_value;
 }
