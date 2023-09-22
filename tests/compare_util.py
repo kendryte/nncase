@@ -15,7 +15,7 @@ def cosine(gt: np.ndarray, pred: np.ndarray, *args):
 
 
 def euclidean(gt: np.ndarray, pred: np.ndarray, *args):
-    return np.linalg.norm(gt - pred, 2)**2
+    return np.linalg.norm(gt.reshape(-1) - pred.reshape(-1))
 
 
 def allclose(gt: np.ndarray, pred: np.ndarray, thresh: float):
@@ -71,7 +71,7 @@ def compare_binfile(result_path: Tuple[str, str],
             np.savetxt(str(p.parent / (p.stem + '_hist.csv')),
                        np.stack((x[:-1], y)).T, fmt='%f', delimiter=',')
         similarity_info = f"\n{similarity_name} similarity = {similarity}, threshold = {threshold}\n"
-    if similarity_name in ['cosine', 'euclidean', 'segment']:
+    if similarity_name in ['cosine', 'segment']:
         compare_op = lt
     else:
         compare_op = gt
@@ -97,7 +97,7 @@ def compare_ndarray(expected: np.ndarray,
         np.savetxt(dump_file, np.stack((x[:-1], y)).T, fmt='%f', delimiter=',')
     similarity_info = f"{similarity_name} similarity = {similarity}, threshold = {threshold}\n"
 
-    if similarity_name in ['cosine', 'euclidean', 'segment']:
+    if similarity_name in ['cosine', 'segment']:
         compare_op = lt
     else:
         compare_op = gt
