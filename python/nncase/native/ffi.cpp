@@ -299,7 +299,9 @@ PYBIND11_MODULE(_nncase, m) {
         .def_property_readonly("entry", &ir_module::entry);
 
     py::class_<compiler>(m, "Compiler")
-        .def("import_module", &compiler::import_module)
+        .def("import_tflite_module", &compiler::import_tflite_module)
+        .def("import_onnx_module", &compiler::import_onnx_module)
+        .def("import_ncnn_module", &compiler::import_ncnn_module)
         .def("compile", &compiler::compile)
         .def("gencode", &compiler::gencode);
 

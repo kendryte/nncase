@@ -175,7 +175,7 @@ def infer_worker(target):
         if ret.find('terminate') != -1 or ret.find('Exception') != -1:
             err = 'infer exception'
             target.logger.error(err)
-            msg = f'{err}: {ret}'.encode()
+            msg = f'{err}'.encode()
             dict['type'] = 'exception'
             dict['len'] = len(msg)
             conn.sendall(json.dumps(dict).encode())
