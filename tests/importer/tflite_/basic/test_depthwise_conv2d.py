@@ -59,7 +59,7 @@ k_sizes = [
 strides = [
     [1, 1],
     [1, 3],
-    [5, 5]
+    # [5, 5]
 ]
 
 paddings = [
