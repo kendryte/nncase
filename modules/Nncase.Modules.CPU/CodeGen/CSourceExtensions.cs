@@ -66,7 +66,7 @@ internal static class CSourceExtensions
             var sp = splits[i];
             if (sp.Count > 0)
             {
-                begins[i] += " + " + sp.Skip(1).Aggregate($"{placement.Name[sp[0].H]}id", (acc, p) => $"({acc} + {TensorUtilities.GetProduct(placement.Hierarchy[(p.H + 1)..])} * {placement.Name[p.H]}id)");
+                begins[i] += " + " + sp.Skip(1).Aggregate($"{placement.Name[sp[0].H]}id", (acc, p) => $"({acc} + {TensorUtilities.GetProduct(placement.Hierarchy[(p.H + 1)..])} * {placement.Name[p.H]}id)") + $" * {tensorType.Shape[i]}";
             }
         }
 
