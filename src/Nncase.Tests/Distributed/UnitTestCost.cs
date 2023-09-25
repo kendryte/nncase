@@ -30,8 +30,9 @@ public sealed class UnitTestCost
             new SBP[] { SBP.S(3), SBP.P },
          })
         {
-            var input0 = new Var(new DistributedType(tensorType, ndsbp, placement));
-            var candidates = Nncase.Passes.Tile.AutoDistributedConvertVisitor.GetPartialCandidateBoxings(input0);
+            var type = new DistributedType(tensorType, ndsbp, placement);
+            var input0 = new Var(type);
+            var candidates = Utilities.DistributedUtility.GetPartialCandidateNDSBPs(type).Select(ndsbp => IR.F.CPU.Boxing(input0, type with { NdSBP = ndsbp }));
             foreach (var item in candidates)
             {
                 var cost = CompilerServices.EvaluateCost(item);

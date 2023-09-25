@@ -77,6 +77,17 @@ public sealed class UnitTestConstruct : TestClassBase
     }
 
     [Fact]
+    public void TestBoxingEqual()
+    {
+        Placement placement = new(Placement.DeviceKind.CPU, new int[] { 4, 2 }, "bt");
+        var ttype = new TensorType(DataTypes.Float32, new[] { 1, 384, 8192 });
+        var a = new IR.CPU.Boxing(new DistributedType(ttype, new[] { SBP.S(1), SBP.S(2) }, placement));
+        var b = new IR.CPU.Boxing(new DistributedType(ttype, new[] { SBP.S(1), SBP.S(2) }, placement));
+        Assert.Equal(a, b);
+        Assert.StrictEqual(a, b);
+    }
+
+    [Fact]
     public void TestUnary()
     {
         Placement placement = new(Placement.DeviceKind.CPU, new int[] { 4, 2 }, "bt");

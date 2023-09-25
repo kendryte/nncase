@@ -39,7 +39,6 @@ public class UnitTestCPUTargetTiling : TestClassBase
     // [ClassData(typeof(TilingCaseBinaryMul))]
     // [ClassData(typeof(TilingCaseUnary))]
     // [ClassData(typeof(TilingCaseMatmul))]
-    // [ClassData(typeof(TilingCaseMatmulUnary))]
     // [ClassData(typeof(TilingCaseLayerNorm))]
     // [ClassData(typeof(TilingCaseGather))]
     // [ClassData(typeof(TilingCaseSoftmax))]
@@ -47,27 +46,27 @@ public class UnitTestCPUTargetTiling : TestClassBase
     // [ClassData(typeof(TilingCaseConcat))]
     // [ClassData(typeof(TilingCaseTranspose))]
     // [ClassData(typeof(TilingCaseReshape1))]
-    [ClassData(typeof(TilingCaseReshape2))]
+    // [ClassData(typeof(TilingCaseReshape2))]
+    [ClassData(typeof(TilingCaseMatmulUnary))]
     public async Task TestCpuFunction(Function main, Tensor[] inputs)
     {
         var module = new IR.IRModule(main);
         using (new Diagnostics.DumpScope(main.Name, CompileOptions.DumpFlags))
         {
-#if DEBUG
-            for (var i = 0; i < inputs.Length - 1; i++)
-            {
-                using (var fs = Diagnostics.DumpScope.Current.OpenFile($"input_{i}.bin"))
-                {
-                    fs.Write(inputs[i].BytesBuffer);
-                }
-            }
+            // #if DEBUG
+            //             for (var i = 0; i < inputs.Length - 1; i++)
+            //             {
+            //                 using (var fs = Diagnostics.DumpScope.Current.OpenFile($"input_{i}.bin"))
+            //                 {
+            //                     fs.Write(inputs[i].BytesBuffer);
+            //                 }
+            //             }
 
-            using (var fs = Diagnostics.DumpScope.Current.OpenFile($"output_0.bin"))
-            {
-                fs.Write(inputs[^1].BytesBuffer);
-            }
-#endif
-
+            // using (var fs = Diagnostics.DumpScope.Current.OpenFile($"output_0.bin"))
+            //             {
+            //                 fs.Write(inputs[^1].BytesBuffer);
+            //             }
+            // #endif
             await Compile(module);
             var output = Testing.RunKModel(File.ReadAllBytes(Path.Join(Diagnostics.DumpScope.Current.Directory, "test.kmodel")), Diagnostics.DumpScope.Current.Directory, inputs);
             var cos = Tests.Comparator.CosSimilarity(output, Value.FromTensor(inputs[^1]))[0];
@@ -173,7 +172,7 @@ internal sealed class TilingCaseMatmulLayerNorm : TheoryData<Function, Tensor[]>
     }
 }
 
-internal sealed class TilingCaseMHA : TheoryData<Function>
+internal sealed class TilingCaseMHA : TheoryData<Function, Tensor[]>
 {
     public TilingCaseMHA()
     {
@@ -208,7 +207,7 @@ internal sealed class TilingCaseMHA : TheoryData<Function>
         }
 
         var main = new Function("mha_qk", new Call(fusion, hid_in, pos_ids), new[] { hid_in, pos_ids });
-        Add(main);
+        Add(main, Array.Empty<Tensor>());
     }
 }
 
@@ -456,9 +455,8 @@ internal sealed class TilingCaseTranspose : TheoryData<Function, Tensor[]>
         {
             { fin_a, Value.FromTensor(input_tensor) },
         };
-        var output = fusion.Body.Evaluate(feedDict).AsTensor();
-
-        var main = new Function("transpose", new Call(fusion, in_a), new[] { in_a });
+        _ = fusion.Body.Evaluate(feedDict).AsTensor();
+        _ = new Function("transpose", new Call(fusion, in_a), new[] { in_a });
     }
 }
 

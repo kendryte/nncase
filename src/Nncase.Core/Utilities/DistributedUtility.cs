@@ -33,6 +33,42 @@ public static class DistributedUtility
            ToArray();
     }
 
+    public static IReadOnlyList<IRArray<SBP>> GetPartialCandidateNDSBPs(DistributedType distributedType)
+    {
+        IRArray<SBP> ndsbp = distributedType.NdSBP;
+        TensorType tensorType = distributedType.TensorType;
+        Placement placement = distributedType.Placement;
+        if (!ndsbp.Any(sbp => sbp is SBPPartialSum))
+        {
+            return Array.Empty<IRArray<SBP>>();
+        }
+
+        var candidateNdsbps = new List<SBP>[placement.Rank];
+        for (int i = 0; i < placement.Rank; i++)
+        {
+            candidateNdsbps[i] = new List<SBP>();
+            if (ndsbp[i] is SBPPartialSum)
+            {
+                candidateNdsbps[i].Add(SBP.B);
+                for (int axis = 0; axis < tensorType.Shape.Rank; axis++)
+                {
+                    if (tensorType.Shape[axis] is { IsFixed: true, Value: int s } && IsDivisible(s, placement.Hierarchy[i]))
+                    {
+                        candidateNdsbps[i].Add(SBP.S(axis));
+                    }
+                }
+            }
+            else
+            {
+                candidateNdsbps[i].Add(ndsbp[i]);
+            }
+        }
+
+        return candidateNdsbps.CartesianProduct().
+            Select(ndsbp => new IRArray<SBP>(ndsbp)).
+            ToArray();
+    }
+
     public static bool IsDistributable(TensorType tensorType, ReadOnlySpan<SBP> ndsbp, Placement placement, [MaybeNullWhen(false)] out TensorType distType)
     {
         distType = null;
