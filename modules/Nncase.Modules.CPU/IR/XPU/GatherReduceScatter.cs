@@ -9,5 +9,7 @@ public sealed partial class GatherReduceScatter : XPUKernelOp
 
     public static readonly ParameterInfo Output = new(typeof(GatherReduceScatter), 1, "output");
 
-    public IRArray<int> ReducePosition { get; }
+    public IRArray<(int Hierarchy, SBP SBP)> ReducePosition { get; }
+
+    public Placement Placement { get; }
 }

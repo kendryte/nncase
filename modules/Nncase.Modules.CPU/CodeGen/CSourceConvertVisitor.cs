@@ -381,17 +381,33 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                     IndentScope.Writer.Write($"__tensor_copy_sync(std::move({Visit(args[1]).Name}),std::move(view({Visit(args[0]).Name},{{{args[1].CheckedShape.ToString()[1..^1]}}})))");
                     break;
                 case IR.XPU.GatherReduceScatter grs:
-                    if (grs.ReducePosition.Count == 2)
+                    var ret_name = Visit(args[1]).Name;
+                    bool reshard = args[0].CheckedType != args[1].CheckedType;
+                    if (reshard)
                     {
-                        IndentScope.Writer.IndWrite($"tdma_all_reduce_async({Visit(args[0]).Name}, {Visit(args[1]).Name}, reduce_op_t::sum, reduce_strategy_t::all, ctx);\n");
-                    }
-                    else if (grs.ReducePosition[0] == 0)
-                    {
-                        IndentScope.Writer.IndWrite($"tdma_all_reduce_async({Visit(args[0]).Name}, {Visit(args[1]).Name}, reduce_op_t::sum, reduce_strategy_t::by_block, ctx);\n");
+                        IndentScope.Writer.IndWrite($"tensor<{args[0].CheckedDataType.ToC()}, loc_t::local> {ret_name}_tmp({{{string.Join(",", args[0].CheckedShape)}}});\n");
                     }
                     else
                     {
-                        IndentScope.Writer.IndWrite($"tdma_reduce_async({Visit(args[0]).Name}, {Visit(args[1]).Name}, reduce_op_t::sum, ctx);\n");
+                        IndentScope.Writer.IndWrite($"auto {ret_name}_tmp = &{ret_name};\n");
+                    }
+
+                    if (grs.ReducePosition.Count == 2)
+                    {
+                        IndentScope.Writer.IndWrite($"tdma_all_reduce_async({Visit(args[0]).Name}, {ret_name}_tmp, reduce_op_t::sum, reduce_strategy_t::all, ctx);\n");
+                    }
+                    else if (grs.ReducePosition[0].Hierarchy == 0)
+                    {
+                        IndentScope.Writer.IndWrite($"tdma_all_reduce_async({Visit(args[0]).Name}, {ret_name}_tmp, reduce_op_t::sum, reduce_strategy_t::by_block, ctx);\n");
+                    }
+                    else
+                    {
+                        IndentScope.Writer.IndWrite($"tdma_reduce_async({Visit(args[0]).Name}, {ret_name}_tmp, reduce_op_t::sum, ctx);\n");
+                    }
+
+                    if (reshard)
+                    {
+                        IndentScope.Writer.IndWrite($"__tensor_copy_sync(std::move({ret_name}), {ret_name}_tmp{((TensorType)args[1].CheckedType).ToSlicing(new IRArray<SBP>(grs.ReducePosition.Select(t => t.SBP)), grs.Placement)});\n");
                     }
 
                     break;

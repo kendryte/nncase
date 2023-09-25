@@ -49,15 +49,8 @@ public sealed record SBPBroadCast : SBP
     public override string ToString() => "B";
 }
 
-public sealed record Placement
+public sealed record Placement(Placement.DeviceKind Kind, IRArray<int> Hierarchy, string Name)
 {
-    public Placement(DeviceKind kind, IRArray<int> hierarchy, string name)
-    {
-        Kind = kind;
-        Hierarchy = hierarchy;
-        Name = name;
-    }
-
     /// <summary>
     /// The device kind type.
     /// </summary>
@@ -65,12 +58,6 @@ public sealed record Placement
     {
         CPU = 0,
     }
-
-    public DeviceKind Kind { get; }
-
-    public IRArray<int> Hierarchy { get; }
-
-    public string Name { get; }
 
     public int Rank => Hierarchy.Count;
 
