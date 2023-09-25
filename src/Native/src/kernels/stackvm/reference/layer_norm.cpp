@@ -40,7 +40,7 @@ static void layernorm_impl(int inner_size, const T *src, const T *scale,
     for (auto i = 0; i < inner_size; i++)
         mean2 += pow[i] / inner_size;
 
-    T add = static_cast<T>(static_cast<float>(mean2) + epsilon);
+    T add = mean2 + static_cast<T>(epsilon);
     T sqrt = std::sqrt(add);
 
     std::vector<T> div(inner_size, 0);
