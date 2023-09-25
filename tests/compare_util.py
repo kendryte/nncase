@@ -69,6 +69,7 @@ def compare_arrays(gt: np.ndarray, pred: np.ndarray):
 def euclidean(gt: np.ndarray, pred: np.ndarray, *args):
     return np.linalg.norm(gt.reshape(-1) - pred.reshape(-1))
 
+
 def allclose(gt: np.ndarray, pred: np.ndarray, thresh: float):
     return np.allclose(gt, pred, atol=thresh)
 
