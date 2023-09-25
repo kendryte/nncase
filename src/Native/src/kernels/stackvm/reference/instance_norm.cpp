@@ -28,7 +28,7 @@ using namespace nncase::kernels::stackvm;
 namespace {
 template <typename T>
 result<void> instance_norm_impl(const T *input, const T *scale, const T *bias,
-                                const float *input_mean, const float *input_var,
+                                const T *input_mean, const T *input_var,
                                 T *output, gsl::span<const size_t> in_shape,
                                 gsl::span<const size_t> in_strides,
                                 gsl::span<const size_t> out_strides,
@@ -40,7 +40,8 @@ result<void> instance_norm_impl(const T *input, const T *scale, const T *bias,
         const auto x = input[off];
         output[offset(out_strides, index)] =
             scale[c] * (x - static_cast<T>(input_mean[offi])) /
-                static_cast<T>(std::sqrt(input_var[offi] + epsilon)) +
+                static_cast<T>(
+                    std::sqrt(static_cast<float>(input_var[offi]) + epsilon)) +
             bias[c];
         return ok();
     });
@@ -48,7 +49,7 @@ result<void> instance_norm_impl(const T *input, const T *scale, const T *bias,
 } // namespace
 
 template <typename T>
-result<void> instance_norm_impl2(const T *input, const T *scale, const T *bias,
+result<void> instance_norm_impl2(typecode_t type, const T *input, const T *scale, const T *bias,
                                  T *output, gsl::span<const size_t> in_shape,
                                  gsl::span<const size_t> in_strides,
                                  gsl::span<const size_t> out_strides,
@@ -59,13 +60,13 @@ result<void> instance_norm_impl2(const T *input, const T *scale, const T *bias,
     }
     auto in_size = runtime::compute_size(in_shape);
     auto channels = in_shape[0] * in_shape[1];
-    auto mean = std::make_unique<float[]>(channels);
-    auto var = std::make_unique<float[]>(channels);
-    auto square_output = std::make_unique<float[]>(in_size);
-    auto sub_output = std::make_unique<float[]>(in_size);
+    auto mean = std::make_unique<T[]>(channels);
+    auto var = std::make_unique<T[]>(channels);
+    auto square_output = std::make_unique<T[]>(in_size);
+    auto sub_output = std::make_unique<T[]>(in_size);
 
     // square and get var
-    auto init_value = 0.f;
+    T init_value = 0;
     auto init_value_addr = IN_CAST(gsl::byte, &init_value);
     auto tmp_out_strides = strides_t{in_shape[1], 1};
     auto tmp_out_shape = strides_t{in_shape[0], in_shape[1]};
@@ -76,7 +77,7 @@ result<void> instance_norm_impl2(const T *input, const T *scale, const T *bias,
     auto run_reduce = [&](auto &&input, auto &&output, auto &&in_shape,
                           auto &&in_strides) -> result<void> {
         try_(nncase::kernels::stackvm::reference::reduce(
-            dt_float32, reduce_op_t::mean, init_value_addr,
+            type, reduce_op_t::mean, init_value_addr,
             IN_CAST(gsl::byte, input), OUT_CAST(gsl::byte, output), in_shape,
             axes, in_strides, tmp_out_strides, true,
             kernels::default_kernel_context()));
@@ -89,12 +90,12 @@ result<void> instance_norm_impl2(const T *input, const T *scale, const T *bias,
         kernels::detail::get_binary_output_shape(in_shape, tmp_out_shape);
     auto sub_out_strides = runtime::get_default_strides(sub_out_shape);
     try_(nncase::kernels::stackvm::reference::binary(
-        dt_float32, runtime::stackvm::binary_op_t::sub,
+        type, runtime::stackvm::binary_op_t::sub,
         IN_CAST(gsl::byte, input), IN_CAST(gsl::byte, mean.get()),
         OUT_CAST(gsl::byte, sub_output.get()), in_shape, in_strides,
         tmp_out_shape, tmp_out_strides, sub_out_shape, sub_out_strides));
     try_(nncase::kernels::stackvm::reference::unary(
-        dt_float32, unary_op_t::square, IN_CAST(gsl::byte, sub_output.get()),
+        type, unary_op_t::square, IN_CAST(gsl::byte, sub_output.get()),
         OUT_CAST(gsl::byte, square_output.get()), sub_out_shape,
         sub_out_strides, sub_out_shape, sub_out_strides,
         kernels::default_kernel_context()));
@@ -107,7 +108,7 @@ result<void> instance_norm_impl2(const T *input, const T *scale, const T *bias,
 }
 
 #define INSTANCE_NORM_IMPL(type)                                               \
-    return instance_norm_impl2(IN_CAST(type, input), IN_CAST(type, scale),     \
+    return instance_norm_impl2(typecode, IN_CAST(type, input), IN_CAST(type, scale),     \
                                IN_CAST(type, bias), OUT_CAST(type, output),    \
                                in_shape, in_strides, out_strides, epsilon);
 

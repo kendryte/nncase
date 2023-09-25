@@ -84,6 +84,7 @@ class LayerNormTest : public KernelTest,
 INSTANTIATE_TEST_SUITE_P(layer_norm, LayerNormTest,
                          testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
+// todo There is a problem with f16 in ortki, and see it later.
 TEST_P(LayerNormTest, layer_norm) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
     auto scale_ort = runtime_tensor_2_ort_tensor(scale);

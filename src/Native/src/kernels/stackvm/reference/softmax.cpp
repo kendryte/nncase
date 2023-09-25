@@ -82,7 +82,7 @@ result<void> softmax_impl(const T *input, T *output,
             kernels::detail::get_reduced_offset(index, axes, true);
         auto out_idx = offset(reduced_strides, out_index);
         output[in_idx] = static_cast<T>(expf(static_cast<float>(in)));
-        tmp[out_idx] += static_cast<float>(output[in_idx]);
+        tmp[out_idx] += static_cast<T>(output[in_idx]);
 
         return ok();
     }));

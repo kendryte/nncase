@@ -1,6 +1,6 @@
 {
   "i_shape":[[2, 4, 2, 2]],
-  "lhs_type":["dt_float32"],
+  "lhs_type":["dt_float32", "dt_uint8", "dt_int8", "dt_float16", "dt_uint32", "dt_uint64", "dt_uint16", "dt_int16", "dt_int32", "dt_int64", "dt_float64", "dt_boolean"],
   "seqLens":[[1, 1], [1, 2], [2, 2], [3, 3]],
   "batch_axis":[0]
 }
