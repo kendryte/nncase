@@ -120,7 +120,7 @@ result<void> lrn_impl2(typecode_t type, const T *input, float alpha, float beta,
 }
 
 #define LRN_IMPL(type)                                                         \
-    return lrn_impl2(typecode, IN_CAST(type, input), alpha, beta, bias, size,      \
+    return lrn_impl2(typecode, IN_CAST(type, input), alpha, beta, bias, size,  \
                      OUT_CAST(type, output), in_shape, in_strides,             \
                      out_strides);
 
