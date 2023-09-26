@@ -27,8 +27,6 @@ using namespace nncase::kernels::stackvm;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 
-// #define ENABLE_NOP
-
 result<value_t> nncase::kernels::stackvm::batch_normalization(
     value_t input, value_t scale, value_t bias, value_t input_mean,
     value_t input_var, value_t epsilon, [[maybe_unused]] value_t momentum,
@@ -573,11 +571,11 @@ result<value_t> nncase::kernels::stackvm::one_hot(one_hot_mode_t one_hot_mode,
 }
 
 inline bool is_nop_pad([[maybe_unused]] const paddings_t &paddings) {
-#ifdef ENABLE_NOP
+#ifdef SKIP_NOP
+    return false;
+#else
     return std::all_of(paddings.begin(), paddings.end(),
                        [](const padding &p) { return p.sum() == 0; });
-#else
-    return false;
 #endif
 }
 
@@ -735,11 +733,11 @@ result<value_t> nncase::kernels::stackvm::require(
 }
 
 inline bool is_nop_pad([[maybe_unused]] const std::vector<int> &paddings) {
-#ifdef ENABLE_NOP
+#ifdef SKIP_NOP
+    return false;
+#else
     return std::all_of(paddings.begin(), paddings.end(),
                        [](auto &p) { return p == 0; });
-#else
-    return false;
 #endif
 }
 
@@ -763,13 +761,30 @@ result<value_t> nncase::kernels::stackvm::bucket_pad(
                           compute_size(pads_shape) * sizeof(int));
     try_var(pads, hrt::create(dt_int32, pads_shape, span, false,
                               host_runtime_tensor::pool_cpu_only));
-    auto pad_value = 0;
-    auto data = gsl::span(reinterpret_cast<gsl::byte *>(&pad_value),
-                          in_tensor->dtype()->size_bytes());
-    try_var(pad_v, hrt::create(in_tensor->dtype()->typecode(), dims_t{}, data,
-                               false, host_runtime_tensor::pool_cpu_only));
-    return nncase::kernels::stackvm::pad(pad_mode_t::constant, input,
+#define RUN_PAD                                                                \
+    auto data = gsl::span(reinterpret_cast<gsl::byte *>(&pad_value),           \
+                          in_tensor->dtype()->size_bytes());                   \
+    try_var(pad_v, hrt::create(in_tensor->dtype()->typecode(), dims_t{}, data, \
+                               false, host_runtime_tensor::pool_cpu_only));    \
+    return nncase::kernels::stackvm::pad(pad_mode_t::constant, input,          \
                                          pads.impl(), pad_v.impl(), output);
+
+    if (runtime::get_bytes(in_tensor->dtype()) == 1) {
+        auto pad_value = (int8_t)0;
+        RUN_PAD;
+    } else if (runtime::get_bytes(in_tensor->dtype()) == 2) {
+        auto pad_value = (int16_t)0;
+        RUN_PAD;
+    }
+    if (runtime::get_bytes(in_tensor->dtype()) == 4) {
+        auto pad_value = (int32_t)0;
+        RUN_PAD;
+    }
+    if (runtime::get_bytes(in_tensor->dtype()) == 8) {
+        auto pad_value = (int64_t)0;
+        RUN_PAD;
+    }
+    return err(std::errc::not_supported);
 }
 
 result<value_t>
@@ -921,7 +936,7 @@ inline bool is_nop_slice([[maybe_unused]] const axes_t &begin,
                          [[maybe_unused]] const axes_t &axes,
                          [[maybe_unused]] const axes_t &strides,
                          [[maybe_unused]] const dims_t &in_shape) {
-#ifndef ENABLE_NOP
+#ifdef SKIP_NOP
     return false;
 #else
     if (begin.size() != in_shape.size()) {

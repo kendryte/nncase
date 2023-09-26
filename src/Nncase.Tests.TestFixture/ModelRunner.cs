@@ -42,9 +42,9 @@ namespace Nncase.Tests
             CompileOptions.QuantizeOptions.UseSquant = false;
             CompileOptions.DumpFlags = DumpFlags.Rewrite;
 
-            using var file = File.OpenRead(ModelPath());
-            CompileOptions.InputFormat = Path.GetExtension(file.Name).Trim('.');
-            var m = await CompileSession.Compiler.ImportModuleAsync(file);
+            var modelPath = ModelPath();
+            CompileOptions.InputFormat = Path.GetExtension(modelPath).Trim('.');
+            var m = await CompileSession.Compiler.ImportModuleAsync(CompileOptions.InputFormat, modelPath);
             var types = m.Entry!.ParameterTypes.Select(type => (TensorType)type!).ToArray();
             var shapes = types.Select(x => x.Shape).ToArray();
             var isDynamic = shapes.Any(shape => !shape.IsFixed);
