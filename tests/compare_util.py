@@ -25,13 +25,6 @@ import test_utils
 
 
 def cosine(gt: np.ndarray, pred: np.ndarray, *args):
-    # gt = np.reshape(gt,-1)
-    # pred = np.reshape(pred,-1)
-    # for i in range(gt.size):
-    #     print(gt[i])
-    # print()
-    # for i in range(pred.size):
-    #     print(pred[i])
 
     # remove the NaN values in the same location.
     if np.isnan(gt).any() and np.isnan(pred).any():
@@ -53,7 +46,7 @@ def cosine(gt: np.ndarray, pred: np.ndarray, *args):
     if np.isnan(gt).any() or np.isnan(pred).any() or np.isinf(gt).any() or np.isinf(pred).any():
         return -1
 
-    # exclude the situation of all zeros in ndarray.
+    # exclude the situation of all zeros in array.
     if compare_arrays(gt, pred):
         return 1
 
