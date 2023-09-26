@@ -84,13 +84,14 @@ class LayerNormTest : public KernelTest,
 INSTANTIATE_TEST_SUITE_P(layer_norm, LayerNormTest,
                          testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
+// todo There is a problem with f16 in ortki, and see it later.
 TEST_P(LayerNormTest, layer_norm) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
     auto scale_ort = runtime_tensor_2_ort_tensor(scale);
     auto b_ort = runtime_tensor_2_ort_tensor(b);
     auto eps = 1e-05f;
 
-    //     expected
+    // expected
     auto output_ort =
         ortki_LayerNormalization(l_ort, scale_ort, b_ort, axis_value, eps, 1L);
     size_t size = 0;
@@ -114,7 +115,9 @@ TEST_P(LayerNormTest, layer_norm) {
                   cosine_similarity_tensor(expected, actual);
 
     if (!result) {
+        std::cout << "actual ";
         print_runtime_tensor(actual);
+        std::cout << "expected ";
         print_runtime_tensor(expected);
     }
 
