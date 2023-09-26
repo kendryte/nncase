@@ -21,28 +21,29 @@
 using namespace nncase;
 using namespace nncase::kernels::stackvm;
 
-static void layernorm_impl(int inner_size, const float *src, const float *scale,
-                           const float *bias, float epsilon, float *dst) {
-    float mean1 = 0.f;
+template <class T>
+static void layernorm_impl(int inner_size, const T *src, const T *scale,
+                           const T *bias, float epsilon, T *dst) {
+    T mean1 = 0;
     for (auto i = 0; i < inner_size; i++)
         mean1 += src[i] / inner_size;
 
-    std::vector<float> sub(inner_size, 0.f);
+    std::vector<T> sub(inner_size, 0);
     for (auto i = 0; i < inner_size; i++)
         sub[i] = src[i] - mean1;
 
-    std::vector<float> pow(inner_size, 0.f);
+    std::vector<T> pow(inner_size, 0);
     for (auto i = 0; i < inner_size; i++)
         pow[i] = sub[i] * sub[i];
 
-    float mean2 = 0.f;
+    T mean2 = 0;
     for (auto i = 0; i < inner_size; i++)
         mean2 += pow[i] / inner_size;
 
-    float add = mean2 + epsilon;
-    float sqrt = std::sqrt(add);
+    T add = mean2 + static_cast<T>(epsilon);
+    T sqrt = std::sqrt(add);
 
-    std::vector<float> div(inner_size, 0.f);
+    std::vector<T> div(inner_size, 0);
     for (auto i = 0; i < inner_size; i++)
         div[i] = sub[i] / sqrt;
 
@@ -50,9 +51,10 @@ static void layernorm_impl(int inner_size, const float *src, const float *scale,
         dst[i] = div[i] * scale[i] + bias[i];
 }
 
-result<void> nncase::kernels::stackvm::reference::layer_norm(
-    const float *input, float *output, const float *scale, const float *bias,
-    gsl::span<const size_t> in_shape, int32_t axis, float epsilon) {
+template <class T>
+result<void> layer_norm_impl2(const T *input, T *output, const T *scale,
+                              const T *bias, gsl::span<const size_t> in_shape,
+                              int32_t axis, float epsilon) {
 
     int ndim = in_shape.size();
     int positive_axis = axis < 0 ? ndim + axis : axis;
@@ -72,4 +74,46 @@ result<void> nncase::kernels::stackvm::reference::layer_norm(
         output += axis_dim;
     }
     return ok();
+}
+
+#define LAYER_NORM_IMPL(type)                                                  \
+    return layer_norm_impl2(IN_CAST(type, input), OUT_CAST(type, output),      \
+                            IN_CAST(type, scale), IN_CAST(type, bias),         \
+                            in_shape, axis, epsilon)
+
+#define TYPE_SELECT_LAYER_NORM(_typecode, _impl)                               \
+    switch (_typecode) {                                                       \
+    case dt_float32:                                                           \
+        _impl(float);                                                          \
+    case dt_float16:                                                           \
+        _impl(half);                                                           \
+    case dt_bfloat16:                                                          \
+        _impl(bfloat16);                                                       \
+    case dt_int8:                                                              \
+        _impl(int8_t);                                                         \
+    case dt_int16:                                                             \
+        _impl(int16_t);                                                        \
+    case dt_int32:                                                             \
+        _impl(int32_t);                                                        \
+    case dt_int64:                                                             \
+        _impl(int64_t);                                                        \
+    case dt_uint8:                                                             \
+        _impl(uint8_t);                                                        \
+    case dt_uint16:                                                            \
+        _impl(uint16_t);                                                       \
+    case dt_uint32:                                                            \
+        _impl(uint32_t);                                                       \
+    case dt_uint64:                                                            \
+        _impl(uint64_t);                                                       \
+    case dt_float64:                                                           \
+        _impl(double);                                                         \
+    default:                                                                   \
+        return err(std::errc::not_supported);                                  \
+    }
+
+result<void> nncase::kernels::stackvm::reference::layer_norm(
+    typecode_t typecode, const gsl::byte *input, gsl::byte *output,
+    const gsl::byte *scale, const gsl::byte *bias,
+    gsl::span<const size_t> in_shape, int32_t axis, float epsilon) {
+    TYPE_SELECT_LAYER_NORM(typecode, LAYER_NORM_IMPL);
 }
