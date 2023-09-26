@@ -16,6 +16,13 @@
 #include <transpose.h>
 #include <unary.h>
 
+enum class reduce_strategy_t : uint8_t {
+    all,
+    by_block,
+    by_thread,
+    none,
+};
+
 #define __tdma_block_sync_apply_macro(func, ctx, ...)                          \
     global_hardware_ctx.lock_block(ctx.bid());                                 \
     int visited = global_hardware_ctx.mark_block_visit(ctx.bid(), ctx.tid());  \
@@ -420,11 +427,6 @@ void tdma_reduce_async(tensor<T, loc_t::local> &src,
     }
 }
 
-enum class reduce_strategy_t : uint8_t {
-    all,
-    by_block,
-};
-
 template <class T, loc_t ALoc>
 void all_reduce_async_visit_func1(int visited, thread_context &ctx,
                                   tensor<T, ALoc> &src) {
@@ -504,7 +506,9 @@ void all_reduce_async_visit_func2_by_block([[maybe_unused]] int visit,
     new_dims[0] = BLOCKS;
     new_strides[0] *= CORES;
 
-    auto viewed_gather_tensor = view(gather_tensor, new_dims, new_strides);
+    auto viewed_gather_tensor = tensor<T>(
+        gather_tensor.data().subspan(ctx.tid() * gather_tensor.strides()[0]),
+        new_dims, new_strides, false);
 
     reduce(viewed_gather_tensor, dest, reduce_op, static_cast<T>(0),
            dims_t({0}), false);
@@ -581,3 +585,62 @@ void tdma_status() {}
 enum class sched_strategy_t : uint8_t { pin_block_tensor, normal };
 
 void set_sched_strategy([[maybe_unused]] sched_strategy_t sch) {}
+
+template <loc_t SrcLoc, loc_t DestLoc>
+void softmax(tensor<float, SrcLoc> &src, tensor<float, DestLoc> &dest, int axis,
+             thread_context &ctx,
+             reduce_strategy_t strategy = reduce_strategy_t::none) {
+    if (strategy == reduce_strategy_t::none) {
+        kernels::softmax(src.cdata().data(), dest.data().data(),
+                         src.dimension(), src.strides(), dest.strides(), axis,
+                         1.0f, false);
+    } else {
+        size_t positive_axis = axis < 0 ? src.dimension().size() + axis : axis;
+        dims_t axes{positive_axis};
+        auto reduced_shape = get_reduced_shape(src.dimension(), axes, true);
+        tensor<float> tmp_max(reduced_shape);
+
+        // max
+        auto initial_max = std::numeric_limits<float>::lowest();
+        kernels::reduce(reduce_op_t::max, &initial_max, src.cdata().data(),
+                        tmp_max.data().data(), src.dimension(), positive_axis,
+                        src.strides(), tmp_max.strides(), true);
+        if (strategy == reduce_strategy_t::all ||
+            strategy == reduce_strategy_t::by_block) {
+            tdma_all_reduce_async(tmp_max, tmp_max, reduce_op_t::max, strategy,
+                                  ctx);
+        } else {
+            tdma_reduce_async(tmp_max, tmp_max, reduce_op_t::max, ctx);
+        }
+
+        // x - max
+        kernels::binary(binary_op_t::sub, src.cdata().data(),
+                        tmp_max.cdata().data(), dest.data().data(),
+                        src.dimension(), src.strides(), reduced_shape,
+                        tmp_max.strides(), dest.dimension(), dest.strides());
+
+        // exp(x - max)
+        kernels::unary(unary_op_t::exp, dest.cdata().data(), dest.data().data(),
+                       dest.strides(), dest.dimension(), dest.strides());
+
+        // sum(exp(x - max))
+        float initial_sum = 0;
+        tensor<float> tmp_sum(reduced_shape);
+        kernels::reduce(reduce_op_t::sum, &initial_sum, dest.cdata().data(),
+                        tmp_sum.data().data(), dest.dimension(), positive_axis,
+                        dest.strides(), tmp_sum.strides(), true);
+        if (strategy == reduce_strategy_t::all ||
+            strategy == reduce_strategy_t::by_block) {
+            tdma_all_reduce_async(tmp_sum, tmp_sum, reduce_op_t::sum, strategy,
+                                  ctx);
+        } else {
+            tdma_reduce_async(tmp_sum, tmp_sum, reduce_op_t::sum, ctx);
+        }
+
+        // exp(x - max) / sum(exp(x - max))
+        kernels::binary(binary_op_t::div, dest.data().data(),
+                        tmp_sum.cdata().data(), dest.data().data(),
+                        dest.dimension(), dest.strides(), tmp_sum.dimension(),
+                        tmp_sum.strides(), dest.dimension(), dest.strides());
+    }
+}

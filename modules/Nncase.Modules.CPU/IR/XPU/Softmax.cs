@@ -10,4 +10,6 @@ public sealed partial class Softmax : XPUKernelOp
     public static readonly ParameterInfo Output = new(typeof(Softmax), 1, "output");
 
     public int Axis { get; }
+
+    public DistributedType DistType { get; }
 }

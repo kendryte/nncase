@@ -131,7 +131,7 @@ public static class DistributedUtility
     {
         var shape = distributedType.TensorType.Shape.ToValueArray();
         var tiles = distributedType.TensorType.Shape.ToValueArray();
-        foreach (var (s, i) in distributedType.NdSBP.OfType<SBPSplit>().Select((s, i) => (s, i)))
+        foreach (var (s, i) in distributedType.NdSBP.Select((s, i) => (s, i)).Where(t => t.s is SBPSplit).Select(t => ((SBPSplit)t.s, t.i)))
         {
             tiles[s.Axis] /= distributedType.Placement.Hierarchy[i];
         }

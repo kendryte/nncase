@@ -39,13 +39,14 @@ template <typename T, loc_t Loc = loc_t::local> class tensor {
         }
     }
 
-    tensor(gsl::span<T> data, dims_t dims, strides_t strides)
+    tensor(gsl::span<T> data, dims_t dims, strides_t strides,
+           bool check_size = true)
         : data_(data),
           parent_(data.data()),
           dims_(dims),
           strides_(strides),
           size_(compute_size(dims_, strides_)) {
-        if (size_ != data_.size()) {
+        if (check_size && size_ != data_.size()) {
             runtime_util->rt_assert(false, (char *)"Invalid tensor size");
         }
     }

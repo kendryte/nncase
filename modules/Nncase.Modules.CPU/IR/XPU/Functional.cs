@@ -57,9 +57,9 @@ public partial class XPU
         return new Call(new Slice(distributedType), input, output, begins, ends, axes);
     }
 
-    public static Call Softmax(int axis, Expr input, Expr output)
+    public static Call Softmax(int axis, Expr input, Expr output, DistributedType distributedType)
     {
-        return new Call(new IR.XPU.Softmax(axis), input, output);
+        return new Call(new IR.XPU.Softmax(axis, distributedType), input, output);
     }
 
     public static Call Transpose(int[] perm, Expr input, Expr output)

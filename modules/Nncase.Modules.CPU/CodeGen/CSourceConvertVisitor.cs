@@ -371,8 +371,31 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                     IndentScope.Writer.Write($"__tensor_copy_sync(std::move({Visit(expr.Arguments[1]).Name}), {Visit(expr.Arguments[0]).Name}({{{string.Join(',', newbegins.Select(e => e.ToString()))}}},{{{string.Join(',', newends.Select(e => e.ToString()))}}}))");
                     break;
                 case IR.XPU.Softmax softmax:
-                    positiveAxis = softmax.Axis > 0 ? softmax.Axis : softmax.Axis + ((TensorType)args[0].CheckedType).Shape.Rank;
-                    IndentScope.Writer.Write($"softmax({Visit(args[0]).Name}, {Visit(args[1]).Name}, {positiveAxis})");
+                    {
+                        positiveAxis = softmax.Axis > 0 ? softmax.Axis : softmax.Axis + ((TensorType)args[0].CheckedType).Shape.Rank;
+                        var sbpOnAxis = softmax.DistType.NdSBP.Where(sbp => sbp is SBPSplit s && s.Axis == softmax.Axis).ToArray();
+                        switch (sbpOnAxis.Length)
+                        {
+                            case 0:
+                                IndentScope.Writer.IndWrite($"softmax({Visit(args[0]).Name}, {Visit(args[1]).Name}, {positiveAxis}, ctx, reduce_strategy_t::none)");
+                                break;
+                            case 1:
+                                if (sbpOnAxis[0] == softmax.DistType.NdSBP[1])
+                                {
+                                    IndentScope.Writer.IndWrite($"softmax({Visit(args[0]).Name}, {Visit(args[1]).Name}, {positiveAxis}, ctx, reduce_strategy_t::by_thread)");
+                                }
+                                else
+                                {
+                                    IndentScope.Writer.IndWrite($"softmax({Visit(args[0]).Name}, {Visit(args[1]).Name}, {positiveAxis}, ctx, reduce_strategy_t::by_block)");
+                                }
+
+                                break;
+                            case 2:
+                                IndentScope.Writer.IndWrite($"softmax({Visit(args[0]).Name}, {Visit(args[1]).Name}, {positiveAxis}, ctx, reduce_strategy_t::all)");
+                                break;
+                        }
+                    }
+
                     break;
                 case IR.XPU.Transpose transpose:
                     IndentScope.Writer.Write($"transpose({Visit(args[0]).Name}, {Visit(args[1]).Name}, {{{string.Join(",", transpose.Perm.Select(p => p.ToString()))}}})");
