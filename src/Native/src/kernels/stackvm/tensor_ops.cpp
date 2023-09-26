@@ -54,9 +54,15 @@ result<value_t> nncase::kernels::stackvm::layer_norm(
     try_input(bias_mem, bias);
     try_output_like_input(output_mem, output, input_tensor);
     try_typecode(typecode, input_tensor);
-    CONTIGUOUS_KERNEL(layer_norm, input_tensor, typecode, input_mem, output_mem,
-                      scale_mem, bias_mem, input_tensor->shape(), axis,
-                      epsilon);
+    if (typecode == dt_float32) {
+        CONTIGUOUS_KERNEL(layer_norm, input_tensor, typecode, input_mem,
+                          output_mem, scale_mem, bias_mem,
+                          input_tensor->shape(), axis, epsilon);
+    } else {
+        try_(reference::layer_norm(typecode, input_mem, output_mem, scale_mem,
+                                   bias_mem, input_tensor->shape(), axis,
+                                   epsilon));
+    }
     KERNEL_FINISH;
 }
 
@@ -448,9 +454,16 @@ result<value_t> nncase::kernels::stackvm::log_softmax(
     try_positive_axis(axis_value, axis, input_tensor);
     try_typecode(type, input_tensor);
 
-    CONTIGUOUS_KERNEL(log_softmax, input_tensor, type, in_mem, out_mem,
-                      input_tensor->shape(), input_tensor->strides(),
-                      output_tensor->strides(), axis_value);
+    if (type == dt_float32) {
+        CONTIGUOUS_KERNEL(log_softmax, input_tensor, type, in_mem, out_mem,
+                          input_tensor->shape(), input_tensor->strides(),
+                          output_tensor->strides(), axis_value);
+    } else {
+        try_(reference::log_softmax(
+            type, in_mem, out_mem, input_tensor->shape(),
+            input_tensor->strides(), output_tensor->strides(), axis_value));
+    }
+
     return ok(output);
 }
 
@@ -1018,9 +1031,15 @@ nncase::kernels::stackvm::softmax(value_t input, value_t axis, value_t output,
     try_output_like_input(out_mem, output, input_tensor);
     try_positive_axis(axis_value, axis, input_tensor);
     try_typecode(type, input_tensor);
-    CONTIGUOUS_KERNEL(softmax, input_tensor, type, in_mem, out_mem,
-                      input_tensor->shape(), input_tensor->strides(),
-                      output_tensor->strides(), axis_value, 1.f);
+    if (type == dt_float32) {
+        CONTIGUOUS_KERNEL(softmax, input_tensor, type, in_mem, out_mem,
+                          input_tensor->shape(), input_tensor->strides(),
+                          output_tensor->strides(), axis_value, 1.f);
+    } else {
+        try_(reference::softmax(type, in_mem, out_mem, input_tensor->shape(),
+                                input_tensor->strides(),
+                                output_tensor->strides(), axis_value, 1.f));
+    }
     return ok(output);
 }
 
