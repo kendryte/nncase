@@ -2,117 +2,197 @@
 
 ## 支持的 ONNX 算子
 
-| Operator | Is Supported |
-|-------|------------------ |
-| Abs | ✅ |
-| Acos | ✅ |
-| Acosh | ✅ |
-| And | ✅ |
-| ArgMax | ✅ |
-| ArgMin | ✅ |
-| Asin | ✅ |
-| Asinh | ✅ |
-| Add | ✅ |
-| AveragePool | ✅ |
-| BatchNormalization | ✅ |
-| Cast | ✅ |
-| Ceil | ✅ |
-| Celu | ✅ |
-| Clip | ✅ |
-| Concat | ✅ |
-| Constant | ✅ |
-| ConstantOfShape | ✅ |
-| Conv | ✅ |
-| ConvTranspose | ✅ |
-| Cos | ✅ |
-| Cosh | ✅ |
-| CumSum | ✅ |
-| DepthToSpace | ✅ |
-| DequantizeLinear | ✅ |
-| Div | ✅ |
-| Dropout | ✅ |
-| Elu | ✅ |
-| Equal | ✅ |
-| Erf | ✅ |
-| Exp | ✅ |
-| Expand | ✅ |
-| Flatten | ✅ |
-| Floor | ✅ |
-| Gather | ✅ |
-| GatherElements | ✅ |
-| GatherND | ✅ |
-| Gemm | ✅ |
-| GlobalAveragePool | ✅ |
-| GlobalMaxPool | ✅ |
-| Hardmax | ✅ |
-| HardSigmoid | ✅ |
-| HardSwish | ✅ |
-| Identity | ✅ |
-| InstanceNormalization | ✅ |
-| LpNormalization | ✅ |
-| LeakyRelu | ✅ |
-| Less | ✅ |
-| Log | ✅ |
-| LogSoftmax | ✅ |
-| LRN | ✅ |
-| LSTM | ✅ |
-| MatMul | ✅ |
-| MaxPool | ✅ |
-| Max | ✅ |
-| Min | ✅ |
-| Mul | ✅ |
-| Neg | ✅ |
-| Not | ✅ |
-| OneHot | ✅ |
-| Pad | ✅ |
-| Pow | ✅ |
-| PRelu | ✅ |
-| QuantizeLinear | ✅ |
-| QLinearConv | ✅ |
-| QLinearMatmul | ✅ |
-| RandomNormal | ✅ |
-| RandomNormalLike | ✅ |
-| RandomUniform | ✅ |
-| RandomUniformLike | ✅ |
-| Range | ✅ |
-| ReduceL1 | ✅ |
-| ReduceL2 | ✅ |
-| ReduceLogSum | ✅ |
-| ReduceLogSumExp | ✅ |
-| ReduceMax | ✅ |
-| ReduceMean | ✅ |
-| ReduceMin | ✅ |
-| ReduceProd | ✅ |
-| ReduceSum | ✅ |
-| ReduceSumSquare | ✅ |
-| Relu | ✅ |
-| Reshape | ✅ |
-| Resize | ✅ |
-| ReverseSequence | ✅ |
-| Round | ✅ |
-| ScatterND | ✅ |
-| Selu | ✅ |
-| Shape | ✅ |
-| Sign | ✅ |
-| Sin | ✅ |
-| Sinh | ✅ |
-| Sigmoid | ✅ |
-| Sign | ✅ |
-| Size | ✅ |
-| Slice | ✅ |
-| Softmax | ✅ |
-| Softplus | ✅ |
-| Softsign | ✅ |
-| SpaceToDepth | ✅ |
-| Split | ✅ |
-| Sqrt | ✅ |
-| Squeeze | ✅ |
-| Sub | ✅ |
-| Sum | ✅ |
-| Tanh | ✅ |
-| Tile | ✅ |
-| TopK | ✅ |
-| Transpose | ✅ |
-| Upsample | ✅ |
-| Unsqueeze | ✅ |
-| Where | ✅ |
+| Operator | Is Supported | version | supported feature | not supported feature | remark |
+|-------|------------------ |-----|------------------------------------------|--------|-|
+| Abs | ✅ |     |
+| Acos | ✅ |     |
+| Acosh | ✅ |     |
+| Add | ✅ |     |
+| And | ✅ |     |
+| ArgMax | ✅ |     |
+| ArgMin | ✅ |     |
+| Asin | ✅ |     |
+| Asinh | ✅ |     |
+| Atan | ✅ |     |
+| Atanh | ✅ |     |
+| AveragePool | ✅ |     |
+| AffineGrid | ✅ |     |
+| BatchNormalization | ✅ |     |
+| BitShift | ✅ |     |
+| BitwiseAnd | ✅ |     |
+| BitwiseNot | ✅ |     |
+| BitwiseOr | ✅ |     |
+| BitwiseXor | ✅ |     |
+| Bernoulli | ✅ |     |
+| BlackmanWindow | ✅ |     |
+| CastLike | ✅ |     |
+| Cast | ✅ |     |
+| Ceil | ✅ |     |
+| Col2Im | ✅ |     |
+| Compress | ✅ |     |
+| Concat | ✅ |     |
+| ConcatFromSequence | ✅ |     |
+| Constant | ✅ |     |
+| ConstantOfShape | ✅ |     |
+| Conv | ✅ |     |
+| ConvInteger | ✅ |     |
+| ConvTranspose | ✅ |     |
+| Cos | ✅ |     |
+| Cosh | ✅ |     |
+| CumSum | ✅ |     |
+| Celu | ✅ |     |
+| CenterCropPad | ✅ |     |
+| Clip | ✅ |     |
+| DFT | ✅ |     |
+| DeformConv | ✅ |     |
+| DepthToSpace | ✅ |     |
+| DequantizeLinear | ✅ |     |
+| Det | ✅ |     |
+| Div | ✅ |     |
+| Dropout | ✅ |     |
+| DynamicQuantizeLinear | ✅ |     |
+| Einsum | ✅ |     |
+| Elu | ✅ |     |
+| Equal | ✅ |     |
+| Erf | ✅ |     |
+| Exp | ✅ |     |
+| Expand | ✅ |     |
+| Flatten | ✅ |     |
+| Floor | ✅ |     |
+| GRU | ✅ |     |
+| Gelu | ✅ |     |
+| Gather | ✅ |     |
+| GatherElements | ✅ |     |
+| GatherND | ✅ |     |
+| Gemm | ✅ |     |
+| GlobalAveragePool | ✅ |     |
+| GlobalLpPool | ✅ |     |
+| GlobalMaxPool | ✅ |     |
+| Greater | ✅ |     |
+| GreaterOrEqual | ✅ |     |
+| GridSample | ✅ |     |
+| GroupNormalization | ✅ |     |
+| Hardmax | ✅ |     |
+| HammingWindow | ✅ |     |
+| HannWindow | ✅ |     |
+| HardSigmoid | ✅ |     |
+| HardSwish | ✅ |     |
+| Identity | ✅ |     |
+| If | ✅ |     |
+| ImageDecoder | ✅ |     |
+| InstanceNormalization | ✅ |     |
+| IsInf | ✅ |     |
+| IsNaN | ✅ |     |
+| LRN | ✅ |     |
+| LSTM | ✅ |     |
+| Less | ✅ |     |
+| Log | ✅ |     |
+| LpNormalization | ✅ |     |
+| LpPool | ✅ |     |
+| LayerNormalization | ✅ |     |
+| LeakyRelu | ✅ |     |
+| LogSoftmax | ✅ |     |
+| LessOrEqual | ✅ |     |
+| LogSoftmax | ✅ |     |
+| MatMul | ✅ |     |
+| MatMulInteger | ✅ |     |
+| Max | ✅ |     |
+| MaxPool | ✅ |     |
+| MaxRoiPool | ✅ |     |
+| MaxUnpool | ✅ |     |
+| Mean | ✅ |     |
+| MelWeightMatrix | ✅ |     |
+| MeanVarianceNormalization | ✅ |     |
+| Min | ✅ |     |
+| Mish | ✅ |     |
+| Mod | ✅ |     |
+| Mul | ✅ |     |
+| Multinomial | ✅ |     |
+| Neg | ✅ |     |
+| NonMaxSuppression | ✅ |     |
+| NonZero | ✅ |     |
+| Not | ✅ |     |
+| NegativeLogLikelihoodLoss | ✅ |     |
+| OneHot | ✅ |     |
+| Optional | ✅ |     |
+| OptionalGetElement | ✅ |     |
+| OptionalHasElement | ✅ |     |
+| Or | ✅ |     |
+| Pad | ✅ |     |
+| Pow | ✅ |     |
+| PRelu | ✅ |     |
+| QLinearConv | ✅ |     |
+| QLinearMatMul | ✅ |     |
+| QuantizeLinear | ✅ |     |
+| RNN | ✅ |     |
+| RandomNormal | ✅ |     |
+| RandomNormalLike | ✅ |     |
+| RandomUniform | ✅ |     |
+| RandomUniformLike | ✅ |     |
+| Reciprocal | ✅ |     |
+| ReduceMax | ✅ |     |
+| ReduceMean | ✅ |     |
+| ReduceMin | ✅ |     |
+| ReduceProd | ✅ |     |
+| ReduceSum | ✅ |     |
+| RegexFullMatch | ✅ |     |
+| Range | ✅ |     |
+| ReduceL1 | ✅ |     |
+| ReduceL2 | ✅ |     |
+| ReduceLogSum | ✅ |     |
+| ReduceLogSumExp | ✅ |     |
+| ReduceSumSquare | ✅ |     |
+| Relu | ✅ |     |
+| Reshape | ✅ |     |
+| Resize | ✅ |     |
+| ReverseSequence | ✅ |     |
+| RoiAlign | ✅ |     |
+| Round | ✅ |     |
+| STFT | ✅ |     |
+| Scan | ✅ |     |
+| Scatter (deprecated) | ✅ |     |
+| ScatterElements | ✅ |     |
+| ScatterND | ✅ |     |
+| SequenceAt | ✅ |     |
+| SequenceConstruct | ✅ |     |
+| SequenceEmpty | ✅ |     |
+| SequenceErase | ✅ |     |
+| SequenceInsert | ✅ |     |
+| SequenceLength | ✅ |     |
+| Shape | ✅ |     |
+| Sigmoid | ✅ |     |
+| Sign | ✅ |     |
+| Sin | ✅ |     |
+| Sinh | ✅ |     |
+| Size | ✅ |     |
+| Slice | ✅ |     |
+| SpaceToDepth | ✅ |     |
+| Split | ✅ |     |
+| SplitToSequence | ✅ |     |
+| Sqrt | ✅ |     |
+| Squeeze | ✅ |     |
+| StringConcat | ✅ |     |
+| StringNormalizer | ✅ |     |
+| StringSplit | ✅ |     |
+| Sub | ✅ |     |
+| Sum | ✅ |     |
+| Selu | ✅ |     |
+| SequenceMap | ✅ |     |
+| Shrink | ✅ |     |
+| Softmax | ✅ |     |
+| SoftmaxCrossEntropyLoss | ✅ |     |
+| Softplus | ✅ |     |
+| Softsign | ✅ |     |
+| Tan | ✅ |     |
+| Tanh | ✅ |     |
+| TfIdfVectorizer | ✅ |     |
+| Tile | ✅ |     |
+| TopK | ✅ |     |
+| Transpose | ✅ |     |
+| Trilu | ✅ |     |
+| ThresholdedRelu | ✅ |     |
+| Unique | ✅ |     |
+| Unsqueeze | ✅ |     |
+| Upsample (deprecated) | ✅ |     |
+| Where | ✅ |     |
+| Xor | ✅ |     |
