@@ -47,12 +47,13 @@ public static class DistributedUtility
         for (int i = 0; i < placement.Rank; i++)
         {
             candidateNdsbps[i] = new List<SBP>();
+            var innerSplitedAxes = distributedType.NdSBP.Skip(i + 1).OfType<SBPSplit>().Select(sbp => sbp.Axis).ToList();
             if (ndsbp[i] is SBPPartialSum)
             {
                 candidateNdsbps[i].Add(SBP.B);
                 for (int axis = 0; axis < tensorType.Shape.Rank; axis++)
                 {
-                    if (tensorType.Shape[axis] is { IsFixed: true, Value: int s } && IsDivisible(s, placement.Hierarchy[i]))
+                    if (tensorType.Shape[axis] is { IsFixed: true, Value: int s } && IsDivisible(s, placement.Hierarchy[i]) && !innerSplitedAxes.Contains(axis))
                     {
                         candidateNdsbps[i].Add(SBP.S(axis));
                     }

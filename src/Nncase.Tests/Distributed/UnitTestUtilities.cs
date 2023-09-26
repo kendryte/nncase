@@ -28,4 +28,14 @@ public sealed class UnitTestUtilities
         Assert.True(eff1 > eff2);
         Assert.True(eff2 > eff3);
     }
+
+    [Fact]
+    public void TestGetPartialCandidateNDSBPs()
+    {
+        var placement = new Placement(Placement.DeviceKind.CPU, new[] { 8, 4 }, "bt");
+        var type = new DistributedType(new(DataTypes.Float32, new[] { 1, 384, 8192 }), new SBP[] { SBP.P, SBP.S(2) }, placement);
+        var candidateSbps = Utilities.DistributedUtility.GetPartialCandidateNDSBPs(type);
+
+        Assert.Equal(0, candidateSbps.Count(ndsbp => ndsbp == new IRArray<SBP>(new SBP[] { SBP.S(2), SBP.S(2) })));
+    }
 }
