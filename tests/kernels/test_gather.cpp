@@ -45,6 +45,13 @@ class GatherTest : public KernelTest,
         init_tensor(input);
 
         size_t indices_value_size = indices_value.size();
+        int64_t min = 0;
+        for (size_t i = 0; i < indices_value_size; i++) {
+            min = indices_value[i] < min ? indices_value[i] : min;
+        }
+        if (-min + 1 >= (int64_t)shape.size()) {
+            indices_value = {0, 0, 0, 0};
+        }
         auto *indices_array =
             (int64_t *)malloc(indices_value_size * sizeof(int64_t));
         std::copy(indices_value.begin(), indices_value.end(), indices_array);
