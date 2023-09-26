@@ -412,7 +412,7 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                     }
                     else
                     {
-                        IndentScope.Writer.IndWrite($"auto {ret_name}_tmp = &{ret_name};\n");
+                        IndentScope.Writer.IndWrite($"tensor<{args[0].CheckedDataType.ToC()}, loc_t::local>& {ret_name}_tmp = {ret_name};\n");
                     }
 
                     if (grs.ReducePosition.Count == 2)

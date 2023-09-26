@@ -114,6 +114,78 @@ void matmul(tensor<T, ALoc> &a, tensor<T, BLoc> &b, tensor<T, CLoc> &c) {
                     c.dimension(), c.strides());
 }
 
+
+template <typename T, loc_t InLoc, loc_t WLoc, loc_t OutLoc, loc_t BLoc>
+T *im2col(tensor<T, InLoc> &input, dims_t filter, dims_t padding, dims_t stride,
+          [[maybe_unused]] dims_t dilation = {1, 1},
+          [[maybe_unused]] int32_t groups = 1) {
+    // todo: support dilated and group conv2d
+    int32_t N = input.dimension()[0];
+    int32_t C = input.dimension()[1];
+    int32_t H = input.dimension()[2] + padding[0] + padding[2];
+    int32_t W = input.dimension()[3] + padding[1] + padding[3];
+
+    int32_t OH = (H - filter[0]) / stride[0] + 1;
+    int32_t OW = (W - filter[1]) / stride[1] + 1;
+
+    T *cols = runtime_util->malloc((C * filter[0] * filter[1]) * (N * OH * OW) *
+                                   sizeof(T));
+    for (auto c = 0; c < C; c++)
+        for (auto e = 0; e < OH; e++)
+            for (auto f = 0; f < OW; f++)
+                for (auto r = 0; r < filter[0]; r++)
+                    for (auto s = 0; s < filter[1]; s++) {
+                        auto row =
+                            c * filter[0] * filter[1] + r * filter[0] + s;
+                        for (auto b = 0; b < N; b++) {
+                            auto col = e * OW * N + f * N + b;
+                            auto out_index = row * (N * OH * OW) + col;
+                            auto in_index =
+                                b * input.strides()[0] +
+                                c * input.strides()[1] +
+                                (stride[0] * e + r) * input.strides()[2] +
+                                (stride[1] * f + s);
+                            if (row < padding[0] || col < padding[1]) {
+                                cols[out_index] = 0;
+                            } else {
+                                cols[out_index] = input.cdata()[in_index];
+                            }
+                        }
+                    }
+    return cols;
+}
+
+template <typename T, loc_t InLoc, loc_t WLoc, loc_t OutLoc, loc_t BLoc>
+void conv2d(tensor<T, InLoc> &input, tensor<T, WLoc> &weight,
+            tensor<T, BLoc> bias, tensor<T, OutLoc> &output, dims_t padding,
+            dims_t stride, dims_t dilation = {1, 1}, int32_t groups = 1) {
+    // todo: support dilated and group conv2d
+    int32_t N = input.dimension()[0];
+    int32_t C = input.dimension()[1];
+    int32_t H = input.dimension()[2] + padding[0] + padding[2];
+    int32_t W = input.dimension()[3] + padding[1] + padding[3];
+
+    int32_t M = weight.dimension()[0];
+    dims_t filter = {weight.dimension()[2], weight.dimension()[3]};
+
+    int32_t OH = (H - filter[0]) / stride[0] + 1;
+    int32_t OW = (W - filter[1]) / stride[1] + 1;
+
+    auto input_cols = im2col<T, InLoc, WLoc, OutLoc, BLoc>(
+        input, filter, padding, stride, dilation, groups);
+    auto mm = runtime_util->malloc(M * C * OH * OW * sizeof(T));
+    kernels::matmul(weight.cdata(), input.cdata(), mm,
+                    {M, C * filter[0] * filter[1]},
+                    {C * filter[0] * filter[1], 1},
+                    {C * filter[0] * filter[1], N * OH * OW}, {N * OH * OW, 1},
+                    {N * OH * OW, 1});
+    kernels::binary(binary_op_t::add, mm, bias.cdata(), mm, {M, N * OH * OW},
+                    {N * OH * OW, 1}, {M, 1}, {1, 1}, {M, N * OH * OW},
+                    {N * OH * OW, 1});
+    kernels::transpose(mm, output.data(), {M, N, OH, OW}, {3, 0, 1, 2},
+                       {N * OH * OW, 1}, output.strides());
+}
+
 template <typename T, loc_t ALoc, loc_t BLoc>
 void reduce(tensor<T, ALoc> &input, tensor<T, BLoc> &output, reduce_op_t op,
             T init_value, dims_t axis, bool keep_dims) {
