@@ -4,12 +4,12 @@ ShapeBucket是针对动态shape的一种解决方案，会根据输入长度的�
 
 对应的不同CompileOptions中的字段
 
-| 字段名称                    | 类型                  | 是否必须 | 描述                                                            |
-| --------------------------- | --------------------- | -------- | --------------------------------------------------------------- |
-| shape_bucket_enable         | bool                  | 是       | 是否开启ShapeBucket功能，默认为False。在 `dump_ir=True`时生效 |
-| shape_bucket_range_info     | Dict[str, [int, int]] | 是       | 每个输入shape维度信息中的变量的范围，最小值必须大于等于1        |
-| shape_bucket_segments_count | int                   | 是       | 输入变量的范围划分为几段                                        |
-| shape_bucket_fix_var_map    | Dict[str, int]        | 否       | 固定shape维度信息中的变量为特定的值                             |
+| 字段名称                        | 类型                    | 是否必须 | 描述                                             |
+|-----------------------------|-----------------------|------|------------------------------------------------|
+| shape_bucket_enable         | bool                  | 是    | 是否开启ShapeBucket功能，默认为False。在 `dump_ir=True`时生效 |
+| shape_bucket_range_info     | Dict[str, [int, int]] | 是    | 每个输入shape维度信息中的变量的范围，最小值必须大于等于1                |
+| shape_bucket_segments_count | int                   | 是    | 输入变量的范围划分为几段                                   |
+| shape_bucket_fix_var_map    | Dict[str, int]        | 否    | 固定shape维度信息中的变量为特定的值                           |
 
 ## onnx
 
@@ -24,14 +24,16 @@ ShapeBucket是针对动态shape的一种解决方案，会根据输入长度的�
 ```python
 shape_bucket_options = nncase.ShapeBucketOptions()
 shape_bucket_options.shape_bucket_enable = True
-shape_bucket_options.shape_bucket_range_info = {"seq_len":[1, 100], "tgt_seq_len":[1, 100]}
+shape_bucket_options.shape_bucket_range_info = {"seq_len": [1, 100], "tgt_seq_len": [1, 100]}
 shape_bucket_options.shape_bucket_segments_count = 2
-shape_bucket_options.shape_bucket_fix_var_map = {"batch_size" : 3}
+shape_bucket_options.shape_bucket_fix_var_map = {"batch_size": 3}
 ```
 
-shape的维度信息中存在seq_len，tgt_seq_len，batch_size这三个变量。首先是batch_size，虽然是变量的但实际应用的时候固定为3，因此在**fix_var_map**中添加batch_size = 3，在运行的时候会将这个维度固定为3。
+shape的维度信息中存在seq_len，tgt_seq_len，batch_size这三个变量。首先是batch_size，虽然是变量的但实际应用的时候固定为3，因此在
+**fix_var_map**中添加batch_size = 3，在运行的时候会将这个维度固定为3。
 
-seq_len，tgt_seq_len两个是实际会发生改变的，因此需要配置这两个变量的实际范围，也就是**range_info**的信息。**segments_count**是实际分段的数量，会根据范围等分为几份，对应的编译时间也会相应增加几倍。
+seq_len，tgt_seq_len两个是实际会发生改变的，因此需要配置这两个变量的实际范围，也就是**range_info**的信息。**segments_count**
+是实际分段的数量，会根据范围等分为几份，对应的编译时间也会相应增加几倍。
 
 ## tflite
 
