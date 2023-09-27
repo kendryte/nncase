@@ -434,6 +434,19 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                     }
 
                     break;
+                case IR.XPU.Conv2D conv:
+                    var sbpOnInChannel = conv.DistType.NdSBP.Where(sbp => sbp is SBPPartialSum).ToArray();
+                    string strategy = sbpOnInChannel.Length switch
+                    {
+                        0 => "reduce_strategy_t::none",
+                        1 when sbpOnInChannel[0] == conv.DistType.NdSBP[1] => "reduce_strategy_t::by_thread",
+                        1 => "reduce_strategy_t::by_block",
+                        2 => "reduce_strategy_t::all",
+                        _ => throw new InvalidOperationException("Invalid length"),
+                    };
+
+                    IndentScope.Writer.Write($"conv2d(ctx, {Visit(args[0]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name}, {Visit(args[3]).Name}, {{{string.Join(",", conv.Stride.Select(p => p.ToString()))}}}, {{{string.Join(",", conv.Padding.Select(p => p.ToString()))}}}, {{{string.Join(",", conv.Dilation.Select(p => p.ToString()))}}}, {conv.Groups}, {strategy})");
+                    break;
                 default:
                     throw new NotSupportedException(xpuOp.ToString());
             }

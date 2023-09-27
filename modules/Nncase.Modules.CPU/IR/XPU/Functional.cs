@@ -76,4 +76,9 @@ public partial class XPU
     {
         return new Call(new GatherReduceScatter(reducePosition, placement), input, output);
     }
+
+    public static Call Conv2D(Expr input, Expr weights, Expr bias, Expr output, int[] stride, int[] padding, int[] dilation, int groups, TensorConst fusedClamp, DistributedType distributedType)
+    {
+        return new Call(new Conv2D(stride, padding, dilation, groups, fusedClamp, distributedType), input, weights, bias, output);
+    }
 }

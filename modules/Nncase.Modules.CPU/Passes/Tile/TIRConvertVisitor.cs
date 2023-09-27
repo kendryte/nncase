@@ -77,6 +77,9 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
             case IR.CPU.Boxing boxing:
                 GenerateBoxing(boxing, arguments, ret, expr);
                 break;
+            case Conv2D conv:
+                GenerateConv2D(conv, arguments, ret, ((TensorConst)expr.Arguments[3]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[4]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[5]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[6]).Value.ToScalar<int>(), (TensorConst)expr.Arguments[7], (DistributedType)expr.CheckedType);
+                break;
             default:
                 throw new NotSupportedException();
         }
@@ -174,6 +177,11 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
     private void GenerateTranspose(Transpose transpose, int[] perm, Buffer[] arguments, Buffer ret)
     {
         _mainBody.Add(IR.F.XPU.Transpose(perm, arguments[0], ret));
+    }
+
+    private void GenerateConv2D(Conv2D conv, Buffer[] arguments, Buffer ret, int[] stride, int[] padding, int[] dilation, int groups, TensorConst fusedClamp, DistributedType distributedType)
+    {
+        _mainBody.Add(IR.F.XPU.Conv2D(arguments[0], arguments[1], arguments[2], ret, stride, padding, dilation, groups, fusedClamp, distributedType));
     }
 
 #if false

@@ -9,6 +9,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using NetFabric.Hyperlinq;
 using Nncase.CodeGen;
 using Nncase.IR;
 using Nncase.IR.Tensors;
@@ -41,32 +42,33 @@ public class UnitTestCPUTargetTiling : TestClassBase
     // [ClassData(typeof(TilingCaseMatmul))]
     // [ClassData(typeof(TilingCaseLayerNorm))]
     // [ClassData(typeof(TilingCaseGather))]
-    [ClassData(typeof(TilingCaseSoftmax))]
+    // [ClassData(typeof(TilingCaseSoftmax))]
     // [ClassData(typeof(TilingCaseSlice))]
     // [ClassData(typeof(TilingCaseConcat))]
     // [ClassData(typeof(TilingCaseTranspose))]
     // [ClassData(typeof(TilingCaseReshape1))]
     // [ClassData(typeof(TilingCaseReshape2))]
     // [ClassData(typeof(TilingCaseMatmulUnary))]
+    [ClassData(typeof(TilingCaseConv2D))]
     public async Task TestCpuFunction(Function main, Tensor[] inputs)
     {
         var module = new IR.IRModule(main);
         using (new Diagnostics.DumpScope(main.Name, CompileOptions.DumpFlags))
         {
-            // #if DEBUG
-            //             for (var i = 0; i < inputs.Length - 1; i++)
-            //             {
-            //                 using (var fs = Diagnostics.DumpScope.Current.OpenFile($"input_{i}.bin"))
-            //                 {
-            //                     fs.Write(inputs[i].BytesBuffer);
-            //                 }
-            //             }
+#if DEBUG
+            for (var i = 0; i < inputs.Length - 1; i++)
+            {
+                using (var fs = Diagnostics.DumpScope.Current.OpenFile($"input_{i}.bin"))
+                {
+                    fs.Write(inputs[i].BytesBuffer);
+                }
+            }
 
-            // using (var fs = Diagnostics.DumpScope.Current.OpenFile($"output_0.bin"))
-            //             {
-            //                 fs.Write(inputs[^1].BytesBuffer);
-            //             }
-            // #endif
+            using (var fs = Diagnostics.DumpScope.Current.OpenFile($"output_0.bin"))
+            {
+                fs.Write(inputs[^1].BytesBuffer);
+            }
+#endif
             await Compile(module);
             var output = Testing.RunKModel(File.ReadAllBytes(Path.Join(Diagnostics.DumpScope.Current.Directory, "test.kmodel")), Diagnostics.DumpScope.Current.Directory, inputs);
             var cos = Tests.Comparator.CosSimilarity(output, Value.FromTensor(inputs[^1]))[0];
@@ -506,6 +508,42 @@ internal sealed class TilingCaseReshape2 : TheoryData<Function, Tensor[]>
         }
 
         var main = new Function("reshape2", new Call(fusion, input), new[] { input });
+
+        var input_tensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, inputShape).Evaluate().AsTensor();
+        var feedDict = new Dictionary<Var, IValue>
+        {
+            { fin, Value.FromTensor(input_tensor) },
+        };
+        var output = fusion.Body.Evaluate(feedDict).AsTensor();
+
+        Add(main, new[] { input_tensor, output });
+    }
+}
+
+internal sealed class TilingCaseConv2D : TheoryData<Function, Tensor[]>
+{
+    public TilingCaseConv2D()
+    {
+        var inputShape = new[] { 8, 4, 64, 64 };
+        var input = new Var("input", new TensorType(DataTypes.Float32, inputShape));
+        var weightsShape = new[] { 1, 4, 3, 3 };
+        var weights = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, weightsShape).Evaluate().AsTensor().Cast<float>();
+        var bias = IR.F.Random.Normal(DataTypes.Float32, 0, 2, 2, weightsShape.Take(1).ToArray()).Evaluate().AsTensor().Cast<float>();
+        var stride = new int[] { 1, 1 };
+        var padding = new int[,] { { 0, 0 }, { 0, 0 } };
+        var dilation = new int[] { 1, 1 };
+        var groups = 1;
+        var fusedClamp = new float[] { float.NegativeInfinity, float.PositiveInfinity };
+
+        Fusion fusion;
+        Var fin;
+        {
+            fin = new Var("input", new TensorType(DataTypes.Float32, inputShape));
+            var v0 = new Call(new IR.CPU.CPUKernelOp(new IR.NN.Conv2D(PadMode.Constant)), fin, weights, bias, stride, padding, dilation, groups, fusedClamp);
+            fusion = new Fusion("cpu", v0, fin);
+        }
+
+        var main = new Function("conv2d", new Call(fusion, input), new[] { input });
 
         var input_tensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, inputShape).Evaluate().AsTensor();
         var feedDict = new Dictionary<Var, IValue>
