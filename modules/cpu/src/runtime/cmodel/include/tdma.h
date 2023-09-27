@@ -124,8 +124,8 @@ T *im2col(tensor<T, InLoc> &input, dims_t filter, dims_t padding, dims_t stride,
     int32_t H = input.dimension()[2] + padding[0] + padding[2];
     int32_t W = input.dimension()[3] + padding[1] + padding[3];
 
-    int32_t OH = (H - filter[0]) / stride[0] + 1;
-    int32_t OW = (W - filter[1]) / stride[1] + 1;
+    int32_t OH = (H - dilation[0] * (filter[0] - 1) - 1) / stride[0] + 1;
+    int32_t OW = (W - dilation[1] * (filter[1] - 1) - 1) / stride[1] + 1;
 
     auto cols = (T *)runtime_util->malloc((C * filter[0] * filter[1]) *
                                           (OH * OW * N) * sizeof(T));
@@ -140,11 +140,11 @@ T *im2col(tensor<T, InLoc> &input, dims_t filter, dims_t padding, dims_t stride,
                         for (auto b = 0; b < N; b++) {
                             auto col = e * OW * N + f * N + b;
                             auto out_index = row * (OH * OW * N) + col;
-                            auto in_index =
-                                b * input.strides()[0] +
-                                c * input.strides()[1] +
-                                (stride[0] * e + r) * input.strides()[2] +
-                                (stride[1] * f + s);
+                            auto in_index = b * input.strides()[0] +
+                                            c * input.strides()[1] +
+                                            (stride[0] * e + r * dilation[0]) *
+                                                input.strides()[2] +
+                                            (stride[1] * f + s * dilation[1]);
                             if (row < padding[0] || col < padding[1]) {
                                 cols[out_index] = 0;
                             } else {
@@ -171,12 +171,12 @@ void conv2d(thread_context &ctx, tensor<T, InLoc> &input,
     size_t M = weight.dimension()[0];
     dims_t filter = {weight.dimension()[2], weight.dimension()[3]};
 
-    size_t OH = (H - filter[0]) / stride[0] + 1;
-    size_t OW = (W - filter[1]) / stride[1] + 1;
+    int32_t OH = (H - dilation[0] * (filter[0] - 1) - 1) / stride[0] + 1;
+    int32_t OW = (W - dilation[1] * (filter[1] - 1) - 1) / stride[1] + 1;
 
     auto input_cols =
         im2col<T, InLoc>(input, filter, padding, stride, dilation, groups);
-    auto mm = tensor<T>({M, OH*OW*N});
+    auto mm = tensor<T>({M, OH * OW * N});
     kernels::matmul(
         weight.cdata().data(), input_cols, mm.data().data(),
         gsl::make_span(dims_t{M, C * filter[0] * filter[1]}),
@@ -185,7 +185,7 @@ void conv2d(thread_context &ctx, tensor<T, InLoc> &input,
         gsl::make_span(dims_t{OH * OW * N, 1}),
         gsl::make_span(dims_t{M, OH * OW * N}),
         gsl::make_span(dims_t{OH * OW * N, 1}));
-    
+
     switch (strategy) {
     case reduce_strategy_t::by_thread:
         tdma_reduce_async(mm, mm, reduce_op_t::sum, ctx);
@@ -197,16 +197,17 @@ void conv2d(thread_context &ctx, tensor<T, InLoc> &input,
     default:
         break;
     }
-    kernels::binary(binary_op_t::add, mm.cdata().data(), bias.cdata().data(), mm.data().data(),
-                    gsl::make_span(dims_t{M, OH * OW * N}),
+    kernels::binary(binary_op_t::add, mm.cdata().data(), bias.cdata().data(),
+                    mm.data().data(), gsl::make_span(dims_t{M, OH * OW * N}),
                     gsl::make_span(dims_t{OH * OW * N, 1}),
                     gsl::make_span(dims_t{M, 1}), gsl::make_span(dims_t{1, 1}),
                     gsl::make_span(dims_t{M, OH * OW * N}),
                     gsl::make_span(dims_t{OH * OW * N, 1}));
-    kernels::transpose(
-        mm.cdata().data(), output.data().data(), gsl::make_span(dims_t{M, OH, OW, N}),
-        gsl::make_span(dims_t{3, 0, 1, 2}),
-        gsl::make_span(dims_t{OH * OW * N, OW * N, N, 1}), output.strides());
+    kernels::transpose(mm.cdata().data(), output.data().data(),
+                       gsl::make_span(dims_t{M, OH, OW, N}),
+                       gsl::make_span(dims_t{3, 0, 1, 2}),
+                       gsl::make_span(dims_t{OH * OW * N, OW * N, N, 1}),
+                       output.strides());
 }
 
 template <typename T, loc_t ALoc, loc_t BLoc>
