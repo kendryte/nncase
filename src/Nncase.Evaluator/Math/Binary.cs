@@ -157,18 +157,20 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
                 case (SBPBroadCast, SBPBroadCast):
                     ndsbp[i] = SBP.B;
                     break;
-                case (SBPPartialSum, _):
-                case (_, SBPPartialSum):
+                case (SBPPartialSum, SBPPartialSum):
                     if (target.BinaryOp == BinaryOp.Add)
                     {
                         ndsbp[i] = SBP.P;
                     }
                     else
                     {
-                        return new InvalidType("lhs rhs have partialsum only can add");
+                        return new InvalidType("lhs rhs all partialsum only can be added.");
                     }
 
                     break;
+                case (SBPPartialSum, _):
+                case (_, SBPPartialSum):
+                    return new InvalidType("not support lhs or rhs partial.");
             }
         }
 

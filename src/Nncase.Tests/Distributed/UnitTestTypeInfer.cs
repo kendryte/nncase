@@ -26,6 +26,24 @@ public sealed class UnitTestTypeInfer : TestClassBase
         },
     };
 
+    public static TheoryData<BinaryOp, DistributedType, DistributedType, IRType> InferBinaryData => new() {
+        { BinaryOp.Add,
+          new DistributedType(new(DataTypes.Float32, new[] { 1, 384, 8192 }), new SBP[] { SBP.B, SBP.S(2) }, new(Placement.DeviceKind.CPU, new[] { 2, 4 }, "bt")),
+          new DistributedType(new(DataTypes.Float32, new[] { 1, 384, 8192 }), new SBP[] { SBP.P, SBP.S(2) }, new(Placement.DeviceKind.CPU, new[] { 2, 4 }, "bt")),
+          new InvalidType(string.Empty)
+        },
+        { BinaryOp.Add,
+          new DistributedType(new(DataTypes.Float32, new[] { 1, 384, 8192 }), new SBP[] { SBP.P, SBP.S(2) }, new(Placement.DeviceKind.CPU, new[] { 2, 4 }, "bt")),
+          new DistributedType(new(DataTypes.Float32, new[] { 1, 384, 8192 }), new SBP[] { SBP.P, SBP.S(2) }, new(Placement.DeviceKind.CPU, new[] { 2, 4 }, "bt")),
+          new DistributedType(new(DataTypes.Float32, new[] { 1, 384, 8192 }), new SBP[] { SBP.P, SBP.S(2) }, new(Placement.DeviceKind.CPU, new[] { 2, 4 }, "bt"))
+        },
+        { BinaryOp.Mul,
+          new DistributedType(new(DataTypes.Float32, new[] { 1, 384, 8192 }), new SBP[] { SBP.P, SBP.S(2) }, new(Placement.DeviceKind.CPU, new[] { 2, 4 }, "bt")),
+          new DistributedType(new(DataTypes.Float32, new[] { 1, 384, 8192 }), new SBP[] { SBP.P, SBP.S(2) }, new(Placement.DeviceKind.CPU, new[] { 2, 4 }, "bt")),
+          new InvalidType(string.Empty)
+        },
+    };
+
     [Theory]
     [MemberData(nameof(InferUnaryData))]
     public void TestInferUnary(UnaryOp unaryOp, DistributedType inputType, IRType outType)
@@ -39,6 +57,23 @@ public sealed class UnitTestTypeInfer : TestClassBase
         else
         {
             Assert.Equal(outType, unary.CheckedType);
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(InferBinaryData))]
+    public void TestInferBinary(BinaryOp binaryOp, DistributedType lhsType, DistributedType rhsType, IRType outType)
+    {
+        var lhs = new Var(lhsType);
+        var rhs = new Var(rhsType);
+        var binary = IR.F.Math.Binary(binaryOp, lhs, rhs);
+        CompilerServices.InferenceType(binary);
+        if (outType is InvalidType && binary.CheckedType is InvalidType)
+        {
+        }
+        else
+        {
+            Assert.Equal(outType, binary.CheckedType);
         }
     }
 
