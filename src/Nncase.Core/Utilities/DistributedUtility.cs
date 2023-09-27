@@ -66,6 +66,8 @@ public static class DistributedUtility
         }
 
         return candidateNdsbps.CartesianProduct().
+            Select(ndsbp => ndsbp.ToArray()).
+            Where(ndsbp => IsDistributable(tensorType, ndsbp, placement, out _)).
             Select(ndsbp => new IRArray<SBP>(ndsbp)).
             ToArray();
     }

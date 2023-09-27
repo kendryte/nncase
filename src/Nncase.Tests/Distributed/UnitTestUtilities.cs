@@ -13,6 +13,14 @@ namespace Nncase.Tests.DistributedTest;
 
 public sealed class UnitTestUtilities
 {
+    public static TheoryData<DistributedType, IRArray<SBP>> GetPartialCandidateNDSBPsNegativeData { get; } = new()
+    {
+        {
+            new DistributedType(new(DataTypes.Float32, new[] { 1, 8, 384, 8192 }), new SBP[] { SBP.P, SBP.P }, new Placement(Placement.DeviceKind.CPU, new[] { 8, 4 }, "bt")),
+            new SBP[] { SBP.S(1), SBP.S(1) }
+        },
+    };
+
     [Fact]
     public void TestEffiecicy()
     {
@@ -37,5 +45,13 @@ public sealed class UnitTestUtilities
         var candidateSbps = Utilities.DistributedUtility.GetPartialCandidateNDSBPs(type);
 
         Assert.Equal(0, candidateSbps.Count(ndsbp => ndsbp == new IRArray<SBP>(new SBP[] { SBP.S(2), SBP.S(2) })));
+    }
+
+    [Theory]
+    [MemberData(nameof(GetPartialCandidateNDSBPsNegativeData))]
+    public void TestGetPartialCandidateNDSBPsNegative(DistributedType inType, IRArray<SBP> negativeNdsbp)
+    {
+        var candidateSbps = Utilities.DistributedUtility.GetPartialCandidateNDSBPs(inType);
+        Assert.Equal(0, candidateSbps.Count(ndsbp => ndsbp == negativeNdsbp));
     }
 }
