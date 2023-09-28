@@ -342,9 +342,10 @@ enum class unary_op_t : uint8_t {
     sign = 16,
     sqrt = 17,
     square = 18,
-    tanh = 19,
-    bitwise_not = 20,
-    logical_not = 21,
+    tan = 19,
+    tanh = 20,
+    bitwise_not = 21,
+    logical_not = 22,
 };
 
 // Instructions
