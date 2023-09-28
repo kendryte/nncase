@@ -1299,11 +1299,12 @@ result<value_t> kernels::stackvm::unary(unary_op_t unary_op, value_t input,
                               output_tensor->shape(), output_tensor->strides(),
                               context));
         return ok(output);
+    } else {
+        CONTIGUOUS_KERNEL(unary, input_tensor, typoecode, unary_op, input_mem,
+                          out_mem, input_tensor->shape(),
+                          input_tensor->strides(), output_tensor->shape(),
+                          output_tensor->strides(), context);
     }
-    CONTIGUOUS_KERNEL(unary, input_tensor, typoecode, unary_op, input_mem,
-                      out_mem, input_tensor->shape(), input_tensor->strides(),
-                      output_tensor->shape(), output_tensor->strides(),
-                      context);
     return ok(output);
 }
 
