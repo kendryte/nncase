@@ -26,6 +26,7 @@ import serial
 import shutil
 import time
 import toml
+from typing import Tuple
 
 
 class MySerial:
@@ -56,21 +57,41 @@ class MySerial:
         self.s.flush()
         self.logger.debug('write end')
 
-    def read_until(self, expected):
-        self.logger.debug('read begin')
-        data = self.s.read_until(expected.encode()).decode()
+    # There is something wrong for self.s.read_until() api, refer to https://github.com/pyserial/pyserial/issues/181
+    def read_until(self, expected: str, size=None) -> Tuple[str, bool]:
+        self.logger.debug('read begin: expected = {0}'.format(expected))
+        if isinstance(expected, str):
+            expected = expected.encode()
+        lenterm = len(expected)
+        data = bytearray()
+        expired = True
+        timeout = serial.Timeout(self.s.timeout)
+        while True:
+            c = self.s.read(1)
+            if c:
+                data += c
+                if data[-lenterm:] == expected:
+                    expired = False
+                    break
+                if size is not None and len(data) >= size:
+                    break
+            else:
+                break
+            if timeout.expired():
+                break
         self.logger.debug('read end: data = {0}, size = {1}'.format(data, len(data)))
-        return data
+        return bytes(data).decode(), expired
 
     def run_cmd(self, cmd, expected=''):
         data = ''
+        expired = False
         self.open()
         self.write(cmd)
         if expected != '':
-            data = self.read_until(expected)
+            data, expired = self.read_until(expected)
 
         self.close()
-        return data
+        return data, expired
 
 
 class Target:
@@ -107,7 +128,7 @@ class Target:
         self.s0.run_cmd(self.username)
         self.s0.run_cmd(self.password)
         self.s0.run_cmd('reboot')
-        time.sleep(20)
+        time.sleep(30)
 
 
 def recv_file(conn, case_dir, logger):
@@ -162,13 +183,14 @@ def infer_worker(target):
         cmds, conn, case_dir, output_num = target.infer_queue.get()
         separator = os.path.basename(case_dir) + target.separator
         ret = ''
+        timeout = False
 
         # exit from face_detect after rebooting
         # target.s1.run_cmd('q')
         target.s1.run_cmd('')
 
         for cmd in cmds.split(';'):
-            ret = target.s1.run_cmd(cmd, separator)
+            ret, timeout = target.s1.run_cmd(cmd, separator)
 
         # infer result
         dict = {'type': 'finish', 'len': 0}
@@ -184,7 +206,7 @@ def infer_worker(target):
 
             # reboot target when exception(it is likely that next test case will fail)
             target.reboot()
-        elif ret.find(separator) == -1:
+        elif timeout:
             err = 'infer timeout'
             target.logger.error(err)
             msg = f'{err}'.encode()
