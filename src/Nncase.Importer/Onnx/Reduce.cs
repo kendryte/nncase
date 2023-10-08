@@ -13,7 +13,18 @@ namespace Nncase.Importer
     {
         private Expr VisitReduce(in NodeProto op, ReduceOp reduceOp, Expr initValue)
         {
-            return ReduceCore(op, reduceOp, initValue, expr => expr);
+            // return ReduceCore(op, reduceOp, initValue, expr => expr);
+            var input = GetInputExpr(op, 0);
+            return reduceOp switch
+            {
+                var x when x == ReduceOp.Max && input.CheckedDataType == DataTypes.Float32 => ReduceCore(op, reduceOp, float.MaxValue, expr => expr),
+                var x when x == ReduceOp.Max && input.CheckedDataType == DataTypes.Float16 => ReduceCore(op, reduceOp, Half.MaxValue, expr => expr),
+                var x when x == ReduceOp.Max && input.CheckedDataType == DataTypes.Float64 => ReduceCore(op, reduceOp, long.MaxValue, expr => expr),
+                var x when x == ReduceOp.Min && input.CheckedDataType == DataTypes.Float32 => ReduceCore(op, reduceOp, float.MinValue, expr => expr),
+                var x when x == ReduceOp.Min && input.CheckedDataType == DataTypes.Float16 => ReduceCore(op, reduceOp, Half.MinValue, expr => expr),
+                var x when x == ReduceOp.Min && input.CheckedDataType == DataTypes.Float64 => ReduceCore(op, reduceOp, long.MinValue, expr => expr),
+                _ => ReduceCore(op, reduceOp, initValue, expr => expr),
+            };
         }
 
         private Expr ReduceCore(in NodeProto op, ReduceOp reduceOp, Expr initValue, Func<Expr, Expr> f)
