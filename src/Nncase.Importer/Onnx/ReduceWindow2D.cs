@@ -14,7 +14,7 @@ namespace Nncase.Importer
     public partial class OnnxImporter
     {
         // isGlobal used for GlobalXXXPool
-        private Expr VisitReduceWindow2D(in NodeProto op, ReduceOp reduceOp, float initValue, bool isGlobal = false)
+        private Expr VisitReduceWindow2D(in NodeProto op, ReduceOp reduceOp, Expr initValue, bool isGlobal = false)
         {
             // auto_pad had been DEPRECATED
             var input = GetInputExpr(op, 0);

@@ -11,12 +11,12 @@ namespace Nncase.Importer
 {
     public partial class OnnxImporter
     {
-        private Expr VisitReduce(in NodeProto op, ReduceOp reduceOp, float initValue)
+        private Expr VisitReduce(in NodeProto op, ReduceOp reduceOp, Expr initValue)
         {
             return ReduceCore(op, reduceOp, initValue, expr => expr);
         }
 
-        private Expr ReduceCore(in NodeProto op, ReduceOp reduceOp, float initValue, Func<Expr, Expr> f)
+        private Expr ReduceCore(in NodeProto op, ReduceOp reduceOp, Expr initValue, Func<Expr, Expr> f)
         {
             var input = GetInputExpr(op, 0);
             Expr axis;
