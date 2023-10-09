@@ -77,6 +77,11 @@ internal class EGraphRewriteProvider : IEGraphRewriteProvider
                 foreach (var (oldExpr, oldEClass, newExpr) in replacedExprs)
                 {
                     var typeInferSuccess = CompilerServices.InferenceType(newExpr);
+                    if (!typeInferSuccess)
+                    {
+                         DumpScope.Current.DumpIR(newExpr, $"{rule.GetType().Name}");
+                    }
+
                     Trace.Assert(typeInferSuccess);
 
                     var newEClass = eGraph.Add(newExpr);
