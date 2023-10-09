@@ -55,7 +55,8 @@ namespace Nncase.Importer
                     f(input), axis, long.MaxValue, keepDims),
                 var x when x == ReduceOp.Min && input.CheckedDataType == DataTypes.Int32 => F.Tensors.Reduce(reduceOp,
                     f(input), axis, int.MaxValue, keepDims),
-                _ => F.Tensors.Reduce(reduceOp, f(input), axis, F.Tensors.Cast(initValue, input.CheckedDataType),
+                _ => F.Tensors.Reduce(reduceOp, f(input), axis,
+                    F.Tensors.Cast(initValue, input.CheckedDataType, CastMode.CheckOverflow),
                     keepDims),
             };
         }
