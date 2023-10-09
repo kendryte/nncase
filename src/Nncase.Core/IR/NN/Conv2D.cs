@@ -26,7 +26,7 @@ public sealed partial class Conv2D : Op
     /// <summary>
     /// Gets Weights.
     /// </summary>
-    public static readonly ParameterInfo Weights = new(typeof(Conv2D), 1, "weights",  HasRank(4), ParameterKind.Input);
+    public static readonly ParameterInfo Weights = new(typeof(Conv2D), 1, "weights", HasRank(4), ParameterKind.Input);
 
     /// <summary>
     /// Gets Bias.

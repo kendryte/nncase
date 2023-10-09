@@ -99,6 +99,7 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.NormAxisGather>();
             p.Add<Passes.Rules.Neutral.NormAxisConcat>();
             p.Add<Passes.Rules.Neutral.NormAxisReduce>();
+            p.Add<Passes.Rules.Neutral.NormAxisReshape>();
             p.Add<Passes.Rules.Neutral.SqueezeTransposeShape>();
             p.Add<Passes.Rules.Neutral.Squeeze5DTranspose>();
             p.Add<Passes.Rules.Neutral.SqueezeBinaryShape>();
@@ -182,7 +183,8 @@ internal class Compiler : ICompiler
 
         passManager.AddWithName<DataflowPass>("MHAFusion").Configure(p =>
         {
-            p.Add<Passes.Rules.MHACombine>();
+            p.Add<Passes.Rules.MHACombine>(true);
+            p.Add<Passes.Rules.MHACombine>(false);
             p.Add<Passes.Rules.Neutral.FoldConstCall>();
 
             // p.Add<Passes.Rules.DumpMM>();
