@@ -45,6 +45,7 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
     public IValue Visit(IEvaluateContext context, SpaceToBatch s)
     {
         var input = context.GetOrtArgumentValue(s, SpaceToBatch.Input);
+        input = NCHWToNHWC(input.ToTensor()).Evaluate().AsTensor().ToOrtTensor();
         var blockShape = context.GetArgumentValueAsTensor<long>(s, SpaceToBatch.BlockShape);
         var paddings = context.GetArgumentValueAsArray<long>(s, SpaceToBatch.Paddings);
         var spatialSize = blockShape.Length;
@@ -82,7 +83,8 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
         var reshape1 = OrtKI.Reshape(p, (OrtKISharp.Tensor)reshappedShape1, 0);
         var rt = OrtKI.Transpose(reshape1, perm);
         var reshape2 = OrtKI.Reshape(rt, (OrtKISharp.Tensor)reshappedShape2, 0);
-        return reshape2.ToValue();
+        return NHWCToNCHW(reshape2.ToTensor()).Evaluate();
+        // return reshape2.ToValue();
     }
 
     /// <inheritdoc/>
@@ -106,6 +108,7 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
             var m = blockShapeValue.Length;
             var inRank = input.CheckedShape.Rank;
 
+            // todo: fix this
             var paddedShape = new[] { inShape[0] }
                 .Concat(Enumerable.Range(0, inRank)
                 .Select(i =>
@@ -149,7 +152,9 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
             var ts_block_shape = block_shape_con.Value.Cast<int>();
             var ts_paddings = paddings_con.Value.ToArray<int>();
             int m = (int)ts_block_shape.Length;
-            var padded_shape = input.Shape.ToList();
+            // var padded_shape = input.Shape.ToList();
+            var inShape = input.Shape.ToList();
+            var padded_shape = new[] { inShape[0], inShape[2], inShape[3], inShape[1] };
             for (int i = 0; i < m; i++)
             {
                 if (!padded_shape[1 + i].IsUnknown)
@@ -168,7 +173,7 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
                                         new InvalidType($"The Padded Shape Must Divides BlockShape!")));
             }
 
-            foreach (var i in Enumerable.Range(m + 1, padded_shape.Count - (m + 1)))
+            foreach (var i in Enumerable.Range(m + 1, padded_shape.Length - (m + 1)))
             {
                 outshape.Add(padded_shape[i]);
             }
@@ -178,7 +183,9 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
                 outshape[0] = outshape[0].IsUnknown ? Dimension.Unknown : outshape[0].FixedValue * block;
             }
 
-            return input with { Shape = new Shape(outshape) };
+            // return input with { Shape = new Shape(outshape) };
+            var outputShape = new[] { outshape[0], outshape[3], outshape[1], outshape[2] };
+            return input with { Shape = new Shape(outputShape) };
         }
 
         return new TensorType(input.DType, Enumerable.Repeat(Dimension.Unknown, input.Shape.Count).ToArray());
