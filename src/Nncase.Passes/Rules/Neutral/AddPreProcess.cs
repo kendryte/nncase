@@ -121,7 +121,10 @@ public sealed class AddPreProcess : ModulePass
             if (inputType != InputType.Float32)
             {
                 var qP = QuantParamOf(QuantMode.UnsignedMode, new[] { inputRange[0], inputRange[1] }, 8);
-                newInput = Dequantize(newInput, qP, DataTypes.Float32);
+                var dequantize = Dequantize(newInput, qP, DataTypes.Float32);
+                List<string> outputNames = new() { input.Metadata.OutputNames?[0] + "_PreDequantize" };
+                dequantize.Metadata.OutputNames = outputNames;
+                newInput = dequantize;
             }
 
             // Letterbox
