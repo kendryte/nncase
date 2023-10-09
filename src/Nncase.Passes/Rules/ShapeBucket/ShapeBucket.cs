@@ -786,7 +786,7 @@ public class FusionBucketContext
                 var outputCount = tuple.Fields.Count;
                 var outShapes = Enumerable.Range(0, outputCount).Select(i =>
                 {var arr = new[] { shapeInfos.First().Outshape.AsTensors()[i] }
-                        .Concat(shapeInfos.Select(info => info.Outshape.AsTensors()[i])).Reverse().ToArray();
+                        .Concat(shapeInfos.Select(info => info.Outshape.AsTensors()[i]).Reverse()).ToArray();
                     var outShapeList = Cast(Stack(new IR.Tuple(arr.Select(x => (Expr)x).ToArray()), 0), DataTypes.Int64);
                     return outShapeList[len];
                 }).ToArray();
@@ -797,7 +797,7 @@ public class FusionBucketContext
                 // 80 79 ... 1 -> 1 1 ... 79 80
                 // len is 1 - 80
                 var arr = new[] { shapeInfos.First().Outshape.AsTensor() }
-                    .Concat(shapeInfos.Select(x => x.Outshape.AsTensor())).Reverse().ToArray();
+                    .Concat(shapeInfos.Select(x => x.Outshape.AsTensor()).Reverse()).ToArray();
                 var outShapeList = Cast(Stack(new IR.Tuple(arr.Select(x => (Expr)x).ToArray()), 0), DataTypes.Int64);
                 return outShapeList[len];
             }
@@ -903,7 +903,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
         return (minDict, maxDict);
     }
 
-    public static (Expr, List<Expr>) Split(FusionBucketContext context)
+    public static (Expr, List<Expr>) Split(FusionBucketContext context, SegmentInfo? info = null)
     {
         var failure = MakeFailure(context.FusionBody);
 
@@ -1058,7 +1058,8 @@ public partial class FusionBucket : RewriteRule<Pattern>
             // Console.WriteLine($"{fusion.Name} totalCount > 1");
         }
 
-        var (body, condList) = Split(context);
+        var info = ComputeSegmentInfo(counts, options);
+        var (body, condList) = Split(context, info);
 
         // FixInput Replace Var
         var newBody = ReplaceFusionVarWithCallArgs(fusion, context.Arguments, body);
@@ -1381,7 +1382,7 @@ public partial class RebuildBucket : RewriteRule<Pattern>
     }
 }
 
-internal record SegmentInfo(int InputIndex, int DimIndex, int[] Segments);
+public record SegmentInfo(int InputIndex, int DimIndex, int[] Segments);
 
 public class FullBucket : FunctionPass
 {

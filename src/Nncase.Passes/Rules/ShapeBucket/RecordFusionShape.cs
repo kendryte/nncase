@@ -13,6 +13,8 @@ using NetFabric.Hyperlinq;
 using Nncase.Diagnostics;
 using Nncase.Evaluator;
 using Nncase.IR;
+using Nncase.IR.Tensors;
+using Nncase.Utilities;
 using static Nncase.IR.F.Tensors;
 using static Nncase.Passes.Rules.ShapeBucket.ShapeBucketHelper;
 
@@ -89,12 +91,19 @@ public class RecordFusionShape : FunctionPass
     // make dummy value from InputInfo
     // VarInfo:(DimVar -> Value)
     public static Dictionary<Var, IValue>
-        MakeDummyInput(IReadOnlyDictionary<Var, Expr[]> info, Dictionary<Var, IValue> varInfo, int i)
-    {
+        MakeDummyInput(IReadOnlyDictionary<Var, Expr[]> info, Dictionary<Var, IValue> varInfo)
+        {
         return info.ToDictionary(
             pair => pair.Key,
             pair =>
             {
+                if (pair.Key.CheckedShape.IsFixed)
+                {
+                    return ConstantOfShape(
+                        pair.Key.CheckedShape.ToValueArray(),
+                        Cast(1, pair.Key.CheckedDataType)).Evaluate();
+                }
+
                 // todo: dummy input可能会有问题...
                 var shapeExpr = pair.Key.CheckedShape.IsScalar
                     ? (Expr)Array.Empty<int>()
@@ -103,7 +112,7 @@ public class RecordFusionShape : FunctionPass
                 var shape = shapeExpr.Evaluate(varInfo).AsTensor();
                 return ConstantOfShape(
                     shape,
-                    Cast(i, pair.Key.CheckedDataType)).Evaluate(varInfo);
+                    Cast(1, pair.Key.CheckedDataType)).Evaluate(varInfo);
             });
     }
 
@@ -141,13 +150,13 @@ public class RecordFusionShape : FunctionPass
                 var start = System.DateTime.Now;
                 var varValues = seg.ToDictionary(pair => pair.Key, pair => (IValue)Value.FromTensor(pair.Value));
                 var exprValues = seg.ToDictionary(pair => (Expr)pair.Key, pair => (IValue)Value.FromTensor(pair.Value));
-                // todo: 根据值来确定shape的？？？
-                var input = MakeDummyInput(varMap, varValues, 2);
+                var input = MakeDummyInput(varMap, varValues);
                 var memo = EvaluatorUtil.GetMemo(body, ConcatDictionary(input, varValues));
                 var f = new FusionShapeUpdater(ConcatDictionary(memo, exprValues));
                 f.Visit(main);
                 var stop = System.DateTime.Now;
                 Console.WriteLine($"time = {stop - start}");
+                GC.Collect();
                 return f.FusionShape;
             }).SelectMany(x => x)
             .ToLookup(x => x.Key, x => x.Value)
@@ -156,7 +165,6 @@ public class RecordFusionShape : FunctionPass
         var end = System.DateTime.Now;
         Console.WriteLine($"FullTime{end - begin}");
 
-        GC.Collect();
         foreach (var (f, shapeInfo) in tmpFusionShapeList)
         {
             FusionShapeInfo[f] = shapeInfo;

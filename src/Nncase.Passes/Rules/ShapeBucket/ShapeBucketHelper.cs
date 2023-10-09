@@ -30,7 +30,8 @@ public static class CallValidator
         typeof(MatMul).TypeHandle,
         typeof(Transpose).TypeHandle,
         typeof(Pad).TypeHandle,
-        typeof(Tile).TypeHandle,
+        typeof(Unsqueeze).TypeHandle,
+        typeof(Squeeze).TypeHandle,
     };
 
     private static readonly HashSet<RuntimeTypeHandle> MaybeDynamic = new()
@@ -42,21 +43,18 @@ public static class CallValidator
         typeof(Gather).TypeHandle,
         typeof(ShapeOf).TypeHandle,
 
-        typeof(Unsqueeze).TypeHandle,
-        typeof(Squeeze).TypeHandle,
         typeof(Cast).TypeHandle,
         typeof(Unary).TypeHandle,
 
         typeof(Reshape).TypeHandle,
         typeof(Expand).TypeHandle,
         typeof(ConstantOfShape).TypeHandle,
-        typeof(Where).TypeHandle,
+        // typeof(Where).TypeHandle,
         typeof(Compare).TypeHandle,
         typeof(Reduce).TypeHandle,
         typeof(Clamp).TypeHandle,
         typeof(Tile).TypeHandle,
         typeof(CumSum).TypeHandle,
-        typeof(IR.Tensors.Range).TypeHandle,
     };
 
     public static bool IsMaybeDynamic(Expr target) => MaybeDynamic.Contains(target.GetType().TypeHandle);
