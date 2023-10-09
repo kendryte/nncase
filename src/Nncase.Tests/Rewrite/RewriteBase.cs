@@ -2874,3 +2874,28 @@ public sealed class PReluTransposeCase : IRewriteCase
 
     public Dictionary<Var, IValue> FeedDict { get; }
 }
+
+public sealed class ReshapeTransposeReshapeCase : IRewriteCase
+{
+    public ReshapeTransposeReshapeCase()
+    {
+        var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 77, 768 }));
+        {
+            var v0 = Reshape(input, new[] { 1, 77, 12, 64 });
+            var v2 = Transpose(v0, new[] { 0, 2, 1, 3 });
+            var v3 = Reshape(v2, new[] { 12, 77, 64 });
+            PreExpr = new Function(v3, new[] { input });
+        }
+
+        FeedDict = new() { { input, IR.F.Random.Normal(new[] { 1, 77, 768 }).Evaluate() } };
+    }
+
+    public Function PreExpr { get; }
+
+    public IEnumerable<Type> Rules => new[] {
+        typeof(CombineReshapeTranspose),
+        typeof(FoldTwoReshapes),
+    };
+
+    public Dictionary<Var, IValue> FeedDict { get; }
+}

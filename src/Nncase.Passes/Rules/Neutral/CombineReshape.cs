@@ -201,3 +201,79 @@ public sealed partial class CombineReshapePad : IRewriteRule
         return null;
     }
 }
+
+/// <summary>
+/// combine reshape transpose
+/// e.g. :
+/// %5 // f32[1,77,768]
+/// %6 = Reshape(%5, const(i64[4] : {1L,77L,12L,64L})): // f32[1,77,12,64]
+/// %7 = Transpose(%6, const(i64[4] : {0L,2L,1L,3L})): // f32[1,12,77,64]
+/// %8 = Reshape(%7, const(i32[3] : {12,77,64})): // f32[12,77,64].
+/// after combine :
+/// %5 // f32[1,77,768]
+/// %6 = Reshape(%5, const(i64[4] : {1L,77L,12L,64L})): // f32[1,77,12,64]
+/// %7 = Reshape(%6, const(i64[3] : {77L,12L,64L})): // f32[77L,12L,64L].
+/// %8 = Transpose(%7, const(i64[4] : {1L,0L,2L})): // f32[12,77,64].
+/// then use foldreshape.
+/// </summary>
+[RuleGenerator]
+public sealed partial class CombineReshapeTranspose : IRewriteRule
+{
+    /// <inheritdoc/>
+    public IPattern Pattern { get; } = IsReshape(
+        IsTranspose(
+            null,
+            "trans",
+            IsWildcard("input") with { TypePattern = HasFixedShape() },
+            IsTensorConst("perm")) with
+        { TypePattern = HasFixedShape() },
+        IsTensorConst("newShape"));
+
+    private int FindViewAxis(int[] oldShape, int[] newShape)
+    {
+        var indices = Enumerable.Range(0, oldShape.Length).ToList();
+        foreach (var dim in newShape)
+        {
+            for (int i = 0; i < oldShape.Length; i++)
+            {
+                if (oldShape[i] == dim && indices.IndexOf(i) != -1)
+                {
+                    indices.Remove(i);
+                }
+            }
+        }
+
+        var oneindex = (indices.Count == 1) ? indices[0] : -1;
+        return oneindex;
+    }
+
+    private Expr? GetReplace(Expr input, Call trans, int[] newShape, int[] perm)
+    {
+        var transShape = trans.CheckedShape.ToValueArray();
+
+        if (transShape.Length == newShape.Length + 1)
+        {
+            // check reshape is sequeeze
+            var viewAxis = FindViewAxis(transShape, newShape);
+            if (viewAxis == -1)
+            {
+                return null;
+            }
+
+            var inv = perm.Select((p, i) => (p, i)).OrderBy(tp => tp.p).ToArray();
+            var invViewAxis = inv.Where(tp => tp.i == viewAxis).First().p;
+            var invPerm = perm.ToList();
+            var invNewShape = input.CheckedShape.ToValueList();
+            invNewShape.RemoveAt(invViewAxis);
+            invPerm.Remove(invViewAxis);
+            return IR.F.Tensors.Transpose(IR.F.Tensors.Reshape(input, invNewShape.ToArray()), invPerm.Select(i => i > invViewAxis ? i - 1 : i).ToArray());
+        }
+        else if (transShape.Length == newShape.Length - 1)
+        {
+            // check rehsape is unsequeeze
+            return null;
+        }
+
+        return null;
+    }
+}
