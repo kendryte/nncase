@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
@@ -37,7 +38,7 @@ public partial class BroadcastInputMarker : RewriteRule<Pattern>
             return null;
         }
 
-        if (outer.Target is MatMul && CompilerServices.TryMatchRoot(outer.Arguments[1], InputPattern, new(), out var matchResult))
+        if ((outer.Target is MatMul || outer.Target is Binary) && CompilerServices.TryMatchRoot(outer.Arguments[1], InputPattern, new(), out var matchResult))
         {
             var rhsMarker = (Marker)matchResult["marker"];
             var rhsCall = (Call)matchResult["call"];
@@ -66,7 +67,7 @@ public partial class BroadcastOutputMarker : RewriteRule<Pattern>
             return null;
         }
 
-        return ReplaceCallFirstParam(input, marker.With(target: input.Arguments[0]));
+        return marker.With(target: ReplaceCallFirstParam(input, marker.With(target: input.Arguments[0])));
     }
 }
 
@@ -74,6 +75,6 @@ internal static class BroadcastMarkerHelper
 {
     public static bool NotChangeRangeOp(Expr op)
     {
-        return op is Squeeze || op is Unsqueeze || op is Reshape || op is Broadcast;
+        return op is Squeeze || op is Unsqueeze || op is Reshape || op is Broadcast || op is Transpose;
     }
 }

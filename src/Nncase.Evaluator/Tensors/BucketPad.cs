@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System;
 using System.Linq;
 using DryIoc.ImTools;
 using Nncase.CostModel;
@@ -9,6 +10,7 @@ using Nncase.IR.NN;
 using Nncase.IR.Tensors;
 using OrtKISharp;
 using static Nncase.IR.F.Tensors;
+using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Evaluator.Tensors;
 
@@ -27,6 +29,11 @@ public class BucketPadEvaluator : IEvaluator<BucketPad>, ITypeInferencer<BucketP
         }
 
         var shape = context.GetArgumentValueAsArray<int>(bucketPad, BucketPad.Shape);
+        if (input.Shape.Size < shape.Aggregate((x, sum) => x * sum))
+        {
+            throw new InvalidOperationException();
+        }
+
         var pads = shape - (Expr)input.Shape;
         var paddings = Transpose(
             Stack(new Tuple(Enumerable.Repeat(0, shape.Length).ToArray(), pads), 0),
