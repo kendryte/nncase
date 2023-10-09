@@ -28,9 +28,10 @@ BEGIN_NS_NNCASE_KERNELS_MODULE(stackvm)
 namespace optimized {
 
 NNCASE_API result<void>
-conv2d(const float *input, const float *weights, const float *bias,
-       float *output, gsl::span<const size_t> in_shape,
-       gsl::span<const size_t> in_strides, gsl::span<const size_t> w_shape,
+conv2d(typecode_t typecode, const gsl::byte *input, const gsl::byte *weights,
+       const gsl::byte *bias, gsl::byte *output,
+       gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
+       gsl::span<const size_t> w_shape,
        NNCASE_UNUSED gsl::span<const size_t> w_strides,
        NNCASE_UNUSED gsl::span<const size_t> bias_strides,
        NNCASE_UNUSED gsl::span<const size_t> out_strides,
@@ -77,8 +78,9 @@ gather(datatype_t type, const gsl::byte *input, gsl::byte *output,
        gsl::span<const size_t> indices_shape, size_t axis,
        kernel_context &context) noexcept;
 
-NNCASE_API result<void> layer_norm(const float *input, float *output,
-                                   const float *scale, const float *bias,
+NNCASE_API result<void> layer_norm(typecode_t typecode, const gsl::byte *input,
+                                   gsl::byte *output, const gsl::byte *scale,
+                                   const gsl::byte *bias,
                                    gsl::span<const size_t> in_shape,
                                    int32_t axis, float epsilon);
 
@@ -147,17 +149,18 @@ unary(typecode_t dtype, runtime::stackvm::unary_op_t op, const gsl::byte *in,
 //                               gsl::span<const size_t> out_strides,
 //                               value_range<float> fused_activation) noexcept;
 
-template <typename T>
+// template <typename T>
 NNCASE_API result<void>
-softmax(const T *input, T *output, gsl::span<const size_t> in_shape,
-        gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
-        int32_t axis, float beta) noexcept;
+softmax(typecode_t typecode, const gsl::byte *input, gsl::byte *output,
+        gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
+        gsl::span<const size_t> out_strides, int32_t axis, float beta) noexcept;
 
-template <typename T>
-NNCASE_API result<void>
-log_softmax(const T *input, T *output, gsl::span<const size_t> in_shape,
-            gsl::span<const size_t> in_strides,
-            gsl::span<const size_t> out_strides, int32_t axis) noexcept;
+NNCASE_API result<void> log_softmax(typecode_t typecode, const gsl::byte *input,
+                                    gsl::byte *output,
+                                    gsl::span<const size_t> in_shape,
+                                    gsl::span<const size_t> in_strides,
+                                    gsl::span<const size_t> out_strides,
+                                    int32_t axis) noexcept;
 
 template <typename T>
 NNCASE_API result<void>
