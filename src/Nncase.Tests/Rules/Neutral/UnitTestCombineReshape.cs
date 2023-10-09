@@ -35,6 +35,24 @@ public class UnitTestCombineReshape : TransformTestBase
         { BinaryOp.Sub, new[] { 1 }, new[] { 1, 32, 32, 64, }, new[] { 1, 1024, 64, 1 }, true },
     };
 
+    public static readonly TheoryData<int[], int[], int[]> TestCombineReshapeTransposePostiveData =
+    new()
+    {
+        { new[] { 1, 77, 12, 64 }, new[] { 0, 2, 1, 3 }, new[] { 12, 77, 64 } },
+        { new[] { 1, 77, 12, 64 }, new[] { 2, 0, 1, 3 }, new[] { 12, 77, 64 } },
+        { new[] { 1, 77, 12, 64 }, new[] { 2, 1, 0, 3 }, new[] { 12, 77, 64 } },
+        { new[] { 1, 77, 12, 64 }, new[] { 2, 1, 3, 0 }, new[] { 12, 77, 64 } },
+        { new[] { 77, 12, 1, 64 }, new[] { 0, 2, 1, 3 }, new[] { 77, 12, 64 } },
+        { new[] { 77, 12, 1, 64 }, new[] { 3, 0, 2, 1 }, new[] { 64, 77, 12 } },
+    };
+
+    public static readonly TheoryData<int[], int[], int[]> TestCombineReshapeTransposeNegativeData =
+    new()
+    {
+        { new[] { 1, 77, 1, 64 }, new[] { 2, 1, 3, 0 }, new[] { 77, 64, 1 } },
+        { new[] { 1, 77, 12, 64 }, new[] { 1, 0, 2, 3 }, new[] { 1, 77, 768 } },
+    };
+
     public static IEnumerable<object[]> CombineBinaryReshapePositiveData =>
         new[]
         {
@@ -196,5 +214,27 @@ public class UnitTestCombineReshape : TransformTestBase
         var a = new Var("input", new TensorType(DataTypes.Float32, inShape));
         var rootPre = Tensors.Reshape(NN.Pad(a, Tensor.From(pads, new[] { pads.Length / 2, 2 }), PadMode.Constant, 0f), shape);
         TestNotMatch<CombineReshapePad>(rootPre);
+    }
+
+    [Theory]
+    [MemberData(nameof(TestCombineReshapeTransposePostiveData))]
+    public void TestCombineReshapeTransposePostive(int[] inShape, int[] perm, int[] newshape)
+    {
+        var input = new Var("input", new TensorType(DataTypes.Float32, inShape));
+        var feed_dict = new Dictionary<Var, IValue>
+        {
+            { input, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate() },
+        };
+        var rootPre = Tensors.Reshape(Tensors.Transpose(input, perm), newshape);
+        TestMatched<CombineReshapeTranspose>(rootPre, feed_dict);
+    }
+
+    [Theory]
+    [MemberData(nameof(TestCombineReshapeTransposeNegativeData))]
+    public void TestCombineReshapeTransposeNegative(int[] inShape, int[] perm, int[] newshape)
+    {
+        var input = new Var("input", new TensorType(DataTypes.Float32, inShape));
+        var rootPre = Tensors.Reshape(Tensors.Transpose(input, perm), newshape);
+        TestNotMatch<CombineReshapeTranspose>(rootPre);
     }
 }

@@ -157,6 +157,7 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.CombineUnaryReshape>();
             p.Add<Passes.Rules.Neutral.CombineActivationsReshape>();
             p.Add<Passes.Rules.Neutral.CombineReshapePad>();
+            p.Add<Passes.Rules.Neutral.CombineReshapeTranspose>();
             p.Add<Passes.Rules.Neutral.FoldNopPad>();
             p.Add<Passes.Rules.Neutral.FoldConv2DPads>();
             p.Add<Passes.Rules.Neutral.FuseClampConv2D>();
