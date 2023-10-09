@@ -19,6 +19,7 @@
 #include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/util.h>
+#include <algorithm>
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -26,126 +27,231 @@ using namespace nncase::runtime::stackvm;
 using namespace nncase::kernels;
 using namespace nncase::kernels::stackvm;
 
+#ifdef __riscv__
+#define _STR(x) #x
+#define STR(x) _STR(x)
+#define _CONNECT(a, b) a##b
+#define CONNECT(a, b) _CONNECT(a, b)
+#define vsetvli_macro(evl, avl, elen, mlen)  \
+    "vsetvli " STR(evl) "," STR(avl) "," STR(CONNECT(e, elen)) "," STR(CONNECT(m, mlen)) ";"
+#define vle_len_macro(eew,vd, rs) \
+STR(CONNECT(vle, eew)) ".v" " " STR(vd) "," STR(rs) ";"
+
+#define vse_len_macro(eew,vd, rs) \
+STR(CONNECT(vse, eew)) ".v" " " STR(vd) "," STR(rs) ";"
+
+#define vluxei_len_macro(ilen,vd, rs, vindex) \
+STR(CONNECT(vluxei, ilen)) ".v" " " STR(vd) "," STR(rs) "," STR(vindex) ";"
+
+#define vsllvi_len_macro(vd,vsrc,shift_bits) \
+"vsll.vi " STR(vd) ", " STR(vsrc) ", " STR(shift_bits) ";"
+
+#define slli_len_macro(rd,rs,shift_bits) \
+"slli " STR(rd) ", " STR(rs) ", " STR(shift_bits) ";"
+
+#define srli_len_macro(rd,rs,shift_bits) \
+"srli " STR(rd) ", " STR(rs) ", " STR(shift_bits) ";"
+
+#define addi_macro(rd,rs,add_num) \
+"addi " STR(rd) ", " STR(rs) ", " STR(add_num) ";"
+
+#define vsse_len_macro(ilen,vd, md, stride) \
+STR(CONNECT(vsse, ilen)) ".v" " " STR(vd) "," STR(md) "," STR(stride) ";"
+
+#define vaddi_macro(vd, vs, idata) \
+"vadd.vi " STR(vd) ", " STR(vs) ", " STR(idata) ";"
+
+#define REGISTER_GATHER_IMPL_CP(date_type_bits, bit_shift, emul)                               \
+static void cy_data##date_type_bits(void* dst, const void* src, int data_bytes)                \
+{                                                                                              \
+    __asm volatile(                                                                            \
+    "mv a0, %[data_bytes];"                                                                    \
+    "mv a1, %[src];"                                                                           \
+    "mv a2, %[dst];"                                                                           \
+    srli_len_macro(a0, a0, bit_shift)                                                          \
+"loop1cpy_data%=:;"                                                                            \
+    vsetvli_macro(t0, a0, date_type_bits, emul)                                                \
+    vle_len_macro(date_type_bits,v8, (a1))                                                     \
+    slli_len_macro(t1, t0, bit_shift)                                                          \
+    vse_len_macro(date_type_bits,v8, (a2))                                                     \
+    "add a1, a1, t1;"                                                                          \
+    "add a2, a2, t1;"                                                                          \
+    "sub a0, a0, t0;"                                                                          \
+    "bnez a0, loop1cpy_data%=;"                                                                \
+    :                                                                                          \
+    :[src] "r"(src),[data_bytes]"r"(data_bytes),[dst] "r"(dst)                                 \
+    : "t0", "t1", "a0", "a1", "a2", "v8", "v16");                                              \
+}                                                                                              \
+template <class T>                                                                             \
+static void set_data_v##date_type_bits(T* dst, T v, int len)                                   \
+{                                                                                              \
+    __asm volatile(                                                                            \
+    "mv a0, %[len];"                                                                           \
+    "mv a2, %[dst];"                                                                           \
+"loop1cpy_data%=:;"                                                                            \
+    vsetvli_macro(t0, a0, date_type_bits, emul)                                                \
+    "vmv.v.x v8, %[v]; "                                                                       \
+    slli_len_macro(t1, t0, bit_shift)                                                          \
+    vse_len_macro(date_type_bits,v8, (a2))                                                     \
+    "add a2, a2, t1;"                                                                          \
+    "sub a0, a0, t0;"                                                                          \
+    "bnez a0, loop1cpy_data%=;"                                                                \
+    :                                                                                          \
+    :[len]"r"(len),[dst] "r"(dst), [v]"r"(v)                                                   \
+    : "t0", "t1", "a0", "a1", "a2", "v8", "v16");                                              \
+}
+
+REGISTER_GATHER_IMPL_CP(32, 2, 8)
+REGISTER_GATHER_IMPL_CP(8, 0, 8)
+REGISTER_GATHER_IMPL_CP(16, 1, 8)
+REGISTER_GATHER_IMPL_CP(64, 3, 8)
+
+#endif
+
 namespace {
-dims_t get_padded_shape(gsl::span<const size_t> in_shape,
-                        const paddings_t &paddings) {
-    dims_t out_shape(in_shape.size());
-    for (size_t i = 0; i < in_shape.size(); i++)
-        out_shape[i] = (size_t)((int32_t)in_shape[i] + paddings[i].sum() +
-                                (in_shape[i] - 1) * paddings[i].interior);
-    return out_shape;
-}
+    dims_t get_padded_shape(gsl::span<const size_t> in_shape,
+                            const paddings_t &paddings) {
+        dims_t out_shape(in_shape.size());
+        for (size_t i = 0; i < in_shape.size(); i++)
+            out_shape[i] = (size_t)((int32_t)in_shape[i] + paddings[i].sum() +
+                                    (in_shape[i] - 1) * paddings[i].interior);
+        return out_shape;
+    }
 
-dims_t get_in_index(gsl::span<const size_t> index,
-                    gsl::span<const size_t> in_shape,
-                    const paddings_t &paddings, pad_mode_t mode,
-                    bool &pad_element) {
-    dims_t in_index(index.size());
-    pad_element = false;
-    for (size_t i = 0; i < index.size(); i++) {
-        auto &padding = paddings[i];
-        if ((int32_t)index[i] < padding.before) {
-            pad_element = true;
-            if (mode == pad_mode_t::reflect)
-                in_index[i] = (size_t)padding.before - index[i];
-            else if (mode == pad_mode_t::symmetric)
-                in_index[i] = (size_t)padding.before - index[i] - 1;
-            else if (mode == pad_mode_t::edge)
-                in_index[i] = 0;
-        } else {
-            auto cnt_idx = (int32_t)index[i] - padding.before;
-            if (cnt_idx > (int32_t)in_shape[i] - 1) {
+    dims_t get_in_index(gsl::span<const size_t> index,
+                        gsl::span<const size_t> in_shape,
+                        const paddings_t &paddings, pad_mode_t mode,
+                        bool &pad_element) {
+        dims_t in_index(index.size());
+        pad_element = false;
+        for (size_t i = 0; i < index.size(); i++) {
+            auto &padding = paddings[i];
+            if ((int32_t)index[i] < padding.before) {
                 pad_element = true;
-                if (mode == pad_mode_t::reflect) {
-                    auto idx = (int32_t)in_shape[i] - 2 -
-                               (cnt_idx - (int32_t)in_shape[i]);
-                    if (idx < 0) {
-                        in_index[i] = std::abs(idx);
-                    } else {
-                        in_index[i] = idx;
-                    }
-                } else if (mode == pad_mode_t::symmetric)
-                    in_index[i] =
-                        in_shape[i] - 1 - ((size_t)cnt_idx - in_shape[i]);
+                if (mode == pad_mode_t::reflect)
+                    in_index[i] = (size_t)padding.before - index[i];
+                else if (mode == pad_mode_t::symmetric)
+                    in_index[i] = (size_t)padding.before - index[i] - 1;
                 else if (mode == pad_mode_t::edge)
-                    in_index[i] = in_shape[i] - 1;
+                    in_index[i] = 0;
             } else {
-                in_index[i] = (size_t)cnt_idx;
+                auto cnt_idx = (int32_t)index[i] - padding.before;
+                if (cnt_idx > (int32_t)in_shape[i] - 1) {
+                    pad_element = true;
+                    if (mode == pad_mode_t::reflect) {
+                        auto idx = (int32_t)in_shape[i] - 2 -
+                                   (cnt_idx - (int32_t)in_shape[i]);
+                        if (idx < 0) {
+                            in_index[i] = std::abs(idx);
+                        } else {
+                            in_index[i] = idx;
+                        }
+                    } else if (mode == pad_mode_t::symmetric)
+                        in_index[i] =
+                                in_shape[i] - 1 - ((size_t)cnt_idx - in_shape[i]);
+                    else if (mode == pad_mode_t::edge)
+                        in_index[i] = in_shape[i] - 1;
+                } else {
+                    in_index[i] = (size_t)cnt_idx;
+                }
             }
         }
+
+        return in_index;
     }
 
-    return in_index;
-}
-
-template <class T>
-result<void>
-pad_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
-         gsl::span<const size_t> out_shape, gsl::span<const size_t> in_strides,
-         gsl::span<const size_t> out_strides, const paddings_t &paddings,
-         pad_mode_t mode, T pad_value,
-         NNCASE_UNUSED kernel_context &context) noexcept {
-    return apply(out_shape, [&](gsl::span<const size_t> index) -> result<void> {
-        bool pad_element = false;
-        auto in_index =
-            get_in_index(index, in_shape, paddings, mode, pad_element);
-        T value;
-        if (!pad_element || mode != pad_mode_t::constant)
-            value = input[offset(in_strides, in_index)];
-        else
-            value = pad_value;
-        output[offset(out_strides, index)] = value;
-        return ok();
-    });
-}
-
-template <class T>
-void copy_data_v(T *src, T *dst, int blocks_in, int blocks_out, T value) {
-    for (int i = 0; i < blocks_in; ++i) {
-        dst[i] = src[i];
+    template <class T>
+    result<void>
+    pad_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
+             gsl::span<const size_t> out_shape, gsl::span<const size_t> in_strides,
+             gsl::span<const size_t> out_strides, const paddings_t &paddings,
+             pad_mode_t mode, T pad_value,
+             NNCASE_UNUSED kernel_context &context) noexcept {
+        return apply(out_shape, [&](gsl::span<const size_t> index) -> result<void> {
+            bool pad_element = false;
+            auto in_index =
+                    get_in_index(index, in_shape, paddings, mode, pad_element);
+            T value;
+            if (!pad_element || mode != pad_mode_t::constant)
+                value = input[offset(in_strides, in_index)];
+            else
+                value = pad_value;
+            output[offset(out_strides, index)] = value;
+            return ok();
+        });
     }
-    dst += blocks_in;
-    for (int i = 0; i < blocks_out - blocks_in; ++i) {
-        dst[i] = value;
-    }
-}
-template <class T> void set_data_v(T *dst, int len, T value) {
-    for (int i = 0; i < len; ++i) {
-        dst[i] = value;
-    }
-}
 
-template <class T>
-void pad_data2(T *in, T *out, int cl, int dl, int hl, int wl, int ch, int dh,
-               int hh, int wh, T value) {
-    (void)ch;
-    int blocks_in = wl;
-
-    int blocks_out = wh;
-
-    for (int c = 0; c < cl; ++c) {
-        for (int d = 0; d < dl; ++d) {
-            for (int h = 0; h < hl; ++h) {
-                int index_out = h + d * hh + c * dh * hh;
-                int index_in = c * hl * dl + d * hl + h;
-                T *inptr = in + index_in * blocks_in;
-                T *outptr = out + index_out * blocks_out;
-                copy_data_v(inptr, outptr, blocks_in, blocks_out, value);
-            }
+    template <class T>
+    void copy_data_v(T *src, T *dst, int blocks_in, int blocks_out, T value) {
+        if(sizeof(T) == 4)
+        {
+            cy_data32(dst, src, blocks_in * sizeof(T));
+            dst += blocks_in;
+            set_data_v32(dst, value, blocks_out - blocks_in);
+        }
+        else if(sizeof(T) == 8)
+        {
+            cy_data64(dst, src, blocks_in * sizeof(T));
+            dst += blocks_in;
+            set_data_v64(dst, value, blocks_out - blocks_in);
+        }
+        else if(sizeof(T) == 2)
+        {
+            cy_data16(dst, src, blocks_in * sizeof(T));
+            dst += blocks_in;
+            set_data_v16(dst, value, blocks_out - blocks_in);
+        }
+        else if(sizeof(T) == 1)
+        {
+            cy_data8(dst, src, blocks_in * sizeof(T));
+            dst += blocks_in;
+            set_data_v8(dst, value, blocks_out - blocks_in);
         }
     }
-    for (int c = 0; c < ch; ++c) {
-        for (int d = 0; d < dh; ++d) {
-            for (int h = 0; h < hh; ++h) {
-                int index = h + d * hh + c * dh * hh;
-                T *outptr = out + index * blocks_out;
-                if (h >= hl || d >= dl || c >= cl) {
-                    set_data_v(outptr, blocks_out, value);
+    template <class T> void set_data_v(T *dst, int len, T value) {
+        if(sizeof(T) == 1)
+            set_data_v8(dst, value, len);
+        else if(sizeof(T) == 2)
+            set_data_v16(dst, value, len);
+        else if(sizeof(T) == 4)
+            set_data_v32(dst, value, len);
+        else if(sizeof(T) == 8)
+            set_data_v64(dst, value, len);
+    }
+
+    template <class T>
+    void pad_data2(T *in, T *out, int cl, int dl, int hl, int wl, int ch, int dh,
+                   int hh, int wh, T value) {
+        (void)ch;
+        (void)value;
+        int blocks_in = wl;
+
+        int blocks_out = wh;
+
+        for (int c = 0; c < cl; ++c) {
+            for (int d = 0; d < dl; ++d) {
+                for (int h = 0; h < hl; ++h) {
+                    int index_out = h + d * hh + c * dh * hh;
+                    int index_in = c * hl * dl + d * hl + h;
+                    T *inptr = in + index_in * blocks_in;
+                    T *outptr = out + index_out * blocks_out;
+                    copy_data_v(inptr, outptr, blocks_in, blocks_out, value);
+                }
+            }
+        }
+
+        for (int c = 0; c < ch; ++c) {
+            for (int d = 0; d < dh; ++d) {
+                for (int h = 0; h < hh; ++h) {
+                    int index = h + d * hh + c * dh * hh;
+                    T *outptr = out + index * blocks_out;
+                    if (h >= hl || d >= dl || c >= cl) {
+                        set_data_v(outptr, blocks_out, value);
+                    }
                 }
             }
         }
     }
-}
 
 template <class T>
 void padding_impl_opt(T *in, T *out, gsl::span<const size_t> in_shape,
@@ -171,7 +277,7 @@ void padding_impl_opt(T *in, T *out, gsl::span<const size_t> in_shape,
         dh = out_shape[1];
         hh = out_shape[2];
         wh = out_shape[3];
-    } else // size ==2
+    } else if(in_shape.size() == 2)
     {
         cl = 1;
         dl = 1;
@@ -180,6 +286,17 @@ void padding_impl_opt(T *in, T *out, gsl::span<const size_t> in_shape,
         ch = 1;
         dh = 1;
         hh = out_shape[0];
+        wh = out_shape[1];
+    }
+    else
+    {
+        cl = 1;
+        dl = 1;
+        hl = 1;
+        wl = in_shape[0];
+        ch = 1;
+        dh = 1;
+        hh = 1;
         wh = out_shape[1];
     }
 
