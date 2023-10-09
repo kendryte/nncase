@@ -139,6 +139,11 @@ public class QuantizeOptions
     public string QuantScheme { get; set; } = string.Empty;
 
     /// <summary>
+    /// Gets or sets a value indicating whether strict mode.
+    /// </summary>
+    public bool QuantSchemeStrictMode { get; set; }
+
+    /// <summary>
     /// Gets or sets a value indicating whether export quant scheme.
     /// </summary>
     public bool ExportQuantScheme { get; set; }
