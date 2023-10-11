@@ -80,6 +80,9 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
             case Conv2D conv:
                 GenerateConv2D(conv, arguments, ret, ((TensorConst)expr.Arguments[3]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[4]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[5]).Value.ToArray<int>(), ((TensorConst)expr.Arguments[6]).Value.ToScalar<int>(), (TensorConst)expr.Arguments[7], (DistributedType)expr.CheckedType);
                 break;
+            case ReduceArg reduceArg:
+                GenerateReduceArg(reduceArg, arguments, ret, ((TensorConst)expr.Arguments[1]).Value.ToScalar<int>(), ((TensorConst)expr.Arguments[2]).Value.ToScalar<bool>(), ((TensorConst)expr.Arguments[3]).Value.ToScalar<bool>(), reduceArg.ReduceArgOp, reduceArg.DestType);
+                break;
             default:
                 throw new NotSupportedException();
         }
@@ -182,6 +185,11 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
     private void GenerateConv2D(Conv2D conv, Buffer[] arguments, Buffer ret, int[] stride, int[] padding, int[] dilation, int groups, TensorConst fusedClamp, DistributedType distributedType)
     {
         _mainBody.Add(IR.F.XPU.Conv2D(arguments[0], arguments[1], arguments[2], ret, stride, padding, dilation, groups, fusedClamp, distributedType));
+    }
+
+    private void GenerateReduceArg(ReduceArg reduceArg, Buffer[] arguments, Buffer ret, int axis, bool keepdims, bool selectLastIndex, ReduceArgOp op, DataType dataType)
+    {
+        _mainBody.Add(IR.F.XPU.ReduceArg(arguments[0], ret, axis, keepdims, selectLastIndex, op, dataType));
     }
 
 #if false

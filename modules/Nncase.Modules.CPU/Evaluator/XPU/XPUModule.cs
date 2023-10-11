@@ -29,5 +29,6 @@ internal class XPUModule : IApplicationPart
         registrator.RegisterManyInterface<ReShapeEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<GatherReduceScatterEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<Conv2DEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<ReduceArgEvaluator>(reuse: Reuse.Singleton);
     }
 }

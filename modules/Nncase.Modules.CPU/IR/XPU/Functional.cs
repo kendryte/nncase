@@ -81,4 +81,9 @@ public partial class XPU
     {
         return new Call(new Conv2D(stride, padding, dilation, groups, fusedClamp, distributedType), input, weights, bias, output);
     }
+
+    public static Call ReduceArg(Expr input, Expr output, int axis, bool keepdims, bool selectLastIndex, ReduceArgOp op, DataType dataType)
+    {
+        return new Call(new ReduceArg(axis, keepdims, selectLastIndex, op, dataType), input, output);
+    }
 }

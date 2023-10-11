@@ -196,6 +196,8 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.FuseMHA2>();
             p.Add<Passes.Rules.FuseMHA3>();
             p.Add<Passes.Rules.FuseVAEDec1>();
+            p.Add<Passes.Rules.FuseSDTextEncoderTail>();
+            p.Add<Passes.Rules.FuseSDTextEncoderHeader>();
         });
 
         _compileSession.Target.RegisterTargetInDependentPass(passManager, _compileSession.CompileOptions);

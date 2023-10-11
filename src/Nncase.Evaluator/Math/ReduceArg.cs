@@ -40,16 +40,23 @@ public class ReduceArgEvaluator : IEvaluator<ReduceArg>, ITypeInferencer<ReduceA
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, ReduceArg target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, ReduceArg.Input);
-        return Visit(context, target, input);
+        var input = context.CheckArgumentType<IRType>(target, ReduceArg.Input);
+        return input switch
+        {
+            TensorType tensorType => Visit(context, target, tensorType),
+            DistributedType distributedType => Visit(context, target, distributedType),
+            _ => new InvalidType(string.Empty),
+        };
     }
 
     public Cost Visit(ICostEvaluateContext context, ReduceArg target)
     {
-        var input = context.GetArgumentType<TensorType>(target, ReduceArg.Input);
-        var ret = context.GetReturnType<TensorType>();
-        uint input_elem = input.Shape.Aggregate(1U, (acc, d) => acc * (d.IsFixed ? (uint)d.FixedValue : 1U));
-        uint ret_elem = ret.Shape.Aggregate(1U, (acc, d) => acc * (d.IsFixed ? (uint)d.FixedValue : 1U));
+        var input = context.GetArgumentType<IRType>(target, ReduceArg.Input);
+        var ret = context.GetReturnType<IRType>();
+        var inShape = input switch { TensorType t => t.Shape, DistributedType d => d.TensorType.Shape, _ => throw new NotImplementedException() };
+        var rShape = ret switch { TensorType t => t.Shape, DistributedType d => d.TensorType.Shape, _ => throw new NotImplementedException() };
+        uint input_elem = inShape.Aggregate(1U, (acc, d) => acc * (d.IsFixed ? (uint)d.FixedValue : 1U));
+        uint ret_elem = rShape.Aggregate(1U, (acc, d) => acc * (d.IsFixed ? (uint)d.FixedValue : 1U));
         uint macPerElement = input_elem / ret_elem;
         return new() { [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(input), [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret), [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(ret, macPerElement), };
     }
@@ -92,5 +99,21 @@ public class ReduceArgEvaluator : IEvaluator<ReduceArg>, ITypeInferencer<ReduceA
         {
             return new InvalidType("ReduceArg axis and keepDims are not const");
         }
+    }
+
+    private IRType Visit(ITypeInferenceContext context, ReduceArg target, DistributedType distributedType)
+    {
+        var rType = Visit(context, target, distributedType.TensorType);
+        if (rType is not TensorType tensorType)
+        {
+            return rType;
+        }
+
+        if (!distributedType.NdSBP.All(sbp => sbp is SBPBroadCast))
+        {
+            return new InvalidType(string.Empty);
+        }
+
+        return distributedType with { TensorType = tensorType };
     }
 }
