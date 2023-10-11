@@ -1,13 +1,13 @@
 #pragma once
 #include "elfload.h"
 #include "hardware_def.h"
+#include "method_table_impl.h"
 #include <inttypes.h>
 #include <math.h>
 #include <nncase/runtime/cpu/compiler_defs.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "method_table_impl.h"
 #if defined(__linux__)
 #include <sys/mman.h>
 #endif

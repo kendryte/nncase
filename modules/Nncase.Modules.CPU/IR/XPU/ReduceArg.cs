@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -28,12 +28,12 @@ public sealed partial class ReduceArg : XPUKernelOp
     public int Axis { get; }
 
     /// <summary>
-    /// Gets whether to keep dims.
+    /// Gets a value indicating whether gets whether to keep dims.
     /// </summary>
     public bool KeepDims { get; }
 
     /// <summary>
-    /// Gets whether to select the last index.
+    /// Gets a value indicating whether gets whether to select the last index.
     /// </summary>
     /// <remarks>Only used in onnx.</remarks>
     public bool SelectLastIndex { get; }

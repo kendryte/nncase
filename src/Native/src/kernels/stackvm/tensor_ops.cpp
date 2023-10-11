@@ -48,8 +48,9 @@ result<value_t> nncase::kernels::stackvm::batch_normalization(
 }
 
 result<value_t> nncase::kernels::stackvm::layer_norm(
-    int32_t axis, float epsilon, [[maybe_unused]] bool use_mean, value_t input, value_t scale, value_t bias,
-    value_t output, [[maybe_unused]] kernel_context &context) {
+    int32_t axis, float epsilon, [[maybe_unused]] bool use_mean, value_t input,
+    value_t scale, value_t bias, value_t output,
+    [[maybe_unused]] kernel_context &context) {
     try_f32_input(input_mem, input);
     try_f32_input(scale_mem, scale);
     try_f32_input(bias_mem, bias);
