@@ -11,9 +11,16 @@ using Nncase.PatternMatch;
 
 namespace Nncase.IR.CPU;
 
-[PatternFunctionalGenerator]
-public sealed partial class CPUKernelOp : Op
+public sealed class CPUKernelOp : Op
 {
+    private readonly ExprPinner _exprPinner;
+
+    public CPUKernelOp(Op target)
+    {
+        _exprPinner = new(target);
+        Target = target;
+    }
+
     /// <summary>
     /// Gets the target.
     /// </summary>

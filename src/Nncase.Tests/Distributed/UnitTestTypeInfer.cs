@@ -42,6 +42,11 @@ public sealed class UnitTestTypeInfer : TestClassBase
           new DistributedType(new(DataTypes.Float32, new[] { 1, 384, 8192 }), new SBP[] { SBP.P, SBP.S(2) }, new(Placement.DeviceKind.CPU, new[] { 2, 4 }, "bt")),
           new InvalidType(string.Empty)
         },
+        { BinaryOp.Add,
+          new DistributedType(new(DataTypes.Float32, new[] { 3072 }), new SBP[] { SBP.S(0), SBP.S(0) }, new(Placement.DeviceKind.CPU, new[] { 8, 4 }, "bt")),
+          new DistributedType(new(DataTypes.Float32, new[] { 1, 77, 3072 }), new SBP[] { SBP.B, SBP.B }, new(Placement.DeviceKind.CPU, new[] { 8, 4 }, "bt")),
+          new DistributedType(new(DataTypes.Float32, new[] { 1, 77, 3072 }), new SBP[] { SBP.S(2), SBP.S(2) }, new(Placement.DeviceKind.CPU, new[] { 8, 4 }, "bt"))
+        },
     };
 
     [Theory]

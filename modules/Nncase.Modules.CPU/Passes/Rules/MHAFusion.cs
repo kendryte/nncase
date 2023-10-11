@@ -268,15 +268,8 @@ public sealed partial class FuseMHA3 : FusionMaker
 
     private static Pattern CreatePattern()
     {
-        var v19 = IsWildcard("input");
-        var v20 = IsLayerNorm(2, 0.000009999999747378752f, true, v19, IsTensorConst(), IsTensorConst()); // f32[1,77,768]
-        var v21 = IsMatMul(v20, IsTensorConst()); // f32[1,77,3072]
-        var v22 = IsBinary(BinaryOp.Add, IsTensorConst(), v21); // f32[1,77,3072]
-        var v23 = IsSwish(v22, IsTensorConst()); // f32[1,77,3072]
-        var v24 = IsMatMul(v23, IsTensorConst()); // f32[1,77,768]
-        var v25 = IsBinary(BinaryOp.Add, IsTensorConst(), v24); // f32[1,77,768]
-        var v26 = IsBinary(BinaryOp.Add, v19, v25); // f32[1,77,768]
-        var v27 = IsLayerNorm(2, 0.000009999999747378752f, true, v26, IsTensorConst(), IsTensorConst()); // f32[1,77,768]
+        var v26 = IsWildcard("input");
+        var v27 = IsLayerNorm(Axis: 2, Epsilon: 1E-05f, UseMean: true, v26, IsTensorConst(), IsTensorConst()); // f32[1,77,768]
         var v28 = IsMatMul(v27, IsTensorConst()); // f32[12,77,64]
         var v29 = IsBinary(BinaryOp.Add, v28, IsTensorConst()); // f32[12,77,64]
         var v30 = IsBinary(BinaryOp.Mul, v29, IsTensorConst()); // f32[12,77,64]
@@ -293,8 +286,15 @@ public sealed partial class FuseMHA3 : FusionMaker
         var v41 = IsReshape(v40, IsTensorConst()); // f32[1,77,768]
         var v42 = IsMatMul(v41, IsTensorConst()); // f32[1,77,768]
         var v43 = IsBinary(BinaryOp.Add, IsTensorConst(), v42); // f32[1,77,768]
-        var v44 = IsBinary(null, "root", BinaryOp.Add, v26, v43); // f32[1,77,768]
-        return v44;
+        var v44 = IsBinary(BinaryOp.Add, v26, v43); // f32[1,77,768]
+        var v45 = IsLayerNorm(Axis: 2, Epsilon: 1E-05f, UseMean: true, v44, IsTensorConst(), IsTensorConst()); // f32[1,77,768]
+        var v46 = IsMatMul(v45, IsTensorConst()); // f32[1,77,3072]
+        var v47 = IsBinary(BinaryOp.Add, IsTensorConst(), v46); // f32[1,77,3072]
+        var v48 = IsSwish(v47, IsTensorConst()); // f32[1,77,3072]
+        var v49 = IsMatMul(v48, IsTensorConst()); // f32[1,77,768]
+        var v50 = IsBinary(BinaryOp.Add, IsTensorConst(), v49); // f32[1,77,768]
+        var v51 = IsBinary(null, "root", BinaryOp.Add, v44, v50); // f32[1,77,768]
+        return v51;
     }
 
     private Call? GetReplace(Call root, Expr input)

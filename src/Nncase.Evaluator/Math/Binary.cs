@@ -135,24 +135,33 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
             return new InvalidType("lhs rhs have different placement");
         }
 
+        var rType = Visit(target, a.TensorType, b.TensorType);
+        if (rType is not TensorType tensorType)
+        {
+            return rType;
+        }
+
+        // assume broadcast shapes are left algin
+        var padA = tensorType.Shape.Rank - a.TensorType.Shape.Rank;
+        var padB = tensorType.Shape.Rank - b.TensorType.Shape.Rank;
         var ndsbp = new SBP[a.Placement.Rank];
         for (int i = 0; i < a.Placement.Rank; i++)
         {
             switch (a.NdSBP[i], b.NdSBP[i])
             {
                 case (SBPSplit sa, SBPSplit sb):
-                    if (sa != sb)
+                    if ((padA + sa.Axis) != (padB + sb.Axis))
                     {
                         return new InvalidType($"lhs rhs sbp at {i} not equal");
                     }
 
-                    ndsbp[i] = sa;
+                    ndsbp[i] = SBP.S(padA + sa.Axis);
                     break;
                 case (SBPSplit s1, SBPBroadCast):
-                    ndsbp[i] = s1;
+                    ndsbp[i] = SBP.S(padA + s1.Axis);
                     break;
                 case (SBPBroadCast, SBPSplit s2):
-                    ndsbp[i] = s2;
+                    ndsbp[i] = SBP.S(padB + s2.Axis);
                     break;
                 case (SBPBroadCast, SBPBroadCast):
                     ndsbp[i] = SBP.B;
@@ -172,12 +181,6 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
                 case (_, SBPPartialSum):
                     return new InvalidType("not support lhs or rhs partial.");
             }
-        }
-
-        var rType = Visit(target, a.TensorType, b.TensorType);
-        if (rType is not TensorType tensorType)
-        {
-            return rType;
         }
 
         return new DistributedType(tensorType, ndsbp, a.Placement);

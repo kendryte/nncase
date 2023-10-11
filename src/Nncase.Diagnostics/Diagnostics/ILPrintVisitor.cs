@@ -476,13 +476,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
     /// <inheritdoc/>
     protected override string VisitOp(Op expr)
     {
-        return expr switch
-        {
-            Unary op => op.UnaryOp.ToString(),
-            Binary op => op.BinaryOp.ToString(),
-            Compare op => op.CompareOp.ToString(),
-            _ => expr.GetType().Name,
-        };
+        return expr.GetType().Name;
     }
 
     /// <inheritdoc/>
