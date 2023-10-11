@@ -447,6 +447,9 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 
                     IndentScope.Writer.Write($"conv2d(ctx, {Visit(args[0]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name}, {Visit(args[3]).Name}, {{{string.Join(",", conv.Stride.Select(p => p.ToString()))}}}, {{{string.Join(",", conv.Padding.Select(p => p.ToString()))}}}, {{{string.Join(",", conv.Dilation.Select(p => p.ToString()))}}}, {conv.Groups}, {strategy})");
                     break;
+                case IR.XPU.ReduceArg reduceArg:
+                    IndentScope.Writer.Write($"reduce_arg({Visit(args[0]).Name}, {Visit(args[1]).Name}, {reduceArg.Axis}, {reduceArg.KeepDims}, {reduceArg.SelectLastIndex}, {reduceArg.ReduceArgOp}, {reduceArg.DestType.ToC()})");
+                    break;
                 default:
                     throw new NotSupportedException(xpuOp.ToString());
             }

@@ -311,7 +311,88 @@ public sealed partial class FuseMHA3 : FusionMaker
         var merger = new MHAMerger(multiVarMap);
         var clonedRoot = merger.Clone(root, default);
 
-        var callFusion = new Call(new Fusion("MHASDTextEncoder", $"{nameof(FuseMHA3)}_{Count}", ModuleKind, clonedRoot, newInputs.OfType<Var>().ToArray()), input);
+        var callFusion = new Call(new Fusion("SDTextEncoderMHA", $"{nameof(FuseMHA3)}_{Count}", ModuleKind, clonedRoot, newInputs.OfType<Var>().ToArray()), input);
+        return callFusion;
+    }
+}
+
+/// <summary>
+/// stable-disffusion text encoder header.
+/// </summary>
+[RuleGenerator]
+public sealed partial class FuseSDTextEncoderHeader : FusionMaker
+{
+    public override string ModuleKind { get; } = CPUTarget.Kind;
+
+    public override Pattern Pattern => CreatePattern();
+
+    private static Pattern CreatePattern()
+    {
+        var v0 = IsWildcard("input");
+        var v1 = IsGather(0, IsTensorConst(), v0); // f32[12,77,64]
+        var v2 = IsBinary(null, "root", BinaryOp.Add, v1, IsTensorConst()); // f32[12,77,64]
+        return v2;
+    }
+
+    private Call? GetReplace(Call root, Expr input)
+    {
+        var newInputs = new List<Var>
+        {
+            new Var(input.CheckedType!),
+        };
+
+        var multiVarMap = new Dictionary<Expr, Var>(ReferenceEqualityComparer.Instance)
+        {
+            { input, newInputs[0] },
+        };
+        var merger = new MHAMerger(multiVarMap);
+        var clonedRoot = merger.Clone(root, default);
+
+        var callFusion = new Call(new Fusion("SDTextEncoderHeader", $"{nameof(FuseSDTextEncoderHeader)}_{Count}", ModuleKind, clonedRoot, newInputs.ToArray()), input);
+        return callFusion;
+    }
+}
+
+/// <summary>
+/// stable-disffusion text encoder header.
+/// </summary>
+[RuleGenerator]
+public sealed partial class FuseSDTextEncoderTail : FusionMaker
+{
+    public override string ModuleKind { get; } = CPUTarget.Kind;
+
+    public override Pattern Pattern => CreatePattern();
+
+    private static Pattern CreatePattern()
+    {
+        var vinput_ids = IsWildcard("input_ids");
+        var v13 = IsWildcard("input");
+        var v14 = IsLayerNorm(Axis: 2, Epsilon: 1E-05f, UseMean: true, v13, IsTensorConst(), IsTensorConst()); // f32[1,77,768]
+        var v15 = IsReshape(v14, IsTensorConst()); // f32[77,768]
+        var v16 = IsReduceArg(ReduceArgOp.ArgMax, DataTypes.Int64, vinput_ids, IsTensorConst(), IsTensorConst(), IsTensorConst()); // i64[1]
+        var v17 = IsBinary(BinaryOp.Add, v16, IsTensorConst()); // i64[1]
+        var v18 = IsGather(null, "root", Axis: 0, v15, v17); // f32[1,768]
+        return v18;
+    }
+
+    private Call? GetReplace(Call root, Expr input_ids, Expr input)
+    {
+        var newInputs = new Var[]
+        {
+            new Var(input_ids.CheckedType!),
+            new Var(input.CheckedType!),
+        };
+
+        var multiVarMap = new Dictionary<Expr, Var>(ReferenceEqualityComparer.Instance)
+        {
+            { input_ids, newInputs[0] },
+            { input, newInputs[1] },
+        };
+
+        var merger = new MHAMerger(multiVarMap);
+        var clonedRoot = merger.Clone(root, default);
+
+        var callFusion = new Call(new Fusion("SDTextEncoderTail", $"{nameof(FuseSDTextEncoderTail)}_{Count}", ModuleKind, clonedRoot, newInputs), input_ids, input);
         return callFusion;
     }
 }
