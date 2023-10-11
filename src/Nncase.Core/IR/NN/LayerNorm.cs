@@ -38,4 +38,6 @@ public sealed partial class LayerNorm : Op
     public float Epsilon { get; }
 
     public bool UseMean { get; }
+
+    public override string DisplayProperty() => $"Axis: {Axis}, Epsilon: {Epsilon}, UseMean: {UseMean}";
 }

@@ -229,24 +229,6 @@ public sealed partial class CombineReshapeTranspose : IRewriteRule
         { TypePattern = HasFixedShape() },
         IsTensorConst("newShape"));
 
-    private int FindViewAxis(int[] oldShape, int[] newShape)
-    {
-        var indices = Enumerable.Range(0, oldShape.Length).ToList();
-        foreach (var dim in newShape)
-        {
-            for (int i = 0; i < oldShape.Length; i++)
-            {
-                if (oldShape[i] == dim && indices.IndexOf(i) != -1)
-                {
-                    indices.Remove(i);
-                }
-            }
-        }
-
-        var oneindex = (indices.Count == 1) ? indices[0] : -1;
-        return oneindex;
-    }
-
     private Expr? GetReplace(Expr input, Call trans, int[] newShape, int[] perm)
     {
         var transShape = trans.CheckedShape.ToValueArray();
@@ -254,7 +236,7 @@ public sealed partial class CombineReshapeTranspose : IRewriteRule
         if (transShape.Length == newShape.Length + 1)
         {
             // check reshape is sequeeze
-            var viewAxis = FindViewAxis(transShape, newShape);
+            var viewAxis = RulesUtility.FindSqueezeAxis(transShape, newShape);
             if (viewAxis == -1)
             {
                 return null;

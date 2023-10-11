@@ -526,7 +526,8 @@ public class SwishEvaluator : IEvaluator<Swish>, ITypeInferencer<Swish>, ICostEv
     public IValue Visit(IEvaluateContext context, Swish swish)
     {
         var input = context.GetOrtArgumentValue(swish, Swish.Input);
-        return OrtKI.Mul(OrtKI.Sigmoid(input), input).ToValue();
+        var beta = context.GetOrtArgumentValue(swish, Swish.Beta);
+        return OrtKI.Mul(OrtKI.Sigmoid(input * beta), input).ToValue();
     }
 
     /// <inheritdoc/>

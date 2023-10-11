@@ -47,6 +47,23 @@ public static class LinqExtensions
     }
 
     /// <summary>
+    /// Get the permutation of the source.
+    /// </summary>
+    /// <typeparam name="T">Element type.</typeparam>
+    /// <param name="source">Source sequences.</param>
+    /// <returns>Permutated sequences.</returns>
+    public static IEnumerable<T[]> Permutate<T>(this IEnumerable<T> source)
+    {
+        return Permutation(source, Enumerable.Empty<T>());
+
+        IEnumerable<T[]> Permutation(IEnumerable<T> reminder, IEnumerable<T> prefix) =>
+            !reminder.Any() ? new[] { prefix.ToArray() } :
+            reminder.SelectMany((c, i) => Permutation(
+                reminder.Take(i).Concat(reminder.Skip(i + 1)).ToArray(),
+                prefix.Append(c)));
+    }
+
+    /// <summary>
     /// take or default.
     /// </summary>
     public static IEnumerable<T> TakeOrDefault<T>(this IEnumerable<T> items, int count, T defaultValue)

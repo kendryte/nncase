@@ -345,6 +345,50 @@ public sealed partial class CombineTransposeReduce : IRewriteRule
 }
 
 /// <summary>
+/// x // [12, 77, 64]
+/// transpose(reshape(x, [1, 12, 77, 64]), [0, 2, 1, 3]) => reshape(transpose(x, [1, 0, 2]), [1, 77, 12, 64]).
+/// </summary>
+[RuleGenerator]
+public sealed partial class CombineTransposeReshape : IRewriteRule
+{
+    /// <inheritdoc/>
+    public IPattern Pattern { get; } = IsTranspose(
+        null,
+        "trans",
+        IsReshape(
+            IsWildcard("input") with { TypePattern = HasFixedShape() },
+            IsTensorConst("newShape")) with
+        { TypePattern = HasFixedShape() },
+        IsTensorConst("perm"));
+
+    private Expr? GetReplace(Call trans, Expr input, int[] newShape, int[] perm)
+    {
+        var inShape = input.CheckedShape.ToValueArray();
+        var outShape = trans.CheckedShape.ToValueArray();
+        if (!(newShape.Length == inShape.Length + 1))
+        {
+            return null;
+        }
+
+        // check reshape is sequeeze
+        var axis = RulesUtility.FindSqueezeAxis(newShape, inShape);
+        if (axis == -1)
+        {
+            return null;
+        }
+
+        var newPerm = perm.ToList();
+        newPerm.Remove(axis);
+        newPerm = newPerm.Select(i => i > axis ? i - 1 : i).ToList();
+
+        var inv = perm.Select((p, i) => (p, i)).OrderBy(tp => tp.p).ToArray();
+        var invNewShape = newPerm.Select(i => inShape[i]).ToList();
+        invNewShape.Insert(perm.ToList().IndexOf(axis), 1);
+        return Reshape(Transpose(input, newPerm.ToArray()), invNewShape.ToArray());
+    }
+}
+
+/// <summary>
 /// Combine Transpose with Unary
 /// reduce(transpose(x,p), a) => transpose(reduce(x, invtranspose(a, p)), p).
 /// </summary>

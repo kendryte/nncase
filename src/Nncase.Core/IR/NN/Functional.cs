@@ -101,5 +101,10 @@ public static class NN
     /// <summary>
     /// create Swish call.
     /// </summary>
-    public static Call Swish(Expr input) => new Call(new Swish(), input);
+    public static Call Swish(Expr input) => new Call(new Swish(), input, 1);
+
+    /// <summary>
+    /// create Swish call.
+    /// </summary>
+    public static Call Swish(Expr input, Expr beta) => new Call(new Swish(), input, beta);
 }

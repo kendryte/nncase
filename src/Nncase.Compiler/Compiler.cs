@@ -163,6 +163,8 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.CombineUnaryReshape>();
             p.Add<Passes.Rules.Neutral.CombineActivationsReshape>();
             p.Add<Passes.Rules.Neutral.CombineReshapePad>();
+            p.Add<Passes.Rules.Neutral.CombineReshapeTranspose>();
+            p.Add<Passes.Rules.Neutral.CombineTransposeReshape>();
             p.Add<Passes.Rules.Neutral.FoldNopPad>();
             p.Add<Passes.Rules.Neutral.FoldConv2DPads>();
             p.Add<Passes.Rules.Neutral.FuseClampConv2D>();
@@ -174,6 +176,7 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.ReshapeToTranspose>();
             p.Add<Passes.Rules.Neutral.FoldNopReshape>();
             p.Add<Passes.Rules.Neutral.FoldTwoReshapes>();
+            p.Add<Passes.Rules.Neutral.FoldReshapeBinaryConstReshape>();
             p.Add<Passes.Rules.Neutral.ReluToClamp>();
             p.Add<Passes.Rules.Neutral.Relu6ToClamp>();
             p.Add<Passes.Rules.Neutral.FoldNopSlice>();
@@ -183,8 +186,7 @@ internal class Compiler : ICompiler
 
         passManager.AddWithName<DataflowPass>("MHAFusion").Configure(p =>
         {
-            p.Add<Passes.Rules.MHACombine>(true);
-            p.Add<Passes.Rules.MHACombine>(false);
+            p.Add<Passes.Rules.CombineMHA>();
             p.Add<Passes.Rules.Neutral.FoldConstCall>();
 
             // p.Add<Passes.Rules.DumpMM>();
@@ -192,6 +194,7 @@ internal class Compiler : ICompiler
             // p.Add<Passes.Rules.DumpGather>();
             p.Add<Passes.Rules.FuseMHA1>();
             p.Add<Passes.Rules.FuseMHA2>();
+            p.Add<Passes.Rules.FuseMHA3>();
         });
 
         _compileSession.Target.RegisterTargetInDependentPass(passManager, _compileSession.CompileOptions);

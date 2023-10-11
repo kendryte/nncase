@@ -35,17 +35,6 @@ public class UnitTestCombineReshape : TransformTestBase
         { BinaryOp.Sub, new[] { 1 }, new[] { 1, 32, 32, 64, }, new[] { 1, 1024, 64, 1 }, true },
     };
 
-    public static readonly TheoryData<int[], int[], int[]> TestCombineReshapeTransposePostiveData =
-    new()
-    {
-        { new[] { 1, 77, 12, 64 }, new[] { 0, 2, 1, 3 }, new[] { 12, 77, 64 } },
-        { new[] { 1, 77, 12, 64 }, new[] { 2, 0, 1, 3 }, new[] { 12, 77, 64 } },
-        { new[] { 1, 77, 12, 64 }, new[] { 2, 1, 0, 3 }, new[] { 12, 77, 64 } },
-        { new[] { 1, 77, 12, 64 }, new[] { 2, 1, 3, 0 }, new[] { 12, 77, 64 } },
-        { new[] { 77, 12, 1, 64 }, new[] { 0, 2, 1, 3 }, new[] { 77, 12, 64 } },
-        { new[] { 77, 12, 1, 64 }, new[] { 3, 0, 2, 1 }, new[] { 64, 77, 12 } },
-    };
-
     public static readonly TheoryData<int[], int[], int[]> TestCombineReshapeTransposeNegativeData =
     new()
     {
@@ -217,7 +206,7 @@ public class UnitTestCombineReshape : TransformTestBase
     }
 
     [Theory]
-    [MemberData(nameof(TestCombineReshapeTransposePostiveData))]
+    [ClassData(typeof(CombineReshapeTransposePostiveData))]
     public void TestCombineReshapeTransposePostive(int[] inShape, int[] perm, int[] newshape)
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, inShape));
@@ -236,5 +225,27 @@ public class UnitTestCombineReshape : TransformTestBase
         var input = new Var("input", new TensorType(DataTypes.Float32, inShape));
         var rootPre = Tensors.Reshape(Tensors.Transpose(input, perm), newshape);
         TestNotMatch<CombineReshapeTranspose>(rootPre);
+    }
+
+    private sealed class CombineReshapeTransposePostiveData : TheoryData<int[], int[], int[]>
+    {
+        public CombineReshapeTransposePostiveData()
+        {
+            var inshapes = new[] {
+                new[] { 1, 77, 12, 64 },
+                new[] { 77, 1, 12, 64 },
+                new[] { 77, 12, 1, 64 },
+                new[] { 77, 12, 64, 1 },
+             };
+
+            var perms = new[] { 0, 1, 2, 3 }.Permutate().ToArray();
+
+            foreach (var (inshape, perm) in new[] { inshapes, perms }.CartesianProduct().Select(i => i.ToArray()).Select(i => (i[0], i[1])))
+            {
+                var newshape = perm.Select(i => inshape[i]).ToList();
+                newshape.Remove(1);
+                Add(inshape, perm, newshape.ToArray());
+            }
+        }
     }
 }

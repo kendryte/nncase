@@ -15,6 +15,8 @@ using Nncase.IR.Tensors;
 using Nncase.Passes.Rules.Neutral;
 using Nncase.PatternMatch;
 using Nncase.Targets;
+using static Nncase.PatternMatch.F.Math;
+using static Nncase.PatternMatch.F.NN;
 using static Nncase.PatternMatch.F.Tensors;
 using static Nncase.PatternMatch.Utility;
 using static Nncase.Utilities.ReplaceUtility;
@@ -31,6 +33,16 @@ public sealed class MHAMerger : ExprCloner<Unit>
     public MHAMerger(IReadOnlyDictionary<Expr, Var> multiVarMap)
     {
         _multiVarMap = multiVarMap;
+    }
+
+    protected override Expr VisitCall(Call expr, Unit context)
+    {
+        if (_multiVarMap.TryGetValue(expr, out var newVar))
+        {
+            return newVar;
+        }
+
+        return base.VisitCall(expr, context);
     }
 
     protected override Expr VisitLeafCall(Call expr, Unit context)
@@ -124,7 +136,7 @@ public sealed partial class FuseMHA1 : FusionMaker
             new Var(mask.CheckedType!),
         };
 
-        var callFusion = new Call(new Fusion("MHABertBase", $"{root.Target.GetType().Name}", "cpu", root, newInputs.OfType<Var>().ToArray()), x, mask);
+        var callFusion = new Call(new Fusion("MHABertBase", $"{nameof(FuseMHA1)}_{Count}", ModuleKind, root, newInputs.OfType<Var>().ToArray()), x, mask);
         return callFusion;
     }
 }
@@ -239,7 +251,67 @@ public sealed partial class FuseMHA2 : FusionMaker
         var merger = new MHAMerger(multiVarMap);
         var clonedRoot = merger.Clone(root, default);
 
-        var callFusion = new Call(new Fusion("MHALLaMA65B", $"{root.Target.GetType().Name}", "cpu", clonedRoot, newInputs.OfType<Var>().ToArray()), hidden_in, position_ids, attn_mask);
+        var callFusion = new Call(new Fusion("MHALLaMA65B", $"{nameof(FuseMHA2)}_{Count}", ModuleKind, clonedRoot, newInputs.OfType<Var>().ToArray()), hidden_in, position_ids, attn_mask);
+        return callFusion;
+    }
+}
+
+/// <summary>
+/// stable-disffusion text encoder.
+/// </summary>
+[RuleGenerator]
+public sealed partial class FuseMHA3 : FusionMaker
+{
+    public override string ModuleKind { get; } = CPUTarget.Kind;
+
+    public override Pattern Pattern => CreatePattern();
+
+    private static Pattern CreatePattern()
+    {
+        var v19 = IsWildcard("input");
+        var v20 = IsLayerNorm(2, 0.000009999999747378752f, true, v19, IsTensorConst(), IsTensorConst()); // f32[1,77,768]
+        var v21 = IsMatMul(v20, IsTensorConst()); // f32[1,77,3072]
+        var v22 = IsBinary(BinaryOp.Add, IsTensorConst(), v21); // f32[1,77,3072]
+        var v23 = IsSwish(v22, IsTensorConst()); // f32[1,77,3072]
+        var v24 = IsMatMul(v23, IsTensorConst()); // f32[1,77,768]
+        var v25 = IsBinary(BinaryOp.Add, IsTensorConst(), v24); // f32[1,77,768]
+        var v26 = IsBinary(BinaryOp.Add, v19, v25); // f32[1,77,768]
+        var v27 = IsLayerNorm(2, 0.000009999999747378752f, true, v26, IsTensorConst(), IsTensorConst()); // f32[1,77,768]
+        var v28 = IsMatMul(v27, IsTensorConst()); // f32[12,77,64]
+        var v29 = IsBinary(BinaryOp.Add, v28, IsTensorConst()); // f32[12,77,64]
+        var v30 = IsBinary(BinaryOp.Mul, v29, IsTensorConst()); // f32[12,77,64]
+        var v31 = IsMatMul(v27, IsTensorConst()); // f32[12,77,64]
+        var v32 = IsBinary(BinaryOp.Add, v31, IsTensorConst()); // f32[12,77,64]
+        var v33 = IsTranspose(v32, IsTensorConst()); // f32[12,64,77]
+        var v34 = IsMatMul(v30, v33); // f32[12,77,77]
+        var v35 = IsBinary(BinaryOp.Add, v34, IsTensorConst()); // f32[12,77,77]
+        var v36 = IsSoftmax(v35, IsTensorConst()); // f32[12,77,77]
+        var v37 = IsMatMul(v27, IsTensorConst()); // f32[12,77,64]
+        var v38 = IsBinary(BinaryOp.Add, v37, IsTensorConst()); // f32[12,77,64]
+        var v39 = IsMatMul(v36, v38); // f32[12,77,64]
+        var v40 = IsTranspose(v39, IsTensorConst()); // f32[77,12,64]
+        var v41 = IsReshape(v40, IsTensorConst()); // f32[1,77,768]
+        var v42 = IsMatMul(v41, IsTensorConst()); // f32[1,77,768]
+        var v43 = IsBinary(BinaryOp.Add, IsTensorConst(), v42); // f32[1,77,768]
+        var v44 = IsBinary(null, "root", BinaryOp.Add, v26, v43); // f32[1,77,768]
+        return v44;
+    }
+
+    private Call? GetReplace(Call root, Expr input)
+    {
+        var newInputs = new List<Expr>
+        {
+            new Var(input.CheckedType!),
+        };
+
+        var multiVarMap = new Dictionary<Expr, Var>(ReferenceEqualityComparer.Instance)
+        {
+            { input, (Var)newInputs[0] },
+        };
+        var merger = new MHAMerger(multiVarMap);
+        var clonedRoot = merger.Clone(root, default);
+
+        var callFusion = new Call(new Fusion("MHASDTextEncoder", $"{nameof(FuseMHA3)}_{Count}", ModuleKind, clonedRoot, newInputs.OfType<Var>().ToArray()), input);
         return callFusion;
     }
 }

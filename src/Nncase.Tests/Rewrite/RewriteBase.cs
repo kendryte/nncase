@@ -2899,3 +2899,28 @@ public sealed class ReshapeTransposeReshapeCase : IRewriteCase
 
     public Dictionary<Var, IValue> FeedDict { get; }
 }
+
+public sealed class ReshapeBinaryConstReshapeCase : IRewriteCase
+{
+    public ReshapeBinaryConstReshapeCase()
+    {
+        var v9 = new Var("v9", new TensorType(DataTypes.Float32, new[] { 12, 77, 77 }));
+        {
+            var v10 = Reshape(v9, new[] { 1, 12, 77, 77 }); // f32[1,12,77,77]
+            var v11 = IR.F.Math.Add(v10, IR.F.Random.Normal(new[] { 1, 1, 77, 77 }).Evaluate().AsTensor()); // f32[1,12,77,77]
+            var v12 = Reshape(v11, new[] { 12, 77, 77 }); // f32[12,77,77]
+
+            PreExpr = new Function(v12, new[] { v9 });
+        }
+
+        FeedDict = new() { { v9, IR.F.Random.Normal(new[] { 12, 77, 77 }).Evaluate() } };
+    }
+
+    public Function PreExpr { get; }
+
+    public IEnumerable<Type> Rules => new[] {
+        typeof(FoldReshapeBinaryConstReshape),
+    };
+
+    public Dictionary<Var, IValue> FeedDict { get; }
+}

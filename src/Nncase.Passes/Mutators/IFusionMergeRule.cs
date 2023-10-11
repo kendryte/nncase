@@ -668,14 +668,8 @@ v2 =f2(v0)      v1 = f1(v0)
         {
             if (caller_inputs[i] is Call { Target: Fusion })
             {
-                Fusion callee_fusion;
-                try
+                if (result[$"callee_fusion_{i}"] is not Fusion callee_fusion)
                 {
-                    callee_fusion = (Fusion)result[$"callee_fusion_{i}"];
-                }
-                catch (KeyNotFoundException)
-                {
-                    // when matched fusion(fusion(x,y)), the input => fusion(x,y)
                     return false;
                 }
 

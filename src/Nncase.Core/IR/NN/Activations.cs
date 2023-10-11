@@ -155,6 +155,11 @@ public sealed partial class Swish : ActivationOp
     /// Gets input.
     /// </summary>
     public static readonly ParameterInfo Input = new(typeof(Swish), 0, "input", ParameterKind.Input);
+
+    /// <summary>
+    /// Gets beta.
+    /// </summary>
+    public static readonly ParameterInfo Beta = new(typeof(Swish), 1, "beta", IsFloatScalar());
 }
 
 /// <summary>

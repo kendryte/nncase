@@ -41,7 +41,7 @@ public class MatchResult : IMatchResult
     public object this[IPattern pattern] => _patternMap[pattern];
 
     /// <inheritdoc/>
-    public object this[string name] => _stringMap[name];
+    public object this[string name] => _stringMap.GetValueOrDefault(name, null!);
 
     /// <inheritdoc/>
     public IEnumerator<KeyValuePair<IPattern, object>> GetEnumerator()
