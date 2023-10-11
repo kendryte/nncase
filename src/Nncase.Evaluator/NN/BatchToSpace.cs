@@ -115,13 +115,13 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
             inShape = Stack(new IR.Tuple(inShape[0], inShape[2], inShape[1]), 0);
         }
 
-        var blockShape = context.GetArgument(target, BatchToSpace.BlockShape);
+        var blockShape = Cast(context.GetArgument(target, BatchToSpace.BlockShape), DataTypes.Int64);
         if (!blockShape.CheckedShape.IsFixed)
         {
             throw new NotImplementedException();
         }
 
-        var crops = context.GetArgument(target, BatchToSpace.Crops);
+        var crops = Cast(context.GetArgument(target, BatchToSpace.Crops), DataTypes.Int64);
         var blockSize = Prod(blockShape);
         var batch = inShape[0];
         var d0 = batch / blockSize;
@@ -131,7 +131,7 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
 
         var inRank = Cast(ShapeOf(inShape)[0], DataTypes.Int32);
         var remainSize = inRank - 1 - m;
-        var remainShape = new If(remainSize > 0, ShapeExprUtility.Slice(inShape, 1 + m, int.MaxValue), Array.Empty<int>());
+        var remainShape = new If(remainSize > 0, ShapeExprUtility.Slice(inShape, 1 + m, int.MaxValue), Array.Empty<long>());
 
         var outShapeList = Concat(new IR.Tuple(Stack(new IR.Tuple(new[] { d0 }), 0), Stack(new IR.Tuple(cropSection), 0), remainShape), 0);
 

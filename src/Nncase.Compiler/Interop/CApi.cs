@@ -63,7 +63,9 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr, IntPtr, IntPtr> CompileSessionCreatePtr;
     public delegate* unmanaged<IntPtr, IntPtr> CompileSessionGetCompilerPtr;
     public delegate* unmanaged<void> CompilerInitializePtr;
-    public delegate* unmanaged<IntPtr, IntPtr, IntPtr> CompilerImportModulePtr;
+    public delegate* unmanaged<IntPtr, IntPtr, IntPtr> CompilerImportTFLiteModulePtr;
+    public delegate* unmanaged<IntPtr, IntPtr, IntPtr> CompilerImportOnnxModulePtr;
+    public delegate* unmanaged<IntPtr, IntPtr, IntPtr, IntPtr> CompilerImportNcnnModulePtr;
     public delegate* unmanaged<IntPtr, void> CompilerCompilePtr;
     public delegate* unmanaged<IntPtr, IntPtr, void> CompilerGencodePtr;
     public delegate* unmanaged<Runtime.TypeCode, IntPtr> DataTypeFromTypeCodePtr;
@@ -131,7 +133,9 @@ public static unsafe class CApi
         mt->CompileSessionCreatePtr = &CompileSessionCreate;
         mt->CompileSessionGetCompilerPtr = &CompileSessionGetCompiler;
         mt->CompilerInitializePtr = &CompilerInitialize;
-        mt->CompilerImportModulePtr = &CompilerImportModule;
+        mt->CompilerImportTFLiteModulePtr = &CompilerImportTFLiteModule;
+        mt->CompilerImportOnnxModulePtr = &CompilerImportOnnxModule;
+        mt->CompilerImportNcnnModulePtr = &CompilerImportNcnnModule;
         mt->CompilerCompilePtr = &CompilerCompile;
         mt->CompilerGencodePtr = &CompilerGencode;
         mt->DataTypeFromTypeCodePtr = &DataTypeFromTypeCode;
@@ -395,11 +399,30 @@ public static unsafe class CApi
     }
 
     [UnmanagedCallersOnly]
-    private static IntPtr CompilerImportModule(IntPtr compilerHandle, IntPtr streamHandle)
+    private static IntPtr CompilerImportTFLiteModule(IntPtr compilerHandle, IntPtr streamHandle)
     {
         var compiler = Get<Compiler>(compilerHandle);
         var stream = Get<CStream>(streamHandle);
-        var module = compiler.ImportModuleAsync(stream).Result;
+        var module = compiler.ImportTFLiteModuleAsync(stream).Result;
+        return GCHandle.ToIntPtr(GCHandle.Alloc(module));
+    }
+
+    [UnmanagedCallersOnly]
+    private static IntPtr CompilerImportOnnxModule(IntPtr compilerHandle, IntPtr streamHandle)
+    {
+        var compiler = Get<Compiler>(compilerHandle);
+        var stream = Get<CStream>(streamHandle);
+        var module = compiler.ImportOnnxModuleAsync(stream).Result;
+        return GCHandle.ToIntPtr(GCHandle.Alloc(module));
+    }
+
+    [UnmanagedCallersOnly]
+    private static IntPtr CompilerImportNcnnModule(IntPtr compilerHandle, IntPtr ncnnParamHandle, IntPtr ncnnBinHandle)
+    {
+        var compiler = Get<Compiler>(compilerHandle);
+        var ncnnParam = Get<CStream>(ncnnParamHandle);
+        var ncnnBin = Get<CStream>(ncnnBinHandle);
+        var module = compiler.ImportNcnnModuleAsync(ncnnParam, ncnnBin).Result;
         return GCHandle.ToIntPtr(GCHandle.Alloc(module));
     }
 

@@ -95,6 +95,6 @@ public class RangeEvaluator : IEvaluator<Range>, ITypeInferencer<Range>, ICostEv
         var begin = context.GetArgument(target, Range.Begin);
         var end = context.GetArgument(target, Range.End);
         var step = context.GetArgument(target, Range.Step);
-        return ShapeExprUtility.StackOne((end - begin) / step);
+        return IR.F.Tensors.Cast(StackOne((end - begin) / step), DataTypes.Int64);
     }
 }

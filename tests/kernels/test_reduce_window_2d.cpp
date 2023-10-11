@@ -26,7 +26,7 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace ortki;
 
-#define TEST_CASE_NAME "test_reduce_window2D"
+#define TEST_CASE_NAME "test_reduce_window_2d"
 
 class ReduceWindow2DTest : public KernelTest,
                            public ::testing::TestWithParam<std::tuple<int>> {

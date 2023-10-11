@@ -12,6 +12,7 @@ using Nncase.Diagnostics;
 using Nncase.Evaluator;
 using Nncase.Hosting;
 using Nncase.IR;
+using Nncase.IR.NN;
 using Nncase.IR.Tensors;
 using Nncase.Passes;
 using Nncase.Passes.Mutators;
@@ -47,27 +48,22 @@ internal class Compiler : ICompiler
     /// <inheritdoc/>
     public void ImportIRModule(IRModule module) => _module = module;
 
-    public async Task<IRModule> ImportModuleAsync(Stream content)
+    public Task<IRModule> ImportTFLiteModuleAsync(Stream content)
     {
-        var module = ImportModel(content);
-        if (_dumpper.IsEnabled(DumpFlags.Compile))
-        {
-            _dumpper.DumpModule(module, "IRImport");
-        }
+        var module = Importers.ImportTFLite(content, _compileSession);
+        return InitializeModuleAsync(module);
+    }
 
-        var preprocess_option = _compileSession.CompileOptions;
+    public Task<IRModule> ImportOnnxModuleAsync(Stream content)
+    {
+        var module = Importers.ImportOnnx(content, _compileSession);
+        return InitializeModuleAsync(module);
+    }
 
-        await RunPassAsync(pmg => BroadcastOutputNamesAfterImportPass(pmg), "BroadcastOutputNamesAfterImport");
-        await RunPassAsync(pmg => pmg.Add<ShapeInferPass>(), "ShapeInferAfterImport");
-        await RunPassAsync(pmg => AddPreAndPostProcess(pmg), "AddPreAndPostProcessAfterImport");
-
-        var inferSucc = CompilerServices.InferenceType(module.Entry!);
-        if (!inferSucc)
-        {
-            throw new InvalidOperationException("InferShape Failed For This Model!");
-        }
-
-        return module;
+    public Task<IRModule> ImportNcnnModuleAsync(Stream ncnnParam, Stream ncnnBin)
+    {
+        var module = Importers.ImportNcnn(ncnnParam, ncnnBin, _compileSession);
+        return InitializeModuleAsync(module);
     }
 
     public void BroadcastOutputNamesAfterImportPass(IPassManager passManager)
@@ -118,7 +114,29 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FoldTwoSlices>();
             p.Add<Passes.Rules.Neutral.FocusFull>();
             p.Add<Passes.Rules.Neutral.ReshapeMatMul>();
+            p.Add<Passes.Rules.Neutral.SplitSpaceToBatch>();
+            p.Add<Passes.Rules.Neutral.SplitBatchToSpace>();
+            p.Add<Passes.Rules.Neutral.FoldConstCall>();
+            p.Add<Passes.Rules.Neutral.FoldShapeOf>();
+            p.Add<Passes.Rules.Neutral.FoldTwoReshapes>();
+            p.Add<Passes.Rules.Neutral.FoldTwoSlices>();
+            p.Add<Passes.Rules.Neutral.FoldNopBinary>();
+            p.Add<Passes.Rules.Neutral.FoldNopCast>();
+            p.Add<Passes.Rules.Neutral.FoldNopReshape>();
+            p.Add<Passes.Rules.Neutral.FoldNopSlice>();
+            p.Add<Passes.Rules.Neutral.FoldSqueezeUnsqueeze>();
+            p.Add<Passes.Rules.Neutral.FoldUnsqueezeSqueeze>();
+            p.Add<Passes.Rules.Neutral.FoldTwoTransposes>();
+            p.Add<Passes.Rules.Neutral.FoldNopClamp>();
+            p.Add<Passes.Rules.Neutral.SqueezeToReshape>();
+            p.Add<Passes.Rules.Neutral.UnSqueezeToReshape>();
+            p.Add<Passes.Rules.ShapeExpr.GatherToGetItem>();
+            p.Add<Passes.Rules.ShapeExpr.FoldGetItemShapeOf>();
+            p.Add<Passes.Rules.Neutral.FoldNopReduce>();
+            p.Add<Passes.Rules.Neutral.SliceToGetItem>();
+            p.Add<Passes.Rules.Neutral.FoldTwoPads>();
         });
+
         passManager.AddWithName<EGraphRulesPass>("NeutralOptimizeTranspose").Configure(p =>
         {
             p.Add<Passes.Rules.Neutral.FoldConstCall>();
@@ -180,24 +198,30 @@ internal class Compiler : ICompiler
     public void RegisterShapeBucket(IPassManager p)
     {
         var options = _compileSession.CompileOptions.ShapeBucketOptions;
-        var singleVar = options.VarMap.Values.SelectMany(x => x).OfType<Var>().ToHashSet().Count <= 1;
         if (!options.Enable)
         {
             return;
         }
 
+        var singleVar = options.VarMap.Values.SelectMany(x => x).OfType<Var>().ToHashSet().Count <= 1;
         CheckShapeBucketOptions(options);
-        ToFusion(p);
-        MergeOp(p);
-        LostToFusion(p, singleVar);
-        MergeOp(p);
-        ClearMarker(p);
 
-        // MergeFusion(p, singleVar);
-        Bucket(p);
-
-        // Rebuild(p);
-        Simplify(p);
+        if (HasNotBucketOp(_module!.Entry!) || !singleVar)
+        {
+            ToFusion(p);
+            MergeOp(p, true);
+            LostToFusion(p, singleVar);
+            MergeOp(p, true);
+            ClearMarker(p);
+            MergeFusion(p, singleVar, true);
+            Bucket(p);
+            Rebuild(p, singleVar);
+            Simplify(p);
+        }
+        else
+        {
+            p.AddWithName<FullBucket>("FullBucket");
+        }
     }
 
     public void ClearFixShape(IPassManager p)
@@ -248,6 +272,30 @@ internal class Compiler : ICompiler
         linkedModel.Serialize(output);
     }
 
+    private async Task<IRModule> InitializeModuleAsync(IRModule module)
+    {
+        _module = module;
+
+        if (_dumpper.IsEnabled(DumpFlags.Compile))
+        {
+            _dumpper.DumpModule(module, "IRImport");
+        }
+
+        var preprocess_option = _compileSession.CompileOptions;
+
+        await RunPassAsync(pmg => BroadcastOutputNamesAfterImportPass(pmg), "BroadcastOutputNamesAfterImport");
+        await RunPassAsync(pmg => pmg.Add<ShapeInferPass>(), "ShapeInferAfterImport");
+        await RunPassAsync(pmg => AddPreAndPostProcess(pmg), "AddPreAndPostProcessAfterImport");
+
+        var inferSucc = CompilerServices.InferenceType(module.Entry!);
+        if (!inferSucc)
+        {
+            throw new InvalidOperationException("InferShape Failed For This Model!");
+        }
+
+        return module;
+    }
+
     private void RegisterTargetIndependQuantPass(IPassManager passManager)
     {
         var quantMode = _compileSession.CompileOptions.QuantizeOptions.ModelQuantMode;
@@ -259,17 +307,6 @@ internal class Compiler : ICompiler
             });
             passManager.AddWithName<EGraphPassWithQuantize>("AssignRanges");
         }
-    }
-
-    private IRModule ImportModel(Stream content)
-    {
-        _module = _compileSession.CompileOptions.InputFormat switch
-        {
-            "tflite" => Importers.ImportTFLite(content, _compileSession),
-            "onnx" => Importers.ImportOnnx(content, _compileSession),
-            var inputFormat => throw new NotImplementedException($"Not Implement {inputFormat} Importer!"),
-        };
-        return _module;
     }
 
     private async Task RunPassAsync(Action<IPassManager> register, string name)

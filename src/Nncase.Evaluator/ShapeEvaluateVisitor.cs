@@ -102,7 +102,7 @@ internal sealed class ShapeEvaluateVisitor : ExprVisitor<Expr, Unit>
                 throw new InvalidOperationException();
             }
 
-            var shapeExpr = shape.Select((x, i) => x.IsFixed ? x.FixedValue : _context.VarMap[expr][i]).Select(x => IR.F.Tensors.Cast(x, DataTypes.Int32)).ToArray();
+            var shapeExpr = shape.Select((x, i) => x.IsFixed ? x.FixedValue : _context.VarMap[expr][i]).Select(x => IR.F.Tensors.Cast(x, DataTypes.Int64)).ToArray();
             return IR.F.Tensors.Stack(new IR.Tuple(shapeExpr), 0);
         }
 

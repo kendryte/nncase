@@ -98,11 +98,11 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
     {
         var inShape = context.GetArgumentShape(target, SpaceToBatch.Input);
         var blockShape = context.GetArgument(target, SpaceToBatch.BlockShape);
-        var padding = context.GetArgument(target, SpaceToBatch.Paddings);
+        var padding = Cast(context.GetArgument(target, SpaceToBatch.Paddings), DataTypes.Int64);
         var input = context.GetArgument(target, SpaceToBatch.Input);
         if (blockShape is TensorConst blockConst)
         {
-            var blockShapeValue = blockConst.Value.ToArray<int>();
+            var blockShapeValue = blockConst.Value.ToArray<long>();
             var m = blockShapeValue.Length;
             var inRank = input.CheckedShape.Rank;
 
@@ -122,7 +122,7 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
             }).ToArray();
 
             var remainSize = inRank - 1 - m;
-            var remainShape = new If(remainSize > 0, ShapeExprUtility.Slice(inShape, 1 + m, int.MaxValue), Array.Empty<int>());
+            var remainShape = new If(remainSize > 0, ShapeExprUtility.Slice(inShape, 1 + m, int.MaxValue), Array.Empty<long>());
             var outLast = remainShape;
             var outShape = Concat(new IR.Tuple(Stack(new IR.Tuple(outFirst.Concat(outMid).ToArray()), 0), outLast), 0);
             return outShape;
