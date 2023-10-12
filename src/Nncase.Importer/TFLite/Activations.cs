@@ -64,7 +64,12 @@ public partial class TFLiteImporter
     private Expr VisitLeakyRelu(in tflite.Operator op)
     {
         var input = GetInputExprs(op, 0);
-        return F.NN.LeakyRelu(input, op.BuiltinOptionsAsLeakyReluOptions().Alpha);
+        var node = F.NN.LeakyRelu(input, op.BuiltinOptionsAsLeakyReluOptions().Alpha);
+
+        List<string> outputNames = new() { GetOutputTensor(op, 0).Name };
+        node.Metadata.OutputNames = outputNames;
+
+        return node;
     }
 
     private Expr VisitHardSwish(in tflite.Operator op)
