@@ -7,8 +7,8 @@
 #include <functional>
 #include <gather.h>
 #include <hardware_context.h>
-#include <layernorm.h>
 #include <instance_norm.h>
+#include <layernorm.h>
 #include <matmul.h>
 #include <reduce.h>
 #include <softmax.h>
@@ -258,18 +258,18 @@ void layernorm(tensor<T, ALoc> &input, tensor<T, loc_t::local> &sum,
 
 template <typename T, loc_t ALoc, loc_t BLoc>
 void instance_norm(tensor<T, ALoc> &input, tensor<T, loc_t::local> &sum,
-               tensor<T, loc_t::local> &sum_sqr, tensor<T, BLoc> &output,
-               tensor<T, loc_t::local> &gamma, tensor<T, loc_t::local> &beta,
-               T eps, int32_t norm_size) {
+                   tensor<T, loc_t::local> &sum_sqr, tensor<T, BLoc> &output,
+                   tensor<T, loc_t::local> &gamma,
+                   tensor<T, loc_t::local> &beta, T eps, int32_t norm_size) {
     assert(sum.strides() == sum_sqr.strides());
     assert(is_contiguous(sum.dimension(), sum.strides()));
     assert(gamma.strides() == beta.strides());
     assert(is_contiguous(gamma.dimension(), gamma.strides()));
-    kernels::instance_norm(
-        input.cdata().data(), sum.data().data(), sum_sqr.data().data(),
-        output.data().data(), gamma.data().data(), beta.data().data(),
-        input.dimension(), input.strides(), output.strides(), sum.strides(),
-        gamma.strides(), eps, norm_size);
+    kernels::instance_norm(input.cdata().data(), sum.data().data(),
+                           sum_sqr.data().data(), output.data().data(),
+                           gamma.data().data(), beta.data().data(),
+                           input.dimension(), input.strides(), output.strides(),
+                           sum.strides(), gamma.strides(), eps, norm_size);
 }
 
 template <typename T, loc_t ALoc>
