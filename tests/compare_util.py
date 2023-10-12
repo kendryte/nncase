@@ -25,7 +25,6 @@ import test_utils
 
 
 def cosine(gt: np.ndarray, pred: np.ndarray, *args):
-
     # remove the NaN values in the same location.
     if np.isnan(gt).any() and np.isnan(pred).any():
         gt_mask = np.isnan(gt)
@@ -52,6 +51,7 @@ def cosine(gt: np.ndarray, pred: np.ndarray, *args):
 
     result = (gt @ pred) / (np.linalg.norm(gt, 2) * np.linalg.norm(pred, 2))
 
+    # When tensor gt is a multiple of tensor pred, their similarity is also 1.
     return -1 if math.isnan(result) else result
 
 
