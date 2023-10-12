@@ -27,7 +27,8 @@ void reduce_arg_impl(TReducer &&reducer, T init_value, const T *input,
     });
 
     // collect all min/max indices
-    auto out_map = (TOutput *)runtime_util->malloc(output_size * 2 * sizeof(TOutput));
+    auto out_map =
+        (TOutput *)runtime_util->malloc(output_size * 2 * sizeof(TOutput));
     // std::unordered_map<size_t, std::vector<TOutput>> out_map;
     apply(in_shape, [&](gsl::span<const size_t> index) -> void {
         const auto src = input[offset(in_strides, index)];

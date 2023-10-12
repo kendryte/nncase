@@ -704,7 +704,7 @@ template <loc_t SrcLoc, loc_t DestLoc, class Tout>
 void reduce_arg(tensor<float, SrcLoc> &src, tensor<Tout, DestLoc> &dest,
                 int axis, bool keep_dims, bool select_last_idx,
                 reduce_arg_op_t op) {
-    auto axes = dims_t { (size_t)axis };
+    auto axes = dims_t{(size_t)axis};
     kernels::reduce_arg<float, Tout>(
         op, src.cdata().data(), dest.data().data(), src.dimension(),
         src.strides(), dest.strides(), axes, keep_dims, select_last_idx);
