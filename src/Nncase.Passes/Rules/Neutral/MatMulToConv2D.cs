@@ -189,10 +189,10 @@ public sealed partial class BroadcastMatMul : IRewriteRule
             var ifShape = new int[] { -1, newAShape[^2], newAShape[^1] };
             var wShape = new int[] { -1, newBShape[^2], newBShape[^1] };
             var bBroadCast = IR.F.Tensors.Broadcast(b, newBShape);
-            List<string> bOutputNames = new() { b.Metadata.OutputNames![0] + "_bBroadCast" };
+            List<string> bOutputNames = new() { b.Metadata.OutputNames?[0] + "_bBroadCast" };
             bBroadCast.Metadata.OutputNames = bOutputNames;
             var aBroadCast = IR.F.Tensors.Broadcast(a, newAShape);
-            List<string> aOutputNames = new() { a.Metadata.OutputNames![0] + "_aBroadCast" };
+            List<string> aOutputNames = new() { a.Metadata.OutputNames?[0] + "_aBroadCast" };
             aBroadCast.Metadata.OutputNames = aOutputNames;
             return Reshape(
                         MatMul(
