@@ -141,7 +141,7 @@ public partial class ReshapeMatMul : RewriteRule<Pattern>
             }
         }
 
-        var end = IR.F.Tensors.Reshape(IR.F.Tensors.MatMul(lhs, rhs), outputShape);
+        var end = IR.F.Tensors.Reshape(IR.F.Tensors.MatMul(lhs, rhs).InheritMetaData(matmul), outputShape);
         return end;
     }
 }
