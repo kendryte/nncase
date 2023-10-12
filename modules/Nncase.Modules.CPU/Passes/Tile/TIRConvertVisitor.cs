@@ -53,6 +53,9 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
             case LayerNorm layernorm:
                 GenerateLayerNorm(layernorm, arguments, ret, (DistributedType)expr.Arguments[0].CheckedType);
                 break;
+            case InstanceNormalization instnorm:
+                GenerateInstanceNorm(instnorm, ((TensorConst)expr.Arguments[3]).Value.ToScalar<float>(), arguments, ret, (DistributedType)expr.Arguments[0].CheckedType);
+                break;
             case Gather gather:
                 GenerateGather(gather, arguments, ret);
                 break;
@@ -165,6 +168,11 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
     private void GenerateLayerNorm(LayerNorm layerNorm, Buffer[] arguments, Buffer ret, DistributedType distributedType)
     {
         _mainBody.Add(IR.F.XPU.LayerNorm(layerNorm.Axis, layerNorm.Epsilon, layerNorm.UseMean, arguments[0], arguments[1], arguments[2], ret, distributedType));
+    }
+
+    private void GenerateInstanceNorm(InstanceNormalization instNorm, float eps, Buffer[] arguments, Buffer ret, DistributedType distributedType)
+    {
+        _mainBody.Add(IR.F.XPU.InstanceNorm(eps, arguments[0], arguments[1], arguments[2], ret, distributedType));
     }
 
     private void GenerateGather(Gather gahter, Buffer[] arguments, Buffer ret)
