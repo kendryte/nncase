@@ -10,6 +10,7 @@
 #include <layernorm.h>
 #include <matmul.h>
 #include <reduce.h>
+#include <reduce_arg.h>
 #include <softmax.h>
 #include <tensor.h>
 #include <thread_context.h>
@@ -681,6 +682,16 @@ void tdma_status() {}
 enum class sched_strategy_t : uint8_t { pin_block_tensor, normal };
 
 void set_sched_strategy([[maybe_unused]] sched_strategy_t sch) {}
+
+template <loc_t SrcLoc, loc_t DestLoc, class Tout>
+void reduce_arg(tensor<float, SrcLoc> &src, tensor<Tout, DestLoc> &dest,
+                int axis, bool keep_dims, bool select_last_idx,
+                reduce_arg_op_t op) {
+    auto axes = dims_t { (size_t)axis };
+    kernels::reduce_arg<float, Tout>(
+        op, src.cdata().data(), dest.data().data(), src.dimension(),
+        src.strides(), dest.strides(), axes, keep_dims, select_last_idx);
+}
 
 template <loc_t SrcLoc, loc_t DestLoc>
 void softmax(tensor<float, SrcLoc> &src, tensor<float, DestLoc> &dest, int axis,

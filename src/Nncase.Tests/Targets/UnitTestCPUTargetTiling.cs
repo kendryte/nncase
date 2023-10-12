@@ -49,7 +49,9 @@ public class UnitTestCPUTargetTiling : TestClassBase
     // [ClassData(typeof(TilingCaseReshape1))]
     // [ClassData(typeof(TilingCaseReshape2))]
     // [ClassData(typeof(TilingCaseMatmulUnary))]
-    [ClassData(typeof(TilingCaseConv2D))]
+    // [ClassData(typeof(TilingCaseConv2D))]
+    [ClassData(typeof(TilingCaseReduceArg))]
+    [ClassData(typeof(TilingCaseReduceArg2))]
     public async Task TestCpuFunction(Function main, Tensor[] inputs)
     {
         var module = new IR.IRModule(main);
@@ -508,6 +510,62 @@ internal sealed class TilingCaseReshape2 : TheoryData<Function, Tensor[]>
         }
 
         var main = new Function("reshape2", new Call(fusion, input), new[] { input });
+
+        var input_tensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, inputShape).Evaluate().AsTensor();
+        var feedDict = new Dictionary<Var, IValue>
+        {
+            { fin, Value.FromTensor(input_tensor) },
+        };
+        var output = fusion.Body.Evaluate(feedDict).AsTensor();
+
+        Add(main, new[] { input_tensor, output });
+    }
+}
+
+internal sealed class TilingCaseReduceArg : TheoryData<Function, Tensor[]>
+{
+    public TilingCaseReduceArg()
+    {
+        var inputShape = new[] { 1, 77 };
+        var input = new Var("input", new TensorType(DataTypes.Float32, inputShape));
+
+        Fusion fusion;
+        Var fin;
+        {
+            fin = new Var("input", new TensorType(DataTypes.Float32, inputShape));
+            var v0 = new Call(new IR.CPU.CPUKernelOp(new IR.Math.ReduceArg(ReduceArgOp.ArgMax, DataTypes.Int64)), fin, 1, false, false);
+            fusion = new Fusion("cpu", v0, fin);
+        }
+
+        var main = new Function("argmax", new Call(fusion, input), new[] { input });
+
+        var input_tensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, inputShape).Evaluate().AsTensor();
+        var feedDict = new Dictionary<Var, IValue>
+        {
+            { fin, Value.FromTensor(input_tensor) },
+        };
+        var output = fusion.Body.Evaluate(feedDict).AsTensor();
+
+        Add(main, new[] { input_tensor, output });
+    }
+}
+
+internal sealed class TilingCaseReduceArg2 : TheoryData<Function, Tensor[]>
+{
+    public TilingCaseReduceArg2()
+    {
+        var inputShape = new[] { 32, 64, 128, 512 };
+        var input = new Var("input", new TensorType(DataTypes.Float32, inputShape));
+
+        Fusion fusion;
+        Var fin;
+        {
+            fin = new Var("input", new TensorType(DataTypes.Float32, inputShape));
+            var v0 = new Call(new IR.CPU.CPUKernelOp(new IR.Math.ReduceArg(ReduceArgOp.ArgMax, DataTypes.Int64)), fin, 2, true, false);
+            fusion = new Fusion("cpu", v0, fin);
+        }
+
+        var main = new Function("argmax2", new Call(fusion, input), new[] { input });
 
         var input_tensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, inputShape).Evaluate().AsTensor();
         var feedDict = new Dictionary<Var, IValue>

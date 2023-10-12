@@ -109,6 +109,37 @@ public class ReduceArgEvaluator : IEvaluator<ReduceArg>, ITypeInferencer<ReduceA
             return rType;
         }
 
+        var inshape = distributedType.TensorType.Shape;
+        if (context.GetArgument(target, ReduceArg.Axis) is TensorConst axisValue &&
+            context.GetArgument(target, ReduceArg.KeepDims) is TensorConst keepDimsValue)
+        {
+            var axis = axisValue.Value.ToScalar<int>();
+            axis = axis >= 0 ? axis : inshape.Rank + axis;
+            var keepdim = keepDimsValue.Value.ToScalar<bool>();
+            var ndsbp = new SBP[distributedType.Placement.Rank];
+            for (int i = 0; i < ndsbp.Length; i++)
+            {
+                switch (distributedType.NdSBP[i])
+                {
+                    case SBPSplit { Axis: int saxis }:
+                        if (saxis == axis)
+                        {
+                            return new InvalidType("can't split on reduce axis.");
+                        }
+
+                        ndsbp[i] = keepdim ? SBP.S(saxis) : SBP.S(saxis > axis ? saxis - 1 : saxis);
+                        break;
+                    case SBPPartialSum:
+                        return new InvalidType("not support partial sum.");
+                    case SBPBroadCast:
+                        ndsbp[i] = SBP.B;
+                        break;
+                }
+            }
+
+            return distributedType with { NdSBP = new(ndsbp), TensorType = tensorType };
+        }
+
         if (!distributedType.NdSBP.All(sbp => sbp is SBPBroadCast))
         {
             return new InvalidType(string.Empty);

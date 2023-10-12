@@ -2,6 +2,7 @@
 #pragma once
 
 #include <nncase/compiler_defs.h>
+#include <cstdint>
 #include <pybind11/pybind11.h>
 
 #include <iostream>

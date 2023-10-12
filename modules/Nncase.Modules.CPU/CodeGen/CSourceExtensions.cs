@@ -29,6 +29,13 @@ internal static class CSourceExtensions
     public static string ToC(this PrimType primType) =>
         _primTypeToC[primType];
 
+    public static string ToC(this ReduceArgOp op) => op switch
+    {
+        ReduceArgOp.ArgMin => "arg_min",
+        ReduceArgOp.ArgMax => "arg_max",
+        _ => throw new NotImplementedException(),
+    };
+
     public static string ToC(this DataType dataType) => dataType switch
     {
         PrimType ptype => ptype.ToC(),
