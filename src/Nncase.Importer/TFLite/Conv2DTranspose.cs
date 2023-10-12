@@ -43,8 +43,7 @@ namespace Nncase.Importer.TFLite
             var padding = F.ShapeExpr.GetPaddings(F.Tensors.Stack(new IR.Tuple(newOutShape), 0), wShape, stride, dilation, options.Padding == tflite.Padding.SAME, false);
             var clamp = ValueRange<float>.Full;
 
-            return F.Tensors.NCHWToNHWC(F.Math.Clamp(
-                F.NN.Conv2DTranspose(
+            var conv2DTranspose = F.NN.Conv2DTranspose(
                     F.Tensors.NHWCToNCHW(input),
                     F.Tensors.NHWCToNCHW(weights),
                     bias,
@@ -54,7 +53,11 @@ namespace Nncase.Importer.TFLite
                     Tensor.From<long>(new long[] { 0, 0, 0, 0 }),
                     dilation,
                     PadMode.Constant,
-                    1),
+                    1);
+            List<string> outputNames = new() { GetInputTensor(op, 0).Name };
+            conv2DTranspose.Metadata.OutputNames = outputNames;
+            return F.Tensors.NCHWToNHWC(F.Math.Clamp(
+                conv2DTranspose,
                 clamp.Min,
                 clamp.Max));
         }

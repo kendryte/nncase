@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
-
+using System.Collections.Generic;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using Onnx;
@@ -27,6 +27,8 @@ namespace Nncase.Importer
             }
 
             var mm = F.Tensors.MatMul(a, b);
+            List<string> outputNames = new() { op.Name };
+            mm.Metadata.OutputNames = outputNames;
             if (alpha != 1.0f)
             {
                 mm = mm * alpha;
