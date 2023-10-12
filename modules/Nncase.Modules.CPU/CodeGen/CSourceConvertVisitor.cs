@@ -333,6 +333,51 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                     }
 
                     break;
+                case IR.XPU.InstanceNorm instancenorm:
+                    using (_ = new IndentScope())
+                    {
+                        IndentScope.Writer.IndWrite($"{{\n");
+
+                        var dividedType = Utilities.DistributedUtility.GetDividedTensorType(instancenorm.DistType);
+                        var sbpOnAxis = instancenorm.DistType.NdSBP.Where(sbp => sbp is SBPSplit s && s.Axis > 1).ToArray();
+                        switch (sbpOnAxis.Length)
+                        {
+                            case 0:
+                                IndentScope.Writer.IndWrite($"tensor<{args[0].CheckedDataType.ToC()}, loc_t::local> sum({{{string.Join(",", dividedType.Shape.ToArray().Take(2))}}});\n");
+                                IndentScope.Writer.IndWrite($"tensor<{args[0].CheckedDataType.ToC()}, loc_t::local> sum_sqr({{{string.Join(",", dividedType.Shape.ToArray().Take(2))}}});\n");
+                                IndentScope.Writer.IndWrite($"reduce_sum_sqr({Visit(args[0]).Name}, sum, sum_sqr);\n");
+                                IndentScope.Writer.IndWrite($"instance_norm({Visit(args[0]).Name}, sum, sum_sqr,{Visit(args[3]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name}, static_cast<{args[0].CheckedDataType.ToC()}>({instancenorm.Epsilon}), {instancenorm.DistType.TensorType.Shape[2]});\n");
+                                break;
+                            case 1:
+                                IndentScope.Writer.IndWrite($"tensor<{args[0].CheckedDataType.ToC()}, loc_t::local> sum({{{string.Join(",", dividedType.Shape.ToArray().Take(2))}}});\n");
+                                IndentScope.Writer.IndWrite($"tensor<{args[0].CheckedDataType.ToC()}, loc_t::local> sum_sqr({{{string.Join(",", dividedType.Shape.ToArray().Take(2))}}});\n");
+                                IndentScope.Writer.IndWrite($"reduce_sum_sqr({Visit(args[0]).Name}, sum, sum_sqr);\n");
+                                if (sbpOnAxis[0] == instancenorm.DistType.NdSBP[1])
+                                {
+                                    IndentScope.Writer.IndWrite($"tdma_reduce_async(sum, sum, reduce_op_t::sum, ctx);\n");
+                                    IndentScope.Writer.IndWrite($"tdma_reduce_async(sum_sqr, sum_sqr, reduce_op_t::sum, ctx);\n");
+                                }
+                                else
+                                {
+                                    IndentScope.Writer.IndWrite($"tdma_all_reduce_async(sum, sum, reduce_op_t::sum, reduce_strategy_t::by_block, ctx);\n");
+                                    IndentScope.Writer.IndWrite($"tdma_all_reduce_async(sum_sqr, sum_sqr, reduce_op_t::sum, reduce_strategy_t::by_block, ctx);\n");
+                                }
+
+                                IndentScope.Writer.IndWrite($"instance_norm({Visit(args[0]).Name}, sum, sum_sqr,{Visit(args[3]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name}, static_cast<{args[0].CheckedDataType.ToC()}>({instancenorm.Epsilon}), {instancenorm.DistType.TensorType.Shape[2]});\n"); break;
+                            case 2:
+                                IndentScope.Writer.IndWrite($"tensor<{args[0].CheckedDataType.ToC()}, loc_t::local> sum({{{string.Join(",", dividedType.Shape.ToArray().Take(2))}}});\n");
+                                IndentScope.Writer.IndWrite($"tensor<{args[0].CheckedDataType.ToC()}, loc_t::local> sum_sqr({{{string.Join(",", dividedType.Shape.ToArray().Take(2))}}});\n");
+                                IndentScope.Writer.IndWrite($"reduce_sum_sqr({Visit(args[0]).Name}, sum, sum_sqr);\n");
+                                IndentScope.Writer.IndWrite($"tdma_all_reduce_async(sum, sum, reduce_op_t::sum, reduce_strategy_t::all, ctx);\n");
+                                IndentScope.Writer.IndWrite($"tdma_all_reduce_async(sum_sqr, sum_sqr, reduce_op_t::sum, reduce_strategy_t::all, ctx);\n");
+                                IndentScope.Writer.IndWrite($"instance_norm({Visit(args[0]).Name}, sum, sum_sqr,{Visit(args[3]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name}, static_cast<{args[0].CheckedDataType.ToC()}>({instancenorm.Epsilon}), {instancenorm.DistType.TensorType.Shape[2]});\n");
+                                break;
+                        }
+
+                        IndentScope.Writer.IndWrite("}\n");
+                    }
+
+                    break;
                 case IR.XPU.Gather gather:
                     IndentScope.Writer.Write($"gather({Visit(args[0]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name}, {gather.Axis})");
                     break;

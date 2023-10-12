@@ -49,7 +49,8 @@ public class UnitTestCPUTargetTiling : TestClassBase
     // [ClassData(typeof(TilingCaseReshape1))]
     // [ClassData(typeof(TilingCaseReshape2))]
     // [ClassData(typeof(TilingCaseMatmulUnary))]
-    [ClassData(typeof(TilingCaseConv2D))]
+    // [ClassData(typeof(TilingCaseConv2D))]
+    [ClassData(typeof(TilingCaseInstanceNorm))]
     public async Task TestCpuFunction(Function main, Tensor[] inputs)
     {
         var module = new IR.IRModule(main);
@@ -359,6 +360,41 @@ internal sealed class TilingCaseLayerNorm : TheoryData<Function, Tensor[]>
         }
 
         var main = new Function("layernorm", new Call(fusion, input), new[] { input });
+
+        var input_tensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, shape).Evaluate().AsTensor();
+        using (var fs = Diagnostics.DumpScope.Current.OpenFile("input_0.bin"))
+        {
+            fs.Write(input_tensor.BytesBuffer);
+        }
+
+        var feedDict = new Dictionary<Var, IValue>
+        {
+            { fin, Value.FromTensor(input_tensor) },
+        };
+        var output = fusion.Body.Evaluate(feedDict).AsTensor();
+
+        Add(main, new[] { input_tensor, output });
+    }
+}
+
+internal sealed class TilingCaseInstanceNorm : TheoryData<Function, Tensor[]>
+{
+    public TilingCaseInstanceNorm()
+    {
+        var shape = new[] { 1, 32, 65536 };
+        var input = new Var("input", new TensorType(DataTypes.Float32, shape));
+        var scale = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, new[] { shape[1] }).Evaluate().AsTensor();
+        var bias = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, new[] { shape[1] }).Evaluate().AsTensor();
+
+        Fusion fusion;
+        Var fin;
+        {
+            fin = new Var("input", new TensorType(DataTypes.Float32, shape));
+            var v0 = new Call(new IR.CPU.CPUKernelOp(new IR.NN.InstanceNormalization()), fin, scale, bias, 1e-5);
+            fusion = new Fusion("cpu", v0, fin);
+        }
+
+        var main = new Function("instance_norm", new Call(fusion, input), new[] { input });
 
         var input_tensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, shape).Evaluate().AsTensor();
         using (var fs = Diagnostics.DumpScope.Current.OpenFile("input_0.bin"))

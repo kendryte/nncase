@@ -17,7 +17,7 @@ public sealed partial class FoldSwishPattern1 : RewriteRule<Pattern>
     public FoldSwishPattern1()
     {
         var input = IsWildcard("input");
-        Pattern = IsSwappableBinary(null, null, b => b.BinaryOp == BinaryOp.Mul, IsSigmoid(input), input);
+        Pattern = IsSwappableBinary(null!, null, b => b.BinaryOp == BinaryOp.Mul, IsSigmoid(input), input);
     }
 
     /// <inheritdoc/>
@@ -35,7 +35,7 @@ public sealed partial class FoldSwishPattern2 : RewriteRule<Pattern>
     public FoldSwishPattern2()
     {
         var input = IsWildcard("input");
-        Pattern = IsSwappableBinary(null, null, b => b.BinaryOp == BinaryOp.Mul, IsSigmoid(IsSwappableBinary(null, null, b => b.BinaryOp == BinaryOp.Mul, input, IsTensorConst("beta", IsFloatScalar()))), input);
+        Pattern = IsSwappableBinary(null!, null, b => b.BinaryOp == BinaryOp.Mul, IsSigmoid(IsSwappableBinary(null!, null, b => b.BinaryOp == BinaryOp.Mul, input, IsTensorConst("beta", IsFloatScalar()))), input);
     }
 
     /// <inheritdoc/>
