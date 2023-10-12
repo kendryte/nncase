@@ -48,7 +48,7 @@ public class UnitTestExportQuantScheme : TestClassBase
         var readJson = "{\"Version\":\"1.0\",\"Model\":null,\"Outputs\":[{\"Name\":\"weight\",\"DataType\":\"u8\",\"DataRange\":[{\"Min\":0.0,\"Max\":0.9988426,\"IsFull\":false}],\"DataRangeMode\":\"by_tensor\"}]}";
         var quantScheme = JsonConvert.DeserializeObject<QuantScheme>(readJson);
         var expectedQuantScheme = JsonConvert.SerializeObject(quantScheme, Newtonsoft.Json.Formatting.Indented);
-        Assert.Equal(expectedQuantScheme, CompileOptions.QuantizeOptions.QuantScheme);
+        Assert.Equal(expectedQuantScheme, CompileOptions.QuantizeOptions.QuantSchemeInnerCheck);
     }
 
     [Fact]
