@@ -135,7 +135,7 @@ public class CSourceCompiler
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
             // return $"-c \"export PATH=/data/huochenghai/toolchain/riscv64-unknown-linux_gnu_12.0.1/bin:$PATH && cd {sourcePath} && mkdir -p build && cd build && rm -rf * && cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=riscv64-unknown-linux-gnu-gcc -DCMAKE_CXX_COMPILER=riscv64-unknown-linux-gnu-g++ -DCMAKE_SYSTEM_PROCESSOR=riscv64 && cmake --build .\"";
-            return $"-c \"cd {sourcePath} && /bin/mkdir -p build && cd build && /bin/rm -rf * && /root/miniconda3/envs/ci/bin/cmake .. -DCMAKE_BUILD_TYPE=Debug && /root/miniconda3/envs/ci/bin/cmake --build .\"";
+            return $"-c \"cd {sourcePath} && /bin/mkdir -p build && cd build && /bin/rm -rf * && cmake .. -DCMAKE_BUILD_TYPE=Debug && cmake --build .\"";
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {

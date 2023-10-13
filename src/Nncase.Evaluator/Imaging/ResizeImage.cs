@@ -121,7 +121,6 @@ public class ResizeImageEvaluator : IEvaluator<ResizeImage>, ITypeInferencer<Res
         };
     }
 
-    /// <inheritdoc/>
     public IRType Visit(TensorType input, Expr newSize)
     {
         return TypeInference.ResizeType(input, newSize, null);
@@ -129,7 +128,7 @@ public class ResizeImageEvaluator : IEvaluator<ResizeImage>, ITypeInferencer<Res
 
     public IRType Visit(DistributedType input, Expr newSize)
     {
-        if (Visit(input.TensorType, newSize) is not TensorType)
+        if (Visit(input.TensorType, newSize) is not TensorType tensorType)
         {
             return new InvalidType(string.Empty);
         }
@@ -152,7 +151,7 @@ public class ResizeImageEvaluator : IEvaluator<ResizeImage>, ITypeInferencer<Res
             }
         }
 
-        return new DistributedType(input.TensorType, ndsbp, input.Placement);
+        return new DistributedType(tensorType, ndsbp, input.Placement);
     }
 
     /// <inheritdoc/>

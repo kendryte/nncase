@@ -496,8 +496,8 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                     IndentScope.Writer.Write($"reduce_arg({Visit(args[0]).Name}, {Visit(args[1]).Name}, {reduceArg.Axis}, {reduceArg.KeepDims.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)}, {reduceArg.SelectLastIndex.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)}, reduce_arg_op_t::{reduceArg.ReduceArgOp.ToC()})");
                     break;
                 case IR.XPU.Resize resize:
-                    IndentScope.Writer.Write($"auto roi[] = {{{string.Join(",", resize.Roi.Select(p => p.ToString()))}}}");
-                    IndentScope.Writer.Write($"auto new_size[] = {{{string.Join(",", resize.NewSize.Select(p => p.ToString()))}}}");
+                    IndentScope.Writer.Write($"float roi[{resize.Roi.Count}] = {{{string.Join(",", resize.Roi.Select(p => p.ToString()))}}};\n");
+                    IndentScope.Writer.Write($"int32_t new_size[{resize.NewSize.Count}] = {{{string.Join(",", resize.NewSize.Select(p => p.ToString()))}}};\n");
                     IndentScope.Writer.Write($"resize({Visit(args[0]).Name}, {Visit(args[1]).Name}, roi, new_size, {resize.CubicCoeffA.ToString()}, {resize.ExcludeOutsideValue.ToString()}, {resize.ExtrapolationValue.ToString()}, image_resize_mode_t::{resize.ResizeMode.ToC()}, image_resize_transformation_mode_t::{resize.TransformationMode.ToC()}, image_resize_nearest_mode_t::{resize.NearestMode.ToC()}, {resize.IsTFResize.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)})");
                     break;
                 default:
