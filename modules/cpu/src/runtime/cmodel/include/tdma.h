@@ -220,10 +220,10 @@ void reduce(tensor<T, ALoc> &input, tensor<T, BLoc> &output, reduce_op_t op,
                     keep_dims);
 }
 
-template <typename T, loc_t ALoc, loc_t BLoc, loc_t CLoc>
-void gather(tensor<T, ALoc> &input, tensor<int64_t, BLoc> &indices,
+template <typename T, typename IndicesT, loc_t ALoc, loc_t BLoc, loc_t CLoc>
+void gather(tensor<T, ALoc> &input, tensor<IndicesT, BLoc> &indices,
             tensor<T, CLoc> &output, int axis) {
-    kernels::gather<T, int64_t>(
+    kernels::gather<T, IndicesT>(
         input.cdata().data(), output.data().data(), input.dimension(),
         input.strides(), output.dimension(), output.strides(),
         indices.data().data(), indices.dimension(), axis);
@@ -700,14 +700,14 @@ enum class sched_strategy_t : uint8_t { pin_block_tensor, normal };
 
 void set_sched_strategy([[maybe_unused]] sched_strategy_t sch) {}
 
-template <loc_t SrcLoc, loc_t DestLoc, class Tout>
-void reduce_arg(tensor<float, SrcLoc> &src, tensor<Tout, DestLoc> &dest,
+template <loc_t SrcLoc, loc_t DestLoc, class Tin, class Tout>
+void reduce_arg(tensor<Tin, SrcLoc> &src, tensor<Tout, DestLoc> &dest,
                 int axis, bool keep_dims, bool select_last_idx,
                 reduce_arg_op_t op) {
     auto axes = dims_t { (size_t)axis };
-    kernels::reduce_arg<float, Tout>(
+    kernels::reduce_arg<Tin, Tout>(
         op, src.cdata().data(), dest.data().data(), src.dimension(),
-        src.strides(), dest.strides(), axes, keep_dims, select_last_idx);
+        src.strides(), dest.dimension(), dest.strides(), axes, keep_dims, select_last_idx);
 }
 
 template <loc_t SrcLoc, loc_t DestLoc>
