@@ -53,6 +53,7 @@ public class UnitTestCPUTargetTiling : TestClassBase
     // [ClassData(typeof(TilingCaseReduceArg))]
     // [ClassData(typeof(TilingCaseReduceArg2))]
     // [ClassData(typeof(TilingCaseInstanceNorm))]
+    // [ClassData(typeof(TilingCaseEncoderTail))]
     [ClassData(typeof(TilingCaseResize))]
     public async Task TestCpuFunction(Function main, Tensor[] inputs)
     {
@@ -75,6 +76,12 @@ public class UnitTestCPUTargetTiling : TestClassBase
 #endif
             await Compile(module);
             var output = Testing.RunKModel(File.ReadAllBytes(Path.Join(Diagnostics.DumpScope.Current.Directory, "test.kmodel")), Diagnostics.DumpScope.Current.Directory, inputs);
+#if DEBUG
+            using (var fs = Diagnostics.DumpScope.Current.OpenFile($"actual_0.bin"))
+            {
+                fs.Write(output.AsTensor().BytesBuffer);
+            }
+#endif
             var cos = Tests.Comparator.CosSimilarity(output, Value.FromTensor(inputs[^1]))[0];
             Assert.True(cos > 0.999);
         }
@@ -612,6 +619,32 @@ internal sealed class TilingCaseReduceArg2 : TheoryData<Function, Tensor[]>
         var output = fusion.Body.Evaluate(feedDict).AsTensor();
 
         Add(main, new[] { input_tensor, output });
+    }
+}
+
+internal sealed class TilingCaseEncoderTail : TheoryData<Function, Tensor[]>
+{
+    public TilingCaseEncoderTail()
+    {
+        var v_16 = new Var("v16", new TensorType(DataTypes.Int32, new[] { 1, 77 }));
+        var v_17 = new Var("v17", new TensorType(DataTypes.Float32, new[] { 1, 77, 768 }));
+        var v0 = IR.F.NN.LayerNorm(2, 1E-05f, v_17, IR.F.Tensors.ConstantOfShape(new[] { 768 }, 1.0f), IR.F.Tensors.ConstantOfShape(new[] { 768 }, 0.0f), true); // f32[1,77,768]
+        var v1 = IR.F.Tensors.Reshape(v0, new[] { 77, 768 }); // f32[77,768]
+        var v2 = IR.F.Tensors.ReduceArg(ReduceArgOp.ArgMax, DataTypes.Int64, v_16, -1, false, false); // i64[1]
+        var v3 = IR.F.Math.Binary(BinaryOp.Add, v2, 1L); // i64[1]
+        var v4 = IR.F.Tensors.Gather(v1, 0, v3); // f32[1,768]
+        var main = new Function("encoderTail", v4, new[] { v_16, v_17 });
+
+        var input_16 = IR.F.Tensors.Cast(IR.F.Random.Uniform(DataTypes.Float32, 60, 1, 2, new[] { 1, 77 }), DataTypes.Int32).Evaluate().AsTensor();
+        var input_17 = IR.F.Random.Normal(DataTypes.Float32, 2, 4, 3, new[] { 1, 77, 768 }).Evaluate().AsTensor();
+        var feedDict = new Dictionary<Var, IValue>
+        {
+            { v_16, Value.FromTensor(input_16) },
+            { v_17, Value.FromTensor(input_17) },
+        };
+        var output = main.Body.Evaluate(feedDict).AsTensor();
+
+        Add(main, new[] { input_16, input_17, output });
     }
 }
 

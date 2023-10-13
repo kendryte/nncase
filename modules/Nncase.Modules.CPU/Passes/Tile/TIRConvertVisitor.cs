@@ -28,7 +28,7 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
 
     public IEnumerable<TIR.Buffer> OutputBuffers => _buffersMap.Values.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location.HasFlag(MemoryLocation.Output));
 
-    public IEnumerable<TIR.Buffer> InputBuffers => _buffersMap.Values.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location.HasFlag(MemoryLocation.Input));
+    public IEnumerable<TIR.Buffer> InputBuffers => VisitRootFusion.Parameters.ToArray().Select(p => _buffersMap[p]).OfType<TIR.Buffer>().Where(b => b.MemSpan.Location.HasFlag(MemoryLocation.Input));
 
     protected override Unit DefaultVisitLeaf(Expr expr)
     {

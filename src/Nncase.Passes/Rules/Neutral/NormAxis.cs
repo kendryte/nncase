@@ -64,6 +64,23 @@ public sealed partial class NormAxisReduce : RewriteRule<CallPattern>
 }
 
 [RuleGenerator]
+public sealed partial class NormAxisReduceArg : RewriteRule<CallPattern>
+{
+    /// <inheritdoc/>
+    public override CallPattern Pattern { get; } = IsReduceArg("reduce", "call", _ => true, IsWildcard("input") with { TypePattern = HasRank() }, IsTensorConst("axis"), IsWildcard("keepDims"), IsWildcard("selectLastIndex"));
+
+    private Expr? GetReplace(IR.Math.ReduceArg reduce, Call call, Expr input, int axis, Expr keepDims, Expr selectLastIndex)
+    {
+        if (axis < 0)
+        {
+            return IR.F.Tensors.ReduceArg(reduce.ReduceArgOp, reduce.DestType, input, axis + input.CheckedShape.Rank, keepDims, selectLastIndex);
+        }
+
+        return call;
+    }
+}
+
+[RuleGenerator]
 public sealed partial class NormAxisReshape : RewriteRule<CallPattern>
 {
     /// <inheritdoc/>
