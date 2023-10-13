@@ -88,11 +88,11 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
                 GenerateReduceArg(reduceArg, arguments, ret, ((TensorConst)expr.Arguments[1]).Value.ToScalar<int>(), ((TensorConst)expr.Arguments[2]).Value.ToScalar<bool>(), ((TensorConst)expr.Arguments[3]).Value.ToScalar<bool>(), reduceArg.ReduceArgOp, reduceArg.DestType);
                 break;
             case ResizeImage resize:
-                float[] roi = expr.Arguments[1] is null ? new[] { 0f, 0f, 1f, 1f } : ((TensorConst)expr.Arguments[1]).Value.ToArray<float>();
+                float[] roi = expr.Arguments[1] is TensorConst tc ? tc.Value.ToArray<float>() : new[] { 0f, 0f, 1f, 1f };
                 int[] newSize = ((TensorConst)expr.Arguments[2]).Value.ToArray<int>();
-                float cubicCoeffA = (TensorConst)expr.Arguments[3] is null ? -0.75f : ((TensorConst)expr.Arguments[3]).Value.ToScalar<float>();
-                int excludeOutside = (TensorConst)expr.Arguments[4] is null ? 0 : ((TensorConst)expr.Arguments[4]).Value.ToScalar<int>();
-                float extrapolationValue = (TensorConst)expr.Arguments[3] is null ? 0f : ((TensorConst)expr.Arguments[5]).Value.ToScalar<float>();
+                float cubicCoeffA = expr.Arguments[3] is TensorConst tc1 ? tc1.Value.ToScalar<float>() : -0.75f;
+                int excludeOutside = expr.Arguments[4] is TensorConst tc2 ? tc2.Value.ToScalar<int>() : 0;
+                float extrapolationValue = expr.Arguments[5] is TensorConst tc3 ? tc3.Value.ToScalar<float>() : 0f;
                 GenerateResize(resize, arguments, ret, roi, newSize, cubicCoeffA, excludeOutside, extrapolationValue, (DistributedType)expr.CheckedType);
                 break;
             default:
@@ -303,6 +303,8 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
                     buffer = T.AttachBuffer(c, out _, name);
                     break;
                 case IR.Tuple:
+                    return null!;
+                case IR.None:
                     return null!;
                 default:
                     throw new NotSupportedException();
