@@ -50,9 +50,10 @@ public class UnitTestCPUTargetTiling : TestClassBase
     // [ClassData(typeof(TilingCaseReshape2))]
     // [ClassData(typeof(TilingCaseMatmulUnary))]
     // [ClassData(typeof(TilingCaseConv2D))]
-    [ClassData(typeof(TilingCaseReduceArg))]
-    [ClassData(typeof(TilingCaseReduceArg2))]
-    [ClassData(typeof(TilingCaseInstanceNorm))]
+    // [ClassData(typeof(TilingCaseReduceArg))]
+    // [ClassData(typeof(TilingCaseReduceArg2))]
+    // [ClassData(typeof(TilingCaseInstanceNorm))]
+    [ClassData(typeof(TilingCaseResize))]
     public async Task TestCpuFunction(Function main, Tensor[] inputs)
     {
         var module = new IR.IRModule(main);
@@ -644,6 +645,39 @@ internal sealed class TilingCaseConv2D : TheoryData<Function, Tensor[]>
         {
             { fin, Value.FromTensor(input_tensor) },
         };
+        var output = fusion.Body.Evaluate(feedDict).AsTensor();
+
+        Add(main, new[] { input_tensor, output });
+    }
+}
+
+internal sealed class TilingCaseResize : TheoryData<Function, Tensor[]>
+{
+    public TilingCaseResize()
+    {
+        var shape = new[] { 1, 512, 64, 64 };
+        var input = new Var("input", new TensorType(DataTypes.Float32, shape));
+
+        Fusion fusion;
+        Var fin;
+        {
+            fin = new Var("input", new TensorType(DataTypes.Float32, shape));
+            var v0 = new Call(new IR.CPU.CPUKernelOp(new IR.Imaging.ResizeImage(ImageResizeMode.NearestNeighbor, ImageResizeTransformationMode.Asymmetric, ImageResizeNearestMode.Floor, false)), fin, None.Default, new[] { 1, 512, 128, 128 }, None.Default, None.Default, None.Default);
+            fusion = new Fusion("cpu", v0, fin);
+        }
+
+        var main = new Function("nearest_resize", new Call(fusion, input), new[] { input });
+
+        var input_tensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, shape).Evaluate().AsTensor();
+        using (var fs = Diagnostics.DumpScope.Current.OpenFile("input_0.bin"))
+        {
+            fs.Write(input_tensor.BytesBuffer);
+        }
+
+        var feedDict = new Dictionary<Var, IValue>
+            {
+                { fin, Value.FromTensor(input_tensor) },
+            };
         var output = fusion.Body.Evaluate(feedDict).AsTensor();
 
         Add(main, new[] { input_tensor, output });

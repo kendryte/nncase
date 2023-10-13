@@ -51,6 +51,32 @@ internal static class CSourceExtensions
         _ => throw new NotSupportedException(location.ToString()),
     };
 
+    public static string ToC(this ImageResizeMode mode) => mode switch
+    {
+        ImageResizeMode.Bilinear => "bilinear",
+        ImageResizeMode.NearestNeighbor => "nearest_neighbor",
+        _ => throw new NotImplementedException(),
+    };
+
+    public static string ToC(this ImageResizeTransformationMode mode) => mode switch
+    {
+        ImageResizeTransformationMode.HalfPixel => "half_pixel",
+        ImageResizeTransformationMode.PytorchHalfPixel => "pytorch_half_pixel",
+        ImageResizeTransformationMode.AlignCorners => "align_corners",
+        ImageResizeTransformationMode.Asymmetric => "asymmetric",
+        ImageResizeTransformationMode.TFCropAndResize => "tfcrop_and_resize",
+        _ => throw new NotImplementedException(),
+    };
+
+    public static string ToC(this ImageResizeNearestMode mode) => mode switch
+    {
+        ImageResizeNearestMode.RoundPreferFloor => "round_prefer_floor",
+        ImageResizeNearestMode.RoundPreferCeil => "round_prefer_ceil",
+        ImageResizeNearestMode.Floor => "floor",
+        ImageResizeNearestMode.Ceil => "ceil",
+        _ => throw new NotImplementedException(),
+    };
+
     public static string ToSlicing(this TensorType tensorType, string[] begins, IRArray<SBP> ndsbp, Placement placement)
     {
         var hstrides = TensorUtilities.GetStrides(placement.Hierarchy.ToArray());

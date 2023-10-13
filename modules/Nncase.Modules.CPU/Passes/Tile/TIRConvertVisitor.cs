@@ -4,6 +4,7 @@
 using System.Reactive;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
+using Nncase.IR.Imaging;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
 using Nncase.IR.Tensors;
@@ -85,6 +86,14 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
                 break;
             case ReduceArg reduceArg:
                 GenerateReduceArg(reduceArg, arguments, ret, ((TensorConst)expr.Arguments[1]).Value.ToScalar<int>(), ((TensorConst)expr.Arguments[2]).Value.ToScalar<bool>(), ((TensorConst)expr.Arguments[3]).Value.ToScalar<bool>(), reduceArg.ReduceArgOp, reduceArg.DestType);
+                break;
+            case ResizeImage resize:
+                float[] roi = expr.Arguments[1] is null ? new[] { 0f, 0f, 1f, 1f } : ((TensorConst)expr.Arguments[1]).Value.ToArray<float>();
+                int[] newSize = ((TensorConst)expr.Arguments[2]).Value.ToArray<int>();
+                float cubicCoeffA = (TensorConst)expr.Arguments[3] is null ? -0.75f : ((TensorConst)expr.Arguments[3]).Value.ToScalar<float>();
+                int excludeOutside = (TensorConst)expr.Arguments[4] is null ? 0 : ((TensorConst)expr.Arguments[4]).Value.ToScalar<int>();
+                float extrapolationValue = (TensorConst)expr.Arguments[3] is null ? 0f : ((TensorConst)expr.Arguments[5]).Value.ToScalar<float>();
+                GenerateResize(resize, arguments, ret, roi, newSize, cubicCoeffA, excludeOutside, extrapolationValue, (DistributedType)expr.CheckedType);
                 break;
             default:
                 throw new NotSupportedException();
@@ -198,6 +207,11 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
     private void GenerateReduceArg(ReduceArg reduceArg, Buffer[] arguments, Buffer ret, int axis, bool keepdims, bool selectLastIndex, ReduceArgOp op, DataType dataType)
     {
         _mainBody.Add(IR.F.XPU.ReduceArg(arguments[0], ret, axis, keepdims, selectLastIndex, op, dataType));
+    }
+
+    private void GenerateResize(ResizeImage resize, Buffer[] arguments, Buffer ret, float[] roi, int[] newSize, float cubicCoeffA, int excludeOutside, float extrapolationValue, DistributedType distributedType)
+    {
+        _mainBody.Add(IR.F.XPU.Resize(arguments[0], ret, roi, newSize, cubicCoeffA, excludeOutside, extrapolationValue, resize.ResizeMode, resize.TransformationMode, resize.NearestMode, resize.IsTFResize));
     }
 
 #if false

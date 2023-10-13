@@ -12,6 +12,7 @@
 #include <matmul.h>
 #include <reduce.h>
 #include <reduce_arg.h>
+#include <resize.h>
 #include <softmax.h>
 #include <tensor.h>
 #include <thread_context.h>
@@ -271,6 +272,40 @@ void instance_norm(tensor<T, ALoc> &input, tensor<T, loc_t::local> &sum,
                            gamma.data().data(), beta.data().data(),
                            input.dimension(), input.strides(), output.strides(),
                            sum.strides(), gamma.strides(), eps, norm_size);
+}
+
+template <typename T, loc_t ALoc, loc_t BLoc>
+void resize(tensor<T, ALoc> &input, tensor<T, BLoc> &output,
+            [[maybe_unused]] float *roi, int32_t *new_size,
+            [[maybe_unused]] float cubic_coeff_a,
+            [[maybe_unused]] int exclude_outside_value,
+            [[maybe_unused]] float extrapolation_value,
+            image_resize_mode_t resize_mode,
+            image_resize_transformation_mode_t transformation_mode,
+            image_resize_nearest_mode_t nearest_mode,
+            [[maybe_unused]] bool is_tf_resize) {
+    if (resize_mode == image_resize_mode_t::bilinear) {
+        kernels::resize_bilinear(
+            input.cdata().data(), output.data().data(), input.dimension(),
+            input.strides(), output.strides(), new_size[2], new_size[3],
+            transformation_mode ==
+                image_resize_transformation_mode_t::align_corners,
+            transformation_mode ==
+                image_resize_transformation_mode_t::half_pixel);
+    } else {
+        get_coordinate_func_t get_coordinate_func =
+            get_coordinate_from_resized(transformation_mode);
+        get_nearest_pixel_func_t get_nearset_func =
+            get_nearest_pixel_from_origin(nearest_mode);
+        kernels::resize_neareast_neighbor(
+            input.cdata().data(), output.data().data(), input.dimension(),
+            input.strides(), output.strides(), new_size[2], new_size[3],
+            transformation_mode ==
+                image_resize_transformation_mode_t::align_corners,
+            transformation_mode ==
+                image_resize_transformation_mode_t::half_pixel,
+            get_coordinate_func, get_nearset_func);
+    }
 }
 
 template <typename T, loc_t ALoc>

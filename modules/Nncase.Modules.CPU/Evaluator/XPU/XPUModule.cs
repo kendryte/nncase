@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using DryIoc;
+using Nncase.Evaluator.Imaging;
 using Nncase.Evaluator.NN;
 using Nncase.Evaluator.Tensors;
 using Nncase.Hosting;
@@ -31,5 +32,6 @@ internal class XPUModule : IApplicationPart
         registrator.RegisterManyInterface<GatherReduceScatterEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<Conv2DEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<ReduceArgEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<ResizeEvaluator>(reuse: Reuse.Singleton);
     }
 }

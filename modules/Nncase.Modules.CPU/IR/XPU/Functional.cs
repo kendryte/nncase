@@ -91,4 +91,9 @@ public partial class XPU
     {
         return new Call(new ReduceArg(axis, keepdims, selectLastIndex, op, dataType), input, output);
     }
+
+    public static Call Resize(Expr input, Expr output, float[] roi, int[] newSize, float cubicCoeffA, int excludeOutside, float extrapolationValue, ImageResizeMode resizeMode, ImageResizeTransformationMode transformationMode, ImageResizeNearestMode nearestMode, bool isTFResize)
+    {
+        return new Call(new Resize(roi, newSize, cubicCoeffA, excludeOutside, extrapolationValue, resizeMode, transformationMode, nearestMode, isTFResize), input, output);
+    }
 }

@@ -130,6 +130,9 @@ internal sealed class AutoDistributedConvertVisitor : ExprVisitor<Dictionary<IRT
                 case (ParameterKind.Attribute, TensorConst e):
                     updateBuckets(buckets, new[] { e.With() }); // remove all old users.
                     break;
+                case (ParameterKind.Attribute, None e):
+                    updateBuckets(buckets, new[] { e.With() });
+                    break;
                 default:
                     throw new InvalidOperationException();
             }
