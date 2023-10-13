@@ -1,7 +1,7 @@
 #include "runtime_utils.h"
 #include <apply.h>
 #include <cmath>
-#ifdef __riscv_vector_
+#ifdef __riscv_vector
 #include <riscv_vector.h>
 #endif
 
@@ -9,6 +9,119 @@ using namespace nncase::runtime::cpu;
 namespace kernels {
 
 namespace {
+
+#ifdef __riscv_vector
+static void layernor_restruct2(const float* input, float* output, int len, const float* gamma, const float* beta,
+ float mean, float sigma)
+{   
+    size_t vl;
+    if(gamma == NULL && beta == NULL)
+    {
+        for (size_t i = len; i > 0; i -= vl) {
+            vl = vsetvl_e32m8(i);
+            vfloat32m8_t vx = vle32_v_f32m8(input, vl);
+            vx = vfsub_vf_f32m8(vx, mean, vl);
+            vx = vfdiv_vf_f32m8(vx, sigma, vl);
+            vse32_v_f32m8(output, vx, vl);
+            input += vl;
+            output += vl;
+        }
+        return;
+    }
+    if(gamma == NULL)
+    {
+        for (size_t i = len; i > 0; i -= vl) {
+            vl = vsetvl_e32m8(i);
+            vfloat32m8_t vx = vle32_v_f32m8(input, vl);
+            vfloat32m8_t vbeta = vle32_v_f32m8(beta, vl);
+            vx = vfsub_vf_f32m8(vx, mean, vl);
+            vx = vfdiv_vf_f32m8(vx, sigma, vl);
+            vx = vfadd_vv_f32m8(vx, vbeta, vl);
+            vse32_v_f32m8(output, vx, vl);
+            input += vl;
+            output += vl;
+            beta += vl;
+        }
+        return;
+    }
+    if(beta == NULL)
+    {
+        for (size_t i = len; i > 0; i -= vl) {
+            vl = vsetvl_e32m8(i);
+            vfloat32m8_t vx = vle32_v_f32m8(input, vl);
+            vfloat32m8_t vgamma = vle32_v_f32m8(gamma, vl);
+            vx = vfsub_vf_f32m8(vx, mean, vl);
+            vx = vfdiv_vf_f32m8(vx, sigma, vl);
+            vx = vfmul_vv_f32m8(vx, vgamma, vl);
+            vse32_v_f32m8(output, vx, vl);
+            input += vl;
+            output += vl;
+            gamma += vl;
+        }
+        return;
+    }
+    
+    for (size_t i = len; i > 0; i -= vl) {
+        vl = vsetvl_e32m8(i);
+        vfloat32m8_t vx = vle32_v_f32m8(input, vl);
+        vfloat32m8_t vgamma = vle32_v_f32m8(gamma, vl);
+        vfloat32m8_t vbeta = vle32_v_f32m8(beta, vl);
+        vx = vfsub_vf_f32m8(vx, mean, vl);
+        vx = vfdiv_vf_f32m8(vx, sigma, vl);
+        vx = vfmacc_vv_f32m8(vbeta, vx, vgamma, vl);
+        vse32_v_f32m8(output, vx, vl);
+        input += vl;
+        output += vl;
+        beta += vl;
+        gamma += vl;
+    }
+}
+
+static int  get_offset_from_index(gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides, int index)
+{
+    strides_t x = get_default_strides(in_shape);
+    int __sum = 0;
+    for(size_t i = 0; i < x.size(); ++i)
+    {
+        __sum += index / x[i] * in_strides[i];
+        index = index % x[i];
+    }
+    return __sum;
+}
+
+template <typename T>
+void layernorm_naive_impl(const T *input, const T *sum, const T *sum_sqr, T *output,
+                          const T *gamma, const T *beta,
+                          gsl::span<const size_t> input_shape,
+                          gsl::span<const size_t> input_stride,
+                          gsl::span<const size_t> output_stride,
+                          [[maybe_unused]] gsl::span<const size_t> sum_strides,
+                          [[maybe_unused]] gsl::span<const size_t> gamma_strides, T eps,
+                          int32_t axis, int32_t norm_size,
+                          [[maybe_unused]] bool rms_norm = false) noexcept {
+
+    size_t outer_size = 1;
+    for (auto i = 0; i < axis; i++) {
+        outer_size *= input_shape[i];
+    }
+
+    size_t inner_size = 1;
+    for (int i = axis; i < (int)input_shape.size(); i++) {
+        inner_size *= input_shape[i];
+    }
+    gsl::span<const size_t> in_shape_outer(input_shape.begin(), input_shape.begin() + axis);
+    gsl::span<const size_t> in_shape_inner(input_shape.begin() + axis, input_shape.end());
+    for (size_t o = 0; o < outer_size; o++) {
+        int __ptr_output = get_offset_from_index(in_shape_outer, output_stride, o);
+        int __ptr_input = get_offset_from_index(in_shape_outer, input_stride, o);
+        int __ptr_sum = get_offset_from_index(in_shape_outer, sum_strides, o);
+        auto mean = sum[__ptr_sum] / norm_size;
+        if(rms_norm) mean = 0;
+        auto sigma = std::sqrt(sum_sqr[__ptr_sum] / norm_size - mean * mean + eps);
+        layernor_restruct2(input + __ptr_input, output + __ptr_output, inner_size, gamma, beta, mean, sigma);
+    }
+}
+#else
 template <typename T>
 void layernorm_naive_impl(const T *input, const T *sum, T *sum_sqr, T *output,
                           T *gamma, T *beta,
@@ -60,81 +173,6 @@ void layernorm_naive_impl(const T *input, const T *sum, T *sum_sqr, T *output,
     //     }
     // }
 }
-
-#ifdef __riscv_vector_
-template <typename T>
-void layernorm_rvv_impl(const T *input, const T *sum, T *sum_sqr, T *gamma,
-                        T *beta, gsl::span<const size_t> input_shape,
-                        [[maybe_unused]] gsl::span<const size_t> input_stride,
-                        T *eps, int32_t axis, int32_t norm_size) noexcept {
-    // only process continues float32 tensor for now
-    size_t outer_size = 1;
-    for (auto i = 0; i < axis; i++) {
-        outer_size *= input_shape[i];
-    }
-
-    size_t inner_size = 1;
-    for (auto i = axis; i < input_shape.size(); i++) {
-        inner_size *= input_shape[i];
-    }
-
-    size_t vl;
-    float r_norm_size = 1.f / norm_size;
-    float *sum_ptr = sum;
-    float *sum_sqr_ptr = sum_sqr;
-    std::vector<float> mean(outer_size, 0);
-    std::vector<float> sigma(outer_size, 0);
-    vfloat32m8_t vmean;
-    vfloat32m8_t vmean_sqr;
-    vfloat32m8_t vsigma;
-    size_t offset = 0;
-    for (size_t o = outer_size; o > 0; o -= vl) {
-        vl = vsetvl_e32m8(o);
-
-        // mean
-        vmean = vle32_v_f32m8(sum_ptr, vl);
-        vmean = vfmul_vf_f32m8(vmean, r_norm_size);
-        vmean_sqr = vfmul_vv_f32m8(vmean, vmean);
-        vse32_v_f32m8(mean.data() + offset, vmean, vl);
-
-        // sigma
-        vsigma = vle32_v_f32m8(sum_sqr_ptr, vl);
-        vsigma = vfmul_vf_f32m8(vsigma, r_norm_size);
-        vsigma = vfsub_vv_f32m8(vsigma, vmean_sqr);
-        vsigma = vfadd_vf_f32m8(vsigma, eps);
-        vsigma = vfsqrt_v_f32m8(vsigma);
-        vse32_v_f32m8(sigma.data() + offset, vsigma, vl);
-
-        sum_ptr += vl;
-        sum_sqr_ptr += vl;
-        offset += vl;
-    }
-
-    float *input_ptr = input;
-    float *gamma_ptr = gamma;
-    float *beta_ptr = beta;
-    vfloat32m8_t vx;
-    vfloat32m8_t vgamma;
-    vfloat32m8_t vbeta;
-    for (size_t i = inner_size; i < inner_size; i -= vl) {
-        vl = vsetvl_e32m8(i);
-
-        vgamma = vle32_v_f32m8(gamma_ptr, vl);
-        vbeta = vle32_v_f32m8(beta_ptr, vl);
-
-        for (size_t o = 0; o < outer_size; o++) {
-            vx = vle32_v_f32m8(input_ptr, vl);
-            vx = vfsub_vf_f32m8(vx, mean[o], vl);
-            vx = vfdiv_vf_f32m8(vx, sigma[o], vl);
-            vx = vfmacc_vv_f32m8(vbeta, vx, vgamma, vl);
-            input_ptr += inner_size;
-        }
-
-        gamma_ptr += vl;
-        beta_ptr += vl;
-        input_ptr = input + vl;
-    }
-}
 #endif
 
 } // namespace
@@ -145,6 +183,7 @@ void layernorm(const T *input, T *sum, T *sum_sqr, T *output, T *gamma, T *beta,
                strides_t output_strides, strides_t sum_strides,
                strides_t gamma_strides, T eps, int32_t axis, int32_t norm_size,
                bool rms_norm = false) {
+                // fafdaf
 #ifdef __riscv_vector_
     return layernorm_rvv_impl(
         input, sum, sum_sqr, gamma, beta,
