@@ -11,12 +11,11 @@ namespace kernels {
 namespace {
 
 #ifdef __riscv_vector
-static void layernor_restruct2(const float* input, float* output, int len, const float* gamma, const float* beta,
- float mean, float sigma)
-{   
+static void layernor_restruct2(const float *input, float *output, int len,
+                               const float *gamma, const float *beta,
+                               float mean, float sigma) {
     size_t vl;
-    if(gamma == NULL && beta == NULL)
-    {
+    if (gamma == NULL && beta == NULL) {
         for (size_t i = len; i > 0; i -= vl) {
             vl = vsetvl_e32m8(i);
             vfloat32m8_t vx = vle32_v_f32m8(input, vl);
@@ -28,8 +27,7 @@ static void layernor_restruct2(const float* input, float* output, int len, const
         }
         return;
     }
-    if(gamma == NULL)
-    {
+    if (gamma == NULL) {
         for (size_t i = len; i > 0; i -= vl) {
             vl = vsetvl_e32m8(i);
             vfloat32m8_t vx = vle32_v_f32m8(input, vl);
@@ -44,8 +42,7 @@ static void layernor_restruct2(const float* input, float* output, int len, const
         }
         return;
     }
-    if(beta == NULL)
-    {
+    if (beta == NULL) {
         for (size_t i = len; i > 0; i -= vl) {
             vl = vsetvl_e32m8(i);
             vfloat32m8_t vx = vle32_v_f32m8(input, vl);
@@ -60,7 +57,7 @@ static void layernor_restruct2(const float* input, float* output, int len, const
         }
         return;
     }
-    
+
     for (size_t i = len; i > 0; i -= vl) {
         vl = vsetvl_e32m8(i);
         vfloat32m8_t vx = vle32_v_f32m8(input, vl);
@@ -77,12 +74,12 @@ static void layernor_restruct2(const float* input, float* output, int len, const
     }
 }
 
-static int  get_offset_from_index(gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides, int index)
-{
+static int get_offset_from_index(gsl::span<const size_t> in_shape,
+                                 gsl::span<const size_t> in_strides,
+                                 int index) {
     strides_t x = get_default_strides(in_shape);
     int __sum = 0;
-    for(size_t i = 0; i < x.size(); ++i)
-    {
+    for (size_t i = 0; i < x.size(); ++i) {
         __sum += index / x[i] * in_strides[i];
         index = index % x[i];
     }
@@ -90,15 +87,13 @@ static int  get_offset_from_index(gsl::span<const size_t> in_shape, gsl::span<co
 }
 
 template <typename T>
-void layernorm_naive_impl(const T *input, const T *sum, const T *sum_sqr, T *output,
-                          const T *gamma, const T *beta,
-                          gsl::span<const size_t> input_shape,
-                          gsl::span<const size_t> input_stride,
-                          gsl::span<const size_t> output_stride,
-                          [[maybe_unused]] gsl::span<const size_t> sum_strides,
-                          [[maybe_unused]] gsl::span<const size_t> gamma_strides, T eps,
-                          int32_t axis, int32_t norm_size,
-                          [[maybe_unused]] bool rms_norm = false) noexcept {
+void layernorm_naive_impl(
+    const T *input, const T *sum, const T *sum_sqr, T *output, const T *gamma,
+    const T *beta, gsl::span<const size_t> input_shape,
+    gsl::span<const size_t> input_stride, gsl::span<const size_t> output_stride,
+    [[maybe_unused]] gsl::span<const size_t> sum_strides,
+    [[maybe_unused]] gsl::span<const size_t> gamma_strides, T eps, int32_t axis,
+    int32_t norm_size, [[maybe_unused]] bool rms_norm = false) noexcept {
 
     size_t outer_size = 1;
     for (auto i = 0; i < axis; i++) {
@@ -109,16 +104,23 @@ void layernorm_naive_impl(const T *input, const T *sum, const T *sum_sqr, T *out
     for (int i = axis; i < (int)input_shape.size(); i++) {
         inner_size *= input_shape[i];
     }
-    gsl::span<const size_t> in_shape_outer(input_shape.begin(), input_shape.begin() + axis);
-    gsl::span<const size_t> in_shape_inner(input_shape.begin() + axis, input_shape.end());
+    gsl::span<const size_t> in_shape_outer(input_shape.begin(),
+                                           input_shape.begin() + axis);
+    gsl::span<const size_t> in_shape_inner(input_shape.begin() + axis,
+                                           input_shape.end());
     for (size_t o = 0; o < outer_size; o++) {
-        int __ptr_output = get_offset_from_index(in_shape_outer, output_stride, o);
-        int __ptr_input = get_offset_from_index(in_shape_outer, input_stride, o);
+        int __ptr_output =
+            get_offset_from_index(in_shape_outer, output_stride, o);
+        int __ptr_input =
+            get_offset_from_index(in_shape_outer, input_stride, o);
         int __ptr_sum = get_offset_from_index(in_shape_outer, sum_strides, o);
         auto mean = sum[__ptr_sum] / norm_size;
-        if(rms_norm) mean = 0;
-        auto sigma = std::sqrt(sum_sqr[__ptr_sum] / norm_size - mean * mean + eps);
-        layernor_restruct2(input + __ptr_input, output + __ptr_output, inner_size, gamma, beta, mean, sigma);
+        if (rms_norm)
+            mean = 0;
+        auto sigma =
+            std::sqrt(sum_sqr[__ptr_sum] / norm_size - mean * mean + eps);
+        layernor_restruct2(input + __ptr_input, output + __ptr_output,
+                           inner_size, gamma, beta, mean, sigma);
     }
 }
 #else
@@ -183,7 +185,7 @@ void layernorm(const T *input, T *sum, T *sum_sqr, T *output, T *gamma, T *beta,
                strides_t output_strides, strides_t sum_strides,
                strides_t gamma_strides, T eps, int32_t axis, int32_t norm_size,
                bool rms_norm = false) {
-                // fafdaf
+    // fafdaf
 #ifdef __riscv_vector_
     return layernorm_rvv_impl(
         input, sum, sum_sqr, gamma, beta,
