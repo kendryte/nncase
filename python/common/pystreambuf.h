@@ -1,8 +1,8 @@
 // https://gist.github.com/asford/544323a5da7dddad2c9174490eb5ed06
 #pragma once
 
-#include <nncase/compiler_defs.h>
 #include <cstdint>
+#include <nncase/compiler_defs.h>
 #include <pybind11/pybind11.h>
 
 #include <iostream>
