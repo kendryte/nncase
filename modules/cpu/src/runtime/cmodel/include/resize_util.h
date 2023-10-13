@@ -73,23 +73,28 @@ get_nearest_pixel_from_origin(image_resize_nearest_mode_t nearest_mode) {
     switch (nearest_mode) {
     case image_resize_nearest_mode_t::round_prefer_ceil:
         return [](float x_original) -> int64_t {
-            return static_cast<int64_t>(nncase_mt->float_unary_round(x_original));
+            return static_cast<int64_t>(
+                nncase_mt->float_unary_round(x_original));
         };
     case image_resize_nearest_mode_t::floor:
-        return [](float x_original) -> int64_t{
-            return static_cast<int64_t>(nncase_mt->float_unary_floor(x_original));
+        return [](float x_original) -> int64_t {
+            return static_cast<int64_t>(
+                nncase_mt->float_unary_floor(x_original));
         };
     case image_resize_nearest_mode_t::ceil:
-        return [](float x_original) -> int64_t{
-            return static_cast<int64_t>(nncase_mt->float_unary_ceil(x_original));
+        return [](float x_original) -> int64_t {
+            return static_cast<int64_t>(
+                nncase_mt->float_unary_ceil(x_original));
         };
     default: // default is round_prefer_floor
-        return [](float x_original) -> int64_t{
+        return [](float x_original) -> int64_t {
             // for half way cases prefer floor
             if (x_original == static_cast<int64_t>(x_original) + 0.5f) {
-                return static_cast<int64_t>(nncase_mt->float_unary_floor(x_original));
+                return static_cast<int64_t>(
+                    nncase_mt->float_unary_floor(x_original));
             }
-            return static_cast<int64_t>(nncase_mt->float_unary_round(x_original));
+            return static_cast<int64_t>(
+                nncase_mt->float_unary_round(x_original));
         };
     }
 }
@@ -116,6 +121,7 @@ inline void set_resize_bilinear(size_t value, float scale,
     }
     float scaled_value_floor = nncase_mt->float_unary_floor(scaled_value);
     v0 = std::max(static_cast<int32_t>(scaled_value_floor), 0);
-    v1 = std::min(static_cast<int32_t>(nncase_mt->float_unary_ceil(scaled_value)),
-                  static_cast<int32_t>(shape_size - 1));
+    v1 = std::min(
+        static_cast<int32_t>(nncase_mt->float_unary_ceil(scaled_value)),
+        static_cast<int32_t>(shape_size - 1));
 }

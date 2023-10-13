@@ -129,7 +129,7 @@ public class ResizeImageEvaluator : IEvaluator<ResizeImage>, ITypeInferencer<Res
 
     public IRType Visit(DistributedType input, Expr newSize)
     {
-        if (Visit(input.TensorType, newSize) is not TensorType outType)
+        if (Visit(input.TensorType, newSize) is not TensorType)
         {
             return new InvalidType(string.Empty);
         }

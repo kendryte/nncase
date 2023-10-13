@@ -131,11 +131,11 @@ template <class T>
 void resize_neareast_neighbor(
     const T *input, T *output, dims_t in_shape, strides_t in_strides,
     strides_t out_strides, int32_t out_h, int32_t out_w, bool align_corners,
-    bool half_pixel_centers,
-    get_coordinate_func_t get_coordinate_func,
+    bool half_pixel_centers, get_coordinate_func_t get_coordinate_func,
     get_nearest_pixel_func_t get_nearset_func) noexcept {
-    resize_nearest_neighbor_impl(
-        input, output, in_shape, in_strides, out_strides, out_h, out_w,
-        align_corners, half_pixel_centers, get_coordinate_func, get_nearset_func);
+    resize_nearest_neighbor_impl(input, output, in_shape, in_strides,
+                                 out_strides, out_h, out_w, align_corners,
+                                 half_pixel_centers, get_coordinate_func,
+                                 get_nearset_func);
 }
 } // namespace kernels
