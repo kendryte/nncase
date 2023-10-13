@@ -28,10 +28,12 @@ void reduce_arg_impl(TReducer &&reducer, T init_value, const T *input,
     });
 
     // collect all min/max indices
-    auto out_map = (TOutput *)runtime_util->malloc(output_size * 2 * sizeof(TOutput));
+    auto out_map =
+        (TOutput *)runtime_util->malloc(output_size * 2 * sizeof(TOutput));
     apply(in_shape, [&](gsl::span<const size_t> index) -> void {
         const auto src = input[offset(in_strides, index)];
-        auto out_idx = offset(out_strides, get_reduced_offset(index, axes, keep_dims));
+        auto out_idx =
+            offset(out_strides, get_reduced_offset(index, axes, keep_dims));
         T &dst = ptr[out_idx];
         auto ret = reducer(src, dst);
         if (ret) {

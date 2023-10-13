@@ -701,13 +701,13 @@ enum class sched_strategy_t : uint8_t { pin_block_tensor, normal };
 void set_sched_strategy([[maybe_unused]] sched_strategy_t sch) {}
 
 template <loc_t SrcLoc, loc_t DestLoc, class Tin, class Tout>
-void reduce_arg(tensor<Tin, SrcLoc> &src, tensor<Tout, DestLoc> &dest,
-                int axis, bool keep_dims, bool select_last_idx,
-                reduce_arg_op_t op) {
-    auto axes = dims_t { (size_t)axis };
-    kernels::reduce_arg<Tin, Tout>(
-        op, src.cdata().data(), dest.data().data(), src.dimension(),
-        src.strides(), dest.dimension(), dest.strides(), axes, keep_dims, select_last_idx);
+void reduce_arg(tensor<Tin, SrcLoc> &src, tensor<Tout, DestLoc> &dest, int axis,
+                bool keep_dims, bool select_last_idx, reduce_arg_op_t op) {
+    auto axes = dims_t{(size_t)axis};
+    kernels::reduce_arg<Tin, Tout>(op, src.cdata().data(), dest.data().data(),
+                                   src.dimension(), src.strides(),
+                                   dest.dimension(), dest.strides(), axes,
+                                   keep_dims, select_last_idx);
 }
 
 template <loc_t SrcLoc, loc_t DestLoc>
