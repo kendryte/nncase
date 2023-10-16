@@ -40,21 +40,21 @@ class RangeTest : public KernelTest,
         auto step_value = GetFloatNumber("step");
         auto typecode = GetDataType("lhs_type");
 
-        float_t begin_array[] = {begin_value};
+        float begin_array[] = {begin_value};
         begin = hrt::create(typecode, shape,
                             {reinterpret_cast<gsl::byte *>(begin_array),
                              sizeof(begin_array)},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
 
-        float_t end_array[] = {end_value};
+        float end_array[] = {end_value};
         end = hrt::create(
                   typecode, shape,
                   {reinterpret_cast<gsl::byte *>(end_array), sizeof(end_array)},
                   true, host_runtime_tensor::pool_cpu_only)
                   .expect("create tensor failed");
 
-        float_t step_array[] = {step_value};
+        float step_array[] = {step_value};
         step = hrt::create(typecode, shape,
                            {reinterpret_cast<gsl::byte *>(step_array),
                             sizeof(step_array)},

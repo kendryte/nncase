@@ -26,6 +26,7 @@ namespace Nncase.Importer
             var strides = GetStrideAttribute(op).ToArray<long>().ToList();
 
             var isConv1D = IsConv1D(weights);
+            List<string> wOutputNames = new() { weights.Metadata.OutputNames![0] };
             if (isConv1D)
             {
                 dilation.Add(1);
@@ -34,9 +35,12 @@ namespace Nncase.Importer
                 weights = To4D(weights);
             }
 
+            weights.Metadata.OutputNames = wOutputNames;
             var pads = AutoPad(op, autoPad, input, weights, strides.ToArray<long>(), dilation.ToArray(), isConv1D);
             pads.InferenceType();
             var conv = F.NN.Conv2D(input, weights, bias, strides.ToArray(), pads, dilation.ToArray(), PadMode.Constant, group);
+            List<string> outputNames = new() { op.Name };
+            conv.Metadata.OutputNames = outputNames;
             if (isConv1D)
             {
                 conv = Squeeze(conv, new[] { 3 });

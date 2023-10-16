@@ -18,6 +18,15 @@ namespace Nncase.Importer.TFLite
             (var lhs, var rhs) = GetInputExprs(op, 0, 1);
 
             var node = F.Math.Binary(binaryOp, lhs, rhs);
+            List<string> outputNames = new();
+
+            var outputsLength = op.GetOutputsArray().Length;
+            for (int i = 0; i < outputsLength; i++)
+            {
+                outputNames.Add(GetOutputTensor(op, i).Name + "_FusedBinary");
+            }
+
+            node.Metadata.OutputNames = outputNames;
             return Activate(node, activation);
         }
 
