@@ -527,8 +527,6 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                 default:
                     throw new NotSupportedException(xpuOp.ToString());
             }
-
-            IndentScope.Writer.Write($";runtime_util->printf(\"%d\\n\", {count++})");
         }
         else
         {

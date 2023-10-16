@@ -118,7 +118,7 @@ public sealed class UnitTestTypeInfer : TestClassBase
 #if DEBUG
         using (var f = Dumpper.OpenFile("types.txt"))
 #else
-        using (var f = new StreamWriter(MemoryStream.Null))
+        using (var f = MemoryStream.Null)
 #endif
         {
             using var wr = new StreamWriter(f);
@@ -156,7 +156,7 @@ public sealed class UnitTestTypeInfer : TestClassBase
 #if DEBUG
         using (var f = Dumpper.OpenFile("types.txt"))
 #else
-        using (var f = new StreamWriter(MemoryStream.Null))
+        using (var f = MemoryStream.Null)
 #endif
         {
             using var wr = new StreamWriter(f);
