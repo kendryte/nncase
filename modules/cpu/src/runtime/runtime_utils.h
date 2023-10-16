@@ -28,6 +28,8 @@ inline void join_thread(pthread_t &pt) { pthread_join(pt, NULL); }
 
 inline void rt_assert([[maybe_unused]] bool condition,
                       [[maybe_unused]] char *message) {
+    if (!condition)
+        printf("%s\n", message);
     assert(condition && message);
 }
 END_NS_NNCASE_RT_MODULE

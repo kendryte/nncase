@@ -124,8 +124,8 @@ T *im2col(tensor<T, InLoc> &input, dims_t filter, dims_t padding, dims_t stride,
     // todo: support dilated and group conv2d
     int32_t N = input.dimension()[0];
     int32_t C = input.dimension()[1];
-    int32_t H = input.dimension()[2] + padding[0] + padding[2];
-    int32_t W = input.dimension()[3] + padding[1] + padding[3];
+    int32_t H = input.dimension()[2] + padding[0] + padding[1];
+    int32_t W = input.dimension()[3] + padding[2] + padding[3];
 
     int32_t OH = (H - dilation[0] * (filter[0] - 1) - 1) / stride[0] + 1;
     int32_t OW = (W - dilation[1] * (filter[1] - 1) - 1) / stride[1] + 1;
@@ -140,17 +140,21 @@ T *im2col(tensor<T, InLoc> &input, dims_t filter, dims_t padding, dims_t stride,
                     for (auto s = 0; s < filter[1]; s++) {
                         auto row =
                             c * filter[0] * filter[1] + r * filter[0] + s;
+                        auto in_h = stride[0] * e + r * dilation[0];
+                        auto in_w = stride[1] * f + s * dilation[1];
                         for (auto b = 0; b < N; b++) {
                             auto col = e * OW * N + f * N + b;
                             auto out_index = row * (OH * OW * N) + col;
-                            auto in_index = b * input.strides()[0] +
-                                            c * input.strides()[1] +
-                                            (stride[0] * e + r * dilation[0]) *
-                                                input.strides()[2] +
-                                            (stride[1] * f + s * dilation[1]);
-                            if (row < padding[0] || col < padding[1]) {
+                            if (in_h < padding[0] || in_w < padding[2] ||
+                                in_h >= H - padding[1] ||
+                                in_w >= W - padding[3]) {
                                 cols[out_index] = 0;
                             } else {
+                                auto in_index =
+                                    b * input.strides()[0] +
+                                    c * input.strides()[1] +
+                                    (in_h - padding[0]) * input.strides()[2] +
+                                    (in_w - padding[2]);
                                 cols[out_index] =
                                     input.cdata().data()[in_index];
                             }
@@ -168,14 +172,14 @@ void conv2d(thread_context &ctx, tensor<T, InLoc> &input,
     // todo: support dilated and group conv2d
     size_t N = input.dimension()[0];
     size_t C = input.dimension()[1];
-    size_t H = input.dimension()[2] + padding[0] + padding[2];
-    size_t W = input.dimension()[3] + padding[1] + padding[3];
+    size_t H = input.dimension()[2] + padding[0] + padding[1];
+    size_t W = input.dimension()[3] + padding[2] + padding[3];
 
     size_t M = weight.dimension()[0];
     dims_t filter = {weight.dimension()[2], weight.dimension()[3]};
 
-    int32_t OH = (H - dilation[0] * (filter[0] - 1) - 1) / stride[0] + 1;
-    int32_t OW = (W - dilation[1] * (filter[1] - 1) - 1) / stride[1] + 1;
+    size_t OH = (H - dilation[0] * (filter[0] - 1) - 1) / stride[0] + 1;
+    size_t OW = (W - dilation[1] * (filter[1] - 1) - 1) / stride[1] + 1;
 
     auto input_cols =
         im2col<T, InLoc>(input, filter, padding, stride, dilation, groups);
@@ -188,6 +192,7 @@ void conv2d(thread_context &ctx, tensor<T, InLoc> &input,
         gsl::make_span(dims_t{OH * OW * N, 1}),
         gsl::make_span(dims_t{M, OH * OW * N}),
         gsl::make_span(dims_t{OH * OW * N, 1}));
+    delete[] input_cols;
 
     switch (strategy) {
     case reduce_strategy_t::by_thread:
