@@ -4,6 +4,7 @@
 #include <binary.h>
 #include <cassert>
 #include <concat.h>
+#include "cast.h"
 #include <functional>
 #include <gather.h>
 #include <hardware_context.h>
@@ -807,4 +808,13 @@ void softmax(tensor<float, SrcLoc> &src, tensor<float, DestLoc> &dest, int axis,
                         dest.dimension(), dest.strides(), tmp_sum.dimension(),
                         tmp_sum.strides(), dest.dimension(), dest.strides());
     }
+}
+
+template <class TI, class TO, loc_t ALoc, loc_t BLoc>
+void cast(tensor<TI, ALoc> &in, tensor<TO, BLoc> &out) {
+    kernels::cast(
+        in.cdata().data(), out.data().data(),
+        gsl::make_span(in.dimension()).template as_span<const size_t>(),
+        gsl::make_span(in.strides()).template as_span<const size_t>(),
+        gsl::make_span(out.strides()).template as_span<const size_t>());
 }

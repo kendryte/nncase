@@ -96,4 +96,9 @@ public partial class XPU
     {
         return new Call(new Resize(roi, newSize, cubicCoeffA, excludeOutside, extrapolationValue, resizeMode, transformationMode, nearestMode, isTFResize), input, output);
     }
+
+    public static Call Cast(Expr input, Expr output, DataType dataType, CastMode castMode)
+    {
+        return new Call(new Cast(dataType, castMode), input, output);
+    }
 }

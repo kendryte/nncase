@@ -95,6 +95,9 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
                 float extrapolationValue = expr.Arguments[5] is TensorConst tc3 ? tc3.Value.ToScalar<float>() : 0f;
                 GenerateResize(resize, arguments, ret, roi, newSize, cubicCoeffA, excludeOutside, extrapolationValue, (DistributedType)expr.CheckedType);
                 break;
+            case Cast cast:
+                GenerateCast(cast.NewType, cast.CastMode, arguments, ret);
+                break;
             default:
                 throw new NotSupportedException();
         }
@@ -212,6 +215,11 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
     private void GenerateResize(ResizeImage resize, Buffer[] arguments, Buffer ret, float[] roi, int[] newSize, float cubicCoeffA, int excludeOutside, float extrapolationValue, DistributedType distributedType)
     {
         _mainBody.Add(IR.F.XPU.Resize(arguments[0], ret, roi, newSize, cubicCoeffA, excludeOutside, extrapolationValue, resize.ResizeMode, resize.TransformationMode, resize.NearestMode, resize.IsTFResize));
+    }
+
+    private void GenerateCast(DataType dataType, CastMode castMode, ReadOnlySpan<Buffer> arguments, Buffer ret)
+    {
+        _mainBody.Add(IR.F.XPU.Cast(arguments[0], ret, dataType, castMode));
     }
 
 #if false

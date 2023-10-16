@@ -20,7 +20,7 @@ public sealed partial class Cast : Op
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Cast), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(Cast), 0, "input", ParameterKind.Input);
 
     public DataType NewType { get; }
 
