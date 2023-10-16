@@ -90,7 +90,6 @@ result<void> unary_impl(unary_op_t op, const T *input, T *output,
         UNARY_IMPL_OP(sinh, sinhf);
         UNARY_IMPL_OP(sqrt, sqrtf);
         UNARY_IMPL_OP(square, [](float v) { return v * v; });
-        UNARY_IMPL_OP(tan, tanf);
         UNARY_IMPL_OP(tanh, tanhf);
     default:
         return err(std::errc::not_supported);
