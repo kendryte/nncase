@@ -68,6 +68,10 @@ void unary_impl(unary_op_t op, const T *input, T *output,
             UNARY_IMPL_OP(swish, [](float x) {
                 return x / (1 + nncase_mt->float_unary_exp(-x));
             });
+            UNARY_IMPL_OP(gelu, [](float x) {
+                return 0.5f * (x) *
+                               (1.f + nncase_mt->float_unary_erf( x / nncase_mt->float_unary_sqrt(2.f)));
+            });
         default:
             runtime_util->rt_assert(false, (char *)"Unsupported Unary Op!");
         }

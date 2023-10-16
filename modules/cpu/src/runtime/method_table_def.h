@@ -28,6 +28,7 @@ typedef struct nncase_method_table {
     float (*float_unary_sqrt)(float);
     float (*float_unary_square)(float);
     float (*float_unary_tanh)(float);
+    float (*float_unary_erf)(float);
     // float bianry
     float (*float_binary_add)(float, float);
     float (*float_binary_sub)(float, float);

@@ -48,7 +48,8 @@ enum class unary_op_t : uint8_t {
     tanh = 19,
     bitwise_not = 20,
     logical_not = 21,
-    swish = 22
+    swish = 22,
+    gelu = 23
 };
 
 enum class binary_op_t : uint8_t {
