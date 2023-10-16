@@ -318,7 +318,8 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                                     IndentScope.Writer.IndWrite($"tdma_all_reduce_async(sum_sqr, sum_sqr, reduce_op_t::sum, reduce_strategy_t::by_block, ctx);\n");
                                 }
 
-                                IndentScope.Writer.IndWrite($"layernorm({Visit(args[0]).Name}, sum, sum_sqr,{Visit(args[3]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name}, static_cast<{args[0].CheckedDataType.ToC()}>({layernorm.Epsilon}), {layernorm.Axis}, {layernorm.DistType.TensorType.Shape[layernorm.Axis]}, {(!layernorm.UseMean).ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)});\n"); break;
+                                IndentScope.Writer.IndWrite($"layernorm({Visit(args[0]).Name}, sum, sum_sqr,{Visit(args[3]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name}, static_cast<{args[0].CheckedDataType.ToC()}>({layernorm.Epsilon}), {layernorm.Axis}, {layernorm.DistType.TensorType.Shape[layernorm.Axis]}, {(!layernorm.UseMean).ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)});\n");
+                                break;
                             case 2:
                                 IndentScope.Writer.IndWrite($"tensor<{args[0].CheckedDataType.ToC()}, loc_t::local> sum({{{string.Join(",", dividedType.Shape.ToArray().Take(layernorm.Axis))}}});\n");
                                 IndentScope.Writer.IndWrite($"tensor<{args[0].CheckedDataType.ToC()}, loc_t::local> sum_sqr({{{string.Join(",", dividedType.Shape.ToArray().Take(layernorm.Axis))}}});\n");
@@ -475,7 +476,22 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 
                     if (reshard)
                     {
-                        IndentScope.Writer.IndWrite($"__tensor_copy_sync(std::move({ret_name}), {ret_name}_tmp{((TensorType)args[1].CheckedType).ToSlicing(new IRArray<SBP>(grs.ReducePosition.Select(t => t.SBP)), grs.Placement)});\n");
+                        var splitAxis = Enumerable.Range(0, grs.ReducePosition.Count).Select(i => grs.ReducePosition[i].SBP is SBPSplit { Axis: int axis } ? (axis, grs.Placement.Hierarchy[i]) : (0, 1)).ToArray();
+                        var inputShape = args[1].CheckedShape.ToValueArray();
+                        foreach (var sa in splitAxis)
+                        {
+                            inputShape[sa.Item1] *= sa.Item2;
+                        }
+
+                        if (Enumerable.SequenceEqual(inputShape, args[0].CheckedShape.ToValueArray()))
+                        {
+                            IndentScope.Writer.IndWrite($"__tensor_copy_sync(std::move({ret_name}), {ret_name}_tmp{((TensorType)args[1].CheckedType).ToSlicing(new IRArray<SBP>(grs.ReducePosition.Select(t => t.SBP)), grs.Placement)});\n");
+                        }
+                        else
+                        {
+                            IndentScope.Writer.IndWrite($"tensor<{args[0].CheckedDataType.ToC()}, loc_t::local> {ret_name}_tmp_view = view({ret_name}_tmp, {{{string.Join(",", inputShape)}}});\n");
+                            IndentScope.Writer.IndWrite($"__tensor_copy_sync(std::move({ret_name}),std::move({ret_name}_tmp_view{((TensorType)args[1].CheckedType).ToSlicing(new IRArray<SBP>(grs.ReducePosition.Select(t => t.SBP)), grs.Placement)}));\n");
+                        }
                     }
 
                     break;
@@ -496,13 +512,23 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                     IndentScope.Writer.Write($"reduce_arg({Visit(args[0]).Name}, {Visit(args[1]).Name}, {reduceArg.Axis}, {reduceArg.KeepDims.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)}, {reduceArg.SelectLastIndex.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)}, reduce_arg_op_t::{reduceArg.ReduceArgOp.ToC()})");
                     break;
                 case IR.XPU.Resize resize:
-                    IndentScope.Writer.Write($"float roi[{resize.Roi.Count}] = {{{string.Join(",", resize.Roi.Select(p => p.ToString()))}}};\n");
-                    IndentScope.Writer.Write($"int32_t new_size[{resize.NewSize.Count}] = {{{string.Join(",", resize.NewSize.Select(p => p.ToString()))}}};\n");
-                    IndentScope.Writer.Write($"resize({Visit(args[0]).Name}, {Visit(args[1]).Name}, roi, new_size, {resize.CubicCoeffA.ToString()}, {resize.ExcludeOutsideValue.ToString()}, {resize.ExtrapolationValue.ToString()}, image_resize_mode_t::{resize.ResizeMode.ToC()}, image_resize_transformation_mode_t::{resize.TransformationMode.ToC()}, image_resize_nearest_mode_t::{resize.NearestMode.ToC()}, {resize.IsTFResize.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)})");
+                    using (_ = new IndentScope())
+                    {
+                        IndentScope.Writer.IndWrite($"{{\n");
+
+                        IndentScope.Writer.IndWrite($"float roi[{resize.Roi.Count}] = {{{string.Join(",", resize.Roi.Select(p => p.ToString()))}}};\n");
+                        IndentScope.Writer.IndWrite($"int32_t new_size[{resize.NewSize.Count}] = {{{string.Join(",", resize.NewSize.Select(p => p.ToString()))}}};\n");
+                        IndentScope.Writer.IndWrite($"resize({Visit(args[0]).Name}, {Visit(args[1]).Name}, roi, new_size, {resize.CubicCoeffA.ToString()}, {resize.ExcludeOutsideValue.ToString()}, {resize.ExtrapolationValue.ToString()}, image_resize_mode_t::{resize.ResizeMode.ToC()}, image_resize_transformation_mode_t::{resize.TransformationMode.ToC()}, image_resize_nearest_mode_t::{resize.NearestMode.ToC()}, {resize.IsTFResize.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)});\n");
+
+                        IndentScope.Writer.IndWrite("}\n");
+                    }
+
                     break;
                 default:
                     throw new NotSupportedException(xpuOp.ToString());
             }
+
+            IndentScope.Writer.Write($";runtime_util->printf(\"%d\\n\", {count++})");
         }
         else
         {
