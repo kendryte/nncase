@@ -59,7 +59,7 @@ k_sizes = [
 strides = [
     [1, 1],
     [1, 3],
-    [5, 5]
+    # [5, 5]
 ]
 
 paddings = [
@@ -69,7 +69,7 @@ paddings = [
 
 dilations = [
     [1, 1],
-    # [2, 2]  there is a bug in tf.nn.depthwise_conv2d that produces incorrect output shape
+    # [2, 2]  there is a bug in tf.nn.depthwise_conv2d that produces incorrect output shape.
 ]
 
 
