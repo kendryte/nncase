@@ -34,7 +34,7 @@ internal class NcnnEmitter
         AddLayer("Softmax", name, new[] { input }, new[] { name }, new ParamDict
         {
             [0] = new ParamValue { Kind = ParamKind.Int, IntValue = axis }, // axis
-            [1] = new ParamValue { Kind= ParamKind.Int, IntValue = 1 }, // fixbug0
+            [1] = new ParamValue { Kind = ParamKind.Int, IntValue = 1 }, // fixbug0
         });
 
     private void AddLayer(string type, string name, string[] bottoms, string[] tops, ParamDict? paramDict = null)

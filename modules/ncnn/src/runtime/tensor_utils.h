@@ -15,8 +15,8 @@
 #pragma once
 #include <ncnn/mat.h>
 #include <nncase/kernels/kernel_context.h>
-#include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/kernels/stackvm/optimized/opt_ops.h>
+#include <nncase/runtime/runtime_op_utility.h>
 
 BEGIN_NS_NNCASE_RT_MODULE(ncnn)
 
