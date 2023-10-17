@@ -1,4 +1,6 @@
 find_package(gsl-lite REQUIRED)
+find_package(ncnn REQUIRED)
+
 if (ENABLE_OPENMP)
     find_package(OpenMP COMPONENTS CXX REQUIRED)
 endif ()

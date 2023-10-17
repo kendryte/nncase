@@ -796,10 +796,18 @@
       "nncase.io": {
         "type": "Project"
       },
+      "nncase.modules.ncnn": {
+        "type": "Project",
+        "dependencies": {
+          "Nncase.CodeGen": "[1.0.0, )",
+          "Nncase.Passes": "[1.0.0, )"
+        }
+      },
       "nncase.modules.stackvm": {
         "type": "Project",
         "dependencies": {
           "Nncase.CodeGen": "[1.0.0, )",
+          "Nncase.Modules.Ncnn": "[1.0.0, )",
           "Nncase.Passes": "[1.0.0, )"
         }
       },

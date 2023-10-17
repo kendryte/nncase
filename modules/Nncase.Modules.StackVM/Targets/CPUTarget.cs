@@ -9,9 +9,11 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Nncase.CodeGen;
+using Nncase.CodeGen.Ncnn;
 using Nncase.CodeGen.StackVM;
 using Nncase.IR;
 using Nncase.Passes;
+using Nncase.Passes.Transforms;
 using Nncase.Quantization;
 
 namespace Nncase.Targets;
@@ -41,6 +43,11 @@ public class CPUTarget : ITarget
     /// <inheritdoc/>
     public void RegisterTargetDependentPass(IPassManager passManager, CompileOptions options)
     {
+        passManager.AddWithName<DataflowPass>("LowerNcnnIR").Configure(p =>
+        {
+            p.Add<Passes.Rules.Ncnn.LowerSoftmax>();
+            p.Add<Passes.Rules.Ncnn.LowerUnary>();
+        });
     }
 
     /// <inheritdoc/>
@@ -75,6 +82,7 @@ public class CPUTarget : ITarget
 
     public void RegisterTargetDependentBeforeCodeGen(IPassManager passManager, CompileOptions options)
     {
+        passManager.Add<FusionToFunctionPass>();
     }
 
     /// <inheritdoc/>
@@ -83,6 +91,10 @@ public class CPUTarget : ITarget
         if (moduleKind == Callable.StackVMModuleKind)
         {
             return new StackVMModuleBuilder();
+        }
+        else if (moduleKind == "ncnn")
+        {
+            return new NcnnModuleBuilder();
         }
         else
         {

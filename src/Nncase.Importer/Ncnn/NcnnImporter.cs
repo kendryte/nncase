@@ -17,6 +17,7 @@ using Nncase.IR.F;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
 using Nncase.IR.Tensors;
+using Nncase.Runtime.Ncnn;
 using Math = System.Math;
 using Tuple = Nncase.IR.Tuple;
 

@@ -39,7 +39,8 @@ public partial class LowerUnary : RewriteRule<Pattern>
     {
         if (MapUnaryOp(unary.UnaryOp) is UnaryOperationType op)
         {
-            return NcnnUnary(op, input);
+            var newInput = new Var(input.CheckedType);
+            return new Call(new Fusion("ncnn", NcnnUnary(newInput, op), new[] { newInput }), input);
         }
 
         return null;

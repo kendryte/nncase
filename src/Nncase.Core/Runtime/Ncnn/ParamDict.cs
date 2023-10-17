@@ -7,12 +7,11 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Google.Protobuf.WellKnownTypes;
 using Nncase.IR;
 
-namespace Nncase.Importer.Ncnn;
+namespace Nncase.Runtime.Ncnn;
 
-internal enum ParamKind
+public enum ParamKind
 {
     Null,
     IntOrFloat,
@@ -23,7 +22,7 @@ internal enum ParamKind
     ArrayOfFloat,
 }
 
-internal struct ParamValue
+public struct ParamValue
 {
     public ParamKind Kind;
 
@@ -34,11 +33,17 @@ internal struct ParamValue
     public Tensor? TensorValue;
 }
 
-internal class ParamDict
+public class ParamDict
 {
     public static readonly int NcnnMaxParamCount = 32;
 
     private readonly Dictionary<int, ParamValue> _values = new();
+
+    public ParamValue this[int index]
+    {
+        get => _values[index];
+        set => _values[index] = value;
+    }
 
     public void LoadFrom(ReadOnlySpan<string> fields)
     {
@@ -116,4 +121,52 @@ internal class ParamDict
     public Tensor<T> Get<T>(int id, Tensor<T> defaultValue)
         where T : unmanaged, IEquatable<T>
         => _values.TryGetValue(id, out var value) ? value.TensorValue!.Cast<T>() : defaultValue;
+
+    public void Serialize(TextWriter writer)
+    {
+        int index = 0;
+        foreach (var field in _values)
+        {
+            var id = field.Key;
+
+            var paramValue = field.Value;
+            var isArray = paramValue.Kind is ParamKind.ArrayOfFloat or ParamKind.ArrayOfIntOrFloat or ParamKind.ArrayOfInt;
+            var isFloat = paramValue.Kind is ParamKind.ArrayOfFloat or ParamKind.Float;
+
+            if (isArray)
+            {
+                id = id - 23300;
+            }
+
+            writer.Write($"{id}=");
+
+            if (isArray)
+            {
+                if (isFloat)
+                {
+                    writer.Write(string.Join(',', paramValue.TensorValue!.Cast<float>().Select(x => x.ToString("e"))));
+                }
+                else
+                {
+                    writer.Write(string.Join(',', paramValue.TensorValue!.Cast<int>()));
+                }
+            }
+            else
+            {
+                if (isFloat)
+                {
+                    writer.Write(paramValue.FloatValue.ToString("e"));
+                }
+                else
+                {
+                    writer.Write(paramValue.IntValue);
+                }
+            }
+
+            if (++index != _values.Count)
+            {
+                writer.Write(' ');
+            }
+        }
+    }
 }

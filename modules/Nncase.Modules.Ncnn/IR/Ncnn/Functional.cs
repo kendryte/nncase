@@ -12,8 +12,9 @@ namespace Nncase.IR.F;
 
 public sealed class Ncnn
 {
-    public static Call NcnnUnary(UnaryOperationType unaryOp, Expr expr)
-    {
-        return new Call(new NcnnUnary(unaryOp), expr);
-    }
+    public static Call NcnnUnary(Expr expr, UnaryOperationType unaryOp) =>
+        new Call(new NcnnUnary(unaryOp), expr);
+
+    public static Call NcnnSoftmax(Expr expr, int axis) =>
+        new Call(new NcnnSoftmax(axis), expr);
 }

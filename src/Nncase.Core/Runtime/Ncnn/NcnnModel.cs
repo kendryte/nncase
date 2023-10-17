@@ -7,47 +7,20 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Nncase.IR;
 
-namespace Nncase.Importer.Ncnn;
+namespace Nncase.Runtime.Ncnn;
 
-internal class NcnnTensor
-{
-    public string Name { get; set; } = string.Empty;
-
-    public Shape ShapeHint { get; set; } = Shape.Unranked;
-
-    public override string ToString() => $"{Name}: {ShapeHint}";
-}
-
-internal class NcnnLayer
-{
-    public NcnnLayer(string type, string name, int bottomCount, int topCount)
-    {
-        Type = type;
-        Name = name;
-        Bottoms = new NcnnTensor[bottomCount];
-        Tops = new NcnnTensor[topCount];
-    }
-
-    public string Type { get; }
-
-    public string Name { get; }
-
-    public NcnnTensor[] Bottoms { get; }
-
-    public NcnnTensor[] Tops { get; }
-
-    public ParamDict ParamDict { get; } = new();
-
-    public override string ToString() => $"[{Type}] {Name}";
-}
-
-internal class NcnnModel
+public class NcnnModel
 {
     public static readonly int ExpectedMagic = 7767517;
 
-    public NcnnModel(int magic, IReadOnlyList<NcnnLayer> layers)
+    public NcnnModel()
+    {
+        Magic = ExpectedMagic;
+        Layers = new List<NcnnLayer>();
+    }
+
+    public NcnnModel(int magic, IList<NcnnLayer> layers)
     {
         Magic = magic;
         Layers = layers;
@@ -55,7 +28,7 @@ internal class NcnnModel
 
     public int Magic { get; }
 
-    public IReadOnlyList<NcnnLayer> Layers { get; }
+    public IList<NcnnLayer> Layers { get; }
 
     public static NcnnModel ParseFromStream(Stream stream)
     {
@@ -104,5 +77,20 @@ internal class NcnnModel
         }
 
         return new NcnnModel(magic, layers);
+    }
+
+    public void Serialize(TextWriter writer)
+    {
+        // 1. Magic
+        writer.WriteLine(Magic);
+
+        // 2. layer_count & blob_count
+        writer.WriteLine($"{Layers.Count} {Layers.Select(x => x.Tops.Length).Sum()}");
+
+        // 3. layers
+        foreach (var layer in Layers)
+        {
+            layer.Serialize(writer);
+        }
     }
 }

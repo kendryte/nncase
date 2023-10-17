@@ -263,5 +263,6 @@ if(BUILD_TESTING)
 endif()
 
 # Modules
+add_subdirectory(modules/ncnn)
 #add_subdirectory(modules/k210)
 #add_subdirectory(modules/vulkan)
