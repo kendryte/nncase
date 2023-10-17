@@ -330,7 +330,7 @@ public static class CostUtility
     }
 
     // cost for op similar to broadcast
-    public static Cost GetBroadcastCost(TensorType input, TensorType ret)
+    public static Cost GetBroadcastCost(IRType input, IRType ret)
     {
         return new()
         {

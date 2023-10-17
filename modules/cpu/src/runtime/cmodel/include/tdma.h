@@ -1,10 +1,11 @@
 #pragma once
+#include "cast.h"
 #include "runtime_utils.h"
 #include <apply.h>
 #include <binary.h>
 #include <cassert>
 #include <concat.h>
-#include "cast.h"
+#include <expand.h>
 #include <functional>
 #include <gather.h>
 #include <hardware_context.h>
@@ -816,5 +817,15 @@ void cast(tensor<TI, ALoc> &in, tensor<TO, BLoc> &out) {
         in.cdata().data(), out.data().data(),
         gsl::make_span(in.dimension()).template as_span<const size_t>(),
         gsl::make_span(in.strides()).template as_span<const size_t>(),
+        gsl::make_span(out.strides()).template as_span<const size_t>());
+}
+
+template <class T, loc_t ALoc, loc_t BLoc>
+void expand(tensor<T, ALoc> &in, tensor<T, BLoc> &out) {
+    kernels::expand(
+        in.cdata().data(), out.data().data(),
+        gsl::make_span(in.dimension()).template as_span<const size_t>(),
+        gsl::make_span(in.strides()).template as_span<const size_t>(),
+        gsl::make_span(out.dimension()).template as_span<const size_t>(),
         gsl::make_span(out.strides()).template as_span<const size_t>());
 }

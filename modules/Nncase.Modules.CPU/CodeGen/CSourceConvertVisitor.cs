@@ -527,6 +527,9 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                 case IR.XPU.Cast cast:
                     IndentScope.Writer.Write($"cast({Visit(args[0]).Name}, {Visit(args[1]).Name})");
                     break;
+                case IR.XPU.Expand expand:
+                    IndentScope.Writer.Write($"expand({Visit(args[0]).Name}, {Visit(args[1]).Name})");
+                    break;
                 default:
                     throw new NotSupportedException(xpuOp.ToString());
             }

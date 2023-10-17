@@ -34,5 +34,6 @@ internal class XPUModule : IApplicationPart
         registrator.RegisterManyInterface<ReduceArgEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<ResizeEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<CastEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<ExpandEvaluator>(reuse: Reuse.Singleton);
     }
 }

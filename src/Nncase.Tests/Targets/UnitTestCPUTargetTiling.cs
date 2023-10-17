@@ -55,7 +55,8 @@ public class UnitTestCPUTargetTiling : TestClassBase
     // [ClassData(typeof(TilingCaseInstanceNorm))]
     // [ClassData(typeof(TilingCaseEncoderTail))]
     // [ClassData(typeof(TilingCaseResize))]
-    [ClassData(typeof(TilingCaseCast))]
+    // [ClassData(typeof(TilingCaseCast))]
+    [ClassData(typeof(TilingCaseExpand))]
     public async Task TestCpuFunction(Function main, Tensor[] inputs)
     {
         var module = new IR.IRModule(main);
@@ -734,6 +735,40 @@ internal sealed class TilingCaseCast : TheoryData<Function, Tensor[]>
         }
 
         var main = new Function("cast", new Call(fusion, input), new[] { input });
+
+        var input_tensor = IR.F.Random.Uniform(DataTypes.Int64, 100, 1, 2, shape).Evaluate().AsTensor();
+        using (var fs = Diagnostics.DumpScope.Current.OpenFile("input_0.bin"))
+        {
+            fs.Write(input_tensor.BytesBuffer);
+        }
+
+        var feedDict = new Dictionary<Var, IValue>
+            {
+                { fin, Value.FromTensor(input_tensor) },
+            };
+        var output = fusion.Body.Evaluate(feedDict).AsTensor();
+
+        Add(main, new[] { input_tensor, output });
+    }
+}
+
+internal sealed class TilingCaseExpand : TheoryData<Function, Tensor[]>
+{
+    public TilingCaseExpand()
+    {
+        var shape = new[] { 1, 32, 1 };
+        var input = new Var("input", new TensorType(DataTypes.Int64, shape));
+        var newShape = new[] { 2, 32, 32 };
+
+        Fusion fusion;
+        Var fin;
+        {
+            fin = new Var("input", new TensorType(DataTypes.Int64, shape));
+            var v0 = new Call(new IR.CPU.CPUKernelOp(new IR.Tensors.Expand()), fin, newShape);
+            fusion = new Fusion("cpu", v0, fin);
+        }
+
+        var main = new Function("expand", new Call(fusion, input), new[] { input });
 
         var input_tensor = IR.F.Random.Uniform(DataTypes.Int64, 100, 1, 2, shape).Evaluate().AsTensor();
         using (var fs = Diagnostics.DumpScope.Current.OpenFile("input_0.bin"))
