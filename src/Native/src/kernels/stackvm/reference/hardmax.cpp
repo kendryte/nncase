@@ -74,13 +74,25 @@ result<void> hardmax_impl(const T *input, gsl::span<const size_t> in_shape,
     return ok();
 }
 
-result<value_t>
-nncase::kernels::stackvm::hardmax(value_t input, value_t axis, value_t output,
-                                  [[maybe_unused]] kernel_context &context) {
-    try_f32_input(input_mem, input);
-    try_f32_output(out_mem, output, input_tensor->shape());
+#define HARDMAX_IMPL(_ty)                                                      \
+    return hardmax_impl(IN_CAST(_ty, input), in_shape, in_strides,             \
+                        OUT_CAST(_ty, output), axis);
+
+result<void> hardmax_impl(typecode_t typecode, const gsl::byte *input,
+                          gsl::span<const size_t> in_shape,
+                          gsl::span<const size_t> in_strides, gsl::byte *output,
+                          int32_t axis) noexcept {
+    TYPE_SELECT(typecode, HARDMAX_IMPL)} // namespace
+
+result<value_t> nncase::kernels::stackvm::hardmax(
+    value_t input, value_t axis, value_t output,
+    [[maybe_unused]] kernel_context &context) {
+    try_input(input_mem, input);
+    try_output(out_mem, output, input_tensor->dtype(), input_tensor->shape());
     try_positive_axis(axis_value, axis, input_tensor);
-    try_(hardmax_impl(input_mem, input_tensor->shape(), input_tensor->strides(),
-                      out_mem, axis_value));
+    try_typecode(typecode, input_tensor);
+    try_(hardmax_impl(typecode, input_mem, input_tensor->shape(),
+                      input_tensor->strides(), out_mem, axis_value));
+
     return ok(output);
 }

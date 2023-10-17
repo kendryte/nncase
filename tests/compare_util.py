@@ -1,4 +1,18 @@
-import enum
+# Copyright 2019-2021 Canaan Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# pylint: disable=invalid-name, unused-argument, import-outside-toplevel
+
 import math
 import os
 import re
@@ -11,11 +25,42 @@ import test_utils
 
 
 def cosine(gt: np.ndarray, pred: np.ndarray, *args):
-    return (gt @ pred) / (np.linalg.norm(gt, 2) * np.linalg.norm(pred, 2))
+    # remove the NaN values in the same location.
+    if np.isnan(gt).any() and np.isnan(pred).any():
+        gt_mask = np.isnan(gt)
+        pred_mask = np.isnan(pred)
+        mask = gt_mask & pred_mask
+        gt = gt[~mask]
+        pred = pred[~mask]
+
+    # remove the INF values in the same location.
+    if np.isinf(gt).any() and np.isinf(pred).any():
+        gt_mask = np.isinf(gt)
+        pred_mask = np.isinf(pred)
+        mask = gt_mask & pred_mask
+        gt = gt[~mask]
+        pred = pred[~mask]
+
+    # return -1 if the nan/inf value is still in the array.
+    if np.isnan(gt).any() or np.isnan(pred).any() or np.isinf(gt).any() or np.isinf(pred).any():
+        return -1
+
+    # exclude the situation of all zeros in array.
+    if compare_arrays(gt, pred):
+        return 1
+
+    result = (gt @ pred) / (np.linalg.norm(gt, 2) * np.linalg.norm(pred, 2))
+
+    # When tensor gt is a multiple of tensor pred, their similarity is also 1.
+    return -1 if math.isnan(result) else result
+
+
+def compare_arrays(gt: np.ndarray, pred: np.ndarray):
+    return np.array_equal(gt, pred)
 
 
 def euclidean(gt: np.ndarray, pred: np.ndarray, *args):
-    return np.linalg.norm(gt - pred, 2)**2
+    return np.linalg.norm(gt.reshape(-1) - pred.reshape(-1))
 
 
 def allclose(gt: np.ndarray, pred: np.ndarray, thresh: float):
@@ -71,7 +116,7 @@ def compare_binfile(result_path: Tuple[str, str],
             np.savetxt(str(p.parent / (p.stem + '_hist.csv')),
                        np.stack((x[:-1], y)).T, fmt='%f', delimiter=',')
         similarity_info = f"\n{similarity_name} similarity = {similarity}, threshold = {threshold}\n"
-    if similarity_name in ['cosine', 'euclidean', 'segment']:
+    if similarity_name in ['cosine', 'segment']:
         compare_op = lt
     else:
         compare_op = gt
@@ -86,18 +131,17 @@ def compare_ndarray(expected: np.ndarray,
                     threshold: float = 0.99,
                     dump_hist: bool = True,
                     dump_file: str = 'hist.csv') -> bool:
-
     if expected.size == actual.size:
         similarity = similarity_func[similarity_name](expected.flatten(), actual.flatten())
     else:
-        raise ValueError("The number of elements in gt and result not match\n")
+        return False, f"The numbers of elements in gt({expected.size}) and result({actual.size}) are not match.\n"
 
     if dump_hist:
         y, x = np.histogram(expected - actual, 100)
         np.savetxt(dump_file, np.stack((x[:-1], y)).T, fmt='%f', delimiter=',')
     similarity_info = f"{similarity_name} similarity = {similarity}, threshold = {threshold}\n"
 
-    if similarity_name in ['cosine', 'euclidean', 'segment']:
+    if similarity_name in ['cosine', 'segment']:
         compare_op = lt
     else:
         compare_op = gt

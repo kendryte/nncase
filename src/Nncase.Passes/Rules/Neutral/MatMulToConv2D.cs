@@ -149,7 +149,10 @@ public sealed partial class BroadcastMatMul : IRewriteRule
 
             var ifShape = new int[] { -1, aShape[^2].FixedValue, aShape[^1].FixedValue };
             var wShape = new int[] { -1, newBShape[^2], newBShape[^1] };
-            return Reshape(MatMul(Reshape(a, ifShape), Reshape(IR.F.Tensors.Broadcast(b, newBShape), wShape)), newOutputShape);
+            var bBroadCast = IR.F.Tensors.Broadcast(b, newBShape);
+            List<string> outputNames = new() { b.Metadata.OutputNames![0] + "_bBroadCast" };
+            bBroadCast.Metadata.OutputNames = outputNames;
+            return Reshape(MatMul(Reshape(a, ifShape), Reshape(bBroadCast, wShape)), newOutputShape);
         }
         else if (aShape.Rank < bShape.Rank)
         {
@@ -163,7 +166,10 @@ public sealed partial class BroadcastMatMul : IRewriteRule
 
             var ifShape = new int[] { -1, newAShape[^2], newAShape[^1] };
             var wShape = new int[] { -1, bShape[^2].FixedValue, bShape[^1].FixedValue };
-            return Reshape(MatMul(Reshape(IR.F.Tensors.Broadcast(a, newAShape), ifShape), Reshape(b, wShape)), newOutputShape);
+            var aBroadCast = IR.F.Tensors.Broadcast(a, newAShape);
+            List<string> outputNames = new() { a.Metadata.OutputNames![0] + "_aBroadCast" };
+            aBroadCast.Metadata.OutputNames = outputNames;
+            return Reshape(MatMul(Reshape(aBroadCast, ifShape), Reshape(b, wShape)), newOutputShape);
         }
         else
         {
@@ -182,13 +188,19 @@ public sealed partial class BroadcastMatMul : IRewriteRule
 
             var ifShape = new int[] { -1, newAShape[^2], newAShape[^1] };
             var wShape = new int[] { -1, newBShape[^2], newBShape[^1] };
+            var bBroadCast = IR.F.Tensors.Broadcast(b, newBShape);
+            List<string> bOutputNames = new() { b.Metadata.OutputNames?[0] + "_bBroadCast" };
+            bBroadCast.Metadata.OutputNames = bOutputNames;
+            var aBroadCast = IR.F.Tensors.Broadcast(a, newAShape);
+            List<string> aOutputNames = new() { a.Metadata.OutputNames?[0] + "_aBroadCast" };
+            aBroadCast.Metadata.OutputNames = aOutputNames;
             return Reshape(
                         MatMul(
                             Reshape(
-                                IR.F.Tensors.Broadcast(a, newAShape),
+                                aBroadCast,
                                 ifShape),
                             Reshape(
-                                IR.F.Tensors.Broadcast(b, newBShape),
+                                bBroadCast,
                                 wShape)).InheritMetaData(matMulCall),
                         newOutputShape);
         }

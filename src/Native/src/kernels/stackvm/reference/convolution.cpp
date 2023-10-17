@@ -23,8 +23,9 @@ using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 using namespace nncase::kernels;
 
-result<void> nncase::kernels::stackvm::reference::conv2d(
-    const float *input, const float *weights, const float *bias, float *output,
+template <typename T>
+result<void> conv2d_impl(
+    const T *input, const T *weights, const T *bias, T *output,
     gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
     gsl::span<const size_t> w_shape, gsl::span<const size_t> w_strides,
     gsl::span<const size_t> bias_strides, gsl::span<const size_t> out_strides,
@@ -85,9 +86,9 @@ result<void> nncase::kernels::stackvm::reference::conv2d(
                                     in_index[2] = in_y_origin + dilation_h * ky;
                                     in_index[3] = in_x_origin + dilation_w * kx;
 
-                                    const float in_v =
+                                    const T in_v =
                                         input[offset(in_strides, in_index)];
-                                    const float w =
+                                    const T w =
                                         weights[offset(w_strides, w_index)];
 
                                     value += in_v * w;
@@ -107,8 +108,43 @@ result<void> nncase::kernels::stackvm::reference::conv2d(
     return ok();
 }
 
-result<void> nncase::kernels::stackvm::reference::conv2d_transpose(
-    const float *input, float *output, const float *weights, const float *bias,
+#define CONV2D_IMPL(type)                                                      \
+    return conv2d_impl(                                                        \
+        IN_CAST(type, input), IN_CAST(type, weights), IN_CAST(type, bias),     \
+        OUT_CAST(type, output), in_shape, in_strides, w_shape, w_strides,      \
+        bias_strides, out_strides, padding_h, padding_w, groups, stride_h,     \
+        stride_w, dilation_h, dilation_w, fused_activation, context);
+
+#define TYPE_SELECT_CONV(_typecode, _impl)                                     \
+    switch (_typecode) {                                                       \
+    case dt_float32:                                                           \
+        _impl(float);                                                          \
+    case dt_float16:                                                           \
+        _impl(half);                                                           \
+    case dt_bfloat16:                                                          \
+        _impl(bfloat16);                                                       \
+    case dt_float64:                                                           \
+        _impl(double);                                                         \
+    default:                                                                   \
+        return err(std::errc::not_supported);                                  \
+    }
+
+result<void> nncase::kernels::stackvm::reference::conv2d(
+    typecode_t typecode, const gsl::byte *input, const gsl::byte *weights,
+    const gsl::byte *bias, gsl::byte *output, gsl::span<const size_t> in_shape,
+    gsl::span<const size_t> in_strides, gsl::span<const size_t> w_shape,
+    gsl::span<const size_t> w_strides, gsl::span<const size_t> bias_strides,
+    gsl::span<const size_t> out_strides, const padding &padding_h,
+    const padding &padding_w, int32_t groups, int32_t stride_h,
+    int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
+    value_range<float> fused_activation,
+    NNCASE_UNUSED kernel_context &context) noexcept {
+    TYPE_SELECT_CONV(typecode, CONV2D_IMPL);
+}
+
+template <typename T>
+result<void> conv2d_transpose_impl(
+    const T *input, T *output, const T *weights, const T *bias,
     gsl::span<const size_t> in_shape, int32_t groups,
     gsl::span<const size_t> out_shape, int32_t filter_h, int32_t filter_w,
     int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
@@ -120,13 +156,13 @@ result<void> nncase::kernels::stackvm::reference::conv2d_transpose(
     const auto g_oc = out_shape[1] / groups;
 
     for (size_t batch = 0; batch < in_shape[0]; batch++) {
-        float *out_batch_p =
+        T *out_batch_p =
             output + (size_t)batch * out_shape[1] * out_shape[2] * out_shape[3];
 
         for (size_t g = 0; g < (size_t)groups; g++) {
-            float *out_group_p =
+            T *out_group_p =
                 out_batch_p + (size_t)g * g_oc * out_shape[2] * out_shape[3];
-            const float *w_group_p =
+            const T *w_group_p =
                 weights + (size_t)g * g_oc * g_ic * filter_h * filter_w;
 
             for (size_t ic = 0; ic < g_ic; ic++) {
@@ -148,16 +184,16 @@ result<void> nncase::kernels::stackvm::reference::conv2d_transpose(
                             filter_w, ((int32_t)out_shape[3] - out_x_origin +
                                        dilation_w - 1) /
                                           dilation_w);
-                        const float in_v = *input++;
+                        const T in_v = *input++;
 
                         for (size_t oc = 0; oc < g_oc; oc++) {
-                            float *out_c_p = out_group_p + (size_t)oc *
-                                                               out_shape[2] *
-                                                               out_shape[3];
-                            const float *w_oc_p =
-                                w_group_p +
-                                (size_t)oc * g_ic * filter_h * filter_w;
-                            const float *w_ic_p =
+                            T *out_c_p = out_group_p + (size_t)oc *
+                                                           out_shape[2] *
+                                                           out_shape[3];
+                            const T *w_oc_p = w_group_p + (size_t)oc * g_ic *
+                                                              filter_h *
+                                                              filter_w;
+                            const T *w_ic_p =
                                 w_oc_p + (size_t)ic * filter_h * filter_w;
 
                             for (size_t ky = filter_y_start; ky < filter_y_end;
@@ -169,7 +205,7 @@ result<void> nncase::kernels::stackvm::reference::conv2d_transpose(
                                     const int32_t out_x =
                                         out_x_origin + dilation_w * kx;
 
-                                    const float w = w_ic_p[ky * filter_w + kx];
+                                    const T w = w_ic_p[ky * filter_w + kx];
 
                                     out_c_p[out_y * out_shape[3] + out_x] +=
                                         in_v * w;
@@ -194,4 +230,36 @@ result<void> nncase::kernels::stackvm::reference::conv2d_transpose(
     //            fused_activation);
     //    }
     return ok();
+}
+
+#define CONV2D_TRANSPOSE_IMPL(type)                                            \
+    return conv2d_transpose_impl(                                              \
+        IN_CAST(type, input), OUT_CAST(type, output), IN_CAST(type, weights),  \
+        IN_CAST(type, bias), in_shape, groups, out_shape, filter_h, filter_w,  \
+        stride_h, stride_w, dilation_h, dilation_w, padding_h, padding_w,      \
+        fused_activation);
+
+#define TYPE_SELECT_CONV_TRANSPOSE(_typecode, _impl)                           \
+    switch (_typecode) {                                                       \
+    case dt_float32:                                                           \
+        _impl(float);                                                          \
+    case dt_float16:                                                           \
+        _impl(half);                                                           \
+    case dt_bfloat16:                                                          \
+        _impl(bfloat16);                                                       \
+    case dt_float64:                                                           \
+        _impl(double);                                                         \
+    default:                                                                   \
+        return err(std::errc::not_supported);                                  \
+    }
+
+result<void> nncase::kernels::stackvm::reference::conv2d_transpose(
+    typecode_t typecode, const gsl::byte *input, gsl::byte *output,
+    const gsl::byte *weights, const gsl::byte *bias,
+    gsl::span<const size_t> in_shape, int32_t groups,
+    gsl::span<const size_t> out_shape, int32_t filter_h, int32_t filter_w,
+    int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
+    const padding &padding_h, const padding &padding_w,
+    [[maybe_unused]] const value_range<float> &fused_activation) noexcept {
+    TYPE_SELECT_CONV_TRANSPOSE(typecode, CONV2D_TRANSPOSE_IMPL);
 }

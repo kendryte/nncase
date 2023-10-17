@@ -1,3 +1,18 @@
+# Copyright 2019-2021 Canaan Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# pylint: disable=invalid-name, unused-argument, import-outside-toplevel
+
 from typing import List, Dict, Union, Tuple
 import os
 import nncase
@@ -10,6 +25,7 @@ from test_utils import *
 import time
 import subprocess
 from update_trace_info import *
+from html import escape
 
 
 def data_shape_list_string(data):
@@ -197,28 +213,28 @@ class Inference:
 
         if header_dict['type'].find('finish') != -1:
             if self.cfg['infer_report_opt']['enabled']:
+                if not self.dynamic:
+                    # update trace info
+                    model_name = self.cfg['infer_report_opt']['model_name']
+                    infer_result = f'0:{model_name} :\n' + detail
+                    trace_file = search_file(infer_dir, 'trace_info.py')
+                    assert(trace_file != '')
+                    update_trace_info(infer_result, trace_file)
 
-                # update trace info
-                model_name = self.cfg['infer_report_opt']['model_name']
-                infer_result = f'0:{model_name} :\n' + detail
-                trace_file = search_file(infer_dir, 'trace_info.py')
-                assert(trace_file != '')
-                update_trace_info(infer_result, trace_file)
+                    # roofline fps/mac usage
+                    estimate_file = search_file(infer_dir, 'estimate_fps.py')
+                    assert(estimate_file != '')
 
-                # roofline fps/mac usage
-                estimate_file = search_file(infer_dir, 'estimate_fps.py')
-                assert(estimate_file != '')
+                    mac_file = search_file(infer_dir, 'mac.csv')
+                    assert(mac_file != '')
 
-                mac_file = search_file(infer_dir, 'mac.csv')
-                assert(mac_file != '')
-
-                cmd_status, cmd_result = subprocess.getstatusoutput(
-                    f'python3 {estimate_file} {mac_file}')
-                assert(cmd_status == 0)
-                data = cmd_result.split(',')
-                assert(len(data) >= 3)
-                self.infer_report_dict['roofline_fps'] = data[1].split(':')[-1].strip()
-                self.infer_report_dict['roofline_mac_usage'] = data[2].split(':')[-1].strip()
+                    cmd_status, cmd_result = subprocess.getstatusoutput(
+                        f'python3 {estimate_file} {mac_file}')
+                    assert(cmd_status == 0)
+                    data = cmd_result.split(',')
+                    assert(len(data) >= 3)
+                    self.infer_report_dict['roofline_fps'] = data[1].split(':')[-1].strip()
+                    self.infer_report_dict['roofline_mac_usage'] = data[2].split(':')[-1].strip()
 
                 # actual fps
                 fps_pattern = re.compile(
@@ -234,15 +250,16 @@ class Inference:
                             round(1000 / float(match.group(2)), 3))
                         break
 
-                # actual mac usage
-                draw_trace_file = search_file(infer_dir, 'draw_trace.py')
-                assert(draw_trace_file != '')
-                cmd_status, cmd_result = subprocess.getstatusoutput(
-                    f'python3 {draw_trace_file} {mac_file}')
-                assert(cmd_status == 0)
-                data = cmd_result.split(',')
-                assert(len(data) >= 1)
-                self.infer_report_dict['actual_mac_usage'] = data[0].split(':')[-1].strip()
+                if not self.dynamic:
+                    # actual mac usage
+                    draw_trace_file = search_file(infer_dir, 'draw_trace.py')
+                    assert(draw_trace_file != '')
+                    cmd_status, cmd_result = subprocess.getstatusoutput(
+                        f'python3 {draw_trace_file} {mac_file}')
+                    assert(cmd_status == 0)
+                    data = cmd_result.split(',')
+                    assert(len(data) >= 1)
+                    self.infer_report_dict['actual_mac_usage'] = data[0].split(':')[-1].strip()
 
             client_socket.sendall(f"pls send outputs".encode())
 
@@ -272,8 +289,7 @@ class Inference:
 
             if self.cfg['infer_report_opt']['enabled']:
                 self.infer_report_dict['result'] = 'Fail'
-                self.infer_report_dict['remark'] = detail.replace('\n', '<br/>')
-                # self.infer_report_dict['remark'] = detail
+                self.infer_report_dict['remark'] = escape(detail)
                 prefix, suffix = os.path.splitext(self.infer_report_file)
                 json_file = f'{prefix}_{os.path.basename(self.case_dir)}{suffix}'
                 dump_dict_to_json(self.infer_report_dict, json_file)

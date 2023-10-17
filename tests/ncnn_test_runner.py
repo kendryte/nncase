@@ -65,9 +65,9 @@ class Net:
         return name
 
     def Pooling(self, name: str, input: str, pooling_type: int, kernel_w: int, kernel_h: int,
-                    stride_w: int, stride_h: int,
-                    pad_left: int, pad_right: int, pad_top: int, pad_bottom: int,
-                    global_pooling: bool, weights: np.ndarray, bias: np.ndarray = None) -> str:
+                stride_w: int, stride_h: int,
+                pad_left: int, pad_right: int, pad_top: int, pad_bottom: int,
+                global_pooling: bool, weights: np.ndarray, bias: np.ndarray = None) -> str:
         self._add_layer("Pooling", name, inputs=[input], outputs=[name], params={
             '0': pooling_type,
             '1': kernel_w,
@@ -189,8 +189,10 @@ class NcnnTestRunner(TestRunner):
                     in_mat = ncnn.Mat(new_value)
                     ex.input(input['name'], in_mat)
                     if self.cfg['compile_opt']['preprocess'] and not test_utils.in_ci():
-                        dump_bin_file(os.path.join(self.case_dir, f'frame_input_{i}.bin'), new_value)
-                        dump_txt_file(os.path.join(self.case_dir, f'frame_input_{i}.txt'), new_value)
+                        dump_bin_file(os.path.join(
+                            self.case_dir, f'frame_input_{i}.bin'), new_value)
+                        dump_txt_file(os.path.join(
+                            self.case_dir, f'frame_input_{i}.txt'), new_value)
 
                 i = 0
                 for output in self.outputs:

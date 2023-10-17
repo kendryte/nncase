@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include "../reference/ref_ops.h"
+#include "nncase/runtime/util.h"
 #include "opt_ops.h"
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/runtime/runtime_op_utility.h>
@@ -55,9 +56,10 @@ using namespace nncase::kernels;
 using namespace nncase::kernels::stackvm;
 using namespace nncase::kernels::stackvm::optimized;
 
+template <typename T>
 result<void>
-conv2d_1x1_s1(const float *input, const float *weights, const float *bias,
-              float *output, gsl::span<const size_t> in_shape,
+conv2d_1x1_s1(const T *input, const T *weights, const T *bias, T *output,
+              gsl::span<const size_t> in_shape,
               NNCASE_UNUSED gsl::span<const size_t> in_strides,
               NNCASE_UNUSED gsl::span<const size_t> w_shape,
               NNCASE_UNUSED gsl::span<const size_t> w_strides,
@@ -67,8 +69,7 @@ conv2d_1x1_s1(const float *input, const float *weights, const float *bias,
               NNCASE_UNUSED const padding &padding_w,
               NNCASE_UNUSED int32_t groups, NNCASE_UNUSED int32_t stride_h,
               NNCASE_UNUSED int32_t stride_w, NNCASE_UNUSED int32_t dilation_h,
-              NNCASE_UNUSED int32_t dilation_w,
-              value_range<float> fused_activation,
+              NNCASE_UNUSED int32_t dilation_w, value_range<T> fused_activation,
               NNCASE_UNUSED kernels::kernel_context &context) noexcept {
     const auto widths = in_shape[2] * in_shape[3];
     // if oc's type is size_t, openmp will throw error in visual studio
@@ -82,8 +83,8 @@ conv2d_1x1_s1(const float *input, const float *weights, const float *bias,
 #endif
         for (int oc = 0; oc < out_channels; oc++) {
             const auto out_c = oc;
-            const float *now_weights = weights + out_c * w_strides[0];
-            const float *now_img_start = input + batch * in_strides[0];
+            const T *now_weights = weights + out_c * w_strides[0];
+            const T *now_img_start = input + batch * in_strides[0];
             size_t channel = 0;
 
             auto *now_output_channel_start =
@@ -94,26 +95,26 @@ conv2d_1x1_s1(const float *input, const float *weights, const float *bias,
                       bias[oc]);
             for (; channel + 4 <= in_shape[1]; channel += 4, now_weights += 4) {
                 auto *w_output = now_output_channel_start;
-                const float w0 = now_weights[0];
-                const float w1 = now_weights[1];
-                const float w2 = now_weights[2];
-                const float w3 = now_weights[3];
+                const T w0 = now_weights[0];
+                const T w1 = now_weights[1];
+                const T w2 = now_weights[2];
+                const T w3 = now_weights[3];
 
-                const float *i0 = now_img_start + (channel + 0) * in_strides[1];
-                const float *i1 = now_img_start + (channel + 1) * in_strides[1];
-                const float *i2 = now_img_start + (channel + 2) * in_strides[1];
-                const float *i3 = now_img_start + (channel + 3) * in_strides[1];
+                const T *i0 = now_img_start + (channel + 0) * in_strides[1];
+                const T *i1 = now_img_start + (channel + 1) * in_strides[1];
+                const T *i2 = now_img_start + (channel + 2) * in_strides[1];
+                const T *i3 = now_img_start + (channel + 3) * in_strides[1];
 
-                const float *v0 = i0;
-                const float *v1 = i1;
-                const float *v2 = i2;
-                const float *v3 = i3;
+                const T *v0 = i0;
+                const T *v1 = i1;
+                const T *v2 = i2;
+                const T *v3 = i3;
 
                 for (size_t index = 0; index < widths; ++index) {
-                    float sum0 = *v0 * w0;
-                    float sum1 = *v1 * w1;
-                    float sum2 = *v2 * w2;
-                    float sum3 = *v3 * w3;
+                    T sum0 = *v0 * w0;
+                    T sum1 = *v1 * w1;
+                    T sum2 = *v2 * w2;
+                    T sum3 = *v3 * w3;
 
                     *w_output += sum0 + sum1 + sum2 + sum3;
 
@@ -127,9 +128,9 @@ conv2d_1x1_s1(const float *input, const float *weights, const float *bias,
 
             for (; channel < in_shape[1]; ++channel) {
                 auto *w_output = now_output_channel_start;
-                const float *v = now_img_start + channel * in_strides[1];
+                const T *v = now_img_start + channel * in_strides[1];
                 for (size_t index = 0; index < widths; ++index) {
-                    *w_output += (*now_weights) * (*v);
+                    *w_output += (T)(*now_weights) * (T)(*v);
                     ++w_output;
                     ++v;
                 }
@@ -146,9 +147,10 @@ conv2d_1x1_s1(const float *input, const float *weights, const float *bias,
     return ok();
 }
 
+template <typename T>
 result<void>
-conv2d_1x1_s2(const float *input, const float *weights, const float *bias,
-              float *output, gsl::span<const size_t> in_shape,
+conv2d_1x1_s2(const T *input, const T *weights, const T *bias, T *output,
+              gsl::span<const size_t> in_shape,
               NNCASE_UNUSED gsl::span<const size_t> in_strides,
               NNCASE_UNUSED gsl::span<const size_t> w_shape,
               NNCASE_UNUSED gsl::span<const size_t> w_strides,
@@ -158,8 +160,7 @@ conv2d_1x1_s2(const float *input, const float *weights, const float *bias,
               NNCASE_UNUSED const padding &padding_w,
               NNCASE_UNUSED int32_t groups, NNCASE_UNUSED int32_t stride_h,
               NNCASE_UNUSED int32_t stride_w, NNCASE_UNUSED int32_t dilation_h,
-              NNCASE_UNUSED int32_t dilation_w,
-              value_range<float> fused_activation,
+              NNCASE_UNUSED int32_t dilation_w, value_range<T> fused_activation,
               NNCASE_UNUSED kernels::kernel_context &context) noexcept {
     const auto batch = in_shape[0], in_channels = in_shape[1],
                in_h = in_shape[2], in_w = in_shape[3],
@@ -178,31 +179,30 @@ conv2d_1x1_s2(const float *input, const float *weights, const float *bias,
 #pragma omp parallel for num_threads(context.num_threads)
 #endif
         for (int oc = 0; oc < out_channels; oc++) {
-            float *out = output + (b * out_strides[0] + oc * out_strides[1]);
+            T *out = output + (b * out_strides[0] + oc * out_strides[1]);
 
             std::fill(out, out + out_h * out_w, bias[oc]);
             size_t ic = 0;
             for (; ic + 3 < in_channels; ic += 4) {
-                float *outptr = out;
-                const float *img0 =
+                T *outptr = out;
+                const T *img0 =
                     input + (b * in_strides[0]) + (ic * in_strides[1]);
-                const float *img1 =
+                const T *img1 =
                     input + (b * in_strides[0]) + ((ic + 1) * in_strides[1]);
-                const float *img2 =
+                const T *img2 =
                     input + (b * in_strides[0]) + ((ic + 2) * in_strides[1]);
-                const float *img3 =
+                const T *img3 =
                     input + (b * in_strides[0]) + ((ic + 3) * in_strides[1]);
 
-                const float *r0 = img0;
-                const float *r1 = img1;
-                const float *r2 = img2;
-                const float *r3 = img3;
+                const T *r0 = img0;
+                const T *r1 = img1;
+                const T *r2 = img2;
+                const T *r3 = img3;
 
-                const float *k0 =
-                    weights + oc * w_strides[0] + ic * w_strides[1];
-                const float *k1 = k0 + 1;
-                const float *k2 = k0 + 2;
-                const float *k3 = k0 + 3;
+                const T *k0 = weights + oc * w_strides[0] + ic * w_strides[1];
+                const T *k1 = k0 + 1;
+                const T *k2 = k0 + 2;
+                const T *k3 = k0 + 3;
                 for (size_t i = 0; i < out_h; i++) {
                     for (size_t remain = 0; remain < out_w; remain++) {
                         *outptr += r0[0] * k0[0];
@@ -223,13 +223,13 @@ conv2d_1x1_s2(const float *input, const float *weights, const float *bias,
             }
 
             for (; ic < in_channels; ic++) {
-                float *outptr = out;
-                const float *img0 =
+                T *outptr = out;
+                const T *img0 =
                     input + (b * in_strides[0]) + (ic * in_strides[1]);
-                const float *kernel0 =
+                const T *kernel0 =
                     weights + oc * w_strides[0] + ic * w_strides[1];
-                const float *r0 = img0;
-                const float *k0 = kernel0;
+                const T *r0 = img0;
+                const T *k0 = kernel0;
                 for (size_t i = 0; i < out_h; i++) {
                     for (size_t remain = 0; remain < out_w; remain++) {
                         *outptr += r0[0] * k0[0];
@@ -240,7 +240,7 @@ conv2d_1x1_s2(const float *input, const float *weights, const float *bias,
                 }
             }
             for (size_t h = 0; h < out_h; h++) {
-                float *r_out = out + h * out_strides[2];
+                T *r_out = out + h * out_strides[2];
                 for (size_t w = 0; w < out_w; w++) {
                     *(r_out + w) = kernels::detail::apply_activation(
                         *(r_out + w), fused_activation);
@@ -415,10 +415,10 @@ void conv2d_channel(size_t out_h, size_t out_w, std::array<T, Parallel> &sum,
 }
 
 template <size_t Parallel, size_t Filter_h, size_t Filter_w, size_t Stride_h,
-          size_t Stride_w>
+          size_t Stride_w, typename T>
 result<void>
-conv2d_nxm(const float *input, const float *weights, const float *bias,
-           float *output, gsl::span<const size_t> in_shape,
+conv2d_nxm(const T *input, const T *weights, const T *bias, float *output,
+           gsl::span<const size_t> in_shape,
            NNCASE_UNUSED gsl::span<const size_t> in_strides,
            NNCASE_UNUSED gsl::span<const size_t> w_shape,
            NNCASE_UNUSED gsl::span<const size_t> w_strides,
@@ -485,9 +485,9 @@ conv2d_nxm(const float *input, const float *weights, const float *bias,
 }
 
 template <size_t Parallel, size_t Filter_h, size_t Filter_w, size_t Stride_h,
-          size_t Stride_w>
+          size_t Stride_w, typename T>
 result<void> conv2d_depthwise_nxm(
-    const float *input, const float *weights, const float *bias, float *output,
+    const T *input, const T *weights, const T *bias, T *output,
     gsl::span<const size_t> in_shape,
     NNCASE_UNUSED gsl::span<const size_t> in_strides,
     NNCASE_UNUSED gsl::span<const size_t> w_shape,
@@ -498,7 +498,7 @@ result<void> conv2d_depthwise_nxm(
     NNCASE_UNUSED const padding &padding_w, NNCASE_UNUSED int32_t groups,
     NNCASE_UNUSED int32_t stride_h, NNCASE_UNUSED int32_t stride_w,
     NNCASE_UNUSED int32_t dilation_h, NNCASE_UNUSED int32_t dilation_w,
-    value_range<float> fused_activation,
+    value_range<T> fused_activation,
     NNCASE_UNUSED kernels::kernel_context &context) noexcept {
     const auto batch = in_shape[0], channels = w_shape[0], in_h = in_shape[2],
                in_w = in_shape[3];
@@ -516,14 +516,13 @@ result<void> conv2d_depthwise_nxm(
 #endif
         for (int c = 0; c < channels; c++) // channel
         {
-            std::array<float *, Parallel> outptr;
-            std::array<const float *,
-                       compute_rsize<Parallel, Stride_h, Filter_h>()>
+            std::array<T *, Parallel> outptr;
+            std::array<const T *, compute_rsize<Parallel, Stride_h, Filter_h>()>
                 r;
-            std::array<const float *, Filter_h> k;
-            std::array<float, Parallel> sum;
+            std::array<const T *, Filter_h> k;
+            std::array<T, Parallel> sum;
 
-            float *out = output + out_strides[0] * b + out_strides[1] * c;
+            T *out = output + out_strides[0] * b + out_strides[1] * c;
             std::fill_n(out,
                         out_strides[2]
                             ? out_h * out_strides[2]
@@ -539,7 +538,7 @@ result<void> conv2d_depthwise_nxm(
                 out_h, out_w, sum, r, k, outptr, in_strides[2], out_strides[2],
                 tail_step);
             for (size_t h = 0; h < out_h; h++) {
-                float *r_out = out + h * out_strides[2];
+                T *r_out = out + h * out_strides[2];
                 for (size_t w = 0; w < out_w; w++) {
                     *(r_out + w) = kernels::detail::apply_activation(
                         *(r_out + w), fused_activation);
@@ -610,7 +609,8 @@ result<void> conv2d_depthwise_nxm(
 #endif
 
 result<void> optimized::conv2d(
-    const float *input, const float *weights, const float *bias, float *output,
+    [[maybe_unused]] typecode_t typecode, const gsl::byte *input1,
+    const gsl::byte *weights1, const gsl::byte *bias1, gsl::byte *output1,
     gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
     gsl::span<const size_t> w_shape,
     NNCASE_UNUSED gsl::span<const size_t> w_strides,
@@ -620,6 +620,10 @@ result<void> optimized::conv2d(
     int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
     value_range<float> fused_activation,
     NNCASE_UNUSED kernels::kernel_context &context) noexcept {
+    [[maybe_unused]] auto input = IN_CAST(float, input1);
+    [[maybe_unused]] auto weights = IN_CAST(float, weights1);
+    [[maybe_unused]] auto bias = IN_CAST(float, bias1);
+    [[maybe_unused]] auto output = OUT_CAST(float, output1);
     const auto filter_h = w_shape[2];
     const auto filter_w = w_shape[3];
 
@@ -675,8 +679,33 @@ result<void> optimized::conv2d(
     }
 #endif
     try_(nncase::kernels::stackvm::reference::conv2d(
-        input, weights, bias, output, in_shape, in_strides, w_shape, w_strides,
-        bias_strides, out_strides, padding_h, padding_w, groups, stride_h,
-        stride_w, dilation_h, dilation_w, fused_activation));
+        typecode, input1, weights1, bias1, output1, in_shape, in_strides,
+        w_shape, w_strides, bias_strides, out_strides, padding_h, padding_w,
+        groups, stride_h, stride_w, dilation_h, dilation_w, fused_activation));
     return ok();
 }
+
+// result<void> optimized::conv2d(
+//     [[maybe_unused]] typecode_t typecode, const gsl::byte *input,
+//     const gsl::byte *weights, const gsl::byte *bias, gsl::byte *output,
+//     gsl::span<const size_t> in_shape, gsl::span<const size_t> in_strides,
+//     gsl::span<const size_t> w_shape,
+//     NNCASE_UNUSED gsl::span<const size_t> w_strides,
+//     NNCASE_UNUSED gsl::span<const size_t> bias_strides,
+//     NNCASE_UNUSED gsl::span<const size_t> out_strides, const padding
+//     &padding_h, const padding &padding_w, int32_t groups, int32_t stride_h,
+//     int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
+//     value_range<float> fused_activation,
+//     NNCASE_UNUSED kernels::kernel_context &context) noexcept {
+//     auto a = conv2d_impl(
+//         IN_CAST(float, input), IN_CAST(float, weights), IN_CAST(float, bias),
+//         OUT_CAST(float, output), in_shape, in_strides, w_shape, w_strides,
+//         bias_strides, out_strides, padding_h, padding_w, groups, stride_h,
+//         stride_w, dilation_h, dilation_w, fused_activation, context);
+//     try_(nncase::kernels::stackvm::reference::conv2d(
+//         typecode, input, weights, bias, output, in_shape, in_strides,
+//         w_shape, w_strides, bias_strides, out_strides, padding_h, padding_w,
+//         groups, stride_h, stride_w, dilation_h, dilation_w,
+//         fused_activation));
+//     return ok();
+// }
