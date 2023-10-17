@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System.Linq;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.NN;
@@ -561,6 +562,11 @@ public class SwishEvaluator : IEvaluator<Swish>, ITypeInferencer<Swish>, ICostEv
 
     private IRType Visit(IRType input)
     {
+        if (input is DistributedType d && d.NdSBP.Any(s => s is SBPPartialSum))
+        {
+            return new InvalidType("swish with partial sum is not supported");
+        }
+
         return input;
     }
 }
@@ -583,14 +589,14 @@ public class GeluEvaluator : IEvaluator<Gelu>, ITypeInferencer<Gelu>, ICostEvalu
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Gelu target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, Gelu.Input);
+        var input = context.CheckArgumentType<IRType>(target, Gelu.Input);
         return Visit(input);
     }
 
     /// <inheritdoc/>
     public Cost Visit(ICostEvaluateContext context, Gelu target)
     {
-        var outputType = context.GetReturnType<TensorType>();
+        var outputType = context.GetReturnType<IRType>();
         return new()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(outputType),
@@ -611,8 +617,13 @@ public class GeluEvaluator : IEvaluator<Gelu>, ITypeInferencer<Gelu>, ICostEvalu
 
     public Expr Visit(IShapeEvaluateContext context, Gelu target) => context.GetArgumentShape(target, Gelu.Input);
 
-    private IRType Visit(TensorType input)
+    private IRType Visit(IRType input)
     {
+        if (input is DistributedType d && d.NdSBP.Any(s => s is SBPPartialSum))
+        {
+            return new InvalidType("gelu with partial sum is not supported");
+        }
+
         return input;
     }
 }
