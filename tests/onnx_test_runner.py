@@ -50,9 +50,12 @@ class OnnxTestRunner(TestRunner):
                 if external_data_helper.uses_external_data(tensor):
                     info = external_data_helper.ExternalDataInfo(tensor)
                     file_location = external_data_helper._sanitize_path(info.location)
-                    external_data_file_path = os.path.join(
+                    external_data_src_path = os.path.join(
                         os.path.dirname(model_file), file_location)
-                    shutil.copy(external_data_file_path, self.case_dir)
+                    external_data_dst_path = os.path.join(
+                        self.case_dir, file_location)
+                    if not os.path.exists(external_data_dst_path):
+                        os.symlink(external_data_src_path, external_data_dst_path)
             model_file = new_file
 
         if not self.inputs:
