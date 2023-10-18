@@ -80,6 +80,9 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
             case Swish:
                 GenerateSwishB(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToScalar<float>());
                 break;
+            case Gelu:
+                GenerateUnary("gelu", arguments, ret);
+                break;
             case IR.CPU.Boxing boxing:
                 GenerateBoxing(boxing, arguments, ret, expr);
                 break;

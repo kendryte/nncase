@@ -196,6 +196,9 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.FuseMHA1>();
             p.Add<Passes.Rules.FuseMHA2>();
             p.Add<Passes.Rules.FuseMHA3>();
+            p.Add<Passes.Rules.FuseUnetSpatialTransformer>();
+            p.Add<Passes.Rules.FuseUnetResBlock>();
+            p.Add<Passes.Rules.FuseUnetTimeEmb>();
             p.Add<Passes.Rules.FuseVAEDecRes>();
             p.Add<Passes.Rules.FuseVAEDecHead>();
             p.Add<Passes.Rules.FuseVAEDecMHA>();

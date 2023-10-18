@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using NetFabric.Hyperlinq;
 using Nncase.CostModel;
@@ -148,15 +149,17 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
         {
             if (oldShape.Length < newShape.Length)
             {
-                var upAxis = 0;
-                foreach (var axis in Enumerable.Range(0, oldShape.Rank + 1))
+                var axis = 0;
+                var axisMap = new Dictionary<int, int>();
+                for (var n = 0; n < newShape.Length; n++)
                 {
-                    var oldShapeList = oldShape.ToList();
-                    oldShapeList.Insert(axis, 1);
-                    if (Enumerable.SequenceEqual(oldShapeList, newShape))
+                    if (newShape[n] == oldShape[axis])
                     {
-                        upAxis = axis;
-                        break;
+                        axisMap.Add(axis++, n);
+                        if (axis >= oldShape.Length)
+                        {
+                            break;
+                        }
                     }
                 }
 
@@ -165,7 +168,7 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
                 {
                     ndsbp[i] = inputType.NdSBP[i] switch
                     {
-                        SBPSplit { Axis: int sx } => sx >= upAxis ? SBPSplit.S(sx + 1) : SBPSplit.S(sx),
+                        SBPSplit { Axis: int sx } => SBPSplit.S(axisMap[sx]),
                         SBP sbp => sbp,
                     };
                 }
@@ -174,15 +177,17 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
             }
             else if (oldShape.Length > newShape.Length)
             {
-                var downAxis = 0;
-                foreach (var axis in Enumerable.Range(0, oldShape.Rank + 1))
+                var axis = 0;
+                var axisMap = new Dictionary<int, int>();
+                for (var o = 0; o < oldShape.Length; o++)
                 {
-                    var oldShapeList = oldShape.ToList();
-                    oldShapeList.RemoveAt(axis);
-                    if (Enumerable.SequenceEqual(oldShapeList, newShape))
+                    if (oldShape[o] == newShape[axis])
                     {
-                        downAxis = axis;
-                        break;
+                        axisMap.Add(o, axis++);
+                        if (axis >= newShape.Length)
+                        {
+                            break;
+                        }
                     }
                 }
 
@@ -191,7 +196,7 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
                 {
                     ndsbp[i] = inputType.NdSBP[i] switch
                     {
-                        SBPSplit { Axis: int sx } => sx >= downAxis ? SBPSplit.S(sx - 1) : SBPSplit.S(sx),
+                        SBPSplit { Axis: int sx } => SBPSplit.S(axisMap[sx]),
                         SBP sbp => sbp,
                     };
                 }
