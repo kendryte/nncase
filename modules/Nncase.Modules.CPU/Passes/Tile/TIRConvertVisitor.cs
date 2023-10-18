@@ -18,15 +18,17 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
 {
     private readonly Dictionary<Expr, TIR.Buffer> _buffersMap = new(ReferenceEqualityComparer.Instance);
     private readonly List<Expr> _mainBody;
+    private readonly List<(int, TIR.Buffer)> _outputbuffers;
 
     public TIRConvertVisitor(List<Expr> mainBody)
     {
         _mainBody = mainBody;
+        _outputbuffers = new();
     }
 
     public Fusion VisitRootFusion => (Fusion)VisitRoot!;
 
-    public IEnumerable<TIR.Buffer> OutputBuffers => _buffersMap.Values.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location.HasFlag(MemoryLocation.Output));
+    public IEnumerable<TIR.Buffer> OutputBuffers => _outputbuffers.OrderBy(p => p.Item1).Select(p => p.Item2);
 
     public IEnumerable<TIR.Buffer> InputBuffers => VisitRootFusion.Parameters.ToArray().Select(p => _buffersMap[p]).OfType<TIR.Buffer>().Where(b => b.MemSpan.Location.HasFlag(MemoryLocation.Input));
 
@@ -313,12 +315,13 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
             {
                 case Call c:
                     var (type, loc) = GetTypeAndLocation(c.CheckedType);
-                    if (ReferenceEquals(c, VisitRootFusion.Body))
+                    var index = CheckRootCall(c, ref loc);
+                    buffer = T.AttachBuffer(type, loc, out _, out _, name);
+                    if (index != -1)
                     {
-                        loc = MemoryLocation.Output;
+                        _outputbuffers.Add((index, buffer));
                     }
 
-                    buffer = T.AttachBuffer(type, loc, out _, out _, name);
                     break;
                 case Var v:
                     buffer = T.AttachBuffer((TensorType)v.CheckedType, MemoryLocation.Input, out _, out _, name);
@@ -338,6 +341,28 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
         }
 
         return buffer;
+    }
+
+    private int CheckRootCall(Call c, ref MemoryLocation loc)
+    {
+        var index = -1;
+        if (VisitRootFusion.Body is Call rootCall && ReferenceEquals(c, rootCall))
+        {
+            loc = MemoryLocation.Output;
+        }
+        else if (VisitRootFusion.Body is IR.Tuple tp)
+        {
+            for (int i = 0; i < tp.Fields.Length; i++)
+            {
+                if (ReferenceEquals(tp.Fields[i], c))
+                {
+                    index = i;
+                    loc = MemoryLocation.Output;
+                }
+            }
+        }
+
+        return index;
     }
 
     private Tuple<TensorType, MemoryLocation> GetTypeAndLocation(IRType type)

@@ -3,6 +3,7 @@
 
 using System.Reactive;
 using System.Runtime.CompilerServices;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.CPU;
 using Nncase.IR.Tensors;
@@ -32,7 +33,11 @@ internal sealed class AutoDistributedConvertVisitor : ExprVisitor<Dictionary<IRT
 
     public Expr Convert(Expr body)
     {
-        var equivalents = Visit(body).Select(g => IR.F.CPU.Boxing(g.Value[0], body.CheckedType)).ToArray();
+        var equivalents = Visit(body).Select(g => g.Value[0] switch
+        {
+            IR.Tuple tp => new IR.Tuple(tp.Fields.ToArray().Select((f, i) => IR.F.CPU.Boxing(f, ((IR.Tuple)body).Fields[i].CheckedType)).ToArray()),
+            Expr e => (Expr)IR.F.CPU.Boxing(e, body.CheckedType),
+        }).ToArray();
         using (new ExprPinner(equivalents))
         {
             BranchCut();
