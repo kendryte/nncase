@@ -19,6 +19,7 @@ internal class XPUModule : IApplicationPart
         registrator.RegisterManyInterface<TDMALoadEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<TDMAStoreEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<UnaryEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<SwishBEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<BinaryEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<MatmulEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<LayerNormEvaluator>(reuse: Reuse.Singleton);

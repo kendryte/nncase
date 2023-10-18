@@ -77,7 +77,7 @@ internal static class CSourceExtensions
         _ => throw new NotImplementedException(),
     };
 
-    public static string ToSlicing(this TensorType tensorType, string[] begins, IRArray<SBP> ndsbp, Placement placement)
+    public static string ToSlicing(this Shape shape, string[] begins, IRArray<SBP> ndsbp, Placement placement)
     {
         var hstrides = TensorUtilities.GetStrides(placement.Hierarchy.ToArray());
         var splits = Enumerable.Range(0, begins.Length).Select(_ => new List<(int H, SBPSplit S)>()).ToArray();
@@ -99,14 +99,14 @@ internal static class CSourceExtensions
             var sp = splits[i];
             if (sp.Count > 0)
             {
-                begins[i] += " + " + sp.Skip(1).Aggregate($"{placement.Name[sp[0].H]}id", (acc, p) => $"({acc} + {TensorUtilities.GetProduct(placement.Hierarchy[(p.H + 1)..])} * {placement.Name[p.H]}id)") + $" * {tensorType.Shape[i]}";
+                begins[i] += " + " + sp.Skip(1).Aggregate($"{placement.Name[sp[0].H]}id", (acc, p) => $"({acc} + {TensorUtilities.GetProduct(placement.Hierarchy[(p.H + 1)..])} * {placement.Name[p.H]}id)") + $" * {shape[i]}";
             }
         }
 
-        return $"({{{string.Join(',', begins)}}}, {{{string.Join(",", tensorType.Shape)}}})";
+        return $"({{{string.Join(',', begins)}}}, {{{string.Join(",", shape)}}})";
     }
 
-    public static string ToSlicing(this TensorType tensorType, IRArray<SBP> ndsbp, Placement placement) => ToSlicing(tensorType, Enumerable.Repeat("0", tensorType.Shape.Rank).ToArray(), ndsbp, placement);
+    public static string ToSlicing(this Shape shape, IRArray<SBP> ndsbp, Placement placement) => ToSlicing(shape, Enumerable.Repeat("0", shape.Rank).ToArray(), ndsbp, placement);
 
     public static string ToC(this BinaryOp binaryOp) => binaryOp switch
     {

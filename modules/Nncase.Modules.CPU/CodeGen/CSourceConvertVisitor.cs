@@ -252,11 +252,11 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                             fullShape[s.Item1] *= s.Item2;
                         }
 
-                        IndentScope.Writer.Write($"tdma_boxing_load_sync({Visit(args[0]).Name}, {{{string.Join(',', fullShape)}}}, {tensorType.ToSlicing(load.NdSbp, load.Placement)[1..^1]}, ctx)");
+                        IndentScope.Writer.Write($"tdma_boxing_load_sync({Visit(args[0]).Name}, {{{string.Join(',', fullShape)}}}, {tensorType.Shape.ToSlicing(load.NdSbp, load.Placement)[1..^1]}, ctx)");
                     }
                     else
                     {
-                        IndentScope.Writer.Write($"tdma_load_async({Visit(args[0]).Name}, {Visit(args[1]).Name}{((TensorType)args[0].CheckedType).ToSlicing(load.NdSbp, load.Placement)})");
+                        IndentScope.Writer.Write($"tdma_load_async({Visit(args[0]).Name}, {Visit(args[1]).Name}{args[0].CheckedShape.ToSlicing(load.NdSbp, load.Placement)})");
                     }
 
                     break;
@@ -271,19 +271,80 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                             fullShape[s.Item1] *= s.Item2;
                         }
 
-                        IndentScope.Writer.Write($"tdma_boxing_store_sync({Visit(args[0]).Name}, {{{string.Join(',', fullShape)}}}, {tensorType.ToSlicing(store.NdSbp, store.Placement)[1..^1]}, ctx)");
+                        IndentScope.Writer.Write($"tdma_boxing_store_sync({Visit(args[0]).Name}, {{{string.Join(',', fullShape)}}}, {tensorType.Shape.ToSlicing(store.NdSbp, store.Placement)[1..^1]}, ctx)");
                     }
                     else
                     {
-                        IndentScope.Writer.Write($"tdma_store_async({Visit(args[0]).Name}, {Visit(args[1]).Name}{((TensorType)args[0].CheckedType).ToSlicing(store.NdSbp, store.Placement)})");
+                        IndentScope.Writer.Write($"tdma_store_async({Visit(args[0]).Name}, {Visit(args[1]).Name}{args[0].CheckedShape.ToSlicing(store.NdSbp, store.Placement)})");
                     }
 
                     break;
                 case IR.XPU.Unary unary:
                     IndentScope.Writer.Write($"unary({Visit(args[0]).Name}, {Visit(args[1]).Name}, unary_op_t::{unary.UnaryOp})");
                     break;
+                case IR.XPU.SwishB swishb:
+                    IndentScope.Writer.Write($"swishb({Visit(args[0]).Name}, {Visit(args[1]).Name}, {swishb.Beta})");
+                    break;
                 case IR.XPU.Binary binary:
-                    IndentScope.Writer.Write($"binary({Visit(args[0]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name}, binary_op_t::{binary.BinaryOp.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)})");
+                    {
+                        var ltype = (TensorType)args[0].CheckedType;
+                        var rtype = (TensorType)args[1].CheckedType;
+                        var outtype = (TensorType)args[2].CheckedType;
+                        var lshape = ltype.Shape;
+                        var rshape = rtype.Shape;
+                        var outshape = outtype.Shape;
+                        var lpad = outtype.Shape.Rank - lshape.Rank;
+                        var rpad = outtype.Shape.Rank - rshape.Rank;
+                        var lsbp = Enumerable.Repeat<SBP>(SBP.B, binary.LhsType.Placement.Rank).ToArray();
+                        var rsbp = Enumerable.Repeat<SBP>(SBP.B, binary.RhsType.Placement.Rank).ToArray();
+
+                        var lnewShape = ltype.Shape.ToValueArray();
+                        var rnewShape = rtype.Shape.ToValueArray();
+                        for (int i = 0; i < binary.RhsType.Placement.Rank; i++)
+                        {
+                            switch (binary.LhsType.NdSBP[i], binary.RhsType.NdSBP[i])
+                            {
+                                case (SBPSplit s, SBPBroadCast):
+                                    var baxis = s.Axis - lshape.Rank + rshape.Rank;
+                                    if (outshape[s.Axis + lpad] == lshape[s.Axis] && baxis < rshape.Rank && baxis >= 0 && lshape[s.Axis] != rshape[baxis] && rshape[baxis] != 1)
+                                    {
+                                        rsbp[i] = SBP.S(baxis);
+                                        rnewShape[baxis] /= binary.RhsType.Placement.Hierarchy[i];
+                                    }
+
+                                    break;
+                                case (SBPBroadCast, SBPSplit s):
+                                    var aaxis = s.Axis - rshape.Rank + lshape.Rank;
+                                    if (outshape[s.Axis + rpad] == rshape[s.Axis] && aaxis < lshape.Rank && aaxis >= 0 && rshape[s.Axis] != lshape[aaxis] && lshape[aaxis] != 1)
+                                    {
+                                        lsbp[i] = SBP.S(aaxis);
+                                        lnewShape[aaxis] /= binary.RhsType.Placement.Hierarchy[i];
+                                    }
+
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+
+                        string lhsStr = Visit(args[0]).Name;
+                        string rhsStr = Visit(args[1]).Name;
+                        if (lsbp.Any(s => s is SBPSplit))
+                        {
+                            var slice = new Shape(lnewShape).ToSlicing(lsbp, binary.LhsType.Placement);
+                            IndentScope.Writer.Write($"auto {lhsStr}_ = {lhsStr}{slice};\n");
+                            lhsStr += "_";
+                        }
+
+                        if (rsbp.Any(s => s is SBPSplit))
+                        {
+                            var slice = new Shape(rnewShape).ToSlicing(rsbp, binary.RhsType.Placement);
+                            IndentScope.Writer.Write($"auto {rhsStr}_ = {rhsStr}{slice};\n");
+                            rhsStr += "_";
+                        }
+
+                        IndentScope.Writer.Write($"binary({lhsStr}, {rhsStr}, {Visit(args[2]).Name}, binary_op_t::{binary.BinaryOp.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)})");
+                    }
                     break;
                 case IR.XPU.Matmul matmul:
                     IndentScope.Writer.Write($"matmul({Visit(args[0]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name})");
@@ -485,12 +546,12 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 
                         if (Enumerable.SequenceEqual(inputShape, args[0].CheckedShape.ToValueArray()))
                         {
-                            IndentScope.Writer.IndWrite($"__tensor_copy_sync(std::move({ret_name}), {ret_name}_tmp{((TensorType)args[1].CheckedType).ToSlicing(new IRArray<SBP>(grs.ReducePosition.Select(t => t.SBP)), grs.Placement)});\n");
+                            IndentScope.Writer.IndWrite($"__tensor_copy_sync(std::move({ret_name}), {ret_name}_tmp{(args[1].CheckedShape).ToSlicing(new IRArray<SBP>(grs.ReducePosition.Select(t => t.SBP)), grs.Placement)});\n");
                         }
                         else
                         {
                             IndentScope.Writer.IndWrite($"tensor<{args[0].CheckedDataType.ToC()}, loc_t::local> {ret_name}_tmp_view = view({ret_name}_tmp, {{{string.Join(",", inputShape)}}});\n");
-                            IndentScope.Writer.IndWrite($"__tensor_copy_sync(std::move({ret_name}),std::move({ret_name}_tmp_view{((TensorType)args[1].CheckedType).ToSlicing(new IRArray<SBP>(grs.ReducePosition.Select(t => t.SBP)), grs.Placement)}));\n");
+                            IndentScope.Writer.IndWrite($"__tensor_copy_sync(std::move({ret_name}),std::move({ret_name}_tmp_view{args[1].CheckedShape.ToSlicing(new IRArray<SBP>(grs.ReducePosition.Select(t => t.SBP)), grs.Placement)}));\n");
                         }
                     }
 

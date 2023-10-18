@@ -55,7 +55,11 @@ public class UnitTestCPUTargetTiling : TestClassBase
     // [ClassData(typeof(TilingCaseInstanceNorm))]
     // [ClassData(typeof(TilingCaseEncoderTail))]
     // [ClassData(typeof(TilingCaseResize))]
-    [ClassData(typeof(TilingCaseCast))]
+    // [ClassData(typeof(TilingCaseCast))]
+    // [ClassData(typeof(TilingCaseBinaryAdd))]
+    // [ClassData(typeof(TilingCaseGatherBinary))]
+    // [ClassData(typeof(TilingCaseLayerNormBinary))]
+    [ClassData(typeof(TilingCaseSDMHA))]
     public async Task TestCpuFunction(Function main, Tensor[] inputs)
     {
         var module = new IR.IRModule(main);
@@ -225,6 +229,29 @@ internal sealed class TilingCaseMHA : TheoryData<Function, Tensor[]>
     }
 }
 
+internal sealed class TilingCaseBinaryAdd : TheoryData<Function, Tensor[]>
+{
+    public TilingCaseBinaryAdd()
+    {
+        var lhsShape = new[] { 1, 77, 768 };
+        var lhs = new Var("lhs", new TensorType(DataTypes.Float32, lhsShape));
+        var rhsShape = new[] { 1, 77, 768 };
+        var rhs = new Var("lhs", new TensorType(DataTypes.Float32, rhsShape));
+        var main = new Function("binary_add", lhs + rhs, new[] { lhs, rhs });
+
+        var lhs_tensor = IR.F.Random.Uniform(DataTypes.Float32, 1, 0, 2, lhsShape).Evaluate().AsTensor();
+        var rhs_tensor = IR.F.Random.Uniform(DataTypes.Float32, 1, 0, 2, rhsShape).Evaluate().AsTensor();
+        var feedDict = new Dictionary<Var, IValue>
+        {
+            { lhs, Value.FromTensor(lhs_tensor) },
+            { rhs, Value.FromTensor(rhs_tensor) },
+        };
+        var output = main.Body.Evaluate(feedDict).AsTensor();
+
+        Add(main, new[] { lhs_tensor, rhs_tensor, output });
+    }
+}
+
 internal sealed class TilingCaseBinaryMul : TheoryData<Function, Tensor[]>
 {
     public TilingCaseBinaryMul()
@@ -373,11 +400,39 @@ internal sealed class TilingCaseLayerNorm : TheoryData<Function, Tensor[]>
         var main = new Function("layernorm", new Call(fusion, input), new[] { input });
 
         var input_tensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, shape).Evaluate().AsTensor();
-        using (var fs = Diagnostics.DumpScope.Current.OpenFile("input_0.bin"))
+        var feedDict = new Dictionary<Var, IValue>
         {
-            fs.Write(input_tensor.BytesBuffer);
+            { fin, Value.FromTensor(input_tensor) },
+        };
+        var output = fusion.Body.Evaluate(feedDict).AsTensor();
+
+        Add(main, new[] { input_tensor, output });
+    }
+}
+
+internal sealed class TilingCaseLayerNormBinary : TheoryData<Function, Tensor[]>
+{
+    public TilingCaseLayerNormBinary()
+    {
+        var shape = new[] { 1, 77, 768 };
+        int axis = 2;
+        var input = new Var("input", new TensorType(DataTypes.Float32, shape));
+        var scale = IR.F.Random.Normal(DataTypes.Float32, new[] { shape[2] }).Evaluate().AsTensor();
+        var bias = IR.F.Random.Normal(DataTypes.Float32, new[] { shape[2] }).Evaluate().AsTensor();
+
+        Fusion fusion;
+        Var fin;
+        {
+            fin = new Var("input", new TensorType(DataTypes.Float32, shape));
+            var v0 = new Call(new IR.NN.LayerNorm(axis, 1e-5f, true), fin, scale, bias);
+            var v1 = IR.F.NN.Swish(v0, 1.602f);
+            var v2 = IR.F.Math.Binary(BinaryOp.Add, fin, v1);
+            fusion = new Fusion("cpu", v2, fin);
         }
 
+        var main = new Function("layernorm_binary", new Call(fusion, input), new[] { input });
+
+        var input_tensor = IR.F.Random.Normal(DataTypes.Float32, shape).Evaluate().AsTensor();
         var feedDict = new Dictionary<Var, IValue>
         {
             { fin, Value.FromTensor(input_tensor) },
@@ -444,6 +499,38 @@ internal sealed class TilingCaseGather : TheoryData<Function, Tensor[]>
         var main = new Function("gather", new Call(fusion, input), new[] { input });
 
         var input_tensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, inputShape).Evaluate().AsTensor();
+        var feedDict = new Dictionary<Var, IValue>
+        {
+            { fin, Value.FromTensor(input_tensor) },
+        };
+        var output = fusion.Body.Evaluate(feedDict).AsTensor();
+
+        Add(main, new[] { input_tensor, output });
+    }
+}
+
+internal sealed class TilingCaseGatherBinary : TheoryData<Function, Tensor[]>
+{
+    public TilingCaseGatherBinary()
+    {
+        var inputShape = new[] { 49408, 768 };
+        var indicesShape = new[] { 1, 77 };
+        int axis = 0;
+        var input = Const.FromValue(IR.F.Random.Normal(DataTypes.Float32, 1, 0, 2, inputShape).Evaluate());
+        var indices = new Var("indices", new TensorType(DataTypes.Int32, indicesShape));
+
+        Fusion fusion;
+        Var fin;
+        {
+            fin = new Var("indices", new TensorType(DataTypes.Int32, indicesShape));
+            var v0 = new Call(new IR.Tensors.Gather(axis), input, fin);
+            var v1 = new Call(new IR.Math.Binary(BinaryOp.Add), v0, IR.F.Random.Normal(DataTypes.Float32, new[] { 1, 77, 768 }).Evaluate().AsTensor());
+            fusion = new Fusion("cpu", v1, fin);
+        }
+
+        var main = new Function("gather_binary", new Call(fusion, indices), new[] { indices });
+
+        var input_tensor = IR.F.Random.Uniform(DataTypes.Int32, 1, 0, 2, indicesShape).Evaluate().AsTensor();
         var feedDict = new Dictionary<Var, IValue>
         {
             { fin, Value.FromTensor(input_tensor) },
@@ -740,6 +827,57 @@ internal sealed class TilingCaseCast : TheoryData<Function, Tensor[]>
         {
             fs.Write(input_tensor.BytesBuffer);
         }
+
+        var feedDict = new Dictionary<Var, IValue>
+            {
+                { fin, Value.FromTensor(input_tensor) },
+            };
+        var output = fusion.Body.Evaluate(feedDict).AsTensor();
+
+        Add(main, new[] { input_tensor, output });
+    }
+}
+
+internal sealed class TilingCaseSDMHA : TheoryData<Function, Tensor[]>
+{
+    public TilingCaseSDMHA()
+    {
+        var fin = new Var("var_4", new TensorType(DataTypes.Float32, new[] { 1, 77, 768 }));
+
+        Fusion fusion;
+        {
+            var v0 = IR.F.NN.LayerNorm(2, 1E-05f, fin, IR.F.Random.Normal(DataTypes.Float32, new[] { 768 }).Evaluate().AsTensor(), IR.F.Random.Normal(DataTypes.Float32, new[] { 768 }).Evaluate().AsTensor(), true); // f32[1,77,768]
+            var v1 = IR.F.Math.MatMul(v0, IR.F.Random.Normal(DataTypes.Float32, new[] { 12, 768, 64 }).Evaluate().AsTensor()); // f32[12,77,64]
+            var v2 = IR.F.Math.Binary(BinaryOp.Add, v1, IR.F.Random.Normal(DataTypes.Float32, new[] { 12, 1, 64 }).Evaluate().AsTensor()); // f32[12,77,64]
+            var v3 = IR.F.Math.Binary(BinaryOp.Mul, v2, new[] { 0.125f }); // f32[12,77,64]
+            var v4 = IR.F.Math.MatMul(v0, IR.F.Random.Normal(DataTypes.Float32, new[] { 12, 768, 64 }).Evaluate().AsTensor()); // f32[12,77,64]
+            var v5 = IR.F.Math.Binary(BinaryOp.Add, v4, IR.F.Random.Normal(DataTypes.Float32, new[] { 12, 1, 64 }).Evaluate().AsTensor()); // f32[12,77,64]
+            var v6 = IR.F.Tensors.Transpose(v5, new[] { 0, 2, 1 }); // f32[12,64,77]
+            var v7 = IR.F.Math.MatMul(v3, v6); // f32[12,77,77]
+            var v8 = IR.F.Math.Binary(BinaryOp.Add, v7, IR.F.Random.Normal(DataTypes.Float32, new[] { 1, 77, 77 }).Evaluate().AsTensor()); // f32[12,77,77]
+            var v9 = IR.F.NN.Softmax(v8, 2); // f32[12,77,77]
+            var v10 = IR.F.Math.MatMul(v0, IR.F.Random.Normal(DataTypes.Float32, new[] { 12, 768, 64 }).Evaluate().AsTensor()); // f32[12,77,64]
+            var v11 = IR.F.Math.Binary(BinaryOp.Add, v10, IR.F.Random.Normal(DataTypes.Float32, new[] { 12, 1, 64 }).Evaluate().AsTensor()); // f32[12,77,64]
+            var v12 = IR.F.Math.MatMul(v9, v11); // f32[12,77,64]
+            var v13 = IR.F.Tensors.Transpose(v12, new[] { 1, 0, 2 }); // f32[77,12,64]
+            var v14 = IR.F.Tensors.Reshape(v13, new[] { 1L, 77L, 768L }); // f32[1,77,768]
+            var v15 = IR.F.Math.MatMul(v14, IR.F.Random.Normal(DataTypes.Float32, new[] { 768, 768 }).Evaluate().AsTensor()); // f32[1,77,768]
+            var v16 = IR.F.Math.Binary(BinaryOp.Add, IR.F.Random.Normal(DataTypes.Float32, new[] { 768 }).Evaluate().AsTensor(), v15); // f32[1,77,768]
+            var v17 = IR.F.Math.Binary(BinaryOp.Add, fin, v16); // f32[1,77,768]
+            var v18 = IR.F.NN.LayerNorm(2, 1E-05f, v17, IR.F.Random.Normal(DataTypes.Float32, new[] { 768 }).Evaluate().AsTensor(), IR.F.Random.Normal(DataTypes.Float32, new[] { 768 }).Evaluate().AsTensor(), true); // f32[1,77,768]
+            var v19 = IR.F.Math.MatMul(v18, IR.F.Random.Normal(DataTypes.Float32, new[] { 768, 3072 }).Evaluate().AsTensor()); // f32[1,77,3072]
+            var v20 = IR.F.Math.Binary(BinaryOp.Add, IR.F.Random.Normal(DataTypes.Float32, new[] { 3072 }).Evaluate().AsTensor(), v19); // f32[1,77,3072]
+            var v21 = IR.F.NN.Swish(v20, 1.702f); // f32[1,77,3072]
+            var v22 = IR.F.Math.MatMul(v21, IR.F.Random.Normal(DataTypes.Float32, new[] { 3072, 768 }).Evaluate().AsTensor()); // f32[1,77,768]
+            var v23 = IR.F.Math.Binary(BinaryOp.Add, IR.F.Random.Normal(DataTypes.Float32, new[] { 768 }).Evaluate().AsTensor(), v22); // f32[1,77,768]
+            var v24 = IR.F.Math.Binary(BinaryOp.Add, v17, v23); // f32[1,77,768]
+            fusion = new Fusion("cpu", v24, new[] { fin });
+        }
+
+        var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 77, 768 }));
+        var main = new Function("sd_mha", new Call(fusion, input), new[] { input });
+
+        var input_tensor = IR.F.Random.Normal(DataTypes.Float32, new[] { 1, 77, 768 }).Evaluate().AsTensor();
 
         var feedDict = new Dictionary<Var, IValue>
             {

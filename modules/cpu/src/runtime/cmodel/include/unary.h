@@ -70,7 +70,8 @@ void unary_impl(unary_op_t op, const T *input, T *output,
             });
             UNARY_IMPL_OP(gelu, [](float x) {
                 return 0.5f * (x) *
-                               (1.f + nncase_mt->float_unary_erf( x / nncase_mt->float_unary_sqrt(2.f)));
+                       (1.f + nncase_mt->float_unary_erf(
+                                  x / nncase_mt->float_unary_sqrt(2.f)));
             });
         default:
             runtime_util->rt_assert(false, (char *)"Unsupported Unary Op!");
@@ -90,4 +91,14 @@ void unary(unary_op_t op, const T *input, T *output,
     unary_impl(op, input, output, in_strides, out_shape, out_strides);
 }
 
+void swishb(const float *input, float *output, float beta,
+                gsl::span<const size_t> input_strides,
+                gsl::span<const size_t> out_shape,
+                gsl::span<const size_t> out_strides) noexcept {
+    unary_impl(
+        [&beta](float x) {
+            return x * (1 / (1 + nncase_mt->float_unary_exp(-(x * beta))));
+        },
+        input, output, input_strides, out_shape, out_strides);
+}
 } // namespace kernels

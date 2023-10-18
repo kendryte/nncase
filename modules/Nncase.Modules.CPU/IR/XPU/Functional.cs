@@ -27,9 +27,9 @@ public partial class XPU
         return new Call(new Unary(unaryOp), input, output);
     }
 
-    public static Call Binary(BinaryOp binaryOp, Expr lhs, Expr rhs, Expr output)
+    public static Call Binary(BinaryOp binaryOp, DistributedType ltype, DistributedType rtype, DistributedType outtype, Expr lhs, Expr rhs, Expr output)
     {
-        return new Call(new Binary(binaryOp), lhs, rhs, output);
+        return new Call(new Binary(binaryOp, ltype, rtype, outtype), lhs, rhs, output);
     }
 
     public static Call Matmul(Expr lhs, Expr rhs, Expr output)
@@ -75,6 +75,11 @@ public partial class XPU
     public static Call ReShape(Expr input, Expr output)
     {
         return new Call(new IR.XPU.ReShape(), input, output);
+    }
+
+    public static Call SwishB(Expr input, Expr output, float beta)
+    {
+        return new Call(new IR.XPU.SwishB(beta), input, output);
     }
 
     public static Call GatherReduceScatter(Expr input, Expr output, (int, SBP)[] reducePosition, Placement placement)

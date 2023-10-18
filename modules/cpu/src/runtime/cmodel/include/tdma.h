@@ -1,10 +1,10 @@
 #pragma once
+#include "cast.h"
 #include "runtime_utils.h"
 #include <apply.h>
 #include <binary.h>
 #include <cassert>
 #include <concat.h>
-#include "cast.h"
 #include <functional>
 #include <gather.h>
 #include <hardware_context.h>
@@ -106,6 +106,15 @@ template <class T, loc_t ALoc, loc_t BLoc>
 void unary(tensor<T, ALoc> &a, tensor<T, BLoc> &out, unary_op_t op) {
     kernels::unary(
         op, a.cdata().data(), out.data().data(),
+        gsl::make_span(a.strides()).template as_span<const size_t>(),
+        gsl::make_span(out.dimension()).template as_span<const size_t>(),
+        gsl::make_span(out.strides()).template as_span<const size_t>());
+}
+
+template <loc_t ALoc, loc_t BLoc>
+void swishb(tensor<float, ALoc> &a, tensor<float, BLoc> &out, float beta) {
+    kernels::swishb(
+        a.cdata().data(), out.data().data(), beta,
         gsl::make_span(a.strides()).template as_span<const size_t>(),
         gsl::make_span(out.dimension()).template as_span<const size_t>(),
         gsl::make_span(out.strides()).template as_span<const size_t>());

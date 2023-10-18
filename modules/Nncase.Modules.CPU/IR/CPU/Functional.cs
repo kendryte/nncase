@@ -25,11 +25,6 @@ public partial class CPU
 
     public static Call Boxing(Expr input, IRType type)
     {
-        if (input.CheckedType == type)
-        {
-            throw new NotSupportedException();
-        }
-
         return new Call(new Boxing(type), input);
     }
 }

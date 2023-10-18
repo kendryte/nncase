@@ -46,7 +46,7 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
                 GenerateUnary(unary.UnaryOp.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture), arguments, ret);
                 break;
             case Binary binary:
-                GenerateBinary(binary, arguments, ret);
+                GenerateBinary(binary, arguments, ret, expr);
                 break;
             case MatMul matmul:
                 GenerateMatmul(matmul, arguments, ret);
@@ -76,7 +76,7 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
                 GenerateReshape(arguments[0], ret);
                 break;
             case Swish:
-                GenerateUnary("swish", arguments, ret);
+                GenerateSwishB(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToScalar<float>());
                 break;
             case IR.CPU.Boxing boxing:
                 GenerateBoxing(boxing, arguments, ret, expr);
@@ -103,6 +103,11 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
         }
 
         return default;
+    }
+
+    private void GenerateSwishB(Buffer input, Buffer ret, float beta)
+    {
+        _mainBody.Add(IR.F.XPU.SwishB(input, ret, beta));
     }
 
     private void GenerateReshape(Buffer input, Buffer ret)
@@ -167,9 +172,12 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
         _mainBody.Add(IR.F.XPU.Unary(unaryOp, input, ret));
     }
 
-    private void GenerateBinary(Binary binary, Buffer[] arguments, Buffer ret)
+    private void GenerateBinary(Binary binary, Buffer[] arguments, Buffer ret, Call expr)
     {
-        _mainBody.Add(IR.F.XPU.Binary(binary.BinaryOp, arguments[0], arguments[1], ret));
+        var lhs = (DistributedType)expr[Binary.Lhs].CheckedType;
+        var rhs = (DistributedType)expr[Binary.Rhs].CheckedType;
+        var outtype = (DistributedType)expr.CheckedType;
+        _mainBody.Add(IR.F.XPU.Binary(binary.BinaryOp, lhs, rhs, outtype, arguments[0], arguments[1], ret));
     }
 
     private void GenerateMatmul(MatMul matmul, Buffer[] arguments, Buffer ret)

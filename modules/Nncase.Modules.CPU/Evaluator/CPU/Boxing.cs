@@ -11,7 +11,7 @@ using Nncase.Utilities;
 
 namespace Nncase.Evaluator.CPU;
 
-public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Boxing>
+public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Boxing>, IEvaluator<Boxing>
 {
     private const int _burstLength = 256;
 
@@ -132,5 +132,10 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
         }
 
         return cost;
+    }
+
+    public IValue Visit(IEvaluateContext context, Boxing target)
+    {
+        return context.GetArgumentValue(target, Boxing.Input);
     }
 }
