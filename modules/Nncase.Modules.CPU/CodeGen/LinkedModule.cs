@@ -15,7 +15,11 @@ internal sealed class LinkedModule : ILinkedModule
     public LinkedModule(IReadOnlyList<ILinkedFunction> functions, Stream text, Stream rdata)
     {
         Functions = functions;
-        Sections = new[] { new LinkedSection(text, WellknownSectionNames.Text, 0, 8, (uint)text.Length), new LinkedSection(rdata, WellknownSectionNames.Rdata, 0, 8, (uint)rdata.Length) };
+        Sections = new[]
+        {
+            new LinkedSection(text, WellknownSectionNames.Text, 0, 8, (ulong)text.Length),
+            new LinkedSection(rdata, WellknownSectionNames.Rdata, 0, 8, (ulong)rdata.Length),
+        };
     }
 
     public string ModuleKind => Targets.CPUTarget.Kind;
