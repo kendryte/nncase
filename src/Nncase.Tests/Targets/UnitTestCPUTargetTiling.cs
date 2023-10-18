@@ -59,6 +59,7 @@ public class UnitTestCPUTargetTiling : TestClassBase
     // [ClassData(typeof(TilingCaseBinaryAdd))]
     // [ClassData(typeof(TilingCaseGatherBinary))]
     // [ClassData(typeof(TilingCaseLayerNormBinary))]
+    // [ClassData(typeof(TilingCaseExpand))]
     [ClassData(typeof(TilingCaseSDMHA))]
     public async Task TestCpuFunction(Function main, Tensor[] inputs)
     {
@@ -878,6 +879,44 @@ internal sealed class TilingCaseSDMHA : TheoryData<Function, Tensor[]>
         var main = new Function("sd_mha", new Call(fusion, input), new[] { input });
 
         var input_tensor = IR.F.Random.Normal(DataTypes.Float32, new[] { 1, 77, 768 }).Evaluate().AsTensor();
+        using (var fs = Diagnostics.DumpScope.Current.OpenFile("input_0.bin"))
+        {
+            fs.Write(input_tensor.BytesBuffer);
+        }
+
+        var feedDict = new Dictionary<Var, IValue>
+            {
+                { fin, Value.FromTensor(input_tensor) },
+            };
+        var output = fusion.Body.Evaluate(feedDict).AsTensor();
+
+        Add(main, new[] { input_tensor, output });
+    }
+}
+
+internal sealed class TilingCaseExpand : TheoryData<Function, Tensor[]>
+{
+    public TilingCaseExpand()
+    {
+        var shape = new[] { 1, 32, 1 };
+        var input = new Var("input", new TensorType(DataTypes.Int64, shape));
+        var newShape = new[] { 2, 32, 32 };
+
+        Fusion fusion;
+        Var fin;
+        {
+            fin = new Var("input", new TensorType(DataTypes.Int64, shape));
+            var v0 = new Call(new IR.CPU.CPUKernelOp(new IR.Tensors.Expand()), fin, newShape);
+            fusion = new Fusion("cpu", v0, fin);
+        }
+
+        var main = new Function("expand", new Call(fusion, input), new[] { input });
+
+        var input_tensor = IR.F.Random.Uniform(DataTypes.Int64, 100, 1, 2, shape).Evaluate().AsTensor();
+        using (var fs = Diagnostics.DumpScope.Current.OpenFile("input_0.bin"))
+        {
+            fs.Write(input_tensor.BytesBuffer);
+        }
 
         var feedDict = new Dictionary<Var, IValue>
             {

@@ -106,4 +106,9 @@ public partial class XPU
     {
         return new Call(new Cast(dataType, castMode), input, output);
     }
+
+    public static Call Expand(int[] shape, DistributedType distributedType, Expr input, Expr output)
+    {
+        return new Call(new Expand(shape, distributedType.NdSBP), input, output);
+    }
 }

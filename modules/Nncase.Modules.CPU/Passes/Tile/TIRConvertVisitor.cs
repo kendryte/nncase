@@ -98,6 +98,9 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
             case Cast cast:
                 GenerateCast(cast.NewType, cast.CastMode, arguments, ret);
                 break;
+            case Expand expand:
+                GenerateExpand(((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), (DistributedType)expr.CheckedType, arguments, ret);
+                break;
             default:
                 throw new NotSupportedException();
         }
@@ -228,6 +231,11 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
     private void GenerateCast(DataType dataType, CastMode castMode, ReadOnlySpan<Buffer> arguments, Buffer ret)
     {
         _mainBody.Add(IR.F.XPU.Cast(arguments[0], ret, dataType, castMode));
+    }
+
+    private void GenerateExpand(int[] shape, DistributedType distributedType, ReadOnlySpan<Buffer> arguments, Buffer ret)
+    {
+        _mainBody.Add(IR.F.XPU.Expand(shape, distributedType, arguments[0], ret));
     }
 
 #if false

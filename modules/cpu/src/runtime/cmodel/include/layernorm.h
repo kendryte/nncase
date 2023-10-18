@@ -87,7 +87,7 @@ static int get_offset_from_index(gsl::span<const size_t> in_shape,
 }
 
 template <typename T>
-void layernorm_naive_impl(
+void layernorm_rvv_impl(
     const T *input, const T *sum, const T *sum_sqr, T *output, const T *gamma,
     const T *beta, gsl::span<const size_t> input_shape,
     gsl::span<const size_t> input_stride, gsl::span<const size_t> output_stride,
@@ -186,12 +186,20 @@ void layernorm(const T *input, T *sum, T *sum_sqr, T *output, T *gamma, T *beta,
                strides_t gamma_strides, T eps, int32_t axis, int32_t norm_size,
                bool rms_norm = false) {
     // fafdaf
-#ifdef __riscv_vector_
-    return layernorm_rvv_impl(
-        input, sum, sum_sqr, gamma, beta,
+#ifdef __riscv_vector
+    // return layernorm_rvv_impl(
+    //     input, sum, sum_sqr, gamma, beta,
+    //     gsl::make_span(input_dims).template as_span<const size_t>(),
+    //     gsl::make_span(input_strides).template as_span<const size_t>(), eps,
+    //     axis, norm_size);
+        return layernorm_rvv_impl(
+        input, sum, sum_sqr, output, gamma, beta,
         gsl::make_span(input_dims).template as_span<const size_t>(),
-        gsl::make_span(input_strides).template as_span<const size_t>(), eps,
-        axis, norm_size);
+        gsl::make_span(input_strides).template as_span<const size_t>(),
+        gsl::make_span(output_strides).template as_span<const size_t>(),
+        gsl::make_span(sum_strides).template as_span<const size_t>(),
+        gsl::make_span(gamma_strides).template as_span<const size_t>(), eps,
+        axis, norm_size, rms_norm);
 #else
     return layernorm_naive_impl(
         input, sum, sum_sqr, output, gamma, beta,
