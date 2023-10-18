@@ -96,10 +96,7 @@ public class UnitTestCPUTargetTiling : TestClassBase
             }
 #endif
             var cos = Tests.Comparator.CosSimilarity(outputs, inputs[parameterLength..]);
-            for (int i = 0; i < cos.Length; i++)
-            {
-                Assert.True(cos[i] > 0.999, $"the outputs[{i}] cos is {cos[i]}!");
-            }
+            Assert.True(cos.All(c => c > 0.999), string.Join("\n", cos.Select((c, i) => $"the outputs[{i}] cos is {c}!")));
         }
     }
 
