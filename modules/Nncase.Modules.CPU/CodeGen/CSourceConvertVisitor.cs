@@ -345,6 +345,7 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 
                         IndentScope.Writer.Write($"binary({lhsStr}, {rhsStr}, {Visit(args[2]).Name}, binary_op_t::{binary.BinaryOp.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)})");
                     }
+
                     break;
                 case IR.XPU.Matmul matmul:
                     IndentScope.Writer.Write($"matmul({Visit(args[0]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name})");
@@ -546,7 +547,7 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 
                         if (Enumerable.SequenceEqual(inputShape, args[0].CheckedShape.ToValueArray()))
                         {
-                            IndentScope.Writer.IndWrite($"__tensor_copy_sync(std::move({ret_name}), {ret_name}_tmp{(args[1].CheckedShape).ToSlicing(new IRArray<SBP>(grs.ReducePosition.Select(t => t.SBP)), grs.Placement)});\n");
+                            IndentScope.Writer.IndWrite($"__tensor_copy_sync(std::move({ret_name}), {ret_name}_tmp{args[1].CheckedShape.ToSlicing(new IRArray<SBP>(grs.ReducePosition.Select(t => t.SBP)), grs.Placement)});\n");
                         }
                         else
                         {
