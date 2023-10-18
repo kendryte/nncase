@@ -348,6 +348,7 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
         var index = -1;
         if (VisitRootFusion.Body is Call rootCall && ReferenceEquals(c, rootCall))
         {
+            index = 0;
             loc = MemoryLocation.Output;
         }
         else if (VisitRootFusion.Body is IR.Tuple tp)
