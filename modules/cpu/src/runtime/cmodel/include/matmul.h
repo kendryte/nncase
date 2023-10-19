@@ -1,4 +1,7 @@
 #include "runtime_utils.h"
+#ifdef __riscv_vector
+#include <riscv_vector.h>
+#endif
 
 namespace kernels {
 
@@ -25,6 +28,35 @@ void matmul_unit_impl(const T *input_a, const T *input_b, T *output,
         runtime_util->free(values);
     }
 }
+
+#ifdef __riscv_vector
+inline void matmul_rvv_impl(const float *input_a, const float *input_b,
+                            float *output, size_t size_m, size_t size_k,
+                            size_t size_n, size_t lda, size_t ldb, size_t ldc) {
+    size_t vl;
+    for (size_t m = 0; m < size_m; ++m) {
+        const float *b_n_ptr = input_b;
+        float *c_n_ptr = output;
+        for (size_t c_n_count = size_n; c_n_count; c_n_count -= vl) {
+            vl = vsetvl_e32m1(c_n_count);
+            const float *a_k_ptr = input_a;
+            const float *b_k_ptr = b_n_ptr;
+            vfloat32m1_t acc = vle32_v_f32m1(c_n_ptr, vl);
+            for (size_t k = 0; k < size_k; ++k) {
+                vfloat32m1_t b_n_data = vle32_v_f32m1(b_k_ptr, vl);
+                acc = vfmacc_vf_f32m1(acc, *a_k_ptr, b_n_data, vl);
+                b_k_ptr += ldb;
+                a_k_ptr++;
+            }
+            vse32_v_f32m1(c_n_ptr, acc, vl);
+            c_n_ptr += vl;
+            b_n_ptr += vl;
+        }
+        input_a += lda;
+        output += ldc;
+    }
+}
+#endif
 
 template <typename T>
 void contiguous_matmul_impl(const T *input_a, const T *input_b, T *output,
@@ -60,7 +92,7 @@ void contiguous_matmul_impl(const T *input_a, const T *input_b, T *output,
                 auto ah = new_a_shape[2] == 1 ? 0 : h;
                 auto bh = new_b_shape[2] == 1 ? 0 : h;
 #ifdef __riscv_vector
-                nncase_mt->matmul_unit_impl(
+                matmul_rvv_impl(
                     input_a + an * ab_size + ac * ah_size + ah * a_unit_size,
                     input_b + bn * bb_size + bc * bh_size + bh * b_unit_size,
                     output + n * ob_size + c * oh_size + h * out_unit_size,
@@ -108,10 +140,9 @@ void no_contiguous_matmul_impl(const T *input_a, const T *input_b, T *output,
                 T *out_ptr = output + n * new_out_stride[0] +
                              c * new_out_stride[1] + h * new_out_stride[2];
 #ifdef __riscv_vector
-                nncase_mt->matmul_unit_impl(in_a_ptr, in_b_ptr, out_ptr,
-                                            new_a_shape[3], new_a_shape[4],
-                                            new_b_shape[4], new_a_stride[3],
-                                            new_b_stride[3], new_b_stride[3]);
+                matmul_rvv_impl(in_a_ptr, in_b_ptr, out_ptr, new_a_shape[3],
+                                new_a_shape[4], new_b_shape[4], new_a_stride[3],
+                                new_b_stride[3], new_b_stride[3]);
 #else
                 for (size_t m = 0; m < new_a_shape[3]; m++) {
                     T *values =
