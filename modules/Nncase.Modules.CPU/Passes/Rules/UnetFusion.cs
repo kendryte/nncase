@@ -186,7 +186,7 @@ public sealed partial class FuseUnetSpatialTransformer : FusionMaker
         var merger = new UnetMerger(multiVarMap);
         var clonedRoot = merger.Clone(root, default);
 
-        var callFusion = new Call(new Fusion("UnetSpatialTransformer", $"{nameof(FuseUnetSpatialTransformer)}_{Count}", ModuleKind, clonedRoot, newInputs.OfType<Var>().ToArray()), input);
+        var callFusion = new Call(new Fusion("UnetSpatialTransformer", $"{nameof(FuseUnetSpatialTransformer)}_{Count}", ModuleKind, clonedRoot, newInputs.OfType<Var>().ToArray()), input, encoderHiddenStates);
         return callFusion;
     }
 }
