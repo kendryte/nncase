@@ -86,18 +86,15 @@ public sealed partial class CombineQuantizeReshape : RewriteRule<Pattern>
     /// <inheritdoc/>
     public override Pattern Pattern { get; }
 
-    private Expr? GetReplace(Quantize quantize, Call reshapeCall, Expr input, Expr shape, Expr quantParam, RunPassContext options)
+    private Expr? GetReplace(Quantize quantize, Call reshapeCall, Expr input, Expr shape, Expr quantParam, RunPassContext context)
     {
-        try
+        if (context.Driver is DataflowPass)
         {
-            var userAnalysis = options.GetAnalysis<IExprUserAnalysisResult>();
+            var userAnalysis = context.GetAnalysis<IExprUserAnalysisResult>();
             if (userAnalysis[reshapeCall].Count() > 1)
             {
                 return null;
             }
-        }
-        catch (KeyNotFoundException)
-        {
         }
 
         var output = Reshape(Quantize(input, quantParam, quantize.TargetType), shape);

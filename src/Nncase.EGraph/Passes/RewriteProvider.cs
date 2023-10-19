@@ -43,8 +43,6 @@ internal class EGraphRewriteProvider : IEGraphRewriteProvider
     public IEGraph ERewrite(IEGraph eGraph, IEnumerable<IRewriteRule> rules, RunPassContext context)
     {
         var last_version = eGraph.Version;
-        int count = 0;
-
         while (true)
         {
             var matches = rules.
