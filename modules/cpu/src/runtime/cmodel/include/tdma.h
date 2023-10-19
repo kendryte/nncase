@@ -132,7 +132,7 @@ template <typename T, loc_t InLoc>
 T *im2col(tensor<T, InLoc> &input, dims_t filter, dims_t padding, dims_t stride,
           [[maybe_unused]] dims_t dilation = {1, 1},
           [[maybe_unused]] int32_t groups = 1) {
-    // todo: support dilated and group conv2d
+    // todo: support group conv2d
     int32_t N = input.dimension()[0];
     int32_t C = input.dimension()[1];
     int32_t H = input.dimension()[2] + padding[0] + padding[1];
@@ -180,7 +180,7 @@ void conv2d(thread_context &ctx, tensor<T, InLoc> &input,
             tensor<T, OutLoc> &output, dims_t stride, dims_t padding,
             dims_t dilation = {1, 1}, int32_t groups = 1,
             reduce_strategy_t strategy = reduce_strategy_t::none) {
-    // todo: support dilated and group conv2d
+    // todo: support group conv2d
     size_t N = input.dimension()[0];
     size_t C = input.dimension()[1];
     size_t H = input.dimension()[2] + padding[0] + padding[1];
@@ -203,7 +203,7 @@ void conv2d(thread_context &ctx, tensor<T, InLoc> &input,
         gsl::make_span(dims_t{OH * OW * N, 1}),
         gsl::make_span(dims_t{M, OH * OW * N}),
         gsl::make_span(dims_t{OH * OW * N, 1}));
-    delete[] input_cols;
+    runtime_util->free(input_cols);
 
     switch (strategy) {
     case reduce_strategy_t::by_thread:
