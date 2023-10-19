@@ -40,14 +40,17 @@ public sealed partial class CombineQuantizeConcat : RewriteRule<Pattern>
 
     private Expr? GetReplace(Quantize quantize, IReadOnlyList<Expr> tupleInputs, Expr axis, Expr quantParam, RunPassContext options)
     {
-        var userAnalysis = options.GetAnalysis<IExprUserAnalysisResult>();
-
-        // see UnitTestCombineQuantize.TestCombineQuantizeConcatNegative
-        foreach (var e in tupleInputs)
+        if (options.Driver is DataflowPass)
         {
-            if (userAnalysis[e].Count() > 1)
+            var userAnalysis = options.GetAnalysis<IExprUserAnalysisResult>();
+
+            // see UnitTestCombineQuantize.TestCombineQuantizeConcatNegative
+            foreach (var e in tupleInputs)
             {
-                return null;
+                if (userAnalysis[e].Count() > 1)
+                {
+                    return null;
+                }
             }
         }
 

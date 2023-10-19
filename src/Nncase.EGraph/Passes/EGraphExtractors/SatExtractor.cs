@@ -30,7 +30,7 @@ internal class SatExtractor : IExtractor
         var vars = new Dictionary<ENode, BoolVar>();
         foreach (var item in eGraph.Nodes.Select((e, i) => (e, i)))
         {
-            vars.Add(item.e, cpmodel.NewBoolVar(item.i.ToString()));
+            vars.Add(item.e, cpmodel.NewBoolVar(item.e.ToString()));
         }
 
         // 1. must pick one in root enode.
@@ -65,7 +65,7 @@ internal class SatExtractor : IExtractor
                 }
             }
 
-            EliminateAllCycles(root, new(), new(), visited, cpmodel, vars);
+            EliminateAllCycles(root, new(), new(), visited, new(), cpmodel, vars);
         }
 
         // 3. add pick weights for all enode.
@@ -105,7 +105,21 @@ internal class SatExtractor : IExtractor
 
         if (status is not (CpSolverStatus.Optimal or CpSolverStatus.Feasible))
         {
-            throw new InvalidProgramException("SatExtract Failed!");
+            var sb = new StringBuilder();
+            var assumptions = solver.SufficientAssumptionsForInfeasibility();
+            foreach (var cons in cpmodel.Model.Constraints)
+            {
+                foreach (var l in cons.BoolOr.Literals)
+                {
+                    if (assumptions.IndexOf(l) != -1)
+                    {
+                        sb.AppendLine(cons.ToString());
+                        break;
+                    }
+                }
+            }
+
+            throw new InvalidProgramException("SatExtract Failed By Invalid Assumptions : " + sb.ToString());
         }
 
         var pick = eGraph.Nodes.ToDictionary(e => e, e => solver.BooleanValue(vars[e]));
@@ -117,33 +131,43 @@ internal class SatExtractor : IExtractor
         return new SatExprBuildVisitor(pick).Visit(root);
     }
 
-    private void EliminateAllCycles(EClass root, LinkedList<(EClass Class, ENode Node)> path, Dictionary<EClass, LinkedListNode<(EClass Class, ENode Node)>> pathMemo, Dictionary<ENode, bool> visited, CpModel cpModel, Dictionary<ENode, BoolVar> vars)
+    private void SuppressNode(EClass root, LinkedListNode<(EClass Class, ENode Node)> lastNode, Dictionary<EClass, HashSet<ENode>> suppressions, CpModel cpModel, Dictionary<ENode, BoolVar> vars)
+    {
+        var (cls, node) = lastNode.Value;
+        if (!suppressions.TryGetValue(cls, out var notPicks))
+        {
+            notPicks = new();
+            suppressions.Add(cls, notPicks);
+        }
+
+        if (notPicks.Contains(node))
+        {
+            return;
+        }
+
+        // when cls's all nodes will be assumption not, need move to next node.
+        if (notPicks.Count == cls.Nodes.Count - 1)
+        {
+            if (lastNode.Previous is not null)
+            {
+                SuppressNode(root, lastNode.Previous, suppressions, cpModel, vars);
+            }
+        }
+        else
+        {
+            cpModel.AddAssumption(vars[node].Not());
+            notPicks.Add(node);
+        }
+    }
+
+    private void EliminateAllCycles(EClass root, LinkedList<(EClass Class, ENode Node)> path, Dictionary<EClass, LinkedListNode<(EClass Class, ENode Node)>> pathMemo, Dictionary<ENode, bool> visited, Dictionary<EClass, HashSet<ENode>> suppressions, CpModel cpModel, Dictionary<ENode, BoolVar> vars)
     {
         // note how to avoid duplicate visit same cycle ?
         // simulate the extract, disable the all cycle path.
         // when detect the cycle, do not pick the cycle path
         if (pathMemo.TryGetValue(root, out _))
         {
-            var (_, node) = path.Last!.Value;
-            cpModel.AddAssumption(vars[node].Not());
-
-            // var cycle = new List<BoolVar>();
-            // do
-            // {
-            //     cycle.Add(vars[oldNode!.Value.Node]);
-            //     oldNode = oldNode.Next;
-            // } while (oldNode is not null);
-
-            // if (cycle.Count == 1)
-            // {
-            //     // eg. eclass: [marker(x) , x], don't pick marker.
-            //     cpModel.AddAssumption(cycle[0].Not());
-            // }
-            // else
-            // {
-            //     // note maybe we just do not pick backward node?
-            //     cpModel.Add(cpModel.NewConstant(cycle.Count) != LinearExpr.Sum(cycle));
-            // }
+            SuppressNode(root, path.Last!, suppressions, cpModel, vars);
             return;
         }
 
@@ -155,7 +179,7 @@ internal class SatExtractor : IExtractor
                 {
                     var linkNode = path.AddLast((root, enode));
                     pathMemo.Add(root, linkNode);
-                    EliminateAllCycles(ch, path, pathMemo, visited, cpModel, vars);
+                    EliminateAllCycles(ch, path, pathMemo, visited, suppressions, cpModel, vars);
                     path.Remove(linkNode);
                     pathMemo.Remove(root);
                 }
