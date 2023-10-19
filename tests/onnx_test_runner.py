@@ -169,7 +169,7 @@ class OnnxTestRunner(TestRunner):
         outputs = onnx_model.graph.output
         self.dynamic = any(is_dynamic(output) for output in outputs)
         # make a static model for infer output
-        if self.dynamic:
+        if self.dynamic and onnx_model.ByteSize() < 2147483648:
             input_shapes = list(map(lambda input: {input['name']: input['shape']}, self.inputs))
             input_shapes = dict(ChainMap(*input_shapes))
             (onnx_model, _) = onnxsim.simplify(onnx_model, input_shapes=input_shapes)
