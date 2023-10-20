@@ -66,7 +66,7 @@ def euclidean(gt: np.ndarray, pred: np.ndarray, *args):
 
 
 def mse(y_true, y_pred):
-    return np.mean((y_true - y_pred) ** 2)
+    return np.mean((np.asarray(y_true, dtype=np.float64) - np.asarray(y_pred, dtype=np.float64)) ** 2)
 
 
 def allclose(gt: np.ndarray, pred: np.ndarray, thresh: float):
