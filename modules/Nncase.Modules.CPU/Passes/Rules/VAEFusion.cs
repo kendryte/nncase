@@ -123,7 +123,7 @@ public sealed partial class FuseVAEDecRes : FusionMaker
         var merger = new VAEMerger(multiVarMap);
         var clonedRoot = merger.Clone(root, default);
 
-        var callFusion = new Call(new Fusion("VAEDecRes", $"{nameof(FuseVAEDecRes)}_{Count}", ModuleKind, clonedRoot, newInputs.OfType<Var>().ToArray()), input);
+        var callFusion = new Call(new Fusion("VAEDecRes", $"{nameof(FuseVAEDecRes)}_{Count++}", ModuleKind, clonedRoot, newInputs.OfType<Var>().ToArray()), input);
         return callFusion;
     }
 }
@@ -166,7 +166,7 @@ public sealed partial class FuseVAEDecHead : FusionMaker
         var merger = new VAEMerger(multiVarMap);
         var clonedRoot = merger.Clone(root, default);
 
-        var callFusion = new Call(new Fusion("VAEDecHead", $"{nameof(FuseVAEDecHead)}_{Count}", ModuleKind, clonedRoot, newInputs.OfType<Var>().ToArray()), input);
+        var callFusion = new Call(new Fusion("VAEDecHead", $"{nameof(FuseVAEDecHead)}_{Count++}", ModuleKind, clonedRoot, newInputs.OfType<Var>().ToArray()), input);
         return callFusion;
     }
 }
@@ -225,7 +225,7 @@ public sealed partial class FuseVAEDecMHA : FusionMaker
         var merger = new VAEMerger(multiVarMap);
         var clonedRoot = merger.Clone(root, default);
 
-        var callFusion = new Call(new Fusion("VAEDecMHA", $"{nameof(FuseVAEDecMHA)}_{Count}", ModuleKind, clonedRoot, newInputs.OfType<Var>().ToArray()), input);
+        var callFusion = new Call(new Fusion("VAEDecMHA", $"{nameof(FuseVAEDecMHA)}_{Count++}", ModuleKind, clonedRoot, newInputs.OfType<Var>().ToArray()), input);
         return callFusion;
     }
 }

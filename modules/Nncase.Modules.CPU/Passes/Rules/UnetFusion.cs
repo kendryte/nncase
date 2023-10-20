@@ -186,7 +186,8 @@ public sealed partial class FuseUnetSpatialTransformer : FusionMaker
         var merger = new UnetMerger(multiVarMap);
         var clonedRoot = merger.Clone(root, default);
 
-        var callFusion = new Call(new Fusion("UnetSpatialTransformer", $"{nameof(FuseUnetSpatialTransformer)}_{Count}", ModuleKind, clonedRoot, newInputs.OfType<Var>().ToArray()), input, encoderHiddenStates);
+        var callFusion = new Call(new Fusion("UnetSpatialTransformer", $"{nameof(FuseUnetSpatialTransformer)}_{Count++}", ModuleKind, clonedRoot, newInputs.OfType<Var>().ToArray()), input, encoderHiddenStates);
+        CompilerServices.DumpCSharpIR(((Fusion)callFusion.Target).Body, $"st{Count-1}", "/data/huochenghai/GNNE/rebuild-ir/nncase/tests_output");
         return callFusion;
     }
 }
@@ -243,7 +244,8 @@ public sealed partial class FuseUnetResBlock : FusionMaker
         var v38 = IsBinary(null, "root", BinaryOp.Add, conv2, v36);
         var v39 = IsBinary(null, "root", BinaryOp.Add, conv1, v36);
         var v40 = IsBinary(null, "root", BinaryOp.Add, vIn, v36);
-        var root = IsAlt(v37, v38, v39, v40);
+        // var root = IsAlt(v37, v38, v39, v40);
+        var root = IsTuple("root", IsVArgs(v6, v7, conv1));
 
         return root!;
     }
@@ -274,7 +276,8 @@ public sealed partial class FuseUnetResBlock : FusionMaker
         var merger = new UnetMerger(multiVarMap);
         var clonedRoot = merger.Clone(root, default);
 
-        var callFusion = new Call(new Fusion("UnetResBlock", $"{nameof(FuseUnetResBlock)}_{Count}", ModuleKind, clonedRoot, newInputs.OfType<Var>().ToArray()), oldInputs.ToArray());
+        var callFusion = new Call(new Fusion("UnetResBlock", $"{nameof(FuseUnetResBlock)}_{Count++}", ModuleKind, clonedRoot, newInputs.OfType<Var>().ToArray()), oldInputs.ToArray());
+        CompilerServices.DumpCSharpIR(((Fusion)callFusion.Target).Body, $"res{Count-1}", "/data/huochenghai/GNNE/rebuild-ir/nncase/tests_output");
         return callFusion;
     }
 }
@@ -328,7 +331,8 @@ public sealed partial class FuseUnetTimeEmb : FusionMaker
         var merger = new UnetMerger(multiVarMap);
         var clonedRoot = merger.Clone(root, default);
 
-        var callFusion = new Call(new Fusion("UnetTimeEmb", $"{nameof(FuseUnetTimeEmb)}_{Count}", ModuleKind, clonedRoot, newInputs.OfType<Var>().ToArray()), input);
+        var callFusion = new Call(new Fusion("UnetTimeEmb", $"{nameof(FuseUnetTimeEmb)}_{Count++}", ModuleKind, clonedRoot, newInputs.OfType<Var>().ToArray()), input);
+        CompilerServices.DumpCSharpIR(((Fusion)callFusion.Target).Body, $"emb{Count-1}", "/data/huochenghai/GNNE/rebuild-ir/nncase/tests_output");
         return callFusion;
     }
 }

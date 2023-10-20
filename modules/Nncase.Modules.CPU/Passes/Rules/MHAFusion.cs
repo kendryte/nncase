@@ -136,7 +136,7 @@ public sealed partial class FuseMHA1 : FusionMaker
             new Var(mask.CheckedType!),
         };
 
-        var callFusion = new Call(new Fusion("MHABertBase", $"{nameof(FuseMHA1)}_{Count}", ModuleKind, root, newInputs.OfType<Var>().ToArray()), x, mask);
+        var callFusion = new Call(new Fusion("MHABertBase", $"{nameof(FuseMHA1)}_{Count++}", ModuleKind, root, newInputs.OfType<Var>().ToArray()), x, mask);
         return callFusion;
     }
 }
@@ -251,7 +251,7 @@ public sealed partial class FuseMHA2 : FusionMaker
         var merger = new MHAMerger(multiVarMap);
         var clonedRoot = merger.Clone(root, default);
 
-        var callFusion = new Call(new Fusion("MHALLaMA65B", $"{nameof(FuseMHA2)}_{Count}", ModuleKind, clonedRoot, newInputs.OfType<Var>().ToArray()), hidden_in, position_ids, attn_mask);
+        var callFusion = new Call(new Fusion("MHALLaMA65B", $"{nameof(FuseMHA2)}_{Count++}", ModuleKind, clonedRoot, newInputs.OfType<Var>().ToArray()), hidden_in, position_ids, attn_mask);
         return callFusion;
     }
 }
@@ -311,7 +311,7 @@ public sealed partial class FuseMHA3 : FusionMaker
         var merger = new MHAMerger(multiVarMap);
         var clonedRoot = merger.Clone(root, default);
 
-        var callFusion = new Call(new Fusion("SDTextEncoderMHA", $"{nameof(FuseMHA3)}_{Count}", ModuleKind, clonedRoot, newInputs.OfType<Var>().ToArray()), input);
+        var callFusion = new Call(new Fusion("SDTextEncoderMHA", $"{nameof(FuseMHA3)}_{Count++}", ModuleKind, clonedRoot, newInputs.OfType<Var>().ToArray()), input);
         return callFusion;
     }
 }
@@ -348,7 +348,7 @@ public sealed partial class FuseSDTextEncoderHeader : FusionMaker
         var merger = new MHAMerger(multiVarMap);
         var clonedRoot = merger.Clone(root, default);
 
-        var callFusion = new Call(new Fusion("SDTextEncoderHeader", $"{nameof(FuseSDTextEncoderHeader)}_{Count}", ModuleKind, clonedRoot, newInputs.ToArray()), input);
+        var callFusion = new Call(new Fusion("SDTextEncoderHeader", $"{nameof(FuseSDTextEncoderHeader)}_{Count++}", ModuleKind, clonedRoot, newInputs.ToArray()), input);
         return callFusion;
     }
 }
@@ -392,7 +392,7 @@ public sealed partial class FuseSDTextEncoderTail : FusionMaker
         var merger = new MHAMerger(multiVarMap);
         var clonedRoot = merger.Clone(root, default);
 
-        var callFusion = new Call(new Fusion("SDTextEncoderTail", $"{nameof(FuseSDTextEncoderTail)}_{Count}", ModuleKind, clonedRoot, newInputs), input_ids, input);
+        var callFusion = new Call(new Fusion("SDTextEncoderTail", $"{nameof(FuseSDTextEncoderTail)}_{Count++}", ModuleKind, clonedRoot, newInputs), input_ids, input);
         return callFusion;
     }
 }
