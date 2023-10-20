@@ -179,7 +179,7 @@ result<value_t> ncnn_runtime_function::invoke_core(
         {
             try_var(map, hb->map(map_write));
             auto csize = (size_t)mat.w * mat.h * mat.d * mat.elemsize;
-            for (size_t i = 0; i < mat.c; i++) {
+            for (size_t i = 0; i < (size_t)mat.c; i++) {
                 void *dest =
                     (unsigned char *)map.buffer().data() + (size_t)i * csize;
                 const void *src =
