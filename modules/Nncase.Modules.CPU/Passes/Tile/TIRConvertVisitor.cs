@@ -220,7 +220,9 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
 
     private void GenerateConv2D(Conv2D conv, Buffer[] arguments, Buffer ret, int[] stride, int[] padding, int[] dilation, int groups, TensorConst fusedClamp, DistributedType distributedType)
     {
-        _mainBody.Add(IR.F.XPU.Conv2D(arguments[0], arguments[1], arguments[2], ret, stride, padding, dilation, groups, fusedClamp, distributedType));
+        // conv2d kernel can handle partial itself
+        var ndsbp = distributedType.NdSBP.Select(sbp => sbp is SBPPartialSum ? SBP.B : sbp).ToArray();
+        _mainBody.Add(IR.F.XPU.Conv2D(arguments[0], arguments[1], arguments[2], ret, stride, padding, dilation, groups, fusedClamp, distributedType with { NdSBP = ndsbp }));
     }
 
     private void GenerateReduceArg(ReduceArg reduceArg, Buffer[] arguments, Buffer ret, int axis, bool keepdims, bool selectLastIndex, ReduceArgOp op, DataType dataType)
