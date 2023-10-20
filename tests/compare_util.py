@@ -51,7 +51,7 @@ def cosine(gt: np.ndarray, pred: np.ndarray, *args):
 
     result = (gt @ pred) / (np.linalg.norm(gt, 2) * np.linalg.norm(pred, 2))
 
-    return -1 if math.isnan(result)|mse(gt, pred)>=1 else result
+    return -1 if math.isnan(result) | mse(gt, pred) >= 1 else result
 
 
 def compare_arrays(gt: np.ndarray, pred: np.ndarray):
