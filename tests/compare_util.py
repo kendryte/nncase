@@ -52,7 +52,7 @@ def cosine(gt: np.ndarray, pred: np.ndarray, *args):
     result = (gt @ pred) / (np.linalg.norm(gt, 2) * np.linalg.norm(pred, 2))
 
     if not (isinstance(gt, bool) | isinstance(pred, bool)):
-        return -1 if math.isnan(result) | mse(gt, pred) >= 1 else result
+        return -1 if math.isnan(result) or mse(gt, pred) >= 1 else result
     else:
         return -1 if math.isnan(result) else result
 
@@ -65,8 +65,8 @@ def euclidean(gt: np.ndarray, pred: np.ndarray, *args):
     return np.linalg.norm(gt.reshape(-1) - pred.reshape(-1))
 
 
-def mse(y_true, y_pred):
-    return np.mean((np.asarray(y_true, dtype=np.float64) - np.asarray(y_pred, dtype=np.float64)) ** 2)
+def mse(gt: np.ndarray, pred: np.ndarray, *args):
+    return np.mean((gt - pred) ** 2)
 
 
 def allclose(gt: np.ndarray, pred: np.ndarray, thresh: float):
