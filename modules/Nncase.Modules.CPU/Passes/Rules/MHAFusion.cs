@@ -151,64 +151,63 @@ public sealed partial class FuseMHA2 : FusionMaker
 
     private static Pattern CreatePattern()
     {
-        var v0 = IsWildcard("hidden_in");
+        var v1 = IsWildcard("hidden_in");
 
-        var v1 = IsTensorConst("v1");
         var v2 = IsTensorConst("v2");
-        var v3 = IsCall("v3", IsOp<LayerNorm>(), IsVArgs(v0, v1, v2));
-        var v4 = IsTensorConst("v4");
-        var v5 = IsCall("v5", IsOp<Unsqueeze>(), IsVArgs(v3, v4));
-        var v6 = IsTensorConst("v6");
-        var v7 = IsCall("v7", IsOp<MatMul>(), IsVArgs(v5, v6));
-        var v8 = IsTensorConst("v8");
+        var v3 = IsTensorConst("v3");
+        var v4 = IsCall("v4", IsOp<LayerNorm>(), IsVArgs(v1, v2, v3));
+        var v5 = IsTensorConst("v5");
+        var v6 = IsCall("v6", IsOp<Unsqueeze>(), IsVArgs(v4, v5));
+        var v7 = IsTensorConst("v7");
+        var v8 = IsCall("v8", IsOp<MatMul>(), IsVArgs(v6, v7));
         var v9 = IsTensorConst("v9");
         var v10 = IsWildcard("position_ids");
 
-        var v11 = IsCall("v11", IsOp<Gather>(_ => true), IsVArgs(v8, v10));
+        var v11 = IsCall("v11", IsOp<Gather>(), IsVArgs(v9, v10));
         var v12 = IsTensorConst("v12");
         var v13 = IsCall("v13", IsOp<Reshape>(), IsVArgs(v11, v12));
-        var v14 = IsCall("v14", IsOp<Binary>(), IsVArgs(v7, v13));
+        var v14 = IsCall("v14", IsOp<Binary>(), IsVArgs(v8, v13));
         var v15 = IsTensorConst("v15");
         var v16 = IsTensorConst("v16");
         var v17 = IsTensorConst("v17");
         var v18 = IsTensorConst("v18");
-        var v19 = IsCall("v19", IsOp<Slice>(), IsVArgs(v7, v15, v16, v17, v18));
-        var v20 = IsCall("v20", IsOp<IR.Math.Unary>(), IsVArgs(v19));
+        var v19 = IsCall("v19", IsOp<Slice>(), IsVArgs(v8, v15, v16, v17, v18));
+        var v20 = IsCall("v20", IsOp<Unary>(), IsVArgs(v19));
         var v21 = IsTensorConst("v21");
-        var v22 = IsCall("v22", IsOp<Slice>(), IsVArgs(v7, v21, v15, v17, v18));
+        var v22 = IsCall("v22", IsOp<Slice>(), IsVArgs(v8, v21, v15, v17, v18));
         var v23 = IsTuple("v23", IsVArgs(v20, v22));
 
-        var v24 = IsTensorConst("v24");
-        var v25 = IsCall("v25", IsOp<Concat>(_ => true), IsVArgs(v23));
-        var v26 = IsTensorConst("v26");
-        var v27 = IsCall("v27", IsOp<Gather>(_ => true), IsVArgs(v26, v10));
-        var v28 = IsCall("v28", IsOp<Reshape>(), IsVArgs(v27, v12));
-        var v29 = IsCall("v29", IsOp<Binary>(), IsVArgs(v25, v28));
-        var v30 = IsCall("v30", IsOp<Binary>(), IsVArgs(v14, v29));
-        var v31 = IsTensorConst("v31");
-        var v32 = IsCall("v32", IsOp<Unsqueeze>(), IsVArgs(v3, v31));
-        var v33 = IsTensorConst("v33");
-        var v34 = IsCall("v34", IsOp<MatMul>(), IsVArgs(v32, v33));
-        var v35 = IsCall("v35", IsOp<Binary>(), IsVArgs(v34, v13));
-        var v36 = IsCall("v36", IsOp<Slice>(), IsVArgs(v34, v15, v16, v17, v18));
-        var v37 = IsCall("v37", IsOp<IR.Math.Unary>(), IsVArgs(v36));
-        var v38 = IsCall("v38", IsOp<Slice>(), IsVArgs(v34, v21, v15, v17, v18));
-        var v39 = IsTuple("v39", IsVArgs(v37, v38));
+        var v24 = IsCall("v24", IsOp<Concat>(), IsVArgs(v23));
+        var v25 = IsTensorConst("v25");
+        var v26 = IsCall("v26", IsOp<Gather>(), IsVArgs(v25, v10));
+        var v27 = IsCall("v27", IsOp<Reshape>(), IsVArgs(v26, v12));
+        var v28 = IsCall("v28", IsOp<Binary>(), IsVArgs(v24, v27));
+        var v29 = IsCall("v29", IsOp<Binary>(), IsVArgs(v14, v28));
+        var v30 = IsTensorConst("v30");
+        var v31 = IsCall("v31", IsOp<Unsqueeze>(), IsVArgs(v4, v30));
+        var v32 = IsTensorConst("v32");
+        var v33 = IsCall("v33", IsOp<MatMul>(), IsVArgs(v31, v32));
+        var v34 = IsCall("v34", IsOp<Binary>(), IsVArgs(v33, v13));
+        var v35 = IsCall("v35", IsOp<Slice>(), IsVArgs(v33, v15, v16, v17, v18));
+        var v36 = IsCall("v36", IsOp<Unary>(), IsVArgs(v35));
+        var v37 = IsCall("v37", IsOp<Slice>(), IsVArgs(v33, v21, v15, v17, v18));
+        var v38 = IsTuple("v38", IsVArgs(v36, v37));
 
-        var v40 = IsCall("v40", IsOp<Concat>(_ => true), IsVArgs(v39));
-        var v41 = IsCall("v41", IsOp<Binary>(), IsVArgs(v40, v28));
-        var v42 = IsCall("v42", IsOp<Binary>(), IsVArgs(v35, v41));
-        var v43 = IsTensorConst("v43");
-        var v44 = IsCall("v44", IsOp<Transpose>(), IsVArgs(v42, v43));
-        var v45 = IsCall("v45", IsOp<MatMul>(), IsVArgs(v30, v44));
-        var v46 = IsTensorConst("v46");
-        var v47 = IsCall("v47", IsOp<Binary>(), IsVArgs(v45, v46));
-        var v48 = IsWildcard("attn_mask");
+        var v39 = IsCall("v39", IsOp<Concat>(), IsVArgs(v38));
+        var v40 = IsCall("v40", IsOp<Binary>(), IsVArgs(v39, v27));
+        var v41 = IsCall("v41", IsOp<Binary>(), IsVArgs(v34, v40));
+        var v42 = IsTensorConst("v42");
+        var v43 = IsCall("v43", IsOp<Transpose>(), IsVArgs(v41, v42));
+        var v44 = IsCall("v44", IsOp<MatMul>(), IsVArgs(v29, v43));
+        var v45 = IsTensorConst("v45");
+        var v46 = IsCall("v46", IsOp<Binary>(), IsVArgs(v44, v45));
+        var v47 = IsWildcard("attn_mask");
 
-        var v49 = IsCall("v49", IsOp<Binary>(), IsVArgs(v47, v48));
-        var v50 = IsCall("v50", IsOp<Softmax>(), IsVArgs(v49, v24));
+        var v48 = IsCall("v48", IsOp<Binary>(), IsVArgs(v46, v47));
+        var v49 = IsTensorConst("v49");
+        var v50 = IsCall("v50", IsOp<Softmax>(), IsVArgs(v48, v49));
         var v51 = IsTensorConst("v51");
-        var v52 = IsCall("v52", IsOp<Unsqueeze>(), IsVArgs(v3, v51));
+        var v52 = IsCall("v52", IsOp<Unsqueeze>(), IsVArgs(v4, v51));
         var v53 = IsTensorConst("v53");
         var v54 = IsCall("v54", IsOp<MatMul>(), IsVArgs(v52, v53));
         var v55 = IsCall("v55", IsOp<MatMul>(), IsVArgs(v50, v54));
@@ -218,19 +217,20 @@ public sealed partial class FuseMHA2 : FusionMaker
         var v59 = IsCall("v59", IsOp<Reshape>(), IsVArgs(v57, v58));
         var v60 = IsTensorConst("v60");
         var v61 = IsCall("v61", IsOp<MatMul>(), IsVArgs(v59, v60));
-        var v62 = IsCall("v62", IsOp<Binary>(), IsVArgs(v0, v61));
-        var v63 = IsCall("v63", IsOp<LayerNorm>(), IsVArgs(v62, v1, v2));
+        var v62 = IsCall("v62", IsOp<Binary>(), IsVArgs(v1, v61));
+        var v63 = IsCall("v63", IsOp<LayerNorm>(), IsVArgs(v62, v2, v3));
         var v64 = IsTensorConst("v64");
         var v65 = IsCall("v65", IsOp<MatMul>(), IsVArgs(v63, v64));
-        var v66 = IsCall("v66", IsOp<Swish>(), IsVArgs(v65));
-        var v67 = IsTensorConst("v67");
-        var v68 = IsCall("v68", IsOp<MatMul>(), IsVArgs(v63, v67));
-        var v69 = IsCall("v69", IsOp<Binary>(), IsVArgs(v66, v68));
-        var v70 = IsTensorConst("v70");
-        var v71 = IsCall("v71", IsOp<MatMul>(), IsVArgs(v69, v70));
-        var v72 = IsCall("root", IsOp<Binary>(), IsVArgs(v62, v71));
+        var v66 = IsTensorConst("v66");
+        var v67 = IsCall("v67", IsOp<Swish>(), IsVArgs(v65, v66));
+        var v68 = IsTensorConst("v68");
+        var v69 = IsCall("v69", IsOp<MatMul>(), IsVArgs(v63, v68));
+        var v70 = IsCall("v70", IsOp<Binary>(), IsVArgs(v67, v69));
+        var v71 = IsTensorConst("v71");
+        var v72 = IsCall("v72", IsOp<MatMul>(), IsVArgs(v70, v71));
+        var v73 = IsCall("root", IsOp<Binary>(), IsVArgs(v62, v72));
 
-        return v72;
+        return v73;
     }
 
     private Call? GetReplace(Call root, Expr hidden_in, Expr position_ids, Expr attn_mask)

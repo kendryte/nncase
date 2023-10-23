@@ -131,6 +131,7 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FoldNopCast>();
             p.Add<Passes.Rules.Neutral.FoldNopReshape>();
             p.Add<Passes.Rules.Neutral.FoldNopSlice>();
+            p.Add<Passes.Rules.Neutral.FoldPrePostReshapeSoftmax>();
             p.Add<Passes.Rules.Neutral.FoldSqueezeUnsqueeze>();
             p.Add<Passes.Rules.Neutral.FoldUnsqueezeSqueeze>();
             p.Add<Passes.Rules.Neutral.FoldTwoTransposes>();

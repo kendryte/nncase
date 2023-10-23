@@ -20,7 +20,8 @@
 
 using namespace nncase;
 using namespace nncase::runtime;
-constexpr size_t loop_count = 10;
+// constexpr size_t loop_count = 10;
+constexpr size_t loop_count = 1;
 
 #define TRY(x)                                                                 \
     if (x)                                                                     \
