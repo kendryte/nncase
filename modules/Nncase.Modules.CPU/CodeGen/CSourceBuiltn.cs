@@ -214,6 +214,37 @@ target_include_directories(
   PUBLIC {solutionPath}/modules/cpu/src/runtime/)
 set_target_properties(cpu_cmodel PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
+# add_definitions(-D__riscv_vector)
+foreach(LIBRARY_PATH ${{CMAKE_CXX_IMPLICIT_LINK_DIRECTORIES}})
+    # Construct the full path to the library file
+    set(CRTI_LIB_PATH ""${{LIBRARY_PATH}}/crti.o"")
+
+    # Check if the library file exists
+    if(EXISTS ${{CRTI_LIB_PATH}})
+        message(""crti.o Library found at: ${{CRTI_LIB_PATH}}"")
+        break()  # Stop searching if found
+    endif()
+endforeach()
+
+if(NOT CRTI_LIB_PATH)
+    message(""crti.o Library not found"")
+endif()
+
+foreach(LIBRARY_PATH ${{CMAKE_CXX_IMPLICIT_LINK_DIRECTORIES}})
+    # Construct the full path to the library file
+    set(CRT1_LIB_PATH ""${{LIBRARY_PATH}}/crt1.o"")
+
+    # Check if the library file exists
+    if(EXISTS ${{CRT1_LIB_PATH}})
+        message(""crt1.o Library found at: ${{CRT1_LIB_PATH}}"")
+        break()  # Stop searching if found
+    endif()
+endforeach()
+
+if(NOT CRT1_LIB_PATH)
+    message(""crt1.o Library not found"")
+endif()
+
 if(CMAKE_BUILD_TYPE STREQUAL ""Release"")
   add_compile_options(-O1)
 endif()
@@ -227,7 +258,7 @@ add_link_options(
   -Wl,-e,_Z6_startPN6nncase7runtime3cpu19hardware_context_mtEPNS1_15runtime_util_mtEPNS1_19nncase_method_tableEPPhS8_
 )
 add_executable({name} ""main.cpp"")
-target_link_libraries({name} cpu_cmodel)
+target_link_libraries({name} cpu_cmodel ${{CRT1_LIB_PATH}} ${{CRTI_LIB_PATH}})
 ";
     }
 
@@ -277,6 +308,9 @@ DEFINE_BFUNC(4)
 DEFINE_BFUNC(5)
 DEFINE_BFUNC(6)
 DEFINE_BFUNC(7)
+
+int main() {{}}
+extern ""C"" {{void __libc_csu_fini(){{}} void __libc_csu_init(){{}}}}
 
 void _start(hardware_context_mt *hw_ctx_impl, runtime_util_mt *rt_util_mt,
             nncase_mt_t *nncase_mt_impl, uint8_t **inputs, uint8_t *rdata) {{

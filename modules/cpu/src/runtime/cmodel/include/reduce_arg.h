@@ -48,8 +48,8 @@ void reduce_arg_impl(TReducer &&reducer, T init_value, const T *input,
     // update min/max idx
     apply(out_shape, [&](gsl::span<const size_t> index) -> void {
         auto out_idx = offset(out_strides, index);
-        output[out_idx] = select_last_idx ? out_map[out_idx * 2 + 0]
-                                          : out_map[out_idx * 2 + 1];
+        output[out_idx] = select_last_idx ? out_map[out_idx * 2 + 1]
+                                          : out_map[out_idx * 2 + 0];
     });
 
     runtime_util->free(out_map);
