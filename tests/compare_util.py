@@ -66,6 +66,17 @@ def euclidean(gt: np.ndarray, pred: np.ndarray, *args):
 #     return np.mean((gt - pred) ** 2)
 
 def divide(gt: np.ndarray, pred: np.ndarray):
+
+    # remove the zero values in the same location.
+    gt_mask = np.equal(gt, 0)
+    pred_mask = np.equal(pred, 0)
+    mask = gt_mask & pred_mask
+    gt = gt[~mask]
+    pred = pred[~mask]
+
+    # to avoid divide zero.
+    pred = np.where(np.equal(pred, 0), 1e-7, pred)
+
     result = np.divide(gt, pred)
     return result
 
@@ -134,7 +145,7 @@ def compare_binfile(result_path: Tuple[str, str],
     if compare_op(similarity, threshold):
         return False, similarity_info
     if (mean(divide(gt_arr, pred_arr)) > 1.5 or mean(divide(gt_arr, pred_arr)) < 0.6):
-        return False, similarity_info , f"\nmaybe a case of multiples"
+        return False, similarity_info, f"\nmaybe a case of multiples"
     return True, similarity_info
 
 
