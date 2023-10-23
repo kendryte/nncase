@@ -40,7 +40,7 @@ internal sealed partial class CPUFusion : FusionMaker
         }
 
         var newCall = new Call(op, newInputs.ToArray());
-        var callFusion = new Call(new Fusion($"{op.Target.GetType().Name}_{Count}", ModuleKind, newCall, newInputs.OfType<Var>().ToArray()), newInputs.Select((e, i) => (e, i)).Where(p => p.e is Var).Select(p => callParams[p.i]).ToArray());
+        var callFusion = new Call(new Fusion($"{op.Target.GetType().Name}_{Count++}", ModuleKind, newCall, newInputs.OfType<Var>().ToArray()), newInputs.Select((e, i) => (e, i)).Where(p => p.e is Var).Select(p => callParams[p.i]).ToArray());
         return callFusion;
     }
 }

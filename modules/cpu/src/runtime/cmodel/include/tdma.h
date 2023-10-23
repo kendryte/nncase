@@ -1,5 +1,6 @@
 #pragma once
 #include "cast.h"
+#include "clamp.h"
 #include "runtime_utils.h"
 #include <apply.h>
 #include <binary.h>
@@ -132,7 +133,7 @@ template <typename T, loc_t InLoc>
 T *im2col(tensor<T, InLoc> &input, dims_t filter, dims_t padding, dims_t stride,
           [[maybe_unused]] dims_t dilation = {1, 1},
           [[maybe_unused]] int32_t groups = 1) {
-    // todo: support dilated and group conv2d
+    // todo: support group conv2d
     int32_t N = input.dimension()[0];
     int32_t C = input.dimension()[1];
     int32_t H = input.dimension()[2] + padding[0] + padding[1];
@@ -180,7 +181,7 @@ void conv2d(thread_context &ctx, tensor<T, InLoc> &input,
             tensor<T, OutLoc> &output, dims_t stride, dims_t padding,
             dims_t dilation = {1, 1}, int32_t groups = 1,
             reduce_strategy_t strategy = reduce_strategy_t::none) {
-    // todo: support dilated and group conv2d
+    // todo: support group conv2d
     size_t N = input.dimension()[0];
     size_t C = input.dimension()[1];
     size_t H = input.dimension()[2] + padding[0] + padding[1];
@@ -203,25 +204,25 @@ void conv2d(thread_context &ctx, tensor<T, InLoc> &input,
         gsl::make_span(dims_t{OH * OW * N, 1}),
         gsl::make_span(dims_t{M, OH * OW * N}),
         gsl::make_span(dims_t{OH * OW * N, 1}));
-    delete[] input_cols;
+    runtime_util->free(input_cols);
 
-    switch (strategy) {
-    case reduce_strategy_t::by_thread:
-        tdma_reduce_async(mm, mm, reduce_op_t::sum, ctx);
-        break;
-    case reduce_strategy_t::by_block:
-    case reduce_strategy_t::all:
-        tdma_all_reduce_async(mm, mm, reduce_op_t::sum, strategy, ctx);
-        break;
-    default:
-        break;
-    }
-    kernels::binary(binary_op_t::add, mm.cdata().data(), bias.cdata().data(),
-                    mm.data().data(), gsl::make_span(dims_t{M, OH * OW * N}),
-                    gsl::make_span(dims_t{OH * OW * N, 1}),
-                    gsl::make_span(dims_t{M, 1}), gsl::make_span(dims_t{1, 1}),
-                    gsl::make_span(dims_t{M, OH * OW * N}),
-                    gsl::make_span(dims_t{OH * OW * N, 1}));
+    // switch (strategy) {
+    // case reduce_strategy_t::by_thread:
+    //     tdma_reduce_async(mm, mm, reduce_op_t::sum, ctx);
+    //     break;
+    // case reduce_strategy_t::by_block:
+    // case reduce_strategy_t::all:
+    //     tdma_all_reduce_async(mm, mm, reduce_op_t::sum, strategy, ctx);
+    //     break;
+    // default:
+    //     break;
+    // }
+    // kernels::binary(binary_op_t::add, mm.cdata().data(), bias.cdata().data(),
+    //                 mm.data().data(), gsl::make_span(dims_t{M, OH * OW * N}),
+    //                 gsl::make_span(dims_t{OH * OW * N, 1}),
+    //                 gsl::make_span(dims_t{M, 1}), gsl::make_span(dims_t{1,
+    //                 1}), gsl::make_span(dims_t{M, OH * OW * N}),
+    //                 gsl::make_span(dims_t{OH * OW * N, 1}));
     kernels::transpose(mm.cdata().data(), output.data().data(),
                        gsl::make_span(dims_t{M, OH, OW, N}),
                        gsl::make_span(dims_t{3, 0, 1, 2}),
@@ -836,5 +837,14 @@ void expand(tensor<T, ALoc> &in, tensor<T, BLoc> &out) {
         gsl::make_span(in.dimension()).template as_span<const size_t>(),
         gsl::make_span(in.strides()).template as_span<const size_t>(),
         gsl::make_span(out.dimension()).template as_span<const size_t>(),
+        gsl::make_span(out.strides()).template as_span<const size_t>());
+}
+
+template <class T, loc_t ALoc, loc_t BLoc>
+void clamp(tensor<T, ALoc> &in, tensor<T, BLoc> &out, T min, T max) {
+    kernels::clamp(
+        in.cdata().data(), out.data().data(), min, max,
+        gsl::make_span(in.dimension()).template as_span<const size_t>(),
+        gsl::make_span(in.strides()).template as_span<const size_t>(),
         gsl::make_span(out.strides()).template as_span<const size_t>());
 }

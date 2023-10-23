@@ -9,9 +9,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#ifdef __riscv_vector
-#include <riscv_vector.h>
-#endif
 
 BEGIN_NS_NNCASE_RT_MODULE(cpu)
 
@@ -66,46 +63,6 @@ inline int64_t int64_binary_mod(int64_t x, int64_t y) { return x % y; }
 inline bool bool_binary_logical_and(bool x, bool y) { return x && y; }
 inline bool bool_binary_logical_or(bool x, bool y) { return x || y; }
 inline bool bool_binary_logical_xor(bool x, bool y) { return x ^ y; }
-
-#ifdef __riscv_vector
-inline void matmul_unit_impl(const float *input_a, const float *input_b,
-                             float *output, size_t size_m, size_t size_k,
-                             size_t size_n, size_t lda, size_t ldb,
-                             size_t ldc) {
-    size_t vl;
-    for (size_t m = 0; m < size_m; ++m) {
-        const float *b_n_ptr = input_b;
-        float *c_n_ptr = output;
-        for (size_t c_n_count = size_n; c_n_count; c_n_count -= vl) {
-            vl = vsetvl_e32m1(c_n_count);
-            const float *a_k_ptr = input_a;
-            const float *b_k_ptr = b_n_ptr;
-            vfloat32m1_t acc = vle32_v_f32m1(c_n_ptr, vl);
-            for (size_t k = 0; k < size_k; ++k) {
-                vfloat32m1_t b_n_data = vle32_v_f32m1(b_k_ptr, vl);
-                acc = vfmacc_vf_f32m1(acc, *a_k_ptr, b_n_data, vl);
-                b_k_ptr += ldb;
-                a_k_ptr++;
-            }
-            vse32_v_f32m1(c_n_ptr, acc, vl);
-            c_n_ptr += vl;
-            b_n_ptr += vl;
-        }
-        input_a += lda;
-        output += ldc;
-    }
-}
-#else
-inline void
-matmul_unit_impl([[maybe_unused]] const float *input_a,
-                 [[maybe_unused]] const float *input_b,
-                 [[maybe_unused]] float *output, [[maybe_unused]] size_t size_m,
-                 [[maybe_unused]] size_t size_k, [[maybe_unused]] size_t size_n,
-                 [[maybe_unused]] size_t lda, [[maybe_unused]] size_t ldb,
-                 [[maybe_unused]] size_t ldc) {
-    throw std::runtime_error("not supported");
-}
-#endif
 
 [[maybe_unused]] static nncase_mt_t nncase_mt = {
     fabsf,
@@ -162,7 +119,6 @@ matmul_unit_impl([[maybe_unused]] const float *input_a,
     bool_binary_logical_xor,
     thread_pool::thread_start,
     thread_pool::thread_end,
-    matmul_unit_impl,
 };
 
 inline void *rt_malloc(size_t size) { return (void *)new uint8_t[size](); }

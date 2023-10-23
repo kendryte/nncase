@@ -158,9 +158,21 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
                     ndsbp[i] = SBP.S(padA + sa.Axis);
                     break;
                 case (SBPSplit s1, SBPBroadCast):
+                    // invalid (S, B) if B is not broacast
+                    if (s1.Axis + padA - padB >= 0 && b.TensorType.Shape[s1.Axis + padA - padB] != 1)
+                    {
+                        return new InvalidType($"lhs rhs sbp at {i} not broadcast");
+                    }
+
                     ndsbp[i] = SBP.S(padA + s1.Axis);
                     break;
                 case (SBPBroadCast, SBPSplit s2):
+                    // invalid (B, S) if A is not broacast
+                    if (s2.Axis + padB - padA >= 0 && a.TensorType.Shape[s2.Axis + padB - padA] != 1)
+                    {
+                        return new InvalidType($"lhs rhs sbp at {i} not broadcast");
+                    }
+
                     ndsbp[i] = SBP.S(padB + s2.Axis);
                     break;
                 case (SBPBroadCast, SBPBroadCast):

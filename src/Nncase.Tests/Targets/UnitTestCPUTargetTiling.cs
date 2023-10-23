@@ -12,6 +12,10 @@ using Microsoft.Extensions.DependencyInjection;
 using NetFabric.Hyperlinq;
 using Nncase.CodeGen;
 using Nncase.IR;
+using Nncase.IR.F;
+using Nncase.IR.Imaging;
+using Nncase.IR.Math;
+using Nncase.IR.NN;
 using Nncase.IR.Tensors;
 using Nncase.Runtime.Interop;
 using Nncase.Targets;
@@ -60,14 +64,16 @@ public class UnitTestCPUTargetTiling : TestClassBase
     // [ClassData(typeof(TilingCaseGatherBinary))]
     // [ClassData(typeof(TilingCaseLayerNormBinary))]
     // [ClassData(typeof(TilingCaseExpand))]
-    [ClassData(typeof(TilingCaseSDMHA))]
+    // [ClassData(typeof(TilingCaseSDMHA))]
+    [ClassData(typeof(TilingCaseClamp))]
     public async Task TestCpuFunction(Function main, Tensor[] inputs)
     {
         var module = new IR.IRModule(main);
+        var parameterLength = main.Parameters.Length;
         using (new Diagnostics.DumpScope(main.Name, CompileOptions.DumpFlags))
         {
 #if DEBUG
-            for (var i = 0; i < inputs.Length - 1; i++)
+            for (var i = 0; i < parameterLength; i++)
             {
                 using (var fs = Diagnostics.DumpScope.Current.OpenFile($"input_{i}.bin"))
                 {
@@ -75,21 +81,27 @@ public class UnitTestCPUTargetTiling : TestClassBase
                 }
             }
 
-            using (var fs = Diagnostics.DumpScope.Current.OpenFile($"output_0.bin"))
+            for (var i = 0; i < inputs.Length - parameterLength; i++)
             {
-                fs.Write(inputs[^1].BytesBuffer);
+                using (var fs = Diagnostics.DumpScope.Current.OpenFile($"output_{i}.bin"))
+                {
+                    fs.Write(inputs[parameterLength + i].BytesBuffer);
+                }
             }
 #endif
             await Compile(module);
-            var output = Testing.RunKModel(File.ReadAllBytes(Path.Join(Diagnostics.DumpScope.Current.Directory, "test.kmodel")), Diagnostics.DumpScope.Current.Directory, inputs);
+            var outputs = Testing.RunKModel(File.ReadAllBytes(Path.Join(Diagnostics.DumpScope.Current.Directory, "test.kmodel")), Diagnostics.DumpScope.Current.Directory, inputs).AsTensors();
 #if DEBUG
-            using (var fs = Diagnostics.DumpScope.Current.OpenFile($"actual_0.bin"))
+            for (int i = 0; i < outputs.Length; i++)
             {
-                fs.Write(output.AsTensor().BytesBuffer);
+                using (var fs = Diagnostics.DumpScope.Current.OpenFile($"actual_{i}.bin"))
+                {
+                    fs.Write(outputs[i].BytesBuffer);
+                }
             }
 #endif
-            var cos = Tests.Comparator.CosSimilarity(output, Value.FromTensor(inputs[^1]))[0];
-            Assert.True(cos > 0.999);
+            var cos = Tests.Comparator.CosSimilarity(outputs, inputs[parameterLength..]);
+            Assert.True(cos.All(c => c > 0.999), string.Join("\n", cos.Select((c, i) => $"the outputs[{i}] cos is {c}!")));
         }
     }
 
@@ -847,50 +859,45 @@ internal sealed class TilingCaseSDMHA : TheoryData<Function, Tensor[]>
 
         Fusion fusion;
         {
-            var v0 = IR.F.NN.LayerNorm(2, 1E-05f, fin, IR.F.Random.Normal(DataTypes.Float32, new[] { 768 }).Evaluate().AsTensor(), IR.F.Random.Normal(DataTypes.Float32, new[] { 768 }).Evaluate().AsTensor(), true); // f32[1,77,768]
-            var v1 = IR.F.Math.MatMul(v0, IR.F.Random.Normal(DataTypes.Float32, new[] { 12, 768, 64 }).Evaluate().AsTensor()); // f32[12,77,64]
-            var v2 = IR.F.Math.Binary(BinaryOp.Add, v1, IR.F.Random.Normal(DataTypes.Float32, new[] { 12, 1, 64 }).Evaluate().AsTensor()); // f32[12,77,64]
+            var v0 = IR.F.NN.LayerNorm(2, 1E-05f, fin, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, new[] { 768 }).Evaluate().AsTensor(), IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, new[] { 768 }).Evaluate().AsTensor(), true); // f32[1,77,768]
+            var v1 = IR.F.Math.MatMul(v0, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, new[] { 12, 768, 64 }).Evaluate().AsTensor()); // f32[12,77,64]
+            var v2 = IR.F.Math.Binary(BinaryOp.Add, v1, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, new[] { 12, 1, 64 }).Evaluate().AsTensor()); // f32[12,77,64]
             var v3 = IR.F.Math.Binary(BinaryOp.Mul, v2, new[] { 0.125f }); // f32[12,77,64]
-            var v4 = IR.F.Math.MatMul(v0, IR.F.Random.Normal(DataTypes.Float32, new[] { 12, 768, 64 }).Evaluate().AsTensor()); // f32[12,77,64]
-            var v5 = IR.F.Math.Binary(BinaryOp.Add, v4, IR.F.Random.Normal(DataTypes.Float32, new[] { 12, 1, 64 }).Evaluate().AsTensor()); // f32[12,77,64]
+            var v4 = IR.F.Math.MatMul(v0, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, new[] { 12, 768, 64 }).Evaluate().AsTensor()); // f32[12,77,64]
+            var v5 = IR.F.Math.Binary(BinaryOp.Add, v4, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, new[] { 12, 1, 64 }).Evaluate().AsTensor()); // f32[12,77,64]
             var v6 = IR.F.Tensors.Transpose(v5, new[] { 0, 2, 1 }); // f32[12,64,77]
             var v7 = IR.F.Math.MatMul(v3, v6); // f32[12,77,77]
-            var v8 = IR.F.Math.Binary(BinaryOp.Add, v7, IR.F.Random.Normal(DataTypes.Float32, new[] { 1, 77, 77 }).Evaluate().AsTensor()); // f32[12,77,77]
+            var v8 = IR.F.Math.Binary(BinaryOp.Add, v7, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, new[] { 1, 77, 77 }).Evaluate().AsTensor()); // f32[12,77,77]
             var v9 = IR.F.NN.Softmax(v8, 2); // f32[12,77,77]
-            var v10 = IR.F.Math.MatMul(v0, IR.F.Random.Normal(DataTypes.Float32, new[] { 12, 768, 64 }).Evaluate().AsTensor()); // f32[12,77,64]
-            var v11 = IR.F.Math.Binary(BinaryOp.Add, v10, IR.F.Random.Normal(DataTypes.Float32, new[] { 12, 1, 64 }).Evaluate().AsTensor()); // f32[12,77,64]
+            var v10 = IR.F.Math.MatMul(v0, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, new[] { 12, 768, 64 }).Evaluate().AsTensor()); // f32[12,77,64]
+            var v11 = IR.F.Math.Binary(BinaryOp.Add, v10, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, new[] { 12, 1, 64 }).Evaluate().AsTensor()); // f32[12,77,64]
             var v12 = IR.F.Math.MatMul(v9, v11); // f32[12,77,64]
             var v13 = IR.F.Tensors.Transpose(v12, new[] { 1, 0, 2 }); // f32[77,12,64]
             var v14 = IR.F.Tensors.Reshape(v13, new[] { 1L, 77L, 768L }); // f32[1,77,768]
-            var v15 = IR.F.Math.MatMul(v14, IR.F.Random.Normal(DataTypes.Float32, new[] { 768, 768 }).Evaluate().AsTensor()); // f32[1,77,768]
-            var v16 = IR.F.Math.Binary(BinaryOp.Add, IR.F.Random.Normal(DataTypes.Float32, new[] { 768 }).Evaluate().AsTensor(), v15); // f32[1,77,768]
+            var v15 = IR.F.Math.MatMul(v14, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, new[] { 768, 768 }).Evaluate().AsTensor()); // f32[1,77,768]
+            var v16 = IR.F.Math.Binary(BinaryOp.Add, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, new[] { 768 }).Evaluate().AsTensor(), v15); // f32[1,77,768]
             var v17 = IR.F.Math.Binary(BinaryOp.Add, fin, v16); // f32[1,77,768]
-            var v18 = IR.F.NN.LayerNorm(2, 1E-05f, v17, IR.F.Random.Normal(DataTypes.Float32, new[] { 768 }).Evaluate().AsTensor(), IR.F.Random.Normal(DataTypes.Float32, new[] { 768 }).Evaluate().AsTensor(), true); // f32[1,77,768]
-            var v19 = IR.F.Math.MatMul(v18, IR.F.Random.Normal(DataTypes.Float32, new[] { 768, 3072 }).Evaluate().AsTensor()); // f32[1,77,3072]
-            var v20 = IR.F.Math.Binary(BinaryOp.Add, IR.F.Random.Normal(DataTypes.Float32, new[] { 3072 }).Evaluate().AsTensor(), v19); // f32[1,77,3072]
+            var v18 = IR.F.NN.LayerNorm(2, 1E-05f, v17, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, new[] { 768 }).Evaluate().AsTensor(), IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, new[] { 768 }).Evaluate().AsTensor(), true); // f32[1,77,768]
+            var v19 = IR.F.Math.MatMul(v18, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, new[] { 768, 3072 }).Evaluate().AsTensor()); // f32[1,77,3072]
+            var v20 = IR.F.Math.Binary(BinaryOp.Add, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, new[] { 3072 }).Evaluate().AsTensor(), v19); // f32[1,77,3072]
             var v21 = IR.F.NN.Swish(v20, 1.702f); // f32[1,77,3072]
-            var v22 = IR.F.Math.MatMul(v21, IR.F.Random.Normal(DataTypes.Float32, new[] { 3072, 768 }).Evaluate().AsTensor()); // f32[1,77,768]
-            var v23 = IR.F.Math.Binary(BinaryOp.Add, IR.F.Random.Normal(DataTypes.Float32, new[] { 768 }).Evaluate().AsTensor(), v22); // f32[1,77,768]
+            var v22 = IR.F.Math.MatMul(v21, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, new[] { 3072, 768 }).Evaluate().AsTensor()); // f32[1,77,768]
+            var v23 = IR.F.Math.Binary(BinaryOp.Add, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, new[] { 768 }).Evaluate().AsTensor(), v22); // f32[1,77,768]
             var v24 = IR.F.Math.Binary(BinaryOp.Add, v17, v23); // f32[1,77,768]
-            fusion = new Fusion("cpu", v24, new[] { fin });
+            fusion = new Fusion("cpu", new IR.Tuple(v17, v23, v24), new[] { fin });
         }
 
         var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 77, 768 }));
         var main = new Function("sd_mha", new Call(fusion, input), new[] { input });
 
-        var input_tensor = IR.F.Random.Normal(DataTypes.Float32, new[] { 1, 77, 768 }).Evaluate().AsTensor();
-        using (var fs = Diagnostics.DumpScope.Current.OpenFile("input_0.bin"))
-        {
-            fs.Write(input_tensor.BytesBuffer);
-        }
-
+        var input_tensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 77, 768 }).Evaluate().AsTensor();
         var feedDict = new Dictionary<Var, IValue>
             {
                 { fin, Value.FromTensor(input_tensor) },
             };
-        var output = fusion.Body.Evaluate(feedDict).AsTensor();
+        var outputs = fusion.Body.Evaluate(feedDict).AsTensors();
 
-        Add(main, new[] { input_tensor, output });
+        Add(main, new[] { input_tensor }.Concat(outputs).ToArray());
     }
 }
 
@@ -913,10 +920,35 @@ internal sealed class TilingCaseExpand : TheoryData<Function, Tensor[]>
         var main = new Function("expand", new Call(fusion, input), new[] { input });
 
         var input_tensor = IR.F.Random.Uniform(DataTypes.Int64, 100, 1, 2, shape).Evaluate().AsTensor();
-        using (var fs = Diagnostics.DumpScope.Current.OpenFile("input_0.bin"))
+
+        var feedDict = new Dictionary<Var, IValue>
+            {
+                { fin, Value.FromTensor(input_tensor) },
+            };
+        var output = fusion.Body.Evaluate(feedDict).AsTensor();
+
+        Add(main, new[] { input_tensor, output });
+    }
+}
+
+internal sealed class TilingCaseClamp : TheoryData<Function, Tensor[]>
+{
+    public TilingCaseClamp()
+    {
+        var shape = new[] { 1, 32, 32 };
+        var input = new Var("input", new TensorType(DataTypes.Float32, shape));
+
+        Fusion fusion;
+        Var fin;
         {
-            fs.Write(input_tensor.BytesBuffer);
+            fin = new Var("input", new TensorType(DataTypes.Float32, shape));
+            var v0 = new Call(new IR.CPU.CPUKernelOp(new IR.Math.Clamp()), fin, float.NegativeInfinity, float.PositiveInfinity);
+            fusion = new Fusion("cpu", v0, fin);
         }
+
+        var main = new Function("clamp", new Call(fusion, input), new[] { input });
+
+        var input_tensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, shape).Evaluate().AsTensor();
 
         var feedDict = new Dictionary<Var, IValue>
             {

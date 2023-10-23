@@ -25,51 +25,6 @@ using static Nncase.Utilities.ReplaceUtility;
 namespace Nncase.Passes.Rules;
 
 /// <summary>
-/// VAE Merger for all.
-/// </summary>
-public sealed class VAEMerger : ExprCloner<Unit>
-{
-    private readonly IReadOnlyDictionary<Expr, Var> _multiVarMap;
-
-    public VAEMerger(IReadOnlyDictionary<Expr, Var> multiVarMap)
-    {
-        _multiVarMap = multiVarMap;
-    }
-
-    protected override Expr VisitCall(Call expr, Unit context)
-    {
-        if (_multiVarMap.TryGetValue(expr, out var newVar))
-        {
-            return newVar;
-        }
-
-        return base.VisitCall(expr, context);
-    }
-
-    protected override Expr VisitLeafCall(Call expr, Unit context)
-    {
-        var target = Clone(expr.Target, context);
-        var arguments = CloneArray(expr.Arguments, context);
-        if (target is Binary)
-        {
-            arguments = arguments.Select(e => e switch { TensorConst { Value: Tensor { Shape.IsScalar: true } } tc => Const.FromTensor(Tensor.FromBytes(tc.ValueType.DType, tc.Value.BytesBuffer.ToArray(), new[] { 1 })), _ => e }).ToArray();
-        }
-
-        return expr.With(target: target, arguments: arguments);
-    }
-
-    protected override Expr VisitLeafVar(Var expr, Unit context)
-    {
-        if (_multiVarMap.TryGetValue(expr, out var newVar))
-        {
-            return newVar;
-        }
-
-        throw new InvalidOperationException();
-    }
-}
-
-/// <summary>
 /// stable-disffusion VAE Decoder res-block.
 /// </summary>
 [RuleGenerator]
@@ -120,10 +75,10 @@ public sealed partial class FuseVAEDecRes : FusionMaker
         {
             { input, (Var)newInputs[0] },
         };
-        var merger = new VAEMerger(multiVarMap);
+        var merger = new FusionMerger(multiVarMap);
         var clonedRoot = merger.Clone(root, default);
 
-        var callFusion = new Call(new Fusion("VAEDecRes", $"{nameof(FuseVAEDecRes)}_{Count}", ModuleKind, clonedRoot, newInputs.OfType<Var>().ToArray()), input);
+        var callFusion = new Call(new Fusion("VAEDecRes", $"{nameof(FuseVAEDecRes)}_{Count++}", ModuleKind, clonedRoot, newInputs.OfType<Var>().ToArray()), input);
         return callFusion;
     }
 }
@@ -163,10 +118,10 @@ public sealed partial class FuseVAEDecHead : FusionMaker
         {
             { input, (Var)newInputs[0] },
         };
-        var merger = new VAEMerger(multiVarMap);
+        var merger = new FusionMerger(multiVarMap);
         var clonedRoot = merger.Clone(root, default);
 
-        var callFusion = new Call(new Fusion("VAEDecHead", $"{nameof(FuseVAEDecHead)}_{Count}", ModuleKind, clonedRoot, newInputs.OfType<Var>().ToArray()), input);
+        var callFusion = new Call(new Fusion("VAEDecHead", $"{nameof(FuseVAEDecHead)}_{Count++}", ModuleKind, clonedRoot, newInputs.OfType<Var>().ToArray()), input);
         return callFusion;
     }
 }
@@ -222,10 +177,10 @@ public sealed partial class FuseVAEDecMHA : FusionMaker
         {
             { input, (Var)newInputs[0] },
         };
-        var merger = new VAEMerger(multiVarMap);
+        var merger = new FusionMerger(multiVarMap);
         var clonedRoot = merger.Clone(root, default);
 
-        var callFusion = new Call(new Fusion("VAEDecMHA", $"{nameof(FuseVAEDecMHA)}_{Count}", ModuleKind, clonedRoot, newInputs.OfType<Var>().ToArray()), input);
+        var callFusion = new Call(new Fusion("VAEDecMHA", $"{nameof(FuseVAEDecMHA)}_{Count++}", ModuleKind, clonedRoot, newInputs.OfType<Var>().ToArray()), input);
         return callFusion;
     }
 }

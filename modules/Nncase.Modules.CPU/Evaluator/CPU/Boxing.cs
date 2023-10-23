@@ -136,6 +136,13 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
 
     public IValue Visit(IEvaluateContext context, Boxing target)
     {
-        return context.GetArgumentValue(target, Boxing.Input);
+        var input = context.GetArgumentValue(target, Boxing.Input).AsTensor();
+        var shape = target.NewType switch
+        {
+            TensorType t => t.Shape,
+            DistributedType d => d.TensorType.Shape,
+            _ => throw new NotSupportedException(),
+        };
+        return Value.FromTensor(Tensor.FromBytes(input.ElementType, input.BytesBuffer.ToArray(), shape));
     }
 }

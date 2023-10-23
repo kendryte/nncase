@@ -45,7 +45,12 @@ public sealed class UnitTestTypeInfer : TestClassBase
         { BinaryOp.Add,
           new DistributedType(new(DataTypes.Float32, new[] { 3072 }), new SBP[] { SBP.S(0), SBP.S(0) }, new(Placement.DeviceKind.CPU, new[] { 8, 4 }, "bt")),
           new DistributedType(new(DataTypes.Float32, new[] { 1, 77, 3072 }), new SBP[] { SBP.B, SBP.B }, new(Placement.DeviceKind.CPU, new[] { 8, 4 }, "bt")),
-          new DistributedType(new(DataTypes.Float32, new[] { 1, 77, 3072 }), new SBP[] { SBP.S(2), SBP.S(2) }, new(Placement.DeviceKind.CPU, new[] { 8, 4 }, "bt"))
+          new InvalidType(string.Empty)
+        },
+        { BinaryOp.Add,
+          new DistributedType(new(DataTypes.Float32, new[] { 16, 32, 32 }), new SBP[] { SBP.S(0), SBP.B }, new(Placement.DeviceKind.CPU, new[] { 8, 4 }, "bt")),
+          new DistributedType(new(DataTypes.Float32, new[] { 16, 32, 32 }), new SBP[] { SBP.B, SBP.S(0) }, new(Placement.DeviceKind.CPU, new[] { 8, 4 }, "bt")),
+          new InvalidType(string.Empty)
         },
     };
 
@@ -135,7 +140,7 @@ public sealed class UnitTestTypeInfer : TestClassBase
             }
         }
 
-        Assert.Equal(64, count);
+        Assert.Equal(16, count);
     }
 
     [Fact]
@@ -200,6 +205,10 @@ internal sealed class InferMatmulData : TheoryData<DistributedType, DistributedT
                 new(new(DataTypes.Float32, lhs), new SBP[] { SBP.S(1), SBP.S(1) }, placement),
                 new(new(DataTypes.Float32, rhs), new SBP[] { SBP.S(0), SBP.S(0) }, placement),
                 new DistributedType(new(DataTypes.Float32, o), new SBP[] { SBP.S(1), SBP.S(1) }, placement));
+            Add(
+            new(new(DataTypes.Float32, lhs), new SBP[] { SBP.S(1), SBP.B }, placement),
+            new(new(DataTypes.Float32, rhs), new SBP[] { SBP.B, SBP.S(0) }, placement),
+            new InvalidType(string.Empty));
         }
 
         {

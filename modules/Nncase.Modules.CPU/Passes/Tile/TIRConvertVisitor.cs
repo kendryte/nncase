@@ -18,15 +18,17 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
 {
     private readonly Dictionary<Expr, TIR.Buffer> _buffersMap = new(ReferenceEqualityComparer.Instance);
     private readonly List<Expr> _mainBody;
+    private readonly List<(int, TIR.Buffer)> _outputbuffers;
 
     public TIRConvertVisitor(List<Expr> mainBody)
     {
         _mainBody = mainBody;
+        _outputbuffers = new();
     }
 
     public Fusion VisitRootFusion => (Fusion)VisitRoot!;
 
-    public IEnumerable<TIR.Buffer> OutputBuffers => _buffersMap.Values.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location.HasFlag(MemoryLocation.Output));
+    public IEnumerable<TIR.Buffer> OutputBuffers => _outputbuffers.OrderBy(p => p.Item1).Select(p => p.Item2);
 
     public IEnumerable<TIR.Buffer> InputBuffers => VisitRootFusion.Parameters.ToArray().Select(p => _buffersMap[p]).OfType<TIR.Buffer>().Where(b => b.MemSpan.Location.HasFlag(MemoryLocation.Input));
 
@@ -78,6 +80,9 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
             case Swish:
                 GenerateSwishB(arguments[0], ret, ((TensorConst)expr.Arguments[1]).Value.ToScalar<float>());
                 break;
+            case Gelu:
+                GenerateUnary("gelu", arguments, ret);
+                break;
             case IR.CPU.Boxing boxing:
                 GenerateBoxing(boxing, arguments, ret, expr);
                 break;
@@ -100,6 +105,9 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
                 break;
             case Expand expand:
                 GenerateExpand(((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), (DistributedType)expr.CheckedType, arguments, ret);
+                break;
+            case Clamp clamp:
+                GenerateClamp(arguments, ret, ((TensorConst)expr.Arguments[1]).Value.ToArray<float>()[0], ((TensorConst)expr.Arguments[2]).Value.ToArray<float>()[0]);
                 break;
             default:
                 throw new NotSupportedException();
@@ -238,6 +246,11 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
         _mainBody.Add(IR.F.XPU.Expand(shape, distributedType, arguments[0], ret));
     }
 
+    private void GenerateClamp(ReadOnlySpan<Buffer> arguments, Buffer ret, float min, float max)
+    {
+        _mainBody.Add(IR.F.XPU.Clamp(arguments[0], ret, min, max));
+    }
+
 #if false
         private void GenerateUnary(IR.Math.Unary unary, ReadOnlySpan<Buffer> arguments, Buffer ret)
         {
@@ -313,12 +326,13 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
             {
                 case Call c:
                     var (type, loc) = GetTypeAndLocation(c.CheckedType);
-                    if (ReferenceEquals(c, VisitRootFusion.Body))
+                    var index = CheckRootCall(c, ref loc);
+                    buffer = T.AttachBuffer(type, loc, out _, out _, name);
+                    if (index != -1)
                     {
-                        loc = MemoryLocation.Output;
+                        _outputbuffers.Add((index, buffer));
                     }
 
-                    buffer = T.AttachBuffer(type, loc, out _, out _, name);
                     break;
                 case Var v:
                     buffer = T.AttachBuffer((TensorType)v.CheckedType, MemoryLocation.Input, out _, out _, name);
@@ -338,6 +352,29 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
         }
 
         return buffer;
+    }
+
+    private int CheckRootCall(Call c, ref MemoryLocation loc)
+    {
+        var index = -1;
+        if (VisitRootFusion.Body is Call rootCall && ReferenceEquals(c, rootCall))
+        {
+            index = 0;
+            loc = MemoryLocation.Output;
+        }
+        else if (VisitRootFusion.Body is IR.Tuple tp)
+        {
+            for (int i = 0; i < tp.Fields.Length; i++)
+            {
+                if (ReferenceEquals(tp.Fields[i], c))
+                {
+                    index = i;
+                    loc = MemoryLocation.Output;
+                }
+            }
+        }
+
+        return index;
     }
 
     private Tuple<TensorType, MemoryLocation> GetTypeAndLocation(IRType type)

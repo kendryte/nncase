@@ -72,10 +72,22 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
                         return invalid;
                     }
 
+                    // invalid (S, B) if B is not broacast matmul
+                    if (ax < aRank - 2 && !(bRank <= 2 || (ax + aPad - bPad >= 0 && b.TensorType.Shape[ax + aPad - bPad] == 1)))
+                    {
+                        return invalid;
+                    }
+
                     ndsbp[i] = SBP.S(ax + aPad);
                     break;
                 case (SBPBroadCast, SBPSplit { Axis: int bx }):
                     if (bx == bRank - 2)
+                    {
+                        return invalid;
+                    }
+
+                    // invalid (B, S) if A is not broacast matmul
+                    if (bx < bRank - 2 && !(aRank <= 2 || (bx + bPad - aPad >= 0 && a.TensorType.Shape[bx + bPad - aPad] == 1)))
                     {
                         return invalid;
                     }

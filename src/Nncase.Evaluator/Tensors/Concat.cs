@@ -202,15 +202,16 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
                 return new InvalidType("not support distribute with partialsum");
             }
 
-            if (sbps.OfType<SBPSplit>().ToHashSet() is HashSet<SBPSplit> set)
+            if (sbps.OfType<SBPSplit>().ToHashSet() is HashSet<SBPSplit> setSplit &&
+            sbps.OfType<SBPSplit>().ToHashSet() is HashSet<SBPSplit> setBroadcast)
             {
-                switch (set.Count)
+                switch (setSplit.Count)
                 {
                     case 0:
                         ndsbp[i] = SBP.B;
                         break;
-                    case 1:
-                        ndsbp[i] = set.First();
+                    case 1 when setBroadcast.Count == 0:
+                        ndsbp[i] = setSplit.First();
                         break;
                     default:
                         return new InvalidType("not support distribute with different axis");
