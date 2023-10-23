@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
@@ -55,6 +56,16 @@ public sealed class UnetMerger : ExprCloner<Unit>
         if (target is Binary)
         {
             arguments = arguments.Select(e => e switch { TensorConst { Value: Tensor { Shape.IsScalar: true } } tc => Const.FromTensor(Tensor.FromBytes(tc.ValueType.DType, tc.Value.BytesBuffer.ToArray(), new[] { 1 })), _ => e }).ToArray();
+        }
+
+        if (target is Conv2D conv)
+        {
+            var bias = (TensorConst)arguments[2];
+            var fusedClamp = ((TensorConst)arguments[7]).Value.ToArray<float>();
+            var newConv = IR.F.NN.Conv2D(arguments[0], arguments[1], Tensor.Zeros<float>(bias.CheckedShape), arguments[3], arguments[4], arguments[5], conv.PadMode, arguments[6], new[] { float.NegativeInfinity, float.PositiveInfinity });
+            var newBias = IR.F.Math.Add(newConv, Tensor.FromBytes(bias.CheckedDataType, bias.Value.BytesBuffer.ToArray(), new[] { bias.CheckedShape[0].FixedValue, 1, 1 }));
+            var newClamp = IR.F.Math.Clamp(newBias, fusedClamp[0], fusedClamp[1]);
+            return newClamp;
         }
 
         return expr.With(target: target, arguments: arguments);
@@ -187,7 +198,6 @@ public sealed partial class FuseUnetSpatialTransformer : FusionMaker
         var clonedRoot = merger.Clone(root, default);
 
         var callFusion = new Call(new Fusion("UnetSpatialTransformer", $"{nameof(FuseUnetSpatialTransformer)}_{Count++}", ModuleKind, clonedRoot, newInputs.OfType<Var>().ToArray()), input, encoderHiddenStates);
-        CompilerServices.DumpCSharpIR(((Fusion)callFusion.Target).Body, $"st{Count-1}", "/data/huochenghai/GNNE/rebuild-ir/nncase/tests_output");
         return callFusion;
     }
 }
@@ -244,8 +254,7 @@ public sealed partial class FuseUnetResBlock : FusionMaker
         var v38 = IsBinary(null, "root", BinaryOp.Add, conv2, v36);
         var v39 = IsBinary(null, "root", BinaryOp.Add, conv1, v36);
         var v40 = IsBinary(null, "root", BinaryOp.Add, vIn, v36);
-        // var root = IsAlt(v37, v38, v39, v40);
-        var root = IsTuple("root", IsVArgs(v6, v7, conv1));
+        var root = IsAlt(v37, v38, v39, v40);
 
         return root!;
     }
@@ -277,7 +286,6 @@ public sealed partial class FuseUnetResBlock : FusionMaker
         var clonedRoot = merger.Clone(root, default);
 
         var callFusion = new Call(new Fusion("UnetResBlock", $"{nameof(FuseUnetResBlock)}_{Count++}", ModuleKind, clonedRoot, newInputs.OfType<Var>().ToArray()), oldInputs.ToArray());
-        CompilerServices.DumpCSharpIR(((Fusion)callFusion.Target).Body, $"res{Count-1}", "/data/huochenghai/GNNE/rebuild-ir/nncase/tests_output");
         return callFusion;
     }
 }
@@ -332,7 +340,6 @@ public sealed partial class FuseUnetTimeEmb : FusionMaker
         var clonedRoot = merger.Clone(root, default);
 
         var callFusion = new Call(new Fusion("UnetTimeEmb", $"{nameof(FuseUnetTimeEmb)}_{Count++}", ModuleKind, clonedRoot, newInputs.OfType<Var>().ToArray()), input);
-        CompilerServices.DumpCSharpIR(((Fusion)callFusion.Target).Body, $"emb{Count-1}", "/data/huochenghai/GNNE/rebuild-ir/nncase/tests_output");
         return callFusion;
     }
 }

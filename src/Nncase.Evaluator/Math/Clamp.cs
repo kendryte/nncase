@@ -29,25 +29,25 @@ public class ClampEvaluator : IEvaluator<Clamp>, ITypeInferencer<Clamp>, ICostEv
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Clamp target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, Clamp.Input);
+        var input = context.CheckArgumentType<IRType>(target, Clamp.Input);
         var min = context.CheckArgumentType<TensorType>(target, Clamp.Min);
         var max = context.CheckArgumentType<TensorType>(target, Clamp.Max);
-        if (input.DType != min.DType || input.DType != max.DType || min.DType != max.DType)
-        {
-            return new InvalidType(
-                $"clamp type is not equal, input:{input.DType}, min:${min.DType}, max:${max.DType}");
-        }
 
-        return Visit(input, min, max);
+        return input switch
+        {
+            TensorType t => Visit(t, min, max),
+            DistributedType d => Visit(d, min, max),
+            _ => new InvalidType("Wrong Clamp Type!"),
+        };
     }
 
     /// <inheritdoc/>
     public Cost Visit(ICostEvaluateContext context, Clamp target)
     {
-        var inputType = context.GetArgumentType<TensorType>(target, Clamp.Input);
+        var inputType = context.GetArgumentType<IRType>(target, Clamp.Input);
         var minType = context.GetArgumentType<TensorType>(target, Clamp.Min);
         var maxType = context.GetArgumentType<TensorType>(target, Clamp.Max);
-        var outputType = context.GetReturnType<TensorType>();
+        var outputType = context.GetReturnType<IRType>();
 
         return new()
         {
@@ -71,6 +71,12 @@ public class ClampEvaluator : IEvaluator<Clamp>, ITypeInferencer<Clamp>, ICostEv
 
     private IRType Visit(TensorType input, TensorType min, TensorType max)
     {
+        if (input.DType != min.DType || input.DType != max.DType || min.DType != max.DType)
+        {
+            return new InvalidType(
+                $"clamp type is not equal, input:{input.DType}, min:${min.DType}, max:${max.DType}");
+        }
+
         if (TypeInference.BroadcastType(input, min) is InvalidType invalidMin)
         {
             return invalidMin;
@@ -86,6 +92,11 @@ public class ClampEvaluator : IEvaluator<Clamp>, ITypeInferencer<Clamp>, ICostEv
             return new InvalidType($"The min.Shape {min.Shape} != max.Shape {max.Shape}");
         }
 
+        return input;
+    }
+
+    private IRType Visit(DistributedType input, TensorType min, TensorType max)
+    {
         return input;
     }
 }

@@ -106,6 +106,9 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
             case Expand expand:
                 GenerateExpand(((TensorConst)expr.Arguments[1]).Value.ToArray<int>(), (DistributedType)expr.CheckedType, arguments, ret);
                 break;
+            case Clamp clamp:
+                GenerateClamp(arguments, ret, ((TensorConst)expr.Arguments[1]).Value.ToArray<float>()[0], ((TensorConst)expr.Arguments[2]).Value.ToArray<float>()[0]);
+                break;
             default:
                 throw new NotSupportedException();
         }
@@ -220,9 +223,7 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
 
     private void GenerateConv2D(Conv2D conv, Buffer[] arguments, Buffer ret, int[] stride, int[] padding, int[] dilation, int groups, TensorConst fusedClamp, DistributedType distributedType)
     {
-        // conv2d kernel can handle partial itself
-        var ndsbp = distributedType.NdSBP.Select(sbp => sbp is SBPPartialSum ? SBP.B : sbp).ToArray();
-        _mainBody.Add(IR.F.XPU.Conv2D(arguments[0], arguments[1], arguments[2], ret, stride, padding, dilation, groups, fusedClamp, distributedType with { NdSBP = ndsbp }));
+        _mainBody.Add(IR.F.XPU.Conv2D(arguments[0], arguments[1], arguments[2], ret, stride, padding, dilation, groups, fusedClamp, distributedType));
     }
 
     private void GenerateReduceArg(ReduceArg reduceArg, Buffer[] arguments, Buffer ret, int axis, bool keepdims, bool selectLastIndex, ReduceArgOp op, DataType dataType)
@@ -243,6 +244,11 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
     private void GenerateExpand(int[] shape, DistributedType distributedType, ReadOnlySpan<Buffer> arguments, Buffer ret)
     {
         _mainBody.Add(IR.F.XPU.Expand(shape, distributedType, arguments[0], ret));
+    }
+
+    private void GenerateClamp(ReadOnlySpan<Buffer> arguments, Buffer ret, float min, float max)
+    {
+        _mainBody.Add(IR.F.XPU.Clamp(arguments[0], ret, min, max));
     }
 
 #if false

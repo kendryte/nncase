@@ -111,4 +111,9 @@ public partial class XPU
     {
         return new Call(new Expand(shape, distributedType.NdSBP), input, output);
     }
+
+    public static Call Clamp(Expr input, Expr output, float min, float max)
+    {
+        return new Call(new IR.XPU.Clamp(min, max), input, output);
+    }
 }

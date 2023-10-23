@@ -592,6 +592,11 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                 case IR.XPU.Expand expand:
                     IndentScope.Writer.Write($"expand({Visit(args[0]).Name}, {Visit(args[1]).Name})");
                     break;
+                case IR.XPU.Clamp clamp:
+                    string min = clamp.Min is float.NegativeInfinity ? float.MinValue.ToString() : clamp.Min.ToString();
+                    string max = clamp.Max is float.PositiveInfinity ? float.MaxValue.ToString() : clamp.Max.ToString();
+                    IndentScope.Writer.Write($"clamp({Visit(args[0]).Name}, {Visit(args[1]).Name}, (float){min}, (float){max})");
+                    break;
                 default:
                     throw new NotSupportedException(xpuOp.ToString());
             }
