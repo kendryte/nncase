@@ -326,7 +326,7 @@ public sealed partial class FuseSDTextEncoderTail : FusionMaker
         var v15 = IsReshape(v14, IsTensorConst()); // f32[77,768]
         var v16 = IsReduceArg(ReduceArgOp.ArgMax, DataTypes.Int64, vinput_ids, IsTensorConst(), IsTensorConst(), IsTensorConst()); // i64[1]
         var v17 = IsBinary(BinaryOp.Add, v16, IsTensorConst()); // i64[1]
-        var v18 = IsGather( Axis: 0, v15, v17); // f32[1,768]
+        var v18 = IsGather(Axis: 0, v15, v17); // f32[1,768]
         var v19 = IsTuple("root", IsVArgs(v14, v18));
         return v19;
     }
