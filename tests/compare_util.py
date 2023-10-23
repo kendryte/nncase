@@ -134,7 +134,7 @@ def compare_binfile(result_path: Tuple[str, str],
     if compare_op(similarity, threshold):
         return False, similarity_info
     if (mean(divide(gt_arr, pred_arr)) > 1.5 or mean(divide(gt_arr, pred_arr)) < 0.6):
-        return False, similarity_info , f"\nmaybe a case of multiples"
+        return False, similarity_info, f"\nmaybe a case of multiples"
     return True, similarity_info
 
 
