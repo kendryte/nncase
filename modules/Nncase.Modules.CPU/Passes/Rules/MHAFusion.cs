@@ -23,51 +23,6 @@ using static Nncase.Utilities.ReplaceUtility;
 
 namespace Nncase.Passes.Rules;
 
-/// <summary>
-/// MHA Merger for all.
-/// </summary>
-public sealed class MHAMerger : ExprCloner<Unit>
-{
-    private readonly IReadOnlyDictionary<Expr, Var> _multiVarMap;
-
-    public MHAMerger(IReadOnlyDictionary<Expr, Var> multiVarMap)
-    {
-        _multiVarMap = multiVarMap;
-    }
-
-    protected override Expr VisitCall(Call expr, Unit context)
-    {
-        if (_multiVarMap.TryGetValue(expr, out var newVar))
-        {
-            return newVar;
-        }
-
-        return base.VisitCall(expr, context);
-    }
-
-    protected override Expr VisitLeafCall(Call expr, Unit context)
-    {
-        var target = Clone(expr.Target, context);
-        var arguments = CloneArray(expr.Arguments, context);
-        if (target is Binary)
-        {
-            arguments = arguments.Select(e => e switch { TensorConst { Value: Tensor { Shape.IsScalar: true } } tc => Const.FromTensor(Tensor.FromBytes(tc.ValueType.DType, tc.Value.BytesBuffer.ToArray(), new[] { 1 })), _ => e }).ToArray();
-        }
-
-        return expr.With(target: target, arguments: arguments);
-    }
-
-    protected override Expr VisitLeafVar(Var expr, Unit context)
-    {
-        if (_multiVarMap.TryGetValue(expr, out var newVar))
-        {
-            return newVar;
-        }
-
-        throw new InvalidOperationException();
-    }
-}
-
 // pattern from BERT base
 [RuleGenerator]
 public sealed partial class FuseMHA1 : FusionMaker
@@ -248,7 +203,7 @@ public sealed partial class FuseMHA2 : FusionMaker
             { position_ids, (Var)newInputs[1] },
             { attn_mask, (Var)newInputs[2] },
         };
-        var merger = new MHAMerger(multiVarMap);
+        var merger = new FusionMerger(multiVarMap);
         var clonedRoot = merger.Clone(root, default);
 
         var callFusion = new Call(new Fusion("MHALLaMA65B", $"{nameof(FuseMHA2)}_{Count++}", ModuleKind, clonedRoot, newInputs.OfType<Var>().ToArray()), hidden_in, position_ids, attn_mask);
@@ -308,7 +263,7 @@ public sealed partial class FuseMHA3 : FusionMaker
         {
             { input, (Var)newInputs[0] },
         };
-        var merger = new MHAMerger(multiVarMap);
+        var merger = new FusionMerger(multiVarMap);
         var clonedRoot = merger.Clone(root, default);
 
         var callFusion = new Call(new Fusion("SDTextEncoderMHA", $"{nameof(FuseMHA3)}_{Count++}", ModuleKind, clonedRoot, newInputs.OfType<Var>().ToArray()), input);
@@ -345,7 +300,7 @@ public sealed partial class FuseSDTextEncoderHeader : FusionMaker
         {
             { input, newInputs[0] },
         };
-        var merger = new MHAMerger(multiVarMap);
+        var merger = new FusionMerger(multiVarMap);
         var clonedRoot = merger.Clone(root, default);
 
         var callFusion = new Call(new Fusion("SDTextEncoderHeader", $"{nameof(FuseSDTextEncoderHeader)}_{Count++}", ModuleKind, clonedRoot, newInputs.ToArray()), input);
@@ -389,7 +344,7 @@ public sealed partial class FuseSDTextEncoderTail : FusionMaker
             { input, newInputs[1] },
         };
 
-        var merger = new MHAMerger(multiVarMap);
+        var merger = new FusionMerger(multiVarMap);
         var clonedRoot = merger.Clone(root, default);
 
         var callFusion = new Call(new Fusion("SDTextEncoderTail", $"{nameof(FuseSDTextEncoderTail)}_{Count++}", ModuleKind, clonedRoot, newInputs), input_ids, input);

@@ -28,61 +28,6 @@ using static Nncase.Utilities.ReplaceUtility;
 namespace Nncase.Passes.Rules;
 
 /// <summary>
-/// Unet Merger for all.
-/// </summary>
-public sealed class UnetMerger : ExprCloner<Unit>
-{
-    private readonly IReadOnlyDictionary<Expr, Var> _multiVarMap;
-
-    public UnetMerger(IReadOnlyDictionary<Expr, Var> multiVarMap)
-    {
-        _multiVarMap = multiVarMap;
-    }
-
-    protected override Expr VisitCall(Call expr, Unit context)
-    {
-        if (_multiVarMap.TryGetValue(expr, out var newVar))
-        {
-            return newVar;
-        }
-
-        return base.VisitCall(expr, context);
-    }
-
-    protected override Expr VisitLeafCall(Call expr, Unit context)
-    {
-        var target = Clone(expr.Target, context);
-        var arguments = CloneArray(expr.Arguments, context);
-        if (target is Binary)
-        {
-            arguments = arguments.Select(e => e switch { TensorConst { Value: Tensor { Shape.IsScalar: true } } tc => Const.FromTensor(Tensor.FromBytes(tc.ValueType.DType, tc.Value.BytesBuffer.ToArray(), new[] { 1 })), _ => e }).ToArray();
-        }
-
-        if (target is Conv2D conv)
-        {
-            var bias = (TensorConst)arguments[2];
-            var fusedClamp = ((TensorConst)arguments[7]).Value.ToArray<float>();
-            var newConv = IR.F.NN.Conv2D(arguments[0], arguments[1], Tensor.Zeros<float>(bias.CheckedShape), arguments[3], arguments[4], arguments[5], conv.PadMode, arguments[6], new[] { float.NegativeInfinity, float.PositiveInfinity });
-            var newBias = IR.F.Math.Add(newConv, Tensor.FromBytes(bias.CheckedDataType, bias.Value.BytesBuffer.ToArray(), new[] { bias.CheckedShape[0].FixedValue, 1, 1 }));
-            var newClamp = IR.F.Math.Clamp(newBias, fusedClamp[0], fusedClamp[1]);
-            return newClamp;
-        }
-
-        return expr.With(target: target, arguments: arguments);
-    }
-
-    protected override Expr VisitLeafVar(Var expr, Unit context)
-    {
-        if (_multiVarMap.TryGetValue(expr, out var newVar))
-        {
-            return newVar;
-        }
-
-        throw new InvalidOperationException();
-    }
-}
-
-/// <summary>
 /// stable-disffusion Unet spatial transformer.
 /// </summary>
 [RuleGenerator]
@@ -194,7 +139,7 @@ public sealed partial class FuseUnetSpatialTransformer : FusionMaker
             { input, (Var)newInputs[0] },
             { encoderHiddenStates, (Var)newInputs[1] },
         };
-        var merger = new UnetMerger(multiVarMap);
+        var merger = new FusionMerger(multiVarMap);
         var clonedRoot = merger.Clone(root, default);
 
         var callFusion = new Call(new Fusion("UnetSpatialTransformer", $"{nameof(FuseUnetSpatialTransformer)}_{Count++}", ModuleKind, clonedRoot, newInputs.OfType<Var>().ToArray()), input, encoderHiddenStates);
@@ -282,7 +227,7 @@ public sealed partial class FuseUnetResBlock : FusionMaker
             multiVarMap.Add(oldInputs[i], (Var)newInputs[i]);
         }
 
-        var merger = new UnetMerger(multiVarMap);
+        var merger = new FusionMerger(multiVarMap);
         var clonedRoot = merger.Clone(root, default);
 
         var callFusion = new Call(new Fusion("UnetResBlock", $"{nameof(FuseUnetResBlock)}_{Count++}", ModuleKind, clonedRoot, newInputs.OfType<Var>().ToArray()), oldInputs.ToArray());
@@ -336,7 +281,7 @@ public sealed partial class FuseUnetTimeEmb : FusionMaker
         {
             { input, (Var)newInputs[0] },
         };
-        var merger = new UnetMerger(multiVarMap);
+        var merger = new FusionMerger(multiVarMap);
         var clonedRoot = merger.Clone(root, default);
 
         var callFusion = new Call(new Fusion("UnetTimeEmb", $"{nameof(FuseUnetTimeEmb)}_{Count++}", ModuleKind, clonedRoot, newInputs.OfType<Var>().ToArray()), input);
