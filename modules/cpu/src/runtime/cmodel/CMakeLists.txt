@@ -25,6 +25,36 @@ set_target_properties(cpu_cmodel PROPERTIES POSITION_INDEPENDENT_CODE ON)
 #   OUTPUT_NAME "nncase.simulator.cpu.c")
 # install(TARGETS cpu_cmodel_cli COMPONENT nncase-runtime)
 
+# add_definitions(-D__riscv_vector)
+foreach(LIBRARY_PATH ${{CMAKE_CXX_IMPLICIT_LINK_DIRECTORIES}})
+    # Construct the full path to the library file
+    set(CRTI_LIB_PATH ""${{LIBRARY_PATH}}/crti.o"")
+
+    # Check if the library file exists
+    if(EXISTS ${{CRTI_LIB_PATH}})
+        message(""crti.o Library found at: ${{CRTI_LIB_PATH}}"")
+        break()  # Stop searching if found
+    endif()
+endforeach()
+
+if(NOT CRTI_LIB_PATH)
+    message(""crti.o Library not found"")
+endif()
+
+foreach(LIBRARY_PATH ${{CMAKE_CXX_IMPLICIT_LINK_DIRECTORIES}})
+    # Construct the full path to the library file
+    set(CRT1_LIB_PATH ""${{LIBRARY_PATH}}/crt1.o"")
+
+    # Check if the library file exists
+    if(EXISTS ${{CRT1_LIB_PATH}})
+        message(""crt1.o Library found at: ${{CRT1_LIB_PATH}}"")
+        break()  # Stop searching if found
+    endif()
+endforeach()
+
+if(NOT CRT1_LIB_PATH)
+    message(""crt1.o Library not found"")
+endif()
 
 function(add_test name test_path)
   if (CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -32,7 +62,7 @@ function(add_test name test_path)
   endif()
   add_link_options(-no-pie -nostartfiles -fPIC -fno-stack-protector -static -Wl,-e,_Z6_startPN6nncase7runtime3cpu19hardware_context_mtEPNS1_15runtime_util_mtEPNS1_19nncase_method_tableEPPh)
   add_executable(${name} "${test_path}/main.cpp")
-  target_link_libraries(${name} cpu_cmodel)
+  target_link_libraries({name} cpu_cmodel ${{CRT1_LIB_PATH}} ${{CRTI_LIB_PATH}})
 endfunction(add_test)
 
 # add_test(demo1 tests/demo1)
