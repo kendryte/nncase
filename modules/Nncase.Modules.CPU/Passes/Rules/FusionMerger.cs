@@ -78,4 +78,3 @@ public sealed class FusionMerger : ExprCloner<Unit>
         throw new InvalidOperationException();
     }
 }
-

@@ -12,6 +12,10 @@ using Microsoft.Extensions.DependencyInjection;
 using NetFabric.Hyperlinq;
 using Nncase.CodeGen;
 using Nncase.IR;
+using Nncase.IR.F;
+using Nncase.IR.Imaging;
+using Nncase.IR.Math;
+using Nncase.IR.NN;
 using Nncase.IR.Tensors;
 using Nncase.Runtime.Interop;
 using Nncase.Targets;
@@ -60,7 +64,8 @@ public class UnitTestCPUTargetTiling : TestClassBase
     // [ClassData(typeof(TilingCaseGatherBinary))]
     // [ClassData(typeof(TilingCaseLayerNormBinary))]
     // [ClassData(typeof(TilingCaseExpand))]
-    [ClassData(typeof(TilingCaseSDMHA))]
+    // [ClassData(typeof(TilingCaseSDMHA))]
+    [ClassData(typeof(TilingCaseClamp))]
     public async Task TestCpuFunction(Function main, Tensor[] inputs)
     {
         var module = new IR.IRModule(main);
@@ -915,6 +920,35 @@ internal sealed class TilingCaseExpand : TheoryData<Function, Tensor[]>
         var main = new Function("expand", new Call(fusion, input), new[] { input });
 
         var input_tensor = IR.F.Random.Uniform(DataTypes.Int64, 100, 1, 2, shape).Evaluate().AsTensor();
+
+        var feedDict = new Dictionary<Var, IValue>
+            {
+                { fin, Value.FromTensor(input_tensor) },
+            };
+        var output = fusion.Body.Evaluate(feedDict).AsTensor();
+
+        Add(main, new[] { input_tensor, output });
+    }
+}
+
+internal sealed class TilingCaseClamp : TheoryData<Function, Tensor[]>
+{
+    public TilingCaseClamp()
+    {
+        var shape = new[] { 1, 32, 32 };
+        var input = new Var("input", new TensorType(DataTypes.Float32, shape));
+
+        Fusion fusion;
+        Var fin;
+        {
+            fin = new Var("input", new TensorType(DataTypes.Float32, shape));
+            var v0 = new Call(new IR.CPU.CPUKernelOp(new IR.Math.Clamp()), fin, float.NegativeInfinity, float.PositiveInfinity);
+            fusion = new Fusion("cpu", v0, fin);
+        }
+
+        var main = new Function("clamp", new Call(fusion, input), new[] { input });
+
+        var input_tensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, shape).Evaluate().AsTensor();
 
         var feedDict = new Dictionary<Var, IValue>
             {
