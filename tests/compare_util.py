@@ -52,7 +52,7 @@ def cosine(gt: np.ndarray, pred: np.ndarray, *args):
     result = (gt @ pred) / (np.linalg.norm(gt, 2) * np.linalg.norm(pred, 2))
 
     if not (isinstance(gt, bool) or isinstance(pred, bool)):
-        return -1 if math.isnan(result) or mse(gt, pred) >= 1 else result
+        return -1 if math.isnan(result) or mse(gt, pred) >= 0.01 else result
     else:
         return -1 if math.isnan(result) else result
 
