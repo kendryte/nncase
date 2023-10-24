@@ -78,6 +78,10 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
                                 break;
                             case (SBPBroadCast, SBPBroadCast or SBPSplit):
                                 // no cost.
+                                cost += new Cost()
+                                {
+                                    [CostFactorNames.CPUCycles] = 1,
+                                };
                                 break;
                             case (SBPPartialSum, SBP sbpout):
                                 switch (sbpout)
@@ -136,13 +140,6 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
 
     public IValue Visit(IEvaluateContext context, Boxing target)
     {
-        var input = context.GetArgumentValue(target, Boxing.Input).AsTensor();
-        var shape = target.NewType switch
-        {
-            TensorType t => t.Shape,
-            DistributedType d => d.TensorType.Shape,
-            _ => throw new NotSupportedException(),
-        };
-        return Value.FromTensor(Tensor.FromBytes(input.ElementType, input.BytesBuffer.ToArray(), shape));
+        return context.GetArgumentValue(target, Boxing.Input);
     }
 }

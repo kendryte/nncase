@@ -572,7 +572,14 @@ void reduce_async_visit_func2([[maybe_unused]] int visit, thread_context &ctx,
                       CORES * gather_tensor.strides()[0]),
                   new_dims, gather_tensor.strides());
 
-    reduce(viewed_gather_tensor, dest, reduce_op, static_cast<T>(0),
+    T init_value = (T)0;
+    if (reduce_op == reduce_op_t::min) {
+        init_value = std::numeric_limits<T>::max();
+    }
+    if (reduce_op == reduce_op_t::max) {
+        init_value = std::numeric_limits<T>::lowest();
+    }
+    reduce(viewed_gather_tensor, dest, reduce_op, static_cast<T>(init_value),
            dims_t({0}), false);
 }
 
@@ -642,8 +649,15 @@ void all_reduce_async_visit_func2_all(int visit,
         tensor<T> reduced_tensor =
             tensor<T>(gsl::make_span(reduced_span, compute_size(reduced_shape)),
                       reduced_shape);
-        reduce(gather_tensor, reduced_tensor, reduce_op, (T)0, dims_t({0}),
-               false);
+        T init_value = (T)0;
+        if (reduce_op == reduce_op_t::min) {
+            init_value = std::numeric_limits<T>::max();
+        }
+        if (reduce_op == reduce_op_t::max) {
+            init_value = std::numeric_limits<T>::lowest();
+        }
+        reduce(gather_tensor, reduced_tensor, reduce_op, init_value,
+               dims_t({0}), false);
         runtime_util->free(gather_span);
         global_hardware_ctx.global_var = reduced_span;
     }
