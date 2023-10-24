@@ -451,7 +451,7 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                 case IR.XPU.Slice slice:
                     var begins = ((TensorConst)expr.Arguments[2]).Value.ToArray<int>();
                     var ends = ((TensorConst)expr.Arguments[3]).Value.ToArray<int>();
-                    var axes = ((TensorConst)expr.Arguments[4]).Value.ToArray<int>().Select(a => a >= 0 ? a : a + ((TensorType)args[0].CheckedType).Shape.Rank).ToList();
+                    var axes = ((TensorConst)expr.Arguments[4]).Value.ToArray<int>().ToList();
                     var retType = (TensorType)expr.Arguments[1].CheckedType;
 
                     var newbegins = Enumerable.Repeat(0, retType.Shape.Rank).ToArray();
