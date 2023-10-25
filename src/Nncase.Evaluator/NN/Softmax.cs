@@ -128,11 +128,12 @@ public class SoftmaxEvaluator : IEvaluator<Softmax>, ITypeInferencer<Softmax>, I
 
     private IRType Visit(DistributedType input, Expr axisExpr)
     {
-        // var axis = ((TensorConst)axisExpr).Value.ToScalar<int>();
-        // if (input.NdSBP.Any(sbp => sbp is SBPSplit s && s.Axis == axis))
-        // {
-        //     return new InvalidType("Not support split on Axis for Softmax now.");
-        // }
+        var axis = ((TensorConst)axisExpr).Value.ToScalar<int>();
+        if (input.NdSBP.Any(sbp => sbp is SBPSplit s && s.Axis == axis))
+        {
+            return new InvalidType("Not support split on Axis for Softmax now.");
+        }
+
         return input;
     }
 }

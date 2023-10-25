@@ -101,6 +101,7 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.NormAxisReduce>();
             p.Add<Passes.Rules.Neutral.NormAxisReshape>();
             p.Add<Passes.Rules.Neutral.NormAxisReduceArg>();
+            p.Add<Passes.Rules.Neutral.NormAxisSlice>();
             p.Add<Passes.Rules.Neutral.SqueezeTransposeShape>();
             p.Add<Passes.Rules.Neutral.Squeeze5DTranspose>();
             p.Add<Passes.Rules.Neutral.SqueezeBinaryShape>();
