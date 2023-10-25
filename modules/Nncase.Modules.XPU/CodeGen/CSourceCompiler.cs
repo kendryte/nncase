@@ -1,0 +1,153 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text;
+using Nncase.IR;
+using Nncase.Schedule;
+using Nncase.TIR;
+
+namespace Nncase.CodeGen;
+
+/// <summary>
+/// the csource code compiler.
+/// </summary>
+public class CSourceCompiler
+{
+    /// <summary>
+    /// compiler exe name.
+    /// </summary>
+    private string _exe = string.Empty;
+
+    /// <summary>
+    /// compiler exe name.
+    /// </summary>
+    private string _arch = string.Empty;
+
+    /// <summary>
+    /// compiler exe name.
+    /// </summary>
+    private string _ext = string.Empty;
+
+    public CSourceCompiler()
+    {
+        PlatformSpecific();
+        ArchSpecific();
+    }
+
+    protected string Exe
+    {
+        get => _exe;
+    }
+
+    protected string Arch
+    {
+        get => _arch;
+    }
+
+    protected string Ext
+    {
+        get => _ext;
+    }
+
+    /// <summary>
+    /// compile the source txt, write to the out_path.
+    /// </summary>
+    /// <param name="sourcePath"> c source code.</param>
+    /// <param name="outPath"> out .so path. </param>
+    /// <returns> outPath. </returns>
+    public string Compile(string sourcePath, string outPath)
+    {
+        var errMsg = new StringBuilder();
+        using (var errWriter = new StringWriter(errMsg))
+        {
+            using (var proc = new Process())
+            {
+                proc.StartInfo.FileName = Exe;
+                proc.StartInfo.Arguments = ArgumentsSpecific(sourcePath, outPath);
+                proc.StartInfo.RedirectStandardError = true;
+                proc.ErrorDataReceived += (sender, e) => errWriter.WriteLine(e.Data);
+                proc.Start();
+                proc.BeginErrorReadLine();
+                proc.WaitForExit();
+                if (proc.ExitCode != 0)
+                {
+                    throw new InvalidOperationException(errMsg.ToString());
+                }
+            }
+        }
+
+        return outPath;
+    }
+
+    /// <summary>
+    /// create the temp dll file and compile source
+    /// <see cref="Compile(string, string)"/>.
+    /// </summary>
+    public string Compile(string sourcePath) => Compile(sourcePath, Path.Join(sourcePath, "build", Path.GetFileName(sourcePath)));
+
+    /// <summary>
+    /// select current pattern's exe.
+    /// </summary>
+    /// <exception cref="NotSupportedException">NotSupportedException.</exception>
+    private void PlatformSpecific()
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            _exe = "/bin/bash";
+            _ext = "so";
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            _exe = "clang";
+            _ext = "dylib";
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            _exe = "cmd";
+            _ext = "dll";
+        }
+
+        if (System.Environment.GetEnvironmentVariable("NNCASE_XPU_COMPILER") is string exe)
+        {
+            _exe = exe;
+        }
+    }
+
+    private void ArchSpecific()
+    {
+        _arch = RuntimeInformation.OSArchitecture switch
+        {
+            Architecture.X64 => RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "x86-64" : "x86_64",
+            Architecture.Arm64 => "arm64",
+            _ => throw new NotSupportedException(RuntimeInformation.OSArchitecture.ToString()),
+        };
+    }
+
+    private string ArgumentsSpecific(string sourcePath, string outPath)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            // return $"-c \"export PATH=/data/huochenghai/toolchain/riscv64-unknown-linux_gnu_12.0.1/bin:$PATH && cd {sourcePath} && mkdir -p build && cd build && rm -rf * && cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=riscv64-unknown-linux-gnu-gcc -DCMAKE_CXX_COMPILER=riscv64-unknown-linux-gnu-g++ -DCMAKE_SYSTEM_PROCESSOR=riscv64 && cmake --build .\"";
+            return $"-c \"cd {sourcePath} && /bin/mkdir -p build && cd build && /bin/rm -rf * && cmake .. -DCMAKE_BUILD_TYPE=Release && cmake --build .\"";
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            return $"{sourcePath} -nostartfiles -pie -fPIC -o {outPath} -static -e__start";
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            var vsdir = Environment.GetEnvironmentVariable("VSAPPIDDIR") ?? throw new InvalidOperationException("Cannot find vs");
+            var vcvardir = Path.Combine(vsdir, "..\\..\\VC\\Auxiliary\\Build\\vcvarsall.bat");
+            return $"/C (\"{vcvardir}\" x64) && (cl /D_USRDLL /D_WINDLL \"{sourcePath}\" /MT /link /DLL /OUT:\"{outPath}\")";
+        }
+
+        throw new System.NotSupportedException("Only Support Linux/Osx/Windows");
+    }
+}

@@ -264,6 +264,6 @@ endif()
 
 # Modules
 if (NOT MSVC)
-add_subdirectory(modules/cpu)
+add_subdirectory(modules/xpu)
 endif()
 #add_subdirectory(modules/vulkan)

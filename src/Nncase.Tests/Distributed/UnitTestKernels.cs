@@ -114,7 +114,7 @@ internal sealed class BinaryCase1 : IDistributedKernelCase
         {
             var l0 = IR.F.CPU.Boxing(lhs, new DistributedType(type, new SBP[] { SBP.S(2), SBP.B }, place));
             var r0 = IR.F.CPU.Boxing(rhs, new DistributedType(type, new SBP[] { SBP.S(2), SBP.S(2) }, place));
-            Fusion = new Fusion(Name + "_fusion", CPUTarget.Kind, IR.F.CPU.Boxing(l0 + r0, type), new[] { lhs, rhs });
+            Fusion = new Fusion(Name + "_fusion", XPUTarget.Kind, IR.F.CPU.Boxing(l0 + r0, type), new[] { lhs, rhs });
         }
 
         Vars = new[] { lhs, rhs };

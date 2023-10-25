@@ -282,7 +282,7 @@ class Compiler:
 
 def check_target(target: str):
     def test_target(target: str):
-        return target in ["cpu", "k510", "k230"]
+        return target in ["cpu", "k510", "k230", "xpu"]
 
     def target_exists(target: str):
         return _nncase.Target.exists(target)
