@@ -66,10 +66,10 @@ namespace Nncase.Importer.TFLite
                 : Expand(Cast(0, GetDataType(GetInputTensor(op, 0).Type)), new[] { otherTensor.Shape(0) }).Evaluate().AsTensor();
 
             var matmul = MatMul(lhs, rhs);
-            List<string> outputNames = new() { GetInputTensor(op, 0).Name + "_matmul" };
+            List<string> outputNames = new() { GetOutputTensor(op, 0).Name + "_matmul" };
             matmul.Metadata.OutputNames = outputNames;
             outputNames.Clear();
-            outputNames.Add(GetInputTensor(op, 0).Name + "_bias");
+            outputNames.Add(GetOutputTensor(op, 0).Name);
             bias.Metadata.OutputNames = outputNames;
             var mm = matmul + bias;
 
