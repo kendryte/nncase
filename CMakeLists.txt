@@ -263,5 +263,7 @@ if(BUILD_TESTING)
 endif()
 
 # Modules
+if (NOT MSVC)
 add_subdirectory(modules/cpu)
+endif()
 #add_subdirectory(modules/vulkan)
