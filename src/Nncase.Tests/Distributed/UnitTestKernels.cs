@@ -38,6 +38,7 @@ public sealed class UnitTestKernels : TestClassBase
     public static readonly TheoryData<IDistributedKernelCase> Cases = new()
     {
         new BinaryCase1(),
+        new SoftmaxCase1(),
     };
 
     public UnitTestKernels()
@@ -56,8 +57,9 @@ public sealed class UnitTestKernels : TestClassBase
         // convert fusion to prim func
         var primBody = new List<Expr>();
         var visitor = new Passes.Tile.TIRConvertVisitor(primBody);
-        visitor.Visit(kernelCase.Fusion);
-        var primFunc = TIR.T.PrimFunc(kernelCase.Fusion.Name, kernelCase.Fusion.ModuleKind, visitor.InputBuffers.Concat(visitor.OutputBuffers).ToArray()).Body(primBody.ToArray()).Build();
+        var fusion = kernelCase.Fusion;
+        visitor.Visit(fusion);
+        var primFunc = TIR.T.PrimFunc(fusion.Name, fusion.ModuleKind, visitor.InputBuffers.Concat(visitor.OutputBuffers).ToArray()).Body(primBody.ToArray()).Build();
         var primWrapper = new PrimFunctionWrapper(primFunc, primFunc.Parameters.Length - 1);
         var main = new Function(new Call(primWrapper, kernelCase.Vars.ToArray()), kernelCase.Vars.ToArray());
 
@@ -65,7 +67,7 @@ public sealed class UnitTestKernels : TestClassBase
         module.Add(primWrapper);
         module.Add(primFunc);
         var inputs = kernelCase.Inputs.ToArray();
-        var output = kernelCase.Fusion.Body.Evaluate(kernelCase.Vars.Zip(inputs).ToDictionary(p => p.First, p => (IValue)Value.FromTensor(p.Second))).AsTensor();
+        var output = fusion.Body.Evaluate(kernelCase.Vars.Zip(inputs).ToDictionary(p => p.First, p => (IValue)Value.FromTensor(p.Second))).AsTensor();
 
 #if DEBUG
         for (var i = 0; i < inputs.Length; i++)
@@ -112,7 +114,7 @@ internal sealed class BinaryCase1 : IDistributedKernelCase
         var lhs = new Var(type);
         var rhs = new Var(type);
         {
-            var l0 = IR.F.CPU.Boxing(lhs, new DistributedType(type, new SBP[] { SBP.S(2), SBP.B }, place));
+            var l0 = IR.F.CPU.Boxing(lhs, new DistributedType(type, new SBP[] { SBP.S(2), SBP.S(2) }, place));
             var r0 = IR.F.CPU.Boxing(rhs, new DistributedType(type, new SBP[] { SBP.S(2), SBP.S(2) }, place));
             Fusion = new Fusion(Name + "_fusion", CPUTarget.Kind, IR.F.CPU.Boxing(l0 + r0, type), new[] { lhs, rhs });
         }
@@ -123,6 +125,44 @@ internal sealed class BinaryCase1 : IDistributedKernelCase
     public string Name => "BinaryCase1";
 
     public Fusion Fusion { get; }
+
+    public IReadOnlyList<Var> Vars { get; }
+
+    public IReadOnlyList<Tensor> Inputs
+    {
+        get
+        {
+            return Vars.Select(v => IR.F.Random.Uniform(v.CheckedDataType, 30, 0, 1, v.CheckedShape).Evaluate().AsTensor()).ToArray();
+        }
+    }
+
+    public override string ToString() => Name;
+}
+
+internal sealed class SoftmaxCase1 : IDistributedKernelCase
+{
+    public SoftmaxCase1()
+    {
+        var type = new TensorType(DataTypes.Float32, new[] { 16, 1024, 1024 });
+        var input = new Var(type);
+        Vars = new[] { input };
+    }
+
+    public string Name => "SoftmaxCase1";
+
+    public Fusion Fusion
+    {
+        get
+        {
+            var type = new TensorType(DataTypes.Float32, new[] { 16, 1024, 1024 });
+            var place = new Placement(Placement.DeviceKind.CPU, new[] { 8, 4 }, "bt");
+            var axis = 2L;
+            {
+                var input0 = IR.F.CPU.Boxing(Vars[0], new DistributedType(type, new SBP[] { SBP.S(0), SBP.S(1) }, place));
+                return new Fusion(Name + "_fusion", CPUTarget.Kind, IR.F.CPU.Boxing(IR.F.NN.Softmax(input0, axis), type), new[] { Vars[0] });
+            }
+        }
+    }
 
     public IReadOnlyList<Var> Vars { get; }
 
