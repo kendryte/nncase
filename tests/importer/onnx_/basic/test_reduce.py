@@ -22,7 +22,7 @@ from onnx_test_runner import OnnxTestRunner
 import numpy as np
 
 
-def _make_module(in_shape, reduce_op, axes, keepdims, op_version):
+def _make_module(in_shape, in_datatype, reduce_op, axes, keepdims, op_version):
     inputs = []
     outputs = []
     initializers = []
@@ -30,14 +30,14 @@ def _make_module(in_shape, reduce_op, axes, keepdims, op_version):
     nodes = []
 
     # input
-    input = helper.make_tensor_value_info('input', TensorProto.FLOAT, in_shape)
+    input = helper.make_tensor_value_info('input', in_datatype, in_shape)
     inputs.append('input')
 
     # output
     kd = 1 if keepdims is None else keepdims
     data = np.ones(in_shape)
     out_shape = np.prod(data, axis=tuple(axes), keepdims=kd).shape
-    output = helper.make_tensor_value_info('output', TensorProto.FLOAT, out_shape)
+    output = helper.make_tensor_value_info('output', in_datatype, out_shape)
     outputs.append('output')
 
     # axes
@@ -71,6 +71,11 @@ def _make_module(in_shape, reduce_op, axes, keepdims, op_version):
 
 in_shapes = [
     [1, 3, 16, 16]
+]
+
+in_datatypes = [
+    TensorProto.FLOAT,
+    TensorProto.FLOAT16
 ]
 
 reduce_ops = [
@@ -108,13 +113,14 @@ op_version_lists = [
 
 
 @pytest.mark.parametrize('in_shape', in_shapes)
+@pytest.mark.parametrize('in_datatype', in_datatypes)
 @pytest.mark.parametrize('reduce_op', reduce_ops)
 @pytest.mark.parametrize('axes', axes_list)
 @pytest.mark.parametrize('keepdims', keepdims_lists)
 @pytest.mark.parametrize('op_version', op_version_lists)
-def test_reduce(in_shape, reduce_op, axes, keepdims, request, op_version):
+def test_reduce(in_shape, in_datatype, reduce_op, axes, keepdims, request, op_version):
     if len(axes) <= len(in_shape):
-        model_def = _make_module(in_shape, reduce_op, axes, keepdims, op_version)
+        model_def = _make_module(in_shape, in_datatype, reduce_op, axes, keepdims, op_version)
 
         runner = OnnxTestRunner(request.node.name)
         model_file = runner.from_onnx_helper(model_def)
