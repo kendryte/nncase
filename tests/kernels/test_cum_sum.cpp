@@ -73,13 +73,13 @@ TEST_P(CumSumTest, cum_sum) {
                         .expect("create tensor failed");
 
     // actual
-    float_t exclusive[] = {0};
+    float exclusive[] = {0};
     auto exclusive_ptr = hrt::create(nncase::dt_float32, {1},
                                      {reinterpret_cast<gsl::byte *>(exclusive),
                                       sizeof(exclusive)},
                                      true, host_runtime_tensor::pool_cpu_only)
                              .expect("create tensor failed");
-    float_t reverse[] = {0};
+    float reverse[] = {0};
     auto reverse_ptr =
         hrt::create(nncase::dt_float32, {1},
                     {reinterpret_cast<gsl::byte *>(reverse), sizeof(reverse)},
