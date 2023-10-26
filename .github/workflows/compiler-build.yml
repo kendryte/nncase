@@ -211,8 +211,8 @@ jobs:
 
       - name: Set up test environment (Linux)
         run: |
-          wget https://sdk.lunarg.com/sdk/download/${VULKANSDK_VER}/linux/vulkansdk-linux-x86_64-${VULKANSDK_VER}.tar.gz -O vulkansdk.tar.gz
-          tar xf vulkansdk.tar.gz
+          wget https://sdk.lunarg.com/sdk/download/${VULKANSDK_VER}/linux/vulkansdk-linux-x86_64-${VULKANSDK_VER}.tar.xz -O vulkansdk.tar.xz
+          tar xf vulkansdk.tar.xz
           sudo cp -P ${VULKANSDK_VER}/x86_64/lib/libvulkan.so* /usr/local/lib/
           wget https://github.com/sunnycase/swiftshader/releases/download/v1.0/swiftshader-ubuntu-18.04-x86_64.zip -O swiftshader.zip
           unzip swiftshader.zip
