@@ -225,8 +225,8 @@ jobs:
       - name: Set up test environment (Windows)
         shell: pwsh
         run: |
-          Invoke-WebRequest -Uri https://sdk.lunarg.com/sdk/download/${env:VULKANSDK_VER}/windows/VulkanSDK-${env:VULKANSDK_VER}-Installer.exe -O VulkanSDK-Installer.exe
-          .\VulkanSDK-Installer.exe /S
+          # Invoke-WebRequest -Uri https://sdk.lunarg.com/sdk/download/${env:VULKANSDK_VER}/windows/VulkanSDK-${env:VULKANSDK_VER}-Installer.exe -O VulkanSDK-Installer.exe
+          # .\VulkanSDK-Installer.exe /S
           Invoke-WebRequest -Uri https://github.com/sunnycase/swiftshader/releases/download/v1.0/swiftshader-windows-2019-x86_64.zip -OutFile swiftshader.zip
           Expand-Archive swiftshader.zip
           Copy-Item swiftshader\lib\vk_swiftshader_icd.json swiftshader\bin\
