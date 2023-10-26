@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Nncase.IR;
+using Nncase.IR.Math;
 using Nncase.Passes;
 using Nncase.PatternMatch;
 using static Nncase.IR.F.NN;
@@ -32,7 +33,7 @@ public sealed partial class BatchNormToBinary : IRewriteRule
         IsTensorConst("var"),
         IsTensorConst("eps"));
 
-    private Expr? GetReplace(Expr input, Tensor<float> gamma, Tensor<float> beta, Tensor<float> mean, Tensor<float> var, Tensor<float> eps)
+    private Expr? GetReplace(Expr input, Tensor<float> gamma, Tensor<float> beta, Tensor<float> mean, Tensor<float> var, Tensor<float> eps, Expr bn, Call bnCall)
     {
         if (input.CheckedShape.Rank <= 1)
         {
@@ -45,6 +46,13 @@ public sealed partial class BatchNormToBinary : IRewriteRule
         var scaleBn = IR.F.Math.Div(gamma, IR.F.Math.Sqrt(IR.F.Math.Add(var, eps)));
         var biasBn = IR.F.Math.Sub(beta, IR.F.Math.Mul(gamma, IR.F.Math.Div(mean, IR.F.Math.Sqrt(IR.F.Math.Add(var, eps)))));
 
-        return IR.F.Math.Add(IR.F.Math.Mul(input, Reshape(scaleBn, bnShape)), Reshape(biasBn, bnShape));
+        var matmul = IR.F.Math.Mul(input, Reshape(scaleBn, bnShape));
+        List<string> outputNames = new() { bnCall.Metadata.OutputNames?[0] + "_BN_Matmul" };
+        matmul.Metadata.OutputNames = outputNames;
+        outputNames.Clear();
+        outputNames.Add(bnCall.Metadata.OutputNames?[0] + "_BN_Binary");
+        var binary = IR.F.Math.Add(matmul, Reshape(biasBn, bnShape));
+        binary.Metadata.OutputNames = outputNames;
+        return binary;
     }
 }

@@ -25,12 +25,15 @@ using namespace nncase::runtime::stackvm;
 using namespace nncase::kernels;
 using namespace nncase::kernels::stackvm;
 
-result<void> nncase::kernels::stackvm::reference::prelu(
-    const float *input, const float *slope_mem, float *output,
-    gsl::span<const size_t> in_shape, gsl::span<const size_t> input_strides,
-    gsl::span<const size_t> slope_shape, gsl::span<const size_t> slope_strides,
-    gsl::span<const size_t> out_shape, gsl::span<const size_t> out_strides,
-    NNCASE_UNUSED kernel_context &context) {
+template <typename T>
+result<void> prelu_impl(const T *input, const T *slope_mem, T *output,
+                        gsl::span<const size_t> in_shape,
+                        gsl::span<const size_t> input_strides,
+                        gsl::span<const size_t> slope_shape,
+                        gsl::span<const size_t> slope_strides,
+                        gsl::span<const size_t> out_shape,
+                        gsl::span<const size_t> out_strides,
+                        NNCASE_UNUSED kernel_context &context) {
     return apply(out_shape, [&](gsl::span<const size_t> index) -> result<void> {
         const auto in_index =
             kernels::detail::get_reduced_offset(index, in_shape);
@@ -38,7 +41,54 @@ result<void> nncase::kernels::stackvm::reference::prelu(
             kernels::detail::get_reduced_offset(index, slope_shape);
         const auto slope = slope_mem[offset(slope_strides, slope_index)];
         const auto x = input[offset(input_strides, in_index)];
-        output[offset(out_strides, index)] = x < 0 ? slope * x : x;
+        output[offset(out_strides, index)] =
+            x < static_cast<T>(0) ? slope * x : x;
         return ok();
     });
+}
+
+#define PRELU_IMPL(type)                                                       \
+    return prelu_impl(IN_CAST(type, input), IN_CAST(type, slope_mem),          \
+                      OUT_CAST(type, output), in_shape, input_strides,         \
+                      slope_shape, slope_strides, out_shape, out_strides,      \
+                      context);
+
+#define TYPE_SELECT_PRELU(_typecode, _impl)                                    \
+    switch (_typecode) {                                                       \
+    case dt_float32:                                                           \
+        _impl(float);                                                          \
+    case dt_float16:                                                           \
+        _impl(half);                                                           \
+    case dt_bfloat16:                                                          \
+        _impl(bfloat16);                                                       \
+    case dt_int8:                                                              \
+        _impl(int8_t);                                                         \
+    case dt_int16:                                                             \
+        _impl(int16_t);                                                        \
+    case dt_int32:                                                             \
+        _impl(int32_t);                                                        \
+    case dt_int64:                                                             \
+        _impl(int64_t);                                                        \
+    case dt_uint8:                                                             \
+        _impl(uint8_t);                                                        \
+    case dt_uint16:                                                            \
+        _impl(uint16_t);                                                       \
+    case dt_uint32:                                                            \
+        _impl(uint32_t);                                                       \
+    case dt_uint64:                                                            \
+        _impl(uint64_t);                                                       \
+    case dt_float64:                                                           \
+        _impl(double);                                                         \
+    default:                                                                   \
+        return err(std::errc::not_supported);                                  \
+    }
+
+result<void> nncase::kernels::stackvm::reference::prelu(
+    typecode_t typecode, const gsl::byte *input, const gsl::byte *slope_mem,
+    gsl::byte *output, gsl::span<const size_t> in_shape,
+    gsl::span<const size_t> input_strides, gsl::span<const size_t> slope_shape,
+    gsl::span<const size_t> slope_strides, gsl::span<const size_t> out_shape,
+    gsl::span<const size_t> out_strides,
+    NNCASE_UNUSED kernel_context &context) {
+    TYPE_SELECT_PRELU(typecode, PRELU_IMPL);
 }
