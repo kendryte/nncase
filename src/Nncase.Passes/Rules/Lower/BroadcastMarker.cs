@@ -48,7 +48,7 @@ public partial class BroadcastInputMarker : RewriteRule<Pattern>
         var newArgs = new Expr[outerParams.Count];
         for (int i = 0; i < outerParams.Count; i++)
         {
-            if (result.GetValueOrDefault($"input_marker_{i}") is Marker marker && result[$"marker_target_{i}"] is Expr target && result[$"marker_attribute_{i}"] is Marker range)
+            if (result.GetValueOrDefault($"input_marker_{i}") is Marker marker && result[$"marker_target_{i}"] is Expr target && result[$"marker_attribute_{i}"] is Expr range)
             {
                 newArgs[i] = IR.F.Math.RangeOfMarker(outerParams[i], range).With(mixQuantInfo: marker.MixQuantInfo, adaQuantInfo: marker.AdaQuantInfo);
             }
