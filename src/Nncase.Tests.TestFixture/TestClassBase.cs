@@ -38,7 +38,7 @@ public abstract class TestClassBase : IDisposable
     /// <summary>
     /// Gets or sets default target name.
     /// </summary>
-    public virtual string DefaultTargetName { get; set; } = "stackvm";
+    public virtual string DefaultTargetName { get; set; } = IR.Callable.StackVMModuleKind;
 
     /// <summary>
     /// Gets test output root.
