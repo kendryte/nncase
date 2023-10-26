@@ -44,6 +44,14 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
             {
                 return Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<uint>(), rhs.ToScalar<uint>())));
             }
+            else if (lhs.ElementType is PointerType && (rhs.ElementType == DataTypes.UInt32 || rhs.ElementType == DataTypes.UInt64))
+            {
+                return Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<ulong>(), rhs.ToScalar<ulong>())));
+            }
+            else if ((lhs.ElementType == DataTypes.UInt32 || lhs.ElementType == DataTypes.UInt64) && rhs.ElementType is PointerType)
+            {
+                return Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<ulong>(), rhs.ToScalar<ulong>())));
+            }
             else
             {
                 return Ort_compute(binary, lhs, rhs);
@@ -226,6 +234,18 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
         _ => throw new ArgumentOutOfRangeException(nameof(op)),
     };
 
+    private ulong Compute(BinaryOp op, ulong a, ulong b) => op switch
+    {
+        BinaryOp.Add => a + b,
+        BinaryOp.Sub => a - b,
+        BinaryOp.Mul => a * b,
+        BinaryOp.Div => a / b,
+        BinaryOp.Mod => a % b,
+        BinaryOp.Min => System.Math.Min(a, b),
+        BinaryOp.Max => System.Math.Max(a, b),
+        _ => throw new ArgumentOutOfRangeException(nameof(op)),
+    };
+
     private bool Compute(BinaryOp op, bool a, bool b) => op switch
     {
         BinaryOp.LogicalAnd => a & b,
@@ -305,26 +325,24 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
             return new InvalidType("The Binary Logical Only Accept The Boolean Datatype.");
         }
 
-        if (lhs is { DType: PointerType { ElemType: var letype } } && rhs is { DType: PointerType { ElemType: var retype } })
+        if (lhs is { DType: PointerType { ElemType: var letype } })
         {
-            if (letype == retype)
+            if ((rhs is { DType: PointerType { ElemType: var other } } && letype == other) || rhs.DType == DataTypes.UInt64 || rhs.DType == DataTypes.UInt32)
             {
                 return TensorType.Pointer(letype);
             }
-            else
+
+            return new InvalidType($"The Binary Lhs {CompilerServices.Print(lhs)} != Rhs {CompilerServices.Print(rhs)}");
+        }
+
+        if (rhs is { DType: PointerType { ElemType: var retype } })
+        {
+            if ((lhs is { DType: PointerType { ElemType: var other } } && retype == other) || lhs.DType == DataTypes.UInt64 || lhs.DType == DataTypes.UInt32)
             {
-                return new InvalidType($"The Binary Lhs {CompilerServices.Print(lhs)} != Rhs {CompilerServices.Print(rhs)}");
+                return TensorType.Pointer(retype);
             }
-        }
 
-        if (lhs is { DType: PointerType { ElemType: var lt } } && rhs.DType == DataTypes.Int32)
-        {
-            return TensorType.Pointer(lt);
-        }
-
-        if (lhs.DType == DataTypes.Int32 && rhs is { DType: PointerType { ElemType: var rt } })
-        {
-            return TensorType.Pointer(rt);
+            return new InvalidType($"The Binary Lhs {CompilerServices.Print(lhs)} != Rhs {CompilerServices.Print(rhs)}");
         }
 
         return TypeInference.BroadcastType(lhs, rhs);

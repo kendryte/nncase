@@ -83,6 +83,11 @@ public static class OrtKIExtensions
             return type;
         }
 
+        if (dt is PointerType)
+        {
+            return OrtDataType.UInt64;
+        }
+
         throw new ArgumentOutOfRangeException("Unsupported DataType: " + dt);
     }
 

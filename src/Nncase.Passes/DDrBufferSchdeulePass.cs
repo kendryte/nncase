@@ -113,6 +113,25 @@ internal sealed class DDrBufferRewriter : ExprRewriter
 
     public PrimFunction Entry => (PrimFunction)VisitRoot!;
 
+    protected override Expr RewriteLeafBuffer(TIR.Buffer expr)
+    {
+        if (expr.MemSpan is { Location: TIR.MemoryLocation.Input or TIR.MemoryLocation.Output, Start: None, Size: TensorConst size } memSpan)
+        {
+            // input/output write into the FunctionUsage
+            if (!_functionUsage.TryGetValue(memSpan.Location, out var start))
+            {
+                start = 0;
+            }
+
+            _functionUsage[memSpan.Location] = start + size.Value.ToScalar<int>();
+            Changed = true;
+
+            return expr.With(memSpan: memSpan.With(start: Tensor.FromPointer((ulong)start, new PointerType(expr.ElemType, expr.Dimensions.ToArray().Select(d => ((TensorConst)d).Value.ToScalar<int>()).ToArray()))));
+        }
+
+        return expr;
+    }
+
     protected override TIR.MemSpan RewriteLeafMemSpan(TIR.MemSpan memSpan)
     {
         if (memSpan is { Location: MemoryLocation.Rdata, Start: Call { Target: IR.Buffers.DDrOf, Arguments: var arg } } && arg[0] is Const { ValueType: TensorType constType } @const)
@@ -147,26 +166,6 @@ internal sealed class DDrBufferRewriter : ExprRewriter
             return memSpan.With(new TensorConst(Tensor.FromPointer((ulong)memRange.Min, new PointerType(constType.DType, constType.Shape))), memRange.Max - memRange.Min);
         }
 
-        // else if (memSpan.Location is MemoryLocation.Data)
-        // {
-        //     data write into the FunctionUsage
-        //     if (!_functionRdatas.Contains(physical))
-        //     {
-        //         if (!_functionUsage.TryGetValue(physical.Location, out var start))
-        //         {
-        //             start = 0;
-        //         }
-
-        // physical.Start = start;
-        //         _functionUsage[physical.Location] = start + physical.Size;
-        //         _functionRdatas.Add(physical);
-        //         Changed = true;
-        //     }
-        // }
-        // else if (memSpan.Location is MemoryLocation.SharedData)
-        // {
-        //     throw new NotSupportedException("Current Not Support!");
-        // }
         return memSpan;
     }
 
