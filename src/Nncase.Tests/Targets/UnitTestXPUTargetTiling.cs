@@ -128,7 +128,7 @@ internal sealed class TilingCaseSlice : TheoryData<Function, Tensor[]>
         Var fin_a;
         {
             fin_a = new Var("fin_a", new TensorType(DataTypes.Float32, shape));
-            var v1 = new Call(new IR.CPU.CPUKernelOp(new IR.Tensors.Slice()), fin_a, new[] { 64 }, new[] { 128 }, new[] { 3 }, new[] { 1 });
+            var v1 = new Call(new IR.XPU.XPUKernelOp(new IR.Tensors.Slice()), fin_a, new[] { 64 }, new[] { 128 }, new[] { 3 }, new[] { 1 });
             fusion = new Fusion("xpu", v1, fin_a);
         }
 
@@ -158,7 +158,7 @@ internal sealed class TilingCaseConcat : TheoryData<Function, Tensor[]>
         {
             fin_a = new Var("fin_a", new TensorType(DataTypes.Float32, in_a_shape));
             fin_b = new Var("fin_b", new TensorType(DataTypes.Float32, in_b_shape));
-            var v1 = new Call(new IR.CPU.CPUKernelOp(new IR.Tensors.Concat(3)), new IR.Tuple(fin_a, fin_b));
+            var v1 = new Call(new IR.XPU.XPUKernelOp(new IR.Tensors.Concat(3)), new IR.Tuple(fin_a, fin_b));
             fusion = new Fusion("xpu", v1, fin_a, fin_b);
         }
 
@@ -190,10 +190,10 @@ internal sealed class TilingCaseMatmulLayerNorm : TheoryData<Function, Tensor[]>
             _ = IR.F.Random.Normal(DataTypes.Float32, new[] { 384, 128 }).Evaluate().AsTensor();
 
             var fin = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 384, 8192 }));
-            var v0 = new Call(new IR.CPU.CPUKernelOp(new IR.NN.LayerNorm(2, 1e-6f, false)), fin, scale, bias);
-            var v1 = new Call(new IR.CPU.CPUKernelOp(new IR.Tensors.Unsqueeze()), v0, new[] { 0 });
-            var v2 = new Call(new IR.CPU.CPUKernelOp(new IR.Math.MatMul()), v1, weights);
-            var v3 = new Call(new IR.CPU.CPUKernelOp(new IR.Math.Unary(UnaryOp.Exp)), v2);
+            var v0 = new Call(new IR.XPU.XPUKernelOp(new IR.NN.LayerNorm(2, 1e-6f, false)), fin, scale, bias);
+            var v1 = new Call(new IR.XPU.XPUKernelOp(new IR.Tensors.Unsqueeze()), v0, new[] { 0 });
+            var v2 = new Call(new IR.XPU.XPUKernelOp(new IR.Math.MatMul()), v1, weights);
+            var v3 = new Call(new IR.XPU.XPUKernelOp(new IR.Math.Unary(UnaryOp.Exp)), v2);
 
             fusion = new Fusion("xpu", v3, fin);
         }
@@ -219,20 +219,20 @@ internal sealed class TilingCaseMHA : TheoryData<Function, Tensor[]>
 
             var fin = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 384, 8192 }));
             var fin2 = new Var("input2", new TensorType(DataTypes.Int64, new[] { 1, 384 }));
-            var v0 = new Call(new IR.CPU.CPUKernelOp(new IR.NN.LayerNorm(2, 1e-6f, false)), fin, scale, bias);
-            var v1 = new Call(new IR.CPU.CPUKernelOp(new IR.Tensors.Unsqueeze()), v0, new[] { 0 });
-            var v2 = new Call(new IR.CPU.CPUKernelOp(new IR.Math.MatMul()), v1, weights);
-            var v3 = new Call(new IR.CPU.CPUKernelOp(new IR.Tensors.Slice()), v2, new[] { 64 }, new[] { 128 }, new[] { 3 }, new[] { 1 });
-            var v4 = new Call(new IR.CPU.CPUKernelOp(new IR.Math.Unary(UnaryOp.Neg)), v3);
-            var v5 = new Call(new IR.CPU.CPUKernelOp(new IR.Tensors.Slice()), v2, new[] { 0 }, new[] { 64 }, new[] { 3 }, new[] { 1 });
-            var v6 = new Call(new IR.CPU.CPUKernelOp(new IR.Tensors.Concat(3)), new IR.Tuple(v4, v5));
+            var v0 = new Call(new IR.XPU.XPUKernelOp(new IR.NN.LayerNorm(2, 1e-6f, false)), fin, scale, bias);
+            var v1 = new Call(new IR.XPU.XPUKernelOp(new IR.Tensors.Unsqueeze()), v0, new[] { 0 });
+            var v2 = new Call(new IR.XPU.XPUKernelOp(new IR.Math.MatMul()), v1, weights);
+            var v3 = new Call(new IR.XPU.XPUKernelOp(new IR.Tensors.Slice()), v2, new[] { 64 }, new[] { 128 }, new[] { 3 }, new[] { 1 });
+            var v4 = new Call(new IR.XPU.XPUKernelOp(new IR.Math.Unary(UnaryOp.Neg)), v3);
+            var v5 = new Call(new IR.XPU.XPUKernelOp(new IR.Tensors.Slice()), v2, new[] { 0 }, new[] { 64 }, new[] { 3 }, new[] { 1 });
+            var v6 = new Call(new IR.XPU.XPUKernelOp(new IR.Tensors.Concat(3)), new IR.Tuple(v4, v5));
 
-            var v7 = new Call(new IR.CPU.CPUKernelOp(new IR.Tensors.Gather(0)), gdata, fin2);
-            var v8 = new Call(new IR.CPU.CPUKernelOp(new IR.Tensors.Unsqueeze()), v7, new[] { 0 });
+            var v7 = new Call(new IR.XPU.XPUKernelOp(new IR.Tensors.Gather(0)), gdata, fin2);
+            var v8 = new Call(new IR.XPU.XPUKernelOp(new IR.Tensors.Unsqueeze()), v7, new[] { 0 });
 
-            var v9 = new Call(new IR.CPU.CPUKernelOp(new IR.Math.Binary(BinaryOp.Mul)), v2, v8);
-            var v10 = new Call(new IR.CPU.CPUKernelOp(new IR.Math.Binary(BinaryOp.Mul)), v6, v8);
-            var v11 = new Call(new IR.CPU.CPUKernelOp(new IR.Math.Binary(BinaryOp.Add)), v9, v10);
+            var v9 = new Call(new IR.XPU.XPUKernelOp(new IR.Math.Binary(BinaryOp.Mul)), v2, v8);
+            var v10 = new Call(new IR.XPU.XPUKernelOp(new IR.Math.Binary(BinaryOp.Mul)), v6, v8);
+            var v11 = new Call(new IR.XPU.XPUKernelOp(new IR.Math.Binary(BinaryOp.Add)), v9, v10);
 
             fusion = new Fusion("xpu", v11, fin, fin2);
         }
@@ -335,7 +335,7 @@ internal sealed class TilingCaseMatmul : TheoryData<Function, Tensor[]>
         Var fin;
         {
             fin = new Var("input", new TensorType(DataTypes.Float32, lhsShape));
-            var v0 = new Call(new IR.CPU.CPUKernelOp(new IR.Math.MatMul()), fin, rhs);
+            var v0 = new Call(new IR.XPU.XPUKernelOp(new IR.Math.MatMul()), fin, rhs);
             fusion = new Fusion("xpu", v0, fin);
         }
 
@@ -369,8 +369,8 @@ internal sealed class TilingCaseMatmulUnary : TheoryData<Function, Tensor[]>
         Var fin;
         {
             fin = new Var("input", new TensorType(DataTypes.Float32, lhsShape));
-            var v0 = new Call(new IR.CPU.CPUKernelOp(new IR.Math.MatMul()), fin, rhs);
-            var v1 = new Call(new IR.CPU.CPUKernelOp(new IR.Math.Unary(UnaryOp.Neg)), v0);
+            var v0 = new Call(new IR.XPU.XPUKernelOp(new IR.Math.MatMul()), fin, rhs);
+            var v1 = new Call(new IR.XPU.XPUKernelOp(new IR.Math.Unary(UnaryOp.Neg)), v0);
             fusion = new Fusion("xpu", v1, fin);
         }
 
@@ -406,7 +406,7 @@ internal sealed class TilingCaseLayerNorm : TheoryData<Function, Tensor[]>
         Var fin;
         {
             fin = new Var("input", new TensorType(DataTypes.Float32, shape));
-            var v0 = new Call(new IR.CPU.CPUKernelOp(new IR.NN.LayerNorm(axis, 1e-5f, false)), fin, scale, bias);
+            var v0 = new Call(new IR.XPU.XPUKernelOp(new IR.NN.LayerNorm(axis, 1e-5f, false)), fin, scale, bias);
             fusion = new Fusion("xpu", v0, fin);
         }
 
@@ -469,7 +469,7 @@ internal sealed class TilingCaseInstanceNorm : TheoryData<Function, Tensor[]>
         Var fin;
         {
             fin = new Var("input", new TensorType(DataTypes.Float32, shape));
-            var v0 = new Call(new IR.CPU.CPUKernelOp(new IR.NN.InstanceNormalization()), fin, scale, bias, 1e-5);
+            var v0 = new Call(new IR.XPU.XPUKernelOp(new IR.NN.InstanceNormalization()), fin, scale, bias, 1e-5);
             fusion = new Fusion("xpu", v0, fin);
         }
 
@@ -505,7 +505,7 @@ internal sealed class TilingCaseGather : TheoryData<Function, Tensor[]>
         Var fin;
         {
             fin = new Var("input", new TensorType(DataTypes.Float32, inputShape));
-            var v0 = new Call(new IR.CPU.CPUKernelOp(new IR.Tensors.Gather(axis)), fin, indices);
+            var v0 = new Call(new IR.XPU.XPUKernelOp(new IR.Tensors.Gather(axis)), fin, indices);
             fusion = new Fusion("xpu", v0, fin);
         }
 
@@ -566,7 +566,7 @@ internal sealed class TilingCaseSoftmax : TheoryData<Function, Tensor[]>
         Var fin;
         {
             fin = new Var("input", new TensorType(DataTypes.Float32, inputShape));
-            var v0 = new Call(new IR.CPU.CPUKernelOp(new IR.NN.Softmax()), fin, axis);
+            var v0 = new Call(new IR.XPU.XPUKernelOp(new IR.NN.Softmax()), fin, axis);
             fusion = new Fusion("xpu", v0, fin);
         }
 
@@ -595,7 +595,7 @@ internal sealed class TilingCaseTranspose : TheoryData<Function, Tensor[]>
         Var fin_a;
         {
             fin_a = new Var("fin_a", new TensorType(DataTypes.Float32, shape));
-            var v1 = new Call(new IR.CPU.CPUKernelOp(new IR.Tensors.Transpose()), fin_a, perm);
+            var v1 = new Call(new IR.XPU.XPUKernelOp(new IR.Tensors.Transpose()), fin_a, perm);
             fusion = new Fusion("xpu", v1, fin_a);
         }
 
@@ -621,7 +621,7 @@ internal sealed class TilingCaseReshape1 : TheoryData<Function, Tensor[]>
         Var fin;
         {
             fin = new Var("input", new TensorType(DataTypes.Float32, inputShape));
-            var v0 = new Call(new IR.CPU.CPUKernelOp(new IR.Tensors.Reshape()), fin, newShape);
+            var v0 = new Call(new IR.XPU.XPUKernelOp(new IR.Tensors.Reshape()), fin, newShape);
             fusion = new Fusion("xpu", v0, fin);
         }
 
@@ -650,7 +650,7 @@ internal sealed class TilingCaseReshape2 : TheoryData<Function, Tensor[]>
         Var fin;
         {
             fin = new Var("input", new TensorType(DataTypes.Float32, inputShape));
-            var v0 = new Call(new IR.CPU.CPUKernelOp(new IR.Tensors.Reshape()), fin, newShape);
+            var v0 = new Call(new IR.XPU.XPUKernelOp(new IR.Tensors.Reshape()), fin, newShape);
             fusion = new Fusion("xpu", v0, fin);
         }
 
@@ -678,7 +678,7 @@ internal sealed class TilingCaseReduceArg : TheoryData<Function, Tensor[]>
         Var fin;
         {
             fin = new Var("input", new TensorType(DataTypes.Float32, inputShape));
-            var v0 = new Call(new IR.CPU.CPUKernelOp(new IR.Math.ReduceArg(ReduceArgOp.ArgMax, DataTypes.Int64)), fin, 1, false, false);
+            var v0 = new Call(new IR.XPU.XPUKernelOp(new IR.Math.ReduceArg(ReduceArgOp.ArgMax, DataTypes.Int64)), fin, 1, false, false);
             fusion = new Fusion("xpu", v0, fin);
         }
 
@@ -706,7 +706,7 @@ internal sealed class TilingCaseReduceArg2 : TheoryData<Function, Tensor[]>
         Var fin;
         {
             fin = new Var("input", new TensorType(DataTypes.Float32, inputShape));
-            var v0 = new Call(new IR.CPU.CPUKernelOp(new IR.Math.ReduceArg(ReduceArgOp.ArgMax, DataTypes.Int64)), fin, 2, true, false);
+            var v0 = new Call(new IR.XPU.XPUKernelOp(new IR.Math.ReduceArg(ReduceArgOp.ArgMax, DataTypes.Int64)), fin, 2, true, false);
             fusion = new Fusion("xpu", v0, fin);
         }
 
@@ -768,7 +768,7 @@ internal sealed class TilingCaseConv2D : TheoryData<Function, Tensor[]>
         Var fin;
         {
             fin = new Var("input", new TensorType(DataTypes.Float32, inputShape));
-            var v0 = new Call(new IR.CPU.CPUKernelOp(new IR.NN.Conv2D(PadMode.Constant)), fin, weights, bias, stride, padding, dilation, groups, fusedClamp);
+            var v0 = new Call(new IR.XPU.XPUKernelOp(new IR.NN.Conv2D(PadMode.Constant)), fin, weights, bias, stride, padding, dilation, groups, fusedClamp);
             fusion = new Fusion("xpu", v0, fin);
         }
 
@@ -796,7 +796,7 @@ internal sealed class TilingCaseResize : TheoryData<Function, Tensor[]>
         Var fin;
         {
             fin = new Var("input", new TensorType(DataTypes.Float32, shape));
-            var v0 = new Call(new IR.CPU.CPUKernelOp(new IR.Imaging.ResizeImage(ImageResizeMode.NearestNeighbor, ImageResizeTransformationMode.Asymmetric, ImageResizeNearestMode.Floor, false)), fin, None.Default, new[] { 1, 512, 128, 128 }, None.Default, None.Default, None.Default);
+            var v0 = new Call(new IR.XPU.XPUKernelOp(new IR.Imaging.ResizeImage(ImageResizeMode.NearestNeighbor, ImageResizeTransformationMode.Asymmetric, ImageResizeNearestMode.Floor, false)), fin, None.Default, new[] { 1, 512, 128, 128 }, None.Default, None.Default, None.Default);
             fusion = new Fusion("xpu", v0, fin);
         }
 
@@ -829,7 +829,7 @@ internal sealed class TilingCaseCast : TheoryData<Function, Tensor[]>
         Var fin;
         {
             fin = new Var("input", new TensorType(DataTypes.Int64, shape));
-            var v0 = new Call(new IR.CPU.CPUKernelOp(new IR.Tensors.Cast(DataTypes.Float32, CastMode.KDefault)), fin);
+            var v0 = new Call(new IR.XPU.XPUKernelOp(new IR.Tensors.Cast(DataTypes.Float32, CastMode.KDefault)), fin);
             fusion = new Fusion("xpu", v0, fin);
         }
 
@@ -913,7 +913,7 @@ internal sealed class TilingCaseExpand : TheoryData<Function, Tensor[]>
         Var fin;
         {
             fin = new Var("input", new TensorType(DataTypes.Int64, shape));
-            var v0 = new Call(new IR.CPU.CPUKernelOp(new IR.Tensors.Expand()), fin, newShape);
+            var v0 = new Call(new IR.XPU.XPUKernelOp(new IR.Tensors.Expand()), fin, newShape);
             fusion = new Fusion("xpu", v0, fin);
         }
 
@@ -942,7 +942,7 @@ internal sealed class TilingCaseClamp : TheoryData<Function, Tensor[]>
         Var fin;
         {
             fin = new Var("input", new TensorType(DataTypes.Float32, shape));
-            var v0 = new Call(new IR.CPU.CPUKernelOp(new IR.Math.Clamp()), fin, float.NegativeInfinity, float.PositiveInfinity);
+            var v0 = new Call(new IR.XPU.XPUKernelOp(new IR.Math.Clamp()), fin, float.NegativeInfinity, float.PositiveInfinity);
             fusion = new Fusion("xpu", v0, fin);
         }
 

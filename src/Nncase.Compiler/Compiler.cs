@@ -187,27 +187,6 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.SpaceToBatchToPad>();
         });
 
-        passManager.AddWithName<DataflowPass>("MHAFusion").Configure(p =>
-        {
-            p.Add<Passes.Rules.CombineMHA>();
-            p.Add<Passes.Rules.Neutral.FoldConstCall>();
-
-            // p.Add<Passes.Rules.DumpMM>();
-            // p.Add<Passes.Rules.DumpLayerNorm>();
-            // p.Add<Passes.Rules.DumpGather>();
-            p.Add<Passes.Rules.FuseMHA1>();
-            p.Add<Passes.Rules.FuseMHA2>();
-            p.Add<Passes.Rules.FuseMHA3>();
-            p.Add<Passes.Rules.FuseUnetSpatialTransformer>();
-            p.Add<Passes.Rules.FuseUnetResBlock>();
-            p.Add<Passes.Rules.FuseUnetTimeEmb>();
-            p.Add<Passes.Rules.FuseVAEDecRes>();
-            p.Add<Passes.Rules.FuseVAEDecHead>();
-            p.Add<Passes.Rules.FuseVAEDecMHA>();
-            p.Add<Passes.Rules.FuseSDTextEncoderTail>();
-            p.Add<Passes.Rules.FuseSDTextEncoderHeader>();
-        });
-
         _compileSession.Target.RegisterTargetInDependentPass(passManager, _compileSession.CompileOptions);
 
         passManager.AddWithName<DataflowPass>("BroadcastMarker").Configure(p =>

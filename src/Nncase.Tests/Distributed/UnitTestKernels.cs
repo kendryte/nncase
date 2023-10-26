@@ -110,13 +110,13 @@ internal sealed class BinaryCase1 : IDistributedKernelCase
     public BinaryCase1()
     {
         var type = new TensorType(DataTypes.Float32, new[] { 1, 16, 768 });
-        var place = new Placement(Placement.DeviceKind.CPU, new[] { 8, 4 }, "bt");
+        var place = new Placement(new[] { 8, 4 }, "bt");
         var lhs = new Var(type);
         var rhs = new Var(type);
         {
-            var l0 = IR.F.CPU.Boxing(lhs, new DistributedType(type, new SBP[] { SBP.S(2), SBP.S(2) }, place));
-            var r0 = IR.F.CPU.Boxing(rhs, new DistributedType(type, new SBP[] { SBP.S(2), SBP.S(2) }, place));
-            Fusion = new Fusion(Name + "_fusion", XPUTarget.Kind, IR.F.CPU.Boxing(l0 + r0, type), new[] { lhs, rhs });
+            var l0 = IR.F.XPU.Boxing(lhs, new DistributedType(type, new SBP[] { SBP.S(2), SBP.S(2) }, place));
+            var r0 = IR.F.XPU.Boxing(rhs, new DistributedType(type, new SBP[] { SBP.S(2), SBP.S(2) }, place));
+            Fusion = new Fusion(Name + "_fusion", XPUTarget.Kind, IR.F.XPU.Boxing(l0 + r0, type), new[] { lhs, rhs });
         }
 
         Vars = new[] { lhs, rhs };
@@ -155,11 +155,11 @@ internal sealed class SoftmaxCase1 : IDistributedKernelCase
         get
         {
             var type = new TensorType(DataTypes.Float32, new[] { 16, 1024, 1024 });
-            var place = new Placement(Placement.DeviceKind.CPU, new[] { 8, 4 }, "bt");
+            var place = new Placement(new[] { 8, 4 }, "bt");
             var axis = 2L;
             {
-                var input0 = IR.F.CPU.Boxing(Vars[0], new DistributedType(type, new SBP[] { SBP.S(0), SBP.S(1) }, place));
-                return new Fusion(Name + "_fusion", CPUTarget.Kind, IR.F.CPU.Boxing(IR.F.NN.Softmax(input0, axis), type), new[] { Vars[0] });
+                var input0 = IR.F.XPU.Boxing(Vars[0], new DistributedType(type, new SBP[] { SBP.S(0), SBP.S(1) }, place));
+                return new Fusion(Name + "_fusion", XPUTarget.Kind, IR.F.XPU.Boxing(IR.F.NN.Softmax(input0, axis), type), new[] { Vars[0] });
             }
         }
     }

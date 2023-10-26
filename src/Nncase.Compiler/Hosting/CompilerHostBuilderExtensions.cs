@@ -53,8 +53,7 @@ public static class CompilerHostBuilderExtensions
                 .AddEGraph()
                 .AddCodeGen()
                 .AddPasses()
-                .AddStackVM()
-                .AddCPU();
+                .AddStackVM();
     }
 
     private static void ConfigureServices(HostBuilderContext context, IServiceCollection services)

@@ -14,7 +14,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\modules\Nncase.Modules.XPU\Nncase.Modules.XPU.csproj" />
         <ProjectReference Include="..\Nncase.CodeGen\Nncase.CodeGen.csproj" />
         <ProjectReference Include="..\Nncase.Core\Nncase.Core.csproj" />
         <ProjectReference Include="..\Nncase.Diagnostics\Nncase.Diagnostics.csproj" />

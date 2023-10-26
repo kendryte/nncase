@@ -17,39 +17,39 @@ public sealed class UnitTestTypeInfer : TestClassBase
 {
     public static TheoryData<UnaryOp, DistributedType, IRType> InferUnaryData => new() {
         { UnaryOp.Exp,
-          new(new(DataTypes.Float32, new[] { 48, 32 }), new[] { SBP.B, SBP.B }, new(Placement.DeviceKind.CPU, new[] { 2, 4 }, "bt")),
-          new DistributedType(new(DataTypes.Float32, new[] { 48, 32 }), new[] { SBP.B, SBP.B }, new(Placement.DeviceKind.CPU, new[] { 2, 4 }, "bt"))
+          new(new(DataTypes.Float32, new[] { 48, 32 }), new[] { SBP.B, SBP.B }, new(new[] { 2, 4 }, "bt")),
+          new DistributedType(new(DataTypes.Float32, new[] { 48, 32 }), new[] { SBP.B, SBP.B }, new(new[] { 2, 4 }, "bt"))
         },
         { UnaryOp.Exp,
-          new(new(DataTypes.Float32, new[] { 384, 128 }), new SBP[] { SBP.S(0), SBP.P }, new(Placement.DeviceKind.CPU, new[] { 2, 4 }, "bt")),
+          new(new(DataTypes.Float32, new[] { 384, 128 }), new SBP[] { SBP.S(0), SBP.P }, new(new[] { 2, 4 }, "bt")),
           new InvalidType(string.Empty)
         },
     };
 
     public static TheoryData<BinaryOp, DistributedType, DistributedType, IRType> InferBinaryData => new() {
         { BinaryOp.Add,
-          new DistributedType(new(DataTypes.Float32, new[] { 1, 384, 8192 }), new SBP[] { SBP.B, SBP.S(2) }, new(Placement.DeviceKind.CPU, new[] { 2, 4 }, "bt")),
-          new DistributedType(new(DataTypes.Float32, new[] { 1, 384, 8192 }), new SBP[] { SBP.P, SBP.S(2) }, new(Placement.DeviceKind.CPU, new[] { 2, 4 }, "bt")),
+          new DistributedType(new(DataTypes.Float32, new[] { 1, 384, 8192 }), new SBP[] { SBP.B, SBP.S(2) }, new(new[] { 2, 4 }, "bt")),
+          new DistributedType(new(DataTypes.Float32, new[] { 1, 384, 8192 }), new SBP[] { SBP.P, SBP.S(2) }, new(new[] { 2, 4 }, "bt")),
           new InvalidType(string.Empty)
         },
         { BinaryOp.Add,
-          new DistributedType(new(DataTypes.Float32, new[] { 1, 384, 8192 }), new SBP[] { SBP.P, SBP.S(2) }, new(Placement.DeviceKind.CPU, new[] { 2, 4 }, "bt")),
-          new DistributedType(new(DataTypes.Float32, new[] { 1, 384, 8192 }), new SBP[] { SBP.P, SBP.S(2) }, new(Placement.DeviceKind.CPU, new[] { 2, 4 }, "bt")),
-          new DistributedType(new(DataTypes.Float32, new[] { 1, 384, 8192 }), new SBP[] { SBP.P, SBP.S(2) }, new(Placement.DeviceKind.CPU, new[] { 2, 4 }, "bt"))
+          new DistributedType(new(DataTypes.Float32, new[] { 1, 384, 8192 }), new SBP[] { SBP.P, SBP.S(2) }, new(new[] { 2, 4 }, "bt")),
+          new DistributedType(new(DataTypes.Float32, new[] { 1, 384, 8192 }), new SBP[] { SBP.P, SBP.S(2) }, new(new[] { 2, 4 }, "bt")),
+          new DistributedType(new(DataTypes.Float32, new[] { 1, 384, 8192 }), new SBP[] { SBP.P, SBP.S(2) }, new(new[] { 2, 4 }, "bt"))
         },
         { BinaryOp.Mul,
-          new DistributedType(new(DataTypes.Float32, new[] { 1, 384, 8192 }), new SBP[] { SBP.P, SBP.S(2) }, new(Placement.DeviceKind.CPU, new[] { 2, 4 }, "bt")),
-          new DistributedType(new(DataTypes.Float32, new[] { 1, 384, 8192 }), new SBP[] { SBP.P, SBP.S(2) }, new(Placement.DeviceKind.CPU, new[] { 2, 4 }, "bt")),
+          new DistributedType(new(DataTypes.Float32, new[] { 1, 384, 8192 }), new SBP[] { SBP.P, SBP.S(2) }, new(new[] { 2, 4 }, "bt")),
+          new DistributedType(new(DataTypes.Float32, new[] { 1, 384, 8192 }), new SBP[] { SBP.P, SBP.S(2) }, new(new[] { 2, 4 }, "bt")),
           new InvalidType(string.Empty)
         },
         { BinaryOp.Add,
-          new DistributedType(new(DataTypes.Float32, new[] { 3072 }), new SBP[] { SBP.S(0), SBP.S(0) }, new(Placement.DeviceKind.CPU, new[] { 8, 4 }, "bt")),
-          new DistributedType(new(DataTypes.Float32, new[] { 1, 77, 3072 }), new SBP[] { SBP.B, SBP.B }, new(Placement.DeviceKind.CPU, new[] { 8, 4 }, "bt")),
+          new DistributedType(new(DataTypes.Float32, new[] { 3072 }), new SBP[] { SBP.S(0), SBP.S(0) }, new(new[] { 8, 4 }, "bt")),
+          new DistributedType(new(DataTypes.Float32, new[] { 1, 77, 3072 }), new SBP[] { SBP.B, SBP.B }, new(new[] { 8, 4 }, "bt")),
           new InvalidType(string.Empty)
         },
         { BinaryOp.Add,
-          new DistributedType(new(DataTypes.Float32, new[] { 16, 32, 32 }), new SBP[] { SBP.S(0), SBP.B }, new(Placement.DeviceKind.CPU, new[] { 8, 4 }, "bt")),
-          new DistributedType(new(DataTypes.Float32, new[] { 16, 32, 32 }), new SBP[] { SBP.B, SBP.S(0) }, new(Placement.DeviceKind.CPU, new[] { 8, 4 }, "bt")),
+          new DistributedType(new(DataTypes.Float32, new[] { 16, 32, 32 }), new SBP[] { SBP.S(0), SBP.B }, new(new[] { 8, 4 }, "bt")),
+          new DistributedType(new(DataTypes.Float32, new[] { 16, 32, 32 }), new SBP[] { SBP.B, SBP.S(0) }, new(new[] { 8, 4 }, "bt")),
           new InvalidType(string.Empty)
         },
     };
@@ -107,7 +107,7 @@ public sealed class UnitTestTypeInfer : TestClassBase
     [Fact]
     public void TestInferMatmulProduct()
     {
-        var placement = new Placement(Placement.DeviceKind.CPU, new[] { 8, 4 }, "bt");
+        var placement = new Placement(new[] { 8, 4 }, "bt");
         var lhsShape = new[] { 1, 64, 384, 8192 };
         var rhsShape = new[] { 1, 64, 8192, 384 };
         var lhsType = new TensorType(DataTypes.Float32, lhsShape);
@@ -148,7 +148,7 @@ public sealed class UnitTestTypeInfer : TestClassBase
     {
         var inputType = new TensorType(DataTypes.Float32, new[] { 384, 128 });
         var indexType = new TensorType(DataTypes.Int64, new[] { 1, 384 });
-        var placement = new Placement(Placement.DeviceKind.CPU, new[] { 8, 4 }, "bt");
+        var placement = new Placement(new[] { 8, 4 }, "bt");
 
         var candiateArgs = new[] {
             DistributedUtility.GetLeafCandidateNDSBPs(inputType, placement).Select(ndsbp => new DistributedType(inputType, ndsbp, placement)),
@@ -186,7 +186,7 @@ internal sealed class InferMatmulData : TheoryData<DistributedType, DistributedT
 {
     public InferMatmulData()
     {
-        var placement = new Placement(Placement.DeviceKind.CPU, new[] { 8, 4 }, "bt");
+        var placement = new Placement(new[] { 8, 4 }, "bt");
         {
             var lhs = new[] { 1, 1, 384, 8192 };
             var rhs = new[] { 64, 8192, 128 };

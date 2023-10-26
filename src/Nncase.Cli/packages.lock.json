@@ -681,7 +681,6 @@
           "Nncase.Graph": "[1.0.0, )",
           "Nncase.Importer": "[1.0.0, )",
           "Nncase.Modules.StackVM": "[1.0.0, )",
-          "Nncase.Modules.XPU": "[1.0.0, )",
           "Nncase.Passes": "[1.0.0, )",
           "Nncase.Quantization": "[1.0.0, )",
           "Nncase.Simulator": "[1.0.0, )"
@@ -747,15 +746,6 @@
         "type": "Project",
         "dependencies": {
           "Nncase.CodeGen": "[1.0.0, )",
-          "Nncase.Passes": "[1.0.0, )"
-        }
-      },
-      "nncase.modules.xpu": {
-        "type": "Project",
-        "dependencies": {
-          "Nncase.CodeGen": "[1.0.0, )",
-          "Nncase.Diagnostics": "[1.0.0, )",
-          "Nncase.Modules.StackVM": "[1.0.0, )",
           "Nncase.Passes": "[1.0.0, )"
         }
       },

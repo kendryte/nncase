@@ -20,7 +20,7 @@ public sealed class UnitTestConstruct : TestClassBase
     [Fact]
     public void TestCreate()
     {
-        Placement placement = new(Placement.DeviceKind.CPU, new int[] { 2, 2 }, "bt");
+        Placement placement = new(new int[] { 2, 2 }, "bt");
         IRArray<SBP> sbps = new[] { SBP.S(2), SBP.S(1), };
         DistributedType t = new(new TensorType(DataTypes.Float32, new[] { 1, 2, 8 }), sbps, placement);
         var input = new Var("input", t);
@@ -58,7 +58,7 @@ public sealed class UnitTestConstruct : TestClassBase
     [Fact]
     public void TestGetLeafCandidateNDSBPs()
     {
-        Placement placement = new(Placement.DeviceKind.CPU, new int[] { 4, 2 }, "bt");
+        Placement placement = new(new int[] { 4, 2 }, "bt");
         var ttype = new TensorType(DataTypes.Float32, new[] { 1, 384, 8192 });
         var input = new Var(ttype);
         var set = new HashSet<DistributedType>(DistributedUtility.GetLeafCandidateNDSBPs(ttype, placement).Select(ndsbp => new DistributedType(ttype, ndsbp, placement)));
@@ -68,7 +68,7 @@ public sealed class UnitTestConstruct : TestClassBase
     [Fact]
     public void TestDistributeTypeEqual()
     {
-        Placement placement = new(Placement.DeviceKind.CPU, new int[] { 4, 2 }, "bt");
+        Placement placement = new(new int[] { 4, 2 }, "bt");
         var ttype = new TensorType(DataTypes.Float32, new[] { 1, 384, 8192 });
         var a = new DistributedType(ttype, new[] { SBP.S(1), SBP.S(2) }, placement);
         var b = new DistributedType(ttype, new[] { SBP.S(1), SBP.S(2) }, placement);
@@ -79,10 +79,10 @@ public sealed class UnitTestConstruct : TestClassBase
     [Fact]
     public void TestBoxingEqual()
     {
-        Placement placement = new(Placement.DeviceKind.CPU, new int[] { 4, 2 }, "bt");
+        Placement placement = new(new int[] { 4, 2 }, "bt");
         var ttype = new TensorType(DataTypes.Float32, new[] { 1, 384, 8192 });
-        var a = new IR.CPU.Boxing(new DistributedType(ttype, new[] { SBP.S(1), SBP.S(2) }, placement));
-        var b = new IR.CPU.Boxing(new DistributedType(ttype, new[] { SBP.S(1), SBP.S(2) }, placement));
+        var a = new IR.XPU.Boxing(new DistributedType(ttype, new[] { SBP.S(1), SBP.S(2) }, placement));
+        var b = new IR.XPU.Boxing(new DistributedType(ttype, new[] { SBP.S(1), SBP.S(2) }, placement));
         Assert.Equal(a, b);
         Assert.StrictEqual(a, b);
     }
@@ -90,7 +90,7 @@ public sealed class UnitTestConstruct : TestClassBase
     [Fact]
     public void TestUnary()
     {
-        Placement placement = new(Placement.DeviceKind.CPU, new int[] { 4, 2 }, "bt");
+        Placement placement = new(new int[] { 4, 2 }, "bt");
         var ttype = new TensorType(DataTypes.Float32, new[] { 1, 384, 8192 });
         var input = new Var(ttype);
         var output = IR.F.Math.Unary(UnaryOp.Neg, input);

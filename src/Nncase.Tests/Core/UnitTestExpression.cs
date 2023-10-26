@@ -529,14 +529,14 @@ public class UnitTestExpression
     [Fact]
     public void TestBoxingEqual()
     {
-        Placement placement = new(Placement.DeviceKind.CPU, new int[] { 4, 2 }, "bt");
+        Placement placement = new(new int[] { 4, 2 }, "bt");
         var ttype = new TensorType(DataTypes.Float32, new[] { 1, 384, 8192 });
         var a = new DistributedType(ttype, new[] { SBP.S(1), SBP.S(2) }, placement);
         var b = new DistributedType(ttype, new[] { SBP.S(1), SBP.S(2) }, placement);
 
         var input = new Var(ttype);
-        var ea = IR.F.CPU.Boxing(input, a);
-        var eb = IR.F.CPU.Boxing(input, b);
+        var ea = IR.F.XPU.Boxing(input, a);
+        var eb = IR.F.XPU.Boxing(input, b);
 
         Assert.Equal(ea.Target, eb.Target);
         Assert.StrictEqual(ea.Target, eb.Target);

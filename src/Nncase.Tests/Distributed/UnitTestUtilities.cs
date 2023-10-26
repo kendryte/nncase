@@ -16,7 +16,7 @@ public sealed class UnitTestUtilities
     public static TheoryData<DistributedType, IRArray<SBP>> GetPartialCandidateNDSBPsNegativeData { get; } = new()
     {
         {
-            new DistributedType(new(DataTypes.Float32, new[] { 1, 8, 384, 8192 }), new SBP[] { SBP.P, SBP.P }, new Placement(Placement.DeviceKind.CPU, new[] { 8, 4 }, "bt")),
+            new DistributedType(new(DataTypes.Float32, new[] { 1, 8, 384, 8192 }), new SBP[] { SBP.P, SBP.P }, new Placement(new[] { 8, 4 }, "bt")),
             new SBP[] { SBP.S(1), SBP.S(1) }
         },
     };
@@ -25,13 +25,13 @@ public sealed class UnitTestUtilities
     public void TestEffiecicy()
     {
         var burst = 256;
-        var type1 = new DistributedType(new TensorType(DataTypes.Float32, new[] { 1, 64, 384, 8192 }), new[] { SBP.S(1), SBP.S(2) }, new(Placement.DeviceKind.CPU, new[] { 8, 4 }, "bt"));
+        var type1 = new DistributedType(new TensorType(DataTypes.Float32, new[] { 1, 64, 384, 8192 }), new[] { SBP.S(1), SBP.S(2) }, new(new[] { 8, 4 }, "bt"));
         var eff1 = DistributedUtility.GetDividedTensorEfficiency(type1, burst);
 
-        var type2 = new DistributedType(new TensorType(DataTypes.Float32, new[] { 1, 64, 384, 8192 }), new[] { SBP.S(1), SBP.S(3) }, new(Placement.DeviceKind.CPU, new[] { 8, 4 }, "bt"));
+        var type2 = new DistributedType(new TensorType(DataTypes.Float32, new[] { 1, 64, 384, 8192 }), new[] { SBP.S(1), SBP.S(3) }, new(new[] { 8, 4 }, "bt"));
         var eff2 = DistributedUtility.GetDividedTensorEfficiency(type2, burst);
 
-        var type3 = new DistributedType(new TensorType(DataTypes.Float32, new[] { 1, 64, 384, 8192 }), new[] { SBP.S(3), SBP.S(3) }, new(Placement.DeviceKind.CPU, new[] { 8, 4 }, "bt"));
+        var type3 = new DistributedType(new TensorType(DataTypes.Float32, new[] { 1, 64, 384, 8192 }), new[] { SBP.S(3), SBP.S(3) }, new(new[] { 8, 4 }, "bt"));
         var eff3 = DistributedUtility.GetDividedTensorEfficiency(type3, burst);
         Assert.True(eff1 > eff2);
         Assert.True(eff2 > eff3);
@@ -40,7 +40,7 @@ public sealed class UnitTestUtilities
     [Fact]
     public void TestGetPartialCandidateNDSBPs()
     {
-        var placement = new Placement(Placement.DeviceKind.CPU, new[] { 8, 4 }, "bt");
+        var placement = new Placement(new[] { 8, 4 }, "bt");
         var type = new DistributedType(new(DataTypes.Float32, new[] { 1, 384, 8192 }), new SBP[] { SBP.P, SBP.S(2) }, placement);
         var candidateSbps = Utilities.DistributedUtility.GetPartialCandidateNDSBPs(type);
 

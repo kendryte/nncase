@@ -17,7 +17,7 @@ public sealed class UnitTestCost
     public void TestPartialToBroadCastCost()
     {
         var tensorType = new TensorType(DataTypes.Float32, new[] { 1, 64, 384, 128 });
-        var placement = new Placement(Placement.DeviceKind.CPU, new[] { 8, 4 }, "bt");
+        var placement = new Placement(new[] { 8, 4 }, "bt");
 
         List<CostModel.Cost> costs = new();
         foreach (var ndsbp in new IRArray<SBP>[] {
@@ -32,7 +32,7 @@ public sealed class UnitTestCost
         {
             var type = new DistributedType(tensorType, ndsbp, placement);
             var input0 = new Var(type);
-            var candidates = Utilities.DistributedUtility.GetPartialCandidateNDSBPs(type).Select(ndsbp => IR.F.CPU.Boxing(input0, type with { NdSBP = ndsbp }));
+            var candidates = Utilities.DistributedUtility.GetPartialCandidateNDSBPs(type).Select(ndsbp => IR.F.XPU.Boxing(input0, type with { NdSBP = ndsbp }));
             foreach (var item in candidates)
             {
                 var cost = CompilerServices.EvaluateCost(item);
