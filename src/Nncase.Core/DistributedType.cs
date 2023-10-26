@@ -52,12 +52,10 @@ public sealed record SBPBroadCast : SBP
 // public sealed record Placement(Placement.DeviceKind Kind, IRArray<int> Hierarchy, string Name)
 public sealed record Placement(IRArray<int> Hierarchy, string Name)
 {
-
     // public enum DeviceKind : uint
     // {
     //     CPU = 0,
     // }
-
     public int Rank => Hierarchy.Count;
 
     // public override string ToString() => $"@{Kind} [{string.Join(',', Hierarchy.Zip(Name).Select(t => t.First.ToString() + '@' + t.Second.ToString()))}]";

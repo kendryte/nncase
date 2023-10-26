@@ -21,7 +21,7 @@ from onnx_test_runner import OnnxTestRunner
 
 
 def test_demo(request):
-    runner = OnnxTestRunner("test_vae_decoder", 
+    runner = OnnxTestRunner("test_vae_decoder",
                             "/root/Workspace/config/vae_config.toml")
     # runner = OnnxTestRunner("test_vae_decoder")
     model_file = "/root/Downloads/Models/vae_decoder.onnx"
@@ -29,7 +29,8 @@ def test_demo(request):
     # model_file = "/root/Downloads/Models/modified_vae_decoder.onnx"
     # model_file = "/root/Downloads/Models/model_sim_huo.onnx"
 
-    runner.set_shape_var({"batch_size": 1, "num_channels_latent": 4, "height_latent": 64, "width_latent": 64})
+    runner.set_shape_var({"batch_size": 1, "num_channels_latent": 4,
+                          "height_latent": 64, "width_latent": 64})
     # runner.set_shape_var({"N": 384})
     runner.run(model_file)
 
