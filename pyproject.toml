@@ -48,9 +48,9 @@ before-all = [
   "pip install conan==1.59",
   "conan profile new default --detect",
   "conan profile update settings.compiler.libcxx=libstdc++11 default",
-  "curl -L https://sdk.lunarg.com/sdk/download/1.2.189.0/linux/vulkansdk-linux-x86_64-1.2.189.0.tar.gz --output vulkansdk.tar.gz",
-  "tar xf vulkansdk.tar.gz",
-  "cp -P 1.2.189.0/x86_64/lib/libvulkan.so* /usr/local/lib/"
+  "curl -L https://sdk.lunarg.com/sdk/download/1.3.268.0/linux/vulkansdk-linux-x86_64-1.3.268.0.tar.xz --output vulkansdk.tar.xz",
+  "tar xf vulkansdk.tar.xz",
+  "cp -P 1.3.268.0/x86_64/lib/libvulkan.so* /usr/local/lib/"
 ]
 before-build = "pip install auditwheel"
 repair-wheel-command = "LD_LIBRARY_PATH=/usr/lib64 auditwheel repair -w {dest_dir} {wheel} --exclude libvulkan.so.1,libgomp.so.1"
