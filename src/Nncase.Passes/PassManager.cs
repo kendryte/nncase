@@ -287,6 +287,7 @@ internal sealed class PassManager : IPassManager
                     _analyzers = populater.Analyzers;
                     AnalysisResults = populater.AnalysisResults;
                     RewriteOnce = _analyzers.Count != 0;
+                    Driver = pass;
                 }
 
                 private struct AnalyzerPopulater
