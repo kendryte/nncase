@@ -54,7 +54,7 @@ namespace Nncase.Importer.TFLite
                     dilation,
                     PadMode.Constant,
                     1);
-            List<string> outputNames = new() { GetInputTensor(op, 0).Name };
+            List<string> outputNames = new() { GetOutputTensor(op, 0).Name };
             conv2DTranspose.Metadata.OutputNames = outputNames;
             return F.Tensors.NCHWToNHWC(F.Math.Clamp(
                 conv2DTranspose,

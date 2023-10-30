@@ -111,6 +111,7 @@ public sealed class UnitTestEGraphRewriteFactory : TestClassBase
         new ResizeImageCase(),
         new ProdCase(),
         new MultiReshapeCase(),
+        new PReluTransposeCase(),
     };
 
     [Theory]

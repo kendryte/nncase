@@ -87,6 +87,50 @@ public sealed class Compile : Command
           description: $"model quant options, default is {Quantization.CalibMethod.Kld}",
           getDefaultValue: () => Quantization.CalibMethod.Kld));
         AddOption(new Option<bool>(
+            alias: "--pre-process",
+            description: "whether enable pre process, default is False",
+            getDefaultValue: () => false));
+        AddOption(new Option(
+            alias: "--input-layout",
+            description: "the model input data layout, default is empty. eg. NCHW/NHWC",
+            getDefaultValue: () => string.Empty));
+        AddOption(new Option(
+            alias: "--output-layout",
+            description: "the model output data layout, default is empty. eg. NCHW/NHWC",
+            getDefaultValue: () => string.Empty));
+        AddOption(new Option(
+            alias: "--input-type",
+            description: "the model input data value type, default is Float32",
+            getDefaultValue: () => InputType.Float32));
+        AddOption(new Option<IEnumerable<int>>(
+            alias: "--input-shape",
+            description: "the model input data shape, default is []. eg. `--input-shape 1 2 3 4`",
+            getDefaultValue: () => Array.Empty<int>()));
+        AddOption(new Option<IEnumerable<float>>(
+            alias: "--input-range",
+            description: "the model input data value range, default is []. eg `--input-range -100.3 200.4`",
+            getDefaultValue: () => Array.Empty<float>()));
+        AddOption(new Option<bool>(
+            alias: "--swap-rb",
+            description: "whether swap the model input data channel R and B",
+            getDefaultValue: () => false));
+        AddOption(new Option(
+            alias: "--letter-box-value",
+            description: "letterbox value, default 0.0",
+            getDefaultValue: () => 0.0f));
+        AddOption(new Option<IEnumerable<float>>(
+            alias: "--mean",
+            description: "the model input data mean, default []",
+            getDefaultValue: () => Array.Empty<float>()));
+        AddOption(new Option<IEnumerable<float>>(
+            alias: "--std",
+            description: "the model input data std, default []",
+            getDefaultValue: () => Array.Empty<float>()));
+        AddOption(new Option(
+            alias: "--model-layout",
+            description: "the model's input layout, default is empty. eg. NCHW/NHWC",
+            getDefaultValue: () => string.Empty));
+        AddOption(new Option<bool>(
           alias: "--benchmark-only",
           description: $"benchmark only",
           getDefaultValue: () => false));
@@ -142,6 +186,17 @@ public sealed class Compile : Command
                 },
                 ModelQuantMode = cliOptions.ModelQuantMode,
             },
+            PreProcess = cliOptions.PreProcess,
+            InputLayout = cliOptions.InputLayout,
+            OutputLayout = cliOptions.OutputLayout,
+            InputType = cliOptions.InputType,
+            InputShape = cliOptions.InputShape.ToArray(),
+            InputRange = cliOptions.InputRange.ToArray(),
+            SwapRB = cliOptions.SwapRB,
+            LetterBoxValue = cliOptions.LetterBoxValue,
+            Mean = cliOptions.Mean.ToArray(),
+            Std = cliOptions.Std.ToArray(),
+            ModelLayout = cliOptions.ModelLayout,
             IsBenchmarkOnly = cliOptions.BenchmarkOnly,
         };
 
@@ -209,6 +264,28 @@ internal sealed class CliCompileOptions
     public DatasetFormat DatasetFormat { get; set; }
 
     public bool BenchmarkOnly { get; set; }
+
+    public bool PreProcess { get; set; }
+
+    public string InputLayout { get; set; }
+
+    public string OutputLayout { get; set; }
+
+    public InputType InputType { get; set; }
+
+    public List<int> InputShape { get; set; }
+
+    public List<float> InputRange { get; set; }
+
+    public bool SwapRB { get; set; }
+
+    public float LetterBoxValue { get; set; }
+
+    public List<float> Mean { get; set; }
+
+    public List<float> Std { get; set; }
+
+    public string ModelLayout { get; set; }
 }
 
 #pragma warning restore CS8618

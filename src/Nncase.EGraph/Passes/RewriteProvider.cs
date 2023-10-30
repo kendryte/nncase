@@ -43,8 +43,6 @@ internal class EGraphRewriteProvider : IEGraphRewriteProvider
     public IEGraph ERewrite(IEGraph eGraph, IEnumerable<IRewriteRule> rules, RunPassContext context)
     {
         var last_version = eGraph.Version;
-        int count = 0;
-
         while (true)
         {
             var matches = rules.
@@ -59,10 +57,12 @@ internal class EGraphRewriteProvider : IEGraphRewriteProvider
 
             if (DumpScope.Current.IsEnabled(DumpFlags.Rewrite))
             {
-                foreach (var (rule, results) in matches.Where(p => p.Item2.Count != 0))
+                using var fs = DumpScope.Current.OpenFile(Path.Combine("Matches", $"V{eGraph.Version}.txt"));
+                using var writer = new StreamWriter(fs);
+                writer.WriteLine("rule, results");
+                foreach (var (rule, results) in matches)
                 {
-                    using var fs = DumpScope.Current.OpenFile(Path.Combine("Matches", $"V{eGraph.Version}_{count++}_{rule.GetType().Name}.dot"));
-                    EGraphPrinter.DumpEgraphAsDot(eGraph, results, fs);
+                    writer.WriteLine($"{rule.GetType().Name}, {results.Count}");
                 }
             }
 

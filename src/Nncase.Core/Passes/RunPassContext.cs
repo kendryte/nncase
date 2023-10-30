@@ -37,6 +37,11 @@ public record RunPassContext
     public int Index { get; set; }
 
     /// <summary>
+    /// Gets this pass's driver.
+    /// </summary>
+    public IPass? Driver { get; init; }
+
+    /// <summary>
     /// Gets or sets a value indicating whether control rewrite once or not.
     /// when RewriteOnce is true, the rule will only apply once, then restart rewrite from first rule.
     /// </summary>
