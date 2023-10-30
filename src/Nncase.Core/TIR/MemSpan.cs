@@ -89,4 +89,17 @@ public sealed class MemSpan : Expr
         => functor.VisitMemSpan(this, context);
 
     public MemSpan With(Expr? start = null, Expr? size = null, MemoryLocation? location = null) => new(start ?? Start, size ?? Size, location ?? Location);
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj)
+    {
+        if (ReferenceEquals(this, obj))
+        {
+            return true;
+        }
+
+        return obj is MemSpan other && GetHashCode() == other.GetHashCode() && Location == other.Location && Operands.SequenceEqual(other.Operands);
+    }
+
+    protected override int GetHashCodeCore() => HashCode.Combine(Location, base.GetHashCodeCore());
 }
