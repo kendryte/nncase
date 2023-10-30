@@ -186,6 +186,10 @@ PYBIND11_MODULE(_nncase, m) {
                       py::overload_cast<std::string_view>(
                           &quantize_options::quant_scheme))
         .def_property(
+            "quant_scheme_strict_mode",
+            py::overload_cast<>(&quantize_options::quant_scheme_strict_mode),
+            py::overload_cast<bool>(&quantize_options::quant_scheme_strict_mode))
+        .def_property(
             "export_quant_scheme",
             py::overload_cast<>(&quantize_options::export_quant_scheme),
             py::overload_cast<bool>(&quantize_options::export_quant_scheme))

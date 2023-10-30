@@ -16,11 +16,13 @@ compiler.use_ptq(ptq_options)
 
 ```python
 ptq_options.quant_scheme = ""
+ptq_options.quant_scheme_strict_mode = False
 ptq_options.export_quant_scheme = False
 ptq_options.export_weight_range_by_channel = False
 ```
 
 * **quant_scheme：导入量化参数配置文件的路径**
+* **quant_scheme_strict_mode：是否严格按照quant_scheme执行量化**
 * **export_quant_scheme：是否导出量化参数配置文件**
 * **export_weight_range_by_channel：是否导出** `bychannel`形式的weights量化参数，为了保证量化效果，该参数建议设置为 `True`
 
@@ -36,6 +38,7 @@ compile_options.dump_ir = True
 
 ```python
 ptq_options.quant_scheme = ""
+ptq_options.quant_scheme_strict_mode = False
 ptq_options.export_quant_scheme = True
 ptq_options.export_weight_range_by_channel = True
 ```
@@ -108,6 +111,7 @@ ptq_options.export_weight_range_by_channel = True
 
 ```python
 ptq_options.quant_scheme = "./QuantScheme.json" # path to your 'QuantScheme.json'
+ptq_options.quant_scheme_strict_mode = False # Whether to strictly follow quant_scheme for quantification
 ptq_options.export_quant_scheme = False
 ptq_options.export_weight_range_by_channel = False # whatever
 ```
