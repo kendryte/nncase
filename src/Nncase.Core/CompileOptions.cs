@@ -114,4 +114,9 @@ public sealed record CompileOptions
     /// Gets or sets quant options.
     /// </summary>
     public ShapeBucketOptions ShapeBucketOptions { get; set; } = ShapeBucketOptions.Default;
+
+    /// <summary>
+    /// Gets or sets the target compile options.
+    /// </summary>
+    public ITargetCompileOptions TargetCompileOptions { get; set; } = null!;
 }

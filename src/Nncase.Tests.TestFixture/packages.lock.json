@@ -1095,13 +1095,8 @@
           "Microsoft.Extensions.Options": "[6.0.0, )",
           "Microsoft.Toolkit.HighPerformance": "[7.1.1, )",
           "NetFabric.Hyperlinq": "[3.0.0-beta48, )",
+          "System.CommandLine": "[2.0.0-beta4.22272.1, )",
           "System.Reactive": "[5.0.0, )"
-        }
-      },
-      "nncase.diagnostics": {
-        "type": "Project",
-        "dependencies": {
-          "Nncase.Core": "[1.0.0, )"
         }
       },
       "nncase.egraph": {
@@ -1136,15 +1131,6 @@
         "type": "Project",
         "dependencies": {
           "Nncase.CodeGen": "[1.0.0, )",
-          "Nncase.Passes": "[1.0.0, )"
-        }
-      },
-      "nncase.modules.xpu": {
-        "type": "Project",
-        "dependencies": {
-          "Nncase.CodeGen": "[1.0.0, )",
-          "Nncase.Diagnostics": "[1.0.0, )",
-          "Nncase.Modules.StackVM": "[1.0.0, )",
           "Nncase.Passes": "[1.0.0, )"
         }
       },
@@ -1272,6 +1258,12 @@
         "requested": "[1.0.2, )",
         "resolved": "1.0.2",
         "contentHash": "giLAHrjJe0Bh7yhNexR6pmcv02+Fi+lEPxQVdB8zvkuJCmy6rnqu8CZLIpxrUfLcWDuTCSiK0IfGmMhig3UDhA=="
+      },
+      "System.CommandLine": {
+        "type": "CentralTransitive",
+        "requested": "[2.0.0-beta4.22272.1, )",
+        "resolved": "2.0.0-beta4.22272.1",
+        "contentHash": "1uqED/q2H0kKoLJ4+hI2iPSBSEdTuhfCYADeJrAqERmiGQ2NNacYKRNEQ+gFbU4glgVyK8rxI+ZOe1onEtr/Pg=="
       },
       "System.Reactive": {
         "type": "CentralTransitive",

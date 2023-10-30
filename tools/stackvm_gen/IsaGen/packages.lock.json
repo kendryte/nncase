@@ -238,6 +238,7 @@
           "Microsoft.Extensions.Options": "[6.0.0, )",
           "Microsoft.Toolkit.HighPerformance": "[7.1.1, )",
           "NetFabric.Hyperlinq": "[3.0.0-beta48, )",
+          "System.CommandLine": "[2.0.0-beta4.22272.1, )",
           "System.Reactive": "[5.0.0, )"
         }
       },
@@ -311,6 +312,12 @@
           "System.Buffers": "4.5.1",
           "System.Runtime.CompilerServices.Unsafe": "5.0.0"
         }
+      },
+      "System.CommandLine": {
+        "type": "CentralTransitive",
+        "requested": "[2.0.0-beta4.22272.1, )",
+        "resolved": "2.0.0-beta4.22272.1",
+        "contentHash": "1uqED/q2H0kKoLJ4+hI2iPSBSEdTuhfCYADeJrAqERmiGQ2NNacYKRNEQ+gFbU4glgVyK8rxI+ZOe1onEtr/Pg=="
       },
       "System.Reactive": {
         "type": "CentralTransitive",

@@ -42,12 +42,13 @@
       },
       "System.CommandLine.Hosting": {
         "type": "Direct",
-        "requested": "[0.3.0-alpha.21216.1, )",
-        "resolved": "0.3.0-alpha.21216.1",
-        "contentHash": "zP8QEUH8dSUYUHdGk6k71kOJy8uFgEPZG2RfhA0cMjDH3/Jov5AjUNaxOvpSNHh+ewu8eIUCYgV8+fEkCPyNlw==",
+        "requested": "[0.4.0-alpha.22272.1, )",
+        "resolved": "0.4.0-alpha.22272.1",
+        "contentHash": "x9JhHxBLxlKyCIZADFYC8q16L9yGHdTakrLFjHabwR7Tk0761aTexiGgMTIS744HGuhc8pk9MoLUzsr/TlRfMQ==",
         "dependencies": {
-          "Microsoft.Extensions.Hosting": "3.1.5",
-          "System.CommandLine": "2.0.0-beta1.21216.1"
+          "Microsoft.Extensions.Hosting": "6.0.0",
+          "System.CommandLine": "2.0.0-beta4.22272.1",
+          "System.CommandLine.NamingConventionBinder": "2.0.0-beta4.22272.1"
         }
       },
       "Google.OrTools.runtime.linux-arm64": {
@@ -362,13 +363,12 @@
           "System.Runtime": "4.3.0"
         }
       },
-      "System.CommandLine": {
+      "System.CommandLine.NamingConventionBinder": {
         "type": "Transitive",
-        "resolved": "2.0.0-beta1.21216.1",
-        "contentHash": "Nbv/tW8sbOKN5T+4SSVBMdk4ADSIpJpY4UHMsj3VkcNtOckIT4iyzagjF+W5FEh2YBRvmvVQijOTIZbUJ1+1aA==",
+        "resolved": "2.0.0-beta4.22272.1",
+        "contentHash": "ux2eUA/syF+JtlpMDc/Lsd6PBIBuwjH3AvHnestoh5uD0WKT5b+wkQxDWVCqp9qgVjMBTLNhX19ZYFtenunt9A==",
         "dependencies": {
-          "Microsoft.CSharp": "4.4.1",
-          "system.memory": "4.5.4"
+          "System.CommandLine": "2.0.0-beta4.22272.1"
         }
       },
       "System.Diagnostics.Contracts": {
@@ -696,6 +696,7 @@
           "Microsoft.Extensions.Options": "[6.0.0, )",
           "Microsoft.Toolkit.HighPerformance": "[7.1.1, )",
           "NetFabric.Hyperlinq": "[3.0.0-beta48, )",
+          "System.CommandLine": "[2.0.0-beta4.22272.1, )",
           "System.Reactive": "[5.0.0, )"
         }
       },
@@ -936,6 +937,12 @@
         "requested": "[1.0.2, )",
         "resolved": "1.0.2",
         "contentHash": "giLAHrjJe0Bh7yhNexR6pmcv02+Fi+lEPxQVdB8zvkuJCmy6rnqu8CZLIpxrUfLcWDuTCSiK0IfGmMhig3UDhA=="
+      },
+      "System.CommandLine": {
+        "type": "CentralTransitive",
+        "requested": "[2.0.0-beta4.22272.1, )",
+        "resolved": "2.0.0-beta4.22272.1",
+        "contentHash": "1uqED/q2H0kKoLJ4+hI2iPSBSEdTuhfCYADeJrAqERmiGQ2NNacYKRNEQ+gFbU4glgVyK8rxI+ZOe1onEtr/Pg=="
       },
       "System.Linq.Async": {
         "type": "CentralTransitive",
