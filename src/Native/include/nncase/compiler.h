@@ -405,8 +405,8 @@ class quantize_options : public clr_object_base {
 
     bool quant_scheme_strict_mode() { return false; }
     void quant_scheme_strict_mode(bool value) {
-        nncase_clr_api()->quantize_options_set_quant_scheme_strict_mode(obj_.get(),
-                                                                   value);
+        nncase_clr_api()->quantize_options_set_quant_scheme_strict_mode(
+            obj_.get(), value);
     }
 
     bool export_quant_scheme() { return false; }
