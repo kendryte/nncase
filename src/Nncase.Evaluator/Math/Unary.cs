@@ -70,6 +70,7 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
         {
             TensorType tensorType => Visit(tensorType),
             DistributedType distTensorType => Visit(distTensorType, target.UnaryOp),
+            AnyType => AnyType.Default,
             _ => new InvalidType($"Not support {inputType.GetType().Name}"),
         };
     }

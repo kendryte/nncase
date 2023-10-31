@@ -225,8 +225,8 @@ public sealed class UnitTestDumpper : TestClassBase
     [Fact]
     public void TestDumpTIRFusion()
     {
-        var lhs = new Var("lhs");
-        var main = T.PrimFunc("main", Callable.StackVMModuleKind).Body(
+        var lhs = new Var("lhs", TensorType.Scalar(DataTypes.Float32));
+        var main = T.PrimFunc("main", DefaultTargetName).Body(
           new Call(new TIRTest.MeshNet(), new Fusion("MeshFunc", lhs + 100, lhs), IR.F.Random.Normal(DataTypes.Float32, 0, 1, 123, new[] { 100 }))).Build();
         Assert.True(CompilerServices.InferenceType(main));
         CompilerServices.DumpIR(main, string.Empty, Dumpper.Directory);

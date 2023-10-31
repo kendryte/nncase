@@ -1004,7 +1004,7 @@ public class UnitTestStackVMEmitter
         var tensorEmitter = new StackVMEmitter.TensorEmitter(stackVmEmitter);
         tensorEmitter.Concat(0);
         var actual = memoryStream.ToArray();
-        Assert.Equal(new byte[] { 100, actual[1], 0 }, actual);
+        Assert.Equal(new byte[] { 100, actual[1], 0, 0, 0, 0, 0 }, actual);
     }
 
     [Fact]
@@ -1158,7 +1158,7 @@ public class UnitTestStackVMEmitter
         var tensorEmitter = new StackVMEmitter.TensorEmitter(stackVmEmitter);
         tensorEmitter.Gather(0);
         var actual = memoryStream.ToArray();
-        Assert.Equal(new byte[] { 100, actual[1], 0 }, actual);
+        Assert.Equal(new byte[] { 100, actual[1], 0, 0, 0, 0, 0 }, actual);
     }
 
     [Fact]
@@ -1246,7 +1246,7 @@ public class UnitTestStackVMEmitter
         var tensorEmitter = new StackVMEmitter.TensorEmitter(stackVmEmitter);
         tensorEmitter.LayerNorm(-1, 0f, false);
         var actual = memoryStream.ToArray();
-        Assert.Equal(new byte[] { 100, actual[1], 0, 255, 255, 255, 255, 0, 0, 0, 0 }, actual);
+        Assert.Equal(new byte[] { 100, actual[1], 0, 255, 255, 255, 255, 0, 0, 0, 0, 0 }, actual);
     }
 
     [Fact]

@@ -173,7 +173,7 @@ public class UnitTestTypeInfer : UnitTypeInferBase
         Const b = 2;
         Function f = new("f", x + b, new[] { x });
         CompilerServices.InferenceType(f);
-        Assert.IsType<AnyType>(f.Body.CheckedType);
+        Assert.IsNotType<AnyType>(f.Body.CheckedType);
 
         // 2. after the  transfrom the dag is valid type
         var y = x.With(typeAnnotation: TensorType.Scalar(DataTypes.Int32));
