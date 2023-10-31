@@ -53,7 +53,10 @@ internal sealed class CompileCommand : Command
           getDefaultValue: () => "tflite");
         DumpFlags = new Option<IEnumerable<DumpFlags>>(
           name: "--dump-flags",
-          description: "dump ir flags. \navailable value: None,ImportOps,PassIR,EGraphCost,Rewrite,Calibration,Evaluator,Compile,Tiling,Schedule,CodeGen.");
+          description: "dump ir flags. \navailable value: None,ImportOps,PassIR,EGraphCost,Rewrite,Calibration,Evaluator,Compile,Tiling,Schedule,CodeGen.")
+        {
+            AllowMultipleArgumentsPerToken = true,
+        };
         DumpDir = new Option<string>(
           name: "--dump-dir",
           description: "dump to directory.",
@@ -90,7 +93,10 @@ internal sealed class CompileCommand : Command
                 return result.Tokens.
                     Select(tk => tk.Value.Split(":").ToArray()).
                     Select(tp => (tp[0].Trim(), int.Parse(tp[1].Trim())));
-            });
+            })
+        {
+            AllowMultipleArgumentsPerToken = true,
+        };
         AddArgument(InputFile);
         AddArgument(OutputFile);
         AddGlobalOption(InputFormat);
