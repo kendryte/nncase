@@ -55,6 +55,8 @@ public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICos
         {
             (DistributedType a, DistributedType b) => Visit(context, target, a, b, (DistributedType)bias),
             (TensorType a, TensorType b) => Visit(context, target, a, b),
+            (AnyType, _) => AnyType.Default,
+            (_, AnyType) => AnyType.Default,
             _ => new InvalidType(string.Empty),
         };
     }

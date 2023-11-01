@@ -144,6 +144,11 @@ public sealed class UnRollLoopSequential : ExprRewriter
             }
         }
 
+        protected override Expr VisitLeafMemSpan(MemSpan expr, Unit context)
+        {
+            return expr.With(Clone(expr.Start, context), Clone(expr.Size, context));
+        }
+
         protected override Expr VisitLeafVar(Var expr, Unit context)
         {
             if (_vmap.TryGetValue(expr, out var result))
