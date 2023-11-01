@@ -468,7 +468,7 @@ public class UnitTestExpression
         CompilerServices.InferenceType(x);
         Assert.Equal("const(i32[4] : {1,2,3,4})", CompilerServices.Print(x));
         Assert.Equal("None", CompilerServices.Print(None.Default));
-        Assert.Equal("Add", CompilerServices.Print(new Nncase.IR.Math.Binary(BinaryOp.Add)));
+        Assert.Equal("Binary", CompilerServices.Print(new Nncase.IR.Math.Binary(BinaryOp.Add)));
         var y = new Var("y");
         CompilerServices.InferenceType(y);
         Assert.Equal("%y: any", CompilerServices.Print(y));

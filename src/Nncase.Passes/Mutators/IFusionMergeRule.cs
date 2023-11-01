@@ -668,7 +668,7 @@ v2 =f2(v0)      v1 = f1(v0)
         {
             if (caller_inputs[i] is Call { Target: Fusion })
             {
-                if (result[$"callee_fusion_{i}"] is not Fusion callee_fusion)
+                if (result.GetValueOrDefault($"callee_fusion_{i}") is not Fusion callee_fusion)
                 {
                     return false;
                 }

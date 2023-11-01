@@ -26,8 +26,7 @@ public class UnitTestInterop : TestClassBase
         var main = new Function("main", y, new[] { x });
         var module = new IRModule(main);
 
-        // var target = CompilerServices.GetTarget(XPUTarget.Kind);
-        var target = CompilerServices.GetTarget("stackvm");
+        var target = CompilerServices.GetTarget("cpu");
         var modelBuilder = new ModelBuilder(target, CompileOptions);
         var linkedModel = modelBuilder.Build(module);
         using var output = new MemoryStream();

@@ -50,6 +50,7 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
         {
             TensorType t => Visit(context, target, t),
             DistributedType d => Visit(context, target, d),
+            AnyType => AnyType.Default,
             _ => new InvalidType(input.GetType().Name),
         };
     }

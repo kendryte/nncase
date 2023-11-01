@@ -71,6 +71,7 @@ public class TransposeEvaluator : IEvaluator<Transpose>, ITypeInferencer<Transpo
         {
             DistributedType d => Visit(context, target, d),
             TensorType t => Visit(context, target, t),
+            AnyType => AnyType.Default,
             _ => new InvalidType(input.GetType().ToString()),
         };
     }

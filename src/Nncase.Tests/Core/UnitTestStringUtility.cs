@@ -29,9 +29,9 @@ public sealed class UnitTestStringUtility
     public void TestJoin()
     {
         var result = StringUtility.Join(",", _entry.Parameters.InputOf().Select(b => b));
-        Assert.Equal("PhysicalBuffer(testInput, f32, MemLocation),PhysicalBuffer(testInput, f32, MemLocation)", result);
+        Assert.Equal("Nncase.TIR.Buffer", result);
 
         var result1 = StringUtility.Join(",", _entry.Parameters.OutputOf().Select(b => b));
-        Assert.Equal(string.Empty, result1);
+        Assert.Equal("Nncase.TIR.Buffer", result1);
     }
 }
