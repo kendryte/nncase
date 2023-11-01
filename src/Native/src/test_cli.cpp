@@ -79,20 +79,22 @@ result<void> run_core(const std::string &kmodel_path,
                        1e6);
 
         if (i == (loop_count - 1)) {
-            if (entry->parameters_size() == (bins.size() - 1)) {
+            if (ret.is_a<tensor>()) {
                 auto output_bin = bins.back();
                 std::ofstream output_stream(output_bin, std::ios::binary);
-                if (ret.is_a<tensor>()) {
-                    try_(write_tensor_buffer(ret, output_stream));
-                } else if (ret.is_a<tuple>()) {
-                    try_var(tp, ret.as<tuple>());
-                    for (auto &&ret_v : tp->fields()) {
-                        try_(write_tensor_buffer(ret_v, output_stream));
-                    }
-                } else {
-                    return nncase::err(std::errc::bad_message);
-                }
+                try_(write_tensor_buffer(ret, output_stream));
                 output_stream.close();
+            } else if (ret.is_a<tuple>()) {
+                try_var(tp, ret.as<tuple>());
+                auto o = 0;
+                for (auto &&ret_v : tp->fields()) {
+                    auto output_bin = bins[entry->parameters_size() + (o++)];
+                    std::ofstream output_stream(output_bin, std::ios::binary);
+                    try_(write_tensor_buffer(ret_v, output_stream));
+                    output_stream.close();
+                }
+            } else {
+                return nncase::err(std::errc::bad_message);
             }
         }
     }
