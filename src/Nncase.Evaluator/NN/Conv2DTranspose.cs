@@ -42,6 +42,9 @@ public class Conv2DTransposeEvaluator : IEvaluator<Conv2DTranspose>, ITypeInfere
         var g_ic = inputShape[1] / groups;
         var g_oc = outputShape[1] / groups;
 
+        var weightsArray = weights.ToArray<float>();
+        var inputsArray = input.ToArray<float>();
+        var biasArray = bias.ToArray<float>();
         int inputIndex = 0;
         for (int batch = 0; batch < inputShape[0]; batch++)
         {
@@ -50,7 +53,7 @@ public class Conv2DTransposeEvaluator : IEvaluator<Conv2DTranspose>, ITypeInfere
             for (int g = 0; g < groups; g++)
             {
                 var out_group_p = out_batch_p.Slice(g * (int)g_oc * (int)outputShape[2] * (int)outputShape[3]);
-                var w_group_p = weights.ToArray<float>().AsSpan().Slice((int)g * (int)g_oc * (int)g_ic * (int)kernelShape[2] * (int)kernelShape[3]);
+                var w_group_p = weightsArray.AsSpan().Slice((int)g * (int)g_oc * (int)g_ic * (int)kernelShape[2] * (int)kernelShape[3]);
 
                 for (int ic = 0; ic < g_ic; ic++)
                 {
@@ -72,7 +75,7 @@ public class Conv2DTransposeEvaluator : IEvaluator<Conv2DTranspose>, ITypeInfere
                             }
                             else
                             {
-                                in_v = input.ToArray<float>()[inputIndex];
+                                in_v = inputsArray[inputIndex];
                             }
 
                             inputIndex++;
@@ -105,7 +108,7 @@ public class Conv2DTransposeEvaluator : IEvaluator<Conv2DTranspose>, ITypeInfere
         for (int i = 0; i < outputSize; i++)
         {
             var biasIdx = i / (outputShape[2] * outputShape[3]) % outputShape[1];
-            outCache[i] = outCache[i] + bias.ToArray<float>()[biasIdx];
+            outCache[i] = outCache[i] + biasArray[biasIdx];
         }
 
         return new TensorValue(Tensor.From(outCache, new[] { (int)outputShape[0], (int)outputShape[1], (int)outputShape[2], (int)outputShape[3] }));
