@@ -94,6 +94,9 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
 
                     ndsbp[i] = SBP.S(bx + bPad);
                     break;
+                case (SBPBroadCast, SBPBroadCast):
+                    ndsbp[i] = SBP.B;
+                    break;
                 default:
                     return invalid;
             }
