@@ -66,7 +66,7 @@ public class Conv2DTransposeEvaluator : IEvaluator<Conv2DTranspose>, ITypeInfere
                             int filterYStart = System.Math.Max(0, (int)((-outYOrigin + dilation[0] - 1) / dilation[0]));
                             int filterYEnd = (int)System.Math.Min(kernelShape[2], ((int)outputShape[2] - outYOrigin + dilation[0] - 1) / dilation[0]);
                             int filterXStart = (int)System.Math.Max(0, (-outXOrigin + dilation[1] - 1) / dilation[1]);
-                            int filter_x_end = (int)System.Math.Min(kernelShape[3], ((int)outputShape[3] - outXOrigin + dilation[1] - 1) / dilation[1]);
+                            int filterXEnd = (int)System.Math.Min(kernelShape[3], ((int)outputShape[3] - outXOrigin + dilation[1] - 1) / dilation[1]);
 
                             float inV;
                             if (ix < 0 || ix >= inputShape[3] || iy < 0 || iy >= inputShape[2])
@@ -88,7 +88,7 @@ public class Conv2DTransposeEvaluator : IEvaluator<Conv2DTranspose>, ITypeInfere
 
                                 for (int ky = filterYStart; ky < filterYEnd; ky++)
                                 {
-                                    for (int kx = filterXStart; kx < filter_x_end; kx++)
+                                    for (int kx = filterXStart; kx < filterXEnd; kx++)
                                     {
                                         int outY = (int)(outYOrigin + (dilation[0] * ky));
                                         int outX = (int)(outXOrigin + (dilation[1] * kx));
