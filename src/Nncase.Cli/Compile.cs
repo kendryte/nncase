@@ -4,17 +4,8 @@
 using System;
 using System.Collections.Generic;
 using System.CommandLine;
-using System.CommandLine.Invocation;
-using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Nncase.CodeGen;
-using Nncase.Compiler;
 using Nncase.Diagnostics;
-using Nncase.IR;
-using Nncase.Passes;
 using Nncase.Quantization;
 
 namespace Nncase.Cli;
@@ -97,6 +88,62 @@ internal sealed class CompileCommand : Command
         {
             AllowMultipleArgumentsPerToken = true,
         };
+        PreProcess = new Option<bool>(
+            name: "--pre-process",
+            description: "whether enable pre process",
+            getDefaultValue: () => false);
+        InputLayout = new Option<string>(
+            name: "--input-layout",
+            description: "the model input data layout",
+            getDefaultValue: () => string.Empty).FromAmong("NCHW", "NHWC");
+        OutputLayout = new Option<string>(
+            name: "--output-layout",
+            description: "the model output data layout.",
+            getDefaultValue: () => string.Empty).FromAmong("NCHW", "NHWC");
+        InputType = new Option<InputType>(
+            name: "--input-type",
+            description: "the model input data value type, default is Float32",
+            getDefaultValue: () => Nncase.InputType.Float32);
+        InputShape = new Option<IEnumerable<int>>(
+            name: "--input-shape",
+            description: "the model input data shape. eg. `--input-shape 1 2 3 4`",
+            getDefaultValue: Array.Empty<int>)
+        {
+            AllowMultipleArgumentsPerToken = true,
+        };
+        InputRange = new Option<IEnumerable<float>>(
+            name: "--input-range",
+            description: "the model input data value range. eg `--input-range -100.3 200.4`",
+            getDefaultValue: Array.Empty<float>)
+        {
+            AllowMultipleArgumentsPerToken = true,
+        };
+        SwapRB = new Option<bool>(
+            name: "--swap-rb",
+            description: "whether swap the model input data channel, like cv2.BGRtoRGB(im)",
+            getDefaultValue: () => false);
+        LetterBoxValue = new Option<float>(
+            name: "--letter-box-value",
+            description: "letterbox fill value",
+            getDefaultValue: () => 0.0f);
+        Mean = new Option<IEnumerable<float>>(
+            name: "--mean",
+            description: "the model input data mean, default []",
+            getDefaultValue: Array.Empty<float>)
+        {
+            AllowMultipleArgumentsPerToken = true,
+        };
+        Std = new Option<IEnumerable<float>>(
+            name: "--std",
+            description: "the model input data std, default []",
+            getDefaultValue: Array.Empty<float>)
+        {
+            AllowMultipleArgumentsPerToken = true,
+        };
+        ModelLayout = new Option<string>(
+            name: "--model-layout",
+            description: "the model's input layout.",
+            getDefaultValue: () => string.Empty).FromAmong("NCHW", "NHWC");
         AddArgument(InputFile);
         AddArgument(OutputFile);
         AddGlobalOption(InputFormat);
@@ -109,6 +156,17 @@ internal sealed class CompileCommand : Command
         AddGlobalOption(ModelQuantMode);
         AddGlobalOption(CalibMethod);
         AddGlobalOption(FixedVars);
+        AddGlobalOption(PreProcess);
+        AddGlobalOption(InputLayout);
+        AddGlobalOption(OutputLayout);
+        AddGlobalOption(InputType);
+        AddGlobalOption(InputShape);
+        AddGlobalOption(InputRange);
+        AddGlobalOption(SwapRB);
+        AddGlobalOption(LetterBoxValue);
+        AddGlobalOption(Mean);
+        AddGlobalOption(Std);
+        AddGlobalOption(ModelLayout);
     }
 
     public Argument<string> InputFile { get; }
@@ -134,4 +192,26 @@ internal sealed class CompileCommand : Command
     public Option<CalibMethod> CalibMethod { get; }
 
     public Option<IEnumerable<(string Name, int Value)>> FixedVars { get; }
+
+    public Option<bool> PreProcess { get; }
+
+    public Option<string> InputLayout { get; }
+
+    public Option<string> OutputLayout { get; }
+
+    public Option<InputType> InputType { get; }
+
+    public Option<IEnumerable<int>> InputShape { get; }
+
+    public Option<IEnumerable<float>> InputRange { get; }
+
+    public Option<bool> SwapRB { get; }
+
+    public Option<float> LetterBoxValue { get; }
+
+    public Option<IEnumerable<float>> Mean { get; }
+
+    public Option<IEnumerable<float>> Std { get; }
+
+    public Option<string> ModelLayout { get; }
 }

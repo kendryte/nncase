@@ -107,7 +107,7 @@ public class Conv2DTransposeEvaluator : IEvaluator<Conv2DTranspose>, ITypeInfere
 
         for (int i = 0; i < outputSize; i++)
         {
-            var biasIdx = i / (outputShape[2] * outputShape[3]) % outputShape[1];
+            var biasIdx = (i / (outputShape[2] * outputShape[3])) % outputShape[1];
             outCache[i] = outCache[i] + biasArray[biasIdx];
         }
 

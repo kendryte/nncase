@@ -95,6 +95,17 @@ internal partial class Program
             InputFormat = context.ParseResult.GetValueForOption(compilecmd.InputFormat)!,
             DumpFlags = context.ParseResult.GetValueForOption(compilecmd.DumpFlags)!.Aggregate(Diagnostics.DumpFlags.None, (a, b) => a | b),
             DumpDir = context.ParseResult.GetValueForOption(compilecmd.DumpDir)!,
+            PreProcess = context.ParseResult.GetValueForOption(compilecmd.PreProcess)!,
+            InputLayout = context.ParseResult.GetValueForOption(compilecmd.InputLayout)!,
+            OutputLayout = context.ParseResult.GetValueForOption(compilecmd.OutputLayout)!,
+            InputType = context.ParseResult.GetValueForOption(compilecmd.InputType)!,
+            InputShape = context.ParseResult.GetValueForOption(compilecmd.InputShape)!.ToArray(),
+            InputRange = context.ParseResult.GetValueForOption(compilecmd.InputRange)!.ToArray(),
+            SwapRB = context.ParseResult.GetValueForOption(compilecmd.SwapRB)!,
+            LetterBoxValue = context.ParseResult.GetValueForOption(compilecmd.LetterBoxValue)!,
+            Mean = context.ParseResult.GetValueForOption(compilecmd.Mean)!.ToArray(),
+            Std = context.ParseResult.GetValueForOption(compilecmd.Std)!.ToArray(),
+            ModelLayout = context.ParseResult.GetValueForOption(compilecmd.ModelLayout)!,
             QuantizeOptions = new()
             {
                 CalibrationMethod = context.ParseResult.GetValueForOption(compilecmd.CalibMethod),

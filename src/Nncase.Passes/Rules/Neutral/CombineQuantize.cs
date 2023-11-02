@@ -55,7 +55,7 @@ public sealed partial class CombineQuantizeConcat : RewriteRule<Pattern>
             }
         }
 
-        return Concat(new IR.Tuple(tupleInputs.Select(e => IR.F.Math.Quantize(e, quantParam, quantize.TargetType)).ToArray()), axis);
+        return Concat(new IR.Tuple(tupleInputs.Select(e => IR.F.Math.Quantize(e, quantParam, quantize.TargetType)).ToArray()), concat.Axis);
     }
 }
 
