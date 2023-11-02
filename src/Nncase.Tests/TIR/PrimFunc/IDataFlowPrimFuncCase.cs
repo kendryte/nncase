@@ -124,7 +124,7 @@ internal static class PrimFuncBuilder
 
     private sealed class Allocator
     {
-        private readonly Dictionary<TIR.MemoryLocation, int> _usage = new() {
+        private readonly Dictionary<TIR.MemoryLocation, ulong> _usage = new() {
           { TIR.MemoryLocation.Input, 0 },
           { TIR.MemoryLocation.Output, 0 },
           { TIR.MemoryLocation.L2Data, 0 },
@@ -135,8 +135,9 @@ internal static class PrimFuncBuilder
             var dims = Dimensions.Select(d => (Expr)d).ToArray();
             var strides = TensorUtilities.GetStrides(Dimensions).Select(s => (Expr)s).ToArray();
             var size = TensorUtilities.GetSize(Dimensions, TensorUtilities.GetStrides(Dimensions), DataTypes.Float32.SizeInBytes);
-            var buffer = new TIR.Buffer(name, DataTypes.Float32, new TIR.MemSpan(_usage[location], size, location), dims, strides);
-            _usage[location] += size;
+
+            var buffer = new TIR.Buffer(name, DataTypes.Float32, new TIR.MemSpan(Tensor.FromPointer<float>(_usage[location]), size, location), dims, strides);
+            _usage[location] += (ulong)size;
             return buffer;
         }
     }

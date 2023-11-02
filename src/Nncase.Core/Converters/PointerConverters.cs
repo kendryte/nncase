@@ -30,3 +30,25 @@ internal class PointerConverters : IPointerSpanConverter<ulong>
         }
     }
 }
+
+internal class PointerIntConverters : IPointerSpanConverter<int>
+{
+    public void ConvertTo<T>(ReadOnlySpan<Pointer<T>> source, Span<int> dest, CastMode castMode)
+        where T : unmanaged, IEquatable<T>
+    {
+        if (castMode != CastMode.KDefault)
+        {
+            throw new InvalidCastException();
+        }
+
+        if (dest.Length < source.Length)
+        {
+            throw new ArgumentException("Dest buffer is not sufficient.");
+        }
+
+        for (int i = 0; i < source.Length; i++)
+        {
+            dest[i] = checked((int)source[i].Value);
+        }
+    }
+}

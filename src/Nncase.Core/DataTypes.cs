@@ -114,7 +114,7 @@ public static class DataTypes
     /// <returns> datatype name.</returns>
     public static string GetDisplayName(this DataType dataType) => dataType switch
     {
-        PointerType pointerType => $"({GetDisplayName(pointerType.ElemType)}{(pointerType.Shape.IsScalar ? string.Empty : pointerType.Shape.ToString())} *)",
+        PointerType pointerType => $"({GetDisplayName(pointerType.ElemType)} *)",
         PrimType primType => primType.ShortName,
         ValueType => dataType.ToString(),
         _ => throw new ArgumentOutOfRangeException(dataType.GetType().Name),
@@ -128,7 +128,7 @@ public static class DataTypes
     public static string GetCSharpName(this DataType dataType) => dataType switch
     {
         PrimType primType => $"DataTypes.{primType.FullName}",
-        PointerType pointerType => $"new PointerType({pointerType.ElemType.GetCSharpName()}, IR.Shape.Scalar)",
+        PointerType pointerType => $"new PointerType({pointerType.ElemType.GetCSharpName()})",
         ValueType valueType => $"new {valueType.GetType().Name}()",
         _ => throw new ArgumentOutOfRangeException(dataType.GetType().Name),
     };

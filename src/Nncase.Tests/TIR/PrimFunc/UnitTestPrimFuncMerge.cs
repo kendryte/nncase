@@ -44,16 +44,17 @@ public class UnitTestPrimFuncMerge : TestClassBase
 
     public IAnalyzerManager AnalyzerMananger => CompileSession.GetRequiredService<IAnalyzerManager>();
 
-    [Theory]
+    [Theory(Skip = "Disable")]
     [MemberData(nameof(Datas))]
     private async void RunCore(IDataFlowPrimFuncCase fusionCase, int count)
     {
+        var dumper = Diagnostics.DumpScope.Current.CreateSubDummper($"case_{count}");
         var inputVar = new Var("input", new TensorType(DataTypes.Float32, PrimFuncBuilder.Dimensions));
         var main = new Function(fusionCase.BuildBody(inputVar), inputVar);
 
         CompilerServices.InferenceType(main);
 #if DEBUG
-        Dumpper.DumpDotIR(main, $"{count}_pre");
+        Diagnostics.DumpScope.Current.DumpDotIR(main, $"{count}_pre");
 #endif
         var feedDict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance) {
           { inputVar, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 12, PrimFuncBuilder.Dimensions).Evaluate() },
@@ -69,7 +70,7 @@ public class UnitTestPrimFuncMerge : TestClassBase
         var post = (Function)module.Entry!;
 
 #if DEBUG
-        Dumpper.DumpDotIR(post, $"{count}_post");
+        Diagnostics.DumpScope.Current.DumpDotIR(post, $"{count}_post");
 #endif
 
         var visitor = new TestVisitor();

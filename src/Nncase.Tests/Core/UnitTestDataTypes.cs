@@ -53,7 +53,7 @@ public sealed class UnitTestDataTypes
     public void TestIsPointer()
     {
         Assert.False(DataTypes.IsPointer(DataTypes.Float32));
-        Assert.True(DataTypes.IsPointer(new PointerType(DataTypes.Float32, IR.Shape.Scalar)));
+        Assert.True(DataTypes.IsPointer(new PointerType(DataTypes.Float32)));
     }
 
     [Fact]
@@ -61,7 +61,7 @@ public sealed class UnitTestDataTypes
     {
         var a = new QuantParamType();
         Assert.Equal(a.ToString(), DataTypes.GetDisplayName(a));
-        Assert.Equal("(f32 *)", DataTypes.GetDisplayName(new PointerType(DataTypes.Float32, IR.Shape.Scalar)));
+        Assert.Equal("(f32 *)", DataTypes.GetDisplayName(new PointerType(DataTypes.Float32)));
         Assert.Equal(DataTypes.Boolean.ShortName, DataTypes.GetDisplayName(DataTypes.Boolean));
         Assert.Equal(DataTypes.Utf8Char.ShortName, DataTypes.GetDisplayName(DataTypes.Utf8Char));
         Assert.Equal(DataTypes.Int8.ShortName, DataTypes.GetDisplayName(DataTypes.Int8));
@@ -82,7 +82,7 @@ public sealed class UnitTestDataTypes
     public void TestCSharpName()
     {
         Assert.Equal("new QuantParamType()", DataTypes.GetCSharpName(new QuantParamType()));
-        Assert.Equal("new PointerType(DataTypes.Float32, IR.Shape.Scalar)", DataTypes.GetCSharpName(new PointerType(DataTypes.Float32, IR.Shape.Scalar)));
+        Assert.Equal("new PointerType(DataTypes.Float32)", DataTypes.GetCSharpName(new PointerType(DataTypes.Float32)));
         Assert.Equal("DataTypes.Boolean", DataTypes.GetCSharpName(DataTypes.Boolean));
         Assert.Equal("DataTypes.Utf8Char", DataTypes.GetCSharpName(DataTypes.Utf8Char));
         Assert.Equal("DataTypes.Int8", DataTypes.GetCSharpName(DataTypes.Int8));

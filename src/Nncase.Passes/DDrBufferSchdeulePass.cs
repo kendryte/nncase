@@ -126,7 +126,7 @@ internal sealed class DDrBufferRewriter : ExprRewriter
             _functionUsage[memSpan.Location] = start + size.Value.ToScalar<int>();
             Changed = true;
 
-            return expr.With(memSpan: memSpan.With(start: Tensor.FromPointer((ulong)start, new PointerType(expr.ElemType, expr.Dimensions.ToArray().Select(d => ((TensorConst)d).Value.ToScalar<int>()).ToArray()))));
+            return expr.With(memSpan: memSpan.With(start: Tensor.FromPointer((ulong)start, expr.ElemType)));
         }
 
         return expr;
@@ -163,7 +163,7 @@ internal sealed class DDrBufferRewriter : ExprRewriter
                 Changed = true;
             }
 
-            return memSpan.With(new TensorConst(Tensor.FromPointer((ulong)memRange.Min, new PointerType(constType.DType, constType.Shape))), memRange.Max - memRange.Min);
+            return memSpan.With(new TensorConst(Tensor.FromPointer((ulong)memRange.Min, constType.DType)), memRange.Max - memRange.Min);
         }
 
         return memSpan;

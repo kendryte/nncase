@@ -120,7 +120,7 @@ internal sealed class LifeTimeCollector : ExprVisitor<Unit, Unit>
                     changed = AliasTime(splitCall, interval);
                 }
             }
-        } while (!changed);
+        } while (changed);
     }
 
     private bool AliasTime(Call call, TimeInterval interval)

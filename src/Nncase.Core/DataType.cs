@@ -42,8 +42,7 @@ public enum PrimTypeAttributes
 /// </example>
 /// </summary>
 /// <param name="ElemType"> the type the pointer points to. </param>
-/// <param name="Shape">the shape of the pointer points to.</param>
-public sealed record PointerType(DataType ElemType, IR.Shape Shape) : DataType
+public sealed record PointerType(DataType ElemType) : DataType
 {
     /// <inheritdoc/>
     public override Type CLRType { get; } = typeof(Pointer<>).MakeGenericType(ElemType.CLRType);
@@ -82,7 +81,7 @@ public abstract record DataType
         {
             if (t.GetGenericTypeDefinition() == typeof(Pointer<>))
             {
-                return new PointerType(FromType(t.GenericTypeArguments[0]), IR.Shape.Scalar);
+                return new PointerType(FromType(t.GenericTypeArguments[0]));
             }
 
             throw new ArgumentException("Unsupported CLR type.");

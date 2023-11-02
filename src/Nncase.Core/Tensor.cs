@@ -342,18 +342,18 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     public static Tensor<Pointer<T>> FromPointer<T>(ulong value)
       where T : unmanaged, IEquatable<T>
     {
-        return Tensor.FromScalar<Pointer<T>>(new Pointer<T>(value));
+        return FromScalar<Pointer<T>>(new Pointer<T>(value));
     }
 
     /// <summary>
     /// Create tensor from a ulong address.
     /// </summary>
     /// <param name="value">addr value.</param>
-    /// <param name="pointerType">points type.</param>
+    /// <param name="elemType">pointed type.</param>
     /// <returns>Created tensor.</returns>
-    public static Tensor FromPointer(ulong value, PointerType pointerType)
+    public static Tensor FromPointer(ulong value, DataType elemType)
     {
-        return Tensor.FromBytes(TensorType.Scalar(pointerType), BitConverter.GetBytes(value));
+        return FromBytes(TensorType.Scalar(new PointerType(elemType)), BitConverter.GetBytes(value));
     }
 
     /// <summary>
