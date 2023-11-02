@@ -1,0 +1,34 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewModels="clr-namespace:Nncase.Studio.ViewModels"
+             xmlns:views="clr-namespace:Nncase.Studio.Views"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="Nncase.Studio.Views.CompileView"
+             x:DataType="viewModels:CompileViewModel">
+
+    <StackPanel VerticalAlignment="Center">
+        <DockPanel Margin="10">
+            <Label Margin="20" Content="Kmodel路径"></Label>
+            <TextBox Text="{Binding KmodelPath}" Watermark="Path or Name"></TextBox>
+        </DockPanel>
+        <DockPanel HorizontalAlignment="Center" Margin="4">
+            <Button Margin= "25"
+                    CornerRadius="45"
+                    Content="编译"
+                    x:CompileBindings="False"
+                    Command="{Binding $parent[Window].DataContext.Compile}">
+            </Button>
+            <Button Margin="25"
+                    CornerRadius="45"
+                    Content="停止"
+                    x:CompileBindings="False"
+                    Command="{Binding $parent[Window].DataContext.CancelCompile}">
+            </Button>
+        </DockPanel>
+        <TextBlock DataContext="Compile Log"></TextBlock>
+        <ProgressBar Minimum="0" Maximum="100" Value="40" Height="20"></ProgressBar>
+    </StackPanel>
+
+</UserControl>

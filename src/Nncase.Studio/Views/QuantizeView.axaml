@@ -1,0 +1,45 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:qt="clr-namespace:Nncase.Quantization"
+             xmlns:quantization="clr-namespace:Nncase.Quantization;assembly=Nncase.Core"
+             xmlns:quantization1="clr-namespace:Nncase.Quantization;assembly=Nncase.Quantization"
+             xmlns:views="clr-namespace:Nncase.Studio.Views"
+             xmlns:viewModels="clr-namespace:Nncase.Studio.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="Nncase.Studio.Views.QuantizeView"
+             x:DataType="viewModels:QuantizeViewModel">
+
+    <StackPanel VerticalAlignment="Center">
+        <UniformGrid Rows="7" Columns="4" Margin="4">
+            <Label Content="矫正集文件夹路径" Height="60"></Label>
+                <DockPanel>
+                    <!-- todo: dataset -->
+                    <!-- <Button Margin="0 0 5 0" Content="SelectFile" Command="{Binding SelectCalibrationDataSet}"></Button> -->
+                    <TextBox Text= "Path"></TextBox>
+                </DockPanel>
+            <Label Content="矫正方法"></Label><views:EnumComboBox TypeName="{x:Type quantization:CalibMethod}" SelectedValue="{Binding CalibMethod}"></views:EnumComboBox>
+            <Label Content="BindQuantMethod"></Label><CheckBox IsChecked="{Binding QuantizeOptions.BindQuantMethod}"></CheckBox>
+            <Label Content="开启SQuant"></Label><CheckBox IsChecked="{Binding QuantizeOptions.UseSquant}"></CheckBox>
+            <Label Content="开启AdaRound"></Label><CheckBox IsChecked="{Binding QuantizeOptions.UseAdaRound}"></CheckBox>
+            <Label Content="输入量化类型"></Label><views:EnumComboBox TypeName="{x:Type quantization:QuantType}" SelectedValue="{Binding QuantType}"></views:EnumComboBox>
+            <Label Content="Weights量化类型"></Label><views:EnumComboBox TypeName="{x:Type quantization:QuantType}" SelectedValue="{Binding WQuantType}"></views:EnumComboBox>
+            <Label Content="模型量化模式"></Label><ComboBox
+                      ItemsSource="{Binding ModelQuantModeList}"
+                      SelectedItem="{Binding ModelQuantMode}"></ComboBox>
+            <!-- todo quant scheme -->
+            <Label Content="量化配置文件"></Label>
+                <DockPanel>
+                    <!-- todo: dataset -->
+                    <!-- <Button Margin="0 0 5 0" Content="SelectFile" Command="{Binding SelectQuantScheme}"></Button> -->
+                    <!-- <TextBox Text= "{Binding QuantSchemaPath}"></TextBox> -->
+                </DockPanel>
+            <Label Content="量化配置严格模式"></Label><CheckBox IsChecked="{Binding QuantizeOptions.QuantSchemeStrictMode}"></CheckBox>
+            <Label Content="导出量化配置"></Label><CheckBox IsChecked="{Binding QuantizeOptions.ExportQuantScheme}"></CheckBox>
+            <Label Content="导出权重范围"></Label><CheckBox IsChecked="{Binding QuantizeOptions.ExportWeightRangeByChannel}"></CheckBox>
+            <Label Content="Dump量化损失"></Label><CheckBox IsChecked="{Binding QuantizeOptions.DumpQuantError}"></CheckBox>
+            <Label Content="Dump对称量化损失"></Label><CheckBox IsChecked="{Binding QuantizeOptions.DumpQuantErrorSymmetricForSigned}"></CheckBox>
+        </UniformGrid>
+    </StackPanel>
+</UserControl>

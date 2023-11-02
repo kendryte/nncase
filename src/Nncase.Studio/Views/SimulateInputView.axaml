@@ -1,0 +1,45 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="Nncase.Studio.Views.SimulateInputView">
+
+    <StackPanel VerticalAlignment="Center">
+        <DockPanel Margin="10" HorizontalAlignment="Center">
+            <StackPanel Margin="10">
+                <TextBlock Text="模型参数信息"></TextBlock>
+                <ListBox
+                    x:CompileBindings="False"
+                    ItemsSource="{Binding $parent[Window].DataContext.MainParamStr}"></ListBox>
+            </StackPanel>
+            <StackPanel Margin="10">
+                <TextBlock Text="输入信息"></TextBlock>
+                <ListBox
+                    x:CompileBindings="False"
+                    ItemsSource="{Binding $parent[Window].DataContext.InputTypeStr}"></ListBox>
+            </StackPanel>
+            <StackPanel Margin="10">
+                <TextBlock Text="输入路径"></TextBlock>
+                <ListBox
+                    x:CompileBindings="False"
+                    ItemsSource="{Binding $parent[Window].DataContext.InputPath}"></ListBox>
+            </StackPanel>
+        </DockPanel>
+
+        <StackPanel Margin="10" HorizontalAlignment="Center">
+            <!-- todo: 滚动条 -->
+            <StackPanel>
+                <Button Content="设置输入"
+                        x:CompileBindings="False"
+                        HorizontalAlignment="Center"
+                        Command="{Binding $parent[Window].DataContext.SetRuntimeInput}">
+                </Button>
+                <Label Margin="10"
+                       HorizontalAlignment="Left"
+                       Content="目前支持的输入格式: *.npy"></Label>
+            </StackPanel>
+
+        </StackPanel>
+    </StackPanel>
+</UserControl>

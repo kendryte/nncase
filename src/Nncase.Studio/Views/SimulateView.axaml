@@ -1,0 +1,26 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:views="clr-namespace:Nncase.Studio.Views"
+             xmlns:viewModels="clr-namespace:Nncase.Studio.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="Nncase.Studio.Views.SimulateView"
+             x:DataType="viewModels:SimulateViewModel">
+
+    <StackPanel VerticalAlignment="Center">
+        <DockPanel HorizontalAlignment="Center">
+            <Label Content="KmodelPath"></Label>
+            <TextBlock x:CompileBindings="False"
+                       Text="{Binding $parent[Window].DataContext.KmodelPath}"></TextBlock>
+        </DockPanel>
+        <Button HorizontalAlignment="Center"
+                Margin="40"
+                Content="Simulate"
+                x:CompileBindings="False"
+                Command="{Binding $parent[Window].DataContext.Simulate}">
+        </Button>
+
+        <ProgressBar Minimum="0" Maximum="100" Value="40" Height="20"></ProgressBar>
+    </StackPanel>
+</UserControl>

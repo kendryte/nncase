@@ -1,0 +1,48 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>WinExe</OutputType>
+        <TargetFramework>net7.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+        <ApplicationManifest>app.manifest</ApplicationManifest>
+        <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Folder Include="Models\"/>
+        <AvaloniaResource Include="Assets\**"/>
+    </ItemGroup>
+
+
+    <ItemGroup>
+        <PackageReference Include="Avalonia" Version="11.0.2"/>
+        <PackageReference Include="Avalonia.Desktop" Version="11.0.2"/>
+        <PackageReference Include="Avalonia.Themes.Fluent" Version="11.0.2"/>
+        <PackageReference Include="Avalonia.Fonts.Inter" Version="11.0.2"/>
+        <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
+        <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.0.2"/>
+        <PackageReference Include="Avalonia.ReactiveUI" Version="11.0.2"/>
+        <PackageReference Include="CommunityToolkit.Mvvm"/>
+        <PackageReference Include="NumSharp" />
+
+
+
+        <ProjectReference Include="..\Nncase.Compiler\Nncase.Compiler.csproj" />
+        <ProjectReference Include="..\Nncase.CodeGen\Nncase.CodeGen.csproj" />
+        <ProjectReference Include="..\Nncase.Core\Nncase.Core.csproj" />
+        <ProjectReference Include="..\Nncase.Diagnostics\Nncase.Diagnostics.csproj" />
+        <ProjectReference Include="..\Nncase.Graph\Nncase.Graph.csproj" />
+        <ProjectReference Include="..\Nncase.EGraph\Nncase.EGraph.csproj" />
+        <ProjectReference Include="..\Nncase.Evaluator\Nncase.Evaluator.csproj" />
+        <ProjectReference Include="..\Nncase.Importer\Nncase.Importer.csproj" />
+        <ProjectReference Include="..\Nncase.Simulator\Nncase.Simulator.csproj" />
+        <ProjectReference Include="..\Nncase.Quantization\Nncase.Quantization.csproj" />
+        <ProjectReference Include="..\Nncase.Passes\Nncase.Passes.csproj" />
+        <ProjectReference Include="..\..\modules\Nncase.Modules.StackVM\Nncase.Modules.StackVM.csproj" />
+    </ItemGroup>
+
+
+    <ItemGroup>
+      <UpToDateCheckInput Remove="Style\EnumComboBox.axaml" />
+    </ItemGroup>
+</Project>

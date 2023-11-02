@@ -238,8 +238,19 @@ internal class Compiler : ICompiler
         });
     }
 
+    public void DoProcessing(IProgress<int> progress)
+    {
+        var maxPassCount = 0;
+        while (_runPassCount < maxPassCount)
+        {
+            Thread.Sleep(1000);
+            progress?.Report(_runPassCount);
+        }
+    }
+
     public async Task CompileAsync()
     {
+        Console.WriteLine("Run");
         var target = _compileSession.Target;
         await RunPassAsync(p => TargetIndependentPass(p), "TargetIndependentPass");
         await RunPassAsync(p => RegisterTargetIndependQuantPass(p), "TargetIndependentQuantPass");
@@ -249,6 +260,7 @@ internal class Compiler : ICompiler
             await RunPassAsync(p => TargetIndependentPass(p), "TargetIndependentPass");
         }
 
+        Console.WriteLine("Target independent");
         await RunPassAsync(
             p => target.RegisterTargetDependentPass(p, _compileSession.CompileOptions),
             "TargetDependentPass");

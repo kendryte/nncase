@@ -1,0 +1,33 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:views="clr-namespace:Nncase.Studio.Views"
+             xmlns:viewModels="clr-namespace:Nncase.Studio.ViewModels"
+             xmlns:nncase="clr-namespace:Nncase;assembly=Nncase.Core"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="Nncase.Studio.Views.PreprocessView"
+             x:DataType="viewModels:PreprocessViewModel">
+
+    <StackPanel VerticalAlignment="Center">
+            <UniformGrid Rows="5" Columns="4" Margin="4">
+                <Label Height="60" Content="输入Layout"></Label><TextBox Text="{Binding InputLayout}" Watermark="{Binding LayoutWatermark}"></TextBox>
+                <Label Content="输出Layout"></Label><TextBox Text="{Binding OutputLayout}" Watermark="{Binding LayoutWatermark}"></TextBox>
+                <Label Content="InputType"></Label> <views:EnumComboBox SelectedValue="{Binding InputTypeValue}" TypeName="nncase:InputType"></views:EnumComboBox>
+                <Label Content="输入Shape"></Label><TextBox Text="{Binding InputShape}" Watermark="{Binding ShapeWaterMark}"></TextBox>
+                <Label Content="输入Range"></Label>
+                    <DockPanel>
+                        <Label Content="Min"></Label><TextBox Text="{Binding RangeMin}"></TextBox>
+                        <Label Content="Max"></Label><TextBox Text="{Binding RangeMax}"></TextBox>
+                    </DockPanel>
+
+                <Label Content="SwapRB"></Label><CheckBox IsChecked="{Binding SwapRB}"></CheckBox>
+
+                <Label Content="Mean"></Label><TextBox Text="{Binding Mean}" Watermark="{Binding ListNumberWaterMark}"></TextBox>
+                <Label Content="Std"></Label><TextBox Text="{Binding Std}" Watermark="{Binding ListNumberWaterMark}"></TextBox>
+
+                <Label Content="模型Layout"></Label><TextBox Text="{Binding ModelLayout}" Watermark="{Binding LayoutWatermark}"></TextBox>
+                <Label Content="LetterBoxValue"></Label><TextBox Text="{Binding LetterBoxValue}"></TextBox>
+            </UniformGrid>
+    </StackPanel>
+</UserControl>
