@@ -99,8 +99,8 @@ public sealed class PytestCalibrationDatasetProvider : ICalibrationDatasetProvid
         if (match.Success)
         {
             string name = match.Groups[1].Value;
-            int n = int.Parse(match.Groups[2].Value);
-            int i = int.Parse(match.Groups[3].Value);
+            int i = int.Parse(match.Groups[2].Value);
+            int n = int.Parse(match.Groups[3].Value);
             item = new(name, n, i);
             return true;
         }
@@ -111,11 +111,11 @@ public sealed class PytestCalibrationDatasetProvider : ICalibrationDatasetProvid
 
     private sealed record Sample(string Name, int Number, int InputIndex)
     {
-        public string FileName => $"{Name}_{Number}_{InputIndex}.bin";
+        public string FileName => $"{Name}_{InputIndex}_{Number}.bin";
 
         public int[] GetShape()
         {
-            using var stream = File.OpenRead($"{Name}_{Number}_{InputIndex}.txt");
+            using var stream = File.OpenRead($"{Name}_{InputIndex}_{Number}.txt");
             using var reader = new StreamReader(stream);
             var line = reader.ReadLine();
             int[] shape = Array.Empty<int>();

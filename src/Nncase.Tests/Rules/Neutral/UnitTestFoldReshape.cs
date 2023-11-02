@@ -11,12 +11,14 @@ using System.Threading.Tasks;
 using Nncase.IR.F;
 using Nncase.Passes;
 using Nncase.Passes.Rules.Neutral;
+using Nncase.Tests.TestFixture;
 using Xunit;
 using Math = Nncase.IR.F.Math;
 using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
+[AutoSetupTestMethod(InitSession = true)]
 public class UnitTestFoldReshape : TransformTestBase
 {
     public static TheoryData<int[], int[], int[], int[]> TestReshapeBinaryConstReshapePositiveData => new()

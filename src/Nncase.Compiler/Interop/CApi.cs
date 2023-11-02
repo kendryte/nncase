@@ -82,6 +82,7 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr, FineTuneWeightsMethod, void> QuantOptionsSetFineTuneWeightsMethodPtr;
     public delegate* unmanaged<IntPtr, byte, void> QuantOptionsSetUseMixQuantPtr;
     public delegate* unmanaged<IntPtr, byte*, nuint, void> QuantOptionsSetQuantSchemePtr;
+    public delegate* unmanaged<IntPtr, byte, void> QuantOptionsSetQuantSchemeStrictModePtr;
     public delegate* unmanaged<IntPtr, byte, void> QuantOptionsSetExportQuantSchemePtr;
     public delegate* unmanaged<IntPtr, byte, void> QuantOptionsSetExportWeightRangeByChannelPtr;
     public delegate* unmanaged<IntPtr, byte, void> QuantOptionsSetDumpQuantErrorPtr;
@@ -150,6 +151,7 @@ public static unsafe class CApi
         mt->QuantOptionsSetFineTuneWeightsMethodPtr = &QuantizeOptionsSetFineTuneWeightsMethod;
         mt->QuantOptionsSetUseMixQuantPtr = &QuantOptionsSetUseMixQuant;
         mt->QuantOptionsSetQuantSchemePtr = &QuantizeOptionsSetQuantScheme;
+        mt->QuantOptionsSetQuantSchemeStrictModePtr = &QuantizeOptionsSetQuantSchemeStrictMode;
         mt->QuantOptionsSetExportQuantSchemePtr = &QuantizeOptionsSetExportQuantScheme;
         mt->QuantOptionsSetExportWeightRangeByChannelPtr = &QuantizeOptionsSetExportWeightRangeByChannel;
         mt->QuantOptionsSetDumpQuantErrorPtr = &QuantizeOptionsSetDumpQuantError;
@@ -578,6 +580,22 @@ public static unsafe class CApi
     private static void QuantizeOptionsSetQuantScheme(IntPtr quantizeOptionsHandle, byte* quantSchemePtr, nuint quantSchemeLength)
     {
         Get<QuantizeOptions>(quantizeOptionsHandle).QuantScheme = ToString(quantSchemePtr, quantSchemeLength);
+    }
+
+    [UnmanagedCallersOnly]
+    private static void QuantizeOptionsSetQuantSchemeStrictMode(IntPtr quantizeOptionsHandle, byte quantSchemeStrictMode)
+    {
+        switch (quantSchemeStrictMode)
+        {
+            case 0:
+                Get<QuantizeOptions>(quantizeOptionsHandle).QuantSchemeStrictMode = false;
+                break;
+            case 1:
+                Get<QuantizeOptions>(quantizeOptionsHandle).QuantSchemeStrictMode = true;
+                break;
+            default:
+                throw new ArgumentException("Invalid QuantSchemeStrictMode Flag");
+        }
     }
 
     [UnmanagedCallersOnly]

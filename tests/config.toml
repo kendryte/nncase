@@ -40,6 +40,7 @@ finetune_weights_method = 'NoFineTuneWeights'
 input_mean = 0.5
 input_std = 0.5
 quant_scheme = ""
+quant_scheme_strict_mode = false
 
 [infer_report_opt]
 enabled = false

@@ -39,7 +39,7 @@ namespace Nncase.Importer
             var pads = AutoPad(op, autoPad, input, weights, strides.ToArray<long>(), dilation.ToArray(), isConv1D);
             pads.InferenceType();
             var conv = F.NN.Conv2D(input, weights, bias, strides.ToArray(), pads, dilation.ToArray(), PadMode.Constant, group);
-            List<string> outputNames = new() { op.Name };
+            List<string> outputNames = new() { op.Output[0] };
             conv.Metadata.OutputNames = outputNames;
             if (isConv1D)
             {

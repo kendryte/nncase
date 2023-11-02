@@ -228,6 +228,7 @@ PTQTensorOptions类, 用于配置nncase PTQ选项，各属性说明如下
 | dump_quant_error                      | bool   | 否       | 是否生成量化损失，默认为False。在 `dump_ir=True`时生效                                  |
 | dump_quant_error_symmetric_for_signed | bool   | 否       | 是否生成使用范围对称的量化损失，默认为True。在 `dump_ir=True`时生效                     |
 | quant_scheme                          | string | 否       | 量化配置文件路径，默认为“ ”。在 `dump_ir=True`时生效                                  |
+| quant_scheme_strict_mode              | bool   | 否       | 是否严格按照quant_scheme执行量化，默认为False。在 `quant_scheme`不为空时生效                              |
 | export_quant_scheme                   | bool   | 否       | 是否导出量化配置文件，默认为False。在 `dump_ir=True`时生效                              |
 | export_weight_range_by_channel        | bool   | 否       | 导出量化配置文件时，是否按照channel统计权重的范围，默认为False。在 `dump_ir=True`时生效 |
 

@@ -41,15 +41,17 @@ public sealed partial class CombineQuantizeConcat : RewriteRule<Pattern>
 
     private Expr? GetReplace(Quantize quantize, IReadOnlyList<Expr> tupleInputs, IR.Tensors.Concat concat, Expr quantParam, RunPassContext options)
     {
-        int axis = concat.Axis;
-        var userAnalysis = options.GetAnalysis<IExprUserAnalysisResult>();
-
-        // see UnitTestCombineQuantize.TestCombineQuantizeConcatNegative
-        foreach (var e in tupleInputs)
+        if (options.Driver is DataflowPass)
         {
-            if (userAnalysis[e].Count() > 1)
+            var userAnalysis = options.GetAnalysis<IExprUserAnalysisResult>();
+
+            // see UnitTestCombineQuantize.TestCombineQuantizeConcatNegative
+            foreach (var e in tupleInputs)
             {
-                return null;
+                if (userAnalysis[e].Count() > 1)
+                {
+                    return null;
+                }
             }
         }
 
@@ -63,49 +65,43 @@ public sealed partial class CombineQuantizeConcat : RewriteRule<Pattern>
 [RuleGenerator]
 public sealed partial class CombineQuantizeReshape : RewriteRule<Pattern>
 {
-    private readonly bool _checkShapeSize;
-
-    public CombineQuantizeReshape()
-    {
-        _checkShapeSize = false;
-    }
-
     /// <summary>
     /// Initializes a new instance of the <see cref="CombineQuantizeReshape"/> class.
     /// </summary>
     /// <param name="checkShapeSize">if true, skip pass.</param>
-    public CombineQuantizeReshape(bool checkShapeSize = false)
+    public CombineQuantizeReshape(bool checkShapeSize)
     {
-        _checkShapeSize = checkShapeSize;
+        Pattern = IsQuantize(
+            "quantize",
+            _ => true,
+            IsReshape(
+                "reshape",
+                "reshapeCall",
+                IsWildcard("input") with { TypePattern = HasShape(sp => !(checkShapeSize && sp.ToValueArray().Any(s => s >= 65536)), "CheckedShape") },
+                IsWildcard("shape")),
+            IsWildcard("quantParam"));
+    }
+
+    public CombineQuantizeReshape()
+        : this(false)
+    {
     }
 
     /// <inheritdoc/>
-    public override Pattern Pattern { get; } = IsQuantize(
-        "quantize",
-        _ => true,
-        IsReshape(
-            "reshape",
-            "reshapeCall",
-            IsWildcard("input"),
-            IsWildcard("shape")),
-        IsWildcard("quantParam"));
+    public override Pattern Pattern { get; }
 
-    private Expr? GetReplace(Quantize quantize, Call reshapeCall, Expr input, Expr shape, Expr quantParam, RunPassContext options)
+    private Expr? GetReplace(Quantize quantize, Call reshapeCall, Expr input, Expr shape, Expr quantParam, RunPassContext context)
     {
-        var userAnalysis = options.GetAnalysis<IExprUserAnalysisResult>();
-
-        if (userAnalysis[reshapeCall].Count() > 1)
+        if (context.Driver is DataflowPass)
         {
-            return null;
-        }
-
-        if (_checkShapeSize && input.CheckedShape.ToValueArray().Any(s => s >= 65536))
-        {
-            return null;
+            var userAnalysis = context.GetAnalysis<IExprUserAnalysisResult>();
+            if (userAnalysis[reshapeCall].Count() > 1)
+            {
+                return null;
+            }
         }
 
         var output = Reshape(Quantize(input, quantParam, quantize.TargetType), shape);
-        output.InferenceType();
         return output;
     }
 }
@@ -162,15 +158,18 @@ public sealed partial class CombineQuantizeTranspose : RewriteRule<Pattern>
 
     private Expr? GetReplace(Quantize quantize, Call transposeCall, Expr input, Expr perm, Expr quantParam, RunPassContext options)
     {
-        var userAnalysis = options.GetAnalysis<IExprUserAnalysisResult>();
-
-        if (userAnalysis[transposeCall].Count() > 1)
+        try
         {
-            return null;
+            var userAnalysis = options.GetAnalysis<IExprUserAnalysisResult>();
+            if (userAnalysis[transposeCall].Count() > 1)
+            {
+                return null;
+            }
+        }
+        catch (System.Exception)
+        {
         }
 
-        var output = Transpose(Quantize(input, quantParam, quantize.TargetType), perm);
-        output.InferenceType();
-        return output;
+        return Transpose(Quantize(input, quantParam, quantize.TargetType), perm);
     }
 }

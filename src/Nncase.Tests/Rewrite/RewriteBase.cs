@@ -2875,6 +2875,38 @@ public sealed class PReluTransposeCase : IRewriteCase
     public Dictionary<Var, IValue> FeedDict { get; }
 }
 
+/// <summary>
+/// egraph extract bad case.
+/// </summary>
+public sealed class FoldReshapeWithBranch : IRewriteCase
+{
+    public FoldReshapeWithBranch()
+    {
+        var v1070 = new Var(new TensorType(DataTypes.Float32, new[] { 1, 1, 2, 8400 }));
+        {
+            var v1071 = Unary(UnaryOp.Cos, v1070); // f32[1,1,2,8400]
+            var v1072 = Reshape(v1071, new[] { 1, 2, 8400 }); // f32[1,2,8400]
+            var v1073 = Reshape(v1072, new[] { 1, 1, 2, 8400 }); // f32[1,1,2,8400]
+            var v1078 = Unary(UnaryOp.Sin, v1073); // f32[1,1,2,8400]
+            var v1079 = Reshape(v1078, new[] { 1, 2, 8400 }); // f32[1,2,8400]
+            var v1080 = Sub(v1072, IR.F.Random.Normal(DataTypes.Float32, new[] { 1, 2, 8400 }).Evaluate().AsTensor()); // f32[1,2,8400]
+            var v1081 = new IR.Tuple(v1079, v1080); // (f32[1,2,8400], f32[1,2,8400])
+            PreExpr = new Function(v1081, new[] { v1070 });
+        }
+
+        FeedDict = new() { { v1070, IR.F.Random.Normal(new[] { 1, 1, 2, 8400 }).Evaluate() } };
+    }
+
+    public Function PreExpr { get; }
+
+    public IEnumerable<Type> Rules => new[] {
+        typeof(FoldNopReshape),
+        typeof(FoldTwoReshapes),
+    };
+
+    public Dictionary<Var, IValue> FeedDict { get; }
+}
+
 public sealed class ReshapeTransposeReshapeCase : IRewriteCase
 {
     public ReshapeTransposeReshapeCase()

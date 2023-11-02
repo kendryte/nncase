@@ -194,6 +194,8 @@ typedef struct {
     void (*quantize_options_set_quant_scheme)(
         clr_object_handle_t quantize_options, const char *quant_scheme,
         size_t quant_scheme_length);
+    void (*quantize_options_set_quant_scheme_strict_mode)(
+        clr_object_handle_t quantize_options, bool quant_scheme_strict_mode);
     void (*quantize_options_set_export_quant_scheme)(
         clr_object_handle_t quantize_options, bool export_quant_scheme);
     void (*quantize_options_set_export_weight_range_by_channel)(
@@ -394,6 +396,12 @@ class quantize_options : public clr_object_base {
     void quant_scheme(std::string_view value) {
         nncase_clr_api()->quantize_options_set_quant_scheme(
             obj_.get(), value.data(), value.length());
+    }
+
+    bool quant_scheme_strict_mode() { return false; }
+    void quant_scheme_strict_mode(bool value) {
+        nncase_clr_api()->quantize_options_set_quant_scheme_strict_mode(
+            obj_.get(), value);
     }
 
     bool export_quant_scheme() { return false; }
