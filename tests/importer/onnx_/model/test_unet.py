@@ -29,7 +29,8 @@ def test_demo(request):
 
     # runner.set_shape_var({"batch_size": 1, "num_channels_latent": 4, "height_latent": 64, "width_latent": 64})
     # runner.set_shape_var({"N": 384})
-    runner.set_shape_var({"batch_size": 2, "num_channels": 4, "height": 64, "width": 64, "steps": 2, "sequence_length": 77})
+    runner.set_shape_var({"batch_size": 2, "num_channels": 4, "height": 64,
+                          "width": 64, "steps": 2, "sequence_length": 77})
     # runner.set_shape_var({"batch_size:1", "sequence_length:77"})
     runner.run(model_file)
 
