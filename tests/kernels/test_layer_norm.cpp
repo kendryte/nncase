@@ -106,7 +106,7 @@ TEST_P(LayerNormTest, layer_norm) {
 
     // actual
     auto output =
-        kernels::stackvm::layer_norm((int32_t)axis_value, eps, input.impl(),
+        kernels::stackvm::layer_norm((int32_t)axis_value, eps, false, input.impl(),
                                      scale.impl(), b.impl())
             .expect("layer_norm failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
