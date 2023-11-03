@@ -180,7 +180,6 @@ def recv_worker(conn, target):
     send_msg(conn, f"pls send header".encode())
     header = recv_msg(conn)
     dict = json.loads(header.decode())
-    # print('recv_worker: dict = {}'.format(dict))
     new_case = dict['case'] + str(int(time.time()))
     target.logger.info("test case = {0}".format(new_case))
     case_dir = os.path.join(target.nfs_dir, new_case)
