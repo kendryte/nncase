@@ -80,7 +80,7 @@ public sealed class UnitTestMutators : TestClassBase
                 var name = getBuffer(count++, LoadT.GlbPp).Name[^4..];
 
                 // System.Console.WriteLine($"{w} {name}");
-                if (((w / 9) % 2) == 0)
+                if ((w / 9 % 2) == 0)
                 {
                     Assert.Equal("ping", name);
                 }

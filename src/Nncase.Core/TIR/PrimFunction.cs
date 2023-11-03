@@ -28,8 +28,8 @@ public sealed class PrimFunction : BaseFunction
     /// <param name="moduleKind">module kind.</param>
     /// <param name="parameters">Arguments.</param>
     /// <param name="body">Body.</param>
-w    public PrimFunction(string name, string moduleKind, Sequential body, ReadOnlySpan<Buffer> parameters)
-        : base(name, moduleKind, ArrayUtility.Concat(body, SpanUtility.UnsafeCast<Buffer, Expr>(parameters)))
+    w public PrimFunction(string name, string moduleKind, Sequential body, ReadOnlySpan<Buffer> parameters)
+            : base(name, moduleKind, ArrayUtility.Concat(body, SpanUtility.UnsafeCast<Buffer, Expr>(parameters)))
     {
     }
 
