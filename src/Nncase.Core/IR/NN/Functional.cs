@@ -44,6 +44,8 @@ public static class NN
 
     public static Call LRN(Expr input, Expr alpha, Expr beta, Expr bias, Expr size) => new Call(new LRN(), input, alpha, beta, bias, size);
 
+    public static Call Mish(Expr input) => input * Math.Tanh(Softplus(input));
+
     public static Call HardSigmoid(Expr input, Expr alpha, Expr beta) => new Call(new HardSigmoid(), input, alpha, beta);
 
     public static Call HardSwish(Expr input) => new Call(new HardSwish(), input);

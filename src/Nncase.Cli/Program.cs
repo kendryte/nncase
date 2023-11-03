@@ -34,11 +34,7 @@ internal partial class Program
         var target = CompilerServices.GetTarget(targetKind);
         using var compileSession = CompileSession.Create(target, compileOptions);
         var compiler = compileSession.Compiler;
-        IR.IRModule module;
-        using (var model_stream = File.OpenRead(compileOptions.InputFile))
-        {
-            module = await compiler.ImportModuleAsync(model_stream);
-        }
+        IR.IRModule module = await compiler.ImportModuleAsync(Path.GetExtension(compileOptions.InputFile).Trim('.'), compileOptions.InputFile);
 
         // 3. create the calib dataset
         if (compileOptions.QuantizeOptions.ModelQuantMode == Quantization.ModelQuantMode.UsePTQ)
