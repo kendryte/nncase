@@ -13,11 +13,21 @@ endif()
 if(NOT DEFINED NNCASE_VERSION_SUFFIX)
     find_package (Git)
     execute_process(
-        COMMAND ${GIT_EXECUTABLE} describe --always --dirty
+        COMMAND ${GIT_EXECUTABLE} describe --always --dirty --tag
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        OUTPUT_VARIABLE GIT_DESC
+        OUTPUT_VARIABLE GIT_TAG
         OUTPUT_STRIP_TRAILING_WHITESPACE)
-    set(NNCASE_VERSION_SUFFIX "-${GIT_DESC}")
+
+    if ("v${NNCASE_VERSION}" STREQUAL "${GIT_TAG}")
+        set(NNCASE_VERSION_SUFFIX "")
+    else()
+        execute_process(
+            COMMAND ${GIT_EXECUTABLE} describe --always --dirty
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+            OUTPUT_VARIABLE GIT_DESC
+            OUTPUT_STRIP_TRAILING_WHITESPACE)
+        set(NNCASE_VERSION_SUFFIX "-${GIT_DESC}")
+    endif()
 endif()
 
 if (NOT PACKAGE_VERSION)
@@ -92,7 +102,7 @@ if (BUILDING_RUNTIME)
 
     if (MSVC)
         add_definitions(/D_CRT_SECURE_NO_WARNINGS /DNOMINMAX)
-        add_compile_options(/wd4267 /wd4251 /wd4244 /FC /utf-8 /W3 /WX /wd4297 -Wno-unused-function -Wno-unused-command-line-argument -Wno-int-to-void-pointer-cast -Wno-int-to-pointer-cast)
+        add_compile_options(/wd4267 /wd4251 /wd4244 /FC /utf-8 /W3 /WX /wd4297 -Wno-unused-function -Wno-unused-command-line-argument)
     else()
         add_compile_options(-Wall -Wextra -pedantic -Werror -Wno-multichar -Wno-missing-field-initializers -Wno-unused-function -Wno-type-limits)
         if (APPLE)
@@ -184,7 +194,7 @@ else()
 
     if (MSVC)
         add_definitions(/D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS /D_CRT_SECURE_NO_WARNINGS /DNOMINMAX)
-        add_compile_options(/wd4267 /wd4251 /wd4244 /FC /utf-8 /W3 /WX -Wno-unused-function -Wno-unused-command-line-argument -Wno-int-to-void-pointer-cast -Wno-int-to-pointer-cast)
+        add_compile_options(/wd4267 /wd4251 /wd4244 /FC /utf-8 /W3 /WX -Wno-unused-function -Wno-unused-command-line-argument)
         set(PYBIND11_CPP_STANDARD "/std:c++latest")
     else()
         add_compile_options(-fvisibility=hidden)

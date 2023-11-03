@@ -50,6 +50,15 @@ class PreluTest : public KernelTest,
         } else {
             slope = slope_t{0.1};
         }
+
+        size_t slope_size = slope.size();
+        float *slope_array = (float *)malloc(slope_size * sizeof(float));
+        std::copy(slope.begin(), slope.end(), slope_array);
+        slope_tensor = hrt::create(dt_float32, {slope_size},
+                                   {reinterpret_cast<gsl::byte *>(slope_array),
+                                    slope_size * sizeof(float)},
+                                   true, host_runtime_tensor::pool_cpu_only)
+                           .expect("create tensor failed");
     }
 
     void TearDown() override{CLEAR_SUBCASE()}
@@ -73,6 +82,7 @@ class PreluTest : public KernelTest,
 
   protected:
     runtime_tensor input;
+    runtime_tensor slope_tensor;
     slope_t slope;
 };
 
@@ -83,15 +93,14 @@ TEST_P(PreluTest, Prelu) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
 
     // expected
-    size_t slope_size = slope.size();
-    float *slope_array = (float *)malloc(slope_size * sizeof(float));
-    std::copy(slope.begin(), slope.end(), slope_array);
-    auto slope = hrt::create(dt_float32, {slope_size},
-                             {reinterpret_cast<gsl::byte *>(slope_array),
-                              slope_size * sizeof(float)},
-                             true, host_runtime_tensor::pool_cpu_only)
-                     .expect("create tensor failed");
-    auto slope_ort = runtime_tensor_2_ort_tensor(slope);
+    runtime_tensor slope_tensor_like_input(
+        kernels::stackvm::cast(input.datatype(),
+                               runtime::stackvm::cast_mode_t::kdefault,
+                               slope_tensor.impl())
+            .expect("cast failed")
+            .as<tensor>()
+            .expect("as tensor failed"));
+    auto slope_ort = runtime_tensor_2_ort_tensor(slope_tensor_like_input);
     auto output_ort = ortki_PRelu(l_ort, slope_ort);
     size_t size = 0;
     void *ptr_ort = tensor_buffer(output_ort, &size);
@@ -103,8 +112,9 @@ TEST_P(PreluTest, Prelu) {
                         .expect("create tensor failed");
 
     // actual
-    auto output = kernels::stackvm::prelu(input.impl(), slope.impl())
-                      .expect("prelu failed");
+    auto output =
+        kernels::stackvm::prelu(input.impl(), slope_tensor_like_input.impl())
+            .expect("prelu failed");
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));
 
     bool result = is_same_tensor(expected, actual) ||

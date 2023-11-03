@@ -16,8 +16,8 @@ public sealed partial class BufferOf : Op
     /// </summary>
     public static readonly ParameterInfo Input = new(typeof(BufferOf), 0, "input", IsTensor());
 
-    public TIR.MemoryLocation MemoryLocation { get; }
+    public Schedule.MemoryLocation MemoryLocation { get; }
 
     /// <inheritdoc/>
-    public override string DisplayProperty() => $"MemoryLocation.{MemoryLocation}";
+    public override string DisplayProperty() => $"Schedule.MemoryLocation.{MemoryLocation}";
 }

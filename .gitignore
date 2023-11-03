@@ -262,6 +262,9 @@ __pycache__/
 # vscode
 .vscode/
 
+# clangd
+.cache/
+
 # pip
 /python/*/dist
 *egg-info

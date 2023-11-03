@@ -58,9 +58,7 @@ class nncaseConan(ConanFile):
 
         if not self.options.runtime:
             self.requires('abseil/20220623.1')
-            # if self.settings.arch != 'riscv64':
-            if self.settings.arch in ['x86_64']:
-                self.requires('nethost/6.0.11')
+            self.requires('nethost/6.0.11')
             self.requires('fmt/7.1.3')
             self.requires('magic_enum/0.7.0')
             self.requires('spdlog/1.8.2')

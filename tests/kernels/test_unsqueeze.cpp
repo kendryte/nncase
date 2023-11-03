@@ -56,23 +56,11 @@ class UnsqueezeTest : public KernelTest,
 INSTANTIATE_TEST_SUITE_P(Unsqueeze, UnsqueezeTest,
                          testing::Combine(testing::Range(0, MAX_CASE_NUM)));
 
-//    testing::Combine(
-//        testing::Values(dt_float32, dt_int32, dt_int16, dt_float64, dt_int8,
-//                        dt_uint8, dt_uint16, dt_uint32, dt_uint64, dt_int64,
-//                        dt_bfloat16, dt_float16, dt_boolean),
-//        testing::Values(dims_t{24, 24}, dims_t{3, 24, 24}, dims_t{24, 24},
-//                        dims_t{24}, dims_t{1, 3, 16}),
-//        testing::Values(axes_t{0}, axes_t{-1}, axes_t{-2}, axes_t{-3},
-//                        axes_t{1}, axes_t{2}, axes_t{3}, axes_t{0, 1},
-//                        axes_t{0, 2}, axes_t{1, -1},
-//                        /*axes_t{-2, -1},
-//          axes_t{2, 1},*/
-//                        axes_t{-4})));
-
 TEST_P(UnsqueezeTest, Unsqueeze) {
     auto l_ort = runtime_tensor_2_ort_tensor(input);
 
     if (axis_array.size() + input.shape().size() == 4) {
+
         // expected
         size_t axis_size = axis_array.size();
         int64_t *axis_array1 = (int64_t *)malloc(axis_size * sizeof(int64_t));

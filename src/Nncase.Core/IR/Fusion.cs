@@ -45,22 +45,10 @@ public class Fusion : BaseFunction
     /// Initializes a new instance of the <see cref="Fusion"/> class.
     /// build function.
     /// </summary>
-    public Fusion(string type, string name, string moduleKind, Expr body, params Var[] parameters)
-        : base(name, moduleKind, ArrayUtility.Concat(body, SpanUtility.UnsafeCast<Var, Expr>(parameters)))
-    {
-        FusionType = type;
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="Fusion"/> class.
-    /// build function.
-    /// </summary>
     public Fusion(string moduleKind, Expr body, params Var[] parameters)
         : this($"func_{_globalFusionIndex++}", moduleKind, body, parameters)
     {
     }
-
-    public string? FusionType { get; }
 
     public Expr Body => Operands[0];
 

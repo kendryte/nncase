@@ -38,7 +38,7 @@ public abstract class TestClassBase : IDisposable
     /// <summary>
     /// Gets or sets default target name.
     /// </summary>
-    public virtual string DefaultTargetName { get; set; } = "cpu";
+    public virtual string DefaultTargetName { get; set; } = CPUTarget.Kind;
 
     /// <summary>
     /// Gets test output root.

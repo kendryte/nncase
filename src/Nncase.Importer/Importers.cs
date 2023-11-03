@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.Importer;
+using Nncase.Importer.Ncnn;
 using Nncase.Importer.TFLite;
 using Nncase.IR;
 
@@ -43,6 +44,20 @@ public static class Importers
     {
         compileSession.CompileOptions.ModelLayout = "NCHW";
         var importer = new OnnxImporter(onnx, compileSession);
+        return importer.Import();
+    }
+
+    /// <summary>
+    /// Import ncnn model.
+    /// </summary>
+    /// <param name="ncnnParam">Ncnn param stream.</param>
+    /// <param name="ncnnBin">Ncnn bin stream.</param>
+    /// <param name="compileSession">compile session.</param>
+    /// <returns>Imported IR module.</returns>
+    public static IRModule ImportNcnn(Stream ncnnParam, Stream ncnnBin, CompileSession compileSession)
+    {
+        compileSession.CompileOptions.ModelLayout = "NCHW";
+        var importer = new NcnnImporter(ncnnParam, ncnnBin, compileSession);
         return importer.Import();
     }
 }

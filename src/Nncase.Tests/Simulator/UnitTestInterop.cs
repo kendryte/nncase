@@ -25,8 +25,7 @@ public class UnitTestInterop : TestClassBase
         var y = x + 1.0f;
         var main = new Function("main", y, new[] { x });
         var module = new IRModule(main);
-
-        var target = CompilerServices.GetTarget("cpu");
+        var target = CompilerServices.GetTarget(CPUTarget.Kind);
         var modelBuilder = new ModelBuilder(target, CompileOptions);
         var linkedModel = modelBuilder.Build(module);
         using var output = new MemoryStream();

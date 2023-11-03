@@ -76,7 +76,7 @@ class OnnxTestRunner(TestRunner):
         if not self.inputs:
             self.parse_model(model_file)
 
-        # model_file = self.do_preprocess(model_file)
+        model_file = self.do_preprocess(model_file)
 
         super().run(model_file)
 
