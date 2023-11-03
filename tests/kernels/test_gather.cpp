@@ -61,11 +61,9 @@ class GatherTest : public KernelTest,
                               true, host_runtime_tensor::pool_cpu_only)
                       .expect("create tensor failed");
 
-        batchDims_value = axis >= 0
-                              ? (size_t)axis >= shape.size() ? -1 : axis
+        batchDims_value = axis >= 0 ? (size_t)axis >= shape.size() ? -1 : axis
                           : -(size_t)axis > shape.size() ? -1
-                                                          : axis;
-
+                                                         : axis;
     }
 
     void TearDown() override { CLEAR_SUBCASE() }
