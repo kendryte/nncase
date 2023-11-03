@@ -146,7 +146,6 @@ class Inference:
             data.extend(packet)
         return data
 
-
     def run_evb(self, target, kmodel, compile_opt, infer_dir):
         ip = test_utils.nuc_ip()
         port = test_utils.nuc_port()
