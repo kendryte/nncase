@@ -81,12 +81,6 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                 'shape': 'N/A',
                 'if_quant_type': 'uint8',
                 'w_quant_type': 'uint8',
-                'roofline_fps': 'N/A',
-                'actual_fps': 'N/A',
-                'roofline_mac_usage': 'N/A',
-                'actual_mac_usage': 'N/A',
-                'result': 'Pass',
-                'remark': 'N/A'
             }
 
     def transform_input(self, values: List[np.ndarray], type: str, stage: str) -> List[np.ndarray]:
@@ -245,6 +239,12 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
 
     @abstractmethod
     def import_model(self, compiler, model_content, import_options):
+        pass
+
+    def config_cmds(self):
+        return []
+
+    def stat_target(self, infer_dir, results):
         pass
 
     def run(self, model_file: Union[List[str], str]):
