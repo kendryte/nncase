@@ -78,7 +78,7 @@ result<void> run_core(const std::string &kmodel_path,
                            .count() /
                        1e6);
 
-        if (i == (loop_count - 1)) {
+        if (i == (loop_count - 1) && (entry->parameters_size() < bins.size())) {
             if (ret.is_a<tensor>()) {
                 auto output_bin = bins.back();
                 std::ofstream output_stream(output_bin, std::ios::binary);
