@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Nncase.Passes;
 using Nncase.Passes.Rules.Neutral;
+using Nncase.Tests.TestFixture;
 using Xunit;
 using Math = Nncase.IR.F.Math;
 using NN = Nncase.IR.F.NN;
@@ -17,6 +18,7 @@ using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
+[AutoSetupTestMethod(InitSession = true)]
 public class UnitTestSpaceToBatchToPad : TransformTestBase
 {
     public static IEnumerable<object[]> TestSpaceToBatchToPadPositiveData =>

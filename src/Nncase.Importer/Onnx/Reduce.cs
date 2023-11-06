@@ -11,12 +11,12 @@ namespace Nncase.Importer
 {
     public partial class OnnxImporter
     {
-        private Expr VisitReduce(in NodeProto op, ReduceOp reduceOp, float initValue)
+        private Expr VisitReduce(in NodeProto op, ReduceOp reduceOp, Expr initValue)
         {
             return ReduceCore(op, reduceOp, initValue, expr => expr);
         }
 
-        private Expr ReduceCore(in NodeProto op, ReduceOp reduceOp, float initValue, Func<Expr, Expr> f)
+        private Expr ReduceCore(in NodeProto op, ReduceOp reduceOp, Expr initValue, Func<Expr, Expr> f)
         {
             var input = GetInputExpr(op, 0);
             Expr axis;
@@ -51,6 +51,12 @@ namespace Nncase.Importer
                 var x when x == ReduceOp.Max && input.CheckedDataType == DataTypes.Int32 => F.Tensors.Reduce(reduceOp, f(input), axis, int.MinValue, keepDims),
                 var x when x == ReduceOp.Min && input.CheckedDataType == DataTypes.Int64 => F.Tensors.Reduce(reduceOp, f(input), axis, long.MaxValue, keepDims),
                 var x when x == ReduceOp.Min && input.CheckedDataType == DataTypes.Int32 => F.Tensors.Reduce(reduceOp, f(input), axis, int.MaxValue, keepDims),
+                var x when x == ReduceOp.Max && input.CheckedDataType == DataTypes.Float32 => F.Tensors.Reduce(reduceOp, f(input), axis, float.MinValue, keepDims),
+                var x when x == ReduceOp.Max && input.CheckedDataType == DataTypes.Float16 => F.Tensors.Reduce(reduceOp, f(input), axis, Half.MinValue, keepDims),
+                var x when x == ReduceOp.Max && input.CheckedDataType == DataTypes.BFloat16 => F.Tensors.Reduce(reduceOp, f(input), axis, BFloat16.RoundToBFloat16(float.MinValue), keepDims),
+                var x when x == ReduceOp.Min && input.CheckedDataType == DataTypes.Float32 => F.Tensors.Reduce(reduceOp, f(input), axis, float.MaxValue, keepDims),
+                var x when x == ReduceOp.Min && input.CheckedDataType == DataTypes.Float16 => F.Tensors.Reduce(reduceOp, f(input), axis, Half.MaxValue, keepDims),
+                var x when x == ReduceOp.Min && input.CheckedDataType == DataTypes.BFloat16 => F.Tensors.Reduce(reduceOp, f(input), axis, BFloat16.RoundToBFloat16(float.MaxValue), keepDims),
                 _ => F.Tensors.Reduce(reduceOp, f(input), axis, F.Tensors.Cast(initValue, input.CheckedDataType), keepDims),
             };
         }

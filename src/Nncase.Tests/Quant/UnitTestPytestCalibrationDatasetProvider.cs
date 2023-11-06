@@ -110,9 +110,9 @@ public class UnitTestPytestCalibrationDatasetProvider
             for (var t = 0; t < tensorValue.Length; t++)
             {
                 var value = tensorValue[t];
-                var sr1 = new StreamWriter(Path.Join(dir, $"input_{s}_{t}.txt"));
+                var sr1 = new StreamWriter(Path.Join(dir, $"input_{t}_{s}.txt"));
                 DumpTxt(value, sr1);
-                var sr2 = Path.Join(dir, $"input_{s}_{t}.bin");
+                var sr2 = Path.Join(dir, $"input_{t}_{s}.bin");
                 DumpBin(value, sr2);
             }
         }

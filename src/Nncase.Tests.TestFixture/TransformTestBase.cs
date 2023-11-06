@@ -67,7 +67,7 @@ public partial class TransformTestBase : TestClassBase
         }
 
         var preHashCode = pre.GetHashCode();
-        var post = (Function)CompilerServices.Rewrite(pre, rules, new() { AnalysisResults = analysis });
+        var post = (Function)CompilerServices.Rewrite(pre, rules, new() { AnalysisResults = analysis, Driver = new DataflowPass() });
         if (isNotMatch)
         {
             Assert.Equal(preHashCode, post.GetHashCode());
@@ -97,7 +97,7 @@ public partial class TransformTestBase : TestClassBase
 
         var preHashCode = pre.GetHashCode();
         var v1 = pre.Evaluate(feeds);
-        var post = CompilerServices.Rewrite(pre, rules, new());
+        var post = CompilerServices.Rewrite(pre, rules, new() { Driver = new DataflowPass() });
         Assert.NotEqual(preHashCode, post.GetHashCode());
         var v2 = post.Evaluate(feeds);
         if (!Comparator.AllEqual(v1, v2))
@@ -112,7 +112,7 @@ public partial class TransformTestBase : TestClassBase
     {
         pre.InferenceType();
         var preHashCode = pre.GetHashCode();
-        var post = CompilerServices.Rewrite(pre, rules, new());
+        var post = CompilerServices.Rewrite(pre, rules, new() { Driver = new DataflowPass() });
         Assert.Equal(preHashCode, post.GetHashCode());
     }
 
