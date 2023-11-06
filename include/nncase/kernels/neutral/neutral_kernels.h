@@ -816,4 +816,575 @@ inline void table_lookup1d(const uint8_t *CXX_RESTRICT input, uint8_t *CXX_RESTR
     for (size_t i = 0; i < size; i++)
         output[i] = table[input[i]];
 }
+
+template <class T, class TShape>
+void gru(const T *CXX_RESTRICT input, const T *CXX_RESTRICT w, const T *CXX_RESTRICT r, const T *CXX_RESTRICT b, T *CXX_RESTRICT initial_h, T *CXX_RESTRICT output, T *CXX_RESTRICT output_h,
+    const runtime_shape_t &input_shape, const runtime_shape_t &w_shape, int mode)
+{
+    const int seq_length = input_shape[0];
+    const int batch_size = input_shape[1];
+    const int input_size = input_shape[2];
+    const int num_direction = w_shape[0];
+    const int hidden_size = w_shape[1] / 3;
+
+    auto sigmoid = [&](float x) {
+        return 1 / (1 + std::exp(-x));
+    };
+    auto tanh = [&](float x) {
+        return std::tanh(x);
+    };
+    runtime_shape_t out_shape { (size_t)seq_length, (size_t)num_direction, (size_t)batch_size, (size_t)hidden_size };
+
+    auto x_gate_size = batch_size * input_size;
+    auto w_gate_size = 3 * hidden_size * input_size;
+    auto h_t_size = batch_size * hidden_size;
+    auto r_gate_size = 3 * hidden_size * hidden_size;
+
+    auto tmp_a = std::vector<float>(batch_size * hidden_size, 0.f);
+    auto tmp_b = std::vector<float>(batch_size * hidden_size, 0.f);
+    auto gate_z = std::vector<float>(batch_size * hidden_size, 0.f);
+    auto gate_r = std::vector<float>(batch_size * hidden_size, 0.f);
+    auto gate_h = std::vector<float>(batch_size * hidden_size, 0.f);
+
+    std::vector<int> seq_len_loop;
+    for (int l = 0; l < seq_length; l++)
+        seq_len_loop.push_back(l);
+    if (mode == lstm_direction::kReverse)
+        std::reverse(seq_len_loop.begin(), seq_len_loop.end());
+    auto x_i = input;
+    auto h_t = initial_h;
+    auto w_i = w;
+    auto r_i = r;
+    auto b_i = b;
+    for (int d = 0; d < num_direction; d++)
+    {
+        h_t = initial_h + d * h_t_size;
+        w_i = w + d * w_gate_size;
+        r_i = r + d * r_gate_size;
+        b_i = b + d * 6 * hidden_size;
+        if (d == 1)
+            std::reverse(seq_len_loop.begin(), seq_len_loop.end());
+        for (auto i : seq_len_loop)
+        {
+            x_i = input + i * x_gate_size;
+            // clean gate_z gate_r gate_h
+            std::fill(gate_z.begin(), gate_z.end(), 0.f);
+            std::fill(gate_r.begin(), gate_r.end(), 0.f);
+            std::fill(gate_h.begin(), gate_h.end(), 0.f);
+
+            // clean tmp_a tmp_b
+            std::fill(tmp_a.begin(), tmp_a.end(), 0.f);
+            std::fill(tmp_b.begin(), tmp_b.end(), 0.f);
+            // gate_z = x_i * w_i_z + b_w_z + h_t *r_i_z + b_r_z
+            for (int bs = 0; bs < batch_size; bs++)
+            {
+                for (int hs = 0; hs < hidden_size; hs++)
+                {
+                    for (int is = 0; is < input_size; is++)
+                    {
+                        tmp_a[bs * hidden_size + hs] += x_i[bs * input_size + is] * w_i[hs * input_size + is];
+                    }
+                    tmp_a[bs * hidden_size + hs] += b_i[hs];
+                    for (int rs = 0; rs < hidden_size; rs++)
+                    {
+                        tmp_b[bs * hidden_size + hs] += h_t[bs * hidden_size + rs] * r_i[hs * hidden_size + rs];
+                    }
+                    tmp_b[bs * hidden_size + hs] += b_i[3 * hidden_size + hs];
+                    gate_z[bs * hidden_size + hs] = tmp_a[bs * hidden_size + hs] + tmp_b[bs * hidden_size + hs];
+                }
+            }
+            // gate_z = sigmoid(gate_z);
+            std::transform(gate_z.begin(), gate_z.end(), gate_z.begin(), sigmoid);
+
+            // clear tmp_a tmp_b
+            std::fill(tmp_a.begin(), tmp_a.end(), 0.f);
+            std::fill(tmp_b.begin(), tmp_b.end(), 0.f);
+            // gate_r = x_i * w_i_r + b_w_r + h_t *r_i_r + b_r_r
+            for (int bs = 0; bs < batch_size; bs++)
+            {
+                for (int hs = 0; hs < hidden_size; hs++)
+                {
+                    for (int is = 0; is < input_size; is++)
+                    {
+                        tmp_a[bs * hidden_size + hs] += x_i[bs * input_size + is] * w_i[hidden_size * input_size + hs * input_size + is];
+                    }
+                    tmp_a[bs * hidden_size + hs] += b_i[hidden_size + hs];
+                    for (int rs = 0; rs < hidden_size; rs++)
+                    {
+                        tmp_b[bs * hidden_size + hs] += h_t[bs * hidden_size + rs] * r_i[hidden_size * hidden_size + hs * hidden_size + rs];
+                    }
+                    tmp_b[bs * hidden_size + hs] += b_i[4 * hidden_size + hs];
+                    gate_r[bs * hidden_size + hs] = tmp_a[bs * hidden_size + hs] + tmp_b[bs * hidden_size + hs];
+                }
+            }
+            // gate_r = sigmoid(gate_r);
+            std::transform(gate_r.begin(), gate_r.end(), gate_r.begin(), sigmoid);
+
+            // clear tmp_a tmp_b
+            std::fill(tmp_a.begin(), tmp_a.end(), 0.f);
+            std::fill(tmp_b.begin(), tmp_b.end(), 0.f);
+            // gate_h = x_i * w_i_h + b_w_h + gate_r·h_t *r_i_h + b_r_h
+            for (int bs = 0; bs < batch_size; bs++)
+            {
+                for (int hs = 0; hs < hidden_size; hs++)
+                {
+                    for (int is = 0; is < input_size; is++)
+                    {
+                        tmp_a[bs * hidden_size + hs] += x_i[bs * input_size + is] * w_i[2 * hidden_size * input_size + hs * input_size + is];
+                    }
+                    tmp_a[bs * hidden_size + hs] += b_i[2 * hidden_size + hs];
+                    for (int rs = 0; rs < hidden_size; rs++)
+                    {
+                        // if not linear
+                        tmp_b[bs * hidden_size + hs] += gate_r[bs * hidden_size + rs] * h_t[bs * hidden_size + rs] * r_i[2 * hidden_size * hidden_size + hs * hidden_size + rs];
+                        // if linear
+                        // tmp_b[bs * batch_size + hs] +=  h_t[bs * batch_size + rs] * r_i[hidden_size * hidden_size + hs * hidden_size + rs] + b_i[5 * hidden_size + hs];
+                    }
+                    tmp_b[bs * hidden_size + hs] += b_i[5 * hidden_size + hs];
+
+                    // if not linear
+                    gate_h[bs * hidden_size + hs] = tmp_a[bs * hidden_size + hs] + tmp_b[bs * hidden_size + hs];
+                    // if linear
+                    // gate_h[bs * batch_size + hs] = tmp_a[bs * batch_size + hs] + gate_r[bs * batch_size + rs] * tmp_b[bs * batch_size + hs];
+                }
+            }
+            // gate_h = tanh(gate_h);
+            std::transform(gate_h.begin(), gate_h.end(), gate_h.begin(), tanh);
+
+            for (int k = 0; k < batch_size * hidden_size; k++)
+            {
+                h_t[k] = (1 - gate_z[k]) * gate_h[k] + gate_z[k] * h_t[k];
+                // *output++ = h_t[k];
+                output[i * (num_direction * batch_size * hidden_size) + d * (batch_size * hidden_size) + k] = h_t[k];
+            }
+        }
+        // if (mode == lstm_direction::kReverse || d == 1)
+        //     h_t.reverse();
+        for (int k = 0; k < batch_size * hidden_size; k++)
+        {
+            output_h[d * (batch_size * hidden_size) + k] = h_t[k];
+        }
+    }
+}
+
+template <class T, class TShape>
+void tflite_detection_postprocess(const T *CXX_RESTRICT boxes, const T *CXX_RESTRICT scores, const T *CXX_RESTRICT anchors, T *CXX_RESTRICT output_locations, T *CXX_RESTRICT output_classes, T *CXX_RESTRICT output_scores, T *CXX_RESTRICT output_num_detections,
+    const runtime_shape_t &boxes_shape, const runtime_shape_t &scores_shape, NNCASE_UNUSED const runtime_shape_t &anchors_shape,
+    const int32_t max_detections, const int32_t max_classes_per_detection, const int32_t detections_per_class,
+    const bool use_regular_non_max_suppression, const float nms_score_threshold, const float nms_iou_threshold,
+    const int32_t num_classes, const float y_scale, const float x_scale, const float h_scale, const float w_scale)
+{
+    struct CenterSizeEncoding
+    {
+        float y;
+        float x;
+        float h;
+        float w;
+    };
+    struct BoxCornerEncoding
+    {
+        float ymin;
+        float xmin;
+        float ymax;
+        float xmax;
+    };
+    struct BoxInfo
+    {
+        int index;
+        float score;
+    };
+
+    auto compute_iou = [&](const std::vector<BoxCornerEncoding> &box, const int &i, const int &j) {
+        auto &box_i = box[i];
+        auto &box_j = box[j];
+        const float area_i = (box_i.ymax - box_i.ymin) * (box_i.xmax - box_i.xmin);
+        const float area_j = (box_j.ymax - box_j.ymin) * (box_j.xmax - box_j.xmin);
+        if (area_i <= 0 || area_j <= 0)
+            return 0.f;
+        const float intersection_y_min = std::max<float>(box_i.ymin, box_j.ymin);
+        const float intersection_x_min = std::max<float>(box_i.xmin, box_j.xmin);
+        const float intersection_y_max = std::min<float>(box_i.ymax, box_j.ymax);
+        const float intersection_x_max = std::min<float>(box_i.xmax, box_j.xmax);
+        const float intersection_area = std::max<float>(intersection_y_max - intersection_y_min, 0.0) * std::max<float>(intersection_x_max - intersection_x_min, 0.0);
+        return intersection_area / (area_i + area_j - intersection_area);
+    };
+
+    const auto num_boxes = (int)anchors_shape[0];
+    const auto num_classes_with_background = (int)scores_shape[2]; // num_classes + background
+    const auto num_detections_per_class = std::min(detections_per_class, max_detections);
+    int label_offset = num_classes_with_background - num_classes;
+    // DecodeCenterSizeBoxes： get decoded_boxes
+    std::vector<BoxCornerEncoding> decoded_boxes(boxes_shape[1]);
+    {
+
+        CenterSizeEncoding box_center_size;
+        CenterSizeEncoding scale_values { y_scale, x_scale, h_scale, w_scale };
+        CenterSizeEncoding anchor;
+
+        for (int index = 0; index < num_boxes; index++)
+        {
+            const auto box_encoding_index = index * boxes_shape[2];
+            box_center_size = *reinterpret_cast<const CenterSizeEncoding *>(boxes + box_encoding_index);
+            anchor = *reinterpret_cast<const CenterSizeEncoding *>(anchors + box_encoding_index);
+
+            auto y_center = static_cast<float>(static_cast<double>(box_center_size.y) / static_cast<double>(scale_values.y) * static_cast<double>(anchor.h) + static_cast<double>(anchor.y));
+            auto x_center = static_cast<float>(static_cast<double>(box_center_size.x) / static_cast<double>(scale_values.x) * static_cast<double>(anchor.w) + static_cast<double>(anchor.x));
+            auto half_h = static_cast<float>(0.5 * (std::exp(static_cast<double>(box_center_size.h) / static_cast<double>(scale_values.h))) * static_cast<double>(anchor.h));
+            auto half_w = static_cast<float>(0.5 * (std::exp(static_cast<double>(box_center_size.w) / static_cast<double>(scale_values.w))) * static_cast<double>(anchor.w));
+            decoded_boxes[index].ymin = y_center - half_h;
+            decoded_boxes[index].xmin = x_center - half_w;
+            decoded_boxes[index].ymax = y_center + half_h;
+            decoded_boxes[index].xmax = x_center + half_w;
+        }
+    }
+    // NMS MultiClass
+    {
+        if (use_regular_non_max_suppression)
+        {
+            // NMS Regular
+            int sorted_indices_size = 0;
+            std::vector<BoxInfo> box_info_after_regular_nms(max_detections + num_detections_per_class);
+            std::vector<int> num_selected(num_classes);
+
+            // compute nms
+            std::vector<float> class_scores(num_boxes);
+            std::vector<int> selected;
+            selected.reserve(num_detections_per_class);
+
+            for (auto col = 0; col < num_classes - 1; col++)
+            {
+                const float *scores_base = scores + col + label_offset;
+                for (int row = 0; row < num_boxes; row++)
+                {
+                    // Get scores of boxes corresponding to all anchors for single class
+                    class_scores[row] = *scores_base;
+                    scores_base += num_classes_with_background;
+                }
+                // Perform non-maximal suppression on single class
+                selected.clear();
+
+                // NMS SingleClass
+                {
+                    std::vector<int> keep_indices;
+                    std::vector<float> keep_scores;
+                    // select detection box score above score threshold
+                    {
+                        for (size_t i = 0; i < class_scores.size(); i++)
+                        {
+                            if (class_scores[i] >= nms_score_threshold)
+                            {
+                                keep_scores.emplace_back(class_scores[i]);
+                                keep_indices.emplace_back(i);
+                            }
+                        }
+                    }
+
+                    int num_scores_kept = (int)keep_scores.size();
+                    std::vector<int> sorted_indices;
+                    sorted_indices.resize(num_scores_kept);
+                    // DecreasingArgSort
+                    {
+                        std::iota(sorted_indices.begin(), sorted_indices.begin() + num_scores_kept, 0);
+                        std::stable_sort(
+                            sorted_indices.begin(), sorted_indices.begin() + num_scores_kept,
+                            [&keep_scores](const int i, const int j) { return keep_scores[i] > keep_scores[j]; });
+                    }
+
+                    const int output_size = std::min(num_scores_kept, max_detections);
+                    selected.clear();
+                    int num_active_candidate = num_scores_kept;
+                    std::vector<uint8_t> active_box_candidate(num_scores_kept, 1);
+                    for (int i = 0; i < num_scores_kept; ++i)
+                    {
+                        if (num_active_candidate == 0 || (int)selected.size() >= output_size)
+                            break;
+                        if (active_box_candidate[i] == 1)
+                        {
+                            selected.push_back(keep_indices[sorted_indices[i]]);
+                            active_box_candidate[i] = 0;
+                            num_active_candidate--;
+                        }
+                        else
+                        {
+                            continue;
+                        }
+                        for (int j = i + 1; j < num_scores_kept; ++j)
+                        {
+                            if (active_box_candidate[j] == 1)
+                            {
+
+                                float iou = compute_iou(
+                                    decoded_boxes, keep_indices[sorted_indices[i]],
+                                    keep_indices[sorted_indices[j]]);
+
+                                if (iou > nms_iou_threshold)
+                                {
+                                    active_box_candidate[j] = 0;
+                                    num_active_candidate--;
+                                }
+                            }
+                        }
+                    }
+                }
+                // end NMS SingleClass
+
+                if (selected.empty())
+                {
+                    continue;
+                }
+                for (size_t i = 0; i < selected.size(); ++i)
+                {
+                    box_info_after_regular_nms[sorted_indices_size + i].score = class_scores[selected[i]];
+                    box_info_after_regular_nms[sorted_indices_size + i].index = (selected[i] * num_classes_with_background + col + label_offset);
+                }
+
+                // In-place merge the original boxes and new selected boxes which are both
+                // sorted by scores.
+                std::inplace_merge(box_info_after_regular_nms.begin(), box_info_after_regular_nms.begin() + sorted_indices_size,
+                    box_info_after_regular_nms.begin() + sorted_indices_size + selected.size(),
+                    [](const BoxInfo &a, const BoxInfo &b) { return a.score >= b.score; });
+
+                sorted_indices_size = std::min(sorted_indices_size + static_cast<int>(selected.size()), max_detections);
+            }
+            // end compute nms result
+
+            // Allocate output tensors
+            for (int output_box_index = 0; output_box_index < max_detections; output_box_index++)
+            {
+                if (output_box_index < sorted_indices_size)
+                {
+                    const int anchor_index = floor(
+                        box_info_after_regular_nms[output_box_index].index / num_classes_with_background);
+                    const int class_index = box_info_after_regular_nms[output_box_index].index - anchor_index * num_classes_with_background - label_offset;
+                    const float selected_score = box_info_after_regular_nms[output_box_index].score;
+                    // detection_boxes
+                    reinterpret_cast<BoxCornerEncoding *>(output_locations)[output_box_index] = decoded_boxes[anchor_index];
+                    // detection_classes
+                    output_classes[output_box_index] = class_index;
+                    // detection_scores
+                    output_scores[output_box_index] = selected_score;
+                }
+                else
+                {
+                    // detection_boxes
+                    reinterpret_cast<BoxCornerEncoding *>(output_locations)[output_box_index] = { 0.0f, 0.0f, 0.0f, 0.0f };
+                    // detection_classes
+                    output_classes[output_box_index] = 0.0f;
+                    // detection_scores
+                    output_scores[output_box_index] = 0.0f;
+                }
+            }
+            output_num_detections[0] = sorted_indices_size;
+            box_info_after_regular_nms.clear();
+        }
+        else
+        {
+            // Fast NMS
+
+            const int max_categories_per_anchor = max_classes_per_detection;
+            const int num_categories_per_anchor = std::min(max_categories_per_anchor, num_classes);
+
+            std::vector<float> max_scores;
+            max_scores.resize(num_boxes);
+            std::vector<int> sorted_class_indices;
+            sorted_class_indices.resize(num_boxes * num_categories_per_anchor);
+
+            for (int row = 0; row < num_boxes; row++)
+            {
+                const float *box_scores = scores + row * num_classes_with_background + label_offset;
+                int *class_indices = sorted_class_indices.data() + row * num_categories_per_anchor;
+
+                // DecreasingPartialArgSort
+                if (num_categories_per_anchor == 1)
+                {
+                    auto arg_max_vector = [&](const T *input_data, int size) {
+                        T max_value = input_data[0];
+                        int max_index = 0;
+                        for (int i = 1; i < size; ++i)
+                        {
+                            // const T curr_value = input_data[i];
+                            if (input_data[i] > max_value)
+                            {
+                                max_value = input_data[i];
+                                max_index = i;
+                            }
+                        }
+                        return max_index;
+                    };
+                    class_indices[0] = arg_max_vector(box_scores, num_classes);
+                }
+                else
+                {
+                    std::iota(class_indices, class_indices + num_classes, 0);
+                    std::partial_sort(
+                        class_indices, class_indices + num_categories_per_anchor, class_indices + num_classes,
+                        [&box_scores](const int i, const int j) { return box_scores[i] > box_scores[j]; });
+                }
+                // end DecreasingPartialArgSort
+
+                max_scores[row] = box_scores[class_indices[0]];
+            }
+            std::vector<int> selected;
+            // NMS SingleClass
+            {
+                std::vector<int> keep_indices;
+                std::vector<float> keep_scores;
+                // select detection box score above score threshold
+                {
+                    for (size_t i = 0; i < max_scores.size(); i++)
+                    {
+                        if (max_scores[i] >= nms_score_threshold)
+                        {
+                            keep_scores.emplace_back(max_scores[i]);
+                            keep_indices.emplace_back(i);
+                        }
+                    }
+                }
+
+                int num_scores_kept = (int)keep_scores.size();
+                std::vector<int> sorted_indices;
+                sorted_indices.resize(num_scores_kept);
+                // DecreasingArgSort
+                {
+                    std::iota(sorted_indices.begin(), sorted_indices.begin() + num_scores_kept, 0);
+                    std::stable_sort(
+                        sorted_indices.begin(), sorted_indices.begin() + num_scores_kept,
+                        [&keep_scores](const int i, const int j) { return keep_scores[i] > keep_scores[j]; });
+                }
+                const int output_size = std::min(num_scores_kept, max_detections);
+                selected.clear();
+                int num_active_candidate = num_scores_kept;
+                std::vector<uint8_t> active_box_candidate(num_scores_kept, 1);
+                for (int i = 0; i < num_scores_kept; ++i)
+                {
+                    if (num_active_candidate == 0 || (int)selected.size() >= output_size)
+                        break;
+                    if (active_box_candidate[i] == 1)
+                    {
+                        selected.push_back(keep_indices[sorted_indices[i]]);
+                        active_box_candidate[i] = 0;
+                        num_active_candidate--;
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                    for (int j = i + 1; j < num_scores_kept; ++j)
+                    {
+                        if (active_box_candidate[j] == 1)
+                        {
+
+                            float iou = compute_iou(
+                                decoded_boxes, keep_indices[sorted_indices[i]],
+                                keep_indices[sorted_indices[j]]);
+                            if (iou > nms_iou_threshold)
+                            {
+                                active_box_candidate[j] = 0;
+                                num_active_candidate--;
+                            }
+                        }
+                    }
+                }
+            }
+            // end NMS SingleClass
+
+            // Allocate output tensors
+            int output_box_index = 0;
+            for (const auto &selected_index : selected)
+            {
+                const float *box_scores = scores + selected_index * num_classes_with_background + label_offset;
+                const int *class_indices = sorted_class_indices.data() + selected_index * num_categories_per_anchor;
+
+                for (int col = 0; col < num_categories_per_anchor; ++col)
+                {
+                    int box_offset = max_categories_per_anchor * output_box_index + col;
+                    // detection_boxes
+                    reinterpret_cast<BoxCornerEncoding *>(output_locations)[box_offset] = decoded_boxes[selected_index];
+                    // detection_classes
+                    output_classes[box_offset] = class_indices[col];
+                    // detection_scores
+                    output_scores[box_offset] = box_scores[class_indices[col]];
+                }
+                output_box_index++;
+            }
+            output_num_detections[0] = output_box_index;
+        }
+    }
+}
+
+inline void layernorm(const float *input, float *output, float *scale, float *bias, runtime_shape_t in_shape, int32_t axis, float epsilon)
+{
+    auto outer_size = 1;
+    auto inner_size = 1;
+    for (auto i = 0; i < axis; i++)
+        outer_size *= in_shape[i];
+    for (auto i = axis; i < in_shape.size(); i++)
+        inner_size *= in_shape[i];
+
+    for (int32_t batch = 0; batch < outer_size; batch++)
+    {
+        auto src = input + batch * inner_size;
+        auto dest = output + batch * inner_size;
+
+        float mean1 = 0.f;
+        for (size_t i = 0; i < inner_size; i++)
+            mean1 += src[i] / inner_size;
+
+        std::vector<float> sub(inner_size, 0.f);
+        for (size_t i = 0; i < inner_size; i++)
+            sub[i] = src[i] - mean1;
+
+        std::vector<float> pow(inner_size, 0.f);
+        for (size_t i = 0; i < inner_size; i++)
+            pow[i] = sub[i] * sub[i];
+
+        float mean2 = 0.f;
+        for (size_t i = 0; i < inner_size; i++)
+            mean2 += pow[i] / inner_size;
+
+        float add = mean2 + epsilon;
+        float sqrt = std::sqrt(add);
+
+        std::vector<float> div(inner_size, 0.f);
+        for (size_t i = 0; i < inner_size; i++)
+            div[i] = sub[i] / sqrt;
+
+        for (size_t i = 0; i < inner_size; i++)
+            dest[i] = div[i] * scale[i] + bias[i];
+    }
+}
+
+template <class T>
+void compress(const T *input, const uint8_t *condition, T *output, const runtime_shape_t &input_shape, const runtime_shape_t &condition_shape, const int axis)
+{
+    if (axis == (int)input_shape.size())
+    {
+        for (auto i = 0; i < (int)condition_shape[0]; i++)
+        {
+            if ((float)*(condition + i) == 0)
+            {
+                continue;
+            }
+            *output++ = *(input + i);
+        }
+    }
+    else
+    {
+        int select_slice = 1;
+        for (auto i = axis + 1; i < (int)input_shape.size(); i++)
+        {
+            select_slice *= input_shape[i];
+        }
+        for (auto j = 0; j < (int)kernels::detail::compute_size(input_shape); j++)
+        {
+            auto i = j % (select_slice * input_shape[axis]);
+            auto cond_index = i / select_slice;
+            if (select_slice != 1 && (cond_index >= condition_shape[0] || condition[cond_index] == 0))
+                continue;
+            if (select_slice == 1 && (i % input_shape[axis] >= condition_shape[0] || condition[cond_index % input_shape[axis] % condition_shape[0]] == 0))
+                continue;
+            *output++ = *(input + j);
+        }
+    }
+}
 }

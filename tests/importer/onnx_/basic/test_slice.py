@@ -21,7 +21,7 @@ from onnx_test_runner import OnnxTestRunner
 import numpy as np
 
 
-def _make_module(in_shape, start, end, axes, step, outshape, op_version, value_format):
+def _make_module(in_shape, start, end, axes, step, outshape, op_version, value_format, attribute_dtype):
     input_names = []
     output_names = []
     inputs = []
@@ -52,7 +52,7 @@ def _make_module(in_shape, start, end, axes, step, outshape, op_version, value_f
         # starts
         start_tensor = helper.make_tensor(
             'starts',
-            TensorProto.INT64,
+            attribute_dtype,
             dims=[len(start)],
             vals=start
         )
@@ -73,7 +73,7 @@ def _make_module(in_shape, start, end, axes, step, outshape, op_version, value_f
         # ends
         end_tensor = helper.make_tensor(
             'ends',
-            TensorProto.INT64,
+            attribute_dtype,
             dims=[len(end)],
             vals=end
         )
@@ -95,7 +95,7 @@ def _make_module(in_shape, start, end, axes, step, outshape, op_version, value_f
         if axes is not None:
             axes_tensor = helper.make_tensor(
                 'axes',
-                TensorProto.INT64,
+                attribute_dtype,
                 dims=[len(end)],
                 vals=axes
             )
@@ -117,7 +117,7 @@ def _make_module(in_shape, start, end, axes, step, outshape, op_version, value_f
         if step is not None:
             step_tensor = helper.make_tensor(
                 'steps',
-                TensorProto.INT64,
+                attribute_dtype,
                 dims=[len(step)],
                 vals=step
             )
@@ -183,16 +183,22 @@ op_versions_and_value_formats = [
     [13, 'constant']
 ]
 
+attribute_dtypes = [
+    TensorProto.INT64,
+    TensorProto.INT32
+]
+
 
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('start_end_axes_step_outshape', starts_ends_axes_steps_outshapes)
 @pytest.mark.parametrize('op_versions_and_value_format', op_versions_and_value_formats)
-def test_slice(in_shape, start_end_axes_step_outshape, op_versions_and_value_format, request):
+@pytest.mark.parametrize('attribute_dtype', attribute_dtypes)
+def test_slice(in_shape, start_end_axes_step_outshape, op_versions_and_value_format, attribute_dtype, request):
     start, end, axes, step, outshape = start_end_axes_step_outshape
     op_version, value_format = op_versions_and_value_format
-    if op_version != 1 or (op_version == 1 and step is not None and all([x == 1 for x in step])):
+    if op_version != 1 or (op_version == 1 and step is not None and all([x == 1 for x in step]) and attribute_dtype == TensorProto.INT64):
         model_def = _make_module(in_shape, start, end, axes, step,
-                                 outshape, op_version, value_format)
+                                 outshape, op_version, value_format, attribute_dtype)
 
         runner = OnnxTestRunner(request.node.name)
         model_file = runner.from_onnx_helper(model_def)

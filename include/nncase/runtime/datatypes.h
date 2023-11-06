@@ -258,7 +258,8 @@ typedef enum _unary_op
     unary_square,
     unary_tanh,
     unary_bitwise_not,
-    unary_logical_not
+    unary_logical_not,
+    unary_erf
 } unary_op_t;
 
 inline std::string unary_op_to_string(unary_op_t op)
@@ -301,6 +302,8 @@ inline std::string unary_op_to_string(unary_op_t op)
         return "unary_bitwise_not";
     case unary_logical_not:
         return "unary_logical_not";
+    case unary_erf:
+        return "unary_erf";
     }
     return "unknown";
 }

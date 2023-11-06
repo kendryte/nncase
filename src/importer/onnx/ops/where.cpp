@@ -35,10 +35,9 @@ void onnx_importer::convert_op_Where(const onnx::NodeProto &node)
     const auto &input_c = node.input()[2];
     const auto &output = node.output()[0];
 
-    quant_param_t qparam { 0, 1.f };
     datatype_t dtype = dt_float32;
-    auto deq_a = graph_.emplace<dequantize>(get_datatype(input_a).value(), get_shape(input_a), dtype, qparam);
-    deq_a->name(op_name + "/deq_a");
+    auto deq_a = graph_.emplace<convert>(get_datatype(input_a).value(), get_shape(input_a), dtype);
+    deq_a->name(op_name + "/cvt");
 
     auto op = graph_.emplace<ternary>(dtype, get_datatype(input_b).value(), deq_a->output().shape(), get_shape(input_b), get_shape(input_c));
     op->name(op_name + "/ternary");

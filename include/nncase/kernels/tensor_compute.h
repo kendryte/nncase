@@ -152,4 +152,31 @@ NNCASE_API result<void> topk(const T *input, T *output_values, int64_t *output_i
 template <typename T>
 NNCASE_API result<void> trilu(const T *input, T *output, const runtime_shape_t &in_shape, const bool upper, const int64_t k) noexcept;
 
+template <typename T>
+NNCASE_API result<void> gru(const T *input, const T *w, const T *r, const T *b, T *initial_h, T *output, T *output_h, const runtime_shape_t &input_shape, const runtime_shape_t &w_shape, int mode, bool linear_before_reset) noexcept;
+
+template <typename T>
+NNCASE_API result<void> tflite_detection_postprocess(const T *boxes, const T *scores, const T *anchors, T *output_locations, T *output_classes, T *output_scores, T *output_num_detections,
+    const runtime_shape_t &boxes_shape, const runtime_shape_t &scores_shape, const runtime_shape_t &anchors_shape,
+    const int32_t max_detections, const int32_t max_classes_per_detection, const int32_t detections_per_class,
+    const bool use_regular_non_max_suppression, const float nms_score_threshold, const float nms_iou_threshold,
+    const int32_t num_classes, const float y_scale, const float x_scale, const float h_scale, const float w_scale) noexcept;
+
+NNCASE_API result<void> space_to_batch(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &block_shape, const runtime_paddings_t &crops, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides,
+    kernel_context &context = default_kernel_context()) noexcept;
+
+template <typename TI, typename TK>
+NNCASE_API result<void> gather_elements(const TI *input, const TK *indices, TI *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &indices_shape, const int axis) noexcept;
+
+template <typename T>
+NNCASE_API result<void> instancenorm(const T *input, T *output, T *scale, T *bias, const runtime_shape_t &in_shape, float epsilon) noexcept;
+
+template <typename T>
+NNCASE_API result<void> layernorm(const T *input, T *output, T *scale, T *bias, const runtime_shape_t &in_shape, int32_t axis, float epsilon) noexcept;
+
+template <typename T>
+NNCASE_API result<void> compress(const T *input, const uint8_t *condition, T *output, const runtime_shape_t &input_shape, const runtime_shape_t &condition_shape, const int axis) noexcept;
+
 END_NS_NNCASE_KERNELS

@@ -86,6 +86,7 @@ DEFINE_TFLITE_LOWER(SPACE_TO_BATCH_ND)
     else
     {
         block_size_w = block_shape.data()[1];
+        real_block_size_w = block_shape.data()[1];
         tp1 = graph_.emplace<transpose>(to_data_type(input.type()), get_shape(input.shape()), axis_t { 0, 3, 1, 2 });
         input_conn = &tp1->input();
     }

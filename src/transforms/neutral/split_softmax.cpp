@@ -48,24 +48,30 @@ void split_softmax_transform::process(transform_context &context)
     auto input_shape = output.shape();
     axis_t axes { sm.axis() };
     auto rmax = context.graph.emplace<reduce>(reduce_max, input_type, input_shape, axes, std::numeric_limits<float>::lowest(), true);
+    rmax->attributes(rmax->attributes() | node_attributes::node_attr_skip_quantize);
     rmax->name(sm.name() + ".rmax");
 
     auto sub = context.graph.emplace<binary>(binary_sub, input_type, input_shape, rmax->output().shape(), value_range<float>::full());
+    sub->attributes(sub->attributes() | node_attributes::node_attr_skip_quantize);
     sub->name(sm.name() + ".sub");
 
     auto beta = context.graph.emplace<constant>(sm.beta());
     beta->name(sm.name() + ".beta");
 
     auto mul = context.graph.emplace<binary>(binary_mul, input_type, sub->output().shape(), beta->output().shape(), value_range<float>::full());
+    mul->attributes(mul->attributes() | node_attributes::node_attr_skip_quantize);
     mul->name(sm.name() + ".mul");
 
     auto exp = context.graph.emplace<unary>(unary_exp, sub->output().shape());
+    exp->attributes(exp->attributes() | node_attributes::node_attr_skip_quantize);
     exp->name(sm.name() + ".exp");
 
     auto rsum = context.graph.emplace<reduce>(reduce_sum, input_type, exp->output().shape(), axes, 0.f, true);
+    rsum->attributes(rsum->attributes() | node_attributes::node_attr_skip_quantize);
     rsum->name(sm.name() + ".rsum");
 
     auto div = context.graph.emplace<binary>(binary_div, input_type, exp->output().shape(), rsum->output().shape(), value_range<float>::full());
+    div->attributes(div->attributes() | node_attributes::node_attr_skip_quantize);
     div->name(sm.name() + ".div");
 
     rmax->input().connect(output);

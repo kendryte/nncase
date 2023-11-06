@@ -32,13 +32,34 @@ void op_profile::print()
         [=](std::pair<std::string, double> &a, std::pair<std::string, double> &b) { return a.second > b.second; });
 
     std::cout << "stackvm OPs profile" << std::endl;
-    std::cout << std::setw(24) << std::left << "stackvm tensor op" << std::setw(12) << std::left << "timing(ms)"
-              << std::setw(12) << std::left << "percent(%)" << std::endl;
+    std::cout << "|" << std::setw(30) << std::left << "stackvm tensor op"
+              << "|" << std::setw(12) << std::left << "timing(ms)"
+              << "|" << std::setw(12) << std::left << "percent(%)"
+              << "|" << std::endl;
+
+    std::cout << "|" << std::setw(30) << std::left << "---"
+              << "|" << std::setw(12) << std::left << "---"
+              << "|" << std::setw(12) << std::left << "---"
+              << "|" << std::endl;
+#if !defined(__riscv)
+    double convert_number = 1.0f;
+#else
+    double convert_number = RISCVFREQUENCY / 1000.0f;
+#endif
+
     for (auto e : v)
     {
-        std::cout << std::setw(24) << std::left << e.first << std::setw(12) << std::left << e.second
-                  << std::setw(12) << std::left << e.second / total * 100 << std::endl;
+        std::cout << "|" << std::setw(30) << std::left << e.first
+                  << "|" << std::setw(12) << std::left << e.second / convert_number
+                  << "|" << std::setw(12) << std::left << e.second / total * 100
+                  << "|" << std::endl;
     }
-    std::cout << std::setw(24) << std::left << "total" << std::setw(12) << std::left << total
-              << std::setw(12) << std::left << total / total * 100 << std::endl;
+
+    std::cout << "|" << std::setw(30) << std::left << "total"
+              << "|" << std::setw(12) << std::left << total / convert_number
+              << "|" << std::setw(12) << std::left << total / total * 100
+              << "|" << std::endl
+              << std::endl;
+
+    op_timing_.clear();
 }

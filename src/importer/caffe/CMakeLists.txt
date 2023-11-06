@@ -25,6 +25,6 @@ set(SRCS caffe.pb.cc
 add_library(caffe_importer ${SRCS})
 target_include_directories(caffe_importer PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(caffe_importer PUBLIC ${PARENT_SOURCE_DIR}/include)
-target_link_libraries(caffe_importer PUBLIC ir)
+target_link_libraries(caffe_importer PUBLIC ir protobuf::libprotobuf)
 target_link_libraries(caffe_importer PRIVATE)
 set_target_properties(caffe_importer PROPERTIES POSITION_INDEPENDENT_CODE ON)

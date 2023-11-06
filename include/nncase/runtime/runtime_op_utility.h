@@ -71,7 +71,7 @@ inline void adapt_strides(const shape_type &shape, strides_type &strides,
 
 template <class shape_type, class strides_type, class bs_ptr>
 inline std::size_t compute_strides(const shape_type &shape,
-    strides_type &strides, bs_ptr bs)
+    strides_type &strides, NNCASE_UNUSED bs_ptr bs)
 {
     using strides_value_type = typename std::decay_t<strides_type>::value_type;
     strides_value_type data_size = 1;
@@ -79,7 +79,7 @@ inline std::size_t compute_strides(const shape_type &shape,
     {
         strides[i - 1] = data_size;
         data_size = strides[i - 1] * static_cast<strides_value_type>(shape[i - 1]);
-        adapt_strides(shape, strides, bs, i - 1);
+        // adapt_strides(shape, strides, bs, i - 1);
     }
     return static_cast<std::size_t>(data_size);
 }
@@ -283,7 +283,7 @@ inline bool is_optimized_binary_op(binary_op_t op)
 
 inline bool is_optimized_unary_op(unary_op_t op)
 {
-    return op == unary_abs || op == unary_ceil || op == unary_cos || op == unary_exp || op == unary_floor || op == unary_log || op == unary_neg || op == unary_round || op == unary_rsqrt || op == unary_sign || op == unary_sin || op == unary_sqrt || op == unary_square || op == unary_tanh;
+    return op == unary_abs || op == unary_ceil || op == unary_cos || op == unary_exp || op == unary_floor || op == unary_log || op == unary_neg || op == unary_round || op == unary_sign || op == unary_sin || op == unary_sqrt || op == unary_square || op == unary_tanh;
 }
 
 template <class TShape>
@@ -298,6 +298,16 @@ bool is_optimized_input_shape(TShape in_shape, TShape out_shape)
     }
 
     return false;
+}
+
+inline void get_gather_index(const std::vector<int> &per_axis_size, std::vector<int> &index, size_t i, int axis, int idx)
+{
+    if (idx != (int)per_axis_size.size())
+    {
+        int new_idx = i / per_axis_size[idx];
+        index.push_back(new_idx);
+        get_gather_index(per_axis_size, index, i - new_idx * per_axis_size[idx], axis, idx + 1);
+    }
 }
 
 struct DefaultCallable

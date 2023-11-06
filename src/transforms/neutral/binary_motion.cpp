@@ -81,6 +81,7 @@ void binary_reduce_window2d_motion_up_transform::process(transform_context &cont
     auto &old_b = static_cast<binary &>(*context.matched_nodes[3]);
 
     auto b = context.graph.emplace<binary>(old_b.binary_op(), conv.output().type(), conv.output().shape(), c.output().shape(), old_b.fused_activation());
+    b->attributes(old_b.attributes());
     b->name(old_b.name());
     b->input_a().connect(conv.output());
     b->input_b().connect(c.output());

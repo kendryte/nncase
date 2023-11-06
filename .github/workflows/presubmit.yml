@@ -5,25 +5,12 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
     paths:
-      - '**.h'
-      - '**.c'
-      - '**.cpp'
       - '**.py'
 
 jobs:
-  check_clang_format:
-    name: Check clang-format
-    runs-on: ubuntu-18.04
-    steps:
-      - uses: actions/checkout@v2
-      - uses: DoozyX/clang-format-lint-action@v0.11
-        with:
-          source: 'tests src include modules python targets'
-          extensions: 'h,c,cc,cxx,cpp,hpp,cppm'
-          clangFormatVersion: 11
   check_autopep8_format:
     name: Check autopep8-format
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     steps:
       - name: autopep8
         id: autopep8

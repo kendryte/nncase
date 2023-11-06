@@ -30,7 +30,10 @@ result<void> convert_impl(const TInput *input, TOutput *output, const runtime_sh
 {
     return apply(in_shape, [&](const runtime_shape_t &index) -> result<void> {
         auto value = input[offset(in_strides, index)];
-        output[offset(out_strides, index)] = static_cast<TOutput>(value);
+        if (to_datatype<TOutput>() == dt_bfloat16)
+            output[offset(out_strides, index)] = bfloat16::round_to_bfloat16(static_cast<float>(value));
+        else
+            output[offset(out_strides, index)] = static_cast<TOutput>(value);
         return ok();
     });
 }
@@ -72,6 +75,7 @@ result<void> convert_f32_to_fp16_impl(const float *input, half *output, const ru
         CONVERT_IMPL_LV2(input_t, int32_t);  \
         CONVERT_IMPL_LV2(input_t, int64_t);  \
         CONVERT_IMPL_LV2(input_t, float);    \
+        CONVERT_IMPL_LV2(input_t, bfloat16); \
     }
 
 result<void> reference::convert(datatype_t in_type, datatype_t out_type, const gsl::byte *input, gsl::byte *output,

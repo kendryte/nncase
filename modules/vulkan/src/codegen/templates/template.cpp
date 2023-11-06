@@ -82,7 +82,7 @@ class xz_reader
 {
 public:
     xz_reader()
-        : archive_(ZipArchive::fromBuffer(xz_res_.data.data(),
+        : archive_(ZipArchive::fromBuffer((void *)xz_res_.data.data(),
             (libzippp_uint32)xz_res_.data.size(), ZipArchive::ReadOnly, true))
     {
         if (!archive_)

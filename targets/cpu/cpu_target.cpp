@@ -14,7 +14,10 @@
  */
 #include "cpu_target.h"
 #include <nncase/plugin_loader.h>
+#include <nncase/transforms/neutral/add_quant_checkpoints.h>
 #include <nncase/transforms/neutral/fold_constant.h>
+#include <nncase/transforms/neutral/fuse_unary.h>
+#include <nncase/transforms/neutral/fused_unary_to_lookup1d.h>
 #include <nncase/transforms/neutral/lstm_transform.h>
 #include <nncase/transforms/pass.h>
 
@@ -44,6 +47,25 @@ void cpu_target::register_target_dependent_passes([[maybe_unused]] const module_
         transform_pass p("lstm_transform");
         p.emplace<fold_constant_transform>();
         p.emplace<lstm_transform>();
+        pass_mgr.add_pass(std::move(p));
+    }
+}
+
+void cpu_target::register_quantize_annotation_passes([[maybe_unused]] const module_type_t &type, ir::transforms::pass_manager &pass_mgr)
+{
+    {
+        transform_pass p("fuse_unary");
+        p.emplace<fuse_one_unary_transform>();
+        p.emplace<fuse_one_binary_transform>();
+        p.emplace<fuse_two_fused_unary_transform>();
+        p.emplace<fuse_one_fused_unary_with_binary_transform>();
+        p.emplace<fuse_two_fused_unary_with_binary_transform>();
+        pass_mgr.add_pass(std::move(p));
+    }
+
+    {
+        transform_pass p("annotate_neutral_quantize");
+        p.emplace<add_quant_checkpoints_transform>(std::in_place, ir::op_fused_unary, ir::op_bitcast, ir::op_dequantize, ir::op_binary, ir::op_output_node);
         pass_mgr.add_pass(std::move(p));
     }
 }

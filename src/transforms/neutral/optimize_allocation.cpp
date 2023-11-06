@@ -140,6 +140,25 @@ void add_copy_to_output_pass::run_core(graph &graph, [[maybe_unused]] nncase::ta
     alias_visitor.visit(graph);
 }
 
+void add_copy_to_bitcast_pass::run_core(graph &graph, [[maybe_unused]] nncase::target &target, [[maybe_unused]] const run_pass_options &options)
+{
+    auto alias_visitor = make_relay_ir_visitor([&](node &node) {
+        if (auto b = node_cast<bitcast>(node))
+        {
+            auto &out = *b->input().connection();
+            if (out.owner().runtime_opcode() != op_copy)
+            {
+                auto cp = graph.emplace<copy>(out.type(), out.shape());
+                cp->module_type(graph.module_type());
+                cp->name(out.owner().name() + "/copy");
+                cp->input().connect(out);
+                b->input().connect(cp->output());
+            }
+        }
+    });
+    alias_visitor.visit(graph);
+}
+
 //   x@data       x@output
 //     |             |
 //   copy            |
@@ -173,8 +192,10 @@ void remove_exclusive_copy_to_output_transform::process(transform_context &conte
 {
     auto &output = *context.inputs[0]->connection();
     auto &old_out = static_cast<output_node &>(*context.matched_nodes[1]);
-
-    output.memory_location(mem_output);
+    if (output.connections().size() == 1)
+        output.memory_location(mem_output);
+    else
+        output.memory_location(mem_shared_data);
     output.attributes(output.attributes() | cnctr_attr_no_layout_strides);
     old_out.input().connect(output);
 }
@@ -188,7 +209,7 @@ void remove_exclusive_copy_to_output_transform::process(transform_context &conte
 bool remove_exclusive_copy_to_concat_transform::on_try_match(node &node, transform_context &context)
 {
     copy *cp;
-    concat *c;
+    concat *c, *pre_c;
 
     if ((cp = node_cast<copy>(node))
         && (c = try_get_direct_child<concat>(*cp)))
@@ -201,6 +222,8 @@ bool remove_exclusive_copy_to_concat_transform::on_try_match(node &node, transfo
             && ((input->attributes() & (cnctr_attr_no_buffer_fusion | cnctr_attr_buffer_slice)) == 0)
             && (is_simple_concat || (input->attributes() & (cnctr_attr_no_layout_strides)) == 0))
         {
+            if ((pre_c = try_get_direct_parent<concat>(*cp)) && pre_c->axis() != c->axis())
+                return false;
             context.inputs.emplace_back(&cp->input());
             context.outputs.emplace_back(&cp->output());
 
@@ -213,6 +236,39 @@ bool remove_exclusive_copy_to_concat_transform::on_try_match(node &node, transfo
 }
 
 void remove_exclusive_copy_to_concat_transform::process(transform_context &context)
+{
+    auto &output = *context.inputs[0]->connection();
+    auto inputs = context.outputs[0]->connections();
+
+    output.attributes(output.attributes() | cnctr_attr_no_buffer_fusion);
+    for (auto &in : dup(inputs))
+        in->connect(output);
+}
+
+bool remove_exclusive_copy_to_bitcast_transform::on_try_match(node &node, transform_context &context)
+{
+    copy *cp;
+    bitcast *b;
+
+    if ((cp = node_cast<copy>(node))
+        && (b = try_get_direct_child<bitcast>(*cp)))
+    {
+        auto input = cp->input().connection();
+        if ((input->memory_location() == mem_data || (input->memory_location() == mem_input && !try_get_direct_child<output_node>(*b)))
+            && ((input->attributes() & cnctr_attr_no_buffer_fusion) == 0))
+        {
+            context.inputs.emplace_back(&cp->input());
+            context.outputs.emplace_back(&cp->output());
+
+            context.matched_nodes.emplace_back(cp);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void remove_exclusive_copy_to_bitcast_transform::process(transform_context &context)
 {
     auto &output = *context.inputs[0]->connection();
     auto inputs = context.outputs[0]->connections();

@@ -29,6 +29,8 @@ public:
     gsl::span<gsl::byte> data() const noexcept;
     gsl::span<const gsl::byte> rdata() const noexcept;
 
+    const runtime_tensor &data_tensor() const noexcept;
+
     result<uintptr_t> reg(size_t id) const noexcept;
     result<void> reg(size_t id, uintptr_t value) noexcept;
 
@@ -43,7 +45,7 @@ protected:
     result<std::unique_ptr<runtime_function>> create_function() noexcept override;
 
 private:
-    std::unique_ptr<gsl::byte[]> data_;
+    runtime_tensor data_;
     gsl::span<const gsl::byte> rdata_;
     std::array<uintptr_t, MAX_GENERAL_REGS> regs_;
     std::vector<runtime_shape_t> shape_regs_;

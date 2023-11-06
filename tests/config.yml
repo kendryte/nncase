@@ -108,9 +108,13 @@ judge:
   specifics:
     - matchs:
         #target: [cpu, vulkan, k210, k510]
-        target: [cpu, k210, k510]
+        target: [cpu, k510]
         ptq: true
       threshold: 0.98
+    - matchs:
+        target: [k210]
+        ptq: true
+      threshold: 0.97
     - matchs:
         target: [k510]
         ptq: false

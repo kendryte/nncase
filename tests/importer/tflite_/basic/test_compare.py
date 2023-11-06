@@ -23,7 +23,7 @@ def _make_module(compare_op, in_type_0, in_shape_0, in_type_1, in_shape_1):
     class CompareModule(tf.Module):
         def __init__(self):
             super(CompareModule).__init__()
-            self.v = tf.constant(np.random.rand(*in_shape_1).astype(in_type_1))
+            self.v = tf.constant((np.ones(in_shape_1)/2.0).astype(in_type_1))
 
         @tf.function(input_signature=[tf.TensorSpec(in_shape_0, in_type_0)])
         def __call__(self, x):

@@ -41,6 +41,10 @@ result<void> stackvm_runtime_function::visit(const tensor_reduce_op_t &op) noexc
         return kernels::reduce(op.reduce_op, init_value.as_i4(), reinterpret_cast<const int32_t *>(input),
             reinterpret_cast<int32_t *>(output), in_shape, axis, in_strides, out_strides, op.keep_dims, module().kernel_context());
         break;
+    case dt_int64:
+        return kernels::reduce(op.reduce_op, init_value.as_i8(), reinterpret_cast<const int64_t *>(input),
+            reinterpret_cast<int64_t *>(output), in_shape, axis, in_strides, out_strides, op.keep_dims, module().kernel_context());
+        break;
     default:
         std::cerr << "unsupported dtype for reduce: " + std::string(datatype_names(op.datatype)) << std::endl;
         return err(std::errc::invalid_argument);

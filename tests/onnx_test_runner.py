@@ -63,6 +63,7 @@ class OnnxTestRunner(TestRunner):
 
         model_file = os.path.join(
             os.path.dirname(model_file), 'simplified.onnx')
+        onnx_model = onnx.shape_inference.infer_shapes(onnx_model)
         onnx.save_model(onnx_model, model_file)
 
         super().run(model_file)
@@ -115,10 +116,10 @@ class OnnxTestRunner(TestRunner):
             input_dict = {}
             input_dict['name'] = e.name
             input_dict['dtype'] = onnx.mapping.TENSOR_TYPE_TO_NP_TYPE[onnx_type.elem_type]
-            input_dict['shape'] = [(i.dim_value if i.dim_value != 0 else d) for i, d in zip(
-                onnx_type.shape.dim, [1, 3, 224, 224])]
-            input_dict['model_shape'] = [(i.dim_value if i.dim_value != 0 else d) for i, d in zip(
-                onnx_type.shape.dim, [1, 3, 224, 224])]
+            input_dict['shape'] = [(i.dim_value if i.dim_value != 0 else 10) for i in
+                                   onnx_type.shape.dim]
+            input_dict['model_shape'] = [(i.dim_value if i.dim_value != 0 else 10) for i in
+                                         onnx_type.shape.dim]
             self.inputs.append(input_dict)
             self.calibs.append(copy.deepcopy(input_dict))
             self.dump_range_data.append(copy.deepcopy(input_dict))
@@ -150,6 +151,7 @@ class OnnxTestRunner(TestRunner):
                 onnx_model = onnx.load(model_file)
                 onnx_model = version_converter.convert_version(onnx_model, 8)
                 model_file = os.path.join(case_dir, 'converted.onnx')
+                onnx_model = onnx.shape_inference(onnx_model)
                 onnx.save_model(onnx_model, model_file)
                 sess = ort.InferenceSession(model_file)
 

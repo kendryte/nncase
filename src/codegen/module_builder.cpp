@@ -189,6 +189,11 @@ function_call_id module_builder::function_id(ir::graph *graph)
     throw std::invalid_argument("Can't find graph " + graph->name() + " in modules");
 }
 
+std::streampos module_builder::get_current_entry_point()
+{
+    return entry_points_.at(current_function_);
+}
+
 void module_builder::set_current_entry_point(std::streampos pos)
 {
     entry_points_[current_function_] = pos;

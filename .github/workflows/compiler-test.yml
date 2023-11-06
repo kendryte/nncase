@@ -2,112 +2,96 @@ name: compiler-test
 
 on: [push, pull_request]
 
-env:
-  BUILD_TYPE: Release
-
 jobs:
   build:
+    name: build-${{matrix.config.name}}
     runs-on: [self-hosted]
+    strategy:
+      matrix:
+        config:
+          - {name: x86_64-linux, shell: bash, cmakeArgs: '', buildType: Release}
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Setup Python
-      uses: actions/setup-python@v2.2.1
+      uses: actions/setup-python@v4
       with:
         python-version: 3.7
 
     - name: Install Conan
-      shell: bash
-      run: |
-        pip install conan
+      run: pip install conan==1.59.0
 
-    - name: Configure Conan
-      if: runner.os == 'Linux'
-      shell: bash
+    - name: Configure Conan (Linux)
       run: |
         conan profile update settings.compiler.libcxx=libstdc++11 default
-
-    - name: Create Build Environment
-      run: cmake -E make_directory ${{github.workspace}}/build
-
-    - name: Configure CMake
-      env:
-        CC: gcc-10
-        CXX: g++-10
+        echo "CC=gcc-10" >> $GITHUB_ENV
+        echo "CXX=g++-10" >> $GITHUB_ENV
       if: runner.os == 'Linux'
-      shell: bash
-      working-directory: ${{github.workspace}}/build
-      run: cmake -G Ninja $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=ON -DPython3_ROOT_DIR=${pythonLocation}
-
-    - name: Configure CMake
-      if: runner.os != 'Linux'
-      shell: bash
-      working-directory: ${{github.workspace}}/build
-      run: cmake -G Ninja $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=ON -DPython3_ROOT_DIR=${pythonLocation}
 
     - name: Build
-      shell: bash
-      working-directory: ${{github.workspace}}/build
       run: |
-        cmake --build . --config $BUILD_TYPE
+        cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=${{matrix.config.buildType}} ${{matrix.config.cmakeArgs}} -DBUILD_TESTING=ON -DPython3_ROOT_DIR=${pythonLocation}
+        cmake --build build --config ${{matrix.config.buildType}}
 
     - name: Install
-      shell: bash
-      working-directory: ${{github.workspace}}/build
-      run: cmake --install . --prefix /tmp/nncase
+      run: cmake --install build --prefix /tmp/nncase
 
     - name: CTest
-      shell: bash
       working-directory: ${{github.workspace}}/build/tests/kernels
-      run: ctest -C $BUILD_TYPE
+      run: ctest -C ${{matrix.config.buildType}}
 
   test-compiler:
     needs: [build]
+    name: test-${{matrix.config.name}}
     runs-on: [self-hosted]
+    strategy:
+      matrix:
+        config:
+          - {name: x86_64-linux, shell: bash}
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Setup Python
-      uses: actions/setup-python@v2.2.1
+      uses: actions/setup-python@v4
       with:
         python-version: 3.7
 
     - name: Install Python Packages
-      if: runner.os != 'Macos'
-      shell: bash
-      run: |
-        pip install conan tensorflow==2.5.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0 opencv-python
-        pip install torch==1.9.0+cpu torchvision==0.10.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
-        pip install imageio==2.15.0
-        pip install kendryte_caffe
-        pip install pytest
+      run: pip install -r requirements.test.txt
 
     - name: Create Test Environment
-      working-directory: ${{github.workspace}}
-      shell: bash
-      run: |
-        pip install pytest pytest-xdist
-        mkdir test_results
+      run: mkdir test_results
 
     - name: Test
       working-directory: ${{github.workspace}}
-      if: runner.os != 'Windows'
-      shell: bash
       env:
         PYTHONPATH: /tmp/nncase/lib:/tmp/nncase/python:${{github.workspace}}/tests
         ONNX_MODELS_DIR: /compiler/github-runner/onnx-models
         TFLITE_MODELS_DIR: /compiler/github-runner/tflite-models
         DATASET_DIR: /compiler/share
       run: |
-
         pytest -n 50 --dist=load tests/other --doctest-modules --junitxml=test_results/other.xml
         pytest -n 50 --dist=load tests/importer --doctest-modules --junitxml=test_results/importer.xml
         pytest -n 50 --dist=load tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
         pytest -n 50 --dist=load tests/graph_partition --doctest-modules --junitxml=test_results/graph_partition.xml
         pytest -n 50 --dist=load tests/transform --doctest-modules --junitxml=test_results/transform.xml
-        pytest -n 8 tests/models/onnx-model-zoo --doctest-modules --junitxml=test_results/models.xml
+        pytest -n 8 tests/models/onnx-model-zoo --doctest-modules --junitxml=test_results/onnx-models.xml
         pytest tests/examples --doctest-modules --junitxml=test_results/examples.xml
         for dir in `ls dataset_tests_output`; do cat dataset_tests_output/$dir/dataset_test_result.txt; done
-
+      if: runner.os != 'Windows'
+      
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v3
+      with:
+        name: nncase-test_results-${{matrix.config.name}}
+        path: ${{github.workspace}}/test_results
+        if-no-files-found: error
+      
+    - name: Upload Dataset Test Results
+      uses: actions/upload-artifact@v3
+      with:
+        name: nncase-dataset_test_results-${{matrix.config.name}}
+        path: ${{github.workspace}}/dataset_tests_output
+        if-no-files-found: error

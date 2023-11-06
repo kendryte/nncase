@@ -9,7 +9,7 @@ if ((NOT BUILDING_RUNTIME) OR ENABLE_VULKAN_RUNTIME)
 endif ()
 
 if (NOT BUILDING_RUNTIME)
-    find_package(Flatbuffers REQUIRED)
+    find_package(flatbuffers REQUIRED)
     find_package(libzip REQUIRED)
     if(NOT CONAN_EXPORTED)
         set(FLATBUFFERS_FLATC_EXECUTABLE ${flatbuffers_LIB_DIRS}/../bin/flatc)

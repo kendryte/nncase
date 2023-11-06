@@ -1,4 +1,4 @@
-﻿cmake_minimum_required (VERSION 3.13)
+﻿cmake_minimum_required(VERSION 3.13)
 
 target_sources(ir PRIVATE
     call.cpp
@@ -45,4 +45,11 @@ target_sources(ir PRIVATE
     softmax.cpp
     ternary.cpp
     topk.cpp
-    trilu.cpp)
+    trilu.cpp
+    gru.cpp
+    tflite_detection_postprocess.cpp
+    gather_elements.cpp
+    layernorm.cpp
+    compress.cpp
+    instancenorm.cpp
+)

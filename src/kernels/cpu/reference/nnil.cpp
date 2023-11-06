@@ -78,6 +78,9 @@ result<void> reference::nnil_unary_method(const float *input, float *output, siz
             case nnil_floor:
                 stack.push(floorf(stack.pop()));
                 break;
+            case nnil_erf:
+                stack.push(erff(stack.pop()));
+                break;
             case nnil_log:
                 stack.push(logf(stack.pop()));
                 break;

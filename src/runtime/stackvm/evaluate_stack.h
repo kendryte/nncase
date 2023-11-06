@@ -85,6 +85,7 @@ public:
     int8_t as_i1() const noexcept { return (int8_t)i_; }
     int16_t as_i2() const noexcept { return (int16_t)i_; }
     int32_t as_i4() const noexcept { return (int32_t)i_; }
+    int64_t as_i8() const noexcept { return (int64_t)i_; }
     uintptr_t as_u() const noexcept { return (uintptr_t)i_; }
     intptr_t as_i() const noexcept { return i_; }
 

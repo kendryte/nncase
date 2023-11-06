@@ -44,11 +44,11 @@ bool fold_quantize_transform::on_try_match(node &node, transform_context &contex
 
                     context.matched_nodes.emplace_back(&q);
                     context.matched_nodes.emplace_back(&deq);
-                    if ((try_get_direct_parent<space_to_batch>(q) && try_get_direct_child<conv2d>(deq))
-                        || (try_get_direct_parent<conv2d>(q) && try_get_direct_child<batch_to_space>(deq)))
-                    {
-                        return true;
-                    }
+                    // if ((try_get_direct_parent<space_to_batch>(q) && try_get_direct_child<conv2d>(deq))
+                    //     || (try_get_direct_parent<conv2d>(q) && try_get_direct_child<batch_to_space>(deq)))
+                    // {
+                    return true;
+                    // }
                 }
             }
         }

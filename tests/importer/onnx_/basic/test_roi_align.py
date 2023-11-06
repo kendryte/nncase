@@ -21,7 +21,7 @@ from onnx_test_runner import OnnxTestRunner
 import numpy as np
 import copy
 
-def _make_module(in_shape, rois, batch_indices, mode, output_height, output_width, sampling_ratio, spatial_scale):
+def _make_module(in_shape, rois, batch_indices, mode, output_height, output_width, sampling_ratio, spatial_scale, op_version):
     inputs = []
     outputs = []
     initializers = []
@@ -54,7 +54,7 @@ def _make_module(in_shape, rois, batch_indices, mode, output_height, output_widt
     inputs.append('batch_indices')
 
     # output
-    out_shape = [rois_array.shape[0], in_shape[1], output_height, output_width]
+    out_shape = [rois_array.shape[0], in_shape[1], output_height if output_height is not None else 1, output_width if output_width is not None else 1]
     output = helper.make_tensor_value_info('output', TensorProto.FLOAT, out_shape)
     outputs.append('output')
 
@@ -95,7 +95,9 @@ def _make_module(in_shape, rois, batch_indices, mode, output_height, output_widt
         initializer=initializers
     )
 
-    model_def = helper.make_model(graph_def, producer_name='onnx')
+    op = onnx.OperatorSetIdProto()
+    op.version = op_version
+    model_def = helper.make_model(graph_def, producer_name='onnx helper', opset_imports=[op])
 
     return model_def
 
@@ -137,6 +139,10 @@ spatial_scales = [
     1.0
 ]
 
+op_versions = [
+    10
+]
+
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('roi', rois)
 @pytest.mark.parametrize('batch_index', batch_indices)
@@ -145,8 +151,9 @@ spatial_scales = [
 @pytest.mark.parametrize('output_width', output_widths)
 @pytest.mark.parametrize('sampling_ratio', sampling_ratios)
 @pytest.mark.parametrize('spatial_scale', spatial_scales)
-def test_roi_align(in_shape, roi, batch_index, mode, output_height, output_width, sampling_ratio, spatial_scale, request):
-    model_def = _make_module(in_shape, roi, batch_index, mode, output_height, output_width, sampling_ratio, spatial_scale)
+@pytest.mark.parametrize('op_version', op_versions)
+def test_roi_align(in_shape, roi, batch_index, mode, output_height, output_width, sampling_ratio, spatial_scale, op_version, request):
+    model_def = _make_module(in_shape, roi, batch_index, mode, output_height, output_width, sampling_ratio, spatial_scale, op_version)
 
     runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_onnx_helper(model_def)

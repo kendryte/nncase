@@ -226,7 +226,7 @@ result<void> kernels::binary(binary_op_t op, const T *input_a, const T *input_b,
 result<void> kernels::unary(unary_op_t op, const float *input, float *output, const runtime_shape_t &shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, kernel_context &context) noexcept
 {
-    if (is_contiguous(shape, in_strides) && is_contiguous(shape, out_strides) && is_optimized_unary_op(op))
+    if (is_contiguous(shape, in_strides) && is_contiguous(shape, out_strides))
     {
         // optimization
         return cpu::optimized::unary(op, input, output, shape, in_strides, out_strides, context);
@@ -240,11 +240,15 @@ template result<void> kernels::reduce<float>(reduce_op_t op, float init_value, c
 template result<void> kernels::reduce<int32_t>(reduce_op_t op, int32_t init_value, const int32_t *input, int32_t *output, const runtime_shape_t &in_shape, const runtime_shape_t &axis,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, bool keep_dims, kernel_context &context) noexcept;
 
+template result<void> kernels::reduce<int64_t>(reduce_op_t op, int64_t init_value, const int64_t *input, int64_t *output, const runtime_shape_t &in_shape, const runtime_shape_t &axis,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, bool keep_dims, kernel_context &context) noexcept;
+
 template <typename T>
 result<void> kernels::reduce(reduce_op_t op, T init_value, const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &axis,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, bool keep_dims, kernel_context &context) noexcept
 {
-    return cpu::reference::reduce(op, init_value, input, output, in_shape, axis, in_strides, out_strides, keep_dims, context);
+    // return cpu::reference::reduce(op, init_value, input, output, in_shape, axis, in_strides, out_strides, keep_dims, context);
+    return cpu::optimized::reduce(op, init_value, input, output, in_shape, axis, in_strides, out_strides, keep_dims, context);
 }
 
 template result<void> kernels::reduce_arg<int32_t>(reduce_arg_op_t op, const float *input, int32_t *output, const runtime_shape_t &in_shape,
@@ -433,13 +437,18 @@ template result<void> kernels::ternary<float>(const float *input_a, const float 
     const runtime_shape_t &in_b_strides, const runtime_shape_t &in_c_shape, const runtime_shape_t &in_c_strides,
     const runtime_shape_t &out_strides) noexcept;
 
+template result<void> kernels::ternary<int64_t>(const float *input_a, const int64_t *input_b, const int64_t *input_c, int64_t *output,
+    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
+    const runtime_shape_t &in_b_strides, const runtime_shape_t &in_c_shape, const runtime_shape_t &in_c_strides,
+    const runtime_shape_t &out_strides) noexcept;
+
 template <typename T>
 result<void> kernels::ternary(const float *input_a, const T *input_b, const T *input_c, T *output,
     const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
     const runtime_shape_t &in_b_strides, const runtime_shape_t &in_c_shape, const runtime_shape_t &in_c_strides,
     const runtime_shape_t &out_strides) noexcept
 {
-    return cpu::reference::ternary(input_a, input_b, input_c, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides,
+    return cpu::optimized::ternary(input_a, input_b, input_c, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides,
         in_c_shape, in_c_strides, out_strides);
 }
 
@@ -466,4 +475,73 @@ template <typename T>
 result<void> kernels::trilu(const T *input, T *output, const runtime_shape_t &in_shape, const bool upper, const int64_t k) noexcept
 {
     return cpu::reference::trilu(input, output, in_shape, upper, k);
+}
+
+template result<void> kernels::gru<float>(const float *input, const float *w, const float *r, const float *b, float *initial_h, float *output, float *output_h, const runtime_shape_t &input_shape, const runtime_shape_t &w_shape, int mode, bool linear_before_reset) noexcept;
+
+template <typename T>
+result<void> kernels::gru(const T *input, const T *w, const T *r, const T *b, T *initial_h, T *output, T *output_h, const runtime_shape_t &input_shape, const runtime_shape_t &w_shape, int mode, bool linear_before_reset) noexcept
+{
+    return cpu::reference::gru(input, w, r, b, initial_h, output, output_h, input_shape, w_shape, mode, linear_before_reset);
+}
+
+template result<void> kernels::tflite_detection_postprocess<float>(const float *boxes, const float *scores, const float *anchors, float *output_locations, float *output_classes, float *output_scores, float *output_num_detections,
+    const runtime_shape_t &boxes_shape, const runtime_shape_t &scores_shape, const runtime_shape_t &anchors_shape,
+    const int32_t max_detections, const int32_t max_classes_per_detection, const int32_t detections_per_class,
+    const bool use_regular_non_max_suppression, const float nms_score_threshold, const float nms_iou_threshold,
+    const int32_t num_classes, const float y_scale, const float x_scale, const float h_scale, const float w_scale) noexcept;
+
+template <typename T>
+result<void> kernels::tflite_detection_postprocess(const T *boxes, const T *scores, const T *anchors, T *output_locations, T *output_classes, T *output_scores, T *output_num_detections,
+    const runtime_shape_t &boxes_shape, const runtime_shape_t &scores_shape, const runtime_shape_t &anchors_shape,
+    const int32_t max_detections, const int32_t max_classes_per_detection, const int32_t detections_per_class,
+    const bool use_regular_non_max_suppression, const float nms_score_threshold, const float nms_iou_threshold,
+    const int32_t num_classes, const float y_scale, const float x_scale, const float h_scale, const float w_scale) noexcept
+{
+    return cpu::reference::tflite_detection_postprocess(boxes, scores, anchors, output_locations, output_classes, output_scores, output_num_detections,
+        boxes_shape, scores_shape, anchors_shape,
+        max_detections, max_classes_per_detection, detections_per_class,
+        use_regular_non_max_suppression, nms_score_threshold, nms_iou_threshold,
+        num_classes, y_scale, x_scale, h_scale, w_scale);
+}
+
+result<void> kernels::space_to_batch(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &block_shape, const runtime_paddings_t &crops, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, kernel_context &context) noexcept
+{
+    return cpu::reference::space_to_batch(type, input, output, in_shape, block_shape, crops, in_strides, out_strides, context);
+}
+
+template result<void> kernels::gather_elements(const float *input, const int64_t *indices, float *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &indices_shape, const int axis) noexcept;
+
+template <typename TI, typename TK>
+result<void> kernels::gather_elements(const TI *input, const TK *indices, TI *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &indices_shape, const int axis) noexcept
+{
+    return cpu::reference::gather_elements(input, indices, output, in_shape, indices_shape, axis);
+}
+
+template result<void> kernels::instancenorm<float>(const float *input, float *output, float *scale, float *bias, const runtime_shape_t &in_shape, float epsilon) noexcept;
+
+template <typename T>
+result<void> kernels::instancenorm(const T *input, T *output, T *scale, T *bias, const runtime_shape_t &in_shape, float epsilon) noexcept
+{
+    return cpu::optimized::instancenorm(input, output, scale, bias, in_shape, epsilon);
+}
+
+template result<void> kernels::layernorm<float>(const float *input, float *output, float *scale, float *bias, const runtime_shape_t &in_shape, int32_t axis, float epsilon) noexcept;
+
+template <typename T>
+result<void> kernels::layernorm(const T *input, T *output, T *scale, T *bias, const runtime_shape_t &in_shape, int32_t axis, float epsilon) noexcept
+{
+    // return cpu::reference::layernorm(input, output, scale, bias, in_shape, axis, epsilon);
+    return cpu::optimized::layernorm(input, output, scale, bias, in_shape, axis, epsilon);
+}
+
+template result<void> kernels::compress<float>(const float *input, const uint8_t *condition, float *output, const runtime_shape_t &input_shape, const runtime_shape_t &condition_shape, const int axis) noexcept;
+
+template <typename T>
+result<void> kernels::compress(const T *input, const uint8_t *condition, T *output, const runtime_shape_t &input_shape, const runtime_shape_t &condition_shape, const int axis) noexcept
+{
+    return cpu::reference::compress(input, condition, output, input_shape, condition_shape, axis);
 }

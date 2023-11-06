@@ -75,10 +75,22 @@ inline size_t get_bytes(datatype_t type, const shape_t &shape)
     return xt::compute_size(shape) * get_bytes(type);
 }
 
+template <class shape_type, class strides_type>
+inline void compute_strides(const shape_type &shape, strides_type &strides)
+{
+    using strides_value_type = typename std::decay_t<strides_type>::value_type;
+    strides_value_type data_size = 1;
+    for (std::size_t i = shape.size(); i != 0; --i)
+    {
+        strides[i - 1] = data_size;
+        data_size = strides[i - 1] * static_cast<strides_value_type>(shape[i - 1]);
+    }
+}
+
 inline nncase::ir::shape_t to_strides(const nncase::ir::shape_t &shape)
 {
     nncase::ir::shape_t strides(shape.size());
-    xt::compute_strides(shape, xt::layout_type::row_major, strides);
+    compute_strides(shape, strides);
     return strides;
 }
 
@@ -371,6 +383,13 @@ inline bool is_simple_slice(const axis_t &begin, const axis_t &end, const axis_t
     }
 
     return is_simple_slice;
+}
+
+inline shape_t get_instancenorm_const_shape(const shape_t &in_shape)
+{
+    shape_t const_shape(in_shape.size() - 1, 1);
+    const_shape[0] = in_shape[1];
+    return const_shape;
 }
 
 inline bool is_axis0_squeeze_or_expand_dim_bitcast(const shape_t &in_shape, const shape_t &out_shape)

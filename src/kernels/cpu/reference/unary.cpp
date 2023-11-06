@@ -62,6 +62,7 @@ result<void> reference::unary(unary_op_t op, const float *input, float *output, 
         UNARY_IMPL(unary_sqrt, sqrtf);
         UNARY_IMPL(unary_square, [](float v) { return v * v; });
         UNARY_IMPL(unary_tanh, tanhf);
+        UNARY_IMPL(unary_erf, erff);
     default:
         return err(std::errc::not_supported);
     }

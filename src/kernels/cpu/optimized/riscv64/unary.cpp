@@ -43,7 +43,7 @@ struct unary_op_abs_rvv
 
 struct unary_op_ceil_rvv
 {
-    vfloat32m8_t operator()(const vfloat32m8_t &x, const word_type &vl) const
+    vfloat32m8_t operator()(const vfloat32m8_t &x, const size_t &vl) const
     {
         vint32m8_t _xi = vfcvt_x_f_v_i32m8(x, vl);
         vbool4_t _mask = vmflt_vv_f32m8_b4(vfcvt_f_x_v_f32m8(_xi, vl), x, vl);
@@ -61,7 +61,7 @@ struct unary_op_cos_rvv
 
 struct unary_op_exp_rvv
 {
-    vfloat32m8_t operator()(const vfloat32m8_t &x, const word_type &vl) const
+    vfloat32m8_t operator()(const vfloat32m8_t &x, const size_t &vl) const
     {
         return exp_ps(x, vl);
     }

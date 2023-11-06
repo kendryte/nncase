@@ -17,6 +17,7 @@
 #include <cassert>
 #include <nncase/ir/graph.h>
 #include <nncase/ir/ops/slice.h>
+#include <nncase/runtime/datatypes.h>
 #include <vector>
 
 using namespace nncase;
@@ -31,6 +32,23 @@ void onnx_importer::convert_op_Slice(const NodeProto &node)
     const shape_t &input_shape = get_shape(input);
     auto ndim = input_shape.size();
 
+#define GET_ATTRIBUTE(index, dst)                                             \
+    {                                                                         \
+        const std::string &name = node.input()[index];                        \
+        const datatype_t type = get_datatype(name).value();                   \
+                                                                              \
+        if (type == datatype_t::dt_int32)                                     \
+        {                                                                     \
+            auto vec = get_constant_value<int, int32_t>(node.input()[index]); \
+            dst.assign(vec.begin(), vec.end());                               \
+        }                                                                     \
+        else                                                                  \
+        {                                                                     \
+            auto vec = get_constant_value<int, int64_t>(node.input()[index]); \
+            dst.assign(vec.begin(), vec.end());                               \
+        }                                                                     \
+    }
+
     // starts/stops
     axis_t starts, stops;
     bool use_opset_1 = node.input().size() == 1;
@@ -43,11 +61,9 @@ void onnx_importer::convert_op_Slice(const NodeProto &node)
     else
     {
         // opset 10/11/13
-        auto vec = get_constant_value<int, int64_t>(node.input()[1]);
-        starts.assign(vec.begin(), vec.end());
+        GET_ATTRIBUTE(1, starts)
 
-        vec = get_constant_value<int, int64_t>(node.input()[2]);
-        stops.assign(vec.begin(), vec.end());
+        GET_ATTRIBUTE(2, stops)
     }
     assert(starts.size() == stops.size());
     assert(starts.size() <= ndim);
@@ -63,8 +79,7 @@ void onnx_importer::convert_op_Slice(const NodeProto &node)
     }
     else if (node.input().size() >= 4)
     {
-        auto vec = get_constant_value<int, int64_t>(node.input()[3]);
-        axes.assign(vec.begin(), vec.end());
+        GET_ATTRIBUTE(3, axes)
     }
 
     if (axes.empty())
@@ -77,8 +92,7 @@ void onnx_importer::convert_op_Slice(const NodeProto &node)
     axis_t steps;
     if (node.input().size() >= 5)
     {
-        auto vec = get_constant_value<int, int64_t>(node.input()[4]);
-        steps.assign(vec.begin(), vec.end());
+        GET_ATTRIBUTE(4, steps);
         assert(steps.size() == axes.size());
     }
 

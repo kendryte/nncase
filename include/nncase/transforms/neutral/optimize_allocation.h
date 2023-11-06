@@ -71,6 +71,15 @@ protected:
     void run_core(graph &graph, nncase::target &target, const run_pass_options &options) override;
 };
 
+class NNCASE_API add_copy_to_bitcast_pass : public graph_pass
+{
+public:
+    using graph_pass::graph_pass;
+
+protected:
+    void run_core(graph &graph, nncase::target &target, const run_pass_options &options) override;
+};
+
 class NNCASE_API remove_exclusive_copy_to_output_transform : public transform
 {
 public:
@@ -81,6 +90,15 @@ protected:
 };
 
 class NNCASE_API remove_exclusive_copy_to_concat_transform : public transform
+{
+public:
+    void process(transform_context &context) override;
+
+protected:
+    bool on_try_match(ir::node &node, transform_context &context) override;
+};
+
+class NNCASE_API remove_exclusive_copy_to_bitcast_transform : public transform
 {
 public:
     void process(transform_context &context) override;

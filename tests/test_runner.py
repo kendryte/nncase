@@ -20,7 +20,8 @@ from PIL import Image
 from compare_util import compare
 from dataset_utils import *
 from models.preprocess.preprocess import preprocess
-
+import socket
+import json
 
 class Edict:
     def __init__(self, d: Dict[str, int]) -> None:
@@ -108,7 +109,7 @@ def generate_random(shape: List[int], dtype: np.dtype,
     elif dtype == np.bool:
         data = np.random.rand(*shape) > 0.5
     else:
-        data = np.random.rand(*shape)
+        data = np.random.uniform(0.01, 1, shape)
     data = data.astype(dtype=dtype)
     if abs:
         return np.abs(data)
@@ -231,7 +232,16 @@ class TestRunner(metaclass=ABCMeta):
             self.case_dir = os.path.join(self.cfg.setup.root, case_name)
         self.clear(self.case_dir)
 
-        self.validate_targets(targets)
+        self.kpu_target = os.getenv('KPU_TARGET')
+        self.port = os.getenv('PORT')
+        self.nncase_test_ci = os.getenv('NNCASE_TEST_CI')
+
+        if self.in_ci and self.cfg.case.generate_inputs.name == 'generate_random' and self.kpu_target is not None and self.port is not None and self.nncase_test_ci is not None and (targets is None or self.kpu_target in targets):
+            new_targets = []
+            new_targets.append(self.kpu_target)
+        else:
+            new_targets = targets
+        self.validate_targets(new_targets)
 
         self.inputs: List[Dict] = []
         self.calibs: List[Dict] = []
@@ -316,7 +326,7 @@ class TestRunner(metaclass=ABCMeta):
 
     def data_pre_process(self, data):
         data = copy.deepcopy(data)
-        if self.pre_process[3]['input_type'] == "float32":
+        if self.pre_process[0]['preprocess'] and self.pre_process[3]['input_type'] == "float32":
             data = np.asarray(data, dtype=np.float32)
         if self.pre_process[0]['preprocess'] and len(data.shape) == 4:
             if self.pre_process[-1]['input_layout'] == 'NCHW':
@@ -462,6 +472,14 @@ class TestRunner(metaclass=ABCMeta):
     def run_single(self, cfg, case_dir: str, model_file: Union[List[str], str]):
         if not self.inputs:
             self.parse_model_input_output(model_file)
+
+        on_board = self.in_ci and self.kpu_target is not None and self.port is not None and self.nncase_test_ci is not None and len(self.inputs) > 0 and len(self.outputs) > 0
+        if on_board and cfg.generate_inputs.name == 'generate_imagenet_dataset':
+            cfg.generate_inputs.batch_size = 1
+
+        if on_board and cfg.generate_calibs.name == 'generate_imagenet_dataset':
+            cfg.generate_calibs.batch_size = 1
+
         names, args = TestRunner.split_value(cfg.preprocess_opt)
         for combine_args in product(*args):
             dict_args = dict(zip(names, combine_args))
@@ -734,8 +752,13 @@ class TestRunner(metaclass=ABCMeta):
         if kwargs['ptq']:
             ptq_options = nncase.PTQTensorOptions()
             if cfg.generate_calibs.name == "generate_imagenet_dataset":
-                ptq_options.set_tensor_data(np.asarray(
-                    [sample['data'] for sample in self.calibs]).tobytes())
+                # ptq_options.set_tensor_data(np.asarray(
+                #     [sample['data'] for sample in self.calibs]).tobytes())
+                calib_len = len(self.calibs[0]['data'])
+                byte_inputs = np.asarray(self.calibs[0]['data'][0][0]).tobytes()
+                for i in range(1, len(self.calibs[0]['data'])):
+                    byte_inputs += np.asarray(self.calibs[0]['data'][i][0]).tobytes()
+                ptq_options.set_tensor_data(byte_inputs)
                 ptq_options.calibrate_method = self.cfg.case.compile_opt.quant_method
             else:
                 raw_inputs = [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in
@@ -754,6 +777,10 @@ class TestRunner(metaclass=ABCMeta):
             f.write(kmodel)
 
         infer_output_paths: List[np.ndarray] = []
+
+        on_board = self.in_ci and kwargs['target'] == self.kpu_target and self.port is not None and self.nncase_test_ci is not None and len(self.inputs) > 0 and len(self.outputs) > 0
+        case_name = f'{os.path.basename(case_dir)}_{os.path.basename(infer_dir)}'
+
         if cfg.generate_inputs.name == "generate_imagenet_dataset":
             gnne_txt = "gnne_no_ptq" if kwargs['ptq'] is False else "gnne_ptq"
             infer_output_paths.append((
@@ -767,45 +794,157 @@ class TestRunner(metaclass=ABCMeta):
             result = []
             for in_data in self.inputs[0]['data']:
                 input_data = copy.deepcopy(in_data)
-                p.apply_async(sim_run, args=(
-                    kmodel, input_data, infer_output_paths, kwargs['target'], self.model_type,
-                    self.inputs[0]['model_shape']))
+                if on_board:
+                    on_board_run(kmodel, input_data, infer_output_paths, kwargs['target'], self.port, case_name, self.nncase_test_ci, len(self.inputs), len(self.outputs), self.model_type,
+                        self.inputs[0]['model_shape'])
+                else:
+                    p.apply_async(sim_run, args=(
+                        kmodel, input_data, infer_output_paths, kwargs['target'], self.model_type,
+                        self.inputs[0]['model_shape']))
             p.close()
             p.join()
 
         else:
-            sim = nncase.Simulator()
-            sim.load_model(kmodel)
-            for i in range(len(self.inputs)):
-                data = self.transform_input(
-                    self.inputs[i]['data'], preprocess['input_type'], "infer")
-                dtype = preprocess['input_type']
-                if preprocess['preprocess']:
-                    data.tofile(os.path.join(case_dir, f'input_{i}_{dtype}.bin'))
-                    self.totxtfile(os.path.join(case_dir, f'input_{i}_{dtype}.txt'), data)
+            if on_board:
+                # connect server
+                client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                client_socket.connect(('localhost', int(self.port)))
 
-                sim.set_input_tensor(i, nncase.RuntimeTensor.from_numpy(data))
-            sim.run()
+                # send header
+                header_dict = {}
+                header_dict['case'] = case_name
+                header_dict['app'] = 1
+                header_dict['kmodel']= 1
+                header_dict['inputs'] = len(self.inputs)
+                header_dict['outputs'] = len(self.outputs)
+                client_socket.sendall(json.dumps(header_dict).encode())
+                dummy = client_socket.recv(1024)
 
-            for i in range(sim.outputs_size):
-                result = sim.get_output_tensor(i).to_numpy()
-                if preprocess['preprocess'] and len(result.shape) == 4:
-                    if (preprocess['output_layout'] == 'NHWC' and self.model_type in ['caffe', 'onnx']):
-                        result = np.transpose(result, [0, 3, 1, 2])
-                    elif (preprocess['output_layout'] == 'NCHW' and self.model_type in ['tflite']):
-                        result = np.transpose(result, [0, 2, 3, 1])
-                infer_output_paths.append((
-                    os.path.join(infer_dir, f'nncase_result_{i}.bin'),
-                    os.path.join(infer_dir, f'nncase_result_{i}.txt')))
-                if cfg.compile_opt.output_type != "float32" and infer_dir.split('/')[-1] == "ptq":
-                    result.tofile(os.path.join(
-                        infer_dir, f'nncase_result_{cfg.compile_opt.output_type}_{i}.bin'))
-                    self.totxtfile(os.path.join(
-                        infer_dir, f'nncase_result_{cfg.compile_opt.output_type}_{i}.txt'), result)
-                    result = deq_output(os.path.join(
-                        infer_dir, f'kmodel_info.txt'), result)
-                result.tofile(infer_output_paths[-1][0])
-                self.totxtfile(infer_output_paths[-1][1], result)
+                # send app
+                file_dict = {}
+                file_dict['file_name'] = os.path.basename(self.nncase_test_ci)
+                file_dict['file_size'] = os.path.getsize(self.nncase_test_ci)
+                client_socket.sendall(json.dumps(file_dict).encode())
+                dummy = client_socket.recv(1024)
+                with open(self.nncase_test_ci, 'rb') as f:
+                    client_socket.sendall(f.read())
+                dummy = client_socket.recv(1024)
+
+                # send kmodel
+                file_dict['file_name'] = 'test.kmodel'
+                file_dict['file_size'] = len(kmodel)
+                client_socket.sendall(json.dumps(file_dict).encode())
+                dummy = client_socket.recv(1024)
+                client_socket.sendall(kmodel)
+                dummy = client_socket.recv(1024)
+
+                # send inputs
+                for i in range(len(self.inputs)):
+                    input_bin = os.path.join(case_dir, f'input_0_{i}.bin')
+                    data = self.transform_input(
+                        self.inputs[i]['data'], preprocess['input_type'], "infer")
+                    dtype = preprocess['input_type']
+                    if preprocess['preprocess']:
+                        input_bin = os.path.join(case_dir, f'input_{i}_{dtype}.bin')
+                        data.tofile(input_bin)
+                        self.totxtfile(os.path.join(case_dir, f'input_{i}_{dtype}.txt'), data)
+
+                    file_dict['file_name'] = f'input_0_{i}.bin'
+                    file_dict['file_size'] = os.path.getsize(input_bin)
+                    client_socket.sendall(json.dumps(file_dict).encode())
+                    dummy = client_socket.recv(1024)
+                    client_socket.sendall(data.tobytes())
+                    dummy = client_socket.recv(1024)
+
+                # infer result
+                cmd_result = client_socket.recv(1024).decode()
+                if cmd_result.find('succeed') != -1:
+                    client_socket.sendall(f"pls send outputs".encode())
+
+                    # recv outputs
+                    for i in range(len(self.outputs)):
+                        header = client_socket.recv(1024)
+                        file_size = int(header.decode())
+                        client_socket.sendall(f"pls send nncase_result_{i}.bin".encode())
+
+                        recv_size = 0
+                        buffer = bytearray(file_size)
+                        while recv_size < file_size:
+                            slice = client_socket.recv(4096)
+                            buffer[recv_size:] = slice
+                            recv_size += len(slice)
+
+                        # save nncase_result
+                        nncase_result = np.frombuffer(buffer, dtype=self.outputs[i]['dtype'])
+                        nncase_result.tofile(os.path.join(infer_dir, f'nncase_result_{i}.bin'))
+                        self.totxtfile(os.path.join(infer_dir, f'nncase_result_{i}.txt'), nncase_result)
+
+                        # save nncase_vs_cpu_result
+                        model_shape = self.outputs[i]['model_shape']
+                        nncase_vs_cpu_result = nncase_result.reshape(model_shape)
+                        if preprocess['preprocess'] and len(model_shape) == 4:
+                            if (preprocess['output_layout'] == 'NHWC' and self.model_type in ['caffe', 'onnx']):
+                                nncase_vs_cpu_result = nncase_result.reshape(model_shape[0], model_shape[2], model_shape[3], model_shape[1])
+                                nncase_vs_cpu_result = np.transpose(nncase_vs_cpu_result, [0, 3, 1, 2])
+                            elif (preprocess['output_layout'] == 'NCHW' and self.model_type in ['tflite']):
+                                nncase_vs_cpu_result = nncase_result.reshape(model_shape[0], model_shape[3], model_shape[1], model_shape[2])
+                                nncase_vs_cpu_result = np.transpose(nncase_vs_cpu_result, [0, 2, 3, 1])
+                        infer_output_paths.append((
+                            os.path.join(infer_dir, f'nncase_vs_cpu_result_{i}.bin'),
+                            os.path.join(infer_dir, f'nncase_vs_cpu_result_{i}.txt')))
+                        if cfg.compile_opt.output_type != "float32" and infer_dir.split('/')[-1] == "ptq":
+                            nncase_vs_cpu_result.tofile(os.path.join(infer_dir, f'nncase_vs_cpu_result_{cfg.compile_opt.output_type}_{i}.bin'))
+                            self.totxtfile(os.path.join(infer_dir, f'nncase_vs_cpu_result_{cfg.compile_opt.output_type}_{i}.txt'), nncase_vs_cpu_result)
+                            nncase_vs_cpu_result = deq_output(os.path.join(infer_dir, f'kmodel_info.txt'), nncase_vs_cpu_result)
+                        nncase_vs_cpu_result.tofile(infer_output_paths[-1][0])
+                        self.totxtfile(infer_output_paths[-1][1], nncase_vs_cpu_result)
+
+                        client_socket.sendall(f"recv nncase_result_{i}.bin succeed".encode())
+
+                    client_socket.close()
+                else:
+                    client_socket.close()
+                    raise Exception(f'{cmd_result}')
+            else:
+                # run in simulator
+                sim = nncase.Simulator()
+                sim.load_model(kmodel)
+                for i in range(len(self.inputs)):
+                    data = self.transform_input(
+                        self.inputs[i]['data'], preprocess['input_type'], "infer")
+                    dtype = preprocess['input_type']
+                    if preprocess['preprocess']:
+                        data.tofile(os.path.join(case_dir, f'input_{i}_{dtype}.bin'))
+                        self.totxtfile(os.path.join(case_dir, f'input_{i}_{dtype}.txt'), data)
+
+                    sim.set_input_tensor(i, nncase.RuntimeTensor.from_numpy(data))
+                sim.run()
+
+                for i in range(sim.outputs_size):
+                    nncase_result = sim.get_output_tensor(i).to_numpy()
+
+                    # save nncase_result
+                    nncase_result.tofile(os.path.join(infer_dir, f'nncase_result_{i}.bin'))
+                    self.totxtfile(os.path.join(infer_dir, f'nncase_result_{i}.txt'), nncase_result)
+
+                    # save nncase_vs_cpu_result
+                    model_shape = self.outputs[i]['model_shape']
+                    nncase_vs_cpu_result = nncase_result
+                    if preprocess['preprocess'] and len(model_shape) == 4:
+                        if (preprocess['output_layout'] == 'NHWC' and self.model_type in ['caffe', 'onnx']):
+                            nncase_vs_cpu_result = np.transpose(nncase_vs_cpu_result, [0, 3, 1, 2])
+                        elif (preprocess['output_layout'] == 'NCHW' and self.model_type in ['tflite']):
+                            nncase_vs_cpu_result = np.transpose(nncase_vs_cpu_result, [0, 2, 3, 1])
+                    infer_output_paths.append((
+                        os.path.join(infer_dir, f'nncase_vs_cpu_result_{i}.bin'),
+                        os.path.join(infer_dir, f'nncase_vs_cpu_result_{i}.txt')))
+                    if cfg.compile_opt.output_type != "float32" and infer_dir.split('/')[-1] == "ptq":
+                        nncase_vs_cpu_result.tofile(os.path.join(infer_dir, f'nncase_vs_cpu_result_{cfg.compile_opt.output_type}_{i}.bin'))
+                        self.totxtfile(os.path.join(infer_dir, f'nncase_vs_cpu_result_{cfg.compile_opt.output_type}_{i}.txt'), nncase_vs_cpu_result)
+                        nncase_vs_cpu_result = deq_output(os.path.join(infer_dir, f'kmodel_info.txt'), nncase_vs_cpu_result)
+                    nncase_vs_cpu_result.tofile(infer_output_paths[-1][0])
+                    self.totxtfile(infer_output_paths[-1][1], nncase_vs_cpu_result)
+
         return infer_output_paths
 
     def on_test_start(self) -> None:

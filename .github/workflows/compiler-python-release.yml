@@ -5,61 +5,58 @@ on:
     tags:
       - '*'
 
-env:
-  BUILD_TYPE: Release
-
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
+    name: ${{matrix.config.name}}
+    runs-on: ${{matrix.config.os}}
     strategy:
       matrix:
-        os: [ubuntu-18.04,windows-2019,macos-10.15]
+        config:
+          - {name: x86_64-macos, os: macos-11}
+          - {name: x86_64-linux, os: ubuntu-20.04}
+          - {name: x86_64-windows, os: windows-latest, arch: x64}
+
+    env:
+      VULKANSDK_VER: 1.2.182.0
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: seanmiddleditch/gha-setup-ninja@master
 
+    - name: Set up build environment (Windows, Visual Studio)
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: ${{matrix.config.arch}}
+      if: runner.os == 'Windows'
+      
+    - name: Set up build environment (Macos)
+      run: |
+        brew install sunnycase/core/libomp@14.0.6
+        aria2c --parameterized-uri=true https://{sdk.lunarg.com/sdk/download/${VULKANSDK_VER}/mac,distfiles.macports.org/MoltenVK}/vulkansdk-macos-${VULKANSDK_VER}.dmg
+        hdiutil attach ./vulkansdk-macos-*.dmg
+        sudo /Volumes/vulkansdk-macos-*/InstallVulkan.app/Contents/MacOS/InstallVulkan --root $HOME/VulkanSDK --accept-licenses --default-answer --confirm-command install
+        hdiutil detach /Volumes/vulkansdk-macos-*
+        echo "VULKAN_SDK=$HOME/VulkanSDK/macOS" >> $GITHUB_ENV
+        wget https://github.com/sunnycase/swiftshader/releases/download/v1.0/swiftshader-macos-10.15-x86_64.zip -O swiftshader.zip
+        unzip swiftshader.zip
+        sudo cmake -E make_directory /usr/local/share/vulkan/icd.d
+        sudo cp lib/* /usr/local/share/vulkan/icd.d
+      if: runner.os == 'Macos'
+
     - name: Setup Python
-      uses: actions/setup-python@v2.2.1
+      uses: actions/setup-python@v4
       with:
         python-version: 3.7
 
     - name: Install cibuildwheel
       run: pip install cibuildwheel
 
-    - name: Install System Requirements
-      if: runner.os == 'Macos'
-      shell: bash
-      run: |
-        brew install sunnycase/core/libomp@11.1.0
-
-    - name: Add msbuild to PATH
-      if: runner.os == 'Windows'
-      uses: ilammy/msvc-dev-cmd@v1.10.0
-
     - name: Build wheel
       run: python -m cibuildwheel --output-dir wheelhouse
-    
-    - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v2.2.2
-      if: runner.os == 'Windows'
-      with:
-        name: nncase-python-windows
-        path: ${{github.workspace}}/wheelhouse
-        if-no-files-found: error
 
-    - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v2.2.2
-      if: runner.os == 'Linux'
+    - name: Upload nncase-python Build Artifact
+      uses: actions/upload-artifact@v3
       with:
-        name: nncase-python-linux
-        path: ${{github.workspace}}/wheelhouse
-        if-no-files-found: error
-
-    - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v2.2.2
-      if: runner.os == 'Macos'
-      with:
-        name: nncase-python-macos
+        name: nncase-python-${{matrix.config.name}}
         path: ${{github.workspace}}/wheelhouse
         if-no-files-found: error

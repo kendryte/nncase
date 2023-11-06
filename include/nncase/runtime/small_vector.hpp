@@ -668,7 +668,6 @@ public:
     iterator insert(const_iterator position, InputIterator first, InputIterator last)
     {
         auto pos = grow_at(position, last - first);
-        size_type i = 0;
         auto np = pos;
         for (auto p = first; p != last; ++p, ++np)
         {

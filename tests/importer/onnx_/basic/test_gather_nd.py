@@ -53,7 +53,10 @@ def _make_module(in_shape, indices, batch_dims):
         initializer=initializers
     )
 
-    return helper.make_model(graph_def, producer_name='kendryte')
+    # todo: support other opset
+    op = onnx.OperatorSetIdProto()
+    op.version = 12
+    return helper.make_model(graph_def, producer_name='kendryte', opset_imports=[op])
 
 
 in_shapes_indices_dim = [
