@@ -103,6 +103,25 @@ internal sealed class IRPrinterProvider : IIRPrinterProvider
     }
 
     /// <inheritdoc/>
+    public void DumpPatternIR(Expr expr, string prefix, string dumpDir)
+    {
+        var nprefix = prefix.Any() ? prefix + "_" : prefix;
+        string ext = "cs";
+        string name = expr is Callable c ? c.Name : expr.GetType().Name;
+        string file_path = Path.Combine(dumpDir, $"{nprefix}{name}.{ext}");
+        if (string.IsNullOrEmpty(dumpDir))
+        {
+            throw new ArgumentException("The dumpDir Is Empty!");
+        }
+
+        Directory.CreateDirectory(dumpDir);
+
+        using var dumpFile = File.Open(file_path, FileMode.Create);
+        using var dumpWriter = new StreamWriter(dumpFile);
+        new PatternPrintVisitor(dumpWriter, 0).Visit(expr);
+    }
+
+    /// <inheritdoc/>
     public string Print(IRType type)
     {
         var sb = new StringBuilder();

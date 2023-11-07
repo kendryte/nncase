@@ -30,8 +30,8 @@ public sealed partial class ExpandEvaluator : IEvaluator<Expand>, ITypeInference
 
     public Cost Visit(ICostEvaluateContext context, Expand target)
     {
-        var input = context.GetArgumentType<TensorType>(target, Expand.Input);
-        var ret = context.GetReturnType<TensorType>();
+        var input = context.GetArgumentType<IRType>(target, Expand.Input);
+        var ret = context.GetReturnType<IRType>();
 
         return CostUtility.GetBroadcastCost(input, ret);
     }
@@ -53,6 +53,18 @@ public sealed partial class ExpandEvaluator : IEvaluator<Expand>, ITypeInference
         };
     }
 
+    public IRType Visit(ITypeInferenceContext context, Expand target)
+    {
+        var input = context.CheckArgumentType<IRType>(target, Expand.Input);
+        var shape = context.CheckArgumentType<TensorType>(target, Expand.Shape);
+        return input switch
+        {
+            TensorType t => Visit(context, target, t, shape),
+            DistributedType d => Visit(context, target, d, shape),
+            _ => new InvalidType(input.GetType().ToString()),
+        };
+    }
+
     private IRType Visit(ITypeInferenceContext context, Expand target, TensorType input, TensorType shape)
     {
         var shape_expr = context.GetArgument(target, Expand.Shape);
@@ -64,5 +76,29 @@ public sealed partial class ExpandEvaluator : IEvaluator<Expand>, ITypeInference
         {
             return input with { Shape = TypeInference.ReshapeTo(shape) };
         }
+    }
+
+    private IRType Visit(ITypeInferenceContext context, Expand target, DistributedType input, TensorType shape)
+    {
+        var invalid = new InvalidType(input.ToString());
+        var shape_expr = context.GetArgument(target, Expand.Shape);
+        if (shape_expr is TensorConst constShape)
+        {
+            var newShape = constShape.Value.ToArray<int>();
+            var ndsbp = new SBP[input.Placement.Rank];
+            for (int i = 0; i < input.Placement.Rank; i++)
+            {
+                if (input.NdSBP[i] is SBPSplit sbp && newShape[sbp.Axis] != input.TensorType.Shape[sbp.Axis])
+                {
+                    return invalid;
+                }
+
+                ndsbp[i] = input.NdSBP[i];
+            }
+
+            return new DistributedType(new TensorType(input.TensorType.DType, new Shape(newShape)), ndsbp, input.Placement);
+        }
+
+        return invalid;
     }
 }

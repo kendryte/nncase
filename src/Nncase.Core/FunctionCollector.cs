@@ -17,7 +17,7 @@ namespace Nncase
 
         public HashSet<Function> Functions => _functions;
 
-        protected override int VisitLeafFunction(Function expr, Unit context)
+        protected override int VisitLeafFunction(Function expr)
         {
             _functions.Add(expr);
             return 0;

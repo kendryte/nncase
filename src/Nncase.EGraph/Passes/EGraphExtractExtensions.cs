@@ -26,10 +26,11 @@ public static class EGraphExtractExtensions
     /// <param name="eGraph">eGraph.</param>
     /// <param name="root">Root eclass.</param>
     /// <param name="basefunc_cost_evaluator">base func cost evaluator.</param>
+    /// <param name="picks">the picks.</param>
     /// <returns>Extracted root expression.</returns>
-    public static Expr Extract(this IEGraph eGraph, EClass root, Evaluator.IBaseFuncCostEvaluator? basefunc_cost_evaluator)
+    public static Expr Extract(this IEGraph eGraph, EClass root, Evaluator.IBaseFuncCostEvaluator? basefunc_cost_evaluator, out IReadOnlyDictionary<ENode, bool> picks)
     {
-        // 1. set the all expr checked shape
+        // 1. set enode expr with more accuracy type.
         foreach (var eclass in eGraph.Classes)
         {
             foreach (var nodes in eclass.Nodes)
@@ -50,7 +51,7 @@ public static class EGraphExtractExtensions
         //     EGraphPrinter.DumpEgraphAsDot(eGraph, costModel, root.Find(), fs);
         // }
         // return new EGraphExtractor(costModel).Extract(root.Find(), eGraph);
-        return new EGraphExtractors.SatExtractor(costModel).Extract(root.Find(), eGraph);
+        return new EGraphExtractors.SatExtractor(costModel).Extract(root.Find(), eGraph, out picks);
     }
 
     /// <summary>

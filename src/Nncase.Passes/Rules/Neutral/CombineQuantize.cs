@@ -34,11 +34,12 @@ public sealed partial class CombineQuantizeConcat : RewriteRule<Pattern>
       "quantize",
       _ => true,
       IsConcat(
-        IsTuple(IsVArgsRepeat("tupleInputs", () => IsWildcard())),
-        IsWildcard("axis")),
+        "concat",
+        _ => true,
+        IsTuple(IsVArgsRepeat("tupleInputs", () => IsWildcard()))),
       IsWildcard("quantParam"));
 
-    private Expr? GetReplace(Quantize quantize, IReadOnlyList<Expr> tupleInputs, Expr axis, Expr quantParam, RunPassContext options)
+    private Expr? GetReplace(Quantize quantize, IReadOnlyList<Expr> tupleInputs, IR.Tensors.Concat concat, Expr quantParam, RunPassContext options)
     {
         if (options.Driver is DataflowPass)
         {
@@ -54,7 +55,7 @@ public sealed partial class CombineQuantizeConcat : RewriteRule<Pattern>
             }
         }
 
-        return Concat(new IR.Tuple(tupleInputs.Select(e => IR.F.Math.Quantize(e, quantParam, quantize.TargetType)).ToArray()), axis);
+        return Concat(new IR.Tuple(tupleInputs.Select(e => IR.F.Math.Quantize(e, quantParam, quantize.TargetType)).ToArray()), concat.Axis);
     }
 }
 

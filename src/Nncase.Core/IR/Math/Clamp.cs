@@ -21,7 +21,7 @@ public sealed partial class Clamp : Op
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Clamp), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(Clamp), 0, "input", ParameterKind.Input);
 
     /// <summary>
     /// Gets min.

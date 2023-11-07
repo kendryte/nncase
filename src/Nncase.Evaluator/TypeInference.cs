@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
+using Nncase.TIR;
 using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.Evaluator;

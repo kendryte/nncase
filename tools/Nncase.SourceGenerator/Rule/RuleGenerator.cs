@@ -213,6 +213,7 @@ internal sealed class RuleGenerator : IIncrementalGenerator
             // 3. add classes
             grouped_classes[cand.ClassSymobl.ContainingNamespace].Add(
               cand.ClassDeclaration
+              .WithBaseList(null)
               .WithIdentifier(Identifier(cand.ClassSymobl.Name))
               .WithMembers(SingletonList<MemberDeclarationSyntax>(method))
               .WithAttributeLists(new SyntaxList<AttributeListSyntax>() { })

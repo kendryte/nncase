@@ -14,6 +14,13 @@ using Nncase.Quantization;
 namespace Nncase;
 
 /// <summary>
+/// The targets own compile options.
+/// </summary>
+public interface ITargetCompileOptions
+{
+}
+
+/// <summary>
 /// Target.
 /// </summary>
 public interface ITarget
@@ -22,6 +29,12 @@ public interface ITarget
     /// Gets target kind.
     /// </summary>
     string Kind { get; }
+
+    /// <summary>
+    /// create the current target's command and parser.
+    /// </summary>
+    /// <returns>command.</returns>
+    (System.CommandLine.Command Command, Func<System.CommandLine.Invocation.InvocationContext, System.CommandLine.Command, ITargetCompileOptions> Parser) RegisterCommandAndParser();
 
     /// <summary>
     /// Bind Quant Method And Quant Cosine With IR.
@@ -90,4 +103,13 @@ public interface ITarget
     /// <param name="options">compile options.</param>
     /// <returns>Module builder.</returns>
     IModuleBuilder CreateModuleBuilder(string moduleKind, CompileOptions options);
+}
+
+public sealed class DefaultTargetCompileOptions : ITargetCompileOptions
+{
+    public static readonly DefaultTargetCompileOptions Instance = new();
+
+    private DefaultTargetCompileOptions()
+    {
+    }
 }
