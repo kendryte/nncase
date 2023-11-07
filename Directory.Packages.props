@@ -12,6 +12,12 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
+    <PackageVersion Include="Avalonia" Version="11.0.2"/>
+    <PackageVersion Include="Avalonia.Desktop" Version="11.0.2"/>
+    <PackageVersion Include="Avalonia.Themes.Fluent" Version="11.0.2"/>
+    <PackageVersion Include="Avalonia.Fonts.Inter" Version="11.0.2"/>
+    <PackageVersion Include="Avalonia.ReactiveUI" Version="11.0.2"/>
+
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.2.1" />
     <PackageVersion Include="Google.OrTools" Version="9.4.1874" />
     <PackageVersion Include="AnyTensorFlow.NET" Version="0.70.1" />

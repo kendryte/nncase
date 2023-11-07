@@ -13,19 +13,16 @@
         <AvaloniaResource Include="Assets\**"/>
     </ItemGroup>
 
-
     <ItemGroup>
-        <PackageReference Include="Avalonia" Version="11.0.2"/>
-        <PackageReference Include="Avalonia.Desktop" Version="11.0.2"/>
-        <PackageReference Include="Avalonia.Themes.Fluent" Version="11.0.2"/>
-        <PackageReference Include="Avalonia.Fonts.Inter" Version="11.0.2"/>
+        <PackageReference Include="Avalonia"/>
+        <PackageReference Include="Avalonia.Desktop"/>
+        <PackageReference Include="Avalonia.Themes.Fluent"/>
+        <PackageReference Include="Avalonia.Fonts.Inter"/>
         <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
-        <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.0.2"/>
-        <PackageReference Include="Avalonia.ReactiveUI" Version="11.0.2"/>
+<!--        <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics"/>-->
+        <PackageReference Include="Avalonia.ReactiveUI"/>
         <PackageReference Include="CommunityToolkit.Mvvm"/>
         <PackageReference Include="NumSharp" />
-
-
 
         <ProjectReference Include="..\Nncase.Compiler\Nncase.Compiler.csproj" />
         <ProjectReference Include="..\Nncase.CodeGen\Nncase.CodeGen.csproj" />
@@ -40,7 +37,6 @@
         <ProjectReference Include="..\Nncase.Passes\Nncase.Passes.csproj" />
         <ProjectReference Include="..\..\modules\Nncase.Modules.StackVM\Nncase.Modules.StackVM.csproj" />
     </ItemGroup>
-
 
     <ItemGroup>
       <UpToDateCheckInput Remove="Style\EnumComboBox.axaml" />
