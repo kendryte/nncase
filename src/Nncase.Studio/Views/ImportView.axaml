@@ -10,19 +10,13 @@
             <!-- 插入三种模型的logo -->
             <Label HorizontalAlignment="Center" Content="支持的模型格式：NCNN ONNX TFLite"></Label>
             <!-- todo: image on click and set file filter -->
-            <DockPanel HorizontalAlignment="Center">
-                <Image Margin="20" Source="/Assets/ncnn-logo.png" Width="128" Height="128"></Image>
-                <Image Margin="20" Source="/Assets/ONNX-logo.png" Width="128" Height="128"></Image>
-                <Image Margin="20" Source="/Assets/tflite-logo.png" Width="128" Height="128"></Image>
+            <DockPanel HorizontalAlignment="Center" Name="LogoPanel">
+                <Image Source="/Assets/ncnn-logo.png"></Image>
+                <Image Source="/Assets/ONNX-logo.png"></Image>
+                <Image Source="/Assets/tflite-logo.png"></Image>
             </DockPanel>
 
-
-            <Button CornerRadius="45"
-                    Margin="20"
-                    Width="200"
-
-                    HorizontalContentAlignment="Center"
-                    HorizontalAlignment="Center"
+            <Button Name="ImportButton"
                     Content="Import"
                     x:CompileBindings="False"
                     FontSize="40"

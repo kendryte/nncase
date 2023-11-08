@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using Avalonia;
 using Avalonia.Controls;
@@ -12,11 +15,13 @@ namespace Nncase.Studio.Views
         public static readonly StyledProperty<Type> TypeNameProperty =
             AvaloniaProperty.Register<EnumComboBox, Type>(nameof(TypeName));
 
-        protected override Type StyleKeyOverride => typeof(Avalonia.Controls.ComboBox);
-
         public Type TypeName
         {
-            get { return GetValue(TypeNameProperty); }
+            get
+            {
+                return GetValue(TypeNameProperty);
+            }
+
             set
             {
                 SetValue(TypeNameProperty, value);
@@ -25,9 +30,11 @@ namespace Nncase.Studio.Views
                 {
                     Items.Add(name);
                 }
+
                 SelectedIndex = 0;
             }
         }
+
+        protected override Type StyleKeyOverride => typeof(Avalonia.Controls.ComboBox);
     }
 }
-

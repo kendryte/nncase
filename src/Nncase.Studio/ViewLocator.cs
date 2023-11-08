@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
@@ -7,24 +10,15 @@ namespace Nncase.Studio;
 
 public class ViewLocator : IDataTemplate
 {
-    public Control Build(object data)
+    public Control Build(object? data)
     {
-        var name = data.GetType().FullName!.Replace("ViewModel", "View");
-        var type = Type.GetType(name);
+        if (data == null)
+        {
+            return new TextBlock { Text = "Not Found" };
+        }
 
-        // todo: what this??
-        // var panel = new DockPanel();
-        // var obj = (OptStr)data;
-        // var l = new Label();
-        // l.Content = obj.OptName;
-        // var t = new TextBox();
-        // t.Text = obj.Value;
-        // t.Watermark = "default";
-        // panel.Children.Add(l);
-        // panel.Children.Add(t);
-        // l.Width = 200;
-        // t.Width = 400;
-        // return panel;
+        var name = data!.GetType().FullName!.Replace("ViewModel", "View", StringComparison.Ordinal);
+        var type = Type.GetType(name);
 
         if (type != null)
         {
@@ -34,7 +28,7 @@ public class ViewLocator : IDataTemplate
         return new TextBlock { Text = "Not Found: " + name };
     }
 
-    public bool Match(object data)
+    public bool Match(object? data)
     {
         return data is ViewModelBase;
     }

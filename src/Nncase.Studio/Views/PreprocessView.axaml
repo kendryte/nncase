@@ -10,24 +10,83 @@
              x:DataType="viewModels:PreprocessViewModel">
 
     <StackPanel VerticalAlignment="Center">
-            <UniformGrid Rows="5" Columns="4" Margin="4">
-                <Label Height="60" Content="输入Layout"></Label><TextBox Text="{Binding InputLayout}" Watermark="{Binding LayoutWatermark}"></TextBox>
-                <Label Content="输出Layout"></Label><TextBox Text="{Binding OutputLayout}" Watermark="{Binding LayoutWatermark}"></TextBox>
-                <Label Content="InputType"></Label> <views:EnumComboBox SelectedValue="{Binding InputTypeValue}" TypeName="nncase:InputType"></views:EnumComboBox>
-                <Label Content="输入Shape"></Label><TextBox Text="{Binding InputShape}" Watermark="{Binding ShapeWaterMark}"></TextBox>
-                <Label Content="输入Range"></Label>
-                    <DockPanel>
-                        <Label Content="Min"></Label><TextBox Text="{Binding RangeMin}"></TextBox>
-                        <Label Content="Max"></Label><TextBox Text="{Binding RangeMax}"></TextBox>
-                    </DockPanel>
+        <Grid>
+  <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition />
+  </Grid.RowDefinitions>
 
-                <Label Content="SwapRB"></Label><CheckBox IsChecked="{Binding SwapRB}"></CheckBox>
+  <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="Auto"/>
+      <ColumnDefinition Width="Auto"/>
+      <ColumnDefinition Width="Auto"/>
+      <ColumnDefinition Width="Auto"/>
+  </Grid.ColumnDefinitions>
 
-                <Label Content="Mean"></Label><TextBox Text="{Binding Mean}" Watermark="{Binding ListNumberWaterMark}"></TextBox>
-                <Label Content="Std"></Label><TextBox Text="{Binding Std}" Watermark="{Binding ListNumberWaterMark}"></TextBox>
+  <Label Grid.Row="0" Grid.Column="0" Content="输入Layout" />
+  <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding InputLayout}"
+    Watermark="{Binding LayoutWatermark}" />
 
-                <Label Content="模型Layout"></Label><TextBox Text="{Binding ModelLayout}" Watermark="{Binding LayoutWatermark}"></TextBox>
-                <Label Content="LetterBoxValue"></Label><TextBox Text="{Binding LetterBoxValue}"></TextBox>
-            </UniformGrid>
+  <Label Grid.Row="0" Grid.Column="2" Content="输出Layout" />
+  <TextBox Grid.Row="0" Grid.Column="3" Text="{Binding OutputLayout}"
+    Watermark="{Binding LayoutWatermark}" />
+
+  <Label Grid.Row="1" Grid.Column="0" Content="InputType" />
+  <views:EnumComboBox Grid.Row="1" Grid.Column="1"
+    SelectedValue="{Binding InputTypeValue}" TypeName="nncase:InputType" />
+
+  <Label Grid.Row="1" Grid.Column="2" Content="输入Shape" />
+  <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding InputShape}"
+    Watermark="{Binding ShapeWaterMark}" />
+
+  <Label Grid.Row="2" Grid.Column="0" Content="输入Range" />
+  <DockPanel Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="3">
+    <Label Content="Min" />
+    <TextBox Text="{Binding RangeMin}" />
+    <Label Content="Max" />
+    <TextBox Text="{Binding RangeMax}" />
+  </DockPanel>
+
+  <Label Grid.Row="3" Grid.Column="0" Content="Mean" />
+  <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Mean}"
+    Watermark="{Binding ListNumberWaterMark}" />
+
+  <Label Grid.Row="3" Grid.Column="2" Content="Std" />
+  <TextBox Grid.Row="3" Grid.Column="3" Text="{Binding Std}"
+    Watermark="{Binding ListNumberWaterMark}" />
+
+  <Label Grid.Row="4" Grid.Column="0" Content="SwapRB" />
+  <CheckBox Grid.Row="4" Grid.Column="1" IsChecked="{Binding SwapRB}" />
+
+  <Label Grid.Row="4" Grid.Column="2" Content="模型Layout" />
+  <TextBox Grid.Row="4" Grid.Column="3" Text="{Binding ModelLayout}"
+    Watermark="{Binding LayoutWatermark}" />
+
+  <Label Grid.Row="5" Grid.Column="0" Content="LetterBoxValue" />
+  <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding LetterBoxValue}" />
+</Grid>
+        <!-- <UniformGrid Rows="5" Columns="4"> -->
+                <!-- <Label Content="输入Layout"></Label><TextBox Text="{Binding InputLayout}" Watermark="{Binding LayoutWatermark}"></TextBox> -->
+                <!-- <Label Content="输出Layout"></Label><TextBox Text="{Binding OutputLayout}" Watermark="{Binding LayoutWatermark}"></TextBox> -->
+                <!-- <Label Content="InputType"></Label> <views:EnumComboBox SelectedValue="{Binding InputTypeValue}" TypeName="nncase:InputType"></views:EnumComboBox> -->
+                <!-- <Label Content="输入Shape"></Label><TextBox Text="{Binding InputShape}" Watermark="{Binding ShapeWaterMark}"></TextBox> -->
+                <!-- <Label Content="输入Range"></Label> -->
+                <!--     <DockPanel> -->
+                <!--         <Label Content="Min"></Label><TextBox Text="{Binding RangeMin}"></TextBox> -->
+                <!--         <Label Content="Max"></Label><TextBox Text="{Binding RangeMax}"></TextBox> -->
+                <!--     </DockPanel> -->
+                <!-- -->
+                <!-- <Label Content="SwapRB"></Label><CheckBox IsChecked="{Binding SwapRB}"></CheckBox> -->
+                <!-- -->
+                <!-- <Label Content="Mean"></Label><TextBox Text="{Binding Mean}" Watermark="{Binding ListNumberWaterMark}"></TextBox> -->
+                <!-- <Label Content="Std"></Label><TextBox Text="{Binding Std}" Watermark="{Binding ListNumberWaterMark}"></TextBox> -->
+                <!-- -->
+                <!-- <Label Content="模型Layout"></Label><TextBox Text="{Binding ModelLayout}" Watermark="{Binding LayoutWatermark}"></TextBox> -->
+                <!-- <Label Content="LetterBoxValue"></Label><TextBox Text="{Binding LetterBoxValue}"></TextBox> -->
+            <!-- </UniformGrid> -->
     </StackPanel>
 </UserControl>

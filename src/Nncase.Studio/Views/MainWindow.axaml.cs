@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -21,45 +24,49 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     public MainWindow()
     {
         InitializeComponent();
-        // window关联一个对应的ViewModel
-
-        // foreach (string flag in Enum.GetNames(typeof(DumpFlags)))
-        // {
-        //     DumpFlagsComboBox.Items.Add(flag);
-        // }
-        //
-        // foreach (string flag in Enum.GetNames(typeof(InputType)))
-        // {
-        //     InputType.Items.Add(flag);
-        // }
-
-        // InputLayout.Items.Add("NCHW");
-        // InputLayout.Items.Add("NHWC");
-
         this.WhenActivated(action =>
         {
             action(ViewModel!.ShowPromptDialog.RegisterHandler(DoShowDialogAsync));
-            action(ViewModel!.ShowFilePicker.RegisterHandler(OpenFileButton_Clicked));
+            action(ViewModel!.ShowFilePicker.RegisterHandler(OpenFileButtonClicked));
+            action(ViewModel!.ShowFolderPicker.RegisterHandler(OpenFolderButtonClicked));
         });
     }
 
-    private async Task DoShowDialogAsync(InteractionContext<string, Unit> interaction)
-    {
-        var dialog = new PromptDialog();
-        var viewModel = new PromptDialogViewModel();
-        viewModel.DialogContent = interaction.Input;
-        dialog.DataContext = viewModel;
-        await dialog.ShowDialog(this);
-    }
-
-    public async Task OpenFileButton_Clicked(InteractionContext<FilePickerOpenOptions, List<string>> interaction)
+    public async Task OpenFolderButtonClicked(InteractionContext<FolderPickerOpenOptions, string> interaction)
     {
         // Get top level from the current control. Alternatively, you can use Window reference instead.
         var topLevel = TopLevel.GetTopLevel(this);
 
+        // Start async operation to open the dialog.
+        var folder = await topLevel!.StorageProvider.OpenFolderPickerAsync(interaction.Input);
+        if (folder.Count == 0)
+        {
+            interaction.SetOutput(string.Empty);
+            return;
+        }
+
+        interaction.SetOutput(folder[0].Path.LocalPath);
+    }
+
+    private async Task DoShowDialogAsync(InteractionContext<(string, PromptDialogLevel), Unit> interaction)
+    {
+        var dialog = new PromptDialog();
+        var viewModel = new PromptDialogViewModel();
+        var (content, level) = interaction.Input;
+        viewModel.DialogContent = content;
+        viewModel.DialogLevel = level;
+        interaction.SetOutput(default);
+        dialog.DataContext = viewModel;
+        await dialog.ShowDialog(this);
+    }
+
+    public async Task OpenFileButtonClicked(InteractionContext<FilePickerOpenOptions, List<string>> interaction)
+    {
+        // Get top level from the current control. Alternatively, you can use Window reference instead.
+        var topLevel = TopLevel.GetTopLevel(this);
 
         // Start async operation to open the dialog.
-        var files = await topLevel.StorageProvider.OpenFilePickerAsync(interaction.Input);
+        var files = await topLevel!.StorageProvider.OpenFilePickerAsync(interaction.Input);
 
         if (files.Count >= 1)
         {

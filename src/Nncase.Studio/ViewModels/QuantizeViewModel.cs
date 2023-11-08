@@ -1,7 +1,12 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Nncase.Quantization;
@@ -11,25 +16,57 @@ namespace Nncase.Studio.ViewModels;
 
 public partial class QuantizeViewModel : ViewModelBase
 {
-    [ObservableProperty] private QuantizeOptions _quantizeOptions;
+    [ObservableProperty]
+    private QuantizeOptions _quantizeOptionsValue;
 
-    [ObservableProperty] private CalibMethod _calibMethod;
+    [ObservableProperty]
+    private CalibMethod _calibMethodValue;
 
-    [ObservableProperty] private QuantType _quantType;
+    [ObservableProperty]
+    private QuantType _quantTypeValue;
 
-    [ObservableProperty] private QuantType _wQuantType;
+    [ObservableProperty]
+    private QuantType _wQuantTypeValue;
 
-    [ObservableProperty] private ModelQuantMode _modelQuantMode;
+    [ObservableProperty]
+    private ModelQuantMode _modelQuantModeValue;
 
-    [ObservableProperty] private string _quantSchemePath;
+    [ObservableProperty]
+    private bool _mixQuantize;
+
+    [ObservableProperty]
+    private bool _exportQuantScheme;
+
+    [ObservableProperty]
+    private string _quantSchemePath = string.Empty;
+
+    [ObservableProperty]
+    private string _exportQuantSchemePath = string.Empty;
+
+    public QuantizeViewModel(ViewModelContext context)
+    {
+        ModelQuantModeList = new ObservableCollection<ModelQuantMode>(Enum.GetValues<ModelQuantMode>().Skip(1).ToList());
+        ModelQuantModeValue = ModelQuantMode.UsePTQ;
+        QuantizeOptionsValue = new();
+        Context = context;
+    }
 
     public ObservableCollection<ModelQuantMode> ModelQuantModeList { get; set; }
 
-    public QuantizeViewModel()
+    public void UpdateCompileOption(CompileOptions options)
     {
-        ModelQuantModeList = new ObservableCollection<ModelQuantMode>(Enum.GetValues<ModelQuantMode>().Skip(1).ToList());
-        ModelQuantMode = ModelQuantMode.UsePTQ;
-        QuantizeOptions = new();
+        QuantizeOptionsValue.QuantType = QuantTypeToDataType(QuantTypeValue);
+        QuantizeOptionsValue.WQuantType = QuantTypeToDataType(WQuantTypeValue);
+        QuantizeOptionsValue.ModelQuantMode = ModelQuantModeValue;
+        QuantizeOptionsValue.CalibrationMethod = CalibMethodValue;
+        QuantizeOptionsValue.QuantScheme = QuantSchemePath;
+        QuantizeOptionsValue.ExportQuantScheme = ExportQuantScheme;
+        options.QuantizeOptions = QuantizeOptionsValue;
+    }
+
+    public List<string> Validate()
+    {
+        return new();
     }
 
     private DataType QuantTypeToDataType(QuantType qt)
@@ -39,22 +76,54 @@ public partial class QuantizeViewModel : ViewModelBase
             QuantType.Uint8 => DataTypes.UInt8,
             QuantType.Int8 => DataTypes.Int8,
             QuantType.Int16 => DataTypes.Int16,
-            _ => throw new ArgumentOutOfRangeException(nameof(qt), qt, null)
+            _ => throw new ArgumentOutOfRangeException(nameof(qt), qt, null),
         };
     }
 
-    public void UpdateCompileOption(CompileOptions options)
+    [RelayCommand]
+    public async Task SelectQuantScheme()
     {
-        QuantizeOptions.QuantType = QuantTypeToDataType(QuantType);
-        QuantizeOptions.WQuantType = QuantTypeToDataType(WQuantType);
-        QuantizeOptions.ModelQuantMode = ModelQuantMode;
-        QuantizeOptions.CalibrationMethod = CalibMethod;
-        QuantizeOptions.QuantScheme = QuantSchemePath;
-        options.QuantizeOptions = this.QuantizeOptions;
+        var path = await Context.OpenFile(PickerOptions.JsonPickerOptions);
+        if (path.Count == 0)
+        {
+            return;
+        }
+
+        var json = path[0];
+        if (Path.GetExtension(json) != ".json")
+        {
+            Context.OpenDialog("QuantScheme Should use .json");
+            return;
+        }
+
+        QuantizeViewModel.QuantSchemePath = json;
     }
 
-    public List<string> Validate()
+    [RelayCommand]
+    public async Task SelectCalibrationDataSet()
     {
-        return new();
+        var path = await Context.OpenFolder(PickerOptions.FolderPickerOpenOptions);
+        if (path == string.Empty)
+        {
+            return;
+        }
+
+        var inputFiles = Directory.GetFiles(path);
+        if (inputFiles.Length == 0)
+        {
+            Context.OpenDialog("empty dir");
+            return;
+        }
+
+        var input = Helper.ReadInput(inputFiles).ToArray();
+        if (input.Length == 0)
+        {
+            Context.OpenDialog("no file is loaded, only support .npy");
+            return;
+        }
+
+        var samples = Context.Entry.Parameters.ToArray().Zip(input)
+            .ToDictionary(pair => pair.First, pair => (IValue)Value.FromTensor(pair.Second));
+        QuantizeOptionsValue.CalibrationDataset = new SelfInputCalibrationDatasetProvider(samples);
     }
 }

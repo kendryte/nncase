@@ -1,12 +1,14 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace Nncase.Studio;
 
 [AttributeUsage(AttributeTargets.All, Inherited = false, AllowMultiple = true)]
-sealed class ValidFloatAttribute : ValidationAttribute
+internal sealed class ValidFloatAttribute : ValidationAttribute
 {
     public ValidFloatAttribute()
     {
@@ -18,13 +20,14 @@ sealed class ValidFloatAttribute : ValidationAttribute
         {
             return false;
         }
+
         // value
         return float.TryParse((string)value, out var _);
     }
 }
 
 [AttributeUsage(AttributeTargets.All, Inherited = false, AllowMultiple = true)]
-sealed class ValidFloatArrayAttribute : ValidationAttribute
+internal sealed class ValidFloatArrayAttribute : ValidationAttribute
 {
     public ValidFloatArrayAttribute()
     {
@@ -36,8 +39,10 @@ sealed class ValidFloatArrayAttribute : ValidationAttribute
         {
             return false;
         }
-        var s = (((string)value));
-        if (s.Contains(","))
+
+        var s = (string)value;
+
+        if (s.Contains(",", StringComparison.Ordinal))
         {
             var list = s.Split(",");
             return list.All(s => float.TryParse(s, out var _));
@@ -50,7 +55,7 @@ sealed class ValidFloatArrayAttribute : ValidationAttribute
 }
 
 [AttributeUsage(AttributeTargets.All, Inherited = false, AllowMultiple = true)]
-sealed class ValidIntArrayAttribute : ValidationAttribute
+internal sealed class ValidIntArrayAttribute : ValidationAttribute
 {
     public ValidIntArrayAttribute()
     {
@@ -62,8 +67,9 @@ sealed class ValidIntArrayAttribute : ValidationAttribute
         {
             return false;
         }
-        var s = (((string)value));
-        if (s.Contains(","))
+
+        var s = (string)value;
+        if (s.Contains(",", StringComparison.Ordinal))
         {
             var list = s.Split(",");
             return list.All(s => int.TryParse(s, out var _));
@@ -76,7 +82,7 @@ sealed class ValidIntArrayAttribute : ValidationAttribute
 }
 
 [AttributeUsage(AttributeTargets.All, Inherited = false, AllowMultiple = true)]
-sealed class ValidLayoutAttribute : ValidationAttribute
+internal sealed class ValidLayoutAttribute : ValidationAttribute
 {
     // todo: add test
     public ValidLayoutAttribute()
@@ -92,7 +98,7 @@ sealed class ValidLayoutAttribute : ValidationAttribute
 
         // todo: 前处理，5d？？
         var s = (string)value;
-        if (s.All(c => "NCHW".Contains(c)))
+        if (s.All(c => "NCHW".Contains(c, StringComparison.Ordinal)))
         {
             return !HasRepeat(s);
         }
@@ -118,7 +124,7 @@ sealed class ValidLayoutAttribute : ValidationAttribute
 
     private static bool TryParseNumberList(string s, out int[] numbers)
     {
-        if (s.Contains(","))
+        if (s.Contains(",", StringComparison.Ordinal))
         {
             // todo: all 0-3
             var charArray = s.Split(",").Select(s => s[0]).ToArray();

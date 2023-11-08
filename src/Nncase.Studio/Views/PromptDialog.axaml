@@ -1,17 +1,38 @@
-<Window xmlns="https://github.com/avaloniaui"
+<Window x:Class="Nncase.Studio.Views.PromptDialog"
+        x:Name="Dialog"
+        xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:viewModels="clr-namespace:Nncase.Studio.ViewModels"
         mc:Ignorable="d" d:DesignWidth="192" d:DesignHeight="108"
-        x:Class="Nncase.Studio.Views.PromptDialog"
         x:DataType="viewModels:PromptDialogViewModel"
-        Width="400"
+        Width="500"
         Height="300"
+        Icon="/Assets/nncase-logo.png"
         Title="Error"
         FontSize="32">
-    <!-- todo: icon for error -->
-    <Label HorizontalAlignment="Center"
-           VerticalAlignment="Center"
-           Content="{Binding DialogContent}"></Label>
+
+    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+        <Grid HorizontalAlignment="Center">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <!-- todo 不同模式不同的logo -->
+            <Image
+                Name="IconImage"
+                Width="64" Height="64" Source="/Assets/error-icon.png"></Image>
+            <Label Grid.Column="1"
+                   HorizontalAlignment="Left"
+                   Content="{Binding DialogContent}"></Label>
+        </Grid>
+
+        <Button Content="关闭"
+                HorizontalAlignment="Center"
+                IsCancel="True"
+                Command="{Binding CloseWindowCommand, Mode=OneWay}"
+                CommandParameter="{Binding $parent[Window]}"
+                ></Button>
+    </StackPanel>
 </Window>

@@ -1,0 +1,40 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Design.PreviewWith>
+        <Border Padding="20">
+            <!-- Add Controls for Previewer Here -->
+        </Border>
+    </Design.PreviewWith>
+
+    <!-- todo: line height -->
+    <!-- simulate view -->
+    <Style Selector="Grid TextBox">
+        <Setter Property="Margin" Value="15"></Setter>
+        <Setter Property="VerticalContentAlignment" Value="Center"></Setter>
+        <Setter Property="Width" Value="240"></Setter>
+    </Style>
+
+    <Style Selector="TextBox.Path">
+        <Setter Property="Margin" Value="15"></Setter>
+        <Setter Property="Width" Value="760"></Setter>
+        <Setter Property="MaxWidth" Value="760"></Setter>
+        <Setter Property="HorizontalAlignment" Value="Left"></Setter>
+    </Style>
+
+    <Style Selector="Grid Label">
+        <Setter Property="Margin" Value="15"></Setter>
+        <Setter Property="VerticalAlignment" Value="Center"></Setter>
+    </Style>
+    <Style Selector="Grid Button">
+        <Setter Property="HorizontalAlignment" Value="Center"></Setter>
+        <Setter Property="VerticalAlignment" Value="Center"></Setter>
+    </Style>
+    <Style Selector="Grid ComboBox">
+        <Setter Property="Margin" Value="15"></Setter>
+        <Setter Property="VerticalAlignment" Value="Center"></Setter>
+    </Style>
+    <Style Selector="Grid CheckBox">
+        <Setter Property="Margin" Value="15"></Setter>
+        <Setter Property="VerticalAlignment" Value="Center"></Setter>
+    </Style>
+</Styles>

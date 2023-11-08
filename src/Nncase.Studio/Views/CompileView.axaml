@@ -9,22 +9,23 @@
              x:DataType="viewModels:CompileViewModel">
 
     <StackPanel VerticalAlignment="Center">
-        <DockPanel Margin="10">
-            <Label Margin="20" Content="Kmodel路径"></Label>
-            <TextBox Text="{Binding KmodelPath}" Watermark="Path or Name"></TextBox>
-        </DockPanel>
+        <Grid Margin="30">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Label Grid.Row="0" Grid.Column="0" Content="Kmodel路径" VerticalAlignment="Center"></Label>
+            <TextBox Grid.Row="0" Grid.Column="1" Classes="Path" Text="{Binding KmodelPath}" Watermark="Path or Name"></TextBox>
+        </Grid>
         <DockPanel HorizontalAlignment="Center" Margin="4">
             <Button Margin= "25"
-                    CornerRadius="45"
                     Content="编译"
                     x:CompileBindings="False"
                     Command="{Binding $parent[Window].DataContext.Compile}">
             </Button>
             <Button Margin="25"
-                    CornerRadius="45"
                     Content="停止"
-                    x:CompileBindings="False"
-                    Command="{Binding $parent[Window].DataContext.CancelCompile}">
+                    Command="{Binding CancelCompileCommand}">
             </Button>
         </DockPanel>
         <TextBlock DataContext="Compile Log"></TextBlock>

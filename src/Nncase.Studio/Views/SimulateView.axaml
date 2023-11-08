@@ -7,18 +7,48 @@
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="Nncase.Studio.Views.SimulateView"
              x:DataType="viewModels:SimulateViewModel">
-
     <StackPanel VerticalAlignment="Center">
-        <DockPanel HorizontalAlignment="Center">
-            <Label Content="KmodelPath"></Label>
-            <TextBlock x:CompileBindings="False"
-                       Text="{Binding $parent[Window].DataContext.KmodelPath}"></TextBlock>
-        </DockPanel>
+            <Grid HorizontalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Label Grid.Row="0" Grid.Column="0" Content="输入文件"></Label>
+                <TextBox Classes="Path" Grid.Row="0" Grid.Column="1" Watermark="Input Path"></TextBox>
+                <Button
+                        Grid.Row="0" Grid.Column="2"
+                        Content="选择"
+                        Command="{Binding SetRuntimeInputCommand}">
+                </Button>
+            <Label Grid.Row="1" Grid.Column="0" Content="结果存储位置" VerticalAlignment="Center"></Label>
+                <TextBox Classes="Path" Grid.Row="1" Grid.Column="1" Watermark="Result ResultDir" Text="{Binding ResultDir}"></TextBox>
+                <Button
+                    Grid.Row="1" Grid.Column="2"
+                    Content="选择"
+                    Command="{Binding SetResultDirCommand}">
+                </Button>
+
+            <Label Grid.Row="2" Grid.Column="0" Content="KmodelPath"></Label>
+                <TextBox Classes="Path" Grid.Row="2" Grid.Column="1" x:CompileBindings="False"
+                     Text="{Binding $parent[Window].DataContext.KmodelPath}"></TextBox>
+                <Button
+                    Grid.Row="2" Grid.Column="2"
+                    Content="选择"
+                    x:CompileBindings="False"
+                    Command="{Binding SetRuntimeInputCommand}">
+                </Button>
+            </Grid>
+
         <Button HorizontalAlignment="Center"
                 Margin="40"
-                Content="Simulate"
-                x:CompileBindings="False"
-                Command="{Binding $parent[Window].DataContext.Simulate}">
+                Content="推理"
+                Command="{Binding SimulateCommand}">
         </Button>
 
         <ProgressBar Minimum="0" Maximum="100" Value="40" Height="20"></ProgressBar>

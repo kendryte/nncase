@@ -3,9 +3,6 @@
 
 namespace Nncase.Studio.ViewModels;
 
-public interface IUpdater
+public class ProfileViewModel : ViewModelBase
 {
-    public void UpdateCompileOption(CompileOptions options);
-
-    public bool Validate();
 }

@@ -17,8 +17,6 @@
 
     <Window.Resources>
         <x:Double x:Key="ControlContentThemeFontSize">24</x:Double>
-        <x:Double x:Key="ControlContentThemeCornerRadius">45</x:Double>
-        <studio:ValueConverter x:Key="ValueConverter"/>
         <studio:EnumConverter x:Key="EnumConverter"/>
     </Window.Resources>
 
@@ -28,13 +26,16 @@
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
+    <!-- todo: margin的区域 也是会被覆盖的 -->
+    <!-- todo: text box max width -->
+    <!-- todo: IsEnabled 页面的检查 -->
     <!-- bind data contenxt -->
-    <Border Background="White"
+    <Border Background="MediumPurple"
             BorderBrush="Black"
-            BorderThickness="2"
+            BorderThickness="3"
             CornerRadius="3"
-            Padding="4">
-        <StackPanel MaxWidth="1920" MaxHeight="1080">
+            Padding="100 0">
+        <StackPanel>
             <DockPanel>
                 <Label FontWeight="Bold" FontSize="54" Content="{Binding Title}" HorizontalAlignment="Left"></Label>
                 <Image Source="/Assets/nncase-full-logo.png" Width="250" Height="90" HorizontalAlignment="Right"></Image>
@@ -42,30 +43,22 @@
 
             <Border Background="White"
                     BorderBrush="Black"
-                    BorderThickness="2"
+                    BorderThickness="3"
                     CornerRadius="3"
                     Padding="4">
-                <Label MinHeight="500" Margin="0 30 0 0 " Content="{Binding ContentViewModel}"></Label>
+                <Label
+                    HorizontalContentAlignment="Center"
+                    VerticalContentAlignment="Center"
+                    MinHeight="600"
+                    Content="{Binding ContentViewModel}"></Label>
             </Border>
             <Border Background="White"
                     BorderBrush="Black"
-                    BorderThickness="2"
+                    BorderThickness="3"
                     CornerRadius="3"
                     Padding="4">
             <views:NavigatorView HorizontalAlignment="Center" Margin="10"></views:NavigatorView>
             </Border>
         </StackPanel>
     </Border>
-        <!-- <TabControl SelectedIndex="{Binding PageIndex}"> -->
-        <!--     <TabItem Header="Import" Content="{Binding ImportViewModel}"></TabItem> -->
-        <!--     <TabItem Header="CompileOption" Content="{Binding CompileOptionViewModel}"></TabItem> -->
-        <!--     <TabItem Header="Preprocess" -->
-        <!--              IsVisible="{Binding CompileOptionViewModel.Preprocess}" -->
-        <!--              Content="{Binding PreprocessViewModel}"></TabItem> -->
-        <!--     <TabItem Header="Quantize" -->
-        <!--              IsVisible="{Binding CompileOptionViewModel.Quantize}" -->
-        <!--              Content="{Binding QuantizeViewModel}"></TabItem> -->
-        <!--     <TabItem Header="Compile" Content="{Binding CompileViewModel}"></TabItem> -->
-        <!--     <TabItem Header="Simulate" Content="{Binding SimulateViewModel}"></TabItem> -->
-        <!-- </TabControl> -->
 </Window>

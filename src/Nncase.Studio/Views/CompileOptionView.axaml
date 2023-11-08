@@ -15,30 +15,73 @@
     </UserControl.Resources>
 
     <StackPanel VerticalAlignment="Center">
-        <UniformGrid Margin="4" Rows="7" Columns="2">
-            <Label Content="模型文件路径"></Label><Label Content="{Binding InputFile}"></Label>
-                <Label Content="模型格式"></Label><Label Content="{Binding InputFormat, Mode=TwoWay}"></Label>
-                <Label Content="Dump选项"></Label>
-                <ListBox SelectionMode="Multiple,Toggle" SelectedItems="{Binding DumpFlagSelected}" MaxHeight="60"
-                         ItemsSource="{Binding DumpFlagsList}">
-                </ListBox>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
 
-                <Label Content="Dump路径"></Label><TextBox Text="{Binding DumpDir}"></TextBox>
-                <Label Content="目标平台"></Label>
-                <DockPanel>
-                    <ComboBox ItemsSource="{Binding TargetList}" SelectedItem="{Binding Target}"></ComboBox>
-                    <Label Content="Nncase Studio 目前只支持 CPU, K230这两个平台"></Label>
-                </DockPanel>
-                <Label Content="开启前后处理"></Label>
-                <CheckBox IsChecked="{Binding Preprocess}"
-                          x:CompileBindings="False"
-                          Command="{Binding $parent[Window].DataContext.ShowPreprocess}">
-                </CheckBox>
-                <Label Content="开启量化"></Label>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <Label Grid.Row="0" Grid.Column="0" Content="模型文件路径"/>
+            <TextBox Grid.Row="0" Grid.Column="1" Classes="Path" Text="{Binding InputFile}"/>
+
+            <Label Grid.Row="1" Grid.Column="0" Content="模型格式"/>
+            <TextBox Grid.Row="1" Grid.Column="1" HorizontalAlignment="Left" Text="{Binding InputFormat, Mode=TwoWay}"/>
+
+            <Label Grid.Row="2" Grid.Column="0" Content="Dump选项"/>
+            <SplitButton Margin="3" Grid.Row="2" Grid.Column="1" Content="DumpFlags" >
+                <SplitButton.Flyout>
+                    <Flyout Placement="Bottom">
+                        <ListBox
+                            SelectionMode="Multiple,Toggle"
+                            SelectedItems="{Binding DumpFlagSelected}"
+                            ItemsSource="{Binding DumpFlagsList}">
+                        </ListBox>
+                    </Flyout>
+                </SplitButton.Flyout>
+            </SplitButton>
+
+            <Label Grid.Row="3" Grid.Column="0" Content="Dump路径"/>
+            <DockPanel Grid.Row="3" Grid.Column="1">
+                <TextBox Classes="Path" Text="{Binding DumpDir}"/>
+                <Button
+                    Content="选择"
+                    x:CompileBindings="False"
+                    Command="{Binding $parent[Window].DataContext.SetDumpDir}">
+                </Button>
+            </DockPanel>
+
+            <Label Grid.Row="4" Grid.Column="0" Content="目标平台"/>
+            <DockPanel Grid.Row="4" Grid.Column="1">
+                <ComboBox ItemsSource="{Binding TargetList}" SelectedItem="{Binding Target}"/>
+                <Label Content="Nncase Studio 目前只支持 CPU, K230这两个平台"/>
+            </DockPanel>
+
+            <Label Grid.Row="5" Grid.Column="0" Content="开启量化"/>
+            <DockPanel Grid.Row="5" Grid.Column="1">
                 <CheckBox IsChecked="{Binding Quantize}"
                           x:CompileBindings="False"
-                          Command="{Binding $parent[Window].DataContext.ShowQuantize}">
-                </CheckBox>
-        </UniformGrid>
+                          Command="{Binding $parent[Window].DataContext.ShowQuantize}"/>
+                <Label IsVisible="{Binding Quantize}" Content="是否使用混合量化"></Label>
+                <CheckBox IsVisible="{Binding Quantize}"
+                          IsChecked="{Binding MixQuantize}"
+                          x:CompileBindings="False"
+                          Command="{Binding $parent[Window].DataContext.UseMixQuantize}"></CheckBox>
+            </DockPanel>
+
+            <Label Grid.Row="6" Grid.Column="0" Content="开启前后处理"/>
+            <CheckBox Grid.Row="6" Grid.Column="1" IsChecked="{Binding Preprocess}"
+                      x:CompileBindings="False"
+                      Command="{Binding $parent[Window].DataContext.ShowPreprocess}"/>
+        </Grid>
     </StackPanel>
 </UserControl>
