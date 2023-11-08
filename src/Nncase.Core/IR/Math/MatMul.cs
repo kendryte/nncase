@@ -20,10 +20,10 @@ public sealed partial class MatMul : Op
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Lhs = new(typeof(MatMul), 0, "lhs");
+    public static readonly ParameterInfo Lhs = new(typeof(MatMul), 0, "lhs", ParameterKind.Input);
 
     /// <summary>
     /// Gets Other.
     /// </summary>
-    public static readonly ParameterInfo Rhs = new(typeof(MatMul), 1, "rhs");
+    public static readonly ParameterInfo Rhs = new(typeof(MatMul), 1, "rhs", ParameterKind.Input);
 }

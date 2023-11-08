@@ -226,6 +226,7 @@ PTQTensorOptions is used to configure PTQ options. The details of all attributes
 | dump_quant_error                      | bool      | N        | Specify whether dump quantification error, False by default. The parameters following worked when `dump_ir=True`. |
 | dump_quant_error_symmetric_for_signed | bool      | N        | Specify whether dump quantification error by symmetric for signed number,True by default.                           |
 | quant_scheme                          | string    | N        | specify the path of quantification scheme file,"" by default.                                                       |
+| quant_scheme_strict_mode              | bool      | N        | Specify whether strictly follow quant_scheme for quantification, False by default.                                                     |
 | export_quant_scheme                   | bool      | N        | Specify whether export quantification scheme, False by default.                                                     |
 | export_weight_range_by_channel        | bool      | N        | Specify whether export weights range by channel, False by default.                                                  |
 

@@ -28,5 +28,6 @@ internal class ConvertersModule : IApplicationPart
         registrator.RegisterManyInterface<UInt64Converters>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<UInt8Converters>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<PointerConverters>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<PointerIntConverters>(reuse: Reuse.Singleton);
     }
 }

@@ -50,10 +50,4 @@ public static class Mutator
     /// </summary>
     /// <returns>RemoveNop.</returns>
     public static Func<ExprRewriter> RemoveNop() => () => new Mutators.RemoveNop();
-
-    /// <summary>
-    /// fold math calc operator.
-    /// </summary>
-    /// <returns>FoldMathCall.</returns>
-    public static Func<ExprRewriter> FoldMathCall() => () => new Mutators.FoldMathCall();
 }

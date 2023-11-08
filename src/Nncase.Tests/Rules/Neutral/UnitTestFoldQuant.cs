@@ -6,11 +6,13 @@ using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.Passes;
 using Nncase.Passes.Rules.Neutral;
+using Nncase.Tests.TestFixture;
 using Xunit;
 using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
+[AutoSetupTestMethod(InitSession = true)]
 public class UnitTestFoldQuant : TransformTestBase
 {
     public static TheoryData<int, bool, int[], DataType, QuantParam, DataType, QuantParam, DataType> FoldQuantDequantData => new()

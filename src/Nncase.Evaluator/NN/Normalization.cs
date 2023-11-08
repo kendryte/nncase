@@ -153,15 +153,22 @@ public class InstanceNormalizationEvaluator : IEvaluator<InstanceNormalization>,
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, InstanceNormalization target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, InstanceNormalization.Input);
-        return Visit(input);
+        var input = context.CheckArgumentType<IRType>(target, InstanceNormalization.Input);
+        var scale = context.CheckArgumentType<IRType>(target, InstanceNormalization.Scale);
+        var bias = context.CheckArgumentType<IRType>(target, InstanceNormalization.Bias);
+        return (input, scale, bias) switch
+        {
+            (DistributedType a, DistributedType b, DistributedType c) => Visit(a, b, c),
+            (TensorType a, TensorType, TensorType) => Visit(a),
+            _ => new InvalidType(input.GetType().ToString()),
+        };
     }
 
     /// <inheritdoc/>
     public Cost Visit(ICostEvaluateContext context, InstanceNormalization target)
     {
-        var inputType = context.GetArgumentType<TensorType>(target, InstanceNormalization.Input);
-        var returnType = context.GetReturnType<TensorType>();
+        var inputType = context.GetArgumentType<IRType>(target, InstanceNormalization.Input);
+        var returnType = context.GetReturnType<IRType>();
         return new()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
@@ -182,6 +189,40 @@ public class InstanceNormalizationEvaluator : IEvaluator<InstanceNormalization>,
     private IRType Visit(TensorType input)
     {
         return input;
+    }
+
+    private IRType Visit(DistributedType input, DistributedType scale, DistributedType bias)
+    {
+        var invalid = new InvalidType($"{input}, {scale}, {bias} not support");
+        if (input.Placement != scale.Placement || scale.Placement != bias.Placement)
+        {
+            return invalid;
+        }
+
+        var ndsbp = new SBP[input.Placement.Rank];
+
+        // scale & bias always on Channel
+        const int rAxis = 1;
+
+        for (int i = 0; i < input.Placement.Rank; i++)
+        {
+            switch (input.NdSBP[i], scale.NdSBP[i], bias.NdSBP[i])
+            {
+                case (SBPSplit { Axis: int ix }, SBPSplit { Axis: int sx }, SBPSplit { Axis: int bx }) when ix == rAxis && sx == (ix - rAxis) && bx == sx:
+                    ndsbp[i] = SBP.S(ix);
+                    break;
+                case (SBPSplit { Axis: int ix }, SBPBroadCast, SBPBroadCast) when ix != rAxis:
+                    ndsbp[i] = SBP.S(ix);
+                    break;
+                case (SBPBroadCast, SBPBroadCast, SBPBroadCast):
+                    ndsbp[i] = SBP.B;
+                    break;
+                default:
+                    return invalid;
+            }
+        }
+
+        return new DistributedType(input.TensorType, ndsbp, input.Placement);
     }
 }
 

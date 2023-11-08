@@ -14,7 +14,7 @@ namespace Nncase.Importer
         {
             var inputs = Enumerable.Range(0, op.Input.Count).Select(x => GetInputExpr(op, x)).ToArray();
             var axis = GetIntAttribute(op, "axis");
-            return F.Tensors.Concat(new Tuple(inputs), axis);
+            return F.Tensors.Concat(new Tuple(inputs), (int)axis);
         }
     }
 }

@@ -85,7 +85,7 @@ public class PatternGenerator : IIncrementalGenerator
                             // var x = name_params[0];
                             statements.Add(ParseStatement(@$"return new(
 new OpPattern<{cand.Op.ToDisplayString()}>(x => {condition}, {(name_params[0] != null ? "target_name" : "null")}), 
-new VArgsPattern (new[]{{ {inputs} }}, null),
+new VArgsPattern (new Pattern[]{{ {inputs} }}, null),
 {(name_params[1] != null ? "call_name" : "null")});").
                                            WithLeadingTrivia(ElasticTab).
                                            WithTrailingTrivia(ElasticLineFeed));
@@ -125,7 +125,7 @@ new VArgsPattern (new[]{{ {inputs} }}, null),
                             // 1.3 build method return
                             statements.Add(ParseStatement(@$"return new(
 new OpPattern<{cand.Op.ToDisplayString()}>(condition, {(name_params[0] != null ? "target_name" : "null")}),
-new VArgsPattern( new [] {{ {inputs} }}, null ),
+new VArgsPattern( new Pattern[] {{ {inputs} }}, null ),
 {(name_params[1] != null ? "call_name" : "null")});").
                                            WithLeadingTrivia(ElasticTab).
                                            WithTrailingTrivia(ElasticLineFeed));

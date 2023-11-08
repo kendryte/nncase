@@ -74,7 +74,8 @@ public class UnitTestFoldSwish : TransformTestBase
         Expr rootPre;
         {
             var v0 = input;
-            var v1 = IR.F.NN.Sigmoid(v0);
+            var v0_2 = IR.F.Math.Binary(BinaryOp.Mul, v0, 2.0f);
+            var v1 = IR.F.NN.Sigmoid(v0_2);
             var v2 = IR.F.Math.Binary(BinaryOp.Mul, v0, v1);
             rootPre = v2;
         }

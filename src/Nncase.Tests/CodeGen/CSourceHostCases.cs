@@ -27,8 +27,8 @@ public class SubCase : ICodeGenCase
     public override PrimFunction GetEntry()
     {
         var func = T.PrimFunc("sub",
-                  T.Buffer(TensorType.Scalar(DataTypes.Float32), Schedule.MemoryLocation.Input, out var x),
-                  T.Buffer(TensorType.Scalar(DataTypes.Float32), Schedule.MemoryLocation.Input, out var y)).Body(
+                  T.Buffer(TensorType.Scalar(DataTypes.Float32), MemoryLocation.Input, out var x),
+                  T.Buffer(TensorType.Scalar(DataTypes.Float32), MemoryLocation.Input, out var y)).Body(
           x - y
         );
         return func;
@@ -71,8 +71,8 @@ public class ForCase : ICodeGenCase
     public override PrimFunction GetEntry()
     {
         return T.PrimFunc("for_loop",
-               T.Buffer(new(DataTypes.Int32, new[] { 100 }), Schedule.MemoryLocation.Input, out var A),
-               T.Buffer(TensorType.Scalar(DataTypes.Int32), Schedule.MemoryLocation.Input, out var n)
+               T.Buffer(new(DataTypes.Int32, new[] { 100 }), MemoryLocation.Input, out var A),
+               T.Buffer(TensorType.Scalar(DataTypes.Int32), MemoryLocation.Input, out var n)
                ).Body(
           T.Serial(out var i, n).Body(
             T.Store(A[i], A[i] + 1),

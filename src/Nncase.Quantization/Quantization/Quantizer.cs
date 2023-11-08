@@ -417,10 +417,12 @@ internal partial class Quantizer
 
         foreach (var rangeOf in _rangeOfs)
         {
+            bool getRange = false;
             for (int i = 0; i < quantScheme!.Outputs!.Length; i++)
             {
                 if (rangeOf.Expr.Metadata.OutputNames?[0] == quantScheme!.Outputs[i].Name)
                 {
+                    getRange = true;
                     if (((RangeOf)((Call)rangeOf.Expr).Target).IsRangeOfWeight == true && quantScheme!.Outputs[i].DataRangeMode == "by_tensor")
                     {
                         var oc = ((Call)rangeOf.Expr).Operands[1].CheckedShape[0].FixedValue;
@@ -457,6 +459,21 @@ internal partial class Quantizer
                     }
                 }
             }
+
+            if (getRange == false && _quantizeOptions.QuantScheme != string.Empty && _quantizeOptions.QuantSchemeStrictMode == true)
+            {
+                if (((RangeOf)((Call)rangeOf.Expr).Target).IsRangeOfWeight == true)
+                {
+                    var oc = ((Call)rangeOf.Expr).Operands[1].CheckedShape[0].FixedValue;
+                    var valueRanges = new ValueRange<float>[oc];
+                    ranges.Add(rangeOf, valueRanges);
+                }
+                else
+                {
+                    var valueRanges = new ValueRange<float>[1];
+                    ranges.Add(rangeOf, valueRanges);
+                }
+            }
         }
 
         return ranges;
@@ -466,8 +483,10 @@ internal partial class Quantizer
     {
         foreach (var marker in _markers)
         {
+            bool getRange = false;
             for (int i = 0; i < quantScheme!.Outputs!.Length; i++)
             {
+                getRange = true;
                 if (marker.Expr.Metadata.OutputNames?[0] == quantScheme.Outputs[i].Name)
                 {
                     var markerExpr = (Marker)marker.Expr;
@@ -479,6 +498,12 @@ internal partial class Quantizer
                     DataType dataType = DataTypes.FromShortName(quantScheme!.Outputs[i].DataType!);
                     markerExpr.MixQuantInfo!.MarkerQuantType = dataType;
                 }
+            }
+
+            if (getRange == false && _quantizeOptions.QuantScheme != string.Empty && _quantizeOptions.QuantSchemeStrictMode == true)
+            {
+                var markerExpr = (Marker)marker.Expr;
+                markerExpr.MixQuantInfo!.MarkerQuantType = DataTypes.Float16;
             }
         }
     }

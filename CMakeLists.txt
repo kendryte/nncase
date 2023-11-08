@@ -10,8 +10,8 @@ if (DEFINED ENV{NNCASE_VERSION_SUFFIX})
     set(NNCASE_VERSION_SUFFIX $ENV{NNCASE_VERSION_SUFFIX})
 endif ()
 
-if (NOT DEFINED NNCASE_VERSION_SUFFIX)
-    find_package(Git)
+if(NOT DEFINED NNCASE_VERSION_SUFFIX)
+    find_package (Git)
 
     execute_process(
             COMMAND ${GIT_EXECUTABLE} describe --always --dirty --tag
@@ -275,5 +275,5 @@ if (BUILD_TESTING)
 endif ()
 
 # Modules
-#add_subdirectory(modules/k210)
+
 #add_subdirectory(modules/vulkan)

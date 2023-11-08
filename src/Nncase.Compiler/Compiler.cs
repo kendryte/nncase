@@ -88,13 +88,15 @@ internal class Compiler : ICompiler
 
     public void TargetIndependentPass(IPassManager passManager)
     {
-        passManager.AddWithName<DataflowPass>("ReshapeMatMul").Configure(p =>
+        passManager.AddWithName<DataflowPass>("NormAxisAndShape").Configure(p =>
         {
             p.Add<Passes.Rules.Neutral.ReshapeMatMul>();
-        });
-
-        passManager.AddWithName<DataflowPass>("SqueezeShape").Configure(p =>
-        {
+            p.Add<Passes.Rules.Neutral.NormAxisGather>();
+            p.Add<Passes.Rules.Neutral.NormAxisConcat>();
+            p.Add<Passes.Rules.Neutral.NormAxisReduce>();
+            p.Add<Passes.Rules.Neutral.NormAxisReshape>();
+            p.Add<Passes.Rules.Neutral.NormAxisReduceArg>();
+            p.Add<Passes.Rules.Neutral.NormAxisSlice>();
             p.Add<Passes.Rules.Neutral.SqueezeTransposeShape>();
             p.Add<Passes.Rules.Neutral.Squeeze5DTranspose>();
             p.Add<Passes.Rules.Neutral.SqueezeBinaryShape>();
@@ -102,6 +104,7 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FoldLayerNormPattern2>();
             p.Add<Passes.Rules.Neutral.FoldLayerNormPattern3>();
             p.Add<Passes.Rules.Neutral.FoldLayerNormPattern4>();
+            p.Add<Passes.Rules.Neutral.FoldLayerNormPattern5>();
             p.Add<Passes.Rules.Neutral.FoldGeluWithScale>();
             p.Add<Passes.Rules.Neutral.FoldGeneralGelu>();
             p.Add<Passes.Rules.Neutral.FoldSwishPattern1>();
@@ -124,6 +127,7 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FoldNopCast>();
             p.Add<Passes.Rules.Neutral.FoldNopReshape>();
             p.Add<Passes.Rules.Neutral.FoldNopSlice>();
+            p.Add<Passes.Rules.Neutral.FoldPrePostReshapeSoftmax>();
             p.Add<Passes.Rules.Neutral.FoldSqueezeUnsqueeze>();
             p.Add<Passes.Rules.Neutral.FoldUnsqueezeSqueeze>();
             p.Add<Passes.Rules.Neutral.FoldTwoTransposes>();
@@ -157,6 +161,8 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.CombineUnaryReshape>();
             p.Add<Passes.Rules.Neutral.CombineActivationsReshape>();
             p.Add<Passes.Rules.Neutral.CombineReshapePad>();
+            p.Add<Passes.Rules.Neutral.CombineReshapeTranspose>();
+            p.Add<Passes.Rules.Neutral.CombineTransposeReshape>();
             p.Add<Passes.Rules.Neutral.FoldNopPad>();
             p.Add<Passes.Rules.Neutral.FoldConv2DPads>();
             p.Add<Passes.Rules.Neutral.FuseClampConv2D>();
@@ -168,6 +174,7 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.ReshapeToTranspose>();
             p.Add<Passes.Rules.Neutral.FoldNopReshape>();
             p.Add<Passes.Rules.Neutral.FoldTwoReshapes>();
+            p.Add<Passes.Rules.Neutral.FoldReshapeBinaryConstReshape>();
             p.Add<Passes.Rules.Neutral.ReluToClamp>();
             p.Add<Passes.Rules.Neutral.Relu6ToClamp>();
             p.Add<Passes.Rules.Neutral.FoldNopSlice>();
