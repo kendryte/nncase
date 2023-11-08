@@ -42,12 +42,6 @@ public partial class CompileOptionViewModel : ViewModelBase
     [ObservableProperty]
     private string _target;
 
-    public ObservableCollection<DumpFlags> DumpFlagSelected { get; set; } = new();
-
-    public ObservableCollection<DumpFlags> DumpFlagsList { get; set; }
-
-    public ObservableCollection<string> TargetList { get; set; }
-
     public CompileOptionViewModel(ViewModelContext context)
     {
         // skip None
@@ -57,25 +51,14 @@ public partial class CompileOptionViewModel : ViewModelBase
         // todo: k230 should set dll path
         _target = TargetList[0];
         DumpDir = Path.Join(Directory.GetCurrentDirectory(), "nncase_dump");
-        Context = context;
+        this.Context = context;
     }
 
-    public void UpdateCompileOption(CompileOptions options)
-    {
-        options.DumpFlags = DumpFlagSelected.Aggregate(DumpFlags.None, (flag, sum) => flag & sum);
-        // options.PreProcess = Preprocess;
-        // options.InputFile = InputFile;
-        // options.InputFormat = InputFormat;
-        // options.DumpDir = DumpDir;
-    }
+    public ObservableCollection<DumpFlags> DumpFlagSelected { get; set; } = new();
 
-    public List<string> Validate()
-    {
-        return new();
+    public ObservableCollection<DumpFlags> DumpFlagsList { get; set; }
 
-        // todo: 什么时候做import
-        // InputFile
-    }
+    public ObservableCollection<string> TargetList { get; set; }
 
     [RelayCommand]
     public async Task SetDumpDir()
@@ -86,49 +69,6 @@ public partial class CompileOptionViewModel : ViewModelBase
             DumpDir = folder;
         }
     }
-
-
-
-        // var i = ContentViewModelList.IndexOf(PreprocessViewModel);
-        // if (CompileOptionViewModel.Preprocess)
-        // {
-        //     if (i == -1)
-        //     {
-        //         var optionIndex = ContentViewModelList.IndexOf(CompileOptionViewModel);
-        //         // insert after OptionView
-        //         ContentViewModelList.Insert(optionIndex + 1, PreprocessViewModel);
-        //     }
-        // }
-        // else
-        // {
-        //     if (i != -1)
-        //     {
-        //         ContentViewModelList.Remove(PreprocessViewModel);
-        //     }
-        // }
-
-        // var i = ContentViewModelList.IndexOf(QuantizeViewModel);
-        // if (CompileOptionViewModel.Quantize)
-        // {
-        //     var compileIndex = ContentViewModelList.IndexOf(CompileViewModel);
-        //
-        //     // insert before CompileView
-        //     ContentViewModelList.Insert(compileIndex, QuantizeViewModel);
-        // }
-        // else
-        // {
-        //     if (i != -1)
-        //     {
-        //         ContentViewModelList.Remove(QuantizeViewModel);
-        //     }
-        // }
-
-
-        [RelayCommand]
-        public void UseMixQuantize()
-        {
-            // QuantizeViewModel.MixQuantize = CompileOptionViewModel.MixQuantize;
-        }
 
     [RelayCommand]
     public void ShowPreprocess()
@@ -157,5 +97,25 @@ public partial class CompileOptionViewModel : ViewModelBase
         {
             Context.RemovePage(quant);
         }
+    }
+
+    public override void UpdateViewModel()
+    {
+        InputFile = Context.CompileOption.InputFile;
+        InputFormat = Context.CompileOption.InputFormat;
+    }
+
+    public override void UpdateContext()
+    {
+        Context.CompileOption.DumpDir = DumpDir;
+        Context.CompileOption.DumpFlags = DumpFlagSelected.Aggregate(DumpFlags.None, (flag, sum) => flag & sum);
+        Context.Target = Target;
+        Context.CompileOption.PreProcess = Preprocess;
+        Context.MixQuantize = MixQuantize;
+    }
+
+    public override List<string> CheckViewModel()
+    {
+        return new();
     }
 }

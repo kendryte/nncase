@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,9 +12,13 @@ namespace Nncase.Studio.ViewModels;
 
 public partial class ImportViewModel : ViewModelBase
 {
+    private string _inputFile = string.Empty;
+
+    private string _inputFormat = string.Empty;
+
     public ImportViewModel(ViewModelContext context)
     {
-        Context = context;
+        this.Context = context;
     }
 
     [RelayCommand]
@@ -38,10 +43,25 @@ public partial class ImportViewModel : ViewModelBase
             return;
         }
 
-        // CompileOptionViewModel.InputFile = path[0];
-        // CompileOptionViewModel.InputFormat = ext;
-
+        _inputFormat = ext;
+        _inputFile = path[0];
         Context.SwitchNext();
     }
 
+    public override void UpdateContext()
+    {
+        Context.CompileOption.InputFile = _inputFile;
+        Context.CompileOption.InputFormat = _inputFormat;
+    }
+
+    public override List<string> CheckViewModel()
+    {
+        var list = new List<string>();
+        if (!File.Exists(_inputFile))
+        {
+            list.Add($"InputFile {_inputFile} Not Exist");
+        }
+
+        return list;
+    }
 }

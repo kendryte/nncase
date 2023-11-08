@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Collections.ObjectModel;
@@ -34,7 +34,7 @@ public partial class SimulateViewModel : ViewModelBase
 
     public SimulateViewModel(ViewModelContext context)
     {
-        Context = context;
+        this.Context = context;
     }
 
     [RelayCommand]
@@ -61,12 +61,12 @@ public partial class SimulateViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    public async Task Simulate()
+    public Task Simulate()
     {
         if (!File.Exists(KmodelPath))
         {
             Context.OpenDialog("Kmodel Not Exist");
-            return;
+            return Task.CompletedTask;
         }
 
         if (RuntimeInput.Count == 0)
@@ -74,37 +74,49 @@ public partial class SimulateViewModel : ViewModelBase
             Context.OpenDialog("Not Set Input");
         }
 
-        var paramList = Context.Entry.Parameters.ToArray();
+        if (Context.Entry == null)
+        {
+            Context.OpenDialog("Should Import Model first");
+            return Task.CompletedTask;
+        }
+
+        var paramList = Context.Entry!.Parameters.ToArray();
         foreach ((var tensor, var param) in RuntimeInput.Zip(paramList))
         {
             var tt = (TensorType)param.TypeAnnotation;
             if (tensor.ElementType != tt.DType)
             {
                 Context.OpenDialog($"{param.Name} input datatype mismatch");
-                return;
+                return Task.CompletedTask;
             }
 
             if (tt.Shape.Count != tensor.Shape.Count || tt.Shape.Zip(tensor.Shape)
                     .Any(pair => pair.First.IsFixed && pair.First != pair.Second))
             {
                 Context.OpenDialog($"{param.Name} input shape mismatch");
-                return;
+                return Task.CompletedTask;
             }
         }
 
         using (var interp = Runtime.Interop.RTInterpreter.Create())
         {
             var kmodel = File.ReadAllBytes(KmodelPath);
-            interp.SetDumpRoot(Context.DumpDir);
+            interp.SetDumpRoot(Context.CompileOption.DumpDir);
             interp.LoadModel(kmodel);
             var entry = interp.Entry!;
             var rtInputs = RuntimeInput.Select(Runtime.Interop.RTTensor.FromTensor).ToArray();
             var result = entry.Invoke(rtInputs).ToValue().AsTensors();
 
-            var list = result.Select(t => np.ndarray(new NumSharp.Shape(t.Shape.ToValueArray()), t.ElementType.CLRType,
-                t.BytesBuffer.ToArray())).ToArray();
+            var list = result
+                .Select(t =>
+                    np.ndarray(
+                        new NumSharp.Shape(t.Shape.ToValueArray()),
+                        t.ElementType.CLRType,
+                        t.BytesBuffer.ToArray()))
+                .ToArray();
 
             // todo: output file name, collect in compiler
+            // todo: open explorer
             foreach (var ndArray in list)
             {
                 np.save(Path.Join(ResultDir, "dir.npy"), ndArray);
@@ -114,8 +126,17 @@ public partial class SimulateViewModel : ViewModelBase
             Context.OpenDialog("Simulate Finish", PromptDialogLevel.Normal);
         }
 
-        // todo: open kmodel in explorer
-        // todo: show log
+        return Task.CompletedTask;
+    }
+
+    public override void UpdateViewModel()
+    {
+        if (ResultDir == string.Empty)
+        {
+            ResultDir = Context.CompileOption.DumpDir;
+        }
+
+        KmodelPath = Context.KmodelPath;
     }
 
     private void UpdateRuntimeInputUI(Tensor[] input, string[] inputFiles)

@@ -35,7 +35,7 @@
             <TextBox Grid.Row="0" Grid.Column="1" Classes="Path" Text="{Binding InputFile}"/>
 
             <Label Grid.Row="1" Grid.Column="0" Content="模型格式"/>
-            <TextBox Grid.Row="1" Grid.Column="1" HorizontalAlignment="Left" Text="{Binding InputFormat, Mode=TwoWay}"/>
+            <TextBlock Grid.Row="1" Grid.Column="1" HorizontalAlignment="Left" Text="{Binding InputFormat, Mode=TwoWay}"/>
 
             <Label Grid.Row="2" Grid.Column="0" Content="Dump选项"/>
             <SplitButton Margin="3" Grid.Row="2" Grid.Column="1" Content="DumpFlags" >
@@ -71,8 +71,7 @@
                           Command="{Binding ShowQuantizeCommand}"/>
                 <Label IsVisible="{Binding Quantize}" Content="是否使用混合量化"></Label>
                 <CheckBox IsVisible="{Binding Quantize}"
-                          IsChecked="{Binding MixQuantize}"
-                          Command="{Binding UseMixQuantizeCommand}"></CheckBox>
+                          IsChecked="{Binding MixQuantize}"></CheckBox>
             </DockPanel>
 
             <Label Grid.Row="6" Grid.Column="0" Content="开启前后处理"/>

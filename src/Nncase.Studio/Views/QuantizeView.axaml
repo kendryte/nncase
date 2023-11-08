@@ -27,11 +27,10 @@
 
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="150"/>
                 </Grid.ColumnDefinitions>
-                <!-- todo 单独一行 -->
                 <Label Grid.Row="0" Grid.Column="0" Content="数据集"></Label>
                 <TextBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" HorizontalAlignment="Left" Width="400" Text="Path"></TextBox>
                 <Button
@@ -55,7 +54,7 @@
                 <views:EnumComboBox Grid.Row="3" Grid.Column="3" TypeName="{x:Type quantization:QuantType}" SelectedValue="{Binding WQuantTypeValue}"></views:EnumComboBox>
 
                 <Label Grid.Row="4" Grid.Column="0" Content="模型量化模式"></Label>
-                <ComboBox Grid.Row="4" Grid.Column="1"
+                <ComboBox Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2"
                           ItemsSource="{Binding ModelQuantModeList}"
                           SelectedItem="{Binding ModelQuantModeValue}">
                 </ComboBox>

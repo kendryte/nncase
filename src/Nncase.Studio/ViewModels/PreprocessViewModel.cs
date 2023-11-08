@@ -13,6 +13,24 @@ public partial class PreprocessViewModel : ViewModelBase
     [ValidIntArray]
     private string _inputShape = string.Empty;
 
+    [ObservableProperty]
+    private InputType _inputTypeValue;
+
+    [ObservableProperty]
+    private string _inputTypeString = string.Empty;
+
+    public PreprocessViewModel(ViewModelContext context)
+    {
+        this.Context = context;
+        RangeMax = "1";
+        RangeMin = "-1";
+        Mean = "1";
+        Std = "1";
+        LetterBoxValue = "0";
+        InputShape = "1, 3, 24, 24";
+        InputTypeValue = InputType.Float32;
+    }
+
     public string LayoutWatermark { get; set; } = "e.g. NHWC or NCHW or 0,2,3,1";
 
     public string ShapeWaterMark { get; set; } = "e.g. 1,3,224,224";
@@ -31,23 +49,6 @@ public partial class PreprocessViewModel : ViewModelBase
     [ValidFloatArray]
     public bool SwapRB { get; set; }
 
-    [ObservableProperty]
-    private InputType _inputTypeValue;
-
-    [ObservableProperty]
-    private string _inputTypeString;
-
-    public PreprocessViewModel(ViewModelContext context)
-    {
-        RangeMax = "1";
-        RangeMin = "-1";
-        Mean = "1";
-        Std = "1";
-        LetterBoxValue = "0";
-        InputShape = "1, 3, 24, 24";
-        InputTypeValue = InputType.Float32;
-    }
-
     [ValidFloat]
     public string RangeMin { get; set; }
 
@@ -63,21 +64,7 @@ public partial class PreprocessViewModel : ViewModelBase
     [ValidFloatArray]
     public string Std { get; set; }
 
-    public List<string> Validate()
-    {
-        var rangeMin = float.Parse(RangeMin);
-        var rangeMax = float.Parse(RangeMax);
-        if (rangeMax < rangeMin)
-        {
-            var l = new List<string>();
-            l.Add("Invalid Range");
-            return l;
-        }
-
-        return new();
-    }
-
-    public void UpdateCompileOption(CompileOptions options)
+    public override void UpdateContext()
     {
         var mean = Mean.Split(",").Select(float.Parse).ToArray();
         var std = Std.Split(",").Select(float.Parse).ToArray();
@@ -89,11 +76,25 @@ public partial class PreprocessViewModel : ViewModelBase
         var letterBoxValue = float.Parse(LetterBoxValue);
 
         // todo: mean std LetterBoxValue，全部by tensor或者部分by channel
-        options.Mean = mean;
-        options.Std = std;
-        options.InputShape = inShape;
-        options.InputRange = new[] { rangeMin, rangeMax };
-        options.InputType = InputTypeValue;
-        options.LetterBoxValue = letterBoxValue;
+        Context.CompileOption.Mean = mean;
+        Context.CompileOption.Std = std;
+        Context.CompileOption.InputShape = inShape;
+        Context.CompileOption.InputRange = new[] { rangeMin, rangeMax };
+        Context.CompileOption.InputType = InputTypeValue;
+        Context.CompileOption.LetterBoxValue = letterBoxValue;
+    }
+
+    public override List<string> CheckViewModel()
+    {
+        var rangeMin = float.Parse(RangeMin);
+        var rangeMax = float.Parse(RangeMax);
+        if (rangeMax < rangeMin)
+        {
+            var l = new List<string>();
+            l.Add("Invalid Range");
+            return l;
+        }
+
+        return new();
     }
 }

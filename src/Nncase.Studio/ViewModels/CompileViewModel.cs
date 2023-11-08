@@ -16,15 +16,17 @@ namespace Nncase.Studio.ViewModels;
 
 public partial class CompileViewModel : ViewModelBase
 {
-    [ObservableProperty]
-    private string _kmodelPath = "test.kmodel";
+    private readonly CancellationTokenSource _cts = new();
 
     private readonly CancellationToken _token;
-    private readonly CancellationTokenSource _cts = new();
+
+    [ObservableProperty]
+    private string _kmodelPath = "test.kmodel";
 
     public CompileViewModel(ViewModelContext context)
     {
         _token = _cts.Token;
+        this.Context = context;
     }
 
     [RelayCommand]
@@ -37,45 +39,49 @@ public partial class CompileViewModel : ViewModelBase
     [RelayCommand]
     public async Task Compile()
     {
-        // todo: validate
-        // var info = Validate();
-        // if (info.Count != 0)
-        // {
-            // Context.OpenDialog($"Error List:\n{string.Join("\n", info)}");
-            // return;
-        // }
-
-        var options = Context.GetCompileOption();
-        // todo: target
-        var target = CompilerServices.GetTarget("");
-        var compileSession = CompileSession.Create(target, options);
-        var compiler = compileSession.Compiler;
-        if (!File.Exists(options.InputFile))
+        var info = Context.CheckViewModel();
+        if (info.Length != 0)
         {
-            Context.OpenDialog($"File Not Exist {options.InputFile}");
+            Context.OpenDialog($"Error List:\n{string.Join("\n", info)}");
             return;
         }
 
-        var _module = await compiler.ImportModuleAsync(options.InputFormat, options.InputFile, options.IsBenchmarkOnly);
+        var options = Context.CompileOption;
+        var compileSession = Context.CreateCompileSession();
+        var compiler = compileSession.Compiler;
+        var module = await compiler.ImportModuleAsync(options.InputFormat, options.InputFile, options.IsBenchmarkOnly);
 
         // todo:
         // update progress bar
         var progress = new Progress<int>(percent => { });
 
         // await Task.Run(() => );
-
         await compiler.CompileAsync().ContinueWith(_ => Task.CompletedTask, _token);
 
         // // todo: kmodel 默认加version info
-        // using (var os = File.OpenWrite(CompileViewModel.KmodelPath))
-        // {
-        //     compiler.Gencode(os);
-        // }
+        using (var os = File.OpenWrite(KmodelPath))
+        {
+            compiler.Gencode(os);
+        }
 
         Context.SwitchNext();
-        var main = (Function)_module.Entry!;
+        var main = (Function)module.Entry!;
+
         // MainParamStr = new ObservableCollection<string>(main.Parameters.ToArray().Select(VarToString));
         Context.OpenDialog("Compile Finish", PromptDialogLevel.Normal);
     }
 
+    public override void UpdateContext()
+    {
+        Context.KmodelPath = KmodelPath;
+    }
+
+    public override void UpdateViewModel()
+    {
+        KmodelPath = Context.KmodelPath;
+        if (KmodelPath == string.Empty)
+        {
+            KmodelPath = Path.Join(Context.CompileOption.DumpDir, "test.kmodel");
+        }
+    }
 }

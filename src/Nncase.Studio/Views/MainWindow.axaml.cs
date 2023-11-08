@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -48,18 +48,6 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         interaction.SetOutput(folder[0].Path.LocalPath);
     }
 
-    private async Task DoShowDialogAsync(InteractionContext<(string, PromptDialogLevel), Unit> interaction)
-    {
-        var dialog = new PromptDialog();
-        var viewModel = new PromptDialogViewModel();
-        var (content, level) = interaction.Input;
-        viewModel.DialogContent = content;
-        viewModel.DialogLevel = level;
-        interaction.SetOutput(default);
-        dialog.DataContext = viewModel;
-        await dialog.ShowDialog(this);
-    }
-
     public async Task OpenFileButtonClicked(InteractionContext<FilePickerOpenOptions, List<string>> interaction)
     {
         // Get top level from the current control. Alternatively, you can use Window reference instead.
@@ -78,5 +66,17 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         {
             interaction.SetOutput(new List<string>());
         }
+    }
+
+    private async Task DoShowDialogAsync(InteractionContext<(string Message, PromptDialogLevel Level), Unit> interaction)
+    {
+        var dialog = new PromptDialog();
+        var viewModel = new PromptDialogViewModel();
+        var (content, level) = interaction.Input;
+        viewModel.DialogContent = content;
+        viewModel.DialogLevel = level;
+        interaction.SetOutput(default);
+        dialog.DataContext = viewModel;
+        await dialog.ShowDialog(this);
     }
 }

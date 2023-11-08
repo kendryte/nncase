@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Nncase.IR;
 using Nncase.Quantization;
 using Nncase.Studio.Views;
 
@@ -48,37 +49,10 @@ public partial class QuantizeViewModel : ViewModelBase
         ModelQuantModeList = new ObservableCollection<ModelQuantMode>(Enum.GetValues<ModelQuantMode>().Skip(1).ToList());
         ModelQuantModeValue = ModelQuantMode.UsePTQ;
         QuantizeOptionsValue = new();
-        Context = context;
+        this.Context = context;
     }
 
     public ObservableCollection<ModelQuantMode> ModelQuantModeList { get; set; }
-
-    public void UpdateCompileOption(CompileOptions options)
-    {
-        QuantizeOptionsValue.QuantType = QuantTypeToDataType(QuantTypeValue);
-        QuantizeOptionsValue.WQuantType = QuantTypeToDataType(WQuantTypeValue);
-        QuantizeOptionsValue.ModelQuantMode = ModelQuantModeValue;
-        QuantizeOptionsValue.CalibrationMethod = CalibMethodValue;
-        QuantizeOptionsValue.QuantScheme = QuantSchemePath;
-        QuantizeOptionsValue.ExportQuantScheme = ExportQuantScheme;
-        options.QuantizeOptions = QuantizeOptionsValue;
-    }
-
-    public List<string> Validate()
-    {
-        return new();
-    }
-
-    private DataType QuantTypeToDataType(QuantType qt)
-    {
-        return qt switch
-        {
-            QuantType.Uint8 => DataTypes.UInt8,
-            QuantType.Int8 => DataTypes.Int8,
-            QuantType.Int16 => DataTypes.Int16,
-            _ => throw new ArgumentOutOfRangeException(nameof(qt), qt, null),
-        };
-    }
 
     [RelayCommand]
     public async Task SelectQuantScheme()
@@ -122,8 +96,51 @@ public partial class QuantizeViewModel : ViewModelBase
             return;
         }
 
-        var samples = Context.Entry.Parameters.ToArray().Zip(input)
+        if (Context.Entry == null)
+        {
+            Context.OpenDialog("Should Import Model first");
+            return;
+        }
+
+        var samples = Context.Entry!.Parameters.ToArray().Zip(input)
             .ToDictionary(pair => pair.First, pair => (IValue)Value.FromTensor(pair.Second));
         QuantizeOptionsValue.CalibrationDataset = new SelfInputCalibrationDatasetProvider(samples);
     }
+
+    public override void UpdateViewModel()
+    {
+        MixQuantize = Context.MixQuantize;
+    }
+
+    public override void UpdateContext()
+    {
+        QuantizeOptionsValue.QuantType = Helper.QuantTypeToDataType(QuantTypeValue);
+        QuantizeOptionsValue.WQuantType = Helper.QuantTypeToDataType(WQuantTypeValue);
+        QuantizeOptionsValue.ModelQuantMode = ModelQuantModeValue;
+        QuantizeOptionsValue.CalibrationMethod = CalibMethodValue;
+        QuantizeOptionsValue.QuantScheme = QuantSchemePath;
+        QuantizeOptionsValue.ExportQuantScheme = ExportQuantScheme;
+        Context.CompileOption.QuantizeOptions = QuantizeOptionsValue;
+    }
+
+    public override List<string> CheckViewModel()
+    {
+        return new();
+    }
+}
+
+public sealed class SelfInputCalibrationDatasetProvider : ICalibrationDatasetProvider
+{
+    private readonly int _count = 1;
+
+    private readonly IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> _samples;
+
+    public SelfInputCalibrationDatasetProvider(IReadOnlyDictionary<Var, IValue> sample)
+    {
+        _samples = new[] { sample }.ToAsyncEnumerable();
+    }
+
+    public int? Count => _count;
+
+    public IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples => _samples;
 }

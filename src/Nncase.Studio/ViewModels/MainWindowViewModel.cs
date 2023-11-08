@@ -43,74 +43,53 @@ public enum PromptDialogLevel
 
 public partial class MainWindowViewModel : ViewModelBase
 {
-    public NavigatorViewModel NavigatorViewModelValue { get; set; }
+    [ObservableProperty]
+    private string _title = string.Empty;
+
+    [ObservableProperty]
+    private ViewModelBase _contentViewModel;
 
     public MainWindowViewModel()
     {
-        InitViewModel();
         var host = Host.CreateDefaultBuilder()
             .ConfigureCompiler()
             .Build();
         CompilerServices.Configure(host.Services);
-        ShowFilePicker = new();
-        ShowFolderPicker = new();
-        ShowPromptDialog = new();
-        var tmpVar = new Var("testVar", new TensorType(DataTypes.Float32, new[] { 1, 3, 24, 24 }));
-
-        // MainParamStr = new ObservableCollection<string>(new[] { VarToString(tmpVar) });
-        // DumpDir = Path.Join(Directory.GetCurrentDirectory(), "nncase_dump");
-        // KmodelPath = Path.Join(DumpDir, "test.kmodel");
-        // ResultDir = Path.Join(DumpDir, "nncase_result");
-        // ExportQuantSchemePath = Path.Join(DumpDir, "QuantScheme.json");
-    }
-
-    public List<string> Validate()
-    {
-        return new();
-        // // todo: validate
-        // var option = CompileOptionViewModel.Validate();
-        // if (CompileOptionViewModel.Preprocess)
-        // {
-        //     var preprocess = PreprocessViewModel.Validate();
-        //     option = option.Concat(preprocess).ToList();
-        // }
-        //
-        // if (CompileOptionViewModel.Quantize)
-        // {
-        //     var quantize = QuantizeViewModel.Validate();
-        //     option = option.Concat(quantize).ToList();
-        // }
-        //
-        // return option;
-    }
-
-    private void InitViewModel()
-    {
         Context = new ViewModelContext(this);
-        var ImportViewModel = new ImportViewModel(Context);
-        var CompileOptionViewModel = new CompileOptionViewModel(Context);
-        var PreprocessViewModel = new PreprocessViewModel(Context);
-        var QuantizeViewModel = new QuantizeViewModel(Context);
-        var CompileViewModel = new CompileViewModel(Context);
+        var importViewModel = new ImportViewModel(Context);
+        var compileOptionViewModel = new CompileOptionViewModel(Context);
+        var preprocessViewModel = new PreprocessViewModel(Context);
+        var quantizeViewModel = new QuantizeViewModel(Context);
+        var compileViewModel = new CompileViewModel(Context);
+
         // var SimulateInputViewModel = new SimulateInputViewModel(Context);
-        var SimulateViewModel = new SimulateViewModel(Context);
+        var simulateViewModel = new SimulateViewModel(Context);
         var contentViewModelList = new ObservableCollection<ViewModelBase>(
             new ViewModelBase[]
             {
-                ImportViewModel,
-                CompileOptionViewModel,
-                CompileViewModel,
-                SimulateViewModel,
+                importViewModel,
+                compileOptionViewModel,
+                compileViewModel,
+                simulateViewModel,
             });
 
-        var allViewModel = contentViewModelList.Concat(new ViewModelBase[] { PreprocessViewModel, QuantizeViewModel }).ToArray();
+        ContentViewModel = contentViewModelList.First();
+        var allViewModel = contentViewModelList.Concat(new ViewModelBase[] { preprocessViewModel, quantizeViewModel }).ToArray();
         Context.ViewModelBases = allViewModel;
         NavigatorViewModelValue = new NavigatorViewModel(contentViewModelList, Update);
         Context.Navigator = NavigatorViewModelValue;
-        CompileOptionViewModel.ShowQuantize();
-        CompileOptionViewModel.ShowPreprocess();
+        compileOptionViewModel.ShowQuantize();
+        compileOptionViewModel.ShowPreprocess();
         NavigatorViewModelValue.UpdateContentViewModel();
     }
+
+    public Interaction<FilePickerOpenOptions, List<string>> ShowFilePicker { get; } = new();
+
+    public Interaction<FolderPickerOpenOptions, string> ShowFolderPicker { get; } = new();
+
+    public Interaction<(string Message, PromptDialogLevel Level), Unit> ShowPromptDialog { get; } = new();
+
+    public NavigatorViewModel NavigatorViewModelValue { get; set; }
 
     public void Update(ViewModelBase contenViewModel)
     {
@@ -123,20 +102,4 @@ public partial class MainWindowViewModel : ViewModelBase
         // todo: dialog level
         await ShowPromptDialog.Handle((prompt, level));
     }
-}
-
-public sealed class SelfInputCalibrationDatasetProvider : ICalibrationDatasetProvider
-{
-    private readonly int _count = 1;
-
-    private readonly IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> _samples;
-
-    public SelfInputCalibrationDatasetProvider(IReadOnlyDictionary<Var, IValue> sample)
-    {
-        _samples = new[] { sample }.ToAsyncEnumerable();
-    }
-
-    public int? Count => _count;
-
-    public IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples => _samples;
 }

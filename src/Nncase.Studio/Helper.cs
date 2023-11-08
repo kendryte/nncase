@@ -1,3 +1,6 @@
+// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -12,110 +15,12 @@ using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Nncase.IR;
+using Nncase.Quantization;
 using Nncase.Studio.Views;
 using NumSharp;
 using ReactiveUI;
-using static Nncase.Studio.ViewModels.Helper;
-using static Nncase.Studio.PickerOptions;
+
 namespace Nncase.Studio.ViewModels;
-
-public interface ISwitchable
-{
-    public List<string> CollectInvalidInput();
-
-    public void UpdateUI();
-
-    public void UpdateContext(ViewModelContext context);
-
-    public bool IsVisible();
-}
-
-public class ViewModelContext
-{
-    private MainWindowViewModel _mainWindowView;
-
-    public NavigatorViewModel? Navigator;
-
-    public ViewModelBase[] ViewModelBases;
-
-    public CompileOptions CompileOption = new();
-
-    public Function Entry;
-
-    public string KmodelPath;
-
-    public string DumpDir;
-
-    public ViewModelContext(MainWindowViewModel windowViewModel)
-    {
-        _mainWindowView = windowViewModel;
-    }
-
-    public async Task<List<string>> OpenFile(FilePickerOpenOptions options)
-    {
-        return await _mainWindowView.ShowFilePicker.Handle(options);
-    }
-
-    public async Task<string> OpenFolder(FolderPickerOpenOptions options)
-    {
-        return await _mainWindowView.ShowFolderPicker.Handle(options);
-    }
-
-    public async void OpenDialog(string prompt, PromptDialogLevel level = PromptDialogLevel.Error)
-    {
-        await _mainWindowView.ShowDialog(prompt, level);
-    }
-
-    public CompileOptions GetCompileOption()
-    {
-        return new();
-    }
-
-    public void InsertPage(ViewModelBase page, ViewModelBase pagePosition, int offset = 0)
-    {
-        Navigator?.InsertPageAfter(page, pagePosition, offset);
-    }
-
-    public void RemovePage(ViewModelBase page)
-    {
-        Navigator?.RemovePage(page);
-    }
-
-    public void SwitchNext()
-    {
-        Navigator?.SwitchNext();
-    }
-
-    public ViewModelBase? ViewModelLookup(Type type)
-    {
-        foreach (var viewModelBase in ViewModelBases)
-        {
-            if (viewModelBase.GetType() == type)
-            {
-                return viewModelBase;
-            }
-        }
-
-        return null;
-    }
-}
-
-
-// property
-public partial class MainWindowViewModel
-{
-    [ObservableProperty]
-    private string _title;
-
-    [ObservableProperty]
-    private ViewModelBase _contentViewModel;
-
-    public Interaction<FilePickerOpenOptions, List<string>> ShowFilePicker { get; }
-
-    public Interaction<FolderPickerOpenOptions, string> ShowFolderPicker { get; }
-
-    public Interaction<(string, PromptDialogLevel), Unit> ShowPromptDialog { get; }
-}
 
 public static class Helper
 {
@@ -130,7 +35,7 @@ public static class Helper
         return $"{var.Name} {TensorTypeToString(tt)}";
     }
 
-    public static (string[], Tensor[]) ReadMultiInputs(List<string> path)
+    public static (string[] InputFiles, Tensor[] InputList) ReadMultiInputs(List<string> path)
     {
         var inputFiles = path.Count == 1 && Directory.Exists(path[0])
             ? Directory.GetFiles(path[0])
@@ -210,5 +115,16 @@ public static class Helper
 
         // todo: bf16, float16
         throw new NotImplementedException();
+    }
+
+    public static DataType QuantTypeToDataType(QuantType qt)
+    {
+        return qt switch
+        {
+            QuantType.Uint8 => DataTypes.UInt8,
+            QuantType.Int8 => DataTypes.Int8,
+            QuantType.Int16 => DataTypes.Int16,
+            _ => throw new ArgumentOutOfRangeException(nameof(qt), qt, null),
+        };
     }
 }
