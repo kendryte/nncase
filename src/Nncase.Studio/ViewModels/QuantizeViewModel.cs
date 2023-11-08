@@ -96,7 +96,7 @@ public partial class QuantizeViewModel : ViewModelBase
             return;
         }
 
-        QuantizeViewModel.QuantSchemePath = json;
+        QuantSchemePath = json;
     }
 
     [RelayCommand]

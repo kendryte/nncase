@@ -20,8 +20,7 @@
         <DockPanel HorizontalAlignment="Center" Margin="4">
             <Button Margin= "25"
                     Content="编译"
-                    x:CompileBindings="False"
-                    Command="{Binding $parent[Window].DataContext.Compile}">
+                    Command="{Binding CompileCommand}">
             </Button>
             <Button Margin="25"
                     Content="停止"

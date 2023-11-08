@@ -43,6 +43,8 @@ public enum PromptDialogLevel
 
 public partial class MainWindowViewModel : ViewModelBase
 {
+    public NavigatorViewModel NavigatorViewModelValue { get; set; }
+
     public MainWindowViewModel()
     {
         InitViewModel();
@@ -54,60 +56,45 @@ public partial class MainWindowViewModel : ViewModelBase
         ShowFolderPicker = new();
         ShowPromptDialog = new();
         var tmpVar = new Var("testVar", new TensorType(DataTypes.Float32, new[] { 1, 3, 24, 24 }));
-        MainParamStr = new ObservableCollection<string>(new[] { VarToString(tmpVar) });
-        DumpDir = Path.Join(Directory.GetCurrentDirectory(), "nncase_dump");
-        KmodelPath = Path.Join(DumpDir, "test.kmodel");
-        ResultDir = Path.Join(DumpDir, "nncase_result");
-        ExportQuantSchemePath = Path.Join(DumpDir, "QuantScheme.json");
+
+        // MainParamStr = new ObservableCollection<string>(new[] { VarToString(tmpVar) });
+        // DumpDir = Path.Join(Directory.GetCurrentDirectory(), "nncase_dump");
+        // KmodelPath = Path.Join(DumpDir, "test.kmodel");
+        // ResultDir = Path.Join(DumpDir, "nncase_result");
+        // ExportQuantSchemePath = Path.Join(DumpDir, "QuantScheme.json");
     }
 
     public List<string> Validate()
     {
-        // todo: validate
-        var option = CompileOptionViewModel.Validate();
-        if (CompileOptionViewModel.Preprocess)
-        {
-            var preprocess = PreprocessViewModel.Validate();
-            option = option.Concat(preprocess).ToList();
-        }
-
-        if (CompileOptionViewModel.Quantize)
-        {
-            var quantize = QuantizeViewModel.Validate();
-            option = option.Concat(quantize).ToList();
-        }
-
-        return option;
-    }
-
-    private CompileOptions GetCompileOption()
-    {
-        var options = new CompileOptions();
-        CompileOptionViewModel.UpdateCompileOption(options);
-        if (CompileOptionViewModel.Quantize)
-        {
-            QuantizeViewModel.UpdateCompileOption(options);
-        }
-
-        if (CompileOptionViewModel.Preprocess)
-        {
-            PreprocessViewModel.UpdateCompileOption(options);
-        }
-
-        return options;
+        return new();
+        // // todo: validate
+        // var option = CompileOptionViewModel.Validate();
+        // if (CompileOptionViewModel.Preprocess)
+        // {
+        //     var preprocess = PreprocessViewModel.Validate();
+        //     option = option.Concat(preprocess).ToList();
+        // }
+        //
+        // if (CompileOptionViewModel.Quantize)
+        // {
+        //     var quantize = QuantizeViewModel.Validate();
+        //     option = option.Concat(quantize).ToList();
+        // }
+        //
+        // return option;
     }
 
     private void InitViewModel()
     {
-        var context = new ViewModelContext(this);
-        ImportViewModel = new ImportViewModel(context);
-        CompileOptionViewModel = new CompileOptionViewModel(context);
-        PreprocessViewModel = new PreprocessViewModel(context);
-        QuantizeViewModel = new QuantizeViewModel(context);
-        CompileViewModel = new CompileViewModel(context);
-        // SimulateInputViewModel = new SimulateInputViewModel(context);
-        SimulateViewModel = new SimulateViewModel(context);
-        ContentViewModelList = new ObservableCollection<ViewModelBase>(
+        Context = new ViewModelContext(this);
+        var ImportViewModel = new ImportViewModel(Context);
+        var CompileOptionViewModel = new CompileOptionViewModel(Context);
+        var PreprocessViewModel = new PreprocessViewModel(Context);
+        var QuantizeViewModel = new QuantizeViewModel(Context);
+        var CompileViewModel = new CompileViewModel(Context);
+        // var SimulateInputViewModel = new SimulateInputViewModel(Context);
+        var SimulateViewModel = new SimulateViewModel(Context);
+        var contentViewModelList = new ObservableCollection<ViewModelBase>(
             new ViewModelBase[]
             {
                 ImportViewModel,
@@ -116,18 +103,19 @@ public partial class MainWindowViewModel : ViewModelBase
                 SimulateViewModel,
             });
 
-        ShowQuantize();
-        ShowPreprocess();
-        UpdateContentViewModel();
+        var allViewModel = contentViewModelList.Concat(new ViewModelBase[] { PreprocessViewModel, QuantizeViewModel }).ToArray();
+        Context.ViewModelBases = allViewModel;
+        NavigatorViewModelValue = new NavigatorViewModel(contentViewModelList, Update);
+        Context.Navigator = NavigatorViewModelValue;
+        CompileOptionViewModel.ShowQuantize();
+        CompileOptionViewModel.ShowPreprocess();
+        NavigatorViewModelValue.UpdateContentViewModel();
     }
 
-    private void UpdateContentViewModel()
+    public void Update(ViewModelBase contenViewModel)
     {
-        PageMaxIndex = ContentViewModelList.Count - 1;
-        ContentViewModel = ContentViewModelList[PageIndex];
+        ContentViewModel = contenViewModel;
         Title = ContentViewModel.GetType().Name.Split("ViewModel")[0];
-        PageIndexString = $"{PageIndex + 1} / {PageCount}";
-        IsLast = PageIndex == PageMaxIndex;
     }
 
     public async Task ShowDialog(string prompt, PromptDialogLevel level = PromptDialogLevel.Error)

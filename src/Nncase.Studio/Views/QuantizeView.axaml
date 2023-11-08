@@ -38,7 +38,7 @@
                     Grid.Row="0" Grid.Column="3"
                     Content="选择"
                     x:CompileBindings="False"
-                    Command="{Binding $parent[Window].DataContext.SelectCalibrationDataSet}"></Button>
+                    Command="{Binding SelectCalibrationDataSetCommand}"></Button>
                 <Label Grid.Row="1" Grid.Column="0" Content="量化方法"></Label>
                 <views:EnumComboBox Grid.Row="1" Grid.Column="1" TypeName="{x:Type quantization:CalibMethod}" SelectedValue="{Binding CalibMethodValue}"></views:EnumComboBox>
 
@@ -103,8 +103,7 @@
                 <TextBox Grid.Row="0" Grid.Column="1" HorizontalAlignment="Left" Width="400" Text="Path"></TextBox>
                 <Button Grid.Row="0" Grid.Column="2"
                         Content="选择"
-                        x:CompileBindings="False"
-                        Command="{Binding $parent[Window].DataContext.SelectQuantScheme}"></Button>
+                        Command="{Binding SelectQuantSchemeCommand}"></Button>
 
                 <Label Grid.Row="1" Grid.Column="0" Content="量化配置严格模式"></Label>
                 <DockPanel Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2">

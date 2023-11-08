@@ -57,15 +57,16 @@ public partial class CompileOptionViewModel : ViewModelBase
         // todo: k230 should set dll path
         _target = TargetList[0];
         DumpDir = Path.Join(Directory.GetCurrentDirectory(), "nncase_dump");
+        Context = context;
     }
 
     public void UpdateCompileOption(CompileOptions options)
     {
         options.DumpFlags = DumpFlagSelected.Aggregate(DumpFlags.None, (flag, sum) => flag & sum);
-        options.PreProcess = Preprocess;
-        options.InputFile = InputFile;
-        options.InputFormat = InputFormat;
-        options.DumpDir = DumpDir;
+        // options.PreProcess = Preprocess;
+        // options.InputFile = InputFile;
+        // options.InputFormat = InputFormat;
+        // options.DumpDir = DumpDir;
     }
 
     public List<string> Validate()
@@ -79,10 +80,82 @@ public partial class CompileOptionViewModel : ViewModelBase
     [RelayCommand]
     public async Task SetDumpDir()
     {
-        var folder = await ShowFolderPicker.Handle(PickerOptions.FolderPickerOpenOptions);
+        var folder = await Context.OpenFolder(PickerOptions.FolderPickerOpenOptions);
         if (folder != string.Empty)
         {
             DumpDir = folder;
+        }
+    }
+
+
+
+        // var i = ContentViewModelList.IndexOf(PreprocessViewModel);
+        // if (CompileOptionViewModel.Preprocess)
+        // {
+        //     if (i == -1)
+        //     {
+        //         var optionIndex = ContentViewModelList.IndexOf(CompileOptionViewModel);
+        //         // insert after OptionView
+        //         ContentViewModelList.Insert(optionIndex + 1, PreprocessViewModel);
+        //     }
+        // }
+        // else
+        // {
+        //     if (i != -1)
+        //     {
+        //         ContentViewModelList.Remove(PreprocessViewModel);
+        //     }
+        // }
+
+        // var i = ContentViewModelList.IndexOf(QuantizeViewModel);
+        // if (CompileOptionViewModel.Quantize)
+        // {
+        //     var compileIndex = ContentViewModelList.IndexOf(CompileViewModel);
+        //
+        //     // insert before CompileView
+        //     ContentViewModelList.Insert(compileIndex, QuantizeViewModel);
+        // }
+        // else
+        // {
+        //     if (i != -1)
+        //     {
+        //         ContentViewModelList.Remove(QuantizeViewModel);
+        //     }
+        // }
+
+
+        [RelayCommand]
+        public void UseMixQuantize()
+        {
+            // QuantizeViewModel.MixQuantize = CompileOptionViewModel.MixQuantize;
+        }
+
+    [RelayCommand]
+    public void ShowPreprocess()
+    {
+        var pre = Context.ViewModelLookup(typeof(PreprocessViewModel))!;
+        if (Preprocess)
+        {
+            Context.InsertPage(pre, this, 1);
+        }
+        else
+        {
+            Context.RemovePage(pre);
+        }
+    }
+
+    [RelayCommand]
+    public void ShowQuantize()
+    {
+        var quant = Context.ViewModelLookup(typeof(QuantizeViewModel))!;
+        var compile = Context.ViewModelLookup(typeof(CompileViewModel))!;
+        if (Quantize)
+        {
+            Context.InsertPage(quant, compile);
+        }
+        else
+        {
+            Context.RemovePage(quant);
         }
     }
 }

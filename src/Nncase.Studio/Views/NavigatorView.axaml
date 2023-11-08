@@ -2,8 +2,10 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewModels="clr-namespace:Nncase.Studio.ViewModels"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-             x:Class="Nncase.Studio.Views.NavigatorView">
+             x:Class="Nncase.Studio.Views.NavigatorView"
+             x:DataType="viewModels:NavigatorViewModel">
 
     <DockPanel Margin="5">
         <Border Background="White"
@@ -19,17 +21,15 @@
             <Button
                    Grid.Row="0" Grid.Column="0"
                    Content="上一步"
-                   x:CompileBindings="False"
-                   IsVisible="{Binding $parent[Window].DataContext.PageIndex}"
-                   Command="{Binding $parent[Window].DataContext.SwitchPrev}">
+                   IsVisible="{Binding PageIndex}"
+                   Command="{Binding SwitchPrevCommand}">
             </Button>
             <!-- todo: can't visible but position is fix  -->
             <Button
                     Grid.Row="0" Grid.Column="1"
                     Content="下一步"
-                    x:CompileBindings="False"
-                    IsVisible="{Binding !$parent[Window].DataContext.IsLast}"
-                    Command="{Binding $parent[Window].DataContext.SwitchNext}">
+                    IsVisible="{Binding !IsLast}"
+                    Command="{Binding SwitchNextCommand}">
             </Button>
         </Grid>
         </Border>
@@ -38,17 +38,15 @@
             Width="60"
             Margin="10"
             VerticalAlignment="Center"
-            x:CompileBindings="False"
-            Content="{Binding $parent[Window].DataContext.PageIndexString}">
+            Content="{Binding PageIndexString}">
         </Label>
 
         <ProgressBar
             Margin="10"
             VerticalAlignment="Center"
-            x:CompileBindings="False"
             Minimum="0"
-            Maximum="{Binding $parent[Window].DataContext.PageMaxIndex}"
-            Value="{Binding $parent[Window].DataContext.PageIndex}"></ProgressBar>
+            Maximum="{Binding PageMaxIndex}"
+            Value="{Binding PageIndex}"></ProgressBar>
     </DockPanel>
 
 </UserControl>

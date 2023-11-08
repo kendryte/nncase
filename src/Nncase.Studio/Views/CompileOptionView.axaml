@@ -55,8 +55,7 @@
                 <TextBox Classes="Path" Text="{Binding DumpDir}"/>
                 <Button
                     Content="选择"
-                    x:CompileBindings="False"
-                    Command="{Binding $parent[Window].DataContext.SetDumpDir}">
+                    Command="{Binding SetDumpDirCommand}">
                 </Button>
             </DockPanel>
 
@@ -69,19 +68,16 @@
             <Label Grid.Row="5" Grid.Column="0" Content="开启量化"/>
             <DockPanel Grid.Row="5" Grid.Column="1">
                 <CheckBox IsChecked="{Binding Quantize}"
-                          x:CompileBindings="False"
-                          Command="{Binding $parent[Window].DataContext.ShowQuantize}"/>
+                          Command="{Binding ShowQuantizeCommand}"/>
                 <Label IsVisible="{Binding Quantize}" Content="是否使用混合量化"></Label>
                 <CheckBox IsVisible="{Binding Quantize}"
                           IsChecked="{Binding MixQuantize}"
-                          x:CompileBindings="False"
-                          Command="{Binding $parent[Window].DataContext.UseMixQuantize}"></CheckBox>
+                          Command="{Binding UseMixQuantizeCommand}"></CheckBox>
             </DockPanel>
 
             <Label Grid.Row="6" Grid.Column="0" Content="开启前后处理"/>
             <CheckBox Grid.Row="6" Grid.Column="1" IsChecked="{Binding Preprocess}"
-                      x:CompileBindings="False"
-                      Command="{Binding $parent[Window].DataContext.ShowPreprocess}"/>
+                      Command="{Binding ShowPreprocessCommand}"/>
         </Grid>
     </StackPanel>
 </UserControl>

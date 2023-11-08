@@ -35,8 +35,8 @@
                 </Button>
 
             <Label Grid.Row="2" Grid.Column="0" Content="KmodelPath"></Label>
-                <TextBox Classes="Path" Grid.Row="2" Grid.Column="1" x:CompileBindings="False"
-                     Text="{Binding $parent[Window].DataContext.KmodelPath}"></TextBox>
+                <TextBox Classes="Path" Grid.Row="2" Grid.Column="1"
+                     Text="{Binding KmodelPath}"></TextBox>
                 <Button
                     Grid.Row="2" Grid.Column="2"
                     Content="选择"
