@@ -30,78 +30,133 @@ namespace {
 template <typename T>
 result<void> softmax_impl(const T *input, T *output,
                           gsl::span<const size_t> in_shape,
-                          gsl::span<const size_t> in_strides,
-                          gsl::span<const size_t> out_strides, int64_t axis,
+                          NNCASE_UNUSED gsl::span<const size_t> in_strides,
+                          NNCASE_UNUSED gsl::span<const size_t> out_strides, int64_t axis,
                           float beta, bool needLog = false) noexcept {
+    std::cout << "axis: " << (int)axis << std::endl;
     size_t positive_axis = axis < 0 ? in_shape.size() + axis : axis;
     dims_t axes{positive_axis};
 
-    auto reduced_shape =
-        kernels::detail::get_reduced_shape(in_shape, axes, true);
-    auto reduced_strides = get_default_strides(reduced_shape);
-    auto reduced_size = compute_size(reduced_shape);
+    std::cout << "positive_axis: " << positive_axis << std::endl;
+    size_t reduced_size = 1;
+    for (size_t i = positive_axis + 1; i < in_shape.size(); i++)
+    {
+        reduced_size *= in_shape[i];
+        std::cout <<i << " in_shape[i]: " << in_shape[i] << std::endl;
+    }
+    std::cout << "reduced_size:" <<reduced_size<< std::endl;
+    // for (auto kk : reduced_shape)
+    //     std::cout << kk << " ";
+    // std::cout << std::endl;
+    // auto reduced_strides = get_default_strides(reduced_shape);
+    // auto reduced_size = compute_size(reduced_shape);
+    auto out_size = compute_size(in_shape) / reduced_size;
     std::vector<T> tmp(reduced_size, std::numeric_limits<T>::lowest());
 
-    // reduce_max
-    try_(apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
-        auto in_idx = offset(in_strides, index);
-        const auto in = input[in_idx];
 
-        const auto out_index =
-            kernels::detail::get_reduced_offset(index, axes, true);
-        auto out_idx = offset(reduced_strides, out_index);
-        auto &out = tmp[out_idx];
+    for (size_t i = 0; i < out_size; i++)
+    {
+        auto p_input = input + i * reduced_size;
+        auto p_output = output + i * reduced_size;
 
-        out = std::max(in, out);
-        return ok();
-    }));
-
-    // x - reduce_max
-    try_(apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
-        auto in_idx = offset(in_strides, index);
-        const auto in = input[in_idx];
-
-        const auto out_index =
-            kernels::detail::get_reduced_offset(index, axes, true);
-        auto max_idx = offset(reduced_strides, out_index);
-
-        auto out_idx = offset(out_strides, index);
-        output[out_idx] =
-            static_cast<T>(static_cast<float>(in - tmp[max_idx]) * beta);
-
-        return ok();
-    }));
-
-    // exp(x - reduce_max) and sum
-    tmp.assign(tmp.size(), static_cast<T>(0));
-    try_(apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
-        auto in_idx = offset(out_strides, index);
-        const auto in = output[in_idx];
-
-        const auto out_index =
-            kernels::detail::get_reduced_offset(index, axes, true);
-        auto out_idx = offset(reduced_strides, out_index);
-        output[in_idx] = static_cast<T>(expf(static_cast<float>(in)));
-        tmp[out_idx] += static_cast<T>(output[in_idx]);
-
-        return ok();
-    }));
-
-    // div
-    try_(apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
-        const auto in_index =
-            kernels::detail::get_reduced_offset(index, axes, true);
-        auto in_idx = offset(reduced_strides, in_index);
-        auto in = tmp[in_idx];
-
-        auto out_idx = offset(out_strides, index);
-        auto &out = output[out_idx];
-        out /= in;
-        if (needLog) {
-            out = static_cast<T>(std::log(static_cast<float>(out)));
+        // reduce_max
+        auto max_value = *p_input;
+        for(size_t j = 0; j < reduced_size; j++)
+        {
+            max_value = std::max(max_value, p_input[j]);
+            std::cout<<"max :"<<static_cast<float>(max_value)<<std::endl;
         }
-        return ok();
-    }));
+
+        // x - reduce_max
+        for(size_t j = 0; j < reduced_size; j++)
+        {
+            p_output[j] = static_cast<T>((static_cast<float>(p_input[j]) -
+                                          static_cast<float>(max_value)) *
+                                         beta);
+            std::cout<<"sub :"<<static_cast<float>(p_output[j])<<std::endl;
+        }
+
+        // exp(x-reduce_max) and sum
+        T sum = 0;
+        for(size_t j = 0; j < reduced_size; j++)
+        {
+            p_output[j] = static_cast<T>(expf(static_cast<float>(p_output[j])));
+            sum += p_output[j];
+            std::cout<<"exp :"<<static_cast<float>(p_output[j])<<std::endl;
+        }
+
+        for(size_t j = 0; j < reduced_size; j++)
+        {
+            p_output[j] /= sum;
+            std::cout<<"p_output[j]:"<<static_cast<float>(p_output[j])<<std::endl;
+            if (needLog)
+            {
+                p_output[j] = static_cast<T>(std::log(static_cast<float>(p_output[j])));
+            }
+        }
+    }
+
+    //     // reduce_max
+    //     try_(
+    //         apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
+    //             auto in_idx = offset(in_strides, index);
+    //             const auto in = input[in_idx];
+
+    //             const auto out_index =
+    //                 kernels::detail::get_reduced_offset(index, axes, true);
+    //             auto out_idx = offset(reduced_strides, out_index);
+    //             auto &out = tmp[out_idx];
+
+    //             out = std::max(in, out);
+    //             return ok();
+    //         }));
+
+    // // x - reduce_max
+    // try_(apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
+    //     auto in_idx = offset(in_strides, index);
+    //     const auto in = input[in_idx];
+
+    //     const auto out_index =
+    //         kernels::detail::get_reduced_offset(index, axes, true);
+    //     auto max_idx = offset(reduced_strides, out_index);
+
+    //     auto out_idx = offset(out_strides, index);
+    //     output[out_idx] =
+    //         static_cast<T>(static_cast<float>(in - tmp[max_idx]) * beta);
+
+    //     return ok();
+    // }));
+
+    // // exp(x - reduce_max) and sum
+    // tmp.assign(tmp.size(), static_cast<T>(0));
+    // try_(apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
+    //     auto in_idx = offset(out_strides, index);
+    //     const auto in = output[in_idx];
+
+    //     const auto out_index =
+    //         kernels::detail::get_reduced_offset(index, axes, true);
+    //     auto out_idx = offset(reduced_strides, out_index);
+    //     output[in_idx] = static_cast<T>(expf(static_cast<float>(in)));
+    //     tmp[out_idx] += static_cast<T>(output[in_idx]);
+
+    //     return ok();
+    // }));
+
+    // // div
+    // try_(apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
+    //     const auto in_index =
+    //         kernels::detail::get_reduced_offset(index, axes, true);
+    //     auto in_idx = offset(reduced_strides, in_index);
+    //     auto in = tmp[in_idx];
+
+    //     auto out_idx = offset(out_strides, index);
+    //     auto &out = output[out_idx];
+    //     out /= in;
+    //     if (needLog) {
+    //         out = static_cast<T>(std::log(static_cast<float>(out)));
+    //     }
+    //     return ok();
+    // }));
 
     return ok();
 }
