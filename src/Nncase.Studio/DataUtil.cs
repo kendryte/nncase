@@ -22,7 +22,7 @@ using ReactiveUI;
 
 namespace Nncase.Studio.ViewModels;
 
-public static class Helper
+public static class DataUtil
 {
     public static string TensorTypeToString(TensorType tt)
     {
@@ -55,7 +55,6 @@ public static class Helper
             }).ToList();
     }
 
-    // todo: not support datatype error
     public static DataType ToDataType(Type type)
     {
         if (type == typeof(byte))
@@ -113,8 +112,12 @@ public static class Helper
             return DataTypes.Boolean;
         }
 
-        // todo: bf16, float16
-        throw new NotImplementedException();
+        if (type == typeof(Half))
+        {
+            return DataTypes.Float16;
+        }
+
+        throw new NotImplementedException($"not supported data type {type}");
     }
 
     public static DataType QuantTypeToDataType(QuantType qt)

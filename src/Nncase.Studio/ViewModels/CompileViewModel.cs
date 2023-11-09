@@ -47,27 +47,37 @@ public partial class CompileViewModel : ViewModelBase
         }
 
         var options = Context.CompileOption;
+        if (!Directory.Exists(options.DumpDir))
+        {
+            Directory.CreateDirectory(options.DumpDir);
+        }
+
         var compileSession = Context.CreateCompileSession();
         var compiler = compileSession.Compiler;
         var module = await compiler.ImportModuleAsync(options.InputFormat, options.InputFile, options.IsBenchmarkOnly);
+        Context.Entry = (Function)module.Entry!;
+        var calib = ((QuantizeViewModel)Context.ViewModelLookup(typeof(QuantizeViewModel))).LoadCalibFiles();
+        if (calib == null)
+        {
+            return;
+        }
 
-        // todo:
+        options.QuantizeOptions.CalibrationDataset = calib;
+
         // update progress bar
         var progress = new Progress<int>(percent => { });
 
-        // await Task.Run(() => );
-        await compiler.CompileAsync().ContinueWith(_ => Task.CompletedTask, _token);
+        await Task.Run(() =>
+            {
+                compiler.CompileAsync();
+            }).ContinueWith(_ => Task.CompletedTask, _token);
 
-        // // todo: kmodel 默认加version info
         using (var os = File.OpenWrite(KmodelPath))
         {
             compiler.Gencode(os);
         }
 
         Context.SwitchNext();
-        var main = (Function)module.Entry!;
-
-        // MainParamStr = new ObservableCollection<string>(main.Parameters.ToArray().Select(VarToString));
         Context.OpenDialog("Compile Finish", PromptDialogLevel.Normal);
     }
 

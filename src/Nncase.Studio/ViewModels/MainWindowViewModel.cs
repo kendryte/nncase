@@ -31,7 +31,7 @@ using Nncase.Studio.Views;
 using Nncase.Utilities;
 using NumSharp;
 using ReactiveUI;
-using static Nncase.Studio.ViewModels.Helper;
+using static Nncase.Studio.ViewModels.DataUtil;
 
 namespace Nncase.Studio.ViewModels;
 
@@ -41,13 +41,15 @@ public enum PromptDialogLevel
     Error,
 }
 
-public partial class MainWindowViewModel : ViewModelBase
+public partial class MainWindowViewModel : WindowViewModelBase
 {
     [ObservableProperty]
     private string _title;
 
     [ObservableProperty]
     private ViewModelBase _contentViewModel;
+
+    protected ViewModelContext Context { get; set; }
 
     public MainWindowViewModel()
     {

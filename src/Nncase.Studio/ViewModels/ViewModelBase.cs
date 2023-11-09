@@ -19,9 +19,21 @@ public interface ISwitchable
     public bool IsVisible();
 }
 
+public class WindowViewModelBase : ObservableValidator
+{
+
+}
+
 public class ViewModelBase : ObservableValidator
 {
-    protected ViewModelContext Context { get; set; } = new(new());
+    private ViewModelContext? _context;
+
+    protected ViewModelContext Context
+    {
+        get { return _context; }
+        set { _context = value; }
+    }
+
 
     public virtual List<string> CheckViewModel()
     {

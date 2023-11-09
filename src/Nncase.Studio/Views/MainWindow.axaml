@@ -26,7 +26,6 @@
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
-    <!-- todo: IsEnabled 页面的检查 -->
     <!-- bind data contenxt -->
     <Border Background="MediumPurple"
             BorderBrush="Black"

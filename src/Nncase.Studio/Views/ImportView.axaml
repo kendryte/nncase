@@ -11,7 +11,6 @@
         <StackPanel VerticalAlignment="Center">
             <!-- 插入三种模型的logo -->
             <Label HorizontalAlignment="Center" Content="支持的模型格式：NCNN ONNX TFLite"></Label>
-            <!-- todo: image on click and set file filter -->
             <DockPanel HorizontalAlignment="Center" Name="LogoPanel">
                 <Image Source="/Assets/ncnn-logo.png"></Image>
                 <Image Source="/Assets/ONNX-logo.png"></Image>

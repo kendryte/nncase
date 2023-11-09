@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -46,7 +47,18 @@ public partial class SimulateViewModel : ViewModelBase
             return;
         }
 
-        var (inputFiles, input) = Helper.ReadMultiInputs(path);
+        Tensor[] input;
+        string[] inputFiles;
+        try
+        {
+            (inputFiles, input) = DataUtil.ReadMultiInputs(path);
+        }
+        catch (Exception e)
+        {
+            Context.OpenDialog(e.Message);
+            return;
+        }
+
         UpdateRuntimeInputUI(input, inputFiles);
     }
 
@@ -74,30 +86,6 @@ public partial class SimulateViewModel : ViewModelBase
             Context.OpenDialog("Not Set Input");
         }
 
-        if (Context.Entry == null)
-        {
-            Context.OpenDialog("Should Import Model first");
-            return Task.CompletedTask;
-        }
-
-        var paramList = Context.Entry!.Parameters.ToArray();
-        foreach ((var tensor, var param) in RuntimeInput.Zip(paramList))
-        {
-            var tt = (TensorType)param.TypeAnnotation;
-            if (tensor.ElementType != tt.DType)
-            {
-                Context.OpenDialog($"{param.Name} input datatype mismatch");
-                return Task.CompletedTask;
-            }
-
-            if (tt.Shape.Count != tensor.Shape.Count || tt.Shape.Zip(tensor.Shape)
-                    .Any(pair => pair.First.IsFixed && pair.First != pair.Second))
-            {
-                Context.OpenDialog($"{param.Name} input shape mismatch");
-                return Task.CompletedTask;
-            }
-        }
-
         using (var interp = Runtime.Interop.RTInterpreter.Create())
         {
             var kmodel = File.ReadAllBytes(KmodelPath);
@@ -116,7 +104,6 @@ public partial class SimulateViewModel : ViewModelBase
                 .ToArray();
 
             // todo: output file name, collect in compiler
-            // todo: open explorer
             foreach (var ndArray in list)
             {
                 np.save(Path.Join(ResultDir, "dir.npy"), ndArray);
@@ -128,6 +115,44 @@ public partial class SimulateViewModel : ViewModelBase
 
         return Task.CompletedTask;
     }
+
+    // private bool CheckInput(out Task simulate)
+    // {
+    //     if (Context.Entry == null)
+    //     {
+    //         Context.OpenDialog("Should Import Model first");
+    //         {
+    //             simulate = Task.CompletedTask;
+    //             return true;
+    //         }
+    //     }
+    //
+    //     var paramList = Context.Entry!.Parameters.ToArray();
+    //     foreach ((var tensor, var param) in RuntimeInput.Zip(paramList))
+    //     {
+    //         var tt = (TensorType)param.TypeAnnotation;
+    //         if (tensor.ElementType != tt.DType)
+    //         {
+    //             Context.OpenDialog($"{param.Name} input datatype mismatch");
+    //             {
+    //                 simulate = Task.CompletedTask;
+    //                 return true;
+    //             }
+    //         }
+    //
+    //         if (tt.Shape.Count != tensor.Shape.Count || tt.Shape.Zip(tensor.Shape)
+    //                 .Any(pair => pair.First.IsFixed && pair.First != pair.Second))
+    //         {
+    //             Context.OpenDialog($"{param.Name} input shape mismatch");
+    //             {
+    //                 simulate = Task.CompletedTask;
+    //                 return true;
+    //             }
+    //         }
+    //     }
+    //
+    //     return false;
+    // }
 
     public override void UpdateViewModel()
     {
@@ -144,6 +169,6 @@ public partial class SimulateViewModel : ViewModelBase
         RuntimeInput = new ObservableCollection<Tensor>(input);
         InputPath = new ObservableCollection<string>(inputFiles);
         InputTypeStr = new ObservableCollection<string>(RuntimeInput
-            .Select(x => Helper.TensorTypeToString(new TensorType(x.ElementType, x.Shape))).ToList());
+            .Select(x => DataUtil.TensorTypeToString(new TensorType(x.ElementType, x.Shape))).ToList());
     }
 }

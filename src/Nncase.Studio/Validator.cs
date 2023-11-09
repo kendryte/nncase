@@ -96,7 +96,6 @@ internal sealed class ValidLayoutAttribute : ValidationAttribute
             return false;
         }
 
-        // todo: 前处理，5d？？
         var s = (string)value;
         if (s.All(c => "NCHW".Contains(c, StringComparison.Ordinal)))
         {

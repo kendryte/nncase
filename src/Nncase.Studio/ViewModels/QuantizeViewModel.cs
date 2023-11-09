@@ -44,6 +44,11 @@ public partial class QuantizeViewModel : ViewModelBase
     [ObservableProperty]
     private string _exportQuantSchemePath = string.Empty;
 
+    [ObservableProperty]
+    private string _calibDir = string.Empty;
+
+    private string[] _inputFiles = Array.Empty<string>();
+
     public QuantizeViewModel(ViewModelContext context)
     {
         ModelQuantModeList = new ObservableCollection<ModelQuantMode>(Enum.GetValues<ModelQuantMode>().Skip(1).ToList());
@@ -89,22 +94,38 @@ public partial class QuantizeViewModel : ViewModelBase
             return;
         }
 
-        var input = Helper.ReadInput(inputFiles).ToArray();
+        CalibDir = path;
+        _inputFiles = inputFiles;
+    }
+
+    public ICalibrationDatasetProvider? LoadCalibFiles()
+    {
+        Tensor[] input;
+        try
+        {
+            input = DataUtil.ReadInput(_inputFiles).ToArray();
+        }
+        catch (Exception e)
+        {
+            Context.OpenDialog(e.Message);
+            return null;
+        }
+
         if (input.Length == 0)
         {
             Context.OpenDialog("no file is loaded, only support .npy");
-            return;
+            return null;
         }
 
         if (Context.Entry == null)
         {
             Context.OpenDialog("Should Import Model first");
-            return;
+            return null;
         }
 
         var samples = Context.Entry!.Parameters.ToArray().Zip(input)
             .ToDictionary(pair => pair.First, pair => (IValue)Value.FromTensor(pair.Second));
-        QuantizeOptionsValue.CalibrationDataset = new SelfInputCalibrationDatasetProvider(samples);
+        return new SelfInputCalibrationDatasetProvider(samples);
     }
 
     public override void UpdateViewModel()
@@ -114,8 +135,8 @@ public partial class QuantizeViewModel : ViewModelBase
 
     public override void UpdateContext()
     {
-        QuantizeOptionsValue.QuantType = Helper.QuantTypeToDataType(QuantTypeValue);
-        QuantizeOptionsValue.WQuantType = Helper.QuantTypeToDataType(WQuantTypeValue);
+        QuantizeOptionsValue.QuantType = DataUtil.QuantTypeToDataType(QuantTypeValue);
+        QuantizeOptionsValue.WQuantType = DataUtil.QuantTypeToDataType(WQuantTypeValue);
         QuantizeOptionsValue.ModelQuantMode = ModelQuantModeValue;
         QuantizeOptionsValue.CalibrationMethod = CalibMethodValue;
         QuantizeOptionsValue.QuantScheme = QuantSchemePath;

@@ -22,7 +22,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
                 <Grid.ColumnDefinitions>
@@ -32,7 +32,7 @@
                     <ColumnDefinition Width="150"/>
                 </Grid.ColumnDefinitions>
                 <Label Grid.Row="0" Grid.Column="0" Content="数据集"></Label>
-                <TextBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" HorizontalAlignment="Left" Width="400" Text="Path"></TextBox>
+                <TextBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" HorizontalAlignment="Left" Width="400" Text="{Binding CalibDir}"></TextBox>
                 <Button
                     Grid.Row="0" Grid.Column="3"
                     Content="选择"
@@ -68,7 +68,7 @@
                 <Label Grid.Row="6" Grid.Column="0" Content="导出量化配置"></Label>
                 <CheckBox Grid.Row="6" Grid.Column="1" IsChecked="{Binding ExportQuantScheme}"></CheckBox>
                 <Label Grid.Row="6" Grid.Column="2"
-                       Content="导出权重范围"
+                       Content="导出Weights范围"
                        IsVisible="{Binding ExportQuantScheme}">
                 </Label>
                 <CheckBox Grid.Row="6" Grid.Column="3"
@@ -77,13 +77,15 @@
                 </CheckBox>
                 <Label Grid.Row="7" Grid.Column="0"
                        IsVisible="{Binding ExportQuantScheme}"
-                       Classes="Path"
                        Content="设置导出路径">
                 </Label>
-                <TextBox Grid.Row="7" Grid.Column="1" Grid.ColumnSpan="2"
+                <TextBox Grid.Row="7" Grid.Column="1" Grid.ColumnSpan="3"
+                         Classes="Path"
+                         Width="400"
                          IsVisible="{Binding ExportQuantScheme}"
                          Text="{Binding ExportQuantSchemePath}">
                 </TextBox>
+                <TextBlock Grid.Row="7" Grid.Column="3" Text=" " Margin="22"></TextBlock>
             </Grid>
         </StackPanel>
 
