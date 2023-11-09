@@ -26,8 +26,6 @@
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
-    <!-- todo: margin的区域 也是会被覆盖的 -->
-    <!-- todo: text box max width -->
     <!-- todo: IsEnabled 页面的检查 -->
     <!-- bind data contenxt -->
     <Border Background="MediumPurple"

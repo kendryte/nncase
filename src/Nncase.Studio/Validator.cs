@@ -126,7 +126,6 @@ internal sealed class ValidLayoutAttribute : ValidationAttribute
     {
         if (s.Contains(",", StringComparison.Ordinal))
         {
-            // todo: all 0-3
             var charArray = s.Split(",").Select(s => s[0]).ToArray();
             return IsNumberList(charArray, out numbers);
         }

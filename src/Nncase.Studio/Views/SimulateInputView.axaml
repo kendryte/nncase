@@ -28,7 +28,6 @@
         </DockPanel>
 
         <StackPanel Margin="10" HorizontalAlignment="Center">
-            <!-- todo: 滚动条 -->
             <StackPanel>
                 <Button Content="设置输入"
                         x:CompileBindings="False"

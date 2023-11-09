@@ -6,7 +6,6 @@
         </Border>
     </Design.PreviewWith>
 
-    <!-- todo: line height -->
     <!-- simulate view -->
     <Style Selector="Grid TextBox">
         <Setter Property="Margin" Value="15"></Setter>

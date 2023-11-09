@@ -44,7 +44,7 @@ public enum PromptDialogLevel
 public partial class MainWindowViewModel : ViewModelBase
 {
     [ObservableProperty]
-    private string _title = string.Empty;
+    private string _title;
 
     [ObservableProperty]
     private ViewModelBase _contentViewModel;
@@ -73,6 +73,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 simulateViewModel,
             });
 
+        Title = string.Empty;
         ContentViewModel = contentViewModelList.First();
         var allViewModel = contentViewModelList.Concat(new ViewModelBase[] { preprocessViewModel, quantizeViewModel }).ToArray();
         Context.ViewModelBases = allViewModel;
@@ -99,7 +100,6 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public async Task ShowDialog(string prompt, PromptDialogLevel level = PromptDialogLevel.Error)
     {
-        // todo: dialog level
         await ShowPromptDialog.Handle((prompt, level));
     }
 }

@@ -71,11 +71,8 @@ public partial class PreprocessViewModel : ViewModelBase
         var inShape = Std.Split(",").Select(int.Parse).ToArray();
         var rangeMin = float.Parse(RangeMin);
         var rangeMax = float.Parse(RangeMax);
-
-        // todo: check min and max
         var letterBoxValue = float.Parse(LetterBoxValue);
 
-        // todo: mean std LetterBoxValue，全部by tensor或者部分by channel
         Context.CompileOption.Mean = mean;
         Context.CompileOption.Std = std;
         Context.CompileOption.InputShape = inShape;

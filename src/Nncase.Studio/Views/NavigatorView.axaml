@@ -24,7 +24,6 @@
                    IsVisible="{Binding PageIndex}"
                    Command="{Binding SwitchPrevCommand}">
             </Button>
-            <!-- todo: can't visible but position is fix  -->
             <Button
                     Grid.Row="0" Grid.Column="1"
                     Content="下一步"
