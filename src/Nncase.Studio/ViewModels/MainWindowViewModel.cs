@@ -62,6 +62,7 @@ public partial class MainWindowViewModel : WindowViewModelBase
         var compileOptionViewModel = new CompileOptionViewModel(Context);
         var preprocessViewModel = new PreprocessViewModel(Context);
         var quantizeViewModel = new QuantizeViewModel(Context);
+        var shapeBucketViewModel = new ShapeBucketViewModel(Context);
         var compileViewModel = new CompileViewModel(Context);
 
         // var SimulateInputViewModel = new SimulateInputViewModel(Context);
@@ -77,7 +78,13 @@ public partial class MainWindowViewModel : WindowViewModelBase
 
         Title = string.Empty;
         ContentViewModel = contentViewModelList.First();
-        var allViewModel = contentViewModelList.Concat(new ViewModelBase[] { preprocessViewModel, quantizeViewModel }).ToArray();
+        var allViewModel = contentViewModelList.Concat(new ViewModelBase[]
+        {
+            preprocessViewModel,
+            quantizeViewModel,
+            shapeBucketViewModel,
+        }).ToArray();
+
         Context.ViewModelBases = allViewModel;
         NavigatorViewModelValue = new NavigatorViewModel(contentViewModelList, Update);
         Context.Navigator = NavigatorViewModelValue;

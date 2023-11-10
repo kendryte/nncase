@@ -24,6 +24,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition />
             </Grid.RowDefinitions>
 
             <Grid.ColumnDefinitions>
@@ -77,6 +78,10 @@
             <Label Grid.Row="6" Grid.Column="0" Content="开启前后处理"/>
             <CheckBox Grid.Row="6" Grid.Column="1" IsChecked="{Binding Preprocess}"
                       Command="{Binding ShowPreprocessCommand}"/>
+
+            <Label Grid.Row="7" Grid.Column="0" Content="开启ShapeBucket"/>
+            <CheckBox Grid.Row="7" Grid.Column="1" IsChecked="{Binding ShapeBucket}"
+                      Command="{Binding ShowShapeBucketCommand}"/>
         </Grid>
     </StackPanel>
 </UserControl>

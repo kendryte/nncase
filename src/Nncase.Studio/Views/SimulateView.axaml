@@ -20,7 +20,16 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <Label Grid.Row="0" Grid.Column="0" Content="输入文件"></Label>
-                <TextBox Classes="Path" Grid.Row="0" Grid.Column="1" Watermark="Input Path"></TextBox>
+                <SplitButton Margin="0" Grid.Row="0" Grid.Column="1" Content="已选择的文件">
+                    <SplitButton.Flyout>
+                        <Flyout Placement="Bottom">
+                            <ListBox
+                                ItemsSource="{Binding InputPath}">
+                            </ListBox>
+                        </Flyout>
+                    </SplitButton.Flyout>
+                </SplitButton>
+                <!-- <ComboBox Grid.Row="0" Grid.Column="1" ItemsSource="{Binding InputPath}" ></ComboBox> -->
                 <Button
                         Grid.Row="0" Grid.Column="2"
                         Content="选择"

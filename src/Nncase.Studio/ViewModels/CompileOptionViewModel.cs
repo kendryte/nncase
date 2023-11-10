@@ -34,6 +34,9 @@ public partial class CompileOptionViewModel : ViewModelBase
     private bool _quantize = true;
 
     [ObservableProperty]
+    private bool _shapeBucket;
+
+    [ObservableProperty]
     private bool _mixQuantize = false;
 
     [ObservableProperty]
@@ -87,6 +90,7 @@ public partial class CompileOptionViewModel : ViewModelBase
     [RelayCommand]
     public void ShowQuantize()
     {
+        // todo: refactor to ShowViewModel
         var quant = Context.ViewModelLookup(typeof(QuantizeViewModel))!;
         var compile = Context.ViewModelLookup(typeof(CompileViewModel))!;
         if (Quantize)
@@ -96,6 +100,21 @@ public partial class CompileOptionViewModel : ViewModelBase
         else
         {
             Context.RemovePage(quant);
+        }
+    }
+
+    [RelayCommand]
+    public void ShowShapeBucket()
+    {
+        var shapeBucket = Context.ViewModelLookup(typeof(ShapeBucketViewModel))!;
+        var compile = Context.ViewModelLookup(typeof(CompileViewModel))!;
+        if (ShapeBucket)
+        {
+            Context.InsertPage(shapeBucket, compile);
+        }
+        else
+        {
+            Context.RemovePage(shapeBucket);
         }
     }
 
