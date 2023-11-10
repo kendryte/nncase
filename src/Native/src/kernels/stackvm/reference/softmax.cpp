@@ -33,26 +33,16 @@ result<void> softmax_impl(const T *input, T *output,
                           NNCASE_UNUSED gsl::span<const size_t> in_strides,
                           NNCASE_UNUSED gsl::span<const size_t> out_strides, int64_t axis,
                           float beta, bool needLog = false) noexcept {
-    std::cout << "axis: " << (int)axis << std::endl;
     size_t positive_axis = axis < 0 ? in_shape.size() + axis : axis;
     dims_t axes{positive_axis};
 
-    std::cout << "positive_axis: " << positive_axis << std::endl;
     size_t reduced_size = 1;
-    for (size_t i = positive_axis + 1; i < in_shape.size(); i++)
+    for (size_t i = positive_axis; i < in_shape.size(); i++)
     {
         reduced_size *= in_shape[i];
-        std::cout <<i << " in_shape[i]: " << in_shape[i] << std::endl;
     }
-    std::cout << "reduced_size:" <<reduced_size<< std::endl;
-    // for (auto kk : reduced_shape)
-    //     std::cout << kk << " ";
-    // std::cout << std::endl;
-    // auto reduced_strides = get_default_strides(reduced_shape);
-    // auto reduced_size = compute_size(reduced_shape);
     auto out_size = compute_size(in_shape) / reduced_size;
     std::vector<T> tmp(reduced_size, std::numeric_limits<T>::lowest());
-
 
     for (size_t i = 0; i < out_size; i++)
     {
@@ -64,7 +54,6 @@ result<void> softmax_impl(const T *input, T *output,
         for(size_t j = 0; j < reduced_size; j++)
         {
             max_value = std::max(max_value, p_input[j]);
-            std::cout<<"max :"<<static_cast<float>(max_value)<<std::endl;
         }
 
         // x - reduce_max
@@ -73,7 +62,6 @@ result<void> softmax_impl(const T *input, T *output,
             p_output[j] = static_cast<T>((static_cast<float>(p_input[j]) -
                                           static_cast<float>(max_value)) *
                                          beta);
-            std::cout<<"sub :"<<static_cast<float>(p_output[j])<<std::endl;
         }
 
         // exp(x-reduce_max) and sum
@@ -82,13 +70,11 @@ result<void> softmax_impl(const T *input, T *output,
         {
             p_output[j] = static_cast<T>(expf(static_cast<float>(p_output[j])));
             sum += p_output[j];
-            std::cout<<"exp :"<<static_cast<float>(p_output[j])<<std::endl;
         }
 
         for(size_t j = 0; j < reduced_size; j++)
         {
             p_output[j] /= sum;
-            std::cout<<"p_output[j]:"<<static_cast<float>(p_output[j])<<std::endl;
             if (needLog)
             {
                 p_output[j] = static_cast<T>(std::log(static_cast<float>(p_output[j])));
