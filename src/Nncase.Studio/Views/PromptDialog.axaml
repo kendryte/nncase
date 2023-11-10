@@ -10,7 +10,7 @@
         Width="500"
         Height="300"
         Icon="/Assets/nncase-logo.png"
-        Title="Error"
+        Title="{Binding Title}"
         FontSize="32">
 
     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
@@ -19,9 +19,9 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition />
             </Grid.ColumnDefinitions>
-            <!-- todo 不同模式不同的logo -->
             <Image
                 Name="IconImage"
+                IsVisible="{Binding IsError}"
                 Width="64" Height="64" Source="/Assets/error-icon.png"></Image>
             <Label Grid.Column="1"
                    HorizontalAlignment="Left"

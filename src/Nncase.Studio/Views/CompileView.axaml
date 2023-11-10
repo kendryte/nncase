@@ -27,8 +27,7 @@
                     Command="{Binding CancelCompileCommand}">
             </Button>
         </DockPanel>
-        <TextBlock DataContext="Compile Log"></TextBlock>
-        <ProgressBar Minimum="0" Maximum="100" Value="40" Height="20"></ProgressBar>
+        <ProgressBar Minimum="0" Maximum="{Binding ProgressBarMax}" Value="{Binding ProgressBarValue}" Height="20"></ProgressBar>
     </StackPanel>
 
 </UserControl>

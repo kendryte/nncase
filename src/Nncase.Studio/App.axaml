@@ -15,4 +15,8 @@
         <StyleInclude Source="Style/Logo.axaml"></StyleInclude>
         <StyleInclude Source="Style/GridStyle.axaml"></StyleInclude>
     </Application.Styles>
+
+     <Application.Resources>
+         <FontFamily x:Key="NunitoFont">Assets\Fonts\Nunito-Black.ttf</FontFamily>
+     </Application.Resources>
 </Application>

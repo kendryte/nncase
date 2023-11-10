@@ -50,11 +50,6 @@ public class ViewModelContext
         await _mainWindowView.ShowDialog(prompt, level);
     }
 
-    public CompileSession CreateCompileSession()
-    {
-        return CompileSession.Create(CompilerServices.GetTarget(Target), CompileOption);
-    }
-
     public void InsertPage(ViewModelBase page, ViewModelBase pagePosition, int offset = 0)
     {
         Navigator?.InsertPageAfter(page, pagePosition, offset);

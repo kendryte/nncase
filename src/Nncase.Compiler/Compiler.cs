@@ -27,7 +27,7 @@ using FoldConstCall = Nncase.Passes.Rules.Neutral.FoldConstCall;
 
 namespace Nncase.Compiler;
 
-internal class Compiler : ICompiler
+public class Compiler : ICompiler
 {
     private readonly CompileSession _compileSession;
     private readonly IModelBuilder _modelBuilder;
@@ -240,10 +240,20 @@ internal class Compiler : ICompiler
 
     public void DoProcessing(IProgress<int> progress)
     {
-        var maxPassCount = 0;
+        var maxPassCount = 8;
+        var task1 = new Task(async() => await CompileAsync());
+        var task2 = new Task(() => Report(progress, maxPassCount));
+        task1.Start();
+        task2.Start();
+        task1.Wait();
+        task2.Wait();
+    }
+
+    private void Report(IProgress<int> progress, int maxPassCount)
+    {
         while (_runPassCount < maxPassCount)
         {
-            Thread.Sleep(1000);
+            Thread.Sleep(10);
             progress?.Report(_runPassCount);
         }
     }

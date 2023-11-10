@@ -16,8 +16,26 @@ public partial class PromptDialogViewModel : ViewModelBase
     [ObservableProperty]
     private PromptDialogLevel _dialogLevel;
 
-    public PromptDialogViewModel()
+    [ObservableProperty]
+    private bool _isError;
+
+    [ObservableProperty]
+    private string _title = string.Empty;
+
+    public PromptDialogViewModel(string content, PromptDialogLevel level)
     {
+        DialogContent = content;
+        DialogLevel = level;
+        IsError = level == PromptDialogLevel.Error;
+        if (IsError)
+        {
+            Title = "错误";
+        }
+        else
+        {
+            Title = "提示";
+        }
+
         CloseWindowCommand = new RelayCommand<Window>(CloseWindow);
     }
 

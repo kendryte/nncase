@@ -108,10 +108,14 @@ public partial class CompileOptionViewModel : ViewModelBase
     public override void UpdateContext()
     {
         Context.CompileOption.DumpDir = DumpDir;
-        Context.CompileOption.DumpFlags = DumpFlagSelected.Aggregate(DumpFlags.None, (flag, sum) => flag & sum);
+        Context.CompileOption.DumpFlags = DumpFlagSelected.Aggregate(DumpFlags.None, (flag, sum) => flag | sum);
         Context.Target = Target;
         Context.CompileOption.PreProcess = Preprocess;
         Context.MixQuantize = MixQuantize;
+        if (!Quantize)
+        {
+            Context.CompileOption.QuantizeOptions.ModelQuantMode = ModelQuantMode.NoQuant;
+        }
     }
 
     public override List<string> CheckViewModel()

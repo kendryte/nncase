@@ -86,34 +86,111 @@ public partial class SimulateViewModel : ViewModelBase
             Context.OpenDialog("Not Set Input");
         }
 
-        using (var interp = Runtime.Interop.RTInterpreter.Create())
+        try
         {
-            var kmodel = File.ReadAllBytes(KmodelPath);
-            interp.SetDumpRoot(Context.CompileOption.DumpDir);
-            interp.LoadModel(kmodel);
-            var entry = interp.Entry!;
-            var rtInputs = RuntimeInput.Select(Runtime.Interop.RTTensor.FromTensor).ToArray();
-            var result = entry.Invoke(rtInputs).ToValue().AsTensors();
+            // todo: 字体问题
+            // todo: 不能阻塞界面
+            // todo: runtime input的输入
+            // todo: fail_fast以及dbg_check，terminate的话gui也会炸
+            // todo: 默认字体的问题
 
-            var list = result
-                .Select(t =>
-                    np.ndarray(
-                        new NumSharp.Shape(t.Shape.ToValueArray()),
-                        t.ElementType.CLRType,
-                        t.BytesBuffer.ToArray()))
-                .ToArray();
-
-            // todo: output file name, collect in compiler
-            foreach (var ndArray in list)
+            // todo: runtime进度的问题
+            // todo: log重定向, compile and simulate
+            using (var interp = Runtime.Interop.RTInterpreter.Create())
             {
-                np.save(Path.Join(ResultDir, "dir.npy"), ndArray);
+                var kmodel = File.ReadAllBytes(KmodelPath);
+                interp.SetDumpRoot(Context.CompileOption.DumpDir);
+                interp.LoadModel(kmodel);
+                var entry = interp.Entry!;
+                var rtInputs = RuntimeInput.Select(Runtime.Interop.RTTensor.FromTensor).ToArray();
+
+                var result = entry.Invoke(rtInputs).ToValue().AsTensors();
+
+                var list = result
+                    .Select(t =>
+                        np.frombuffer(t.BytesBuffer.ToArray(), t.ElementType.CLRType)
+                            .reshape(t.Shape.ToValueArray()))
+                    .ToArray();
+
+                for (int i = 0; i < list.Length; i++)
+                {
+                    np.save(Path.Join(ResultDir, $"nncase_result_{i}.npy"), list[i]);
+                }
+
+                Context.OpenDialog("Simulate Finish", PromptDialogLevel.Normal);
+            }
+            return Task.CompletedTask;
+        }
+        catch (DllNotFoundException e)
+        {
+            Context.OpenDialog("libNncase.Native.so not found");
+            return Task.CompletedTask;
+        }
+        catch (Exception e)
+        {
+            var msg = ExceptionMessageProcess(e);
+            Context.OpenDialog(msg);
+            return Task.CompletedTask;
+        }
+    }
+
+    private string ExceptionMessageProcess(Exception exception)
+    {
+        var msg = exception.Message;
+        if (msg.Contains("Status code", StringComparison.Ordinal))
+        {
+            if (int.TryParse(msg.Split(":")[1].Trim(), out var errc))
+            {
+                return ErrcToString(errc);
             }
 
-            // BinFileUtil.WriteBinOutputs(result, Path.Join(DumpDir, "output"));
-            Context.OpenDialog("Simulate Finish", PromptDialogLevel.Normal);
+            return exception.ToString();
         }
 
-        return Task.CompletedTask;
+        return exception.ToString();
+    }
+
+    private string ErrcToString(int errc)
+    {
+        string errcStr;
+        switch (-errc)
+        {
+            case 0x01:
+                errcStr = "invalid model indentifier"; break;
+            case 0x02:
+                errcStr = "invalid model checksum"; break;
+            case 0x03:
+                errcStr = "invalid model version"; break;
+            case 0x04:
+                errcStr = "runtime not found"; break;
+            case 0x05:
+                errcStr = "datatype mismatch"; break;
+            case 0x06:
+                errcStr = "shape mismatch"; break;
+            case 0x07:
+                errcStr = "invalid memory location"; break;
+            case 0x08:
+                errcStr = "runtime register not found"; break;
+            case 0x0100:
+                errcStr = "stackvm illegal instruction"; break;
+            case 0x0101:
+                errcStr = "stackvm illegal target"; break;
+            case 0x0102:
+                errcStr = "stackvm stack overflow"; break;
+            case 0x0103:
+                errcStr = "stackvm stack underflow"; break;
+            case 0x0104:
+                errcStr = "stackvm unknow custom call"; break;
+            case 0x0105:
+                errcStr = "stackvm duplicate custom call"; break;
+            case 0x0200:
+                errcStr = "nnil illegal instruction"; break;
+            default:
+                errcStr = $"Unknown Status code: {errc}";
+                break;
+        }
+
+        return errcStr;
     }
 
     // private bool CheckInput(out Task simulate)

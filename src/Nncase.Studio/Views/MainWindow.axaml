@@ -34,7 +34,7 @@
             Padding="100 0">
         <StackPanel>
             <DockPanel>
-                <!-- <Label FontWeight="Bold" FontSize="54" Content="{Binding Title}" HorizontalAlignment="Left"></Label> -->
+                <Label FontWeight="Bold" FontSize="54" Content="{Binding Title}" HorizontalAlignment="Left"></Label>
                 <Image Source="/Assets/nncase-full-logo.png" Width="250" Height="90" HorizontalAlignment="Right"></Image>
             </DockPanel>
 

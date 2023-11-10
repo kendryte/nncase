@@ -71,10 +71,8 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     private async Task DoShowDialogAsync(InteractionContext<(string Message, PromptDialogLevel Level), Unit> interaction)
     {
         var dialog = new PromptDialog();
-        var viewModel = new PromptDialogViewModel();
         var (content, level) = interaction.Input;
-        viewModel.DialogContent = content;
-        viewModel.DialogLevel = level;
+        var viewModel = new PromptDialogViewModel(content, level);
         interaction.SetOutput(default);
         dialog.DataContext = viewModel;
         await dialog.ShowDialog(this);

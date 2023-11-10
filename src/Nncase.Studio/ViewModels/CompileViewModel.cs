@@ -9,6 +9,7 @@ using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Nncase.IR;
+using Nncase.Quantization;
 using Nncase.Studio.Views;
 using ReactiveUI;
 
@@ -21,7 +22,15 @@ public partial class CompileViewModel : ViewModelBase
     private readonly CancellationToken _token;
 
     [ObservableProperty]
+    private int _progressBarMax = 8;
+
+    [ObservableProperty]
+    private int _progressBarValue;
+
+    [ObservableProperty]
     private string _kmodelPath = "test.kmodel";
+
+    [ObservableProperty] private string _p = string.Empty;
 
     public CompileViewModel(ViewModelContext context)
     {
@@ -52,24 +61,43 @@ public partial class CompileViewModel : ViewModelBase
             Directory.CreateDirectory(options.DumpDir);
         }
 
-        var compileSession = Context.CreateCompileSession();
-        var compiler = compileSession.Compiler;
-        var module = await compiler.ImportModuleAsync(options.InputFormat, options.InputFile, options.IsBenchmarkOnly);
-        Context.Entry = (Function)module.Entry!;
-        var calib = ((QuantizeViewModel)Context.ViewModelLookup(typeof(QuantizeViewModel))).LoadCalibFiles();
-        if (calib == null)
+        ITarget target;
+        try
         {
+            target = CompilerServices.GetTarget(Context.Target);
+        }
+        catch (Exception e)
+        {
+            Context.OpenDialog(e.Message, PromptDialogLevel.Error);
             return;
         }
 
-        options.QuantizeOptions.CalibrationDataset = calib;
+        var compileSession = CompileSession.Create(target, options);
+        var compiler = compileSession.Compiler;
+        var module = await compiler.ImportModuleAsync(options.InputFormat, options.InputFile, options.IsBenchmarkOnly);
+        Context.Entry = (Function)module.Entry!;
+        if (options.QuantizeOptions.ModelQuantMode != ModelQuantMode.NoQuant)
+        {
+            var calib = ((QuantizeViewModel)Context.ViewModelLookup(typeof(QuantizeViewModel))).LoadCalibFiles();
+            if (calib == null)
+            {
+                return;
+            }
 
-        // update progress bar
-        var progress = new Progress<int>(percent => { });
+            options.QuantizeOptions.CalibrationDataset = calib;
+        }
 
+        // todo: max value
+        ProgressBarMax = 8;
+        var progress = new Progress<int>(percent =>
+        {
+            ProgressBarValue = percent;
+        });
+
+        // todo: cancel
         await Task.Run(() =>
             {
-                compiler.CompileAsync();
+                ((Compiler.Compiler)compiler).DoProcessing(progress);
             }).ContinueWith(_ => Task.CompletedTask, _token);
 
         using (var os = File.OpenWrite(KmodelPath))

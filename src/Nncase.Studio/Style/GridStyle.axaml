@@ -5,6 +5,12 @@
             <!-- Add Controls for Previewer Here -->
         </Border>
     </Design.PreviewWith>
+    <!-- -->
+    <!-- ~1~ todo: change selector @1@ -->
+    <!-- <Style Selector=""> -->
+    <!--     <Setter Property="FontFamily" Value="NunitoFont"></Setter> -->
+    <!-- </Style> -->
+    <!-- -->
 
     <!-- simulate view -->
     <Style Selector="Grid TextBox">
