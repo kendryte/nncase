@@ -79,19 +79,8 @@ public static class DistributedUtility
             return false;
         }
 
-        var shape = tensorType.Shape.ToValueArray();
-        for (int i = 0; i < ndsbp.Length; i++)
-        {
-            if (ndsbp[i] is SBPSplit { Axis: int axis })
-            {
-                if (!IsDivideBy(shape[axis], placement.Hierarchy[i]))
-                {
-                    return false;
-                }
-            }
-        }
-
-        return true;
+        var divisors = GetDivisors(new DistributedType(tensorType, new IRArray<SBP>(ndsbp.ToArray()), placement));
+        return divisors.Select((d, axis) => (d, axis)).All(p => p.d == 0 ? true : IsDivideBy(tensorType.Shape[p.axis].FixedValue, p.d));
     }
 
     public static IReadOnlyList<int> GetDivisors(DistributedType distributedType)
