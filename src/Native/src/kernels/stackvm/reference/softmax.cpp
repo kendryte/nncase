@@ -28,54 +28,49 @@ using namespace nncase::kernels::stackvm;
 namespace {
 // softmax(x) = exp(x - reduce_max(x)) / reduce_sum(exp(x - reduce_max(x)))
 template <typename T>
-result<void> softmax_impl(const T *input, T *output,
-                          gsl::span<const size_t> in_shape,
-                          NNCASE_UNUSED gsl::span<const size_t> in_strides,
-                          NNCASE_UNUSED gsl::span<const size_t> out_strides, int64_t axis,
-                          float beta, bool needLog = false) noexcept {
+result<void>
+softmax_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
+             NNCASE_UNUSED gsl::span<const size_t> in_strides,
+             NNCASE_UNUSED gsl::span<const size_t> out_strides, int64_t axis,
+             float beta, bool needLog = false) noexcept {
     size_t positive_axis = axis < 0 ? in_shape.size() + axis : axis;
     dims_t axes{positive_axis};
 
     size_t reduced_size = 1;
-    for (size_t i = positive_axis; i < in_shape.size(); i++)
-    {
+    for (size_t i = positive_axis; i < in_shape.size(); i++) {
         reduced_size *= in_shape[i];
     }
     auto out_size = compute_size(in_shape) / reduced_size;
     std::vector<T> tmp(reduced_size, std::numeric_limits<T>::lowest());
 
-    for (size_t i = 0; i < out_size; i++)
-    {
+    for (size_t i = 0; i < out_size; i++) {
         auto in_ = input + i * reduced_size;
         auto out_ = output + i * reduced_size;
 
         // reduce_max
         auto max_value = *in_;
-        for(size_t j = 0; j < reduced_size; j++)
-        {
+        for (size_t j = 0; j < reduced_size; j++) {
             max_value = std::max(max_value, in_[j]);
         }
 
         // (x - reduce_max) * beta
-        for(size_t j = 0; j < reduced_size; j++)
-        {
-            out_[j] = static_cast<T>((static_cast<float>(in_[j]) - static_cast<float>(max_value)) * beta);
+        for (size_t j = 0; j < reduced_size; j++) {
+            out_[j] = static_cast<T>(
+                (static_cast<float>(in_[j]) - static_cast<float>(max_value)) *
+                beta);
         }
 
         // exp((x - reduce_max) * beta) and sum
         T sum = 0;
-        for(size_t j = 0; j < reduced_size; j++)
-        {
+        for (size_t j = 0; j < reduced_size; j++) {
             out_[j] = static_cast<T>(expf(static_cast<float>(out_[j])));
             sum += out_[j];
         }
 
         // div
-        for(size_t j = 0; j < reduced_size; j++)
-        {
+        for (size_t j = 0; j < reduced_size; j++) {
             out_[j] /= sum;
-            if (needLog)
-            {
+            if (needLog) {
                 out_[j] = static_cast<T>(std::log(static_cast<float>(out_[j])));
             }
         }
