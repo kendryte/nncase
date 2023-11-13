@@ -10,7 +10,7 @@
     <DockPanel Margin="5">
         <Border Background="White"
                 BorderBrush="Black"
-                BorderThickness="3"
+                BorderThickness="0"
                 CornerRadius="3"
                 Padding="4">
         <Grid Width="260">

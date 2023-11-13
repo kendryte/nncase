@@ -131,6 +131,7 @@ public partial class CompileOptionViewModel : ViewModelBase
         Context.Target = Target;
         Context.CompileOption.PreProcess = Preprocess;
         Context.MixQuantize = MixQuantize;
+        Context.EnableShapeBucket = ShapeBucket;
         if (!Quantize)
         {
             Context.CompileOption.QuantizeOptions.ModelQuantMode = ModelQuantMode.NoQuant;

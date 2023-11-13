@@ -135,12 +135,14 @@ public partial class QuantizeViewModel : ViewModelBase
 
     public override void UpdateContext()
     {
+        // load calib data set when compile start
+        QuantizeOptionsValue.CalibrationMethod = CalibMethodValue;
         QuantizeOptionsValue.QuantType = DataUtil.QuantTypeToDataType(QuantTypeValue);
         QuantizeOptionsValue.WQuantType = DataUtil.QuantTypeToDataType(WQuantTypeValue);
         QuantizeOptionsValue.ModelQuantMode = ModelQuantModeValue;
-        QuantizeOptionsValue.CalibrationMethod = CalibMethodValue;
         QuantizeOptionsValue.QuantScheme = QuantSchemePath;
         QuantizeOptionsValue.ExportQuantScheme = ExportQuantScheme;
+        QuantizeOptionsValue.ExportQuantSchemePath = ExportQuantSchemePath;
         Context.CompileOption.QuantizeOptions = QuantizeOptionsValue;
     }
 

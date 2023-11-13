@@ -21,6 +21,8 @@ public partial class SimulateViewModel : ViewModelBase
     [ObservableProperty]
     private string _kmodelPath = string.Empty;
 
+    [ObservableProperty] private string _status = "未运行";
+
     [ObservableProperty]
     private ObservableCollection<Tensor> _runtimeInput = new();
 
@@ -73,29 +75,26 @@ public partial class SimulateViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    public Task Simulate()
+    public void Simulate()
     {
         if (!File.Exists(KmodelPath))
         {
             Context.OpenDialog("Kmodel Not Exist");
-            return Task.CompletedTask;
+            return;
         }
 
         if (RuntimeInput.Count == 0)
         {
             Context.OpenDialog("Not Set Input");
+            return;
         }
 
         try
         {
-            // todo: 字体问题
-            // todo: 不能阻塞界面
-            // todo: runtime input的输入
-            // todo: fail_fast以及dbg_check，terminate的话gui也会炸
-            // todo: 默认字体的问题
+            // todo: 字体问题？？？
 
-            // todo: runtime进度的问题
-            // todo: log重定向, compile and simulate
+            // todo: 通过kmodel检查input，是否应当支持直接跑kmodel，如果支持的话那就必须在function的接口添加input信息的地方
+            // todo: log能否重定向, compile and simulate， simulate如何log和进度
             using (var interp = Runtime.Interop.RTInterpreter.Create())
             {
                 var kmodel = File.ReadAllBytes(KmodelPath);
@@ -104,6 +103,7 @@ public partial class SimulateViewModel : ViewModelBase
                 var entry = interp.Entry!;
                 var rtInputs = RuntimeInput.Select(Runtime.Interop.RTTensor.FromTensor).ToArray();
 
+                Status = "Running";
                 var result = entry.Invoke(rtInputs).ToValue().AsTensors();
 
                 var list = result
@@ -117,20 +117,21 @@ public partial class SimulateViewModel : ViewModelBase
                     np.save(Path.Join(ResultDir, $"nncase_result_{i}.npy"), list[i]);
                 }
 
-                Context.OpenDialog("Simulate Finish", PromptDialogLevel.Normal);
+                Status = "Finish";
+                Context.OpenDialog($"Simulate Finish, result in {ResultDir}", PromptDialogLevel.Normal);
             }
-            return Task.CompletedTask;
+            return;
         }
         catch (DllNotFoundException e)
         {
             Context.OpenDialog("libNncase.Native.so not found");
-            return Task.CompletedTask;
+            return;
         }
         catch (Exception e)
         {
             var msg = ExceptionMessageProcess(e);
             Context.OpenDialog(msg);
-            return Task.CompletedTask;
+            return;
         }
     }
 

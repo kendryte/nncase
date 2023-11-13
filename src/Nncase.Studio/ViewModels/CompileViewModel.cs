@@ -97,7 +97,7 @@ public partial class CompileViewModel : ViewModelBase
         // todo: cancel
         await Task.Run(() =>
             {
-                ((Compiler.Compiler)compiler).DoProcessing(progress);
+                compiler.CompileWithReport(progress);
             }).ContinueWith(_ => Task.CompletedTask, _token);
 
         using (var os = File.OpenWrite(KmodelPath))

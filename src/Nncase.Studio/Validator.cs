@@ -84,7 +84,6 @@ internal sealed class ValidIntArrayAttribute : ValidationAttribute
 [AttributeUsage(AttributeTargets.All, Inherited = false, AllowMultiple = true)]
 internal sealed class ValidLayoutAttribute : ValidationAttribute
 {
-    // todo: add test
     public ValidLayoutAttribute()
     {
     }

@@ -8,7 +8,7 @@
              x:DataType="viewModels:ShapeBucketViewModel">
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition />
+            <ColumnDefinition Width="Auto"/>
             <ColumnDefinition />
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
@@ -17,11 +17,11 @@
             <RowDefinition />
         </Grid.RowDefinitions>
         <Label Grid.Row="0" Grid.Column="0" Content="分段数量"></Label>
-        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding SegmentCount}"></TextBox>
+        <TextBox Grid.Row="0" Grid.Column="1" HorizontalAlignment="Left" Text="{Binding SegmentCount}"></TextBox>
 
         <Label Grid.Row="1" Grid.Column="0" Content="FixVarMap"></Label>
-        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding FixVarMap}"></TextBox>
+        <TextBox Grid.Row="1" Grid.Column="1" Width="600" Text="{Binding FixVarMap}" Watermark="example: batch:3, len:24"></TextBox>
         <Label Grid.Row="2" Grid.Column="0" Content="VarRangeInfo"></Label>
-        <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding VarRangeInfo}"></TextBox>
+        <TextBox Grid.Row="2" Grid.Column="1" Width="600" Text="{Binding VarRangeInfo}" Watermark="example: len1:(1, 100); len2:(1, 40)"></TextBox>
     </Grid>
 </UserControl>

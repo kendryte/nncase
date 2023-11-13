@@ -238,8 +238,12 @@ public class Compiler : ICompiler
         });
     }
 
-    public void DoProcessing(IProgress<int> progress)
+    public void CompileWithReport(IProgress<int> progress)
     {
+        // var _cts = new CancellationTokenSource();
+        // var _token = _cts.Token;
+
+        // todo: 容易出错
         var maxPassCount = 8;
         var task1 = new Task(async() => await CompileAsync());
         var task2 = new Task(() => Report(progress, maxPassCount));
@@ -260,7 +264,6 @@ public class Compiler : ICompiler
 
     public async Task CompileAsync()
     {
-        Console.WriteLine("Run");
         var target = _compileSession.Target;
         await RunPassAsync(p => TargetIndependentPass(p), "TargetIndependentPass");
         await RunPassAsync(p => RegisterTargetIndependQuantPass(p), "TargetIndependentQuantPass");
@@ -270,7 +273,6 @@ public class Compiler : ICompiler
             await RunPassAsync(p => TargetIndependentPass(p), "TargetIndependentPass");
         }
 
-        Console.WriteLine("Target independent");
         await RunPassAsync(
             p => target.RegisterTargetDependentPass(p, _compileSession.CompileOptions),
             "TargetDependentPass");

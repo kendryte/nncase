@@ -8,8 +8,8 @@
         xmlns:studio="clr-namespace:Nncase.Studio"
         xmlns:views="clr-namespace:Nncase.Studio.Views"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-        MinHeight="800"
-        MinWidth="1080"
+        MinHeight="820"
+        MinWidth="1400"
         x:Class="Nncase.Studio.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/nncase-logo.png"
@@ -27,16 +27,23 @@
     </Design.DataContext>
 
     <!-- bind data contenxt -->
-    <Border Background="MediumPurple"
+    <!-- <Border Background="MediumPurple" -->
+    <Border Background="White"
             BorderBrush="Black"
-            BorderThickness="3"
+            BorderThickness="0"
             CornerRadius="3"
             Padding="100 0">
         <StackPanel>
-            <DockPanel>
-                <Label FontWeight="Bold" FontSize="54" Content="{Binding Title}" HorizontalAlignment="Left"></Label>
-                <Image Source="/Assets/nncase-full-logo.png" Width="250" Height="90" HorizontalAlignment="Right"></Image>
-            </DockPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition />
+                    <ColumnDefinition />
+                </Grid.ColumnDefinitions>
+                <Image Grid.Column="0" Source="/Assets/canaan-logo.png" Width="250" Height="90" HorizontalAlignment="Left"></Image>
+                <Label Grid.Column="1" FontWeight="Bold" FontSize="54" Content="{Binding Title}" HorizontalAlignment="Center" VerticalAlignment="Center"></Label>
+                <Image Grid.Column="2" Source="/Assets/nncase-full-logo.png" Width="180" Height="90" HorizontalAlignment="Right"></Image>
+            </Grid>
 
             <Border Background="White"
                     BorderBrush="Black"
@@ -51,7 +58,7 @@
             </Border>
             <Border Background="White"
                     BorderBrush="Black"
-                    BorderThickness="3"
+                    BorderThickness="0"
                     CornerRadius="3"
                     Padding="4">
             <views:NavigatorView HorizontalAlignment="Center" Margin="10" DataContext="{Binding NavigatorViewModelValue}"></views:NavigatorView>

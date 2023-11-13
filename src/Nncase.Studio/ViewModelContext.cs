@@ -29,6 +29,12 @@ public class ViewModelContext
 
     public bool MixQuantize { get; set; }
 
+    public bool EnableShapeBucket
+    {
+        get { return CompileOption.ShapeBucketOptions.Enable; }
+        set { CompileOption.ShapeBucketOptions.Enable = value; }
+    }
+
     public string KmodelPath { get; set; } = string.Empty;
 
     public string Target { get; set; } = "cpu";

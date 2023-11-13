@@ -73,11 +73,15 @@ public partial class PreprocessViewModel : ViewModelBase
         var rangeMax = float.Parse(RangeMax);
         var letterBoxValue = float.Parse(LetterBoxValue);
 
-        Context.CompileOption.Mean = mean;
-        Context.CompileOption.Std = std;
+        Context.CompileOption.InputLayout = InputLayout;
+        Context.CompileOption.OutputLayout = OutputLayout;
+        Context.CompileOption.InputType = InputTypeValue;
         Context.CompileOption.InputShape = inShape;
         Context.CompileOption.InputRange = new[] { rangeMin, rangeMax };
-        Context.CompileOption.InputType = InputTypeValue;
+        Context.CompileOption.Mean = mean;
+        Context.CompileOption.Std = std;
+        Context.CompileOption.SwapRB = SwapRB;
+        Context.CompileOption.ModelLayout = ModelLayout;
         Context.CompileOption.LetterBoxValue = letterBoxValue;
     }
 
