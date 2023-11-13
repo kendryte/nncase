@@ -20,7 +20,7 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <Label Grid.Row="0" Grid.Column="0" Content="输入文件"></Label>
-                <SplitButton Margin="0" Grid.Row="0" Grid.Column="1" Content="已选择的文件">
+                <SplitButton Margin="5 0" Grid.Row="0" Grid.Column="1" Content="已选择的文件">
                     <SplitButton.Flyout>
                         <Flyout Placement="Bottom">
                             <ListBox
@@ -54,13 +54,15 @@
                 </Button>
             </Grid>
 
-        <Button HorizontalAlignment="Center"
-                Margin="40"
-                Content="推理"
-                Command="{Binding SimulateCommand}">
-        </Button>
+        <DockPanel Margin="0 40 0 0" HorizontalAlignment="Center">
+            <Button HorizontalAlignment="Center"
+                    Content="推理"
+                    Margin="40 0"
+                    Command="{Binding SimulateCommand}">
+            </Button>
 
-        <!-- <Label Content="{Binding Status}"></Label> -->
-        <!-- <ProgressBar Minimum="0" Maximum="100" Value="40" Height="20"></ProgressBar> -->
+            <Label Content="{Binding Status}" Width="120"></Label>
+        </DockPanel>
+
     </StackPanel>
 </UserControl>

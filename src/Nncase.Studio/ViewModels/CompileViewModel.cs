@@ -17,9 +17,7 @@ namespace Nncase.Studio.ViewModels;
 
 public partial class CompileViewModel : ViewModelBase
 {
-    private readonly CancellationTokenSource _cts = new();
-
-    private readonly CancellationToken _token;
+    private CancellationTokenSource _cts = new();
 
     [ObservableProperty]
     private int _progressBarMax = 8;
@@ -34,8 +32,7 @@ public partial class CompileViewModel : ViewModelBase
 
     public CompileViewModel(ViewModelContext context)
     {
-        _token = _cts.Token;
-        this.Context = context;
+        Context = context;
     }
 
     [RelayCommand]
@@ -87,18 +84,27 @@ public partial class CompileViewModel : ViewModelBase
             options.QuantizeOptions.CalibrationDataset = calib;
         }
 
+        _cts = new();
         // todo: max value
-        ProgressBarMax = 8;
+        ProgressBarMax = 9;
         var progress = new Progress<int>(percent =>
         {
             ProgressBarValue = percent;
         });
 
-        // todo: cancel
-        await Task.Run(() =>
+        try
+        {
+            await Task.Run(async () =>
             {
-                compiler.CompileWithReport(progress);
-            }).ContinueWith(_ => Task.CompletedTask, _token);
+                await compiler.CompileWithReport(progress, _cts.Token);
+            }).ContinueWith(_ => Task.CompletedTask, _cts.Token);
+        }
+        catch (Exception e)
+        {
+            Context.OpenDialog("Compile has been cancel");
+            ProgressBarValue = 0;
+            return;
+        }
 
         using (var os = File.OpenWrite(KmodelPath))
         {

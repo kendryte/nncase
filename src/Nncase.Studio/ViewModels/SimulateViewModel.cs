@@ -5,6 +5,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -15,25 +16,19 @@ namespace Nncase.Studio.ViewModels;
 
 public partial class SimulateViewModel : ViewModelBase
 {
-    [ObservableProperty]
-    private string _resultDir = string.Empty;
+    [ObservableProperty] private string _resultDir = string.Empty;
 
-    [ObservableProperty]
-    private string _kmodelPath = string.Empty;
+    [ObservableProperty] private string _kmodelPath = string.Empty;
 
     [ObservableProperty] private string _status = "未运行";
 
-    [ObservableProperty]
-    private ObservableCollection<Tensor> _runtimeInput = new();
+    [ObservableProperty] private ObservableCollection<Tensor> _runtimeInput = new();
 
-    [ObservableProperty]
-    private ObservableCollection<string> _inputPath = new();
+    [ObservableProperty] private ObservableCollection<string> _inputPath = new();
 
-    [ObservableProperty]
-    private ObservableCollection<string> _mainParamStr = new();
+    [ObservableProperty] private ObservableCollection<string> _mainParamStr = new();
 
-    [ObservableProperty]
-    private ObservableCollection<string> _inputTypeStr = new();
+    [ObservableProperty] private ObservableCollection<string> _inputTypeStr = new();
 
     public SimulateViewModel(ViewModelContext context)
     {
@@ -75,7 +70,7 @@ public partial class SimulateViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    public void Simulate()
+    public async Task Simulate()
     {
         if (!File.Exists(KmodelPath))
         {
@@ -89,12 +84,10 @@ public partial class SimulateViewModel : ViewModelBase
             return;
         }
 
+        var cts = new CancellationTokenSource();
+
         try
         {
-            // todo: 字体问题？？？
-
-            // todo: 通过kmodel检查input，是否应当支持直接跑kmodel，如果支持的话那就必须在function的接口添加input信息的地方
-            // todo: log能否重定向, compile and simulate， simulate如何log和进度
             using (var interp = Runtime.Interop.RTInterpreter.Create())
             {
                 var kmodel = File.ReadAllBytes(KmodelPath);
@@ -103,35 +96,57 @@ public partial class SimulateViewModel : ViewModelBase
                 var entry = interp.Entry!;
                 var rtInputs = RuntimeInput.Select(Runtime.Interop.RTTensor.FromTensor).ToArray();
 
+                var start = System.DateTime.Now;
                 Status = "Running";
-                var result = entry.Invoke(rtInputs).ToValue().AsTensors();
+                Task.Run(
+                    () =>
+                    {
+                        while (true)
+                        {
+                            Thread.Sleep(20);
+                            if (cts.Token.IsCancellationRequested)
+                            {
+                                return;
+                            }
 
-                var list = result
-                    .Select(t =>
-                        np.frombuffer(t.BytesBuffer.ToArray(), t.ElementType.CLRType)
-                            .reshape(t.Shape.ToValueArray()))
-                    .ToArray();
-
-                for (int i = 0; i < list.Length; i++)
+                            var now = System.DateTime.Now;
+                            var timeStr = (now - start).ToString();
+                            Status = timeStr.Substring(3, timeStr.Length - 8);
+                        }
+                    }, cts.Token);
+                await Task.Run(() =>
                 {
-                    np.save(Path.Join(ResultDir, $"nncase_result_{i}.npy"), list[i]);
-                }
+                    var result = entry.Invoke(rtInputs).ToValue().AsTensors();
+                    var list = result
+                        .Select(t =>
+                            np.frombuffer(t.BytesBuffer.ToArray(), t.ElementType.CLRType)
+                                .reshape(t.Shape.ToValueArray()))
+                        .ToArray();
 
+                    for (int i = 0; i < list.Length; i++)
+                    {
+                        np.save(Path.Join(ResultDir, $"nncase_result_{i}.npy"), list[i]);
+                    }
+                }).ContinueWith(t => t, cts.Token);
+
+                cts.Cancel();
+
+                Context.OpenDialog($"Simulate Finish, spent time:{Status}\n result in {ResultDir}", PromptDialogLevel.Normal);
                 Status = "Finish";
-                Context.OpenDialog($"Simulate Finish, result in {ResultDir}", PromptDialogLevel.Normal);
             }
-            return;
         }
         catch (DllNotFoundException e)
         {
             Context.OpenDialog("libNncase.Native.so not found");
-            return;
         }
         catch (Exception e)
         {
             var msg = ExceptionMessageProcess(e);
             Context.OpenDialog(msg);
-            return;
+        }
+        finally
+        {
+            cts.Cancel();
         }
     }
 
@@ -157,35 +172,50 @@ public partial class SimulateViewModel : ViewModelBase
         switch (-errc)
         {
             case 0x01:
-                errcStr = "invalid model indentifier"; break;
+                errcStr = "invalid model indentifier";
+                break;
             case 0x02:
-                errcStr = "invalid model checksum"; break;
+                errcStr = "invalid model checksum";
+                break;
             case 0x03:
-                errcStr = "invalid model version"; break;
+                errcStr = "invalid model version";
+                break;
             case 0x04:
-                errcStr = "runtime not found"; break;
+                errcStr = "runtime not found";
+                break;
             case 0x05:
-                errcStr = "datatype mismatch"; break;
+                errcStr = "datatype mismatch";
+                break;
             case 0x06:
-                errcStr = "shape mismatch"; break;
+                errcStr = "shape mismatch";
+                break;
             case 0x07:
-                errcStr = "invalid memory location"; break;
+                errcStr = "invalid memory location";
+                break;
             case 0x08:
-                errcStr = "runtime register not found"; break;
+                errcStr = "runtime register not found";
+                break;
             case 0x0100:
-                errcStr = "stackvm illegal instruction"; break;
+                errcStr = "stackvm illegal instruction";
+                break;
             case 0x0101:
-                errcStr = "stackvm illegal target"; break;
+                errcStr = "stackvm illegal target";
+                break;
             case 0x0102:
-                errcStr = "stackvm stack overflow"; break;
+                errcStr = "stackvm stack overflow";
+                break;
             case 0x0103:
-                errcStr = "stackvm stack underflow"; break;
+                errcStr = "stackvm stack underflow";
+                break;
             case 0x0104:
-                errcStr = "stackvm unknow custom call"; break;
+                errcStr = "stackvm unknow custom call";
+                break;
             case 0x0105:
-                errcStr = "stackvm duplicate custom call"; break;
+                errcStr = "stackvm duplicate custom call";
+                break;
             case 0x0200:
-                errcStr = "nnil illegal instruction"; break;
+                errcStr = "nnil illegal instruction";
+                break;
             default:
                 errcStr = $"Unknown Status code: {errc}";
                 break;

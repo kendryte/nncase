@@ -238,25 +238,30 @@ public class Compiler : ICompiler
         });
     }
 
-    public void CompileWithReport(IProgress<int> progress)
+    public async Task CompileWithReport(IProgress<int> progress, CancellationToken token)
     {
-        // var _cts = new CancellationTokenSource();
-        // var _token = _cts.Token;
-
-        // todo: 容易出错
-        var maxPassCount = 8;
-        var task1 = new Task(async() => await CompileAsync());
-        var task2 = new Task(() => Report(progress, maxPassCount));
-        task1.Start();
-        task2.Start();
-        task1.Wait();
-        task2.Wait();
+        CancellationTokenSource cts = new();
+        var internalToken = cts.Token;
+        using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(internalToken, token))
+        {
+            try
+            {
+                var task = Task.Run(CompileAsync, linkedCts.Token);
+                Report(progress, 9, linkedCts.Token);
+                await task.WaitAsync(linkedCts.Token);
+            }
+            catch (Exception e)
+            {
+                return;
+            }
+        }
     }
 
-    private void Report(IProgress<int> progress, int maxPassCount)
+    private void Report(IProgress<int> progress, int maxPassCount, CancellationToken token)
     {
-        while (_runPassCount < maxPassCount)
+        while (_runPassCount < maxPassCount && !token.IsCancellationRequested)
         {
+            Console.WriteLine(_runPassCount);
             Thread.Sleep(10);
             progress?.Report(_runPassCount);
         }
