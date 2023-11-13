@@ -2,8 +2,8 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
-using DryIoc.ImTools;
 using NetFabric.Hyperlinq;
 using Nncase.CostModel;
 using Nncase.IR;
@@ -34,8 +34,14 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Reshape target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, Reshape.Input);
-        return Visit(context, target, input);
+        var input = context.CheckArgumentType<IRType>(target, Reshape.Input);
+        return input switch
+        {
+            TensorType tensorType => Visit(context, target, tensorType),
+            DistributedType distributedType => Visit(context, target, distributedType),
+            AnyType => AnyType.Default,
+            _ => throw new NotImplementedException(),
+        };
     }
 
     public Cost Visit(ICostEvaluateContext context, Reshape target)
@@ -120,5 +126,86 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
         var targetType = context.CheckArgumentType<TensorType>(target, Reshape.Shape);
         var outShape = ReshapeTo(targetType);
         return input with { Shape = outShape };
+    }
+
+    private IRType Visit(ITypeInferenceContext context, Reshape target, DistributedType inputType)
+    {
+        var outType = Visit(context, target, inputType.TensorType);
+        if (outType is not TensorType outTensorType)
+        {
+            return outType;
+        }
+
+        var invalid = new InvalidType(inputType.ToString());
+        if (outTensorType.Shape.IsUnranked)
+        {
+            return invalid;
+        }
+
+        var newShape = outTensorType.Shape.ToValueArray();
+        var oldShape = inputType.TensorType.Shape.ToValueArray();
+
+        // check is unsequeeze/sequeeze
+        if (Enumerable.SequenceEqual(oldShape.Where(i => i != 1).ToArray(), newShape.Where(i => i != 1).ToArray()))
+        {
+            if (oldShape.Length < newShape.Length)
+            {
+                var axis = 0;
+                var axisMap = new Dictionary<int, int>();
+                for (var n = 0; n < newShape.Length; n++)
+                {
+                    if (newShape[n] == oldShape[axis])
+                    {
+                        axisMap.Add(axis++, n);
+                        if (axis >= oldShape.Length)
+                        {
+                            break;
+                        }
+                    }
+                }
+
+                var ndsbp = new SBP[inputType.Placement.Rank];
+                for (int i = 0; i < inputType.Placement.Rank; i++)
+                {
+                    ndsbp[i] = inputType.NdSBP[i] switch
+                    {
+                        SBPSplit { Axis: int sx } => SBPSplit.S(axisMap[sx]),
+                        SBP sbp => sbp,
+                    };
+                }
+
+                return inputType with { TensorType = outTensorType, NdSBP = new(ndsbp) };
+            }
+            else if (oldShape.Length > newShape.Length)
+            {
+                var axis = 0;
+                var axisMap = new Dictionary<int, int>();
+                for (var o = 0; o < oldShape.Length; o++)
+                {
+                    if (oldShape[o] == newShape[axis])
+                    {
+                        axisMap.Add(o, axis++);
+                        if (axis >= newShape.Length)
+                        {
+                            break;
+                        }
+                    }
+                }
+
+                var ndsbp = new SBP[inputType.Placement.Rank];
+                for (int i = 0; i < inputType.Placement.Rank; i++)
+                {
+                    ndsbp[i] = inputType.NdSBP[i] switch
+                    {
+                        SBPSplit { Axis: int sx } => SBPSplit.S(axisMap[sx]),
+                        SBP sbp => sbp,
+                    };
+                }
+
+                return inputType with { TensorType = outTensorType, NdSBP = new(ndsbp) };
+            }
+        }
+
+        return invalid;
     }
 }

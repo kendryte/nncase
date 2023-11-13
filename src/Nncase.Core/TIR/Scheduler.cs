@@ -87,7 +87,10 @@ public class Scheduler
         } // TODO add assert total == (loop.Dom.Max - loop.Dom.Min)
 
         // Step 2. Replace all occurrences of the original loop var with new variables
-        Expr total = 1, substitute = 0;
+        _ = 1;
+
+        // Step 2. Replace all occurrences of the original loop var with new variables
+        Expr substitute = 0;
         var newloopVars = new Var[factors.Length];
         foreach (var i in Enumerable.Range(0, factors.Length))
         {
@@ -96,21 +99,23 @@ public class Scheduler
             newloopVars[i] = loopVar;
         }
 
-        Dictionary<Block, Block> opaque_block_reuse = new(); // TODO the opaque_block_reuse for what?
-        Sequential nbody = loop.Body;
+        _ = new
+        Dictionary<Block, Block>(); // TODO the opaque_block_reuse for what?
+        _ = loop.Body;
 
         // Step 3. create new for loop.
         var nFor = new For[factors.Length];
-        nbody = (Sequential)new Passes.Mutators.SubstituteVarAndCollectOpaqueBlock(v => v == loop.LoopVar ? substitute : v, opaque_block_reuse).Rewrite(nbody);
-        for (int i = factors.Length - 1; i >= 0; i--)
-        {
-            var @for = new For(newloopVars[i], (0, factors[i]), LoopMode.Serial, nbody);
-            nbody = T.Sequential(@for);
-            nFor[i] = @for;
-        }
 
-        // Setp 4. update the function
-        Entry = (Function)new Passes.Mutators.Substitutor(expr => object.ReferenceEquals(expr, loop) ? nFor[0] : null).Rewrite(Entry);
+        // nbody = (Sequential)new Passes.Mutators.SubstituteVarAndCollectOpaqueBlock(v => v == loop.LoopVar ? substitute : v, opaque_block_reuse).Rewrite(nbody);
+        // for (int i = factors.Length - 1; i >= 0; i--)
+        // {
+        //     var @for = new For(newloopVars[i], (0, factors[i]), LoopMode.Serial, nbody);
+        //     nbody = T.Sequential(@for);
+        //     nFor[i] = @for;
+        // }
+
+        // // Setp 4. update the function
+        // Entry = (Function)new Passes.Mutators.Substitutor(expr => object.ReferenceEquals(expr, loop) ? nFor[0] : null).Rewrite(Entry);
         return nFor;
     }
 

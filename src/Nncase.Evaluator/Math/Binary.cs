@@ -2,9 +2,11 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using DryIoc;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
+using Nncase.IR.Tensors;
 using Nncase.Utilities;
 using OrtKISharp;
 
@@ -42,6 +44,14 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
             {
                 return Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<uint>(), rhs.ToScalar<uint>())));
             }
+            else if (lhs.ElementType is PointerType && (rhs.ElementType == DataTypes.UInt32 || rhs.ElementType == DataTypes.UInt64))
+            {
+                return Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<ulong>(), rhs.ToScalar<ulong>())));
+            }
+            else if ((lhs.ElementType == DataTypes.UInt32 || lhs.ElementType == DataTypes.UInt64) && rhs.ElementType is PointerType)
+            {
+                return Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<ulong>(), rhs.ToScalar<ulong>())));
+            }
             else
             {
                 return Ort_compute(binary, lhs, rhs);
@@ -54,17 +64,24 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Binary target)
     {
-        var lhs = context.CheckArgumentType<TensorType>(target, Binary.Lhs);
-        var rhs = context.CheckArgumentType<TensorType>(target, Binary.Rhs);
-        return Visit(target, lhs, rhs);
+        var lhs = context.CheckArgumentType<IRType>(target, Binary.Lhs);
+        var rhs = context.CheckArgumentType<IRType>(target, Binary.Rhs);
+        return (lhs, rhs) switch
+        {
+            (TensorType a, TensorType b) => Visit(target, a, b),
+            (DistributedType a, DistributedType b) => Visit(target, a, b),
+            (AnyType, _) => AnyType.Default,
+            (_, AnyType) => AnyType.Default,
+            _ => new InvalidType($"{lhs} {rhs}"),
+        };
     }
 
     /// <inheritdoc/>
     public Cost Visit(ICostEvaluateContext context, Binary target)
     {
-        var lhsType = context.GetArgumentType<TensorType>(target, Binary.Lhs);
-        var rhsType = context.GetArgumentType<TensorType>(target, Binary.Rhs);
-        var outputType = context.GetReturnType<TensorType>();
+        var lhsType = context.GetArgumentType<IRType>(target, Binary.Lhs);
+        var rhsType = context.GetArgumentType<IRType>(target, Binary.Rhs);
+        var outputType = context.GetReturnType<IRType>();
 
         return new()
         {
@@ -121,6 +138,76 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
         return ShapeExprUtility.BroadcastShape(lhs, rhs);
     }
 
+    private IRType Visit(Binary target, DistributedType a, DistributedType b)
+    {
+        if (a.Placement != b.Placement)
+        {
+            return new InvalidType("lhs rhs have different placement");
+        }
+
+        var rType = Visit(target, a.TensorType, b.TensorType);
+        if (rType is not TensorType tensorType)
+        {
+            return rType;
+        }
+
+        // assume broadcast shapes are left algin
+        var padA = tensorType.Shape.Rank - a.TensorType.Shape.Rank;
+        var padB = tensorType.Shape.Rank - b.TensorType.Shape.Rank;
+        var ndsbp = new SBP[a.Placement.Rank];
+        for (int i = 0; i < a.Placement.Rank; i++)
+        {
+            switch (a.NdSBP[i], b.NdSBP[i])
+            {
+                case (SBPSplit sa, SBPSplit sb):
+                    if ((padA + sa.Axis) != (padB + sb.Axis))
+                    {
+                        return new InvalidType($"lhs rhs sbp at {i} not equal");
+                    }
+
+                    ndsbp[i] = SBP.S(padA + sa.Axis);
+                    break;
+                case (SBPSplit s1, SBPBroadCast):
+                    // invalid (S, B) if B is not broacast
+                    if (s1.Axis + padA - padB >= 0 && b.TensorType.Shape[s1.Axis + padA - padB] != 1)
+                    {
+                        return new InvalidType($"lhs rhs sbp at {i} not broadcast");
+                    }
+
+                    ndsbp[i] = SBP.S(padA + s1.Axis);
+                    break;
+                case (SBPBroadCast, SBPSplit s2):
+                    // invalid (B, S) if A is not broacast
+                    if (s2.Axis + padB - padA >= 0 && a.TensorType.Shape[s2.Axis + padB - padA] != 1)
+                    {
+                        return new InvalidType($"lhs rhs sbp at {i} not broadcast");
+                    }
+
+                    ndsbp[i] = SBP.S(padB + s2.Axis);
+                    break;
+                case (SBPBroadCast, SBPBroadCast):
+                    ndsbp[i] = SBP.B;
+                    break;
+                case (SBPPartialSum, SBPPartialSum):
+                    if (target.BinaryOp == BinaryOp.Add)
+                    {
+                        ndsbp[i] = SBP.P;
+                    }
+                    else
+                    {
+                        return new InvalidType("lhs rhs all partialsum only can be added.");
+                    }
+
+                    break;
+                case (SBPPartialSum, _):
+                case (_, SBPPartialSum):
+                    return new InvalidType("not support lhs or rhs partial.");
+            }
+        }
+
+        return new DistributedType(tensorType, ndsbp, a.Placement);
+    }
+
     private int Compute(BinaryOp op, int a, int b) => op switch
     {
         BinaryOp.Add => a + b,
@@ -146,6 +233,18 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
         BinaryOp.Pow => checked((uint)System.Math.Pow((double)a, (double)b)),
         BinaryOp.LeftShift => a << (int)b,
         BinaryOp.RightShift => a >> (int)b,
+        _ => throw new ArgumentOutOfRangeException(nameof(op)),
+    };
+
+    private ulong Compute(BinaryOp op, ulong a, ulong b) => op switch
+    {
+        BinaryOp.Add => a + b,
+        BinaryOp.Sub => a - b,
+        BinaryOp.Mul => a * b,
+        BinaryOp.Div => a / b,
+        BinaryOp.Mod => a % b,
+        BinaryOp.Min => System.Math.Min(a, b),
+        BinaryOp.Max => System.Math.Max(a, b),
         _ => throw new ArgumentOutOfRangeException(nameof(op)),
     };
 
@@ -228,26 +327,24 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
             return new InvalidType("The Binary Logical Only Accept The Boolean Datatype.");
         }
 
-        if (lhs is { DType: PointerType { ElemType: var letype } } && rhs is { DType: PointerType { ElemType: var retype } })
+        if (lhs is { DType: PointerType { ElemType: var letype } })
         {
-            if (letype == retype)
+            if ((rhs is { DType: PointerType { ElemType: var other } } && letype == other) || rhs.DType == DataTypes.UInt64 || rhs.DType == DataTypes.UInt32)
             {
                 return TensorType.Pointer(letype);
             }
-            else
+
+            return new InvalidType($"The Binary Lhs {CompilerServices.Print(lhs)} != Rhs {CompilerServices.Print(rhs)}");
+        }
+
+        if (rhs is { DType: PointerType { ElemType: var retype } })
+        {
+            if ((lhs is { DType: PointerType { ElemType: var other } } && retype == other) || lhs.DType == DataTypes.UInt64 || lhs.DType == DataTypes.UInt32)
             {
-                return new InvalidType($"The Binary Lhs {CompilerServices.Print(lhs)} != Rhs {CompilerServices.Print(rhs)}");
+                return TensorType.Pointer(retype);
             }
-        }
 
-        if (lhs is { DType: PointerType { ElemType: var lt } } && rhs.DType == DataTypes.Int32)
-        {
-            return TensorType.Pointer(lt);
-        }
-
-        if (lhs.DType == DataTypes.Int32 && rhs is { DType: PointerType { ElemType: var rt } })
-        {
-            return TensorType.Pointer(rt);
+            return new InvalidType($"The Binary Lhs {CompilerServices.Print(lhs)} != Rhs {CompilerServices.Print(rhs)}");
         }
 
         return TypeInference.BroadcastType(lhs, rhs);

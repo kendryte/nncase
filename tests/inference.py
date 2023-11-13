@@ -1,3 +1,18 @@
+# Copyright 2019-2021 Canaan Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# pylint: disable=invalid-name, unused-argument, import-outside-toplevel
+
 from typing import List, Dict, Union, Tuple
 import os
 import nncase
@@ -5,11 +20,10 @@ import numpy as np
 import test_utils
 import preprocess_utils
 import socket
+import struct
 import json
 from test_utils import *
 import time
-import subprocess
-from update_trace_info import *
 from html import escape
 
 
@@ -108,6 +122,30 @@ class Inference:
                 dump_txt_file(os.path.join(infer_dir, f'nncase_result_{i}.txt'), output)
         return outputs
 
+    def send_msg(self, sock, msg):
+        # Prefix each message with a 4-byte length (network byte order)
+        msg = struct.pack('>I', len(msg)) + msg
+        sock.sendall(msg)
+
+    def recv_msg(self, sock):
+        # Read message length and unpack it into an integer
+        raw_msglen = self.recvall(sock, 4)
+        if not raw_msglen:
+            return None
+        msglen = struct.unpack('>I', raw_msglen)[0]
+        # Read the message data
+        return self.recvall(sock, msglen)
+
+    def recvall(self, sock, n):
+        # Helper function to recv n bytes or return None if EOF is hit
+        data = bytearray()
+        while len(data) < n:
+            packet = sock.recv(n - len(data))
+            if not packet:
+                return None
+            data.extend(packet)
+        return data
+
     def run_evb(self, target, kmodel, compile_opt, infer_dir):
         ip = test_utils.nuc_ip()
         port = test_utils.nuc_port()
@@ -118,13 +156,13 @@ class Inference:
         client_socket.connect((ip, int(port)))
 
         # send target
-        dummy = client_socket.recv(1024)
+        dummy = self.recv_msg(client_socket)
         target_dict = {}
         target_dict['target'] = target
-        client_socket.sendall(json.dumps(target_dict).encode())
+        self.send_msg(client_socket, json.dumps(target_dict).encode())
 
         # send header
-        dummy = client_socket.recv(1024)
+        dummy = self.recv_msg(client_socket)
         header_dict = {}
         header_dict['case'] = os.path.basename(self.case_dir)
         header_dict['app'] = 1
@@ -132,141 +170,77 @@ class Inference:
         header_dict['inputs'] = len(self.inputs)
         header_dict['description'] = 1 if self.dynamic else 0
         header_dict['outputs'] = len(self.outputs)
-        client_socket.sendall(json.dumps(header_dict).encode())
+        header_dict['cfg_cmds'] = self.config_cmds()
+        self.send_msg(client_socket, json.dumps(header_dict).encode())
 
         # send app
-        dummy = client_socket.recv(1024)
+        dummy = self.recv_msg(client_socket)
         file_dict = {}
         file_dict['file_name'] = os.path.basename(test_executable)
         file_dict['file_size'] = os.path.getsize(test_executable)
-        client_socket.sendall(json.dumps(file_dict).encode())
-        dummy = client_socket.recv(1024)
+        self.send_msg(client_socket, json.dumps(file_dict).encode())
+        dummy = self.recv_msg(client_socket)
         with open(test_executable, 'rb') as f:
             client_socket.sendall(f.read())
 
         # send kmodel
-        dummy = client_socket.recv(1024)
+        dummy = self.recv_msg(client_socket)
         file_dict['file_name'] = self.cfg['kmodel_name']
         file_dict['file_size'] = len(kmodel)
-        client_socket.sendall(json.dumps(file_dict).encode())
-        dummy = client_socket.recv(1024)
+        self.send_msg(client_socket, json.dumps(file_dict).encode())
+        dummy = self.recv_msg(client_socket)
         client_socket.sendall(kmodel)
 
         # send inputs
         for idx, value in enumerate(self.inputs):
+            dummy = self.recv_msg(client_socket)
             data = self.transform_input(
                 value['data'], compile_opt['input_type'], "infer")[0]
             file_dict['file_name'] = f'input_{idx}.bin'
             file_dict['file_size'] = data.size * data.itemsize
-            dummy = client_socket.recv(1024)
-            client_socket.sendall(json.dumps(file_dict).encode())
-            dummy = client_socket.recv(1024)
+            self.send_msg(client_socket, json.dumps(file_dict).encode())
+            dummy = self.recv_msg(client_socket)
             client_socket.sendall(data.tobytes())
 
         # send kmodel.desc
         if self.dynamic:
-            dummy = client_socket.recv(1024)
+            dummy = self.recv_msg(client_socket)
             desc_file = os.path.join(infer_dir, self.cfg['desc_name'])
             file_dict['file_name'] = os.path.basename(desc_file)
             file_dict['file_size'] = os.path.getsize(desc_file)
-            client_socket.sendall(json.dumps(file_dict).encode())
-            dummy = client_socket.recv(1024)
+            self.send_msg(client_socket, json.dumps(file_dict).encode())
+            dummy = self.recv_msg(client_socket)
             with open(desc_file, 'rb') as f:
                 client_socket.sendall(f.read())
 
         # get infer result
         outputs = []
         header_dict = {}
-        ret = client_socket.recv(1024)
+        ret = self.recv_msg(client_socket)
         header_dict = json.loads(ret.decode())
-        length = header_dict['len']
-
-        # recv result
-        count = length // 1024
-        left = length % 1024
-
-        client_socket.sendall(f"pls send detail".encode())
-        recv_data = b''
-        for i in range(count):
-            data = client_socket.recv(1024, socket.MSG_WAITALL)
-            recv_data += data
-
-        if left:
-            recv_data += client_socket.recv(left, socket.MSG_WAITALL)
-
-        detail = recv_data.decode()
-
+        ret = header_dict['msg']
         if header_dict['type'].find('finish') != -1:
             if self.cfg['infer_report_opt']['enabled']:
-                if not self.dynamic:
-                    # update trace info
-                    model_name = self.cfg['infer_report_opt']['model_name']
-                    infer_result = f'0:{model_name} :\n' + detail
-                    trace_file = search_file(infer_dir, 'trace_info.py')
-                    assert(trace_file != '')
-                    update_trace_info(infer_result, trace_file)
+                self.stat_target(infer_dir, ret)
 
-                    # roofline fps/mac usage
-                    estimate_file = search_file(infer_dir, 'estimate_fps.py')
-                    assert(estimate_file != '')
-
-                    mac_file = search_file(infer_dir, 'mac.csv')
-                    assert(mac_file != '')
-
-                    cmd_status, cmd_result = subprocess.getstatusoutput(
-                        f'python3 {estimate_file} {mac_file}')
-                    assert(cmd_status == 0)
-                    data = cmd_result.split(',')
-                    assert(len(data) >= 3)
-                    self.infer_report_dict['roofline_fps'] = data[1].split(':')[-1].strip()
-                    self.infer_report_dict['roofline_mac_usage'] = data[2].split(':')[-1].strip()
-
-                # actual fps
-                fps_pattern = re.compile(
-                    r"^\|total\s+\|(\d+|\d+.\d+)\s+\|(\d+|\d+.\d+)\s+\|(\d+|\d+.\d+)\s+\|")
-                buf = io.StringIO(detail)
-                while True:
-                    line = buf.readline()
-                    if not line:
-                        break
-                    match = fps_pattern.match(line)
-                    if match is not None:
-                        self.infer_report_dict['actual_fps'] = str(
-                            round(1000 / float(match.group(2)), 3))
-                        break
-
-                if not self.dynamic:
-                    # actual mac usage
-                    draw_trace_file = search_file(infer_dir, 'draw_trace.py')
-                    assert(draw_trace_file != '')
-                    cmd_status, cmd_result = subprocess.getstatusoutput(
-                        f'python3 {draw_trace_file} {mac_file}')
-                    assert(cmd_status == 0)
-                    data = cmd_result.split(',')
-                    assert(len(data) >= 1)
-                    self.infer_report_dict['actual_mac_usage'] = data[0].split(':')[-1].strip()
-
-            client_socket.sendall(f"pls send outputs".encode())
+            self.send_msg(client_socket, f"pls send outputs".encode())
 
             # recv outputs
             for i in range(len(self.outputs)):
-                header = client_socket.recv(1024)
-                file_size = int(header.decode())
-                client_socket.sendall(f"pls send nncase_result_{i}.bin".encode())
+                header = self.recv_msg(client_socket)
+                file_dict = json.loads(header.decode())
+                file_size = file_dict['file_size']
+                self.send_msg(client_socket, f"pls send file".encode())
 
-                recv_size = 0
                 buffer = bytearray(file_size)
-                while recv_size < file_size:
-                    slice = client_socket.recv(4096)
-                    buffer[recv_size:] = slice
-                    recv_size += len(slice)
+                buffer = self.recvall(client_socket, file_size)
 
                 output = np.frombuffer(buffer, dtype=self.outputs[i]['dtype'])
                 outputs.append(output)
+
                 if not test_utils.in_ci():
                     dump_bin_file(os.path.join(infer_dir, f'nncase_result_{i}.bin'), output)
                     dump_txt_file(os.path.join(infer_dir, f'nncase_result_{i}.txt'), output)
-                client_socket.sendall(f"recv nncase_result_{i}.bin succeed".encode())
 
             client_socket.close()
         else:
@@ -274,11 +248,11 @@ class Inference:
 
             if self.cfg['infer_report_opt']['enabled']:
                 self.infer_report_dict['result'] = 'Fail'
-                self.infer_report_dict['remark'] = escape(detail)
+                self.infer_report_dict['remark'] = escape(ret)
                 prefix, suffix = os.path.splitext(self.infer_report_file)
                 json_file = f'{prefix}_{os.path.basename(self.case_dir)}{suffix}'
                 dump_dict_to_json(self.infer_report_dict, json_file)
 
-            raise Exception(detail)
+            raise Exception(ret)
 
         return outputs

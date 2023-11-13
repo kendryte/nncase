@@ -21,7 +21,7 @@ public sealed partial class ReduceArg : Op
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(ReduceArg), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(ReduceArg), 0, "input", ParameterKind.Input);
 
     /// <summary>
     /// Gets Axis.
@@ -42,8 +42,8 @@ public sealed partial class ReduceArg : Op
 
     public ReduceArgOp ReduceArgOp { get; }
 
-    public DataType DestType { get; }
+    public PrimType DestType { get; }
 
     /// <inheritdoc/>
-    public override string DisplayProperty() => $"ReduceArgOp.{ReduceArgOp}";
+    public override string DisplayProperty() => $"ReduceArgOp.{ReduceArgOp}, DestType: {DestType}";
 }

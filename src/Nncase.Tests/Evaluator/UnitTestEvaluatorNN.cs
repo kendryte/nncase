@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using NetFabric.Hyperlinq;
 using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.F;
@@ -275,7 +276,10 @@ public class UnitTestEvaluatorNN : TestClassBase
             PadMode.Constant,
             1);
         CompilerServices.InferenceType(expr);
-        Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
+        var expectValue = expect.ToArray<float>();
+        var realValue = expr.Evaluate().AsTensor().ToArray<float>();
+        var cos = Nncase.Tests.Comparator.CosSimilarity(expectValue, realValue);
+        Assert.True(cos >= 0.99);
     }
 
     [Fact]

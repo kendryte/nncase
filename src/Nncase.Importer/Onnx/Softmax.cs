@@ -43,7 +43,7 @@ namespace Nncase.Importer
         {
             var input = GetSingleInputExpr(op);
             var axis = GetIntAttribute(op, "axis", -1);
-            return f(input, axis);
+            return f(input, IR.F.Math.Select(axis < 0, (Rank(input) + axis)[0], axis));
         }
 
         private Expr SoftmaxV1(in NodeProto op)

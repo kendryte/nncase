@@ -20,7 +20,7 @@ public sealed partial class Unary : Op
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Unary), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(Unary), 0, "input", ParameterKind.Input);
 
     public UnaryOp UnaryOp { get; }
 

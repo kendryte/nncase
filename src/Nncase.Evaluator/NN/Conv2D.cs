@@ -48,20 +48,28 @@ public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICos
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Conv2D target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, Conv2D.Input);
-        var weights = context.CheckArgumentType<TensorType>(target, Conv2D.Weights);
-        return Visit(context, target, input, weights);
+        var input = context.GetArgumentType(target, Conv2D.Input);
+        var weights = context.GetArgumentType(target, Conv2D.Weights);
+        var bias = context.GetArgumentType(target, Conv2D.Bias);
+        return (input, weights) switch
+        {
+            (DistributedType a, DistributedType b) => Visit(context, target, a, b, (DistributedType)bias),
+            (TensorType a, TensorType b) => Visit(context, target, a, b),
+            (AnyType, _) => AnyType.Default,
+            (_, AnyType) => AnyType.Default,
+            _ => new InvalidType(string.Empty),
+        };
     }
 
     /// <inheritdoc/>
     public Cost Visit(ICostEvaluateContext context, Conv2D target)
     {
-        var inputType = context.GetArgumentType<TensorType>(target, Conv2D.Input);
-        var weightsType = context.GetArgumentType<TensorType>(target, Conv2D.Weights);
-        var biasType = context.GetArgumentType<TensorType>(target, Conv2D.Bias);
-        var outputType = context.GetReturnType<TensorType>();
+        var inputType = context.GetArgumentType<IRType>(target, Conv2D.Input);
+        var weightsType = context.GetArgumentType<IRType>(target, Conv2D.Weights);
+        var biasType = context.GetArgumentType<IRType>(target, Conv2D.Bias);
+        var outputType = context.GetReturnType<IRType>();
 
-        var weightsShape = weightsType.Shape;
+        var weightsShape = weightsType is TensorType ? ((TensorType)weightsType).Shape : ((DistributedType)weightsType).TensorType.Shape;
         var macPerElement = (2 * weightsShape[1] * weightsShape[2] * weightsShape[3]) - 1;
         return new()
         {
@@ -103,5 +111,91 @@ public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICos
     {
         var args = context.GetArguments(target, Conv2D.Stride, Conv2D.Padding, Conv2D.Dilation, Conv2D.Groups);
         return TypeInference.Conv2DType(input, weights, args[0], args[1], args[2], args[3]);
+    }
+
+    private IRType Visit(ITypeInferenceContext context, Conv2D target, DistributedType input, DistributedType weights, DistributedType bias)
+    {
+        if (Visit(context, target, input.TensorType, weights.TensorType) is not TensorType outType)
+        {
+            return new InvalidType(string.Empty);
+        }
+
+        var args = context.GetArguments(target, Conv2D.Stride, Conv2D.Padding, Conv2D.Dilation, Conv2D.Groups);
+
+        // Not support split on h/w/r/s
+        if (input.NdSBP.Any(sbp => sbp is SBPSplit s && s.Axis >= 2) || weights.NdSBP.Any(sbp => sbp is SBPSplit s && s.Axis >= 2))
+        {
+            return new InvalidType(string.Empty);
+        }
+
+        if (input.Placement != weights.Placement)
+        {
+            return new InvalidType("placement not equal");
+        }
+
+        var ndsbp = new SBP[input.Placement.Rank];
+        for (int i = 0; i < input.Placement.Rank; i++)
+        {
+            var invalid = new InvalidType($"({input.NdSBP[i]}, {weights.NdSBP[i]}) not support");
+            switch (input.NdSBP[i], weights.NdSBP[i])
+            {
+                case (SBPSplit { Axis: int ax }, SBPSplit { Axis: int bx }):
+                    // split on ic
+                    if (ax == 1 && bx == 1)
+                    {
+                        if (bias.NdSBP[i] is SBPBroadCast)
+                        {
+                            ndsbp[i] = SBP.P;
+                        }
+                        else
+                        {
+                            return invalid;
+                        }
+                    }
+                    else
+                    {
+                        return invalid;
+                    }
+
+                    break;
+                case (SBPSplit { Axis: int ax }, SBPBroadCast):
+                    if (ax == 0 && bias.NdSBP[i] is SBPBroadCast)
+                    {
+                        ndsbp[i] = SBP.S(ax);
+                    }
+                    else
+                    {
+                        return invalid;
+                    }
+
+                    break;
+                case (SBPBroadCast, SBPSplit { Axis: int bx }):
+                    if (bx == 0 && bias.NdSBP[i] is SBPSplit s && s.Axis == bx)
+                    {
+                        ndsbp[i] = SBP.S(bx + 1);
+                    }
+                    else
+                    {
+                        return invalid;
+                    }
+
+                    break;
+                case (SBPBroadCast, SBPBroadCast):
+                    if (bias.NdSBP[i] is SBPBroadCast)
+                    {
+                        ndsbp[i] = SBP.B;
+                    }
+                    else
+                    {
+                        return invalid;
+                    }
+
+                    break;
+                default:
+                    return invalid;
+            }
+        }
+
+        return new DistributedType(outType, ndsbp, input.Placement);
     }
 }

@@ -41,5 +41,5 @@ public static class Buffer
     /// <summary>
     /// create the uninitialized buffer.
     /// </summary>
-    public static Call Uninitialized(DataType dataType, Schedule.MemoryLocation memoryLocation, Expr shape) => new Call(new Uninitialized(dataType, memoryLocation), shape);
+    public static Call Uninitialized(DataType dataType, TIR.MemoryLocation memoryLocation, Expr shape) => new Call(new Uninitialized(dataType, memoryLocation), shape);
 }

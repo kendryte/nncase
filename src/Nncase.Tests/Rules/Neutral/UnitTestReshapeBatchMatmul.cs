@@ -20,6 +20,7 @@ using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
+[AutoSetupTestMethod(InitSession = true)]
 public class UnitTestReshapeBatchMatmul : TransformTestBase
 {
     public static IEnumerable<object[]> TestReshapeBatchMatmulPositiveData =>

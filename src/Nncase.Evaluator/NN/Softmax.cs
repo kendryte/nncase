@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System.Linq;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.NN;
@@ -81,14 +82,20 @@ public class SoftmaxEvaluator : IEvaluator<Softmax>, ITypeInferencer<Softmax>, I
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Softmax target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, Softmax.Input);
-        return Visit(input);
+        var input = context.CheckArgumentType<IRType>(target, Softmax.Input);
+        var axis = context.GetArgument(target, Softmax.Axis);
+        return input switch
+        {
+            TensorType t => Visit(t),
+            DistributedType d => Visit(d, axis),
+            _ => new InvalidType(input.GetType().Name),
+        };
     }
 
     /// <inheritdoc/>
     public Cost Visit(ICostEvaluateContext context, Softmax target)
     {
-        var ret = context.GetReturnType<TensorType>();
+        var ret = context.GetReturnType<IRType>();
         return new()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(ret),
@@ -116,6 +123,17 @@ public class SoftmaxEvaluator : IEvaluator<Softmax>, ITypeInferencer<Softmax>, I
 
     private IRType Visit(TensorType input)
     {
+        return input;
+    }
+
+    private IRType Visit(DistributedType input, Expr axisExpr)
+    {
+        var axis = ((TensorConst)axisExpr).Value.ToScalar<int>();
+        if (input.NdSBP.Any(sbp => sbp is SBPSplit s && s.Axis == axis))
+        {
+            return new InvalidType("Not support split on Axis for Softmax now.");
+        }
+
         return input;
     }
 }

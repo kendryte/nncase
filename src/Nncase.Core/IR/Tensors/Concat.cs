@@ -20,10 +20,13 @@ public sealed partial class Concat : Op
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Concat), 0, "inputs");
+    public static readonly ParameterInfo Input = new(typeof(Concat), 0, "inputs", ParameterKind.Input);
 
     /// <summary>
     /// Gets axis.
     /// </summary>
-    public static readonly ParameterInfo Axis = new(typeof(Concat), 1, "axis");
+    public int Axis { get; }
+
+    /// <inheritdoc/>
+    public override string DisplayProperty() => $"Axis: {Axis}";
 }

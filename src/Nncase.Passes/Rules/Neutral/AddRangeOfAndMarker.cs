@@ -10,6 +10,7 @@ using Nncase.IR;
 using Nncase.IR.Imaging;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
+using Nncase.IR.RNN;
 using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
 using static Nncase.IR.TypePatternUtility;

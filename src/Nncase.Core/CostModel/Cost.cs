@@ -204,6 +204,7 @@ public static class CostUtility
         {
             TensorType t => (UInt128)(t.Shape.Aggregate(1D, (acc, x) => acc * (x.IsFixed ? x.FixedValue : 1)) * t.DType.SizeInBytes),
             TupleType t => t.Fields.Sum(GetMemoryAccess),
+            DistributedType t => GetMemoryAccess(Utilities.DistributedUtility.GetDividedTensorType(t)),
             _ => 0,
         };
     }
@@ -229,6 +230,7 @@ public static class CostUtility
         {
             TensorType t => (UInt128)(t.Shape.Aggregate(1D, (acc, x) => acc * (x.IsFixed ? x.FixedValue : 1)) * cyclesPerElement),
             TupleType t => t.Fields.Sum(GetMemoryAccess),
+            DistributedType t => GetCPUCycles(Utilities.DistributedUtility.GetDividedTensorType(t)),
             _ => 0,
         };
     }
@@ -328,7 +330,7 @@ public static class CostUtility
     }
 
     // cost for op similar to broadcast
-    public static Cost GetBroadcastCost(TensorType input, TensorType ret)
+    public static Cost GetBroadcastCost(IRType input, IRType ret)
     {
         return new()
         {

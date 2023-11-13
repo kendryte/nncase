@@ -33,89 +33,37 @@ public class UnitTestPytestCalibrationDatasetProvider
     {
         var vars = Setup();
         var dataset = "./public/test1";
-        foreach (var t in vars)
+        var actuals = DumpTensors(dataset, vars, 2);
+        var provider = new PytestCalibrationDatasetProvider(vars, dataset);
+        Assert.Equal(2, provider.Count);
+        var samples = provider.Samples;
+        var count = 0;
+        await foreach (var sample in samples)
         {
-            var actual = IR.F.Random.Uniform(t.CheckedDataType, 1.0f, -1.0f, 0, t.CheckedShape).Evaluate().AsTensor();
-            DumpTensors(new[] { actual }, dataset, 2);
-            var provider = new PytestCalibrationDatasetProvider(new[] { t }, dataset);
-            Assert.Equal(2, provider.Count);
-            var samples = provider.Samples;
-            await foreach (var sample in samples)
-            {
-                Assert.Equal(sample[t].AsTensor(), actual);
-            }
+            Assert.Equal(sample[vars[0]].AsTensor(), actuals[count, 0]);
+            Assert.Equal(sample[vars[1]].AsTensor(), actuals[count, 1]);
+            count++;
         }
     }
 
-    [Fact]
-    public async Task TestPytestCalibrationDatasetProvider2()
-    {
-        var vars = Setup();
-        var dataset = "./public/test2";
-        foreach (var t in vars)
-        {
-            var actual = IR.F.Random.Uniform(t.CheckedDataType, 1.0f, -1.0f, 0, t.CheckedShape).Evaluate().AsTensor();
-            DumpTensors(new[] { actual }, dataset);
-            var provider = new PytestCalibrationDatasetProvider(new[] { t }, dataset);
-            Assert.Equal(1, provider.Count);
-            var samples = provider.Samples;
-            await foreach (var sample in samples)
-            {
-                Assert.Equal(sample[t].AsTensor(), actual);
-            }
-        }
-    }
-
-    [Fact]
-    public async Task TestPytestCalibrationDatasetProvider3()
-    {
-        var vars1 = Setup();
-        var dataset = "./public/test3";
-        var actual1 = IR.F.Random.Uniform(vars1[0].CheckedDataType, 1.0f, -1.0f, 0, vars1[0].CheckedShape).Evaluate().AsTensor();
-        var actual2 = IR.F.Random.Uniform(vars1[1].CheckedDataType, 1.0f, -1.0f, 0, vars1[1].CheckedShape).Evaluate().AsTensor();
-        DumpTensors(new[] { actual1, actual2 }, dataset);
-        var provider1 = new PytestCalibrationDatasetProvider(vars1, dataset);
-        Assert.Equal(1, provider1.Count);
-        var samples1 = provider1.Samples;
-        await foreach (var sample in samples1)
-        {
-            Assert.Equal(sample[vars1[0]].AsTensor(), actual1);
-            Assert.Equal(sample[vars1[1]].AsTensor(), actual2);
-        }
-    }
-
-    [Fact]
-    public async Task TestPytestCalibrationDatasetProvider4()
-    {
-        var vars1 = Setup();
-        var dataset = "./public/test4";
-        var actual1 = IR.F.Random.Uniform(vars1[0].CheckedDataType, 1.0f, -1.0f, 0, vars1[0].CheckedShape).Evaluate().AsTensor();
-        var actual2 = IR.F.Random.Uniform(vars1[1].CheckedDataType, 1.0f, -1.0f, 0, vars1[1].CheckedShape).Evaluate().AsTensor();
-        DumpTensors(new[] { actual1, actual2 }, dataset, 2);
-        var provider1 = new PytestCalibrationDatasetProvider(vars1, dataset);
-        Assert.Equal(2, provider1.Count);
-        var samples1 = provider1.Samples;
-        await foreach (var sample in samples1)
-        {
-            Assert.Equal(sample[vars1[0]].AsTensor(), actual1);
-            Assert.Equal(sample[vars1[1]].AsTensor(), actual2);
-        }
-    }
-
-    private static void DumpTensors(Tensor[] tensorValue, string dir, int sample = 1)
+    private static Tensor[,] DumpTensors(string dir, Var[] inputs, int sample)
     {
         Directory.CreateDirectory(dir);
+        var outputs = new Tensor[sample, inputs.Length];
         for (var s = 0; s < sample; s++)
         {
-            for (var t = 0; t < tensorValue.Length; t++)
+            for (var t = 0; t < inputs.Length; t++)
             {
-                var value = tensorValue[t];
-                var sr1 = new StreamWriter(Path.Join(dir, $"input_{s}_{t}.txt"));
+                var value = IR.F.Random.Uniform(inputs[t].CheckedDataType, 1.0f, -1.0f, s + t, inputs[t].CheckedShape).Evaluate().AsTensor();
+                var sr1 = new StreamWriter(Path.Join(dir, $"input_{t}_{s}.txt"));
                 DumpTxt(value, sr1);
-                var sr2 = Path.Join(dir, $"input_{s}_{t}.bin");
+                var sr2 = Path.Join(dir, $"input_{t}_{s}.bin");
                 DumpBin(value, sr2);
+                outputs[s, t] = value;
             }
         }
+
+        return outputs;
     }
 
     private static void DumpTxt(Tensor tensorValue, StreamWriter writer)

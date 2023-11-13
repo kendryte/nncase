@@ -14,12 +14,14 @@ using Nncase.IR.Math;
 using Nncase.IR.NN;
 using Nncase.Passes;
 using Nncase.Passes.Rules.Neutral;
+using Nncase.Tests.TestFixture;
 using Xunit;
 using Math = Nncase.IR.F.Math;
 using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
+[AutoSetupTestMethod(InitSession = true)]
 public class UnitTestFoldBinary : TransformTestBase
 {
     public static IEnumerable<object[]> TestFoldNopBinaryNegativeData =>

@@ -17,7 +17,7 @@ namespace Nncase.Importer
         {
             var input = GetSingleInputExpr(op);
             var perm = Tensor.From<long>(GetIntsAttribute(op, "perm"));
-            return F.Tensors.Transpose(input, perm);
+            return F.Tensors.Transpose(input, perm).With(metadata: new IRMetadata() { OutputNames = op.Output, });
         }
     }
 }

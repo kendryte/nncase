@@ -17,7 +17,7 @@ namespace Nncase.Passes.EGraphExtractors;
 
 internal interface IExtractor
 {
-    Expr Extract(EClass root, IEGraph eGraph);
+    Expr Extract(EClass root, IEGraph eGraph, out IReadOnlyDictionary<ENode, bool> picks);
 }
 
 internal class Extractor : IExtractor
@@ -25,6 +25,7 @@ internal class Extractor : IExtractor
     private readonly EGraphCostModel _costModel;
     private readonly Dictionary<EClass, Expr> _eclassMemo = new();
     private readonly Dictionary<EClass, Expr> _markerEclassMemo = new();
+    private readonly Dictionary<ENode, bool> _picks = new();
     private StreamWriter? _dumpWriter;
 
     public Extractor(EGraphCostModel costModel)
@@ -32,7 +33,7 @@ internal class Extractor : IExtractor
         _costModel = costModel;
     }
 
-    public Expr Extract(EClass root, IEGraph eGraph)
+    public Expr Extract(EClass root, IEGraph eGraph, out IReadOnlyDictionary<ENode, bool> picks)
     {
         _dumpWriter = DumpScope.Current.IsEnabled(DumpFlags.EGraphCost)
             ? new StreamWriter(DumpScope.Current.OpenFile($"{nameof(Extractor)}_Class_{root.Id}.txt"))
@@ -46,6 +47,15 @@ internal class Extractor : IExtractor
             _dumpWriter?.Dispose();
         }
 
+        foreach (var enode in eGraph.Nodes)
+        {
+            if (!_picks.ContainsKey(enode))
+            {
+                _picks[enode] = false;
+            }
+        }
+
+        picks = _picks;
         return _eclassMemo[root];
     }
 
@@ -132,6 +142,7 @@ internal class Extractor : IExtractor
                 _eclassMemo.Add(eclass, expr);
             }
 
+            _picks[minCostEnode] = true;
             stack.Pop();
         }
     }
