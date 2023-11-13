@@ -46,103 +46,40 @@ result<void> softmax_impl(const T *input, T *output,
 
     for (size_t i = 0; i < out_size; i++)
     {
-        auto p_input = input + i * reduced_size;
-        auto p_output = output + i * reduced_size;
+        auto in_ = input + i * reduced_size;
+        auto out_ = output + i * reduced_size;
 
         // reduce_max
-        auto max_value = *p_input;
+        auto max_value = *in_;
         for(size_t j = 0; j < reduced_size; j++)
         {
-            max_value = std::max(max_value, p_input[j]);
+            max_value = std::max(max_value, in_[j]);
         }
 
-        // x - reduce_max
+        // (x - reduce_max) * beta
         for(size_t j = 0; j < reduced_size; j++)
         {
-            p_output[j] = static_cast<T>((static_cast<float>(p_input[j]) -
-                                          static_cast<float>(max_value)) *
-                                         beta);
+            out_[j] = static_cast<T>((static_cast<float>(in_[j]) - static_cast<float>(max_value)) * beta);
         }
 
-        // exp(x-reduce_max) and sum
+        // exp((x - reduce_max) * beta) and sum
         T sum = 0;
         for(size_t j = 0; j < reduced_size; j++)
         {
-            p_output[j] = static_cast<T>(expf(static_cast<float>(p_output[j])));
-            sum += p_output[j];
+            out_[j] = static_cast<T>(expf(static_cast<float>(out_[j])));
+            sum += out_[j];
         }
 
+        // div
         for(size_t j = 0; j < reduced_size; j++)
         {
-            p_output[j] /= sum;
+            out_[j] /= sum;
             if (needLog)
             {
-                p_output[j] = static_cast<T>(std::log(static_cast<float>(p_output[j])));
+                out_[j] = static_cast<T>(std::log(static_cast<float>(out_[j])));
             }
         }
     }
-
-    //     // reduce_max
-    //     try_(
-    //         apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
-    //             auto in_idx = offset(in_strides, index);
-    //             const auto in = input[in_idx];
-
-    //             const auto out_index =
-    //                 kernels::detail::get_reduced_offset(index, axes, true);
-    //             auto out_idx = offset(reduced_strides, out_index);
-    //             auto &out = tmp[out_idx];
-
-    //             out = std::max(in, out);
-    //             return ok();
-    //         }));
-
-    // // x - reduce_max
-    // try_(apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
-    //     auto in_idx = offset(in_strides, index);
-    //     const auto in = input[in_idx];
-
-    //     const auto out_index =
-    //         kernels::detail::get_reduced_offset(index, axes, true);
-    //     auto max_idx = offset(reduced_strides, out_index);
-
-    //     auto out_idx = offset(out_strides, index);
-    //     output[out_idx] =
-    //         static_cast<T>(static_cast<float>(in - tmp[max_idx]) * beta);
-
-    //     return ok();
-    // }));
-
-    // // exp(x - reduce_max) and sum
-    // tmp.assign(tmp.size(), static_cast<T>(0));
-    // try_(apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
-    //     auto in_idx = offset(out_strides, index);
-    //     const auto in = output[in_idx];
-
-    //     const auto out_index =
-    //         kernels::detail::get_reduced_offset(index, axes, true);
-    //     auto out_idx = offset(reduced_strides, out_index);
-    //     output[in_idx] = static_cast<T>(expf(static_cast<float>(in)));
-    //     tmp[out_idx] += static_cast<T>(output[in_idx]);
-
-    //     return ok();
-    // }));
-
-    // // div
-    // try_(apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
-    //     const auto in_index =
-    //         kernels::detail::get_reduced_offset(index, axes, true);
-    //     auto in_idx = offset(reduced_strides, in_index);
-    //     auto in = tmp[in_idx];
-
-    //     auto out_idx = offset(out_strides, index);
-    //     auto &out = output[out_idx];
-    //     out /= in;
-    //     if (needLog) {
-    //         out = static_cast<T>(std::log(static_cast<float>(out)));
-    //     }
-    //     return ok();
-    // }));
 
     return ok();
 }
