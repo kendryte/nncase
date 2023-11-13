@@ -51,7 +51,6 @@ public partial class CompileOptionViewModel : ViewModelBase
         DumpFlagsList = new ObservableCollection<DumpFlags>(System.Enum.GetValues<DumpFlags>().Skip(1).ToList());
         TargetList = new ObservableCollection<string>(new[] { "cpu", "k230" });
 
-        // todo: k230 should set dll path
         _target = TargetList[0];
         DumpDir = Path.Join(Directory.GetCurrentDirectory(), "nncase_dump");
         Context = context;
@@ -90,7 +89,6 @@ public partial class CompileOptionViewModel : ViewModelBase
     [RelayCommand]
     public void ShowQuantize()
     {
-        // todo: refactor to ShowViewModel
         var quant = Context.ViewModelLookup(typeof(QuantizeViewModel))!;
         var compile = Context.ViewModelLookup(typeof(CompileViewModel))!;
         if (Quantize)

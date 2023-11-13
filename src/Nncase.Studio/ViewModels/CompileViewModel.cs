@@ -20,7 +20,7 @@ public partial class CompileViewModel : ViewModelBase
     private CancellationTokenSource _cts = new();
 
     [ObservableProperty]
-    private int _progressBarMax = 8;
+    private int _progressBarMax = 9;
 
     [ObservableProperty]
     private int _progressBarValue;
@@ -87,7 +87,6 @@ public partial class CompileViewModel : ViewModelBase
 
         _cts = new();
 
-        // todo: max value
         ProgressBarMax = 9;
         var progress = new Progress<int>(percent =>
         {
