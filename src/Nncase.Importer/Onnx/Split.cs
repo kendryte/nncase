@@ -28,7 +28,7 @@ namespace Nncase.Importer
             var split = GetOptionIntsAttribute(op, "split")
                 .Map(x => (Expr)Tensor.From<long>(x))
                 .Or(ComputeSplit(input, op.Output.Count, axis));
-            return F.Tensors.Split(input, axis, split);
+            return F.Tensors.Split(input, axis, split).With(metadata: new IRMetadata() { OutputNames = op.Output, });
         }
 
         private Expr SplitV13(in NodeProto op)
@@ -37,7 +37,7 @@ namespace Nncase.Importer
             var axis = GetIntAttribute(op, "axis", 0);
             var split = GetOptionInputExpr(op, 1)
                 .Or(ComputeSplit(input, op.Output.Count, axis));
-            return F.Tensors.Split(input, axis, split);
+            return F.Tensors.Split(input, axis, split).With(metadata: new IRMetadata() { OutputNames = op.Output, });
         }
     }
 }
