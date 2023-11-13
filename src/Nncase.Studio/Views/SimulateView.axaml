@@ -54,7 +54,7 @@
                 </Button>
             </Grid>
 
-        <DockPanel Margin="0 40 0 0" HorizontalAlignment="Center">
+        <DockPanel Margin="0 40" HorizontalAlignment="Center">
             <Button HorizontalAlignment="Center"
                     Content="推理"
                     Margin="40 0"
@@ -64,5 +64,6 @@
             <Label Content="{Binding Status}" Width="120"></Label>
         </DockPanel>
 
+        <ProgressBar Margin="10" ShowProgressText="False" IsIndeterminate="{Binding RunSimulate}"/>
     </StackPanel>
 </UserControl>

@@ -2,7 +2,10 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Avalonia;
+using Avalonia.Media;
+using Avalonia.Media.Fonts;
 using Avalonia.ReactiveUI;
 
 namespace Nncase.Studio;
@@ -20,7 +23,7 @@ internal class Program
     public static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()
-            .WithInterFont()
+            .UseAntDesignFontManager()
             .LogToTrace()
             .UseReactiveUI();
 }

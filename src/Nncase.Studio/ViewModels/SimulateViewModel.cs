@@ -30,6 +30,8 @@ public partial class SimulateViewModel : ViewModelBase
 
     [ObservableProperty] private ObservableCollection<string> _inputTypeStr = new();
 
+    [ObservableProperty] private bool _runSimulate;
+
     public SimulateViewModel(ViewModelContext context)
     {
         this.Context = context;
@@ -98,39 +100,19 @@ public partial class SimulateViewModel : ViewModelBase
 
                 var start = System.DateTime.Now;
                 Status = "Running";
+                RunSimulate = true;
                 Task.Run(
                     () =>
                     {
-                        while (true)
-                        {
-                            Thread.Sleep(20);
-                            if (cts.Token.IsCancellationRequested)
-                            {
-                                return;
-                            }
-
-                            var now = System.DateTime.Now;
-                            var timeStr = (now - start).ToString();
-                            Status = timeStr.Substring(3, timeStr.Length - 8);
-                        }
+                        UpdateTime(cts, start);
                     }, cts.Token);
                 await Task.Run(() =>
                 {
                     var result = entry.Invoke(rtInputs).ToValue().AsTensors();
-                    var list = result
-                        .Select(t =>
-                            np.frombuffer(t.BytesBuffer.ToArray(), t.ElementType.CLRType)
-                                .reshape(t.Shape.ToValueArray()))
-                        .ToArray();
-
-                    for (int i = 0; i < list.Length; i++)
-                    {
-                        np.save(Path.Join(ResultDir, $"nncase_result_{i}.npy"), list[i]);
-                    }
+                    SaveResult(result);
                 }).ContinueWith(t => t, cts.Token);
 
-                cts.Cancel();
-
+                SimulateFinish(cts);
                 Context.OpenDialog($"Simulate Finish, spent time:{Status}\n result in {ResultDir}", PromptDialogLevel.Normal);
                 Status = "Finish";
             }
@@ -146,8 +128,44 @@ public partial class SimulateViewModel : ViewModelBase
         }
         finally
         {
-            cts.Cancel();
+            SimulateFinish(cts);
         }
+    }
+
+    private void SaveResult(Tensor[] result)
+    {
+        var list = result
+            .Select(t =>
+                np.frombuffer(t.BytesBuffer.ToArray(), t.ElementType.CLRType)
+                    .reshape(t.Shape.ToValueArray()))
+            .ToArray();
+
+        for (int i = 0; i < list.Length; i++)
+        {
+            np.save(Path.Join(ResultDir, $"nncase_result_{i}.npy"), list[i]);
+        }
+    }
+
+    private void UpdateTime(CancellationTokenSource cts, DateTime start)
+    {
+        while (true)
+        {
+            Thread.Sleep(20);
+            if (cts.Token.IsCancellationRequested)
+            {
+                return;
+            }
+
+            var now = System.DateTime.Now;
+            var timeStr = (now - start).ToString();
+            Status = timeStr.Substring(3, timeStr.Length - 8);
+        }
+    }
+
+    private void SimulateFinish(CancellationTokenSource cts)
+    {
+        cts.Cancel();
+        RunSimulate = false;
     }
 
     private string ExceptionMessageProcess(Exception exception)

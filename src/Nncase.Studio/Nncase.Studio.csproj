@@ -40,6 +40,18 @@
 
     <ItemGroup>
       <UpToDateCheckInput Remove="Style\EnumComboBox.axaml" />
+      <UpToDateCheckInput Remove="Assets\Fonts\Noto_Sans_TC\NotoSansTC-VariableFont_wght.ttf" />
+      <UpToDateCheckInput Remove="Assets\Fonts\Noto_Sans_TC\OFL.txt" />
+      <UpToDateCheckInput Remove="Assets\Fonts\Noto_Sans_TC\README.txt" />
+      <UpToDateCheckInput Remove="Assets\Fonts\Noto_Sans_TC\static\NotoSansTC-Black.ttf" />
+      <UpToDateCheckInput Remove="Assets\Fonts\Noto_Sans_TC\static\NotoSansTC-Bold.ttf" />
+      <UpToDateCheckInput Remove="Assets\Fonts\Noto_Sans_TC\static\NotoSansTC-ExtraBold.ttf" />
+      <UpToDateCheckInput Remove="Assets\Fonts\Noto_Sans_TC\static\NotoSansTC-ExtraLight.ttf" />
+      <UpToDateCheckInput Remove="Assets\Fonts\Noto_Sans_TC\static\NotoSansTC-Light.ttf" />
+      <UpToDateCheckInput Remove="Assets\Fonts\Noto_Sans_TC\static\NotoSansTC-Medium.ttf" />
+      <UpToDateCheckInput Remove="Assets\Fonts\Noto_Sans_TC\static\NotoSansTC-Regular.ttf" />
+      <UpToDateCheckInput Remove="Assets\Fonts\Noto_Sans_TC\static\NotoSansTC-SemiBold.ttf" />
+      <UpToDateCheckInput Remove="Assets\Fonts\Noto_Sans_TC\static\NotoSansTC-Thin.ttf" />
     </ItemGroup>
 
     <ItemGroup>

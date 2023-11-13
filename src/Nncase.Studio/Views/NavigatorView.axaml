@@ -7,7 +7,7 @@
              x:Class="Nncase.Studio.Views.NavigatorView"
              x:DataType="viewModels:NavigatorViewModel">
 
-    <DockPanel Margin="5">
+    <DockPanel Margin="10">
         <Border Background="White"
                 BorderBrush="Black"
                 BorderThickness="0"

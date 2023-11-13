@@ -17,6 +17,6 @@
     </Application.Styles>
 
      <Application.Resources>
-         <FontFamily x:Key="NunitoFont">Assets\Fonts\Nunito-Black.ttf</FontFamily>
+         <!-- <FontFamily x:Key="NunitoFont">Assets\Fonts\Nunito-Black.ttf</FontFamily> -->
      </Application.Resources>
 </Application>

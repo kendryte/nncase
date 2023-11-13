@@ -8,7 +8,7 @@
         xmlns:studio="clr-namespace:Nncase.Studio"
         xmlns:views="clr-namespace:Nncase.Studio.Views"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-        MinHeight="820"
+        MinHeight="880"
         MinWidth="1400"
         x:Class="Nncase.Studio.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
@@ -53,7 +53,7 @@
                 <Label
                     HorizontalContentAlignment="Center"
                     VerticalContentAlignment="Center"
-                    MinHeight="600"
+                    MinHeight="640"
                     Content="{Binding ContentViewModel}"></Label>
             </Border>
             <Border Background="White"
@@ -61,7 +61,7 @@
                     BorderThickness="0"
                     CornerRadius="3"
                     Padding="4">
-            <views:NavigatorView HorizontalAlignment="Center" Margin="10" DataContext="{Binding NavigatorViewModelValue}"></views:NavigatorView>
+            <views:NavigatorView HorizontalAlignment="Center" DataContext="{Binding NavigatorViewModelValue}"></views:NavigatorView>
             </Border>
         </StackPanel>
     </Border>
