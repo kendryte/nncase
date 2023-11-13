@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Collections.Generic;
@@ -21,7 +21,7 @@ public partial class PreprocessViewModel : ViewModelBase
 
     public PreprocessViewModel(ViewModelContext context)
     {
-        this.Context = context;
+        Context = context;
         RangeMax = "1";
         RangeMin = "-1";
         Mean = "1";

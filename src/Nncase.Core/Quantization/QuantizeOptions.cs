@@ -156,7 +156,7 @@ public class QuantizeOptions
     /// <summary>
     /// Gets or sets quantize scheme path.
     /// </summary>
-    public string ExportQuantSchemePath { get; set; }
+    public string ExportQuantSchemePath { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets a value indicating whether export weight range by channel.

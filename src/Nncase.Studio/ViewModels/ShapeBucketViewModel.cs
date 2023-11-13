@@ -1,3 +1,6 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,11 +10,14 @@ namespace Nncase.Studio.ViewModels;
 
 public partial class ShapeBucketViewModel : ViewModelBase
 {
-    [ObservableProperty] private string _segmentCount;
+    [ObservableProperty]
+    private string _segmentCount = string.Empty;
 
-    [ObservableProperty] private string _fixVarMap;
+    [ObservableProperty]
+    private string _fixVarMap = string.Empty;
 
-    [ObservableProperty] private string _varRangeInfo;
+    [ObservableProperty]
+    private string _varRangeInfo = string.Empty;
 
     public ShapeBucketViewModel(ViewModelContext context)
     {
@@ -47,7 +53,7 @@ public partial class ShapeBucketViewModel : ViewModelBase
             map = input.Trim().Split(",").Select(x => x.Trim().Split(":")).ToDictionary(x => x[0], x => int.Parse(x[1]));
             return true;
         }
-        catch (Exception e)
+        catch (Exception)
         {
             map = new();
             return false;
@@ -68,11 +74,10 @@ public partial class ShapeBucketViewModel : ViewModelBase
                 });
             return true;
         }
-        catch (Exception e)
+        catch (Exception)
         {
             map = new();
             return false;
         }
     }
-
 }

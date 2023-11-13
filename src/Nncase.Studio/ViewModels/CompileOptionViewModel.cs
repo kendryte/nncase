@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Collections.Generic;
@@ -54,7 +54,7 @@ public partial class CompileOptionViewModel : ViewModelBase
         // todo: k230 should set dll path
         _target = TargetList[0];
         DumpDir = Path.Join(Directory.GetCurrentDirectory(), "nncase_dump");
-        this.Context = context;
+        Context = context;
     }
 
     public ObservableCollection<DumpFlags> DumpFlagSelected { get; set; } = new();

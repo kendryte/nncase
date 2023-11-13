@@ -54,7 +54,7 @@ public partial class QuantizeViewModel : ViewModelBase
         ModelQuantModeList = new ObservableCollection<ModelQuantMode>(Enum.GetValues<ModelQuantMode>().Skip(1).ToList());
         ModelQuantModeValue = ModelQuantMode.UsePTQ;
         QuantizeOptionsValue = new();
-        this.Context = context;
+        Context = context;
     }
 
     public ObservableCollection<ModelQuantMode> ModelQuantModeList { get; set; }

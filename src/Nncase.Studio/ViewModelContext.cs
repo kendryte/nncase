@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -71,7 +71,7 @@ public class ViewModelContext
         Navigator?.SwitchNext();
     }
 
-    public ViewModelBase? ViewModelLookup(Type type)
+    public ViewModelBase ViewModelLookup(Type type)
     {
         foreach (var viewModelBase in ViewModelBases)
         {
@@ -81,7 +81,7 @@ public class ViewModelContext
             }
         }
 
-        return null;
+        throw new InvalidOperationException($"{type} Not Found");
     }
 
     public string[] CheckViewModel()

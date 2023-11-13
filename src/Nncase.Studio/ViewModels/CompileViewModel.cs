@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -28,7 +28,8 @@ public partial class CompileViewModel : ViewModelBase
     [ObservableProperty]
     private string _kmodelPath = "test.kmodel";
 
-    [ObservableProperty] private string _p = string.Empty;
+    [ObservableProperty]
+    private string _p = string.Empty;
 
     public CompileViewModel(ViewModelContext context)
     {
@@ -85,6 +86,7 @@ public partial class CompileViewModel : ViewModelBase
         }
 
         _cts = new();
+
         // todo: max value
         ProgressBarMax = 9;
         var progress = new Progress<int>(percent =>
@@ -99,7 +101,7 @@ public partial class CompileViewModel : ViewModelBase
                 await compiler.CompileWithReport(progress, _cts.Token);
             }).ContinueWith(_ => Task.CompletedTask, _cts.Token);
         }
-        catch (Exception e)
+        catch (Exception)
         {
             Context.OpenDialog("Compile has been cancel");
             ProgressBarValue = 0;

@@ -250,20 +250,10 @@ public class Compiler : ICompiler
                 Report(progress, 9, linkedCts.Token);
                 await task.WaitAsync(linkedCts.Token);
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 return;
             }
-        }
-    }
-
-    private void Report(IProgress<int> progress, int maxPassCount, CancellationToken token)
-    {
-        while (_runPassCount < maxPassCount && !token.IsCancellationRequested)
-        {
-            Console.WriteLine(_runPassCount);
-            Thread.Sleep(10);
-            progress?.Report(_runPassCount);
         }
     }
 
@@ -299,6 +289,16 @@ public class Compiler : ICompiler
     {
         var linkedModel = _modelBuilder.Build(Module);
         linkedModel.Serialize(output);
+    }
+
+    private void Report(IProgress<int> progress, int maxPassCount, CancellationToken token)
+    {
+        while (_runPassCount < maxPassCount && !token.IsCancellationRequested)
+        {
+            Console.WriteLine(_runPassCount);
+            Thread.Sleep(10);
+            progress?.Report(_runPassCount);
+        }
     }
 
     private async Task<IRModule> InitializeModuleAsync(IRModule module)

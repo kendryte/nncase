@@ -49,8 +49,6 @@ public partial class MainWindowViewModel : WindowViewModelBase
     [ObservableProperty]
     private ViewModelBase _contentViewModel;
 
-    protected ViewModelContext Context { get; set; }
-
     public MainWindowViewModel()
     {
         var host = Host.CreateDefaultBuilder()
@@ -100,6 +98,8 @@ public partial class MainWindowViewModel : WindowViewModelBase
     public Interaction<(string Message, PromptDialogLevel Level), Unit> ShowPromptDialog { get; } = new();
 
     public NavigatorViewModel NavigatorViewModelValue { get; set; }
+
+    protected ViewModelContext Context { get; set; }
 
     public void Update(ViewModelBase contenViewModel)
     {

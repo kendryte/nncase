@@ -16,25 +16,33 @@ namespace Nncase.Studio.ViewModels;
 
 public partial class SimulateViewModel : ViewModelBase
 {
-    [ObservableProperty] private string _resultDir = string.Empty;
+    [ObservableProperty]
+    private string _resultDir = string.Empty;
 
-    [ObservableProperty] private string _kmodelPath = string.Empty;
+    [ObservableProperty]
+    private string _kmodelPath = string.Empty;
 
-    [ObservableProperty] private string _status = "未运行";
+    [ObservableProperty]
+    private string _status = "未运行";
 
-    [ObservableProperty] private ObservableCollection<Tensor> _runtimeInput = new();
+    [ObservableProperty]
+    private ObservableCollection<Tensor> _runtimeInput = new();
 
-    [ObservableProperty] private ObservableCollection<string> _inputPath = new();
+    [ObservableProperty]
+    private ObservableCollection<string> _inputPath = new();
 
-    [ObservableProperty] private ObservableCollection<string> _mainParamStr = new();
+    [ObservableProperty]
+    private ObservableCollection<string> _mainParamStr = new();
 
-    [ObservableProperty] private ObservableCollection<string> _inputTypeStr = new();
+    [ObservableProperty]
+    private ObservableCollection<string> _inputTypeStr = new();
 
-    [ObservableProperty] private bool _runSimulate;
+    [ObservableProperty]
+    private bool _runSimulate;
 
     public SimulateViewModel(ViewModelContext context)
     {
-        this.Context = context;
+        Context = context;
     }
 
     [RelayCommand]
@@ -101,11 +109,13 @@ public partial class SimulateViewModel : ViewModelBase
                 var start = System.DateTime.Now;
                 Status = "Running";
                 RunSimulate = true;
-                Task.Run(
+
+                var task = Task.Run(
                     () =>
                     {
                         UpdateTime(cts, start);
-                    }, cts.Token);
+                    },
+                    cts.Token);
                 await Task.Run(() =>
                 {
                     var result = entry.Invoke(rtInputs).ToValue().AsTensors();
@@ -117,7 +127,7 @@ public partial class SimulateViewModel : ViewModelBase
                 Status = "Finish";
             }
         }
-        catch (DllNotFoundException e)
+        catch (DllNotFoundException)
         {
             Context.OpenDialog("libNncase.Native.so not found");
         }
@@ -130,6 +140,53 @@ public partial class SimulateViewModel : ViewModelBase
         {
             SimulateFinish(cts);
         }
+    }
+
+    // private bool CheckInput(out Task simulate)
+    // {
+    //     if (Context.Entry == null)
+    //     {
+    //         Context.OpenDialog("Should Import Model first");
+    //         {
+    //             simulate = Task.CompletedTask;
+    //             return true;
+    //         }
+    //     }
+    //
+    //     var paramList = Context.Entry!.Parameters.ToArray();
+    //     foreach ((var tensor, var param) in RuntimeInput.Zip(paramList))
+    //     {
+    //         var tt = (TensorType)param.TypeAnnotation;
+    //         if (tensor.ElementType != tt.DType)
+    //         {
+    //             Context.OpenDialog($"{param.Name} input datatype mismatch");
+    //             {
+    //                 simulate = Task.CompletedTask;
+    //                 return true;
+    //             }
+    //         }
+    //
+    //         if (tt.Shape.Count != tensor.Shape.Count || tt.Shape.Zip(tensor.Shape)
+    //                 .Any(pair => pair.First.IsFixed && pair.First != pair.Second))
+    //         {
+    //             Context.OpenDialog($"{param.Name} input shape mismatch");
+    //             {
+    //                 simulate = Task.CompletedTask;
+    //                 return true;
+    //             }
+    //         }
+    //     }
+    //
+    //     return false;
+    // }
+    public override void UpdateViewModel()
+    {
+        if (ResultDir == string.Empty)
+        {
+            ResultDir = Context.CompileOption.DumpDir;
+        }
+
+        KmodelPath = Context.KmodelPath;
     }
 
     private void SaveResult(Tensor[] result)
@@ -240,54 +297,6 @@ public partial class SimulateViewModel : ViewModelBase
         }
 
         return errcStr;
-    }
-
-    // private bool CheckInput(out Task simulate)
-    // {
-    //     if (Context.Entry == null)
-    //     {
-    //         Context.OpenDialog("Should Import Model first");
-    //         {
-    //             simulate = Task.CompletedTask;
-    //             return true;
-    //         }
-    //     }
-    //
-    //     var paramList = Context.Entry!.Parameters.ToArray();
-    //     foreach ((var tensor, var param) in RuntimeInput.Zip(paramList))
-    //     {
-    //         var tt = (TensorType)param.TypeAnnotation;
-    //         if (tensor.ElementType != tt.DType)
-    //         {
-    //             Context.OpenDialog($"{param.Name} input datatype mismatch");
-    //             {
-    //                 simulate = Task.CompletedTask;
-    //                 return true;
-    //             }
-    //         }
-    //
-    //         if (tt.Shape.Count != tensor.Shape.Count || tt.Shape.Zip(tensor.Shape)
-    //                 .Any(pair => pair.First.IsFixed && pair.First != pair.Second))
-    //         {
-    //             Context.OpenDialog($"{param.Name} input shape mismatch");
-    //             {
-    //                 simulate = Task.CompletedTask;
-    //                 return true;
-    //             }
-    //         }
-    //     }
-    //
-    //     return false;
-    // }
-
-    public override void UpdateViewModel()
-    {
-        if (ResultDir == string.Empty)
-        {
-            ResultDir = Context.CompileOption.DumpDir;
-        }
-
-        KmodelPath = Context.KmodelPath;
     }
 
     private void UpdateRuntimeInputUI(Tensor[] input, string[] inputFiles)
