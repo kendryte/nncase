@@ -184,7 +184,7 @@ public partial class FoldTransposeActTranspose : RewriteRule<Pattern>
 
     public Pattern LeakyReluPattern => HasMarker(
         IsLeakyRelu(
-            "op",
+            "target",
             "call",
             HasMarker(
                 IsTranspose(IsWildcard("input") with { TypePattern = HasFixedShape() }, IsWildcard("perm1")),
@@ -192,7 +192,7 @@ public partial class FoldTransposeActTranspose : RewriteRule<Pattern>
             IsWildcard("alpha")),
         "outMarker");
 
-    private Expr? GetReplace(Call call, Expr input, Marker inMarker, Marker outMarker, int[] perm1, int[] perm2, Call outTrCall, Expr alpha)
+    private Expr? GetReplace(Call call, Expr input, Marker inMarker, Marker outMarker, int[] perm1, int[] perm2, Call outTrCall, Expr alpha, Expr target)
     {
         if (perm1.Length != perm2.Length)
         {
@@ -201,7 +201,7 @@ public partial class FoldTransposeActTranspose : RewriteRule<Pattern>
 
         if (outTrCall.CheckedShape.SequenceEqual(input.CheckedShape))
         {
-            return outMarker.With(target: ReplaceUtility.ReplaceCallFirstParam(call, inMarker.With(target: input), call));
+            return outMarker.With(target: ReplaceUtility.ReplaceCallFirstParam(target, call.Arguments.ToArray(), inMarker.With(target: input)));
         }
 
         // transpose(leakyrelu(transpose(input))) => leakyRelu(transpose(transpose(input)))
