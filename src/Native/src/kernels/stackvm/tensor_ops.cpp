@@ -789,7 +789,7 @@ result<value_t> nncase::kernels::stackvm::bucket_pad(
     try_dims_v(shape);
     auto in_tensor = input.as<tensor>().expect("input is not a tensor");
     auto in_shape = in_tensor->shape();
-    if(compute_size(in_shape) < compute_size(shape_value))
+    if(compute_size(in_shape) > compute_size(shape_value))
     {
         return err(std::errc::invalid_argument);
     }
