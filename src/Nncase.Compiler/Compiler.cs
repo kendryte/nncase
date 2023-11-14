@@ -27,7 +27,7 @@ using FoldConstCall = Nncase.Passes.Rules.Neutral.FoldConstCall;
 
 namespace Nncase.Compiler;
 
-public class Compiler : ICompiler
+internal class Compiler : ICompiler
 {
     private readonly CompileSession _compileSession;
     private readonly IModelBuilder _modelBuilder;
