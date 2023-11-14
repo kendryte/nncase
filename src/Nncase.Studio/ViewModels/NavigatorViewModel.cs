@@ -40,28 +40,36 @@ public partial class NavigatorViewModel : ViewModelBase
     [RelayCommand]
     public void SwitchPrev()
     {
-        if (PageIndex != 0)
+        UpdateContentViewModel(() =>
         {
-            PageIndex -= 1;
-        }
-
-        UpdateContentViewModel();
+            do
+            {
+                PageIndex -= 1;
+            } while (!ContentViewModelList[PageIndex].IsVisible());
+        });
     }
 
     [RelayCommand]
     public void SwitchNext()
     {
-        if (PageIndex != PageMaxIndex)
+        UpdateContentViewModel(() =>
         {
-            PageIndex += 1;
-        }
-
-        UpdateContentViewModel();
+            do
+            {
+                PageIndex += 1;
+            } while (!ContentViewModelList[PageIndex].IsVisible());
+        });
     }
 
     public void UpdateContentViewModel()
     {
+        UpdateContentViewModel(() => {});
+    }
+
+    public void UpdateContentViewModel(Action updateIndex)
+    {
         ContentViewModel?.UpdateContext();
+        updateIndex();
         PageMaxIndex = ContentViewModelList.Count - 1;
         ContentViewModel = ContentViewModelList[PageIndex];
         ContentViewModel.UpdateViewModel();

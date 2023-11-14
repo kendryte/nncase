@@ -8,6 +8,7 @@ using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Avalonia.Platform.Storage;
 using Nncase.IR;
+using Nncase.Quantization;
 using Nncase.Studio.ViewModels;
 
 namespace Nncase.Studio;
@@ -28,6 +29,8 @@ public class ViewModelContext
     public ViewModelBase[] ViewModelBases { get; set; } = Array.Empty<ViewModelBase>();
 
     public bool MixQuantize { get; set; }
+
+    public bool UseQuantize { get; set; }
 
     public bool EnableShapeBucket
     {
@@ -56,15 +59,15 @@ public class ViewModelContext
         await _mainWindowView.ShowDialog(prompt, level);
     }
 
-    public void InsertPage(ViewModelBase page, ViewModelBase pagePosition, int offset = 0)
-    {
-        Navigator?.InsertPageAfter(page, pagePosition, offset);
-    }
-
-    public void RemovePage(ViewModelBase page)
-    {
-        Navigator?.RemovePage(page);
-    }
+    // public void InsertPage(ViewModelBase page, ViewModelBase pagePosition, int offset = 0)
+    // {
+    //     Navigator?.InsertPageAfter(page, pagePosition, offset);
+    // }
+    //
+    // public void RemovePage(ViewModelBase page)
+    // {
+    //     Navigator?.RemovePage(page);
+    // }
 
     public void SwitchNext()
     {

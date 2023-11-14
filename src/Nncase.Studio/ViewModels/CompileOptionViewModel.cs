@@ -45,6 +45,11 @@ public partial class CompileOptionViewModel : ViewModelBase
     [ObservableProperty]
     private string _target;
 
+    [ObservableProperty]
+    public string _preprocessMode;
+
+    public static string CustomMode = "自定义";
+
     public CompileOptionViewModel(ViewModelContext context)
     {
         // skip None
@@ -54,6 +59,8 @@ public partial class CompileOptionViewModel : ViewModelBase
         _target = TargetList[0];
         DumpDir = Path.Join(Directory.GetCurrentDirectory(), "nncase_dump");
         Context = context;
+        var list = new[] { CustomMode };
+        PreprocessModeList = new(list);
     }
 
     public ObservableCollection<DumpFlags> DumpFlagSelected { get; set; } = new();
@@ -61,6 +68,8 @@ public partial class CompileOptionViewModel : ViewModelBase
     public ObservableCollection<DumpFlags> DumpFlagsList { get; set; }
 
     public ObservableCollection<string> TargetList { get; set; }
+
+    public ObservableCollection<string> PreprocessModeList { get; set; }
 
     [RelayCommand]
     public async Task SetDumpDir()
@@ -72,49 +81,49 @@ public partial class CompileOptionViewModel : ViewModelBase
         }
     }
 
-    [RelayCommand]
-    public void ShowPreprocess()
-    {
-        var pre = Context.ViewModelLookup(typeof(PreprocessViewModel))!;
-        if (Preprocess)
-        {
-            Context.InsertPage(pre, this, 1);
-        }
-        else
-        {
-            Context.RemovePage(pre);
-        }
-    }
-
-    [RelayCommand]
-    public void ShowQuantize()
-    {
-        var quant = Context.ViewModelLookup(typeof(QuantizeViewModel))!;
-        var compile = Context.ViewModelLookup(typeof(CompileViewModel))!;
-        if (Quantize)
-        {
-            Context.InsertPage(quant, compile);
-        }
-        else
-        {
-            Context.RemovePage(quant);
-        }
-    }
-
-    [RelayCommand]
-    public void ShowShapeBucket()
-    {
-        var shapeBucket = Context.ViewModelLookup(typeof(ShapeBucketViewModel))!;
-        var compile = Context.ViewModelLookup(typeof(CompileViewModel))!;
-        if (ShapeBucket)
-        {
-            Context.InsertPage(shapeBucket, compile);
-        }
-        else
-        {
-            Context.RemovePage(shapeBucket);
-        }
-    }
+    // [RelayCommand]
+    // public void ShowPreprocess()
+    // {
+    //     var pre = Context.ViewModelLookup(typeof(PreprocessViewModel))!;
+    //     if (Preprocess)
+    //     {
+    //         Context.InsertPage(pre, this, 1);
+    //     }
+    //     else
+    //     {
+    //         Context.RemovePage(pre);
+    //     }
+    // }
+    //
+    // [RelayCommand]
+    // public void ShowQuantize()
+    // {
+    //     var quant = Context.ViewModelLookup(typeof(QuantizeViewModel))!;
+    //     var compile = Context.ViewModelLookup(typeof(CompileViewModel))!;
+    //     if (Quantize)
+    //     {
+    //         Context.InsertPage(quant, compile);
+    //     }
+    //     else
+    //     {
+    //         Context.RemovePage(quant);
+    //     }
+    // }
+    //
+    // [RelayCommand]
+    // public void ShowShapeBucket()
+    // {
+    //     var shapeBucket = Context.ViewModelLookup(typeof(ShapeBucketViewModel))!;
+    //     var compile = Context.ViewModelLookup(typeof(CompileViewModel))!;
+    //     if (ShapeBucket)
+    //     {
+    //         Context.InsertPage(shapeBucket, compile);
+    //     }
+    //     else
+    //     {
+    //         Context.RemovePage(shapeBucket);
+    //     }
+    // }
 
     public override void UpdateViewModel()
     {
@@ -130,10 +139,7 @@ public partial class CompileOptionViewModel : ViewModelBase
         Context.CompileOption.PreProcess = Preprocess;
         Context.MixQuantize = MixQuantize;
         Context.EnableShapeBucket = ShapeBucket;
-        if (!Quantize)
-        {
-            Context.CompileOption.QuantizeOptions.ModelQuantMode = ModelQuantMode.NoQuant;
-        }
+        Context.UseQuantize = Quantize;
     }
 
     public override List<string> CheckViewModel()

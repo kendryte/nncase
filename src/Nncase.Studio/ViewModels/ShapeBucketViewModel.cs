@@ -48,6 +48,12 @@ public partial class ShapeBucketViewModel : ViewModelBase
 
     public bool TryParseFixVarMap(string input, out Dictionary<string, int> map)
     {
+        map = new();
+        if (input == string.Empty)
+        {
+            return false;
+        }
+
         try
         {
             map = input.Trim().Split(",").Select(x => x.Trim().Split(":")).ToDictionary(x => x[0], x => int.Parse(x[1]));
@@ -55,13 +61,18 @@ public partial class ShapeBucketViewModel : ViewModelBase
         }
         catch (Exception)
         {
-            map = new();
             return false;
         }
     }
 
     public bool TryParseRangeInfo(string input, out Dictionary<string, (int Min, int Max)> map)
     {
+        map = new();
+        if (input == string.Empty)
+        {
+            return false;
+        }
+
         try
         {
             map = input.Trim()
@@ -76,8 +87,9 @@ public partial class ShapeBucketViewModel : ViewModelBase
         }
         catch (Exception)
         {
-            map = new();
             return false;
         }
     }
+
+    public override bool IsVisible() => Context.EnableShapeBucket;
 }

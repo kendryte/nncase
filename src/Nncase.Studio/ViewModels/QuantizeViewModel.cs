@@ -150,6 +150,8 @@ public partial class QuantizeViewModel : ViewModelBase
     {
         return new();
     }
+
+    public override bool IsVisible() => Context.UseQuantize;
 }
 
 public sealed class SelfInputCalibrationDatasetProvider : ICalibrationDatasetProvider
