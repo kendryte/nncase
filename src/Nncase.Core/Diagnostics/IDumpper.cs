@@ -42,6 +42,8 @@ public interface IDumpper
 
     void DumpCSharpIR(Expr expr, string prefix, string? reletivePath = null);
 
+    void DumpPatternIR(Expr expr, string prefix, string? reletivePath = null);
+
     void DumpModule(IRModule module, string? reletivePath = null);
 
     Stream OpenFile(string reletivePath, FileMode fileMode = FileMode.Create);

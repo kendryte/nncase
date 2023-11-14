@@ -21,6 +21,7 @@ using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Passes.Rules.Neutral;
 
+#if false
 [RuleGenerator]
 public sealed partial class PrimFuncMergeRule : RewriteRule<PatternMatch.Pattern>
 {
@@ -98,7 +99,7 @@ public sealed partial class PrimFuncMergeRule : RewriteRule<PatternMatch.Pattern
         }
 
         // 2. chack and create the data buffer
-        if (calleeFunc.Parameters.ToArray().Count(b => b.MemLocation == Schedule.MemoryLocation.Output) != 1)
+        if (calleeFunc.Parameters.ToArray().Count(b => b.MemLocation == MemoryLocation.Output) != 1)
         {
             // the direct call mean the callee function only have one output.
             return null;
@@ -128,7 +129,7 @@ public sealed partial class PrimFuncMergeRule : RewriteRule<PatternMatch.Pattern
 
         // 5. build the new call.
         var nameWrapper = callerWrapper.Name; // + '_' + calleeWrapper.Name;
-        var newWrapper = new PrimFunctionWrapper(nameWrapper, newFunc, newFuncParams.Count(b => b.MemLocation == Schedule.MemoryLocation.Input));
+        var newWrapper = new PrimFunctionWrapper(nameWrapper, newFunc, newFuncParams.Count(b => b.MemLocation == MemoryLocation.Input));
 
         var newCallParams = new List<Expr>();
         newCallParams.AddRange(callerParams.Take(calleeBufferIndexs[0]));
@@ -151,10 +152,10 @@ public sealed partial class PrimFuncMergeRule : RewriteRule<PatternMatch.Pattern
             retBuffer.FixedStrides.SequenceEqual(inBuffer.FixedStrides) &&
             retBuffer.ElemType == inBuffer.ElemType &&
             retBuffer.Size == inBuffer.Size &&
-            retBuffer.MemLocation == Schedule.MemoryLocation.Output &&
-            inBuffer.MemLocation == Schedule.MemoryLocation.Input)
+            retBuffer.MemLocation == MemoryLocation.Output &&
+            inBuffer.MemLocation == MemoryLocation.Input)
         {
-            dataBuffer = new TIR.PhysicalBuffer(inBuffer.Name, inBuffer.ElemType, Schedule.MemoryLocation.Data, inBuffer.FixedDimensions, inBuffer.FixedStrides, inBuffer.Start, inBuffer.Size);
+            dataBuffer = new TIR.PhysicalBuffer(inBuffer.Name, inBuffer.ElemType, MemoryLocation.Data, inBuffer.FixedDimensions, inBuffer.FixedStrides, inBuffer.Start, inBuffer.Size);
             return true;
         }
 
@@ -191,3 +192,4 @@ public sealed partial class PrimFuncMergeRule : RewriteRule<PatternMatch.Pattern
         }
     }
 }
+#endif

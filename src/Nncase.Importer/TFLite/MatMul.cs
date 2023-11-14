@@ -66,12 +66,13 @@ namespace Nncase.Importer.TFLite
                 : Expand(Cast(0, GetDataType(GetInputTensor(op, 0).Type)), new[] { otherTensor.Shape(0) }).Evaluate().AsTensor();
 
             var matmul = MatMul(lhs, rhs);
-            List<string> outputNames = new() { GetOutputTensor(op, 0).Name + "_matmul" };
-            matmul.Metadata.OutputNames = outputNames;
-            outputNames.Clear();
-            outputNames.Add(GetOutputTensor(op, 0).Name);
-            bias.Metadata.OutputNames = outputNames;
+            List<string> outputNames_matmul = new() { GetOutputTensor(op, 0).Name + "_matmul" };
+            matmul.Metadata.OutputNames = outputNames_matmul;
+            List<string> outputNames_bias = new() { GetOutputTensor(op, 0).Name + "_bias" };
+            bias.Metadata.OutputNames = outputNames_bias;
             var mm = matmul + bias;
+            List<string> outputNames = new() { GetOutputTensor(op, 0).Name };
+            mm.Metadata.OutputNames = outputNames;
 
             return fusedActivationFunction switch
             {

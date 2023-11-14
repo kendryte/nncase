@@ -24,21 +24,21 @@ public class StoreEvaluator : ITypeInferencer<Store>, IOpPrinter<Store>
     public string Visit(IIRPrinterContext context, Store target, bool iLmode)
     {
         var handle = context.GetArgument(target, Store.Handle);
-        _ = context.GetArgument(target, Store.Value);
+        var value = context.GetArgument(target, Store.Value);
         var index = context.GetArgument(target, Store.Index);
-        return $"{handle}[{index}] = {index}";
-
-        throw new System.NotImplementedException();
+        return $"{handle}[{index}] = {value}";
     }
 
     private IRType Visit(Store target, TensorType handle, TensorType index, TensorType value)
     {
-        _ = index.IsScalar ? 1 : index.Shape[0].FixedValue;
-
-        var elemType = ((PointerType)handle.DType).ElemType;
-        if (elemType != value.DType)
+        if (handle.DType is not PointerType { ElemType: DataType elemType } || elemType != value.DType)
         {
-            return new InvalidType($"You Can't Load The {value.DType} To {elemType}");
+            return new InvalidType($"You Can't Load The {value.DType} To {handle.DType}");
+        }
+
+        if (index.DType != DataTypes.Int32)
+        {
+            return new InvalidType($"store value type {index.DType} not supported");
         }
 
         return TupleType.Void;

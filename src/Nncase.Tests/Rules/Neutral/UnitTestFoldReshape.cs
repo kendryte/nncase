@@ -21,6 +21,12 @@ namespace Nncase.Tests.Rules.NeutralTest;
 [AutoSetupTestMethod(InitSession = true)]
 public class UnitTestFoldReshape : TransformTestBase
 {
+    public static TheoryData<int[], int[], int[], int[]> TestReshapeBinaryConstReshapePositiveData => new()
+    {
+        { new[] { 12, 77, 77 }, new[] { 1, 12, 77, 77 }, new[] { 1, 1, 77, 77 }, new[] { 12, 77, 77 } },
+        { new[] { 12, 77, 77 }, new[] { 1, 12, 77, 77 }, new[] { 77 }, new[] { 12, 77, 77 } },
+    };
+
     public static IEnumerable<object[]> TestFoldNopReshapePositiveData =>
         new[]
         {
@@ -100,5 +106,17 @@ public class UnitTestFoldReshape : TransformTestBase
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Reshape(a, newShape);
         TestNotMatch<ReshapeToTranspose>(rootPre);
+    }
+
+    [Theory]
+    [MemberData(nameof(TestReshapeBinaryConstReshapePositiveData))]
+    public void TestReshapeBinaryConstReshapePositive(int[] inShape, int[] unsqShape, int[] constShape, int[] sqShape)
+    {
+        var a = Random.Normal(DataTypes.Float32, 0, 1, 0, inShape);
+        var v0 = Tensors.Reshape(a, unsqShape);
+        var v1 = Math.Binary(BinaryOp.Add, v0, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, constShape).Evaluate().AsTensor());
+        var v2 = Tensors.Reshape(v1, sqShape);
+        var rootPre = v2;
+        TestMatched<FoldReshapeBinaryConstReshape>(rootPre);
     }
 }

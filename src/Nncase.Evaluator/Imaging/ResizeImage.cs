@@ -110,16 +110,55 @@ public class ResizeImageEvaluator : IEvaluator<ResizeImage>, ITypeInferencer<Res
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, ResizeImage target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, ResizeImage.Input);
+        var input = context.CheckArgumentType<IRType>(target, ResizeImage.Input);
         var newSize = context.GetArgument(target, ResizeImage.NewSize);
+
+        return input switch
+        {
+            TensorType t => Visit(t, newSize),
+            DistributedType d => Visit(d, newSize),
+            _ => new InvalidType(input.GetType().ToString()),
+        };
+    }
+
+    public IRType Visit(TensorType input, Expr newSize)
+    {
         return TypeInference.ResizeType(input, newSize, null);
+    }
+
+    public IRType Visit(DistributedType input, Expr newSize)
+    {
+        if (Visit(input.TensorType, newSize) is not TensorType tensorType)
+        {
+            return new InvalidType(string.Empty);
+        }
+
+        var ndsbp = new SBP[input.Placement.Rank];
+
+        var invalid = new InvalidType($"{input}, not support");
+        for (int i = 0; i < input.Placement.Rank; i++)
+        {
+            switch (input.NdSBP[i])
+            {
+                case SBPSplit { Axis: int ix } when ix < 2:
+                    ndsbp[i] = SBP.S(ix);
+                    break;
+                case SBPBroadCast:
+                    ndsbp[i] = SBP.B;
+                    break;
+                default:
+                    return invalid;
+            }
+        }
+
+        return new DistributedType(tensorType, ndsbp, input.Placement);
     }
 
     /// <inheritdoc/>
     public Cost Visit(ICostEvaluateContext context, ResizeImage target)
     {
-        var inputType = context.GetArgumentType<TensorType>(target, ResizeImage.Input);
-        var returnType = context.GetReturnType<TensorType>();
+        var inputType = context.GetArgumentType<IRType>(target, ResizeImage.Input);
+        var returnType = context.GetReturnType<IRType>();
         return new()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),

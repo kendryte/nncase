@@ -29,7 +29,7 @@ public class UnitTestEvaluatorBuffers : TestClassBase
     public void TestUninitialized()
     {
         var shape = new[] { 1 };
-        var expr = IR.F.Buffer.Uninitialized(DataTypes.Float32, MemoryLocation.Input, shape);
+        var expr = IR.F.Buffer.Uninitialized(DataTypes.Float32, TIR.MemoryLocation.Input, shape);
         CompilerServices.InferenceType(expr);
         Assert.Equal(Value.None, expr.Evaluate());
     }

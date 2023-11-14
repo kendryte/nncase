@@ -15,10 +15,14 @@ public sealed partial class FoldGatherReshape : RewriteRule<Pattern>
 {
     // Reshape(Gather(Shape, 0, 0), new[] { 0 }) -> GetItem(Shape, 0)
     public override Pattern Pattern => IsGather(
-        IsReshape(IsWildcard("input"), IsTensorConst("newShape")), IsTensorConst("axis"), IsTensorConst("index"));
+        "gather",
+        _ => true,
+        IsReshape(IsWildcard("input"), IsTensorConst("newShape")),
+        IsTensorConst("index"));
 
-    private Expr? GetReplace(Expr input, int[] newShape, int axis, int index)
+    private Expr? GetReplace(Expr input, int[] newShape, IR.Tensors.Gather gather, int index)
     {
+        int axis = gather.Axis;
         if (newShape.SequenceEqual(new[] { 1 }) && axis == 1)
         {
             return input[index];

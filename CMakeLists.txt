@@ -12,7 +12,6 @@ endif()
 
 if(NOT DEFINED NNCASE_VERSION_SUFFIX)
     find_package (Git)
-
     execute_process(
         COMMAND ${GIT_EXECUTABLE} describe --always --dirty --tag
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
@@ -274,5 +273,5 @@ if(BUILD_TESTING)
 endif()
 
 # Modules
-#add_subdirectory(modules/k210)
+
 #add_subdirectory(modules/vulkan)

@@ -23,7 +23,7 @@ public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>, ICos
     public IValue Visit(IEvaluateContext context, Gather gather)
     {
         var input = context.GetOrtArgumentValue(gather, Gather.Input);
-        var axis = context.GetArgumentValueAsScalar<int>(gather, Gather.Axis);
+        var axis = gather.Axis;
         var index = context.GetOrtArgumentValue(gather, Gather.Index);
         return OrtKI.Gather(input, index, axis).ToValue();
     }
@@ -31,29 +31,35 @@ public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>, ICos
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Gather target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, Gather.Input);
-        var axis = context.CheckArgumentType<TensorType>(target, Gather.Axis);
-        var index = context.CheckArgumentType<TensorType>(target, Gather.Index);
-        return Visit(context, target, input, axis, index);
+        var input = context.CheckArgumentType<IRType>(target, Gather.Input);
+        var index = context.CheckArgumentType<IRType>(target, Gather.Index);
+
+        return (input, index) switch
+        {
+            (TensorType a, TensorType b) => Visit(a, target.Axis, b),
+            (DistributedType a, DistributedType b) => Visit(a, target.Axis, b),
+            _ => new InvalidType($"{input}, {index}"),
+        };
     }
 
     /// <inheritdoc/>
     public Cost Visit(ICostEvaluateContext context, Gather target)
     {
-        var ret_type = context.GetReturnType<TensorType>();
+        var inputType = context.GetArgumentType<IRType>(target, Gather.Input);
+        var indexType = context.GetArgumentType<IRType>(target, Gather.Index);
+        var retType = context.GetReturnType<IRType>();
         return new()
         {
-            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(ret_type.DType),
-            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret_type.DType),
-            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(ret_type.DType, 1),
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(indexType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(retType),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(retType),
         };
     }
 
     public Expr Visit(IShapeEvaluateContext context, Gather target)
     {
-        var axis = context.GetArgument(target, Gather.Axis);
         var inShape = context.GetArgumentShape(target, Gather.Input);
-        axis = ShapeExprUtility.Positive(Cast(axis, DataTypes.Int32), inShape);
+        var axis = ShapeExprUtility.Positive(target.Axis, inShape);
         var indexShape = context.GetArgumentShape(target, Gather.Index);
         var outShape = ShapeExprUtility.ReplaceList(inShape, axis, indexShape);
         return outShape;
@@ -68,26 +74,56 @@ public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>, ICos
         };
     }
 
-    private IRType Visit(ITypeInferenceContext context, Gather target, TensorType input, TensorType axis, TensorType index)
+    private IRType Visit(TensorType input, int axis, TensorType index)
     {
         if (input.Shape.IsUnranked)
         {
             return input;
         }
 
-        if (context.GetArgument(target, Gather.Axis) is TensorConst axisValue)
-        {
-            var axisV = axisValue.Value.ToScalar<int>();
-            axisV = axisV < 0 ? axisV + input.Shape.Rank : axisV;
+        axis = axis < 0 ? axis + input.Shape.Rank : axis;
 
-            // input_shape[:axis] + index_shape + input_shape[axis + 1:]
-            var inShape = input.Shape.ToArray();
-            var newShape = inShape[..axisV].Concat(index.Shape).Concat(inShape[(axisV + 1)..]).ToArray();
-            return new TensorType(input.DType, newShape);
-        }
-        else
+        // input_shape[:axis] + index_shape + input_shape[axis + 1:]
+        var inShape = input.Shape.ToArray();
+        var newShape = inShape[..axis].Concat(index.Shape).Concat(inShape[(axis + 1)..]).ToArray();
+        return new TensorType(input.DType, newShape);
+    }
+
+    private IRType Visit(DistributedType input, int axis, DistributedType index)
+    {
+        var invalid = new InvalidType(input.ToString() + " " + index.ToString());
+        if (Visit(input.TensorType, axis, index.TensorType) is not TensorType tensorType)
         {
-            return new InvalidType("Gather axis must be constant");
+            return invalid;
         }
+
+        if (input.Placement != index.Placement)
+        {
+            return invalid;
+        }
+
+        var ndsbp = new SBP[input.Placement.Rank];
+
+        for (int i = 0; i < input.Placement.Rank; i++)
+        {
+            switch (input.NdSBP[i], index.NdSBP[i])
+            {
+                case (SBPSplit { Axis: int ix }, _) when ix == axis:
+                    return new InvalidType($"the input can't split on {axis}");
+                case (SBPBroadCast, SBPSplit { Axis: int ix }):
+                    ndsbp[i] = SBP.S(ix);
+                    break;
+                case (SBPSplit { Axis: int ix }, SBPBroadCast):
+                    ndsbp[i] = SBP.S(ix - axis + index.TensorType.Shape.Rank - 1);
+                    break;
+                case (SBPBroadCast, SBPBroadCast):
+                    ndsbp[i] = SBP.B;
+                    break;
+                default:
+                    return invalid;
+            }
+        }
+
+        return new DistributedType(tensorType, ndsbp, input.Placement);
     }
 }
