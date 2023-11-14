@@ -84,8 +84,6 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
         var rt = OrtKI.Transpose(reshape1, perm);
         var reshape2 = OrtKI.Reshape(rt, (OrtKISharp.Tensor)reshappedShape2, 0);
         return NHWCToNCHW(reshape2.ToTensor()).Evaluate();
-
-        // return reshape2.ToValue();
     }
 
     /// <inheritdoc/>
@@ -109,7 +107,6 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
             var m = blockShapeValue.Length;
             var inRank = input.CheckedShape.Rank;
 
-            // todo: fix this
             var paddedShape = new[] { inShape[0] }
                 .Concat(Enumerable.Range(0, inRank)
                 .Select(i =>

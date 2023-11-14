@@ -145,12 +145,12 @@ public partial class FoldDilatedConv2D : RewriteRule<Pattern>
         var cropBegin = crop_begs.ToArray();
         var cropEnd = crop_ends.ToArray();
         var strides = Enumerable.Repeat(1, crop_begs.Count).ToArray();
-        var begin = Normalize_strided_slice_begin(btsInputShape, cropBegin, strides, 0);
-        var end = Normalize_strided_slice_end(btsInputShape, begin, cropEnd, strides, 0, 0);
+        var begin = NormalizeStridedSliceBegin(btsInputShape, cropBegin, strides, 0);
+        var end = NormalizeStridedSliceEndEnd(btsInputShape, begin, cropEnd, strides, 0, 0);
         return (begin, end);
     }
 
-    private int[] Normalize_strided_slice_end(int[] in_shape, int[] begin, int[] end, int[] strides, int end_mask, int shrink_axis_mask)
+    private int[] NormalizeStridedSliceEndEnd(int[] in_shape, int[] begin, int[] end, int[] strides, int end_mask, int shrink_axis_mask)
     {
         var new_shape = Enumerable.Range(0, strides.Length).ToArray();
         for (var i = 0; i < new_shape.Length; i++)
@@ -166,7 +166,7 @@ public partial class FoldDilatedConv2D : RewriteRule<Pattern>
         return new_shape;
     }
 
-    private int[] Normalize_strided_slice_begin(int[] in_shape, int[] begin, int[] strides, int begin_mask)
+    private int[] NormalizeStridedSliceBegin(int[] in_shape, int[] begin, int[] strides, int begin_mask)
     {
         var new_shape = Enumerable.Range(0, strides.Length).ToArray();
         for (var i = 0; i < new_shape.Length; i++)

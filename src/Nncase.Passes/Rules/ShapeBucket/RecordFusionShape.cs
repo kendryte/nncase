@@ -142,29 +142,16 @@ public class RecordFusionShape : FunctionPass
         var body = ((Function)main).Body;
         var tmpFusionShapeList = list.Select((seg, i) =>
             {
-                Console.WriteLine($"Record {i}");
-                for (var i1 = 0; i1 < seg.Length; i1++)
-                {
-                    Console.WriteLine($"{seg[i1]}");
-                }
-
-                var start = System.DateTime.Now;
                 var varValues = seg.ToDictionary(pair => pair.Key, pair => (IValue)Value.FromTensor(pair.Value));
                 var exprValues = seg.ToDictionary(pair => (Expr)pair.Key, pair => (IValue)Value.FromTensor(pair.Value));
                 var input = MakeDummyInput(varMap, varValues);
                 var memo = EvaluatorUtil.GetMemo(body, ConcatDictionary(input, varValues));
                 var f = new FusionShapeUpdater(ConcatDictionary(memo, exprValues));
                 f.Visit(main);
-                var stop = System.DateTime.Now;
-                Console.WriteLine($"time = {stop - start}");
-                GC.Collect();
                 return f.FusionShape;
             }).SelectMany(x => x)
             .ToLookup(x => x.Key, x => x.Value)
             .ToDictionary(pair => pair.Key, pair => pair.ToArray());
-
-        var end = System.DateTime.Now;
-        Console.WriteLine($"FullTime{end - begin}");
 
         foreach (var (f, shapeInfo) in tmpFusionShapeList)
         {
