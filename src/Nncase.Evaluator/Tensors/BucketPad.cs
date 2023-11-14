@@ -29,7 +29,7 @@ public class BucketPadEvaluator : IEvaluator<BucketPad>, ITypeInferencer<BucketP
         }
 
         var shape = context.GetArgumentValueAsArray<int>(bucketPad, BucketPad.Shape);
-        if (input.Shape.Size < shape.Aggregate((x, sum) => x * sum))
+        if (input.Shape.Size > shape.Aggregate((x, sum) => x * sum))
         {
             throw new InvalidOperationException();
         }

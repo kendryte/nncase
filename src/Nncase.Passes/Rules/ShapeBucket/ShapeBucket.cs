@@ -1014,6 +1014,35 @@ public partial class FusionBucket : RewriteRule<Pattern>
     public static Expr RestoreBodyWithArgs(Expr[] args, Var[] parameters, Expr body) =>
         ReplaceClone(body, parameters.Zip(args).ToArray());
 
+    public static int[][][] UpdateShapeCache(FusionShapeData[] shapeInfos, ShapeBucketOptions options, FusionBucketContext context)
+    {
+        var allFixedShapes = shapeInfos
+            .Select(x =>
+                x.InputShapes.Select(iShape => iShape.AsTensor().ToArray<int>().ToArray()).ToArray()).ToArray();
+        if (!SingleDimVar(options))
+        {
+            for (int i = 0; i < shapeInfos.Length; i++)
+            {
+                for (int j = 0; j < allFixedShapes.Length; j++)
+                {
+                    context.FixedShapeCache[j] = allFixedShapes[j];
+                }
+            }
+        }
+        else
+        {
+            allFixedShapes = new[] { allFixedShapes[0] }.Concat(allFixedShapes.Reverse()).ToArray();
+            var segments = context.DimVarValues.First().Value.Reverse().ToArray();
+
+            for (int i = 0; i < segments.Length; i++)
+            {
+                context.FixedShapeCache[segments.Length - 1 - i] = allFixedShapes[segments[i]];
+            }
+        }
+
+        return allFixedShapes;
+    }
+
     public Expr? GetReplace(Call outerCall, BucketFusion fusion, Expr fusionBody)
     {
         if (ShouldRestore(outerCall, fusion))
@@ -1042,16 +1071,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
         // 每个段的output
         var context = new FusionBucketContext(outerCall, fusion, options, _cache, _counter, shapeInfos);
 
-        var allFixedShapes = shapeInfos
-            .Select(x =>
-                x.InputShapes.Select(iShape => iShape.AsTensor().ToArray<int>().ToArray()).ToArray()).ToArray();
-        allFixedShapes = new[] { allFixedShapes[0] }.Concat(allFixedShapes.Reverse()).ToArray();
-        var segments = context.DimVarValues.First().Value.Reverse().ToArray();
-
-        for (int i = 0; i < segments.Length; i++)
-        {
-            context.FixedShapeCache[segments.Length - 1 - i] = allFixedShapes[segments[i]];
-        }
+        int[][][] allFixedShapes = UpdateShapeCache(shapeInfos, options, context);
 
         var minFixedShapeList = allFixedShapes[^1];
         var maxFixedShapeList = allFixedShapes[1];
@@ -1413,16 +1433,7 @@ public class FullBucket : FunctionPass
         var shapeData = shapeList.First().Value;
         var context = new FusionBucketContext(call, tmpFusion, options, new ShapeExprCache(options.VarMap), 0, shapeData);
 
-        var allFixedShapes = shapeData
-            .Select(x =>
-                x.InputShapes.Select(iShape => iShape.AsTensor().ToArray<int>().ToArray()).ToArray()).ToArray();
-        allFixedShapes = new[] { allFixedShapes[0] }.Concat(allFixedShapes.Reverse()).ToArray();
-        var segments = context.DimVarValues.First().Value.Reverse().ToArray();
-
-        for (int i = 0; i < segments.Length; i++)
-        {
-            context.FixedShapeCache[segments.Length - 1 - i] = allFixedShapes[segments[i]];
-        }
+        FusionBucket.UpdateShapeCache(shapeData, options, context);
 
         var (newBody, condList) = FusionBucket.Split(context);
         foreach (var (oldVar, tmpVar) in replaceItem)

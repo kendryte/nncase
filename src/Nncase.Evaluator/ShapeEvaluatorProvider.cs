@@ -31,7 +31,7 @@ internal sealed class ShapeEvaluateProvider : IShapeEvaluateProvider
 
         if (expr.CheckedType is InvalidType)
         {
-            if (DumpScope.Current.IsEnabled(DumpFlags.Compile))
+            // if (DumpScope.Current.IsEnabled(DumpFlags.Compile))
             {
                 DumpScope.Current.DumpIR(expr, "EvaluateShapeExprInvalid");
             }
