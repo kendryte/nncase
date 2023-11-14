@@ -405,17 +405,17 @@ result<value_t> nncase::kernels::stackvm::get_item(
             return err(std::errc::not_supported);
         }
 
-        if(input_tensor->shape().size() == 2 && begins_value.size() == 1) {
+        if (input_tensor->shape().size() == 2 && begins_value.size() == 1) {
             auto get_item_index = begins_value[0];
             auto out_shape = dims_t{input_tensor->shape()[1]};
             try_output(out_mem, output, input_tensor->dtype(), out_shape);
             auto size = input_tensor->shape()[1];
 #define RETURN_RESULT(_in_type)                                                \
     if (cmp_type<_in_type>(input_tensor->dtype())) {                           \
-        for(int i = 0; i < size; ++i)                      \
-        {\
-            OUT_CAST(_in_type, out_mem)[i] = IN_CAST(_in_type, in_mem)[get_item_index * size + i];    \
-        }                                                                       \
+        for (int i = 0; i < size; ++i) {                                       \
+            OUT_CAST(_in_type, out_mem)                                        \
+            [i] = IN_CAST(_in_type, in_mem)[get_item_index * size + i];        \
+        }                                                                      \
         return ok(output);                                                     \
     }
             RETURN_RESULT_SELECT(RETURN_RESULT);
@@ -442,7 +442,8 @@ result<value_t> nncase::kernels::stackvm::get_item(
                           out_mem, in_shape, input_tensor->strides(),
                           output_tensor->strides(), begin_values, end_values,
                           strides_values, context);
-        output = tensor_reshape(output_tensor, dims_t(out_shape.begin() + n, out_shape.end()));
+        output = tensor_reshape(output_tensor,
+                                dims_t(out_shape.begin() + n, out_shape.end()));
         KERNEL_FINISH;
     }
 }
@@ -791,8 +792,7 @@ result<value_t> nncase::kernels::stackvm::bucket_pad(
     try_dims_v(shape);
     auto in_tensor = input.as<tensor>().expect("input is not a tensor");
     auto in_shape = in_tensor->shape();
-    if(compute_size(in_shape) > compute_size(shape_value))
-    {
+    if (compute_size(in_shape) > compute_size(shape_value)) {
         return err(std::errc::invalid_argument);
     }
 
