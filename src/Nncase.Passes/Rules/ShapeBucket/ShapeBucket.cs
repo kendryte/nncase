@@ -875,6 +875,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
         // Console.WriteLine($"seg index{segIndex}");
         if (context.FixedShapeCache.TryGetValue(segIndex, out var cachedFixedShape))
         {
+            // replace index by value
             var shape = cachedFixedShape[inputIndex];
             if ((param.CheckedShape.IsFixed && shape.SequenceEqual(param.CheckedShape.ToValueArray())) || param.CheckedShape.IsScalar)
             {
@@ -905,7 +906,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
 
     public static (Expr, List<Expr>) Split(FusionBucketContext context, SegmentInfo? info = null)
     {
-        var failure = MakeFailure(context.FusionBody);
+        var restore = MakeFailure(context);
 
         // todo: test this
         var value = GetVarValue(context);
@@ -913,9 +914,9 @@ public partial class FusionBucket : RewriteRule<Pattern>
         int i = 0;
 
         var condList = new List<Expr>();
-        // todo: only used for same range
+        // todo: only used for same range, should add check
         var body = context.DimVarValues.First().Value.OrderByDescending(x => x).Aggregate(
-            failure,
+            restore,
             (sum, seg) =>
             {
                 // 根据var，也就是target为这个fusion的call的参数来进行判断落在哪个段
@@ -1027,18 +1028,16 @@ public partial class FusionBucket : RewriteRule<Pattern>
         var allFixedShapes = shapeInfos
             .Select(x =>
                 x.InputShapes.Select(iShape => iShape.AsTensor().ToArray<int>().ToArray()).ToArray()).ToArray();
-        for (int i = 0; i < shapeInfos.Length; i++)
-        {
-            for (int j = 0; j < allFixedShapes.Length; j++)
-            {
-                context.FixedShapeCache[j] = allFixedShapes[j];
-            }
-        }
+        allFixedShapes = new[] { allFixedShapes[0] }.Concat(allFixedShapes.Reverse()).ToArray();
+        var segments = context.DimVarValues.First().Value.Reverse().ToArray();
 
-        // todo: fix min max
-        // reverse
+
+        for (int i = 0; i < segments.Length; i++)
+        {
+            context.FixedShapeCache[segments.Length - 1 - i] = allFixedShapes[segments[i]];
+        }
         var minFixedShapeList = allFixedShapes[^1];
-        var maxFixedShapeList = allFixedShapes[0];
+        var maxFixedShapeList = allFixedShapes[1];
 
         // PrintMinMaxShape(minFixedShapeList, maxFixedShapeList, _relPath);
 
@@ -1248,9 +1247,10 @@ public partial class FusionBucket : RewriteRule<Pattern>
             return result;
         });
 
-    private static Expr MakeFailure(Expr fusionBody)
+    private static Expr MakeFailure(FusionBucketContext context)
     {
-        var failure = fusionBody.CheckedType switch
+        // return RestoreBodyWithArgs(context.Arguments, context.Parameters, context.FusionBody);
+        var failure = context.FusionBody.CheckedType switch
         {
             TupleType tuple => new IR.Tuple(tuple.Fields.ToArray()
                 .Select(x =>
@@ -1302,8 +1302,6 @@ public partial class RebuildBucket : RewriteRule<Pattern>
         // 1. 普通情况不应该rebuild
         // 2. rebuild的正确性
         var context = new FusionBucketContext(outerCall, fusion, options, ShapeExprCache.Default, counter, shapeInfos);
-
-
 
 
         var allFixedShapes = shapeInfos
@@ -1413,12 +1411,12 @@ public class FullBucket : FunctionPass
         var allFixedShapes = shapeData
             .Select(x =>
                 x.InputShapes.Select(iShape => iShape.AsTensor().ToArray<int>().ToArray()).ToArray()).ToArray();
-        for (int i = 0; i < shapeData.Length; i++)
+        allFixedShapes = new[] { allFixedShapes[0] }.Concat(allFixedShapes.Reverse()).ToArray();
+        var segments = context.DimVarValues.First().Value.Reverse().ToArray();
+
+        for (int i = 0; i < segments.Length; i++)
         {
-            for (int j = 0; j < allFixedShapes.Length; j++)
-            {
-                context.FixedShapeCache[j] = allFixedShapes[j];
-            }
+            context.FixedShapeCache[segments.Length - 1 - i] = allFixedShapes[segments[i]];
         }
 
         var (newBody, condList) = FusionBucket.Split(context);

@@ -32,6 +32,7 @@ public static class CallValidator
         typeof(Pad).TypeHandle,
         typeof(Unsqueeze).TypeHandle,
         typeof(Squeeze).TypeHandle,
+        typeof(Unary).TypeHandle,
     };
 
     private static readonly HashSet<RuntimeTypeHandle> MaybeDynamic = new()
@@ -44,7 +45,6 @@ public static class CallValidator
         typeof(ShapeOf).TypeHandle,
 
         typeof(Cast).TypeHandle,
-        typeof(Unary).TypeHandle,
 
         typeof(Reshape).TypeHandle,
         typeof(Expand).TypeHandle,
@@ -266,9 +266,7 @@ public static class ShapeBucketHelper
         get
         {
             var options = CompileSessionScope.GetCurrentThrowIfNull().CompileOptions.ShapeBucketOptions;
-            return options.VarMap.Keys.Count !=
-                   5 &&
-                   SingleDimVar(options);
+            return SingleDimVar(options);
         }
     }
 
