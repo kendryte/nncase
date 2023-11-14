@@ -32,10 +32,10 @@ public partial class FoldDilatedConv2D : RewriteRule<Pattern>
         IsBatchToSpace(
             "bts",
             "btsCall",
-                IsRangeOfMarker(
+            IsRangeOfMarker(
                     "btsInput",
-                        Conv2DPattern(),
-                        IsTensorConst()),
+                    Conv2DPattern(),
+                    IsTensorConst()),
             IsTensorConst("btsBlockShape"),
             IsTensorConst("originCrop"));
 
@@ -47,12 +47,12 @@ public partial class FoldDilatedConv2D : RewriteRule<Pattern>
                     IsSpaceToBatch(
                         "sbt",
                         "stbCall",
-                        IsWildcard("stbInput") with { TypePattern = HasFixedShape()},
+                        IsWildcard("stbInput") with { TypePattern = HasFixedShape() },
                         IsTensorConst("stbBlockShape"),
                         IsTensorConst("originPaddings")),
-                IsTensorConst()));
+                    IsTensorConst()));
 
-    Expr? GetReplace(Call conv, Call btsCall, Call stbCall, Expr btsInput, Expr stbInput, int[] btsBlockShape, int[] stbBlockShape, int[] originPaddings, int[] originCrop)
+    private Expr? GetReplace(Call conv, Call btsCall, Call stbCall, Expr btsInput, Expr stbInput, int[] btsBlockShape, int[] stbBlockShape, int[] originPaddings, int[] originCrop)
     {
         var btsShape = btsCall.CheckedShape.ToValueArray();
         var btsInputShape = btsInput.CheckedShape.ToValueArray();
@@ -70,9 +70,8 @@ public partial class FoldDilatedConv2D : RewriteRule<Pattern>
         var wW = weightsShape[3];
         var outH = btsShape[2] + crop[0, 0] + crop[0, 1];
         var outW = btsShape[3] + crop[1, 0] + crop[1, 1];
-        var strideH = outH == 1 ? 1 : (padIfH - dilationH * (wH - 1) - 1) / (outH - 1);
-        var strideW = outW == 1 ? 1 : (padIfW - dilationW * (wW - 1) - 1) / (outW - 1);
-
+        var strideH = outH == 1 ? 1 : (padIfH - (dilationH * (wH - 1)) - 1) / (outH - 1);
+        var strideW = outW == 1 ? 1 : (padIfW - (dilationW * (wW - 1)) - 1) / (outW - 1);
 
         var (begin, end) = GetBeginEnd(btsBlockShape, crop, btsInputShape);
         var slicePadding = new[,]
@@ -87,8 +86,8 @@ public partial class FoldDilatedConv2D : RewriteRule<Pattern>
         {
             { 0, 0 },
             { 0, 0 },
-            { paddings[0, 0] + strideH * slicePadding[2, 0] - crop[0, 0], paddings[0, 1] + strideH * slicePadding[2, 1] - crop[0, 1] },
-            { paddings[1, 0] + strideH * slicePadding[3, 0] - crop[1, 0], paddings[1, 1] + strideH * slicePadding[3, 1] - crop[1, 1] },
+            { paddings[0, 0] + (strideH * slicePadding[2, 0]) - crop[0, 0], paddings[0, 1] + (strideH * slicePadding[2, 1]) - crop[0, 1] },
+            { paddings[1, 0] + (strideH * slicePadding[3, 0]) - crop[1, 0], paddings[1, 1] + (strideH * slicePadding[3, 1]) - crop[1, 1] },
         };
 
         var pairs = new[]
@@ -101,7 +100,7 @@ public partial class FoldDilatedConv2D : RewriteRule<Pattern>
         return ReplaceUtility.ReplaceCallParams(conv, pairs);
     }
 
-    private (int[], int[]) GetBeginEnd(int[] btsBlockShape, int[,] crop, int[] btsInputShape)
+    private (int[] Begin, int[] End) GetBeginEnd(int[] btsBlockShape, int[,] crop, int[] btsInputShape)
     {
         List<int> shape_expend = new();
         var block_shape_produt = btsBlockShape.Aggregate((x, sum) => x * sum);
@@ -146,12 +145,12 @@ public partial class FoldDilatedConv2D : RewriteRule<Pattern>
         var cropBegin = crop_begs.ToArray();
         var cropEnd = crop_ends.ToArray();
         var strides = Enumerable.Repeat(1, crop_begs.Count).ToArray();
-        var begin = normalize_strided_slice_begin(btsInputShape, cropBegin, strides, 0);
-        var end = normalize_strided_slice_end(btsInputShape, begin, cropEnd, strides, 0, 0);
+        var begin = Normalize_strided_slice_begin(btsInputShape, cropBegin, strides, 0);
+        var end = Normalize_strided_slice_end(btsInputShape, begin, cropEnd, strides, 0, 0);
         return (begin, end);
     }
 
-    int[] normalize_strided_slice_end(int[] in_shape, int[] begin, int[] end, int[] strides, int end_mask, int shrink_axis_mask)
+    private int[] Normalize_strided_slice_end(int[] in_shape, int[] begin, int[] end, int[] strides, int end_mask, int shrink_axis_mask)
     {
         var new_shape = Enumerable.Range(0, strides.Length).ToArray();
         for (var i = 0; i < new_shape.Length; i++)
@@ -167,7 +166,7 @@ public partial class FoldDilatedConv2D : RewriteRule<Pattern>
         return new_shape;
     }
 
-    int[] normalize_strided_slice_begin(int[] in_shape, int[] begin, int[] strides, int begin_mask)
+    private int[] Normalize_strided_slice_begin(int[] in_shape, int[] begin, int[] strides, int begin_mask)
     {
         var new_shape = Enumerable.Range(0, strides.Length).ToArray();
         for (var i = 0; i < new_shape.Length; i++)
@@ -180,5 +179,4 @@ public partial class FoldDilatedConv2D : RewriteRule<Pattern>
 
         return new_shape;
     }
-
 }

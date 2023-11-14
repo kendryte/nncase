@@ -49,6 +49,7 @@ public static class CallValidator
         typeof(Reshape).TypeHandle,
         typeof(Expand).TypeHandle,
         typeof(ConstantOfShape).TypeHandle,
+
         // typeof(Where).TypeHandle,
         typeof(Compare).TypeHandle,
         typeof(Reduce).TypeHandle,
@@ -249,6 +250,16 @@ public static class ShapeBucketRegister
 
 public static class ShapeBucketHelper
 {
+    // todo: fix this
+    public static bool IsStaticShpae
+    {
+        get
+        {
+            var options = CompileSessionScope.GetCurrentThrowIfNull().CompileOptions.ShapeBucketOptions;
+            return SingleDimVar(options);
+        }
+    }
+
     public static Dictionary<T, IValue> ConcatDictionary<T>(Dictionary<T, IValue> memo, Dictionary<T, IValue> exprValues)
         where T : Expr
     {
@@ -258,16 +269,6 @@ public static class ShapeBucketHelper
         }
 
         return memo;
-    }
-
-    // todo: fix this
-    public static bool IsStaticShpae
-    {
-        get
-        {
-            var options = CompileSessionScope.GetCurrentThrowIfNull().CompileOptions.ShapeBucketOptions;
-            return SingleDimVar(options);
-        }
     }
 
     public static Dictionary<Var, int[]> MakeVarValuesForAllSegment(ShapeBucketOptions options, bool staticShape = false)

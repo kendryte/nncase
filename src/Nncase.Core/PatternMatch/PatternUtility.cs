@@ -288,5 +288,5 @@ public static partial class Utility
 
     public static Pattern MaybeMarker(Pattern input) => IsAlt(input, IsRangeOfMarker(input, IsWildcard()));
 
-    public static Pattern HasMarker(Pattern input, string markerName = null) => IsRangeOfMarker(markerName, input, IsWildcard());
+    public static Pattern HasMarker(Pattern input, string? markerName = null) => IsRangeOfMarker(markerName, input, IsWildcard());
 }

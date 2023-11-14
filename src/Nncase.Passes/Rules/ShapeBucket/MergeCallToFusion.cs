@@ -135,7 +135,7 @@ public partial class MergeNextCallToFusion : MergeFusionBase
     // nextCall(marker(fusion(x))) -> fusion(nextCall(marker(x)))
     public Expr? GetReplace(Call nextCall, Expr maybeFusionCallMarker, Expr target, Call fusionOuterCall, BucketFusion fusion)
     {
-        var singleVar = SingleDimVar(CompileSession.CompileOptions.ShapeBucketOptions);
+        _ = SingleDimVar(CompileSession.CompileOptions.ShapeBucketOptions);
         if (!AllConst(nextCall))
         {
             return null;

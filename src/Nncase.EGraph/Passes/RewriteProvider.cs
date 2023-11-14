@@ -79,7 +79,7 @@ internal class EGraphRewriteProvider : IEGraphRewriteProvider
                     var typeInferSuccess = CompilerServices.InferenceType(newExpr);
                     if (!typeInferSuccess)
                     {
-                         DumpScope.Current.DumpIR(newExpr, $"{rule.GetType().Name}");
+                        DumpScope.Current.DumpIR(newExpr, $"{rule.GetType().Name}");
                     }
 
                     Trace.Assert(typeInferSuccess);

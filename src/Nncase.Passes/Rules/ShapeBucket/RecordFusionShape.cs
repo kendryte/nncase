@@ -76,9 +76,9 @@ public class FusionShapeUpdater : ExprVisitor<Expr, Unit>
 
 public class RecordFusionShape : FunctionPass
 {
-    private Dictionary<Var, int[]> _dimVarValues = new();
+    private readonly bool _once;
 
-    private bool _once;
+    private Dictionary<Var, int[]> _dimVarValues = new();
 
     public RecordFusionShape(Dictionary<BucketFusion, FusionShapeData[]> shapeList, bool once = false)
     {
@@ -92,7 +92,7 @@ public class RecordFusionShape : FunctionPass
     // VarInfo:(DimVar -> Value)
     public static Dictionary<Var, IValue>
         MakeDummyInput(IReadOnlyDictionary<Var, Expr[]> info, Dictionary<Var, IValue> varInfo)
-        {
+    {
         return info.ToDictionary(
             pair => pair.Key,
             pair =>
@@ -126,6 +126,7 @@ public class RecordFusionShape : FunctionPass
                            && SingleDimVar(options)
             ? options.RangeInfo.First().Value.Max
             : options.SegmentsCount;
+
         // var segmentCount = options.SegmentsCount;
         _dimVarValues = MakeVarValuesForAllSegment(options, segmentCount, staticShape);
 

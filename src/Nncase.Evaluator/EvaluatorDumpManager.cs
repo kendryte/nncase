@@ -84,6 +84,7 @@ internal sealed class EvaluatorDumpManager : IDisposable
 
         // a bad tmp change
         var result = _tensorGetter(call);
+
         // todo: when tuple maybe bug
         var shape = result.Length == 1 ? result[0].Shape : result[0].Shape.ToValueArray();
         DumpCall(target, shape, sr =>

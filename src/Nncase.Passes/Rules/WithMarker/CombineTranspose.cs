@@ -32,7 +32,8 @@ public sealed partial class CombineTransposeActivations : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
-        HasMarker(IsTranspose(
+        HasMarker(
+            IsTranspose(
             HasMarker(
                 IsCall("actCall", IsOp<ActivationOp>("activation", op => true), IsVArgsRepeat("arguments", () => IsWildcard() with { TypePattern = HasFixedShape() })),
                 "outputMarker"),
@@ -144,7 +145,8 @@ public sealed partial class CombineActivationsReshape : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
-        HasMarker(IsCall("call", IsOp<ActivationOp>("activation", op => true), IsVArgsRepeat("parameters", (inputs) =>
+        HasMarker(
+            IsCall("call", IsOp<ActivationOp>("activation", op => true), IsVArgsRepeat("parameters", (inputs) =>
         {
             var patterns = new Pattern[inputs.Length];
             patterns[0] = HasMarker(IsReshape(IsWildcard("input"), IsWildcard("shape")), "inputMarker");
@@ -154,7 +156,8 @@ public sealed partial class CombineActivationsReshape : IRewriteRule
             }
 
             return patterns;
-        })), "outMarker");
+        })),
+            "outMarker");
 
     private Expr? GetReplace(ActivationOp activation, Call call, Expr input, IReadOnlyList<Expr> parameters, Expr shape, Marker inputMarker, Marker outMarker)
     {
@@ -170,7 +173,6 @@ public sealed partial class CombineActivationsReshape : IRewriteRule
     }
 }
 
-
 [RuleGenerator]
 public partial class FoldTransposeActTranspose : RewriteRule<Pattern>
 {
@@ -178,7 +180,6 @@ public partial class FoldTransposeActTranspose : RewriteRule<Pattern>
         "outTr",
         "outTrCall",
         LeakyReluPattern,
-        // IsAlt(LeakyReluPattern, HasMarker(IsReshape(LeakyReluPattern, IsWildcard()))),
         IsWildcard("perm2"));
 
     public Pattern LeakyReluPattern => HasMarker(
@@ -186,12 +187,12 @@ public partial class FoldTransposeActTranspose : RewriteRule<Pattern>
             "op",
             "call",
             HasMarker(
-                IsTranspose(IsWildcard("input") with {TypePattern = HasFixedShape()}, IsWildcard("perm1")),
+                IsTranspose(IsWildcard("input") with { TypePattern = HasFixedShape() }, IsWildcard("perm1")),
                 "inMarker"),
             IsWildcard("alpha")),
         "outMarker");
 
-    Expr? GetReplace(Call call, Expr input, Marker inMarker, Marker outMarker, int[] perm1, int[] perm2, Call outTrCall, Expr alpha)
+    private Expr? GetReplace(Call call, Expr input, Marker inMarker, Marker outMarker, int[] perm1, int[] perm2, Call outTrCall, Expr alpha)
     {
         if (perm1.Length != perm2.Length)
         {
@@ -200,18 +201,16 @@ public partial class FoldTransposeActTranspose : RewriteRule<Pattern>
 
         if (outTrCall.CheckedShape.SequenceEqual(input.CheckedShape))
         {
-            return outMarker.With(target: ReplaceUtility.ReplaceCallFirstParam(call, inMarker.With(target: input)));
+            return outMarker.With(target: ReplaceUtility.ReplaceCallFirstParam(call, inMarker.With(target: input), call));
         }
+
         // transpose(leakyrelu(transpose(input))) => leakyRelu(transpose(transpose(input)))
         else
         {
             return outMarker.With(target: Transpose(outMarker.With(target: Transpose(outMarker.With(target: LeakyRelu(inMarker.With(target: input), alpha)), perm1)), perm2));
         }
-
-        return null;
     }
 }
-
 
 [RuleGenerator]
 public partial class FoldTransposeBinaryActTranspose : RewriteRule<Pattern>
@@ -231,19 +230,16 @@ public partial class FoldTransposeBinaryActTranspose : RewriteRule<Pattern>
                                 HasMarker(
                                     IsReshape(
                                         HasMarker(
-                                            IsTranspose(HasMarker(IsWildcard(), "input"), IsWildcard("perm1"))
-                                            ),
+                                            IsTranspose(HasMarker(IsWildcard(), "input"), IsWildcard("perm1"))),
                                         IsWildcard())),
                                 IsWildcard("rhs")),
                             "bnMarker"),
-                        IsWildcard("alpha"))
-                    ),
-                    IsWildcard()
-                ),
+                        IsWildcard("alpha"))),
+                    IsWildcard()),
             "outMarker"),
         IsWildcard("perm2"));
 
-    Expr? GetReplace(int[] perm1, int[] perm2, Expr input, Expr rhs, Marker bnMarker, Marker outMarker, Expr alpha)
+    private Expr? GetReplace(int[] perm1, int[] perm2, Expr input, Expr rhs, Marker bnMarker, Marker outMarker, Expr alpha)
     {
         if (perm1.SequenceEqual(new[] { 0, 2, 3, 1 }) && perm2.SequenceEqual(new[] { 0, 3, 1, 2 }))
         {
@@ -255,7 +251,7 @@ public partial class FoldTransposeBinaryActTranspose : RewriteRule<Pattern>
                 return outMarker.With(target: LeakyRelu(bnMarker.With(target: Add(input, constRhs)), alpha));
             }
 
-            return outMarker.With(target: LeakyRelu(bnMarker.With(target: Add(input, Reshape(rhs, new[]{rhs.CheckedShape.Size, 1, 1}))), alpha));
+            return outMarker.With(target: LeakyRelu(bnMarker.With(target: Add(input, Reshape(rhs, new[] { rhs.CheckedShape.Size, 1, 1 }))), alpha));
         }
 
         return null;
