@@ -185,7 +185,7 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
             Dimension[] padded_shape;
             if (inShape.Count == 4)
             {
-                 padded_shape = new[] { inShape[0], inShape[2], inShape[3], inShape[1] };
+                padded_shape = new[] { inShape[0], inShape[2], inShape[3], inShape[1] };
             }
             else if (inShape.Count == 3)
             {
