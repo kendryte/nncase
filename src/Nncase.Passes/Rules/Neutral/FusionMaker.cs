@@ -22,13 +22,13 @@ namespace Nncase.Passes.Rules.Neutral;
 
 public abstract class FusionMaker : RewriteRule<Pattern>
 {
-    private int _count;
+    public int Count { get; set; }
 
     public virtual string Name { get; } = "FusionMaker";
 
     public virtual string ModuleKind { get; } = "StackVM";
 
-    public string FullName => $"{Name}_{_count++}";
+    public string FullName => $"{Name}_{Count}";
 }
 
 /// <summary>

@@ -86,14 +86,7 @@ TEST_P(ConcatTest, Concat) {
     fields.push_back(field2);
     auto output_tuple = tuple(std::in_place, std::move(fields));
 
-    int64_t axis_ptr[] = {axis_value};
-    auto axis =
-        hrt::create(dt_int64, {1},
-                    {reinterpret_cast<gsl::byte *>(axis_ptr), sizeof(axis_ptr)},
-                    true, host_runtime_tensor::pool_cpu_only)
-            .expect("create tensor failed");
-
-    auto output = kernels::stackvm::concat(output_tuple, axis.impl())
+    auto output = kernels::stackvm::concat((int)axis_value, output_tuple)
                       .expect("concat failed");
 
     runtime_tensor actual(output.as<tensor>().expect("as tensor failed"));

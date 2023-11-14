@@ -61,17 +61,17 @@ public sealed partial class InstanceNormalization : Op
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(InstanceNormalization), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(InstanceNormalization), 0, "input", ParameterKind.Input);
 
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Scale = new(typeof(InstanceNormalization), 1, "scale");
+    public static readonly ParameterInfo Scale = new(typeof(InstanceNormalization), 1, "scale", ParameterKind.Input);
 
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Bias = new(typeof(InstanceNormalization), 2, "bias");
+    public static readonly ParameterInfo Bias = new(typeof(InstanceNormalization), 2, "bias", ParameterKind.Input);
 
     /// <summary>
     /// Gets Epsilon.

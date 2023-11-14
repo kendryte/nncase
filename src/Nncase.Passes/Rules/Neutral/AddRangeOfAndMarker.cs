@@ -10,6 +10,7 @@ using Nncase.IR;
 using Nncase.IR.Imaging;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
+using Nncase.IR.RNN;
 using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
 using static Nncase.IR.TypePatternUtility;
@@ -130,7 +131,7 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
                     // 这里必须要对matmul的rhs进行判断，如果matmul是动态的那么不会走量化，如果是静态的那么一定会转到conv2d
                     // 因此认为matmul的rhs为const的情况下一定能转成conv2d
                     bool isWeights = ((call.Target is Conv2D || call.Target is Conv2DTranspose) && (i == 1))
-                    || (call.Target is LSTM && i > 0)
+                    || (call.Target is LSTM && (i == 1 || i == 2))
                     || (call.Target is MatMul && i == 1 && callParams[1] is TensorConst);
 
                     if (!configExist && !useAutoMixQuant)
@@ -190,6 +191,14 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
     private IR.Tuple WrapLSTMOutput(Call call, int outputSize, bool configExist, bool useAutoMixQuant, RunPassContext context)
     {
         var outputs = Enumerable.Range(0, outputSize).Select(i => IR.F.Tensors.GetItem(call, i)).ToArray();
+        for (int i = 0; i < outputSize; i++)
+        {
+            var outputNames = new List<string>();
+            var getItem = IR.F.Tensors.GetItem(call, i);
+            outputNames.Add("LSTMOutput_" + call.Metadata.OutputNames?[i]);
+            outputs[i].Metadata.OutputNames = outputNames;
+        }
+
         foreach (var o in outputs)
         {
             context.MatchOptions.SuppressPattern(o, Pattern);

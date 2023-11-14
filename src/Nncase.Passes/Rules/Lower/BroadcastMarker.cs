@@ -2,7 +2,8 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
-using NetFabric.Hyperlinq;
+using System.Collections.Generic;
+using System.Linq;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
@@ -18,36 +19,46 @@ namespace Nncase.Passes.Rules.Lower;
 [RuleGenerator]
 public partial class BroadcastInputMarker : RewriteRule<Pattern>
 {
-    public override Pattern Pattern => IsCallWildcard(
-        "outer",
-        IsWildcard(),
-        InputPattern);
-
-    public Pattern InputPattern => IsCallWildcard(
-        "call",
-        IsWildcard(),
-        IsRangeOfMarker(
-            "marker",
-            IsWildcard(),
-            IsWildcard()));
-
-    public Expr? GetReplace(Call outer, Call call, Marker marker)
+    public override Pattern Pattern => IsCall("outer", IsWildcard("outerTarget"), IsVArgsRepeat("outerParams", exprs =>
     {
-        if (!NotChangeRangeOp(call.Target))
+        var patterns = new Pattern[exprs.Length];
+        for (int i = 0; i < exprs.Length; i++)
+        {
+            patterns[i] = GetInputPattern(i);
+        }
+
+        return patterns;
+    }));
+
+    public Pattern GetInputPattern(int i) =>
+     IsAlt(
+        IsCallWildcard(
+            $"input_{i}",
+            IsOp<Op>($"input_target_{i}", NotChangeRangeOp),
+            IsRangeOfMarker($"input_marker_{i}", IsWildcard($"marker_target_{i}"), IsWildcard($"marker_attribute_{i}"))),
+        IsWildcard($"input_{i}"));
+
+    public Expr? GetReplace(Call outer, Expr outerTarget, IReadOnlyList<Expr> outerParams, IMatchResult result)
+    {
+        if (!Enumerable.Range(0, outerParams.Count).Select(i => result.GetValueOrDefault($"input_marker_{i}")).Any(e => e is not null))
         {
             return null;
         }
 
-        if ((outer.Target is MatMul || outer.Target is Binary) && CompilerServices.TryMatchRoot(outer.Arguments[1], InputPattern, new(), out var matchResult))
+        var newArgs = new Expr[outerParams.Count];
+        for (int i = 0; i < outerParams.Count; i++)
         {
-            var rhsMarker = (Marker)matchResult["marker"];
-            var rhsCall = (Call)matchResult["call"];
-            var lhs = marker.With(target: ReplaceCallFirstParam(call, marker));
-            var rhs = rhsMarker.With(target: ReplaceCallFirstParam(rhsCall, rhsMarker));
-            return ReplaceCallParams(outer, (0, lhs), (1, rhs));
+            if (result.GetValueOrDefault($"input_marker_{i}") is Marker marker && result[$"marker_target_{i}"] is Expr target && result[$"marker_attribute_{i}"] is Expr range)
+            {
+                newArgs[i] = IR.F.Math.RangeOfMarker(outerParams[i], range).With(mixQuantInfo: marker.MixQuantInfo, adaQuantInfo: marker.AdaQuantInfo);
+            }
+            else
+            {
+                newArgs[i] = outerParams[i];
+            }
         }
 
-        return ReplaceCallFirstParam(outer, marker.With(target: ReplaceCallFirstParam(call, marker)));
+        return new Call(outerTarget, newArgs);
     }
 }
 
@@ -57,24 +68,19 @@ public partial class BroadcastOutputMarker : RewriteRule<Pattern>
 {
     public override Pattern Pattern => IsRangeOfMarker(
         "marker",
-        IsCallWildcard("input", IsWildcard(), IsCallWildcard(null, IsWildcard())),
-        IsWildcard());
+        IsCallWildcard("output", IsOp<Op>("outputTarget", NotChangeRangeOp), IsCallWildcard("input", IsWildcard("inputTarget"))),
+        IsWildcard("range"));
 
-    public Expr? GetReplace(Call input, Marker marker)
+    public Expr? GetReplace(Marker marker, Expr range, Call output, Op outputTarget, IReadOnlyList<Expr> outputParams)
     {
-        if (!NotChangeRangeOp(input.Target))
-        {
-            return null;
-        }
-
-        return marker.With(target: ReplaceCallFirstParam(input, marker.With(target: input.Arguments[0])));
+        return ReplaceCallFirstParam(outputTarget, outputParams, IR.F.Math.RangeOfMarker(outputParams[0], range).With(adaQuantInfo: marker.AdaQuantInfo, mixQuantInfo: marker.MixQuantInfo));
     }
 }
 
 internal static class BroadcastMarkerHelper
 {
-    public static bool NotChangeRangeOp(Expr op)
+    public static bool NotChangeRangeOp(Op op)
     {
-        return op is Squeeze || op is Unsqueeze || op is Reshape || op is Broadcast || op is Transpose;
+        return op is Squeeze || op is Unsqueeze || op is Reshape || op is Broadcast;
     }
 }

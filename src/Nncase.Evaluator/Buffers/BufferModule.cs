@@ -20,5 +20,8 @@ internal class BufferModule : IApplicationPart
         registrator.RegisterManyInterface<StrideOfEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<AllocateEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<UninitializedEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<BufferLoadEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<BufferStoreEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<MatchBufferEvaluator>(reuse: Reuse.Singleton);
     }
 }

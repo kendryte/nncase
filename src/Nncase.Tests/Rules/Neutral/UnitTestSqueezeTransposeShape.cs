@@ -62,6 +62,7 @@ public class UnitTestSqueezeTransposeShape : TransformTestBase
     }
 }
 
+[AutoSetupTestMethod(InitSession = true)]
 public class UnitTestSqueezeBinaryShape : TransformTestBase
 {
     public static IEnumerable<object[]> TestSqueezeBinaryShapePosivateData =>

@@ -53,28 +53,6 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
     }
 
     /// <inheritdoc/>
-    protected override IRType VisitLeafBufferLoad(BufferLoad expr)
-    {
-        IRType type;
-        VerifySubField(expr, expr.Buffer, TypePatternUtility.IsPointer());
-        for (int i = 0; i < expr.Indices.Length; i++)
-        {
-            VerifySubField(expr, expr.Indices[i], TypePatternUtility.IsIntegralScalar(), $"BufferLoad.Indices[{i}]");
-        }
-
-        if (expr.Buffer.CheckedType is TensorType { IsScalar: true, DType: PointerType { ElemType: PrimType pointedType } })
-        {
-            type = TensorType.Scalar(pointedType);
-        }
-        else
-        {
-            type = new InvalidType($"Can't load from {expr.Buffer.CheckedType}");
-        }
-
-        return type;
-    }
-
-    /// <inheritdoc/>
     protected override IRType VisitLeafBufferRegion(BufferRegion expr)
     {
         VerifySubField(expr, expr.Buffer, TypePatternUtility.IsTensor());
@@ -91,27 +69,24 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
     }
 
     /// <inheritdoc/>
-    protected override IRType VisitLeafBufferStore(BufferStore expr)
+    protected override IRType VisitLeafBuffer(Nncase.TIR.Buffer expr)
     {
-        VerifySubField(expr, expr.Buffer, TypePatternUtility.IsPointer());
-        for (int i = 0; i < expr.Indices.Length; i++)
+        VerifySubField(expr, expr.MemSpan, TypePatternUtility.IsPointer() | TypePatternUtility.IsNoneType());
+        foreach (var r in expr.Dimensions)
         {
-            VerifySubField(expr, expr.Indices[i], TypePatternUtility.IsIntegralScalar(), $"BufferStore.Indices[{i}]");
+            VerifySubField(expr, r, TypePatternUtility.IsIntegralScalar());
         }
 
-        VerifySubField(expr, expr.Value, TypePatternUtility.IsScalar());
+        foreach (var r in expr.Strides)
+        {
+            VerifySubField(expr, r, TypePatternUtility.IsIntegralScalar());
+        }
 
-        IRType type;
-        if (expr.Value.CheckedType is TensorType { IsScalar: true, DType: PrimType valueType } &&
-            expr.Buffer.CheckedType is TensorType { IsScalar: true, DType: PointerType { ElemType: PrimType pointedType } }
-            && valueType == pointedType)
+        var type = new TensorType(expr.ElemType, expr.Dimensions.AsValueEnumerable().Select(e => e switch
         {
-            type = TupleType.Void;
-        }
-        else
-        {
-            type = new InvalidType($"Can't store {expr.Value.CheckedType} to {expr.Buffer.CheckedType}");
-        }
+            TensorConst { Value: { Shape: { IsScalar: true } } t } => new Dimension(t.ToScalar<int>()),
+            _ => Dimension.Unknown,
+        }).ToArray());
 
         return type;
     }
@@ -223,13 +198,6 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
     }
 
     /// <inheritdoc/>
-    protected override IRType VisitLeafLogicalBuffer(LogicalBuffer expr)
-    {
-        var type = new TensorType(expr.ElemType, Shape.Unknown(expr.Rank));
-        return type;
-    }
-
-    /// <inheritdoc/>
     protected override IRType VisitLeafMarker(Marker expr)
     {
         var type = expr.Target.CheckedType;
@@ -248,13 +216,6 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
     {
         var paramTypes = expr.Parameters.Select(_ => (IRType)AnyType.Default).ToArray();
         var type = new CallableType(AnyType.Default, ImmutableArray.Create(paramTypes));
-        return type;
-    }
-
-    /// <inheritdoc/>
-    protected override IRType VisitLeafPhysicalBuffer(PhysicalBuffer expr)
-    {
-        var type = new TensorType(expr.ElemType, new(expr.FixedDimensions));
         return type;
     }
 
@@ -316,6 +277,13 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
     {
         var type = expr.TypeAnnotation;
         return type;
+    }
+
+    protected override IRType VisitLeafMemSpan(MemSpan expr)
+    {
+        VerifySubField(expr, expr.Start, TypePatternUtility.IsNoneType() | TypePatternUtility.IsIntegralScalar() | TypePatternUtility.IsPointer());
+        VerifySubField(expr, expr.Size, TypePatternUtility.IsIntegralScalar());
+        return expr.Start.CheckedType;
     }
 
     /// <inheritdoc/>

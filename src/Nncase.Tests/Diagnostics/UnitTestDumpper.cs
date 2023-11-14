@@ -65,7 +65,7 @@ public sealed class UnitTestDumpper : TestClassBase
     [Fact]
     public void TestDumpScript()
     {
-        var prim_func_1 = T.PrimFunc("prim_func_1", "k?", T.PhysicalBuffer(DataTypes.Float32, Schedule.MemoryLocation.Input, new[] { 1, 2, 3, 4 }, out _), T.PhysicalBuffer(DataTypes.Float32, Schedule.MemoryLocation.Output, new[] { 1, 2, 3, 4 }, out _)).Body(T.Nop()).Build();
+        var prim_func_1 = T.PrimFunc("prim_func_1", "k?", T.CreateBuffer(new(DataTypes.Float32, new[] { 1, 2, 3, 4 }), MemoryLocation.Input, out _), T.CreateBuffer(new(DataTypes.Float32, new[] { 1, 2, 3, 4 }), MemoryLocation.Output, out _)).Body(T.Nop()).Build();
 
         Assert.True(CompilerServices.InferenceType(prim_func_1));
 
@@ -195,6 +195,17 @@ public sealed class UnitTestDumpper : TestClassBase
     }
 
     [Fact]
+    public void TestDumperPatternIRFunction()
+    {
+        var x = IR.F.Math.Quantize(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 2, 2, 2 }), new QuantParam(1, 2.0f), DataTypes.UInt8);
+        var y = new Var("y", new TensorType(DataTypes.UInt8, new int[] { 1, 2, 2, 2 }));
+        var z = IR.F.Random.Normal(DataTypes.UInt8, 0, 1, 0, new[] { 1, 2, 2, 2 });
+        var m = IR.F.Random.Normal(DataTypes.UInt8, 0, 1, 0, new[] { 1, 20, 2, 2 });
+        var main = new Function("main", IR.F.Tensors.Concat(new IR.Tuple(new Expr[] { x, y, z, m }), 1), new[] { y });
+        CompilerServices.DumpPatternIR(main, string.Empty, Dumpper.Directory);
+    }
+
+    [Fact]
     public void TestDumperCSharpIRFusion()
     {
         var x = IR.F.Math.RangeOfMarker(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 2, 2, 2 }), new Half[] { (Half)1, (Half)3 });
@@ -214,9 +225,9 @@ public sealed class UnitTestDumpper : TestClassBase
     [Fact]
     public void TestDumpTIRFusion()
     {
-        var lhs = new Var("lhs");
-        var main = T.PrimFunc("main", Callable.StackVMModuleKind).Body(
-          new Call(new TIRTest.MeshNet(), new Fusion("MeshFunc", lhs + 100, lhs), IR.F.Random.Normal(DataTypes.Float32, 0, 1, 123, new[] { 100 }))).Build();
+        var lhs = new Var("lhs", TensorType.Scalar(DataTypes.Float32));
+        var main = T.PrimFunc("main", DefaultTargetName).Body(
+          new Call(new TIRTest.MeshNet(), new Fusion("MeshFunc", lhs + 100.0f, lhs), IR.F.Random.Normal(DataTypes.Float32, 0, 1, 123, new[] { 100 }))).Build();
         Assert.True(CompilerServices.InferenceType(main));
         CompilerServices.DumpIR(main, string.Empty, Dumpper.Directory);
     }

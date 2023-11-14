@@ -261,8 +261,8 @@ public class UnitTestExpression
     public void TestConstBufferNotEqual()
     {
         var c = IR.F.Random.Normal(DataTypes.Float32, 1, 0, 0, new[] { 1, 16, 64, 400 }).Evaluate().AsTensor();
-        var ddr_ld_input = new TIR.BufferRegion(Nncase.TIR.T.ConstBuffer(Const.FromTensor(c), out _, "ddr_ld_input"), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
-        var ddr_ld_output = new TIR.BufferRegion(new TIR.PhysicalBuffer("ddr_ld_input", DataTypes.Float32, Schedule.MemoryLocation.Input, new[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new[] { 1, 16, 64, 400 }), 0, 0), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
+        var ddr_ld_input = new TIR.BufferRegion(TIR.T.AttachBuffer(Const.FromTensor(c), out _, "ddr_ld_input"), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
+        var ddr_ld_output = new TIR.BufferRegion(new TIR.Buffer("ddr_ld_input", DataTypes.Float32, new MemSpan(0, 0, MemoryLocation.Input), new Expr[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new Expr[] { 1, 16, 64, 400 })), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
         Assert.NotEqual(ddr_ld_input.Buffer, ddr_ld_output.Buffer);
         Assert.NotEqual(ddr_ld_input, ddr_ld_output);
     }
@@ -270,8 +270,8 @@ public class UnitTestExpression
     [Fact]
     public void TestBufferEqual()
     {
-        var ddr_ld_input = new TIR.BufferRegion(new TIR.PhysicalBuffer("ddr_ld_input", DataTypes.Float32, Schedule.MemoryLocation.Input, new[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new[] { 1, 16, 64, 400 }), 0, 0), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
-        var ddr_ld_output = new TIR.BufferRegion(new TIR.PhysicalBuffer("ddr_ld_input", DataTypes.Float32, Schedule.MemoryLocation.Input, new[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new[] { 1, 16, 64, 400 }), 0, 0), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
+        var ddr_ld_input = new TIR.BufferRegion(new TIR.Buffer("ddr_ld_input", DataTypes.Float32, new MemSpan(0, 0, MemoryLocation.Input), new Expr[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new Expr[] { 1, 16, 64, 400 })), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
+        var ddr_ld_output = new TIR.BufferRegion(new TIR.Buffer("ddr_ld_input", DataTypes.Float32, new MemSpan(0, 0, MemoryLocation.Input), new Expr[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new Expr[] { 1, 16, 64, 400 })), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
         Assert.Equal(ddr_ld_input.Buffer, ddr_ld_output.Buffer);
         Assert.Equal(ddr_ld_input, ddr_ld_output);
     }
@@ -279,8 +279,8 @@ public class UnitTestExpression
     [Fact]
     public void TestBufferNotEqual()
     {
-        var ddr_ld_input = new TIR.BufferRegion(new TIR.PhysicalBuffer("ddr_ld_input", DataTypes.Float32, Schedule.MemoryLocation.Input, new[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new[] { 1, 16, 64, 400 }), 0, 0), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
-        var glb_ld_output = new TIR.BufferRegion(new TIR.PhysicalBuffer("glb_ld_output", DataTypes.BFloat16, Schedule.MemoryLocation.Data, new[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new[] { 1, 16, 64, 400 }), 0, 0), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
+        var ddr_ld_input = new TIR.BufferRegion(new TIR.Buffer("ddr_ld_input", DataTypes.Float32, new MemSpan(0, 0, MemoryLocation.Input), new Expr[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new Expr[] { 1, 16, 64, 400 })), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
+        var glb_ld_output = new TIR.BufferRegion(new TIR.Buffer("glb_ld_output", DataTypes.BFloat16, new MemSpan(0, 0, MemoryLocation.Data), new Expr[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new Expr[] { 1, 16, 64, 400 })), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
         Assert.False(ddr_ld_input.Buffer.Equals(glb_ld_output.Buffer));
         Assert.False(ddr_ld_input.Equals(glb_ld_output));
     }
@@ -468,7 +468,7 @@ public class UnitTestExpression
         CompilerServices.InferenceType(x);
         Assert.Equal("const(i32[4] : {1,2,3,4})", CompilerServices.Print(x));
         Assert.Equal("None", CompilerServices.Print(None.Default));
-        Assert.Equal("Add", CompilerServices.Print(new Nncase.IR.Math.Binary(BinaryOp.Add)));
+        Assert.Equal("Binary", CompilerServices.Print(new Nncase.IR.Math.Binary(BinaryOp.Add)));
         var y = new Var("y");
         CompilerServices.InferenceType(y);
         Assert.Equal("%y: any", CompilerServices.Print(y));

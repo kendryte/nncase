@@ -22,7 +22,7 @@ public sealed partial class Reshape : Op
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Reshape), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(Reshape), 0, "input", ParameterKind.Input);
 
     /// <summary>
     /// Gets shape.

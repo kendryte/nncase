@@ -2,7 +2,7 @@
   "profiles": {
     "Nncase.Tests": {
       "commandName": "Project",
-      "nativeDebugging": true
+      "nativeDebugging": false
     }
   }
 }

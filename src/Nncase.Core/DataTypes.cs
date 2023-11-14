@@ -114,7 +114,7 @@ public static class DataTypes
     /// <returns> datatype name.</returns>
     public static string GetDisplayName(this DataType dataType) => dataType switch
     {
-        PointerType pointerType => $"({GetDisplayName(pointerType.ElemType)}*)",
+        PointerType pointerType => $"({GetDisplayName(pointerType.ElemType)} *)",
         PrimType primType => primType.ShortName,
         ValueType => dataType.ToString(),
         _ => throw new ArgumentOutOfRangeException(dataType.GetType().Name),

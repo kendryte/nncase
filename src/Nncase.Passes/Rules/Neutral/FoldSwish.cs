@@ -4,6 +4,7 @@
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.PatternMatch;
+using static Nncase.IR.TypePatternUtility;
 using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.F.NN;
 using static Nncase.PatternMatch.Utility;
@@ -11,37 +12,37 @@ using static Nncase.PatternMatch.Utility;
 namespace Nncase.Passes.Rules.Neutral;
 
 [RuleGenerator]
-public sealed partial class FoldSwishPattern1 : RewriteRule<CallPattern>
+public sealed partial class FoldSwishPattern1 : RewriteRule<Pattern>
 {
-    /// <inheritdoc/>
-    public override CallPattern Pattern { get; } =
-        IsBinary(null, "binaryCall", BinaryOp.Mul, IsSigmoid(null, "sigmoidCall", IsWildcard("input")));
-
-    private Expr? GetReplace(Call binaryCall, Call sigmoidCall, Expr input)
+    public FoldSwishPattern1()
     {
-        if (binaryCall[Binary.Rhs] == input)
-        {
-            return IR.F.NN.Swish(input);
-        }
+        var input = IsWildcard("input");
+        Pattern = IsSwappableBinary(null!, null, b => b.BinaryOp == BinaryOp.Mul, IsSigmoid(input), input);
+    }
 
-        return null;
+    /// <inheritdoc/>
+    public override Pattern Pattern { get; }
+
+    private Expr? GetReplace(Expr input)
+    {
+        return IR.F.NN.Swish(input);
     }
 }
 
 [RuleGenerator]
-public sealed partial class FoldSwishPattern2 : RewriteRule<CallPattern>
+public sealed partial class FoldSwishPattern2 : RewriteRule<Pattern>
 {
-    /// <inheritdoc/>
-    public override CallPattern Pattern { get; } =
-        IsBinary(null, "binaryCall", BinaryOp.Mul, IsWildcard(), IsSigmoid(null, "sigmoidCall", IsWildcard("input")));
-
-    private Expr? GetReplace(Call binaryCall, Call sigmoidCall, Expr input)
+    public FoldSwishPattern2()
     {
-        if (binaryCall[Binary.Lhs] == input)
-        {
-            return IR.F.NN.Swish(input);
-        }
+        var input = IsWildcard("input");
+        Pattern = IsSwappableBinary(null!, null, b => b.BinaryOp == BinaryOp.Mul, IsSigmoid(IsSwappableBinary(null!, null, b => b.BinaryOp == BinaryOp.Mul, input, IsTensorConst("beta", IsFloatScalar()))), input);
+    }
 
-        return null;
+    /// <inheritdoc/>
+    public override Pattern Pattern { get; }
+
+    private Expr? GetReplace(Expr input, TensorConst beta)
+    {
+        return IR.F.NN.Swish(input, beta);
     }
 }

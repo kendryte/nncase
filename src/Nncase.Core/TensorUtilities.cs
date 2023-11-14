@@ -323,10 +323,11 @@ public static class TensorUtilities
     /// <summary>
     /// check the dimensions selected range is contiguous.
     /// </summary>
-    public static bool IsContiguousSlice(ReadOnlySpan<int> dimensions, ReadOnlySpan<System.Range> slices)
+    public static bool IsContiguousSlice(ReadOnlySpan<int> dimensions, ReadOnlySpan<System.Range> slices, out int contiguousStart)
     {
         if (dimensions.Length != slices.Length)
         {
+            contiguousStart = slices.Length - 1;
             return false;
         }
 
@@ -366,12 +367,16 @@ public static class TensorUtilities
             };
             if (status == SliceStatus.IsInvalid)
             {
+                contiguousStart = i + 1;
                 return false;
             }
         }
 
+        contiguousStart = 0;
         return true;
     }
+
+    public static bool IsContiguousSlice(ReadOnlySpan<int> dimensions, ReadOnlySpan<System.Range> slices) => IsContiguousSlice(dimensions, slices, out _);
 
     public static long[] ToLongs(this ReadOnlySpan<int> ints)
     {

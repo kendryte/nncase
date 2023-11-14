@@ -2072,7 +2072,7 @@ public sealed class GatherCase : IRewriteCase
             var input = new Tensor<int>(new[] { 0, 1, 2, 3 }, shape);
             var indices = new Tensor<long>(new[] { 0L, 0L, 1L, 1L }, shape);
             long batchDims = 0L;
-            var expr = IR.F.Tensors.Gather(input, batchDims, indices);
+            var expr = IR.F.Tensors.Gather(input, (int)batchDims, indices);
             return new Function(expr, new Var[] { _input });
         }
     }
@@ -2870,6 +2870,88 @@ public sealed class PReluTransposeCase : IRewriteCase
         typeof(ReshapeToTranspose),
         typeof(FoldNopTranspose),
         typeof(FoldNopReshape),
+    };
+
+    public Dictionary<Var, IValue> FeedDict { get; }
+}
+
+/// <summary>
+/// egraph extract bad case.
+/// </summary>
+public sealed class FoldReshapeWithBranch : IRewriteCase
+{
+    public FoldReshapeWithBranch()
+    {
+        var v1070 = new Var(new TensorType(DataTypes.Float32, new[] { 1, 1, 2, 8400 }));
+        {
+            var v1071 = Unary(UnaryOp.Cos, v1070); // f32[1,1,2,8400]
+            var v1072 = Reshape(v1071, new[] { 1, 2, 8400 }); // f32[1,2,8400]
+            var v1073 = Reshape(v1072, new[] { 1, 1, 2, 8400 }); // f32[1,1,2,8400]
+            var v1078 = Unary(UnaryOp.Sin, v1073); // f32[1,1,2,8400]
+            var v1079 = Reshape(v1078, new[] { 1, 2, 8400 }); // f32[1,2,8400]
+            var v1080 = Sub(v1072, IR.F.Random.Normal(DataTypes.Float32, new[] { 1, 2, 8400 }).Evaluate().AsTensor()); // f32[1,2,8400]
+            var v1081 = new IR.Tuple(v1079, v1080); // (f32[1,2,8400], f32[1,2,8400])
+            PreExpr = new Function(v1081, new[] { v1070 });
+        }
+
+        FeedDict = new() { { v1070, IR.F.Random.Normal(new[] { 1, 1, 2, 8400 }).Evaluate() } };
+    }
+
+    public Function PreExpr { get; }
+
+    public IEnumerable<Type> Rules => new[] {
+        typeof(FoldNopReshape),
+        typeof(FoldTwoReshapes),
+    };
+
+    public Dictionary<Var, IValue> FeedDict { get; }
+}
+
+public sealed class ReshapeTransposeReshapeCase : IRewriteCase
+{
+    public ReshapeTransposeReshapeCase()
+    {
+        var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 77, 768 }));
+        {
+            var v0 = Reshape(input, new[] { 1, 77, 12, 64 });
+            var v2 = Transpose(v0, new[] { 0, 2, 1, 3 });
+            var v3 = Reshape(v2, new[] { 12, 77, 64 });
+            PreExpr = new Function(v3, new[] { input });
+        }
+
+        FeedDict = new() { { input, IR.F.Random.Normal(new[] { 1, 77, 768 }).Evaluate() } };
+    }
+
+    public Function PreExpr { get; }
+
+    public IEnumerable<Type> Rules => new[] {
+        typeof(CombineReshapeTranspose),
+        typeof(FoldTwoReshapes),
+    };
+
+    public Dictionary<Var, IValue> FeedDict { get; }
+}
+
+public sealed class ReshapeBinaryConstReshapeCase : IRewriteCase
+{
+    public ReshapeBinaryConstReshapeCase()
+    {
+        var v9 = new Var("v9", new TensorType(DataTypes.Float32, new[] { 12, 77, 77 }));
+        {
+            var v10 = Reshape(v9, new[] { 1, 12, 77, 77 }); // f32[1,12,77,77]
+            var v11 = IR.F.Math.Add(v10, IR.F.Random.Normal(new[] { 1, 1, 77, 77 }).Evaluate().AsTensor()); // f32[1,12,77,77]
+            var v12 = Reshape(v11, new[] { 12, 77, 77 }); // f32[12,77,77]
+
+            PreExpr = new Function(v12, new[] { v9 });
+        }
+
+        FeedDict = new() { { v9, IR.F.Random.Normal(new[] { 12, 77, 77 }).Evaluate() } };
+    }
+
+    public Function PreExpr { get; }
+
+    public IEnumerable<Type> Rules => new[] {
+        typeof(FoldReshapeBinaryConstReshape),
     };
 
     public Dictionary<Var, IValue> FeedDict { get; }

@@ -174,6 +174,35 @@ public class UnitTestVrp : TestClassBase
         }
     }
 
+    [Fact]
+    public void TestOverLap()
+    {
+        // note ortools no overlap not support 0 size.
+        var model = new CpModel();
+
+        var x0 = model.NewIntervalVar(model.NewConstant(0), model.NewConstant(2), model.NewConstant(2), "x0");
+        var y0 = model.NewFixedSizeIntervalVar(model.NewIntVar(0, 10, "y0_start"), 7, "y0");
+
+        var x1 = model.NewIntervalVar(model.NewConstant(2), model.NewConstant(0), model.NewConstant(2), "x1");
+        var y1 = model.NewFixedSizeIntervalVar(model.NewIntVar(0, 10, "y1_start"), 7, "y1");
+
+        var x2 = model.NewIntervalVar(model.NewConstant(2), model.NewConstant(1), model.NewConstant(3), "x2");
+        var y2 = model.NewFixedSizeIntervalVar(model.NewIntVar(0, 10, "y2_start"), 7, "y2");
+
+        model.Add(y0.StartExpr() == y1.StartExpr());
+        model.Add(y1.StartExpr() == y2.StartExpr());
+        var nooverlap = model.AddNoOverlap2D();
+        nooverlap.AddRectangle(x0, y0);
+        nooverlap.AddRectangle(x1, y1);
+        nooverlap.AddRectangle(x2, y2);
+        model.Minimize(y0.StartExpr() + y1.StartExpr() + y2.StartExpr());
+
+        var solver = new CpSolver();
+        var status = solver.Solve(model);
+
+        Assert.Equal(CpSolverStatus.Infeasible, status);
+    }
+
     private static void PrintSolution(in IDataModel data, in RoutingModel routing, in RoutingIndexManager manager, in Assignment solution)
     {
         Console.WriteLine($"Objective {solution.ObjectiveValue()}:");

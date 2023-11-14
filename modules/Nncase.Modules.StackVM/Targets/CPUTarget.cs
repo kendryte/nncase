@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.CommandLine.Invocation;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -21,12 +22,14 @@ namespace Nncase.Targets;
 /// </summary>
 public class CPUTarget : ITarget
 {
-    /// <summary>
-    /// Gets kind.
-    /// </summary>
-    public static readonly string Kind = "cpu";
+    public const string Kind = "cpu";
 
     string ITarget.Kind => Kind;
+
+    public (System.CommandLine.Command Command, Func<InvocationContext, System.CommandLine.Command, ITargetCompileOptions> Parser) RegisterCommandAndParser()
+    {
+        return (new System.CommandLine.Command(Kind), (_, _) => DefaultTargetCompileOptions.Instance);
+    }
 
     /// <inheritdoc/>
     public void ParseTargetDependentOptions(IConfigurationSection configure)

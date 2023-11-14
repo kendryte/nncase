@@ -441,12 +441,14 @@ public class TFConv2DTransposeToFusion : MarkerCallToFusion<Conv2DTranspose>
     {
         var convTranspose = (Call)CallMarker!.Target;
         var c = ReplaceCallFirstParam(
-            convTranspose,
+            convTranspose.Target,
+            convTranspose.Arguments.ToArray(),
             _transposeInputMarker!.With(target:
                 ReplaceCallFirstParam(
-                    _transpose!,
+                    _transpose!.Target,
+                    _transpose!.Arguments.ToArray(),
                     _transposeInputMarker.With(target:
-                        ReplaceCallFirstParam(_originCall!, fusionVars[0])))));
+                        ReplaceCallFirstParam(_originCall!.Target, _originCall!.Arguments.ToArray(), fusionVars[0])))));
         return CallMarker.With(target: base.ReplaceVarsWithArg(fusionVars, args, c));
     }
 

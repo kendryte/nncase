@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Nncase.IR;
 using Nncase.Passes;
 using Nncase.Passes.Rules.Neutral;
+using Nncase.Tests.TestFixture;
 using Xunit;
 using Dimension = Nncase.IR.Dimension;
 using Math = Nncase.IR.F.Math;
@@ -19,6 +20,7 @@ using Tensors = Nncase.IR.F.Tensors;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
+[AutoSetupTestMethod(InitSession = true)]
 public class UnitTestExpandToBroadcast : TransformTestBase
 {
     public static IEnumerable<object[]> TestExpandToBroadcastPositiveData =>
