@@ -183,6 +183,7 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
             // var padded_shape = input.Shape.ToList();
             var inShape = input.Shape.ToList();
             Dimension[] padded_shape;
+            // nchw to nhwc
             if (inShape.Count == 4)
             {
                  padded_shape = new[] { inShape[0], inShape[2], inShape[3], inShape[1] };
@@ -226,6 +227,7 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
 
             // return input with { Shape = new Shape(outshape) };
             Dimension[] outputShape;
+            // nhwc to nchw
             if (inShape.Count == 4)
             {
                 outputShape = new[] { outshape[0], outshape[3], outshape[1], outshape[2] };
