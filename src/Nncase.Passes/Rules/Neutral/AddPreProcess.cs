@@ -175,28 +175,26 @@ public sealed class AddPreProcess : ModulePass
             // Normalization
             if (mean.Length != 0)
             {
+                Expr meanCall;
+                Expr stdCall;
                 switch (mean.Length)
                 {
                     case 3 when inputShape.Length == 4:
-                        var meanCall = (Expr)Tensor.From(mean, new[] { 1, mean.Length, 1, 1 });
-                        meanCall.Metadata.OutputNames = new[] { "Mean" };
-                        var stdCall = (Expr)Tensor.From(std, new[] { 1, std.Length, 1, 1 });
-                        stdCall.Metadata.OutputNames = new[] { "Std" };
-                        var subMean = (newInput - meanCall).With(metadata: new IRMetadata() { OutputNames = new[] { input.Metadata.OutputNames?[0] + "_SubMean" } });
-                        var divStd = (subMean / stdCall).With(metadata: new IRMetadata() { OutputNames = new[] { input.Metadata.OutputNames?[0] + "_DivStd" } });
-                        newInput = divStd;
+                        meanCall = (Expr)Tensor.From(mean, new[] { 1, mean.Length, 1, 1 });
+                        stdCall = (Expr)Tensor.From(std, new[] { 1, std.Length, 1, 1 });
                         break;
 
                     default:
                         meanCall = (Expr)Tensor.From(new float[] { mean[0] }, new[] { 1 });
-                        meanCall.Metadata.OutputNames = new[] { "Mean" };
                         stdCall = (Expr)Tensor.From(new float[] { std[0] }, new[] { 1 });
-                        stdCall.Metadata.OutputNames = new[] { "Std" };
-                        subMean = (newInput - meanCall).With(metadata: new IRMetadata() { OutputNames = new[] { input.Metadata.OutputNames?[0] + "_SubMean" } });
-                        divStd = (subMean / stdCall).With(metadata: new IRMetadata() { OutputNames = new[] { input.Metadata.OutputNames?[0] + "_DivStd" } });
-                        newInput = divStd;
                         break;
                 }
+
+                meanCall.Metadata.OutputNames = new[] { "Mean" };
+                stdCall.Metadata.OutputNames = new[] { "Std" };
+                var subMean = (newInput - meanCall).With(metadata: new IRMetadata() { OutputNames = new[] { input.Metadata.OutputNames?[0] + "_SubMean" } });
+                var divStd = (subMean / stdCall).With(metadata: new IRMetadata() { OutputNames = new[] { input.Metadata.OutputNames?[0] + "_DivStd" } });
+                newInput = divStd;
 
                 // newInput = Binary(BinaryOp.Div, Binary(BinaryOp.Sub, newInput, Tensor.From(mean, new []{1,3,1,1})), Const.FromTensor(std) );
             }
