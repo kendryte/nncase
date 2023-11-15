@@ -72,7 +72,7 @@ public partial class NavigatorViewModel : ViewModelBase
 
     public void UpdateContentViewModel()
     {
-        UpdateContentViewModel(() => {});
+        UpdateContentViewModel(() => { });
     }
 
     public void UpdateContentViewModel(Action updateIndex)

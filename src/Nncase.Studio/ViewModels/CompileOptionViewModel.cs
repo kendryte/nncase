@@ -17,36 +17,11 @@ using Nncase.Quantization;
 
 namespace Nncase.Studio.ViewModels;
 
-public class PreprocessConfig
-{
-    private int[] _inputShape;
-
-    private InputType _inputTypeValue;
-
-    private int[] _inputTypeString;
-
-    public string InputLayout { get; set; } = "NCHW";
-
-    public string OutputLayout { get; set; } = "NCHW";
-
-    public string ModelLayout { get; set; } = "NCHW";
-
-    public bool SwapRB { get; set; }
-
-    public float RangeMin { get; set; }
-
-    public float RangeMax { get; set; }
-
-    public float LetterBoxValue { get; set; }
-
-    public float[] Mean { get; set; }
-
-    public float[] Std { get; set; }
-}
-
 // todo: button 字体？？
 public partial class CompileOptionViewModel : ViewModelBase
 {
+    private static readonly string _customMode = "自定义";
+
     [Required]
     [ObservableProperty]
     private string _inputFile = string.Empty;
@@ -74,9 +49,7 @@ public partial class CompileOptionViewModel : ViewModelBase
     private string _target;
 
     [ObservableProperty]
-    public string _preprocessMode = CustomMode;
-
-    public static string CustomMode = "自定义";
+    private string _preprocessMode = _customMode;
 
     public CompileOptionViewModel(ViewModelContext context)
     {
@@ -87,7 +60,7 @@ public partial class CompileOptionViewModel : ViewModelBase
         _target = TargetList[0];
         DumpDir = Path.Join(Directory.GetCurrentDirectory(), "nncase_dump");
         Context = context;
-        var list = new[] { CustomMode };
+        var list = new[] { _customMode };
         PreprocessModeList = new(list);
     }
 
@@ -124,7 +97,7 @@ public partial class CompileOptionViewModel : ViewModelBase
         Context.MixQuantize = MixQuantize;
         Context.EnableShapeBucket = ShapeBucket;
         Context.UseQuantize = Quantize;
-        Context.CustomPreprocessMode = PreprocessMode == CustomMode;
+        Context.CustomPreprocessMode = PreprocessMode == _customMode;
         if (Quantize == false)
         {
             Context.CompileOption.QuantizeOptions.ModelQuantMode = ModelQuantMode.NoQuant;
@@ -136,7 +109,6 @@ public partial class CompileOptionViewModel : ViewModelBase
     // todo validate那边修复间距和字体
     // todo system prompt dialog
     // todo dialog中的路径可以被复制
-
     public override List<string> CheckViewModel()
     {
         var list = new List<string>();
