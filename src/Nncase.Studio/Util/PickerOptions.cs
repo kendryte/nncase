@@ -9,16 +9,23 @@ public static class PickerOptions
 {
     public static FilePickerOpenOptions DataPickerOptions => new FilePickerOpenOptions
     {
-        Title = "Open Input File",
+        Title = "Select Input File",
         AllowMultiple = true,
         FileTypeFilter = new FilePickerFileType[] { new("npy") { Patterns = new[] { "*.npy" } } },
     };
 
     public static FilePickerOpenOptions JsonPickerOptions => new FilePickerOpenOptions
     {
-        Title = "Open Json File",
+        Title = "Select Json File",
         AllowMultiple = true,
         FileTypeFilter = new FilePickerFileType[] { new("json") { Patterns = new[] { "*.json" } } },
+    };
+
+    public static FilePickerOpenOptions KmodelPickerOptions => new FilePickerOpenOptions
+    {
+        Title = "Select Kmodel",
+        AllowMultiple = true,
+        FileTypeFilter = new FilePickerFileType[] { new("kmodel") { Patterns = new[] { "*.kmodel" } } },
     };
 
     public static FilePickerOpenOptions ImporterPickerOptions => new FilePickerOpenOptions
@@ -27,7 +34,7 @@ public static class PickerOptions
         AllowMultiple = false,
         FileTypeFilter = new FilePickerFileType[]
         {
-            new("model(tflite/onnx/ncnn)") { Patterns = new[] { "*.tflite", "*.onnx", "*.ncnn" } },
+            new("model") { Patterns = new[] { "*.tflite", "*.onnx", "*.ncnn" } },
         },
     };
 
