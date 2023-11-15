@@ -11,7 +11,7 @@ namespace Nncase.Studio;
 
 public static class AvaloniaAppBuilderExtensions
 {
-    public static AppBuilder UseAntDesignFontManager([DisallowNull] this AppBuilder builder, Action<FontSettings>? configDelegate = default)
+    public static AppBuilder UseNncaseFontManager([DisallowNull] this AppBuilder builder, Action<FontSettings>? configDelegate = default)
     {
         var setting = new FontSettings();
         configDelegate?.Invoke(setting);

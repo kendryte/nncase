@@ -23,8 +23,10 @@ internal class Program
     public static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()
-            .UseAntDesignFontManager()
+            .UseNncaseFontManager()
             .LogToTrace()
             .UseReactiveUI()
+
+            // https://github.com/AvaloniaUI/Avalonia/issues/9383#issuecomment-1378350456
             .With(new X11PlatformOptions() { UseDBusFilePicker = false });
 }
