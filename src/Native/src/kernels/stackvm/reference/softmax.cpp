@@ -28,11 +28,11 @@ using namespace nncase::kernels::stackvm;
 namespace {
 // softmax(x) = exp(x - reduce_max(x)) / reduce_sum(exp(x - reduce_max(x)))
 template <typename T>
-result<void> softmax_impl(const T *input, T *output,
-                          gsl::span<const size_t> in_shape,
-                          NNCASE_UNUSED gsl::span<const size_t> in_strides,
-                          NNCASE_UNUSED gsl::span<const size_t> out_strides, int64_t axis,
-                          float beta, bool needLog = false) noexcept {
+result<void>
+softmax_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
+             NNCASE_UNUSED gsl::span<const size_t> in_strides,
+             NNCASE_UNUSED gsl::span<const size_t> out_strides, int64_t axis,
+             float beta, bool needLog = false) noexcept {
     size_t positive_axis = axis < 0 ? in_shape.size() + axis : axis;
 
     if(positive_axis == in_shape.size()-1)
