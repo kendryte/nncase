@@ -21,7 +21,13 @@ namespace Nncase.Importer.TFLite
                 input = Unsqueeze(input, new[] { -3 });
             }
 
-            return Squeeze(NCHWToNHWC(SpaceToBatch(NHWCToNCHW(input), blockShape, paddings)), 1);
+            var stb = NCHWToNHWC(SpaceToBatch(NHWCToNCHW(input), blockShape, paddings));
+            if (input.CheckedShape.Rank == 3)
+            {
+                return Squeeze(stb, new[] { 1 });
+            }
+
+            return stb;
         }
 
         private Expr VisitBatchToSpaceND(in tflite.Operator op)
@@ -35,7 +41,13 @@ namespace Nncase.Importer.TFLite
                 input = Unsqueeze(input, new[] { -3 });
             }
 
-            return Squeeze(NCHWToNHWC(BatchToSpace(NHWCToNCHW(input), blockShape, crops)), 1);
+            var bts = NCHWToNHWC(BatchToSpace(NHWCToNCHW(input), blockShape, crops));
+            if (input.CheckedShape.Rank == 3)
+            {
+                return Squeeze(bts, new[] { 1 });
+            }
+
+            return bts;
         }
     }
 }
