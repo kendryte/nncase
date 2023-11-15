@@ -25,5 +25,6 @@ internal class Program
             .UsePlatformDetect()
             .UseAntDesignFontManager()
             .LogToTrace()
-            .UseReactiveUI();
+            .UseReactiveUI()
+            .With(new X11PlatformOptions() { UseDBusFilePicker = false });
 }
