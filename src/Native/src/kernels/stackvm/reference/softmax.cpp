@@ -80,11 +80,11 @@ softmax_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
             reduced_size *= in_shape[i];
         }
         auto out_size = compute_size(in_shape) / reduced_size / axis_size;
-        std::vector<T> axis_sum(reduced_size, static_cast<T>(0));
-        std::vector<T> max_value(reduced_size,
-                                 std::numeric_limits<T>::lowest());
 
         for (size_t i = 0; i < out_size; i++) {
+            std::vector<T> axis_sum(reduced_size, static_cast<T>(0));
+            std::vector<T> max_value(reduced_size,
+                                     std::numeric_limits<T>::lowest());
             auto in_ = input + i * reduced_size * axis_size;
             auto out_ = output + i * reduced_size * axis_size;
 

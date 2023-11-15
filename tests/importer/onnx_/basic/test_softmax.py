@@ -63,7 +63,8 @@ def _make_module(in_shape, axis, op_version):
 
 
 in_shapes = [
-    [1, 3, 16, 16],
+    [2, 3, 8, 1],
+    [1, 3, 8, 5],
 ]
 
 axes = [
