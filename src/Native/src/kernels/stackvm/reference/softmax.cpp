@@ -34,52 +34,103 @@ result<void> softmax_impl(const T *input, T *output,
                           NNCASE_UNUSED gsl::span<const size_t> out_strides, int64_t axis,
                           float beta, bool needLog = false) noexcept {
     size_t positive_axis = axis < 0 ? in_shape.size() + axis : axis;
-    dims_t axes{positive_axis};
 
-    size_t reduced_size = 1;
-    for (size_t i = positive_axis; i < in_shape.size(); i++)
+    if(positive_axis == in_shape.size()-1)
     {
-        reduced_size *= in_shape[i];
-    }
-    auto out_size = compute_size(in_shape) / reduced_size;
-    std::vector<T> tmp(reduced_size, std::numeric_limits<T>::lowest());
+        size_t reduced_size = in_shape[positive_axis];
+        auto out_size = compute_size(in_shape) / reduced_size;
+        std::vector<T> tmp(reduced_size, std::numeric_limits<T>::lowest());
 
-    for (size_t i = 0; i < out_size; i++)
-    {
-        auto in_ = input + i * reduced_size;
-        auto out_ = output + i * reduced_size;
-
-        // reduce_max
-        auto max_value = *in_;
-        for(size_t j = 0; j < reduced_size; j++)
+        for (size_t i = 0; i < out_size; i++)
         {
-            max_value = std::max(max_value, in_[j]);
-        }
+            auto in_ = input + i * reduced_size;
+            auto out_ = output + i * reduced_size;
 
-        // (x - reduce_max) * beta
-        for(size_t j = 0; j < reduced_size; j++)
-        {
-            out_[j] = static_cast<T>((static_cast<float>(in_[j]) - static_cast<float>(max_value)) * beta);
-        }
-
-        // exp((x - reduce_max) * beta) and sum
-        T sum = 0;
-        for(size_t j = 0; j < reduced_size; j++)
-        {
-            out_[j] = static_cast<T>(expf(static_cast<float>(out_[j])));
-            sum += out_[j];
-        }
-
-        // div
-        for(size_t j = 0; j < reduced_size; j++)
-        {
-            out_[j] /= sum;
-            if (needLog)
+            // reduce_max
+            auto max_value = *in_;
+            for(size_t j = 0; j < reduced_size; j++)
             {
-                out_[j] = static_cast<T>(std::log(static_cast<float>(out_[j])));
+                max_value = std::max(max_value, in_[j]);
+            }
+
+            // (x - reduce_max) * beta
+            for(size_t j = 0; j < reduced_size; j++)
+            {
+                out_[j] = static_cast<T>((static_cast<float>(in_[j]) - static_cast<float>(max_value)) * beta);
+            }
+
+            // exp((x - reduce_max) * beta) and sum
+            T sum = 0;
+            for(size_t j = 0; j < reduced_size; j++)
+            {
+                out_[j] = static_cast<T>(expf(static_cast<float>(out_[j])));
+                sum += out_[j];
+            }
+
+            // div
+            for(size_t j = 0; j < reduced_size; j++)
+            {
+                out_[j] /= sum;
+                if (needLog)
+                {
+                    out_[j] = static_cast<T>(std::log(static_cast<float>(out_[j])));
+                }
             }
         }
     }
+    else
+    {
+        size_t axis_size = in_shape[positive_axis];
+        size_t reduced_size = 1;
+        for (size_t i = positive_axis+1; i < in_shape.size(); i++)
+        {
+            reduced_size *= in_shape[i];
+        }
+        auto out_size = compute_size(in_shape) / reduced_size / axis_size;
+        std::vector<T> axis_sum(reduced_size, static_cast<T>(0));
+        std::vector<T> max_value(reduced_size, std::numeric_limits<T>::lowest());
+
+        for (size_t i = 0; i < out_size; i++)
+        {
+            auto in_ = input + i * reduced_size * axis_size;
+            auto out_ = output + i * reduced_size * axis_size;
+
+            // reduce_max
+            for (size_t k = 0; k < axis_size; k++)
+            {
+                auto in_k = in_ + k * reduced_size;
+                for (size_t j = 0; j < reduced_size; j++)
+                {
+                    max_value[j] = std::max(max_value[j], in_k[j]);
+                }
+            }
+
+            // exp((x - reduce_max) * beta) and sum
+            for (size_t k = 0; k < axis_size; k++)
+            {
+                auto in_k = in_ + k * reduced_size;
+                auto out_k = out_ + k * reduced_size;
+                for (size_t j = 0; j < reduced_size; j++)
+                {
+                    out_k[j] = static_cast<T>(expf((static_cast<float>(in_k[j]) - static_cast<float>(max_value[j])) * beta));
+                    axis_sum[j] += out_k[j];
+                }
+            }
+
+            // div
+            for (size_t k = 0; k < axis_size; k++)
+            {
+                auto out_k = out_ + k * reduced_size;
+                for (size_t j = 0; j < reduced_size; j++)
+                {
+                    out_k[j] /= axis_sum[j];
+                    if(needLog)
+                        out_k[j] = static_cast<T>(std::log(static_cast<float>((out_k[j]))));
+                }
+            }
+        }
+    }
+
 
     return ok();
 }
