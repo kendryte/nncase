@@ -79,8 +79,8 @@
             <Label Grid.Row="6" Grid.Column="0" Content="开启前后处理"/>
             <DockPanel Grid.Row="6" Grid.Column="1">
                 <CheckBox IsChecked="{Binding Preprocess}"/>
-                <Label Content="前后处理模式"></Label>
-                <ComboBox ItemsSource="{Binding PreprocessModeList}" SelectedValue="{Binding PreprocessMode}"></ComboBox>
+                <Label Content="前后处理模式" IsVisible="{Binding Preprocess}"></Label>
+                <ComboBox IsVisible="{Binding Preprocess}" ItemsSource="{Binding PreprocessModeList}" SelectedValue="{Binding PreprocessMode}"></ComboBox>
             </DockPanel>
 
 

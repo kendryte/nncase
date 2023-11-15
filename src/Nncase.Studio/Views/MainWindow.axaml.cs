@@ -58,7 +58,6 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
         if (files.Count >= 1)
         {
-            Console.WriteLine(files[0].Path.LocalPath);
             var path = files.Select(f => f.Path.LocalPath).ToList();
             interaction.SetOutput(path);
         }

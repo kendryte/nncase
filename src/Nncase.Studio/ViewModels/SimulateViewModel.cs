@@ -142,6 +142,18 @@ public partial class SimulateViewModel : ViewModelBase
         }
     }
 
+    [RelayCommand]
+    async Task SetKmodelPath()
+    {
+        var kmodel = await Context.OpenFile(PickerOptions.KmodelPickerOptions);
+        if (kmodel.Count == 0)
+        {
+            return;
+        }
+
+        KmodelPath = kmodel[0];
+    }
+
     // private bool CheckInput(out Task simulate)
     // {
     //     if (Context.Entry == null)
@@ -181,12 +193,22 @@ public partial class SimulateViewModel : ViewModelBase
     // }
     public override void UpdateViewModel()
     {
-        if (ResultDir == string.Empty)
+        var dumpDir = Directory.GetCurrentDirectory();
+        if (Context.CompileOption.DumpDir != string.Empty)
         {
-            ResultDir = Context.CompileOption.DumpDir;
+            dumpDir = Context.CompileOption.DumpDir;
         }
 
-        KmodelPath = Context.KmodelPath;
+        if (ResultDir == string.Empty)
+        {
+            ResultDir = dumpDir;
+        }
+
+        if (Context.KmodelPath == string.Empty)
+        {
+            KmodelPath = Path.Join(dumpDir, "test.kmodel");
+        }
+
     }
 
     private void SaveResult(Tensor[] result)

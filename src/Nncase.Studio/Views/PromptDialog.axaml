@@ -19,6 +19,7 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition />
             </Grid.ColumnDefinitions>
+            <!-- todo: 自适应长度 -->
             <Image
                 Name="IconImage"
                 IsVisible="{Binding IsError}"

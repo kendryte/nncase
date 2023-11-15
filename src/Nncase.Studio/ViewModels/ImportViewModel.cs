@@ -27,7 +27,6 @@ public partial class ImportViewModel : ViewModelBase
         var path = await Context.OpenFile(PickerOptions.ImporterPickerOptions);
         if (path == null)
         {
-            Console.WriteLine("FileNotSelected");
             return;
         }
 

@@ -45,12 +45,13 @@
 
             <Label Grid.Row="2" Grid.Column="0" Content="KmodelPath"></Label>
                 <TextBox Classes="Path" Grid.Row="2" Grid.Column="1"
-                     Text="{Binding KmodelPath}"></TextBox>
+                     Text="{Binding KmodelPath}"
+                     Watermark="Kmodel Path"></TextBox>
                 <Button
                     Grid.Row="2" Grid.Column="2"
                     Content="选择"
                     x:CompileBindings="False"
-                    Command="{Binding SetRuntimeInputCommand}">
+                    Command="{Binding SetKmodelPathCommand}">
                 </Button>
             </Grid>
 

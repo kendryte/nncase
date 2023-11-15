@@ -130,12 +130,17 @@ public partial class QuantizeViewModel : ViewModelBase
 
     public override void UpdateViewModel()
     {
+        if (ExportQuantSchemePath == string.Empty)
+        {
+            ExportQuantSchemePath = Path.Join(Context.CompileOption.DumpDir, "QuantScheme.json");
+        }
+
         MixQuantize = Context.MixQuantize;
     }
 
     public override void UpdateContext()
     {
-        // load calib data set when compile start
+        // todo: load calib data set when compile start
         QuantizeOptionsValue.CalibrationMethod = CalibMethodValue;
         QuantizeOptionsValue.QuantType = DataUtil.QuantTypeToDataType(QuantTypeValue);
         QuantizeOptionsValue.WQuantType = DataUtil.QuantTypeToDataType(WQuantTypeValue);

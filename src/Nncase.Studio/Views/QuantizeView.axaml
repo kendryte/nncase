@@ -101,7 +101,7 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <Label Grid.Row="0" Grid.Column="0" Content="量化配置文件"></Label>
-                <TextBox Grid.Row="0" Grid.Column="1" HorizontalAlignment="Left" Width="400" Text="Path"></TextBox>
+                <TextBox Grid.Row="0" Grid.Column="1" HorizontalAlignment="Left" Width="400" Watermark="Path"></TextBox>
                 <Button Grid.Row="0" Grid.Column="2"
                         Content="选择"
                         Command="{Binding SelectQuantSchemeCommand}"></Button>
