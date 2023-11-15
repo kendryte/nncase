@@ -37,6 +37,15 @@ public partial class NavigatorViewModel : ViewModelBase
 
     public int PageCount => ContentViewModelList.Count;
 
+    public void SwitchToPage(ViewModelBase page)
+    {
+        UpdateContentViewModel(() =>
+        {
+            var index = ContentViewModelList.IndexOf(page);
+            PageIndex = index;
+        });
+    }
+
     [RelayCommand]
     public void SwitchPrev()
     {

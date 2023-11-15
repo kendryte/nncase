@@ -17,6 +17,34 @@ using Nncase.Quantization;
 
 namespace Nncase.Studio.ViewModels;
 
+public class PreprocessConfig
+{
+    private int[] _inputShape;
+
+    private InputType _inputTypeValue;
+
+    private int[] _inputTypeString;
+
+    public string InputLayout { get; set; } = "NCHW";
+
+    public string OutputLayout { get; set; } = "NCHW";
+
+    public string ModelLayout { get; set; } = "NCHW";
+
+    public bool SwapRB { get; set; }
+
+    public float RangeMin { get; set; }
+
+    public float RangeMax { get; set; }
+
+    public float LetterBoxValue { get; set; }
+
+    public float[] Mean { get; set; }
+
+    public float[] Std { get; set; }
+}
+
+// todo: button 字体？？
 public partial class CompileOptionViewModel : ViewModelBase
 {
     [Required]
@@ -46,7 +74,7 @@ public partial class CompileOptionViewModel : ViewModelBase
     private string _target;
 
     [ObservableProperty]
-    public string _preprocessMode;
+    public string _preprocessMode = CustomMode;
 
     public static string CustomMode = "自定义";
 
@@ -81,50 +109,6 @@ public partial class CompileOptionViewModel : ViewModelBase
         }
     }
 
-    // [RelayCommand]
-    // public void ShowPreprocess()
-    // {
-    //     var pre = Context.ViewModelLookup(typeof(PreprocessViewModel))!;
-    //     if (Preprocess)
-    //     {
-    //         Context.InsertPage(pre, this, 1);
-    //     }
-    //     else
-    //     {
-    //         Context.RemovePage(pre);
-    //     }
-    // }
-    //
-    // [RelayCommand]
-    // public void ShowQuantize()
-    // {
-    //     var quant = Context.ViewModelLookup(typeof(QuantizeViewModel))!;
-    //     var compile = Context.ViewModelLookup(typeof(CompileViewModel))!;
-    //     if (Quantize)
-    //     {
-    //         Context.InsertPage(quant, compile);
-    //     }
-    //     else
-    //     {
-    //         Context.RemovePage(quant);
-    //     }
-    // }
-    //
-    // [RelayCommand]
-    // public void ShowShapeBucket()
-    // {
-    //     var shapeBucket = Context.ViewModelLookup(typeof(ShapeBucketViewModel))!;
-    //     var compile = Context.ViewModelLookup(typeof(CompileViewModel))!;
-    //     if (ShapeBucket)
-    //     {
-    //         Context.InsertPage(shapeBucket, compile);
-    //     }
-    //     else
-    //     {
-    //         Context.RemovePage(shapeBucket);
-    //     }
-    // }
-
     public override void UpdateViewModel()
     {
         InputFile = Context.CompileOption.InputFile;
@@ -140,10 +124,21 @@ public partial class CompileOptionViewModel : ViewModelBase
         Context.MixQuantize = MixQuantize;
         Context.EnableShapeBucket = ShapeBucket;
         Context.UseQuantize = Quantize;
+        Context.CustomPreprocessMode = PreprocessMode == CustomMode;
+        if (Quantize == false)
+        {
+            Context.CompileOption.QuantizeOptions.ModelQuantMode = ModelQuantMode.NoQuant;
+        }
     }
 
     public override List<string> CheckViewModel()
     {
-        return new();
+        var list = new List<string>();
+        if (DumpDir == string.Empty)
+        {
+            list.Add("DumpDir can't be empty");
+        }
+
+        return list;
     }
 }

@@ -27,7 +27,7 @@ public static class PickerOptions
         AllowMultiple = false,
         FileTypeFilter = new FilePickerFileType[]
         {
-            new("model") { Patterns = new[] { "*.tflite", "*.onnx", "*.ncnn" } },
+            new("model(tflite/onnx/ncnn)") { Patterns = new[] { "*.tflite", "*.onnx", "*.ncnn" } },
         },
     };
 

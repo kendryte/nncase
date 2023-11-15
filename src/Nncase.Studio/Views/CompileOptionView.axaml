@@ -33,11 +33,13 @@
             </Grid.ColumnDefinitions>
 
             <Label Grid.Row="0" Grid.Column="0" Content="模型文件路径"/>
-            <TextBox Grid.Row="0" Grid.Column="1" Classes="Path" Text="{Binding InputFile}"/>
+            <TextBox Grid.Row="0" Grid.Column="1" Classes="Path" Text="{Binding InputFile}" IsReadOnly="True"/>
 
             <Label Grid.Row="1" Grid.Column="0" Content="模型格式"/>
             <TextBlock Grid.Row="1" Grid.Column="1" HorizontalAlignment="Left" Margin="15" Text="{Binding InputFormat, Mode=TwoWay}"/>
 
+            <!-- todo: valid以后才能下一步 -->
+            <!-- todo:下拉框的提示，mac点不开的问题 -->
             <Label Grid.Row="2" Grid.Column="0" Content="Dump选项"/>
             <SplitButton Margin="3" Grid.Row="2" Grid.Column="1" Content="DumpFlags" >
                 <SplitButton.Flyout>

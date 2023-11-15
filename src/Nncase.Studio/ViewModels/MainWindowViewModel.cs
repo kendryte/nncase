@@ -56,6 +56,7 @@ public partial class MainWindowViewModel : WindowViewModelBase
             .Build();
         CompilerServices.Configure(host.Services);
         Context = new ViewModelContext(this);
+        var studioModeViewModel = new StudioModeViewModel(Context);
         var importViewModel = new ImportViewModel(Context);
         var compileOptionViewModel = new CompileOptionViewModel(Context);
         var preprocessViewModel = new PreprocessViewModel(Context);
@@ -68,6 +69,7 @@ public partial class MainWindowViewModel : WindowViewModelBase
         var contentViewModelList = new ObservableCollection<ViewModelBase>(
             new ViewModelBase[]
             {
+                studioModeViewModel,
                 importViewModel,
                 compileOptionViewModel,
                 preprocessViewModel,

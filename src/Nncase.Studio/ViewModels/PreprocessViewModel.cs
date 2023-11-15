@@ -99,5 +99,8 @@ public partial class PreprocessViewModel : ViewModelBase
         return new();
     }
 
-    public override bool IsVisible() => Context.CompileOption.PreProcess;
+    public override bool IsVisible()
+    {
+        return Context.CompileOption.PreProcess && Context.CustomPreprocessMode;
+    }
 }

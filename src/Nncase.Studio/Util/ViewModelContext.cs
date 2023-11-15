@@ -32,6 +32,8 @@ public class ViewModelContext
 
     public bool UseQuantize { get; set; }
 
+    public bool CustomPreprocessMode { get; set; }
+
     public bool EnableShapeBucket
     {
         get { return CompileOption.ShapeBucketOptions.Enable; }
@@ -59,15 +61,11 @@ public class ViewModelContext
         await _mainWindowView.ShowDialog(prompt, level);
     }
 
-    // public void InsertPage(ViewModelBase page, ViewModelBase pagePosition, int offset = 0)
-    // {
-    //     Navigator?.InsertPageAfter(page, pagePosition, offset);
-    // }
-    //
-    // public void RemovePage(ViewModelBase page)
-    // {
-    //     Navigator?.RemovePage(page);
-    // }
+    public void SwitchToPage(Type page)
+    {
+        var viewModel = ViewModelLookup(page);
+        Navigator?.SwitchToPage(viewModel);
+    }
 
     public void SwitchNext()
     {

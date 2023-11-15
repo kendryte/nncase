@@ -23,9 +23,11 @@
                 Name="IconImage"
                 IsVisible="{Binding IsError}"
                 Width="64" Height="64" Source="/Assets/error-icon.png"></Image>
-            <Label Grid.Column="1"
+            <TextBox Grid.Column="1"
                    HorizontalAlignment="Left"
-                   Content="{Binding DialogContent}"></Label>
+                   FontSize="27"
+                   Text="{Binding DialogContent}"
+                   IsReadOnly="True"></TextBox>
         </Grid>
 
         <Button Content="关闭"
