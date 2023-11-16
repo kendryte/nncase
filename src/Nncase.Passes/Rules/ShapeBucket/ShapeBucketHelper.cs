@@ -250,7 +250,6 @@ public static class ShapeBucketRegister
 
 public static class ShapeBucketHelper
 {
-    // todo: fix this
     public static bool IsStaticShpae
     {
         get
@@ -278,7 +277,6 @@ public static class ShapeBucketHelper
 
     public static Dictionary<Var, int[]> MakeVarValuesForAllSegment(ShapeBucketOptions options, int segmentCount, bool staticShape)
     {
-        // todo: fix this
         var varRange = options.RangeInfo;
         var varMap = options.VarMap;
         var varAndInputAllSegment = varRange.ToDictionary(pair => pair.Key, pair =>

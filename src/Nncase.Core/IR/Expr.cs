@@ -95,7 +95,7 @@ public abstract partial class Expr : IDisposable
                 case TensorType type:
                     return type.Shape;
                 default:
-                    // if (DumpScope.Current.IsEnabled(DumpFlags.Compile))
+                    if (DumpScope.Current.IsEnabled(DumpFlags.Compile))
                     {
                         DumpScope.Current.DumpIR(this, "CheckedShapeError");
                     }

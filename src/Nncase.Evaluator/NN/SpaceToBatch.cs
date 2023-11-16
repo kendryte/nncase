@@ -226,7 +226,6 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
                 outshape[0] = outshape[0].IsUnknown ? Dimension.Unknown : outshape[0].FixedValue * block;
             }
 
-            // return input with { Shape = new Shape(outshape) };
             Dimension[] outputShape;
 
             // nhwc to nchw

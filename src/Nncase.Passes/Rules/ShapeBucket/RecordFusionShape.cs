@@ -127,7 +127,6 @@ public class RecordFusionShape : FunctionPass
             ? options.RangeInfo.First().Value.Max
             : options.SegmentsCount;
 
-        // var segmentCount = options.SegmentsCount;
         _dimVarValues = MakeVarValuesForAllSegment(options, segmentCount, staticShape);
 
         // 一共有多组key seg
@@ -138,7 +137,6 @@ public class RecordFusionShape : FunctionPass
         });
         var list = _once ? tmpList.TakeLast(1).ToArray() : tmpList.ToArray();
 
-        var begin = System.DateTime.Now;
         var body = ((Function)main).Body;
         var tmpFusionShapeList = list.Select((seg, i) =>
             {

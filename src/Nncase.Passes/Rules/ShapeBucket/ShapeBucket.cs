@@ -1306,7 +1306,6 @@ public partial class RebuildBucket : RewriteRule<Pattern>
 
     public override Pattern Pattern => FusionBucket.BucketFusionPattern;
 
-    // todo: collect once shape
     public Expr? GetReplace(Call outerCall, BucketFusion fusion, Expr fusionBody)
     {
         // only once RecordShape
@@ -1325,7 +1324,6 @@ public partial class RebuildBucket : RewriteRule<Pattern>
             shapeInfos = list[0].Value;
         }
 
-        // todo: test
         // 1. 普通情况不应该rebuild
         // 2. rebuild的正确性
         var context = new FusionBucketContext(outerCall, fusion, options, ShapeExprCache.Default, _counter, shapeInfos);
