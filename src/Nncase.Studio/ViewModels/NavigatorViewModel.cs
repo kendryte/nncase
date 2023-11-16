@@ -12,6 +12,8 @@ public partial class NavigatorViewModel : ViewModelBase
 {
     private readonly Action<ViewModelBase> _windowUpdater;
 
+    private readonly Action<string, PromptDialogLevel> _showDialog;
+
     [ObservableProperty]
     private ViewModelBase? _contentViewModel;
 
@@ -27,10 +29,11 @@ public partial class NavigatorViewModel : ViewModelBase
     [ObservableProperty]
     private string _pageIndexString = string.Empty;
 
-    public NavigatorViewModel(ObservableCollection<ViewModelBase> content, Action<ViewModelBase> windowUpdater)
+    public NavigatorViewModel(ObservableCollection<ViewModelBase> content, Action<string, PromptDialogLevel> showDialog, Action<ViewModelBase> windowUpdater)
     {
         ContentViewModelList = content;
         _windowUpdater = windowUpdater;
+        _showDialog = showDialog;
     }
 
     public ObservableCollection<ViewModelBase> ContentViewModelList { get; set; } = new();
@@ -61,6 +64,14 @@ public partial class NavigatorViewModel : ViewModelBase
     [RelayCommand]
     public void SwitchNext()
     {
+        var check = ContentViewModel!.CheckViewModel();
+        // todo: show log
+        if (check.Count != 0)
+        {
+            _showDialog("Err:\n" + string.Join("\n", check), PromptDialogLevel.Error);
+            return;
+        }
+
         UpdateContentViewModel(() =>
         {
             do

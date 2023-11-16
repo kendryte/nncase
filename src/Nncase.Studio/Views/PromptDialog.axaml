@@ -7,7 +7,8 @@
         xmlns:viewModels="clr-namespace:Nncase.Studio.ViewModels"
         mc:Ignorable="d" d:DesignWidth="192" d:DesignHeight="108"
         x:DataType="viewModels:PromptDialogViewModel"
-        Width="500"
+        MaxWidth="800"
+        Width="{Binding WindowWidth}"
         Height="300"
         Icon="/Assets/nncase-logo.png"
         Title="{Binding Title}"
@@ -24,11 +25,11 @@
                 Name="IconImage"
                 IsVisible="{Binding IsError}"
                 Width="64" Height="64" Source="/Assets/error-icon.png"></Image>
-            <TextBox Grid.Column="1"
+            <TextBlock Grid.Column="1"
                    HorizontalAlignment="Left"
                    FontSize="27"
                    Text="{Binding DialogContent}"
-                   IsReadOnly="True"></TextBox>
+                   ></TextBlock>
         </Grid>
 
         <Button Content="关闭"

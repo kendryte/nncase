@@ -14,6 +14,9 @@ public partial class PromptDialogViewModel : ViewModelBase
     private string _dialogContent = string.Empty;
 
     [ObservableProperty]
+    private int _windowWidth = 500;
+
+    [ObservableProperty]
     private PromptDialogLevel _dialogLevel;
 
     [ObservableProperty]
@@ -37,6 +40,7 @@ public partial class PromptDialogViewModel : ViewModelBase
         }
 
         CloseWindowCommand = new RelayCommand<Window>(CloseWindow);
+        WindowWidth = content.Length * 20 + 60;
     }
 
     public RelayCommand<Window> CloseWindowCommand { get; private set; }

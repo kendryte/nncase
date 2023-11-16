@@ -24,6 +24,7 @@ public partial class ShapeBucketViewModel : ViewModelBase
         Context = context;
     }
 
+    // todo: fix var map not stop, add validator for this
     public override void UpdateContext()
     {
         var options = new ShapeBucketOptions();

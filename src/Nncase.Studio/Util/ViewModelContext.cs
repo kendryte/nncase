@@ -58,7 +58,7 @@ public class ViewModelContext
 
     public async void OpenDialog(string prompt, PromptDialogLevel level = PromptDialogLevel.Error)
     {
-        await _mainWindowView.ShowDialog(prompt, level);
+        _mainWindowView.ShowDialog(prompt, level);
     }
 
     public void SwitchToPage(Type page)

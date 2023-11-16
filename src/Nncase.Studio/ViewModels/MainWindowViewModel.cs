@@ -82,7 +82,7 @@ public partial class MainWindowViewModel : WindowViewModelBase
         Title = string.Empty;
         ContentViewModel = contentViewModelList.First();
         Context.ViewModelBases = contentViewModelList.ToArray();
-        NavigatorViewModelValue = new NavigatorViewModel(contentViewModelList, Update);
+        NavigatorViewModelValue = new NavigatorViewModel(contentViewModelList, ShowDialog, UpdateTitle);
         Context.Navigator = NavigatorViewModelValue;
         NavigatorViewModelValue.UpdateContentViewModel();
     }
@@ -97,13 +97,13 @@ public partial class MainWindowViewModel : WindowViewModelBase
 
     protected ViewModelContext Context { get; set; }
 
-    public void Update(ViewModelBase contenViewModel)
+    public void UpdateTitle(ViewModelBase contenViewModel)
     {
         ContentViewModel = contenViewModel;
         Title = ContentViewModel.GetType().Name.Split("ViewModel")[0];
     }
 
-    public async Task ShowDialog(string prompt, PromptDialogLevel level = PromptDialogLevel.Error)
+    public async void ShowDialog(string prompt, PromptDialogLevel level = PromptDialogLevel.Error)
     {
         await ShowPromptDialog.Handle((prompt, level));
     }

@@ -56,9 +56,13 @@ public partial class ImportViewModel : ViewModelBase
     public override List<string> CheckViewModel()
     {
         var list = new List<string>();
-        if (!File.Exists(_inputFile))
+        if (_inputFile == string.Empty)
         {
-            list.Add($"InputFile {_inputFile} Not Exist");
+            list.Add("model path is empty");
+        }
+        else if (!File.Exists(_inputFile))
+        {
+            list.Add($"model path {_inputFile} Not Exist");
         }
 
         return list;
