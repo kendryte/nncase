@@ -65,6 +65,7 @@ public partial class NavigatorViewModel : ViewModelBase
     public void SwitchNext()
     {
         var check = ContentViewModel!.CheckViewModel();
+
         // todo: show log
         if (check.Count != 0)
         {

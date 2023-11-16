@@ -56,7 +56,7 @@ public class ViewModelContext
         return await _mainWindowView.ShowFolderPicker.Handle(options);
     }
 
-    public async void OpenDialog(string prompt, PromptDialogLevel level = PromptDialogLevel.Error)
+    public void OpenDialog(string prompt, PromptDialogLevel level = PromptDialogLevel.Error)
     {
         _mainWindowView.ShowDialog(prompt, level);
     }
