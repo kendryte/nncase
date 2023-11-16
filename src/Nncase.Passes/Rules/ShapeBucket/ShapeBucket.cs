@@ -153,7 +153,6 @@ public partial class CallToFusion : RewriteRule<Pattern>
 
         Init(matchResult);
 
-        Console.WriteLine(call.Target.GetType().Name);
         var argsMarkerData = CollectInputs(call);
         var args = argsMarkerData.Select(pair => pair.Item1).ToArray();
         var varMap = CompileSession.CompileOptions.ShapeBucketOptions.VarMap;
