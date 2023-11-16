@@ -12,6 +12,7 @@
     <Application.Styles>
         <FluentTheme />
         <StyleInclude Source="Style/ButtonStyle.axaml"></StyleInclude>
+        <StyleInclude Source="Style/CustomValidation.axaml"></StyleInclude>
         <StyleInclude Source="Style/Logo.axaml"></StyleInclude>
         <StyleInclude Source="Style/GridStyle.axaml"></StyleInclude>
     </Application.Styles>
