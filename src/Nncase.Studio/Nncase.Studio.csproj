@@ -23,6 +23,7 @@
         <PackageReference Include="Avalonia.ReactiveUI"/>
         <PackageReference Include="CommunityToolkit.Mvvm"/>
         <PackageReference Include="NumSharp" />
+        <PackageReference Include="MessageBox.Avalonia"/>
 
         <ProjectReference Include="..\Nncase.Compiler\Nncase.Compiler.csproj" />
         <ProjectReference Include="..\Nncase.CodeGen\Nncase.CodeGen.csproj" />

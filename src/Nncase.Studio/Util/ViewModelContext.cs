@@ -69,7 +69,6 @@ public class ViewModelContext
 
     public void SwitchNext()
     {
-        // todo: switch check is validate
         Navigator?.SwitchNext();
     }
 

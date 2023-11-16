@@ -7,6 +7,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Avalonia.Media.Fonts;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Nncase.IR;
@@ -153,7 +154,41 @@ public partial class QuantizeViewModel : ViewModelBase
 
     public override List<string> CheckViewModel()
     {
-        return new();
+        var list = new List<string>();
+        if (Context.MixQuantize)
+        {
+            if (QuantSchemePath == string.Empty)
+            {
+                list.Add("QuantSchemePath should not be empty");
+            }
+            else if (!File.Exists(QuantSchemePath))
+            {
+                list.Add("QuantSchemePath not exist, please check file and path");
+            }
+        }
+        else
+        {
+            // todo: check quant scheme path
+            if (Directory.Exists(CalibDir))
+            {
+                if (_inputFiles.Length == 0)
+                {
+                    list.Add("CalibDir don't exist any .npy file");
+                }
+            }
+            else
+            {
+                list.Add($"CalibDir {CalibDir} not exist");
+            }
+
+            if (QuantTypeValue == QuantType.Int16 && WQuantTypeValue == QuantType.Int16 &&
+                string.Equals(Context.Target, "k230", StringComparison.OrdinalIgnoreCase))
+            {
+                list.Add("k230 not support QuantType and WeightsQuantType are int16");
+            }
+        }
+
+        return list;
     }
 
     public override bool IsVisible() => Context.UseQuantize;

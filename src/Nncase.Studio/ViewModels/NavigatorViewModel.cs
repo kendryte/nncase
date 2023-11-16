@@ -5,6 +5,7 @@ using System;
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using MsBox.Avalonia;
 
 namespace Nncase.Studio.ViewModels;
 
@@ -66,7 +67,6 @@ public partial class NavigatorViewModel : ViewModelBase
     {
         var check = ContentViewModel!.CheckViewModel();
 
-        // todo: show log
         if (check.Count != 0)
         {
             _showDialog("Err:\n" + string.Join("\n", check), PromptDialogLevel.Error);

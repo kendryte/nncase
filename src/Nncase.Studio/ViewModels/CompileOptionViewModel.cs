@@ -17,7 +17,6 @@ using Nncase.Quantization;
 
 namespace Nncase.Studio.ViewModels;
 
-// todo: button 字体？？
 public partial class CompileOptionViewModel : ViewModelBase
 {
     private static readonly string _customMode = "自定义";
@@ -105,10 +104,7 @@ public partial class CompileOptionViewModel : ViewModelBase
     }
 
     // todo simulate生成随机数
-    // todo 每个页面valid以后再到下一页
     // todo validate那边修复间距和字体
-    // todo system prompt dialog
-    // todo dialog中的路径可以被复制
     public override List<string> CheckViewModel()
     {
         var list = new List<string>();

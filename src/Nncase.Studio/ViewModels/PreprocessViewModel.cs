@@ -1,7 +1,9 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 
@@ -46,7 +48,6 @@ public partial class PreprocessViewModel : ViewModelBase
     [ValidLayout]
     public string ModelLayout { get; set; } = "NCHW";
 
-    [ValidFloatArray]
     public bool SwapRB { get; set; }
 
     [ValidFloat]
@@ -87,16 +88,21 @@ public partial class PreprocessViewModel : ViewModelBase
 
     public override List<string> CheckViewModel()
     {
-        var rangeMin = float.Parse(RangeMin);
-        var rangeMax = float.Parse(RangeMax);
-        if (rangeMax < rangeMin)
+        var l = new List<string>();
+        if (!CustomValidator.ValidateViewModel(this, out var results))
         {
-            var l = new List<string>();
-            l.Add("Invalid Range");
-            return l;
+            l = l.Concat(results.Select(x => x.ErrorMessage!)).ToList();
         }
 
-        return new();
+        if (float.TryParse(RangeMin, out var min) && float.TryParse(RangeMax, out var max))
+        {
+            if (max < min)
+            {
+                l.Add("Invalid Range");
+            }
+        }
+
+        return l;
     }
 
     public override bool IsVisible()

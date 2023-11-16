@@ -62,6 +62,17 @@
         "resolved": "8.2.1",
         "contentHash": "I24ofWVEdplxYjUez9/bljv/qb8r8Ccj6cvYXHexNBegLaD3iDy3QrzAAOYVMmfGWIXxlU1ZtECQNfU07+6hXQ=="
       },
+      "MessageBox.Avalonia": {
+        "type": "Direct",
+        "requested": "[3.1.2, )",
+        "resolved": "3.1.2",
+        "contentHash": "MX6qJuKZQytw9Bek8JK7Zr+C7AykNnrQVM7U0mbAvMORFsG/DOrLRQH+lT1pgQnHVYInS6Mx8Rgjy928abGIyg==",
+        "dependencies": {
+          "Avalonia": "11.0.0",
+          "DialogHost.Avalonia": "0.7.5",
+          "Markdown.Avalonia.Tight": "11.0.0-d1"
+        }
+      },
       "NumSharp": {
         "type": "Direct",
         "requested": "[0.30.0, )",
@@ -145,6 +156,23 @@
           "Avalonia": "11.0.2",
           "Avalonia.FreeDesktop": "11.0.2",
           "Avalonia.Skia": "11.0.2"
+        }
+      },
+      "ColorTextBlock.Avalonia": {
+        "type": "Transitive",
+        "resolved": "11.0.0-d1",
+        "contentHash": "sQAZgCwCS7vT5qGlxivrx6WAb1xkP47p4gAVmv5GQapfW8YXuk9a/t6QLmjJqFTJAAdk8M1EAUde0Ox5HPxjHA==",
+        "dependencies": {
+          "Avalonia": "11.0.0-rc1.1"
+        }
+      },
+      "DialogHost.Avalonia": {
+        "type": "Transitive",
+        "resolved": "0.7.5",
+        "contentHash": "jpXMSP2dy/K5UY6lclNjVgeqkitT+Vh8Aj4cLD64TShnDoBxfKOqHd8TMaFCkU5fa7hfhysdxZLZN2IrSwUZcw==",
+        "dependencies": {
+          "Avalonia": "11.0.0-rc2.1",
+          "System.Reactive": "6.0.0"
         }
       },
       "DynamicData": {
@@ -242,6 +270,15 @@
         "type": "Transitive",
         "resolved": "0.0.2",
         "contentHash": "HAoROgAKn8XBun11X43HZuspKlo5JGy8/OYw5IUPo7FVh5TCaPrLjGmyGYYZ2dqLlv31yv/b6s254PIRGn95cA=="
+      },
+      "Markdown.Avalonia.Tight": {
+        "type": "Transitive",
+        "resolved": "11.0.0-d1",
+        "contentHash": "fwl4wrvTdLFLUfkFezRY6SSfPmXIJcRyYChMDiMKFEGo1rKdPMnmcJbK+BWYXxZS+g66E6SFl/ca4kakhTk1HQ==",
+        "dependencies": {
+          "Avalonia": "11.0.0-rc1.1",
+          "ColorTextBlock.Avalonia": "11.0.0-d1"
+        }
       },
       "MicroCom.Runtime": {
         "type": "Transitive",
@@ -1186,8 +1223,8 @@
       "System.Reactive": {
         "type": "CentralTransitive",
         "requested": "[5.0.0, )",
-        "resolved": "5.0.0",
-        "contentHash": "erBZjkQHWL9jpasCE/0qKAryzVBJFxGHVBAvgRN1bzM0q2s1S4oYREEEL0Vb+1kA/6BKb5FjUZMp5VXmy+gzkQ=="
+        "resolved": "6.0.0",
+        "contentHash": "31kfaW4ZupZzPsI5PVe77VhnvFF55qgma7KZr/E0iFTs6fmdhhG8j0mgEx620iLTey1EynOkEfnyTjtNEpJzGw=="
       }
     }
   }

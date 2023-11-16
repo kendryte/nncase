@@ -2,10 +2,22 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace Nncase.Studio;
+
+public static class CustomValidator
+{
+    public static bool ValidateViewModel<T>(T obj, out ICollection<ValidationResult> results)
+    {
+        results = new List<ValidationResult>();
+
+        return Validator.TryValidateObject(obj!, new ValidationContext(obj!), results, true);
+    }
+}
 
 [AttributeUsage(AttributeTargets.All, Inherited = false, AllowMultiple = true)]
 internal sealed class ValidFloatAttribute : ValidationAttribute
@@ -40,6 +52,11 @@ internal sealed class ValidFloatArrayAttribute : ValidationAttribute
             return false;
         }
 
+        if (value.GetType() != typeof(string))
+        {
+            return false;
+        }
+
         var s = (string)value;
 
         if (s.Contains(",", StringComparison.Ordinal))
@@ -64,6 +81,11 @@ internal sealed class ValidIntArrayAttribute : ValidationAttribute
     public override bool IsValid(object? value)
     {
         if (value == null)
+        {
+            return false;
+        }
+
+        if (value.GetType() != typeof(string))
         {
             return false;
         }
