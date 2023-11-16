@@ -175,6 +175,44 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
         return inShape;
     }
 
+    private static Dimension[] ShapeNHWCToNCHW(List<Dimension> inShape, List<Dimension> outshape)
+    {
+        Dimension[] outputShape;
+
+        // nhwc to nchw
+        if (inShape.Count == 4)
+        {
+            outputShape = new[] { outshape[0], outshape[3], outshape[1], outshape[2] };
+        }
+        else
+        {
+            outputShape = new[] { inShape[0], inShape[2], inShape[1] };
+        }
+
+        return outputShape;
+    }
+
+    private static Dimension[] ShapeNCHWToNHWC(List<Dimension> inShape)
+    {
+        Dimension[] padded_shape;
+
+        // nchw to nhwc
+        if (inShape.Count == 4)
+        {
+            padded_shape = new[] { inShape[0], inShape[2], inShape[3], inShape[1] };
+        }
+        else if (inShape.Count == 3)
+        {
+            padded_shape = new[] { inShape[0], inShape[2], inShape[1] };
+        }
+        else
+        {
+            throw new InvalidOperationException();
+        }
+
+        return padded_shape;
+    }
+
     private T[] RangeExec<T>(long end, Func<int, T> f)
     {
         return EndRange(0, (int)end).Select(f).ToArray();
@@ -232,42 +270,5 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
         }
 
         return new TensorType(input.DType, Enumerable.Repeat(Dimension.Unknown, input.Shape.Count).ToArray());
-    }
-
-    private static Dimension[] ShapeNHWCToNCHW(List<Dimension> inShape, List<Dimension> outshape)
-    {
-        Dimension[] outputShape;
-        // nhwc to nchw
-        if (inShape.Count == 4)
-        {
-            outputShape = new[] { outshape[0], outshape[3], outshape[1], outshape[2] };
-        }
-        else
-        {
-            outputShape = new[] { inShape[0], inShape[2], inShape[1] };
-        }
-
-        return outputShape;
-    }
-
-    private static Dimension[] ShapeNCHWToNHWC(List<Dimension> inShape)
-    {
-        Dimension[] padded_shape;
-
-        // nchw to nhwc
-        if (inShape.Count == 4)
-        {
-            padded_shape = new[] { inShape[0], inShape[2], inShape[3], inShape[1] };
-        }
-        else if (inShape.Count == 3)
-        {
-            padded_shape = new[] { inShape[0], inShape[2], inShape[1] };
-        }
-        else
-        {
-            throw new InvalidOperationException();
-        }
-
-        return padded_shape;
     }
 }
