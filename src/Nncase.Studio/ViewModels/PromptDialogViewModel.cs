@@ -40,7 +40,7 @@ public partial class PromptDialogViewModel : ViewModelBase
         }
 
         CloseWindowCommand = new RelayCommand<Window>(CloseWindow);
-        WindowWidth = content.Length * 20 + 60;
+        WindowWidth = (content.Length * 20) + 60;
     }
 
     public RelayCommand<Window> CloseWindowCommand { get; private set; }
