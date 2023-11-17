@@ -12,6 +12,7 @@ using Nncase.Passes;
 using Nncase.Passes.Rules.Neutral;
 using Nncase.Tests.TestFixture;
 using Xunit;
+using static Nncase.IR.F.Tensors;
 using Math = Nncase.IR.F.Math;
 using NN = Nncase.IR.F.NN;
 using Random = Nncase.IR.F.Random;
@@ -41,7 +42,7 @@ public class UnitTestSpaceToBatchToPad : TransformTestBase
     public void TestSpaceToBatchToPadPositive(int[] shape, int[] blockShape, int[,] paddings)
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
-        var rootPre = NN.SpaceToBatch(a, blockShape, paddings);
+        var rootPre = NCHWToNHWC(NN.SpaceToBatch(NHWCToNCHW(a), blockShape, paddings));
         TestMatched<SpaceToBatchToPad>(rootPre);
     }
 

@@ -44,7 +44,7 @@ public partial class SplitSpaceToBatch : RewriteRule<Pattern>
 
         var tmpPaddings = Stack(new IR.Tuple(newPaddings), 0);
         var newPaddingsTensor = Transpose(Reshape(tmpPaddings, new long[] { 2, 1 + spatialSize + remainShapeSize }), new long[] { 1, 0 });
-        var p = Pad(input, newPaddingsTensor, PadMode.Constant, 0f);
+        var p = Pad(NCHWToNHWC(input), newPaddingsTensor, PadMode.Constant, 0f);
 
         var padShape = Cast(ShapeOf(p), DataTypes.Int32);
         var batchShape1 = StackScalar(padShape[0]);
@@ -77,7 +77,7 @@ public partial class SplitSpaceToBatch : RewriteRule<Pattern>
         var reshape1 = Reshape(p, reshappedShape1);
         var rt = Transpose(reshape1, perm);
         var reshape2 = Reshape(rt, reshappedShape2);
-        return reshape2;
+        return NHWCToNCHW(reshape2);
     }
 
     private T[] RangeExec<T>(long end, Func<int, T> f)
