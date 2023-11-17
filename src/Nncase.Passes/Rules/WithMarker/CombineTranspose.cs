@@ -207,7 +207,7 @@ public partial class FoldTransposeActTranspose : RewriteRule<Pattern>
         // transpose(leakyrelu(transpose(input))) => leakyRelu(transpose(transpose(input)))
         else
         {
-            return outMarker.With(target: Transpose(outMarker.With(target: Transpose(outMarker.With(target: LeakyRelu(inMarker.With(target: input), alpha)), perm1)), perm2));
+            return outMarker.With(target: Transpose(outMarker.With(target: Transpose(outMarker.With(target: LeakyRelu(inMarker.With(target: input), alpha).InheritMetaData(call)), perm1)), perm2));
         }
     }
 }
@@ -239,7 +239,7 @@ public partial class FoldTransposeBinaryActTranspose : RewriteRule<Pattern>
             "outMarker"),
         IsWildcard("perm2"));
 
-    private Expr? GetReplace(int[] perm1, int[] perm2, Expr input, Expr rhs, Marker bnMarker, Marker outMarker, Expr alpha)
+    private Expr? GetReplace(int[] perm1, int[] perm2, Expr input, Expr rhs, Marker bnMarker, Marker outMarker, Expr alpha, Expr call, Expr bnCall)
     {
         if (perm1.SequenceEqual(new[] { 0, 2, 3, 1 }) && perm2.SequenceEqual(new[] { 0, 3, 1, 2 }))
         {
@@ -248,10 +248,10 @@ public partial class FoldTransposeBinaryActTranspose : RewriteRule<Pattern>
             if (rhs is Marker m)
             {
                 var constRhs = m.With(target: Reshape(m.Target, new[] { rhs.CheckedShape.Size, 1, 1 }).Evaluate().AsTensor());
-                return outMarker.With(target: LeakyRelu(bnMarker.With(target: Add(input, constRhs)), alpha));
+                return outMarker.With(target: LeakyRelu(bnMarker.With(target: Add(input, constRhs).InheritMetaData(bnCall)), alpha).InheritMetaData(call));
             }
 
-            return outMarker.With(target: LeakyRelu(bnMarker.With(target: Add(input, Reshape(rhs, new[] { rhs.CheckedShape.Size, 1, 1 }))), alpha));
+            return outMarker.With(target: LeakyRelu(bnMarker.With(target: Add(input, Reshape(rhs, new[] { rhs.CheckedShape.Size, 1, 1 }))), alpha).InheritMetaData(call));
         }
 
         return null;
