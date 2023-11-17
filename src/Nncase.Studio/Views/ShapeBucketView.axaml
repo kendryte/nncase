@@ -17,7 +17,12 @@
             <RowDefinition />
         </Grid.RowDefinitions>
         <Label Grid.Row="0" Grid.Column="0" Content="分段数量"></Label>
-        <TextBox Grid.Row="0" Grid.Column="1" HorizontalAlignment="Left" Text="{Binding SegmentCount}"></TextBox>
+        <NumericUpDown Grid.Row="0" Grid.Column="1"
+                       HorizontalAlignment="Left"
+                       Value="{Binding SegmentCount}"
+                       FormatString="0"
+                       Minimum="2"
+                       Increment="1"></NumericUpDown>
 
         <Label Grid.Row="1" Grid.Column="0" Content="FixVarMap"></Label>
         <TextBox Grid.Row="1" Grid.Column="1" Width="600" Text="{Binding FixVarMap}" Watermark="example: batch:3, len:24"></TextBox>

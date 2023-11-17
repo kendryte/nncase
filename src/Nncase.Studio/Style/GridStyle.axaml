@@ -13,6 +13,10 @@
         <Setter Property="Width" Value="240"></Setter>
     </Style>
 
+    <Style Selector="Grid NumericUpDown">
+        <Setter Property="Margin" Value="15"></Setter>
+    </Style>
+
     <Style Selector="TextBox.Path">
         <Setter Property="Margin" Value="15"></Setter>
         <Setter Property="Width" Value="760"></Setter>

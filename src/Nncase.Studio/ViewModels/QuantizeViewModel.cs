@@ -168,7 +168,6 @@ public partial class QuantizeViewModel : ViewModelBase
         }
         else
         {
-            // todo: check quant scheme path
             if (Directory.Exists(CalibDir))
             {
                 if (_inputFiles.Length == 0)

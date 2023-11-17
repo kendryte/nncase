@@ -130,4 +130,49 @@ public static class DataUtil
             _ => throw new ArgumentOutOfRangeException(nameof(qt), qt, null),
         };
     }
+
+    public static bool TryParseFixVarMap(string input, out Dictionary<string, int> map)
+    {
+        map = new();
+        if (input == string.Empty)
+        {
+            return false;
+        }
+
+        try
+        {
+            map = input.Trim().Split(",").Select(x => x.Trim().Split(":")).ToDictionary(x => x[0], x => int.Parse(x[1]));
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    public static bool TryParseRangeInfo(string input, out Dictionary<string, (int Min, int Max)> map)
+    {
+        map = new();
+        if (input == string.Empty)
+        {
+            return false;
+        }
+
+        try
+        {
+            map = input.Trim()
+                .Split(";")
+                .Select(x => x.Trim().Split(":"))
+                .ToDictionary(x => x[0], x =>
+                {
+                    var pair = x[1].Split(",");
+                    return (int.Parse(pair[0]), int.Parse(pair[1]));
+                });
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
 }

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Nncase.Studio.ViewModels;
 
 namespace Nncase.Studio;
 
@@ -178,5 +179,33 @@ internal sealed class ValidLayoutAttribute : ValidationAttribute
         }
 
         return true;
+    }
+}
+
+[AttributeUsage(AttributeTargets.All, Inherited = false, AllowMultiple = true)]
+internal sealed class ValidBucketVarMapAttribute : ValidationAttribute
+{
+    public ValidBucketVarMapAttribute()
+    {
+    }
+
+    public override bool IsValid(object? value)
+    {
+        var input = (string)value!;
+        return DataUtil.TryParseFixVarMap(input, out var _);
+    }
+}
+
+[AttributeUsage(AttributeTargets.All, Inherited = false, AllowMultiple = true)]
+internal sealed class ValidBucketRangeInfoAttribute : ValidationAttribute
+{
+    public ValidBucketRangeInfoAttribute()
+    {
+    }
+
+    public override bool IsValid(object? value)
+    {
+        var input = (string)value!;
+        return DataUtil.TryParseRangeInfo(input, out var _);
     }
 }
