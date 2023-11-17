@@ -52,7 +52,7 @@ public interface ICompiler
     /// <summary>
     /// Compile module with report pass number.
     /// </summary>
-    Task CompileWithReport(IProgress<int> progress, CancellationToken token);
+    Task CompileWithReportAsync(IProgress<int> progress, CancellationToken token);
 
     /// <summary>
     /// Generate code to stream.

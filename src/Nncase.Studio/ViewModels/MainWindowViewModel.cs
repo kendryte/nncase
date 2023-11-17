@@ -51,10 +51,6 @@ public partial class MainWindowViewModel : WindowViewModelBase
 
     public MainWindowViewModel()
     {
-        var host = Host.CreateDefaultBuilder()
-            .ConfigureCompiler()
-            .Build();
-        CompilerServices.Configure(host.Services);
         Context = new ViewModelContext(this);
         var studioModeViewModel = new StudioModeViewModel(Context);
         var importViewModel = new ImportViewModel(Context);

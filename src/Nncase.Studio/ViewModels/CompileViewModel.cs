@@ -97,7 +97,7 @@ public partial class CompileViewModel : ViewModelBase
         {
             await Task.Run(async () =>
             {
-                await compiler.CompileWithReport(progress, _cts.Token);
+                await compiler.CompileWithReportAsync(progress, _cts.Token);
             }).ContinueWith(_ => Task.CompletedTask, _cts.Token);
         }
         catch (Exception)

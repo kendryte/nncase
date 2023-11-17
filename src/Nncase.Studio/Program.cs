@@ -24,9 +24,8 @@ internal class Program
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()
             .UseNncaseFontManager()
+            .ConfigureCompiler()
             .LogToTrace()
             .UseReactiveUI()
-
-            // https://github.com/AvaloniaUI/Avalonia/issues/9383#issuecomment-1378350456
-            .With(new X11PlatformOptions() { UseDBusFilePicker = false });
+            .DisableDBus();
 }

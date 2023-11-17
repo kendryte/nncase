@@ -54,13 +54,4 @@
       <UpToDateCheckInput Remove="Assets\Fonts\Noto_Sans_TC\static\NotoSansTC-SemiBold.ttf" />
       <UpToDateCheckInput Remove="Assets\Fonts\Noto_Sans_TC\static\NotoSansTC-Thin.ttf" />
     </ItemGroup>
-
-    <ItemGroup>
-      <Reference Include="CommunityToolkit.Mvvm">
-        <HintPath>..\..\..\..\.nuget\packages\communitytoolkit.mvvm\8.2.1\lib\net6.0\CommunityToolkit.Mvvm.dll</HintPath>
-      </Reference>
-      <Reference Include="ReactiveUI">
-        <HintPath>..\..\..\..\.nuget\packages\reactiveui\18.3.1\lib\net6.0\ReactiveUI.dll</HintPath>
-      </Reference>
-    </ItemGroup>
 </Project>

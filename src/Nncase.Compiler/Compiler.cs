@@ -244,7 +244,7 @@ internal class Compiler : ICompiler
         });
     }
 
-    public async Task CompileWithReport(IProgress<int> progress, CancellationToken token)
+    public async Task CompileWithReportAsync(IProgress<int> progress, CancellationToken token)
     {
         CancellationTokenSource cts = new();
         var internalToken = cts.Token;
@@ -301,8 +301,6 @@ internal class Compiler : ICompiler
     {
         while (_runPassCount < maxPassCount && !token.IsCancellationRequested)
         {
-            Console.WriteLine(_runPassCount);
-            Thread.Sleep(10);
             progress?.Report(_runPassCount);
         }
     }
