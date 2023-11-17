@@ -28,80 +28,99 @@ using namespace nncase::kernels::stackvm;
 namespace {
 // softmax(x) = exp(x - reduce_max(x)) / reduce_sum(exp(x - reduce_max(x)))
 template <typename T>
-result<void> softmax_impl(const T *input, T *output,
-                          gsl::span<const size_t> in_shape,
-                          gsl::span<const size_t> in_strides,
-                          gsl::span<const size_t> out_strides, int64_t axis,
-                          float beta, bool needLog = false) noexcept {
+result<void>
+softmax_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
+             NNCASE_UNUSED gsl::span<const size_t> in_strides,
+             NNCASE_UNUSED gsl::span<const size_t> out_strides, int64_t axis,
+             float beta, bool needLog = false) noexcept {
     size_t positive_axis = axis < 0 ? in_shape.size() + axis : axis;
-    dims_t axes{positive_axis};
 
-    auto reduced_shape =
-        kernels::detail::get_reduced_shape(in_shape, axes, true);
-    auto reduced_strides = get_default_strides(reduced_shape);
-    auto reduced_size = compute_size(reduced_shape);
-    std::vector<T> tmp(reduced_size, std::numeric_limits<T>::lowest());
+    if (positive_axis == in_shape.size() - 1) {
+        size_t reduced_size = in_shape[positive_axis];
+        auto out_size = compute_size(in_shape) / reduced_size;
+        std::vector<T> tmp(reduced_size, std::numeric_limits<T>::lowest());
 
-    // reduce_max
-    try_(apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
-        auto in_idx = offset(in_strides, index);
-        const auto in = input[in_idx];
+        for (size_t i = 0; i < out_size; i++) {
+            auto in_ = input + i * reduced_size;
+            auto out_ = output + i * reduced_size;
 
-        const auto out_index =
-            kernels::detail::get_reduced_offset(index, axes, true);
-        auto out_idx = offset(reduced_strides, out_index);
-        auto &out = tmp[out_idx];
+            // reduce_max
+            auto max_value = *in_;
+            for (size_t j = 0; j < reduced_size; j++) {
+                max_value = std::max(max_value, in_[j]);
+            }
 
-        out = std::max(in, out);
-        return ok();
-    }));
+            // (x - reduce_max) * beta
+            for (size_t j = 0; j < reduced_size; j++) {
+                out_[j] = static_cast<T>((static_cast<float>(in_[j]) -
+                                          static_cast<float>(max_value)) *
+                                         beta);
+            }
 
-    // x - reduce_max
-    try_(apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
-        auto in_idx = offset(in_strides, index);
-        const auto in = input[in_idx];
+            // exp((x - reduce_max) * beta) and sum
+            T sum = 0;
+            for (size_t j = 0; j < reduced_size; j++) {
+                out_[j] = static_cast<T>(expf(static_cast<float>(out_[j])));
+                sum += out_[j];
+            }
 
-        const auto out_index =
-            kernels::detail::get_reduced_offset(index, axes, true);
-        auto max_idx = offset(reduced_strides, out_index);
-
-        auto out_idx = offset(out_strides, index);
-        output[out_idx] =
-            static_cast<T>(static_cast<float>(in - tmp[max_idx]) * beta);
-
-        return ok();
-    }));
-
-    // exp(x - reduce_max) and sum
-    tmp.assign(tmp.size(), static_cast<T>(0));
-    try_(apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
-        auto in_idx = offset(out_strides, index);
-        const auto in = output[in_idx];
-
-        const auto out_index =
-            kernels::detail::get_reduced_offset(index, axes, true);
-        auto out_idx = offset(reduced_strides, out_index);
-        output[in_idx] = static_cast<T>(expf(static_cast<float>(in)));
-        tmp[out_idx] += static_cast<T>(output[in_idx]);
-
-        return ok();
-    }));
-
-    // div
-    try_(apply(in_shape, [&](gsl::span<const size_t> index) -> result<void> {
-        const auto in_index =
-            kernels::detail::get_reduced_offset(index, axes, true);
-        auto in_idx = offset(reduced_strides, in_index);
-        auto in = tmp[in_idx];
-
-        auto out_idx = offset(out_strides, index);
-        auto &out = output[out_idx];
-        out /= in;
-        if (needLog) {
-            out = static_cast<T>(std::log(static_cast<float>(out)));
+            // div
+            for (size_t j = 0; j < reduced_size; j++) {
+                out_[j] /= sum;
+                if (needLog) {
+                    out_[j] =
+                        static_cast<T>(std::log(static_cast<float>(out_[j])));
+                }
+            }
         }
-        return ok();
-    }));
+    } else {
+        size_t axis_size = in_shape[positive_axis];
+        size_t reduced_size = 1;
+        for (size_t i = positive_axis + 1; i < in_shape.size(); i++) {
+            reduced_size *= in_shape[i];
+        }
+        auto out_size = compute_size(in_shape) / reduced_size / axis_size;
+
+        for (size_t i = 0; i < out_size; i++) {
+            std::vector<T> axis_sum(reduced_size, static_cast<T>(0));
+            std::vector<T> max_value(reduced_size,
+                                     std::numeric_limits<T>::lowest());
+            auto in_ = input + i * reduced_size * axis_size;
+            auto out_ = output + i * reduced_size * axis_size;
+
+            // reduce_max
+            for (size_t k = 0; k < axis_size; k++) {
+                auto in_k = in_ + k * reduced_size;
+                for (size_t j = 0; j < reduced_size; j++) {
+                    max_value[j] = std::max(max_value[j], in_k[j]);
+                }
+            }
+
+            // exp((x - reduce_max) * beta) and sum
+            for (size_t k = 0; k < axis_size; k++) {
+                auto in_k = in_ + k * reduced_size;
+                auto out_k = out_ + k * reduced_size;
+                for (size_t j = 0; j < reduced_size; j++) {
+                    out_k[j] =
+                        static_cast<T>(expf((static_cast<float>(in_k[j]) -
+                                             static_cast<float>(max_value[j])) *
+                                            beta));
+                    axis_sum[j] += out_k[j];
+                }
+            }
+
+            // div
+            for (size_t k = 0; k < axis_size; k++) {
+                auto out_k = out_ + k * reduced_size;
+                for (size_t j = 0; j < reduced_size; j++) {
+                    out_k[j] /= axis_sum[j];
+                    if (needLog)
+                        out_k[j] = static_cast<T>(
+                            std::log(static_cast<float>((out_k[j]))));
+                }
+            }
+        }
+    }
 
     return ok();
 }
