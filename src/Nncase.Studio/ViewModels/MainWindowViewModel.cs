@@ -26,6 +26,7 @@ using Nncase.IR;
 using Nncase.Passes.Mutators;
 using Nncase.Quantization;
 using Nncase.Runtime.Interop;
+using Nncase.Studio.Util;
 using Nncase.Studio.ViewModels;
 using Nncase.Studio.Views;
 using Nncase.Utilities;
@@ -99,8 +100,8 @@ public partial class MainWindowViewModel : WindowViewModelBase
         Title = ContentViewModel.GetType().Name.Split("ViewModel")[0];
     }
 
-    public async void ShowDialog(string prompt, PromptDialogLevel level = PromptDialogLevel.Error)
+    public void ShowDialog(string prompt, PromptDialogLevel level = PromptDialogLevel.Error)
     {
-        await ShowPromptDialog.Handle((prompt, level));
+        new AvaloniaUserDialog().ShowDialog(prompt);
     }
 }

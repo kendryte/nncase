@@ -15,6 +15,10 @@
         <StyleInclude Source="Style/CustomValidation.axaml"></StyleInclude>
         <StyleInclude Source="Style/Logo.axaml"></StyleInclude>
         <StyleInclude Source="Style/GridStyle.axaml"></StyleInclude>
+
+        <Style Selector="TextBox.contentMessage">
+            <Setter Property="FontSize" Value="30"></Setter>
+        </Style>
     </Application.Styles>
 
      <Application.Resources>
