@@ -45,7 +45,7 @@ public sealed partial class FoldTwoTransposes : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } = IsTranspose(
-        IsTranspose(IsWildcard("input"), IsWildcard("perm1") with { TypePattern = HasRank() }),
+        MaybeMarker(IsTranspose(IsWildcard("input"), IsWildcard("perm1") with { TypePattern = HasRank() })),
         IsWildcard("perm2") with { TypePattern = HasRank() });
 
     private Expr? GetReplace(Expr input, Expr perm1, Expr perm2)

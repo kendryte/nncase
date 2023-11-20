@@ -4,6 +4,7 @@ using Nncase.IR;
 using Nncase.IR.Tensors;
 using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Tensors;
+using Unsqueeze = Nncase.IR.Tensors.Unsqueeze;
 
 namespace Nncase.Importer.TFLite
 {
@@ -13,14 +14,40 @@ namespace Nncase.Importer.TFLite
         {
             var (input, blockShape) = GetInputExprs(op, 0, 1);
             var paddings = GetInputExprs(op, 2);
-            return SpaceToBatch(input, blockShape, paddings);
+            if (input.CheckedShape.Rank == 3)
+            {
+                blockShape = Concat(new IR.Tuple(new[] { new[] { 1 }, blockShape }), 0);
+                paddings = Concat(new IR.Tuple(new[] { new[,] { { 0, 0 } }, paddings }), 0);
+                input = Unsqueeze(input, new[] { -3 });
+            }
+
+            var stb = NCHWToNHWC(SpaceToBatch(NHWCToNCHW(input), blockShape, paddings));
+            if (input.CheckedShape.Rank == 3)
+            {
+                return Squeeze(stb, new[] { 1 });
+            }
+
+            return stb;
         }
 
         private Expr VisitBatchToSpaceND(in tflite.Operator op)
         {
             var (input, blockShape) = GetInputExprs(op, 0, 1);
             var crops = GetInputExprs(op, 2);
-            return NCHWToNHWC(BatchToSpace(NHWCToNCHW(input), blockShape, crops));
+            if (input.CheckedShape.Rank == 3)
+            {
+                blockShape = Concat(new IR.Tuple(new[] { new[] { 1 }, blockShape }), 0);
+                crops = Concat(new IR.Tuple(new[] { new[,] { { 0, 0 } }, crops }), 0);
+                input = Unsqueeze(input, new[] { -3 });
+            }
+
+            var bts = NCHWToNHWC(BatchToSpace(NHWCToNCHW(input), blockShape, crops));
+            if (input.CheckedShape.Rank == 3)
+            {
+                return Squeeze(bts, new[] { 1 });
+            }
+
+            return bts;
         }
     }
 }

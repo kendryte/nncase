@@ -793,14 +793,6 @@ result<value_t> nncase::kernels::stackvm::bucket_pad(
     auto in_tensor = input.as<tensor>().expect("input is not a tensor");
     auto in_shape = in_tensor->shape();
     if (compute_size(in_shape) > compute_size(shape_value)) {
-        std::cout << "in shape" << std::endl;
-        for (int i = 0; i < in_shape.size(); ++i) {
-            std::cout << in_shape[i] << std::endl;
-        }
-        std::cout << "shape_value shape" << std::endl;
-        for (int i = 0; i < shape_value.size(); ++i) {
-            std::cout << shape_value[i] << std::endl;
-        }
         return err(std::errc::invalid_argument);
     }
 
@@ -1138,7 +1130,6 @@ nncase::kernels::stackvm::squeeze(value_t input, value_t dim, value_t output,
     try_var(in_tensor, input.as<tensor>());
     auto in_shape = in_tensor->shape();
     not_impl_no_contiguous(in_tensor);
-    // todo: dim is scalar
     try_positive_axes(axes, dim, in_tensor->shape().size());
     auto new_shape = squeeze_infer_shape(in_shape, axes);
     output = tensor_reshape(in_tensor, new_shape);
