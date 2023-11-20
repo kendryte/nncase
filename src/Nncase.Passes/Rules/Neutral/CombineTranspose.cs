@@ -105,7 +105,7 @@ public sealed partial class CombineConstBinaryTranspose : IRewriteRule
                 }
             }
 
-            var newConst = Reshape(x, newShape.ToArray());
+            var newConst = Reshape(x, newShape.ToArray()).InheritMetaData(x);
             return Transpose(Binary(binary.BinaryOp, newConst, y).InheritMetaData(binaryCall), perm);
         }
 
@@ -125,7 +125,7 @@ public sealed partial class CombineConstBinaryTranspose : IRewriteRule
                 }
             }
 
-            var newConst = Reshape(y, newShape.ToArray());
+            var newConst = Reshape(y, newShape.ToArray()).InheritMetaData(y);
             return Transpose(Binary(binary.BinaryOp, x, newConst).InheritMetaData(binaryCall), perm);
         }
 
