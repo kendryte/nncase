@@ -660,10 +660,10 @@ public class UnitTestEvaluatorNN : TestClassBase
         var output = new float[] { 1, 3, 9, 11, 2, 4, 10, 12, 5, 7, 13, 15, 6, 8, 14, 16 };
         var expect = Tensor.From(output, new[] { 4, 2, 2, 1 });
         var crops = new long[] { 0, 0, 0, 0 };
-        var expr = IR.F.NN.SpaceToBatch(
-            input,
+        var expr = NCHWToNHWC(IR.F.NN.SpaceToBatch(
+            NHWCToNCHW(input).Evaluate().AsTensor(),
             Tensor.From(shape, new[] { 2 }),
-            Tensor.From(crops, new[] { 2, 2 }));
+            Tensor.From(crops, new[] { 2, 2 })));
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor());
     }

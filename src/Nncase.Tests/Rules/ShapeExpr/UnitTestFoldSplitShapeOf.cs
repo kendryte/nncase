@@ -25,4 +25,13 @@ public class UnitTestFoldSplitShapeOf : TransformTestBase
         var newShape = Stack(new IR.Tuple(shape[0], shape[1], shape[2], shape[3]), 0);
         TestMatched<FoldSplitShapeOf>(newShape);
     }
+
+    [Fact]
+    public void TestFoldSplitCastShapeOf()
+    {
+        var input = Testing.Rand<float>(1, 3, 24, 24);
+        var shape = ShapeOf(input);
+        var newShape = Stack(new IR.Tuple(Cast(shape[0], DataTypes.Int64), Cast(shape[1], DataTypes.Int64), Cast(shape[2], DataTypes.Int64), Cast(shape[3], DataTypes.Int64)), 0);
+        TestMatched<FoldSplitShapeOf>(newShape);
+    }
 }
