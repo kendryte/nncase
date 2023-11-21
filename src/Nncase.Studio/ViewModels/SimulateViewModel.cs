@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Nncase.IR;
+using Nncase.Studio.Util;
 using NumSharp;
 
 namespace Nncase.Studio.ViewModels;
@@ -94,6 +95,11 @@ public partial class SimulateViewModel : ViewModelBase
             return;
         }
 
+        if (!CheckInput())
+        {
+            return;
+        }
+
         var cts = new CancellationTokenSource();
 
         try
@@ -101,7 +107,7 @@ public partial class SimulateViewModel : ViewModelBase
             using (var interp = Runtime.Interop.RTInterpreter.Create())
             {
                 var kmodel = File.ReadAllBytes(KmodelPath);
-                interp.SetDumpRoot(Context.CompileOption.DumpDir);
+                interp.SetDumpRoot(Context.CompileConfig.CompileOption.DumpDir);
                 interp.LoadModel(kmodel);
                 var entry = interp.Entry!;
                 var rtInputs = RuntimeInput.Select(Runtime.Interop.RTTensor.FromTensor).ToArray();
@@ -142,60 +148,56 @@ public partial class SimulateViewModel : ViewModelBase
         }
     }
 
-    // private bool CheckInput(out Task simulate)
-    // {
-    //     if (Context.Entry == null)
-    //     {
-    //         Context.OpenDialog("Should Import Model first");
-    //         {
-    //             simulate = Task.CompletedTask;
-    //             return true;
-    //         }
-    //     }
-    //
-    //     var paramList = Context.Entry!.Parameters.ToArray();
-    //     foreach ((var tensor, var param) in RuntimeInput.Zip(paramList))
-    //     {
-    //         var tt = (TensorType)param.TypeAnnotation;
-    //         if (tensor.ElementType != tt.DType)
-    //         {
-    //             Context.OpenDialog($"{param.Name} input datatype mismatch");
-    //             {
-    //                 simulate = Task.CompletedTask;
-    //                 return true;
-    //             }
-    //         }
-    //
-    //         if (tt.Shape.Count != tensor.Shape.Count || tt.Shape.Zip(tensor.Shape)
-    //                 .Any(pair => pair.First.IsFixed && pair.First != pair.Second))
-    //         {
-    //             Context.OpenDialog($"{param.Name} input shape mismatch");
-    //             {
-    //                 simulate = Task.CompletedTask;
-    //                 return true;
-    //             }
-    //         }
-    //     }
-    //
-    //     return false;
-    // }
-    public override void UpdateViewModel()
+    public override void UpdateViewModelCore(CompileConfig config)
     {
         var dumpDir = Directory.GetCurrentDirectory();
-        if (Context.CompileOption.DumpDir != string.Empty)
+        if (config.CompileOption.DumpDir != string.Empty)
         {
-            dumpDir = Context.CompileOption.DumpDir;
+            dumpDir = config.CompileOption.DumpDir;
         }
 
         if (ResultDir == string.Empty)
         {
             ResultDir = dumpDir;
         }
+    }
 
-        if (Context.KmodelPath == string.Empty)
+    public override void UpdateConfig(CompileConfig config)
+    {
+        config.ResultDir = ResultDir;
+        config.InputPathList = InputPath.ToArray();
+    }
+
+    private bool CheckInput()
+    {
+        if (Context.Entry == null)
         {
-            KmodelPath = Path.Join(dumpDir, "test.kmodel");
+            return true;
         }
+
+        var paramList = Context.Entry!.Parameters.ToArray();
+        foreach ((var tensor, var param) in RuntimeInput.Zip(paramList))
+        {
+            var tt = (TensorType)param.TypeAnnotation;
+            if (tensor.ElementType != tt.DType)
+            {
+                Context.OpenDialog($"{param.Name} input datatype mismatch");
+                {
+                    return true;
+                }
+            }
+
+            if (tt.Shape.Count != tensor.Shape.Count || tt.Shape.Zip(tensor.Shape)
+                    .Any(pair => pair.First.IsFixed && pair.First != pair.Second))
+            {
+                Context.OpenDialog($"{param.Name} input shape mismatch");
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     [RelayCommand]

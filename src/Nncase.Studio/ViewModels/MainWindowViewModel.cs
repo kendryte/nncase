@@ -21,6 +21,7 @@ using Avalonia.Rendering.Composition;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Hosting;
+using Newtonsoft.Json;
 using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.Passes.Mutators;
@@ -84,15 +85,32 @@ public partial class MainWindowViewModel : WindowViewModelBase
         NavigatorViewModelValue.UpdateContentViewModel();
     }
 
-    public Interaction<FilePickerOpenOptions, List<string>> ShowFilePicker { get; } = new();
+    public Interaction<FilePickerOpenOptions, List<string>> ShowOpenFilePicker { get; } = new();
+
+    public Interaction<FilePickerSaveOptions, string> ShowSaveFilePicker { get; } = new();
 
     public Interaction<FolderPickerOpenOptions, string> ShowFolderPicker { get; } = new();
-
-    public Interaction<(string Message, PromptDialogLevel Level), Unit> ShowPromptDialog { get; } = new();
 
     public NavigatorViewModel NavigatorViewModelValue { get; set; }
 
     protected ViewModelContext Context { get; set; }
+
+    [RelayCommand]
+    public async Task ExportStudioConfig()
+    {
+        NavigatorViewModelValue.ContentViewModel!.UpdateContext();
+        var quantScheme = Context.ExportConfig();
+        var json = JsonConvert.SerializeObject(quantScheme, Newtonsoft.Json.Formatting.Indented);
+        var path = await Context.SaveFile(PickerOptions.CompileConfPickerSaveOptions);
+        if (path == string.Empty)
+        {
+            return;
+        }
+
+        using var f = new StreamWriter(path);
+        await f.WriteAsync(json);
+        Context.OpenDialog($"export successful {path}");
+    }
 
     public void UpdateTitle(ViewModelBase contenViewModel)
     {

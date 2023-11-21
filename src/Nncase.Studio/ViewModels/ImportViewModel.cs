@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.Input;
+using Nncase.Studio.Util;
 
 namespace Nncase.Studio.ViewModels;
 
@@ -48,10 +49,16 @@ public partial class ImportViewModel : ViewModelBase
         Context.SwitchNext();
     }
 
-    public override void UpdateContext()
+    public override void UpdateViewModelCore(CompileConfig config)
     {
-        Context.CompileOption.InputFile = _inputFile;
-        Context.CompileOption.InputFormat = _inputFormat;
+        _inputFile = config.CompileOption.InputFile;
+        _inputFormat = config.CompileOption.InputFormat;
+    }
+
+    public override void UpdateConfig(CompileConfig config)
+    {
+        config.CompileOption.InputFile = _inputFile;
+        config.CompileOption.InputFormat = _inputFormat;
     }
 
     public override List<string> CheckViewModel()

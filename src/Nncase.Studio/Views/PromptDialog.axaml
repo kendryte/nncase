@@ -20,9 +20,6 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition />
             </Grid.ColumnDefinitions>
-            <!-- todo system prompt dialog -->
-            <!-- todo 自适应长度 -->
-            <!-- todo dialog中的路径可以被复制 -->
             <Image
                 Name="IconImage"
                 IsVisible="{Binding IsError}"

@@ -14,6 +14,7 @@ using Google.Protobuf.WellKnownTypes;
 using NetFabric.Hyperlinq;
 using Nncase.Diagnostics;
 using Nncase.Quantization;
+using Nncase.Studio.Util;
 
 namespace Nncase.Studio.ViewModels;
 
@@ -26,9 +27,8 @@ public partial class CompileOptionViewModel : ViewModelBase
     private string _inputFile = string.Empty;
 
     [ObservableProperty]
-    private string _dumpDir;
+    private string _dumpDir = string.Empty;
 
-    // 带有参数的正则验证？？？
     [ObservableProperty]
     private bool _preprocess;
 
@@ -57,7 +57,6 @@ public partial class CompileOptionViewModel : ViewModelBase
         TargetList = new ObservableCollection<string>(new[] { "cpu", "k230" });
 
         _target = TargetList[0];
-        DumpDir = Path.Join(Directory.GetCurrentDirectory(), "nncase_dump");
         Context = context;
         var list = new[] { _customMode };
         PreprocessModeList = new(list);
@@ -81,30 +80,39 @@ public partial class CompileOptionViewModel : ViewModelBase
         }
     }
 
-    public override void UpdateViewModel()
+    public override void UpdateViewModelCore(CompileConfig config)
     {
-        InputFile = Context.CompileOption.InputFile;
-        InputFormat = Context.CompileOption.InputFormat;
+        InputFile = config.CompileOption.InputFile;
+        InputFormat = config.CompileOption.InputFormat;
+        DumpDir = config.CompileOption.DumpDir;
+        Target = config.Target;
+        Preprocess = config.CompileOption.PreProcess;
+        MixQuantize = config.MixQuantize;
+        ShapeBucket = config.EnableShapeBucket;
+        Quantize = config.UseQuantize;
+
+        // todo:
+        // dump flag
+        // PreprocessMode
     }
 
-    public override void UpdateContext()
+    public override void UpdateConfig(CompileConfig config)
     {
-        Context.CompileOption.DumpDir = DumpDir;
-        Context.CompileOption.DumpFlags = DumpFlagSelected.Aggregate(DumpFlags.None, (flag, sum) => flag | sum);
-        Context.Target = Target;
-        Context.CompileOption.PreProcess = Preprocess;
-        Context.MixQuantize = MixQuantize;
-        Context.EnableShapeBucket = ShapeBucket;
-        Context.UseQuantize = Quantize;
-        Context.CustomPreprocessMode = PreprocessMode == _customMode;
+        config.CompileOption.DumpDir = DumpDir;
+        config.CompileOption.DumpFlags = DumpFlagSelected.Aggregate(DumpFlags.None, (flag, sum) => flag | sum);
+        config.Target = Target;
+        config.CompileOption.PreProcess = Preprocess;
+        config.MixQuantize = MixQuantize;
+        config.EnableShapeBucket = ShapeBucket;
+        config.UseQuantize = Quantize;
+        config.CustomPreprocessMode = PreprocessMode == _customMode;
         if (Quantize == false)
         {
-            Context.CompileOption.QuantizeOptions.ModelQuantMode = ModelQuantMode.NoQuant;
+            config.CompileOption.QuantizeOptions.ModelQuantMode = ModelQuantMode.NoQuant;
         }
     }
 
     // todo simulate生成随机数
-    // todo validate那边修复间距和字体
     public override List<string> CheckViewModel()
     {
         var list = new List<string>();

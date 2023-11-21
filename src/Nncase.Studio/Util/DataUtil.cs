@@ -51,73 +51,8 @@ public static class DataUtil
             .Select(f =>
             {
                 var tensor = np.load(f);
-                return Tensor.FromBytes(new TensorType(ToDataType(tensor.dtype), tensor.shape), tensor.ToByteArray());
+                return Tensor.FromBytes(new TensorType(DataType.FromType(tensor.dtype), tensor.shape), tensor.ToByteArray());
             }).ToList();
-    }
-
-    public static DataType ToDataType(Type type)
-    {
-        if (type == typeof(byte))
-        {
-            return DataTypes.UInt8;
-        }
-
-        if (type == typeof(sbyte))
-        {
-            return DataTypes.Int8;
-        }
-
-        if (type == typeof(ushort))
-        {
-            return DataTypes.UInt16;
-        }
-
-        if (type == typeof(short))
-        {
-            return DataTypes.Int16;
-        }
-
-        if (type == typeof(int))
-        {
-            return DataTypes.Int32;
-        }
-
-        if (type == typeof(uint))
-        {
-            return DataTypes.UInt32;
-        }
-
-        if (type == typeof(long))
-        {
-            return DataTypes.Int64;
-        }
-
-        if (type == typeof(ulong))
-        {
-            return DataTypes.UInt64;
-        }
-
-        if (type == typeof(float))
-        {
-            return DataTypes.Float32;
-        }
-
-        if (type == typeof(double))
-        {
-            return DataTypes.Float64;
-        }
-
-        if (type == typeof(bool))
-        {
-            return DataTypes.Boolean;
-        }
-
-        if (type == typeof(Half))
-        {
-            return DataTypes.Float16;
-        }
-
-        throw new NotImplementedException($"not supported data type {type}");
     }
 
     public static DataType QuantTypeToDataType(QuantType qt)

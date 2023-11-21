@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using NetFabric.Hyperlinq;
+using Nncase.Studio.Util;
 
 namespace Nncase.Studio.ViewModels;
 
@@ -27,7 +28,7 @@ public partial class ShapeBucketViewModel : ViewModelBase
         Context = context;
     }
 
-    public override void UpdateContext()
+    public override void UpdateConfig(CompileConfig config)
     {
         var options = new ShapeBucketOptions();
         options.Enable = true;
@@ -43,10 +44,10 @@ public partial class ShapeBucketViewModel : ViewModelBase
             options.RangeInfo = rangeInfo;
         }
 
-        Context.CompileOption.ShapeBucketOptions = options;
+        config.CompileOption.ShapeBucketOptions = options;
     }
 
-    public override bool IsVisible() => Context.EnableShapeBucket;
+    public override bool IsVisible() => Context.CompileConfig.EnableShapeBucket;
 
     public override List<string> CheckViewModel()
     {

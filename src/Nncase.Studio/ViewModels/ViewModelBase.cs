@@ -4,20 +4,10 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Nncase.Studio.Util;
 using ReactiveUI;
 
 namespace Nncase.Studio.ViewModels;
-
-public interface ISwitchable
-{
-    public List<string> CollectInvalidInput();
-
-    public void UpdateUI();
-
-    public void UpdateContext(ViewModelContext context);
-
-    public bool IsVisible();
-}
 
 public class WindowViewModelBase : ObservableValidator
 {
@@ -33,19 +23,26 @@ public class ViewModelBase : ObservableValidator
         set { _context = value; }
     }
 
+    public void UpdateContext()
+    {
+        UpdateConfig(Context.CompileConfig);
+    }
+
+    public void UpdateViewModel()
+    {
+        UpdateViewModelCore(Context.CompileConfig);
+    }
+
     public virtual List<string> CheckViewModel()
     {
         return new();
     }
 
-    /// <summary>
-    /// Update Data when switch page.
-    /// </summary>
-    public virtual void UpdateContext()
+    public virtual void UpdateConfig(CompileConfig config)
     {
     }
 
-    public virtual void UpdateViewModel()
+    public virtual void UpdateViewModelCore(CompileConfig config)
     {
     }
 

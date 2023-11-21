@@ -61,7 +61,11 @@
                     BorderThickness="0"
                     CornerRadius="3"
                     Padding="4">
-            <views:NavigatorView HorizontalAlignment="Center" DataContext="{Binding NavigatorViewModelValue}"></views:NavigatorView>
+                <DockPanel HorizontalAlignment="Center">
+                    <views:NavigatorView HorizontalAlignment="Center" DataContext="{Binding NavigatorViewModelValue}"></views:NavigatorView>
+                    <Button Content="导出编译配置" Command="{Binding ExportStudioConfigCommand}"></Button>
+                </DockPanel>
+
             </Border>
         </StackPanel>
     </Border>

@@ -9,5 +9,6 @@
     <StackPanel>
         <Button Width="300" Margin="30" FontSize="40" Content="常规编译" Command="{Binding SwitchToImportViewCommand}"></Button>
         <Button Width="300" Margin="30" FontSize="40" Content="直接推理" Command="{Binding SwitchToSimulateViewCommand}"></Button>
+        <Button Width="300" Margin="30" FontSize="40" Content="导入配置" Command="{Binding ImportStudioConfigCommand}"></Button>
     </StackPanel>
 </UserControl>

@@ -10,6 +10,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Nncase.IR;
 using Nncase.Quantization;
+using Nncase.Studio.Util;
 using Nncase.Studio.Views;
 using ReactiveUI;
 
@@ -27,9 +28,6 @@ public partial class CompileViewModel : ViewModelBase
 
     [ObservableProperty]
     private string _kmodelPath = "test.kmodel";
-
-    [ObservableProperty]
-    private string _p = string.Empty;
 
     public CompileViewModel(ViewModelContext context)
     {
@@ -53,7 +51,8 @@ public partial class CompileViewModel : ViewModelBase
             return;
         }
 
-        var options = Context.CompileOption;
+        var conf = Context.CompileConfig;
+        var options = conf.CompileOption;
         if (!Directory.Exists(options.DumpDir))
         {
             Directory.CreateDirectory(options.DumpDir);
@@ -62,7 +61,7 @@ public partial class CompileViewModel : ViewModelBase
         ITarget target;
         try
         {
-            target = CompilerServices.GetTarget(Context.Target);
+            target = CompilerServices.GetTarget(conf.Target);
         }
         catch (Exception e)
         {
@@ -116,17 +115,13 @@ public partial class CompileViewModel : ViewModelBase
         Context.OpenDialog("Compile Finish", PromptDialogLevel.Normal);
     }
 
-    public override void UpdateContext()
+    public override void UpdateConfig(CompileConfig config)
     {
-        Context.KmodelPath = KmodelPath;
+        config.KmodelPath = KmodelPath;
     }
 
-    public override void UpdateViewModel()
+    public override void UpdateViewModelCore(CompileConfig config)
     {
-        KmodelPath = Context.KmodelPath;
-        if (KmodelPath == string.Empty)
-        {
-            KmodelPath = Path.Join(Context.CompileOption.DumpDir, "test.kmodel");
-        }
+        KmodelPath = config.KmodelPath;
     }
 }

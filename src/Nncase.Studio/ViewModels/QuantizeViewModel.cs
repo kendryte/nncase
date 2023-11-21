@@ -12,6 +12,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Nncase.IR;
 using Nncase.Quantization;
+using Nncase.Studio.Util;
 using Nncase.Studio.Views;
 
 namespace Nncase.Studio.ViewModels;
@@ -129,17 +130,17 @@ public partial class QuantizeViewModel : ViewModelBase
         return new SelfInputCalibrationDatasetProvider(samples);
     }
 
-    public override void UpdateViewModel()
+    public override void UpdateViewModelCore(CompileConfig config)
     {
         if (ExportQuantSchemePath == string.Empty)
         {
-            ExportQuantSchemePath = Path.Join(Context.CompileOption.DumpDir, "QuantScheme.json");
+            ExportQuantSchemePath = Path.Join(config.CompileOption.DumpDir, "QuantScheme.json");
         }
 
-        MixQuantize = Context.MixQuantize;
+        MixQuantize = config.MixQuantize;
     }
 
-    public override void UpdateContext()
+    public override void UpdateConfig(CompileConfig config)
     {
         // todo: load calib data set when compile start
         QuantizeOptionsValue.CalibrationMethod = CalibMethodValue;
@@ -148,14 +149,16 @@ public partial class QuantizeViewModel : ViewModelBase
         QuantizeOptionsValue.ModelQuantMode = ModelQuantModeValue;
         QuantizeOptionsValue.QuantScheme = QuantSchemePath;
         QuantizeOptionsValue.ExportQuantScheme = ExportQuantScheme;
+
+        // todo: 如果手动输入路径好像没效果
         QuantizeOptionsValue.ExportQuantSchemePath = ExportQuantSchemePath;
-        Context.CompileOption.QuantizeOptions = QuantizeOptionsValue;
+        config.CompileOption.QuantizeOptions = QuantizeOptionsValue;
     }
 
     public override List<string> CheckViewModel()
     {
         var list = new List<string>();
-        if (Context.MixQuantize)
+        if (Context.CompileConfig.MixQuantize)
         {
             if (QuantSchemePath == string.Empty)
             {
@@ -181,7 +184,7 @@ public partial class QuantizeViewModel : ViewModelBase
             }
 
             if (QuantTypeValue == QuantType.Int16 && WQuantTypeValue == QuantType.Int16 &&
-                string.Equals(Context.Target, "k230", StringComparison.OrdinalIgnoreCase))
+                string.Equals(Context.CompileConfig.Target, "k230", StringComparison.OrdinalIgnoreCase))
             {
                 list.Add("k230 not support QuantType and WeightsQuantType are int16");
             }
@@ -190,7 +193,7 @@ public partial class QuantizeViewModel : ViewModelBase
         return list;
     }
 
-    public override bool IsVisible() => Context.UseQuantize;
+    public override bool IsVisible() => Context.CompileConfig.UseQuantize;
 }
 
 public sealed class SelfInputCalibrationDatasetProvider : ICalibrationDatasetProvider

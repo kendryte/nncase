@@ -26,8 +26,8 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         InitializeComponent();
         this.WhenActivated(action =>
         {
-            action(ViewModel!.ShowPromptDialog.RegisterHandler(DoShowDialogAsync));
-            action(ViewModel!.ShowFilePicker.RegisterHandler(OpenFileButtonClicked));
+            action(ViewModel!.ShowOpenFilePicker.RegisterHandler(OpenFileButtonClicked));
+            action(ViewModel!.ShowSaveFilePicker.RegisterHandler(SaveFileButtonClicked));
             action(ViewModel!.ShowFolderPicker.RegisterHandler(OpenFolderButtonClicked));
         });
     }
@@ -67,13 +67,20 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         }
     }
 
-    private async Task DoShowDialogAsync(InteractionContext<(string Message, PromptDialogLevel Level), Unit> interaction)
+    public async Task SaveFileButtonClicked(InteractionContext<FilePickerSaveOptions, string> interaction)
     {
-        var dialog = new PromptDialog();
-        var (content, level) = interaction.Input;
-        var viewModel = new PromptDialogViewModel(content, level);
-        interaction.SetOutput(default);
-        dialog.DataContext = viewModel;
-        await dialog.ShowDialog(this);
+        // Get top level from the current control. Alternatively, you can use Window reference instead.
+        var topLevel = TopLevel.GetTopLevel(this);
+
+        // Start async operation to open the dialog.
+        var res = await topLevel!.StorageProvider.SaveFilePickerAsync(interaction.Input);
+        if (res != null)
+        {
+            interaction.SetOutput(res.Path.LocalPath);
+        }
+        else
+        {
+            interaction.SetOutput(string.Empty);
+        }
     }
 }

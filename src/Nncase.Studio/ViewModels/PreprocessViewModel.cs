@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Nncase.Studio.Util;
 
 namespace Nncase.Studio.ViewModels;
 
@@ -65,7 +66,7 @@ public partial class PreprocessViewModel : ViewModelBase
     [ValidFloatArray]
     public string Std { get; set; }
 
-    public override void UpdateContext()
+    public override void UpdateConfig(CompileConfig config)
     {
         var mean = Mean.Split(",").Select(float.Parse).ToArray();
         var std = Std.Split(",").Select(float.Parse).ToArray();
@@ -74,16 +75,16 @@ public partial class PreprocessViewModel : ViewModelBase
         var rangeMax = float.Parse(RangeMax);
         var letterBoxValue = float.Parse(LetterBoxValue);
 
-        Context.CompileOption.InputLayout = InputLayout;
-        Context.CompileOption.OutputLayout = OutputLayout;
-        Context.CompileOption.InputType = InputTypeValue;
-        Context.CompileOption.InputShape = inShape;
-        Context.CompileOption.InputRange = new[] { rangeMin, rangeMax };
-        Context.CompileOption.Mean = mean;
-        Context.CompileOption.Std = std;
-        Context.CompileOption.SwapRB = SwapRB;
-        Context.CompileOption.ModelLayout = ModelLayout;
-        Context.CompileOption.LetterBoxValue = letterBoxValue;
+        config.CompileOption.InputLayout = InputLayout;
+        config.CompileOption.OutputLayout = OutputLayout;
+        config.CompileOption.InputType = InputTypeValue;
+        config.CompileOption.InputShape = inShape;
+        config.CompileOption.InputRange = new[] { rangeMin, rangeMax };
+        config.CompileOption.Mean = mean;
+        config.CompileOption.Std = std;
+        config.CompileOption.SwapRB = SwapRB;
+        config.CompileOption.ModelLayout = ModelLayout;
+        config.CompileOption.LetterBoxValue = letterBoxValue;
     }
 
     public override List<string> CheckViewModel()
@@ -107,6 +108,6 @@ public partial class PreprocessViewModel : ViewModelBase
 
     public override bool IsVisible()
     {
-        return Context.CompileOption.PreProcess && Context.CustomPreprocessMode;
+        return Context.CompileConfig.CompileOption.PreProcess && Context.CustomPreprocessMode;
     }
 }
