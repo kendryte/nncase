@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using Nncase.IR;
 using Nncase.PatternMatch;
+using Nncase.Utilities;
 using static Nncase.Passes.Utility;
 using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.Utility;
