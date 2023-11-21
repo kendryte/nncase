@@ -31,6 +31,13 @@ public interface IMatchResult : IEnumerable<KeyValuePair<IPattern, object>>
     object this[IPattern pattern] { get; }
 
     /// <summary>
+    /// Get match result by name, default is null.
+    /// </summary>
+    /// <param name="name">Pattern name.</param>
+    /// <returns>match result.</returns>
+    object GetValueOrDefault(string name);
+
+    /// <summary>
     /// Get match result by pattern.
     /// </summary>
     /// <typeparam name="T">Match result type.</typeparam>

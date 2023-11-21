@@ -38,7 +38,7 @@ public class NcnnModel
             throw new InvalidDataException("parse magic failed");
         }
 
-        if (reader.ReadLine()?.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) is not [var layerCountStr, var blobCountStr])
+        if (reader.ReadLine()?.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) is not[var layerCountStr, var blobCountStr])
         {
             throw new InvalidDataException("parse layer_count or blob_count failed");
         }

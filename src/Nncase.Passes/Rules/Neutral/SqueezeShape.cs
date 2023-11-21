@@ -167,7 +167,7 @@ public sealed partial class Squeeze5DTranspose : IRewriteRule
                 throw new NotSupportedException("Not Supported perm!");
         }
 
-        return Reshape(Transpose(Reshape(tp1, shape3), perm2), call.CheckedShape);
+        return Reshape(Transpose(Reshape(tp1, shape3), perm2).With(metadata: call.Metadata), call.CheckedShape);
     }
 }
 
@@ -175,7 +175,11 @@ public sealed partial class Squeeze5DTranspose : IRewriteRule
 public sealed partial class SqueezeTransposeShape : IRewriteRule
 {
     /// <inheritdoc/>
-    public IPattern Pattern { get; } = IsTranspose(IsWildcard("input") with { TypePattern = HasFixedShape() & HasRank(x => x > 4, "more than 4D need to squeeze") }, IsWildcard("perm"));
+    public IPattern Pattern { get; } = IsTranspose(
+        "transpose",
+        "call",
+        IsWildcard("input") with { TypePattern = HasFixedShape() & HasRank(x => x > 4, "more than 4D need to squeeze") },
+        IsWildcard("perm"));
 
     private Tuple<bool, List<int>, List<int>> SqueezeTranspose(List<int> oldShape, List<int> oldAxis)
     {
@@ -228,7 +232,7 @@ public sealed partial class SqueezeTransposeShape : IRewriteRule
         return new Tuple<bool, List<int>, List<int>>(true, newAxis, newShape);
     }
 
-    private Expr? GetReplace(Expr input, int[] perm)
+    private Expr? GetReplace(Expr input, int[] perm, Expr call)
     {
         var inputShape = input.CheckedShape;
         var (result, new_perm, new_shape) = SqueezeTranspose(inputShape.ToValueList(), perm.ToList());
@@ -243,7 +247,7 @@ public sealed partial class SqueezeTransposeShape : IRewriteRule
             newOutputShape[i] = inputShape[perm[i]].FixedValue;
         }
 
-        return Reshape(Transpose(Reshape(input, new_shape.ToArray()), new_perm.ToArray()), newOutputShape);
+        return Reshape(Transpose(Reshape(input, new_shape.ToArray()), new_perm.ToArray()).With(metadata: call.Metadata), newOutputShape);
     }
 }
 
@@ -398,6 +402,6 @@ public sealed partial class SqueezeBinaryShape : IRewriteRule
 
         var outputShape = GetOutputShape(lShape.ToValueList(), rShape.ToValueList());
 
-        return Reshape(Binary(binary.BinaryOp, Reshape(lhs, newLShape.ToArray()), Reshape(rhs, newRShape.ToArray())), outputShape.ToArray());
+        return Reshape(Binary(binary.BinaryOp, Reshape(lhs, newLShape.ToArray()).With(metadata: lhs.Metadata), Reshape(rhs, newRShape.ToArray()).With(metadata: rhs.Metadata)).With(metadata: binaryCall.Metadata), outputShape.ToArray());
     }
 }

@@ -11,52 +11,6 @@ using Nncase.TIR;
 namespace Nncase.Schedule;
 
 /// <summary>
-/// the memory type.
-/// </summary>
-public enum MemoryLocation : byte
-{
-    /// <summary>
-    /// input.
-    /// </summary>
-    Input = 0,
-
-    /// <summary>
-    /// output.
-    /// </summary>
-    Output = 1,
-
-    /// <summary>
-    /// constant data.
-    /// </summary>
-    Rdata = 2,
-
-    /// <summary>
-    /// compute temp data.
-    /// </summary>
-    Data = 3,
-
-    /// <summary>
-    /// shared data.
-    /// </summary>
-    SharedData = 4,
-
-    /// <summary>
-    /// l2 data.
-    /// </summary>
-    L2Data = 5,
-
-    /// <summary>
-    /// L1 data.
-    /// </summary>
-    L1Data = 6,
-
-    /// <summary>
-    /// base addr.
-    /// </summary>
-    PrivateBase = 64,
-}
-
-/// <summary>
 /// the scheduler interface.
 /// </summary>
 public interface IScheduler
@@ -261,12 +215,12 @@ public sealed class SchedFunctionResult
     /// <summary>
     /// Gets the buffer allocation.
     /// </summary>
-    public HashSet<TIR.PhysicalBuffer> Rdatas { get; }
+    public Dictionary<IR.Const, ValueRange<long>> Rdatas { get; }
 
     /// <summary>
     /// Gets or sets the data section length.
     /// </summary>
-    public int DataUsage { get; set; }
+    public long DataUsage { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the Scheduled status.
@@ -296,8 +250,8 @@ public sealed class SchedFunctionResult
             return true;
         }
 
-        return EqualityComparer<HashSet<TIR.PhysicalBuffer>>.Default.Equals(Rdatas, result.Rdatas) &&
-               EqualityComparer<int>.Default.Equals(DataUsage, result.DataUsage);
+        return EqualityComparer<Dictionary<IR.Const, ValueRange<long>>>.Default.Equals(Rdatas, result.Rdatas) &&
+               EqualityComparer<long>.Default.Equals(DataUsage, result.DataUsage);
     }
 
     /// <inheritdoc/>

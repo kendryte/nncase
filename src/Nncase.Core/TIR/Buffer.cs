@@ -267,31 +267,34 @@ public record SelectedRange(int Start, int End, Padding Padding)
 /// <summary>
 /// buffer.
 /// </summary>
-public abstract class Buffer : Expr
+public sealed class Buffer : Expr
 {
-    public Buffer(string name, DataType elemType, Schedule.MemoryLocation memoryLocation, Expr[] operands)
-        : base(operands.ToArray())
+    public Buffer(string name, DataType elemType, MemSpan memSpan, Expr[] dimensions, Expr[] strides)
+        : base(new[] { memSpan }.Concat(dimensions).Concat(strides))
     {
         Name = name;
         ElemType = elemType;
-        MemLocation = memoryLocation;
+        Rank = dimensions.Length;
     }
 
     public string Name { get; }
 
     public DataType ElemType { get; }
 
-    public Schedule.MemoryLocation MemLocation { get; }
-
-    /// <summary>
-    /// Gets if this buffer from the constant !.
-    /// </summary>
-    public TensorConst? Const { get; init; }
-
     /// <summary>
     /// Gets rank of the tensor: number of dimensions.
     /// </summary>
-    public abstract int Rank { get; }
+    public int Rank { get; }
+
+    /// <summary>
+    /// Gets the shape.
+    /// </summary>
+    public MemSpan MemSpan => (MemSpan)Operands[0];
+
+    /// <summary>
+    /// Gets the shape.
+    /// </summary>
+    public ReadOnlySpan<Expr> Dimensions => Operands[1..(1 + Rank)];
 
     /// <summary>
     /// Gets the strides.
@@ -299,201 +302,23 @@ public abstract class Buffer : Expr
     /// This Strides is by elements not by bytes!
     /// </remarks>
     /// </summary>
-    public abstract ReadOnlySpan<Expr> Strides { get; }
+    public ReadOnlySpan<Expr> Strides => Operands[(1 + Rank)..(1 + Rank + Rank)];
 
-    /// <summary>
-    /// Gets the shape.
-    /// </summary>
-    public abstract ReadOnlySpan<Expr> Dimensions { get; }
+    public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) => functor.VisitBuffer(this, context);
 
-    /// <inheritdoc/>
-    public override bool Equals(object? obj)
-    {
-        if (obj is not Buffer other)
-        {
-            return false;
-        }
-
-        if (Const is not null && !Const.Equals(other.Const))
-        {
-            return false;
-        }
-
-        return string.Equals(Name, other.Name, StringComparison.Ordinal) &&
-                ElemType.Equals(other.ElemType) &&
-                MemLocation.Equals(other.MemLocation) &&
-                Rank.Equals(other.Rank) &&
-                base.Equals(obj);
-    }
-}
-
-/// <summary>
-/// the logical buffer.
-/// </summary>
-public sealed class LogicalBuffer : Buffer
-{
-    /// <summary>
-    /// Initializes a new instance of the <see cref="LogicalBuffer"/> class.
-    /// create from the IRType.
-    /// </summary>
-    /// <param name="name">the name.</param>
-    /// <param name="location">the location.</param>
-    /// <param name="elemType">prim type.</param>
-    /// <param name="dimensions">the shape.</param>
-    /// <param name="strides">the strides.</param>
-    public LogicalBuffer(string name, DataType elemType, Schedule.MemoryLocation location, ReadOnlySpan<Expr> dimensions, ReadOnlySpan<Expr> strides)
-        : base(name, elemType, location, ArrayUtility.Concat(dimensions, strides))
-    {
-        Rank = dimensions.Length;
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="LogicalBuffer"/> class.
-    /// <see cref="LogicalBuffer"/>.
-    /// </summary>
-    public LogicalBuffer(string name, Schedule.MemoryLocation location, TensorConst tensor)
-        : this(name, tensor.Value.ElementType, location, ArrayUtility.ToExprArray(tensor.Value.Dimensions), ArrayUtility.ToExprArray(tensor.Value.Strides))
-    {
-        Const = tensor;
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="LogicalBuffer"/> class.
-    /// <seealso cref="LogicalBuffer"/>
-    /// </summary>
-    public LogicalBuffer(string name, DataType elemType, Schedule.MemoryLocation location, ReadOnlySpan<Expr> dimensions)
-        : this(name, elemType, location, dimensions, TensorUtilities.GetStrides(dimensions))
-    {
-    }
-
-    /// <summary>
-    /// Gets get the total length.
-    /// </summary>
-    public Expr Length => TensorUtilities.GetProduct(Dimensions);
-
-    /// <summary>
-    /// Gets the shape.
-    /// </summary>
-    public override ReadOnlySpan<Expr> Dimensions => Operands[0..Rank];
-
-    /// <summary>
-    /// Gets the strides.
-    /// </summary>
-    public override ReadOnlySpan<Expr> Strides => Operands[Rank..];
-
-    /// <inheritdoc/>
-    public override int Rank { get; }
-
-    /// <inheritdoc/>
-    public override string ToString()
-    {
-        return $"LogicalBuffer({Name}, {ElemType}, {nameof(MemLocation)})";
-    }
-
-    /// <inheritdoc/>
-    public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
-        => functor.VisitLogicalBuffer(this, context);
-
-    public LogicalBuffer With(string? name = null, DataType? elemType = null, Schedule.MemoryLocation? location = null, Expr[]? dimensions = null, Expr[]? strides = null)
-        => new LogicalBuffer(name ?? Name, elemType ?? ElemType, location ?? MemLocation, dimensions ?? Dimensions, strides ?? Strides) { Const = Const };
-}
-
-/// <summary>
-/// the physical buffer.
-/// </summary>
-public sealed class PhysicalBuffer : Buffer
-{
-    private readonly int[] _fixedDimensions;
-    private readonly int[] _fixedStrides;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="PhysicalBuffer"/> class.
-    /// ctor for physical buffer.
-    /// </summary>
-    public PhysicalBuffer(string name, DataType elemType, Schedule.MemoryLocation location, ReadOnlySpan<int> dimensions, ReadOnlySpan<int> strides, int start, int size)
-        : base(name, elemType, location, Array.Empty<Expr>())
-    {
-        Start = start;
-        Size = size;
-        _fixedDimensions = dimensions.ToArray();
-        _fixedStrides = strides.ToArray();
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="PhysicalBuffer"/> class.
-    /// <see cref="PhysicalBuffer"/>.
-    /// </summary>
-    public PhysicalBuffer(string name, DataType elemType, Schedule.MemoryLocation location, ReadOnlySpan<int> dimensions, int start, int size)
-        : this(name, elemType, location, dimensions, TensorUtilities.GetStrides(dimensions), start, size)
-    {
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="PhysicalBuffer"/> class.
-    /// <see cref="PhysicalBuffer"/>.
-    /// </summary>
-    public PhysicalBuffer(string name, Schedule.MemoryLocation location, TensorConst tensor, int start, int size)
-        : this(name, tensor.Value.ElementType, location, tensor.Value.Dimensions, tensor.Value.Strides, start, size)
-    {
-        Const = tensor;
-    }
-
-    /// <summary>
-    /// Gets fixed dimensions.
-    /// </summary>
-    public ReadOnlySpan<int> FixedDimensions => _fixedDimensions;
-
-    /// <summary>
-    /// Gets fixed strides.
-    /// </summary>
-    public ReadOnlySpan<int> FixedStrides => _fixedStrides;
-
-    /// <summary>
-    /// Gets or sets start.
-    /// </summary>
-    public int Start { get; set; }
-
-    /// <summary>
-    /// Gets total size in bytes.
-    /// </summary>
-    public int Size { get; init; }
-
-    /// <summary>
-    /// Gets dimensions.
-    /// </summary>
-    public override ReadOnlySpan<Expr> Dimensions => ArrayUtility.ToExprArray(FixedDimensions);
-
-    /// <summary>
-    /// Gets strides.
-    /// </summary>
-    public override ReadOnlySpan<Expr> Strides => ArrayUtility.ToExprArray(FixedStrides);
-
-    /// <summary>
-    /// Gets shape.
-    /// </summary>
-    public Shape Shape => new Shape(FixedDimensions);
-
-    /// <inheritdoc/>
-    public override int Rank => FixedDimensions.Length;
-
-    /// <inheritdoc/>
-    public override string ToString()
-    {
-        return $"PhysicalBuffer({Name}, {ElemType}, {nameof(MemLocation)})";
-    }
+    public Buffer With(MemSpan? memSpan = null, Expr[]? dimensions = null, Expr[]? strides = null)
+        => new Buffer(Name, ElemType, memSpan ?? MemSpan, dimensions ?? Dimensions.ToArray(), strides ?? Strides.ToArray());
 
     /// <inheritdoc/>
     public override bool Equals(object? obj)
     {
-        return base.Equals(obj) && obj is PhysicalBuffer other &&
-          FixedDimensions.SequenceEqual(other.FixedDimensions) &&
-          FixedStrides.SequenceEqual(other.FixedStrides);
+        if (ReferenceEquals(this, obj))
+        {
+            return true;
+        }
+
+        return obj is TIR.Buffer other && GetHashCode() == other.GetHashCode() && Name == other.Name && ElemType == other.ElemType && Rank == other.Rank && Operands.SequenceEqual(other.Operands);
     }
 
-    /// <inheritdoc/>
-    public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
-        => functor.VisitPhysicalBuffer(this, context);
-
-    public PhysicalBuffer With(string? name = null, DataType? elemType = null, Schedule.MemoryLocation? location = null, int[]? dimensions = null, int[]? strides = null, int? start = null, int? size = null)
-        => new PhysicalBuffer(name ?? Name, elemType ?? ElemType, location ?? MemLocation, dimensions ?? FixedDimensions, strides ?? FixedStrides, start ?? Start, size ?? Size) { Const = Const };
+    protected override int GetHashCodeCore() => HashCode.Combine(Name, ElemType, Rank, base.GetHashCodeCore());
 }

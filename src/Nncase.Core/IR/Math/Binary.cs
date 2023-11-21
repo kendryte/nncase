@@ -20,12 +20,12 @@ public sealed partial class Binary : Op
     /// <summary>
     /// Gets lhs.
     /// </summary>
-    public static readonly ParameterInfo Lhs = new(typeof(Binary), 0, "lhs");
+    public static readonly ParameterInfo Lhs = new(typeof(Binary), 0, "lhs", ParameterKind.Input);
 
     /// <summary>
     /// Gets rhs.
     /// </summary>
-    public static readonly ParameterInfo Rhs = new(typeof(Binary), 1, "rhs");
+    public static readonly ParameterInfo Rhs = new(typeof(Binary), 1, "rhs", ParameterKind.Input);
 
     public BinaryOp BinaryOp { get; }
 

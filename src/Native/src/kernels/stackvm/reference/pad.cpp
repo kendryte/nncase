@@ -171,8 +171,7 @@ void padding_impl_opt(T *in, T *out, gsl::span<const size_t> in_shape,
         dh = out_shape[1];
         hh = out_shape[2];
         wh = out_shape[3];
-    } else // size ==2
-    {
+    } else if (in_shape.size() == 2) {
         cl = 1;
         dl = 1;
         hl = in_shape[0];
@@ -180,6 +179,15 @@ void padding_impl_opt(T *in, T *out, gsl::span<const size_t> in_shape,
         ch = 1;
         dh = 1;
         hh = out_shape[0];
+        wh = out_shape[1];
+    } else {
+        cl = 1;
+        dl = 1;
+        hl = 1;
+        wl = in_shape[0];
+        ch = 1;
+        dh = 1;
+        hh = 1;
         wh = out_shape[1];
     }
 

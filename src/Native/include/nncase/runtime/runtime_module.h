@@ -58,6 +58,8 @@ class NNCASE_API runtime_module {
 
     result<runtime_function *> find_function_by_id(size_t index) noexcept;
 
+    result<size_t> find_id_by_function(runtime_function *function) noexcept;
+
   protected:
     virtual result<void>
     initialize_before_functions(runtime_module_init_context &context) noexcept;

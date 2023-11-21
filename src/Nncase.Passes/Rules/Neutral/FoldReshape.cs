@@ -54,11 +54,34 @@ public sealed partial class FoldTwoReshapes : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } = IsReshape(
-        IsReshape(IsWildcard("input"), IsWildcard()), IsWildcard("newShape"));
+        MaybeMarker(IsReshape(IsWildcard("input"), IsWildcard())), IsWildcard("newShape"));
 
     private Expr? GetReplace(Expr input, Expr newShape)
     {
         return Reshape(input, newShape);
+    }
+}
+
+/// <summary>
+/// Fold sequeeze reshape(binary(unsequeeze reshape(x), const)).
+/// </summary>
+[RuleGenerator]
+public sealed partial class FoldReshapeBinaryConstReshape : IRewriteRule
+{
+    /// <inheritdoc/>
+    public IPattern Pattern { get; } =
+        IsReshape(IsSwappableBinary("binary", null, b => b.BinaryOp is BinaryOp.Add or BinaryOp.Mul, IsReshape(IsWildcard("input") with { TypePattern = HasFixedShape() }, IsTensorConst("unsqShape")), IsTensorConst("binaryConst")), IsTensorConst("sqShape"));
+
+    private Expr? GetReplace(Expr input, Binary binary, int[] unsqShape, TensorConst binaryConst, int[] sqShape)
+    {
+        var inShape = input.CheckedShape.ToValueArray();
+        if (!(sqShape.SequenceEqual(inShape) && RulesUtility.FindSqueezeAxis(unsqShape, sqShape) is int axis && axis != -1 && (
+            (binaryConst.Value.Shape.Rank == unsqShape.Length && binaryConst.Value.Shape[axis].Value == 1) || (Evaluator.TypeInference.BroadcastType((TensorType)input.CheckedType, (TensorType)binaryConst.CheckedType) is TensorType outType && outType.Shape.ToValueArray().SequenceEqual(inShape)))))
+        {
+            return null;
+        }
+
+        return IR.F.Math.Binary(binary.BinaryOp, input, (binaryConst.Value.Shape.Rank == unsqShape.Length && binaryConst.Value.Shape[axis].Value == 1) ? IR.F.Tensors.Squeeze(binaryConst, new[] { axis }) : binaryConst);
     }
 }
 

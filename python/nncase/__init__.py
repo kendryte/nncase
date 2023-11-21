@@ -66,6 +66,7 @@ class PTQTensorOptions:
     input_mean: float
     input_std: float
     quant_scheme: str
+    quant_scheme_strict_mode: bool
     samples_count: int
     cali_data: List[RuntimeTensor]
 
@@ -83,6 +84,7 @@ class PTQTensorOptions:
         self.input_mean: float = 0.5
         self.input_std: float = 0.5
         self.quant_scheme: str = ""
+        self.quant_scheme_strict_mode: bool = False
         self.samples_count: int = 5
         self.cali_data: List[RuntimeTensor] = []
 
@@ -244,6 +246,7 @@ class Compiler:
 
         self._quantize_options.use_mix_quant = ptq_dataset_options.use_mix_quant
         self._quantize_options.quant_scheme = ptq_dataset_options.quant_scheme
+        self._quantize_options.quant_scheme_strict_mode = ptq_dataset_options.quant_scheme_strict_mode
         self._quantize_options.export_quant_scheme = ptq_dataset_options.export_quant_scheme
         self._quantize_options.export_weight_range_by_channel = ptq_dataset_options.export_weight_range_by_channel
         self._quantize_options.dump_quant_error = ptq_dataset_options.dump_quant_error
@@ -295,7 +298,7 @@ class Compiler:
 
 def check_target(target: str):
     def test_target(target: str):
-        return target in ["cpu", "k510", "k230"]
+        return target in ["cpu", "k510", "k230", "xpu"]
 
     def target_exists(target: str):
         return _nncase.Target.exists(target)

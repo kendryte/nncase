@@ -49,7 +49,7 @@ public class ParamDict
     {
         foreach (var field in fields)
         {
-            if (field.Split('=', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) is not [var idStr, var valueStr])
+            if (field.Split('=', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) is not[var idStr, var valueStr])
             {
                 break;
             }

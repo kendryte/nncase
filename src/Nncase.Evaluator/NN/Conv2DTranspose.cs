@@ -27,24 +27,91 @@ public class Conv2DTransposeEvaluator : IEvaluator<Conv2DTranspose>, ITypeInfere
         var stride = context.GetArgumentValueAsArray<long>(conv, Conv2DTranspose.Stride);
         var outputShape = context.GetArgumentValueAsArray<long>(conv, Conv2DTranspose.OutputShape);
 
-        // [w:[left right] h:[top bottom]]
+        // [h:[top bottom] w:[left right] ]
         var pads = context.GetArgumentValueAsArray<long>(conv, Conv2DTranspose.Padding);
-        var outputPaddings = context.GetArgumentValueAsArray<long>(conv, Conv2DTranspose.OutputPadding);
+        _ = context.GetArgumentValueAsArray<long>(conv, Conv2DTranspose.OutputPadding);
         var dilation = context.GetArgumentValueAsArray<long>(conv, Conv2DTranspose.Dilation);
         var groups = context.GetArgumentValueAsScalar<long>(conv, Conv2DTranspose.Groups);
         var kernelShape = weights.Shape;
-        return OrtKI.ConvTranspose(
-            input,
-            OrtKI.Transpose(weights, new long[] { 1, 0, 2, 3 }),
-            bias,
-            "NOTSET",
-            dilation,
-            groups,
-            new long[] { kernelShape[2], kernelShape[3] },
-            outputPaddings,
-            outputShape,
-            pads,
-            stride).ToValue();
+        var inputShape = input.Shape;
+
+        var outputSize = outputShape[0] * outputShape[1] * outputShape[2] * outputShape[3];
+        float[] outCache = new float[outputSize];
+        Array.Clear(outCache, 0, (int)outputSize);
+
+        var gIC = inputShape[1] / groups;
+        var gOC = outputShape[1] / groups;
+
+        var weightsArray = weights.ToArray<float>();
+        var inputsArray = input.ToArray<float>();
+        var biasArray = bias.ToArray<float>();
+        int inputIndex = 0;
+        for (int batch = 0; batch < inputShape[0]; batch++)
+        {
+            var outBatchP = outCache.AsSpan().Slice(batch * (int)outputShape[1] * (int)outputShape[2] * (int)outputShape[3]);
+
+            for (int g = 0; g < groups; g++)
+            {
+                var outGroupP = outBatchP.Slice(g * (int)gOC * (int)outputShape[2] * (int)outputShape[3]);
+                var wGroupP = weightsArray.AsSpan().Slice((int)g * (int)gOC * (int)gIC * (int)kernelShape[2] * (int)kernelShape[3]);
+
+                for (int ic = 0; ic < gIC; ic++)
+                {
+                    for (int iy = 0; iy < inputShape[2]; iy++)
+                    {
+                        for (int ix = 0; ix < inputShape[3]; ix++)
+                        {
+                            int outYOrigin = (int)((iy * stride[0]) - pads[0]);
+                            int outXOrigin = (int)((ix * stride[1]) - pads[2]);
+                            int filterYStart = System.Math.Max(0, (int)((-outYOrigin + dilation[0] - 1) / dilation[0]));
+                            int filterYEnd = (int)System.Math.Min(kernelShape[2], ((int)outputShape[2] - outYOrigin + dilation[0] - 1) / dilation[0]);
+                            int filterXStart = (int)System.Math.Max(0, (-outXOrigin + dilation[1] - 1) / dilation[1]);
+                            int filterXEnd = (int)System.Math.Min(kernelShape[3], ((int)outputShape[3] - outXOrigin + dilation[1] - 1) / dilation[1]);
+
+                            float inV;
+                            if (ix < 0 || ix >= inputShape[3] || iy < 0 || iy >= inputShape[2])
+                            {
+                                inV = 0f;
+                            }
+                            else
+                            {
+                                inV = inputsArray[inputIndex];
+                            }
+
+                            inputIndex++;
+
+                            for (int oc = 0; oc < gOC; oc++)
+                            {
+                                var outCP = outGroupP.Slice((int)(oc * outputShape[2] * outputShape[3]));
+                                var wOCP = wGroupP.Slice((int)(oc * gIC * kernelShape[2] * kernelShape[3]));
+                                var wICP = wOCP.Slice((int)(ic * kernelShape[2] * kernelShape[3]));
+
+                                for (int ky = filterYStart; ky < filterYEnd; ky++)
+                                {
+                                    for (int kx = filterXStart; kx < filterXEnd; kx++)
+                                    {
+                                        int outY = (int)(outYOrigin + (dilation[0] * ky));
+                                        int outX = (int)(outXOrigin + (dilation[1] * kx));
+
+                                        var w = wICP[(int)((ky * kernelShape[3]) + kx)];
+
+                                        outCP[(int)((outY * outputShape[3]) + outX)] += (float)inV * w;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        for (int i = 0; i < outputSize; i++)
+        {
+            var biasIdx = i / (outputShape[2] * outputShape[3]) % outputShape[1];
+            outCache[i] = outCache[i] + biasArray[biasIdx];
+        }
+
+        return new TensorValue(Tensor.From(outCache, new[] { (int)outputShape[0], (int)outputShape[1], (int)outputShape[2], (int)outputShape[3] }));
     }
 
     /// <inheritdoc/>

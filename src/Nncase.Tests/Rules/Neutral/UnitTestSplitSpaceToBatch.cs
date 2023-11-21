@@ -8,6 +8,7 @@ using Nncase.Passes.Rules.Neutral;
 using Nncase.Tests.TestFixture;
 using Xunit;
 using static Nncase.IR.F.NN;
+using static Nncase.IR.F.Tensors;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
@@ -17,7 +18,7 @@ public class UnitTestSpaceToBatch : TransformTestBase
     [Fact]
     public void TestSplitSpaceToBatch()
     {
-        var i = SpaceToBatch(Testing.Rand<float>(1, 206, 192), new[] { 3 }, new[,] { { 0, 1 } });
+        var i = NCHWToNHWC(SpaceToBatch(NHWCToNCHW(Testing.Rand<float>(1, 206, 192)), new[] { 3 }, new[,] { { 0, 1 } }));
         var originEvaluateResult = i.Evaluate();
         var newBody = TestMatched<SplitSpaceToBatch>(i);
         var ev = newBody.Evaluate();

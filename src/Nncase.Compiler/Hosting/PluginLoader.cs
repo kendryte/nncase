@@ -19,13 +19,15 @@ namespace Nncase.Hosting;
 /// </summary>
 public sealed class PluginLoader
 {
-    private const string _modulesDllPattern = "Nncase.Modules.*.dll";
-    private const string _pluginPathEnvName = "NNCASE_PLUGIN_PATH";
+    public const string PluginPathEnvName = "NNCASE_PLUGIN_PATH";
+
+    public const string ModulesDllPattern = "Nncase.Modules.*.dll";
 
     private static readonly string[] _builtinModules = new[]
     {
         "Nncase.Modules.StackVM.dll",
         "Nncase.Modules.Ncnn.dll",
+        "Nncase.Modules.CPU.dll",
         "Nncase.Modules.K210.dll",
     };
 
@@ -43,26 +45,60 @@ public sealed class PluginLoader
             ?? AssemblyLoadContext.Default;
     }
 
-    /// <summary>
-    /// Load plugins.
-    /// </summary>
-    /// <returns>Plugins.</returns>
-    public IReadOnlyList<IPlugin> LoadPlugins()
+    public static Assembly LoadPluginAssembly(string assemblyFile, AssemblyLoadContext loadContext)
     {
-        var pluginAsms = GetPluginsSearchDirectories().Select(GetPluginAssemblies).SelectMany(x => x)
-                    .DistinctBy(Path.GetFileName).Select(LoadPluginAssembly).Distinct().ToList();
-        var plugins = (from asm in pluginAsms
-                       from t in asm.ExportedTypes
-                       where t.IsClass
-                       && t.IsAssignableTo(typeof(IPlugin))
-                       let ctor = t.GetConstructor(Type.EmptyTypes)
-                       where ctor != null
-                       select (IPlugin)ctor.Invoke(null)).ToList();
-
-        return plugins;
+        return loadContext.LoadFromAssemblyPath(assemblyFile);
     }
 
-    private static bool IsLoadableAssembly(string filePath)
+    public static IEnumerable<string> GetPluginAssemblies(string basePath)
+    {
+        if (Directory.Exists(basePath))
+        {
+            return (from filePath in Directory.GetFiles(basePath, ModulesDllPattern, SearchOption.AllDirectories)
+                    where !_builtinModules.Contains(Path.GetFileName(filePath))
+                     && IsLoadableAssembly(filePath)
+                    select filePath).Distinct();
+        }
+        else
+        {
+            return Array.Empty<string>();
+        }
+    }
+
+    public static IEnumerable<string> GetPluginsSearchDirectories(string pluginPathEnvName, ILogger? logger)
+    {
+        var directories = new List<string>();
+
+        // 1. Environment variable
+        var targetPathEnv = Environment.GetEnvironmentVariable(pluginPathEnvName);
+        if (string.IsNullOrWhiteSpace(targetPathEnv))
+        {
+            if (logger is not null)
+            {
+                logger.LogWarning($"{pluginPathEnvName} is not set.");
+            }
+        }
+        else
+        {
+            var targetPaths = from path in targetPathEnv!.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries)
+                              select Environment.ExpandEnvironmentVariables(path);
+            directories.AddRange(targetPaths);
+        }
+
+        // 2. Python nncase modules
+        var rootPath = Path.GetDirectoryName(typeof(PluginLoader).Assembly.Location)!;
+        var modulesPath = Path.Combine(rootPath, "modules");
+        directories.Add(modulesPath);
+
+        if (logger is not null && logger.IsEnabled(LogLevel.Trace))
+        {
+            logger.LogInformation($"Loading plugins from {string.Join(", ", directories)}.");
+        }
+
+        return directories.Distinct();
+    }
+
+    public static bool IsLoadableAssembly(string filePath)
     {
         using var fs = File.OpenRead(filePath);
         using var peReader = new PEReader(fs);
@@ -94,53 +130,22 @@ public sealed class PluginLoader
         return true;
     }
 
-    private Assembly LoadPluginAssembly(string assemblyFile)
+    /// <summary>
+    /// Load plugins.
+    /// </summary>
+    /// <returns>Plugins.</returns>
+    public IReadOnlyList<IPlugin> LoadPlugins()
     {
-        return _loadContext.LoadFromAssemblyPath(assemblyFile);
-    }
+        var pluginAsms = GetPluginsSearchDirectories(PluginPathEnvName, _logger).Select(GetPluginAssemblies).SelectMany(x => x)
+                    .DistinctBy(Path.GetFileName).Select(x => LoadPluginAssembly(x, _loadContext)).Distinct().ToList();
+        var plugins = (from asm in pluginAsms
+                       from t in asm.ExportedTypes
+                       where t.IsClass
+                       && t.IsAssignableTo(typeof(IPlugin))
+                       let ctor = t.GetConstructor(Type.EmptyTypes)
+                       where ctor != null
+                       select (IPlugin)ctor.Invoke(null)).ToList();
 
-    private IEnumerable<string> GetPluginAssemblies(string basePath)
-    {
-        if (Directory.Exists(basePath))
-        {
-            return (from filePath in Directory.GetFiles(basePath, _modulesDllPattern, SearchOption.AllDirectories)
-                    where !_builtinModules.Contains(Path.GetFileName(filePath))
-                     && IsLoadableAssembly(filePath)
-                    select filePath).Distinct();
-        }
-        else
-        {
-            return Array.Empty<string>();
-        }
-    }
-
-    private IEnumerable<string> GetPluginsSearchDirectories()
-    {
-        var directories = new List<string>();
-
-        // 1. Environment variable
-        var targetPathEnv = Environment.GetEnvironmentVariable(_pluginPathEnvName);
-        if (string.IsNullOrWhiteSpace(targetPathEnv))
-        {
-            _logger.LogWarning($"{_pluginPathEnvName} is not set.");
-        }
-        else
-        {
-            var targetPaths = from path in targetPathEnv.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries)
-                              select Environment.ExpandEnvironmentVariables(path);
-            directories.AddRange(targetPaths);
-        }
-
-        // 2. Python nncase modules
-        var rootPath = Path.GetDirectoryName(typeof(PluginLoader).Assembly.Location)!;
-        var modulesPath = Path.Combine(rootPath, "modules");
-        directories.Add(modulesPath);
-
-        if (_logger.IsEnabled(LogLevel.Trace))
-        {
-            _logger.LogInformation($"Loading plugins from {string.Join(", ", directories)}.");
-        }
-
-        return directories.Distinct();
+        return plugins;
     }
 }

@@ -22,7 +22,7 @@ internal class SatExtractor : IExtractor
         _costModel = costModel;
     }
 
-    public Expr Extract(EClass root, IEGraph eGraph)
+    public Expr Extract(EClass root, IEGraph eGraph, out IReadOnlyDictionary<ENode, bool> picks)
     {
         var cpmodel = new CpModel();
 
@@ -108,13 +108,13 @@ internal class SatExtractor : IExtractor
             throw new InvalidProgramException("SatExtract Failed!");
         }
 
-        var pick = eGraph.Nodes.ToDictionary(e => e, e => solver.BooleanValue(vars[e]));
+        picks = eGraph.Nodes.ToDictionary(e => e, e => solver.BooleanValue(vars[e]));
         using (var dumpStream = enableDump ? DumpScope.Current.OpenFile("Costs/Pick.dot") : Stream.Null)
         {
-            EGraphPrinter.DumpEgraphAsDot(eGraph, _costModel, pick, root.Find(), dumpStream);
+            EGraphPrinter.DumpEgraphAsDot(eGraph, _costModel, picks, root.Find(), dumpStream);
         }
 
-        return new SatExprBuildVisitor(pick).Visit(root);
+        return new SatExprBuildVisitor(picks).Visit(root);
     }
 
     private void EliminateAllCycles(EClass root, LinkedList<(EClass Class, ENode Node)> path, Dictionary<EClass, LinkedListNode<(EClass Class, ENode Node)>> pathMemo, Dictionary<ENode, bool> visited, CpModel cpModel, Dictionary<ENode, BoolVar> vars)

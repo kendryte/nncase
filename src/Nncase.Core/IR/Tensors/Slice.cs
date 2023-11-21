@@ -21,7 +21,7 @@ public sealed partial class Slice : Op
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Slice), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(Slice), 0, "input", ParameterKind.Input);
 
     /// <summary>
     /// Gets begins.

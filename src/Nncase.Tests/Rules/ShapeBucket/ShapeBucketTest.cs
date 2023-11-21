@@ -106,7 +106,7 @@ public class ShapeBucketTest : TransformTestBase
         var newBody = TestMatchedCore(
             main.Body!,
             new Dictionary<Var, IValue> { { mainVar, Value.FromTensor(input) } },
-            new FusionBucket(shape));
+            new RebuildBucket(shape));
         Assert.True(newBody is Call { Target: IR.Math.MatMul });
     }
 
@@ -368,7 +368,7 @@ public class TestMergePrevCallToFusion : TransformTestBase
         var lhs = MakeVar(input);
         var add = Add(lhs, new[] { 1f });
         var rhs = Reshape(add, Concat(
-            new IR.Tuple(Reshape(Gather(ShapeOf(add), 0L, 0L), new[] { 1L }), new[] { 3L }, new[] { 24L }, new[] { 24L }), 0));
+            new IR.Tuple(Reshape(Gather(ShapeOf(add), 0, 0L), new[] { 1L }), new[] { 3L }, new[] { 24L }, new[] { 24L }), 0));
 
         var lhsVar = new Var("lhs", new TensorType(input.ElementType, input.Shape));
         var rhsVar = new Var("rhs", new TensorType(input.ElementType, input.Shape));

@@ -23,7 +23,7 @@ public sealed partial class Unsqueeze : Op
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Unsqueeze), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(Unsqueeze), 0, "input", ParameterKind.Input);
 
     /// <summary>
     /// Gets dimension.

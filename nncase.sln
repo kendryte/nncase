@@ -44,8 +44,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nncase.IO", "src\Nncase.IO\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nncase.Schedule", "src\Nncase.Schedule\Nncase.Schedule.csproj", "{8E0E0672-0F96-4EF1-BDCD-D31F96A3DF73}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "targets", "targets", "{A2590531-71C5-4326-88DD-6A9DB2EF0A2B}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nncase.Targets", "src\Nncase.Targets\Nncase.Targets.csproj", "{56283378-06E3-4C6E-A8BF-7BD85C92D42C}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nncase.Simulator", "src\Nncase.Simulator\Nncase.Simulator.csproj", "{901AC17C-7B53-4B10-A2AC-EA7AEA6DC614}"
