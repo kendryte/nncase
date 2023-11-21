@@ -47,6 +47,14 @@ public partial class ShapeBucketViewModel : ViewModelBase
         config.CompileOption.ShapeBucketOptions = options;
     }
 
+    public override void UpdateViewModelCore(CompileConfig config)
+    {
+        var option = config.CompileOption.ShapeBucketOptions;
+        SegmentCount = option.SegmentsCount;
+        VarRangeInfo = string.Join(",", option.FixVarMap.Select(pair => $"{pair.Key}:{pair.Value}"));
+        FixVarMap = string.Join(",", option.RangeInfo.Select(pair => $"{pair.Key}:({pair.Value.Min}, {pair.Value.Max})"));
+    }
+
     public override bool IsVisible() => Context.CompileConfig.EnableShapeBucket;
 
     public override List<string> CheckViewModel()

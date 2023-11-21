@@ -87,6 +87,31 @@ public partial class PreprocessViewModel : ViewModelBase
         config.CompileOption.LetterBoxValue = letterBoxValue;
     }
 
+    public override void UpdateViewModelCore(CompileConfig config)
+    {
+        InputLayout = config.CompileOption.InputLayout;
+        OutputLayout = config.CompileOption.OutputLayout;
+        InputTypeValue = config.CompileOption.InputType;
+        InputShape = string.Join(",", config.CompileOption.InputShape);
+        var range = config.CompileOption.InputRange;
+        if (range.Length == 2)
+        {
+            RangeMin = range[0].ToString();
+            RangeMax = range[1].ToString();
+        }
+        else
+        {
+            RangeMin = string.Empty;
+            RangeMax = string.Empty;
+        }
+
+        Mean = string.Join(",", config.CompileOption.Mean);
+        Std = string.Join(",", config.CompileOption.Std);
+        SwapRB = config.CompileOption.SwapRB;
+        ModelLayout = config.CompileOption.ModelLayout;
+        LetterBoxValue = config.CompileOption.LetterBoxValue.ToString();
+    }
+
     public override List<string> CheckViewModel()
     {
         var l = new List<string>();

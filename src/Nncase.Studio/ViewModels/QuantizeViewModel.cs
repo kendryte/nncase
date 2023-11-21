@@ -132,6 +132,7 @@ public partial class QuantizeViewModel : ViewModelBase
 
     public override void UpdateViewModelCore(CompileConfig config)
     {
+        QuantizeOptionsValue = config.CompileOption.QuantizeOptions;
         if (ExportQuantSchemePath == string.Empty)
         {
             ExportQuantSchemePath = Path.Join(config.CompileOption.DumpDir, "QuantScheme.json");
@@ -142,15 +143,12 @@ public partial class QuantizeViewModel : ViewModelBase
 
     public override void UpdateConfig(CompileConfig config)
     {
-        // todo: load calib data set when compile start
         QuantizeOptionsValue.CalibrationMethod = CalibMethodValue;
         QuantizeOptionsValue.QuantType = DataUtil.QuantTypeToDataType(QuantTypeValue);
         QuantizeOptionsValue.WQuantType = DataUtil.QuantTypeToDataType(WQuantTypeValue);
         QuantizeOptionsValue.ModelQuantMode = ModelQuantModeValue;
         QuantizeOptionsValue.QuantScheme = QuantSchemePath;
         QuantizeOptionsValue.ExportQuantScheme = ExportQuantScheme;
-
-        // todo: 如果手动输入路径好像没效果
         QuantizeOptionsValue.ExportQuantSchemePath = ExportQuantSchemePath;
         config.CompileOption.QuantizeOptions = QuantizeOptionsValue;
     }

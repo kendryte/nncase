@@ -26,36 +26,8 @@ public class ViewModelContext
 
     public CompileConfig CompileConfig { get; set; } = new();
 
-    // public CompileOptions CompileOption
-    // {
-    //     get { return CompileConfig.CompileOption; }
-    //     set { CompileConfig.CompileOption = value; }
-    // }
-    //
-    // public bool MixQuantize
-    // {
-    //     get { return CompileConfig.MixQuantize; }
-    //     set { CompileConfig.MixQuantize = value; }
-    // }
-    //
-    // public bool UseQuantize
-    // {
-    //     get { return CompileConfig.UseQuantize; }
-    //     set { CompileConfig.UseQuantize = value; }
-    // }
-    public bool CustomPreprocessMode { get; set; }
+    public bool CustomPreprocessMode => CompileConfig.PreprocessMode == PreprocessMode.Custom;
 
-    // public string KmodelPath
-    // {
-    //     get { return CompileConfig.KmodelPath; }
-    //     set { CompileConfig.KmodelPath = value; }
-    // }
-    //
-    // public string Target
-    // {
-    //     get { return CompileConfig.Target; }
-    //     set { CompileConfig.Target = value; }
-    // }
     public NavigatorViewModel? Navigator { get; set; }
 
     public ViewModelBase[] ViewModelBases { get; set; } = Array.Empty<ViewModelBase>();

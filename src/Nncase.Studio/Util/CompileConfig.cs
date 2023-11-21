@@ -4,6 +4,8 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices.JavaScript;
+using Nncase.Diagnostics;
+using Nncase.Studio.ViewModels;
 
 namespace Nncase.Studio.Util;
 
@@ -24,11 +26,13 @@ public class CompileConfig
 
     public bool UseQuantize { get; set; }
 
-    public bool CustomPreprocessMode { get; set; }
+    public PreprocessMode PreprocessMode { get; set; }
 
-    public string KmodelPath { get; set; } = string.Empty;
+    public DumpFlags[] DumpFlags { get; set; } = Array.Empty<DumpFlags>();
 
     public string Target { get; set; } = "cpu";
+
+    public string KmodelPath { get; set; }
 
     public string ResultDir { get; set; }
 

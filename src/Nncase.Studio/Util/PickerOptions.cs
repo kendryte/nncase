@@ -41,12 +41,7 @@ public static class PickerOptions
     public static FilePickerSaveOptions CompileConfPickerSaveOptions => new FilePickerSaveOptions
     {
         Title = "Save Conf",
-
-        // SuggestedStartLocation = null,
-        SuggestedFileName = "config",
-        DefaultExtension = ".json",
-
-        // FileTypeChoices = null,
+        SuggestedFileName = "config.json",
         ShowOverwritePrompt = true,
     };
 

@@ -112,7 +112,7 @@ public partial class CompileViewModel : ViewModelBase
         }
 
         Context.SwitchNext();
-        Context.OpenDialog("Compile Finish", PromptDialogLevel.Normal);
+        Context.OpenDialog($"Compile Finish, kmodel in {KmodelPath}", PromptDialogLevel.Normal);
     }
 
     public override void UpdateConfig(CompileConfig config)

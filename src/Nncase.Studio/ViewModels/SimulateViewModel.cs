@@ -150,16 +150,9 @@ public partial class SimulateViewModel : ViewModelBase
 
     public override void UpdateViewModelCore(CompileConfig config)
     {
-        var dumpDir = Directory.GetCurrentDirectory();
-        if (config.CompileOption.DumpDir != string.Empty)
-        {
-            dumpDir = config.CompileOption.DumpDir;
-        }
-
-        if (ResultDir == string.Empty)
-        {
-            ResultDir = dumpDir;
-        }
+        ResultDir = config.ResultDir;
+        KmodelPath = config.KmodelPath;
+        InputPath = new(config.InputPathList);
     }
 
     public override void UpdateConfig(CompileConfig config)

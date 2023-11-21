@@ -18,10 +18,13 @@ using Nncase.Studio.Util;
 
 namespace Nncase.Studio.ViewModels;
 
+public enum PreprocessMode
+{
+    Custom,
+}
+
 public partial class CompileOptionViewModel : ViewModelBase
 {
-    private static readonly string _customMode = "自定义";
-
     [Required]
     [ObservableProperty]
     private string _inputFile = string.Empty;
@@ -48,7 +51,7 @@ public partial class CompileOptionViewModel : ViewModelBase
     private string _target;
 
     [ObservableProperty]
-    private string _preprocessMode = _customMode;
+    private PreprocessMode _preprocessMode = PreprocessMode.Custom;
 
     public CompileOptionViewModel(ViewModelContext context)
     {
@@ -58,7 +61,7 @@ public partial class CompileOptionViewModel : ViewModelBase
 
         _target = TargetList[0];
         Context = context;
-        var list = new[] { _customMode };
+        var list = new[] { PreprocessMode.Custom };
         PreprocessModeList = new(list);
     }
 
@@ -68,7 +71,7 @@ public partial class CompileOptionViewModel : ViewModelBase
 
     public ObservableCollection<string> TargetList { get; set; }
 
-    public ObservableCollection<string> PreprocessModeList { get; set; }
+    public ObservableCollection<PreprocessMode> PreprocessModeList { get; set; }
 
     [RelayCommand]
     public async Task SetDumpDir()
@@ -91,28 +94,27 @@ public partial class CompileOptionViewModel : ViewModelBase
         ShapeBucket = config.EnableShapeBucket;
         Quantize = config.UseQuantize;
 
-        // todo:
-        // dump flag
-        // PreprocessMode
+        PreprocessMode = config.PreprocessMode;
+        DumpFlagSelected = new(config.DumpFlags.ToArray());
     }
 
     public override void UpdateConfig(CompileConfig config)
     {
         config.CompileOption.DumpDir = DumpDir;
+        config.DumpFlags = DumpFlagSelected.ToArray();
         config.CompileOption.DumpFlags = DumpFlagSelected.Aggregate(DumpFlags.None, (flag, sum) => flag | sum);
         config.Target = Target;
         config.CompileOption.PreProcess = Preprocess;
         config.MixQuantize = MixQuantize;
         config.EnableShapeBucket = ShapeBucket;
         config.UseQuantize = Quantize;
-        config.CustomPreprocessMode = PreprocessMode == _customMode;
+        config.PreprocessMode = PreprocessMode;
         if (Quantize == false)
         {
             config.CompileOption.QuantizeOptions.ModelQuantMode = ModelQuantMode.NoQuant;
         }
     }
 
-    // todo simulate生成随机数
     public override List<string> CheckViewModel()
     {
         var list = new List<string>();
