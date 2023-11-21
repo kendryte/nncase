@@ -94,6 +94,8 @@ public abstract partial class Expr : IDisposable
             {
                 case TensorType type:
                     return type.Shape;
+                case DistributedType type:
+                    return type.TensorType.Shape;
                 default:
                     if (DumpScope.Current.IsEnabled(DumpFlags.Compile))
                     {
