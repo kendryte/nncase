@@ -7,10 +7,14 @@ using System.Linq;
 using System.Reactive;
 using System.Threading.Tasks;
 using Google.OrTools.Algorithms;
+using Google.OrTools.Graph;
+using Microsoft.Toolkit.HighPerformance;
 using NetFabric.Hyperlinq;
 using Nncase.Diagnostics;
 using Nncase.Evaluator;
 using Nncase.IR;
+using Nncase.IR.Tensors;
+using Nncase.Utilities;
 using static Nncase.IR.F.Tensors;
 using static Nncase.Passes.Rules.ShapeBucket.ShapeBucketHelper;
 
@@ -72,11 +76,14 @@ public class FusionShapeUpdater : ExprVisitor<Expr, Unit>
 
 public class RecordFusionShape : FunctionPass
 {
+    private readonly bool _once;
+
     private Dictionary<Var, int[]> _dimVarValues = new();
 
-    public RecordFusionShape(Dictionary<BucketFusion, FusionShapeData[]> shapeList)
+    public RecordFusionShape(Dictionary<BucketFusion, FusionShapeData[]> shapeList, bool once = false)
     {
         FusionShapeInfo = shapeList;
+        _once = once;
     }
 
     public Dictionary<BucketFusion, FusionShapeData[]> FusionShapeInfo { get; set; }
@@ -90,6 +97,13 @@ public class RecordFusionShape : FunctionPass
             pair => pair.Key,
             pair =>
             {
+                if (pair.Key.CheckedShape.IsFixed)
+                {
+                    return ConstantOfShape(
+                        pair.Key.CheckedShape.ToValueArray(),
+                        Cast(1, pair.Key.CheckedDataType)).Evaluate();
+                }
+
                 // todo: dummy input可能会有问题...
                 var shapeExpr = pair.Key.CheckedShape.IsScalar
                     ? (Expr)Array.Empty<int>()
@@ -106,14 +120,22 @@ public class RecordFusionShape : FunctionPass
     {
         var options = CompileSession.CompileOptions.ShapeBucketOptions;
         var varMap = options.VarMap;
-        _dimVarValues = MakeVarValuesForAllSegment(options);
+
+        var staticShape = IsStaticShpae;
+        var segmentCount = staticShape
+                           && SingleDimVar(options)
+            ? options.RangeInfo.First().Value.Max
+            : options.SegmentsCount;
+
+        _dimVarValues = MakeVarValuesForAllSegment(options, segmentCount, staticShape);
 
         // 一共有多组key seg
-        var list = Enumerable.Range(0, _dimVarValues.First().Value.Length).Select(i =>
+        var tmpList = Enumerable.Range(0, _dimVarValues.First().Value.Length).Select(i =>
         {
             // 一组里面多个key seg
             return _dimVarValues.Select(pair => (pair.Key, Value: pair.Value[i])).ToArray();
-        }).ToArray();
+        });
+        var list = _once ? tmpList.TakeLast(1).ToArray() : tmpList.ToArray();
 
         var body = ((Function)main).Body;
         var tmpFusionShapeList = list.Select((seg, i) =>
@@ -129,7 +151,6 @@ public class RecordFusionShape : FunctionPass
             .ToLookup(x => x.Key, x => x.Value)
             .ToDictionary(pair => pair.Key, pair => pair.ToArray());
 
-        GC.Collect();
         foreach (var (f, shapeInfo) in tmpFusionShapeList)
         {
             FusionShapeInfo[f] = shapeInfo;
