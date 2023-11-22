@@ -6,7 +6,9 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using Nncase.Studio.Util;
+using Nncase.Studio.Views;
 
 namespace Nncase.Studio.ViewModels;
 
@@ -65,6 +67,12 @@ public partial class PreprocessViewModel : ViewModelBase
 
     [ValidFloatArray]
     public string Std { get; set; }
+
+    [RelayCommand]
+    public void ShowPreprocessOrder()
+    {
+        new PreprocessWindow().Show();
+    }
 
     public override void UpdateConfig(CompileConfig config)
     {

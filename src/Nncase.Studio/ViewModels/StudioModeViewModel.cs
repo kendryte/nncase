@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.Input;
 using Newtonsoft.Json;
 using Nncase.Studio.Util;
+using Nncase.Studio.Views;
 
 namespace Nncase.Studio.ViewModels;
 
@@ -32,7 +33,7 @@ public partial class StudioModeViewModel : ViewModelBase
             Context.ImportConfig(conf!);
         }
 
-        SwitchToImportView();
+        Context.SwitchToPage(typeof(CompileOptionViewModel));
     }
 
     [RelayCommand]

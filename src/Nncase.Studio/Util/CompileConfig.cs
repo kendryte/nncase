@@ -18,6 +18,14 @@ public class CompileConfig
         CompileOption.InputFile = string.Empty;
         KmodelPath = Path.Join(dumpDir, "test.kmodel");
         ResultDir = dumpDir;
+        CompileOption.InputLayout = "NCHW";
+        CompileOption.OutputLayout = "NCHW";
+        CompileOption.ModelLayout = "NCHW";
+        CompileOption.InputShape = new[] { 1, 3, 24, 24 };
+        CompileOption.InputRange = new float[] { -1, 1 };
+        CompileOption.Mean = new[] { 0f };
+        CompileOption.Std = new[] { 0f };
+        CompileOption.LetterBoxValue = 0f;
     }
 
     public CompileOptions CompileOption { get; set; } = new();
