@@ -34,7 +34,6 @@ public sealed partial class FoldNopBinary : IRewriteRule
             (BinaryOp.Add, 0f) => lhs,
             (BinaryOp.Sub, 0f) => lhs,
             (BinaryOp.Mul, 1f) => lhs,
-            (BinaryOp.Mod, 1f) => lhs,
             (BinaryOp.Pow, 1f) => lhs,
             (BinaryOp.Div, 1f) => lhs,
             _ => null,
