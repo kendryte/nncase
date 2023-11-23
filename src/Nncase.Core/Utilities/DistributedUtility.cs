@@ -137,6 +137,11 @@ public static class DistributedUtility
                 {
                     var divsor = (int)TensorUtilities.GetProduct(divs.Select(h => distributedType.Placement.Hierarchy[h]).ToArray());
                     var (res, rem) = Math.DivRem(shape[axis], divsor);
+                    if (rem == 0)
+                    {
+                        return res;
+                    }
+
                     dim = IR.F.Math.Select(
                         TensorUtilities.GetIndex(hierarchyStrides.TakeLast(divs.Count).Select(s => (Expr)s).ToArray(), divs.Select(h => ids[h]).ToArray()) < (divsor - 1),
                         res,

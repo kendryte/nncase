@@ -224,6 +224,34 @@ public static class T
     }
 
     /// <summary>
+    /// create the buffer by expressions.
+    /// </summary>
+    public static Buffer CreateBuffer(DataType dataType, Expr[] dimensions, MemoryLocation location, out Buffer buffer, [CallerArgumentExpression("buffer")] string name = "")
+    {
+        if (name.StartsWith("var "))
+        {
+            name = name[4..];
+        }
+
+        var strides = TensorUtilities.GetStrides(dimensions);
+        var size = TensorUtilities.GetProduct(dimensions.ToArray()) * dataType.SizeInBytes;
+        var memspan = new MemSpan(size, location);
+        buffer = new Buffer(name, dataType, memspan, dimensions, strides);
+        return buffer;
+    }
+
+    public static Buffer CreateBuffer(DataType dataType, Expr[] dimensions, Expr[] strides, MemSpan memSpan, out Buffer buffer, [CallerArgumentExpression("buffer")] string name = "")
+    {
+        if (name.StartsWith("var "))
+        {
+            name = name[4..];
+        }
+
+        buffer = new Buffer(name, dataType, memSpan, dimensions, strides);
+        return buffer;
+    }
+
+    /// <summary>
     /// create buffer by const.
     /// </summary>
     public static Buffer AttachBuffer(TensorConst @const, out Buffer buffer, [CallerArgumentExpression("buffer")] string name = "")

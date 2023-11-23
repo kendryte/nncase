@@ -69,7 +69,7 @@ public static class TensorUtilities
         for (int i = startIndex; i < dimensions.Length; i++)
         {
             var dimension = dimensions[i];
-            product *= IR.F.Math.Require(dimension >= 0, dimension, "Dimension is out of range.");
+            product *= dimension;
         }
 
         return product;
