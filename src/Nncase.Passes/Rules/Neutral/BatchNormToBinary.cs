@@ -43,16 +43,10 @@ public sealed partial class BatchNormToBinary : IRewriteRule
         var shape = input.CheckedShape.ToValueArray();
         var bnShape = Enumerable.Repeat(1, shape.Length - 1).ToArray();
         bnShape[0] = shape[1];
-        var scaleBn = IR.F.Math.Div(gamma, IR.F.Math.Sqrt(IR.F.Math.Add(var, eps)));
-        var biasBn = IR.F.Math.Sub(beta, IR.F.Math.Mul(gamma, IR.F.Math.Div(mean, IR.F.Math.Sqrt(IR.F.Math.Add(var, eps)))));
-
-        var matmul = IR.F.Math.Mul(input, Reshape(scaleBn, bnShape));
-        List<string> outputNames = new() { bnCall.Metadata.OutputNames?[0] + "_BN_Matmul" };
-        matmul.Metadata.OutputNames = outputNames;
-        outputNames.Clear();
-        outputNames.Add(bnCall.Metadata.OutputNames?[0] + "_BN_Binary");
-        var binary = IR.F.Math.Add(matmul, Reshape(biasBn, bnShape));
-        binary.Metadata.OutputNames = outputNames;
+        var scaleBn = IR.F.Math.Div(gamma, IR.F.Math.Sqrt(IR.F.Math.Add(var, eps))).With(metadata: new IRMetadata() { OutputNames = new[] { bnCall.Metadata.OutputNames?[0] + "_Scale" } });
+        var biasBn = IR.F.Math.Sub(beta, IR.F.Math.Mul(gamma, IR.F.Math.Div(mean, IR.F.Math.Sqrt(IR.F.Math.Add(var, eps))))).With(metadata: new IRMetadata() { OutputNames = new[] { bnCall.Metadata.OutputNames?[0] + "_Bias" } });
+        var mul = IR.F.Math.Mul(input, Reshape(scaleBn, bnShape).With(metadata: new IRMetadata() { OutputNames = new[] { bnCall.Metadata.OutputNames?[0] + "_Scale" } })).With(metadata: new IRMetadata() { OutputNames = new[] { bnCall.Metadata.OutputNames?[0] + "_BN_Mul" } });
+        var binary = IR.F.Math.Add(mul, Reshape(biasBn, bnShape).With(metadata: new IRMetadata() { OutputNames = new[] { bnCall.Metadata.OutputNames?[0] + "_Bias" } })).With(metadata: new IRMetadata() { OutputNames = new[] { bnCall.Metadata.OutputNames?[0] + "_BN_Add" } });
         return binary;
     }
 }

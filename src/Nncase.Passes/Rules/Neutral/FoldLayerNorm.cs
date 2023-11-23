@@ -279,3 +279,57 @@ public sealed partial class FoldLayerNormPattern4 : RewriteRule<CallPattern>
         return null;
     }
 }
+
+// pattern from llama without mean and beta
+[RuleGenerator]
+public sealed partial class FoldLayerNormPattern5 : RewriteRule<CallPattern>
+{
+    /// <inheritdoc/>
+    public override CallPattern Pattern { get; } =
+        IsBinary(
+            "mulGamma",
+            "mulGammaCall",
+            BinaryOp.Mul,
+            IsTensorConst("gamma"),
+            IsBinary(
+                "mulX",
+                "mulXCall",
+                BinaryOp.Mul,
+                IsWildcard("input"),
+                IsBinary(
+                    "rsqrt",
+                    "rsqrtCall",
+                    BinaryOp.Div,
+                    IsTensorConst("one"),
+                    IsUnary(
+                        "sqrt",
+                        "sqrtCall",
+                        UnaryOp.Sqrt,
+                        IsBinary(
+                            "addEps",
+                            "addEpsCall",
+                            BinaryOp.Add,
+                            IsReduce(
+                                "rdVar",
+                                "rdVarCall",
+                                ReduceOp.Mean,
+                                IsBinary(
+                                        "pow2",
+                                        "pow2Call",
+                                        BinaryOp.Pow,
+                                        IsWildcard(),
+                                        IsTensorConst("two"))),
+                            IsTensorConst("eps"))))));
+
+    private Expr? GetReplace(Call pow2Call, TensorConst eps, TensorConst gamma, Expr input, TensorConst one, TensorConst two)
+    {
+        if (input == pow2Call[Binary.Lhs] && one.Value.Cast<float>()[0] == 1f && two.Value.Cast<float>()[0] == 2f)
+        {
+            var axis = pow2Call.CheckedShape.Count - gamma.CheckedShape.Count;
+            var beta = Tensor.FromScalar(0f, gamma.CheckedShape);
+            return LayerNorm(axis, eps.Value.Cast<float>()[0], input, gamma, beta, hasMean: false);
+        }
+
+        return null;
+    }
+}

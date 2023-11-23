@@ -21,17 +21,17 @@ public sealed partial class Conv2D : Op
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Conv2D), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(Conv2D), 0, "input", ParameterKind.Input);
 
     /// <summary>
     /// Gets Weights.
     /// </summary>
-    public static readonly ParameterInfo Weights = new(typeof(Conv2D), 1, "weights", HasRank(4));
+    public static readonly ParameterInfo Weights = new(typeof(Conv2D), 1, "weights", HasRank(4), ParameterKind.Input);
 
     /// <summary>
     /// Gets Bias.
     /// </summary>
-    public static readonly ParameterInfo Bias = new(typeof(Conv2D), 2, "bias", HasRank(1));
+    public static readonly ParameterInfo Bias = new(typeof(Conv2D), 2, "bias", HasRank(1), ParameterKind.Input);
 
     /// <summary>
     /// Gets Stride.

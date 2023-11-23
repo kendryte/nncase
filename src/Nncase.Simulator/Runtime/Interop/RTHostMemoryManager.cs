@@ -59,7 +59,7 @@ internal unsafe class RTHostMemoryManager : MemoryManager<byte>
     protected override void Dispose(bool disposing)
     {
         var pointer = Interlocked.Exchange(ref _pointer, IntPtr.Zero);
-        if (pointer != IntPtr.Zero && _buffer != null)
+        if (pointer != IntPtr.Zero && _buffer != null && _length != 0)
         {
             Native.HostBufferUnmap(_buffer.DangerousGetHandle());
             GC.RemoveMemoryPressure(_length);

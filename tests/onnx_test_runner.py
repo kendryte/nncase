@@ -13,7 +13,7 @@
 # limitations under the License.
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
 
-from onnx import version_converter, helper
+from onnx import version_converter, helper, external_data_helper
 import onnxsim
 import onnxruntime as ort
 import onnx
@@ -61,8 +61,16 @@ class OnnxTestRunner(TestRunner):
         if self.case_dir != os.path.dirname(model_file):
             new_file = os.path.join(self.case_dir, 'test.onnx')
             shutil.copy(model_file, new_file)
-            if os.path.exists(model_file + "_data"):
-                shutil.copy(model_file + "_data", self.case_dir)
+            for tensor in external_data_helper._get_all_tensors(onnx.load(model_file, load_external_data=False)):
+                if external_data_helper.uses_external_data(tensor):
+                    info = external_data_helper.ExternalDataInfo(tensor)
+                    file_location = external_data_helper._sanitize_path(info.location)
+                    external_data_src_path = os.path.join(
+                        os.path.dirname(model_file), file_location)
+                    external_data_dst_path = os.path.join(
+                        self.case_dir, file_location)
+                    if not os.path.exists(external_data_dst_path):
+                        os.symlink(external_data_src_path, external_data_dst_path)
             model_file = new_file
 
         if not self.inputs:
@@ -176,7 +184,7 @@ class OnnxTestRunner(TestRunner):
         outputs = onnx_model.graph.output
         self.dynamic = any(is_dynamic(output) for output in outputs)
         # make a static model for infer output
-        if self.dynamic:
+        if self.dynamic and onnx_model.ByteSize() < 2147483648:
             input_shapes = list(map(lambda input: {input['name']: input['shape']}, self.inputs))
             input_shapes = dict(ChainMap(*input_shapes))
             (onnx_model, _) = onnxsim.simplify(onnx_model, input_shapes=input_shapes)

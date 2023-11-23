@@ -33,11 +33,11 @@ internal static class PrimFuncBuilder
     public static PrimFunctionWrapper MakeLoadStoreFunc(bool mask)
     {
         var allocator = new Allocator();
-        var fusion_input = allocator.Allocate($"fusion_{_count}_input", Schedule.MemoryLocation.Input);
+        var fusion_input = allocator.Allocate($"fusion_{_count}_input", TIR.MemoryLocation.Input);
 
-        var glb = allocator.Allocate($"fusion_{_count}_glb", Schedule.MemoryLocation.L2Data);
+        var glb = allocator.Allocate($"fusion_{_count}_glb", TIR.MemoryLocation.L2Data);
 
-        var fusion_output = allocator.Allocate($"fusion_{_count}_output", Schedule.MemoryLocation.Output);
+        var fusion_output = allocator.Allocate($"fusion_{_count}_output", TIR.MemoryLocation.Output);
 
         var fusion_1 = TIR.T.PrimFunc($"fusion_{_count}_{mask}", Callable.StackVMModuleKind, fusion_input, fusion_output).Body(
           new Call(new TIRTest.LoadT(), fusion_input, glb),
@@ -50,12 +50,12 @@ internal static class PrimFuncBuilder
     public static PrimFunctionWrapper MakeBinaryFunc(BinaryOp binaryOp, bool mask)
     {
         var allocator = new Allocator();
-        var fusion_input_lhs = allocator.Allocate($"fusion_{_count}_input_lhs", Schedule.MemoryLocation.Input);
-        var fusion_input_rhs = allocator.Allocate($"fusion_{_count}_input_rhs", Schedule.MemoryLocation.Input);
-        var glb_lhs = allocator.Allocate($"fusion_{_count}_glb_lhs", Schedule.MemoryLocation.L2Data);
-        var glb_rhs = allocator.Allocate($"fusion_{_count}_glb_rhs", Schedule.MemoryLocation.L2Data);
-        var glb_output = allocator.Allocate($"fusion_{_count}_glb_output", Schedule.MemoryLocation.L2Data);
-        var fusion_output = allocator.Allocate($"fusion_{_count}_output", Schedule.MemoryLocation.Output);
+        var fusion_input_lhs = allocator.Allocate($"fusion_{_count}_input_lhs", TIR.MemoryLocation.Input);
+        var fusion_input_rhs = allocator.Allocate($"fusion_{_count}_input_rhs", TIR.MemoryLocation.Input);
+        var glb_lhs = allocator.Allocate($"fusion_{_count}_glb_lhs", TIR.MemoryLocation.L2Data);
+        var glb_rhs = allocator.Allocate($"fusion_{_count}_glb_rhs", TIR.MemoryLocation.L2Data);
+        var glb_output = allocator.Allocate($"fusion_{_count}_glb_output", TIR.MemoryLocation.L2Data);
+        var fusion_output = allocator.Allocate($"fusion_{_count}_output", TIR.MemoryLocation.Output);
 
         var fusion = TIR.T.PrimFunc($"fusion_{_count}_{mask}", Callable.StackVMModuleKind, fusion_input_lhs, fusion_input_rhs, fusion_output).Body(
           new Call(new TIRTest.LoadT(), fusion_input_lhs, glb_lhs),
@@ -71,16 +71,16 @@ internal static class PrimFuncBuilder
     public static PrimFunctionWrapper MakeMultiInputFunc(int length, bool mask)
     {
         var allocator = new Allocator();
-        var fusion_inputs = new List<TIR.PhysicalBuffer>();
+        var fusion_inputs = new List<TIR.Buffer>();
         for (int i = 0; i < length; i++)
         {
-            var fusion_input_i = allocator.Allocate($"fusion_{_count}_input_{i}", Schedule.MemoryLocation.Input);
+            var fusion_input_i = allocator.Allocate($"fusion_{_count}_input_{i}", TIR.MemoryLocation.Input);
             fusion_inputs.Add(fusion_input_i);
         }
 
-        var glb1 = allocator.Allocate($"fusion_{_count}_glb1", Schedule.MemoryLocation.L2Data);
-        var glb2 = allocator.Allocate($"fusion_{_count}_glb2", Schedule.MemoryLocation.L2Data);
-        var fusion_output = allocator.Allocate($"fusion_{_count}_output", Schedule.MemoryLocation.Output);
+        var glb1 = allocator.Allocate($"fusion_{_count}_glb1", TIR.MemoryLocation.L2Data);
+        var glb2 = allocator.Allocate($"fusion_{_count}_glb2", TIR.MemoryLocation.L2Data);
+        var fusion_output = allocator.Allocate($"fusion_{_count}_output", TIR.MemoryLocation.Output);
 
         var fusion = TIR.T.PrimFunc($"multi_fusion_{_count}_{mask}", Callable.StackVMModuleKind, fusion_inputs.Concat(new[] { fusion_output }).ToArray());
 
@@ -124,18 +124,20 @@ internal static class PrimFuncBuilder
 
     private sealed class Allocator
     {
-        private readonly Dictionary<Schedule.MemoryLocation, int> _useage = new() {
-          { Schedule.MemoryLocation.Input, 0 },
-          { Schedule.MemoryLocation.Output, 0 },
-          { Schedule.MemoryLocation.L2Data, 0 },
+        private readonly Dictionary<TIR.MemoryLocation, ulong> _usage = new() {
+          { TIR.MemoryLocation.Input, 0 },
+          { TIR.MemoryLocation.Output, 0 },
+          { TIR.MemoryLocation.L2Data, 0 },
         };
 
-        public TIR.PhysicalBuffer Allocate(string name, Schedule.MemoryLocation location)
+        public TIR.Buffer Allocate(string name, TIR.MemoryLocation location)
         {
-            var strides = TensorUtilities.GetStrides(Dimensions);
-            var size = TensorUtilities.GetSize(Dimensions, strides, DataTypes.Float32.SizeInBytes);
-            var buffer = new TIR.PhysicalBuffer(name, DataTypes.Float32, location, Dimensions, strides, _useage[location], size);
-            _useage[location] += size;
+            var dims = Dimensions.Select(d => (Expr)d).ToArray();
+            var strides = TensorUtilities.GetStrides(Dimensions).Select(s => (Expr)s).ToArray();
+            var size = TensorUtilities.GetSize(Dimensions, TensorUtilities.GetStrides(Dimensions), DataTypes.Float32.SizeInBytes);
+
+            var buffer = new TIR.Buffer(name, DataTypes.Float32, new TIR.MemSpan(Tensor.FromPointer<float>(_usage[location]), size, location), dims, strides);
+            _usage[location] += (ulong)size;
             return buffer;
         }
     }

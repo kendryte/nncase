@@ -47,8 +47,9 @@ result<value_t> nncase::kernels::stackvm::batch_normalization(
 }
 
 result<value_t> nncase::kernels::stackvm::layer_norm(
-    int32_t axis, float epsilon, value_t input, value_t scale, value_t bias,
-    value_t output, [[maybe_unused]] kernel_context &context) {
+    int32_t axis, float epsilon, [[maybe_unused]] bool use_mean, value_t input,
+    value_t scale, value_t bias, value_t output,
+    [[maybe_unused]] kernel_context &context) {
     try_input(input_mem, input);
     try_input(scale_mem, scale);
     try_input(bias_mem, bias);
@@ -124,7 +125,7 @@ nncase::kernels::stackvm::clamp(value_t input, value_t min, value_t max,
     KERNEL_FINISH;
 }
 
-result<value_t> nncase::kernels::stackvm::concat(value_t input, value_t axis,
+result<value_t> nncase::kernels::stackvm::concat(int32_t axis, value_t input,
                                                  value_t output,
                                                  kernel_context &context) {
     try_tuple_input(inputs_mem, input);
@@ -132,7 +133,7 @@ result<value_t> nncase::kernels::stackvm::concat(value_t input, value_t axis,
     try_var(strides, get_strides(input_tuple));
     try_tuple_field0(input0, input_tuple);
     auto dtype = input0->dtype();
-    try_positive_axis_with_rank(axis_value, axis, input0->shape().size());
+    auto axis_value = positive_index(axis, input0->shape().size());
     auto out_shape = concat_infer_shape(shapes, axis_value);
     try_output(out_mem, output, dtype, out_shape);
     auto concat_dims = dims_t();
@@ -293,14 +294,15 @@ nncase::kernels::stackvm::flatten(value_t input, value_t axis, value_t output,
     KERNEL_FINISH;
 }
 
-result<value_t> nncase::kernels::stackvm::gather(value_t input, value_t axis,
+result<value_t> nncase::kernels::stackvm::gather(int32_t axis, value_t input,
                                                  value_t index, value_t output,
                                                  kernel_context &context) {
     try_input(input_mem, input);
     try_input(index_mem, index);
     auto dtype = input_tensor->dtype();
     try_var(typecode, to_typecode(dtype));
-    try_positive_axis(axis_value, axis, input_tensor);
+    // try_positive_axis(axis_value, axis, input_tensor);
+    auto axis_value = positive_index(axis, input_tensor->shape().size());
     auto out_shape = gather_infer_shape(input_tensor->shape(),
                                         index_tensor->shape(), axis_value);
     try_output(out_mem, output, dtype, out_shape);
@@ -402,6 +404,25 @@ result<value_t> nncase::kernels::stackvm::get_item(
 #undef RETURN_RESULT
             return err(std::errc::not_supported);
         }
+
+        if (input_tensor->shape().size() == 2 && begins_value.size() == 1) {
+            auto get_item_index = begins_value[0];
+            auto out_shape = dims_t{input_tensor->shape()[1]};
+            try_output(out_mem, output, input_tensor->dtype(), out_shape);
+            auto size = input_tensor->shape()[1];
+#define RETURN_RESULT(_in_type)                                                \
+    if (cmp_type<_in_type>(input_tensor->dtype())) {                           \
+        for (int i = 0; i < size; ++i) {                                       \
+            OUT_CAST(_in_type, out_mem)                                        \
+            [i] = IN_CAST(_in_type, in_mem)[get_item_index * size + i];        \
+        }                                                                      \
+        return ok(output);                                                     \
+    }
+            RETURN_RESULT_SELECT(RETURN_RESULT);
+#undef RETURN_RESULT
+            return err(std::errc::not_supported);
+        }
+
         auto n = begins_value.size();
         auto in_shape = input_tensor->shape();
         auto ends_value = axes_t(n, 0);
@@ -421,6 +442,8 @@ result<value_t> nncase::kernels::stackvm::get_item(
                           out_mem, in_shape, input_tensor->strides(),
                           output_tensor->strides(), begin_values, end_values,
                           strides_values, context);
+        output = tensor_reshape(output_tensor,
+                                dims_t(out_shape.begin() + n, out_shape.end()));
         KERNEL_FINISH;
     }
 }
@@ -769,6 +792,10 @@ result<value_t> nncase::kernels::stackvm::bucket_pad(
     try_dims_v(shape);
     auto in_tensor = input.as<tensor>().expect("input is not a tensor");
     auto in_shape = in_tensor->shape();
+    if (compute_size(in_shape) > compute_size(shape_value)) {
+        return err(std::errc::invalid_argument);
+    }
+
     auto paddings = std::vector<int>(8);
     auto rank = shape_value.size();
     for (int i = 0; i < rank; ++i) {

@@ -61,7 +61,7 @@ public sealed class UnitTestDataTypes
     {
         var a = new QuantParamType();
         Assert.Equal(a.ToString(), DataTypes.GetDisplayName(a));
-        Assert.Equal("(f32*)", DataTypes.GetDisplayName(new PointerType(DataTypes.Float32)));
+        Assert.Equal("(f32 *)", DataTypes.GetDisplayName(new PointerType(DataTypes.Float32)));
         Assert.Equal(DataTypes.Boolean.ShortName, DataTypes.GetDisplayName(DataTypes.Boolean));
         Assert.Equal(DataTypes.Utf8Char.ShortName, DataTypes.GetDisplayName(DataTypes.Utf8Char));
         Assert.Equal(DataTypes.Int8.ShortName, DataTypes.GetDisplayName(DataTypes.Int8));
@@ -103,7 +103,6 @@ public sealed class UnitTestDataTypes
     public void TestBuiltInName()
     {
         Assert.Equal("QuantParam", DataTypes.GetBuiltInName(new QuantParamType()));
-        Assert.Throws<NotSupportedException>(() => DataTypes.GetBuiltInName(new PointerType(DataTypes.Float32)));
         Assert.Equal("bool", DataTypes.GetBuiltInName(DataTypes.Boolean));
         Assert.Equal("Utf8Char", DataTypes.GetBuiltInName(DataTypes.Utf8Char));
         Assert.Equal("sbyte", DataTypes.GetBuiltInName(DataTypes.Int8));

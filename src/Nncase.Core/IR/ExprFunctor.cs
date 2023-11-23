@@ -103,6 +103,13 @@ public partial class ExprFunctor<TExprResult, TTypeResult> : ExprFunctor<TExprRe
     public virtual TTypeResult VisitType(TensorType type) => base.VisitType(type, default);
 
     /// <summary>
+    /// Visit point type.
+    /// </summary>
+    /// <param name="type">pointer type.</param>
+    /// <returns>Result.</returns>
+    public virtual TTypeResult VisitType(PointerType type) => base.VisitType(type, default);
+
+    /// <summary>
     /// Visit tuple type.
     /// </summary>
     /// <param name="type">Tuple type.</param>
@@ -115,6 +122,13 @@ public partial class ExprFunctor<TExprResult, TTypeResult> : ExprFunctor<TExprRe
     /// <param name="type">Callable type.</param>
     /// <returns>Result.</returns>
     public virtual TTypeResult VisitType(CallableType type) => base.VisitType(type, default);
+
+    /// <summary>
+    /// Visit callable type.
+    /// </summary>
+    /// <param name="type">Callable type.</param>
+    /// <returns>Result.</returns>
+    public virtual TTypeResult VisitType(DistributedType type) => base.VisitType(type, default);
 
     /// <summary>
     /// Default visit routine.
@@ -136,10 +150,16 @@ public partial class ExprFunctor<TExprResult, TTypeResult> : ExprFunctor<TExprRe
     public sealed override TTypeResult VisitType(TensorType type, Unit context) => VisitType(type);
 
     /// <inheritdoc/>
+    public sealed override TTypeResult VisitType(PointerType type, Unit context) => VisitType(type);
+
+    /// <inheritdoc/>
     public sealed override TTypeResult VisitType(TupleType type, Unit context) => VisitType(type);
 
     /// <inheritdoc/>
     public sealed override TTypeResult VisitType(CallableType type, Unit context) => VisitType(type);
+
+    /// <inheritdoc/>
+    public sealed override TTypeResult VisitType(DistributedType type, Unit context) => VisitType(type);
 
     /// <inheritdoc/>
     public sealed override TTypeResult DefaultVisitType(IRType type, Unit context) => DefaultVisitType(type);

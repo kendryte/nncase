@@ -24,8 +24,13 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Cast target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, Cast.Input);
-        return Visit(target, input);
+        var input = context.CheckArgumentType<IRType>(target, Cast.Input);
+        return input switch
+        {
+            TensorType t => Visit(target, t),
+            DistributedType d => Visit(target, d),
+            _ => new InvalidType(input.GetType().ToString()),
+        };
     }
 
     /// <inheritdoc/>
@@ -37,10 +42,10 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
     /// <inheritdoc/>
     public Cost Visit(ICostEvaluateContext context, Cast target)
     {
-        var input = context.GetArgumentType<TensorType>(target, Cast.Input);
+        var input = context.GetArgumentType<IRType>(target, Cast.Input);
         return new()
         {
-            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(input.DType),
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(input),
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(target.NewType),
             [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(target.NewType, 1),
         };
@@ -60,5 +65,22 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
     private IRType Visit(Cast target, TensorType input)
     {
         return new TensorType(target.NewType, input.Shape);
+    }
+
+    private IRType Visit(Cast target, DistributedType inType)
+    {
+        var invalid = new InvalidType(inType.ToString());
+        var ndsbp = new SBP[inType.Placement.Rank];
+        for (int i = 0; i < inType.Placement.Rank; i++)
+        {
+            if (inType.NdSBP[i] is SBPPartialSum)
+            {
+                return invalid;
+            }
+
+            ndsbp[i] = inType.NdSBP[i];
+        }
+
+        return new DistributedType(new TensorType(target.NewType, inType.TensorType.Shape), ndsbp, inType.Placement);
     }
 }

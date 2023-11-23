@@ -28,8 +28,5 @@ public sealed class UnitTestMutator
 
         var removeNop = Mutator.RemoveNop().Invoke();
         Assert.Equal(new Passes.Mutators.RemoveNop().IsMutated, removeNop.IsMutated);
-
-        var foldMathCall = Mutator.FoldMathCall().Invoke();
-        Assert.Equal(new Passes.Mutators.FoldMathCall().IsMutated, foldMathCall.IsMutated);
     }
 }

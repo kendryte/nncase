@@ -57,12 +57,12 @@ public record TypePattern(Func<IRType, bool> Cond, string Reason)
     public T Check<T>(T valueType, string fieldName)
         where T : IRType
     {
-        if (valueType is TensorType tensorValueType && tensorValueType.Shape.IsUnranked)
+        if (valueType is TensorType { Shape: { IsUnranked: true } } || valueType is DistributedType { TensorType: { Shape: { IsUnranked: true } } })
         {
             return valueType;
         }
 
-        if (valueType == null || !MatchLeaf(valueType))
+        if (valueType == null || (valueType is TensorType t && !MatchLeaf(t)) || (valueType is DistributedType d && !MatchLeaf(d.TensorType)))
         {
             var cur = valueType is null ? "None" : CompilerServices.Print(valueType);
             throw new InvalidOperationException($"{fieldName} Requrie <{Reason}>, But {cur}!");
@@ -187,6 +187,7 @@ public static partial class TypePatternUtility
       x => x switch
       {
           TensorType ttype => DataTypes.IsIntegral(ttype.DType),
+          DistributedType distributedType => DataTypes.IsIntegral(distributedType.TensorType.DType),
           _ => false,
       },
       "IsIntegral");

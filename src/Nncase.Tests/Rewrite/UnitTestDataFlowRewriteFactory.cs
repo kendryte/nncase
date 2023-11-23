@@ -15,7 +15,7 @@ public class UnitTestDataFlowRewriteFactory : TestClassBase
 {
     public static TheoryData<IRewriteCase> DataOne => new()
     {
-        new CombineClampAddMul(),
+        new ReshapeBinaryConstReshapeCase(),
     };
 
     public static TheoryData<IRewriteCase> DataAll => new()
@@ -31,6 +31,7 @@ public class UnitTestDataFlowRewriteFactory : TestClassBase
         new Conv2DPadsCase(),
         new ReduceWindow2DPadsCase(),
         new MobileNetV1TransposeCase(),
+        new CombineClampAddMul(),
     };
 
     [Theory]

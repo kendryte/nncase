@@ -52,6 +52,12 @@ internal sealed class Dumpper : IDumpper
         CompilerServices.DumpCSharpIR(expr, prefix, EnsureWritable(path));
     }
 
+    public void DumpPatternIR(Expr expr, string prefix, string? reletivePath = null)
+    {
+        var path = Path.Join(_dumpDirectory, reletivePath);
+        CompilerServices.DumpPatternIR(expr, prefix, EnsureWritable(path));
+    }
+
     public void DumpModule(IRModule module, string? reletivePath = null)
     {
         foreach (var func in module.Functions)
