@@ -59,13 +59,14 @@ class PadTest : public KernelTest,
         }
     }
 
-    std::vector<int64_t> ToNncaseFormat(std::vector<int64_t> &padding) {
+    std::vector<int64_t> ToNncaseFormat(std::vector<int64_t> &padding_vector) {
         // int64_t before_pad;
         // int64_t after_pad;
         std::vector<int64_t> padding_nncase;
-        for (size_t i = 0; i < padding.size() / 2; ++i) {
-            padding_nncase.push_back(padding[i]);
-            padding_nncase.push_back(padding[i + padding.size() / 2]);
+        for (size_t i = 0; i < padding_vector.size() / 2; ++i) {
+            padding_nncase.push_back(padding_vector[i]);
+            padding_nncase.push_back(
+                padding_vector[i + padding_vector.size() / 2]);
         }
         return padding_nncase;
     }
