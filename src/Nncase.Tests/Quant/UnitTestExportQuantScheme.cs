@@ -92,7 +92,7 @@ public class UnitTestExportQuantScheme : TestClassBase
         var pmgr = CompileSession.CreatePassManager("Passes");
 
         CompileOptions.QuantizeOptions.CalibrationDataset = new SolidCalibrationDatasetProvider(new Var[] { input });
-        CompileOptions.QuantizeOptions.CalibrationMethod = CalibMethod.Kld;
+        CompileOptions.QuantizeOptions.CalibrationMethod = CalibMethod.NoClip;
         CompileOptions.QuantizeOptions.ExportQuantScheme = true;
         CompileOptions.QuantizeOptions.ExportWeightRangeByChannel = exportWeightRangeByChannel;
 

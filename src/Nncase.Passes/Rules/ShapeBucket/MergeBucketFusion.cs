@@ -40,20 +40,12 @@ public class MergeBucketFusionPass : FunctionPass
         while (true)
         {
             var preHash = main.GetHashCode();
-            if (_greedy)
-            {
-                CompilerServices.Rewrite(main, new IRewriteRule[] { new MultiUserCallToFusion(false, _greedy), new MergeTupleFusion() }, new());
-                await new MergeSeqBucketFusion().RunAsync(main, context);
-                IRHelpers.DCE(main);
-                await new MergeMultiUsersFusion().RunAsync(main, context);
-                DumpIR(main, $"{i}_before", "FoldNopTuple");
-                await new FoldNopTuple().RunAsync(main, context);
-            }
-            else
-            {
-                await new MergeSeqBucketFusion().RunAsync(main, context);
-                IRHelpers.DCE(main);
-            }
+            CompilerServices.Rewrite(main, new IRewriteRule[] { new MultiUserCallToFusion(!_greedy, _greedy), new MergeTupleFusion() }, new());
+            await new MergeSeqBucketFusion().RunAsync(main, context);
+            IRHelpers.DCE(main);
+            await new MergeMultiUsersFusion().RunAsync(main, context);
+            DumpIR(main, $"{i}_before", "FoldNopTuple");
+            await new FoldNopTuple().RunAsync(main, context);
 
             CheckRepeat(main);
             CheckErrorVar(main, main.Parameters.ToArray());

@@ -80,11 +80,11 @@ public sealed partial class FoldConv2DPads : IRewriteRule
     public IPattern Pattern { get; } = IsConv2D(
         "conv",
         conv => conv.PadMode == PadMode.Constant,
-        IsPad(
+        MaybeMarker(IsPad(
             pad => pad.PadMode == PadMode.Constant,
             IsWildcard("input"),
             IsTensorConst("ext_pad"),
-            IsTensorConst("ext_pad_init")),
+            IsTensorConst("ext_pad_init"))),
         IsWildcard("weights"),
         IsWildcard("bias"),
         IsWildcard("stride"),

@@ -167,10 +167,10 @@ internal partial class Quantizer
                 var histograms = await GetHistogramsAsync(_quantizeOptions.CalibrationDataset, ranges, srcBinSize, dstBinSize);
 
                 // 1.2. Select best ranges
-                var optRanges = GetOptRanges(histograms, ranges, srcBinSize, dstBinSize, _quantizeOptions.CalibrationMethod);
+                ranges = GetOptRanges(histograms, ranges, srcBinSize, dstBinSize, _quantizeOptions.CalibrationMethod);
 
                 // 1.3. Assign ranges
-                AssignRanges(optRanges);
+                AssignRanges(ranges);
             }
             else
             { // 2. Assign ranges

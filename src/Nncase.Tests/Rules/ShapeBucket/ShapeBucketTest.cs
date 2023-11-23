@@ -106,7 +106,7 @@ public class ShapeBucketTest : TransformTestBase
         var newBody = TestMatchedCore(
             main.Body!,
             new Dictionary<Var, IValue> { { mainVar, Value.FromTensor(input) } },
-            new FusionBucket(shape));
+            new RebuildBucket(shape));
         Assert.True(newBody is Call { Target: IR.Math.MatMul });
     }
 

@@ -30,7 +30,9 @@ public static class CallValidator
         typeof(MatMul).TypeHandle,
         typeof(Transpose).TypeHandle,
         typeof(Pad).TypeHandle,
-        typeof(Tile).TypeHandle,
+        typeof(Unsqueeze).TypeHandle,
+        typeof(Squeeze).TypeHandle,
+        typeof(Unary).TypeHandle,
     };
 
     private static readonly HashSet<RuntimeTypeHandle> MaybeDynamic = new()
@@ -42,21 +44,18 @@ public static class CallValidator
         typeof(Gather).TypeHandle,
         typeof(ShapeOf).TypeHandle,
 
-        typeof(Unsqueeze).TypeHandle,
-        typeof(Squeeze).TypeHandle,
         typeof(Cast).TypeHandle,
-        typeof(Unary).TypeHandle,
 
         typeof(Reshape).TypeHandle,
         typeof(Expand).TypeHandle,
         typeof(ConstantOfShape).TypeHandle,
-        typeof(Where).TypeHandle,
+
+        // typeof(Where).TypeHandle,
         typeof(Compare).TypeHandle,
         typeof(Reduce).TypeHandle,
         typeof(Clamp).TypeHandle,
         typeof(Tile).TypeHandle,
         typeof(CumSum).TypeHandle,
-        typeof(IR.Tensors.Range).TypeHandle,
     };
 
     public static bool IsMaybeDynamic(Expr target) => MaybeDynamic.Contains(target.GetType().TypeHandle);
@@ -71,7 +70,7 @@ public static class CallValidator
             ShapeBucketHelper.SingleDimVar(
                 CompileSessionScope.GetCurrentThrowIfNull().CompileOptions.ShapeBucketOptions);
 
-        if (target is Binary && call.Arguments.ToArray().OfType<TensorConst>().Any())
+        if (target is Binary && call.Arguments.ToArray().Any(arg => arg is TensorConst || arg is Marker { Target: TensorConst }))
         {
             return true;
         }
@@ -179,7 +178,13 @@ public static class ShapeBucketRegister
 
     public static void Rebuild(IPassManager p, bool singleVar)
     {
-        // rebuild
+        var shapeList = new Dictionary<BucketFusion, FusionShapeData[]>();
+        p.Add<RecordFusionShape>(shapeList, true);
+        p.AddWithName<DataflowPass>("RestoreDynamic").Configure(p =>
+        {
+            p.Add<RebuildBucket>(shapeList);
+        });
+
         ToFusion(p, true);
         MergeOp(p, false);
 
@@ -191,7 +196,6 @@ public static class ShapeBucketRegister
         });
 
         MergeFusion(p, singleVar, false);
-        Bucket(p);
     }
 
     public static void MergeFusion(IPassManager p, bool singleVar, bool greedy)
@@ -226,9 +230,9 @@ public static class ShapeBucketRegister
     public static void Simplify(IPassManager p) =>
         p.AddWithName<DataflowPass>("Simplify").Configure(c =>
         {
+            c.Add<FoldConstCall>();
             c.Add<FoldRepeatMarker>();
             c.Add<FoldStackGetItem>();
-            c.Add<FoldConstCall>();
             c.Add<FoldShapeOf>();
             c.Add<FoldTwoReshapes>();
             c.Add<FoldTwoCasts>();
@@ -246,6 +250,15 @@ public static class ShapeBucketRegister
 
 public static class ShapeBucketHelper
 {
+    public static bool IsStaticShpae
+    {
+        get
+        {
+            var options = CompileSessionScope.GetCurrentThrowIfNull().CompileOptions.ShapeBucketOptions;
+            return SingleDimVar(options);
+        }
+    }
+
     public static Dictionary<T, IValue> ConcatDictionary<T>(Dictionary<T, IValue> memo, Dictionary<T, IValue> exprValues)
         where T : Expr
     {
@@ -257,18 +270,21 @@ public static class ShapeBucketHelper
         return memo;
     }
 
-    public static Dictionary<Var, int[]> MakeVarValuesForAllSegment(ShapeBucketOptions options)
+    public static Dictionary<Var, int[]> MakeVarValuesForAllSegment(ShapeBucketOptions options, bool staticShape = false)
     {
-        int segmentCount = options.SegmentsCount;
+        return MakeVarValuesForAllSegment(options, options.SegmentsCount, staticShape);
+    }
+
+    public static Dictionary<Var, int[]> MakeVarValuesForAllSegment(ShapeBucketOptions options, int segmentCount, bool staticShape)
+    {
         var varRange = options.RangeInfo;
         var varMap = options.VarMap;
-        var staticShape = false;
         var varAndInputAllSegment = varRange.ToDictionary(pair => pair.Key, pair =>
         {
             var (min, max) = pair.Value;
             if (staticShape)
             {
-                return Enumerable.Range(min, max - min).ToArray();
+                return Enumerable.Range(min, max - min + 1).ToArray();
             }
 
             var segments = ComputeSegmentList(segmentCount, min, max);
@@ -280,7 +296,10 @@ public static class ShapeBucketHelper
         // DimVarName -> Dict.key -> Dict.Value
         var varValues = varAndInputAllSegment.ToDictionary(
             pair => vars.FindFirst(v => v.Name == pair.Key),
-            pair => { return pair.Value.OrderByDescending(x => x).ToArray(); });
+            pair =>
+            {
+                return pair.Value.OrderByDescending(x => x).ToArray();
+            });
         return varValues;
     }
 
@@ -300,11 +319,6 @@ public static class ShapeBucketHelper
         if (newArgs.Any(arg => arg is Var v && v.Name.StartsWith("var_")))
         {
             throw new InvalidOperationException("Args has Var in fusion");
-        }
-
-        if (newArgs.Any(arg => arg is Marker m && m.Target is Const))
-        {
-            throw new InvalidOperationException("Args has tuple");
         }
 
         if (newArgs.Any(arg => arg is IR.Tuple))

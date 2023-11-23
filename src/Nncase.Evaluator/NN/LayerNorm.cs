@@ -145,7 +145,7 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
 #if true
     private Tensor LayerNormImpl(Tensor input, Tensor scale, Tensor bias, int axis, float epsilon, bool useMean = true)
     {
-        int outputSize = 1;
+        int outerSize = 1;
         int innerSize = 1;
         float[] inputArray = input.ToArray<float>();
         float[] outputArray = new float[inputArray.Length];
@@ -157,7 +157,7 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
 
         for (int i = 0; i < axis; i++)
         {
-            outputSize *= inShape[i];
+            outerSize *= inShape[i];
         }
 
         for (int i = axis; i < inShape.Length; i++)
@@ -165,15 +165,17 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
             innerSize *= inShape[i];
         }
 
-        for (int batch = 0; batch < outputSize; batch++)
+        for (int batch = 0; batch < outerSize; batch++)
         {
             float mean1 = 0f;
             if (useMean)
             {
                 for (int i = 0; i < innerSize; i++)
                 {
-                    mean1 += inputArray[(i + (batch * innerSize)) % inputArray.Length] / innerSize;
+                    mean1 += inputArray[(i + (batch * innerSize)) % inputArray.Length];
                 }
+
+                mean1 /= innerSize;
             }
 
             float[] sub = new float[innerSize];
@@ -191,8 +193,10 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
             float mean2 = 0f;
             for (int i = 0; i < innerSize; i++)
             {
-                mean2 += pow[i] / innerSize;
+                mean2 += pow[i];
             }
+
+            mean2 /= innerSize;
 
             float add = mean2 + epsilon;
             float sqrt = (float)System.Math.Sqrt(add);

@@ -94,6 +94,11 @@ public static class Comparator
             return 1f;
         }
 
+        if (!a.Shape.ToValueArray().SequenceEqual(b.Shape.ToValueArray()))
+        {
+            throw new InvalidOperationException();
+        }
+
         var va = a.ToArray<float>();
         var vb = b.ToArray<float>();
         var v1 = Math.Sqrt(Prod(va, va));

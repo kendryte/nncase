@@ -404,6 +404,25 @@ result<value_t> nncase::kernels::stackvm::get_item(
 #undef RETURN_RESULT
             return err(std::errc::not_supported);
         }
+
+        if (input_tensor->shape().size() == 2 && begins_value.size() == 1) {
+            auto get_item_index = begins_value[0];
+            auto out_shape = dims_t{input_tensor->shape()[1]};
+            try_output(out_mem, output, input_tensor->dtype(), out_shape);
+            auto size = input_tensor->shape()[1];
+#define RETURN_RESULT(_in_type)                                                \
+    if (cmp_type<_in_type>(input_tensor->dtype())) {                           \
+        for (int i = 0; i < size; ++i) {                                       \
+            OUT_CAST(_in_type, out_mem)                                        \
+            [i] = IN_CAST(_in_type, in_mem)[get_item_index * size + i];        \
+        }                                                                      \
+        return ok(output);                                                     \
+    }
+            RETURN_RESULT_SELECT(RETURN_RESULT);
+#undef RETURN_RESULT
+            return err(std::errc::not_supported);
+        }
+
         auto n = begins_value.size();
         auto in_shape = input_tensor->shape();
         auto ends_value = axes_t(n, 0);
@@ -423,6 +442,8 @@ result<value_t> nncase::kernels::stackvm::get_item(
                           out_mem, in_shape, input_tensor->strides(),
                           output_tensor->strides(), begin_values, end_values,
                           strides_values, context);
+        output = tensor_reshape(output_tensor,
+                                dims_t(out_shape.begin() + n, out_shape.end()));
         KERNEL_FINISH;
     }
 }
@@ -771,6 +792,10 @@ result<value_t> nncase::kernels::stackvm::bucket_pad(
     try_dims_v(shape);
     auto in_tensor = input.as<tensor>().expect("input is not a tensor");
     auto in_shape = in_tensor->shape();
+    if (compute_size(in_shape) > compute_size(shape_value)) {
+        return err(std::errc::invalid_argument);
+    }
+
     auto paddings = std::vector<int>(8);
     auto rank = shape_value.size();
     for (int i = 0; i < rank; ++i) {
@@ -1301,11 +1326,12 @@ result<value_t> kernels::stackvm::unary(unary_op_t unary_op, value_t input,
                               output_tensor->shape(), output_tensor->strides(),
                               context));
         return ok(output);
+    } else {
+        CONTIGUOUS_KERNEL(unary, input_tensor, typoecode, unary_op, input_mem,
+                          out_mem, input_tensor->shape(),
+                          input_tensor->strides(), output_tensor->shape(),
+                          output_tensor->strides(), context);
     }
-    CONTIGUOUS_KERNEL(unary, input_tensor, typoecode, unary_op, input_mem,
-                      out_mem, input_tensor->shape(), input_tensor->strides(),
-                      output_tensor->shape(), output_tensor->strides(),
-                      context);
     return ok(output);
 }
 
