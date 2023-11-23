@@ -163,7 +163,7 @@ jobs:
       - name: Upload nncase studio Build Artifact
         uses: actions/upload-artifact@v3
         with:
-          name: nncase-${{matrix.config.name}}
+          name: nncase-studio-${{matrix.config.name}}
           path: ${{github.workspace}}/src/Nncase.Studio/bin/${{matrix.config.buildType}}/net${{matrix.dotnet-version}}/${{matrix.config.rid}}/publish
           if-no-files-found: error
 
