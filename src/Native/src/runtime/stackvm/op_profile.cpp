@@ -63,8 +63,7 @@ void op_profile::print() {
             std::cout << "|" << std::setw(24) << std::left << op_name << "|"
                       << std::setw(24) << begin - init_timing << "|"
                       << std::setw(24) << end - init_timing << "|"
-                      << std::setw(24) << end - begin<<"|"
-                      << std::endl;
+                      << std::setw(24) << end - begin << "|" << std::endl;
     }
 
     double total = 0.f;

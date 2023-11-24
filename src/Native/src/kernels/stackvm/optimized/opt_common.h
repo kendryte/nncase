@@ -20,39 +20,47 @@
 #define STR(x) _STR(x)
 #define _CONNECT(a, b) a##b
 #define CONNECT(a, b) _CONNECT(a, b)
-#define vsetvli_macro(evl, avl, elen, mlen)  \
-    "vsetvli " STR(evl) "," STR(avl) "," STR(CONNECT(e, elen)) "," STR(CONNECT(m, mlen)) ";"
-#define vle_len_macro(eew,vd, rs) \
-STR(CONNECT(vle, eew)) ".v" " " STR(vd) "," STR(rs) ";"
+#define vsetvli_macro(evl, avl, elen, mlen)                                    \
+    "vsetvli " STR(evl) "," STR(avl) "," STR(CONNECT(e, elen)) "," STR(        \
+        CONNECT(m, mlen)) ";"
+#define vle_len_macro(eew, vd, rs)                                             \
+    STR(CONNECT(vle, eew))                                                     \
+    ".v"                                                                       \
+    " " STR(vd) "," STR(rs) ";"
 
-#define vse_len_macro(eew,vd, rs) \
-STR(CONNECT(vse, eew)) ".v" " " STR(vd) "," STR(rs) ";"
+#define vse_len_macro(eew, vd, rs)                                             \
+    STR(CONNECT(vse, eew))                                                     \
+    ".v"                                                                       \
+    " " STR(vd) "," STR(rs) ";"
 
-#define vluxei_len_macro(ilen,vd, rs, vindex) \
-STR(CONNECT(vluxei, ilen)) ".v" " " STR(vd) "," STR(rs) "," STR(vindex) ";"
+#define vluxei_len_macro(ilen, vd, rs, vindex)                                 \
+    STR(CONNECT(vluxei, ilen))                                                 \
+    ".v"                                                                       \
+    " " STR(vd) "," STR(rs) "," STR(vindex) ";"
 
-#define vsllvi_len_macro(vd,vsrc,shift_bits) \
-"vsll.vi " STR(vd) ", " STR(vsrc) ", " STR(shift_bits) ";"
+#define vsllvi_len_macro(vd, vsrc, shift_bits)                                 \
+    "vsll.vi " STR(vd) ", " STR(vsrc) ", " STR(shift_bits) ";"
 
-#define slli_len_macro(rd,rs,shift_bits) \
-"slli " STR(rd) ", " STR(rs) ", " STR(shift_bits) ";"
+#define slli_len_macro(rd, rs, shift_bits)                                     \
+    "slli " STR(rd) ", " STR(rs) ", " STR(shift_bits) ";"
 
-#define srli_len_macro(rd,rs,shift_bits) \
-"srli " STR(rd) ", " STR(rs) ", " STR(shift_bits) ";"
+#define srli_len_macro(rd, rs, shift_bits)                                     \
+    "srli " STR(rd) ", " STR(rs) ", " STR(shift_bits) ";"
 
-#define addi_macro(rd,rs,add_num) \
-"addi " STR(rd) ", " STR(rs) ", " STR(add_num) ";"
+#define addi_macro(rd, rs, add_num)                                            \
+    "addi " STR(rd) ", " STR(rs) ", " STR(add_num) ";"
 
-#define vsse_len_macro(ilen,vd, md, stride) \
-STR(CONNECT(vsse, ilen)) ".v" " " STR(vd) "," STR(md) "," STR(stride) ";"
+#define vsse_len_macro(ilen, vd, md, stride)                                   \
+    STR(CONNECT(vsse, ilen))                                                   \
+    ".v"                                                                       \
+    " " STR(vd) "," STR(md) "," STR(stride) ";"
 
-#define vaddi_macro(vd, vs, idata) \
-"vadd.vi " STR(vd) ", " STR(vs) ", " STR(idata) ";"
+#define vaddi_macro(vd, vs, idata)                                             \
+    "vadd.vi " STR(vd) ", " STR(vs) ", " STR(idata) ";"
 #define date_type_bits 32
 #define bit_shift 2
 #define emul 8
-static void *cy_data(void *dst, const void *src, int data_bytes)
-{
+static void *cy_data(void *dst, const void *src, int data_bytes) {
     __asm volatile(
         "mv a0, %[data_bytes];"
         "mv a1, %[src];"
