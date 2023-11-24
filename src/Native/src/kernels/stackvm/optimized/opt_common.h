@@ -77,7 +77,7 @@ static void *cy_data(void *dst, const void *src, int data_bytes) {
         :
         : [src] "r"(src), [data_bytes] "r"(data_bytes), [dst] "r"(dst)
         : "t0", "t1", "a0", "a1", "a2", "v8", "v16");
-    return dst
+    return dst;
 }
 #endif
 
