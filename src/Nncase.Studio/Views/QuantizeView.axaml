@@ -32,7 +32,11 @@
                     <ColumnDefinition Width="150"/>
                 </Grid.ColumnDefinitions>
                 <Label Grid.Row="0" Grid.Column="0" Content="数据集"></Label>
-                <TextBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" HorizontalAlignment="Left" Width="400" Text="{Binding CalibDir}"></TextBox>
+                <TextBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2"
+                         Width="400"
+                         HorizontalAlignment="Left"
+                         Text="{Binding CalibDir}"
+                         Watermark="数据集所在的文件夹，仅支持npy格式的输入"></TextBox>
                 <Button
                     Grid.Row="0" Grid.Column="3"
                     Content="选择"

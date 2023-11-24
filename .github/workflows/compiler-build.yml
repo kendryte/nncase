@@ -160,13 +160,6 @@ jobs:
           path: ${{github.workspace}}/src/Nncase.Compiler/bin/${{matrix.config.buildType}}/net${{matrix.dotnet-version}}/${{matrix.config.rid}}/publish
           if-no-files-found: error
 
-      - name: Upload nncase studio Build Artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: nncase-studio-${{matrix.config.name}}
-          path: ${{github.workspace}}/src/Nncase.Studio/bin/${{matrix.config.buildType}}/net${{matrix.dotnet-version}}/${{matrix.config.rid}}/publish
-          if-no-files-found: error
-
   test-compiler:
     needs: [build-compiler]
     name: test-${{matrix.config.name}}
