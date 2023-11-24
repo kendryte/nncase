@@ -244,6 +244,25 @@ internal class Compiler : ICompiler
         });
     }
 
+    public async Task CompileWithReportAsync(IProgress<int> progress, CancellationToken token)
+    {
+        CancellationTokenSource cts = new();
+        var internalToken = cts.Token;
+        using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(internalToken, token))
+        {
+            try
+            {
+                var task = Task.Run(CompileAsync, linkedCts.Token);
+                Report(progress, 9, linkedCts.Token);
+                await task.WaitAsync(linkedCts.Token);
+            }
+            catch (Exception)
+            {
+                return;
+            }
+        }
+    }
+
     public async Task CompileAsync()
     {
         var target = _compileSession.Target;
@@ -276,6 +295,14 @@ internal class Compiler : ICompiler
     {
         var linkedModel = _modelBuilder.Build(Module);
         linkedModel.Serialize(output);
+    }
+
+    private void Report(IProgress<int> progress, int maxPassCount, CancellationToken token)
+    {
+        while (_runPassCount < maxPassCount && !token.IsCancellationRequested)
+        {
+            progress?.Report(_runPassCount);
+        }
     }
 
     private async Task<IRModule> InitializeModuleAsync(IRModule module)

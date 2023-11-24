@@ -1,0 +1,70 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:views="clr-namespace:Nncase.Studio.Views"
+             xmlns:viewModels="clr-namespace:Nncase.Studio.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="Nncase.Studio.Views.SimulateView"
+             x:DataType="viewModels:SimulateViewModel">
+    <StackPanel VerticalAlignment="Center">
+            <Grid HorizontalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Label Grid.Row="0" Grid.Column="0" Content="输入文件"></Label>
+                <SplitButton Margin="5 0" Grid.Row="0" Grid.Column="1" Content="已选择的文件">
+                    <SplitButton.Flyout>
+                        <Flyout Placement="Bottom">
+                            <ListBox
+                                ItemsSource="{Binding InputPath}">
+                            </ListBox>
+                        </Flyout>
+                    </SplitButton.Flyout>
+                </SplitButton>
+                <!-- <ComboBox Grid.Row="0" Grid.Column="1" ItemsSource="{Binding InputPath}" ></ComboBox> -->
+                <Button
+                        Grid.Row="0" Grid.Column="2"
+                        Content="选择"
+                        Command="{Binding SetRuntimeInputCommand}">
+                </Button>
+            <Label Grid.Row="1" Grid.Column="0" Content="结果存储位置" VerticalAlignment="Center"></Label>
+                <TextBox Classes="Path" Grid.Row="1" Grid.Column="1" Watermark="Result ResultDir" Text="{Binding ResultDir}"></TextBox>
+                <Button
+                    Grid.Row="1" Grid.Column="2"
+                    Content="选择"
+                    Command="{Binding SetResultDirCommand}">
+                </Button>
+
+            <Label Grid.Row="2" Grid.Column="0" Content="KmodelPath"></Label>
+                <TextBox Classes="Path" Grid.Row="2" Grid.Column="1"
+                     Text="{Binding KmodelPath}"
+                     Watermark="Kmodel Path"></TextBox>
+                <Button
+                    Grid.Row="2" Grid.Column="2"
+                    Content="选择"
+                    x:CompileBindings="False"
+                    Command="{Binding SetKmodelPathCommand}">
+                </Button>
+            </Grid>
+
+        <DockPanel Margin="0 40" HorizontalAlignment="Center">
+            <Button HorizontalAlignment="Center"
+                    Content="推理"
+                    Margin="40 0"
+                    Command="{Binding SimulateCommand}">
+            </Button>
+
+            <Label Content="{Binding Status}" Width="120"></Label>
+        </DockPanel>
+
+        <ProgressBar Margin="10" ShowProgressText="False" IsIndeterminate="{Binding RunSimulate}"/>
+    </StackPanel>
+</UserControl>

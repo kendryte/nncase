@@ -1,0 +1,17 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:studio="clr-namespace:Nncase.Studio"
+             xmlns:viewModels="clr-namespace:Nncase.Studio.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="Nncase.Studio.Views.EnumComboBox">
+
+    <UserControl.Resources>
+        <studio:EnumConverter x:Key="EnumConverter" />
+    </UserControl.Resources>
+
+    <DockPanel>
+        <Label x:Name="Label"></Label>
+        <ComboBox x:Name="ComboBoxList"></ComboBox></DockPanel>
+</UserControl>

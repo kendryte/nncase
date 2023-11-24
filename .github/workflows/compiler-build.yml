@@ -114,6 +114,7 @@ jobs:
           dotnet restore -r ${{matrix.config.rid}}
           dotnet build -c ${{matrix.config.buildType}} --no-restore
           dotnet publish src/Nncase.Compiler -c ${{matrix.config.buildType}} --no-restore --sc false -r ${{matrix.config.rid}}
+          dotnet publish src/Nncase.Studio -c ${{matrix.config.buildType}} --no-restore --sc false -r ${{matrix.config.rid}}
 
       - name: Set up Dotnet Test settings
         uses: 1arp/create-a-file-action@0.2

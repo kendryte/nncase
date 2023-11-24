@@ -1,0 +1,33 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewModels="clr-namespace:Nncase.Studio.ViewModels"
+             xmlns:views="clr-namespace:Nncase.Studio.Views"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="Nncase.Studio.Views.CompileView"
+             x:DataType="viewModels:CompileViewModel">
+
+    <StackPanel VerticalAlignment="Center">
+        <Grid Margin="30">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Label Grid.Row="0" Grid.Column="0" Content="Kmodel路径" VerticalAlignment="Center"></Label>
+            <TextBox Grid.Row="0" Grid.Column="1" Classes="Path" Text="{Binding KmodelPath}" Watermark="Path or Name"></TextBox>
+        </Grid>
+        <DockPanel HorizontalAlignment="Center" Margin="4">
+            <Button Margin= "25"
+                    Content="编译"
+                    Command="{Binding CompileCommand}">
+            </Button>
+            <Button Margin="25"
+                    Content="停止"
+                    Command="{Binding CancelCompileCommand}">
+            </Button>
+        </DockPanel>
+        <ProgressBar Minimum="0" Maximum="{Binding ProgressBarMax}" Value="{Binding ProgressBarValue}" Height="20"></ProgressBar>
+    </StackPanel>
+
+</UserControl>
