@@ -8,7 +8,7 @@
 2. 哪些算子可以被 KPU 完全加速？
 
     下面的约束需要全部满足。
-    - 特征图尺寸：输入特征图小于等于 320x240(WxH) 同时输出特征图大于等于 4x4(WxH)，通道数在 1 到 1024。
+    - 特征图尺寸：输入特征图小于等于 *320x240(WxH)* 同时输出特征图大于等于 *4x4(WxH)*，通道数在 1 到 1024。
     - Same 对称 paddings (TensorFlow 在 stride=2 同时尺寸为偶数时使用非对称 paddings)。
     - 普通 Conv2D 和 DepthwiseConv2D，卷积核为 1x1 或 3x3，stride 为 1 或 2。
     - MaxPool(2x2 或 4x4) 和 AveragePool(2x2 或 4x4)。
@@ -22,10 +22,21 @@
     - DilatedConv2D, nncase 会把它替换为一个 SpaceToBatch + KPUConv2D + BatchToSpace。
     - TransposeConv2D, nncase 会把它替换为一个 Pad + KPUConv2D。
 
+4. 使用K210注意事项。
+
+    - 请使用官方SDK仓库：[kendryte-standalone-sdk](https://github.com/kendryte/kendryte-standalone-sdk).
+    - 使用纯英文路径，路径尽量短。
+    - 需要编译的项目放在src目录下，参考其他example。
+    - Windows下使用管理员权限。
+
 ### 编译模型
 1. Fatal: Not supported tflite opcode: DEQUANTIZE
 
     使用浮点 tflite 模型，nncase 会做量化。
+
+2. Fatal: inputs are not compatible to xxx.
+
+    请检查模型输入是否合法，不支持动态shape。
 
 ### 部署模型
 1. 运行模型是我需要归一化输入吗？

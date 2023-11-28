@@ -8,7 +8,7 @@
 2. What kinds of ops can be fully accelerated by KPU?
 
     All the following constraints must be met.
-    - Feature map shape: Input feature maps smaller than or equal to 320x240(WxH) and output features map larger than or equal to 4x4(WxH) and channels are between 1 to 1024 are supported.
+    - Feature map shape: Input feature maps smaller than or equal to *320x240(WxH)* and output features map larger than or equal to *4x4(WxH)* and channels are between 1 to 1024 are supported.
     - Same symmetric paddings (TensorFlow use asymmetric paddings when stride=2 and size is even).
     - Normal Conv2D and DepthwiseConv2D of 1x1 or 3x3 filters and stride is 1 or 2.
     - MaxPool(2x2 or 4x4) and AveragePool(2x2 or 4x4).
@@ -22,10 +22,21 @@
     - DilatedConv2D, nncase will replace it with a SpaceToBatch + KPUConv2D + BatchToSpace.
     - TransposeConv2D, nncase will replace it with a Pad + KPUConv2D.
 
+4. Attention point about K210。
+
+    - Use official SDK repo：[kendryte-standalone-sdk](https://github.com/kendryte/kendryte-standalone-sdk).
+    - Use a pure English path and keep the path as short as possible.
+    - Projects that need to be compiled are placed in the src directory, see other examples.
+    - Use administrator privileges in Windows.
+
 ### Compile models
 1. Fatal: Not supported tflite opcode: DEQUANTIZE
 
     Use float tflite models, nncase will take care of quantization.
+
+2. Fatal: inputs are not compatible to xxx.
+
+    Please check if the input of model is valid. Not support dynamic input shape.
 
 ### Deploy models
 1. Should I normalize inputs when running the model?
