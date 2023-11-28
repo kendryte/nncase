@@ -39,14 +39,14 @@ public class UnitTestCombineTranspose : TransformTestBase
     };
 
     public static IEnumerable<object[]> CombineBinaryTransposePositiveData =>
-        new[]
-        {
+    new[]
+    {
             new object[] { new[] { 5, 4 }, new[] { 5, 4 }, new[] { 1, 0 } },
             new object[] { new[] { 4, 4 }, new[] { 4, 4 }, new[] { 1, 0 } },
             new object[] { new[] { 4 }, new[] { 4 }, new[] { 0 } },
             new object[] { new[] { 1, 3, 4 }, new[] { 1, 3, 4 }, new[] { 0, 2, 1 } },
             new object[] { new[] { 1, 3, 2, 4 }, new[] { 1, 3, 2, 4 }, new[] { 0, 2, 3, 1 } },
-        };
+    };
 
     public static IEnumerable<object[]> CombineConstBinaryTransposeNotMatchData =>
         new[]
@@ -358,5 +358,40 @@ public class UnitTestCombineTranspose : TransformTestBase
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
         var rootPre = IR.F.Math.Unary(opType, Tensors.Transpose(a, perm));
         TestMatched<CombineTransposeUnary>(rootPre, normal);
+    }
+
+    [Theory]
+    [ClassData(typeof(CombineTransposeReshapePostiveData))]
+    public void TestCombineTransposeReshapePostive(int[] inShape, int[] newShape, int[] perm)
+    {
+        var a = new Var(new TensorType(DataTypes.Float32, inShape));
+        var feed_dict = new Dictionary<Var, IValue>
+        {
+            { a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate() },
+        };
+        var rootPre = Tensors.Transpose(Tensors.Reshape(a, newShape), perm);
+        TestMatched<CombineTransposeReshape>(rootPre, feed_dict);
+    }
+
+    private sealed class CombineTransposeReshapePostiveData : TheoryData<int[], int[], int[]>
+    {
+        public CombineTransposeReshapePostiveData()
+        {
+            var inshapes = new[] { new[] { 12, 77, 64 } };
+
+            var newShapes = new[] {
+                new[] { 1, 12, 77, 64 },
+                new[] { 12, 1, 77, 64 },
+                new[] { 12, 77, 1, 64 },
+                new[] { 12, 77, 64, 1 },
+            };
+
+            var perms = new[] { 0, 1, 2, 3 }.Permutate().ToArray();
+
+            foreach (var (a, b, c) in new[] { inshapes, newShapes, perms }.CartesianProduct().Select(i => i.ToArray()).Select(i => (i[0], i[1], i[2])))
+            {
+                Add(a, b, c);
+            }
+        }
     }
 }

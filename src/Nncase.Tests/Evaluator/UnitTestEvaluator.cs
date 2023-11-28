@@ -97,10 +97,10 @@ public class UnitTestEvaluator : TestClassBase
     public void TestLoadStore()
     {
         var loop_i = new Var(TensorType.Scalar(DataTypes.Int32));
-        var load = T.Load(T.Handle("hd", DataTypes.Float32), loop_i);
+        T.CreateBuffer(new(DataTypes.Float32, new[] { 1, 2, 3 }), MemoryLocation.Input, out var bf);
+        var load = T.Load(bf, loop_i);
         CompilerServices.InferenceType(load);
-
-        var store = T.Store((Var)load[TIR.Load.Handle], load[TIR.Load.Index], loop_i);
+        var store = T.Store(bf, loop_i, IR.F.Tensors.Cast(loop_i, DataTypes.Float32));
         CompilerServices.InferenceType(store);
     }
 

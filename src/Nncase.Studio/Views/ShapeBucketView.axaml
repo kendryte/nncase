@@ -1,0 +1,32 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewModels="clr-namespace:Nncase.Studio.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="Nncase.Studio.Views.ShapeBucketView"
+             x:DataType="viewModels:ShapeBucketViewModel">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition />
+            <RowDefinition />
+            <RowDefinition />
+        </Grid.RowDefinitions>
+        <Label Grid.Row="0" Grid.Column="0" Content="分段数量"></Label>
+        <NumericUpDown Grid.Row="0" Grid.Column="1"
+                       HorizontalAlignment="Left"
+                       Value="{Binding SegmentCount}"
+                       FormatString="0"
+                       Minimum="2"
+                       Increment="1"></NumericUpDown>
+
+        <Label Grid.Row="1" Grid.Column="0" Content="FixVarMap"></Label>
+        <TextBox Grid.Row="1" Grid.Column="1" Width="600" Text="{Binding FixVarMap}" Watermark="example: batch:3, len:24"></TextBox>
+        <Label Grid.Row="2" Grid.Column="0" Content="VarRangeInfo"></Label>
+        <TextBox Grid.Row="2" Grid.Column="1" Width="600" Text="{Binding VarRangeInfo}" Watermark="example: len1:(1, 100); len2:(1, 40)"></TextBox>
+    </Grid>
+</UserControl>

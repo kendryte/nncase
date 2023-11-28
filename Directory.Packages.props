@@ -12,6 +12,14 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
+    <PackageVersion Include="Avalonia" Version="11.0.2"/>
+    <PackageVersion Include="Avalonia.Desktop" Version="11.0.2"/>
+    <PackageVersion Include="Avalonia.Themes.Fluent" Version="11.0.2"/>
+    <PackageVersion Include="Avalonia.Fonts.Inter" Version="11.0.2"/>
+    <PackageVersion Include="Avalonia.ReactiveUI" Version="11.0.2"/>
+    <PackageVersion Include="MessageBox.Avalonia" Version="3.1.2" />
+
+    <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.2.1" />
     <PackageVersion Include="Google.OrTools" Version="9.4.1874" />
     <PackageVersion Include="AnyTensorFlow.NET" Version="0.70.1" />
     <PackageVersion Include="BitFields" Version="0.1.0" />
@@ -46,11 +54,13 @@
     <PackageVersion Include="NetFabric.Hyperlinq" Version="3.0.0-beta48" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageVersion Include="Nncase.FlatBuffers" Version="2.0.0" />
+    <PackageVersion Include="NumSharp" Version="0.30.0" />
     <PackageVersion Include="OrtKISharp" Version="0.0.2" />
     <PackageVersion Include="RazorLight" Version="2.3.0" />
     <PackageVersion Include="Singulink.Collections.Weak" Version="1.0.2" />
-    <PackageVersion Include="StyleCop.Analyzers" Version="1.2.0-beta.507" />
-    <PackageVersion Include="System.CommandLine.Hosting" Version="0.3.0-alpha.21216.1" />
+    <PackageVersion Include="StyleCop.Analyzers" Version="1.2.0-beta.435" />
+    <PackageVersion Include="System.CommandLine.Hosting" Version="0.4.0-alpha.22272.1" />
+    <PackageVersion Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
     <PackageVersion Include="System.Linq.Async" Version="6.0.1" />
     <PackageVersion Include="System.Reactive" Version="5.0.0" />
     <PackageVersion Include="Tomlyn.Extensions.Configuration" Version="1.0.5" />

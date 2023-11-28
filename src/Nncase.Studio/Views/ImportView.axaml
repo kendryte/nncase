@@ -1,0 +1,26 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:views="clr-namespace:Nncase.Studio.Views"
+             xmlns:viewModels="clr-namespace:Nncase.Studio.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="Nncase.Studio.Views.ImportView"
+             x:DataType="viewModels:ImportViewModel"
+             FontSize="32">
+        <StackPanel VerticalAlignment="Center">
+            <!-- 插入三种模型的logo -->
+            <Label HorizontalAlignment="Center" Content="支持的模型格式：NCNN ONNX TFLite"></Label>
+            <DockPanel HorizontalAlignment="Center" Name="LogoPanel">
+                <Image Source="/Assets/ncnn-logo.png"></Image>
+                <Image Source="/Assets/ONNX-logo.png"></Image>
+                <Image Source="/Assets/tflite-logo.png"></Image>
+            </DockPanel>
+
+            <Button Name="ImportButton"
+                    Content="Import"
+                    FontSize="40"
+                    Command="{Binding ImportCommand}">
+            </Button>
+        </StackPanel>
+</UserControl>

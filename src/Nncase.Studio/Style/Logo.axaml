@@ -1,0 +1,15 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Design.PreviewWith>
+        <Border Padding="20">
+            <!-- Add Controls for Previewer Here -->
+        </Border>
+    </Design.PreviewWith>
+
+    <!-- Import Logo -->
+    <Style Selector="DockPanel#LogoPanel > Image">
+        <Setter Property="Margin" Value="40 80"></Setter>
+        <Setter Property="Width" Value="128"></Setter>
+        <Setter Property="Height" Value="128"></Setter>
+    </Style>
+</Styles>

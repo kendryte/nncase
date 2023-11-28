@@ -41,18 +41,24 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Slice target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, Slice.Input);
+        var input = context.CheckArgumentType<IRType>(target, Slice.Input);
         context.CheckArgumentType<TensorType>(target, Slice.Begins);
         context.CheckArgumentType<TensorType>(target, Slice.Ends);
         context.CheckArgumentType<TensorType>(target, Slice.Axes);
         context.CheckArgumentType<TensorType>(target, Slice.Strides);
-        return Visit(context, target, input);
+        return input switch
+        {
+            TensorType t => Visit(context, target, t),
+            DistributedType d => Visit(context, target, d),
+            AnyType => AnyType.Default,
+            _ => new InvalidType(input.GetType().Name),
+        };
     }
 
     /// <inheritdoc/>
     public Cost Visit(ICostEvaluateContext context, Slice target)
     {
-        var outputType = context.GetReturnType<TensorType>();
+        var outputType = context.GetReturnType<IRType>();
 
         return new()
         {
@@ -226,5 +232,22 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
         }
 
         return input with { Shape = outShape };
+    }
+
+    private IRType Visit(ITypeInferenceContext context, Slice target, DistributedType input)
+    {
+        var outType = Visit(context, target, input.TensorType);
+        if (outType is not TensorType tensorType)
+        {
+            return new InvalidType("not support input tensor type infer");
+        }
+
+        var axes = ((TensorConst)context.GetArgument(target, Slice.Axes)).Value.ToArray<int>();
+        if (input.NdSBP.Any(sbp => sbp is SBPSplit s && axes.Contains(s.Axis)))
+        {
+            return new InvalidType("not support input tensor type infer");
+        }
+
+        return new DistributedType((TensorType)outType, input.NdSBP, input.Placement);
     }
 }

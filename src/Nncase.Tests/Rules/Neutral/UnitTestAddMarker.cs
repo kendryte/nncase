@@ -96,7 +96,7 @@ public class UnitTestAddMarker : TestClassBase
         var module = new IRModule(main);
         await TestAddMarkerPasses(module);
         Assert.True(((Function)module.Entry!).Body is Tuple t
-                    && CompilerServices.TryMatchRoot(t, IsWrappedLSTM(PatternMatch.F.Tensors.IsLSTM("lstm", "lstmCall", _ => true), (x, _) => IsRangeOfMarker(x, IsWildcard())), out var result)
+                    && CompilerServices.TryMatchRoot(t, IsWrappedLSTM(PatternMatch.F.RNN.IsLSTM("lstm", "lstmCall", _ => true), (x, _) => IsRangeOfMarker(x, IsWildcard())), out var result)
                     && result["lstmCall"] is Call call
                     && new[] { 0, 1, 2, 5, 6 }.All(i => call.Arguments[i] is Marker));
     }
@@ -126,7 +126,7 @@ public class UnitTestAddMarker : TestClassBase
         var module = new IRModule(main);
         await TestAddMarkerPasses(module);
         Assert.True(((Function)module.Entry!).Body is Tuple t
-                    && CompilerServices.TryMatchRoot(t, IsWrappedLSTM(PatternMatch.F.Tensors.IsLSTM("lstm", "lstmCall", _ => true), (x, _) => IsRangeOfMarker(x, IsWildcard())), out var result)
+                    && CompilerServices.TryMatchRoot(t, IsWrappedLSTM(PatternMatch.F.RNN.IsLSTM("lstm", "lstmCall", _ => true), (x, _) => IsRangeOfMarker(x, IsWildcard())), out var result)
                     && result["lstmCall"] is Call call
                     && new[] { 0, 1, 2, 5, 6 }.All(i => call.Arguments[i] is Marker));
     }

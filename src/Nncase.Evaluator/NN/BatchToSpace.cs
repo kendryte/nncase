@@ -203,7 +203,7 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
             var m = blockShape.Shape[0].FixedValue;
             var cropsV = cropsValue.Value.Cast<int>();
             var cropSection = Enumerable.Range(0, m).Select(
-                i => (inShape[i + 1] * blockShapeArr[0]) - cropsV[i, 0] - cropsV[i, 1]);
+                i => (inShape[i + 1] * blockShapeArr[i]) - cropsV[i, 0] - cropsV[i, 1]);
 
             var remainSize = inShape.Rank - 1 - m;
             var remainShape = remainSize > 0 ? inShape.Skip(1 + m) : Array.Empty<Dimension>();

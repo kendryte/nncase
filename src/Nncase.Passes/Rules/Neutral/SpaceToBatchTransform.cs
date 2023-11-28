@@ -41,9 +41,11 @@ public sealed partial class SpaceToBatchToPad : IRewriteRule
         if (input.CheckedShape.Rank == 4 && blockShapeArray.Length == 2 && blockShapeArray[0] == 1 && blockShape[1] == 1)
         {
             var newPaddingsArray = new int[8];
+
+            // pad for hw
             for (var i = 0; i < paddingsArray.Length; i++)
             {
-                newPaddingsArray[i + 2] = paddingsArray[i];
+                newPaddingsArray[i + 4] = paddingsArray[i];
             }
 
             var newPaddings = Tensor.From(newPaddingsArray, new[] { 4, 2 });

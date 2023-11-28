@@ -47,8 +47,9 @@ result<value_t> nncase::kernels::stackvm::batch_normalization(
 }
 
 result<value_t> nncase::kernels::stackvm::layer_norm(
-    int32_t axis, float epsilon, value_t input, value_t scale, value_t bias,
-    value_t output, [[maybe_unused]] kernel_context &context) {
+    int32_t axis, float epsilon, [[maybe_unused]] bool use_mean, value_t input,
+    value_t scale, value_t bias, value_t output,
+    [[maybe_unused]] kernel_context &context) {
     try_input(input_mem, input);
     try_input(scale_mem, scale);
     try_input(bias_mem, bias);
@@ -124,7 +125,7 @@ nncase::kernels::stackvm::clamp(value_t input, value_t min, value_t max,
     KERNEL_FINISH;
 }
 
-result<value_t> nncase::kernels::stackvm::concat(value_t input, value_t axis,
+result<value_t> nncase::kernels::stackvm::concat(int32_t axis, value_t input,
                                                  value_t output,
                                                  kernel_context &context) {
     try_tuple_input(inputs_mem, input);
@@ -132,7 +133,7 @@ result<value_t> nncase::kernels::stackvm::concat(value_t input, value_t axis,
     try_var(strides, get_strides(input_tuple));
     try_tuple_field0(input0, input_tuple);
     auto dtype = input0->dtype();
-    try_positive_axis_with_rank(axis_value, axis, input0->shape().size());
+    auto axis_value = positive_index(axis, input0->shape().size());
     auto out_shape = concat_infer_shape(shapes, axis_value);
     try_output(out_mem, output, dtype, out_shape);
     auto concat_dims = dims_t();
@@ -293,14 +294,15 @@ nncase::kernels::stackvm::flatten(value_t input, value_t axis, value_t output,
     KERNEL_FINISH;
 }
 
-result<value_t> nncase::kernels::stackvm::gather(value_t input, value_t axis,
+result<value_t> nncase::kernels::stackvm::gather(int32_t axis, value_t input,
                                                  value_t index, value_t output,
                                                  kernel_context &context) {
     try_input(input_mem, input);
     try_input(index_mem, index);
     auto dtype = input_tensor->dtype();
     try_var(typecode, to_typecode(dtype));
-    try_positive_axis(axis_value, axis, input_tensor);
+    // try_positive_axis(axis_value, axis, input_tensor);
+    auto axis_value = positive_index(axis, input_tensor->shape().size());
     auto out_shape = gather_infer_shape(input_tensor->shape(),
                                         index_tensor->shape(), axis_value);
     try_output(out_mem, output, dtype, out_shape);
@@ -791,14 +793,6 @@ result<value_t> nncase::kernels::stackvm::bucket_pad(
     auto in_tensor = input.as<tensor>().expect("input is not a tensor");
     auto in_shape = in_tensor->shape();
     if (compute_size(in_shape) > compute_size(shape_value)) {
-        std::cout << "in shape" << std::endl;
-        for (int i = 0; i < in_shape.size(); ++i) {
-            std::cout << in_shape[i] << std::endl;
-        }
-        std::cout << "shape_value shape" << std::endl;
-        for (int i = 0; i < shape_value.size(); ++i) {
-            std::cout << shape_value[i] << std::endl;
-        }
         return err(std::errc::invalid_argument);
     }
 
@@ -1333,11 +1327,12 @@ result<value_t> kernels::stackvm::unary(unary_op_t unary_op, value_t input,
                               output_tensor->shape(), output_tensor->strides(),
                               context));
         return ok(output);
+    } else {
+        CONTIGUOUS_KERNEL(unary, input_tensor, typoecode, unary_op, input_mem,
+                          out_mem, input_tensor->shape(),
+                          input_tensor->strides(), output_tensor->shape(),
+                          output_tensor->strides(), context);
     }
-    CONTIGUOUS_KERNEL(unary, input_tensor, typoecode, unary_op, input_mem,
-                      out_mem, input_tensor->shape(), input_tensor->strides(),
-                      output_tensor->shape(), output_tensor->strides(),
-                      context);
     return ok(output);
 }
 

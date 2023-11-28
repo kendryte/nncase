@@ -113,7 +113,7 @@ public sealed class UnitTestEGraphMatch
         Expr expr = Concat(tuple, 0);
         CompilerServices.InferenceType(expr);
 
-        var vpat = IsConcat(IsTuple("tp"), IsConst(0));
+        var vpat = IsConcat(0, IsTuple("tp"));
 
         Assert.True(CompilerServices.TryEMatchRoot(expr, vpat, out var eMatches));
         Assert.Single(eMatches);
@@ -122,13 +122,11 @@ public sealed class UnitTestEGraphMatch
     [Fact]
     public void TestMatchVArgsTwice()
     {
-        ConstPattern wcaxis = IsConst();
-
         var tuple_lhs = new IR.Tuple(1, new Var(), 3);
         var tuple_rhs = new IR.Tuple(4, 5, 6);
         Expr expr = Concat(tuple_lhs, 0) + Concat(tuple_rhs, 1);
 
-        var vpat = IsConcat(IsTuple("tp"), wcaxis);
+        var vpat = IsConcat(_ => true, IsTuple("tp"));
 
         Assert.True(CompilerServices.TryEMatchRoot(expr, vpat, out var eMatches));
         Assert.Equal(2, eMatches.Count);
@@ -151,9 +149,8 @@ public sealed class UnitTestEGraphMatch
 
         var wc = IsWildcard("wc");
         var wcperm = IsWildcard("perm");
-        var wcaxis = IsWildcard("axis");
 
-        var pattern = IsConcat(IsTuple(IsVArgsRepeat("wcvargs", () => IsTranspose(IsWildcard(), wcperm))), wcaxis);
+        var pattern = IsConcat(_ => true, IsTuple(IsVArgsRepeat("wcvargs", () => IsTranspose(IsWildcard(), wcperm))));
 
         Assert.True(CompilerServices.TryEMatchRoot(expr, pattern, out var results));
         Assert.Single(results);
@@ -163,7 +160,6 @@ public sealed class UnitTestEGraphMatch
         Assert.Equal(((Call)wcvargs[1]).Arguments[0], y);
         Assert.Equal(((Call)wcvargs[2]).Arguments[0], z);
         Assert.Equal(result[wcperm], perm);
-        Assert.Equal(result[wcaxis], (Const)0);
     }
 
     [Fact]

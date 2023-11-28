@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Math;
-using Nncase.IR.Tensors;
+using Nncase.IR.RNN;
 using Nncase.Passes;
 using Nncase.Passes.Analysis;
 using Nncase.Passes.Mutators;
@@ -20,9 +20,8 @@ using Nncase.Utilities;
 using Xunit;
 using Xunit.Abstractions;
 using static Nncase.IR.F.Math;
+using static Nncase.IR.F.RNN;
 using static Nncase.IR.F.Tensors;
-using static Nncase.IR.TypePatternUtility;
-using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.Utility;
 using Transpose = Nncase.IR.Tensors.Transpose;
 using Tuple = Nncase.IR.Tuple;
@@ -330,9 +329,9 @@ public sealed class UnitTestFusionMaker : TestClassBase
         var newVar2 = newVars[2];
         var pairs = new[]
         {
-            (LSTM.X, (Expr)WrapInput(newVar0)),
-            (LSTM.InitialC, WrapInput(newVar1)),
-            (LSTM.InitialH, WrapInput(newVar2)),
+            (IR.RNN.LSTM.X, (Expr)WrapInput(newVar0)),
+            (IR.RNN.LSTM.InitialC, WrapInput(newVar1)),
+            (IR.RNN.LSTM.InitialH, WrapInput(newVar2)),
         };
         var expectLSTM = ReplaceUtility.ReplaceCallParams(lstm.Target, lstm.Arguments.ToArray(), pairs);
         var expectBody = WrapOutput(expectLSTM);
@@ -363,7 +362,7 @@ public sealed class UnitTestFusionMaker : TestClassBase
     internal sealed class LSTMFusion : ComplexFusion<LSTM, Quantize, Dequantize>
     {
         public override (ParameterInfo, CallPattern)[] InputPatterns { get; } =
-            GenerateInputPatterns(LSTM.X, LSTM.InitialC, LSTM.InitialH);
+            GenerateInputPatterns(IR.RNN.LSTM.X, IR.RNN.LSTM.InitialC, IR.RNN.LSTM.InitialH);
     }
 }
 

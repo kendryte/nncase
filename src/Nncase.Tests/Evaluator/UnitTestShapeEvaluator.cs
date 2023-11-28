@@ -262,7 +262,7 @@ public class UnitTestShapeEvaluator : TestClassBase
         var dimVar = new Var(new TensorType(DataTypes.Int32, Shape.Scalar));
         var input = new Var(new TensorType(DataTypes.Float32, new[] { 1, Dimension.Unknown, 192 }));
         var paddings = Tensor.From(new[] { 0, 1 }, new[] { 1, 2 });
-        var expr = SpaceToBatch(input, new[] { 3 }, paddings);
+        var expr = NCHWToNHWC(SpaceToBatch(NHWCToNCHW(input), new[] { 3 }, paddings));
         var dict = new Dictionary<Var, Expr[]> { { input, new Expr[] { 1, dimVar, 192 } } };
         var shape = expr.EvaluateShapeExpr(dict);
         var varValues = new Dictionary<Var, IValue> { { dimVar, Value.FromTensor(8) } };

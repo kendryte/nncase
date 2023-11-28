@@ -71,7 +71,7 @@ class ReduceProdTest : public KernelTest,
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](gsl::span<const size_t> index) -> result<void> {
-                    get<int8_t>(tensor, index) = static_cast<int8_t>(-6);
+                    get<int8_t>(tensor, index) = static_cast<int8_t>(1);
                     return ok();
                 });
             break;
@@ -80,7 +80,7 @@ class ReduceProdTest : public KernelTest,
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](gsl::span<const size_t> index) -> result<void> {
-                    get<int16_t>(tensor, index) = static_cast<int16_t>(-6);
+                    get<int16_t>(tensor, index) = static_cast<int16_t>(1);
                     return ok();
                 });
             break;
@@ -89,7 +89,7 @@ class ReduceProdTest : public KernelTest,
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](gsl::span<const size_t> index) -> result<void> {
-                    get<int32_t>(tensor, index) = -6;
+                    get<int32_t>(tensor, index) = 1;
                     return ok();
                 });
             break;
@@ -98,7 +98,7 @@ class ReduceProdTest : public KernelTest,
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](gsl::span<const size_t> index) -> result<void> {
-                    get<int64_t>(tensor, index) = static_cast<int64_t>(-6);
+                    get<int64_t>(tensor, index) = static_cast<int64_t>(1);
                     return ok();
                 });
             break;
@@ -107,7 +107,7 @@ class ReduceProdTest : public KernelTest,
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](gsl::span<const size_t> index) -> result<void> {
-                    get<uint8_t>(tensor, index) = static_cast<uint8_t>(0);
+                    get<uint8_t>(tensor, index) = static_cast<uint8_t>(1);
                     return ok();
                 });
             break;
@@ -116,7 +116,7 @@ class ReduceProdTest : public KernelTest,
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](gsl::span<const size_t> index) -> result<void> {
-                    get<uint16_t>(tensor, index) = static_cast<uint16_t>(0);
+                    get<uint16_t>(tensor, index) = static_cast<uint16_t>(1);
                     return ok();
                 });
             break;
@@ -125,7 +125,7 @@ class ReduceProdTest : public KernelTest,
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](gsl::span<const size_t> index) -> result<void> {
-                    get<uint32_t>(tensor, index) = static_cast<uint32_t>(0);
+                    get<uint32_t>(tensor, index) = static_cast<uint32_t>(1);
                     return ok();
                 });
             break;
@@ -134,7 +134,7 @@ class ReduceProdTest : public KernelTest,
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](gsl::span<const size_t> index) -> result<void> {
-                    get<uint64_t>(tensor, index) = static_cast<uint64_t>(0);
+                    get<uint64_t>(tensor, index) = static_cast<uint64_t>(1);
                     return ok();
                 });
             break;
@@ -143,7 +143,7 @@ class ReduceProdTest : public KernelTest,
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](gsl::span<const size_t> index) -> result<void> {
-                    get<half>(tensor, index) = static_cast<half>(-1);
+                    get<half>(tensor, index) = static_cast<half>(1);
                     return ok();
                 });
             break;
@@ -152,7 +152,7 @@ class ReduceProdTest : public KernelTest,
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](gsl::span<const size_t> index) -> result<void> {
-                    get<float>(tensor, index) = static_cast<float>(-1);
+                    get<float>(tensor, index) = static_cast<float>(1);
                     return ok();
                 });
             break;
@@ -161,7 +161,7 @@ class ReduceProdTest : public KernelTest,
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](gsl::span<const size_t> index) -> result<void> {
-                    get<double>(tensor, index) = static_cast<double>(-1);
+                    get<double>(tensor, index) = static_cast<double>(1);
                     return ok();
                 });
             break;
@@ -170,7 +170,7 @@ class ReduceProdTest : public KernelTest,
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](gsl::span<const size_t> index) -> result<void> {
-                    get<bfloat16>(tensor, index) = static_cast<bfloat16>(-1);
+                    get<bfloat16>(tensor, index) = static_cast<bfloat16>(1);
                     return ok();
                 });
             break;

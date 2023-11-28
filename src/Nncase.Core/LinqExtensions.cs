@@ -15,6 +15,21 @@ namespace Nncase;
 public static class LinqExtensions
 {
     /// <summary>
+    /// Get the ranges from range desc.
+    /// </summary>
+    /// <param name="stride">stride.</param>
+    /// <param name="start">start.</param>
+    /// <param name="stop">stop.</param>
+    /// <returns>Ranges.</returns>
+    public static IEnumerable<Range> Ranges(this int stride, int start, int stop)
+    {
+        for (int i = start; i < stop; i += stride)
+        {
+            yield return new Range(i, Math.Min(stop, i + stride));
+        }
+    }
+
+    /// <summary>
     /// Get cartesian product.
     /// </summary>
     /// <typeparam name="T">Element type.</typeparam>
@@ -29,6 +44,23 @@ public static class LinqExtensions
               from accseq in accumulator
               from item in sequence
               select accseq.Concat(new[] { item }));
+    }
+
+    /// <summary>
+    /// Get the permutation of the source.
+    /// </summary>
+    /// <typeparam name="T">Element type.</typeparam>
+    /// <param name="source">Source sequences.</param>
+    /// <returns>Permutated sequences.</returns>
+    public static IEnumerable<T[]> Permutate<T>(this IEnumerable<T> source)
+    {
+        return Permutation(source, Enumerable.Empty<T>());
+
+        IEnumerable<T[]> Permutation(IEnumerable<T> reminder, IEnumerable<T> prefix) =>
+            !reminder.Any() ? new[] { prefix.ToArray() } :
+            reminder.SelectMany((c, i) => Permutation(
+                reminder.Take(i).Concat(reminder.Skip(i + 1)).ToArray(),
+                prefix.Append(c)));
     }
 
     /// <summary>

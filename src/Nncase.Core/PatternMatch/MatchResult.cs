@@ -44,6 +44,9 @@ public class MatchResult : IMatchResult
     public object this[string name] => _stringMap[name];
 
     /// <inheritdoc/>
+    public object GetValueOrDefault(string name) => _stringMap.GetValueOrDefault(name, null!);
+
+    /// <inheritdoc/>
     public IEnumerator<KeyValuePair<IPattern, object>> GetEnumerator()
     {
         return _patternMap.GetEnumerator();

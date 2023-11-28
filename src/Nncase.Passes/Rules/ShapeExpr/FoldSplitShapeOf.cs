@@ -25,16 +25,25 @@ public partial class FoldSplitShapeOf : RewriteRule<Pattern>
             new VArgsPattern(
                 list =>
                     Enumerable.Range(0, list.Length)
-                    .Select(_ => IsGetItem(InputPattern, IsTensorConst()))
+                    .Select(_ => IsAlt(IsCast(c => c.NewType == DataTypes.Int64, InputPattern), InputPattern))
                     .ToArray(),
                 "args")),
         IsTensorConst(tensor => tensor.Value.ToScalar<int>() == 0));
 
-    public Pattern InputPattern => IsShapeOf(IsWildcard());
+    public Pattern InputPattern => IsGetItem(IsShapeOf(IsWildcard()), IsTensorConst());
 
     private Expr? GetReplace(IR.Tuple tuple)
     {
-        var getItemList = tuple.Fields.ToArray().OfType<Call>().ToArray();
+        var getItemList = tuple.Fields.ToArray().OfType<Call>().Select(x =>
+        {
+            if (x.Target is Cast)
+            {
+                return x.Arguments[Cast.Input.Index];
+            }
+
+            return x;
+        }).OfType<Call>().ToArray();
+
         var getItemIndices = getItemList.Select(x => x.Arguments[GetItem.Index.Index]).OfType<TensorConst>().Select(x => x.Value.ToScalar<int>()).ToArray();
         if (getItemIndices.Length == 0)
         {

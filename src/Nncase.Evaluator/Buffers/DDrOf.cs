@@ -14,6 +14,6 @@ public partial class DDrOfEvaluator : ITypeInferencer<DDrOf>
 {
     private IRType Visit(TensorType input)
     {
-        return new PointerType(input.DType);
+        return TensorType.Pointer(input.DType);
     }
 }

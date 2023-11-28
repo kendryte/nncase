@@ -15,6 +15,7 @@ using Nncase.IR.Tensors;
 using Nncase.Passes;
 using Nncase.Passes.Rules.Neutral;
 using Nncase.PatternMatch;
+using Nncase.Tests.TestFixture;
 using Xunit;
 using static Nncase.IR.F.NN;
 using ITuple = Nncase.IR.ITuple;
@@ -25,6 +26,7 @@ using Tuple = System.Tuple;
 
 namespace Nncase.Tests.Rules.NeutralTest;
 
+[AutoSetupTestMethod(InitSession = true)]
 public class UnitTestCombineUnary : TransformTestBase
 {
     // TODO: CombinePadUnary

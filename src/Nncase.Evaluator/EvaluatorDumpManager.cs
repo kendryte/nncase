@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using Nncase.Diagnostics;
 using Nncase.IR;
+using Nncase.IR.Tensors;
 using Nncase.Utilities;
 using CallbacksRegister = System.Action<string, System.Action<Nncase.IR.Expr>>;
 using TensorGetter = System.Func<Nncase.IR.Expr, Nncase.Tensor[]>;
@@ -27,6 +28,7 @@ internal sealed class EvaluatorDumpManager : IDisposable
         _dumpper = dumpper;
         _tensorGetter = tensorGetter;
 
+        // todo: has bug when evaluate sub function
         if (_dumpper.IsEnabled(DumpFlags.Evaluator))
         {
             _shapeWriter = new StreamWriter(_dumpper.OpenFile("!out_shape_list"));
@@ -57,6 +59,12 @@ internal sealed class EvaluatorDumpManager : IDisposable
 
     private void DumpCallArgs(Call call)
     {
+        // todo: fix this
+        if (call.Target is not Op)
+        {
+            return;
+        }
+
         string target = GetTargetName(call);
         var paramsInfo = ((Op)call.Target).Parameters.ToArray();
 
@@ -75,11 +83,12 @@ internal sealed class EvaluatorDumpManager : IDisposable
         string target = GetTargetName(call);
 
         // a bad tmp change
-        var shape = !(call.CheckedType is TensorType) ? Shape.Scalar : call.CheckedShape;
+        var result = _tensorGetter(call);
+
+        // todo: when tuple maybe bug
+        var shape = result.Length == 1 ? result[0].Shape : result[0].Shape.ToValueArray();
         DumpCall(target, shape, sr =>
         {
-            sr.WriteLine(target);
-            var result = _tensorGetter(call);
             ValueDumper.DumpTensors(result, sr);
         });
     }

@@ -14,7 +14,7 @@ namespace Nncase.Importer
         {
             var (a, b) = GetInputExprs(op, 0, 1);
             var matmul = IR.F.Math.MatMul(a, b);
-            List<string> outputNames = new() { op.Name };
+            List<string> outputNames = new() { op.Output[0] };
             matmul.Metadata.OutputNames = outputNames;
             return matmul;
         }

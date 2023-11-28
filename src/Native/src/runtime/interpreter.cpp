@@ -246,6 +246,17 @@ result<runtime_module *> interpreter::find_module_by_id(size_t index) noexcept {
     return ok(modules_[index].get());
 }
 
+result<size_t> interpreter::find_id_by_module(runtime_module *module) noexcept {
+    auto it = std::find_if(modules_.begin(), modules_.end(),
+                           [&module](const std::unique_ptr<runtime_module> &p) {
+                               return p.get() == module;
+                           });
+    if (it == modules_.end()) {
+        return err(std::errc::result_out_of_range);
+    }
+    return ok((it - modules_.begin()));
+}
+
 options_dict &interpreter::options() noexcept { return options_; }
 
 result<runtime_function *> interpreter::entry_function() noexcept {
