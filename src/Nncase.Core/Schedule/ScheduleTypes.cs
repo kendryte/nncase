@@ -164,7 +164,7 @@ public class BufferAllocation
             {
                 code = PrimTypeCodes.ToTypeCode(DType);
             }
-            catch (System.Collections.Generic.KeyNotFoundException e)
+            catch (System.Collections.Generic.KeyNotFoundException)
             {
                 if (DType.SizeInBytes == 4)
                 {
@@ -172,7 +172,7 @@ public class BufferAllocation
                 }
                 else
                 {
-                    throw e;
+                    throw;
                 }
             }
 

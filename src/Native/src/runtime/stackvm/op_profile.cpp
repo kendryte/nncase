@@ -36,9 +36,11 @@ void op_profile::print() {
     std::cout << "|" << std::setw(24) << std::left << "stackvm tensor op"
               << "|" << std::setw(24) << std::left << "start timing(ms)"
               << "|" << std::setw(24) << std::left << "end timing(ms)"
+              << "|" << std::setw(24) << std::left << "cast(ms)"
               << "|" << std::endl;
 
     std::cout << "|" << std::setw(24) << std::left << "---"
+              << "|" << std::setw(24) << std::left << "---"
               << "|" << std::setw(24) << std::left << "---"
               << "|" << std::setw(24) << std::left << "---"
               << "|" << std::endl;
@@ -60,7 +62,8 @@ void op_profile::print() {
             op_type == (uint8_t)nncase::runtime::stackvm::opcode_t::CUSCALL)
             std::cout << "|" << std::setw(24) << std::left << op_name << "|"
                       << std::setw(24) << begin - init_timing << "|"
-                      << std::setw(24) << end - init_timing << "|" << std::endl;
+                      << std::setw(24) << end - init_timing << "|"
+                      << std::setw(24) << end - begin << "|" << std::endl;
     }
 
     double total = 0.f;
@@ -104,6 +107,6 @@ void op_profile::print() {
               << std::setw(12) << std::left << total << "|" << std::setw(12)
               << std::left << total / total * 100 << "|" << std::endl
               << std::endl;
-
+    op_timing_.clear();
     op_timing.clear();
 }

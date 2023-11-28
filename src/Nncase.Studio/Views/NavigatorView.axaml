@@ -1,0 +1,51 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewModels="clr-namespace:Nncase.Studio.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="Nncase.Studio.Views.NavigatorView"
+             x:DataType="viewModels:NavigatorViewModel">
+
+    <DockPanel Margin="10">
+        <Border Background="White"
+                BorderBrush="Black"
+                BorderThickness="0"
+                CornerRadius="3"
+                Padding="4">
+        <Grid Width="260">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <Button
+                   Grid.Row="0" Grid.Column="0"
+                   Content="上一步"
+                   IsVisible="{Binding PageIndex}"
+                   Command="{Binding SwitchPrevCommand}">
+            </Button>
+            <Button
+                    Grid.Row="0" Grid.Column="1"
+                    Content="下一步"
+                    IsVisible="{Binding !IsLast}"
+                    Command="{Binding SwitchNextCommand}">
+            </Button>
+        </Grid>
+        </Border>
+
+        <Label
+            Width="60"
+            Margin="10"
+            VerticalAlignment="Center"
+            Content="{Binding PageIndexString}">
+        </Label>
+
+        <ProgressBar
+            Margin="10"
+            VerticalAlignment="Center"
+            Minimum="0"
+            Maximum="{Binding PageMaxIndex}"
+            Value="{Binding PageIndex}"></ProgressBar>
+    </DockPanel>
+
+</UserControl>
