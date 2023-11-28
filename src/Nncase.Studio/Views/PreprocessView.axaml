@@ -1,0 +1,74 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:views="clr-namespace:Nncase.Studio.Views"
+             xmlns:viewModels="clr-namespace:Nncase.Studio.ViewModels"
+             xmlns:nncase="clr-namespace:Nncase;assembly=Nncase.Core"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="Nncase.Studio.Views.PreprocessView"
+             x:DataType="viewModels:PreprocessViewModel">
+
+    <StackPanel VerticalAlignment="Center">
+        <Grid>
+  <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition />
+  </Grid.RowDefinitions>
+
+  <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="Auto"/>
+      <ColumnDefinition Width="Auto"/>
+      <ColumnDefinition Width="Auto"/>
+      <ColumnDefinition Width="Auto"/>
+  </Grid.ColumnDefinitions>
+
+  <Label Grid.Row="0" Grid.Column="0" Content="InputLayout" />
+  <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding InputLayout}"
+    Watermark="{Binding LayoutWatermark}" />
+
+  <Label Grid.Row="0" Grid.Column="2" Content="OutputLayout" />
+  <TextBox Grid.Row="0" Grid.Column="3" Text="{Binding OutputLayout}"
+    Watermark="{Binding LayoutWatermark}" />
+
+  <Label Grid.Row="1" Grid.Column="0" Content="InputType" />
+  <views:EnumComboBox Grid.Row="1" Grid.Column="1"
+    SelectedValue="{Binding InputTypeValue}" TypeName="nncase:InputType" />
+
+  <Label Grid.Row="1" Grid.Column="2" Content="InputShape" />
+  <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding InputShape}"
+    Watermark="{Binding ShapeWaterMark}" />
+
+  <Label Grid.Row="2" Grid.Column="0" Content="InputRange" />
+  <DockPanel Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="3">
+    <Label Content="Min" />
+    <TextBox Text="{Binding RangeMin}" />
+    <Label Content="Max" />
+    <TextBox Text="{Binding RangeMax}" />
+  </DockPanel>
+
+  <Label Grid.Row="3" Grid.Column="0" Content="Mean" />
+  <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Mean}"
+    Watermark="{Binding ListNumberWaterMark}" />
+
+  <Label Grid.Row="3" Grid.Column="2" Content="Std" />
+  <TextBox Grid.Row="3" Grid.Column="3" Text="{Binding Std}"
+    Watermark="{Binding ListNumberWaterMark}" />
+
+  <Label Grid.Row="4" Grid.Column="0" Content="SwapRB" />
+  <CheckBox Grid.Row="4" Grid.Column="1" IsChecked="{Binding SwapRB}" />
+
+  <Label Grid.Row="4" Grid.Column="2" Content="Model Layout" />
+  <TextBox Grid.Row="4" Grid.Column="3" Text="{Binding ModelLayout}"
+    Watermark="{Binding LayoutWatermark}" />
+
+  <Label Grid.Row="5" Grid.Column="0" Content="LetterBoxValue" />
+  <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding LetterBoxValue}" />
+  <Button Grid.Row="5" Grid.Column="2" Content="显示前处理顺序" Command="{Binding ShowPreprocessOrderCommand}"></Button>
+</Grid>
+    </StackPanel>
+</UserControl>

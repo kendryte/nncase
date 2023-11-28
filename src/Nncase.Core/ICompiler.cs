@@ -50,6 +50,11 @@ public interface ICompiler
     Task CompileAsync();
 
     /// <summary>
+    /// Compile module with report pass number.
+    /// </summary>
+    Task CompileWithReportAsync(IProgress<int> progress, CancellationToken token);
+
+    /// <summary>
     /// Generate code to stream.
     /// </summary>
     /// <param name="output">Stream to be written.</param>
