@@ -57,8 +57,8 @@
 
 #define vaddi_macro(vd, vs, idata)                                             \
     "vadd.vi " STR(vd) ", " STR(vs) ", " STR(idata) ";"
-#define date_type_bits 32
-#define bit_shift 2
+#define date_type_bits 8
+#define bit_shift 0
 #define emul 8
 static void *cy_data(void *dst, const void *src, int data_bytes) {
     __asm volatile(
