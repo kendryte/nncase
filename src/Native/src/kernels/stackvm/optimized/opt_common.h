@@ -57,10 +57,14 @@
 
 #define vaddi_macro(vd, vs, idata)                                             \
     "vadd.vi " STR(vd) ", " STR(vs) ", " STR(idata) ";"
+
+// TODO: auto config this in diff types
+// Parallel control
 #define date_type_bits 8
 #define bit_shift 0
 #define emul 8
-static void *cy_data(void *dst, const void *src, int data_bytes) {
+
+static void *rvv_memcpy(void *dst, const void *src, int data_bytes) {
     __asm volatile(
         "mv a0, %[data_bytes];"
         "mv a1, %[src];"
@@ -81,10 +85,9 @@ static void *cy_data(void *dst, const void *src, int data_bytes) {
 }
 #endif
 
-// todo: reimplement memcpy with rvv
 inline void *opt_memcpy(void *dst, const void *src, size_t n) {
 #if __riscv_vector
-    return cy_data(dst, src, n);
+    return rvv_memcpy(dst, src, n);
 #else
     return memcpy(dst, src, n);
 #endif
