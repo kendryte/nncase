@@ -244,47 +244,34 @@ internal class Compiler : ICompiler
         });
     }
 
-    public async Task CompileWithReportAsync(IProgress<int> progress, CancellationToken token)
-    {
-        CancellationTokenSource cts = new();
-        var internalToken = cts.Token;
-        using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(internalToken, token))
-        {
-            try
-            {
-                var task = Task.Run(CompileAsync, linkedCts.Token);
-                Report(progress, 9, linkedCts.Token);
-                await task.WaitAsync(linkedCts.Token);
-            }
-            catch (Exception)
-            {
-                return;
-            }
-        }
-    }
-
-    public async Task CompileAsync()
+    public async Task CompileAsync(IProgress<int>? progress = null, CancellationToken token = default)
     {
         var target = _compileSession.Target;
-        await RunPassAsync(p => TargetIndependentPass(p), "TargetIndependentPass");
-        await RunPassAsync(p => RegisterTargetIndependQuantPass(p), "TargetIndependentQuantPass");
+        await RunPassAsync(p => TargetIndependentPass(p), "TargetIndependentPass", progress, token);
+        await RunPassAsync(p => RegisterTargetIndependQuantPass(p), "TargetIndependentQuantPass", progress, token);
         if (_compileSession.CompileOptions.ShapeBucketOptions.Enable)
         {
-            await RunPassAsync(p => RegisterShapeBucket(p), "ShapeBucket");
-            await RunPassAsync(p => TargetIndependentPass(p), "TargetIndependentPass");
+            await RunPassAsync(p => RegisterShapeBucket(p), "ShapeBucket", progress, token);
+            await RunPassAsync(p => TargetIndependentPass(p), "TargetIndependentPass", progress, token);
         }
 
         await RunPassAsync(
             p => target.RegisterTargetDependentPass(p, _compileSession.CompileOptions),
-            "TargetDependentPass");
-        await RunPassAsync(p => target.RegisterQuantizePass(p, _compileSession.CompileOptions), "QuantizePass");
+            "TargetDependentPass",
+            progress,
+            token);
+        await RunPassAsync(p => target.RegisterQuantizePass(p, _compileSession.CompileOptions), "QuantizePass", progress, token);
         await RunPassAsync(
             p => target.RegisterTargetDependentAfterQuantPass(p, _compileSession.CompileOptions),
-            "TargetDependentAfterQuantPass");
-        await RunPassAsync(p => ClearFixShape(p), "ClearFixShape");
+            "TargetDependentAfterQuantPass",
+            progress,
+            token);
+        await RunPassAsync(p => ClearFixShape(p), "ClearFixShape", progress, token);
         await RunPassAsync(
             p => target.RegisterTargetDependentBeforeCodeGen(p, _compileSession.CompileOptions),
-            "TargetDependentBeforeCodeGen");
+            "TargetDependentBeforeCodeGen",
+            progress,
+            token);
         if (_dumpper.IsEnabled(DumpFlags.Compile))
         {
             DumpScope.Current.DumpModule(_module!, "ModuleAfterCompile");
@@ -295,14 +282,6 @@ internal class Compiler : ICompiler
     {
         var linkedModel = _modelBuilder.Build(Module);
         linkedModel.Serialize(output);
-    }
-
-    private void Report(IProgress<int> progress, int maxPassCount, CancellationToken token)
-    {
-        while (_runPassCount < maxPassCount && !token.IsCancellationRequested)
-        {
-            progress?.Report(_runPassCount);
-        }
     }
 
     private async Task<IRModule> InitializeModuleAsync(IRModule module)
@@ -342,7 +321,7 @@ internal class Compiler : ICompiler
         }
     }
 
-    private async Task RunPassAsync(Action<IPassManager> register, string name)
+    private async Task RunPassAsync(Action<IPassManager> register, string name, IProgress<int>? progress = null, CancellationToken token = default)
     {
         var newName = $"{_runPassCount++}_" + name;
         var pmgr = _compileSession.CreatePassManager(newName);
@@ -354,5 +333,8 @@ internal class Compiler : ICompiler
             _dumpper.DumpModule(_module, newName);
             _dumpper.DumpDotIR(_module.Entry!, newName);
         }
+
+        progress?.Report(_runPassCount);
+        token.ThrowIfCancellationRequested();
     }
 }
