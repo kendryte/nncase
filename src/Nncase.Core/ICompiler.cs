@@ -47,12 +47,7 @@ public interface ICompiler
     /// Compile module.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    Task CompileAsync();
-
-    /// <summary>
-    /// Compile module with report pass number.
-    /// </summary>
-    Task CompileWithReportAsync(IProgress<int> progress, CancellationToken token);
+    Task CompileAsync(IProgress<int>? progress = null, CancellationToken? token = null);
 
     /// <summary>
     /// Generate code to stream.

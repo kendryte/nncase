@@ -6,6 +6,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Nncase.IR;
@@ -44,6 +45,7 @@ public partial class CompileViewModel : ViewModelBase
     [RelayCommand]
     public async Task Compile()
     {
+        _cts = new CancellationTokenSource();
         var conf = Context.CompileConfig;
         var options = conf.CompileOption;
         if (!File.Exists(options.InputFile))
@@ -86,17 +88,18 @@ public partial class CompileViewModel : ViewModelBase
         _cts = new();
 
         ProgressBarMax = 9;
+
         var progress = new Progress<int>(percent =>
         {
-            ProgressBarValue = percent;
+            Dispatcher.UIThread.Post(() =>
+            {
+                ProgressBarValue = percent;
+            });
         });
 
         try
         {
-            await Task.Run(async () =>
-            {
-                await compiler.CompileWithReportAsync(progress, _cts.Token);
-            }).ContinueWith(_ => Task.CompletedTask, _cts.Token);
+            await Task.Run(async () => await compiler.CompileAsync(progress, _cts.Token));
         }
         catch (Exception)
         {
@@ -122,5 +125,6 @@ public partial class CompileViewModel : ViewModelBase
     public override void UpdateViewModelCore(CompileConfig config)
     {
         KmodelPath = config.KmodelPath;
+        ProgressBarValue = 0;
     }
 }
