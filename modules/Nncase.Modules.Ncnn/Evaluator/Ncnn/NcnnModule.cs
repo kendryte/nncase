@@ -14,5 +14,6 @@ internal class NcnnModule : IApplicationPart
     public void ConfigureServices(IRegistrator registrator)
     {
         registrator.RegisterManyInterface<NcnnSoftmaxEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<NcnnUnaryEvaluator>(reuse: Reuse.Singleton);
     }
 }

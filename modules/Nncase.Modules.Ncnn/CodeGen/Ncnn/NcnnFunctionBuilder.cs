@@ -85,6 +85,9 @@ internal class NcnnFunctionBuilder : FunctionBuilder
                 case NcnnSoftmax op:
                     _emitter.Softmax(name, ExprMemo[expr.Arguments[0]], op.Axis);
                     break;
+                case NcnnUnary op:
+                    _emitter.Unary(name, ExprMemo[expr.Arguments[0]], op.OpType);
+                    break;
                 default:
                     throw new NotSupportedException();
             }

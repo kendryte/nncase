@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.IR.Ncnn;
 using Nncase.Runtime.Ncnn;
 
 namespace Nncase.CodeGen.Ncnn;
@@ -35,6 +36,12 @@ internal class NcnnEmitter
         {
             [0] = new ParamValue { Kind = ParamKind.Int, IntValue = axis }, // axis
             [1] = new ParamValue { Kind = ParamKind.Int, IntValue = 1 }, // fixbug0
+        });
+
+    public void Unary(string name, string input, UnaryOperationType opTypes) =>
+        AddLayer("UnaryOp", name, new[] { input }, new[] { name }, new ParamDict
+        {
+            [0] = new ParamValue { Kind = ParamKind.Int, IntValue = (int)opTypes },
         });
 
     private void AddLayer(string type, string name, string[] bottoms, string[] tops, ParamDict? paramDict = null)
