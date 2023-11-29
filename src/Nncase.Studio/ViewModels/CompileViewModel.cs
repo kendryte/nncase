@@ -44,15 +44,14 @@ public partial class CompileViewModel : ViewModelBase
     [RelayCommand]
     public async Task Compile()
     {
-        var info = Context.CheckViewModel();
-        if (info.Length != 0)
+        var conf = Context.CompileConfig;
+        var options = conf.CompileOption;
+        if (!File.Exists(options.InputFile))
         {
-            Context.OpenDialog($"Error List:\n{string.Join("\n", info)}");
+            Context.OpenDialog($"InputFile {options.InputFile} not found");
             return;
         }
 
-        var conf = Context.CompileConfig;
-        var options = conf.CompileOption;
         if (!Directory.Exists(options.DumpDir))
         {
             Directory.CreateDirectory(options.DumpDir);

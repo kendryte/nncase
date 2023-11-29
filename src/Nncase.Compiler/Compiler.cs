@@ -252,9 +252,11 @@ internal class Compiler : ICompiler
         {
             try
             {
+                bool flag = false;
                 var task = Task.Run(CompileAsync, linkedCts.Token);
-                Report(progress, 9, linkedCts.Token);
+                Report(progress, 9, ref flag, linkedCts.Token);
                 await task.WaitAsync(linkedCts.Token);
+                flag = true;
             }
             catch (Exception)
             {
@@ -297,10 +299,12 @@ internal class Compiler : ICompiler
         linkedModel.Serialize(output);
     }
 
-    private void Report(IProgress<int> progress, int maxPassCount, CancellationToken token)
+    private void Report(IProgress<int> progress, int maxPassCount, ref bool flag, CancellationToken token)
     {
-        while (_runPassCount < maxPassCount && !token.IsCancellationRequested)
+        while (_runPassCount < maxPassCount && (!token.IsCancellationRequested || flag))
         {
+            // Without this, the progress bar will get stuck
+            Thread.Sleep(5);
             progress?.Report(_runPassCount);
         }
     }
