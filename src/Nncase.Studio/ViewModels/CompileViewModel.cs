@@ -101,10 +101,15 @@ public partial class CompileViewModel : ViewModelBase
         {
             await Task.Run(async () => await compiler.CompileAsync(progress, _cts.Token));
         }
-        catch (Exception)
+        catch (OperationCanceledException)
         {
             Context.OpenDialog("Compile has been cancel");
             ProgressBarValue = 0;
+            return;
+        }
+        catch (Exception exp)
+        {
+            Context.OpenDialog($"Error:{exp.Message}");
             return;
         }
 
