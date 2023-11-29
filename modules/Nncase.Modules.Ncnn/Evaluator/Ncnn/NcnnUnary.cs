@@ -68,7 +68,7 @@ public class NcnnUnaryEvaluator : IEvaluator<NcnnUnary>, ITypeInferencer<NcnnUna
             case UnaryOperationType.ROUND:
                 return OrtKI.Round(input).ToValue();
 
-            //TODO: trunc
+            // TODO: trunc
             default:
                 throw new NotSupportedException("Ncnn unary ops");
         }
