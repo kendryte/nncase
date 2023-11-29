@@ -335,9 +335,6 @@ internal class Compiler : ICompiler
         }
 
         progress?.Report(_runPassCount);
-        if (token.IsCancellationRequested)
-        {
-            token.ThrowIfCancellationRequested();
-        }
+        token.ThrowIfCancellationRequested();
     }
 }
