@@ -244,7 +244,7 @@ internal class Compiler : ICompiler
         });
     }
 
-    public async Task CompileAsync(IProgress<int>? progress = null, CancellationToken? token = null)
+    public async Task CompileAsync(IProgress<int>? progress = null, CancellationToken token = default)
     {
         var target = _compileSession.Target;
         await RunPassAsync(p => TargetIndependentPass(p), "TargetIndependentPass", progress, token);
@@ -284,16 +284,6 @@ internal class Compiler : ICompiler
         linkedModel.Serialize(output);
     }
 
-    private void Report(IProgress<int> progress, int maxPassCount, CancellationToken token)
-    {
-        while (_runPassCount < maxPassCount && !token.IsCancellationRequested)
-        {
-            // Without this, the progress bar will get stuck
-            Thread.Sleep(5);
-            progress?.Report(_runPassCount);
-        }
-    }
-
     private async Task<IRModule> InitializeModuleAsync(IRModule module)
     {
         _module = module;
@@ -331,7 +321,7 @@ internal class Compiler : ICompiler
         }
     }
 
-    private async Task RunPassAsync(Action<IPassManager> register, string name, IProgress<int>? progress = null, CancellationToken? token = null)
+    private async Task RunPassAsync(Action<IPassManager> register, string name, IProgress<int>? progress = null, CancellationToken token = default)
     {
         var newName = $"{_runPassCount++}_" + name;
         var pmgr = _compileSession.CreatePassManager(newName);
@@ -345,12 +335,9 @@ internal class Compiler : ICompiler
         }
 
         progress?.Report(_runPassCount);
-        if (token != null)
+        if (token.IsCancellationRequested)
         {
-            if (token.Value.IsCancellationRequested)
-            {
-                token?.ThrowIfCancellationRequested();
-            }
+            token.ThrowIfCancellationRequested();
         }
     }
 }
