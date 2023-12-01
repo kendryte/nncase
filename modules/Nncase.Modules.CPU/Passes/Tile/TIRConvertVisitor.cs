@@ -145,7 +145,7 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
                 {
                     if (inType.NdSBP.Any(sbp => sbp is SBPPartialSum))
                     {
-                        //_mainBody.Add(TIR.F.CPU.GatherReduceScatter(arguments[0], ret, inType, outType));
+                        // _mainBody.Add(TIR.F.CPU.GatherReduceScatter(arguments[0], ret, inType, outType));
                     }
                     else
                     {

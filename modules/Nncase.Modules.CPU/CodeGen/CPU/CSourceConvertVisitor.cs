@@ -181,7 +181,6 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, IDispo
             // 2. Function body
             using (_ = new IndentScope())
             {
-                //IndentScope.Writer.IndWrite($"thread_context ctx(bid, tid);\n");
                 Visit(expr.Body);
             }
 
@@ -748,7 +747,6 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, IDispo
             if (field is Call call)
             {
                 IndentScope.Writer.IndWrite(Visit(call).Name);
-                //IndentScope.Writer.Write(";\n");
             }
             else
             {

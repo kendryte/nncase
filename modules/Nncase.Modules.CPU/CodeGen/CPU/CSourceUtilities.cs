@@ -38,6 +38,7 @@ internal static class CSourceUtilities
             rem = int.Parse(dim[(e + 1)..^1].Trim());
             return true;
         }
+
         return false;
     }
 
@@ -51,6 +52,7 @@ internal static class CSourceUtilities
                 str = $"nncase_mt->{arguments[0].Type}_{nameof(Unary).ToLower(CultureInfo.CurrentCulture)}_{op.UnaryOp.ToString().ToLower(CultureInfo.CurrentCulture)}{input}";
                 break;
         }
+
         return str;
     }
 

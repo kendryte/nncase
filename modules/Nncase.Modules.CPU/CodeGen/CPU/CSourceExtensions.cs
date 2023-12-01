@@ -134,4 +134,3 @@ internal static class CSourceExtensions
         _ => throw new NotSupportedException(op.ToString()),
     };
 }
-
