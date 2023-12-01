@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using DynamicData;
 using Nncase.IR;
 using Nncase.Quantization;
 using Nncase.Studio.Views;
@@ -76,6 +77,11 @@ public static class DataUtil
 
         try
         {
+            if (!input.Contains(":", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
             map = input.Trim().Split(",").Select(x => x.Trim().Split(":")).ToDictionary(x => x[0], x => int.Parse(x[1]));
             return true;
         }
@@ -101,7 +107,7 @@ public static class DataUtil
                 .ToDictionary(x => x[0], x =>
                 {
                     var pair = x[1].Split(",");
-                    return (int.Parse(pair[0]), int.Parse(pair[1]));
+                    return (int.Parse(pair[0].Trim('(')), int.Parse(pair[1].Trim(')')));
                 });
             return true;
         }

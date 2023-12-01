@@ -5,6 +5,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices.JavaScript;
 using Nncase.Diagnostics;
+using Nncase.Quantization;
 using Nncase.Studio.ViewModels;
 
 namespace Nncase.Studio.Util;
@@ -26,6 +27,8 @@ public class CompileConfig
         CompileOption.Mean = new[] { 0f };
         CompileOption.Std = new[] { 0f };
         CompileOption.LetterBoxValue = 0f;
+        UseQuantize = true;
+        CompileOption.QuantizeOptions.ModelQuantMode = ModelQuantMode.UsePTQ;
     }
 
     public CompileOptions CompileOption { get; set; } = new();
