@@ -53,12 +53,14 @@ public static class CompilerHostBuilderExtensions
                 .AddEGraph()
                 .AddCodeGen()
                 .AddPasses()
+                .AddCPU()
                 .AddStackVM();
     }
 
     private static void ConfigureServices(HostBuilderContext context, IServiceCollection services)
     {
         services.AddLogging();
+        services.AddRazorTemplating();
 
         services.AddSingleton<PluginLoader>();
         services.AddScoped<ICompiler, Compiler>();

@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <RootNamespace>Nncase</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Razor.Templating.Core" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\nncase\src\Nncase.Diagnostics\Nncase.Diagnostics.csproj" />
+    <ProjectReference Include="..\..\..\nncase\src\Nncase.Passes\Nncase.Passes.csproj" />
+    <ProjectReference Include="..\..\..\nncase\src\Nncase.CodeGen\Nncase.CodeGen.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\nncase/tools/Nncase.SourceGenerator/Nncase.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\..\nncase\modules\Nncase.Modules.StackVM\Nncase.Modules.StackVM.csproj" />
+  </ItemGroup>
+</Project>

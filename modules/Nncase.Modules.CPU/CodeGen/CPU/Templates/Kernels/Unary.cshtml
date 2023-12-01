@@ -1,0 +1,11 @@
+﻿@model Nncase.CodeGen.CPU.UnaryKernelTemplateModel
+@{
+    string UnaryToCFunction(UnaryOp op) =>
+                op switch
+                {
+                    UnaryOp.Abs => "mathops::abs",
+                    UnaryOp.Acosh => "mathops::acosh",
+                    _ => throw new NotSupportedException($"Unsupported unary: {op}."),
+                };
+}
+unary<@UnaryToCFunction(Model.UnaryOp)>(@(Model.Arguments[0].Symbol.Name).view(), @(Model.Arguments[1].Symbol.Name).view());

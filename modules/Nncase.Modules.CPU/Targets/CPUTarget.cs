@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Nncase.CodeGen;
+using Nncase.CodeGen.CPU;
 using Nncase.CodeGen.StackVM;
 using Nncase.IR;
 using Nncase.Passes;
@@ -44,6 +45,10 @@ public class CPUTarget : ITarget
     /// <inheritdoc/>
     public void RegisterTargetDependentPass(IPassManager passManager, CompileOptions options)
     {
+        passManager.AddWithName<DataflowPass>("LowerIR").Configure(p =>
+        {
+            p.Add<Passes.Rules.CPU.LowerUnary>();
+        });
     }
 
     /// <inheritdoc/>
@@ -74,6 +79,29 @@ public class CPUTarget : ITarget
                 p.Add<Passes.Rules.Lower.RemoveMarker>();
             });
         }
+
+        passManager.AddWithName<DataflowPass>("MakeFusion").Configure(p =>
+        {
+            p.Add<Passes.Rules.CPU.CPUFusion>();
+        });
+
+        passManager.Add<CPUFusionToTirPass>(Passes.Tile.TileOptions.Default);
+
+        passManager.Add<PrimFuncPass>().Configure(p =>
+        {
+            p.Add<Passes.Mutators.UnFoldBlock>();
+            p.Add<Passes.Mutators.FlattenSequential>();
+            p.Add<Passes.Mutators.FoldConstCall>();
+        });
+
+        passManager.AddWithName<DDrBufferSchdeulePass>("DDrBufferSchdeule");
+
+        passManager.AddWithName<PrimFuncPass>("InstStage").Configure(p =>
+        {
+            p.Add<Passes.Mutators.FlattenBuffer>();
+            p.Add<Passes.Mutators.FoldConstCall>();
+            p.Add<Passes.Mutators.RemoveNop>();
+        });
     }
 
     public void RegisterTargetDependentBeforeCodeGen(IPassManager passManager, CompileOptions options)
@@ -86,6 +114,10 @@ public class CPUTarget : ITarget
         if (moduleKind == Callable.StackVMModuleKind)
         {
             return new StackVMModuleBuilder();
+        }
+        else if (moduleKind == "cpu")
+        {
+            return new CPUModuleBuilder(options);
         }
         else
         {

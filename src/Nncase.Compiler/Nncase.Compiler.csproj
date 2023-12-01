@@ -11,9 +11,11 @@
         <PackageReference Include="DryIoc.dll" />
         <PackageReference Include="DryIoc.Microsoft.DependencyInjection" />
         <PackageReference Include="Microsoft.Extensions.Hosting" />
+        <PackageReference Include="Razor.Templating.Core" />
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\modules\Nncase.Modules.CPU\Nncase.Modules.CPU.csproj" />
         <ProjectReference Include="..\Nncase.CodeGen\Nncase.CodeGen.csproj" />
         <ProjectReference Include="..\Nncase.Core\Nncase.Core.csproj" />
         <ProjectReference Include="..\Nncase.Diagnostics\Nncase.Diagnostics.csproj" />
