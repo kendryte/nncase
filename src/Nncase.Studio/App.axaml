@@ -1,0 +1,27 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Nncase.Studio.App"
+             xmlns:local="using:Nncase.Studio"
+             RequestedThemeVariant="Default">
+             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+
+    <Application.DataTemplates>
+        <local:ViewLocator/>
+    </Application.DataTemplates>
+
+    <Application.Styles>
+        <FluentTheme />
+        <StyleInclude Source="Style/ButtonStyle.axaml"></StyleInclude>
+        <StyleInclude Source="Style/CustomValidation.axaml"></StyleInclude>
+        <StyleInclude Source="Style/Logo.axaml"></StyleInclude>
+        <StyleInclude Source="Style/GridStyle.axaml"></StyleInclude>
+
+        <Style Selector="TextBox.contentMessage">
+            <Setter Property="FontSize" Value="30"></Setter>
+        </Style>
+    </Application.Styles>
+
+     <Application.Resources>
+         <!-- <FontFamily x:Key="NunitoFont">Assets\Fonts\Nunito-Black.ttf</FontFamily> -->
+     </Application.Resources>
+</Application>

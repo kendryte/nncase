@@ -1,0 +1,72 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Nncase.Studio.ViewModels"
+        xmlns:flg="using:Nncase.Diagnostics"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:global="clr-namespace:"
+        xmlns:studio="clr-namespace:Nncase.Studio"
+        xmlns:views="clr-namespace:Nncase.Studio.Views"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        MinHeight="880"
+        MinWidth="1400"
+        x:Class="Nncase.Studio.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/nncase-logo.png"
+        Title="Nncase.Studio">
+
+    <Window.Resources>
+        <x:Double x:Key="ControlContentThemeFontSize">24</x:Double>
+        <studio:EnumConverter x:Key="EnumConverter"/>
+    </Window.Resources>
+
+    <Design.DataContext>
+        <!-- This only sets the DataContext for the previewer in an IDE,
+             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+
+    <!-- bind data contenxt -->
+    <!-- <Border Background="MediumPurple" -->
+    <Border Background="White"
+            BorderBrush="Black"
+            BorderThickness="0"
+            CornerRadius="3"
+            Padding="100 0">
+        <StackPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition />
+                    <ColumnDefinition />
+                </Grid.ColumnDefinitions>
+                <Image Grid.Column="0" Source="/Assets/canaan-logo.png" Width="250" Height="90" HorizontalAlignment="Left"></Image>
+                <Label Grid.Column="1" FontWeight="Bold" FontSize="54" Content="{Binding Title}" HorizontalAlignment="Center" VerticalAlignment="Center"></Label>
+                <Image Grid.Column="2" Source="/Assets/nncase-full-logo.png" Width="180" Height="90" HorizontalAlignment="Right"></Image>
+            </Grid>
+
+            <Border Background="White"
+                    BorderBrush="Black"
+                    BorderThickness="3"
+                    CornerRadius="3"
+                    Padding="4">
+                <Label
+                    HorizontalContentAlignment="Center"
+                    VerticalContentAlignment="Center"
+                    MinHeight="640"
+                    Content="{Binding ContentViewModel}"></Label>
+            </Border>
+            <Border Background="White"
+                    BorderBrush="Black"
+                    BorderThickness="0"
+                    CornerRadius="3"
+                    Padding="4">
+                <DockPanel HorizontalAlignment="Center">
+                    <views:NavigatorView HorizontalAlignment="Center" DataContext="{Binding NavigatorViewModelValue}"></views:NavigatorView>
+                    <Button Content="导出编译配置" Command="{Binding ExportStudioConfigCommand}"></Button>
+                </DockPanel>
+
+            </Border>
+        </StackPanel>
+    </Border>
+</Window>
