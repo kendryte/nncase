@@ -60,6 +60,13 @@ public sealed partial class CombineQuantizeConcat : RewriteRule<Pattern>
                                 return null;
                             }
                         }
+                        else
+                        {
+                            if (user is not Nncase.IR.Tuple)
+                            {
+                                return null;
+                            }
+                        }
                     }
                 }
             }
