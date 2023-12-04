@@ -82,8 +82,6 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                 'kind': 'N/A',
                 'model': 'N/A',
                 'shape': 'N/A',
-                'if_quant_type': 'uint8',
-                'w_quant_type': 'uint8',
                 'official_result': '',
                 'tflite_onnx_result': '',
                 'nncase_result': '',
@@ -195,6 +193,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                 self.get_official_result()).replace('\n', '<br/>')
             self.infer_report_dict['tflite_onnx_result'] = escape(
                 tflite_onnx_result).replace('\n', '<br/>')
+            self.infer_report_dict['remark'] = self.get_remark()
 
         # nncase
         targets = self.cfg['target']
@@ -227,11 +226,6 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                             if stage == 'infer' and self.cfg['infer_report_opt']['enabled']:
                                 self.infer_report_dict['nncase_result'] = escape(
                                     result).replace('\n', '<br/>')
-                                remark = self.get_remark()
-                                remark if self.infer_report_dict['remark'] == '' else remark + \
-                                    ': ' + self.infer_report_dict['remark']
-                                self.infer_report_dict['remark'] = escape(
-                                    remark).replace('\n', '<br/>')
                                 prefix, suffix = os.path.splitext(self.infer_report_file)
                                 json_file = f'{prefix}_{os.path.basename(self.case_dir)}{suffix}'
                                 dump_dict_to_json(self.infer_report_dict, json_file)

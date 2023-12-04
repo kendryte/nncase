@@ -52,11 +52,10 @@ class Inference:
                 map(lambda d: '[' + ','.join(map(lambda x: str(x), d['model_shape'])) + ']', self.inputs))
         if ptq_enabled:
             self.set_quant_opt(compiler)
-
             if self.cfg['infer_report_opt']['enabled']:
-                case = os.path.basename(self.case_dir)
-                self.infer_report_dict['if_quant_type'] = self.cfg['ptq_opt']['quant_type']
-                self.infer_report_dict['w_quant_type'] = self.cfg['ptq_opt']['w_quant_type']
+                if_quant_type = self.cfg['ptq_opt']['quant_type']
+                w_quant_type = self.cfg['ptq_opt']['w_quant_type']
+                self.infer_report_dict['remark'] += f', nncase(if_quant_type={if_quant_type}, w_quant_type={w_quant_type})'
 
         compiler.compile()
         kmodel = compiler.gencode_tobytes()
@@ -263,6 +262,7 @@ class Inference:
             t.join()
         else:
             if self.cfg['infer_report_opt']['enabled']:
-                self.infer_report_dict['remark'] = header_dict['msg']
+                remark = self.infer_report_dict['remark'] + ', ' + header_dict['msg']
+                self.infer_report_dict['remark'] = escape(remark).replace('\n', '<br/>')
 
         client_socket.close()
