@@ -251,6 +251,22 @@ public static class T
         return buffer;
     }
 
+    public static Buffer AttachBuffer(Expr start, TensorType tensorType, MemoryLocation location, out Buffer buffer, [CallerArgumentExpression("buffer")] string name = "")
+    {
+        if (name.StartsWith("var "))
+        {
+            name = name[4..];
+        }
+
+        var dimensions = tensorType.Shape.ToValueArray();
+        var strides = TensorUtilities.GetStrides(dimensions);
+        var size = (int)TensorUtilities.GetProduct(dimensions.ToArray()) * tensorType.DType.SizeInBytes;
+        var memspan = new MemSpan(start, size, location);
+        buffer = new Buffer(name, tensorType.DType, memspan, dimensions.Select(i => (Expr)i).ToArray(), strides.Select(i => (Expr)i).ToArray());
+        return buffer;
+    }
+
+
     /// <summary>
     /// create buffer by const.
     /// </summary>
