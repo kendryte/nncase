@@ -36,10 +36,10 @@ public sealed partial class CombineQuantizeConcat : RewriteRule<Pattern>
       IsConcat(
         "concat",
         _ => true,
-        IsTuple(IsVArgsRepeat("tupleInputs", () => IsWildcard()))),
+        IsTuple("tuple", IsVArgsRepeat("tupleInputs", () => IsWildcard()))),
       IsWildcard("quantParam"));
 
-    private Expr? GetReplace(Quantize quantize, IReadOnlyList<Expr> tupleInputs, IR.Tensors.Concat concat, Expr quantParam, RunPassContext options)
+    private Expr? GetReplace(Quantize quantize, IReadOnlyList<Expr> tupleInputs, IR.Tensors.Concat concat, Expr quantParam, RunPassContext options, Expr tuple)
     {
         if (options.Driver is DataflowPass)
         {
@@ -65,6 +65,13 @@ public sealed partial class CombineQuantizeConcat : RewriteRule<Pattern>
                             if (user is not Nncase.IR.Tuple)
                             {
                                 return null;
+                            }
+                            else
+                            {
+                                if (user != tuple)
+                                {
+                                    return null;
+                                }
                             }
                         }
                     }
