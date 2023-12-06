@@ -64,7 +64,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         self.outputs: List[Dict] = []
         self.model_type: str = ""
         self.pre_process: List[Dict] = []
-        self.postprocess_qsize = 1024
+        self.postprocess_qsize = 4096
         self.postprocess_result = ''
 
         self.num_pattern = re.compile("(\d+)")
@@ -196,6 +196,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
             self.infer_report_dict['remark'] = self.get_remark()
 
         # nncase
+        self.postprocess_result = ''
         targets = self.cfg['target']
         model_content = self.read_model_file(model_file)
         import_options = nncase.ImportOptions()
