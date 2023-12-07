@@ -227,6 +227,8 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                             if stage == 'infer' and self.cfg['infer_report_opt']['enabled']:
                                 self.infer_report_dict['nncase_result'] = escape(
                                     result).replace('\n', '<br/>')
+                                self.infer_report_dict['remark'] = escape(
+                                    self.infer_report_dict['remark']).replace('\n', '<br/>')
                                 prefix, suffix = os.path.splitext(self.infer_report_file)
                                 json_file = f'{prefix}_{os.path.basename(self.case_dir)}{suffix}'
                                 dump_dict_to_json(self.infer_report_dict, json_file)

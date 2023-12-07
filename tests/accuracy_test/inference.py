@@ -55,7 +55,7 @@ class Inference:
             if self.cfg['infer_report_opt']['enabled']:
                 if_quant_type = self.cfg['ptq_opt']['quant_type']
                 w_quant_type = self.cfg['ptq_opt']['w_quant_type']
-                self.infer_report_dict['remark'] += f', nncase(if_quant_type={if_quant_type}, w_quant_type={w_quant_type})'
+                self.infer_report_dict['remark'] += f',\nnncase(if_quant_type={if_quant_type}, w_quant_type={w_quant_type})'
 
         compiler.compile()
         kmodel = compiler.gencode_tobytes()
@@ -262,7 +262,6 @@ class Inference:
             t.join()
         else:
             if self.cfg['infer_report_opt']['enabled']:
-                remark = self.infer_report_dict['remark'] + ', ' + header_dict['msg']
-                self.infer_report_dict['remark'] = escape(remark).replace('\n', '<br/>')
+                self.infer_report_dict['remark'] += ',\n' + header_dict['msg']
 
         client_socket.close()
