@@ -43,7 +43,6 @@ public partial class LowerBatchNorm : RewriteRule<Pattern>
 
         var newVar = Add(var, eps).Evaluate().AsTensor().ToArray<float>();
 
-
         var inRes = Reshape(input, shape);
         var inResO = new Var(inRes.CheckedType);
 

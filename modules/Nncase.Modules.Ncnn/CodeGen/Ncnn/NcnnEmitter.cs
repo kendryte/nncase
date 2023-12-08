@@ -85,6 +85,5 @@ internal class NcnnEmitter
         {
             _binWriter.Write(value);
         }
-
     }
 }
