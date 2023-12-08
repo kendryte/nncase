@@ -19,6 +19,7 @@
 #endif
 
 #include <cstring>
+#include <nncase/runtime/cpu/runtime_module.h>
 #include <nncase/runtime/runtime_loader.h>
 #include <nncase/runtime/runtime_module.h>
 #include <nncase/runtime/stackvm/runtime_module.h>
@@ -117,8 +118,12 @@ FindRuntimeMethod(collector)
 result<std::unique_ptr<runtime_module>>
 runtime_module::create(const module_kind_t &kind) {
     if (!strncmp(kind.data(), stackvm::stackvm_module_kind.data(),
-                 MAX_MODULE_KIND_LENGTH))
+                 MAX_MODULE_KIND_LENGTH)) {
         return stackvm::create_stackvm_runtime_module();
+    } else if (!strncmp(kind.data(), cpu::cpu_module_kind.data(),
+                        MAX_MODULE_KIND_LENGTH)) {
+        return cpu::create_cpu_runtime_module();
+    }
 
     result<std::unique_ptr<runtime_module>> rt_module(
         nncase_errc::runtime_not_found);

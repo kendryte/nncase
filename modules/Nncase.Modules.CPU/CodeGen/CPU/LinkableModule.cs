@@ -91,6 +91,6 @@ internal sealed class LinkableModule : ILinkableModule
     private string CompileCSource(string sourcePath)
     {
         var compiler = new CSourceCompiler();
-        return compiler.Compile(sourcePath, Path.Join(sourcePath, "build", Path.GetFileName(sourcePath)));
+        return compiler.Compile(sourcePath, Path.Join(sourcePath, "build", "RelWithDebInfo", "nncase_cpu_module.dll"));
     }
 }

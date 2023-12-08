@@ -36,8 +36,8 @@ using namespace nncase::runtime::cpu;
         string init_tensors = string.Join("\n", primFunction.Parameters.ToArray().Select((b, i) =>
         {
             var size = TensorUtilities.GetSize(b.CheckedShape.ToValueArray(), TensorUtilities.GetStrides(b.CheckedShape.ToValueArray()), 1);
-            return $@"    auto p{b.Name} = ({b.ElemType.ToC()} *)inputs[{i}];
-    auto &{b.Name} = *reinterpret_cast<tensor<{b.ElemType.ToC()}, {KernelUtility.DimensionsToC(b.Dimensions)}> *>(&p{b.Name});
+            return $@"    std::span<{b.ElemType.ToC()}, {size}> p{b.Name}(({b.ElemType.ToC()} *)inputs[{i}], {size});
+    tensor_view<{b.ElemType.ToC()}, {KernelUtility.DimensionsToC(b.Dimensions)}, {KernelUtility.StridesToC(b.Strides)}> {b.Name}(p{b.Name});
 ";
         }).Concat(rdataBuffers.Select(b =>
         {
@@ -48,9 +48,7 @@ using namespace nncase::runtime::cpu;
         })));
         return @$"#include ""kernel.h""
 
-extern ""C"" {{void __libc_csu_fini(){{}} void __libc_csu_init(){{}}}}
-
-void kernel_entry(nncase_runtime_cpu_mt_t *cpu_mt, uint8_t **inputs, uint8_t *rdata) {{
+extern ""C"" NNCASE_API void kernel_entry(nncase_runtime_cpu_mt_t *cpu_mt, uint8_t **inputs, uint8_t *rdata) {{
 g_cpu_mt = cpu_mt;
 {init_tensors}
 

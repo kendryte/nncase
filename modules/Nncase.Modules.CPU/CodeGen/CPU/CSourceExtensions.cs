@@ -109,7 +109,7 @@ internal static class CSourceExtensions
             }
         }
 
-        return $".view<fixed_dims_t<{string.Join(',', begins)}>, fixed_dims_t<{string.Join(",", dims.Select(d => d.ToString()))}>>()";
+        return $".view<fixed_shape<{string.Join(',', begins)}>, fixed_shape<{string.Join(",", dims.Select(d => d.ToString()))}>>()";
     }
 
     public static string ToSlicing(this IEnumerable<string> dims, IRArray<SBP> ndsbp, Placement placement) => ToSlicing(dims, Enumerable.Repeat("0", dims.Count()).ToArray(), ndsbp, placement);

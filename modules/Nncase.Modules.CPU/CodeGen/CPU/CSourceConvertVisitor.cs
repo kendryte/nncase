@@ -12,6 +12,7 @@ using System.Reactive;
 using System.Runtime.InteropServices;
 using System.Text;
 using DryIoc.ImTools;
+using Microsoft.Toolkit.HighPerformance;
 using NetFabric.Hyperlinq;
 using Nncase.CodeGen.CPU;
 using Nncase.IR;
@@ -134,7 +135,7 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, IDispo
             _sharedWriter.WriteLine(";");
         });
 
-        var ctype = $"void {VisitEntry.Name}({string.Join(", ", VisitEntry.Parameters.AsValueEnumerable().Select(Visit).Select(s => $"{s.Type} &{s.Name}").ToArray().Concat(_exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location == MemoryLocation.Rdata).Select(Visit).Select(s => $" {s.Type} &{s.Name}").ToArray()))})";
+        var ctype = $"void {VisitEntry.Name}({string.Join(", ", VisitEntry.Parameters.AsValueEnumerable().Select(Visit).Select(s => $"{s.Type} {s.Name}").ToArray().Concat(_exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location == MemoryLocation.Rdata).Select(Visit).Select(s => $" {s.Type} {s.Name}").ToArray()))})";
         return new(
             CSourceBuiltn.MakeMain(VisitEntry, _exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location == MemoryLocation.Rdata)),
             CSourceBuiltn.MakeKernel(ctype, _kernelBuilder.ToString()));
@@ -171,7 +172,7 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, IDispo
             throw new NotSupportedException("The PrimFunction must return void!");
         }
 
-        var ctype = $"void {expr.Name}({string.Join(", ", expr.Parameters.AsValueEnumerable().Select(Visit).Select(s => $"{s.Type} &{s.Name}").ToArray())})";
+        var ctype = $"void {expr.Name}({string.Join(", ", expr.Parameters.AsValueEnumerable().Select(Visit).Select(s => $"{s.Type} {s.Name}").ToArray())})";
 
         using (var scope = new IndentScope(_kernelBuilder))
         {
@@ -227,7 +228,9 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, IDispo
             return symbol;
         }
 
-        var type = $"tensor<{expr.ElemType.ToC()}, {KernelUtility.DimensionsToC(expr.Dimensions)}> ";
+        var type = VisitEntry.Parameters.AsValueEnumerable().Contains(expr)
+            ? $"tensor_view<{expr.ElemType.ToC()}, {KernelUtility.DimensionsToC(expr.Dimensions)}, {KernelUtility.StridesToC(expr.Strides)}> "
+            : $"tensor<{expr.ElemType.ToC()}, {KernelUtility.DimensionsToC(expr.Dimensions)}> ";
 
         symbol = new(type, expr.Name);
         _exprMemo.Add(expr, symbol);

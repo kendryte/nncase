@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Nncase.CodeGen;
 using Nncase.Diagnostics;
 using Nncase.IR;
+using Nncase.IR.F;
 using Nncase.IR.Tensors;
 using Nncase.Runtime.Interop;
 using Nncase.Targets;
@@ -110,6 +111,16 @@ public class UnitTestCPUTarget : TestClassBase
         var main = new Function("main", y, new[] { x });
         var module = new IRModule(main);
         GenerateKModelAndRun(module, new[] { 1.0f }, new[] { 2.0f });
+    }
+
+    [Fact]
+    public void TestSimpleUnary()
+    {
+        var x = new Var("x", new TensorType(DataTypes.Float32, new[] { 1 }));
+        var y = IR.F.Math.Abs(x);
+        var main = new Function("main", y, new[] { x });
+        var module = new IRModule(main);
+        GenerateKModelAndRun(module, new[] { -1.0f }, new[] { 1.0f });
     }
 
     [Fact]
@@ -237,20 +248,17 @@ public class UnitTestCPUTarget : TestClassBase
 
     private void GenerateKModelAndRun(IRModule module, Tensor input, Tensor[] expectedOutput, [CallerMemberName] string? name = null)
     {
-        var modelBuilder = CompileSession.GetRequiredService<IModelBuilder>();
-        var linkedModel = modelBuilder.Build(module);
-        using (var output = File.Open($"{name}.kmodel", FileMode.Create))
-        {
-            linkedModel.Serialize(output);
-            Assert.NotEqual(0, output.Length);
-        }
+        CompileSession.Compiler.ImportIRModule(module);
+        CompileSession.Compiler.CompileAsync().Wait();
 
         byte[] kmodel;
         using (var output = new MemoryStream())
         {
-            linkedModel.Serialize(output);
+            CompileSession.Compiler.Gencode(output);
             kmodel = output.ToArray();
         }
+
+        File.WriteAllBytes($"{name}.kmodel", kmodel);
 
         var interp = RTInterpreter.Create();
         interp.LoadModel(kmodel);

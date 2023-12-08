@@ -30,6 +30,7 @@ using namespace std::string_view_literals;
         throw 1;
 
 int main() {
+#if 0
     nncase_clr_initialize(
         R"(E:\Work\Repos\nncase-v2\nncase\src\Nncase.Compiler\bin\Debug\net6.0\Nncase.Compiler.dll)");
     auto target_name = "cpu"sv;
@@ -39,9 +40,9 @@ int main() {
     target = nncapi->target_create(target_name.data(), target_name.length());
     nncapi->compile_session_create(target.get(), compile_options.get());
     compiler = nncapi->compile_session_get_compiler(compile_session.get());
+#endif
 
-    auto kmodel = read_file(
-        R"(E:\Work\Repos\nncase\tests\private\tests_output\test_nmt_enc\infer\cpu\noptq\test.kmodel)");
+    auto kmodel = read_file(R"(E:\Work\Models\onnx\acosh.kmodel)");
 
     interpreter *interp;
     TRY(nncase_interp_create(&interp));
@@ -53,10 +54,11 @@ int main() {
     buffer_allocator *host_alloc;
     TRY(nncase_buffer_allocator_get_host(&host_alloc));
 
-    datatype_node *dtype_int64;
+    datatype_node *dtype_int64, *dtype_float32;
     TRY(nncase_dtype_create_prime(dt_int64, &dtype_int64));
+    TRY(nncase_dtype_create_prime(dt_float32, &dtype_float32));
 
-    int64_t x[] = {1};
+    float x[] = {-1.f};
     buffer_node *x_buf;
     TRY(nncase_buffer_allocator_alloc(host_alloc, sizeof(x), nullptr, &x_buf));
     {
@@ -74,8 +76,8 @@ int main() {
     uint32_t dims[] = {1, 1};
     uint32_t strides[] = {1, 1};
     nncase_buffer_slice x_buffer_slice{x_buf, 0, sizeof(x)};
-    TRY(nncase_tensor_create(dtype_int64, dims, 1, strides, 1, &x_buffer_slice,
-                             &x_tensor));
+    TRY(nncase_tensor_create(dtype_float32, dims, 1, strides, 1,
+                             &x_buffer_slice, &x_tensor));
 
     value_node *params[] = {(value_node *)x_tensor};
     tensor_node *ret = nullptr;

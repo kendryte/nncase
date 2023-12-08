@@ -132,11 +132,12 @@ public class CSourceCompiler
 
     private string ArgumentsSpecific(string sourcePath, string outPath)
     {
+        var config = "RelWithDebInfo";
         var script = $"""
             cd {sourcePath} &&
             cmake -E remove_directory build &&
-            cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo &&
-            cmake --build build --config RelWithDebInfo
+            cmake -S . -B build -DCMAKE_BUILD_TYPE={config} &&
+            cmake --build build --config {config}
             """.Replace("\r\n", " ", StringComparison.Ordinal);
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
