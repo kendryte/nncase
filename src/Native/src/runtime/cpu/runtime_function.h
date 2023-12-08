@@ -25,11 +25,13 @@ struct nncase_runtime_cpu_mt_t {
     void *unused;
 };
 
-typedef void (_cdecl *kernel_entry_t)(nncase_runtime_cpu_mt_t *cpu_mt,
-                               gsl::byte **inputs, const gsl::byte *rdata);
+#define CPU_ENTRY_NAME "kernel_entry"
 }
 
 class cpu_runtime_function final : public runtime_function {
+    typedef void (*kernel_entry_t)(nncase_runtime_cpu_mt_t *cpu_mt,
+                                   gsl::byte **inputs, const gsl::byte *rdata);
+
   public:
     cpu_runtime_function(runtime_module &rt_module);
     virtual ~cpu_runtime_function();
@@ -46,11 +48,8 @@ class cpu_runtime_function final : public runtime_function {
     result<void> run(gsl::span<gsl::byte *> params) noexcept;
 
   private:
-#ifdef WIN32
-    void *func_file_;
-    void *func_mod_;
+    gsl::byte *image_;
     kernel_entry_t kernel_entry_;
-#endif
 };
 
 END_NS_NNCASE_RT_MODULE

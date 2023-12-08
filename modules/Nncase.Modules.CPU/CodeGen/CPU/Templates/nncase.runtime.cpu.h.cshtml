@@ -9,11 +9,28 @@
 
 // compiler support
 #if defined(_MSC_VER)
-#define NNCASE_API __declspec(dllexport)
+#define __ISA_AVAILABLE_X86 0
+#define __ISA_AVAILABLE_SSE2 1
+#define __ISA_AVAILABLE_SSE42 2
+#define __ISA_AVAILABLE_AVX 3
+#define __ISA_AVAILABLE_ENFSTRG 4
+#define __ISA_AVAILABLE_AVX2 5
+#define __ISA_AVAILABLE_AVX512 6
+
+extern "C" {
+    int _fltused = 0;
+
+    unsigned int __isa_available = __ISA_AVAILABLE_AVX;
+    unsigned int __favor         = 0;
+    
+    void __chkstk() {
+    }
+}
 #endif
 
 extern "C" {
     struct nncase_runtime_cpu_mt_t {
+        float (*acoshf)(float v);
     };
 
     nncase_runtime_cpu_mt_t *g_cpu_mt;
@@ -143,7 +160,7 @@ namespace nncase::runtime::cpu {
         };
 
         struct acosh {
-            float operator()(float v) const noexcept { return acoshf(v); }
+            float operator()(float v) const noexcept { return g_cpu_mt->acoshf(v); }
         };
     }
 
