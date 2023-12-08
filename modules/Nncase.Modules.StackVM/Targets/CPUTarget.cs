@@ -48,6 +48,7 @@ public class CPUTarget : ITarget
     {
         passManager.AddWithName<DataflowPass>("LowerNcnnIR").Configure(p =>
         {
+            p.Add<Passes.Rules.Ncnn.LowerBatchNorm>();
             p.Add<Passes.Rules.Ncnn.LowerSoftmax>();
             p.Add<Passes.Rules.Ncnn.LowerUnary>();
         });

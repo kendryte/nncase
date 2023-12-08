@@ -88,6 +88,9 @@ internal class NcnnFunctionBuilder : FunctionBuilder
                 case NcnnUnary op:
                     _emitter.Unary(name, ExprMemo[expr.Arguments[0]], op.OpType);
                     break;
+                case NcnnBatchNorm op:
+                    _emitter.BatchNorm(name, ExprMemo[expr.Arguments[0]], op.Channels, op.Eps, op.SlopeData, op.MeanData, op.VarData, op.BiasData);
+                    break;
                 default:
                     throw new NotSupportedException();
             }

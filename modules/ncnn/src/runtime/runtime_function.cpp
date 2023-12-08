@@ -18,19 +18,19 @@
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/runtime_op_utility.h>
-
+#include <iostream>
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::ncnn;
 
 namespace {
 class DataReaderFromEmpty : public ::ncnn::DataReader {
-  public:
-    virtual int scan(const char *format, void *p) const { return 0; }
-    virtual size_t read(void *buf, size_t size) const {
-        memset(buf, 0, size);
-        return size;
-    }
+    public:
+        virtual int scan(const char *format, void *p) const { return 0; }
+        virtual size_t read(void *buf, size_t size) const {
+            memset(buf, 0, size);
+            return size;
+        }
 };
 } // namespace
 
@@ -56,8 +56,10 @@ result<void> ncnn_runtime_function::initialize_core(
 
     auto param_mem = reinterpret_cast<const uint8_t *>(
         module().text().data() + context.header().entrypoint);
+    auto bin_mem = reinterpret_cast<const uint8_t *>(
+        module().rdata().data() + context.header().entrypoint);
     ::ncnn::DataReaderFromMemory paramdr(param_mem);
-    DataReaderFromEmpty bindr;
+    ::ncnn::DataReaderFromMemory bindr(bin_mem);
 
     CHECK_WITH_ERR(!net_.load_param(paramdr), std::errc::invalid_argument);
     CHECK_WITH_ERR(!net_.load_model(bindr), std::errc::invalid_argument);

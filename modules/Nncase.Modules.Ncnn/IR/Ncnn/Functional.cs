@@ -17,4 +17,7 @@ public sealed class Ncnn
 
     public static Call NcnnSoftmax(Expr expr, int axis) =>
         new Call(new NcnnSoftmax(axis), expr);
+
+    public static Call NcnnBatchNorm(Expr expr, int channels, float eps, float[] slopeData, float[] meanData, float[] varData, float[] biasData) =>
+        new Call(new NcnnBatchNorm(channels, eps, slopeData, meanData, varData, biasData), expr);
 }

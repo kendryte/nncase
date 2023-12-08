@@ -22,6 +22,9 @@ public sealed partial class NcnnSoftmax : Op
     /// </summary>
     public static readonly ParameterInfo Input = new(typeof(NcnnSoftmax), 0, "input");
 
+    /// <summary>
+    /// Gets axis of Ncnn Softmax.
+    /// </summary>
     public int Axis { get; }
 
     /// <inheritdoc/>

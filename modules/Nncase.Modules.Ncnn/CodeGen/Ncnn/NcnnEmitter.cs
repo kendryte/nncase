@@ -44,6 +44,20 @@ internal class NcnnEmitter
             [0] = new ParamValue { Kind = ParamKind.Int, IntValue = (int)opTypes },
         });
 
+    public void BatchNorm(string name, string input, int channels, float eps, float[] slopeData, float[] meanData, float[] varData, float[] biasData/*, float[] aData, float[] bData*/)
+    {
+        AddLayer("BatchNorm", name, new[] { input }, new[] { name }, new ParamDict
+        {
+            [0] = new ParamValue { Kind = ParamKind.Int, IntValue = channels },
+            [1] = new ParamValue { Kind = ParamKind.Float, FloatValue = eps },
+        });
+
+        WriteFloatArray(slopeData);
+        WriteFloatArray(meanData);
+        WriteFloatArray(varData);
+        WriteFloatArray(biasData);
+    }
+
     private void AddLayer(string type, string name, string[] bottoms, string[] tops, ParamDict? paramDict = null)
     {
         var layer = new NcnnLayer(type, name, bottoms.Length, tops.Length);
@@ -63,5 +77,14 @@ internal class NcnnEmitter
         }
 
         _model.Layers.Add(layer);
+    }
+
+    private void WriteFloatArray(float[] data)
+    {
+        foreach (float value in data)
+        {
+            _binWriter.Write(value);
+        }
+
     }
 }
