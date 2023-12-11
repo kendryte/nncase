@@ -34,7 +34,7 @@ if (BUILDING_RUNTIME)
     install(TARGETS runtime EXPORT nncaseruntimeTargets)
 
     add_library(nncaseruntime STATIC dummy.cpp)
-    target_link_libraries(nncaseruntime PRIVATE nncasebase kernels runtime runtime_stackvm runtime_cpu)
+    target_link_libraries(nncaseruntime PRIVATE nncasebase kernels runtime runtime_stackvm runtime_cpu cpu_loaders)
     target_link_libraries(nncaseruntime PUBLIC gsl::gsl-lite)
     set_target_properties(nncaseruntime PROPERTIES
                                         OUTPUT_NAME "Nncase.Runtime.Native")
@@ -66,7 +66,7 @@ else()
     set_property(TARGET simulator PROPERTY POSITION_INDEPENDENT_CODE ON)
     
     add_library(nncaseruntime SHARED dummy.cpp)
-    target_link_libraries(nncaseruntime PRIVATE nncasebase kernels simulator compiler simulator_stackvm simulator_cpu fmt::fmt)
+    target_link_libraries(nncaseruntime PRIVATE nncasebase kernels simulator compiler simulator_stackvm simulator_cpu cpu_loaders fmt::fmt)
     target_link_libraries(nncaseruntime PUBLIC gsl::gsl-lite)
     set_target_properties(nncaseruntime PROPERTIES
                                         OUTPUT_NAME "Nncase.Runtime.Native")

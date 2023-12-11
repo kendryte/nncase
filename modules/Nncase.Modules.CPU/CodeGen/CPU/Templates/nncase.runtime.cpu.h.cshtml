@@ -133,7 +133,7 @@ namespace nncase::runtime::cpu {
 
         template<class Offset = fixed_shape<0>, class UShape = Shape>
         tensor_view<T, UShape, Strides> view() noexcept {
-            return buffer_.subspan<linear_offset<Offset, Strides>()>();
+            return buffer_.template subspan<linear_offset<Offset, Strides>()>();
         }
 
     private:
@@ -143,7 +143,7 @@ namespace nncase::runtime::cpu {
     template<class T, class Shape, class Strides>
     template<class Offset, class UShape>
     tensor_view<T, UShape, Strides> tensor<T, Shape, Strides>::view() noexcept {
-        return { buffer().subspan<linear_offset<Offset, Strides>()>()};
+        return { buffer().template subspan<linear_offset<Offset, Strides>()>()};
     }
 
     // tensors

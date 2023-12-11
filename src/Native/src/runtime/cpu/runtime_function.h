@@ -18,6 +18,12 @@
 #include <nncase/runtime/runtime_function.h>
 #include <nncase/tensor.h>
 
+#if WIN32
+#include "loaders/pe/pe_loader.h"
+#else
+#include "loaders/elf/elf_loader.h"
+#endif
+
 BEGIN_NS_NNCASE_RT_MODULE(cpu)
 
 extern "C" {
@@ -48,7 +54,12 @@ class cpu_runtime_function final : public runtime_function {
     result<void> run(gsl::span<gsl::byte *> params) noexcept;
 
   private:
-    gsl::byte *image_;
+#if WIN32
+    pe_loader loader_;
+#else
+    elf_loader loader_;
+#endif
+
     kernel_entry_t kernel_entry_;
 };
 
