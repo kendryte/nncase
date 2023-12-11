@@ -19,7 +19,6 @@
 
 #ifdef WIN32
 #include <Windows.h>
-#include <winternl.h>
 #elif defined(__unix__) || defined(__APPLE__)
 #include <dlfcn.h>
 #endif
@@ -28,6 +27,7 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::cpu;
 
+#ifdef WIN32
 // Protection flags for memory pages (Executable, Readable, Writeable)
 static int ProtectionFlags[2][2][2] = {
     {
@@ -41,65 +41,16 @@ static int ProtectionFlags[2][2][2] = {
         {PAGE_EXECUTE_READ, PAGE_EXECUTE_READWRITE},
     },
 };
-typedef struct _LDR_DLL_LOADED_NOTIFICATION_DATA {
-    ULONG Flags;                 // Reserved.
-    PUNICODE_STRING FullDllName; // The full path name of the DLL module.
-    PUNICODE_STRING BaseDllName; // The base file name of the DLL module.
-    PVOID DllBase;     // A pointer to the base address for the DLL in memory.
-    ULONG SizeOfImage; // The size of the DLL image, in bytes.
-} LDR_DLL_LOADED_NOTIFICATION_DATA, *PLDR_DLL_LOADED_NOTIFICATION_DATA;
-typedef struct _LDR_DLL_UNLOADED_NOTIFICATION_DATA {
-    ULONG Flags;                 // Reserved.
-    PUNICODE_STRING FullDllName; // The full path name of the DLL module.
-    PUNICODE_STRING BaseDllName; // The base file name of the DLL module.
-    PVOID DllBase;     // A pointer to the base address for the DLL in memory.
-    ULONG SizeOfImage; // The size of the DLL image, in bytes.
-} LDR_DLL_UNLOADED_NOTIFICATION_DATA, *PLDR_DLL_UNLOADED_NOTIFICATION_DATA;
-typedef union _LDR_DLL_NOTIFICATION_DATA {
-    LDR_DLL_LOADED_NOTIFICATION_DATA Loaded;
-    LDR_DLL_UNLOADED_NOTIFICATION_DATA Unloaded;
-} LDR_DLL_NOTIFICATION_DATA, *PLDR_DLL_NOTIFICATION_DATA;
-typedef VOID(CALLBACK *PLDR_DLL_NOTIFICATION_FUNCTION)(
-    ULONG NotificationReason, PLDR_DLL_NOTIFICATION_DATA NotificationData,
-    PVOID Context);
-typedef struct _LDR_DLL_NOTIFICATION_ENTRY {
-    LIST_ENTRY List;
-    PLDR_DLL_NOTIFICATION_FUNCTION Callback;
-    PVOID Context;
-} LDR_DLL_NOTIFICATION_ENTRY, *PLDR_DLL_NOTIFICATION_ENTRY;
-typedef NTSTATUS(NTAPI *_LdrRegisterDllNotification)(
-    ULONG Flags, PLDR_DLL_NOTIFICATION_FUNCTION NotificationFunction,
-    PVOID Context, PVOID *Cookie);
-typedef NTSTATUS(NTAPI *_LdrUnregisterDllNotification)(PVOID Cookie);
-// Reference:
-// https://github.com/gmh5225/X64DBG-ViewDllNotification/blob/09b73617635a9da92833544979bd8af31a3bdecb/src/plugin.cpp
-typedef struct _DBG_LDRP_DLL_NOTIFICATION_BLOCK {
-    LIST_ENTRY Links;
-    PLDR_DLL_NOTIFICATION_FUNCTION NotificationFunction;
-    PVOID Context;
-} DBG_LDRP_DLL_NOTIFICATION_BLOCK, *PDBG_LDRP_DLL_NOTIFICATION_BLOCK;
-
-#define LDR_DLL_NOTIFICATION_REASON_LOADED 1
-
-static VOID CALLBACK EmptyNotificationFunction(
-    _In_ ULONG NotificationReason,
-    _In_ PLDR_DLL_NOTIFICATION_DATA NotificationData, _In_opt_ PVOID Context) {
-    // Do nothing.
-}
 
 #define TRY_WIN32_IF_NOT(x)                                                    \
     if (!(x)) {                                                                \
         return err(                                                            \
             std::error_condition(GetLastError(), std::system_category()));     \
     }
+#endif
 
 cpu_runtime_function::cpu_runtime_function(runtime_module &rt_module)
-    : runtime_function(rt_module),
-#ifdef WIN32
-      image_(nullptr),
-#endif
-      kernel_entry_(nullptr) {
-}
+    : runtime_function(rt_module), image_(nullptr), kernel_entry_(nullptr) {}
 
 cpu_runtime_function::~cpu_runtime_function() {
 #ifdef WIN32
@@ -178,38 +129,6 @@ result<void> cpu_runtime_function::initialize_core(
     kernel_entry_ =
         (kernel_entry_t)(image_ +
                          new_nt_header->OptionalHeader.AddressOfEntryPoint);
-
-    HMODULE hNtdll = GetModuleHandleA("NTDLL.dll");
-    _LdrRegisterDllNotification pLdrRegisterDllNotification =
-        (_LdrRegisterDllNotification)GetProcAddress(
-            hNtdll, "LdrRegisterDllNotification");
-    PVOID cookie;
-    pLdrRegisterDllNotification(0, EmptyNotificationFunction, NULL, &cookie);
-
-    LDR_DLL_NOTIFICATION_DATA data{};
-    data.Loaded.DllBase = image_;
-    data.Loaded.SizeOfImage = nt_header->OptionalHeader.SizeOfImage;
-
-    UNICODE_STRING baseDllName, fullDllName;
-    RtlInitUnicodeString(&baseDllName, L"nncase_cpu_module.exe");
-    RtlInitUnicodeString(
-        &fullDllName,
-        LR"(E:\Work\Models\onnx\dump\Unary_1\build\RelWithDebInfo\nncase_cpu_"
-        "module.exe)");
-    data.Loaded.BaseDllName = &baseDllName;
-    data.Loaded.FullDllName = &fullDllName;
-
-    //PLIST_ENTRY Next = ((PDBG_LDRP_DLL_NOTIFICATION_BLOCK)cookie)->Links.Flink;
-
-    //while (Next != &((PDBG_LDRP_DLL_NOTIFICATION_BLOCK)cookie)->Links) {
-    //    PDBG_LDRP_DLL_NOTIFICATION_BLOCK Block =
-    //        CONTAINING_RECORD(Next, DBG_LDRP_DLL_NOTIFICATION_BLOCK, Links);
-    //    (*Block->NotificationFunction)(LDR_DLL_NOTIFICATION_REASON_LOADED,
-    //                                   &data, Block->Context);
-    //    Next = Next->Flink;
-    //}
-    //RtlFreeUnicodeString(&baseDllName);
-    //RtlFreeUnicodeString(&fullDllName);
 #endif
     return ok();
 }
