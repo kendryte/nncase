@@ -134,8 +134,16 @@ public static class T
     {
         string[] names = { "i", "j", "k", "l" };
         var newLoopVars = loopVars = new Var[ranges.Length];
-        return new NestBodyExprBuilder<For>(ranges.Select((rg, i) =>
-             T.ForLoop(out newLoopVars[i], rg, loopMode, names[i % 4] + (i / 4 == 0 ? string.Empty : (i / 4).ToString())).Body()).ToArray());
+        var newLoops = ranges.Select((rg, i) => T.ForLoop(out newLoopVars[i], rg, loopMode, names[i % 4] + (i / 4 == 0 ? string.Empty : (i / 4).ToString())).Body()).ToArray();
+        return new NestBodyExprBuilder<For>(newLoops);
+    }
+
+    public static ISequentialBuilder<For> Grid(out Var[] loopVars, out ISequentialBuilder<For>[] loops, LoopMode loopMode, params TIR.Range[] ranges)
+    {
+        string[] names = { "i", "j", "k", "l" };
+        var newLoopVars = loopVars = new Var[ranges.Length];
+        var newLoops = loops = ranges.Select((rg, i) => T.ForLoop(out newLoopVars[i], rg, loopMode, names[i % 4] + (i / 4 == 0 ? string.Empty : (i / 4).ToString())).Body()).ToArray();
+        return new NestBodyExprBuilder<For>(loops);
     }
 
     /// <summary>
