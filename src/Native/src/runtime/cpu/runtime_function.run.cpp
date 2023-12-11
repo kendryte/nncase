@@ -22,7 +22,11 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::cpu;
 
+namespace {
+nncase_runtime_cpu_mt_t nncase_cpu_mt_ = {.acoshf = acosf};
+}
+
 result<void> cpu_runtime_function::run(gsl::span<gsl::byte *> params) noexcept {
-    kernel_entry_(nullptr, params.data(), module().rdata().data());
+    kernel_entry_(&nncase_cpu_mt_, params.data(), module().rdata().data());
     return ok();
 }

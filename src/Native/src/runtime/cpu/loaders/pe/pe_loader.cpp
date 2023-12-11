@@ -45,9 +45,9 @@ pe_loader::~pe_loader() {
 }
 
 void pe_loader::load(const gsl::byte *pe) {
-    auto dos_header = reinterpret_cast<const IMAGE_DOS_HEADER *>(text.data());
-    auto nt_header = reinterpret_cast<const IMAGE_NT_HEADERS *>(
-        text.data() + dos_header->e_lfanew);
+    auto dos_header = reinterpret_cast<const IMAGE_DOS_HEADER *>(pe);
+    auto nt_header =
+        reinterpret_cast<const IMAGE_NT_HEADERS *>(pe + dos_header->e_lfanew);
     image_ = (gsl::byte *)VirtualAlloc(nullptr,
                                        nt_header->OptionalHeader.SizeOfImage,
                                        MEM_COMMIT, PAGE_READWRITE);
@@ -80,8 +80,7 @@ void pe_loader::load(const gsl::byte *pe) {
         } else {
             section_size = section.SizeOfRawData;
             auto dest = image_ + section.VirtualAddress;
-            memcpy(dest, text.data() + section.PointerToRawData,
-                   section.SizeOfRawData);
+            memcpy(dest, pe + section.PointerToRawData, section.SizeOfRawData);
             section.Misc.PhysicalAddress =
                 (DWORD)((uintptr_t)dest & 0xffffffff);
         }
@@ -106,5 +105,5 @@ void *pe_loader::entry() const noexcept {
     auto dos_header = reinterpret_cast<const IMAGE_DOS_HEADER *>(image_);
     auto nt_header = reinterpret_cast<const IMAGE_NT_HEADERS *>(
         image_ + dos_header->e_lfanew);
-    return image_ + new_nt_header->OptionalHeader.AddressOfEntryPoint;
+    return image_ + nt_header->OptionalHeader.AddressOfEntryPoint;
 }

@@ -28,7 +28,7 @@ BEGIN_NS_NNCASE_RT_MODULE(cpu)
 
 extern "C" {
 struct nncase_runtime_cpu_mt_t {
-    void *unused;
+    float (*acoshf)(float v);
 };
 
 #define CPU_ENTRY_NAME "kernel_entry"

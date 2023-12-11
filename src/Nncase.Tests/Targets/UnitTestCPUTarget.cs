@@ -258,9 +258,12 @@ public class UnitTestCPUTarget : TestClassBase
             kmodel = output.ToArray();
         }
 
-        using (var kmodelFile = Dumpper.OpenFile($"{name}.kmodel"))
+        if (Dumpper.IsEnabled(DumpFlags.CodeGen))
         {
-            kmodelFile.Write(kmodel);
+            using (var kmodelFile = Dumpper.OpenFile($"{name}.kmodel"))
+            {
+                kmodelFile.Write(kmodel);
+            }
         }
 
         var interp = RTInterpreter.Create();
