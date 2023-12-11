@@ -139,7 +139,6 @@ public class CSourceCompiler
             cmake -S . -B build -DCMAKE_BUILD_TYPE={config} &&
             cmake --build build --config {config}
             """.Replace("\r\n", " ", StringComparison.Ordinal);
-        Console.WriteLine(script);
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
