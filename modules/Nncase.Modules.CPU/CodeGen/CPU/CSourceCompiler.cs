@@ -114,7 +114,7 @@ public class CSourceCompiler
             _ext = "dll";
         }
 
-        if (System.Environment.GetEnvironmentVariable("NNCASE_XPU_COMPILER") is string exe)
+        if (System.Environment.GetEnvironmentVariable("NNCASE_CPU_COMPILER") is string exe)
         {
             _exe = exe;
         }

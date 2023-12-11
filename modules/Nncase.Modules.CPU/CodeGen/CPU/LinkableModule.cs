@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.CodeGen.CPU;
@@ -91,6 +92,6 @@ internal sealed class LinkableModule : ILinkableModule
     private string CompileCSource(string sourcePath)
     {
         var compiler = new CSourceCompiler();
-        return compiler.Compile(sourcePath, Path.Join(sourcePath, "build", "RelWithDebInfo", "nncase_cpu_module.exe"));
+        return compiler.Compile(sourcePath, Path.Join(sourcePath, "build", "RelWithDebInfo", "nncase_cpu_module" + (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ".exe" : string.Empty)));
     }
 }

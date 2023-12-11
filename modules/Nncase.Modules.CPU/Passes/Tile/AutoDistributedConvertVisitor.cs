@@ -74,6 +74,16 @@ internal sealed class AutoDistributedConvertVisitor : ExprVisitor<Dictionary<IRT
         return new();
     }
 
+    protected override Dictionary<IRType, List<Expr>> VisitLeafIf(If expr)
+    {
+        return new[] { expr.Condition, expr.Then, expr.Else }.
+                Select(Visit).
+                CartesianProduct().
+                Select(e => new IR.If(e.First().Value[0], e.Skip(1).First().Value[0], e.Skip(2).First().Value[0])).
+                GroupBy(tp => tp.CheckedType).
+                ToDictionary(g => g.Key, g => g.ToList<Expr>());
+    }
+
     protected override Dictionary<IRType, List<Expr>> VisitLeafTuple(IR.Tuple expr)
     {
         return expr.Fields.ToArray().
@@ -155,6 +165,17 @@ internal sealed class AutoDistributedConvertVisitor : ExprVisitor<Dictionary<IRT
                     }
 
                     foreach (var (k, v) in VisitLeafTuple(tp))
+                    {
+                        buckets.Add(k, v);
+                    }
+
+                    break;
+                case (ParameterKind.Input, Expr e) when e is IR.If @if:
+                    VisitLeafArgument(parameterKind, @if.Condition);
+                    VisitLeafArgument(parameterKind, @if.Then);
+                    VisitLeafArgument(parameterKind, @if.Else);
+
+                    foreach (var (k, v) in VisitLeafIf(@if))
                     {
                         buckets.Add(k, v);
                     }

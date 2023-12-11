@@ -359,46 +359,48 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
             switch (expr)
             {
                 case Call c:
-                    var loc = GetMemLocation(c.CheckedType);
-                    var index = CheckRootCall(c, ref loc);
-                    if (c.Target is Boxing box && box.NewType is DistributedType d && !d.TensorType.Shape.Equals(c.Arguments[0].CheckedShape))
                     {
-                        name += "_reshape";
-                    }
-
-                    TensorType? dividedType = null;
-                    if (c.CheckedType is TensorType tensorType)
-                    {
-                        dividedType = tensorType;
-                    }
-                    else if (c.CheckedType is DistributedType distributedType)
-                    {
-                        if (DistributedUtility.TryGetDividedTensorType(distributedType, out var type))
+                        var loc = GetMemLocation(c.CheckedType);
+                        var index = CheckRootCall(c, ref loc);
+                        if (c.Target is Boxing box && box.NewType is DistributedType d && !d.TensorType.Shape.Equals(c.Arguments[0].CheckedShape))
                         {
-                            dividedType = type;
+                            name += "_reshape";
                         }
-                    }
 
-                    if (dividedType is not null)
-                    {
-                        buffer = T.AttachBuffer(dividedType, loc, out _, out _, name);
-                    }
-                    else if (c.CheckedType is DistributedType distributedType)
-                    {
-                        var shape = DistributedUtility.TryGetNonUniformDividedShape(distributedType);
-                        var @var = new Var(TensorType.Pointer(distributedType.TensorType.DType));
-                        var strides = TensorUtilities.GetStrides(shape);
-                        var size = TensorUtilities.GetProduct(shape) * distributedType.TensorType.DType.SizeInBytes;
-                        buffer = new Buffer(name, distributedType.TensorType.DType, new MemSpan(@var, size, loc), shape, strides);
-                    }
-                    else
-                    {
-                        throw new NotSupportedException();
-                    }
+                        TensorType? dividedType = null;
+                        if (c.CheckedType is TensorType tensorType)
+                        {
+                            dividedType = tensorType;
+                        }
+                        else if (c.CheckedType is DistributedType distributedType)
+                        {
+                            if (DistributedUtility.TryGetDividedTensorType(distributedType, out var type))
+                            {
+                                dividedType = type;
+                            }
+                        }
 
-                    if (index != -1)
-                    {
-                        _outputbuffers.Add((index, buffer));
+                        if (dividedType is not null)
+                        {
+                            buffer = T.AttachBuffer(dividedType, loc, out _, out _, name);
+                        }
+                        else if (c.CheckedType is DistributedType distributedType)
+                        {
+                            var shape = DistributedUtility.TryGetNonUniformDividedShape(distributedType);
+                            var @var = new Var(TensorType.Pointer(distributedType.TensorType.DType));
+                            var strides = TensorUtilities.GetStrides(shape);
+                            var size = TensorUtilities.GetProduct(shape) * distributedType.TensorType.DType.SizeInBytes;
+                            buffer = new Buffer(name, distributedType.TensorType.DType, new MemSpan(@var, size, loc), shape, strides);
+                        }
+                        else
+                        {
+                            throw new NotSupportedException();
+                        }
+
+                        if (index != -1)
+                        {
+                            _outputbuffers.Add((index, buffer));
+                        }
                     }
 
                     break;
@@ -422,7 +424,7 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
         return buffer;
     }
 
-    private int CheckRootCall(Call c, ref MemoryLocation loc)
+    private int CheckRootCall(Expr c, ref MemoryLocation loc)
     {
         var index = -1;
         if (VisitRootFusion.Body is Call rootCall && ReferenceEquals(c, rootCall))

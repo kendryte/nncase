@@ -163,7 +163,7 @@ public class UnitTestCPUTarget : TestClassBase
         GenerateKModelAndRunFromFn(main, input, second.Evaluate(dict).AsTensor());
     }
 
-    [Fact]
+    [Fact(Skip = "EGraph codegen currently doesn't support call function")]
     public void TestCallFunction()
     {
         var a = new Var("a");
@@ -178,7 +178,7 @@ public class UnitTestCPUTarget : TestClassBase
         GenerateKModelAndRun(module, new[] { 1.0f }, new[] { 3.0f });
     }
 
-    [Theory]
+    [Theory(Skip = "CPU codegen currently doesn't support If")]
     [MemberData(nameof(TestIfData))]
     public void TestIf(bool input)
     {

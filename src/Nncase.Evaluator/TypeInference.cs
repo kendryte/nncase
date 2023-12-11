@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.TIR;
+using Nncase.Utilities;
 using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.Evaluator;
@@ -452,12 +453,30 @@ public static class TypeInference
             return new TensorType(a.DType, Shape.Unknown(a.Shape.Rank));
         }
 
+        IRType DistributedCommonTypeImpl(DistributedType a, DistributedType b)
+        {
+            var tA = DistributedUtility.GetDividedTensorType(a);
+            var tB = DistributedUtility.GetDividedTensorType(b);
+            if (tA == tB)
+            {
+                return a;
+            }
+
+            if (tA.DType != tB.DType)
+            {
+                return new InvalidType($"Inputs DType of if should be same, then: {tA.DType}, else: {tB.DType}");
+            }
+
+            return new TensorType(tA.DType, Shape.Unknown(tA.Shape.Rank));
+        }
+
         return (thenType, elseType) switch
         {
             (TensorType then, TensorType @else) => CommonTypeImpl(then, @else),
             (TupleType then, TupleType @else) => then.Count != @else.Count
                 ? new InvalidType($"tuple Inputs of if should be same count, then: {then.Count}, else: {@else.Count}")
                 : new TupleType(then.Zip(@else).Select(tuple => CommonType(tuple.First, tuple.Second))),
+            (DistributedType then, DistributedType @else) => DistributedCommonTypeImpl(then, @else),
             _ => new InvalidType($"Inputs of if should be same IRType Kind, but then:{thenType}, else: {elseType}"),
         };
     }
