@@ -105,7 +105,7 @@ public class CSourceCompiler
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
-            _exe = "clang";
+            _exe = "/bin/bash";
             _ext = "dylib";
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
