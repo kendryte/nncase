@@ -342,6 +342,26 @@ public static class TypeInference
     }
 
     /// <summary>
+    /// Pack Type Infer.
+    /// </summary>
+    public static IRType PackType(TensorType input, int lanes, int axis)
+    {
+        if (input.Shape.IsRanked)
+        {
+            var dims = input.Shape.ToList();
+            dims.Add(lanes);
+            if (dims[axis].IsFixed)
+            {
+                dims[axis] = MathUtility.CeilDiv(dims[axis].FixedValue, lanes);
+            }
+
+            return input with { Shape = new Shape(dims) };
+        }
+
+        return input;
+    }
+
+    /// <summary>
     /// Transpose Type Infer.
     /// </summary>
     public static IRType TransposeType(TensorType input, Expr perm)

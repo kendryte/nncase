@@ -22,5 +22,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\nncase/tools/Nncase.SourceGenerator/Nncase.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\..\..\nncase\modules\Nncase.Modules.StackVM\Nncase.Modules.StackVM.csproj" />
+    <ProjectReference Include="..\..\src\Nncase.Evaluator\Nncase.Evaluator.csproj" />
   </ItemGroup>
 </Project>

@@ -27,4 +27,14 @@ public partial class CPU
     {
         return new Call(new Boxing(type), input);
     }
+
+    public static Call Pack(Expr input, int lanes, int axis)
+    {
+        return new Call(new Pack(lanes, axis), input);
+    }
+
+    public static Call Unpack(Expr input, Expr originDim, int axis)
+    {
+        return new Call(new Unpack(axis), input, originDim);
+    }
 }
