@@ -20,6 +20,8 @@
 
 #if WIN32
 #include "loaders/pe/pe_loader.h"
+#elif defined(__APPLE__)
+#include "loaders/macho/macho_loader.h"
 #else
 #include "loaders/elf/elf_loader.h"
 #endif
@@ -56,6 +58,8 @@ class cpu_runtime_function final : public runtime_function {
   private:
 #if WIN32
     pe_loader loader_;
+#elif defined(__APPLE__)
+    macho_loader loader_;
 #else
     elf_loader loader_;
 #endif

@@ -2,6 +2,8 @@
 
 if (WIN32)
     set(SRCS pe/pe_loader.cpp)
+elseif (APPLE)
+    set(SRCS macho/macho_loader.cpp)
 else ()
     set(SRCS elf/elf_loader.cpp
              elf/elfload.cpp
