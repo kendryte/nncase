@@ -285,11 +285,11 @@ public static class T
             name = name[4..];
         }
 
-        var dimensions = @const.ValueType.Shape.ToValueArray();
+        var dimensions = @const.CheckedShape.ToValueArray();
         var strides = TensorUtilities.GetStrides(dimensions);
-        var size = (int)TensorUtilities.GetProduct(dimensions.ToArray()) * @const.ValueType.DType.SizeInBytes;
+        var size = (int)TensorUtilities.GetProduct(dimensions.ToArray()) * @const.CheckedDataType.SizeInBytes;
         var memspan = new MemSpan(IR.F.Buffer.DDrOf(@const), size, MemoryLocation.Rdata);
-        buffer = new Buffer(name, @const.ValueType.DType, memspan, dimensions.Select(i => (Expr)i).ToArray(), strides.Select(i => (Expr)i).ToArray());
+        buffer = new Buffer(name, @const.CheckedDataType, memspan, dimensions.Select(i => (Expr)i).ToArray(), strides.Select(i => (Expr)i).ToArray());
         return buffer;
     }
 
