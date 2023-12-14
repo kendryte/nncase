@@ -131,15 +131,15 @@ public static class QuantAlgorithmUtility
 
             var orderTmp = OrtKI.Slice(order, starts, ends, axes, steps);
 
-            var orderTmpArr = orderTmp.ToArray<long>();
-            var orderArr = order.ToArray<int>();
-            var errorArr = error.ToArray<float>();
-            var numberArr = number.ToArray<float>();
+            var orderTmpArr = MemoryMarshal.Cast<byte, long>(orderTmp.BytesBuffer);
+            var orderArr = MemoryMarshal.Cast<byte, int>(order.BytesBuffer);
+            var errorArr = MemoryMarshal.Cast<byte, float>(error.BytesBuffer);
+            var numberArr = MemoryMarshal.Cast<byte, float>(number.BytesBuffer);
             for (int i = 0; i < orderTmp.Length; i++)
             {
-                var index = orderTmpArr[i];
-                roundingErrorMem[(int)index] = errorArr[index];
-                roundingNumberMem[(int)index] = numberArr[index];
+                var index = (int)orderTmpArr[i];
+                roundingErrorMem[index] = errorArr[index];
+                roundingNumberMem[index] = numberArr[index];
             }
 
             if (overSquant)
@@ -203,10 +203,10 @@ public static class QuantAlgorithmUtility
                 RoundingForward(roundingErrorSumArr[(n * inputChannel) + c], roundingNumberTmp, roundingErrorTmp,
                     upNumberSlice, upErrorSlice, priorityTmp, upOrderSlice, priority1Tmp);
 
-                var roundingNumberTmpArr = roundingNumberTmp.ToArray<float>();
-                var roundingErrorTmpArr = roundingErrorTmp.ToArray<float>();
-                var priorityTmpArr = priorityTmp.ToArray<float>();
-                var priority1TmpArr = priority1Tmp.ToArray<float>();
+                var roundingNumberTmpArr = MemoryMarshal.Cast<byte, float>(roundingNumberTmp.BytesBuffer);
+                var roundingErrorTmpArr = MemoryMarshal.Cast<byte, float>(roundingErrorTmp.BytesBuffer);
+                var priorityTmpArr = MemoryMarshal.Cast<byte, float>(priorityTmp.BytesBuffer);
+                var priority1TmpArr = MemoryMarshal.Cast<byte, float>(priority1Tmp.BytesBuffer);
                 for (int i = 0; i < roundingNumberTmp.Length; i++)
                 {
                     roundingNumberMem[(int)offset + i] =
@@ -239,10 +239,10 @@ public static class QuantAlgorithmUtility
                 RoundingForward(roundingErrorSumArr[(n * inputChannel) + c], roundingNumberTmp, roundingErrorTmp,
                     downNumberSlice, downErrorSlice, priorityTmp, downOrderSlice, priority1Tmp);
 
-                var roundingNumberTmpArr = roundingNumberTmp.ToArray<float>();
-                var roundingErrorTmpArr = roundingErrorTmp.ToArray<float>();
-                var priorityTmpArr = priorityTmp.ToArray<float>();
-                var priority1TmpArr = priority1Tmp.ToArray<float>();
+                var roundingNumberTmpArr = MemoryMarshal.Cast<byte, float>(roundingNumberTmp.BytesBuffer);
+                var roundingErrorTmpArr = MemoryMarshal.Cast<byte, float>(roundingErrorTmp.BytesBuffer);
+                var priorityTmpArr = MemoryMarshal.Cast<byte, float>(priorityTmp.BytesBuffer);
+                var priority1TmpArr = MemoryMarshal.Cast<byte, float>(priority1Tmp.BytesBuffer);
 
                 for (int i = 0; i < roundingNumberTmp.Length; i++)
                 {
