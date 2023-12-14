@@ -28,10 +28,12 @@ nncase_runtime_cpu_mt_t nncase_cpu_mt_ = {.acosf = acosf,
                                           .asinf = asinf,
                                           .asinhf = asinhf,
                                           .cosf = cosf,
+                                          .coshf = coshf,
                                           .expf = expf,
                                           .logf = logf,
                                           .nearbyintf = nearbyintf,
                                           .sinf = sinf,
+                                          .sinhf = sinhf,
                                           .tanhf = tanhf};
 }
 

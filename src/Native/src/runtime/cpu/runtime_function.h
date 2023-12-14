@@ -35,10 +35,12 @@ struct nncase_runtime_cpu_mt_t {
     float (*asinf)(float v);
     float (*asinhf)(float v);
     float (*cosf)(float v);
+    float (*coshf)(float v);
     float (*expf)(float v);
     float (*logf)(float v);
     float (*nearbyintf)(float v);
     float (*sinf)(float v);
+    float (*sinhf)(float v);
     float (*tanhf)(float v);
 };
 

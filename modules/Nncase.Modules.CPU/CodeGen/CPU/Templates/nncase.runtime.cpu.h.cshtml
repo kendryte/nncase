@@ -35,10 +35,12 @@ extern "C" {
         float (*asinf)(float v);
         float (*asinhf)(float v);
         float (*cosf)(float v);
+        float (*coshf)(float v);
         float (*expf)(float v);
         float (*logf)(float v);
         float (*nearbyintf)(float v);
         float (*sinf)(float v);
+        float (*sinhf)(float v);
         float (*tanhf)(float v);
     };
 
@@ -192,6 +194,10 @@ namespace nncase::runtime::cpu {
             float operator()(float v) const noexcept { return g_cpu_mt->cosf(v); }
         };
 
+        struct cosh {
+            float operator()(float v) const noexcept { return g_cpu_mt->coshf(v); }
+        };
+
         struct exp {
             float operator()(float v) const noexcept { return g_cpu_mt->expf(v); }
         };
@@ -214,6 +220,10 @@ namespace nncase::runtime::cpu {
 
         struct sin {
             float operator()(float v) const noexcept { return g_cpu_mt->sinf(v); }
+        };
+
+        struct sinh {
+            float operator()(float v) const noexcept { return g_cpu_mt->sinhf(v); }
         };
 
         struct sqrt {
