@@ -32,7 +32,6 @@ public static class QuantAlgorithmUtility
         {
             throw new NotSupportedException("By tensor weights quant is not supported.");
         }
-
         var x = inputWeights;
         var shape = inputWeightsShape.ToArray();
         var outChannel = inputWeightsShape[0];
@@ -88,7 +87,7 @@ public static class QuantAlgorithmUtility
         return (qMax, qMin);
     }
 
-    private static void RoundingForward(float roundingErrorSum, Tensor roundingNumber, Tensor roundingError, SQuantParam param, Tensor priority, Tensor priority1)
+    private static (Tensor Number, Tensor Error, Tensor Priority, Tensor Priority1) RoundingForward(float roundingErrorSum, Tensor roundingNumber, Tensor roundingError, SQuantParam param, Tensor priority, Tensor priority1)
     {
         var roundingNumberMem = roundingNumber.ToArray<float>();
         var roundingErrorMem = roundingError.ToArray<float>();
@@ -127,9 +126,16 @@ public static class QuantAlgorithmUtility
                 priorityMem[index] = System.Math.Abs(roundingErrorMem[index]);
             }
         }
+        // roundingNumberTmp, roundingErrorTmp, priorityTmp, priority1Tmp
+        return (
+            Tensor.From(roundingNumberMem, roundingNumber.Shape),
+            Tensor.From(roundingErrorMem, roundingError.Shape),
+            Tensor.From(priorityMem, priority.Shape),
+            Tensor.From(priority1Mem, priority1.Shape)
+            );
     }
 
-    private static void SQuantFunc(Tensor roundingErrorSum, Tensor roundingNumberOrigin,
+    private static (Tensor Number, Tensor Error, Tensor Priority, Tensor Priority1)  SQuantFunc(Tensor roundingErrorSum, Tensor roundingNumberOrigin,
         Tensor roundingErrorOrigin, SQuantParam upParam, SQuantParam downParam, long[] converShape)
     {
         var upNumber = Reshape(upParam.Number, converShape).Evaluate().AsTensor();
@@ -188,23 +194,22 @@ public static class QuantAlgorithmUtility
             if (isDown)
             {
                 var upParamSlice = new SQuantParam(upNumberSlice, upErrorSlice, null, upOrderSlice);
-                RoundingForward(roundingErrorSumValue, roundingNumberTmp, roundingErrorTmp,
+                return RoundingForward(roundingErrorSumValue, roundingNumberTmp, roundingErrorTmp,
                     upParamSlice, priorityTmp, priority1Tmp);
             }
             else
             {
+                // todo: priority order??
                 var downParamSlice = new SQuantParam(downNumberSlice, downErrorSlice, null, downOrderSlice);
-                RoundingForward(roundingErrorSumValue, roundingNumberTmp, roundingErrorTmp,
+                return RoundingForward(roundingErrorSumValue, roundingNumberTmp, roundingErrorTmp,
                     downParamSlice, priority1Tmp, priorityTmp);
             }
-
-            return (roundingNumberTmp, roundingErrorTmp, priorityTmp, priority1Tmp);
         }).ToArray();
-        // }).ToArray();
         var number = Reshape(Concat(new IR.Tuple(data.Select(x => (Expr)x.RoundingNumber).ToArray()), 0), roundingNumber.Shape).Evaluate().AsTensor();
         var error = Reshape(Concat(new IR.Tuple(data.Select(x => (Expr)x.RoundingError).ToArray()), 0), roundingError.Shape).Evaluate().AsTensor();
         var priority = Reshape(Concat(new IR.Tuple(data.Select(x => (Expr)x.Priority).ToArray()), 0), upPriority.Shape).Evaluate().AsTensor();
         var priority1 = Reshape(Concat(new IR.Tuple(data.Select(x => (Expr)x.Priority1).ToArray()), 0), downPriority.Shape).Evaluate().AsTensor();
+        return (number, error, priority, priority1);
     }
 
     record SQuantParam(Tensor Number, Tensor Error, Tensor? Priority, Tensor Order);
@@ -224,8 +229,8 @@ public static class QuantAlgorithmUtility
             ReduceSum(Reshape(roundingError, converShape), new long[] { -1 }, 0, 0);
         var upParam = UpData(tMax, roundingNumber, roundingError, x, squantK, converShape);
         var downParam = DownData(tMin, roundingNumber, roundingError, x, squantK, converShape);
-        SQuantFunc(roundingErrorSum.Evaluate().AsTensor(), roundingNumber, roundingError, upParam, downParam, converShape);
-        return roundingNumber!;
+        var (num, _, _, _) = SQuantFunc(roundingErrorSum.Evaluate().AsTensor(), roundingNumber, roundingError, upParam, downParam, converShape);
+        return num;
     }
 
     private static Tensor GetDownOrder(Tensor Priority, long[] converShape)
