@@ -236,7 +236,7 @@ internal sealed class SatExprBuildVisitor
                 expr = enode.Expr;
                 break;
             case Function func:
-                expr = func.With(body: children[0], parameters: children[1..].OfType<Var>().ToArray());
+                expr = children.Length == 0 ? func : func.With(body: children[0], parameters: children[1..].OfType<Var>().ToArray());
                 break;
             case Call call:
                 expr = call.With(target: children[0], arguments: children[1..], call.Metadata);

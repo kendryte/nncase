@@ -30,6 +30,9 @@ public class UnitTestCPUTarget : TestClassBase
     public UnitTestCPUTarget()
     {
         DefaultTargetName = CPUTarget.Kind;
+#if DEBUG
+        CompileOptions.DumpFlags = DumpFlags.PassIR | DumpFlags.Rewrite | DumpFlags.EGraphCost | DumpFlags.CodeGen;
+#endif
     }
 
     public static IEnumerable<object[]> TestGetItemData =>
@@ -163,7 +166,7 @@ public class UnitTestCPUTarget : TestClassBase
         GenerateKModelAndRunFromFn(main, input, second.Evaluate(dict).AsTensor());
     }
 
-    [Fact(Skip = "EGraph codegen currently doesn't support call function")]
+    [Fact]
     public void TestCallFunction()
     {
         var a = new Var("a");
