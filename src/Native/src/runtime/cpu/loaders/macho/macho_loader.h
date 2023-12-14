@@ -22,7 +22,7 @@ class macho_loader {
     macho_loader() noexcept : image_(nullptr) {}
     ~macho_loader();
 
-    void load(const gsl::byte *macho);
+    void load(gsl::span<const gsl::byte> macho);
     void *entry() const noexcept;
 
   private:

@@ -40,7 +40,7 @@ result<void> cpu_runtime_function::initialize_core(
     runtime_function_init_context &context) noexcept {
     auto text = module().text().subspan(context.header().entrypoint,
                                         context.header().text_size);
-    loader_.load(text.data());
+    loader_.load(text);
     kernel_entry_ = (kernel_entry_t)loader_.entry();
     return ok();
 }

@@ -22,7 +22,7 @@ class pe_loader {
     pe_loader() noexcept : image_(nullptr) {}
     ~pe_loader();
 
-    void load(const gsl::byte *pe);
+    void load(gsl::span<const gsl::byte> pe);
     void *entry() const noexcept;
 
   private:

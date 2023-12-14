@@ -23,7 +23,16 @@ using namespace nncase::runtime;
 using namespace nncase::runtime::cpu;
 
 namespace {
-nncase_runtime_cpu_mt_t nncase_cpu_mt_ = {.acoshf = acosf};
+nncase_runtime_cpu_mt_t nncase_cpu_mt_ = {.acosf = acosf,
+                                          .acoshf = acoshf,
+                                          .asinf = asinf,
+                                          .asinhf = asinhf,
+                                          .cosf = cosf,
+                                          .expf = expf,
+                                          .logf = logf,
+                                          .nearbyintf = nearbyintf,
+                                          .sinf = sinf,
+                                          .tanhf = tanhf};
 }
 
 result<void> cpu_runtime_function::run(gsl::span<gsl::byte *> params) noexcept {

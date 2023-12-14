@@ -30,7 +30,16 @@ BEGIN_NS_NNCASE_RT_MODULE(cpu)
 
 extern "C" {
 struct nncase_runtime_cpu_mt_t {
+    float (*acosf)(float v);
     float (*acoshf)(float v);
+    float (*asinf)(float v);
+    float (*asinhf)(float v);
+    float (*cosf)(float v);
+    float (*expf)(float v);
+    float (*logf)(float v);
+    float (*nearbyintf)(float v);
+    float (*sinf)(float v);
+    float (*tanhf)(float v);
 };
 
 #define CPU_ENTRY_NAME "kernel_entry"

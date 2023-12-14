@@ -40,8 +40,8 @@ elf_loader::~elf_loader() {
     }
 }
 
-void elf_loader::load(const gsl::byte *elf) {
-    ctx_.elf = (void *)elf;
+void elf_loader::load(gsl::span<const gsl::byte> elf) {
+    ctx_.elf = (void *)elf.data();
     el_init(&ctx_);
 
     buffer_ = (gsl::byte *)malloc(ctx_.memsz + ctx_.align);

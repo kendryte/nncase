@@ -4,7 +4,20 @@
                 op switch
                 {
                     UnaryOp.Abs => "mathops::abs",
+                    UnaryOp.Acos => "mathops::acos",
                     UnaryOp.Acosh => "mathops::acosh",
+                    UnaryOp.Asin => "mathops::asin",
+                    UnaryOp.Asinh => "mathops::asinh",
+                    UnaryOp.Ceil => "mathops::ceil",
+                    UnaryOp.Cos => "mathops::cos",
+                    UnaryOp.Exp => "mathops::exp",
+                    UnaryOp.Floor => "mathops::floor",
+                    UnaryOp.Log => "mathops::log",
+                    UnaryOp.Neg => "mathops::neg",
+                    UnaryOp.Round => "mathops::round",
+                    UnaryOp.Sin => "mathops::sin",
+                    UnaryOp.Sqrt => "mathops::sqrt",
+                    UnaryOp.Tanh => "mathops::tanh",
                     _ => throw new NotSupportedException($"Unsupported unary: {op}."),
                 };
 }

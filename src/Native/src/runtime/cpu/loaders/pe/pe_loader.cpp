@@ -18,6 +18,12 @@
 
 using namespace nncase::runtime;
 
+#ifndef NDEBUG
+#define THROW_WIN32_IF_NOT(x)                                                  \
+    if (!(x)) {                                                                \
+        throw std::system_error(GetLastError(), std::system_category());       \
+    }
+#else
 // Protection flags for memory pages (Executable, Readable, Writeable)
 static int ProtectionFlags[2][2][2] = {
     {
@@ -31,23 +37,47 @@ static int ProtectionFlags[2][2][2] = {
         {PAGE_EXECUTE_READ, PAGE_EXECUTE_READWRITE},
     },
 };
-
-#define TRY_WIN32_IF_NOT(x)                                                    \
-    if (!(x)) {                                                                \
-        return err(                                                            \
-            std::error_condition(GetLastError(), std::system_category()));     \
-    }
+#endif
 
 pe_loader::~pe_loader() {
     if (image_) {
+#ifndef NDEBUG
+        FreeModule((HMODULE)image_);
+#else
         VirtualFree(image_, 0, MEM_RELEASE);
+#endif
     }
 }
 
-void pe_loader::load(const gsl::byte *pe) {
-    auto dos_header = reinterpret_cast<const IMAGE_DOS_HEADER *>(pe);
-    auto nt_header =
-        reinterpret_cast<const IMAGE_NT_HEADERS *>(pe + dos_header->e_lfanew);
+void pe_loader::load(gsl::span<const gsl::byte> pe) {
+#ifndef NDEBUG
+    wchar_t temp_path[MAX_PATH];
+    wchar_t temp_filename[MAX_PATH];
+
+    THROW_WIN32_IF_NOT(GetTempPathW(std::size(temp_path), temp_path));
+    THROW_WIN32_IF_NOT(
+        GetTempFileNameW(temp_path, L"nncase.function.cpu.", 0, temp_filename));
+
+    auto func_file =
+        CreateFileW(temp_filename, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS,
+                    FILE_ATTRIBUTE_TEMPORARY, nullptr);
+    THROW_WIN32_IF_NOT(func_file != INVALID_HANDLE_VALUE);
+    THROW_WIN32_IF_NOT(
+        WriteFile(func_file, pe.data(), pe.size_bytes(), nullptr, nullptr));
+    CloseHandle(func_file);
+
+    func_file = CreateFileW(
+        temp_filename, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING,
+        FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE, nullptr);
+    THROW_WIN32_IF_NOT(func_file != INVALID_HANDLE_VALUE);
+
+    auto func_mod = LoadLibraryW(temp_filename);
+    THROW_WIN32_IF_NOT(func_mod);
+    image_ = (gsl::byte *)func_mod;
+#else
+    auto dos_header = reinterpret_cast<const IMAGE_DOS_HEADER *>(pe.data());
+    auto nt_header = reinterpret_cast<const IMAGE_NT_HEADERS *>(
+        pe.data() + dos_header->e_lfanew);
     image_ = (gsl::byte *)VirtualAlloc(nullptr,
                                        nt_header->OptionalHeader.SizeOfImage,
                                        MEM_COMMIT, PAGE_READWRITE);
@@ -80,7 +110,8 @@ void pe_loader::load(const gsl::byte *pe) {
         } else {
             section_size = section.SizeOfRawData;
             auto dest = image_ + section.VirtualAddress;
-            memcpy(dest, pe + section.PointerToRawData, section.SizeOfRawData);
+            memcpy(dest, pe.data() + section.PointerToRawData,
+                   section.SizeOfRawData);
             section.Misc.PhysicalAddress =
                 (DWORD)((uintptr_t)dest & 0xffffffff);
         }
@@ -99,6 +130,7 @@ void pe_loader::load(const gsl::byte *pe) {
         VirtualProtect(image_ + section.VirtualAddress, section_size, protect,
                        &oldProtect);
     }
+#endif
 }
 
 void *pe_loader::entry() const noexcept {

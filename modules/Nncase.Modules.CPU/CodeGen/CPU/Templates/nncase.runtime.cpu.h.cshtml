@@ -30,7 +30,16 @@ extern "C" {
 
 extern "C" {
     struct nncase_runtime_cpu_mt_t {
+        float (*acosf)(float v);
         float (*acoshf)(float v);
+        float (*asinf)(float v);
+        float (*asinhf)(float v);
+        float (*cosf)(float v);
+        float (*expf)(float v);
+        float (*logf)(float v);
+        float (*nearbyintf)(float v);
+        float (*sinf)(float v);
+        float (*tanhf)(float v);
     };
 
     nncase_runtime_cpu_mt_t *g_cpu_mt;
@@ -159,8 +168,60 @@ namespace nncase::runtime::cpu {
             float operator()(float v) const noexcept { return fabs(v); }
         };
 
+        struct acos {
+            float operator()(float v) const noexcept { return g_cpu_mt->acosf(v); }
+        };
+
         struct acosh {
             float operator()(float v) const noexcept { return g_cpu_mt->acoshf(v); }
+        };
+
+        struct asin {
+            float operator()(float v) const noexcept { return g_cpu_mt->asinf(v); }
+        };
+
+        struct asinh {
+            float operator()(float v) const noexcept { return g_cpu_mt->asinhf(v); }
+        };
+
+        struct ceil {
+            float operator()(float v) const noexcept { return ceilf(v); }
+        };
+
+        struct cos {
+            float operator()(float v) const noexcept { return g_cpu_mt->cosf(v); }
+        };
+
+        struct exp {
+            float operator()(float v) const noexcept { return g_cpu_mt->expf(v); }
+        };
+
+        struct floor {
+            float operator()(float v) const noexcept { return floorf(v); }
+        };
+
+        struct log {
+            float operator()(float v) const noexcept { return g_cpu_mt->logf(v); }
+        };
+
+        struct neg {
+            float operator()(float v) const noexcept { return -v; }
+        };
+
+        struct round {
+            float operator()(float v) const noexcept { return g_cpu_mt->nearbyintf(v); }
+        };
+
+        struct sin {
+            float operator()(float v) const noexcept { return g_cpu_mt->sinf(v); }
+        };
+
+        struct sqrt {
+            float operator()(float v) const noexcept { return sqrtf(v); }
+        };
+
+        struct tanh {
+            float operator()(float v) const noexcept { return g_cpu_mt->tanhf(v); }
         };
     }
 

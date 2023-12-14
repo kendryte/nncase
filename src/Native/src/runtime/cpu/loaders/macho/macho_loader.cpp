@@ -31,10 +31,10 @@ macho_loader::~macho_loader() {
     }
 }
 
-void macho_loader::load(const gsl::byte *macho) {
-    auto header = reinterpret_cast<const mach_header_64 *>(macho);
-    auto lc_base =
-        reinterpret_cast<const load_command *>(macho + sizeof(mach_header_64));
+void macho_loader::load(gsl::span<const gsl::byte> macho) {
+    auto header = reinterpret_cast<const mach_header_64 *>(macho.data());
+    auto lc_base = reinterpret_cast<const load_command *>(
+        macho.data() + sizeof(mach_header_64));
 
     // 1. Calc image size
     uint64_t max_addr = 0;
@@ -63,7 +63,7 @@ void macho_loader::load(const gsl::byte *macho) {
     for (size_t i = 0; i < header->ncmds; i++) {
         if (cnt_lc->cmd == LC_SEGMENT_64) {
             auto seg_lc = (const segment_command_64 *)cnt_lc;
-            memcpy(image_ + seg_lc->vmaddr, macho + seg_lc->fileoff,
+            memcpy(image_ + seg_lc->vmaddr, macho.data() + seg_lc->fileoff,
                    seg_lc->filesize);
             mach_vm_protect(mach_task_self(),
                             (mach_vm_address_t)image_ + seg_lc->vmaddr,
@@ -78,7 +78,8 @@ void macho_loader::load(const gsl::byte *macho) {
                 mach_vm_protect(mach_task_self(),
                                 (mach_vm_address_t)section_vaddr, section.size,
                                 false, PROT_READ | PROT_WRITE);
-                memcpy(section_vaddr, macho + section.offset, section.size);
+                memcpy(section_vaddr, macho.data() + section.offset,
+                       section.size);
                 mach_vm_protect(mach_task_self(),
                                 (mach_vm_address_t)section_vaddr, section.size,
                                 false, seg_lc->initprot);

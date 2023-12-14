@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 #pragma once
-#include <nncase/compiler_defs.h>
 #include "elfload.h"
+#include <nncase/compiler_defs.h>
 
 BEGIN_NS_NNCASE_RUNTIME
 
@@ -23,7 +23,7 @@ class elf_loader {
     elf_loader() noexcept;
     ~elf_loader();
 
-    void load(const gsl::byte *pe);
+    void load(gsl::span<const gsl::byte> pe);
     void *entry() const noexcept;
 
   private:

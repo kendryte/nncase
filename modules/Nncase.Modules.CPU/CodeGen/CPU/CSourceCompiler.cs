@@ -72,9 +72,12 @@ public class CSourceCompiler
                 proc.StartInfo.FileName = Exe;
                 proc.StartInfo.Arguments = ArgumentsSpecific(sourcePath, outPath);
                 proc.StartInfo.RedirectStandardError = true;
+                proc.StartInfo.RedirectStandardOutput = true;
+                proc.OutputDataReceived += (sender, e) => errWriter.WriteLine(e.Data);
                 proc.ErrorDataReceived += (sender, e) => errWriter.WriteLine(e.Data);
                 proc.Start();
                 proc.BeginErrorReadLine();
+                proc.BeginOutputReadLine();
                 proc.WaitForExit();
                 if (proc.ExitCode != 0)
                 {
