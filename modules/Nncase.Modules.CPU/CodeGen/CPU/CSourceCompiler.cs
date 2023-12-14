@@ -139,7 +139,7 @@ public class CSourceCompiler
         var script = $"""
             cd {sourcePath} &&
             cmake -E remove_directory build &&
-            cmake -S . -B build -DCMAKE_BUILD_TYPE={config} &&
+            cmake -S . -B build -DCMAKE_BUILD_TYPE={config} {(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "-A x64 " : string.Empty)}&&
             cmake --build build --config {config}
             """.Replace("\r\n", " ", StringComparison.Ordinal);
 
@@ -153,9 +153,14 @@ public class CSourceCompiler
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            var vsdir = Environment.GetEnvironmentVariable("VSAPPIDDIR") ?? throw new InvalidOperationException("Cannot find vs");
-            var vcvardir = Path.Combine(vsdir, "..\\..\\VC\\Auxiliary\\Build\\vcvarsall.bat");
-            return $"/C (\"{vcvardir}\" x64) && {script}";
+            var vsdir = Environment.GetEnvironmentVariable("VSAPPIDDIR");
+            if (!string.IsNullOrEmpty(vsdir))
+            {
+                var vcvardir = Path.Combine(vsdir, "..\\..\\VC\\Auxiliary\\Build\\vcvarsall.bat");
+                return $"/C (\"{vcvardir}\" x64) && {script}";
+            }
+
+            return $"/C {script}";
         }
 
         throw new System.NotSupportedException("Only Support Linux/Osx/Windows");
