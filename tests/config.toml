@@ -131,3 +131,16 @@ threshold = 0.999
 [target.k230.mode.ptq]
 enabled = true
 threshold = 0.96
+
+[target.xpu]
+eval = false
+infer = true
+similarity_name = 'cosine'
+
+[target.xpu.mode.noptq]
+enabled = true
+threshold = 0.999
+
+[target.xpu.mode.ptq]
+enabled = false
+threshold = 0.9
