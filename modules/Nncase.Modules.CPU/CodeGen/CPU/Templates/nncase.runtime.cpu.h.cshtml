@@ -13,6 +13,7 @@ extern "C" {
         float (*acoshf)(float v);
         float (*asinf)(float v);
         float (*asinhf)(float v);
+        float (*copysignf)(float mag, float sgn);
         float (*cosf)(float v);
         float (*coshf)(float v);
         float (*expf)(float v);
@@ -256,6 +257,10 @@ namespace nncase::runtime::cpu {
 
         struct round {
             float operator()(float v) const noexcept { return g_cpu_mt->nearbyintf(v); }
+        };
+
+        struct sign {
+            float operator()(float v) const noexcept { return g_cpu_mt->copysignf(1.f, v); }
         };
 
         struct sin {

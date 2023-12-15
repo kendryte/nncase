@@ -28,6 +28,7 @@ nncase_runtime_cpu_mt_t nncase_cpu_mt_ = {
     .acoshf = acoshf,
     .asinf = asinf,
     .asinhf = asinhf,
+    .copysignf = copysignf,
     .cosf = cosf,
     .coshf = coshf,
     .expf = expf,
