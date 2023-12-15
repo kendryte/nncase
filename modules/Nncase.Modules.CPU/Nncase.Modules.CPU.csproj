@@ -24,4 +24,18 @@
     <ProjectReference Include="..\..\..\nncase\modules\Nncase.Modules.StackVM\Nncase.Modules.StackVM.csproj" />
     <ProjectReference Include="..\..\src\Nncase.Evaluator\Nncase.Evaluator.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Runtime\include\nncase\" />
+    <Folder Include="Runtime\src\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\src\Native\include\nncase\ntt\**\*" Link="Runtime\include\nncase\ntt\%(RecursiveDir)\%(FileName)%(Extension)">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\src\Native\src\ntt\**\*" Link="Runtime\src\%(RecursiveDir)\%(FileName)%(Extension)">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>

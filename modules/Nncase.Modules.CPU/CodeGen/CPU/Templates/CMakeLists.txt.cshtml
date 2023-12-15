@@ -3,33 +3,12 @@
 cmake_minimum_required(VERSION 3.15)
 project(nncase_cpu_module)
 
-if (MSVC)
-    add_definitions(/D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS /D_CRT_SECURE_NO_WARNINGS /DNOMINMAX /DUNICODE /D_UNICODE)
-    add_compile_options(/Zc:threadSafeInit- /utf-8 /wd4200 /Oi)
-    # Disable C++ exceptions.
-    string(REGEX REPLACE "/EH[a-z]+" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHs-c- /GS-")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /GS-")
-    string(REGEX REPLACE "/RTC[^ ]*" "" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
-    string(REGEX REPLACE "/RTC[^ ]*" "" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
-    add_definitions(-D_HAS_EXCEPTIONS=0)
-
-    # Disable RTTI.
-    string(REGEX REPLACE "/GR" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /GR-")
-    add_compile_options(/arch:AVX /fp:fast)
-else()
-    add_compile_options(-ffast-math -flto -Wno-multichar -Wno-unused-value -fno-common -ffunction-sections -fno-exceptions -fdata-sections -fno-unwind-tables -fno-asynchronous-unwind-tables -fno-stack-protector)
-    add_link_options(-flto)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
-
-    if (APPLE)
-        add_compile_options(-fno-stack-check)
-    endif()
-endif()
+include(@Model.CMakePath)
 
 add_executable(nncase_cpu_module main.cpp)
 target_compile_features(nncase_cpu_module PUBLIC cxx_std_20)
+target_link_libraries(nncase_cpu_module PRIVATE nncase_cpu_runtime)
+target_compile_definitions(nncase_cpu_module PUBLIC -DNNCASE_CPU_MODULE=1)
 
 if (MSVC)
     set_target_properties(nncase_cpu_module PROPERTIES LINK_FLAGS /SUBSYSTEM:CONSOLE)

@@ -37,6 +37,7 @@ nncase_runtime_cpu_mt_t nncase_cpu_mt_ = {
     .sinf = sinf,
     .sinhf = sinhf,
     .tanhf = tanhf,
+
 #if defined(__APPLE__)
     .memcpy = memcpy,
 #endif

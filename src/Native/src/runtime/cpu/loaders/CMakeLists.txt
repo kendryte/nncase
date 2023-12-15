@@ -15,3 +15,7 @@ endif()
 
 add_library(cpu_loaders OBJECT ${SRCS})
 set_property(TARGET cpu_loaders PROPERTY POSITION_INDEPENDENT_CODE ON)
+
+if (BUILDING_RUNTIME)
+    install(TARGETS cpu_loaders EXPORT nncaseruntimeTargets)
+endif()

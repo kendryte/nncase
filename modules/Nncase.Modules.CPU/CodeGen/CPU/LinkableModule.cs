@@ -38,14 +38,6 @@ internal sealed class LinkableModule : ILinkableModule
                 Directory.CreateDirectory(dumpPath);
             }
 
-            using (var fs = File.Open(Path.Join(dumpPath, "nncase.runtime.cpu.h"), FileMode.Create))
-            {
-                using (var writer = new StreamWriter(fs))
-                {
-                    writer.Write(CSourceBuiltn.RuntimeDef());
-                }
-            }
-
             using (var fs = File.Open(Path.Join(dumpPath, "main.cpp"), FileMode.Create))
             {
                 using (var writer = new StreamWriter(fs))

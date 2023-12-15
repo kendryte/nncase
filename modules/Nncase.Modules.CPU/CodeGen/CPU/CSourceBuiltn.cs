@@ -9,20 +9,15 @@ namespace Nncase.CodeGen.CPU;
 
 public static class CSourceBuiltn
 {
-    public const string KernelHeader = @"#include ""nncase.runtime.cpu.h""
-using namespace nncase::runtime::cpu;
+    public const string KernelHeader = @"#include <nncase/ntt/ntt.h>
+using namespace nncase::ntt;
 
 ";
 
-    public static string CMakeDef(string name, [CallerFilePath] string? callerFilePath = null)
+    public static string CMakeDef(string name)
     {
-        var content = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/CMakeLists.txt.cshtml").Result;
-        return content;
-    }
-
-    public static string RuntimeDef()
-    {
-        var content = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/nncase.runtime.cpu.h.cshtml").Result;
+        var cmakePath = CMakePath(Path.Combine(Path.GetDirectoryName(typeof(CSourceBuiltn).Assembly.Location)!, "Runtime", "src", "cpu_runtime.cmake"));
+        var content = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/CMakeLists.txt.cshtml", new { CMakePath = cmakePath }).Result;
         return content;
     }
 
@@ -46,7 +41,8 @@ using namespace nncase::runtime::cpu;
     
             {b.Name} = &{b.Name}_;";
         })));
-        return @$"#include ""kernel.h""
+        return @$"#include <nncase/ntt/cpu_runtime.h>
+#include ""kernel.h""
 
 extern ""C"" void kernel_entry(nncase_runtime_cpu_mt_t *cpu_mt, uint8_t **inputs, uint8_t *rdata) {{
 g_cpu_mt = cpu_mt;

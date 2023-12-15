@@ -15,6 +15,7 @@
 #pragma once
 #include "runtime_module.h"
 #include <nncase/kernels/kernel_context.h>
+#include <nncase/ntt/cpu_runtime.h>
 #include <nncase/runtime/runtime_function.h>
 #include <nncase/tensor.h>
 
@@ -28,29 +29,7 @@
 
 BEGIN_NS_NNCASE_RT_MODULE(cpu)
 
-extern "C" {
-struct nncase_runtime_cpu_mt_t {
-    float (*acosf)(float v);
-    float (*acoshf)(float v);
-    float (*asinf)(float v);
-    float (*asinhf)(float v);
-    float (*copysignf)(float mag, float sgn);
-    float (*cosf)(float v);
-    float (*coshf)(float v);
-    float (*expf)(float v);
-    float (*logf)(float v);
-    float (*nearbyintf)(float v);
-    float (*sinf)(float v);
-    float (*sinhf)(float v);
-    float (*tanhf)(float v);
-
-#if defined(__APPLE__)
-    void *(*memcpy)(void *dst, const void *src, size_t len);
-#endif
-};
-
 #define CPU_ENTRY_NAME "kernel_entry"
-}
 
 class cpu_runtime_function final : public runtime_function {
     typedef void (*kernel_entry_t)(nncase_runtime_cpu_mt_t *cpu_mt,
