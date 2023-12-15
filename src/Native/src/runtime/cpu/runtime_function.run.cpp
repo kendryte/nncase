@@ -23,19 +23,24 @@ using namespace nncase::runtime;
 using namespace nncase::runtime::cpu;
 
 namespace {
-nncase_runtime_cpu_mt_t nncase_cpu_mt_ = {.acosf = acosf,
-                                          .acoshf = acoshf,
-                                          .asinf = asinf,
-                                          .asinhf = asinhf,
-                                          .cosf = cosf,
-                                          .coshf = coshf,
-                                          .expf = expf,
-                                          .logf = logf,
-                                          .nearbyintf = nearbyintf,
-                                          .sinf = sinf,
-                                          .sinhf = sinhf,
-                                          .tanhf = tanhf};
-}
+nncase_runtime_cpu_mt_t nncase_cpu_mt_ = {
+    .acosf = acosf,
+    .acoshf = acoshf,
+    .asinf = asinf,
+    .asinhf = asinhf,
+    .cosf = cosf,
+    .coshf = coshf,
+    .expf = expf,
+    .logf = logf,
+    .nearbyintf = nearbyintf,
+    .sinf = sinf,
+    .sinhf = sinhf,
+    .tanhf = tanhf,
+#if defined(__APPLE__)
+    .memcpy = memcpy,
+#endif
+};
+} // namespace
 
 result<void> cpu_runtime_function::run(gsl::span<gsl::byte *> params) noexcept {
     kernel_entry_(&nncase_cpu_mt_, params.data(), module().rdata().data());

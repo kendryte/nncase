@@ -42,6 +42,10 @@ struct nncase_runtime_cpu_mt_t {
     float (*sinf)(float v);
     float (*sinhf)(float v);
     float (*tanhf)(float v);
+
+#if defined(__APPLE__)
+    void *(*memcpy)(void *dst, const void *src, size_t len);
+#endif
 };
 
 #define CPU_ENTRY_NAME "kernel_entry"
