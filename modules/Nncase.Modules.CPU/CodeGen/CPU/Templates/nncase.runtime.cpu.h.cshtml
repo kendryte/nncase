@@ -94,14 +94,27 @@ namespace nncase::runtime::cpu {
             using strides_t = typename next_impl_t::strides_t::template prepend<value>::type;
         };
 
+        template<size_t Value, class Dims>
+        struct repeat_shape_impl;
+
+        template<size_t Value, size_t ...Dims>
+        struct repeat_shape_impl<Value, std::index_sequence<Dims...>> {
+            using shape_t = fixed_shape<(Dims, Value)...>;
+        };
+
         template<class Offset, class Strides, size_t...I>
         constexpr size_t linear_offset(std::index_sequence<I...>) noexcept {
-            return ((Offset::at(I) * Strides::at(I)) + ...);
+            return ((Offset::at(I) * Strides::at(I)) + ... + 0);
         }
     }
 
     template<class Shape>
     struct default_strides;
+
+    template<>
+    struct default_strides<fixed_shape<>> {
+        using type = fixed_strides<>;
+    };
 
     template<size_t Dim, size_t ...Dims>
     struct default_strides<fixed_shape<Dim, Dims...>> {
@@ -111,9 +124,26 @@ namespace nncase::runtime::cpu {
     template<class Shape>
     using default_strides_t = typename default_strides<Shape>::type;
 
+    template<size_t Rank>
+    using zero_shape_t = typename detail::repeat_shape_impl<0, std::make_index_sequence<Rank>>::shape_t;
+
     template<class Offset, class Strides>
     constexpr size_t linear_offset() noexcept {
         return detail::linear_offset<Offset, Strides>(std::make_index_sequence<Offset::rank()>());
+    }
+
+    template<class Shape, class Strides>
+    constexpr size_t linear_size() noexcept {
+        size_t max_stride = 1, max_shape = 1;
+        for (size_t i = 0; i < Shape::rank(); i++) {
+            if ((Shape::at(i) == 1 ? 0 : Strides::at(i)) >= max_stride) {
+                max_stride = Strides::at(i);
+                max_shape = Shape::at(i);
+            }
+        }
+        
+        size_t size = max_stride * max_shape;
+        return size;
     }
 
     template<class T, class Shape, class Strides = default_strides_t<Shape>>
@@ -124,11 +154,11 @@ namespace nncase::runtime::cpu {
 
         auto buffer() noexcept { return std::span(buffer_); }
         
-        template<class Offset = fixed_shape<0>, class UShape = Shape>
+        template<class Offset = zero_shape_t<Shape::rank()>, class UShape = Shape>
         tensor_view<T, UShape, Strides> view() noexcept;
 
     private:
-        T buffer_[shape().at(0) * strides().at(0)];
+        T buffer_[linear_size<Shape, Strides>()];
     };
 
     template<class T, class Shape, class Strides>
@@ -137,18 +167,18 @@ namespace nncase::runtime::cpu {
         static constexpr auto shape() noexcept { return Shape{}; }
         static constexpr auto strides() noexcept { return Strides{}; }
 
-        tensor_view(std::span<T, Shape::at(0) * Strides::at(0)> buffer) noexcept
+        tensor_view(std::span<T, linear_size<Shape, Strides>()> buffer) noexcept
             :buffer_(buffer) {}
 
         auto buffer() noexcept { return buffer_; }
 
-        template<class Offset = fixed_shape<0>, class UShape = Shape>
+        template<class Offset = zero_shape_t<Shape::rank()>, class UShape = Shape>
         tensor_view<T, UShape, Strides> view() noexcept {
             return buffer_.template subspan<linear_offset<Offset, Strides>()>();
         }
 
     private:
-        std::span<T, Shape::at(0) * Strides::at(0)> buffer_;
+        std::span<T, linear_size<Shape, Strides>()> buffer_;
     };
     
     template<class T, class Shape, class Strides>
