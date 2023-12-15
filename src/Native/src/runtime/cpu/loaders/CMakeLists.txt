@@ -15,6 +15,7 @@ endif()
 
 add_library(cpu_loaders OBJECT ${SRCS})
 set_property(TARGET cpu_loaders PROPERTY POSITION_INDEPENDENT_CODE ON)
+target_link_libraries(cpu_loaders PUBLIC gsl::gsl-lite)
 
 if (BUILDING_RUNTIME)
     install(TARGETS cpu_loaders EXPORT nncaseruntimeTargets)

@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 #include <cmath>
+#include <cstddef>
+#include <cstdint>
 #include <cstring>
 #include <nncase/ntt/cpu_runtime.h>
 
