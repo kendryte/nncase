@@ -63,7 +63,7 @@ float sinf(float v) { return g_cpu_mt->sinf(v); }
 float sinhf(float v) { return g_cpu_mt->sinhf(v); }
 float tanhf(float v) { return g_cpu_mt->tanhf(v); }
 
-#if defined(__APPLE__)
+#if !defined(WIN32)
 void *memcpy(void *dst, const void *src, size_t len) {
     return g_cpu_mt->memcpy(dst, src, len);
 }

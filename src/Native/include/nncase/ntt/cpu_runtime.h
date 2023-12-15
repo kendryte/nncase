@@ -31,7 +31,7 @@ struct nncase_runtime_cpu_mt_t {
     float (*sinhf)(float v);
     float (*tanhf)(float v);
 
-#if defined(__APPLE__)
+#if !defined(WIN32)
     void *(*memcpy)(void *dst, const void *src, size_t len);
 #endif
 };
