@@ -270,6 +270,10 @@ namespace nncase::runtime::cpu {
             float operator()(float v) const noexcept { return sqrtf(v); }
         };
 
+        struct square {
+            float operator()(float v) const noexcept { return v * v; }
+        };
+
         struct tanh {
             float operator()(float v) const noexcept { return g_cpu_mt->tanhf(v); }
         };
