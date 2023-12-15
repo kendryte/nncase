@@ -91,10 +91,12 @@ struct default_strides<fixed_shape<Dim, Dims...>> {
 template <class Shape>
 using default_strides_t = typename default_strides<Shape>::type;
 
-template <size_t Rank>
-using zero_shape_t =
-    typename detail::repeat_shape_impl<0,
+template <size_t Value, size_t Rank>
+using repeat_shape_t =
+    typename detail::repeat_shape_impl<Value,
                                        std::make_index_sequence<Rank>>::shape_t;
+
+template <size_t Rank> using zero_shape_t = repeat_shape_t<0, Rank>;
 
 template <class Offset, class Strides>
 constexpr size_t linear_offset() noexcept {

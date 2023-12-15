@@ -69,6 +69,10 @@ struct round {
     float operator()(float v) const noexcept { return nearbyintf(v); }
 };
 
+struct rsqrt {
+    float operator()(float v) const noexcept { return 1.f / sqrtf(v); }
+};
+
 struct sign {
     float operator()(float v) const noexcept { return copysignf(1.f, v); }
 };
