@@ -114,11 +114,10 @@ public static class QuantAlgorithmUtility
         var xInt = AdaptiveRound(quantTensor, qMin, qMax); // SQuant量化
         var xQuant = OrtKI.Clip(xInt, OrtKISharp.Tensor.FromScalar<float>(qMin), OrtKISharp.Tensor.FromScalar<float>(qMax));
         var xDequant = (xQuant - zeroPoint) * delta;
-        // quantTensor.Dispose();
-        // xQuant.Dispose();
-        // GC.Collect();
         var res = Tensor.From<float>(xDequant.ToArray<float>(), inputWeights.Shape);
-        // xDequant.Dispose();
+        quantTensor.Dispose();
+        xQuant.Dispose();
+        xDequant.Dispose();
         return res;
     }
 
@@ -206,45 +205,26 @@ public static class QuantAlgorithmUtility
             {
                 var s = OrtKI.Slice(tensor, starts, ends, axes, steps);
                 var ret = OrtKI.Squeeze(s, axes);
-                // 这里dispose s会引起原始的挂掉
                 s.Dispose();
-                return s;
-                // return IR.F.Tensors.Squeeze(IR.F.Tensors.Slice(tensor, starts, ends, axes, steps), axes);
+                return ret;
             }
 
-            OrtKISharp.Tensor tmp;
-            tmp = OrtKI.Slice(roundingNumber, starts, ends, axes, steps);
-            var roundingNumberTmp = OrtKI.Squeeze(tmp, axes);
-            tmp.Dispose();
-            tmp = OrtKI.Slice(roundingError, starts, ends, axes, steps);
-            var roundingErrorTmp = OrtKI.Squeeze(tmp, axes);
-            tmp.Dispose();
-            tmp = OrtKI.Slice(upNumber, starts, ends, axes, steps);
-            var upNumberSlice = OrtKI.Squeeze(tmp, axes);
-            tmp.Dispose();
-            tmp = OrtKI.Slice(upError, starts, ends, axes, steps);
-            var upErrorSlice = OrtKI.Squeeze(tmp, axes);
-            tmp.Dispose();
-            tmp = OrtKI.Slice(upOrder, starts, ends, axes, steps);
-            var upOrderSlice = OrtKI.Squeeze(tmp, axes);
-            tmp.Dispose();
-            tmp = OrtKI.Slice(downNumber, starts, ends, axes, steps);
-            var downNumberSlice = OrtKI.Squeeze(tmp, axes);
-            tmp.Dispose();
-            tmp = OrtKI.Slice(downError, starts, ends, axes, steps);
-            var downErrorSlice = OrtKI.Squeeze(tmp, axes);
-            tmp.Dispose();
-            tmp = OrtKI.Slice(downOrder, starts, ends, axes, steps);
-            var downOrderSlice = OrtKI.Squeeze(tmp, axes);
-            tmp.Dispose();
+            var roundingNumberTmp = Sl(roundingNumber);
+            var roundingErrorTmp = Sl(roundingError);
+            var upNumberSlice = Sl(upNumber);
+            var upErrorSlice = Sl(upError);
+            var upOrderSlice = Sl(upOrder);
+            var downNumberSlice = Sl(downNumber);
+            var downErrorSlice = Sl(downError);
+            var downOrderSlice = Sl(downOrder);
 
             var offset = (int)((n * oneBatchSize) + (c * oneInputChannelSize));
             OrtKISharp.Tensor priorityTmp;
             OrtKISharp.Tensor priority1Tmp;
             if (roundingErrorSumArr[currentIndex] < 0)
             {
-                priorityTmp = OrtKI.Squeeze(OrtKI.Slice(upPriority, starts, ends, axes, steps), axes);
-                priority1Tmp = OrtKI.Squeeze(OrtKI.Slice(downPriority, starts, ends, axes, steps), axes);
+                priorityTmp = Sl(upPriority);
+                priority1Tmp = Sl(downPriority);
                 RoundingForward(roundingErrorSumArr[currentIndex], roundingNumberTmp, roundingErrorTmp,
                     upNumberSlice, upErrorSlice, priorityTmp, upOrderSlice, priority1Tmp);
 
@@ -283,8 +263,8 @@ public static class QuantAlgorithmUtility
             }
             else
             {
-                priorityTmp = OrtKI.Squeeze(OrtKI.Slice(downPriority, starts, ends, axes, steps), axes);
-                priority1Tmp = OrtKI.Squeeze(OrtKI.Slice(upPriority, starts, ends, axes, steps), axes);
+                priorityTmp = Sl(downPriority);
+                priority1Tmp = Sl(upPriority);
                 RoundingForward(roundingErrorSumArr[currentIndex], roundingNumberTmp, roundingErrorTmp,
                     downNumberSlice, downErrorSlice, priorityTmp, downOrderSlice, priority1Tmp);
 
