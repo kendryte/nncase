@@ -173,8 +173,10 @@ public static class QuantAlgorithmUtility
         {
             throw new InvalidOperationException("Error");
         }
+
         var batches = roundingNumberShape[0];
         var inputChannel = roundingNumberShape[1];
+
         // Console.WriteLine($"batch:{batches} channel:{inputChannel} size:{roundingNumberShape[2]}");
         int totalSize = 1;
         for (int i = 0; i < roundingNumberShape.Length; i++)
@@ -260,6 +262,7 @@ public static class QuantAlgorithmUtility
             if (currentIndex == 0)
             {
                 end = System.DateTime.Now;
+
                 // Console.WriteLine(end - start);
             }
         });
@@ -321,9 +324,10 @@ public static class QuantAlgorithmUtility
             downNumber = OrtKI.Reshape(downNumber, converShape, 0);
             downError = OrtKI.Reshape(downError, converShape, 0);
             downPriority = OrtKI.Reshape(downPriority, converShape, 0);
-            var start = System.DateTime.Now;
+            _ = System.DateTime.Now;
             SQuantFunc(roundingErrorSum, roundingNumber, roundingError, upNumber, upError, upPriority, upOrder, downNumber, downError, downPriority, downOrder, false);
-            var end = System.DateTime.Now;
+            _ = System.DateTime.Now;
+
             // Console.WriteLine($"squantk {end - start}");
             roundingNumber = OrtKI.Reshape(roundingNumber, x.Shape, 0);
             roundingError = OrtKI.Reshape(roundingError, x.Shape, 0);
@@ -352,9 +356,10 @@ public static class QuantAlgorithmUtility
             downNumber = OrtKI.Reshape(downNumber, converShape, 0);
             downError = OrtKI.Reshape(downError, converShape, 0);
             downPriority = OrtKI.Reshape(downPriority, converShape, 0);
-            var start = System.DateTime.Now;
+            _ = System.DateTime.Now;
             SQuantFunc(roundingErrorSum, roundingNumber, roundingError, upNumber, upError, upPriority, upOrder, downNumber, downError, downPriority, downOrder, true);
-            var end = System.DateTime.Now;
+            _ = System.DateTime.Now;
+
             // Console.WriteLine($"squantc {end - start}");
         }
 
