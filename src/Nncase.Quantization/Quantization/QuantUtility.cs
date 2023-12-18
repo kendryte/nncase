@@ -181,12 +181,11 @@ public static class QuantAlgorithmUtility
         var oneInputChannelSize = oneBatchSize / inputChannel;
 
         var roundingErrorSumArr = roundingErrorSum.ToArray<float>();
+        var axes = OrtKISharp.Tensor.MakeTensor(new long[] { 0, 1 }, new long[] { 2 });
+        var steps = OrtKISharp.Tensor.MakeTensor(new long[] { 1, 1 }, new long[] { 2 });
 
         Parallel.For(0, (long)batches * inputChannel, currentIndex =>
-            // for (int currentIndex = 0; currentIndex < batches * inputChannel; currentIndex++)
         {
-            // Console.WriteLine("For Index");
-            // Console.WriteLine(currentIndex);
             var roundingNumberMem = MemoryMarshal.Cast<byte, float>(roundingNumber.BytesBuffer);
             var roundingErrorMem = MemoryMarshal.Cast<byte, float>(roundingError.BytesBuffer);
             var upPriorityMem = MemoryMarshal.Cast<byte, float>(upPriority.BytesBuffer);
@@ -198,8 +197,6 @@ public static class QuantAlgorithmUtility
             var c = currentIndex % inputChannel;
             var starts = OrtKISharp.Tensor.MakeTensor(new long[] { n, c }, new long[] { 2 });
             var ends = OrtKISharp.Tensor.MakeTensor(new long[] { n + 1, c + 1 }, new long[] { 2 });
-            var axes = OrtKISharp.Tensor.MakeTensor(new long[] { 0, 1 }, new long[] { 2 });
-            var steps = OrtKISharp.Tensor.MakeTensor(new long[] { 1, 1 }, new long[] { 2 });
 
             OrtKISharp.Tensor Sl(OrtKISharp.Tensor tensor)
             {
@@ -228,14 +225,10 @@ public static class QuantAlgorithmUtility
                 RoundingForward(roundingErrorSumArr[currentIndex], roundingNumberTmp, roundingErrorTmp,
                     upNumberSlice, upErrorSlice, priorityTmp, upOrderSlice, priority1Tmp);
 
-                // var roundingNumberTmpArr = roundingNumberTmp.ToArray<float>();
-                // var roundingErrorTmpArr = roundingErrorTmp.ToArray<float>();
-                // var priorityTmpArr = priorityTmp.ToArray<float>();
-                // var priority1TmpArr = priority1Tmp.ToArray<float>();
-                var roundingNumberTmpArr = roundingNumberTmp.ToArray<float>();
-                var roundingErrorTmpArr = roundingErrorTmp.ToArray<float>();
-                var priorityTmpArr = priorityTmp.ToArray<float>();
-                var priority1TmpArr = priority1Tmp.ToArray<float>();
+                var roundingNumberTmpArr = MemoryMarshal.Cast<byte, float>(roundingNumberTmp.BytesBuffer);
+                var roundingErrorTmpArr = MemoryMarshal.Cast<byte, float>(roundingErrorTmp.BytesBuffer);
+                var priorityTmpArr = MemoryMarshal.Cast<byte, float>(priorityTmp.BytesBuffer);
+                var priority1TmpArr = MemoryMarshal.Cast<byte, float>(priority1Tmp.BytesBuffer);
                 for (int i = 0; i < roundingNumberTmp.Length; i++)
                 {
                     roundingNumberMem[offset + i] =
@@ -268,10 +261,10 @@ public static class QuantAlgorithmUtility
                 RoundingForward(roundingErrorSumArr[currentIndex], roundingNumberTmp, roundingErrorTmp,
                     downNumberSlice, downErrorSlice, priorityTmp, downOrderSlice, priority1Tmp);
 
-                var roundingNumberTmpArr = roundingNumberTmp.ToArray<float>();
-                var roundingErrorTmpArr = roundingErrorTmp.ToArray<float>();
-                var priorityTmpArr = priorityTmp.ToArray<float>();
-                var priority1TmpArr = priority1Tmp.ToArray<float>();
+                var roundingNumberTmpArr = MemoryMarshal.Cast<byte, float>(roundingNumberTmp.BytesBuffer);
+                var roundingErrorTmpArr = MemoryMarshal.Cast<byte, float>(roundingErrorTmp.BytesBuffer);
+                var priorityTmpArr = MemoryMarshal.Cast<byte, float>(priorityTmp.BytesBuffer);
+                var priority1TmpArr = MemoryMarshal.Cast<byte, float>(priority1Tmp.BytesBuffer);
 
                 for (int i = 0; i < roundingNumberTmp.Length; i++)
                 {
@@ -311,15 +304,12 @@ public static class QuantAlgorithmUtility
             downOrderSlice.Dispose();
             starts.Dispose();
             ends.Dispose();
-            axes.Dispose();
-            steps.Dispose();
             if (currentIndex == 0)
             {
                 end = System.DateTime.Now;
                 // Console.WriteLine(end - start);
             }
         });
-        // }
     }
 
     private static OrtKISharp.Tensor AdaptiveRound(OrtKISharp.Tensor x, float tMin, float tMax)
