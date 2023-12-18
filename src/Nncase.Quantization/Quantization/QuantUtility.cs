@@ -115,7 +115,7 @@ public static class QuantAlgorithmUtility
 
         var quantParamEnd = System.DateTime.Now;
 
-        Console.WriteLine($"QuantParamTime {quantParamEnd - quantParamBegin}");
+        // Console.WriteLine($"QuantParamTime {quantParamEnd - quantParamBegin}");
         var quantTensor = OrtKI.Add(OrtKI.Div(x, delta), zeroPoint);
         var xInt = AdaptiveRound(quantTensor, qMin, qMax); // SQuant量化
         var xQuant = OrtKI.Clip(xInt, OrtKISharp.Tensor.FromScalar<float>(qMin), OrtKISharp.Tensor.FromScalar<float>(qMax));
@@ -175,7 +175,7 @@ public static class QuantAlgorithmUtility
         }
         var batches = roundingNumberShape[0];
         var inputChannel = roundingNumberShape[1];
-        Console.WriteLine($"batch:{batches} channel:{inputChannel} size:{roundingNumberShape[2]}");
+        // Console.WriteLine($"batch:{batches} channel:{inputChannel} size:{roundingNumberShape[2]}");
         int totalSize = 1;
         for (int i = 0; i < roundingNumberShape.Length; i++)
         {
@@ -324,7 +324,7 @@ public static class QuantAlgorithmUtility
             var start = System.DateTime.Now;
             SQuantFunc(roundingErrorSum, roundingNumber, roundingError, upNumber, upError, upPriority, upOrder, downNumber, downError, downPriority, downOrder, false);
             var end = System.DateTime.Now;
-            Console.WriteLine($"squantk {end - start}");
+            // Console.WriteLine($"squantk {end - start}");
             roundingNumber = OrtKI.Reshape(roundingNumber, x.Shape, 0);
             roundingError = OrtKI.Reshape(roundingError, x.Shape, 0);
             upPriority = OrtKI.Reshape(upPriority, x.Shape, 0);
@@ -355,7 +355,7 @@ public static class QuantAlgorithmUtility
             var start = System.DateTime.Now;
             SQuantFunc(roundingErrorSum, roundingNumber, roundingError, upNumber, upError, upPriority, upOrder, downNumber, downError, downPriority, downOrder, true);
             var end = System.DateTime.Now;
-            Console.WriteLine($"squantc {end - start}");
+            // Console.WriteLine($"squantc {end - start}");
         }
 
         roundingNumber = OrtKI.Reshape(roundingNumber, x.Shape, 0);
