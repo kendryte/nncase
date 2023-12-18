@@ -39,6 +39,7 @@ public static class QuantAlgorithmUtility
             qMin = -(1 << (bits - 1)) + 1;
         }
 
+        var inWShape = inputWeights.Shape.Select(x => (long)x.FixedValue).ToArray();
         OrtKISharp.Tensor x, delta, zeroPoint;
         if (inputWeightsShape.Length == 4)
         {
@@ -66,8 +67,8 @@ public static class QuantAlgorithmUtility
                         zeroPointArr[(c * eachChannelSize) + i] = (float)zeroPointTmp;
                     }
                 });
-                delta = OrtKISharp.Tensor.MakeTensor(deltaArr, new long[] { outChannel, inChannel, filterH, filterW });
-                zeroPoint = OrtKISharp.Tensor.MakeTensor(zeroPointArr, new long[] { outChannel, inChannel, filterH, filterW });
+                delta = OrtKISharp.Tensor.MakeTensor(deltaArr, inWShape);
+                zeroPoint = OrtKISharp.Tensor.MakeTensor(zeroPointArr, inWShape);
             }
             else
             {
@@ -100,8 +101,8 @@ public static class QuantAlgorithmUtility
                     }
                 });
 
-                delta = OrtKISharp.Tensor.MakeTensor(deltaArr, new long[] { outChannel, inChannel });
-                zeroPoint = OrtKISharp.Tensor.MakeTensor(zeroPointArr, new long[] { outChannel, inChannel });
+                delta = OrtKISharp.Tensor.MakeTensor(deltaArr, inWShape);
+                zeroPoint = OrtKISharp.Tensor.MakeTensor(zeroPointArr, inWShape);
             }
             else
             {
@@ -109,7 +110,9 @@ public static class QuantAlgorithmUtility
             }
         }
 
+        Console.WriteLine("before");
         var quantTensor = OrtKI.Add(OrtKI.Div(x, delta), zeroPoint);
+        Console.WriteLine("after");
         var xInt = AdaptiveRound(quantTensor, qMin, qMax); // SQuant量化
         var xQuant = OrtKI.Clip(xInt, OrtKISharp.Tensor.FromScalar<float>(qMin), OrtKISharp.Tensor.FromScalar<float>(qMax));
         var xDequant = (xQuant - zeroPoint) * delta;
@@ -123,10 +126,10 @@ public static class QuantAlgorithmUtility
 
     private static void RoundingForward(float roundingErrorSum, OrtKISharp.Tensor roundingNumber, OrtKISharp.Tensor roundingError, OrtKISharp.Tensor number, OrtKISharp.Tensor error, OrtKISharp.Tensor priority, OrtKISharp.Tensor order, OrtKISharp.Tensor priority1)
     {
-        var roundingNumberMem = roundingNumber.ToArray<float>();
-        var roundingErrorMem = roundingError.ToArray<float>();
-        var priorityMem = priority.ToArray<float>();
-        var priority1Mem = priority1.ToArray<float>();
+        var roundingNumberMem = MemoryMarshal.Cast<byte, float>(roundingNumber.BytesBuffer);
+        var roundingErrorMem = MemoryMarshal.Cast<byte, float>(roundingError.BytesBuffer);
+        var priorityMem = MemoryMarshal.Cast<byte, float>(priority.BytesBuffer);
+        var priority1Mem = MemoryMarshal.Cast<byte, float>(priority1.BytesBuffer);
         int topK = (int)System.Math.Round(System.Math.Abs(roundingErrorSum));
         bool overSquant = topK >= System.Math.Abs(roundingErrorSum);
         if (topK > 0)
@@ -335,7 +338,7 @@ public static class QuantAlgorithmUtility
             if (currentIndex == 0)
             {
                 end = System.DateTime.Now;
-                Console.WriteLine(end - start);
+                // Console.WriteLine(end - start);
             }
         });
         // }
