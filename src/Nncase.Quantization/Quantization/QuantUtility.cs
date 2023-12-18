@@ -379,11 +379,13 @@ public static class QuantAlgorithmUtility
         if (squantK)
         {
             var roundingErrorSum = OrtKI.ReduceSum(OrtKI.Reshape(roundingError, converShape, 0), new long[] { -1 }, 0, 0);
-            var upPriorityK = OrtKI.Reshape(upPriority, converShape, 0).Shape[OrtKI.Reshape(upPriority, converShape, 0).Shape.Length - 1];
-            var sortRet = OrtKI.TopK(OrtKI.Reshape(upPriority, converShape, 0), OrtKISharp.Tensor.MakeTensor(new long[] { upPriorityK }, new long[] { 1 }), -1, 1, 1);
+            var reshapeUpPriority = OrtKI.Reshape(upPriority, converShape, 0);
+            var upPriorityK = reshapeUpPriority.Shape[^1];
+            var sortRet = OrtKI.TopK(reshapeUpPriority, OrtKISharp.Tensor.MakeTensor(new long[] { upPriorityK }, new long[] { 1 }), -1, 1, 1);
             var upOrder = sortRet[1];
-            var downPriorityK = OrtKI.Reshape(downPriority, converShape, 0).Shape[OrtKI.Reshape(downPriority, converShape, 0).Shape.Length - 1];
-            sortRet = OrtKI.TopK(OrtKI.Reshape(downPriority, converShape, 0), OrtKISharp.Tensor.MakeTensor(new long[] { downPriorityK }, new long[] { 1 }), -1, 1, 1);
+            var reshapeDownPriority = OrtKI.Reshape(downPriority, converShape, 0);
+            var downPriorityK = reshapeDownPriority.Shape[^1];
+            sortRet = OrtKI.TopK(reshapeDownPriority, OrtKISharp.Tensor.MakeTensor(new long[] { downPriorityK }, new long[] { 1 }), -1, 1, 1);
             var downOrder = sortRet[1];
             upPriority *= 0.0f;
             downPriority *= 0.0f;
@@ -407,11 +409,13 @@ public static class QuantAlgorithmUtility
         {
             converShape = new long[] { 1, x.Shape[0], -1 };
             var roundingErrorSum = OrtKI.ReduceSum(OrtKI.Reshape(roundingError, converShape, 0), new long[] { -1 }, 0, 0);
-            var upPriorityK = OrtKI.Reshape(upPriority, converShape, 0).Shape[OrtKI.Reshape(upPriority, converShape, 0).Shape.Length - 1];
-            var sortRet = OrtKI.TopK(OrtKI.Reshape(upPriority, converShape, 0), OrtKISharp.Tensor.MakeTensor(new long[] { upPriorityK }, new long[] { 1 }), -1, 1, 1);
+            var reshapePriority = OrtKI.Reshape(upPriority, converShape, 0);
+            var upPriorityK = reshapePriority.Shape[^1];
+            var sortRet = OrtKI.TopK(reshapePriority, OrtKISharp.Tensor.MakeTensor(new long[] { upPriorityK }, new long[] { 1 }), -1, 1, 1);
             var upOrder = sortRet[1];
-            var downPriorityK = OrtKI.Reshape(downPriority, converShape, 0).Shape[OrtKI.Reshape(downPriority, converShape, 0).Shape.Length - 1];
-            sortRet = OrtKI.TopK(OrtKI.Reshape(downPriority, converShape, 0), OrtKISharp.Tensor.MakeTensor(new long[] { downPriorityK }, new long[] { 1 }), -1, 1, 1);
+            var reshapeDownPriority = OrtKI.Reshape(downPriority, converShape, 0);
+            var downPriorityK = reshapeDownPriority.Shape[^1];
+            sortRet = OrtKI.TopK(reshapeDownPriority, OrtKISharp.Tensor.MakeTensor(new long[] { downPriorityK }, new long[] { 1 }), -1, 1, 1);
             var downOrder = sortRet[1];
 
             roundingNumber = OrtKI.Reshape(roundingNumber, converShape, 0);
