@@ -86,18 +86,19 @@ public static class QuantAlgorithmUtility
                 float[] zeroPointArr = new float[inputWeights.Length];
                 int eachChannelSize = inputWeights.Length / outChannel;
 
-                for (var c = 0; c < outChannel; c++)
+                Parallel.For(0, outChannel, c =>
                 {
                     var xMin = inputWeightsRanges[c, 0];
                     var xMax = inputWeightsRanges[c, 1];
                     var deltaTmp = (xMax - xMin) / (qMax - qMin);
                     var zeroPointTmp = System.Math.Round(((xMax * qMin) - (xMin * qMax)) / (xMax - xMin));
+
                     for (int i = 0; i < eachChannelSize; i++)
                     {
                         deltaArr[(c * eachChannelSize) + i] = deltaTmp;
                         zeroPointArr[(c * eachChannelSize) + i] = (float)zeroPointTmp;
                     }
-                }
+                });
 
                 delta = OrtKISharp.Tensor.MakeTensor(deltaArr, new long[] { outChannel, inChannel });
                 zeroPoint = OrtKISharp.Tensor.MakeTensor(zeroPointArr, new long[] { outChannel, inChannel });
@@ -112,9 +113,12 @@ public static class QuantAlgorithmUtility
         var xInt = AdaptiveRound(quantTensor, qMin, qMax); // SQuant量化
         var xQuant = OrtKI.Clip(xInt, OrtKISharp.Tensor.FromScalar<float>(qMin), OrtKISharp.Tensor.FromScalar<float>(qMax));
         var xDequant = (xQuant - zeroPoint) * delta;
-
-        GC.Collect();
-        return Tensor.From<float>(xDequant.ToArray<float>(), inputWeights.Shape);
+        // quantTensor.Dispose();
+        // xQuant.Dispose();
+        // GC.Collect();
+        var res = Tensor.From<float>(xDequant.ToArray<float>(), inputWeights.Shape);
+        // xDequant.Dispose();
+        return res;
     }
 
     private static void RoundingForward(float roundingErrorSum, OrtKISharp.Tensor roundingNumber, OrtKISharp.Tensor roundingError, OrtKISharp.Tensor number, OrtKISharp.Tensor error, OrtKISharp.Tensor priority, OrtKISharp.Tensor order, OrtKISharp.Tensor priority1)

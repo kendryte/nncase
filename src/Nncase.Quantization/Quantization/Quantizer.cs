@@ -325,25 +325,21 @@ internal partial class Quantizer
         _graph.Rebuild();
     }
 
-    private async Task RunPassAsync(ICalibrationDatasetProvider calibrationDataset, Action<IReadOnlyDictionary<ENode, Tensor>, IReadOnlyDictionary<ENode, Tensor>> func)
+    private async Task RunPassAsync(ICalibrationDatasetProvider calibrationDataset, Action<IReadOnlyDictionary<ENode, Tensor>> func, bool r)
     {
         await foreach (var sample in calibrationDataset.Samples)
         {
-            IReadOnlyDictionary<ENode, Tensor> values, childrenValues;
-            using (var dumpScope = new DumpScope("ep1"))
-            {
-                var evaluator = new CalibrationEvaluator(sample, _rangeOfs);
-                values = evaluator.Evaluate();
-            }
-
+            IReadOnlyDictionary<ENode, Tensor> childrenValues;
             using (var dumpScope2 = new DumpScope("ep2"))
             {
                 var childrenEvaluator = new CalibrationEvaluator(sample, _childrenOfRangeOfs);
-                childrenValues = childrenEvaluator.Evaluate();
+                var tmpChildrenValues = childrenEvaluator.Evaluate().ToList();
+                childrenValues = tmpChildrenValues.Zip(_rangeOfs).ToDictionary(pair => pair.Second, pair => pair.First.Value);
             }
 
             // values are children op range values(only two scalars for each value: Min and Max), childrenValues are children op tensor values.
-            func(values, childrenValues);
+            func(childrenValues);
+            GC.Collect();
         }
     }
 
@@ -355,6 +351,7 @@ internal partial class Quantizer
             var evaluator = new CalibrationEvaluator(sample, _rangeOfs);
             var values = evaluator.Evaluate();
             func(values);
+            GC.Collect();
         }
     }
 
@@ -511,26 +508,23 @@ internal partial class Quantizer
     private async Task<IDictionary<ENode, QuantizeHistogram<float>>> GetHistogramsAsync(ICalibrationDatasetProvider calibrationDataset, IDictionary<ENode, ValueRange<float>> ranges, int srcBinSize, int dstBinSize)
     {
         var histograms = new Dictionary<ENode, QuantizeHistogram<float>>(ReferenceEqualityComparer.Instance);
-        await RunPassAsync(calibrationDataset, (values, childrenValues) =>
+        foreach (var (key, value) in ranges)
         {
-            var valuesList = values.ToList();
-            var childrenValuesList = childrenValues.ToList();
-            for (int i = 0; i < valuesList.Count; i++)
+            var initSrcBin = new List<float>(new float[srcBinSize]);
+            histograms[key] = new QuantizeHistogram<float>(initSrcBin, initSrcBin);
+        }
+
+        await RunPassAsync(calibrationDataset, childrenValues =>
+        {
+            foreach (var (key, value) in childrenValues)
             {
-                var r = ranges[valuesList[i].Key].Max - ranges[valuesList[i].Key].Min;
+                var r = ranges[key].Max - ranges[key].Min;
                 var srcBinInterval = r / srcBinSize;
-                if (!histograms.TryGetValue(valuesList[i].Key, out var histogram))
-                {
-                    var initSrcBin = new List<float>(new float[srcBinSize]);
-                    var initDstBin = new List<float>(new float[dstBinSize]);
-                    histogram = new QuantizeHistogram<float>(initSrcBin, initDstBin);
-                    histograms.Add(valuesList[i].Key, histogram);
-                }
 
-                var childrenTensor = childrenValuesList[i].Value.Cast<float>();
+                var childrenTensor = value.Cast<float>();
                 var childrenBuffer = childrenTensor.Buffer.Span;
-                var valueRange = ranges[valuesList[i].Key];
-
+                var valueRange = ranges[key];
+                var histogram = histograms[key];
                 foreach (var buf in childrenBuffer)
                 {
                     var r_index = (buf - valueRange.Min) / srcBinInterval;
@@ -538,7 +532,7 @@ internal partial class Quantizer
                     histogram.SrcBin[index]++;
                 }
             }
-        });
+        }, false);
         return histograms;
     }
 
