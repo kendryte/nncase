@@ -181,8 +181,8 @@ public static class QuantAlgorithmUtility
         var oneInputChannelSize = oneBatchSize / inputChannel;
 
         var roundingErrorSumArr = roundingErrorSum.ToArray<float>();
-        var axes = OrtKISharp.Tensor.MakeTensor(new long[] { 0, 1 }, new long[] { 2 });
-        var steps = OrtKISharp.Tensor.MakeTensor(new long[] { 1, 1 }, new long[] { 2 });
+        using var axes = OrtKISharp.Tensor.MakeTensor(new long[] { 0, 1 }, new long[] { 2 });
+        using var steps = OrtKISharp.Tensor.MakeTensor(new long[] { 1, 1 }, new long[] { 2 });
 
         Parallel.For(0, (long)batches * inputChannel, currentIndex =>
         {
@@ -195,25 +195,24 @@ public static class QuantAlgorithmUtility
             start = System.DateTime.Now;
             var n = currentIndex / inputChannel;
             var c = currentIndex % inputChannel;
-            var starts = OrtKISharp.Tensor.MakeTensor(new long[] { n, c }, new long[] { 2 });
-            var ends = OrtKISharp.Tensor.MakeTensor(new long[] { n + 1, c + 1 }, new long[] { 2 });
+            using var starts = OrtKISharp.Tensor.MakeTensor(new long[] { n, c }, new long[] { 2 });
+            using var ends = OrtKISharp.Tensor.MakeTensor(new long[] { n + 1, c + 1 }, new long[] { 2 });
 
             OrtKISharp.Tensor Sl(OrtKISharp.Tensor tensor)
             {
-                var s = OrtKI.Slice(tensor, starts, ends, axes, steps);
+                using var s = OrtKI.Slice(tensor, starts, ends, axes, steps);
                 var ret = OrtKI.Squeeze(s, axes);
-                s.Dispose();
                 return ret;
             }
 
-            var roundingNumberTmp = Sl(roundingNumber);
-            var roundingErrorTmp = Sl(roundingError);
-            var upNumberSlice = Sl(upNumber);
-            var upErrorSlice = Sl(upError);
-            var upOrderSlice = Sl(upOrder);
-            var downNumberSlice = Sl(downNumber);
-            var downErrorSlice = Sl(downError);
-            var downOrderSlice = Sl(downOrder);
+            using var roundingNumberTmp = Sl(roundingNumber);
+            using var roundingErrorTmp = Sl(roundingError);
+            using var upNumberSlice = Sl(upNumber);
+            using var upErrorSlice = Sl(upError);
+            using var upOrderSlice = Sl(upOrder);
+            using var downNumberSlice = Sl(downNumber);
+            using var downErrorSlice = Sl(downError);
+            using var downOrderSlice = Sl(downOrder);
 
             var offset = (int)((n * oneBatchSize) + (c * oneInputChannelSize));
             OrtKISharp.Tensor priorityTmp;
@@ -294,16 +293,6 @@ public static class QuantAlgorithmUtility
 
             priorityTmp.Dispose();
             priority1Tmp.Dispose();
-            roundingNumberTmp.Dispose();
-            roundingErrorTmp.Dispose();
-            upNumberSlice.Dispose();
-            upErrorSlice.Dispose();
-            upOrderSlice.Dispose();
-            downNumberSlice.Dispose();
-            downErrorSlice.Dispose();
-            downOrderSlice.Dispose();
-            starts.Dispose();
-            ends.Dispose();
             if (currentIndex == 0)
             {
                 end = System.DateTime.Now;
