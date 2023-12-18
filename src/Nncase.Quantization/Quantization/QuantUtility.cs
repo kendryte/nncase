@@ -110,9 +110,7 @@ public static class QuantAlgorithmUtility
             }
         }
 
-        Console.WriteLine("before");
         var quantTensor = OrtKI.Add(OrtKI.Div(x, delta), zeroPoint);
-        Console.WriteLine("after");
         var xInt = AdaptiveRound(quantTensor, qMin, qMax); // SQuant量化
         var xQuant = OrtKI.Clip(xInt, OrtKISharp.Tensor.FromScalar<float>(qMin), OrtKISharp.Tensor.FromScalar<float>(qMax));
         var xDequant = (xQuant - zeroPoint) * delta;
