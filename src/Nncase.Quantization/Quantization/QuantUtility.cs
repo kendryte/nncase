@@ -8,6 +8,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.Evaluator;
 using Nncase.IR;
 using OrtKISharp;
 using SMath = System.Math;
@@ -45,7 +46,7 @@ public static class QuantAlgorithmUtility
             var inChannel = inputWeightsShape[1];
             var filterH = inputWeightsShape[2];
             var filterW = inputWeightsShape[3];
-            x = OrtKISharp.Tensor.MakeTensor(inputWeights.PinBuffer(), OrtDataType.Float, new long[] { outChannel, inChannel, filterH, filterW });
+            x = inputWeights.ToOrtTensor();
 
             if (isByChannel)
             {
@@ -77,7 +78,8 @@ public static class QuantAlgorithmUtility
         {
             var outChannel = inputWeightsShape[0];
             var inChannel = inputWeightsShape[1];
-            x = OrtKISharp.Tensor.MakeTensor(inputWeights.PinBuffer(), OrtDataType.Float, new long[] { outChannel, inChannel });
+            x = inputWeights.ToOrtTensor();
+
             if (isByChannel)
             {
                 float[] deltaArr = new float[inputWeights.Length];
@@ -111,15 +113,16 @@ public static class QuantAlgorithmUtility
         var xQuant = OrtKI.Clip(xInt, OrtKISharp.Tensor.FromScalar<float>(qMin), OrtKISharp.Tensor.FromScalar<float>(qMax));
         var xDequant = (xQuant - zeroPoint) * delta;
 
+        GC.Collect();
         return Tensor.From<float>(xDequant.ToArray<float>(), inputWeights.Shape);
     }
 
     private static void RoundingForward(float roundingErrorSum, OrtKISharp.Tensor roundingNumber, OrtKISharp.Tensor roundingError, OrtKISharp.Tensor number, OrtKISharp.Tensor error, OrtKISharp.Tensor priority, OrtKISharp.Tensor order, OrtKISharp.Tensor priority1)
     {
-        var roundingNumberMem = MemoryMarshal.Cast<byte, float>(roundingNumber.BytesBuffer);
-        var roundingErrorMem = MemoryMarshal.Cast<byte, float>(roundingError.BytesBuffer);
-        var priorityMem = MemoryMarshal.Cast<byte, float>(priority.BytesBuffer);
-        var priority1Mem = MemoryMarshal.Cast<byte, float>(priority1.BytesBuffer);
+        var roundingNumberMem = roundingNumber.ToArray<float>();
+        var roundingErrorMem = roundingError.ToArray<float>();
+        var priorityMem = priority.ToArray<float>();
+        var priority1Mem = priority1.ToArray<float>();
         int topK = (int)System.Math.Round(System.Math.Abs(roundingErrorSum));
         bool overSquant = topK >= System.Math.Abs(roundingErrorSum);
         if (topK > 0)
@@ -152,6 +155,7 @@ public static class QuantAlgorithmUtility
                 var index = orderArr[topK];
                 priorityMem[index] = System.Math.Abs(roundingErrorMem[index]);
             }
+            orderTmp.Dispose();
         }
     }
 
@@ -160,10 +164,10 @@ public static class QuantAlgorithmUtility
         OrtKISharp.Tensor upPriority, OrtKISharp.Tensor upOrder, OrtKISharp.Tensor downNumber,
         OrtKISharp.Tensor downError, OrtKISharp.Tensor downPriority, OrtKISharp.Tensor downOrder, bool getNumberOnly)
     {
-        var roundingNumberShape = roundingNumber.Shape;
+        var roundingNumberShape = roundingNumber.Shape.Select(x => (int)x).ToArray();
         var batches = roundingNumberShape[0];
         var inputChannel = roundingNumberShape[1];
-        long totalSize = 1;
+        int totalSize = 1;
         for (int i = 0; i < roundingNumberShape.Length; i++)
         {
             totalSize *= roundingNumberShape[i];
@@ -174,42 +178,82 @@ public static class QuantAlgorithmUtility
 
         var roundingErrorSumArr = roundingErrorSum.ToArray<float>();
 
-        Parallel.For(0, batches * inputChannel, currentIndex =>
+        Parallel.For(0, (long)batches * inputChannel, currentIndex =>
+            // for (int currentIndex = 0; currentIndex < batches * inputChannel; currentIndex++)
         {
+            // Console.WriteLine("For Index");
+            // Console.WriteLine(currentIndex);
             var roundingNumberMem = MemoryMarshal.Cast<byte, float>(roundingNumber.BytesBuffer);
             var roundingErrorMem = MemoryMarshal.Cast<byte, float>(roundingError.BytesBuffer);
             var upPriorityMem = MemoryMarshal.Cast<byte, float>(upPriority.BytesBuffer);
             var downPriorityMem = MemoryMarshal.Cast<byte, float>(downPriority.BytesBuffer);
+
+            System.DateTime start, end;
+            start = System.DateTime.Now;
             var n = currentIndex / inputChannel;
             var c = currentIndex % inputChannel;
             var starts = OrtKISharp.Tensor.MakeTensor(new long[] { n, c }, new long[] { 2 });
             var ends = OrtKISharp.Tensor.MakeTensor(new long[] { n + 1, c + 1 }, new long[] { 2 });
             var axes = OrtKISharp.Tensor.MakeTensor(new long[] { 0, 1 }, new long[] { 2 });
             var steps = OrtKISharp.Tensor.MakeTensor(new long[] { 1, 1 }, new long[] { 2 });
-            var roundingNumberTmp = OrtKI.Squeeze(OrtKI.Slice(roundingNumber, starts, ends, axes, steps), axes);
-            var roundingErrorTmp = OrtKI.Squeeze(OrtKI.Slice(roundingError, starts, ends, axes, steps), axes);
-            var upNumberSlice = OrtKI.Squeeze(OrtKI.Slice(upNumber, starts, ends, axes, steps), axes);
-            var upErrorSlice = OrtKI.Squeeze(OrtKI.Slice(upError, starts, ends, axes, steps), axes);
-            var upOrderSlice = OrtKI.Squeeze(OrtKI.Slice(upOrder, starts, ends, axes, steps), axes);
-            var downNumberSlice = OrtKI.Squeeze(OrtKI.Slice(downNumber, starts, ends, axes, steps), axes);
-            var downErrorSlice = OrtKI.Squeeze(OrtKI.Slice(downError, starts, ends, axes, steps), axes);
-            var downOrderSlice = OrtKI.Squeeze(OrtKI.Slice(downOrder, starts, ends, axes, steps), axes);
 
-            var offset = (n * (int)oneBatchSize) + (c * (int)oneInputChannelSize);
-            if (roundingErrorSumArr[(n * inputChannel) + c] < 0)
+            OrtKISharp.Tensor Sl(OrtKISharp.Tensor tensor)
             {
-                var priorityTmp = OrtKI.Squeeze(OrtKI.Slice(upPriority, starts, ends, axes, steps), axes);
-                var priority1Tmp = OrtKI.Squeeze(OrtKI.Slice(downPriority, starts, ends, axes, steps), axes);
-                RoundingForward(roundingErrorSumArr[(n * inputChannel) + c], roundingNumberTmp, roundingErrorTmp,
+                var s = OrtKI.Slice(tensor, starts, ends, axes, steps);
+                var ret = OrtKI.Squeeze(s, axes);
+                // 这里dispose s会引起原始的挂掉
+                s.Dispose();
+                return s;
+                // return IR.F.Tensors.Squeeze(IR.F.Tensors.Slice(tensor, starts, ends, axes, steps), axes);
+            }
+
+            OrtKISharp.Tensor tmp;
+            tmp = OrtKI.Slice(roundingNumber, starts, ends, axes, steps);
+            var roundingNumberTmp = OrtKI.Squeeze(tmp, axes);
+            tmp.Dispose();
+            tmp = OrtKI.Slice(roundingError, starts, ends, axes, steps);
+            var roundingErrorTmp = OrtKI.Squeeze(tmp, axes);
+            tmp.Dispose();
+            tmp = OrtKI.Slice(upNumber, starts, ends, axes, steps);
+            var upNumberSlice = OrtKI.Squeeze(tmp, axes);
+            tmp.Dispose();
+            tmp = OrtKI.Slice(upError, starts, ends, axes, steps);
+            var upErrorSlice = OrtKI.Squeeze(tmp, axes);
+            tmp.Dispose();
+            tmp = OrtKI.Slice(upOrder, starts, ends, axes, steps);
+            var upOrderSlice = OrtKI.Squeeze(tmp, axes);
+            tmp.Dispose();
+            tmp = OrtKI.Slice(downNumber, starts, ends, axes, steps);
+            var downNumberSlice = OrtKI.Squeeze(tmp, axes);
+            tmp.Dispose();
+            tmp = OrtKI.Slice(downError, starts, ends, axes, steps);
+            var downErrorSlice = OrtKI.Squeeze(tmp, axes);
+            tmp.Dispose();
+            tmp = OrtKI.Slice(downOrder, starts, ends, axes, steps);
+            var downOrderSlice = OrtKI.Squeeze(tmp, axes);
+            tmp.Dispose();
+
+            var offset = (int)((n * oneBatchSize) + (c * oneInputChannelSize));
+            OrtKISharp.Tensor priorityTmp;
+            OrtKISharp.Tensor priority1Tmp;
+            if (roundingErrorSumArr[currentIndex] < 0)
+            {
+                priorityTmp = OrtKI.Squeeze(OrtKI.Slice(upPriority, starts, ends, axes, steps), axes);
+                priority1Tmp = OrtKI.Squeeze(OrtKI.Slice(downPriority, starts, ends, axes, steps), axes);
+                RoundingForward(roundingErrorSumArr[currentIndex], roundingNumberTmp, roundingErrorTmp,
                     upNumberSlice, upErrorSlice, priorityTmp, upOrderSlice, priority1Tmp);
 
-                var roundingNumberTmpArr = MemoryMarshal.Cast<byte, float>(roundingNumberTmp.BytesBuffer);
-                var roundingErrorTmpArr = MemoryMarshal.Cast<byte, float>(roundingErrorTmp.BytesBuffer);
-                var priorityTmpArr = MemoryMarshal.Cast<byte, float>(priorityTmp.BytesBuffer);
-                var priority1TmpArr = MemoryMarshal.Cast<byte, float>(priority1Tmp.BytesBuffer);
+                // var roundingNumberTmpArr = roundingNumberTmp.ToArray<float>();
+                // var roundingErrorTmpArr = roundingErrorTmp.ToArray<float>();
+                // var priorityTmpArr = priorityTmp.ToArray<float>();
+                // var priority1TmpArr = priority1Tmp.ToArray<float>();
+                var roundingNumberTmpArr = roundingNumberTmp.ToArray<float>();
+                var roundingErrorTmpArr = roundingErrorTmp.ToArray<float>();
+                var priorityTmpArr = priorityTmp.ToArray<float>();
+                var priority1TmpArr = priority1Tmp.ToArray<float>();
                 for (int i = 0; i < roundingNumberTmp.Length; i++)
                 {
-                    roundingNumberMem[(int)offset + i] =
+                    roundingNumberMem[offset + i] =
                         roundingNumberTmpArr[i];
                 }
 
@@ -217,36 +261,36 @@ public static class QuantAlgorithmUtility
                 {
                     for (int i = 0; i < roundingErrorTmp.Length; i++)
                     {
-                        roundingErrorMem[(int)offset + i] =
+                        roundingErrorMem[offset + i] =
                             roundingErrorTmpArr[i];
                     }
 
                     for (int i = 0; i < priorityTmp.Length; i++)
                     {
-                        upPriorityMem[(int)offset + i] = priorityTmpArr[i];
+                        upPriorityMem[offset + i] = priorityTmpArr[i];
                     }
 
                     for (int i = 0; i < priority1Tmp.Length; i++)
                     {
-                        downPriorityMem[(int)offset + i] = priority1TmpArr[i];
+                        downPriorityMem[offset + i] = priority1TmpArr[i];
                     }
                 }
             }
             else
             {
-                var priorityTmp = OrtKI.Squeeze(OrtKI.Slice(downPriority, starts, ends, axes, steps), axes);
-                var priority1Tmp = OrtKI.Squeeze(OrtKI.Slice(upPriority, starts, ends, axes, steps), axes);
-                RoundingForward(roundingErrorSumArr[(n * inputChannel) + c], roundingNumberTmp, roundingErrorTmp,
+                priorityTmp = OrtKI.Squeeze(OrtKI.Slice(downPriority, starts, ends, axes, steps), axes);
+                priority1Tmp = OrtKI.Squeeze(OrtKI.Slice(upPriority, starts, ends, axes, steps), axes);
+                RoundingForward(roundingErrorSumArr[currentIndex], roundingNumberTmp, roundingErrorTmp,
                     downNumberSlice, downErrorSlice, priorityTmp, downOrderSlice, priority1Tmp);
 
-                var roundingNumberTmpArr = MemoryMarshal.Cast<byte, float>(roundingNumberTmp.BytesBuffer);
-                var roundingErrorTmpArr = MemoryMarshal.Cast<byte, float>(roundingErrorTmp.BytesBuffer);
-                var priorityTmpArr = MemoryMarshal.Cast<byte, float>(priorityTmp.BytesBuffer);
-                var priority1TmpArr = MemoryMarshal.Cast<byte, float>(priority1Tmp.BytesBuffer);
+                var roundingNumberTmpArr = roundingNumberTmp.ToArray<float>();
+                var roundingErrorTmpArr = roundingErrorTmp.ToArray<float>();
+                var priorityTmpArr = priorityTmp.ToArray<float>();
+                var priority1TmpArr = priority1Tmp.ToArray<float>();
 
                 for (int i = 0; i < roundingNumberTmp.Length; i++)
                 {
-                    roundingNumberMem[(int)offset + i] =
+                    roundingNumberMem[offset + i] =
                         roundingNumberTmpArr[i];
                 }
 
@@ -254,22 +298,43 @@ public static class QuantAlgorithmUtility
                 {
                     for (int i = 0; i < roundingErrorTmp.Length; i++)
                     {
-                        roundingErrorMem[(int)offset + i] =
+                        roundingErrorMem[offset + i] =
                             roundingErrorTmpArr[i];
                     }
 
                     for (int i = 0; i < priorityTmp.Length; i++)
                     {
-                        downPriorityMem[(int)offset + i] = priorityTmpArr[i];
+                        downPriorityMem[offset + i] = priorityTmpArr[i];
                     }
 
                     for (int i = 0; i < priority1Tmp.Length; i++)
                     {
-                        upPriorityMem[(int)offset + i] = priority1TmpArr[i];
+                        upPriorityMem[offset + i] = priority1TmpArr[i];
                     }
                 }
             }
+
+            priorityTmp.Dispose();
+            priority1Tmp.Dispose();
+            roundingNumberTmp.Dispose();
+            roundingErrorTmp.Dispose();
+            upNumberSlice.Dispose();
+            upErrorSlice.Dispose();
+            upOrderSlice.Dispose();
+            downNumberSlice.Dispose();
+            downErrorSlice.Dispose();
+            downOrderSlice.Dispose();
+            starts.Dispose();
+            ends.Dispose();
+            axes.Dispose();
+            steps.Dispose();
+            if (currentIndex == 0)
+            {
+                end = System.DateTime.Now;
+                Console.WriteLine(end - start);
+            }
         });
+        // }
     }
 
     private static OrtKISharp.Tensor AdaptiveRound(OrtKISharp.Tensor x, float tMin, float tMax)
