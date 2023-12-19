@@ -81,10 +81,12 @@ jobs:
         config:
           - {name: x86_64-macos, os: macos-latest, shell: bash, rid: osx-x64, buildType: Release}
           - {name: x86_64-linux, os: ubuntu-latest, shell: bash, rid: linux-x64, buildType: Release}
-          - {name: x86_64-windows, os: windows-latest, shell: bash, rid: win-x64, buildType: Release}
+          - {name: x86_64-windows, os: windows-latest, arch: x64, shell: bash, rid: win-x64, buildType: Release}
 
     steps:
       - uses: actions/checkout@v2
+      - uses: seanmiddleditch/gha-setup-ninja@master
+      
       - name: Setup .NET
         uses: actions/setup-dotnet@v1
         with:
@@ -108,6 +110,12 @@ jobs:
         run: |
           brew install sunnycase/core/libomp@11.1.0
         if: runner.os == 'Macos'
+
+      - name: Set up test environment (Windows, Visual Studio)
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{matrix.config.arch}}
+        if: runner.os == 'Windows'
 
       - name: Build
         run: |
@@ -177,6 +185,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+      - uses: seanmiddleditch/gha-setup-ninja@master
+      
       - name: Setup .NET
         uses: actions/setup-dotnet@v1
         with:
