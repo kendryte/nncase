@@ -40,8 +40,6 @@ public static class QuantAlgorithmUtility
             qMin = -(1 << (bits - 1)) + 1;
         }
 
-        var quantParamBegin = System.DateTime.Now;
-
         var inWShape = inputWeights.Shape.Select(x => (long)x.FixedValue).ToArray();
         OrtKISharp.Tensor x, delta, zeroPoint;
         if (inputWeightsShape.Length == 4)
@@ -113,9 +111,6 @@ public static class QuantAlgorithmUtility
             }
         }
 
-        var quantParamEnd = System.DateTime.Now;
-
-        // Console.WriteLine($"QuantParamTime {quantParamEnd - quantParamBegin}");
         var quantTensor = OrtKI.Add(OrtKI.Div(x, delta), zeroPoint);
         var xInt = AdaptiveRound(quantTensor, qMin, qMax); // SQuant量化
         var xQuant = OrtKI.Clip(xInt, OrtKISharp.Tensor.FromScalar<float>(qMin), OrtKISharp.Tensor.FromScalar<float>(qMax));
@@ -163,10 +158,7 @@ public static class QuantAlgorithmUtility
         }
     }
 
-    private static void SQuantFunc(OrtKISharp.Tensor roundingErrorSum, OrtKISharp.Tensor roundingNumber,
-        OrtKISharp.Tensor roundingError, OrtKISharp.Tensor upNumber, OrtKISharp.Tensor upError,
-        OrtKISharp.Tensor upPriority, OrtKISharp.Tensor upOrder, OrtKISharp.Tensor downNumber,
-        OrtKISharp.Tensor downError, OrtKISharp.Tensor downPriority, OrtKISharp.Tensor downOrder, bool getNumberOnly)
+    private static void SQuantFunc(OrtKISharp.Tensor roundingErrorSum, OrtKISharp.Tensor roundingNumber, OrtKISharp.Tensor roundingError, OrtKISharp.Tensor upNumber, OrtKISharp.Tensor upError,  OrtKISharp.Tensor upPriority, OrtKISharp.Tensor upOrder, OrtKISharp.Tensor downNumber, OrtKISharp.Tensor downError, OrtKISharp.Tensor downPriority, OrtKISharp.Tensor downOrder, bool getNumberOnly)
     {
         var roundingNumberShape = roundingNumber.Shape.Select(x => (int)x).ToArray();
         if (roundingNumberShape.Length != 3)
@@ -176,45 +168,17 @@ public static class QuantAlgorithmUtility
 
         var batches = roundingNumberShape[0];
         var inputChannel = roundingNumberShape[1];
-
-        // Console.WriteLine($"batch:{batches} channel:{inputChannel} size:{roundingNumberShape[2]}");
-        int totalSize = 1;
-        for (int i = 0; i < roundingNumberShape.Length; i++)
-        {
-            totalSize *= roundingNumberShape[i];
-        }
-
-        var oneBatchSize = totalSize / batches;
-        var oneInputChannelSize = oneBatchSize / inputChannel;
         var sizePreChannel = roundingNumberShape[2];
         var roundingErrorSumArr = roundingErrorSum.ToArray<float>();
-
-        // todo: conv shape is 3d
-        // 128, 128, 9 // todo: 非常慢
-        // 1, 128, 1152
-        // x0，x1，!= 1
-
-        // 1, 80, 128
-        // 1，x0，-1
-
-        // todo: 128*128个并行的时候不太行，得根据不同尺寸走不同逻辑
         var loopSize = (long)batches * inputChannel;
         Parallel.For(0, loopSize, currentIndex =>
         {
-            System.DateTime start, end;
-            start = System.DateTime.Now;
             var n = currentIndex / inputChannel;
             var c = currentIndex % inputChannel;
             using var starts = OrtKISharp.Tensor.MakeTensor(new long[] { n, c }, new long[] { 2 });
             using var ends = OrtKISharp.Tensor.MakeTensor(new long[] { n + 1, c + 1 }, new long[] { 2 });
             using var axes = OrtKISharp.Tensor.MakeTensor(new long[] { 0, 1 }, new long[] { 2 });
             using var steps = OrtKISharp.Tensor.MakeTensor(new long[] { 1, 1 }, new long[] { 2 });
-
-            OrtKISharp.Tensor NormalSlice(OrtKISharp.Tensor tensor)
-            {
-                using var s = OrtKI.Slice(tensor, starts, ends, axes, steps);
-                return OrtKI.Squeeze(s, axes);
-            }
 
             Span<float> Sl(OrtKISharp.Tensor tensor)
             {
@@ -230,7 +194,6 @@ public static class QuantAlgorithmUtility
                 return span.Slice((int)begin, sizePreChannel);
             }
 
-            // todo: rounding的number, error, up priority, down priority四种可能要实际slice，必须有一个临时的
             var roundingNumberTmp = Sl(roundingNumber);
             var roundingErrorTmp = Sl(roundingError);
 
@@ -241,29 +204,19 @@ public static class QuantAlgorithmUtility
             var downErrorSlice = Sl(downError);
             var downOrderSlice = SlInt(downOrder);
 
-            var offset = (int)((n * oneBatchSize) + (c * oneInputChannelSize));
             Span<float> priorityTmp;
             Span<float> priority1Tmp;
             if (roundingErrorSumArr[currentIndex] < 0)
             {
                 priorityTmp = Sl(upPriority);
                 priority1Tmp = Sl(downPriority);
-                RoundingForward(roundingErrorSumArr[currentIndex], roundingNumberTmp, roundingErrorTmp,
-                    upNumberSlice, upErrorSlice, priorityTmp, upOrderSlice, priority1Tmp);
+                RoundingForward(roundingErrorSumArr[currentIndex], roundingNumberTmp, roundingErrorTmp, upNumberSlice, upErrorSlice, priorityTmp, upOrderSlice, priority1Tmp);
             }
             else
             {
                 priorityTmp = Sl(downPriority);
                 priority1Tmp = Sl(upPriority);
-                RoundingForward(roundingErrorSumArr[currentIndex], roundingNumberTmp, roundingErrorTmp,
-                    downNumberSlice, downErrorSlice, priorityTmp, downOrderSlice, priority1Tmp);
-            }
-
-            if (currentIndex == 0)
-            {
-                end = System.DateTime.Now;
-
-                // Console.WriteLine(end - start);
+                RoundingForward(roundingErrorSumArr[currentIndex], roundingNumberTmp, roundingErrorTmp, downNumberSlice, downErrorSlice, priorityTmp, downOrderSlice, priority1Tmp);
             }
         });
     }
@@ -324,11 +277,7 @@ public static class QuantAlgorithmUtility
             downNumber = OrtKI.Reshape(downNumber, converShape, 0);
             downError = OrtKI.Reshape(downError, converShape, 0);
             downPriority = OrtKI.Reshape(downPriority, converShape, 0);
-            _ = System.DateTime.Now;
             SQuantFunc(roundingErrorSum, roundingNumber, roundingError, upNumber, upError, upPriority, upOrder, downNumber, downError, downPriority, downOrder, false);
-            _ = System.DateTime.Now;
-
-            // Console.WriteLine($"squantk {end - start}");
             roundingNumber = OrtKI.Reshape(roundingNumber, x.Shape, 0);
             roundingError = OrtKI.Reshape(roundingError, x.Shape, 0);
             upPriority = OrtKI.Reshape(upPriority, x.Shape, 0);
@@ -356,11 +305,7 @@ public static class QuantAlgorithmUtility
             downNumber = OrtKI.Reshape(downNumber, converShape, 0);
             downError = OrtKI.Reshape(downError, converShape, 0);
             downPriority = OrtKI.Reshape(downPriority, converShape, 0);
-            _ = System.DateTime.Now;
             SQuantFunc(roundingErrorSum, roundingNumber, roundingError, upNumber, upError, upPriority, upOrder, downNumber, downError, downPriority, downOrder, true);
-            _ = System.DateTime.Now;
-
-            // Console.WriteLine($"squantc {end - start}");
         }
 
         roundingNumber = OrtKI.Reshape(roundingNumber, x.Shape, 0);

@@ -325,7 +325,7 @@ internal partial class Quantizer
         _graph.Rebuild();
     }
 
-    private async Task RunPassAsync(ICalibrationDatasetProvider calibrationDataset, Action<IReadOnlyDictionary<ENode, Tensor>> func, bool r)
+    private async Task RunForHistogramsAsync(ICalibrationDatasetProvider calibrationDataset, Action<IReadOnlyDictionary<ENode, Tensor>> func)
     {
         await foreach (var sample in calibrationDataset.Samples)
         {
@@ -514,7 +514,7 @@ internal partial class Quantizer
             histograms[key] = new QuantizeHistogram<float>(initSrcBin, initSrcBin);
         }
 
-        await RunPassAsync(calibrationDataset, childrenValues =>
+        await RunForHistogramsAsync(calibrationDataset, childrenValues =>
         {
             foreach (var (key, value) in childrenValues)
             {
@@ -532,7 +532,7 @@ internal partial class Quantizer
                     histogram.SrcBin[index]++;
                 }
             }
-        }, false);
+        });
         return histograms;
     }
 
