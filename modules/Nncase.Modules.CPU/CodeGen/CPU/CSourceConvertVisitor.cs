@@ -228,7 +228,7 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, IDispo
             return symbol;
         }
 
-        var type = VisitEntry.Parameters.AsValueEnumerable().Contains(expr)
+        var type = VisitEntry.Parameters.AsValueEnumerable().Contains(expr) || expr.MemSpan.Location == MemoryLocation.Rdata
             ? $"tensor_view<{expr.ElemType.ToC()}, {KernelUtility.DimensionsToC(expr.Dimensions)}, {KernelUtility.StridesToC(expr.Strides)}> "
             : $"tensor<{expr.ElemType.ToC()}, {KernelUtility.DimensionsToC(expr.Dimensions)}> ";
 

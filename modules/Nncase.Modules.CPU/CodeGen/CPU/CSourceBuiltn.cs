@@ -37,9 +37,8 @@ using namespace nncase::ntt;
         }).Concat(rdataBuffers.Select(b =>
         {
             var size = TensorUtilities.GetSize(b.CheckedShape.ToValueArray(), TensorUtilities.GetStrides(b.CheckedShape.ToValueArray()), 1);
-            return $@"    auto {b.Name} = reinterpret_cast<tensor<{b.ElemType.ToC()}, {KernelUtility.DimensionsToC(b.Dimensions)}>>(({b.ElemType.ToC()}*)(rdata + {((IR.TensorConst)b.MemSpan.Start).Value.ToScalar<ulong>()})));
-    
-            {b.Name} = &{b.Name}_;";
+            return $@"    std::span<{b.ElemType.ToC()}, {size}> p{b.Name}(({b.ElemType.ToC()}*)(rdata + {((IR.TensorConst)b.MemSpan.Start).Value.ToScalar<ulong>()}), {size});
+    tensor_view<{b.ElemType.ToC()}, {KernelUtility.DimensionsToC(b.Dimensions)}, {KernelUtility.StridesToC(b.Strides)}> {b.Name}(p{b.Name});";
         })));
         return @$"#include <nncase/ntt/cpu_runtime.h>
 #include ""kernel.h""

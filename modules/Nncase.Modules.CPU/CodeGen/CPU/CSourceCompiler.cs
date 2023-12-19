@@ -71,6 +71,7 @@ public class CSourceCompiler
             {
                 proc.StartInfo.FileName = Exe;
                 proc.StartInfo.Arguments = ArgumentsSpecific(sourcePath, outPath);
+                proc.StartInfo.WorkingDirectory = Directory.GetCurrentDirectory();
                 proc.StartInfo.RedirectStandardError = true;
                 proc.StartInfo.RedirectStandardOutput = true;
                 proc.OutputDataReceived += (sender, e) => errWriter.WriteLine(e.Data);
@@ -157,7 +158,7 @@ public class CSourceCompiler
             if (!string.IsNullOrEmpty(vsdir))
             {
                 var vcvardir = Path.Combine(vsdir, "..\\..\\VC\\Auxiliary\\Build\\vcvarsall.bat");
-                return $"/C (\"{vcvardir}\" x64) && {script}";
+                return $"/C \"(\"{vcvardir}\" x64) && {script}\"";
             }
 
             return $"/C {script}";

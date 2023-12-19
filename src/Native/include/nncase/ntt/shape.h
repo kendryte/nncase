@@ -57,6 +57,14 @@ template <size_t Rank> struct ranked_dims_base {
 
 template <size_t... Dims>
 struct fixed_shape : detail::fixed_dims_base<Dims...> {
+    template <size_t I> struct prepend {
+        using type = fixed_shape<I, Dims...>;
+    };
+
+    template <size_t I> struct append {
+        using type = fixed_shape<Dims..., I>;
+    };
+
     static constexpr size_t length() noexcept {
         return sizeof...(Dims) ? (Dims * ...) : 1;
     }
@@ -73,6 +81,10 @@ template <size_t... Strides>
 struct fixed_strides : detail::fixed_dims_base<Strides...> {
     template <size_t I> struct prepend {
         using type = fixed_strides<I, Strides...>;
+    };
+
+    template <size_t I> struct append {
+        using type = fixed_strides<Strides..., I>;
     };
 };
 

@@ -132,20 +132,19 @@ class tensor_base : public detail::tensor_storage<T, Shape, Strides, IsView> {
                     return {
                         buffer()
                             .template subspan<linear_offset(index, strides()),
-                                              linear_offset(shape,
-                                                            Strides{})>(),
+                                              linear_size(shape, strides())>(),
                         shape, strides()};
                 } else {
                     return {
                         buffer()
                             .template subspan<linear_offset(index, strides())>(
-                                linear_offset(shape, strides())),
+                                linear_size(shape, strides())),
                         shape, strides()};
                 }
             }
         } else {
             return {buffer().subspan(linear_offset(index, strides()),
-                                     linear_offset(shape, strides())),
+                                     linear_size(shape, strides())),
                     shape, strides()};
         }
     }

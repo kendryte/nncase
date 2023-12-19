@@ -13,7 +13,9 @@
  * limitations under the License.
  */
 #pragma once
-#include <cmath>
+#include "../apply.h"
+#include "../shape_infer/binary.h"
+#include "../shape_infer/reduce.h"
 
 namespace nncase::ntt {
 // math ops
@@ -50,8 +52,14 @@ template <class T> struct max {
 template <template <class T> class Op, class TLhs, class TRhs, class TOut>
 void binary(const TLhs &lhs, const TRhs &rhs, TOut &&output) {
     Op<typename TLhs::element_type> op;
-    for (size_t i = 0; i < lhs.buffer().size(); i++) {
-        output.buffer()[i] = op(lhs.buffer()[i]);
-    }
+    auto out_shape = shape_infer::binary_output_shape(lhs.shape(), rhs.shape());
+
+    apply(out_shape, [&](auto index) {
+        const auto lhs_index =
+            shape_infer::reduced_index_by_shape(index, lhs.shape());
+        const auto rhs_index =
+            shape_infer::reduced_index_by_shape(index, rhs.shape());
+        output(index) = op(lhs(lhs_index), rhs(rhs_index));
+    });
 }
 } // namespace nncase::ntt
