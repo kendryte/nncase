@@ -93,13 +93,13 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
         {
             switch (cond.NdSBP[i], x.NdSBP[i], y.NdSBP[i])
             {
-                case (SBPSplit { Axis: int ic }, SBPSplit { Axis: int ix }, SBPSplit { Axis: int iy }):
+                case (SBPSplit { Axis: int ic }, SBPSplit { Axis: int }, SBPSplit { Axis: int }):
                     ndsbp[i] = SBP.S(ic);
                     break;
-                case (SBPSplit { Axis: int ic }, SBPBroadCast, SBPSplit { Axis: int iy }):
+                case (SBPSplit { Axis: int ic }, SBPBroadCast, SBPSplit { Axis: int }):
                     ndsbp[i] = SBP.S(ic);
                     break;
-                case (SBPSplit { Axis: int ic }, SBPSplit { Axis: int ix }, SBPBroadCast):
+                case (SBPSplit { Axis: int ic }, SBPSplit { Axis: int }, SBPBroadCast):
                     ndsbp[i] = SBP.S(ic);
                     break;
                 case (SBPSplit { Axis: int ic }, SBPBroadCast, SBPBroadCast):
