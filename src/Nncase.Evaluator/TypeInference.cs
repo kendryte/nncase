@@ -346,19 +346,19 @@ public static class TypeInference
     /// </summary>
     public static IRType PackType(TensorType input, int lanes, int axis)
     {
+        var vType = new VectorType(input.DType, lanes);
         if (input.Shape.IsRanked)
         {
             var dims = input.Shape.ToList();
-            dims.Add(lanes);
             if (dims[axis].IsFixed)
             {
                 dims[axis] = MathUtility.CeilDiv(dims[axis].FixedValue, lanes);
             }
 
-            return input with { Shape = new Shape(dims) };
+            return new TensorType(vType, new Shape(dims));
         }
 
-        return input;
+        return new TensorType(vType, Shape.Unranked);
     }
 
     /// <summary>

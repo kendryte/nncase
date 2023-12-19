@@ -13,7 +13,11 @@
  * limitations under the License.
  */
 #pragma once
-#include "kernels/binary.h"
-#include "kernels/copy.h"
-#include "kernels/unary.h"
-#include "tensor.h"
+#include "../apply.h"
+
+namespace nncase::ntt {
+template <class TA, class TB>
+void tensor_copy(const TA &input, TB &&output) noexcept {
+    apply(input.shape(), [&](auto index) { output(index) = input(index); });
+}
+} // namespace nncase::ntt

@@ -153,3 +153,13 @@ public abstract record ValueType : DataType
     /// </summary>
     public abstract Guid Uuid { get; }
 }
+
+/// <summary>
+/// Vector type.
+/// </summary>
+public sealed record VectorType(DataType ElemType, int Lanes) : DataType
+{
+    public override Type CLRType => typeof(Vector<>).MakeGenericType(ElemType.CLRType);
+
+    public override int SizeInBytes => ElemType.SizeInBytes * Lanes;
+}

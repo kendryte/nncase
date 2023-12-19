@@ -28,4 +28,9 @@ public partial class CPU
     {
         return new Call(new Unary(unaryOp), input, output);
     }
+
+    public static Call Binary(BinaryOp binaryOp, DistributedType ltype, DistributedType rtype, DistributedType outtype, Expr lhs, Expr rhs, Expr output)
+    {
+        return new Call(new Binary(binaryOp, ltype, rtype, outtype), lhs, rhs, output);
+    }
 }

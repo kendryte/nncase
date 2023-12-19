@@ -26,4 +26,4 @@
                     _ => throw new NotSupportedException($"Unsupported unary: {op}."),
                 };
 }
-unary<@UnaryToCFunction(Model.UnaryOp)>(@(Model.Arguments[0].Symbol.Name).view(), @(Model.Arguments[1].Symbol.Name).view());
+unary<@UnaryToCFunction(Model.UnaryOp)>(@Model.Arguments[0].Symbol.Name, @Model.Arguments[1].Symbol.Name);

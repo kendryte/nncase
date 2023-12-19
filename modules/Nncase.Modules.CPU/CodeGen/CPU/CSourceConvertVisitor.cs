@@ -297,7 +297,7 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, IDispo
                     }
                     else
                     {
-                        IndentScope.Writer.Write($"tensor_copy({Visit(args[1]).Name}{args[0].Dimensions.ToArray().Select(e => Visit(e).Name).ToSlicing(load.NdSbp, load.Placement)}, {Visit(args[0]).Name}.view());\n");
+                        IndentScope.Writer.Write($"tensor_copy({Visit(args[1]).Name}{args[0].Dimensions.ToArray().Select(e => Visit(e).Name).ToSlicing(load.NdSbp, load.Placement)}, {Visit(args[0]).Name});\n");
                     }
 
                     break;
@@ -328,83 +328,23 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, IDispo
                     }
                     else
                     {
-                        IndentScope.Writer.Write($"tensor_copy({Visit(args[0]).Name}.view(), {Visit(args[1]).Name}{args[0].Dimensions.ToArray().Select(e => Visit(e).Name).ToSlicing(store.NdSbp, store.Placement)});\n");
+                        IndentScope.Writer.Write($"tensor_copy({Visit(args[0]).Name}, {Visit(args[1]).Name}{args[0].Dimensions.ToArray().Select(e => Visit(e).Name).ToSlicing(store.NdSbp, store.Placement)});\n");
+                    }
+
+                    break;
+                case TIR.CPU.Binary binary:
+                    {
+                        IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Binary.cshtml", new BinaryKernelTemplateModel
+                        {
+                            Arguments = args.Select(x => new KernelArgument { Buffer = x, Symbol = Visit(x) }).ToArray(),
+                            BinaryOp = binary.BinaryOp,
+                        }).Result);
                     }
 
                     break;
 #if false
                 case TIR.CPU.SwishB swishb:
                     IndentScope.Writer.Write($"swishb({Visit(args[0]).Name}, {Visit(args[1]).Name}, {swishb.Beta}, ctx)");
-                    break;
-                case TIR.CPU.Binary binary:
-                    {
-                        var ltype = (TensorType)args[0].CheckedType;
-                        var rtype = (TensorType)args[1].CheckedType;
-                        var outtype = (TensorType)args[2].CheckedType;
-#endif
-#if false
-                        if (ltype.Shape.IsFixed && rtype.Shape.IsFixed)
-                        {
-                            var lshape = ltype.Shape;
-                            var rshape = rtype.Shape;
-                            var outshape = outtype.Shape;
-                            var lpad = outtype.Shape.Rank - lshape.Rank;
-                            var rpad = outtype.Shape.Rank - rshape.Rank;
-                            var lsbp = Enumerable.Repeat<SBP>(SBP.B, binary.LhsType.Placement.Rank).ToArray();
-                            var rsbp = Enumerable.Repeat<SBP>(SBP.B, binary.RhsType.Placement.Rank).ToArray();
-
-                            var lnewShape = ltype.Shape.ToValueArray();
-                            var rnewShape = rtype.Shape.ToValueArray();
-                            for (int i = 0; i < binary.RhsType.Placement.Rank; i++)
-                            {
-                                switch (binary.LhsType.NdSBP[i], binary.RhsType.NdSBP[i])
-                                {
-                                    case (SBPSplit s, SBPBroadCast):
-                                        var baxis = s.Axis - lshape.Rank + rshape.Rank;
-                                        if (outshape[s.Axis + lpad] == lshape[s.Axis] && baxis < rshape.Rank && baxis >= 0 && lshape[s.Axis] != rshape[baxis] && rshape[baxis] != 1)
-                                        {
-                                            rsbp[i] = SBP.S(baxis);
-                                            rnewShape[baxis] /= binary.RhsType.Placement.Hierarchy[i];
-                                        }
-
-                                        break;
-                                    case (SBPBroadCast, SBPSplit s):
-                                        var aaxis = s.Axis - rshape.Rank + lshape.Rank;
-                                        if (outshape[s.Axis + rpad] == rshape[s.Axis] && aaxis < lshape.Rank && aaxis >= 0 && rshape[s.Axis] != lshape[aaxis] && lshape[aaxis] != 1)
-                                        {
-                                            lsbp[i] = SBP.S(aaxis);
-                                            lnewShape[aaxis] /= binary.RhsType.Placement.Hierarchy[i];
-                                        }
-
-                                        break;
-                                    default:
-                                        break;
-                                }
-                            }
-
-
-                            if (lsbp.Any(s => s is SBPSplit))
-                            {
-                                var slice = new Shape(lnewShape).Select(d => d.ToString()).ToSlicing(lsbp, binary.LhsType.Placement);
-                                IndentScope.Writer.Write($"auto {lhsStr}_ = {lhsStr}{slice};\n");
-                                lhsStr += "_";
-                            }
-
-                            if (rsbp.Any(s => s is SBPSplit))
-                            {
-                                var slice = new Shape(rnewShape).Select(d => d.ToString()).ToSlicing(rsbp, binary.RhsType.Placement);
-                                IndentScope.Writer.Write($"auto {rhsStr}_ = {rhsStr}{slice};\n");
-                                rhsStr += "_";
-                            }
-
-                        }
-#endif
-#if false
-                    string lhsStr = Visit(args[0]).Name;
-                        string rhsStr = Visit(args[1]).Name;
-                        IndentScope.Writer.Write($"binary({lhsStr}, {rhsStr}, {Visit(args[2]).Name}, binary_op_t::{binary.BinaryOp.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)}, ctx)");
-                    }
-
                     break;
                 case TIR.CPU.Matmul matmul:
                     IndentScope.Writer.Write($"matmul({Visit(args[0]).Name}, {Visit(args[1]).Name}, {Visit(args[2]).Name}, ctx)");
@@ -780,9 +720,9 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, IDispo
     }
 }
 #else
-                    /// <summary>
-                    /// convert single prim function to c source.
-                    /// </summary>
+                        /// <summary>
+                        /// convert single prim function to c source.
+                        /// </summary>
 internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 {
     private readonly Dictionary<Expr, CSymbol> _exprMemo;

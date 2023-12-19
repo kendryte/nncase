@@ -12,96 +12,96 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <cmath>
+#pragma once
+#include "../apply.h"
 
 namespace nncase::ntt {
 // math ops
 namespace mathops {
-struct abs {
-    float operator()(float v) const noexcept { return fabs(v); }
+template <class T> struct abs {
+    T operator()(T v) const noexcept { return std::abs(v); }
 };
 
-struct acos {
-    float operator()(float v) const noexcept { return acosf(v); }
+template <class T> struct acos {
+    T operator()(T v) const noexcept { return std::acos(v); }
 };
 
-struct acosh {
-    float operator()(float v) const noexcept { return acoshf(v); }
+template <class T> struct acosh {
+    T operator()(T v) const noexcept { return std::acosh(v); }
 };
 
-struct asin {
-    float operator()(float v) const noexcept { return asinf(v); }
+template <class T> struct asin {
+    T operator()(T v) const noexcept { return std::asin(v); }
 };
 
-struct asinh {
-    float operator()(float v) const noexcept { return asinhf(v); }
+template <class T> struct asinh {
+    T operator()(T v) const noexcept { return std::asinh(v); }
 };
 
-struct ceil {
-    float operator()(float v) const noexcept { return ceilf(v); }
+template <class T> struct ceil {
+    T operator()(T v) const noexcept { return std::ceil(v); }
 };
 
-struct cos {
-    float operator()(float v) const noexcept { return cosf(v); }
+template <class T> struct cos {
+    T operator()(T v) const noexcept { return std::cos(v); }
 };
 
-struct cosh {
-    float operator()(float v) const noexcept { return coshf(v); }
+template <class T> struct cosh {
+    T operator()(T v) const noexcept { return std::cosh(v); }
 };
 
-struct exp {
-    float operator()(float v) const noexcept { return expf(v); }
+template <class T> struct exp {
+    T operator()(T v) const noexcept { return std::exp(v); }
 };
 
-struct floor {
-    float operator()(float v) const noexcept { return floorf(v); }
+template <class T> struct floor {
+    T operator()(T v) const noexcept { return std::floor(v); }
 };
 
-struct log {
-    float operator()(float v) const noexcept { return logf(v); }
+template <class T> struct log {
+    T operator()(T v) const noexcept { return std::log(v); }
 };
 
-struct neg {
-    float operator()(float v) const noexcept { return -v; }
+template <class T> struct neg {
+    T operator()(T v) const noexcept { return -v; }
 };
 
-struct round {
-    float operator()(float v) const noexcept { return nearbyintf(v); }
+template <class T> struct round {
+    T operator()(T v) const noexcept { return std::nearbyint(v); }
 };
 
-struct rsqrt {
-    float operator()(float v) const noexcept { return 1.f / sqrtf(v); }
+template <class T> struct rsqrt {
+    T operator()(T v) const noexcept { return (T)1 / std::sqrt(v); }
 };
 
-struct sign {
-    float operator()(float v) const noexcept { return copysignf(1.f, v); }
+template <class T> struct sign {
+    T operator()(T v) const noexcept { return std::copysign((T)1, v); }
 };
 
-struct sin {
-    float operator()(float v) const noexcept { return sinf(v); }
+template <class T> struct sin {
+    T operator()(T v) const noexcept { return std::sin(v); }
 };
 
-struct sinh {
-    float operator()(float v) const noexcept { return sinhf(v); }
+template <class T> struct sinh {
+    T operator()(T v) const noexcept { return std::sinh(v); }
 };
 
-struct sqrt {
-    float operator()(float v) const noexcept { return sqrtf(v); }
+template <class T> struct sqrt {
+    T operator()(T v) const noexcept { return std::sqrt(v); }
 };
 
-struct square {
-    float operator()(float v) const noexcept { return v * v; }
+template <class T> struct square {
+    T operator()(T v) const noexcept { return v * v; }
 };
 
-struct tanh {
-    float operator()(float v) const noexcept { return tanhf(v); }
+template <class T> struct tanh {
+    T operator()(T v) const noexcept { return std::tanh(v); }
 };
 } // namespace mathops
 
-template <class Op, class TVA, class TVB> void unary(TVA input, TVB output) {
-    Op op;
-    for (size_t i = 0; i < input.buffer().size(); i++) {
-        output.buffer()[i] = op(input.buffer()[i]);
-    }
+template <template <class T> class Op, class TA, class TB>
+void unary(const TA &input, TB &&output) {
+    Op<typename TA::element_type> op;
+    apply(input.shape(), [&](auto index) { output(index) = op(input(index)); });
 }
 } // namespace nncase::ntt

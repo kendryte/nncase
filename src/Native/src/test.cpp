@@ -18,6 +18,7 @@
 #include <nncase/api.h>
 #include <nncase/compiler.h>
 #include <nncase/io_utils.h>
+#include <nncase/ntt/ntt.h>
 #include <string_view>
 
 using namespace nncase;
@@ -41,6 +42,11 @@ int main() {
     nncapi->compile_session_create(target.get(), compile_options.get());
     compiler = nncapi->compile_session_get_compiler(compile_session.get());
 #endif
+
+    ntt::tensor<float, ntt::fixed_shape<1>> ta, tb;
+    std::fill(ta.buffer().begin(), ta.buffer().end(), 1.f);
+    ntt::unary<ntt::mathops::sin>(ta, tb.view());
+    assert(tb(0) == sinf(1.f));
 
     auto kmodel = read_file(
         R"(/mnt/home-nas/work/repo/nncase/tests_output/UnitTestCPUTarget/TestSimpleUnary/TestSimpleUnary.kmodel)");

@@ -51,10 +51,10 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
             case IR.CPU.Boxing boxing:
                 GenerateBoxing(boxing, arguments, ret, expr);
                 break;
-#if false
             case Binary binary:
                 GenerateBinary(binary, arguments, ret, expr);
                 break;
+#if false
             case MatMul matmul:
                 GenerateMatmul(matmul, arguments, ret);
                 break;
@@ -160,6 +160,14 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
         }
     }
 
+    private void GenerateBinary(Binary binary, Buffer[] arguments, Buffer ret, Call expr)
+    {
+        var lhs = (DistributedType)expr.Arguments[0].CheckedType;
+        var rhs = (DistributedType)expr.Arguments[1].CheckedType;
+        var outtype = (DistributedType)expr.CheckedType;
+        _mainBody.Add(TIR.F.CPU.Binary(binary.BinaryOp, lhs, rhs, outtype, arguments[0], arguments[1], ret));
+    }
+
 #if false
     private void GenerateSwishB(Buffer input, Buffer ret, float beta)
     {
@@ -214,14 +222,6 @@ public sealed class TIRConvertVisitor : ExprVisitor<Unit, Unit>
             default:
                 throw new NotSupportedException();
         }
-    }
-
-    private void GenerateBinary(Binary binary, Buffer[] arguments, Buffer ret, Call expr)
-    {
-        var lhs = (DistributedType)expr.Arguments[0].CheckedType;
-        var rhs = (DistributedType)expr.Arguments[1].CheckedType;
-        var outtype = (DistributedType)expr.CheckedType;
-        _mainBody.Add(TIR.F.CPU.Binary(binary.BinaryOp, lhs, rhs, outtype, arguments[0], arguments[1], ret));
     }
 
     private void GenerateMatmul(MatMul matmul, Buffer[] arguments, Buffer ret)

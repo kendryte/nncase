@@ -85,7 +85,7 @@ internal sealed class LinkableModule : ILinkableModule
     {
         var compiler = new CSourceCompiler();
         var binDir = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-            ? Path.Join(sourcePath, "build", "RelWithDebInfo", "nncase_cpu_module.exe")
+            ? Path.Join(sourcePath, "build", "nncase_cpu_module.exe")
             : Path.Join(sourcePath, "build", "nncase_cpu_module");
         return compiler.Compile(sourcePath, binDir);
     }

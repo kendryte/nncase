@@ -25,3 +25,8 @@ public class UnaryKernelTemplateModel : KernelTemplateModel
 {
     public UnaryOp UnaryOp { get; set; }
 }
+
+public class BinaryKernelTemplateModel : KernelTemplateModel
+{
+    public BinaryOp BinaryOp { get; set; }
+}

@@ -139,7 +139,7 @@ public class CSourceCompiler
         var script = $"""
             cd {sourcePath} &&
             cmake -E remove_directory build &&
-            cmake -S . -B build -DCMAKE_BUILD_TYPE={config} {(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "-A x64 " : string.Empty)}&&
+            cmake -G Ninja -S . -B build -DCMAKE_BUILD_TYPE={config} &&
             cmake --build build --config {config}
             """.Replace("\r\n", " ", StringComparison.Ordinal);
 

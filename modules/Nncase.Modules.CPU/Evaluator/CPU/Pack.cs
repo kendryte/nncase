@@ -28,7 +28,8 @@ public sealed class PackEvaluator : ITypeInferencer<Pack>, ICostEvaluator<Pack>,
         var dividedShape = input.Shape.Take(target.Axis).Concat(new[] { paddedDim / target.Lanes, target.Lanes }).Concat(input.Shape.Skip(target.Axis + 1)).ToArray();
         var perm = Enumerable.Range(0, target.Axis + 1).Concat(Enumerable.Range(target.Axis + 2, dividedShape.Length - (target.Axis + 2))).Cast<long>().ToArray();
         var tp = OrtKI.Transpose(OrtKI.Reshape(padded, dividedShape, 0), perm);
-        return tp.ToValue();
+        var tensor = tp.ToTensor();
+        return Value.FromTensor(tensor.CastTo(new VectorType(tensor.ElementType, target.Lanes)));
     }
 
     /// <inheritdoc/>

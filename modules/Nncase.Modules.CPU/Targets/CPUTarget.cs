@@ -47,6 +47,7 @@ public class CPUTarget : ITarget
     {
         passManager.AddWithName<DataflowPass>("LowerIR").Configure(p =>
         {
+            p.Add<Passes.Rules.CPU.LowerBinary>();
             p.Add<Passes.Rules.CPU.LowerUnary>();
         });
     }
