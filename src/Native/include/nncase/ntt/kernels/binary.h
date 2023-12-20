@@ -54,6 +54,10 @@ template <class T> struct min {
 template <class T> struct max {
     T operator()(T v1, T v2) const noexcept { return std::max(v1, v2); }
 };
+
+template <class T> struct pow {
+    T operator()(T v1, T v2) const noexcept { return std::pow(v1, v2); }
+};
 } // namespace mathops
 
 template <template <class T> class Op, class TLhs, class TRhs, class TOut>

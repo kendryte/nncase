@@ -28,6 +28,7 @@ struct nncase_runtime_cpu_mt_t {
     float (*fmodf)(float x, float y);
     float (*logf)(float v);
     float (*nearbyintf)(float v);
+    float (*powf)(float x, float y);
     float (*sinf)(float v);
     float (*sinhf)(float v);
     float (*tanhf)(float v);

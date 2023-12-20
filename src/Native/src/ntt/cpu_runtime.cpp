@@ -47,6 +47,7 @@ void __chkstk() {}
 #pragma function(expf)
 #pragma function(fmodf)
 #pragma function(logf)
+#pragma function(powf)
 #pragma function(sinf)
 #pragma function(sinhf)
 #pragma function(tanhf)
@@ -63,6 +64,7 @@ float expf(float v) { return g_cpu_mt->expf(v); }
 float fmodf(float x, float y) { return g_cpu_mt->fmodf(x, y); }
 float logf(float v) { return g_cpu_mt->logf(v); }
 float nearbyintf(float v) { return g_cpu_mt->nearbyintf(v); }
+float powf(float x, float y) { return g_cpu_mt->powf(x, y); }
 float sinf(float v) { return g_cpu_mt->sinf(v); }
 float sinhf(float v) { return g_cpu_mt->sinhf(v); }
 float tanhf(float v) { return g_cpu_mt->tanhf(v); }
