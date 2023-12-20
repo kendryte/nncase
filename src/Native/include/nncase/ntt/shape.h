@@ -144,6 +144,11 @@ using repeat_shape_t =
 
 template <size_t Rank> using zero_shape_t = repeat_shape_t<0, Rank>;
 
+template <class... Args> auto make_ranked_shape(Args &&...args) noexcept {
+    return ranked_shape<sizeof...(args)>{
+        static_cast<size_t>(std::forward<Args>(args))...};
+}
+
 template <class Index, class Strides>
 constexpr size_t linear_offset(const Index &index,
                                const Strides &strides) noexcept {

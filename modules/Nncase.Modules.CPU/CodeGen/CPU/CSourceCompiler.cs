@@ -96,6 +96,35 @@ public class CSourceCompiler
     /// </summary>
     public string Compile(string sourcePath) => Compile(sourcePath, Path.Join(sourcePath, "build", Path.GetFileName(sourcePath)));
 
+    private static string? FindVCVarPath()
+    {
+        var vsDir = Environment.GetEnvironmentVariable("VSAPPIDDIR");
+        if (!string.IsNullOrEmpty(vsDir))
+        {
+            return Path.Combine(vsDir, "..\\..\\VC\\Auxiliary\\Build\\vcvarsall.bat");
+        }
+        else
+        {
+            var vsWhereDir = Path.Combine(Environment.GetEnvironmentVariable("ProgramFiles(x86)")!, "Microsoft Visual Studio\\Installer\\vswhere");
+            if (string.IsNullOrEmpty(vsWhereDir))
+            {
+                return null;
+            }
+
+            using (var proc = new Process())
+            {
+                proc.StartInfo.FileName = vsWhereDir;
+                proc.StartInfo.Arguments = "-prerelease -latest -property installationPath";
+                proc.StartInfo.RedirectStandardOutput = true;
+                proc.Start();
+                proc.BeginOutputReadLine();
+                proc.WaitForExit();
+                vsDir = proc.StandardOutput.ReadToEnd();
+                return Path.Combine(vsDir, "VC\\Auxiliary\\Build\\vcvarsall.bat");
+            }
+        }
+    }
+
     /// <summary>
     /// select current pattern's exe.
     /// </summary>
@@ -154,16 +183,15 @@ public class CSourceCompiler
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            var vsdir = Environment.GetEnvironmentVariable("VSAPPIDDIR");
-            if (!string.IsNullOrEmpty(vsdir))
+            var vcVarPath = FindVCVarPath();
+            if (!string.IsNullOrEmpty(vcVarPath))
             {
-                var vcvardir = Path.Combine(vsdir, "..\\..\\VC\\Auxiliary\\Build\\vcvarsall.bat");
-                return $"/C \"(\"{vcvardir}\" x64) && {script}\"";
+                return $"/C \"(\"{vcVarPath}\" x64) && {script}\"";
             }
 
             return $"/C {script}";
         }
 
-        throw new System.NotSupportedException("Only Support Linux/Osx/Windows");
+        throw new NotSupportedException("Only Support Linux/Osx/Windows");
     }
 }

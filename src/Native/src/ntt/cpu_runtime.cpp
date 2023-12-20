@@ -20,6 +20,8 @@
 
 extern "C" {
 nncase_runtime_cpu_mt_t *g_cpu_mt;
+size_t bid;
+size_t tid;
 
 // compiler support
 #if defined(_MSC_VER)
@@ -43,6 +45,7 @@ void __chkstk() {}
 #pragma function(cosf)
 #pragma function(coshf)
 #pragma function(expf)
+#pragma function(fmodf)
 #pragma function(logf)
 #pragma function(sinf)
 #pragma function(sinhf)
@@ -57,6 +60,7 @@ float copysignf(float mag, float sgn) { return g_cpu_mt->copysignf(mag, sgn); }
 float cosf(float v) { return g_cpu_mt->cosf(v); }
 float coshf(float v) { return g_cpu_mt->coshf(v); }
 float expf(float v) { return g_cpu_mt->expf(v); }
+float fmodf(float x, float y) { return g_cpu_mt->fmodf(x, y); }
 float logf(float v) { return g_cpu_mt->logf(v); }
 float nearbyintf(float v) { return g_cpu_mt->nearbyintf(v); }
 float sinf(float v) { return g_cpu_mt->sinf(v); }

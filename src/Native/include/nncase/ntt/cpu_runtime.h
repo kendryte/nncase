@@ -25,6 +25,7 @@ struct nncase_runtime_cpu_mt_t {
     float (*cosf)(float v);
     float (*coshf)(float v);
     float (*expf)(float v);
+    float (*fmodf)(float x, float y);
     float (*logf)(float v);
     float (*nearbyintf)(float v);
     float (*sinf)(float v);
@@ -38,5 +39,7 @@ struct nncase_runtime_cpu_mt_t {
 
 #ifdef NNCASE_CPU_MODULE
 extern nncase_runtime_cpu_mt_t *g_cpu_mt;
+extern size_t bid;
+extern size_t tid;
 #endif
 }

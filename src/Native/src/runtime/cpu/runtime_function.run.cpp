@@ -32,6 +32,7 @@ nncase_runtime_cpu_mt_t nncase_cpu_mt_ = {
     .cosf = cosf,
     .coshf = coshf,
     .expf = expf,
+    .fmodf = fmodf,
     .logf = logf,
     .nearbyintf = nearbyintf,
     .sinf = sinf,

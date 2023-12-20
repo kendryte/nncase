@@ -16,6 +16,7 @@
 #include "../apply.h"
 #include "../shape_infer/binary.h"
 #include "../shape_infer/reduce.h"
+#include <type_traits>
 
 namespace nncase::ntt {
 // math ops
@@ -37,7 +38,13 @@ template <class T> struct div {
 };
 
 template <class T> struct mod {
-    T operator()(T v1, T v2) const noexcept { return v1 % v2; }
+    T operator()(T v1, T v2) const noexcept {
+        if constexpr (std::is_floating_point_v<std::decay_t<T>>) {
+            return std::fmod(v1, v2);
+        } else {
+            return v1 % v2;
+        }
+    }
 };
 
 template <class T> struct min {

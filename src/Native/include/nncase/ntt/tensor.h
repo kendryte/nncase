@@ -127,20 +127,14 @@ class tensor_base : public detail::tensor_storage<T, Shape, Strides, IsView> {
     constexpr tensor_view<T, UShape, Strides> view(Index index,
                                                    UShape shape) noexcept {
         if constexpr (is_fixed_dims_v<Strides>) {
-            if constexpr (is_fixed_dims_v<Index>) {
-                if constexpr (is_fixed_dims_v<UShape>) {
-                    return {
-                        buffer()
-                            .template subspan<linear_offset(index, strides()),
-                                              linear_size(shape, strides())>(),
-                        shape, strides()};
-                } else {
-                    return {
-                        buffer()
-                            .template subspan<linear_offset(index, strides())>(
-                                linear_size(shape, strides())),
-                        shape, strides()};
-                }
+            auto offset = linear_offset(index, strides());
+            auto begin = buffer().data() + offset;
+            if constexpr (is_fixed_dims_v<UShape>) {
+                constexpr size_t size = linear_size(shape, strides());
+                return {std::span<T, size>(begin, size), shape, strides()};
+            } else {
+                size_t size = linear_size(shape, strides());
+                return {std::span(begin, size), shape, strides()};
             }
         } else {
             return {buffer().subspan(linear_offset(index, strides()),
