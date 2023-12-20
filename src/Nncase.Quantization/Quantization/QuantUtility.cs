@@ -45,9 +45,6 @@ public static class QuantAlgorithmUtility
         if (inputWeightsShape.Length == 4)
         {
             var outChannel = inputWeightsShape[0];
-            var inChannel = inputWeightsShape[1];
-            var filterH = inputWeightsShape[2];
-            var filterW = inputWeightsShape[3];
             x = inputWeights.ToOrtTensor();
 
             if (isByChannel)
@@ -122,37 +119,29 @@ public static class QuantAlgorithmUtility
         return res;
     }
 
-    private static void RoundingForward(float roundingErrorSum, Span<float> roundingNumber, Span<float> roundingError, Span<float> number, Span<float> error, Span<float> priority, Span<long> order, Span<float> priority1)
+    private static void RoundingForward(float roundingErrorSum, Span<float> roundingNumberMem, Span<float> roundingErrorMem, Span<float> numberMem, Span<float> errorMem, Span<float> priorityMem, Span<long> orderMem, Span<float> priority1Mem)
     {
-        var roundingNumberMem = roundingNumber;
-        var roundingErrorMem = roundingError;
-        var priorityMem = priority;
-        var priority1Mem = priority1;
         int topK = (int)System.Math.Round(System.Math.Abs(roundingErrorSum));
         bool overSquant = topK >= System.Math.Abs(roundingErrorSum);
         if (topK > 0)
         {
-            var orderTmp = order.Slice(0, topK);
+            var orderTmpArr = orderMem.Slice(0, topK);
 
-            var orderTmpArr = orderTmp;
-            var orderArr = order;
-            var errorArr = error;
-            var numberArr = number;
-            for (int i = 0; i < orderTmp.Length; i++)
+            for (int i = 0; i < orderTmpArr.Length; i++)
             {
                 var index = (int)orderTmpArr[i];
-                roundingErrorMem[index] = errorArr[index];
-                roundingNumberMem[index] = numberArr[index];
+                roundingErrorMem[index] = errorMem[index];
+                roundingNumberMem[index] = numberMem[index];
             }
 
             if (overSquant)
             {
-                var index = (int)orderArr[topK - 1];
+                var index = (int)orderMem[topK - 1];
                 priority1Mem[index] = System.Math.Abs(roundingErrorMem[index]);
             }
             else
             {
-                var index = (int)orderArr[topK];
+                var index = (int)orderMem[topK];
                 priorityMem[index] = System.Math.Abs(roundingErrorMem[index]);
             }
         }
