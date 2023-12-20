@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.CommandLine.Invocation;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
@@ -45,11 +46,15 @@ public class CPUTarget : ITarget
     /// <inheritdoc/>
     public void RegisterTargetDependentPass(IPassManager passManager, CompileOptions options)
     {
-        passManager.AddWithName<DataflowPass>("LowerIR").Configure(p =>
+        // FIX ME: Disable macos as macho loader is buggy.
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
-            p.Add<Passes.Rules.CPU.LowerBinary>();
-            p.Add<Passes.Rules.CPU.LowerUnary>();
-        });
+            passManager.AddWithName<DataflowPass>("LowerIR").Configure(p =>
+            {
+                p.Add<Passes.Rules.CPU.LowerBinary>();
+                p.Add<Passes.Rules.CPU.LowerUnary>();
+            });
+        }
     }
 
     /// <inheritdoc/>
