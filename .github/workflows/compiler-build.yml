@@ -111,12 +111,6 @@ jobs:
           brew install sunnycase/core/libomp@11.1.0
         if: runner.os == 'Macos'
 
-      - name: Set up test environment (Windows, Visual Studio)
-        uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: ${{matrix.config.arch}}
-        if: runner.os == 'Windows'
-
       - name: Build
         run: |
           dotnet restore -r ${{matrix.config.rid}}
@@ -144,6 +138,12 @@ jobs:
         shell: pwsh
         run: |
           echo "PATH=${env:PATH};${env:GITHUB_WORKSPACE}/install/bin" >> $env:GITHUB_ENV
+        if: runner.os == 'Windows'
+
+      - name: Set up test environment (Windows, Visual Studio)
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{matrix.config.arch}}
         if: runner.os == 'Windows'
 
       - name: Dotnet Test
