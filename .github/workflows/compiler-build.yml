@@ -140,12 +140,6 @@ jobs:
           echo "PATH=${env:PATH};${env:GITHUB_WORKSPACE}/install/bin" >> $env:GITHUB_ENV
         if: runner.os == 'Windows'
 
-      - name: Set up test environment (Windows, Visual Studio)
-        uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: ${{matrix.config.arch}}
-        if: runner.os == 'Windows'
-
       - name: Dotnet Test
         working-directory: ${{github.workspace}}
         run: |
@@ -245,12 +239,6 @@ jobs:
           echo "VK_ICD_FILENAMES=${env:GITHUB_WORKSPACE}/swiftshader/bin/vk_swiftshader_icd.json" >> $env:GITHUB_ENV
           echo "PYTHONPATH=${env:GITHUB_WORKSPACE}/install/lib;${env:GITHUB_WORKSPACE}/install/python;${env:GITHUB_WORKSPACE}/tests" >> $env:GITHUB_ENV
           echo "PATH=${env:PATH};${env:GITHUB_WORKSPACE}/install/bin" >> $env:GITHUB_ENV
-        if: runner.os == 'Windows'
-
-      - name: Set up test environment (Windows, Visual Studio)
-        uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: ${{matrix.config.arch}}
         if: runner.os == 'Windows'
 
       - name: Setup Python
