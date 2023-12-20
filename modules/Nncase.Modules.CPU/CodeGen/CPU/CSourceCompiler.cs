@@ -99,7 +99,7 @@ public class CSourceCompiler
     private static string? FindVCVarPath()
     {
         var vsDir = Environment.GetEnvironmentVariable("VSAPPIDDIR");
-        if (false)
+        if (!string.IsNullOrEmpty(vsDir))
         {
             return Path.Combine(vsDir, "..\\..\\VC\\Auxiliary\\Build\\vcvarsall.bat");
         }
@@ -118,7 +118,7 @@ public class CSourceCompiler
                 proc.StartInfo.RedirectStandardOutput = true;
                 proc.Start();
                 proc.WaitForExit();
-                vsDir = proc.StandardOutput.ReadLine();
+                vsDir = proc.StandardOutput.ReadLine()!;
                 return Path.Combine(vsDir, "VC\\Auxiliary\\Build\\vcvarsall.bat");
             }
         }
