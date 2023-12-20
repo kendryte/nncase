@@ -21,17 +21,22 @@ public sealed partial class Where : Op
     /// <summary>
     /// Gets condition.
     /// </summary>
-    public static readonly ParameterInfo Cond = new(typeof(Where), 0, "cond");
+    public static readonly ParameterInfo Cond = new(typeof(Where), 0, "cond", ParameterKind.Input);
 
     /// <summary>
     /// Gets x.
     /// </summary>
-    public static readonly ParameterInfo X = new(typeof(Where), 1, "x");
+    public static readonly ParameterInfo X = new(typeof(Where), 1, "x", ParameterKind.Input);
 
     /// <summary>
     /// Gets y.
     /// </summary>
-    public static readonly ParameterInfo Y = new(typeof(Where), 2, "y");
+    public static readonly ParameterInfo Y = new(typeof(Where), 2, "y", ParameterKind.Input);
 
     public bool IsTfWhere { get; }
+
+    public override string DisplayProperty()
+    {
+        return $"IsTfWhere: {IsTfWhere}";
+    }
 }

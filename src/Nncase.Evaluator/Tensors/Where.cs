@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using NetFabric.Hyperlinq;
 using Nncase.CostModel;
 using Nncase.IR;
@@ -45,9 +46,20 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Where target)
     {
-        var cond = context.CheckArgumentType<TensorType>(target, Where.Cond);
-        var x = context.CheckArgumentType<TensorType>(target, Where.X);
-        var y = context.CheckArgumentType<TensorType>(target, Where.Y);
+        var cond = context.CheckArgumentType<IRType>(target, Where.Cond);
+        var x = context.CheckArgumentType<IRType>(target, Where.X);
+        var y = context.CheckArgumentType<IRType>(target, Where.Y);
+
+        return (cond, x, y) switch
+        {
+            (DistributedType a, DistributedType b, DistributedType c) => Visit(a, b, c, target),
+            (TensorType a, TensorType b, TensorType c) => Visit(a, b, c, target),
+            _ => new InvalidType(cond.GetType().ToString()),
+        };
+    }
+
+    public IRType Visit(TensorType cond, TensorType x, TensorType y, Where target)
+    {
         if (target.IsTfWhere)
         {
             return new TensorType(DataTypes.Int64, new Shape(Dimension.Unknown, cond.Shape.Rank));
@@ -56,12 +68,60 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
         return TypeInference.BroadcastType(x.DType, cond, x, y);
     }
 
+    public IRType Visit(DistributedType cond, DistributedType x, DistributedType y, Where target)
+    {
+        var invalid = new InvalidType($"{cond}, {x}, {y} not support");
+        if (cond.Placement != x.Placement || x.Placement != y.Placement)
+        {
+            return invalid;
+        }
+
+        if (target.IsTfWhere)
+        {
+            return invalid;
+        }
+
+        var targetType = (TensorType)TypeInference.BroadcastType(x.TensorType.DType, cond.TensorType, x.TensorType, y.TensorType);
+        if (cond.TensorType.Shape != targetType.Shape)
+        {
+            return invalid;
+        }
+
+        var ndsbp = new SBP[cond.Placement.Rank];
+
+        for (int i = 0; i < cond.Placement.Rank; i++)
+        {
+            switch (cond.NdSBP[i], x.NdSBP[i], y.NdSBP[i])
+            {
+                case (SBPSplit { Axis: int ic }, SBPSplit { Axis: int }, SBPSplit { Axis: int }):
+                    ndsbp[i] = SBP.S(ic);
+                    break;
+                case (SBPSplit { Axis: int ic }, SBPBroadCast, SBPSplit { Axis: int }):
+                    ndsbp[i] = SBP.S(ic);
+                    break;
+                case (SBPSplit { Axis: int ic }, SBPSplit { Axis: int }, SBPBroadCast):
+                    ndsbp[i] = SBP.S(ic);
+                    break;
+                case (SBPSplit { Axis: int ic }, SBPBroadCast, SBPBroadCast):
+                    ndsbp[i] = SBP.S(ic);
+                    break;
+                case (SBPBroadCast, SBPBroadCast, SBPBroadCast):
+                    ndsbp[i] = SBP.B;
+                    break;
+                default:
+                    return invalid;
+            }
+        }
+
+        return new DistributedType(targetType, ndsbp, cond.Placement);
+    }
+
     public Cost Visit(ICostEvaluateContext context, Where target)
     {
-        var cond = context.GetArgumentType<TensorType>(target, Where.Cond);
-        var x = context.GetArgumentType<TensorType>(target, Where.X);
-        var y = context.GetArgumentType<TensorType>(target, Where.Y);
-        var ret = context.GetReturnType<TensorType>();
+        var cond = context.GetArgumentType<IRType>(target, Where.Cond);
+        var x = context.GetArgumentType<IRType>(target, Where.X);
+        var y = context.GetArgumentType<IRType>(target, Where.Y);
+        var ret = context.GetReturnType<IRType>();
         return new()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(cond, x, y),
