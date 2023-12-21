@@ -25,21 +25,6 @@ size_t tid;
 
 // compiler support
 #if defined(_MSC_VER)
-#define __ISA_AVAILABLE_X86 0
-#define __ISA_AVAILABLE_SSE2 1
-#define __ISA_AVAILABLE_SSE42 2
-#define __ISA_AVAILABLE_AVX 3
-#define __ISA_AVAILABLE_ENFSTRG 4
-#define __ISA_AVAILABLE_AVX2 5
-#define __ISA_AVAILABLE_AVX512 6
-
-int _fltused = 0;
-
-unsigned int __isa_available = __ISA_AVAILABLE_AVX;
-unsigned int __favor = 0;
-
-void __chkstk() {}
-
 #pragma function(acosf)
 #pragma function(asinf)
 #pragma function(cosf)
@@ -69,7 +54,7 @@ float sinf(float v) { return g_cpu_mt->sinf(v); }
 float sinhf(float v) { return g_cpu_mt->sinhf(v); }
 float tanhf(float v) { return g_cpu_mt->tanhf(v); }
 
-#if !defined(WIN32)
+#ifndef WIN32
 void *memcpy(void *dst, const void *src, size_t len) {
     return g_cpu_mt->memcpy(dst, src, len);
 }

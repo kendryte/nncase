@@ -40,7 +40,7 @@ nncase_runtime_cpu_mt_t nncase_cpu_mt_ = {
     .sinhf = sinhf,
     .tanhf = tanhf,
 
-#if !defined(WIN32)
+#ifndef WIN32
     .memcpy = memcpy,
 #endif
 };

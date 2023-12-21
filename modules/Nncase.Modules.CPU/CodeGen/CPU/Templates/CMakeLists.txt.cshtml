@@ -14,7 +14,7 @@ target_compile_definitions(nncase_cpu_module PUBLIC -DNNCASE_CPU_MODULE=1)
 if (MSVC)
     set_target_properties(nncase_cpu_module PROPERTIES LINK_FLAGS /SUBSYSTEM:CONSOLE)
     target_link_options(nncase_cpu_module PRIVATE /ENTRY:kernel_entry /NODEFAULTLIB)
-    target_link_libraries(nncase_cpu_module PRIVATE libvcruntime)
+    target_link_libraries(nncase_cpu_module PRIVATE libvcruntime msvcrt)
     set_property(TARGET nncase_cpu_module PROPERTY
         MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 else()
