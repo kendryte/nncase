@@ -1,0 +1,57 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>WinExe</OutputType>
+        <TargetFramework>net7.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+        <ApplicationManifest>app.manifest</ApplicationManifest>
+        <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Folder Include="Models\"/>
+        <AvaloniaResource Include="Assets\**"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Avalonia"/>
+        <PackageReference Include="Avalonia.Desktop"/>
+        <PackageReference Include="Avalonia.Themes.Fluent"/>
+        <PackageReference Include="Avalonia.Fonts.Inter"/>
+        <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
+<!--        <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics"/>-->
+        <PackageReference Include="Avalonia.ReactiveUI"/>
+        <PackageReference Include="CommunityToolkit.Mvvm"/>
+        <PackageReference Include="NumSharp" />
+        <PackageReference Include="MessageBox.Avalonia"/>
+
+        <ProjectReference Include="..\Nncase.Compiler\Nncase.Compiler.csproj" />
+        <ProjectReference Include="..\Nncase.CodeGen\Nncase.CodeGen.csproj" />
+        <ProjectReference Include="..\Nncase.Core\Nncase.Core.csproj" />
+        <ProjectReference Include="..\Nncase.Diagnostics\Nncase.Diagnostics.csproj" />
+        <ProjectReference Include="..\Nncase.Graph\Nncase.Graph.csproj" />
+        <ProjectReference Include="..\Nncase.EGraph\Nncase.EGraph.csproj" />
+        <ProjectReference Include="..\Nncase.Evaluator\Nncase.Evaluator.csproj" />
+        <ProjectReference Include="..\Nncase.Importer\Nncase.Importer.csproj" />
+        <ProjectReference Include="..\Nncase.Simulator\Nncase.Simulator.csproj" />
+        <ProjectReference Include="..\Nncase.Quantization\Nncase.Quantization.csproj" />
+        <ProjectReference Include="..\Nncase.Passes\Nncase.Passes.csproj" />
+        <ProjectReference Include="..\..\modules\Nncase.Modules.StackVM\Nncase.Modules.StackVM.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <UpToDateCheckInput Remove="Style\EnumComboBox.axaml" />
+      <UpToDateCheckInput Remove="Assets\Fonts\Noto_Sans_TC\NotoSansTC-VariableFont_wght.ttf" />
+      <UpToDateCheckInput Remove="Assets\Fonts\Noto_Sans_TC\OFL.txt" />
+      <UpToDateCheckInput Remove="Assets\Fonts\Noto_Sans_TC\README.txt" />
+      <UpToDateCheckInput Remove="Assets\Fonts\Noto_Sans_TC\static\NotoSansTC-Black.ttf" />
+      <UpToDateCheckInput Remove="Assets\Fonts\Noto_Sans_TC\static\NotoSansTC-Bold.ttf" />
+      <UpToDateCheckInput Remove="Assets\Fonts\Noto_Sans_TC\static\NotoSansTC-ExtraBold.ttf" />
+      <UpToDateCheckInput Remove="Assets\Fonts\Noto_Sans_TC\static\NotoSansTC-ExtraLight.ttf" />
+      <UpToDateCheckInput Remove="Assets\Fonts\Noto_Sans_TC\static\NotoSansTC-Light.ttf" />
+      <UpToDateCheckInput Remove="Assets\Fonts\Noto_Sans_TC\static\NotoSansTC-Medium.ttf" />
+      <UpToDateCheckInput Remove="Assets\Fonts\Noto_Sans_TC\static\NotoSansTC-Regular.ttf" />
+      <UpToDateCheckInput Remove="Assets\Fonts\Noto_Sans_TC\static\NotoSansTC-SemiBold.ttf" />
+      <UpToDateCheckInput Remove="Assets\Fonts\Noto_Sans_TC\static\NotoSansTC-Thin.ttf" />
+    </ItemGroup>
+</Project>

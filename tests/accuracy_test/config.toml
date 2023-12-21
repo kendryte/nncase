@@ -1,0 +1,133 @@
+name = 'default_config'
+root = 'tests_output'
+kmodel_name = 'test.kmodel'
+desc_name = 'kmodel.desc'
+
+[compile_opt]
+preprocess = false
+swapRB = false
+input_type = 'uint8'
+input_shape = [1, 224, 224, 3]
+input_range = [0, 255]
+input_file = ""
+mean = [0, 0, 0]
+std = [1, 1, 1]
+input_layout = 'NHWC'
+output_layout = 'NHWC'
+model_layout = 'NHWC'
+letterbox_value = 0
+dump_asm = true
+dump_ir = false
+shape_bucket_enable = false
+shape_bucket_range_info = { }
+shape_bucket_segments_count = 4
+shape_bucket_fix_var_map = { }
+
+[ptq_opt]
+use_mix_quant = false
+use_mse_quant_w = true
+export_quant_scheme = false
+export_weight_range_by_channel = true
+dump_quant_error = false
+dump_quant_error_symmetric_for_signed = true
+quant_type = "uint8"
+w_quant_type = "uint8"
+# ['NoClip', 'Kld']
+calibrate_method = 'NoClip'
+# ['NoFineTuneWeights', 'UseSquant']
+finetune_weights_method = 'NoFineTuneWeights'
+input_mean = 0.5
+input_std = 0.5
+quant_scheme = ""
+quant_scheme_strict_mode = false
+
+[infer_report_opt]
+enabled = false
+priority = 100
+kind = 'N/A'
+model_name = 'N/A'
+report_name = 'infer_report.json'
+
+[generator]
+[generator.inputs]
+# ['random', 'bin', 'image', 'constant_of_shape']
+method = 'random'
+number = 1
+batch = 1
+
+[generator.inputs.random]
+args = false
+
+[generator.inputs.bin]
+# /path/to/bin directory
+roofline_args = ''
+nncase_args = ''
+
+[generator.inputs.image]
+# /path/to/image directory
+args = ''
+
+[generator.inputs.constant_of_shape]
+# shape
+args = []
+
+[generator.calibs]
+method = 'random'
+number = 5
+batch = 1
+
+[generator.calibs.random]
+args = false
+
+[generator.calibs.bin]
+# /path/to/bin directory
+args = ''
+
+[generator.calibs.image]
+# /path/to/image directory
+args = ''
+
+[generator.calibs.constant_of_shape]
+# shape
+args = []
+
+[target]
+
+[target.cpu]
+eval = false
+infer = false
+similarity_name = 'cosine'
+
+[target.cpu.mode.noptq]
+enabled = false
+threshold = 0.999
+
+[target.cpu.mode.ptq]
+enabled = true
+threshold = 0.98
+
+[target.k510]
+eval = true
+infer = true
+similarity_name = 'cosine'
+
+[target.k510.mode.noptq]
+enabled = false
+threshold = 0.99
+
+[target.k510.mode.ptq]
+enabled = true
+threshold = 0.98
+
+[target.k230]
+eval = false
+infer = true
+similarity_name = 'cosine'
+
+[target.k230.mode.noptq]
+enabled = false
+threshold = 0.999
+
+[target.k230.mode.ptq]
+enabled = true
+threshold = 0.96

@@ -42,7 +42,7 @@ public sealed class PytestCalibrationDatasetProvider : ICalibrationDatasetProvid
         }
 
         // group by the samples
-        _sampleSets = sampleItems.GroupBy(item => item.Number).Select(g => g.OrderBy(item => item.InputIndex).ToArray()).ToArray();
+        _sampleSets = sampleItems.GroupBy(item => item.Number).OrderBy(x => x.Key).Select(g => g.OrderBy(item => item.InputIndex).ToArray()).ToArray();
 
         Count = _sampleSets.Length;
         Samples = _sampleSets.Select(samples =>
