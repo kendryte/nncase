@@ -74,7 +74,7 @@ class nncaseConan(ConanFile):
         pass
 
     def configure(self):
-        min_cppstd = "17" if self.options.runtime else "20"
+        min_cppstd = "20"
         tools.check_min_cppstd(self, min_cppstd)
 
         if self.settings.os == 'Windows':
@@ -105,8 +105,6 @@ class nncaseConan(ConanFile):
         cmake.definitions['ENABLE_HALIDE'] = self.options.halide
         cmake.definitions['BUILD_PYTHON_BINDING'] = self.options.python
         cmake.definitions['BUILD_TESTING'] = self.options.tests
-        if self.options.runtime:
-            cmake.definitions["CMAKE_CXX_STANDARD"] = 17
         cmake.configure()
         return cmake
 

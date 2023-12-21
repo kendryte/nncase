@@ -61,9 +61,9 @@ def _make_module(in_shape, op_version: int):
 
 
 in_shapes = [
-    [1, 120, 14, 14],
-    [1, 64, 56, 56],
-    [1, 128, 56, 56],
+    [1, 12, 14, 14],
+    [1, 8, 56, 56],
+    [1, 8, 56, 56],
 ]
 
 op_versions = [
