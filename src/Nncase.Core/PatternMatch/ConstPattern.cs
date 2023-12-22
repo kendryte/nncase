@@ -66,9 +66,9 @@ public static partial class Utility
     public static TensorConstPattern IsConst(string? name, Func<float, bool> cond) => new(
       x =>
       {
-          if (DataTypes.IsFloat(x.ValueType.DType))
+          if (DataTypes.IsFloat(x.CheckedDataType))
           {
-              if (x.ValueType.IsScalar)
+              if (x.CheckedShape.IsScalar)
               {
                   return cond(x.Value.ToScalar<float>());
               }
@@ -93,9 +93,9 @@ public static partial class Utility
     public static TensorConstPattern IsConst(string? name, Func<int, bool> cond) => new(
       x =>
       {
-          if (DataTypes.IsIntegral(x.ValueType.DType))
+          if (DataTypes.IsIntegral(x.CheckedDataType))
           {
-              if (x.ValueType.IsScalar)
+              if (x.CheckedShape.IsScalar)
               {
                   return cond(x.Value.ToScalar<int>());
               }

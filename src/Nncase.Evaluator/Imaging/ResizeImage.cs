@@ -163,6 +163,7 @@ public class ResizeImageEvaluator : IEvaluator<ResizeImage>, ITypeInferencer<Res
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(returnType, 4),
         };
     }
 

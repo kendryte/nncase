@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Diagnostics.CodeAnalysis;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 
 namespace Nncase.Utilities;
@@ -26,11 +27,7 @@ public static class DistributedUtility
             ndsbps.Add(ndsbp);
         }
 
-        return ndsbps.CartesianProduct().
-           Select(ndsbp => ndsbp.ToArray()).
-           Where(ndsbp => IsDistributable(tensorType, ndsbp, placement)).
-           Select(ndsbp => new IRArray<SBP>(ndsbp)).
-           ToArray();
+        return ndsbps.CartesianProduct().Select(ndsbp => ndsbp.ToArray()).Where(ndsbp => IsDistributable(tensorType, ndsbp, placement)).Select(ndsbp => new IRArray<SBP>(ndsbp)).ToArray();
     }
 
     public static IReadOnlyList<IRArray<SBP>> GetPartialCandidateNDSBPs(DistributedType distributedType)
@@ -65,11 +62,7 @@ public static class DistributedUtility
             }
         }
 
-        return candidateNdsbps.CartesianProduct().
-            Select(ndsbp => ndsbp.ToArray()).
-            Where(ndsbp => IsDistributable(tensorType, ndsbp, placement)).
-            Select(ndsbp => new IRArray<SBP>(ndsbp)).
-            ToArray();
+        return candidateNdsbps.CartesianProduct().Select(ndsbp => ndsbp.ToArray()).Where(ndsbp => IsDistributable(tensorType, ndsbp, placement)).Select(ndsbp => new IRArray<SBP>(ndsbp)).ToArray();
     }
 
     public static bool IsDistributable(TensorType tensorType, ReadOnlySpan<SBP> ndsbp, Placement placement)
@@ -131,24 +124,74 @@ public static class DistributedUtility
         }
 
         return hierarchies.Select((divs, axis) =>
+        {
+            Expr dim;
+            if (divs.Any())
             {
-                Expr dim;
-                if (divs.Any())
+                var divsor = (int)TensorUtilities.GetProduct(divs.Select(h => distributedType.Placement.Hierarchy[h]).ToArray());
+                var (res, rem) = Math.DivRem(shape[axis], divsor);
+                if (rem == 0)
                 {
-                    var divsor = (int)TensorUtilities.GetProduct(divs.Select(h => distributedType.Placement.Hierarchy[h]).ToArray());
-                    var (res, rem) = Math.DivRem(shape[axis], divsor);
-                    dim = IR.F.Math.Select(
-                        TensorUtilities.GetIndex(hierarchyStrides.TakeLast(divs.Count).Select(s => (Expr)s).ToArray(), divs.Select(h => ids[h]).ToArray()) < (divsor - 1),
-                        res,
-                        res + rem);
-                }
-                else
-                {
-                    dim = distributedType.TensorType.Shape[axis].FixedValue;
+                    return res;
                 }
 
-                return dim;
-            }).ToArray();
+                dim = IR.F.Math.Select(
+                    TensorUtilities.GetIndex(hierarchyStrides.TakeLast(divs.Count).Select(s => (Expr)s).ToArray(), divs.Select(h => ids[h]).ToArray()) < (divsor - 1),
+                    res,
+                    res + rem);
+            }
+            else
+            {
+                dim = distributedType.TensorType.Shape[axis].FixedValue;
+            }
+
+            return dim;
+        }).ToArray();
+    }
+
+    public static List<int[]> TryGetNonUniformDividedSlice(DistributedType distributedType)
+    {
+        var shape = distributedType.TensorType.Shape.ToValueArray();
+        var hierarchies = Enumerable.Range(0, shape.Length).Select(i => new List<int>()).ToArray();
+        for (int i = 0; i < distributedType.NdSBP.Count; i++)
+        {
+            if (distributedType.NdSBP[i] is SBPSplit { Axis: int axis })
+            {
+                hierarchies[axis].Add(i);
+            }
+        }
+
+        var spliList = hierarchies.Select<List<int>, int[]>((divs, axis) =>
+        {
+            int[] dim;
+            if (divs.Any())
+            {
+                var divsor = (int)TensorUtilities.GetProduct(divs.Select(h => distributedType.Placement.Hierarchy[h]).ToArray());
+                var (res, rem) = Math.DivRem(shape[axis], divsor);
+                if (rem == 0)
+                {
+                    return new[] { res };
+                }
+
+                dim = new[] { res, res + rem };
+            }
+            else
+            {
+                dim = distributedType.TensorType.Shape.ToValueArray().Skip(axis).Take(1).ToArray();
+            }
+
+            return dim;
+        }).ToList();
+
+        IEnumerable<int[]> ret = new[] { Array.Empty<int>() };
+        foreach (int[] array in spliList)
+        {
+            ret = from seq in ret
+                  from item in array
+                  select seq.Concat(new[] { item }).ToArray();
+        }
+
+        return ret.ToList();
     }
 
     public static bool IsDivideBy(int input, int divisor)
@@ -174,17 +217,14 @@ public static class DistributedUtility
     public static float GetDividedTensorEfficiency(DistributedType distributedType, int burstLength)
     {
         var (tiles, shape) = GetDividedTile(distributedType);
-        return Enumerable.Range(0, tiles.Count).
-                  Select(i => tiles[i].Ranges(0, shape[i])).
-                  CartesianProduct().
-                  Select(rgs =>
-                  {
-                      var slice = rgs.ToArray();
-                      var iscontiguous = TensorUtilities.IsContiguousSlice(shape.ToArray(), slice, out var contiguousStart);
-                      var size = TensorUtilities.GetProduct(tiles.ToArray(), contiguousStart) * distributedType.TensorType.DType.SizeInBytes;
-                      var (div, rem) = Math.DivRem(size, burstLength);
-                      return ((div * 1.0f) + ((float)rem / burstLength)) / (div + 1);
-                  }).Average();
+        return Enumerable.Range(0, tiles.Count).Select(i => tiles[i].Ranges(0, shape[i])).CartesianProduct().Select(rgs =>
+        {
+            var slice = rgs.ToArray();
+            var iscontiguous = TensorUtilities.IsContiguousSlice(shape.ToArray(), slice, out var contiguousStart);
+            var size = TensorUtilities.GetProduct(tiles.ToArray(), contiguousStart) * distributedType.TensorType.DType.SizeInBytes;
+            var (div, rem) = Math.DivRem(size, burstLength);
+            return ((div * 1.0f) + ((float)rem / burstLength)) / (div + 1);
+        }).Average();
     }
 
     public static TensorType GetDividedTensorType(DistributedType distributedType)

@@ -99,7 +99,7 @@ public sealed class UnitTestTIR
     public void TestGrid()
     {
         var grid1 = T.Grid(out _, LoopMode.Serial, new Range(-1f, 1f, 1));
-        var grid2 = T.Grid(out _, out _, new(1, 1));
+        var grid2 = T.Grid(out _, LoopMode.Serial, new Range(1, 1, 1));
         Assert.Equal(grid1.GetType(), grid2.GetType());
     }
 

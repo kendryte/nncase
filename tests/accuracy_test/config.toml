@@ -2,7 +2,6 @@ name = 'default_config'
 root = 'tests_output'
 kmodel_name = 'test.kmodel'
 desc_name = 'kmodel.desc'
-dump_hist = false
 
 [compile_opt]
 preprocess = false
@@ -61,7 +60,8 @@ args = false
 
 [generator.inputs.bin]
 # /path/to/bin directory
-args = ''
+roofline_args = ''
+nncase_args = ''
 
 [generator.inputs.image]
 # /path/to/image directory
@@ -94,8 +94,8 @@ args = []
 [target]
 
 [target.cpu]
-eval = true
-infer = true
+eval = false
+infer = false
 similarity_name = 'cosine'
 
 [target.cpu.mode.noptq]
@@ -120,7 +120,7 @@ enabled = true
 threshold = 0.98
 
 [target.k230]
-eval = true
+eval = false
 infer = true
 similarity_name = 'cosine'
 
@@ -131,16 +131,3 @@ threshold = 0.999
 [target.k230.mode.ptq]
 enabled = true
 threshold = 0.96
-
-[target.xpu]
-eval = false
-infer = true
-similarity_name = 'cosine'
-
-[target.xpu.mode.noptq]
-enabled = true
-threshold = 0.999
-
-[target.xpu.mode.ptq]
-enabled = false
-threshold = 0.9

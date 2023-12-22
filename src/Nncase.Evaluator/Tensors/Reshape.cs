@@ -40,7 +40,8 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
             TensorType tensorType => Visit(context, target, tensorType),
             DistributedType distributedType => Visit(context, target, distributedType),
             AnyType => AnyType.Default,
-            _ => throw new NotImplementedException(),
+            InvalidType => input,
+            _ => new InvalidType($"Not Support Input Type {input.GetType().Name}"),
         };
     }
 

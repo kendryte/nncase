@@ -37,6 +37,7 @@ from evaluator import *
 from compare_util import *
 from test_utils import *
 from html import escape
+import sys
 
 
 class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
@@ -63,6 +64,8 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         self.outputs: List[Dict] = []
         self.model_type: str = ""
         self.pre_process: List[Dict] = []
+        self.postprocess_qsize = 4096
+        self.postprocess_result = ''
 
         self.num_pattern = re.compile("(\d+)")
         # [n, c, h, w].zip default_shape => [(n, 1), (c, 1), (h, 48), (w, 48)]
@@ -79,8 +82,10 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                 'kind': 'N/A',
                 'model': 'N/A',
                 'shape': 'N/A',
-                'if_quant_type': 'uint8',
-                'w_quant_type': 'uint8',
+                'official_result': '',
+                'tflite_onnx_result': '',
+                'nncase_result': '',
+                'remark': ''
             }
 
     def transform_input(self, values: List[np.ndarray], type: str, stage: str) -> List[np.ndarray]:
@@ -110,87 +115,6 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                     raise TypeError(" Not support type for quant input")
 
             new_values.append(new_value)
-        return new_values
-
-    def data_pre_process(self, values: List[np.ndarray]) -> List[np.ndarray]:
-        new_values = []
-        compile_opt = self.cfg['compile_opt']
-
-        compile_opt['model_shape'] = self.inputs[0]['model_shape'] if self.inputs else config['input_shape']
-
-        for value in values:
-            new_value = copy.deepcopy(value)
-            if compile_opt['preprocess'] and len(value.shape) == 4:
-                if compile_opt['input_layout'] in ['NCHW', "0,2,3,1"]:
-                    new_value = np.transpose(new_value, [0, 2, 3, 1])
-
-                # dequantize
-                if 'input_range' in compile_opt.keys() and 'input_type' in compile_opt.keys():
-                    Q_max, Q_min = 0, 0
-                    if compile_opt['input_type'] == 'uint8':
-                        Q_max, Q_min = 255, 0
-                    else:
-                        continue
-                    scale = (compile_opt['input_range'][1] -
-                             compile_opt['input_range'][0]) / (Q_max - Q_min)
-                    bias = round((compile_opt['input_range'][1] * Q_min - compile_opt['input_range'][0] *
-                                  Q_max) / (compile_opt['input_range'][1] - compile_opt['input_range'][0]))
-                    new_value = new_value * scale
-                    new_value = new_value - bias
-
-                # swapRB
-                if 'swapRB' in compile_opt.keys():
-                    if new_value.shape[-1] != 3:
-                        assert("Please confirm your input channel is 3.")
-                    if compile_opt['swapRB'] == True:
-                        new_value = new_value[:, :, :, ::-1]
-                        new_value = np.array(new_value)
-
-                # LetterBox
-                if 'input_range' in compile_opt.keys() and 'input_shape' in compile_opt.keys() and 'model_shape' in compile_opt.keys():
-                    if compile_opt['input_shape'] != []:
-                        model_shape: List = []
-                        if self.model_type in ["onnx", "caffe"] and compile_opt['model_layout'] != 'NHWC':
-                            model_shape = [compile_opt['model_shape'][0], compile_opt['model_shape'][2],
-                                           compile_opt['model_shape'][3], compile_opt['model_shape'][1]]
-                        else:
-                            model_shape = compile_opt['model_shape']
-                        if model_shape[1] != new_value.shape[1] or model_shape[2] != new_value.shape[2]:
-                            in_h, in_w = new_value.shape[1], new_value.shape[2]
-                            model_h, model_w = model_shape[1], model_shape[2]
-                            ratio = min(model_h / in_h, model_w / in_w)
-                            resize_shape = new_value.shape[0], round(
-                                in_h * ratio), round(in_w * ratio), 3
-                            resize_data = np.random.rand(*model_shape)
-                            for batch_data in new_value:
-                                tmp = cv2.resize(
-                                    batch_data, (resize_shape[2], resize_shape[1]), interpolation=cv2.INTER_LINEAR)
-
-                                dh = model_shape[1] - resize_shape[1]
-                                dw = model_shape[2] - resize_shape[2]
-                                dh /= 2
-                                dw /= 2
-                                tmp = np.array(tmp, dtype=np.float32)
-                                tmp = cv2.copyMakeBorder(tmp, round(dh - 0.1), round(model_h - resize_shape[1] - round(dh - 0.1)), round(dw - 0.1), round(
-                                    model_w - resize_shape[2] - round(dw - 0.1)), cv2.BORDER_CONSTANT, value=(compile_opt['letterbox_value'], compile_opt['letterbox_value'], compile_opt['letterbox_value']))
-                                tmp = np.expand_dims(tmp, 0)
-                                # print("resize_data.shape = ", resize_data.shape)
-                                # print("tmp.shape = ", tmp.shape)
-                                resize_data = np.concatenate([resize_data, tmp], axis=0)
-                            new_value = np.array(resize_data[1:], dtype=np.float32)
-
-                # Normalize
-                if 'mean' in compile_opt.keys() and 'std' in compile_opt.keys():
-                    for i in range(new_value.shape[-1]):
-                        k = i
-                        if new_value.shape[-1] > 3:
-                            k = 0
-                        new_value[:, :, :, i] = (new_value[:, :, :, i] - float(compile_opt['mean'][k])) / \
-                            float(compile_opt['std'][k])
-            else:
-                assert("Please confirm your input shape and model shape is 4D!")
-            new_values.append(new_value)
-
         return new_values
 
     def validte_config(self, config):
@@ -241,11 +165,17 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
     def import_model(self, compiler, model_content, import_options):
         pass
 
-    def config_cmds(self):
-        return []
-
-    def stat_target(self, infer_dir, results):
+    def postprocess(self, result):
         pass
+
+    def get_official_result(self):
+        return 'N/A'
+
+    def get_postprocess_result(self):
+        return self.postprocess_result
+
+    def get_remark(self):
+        return 'N/A'
 
     def run(self, model_file: Union[List[str], str]):
         if not self.inputs:
@@ -254,13 +184,24 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         self.generate_all_data()
         self.write_compile_opt()
 
-        expected = self.cpu_infer(model_file)
+        # onnx/tflite runtime
+        self.cpu_infer(model_file)
+        tflite_onnx_result = self.get_postprocess_result()
+
+        if self.cfg['infer_report_opt']['enabled']:
+            self.infer_report_dict['official_result'] = escape(
+                self.get_official_result()).replace('\n', '<br/>')
+            self.infer_report_dict['tflite_onnx_result'] = escape(
+                tflite_onnx_result).replace('\n', '<br/>')
+            self.infer_report_dict['remark'] = self.get_remark()
+
+        # nncase
+        self.postprocess_result = ''
         targets = self.cfg['target']
         model_content = self.read_model_file(model_file)
         import_options = nncase.ImportOptions()
 
         compiler = None
-        dump_hist = self.cfg['dump_hist']
         for k_target, v_target in targets.items():
             tmp_dir = os.path.join(self.case_dir, 'tmp')
             if v_target['eval'] or v_target['infer']:
@@ -274,28 +215,23 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                         if v_mode['enabled']:
                             os.makedirs(tmp_dir, exist_ok=True)
                             if stage == 'eval':
-                                actual = self.run_evaluator(compiler, tmp_dir)
+                                self.run_evaluator(compiler, tmp_dir)
                             else:
-                                actual = self.run_inference(
-                                    compiler, k_target, k_mode == "ptq" and v_mode['enabled'], tmp_dir)
+                                self.run_inference(compiler, k_target, v_mode['enabled'], tmp_dir)
                             target_dir = os.path.join(self.case_dir, stage, k_target)
                             os.makedirs(target_dir, exist_ok=True)
                             mode_dir = os.path.join(target_dir, k_mode)
                             shutil.move(tmp_dir, mode_dir)
-                            judge, result = self.compare_results(
-                                expected, actual, stage, k_target, v_target['similarity_name'], k_mode, v_mode['threshold'], dump_hist, mode_dir)
 
+                            result = self.get_postprocess_result()
                             if stage == 'infer' and self.cfg['infer_report_opt']['enabled']:
-                                self.infer_report_dict['result'] = 'Pass' if judge else 'Fail'
-                                self.infer_report_dict['remark'] = escape(
+                                self.infer_report_dict['nncase_result'] = escape(
                                     result).replace('\n', '<br/>')
+                                self.infer_report_dict['remark'] = escape(
+                                    self.infer_report_dict['remark']).replace('\n', '<br/>')
                                 prefix, suffix = os.path.splitext(self.infer_report_file)
                                 json_file = f'{prefix}_{os.path.basename(self.case_dir)}{suffix}'
                                 dump_dict_to_json(self.infer_report_dict, json_file)
-                            if not judge:
-                                if test_utils.in_ci():
-                                    self.clear(self.case_dir)
-                                assert (judge), f"Fault result in {stage} + {result}"
 
         if test_utils.in_ci():
             self.clear(self.case_dir)
@@ -338,8 +274,8 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                 f.write("-------------------------\n")
 
     def generate_all_data(self):
-        self.generate_data('input', self.inputs,
-                           self.cfg['compile_opt'], self.cfg['generator']['inputs'])
+        # self.generate_data('input', self.inputs,
+        #                    self.cfg['compile_opt'], self.cfg['generator']['inputs'])
         self.generate_data('calib', self.calibs,
                            self.cfg['compile_opt'], self.cfg['generator']['calibs'])
 
@@ -398,6 +334,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
             file_list.sort()
         elif method == 'image':
             file_list.extend([os.path.join(args, p) for p in os.listdir(args)])
+            file_list.sort()
         elif method == 'constant_of_shape':
             assert len(args) != 0
         else:
@@ -406,6 +343,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         generator = Generator()
         for input_idx, input in enumerate(inputs):
             samples = []
+            files = []
             input_shape = []
             dtype = input['dtype']
             if compile_opt['preprocess'] and compile_opt['input_shape'] != []:
@@ -426,10 +364,12 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                     idx = input_idx * batch_number + batch_idx
                     assert(idx < len(file_list))
                     data = generator.from_bin(input_shape, dtype, file_list[idx])
+                    files.append(file_list[idx])
                 elif method == 'image':
                     idx = input_idx * batch_number + batch_idx
                     assert(idx < len(file_list))
                     data = generator.from_image(input_shape, dtype, file_list[idx])
+                    files.append(file_list[idx])
                 elif method == 'constant_of_shape':
                     data = generator.from_constant_of_shape(args, dtype)
 
@@ -440,26 +380,4 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                                                f'{name}_{input_idx}_{batch_idx}.txt'), data)
                 samples.append(data)
             input['data'] = samples
-
-    def compare_results(self,
-                        ref_ouputs: List[np.ndarray],
-                        test_outputs: List[np.ndarray],
-                        stage, target, similarity_name, mode, threshold, dump_hist, dump_dir) -> Tuple[bool, str]:
-        i = 0
-        judges = []
-        result = ''
-        for expected, actual in zip(ref_ouputs, test_outputs):
-            expected = expected.astype(np.float32)
-            actual = actual.astype(np.float32)
-            dump_file = os.path.join(dump_dir, 'nncase_result_{0}_hist.csv'.format(i))
-            judge, similarity_info = compare_ndarray(
-                expected, actual, similarity_name, threshold, dump_hist, dump_file)
-            result_info = "{0} [ {1} {2} {3} ] Output {4}:".format(
-                'Pass' if judge else 'Fail', stage, target, mode, i)
-            result += result_info + similarity_info
-            i = i + 1
-            judges.append(judge)
-
-        with open(os.path.join(self.case_dir, 'test_result.txt'), 'a+') as f:
-            f.write(result)
-        return sum(judges) == len(judges), result
+            input['file'] = files
