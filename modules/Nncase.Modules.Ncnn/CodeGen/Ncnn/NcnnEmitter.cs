@@ -25,6 +25,7 @@ internal class NcnnEmitter
     public void SaveParam(Stream paramStream)
     {
         using var sw = new StreamWriter(paramStream, Encoding.ASCII, leaveOpen: true);
+        // using var sw = new StreamWriter(@"/home/curio/Desktop/param.txt", false, Encoding.UTF8);
         _model.Serialize(sw);
     }
 
@@ -58,7 +59,39 @@ internal class NcnnEmitter
         WriteFloatArray(biasData);
     }
 
-    private void AddLayer(string type, string name, string[] bottoms, string[] tops, ParamDict? paramDict = null)
+    public void Binary(string name, string inputA, string inputB, BinaryOperationType opTypes, int lOrR, float[] constInput, int[] constShape)
+    {
+        var inputList = new[] { inputA, inputB };
+
+        if (constInput != null && constShape != null)
+        {
+            if (lOrR == 1)
+            {
+                inputList[0] = name + "_memorydata";
+            }
+            else
+            {
+                inputList[1] = name + "_memorydata";
+            }
+
+            var paramDict = new ParamDict();
+            for (int i = 0; i < constShape.Length; i++)
+            {
+                paramDict[i] = new ParamValue { Kind = ParamKind.Int, IntValue = constShape[constShape.Length - 1 - i] };
+            }
+
+            AddLayer("MemoryData", name + "_memorydata", Array.Empty<string>(), new[] { name + "_memorydata" }, paramDict);
+
+            WriteFloatArray(constInput);
+        }
+
+        AddLayer("BinaryOp", name, inputList, new[] { name }, new ParamDict
+        {
+            [0] = new ParamValue { Kind = ParamKind.Int, IntValue = (int)opTypes },
+        });
+    }
+
+    private void AddLayer(string type, string name, string[] bottoms, string[] tops, ParamDict? paramDict = null, int layerType = 1)
     {
         var layer = new NcnnLayer(type, name, bottoms.Length, tops.Length);
         if (paramDict != null)
@@ -76,7 +109,19 @@ internal class NcnnEmitter
             layer.Tops[i] = new NcnnTensor { Name = tops[i] };
         }
 
-        _model.Layers.Add(layer);
+        switch (type)
+        {
+            case "Input":
+                _model.ModelInputs.Add(layer);
+                break;
+            case "MemoryData":
+                _model.MemoryDatas.Add(layer);
+                break;
+            default:
+                _model.Layers.Add(layer);
+                break;
+        }
+
     }
 
     private void WriteFloatArray(float[] data)

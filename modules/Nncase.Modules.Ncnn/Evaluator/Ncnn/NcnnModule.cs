@@ -16,5 +16,6 @@ internal class NcnnModule : IApplicationPart
         registrator.RegisterManyInterface<NcnnSoftmaxEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<NcnnUnaryEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<NcnnBatchNormEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<NcnnBinaryEvaluator>(reuse: Reuse.Singleton);
     }
 }

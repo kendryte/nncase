@@ -20,4 +20,7 @@ public sealed class Ncnn
 
     public static Call NcnnBatchNorm(Expr expr, int channels, float eps, float[] slopeData, float[] meanData, float[] varData, float[] biasData) =>
         new Call(new NcnnBatchNorm(channels, eps, slopeData, meanData, varData, biasData), expr);
+
+    public static Call NcnnBinary(Expr[] inExpr, BinaryOperationType binaryOp, int lorR, float[]? constInput, int[]? constShape) =>
+        new Call(new NcnnBinary(binaryOp, lorR, constInput, constShape), inExpr);
 }

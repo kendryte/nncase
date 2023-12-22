@@ -17,17 +17,22 @@ public class NcnnModel
     public NcnnModel()
     {
         Magic = ExpectedMagic;
+        ModelInputs = new List<NcnnLayer>();
         Layers = new List<NcnnLayer>();
+        MemoryDatas = new List<NcnnLayer>();
     }
 
-    public NcnnModel(int magic, IList<NcnnLayer> layers)
+    public NcnnModel(int magic, IList<NcnnLayer> layers, IList<NcnnLayer>? modelInputs = null, IList<NcnnLayer>? memoryDatas = null)
     {
         Magic = magic;
+        ModelInputs = modelInputs;
         Layers = layers;
+        MemoryDatas = memoryDatas;
     }
 
     public int Magic { get; }
-
+    public IList<NcnnLayer> ModelInputs { get; }
+    public IList<NcnnLayer> MemoryDatas { get; }
     public IList<NcnnLayer> Layers { get; }
 
     public static NcnnModel ParseFromStream(Stream stream)
@@ -85,9 +90,21 @@ public class NcnnModel
         writer.WriteLine(Magic);
 
         // 2. layer_count & blob_count
-        writer.WriteLine($"{Layers.Count} {Layers.Select(x => x.Tops.Length).Sum()}");
+        writer.WriteLine($"{Layers.Count + MemoryDatas.Count + ModelInputs.Count} {Layers.Select(x => x.Tops.Length).Sum() + MemoryDatas.Select(x => x.Tops.Length).Sum() + ModelInputs.Select(x => x.Tops.Length).Sum()}");
 
-        // 3. layers
+        // 3. inputs
+        foreach (var modelInput in ModelInputs)
+        {
+            modelInput.Serialize(writer);
+        }
+
+        // 4. memorydatas
+        foreach (var memoryData in MemoryDatas)
+        {
+            memoryData.Serialize(writer);
+        }
+
+        // 5. layers
         foreach (var layer in Layers)
         {
             layer.Serialize(writer);

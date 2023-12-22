@@ -91,6 +91,24 @@ internal class NcnnFunctionBuilder : FunctionBuilder
                 case NcnnBatchNorm op:
                     _emitter.BatchNorm(name, ExprMemo[expr.Arguments[0]], op.Channels, op.Eps, op.SlopeData, op.MeanData, op.VarData, op.BiasData);
                     break;
+                case NcnnBinary op:
+                    string[]? inString;
+                    switch (op.LorR)
+                    {
+                        case 0:
+                            inString = new string[] { ExprMemo[expr.Arguments[0]], ExprMemo[expr.Arguments[1]] };
+                            break;
+                        case 1:
+                            inString = new string[] { string.Empty, ExprMemo[expr.Arguments[0]] };
+                            break;
+                        case 2:
+                            inString = new string[] { ExprMemo[expr.Arguments[0]], string.Empty };
+                            break;
+                        default:
+                            throw new NotImplementedException("Not found binary emmiter.");
+                    }
+                    _emitter.Binary(name, inString[0], inString[1], op.OpType, op.LorR, op.ConstInput, op.ConstShape);
+                    break;
                 default:
                     throw new NotSupportedException();
             }

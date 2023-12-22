@@ -51,6 +51,8 @@ public class CPUTarget : ITarget
             p.Add<Passes.Rules.Ncnn.LowerBatchNorm>();
             p.Add<Passes.Rules.Ncnn.LowerSoftmax>();
             p.Add<Passes.Rules.Ncnn.LowerUnary>();
+            p.Add<Passes.Rules.Lower.RemoveMarker>();
+            p.Add<Passes.Rules.Ncnn.LowerBinary>();
         });
     }
 
