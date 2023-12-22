@@ -25,6 +25,7 @@ internal class NcnnEmitter
     public void SaveParam(Stream paramStream)
     {
         using var sw = new StreamWriter(paramStream, Encoding.ASCII, leaveOpen: true);
+
         // using var sw = new StreamWriter(@"/home/curio/Desktop/param.txt", false, Encoding.UTF8);
         _model.Serialize(sw);
     }
@@ -121,7 +122,6 @@ internal class NcnnEmitter
                 _model.Layers.Add(layer);
                 break;
         }
-
     }
 
     private void WriteFloatArray(float[] data)

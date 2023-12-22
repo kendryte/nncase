@@ -36,7 +36,6 @@ public partial class LowerBinary : RewriteRule<Pattern>
     //         x => x.BinaryOp is BinaryOp.Add or BinaryOp.Sub or BinaryOp.Mul or BinaryOp.Div or BinaryOp.Mod or BinaryOp.Pow,
     //         IsWildcard("lhs"),
     //         IsTensorConst("rhs", IsScalar()));
-
     private static BinaryOperationType? MapBinaryOp(BinaryOp binaryOp) =>
         binaryOp switch
         {
@@ -70,12 +69,16 @@ public partial class LowerBinary : RewriteRule<Pattern>
     private int[] FixShape(int[] shape, int r)
     {
         if (shape.Length == 1)
-            {return shape;}
+        {
+            return shape;
+        }
+
         var newShape = shape.ToList();
         for (int i = r - shape.Length; i > 0; i--)
         {
             newShape.Insert(0, 1);
         }
+
         return newShape.ToArray();
     }
 

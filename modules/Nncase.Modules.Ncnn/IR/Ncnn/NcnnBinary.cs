@@ -72,7 +72,4 @@ public sealed partial class NcnnBinary : Op
     {
         return $"BinaryOp.{OpType}";
     }
-
-
-
 }
