@@ -105,15 +105,16 @@ class unary_apply_impl {
   public:
     using T = typename TA::element_type;
 
-    unary_apply_impl(const TA &input, TB &output)
+    constexpr unary_apply_impl(const TA &input, TB &output)
         : input_(input), output_(output) {}
 
-    void operator()() {
+    constexpr void operator()() {
         apply(std::make_index_sequence<input_.shape().rank()>());
     }
 
   private:
-    template <size_t... Axes> void apply(std::index_sequence<Axes...>) {
+    template <size_t... Axes>
+    constexpr void apply(std::index_sequence<Axes...>) {
         constexpr size_t conti_dims =
             std::min(contiguous_dims(input_.shape(), input_.strides()),
                      contiguous_dims(output_.shape(), output_.strides()));
@@ -123,7 +124,7 @@ class unary_apply_impl {
     }
 
     template <size_t Axis, size_t Rank, size_t ContiguousDims, size_t... Dims>
-    void apply(ranked_shape<Rank> &index) {
+    constexpr void apply(ranked_shape<Rank> &index) {
         if constexpr (ContiguousDims == sizeof...(Dims)) {
             constexpr auto inner_size = (Dims * ... * 1);
             auto input_p =
@@ -138,14 +139,14 @@ class unary_apply_impl {
 
     template <size_t Axis, size_t Rank, size_t ContiguousDims, size_t Dim,
               size_t... Dims>
-    void apply_next(ranked_shape<Rank> &index) {
+    constexpr void apply_next(ranked_shape<Rank> &index) {
         for (index[Axis] = 0; index[Axis] < Dim; index[Axis]++) {
             apply<Axis, Rank, ContiguousDims, Dims...>(index);
         }
     }
 
     template <size_t InnerSize>
-    void apply_contiguous(const T *input_p, T *output_p) {
+    constexpr void apply_contiguous(const T *input_p, T *output_p) {
         for (size_t i = 0; i < InnerSize; i++) {
             output_p[i] = op_(input_p[i]);
         }
