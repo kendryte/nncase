@@ -115,7 +115,7 @@ class unary_impl<fixed_shape<Dims...>, fixed_strides<InStrides...>,
   public:
     template <class Op, class TIn, class TOut>
     constexpr void operator()(Op &op, const TIn &input, TOut &output) {
-        constexpr size_t rank = input.shape().rank();
+        constexpr size_t rank = sizeof...(Dims);
         ranked_shape<rank> index{};
         constexpr auto conti_dims =
             std::min(contiguous_dims(fixed_shape<Dims...>{},
@@ -160,7 +160,7 @@ template <template <class T> class Op, class TIn, class TOut>
 void unary(const TIn &input, TOut &&output) {
     Op<typename TIn::element_type> op;
     detail::unary_impl<typename TIn::shape_type, typename TIn::strides_type,
-                       typename TOut::strides_type>
+                       typename std::decay_t<TOut>::strides_type>
         impl;
     impl(op, input, output);
 }
