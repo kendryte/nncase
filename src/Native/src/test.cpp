@@ -43,10 +43,10 @@ int main() {
     compiler = nncapi->compile_session_get_compiler(compile_session.get());
 #endif
 
-    ntt::tensor<float, ntt::fixed_shape<1>> ta, tb, tc;
+    ntt::tensor<float, ntt::fixed_shape<1, 16>> ta, tb, tc;
     std::fill(ta.buffer().begin(), ta.buffer().end(), 1.f);
     ntt::unary<ntt::mathops::sin>(ta, tb.view());
-    assert(tb(0) == sinf(1.f));
+    assert(tb(0, 0) == sinf(1.f));
     ntt::binary<ntt::mathops::mul>(ta, tb, tc);
 
     auto kmodel = read_file(

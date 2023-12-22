@@ -164,7 +164,7 @@ public class CSourceCompiler
 
     private string ArgumentsSpecific(string sourcePath, string outPath)
     {
-        var config = "RelWithDebInfo";
+        var config = "Release";
         var script = $"""
             cd {sourcePath} &&
             cmake -E remove_directory build &&

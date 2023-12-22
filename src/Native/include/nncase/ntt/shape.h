@@ -20,6 +20,7 @@
 #include <cstdint>
 #include <cstring>
 #include <numeric>
+#include <optional>
 #include <span>
 #include <utility>
 
@@ -172,5 +173,16 @@ constexpr size_t linear_size(const Shape &shape,
 
     size_t size = max_stride * max_shape;
     return size;
+}
+
+template <class Shape, class Strides>
+constexpr size_t contiguous_dims(const Shape &shape, const Strides &strides) {
+    auto def_strides = default_strides_t<Shape>{};
+    for (int32_t i = strides.rank() - 1; i >= 0; --i) {
+        if (strides[i] != def_strides[i]) {
+            return shape.rank() - i - 1;
+        }
+    }
+    return shape.rank();
 }
 } // namespace nncase::ntt

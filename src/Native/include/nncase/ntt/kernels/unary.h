@@ -99,9 +99,68 @@ template <class T> struct tanh {
 };
 } // namespace mathops
 
+namespace detail {
+template <template <class T> class Op, class TA, class TB>
+class unary_apply_impl {
+  public:
+    using T = typename TA::element_type;
+
+    unary_apply_impl(const TA &input, TB &output)
+        : input_(input), output_(output) {}
+
+    void operator()() {
+        apply(std::make_index_sequence<input_.shape().rank()>());
+    }
+
+  private:
+    template <size_t... Axes> void apply(std::index_sequence<Axes...>) {
+        constexpr size_t conti_dims =
+            std::min(contiguous_dims(input_.shape(), input_.strides()),
+                     contiguous_dims(output_.shape(), output_.strides()));
+        ranked_shape<input_.shape().rank()> index{};
+        apply<0, sizeof...(Axes), conti_dims, input_.shape().at(Axes)...>(
+            index);
+    }
+
+    template <size_t Axis, size_t Rank, size_t ContiguousDims, size_t... Dims>
+    void apply(ranked_shape<Rank> &index) {
+        if constexpr (ContiguousDims == sizeof...(Dims)) {
+            constexpr auto inner_size = (Dims * ... * 1);
+            auto input_p =
+                input_.buffer().data() + linear_offset(index, input_.strides());
+            auto output_p = output_.buffer().data() +
+                            linear_offset(index, output_.strides());
+            apply_contiguous<inner_size>(input_p, output_p);
+        } else {
+            apply_next<Axis + 1, Rank, ContiguousDims, Dims...>(index);
+        }
+    }
+
+    template <size_t Axis, size_t Rank, size_t ContiguousDims, size_t Dim,
+              size_t... Dims>
+    void apply_next(ranked_shape<Rank> &index) {
+        for (index[Axis] = 0; index[Axis] < Dim; index[Axis]++) {
+            apply<Axis, Rank, ContiguousDims, Dims...>(index);
+        }
+    }
+
+    template <size_t InnerSize>
+    void apply_contiguous(const T *input_p, T *output_p) {
+        for (size_t i = 0; i < InnerSize; i++) {
+            output_p[i] = op_(input_p[i]);
+        }
+    }
+
+  private:
+    const TA &input_;
+    TB &output_;
+    Op<T> op_;
+};
+} // namespace detail
+
 template <template <class T> class Op, class TA, class TB>
 void unary(const TA &input, TB &&output) {
-    Op<typename TA::element_type> op;
-    apply(input.shape(), [&](auto index) { output(index) = op(input(index)); });
+    detail::unary_apply_impl<Op, TA, TB> apply(input, output);
+    apply();
 }
 } // namespace nncase::ntt

@@ -54,7 +54,7 @@ jobs:
       - name: Configure CMake
         shell: bash
         run: |
-          conan install . -if build --build=missing -s build_type=${{matrix.config.buildType}} --profile=default -o runtime=True -o python=False -o tests=True -s compiler.cppstd=17
+          conan install . -if build --build=missing -s build_type=${{matrix.config.buildType}} --profile=default -o runtime=True -o python=False -o tests=True -s compiler.cppstd=20
 
       - name: Build & Install
         run: |
