@@ -36,32 +36,22 @@ public sealed partial class NcnnBatchNorm : Op
     /// <summary>
     /// Gets slopeData of Ncnn BatchNorm.
     /// </summary>
-    public float[] SlopeData { get; } // 斜率数据
+    public float[] SlopeData { get; }
 
     /// <summary>
     /// Gets meanData of Ncnn BatchNorm.
     /// </summary>
-    public float[] MeanData { get; } // 均值数据
+    public float[] MeanData { get; }
 
     /// <summary>
     /// Gets varData of Ncnn BatchNorm.
     /// </summary>
-    public float[] VarData { get; } // 方差数据
+    public float[] VarData { get; }
 
     /// <summary>
     /// Gets biasData of Ncnn BatchNorm.
     /// </summary>
-    public float[] BiasData { get; } // 偏置数据
-
-    // /// <summary>
-    // /// Gets aData of Ncnn BatchNorm.
-    // /// </summary>
-    // public float[] AData { get; }
-
-    // /// <summary>
-    // /// Gets bData of Ncnn BatchNorm.
-    // /// </summary>
-    // public float[] BData { get; }
+    public float[] BiasData { get; }
 
     /// <inheritdoc/>
     public override string DisplayProperty()
