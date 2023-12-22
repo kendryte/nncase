@@ -25,7 +25,7 @@ namespace Nncase.Importer
             var aDeq = Dequantize(input_a, new QuantParam(((TensorConst)aZeroPoint).Value.ToScalar<int>(), ((TensorConst)aScale).Value.ToScalar<float>()), DataTypes.Float32);
             var bDeq = Dequantize(input_b, new QuantParam(((TensorConst)bZeroPoint).Value.ToScalar<int>(), ((TensorConst)bScale).Value.ToScalar<float>()), DataTypes.Float32);
             var matmul = F.Tensors.MatMul(aDeq, bDeq);
-            return Quantize(matmul, new QuantParam(((TensorConst)yZeroPoint).Value.ToScalar<int>(), ((TensorConst)yScale).Value.ToScalar<float>()), ((TensorConst)yZeroPoint).ValueType.DType);
+            return Quantize(matmul, new QuantParam(((TensorConst)yZeroPoint).Value.ToScalar<int>(), ((TensorConst)yScale).Value.ToScalar<float>()), ((TensorConst)yZeroPoint).CheckedDataType);
         }
     }
 }

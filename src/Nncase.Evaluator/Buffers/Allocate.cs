@@ -14,6 +14,6 @@ public partial class AllocateEvaluator : ITypeInferencer<Allocate>
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Allocate target)
     {
-        return TensorType.Pointer(target.ElemType.DType);
+        return TensorType.Pointer(target.ElemType);
     }
 }

@@ -134,8 +134,16 @@ public static class T
     {
         string[] names = { "i", "j", "k", "l" };
         var newLoopVars = loopVars = new Var[ranges.Length];
-        return new NestBodyExprBuilder<For>(ranges.Select((rg, i) =>
-             T.ForLoop(out newLoopVars[i], rg, loopMode, names[i % 4] + (i / 4 == 0 ? string.Empty : (i / 4).ToString())).Body()).ToArray());
+        var newLoops = ranges.Select((rg, i) => T.ForLoop(out newLoopVars[i], rg, loopMode, names[i % 4] + (i / 4 == 0 ? string.Empty : (i / 4).ToString())).Body()).ToArray();
+        return new NestBodyExprBuilder<For>(newLoops);
+    }
+
+    public static ISequentialBuilder<For> Grid(out Var[] loopVars, out ISequentialBuilder<For>[] loops, LoopMode loopMode, params TIR.Range[] ranges)
+    {
+        string[] names = { "i", "j", "k", "l" };
+        var newLoopVars = loopVars = new Var[ranges.Length];
+        var newLoops = loops = ranges.Select((rg, i) => T.ForLoop(out newLoopVars[i], rg, loopMode, names[i % 4] + (i / 4 == 0 ? string.Empty : (i / 4).ToString())).Body()).ToArray();
+        return new NestBodyExprBuilder<For>(loops);
     }
 
     /// <summary>
@@ -224,6 +232,49 @@ public static class T
     }
 
     /// <summary>
+    /// create the buffer by expressions.
+    /// </summary>
+    public static Buffer CreateBuffer(DataType dataType, Expr[] dimensions, MemoryLocation location, out Buffer buffer, [CallerArgumentExpression("buffer")] string name = "")
+    {
+        if (name.StartsWith("var "))
+        {
+            name = name[4..];
+        }
+
+        var strides = TensorUtilities.GetStrides(dimensions);
+        var size = TensorUtilities.GetProduct(dimensions.ToArray()) * dataType.SizeInBytes;
+        var memspan = new MemSpan(size, location);
+        buffer = new Buffer(name, dataType, memspan, dimensions, strides);
+        return buffer;
+    }
+
+    public static Buffer CreateBuffer(DataType dataType, Expr[] dimensions, Expr[] strides, MemSpan memSpan, out Buffer buffer, [CallerArgumentExpression("buffer")] string name = "")
+    {
+        if (name.StartsWith("var "))
+        {
+            name = name[4..];
+        }
+
+        buffer = new Buffer(name, dataType, memSpan, dimensions, strides);
+        return buffer;
+    }
+
+    public static Buffer AttachBuffer(Expr start, TensorType tensorType, MemoryLocation location, out Buffer buffer, [CallerArgumentExpression("buffer")] string name = "")
+    {
+        if (name.StartsWith("var "))
+        {
+            name = name[4..];
+        }
+
+        var dimensions = tensorType.Shape.ToValueArray();
+        var strides = TensorUtilities.GetStrides(dimensions);
+        var size = (int)TensorUtilities.GetProduct(dimensions.ToArray()) * tensorType.DType.SizeInBytes;
+        var memspan = new MemSpan(start, size, location);
+        buffer = new Buffer(name, tensorType.DType, memspan, dimensions.Select(i => (Expr)i).ToArray(), strides.Select(i => (Expr)i).ToArray());
+        return buffer;
+    }
+
+    /// <summary>
     /// create buffer by const.
     /// </summary>
     public static Buffer AttachBuffer(TensorConst @const, out Buffer buffer, [CallerArgumentExpression("buffer")] string name = "")
@@ -233,11 +284,11 @@ public static class T
             name = name[4..];
         }
 
-        var dimensions = @const.ValueType.Shape.ToValueArray();
+        var dimensions = @const.CheckedShape.ToValueArray();
         var strides = TensorUtilities.GetStrides(dimensions);
-        var size = (int)TensorUtilities.GetProduct(dimensions.ToArray()) * @const.ValueType.DType.SizeInBytes;
+        var size = (int)TensorUtilities.GetProduct(dimensions.ToArray()) * @const.CheckedDataType.SizeInBytes;
         var memspan = new MemSpan(IR.F.Buffer.DDrOf(@const), size, MemoryLocation.Rdata);
-        buffer = new Buffer(name, @const.ValueType.DType, memspan, dimensions.Select(i => (Expr)i).ToArray(), strides.Select(i => (Expr)i).ToArray());
+        buffer = new Buffer(name, @const.CheckedDataType, memspan, dimensions.Select(i => (Expr)i).ToArray(), strides.Select(i => (Expr)i).ToArray());
         return buffer;
     }
 
