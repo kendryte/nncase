@@ -117,6 +117,8 @@ class tensor_base : public detail::tensor_storage<T, Shape, Strides, IsView> {
   public:
     using element_type = T;
     using storage_type = detail::tensor_storage<T, Shape, Strides, IsView>;
+    using shape_type = Shape;
+    using strides_type = Strides;
 
     using storage_type::buffer;
     using storage_type::shape;

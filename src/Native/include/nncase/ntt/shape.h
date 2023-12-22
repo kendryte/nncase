@@ -66,9 +66,7 @@ struct fixed_shape : detail::fixed_dims_base<Dims...> {
         using type = fixed_shape<Dims..., I>;
     };
 
-    static constexpr size_t length() noexcept {
-        return sizeof...(Dims) ? (Dims * ...) : 1;
-    }
+    static constexpr size_t length() noexcept { return (Dims * ... * 1); }
 };
 
 template <size_t Rank> struct ranked_shape : detail::ranked_dims_base<Rank> {

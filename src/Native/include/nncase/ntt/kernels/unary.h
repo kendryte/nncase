@@ -99,69 +99,69 @@ template <class T> struct tanh {
 };
 } // namespace mathops
 
+template <size_t Extent, class T, class Op>
+constexpr void unary(Op &&op, const T *input_p, T *output_p) {
+    for (size_t i = 0; i < Extent; i++) {
+        output_p[i] = op(input_p[i]);
+    }
+}
+
 namespace detail {
-template <template <class T> class Op, class TA, class TB>
-class unary_apply_impl {
+template <class Shape, class InStrides, class OutStrides> class unary_impl;
+
+template <size_t... Dims, size_t... InStrides, size_t... OutStrides>
+class unary_impl<fixed_shape<Dims...>, fixed_strides<InStrides...>,
+                 fixed_strides<OutStrides...>> {
   public:
-    using T = typename TA::element_type;
-
-    constexpr unary_apply_impl(const TA &input, TB &output)
-        : input_(input), output_(output) {}
-
-    constexpr void operator()() {
-        apply(std::make_index_sequence<input_.shape().rank()>());
+    template <class Op, class TIn, class TOut>
+    constexpr void operator()(Op &op, const TIn &input, TOut &output) {
+        constexpr size_t rank = input.shape().rank();
+        ranked_shape<rank> index{};
+        constexpr auto conti_dims =
+            std::min(contiguous_dims(fixed_shape<Dims...>{},
+                                     fixed_strides<InStrides...>{}),
+                     contiguous_dims(fixed_shape<Dims...>{},
+                                     fixed_strides<OutStrides...>{}));
+        apply<Op, TIn, TOut, 0, rank, conti_dims, Dims...>(op, index, input,
+                                                           output);
     }
 
   private:
-    template <size_t... Axes>
-    constexpr void apply(std::index_sequence<Axes...>) {
-        constexpr size_t conti_dims =
-            std::min(contiguous_dims(input_.shape(), input_.strides()),
-                     contiguous_dims(output_.shape(), output_.strides()));
-        ranked_shape<input_.shape().rank()> index{};
-        apply<0, sizeof...(Axes), conti_dims, input_.shape().at(Axes)...>(
-            index);
-    }
-
-    template <size_t Axis, size_t Rank, size_t ContiguousDims, size_t... Dims>
-    constexpr void apply(ranked_shape<Rank> &index) {
-        if constexpr (ContiguousDims == sizeof...(Dims)) {
-            constexpr auto inner_size = (Dims * ... * 1);
+    template <class Op, class TIn, class TOut, size_t Axis, size_t Rank,
+              size_t ContiguousDims, size_t... RestDims>
+    constexpr void apply(Op &op, ranked_shape<Rank> &index, const TIn &input,
+                         TOut &output) {
+        if constexpr (ContiguousDims == sizeof...(RestDims)) {
+            constexpr auto inner_size = fixed_shape<RestDims...>::length();
             auto input_p =
-                input_.buffer().data() + linear_offset(index, input_.strides());
-            auto output_p = output_.buffer().data() +
-                            linear_offset(index, output_.strides());
-            apply_contiguous<inner_size>(input_p, output_p);
+                input.buffer().data() + linear_offset(index, input.strides());
+            auto output_p =
+                output.buffer().data() + linear_offset(index, output.strides());
+            unary<inner_size>(op, input_p, output_p);
         } else {
-            apply_next<Axis + 1, Rank, ContiguousDims, Dims...>(index);
+            apply_next<Op, TIn, TOut, Axis, Rank, ContiguousDims, RestDims...>(
+                op, index, input, output);
         }
     }
 
-    template <size_t Axis, size_t Rank, size_t ContiguousDims, size_t Dim,
-              size_t... Dims>
-    constexpr void apply_next(ranked_shape<Rank> &index) {
+    template <class Op, class TIn, class TOut, size_t Axis, size_t Rank,
+              size_t ContiguousDims, size_t Dim, size_t... RestDims>
+    constexpr void apply_next(Op &op, ranked_shape<Rank> &index,
+                              const TIn &input, TOut &output) {
         for (index[Axis] = 0; index[Axis] < Dim; index[Axis]++) {
-            apply<Axis, Rank, ContiguousDims, Dims...>(index);
+            apply<Op, TIn, TOut, Axis, Rank, ContiguousDims, RestDims...>(
+                op, index, input, output);
         }
     }
-
-    template <size_t InnerSize>
-    constexpr void apply_contiguous(const T *input_p, T *output_p) {
-        for (size_t i = 0; i < InnerSize; i++) {
-            output_p[i] = op_(input_p[i]);
-        }
-    }
-
-  private:
-    const TA &input_;
-    TB &output_;
-    Op<T> op_;
 };
 } // namespace detail
 
-template <template <class T> class Op, class TA, class TB>
-void unary(const TA &input, TB &&output) {
-    detail::unary_apply_impl<Op, TA, TB> apply(input, output);
-    apply();
+template <template <class T> class Op, class TIn, class TOut>
+void unary(const TIn &input, TOut &&output) {
+    Op<typename TIn::element_type> op;
+    detail::unary_impl<typename TIn::shape_type, typename TIn::strides_type,
+                       typename TOut::strides_type>
+        impl;
+    impl(op, input, output);
 }
 } // namespace nncase::ntt
