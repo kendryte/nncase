@@ -31,8 +31,11 @@ public class NcnnModel
     }
 
     public int Magic { get; }
+
     public IList<NcnnLayer> ModelInputs { get; }
+
     public IList<NcnnLayer> MemoryDatas { get; }
+
     public IList<NcnnLayer> Layers { get; }
 
     public static NcnnModel ParseFromStream(Stream stream)

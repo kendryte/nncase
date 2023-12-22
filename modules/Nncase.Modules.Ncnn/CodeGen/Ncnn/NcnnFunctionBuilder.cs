@@ -107,6 +107,7 @@ internal class NcnnFunctionBuilder : FunctionBuilder
                         default:
                             throw new NotImplementedException("Not found binary emmiter.");
                     }
+
                     _emitter.Binary(name, inString[0], inString[1], op.OpType, op.LorR, op.ConstInput, op.ConstShape);
                     break;
                 default:

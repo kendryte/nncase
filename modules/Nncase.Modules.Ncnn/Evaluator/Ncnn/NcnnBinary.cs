@@ -21,7 +21,6 @@ namespace Nncase.Evaluator.Ncnn;
 /// </summary>
 public class NcnnBinaryEvaluator : IEvaluator<NcnnBinary>, ITypeInferencer<NcnnBinary>, ICostEvaluator<NcnnBinary>, IShapeEvaluator<NcnnBinary>, IMetricEvaluator<NcnnBinary>
 {
-
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, NcnnBinary binary)
     {
@@ -40,6 +39,7 @@ public class NcnnBinaryEvaluator : IEvaluator<NcnnBinary>, ITypeInferencer<NcnnB
                 return OrtKI.Mul(inputA, inputB).ToValue();
             case BinaryOperationType.DIV:
                 return OrtKI.Div(inputA, inputB).ToValue();
+
             // case BinaryOperationType.MAX:
             //     return System.Math.Min(inputA, inputB).ToValue();
             // case BinaryOperationType.MIN:
@@ -93,7 +93,6 @@ public class NcnnBinaryEvaluator : IEvaluator<NcnnBinary>, ITypeInferencer<NcnnB
         var lhs = context.GetArgumentShape(target, NcnnBinary.InputA);
         var rhs = context.GetArgumentShape(target, NcnnBinary.InputB);
         return ShapeExprUtility.BroadcastShape(lhs, rhs);
-
     }
 
     private static BinaryOp MapBinaryOp(BinaryOperationType binaryOp) =>
@@ -130,6 +129,4 @@ public class NcnnBinaryEvaluator : IEvaluator<NcnnBinary>, ITypeInferencer<NcnnB
     {
         return input;
     }
-
-
 }
