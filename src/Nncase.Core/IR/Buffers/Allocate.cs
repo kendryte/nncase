@@ -19,13 +19,13 @@ public sealed partial class Allocate : Op
     public static readonly ParameterInfo Size = new(typeof(Allocate), 0, "size", TypePatternUtility.IsIntegralScalar());
 
     /// <summary>
-    /// Get the alloacted buffer type.
+    /// Gets get the alloacted buffer type.
     /// </summary>
     public DataType ElemType { get; }
 
     public TIR.MemoryLocation Location { get; }
 
-    public override string DisplayProperty() => $"{ElemType}, {Location}";
-
     public override bool CanFoldConstCall => false;
+
+    public override string DisplayProperty() => $"{ElemType}, {Location}";
 }

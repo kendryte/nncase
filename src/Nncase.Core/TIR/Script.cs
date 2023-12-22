@@ -274,7 +274,6 @@ public static class T
         return buffer;
     }
 
-
     /// <summary>
     /// create buffer by const.
     /// </summary>

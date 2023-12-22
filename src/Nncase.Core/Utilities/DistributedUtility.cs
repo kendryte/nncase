@@ -187,8 +187,8 @@ public static class DistributedUtility
         foreach (int[] array in spliList)
         {
             ret = from seq in ret
-                from item in array
-                select seq.Concat(new[] { item }).ToArray();
+                  from item in array
+                  select seq.Concat(new[] { item }).ToArray();
         }
 
         return ret.ToList();
