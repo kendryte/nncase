@@ -60,8 +60,7 @@ public partial class SimulateViewModel : ViewModelBase
         try
         {
             (inputFiles, input) = DataUtil.ReadMultiInputs(path);
-            bool canBeSort = CanBeSort(inputFiles);
-            if (canBeSort)
+            if (CanBeSort(inputFiles))
             {
                 var pairList = inputFiles.Zip(input)
                     .OrderBy(pair => int.Parse(Path.GetFileName(pair.First).Split("_")[0]));
