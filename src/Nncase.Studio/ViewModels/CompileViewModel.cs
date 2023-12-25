@@ -3,6 +3,7 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -73,12 +74,13 @@ public partial class CompileViewModel : ViewModelBase
         var compileSession = CompileSession.Create(target, options);
         var compiler = compileSession.Compiler;
         var module = await compiler.ImportModuleAsync(options.InputFormat, options.InputFile, options.IsBenchmarkOnly);
-        Context.Entry = (Function)module.Entry!;
+        Context.Params = ((Function)module.Entry!).Parameters.ToArray();
         if (options.QuantizeOptions.ModelQuantMode != ModelQuantMode.NoQuant)
         {
             var calib = ((QuantizeViewModel)Context.ViewModelLookup(typeof(QuantizeViewModel))).LoadCalibFiles();
             if (calib == null)
             {
+                Context.OpenDialog("矫正集为空");
                 return;
             }
 

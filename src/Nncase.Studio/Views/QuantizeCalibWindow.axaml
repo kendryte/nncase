@@ -1,0 +1,13 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="Nncase.Studio.Views.QuantizeCalibWindow"
+        Title="QuantizeCalibWindow">
+    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+        <TextBlock Margin="30 0">数据集文件夹中仅会读取npy格式的文件</TextBlock>
+        <TextBlock Margin="30">文件名需要以"第几组数据集_第几个输入_文件名.bin"的格式,例如下图中</TextBlock>
+        <Image Source="../Assets/calib.png" Width="146" Height="280"></Image>
+    </StackPanel>
+</Window>

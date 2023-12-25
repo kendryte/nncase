@@ -92,13 +92,21 @@ public partial class QuantizeViewModel : ViewModelBase
 
         var inputFiles = Directory.GetFiles(path);
 
-        var n = inputFiles.Where(f => Path.GetExtension(f) == ".npy").GroupBy(s => Path.GetFileName(s).Split("_")[0]);
-        _multiInputFiles = n.Select(group =>
+        try
         {
-            var value = group.ToArray();
-            var one = value.OrderBy(s => int.Parse(Path.GetFileName(s).Split("_")[1])).ToArray();
-            return one;
-        }).ToArray();
+            var n = inputFiles.Where(f => Path.GetExtension(f) == ".npy").GroupBy(s => Path.GetFileName(s).Split("_")[0]);
+            _multiInputFiles = n.Select(group =>
+            {
+                var value = group.ToArray();
+                var one = value.OrderBy(s => int.Parse(Path.GetFileName(s).Split("_")[1])).ToArray();
+                return one;
+            }).ToArray();
+        }
+        catch (Exception e)
+        {
+            Context.OpenDialog($"文件夹中的文件解析失败，请检查文件名是否符合格式。\n{e.Message}");
+            return;
+        }
 
         if (inputFiles.Length == 0)
         {
@@ -109,6 +117,12 @@ public partial class QuantizeViewModel : ViewModelBase
         CalibDir = path;
     }
 
+    [RelayCommand]
+    public void ShowCalibFormat()
+    {
+        new QuantizeCalibWindow().Show();
+    }
+
     public ICalibrationDatasetProvider? LoadCalibFiles()
     {
         try
@@ -116,12 +130,12 @@ public partial class QuantizeViewModel : ViewModelBase
             var samples = _multiInputFiles.Select(files =>
             {
                 var input = files.Select(DataUtil.ReadNumpyAsTensor).ToArray();
-                var samples = Context.Entry!.Parameters.ToArray().Zip(input)
+                var samples = Context.Params.Zip(input)
                     .ToDictionary(pair => pair.First, pair => (IValue)Value.FromTensor(pair.Second));
                 return samples;
             }).ToArray();
 
-            if (Context.Entry == null)
+            if (Context.Params.Length == 0)
             {
                 Context.OpenDialog("Should Import Model first");
                 return null;

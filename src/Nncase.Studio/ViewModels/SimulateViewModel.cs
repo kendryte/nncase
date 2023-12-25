@@ -60,6 +60,14 @@ public partial class SimulateViewModel : ViewModelBase
         try
         {
             (inputFiles, input) = DataUtil.ReadMultiInputs(path);
+            bool canBeSort = CanBeSort(inputFiles);
+            if (canBeSort)
+            {
+                var pairList = inputFiles.Zip(input)
+                    .OrderBy(pair => int.Parse(Path.GetFileName(pair.First).Split("_")[0]));
+                inputFiles = pairList.Select(x => x.First).ToArray();
+                input = pairList.Select(x => x.Second).ToArray();
+            }
         }
         catch (Exception e)
         {
@@ -68,6 +76,14 @@ public partial class SimulateViewModel : ViewModelBase
         }
 
         UpdateRuntimeInputUI(input, inputFiles);
+
+        bool CanBeSort(string[] inputFilePathList)
+        {
+            var fileNames = inputFilePathList.Select(Path.GetFileName).ToArray();
+            var canBeSort = fileNames.All(x =>
+                x!.Contains("_", StringComparison.Ordinal) && int.TryParse(x.Split("_")[0], out int _));
+            return canBeSort;
+        }
     }
 
     [RelayCommand]
@@ -163,12 +179,12 @@ public partial class SimulateViewModel : ViewModelBase
 
     private bool CheckInput()
     {
-        if (Context.Entry == null)
+        if (Context.Params.Length == 0)
         {
             return true;
         }
 
-        var paramList = Context.Entry!.Parameters.ToArray();
+        var paramList = Context.Params!;
         foreach ((var tensor, var param) in RuntimeInput.Zip(paramList))
         {
             var tt = (TensorType)param.TypeAnnotation;
@@ -176,7 +192,7 @@ public partial class SimulateViewModel : ViewModelBase
             {
                 Context.OpenDialog($"{param.Name} input datatype mismatch");
                 {
-                    return true;
+                    return false;
                 }
             }
 
@@ -185,12 +201,12 @@ public partial class SimulateViewModel : ViewModelBase
             {
                 Context.OpenDialog($"{param.Name} input shape mismatch");
                 {
-                    return true;
+                    return false;
                 }
             }
         }
 
-        return false;
+        return true;
     }
 
     [RelayCommand]
