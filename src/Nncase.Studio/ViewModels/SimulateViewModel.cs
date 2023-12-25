@@ -67,6 +67,10 @@ public partial class SimulateViewModel : ViewModelBase
                 inputFiles = pairList.Select(x => x.First).ToArray();
                 input = pairList.Select(x => x.Second).ToArray();
             }
+            else
+            {
+                Context.OpenDialog("输入文件未排序，可能出现输入无法正确对应的情况");
+            }
         }
         catch (Exception e)
         {
