@@ -45,15 +45,17 @@ public static class DataUtil
         return (inputFiles, input);
     }
 
+    public static Tensor ReadNumpyAsTensor(string f)
+    {
+        var tensor = np.load(f);
+        return Tensor.FromBytes(new TensorType(DataType.FromType(tensor.dtype), tensor.shape), tensor.ToByteArray());
+    }
+
     public static List<Tensor> ReadInput(string[] file)
     {
         return file
             .Where(f => Path.GetExtension(f) == ".npy")
-            .Select(f =>
-            {
-                var tensor = np.load(f);
-                return Tensor.FromBytes(new TensorType(DataType.FromType(tensor.dtype), tensor.shape), tensor.ToByteArray());
-            }).ToList();
+            .Select(ReadNumpyAsTensor).ToList();
     }
 
     public static DataType QuantTypeToDataType(QuantType qt)

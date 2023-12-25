@@ -20,16 +20,19 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <Label Grid.Row="0" Grid.Column="0" Content="输入文件"></Label>
-                <SplitButton Margin="5 0" Grid.Row="0" Grid.Column="1" Content="已选择的文件">
-                    <SplitButton.Flyout>
-                        <Flyout Placement="Bottom">
-                            <ListBox
-                                ItemsSource="{Binding InputPath}">
-                            </ListBox>
-                        </Flyout>
-                    </SplitButton.Flyout>
-                </SplitButton>
-                <!-- <ComboBox Grid.Row="0" Grid.Column="1" ItemsSource="{Binding InputPath}" ></ComboBox> -->
+                <DockPanel Grid.Row="0" Grid.Column="1">
+                    <SplitButton Margin="5 0" Content="已选择的文件">
+                        <SplitButton.Flyout>
+                            <Flyout Placement="Bottom">
+                                <ListBox
+                                    ItemsSource="{Binding InputPath}">
+                                </ListBox>
+                            </Flyout>
+                        </SplitButton.Flyout>
+                    </SplitButton>
+
+                    <Label Content="文件名以编号下划线开头，比如0__input.npy"></Label>
+                </DockPanel>
                 <Button
                         Grid.Row="0" Grid.Column="2"
                         Content="选择"
