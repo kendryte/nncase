@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Avalonia.Media.Fonts;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.Quantization;
 using Nncase.Studio.Util;
@@ -49,7 +50,7 @@ public partial class QuantizeViewModel : ViewModelBase
     [ObservableProperty]
     private string _calibDir = string.Empty;
 
-    private string[] _inputFiles = Array.Empty<string>();
+    private string[][] _multiInputFiles = Array.Empty<string[]>();
 
     public QuantizeViewModel(ViewModelContext context)
     {
@@ -90,6 +91,15 @@ public partial class QuantizeViewModel : ViewModelBase
         }
 
         var inputFiles = Directory.GetFiles(path);
+
+        var n = inputFiles.Where(f => Path.GetExtension(f) == ".npy").GroupBy(s => Path.GetFileName(s).Split("_")[0]);
+        _multiInputFiles = n.Select(group =>
+        {
+            var value = group.ToArray();
+            var one = value.OrderBy(s => int.Parse(Path.GetFileName(s).Split("_")[1])).ToArray();
+            return one;
+        }).ToArray();
+
         if (inputFiles.Length == 0)
         {
             Context.OpenDialog("empty dir");
@@ -97,37 +107,33 @@ public partial class QuantizeViewModel : ViewModelBase
         }
 
         CalibDir = path;
-        _inputFiles = inputFiles;
     }
 
     public ICalibrationDatasetProvider? LoadCalibFiles()
     {
-        Tensor[] input;
         try
         {
-            input = DataUtil.ReadInput(_inputFiles).ToArray();
+            var samples = _multiInputFiles.Select(files =>
+            {
+                var input = files.Select(DataUtil.ReadNumpyAsTensor).ToArray();
+                var samples = Context.Entry!.Parameters.ToArray().Zip(input)
+                    .ToDictionary(pair => pair.First, pair => (IValue)Value.FromTensor(pair.Second));
+                return samples;
+            }).ToArray();
+
+            if (Context.Entry == null)
+            {
+                Context.OpenDialog("Should Import Model first");
+                return null;
+            }
+
+            return new SelfInputCalibrationDatasetProvider(samples);
         }
         catch (Exception e)
         {
             Context.OpenDialog(e.Message);
             return null;
         }
-
-        if (input.Length == 0)
-        {
-            Context.OpenDialog("no file is loaded, only support .npy");
-            return null;
-        }
-
-        if (Context.Entry == null)
-        {
-            Context.OpenDialog("Should Import Model first");
-            return null;
-        }
-
-        var samples = Context.Entry!.Parameters.ToArray().Zip(input)
-            .ToDictionary(pair => pair.First, pair => (IValue)Value.FromTensor(pair.Second));
-        return new SelfInputCalibrationDatasetProvider(samples);
     }
 
     public override void UpdateViewModelCore(CompileConfig config)
@@ -171,7 +177,7 @@ public partial class QuantizeViewModel : ViewModelBase
         {
             if (Directory.Exists(CalibDir))
             {
-                if (_inputFiles.Length == 0)
+                if (_multiInputFiles.Length == 0)
                 {
                     list.Add("CalibDir don't exist any .npy file");
                 }
@@ -200,9 +206,9 @@ public sealed class SelfInputCalibrationDatasetProvider : ICalibrationDatasetPro
 
     private readonly IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> _samples;
 
-    public SelfInputCalibrationDatasetProvider(IReadOnlyDictionary<Var, IValue> sample)
+    public SelfInputCalibrationDatasetProvider(IReadOnlyDictionary<Var, IValue>[] samples)
     {
-        _samples = new[] { sample }.ToAsyncEnumerable();
+        _samples = samples.ToAsyncEnumerable();
     }
 
     public int? Count => _count;
