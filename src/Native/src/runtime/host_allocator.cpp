@@ -124,7 +124,6 @@ class host_buffer_allocator : public buffer_allocator {
     }
 
     void clear_mem_pool() override {}
-
 };
 
 host_buffer_allocator host_allocator;
