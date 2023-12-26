@@ -4,10 +4,12 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="Nncase.Studio.Views.QuantizeCalibWindow"
+        Width="600"
+        Height="600"
         Title="QuantizeCalibWindow">
     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-        <TextBlock Margin="30 0">数据集文件夹中仅会读取npy格式的文件</TextBlock>
-        <TextBlock Margin="30">文件名需要以"第几组数据集_第几个输入_文件名.bin"的格式,例如下图中</TextBlock>
-        <Image Source="../Assets/calib.png" Width="146" Height="280"></Image>
+        <TextBlock Margin="10 0">数据集文件夹中仅会读取npy格式的文件</TextBlock>
+        <TextBlock Margin="10">文件名需要以"第几组数据集_第几个输入_文件名.bin"的格式,例如下图中</TextBlock>
+        <Image Source="../Assets/calib.png" Width="219" Height="420"></Image>
     </StackPanel>
 </Window>
