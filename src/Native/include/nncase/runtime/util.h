@@ -587,4 +587,9 @@ inline dims_t to_4d(dims_t in_a_shape) {
     return in_a_shape;
 }
 
+inline void clear_mem_pool() {
+
+    buffer_allocator::host().clear_mem_pool();
+}
+
 END_NS_NNCASE_RUNTIME
