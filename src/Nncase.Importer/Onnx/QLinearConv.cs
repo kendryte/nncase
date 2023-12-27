@@ -29,13 +29,13 @@ namespace Nncase.Importer
             var group = GetIntAttribute(op, "group", 1);
             var strides = GetStrideAttribute(op);
 
-            int? stridesValueLen = ((TensorConst)strides).ValueType.Shape[0].Value;
+            int? stridesValueLen = ((TensorConst)strides).CheckedShape[0].Value;
             for (var i = 0; i < stridesValueLen; i++)
             {
                 System.Diagnostics.Trace.Assert(((TensorConst)strides).Value.Cast<long>()[i] <= (long)int.MaxValue);
             }
 
-            int? dilationValueLen = ((TensorConst)dilation).ValueType.Shape[0].Value;
+            int? dilationValueLen = ((TensorConst)dilation).CheckedShape[0].Value;
             for (var i = 0; i < dilationValueLen; i++)
             {
                 System.Diagnostics.Trace.Assert(((TensorConst)dilation).Value.Cast<long>()[i] <= (long)int.MaxValue);
@@ -63,16 +63,16 @@ namespace Nncase.Importer
 
             if (bias == null)
             {
-                int? ocNumber = ((TensorConst)weights).ValueType.Shape[0].Value;
+                int? ocNumber = ((TensorConst)weights).CheckedShape[0].Value;
                 var zeroBias = new TensorConst(new int[ocNumber == null ? default(int) : ocNumber.Value]);
                 var conv = F.NN.Conv2D(inputDeq, weightsDeq, zeroBias, strideConst, pads, dilationConst, PadMode.Constant, group);
-                return Quantize(conv, new QuantParam(((TensorConst)yZeroPoint).Value.ToScalar<int>(), ((TensorConst)yScale).Value.ToScalar<float>()), ((TensorConst)yZeroPoint).ValueType.DType);
+                return Quantize(conv, new QuantParam(((TensorConst)yZeroPoint).Value.ToScalar<int>(), ((TensorConst)yScale).Value.ToScalar<float>()), ((TensorConst)yZeroPoint).CheckedDataType);
             }
             else
             {
                 var biasDeq = Dequantize(bias, new QuantParam(0, ((TensorConst)xScale).Value.ToScalar<float>() * ((TensorConst)wScale).Value.ToScalar<float>()), DataTypes.Float32);
                 var conv = F.NN.Conv2D(inputDeq, weightsDeq, biasDeq, strideConst, pads, dilationConst, PadMode.Constant, group);
-                return Quantize(conv, new QuantParam(((TensorConst)yZeroPoint).Value.ToScalar<int>(), ((TensorConst)yScale).Value.ToScalar<float>()), ((TensorConst)yZeroPoint).ValueType.DType);
+                return Quantize(conv, new QuantParam(((TensorConst)yZeroPoint).Value.ToScalar<int>(), ((TensorConst)yScale).Value.ToScalar<float>()), ((TensorConst)yZeroPoint).CheckedDataType);
             }
         }
     }

@@ -277,7 +277,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                                 actual = self.run_evaluator(compiler, tmp_dir)
                             else:
                                 actual = self.run_inference(
-                                    compiler, k_target, v_mode['enabled'], tmp_dir)
+                                    compiler, k_target, k_mode == "ptq" and v_mode['enabled'], tmp_dir)
                             target_dir = os.path.join(self.case_dir, stage, k_target)
                             os.makedirs(target_dir, exist_ok=True)
                             mode_dir = os.path.join(target_dir, k_mode)

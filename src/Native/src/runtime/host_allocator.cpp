@@ -122,6 +122,8 @@ class host_buffer_allocator : public buffer_allocator {
             []([[maybe_unused]] gsl::byte *p) {}, paddr, *this,
             host_sync_status_t::valid));
     }
+
+    void shrink_memory_pool() override {}
 };
 
 host_buffer_allocator host_allocator;

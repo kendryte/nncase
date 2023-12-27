@@ -23,7 +23,7 @@ namespace Nncase.Importer
                     new QuantParam(
                         biasConst.Value.ToScalar<int>(),
                         scaleConst.Value.ToScalar<float>()),
-                    ((TensorConst)bias).ValueType.DType);
+                    ((TensorConst)bias).CheckedDataType);
             }
 
             throw new NotImplementedException("Onnx importer not impl for dynamic scale and bias");

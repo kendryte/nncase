@@ -12,8 +12,13 @@ namespace Nncase.Evaluator.Buffers;
 [TypeInferGenerator]
 public partial class DDrOfEvaluator : ITypeInferencer<DDrOf>
 {
-    private IRType Visit(TensorType input)
+    private IRType Visit(IRType input)
     {
-        return TensorType.Pointer(input.DType);
+        return input switch
+        {
+            DistributedType d => TensorType.Pointer(d.TensorType.DType),
+            TensorType t => TensorType.Pointer(t.DType),
+            _ => new InvalidType(input.GetType().Name),
+        };
     }
 }

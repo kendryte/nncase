@@ -109,6 +109,7 @@ typedef struct {
     clr_object_handle_t (*calibration_dataset_provider_create)(
         clr_object_handle_t dataset, size_t samplesCount,
         clr_object_handle_t fn_params);
+    void (*handle_dispose)(clr_object_handle_t handle);
     void (*handle_free)(clr_object_handle_t handle);
     clr_object_handle_t (*compile_options_create)();
     void (*compile_options_set_input_file)(clr_object_handle_t compile_options,
@@ -478,6 +479,8 @@ class cstream : public clr_object_base {
     cstream(const nncase_stream_mt_t *mt, void *handle) {
         obj_ = nncase_clr_api()->stream_create(mt, handle);
     }
+
+    ~cstream() { nncase_clr_api()->handle_dispose(obj_.get()); }
 };
 
 class compile_options : public clr_object_base {

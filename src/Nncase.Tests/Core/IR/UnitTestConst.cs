@@ -18,7 +18,7 @@ public sealed class UnitTestConst
         byte expected = 1;
         Const c = expected;
         var tc = (TensorConst)c;
-        Assert.True(tc.ValueType.IsScalar);
+        Assert.True(tc.CheckedShape.IsScalar);
         Assert.Equal(DataType.FromType<byte>(), tc.Value.ElementType);
         var list = (IList)tc.Value;
         Assert.Equal(expected, list[0]);
@@ -30,7 +30,7 @@ public sealed class UnitTestConst
         ushort expected = 1;
         Const c = expected;
         var tc = (TensorConst)c;
-        Assert.True(tc.ValueType.IsScalar);
+        Assert.True(tc.CheckedShape.IsScalar);
         Assert.Equal(DataType.FromType<ushort>(), tc.Value.ElementType);
         var list = (IList)tc.Value;
         Assert.Equal(expected, list[0]);
@@ -42,7 +42,7 @@ public sealed class UnitTestConst
         uint expected = 1;
         Const c = expected;
         var tc = (TensorConst)c;
-        Assert.True(tc.ValueType.IsScalar);
+        Assert.True(tc.CheckedShape.IsScalar);
         Assert.Equal(DataType.FromType<uint>(), tc.Value.ElementType);
         var list = (IList)tc.Value;
         Assert.Equal(expected, list[0]);
@@ -54,7 +54,7 @@ public sealed class UnitTestConst
         ulong expected = 1;
         Const c = expected;
         var tc = (TensorConst)c;
-        Assert.True(tc.ValueType.IsScalar);
+        Assert.True(tc.CheckedShape.IsScalar);
         Assert.Equal(DataType.FromType<ulong>(), tc.Value.ElementType);
         var list = (IList)tc.Value;
         Assert.Equal(expected, list[0]);
@@ -66,7 +66,7 @@ public sealed class UnitTestConst
         sbyte expected = 1;
         Const c = expected;
         var tc = (TensorConst)c;
-        Assert.True(tc.ValueType.IsScalar);
+        Assert.True(tc.CheckedShape.IsScalar);
         Assert.Equal(DataType.FromType<sbyte>(), tc.Value.ElementType);
         var list = (IList)tc.Value;
         Assert.Equal(expected, list[0]);
@@ -78,7 +78,7 @@ public sealed class UnitTestConst
         short expected = 1;
         Const c = expected;
         var tc = (TensorConst)c;
-        Assert.True(tc.ValueType.IsScalar);
+        Assert.True(tc.CheckedShape.IsScalar);
         Assert.Equal(DataType.FromType<short>(), tc.Value.ElementType);
         var list = (IList)tc.Value;
         Assert.Equal(expected, list[0]);
@@ -90,7 +90,7 @@ public sealed class UnitTestConst
         int expected = 1;
         Const c = expected;
         var tc = (TensorConst)c;
-        Assert.True(tc.ValueType.IsScalar);
+        Assert.True(tc.CheckedShape.IsScalar);
         Assert.Equal(DataType.FromType<int>(), tc.Value.ElementType);
         var list = (IList)tc.Value;
         Assert.Equal(expected, list[0]);
@@ -102,7 +102,7 @@ public sealed class UnitTestConst
         long expected = 1;
         Const c = expected;
         var tc = (TensorConst)c;
-        Assert.True(tc.ValueType.IsScalar);
+        Assert.True(tc.CheckedShape.IsScalar);
         Assert.Equal(DataType.FromType<long>(), tc.Value.ElementType);
         var list = (IList)tc.Value;
         Assert.Equal(expected, list[0]);
@@ -114,7 +114,7 @@ public sealed class UnitTestConst
         var expected = (Half)1F;
         Const c = expected;
         var tc = (TensorConst)c;
-        Assert.True(tc.ValueType.IsScalar);
+        Assert.True(tc.CheckedShape.IsScalar);
         Assert.Equal(DataType.FromType<Half>(), tc.Value.ElementType);
         var list = (IList)tc.Value;
         Assert.Equal(expected, list[0]);
@@ -126,7 +126,7 @@ public sealed class UnitTestConst
         var expected = 1F;
         Const c = expected;
         var tc = (TensorConst)c;
-        Assert.True(tc.ValueType.IsScalar);
+        Assert.True(tc.CheckedShape.IsScalar);
         Assert.Equal(DataType.FromType<float>(), tc.Value.ElementType);
         var list = (IList)tc.Value;
         Assert.Equal(expected, list[0]);
@@ -138,7 +138,7 @@ public sealed class UnitTestConst
         var expected = 1D;
         Const c = expected;
         var tc = (TensorConst)c;
-        Assert.True(tc.ValueType.IsScalar);
+        Assert.True(tc.CheckedShape.IsScalar);
         Assert.Equal(DataType.FromType<double>(), tc.Value.ElementType);
         var list = (IList)tc.Value;
         Assert.Equal(expected, list[0]);
@@ -150,7 +150,7 @@ public sealed class UnitTestConst
         var expected = (BFloat16)1F;
         Const c = expected;
         var tc = (TensorConst)c;
-        Assert.True(tc.ValueType.IsScalar);
+        Assert.True(tc.CheckedShape.IsScalar);
         Assert.Equal(DataType.FromType<BFloat16>(), tc.Value.ElementType);
         var list = (IList)tc.Value;
         Assert.Equal(expected, list[0]);
@@ -162,7 +162,7 @@ public sealed class UnitTestConst
         var expected = false;
         Const c = expected;
         var tc = (TensorConst)c;
-        Assert.True(tc.ValueType.IsScalar);
+        Assert.True(tc.CheckedShape.IsScalar);
         Assert.Equal(DataType.FromType<bool>(), tc.Value.ElementType);
         var list = (IList)tc.Value;
         Assert.Equal(expected, list[0]);
@@ -175,7 +175,7 @@ public sealed class UnitTestConst
         Utf8Char expected = b;
         Const c = expected;
         var tc = (TensorConst)c;
-        Assert.True(tc.ValueType.IsScalar);
+        Assert.True(tc.CheckedShape.IsScalar);
         Assert.Equal(DataType.FromType<Utf8Char>(), tc.Value.ElementType);
         var list = (IList)tc.Value;
         Assert.Equal(expected, list[0]);
@@ -188,7 +188,7 @@ public sealed class UnitTestConst
         var tv = new TensorValue(b);
         var c = Const.FromValue(tv);
         var tc = (TensorConst)c;
-        Assert.True(tc.ValueType.IsScalar);
+        Assert.True(tc.CheckedShape.IsScalar);
         Assert.Equal(DataType.FromType<byte>(), tc.Value.ElementType);
         var list = (IList)tc.Value;
         Assert.Equal(b, list[0]);
