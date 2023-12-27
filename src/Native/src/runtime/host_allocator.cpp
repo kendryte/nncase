@@ -123,7 +123,7 @@ class host_buffer_allocator : public buffer_allocator {
             host_sync_status_t::valid));
     }
 
-    void clear_mem_pool() override {}
+    void shrink_memory_pool() override {}
 };
 
 host_buffer_allocator host_allocator;
