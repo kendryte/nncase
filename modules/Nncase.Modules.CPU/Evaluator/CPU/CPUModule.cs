@@ -13,7 +13,9 @@ internal class CPUModule : IApplicationPart
 {
     public void ConfigureServices(IRegistrator registrator)
     {
-        registrator.RegisterManyInterface<CPUKernelOpEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<BoxingEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<CPUKernelOpEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<LoadEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<StoreEvaluator>(reuse: Reuse.Singleton);
     }
 }

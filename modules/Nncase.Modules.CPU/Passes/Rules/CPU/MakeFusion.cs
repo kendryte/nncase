@@ -15,17 +15,32 @@ using static Nncase.PatternMatch.F.Tensors;
 using static Nncase.PatternMatch.Utility;
 using static Nncase.Utilities.ReplaceUtility;
 
-namespace Nncase.Passes.Rules.CPU;
+namespace Nncase.Passes.Rules;
 
 [RuleGenerator]
 internal sealed partial class CPUFusion : FusionMaker
 {
-    public override string ModuleKind { get; } = "cpu";
+    public override string ModuleKind { get; } = CPUTarget.Kind;
 
-    public override Pattern Pattern => IsCallWildcard("call", IsOp<CPUKernelOp>("op"));
+    public override Pattern Pattern => IsCallWildcard(
+        "call",
+        IsOp<Op>(
+            "op",
+            op => op is IR.Math.Unary /*or IR.Math.MatMul*/ or IR.Math.Binary));
 
-    private Call? GetReplace(Call call, CPUKernelOp op, IReadOnlyList<Expr> callParams)
+    private Call? GetReplace(Call call, Op op, IReadOnlyList<Expr> callParams)
     {
+        if (call.CheckedType is not DistributedType distributedType)
+        {
+            return null;
+        }
+
+        // note current not support.
+        if (!Utilities.DistributedUtility.TryGetDividedTensorType(distributedType, out _))
+        {
+            return null;
+        }
+
         var newInputs = new List<Expr>();
         for (int i = 0; i < callParams.Count; i++)
         {
@@ -39,8 +54,8 @@ internal sealed partial class CPUFusion : FusionMaker
             }
         }
 
-        var newCall = new Call(op, newInputs.ToArray());
-        var callFusion = new Call(new Fusion($"{op.Target.GetType().Name}_{Count++}", ModuleKind, newCall, newInputs.OfType<Var>().ToArray()), newInputs.Select((e, i) => (e, i)).Where(p => p.e is Var).Select(p => callParams[p.i]).ToArray());
+        var newCall = IR.F.CPU.Store(new Call(op, newInputs.Select(IR.F.CPU.Load).ToArray()));
+        var callFusion = new Call(new Fusion($"{op.GetType().Name}_{Count++}_device", ModuleKind, newCall, newInputs.OfType<Var>().ToArray()), newInputs.Select((e, i) => (e, i)).Where(p => p.e is Var).Select(p => callParams[p.i]).ToArray());
         return callFusion;
     }
 }

@@ -28,6 +28,16 @@ public partial class CPU
         return new Call(new Boxing(type), input);
     }
 
+    public static Call Load(Expr input)
+    {
+        return new Call(new Load(), input);
+    }
+
+    public static Call Store(Expr input)
+    {
+        return new Call(new Store(), input);
+    }
+
     public static Call Pack(Expr input, int lanes, int axis)
     {
         return new Call(new Pack(lanes, axis), input);

@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -30,7 +31,7 @@ public class CPUTarget : ITarget
 
     public (System.CommandLine.Command Command, Func<InvocationContext, System.CommandLine.Command, ITargetCompileOptions> Parser) RegisterCommandAndParser()
     {
-        return (new System.CommandLine.Command(Kind), (_, _) => DefaultTargetCompileOptions.Instance);
+        return (new System.CommandLine.Command(Kind), ParseTargetCompileOptions);
     }
 
     /// <inheritdoc/>
@@ -46,15 +47,6 @@ public class CPUTarget : ITarget
     /// <inheritdoc/>
     public void RegisterTargetDependentPass(IPassManager passManager, CompileOptions options)
     {
-        // FIX ME: Disable macos as macho loader is buggy.
-        if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-        {
-            passManager.AddWithName<DataflowPass>("LowerIR").Configure(p =>
-            {
-                p.Add<Passes.Rules.CPU.LowerBinary>();
-                p.Add<Passes.Rules.CPU.LowerUnary>();
-            });
-        }
     }
 
     /// <inheritdoc/>
@@ -78,20 +70,24 @@ public class CPUTarget : ITarget
     /// <inheritdoc/>
     public void RegisterTargetDependentAfterQuantPass(IPassManager passManager, CompileOptions options)
     {
-        if (options.QuantizeOptions.ModelQuantMode == ModelQuantMode.UsePTQ)
+        passManager.AddWithName<DataflowPass>("AutoDistributed").Configure(p =>
         {
-            passManager.AddWithName<DataflowPass>("RemoveMarker").Configure(p =>
+            p.Add<Passes.Rules.AutoDistributed>();
+        });
+
+        passManager.Add<CPUFusionToModulePass>();
+
+        // FIX ME: Disable macos as macho loader is buggy.
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            passManager.AddWithName<DataflowPass>("CPUFusion").Configure(p =>
             {
-                p.Add<Passes.Rules.Lower.RemoveMarker>();
+                p.AddAnalysis<Passes.Analysis.IExprUserAnalysisResult>();
+                p.Add<Passes.Rules.CPUFusion>();
             });
         }
 
-        passManager.AddWithName<DataflowPass>("MakeFusion").Configure(p =>
-        {
-            p.Add<Passes.Rules.CPU.CPUFusion>();
-        });
-
-        passManager.Add<CPUFusionToTirPass>(Passes.Tile.TileOptions.Default);
+        passManager.Add<CPUFusionToTirPass>();
 
         passManager.Add<PrimFuncPass>().Configure(p =>
         {
@@ -129,5 +125,10 @@ public class CPUTarget : ITarget
         {
             throw new NotSupportedException($"{moduleKind} module is not supported.");
         }
+    }
+
+    private static ITargetCompileOptions ParseTargetCompileOptions(InvocationContext context, Command command)
+    {
+        return new CPUCompileOptions(string.Empty, Array.Empty<int>(), new[] { 1 }, "b", new[] { 3 * (int)MathF.Pow(2, 20) });
     }
 }

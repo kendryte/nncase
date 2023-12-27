@@ -49,9 +49,9 @@ public sealed class FusionMerger : ExprCloner<Unit>
     {
         var target = Clone(expr.Target, context);
         var arguments = CloneArray(expr.Arguments, context);
-        if (target is Binary)
+        if (target is Binary || target is Where)
         {
-            arguments = arguments.Select(e => e switch { TensorConst { Value: Tensor { Shape.IsScalar: true } } tc => Const.FromTensor(Tensor.FromBytes(tc.ValueType.DType, tc.Value.BytesBuffer.ToArray(), new[] { 1 })), _ => e }).ToArray();
+            arguments = arguments.Select(e => e switch { TensorConst { Value: Tensor { Shape.IsScalar: true } } tc => Const.FromTensor(Tensor.FromBytes(tc.CheckedDataType, tc.Value.BytesBuffer.ToArray(), new[] { 1 })), _ => e }).ToArray();
         }
 
         if (target is Conv2D conv)

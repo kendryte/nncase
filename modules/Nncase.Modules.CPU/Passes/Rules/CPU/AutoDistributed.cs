@@ -8,22 +8,55 @@ using Nncase.CodeGen;
 using Nncase.IR;
 using Nncase.IR.CPU;
 using Nncase.IR.Tensors;
+using Nncase.PatternMatch;
+using Nncase.Targets;
+using static Nncase.PatternMatch.Utility;
 
 [assembly: InternalsVisibleTo("Nncase.Tests")]
 
-namespace Nncase.Passes.Tile;
+namespace Nncase.Passes.Rules;
+
+/// <summary>
+/// auto distributed the xpu fusion.
+/// </summary>
+[RuleGenerator]
+public sealed partial class AutoDistributed : IRewriteRule
+{
+    private readonly CompileOptions _compileOptions;
+
+    public AutoDistributed(CompileOptions compileOptions)
+    {
+        _compileOptions = compileOptions;
+    }
+
+    public IPattern Pattern { get; } = IsCallWildcard("call", IsFusion("fusion", CPUTarget.Kind, IsWildcard("body"), IsVArgsRepeat("parameters", () => IsVar())));
+
+    private Expr? GetReplace(Call call, Fusion fusion, Expr body, IReadOnlyList<Expr> parameters, IReadOnlyList<Expr> callParams)
+    {
+        // 1. convert to distribute graph
+        if (body is Call { Target: Boxing } || (body is IR.Tuple tp && tp.Fields.AsValueEnumerable().Any(e => e is Call { Target: Boxing })))
+        {
+            return null;
+        }
+
+        var distConverter = new AutoDistributedConvertVisitor((CPUCompileOptions)_compileOptions.TargetCompileOptions);
+        var newbody = distConverter.Convert(body);
+        var newFusion = fusion.With(moduleKind: CPUTarget.Kind, body: newbody, parameters: parameters.Cast<Var>().ToArray());
+        return new Call(newFusion, callParams.ToArray());
+    }
+}
 
 internal sealed class AutoDistributedConvertVisitor : ExprVisitor<Dictionary<IRType, List<Expr>>, Unit>
 {
-    public AutoDistributedConvertVisitor(TileOptions tileOptions)
+    public AutoDistributedConvertVisitor(CPUCompileOptions compileOptions)
     {
-        TileOptions = tileOptions;
-        Placement = new Placement(tileOptions.Hierarchy, "bt");
+        Placement = new Placement(compileOptions.Hierarchy, compileOptions.HierarchyNames);
+        CompileOptions = compileOptions;
     }
 
-    public TileOptions TileOptions { get; }
-
     public Placement Placement { get; }
+
+    public CPUCompileOptions CompileOptions { get; }
 
     public static IReadOnlyList<Expr> GetLeafCandidateBoxings(Expr expr, Placement placement)
     {
@@ -72,16 +105,6 @@ internal sealed class AutoDistributedConvertVisitor : ExprVisitor<Dictionary<IRT
     protected override Dictionary<IRType, List<Expr>> DefaultVisitLeaf(Expr expr)
     {
         return new();
-    }
-
-    protected override Dictionary<IRType, List<Expr>> VisitLeafIf(If expr)
-    {
-        return new[] { expr.Condition, expr.Then, expr.Else }.
-                Select(Visit).
-                CartesianProduct().
-                Select(e => new IR.If(e.First().Value[0], e.Skip(1).First().Value[0], e.Skip(2).First().Value[0])).
-                GroupBy(tp => tp.CheckedType).
-                ToDictionary(g => g.Key, g => g.ToList<Expr>());
     }
 
     protected override Dictionary<IRType, List<Expr>> VisitLeafTuple(IR.Tuple expr)
@@ -165,17 +188,6 @@ internal sealed class AutoDistributedConvertVisitor : ExprVisitor<Dictionary<IRT
                     }
 
                     foreach (var (k, v) in VisitLeafTuple(tp))
-                    {
-                        buckets.Add(k, v);
-                    }
-
-                    break;
-                case (ParameterKind.Input, Expr e) when e is IR.If @if:
-                    VisitLeafArgument(parameterKind, @if.Condition);
-                    VisitLeafArgument(parameterKind, @if.Then);
-                    VisitLeafArgument(parameterKind, @if.Else);
-
-                    foreach (var (k, v) in VisitLeafIf(@if))
                     {
                         buckets.Add(k, v);
                     }

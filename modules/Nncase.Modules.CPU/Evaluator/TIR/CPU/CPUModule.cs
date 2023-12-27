@@ -17,6 +17,10 @@ internal class CPUModule : IApplicationPart
     public void ConfigureServices(IRegistrator registrator)
     {
         registrator.RegisterManyInterface<BinaryEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<MatmulEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<MemcopyEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<PtrOfEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<SramPtrEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<TensorLoadEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<TensorStoreEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<UnaryEvaluator>(reuse: Reuse.Singleton);
