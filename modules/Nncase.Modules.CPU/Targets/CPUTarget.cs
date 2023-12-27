@@ -47,6 +47,10 @@ public class CPUTarget : ITarget
     /// <inheritdoc/>
     public void RegisterTargetDependentPass(IPassManager passManager, CompileOptions options)
     {
+        passManager.AddWithName<DataflowPass>("CPUDeviceFusion").Configure(p =>
+        {
+            p.Add<Passes.Rules.CPUSingleKernelFusion>();
+        });
     }
 
     /// <inheritdoc/>
@@ -80,10 +84,10 @@ public class CPUTarget : ITarget
         // FIX ME: Disable macos as macho loader is buggy.
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
-            passManager.AddWithName<DataflowPass>("CPUFusion").Configure(p =>
+            passManager.AddWithName<DataflowPass>("CPUDeviceFusion").Configure(p =>
             {
                 p.AddAnalysis<Passes.Analysis.IExprUserAnalysisResult>();
-                p.Add<Passes.Rules.CPUFusion>();
+                p.Add<Passes.Rules.CPUDeviceFusion>();
             });
         }
 

@@ -39,7 +39,7 @@ public sealed partial class AutoDistributed : IRewriteRule
             return null;
         }
 
-        var distConverter = new AutoDistributedConvertVisitor((CPUCompileOptions)_compileOptions.TargetCompileOptions);
+        var distConverter = new AutoDistributedConvertVisitor(_compileOptions.TargetCompileOptions is CPUCompileOptions options ? options : CPUCompileOptions.Default);
         var newbody = distConverter.Convert(body);
         var newFusion = fusion.With(moduleKind: CPUTarget.Kind, body: newbody, parameters: parameters.Cast<Var>().ToArray());
         return new Call(newFusion, callParams.ToArray());
