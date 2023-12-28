@@ -725,10 +725,10 @@ void quantizer::histogram::finish()
         std::vector<calibrate_method> method_list { calibrate_method::kld_m2, calibrate_method::l2, calibrate_method::no_clip };
         auto min_loss = std::numeric_limits<float>::max();
         auto new_threshold = threshold;
-        
+
         for (auto i : method_list)
         {
-            std::cout<<"range_: "<<range_.min<<", "<<range_.max<<std::endl;
+            std::cout << "range_: " << range_.min << ", " << range_.max << std::endl;
             std::string tmp_name = "";
             if (i == calibrate_method::kld_m2)
             {
@@ -752,9 +752,9 @@ void quantizer::histogram::finish()
             }
             auto opt_min = (new_threshold->first - 0.5f) * src_bin_interval_ + range_.min;
             auto opt_max = (new_threshold->second + 0.5f) * src_bin_interval_ + range_.min;
-            
+
             value_range<float> tmp_range = { opt_min, opt_max };
-            if( i == calibrate_method::no_clip)
+            if (i == calibrate_method::no_clip)
                 tmp_range = range_;
             auto new_loss = compute_l2(src_bins_, range_, tmp_range, dest_bins);
             if (new_loss < min_loss)
@@ -771,7 +771,7 @@ void quantizer::histogram::finish()
     {
         auto opt_min = (threshold->first - 0.5f) * src_bin_interval_ + range_.min;
         auto opt_max = (threshold->second + 0.5f) * src_bin_interval_ + range_.min;
-        if( quant_method_name == "no_clip" )
+        if (quant_method_name == "no_clip")
             optimal_range_ = range_;
         else
             optimal_range_ = { opt_min, opt_max };
