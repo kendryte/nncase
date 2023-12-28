@@ -12,10 +12,12 @@ using System.Linq;
 using System.Reactive;
 using System.Runtime.InteropServices;
 using System.Text;
+using Google.OrTools.Sat;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.Runtime;
 using Nncase.TIR;
+using Nncase.Utilities;
 
 namespace Nncase.CodeGen.CPU;
 
@@ -211,7 +213,13 @@ internal sealed class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                 str = $"({type})runtime_util->malloc({arguments[0].Name})";
                 break;
             case IR.Tensors.Cast op:
-                str = $"(({op.NewType.ToC()}) {arguments[0].Name})";
+                str = $"(({op.NewType.ToC()}){arguments[0].Name})";
+                break;
+            case TIR.CPU.Memcopy op:
+                IndentScope.Writer.IndWrite($"{arguments[1].Name}.copy_to({arguments[0].Name});\n");
+                break;
+            case TIR.CPU.Unary op:
+                IndentScope.Writer.IndWrite($"unary({arguments[0].Name}, {arguments[1].Name});\n");
                 break;
             default:
                 throw new NotSupportedException();
@@ -286,7 +294,7 @@ internal sealed class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 
         // 1. For Loop signature
         var loopVar = Visit(expr.LoopVar);
-        IndentScope.Writer.IndWrite($"for ({loopVar.Type} {loopVar.Name} = {Visit(expr.Domain.Start).Name}; {loopVar.Name} < {Visit(expr.Domain.Stop).Name}; {loopVar.Name}+={Visit(expr.Domain.Step).Name}) {{\n");
+        IndentScope.Writer.IndWrite($"for ({loopVar.Type} {loopVar.Name} = {Visit(expr.Domain.Start).Name}; {loopVar.Name} < {Visit(expr.Domain.Stop).Name}; {loopVar.Name} += {Visit(expr.Domain.Step).Name}) {{\n");
 #if DEBUG_PRINT
         IndentScope.Writer.IndWrite($"runtime_util->printf(\"{loopVar.Name} = %d\\n\", {loopVar.Name});\n");
 #endif
@@ -319,6 +327,21 @@ internal sealed class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                 _ => throw new ArgumentOutOfRangeException(nameof(expr)),
             },
             expr.Name + expr.GlobalVarIndex.ToString());
+        _exprMemo.Add(expr, symbol);
+        return symbol;
+    }
+
+    protected override CSymbol VisitBufferRegion(BufferRegion expr)
+    {
+        if (_exprMemo.TryGetValue(expr, out var symbol))
+        {
+            return symbol;
+        }
+
+        var buffer = Visit(expr.Buffer);
+        var begins = $"{StringUtility.Join(", ", expr.Region.AsValueEnumerable().Select(x => Visit(x.Start).Name))}";
+        var extents = $"{StringUtility.Join(", ", expr.Region.AsValueEnumerable().Select(x => Visit(x.Stop - x.Start).Name))}";
+        symbol = new(string.Empty, $"{buffer.Name}.view(make_ranked_shape({begins}), make_ranked_shape({extents}))");
         _exprMemo.Add(expr, symbol);
         return symbol;
     }

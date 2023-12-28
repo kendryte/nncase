@@ -21,6 +21,9 @@ internal static class CSourceUtilities
             case BinaryOp.Add or BinaryOp.Sub or BinaryOp.Mul or BinaryOp.Div:
                 str = $"({lhs} {binary.BinaryOp.ToC()} {rhs})";
                 break;
+            case BinaryOp.Min:
+                str = $"std::min({lhs}, {rhs})";
+                break;
             default:
                 throw new NotSupportedException();
         }
