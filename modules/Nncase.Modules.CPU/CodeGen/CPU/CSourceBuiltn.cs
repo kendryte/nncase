@@ -9,7 +9,8 @@ namespace Nncase.CodeGen.CPU;
 
 public static class CSourceBuiltn
 {
-    public const string KernelHeader = @"#include <nncase/ntt/ntt.h>
+    public const string KernelHeader = @"#pragma once
+#include <nncase/ntt/ntt.h>
 using namespace nncase::ntt;
 
 ";
@@ -41,6 +42,7 @@ using namespace nncase::ntt;
     tensor_view<{b.ElemType.ToC()}, {KernelUtility.DimensionsToC(b.Dimensions)}, {KernelUtility.StridesToC(b.Strides)}> {b.Name}(p{b.Name});";
         })));
         return @$"#include <nncase/ntt/cpu_runtime.h>
+#include ""../device.h""
 #include ""kernel.h""
 
 extern ""C"" void kernel_entry(nncase_runtime_cpu_mt_t *cpu_mt, uint8_t **inputs, uint8_t *rdata) {{

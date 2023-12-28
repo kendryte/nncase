@@ -31,54 +31,52 @@ internal sealed class LinkableModule : ILinkableModule
 
     public ILinkedModule Link(ILinkContext linkContext)
     {
-        foreach (var func in _functions)
         {
-            if (func is LinkableKernelFunction kernelFunction)
+            if (!Directory.Exists(_options.DumpDir))
             {
-                var dumpPath = Path.Join(_options.DumpDir, kernelFunction.PrimFunction.Name);
-                if (!Directory.Exists(dumpPath))
-                {
-                    Directory.CreateDirectory(dumpPath);
-                }
+                Directory.CreateDirectory(_options.DumpDir);
+            }
 
-                using (var fs = File.Open(Path.Join(dumpPath, "main.cpp"), FileMode.Create))
-                {
-                    using (var writer = new StreamWriter(fs))
-                    {
-                        writer.Write(kernelFunction.FunctionCSource.Main);
-                    }
-                }
+            using (var writer = new StreamWriter(File.Open(Path.Join(_options.DumpDir, "device.h"), FileMode.Create)))
+            {
+                writer.Write(CSourceBuiltn.KernelHeader);
 
-                using (var fs = File.Open(Path.Join(dumpPath, "kernel.h"), FileMode.Create))
+                foreach (var func in _functions.OfType<LinkableDeviceFunction>())
                 {
-                    using (var writer = new StreamWriter(fs))
-                    {
-                        writer.Write(kernelFunction.FunctionCSource.Kernel);
-                    }
-                }
-
-                using (var fs = File.Open(Path.Join(dumpPath, "CMakeLists.txt"), FileMode.Create))
-                {
-                    using (var writer = new StreamWriter(fs))
-                    {
-                        writer.Write(CSourceBuiltn.CMakeDef(kernelFunction.PrimFunction.Name));
-                    }
+                    writer.Write(func.Header);
                 }
             }
-            else if (func is LinkableDeviceFunction deviceFunction)
-            {
-                var dumpPath = Path.Join(_options.DumpDir, "device");
-                if (!Directory.Exists(dumpPath))
-                {
-                    Directory.CreateDirectory(dumpPath);
-                }
+        }
 
-                using (var fs = File.Open(Path.Join(dumpPath, $"{deviceFunction.SourceFunction.Name}.h"), FileMode.Create))
+        foreach (var func in _functions.OfType<LinkableKernelFunction>())
+        {
+            var dumpPath = Path.Join(_options.DumpDir, func.PrimFunction.Name);
+            if (!Directory.Exists(dumpPath))
+            {
+                Directory.CreateDirectory(dumpPath);
+            }
+
+            using (var fs = File.Open(Path.Join(dumpPath, "main.cpp"), FileMode.Create))
+            {
+                using (var writer = new StreamWriter(fs))
                 {
-                    using (var writer = new StreamWriter(fs))
-                    {
-                        writer.Write(deviceFunction.Header);
-                    }
+                    writer.Write(func.FunctionCSource.Main);
+                }
+            }
+
+            using (var fs = File.Open(Path.Join(dumpPath, "kernel.h"), FileMode.Create))
+            {
+                using (var writer = new StreamWriter(fs))
+                {
+                    writer.Write(func.FunctionCSource.Kernel);
+                }
+            }
+
+            using (var fs = File.Open(Path.Join(dumpPath, "CMakeLists.txt"), FileMode.Create))
+            {
+                using (var writer = new StreamWriter(fs))
+                {
+                    writer.Write(CSourceBuiltn.CMakeDef(func.PrimFunction.Name));
                 }
             }
         }

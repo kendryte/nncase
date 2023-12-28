@@ -568,9 +568,4 @@ internal sealed class DeviceToTIRConverter
 
         return region;
     }
-
-    private Expr GetBufferPtr(BufferRegion region, Expr[] indices)
-    {
-        return region.Buffer.MemSpan.Start + IR.F.Tensors.Cast(Enumerable.Range(0, indices.Length).Aggregate((Expr)0, (acc, i) => acc + (region.Buffer.Strides[i] * indices[i])), DataTypes.UInt32);
-    }
 }

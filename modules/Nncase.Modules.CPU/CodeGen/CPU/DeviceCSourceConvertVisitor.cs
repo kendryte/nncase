@@ -52,7 +52,7 @@ internal sealed class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             throw new NotSupportedException("The PrimFunction must return void!");
         }
 
-        var ctype = $"void {expr.Name}({string.Join(", ", expr.Parameters.AsValueEnumerable().Select(Visit).Select(s => $"{s.Type} &{s.Name}").ToArray())})";
+        var ctype = $"void {expr.Name}({string.Join(", ", expr.Parameters.AsValueEnumerable().Select(Visit).Select(s => $"{s.Type} {s.Name}").ToArray())})";
 
         using (var scope = new IndentScope(_deviceBuilder))
         {
@@ -62,7 +62,6 @@ internal sealed class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             // 2. Function body
             using (_ = new IndentScope())
             {
-                IndentScope.Writer.IndWrite($"thread_context ctx(bid, tid);\n");
                 Visit(expr.Body);
             }
 
@@ -153,8 +152,7 @@ internal sealed class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             return symbol;
         }
 
-        var loc = expr.MemSpan.Location is MemoryLocation.Input or MemoryLocation.Output ? MemoryLocation.L1Data.ToC() : expr.MemSpan.Location.ToC();
-        var type = $"tensor<{expr.ElemType.ToC()}, {loc}> ";
+        var type = $"tensor_view<{expr.ElemType.ToC()}, {KernelUtility.DimensionsToC(expr.Dimensions)}, {KernelUtility.StridesToC(expr.Strides)}> ";
 
         symbol = new(type, expr.Name);
         _exprMemo.Add(expr, symbol);
@@ -172,6 +170,7 @@ internal sealed class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         {
             TupleType x when x == TupleType.Void => string.Empty,
             TensorType { IsScalar: true } x => x.DType.ToC(),
+            TensorType { Shape: { IsRanked: true } } x => $"tensor_view<{x.DType.ToC()}, ranked_shape<{x.Shape.Rank}>>",
             _ => throw new NotSupportedException(),
         };
 
@@ -212,11 +211,14 @@ internal sealed class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             case IR.Buffers.Allocate op:
                 str = $"({type})runtime_util->malloc({arguments[0].Name})";
                 break;
+            case IR.Buffers.AllocateBufferView op:
+                str = $"{Visit(((TIR.Buffer)expr.Arguments[0]).MemSpan)}";
+                break;
             case IR.Tensors.Cast op:
                 str = $"(({op.NewType.ToC()}){arguments[0].Name})";
                 break;
             case TIR.CPU.Memcopy op:
-                IndentScope.Writer.IndWrite($"{arguments[1].Name}.copy_to({arguments[0].Name});\n");
+                IndentScope.Writer.IndWrite($"tensor_copy({arguments[0].Name}, {arguments[1].Name});\n");
                 break;
             case TIR.CPU.Unary op:
                 IndentScope.Writer.IndWrite($"unary({arguments[0].Name}, {arguments[1].Name});\n");
