@@ -8,6 +8,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using DryIoc.ImTools;
 using Nncase.CodeGen.CPU;
 using Nncase.Diagnostics;
 using Nncase.Runtime.StackVM;
@@ -18,10 +19,10 @@ internal sealed class LinkableModule : ILinkableModule
 {
     private readonly Stream _rdata;
 
-    private readonly IReadOnlyList<LinkableFunction> _functions;
+    private readonly IReadOnlyList<ILinkableFunction> _functions;
     private readonly CompileOptions _options;
 
-    public LinkableModule(Stream rdata, IReadOnlyList<LinkableFunction> functions, CompileOptions options)
+    public LinkableModule(Stream rdata, IReadOnlyList<ILinkableFunction> functions, CompileOptions options)
     {
         _rdata = rdata;
         _functions = functions;
@@ -32,33 +33,52 @@ internal sealed class LinkableModule : ILinkableModule
     {
         foreach (var func in _functions)
         {
-            var dumpPath = Path.Join(_options.DumpDir, func.PrimFunction.Name);
-            if (!Directory.Exists(dumpPath))
+            if (func is LinkableKernelFunction kernelFunction)
             {
-                Directory.CreateDirectory(dumpPath);
-            }
-
-            using (var fs = File.Open(Path.Join(dumpPath, "main.cpp"), FileMode.Create))
-            {
-                using (var writer = new StreamWriter(fs))
+                var dumpPath = Path.Join(_options.DumpDir, kernelFunction.PrimFunction.Name);
+                if (!Directory.Exists(dumpPath))
                 {
-                    writer.Write(func.FunctionCSource.Main);
+                    Directory.CreateDirectory(dumpPath);
+                }
+
+                using (var fs = File.Open(Path.Join(dumpPath, "main.cpp"), FileMode.Create))
+                {
+                    using (var writer = new StreamWriter(fs))
+                    {
+                        writer.Write(kernelFunction.FunctionCSource.Main);
+                    }
+                }
+
+                using (var fs = File.Open(Path.Join(dumpPath, "kernel.h"), FileMode.Create))
+                {
+                    using (var writer = new StreamWriter(fs))
+                    {
+                        writer.Write(kernelFunction.FunctionCSource.Kernel);
+                    }
+                }
+
+                using (var fs = File.Open(Path.Join(dumpPath, "CMakeLists.txt"), FileMode.Create))
+                {
+                    using (var writer = new StreamWriter(fs))
+                    {
+                        writer.Write(CSourceBuiltn.CMakeDef(kernelFunction.PrimFunction.Name));
+                    }
                 }
             }
-
-            using (var fs = File.Open(Path.Join(dumpPath, "kernel.h"), FileMode.Create))
+            else if (func is LinkableDeviceFunction deviceFunction)
             {
-                using (var writer = new StreamWriter(fs))
+                var dumpPath = Path.Join(_options.DumpDir, "device");
+                if (!Directory.Exists(dumpPath))
                 {
-                    writer.Write(func.FunctionCSource.Kernel);
+                    Directory.CreateDirectory(dumpPath);
                 }
-            }
 
-            using (var fs = File.Open(Path.Join(dumpPath, "CMakeLists.txt"), FileMode.Create))
-            {
-                using (var writer = new StreamWriter(fs))
+                using (var fs = File.Open(Path.Join(dumpPath, $"{deviceFunction.SourceFunction.Name}.h"), FileMode.Create))
                 {
-                    writer.Write(CSourceBuiltn.CMakeDef(func.PrimFunction.Name));
+                    using (var writer = new StreamWriter(fs))
+                    {
+                        writer.Write(deviceFunction.Header);
+                    }
                 }
             }
         }
@@ -67,7 +87,7 @@ internal sealed class LinkableModule : ILinkableModule
         var textWriter = manager.GetWriter(WellknownSectionNames.Text);
         var linkedFunctions = new List<LinkedFunction>();
         int offset = 0;
-        foreach (var func in _functions)
+        foreach (var func in _functions.OfType<LinkableKernelFunction>())
         {
             var dumpPath = Path.Join(_options.DumpDir, func.PrimFunction.Name);
             var elfPath = CompileCSource(dumpPath);

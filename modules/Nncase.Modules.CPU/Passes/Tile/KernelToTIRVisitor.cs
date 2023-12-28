@@ -49,6 +49,15 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
         var op = expr.Target is IR.CPU.CPUKernelOp kop ? kop.Target : expr.Target;
         switch (op)
         {
+            case Fusion deviceFunc:
+                {
+                    var r = new DeviceFusionToPrimFuncRewriter(_fusionCheckCache);
+                    var post = (TIR.PrimFunction)r.Rewrite(deviceFunc);
+                    _devices.Add(post);
+                    _mainBody.Add(new Call(post, arguments.Concat(new[] { ret }).ToArray()));
+                }
+
+                break;
             case IR.Math.Unary unary:
                 GenerateUnary(unary.UnaryOp, arguments, ret);
                 break;
@@ -117,15 +126,6 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
                 break;
             case Where where:
                 GenerateWhere(arguments, ret, (DistributedType)expr.CheckedType);
-                break;
-            case Fusion deviceFunc:
-                {
-                    var r = new DeviceFusionToPrimFuncRewriter(_fusionCheckCache);
-                    var post = (TIR.PrimFunction)r.Rewrite(deviceFunc);
-                    _devices.Add(post);
-                    _mainBody.Add(new Call(post, arguments.Concat(new[] { ret }).ToArray()));
-                }
-
                 break;
 #endif
             default:

@@ -105,29 +105,30 @@ internal sealed class IndentWriter : StringWriter
     }
 }
 
-#if MULTI_CORE_CPU
 /// <summary>
 /// convert single prim function to c source.
 /// </summary>
-internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, IDisposable
+internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, IDisposable
 {
     private readonly Dictionary<Expr, CSymbol> _exprMemo;
     private readonly StringBuilder _kernelBuilder;
 
     private readonly StringBuilder _sharedBuilder;
+    private readonly HashSet<TIR.PrimFunction> _refFuncs;
     private readonly StringWriter _sharedWriter;
 
-    public CSourceConvertVisitor()
+    public KernelCSourceConvertVisitor()
     {
         _kernelBuilder = new StringBuilder();
         _sharedBuilder = new StringBuilder();
         _sharedWriter = new StringWriter(_sharedBuilder);
         _exprMemo = new(ReferenceEqualityComparer.Instance);
+        _refFuncs = new(ReferenceEqualityComparer.Instance);
     }
 
     public PrimFunction VisitEntry => (TIR.PrimFunction)VisitRoot!;
 
-    public FunctionCSource GetFunctionCSource()
+    public KernelCSource GetCSource()
     {
         _exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location == MemoryLocation.L2Data).ToList().ForEach(b =>
         {
@@ -613,6 +614,19 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, IDispo
                     throw new NotSupportedException(xpuOp.ToString());
             }
         }
+        else if (expr.Target is PrimFunction deviceFunc)
+        {
+            foreach (var item in expr.Arguments.ToArray().OfType<TIR.Buffer>())
+            {
+                DeclBuffer(item);
+            }
+#if DEBUG_PRINT
+            IndentScope.Writer.IndWrite($"runtime_util->printf(\"call {deviceFunc.Name} bid %d tid %d\\n\", bid, tid);\n");
+#endif
+            var arguments = expr.Arguments.AsValueEnumerable().Select(Visit).ToArray();
+            _refFuncs.Add(deviceFunc);
+            IndentScope.Writer.IndWrite($"{deviceFunc.Name}({string.Join(",", arguments.Select(arg => arg.Name))});\n");
+        }
         else
         {
             var arguments = expr.Arguments.AsValueEnumerable().Select(Visit).ToArray();
@@ -629,6 +643,15 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, IDispo
                     break;
                 case IR.Math.Select op:
                     str = CSourceUtilities.ContertSelect(op, arguments);
+                    break;
+                case TIR.Load op:
+                    str = $"{arguments[0].Name}[{arguments[1].Name}]";
+                    break;
+                case TIR.Store op:
+                    IndentScope.Writer.IndWrite($"{arguments[0].Name}[{arguments[1].Name}] = {arguments[1].Name};\n");
+                    break;
+                case TIR.CPU.PtrOf op:
+                    str = op.PtrName;
                     break;
                 default:
                     throw new NotSupportedException();
@@ -719,348 +742,3 @@ internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, IDispo
         IndentScope.Writer.IndWrite($"{symbol.Type} {symbol.Name};\n");
     }
 }
-#else
-                        /// <summary>
-                        /// convert single prim function to c source.
-                        /// </summary>
-internal sealed class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
-{
-    private readonly Dictionary<Expr, CSymbol> _exprMemo;
-    private readonly StringBuilder _implBuilder;
-    private readonly StringBuilder _declBuilder;
-    private readonly StringWriter _declWriter;
-
-    public CSourceConvertVisitor()
-    {
-        _implBuilder = new StringBuilder();
-        _declBuilder = new StringBuilder();
-        _declWriter = new StringWriter(_declBuilder);
-        _exprMemo = new(ReferenceEqualityComparer.Instance);
-    }
-
-    public PrimFunction VisitEntry => (TIR.PrimFunction)VisitRoot!;
-
-    public FunctionCSource GetFunctionCSource()
-    {
-        return new(_declBuilder.ToString(), _implBuilder.ToString());
-    }
-
-    /// <inheritdoc/>
-    protected override CSymbol VisitPrimFunction(PrimFunction expr)
-    {
-        if (_exprMemo.TryGetValue(expr, out var symbol))
-        {
-            return symbol;
-        }
-
-        if (expr.CheckedType is not CallableType { ReturnType: TupleType r } || r != TupleType.Void)
-        {
-            throw new NotSupportedException("The PrimFunction must return void!");
-        }
-
-        var type = $"void {expr.Name}({string.Join(", ", expr.Parameters.AsValueEnumerable().Select(b => Visit(b.MemSpan.Start).ToString()).ToArray())}, {CSourceBuiltn.FixedParameters})";
-
-        _declWriter.WriteLine(type + ";");
-        _declWriter.WriteLine();
-
-        using (var scope = new IndentScope(_implBuilder))
-        {
-            // 1. Function signature
-            IndentScope.Writer.IndWrite($"{type} {{\n");
-
-            // 2. Function body
-            using (_ = new IndentScope())
-            {
-                Visit(expr.Body);
-            }
-
-            // 3. Function closing
-            IndentScope.Writer.IndWrite("}\n");
-        }
-
-        var ctype = $"void (*{expr.Name})({string.Join(", ", expr.Parameters.AsValueEnumerable().Select(b => Visit(b.MemSpan.Start).ToString()).ToArray())}, {CSourceBuiltn.FixedParameters})";
-        symbol = new(ctype, expr.Name);
-        _exprMemo.Add(expr, symbol);
-        return symbol;
-    }
-
-    /// <inheritdoc/>
-    protected override CSymbol VisitMemSpan(MemSpan expr)
-    {
-        if (_exprMemo.TryGetValue(expr, out var symbol))
-        {
-            return symbol;
-        }
-
-        var start = Visit(expr.Start);
-        _ = Visit(expr.Size);
-        string name = start.Name;
-        if (expr.Start is TensorConst or Call)
-        {
-            var loc = expr.Location switch
-            {
-                MemoryLocation.Rdata => "rdata",
-                MemoryLocation.Data => "data",
-                _ => throw new NotSupportedException(),
-            };
-            name = $"({loc} + {start.Name})";
-        }
-
-        symbol = new(start.Type, name);
-        _exprMemo.Add(expr, symbol);
-        return symbol;
-    }
-
-    /// <inheritdoc/>
-    protected override CSymbol VisitCall(Call expr)
-    {
-        if (_exprMemo.TryGetValue(expr, out var symbol))
-        {
-            return symbol;
-        }
-
-        var arguments = expr.Arguments.AsValueEnumerable().Select(Visit).ToArray();
-        string type = expr.CheckedType switch
-        {
-            TupleType x when x == TupleType.Void => string.Empty,
-            TensorType { IsScalar: true } x => x.DType.ToC(),
-            _ => throw new NotSupportedException(),
-        };
-
-        string str;
-        switch (expr.Target)
-        {
-            case IR.Math.Binary op:
-                str = CSourceUtilities.ContertBinary(op, arguments);
-                break;
-            case IR.Math.Unary op:
-                str = CSourceUtilities.ContertUnary(op, arguments);
-                break;
-            case Store:
-                str = $"((({arguments[2].Type} *){arguments[0].Name})[{arguments[1].Name}] = {arguments[2].Name})";
-                break;
-            case Load:
-                str = $"((({type} *){arguments[0].Name})[{arguments[1].Name}])";
-                break;
-            case IR.Buffers.MatchBuffer op:
-                var n = arguments[0].Name;
-                var pb = (TIR.Buffer)expr[IR.Buffers.MatchBuffer.Input];
-                var ind = new string(Enumerable.Repeat<char>(' ', IndentScope.Writer.Indent).ToArray());
-                str = $@"uint32_t _{n}_shape[] = {{ {string.Join(", ", pb.Dimensions.AsValueEnumerable().Select(e => Visit(e).Name).ToArray())} }};
-{ind}uint32_t _{n}_stride[] = {{ {string.Join(", ", pb.Strides.AsValueEnumerable().Select(e => Visit(e).Name).ToArray())} }};
-{ind}buffer_t _{n} = {{
-{ind}{ind}.vaddr = ((uint8_t*) rdata + {Visit(pb.MemSpan.Start).Name}),
-{ind}{ind}.paddr = 0,
-{ind}{ind}.shape = _{n}_shape,
-{ind}{ind}.stride = _{n}_stride,
-{ind}{ind}.rank = {pb.Dimensions.Length} }};
-{ind}buffer_t *{n} = &_{n}";
-                break;
-            default:
-                throw new NotSupportedException();
-        }
-
-        symbol = new(type, str);
-        _exprMemo.Add(expr, symbol);
-        return symbol;
-    }
-
-    /// <inheritdoc/>
-    protected override CSymbol VisitConst(Const expr)
-    {
-        if (_exprMemo.TryGetValue(expr, out var symbol))
-        {
-            return symbol;
-        }
-
-        string type;
-        string str;
-        if (expr is TensorConst { Value: Tensor { ElementType: PrimType ptype, Shape: { IsScalar: true } } scalar })
-        {
-            str = scalar[0].ToString() switch
-            {
-                "True" => "1",
-                "False" => "0",
-                null => string.Empty,
-                var x => x,
-            };
-
-            type = ptype.ToC();
-        }
-        else if (expr is TensorConst { Value: Tensor { ElementType: PointerType { ElemType: PrimType }, Shape: { IsScalar: true } } pointer })
-        {
-            str = pointer.ToScalar<ulong>().ToString();
-            type = "uint8_t *";
-        }
-        else
-        {
-            throw new NotSupportedException();
-        }
-
-        symbol = new(type, str);
-        _exprMemo.Add(expr, symbol);
-        return symbol;
-    }
-
-    /// <inheritdoc/>
-    protected override CSymbol VisitVar(Var expr)
-    {
-        if (_exprMemo.TryGetValue(expr, out var symbol))
-        {
-            return symbol;
-        }
-
-        if (expr.CheckedType is not TensorType { Shape: { IsScalar: true } } ttype)
-        {
-            throw new NotSupportedException();
-        }
-
-        symbol = new(ttype.DType.ToC(), new($"{expr.Name}_{expr.GlobalVarIndex}"));
-        _exprMemo.Add(expr, symbol);
-        return symbol;
-    }
-
-    /// <inheritdoc/>
-    protected override CSymbol VisitFor(For expr)
-    {
-        if (_exprMemo.TryGetValue(expr, out var symbol))
-        {
-            return symbol;
-        }
-
-        // 1. For Loop signature
-        var loopVar = Visit(expr.LoopVar);
-        IndentScope.Writer.IndWrite($"for ({loopVar.Type} {loopVar.Name} = {Visit(expr.Domain.Start).Name}; {loopVar.Name} < {Visit(expr.Domain.Stop).Name}; {loopVar.Name}+={Visit(expr.Domain.Step).Name}) {{\n");
-
-        if (expr.Mode == LoopMode.Parallel)
-        {
-            // find the vars will be used and make new struct type.
-            var msg_fields = _exprMemo.Where(p => p.Key is MemSpan or TIR.Buffer or Var).Select(p => p.Value).Concat(CSymbol.Builtns).ToArray();
-            var msg_type = DeclThreadMessageStruct(msg_fields);
-
-            using (new IndentScope(_declBuilder))
-            {
-                IndentScope.Writer.IndWrite($"void *{VisitEntry.Name}_inner(void *args) {{\n");
-                using (new IndentScope())
-                {
-                    IndentScope.Writer.IndWrite($"{msg_type}* _message = ({msg_type}*)args;\n");
-                    foreach (var sym in msg_fields)
-                    {
-                        IndentScope.Writer.IndWrite($"{sym.Type} {sym.Name} = _message->{sym.Name};\n");
-                    }
-
-                    Visit(expr.Body);
-                }
-
-                IndentScope.Writer.IndWrite(" return 0;\n");
-                IndentScope.Writer.IndWrite("}\n");
-            }
-
-            using (new IndentScope())
-            {
-                IndentScope.Writer.IndWrite($"{msg_type} _message = {{\n");
-                foreach (var sym in msg_fields)
-                {
-                    IndentScope.Writer.IndWrite($".{sym.Name} = {sym.Name},\n");
-                }
-
-                IndentScope.Writer.IndWrite("};\n");
-
-                IndentScope.Writer.IndWrite($"nncase_mt->thread_start({VisitEntry.Name}_inner, (void *)&_message, sizeof ({msg_type}));\n");
-            }
-        }
-        else
-        {
-            using (_ = new IndentScope())
-            {
-                // 2. For Body
-                Visit(expr.Body);
-            }
-        }
-
-        // 3. For closing
-        IndentScope.Writer.IndWrite("}\n");
-
-        if (expr.Mode == LoopMode.Parallel)
-        {
-            IndentScope.Writer.IndWrite("nncase_mt->thread_end();\n");
-        }
-
-        symbol = new(string.Empty, string.Empty);
-        _exprMemo.Add(expr, symbol);
-        return symbol;
-    }
-
-    /// <inheritdoc/>
-    protected override CSymbol VisitSequential(Sequential expr)
-    {
-        if (_exprMemo.TryGetValue(expr, out var symbol))
-        {
-            return symbol;
-        }
-
-        foreach (var field in expr.Fields)
-        {
-            if (field is Call call)
-            {
-                IndentScope.Writer.IndWrite(Visit(call).Name);
-                IndentScope.Writer.Write(";\n");
-            }
-            else
-            {
-                Visit(field);
-            }
-        }
-
-        symbol = new(string.Empty, string.Empty);
-        _exprMemo.Add(expr, symbol);
-        return symbol;
-    }
-
-    /// <inheritdoc/>
-    protected override CSymbol VisitIfThenElse(IfThenElse expr)
-    {
-        if (_exprMemo.TryGetValue(expr, out var symbol))
-        {
-            return symbol;
-        }
-
-        IndentScope.Writer.IndWrite($"if({Visit(expr.Condition).Name}) {{\n");
-        using (_ = new IndentScope())
-        {
-            Visit(expr.Then);
-        }
-
-        IndentScope.Writer.IndWrite("} else {\n");
-        using (_ = new IndentScope())
-        {
-            Visit(expr.Else);
-        }
-
-        IndentScope.Writer.IndWrite("}\n");
-
-        symbol = new(string.Empty, string.Empty);
-        _exprMemo.Add(expr, symbol);
-        return symbol;
-    }
-
-    private string DeclThreadMessageStruct(IEnumerable<CSymbol> keyValues)
-    {
-        var type = $"{VisitEntry.Name}_thread_message_t";
-        _declWriter.WriteLine("typedef struct {");
-        foreach (var sym in keyValues)
-        {
-            if (sym.Name == string.Empty)
-            {
-                throw new InvalidOperationException("empty name");
-            }
-
-            _declWriter.WriteLine("  " + sym.Type + " " + sym.Name + ";");
-        }
-
-        _declWriter.WriteLine($"}} {type};");
-        _declWriter.WriteLine();
-        return type;
-    }
-}
-#endif

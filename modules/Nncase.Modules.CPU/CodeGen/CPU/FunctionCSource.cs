@@ -15,22 +15,6 @@ using Nncase.TIR;
 
 namespace Nncase.CodeGen;
 
-#if MULTI_CORE_XPU
-internal sealed record FunctionCSource(string Main, string Kernel)
+internal sealed record KernelCSource(string Main, string Kernel)
 {
 }
-
-#else
-internal sealed class FunctionCSource
-{
-    public FunctionCSource(string declaration, string implementation)
-    {
-        Declaration = declaration;
-        Implementation = implementation;
-    }
-
-    public string Declaration { get; }
-
-    public string Implementation { get; }
-}
-#endif

@@ -65,28 +65,40 @@ internal class FunctionBuilder : IDisposable
         _rdataWriter = rdataWriter;
     }
 
-    public unsafe LinkableFunction Build(TIR.PrimFunction function)
+    public unsafe ILinkableFunction Build(TIR.PrimFunction function)
     {
-        // 1. convert func to csource
-        var visitor = new CSourceConvertVisitor();
-        visitor.Visit(function);
-        var functionCSource = visitor.GetFunctionCSource();
-
-        // 3. write the rdata
-        foreach (var (@const, range) in function.SchedResult.Rdatas)
+        if (function.Name.EndsWith("kernel"))
         {
-            var bytes = ((TensorConst)@const).Value.BytesBuffer;
-            var size = range.Max - range.Min;
-            if ((uint)bytes.Length != size)
+            // 1. convert func to csource
+            var visitor = new KernelCSourceConvertVisitor();
+            visitor.Visit(function);
+            var functionCSource = visitor.GetCSource();
+            // 3. write the rdata
+            foreach (var (@const, range) in function.SchedResult.Rdatas)
             {
-                throw new InvalidDataException("The Buffer Szie Not Equal!");
+                var bytes = ((TensorConst)@const).Value.BytesBuffer;
+                var size = range.Max - range.Min;
+                if ((uint)bytes.Length != size)
+                {
+                    throw new InvalidDataException("The Buffer Szie Not Equal!");
+                }
+
+                _rdataWriter.Position(range.Min);
+                _rdataWriter.Write(bytes);
             }
 
-            _rdataWriter.Position(range.Min);
-            _rdataWriter.Write(bytes);
+            return new LinkableKernelFunction(_id, function, functionCSource, _sectionManager.GetContent(WellknownSectionNames.Text));
+        }
+        else if (function.Name.EndsWith("device"))
+        {
+            var visitor = new DeviceCSourceConvertVisitor();
+            visitor.Visit(function);
+            var header = visitor.GetHeader();
+
+            return new LinkableDeviceFunction(_id, function, header, _sectionManager.GetContent(WellknownSectionNames.Text));
         }
 
-        return new LinkableFunction(_id, function, functionCSource, _sectionManager.GetContent(WellknownSectionNames.Text));
+        throw new NotSupportedException();
     }
 
     public void Dispose()

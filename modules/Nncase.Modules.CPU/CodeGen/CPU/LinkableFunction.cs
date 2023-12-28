@@ -5,10 +5,9 @@ using System.Runtime.InteropServices;
 using Nncase.IR;
 
 namespace Nncase.CodeGen.CPU;
-
-internal sealed class LinkableFunction : ILinkableFunction
+internal sealed class LinkableKernelFunction : ILinkableFunction
 {
-    public LinkableFunction(uint id, TIR.PrimFunction sourceFunction, FunctionCSource funcCSource, Stream text)
+    public LinkableKernelFunction(uint id, TIR.PrimFunction sourceFunction, KernelCSource funcCSource, Stream text)
     {
         Id = id;
         SourceFunction = sourceFunction;
@@ -24,7 +23,34 @@ internal sealed class LinkableFunction : ILinkableFunction
 
     public TIR.PrimFunction PrimFunction { get; }
 
-    public FunctionCSource FunctionCSource { get; }
+    public KernelCSource FunctionCSource { get; }
+
+    public Stream Text { get; }
+
+    public IEnumerable<FunctionRef> FunctionRefs => Enumerable.Empty<FunctionRef>();
+
+    public IReadOnlyList<ILinkedSection> Sections { get; }
+}
+
+internal sealed class LinkableDeviceFunction : ILinkableFunction
+{
+    public LinkableDeviceFunction(uint id, TIR.PrimFunction sourceFunction, string header, Stream text)
+    {
+        Id = id;
+        SourceFunction = sourceFunction;
+        Header = header;
+        PrimFunction = sourceFunction;
+        Text = text;
+        Sections = Array.Empty<ILinkedSection>();
+    }
+
+    public uint Id { get; }
+
+    public BaseFunction SourceFunction { get; }
+
+    public string Header { get; }
+
+    public TIR.PrimFunction PrimFunction { get; }
 
     public Stream Text { get; }
 
