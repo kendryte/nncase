@@ -248,6 +248,8 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         _scope = new(textWriter, indent_level);
     }
 
+    public override string DefaultVisitType(IRType type) => type.ToString();
+
     /// <inheritdoc/>
     public override string VisitType(AnyType type) => "any";
 

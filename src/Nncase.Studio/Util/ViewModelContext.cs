@@ -32,7 +32,7 @@ public class ViewModelContext
 
     public ViewModelBase[] ViewModelBases { get; set; } = Array.Empty<ViewModelBase>();
 
-    public Function? Entry { get; set; }
+    public Var[] Params { get; set; } = Array.Empty<Var>();
 
     public async Task<List<string>> OpenFile(FilePickerOpenOptions options)
     {

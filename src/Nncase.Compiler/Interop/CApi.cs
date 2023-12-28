@@ -41,6 +41,7 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr, nuint, IntPtr> ArrayGetItemPtr;
     public delegate* unmanaged<IntPtr, nuint> ArrayGetLengthPtr;
     public delegate* unmanaged<IntPtr, nuint, IntPtr, IntPtr> CalibrationDatasetProviderCreatePtr;
+    public delegate* unmanaged<IntPtr, void> ClrHandleDisposePtr;
     public delegate* unmanaged<IntPtr, void> ClrHandleFreePtr;
     public delegate* unmanaged<IntPtr> CompileOptionsCreatePtr;
     public delegate* unmanaged<IntPtr, byte*, nuint, void> CompileOptionsSetInputFilePtr;
@@ -112,6 +113,7 @@ public static unsafe class CApi
         mt->ArrayGetItemPtr = &ArrayGetItem;
         mt->ArrayGetLengthPtr = &ArrayGetLength;
         mt->CalibrationDatasetProviderCreatePtr = &CalibrationDatasetProviderCreate;
+        mt->ClrHandleDisposePtr = &ClrHandleDispose;
         mt->ClrHandleFreePtr = &ClrHandleFree;
         mt->CompileOptionsCreatePtr = &CompileOptionsCreate;
         mt->CompileOptionsSetInputFilePtr = &CompileOptionsSetInputFile;
@@ -223,6 +225,12 @@ public static unsafe class CApi
             item => item.Second,
             item => item.First.ToValue()))).ToAsyncEnumerable();
         return GCHandle.ToIntPtr(GCHandle.Alloc(new CCalibrationDatasetProvider(samples, (int)samplesCount)));
+    }
+
+    [UnmanagedCallersOnly]
+    private static void ClrHandleDispose(IntPtr handle)
+    {
+        Get<IDisposable>(handle).Dispose();
     }
 
     [UnmanagedCallersOnly]

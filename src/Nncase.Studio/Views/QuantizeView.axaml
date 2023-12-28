@@ -42,23 +42,27 @@
                     Content="选择"
                     x:CompileBindings="False"
                     Command="{Binding SelectCalibrationDataSetCommand}"></Button>
-                <Label Grid.Row="1" Grid.Column="0" Content="量化方法"></Label>
-                <views:EnumComboBox Grid.Row="1" Grid.Column="1" TypeName="{x:Type quantization:CalibMethod}" SelectedValue="{Binding CalibMethodValue}"></views:EnumComboBox>
 
-                <Label Grid.Row="1" Grid.Column="2" Content="BindQuantMethod"></Label>
-                <CheckBox Grid.Row="1" Grid.Column="3" IsChecked="{Binding QuantizeOptionsValue.BindQuantMethod}"></CheckBox>
-                <Label Grid.Row="2" Grid.Column="0" Content="开启SQuant"></Label>
-                <CheckBox Grid.Row="2" Grid.Column="1" IsChecked="{Binding QuantizeOptionsValue.UseSquant}"></CheckBox>
-                <Label Grid.Row="2" Grid.Column="2" Content="开启AdaRound"></Label>
-                <CheckBox Grid.Row="2" Grid.Column="3" IsChecked="{Binding QuantizeOptionsValue.UseAdaRound}"></CheckBox>
+                <Label Grid.Row="1" Grid.Column="0" Content="数据集格式提示"></Label>
+                <Button Grid.Row="1" Grid.Column="1" Content="显示" Command="{Binding ShowCalibFormatCommand}"></Button>
 
-                <Label Grid.Row="3" Grid.Column="0" Content="输入量化类型"></Label>
-                <views:EnumComboBox Grid.Row="3" Grid.Column="1" TypeName="{x:Type quantization:QuantType}" SelectedValue="{Binding QuantTypeValue}"></views:EnumComboBox>
-                <Label Grid.Row="3" Grid.Column="2" Content="Weights量化类型"></Label>
-                <views:EnumComboBox Grid.Row="3" Grid.Column="3" TypeName="{x:Type quantization:QuantType}" SelectedValue="{Binding WQuantTypeValue}"></views:EnumComboBox>
+                <Label Grid.Row="1" Grid.Column="2" Content="量化方法"></Label>
+                <views:EnumComboBox Grid.Row="1" Grid.Column="3" TypeName="{x:Type quantization:CalibMethod}" SelectedValue="{Binding CalibMethodValue}"></views:EnumComboBox>
 
-                <Label Grid.Row="4" Grid.Column="0" Content="模型量化模式"></Label>
-                <ComboBox Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2"
+                <Label Grid.Row="2" Grid.Column="0" Content="BindQuantMethod"></Label>
+                <CheckBox Grid.Row="2" Grid.Column="1" IsChecked="{Binding QuantizeOptionsValue.BindQuantMethod}"></CheckBox>
+                <Label Grid.Row="2" Grid.Column="2" Content="开启SQuant"></Label>
+                <CheckBox Grid.Row="2" Grid.Column="3" IsChecked="{Binding QuantizeOptionsValue.UseSquant}"></CheckBox>
+                <Label Grid.Row="3" Grid.Column="0" Content="开启AdaRound"></Label>
+                <CheckBox Grid.Row="3" Grid.Column="1" IsChecked="{Binding QuantizeOptionsValue.UseAdaRound}"></CheckBox>
+
+                <Label Grid.Row="3" Grid.Column="2" Content="输入量化类型"></Label>
+                <views:EnumComboBox Grid.Row="3" Grid.Column="3" TypeName="{x:Type quantization:QuantType}" SelectedValue="{Binding QuantTypeValue}"></views:EnumComboBox>
+                <Label Grid.Row="4" Grid.Column="0" Content="Weights量化类型"></Label>
+                <views:EnumComboBox Grid.Row="4" Grid.Column="1" TypeName="{x:Type quantization:QuantType}" SelectedValue="{Binding WQuantTypeValue}"></views:EnumComboBox>
+
+                <Label Grid.Row="4" Grid.Column="2" Content="模型量化模式"></Label>
+                <ComboBox Grid.Row="4" Grid.Column="3"
                           ItemsSource="{Binding ModelQuantModeList}"
                           SelectedItem="{Binding ModelQuantModeValue}">
                 </ComboBox>
