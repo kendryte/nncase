@@ -28,14 +28,9 @@ public partial class LowerBinary : RewriteRule<Pattern>
     public override Pattern Pattern { get; } = IsBinary(
       target_name: "binary",
       _ => true,
-      IsWildcard("inputA") with { TypePattern = IsFloat() },
-      IsWildcard("inputB") with { TypePattern = IsFloat() });
+      IsWildcard("inputA") with { TypePattern = IsFloat() & HasRank(x => x <= 3) },
+      IsWildcard("inputB") with { TypePattern = IsFloat() & HasRank(x => x <= 3) });
 
-    // public IPattern Pattern { get; } = IsBinary(
-    //         "binary",
-    //         x => x.BinaryOp is BinaryOp.Add or BinaryOp.Sub or BinaryOp.Mul or BinaryOp.Div or BinaryOp.Mod or BinaryOp.Pow,
-    //         IsWildcard("lhs"),
-    //         IsTensorConst("rhs", IsScalar()));
     private static BinaryOperationType? MapBinaryOp(BinaryOp binaryOp) =>
         binaryOp switch
         {
@@ -46,7 +41,6 @@ public partial class LowerBinary : RewriteRule<Pattern>
             BinaryOp.Max => BinaryOperationType.MAX,
             BinaryOp.Min => BinaryOperationType.MIN,
             BinaryOp.Pow => BinaryOperationType.POW,
-
             _ => null,
 
             // unsupported Binary ops
@@ -86,25 +80,28 @@ public partial class LowerBinary : RewriteRule<Pattern>
     {
         if (MapBinaryOp(binary.BinaryOp) is BinaryOperationType op)
         {
-            var newInputA = new Var(inputA.CheckedType);
-            var newInputB = new Var(inputB.CheckedType);
 
             var r = Math.Max(inputA.CheckedShape.Rank, inputB.CheckedShape.Rank);
-
             if (inputA is Const)
             {
                 var constA = ((TensorConst)inputA).Value;
                 var constShape = FixShape(inputA.CheckedShape.ToValueArray(), r);
-                return new Call(new Fusion("ncnn", NcnnBinary(new Expr[] { newInputB }, op, 1, constA.ToArray<float>(), constShape), new[] { newInputB }), inputB);
+                var newB = Reshape(inputB, FixShape(inputB.CheckedShape.ToValueArray(), r));
+                var newInputB = new Var(newB.CheckedType);
+                return new Call(new Fusion("ncnn", NcnnBinary(new Expr[] { newInputB }, op, 1, constA.ToArray<float>(), constShape), new[] { newInputB }), newB);
             }
             else if (inputB is Const)
             {
+                var newA = Reshape(inputA, FixShape(inputA.CheckedShape.ToValueArray(), r));
+                var newInputA = new Var(newA.CheckedType);
                 var constB = ((TensorConst)inputB).Value;
                 var constShape = FixShape(inputB.CheckedShape.ToValueArray(), r);
-                return new Call(new Fusion("ncnn", NcnnBinary(new Expr[] { newInputA }, op, 2, constB.ToArray<float>(), constShape), new[] { newInputA }), inputA);
+                return new Call(new Fusion("ncnn", NcnnBinary(new Expr[] { newInputA }, op, 2, constB.ToArray<float>(), constShape), newInputA), newA);
             }
             else
             {
+                var newInputA = new Var(inputA.CheckedType);
+                var newInputB = new Var(inputB.CheckedType);
                 return new Call(new Fusion("ncnn", NcnnBinary(new Expr[] { newInputA, newInputB }, op, 0, null, null), new[] { newInputA, newInputB }), inputA, inputB);
             }
         }
