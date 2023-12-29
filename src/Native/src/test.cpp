@@ -43,11 +43,41 @@ int main() {
     compiler = nncapi->compile_session_get_compiler(compile_session.get());
 #endif
 
-    ntt::tensor<float, ntt::fixed_shape<1, 16>> ta, tb, tc;
-    std::fill(ta.buffer().begin(), ta.buffer().end(), 1.f);
-    ntt::unary<ntt::mathops::sin>(ta, tb.view());
-    assert(tb(0, 0) == sinf(1.f));
-    ntt::binary<ntt::mathops::mul>(ta, tb, tc);
+    // fixed
+    {
+        ntt::tensor<float, ntt::fixed_shape<1, 16>> ta, tb, tc;
+        std::fill(ta.buffer().begin(), ta.buffer().end(), 1.f);
+        ntt::unary<ntt::mathops::sin>(ta, tb.view());
+        assert(tb(0, 0) == sinf(1.f));
+        ntt::binary<ntt::mathops::mul>(ta, tb, tc);
+        assert(tc(0, 0) == sinf(1.f));
+    }
+
+    // ranked
+    {
+        auto shape = ntt::make_ranked_shape(1, 16);
+        ntt::tensor<float, ntt::ranked_shape<2>> ta(shape), tb(shape),
+            tc(shape);
+        std::fill(ta.buffer().begin(), ta.buffer().end(), 1.f);
+        ntt::unary<ntt::mathops::sin>(ta, tb.view());
+        assert(tb(0, 0) == sinf(1.f));
+        ntt::tensor_copy(tb, tc);
+        // ntt::binary<ntt::mathops::mul>(ta, tb, tc);
+        assert(tc(0, 0) == sinf(1.f));
+    }
+
+    // 1
+    {
+        auto shape = ntt::make_ranked_shape(1);
+        ntt::tensor<float, ntt::ranked_shape<1>> ta(shape), tb(shape),
+            tc(shape);
+        std::fill(ta.buffer().begin(), ta.buffer().end(), 1.f);
+        ntt::unary<ntt::mathops::sin>(ta, tb.view());
+        assert(tb(0) == sinf(1.f));
+        ntt::tensor_copy(tb, tc);
+        // ntt::binary<ntt::mathops::mul>(ta, tb, tc);
+        assert(tc(0) == sinf(1.f));
+    }
 
     auto kmodel = read_file(
         R"(/mnt/home-nas/work/repo/nncase/tests_output/UnitTestCPUTarget/TestSimpleUnary/TestSimpleUnary.kmodel)");

@@ -267,7 +267,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                 case TIR.CPU.Unary unary:
                     IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Unary.cshtml", new UnaryKernelTemplateModel
                     {
-                        Arguments = args.Select(x => new KernelArgument { Buffer = x, Symbol = Visit(x) }).ToArray(),
+                        Arguments = args.Select(x => new KernelArgument { Symbol = Visit(x) }).ToArray(),
                         UnaryOp = unary.UnaryOp,
                     }).Result);
                     break;
@@ -337,7 +337,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                     {
                         IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Binary.cshtml", new BinaryKernelTemplateModel
                         {
-                            Arguments = args.Select(x => new KernelArgument { Buffer = x, Symbol = Visit(x) }).ToArray(),
+                            Arguments = args.Select(x => new KernelArgument { Symbol = Visit(x) }).ToArray(),
                             BinaryOp = binary.BinaryOp,
                         }).Result);
                     }

@@ -30,17 +30,6 @@ public static class KernelUtility
         return length;
     }
 
-    public static string IndexedAccess(KernelArgument argument, string iterVar)
-    {
-        // Scalar
-        if (argument.Buffer.Dimensions.Length == 0)
-        {
-            return argument.Symbol.Name;
-        }
-
-        return $"{argument.Symbol.Name}[{iterVar}]";
-    }
-
     public static string DimensionsToC(ReadOnlySpan<Expr> dimensions)
     {
         var sb = new StringBuilder("fixed_shape<");

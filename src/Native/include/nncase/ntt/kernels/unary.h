@@ -98,14 +98,11 @@ template <class T> struct tanh {
     T operator()(T v) const noexcept { return std::tanh(v); }
 };
 } // namespace mathops
+} // namespace nncase::ntt
 
-template <size_t Extent, class T, class Op>
-constexpr void unary(Op &&op, const T *input_p, T *output_p) {
-    for (size_t i = 0; i < Extent; i++) {
-        output_p[i] = op(input_p[i]);
-    }
-}
+#include "arch/x86_64/unary.h"
 
+namespace nncase::ntt {
 namespace detail {
 template <class Shape, class InStrides, class OutStrides> class unary_impl;
 
@@ -137,7 +134,7 @@ class unary_impl<fixed_shape<Dims...>, fixed_strides<InStrides...>,
                 input.buffer().data() + linear_offset(index, input.strides());
             auto output_p =
                 output.buffer().data() + linear_offset(index, output.strides());
-            unary<inner_size>(op, input_p, output_p);
+            arch::unary<inner_size>(op, input_p, output_p);
         } else {
             apply_next<Op, TIn, TOut, Axis, Rank, ContiguousDims, RestDims...>(
                 op, index, input, output);
@@ -149,8 +146,44 @@ class unary_impl<fixed_shape<Dims...>, fixed_strides<InStrides...>,
     constexpr void apply_next(Op &op, ranked_shape<Rank> &index,
                               const TIn &input, TOut &output) {
         for (index[Axis] = 0; index[Axis] < Dim; index[Axis]++) {
-            apply<Op, TIn, TOut, Axis, Rank, ContiguousDims, RestDims...>(
+            apply<Op, TIn, TOut, Axis + 1, Rank, ContiguousDims, RestDims...>(
                 op, index, input, output);
+        }
+    }
+};
+
+template <size_t Rank, class InStrides, class OutStrides>
+class unary_impl<ranked_shape<Rank>, InStrides, OutStrides> {
+  public:
+    template <class Op, class TIn, class TOut>
+    constexpr void operator()(Op &op, const TIn &input, TOut &output) {
+        ranked_shape<Rank> index{};
+        auto conti_dims =
+            std::min(contiguous_dims(input.shape(), input.strides()),
+                     contiguous_dims(input.shape(), output.strides()));
+        apply<Op, TIn, TOut, 0>(op, index, conti_dims, input, output);
+    }
+
+  private:
+    template <class Op, class TIn, class TOut, size_t Axis>
+    constexpr void apply(Op &op, ranked_shape<Rank> &index, size_t conti_dims,
+                         const TIn &input, TOut &output) {
+        const auto outer_dims = Rank - conti_dims;
+        if (Axis >= outer_dims) {
+            const auto inner_size = std::accumulate(
+                input.shape().begin() + outer_dims, input.shape().end(),
+                size_t(1), std::multiplies<>());
+            auto input_p =
+                input.buffer().data() + linear_offset(index, input.strides());
+            auto output_p =
+                output.buffer().data() + linear_offset(index, output.strides());
+            arch::unary(op, input_p, output_p, inner_size);
+        } else if constexpr (Axis < Rank - 1) {
+            const auto dim = input.shape()[Axis];
+            for (index[Axis] = 0; index[Axis] < dim; index[Axis]++) {
+                apply<Op, TIn, TOut, Axis + 1>(op, index, conti_dims, input,
+                                               output);
+            }
         }
     }
 };
@@ -159,8 +192,9 @@ class unary_impl<fixed_shape<Dims...>, fixed_strides<InStrides...>,
 template <template <class T> class Op, class TIn, class TOut>
 void unary(const TIn &input, TOut &&output) {
     Op<typename TIn::element_type> op;
-    detail::unary_impl<typename TIn::shape_type, typename TIn::strides_type,
-                       typename std::decay_t<TOut>::strides_type>
+    detail::unary_impl<
+        common_shape_t<typename TIn::shape_type, typename TOut::shape_type>,
+        typename TIn::strides_type, typename std::decay_t<TOut>::strides_type>
         impl;
     impl(op, input, output);
 }

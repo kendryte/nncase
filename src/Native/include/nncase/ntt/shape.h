@@ -87,6 +87,9 @@ struct fixed_strides : detail::fixed_dims_base<Strides...> {
     };
 };
 
+template <size_t Rank>
+struct ranked_strides : detail::ranked_dims_base<Rank> {};
+
 namespace detail {
 template <size_t I, size_t... Dims> struct default_strides_impl;
 
@@ -122,19 +125,53 @@ struct is_fixed_dims<fixed_strides<Dims...>> : std::true_type {};
 template <class Dims>
 inline constexpr bool is_fixed_dims_v = is_fixed_dims<Dims>::value;
 
-template <class Shape> struct default_strides;
+#define DEFINE_COMMON_DIMS_TYPE(name)                                          \
+    template <class ShapeA, class ShapeB> struct common_##name##_type;         \
+                                                                               \
+    template <size_t... Dims>                                                  \
+    struct common_##name##_type<fixed_##name<Dims...>,                         \
+                                fixed_##name<Dims...>> {                       \
+        using type = fixed_##name<Dims...>;                                    \
+    };                                                                         \
+                                                                               \
+    template <size_t Rank>                                                     \
+    struct common_##name##_type<ranked_##name<Rank>, ranked_##name<Rank>> {    \
+        using type = ranked_##name<Rank>;                                      \
+    };                                                                         \
+                                                                               \
+    template <size_t... Dims, size_t Rank>                                     \
+    struct common_##name##_type<fixed_##name<Dims...>, ranked_##name<Rank>> {  \
+        using type = ranked_##name<Rank>;                                      \
+    };                                                                         \
+                                                                               \
+    template <size_t... Dims, size_t Rank>                                     \
+    struct common_##name##_type<ranked_##name<Rank>, fixed_##name<Dims...>> {  \
+        using type = ranked_##name<Rank>;                                      \
+    };                                                                         \
+                                                                               \
+    template <class ShapeA, class ShapeB>                                      \
+    using common_##name##_t = common_##name##_type<ShapeA, ShapeB>::type;
 
-template <> struct default_strides<fixed_shape<>> {
+DEFINE_COMMON_DIMS_TYPE(shape)
+DEFINE_COMMON_DIMS_TYPE(strides)
+
+template <class Shape> struct default_strides_type;
+
+template <> struct default_strides_type<fixed_shape<>> {
     using type = fixed_strides<>;
 };
 
 template <size_t Dim, size_t... Dims>
-struct default_strides<fixed_shape<Dim, Dims...>> {
+struct default_strides_type<fixed_shape<Dim, Dims...>> {
     using type = typename detail::default_strides_impl<0, Dims...>::strides_t;
 };
 
+template <size_t Rank> struct default_strides_type<ranked_shape<Rank>> {
+    using type = ranked_strides<Rank>;
+};
+
 template <class Shape>
-using default_strides_t = typename default_strides<Shape>::type;
+using default_strides_t = typename default_strides_type<Shape>::type;
 
 template <size_t Value, size_t Rank>
 using repeat_shape_t =
@@ -146,6 +183,29 @@ template <size_t Rank> using zero_shape_t = repeat_shape_t<0, Rank>;
 template <class... Args> auto make_ranked_shape(Args &&...args) noexcept {
     return ranked_shape<sizeof...(args)>{
         static_cast<size_t>(std::forward<Args>(args))...};
+}
+
+template <class... Args> auto make_ranked_strides(Args &&...args) noexcept {
+    return ranked_strides<sizeof...(args)>{
+        static_cast<size_t>(std::forward<Args>(args))...};
+}
+
+template <class Shape>
+constexpr auto default_strides(const Shape &shape) noexcept {
+    if constexpr (is_fixed_dims_v<Shape>) {
+        return default_strides_t<Shape>{};
+    } else {
+        ranked_strides<Shape::rank()> strides;
+        if constexpr (strides.rank()) {
+            strides[strides.rank() - 1] = 1;
+            if constexpr (strides.rank() > 1) {
+                for (int i = strides.rank() - 2; i >= 0; i--) {
+                    strides[i] = shape[i + 1] * strides[i + 1];
+                }
+            }
+        }
+        return strides;
+    }
 }
 
 template <class Index, class Strides>
@@ -175,7 +235,7 @@ constexpr size_t linear_size(const Shape &shape,
 
 template <class Shape, class Strides>
 constexpr size_t contiguous_dims(const Shape &shape, const Strides &strides) {
-    auto def_strides = default_strides_t<Shape>{};
+    auto def_strides = default_strides(shape);
     for (int32_t i = strides.rank() - 1; i >= 0; --i) {
         if (strides[i] != def_strides[i]) {
             return shape.rank() - i - 1;

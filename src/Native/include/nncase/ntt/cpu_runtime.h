@@ -42,5 +42,7 @@ struct nncase_runtime_cpu_mt_t {
 extern nncase_runtime_cpu_mt_t *g_cpu_mt;
 extern size_t bid;
 extern size_t tid;
+extern uint8_t **sram;
+extern size_t sram_size_per_thread;
 #endif
 }

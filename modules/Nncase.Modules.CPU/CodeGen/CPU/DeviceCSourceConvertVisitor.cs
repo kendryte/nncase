@@ -12,12 +12,14 @@ using System.Linq;
 using System.Reactive;
 using System.Runtime.InteropServices;
 using System.Text;
+using DryIoc;
 using Google.OrTools.Sat;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.Runtime;
 using Nncase.TIR;
 using Nncase.Utilities;
+using Razor.Templating.Core;
 
 namespace Nncase.CodeGen.CPU;
 
@@ -52,7 +54,8 @@ internal sealed class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             throw new NotSupportedException("The PrimFunction must return void!");
         }
 
-        var ctype = $"void {expr.Name}({string.Join(", ", expr.Parameters.AsValueEnumerable().Select(Visit).Select(s => $"{s.Type} {s.Name}").ToArray())})";
+        var ctype = $"template<{string.Join(", ", Enumerable.Range(0, expr.Parameters.Length).Select(x => $"class T{x}"))}>" +
+            $"void {expr.Name}({string.Join(", ", expr.Parameters.AsValueEnumerable().Select(Visit).Select((s, i) => $"T{i} &&{s.Name}").ToArray())})";
 
         using (var scope = new IndentScope(_deviceBuilder))
         {
@@ -132,7 +135,7 @@ internal sealed class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         }
 
         var start = Visit(expr.Start);
-        _ = Visit(expr.Size);
+        var size = Visit(expr.Size);
         string name = expr.Location switch
         {
             MemoryLocation.L2Data => start.Name,
@@ -140,7 +143,7 @@ internal sealed class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             _ => throw new NotSupportedException(expr.Location.ToString()),
         };
 
-        symbol = new(start.Type, name);
+        symbol = new(start.Type, $"std::span<uint8_t, {size.Name}>({name}, {size.Name})");
         _exprMemo.Add(expr, symbol);
         return symbol;
     }
@@ -194,7 +197,7 @@ internal sealed class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                 str = CSourceUtilities.ContertSelect(op, arguments);
                 break;
             case TIR.CPU.SramPtr op:
-                str = $"({type})(sram[bid] + (sram_size_per_thread * tid) + {arguments[0].Name})";
+                str = $"sram[bid] + (sram_size_per_thread * tid) + {arguments[0].Name}";
                 break;
             case TIR.Load op:
                 str = $"{arguments[0].Name}[{arguments[1].Name}]";
@@ -212,16 +215,24 @@ internal sealed class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                 str = $"({type})runtime_util->malloc({arguments[0].Name})";
                 break;
             case IR.Buffers.AllocateBufferView op:
-                str = $"{Visit(((TIR.Buffer)expr.Arguments[0]).MemSpan)}";
+                {
+                    var buffer = (TIR.Buffer)expr.Arguments[0];
+                    str = $"{{span_cast<{buffer.ElemType.ToC()}>({Visit(buffer.MemSpan).Name}), make_ranked_shape({StringUtility.Join(", ", buffer.Dimensions.AsValueEnumerable().Select(x => Visit(x).Name))})}}";
+                }
+
                 break;
             case IR.Tensors.Cast op:
                 str = $"(({op.NewType.ToC()}){arguments[0].Name})";
                 break;
             case TIR.CPU.Memcopy op:
-                IndentScope.Writer.IndWrite($"tensor_copy({arguments[0].Name}, {arguments[1].Name});\n");
+                IndentScope.Writer.IndWrite($"tensor_copy({arguments[1].Name}, {arguments[0].Name});\n");
                 break;
             case TIR.CPU.Unary op:
-                IndentScope.Writer.IndWrite($"unary({arguments[0].Name}, {arguments[1].Name});\n");
+                IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Unary.cshtml", new UnaryKernelTemplateModel
+                {
+                    Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
+                    UnaryOp = op.UnaryOp,
+                }).Result);
                 break;
             default:
                 throw new NotSupportedException();

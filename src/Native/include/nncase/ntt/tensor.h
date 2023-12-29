@@ -20,7 +20,7 @@ namespace nncase::ntt {
 template <class T, class Shape, class Strides, bool IsView> class tensor_base;
 template <class T, class Shape, class Strides = default_strides_t<Shape>>
 using tensor = tensor_base<T, Shape, Strides, false>;
-template <class T, class Shape, class Strides>
+template <class T, class Shape, class Strides = default_strides_t<Shape>>
 using tensor_view = tensor_base<T, Shape, Strides, true>;
 
 namespace detail {
@@ -53,8 +53,11 @@ class tensor_storage<T, Shape, Strides, false, false> {
           shape_(std::move(shape)),
           strides_(std::move(strides)) {}
 
-    constexpr const Shape &shape() noexcept { return shape_; }
-    constexpr const Strides &strides() noexcept { return strides_; }
+    constexpr tensor_storage(Shape shape)
+        : tensor_storage(shape, default_strides(shape)) {}
+
+    constexpr const Shape &shape() const noexcept { return shape_; }
+    constexpr const Strides &strides() const noexcept { return strides_; }
 
     constexpr const std::span<const T> buffer() const noexcept {
         return buffer_;
@@ -98,6 +101,10 @@ class tensor_storage<T, Shape, Strides, true, false> {
         : buffer_(std::move(buffer)),
           shape_(std::move(shape)),
           strides_(std::move(strides)) {}
+
+    constexpr tensor_storage(buffer_type buffer, Shape shape) noexcept
+        : tensor_storage(std::move(buffer), std::move(shape),
+                         default_strides(shape)) {}
 
     constexpr const Shape &shape() const noexcept { return shape_; }
     constexpr const Strides &strides() const noexcept { return strides_; }

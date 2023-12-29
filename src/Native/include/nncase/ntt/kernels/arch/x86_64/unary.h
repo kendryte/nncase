@@ -13,8 +13,19 @@
  * limitations under the License.
  */
 #pragma once
-#include "kernels/binary.h"
-#include "kernels/copy.h"
-#include "kernels/unary.h"
-#include "tensor.h"
-#include "utility.h"
+
+namespace nncase::ntt::arch {
+template <size_t Extent, class T, class Op>
+constexpr void unary(Op &&op, const T *input_p, T *output_p) {
+    for (size_t i = 0; i < Extent; i++) {
+        output_p[i] = op(input_p[i]);
+    }
+}
+
+template <class T, class Op>
+constexpr void unary(Op &&op, const T *input_p, T *output_p, size_t extent) {
+    for (size_t i = 0; i < extent; i++) {
+        output_p[i] = op(input_p[i]);
+    }
+}
+} // namespace nncase::ntt::arch

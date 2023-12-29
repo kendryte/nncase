@@ -12,8 +12,6 @@ namespace Nncase.CodeGen.CPU;
 public class KernelArgument
 {
     public CSymbol Symbol { get; set; } = null!;
-
-    public TIR.Buffer Buffer { get; set; } = null!;
 }
 
 public class KernelTemplateModel
