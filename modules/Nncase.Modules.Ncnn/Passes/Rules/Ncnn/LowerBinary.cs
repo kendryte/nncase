@@ -80,7 +80,6 @@ public partial class LowerBinary : RewriteRule<Pattern>
     {
         if (MapBinaryOp(binary.BinaryOp) is BinaryOperationType op)
         {
-
             var r = Math.Max(inputA.CheckedShape.Rank, inputB.CheckedShape.Rank);
             if (inputA is Const)
             {
