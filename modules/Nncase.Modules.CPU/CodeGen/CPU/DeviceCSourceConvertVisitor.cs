@@ -173,7 +173,11 @@ internal sealed class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         {
             TupleType x when x == TupleType.Void => string.Empty,
             TensorType { IsScalar: true } x => x.DType.ToC(),
-            TensorType { Shape: { IsRanked: true } } x => $"tensor_view<{x.DType.ToC()}, ranked_shape<{x.Shape.Rank}>>",
+            TensorType { Shape: { IsRanked: true } } x => x.Shape.IsFixed switch
+            {
+                true => $"tensor_view<{x.DType.ToC()}, fixed_shape<{x.Shape.ToString()[1..^1]}>>",
+                false => $"tensor_view<{x.DType.ToC()}, ranked_shape<{x.Shape.Rank}>>",
+            },
             _ => throw new NotSupportedException(),
         };
 
@@ -217,7 +221,14 @@ internal sealed class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             case IR.Buffers.AllocateBufferView op:
                 {
                     var buffer = (TIR.Buffer)expr.Arguments[0];
-                    str = $"{{span_cast<{buffer.ElemType.ToC()}>({Visit(buffer.MemSpan).Name}), make_ranked_shape({StringUtility.Join(", ", buffer.Dimensions.AsValueEnumerable().Select(x => Visit(x).Name))})}}";
+                    if (expr.CheckedShape.IsFixed)
+                    {
+                        str = $"{{span_cast<{buffer.ElemType.ToC()}>({Visit(buffer.MemSpan).Name}), {KernelUtility.DimensionsToC(buffer.Dimensions)}{{}}}}";
+                    }
+                    else
+                    {
+                        str = $"{{span_cast<{buffer.ElemType.ToC()}>({Visit(buffer.MemSpan).Name}), make_ranked_shape({StringUtility.Join(", ", buffer.Dimensions.AsValueEnumerable().Select(x => Visit(x).Name))})}}";
+                    }
                 }
 
                 break;
@@ -352,10 +363,21 @@ internal sealed class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         }
 
         var buffer = Visit(expr.Buffer);
-        var begins = $"{StringUtility.Join(", ", expr.Region.AsValueEnumerable().Select(x => Visit(x.Start).Name))}";
-        var extents = $"{StringUtility.Join(", ", expr.Region.AsValueEnumerable().Select(x => Visit(x.Stop - x.Start).Name))}";
-        symbol = new(string.Empty, $"{buffer.Name}.view(make_ranked_shape({begins}), make_ranked_shape({extents}))");
-        _exprMemo.Add(expr, symbol);
+        if (expr.Region.AsValueEnumerable().All(r => r is { Start: TensorConst, Stop: TensorConst, Step: TensorConst step } && step.Value.ToScalar<int>() == 1))
+        {
+            var begins = $"{StringUtility.Join(", ", expr.Region.AsValueEnumerable().Select(x => Visit(x.Start).Name))}";
+            var extents = $"{StringUtility.Join(", ", expr.Region.AsValueEnumerable().Select(x => Visit(x.Stop).Name))}";
+            symbol = new(string.Empty, $"{buffer.Name}.view(fixed_shape<{begins}>{{}}, fixed_shape<{extents}>{{}})");
+            _exprMemo.Add(expr, symbol);
+        }
+        else
+        {
+            var begins = $"{StringUtility.Join(", ", expr.Region.AsValueEnumerable().Select(x => Visit(x.Start).Name))}";
+            var extents = $"{StringUtility.Join(", ", expr.Region.AsValueEnumerable().Select(x => Visit(x.Stop - x.Start).Name))}";
+            symbol = new(string.Empty, $"{buffer.Name}.view(make_ranked_shape({begins}), make_ranked_shape({extents}))");
+            _exprMemo.Add(expr, symbol);
+        }
+
         return symbol;
     }
 }

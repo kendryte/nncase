@@ -97,6 +97,7 @@ public class CPUTarget : ITarget
         {
             p.Add<Passes.Mutators.UnFoldBlock>();
             p.Add<Passes.Mutators.FlattenSequential>();
+            p.Add<Passes.Mutators.TailLoopStripping>();
             p.Add<Passes.Mutators.FoldConstCall>();
         });
 
