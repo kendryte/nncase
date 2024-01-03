@@ -165,7 +165,7 @@ public class CSourceCompiler
     private string ArgumentsSpecific(string sourcePath, string outPath)
     {
 #if DEBUG
-        var config = "RelWithDebInfo";
+        var config = "Debug";
 #else
         var config = "Release";
 #endif

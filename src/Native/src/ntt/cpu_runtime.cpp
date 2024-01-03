@@ -18,19 +18,11 @@
 #include <cstring>
 #include <nncase/ntt/cpu_runtime.h>
 
-#define SRAM_SIZE_PER_BLOCK (1024 * 1024 * 4)
-#define SRAM_SIZE_PER_THREAD (SRAM_SIZE_PER_BLOCK)
-
 extern "C" {
 nncase_runtime_cpu_mt_t *g_cpu_mt;
 size_t bid;
 size_t tid;
 
-static uint8_t _sram[1][SRAM_SIZE_PER_BLOCK];
-static uint8_t *block_sram_ptr[] = {_sram[0]};
-
-uint8_t **sram = block_sram_ptr;
-size_t sram_size_per_thread = SRAM_SIZE_PER_THREAD;
 
 // compiler support
 #if defined(_MSC_VER)

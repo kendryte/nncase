@@ -201,7 +201,7 @@ internal sealed class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                 str = CSourceUtilities.ContertSelect(op, arguments);
                 break;
             case TIR.CPU.SramPtr op:
-                str = $"sram[bid] + (sram_size_per_thread * tid) + {arguments[0].Name}";
+                str = $"g_cpu_mt->sram_address(bid, tid) + {arguments[0].Name}";
                 break;
             case TIR.Load op:
                 str = $"{arguments[0].Name}[{arguments[1].Name}]";

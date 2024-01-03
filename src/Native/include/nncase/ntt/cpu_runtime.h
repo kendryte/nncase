@@ -32,6 +32,7 @@ struct nncase_runtime_cpu_mt_t {
     float (*sinf)(float v);
     float (*sinhf)(float v);
     float (*tanhf)(float v);
+    uint8_t* (*sram_address)(int bid, int tid);
 
 #ifndef WIN32
     void *(*memcpy)(void *dst, const void *src, size_t len);
@@ -42,7 +43,5 @@ struct nncase_runtime_cpu_mt_t {
 extern nncase_runtime_cpu_mt_t *g_cpu_mt;
 extern size_t bid;
 extern size_t tid;
-extern uint8_t **sram;
-extern size_t sram_size_per_thread;
 #endif
 }

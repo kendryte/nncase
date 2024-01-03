@@ -23,6 +23,15 @@ using namespace nncase::runtime;
 using namespace nncase::runtime::cpu;
 
 namespace {
+#define SRAM_SIZE_PER_BLOCK (1024 * 1024 * 4)
+#define SRAM_SIZE_PER_THREAD (SRAM_SIZE_PER_BLOCK)
+
+static uint8_t _sram[1][SRAM_SIZE_PER_BLOCK];
+static uint8_t *_block_sram_ptr[] = {_sram[0]};
+static uint8_t *sram_address(int bid, int tid) {
+    return _block_sram_ptr[bid] + (SRAM_SIZE_PER_BLOCK * tid);
+}
+
 nncase_runtime_cpu_mt_t nncase_cpu_mt_ = {
     .acosf = acosf,
     .acoshf = acoshf,
@@ -39,6 +48,7 @@ nncase_runtime_cpu_mt_t nncase_cpu_mt_ = {
     .sinf = sinf,
     .sinhf = sinhf,
     .tanhf = tanhf,
+    .sram_address = sram_address,
 
 #ifndef WIN32
     .memcpy = memcpy,
