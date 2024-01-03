@@ -138,6 +138,7 @@ internal class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FoldNopReduce>();
             p.Add<Passes.Rules.Neutral.SliceToGetItem>();
             p.Add<Passes.Rules.Neutral.FoldTwoPads>();
+            p.Add<Passes.Rules.Neutral.FoldDilatedConv2D>();
         });
 
         passManager.AddWithName<EGraphRulesPass>("NeutralOptimizeTranspose").Configure(p =>
@@ -220,7 +221,7 @@ internal class Compiler : ICompiler
             MergeOp(p, true);
             ClearMarker(p);
             MergeFusion(p, singleVar, true);
-            Bucket(p);
+            // Bucket(p);
             Rebuild(p, singleVar);
             Simplify(p);
         }
@@ -266,7 +267,7 @@ internal class Compiler : ICompiler
             "TargetDependentAfterQuantPass",
             progress,
             token);
-        await RunPassAsync(p => ClearFixShape(p), "ClearFixShape", progress, token);
+        // await RunPassAsync(p => ClearFixShape(p), "ClearFixShape", progress, token);
         await RunPassAsync(
             p => target.RegisterTargetDependentBeforeCodeGen(p, _compileSession.CompileOptions),
             "TargetDependentBeforeCodeGen",

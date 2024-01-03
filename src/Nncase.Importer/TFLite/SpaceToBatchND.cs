@@ -22,7 +22,7 @@ namespace Nncase.Importer.TFLite
             }
 
             var stb = NCHWToNHWC(SpaceToBatch(NHWCToNCHW(input), blockShape, paddings));
-            if (input.CheckedShape.Rank == 3)
+            if (input.CheckedShape.Rank == 4)
             {
                 return Squeeze(stb, new[] { 1 });
             }
@@ -42,7 +42,7 @@ namespace Nncase.Importer.TFLite
             }
 
             var bts = NCHWToNHWC(BatchToSpace(NHWCToNCHW(input), blockShape, crops));
-            if (input.CheckedShape.Rank == 3)
+            if (input.CheckedShape.Rank == 4)
             {
                 return Squeeze(bts, new[] { 1 });
             }

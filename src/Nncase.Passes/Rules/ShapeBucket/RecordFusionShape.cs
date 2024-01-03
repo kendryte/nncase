@@ -53,6 +53,12 @@ public class FusionShapeUpdater : ExprVisitor<Expr, Unit>
             var argShape = expr.Arguments.ToArray().Select(arg =>
             {
                 var exp = arg is Marker m ? m.Target : arg;
+                if (!_memo.ContainsKey(exp))
+                {
+                    Console.WriteLine("Input Not Exist");
+                    Console.WriteLine(f.Name);
+                }
+
                 return GetShape(_memo[exp]);
             }).ToArray();
             var shape = GetShape(_memo[expr]);
@@ -146,6 +152,7 @@ public class RecordFusionShape : FunctionPass
                 var memo = EvaluatorUtil.GetMemo(body, ConcatDictionary(input, varValues));
                 var f = new FusionShapeUpdater(ConcatDictionary(memo, exprValues));
                 f.Visit(main);
+                GC.Collect();
                 return f.FusionShape;
             }).SelectMany(x => x)
             .ToLookup(x => x.Key, x => x.Value)

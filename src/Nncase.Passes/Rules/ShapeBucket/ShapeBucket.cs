@@ -1183,7 +1183,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
         totalCount == 0 || (minFixedShapeList[0].SequenceEqual(maxFixedShapeList[0]) &&
                             minFixedShapeList[1].SequenceEqual(maxFixedShapeList[1]));
 
-    private static bool ShouldRestore(Call outerCall, BucketFusion fusion)
+    public static bool ShouldRestore(Call outerCall, BucketFusion fusion)
     {
         if (CallValidator.IsSimple(fusion))
         {
@@ -1303,10 +1303,16 @@ public partial class RebuildBucket : RewriteRule<Pattern>
         _shapeInfo = shapeInfo;
     }
 
+    // todo: pattern not match??
     public override Pattern Pattern => FusionBucket.BucketFusionPattern;
 
     public Expr? GetReplace(Call outerCall, BucketFusion fusion, Expr fusionBody)
     {
+        if (FusionBucket.ShouldRestore(outerCall, fusion))
+        {
+            return FusionBucket.RestoreBodyWithArgs(outerCall.Arguments.ToArray(), fusion.Parameters.ToArray(), fusion.Body);
+        }
+
         // only once RecordShape
         var options = CompileSession.CompileOptions.ShapeBucketOptions;
 
@@ -1392,6 +1398,15 @@ public partial class RebuildBucket : RewriteRule<Pattern>
             if (CallValidator.ForceConvert.Contains(expr.Target.GetType().TypeHandle))
             {
                 if (!expr.CheckedShape.IsFixed)
+                {
+                    _hasDynamic = true;
+                }
+            }
+
+            if (expr.Target is Call { Target: IR.Tensors.Reshape })
+            {
+                var type = expr.Arguments[IR.Tensors.Reshape.Shape.Index].CheckedType;
+                if (type is TensorType { Shape.IsFixed: false })
                 {
                     _hasDynamic = true;
                 }

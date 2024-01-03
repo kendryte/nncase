@@ -196,6 +196,7 @@ public static class ShapeBucketRegister
         });
 
         MergeFusion(p, singleVar, false);
+        Bucket(p);
     }
 
     public static void MergeFusion(IPassManager p, bool singleVar, bool greedy)
