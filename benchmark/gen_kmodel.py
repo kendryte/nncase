@@ -31,11 +31,11 @@ MODEL_DIR = "models"
 
 MODELS = {
     "mnist": {
-        "url": "https://github.com/onnx/models/raw/main/vision/classification/mnist/model/mnist-8.onnx",
+        "url": "https://github.com/onnx/models/raw/main/validated/vision/classification/mnist/model/mnist-8.onnx",
         "in_shapes": {"Input3": [1, 1, 28, 28]}
     },
     "mobilenet_v2": {
-        "url": "https://github.com/onnx/models/raw/main/vision/classification/mobilenet/model/mobilenetv2-7.onnx",
+        "url": "https://github.com/onnx/models/raw/main/validated/vision/classification/mobilenet/model/mobilenetv2-7.onnx",
         "in_shapes": {"data": [1, 3, 224, 224]}
     }
 }
