@@ -223,7 +223,7 @@ internal sealed class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                     var buffer = (TIR.Buffer)expr.Arguments[0];
                     if (expr.CheckedShape.IsFixed)
                     {
-                        str = $"{{span_cast<{buffer.ElemType.ToC()}>({Visit(buffer.MemSpan).Name}), {KernelUtility.DimensionsToC(buffer.Dimensions)}{{}}}}";
+                        str = $"{{span_cast<{buffer.ElemType.ToC()}>({Visit(buffer.MemSpan).Name}), {KernelUtility.DimensionsToC(buffer.Dimensions)}{{}}, {KernelUtility.StridesToC(buffer.Strides)}{{}}}}";
                     }
                     else
                     {
@@ -239,7 +239,7 @@ internal sealed class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                 IndentScope.Writer.IndWrite($"tensor_copy({arguments[1].Name}, {arguments[0].Name});\n");
                 break;
             case TIR.CPU.Unary op:
-                IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Unary.cshtml", new UnaryKernelTemplateModel
+                IndentScope.Writer.IndWrite(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Unary.cshtml", new UnaryKernelTemplateModel
                 {
                     Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
                     UnaryOp = op.UnaryOp,
