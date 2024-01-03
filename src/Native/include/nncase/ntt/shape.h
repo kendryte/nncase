@@ -150,7 +150,7 @@ inline constexpr bool is_fixed_dims_v = is_fixed_dims<Dims>::value;
     };                                                                         \
                                                                                \
     template <class ShapeA, class ShapeB>                                      \
-    using common_##name##_t = common_##name##_type<ShapeA, ShapeB>::type;
+    using common_##name##_t = typename common_##name##_type<ShapeA, ShapeB>::type;
 
 DEFINE_COMMON_DIMS_TYPE(shape)
 DEFINE_COMMON_DIMS_TYPE(strides)
