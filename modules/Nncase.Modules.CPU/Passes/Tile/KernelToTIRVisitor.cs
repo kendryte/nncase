@@ -146,7 +146,7 @@ internal sealed class KernelToTIRVisitor : ExprVisitor<Unit, Unit>
         var lhs = (DistributedType)expr.Arguments[0].CheckedType;
         var rhs = (DistributedType)expr.Arguments[1].CheckedType;
         var outtype = (DistributedType)expr.CheckedType;
-        _mainBody.Add(TIR.F.CPU.Binary(binary.BinaryOp, lhs, rhs, outtype, arguments[0], arguments[1], ret));
+        _mainBody.Add(TIR.F.CPU.Binary(binary.BinaryOp, arguments[0], arguments[1], ret));
     }
 
     private void GenerateBoxing(IR.CPU.Boxing boxing, Buffer[] arguments, Buffer ret, Call expr)

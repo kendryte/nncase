@@ -32,6 +32,8 @@ public class UnitTestCPUTarget : TestClassBase
         DefaultTargetName = CPUTarget.Kind;
 #if DEBUG
         CompileOptions.DumpFlags = DumpFlags.PassIR | DumpFlags.Rewrite | DumpFlags.EGraphCost | DumpFlags.CodeGen;
+#else
+        CompileOptions.DumpFlags = DumpFlags.CodeGen;
 #endif
     }
 
@@ -216,7 +218,6 @@ public class UnitTestCPUTarget : TestClassBase
     [Fact]
     public void TestNestIfWithThenBegin()
     {
-        CompileOptions.DumpFlags = DumpFlags.CodeGen;
         var condVar = new Var(new TensorType(DataTypes.Boolean, Shape.Scalar));
         var cast = Cast(condVar, DataTypes.Int32);
         var i = new If(condVar, cast * new If(condVar, 3 + cast, 2), 6);

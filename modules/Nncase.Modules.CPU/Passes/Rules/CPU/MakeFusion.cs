@@ -69,16 +69,21 @@ internal sealed partial class CPUSingleKernelFusion : FusionMaker
         "call",
         IsOp<Op>(
             "op",
-            op => op is IR.Math.Unary or IR.Math.MatMul or IR.Tensors.Gather or IR.Math.Binary));
+            op => op is IR.Math.Unary or IR.Math.MatMul or IR.Tensors.Gather or IR.Math.Binary)) with
+    { TypePattern = TypePatternUtility.HasFixedShape() & TypePatternUtility.HasRank() };
 
     private Call? GetReplace(Call call, Op op, IReadOnlyList<Expr> callParams)
     {
         var newInputs = new List<Expr>();
         for (int i = 0; i < callParams.Count; i++)
         {
-            if (callParams[i] is Call or Var)
+            if (callParams[i] is Call or Var or If)
             {
-                newInputs.Add(new Var(callParams[i].CheckedType!));
+                newInputs.Add(new Var(callParams[i].CheckedType switch
+                {
+                    TensorType { IsScalar: true } t => t with { Shape = new Shape(1) },
+                    var x => x,
+                }));
             }
             else
             {
@@ -94,7 +99,11 @@ internal sealed partial class CPUSingleKernelFusion : FusionMaker
         }
 
         var newCall = new Call(op, newInputs.ToArray());
-        var callFusion = new Call(new Fusion($"{op.GetType().Name}_{Count++}_kernel", ModuleKind, newCall, newInputs.OfType<Var>().ToArray()), newInputs.Select((e, i) => (e, i)).Where(p => p.e is Var).Select(p => callParams[p.i]).ToArray());
+        var callFusion = new Call(new Fusion($"{op.GetType().Name}_{Count++}_kernel", ModuleKind, newCall, newInputs.OfType<Var>().ToArray()), newInputs.Select((e, i) => (e, i)).Where(p => p.e is Var).Select(p => callParams[p.i] switch
+        {
+            Expr { CheckedShape.IsScalar: true } e => IR.F.Tensors.Unsqueeze(e, new[] { 0 }),
+            var e => e,
+        }).ToArray());
         return callFusion;
     }
 }

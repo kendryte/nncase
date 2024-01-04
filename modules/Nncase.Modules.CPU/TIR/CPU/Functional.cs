@@ -39,9 +39,9 @@ public partial class CPU
         return new Call(new TIR.CPU.Unary(unaryOp), input, output);
     }
 
-    public static Call Binary(BinaryOp binaryOp, DistributedType ltype, DistributedType rtype, DistributedType outtype, Expr lhs, Expr rhs, Expr output)
+    public static Call Binary(BinaryOp binaryOp, Expr lhs, Expr rhs, Expr output)
     {
-        return new Call(new TIR.CPU.Binary(binaryOp, ltype, rtype, outtype), lhs, rhs, output);
+        return new Call(new TIR.CPU.Binary(binaryOp), lhs, rhs, output);
     }
 
     public static Call Matmul(Expr lhs, Expr rhs, Expr output)

@@ -225,6 +225,7 @@ internal sealed class DeviceToTIRConverter
                 IR.CPU.Store op => LowerStore(call, op, rootMap, outRegion, out inputMaps),
                 IR.Math.Unary op => LowerUnary(call, op, rootMap, outRegion, out inputMaps),
                 IR.Math.MatMul op => LowerMatmul(call, op, rootMap, outRegion, out inputMaps),
+                IR.Math.Binary op => LowerBinary(call, op, rootMap, outRegion, out inputMaps),
                 Fusion func => LowerFusion(call, func, rootMap, outRegion, out inputMaps),
                 _ => throw new NotSupportedException(),
             }).Build(),
@@ -437,6 +438,56 @@ internal sealed class DeviceToTIRConverter
         // final.Body(compute);
         // block.Body(inStarts[0].Item1);
         block.Body(compute);
+#endif
+        return seq;
+    }
+
+    private ISequentialBuilder<Sequential> LowerBinary(Call call, Binary op, AffineMap rootMap, BufferRegion outRegion, out AffineMap[] inputMaps)
+    {
+        var lhsShape = GetShape(call.Arguments[0]);
+        var rhsShape = GetShape(call.Arguments[1]);
+        var fullShape = GetShape(call);
+        var lhsRegion = GetBufferRegion(call.Arguments[0], (TIR.Buffer inBuffer) => new BufferRegion(inBuffer, outRegion.Region));
+        var rhsRegion = GetBufferRegion(call.Arguments[1], (TIR.Buffer inBuffer) => new BufferRegion(inBuffer, outRegion.Region));
+        TileScope.CurrentBlock.Alloc(outRegion.Buffer);
+
+        Expr[] PostProcessAffineMap(List<Expr> iters, IReadOnlyList<int> inShape, IReadOnlyList<int> outShape)
+        {
+            var ralign = outShape.Count - inShape.Count;
+            for (int i = outShape.Count - 1; i >= 0; i--)
+            {
+                if (i < ralign)
+                {
+                    iters.RemoveAt(i);
+                }
+                else if (i < (outShape.Count - 2) && inShape[i] == 1 && outShape[i] != 1)
+                {
+                    iters[i] = 0;
+                }
+            }
+
+            return iters.ToArray();
+        }
+
+        Expr[] LhsInFunc(params Expr[] exprs) => PostProcessAffineMap(exprs.ToList(), lhsShape, fullShape);
+        Expr[] RhsInFunc(params Expr[] exprs) => PostProcessAffineMap(exprs.ToList(), rhsShape, fullShape);
+
+        inputMaps = new[] {
+            AffineMap.FromCallable(LhsInFunc, fullShape.Count, 0).Compose(rootMap),
+            AffineMap.FromCallable(RhsInFunc, fullShape.Count, 0).Compose(rootMap),
+        };
+
+        var block = T.Block("binary").
+                Reads(lhsRegion, rhsRegion).
+                Writes(outRegion);
+        var seq = T.Sequential().Body(
+            Visit(call.Arguments[0], rootMap, lhsRegion, out _),
+            Visit(call.Arguments[1], rootMap, rhsRegion, out _),
+            block);
+#if USE_KERNEL_LIB
+        block.Body(TIR.F.CPU.Binary(op.BinaryOp, lhsRegion, rhsRegion, outRegion));
+#else
+    throw new NotSupportedException();
 #endif
         return seq;
     }

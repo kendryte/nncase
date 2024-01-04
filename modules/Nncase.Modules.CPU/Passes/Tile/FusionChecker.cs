@@ -470,7 +470,17 @@ internal sealed class FusionChecker
                 strides = TensorUtilities.GetStrides(shape);
             }
 
-            var memSpan = new MemSpan(start, shape[0] * strides[0] * dtype.SizeInBytes, location);
+            Expr size;
+            if (shape.Length == 0)
+            {
+                size = dtype.SizeInBytes;
+            }
+            else
+            {
+                size = shape[0] * strides[0] * dtype.SizeInBytes;
+            }
+
+            var memSpan = new MemSpan(start, size, location);
             var buffer = new TIR.Buffer(bfname, dtype, memSpan, shape.Select(s => (Expr)s).ToArray(), strides.Select(s => (Expr)s).ToArray());
             UpdateLifeness(i, kv.Key, buffer, location == MemoryLocation.L2Data);
         }

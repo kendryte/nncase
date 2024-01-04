@@ -126,8 +126,7 @@ internal sealed class PrimTileVisitor : ExprVisitor<Unit, Unit>
                     }
 
                     var outTileShape = Enumerable.Repeat(1, expr.CheckedShape.Rank).ToArray();
-                    outTileShape[^1] = inTileShapeB[^1];
-                    outTileShape[^2] = inTileShapeA[^2];
+                    outTileShape[^1] = 32;
                     TileList.Add(new(expr, outTileShape));
                     NameList.Add(new(expr, nameof(IR.Math.Binary) + "_" + Count));
                     Count++;

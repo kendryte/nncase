@@ -20,12 +20,6 @@ public sealed partial class Binary : CPUKernelOp
 
     public BinaryOp BinaryOp { get; }
 
-    public DistributedType LhsType { get; }
-
-    public DistributedType RhsType { get; }
-
-    public DistributedType OutType { get; }
-
     /// <inheritdoc/>
     public override string DisplayProperty()
     {

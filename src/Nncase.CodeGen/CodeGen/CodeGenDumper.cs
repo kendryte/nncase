@@ -12,7 +12,8 @@ namespace Nncase.CodeGen
         public static void DumpIdMap(Dictionary<BaseFunction, FunctionId> ids)
         {
             var idInfo = ids.Select(pair => $"{pair.Value.ModuleId} {pair.Value.Id} {pair.Key.Name}").ToArray();
-            DumpUtility.WriteResult(Path.Join(DumpScope.Current.Directory, "ids.txt"), idInfo);
+            using var file = DumpScope.Current.OpenFile("ids.txt");
+            DumpUtility.WriteResult(file, idInfo);
         }
 
         public static void WriteDebugInfo(uint fnId, uint moduleId, List<(Expr Expr, (long Min, long Max) Range)> sourceMap)
@@ -27,9 +28,8 @@ namespace Nncase.CodeGen
                 Directory.CreateDirectory(debugInfoDir);
             }
 
-            DumpUtility.WriteResult(
-                Path.Join(dir, "StackVMInst", $"{ids[new(fnId, moduleId)]}.txt"),
-                sourceMap.Where(x => x.Expr is not PrimFunctionWrapper).Select(x => ToStr(x.Expr) + x.Range).ToArray());
+            using var stream = File.OpenWrite(Path.Join(dir, "StackVMInst", $"{ids[new(fnId, moduleId)]}.txt"));
+            DumpUtility.WriteResult(stream, sourceMap.Where(x => x.Expr is not PrimFunctionWrapper).Select(x => ToStr(x.Expr) + x.Range).ToArray());
         }
 
         public static Dictionary<FunctionId, string> ReadIds(string dir)
