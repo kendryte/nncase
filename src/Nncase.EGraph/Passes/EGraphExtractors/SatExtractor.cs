@@ -77,7 +77,7 @@ internal class SatExtractor : IExtractor
         }
 
         var solver = new CpSolver();
-        int max_time = 60;
+        int max_time = 600;
         if (System.Environment.GetEnvironmentVariable("SOLVE_MAX_TIME") is string s_solve_max_time)
         {
             try
@@ -90,7 +90,8 @@ internal class SatExtractor : IExtractor
             }
         }
 
-        solver.StringParameters = $"max_time_in_seconds:{max_time},num_workers:0";
+        int processorCount = Math.Max(System.Environment.ProcessorCount / 2, 1);
+        solver.StringParameters = $"max_time_in_seconds:{max_time},num_workers:{processorCount}";
 
         var enableDump = DumpScope.Current.IsEnabled(DumpFlags.EGraphCost);
         CpSolverStatus status;
