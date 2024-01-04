@@ -12,13 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <omp.h>
 #include "runtime_function.h"
-#include <iostream>
 #include <ncnn/datareader.h>
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/runtime_op_utility.h>
+#include <chrono>
+
+typedef std::chrono::high_resolution_clock::time_point TimeVar;
+
+#define duration(name, a) std::cout<<name<<" : "<<std::chrono::duration_cast<std::chrono::nanoseconds>(a).count()/1000.0<<" ms"<<std::endl
+#define timeNow() std::chrono::high_resolution_clock::now()
+
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::ncnn;
@@ -63,6 +70,8 @@ result<void> ncnn_runtime_function::initialize_core(
 
     CHECK_WITH_ERR(!net_.load_param(paramdr), std::errc::invalid_argument);
     CHECK_WITH_ERR(!net_.load_model(bindr), std::errc::invalid_argument);
+    net_.opt.num_threads = omp_get_num_devices();
+
     return ok();
 }
 
@@ -130,6 +139,7 @@ result<value_t> ncnn_runtime_function::invoke_core(
 
     // 2. Extract outputs
     std::vector<value_t> outputs;
+    TimeVar t = timeNow();
     for (size_t i = 0; i < output_names_.size(); i++) {
         ::ncnn::Mat mat;
         CHECK_WITH_ERR(!ex.extract(output_names_[i].c_str(), mat),
@@ -193,7 +203,7 @@ result<value_t> ncnn_runtime_function::invoke_core(
         tensor t(std::in_place, dt, shape, get_default_strides(shape), buf);
         outputs.emplace_back(t);
     }
-
+    duration("ncnn run", timeNow() - t);
     auto ret_val = output_names_.size() == 1
                        ? outputs[0]
                        : tuple(std::in_place, std::move(outputs));
