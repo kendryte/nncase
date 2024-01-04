@@ -88,7 +88,7 @@ public static class DumpUtility
 {
     public static void WriteResult(Stream stream, string data, string prefix = "")
     {
-        using (var sw = new StreamWriter(stream))
+        using (var sw = new StreamWriter(stream, leaveOpen: true))
         {
             sw.Write(prefix);
             sw.Write(data);
