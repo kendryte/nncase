@@ -61,8 +61,7 @@ int main() {
         std::fill(ta.buffer().begin(), ta.buffer().end(), 1.f);
         ntt::unary<ntt::mathops::sin>(ta, tb.view());
         assert(tb(0, 0) == sinf(1.f));
-        ntt::tensor_copy(tb, tc);
-        // ntt::binary<ntt::mathops::mul>(ta, tb, tc);
+        ntt::binary<ntt::mathops::mul>(ta, tb, tc);
         assert(tc(0, 0) == sinf(1.f));
     }
 
@@ -74,8 +73,7 @@ int main() {
         std::fill(ta.buffer().begin(), ta.buffer().end(), 1.f);
         ntt::unary<ntt::mathops::sin>(ta, tb.view());
         assert(tb(0) == sinf(1.f));
-        ntt::tensor_copy(tb, tc);
-        // ntt::binary<ntt::mathops::mul>(ta, tb, tc);
+        ntt::binary<ntt::mathops::mul>(ta, tb, tc);
         assert(tc(0) == sinf(1.f));
     }
 

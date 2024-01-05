@@ -51,6 +51,14 @@
     <None Update="IR\IRListParser.tt">
       <Generator></Generator>
     </None>
+    <None Update="Tiling\AffineExprListParser.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>AffineExprListParser.cs</LastGenOutput>
+    </None>
+    <None Update="Tiling\AffineExprVisitor.g.tt">
+      <LastGenOutput>AffineExprVisitor.g.cs</LastGenOutput>
+      <Generator>TextTemplatingFileGenerator</Generator>
+    </None>
     <None Update="TIR\Range.Conversions.tt">
       <Generator>TextTemplatingFileGenerator</Generator>
       <LastGenOutput>Range.Conversions.cs</LastGenOutput>
@@ -81,6 +89,16 @@
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
       <DependentUpon>ExprVisitor.g.tt</DependentUpon>
+    </Compile>
+    <Compile Update="Tiling\AffineExprListParser.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>AffineExprListParser.tt</DependentUpon>
+    </Compile>
+    <Compile Update="Tiling\AffineExprVisitor.g.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>AffineExprVisitor.g.tt</DependentUpon>
     </Compile>
     <Compile Update="TIR\Range.Conversions.cs">
       <DesignTime>True</DesignTime>
