@@ -77,7 +77,7 @@ internal class SatExtractor : IExtractor
         }
 
         var solver = new CpSolver();
-        int max_time = 600;
+        int max_time = 120;
         if (System.Environment.GetEnvironmentVariable("SOLVE_MAX_TIME") is string s_solve_max_time)
         {
             try
