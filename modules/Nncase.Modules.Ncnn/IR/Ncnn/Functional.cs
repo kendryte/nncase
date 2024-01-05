@@ -23,4 +23,7 @@ public sealed class Ncnn
 
     public static Call NcnnBinary(Expr[] inExpr, BinaryOperationType binaryOp, int lorR, float[]? constInput, int[]? constShape) =>
         new Call(new NcnnBinary(binaryOp, lorR, constInput, constShape), inExpr);
+
+    public static Call NcnnCelu(Expr expr, float alpha) =>
+        new Call(new NcnnCelu(alpha), expr);
 }
