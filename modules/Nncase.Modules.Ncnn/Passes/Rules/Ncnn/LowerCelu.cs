@@ -25,7 +25,7 @@ public partial class LowerCelu : RewriteRule<Pattern>
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = IsCelu(
       IsWildcard("input") with { TypePattern = IsFloat() },
-      IsTensorConst("alpha") with { TypePattern = IsFloatScalar() } );
+      IsTensorConst("alpha") with { TypePattern = IsFloatScalar() });
 
     private Expr? GetReplace(Expr input, float alpha)
     {
@@ -37,6 +37,5 @@ public partial class LowerCelu : RewriteRule<Pattern>
         var newInput = new Var(input.CheckedType);
 
         return new Call(new Fusion("ncnn", NcnnCelu(newInput, alpha), new[] { newInput }), input);
-
     }
 }
