@@ -195,7 +195,7 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
         {
             var outputNames = new List<string>();
             var getItem = IR.F.Tensors.GetItem(call, i);
-            outputNames.Add("LSTMOutput_" + call.Metadata.OutputNames?[i]);
+            outputNames.Add(call.Metadata.OutputNames?[i] ?? "LSTMOutput_" + i.ToString());
             outputs[i].Metadata.OutputNames = outputNames;
         }
 
