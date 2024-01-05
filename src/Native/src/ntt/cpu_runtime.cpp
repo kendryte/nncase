@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include <cmath>
+#include <cstdarg>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -22,7 +23,6 @@ extern "C" {
 nncase_runtime_cpu_mt_t *g_cpu_mt;
 size_t bid;
 size_t tid;
-
 
 // compiler support
 #if defined(_MSC_VER)
@@ -55,7 +55,24 @@ float sinf(float v) { return g_cpu_mt->sinf(v); }
 float sinhf(float v) { return g_cpu_mt->sinhf(v); }
 float tanhf(float v) { return g_cpu_mt->tanhf(v); }
 
-#ifndef WIN32
+#ifdef WIN32
+void _invalid_parameter(wchar_t const *const expression,
+                        wchar_t const *const function_name,
+                        wchar_t const *const file_name,
+                        unsigned int const line_number,
+                        uintptr_t const reserved) {
+    g_cpu_mt->failfast("invalid_parameter", (va_list)0);
+}
+
+int _CrtDbgReport(int reportType, const char *filename, int linenumber,
+                  const char *moduleName, const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    g_cpu_mt->failfast(format, args);
+    va_end(args);
+    return 0;
+}
+#else
 void *memcpy(void *dst, const void *src, size_t len) {
     return g_cpu_mt->memcpy(dst, src, len);
 }

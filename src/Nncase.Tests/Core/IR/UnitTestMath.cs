@@ -217,7 +217,7 @@ public sealed class UnitTestMath
         var rhs = IR.F.Random.Normal(new[] { 1, 3, 16, 16 });
         var expr = IR.F.Math.FloorDiv(lhs, rhs);
         CompilerServices.InferenceType(expr);
-        var expect = IR.F.Math.Floor(lhs / rhs);
+        var expect = IR.F.Math.Binary(BinaryOp.FloorDiv, lhs, rhs);
         CompilerServices.InferenceType(expect);
         Assert.Equal(expr, expect);
     }

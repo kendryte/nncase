@@ -17,6 +17,7 @@
 #include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/type_serializer.h>
+#include <stdexcept>
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -30,6 +31,12 @@ static uint8_t _sram[1][SRAM_SIZE_PER_BLOCK];
 static uint8_t *_block_sram_ptr[] = {_sram[0]};
 static uint8_t *sram_address(int bid, int tid) {
     return _block_sram_ptr[bid] + (SRAM_SIZE_PER_BLOCK * tid);
+}
+
+static void failfast(const char *foramt, va_list args) {
+    char buffer[1024];
+    vsprintf(buffer, foramt, args);
+    throw std::runtime_error(buffer);
 }
 
 nncase_runtime_cpu_mt_t nncase_cpu_mt_ = {
@@ -49,6 +56,7 @@ nncase_runtime_cpu_mt_t nncase_cpu_mt_ = {
     .sinhf = sinhf,
     .tanhf = tanhf,
     .sram_address = sram_address,
+    .failfast = failfast,
 
 #ifndef WIN32
     .memcpy = memcpy,
