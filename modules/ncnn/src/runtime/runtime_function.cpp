@@ -12,18 +12,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <omp.h>
 #include "runtime_function.h"
+#include <chrono>
 #include <ncnn/datareader.h>
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/runtime_op_utility.h>
-#include <chrono>
+#include <omp.h>
 
 typedef std::chrono::high_resolution_clock::time_point TimeVar;
 
-#define duration(name, a) std::cout<<name<<" : "<<std::chrono::duration_cast<std::chrono::nanoseconds>(a).count()/1000.0<<" ms"<<std::endl
+#define duration(name, a)                                                      \
+    std::cout                                                                  \
+        << name << " : "                                                       \
+        << std::chrono::duration_cast<std::chrono::nanoseconds>(a).count() /   \
+               1000.0                                                          \
+        << " ms" << std::endl
 #define timeNow() std::chrono::high_resolution_clock::now()
 
 using namespace nncase;
