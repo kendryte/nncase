@@ -104,6 +104,9 @@ internal class NcnnFunctionBuilder : FunctionBuilder
                 case NcnnCelu op:
                     _emitter.Celu(name, ExprMemo[expr.Arguments[0]], op.Alpha);
                     break;
+                case NcnnClip op:
+                    _emitter.Clip(name, ExprMemo[expr.Arguments[0]], op.Min, op.Max);
+                    break;
                 default:
                     throw new NotSupportedException();
             }

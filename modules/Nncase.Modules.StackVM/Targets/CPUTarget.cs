@@ -54,6 +54,7 @@ public class CPUTarget : ITarget
             p.Add<Passes.Rules.Lower.RemoveMarker>();
             p.Add<Passes.Rules.Ncnn.LowerBinary>();
             // p.Add<Passes.Rules.Ncnn.LowerCelu>(); //0816ncnn not support
+            p.Add<Passes.Rules.Ncnn.LowerClamp>();
         });
     }
 

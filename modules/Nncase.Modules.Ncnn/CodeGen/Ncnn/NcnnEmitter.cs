@@ -98,6 +98,13 @@ internal class NcnnEmitter
             [0] = new ParamValue { Kind = ParamKind.Float, FloatValue = alpha }, // alpha
         });
 
+    public void Clip(string name, string input, float min, float max) =>
+        AddLayer("Clip", name, new[] { input }, new[] { name }, new ParamDict
+        {
+            [0] = new ParamValue { Kind = ParamKind.Float, FloatValue = min }, // min
+            [1] = new ParamValue { Kind = ParamKind.Float, FloatValue = max }, // max
+        });
+
     private void AddLayer(string type, string name, string[] bottoms, string[] tops, ParamDict? paramDict = null, int layerType = 1)
     {
         var layer = new NcnnLayer(type, name, bottoms.Length, tops.Length);

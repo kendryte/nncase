@@ -26,4 +26,7 @@ public sealed class Ncnn
 
     public static Call NcnnCelu(Expr expr, float alpha) =>
         new Call(new NcnnCelu(alpha), expr);
+
+    public static Call NcnnClip(Expr expr, float min, float max) =>
+        new Call(new NcnnClip(min, max), expr);
 }
