@@ -88,7 +88,7 @@ result<value_t> ncnn_runtime_function::invoke_core(
 
     // 1. Set input
     for (size_t i = 0; i < parameters.size(); i++) {
-        try_var(t, parameters[0].as<tensor>());
+        try_var(t, parameters[i].as<tensor>());
         ::ncnn::Mat mat;
         mat.elempack = 1;
         mat.elemsize = runtime::get_bytes(t->dtype());
