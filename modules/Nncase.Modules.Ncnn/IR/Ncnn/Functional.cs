@@ -29,4 +29,7 @@ public sealed class Ncnn
 
     public static Call NcnnClip(Expr expr, float min, float max) =>
         new Call(new NcnnClip(min, max), expr);
+
+    public static Call NcnnConcat(Expr[] expr, int axis) =>
+        new Call(new NcnnConcat(axis), new IR.Tuple(expr));
 }

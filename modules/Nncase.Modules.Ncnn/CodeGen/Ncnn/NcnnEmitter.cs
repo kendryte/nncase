@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Toolkit.HighPerformance;
 using Nncase.IR.Ncnn;
 using Nncase.Runtime.Ncnn;
 
@@ -104,6 +105,14 @@ internal class NcnnEmitter
             [0] = new ParamValue { Kind = ParamKind.Float, FloatValue = min }, // min
             [1] = new ParamValue { Kind = ParamKind.Float, FloatValue = max }, // max
         });
+
+    public void Concat(string name, string[] input, int axis)
+    {
+        AddLayer("Concat", name, input, new[] { name }, new ParamDict
+        {
+            [0] = new ParamValue { Kind = ParamKind.Int, IntValue = axis }, // axis
+        });
+    }
 
     private void AddLayer(string type, string name, string[] bottoms, string[] tops, ParamDict? paramDict = null, int layerType = 1)
     {

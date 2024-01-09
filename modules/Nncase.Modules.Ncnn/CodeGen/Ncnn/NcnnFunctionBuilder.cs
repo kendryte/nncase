@@ -107,6 +107,16 @@ internal class NcnnFunctionBuilder : FunctionBuilder
                 case NcnnClip op:
                     _emitter.Clip(name, ExprMemo[expr.Arguments[0]], op.Min, op.Max);
                     break;
+                case NcnnConcat op:
+                    List<string> in_ = new();
+                    var t = (IR.Tuple)expr.Arguments[0];
+                    for (int i = 0; i < t.Fields.Length; i++)
+                    {
+                        in_.Add(ExprMemo[t.Fields[i]]);
+                    }
+
+                    _emitter.Concat(name, in_.ToArray(), op.Axis);
+                    break;
                 default:
                     throw new NotSupportedException();
             }
