@@ -149,7 +149,7 @@ result<value_t> ncnn_runtime_function::invoke_core(
         ::ncnn::Mat mat;
         CHECK_WITH_ERR(!ex.extract(output_names_[i].c_str(), mat),
                        std::errc::invalid_argument);
-        auto mat_size = (size_t)mat.c *mat.w * mat.h * mat.d * mat.elemsize;
+        auto mat_size = (size_t)mat.c * mat.w * mat.h * mat.d * mat.elemsize;
         gsl::span<gsl::byte> data{reinterpret_cast<gsl::byte *>(mat.data),
                                   mat_size};
 
