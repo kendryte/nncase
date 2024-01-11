@@ -117,6 +117,9 @@ internal class NcnnFunctionBuilder : FunctionBuilder
 
                     _emitter.Concat(name, in_.ToArray(), op.Axis);
                     break;
+                case NcnnCumsum op:
+                    _emitter.Cumsum(name, ExprMemo[expr.Arguments[0]], op.Axis);
+                    break;
                 default:
                     throw new NotSupportedException();
             }
