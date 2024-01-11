@@ -36,7 +36,7 @@ public partial class LowerCumsum : RewriteRule<Pattern>
         {
             var inResShape = FitNcnnShape(input.CheckedShape.ToValueList(), axis[0]);
             var inRes = Reshape(input, inResShape.ToArray());
-            var inRes0 = new Var(inRes.CheckedType);
+            _ = new Var(inRes.CheckedType);
 
             var newInput = new Var(input.CheckedType);
             var cumsum_ = new Call(new Fusion("ncnn", NcnnCumsum(newInput, 1), new[] { newInput }), inRes);

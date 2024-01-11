@@ -116,7 +116,7 @@ internal class NcnnEmitter
 
     public void Cumsum(string name, string input, int axis)
     {
-        AddLayer("CumulativeSum", name, new[] {input}, new[] { name }, new ParamDict
+        AddLayer("CumulativeSum", name, new[] { input }, new[] { name }, new ParamDict
         {
             [0] = new ParamValue { Kind = ParamKind.Int, IntValue = axis }, // axis
         });
