@@ -10,13 +10,12 @@ using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Ncnn;
 using Nncase.PatternMatch;
-
 using static Nncase.IR.F.Ncnn;
 using static Nncase.IR.F.Tensors;
 using static Nncase.IR.TypePatternUtility;
+using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.Utility;
 
-using static Nncase.PatternMatch.F.Math;
 namespace Nncase.Passes.Rules.Ncnn;
 
 [RuleGenerator]
@@ -30,10 +29,8 @@ public partial class LowerClamp : RewriteRule<Pattern>
 
     private Expr? GetReplace(Expr input, float min, float max)
     {
-
         var newInput = new Var(input.CheckedType);
 
         return new Call(new Fusion("ncnn", NcnnClip(newInput, min, max), new[] { newInput }), input);
-
     }
 }

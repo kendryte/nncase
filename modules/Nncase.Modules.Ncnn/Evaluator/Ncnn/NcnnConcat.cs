@@ -10,8 +10,8 @@ using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Ncnn;
 using Nncase.Utilities;
-using static Nncase.IR.F.Tensors;
 using OrtKISharp;
+using static Nncase.IR.F.Tensors;
 
 namespace Nncase.Evaluator.Ncnn;
 
@@ -98,7 +98,6 @@ public class NcnnConcatEvaluator : IEvaluator<NcnnConcat>, ITypeInferencer<NcnnC
         DistributedType d => d.TensorType,
         _ => throw new InvalidCastException(),
     };
-
 
     private IRType Visit(IRArray<IRType> inputs, int axisValue)
     {

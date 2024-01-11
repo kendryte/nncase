@@ -10,15 +10,13 @@ using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Ncnn;
 using Nncase.PatternMatch;
-
 using static Nncase.IR.F.Ncnn;
 using static Nncase.IR.F.Tensors;
 using static Nncase.IR.TypePatternUtility;
+using static Nncase.PatternMatch.F.Tensors;
 using static Nncase.PatternMatch.Utility;
 
-using static Nncase.PatternMatch.F.Tensors;
 namespace Nncase.Passes.Rules.Ncnn;
-
 
 [RuleGenerator]
 public partial class LowerConcat : RewriteRule<Pattern>
