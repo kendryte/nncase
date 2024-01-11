@@ -149,9 +149,9 @@ result<value_t> ncnn_runtime_function::invoke_core(
         ::ncnn::Mat mat;
         CHECK_WITH_ERR(!ex.extract(output_names_[i].c_str(), mat),
                        std::errc::invalid_argument);
-
+        auto mat_size = (size_t)mat.c *mat.w * mat.h * mat.d * mat.elemsize;
         gsl::span<gsl::byte> data{reinterpret_cast<gsl::byte *>(mat.data),
-                                  mat.total() * mat.elemsize};
+                                  mat_size};
 
         dims_t shape;
         switch (mat.dims) {
@@ -189,8 +189,7 @@ result<value_t> ncnn_runtime_function::invoke_core(
 
         buffer_allocate_options options{};
         options.flags = HOST_BUFFER_ALLOCATE_SHARED;
-        try_var(buf, buffer_allocator::host().allocate(
-                         mat.total() * mat.elemsize, options));
+        try_var(buf, buffer_allocator::host().allocate(mat_size, options));
         try_var(hb, buf.as<host_buffer_t>());
 
         {
@@ -199,8 +198,7 @@ result<value_t> ncnn_runtime_function::invoke_core(
             for (size_t i = 0; i < (size_t)mat.c; i++) {
                 void *dest =
                     (unsigned char *)map.buffer().data() + (size_t)i * csize;
-                const void *src =
-                    (unsigned char *)mat.data + i * mat.cstep * mat.elemsize;
+                const void *src = (unsigned char *)mat.channel(i);
                 memcpy(dest, src, csize);
             }
         }
