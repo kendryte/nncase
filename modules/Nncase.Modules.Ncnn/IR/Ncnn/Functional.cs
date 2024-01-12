@@ -32,4 +32,7 @@ public sealed class Ncnn
 
     public static Call NcnnConcat(Expr[] expr, int axis) =>
         new Call(new NcnnConcat(axis), new IR.Tuple(expr));
+
+    public static Call NcnnCumsum(Expr expr, int axis) =>
+        new Call(new NcnnCumsum(axis), expr);
 }
