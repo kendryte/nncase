@@ -9,6 +9,8 @@ public struct QuantConfig : IEquatable<QuantConfig>
 {
     private Dictionary<ParameterInfo, (ValueRange<float>, DataType)> _config = new();
 
+    private ValueRange<float>[] _outRange = Array.Empty<ValueRange<float>>();
+
     public QuantConfig()
     {
     }

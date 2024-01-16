@@ -8,6 +8,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.Quantization;
 using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.IR;
@@ -151,5 +152,13 @@ public abstract class CustomOp : Op
     public virtual byte[] SerializeFields()
     {
         return Array.Empty<byte>();
+    }
+}
+
+public abstract class QuantizeOp : Op
+{
+    public virtual QuantType[] SupportedQuantType()
+    {
+        throw new InvalidOperationException("QuantizeOp should override SupportedQuantType");
     }
 }
