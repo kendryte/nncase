@@ -248,7 +248,6 @@ internal class Compiler : ICompiler
     {
         var target = _compileSession.Target;
         await RunPassAsync(p => TargetIndependentPass(p), "TargetIndependentPass", progress, token);
-        await RunPassAsync(p => RegisterTargetIndependQuantPass(p), "TargetIndependentQuantPass", progress, token);
         if (_compileSession.CompileOptions.ShapeBucketOptions.Enable)
         {
             await RunPassAsync(p => RegisterShapeBucket(p), "ShapeBucket", progress, token);
