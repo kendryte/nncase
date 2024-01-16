@@ -226,7 +226,7 @@ public static class CostUtility
 
     public static UInt128 GetRestoreCPUCycles()
     {
-        return 114514;
+        return UInt128.MaxValue / 2;
     }
 
     public static UInt128 GetCPUCycles(IRType type, double cyclesPerElement = 1)
