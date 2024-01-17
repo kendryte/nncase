@@ -7,30 +7,74 @@ namespace Nncase;
 
 public struct QuantConfig : IEquatable<QuantConfig>
 {
-    private Dictionary<ParameterInfo, (ValueRange<float>, DataType)> _config = new();
+    // [sizeof(input) + sizeof(output)][datatype, min, max]
+    private readonly (Tensor<float>, DataType)[] _config = Array.Empty<(Tensor<float>, DataType)>();
 
-    private ValueRange<float>[] _outRange = Array.Empty<ValueRange<float>>();
-
-    public QuantConfig()
+    public QuantConfig((Tensor<float>, DataType)[] config)
     {
+        _config = config;
     }
 
-    public ValueRange<float> GetRange(ParameterInfo info) => _config[info].Item1;
+    // todo: 但是bychannel的range就不行了吧
+    public static QuantConfig FromRaw(Tensor rawTensor)
+    {
+        var raw = rawTensor.ToArray<float>();
+        var config = default(QuantConfig);
+        for (int i = 0; i < raw.Length / 3; i++)
+        {
+            var rawBase = i * 3;
+            config._config[i] = (Tensor.From(new[] { raw[rawBase], raw[rawBase + 1] }), QuantTypeMapReverse[(int)raw[rawBase] + 2]);
+        }
 
-    public DataType GetQuantType(ParameterInfo info) => _config[info].Item2;
+        return config;
+    }
 
-    public bool Equals(QuantConfig other) => _config.Equals(other._config);
+    public Tensor ToRaw()
+    {
+        return _config.SelectMany(x => x.Item1.ToArray().Append(QuantTypeMap[x.Item2])).ToArray();
+    }
 
-    public override bool Equals(object? obj) => obj is QuantConfig other && Equals(other);
+    private static readonly Dictionary<DataType, int> QuantTypeMap = new Dictionary<DataType, int>
+    {
+        { DataTypes.UInt8, 0 }, { DataTypes.Int8, 1 }, { DataTypes.Int16, 2 },
+    };
 
-    public override int GetHashCode() => _config.GetHashCode();
-}
+    private static readonly Dictionary<int, DataType> QuantTypeMapReverse = QuantTypeMap.ToDictionary(x => x.Value, x => x.Key);
 
-public record QuantConfigType() : ValueType
-{
-    public override Type CLRType => typeof(QuantConfig);
+    public Tensor<float> GetInputRange(ParameterInfo info)
+    {
+        return _config[info.Index].Item1;
+    }
 
-    public unsafe override int SizeInBytes => sizeof(QuantConfig);
+    public DataType GetQuantType(ParameterInfo info)
+    {
+        return _config[info.Index].Item2;
+    }
 
-    public override Guid Uuid { get; }
+    // todo: for multi outputs
+    public Tensor<float> GetOutputRange()
+    {
+        return _config[^1].Item1;
+    }
+
+    public Tensor<float>[] GetOutputRanges()
+    {
+        throw new NotImplementedException();
+        // return _outRange;
+    }
+
+    public bool Equals(QuantConfig other)
+    {
+        return _config.Equals(other._config);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is QuantConfig other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return _config.GetHashCode();
+    }
 }
