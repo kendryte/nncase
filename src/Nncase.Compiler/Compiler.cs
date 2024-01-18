@@ -222,6 +222,7 @@ internal class Compiler : ICompiler
             ClearMarker(p);
             MergeFusion(p, singleVar, true);
             Rebuild(p, singleVar);
+            Bucket(p);
             Simplify(p);
         }
         else
