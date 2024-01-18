@@ -221,7 +221,6 @@ internal class Compiler : ICompiler
             MergeOp(p, true);
             ClearMarker(p);
             MergeFusion(p, singleVar, true);
-            // Bucket(p);
             Rebuild(p, singleVar);
             Simplify(p);
         }
@@ -267,7 +266,7 @@ internal class Compiler : ICompiler
             "TargetDependentAfterQuantPass",
             progress,
             token);
-        // await RunPassAsync(p => ClearFixShape(p), "ClearFixShape", progress, token);
+        await RunPassAsync(p => ClearFixShape(p), "ClearFixShape", progress, token);
         await RunPassAsync(
             p => target.RegisterTargetDependentBeforeCodeGen(p, _compileSession.CompileOptions),
             "TargetDependentBeforeCodeGen",
