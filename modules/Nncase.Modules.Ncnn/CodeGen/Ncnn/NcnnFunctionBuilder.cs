@@ -134,7 +134,7 @@ internal class NcnnFunctionBuilder : FunctionBuilder
                 case NcnnElu op:
                     _emitter.Elu(name, ExprMemo[expr.Arguments[0]], op.Alpha);
                     break;
-                case NcnnErf op:
+                case NcnnErf:
                     _emitter.Erf(name, ExprMemo[expr.Arguments[0]]);
                     break;
                 default:

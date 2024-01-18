@@ -40,6 +40,5 @@ public partial class LowerErf : RewriteRule<Pattern>
         var erf = new Call(new Fusion("ncnn", NcnnErf(inResO), new[] { inResO }), inRes);
 
         return Unsqueeze(erf, new[] { 0 });
-
     }
 }
