@@ -560,6 +560,8 @@ public class SwishEvaluator : IEvaluator<Swish>, ITypeInferencer<Swish>, ICostEv
         };
     }
 
+    public Expr Visit(IShapeEvaluateContext context, Swish target) => context.GetArgumentShape(target, Swish.Input);
+
     private IRType Visit(IRType input)
     {
         if (input is DistributedType d && d.NdSBP.Any(s => s is SBPPartialSum))
@@ -569,8 +571,6 @@ public class SwishEvaluator : IEvaluator<Swish>, ITypeInferencer<Swish>, ICostEv
 
         return input;
     }
-
-    public Expr Visit(IShapeEvaluateContext context, Swish target) => context.GetArgumentShape(target, Swish.Input);
 }
 
 /// <summary>
