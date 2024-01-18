@@ -44,7 +44,7 @@ public class NcnnLayer
 
     public void Serialize(TextWriter writer)
     {
-        writer.Write($"{Type}\t{Name}\t{Bottoms.Length} {Tops.Length} ");
+        writer.Write($"{Type,-16} {Name,-24} {Bottoms.Length} {Tops.Length} ");
 
         foreach (var bottom in Bottoms)
         {
