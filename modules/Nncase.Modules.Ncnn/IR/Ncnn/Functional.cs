@@ -39,4 +39,7 @@ public sealed class Ncnn
 
     public static Call NcnnCumsum(Expr expr, int axis) =>
         new Call(new NcnnCumsum(axis), expr);
+
+    public static Call NcnnElu(Expr expr, float alpha) =>
+        new Call(new NcnnElu(alpha), expr);
 }

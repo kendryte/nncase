@@ -131,6 +131,9 @@ internal class NcnnFunctionBuilder : FunctionBuilder
                 case NcnnCumsum op:
                     _emitter.Cumsum(name, ExprMemo[expr.Arguments[0]], op.Axis);
                     break;
+                case NcnnElu op:
+                    _emitter.Elu(name, ExprMemo[expr.Arguments[0]], op.Alpha);
+                    break;
                 default:
                     throw new NotSupportedException();
             }

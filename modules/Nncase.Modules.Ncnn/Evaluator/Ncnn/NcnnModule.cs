@@ -22,5 +22,6 @@ internal class NcnnModule : IApplicationPart
         registrator.RegisterManyInterface<NcnnConcatEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<NcnnConvEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<NcnnCumsumEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<NcnnEluEvaluator>(reuse: Reuse.Singleton);
     }
 }

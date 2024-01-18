@@ -60,6 +60,7 @@ public class CPUTarget : ITarget
             p.Add<Passes.Rules.Ncnn.LowerConcat>();
             p.Add<Passes.Rules.Ncnn.LowerConv>();
             p.Add<Passes.Rules.Ncnn.LowerCumsum>();
+            p.Add<Passes.Rules.Ncnn.LowerElu>();
         });
     }
 
