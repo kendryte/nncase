@@ -26,9 +26,16 @@ internal class NcnnEmitter
     public void SaveParam(Stream paramStream)
     {
         using var sw = new StreamWriter(paramStream, Encoding.ASCII, leaveOpen: true);
-
-        // using var sw = new StreamWriter(@"/home/curio/Desktop/param.txt", false, Encoding.UTF8);
         _model.Serialize(sw);
+    }
+
+    public void SaveBin()
+    {
+        using (var fileStream = File.Create(Directory.GetCurrentDirectory() + "/ncnn.bin"))
+        {
+            _binWriter.BaseStream.Seek(0, SeekOrigin.Begin);
+            _binWriter.BaseStream.CopyTo(fileStream);
+        }
     }
 
     public void Input(string name) =>
@@ -112,6 +119,36 @@ internal class NcnnEmitter
         {
             [0] = new ParamValue { Kind = ParamKind.Int, IntValue = axis }, // axis
         });
+    }
+
+    public void Conv(string name, string input, float[] weightsData, float[] biasData, int numOutput, int kernelW, int kernelH, int dilationW, int dilationH, int strideW, int strideH, int padLeft, int padRight, int padBottom, int padTop, int biasTerm, int weightsDataSize, int int8Flag, int actType, float[] actParams, float padValue, int dynamicFlag)
+    {
+        AddLayer("Convolution", name, new[] { input }, new[] { name }, new ParamDict
+        {
+            [0] = new ParamValue { Kind = ParamKind.Int, IntValue = numOutput },
+            [1] = new ParamValue { Kind = ParamKind.Int, IntValue = kernelW },
+            [11] = new ParamValue { Kind = ParamKind.Int, IntValue = kernelH },
+            [2] = new ParamValue { Kind = ParamKind.Int, IntValue = dilationW },
+            [12] = new ParamValue { Kind = ParamKind.Int, IntValue = dilationH },
+            [3] = new ParamValue { Kind = ParamKind.Int, IntValue = strideW },
+            [13] = new ParamValue { Kind = ParamKind.Int, IntValue = strideH },
+            [4] = new ParamValue { Kind = ParamKind.Int, IntValue = padLeft },
+            [14] = new ParamValue { Kind = ParamKind.Int, IntValue = padTop },
+            [16] = new ParamValue { Kind = ParamKind.Int, IntValue = padRight },
+            [15] = new ParamValue { Kind = ParamKind.Int, IntValue = padBottom },
+            [5] = new ParamValue { Kind = ParamKind.Int, IntValue = biasTerm },
+            [6] = new ParamValue { Kind = ParamKind.Int, IntValue = weightsDataSize },
+            [7] = new ParamValue { Kind = ParamKind.Int, IntValue = 1 }, // Group
+            [8] = new ParamValue { Kind = ParamKind.Int, IntValue = int8Flag },
+
+            // [9] = new ParamValue { Kind = ParamKind.Int, IntValue = actType },
+            // [10] = new ParamValue { Kind = ParamKind.ArrayOfFloat, TensorValue = actParams },
+            [18] = new ParamValue { Kind = ParamKind.Float, FloatValue = padValue },
+            [19] = new ParamValue { Kind = ParamKind.Int, IntValue = dynamicFlag },
+        });
+        WriteFloatArray(new float[] { 0 }); // quantize flag [Not exist in ncnn op.md]
+        WriteFloatArray(weightsData);
+        WriteFloatArray(biasData);
     }
 
     public void Cumsum(string name, string input, int axis)

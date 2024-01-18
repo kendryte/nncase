@@ -55,8 +55,10 @@ public class CPUTarget : ITarget
             p.Add<Passes.Rules.Ncnn.LowerBinary>();
 
             // p.Add<Passes.Rules.Ncnn.LowerCelu>(); //0816ncnn not support
+
             p.Add<Passes.Rules.Ncnn.LowerClamp>();
             p.Add<Passes.Rules.Ncnn.LowerConcat>();
+            p.Add<Passes.Rules.Ncnn.LowerConv>();
             p.Add<Passes.Rules.Ncnn.LowerCumsum>();
         });
     }

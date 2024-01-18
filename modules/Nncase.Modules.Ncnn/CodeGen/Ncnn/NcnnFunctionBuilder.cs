@@ -48,6 +48,14 @@ internal class NcnnFunctionBuilder : FunctionBuilder
     protected override void WriteText()
     {
         _emitter.SaveParam(TextWriter.BaseStream);
+
+        using (var fileStream = File.Create(Directory.GetCurrentDirectory() + "/ncnn.param"))
+        {
+            TextWriter.BaseStream.Seek(0, SeekOrigin.Begin);
+            TextWriter.BaseStream.CopyTo(fileStream);
+        }
+
+        _emitter.SaveBin();
     }
 
     private class CodeGenVisitor : ExprVisitor<string, Unit>
@@ -116,6 +124,9 @@ internal class NcnnFunctionBuilder : FunctionBuilder
                     }
 
                     _emitter.Concat(name, in_.ToArray(), op.Axis);
+                    break;
+                case NcnnConv op:
+                    _emitter.Conv(name, ExprMemo[expr.Arguments[0]], op.WeightData, op.BiasData, op.NumOutput, op.KernelW, op.KernelH, op.DilationW, op.DilationH, op.StrideW, op.StrideH, op.PadLeft, op.PadTop, op.PadRight, op.PadBottom, op.BiasTerm, op.WeightDataSize, op.Int8ScaleTerm, op.ActivationType, op.ActivationParams, op.PadValue, op.DynamicWeight);
                     break;
                 case NcnnCumsum op:
                     _emitter.Cumsum(name, ExprMemo[expr.Arguments[0]], op.Axis);
