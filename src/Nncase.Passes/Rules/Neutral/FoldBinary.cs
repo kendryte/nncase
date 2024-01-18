@@ -29,7 +29,7 @@ public sealed partial class FoldNopBinary : IRewriteRule
 
     private Expr? GetReplace(Binary binary, Expr lhs, TensorConst rhs)
     {
-        if (lhs is Var || lhs.CheckedShape == rhs.CheckedShape)
+        if (lhs.CheckedType is Nncase.IR.AnyType || lhs.CheckedShape == rhs.CheckedShape)
         {
             return binary.BinaryOp switch
             {
