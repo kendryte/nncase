@@ -1042,6 +1042,30 @@ public partial class FusionBucket : RewriteRule<Pattern>
         return allFixedShapes;
     }
 
+    public static bool ShouldRestore(Call outerCall, BucketFusion fusion)
+    {
+        if (CallValidator.IsSimple(fusion))
+        {
+            return true;
+        }
+
+        if (outerCall.CheckedType is TupleType tt)
+        {
+            if (tt.Fields.All(f => f is TensorType t && t.Shape.Rank < 2))
+            {
+                return true;
+            }
+        }
+
+        if (outerCall.Arguments.ToArray().Any(arg =>
+                arg.CheckedType is TupleType))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
     public Expr? GetReplace(Call outerCall, BucketFusion fusion, Expr fusionBody)
     {
         if (ShouldRestore(outerCall, fusion))
@@ -1182,30 +1206,6 @@ public partial class FusionBucket : RewriteRule<Pattern>
     private static bool IsFixed(int totalCount, int[][] minFixedShapeList, int[][] maxFixedShapeList) =>
         totalCount == 0 || (minFixedShapeList[0].SequenceEqual(maxFixedShapeList[0]) &&
                             minFixedShapeList[1].SequenceEqual(maxFixedShapeList[1]));
-
-    public static bool ShouldRestore(Call outerCall, BucketFusion fusion)
-    {
-        if (CallValidator.IsSimple(fusion))
-        {
-            return true;
-        }
-
-        if (outerCall.CheckedType is TupleType tt)
-        {
-            if (tt.Fields.All(f => f is TensorType t && t.Shape.Rank < 2))
-            {
-                return true;
-            }
-        }
-
-        if (outerCall.Arguments.ToArray().Any(arg =>
-                arg.CheckedType is TupleType))
-        {
-            return true;
-        }
-
-        return false;
-    }
 
     private static void PrintMinMaxShape(int[][] minFixedShapeList, int[][] maxFixedShapeList, string relPath)
     {
