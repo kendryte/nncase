@@ -165,6 +165,8 @@ internal class NcnnEmitter
             [0] = new ParamValue { Kind = ParamKind.Float, FloatValue = alpha }, // alpha
         });
 
+    public void Erf(string name, string input) => AddLayer("Erf", name, new[] { input }, new[] { name }, new ParamDict { });
+
     private void AddLayer(string type, string name, string[] bottoms, string[] tops, ParamDict? paramDict = null, int layerType = 1)
     {
         var layer = new NcnnLayer(type, name, bottoms.Length, tops.Length);

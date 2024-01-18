@@ -37,9 +37,9 @@ public sealed class Ncnn
     public static Call NcnnConv(Expr expr, float[] weightsData, float[] biasData, int numOutput, int[] kernel, int[] dilation, int[] strides, int[] pads, int biasTerm, int weightsDataSize, int int8Flag, int actType, float[] actParams, float padValue, int dynamicFlag) =>
         new Call(new NcnnConv(weightsData, biasData, numOutput, kernel[1], kernel[0], dilation[1], dilation[0], strides[1], strides[0], pads[0], pads[1], pads[2], pads[3], padValue, biasTerm, weightsDataSize, int8Flag, actType, actParams, dynamicFlag), expr);
 
-    public static Call NcnnCumsum(Expr expr, int axis) =>
-        new Call(new NcnnCumsum(axis), expr);
+    public static Call NcnnCumsum(Expr expr, int axis) => new Call(new NcnnCumsum(axis), expr);
 
-    public static Call NcnnElu(Expr expr, float alpha) =>
-        new Call(new NcnnElu(alpha), expr);
+    public static Call NcnnElu(Expr expr, float alpha) => new Call(new NcnnElu(alpha), expr);
+
+    public static Call NcnnErf(Expr expr) => new Call(new NcnnErf(), expr);
 }
