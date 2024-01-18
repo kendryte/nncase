@@ -29,14 +29,19 @@ public sealed partial class FoldNopBinary : IRewriteRule
 
     private Expr? GetReplace(Binary binary, Expr lhs, TensorConst rhs)
     {
-        return binary.BinaryOp switch
+        if (lhs.CheckedShape == rhs.CheckedShape)
         {
-            BinaryOp.Add when rhs.Value.ToArray<float>().All(x => x == 0) => lhs,
-            BinaryOp.Sub when rhs.Value.ToArray<float>().All(x => x == 0) => lhs,
-            BinaryOp.Mul when rhs.Value.ToArray<float>().All(x => x == 1) => lhs,
-            BinaryOp.Pow when rhs.Value.ToArray<float>().All(x => x == 1) => lhs,
-            BinaryOp.Div when rhs.Value.ToArray<float>().All(x => x == 1) => lhs,
-            _ => null,
-        };
+            return binary.BinaryOp switch
+            {
+                BinaryOp.Add when rhs.Value.ToArray<float>().All(x => x == 0) => lhs,
+                BinaryOp.Sub when rhs.Value.ToArray<float>().All(x => x == 0) => lhs,
+                BinaryOp.Mul when rhs.Value.ToArray<float>().All(x => x == 1) => lhs,
+                BinaryOp.Pow when rhs.Value.ToArray<float>().All(x => x == 1) => lhs,
+                BinaryOp.Div when rhs.Value.ToArray<float>().All(x => x == 1) => lhs,
+                _ => null,
+            };
+        }
+
+        return null;
     }
 }
