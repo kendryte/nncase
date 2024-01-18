@@ -60,7 +60,8 @@ public class CPUTarget : ITarget
             p.Add<Passes.Rules.Ncnn.LowerConv>();
             p.Add<Passes.Rules.Ncnn.LowerCumsum>();
             p.Add<Passes.Rules.Ncnn.LowerElu>();
-            p.Add<Passes.Rules.Ncnn.LowerErf>();
+
+            // p.Add<Passes.Rules.Ncnn.LowerErf>(); // need ncnn later than 20230908
         });
     }
 
