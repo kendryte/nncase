@@ -25,9 +25,9 @@ public class NcnnModel
     public NcnnModel(int magic, IList<NcnnLayer> layers, IList<NcnnLayer>? modelInputs = null, IList<NcnnLayer>? memoryDatas = null)
     {
         Magic = magic;
-        ModelInputs = modelInputs;
+        ModelInputs = modelInputs ?? new List<NcnnLayer>();
         Layers = layers;
-        MemoryDatas = memoryDatas;
+        MemoryDatas = memoryDatas ?? new List<NcnnLayer>();
     }
 
     public int Magic { get; }
