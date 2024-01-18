@@ -91,6 +91,18 @@ internal class SatExtractor : IExtractor
         }
 
         int processorCount = Math.Max(System.Environment.ProcessorCount / 2, 1);
+        if (System.Environment.GetEnvironmentVariable("SOLVE_PROCESSOR_COUNT") is string s_solve_processor_count)
+        {
+            try
+            {
+                var solve_processor_count = int.Parse(s_solve_processor_count);
+                processorCount = solve_processor_count;
+            }
+            catch (System.Exception)
+            {
+            }
+        }
+
         solver.StringParameters = $"max_time_in_seconds:{max_time},num_workers:{processorCount}";
 
         var enableDump = DumpScope.Current.IsEnabled(DumpFlags.EGraphCost);
