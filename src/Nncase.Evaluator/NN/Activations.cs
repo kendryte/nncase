@@ -521,7 +521,7 @@ public class ErfEvaluator : IEvaluator<Erf>, ITypeInferencer<Erf>, ICostEvaluato
 /// <summary>
 /// Evaluator for <see cref="Sigmoid"/>.
 /// </summary>
-public class SwishEvaluator : IEvaluator<Swish>, ITypeInferencer<Swish>, ICostEvaluator<Swish>, IMetricEvaluator<Swish>
+public class SwishEvaluator : IEvaluator<Swish>, ITypeInferencer<Swish>, ICostEvaluator<Swish>, IMetricEvaluator<Swish>, IShapeEvaluator<Swish>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Swish swish)
@@ -569,6 +569,8 @@ public class SwishEvaluator : IEvaluator<Swish>, ITypeInferencer<Swish>, ICostEv
 
         return input;
     }
+
+    public Expr Visit(IShapeEvaluateContext context, Swish target) => context.GetArgumentShape(target, Swish.Input);
 }
 
 /// <summary>
