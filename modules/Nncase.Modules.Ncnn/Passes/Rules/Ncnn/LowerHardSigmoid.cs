@@ -26,8 +26,7 @@ public partial class LowerHardSigmoid : RewriteRule<Pattern>
     public override Pattern Pattern { get; } = IsHardSigmoid(
       IsWildcard("input") with { TypePattern = IsFloat() },
       IsTensorConst("alpha") with { TypePattern = IsScalar() },
-      IsTensorConst("beta") with { TypePattern = IsScalar() }
-      );
+      IsTensorConst("beta") with { TypePattern = IsScalar() });
 
     private Expr? GetReplace(Expr input, float alpha, float beta)
     {
