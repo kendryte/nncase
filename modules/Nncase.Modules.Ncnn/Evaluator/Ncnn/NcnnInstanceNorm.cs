@@ -56,10 +56,10 @@ public class NcnnInstanceNormEvaluator : IEvaluator<NcnnInstanceNorm>, ITypeInfe
 
             // x = (x - mean)/(standard_deviation) * gamma + beta;
             // mean = sum(x)/N;
-            // standard-deviation = sqrt(sum(square(x-mean))/N);
+            // standard-deviation = sqrt(sum(square(x-mean))/N + eps);
             [MetricFactorNames.FLOPs] =
                 (MetricUtility.GetFLOPs(inputType) * (MetricUtility.AddFLOPs + MetricUtility.SubFLOPs)) + MetricUtility.DivFLOPs + // x = x-mean
-                (MetricUtility.GetFLOPs(inputType) * (MetricUtility.PowFLOPs + MetricUtility.AddFLOPs)) + MetricUtility.SqrtFLOPs + MetricUtility.DivFLOPs +
+                (MetricUtility.GetFLOPs(inputType) * (MetricUtility.PowFLOPs + MetricUtility.AddFLOPs)) + MetricUtility.SqrtFLOPs + MetricUtility.DivFLOPs + MetricUtility.AddFLOPs +
                 (MetricUtility.GetFLOPs(inputType) * (MetricUtility.DivFLOPs + MetricUtility.MulFLOPs + MetricUtility.AddFLOPs)),
             [MetricFactorNames.Parallel] = 4,
         };
