@@ -44,6 +44,7 @@ public sealed class Ncnn
     public static Call NcnnErf(Expr expr) => new Call(new NcnnErf(), expr);
 
     public static Call NcnnHardSigmoid(Expr expr, float alpha, float beta) => new Call(new NcnnHardSigmoid(alpha, beta), expr);
+
     public static Call NcnnHardSwish(Expr expr, float alpha, float beta) => new Call(new NcnnHardSwish(alpha, beta), expr);
     public static Call NcnnInstanceNorm(Expr expr, int channels, float eps, int affine, float[] gammaData, float[] betaData) =>
         new Call(new NcnnInstanceNorm(channels, eps, affine, gammaData, betaData), expr);
