@@ -15,20 +15,20 @@ namespace Nncase.IR.Ncnn;
 /// Gets expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed partial class NcnnHardSigmoid : Op
+public sealed partial class NcnnHardSwish : Op
 {
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(NcnnHardSigmoid), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(NcnnHardSwish), 0, "input");
 
     /// <summary>
-    /// Gets axis of Ncnn HardSigmoid.
+    /// Gets axis of Ncnn HardSwish.
     /// </summary>
     public float Alpha { get; }
 
     /// <summary>
-    /// Gets axis of Ncnn HardSigmoid.
+    /// Gets axis of Ncnn HardSwish.
     /// </summary>
     public float Beta { get; }
 

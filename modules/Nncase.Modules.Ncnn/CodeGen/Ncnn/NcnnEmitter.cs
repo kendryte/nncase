@@ -174,6 +174,13 @@ internal class NcnnEmitter
             [1] = new ParamValue { Kind = ParamKind.Float, FloatValue = beta }, // beta
         });
 
+    public void HardSwish(string name, string input, float alpha, float beta) =>
+        AddLayer("HardSwish", name, new[] { input }, new[] { name }, new ParamDict
+        {
+            [0] = new ParamValue { Kind = ParamKind.Float, FloatValue = alpha }, // alpha
+            [1] = new ParamValue { Kind = ParamKind.Float, FloatValue = beta }, // beta
+        });
+
     private void AddLayer(string type, string name, string[] bottoms, string[] tops, ParamDict? paramDict = null, int layerType = 1)
     {
         var layer = new NcnnLayer(type, name, bottoms.Length, tops.Length);

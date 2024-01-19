@@ -140,6 +140,9 @@ internal class NcnnFunctionBuilder : FunctionBuilder
                 case NcnnHardSigmoid op:
                     _emitter.HardSigmoid(name, ExprMemo[expr.Arguments[0]], op.Alpha, op.Beta);
                     break;
+                case NcnnHardSwish op:
+                    _emitter.HardSwish(name, ExprMemo[expr.Arguments[0]], op.Alpha, op.Beta);
+                    break;
                 default:
                     throw new NotSupportedException();
             }
