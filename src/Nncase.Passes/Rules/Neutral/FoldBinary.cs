@@ -25,18 +25,23 @@ public sealed partial class FoldNopBinary : IRewriteRule
         "binary",
         x => x.BinaryOp is BinaryOp.Add or BinaryOp.Sub or BinaryOp.Mul or BinaryOp.Div or BinaryOp.Mod or BinaryOp.Pow,
         IsWildcard("lhs"),
-        IsTensorConst("rhs", IsScalar()));
+        IsTensorConst("rhs"));
 
     private Expr? GetReplace(Binary binary, Expr lhs, TensorConst rhs)
     {
-        return (binary.BinaryOp, rhs.Value.ToScalar<float>()) switch
+        if (lhs.CheckedType is Nncase.IR.AnyType || lhs.CheckedShape == rhs.CheckedShape)
         {
-            (BinaryOp.Add, 0f) => lhs,
-            (BinaryOp.Sub, 0f) => lhs,
-            (BinaryOp.Mul, 1f) => lhs,
-            (BinaryOp.Pow, 1f) => lhs,
-            (BinaryOp.Div, 1f) => lhs,
-            _ => null,
-        };
+            return binary.BinaryOp switch
+            {
+                BinaryOp.Add when rhs.Value.ToArray<float>().All(x => x == 0) => lhs,
+                BinaryOp.Sub when rhs.Value.ToArray<float>().All(x => x == 0) => lhs,
+                BinaryOp.Mul when rhs.Value.ToArray<float>().All(x => x == 1) => lhs,
+                BinaryOp.Pow when rhs.Value.ToArray<float>().All(x => x == 1) => lhs,
+                BinaryOp.Div when rhs.Value.ToArray<float>().All(x => x == 1) => lhs,
+                _ => null,
+            };
+        }
+
+        return null;
     }
 }
