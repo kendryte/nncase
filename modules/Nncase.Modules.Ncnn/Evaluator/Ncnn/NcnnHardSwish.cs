@@ -51,7 +51,7 @@ public class NcnnHardSwishEvaluator : IEvaluator<NcnnHardSwish>, ITypeInferencer
         return new()
         {
             [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(returnType) * 2,
-            [MetricFactorNames.FLOPs] = MetricUtility.GetFLOPs(inputType) * (MetricUtility.PowFLOPs + MetricUtility.MulFLOPs + MetricUtility.AddFLOPs + MetricUtility.CmpFLOPs * 2),
+            [MetricFactorNames.FLOPs] = MetricUtility.GetFLOPs(inputType) * (MetricUtility.PowFLOPs + MetricUtility.MulFLOPs + MetricUtility.AddFLOPs + (MetricUtility.CmpFLOPs * 2)),
             [MetricFactorNames.Parallel] = 4,
         };
     }
