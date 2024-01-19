@@ -53,12 +53,6 @@ public class FusionShapeUpdater : ExprVisitor<Expr, Unit>
             var argShape = expr.Arguments.ToArray().Select(arg =>
             {
                 var exp = arg is Marker m ? m.Target : arg;
-                if (!_memo.ContainsKey(exp))
-                {
-                    Console.WriteLine("Input Not Exist");
-                    Console.WriteLine(f.Name);
-                }
-
                 return GetShape(_memo[exp]);
             }).ToArray();
             var shape = GetShape(_memo[expr]);
