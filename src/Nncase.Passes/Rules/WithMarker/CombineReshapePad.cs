@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -38,7 +38,7 @@ public sealed partial class CombineReshapePad : IRewriteRule
                 _ => true,
                 HasMarker(IsPad("pad", "padCall", _ => true, HasMarker(IsWildcard("input"), "marker"), IsTensorConst("pads"), IsTensorConst("value")) with { TypePattern = HasFixedShape() }, "padOutMarker"),
                 IsWildcard("shape")) with
-            { TypePattern = HasFixedShape() };
+        { TypePattern = HasFixedShape() };
 
     private Expr? GetReplace(Reshape reshape, Call reshapeCall, Pad pad, Call padCall, Expr input, Expr shape, int[] pads, Expr value, Marker marker)
     {
