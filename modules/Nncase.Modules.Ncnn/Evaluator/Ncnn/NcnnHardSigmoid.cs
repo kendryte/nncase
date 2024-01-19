@@ -53,7 +53,7 @@ public class NcnnHardSigmoidEvaluator : IEvaluator<NcnnHardSigmoid>, ITypeInfere
         return new()
         {
             [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(returnType) * 2,
-            [MetricFactorNames.FLOPs] = MetricUtility.GetFLOPs(inputType) * (MetricUtility.ExpFLOPs + MetricUtility.MulFLOPs + MetricUtility.SubFLOPs + MetricUtility.CmpFLOPs),
+            [MetricFactorNames.FLOPs] = MetricUtility.GetFLOPs(inputType) * (MetricUtility.MulFLOPs + MetricUtility.AddFLOPs + MetricUtility.CmpFLOPs*2),
             [MetricFactorNames.Parallel] = 4,
         };
     }
