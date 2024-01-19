@@ -167,6 +167,13 @@ internal class NcnnEmitter
 
     public void Erf(string name, string input) => AddLayer("Erf", name, new[] { input }, new[] { name }, new ParamDict { });
 
+    public void HardSigmoid(string name, string input, float alpha, float beta) =>
+        AddLayer("HardSigmoid", name, new[] { input }, new[] { name }, new ParamDict
+        {
+            [0] = new ParamValue { Kind = ParamKind.Float, FloatValue = alpha }, // alpha
+            [1] = new ParamValue { Kind = ParamKind.Float, FloatValue = beta }, // beta
+        });
+
     private void AddLayer(string type, string name, string[] bottoms, string[] tops, ParamDict? paramDict = null, int layerType = 1)
     {
         var layer = new NcnnLayer(type, name, bottoms.Length, tops.Length);

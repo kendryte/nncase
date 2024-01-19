@@ -137,6 +137,9 @@ internal class NcnnFunctionBuilder : FunctionBuilder
                 case NcnnErf:
                     _emitter.Erf(name, ExprMemo[expr.Arguments[0]]);
                     break;
+                case NcnnHardSigmoid op:
+                    _emitter.HardSigmoid(name, ExprMemo[expr.Arguments[0]], op.Alpha, op.Beta);
+                    break;
                 default:
                     throw new NotSupportedException();
             }

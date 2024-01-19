@@ -24,5 +24,6 @@ internal class NcnnModule : IApplicationPart
         registrator.RegisterManyInterface<NcnnCumsumEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<NcnnEluEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<NcnnErfEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<NcnnHardSigmoidEvaluator>(reuse: Reuse.Singleton);
     }
 }

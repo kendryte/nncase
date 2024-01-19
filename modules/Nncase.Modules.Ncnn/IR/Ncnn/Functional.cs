@@ -42,4 +42,6 @@ public sealed class Ncnn
     public static Call NcnnElu(Expr expr, float alpha) => new Call(new NcnnElu(alpha), expr);
 
     public static Call NcnnErf(Expr expr) => new Call(new NcnnErf(), expr);
+
+    public static Call NcnnHardSigmoid(Expr expr, float alpha, float beta) => new Call(new NcnnHardSigmoid(alpha, beta), expr);
 }
