@@ -64,6 +64,7 @@ public class CPUTarget : ITarget
             // p.Add<Passes.Rules.Ncnn.LowerErf>(); // need ncnn later than 20230908
             p.Add<Passes.Rules.Ncnn.LowerHardSigmoid>();
             p.Add<Passes.Rules.Ncnn.LowerHardSwish>();
+            p.Add<Passes.Rules.Ncnn.LowerInstanceNorm>();
         });
     }
 

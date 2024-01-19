@@ -143,6 +143,9 @@ internal class NcnnFunctionBuilder : FunctionBuilder
                 case NcnnHardSwish op:
                     _emitter.HardSwish(name, ExprMemo[expr.Arguments[0]], op.Alpha, op.Beta);
                     break;
+                case NcnnInstanceNorm op:
+                    _emitter.InstanceNorm(name, ExprMemo[expr.Arguments[0]], op.Channels, op.Eps, op.Affine, op.GammaData, op.BetaData);
+                    break;
                 default:
                     throw new NotSupportedException();
             }
