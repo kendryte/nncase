@@ -1020,22 +1020,19 @@ public partial class FusionBucket : RewriteRule<Pattern>
                 x.InputShapes.Select(iShape => iShape.AsTensor().ToArray<int>().ToArray()).ToArray()).ToArray();
         if (!SingleDimVar(options))
         {
-            for (int i = 0; i < shapeInfos.Length; i++)
+            for (int j = 0; j < allFixedShapes.Length; j++)
             {
-                for (int j = 0; j < allFixedShapes.Length; j++)
-                {
-                    context.FixedShapeCache[j] = allFixedShapes[j];
-                }
+                context.FixedShapeCache[j] = allFixedShapes[j];
             }
         }
         else
         {
-            allFixedShapes = new[] { allFixedShapes[0] }.Concat(allFixedShapes.Reverse()).ToArray();
+            var tmpAllFixedShapes = new[] { allFixedShapes[0] }.Concat(allFixedShapes.Reverse()).ToArray();
             var segments = context.DimVarValues.First().Value.Reverse().ToArray();
 
             for (int i = 0; i < segments.Length; i++)
             {
-                context.FixedShapeCache[segments.Length - 1 - i] = allFixedShapes[segments[i]];
+                context.FixedShapeCache[segments.Length - 1 - i] = tmpAllFixedShapes[segments[i]];
             }
         }
 
@@ -1097,7 +1094,7 @@ public partial class FusionBucket : RewriteRule<Pattern>
         int[][][] allFixedShapes = UpdateShapeCache(shapeInfos, options, context);
 
         var minFixedShapeList = allFixedShapes[^1];
-        var maxFixedShapeList = allFixedShapes[1];
+        var maxFixedShapeList = allFixedShapes[0];
 
         // PrintMinMaxShape(minFixedShapeList, maxFixedShapeList, _relPath);
 
