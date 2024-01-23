@@ -16,7 +16,9 @@ namespace Nncase.Importer
         private Expr VisitTranspose(NodeProto op)
         {
             var input = GetSingleInputExpr(op);
-            var perm = Tensor.From<long>(GetIntsAttribute(op, "perm"));
+            var default_perm = Enumerable.Range(0, input.CheckedShape.Rank).ToArray<int>();
+            Array.Reverse(default_perm);
+            var perm = Tensor.From<long>(GetIntsAttribute(op, "perm", default_perm));
             return F.Tensors.Transpose(input, perm).With(metadata: new IRMetadata() { OutputNames = op.Output, });
         }
     }
