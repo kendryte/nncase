@@ -182,23 +182,6 @@ internal class Compiler : ICompiler
         });
 
         _compileSession.Target.RegisterTargetInDependentPass(passManager, _compileSession.CompileOptions);
-
-        passManager.AddWithName<DataflowPass>("BroadcastMarker").Configure(p =>
-        {
-            p.Add<BroadcastInputMarker>();
-            p.Add<BroadcastOutputMarker>();
-        });
-
-        // passManager.AddWithName<EGraphPass>("NeutralOptimizeClamp").Configure(p =>
-        // {
-        //     p.Add<Passes.Rules.Neutral.FoldConstCall>();
-        //     p.Add<Passes.Rules.Neutral.FoldConv2DAddMul>();
-        //     p.Add<Passes.Rules.Neutral.ReluToClamp>();
-        //     p.Add<Passes.Rules.Neutral.Relu6ToClamp>();
-        //     p.Add<Passes.Rules.Neutral.CombineClampAdd>();
-        //     p.Add<Passes.Rules.Neutral.CombineClampMul>();
-        //     p.Add<Passes.Rules.Neutral.FoldNopClamp>();
-        // });
     }
 
     public void RegisterShapeBucket(IPassManager p)
@@ -248,12 +231,6 @@ internal class Compiler : ICompiler
     {
         var target = _compileSession.Target;
         await RunPassAsync(p => TargetIndependentPass(p), "TargetIndependentPass", progress, token);
-        if (_compileSession.CompileOptions.ShapeBucketOptions.Enable)
-        {
-            await RunPassAsync(p => RegisterShapeBucket(p), "ShapeBucket", progress, token);
-            await RunPassAsync(p => TargetIndependentPass(p), "TargetIndependentPass", progress, token);
-        }
-
         await RunPassAsync(
             p => target.RegisterTargetDependentPass(p, _compileSession.CompileOptions),
             "TargetDependentPass",
@@ -305,19 +282,6 @@ internal class Compiler : ICompiler
         }
 
         return module;
-    }
-
-    private void RegisterTargetIndependQuantPass(IPassManager passManager)
-    {
-        var quantMode = _compileSession.CompileOptions.QuantizeOptions.ModelQuantMode;
-        if (quantMode == ModelQuantMode.UsePTQ)
-        {
-            passManager.AddWithName<DataflowPass>("AddRangeOfMarker").Configure(p =>
-            {
-                p.Add<Passes.Rules.Neutral.AddRangeOfAndMarker>();
-            });
-            passManager.AddWithName<EGraphPassWithQuantize>("AssignRanges");
-        }
     }
 
     private async Task RunPassAsync(Action<IPassManager> register, string name, IProgress<int>? progress = null, CancellationToken token = default)
