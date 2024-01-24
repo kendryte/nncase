@@ -20,13 +20,13 @@ from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
 import numpy as np
 
+
 def _make_module(in_shape, axis, op_version):
     inputs = []
     outputs = []
     initializers = []
     attributes_dict = {}
     nodes = []
-
 
     input = helper.make_tensor_value_info('input', TensorProto.FLOAT, in_shape)
     inputs.append('input')
@@ -38,7 +38,6 @@ def _make_module(in_shape, axis, op_version):
 
     if axis is not None:
         attributes_dict['perm'] = axis
-
 
     node = onnx.helper.make_node(
         'Transpose',
@@ -90,6 +89,7 @@ op_versions = [
     1,
     13
 ]
+
 
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('axis', axes)
