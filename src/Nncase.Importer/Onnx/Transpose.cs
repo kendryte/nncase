@@ -3,6 +3,7 @@
 
 using System;
 using System.Linq;
+using DryIoc.ImTools;
 using LanguageExt.UnsafeValueAccess;
 using Nncase.IR;
 using Nncase.IR.Tensors;
@@ -16,7 +17,8 @@ namespace Nncase.Importer
         private Expr VisitTranspose(NodeProto op)
         {
             var input = GetSingleInputExpr(op);
-            var perm = Tensor.From<long>(GetIntsAttribute(op, "perm"));
+            var defaultPerm = Enumerable.Range(0, input.CheckedShape.Rank).Reverse().ToArray();
+            var perm = Tensor.From(GetIntsAttribute(op, "perm", defaultPerm));
             return F.Tensors.Transpose(input, perm).With(metadata: new IRMetadata() { OutputNames = op.Output, });
         }
     }
