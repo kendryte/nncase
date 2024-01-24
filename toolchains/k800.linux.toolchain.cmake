@@ -25,5 +25,5 @@ set(ENABLE_VULKAN OFF)
 set(ENABLE_HALIDE OFF)
 set(BUILD_PYTHON_BINDING OFF)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=rv64gv")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=rv64gv")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=rv64gvzfh")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=rv64gvzfh")
