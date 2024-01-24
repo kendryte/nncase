@@ -84,6 +84,30 @@ public abstract partial class Expr : IDisposable
     }
 
     /// <summary>
+    /// Gets checked tensor type.
+    /// </summary>
+    public TensorType CheckedTensorType
+    {
+        get
+        {
+            switch (CheckedType)
+            {
+                case TensorType type:
+                    return type;
+                case DistributedType type:
+                    return type.TensorType;
+                default:
+                    if (DumpScope.Current.IsEnabled(DumpFlags.Compile))
+                    {
+                        DumpScope.Current.DumpIR(this, "CheckedTensorType");
+                    }
+
+                    throw new InvalidOperationException("Only The Expr Have CheckedType Can Get It's Shape");
+            }
+        }
+    }
+
+    /// <summary>
     /// Gets checked shape.
     /// </summary>
     public Shape CheckedShape

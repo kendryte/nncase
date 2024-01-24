@@ -49,6 +49,11 @@ public class CPUTarget : ITarget
     {
         passManager.AddWithName<DataflowPass>("CPUDeviceFusion").Configure(p =>
         {
+            p.Add<Passes.Rules.CPU.Affine.LowerUnary>();
+        });
+
+        passManager.AddWithName<DataflowPass>("CPUDeviceFusion").Configure(p =>
+        {
             p.Add<Passes.Rules.CPUSingleKernelFusion>();
         });
     }

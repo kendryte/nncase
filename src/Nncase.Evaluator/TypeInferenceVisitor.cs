@@ -11,11 +11,12 @@ using System.Text;
 using System.Threading.Tasks;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
+using Nncase.IR.Affine;
 using Nncase.TIR;
 
 namespace Nncase.Evaluator;
 
-internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
+internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
 {
     private readonly TypeInferenceContext _context;
     private readonly Dictionary<Type, ITypeInferencer> _inferencer_cache;
@@ -113,7 +114,7 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
     }
 
     /// <inheritdoc/>
-    protected override IRType VisitLeafFor(For expr)
+    protected override IRType VisitLeafFor(Nncase.TIR.For expr)
     {
         VerifySubField(expr, expr.Domain.Start, TypePatternUtility.IsIntegralScalar());
         VerifySubField(expr, expr.Domain.Stop, TypePatternUtility.IsIntegralScalar());
@@ -238,6 +239,20 @@ internal sealed class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
     protected override IRType VisitLeafPrimFunctionWrapper(PrimFunctionWrapper expr)
     {
         var type = new CallableType(expr.ReturnType, new(expr.ParameterTypes));
+        return type;
+    }
+
+    protected override IRType VisitLeafAffineExpr(AffineExpr expr) => TensorType.Scalar(DataTypes.Int64);
+
+    protected override IRType VisitLeafAffineDomain(AffineDomain expr) => new TupleType(ImmutableArray.Create(expr.Offset.CheckedType, expr.Extent.CheckedType));
+
+    protected override IRType VisitLeafAffineRange(AffineRange expr) => new TupleType(ImmutableArray.Create(expr.Offset.CheckedType, expr.Extent.CheckedType));
+
+    protected override IRType VisitAffineMap(AffineMap expr)
+    {
+        var returnType = new TupleType(ImmutableArray.Create(expr.Results.AsValueEnumerable().Select(x => x.CheckedType).ToArray()));
+        var parametersType = ImmutableArray.Create(expr.Domains.AsValueEnumerable().Select(x => x.CheckedType).ToArray().Concat(expr.Symbols.AsValueEnumerable().Select(x => x.CheckedType).ToArray()).ToArray());
+        var type = new CallableType(returnType, new(parametersType));
         return type;
     }
 

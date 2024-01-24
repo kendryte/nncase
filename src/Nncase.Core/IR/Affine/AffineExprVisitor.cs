@@ -10,7 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
 
-namespace Nncase.Tiling;
+namespace Nncase.IR.Affine;
 
 /// <summary>
 /// Expression visitor.
@@ -35,9 +35,9 @@ public abstract partial class AffineExprVisitor<TExprResult, TContext>
     /// <summary>
     /// Visit <see cref="Expr"/>.
     /// </summary>
-    public TExprResult Visit(Either<AffineConstantExpr, AffineSymbolExpr> expr, TContext context)
+    public TExprResult Visit(Either<AffineConstant, AffineSymbol> expr, TContext context)
     {
-        return expr.Match(x => VisitAffineConstantExpr(x, context), x => VisitAffineSymbolExpr(x, context));
+        return expr.Match(x => VisitAffineConstant(x, context), x => VisitAffineSymbol(x, context));
     }
 
     public void Clear()

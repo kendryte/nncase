@@ -5,7 +5,7 @@
 <#@ import namespace="System.Collections.Generic" #>
 <#@ import namespace="System.Diagnostics" #>
 <#
-var irs = (from l in File.ReadAllLines("src/Nncase.Core/Tiling/AffineExprList.csv")
+var irs = (from l in File.ReadAllLines("src/Nncase.Core/IR/Affine/AffineExprList.csv")
           where !string.IsNullOrWhiteSpace(l)
           let columns = l.Split(',')
           let isDerived = bool.Parse(columns[1])

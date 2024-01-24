@@ -51,11 +51,10 @@
     <None Update="IR\IRListParser.tt">
       <Generator></Generator>
     </None>
-    <None Update="Tiling\AffineExprListParser.tt">
-      <Generator>TextTemplatingFileGenerator</Generator>
-      <LastGenOutput>AffineExprListParser.cs</LastGenOutput>
+    <None Update="IR\Affine\AffineExprListParser.tt">
+      <Generator></Generator>
     </None>
-    <None Update="Tiling\AffineExprVisitor.g.tt">
+    <None Update="IR\Affine\AffineExprVisitor.g.tt">
       <LastGenOutput>AffineExprVisitor.g.cs</LastGenOutput>
       <Generator>TextTemplatingFileGenerator</Generator>
     </None>
@@ -70,6 +69,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="IR\Affine\AffineExprVisitor.g.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>AffineExprVisitor.g.tt</DependentUpon>
+    </Compile>
     <Compile Update="IR\ExprCloner.g.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -90,21 +94,15 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>ExprVisitor.g.tt</DependentUpon>
     </Compile>
-    <Compile Update="Tiling\AffineExprListParser.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>AffineExprListParser.tt</DependentUpon>
-    </Compile>
-    <Compile Update="Tiling\AffineExprVisitor.g.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>AffineExprVisitor.g.tt</DependentUpon>
-    </Compile>
     <Compile Update="TIR\Range.Conversions.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
       <DependentUpon>Range.Conversions.tt</DependentUpon>
     </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Tiling\" />
   </ItemGroup>
 
 </Project>

@@ -57,6 +57,14 @@ public struct Either<T1, T2>
 
     public static Either<T1, T2> From(T2 value) => new(value);
 
+    public static Either<T1, T2> From<TCommon>(TCommon value)
+        => value switch
+        {
+            T1 v => v,
+            T2 v => v,
+            _ => throw new InvalidCastException(),
+        };
+
     public bool Is<T>()
     {
         if (typeof(T) == typeof(T1))
@@ -77,4 +85,10 @@ public struct Either<T1, T2>
 
     public object Match(Func<T1, object> t1Selector, Func<T2, object> t2Selector)
         => Is<T1>() ? t1Selector(_t1) : t2Selector(_t2);
+
+    public TCommon ToCommonValue<TCommon>()
+        where TCommon : class
+    {
+        return Is<T1>() ? (TCommon)(object)Value1! : (TCommon)(object)Value2!;
+    }
 }
