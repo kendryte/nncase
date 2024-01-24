@@ -193,6 +193,18 @@ internal class NcnnEmitter
         WriteFloatArray(betaData);
     }
 
+    public void LayerNorm(string name, string input, int affineSize, float eps, int affine, float[] gammaData, float[] betaData)
+    {
+        AddLayer("LayerNorm", name, new[] { input }, new[] { name }, new ParamDict
+        {
+            [0] = new ParamValue { Kind = ParamKind.Int, IntValue = affineSize }, // affineSize
+            [1] = new ParamValue { Kind = ParamKind.Float, FloatValue = eps }, // eps
+            [2] = new ParamValue { Kind = ParamKind.Int, IntValue = affine }, // affine
+        });
+        WriteFloatArray(gammaData);
+        WriteFloatArray(betaData);
+    }
+
     private void AddLayer(string type, string name, string[] bottoms, string[] tops, ParamDict? paramDict = null, int layerType = 1)
     {
         var layer = new NcnnLayer(type, name, bottoms.Length, tops.Length);

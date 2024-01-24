@@ -146,8 +146,11 @@ internal class NcnnFunctionBuilder : FunctionBuilder
                 case NcnnInstanceNorm op:
                     _emitter.InstanceNorm(name, ExprMemo[expr.Arguments[0]], op.Channels, op.Eps, op.Affine, op.GammaData, op.BetaData);
                     break;
+                case NcnnLayerNorm op:
+                    _emitter.LayerNorm(name, ExprMemo[expr.Arguments[0]], op.AffineSize, op.Eps, op.Affine, op.GammaData, op.BetaData);
+                    break;
                 default:
-                    throw new NotSupportedException();
+                    throw new NotSupportedException("Not support in Ncnn ops emitter");
             }
 
             return name;
