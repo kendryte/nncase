@@ -146,6 +146,9 @@ internal class NcnnFunctionBuilder : FunctionBuilder
                 case NcnnInstanceNorm op:
                     _emitter.InstanceNorm(name, ExprMemo[expr.Arguments[0]], op.Channels, op.Eps, op.Affine, op.GammaData, op.BetaData);
                     break;
+                case NcnnLRN op:
+                    _emitter.LRN(name, ExprMemo[expr.Arguments[0]], op.Alpha, op.Beta, op.Bias, op.Size);
+                    break;
                 default:
                     throw new NotSupportedException();
             }

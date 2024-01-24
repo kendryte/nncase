@@ -193,6 +193,16 @@ internal class NcnnEmitter
         WriteFloatArray(betaData);
     }
 
+    public void LRN(string name, string input, float alpha, float beta, float bias, int size) =>
+        AddLayer("LRN", name, new[] { input }, new[] { name }, new ParamDict
+        {
+            [0] = new ParamValue { Kind = ParamKind.Int, IntValue = 0 }, // region_type
+            [1] = new ParamValue { Kind = ParamKind.Int, IntValue = size }, // size
+            [2] = new ParamValue { Kind = ParamKind.Float, FloatValue = alpha }, // alpha
+            [3] = new ParamValue { Kind = ParamKind.Float, FloatValue = beta }, // beta
+            [4] = new ParamValue { Kind = ParamKind.Float, FloatValue = bias }, // bias
+        });
+
     private void AddLayer(string type, string name, string[] bottoms, string[] tops, ParamDict? paramDict = null, int layerType = 1)
     {
         var layer = new NcnnLayer(type, name, bottoms.Length, tops.Length);

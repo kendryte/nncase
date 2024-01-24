@@ -49,4 +49,6 @@ public sealed class Ncnn
 
     public static Call NcnnInstanceNorm(Expr expr, int channels, float eps, int affine, float[] gammaData, float[] betaData) =>
         new Call(new NcnnInstanceNorm(channels, eps, affine, gammaData, betaData), expr);
+
+    public static Call NcnnLRN(Expr expr, float alpha, float beta, float bias, int size) => new Call(new NcnnLRN(alpha, beta, bias, size), expr);
 }
