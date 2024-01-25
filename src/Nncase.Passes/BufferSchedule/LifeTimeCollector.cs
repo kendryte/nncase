@@ -10,16 +10,16 @@ using Nncase.IR;
 
 namespace Nncase.Passes.BufferSchedule;
 
-internal sealed class LifeTimeCollector : ExprVisitor<Unit, Unit>
+public class LifeTimeCollector : ExprVisitor<Unit, Unit>
 {
     public int TimeStamp { get; private set; }
 
-    public Dictionary<Expr, TimeInterval> LifenessMap { get; } = new(ReferenceEqualityComparer.Instance);
+    public Dictionary<Expr, Interval> LifenessMap { get; } = new(ReferenceEqualityComparer.Instance);
 
-    public IReadOnlyDictionary<Expr, ScheduleBuffer> Collect(Function entry)
+    public IReadOnlyDictionary<Expr, ScheduleBuffer> Collect(Expr expr)
     {
-        Visit(entry.Body);
-        Update(entry.Body); // avoid final call time interval size == 1.
+        Visit(expr);
+        Update(expr); // avoid final call time interval size == 1.
         Alias();
 
         var d = new Dictionary<Expr, ScheduleBuffer>(ReferenceEqualityComparer.Instance);
@@ -32,8 +32,7 @@ internal sealed class LifeTimeCollector : ExprVisitor<Unit, Unit>
                 Var va => va.Name,
                 _ => k.GetType().Name,
             };
-            var size = GetSize(k.CheckedType, out var shape, out var stride);
-
+            var size = ComputeBufferSize(k.CheckedType, out var shape, out var stride);
             d.Add(k, new(name, count++, v, new(0, size), shape, stride, false));
         }
 
@@ -62,6 +61,29 @@ internal sealed class LifeTimeCollector : ExprVisitor<Unit, Unit>
         return Unit.Default;
     }
 
+    protected virtual int ComputeBufferSize(IRType type, out int[] shape, out int[] stride)
+    {
+        shape = Array.Empty<int>();
+        stride = Array.Empty<int>();
+        var size = 0;
+        if (type is TensorType tensorType)
+        {
+            shape = tensorType.Shape.ToValueArray();
+            stride = TensorUtilities.GetStrides(shape);
+            size = TensorUtilities.GetSize(shape, stride, tensorType.DType.SizeInBytes);
+        }
+        else if (type is TupleType tupleType)
+        {
+            size = 0;
+            foreach (var item in tupleType)
+            {
+                size += ComputeBufferSize(item, out _, out _);
+            }
+        }
+
+        return size;
+    }
+
     private void Update(Expr expr)
     {
         if (expr is Const or None)
@@ -85,7 +107,7 @@ internal sealed class LifeTimeCollector : ExprVisitor<Unit, Unit>
         }
         else
         {
-            interval.Death = TimeStamp + 1;
+            interval.Stop = TimeStamp + 1;
         }
 
         LifenessMap[expr] = interval;
@@ -123,12 +145,12 @@ internal sealed class LifeTimeCollector : ExprVisitor<Unit, Unit>
         } while (changed);
     }
 
-    private bool AliasTime(Call call, TimeInterval interval)
+    private bool AliasTime(Call call, Interval interval)
     {
-        var brith = call.GetArguments().Select(arg => LifenessMap[arg].Death).Concat(new[] { interval.Brith }).Max();
-        var death = call.GetUsers().Select(usr => LifenessMap[usr].Brith).Concat(new[] { interval.Death }).Min();
+        var brith = call.GetArguments().Select(arg => LifenessMap[arg].Stop).Concat(new[] { interval.Start }).Max();
+        var death = call.GetUsers().Select(usr => LifenessMap[usr].Start).Concat(new[] { interval.Stop }).Min();
 
-        if (brith == interval.Brith && death == interval.Death)
+        if (brith == interval.Start && death == interval.Stop)
         {
             return false;
         }
@@ -138,31 +160,8 @@ internal sealed class LifeTimeCollector : ExprVisitor<Unit, Unit>
             throw new InvalidOperationException();
         }
 
-        interval.Brith = brith;
-        interval.Death = death;
+        interval.Start = brith;
+        interval.Stop = death;
         return true;
-    }
-
-    private int GetSize(IRType type, out int[] shape, out int[] stride)
-    {
-        shape = Array.Empty<int>();
-        stride = Array.Empty<int>();
-        var size = 0;
-        if (type is TensorType tensorType)
-        {
-            shape = tensorType.Shape.ToValueArray();
-            stride = TensorUtilities.GetStrides(shape);
-            size = TensorUtilities.GetSize(shape, stride, tensorType.DType.SizeInBytes);
-        }
-        else if (type is TupleType tupleType)
-        {
-            size = 0;
-            foreach (var item in tupleType)
-            {
-                size += GetSize(item, out _, out _);
-            }
-        }
-
-        return size;
     }
 }
