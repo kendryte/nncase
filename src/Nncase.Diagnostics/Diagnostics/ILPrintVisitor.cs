@@ -576,7 +576,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         _scope.Push();
 
         // 1. For Loop signature
-        _scope.Append($"%{name} = Grid({string.Join(", ", reads)})");
+        _scope.Append($"{name} = Grid({string.Join(", ", reads)})");
         AppendCheckedType(expr.CheckedType, " {");
 
         using (_scope.IndentUp())
@@ -601,7 +601,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
             // 4. For Body
             var parameters = expr.BodyParameters.AsValueEnumerable().Select(Visit).ToArray();
             _scope.IndWrite($"Body: ({string.Join(", ", parameters)})");
-            AppendCheckedType(expr.CheckedType, " {", hasNewLine: true);
+            AppendCheckedType(expr.Body.CheckedType, " {", hasNewLine: true);
             using (_scope.IndentUp())
             {
                 foreach (var item in expr.Body.Fields)

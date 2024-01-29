@@ -14,10 +14,6 @@ public sealed record class TiledFor(For For, AffineSymbol[] TileSizes);
 
 public static class AffineUtility
 {
-    public static For AutoTile(For @for)
-    {
-        throw new NotImplementedException();
-    }
 
 #if false
     private sealed class AutoTileRewriter : ExprRewriter
