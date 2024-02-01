@@ -105,10 +105,10 @@ public partial class LowerLSTM : RewriteRule<Pattern>
         var biasR = Concat(
                         new IR.Tuple(new[]
                         {
-                            Slice(biasR_, new int[] { 0 }, new int[] { 1 }, new int[] { 2 },strides),
-                            Slice(biasR_, new int[] { 2 }, new int[] { 3 }, new int[] { 2 },strides),
-                            Slice(biasR_, new int[] { 1 }, new int[] { 2 }, new int[] { 2 },strides),
-                            Slice(biasR_, new int[] { 3 }, new int[] { 4 }, new int[] { 2 },strides),
+                            Slice(biasR_, new int[] { 0 }, new int[] { 1 }, new int[] { 2 }, strides),
+                            Slice(biasR_, new int[] { 2 }, new int[] { 3 }, new int[] { 2 }, strides),
+                            Slice(biasR_, new int[] { 1 }, new int[] { 2 }, new int[] { 2 }, strides),
+                            Slice(biasR_, new int[] { 3 }, new int[] { 4 }, new int[] { 2 }, strides),
                         }),
                         2);
         float[] newBias = (biasW + biasR).Evaluate().AsTensor().ToArray<float>();
@@ -126,6 +126,6 @@ public partial class LowerLSTM : RewriteRule<Pattern>
                         1).Evaluate().AsTensor().ToArray<float>();
 
         var lstm_ = new Call(new Fusion("ncnn", NcnnLSTM(inResO, outputSize, hiddenSize, weightDataSize, direction, newWeights, newBias, newR), new[] { inResO }), inRes);
-        return new IR.Tuple(new[] { Unsqueeze(lstm_[0], new[] { 1,1 }), lstm_[1], lstm_[2] });
+        return new IR.Tuple(new[] { Unsqueeze(lstm_[0], new[] { 1, 1 }), lstm_[1], lstm_[2] });
     }
 }

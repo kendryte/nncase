@@ -71,6 +71,7 @@ internal class NcnnFunctionBuilder : FunctionBuilder
         }
 
         public List<string> Inputs { get; } = new();
+
         public List<string> Outputs { get; } = new();
 
         protected override string VisitLeafVar(Var expr)

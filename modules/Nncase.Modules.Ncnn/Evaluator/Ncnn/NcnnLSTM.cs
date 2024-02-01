@@ -8,10 +8,11 @@ using System.Text;
 using System.Threading.Tasks;
 using Nncase.CostModel;
 using Nncase.IR;
-using Nncase.IR.RNN;
 using Nncase.IR.Ncnn;
+using Nncase.IR.RNN;
 using OrtKISharp;
 using static Nncase.LSTMHelper;
+
 namespace Nncase.Evaluator.Ncnn;
 
 /// <summary>
@@ -23,6 +24,7 @@ public class NcnnLSTMEvaluator : IEvaluator<NcnnLSTM>, ITypeInferencer<NcnnLSTM>
     public IValue Visit(IEvaluateContext context, NcnnLSTM lstm)
     {
         var input = context.GetOrtArgumentValue(lstm, NcnnLSTM.Input);
+
         // TODO: reorder w,r to iofg, b to numDirection-8*hiddensize (Now, numDirection-4*hiddensize (bw+br))
         var w = lstm.W;
         var r = lstm.R;
@@ -37,7 +39,7 @@ public class NcnnLSTMEvaluator : IEvaluator<NcnnLSTM>, ITypeInferencer<NcnnLSTM>
         };
 
         var seqLens = (int)input.Shape[0];
-        var initH = Tensor.Zeros<float>(new[] { direction_, seqLens, lstm.HiddenSize});
+        var initH = Tensor.Zeros<float>(new[] { direction_, seqLens, lstm.HiddenSize });
         var initC = Tensor.Zeros<float>(new[] { direction_, seqLens, lstm.HiddenSize });
         var p = Tensor.Zeros<float>(new[] { 1, seqLens, lstm.HiddenSize });
         var actAlpha = new[] { 0.0f };
@@ -48,13 +50,13 @@ public class NcnnLSTMEvaluator : IEvaluator<NcnnLSTM>, ITypeInferencer<NcnnLSTM>
         var outputSize = 1;
         var result = OrtKI.LSTM(input, w, r, b, seqLens, initH.ToOrtTensor(), initC.ToOrtTensor(), p.ToOrtTensor(), actAlpha, actBeta, new string[] { "sigmoid", "sigmoid", "tanh" }, clip, LSTMDirectionToValue(mode), hiddenSize, inputForget, 0, !clip.Equals(float.NaN), outputSize);
         return Value.FromTensors(result.Select(t => t.ToTensor()).ToArray());
-
     }
 
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, NcnnLSTM target)
     {
         var input = context.CheckArgumentType<TensorType>(target, NcnnLSTM.Input);
+
         // [num_direction, batch_size:1, hidden_size]
         var initH = new TensorType(DataTypes.Float32, new[] { target.Direction > 1 ? 2 : 1, 1, target.HiddenSize });
         var initC = new TensorType(DataTypes.Float32, new[] { target.Direction > 1 ? 2 : 1, 1, target.HiddenSize });
@@ -124,7 +126,7 @@ public class NcnnLSTMEvaluator : IEvaluator<NcnnLSTM>, ITypeInferencer<NcnnLSTM>
     private IRType Visit(ITypeInferenceContext context, TensorType x, TensorType initH, TensorType initC, int outputSize)
     {
         // TODO: confirm ncnn output
-        var numDirections = initH.Shape[0];
+        _ = initH.Shape[0];
         var seqLenIndex = 0;
         var yType = new TensorType(DataTypes.Float32, new[] { x.Shape[0].FixedValue, initH.Shape[2].FixedValue });
         Console.WriteLine($"x.Shape[0].FixedValue: {x.Shape[0].FixedValue},  initH.Shape[2].FixedValue:{initH.Shape[2].FixedValue}");

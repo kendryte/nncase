@@ -14,9 +14,9 @@ using Nncase.CodeGen.Ncnn;
 using Nncase.CodeGen.StackVM;
 using Nncase.IR;
 using Nncase.Passes;
+using Nncase.Passes.Rules.Neutral;
 using Nncase.Passes.Transforms;
 using Nncase.Quantization;
-using Nncase.Passes.Rules.Neutral;
 
 namespace Nncase.Targets;
 
