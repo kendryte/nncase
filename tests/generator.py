@@ -112,3 +112,6 @@ class Generator:
 
     def from_constant_of_shape(self, shape: List[int], dtype: np.dtype) -> np.ndarray:
         return np.array(shape, dtype=dtype)
+
+    def from_numpy(self, path) -> np.ndarray:
+        return np.load(path)
