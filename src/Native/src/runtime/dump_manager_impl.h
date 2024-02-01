@@ -36,6 +36,7 @@ void dump_by_steam(dump_manager &dump_manager_, nncase::value_t value, F &&f,
         auto value_tuple = value.as<nncase::tuple>().unwrap();
         for (auto &field : value_tuple->fields()) {
             dump_by_steam(dump_manager_, field, f, stream);
+            std::cout << std::endl;
         }
     } else {
         std::cout << "unknown in dump" << std::endl;
@@ -68,10 +69,6 @@ inline std::string to_str(const nncase::dims_t &shape) {
 template <typename T>
 void dump_data(std::ostream &stream, const T *data,
                nncase::tensor value_tensor) {
-    //    std::cout << "out_shape:";
-    //    for (auto d : value_tensor->shape()) {
-    //        std::cout << d << " ";
-    //    }
     stream << "type:"
            << std::to_string(to_typecode(value_tensor->dtype()).unwrap())
            << std::endl;
