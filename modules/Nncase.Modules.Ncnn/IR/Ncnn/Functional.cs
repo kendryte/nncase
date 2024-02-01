@@ -51,4 +51,7 @@ public sealed class Ncnn
         new Call(new NcnnInstanceNorm(channels, eps, affine, gammaData, betaData), expr);
 
     public static Call NcnnLRN(Expr expr, float alpha, float beta, float bias, int size) => new Call(new NcnnLRN(alpha, beta, bias, size), expr);
+
+    public static Call NcnnLSTM(Expr expr, int outputSize, int hiddenSize, int weightDataSize, int direction, float[] w, float[] b, float[] r) =>
+        new Call(new NcnnLSTM(outputSize, hiddenSize, weightDataSize, direction, w, b, r), expr);
 }

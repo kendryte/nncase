@@ -203,6 +203,22 @@ internal class NcnnEmitter
             [4] = new ParamValue { Kind = ParamKind.Float, FloatValue = bias }, // bias
         });
 
+    public void LSTM(string[] name, string input, int hiddenSize, int weightDataSize, int direction, float[] w, float[] r, float[] b)
+    {
+        AddLayer("LSTM", name[0], new[] { input }, name, new ParamDict
+        {
+            [0] = new ParamValue { Kind = ParamKind.Int, IntValue = hiddenSize },
+            [1] = new ParamValue { Kind = ParamKind.Int, IntValue = weightDataSize },
+            [2] = new ParamValue { Kind = ParamKind.Int, IntValue = direction },
+        });
+        WriteFloatArray(new float[] { 0 });
+        WriteFloatArray(w);
+        WriteFloatArray(new float[] { 0 });
+        WriteFloatArray(b);
+        WriteFloatArray(new float[] { 0 });
+        WriteFloatArray(r);
+    }
+
     private void AddLayer(string type, string name, string[] bottoms, string[] tops, ParamDict? paramDict = null, int layerType = 1)
     {
         var layer = new NcnnLayer(type, name, bottoms.Length, tops.Length);

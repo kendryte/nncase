@@ -28,5 +28,6 @@ internal class NcnnModule : IApplicationPart
         registrator.RegisterManyInterface<NcnnHardSwishEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<NcnnInstanceNormEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<NcnnLRNEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<NcnnLSTMEvaluator>(reuse: Reuse.Singleton);
     }
 }

@@ -16,6 +16,7 @@ using Nncase.IR;
 using Nncase.Passes;
 using Nncase.Passes.Transforms;
 using Nncase.Quantization;
+using Nncase.Passes.Rules.Neutral;
 
 namespace Nncase.Targets;
 
@@ -66,6 +67,7 @@ public class CPUTarget : ITarget
             p.Add<Passes.Rules.Ncnn.LowerHardSwish>();
             p.Add<Passes.Rules.Ncnn.LowerInstanceNorm>();
             p.Add<Passes.Rules.Ncnn.LowerLRN>();
+            p.Add<Passes.Rules.Ncnn.LowerLSTM>();
         });
     }
 
