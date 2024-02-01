@@ -97,7 +97,8 @@ public partial class FoldDilatedConv2D : RewriteRule<Pattern>
             (Conv2D.Stride.Index, (Expr)new[] { strideH, strideW }),
             (Conv2D.Dilation.Index, (Expr)new[] { dilationH, dilationW }),
         };
-        return ReplaceUtility.ReplaceCallParams(conv, conv.Arguments.ToArray(), pairs).InheritMetaData(btsCall);
+        var res = ReplaceUtility.ReplaceCallParams(conv.Target, conv.Arguments.ToArray(), pairs).InheritMetaData(btsCall);
+        return res;
     }
 
     private (int[] Begin, int[] End) GetBeginEnd(int[] btsBlockShape, int[,] crop, int[] btsInputShape)

@@ -176,8 +176,12 @@ def recv_worker(conn, target):
     if dict['app'] == 1:
         dict['app'] = recv_file(conn, case_dir, target.logger)
 
-    if dict['kmodel'] == 1:
-        dict['kmodel'] = recv_file(conn, case_dir, target.logger)
+    kmodel_num = dict['kmodel']
+    if kmodel_num > 0:
+        file_names = []
+        for i in range(kmodel_num):
+            file_names.append(recv_file(conn, case_dir, target.logger))
+        dict['kmodel'] = ' '.join(file_names)
 
     if dict['description'] == 1:
         dict['description'] = recv_file(conn, case_dir, target.logger)

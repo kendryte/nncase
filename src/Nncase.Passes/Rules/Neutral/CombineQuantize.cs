@@ -68,7 +68,7 @@ public sealed partial class CombineQuantizeConcat : RewriteRule<Pattern>
                             }
                             else
                             {
-                                if (user != tuple)
+                                if (!ReferenceEquals(user, tuple))
                                 {
                                     return null;
                                 }
