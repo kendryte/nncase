@@ -28,7 +28,7 @@ void dump_append(dump_manager &dump_manager_, F &&f, const std::string &path) {
 
 template <typename F>
 void dump_by_steam(dump_manager &dump_manager_, nncase::value_t value, F &&f,
-          std::ofstream &stream) {
+                   std::ofstream &stream) {
     if (value.is_a<nncase::tensor>()) {
         auto value_tensor = value.as<nncase::tensor>().unwrap();
         f(stream, value_tensor);
@@ -45,7 +45,8 @@ void dump_by_steam(dump_manager &dump_manager_, nncase::value_t value, F &&f,
 
 // dump_by_path create a new steam by path and close steam after dump_by_stream.
 template <typename F>
-void dump_by_path(dump_manager &dump_manager_, nncase::value_t value, F &&f, const std::string &path) {
+void dump_by_path(dump_manager &dump_manager_, nncase::value_t value, F &&f,
+                  const std::string &path) {
     auto stream = dump_manager_.get_stream(path);
     dump_by_steam(dump_manager_, value, f, stream);
     stream.close();
