@@ -23,7 +23,7 @@ public struct QuantConfig : IEquatable<QuantConfig>
         for (int i = 0; i < raw.Length / 3; i++)
         {
             var rawBase = i * 3;
-            config._config[i] = (Tensor.From(new[] { raw[rawBase], raw[rawBase + 1] }), QuantTypeMapReverse[(int)raw[rawBase] + 2]);
+            config._config[i] = (Tensor.From(new[] { raw[rawBase], raw[rawBase + 1] }), QuantTypeMapReverse[(int)rawBase + 2]);
         }
 
         return config;
