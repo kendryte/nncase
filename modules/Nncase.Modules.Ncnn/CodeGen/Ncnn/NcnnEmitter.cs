@@ -219,6 +219,25 @@ internal class NcnnEmitter
         WriteFloatArray(r);
     }
 
+    public void Padding(string[] name, string input, int top, int bottom, int left, int right, int type, float value, int front, int behind)
+    {
+        AddLayer("Padding", name[0], new[] { input }, name, new ParamDict
+        {
+            [0] = new ParamValue { Kind = ParamKind.Int, IntValue = top },
+            [1] = new ParamValue { Kind = ParamKind.Int, IntValue = bottom },
+            [2] = new ParamValue { Kind = ParamKind.Int, IntValue = left },
+            [3] = new ParamValue { Kind = ParamKind.Int, IntValue = right },
+            [4] = new ParamValue { Kind = ParamKind.Int, IntValue = type },
+            [5] = new ParamValue { Kind = ParamKind.Float, FloatValue = value },
+            // [6] for perChannelPadDataSize.
+            [7] = new ParamValue { Kind = ParamKind.Int, IntValue = front },
+            [8] = new ParamValue { Kind = ParamKind.Int, IntValue = behind },
+        });
+
+        // TODO: confirm padValue is a tensor.
+        WriteFloatArray(new float[] { value });
+    }
+
     private void AddLayer(string type, string name, string[] bottoms, string[] tops, ParamDict? paramDict = null, int layerType = 1)
     {
         var layer = new NcnnLayer(type, name, bottoms.Length, tops.Length);

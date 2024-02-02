@@ -162,6 +162,9 @@ internal class NcnnFunctionBuilder : FunctionBuilder
 
                     _emitter.LSTM(names.ToArray(), ExprMemo[expr.Arguments[0]], op.HiddenSize, op.WeightDataSize, op.Direction, op.W, op.R, op.B);
                     break;
+                case NcnnPadding op:
+                    _emitter.Padding(names.ToArray(), ExprMemo[expr.Arguments[0]], op.Top, op.Bottom, op.Left, op.Right, op.Type, op.Value, op.Front, op.Behind);
+                    break;
                 default:
                     throw new NotSupportedException();
             }

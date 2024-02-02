@@ -54,4 +54,7 @@ public sealed class Ncnn
 
     public static Call NcnnLSTM(Expr expr, int outputSize, int hiddenSize, int weightDataSize, int direction, float[] w, float[] b, float[] r) =>
         new Call(new NcnnLSTM(outputSize, hiddenSize, weightDataSize, direction, w, b, r), expr);
+
+    public static Call NcnnPadding(Expr expr, int top, int bottom, int left, int right, int type, float value, int front, int behind) =>
+        new Call(new NcnnPadding(top, bottom, left, right, type, value, front, behind), expr);
 }
