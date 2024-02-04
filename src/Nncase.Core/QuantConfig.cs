@@ -31,7 +31,7 @@ public record QuantConfigData(Tensor<float> Range, DataType DType)
 
     public int RawLength => Range.Length + 2;
 
-    public int Channesl => Range.Length / 2;
+    public int Channels => Range.Length / 2;
 
     internal static readonly Dictionary<DataType, int> QuantTypeMap = new Dictionary<DataType, int>
     {
