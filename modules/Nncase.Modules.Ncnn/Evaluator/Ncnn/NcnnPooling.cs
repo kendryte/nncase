@@ -28,14 +28,15 @@ public class NcnnPoolingEvaluator : IEvaluator<NcnnPooling>, ITypeInferencer<Ncn
         var kernelSize = new long[] { pooling.Args.KernelH, pooling.Args.KernelW };
         var stride = new long[] { pooling.Args.StrideH, pooling.Args.StrideW };
         var dilation = new long[] { 1, 1 };
-        var padData = new long[] { pooling.Args.PadTop, pooling.Args.PadLeft, pooling.Args.PadBottom,  pooling.Args.PadRight };
+        var padData = new long[] { pooling.Args.PadTop, pooling.Args.PadLeft, pooling.Args.PadBottom, pooling.Args.PadRight };
+
         // var ceilMode = pooling.Args.PadMode == 0 ? 1 : 0;
         long countIncludePad = pooling.Args.AvgPoolCountIncludePad ? 1 : 0;
 
         return (pooling.Args.PoolingType switch
         {
-            0 => OrtKI.MaxPool(input, "NOTSET", pooling.Args.CeilMode?1:0, dilation, kernelSize, padData, countIncludePad, stride)[0],
-            1 => OrtKI.AveragePool(input, "NOTSET", pooling.Args.CeilMode?1:0, countIncludePad, kernelSize, padData, stride),
+            0 => OrtKI.MaxPool(input, "NOTSET", pooling.Args.CeilMode ? 1 : 0, dilation, kernelSize, padData, countIncludePad, stride)[0],
+            1 => OrtKI.AveragePool(input, "NOTSET", pooling.Args.CeilMode ? 1 : 0, countIncludePad, kernelSize, padData, stride),
             _ => throw
                 new NotImplementedException($"Pooling type {pooling.Args.PoolingType} is not supported."),
         }).ToValue();
@@ -83,8 +84,7 @@ public class NcnnPoolingEvaluator : IEvaluator<NcnnPooling>, ITypeInferencer<Ncn
         var kernelSize = new long[] { pooling.Args.KernelH, pooling.Args.KernelW };
         var stride = new long[] { pooling.Args.StrideH, pooling.Args.StrideW };
         var padData = new long[] { pooling.Args.PadTop, pooling.Args.PadBottom, pooling.Args.PadLeft, pooling.Args.PadRight };
-
-        long countIncludePad = pooling.Args.AvgPoolCountIncludePad ? 1 : 0;
+        _ = pooling.Args.AvgPoolCountIncludePad ? 1 : 0;
         var newInput = new TensorType(input.DType, input.Shape.InsertAndClone(0, 1));
         var output_ = TypeInference.ReduceWindow2DType(newInput, kernelSize, stride,
             Tensor.From(padData, new[] { 2, 2, }), pooling.Args.CeilMode);

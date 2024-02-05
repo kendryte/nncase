@@ -7,30 +7,29 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Nncase.ArgsStruct;
 using Nncase.PatternMatch;
 
 namespace Nncase.IR.Ncnn;
 
 /// <summary>
-/// Pooling expression.
+/// PRelu expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed partial class NcnnPooling : Op
+public sealed partial class NcnnPRelu : Op
 {
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(NcnnPooling), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(NcnnPRelu), 0, "input");
 
     /// <summary>
-    /// Gets PoolingArgs of Ncnn Pooling.
+    /// Gets Slope of Ncnn PRelu.
     /// </summary>
-    public PoolingArgs Args { get; }
+    public float[] Slope { get; }
 
     /// <inheritdoc/>
     public override string DisplayProperty()
     {
-        return $"{Args.PoolingType}, Kernel: {Args.KernelW}-{Args.KernelH}, Stride: {Args.StrideW}-{Args.StrideH}, Padding: {Args.PadLeft}-{Args.PadRight}-{Args.PadTop}-{Args.PadBottom}, CeilMode: {Args.CeilMode}";
+        return $"";
     }
 }

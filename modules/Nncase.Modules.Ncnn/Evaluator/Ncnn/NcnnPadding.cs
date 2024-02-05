@@ -23,6 +23,7 @@ public class NcnnPaddingEvaluator : IEvaluator<NcnnPadding>, ITypeInferencer<Ncn
     public IValue Visit(IEvaluateContext context, NcnnPadding padding)
     {
         var input = context.GetOrtArgumentValue(padding, NcnnPadding.Input);
+
         // ncnn not support N
         var pads = new Tensor<long>(new int[] { 0, 0, padding.Front, padding.Top, padding.Left, padding.Behind, padding.Bottom, padding.Right });
         return OrtKI.Pad(input, pads.ToOrtTensor(), padding.Value, padding.Type switch

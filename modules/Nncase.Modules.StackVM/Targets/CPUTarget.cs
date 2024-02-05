@@ -70,6 +70,7 @@ public class CPUTarget : ITarget
             p.Add<Passes.Rules.Ncnn.LowerLSTM>();
             p.Add<Passes.Rules.Ncnn.LowerPadding>();
             p.Add<Passes.Rules.Ncnn.LowerPooling>();
+            p.Add<Passes.Rules.Ncnn.LowerPRelu>();  // x86 need ncnn later than 20231115
         });
     }
 

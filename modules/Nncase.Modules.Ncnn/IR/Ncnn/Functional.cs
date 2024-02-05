@@ -61,4 +61,7 @@ public sealed class Ncnn
 
     public static Call NcnnPooling(Expr expr, PoolingArgs poolingArgs) =>
         new Call(new NcnnPooling(poolingArgs), expr);
+
+    public static Call NcnnPRelu(Expr expr, float[] slope) =>
+        new Call(new NcnnPRelu(slope), expr);
 }

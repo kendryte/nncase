@@ -6,18 +6,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.ArgsStruct;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Ncnn;
+using Nncase.IR.NN;
 using Nncase.PatternMatch;
-using Nncase.ArgsStruct;
-
 using static Nncase.IR.F.Ncnn;
 using static Nncase.IR.F.Tensors;
 using static Nncase.IR.TypePatternUtility;
 using static Nncase.PatternMatch.F.NN;
 using static Nncase.PatternMatch.Utility;
-using Nncase.IR.NN;
 
 namespace Nncase.Passes.Rules.Ncnn;
 

@@ -127,7 +127,6 @@ public class NcnnLSTMEvaluator : IEvaluator<NcnnLSTM>, ITypeInferencer<NcnnLSTM>
     {
         // TODO: confirm ncnn output
         _ = initH.Shape[0];
-        var seqLenIndex = 0;
         var yType = new TensorType(DataTypes.Float32, new[] { x.Shape[0].FixedValue, initH.Shape[2].FixedValue });
         Console.WriteLine($"x.Shape[0].FixedValue: {x.Shape[0].FixedValue},  initH.Shape[2].FixedValue:{initH.Shape[2].FixedValue}");
         var result = new[] { yType, initH, initC };

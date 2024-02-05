@@ -230,6 +230,7 @@ internal class NcnnEmitter
             [3] = new ParamValue { Kind = ParamKind.Int, IntValue = right },
             [4] = new ParamValue { Kind = ParamKind.Int, IntValue = type },
             [5] = new ParamValue { Kind = ParamKind.Float, FloatValue = value },
+
             // [6] for perChannelPadDataSize.
             [7] = new ParamValue { Kind = ParamKind.Int, IntValue = front },
             [8] = new ParamValue { Kind = ParamKind.Int, IntValue = behind },
@@ -256,9 +257,20 @@ internal class NcnnEmitter
             [5] = new ParamValue { Kind = ParamKind.Int, IntValue = poolingArgs.PadMode },
             [6] = new ParamValue { Kind = ParamKind.Int, IntValue = poolingArgs.AvgPoolCountIncludePad ? 1 : 0 },
             [7] = new ParamValue { Kind = ParamKind.Int, IntValue = poolingArgs.AdaptivePooling ? 1 : 0 },
+
             // [8] = new ParamValue { Kind = ParamKind.Int, IntValue = poolingArgs.OutH },
             // [18] = new ParamValue { Kind = ParamKind.Int, IntValue = poolingArgs.OutH },
         });
+    }
+
+    public void PRelu(string[] name, string input, float[] slope)
+    {
+        AddLayer("PRelu", name[0], new[] { input }, name, new ParamDict
+        {
+            [0] = new ParamValue { Kind = ParamKind.Int, IntValue = slope.Length },
+        });
+
+        WriteFloatArray(slope);
     }
 
     private void AddLayer(string type, string name, string[] bottoms, string[] tops, ParamDict? paramDict = null, int layerType = 1)
