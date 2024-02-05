@@ -263,9 +263,9 @@ internal class NcnnEmitter
         });
     }
 
-    public void PRelu(string[] name, string input, float[] slope)
+    public void PReLU(string[] name, string input, float[] slope)
     {
-        AddLayer("PRelu", name[0], new[] { input }, name, new ParamDict
+        AddLayer("PReLU", name[0], new[] { input }, name, new ParamDict
         {
             [0] = new ParamValue { Kind = ParamKind.Int, IntValue = slope.Length },
         });

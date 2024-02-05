@@ -12,18 +12,18 @@ using Nncase.PatternMatch;
 namespace Nncase.IR.Ncnn;
 
 /// <summary>
-/// PRelu expression.
+/// PReLU expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed partial class NcnnPRelu : Op
+public sealed partial class NcnnPReLU : Op
 {
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(NcnnPRelu), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(NcnnPReLU), 0, "input");
 
     /// <summary>
-    /// Gets Slope of Ncnn PRelu.
+    /// Gets Slope of Ncnn PReLU.
     /// </summary>
     public float[] Slope { get; }
 

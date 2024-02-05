@@ -21,7 +21,7 @@ using static Nncase.PatternMatch.Utility;
 namespace Nncase.Passes.Rules.Ncnn;
 
 [RuleGenerator]
-public partial class LowerPRelu : RewriteRule<Pattern>
+public partial class LowerPReLU : RewriteRule<Pattern>
 {
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = IsPRelu(
@@ -41,7 +41,7 @@ public partial class LowerPRelu : RewriteRule<Pattern>
         var inRes = Squeeze(input, new[] { 0 });
         var inResO = new Var(inRes.CheckedType);
 
-        var pRelu = new Call(new Fusion("ncnn", NcnnPRelu(inResO, slope.ToArray()), new[] { inResO }), input);
-        return Unsqueeze(pRelu, new[] { 0 });
+        var pReLU = new Call(new Fusion("ncnn", NcnnPReLU(inResO, slope.ToArray()), new[] { inResO }), input);
+        return Unsqueeze(pReLU, new[] { 0 });
     }
 }

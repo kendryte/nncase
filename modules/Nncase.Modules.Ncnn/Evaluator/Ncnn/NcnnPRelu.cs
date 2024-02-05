@@ -14,27 +14,27 @@ using OrtKISharp;
 namespace Nncase.Evaluator.Ncnn;
 
 /// <summary>
-/// Evaluator for <see cref="NcnnPRelu"/>.
+/// Evaluator for <see cref="NcnnPReLU"/>.
 /// </summary>
-public class NcnnPReluEvaluator : IEvaluator<NcnnPRelu>, ITypeInferencer<NcnnPRelu>, ICostEvaluator<NcnnPRelu>, IShapeEvaluator<NcnnPRelu>, IMetricEvaluator<NcnnPRelu>
+public class NcnnPReluEvaluator : IEvaluator<NcnnPReLU>, ITypeInferencer<NcnnPReLU>, ICostEvaluator<NcnnPReLU>, IShapeEvaluator<NcnnPReLU>, IMetricEvaluator<NcnnPReLU>
 {
     /// <inheritdoc/>
-    public IValue Visit(IEvaluateContext context, NcnnPRelu pRelu)
+    public IValue Visit(IEvaluateContext context, NcnnPReLU pReLU)
     {
-        var input = context.GetOrtArgumentValue(pRelu, NcnnPRelu.Input);
-        var slope = pRelu.Slope;
+        var input = context.GetOrtArgumentValue(pReLU, NcnnPReLU.Input);
+        var slope = pReLU.Slope;
         return OrtKI.PRelu(input, slope).ToValue();
     }
 
     /// <inheritdoc/>
-    public IRType Visit(ITypeInferenceContext context, NcnnPRelu target)
+    public IRType Visit(ITypeInferenceContext context, NcnnPReLU target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, NcnnPRelu.Input);
+        var input = context.CheckArgumentType<TensorType>(target, NcnnPReLU.Input);
         return Visit(input);
     }
 
     /// <inheritdoc/>
-    public Cost Visit(ICostEvaluateContext context, NcnnPRelu target)
+    public Cost Visit(ICostEvaluateContext context, NcnnPReLU target)
     {
         var ret = context.GetReturnType<TensorType>();
         return new()
@@ -44,9 +44,9 @@ public class NcnnPReluEvaluator : IEvaluator<NcnnPRelu>, ITypeInferencer<NcnnPRe
         };
     }
 
-    public Metric Visit(IMetricEvaluateContext context, NcnnPRelu target)
+    public Metric Visit(IMetricEvaluateContext context, NcnnPReLU target)
     {
-        var inputType = context.GetArgumentType<TensorType>(target, NcnnPRelu.Input);
+        var inputType = context.GetArgumentType<TensorType>(target, NcnnPReLU.Input);
         var returnType = context.GetReturnType<TensorType>();
 
         return new()
@@ -57,7 +57,7 @@ public class NcnnPReluEvaluator : IEvaluator<NcnnPRelu>, ITypeInferencer<NcnnPRe
         };
     }
 
-    public Expr Visit(IShapeEvaluateContext context, NcnnPRelu target) => context.GetArgumentShape(target, NcnnPRelu.Input);
+    public Expr Visit(IShapeEvaluateContext context, NcnnPReLU target) => context.GetArgumentShape(target, NcnnPReLU.Input);
 
     private IRType Visit(TensorType input)
     {

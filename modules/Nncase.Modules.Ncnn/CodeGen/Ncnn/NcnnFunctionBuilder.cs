@@ -168,8 +168,8 @@ internal class NcnnFunctionBuilder : FunctionBuilder
                 case NcnnPooling op:
                     _emitter.Pooling(names.ToArray(), ExprMemo[expr.Arguments[0]], op.Args);
                     break;
-                case NcnnPRelu op:
-                    _emitter.PRelu(names.ToArray(), ExprMemo[expr.Arguments[0]], op.Slope);
+                case NcnnPReLU op:
+                    _emitter.PReLU(names.ToArray(), ExprMemo[expr.Arguments[0]], op.Slope);
                     break;
                 default:
                     throw new NotSupportedException();
