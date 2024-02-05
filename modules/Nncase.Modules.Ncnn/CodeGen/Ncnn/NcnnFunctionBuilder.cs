@@ -165,6 +165,9 @@ internal class NcnnFunctionBuilder : FunctionBuilder
                 case NcnnPadding op:
                     _emitter.Padding(names.ToArray(), ExprMemo[expr.Arguments[0]], op.Top, op.Bottom, op.Left, op.Right, op.Type, op.Value, op.Front, op.Behind);
                     break;
+                case NcnnPooling op:
+                    _emitter.Pooling(names.ToArray(), ExprMemo[expr.Arguments[0]], op.Args);
+                    break;
                 default:
                     throw new NotSupportedException();
             }

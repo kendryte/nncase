@@ -69,6 +69,7 @@ public class CPUTarget : ITarget
             p.Add<Passes.Rules.Ncnn.LowerLRN>();
             p.Add<Passes.Rules.Ncnn.LowerLSTM>();
             p.Add<Passes.Rules.Ncnn.LowerPadding>();
+            p.Add<Passes.Rules.Ncnn.LowerPooling>();
         });
     }
 

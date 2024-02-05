@@ -30,5 +30,6 @@ internal class NcnnModule : IApplicationPart
         registrator.RegisterManyInterface<NcnnLRNEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<NcnnLSTMEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<NcnnPaddingEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<NcnnPoolingEvaluator>(reuse: Reuse.Singleton);
     }
 }

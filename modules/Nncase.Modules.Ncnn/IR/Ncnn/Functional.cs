@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.ArgsStruct;
 using Nncase.IR.Ncnn;
 
 namespace Nncase.IR.F;
@@ -57,4 +58,7 @@ public sealed class Ncnn
 
     public static Call NcnnPadding(Expr expr, int top, int bottom, int left, int right, int type, float value, int front, int behind) =>
         new Call(new NcnnPadding(top, bottom, left, right, type, value, front, behind), expr);
+
+    public static Call NcnnPooling(Expr expr, PoolingArgs poolingArgs) =>
+        new Call(new NcnnPooling(poolingArgs), expr);
 }

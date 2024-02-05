@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Toolkit.HighPerformance;
+using Nncase.ArgsStruct;
 using Nncase.IR.Ncnn;
 using Nncase.Runtime.Ncnn;
 
@@ -236,6 +237,28 @@ internal class NcnnEmitter
 
         // TODO: confirm padValue is a tensor.
         WriteFloatArray(new float[] { value });
+    }
+
+    public void Pooling(string[] name, string input, PoolingArgs poolingArgs)
+    {
+        AddLayer("Pooling", name[0], new[] { input }, name, new ParamDict
+        {
+            [0] = new ParamValue { Kind = ParamKind.Int, IntValue = poolingArgs.PoolingType },
+            [1] = new ParamValue { Kind = ParamKind.Int, IntValue = poolingArgs.KernelW },
+            [11] = new ParamValue { Kind = ParamKind.Int, IntValue = poolingArgs.KernelH },
+            [2] = new ParamValue { Kind = ParamKind.Int, IntValue = poolingArgs.StrideW },
+            [12] = new ParamValue { Kind = ParamKind.Int, IntValue = poolingArgs.StrideH },
+            [3] = new ParamValue { Kind = ParamKind.Int, IntValue = poolingArgs.PadLeft },
+            [14] = new ParamValue { Kind = ParamKind.Int, IntValue = poolingArgs.PadRight },
+            [13] = new ParamValue { Kind = ParamKind.Int, IntValue = poolingArgs.PadTop },
+            [15] = new ParamValue { Kind = ParamKind.Int, IntValue = poolingArgs.PadBottom },
+            [4] = new ParamValue { Kind = ParamKind.Int, IntValue = poolingArgs.GlobalPooling ? 1 : 0 },
+            [5] = new ParamValue { Kind = ParamKind.Int, IntValue = poolingArgs.PadMode },
+            [6] = new ParamValue { Kind = ParamKind.Int, IntValue = poolingArgs.AvgPoolCountIncludePad ? 1 : 0 },
+            [7] = new ParamValue { Kind = ParamKind.Int, IntValue = poolingArgs.AdaptivePooling ? 1 : 0 },
+            // [8] = new ParamValue { Kind = ParamKind.Int, IntValue = poolingArgs.OutH },
+            // [18] = new ParamValue { Kind = ParamKind.Int, IntValue = poolingArgs.OutH },
+        });
     }
 
     private void AddLayer(string type, string name, string[] bottoms, string[] tops, ParamDict? paramDict = null, int layerType = 1)
