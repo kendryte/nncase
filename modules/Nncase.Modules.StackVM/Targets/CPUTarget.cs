@@ -49,10 +49,19 @@ public class CPUTarget : ITarget
     {
         passManager.AddWithName<DataflowPass>("LowerNcnnIR").Configure(p =>
         {
+            p.Add<Passes.Rules.Lower.RemoveMarker>();
+
+            // Fold reduce
+            p.Add<Passes.Rules.Ncnn.LowerReductionSumSquare>();
+            p.Add<Passes.Rules.Ncnn.LowerReductionL1>();
+            p.Add<Passes.Rules.Ncnn.LowerReductionL2>();
+            p.Add<Passes.Rules.Ncnn.LowerReductionLogSum>();
+            p.Add<Passes.Rules.Ncnn.LowerReductionLogSumExp>();
+
+            // single op
             p.Add<Passes.Rules.Ncnn.LowerBatchNorm>();
             p.Add<Passes.Rules.Ncnn.LowerSoftmax>();
             p.Add<Passes.Rules.Ncnn.LowerUnary>();
-            p.Add<Passes.Rules.Lower.RemoveMarker>();
             p.Add<Passes.Rules.Ncnn.LowerBinary>();
 
             // p.Add<Passes.Rules.Ncnn.LowerCelu>(); //0816ncnn not support
@@ -70,7 +79,8 @@ public class CPUTarget : ITarget
             p.Add<Passes.Rules.Ncnn.LowerLSTM>();
             p.Add<Passes.Rules.Ncnn.LowerPadding>();
             p.Add<Passes.Rules.Ncnn.LowerPooling>();
-            p.Add<Passes.Rules.Ncnn.LowerPReLU>(); 
+            p.Add<Passes.Rules.Ncnn.LowerPReLU>();
+            p.Add<Passes.Rules.Ncnn.LowerReduction>();
         });
     }
 

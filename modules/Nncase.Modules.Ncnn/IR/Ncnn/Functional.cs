@@ -64,4 +64,7 @@ public sealed class Ncnn
 
     public static Call NcnnPReLU(Expr expr, float[] slope) =>
         new Call(new NcnnPReLU(slope), expr);
+
+    public static Call NcnnReduction(Expr expr, ReductionArgs reductionArgs) =>
+        new Call(new NcnnReduction(reductionArgs), expr);
 }

@@ -48,7 +48,7 @@ public partial class LowerPooling : RewriteRule<Pattern>
         {
             ReduceOp.Max => 0,
             ReduceOp.Mean => 1,
-            _ => throw new NotImplementedException($"{pdp.ReduceOp} not suppor in ncnn!"),
+            _ => throw new NotImplementedException($"{pdp.ReduceOp} not support in ncnn!"),
         };
 
         var kernel_ = filter.Evaluate().AsTensor().ToArray<int>();

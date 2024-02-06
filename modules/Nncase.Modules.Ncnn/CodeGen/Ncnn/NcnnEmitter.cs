@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Toolkit.HighPerformance;
 using Nncase.ArgsStruct;
+using Nncase.IR;
 using Nncase.IR.Ncnn;
 using Nncase.Runtime.Ncnn;
 
@@ -271,6 +272,30 @@ internal class NcnnEmitter
         });
 
         WriteFloatArray(slope);
+    }
+
+    public void Reduction(string[] name, string input, ReductionArgs reductionArgs)
+    {
+        var args = new ParamDict
+        {
+            [0] = new ParamValue { Kind = ParamKind.Int, IntValue = reductionArgs.OpType },
+            [1] = new ParamValue { Kind = ParamKind.Int, IntValue = reductionArgs.ReduceAll },
+        };
+
+        if (reductionArgs.Axes.Length > 0)
+        {
+            var axesSizeAndData = new List<long> { reductionArgs.Axes.Length };
+            foreach (var item in reductionArgs.Axes)
+            {
+                axesSizeAndData.Add(item);
+            }
+
+            args.Add(-3, new ParamValue { Kind = ParamKind.ArrayOfInt, TensorValue = axesSizeAndData.ToArray() });
+        }
+
+        args.Add(4, new ParamValue { Kind = ParamKind.Int, IntValue = reductionArgs.Keepdims });
+        args.Add(5, new ParamValue { Kind = ParamKind.Int, IntValue = 1 });
+        AddLayer("Reduction", name[0], new[] { input }, name, args);
     }
 
     private void AddLayer(string type, string name, string[] bottoms, string[] tops, ParamDict? paramDict = null, int layerType = 1)

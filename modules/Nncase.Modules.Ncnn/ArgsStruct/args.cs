@@ -63,3 +63,29 @@ public record PoolingArgs
 
     public bool CeilMode { get; }
 }
+
+public record ReductionArgs
+{
+    public ReductionArgs()
+    {
+    }
+
+    public ReductionArgs(int opType, int reduceAll, float coeff, long[] axes, int keepdims)
+    {
+        OpType = opType;
+        ReduceAll = reduceAll;
+        Coeff = coeff;
+        Axes = axes;
+        Keepdims = keepdims;
+    }
+
+    public int OpType { get; }
+
+    public int ReduceAll { get; }
+
+    public float Coeff { get; }
+
+    public long[] Axes { get; }
+
+    public int Keepdims { get; }
+}

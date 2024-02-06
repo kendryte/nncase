@@ -171,6 +171,9 @@ internal class NcnnFunctionBuilder : FunctionBuilder
                 case NcnnPReLU op:
                     _emitter.PReLU(names.ToArray(), ExprMemo[expr.Arguments[0]], op.Slope);
                     break;
+                case NcnnReduction op:
+                    _emitter.Reduction(names.ToArray(), ExprMemo[expr.Arguments[0]], op.Args);
+                    break;
                 default:
                     throw new NotSupportedException();
             }
