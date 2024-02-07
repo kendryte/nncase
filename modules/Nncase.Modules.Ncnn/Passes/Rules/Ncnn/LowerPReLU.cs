@@ -25,8 +25,6 @@ public partial class LowerPReLU : RewriteRule<Pattern>
 {
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = IsPRelu(
-
-        // "prelu",
         IsWildcard("input"),
         IsTensorConst("slope"));
 

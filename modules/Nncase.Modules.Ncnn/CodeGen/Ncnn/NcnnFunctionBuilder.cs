@@ -174,6 +174,9 @@ internal class NcnnFunctionBuilder : FunctionBuilder
                 case NcnnReduction op:
                     _emitter.Reduction(names.ToArray(), ExprMemo[expr.Arguments[0]], op.Args);
                     break;
+                case NcnnReshape op:
+                    _emitter.Reshape(names.ToArray(), ExprMemo[expr.Arguments[0]], op.Shape);
+                    break;
                 default:
                     throw new NotSupportedException();
             }

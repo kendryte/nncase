@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DryIoc.ImTools;
 using Microsoft.Toolkit.HighPerformance;
 using Nncase.ArgsStruct;
 using Nncase.IR;
@@ -296,6 +297,24 @@ internal class NcnnEmitter
         args.Add(4, new ParamValue { Kind = ParamKind.Int, IntValue = reductionArgs.Keepdims });
         args.Add(5, new ParamValue { Kind = ParamKind.Int, IntValue = 1 });
         AddLayer("Reduction", name[0], new[] { input }, name, args);
+    }
+
+    public void Reshape(string[] name, string input, int[] newshape)
+    {
+        if (newshape.Length == 4)
+        {
+            newshape[2] *= newshape[3];
+            newshape.RemoveAt(3);
+        }
+
+        var args = new ParamDict();
+        const int i = 0;
+        foreach (var item in newshape.Reverse())
+        {
+            args.Add(i, new ParamValue { Kind = ParamKind.Int, IntValue = item });
+        }
+
+        AddLayer("Reshape", name[0], new[] { input }, name, args);
     }
 
     private void AddLayer(string type, string name, string[] bottoms, string[] tops, ParamDict? paramDict = null, int layerType = 1)

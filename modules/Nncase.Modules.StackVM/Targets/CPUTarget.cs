@@ -81,6 +81,7 @@ public class CPUTarget : ITarget
             p.Add<Passes.Rules.Ncnn.LowerPooling>();
             p.Add<Passes.Rules.Ncnn.LowerPReLU>();
             p.Add<Passes.Rules.Ncnn.LowerReduction>();
+            p.Add<Passes.Rules.Ncnn.LowerReshape>();
         });
     }
 

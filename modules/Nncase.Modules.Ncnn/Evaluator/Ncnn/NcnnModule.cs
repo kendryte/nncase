@@ -33,5 +33,6 @@ internal class NcnnModule : IApplicationPart
         registrator.RegisterManyInterface<NcnnPoolingEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<NcnnPReluEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<NcnnReductionEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<NcnnReshapeEvaluator>(reuse: Reuse.Singleton);
     }
 }

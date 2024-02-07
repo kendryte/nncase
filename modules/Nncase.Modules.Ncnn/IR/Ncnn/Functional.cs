@@ -67,4 +67,7 @@ public sealed class Ncnn
 
     public static Call NcnnReduction(Expr expr, ReductionArgs reductionArgs) =>
         new Call(new NcnnReduction(reductionArgs), expr);
+
+    public static Call NcnnReshape(Expr expr, int[] shape) =>
+        new Call(new NcnnReshape(shape), expr);
 }
