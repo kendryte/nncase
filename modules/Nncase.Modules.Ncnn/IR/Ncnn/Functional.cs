@@ -70,4 +70,7 @@ public sealed class Ncnn
 
     public static Call NcnnReshape(Expr expr, int[] shape) =>
         new Call(new NcnnReshape(shape), expr);
+
+    public static Call NcnnSELU(Expr expr, float alpha, float gamma) =>
+        new Call(new NcnnSELU(alpha, gamma), expr);
 }

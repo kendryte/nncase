@@ -23,7 +23,7 @@ public sealed partial class NcnnReshape : Op
     public static readonly ParameterInfo Input = new(typeof(NcnnReshape), 0, "input");
 
     /// <summary>
-    /// Gets Slope of Ncnn Reshape.
+    /// Gets Shape of Ncnn Reshape.
     /// </summary>
     public int[] Shape { get; }
 

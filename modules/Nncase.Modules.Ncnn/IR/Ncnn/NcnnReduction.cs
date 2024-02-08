@@ -24,7 +24,7 @@ public sealed partial class NcnnReduction : Op
     public static readonly ParameterInfo Input = new(typeof(NcnnReduction), 0, "input");
 
     /// <summary>
-    /// Gets Slope of Ncnn Reduction.
+    /// Gets ReductionArgs of Ncnn Reduction.
     /// </summary>
     public ReductionArgs Args { get; }
 

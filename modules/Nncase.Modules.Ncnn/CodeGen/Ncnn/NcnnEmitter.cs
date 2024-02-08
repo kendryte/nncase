@@ -317,6 +317,15 @@ internal class NcnnEmitter
         AddLayer("Reshape", name[0], new[] { input }, name, args);
     }
 
+    public void SELU(string[] name, string input, float alpha, float gamma)
+    {
+        AddLayer("SELU", name[0], new[] { input }, name, new ParamDict
+        {
+            [0] = new ParamValue { Kind = ParamKind.Float, FloatValue = alpha },
+            [1] = new ParamValue { Kind = ParamKind.Float, FloatValue = gamma },
+        });
+    }
+
     private void AddLayer(string type, string name, string[] bottoms, string[] tops, ParamDict? paramDict = null, int layerType = 1)
     {
         var layer = new NcnnLayer(type, name, bottoms.Length, tops.Length);

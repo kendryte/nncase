@@ -23,7 +23,7 @@ public sealed partial class NcnnElu : Op
     public static readonly ParameterInfo Input = new(typeof(NcnnElu), 0, "input");
 
     /// <summary>
-    /// Gets axis of Ncnn Elu.
+    /// Gets Alpha of Ncnn Elu.
     /// </summary>
     public float Alpha { get; }
 

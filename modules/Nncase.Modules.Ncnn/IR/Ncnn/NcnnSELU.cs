@@ -12,24 +12,29 @@ using Nncase.PatternMatch;
 namespace Nncase.IR.Ncnn;
 
 /// <summary>
-/// Celu expression.
+/// SELU expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed partial class NcnnCelu : Op
+public sealed partial class NcnnSELU : Op
 {
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(NcnnCelu), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(NcnnSELU), 0, "input");
 
     /// <summary>
-    /// Gets Alpha of Ncnn Celu.
+    /// Gets Alpha of Ncnn SELU.
     /// </summary>
     public float Alpha { get; }
+
+    /// <summary>
+    /// Gets Gamma of Ncnn SELU.
+    /// </summary>
+    public float Gamma { get; }
 
     /// <inheritdoc/>
     public override string DisplayProperty()
     {
-        return $"{Alpha}";
+        return $"Alpha:{Alpha}, Gamma:{Gamma}";
     }
 }

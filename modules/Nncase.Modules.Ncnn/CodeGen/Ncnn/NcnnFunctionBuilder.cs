@@ -177,6 +177,9 @@ internal class NcnnFunctionBuilder : FunctionBuilder
                 case NcnnReshape op:
                     _emitter.Reshape(names.ToArray(), ExprMemo[expr.Arguments[0]], op.Shape);
                     break;
+                case NcnnSELU op:
+                    _emitter.SELU(names.ToArray(), ExprMemo[expr.Arguments[0]], op.Alpha, op.Gamma);
+                    break;
                 default:
                     throw new NotSupportedException();
             }

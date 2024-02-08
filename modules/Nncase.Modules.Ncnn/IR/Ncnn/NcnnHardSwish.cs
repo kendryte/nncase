@@ -23,12 +23,12 @@ public sealed partial class NcnnHardSwish : Op
     public static readonly ParameterInfo Input = new(typeof(NcnnHardSwish), 0, "input");
 
     /// <summary>
-    /// Gets axis of Ncnn HardSwish.
+    /// Gets Alpha of Ncnn HardSwish.
     /// </summary>
     public float Alpha { get; }
 
     /// <summary>
-    /// Gets axis of Ncnn HardSwish.
+    /// Gets Beta of Ncnn HardSwish.
     /// </summary>
     public float Beta { get; }
 
