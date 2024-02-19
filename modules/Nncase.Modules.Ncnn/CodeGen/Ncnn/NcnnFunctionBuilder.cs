@@ -180,6 +180,9 @@ internal class NcnnFunctionBuilder : FunctionBuilder
                 case NcnnSELU op:
                     _emitter.SELU(names.ToArray(), ExprMemo[expr.Arguments[0]], op.Alpha, op.Gamma);
                     break;
+                case NcnnSigmoid op:
+                    _emitter.Sigmoid(names.ToArray(), ExprMemo[expr.Arguments[0]]);
+                    break;
                 default:
                     throw new NotSupportedException();
             }

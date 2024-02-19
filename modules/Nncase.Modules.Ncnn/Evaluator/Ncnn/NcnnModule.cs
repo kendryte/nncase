@@ -35,5 +35,6 @@ internal class NcnnModule : IApplicationPart
         registrator.RegisterManyInterface<NcnnReductionEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<NcnnReshapeEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<NcnnSELUEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<NcnnSigmoidEvaluator>(reuse: Reuse.Singleton);
     }
 }

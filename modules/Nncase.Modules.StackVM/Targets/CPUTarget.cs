@@ -83,6 +83,7 @@ public class CPUTarget : ITarget
             p.Add<Passes.Rules.Ncnn.LowerReduction>();
             p.Add<Passes.Rules.Ncnn.LowerReshape>();
             p.Add<Passes.Rules.Ncnn.LowerSELU>();
+            p.Add<Passes.Rules.Ncnn.LowerSigmoid>();
         });
     }
 

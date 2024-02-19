@@ -73,4 +73,7 @@ public sealed class Ncnn
 
     public static Call NcnnSELU(Expr expr, float alpha, float gamma) =>
         new Call(new NcnnSELU(alpha, gamma), expr);
+
+    public static Call NcnnSigmoid(Expr expr) =>
+        new Call(new NcnnSigmoid(), expr);
 }
