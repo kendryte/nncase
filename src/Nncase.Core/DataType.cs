@@ -157,9 +157,13 @@ public abstract record ValueType : DataType
 /// <summary>
 /// Vector type.
 /// </summary>
-public sealed record VectorType(DataType ElemType, int Lanes) : DataType
+public sealed record VectorType(DataType ElemType, IR.IRArray<int> Lanes) : DataType
 {
-    public override Type CLRType => typeof(Vector<>).MakeGenericType(ElemType.CLRType);
+    public override Type CLRType => Lanes.ToArray() switch
+    {
+        [32] => typeof(Vector32<>).MakeGenericType(ElemType.CLRType),
+        _ => throw new NotSupportedException(),
+    };
 
-    public override int SizeInBytes => ElemType.SizeInBytes * Lanes;
+    public override int SizeInBytes => ElemType.SizeInBytes * (int)TensorUtilities.GetProduct(Lanes.ToArray());
 }

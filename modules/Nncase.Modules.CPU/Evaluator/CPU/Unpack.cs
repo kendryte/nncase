@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using DryIoc.ImTools;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.CPU;
@@ -14,24 +15,24 @@ using OrtKISharp;
 
 namespace Nncase.Evaluator.IR.CPU;
 
-public sealed class PackEvaluator : ITypeInferencer<Pack>, ICostEvaluator<Pack>, IEvaluator<Pack>
+public sealed class UnpackEvaluator : ITypeInferencer<Unpack>, ICostEvaluator<Unpack>, IEvaluator<Unpack>
 {
     /// <inheritdoc/>
-    public IValue Visit(IEvaluateContext context, Pack target)
+    public IValue Visit(IEvaluateContext context, Unpack target)
     {
-        var input = context.GetOrtArgumentValue(target, Pack.Input);
-        foreach (var (lanes, axis) in target.Lanes.Zip(target.Axes))
+        var input = context.GetOrtArgumentValue(target, Unpack.Input);
+        foreach (var axis in target.Axes.Reverse())
         {
-            input = input.Pack(lanes, axis);
+            input = input.Unpack(axis);
         }
 
-        return Value.FromTensor(Tensor.FromBytes(new VectorType(input.DataType.ToDataType(), target.Lanes), input.BytesBuffer.ToArray(), input.Shape.ToArray().SkipLast(target.Lanes.Count).Select(i => (int)i).ToArray()));
+        return Value.FromTensor(input.ToTensor());
     }
 
     /// <inheritdoc/>
-    public IRType Visit(ITypeInferenceContext context, Pack target)
+    public IRType Visit(ITypeInferenceContext context, Unpack target)
     {
-        var input = context.CheckArgumentType<IRType>(target, Pack.Input);
+        var input = context.CheckArgumentType<IRType>(target, Unpack.Input);
 
         return input switch
         {
@@ -43,9 +44,9 @@ public sealed class PackEvaluator : ITypeInferencer<Pack>, ICostEvaluator<Pack>,
     }
 
     /// <inheritdoc/>
-    public Cost Visit(ICostEvaluateContext context, Pack target)
+    public Cost Visit(ICostEvaluateContext context, Unpack target)
     {
-        var inputType = context.GetArgumentType<IRType>(target, Pack.Input);
+        var inputType = context.GetArgumentType<IRType>(target, Unpack.Input);
         var outputType = context.GetReturnType<IRType>();
 
         return new()
@@ -55,7 +56,7 @@ public sealed class PackEvaluator : ITypeInferencer<Pack>, ICostEvaluator<Pack>,
         };
     }
 
-    public Metric Visit(IMetricEvaluateContext context, Pack target)
+    public Metric Visit(IMetricEvaluateContext context, Unpack target)
     {
         var returnType = context.GetReturnType<TensorType>();
         return new()
@@ -64,12 +65,12 @@ public sealed class PackEvaluator : ITypeInferencer<Pack>, ICostEvaluator<Pack>,
         };
     }
 
-    private IRType Visit(ITypeInferenceContext context, Pack target, TensorType input)
+    private IRType Visit(ITypeInferenceContext context, Unpack target, TensorType input)
     {
-        return TypeInference.PackType(input, target.Lanes, target.Axes);
+        return TypeInference.UnpackType(input, target.Axes);
     }
 
-    private IRType Visit(ITypeInferenceContext context, Pack target, DistributedType input)
+    private IRType Visit(ITypeInferenceContext context, Unpack target, DistributedType input)
     {
         if (Visit(context, target, input.TensorType) is not TensorType tensorType)
         {

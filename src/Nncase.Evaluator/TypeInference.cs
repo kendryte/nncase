@@ -344,21 +344,45 @@ public static class TypeInference
     /// <summary>
     /// Pack Type Infer.
     /// </summary>
-    public static IRType PackType(TensorType input, int lanes, int axis)
+    public static IRType PackType(TensorType input, IRArray<int> lanes, IRArray<int> axes)
     {
         var vType = new VectorType(input.DType, lanes);
         if (input.Shape.IsRanked)
         {
             var dims = input.Shape.ToList();
-            if (dims[axis].IsFixed)
+            for (int i = 0; i < axes.Count; i++)
             {
-                dims[axis] = MathUtility.CeilDiv(dims[axis].FixedValue, lanes);
+                if (dims[i].IsFixed)
+                {
+                    dims[i] = MathUtility.CeilDiv(dims[i].FixedValue, lanes[i]);
+                }
             }
 
             return new TensorType(vType, new Shape(dims));
         }
 
         return new TensorType(vType, Shape.Unranked);
+    }
+
+    public static IRType UnpackType(TensorType input, IRArray<int> axes)
+    {
+        if (input.DType is not VectorType vtype)
+        {
+            return new InvalidType("input.DType is not VectorType vtype");
+        }
+
+        if (input.Shape.IsRanked)
+        {
+            var dims = input.Shape.ToList();
+            foreach (var (lanes, axis) in vtype.Lanes.Zip(axes))
+            {
+                dims[axis] *= lanes;
+            }
+
+            return new TensorType(vtype.ElemType, new Shape(dims));
+        }
+
+        return new TensorType(vtype.ElemType, Shape.Unranked);
     }
 
     /// <summary>

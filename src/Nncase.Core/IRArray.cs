@@ -166,4 +166,6 @@ public struct IRArray<T> : IStructuralEquatable, IEquatable<IRArray<T>>, IReadOn
     {
         return ((IEnumerable)_array).GetEnumerator();
     }
+
+    public override string ToString() => "{" + string.Join(", ", _array) + "}";
 }

@@ -4,6 +4,7 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Nncase.IR;
@@ -97,6 +98,30 @@ public static class OrtKIExtensions
     }
 
     public static OrtKISharp.Tensor BroadcastTo(this OrtKISharp.Tensor tensor, long[] shape, OrtDataType dtype = OrtDataType.Float) => tensor + OrtKISharp.Tensor.Empty(shape, dtype);
+
+    public static OrtKISharp.Tensor Pack(this OrtKISharp.Tensor tensor, int lanes, int axis)
+    {
+        if (axis < 0)
+        {
+            return tensor;
+        }
+
+        var shape = tensor.Shape;
+        var dividedShape = shape.Take(axis).Concat(new[] { shape[axis] / lanes, lanes }).Concat(shape.Skip(axis + 1)).ToArray();
+        var perm = Enumerable.Range(0, axis + 1).Concat(Enumerable.Range(axis + 2, dividedShape.Length - (axis + 2))).Concat(new[] { axis + 1 }).Select(i => (long)i).ToArray();
+        return OrtKI.Transpose(OrtKI.Reshape(tensor, dividedShape, 0), perm);
+    }
+
+    public static OrtKISharp.Tensor Unpack(this OrtKISharp.Tensor tensor, int axis)
+    {
+        var perm = Enumerable.Range(0, tensor.Shape.Length);
+        perm = perm.Take(axis + 1).Concat(new[] { perm.Last() }).Concat(perm.Skip(axis + 1).SkipLast(1));
+        var unpacked = OrtKI.Transpose(tensor, perm.Select(i => (long)i).ToArray());
+        var shape = unpacked.Shape.ToList();
+        shape[axis] = shape[axis] * shape[axis + 1];
+        shape.RemoveAt(axis + 1);
+        return OrtKI.Reshape(unpacked, shape.ToArray(), 0);
+    }
 
     private static OrtKISharp.Tensor ToOrtTensor(this Tensor tensor, int[] shape)
     {

@@ -20,15 +20,10 @@ public sealed partial class Unpack : Op
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Pack), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(Unpack), 0, "input");
 
-    /// <summary>
-    /// Gets original dim.
-    /// </summary>
-    public static readonly ParameterInfo OriginDim = new(typeof(Pack), 0, "originDim");
-
-    public int Axis { get; }
+    public IRArray<int> Axes { get; }
 
     /// <inheritdoc/>
-    public override string DisplayProperty() => $"{Axis}";
+    public override string DisplayProperty() => $"{Axes}";
 }

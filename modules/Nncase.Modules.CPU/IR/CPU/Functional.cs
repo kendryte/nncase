@@ -38,13 +38,18 @@ public partial class CPU
         return new Call(new Store(), input);
     }
 
-    public static Call Pack(Expr input, int lanes, int axis)
+    public static Call Pack(Expr input, int[] lanes, int[] axes)
     {
-        return new Call(new Pack(lanes, axis), input);
+        return new Call(new Pack(lanes, axes), input);
     }
 
-    public static Call Unpack(Expr input, Expr originDim, int axis)
+    public static Call Unpack(Expr input, int[] axes)
     {
-        return new Call(new Unpack(axis), input, originDim);
+        return new Call(new Unpack(axes), input);
+    }
+
+    public static Expr PackedSoftMax(Expr input, int axis, IRArray<int> packedAxes)
+    {
+        return new Call(new PackedSoftMax(axis, packedAxes), input);
     }
 }

@@ -12,11 +12,11 @@ namespace Nncase.Passes.Rules.CPU;
 
 public static class PackRule
 {
-    public static Expr PackedKernel(Expr input, int axis, Func<Expr, Expr> kernel, CompileSession session)
-    {
-        int lanes = 256 / 8 / input.CheckedDataType.SizeInBytes;
-        var packedInput = IR.F.CPU.Pack(input, lanes, axis);
-        var packedOutput = kernel(packedInput);
-        return IR.F.CPU.Unpack(packedOutput, IR.F.Tensors.ShapeOf(input)[axis], axis);
-    }
+    // public static Expr PackedKernel(Expr input, int axis, Func<Expr, Expr> kernel, CompileSession session)
+    // {
+    //     int lanes = 256 / 8 / input.CheckedDataType.SizeInBytes;
+    //     var packedInput = IR.F.CPU.Pack(input, lanes, axis);
+    //     var packedOutput = kernel(packedInput);
+    //     return IR.F.CPU.Unpack(packedOutput, IR.F.Tensors.ShapeOf(input)[axis], axis);
+    // }
 }
