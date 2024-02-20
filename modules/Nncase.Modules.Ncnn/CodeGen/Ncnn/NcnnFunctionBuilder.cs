@@ -183,6 +183,9 @@ internal class NcnnFunctionBuilder : FunctionBuilder
                 case NcnnSigmoid op:
                     _emitter.Sigmoid(names.ToArray(), ExprMemo[expr.Arguments[0]]);
                     break;
+                case NcnnCrop op:
+                    _emitter.Crop(names.ToArray(), ExprMemo[expr.Arguments[0]], op.Args);
+                    break;
                 default:
                     throw new NotSupportedException();
             }

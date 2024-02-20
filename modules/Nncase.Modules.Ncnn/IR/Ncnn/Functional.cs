@@ -76,4 +76,7 @@ public sealed class Ncnn
 
     public static Call NcnnSigmoid(Expr expr) =>
         new Call(new NcnnSigmoid(), expr);
+
+    public static Call NcnnCrop(Expr expr, CropArgs args) =>
+        new Call(new NcnnCrop(args), expr);
 }

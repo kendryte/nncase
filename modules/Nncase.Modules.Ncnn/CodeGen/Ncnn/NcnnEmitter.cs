@@ -326,6 +326,31 @@ internal class NcnnEmitter
         });
     }
 
+    public void Crop(string[] name, string input, CropArgs cropArgs)
+    {
+
+        var args = new ParamDict();
+        // TODO: if need to fit torch crop, add other args into paramDict.
+        if (cropArgs.Axes.Length > 0)
+        {
+            var startData = new List<long> { cropArgs.Axes.Length };
+            var endData = new List<long> { cropArgs.Axes.Length };
+            var axisData = new List<long> { cropArgs.Axes.Length };
+            for (int i = 0; i < cropArgs.Axes.Length; i++)
+            {
+                startData.Add(cropArgs.Starts[i]);
+                endData.Add(cropArgs.Ends[i]);
+                axisData.Add(cropArgs.Axes[i]);
+            }
+
+            args.Add(-9, new ParamValue { Kind = ParamKind.ArrayOfInt, TensorValue = startData.ToArray() });
+            args.Add(-10, new ParamValue { Kind = ParamKind.ArrayOfInt, TensorValue = endData.ToArray() });
+            args.Add(-11, new ParamValue { Kind = ParamKind.ArrayOfInt, TensorValue = axisData.ToArray() });
+        }
+
+        AddLayer("Crop", name[0], new[] { input }, name, args);
+    }
+
     public void Sigmoid(string[] name, string input)
     {
         AddLayer("Sigmoid", name[0], new[] { input }, name);
