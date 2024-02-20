@@ -328,8 +328,8 @@ internal class NcnnEmitter
 
     public void Crop(string[] name, string input, CropArgs cropArgs)
     {
-
         var args = new ParamDict();
+
         // TODO: if need to fit torch crop, add other args into paramDict.
         if (cropArgs.Axes.Length > 0)
         {
@@ -354,6 +354,11 @@ internal class NcnnEmitter
     public void Sigmoid(string[] name, string input)
     {
         AddLayer("Sigmoid", name[0], new[] { input }, name);
+    }
+
+    public void Softplus(string[] name, string input)
+    {
+        AddLayer("Softplus", name[0], new[] { input }, name);
     }
 
     private void AddLayer(string type, string name, string[] bottoms, string[] tops, ParamDict? paramDict = null, int layerType = 1)

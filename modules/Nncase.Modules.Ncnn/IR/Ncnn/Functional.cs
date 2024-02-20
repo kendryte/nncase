@@ -79,4 +79,7 @@ public sealed class Ncnn
 
     public static Call NcnnCrop(Expr expr, CropArgs args) =>
         new Call(new NcnnCrop(args), expr);
+
+    public static Call NcnnSoftplus(Expr expr) =>
+        new Call(new NcnnSoftplus(), expr);
 }
