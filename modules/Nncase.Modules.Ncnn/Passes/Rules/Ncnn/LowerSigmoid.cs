@@ -28,6 +28,16 @@ public partial class LowerSigmoid : RewriteRule<Pattern>
 
     private Expr? GetReplace(Expr input)
     {
+        if (input.CheckedShape.Count > 3)
+        {
+            var inRes = Squeeze(input, new[] { 0 });
+            var inResO = new Var(inRes.CheckedType);
+
+            var sigmoid = new Call(new Fusion("ncnn", NcnnSigmoid(inResO), new[] { inResO }), inRes);
+            return Unsqueeze(sigmoid, new[] { 0 });
+        }
+
+        // if input has shape [1]
         var newInput = new Var(input.CheckedType);
         return new Call(new Fusion("ncnn", NcnnSigmoid(newInput), new[] { newInput }), input);
     }
