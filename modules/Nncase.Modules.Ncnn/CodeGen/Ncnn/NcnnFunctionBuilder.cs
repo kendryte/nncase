@@ -189,6 +189,10 @@ internal class NcnnFunctionBuilder : FunctionBuilder
                 case NcnnSoftplus:
                     _emitter.Softplus(names.ToArray(), ExprMemo[expr.Arguments[0]]);
                     break;
+                case NcnnSlice op:
+                    names.AddRange(op.Slices.Select(i => GetNextName()));
+                    _emitter.Slice(names.ToArray(), ExprMemo[expr.Arguments[0]], op.Slices, op.Axis);
+                    break;
                 default:
                     throw new NotSupportedException();
             }

@@ -361,6 +361,17 @@ internal class NcnnEmitter
         AddLayer("Softplus", name[0], new[] { input }, name);
     }
 
+    public void Slice(string[] name, string input, int[] slices, int axis)
+    {
+        var sliceData = new List<int> { slices.Length };
+        sliceData.AddRange(slices);
+        AddLayer("Slice", name[0], new[] { input }, name, new ParamDict
+        {
+            [-0] = new ParamValue { Kind = ParamKind.ArrayOfInt, TensorValue = sliceData.ToArray() },
+            [1] = new ParamValue { Kind = ParamKind.Int, IntValue = axis },
+        });
+    }
+
     private void AddLayer(string type, string name, string[] bottoms, string[] tops, ParamDict? paramDict = null, int layerType = 1)
     {
         var layer = new NcnnLayer(type, name, bottoms.Length, tops.Length);

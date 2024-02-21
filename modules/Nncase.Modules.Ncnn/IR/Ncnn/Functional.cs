@@ -82,4 +82,7 @@ public sealed class Ncnn
 
     public static Call NcnnSoftplus(Expr expr) =>
         new Call(new NcnnSoftplus(), expr);
+
+    public static Call NcnnSlice(Expr expr, int[] slices, int axis) =>
+        new Call(new NcnnSlice(slices, axis), expr);
 }

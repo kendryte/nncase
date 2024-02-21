@@ -38,5 +38,6 @@ internal class NcnnModule : IApplicationPart
         registrator.RegisterManyInterface<NcnnSigmoidEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<NcnnCropEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<NcnnSoftplusEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<NcnnSliceEvaluator>(reuse: Reuse.Singleton);
     }
 }
