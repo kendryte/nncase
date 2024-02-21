@@ -32,15 +32,17 @@ public sealed partial class CombineReshapePad : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
-        IsReshape(
+        MaybeMarker(
+            IsReshape(
                 "reshape",
                 "reshapeCall",
                 _ => true,
                 HasMarker(IsPad("pad", "padCall", _ => true, HasMarker(IsWildcard("input"), "marker"), IsTensorConst("pads"), IsTensorConst("value")) with { TypePattern = HasFixedShape() }, "padOutMarker"),
                 IsWildcard("shape")) with
-        { TypePattern = HasFixedShape() };
+            { TypePattern = HasFixedShape() },
+            "outMarker");
 
-    private Expr? GetReplace(Reshape reshape, Call reshapeCall, Pad pad, Call padCall, Expr input, Expr shape, int[] pads, Expr value, Marker marker)
+    private Expr? GetReplace(Reshape reshape, Call reshapeCall, Pad pad, Call padCall, Expr input, Expr shape, int[] pads, Expr value, Marker marker, IMatchResult result)
     {
         // only support pattern like melgan
         var reshapeRank = reshapeCall.CheckedShape.Rank;
@@ -48,11 +50,23 @@ public sealed partial class CombineReshapePad : IRewriteRule
         if (reshapeRank >= padRank
             && Enumerable.SequenceEqual(reshapeCall.CheckedShape.ToValueArray()[(reshapeRank - padRank)..], padCall.CheckedShape.ToValueArray()))
         {
-            return Pad(
-                marker.With(target: Reshape(input, Enumerable.Repeat(1, reshapeRank - padRank).Concat(input.CheckedShape.ToValueArray()).ToArray()).InheritMetaData(reshapeCall)),
-                Tensor.From(Enumerable.Repeat(0, (reshapeRank - padRank) * 2).Concat(pads).ToArray(), new[] { reshapeRank, 2 }),
+            var newPad = Pad(
+                marker.With(target: Reshape(
+                        marker.With(target: input),
+                        Enumerable.Repeat(1, reshapeRank - padRank).Concat(input.CheckedShape.ToValueArray()).ToArray())
+                    .InheritMetaData(reshapeCall)),
+                Tensor.From(
+                    Enumerable.Repeat(0, (reshapeRank - padRank) * 2).Concat(pads).ToArray(),
+                    new[] { reshapeRank, 2 }),
                 pad.PadMode,
                 value).InheritMetaData(padCall);
+            var outMarker = result.GetValueOrDefault("outMarker");
+            if (outMarker != null)
+            {
+                return ((Marker)outMarker).With(target: newPad);
+            }
+
+            return newPad;
         }
 
         return null;
@@ -67,15 +81,17 @@ public sealed partial class CombineReshapePad : IRewriteRule
 public sealed partial class CombineTransposePad : IRewriteRule
 {
     /// <inheritdoc/>
-    public IPattern Pattern { get; } = IsPad(
+    public IPattern Pattern { get; } = MaybeMarker(
+        IsPad(
         "pad",
         "padCall",
         x => true,
         HasMarker(IsTranspose(IsWildcard("input"), IsTensorConst("perm")), "marker"),
         IsTensorConst("pads"),
-        IsWildcard("padValue"));
+        IsWildcard("padValue")),
+        "outMarker");
 
-    private Expr GetReplace(Pad pad, Call padCall, Expr input, int[] perm, Expr pads, Expr padValue, Marker marker)
+    private Expr GetReplace(Pad pad, Call padCall, Expr input, int[] perm, Expr pads, Expr padValue, Marker marker, IMatchResult result)
     {
         var inv_perm = perm.Select((p, i) => (p, i)).OrderBy(tp => tp.p).ToArray();
         var newPads = new List<Expr>();
@@ -87,7 +103,14 @@ public sealed partial class CombineTransposePad : IRewriteRule
         }
 
         var p = Pad(input, Stack(new IR.Tuple(newPads.ToArray()), 0).Evaluate().AsTensor(), pad.PadMode, padValue).InheritMetaData(padCall);
-        return Transpose(marker.With(target: p), perm);
+        var newTranspose = Transpose(marker.With(target: p), perm);
+        var outMarker = result.GetValueOrDefault("outMarker");
+        if (outMarker != null)
+        {
+            return ((Marker)outMarker).With(target: newTranspose);
+        }
+
+        return newTranspose;
     }
 }
 
@@ -99,7 +122,8 @@ public sealed partial class CombineTransposePad : IRewriteRule
 public sealed partial class CombinePadTranspose : IRewriteRule
 {
     /// <inheritdoc/>
-    public IPattern Pattern { get; } = IsTranspose(
+    public IPattern Pattern { get; } = MaybeMarker(
+        IsTranspose(
         "transpose",
         x => true,
         HasMarker(
@@ -111,9 +135,10 @@ public sealed partial class CombinePadTranspose : IRewriteRule
             IsTensorConst("pads"),
             IsTensorConst("padValue")),
             "marker"),
-        IsTensorConst("perm"));
+        IsTensorConst("perm")),
+        "outMarker");
 
-    private Expr GetReplace(Pad pad, Call padCall, Expr input, int[] perm, Expr pads, Expr padValue, Marker marker)
+    private Expr GetReplace(Pad pad, Call padCall, Expr input, int[] perm, Expr pads, Expr padValue, Marker marker, IMatchResult result)
     {
         var newPads = new List<int>();
         for (int i = 0; i < perm.Length; i++)
@@ -122,6 +147,17 @@ public sealed partial class CombinePadTranspose : IRewriteRule
             newPads.Add(((TensorConst)pads).Value.ToArray<int>()[(perm[i] * 2) + 1]);
         }
 
-        return Pad(marker.With(target: Transpose(input, perm)), Tensor.From<int>(newPads.ToArray(), pads.CheckedShape), pad.PadMode, padValue).InheritMetaData(padCall);
+        var newPad = Pad(
+            marker.With(target: Transpose(input, perm)),
+            Tensor.From<int>(newPads.ToArray(), pads.CheckedShape),
+            pad.PadMode,
+            padValue).InheritMetaData(padCall);
+        var outMarker = result.GetValueOrDefault("outMarker");
+        if (outMarker != null)
+        {
+            return ((Marker)outMarker).With(target: newPad);
+        }
+
+        return newPad;
     }
 }
