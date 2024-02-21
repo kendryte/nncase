@@ -85,4 +85,7 @@ public sealed class Ncnn
 
     public static Call NcnnSlice(Expr expr, int[] slices, int axis) =>
         new Call(new NcnnSlice(slices, axis), expr);
+
+    public static Call NcnnTile(Expr expr, int[] repeats) =>
+        new Call(new NcnnTile(repeats), expr);
 }

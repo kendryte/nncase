@@ -193,6 +193,9 @@ internal class NcnnFunctionBuilder : FunctionBuilder
                     names.AddRange(op.Slices.Select(i => GetNextName()));
                     _emitter.Slice(names.ToArray(), ExprMemo[expr.Arguments[0]], op.Slices, op.Axis);
                     break;
+                case NcnnTile op:
+                    _emitter.Tile(names.ToArray(), ExprMemo[expr.Arguments[0]], op.Repeats);
+                    break;
                 default:
                     throw new NotSupportedException();
             }

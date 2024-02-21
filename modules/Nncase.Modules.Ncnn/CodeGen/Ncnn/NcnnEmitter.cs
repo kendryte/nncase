@@ -372,6 +372,16 @@ internal class NcnnEmitter
         });
     }
 
+    public void Tile(string[] name, string input, int[] repeats)
+    {
+        var repeatsData = new List<int> { repeats.Length };
+        repeatsData.AddRange(repeats);
+        AddLayer("Tile", name[0], new[] { input }, name, new ParamDict
+        {
+            [-2] = new ParamValue { Kind = ParamKind.ArrayOfInt, TensorValue = repeatsData.ToArray() },
+        });
+    }
+
     private void AddLayer(string type, string name, string[] bottoms, string[] tops, ParamDict? paramDict = null, int layerType = 1)
     {
         var layer = new NcnnLayer(type, name, bottoms.Length, tops.Length);
