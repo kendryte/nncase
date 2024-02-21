@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using System.Numerics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -80,9 +79,30 @@ public abstract record DataType
     {
         if (t.IsGenericType)
         {
-            if (t.GetGenericTypeDefinition() == typeof(Pointer<>))
+            var generic = t.GetGenericTypeDefinition();
+            if (generic == typeof(Pointer<>))
             {
                 return new PointerType(FromType(t.GenericTypeArguments[0]));
+            }
+            else if (generic == typeof(Vector2<>))
+            {
+                return new VectorType(FromType(t.GenericTypeArguments[0]), 2);
+            }
+            else if (generic == typeof(Vector4<>))
+            {
+                return new VectorType(FromType(t.GenericTypeArguments[0]), 4);
+            }
+            else if (generic == typeof(Vector8<>))
+            {
+                return new VectorType(FromType(t.GenericTypeArguments[0]), 8);
+            }
+            else if (generic == typeof(Vector16<>))
+            {
+                return new VectorType(FromType(t.GenericTypeArguments[0]), 16);
+            }
+            else if (generic == typeof(Vector32<>))
+            {
+                return new VectorType(FromType(t.GenericTypeArguments[0]), 32);
             }
 
             throw new ArgumentException("Unsupported CLR type.");
@@ -159,9 +179,19 @@ public abstract record ValueType : DataType
 /// </summary>
 public sealed record VectorType(DataType ElemType, IR.IRArray<int> Lanes) : DataType
 {
+    public VectorType(DataType elemType, params int[] lanes)
+        : this(elemType, new IR.IRArray<int>(lanes))
+    {
+    }
+
     public override Type CLRType => Lanes.ToArray() switch
     {
-        [32] => typeof(Vector32<>).MakeGenericType(ElemType.CLRType),
+    [2] => typeof(Vector2<>).MakeGenericType(ElemType.CLRType),
+    [4] => typeof(Vector4<>).MakeGenericType(ElemType.CLRType),
+    [8] => typeof(Vector8<>).MakeGenericType(ElemType.CLRType),
+    [16] => typeof(Vector16<>).MakeGenericType(ElemType.CLRType),
+    [32] => typeof(Vector32<>).MakeGenericType(ElemType.CLRType),
+    [64] => typeof(Vector64<>).MakeGenericType(ElemType.CLRType),
         _ => throw new NotSupportedException(),
     };
 

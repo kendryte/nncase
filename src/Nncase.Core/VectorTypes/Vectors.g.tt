@@ -6,7 +6,8 @@
 // </auto-generated>
 //---------------------------------------------------------------------------------------------------
 
-using System.Collections;
+using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Microsoft.Toolkit.HighPerformance;
 
@@ -14,114 +15,80 @@ namespace Nncase;
 
 // NOTE fixed array not suppot generic
 
-<# foreach (var lanes in new[] { 16, 32, 64 })
+<# 
+foreach (var lanesA in new[] { 0, 16, 32, 64 })
 {
+foreach (var lanesB in new[] { 2, 4, 8, 16, 32, 64 })
+{
+var typeName = lanesA == 0 ? $"Vector{lanesB.ToString()}<T>" : $"Vector{lanesA.ToString()}x{lanesB.ToString()}<T>";
 #>
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector<#=lanes.ToString()#><T> : IEquatable<Vector<#=lanes.ToString()#><T>>
-    where T : unmanaged, IEquatable<T>
+public unsafe struct <#=typeName#> : IEquatable<<#=typeName#>>, IAdditionOperators<<#=typeName#>, <#=typeName#>, <#=typeName#>>, ISubtractionOperators<<#=typeName#>, <#=typeName#>, <#=typeName#>>, IMultiplyOperators<<#=typeName#>, <#=typeName#>, <#=typeName#>>, IDivisionOperators<<#=typeName#>, <#=typeName#>, <#=typeName#>>
+    where T : unmanaged, IEquatable<T>, INumber<T>
 {
-<# foreach (var i in Enumerable.Range(0, lanes)) {#>
-    private T _item<#=i.ToString()#>;
+<# if (lanesA == 0) {#>
+<# foreach (var i in Enumerable.Range(0, lanesB)) { #>
+    private T _item_0_<#=i#>;
+<#}#>
+<#} else {#>
+<# foreach (var i in Enumerable.Range(0, lanesA)) { 
+   foreach (var j in Enumerable.Range(0, lanesB)) {#>
+    private T _item_<#=i#>_<#=j#>;
+<#}}#>
 <#}#>
 
-    public T this[int index]
+    public static <#=typeName#> Create(T[<#=(lanesA == 0) ? "" : ","#>] array) {
+      <#=typeName#> vec = default;
+      var src = array.AsSpan<#= lanesA == 0 ? "" : "2D"#>();
+      var dest = vec.AsSpan<#= lanesA == 0 ? "" : "2D"#>();
+      src.CopyTo(dest);
+      return vec;
+    }
+
+<# if (lanesA == 0) {#>
+    public T this[int i]
     {
-        get
-        {
-            fixed (T* ptr = &_item0)
-            {
-                return *(ptr + index);
-            }
-        }
-
-        set
-        {
-            fixed (T* ptr = &_item0)
-            {
-                *(ptr + index) = value;
-            }
-        }
+        get => Unsafe.Add(ref Unsafe.AsRef(in _item_0_0), i);
+        set => Unsafe.Add(ref Unsafe.AsRef(in _item_0_0), i) = value;
     }
-
-    public T[] ToArray()
-    {
-        T[] values;
-
-        fixed (T* ptr = &_item0)
-        {
-            var span = new Span<T>(ptr, Count);
-            values = span.ToArray();
-        }
-
-        return values;
-    }
-
-    public bool Equals(Vector<#=lanes.ToString()#><T> other) {
-      return <#=string.Join(" & ", Enumerable.Range(0, lanes).Select(i => $"_item{i.ToString()}.Equals(other._item{i.ToString()})"))#>;
-    }
-
-    public int Count => <#=lanes.ToString()#>;
-}
-<#}#>
-
-
-<# foreach (var lanesA in new[] { 16, 32, 64 })
-{
-foreach (var lanesB in new[] { 16, 32, 64 })
-{
-#>
-[StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector<#=lanesA.ToString()#>x<#=lanesB.ToString()#><T> : IEquatable<Vector<#=lanesA.ToString()#>x<#=lanesB.ToString()#><T>>
-    where T : unmanaged, IEquatable<T>
-{
-    // NOTE fixed buffer not suppot generic
-<# foreach (var i in Enumerable.Range(0, lanesA)) {#>
-<# foreach (var j in Enumerable.Range(0, lanesB)) {#>
-    private T _item<#=i.ToString()#>_<#=j.ToString()#>;
-<#}#>
-<#}#>
-
+<#} else {#>
     public T this[int i, int j]
     {
-        get
-        {
-            fixed (T* ptr = &_item0_0)
-            {
-                return *(ptr + i * Width + j);
-            }
-        }
-
-        set
-        {
-            fixed (T* ptr = &_item0_0)
-            {
-                *(ptr + i * Width + j) = value;
-            }
-        }
+        get => Unsafe.Add(ref Unsafe.AsRef(in _item_0_0), i * Width + j);
+        set => Unsafe.Add(ref Unsafe.AsRef(in _item_0_0), i * Width + j) = value;
     }
+<#}#>
 
-    public T[,] ToArray()
-    {
-        T[,] values;
+    public bool Equals(<#=typeName#> other) => AsSpan().SequenceEqual(other.AsSpan());
 
-        fixed (T* ptr = &_item0_0)
-        {
-            var span = new Span2D<T>(ptr, Height, Width, 1);
-            values = span.ToArray();
-        }
+    public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
 
-        return values;
-    }
+<# if (lanesA != 0) {#>
+    public Span2D<T> AsSpan2D() => Span2D<T>.DangerousCreate(ref Unsafe.AsRef(in _item_0_0), Height, Width, 1);
 
-    public int Height => <#=lanesA.ToString()#>;
+    public int Height => <#=lanesA#>;
 
-    public int Width => <#=lanesB.ToString()#>;
-
+    public int Width => <#=lanesB#>;
+    
     public int Count => Height * Width;
+<# } else {#>
+    public int Count => <#=lanesB#>;
+<#}#>
 
-    public bool Equals(Vector<#=lanesA.ToString()#>x<#=lanesB.ToString()#><T> other) {
-      return <# foreach (var i in Enumerable.Range(0, lanesA)) {#> <# foreach (var j in Enumerable.Range(0, lanesB)) {#> _item<#=i.ToString()#>_<#=j.ToString()#>.Equals(other._item<#=i.ToString()#>_<#=j.ToString()#>) & <#}#><#}#> true;
+<#foreach (var op in new string[] { "+", "-" , "*", "/" }) {#>
+    public static <#=typeName#> operator <#=op#>(<#=typeName#> left, <#=typeName#> right) {
+        <#=typeName#> res = default;
+        var lhs = left.AsSpan();
+        var rhs = right.AsSpan();
+        var span = res.AsSpan();
+        for (int i = 0; i < span.Length; i++)
+        {
+            span[i] = lhs[i] <#=op#> rhs[i];
+        }
+        return res;
     }
+
+<#}#>
 }
+
 <#}}#>

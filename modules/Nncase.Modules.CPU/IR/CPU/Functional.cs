@@ -52,4 +52,9 @@ public partial class CPU
     {
         return new Call(new PackedSoftMax(axis, packedAxes), input);
     }
+
+    public static Expr PackedLayerNorm(Expr input, Expr scale, Expr bias, int axis, float epsilon, bool usemean, IRArray<int> packedAxes, IRArray<int> padedNums)
+    {
+        return new Call(new PackedLayerNorm(axis, epsilon, usemean, packedAxes, padedNums), input, scale, bias);
+    }
 }

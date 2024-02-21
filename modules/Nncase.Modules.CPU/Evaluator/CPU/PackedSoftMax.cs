@@ -43,15 +43,21 @@ public sealed class PackedSoftMaxEvaluator : ITypeInferencer<PackedSoftMax>, ICo
     {
         var input = context.GetOrtArgumentValue(target, PackedSoftMax.Input);
         var shape = input.Shape.Select(i => (int)i).ToArray();
+        OrtKISharp.Tensor softmax;
         if (!target.PackedAxes.Any(i => i == target.Axis))
         {
-            var softmax = OrtKI.Softmax(input, target.Axis);
-            return Value.FromTensor(Tensor.FromBytes(new TensorType(new VectorType(input.DataType.ToDataType(), shape.TakeLast(target.PackedAxes.Count).ToArray()), shape.SkipLast(target.PackedAxes.Count).ToArray()), softmax.BytesBuffer.ToArray()));
+            softmax = OrtKI.Softmax(input, target.Axis);
         }
         else
         {
-            throw new NotSupportedException();
+            var packedAxis = shape.Length - 1 + target.PackedAxes.IndexOf(target.Axis);
+            var max = OrtKI.ReduceMax(input, new long[] { target.Axis, packedAxis }, 1);
+            var exp = OrtKI.Exp(input - max);
+            var reduceSum = OrtKI.ReduceSum(exp, new long[] { target.Axis, packedAxis }, 1, 0);
+            softmax = OrtKI.Div(exp, reduceSum);
         }
+
+        return Value.FromTensor(Tensor.FromBytes(new TensorType(new VectorType(input.DataType.ToDataType(), shape.TakeLast(target.PackedAxes.Count).ToArray()), shape.SkipLast(target.PackedAxes.Count).ToArray()), softmax.BytesBuffer.ToArray()));
     }
 
     private IRType Visit(ITypeInferenceContext context, PackedSoftMax target, TensorType input)
