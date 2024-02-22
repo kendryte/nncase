@@ -196,6 +196,9 @@ internal class NcnnFunctionBuilder : FunctionBuilder
                 case NcnnTile op:
                     _emitter.Tile(names.ToArray(), ExprMemo[expr.Arguments[0]], op.Repeats);
                     break;
+                case NcnnPermute op:
+                    _emitter.Permute(names.ToArray(), ExprMemo[expr.Arguments[0]], op.OrderType);
+                    break;
                 default:
                     throw new NotSupportedException();
             }

@@ -88,4 +88,7 @@ public sealed class Ncnn
 
     public static Call NcnnTile(Expr expr, int[] repeats) =>
         new Call(new NcnnTile(repeats), expr);
+
+    public static Call NcnnPermute(Expr expr, int orderType, int[] perm) =>
+        new Call(new NcnnPermute(orderType, perm), expr);
 }

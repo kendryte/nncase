@@ -382,6 +382,14 @@ internal class NcnnEmitter
         });
     }
 
+    public void Permute(string[] name, string input, int orderType)
+    {
+        AddLayer("Permute", name[0], new[] { input }, name, new ParamDict
+        {
+            [0] = new ParamValue { Kind = ParamKind.Int, IntValue = orderType },
+        });
+    }
+
     private void AddLayer(string type, string name, string[] bottoms, string[] tops, ParamDict? paramDict = null, int layerType = 1)
     {
         var layer = new NcnnLayer(type, name, bottoms.Length, tops.Length);

@@ -88,6 +88,7 @@ public class CPUTarget : ITarget
             p.Add<Passes.Rules.Ncnn.LowerSoftplus>();
             p.Add<Passes.Rules.Ncnn.LowerSlice>();
             p.Add<Passes.Rules.Ncnn.LowerTile>();
+            p.Add<Passes.Rules.Ncnn.LowerPermute>();
         });
     }
 

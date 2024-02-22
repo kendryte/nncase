@@ -40,5 +40,6 @@ internal class NcnnModule : IApplicationPart
         registrator.RegisterManyInterface<NcnnSoftplusEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<NcnnSliceEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<NcnnTileEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<NcnnPermuteEvaluator>(reuse: Reuse.Singleton);
     }
 }
