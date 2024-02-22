@@ -86,7 +86,7 @@ public sealed class UnitTestEvaluatorCPU
                 packedBias = IR.F.CPU.Pack(packedBias, Enumerable.Repeat(Lanes, pAxes.Length).ToArray(), pAxes);
             }
 
-            var layernorm = IR.F.CPU.PackedLayerNorm(packedInput, packedScale, packedBias, axis, 1e-6f, false, packedAxes, packedAxes.Select(i => padsInput[i, 1]).ToArray());
+            var layernorm = IR.F.CPU.PackedLayerNorm(packedInput, packedScale, packedBias, axis, 1e-6f, false, packedAxes, padsInput);
 
             post = SliceForPack(IR.F.CPU.Unpack(layernorm, packedAxes), shape, padsInput);
         }
@@ -99,10 +99,70 @@ public sealed class UnitTestEvaluatorCPU
         Comparator.Compare(pre.Evaluate(feedDict), post.Evaluate(feedDict), 0.999f);
     }
 
-    private static Expr PadForPack(Expr input, int[] shape, int[] packedAxes, Expr value, out int[,] pads)
+    [Theory]
+    [InlineData(new object[] { new[] { 12, 128, 768 }, new[] { 12, 768, 64 }, new[] { 1, 2 }, new[] { 1, 2 } })] // no broadcast, no pad
+    [InlineData(new object[] { new[] { 1, 128, 768 }, new[] { 12, 768, 64 }, new[] { 1, 2 }, new[] { 1, 2 } })] // broadcast, no pad
+    [InlineData(new object[] { new[] { 1, 129, 768 }, new[] { 12, 768, 64 }, new[] { 1, 2 }, new[] { 1, 2 } })] // broadcast, pad
+    [InlineData(new object[] { new[] { 1, 128, 777 }, new[] { 12, 777, 64 }, new[] { 1, 2 }, new[] { 1, 2 } })] // broadcast, pad
+    [InlineData(new object[] { new[] { 1, 131, 776 }, new[] { 12, 776, 64 }, new[] { 1, 2 }, new[] { 1, 2 } })] // broadcast, pad
+    [InlineData(new object[] { new[] { 1, 131, 776 }, new[] { 12, 776, 58 }, new[] { 1, 2 }, new[] { 1, 2 } })] // broadcast, pad
+    public void TestPackedMatMul(int[] lhsShape, int[] rhsShape, int[] lhsPackedAxes, int[] rhsPackedAxes)
+    {
+        var lhs = new Var(new TensorType(DataTypes.Float32, lhsShape));
+        var rhs = new Var(new TensorType(DataTypes.Float32, rhsShape));
+        var pre = IR.F.Tensors.MatMul(lhs, rhs);
+
+        Expr post;
+        {
+            var packedLhs = IR.F.CPU.Pack(PadForPack(lhs, lhsShape, lhsPackedAxes, 0f, out var lhsPadNums), Enumerable.Repeat(Lanes, lhsPackedAxes.Length).ToArray(), lhsPackedAxes);
+            var packedRhs = IR.F.CPU.Pack(PadForPack(rhs, rhsShape, rhsPackedAxes, 0f, out var rhsPadNums), Enumerable.Repeat(Lanes, rhsPackedAxes.Length).ToArray(), rhsPackedAxes);
+
+            var matmul = IR.F.CPU.PackedMatMul(packedLhs, packedRhs, lhsPackedAxes, lhsPadNums, rhsPackedAxes, rhsPadNums);
+            post = SliceForPack(IR.F.CPU.Unpack(matmul, new[] { lhsPackedAxes[0], rhsPackedAxes[1] }), pre.CheckedShape.ToValueArray(), new[] { lhsPadNums[0], rhsPadNums[1] });
+        }
+
+        var feedDict = new Dictionary<Var, IValue>() {
+            { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
+            { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, rhsShape).Evaluate() },
+        };
+        Comparator.Compare(pre.Evaluate(feedDict), post.Evaluate(feedDict), 0.999f);
+    }
+
+    [Theory]
+    [InlineData(new object[] { BinaryOp.Add, new[] { 12, 77, 64 }, new[] { 12, 1, 64 }, new[] { 1, 2 }, new[] { 2 } })]
+    [InlineData(new object[] { BinaryOp.Mul, new[] { 12, 77, 64 }, new int[] { }, new[] { 1, 2 }, new int[] { } })]
+    [InlineData(new object[] { BinaryOp.Add, new[] { 12, 77, 77 }, new int[] { 1, 77, 77 }, new[] { 1 }, new int[] { 1 } })]
+    [InlineData(new object[] { BinaryOp.Add, new[] { 12, 77, 77 }, new int[] { 1, 77, 77 }, new[] { 2 }, new int[] { 2 } })]
+    [InlineData(new object[] { BinaryOp.Add, new[] { 12, 77, 77 }, new int[] { 1, 77, 77 }, new[] { 1, 2 }, new int[] { 1, 2 } })]
+    [InlineData(new object[] { BinaryOp.Add, new[] { 1, 77, 768 }, new int[] { 768 }, new[] { 1, 2 }, new int[] { 0 } })]
+    [InlineData(new object[] { BinaryOp.Add, new[] { 1, 77, 3072 }, new int[] { 3072 }, new[] { 1, 2 }, new int[] { 0 } })]
+    [InlineData(new object[] { BinaryOp.Add, new[] { 1, 77, 768 }, new int[] { 1, 77, 768 }, new[] { 1, 2 }, new int[] { 1, 2 } })]
+    public void TestPackedBinary(BinaryOp op, int[] lhsShape, int[] rhsShape, int[] lhsPackedAxes, int[] rhsPackedAxes)
+    {
+        var lhs = new Var(new TensorType(DataTypes.Float32, lhsShape));
+        var rhs = new Var(new TensorType(DataTypes.Float32, rhsShape));
+        var pre = IR.F.Tensors.MatMul(lhs, rhs);
+
+        Expr post;
+        {
+            var packedLhs = IR.F.CPU.Pack(PadForPack(lhs, lhsShape, lhsPackedAxes, 0f, out var lhsPadNums), Enumerable.Repeat(Lanes, lhsPackedAxes.Length).ToArray(), lhsPackedAxes);
+            var packedRhs = IR.F.CPU.Pack(PadForPack(rhs, rhsShape, rhsPackedAxes, 0f, out var rhsPadNums), Enumerable.Repeat(Lanes, rhsPackedAxes.Length).ToArray(), rhsPackedAxes);
+
+            var matmul = IR.F.CPU.PackedBinary(packedLhs, packedRhs, lhsPackedAxes, lhsPadNums, rhsPackedAxes, rhsPadNums);
+            post = SliceForPack(IR.F.CPU.Unpack(matmul, new[] { lhsPackedAxes[0], rhsPackedAxes[1] }), pre.CheckedShape.ToValueArray(), new[] { lhsPadNums[0], rhsPadNums[1] });
+        }
+
+        var feedDict = new Dictionary<Var, IValue>() {
+            { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
+            { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, rhsShape).Evaluate() },
+        };
+        Comparator.Compare(pre.Evaluate(feedDict), post.Evaluate(feedDict), 0.999f);
+    }
+
+    private static Expr PadForPack(Expr input, int[] shape, int[] packedAxes, Expr value, out int[] padNums)
     {
         var isPadded = false;
-        pads = new int[shape.Length, 2];
+        var pads = new int[shape.Length, 2];
         foreach (var i in packedAxes)
         {
             if (shape[i] % Lanes != 0)
@@ -110,6 +170,12 @@ public sealed class UnitTestEvaluatorCPU
                 pads[i, 1] = MathUtility.AlignUp(shape[i], Lanes) - shape[i];
                 isPadded = true;
             }
+        }
+
+        padNums = new int[packedAxes.Length];
+        for (int i = 0; i < packedAxes.Length; i++)
+        {
+            padNums[i] = pads[packedAxes[i], 1];
         }
 
         if (isPadded)
@@ -120,16 +186,13 @@ public sealed class UnitTestEvaluatorCPU
         return input;
     }
 
-    private static Expr SliceForPack(Expr input, int[] shape, int[,] pads)
+    private static Expr SliceForPack(Expr input, int[] shape, int[] padNums)
     {
         bool isPadded = false;
         var ends = shape.ToArray();
-        for (int i = 0; i < pads.GetLength(0); i++)
+        if (padNums.Any(i => i > 0))
         {
-            if (pads[i, 1] != 0)
-            {
-                isPadded = true;
-            }
+            isPadded = true;
         }
 
         return isPadded ? IR.F.Tensors.Slice(input, Enumerable.Repeat(0, shape.Length).ToArray(), ends, shape.Length) : input;

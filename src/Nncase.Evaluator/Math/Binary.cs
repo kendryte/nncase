@@ -138,19 +138,8 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
         return ShapeExprUtility.BroadcastShape(lhs, rhs);
     }
 
-    private IRType Visit(Binary target, DistributedType a, DistributedType b)
+    public static IRType CheckSBP(BinaryOp op, TensorType tensorType, DistributedType a, DistributedType b)
     {
-        if (a.Placement != b.Placement)
-        {
-            return new InvalidType("lhs rhs have different placement");
-        }
-
-        var rType = Visit(target, a.TensorType, b.TensorType);
-        if (rType is not TensorType tensorType)
-        {
-            return rType;
-        }
-
         // assume broadcast shapes are left algin
         var padA = tensorType.Shape.Rank - a.TensorType.Shape.Rank;
         var padB = tensorType.Shape.Rank - b.TensorType.Shape.Rank;
@@ -189,7 +178,7 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
                     ndsbp[i] = SBP.B;
                     break;
                 case (SBPPartialSum, SBPPartialSum):
-                    if (target.BinaryOp == BinaryOp.Add)
+                    if (op == BinaryOp.Add)
                     {
                         ndsbp[i] = SBP.P;
                     }
@@ -206,6 +195,22 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
         }
 
         return new DistributedType(tensorType, ndsbp, a.Placement);
+    }
+
+    private IRType Visit(Binary target, DistributedType a, DistributedType b)
+    {
+        if (a.Placement != b.Placement)
+        {
+            return new InvalidType("lhs rhs have different placement");
+        }
+
+        var rType = Visit(target, a.TensorType, b.TensorType);
+        if (rType is not TensorType tensorType)
+        {
+            return rType;
+        }
+
+        return CheckSBP(target.BinaryOp, tensorType, a, b);
     }
 
     private int Compute(BinaryOp op, int a, int b) => op switch

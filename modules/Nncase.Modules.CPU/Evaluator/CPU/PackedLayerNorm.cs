@@ -13,7 +13,7 @@ using OrtKISharp;
 
 namespace Nncase.Evaluator.IR.CPU;
 
-public class PackedLayerNormEvaluator : IEvaluator<PackedLayerNorm>, ITypeInferencer<PackedLayerNorm>, ICostEvaluator<PackedLayerNorm>,
+public sealed class PackedLayerNormEvaluator : IEvaluator<PackedLayerNorm>, ITypeInferencer<PackedLayerNorm>, ICostEvaluator<PackedLayerNorm>,
     IShapeEvaluator<PackedLayerNorm>, IMetricEvaluator<PackedLayerNorm>
 {
     /// <inheritdoc/>

@@ -104,6 +104,10 @@ public abstract record DataType
             {
                 return new VectorType(FromType(t.GenericTypeArguments[0]), 32);
             }
+            else if (generic == typeof(Vector32x32<>))
+            {
+                return new VectorType(FromType(t.GenericTypeArguments[0]), 32, 32);
+            }
 
             throw new ArgumentException("Unsupported CLR type.");
         }
@@ -192,6 +196,9 @@ public sealed record VectorType(DataType ElemType, IR.IRArray<int> Lanes) : Data
     [16] => typeof(Vector16<>).MakeGenericType(ElemType.CLRType),
     [32] => typeof(Vector32<>).MakeGenericType(ElemType.CLRType),
     [64] => typeof(Vector64<>).MakeGenericType(ElemType.CLRType),
+    [32, 16] => typeof(Vector32x16<>).MakeGenericType(ElemType.CLRType),
+    [32, 32] => typeof(Vector32x32<>).MakeGenericType(ElemType.CLRType),
+    [32, 64] => typeof(Vector32x64<>).MakeGenericType(ElemType.CLRType),
         _ => throw new NotSupportedException(),
     };
 

@@ -350,11 +350,11 @@ public static class TypeInference
         if (input.Shape.IsRanked)
         {
             var dims = input.Shape.ToList();
-            for (int i = 0; i < axes.Count; i++)
+            foreach (var (lane, axis) in lanes.Zip(axes))
             {
-                if (dims[i].IsFixed)
+                if (dims[axis].IsFixed)
                 {
-                    dims[i] = MathUtility.CeilDiv(dims[i].FixedValue, lanes[i]);
+                    dims[axis] = MathUtility.CeilDiv(dims[axis].FixedValue, lane);
                 }
             }
 
