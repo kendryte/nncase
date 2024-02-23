@@ -1,7 +1,10 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+#pragma warning disable SA1008 // Opening parenthesis should be spaced correctly
+
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
@@ -17,22 +20,38 @@ public sealed class PackedBinaryEvaluator : IEvaluator<PackedBinary>, ITypeInfer
 {
     public IValue Visit(IEvaluateContext context, PackedBinary target)
     {
-        var lhs = context.GetOrtArgumentValue(target, PackedBinary.Lhs); // [x,m/32,k/32,m',k']
-        var rhs = context.GetOrtArgumentValue(target, PackedBinary.Rhs); // [x,k/32,n/32,k',n']
-        var lanes = new[] { (int)lhs.Shape[^2], (int)rhs.Shape[^1] };
-        var outshape = new[] { (int)lhs.Shape[^4], (int)rhs.Shape[^3] };
-        var maxRank = System.Math.Max(lhs.Shape.Length, rhs.Shape.Length);
-        outshape = Enumerable.Repeat(1L, maxRank - lhs.Shape.Length).Concat(lhs.Shape.SkipLast(4)).
-         Zip(Enumerable.Repeat(1L, maxRank - rhs.Shape.Length).Concat(rhs.Shape.SkipLast(4))).
-         Select(p => (int)System.Math.Max(p.First, p.Second)).
-         Concat(outshape).ToArray();
+        var a = context.GetOrtArgumentValue(target, PackedBinary.Lhs);
+        var b = context.GetOrtArgumentValue(target, PackedBinary.Rhs);
+        var pRank = System.Math.Max(target.LhsPackedAxes.Count, target.RhsPackedAxes.Count);
 
-        lhs = OrtKI.Unsqueeze(lhs, new long[] { -4, -1 }); // [x,m/32,k/32, 1  , m' ,k', 1 ]
-        rhs = OrtKI.Unsqueeze(rhs, new long[] { -6, -3 }); // [x, 1  ,k/32,n/32, 1  ,k', n']
-        var matmul = OrtKI.Mul(lhs, rhs); // [x, m/32,k/32,n/32,m',k',n']
-        matmul = OrtKI.ReduceSum(matmul, new long[] { -2, -5 }, 0, 1);
+        switch (target.LhsPackedAxes.Count, target.RhsPackedAxes.Count)
+        {
+            case (2, 1):
+                b = OrtKI.Unsqueeze(b, new long[] { -2 });
+                break;
+            case (1, 2):
+                a = OrtKI.Unsqueeze(a, new long[] { -2 });
+                break;
+            case (2, 0):
+                b = OrtKI.Unsqueeze(b, new long[] { -1, -1 });
+                break;
+            case (0, 2):
+                a = OrtKI.Unsqueeze(a, new long[] { -1, -1 });
+                break;
+            default:
+                break;
+        }
 
-        return Value.FromTensor(Tensor.FromBytes(new VectorType(DataTypes.Float32, lanes), matmul.BytesBuffer.ToArray(), outshape));
+        var binary = target.BinaryOp switch
+        {
+            BinaryOp.Add => a + b,
+            BinaryOp.Sub => a - b,
+            BinaryOp.Mul => a * b,
+            BinaryOp.Div => a / b,
+            _ => throw new ArgumentOutOfRangeException(target.BinaryOp.ToString()),
+        };
+
+        return Value.FromTensor(Tensor.FromBytes(context.CurrentCall.CheckedDataType, binary.BytesBuffer.ToArray(), context.CurrentCall.CheckedShape));
     }
 
     public IRType Visit(ITypeInferenceContext context, PackedBinary target)
@@ -42,50 +61,11 @@ public sealed class PackedBinaryEvaluator : IEvaluator<PackedBinary>, ITypeInfer
 
         return (lhs, rhs) switch
         {
-            (DistributedType a, DistributedType b) => Visit(context, target, a, b),
-            (TensorType a, TensorType b) => Visit(context, target, a, b),
+            (DistributedType a, DistributedType b) => Visit(target, a, b),
+            (TensorType a, TensorType b) => Visit(target, a, b),
             _ => new InvalidType("not support"),
         };
     }
-
-    private IRType Visit(ITypeInferenceContext context, PackedBinary target, TensorType a, TensorType b)
-    {
-        int GetDim(Shape s, int lane, int axis, int pad)
-        {
-            return (s[axis].FixedValue * lane) - pad;
-        }
-
-        var rank = System.Math.Max(a.Shape.Rank, b.Shape.Rank);
-        var leftA = rank - a.Shape.Rank;
-        var leftB = rank - b.Shape.Rank;
-        int ToA(int i) => leftB - leftA + i;
-        int ToB(int i) => leftA - leftB + i;
-        // the pack can't on the broadcast axis
-        switch (a.DType, b.DType)
-        {
-            case (VectorType va, VectorType vb):
-                {
-                    for (int i = 0; i < va.Lanes.Count; i++)
-                    {
-                        ToA(target.LhsPackedAxes[i])
-                    }
-                    // for (int i = 0; i < ; i++)
-                    // {
-
-                    // }
-                }
-                break;
-            case (VectorType va, PrimType pb):
-                {
-
-                }
-                break;
-            default:
-                break;
-        };
-    }
-
-    private IRType Visit(ITypeInferenceContext context, PackedBinary target, DistributedType a, DistributedType b) => throw new NotImplementedException();
 
     public Cost Visit(ICostEvaluateContext context, PackedBinary target)
     {
@@ -112,4 +92,160 @@ public sealed class PackedBinaryEvaluator : IEvaluator<PackedBinary>, ITypeInfer
         };
     }
 
+    private IRType Visit(PackedBinary target, TensorType a, TensorType b)
+    {
+        var rank = System.Math.Max(a.Shape.Rank, b.Shape.Rank);
+        Shape outShape = Shape.Scalar;
+        var leftA = rank - a.Shape.Rank;
+        var leftB = rank - b.Shape.Rank;
+
+        bool CheckDimBroadCast(int dimA, int dimB, out int dimOut)
+        {
+            dimOut = System.Math.Max(dimA, dimB);
+            return (dimA, dimB) switch
+            {
+                (int a, int b) when a == b => true,
+                (1, _) => true,
+                (_, 1) => true,
+                _ => false,
+            };
+        }
+
+        bool CheckBroadCast([MaybeNullWhen(false)] out Shape shape)
+        {
+            shape = null!;
+            var dims = new Dimension[rank];
+            for (int i = -1; i >= -rank; i--)
+            {
+                var aAxis = a.Shape.Rank + i;
+                var bAxis = b.Shape.Rank + i;
+                switch (aAxis, bAxis)
+                {
+                    case ( < 0, _):
+                        dims[rank + i] = b.Shape[bAxis];
+                        break;
+                    case (_, < 0):
+                        dims[rank + i] = a.Shape[aAxis];
+                        break;
+                    case ( >= 0, >= 0):
+                        if (CheckDimBroadCast(a.Shape[aAxis].FixedValue, b.Shape[bAxis].FixedValue, out int dimOut))
+                        {
+                            dims[rank + i] = dimOut;
+                        }
+                        else
+                        {
+                            return false;
+                        }
+
+                        break;
+                    default:
+                        throw new NotSupportedException();
+                }
+            }
+
+            shape = new Shape(dims);
+            return true;
+        }
+
+        // first check shape can broadcast
+        switch (a.Shape.Rank, b.Shape.Rank)
+        {
+            case (0, 0):
+                break;
+            case ( > 0, 0):
+                outShape = a.Shape;
+                break;
+            case (0, > 0):
+                outShape = b.Shape;
+                break;
+            case ( > 0, > 0):
+                if (CheckBroadCast(out var oShape))
+                {
+                    outShape = oShape;
+                }
+                else
+                {
+                    goto ERROR;
+                }
+
+                break;
+            default:
+            ERROR: return new InvalidType("Shape Can't Broadcast");
+        }
+
+        // second check the dtype.
+        DataType dataType;
+        switch (a.DType, b.DType)
+        {
+            case (VectorType va, VectorType vb):
+                {
+                    var valid = true;
+                    for (int i = -1; i >= System.Math.Max(va.Lanes.Count, vb.Lanes.Count); --i)
+                    {
+                        var ai = va.Lanes.Count + i;
+                        var bi = vb.Lanes.Count + i;
+                        switch (ai, bi)
+                        {
+                            case ( < 0, _):
+                            case (_, < 0):
+                                break;
+                            case ( >= 0, >= 0):
+                                var adim = (a.Shape[target.LhsPackedAxes[ai]].FixedValue * va.Lanes[ai]) - target.LhsPadedNums[ai];
+                                var bdim = (b.Shape[target.LhsPackedAxes[bi]].FixedValue * vb.Lanes[bi]) - target.RhsPadedNums[bi];
+                                valid &= adim == bdim && adim != 1;
+
+                                break;
+                        }
+                    }
+
+                    if (valid)
+                    {
+                        dataType = va.Lanes.Count >= vb.Lanes.Count ? va : vb;
+                    }
+                    else
+                    {
+                        return new InvalidType("can't pack on the broadcast axis!");
+                    }
+                }
+
+                break;
+            case (VectorType va, PrimType pb):
+                if (va.ElemType != pb)
+                {
+                    return new InvalidType("Shape Can't Broadcast");
+                }
+
+                dataType = va;
+                break;
+            case (PrimType pa, VectorType vb):
+                if (vb.ElemType != pa)
+                {
+                    return new InvalidType("Shape Can't Broadcast");
+                }
+
+                dataType = vb;
+                break;
+            default:
+                return new InvalidType("Shape Can't Broadcast");
+        }
+
+        return new TensorType(dataType, outShape);
+    }
+
+    private IRType Visit(PackedBinary target, DistributedType a, DistributedType b)
+    {
+        if (a.Placement != b.Placement)
+        {
+            return new InvalidType("lhs rhs have different placement");
+        }
+
+        var rType = Visit(target, a.TensorType, b.TensorType);
+        if (rType is not TensorType tensorType)
+        {
+            return rType;
+        }
+
+        return Math.BinaryEvaluator.CheckSBP(target.BinaryOp, tensorType, a, b);
+    }
 }
+#pragma warning restore SA1008 // Opening parenthesis should be spaced correctly

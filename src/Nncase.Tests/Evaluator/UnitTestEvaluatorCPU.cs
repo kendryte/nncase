@@ -129,6 +129,7 @@ public sealed class UnitTestEvaluatorCPU
     }
 
     [Theory]
+    [InlineData(new object[] { BinaryOp.Add, new[] { 1, 77, 768 }, new int[] { 1, 77, 768 }, new[] { 1, 2 }, new int[] { 1, 2 } })]
     [InlineData(new object[] { BinaryOp.Add, new[] { 12, 77, 64 }, new[] { 12, 1, 64 }, new[] { 1, 2 }, new[] { 2 } })]
     [InlineData(new object[] { BinaryOp.Mul, new[] { 12, 77, 64 }, new int[] { }, new[] { 1, 2 }, new int[] { } })]
     [InlineData(new object[] { BinaryOp.Add, new[] { 12, 77, 77 }, new int[] { 1, 77, 77 }, new[] { 1 }, new int[] { 1 } })]
@@ -136,7 +137,6 @@ public sealed class UnitTestEvaluatorCPU
     [InlineData(new object[] { BinaryOp.Add, new[] { 12, 77, 77 }, new int[] { 1, 77, 77 }, new[] { 1, 2 }, new int[] { 1, 2 } })]
     [InlineData(new object[] { BinaryOp.Add, new[] { 1, 77, 768 }, new int[] { 768 }, new[] { 1, 2 }, new int[] { 0 } })]
     [InlineData(new object[] { BinaryOp.Add, new[] { 1, 77, 3072 }, new int[] { 3072 }, new[] { 1, 2 }, new int[] { 0 } })]
-    [InlineData(new object[] { BinaryOp.Add, new[] { 1, 77, 768 }, new int[] { 1, 77, 768 }, new[] { 1, 2 }, new int[] { 1, 2 } })]
     public void TestPackedBinary(BinaryOp op, int[] lhsShape, int[] rhsShape, int[] lhsPackedAxes, int[] rhsPackedAxes)
     {
         var lhs = new Var(new TensorType(DataTypes.Float32, lhsShape));
@@ -148,8 +148,8 @@ public sealed class UnitTestEvaluatorCPU
             var packedLhs = IR.F.CPU.Pack(PadForPack(lhs, lhsShape, lhsPackedAxes, 0f, out var lhsPadNums), Enumerable.Repeat(Lanes, lhsPackedAxes.Length).ToArray(), lhsPackedAxes);
             var packedRhs = IR.F.CPU.Pack(PadForPack(rhs, rhsShape, rhsPackedAxes, 0f, out var rhsPadNums), Enumerable.Repeat(Lanes, rhsPackedAxes.Length).ToArray(), rhsPackedAxes);
 
-            var matmul = IR.F.CPU.PackedBinary(packedLhs, packedRhs, lhsPackedAxes, lhsPadNums, rhsPackedAxes, rhsPadNums);
-            post = SliceForPack(IR.F.CPU.Unpack(matmul, new[] { lhsPackedAxes[0], rhsPackedAxes[1] }), pre.CheckedShape.ToValueArray(), new[] { lhsPadNums[0], rhsPadNums[1] });
+            var binary = IR.F.CPU.PackedBinary(packedLhs, packedRhs, op, lhsPackedAxes, lhsPadNums, rhsPackedAxes, rhsPadNums);
+            post = SliceForPack(IR.F.CPU.Unpack(binary, lhsPackedAxes.Length >= rhsPackedAxes.Length ? lhsPackedAxes : rhsPackedAxes), pre.CheckedShape.ToValueArray(), lhsPackedAxes.Length >= rhsPackedAxes.Length ? lhsPadNums : rhsPadNums);
         }
 
         var feedDict = new Dictionary<Var, IValue>() {
