@@ -3,10 +3,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Google.OrTools.Sat;
+using Google.OrTools.ConstraintSolver;
+using Nncase.Utilities;
 
 namespace Nncase.Schedule;
 
@@ -19,61 +22,399 @@ public static class Tiling
     }
 }
 
-internal class TilingSolver
+public struct LoopMask
 {
-    private readonly CpModel _model = new();
+    private readonly int _mask;
+
+    public LoopMask(int mask)
+    {
+        _mask = mask;
+    }
+
+    public bool IsRelated(int loop) => (_mask & (1 << loop)) != 0;
+}
+
+public record struct OrderCombination(LoopMask Loops)
+{
+    public IntExpr Expr { get; set; }
+}
+
+public class TilingSolver
+{
+    private readonly Solver _solver = new("TilingSolver");
+    private readonly IntVar[] _tiles;
+    private readonly IntVar[,] _orders;
+    private readonly IntVar[,] _places;
+    private readonly OrderCombination[][] _orderCombinations;
+
+    private readonly IntVar _objective;
+    private readonly DecisionBuilder _decisionBuilder;
+    private readonly SolutionCollector _solutionCollector;
+
+    // 1. Constants
+    private const int M = 16;
+    private const int N = 256;
+    private const int K = 256;
+    private const int LoopsCount = 3; // m, n, k
+    private const int ReductionLoopsCount = 1; // k
+    private const int BuffersCount = 3;
+
+    private const int L2_SIZE = 1024 * 1024 * 4; // 4MB
+    private const int LDST_PRIM = 128; // 128B
+    private const int L3_BANDWIDTH = 128; // 128B/cycle
+    private const int MMA_PRIM_M = 32;
+    private const int MMA_PRIM_N = 32;
+    private const int MMA_PRIM_K = 32;
+    private const int MMA_PRIM_CYCLES = 8;
+
+    private readonly int[] Dims = new[] { M, N, K };
+    private readonly LoopMask[] _loopMasks = new LoopMask[] { new(0b101), new(0b110), new(0b011) };
 
     public TilingSolver()
     {
+        // 2. Variables
+        _tiles = CreateTileVars(new[] { M, N, K });
+        _orders = CreateLoopOrderVars();
+        _places = CreateBufferPlaceVars();
+
+        // 3. Expressions
+        // 3.1. Orders
+        var orderCombines = _orderCombinations = CreateOrderCombinationExprs();
+
+        // 3.2. Buffer sizes
+        var bufferSizes = CreateBufferSizeExprs();
+        var totalBufferSize = bufferSizes[0] + bufferSizes[1] + bufferSizes[2];
+
+        // 3.3. Memory access latency
+        var loadIn0TileCycles = bufferSizes[0].CeilDiv(L3_BANDWIDTH);
+        var loadIn1TileCycles = bufferSizes[1].CeilDiv(L3_BANDWIDTH);
+        var storeOutTileCycles = bufferSizes[2].CeilDiv(L3_BANDWIDTH);
+
+        var mTiles = M.CeilDiv(_tiles[0]);
+        var nTiles = N.CeilDiv(_tiles[1]);
+        var kTiles = K.CeilDiv(_tiles[2]);
+
+        var loadIn0Times = _places[0, 0]
+            + (_places[0, 1] * (
+                  (orderCombines[1][0].Expr * mTiles)
+                + (orderCombines[1][1].Expr * nTiles)
+                + (orderCombines[1][2].Expr * kTiles)))
+            + (_places[0, 2] * (
+                  (orderCombines[2][0].Expr * mTiles * nTiles)
+                + (orderCombines[2][1].Expr * mTiles * kTiles)
+                + (orderCombines[2][2].Expr * nTiles * kTiles)))
+            + (_places[0, 3] * mTiles * nTiles * kTiles);
+        var loadIn1Times = _places[1, 0]
+            + (_places[1, 1] * (
+                  (orderCombines[1][0].Expr * mTiles)
+                + (orderCombines[1][1].Expr * nTiles)
+                + (orderCombines[1][2].Expr * kTiles)))
+            + (_places[1, 2] * (
+                  (orderCombines[2][0].Expr * mTiles * nTiles)
+                + (orderCombines[2][1].Expr * mTiles * kTiles)
+                + (orderCombines[2][2].Expr * nTiles * kTiles)))
+            + (_places[1, 3] * mTiles * nTiles * kTiles);
+        var storeOutTimes = _places[2, 0]
+            + (_places[2, 1] * (
+                  (orderCombines[1][0].Expr * mTiles)
+                + (orderCombines[1][1].Expr * nTiles)))
+            + (_places[2, 2] *
+                  (orderCombines[2][0].Expr * mTiles * nTiles));
+
+        var totalLoadIn0Cycles = loadIn0TileCycles * loadIn0Times;
+        var totalLoadIn1Cycles = loadIn1TileCycles * loadIn1Times;
+        var totalStoreOutCycles = storeOutTileCycles * storeOutTimes;
+        var totalMemoryAccessCycles = totalLoadIn0Cycles + totalLoadIn1Cycles + totalStoreOutCycles;
+
+        var tileCalcCycles = _tiles[0].CeilDiv(MMA_PRIM_M) * _tiles[1].CeilDiv(MMA_PRIM_N) * _tiles[2].CeilDiv(MMA_PRIM_K) * MMA_PRIM_CYCLES;
+        var totalCalcCyles = tileCalcCycles * mTiles * nTiles * kTiles;
+
+        var totalCycles = _solver.MakeMax(totalMemoryAccessCycles, totalCalcCyles);
+
+        // 4. Constraints
+        // 4.1. Buffer size
+        _solver.Add(totalBufferSize <= L2_SIZE);
+
+        // 4.2. Orders
+        _solver.Add(_orders[0, 0] + _orders[1, 0] + _orders[2, 0] == 1);
+        _solver.Add(_orders[0, 1] + _orders[1, 1] + _orders[2, 1] == 1);
+        _solver.Add(_orders[0, 2] + _orders[1, 2] + _orders[2, 2] == 1);
+
+        _solver.Add(_orders[0, 0] + _orders[0, 1] + _orders[0, 2] == 1);
+        _solver.Add(_orders[1, 0] + _orders[1, 1] + _orders[1, 2] == 1);
+        _solver.Add(_orders[2, 0] + _orders[2, 1] + _orders[2, 2] == 1);
+
+        // 4.3. Places
+        _solver.Add(_places[0, 0] + _places[0, 1] + _places[0, 2] + _places[0, 3] == 1);
+        _solver.Add(_places[1, 0] + _places[1, 1] + _places[1, 2] + _places[1, 3] == 1);
+        _solver.Add(_places[2, 0] + _places[2, 1] + _places[2, 2] == 1);
+
+        // 4.4. Reduction aware
+        _solver.Add(_places[2, 1] * _orders[2, 0] == 0);
+        _solver.Add(_places[2, 2] * (_orders[2, 0] + _orders[2, 1]) == 0);
+        _solver.Add(_places[2, 3] == 0);
+
+        // 5. Objective
+        _objective = totalCycles.Var();
+
+        var allVars = _tiles.Concat(_orders.Cast<IntVar>()).Concat(_places.Cast<IntVar>()).ToArray();
+        _decisionBuilder = _solver.MakePhase(allVars, Solver.CHOOSE_FIRST_UNBOUND, Solver.ASSIGN_MIN_VALUE);
+        _solutionCollector = _solver.MakeLastSolutionCollector();
+        _solutionCollector.Add(allVars);
+        _solutionCollector.AddObjective(_objective);
     }
 
     public void Solve()
     {
-        // constants
-        const int M = 16;
-        const int N = 256;
-        const int K = 256;
-        const int LoopsCount = 3; // m, n, k
-        const int InputOperands = 2;
+        var objeciveMonitor = _solver.MakeMinimize(_objective, 1);
+        var searchLog = _solver.MakeSearchLog(100000, objeciveMonitor);
+        var searchLimit = _solver.MakeImprovementLimit(_objective, false, 1, 0, 1, 2);
+        var timeLimit = _solver.MakeTimeLimit(5000);
 
-        const int L2_SIZE = 1024 * 1024 * 4; // 4MB
-        const int LDST_PRIM = 128; // 128B
-        const int L3_BANDWIDTH = 128; // 128B/cycle
+        _solver.Solve(_decisionBuilder, new SearchMonitor[] { objeciveMonitor, searchLimit, timeLimit, searchLog, _solutionCollector });
 
-        var model = new CpModel();
+        if (_solutionCollector.SolutionCount() < 1)
+        {
+            throw new InvalidOperationException();
+        }
 
-        // variables
-        var tiles = CreateTileVars(new[] { M, N, K });
-        var orders = CreateLoopOrderVars(LoopsCount);
+        var solution = _solutionCollector.SolutionCount() - 1;
+        var getLoopName = (int loop) => "mnk"[GetOrderDim(solution, loop)];
+
+        Debug.WriteLine($"(tm, tn, tk): ({_solutionCollector.Value(solution, _tiles[0])}, {_solutionCollector.Value(solution, _tiles[1])}, {_solutionCollector.Value(solution, _tiles[2])})");
+        Debug.WriteLine($"for ({getLoopName(0)}, {getLoopName(1)}, {getLoopName(2)})");
+        Debug.WriteLine($"buffer place(a, b, c): ({GetBufferPlace(solution, 0)}, {GetBufferPlace(solution, 1)}, {GetBufferPlace(solution, 2)})");
     }
 
-    private IntVar[] CreateTileVars(int[] upperbounds)
+    private IntVar[] CreateTileVars(int[] upperBounds)
     {
-        var tiles = new IntVar[upperbounds.Length];
+        var tiles = new IntVar[upperBounds.Length];
         for (int i = 0; i < tiles.Length; i++)
         {
-            tiles[i] = _model.NewIntVar(1, upperbounds[i], $"t{i}");
+            tiles[i] = _solver.MakeIntVar(1, upperBounds[i], $"t{i}");
         }
 
         return tiles;
     }
 
-    private BoolVar[,] CreateLoopOrderVars(int loopsCount)
+    private IntVar[,] CreateLoopOrderVars()
     {
-        var orders = new BoolVar[loopsCount, loopsCount];
-        for (int i = 0; i < loopsCount; i++)
+        var orders = new IntVar[LoopsCount, LoopsCount];
+        for (int i = 0; i < LoopsCount; i++)
         {
-            for (int j = 0; j < loopsCount; j++)
+            for (int j = 0; j < LoopsCount; j++)
             {
-                orders[i, j] = _model.NewBoolVar($"order_d{i}_{j}");
+                orders[i, j] = _solver.MakeBoolVar($"order_d{i}_l{j}");
             }
         }
 
         return orders;
     }
 
-    private BoolVar[,] CreateInputPlaceVars(int inputsCount, int loopsCount)
+    private IntVar[,] CreateBufferPlaceVars()
     {
-        throw new NotImplementedException();
+        var places = new IntVar[BuffersCount, LoopsCount + 1];
+        for (int i = 0; i < BuffersCount; i++)
+        {
+            for (int j = 0; j < LoopsCount + 1; j++)
+            {
+                places[i, j] = _solver.MakeBoolVar($"place_b{i}_{j}");
+            }
+        }
+
+        return places;
     }
+
+    private OrderCombination[][] CreateOrderCombinationExprs()
+    {
+        var maxCount = LoopsCount + 1;
+        var permutations = new OrderCombination[maxCount][];
+        for (int i = 0; i < permutations.Length; i++)
+        {
+            permutations[i] = CreateOrderCombinationExprs(i);
+        }
+
+        return permutations;
+    }
+
+    private OrderCombination[] CreateOrderCombinationExprs(int count)
+    {
+        var combinations = new OrderCombination[MathUtility.Factorial(LoopsCount) / (MathUtility.Factorial(LoopsCount - count) * MathUtility.Factorial(count))];
+
+        int index = 0;
+        var combination = new int[count];
+        bool[] chosen = new bool[LoopsCount];
+        GenerateOrderCombinations(count, combinations, combination, 0, 0, chosen, ref index);
+        return combinations;
+    }
+
+    private void GenerateOrderCombinations(int count, OrderCombination[] combinations, int[] combination, int start, int index, bool[] chosen, ref int combineResultIndex)
+    {
+        if (index == count)
+        {
+#if true
+            Debug.WriteLine($"{count}: {string.Join(", ", combination)}");
+#endif
+            int[] permutation = new int[count];
+            int permuteResultIndex = 0;
+            ref var result = ref combinations[combineResultIndex++];
+            result = new OrderCombination(CombinationToLoopMask(combination));
+            GenerateOrderPermutations(ref result, combination, permutation, 0, chosen, ref permuteResultIndex);
+            return;
+        }
+
+        for (int i = start; i <= LoopsCount - count + index; ++i)
+        {
+            combination[index] = i;
+            GenerateOrderCombinations(count, combinations, combination, i + 1, index + 1, chosen, ref combineResultIndex);
+        }
+    }
+
+    private LoopMask CombinationToLoopMask(int[] combination)
+    {
+        int mask = 0;
+        foreach (var loop in combination)
+        {
+            mask |= 1 << loop;
+        }
+
+        return new LoopMask(mask);
+    }
+
+    private void GenerateOrderPermutations(ref OrderCombination result, int[] combination, int[] permutation, int index, bool[] chosen, ref int permuteResultIndex)
+    {
+        if (index == combination.Length)
+        {
+#if true
+            Debug.WriteLine($"{string.Join(", ", permutation)}");
+#endif
+            if (combination.Length == 0)
+            {
+                result.Expr = _solver.MakeIntConst(1);
+            }
+            else
+            {
+                IntExpr? expr = null;
+                for (int i = 0; i < permutation.Length; i++)
+                {
+                    var order = _orders[permutation[i], i];
+                    expr = expr == null ? order : expr * order;
+                }
+
+                result.Expr = result.Expr == null ? expr! : result.Expr + expr;
+            }
+
+            return;
+        }
+
+        for (int i = 0; i < combination.Length; ++i)
+        {
+            if (!chosen[i])
+            {
+                chosen[i] = true;
+                permutation[index] = combination[i];
+                GenerateOrderPermutations(ref result, combination, permutation, index + 1, chosen, ref permuteResultIndex);
+                chosen[i] = false;
+            }
+        }
+    }
+
+    private int GetOrderDim(int solution, int order)
+    {
+        for (int i = 0; i < LoopsCount; i++)
+        {
+            if (_solutionCollector.Value(solution, _orders[i, order]) == 1)
+            {
+                return i;
+            }
+        }
+
+        throw new InvalidOperationException();
+    }
+
+    private int GetBufferPlace(int solution, int bufferIndex)
+    {
+        for (int i = 0; i < LoopsCount + 1; i++)
+        {
+            if (_solutionCollector.Value(solution, _places[bufferIndex, i]) == 1)
+            {
+                return i;
+            }
+        }
+
+        throw new InvalidOperationException();
+    }
+
+    private IntExpr[] CreateBufferSizeExprs()
+    {
+        var exprs = new IntExpr[BuffersCount];
+        for (int i = 0; i < exprs.Length; i++)
+        {
+            exprs[i] = CreateBufferSizeExpr(i);
+        }
+
+        return exprs;
+    }
+
+    private IntExpr CreateBufferSizeExpr(int bufferIndex)
+    {
+        var loopMask = _loopMasks[bufferIndex];
+        IntExpr? bufferSizeExpr = null;
+        for (int place = 0; place < LoopsCount + 1; place++)
+        {
+            IntExpr? placedBufferSizeExpr = null;
+            foreach (var combination in _orderCombinations[place])
+            {
+                IntExpr? tileSizeExpr = null;
+                for (int loop = 0; loop < LoopsCount; loop++)
+                {
+                    if (loopMask.IsRelated(loop))
+                    {
+                        var tileDimExpr = combination.Loops.IsRelated(loop) ? _tiles[loop] : _solver.MakeIntConst(Dims[loop]);
+                        tileSizeExpr = tileSizeExpr == null ? tileDimExpr : tileSizeExpr * tileDimExpr;
+                    }
+                }
+
+                var gatedTileSizeExpr = combination.Expr * tileSizeExpr;
+                placedBufferSizeExpr = placedBufferSizeExpr == null ? gatedTileSizeExpr : placedBufferSizeExpr + gatedTileSizeExpr;
+            }
+
+            var gatedPlacedBufferSizeExpr = _places[bufferIndex, place] * placedBufferSizeExpr;
+            bufferSizeExpr = bufferSizeExpr == null ? gatedPlacedBufferSizeExpr : bufferSizeExpr + gatedPlacedBufferSizeExpr;
+        }
+
+        return bufferSizeExpr * sizeof(float);
+    }
+
+#if false
+    private void GetOrdersSequence(ref IntExpr destExpr, LoopMask loopMask, int[] orders, int start, int level)
+    {
+        ref var order = ref orders[level];
+        for (order = start; order < LoopsCount; order++)
+        {
+            // Last level
+            if (level == orders.Length - 1)
+            {
+                destExpr += GetBufferSize(orders, loopMask);
+            }
+        }
+    }
+
+    private IntExpr GetBufferSize(int[] orders, LoopMask loopMask)
+    {
+
+    }
+#endif
+}
+
+public static class CPExtensions
+{
+    public static IntExpr CeilDiv(this IntExpr numer, long denom) =>
+        (numer + (denom - 1)) / denom;
+
+    public static IntExpr CeilDiv(this long numer, IntExpr denom) =>
+        denom.solver().MakeDiv(numer + (denom - 1), denom);
+
+    public static IntExpr CeilDiv(this int numer, IntExpr denom) =>
+        denom.solver().MakeDiv(numer + (denom - 1), denom);
 }
