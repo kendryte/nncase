@@ -67,7 +67,8 @@ public class TilingSolver
     private const int MMA_PRIM_K = 32;
     private const int MMA_PRIM_CYCLES = 8;
 
-    private readonly int[] Dims = new[] { M, N, K };
+    private readonly IntExpr[] Dims;
+    private readonly IntExpr[] _tileCounts;
     private readonly LoopMask[] _loopMasks = new LoopMask[] { new(0b101), new(0b110), new(0b011) };
 
     public TilingSolver()
@@ -79,55 +80,23 @@ public class TilingSolver
 
         // 3. Expressions
         // 3.1. Orders
-        var orderCombines = _orderCombinations = CreateOrderCombinationExprs();
+        Dims = new[] { M, N, K }.Select(x => _solver.MakeIntConst(x)).ToArray();
+        _orderCombinations = CreateOrderCombinationExprs();
+        _tileCounts = CreateTileCountsExprs();
 
         // 3.2. Buffer sizes
         var bufferSizes = CreateBufferSizeExprs();
-        var totalBufferSize = bufferSizes[0] + bufferSizes[1] + bufferSizes[2];
+        var totalBufferSize = bufferSizes.Aggregate((IntExpr)_solver.MakeIntConst(0), (x, y) => x + y);
 
         // 3.3. Memory access latency
-        var loadIn0TileCycles = bufferSizes[0].CeilDiv(L3_BANDWIDTH);
-        var loadIn1TileCycles = bufferSizes[1].CeilDiv(L3_BANDWIDTH);
-        var storeOutTileCycles = bufferSizes[2].CeilDiv(L3_BANDWIDTH);
+        var bufferTileAccessCycles = bufferSizes.Select(x => x.CeilDiv(L3_BANDWIDTH)).ToArray();
+        var bufferAccessTimes = CreateBufferAccessTimesExprs();
+        var bufferAccessCycles = bufferTileAccessCycles.Zip(bufferAccessTimes).Select(x => x.First * x.Second).ToArray();
+        var totalMemoryAccessCycles = bufferAccessCycles.Aggregate((IntExpr)_solver.MakeIntConst(0), (x, y) => x + y);
 
-        var mTiles = M.CeilDiv(_tiles[0]);
-        var nTiles = N.CeilDiv(_tiles[1]);
-        var kTiles = K.CeilDiv(_tiles[2]);
-
-        var loadIn0Times = _places[0, 0]
-            + (_places[0, 1] * (
-                  (orderCombines[1][0].Expr * mTiles)
-                + (orderCombines[1][1].Expr * nTiles)
-                + (orderCombines[1][2].Expr * kTiles)))
-            + (_places[0, 2] * (
-                  (orderCombines[2][0].Expr * mTiles * nTiles)
-                + (orderCombines[2][1].Expr * mTiles * kTiles)
-                + (orderCombines[2][2].Expr * nTiles * kTiles)))
-            + (_places[0, 3] * mTiles * nTiles * kTiles);
-        var loadIn1Times = _places[1, 0]
-            + (_places[1, 1] * (
-                  (orderCombines[1][0].Expr * mTiles)
-                + (orderCombines[1][1].Expr * nTiles)
-                + (orderCombines[1][2].Expr * kTiles)))
-            + (_places[1, 2] * (
-                  (orderCombines[2][0].Expr * mTiles * nTiles)
-                + (orderCombines[2][1].Expr * mTiles * kTiles)
-                + (orderCombines[2][2].Expr * nTiles * kTiles)))
-            + (_places[1, 3] * mTiles * nTiles * kTiles);
-        var storeOutTimes = _places[2, 0]
-            + (_places[2, 1] * (
-                  (orderCombines[1][0].Expr * mTiles)
-                + (orderCombines[1][1].Expr * nTiles)))
-            + (_places[2, 2] *
-                  (orderCombines[2][0].Expr * mTiles * nTiles));
-
-        var totalLoadIn0Cycles = loadIn0TileCycles * loadIn0Times;
-        var totalLoadIn1Cycles = loadIn1TileCycles * loadIn1Times;
-        var totalStoreOutCycles = storeOutTileCycles * storeOutTimes;
-        var totalMemoryAccessCycles = totalLoadIn0Cycles + totalLoadIn1Cycles + totalStoreOutCycles;
-
-        var tileCalcCycles = _tiles[0].CeilDiv(MMA_PRIM_M) * _tiles[1].CeilDiv(MMA_PRIM_N) * _tiles[2].CeilDiv(MMA_PRIM_K) * MMA_PRIM_CYCLES;
-        var totalCalcCyles = tileCalcCycles * mTiles * nTiles * kTiles;
+        // 3.4. Calc latency
+        var tileCalcCycles = GetTileCalcCycles(_tiles);
+        var totalCalcCyles = _tileCounts.Aggregate(tileCalcCycles, (x, y) => x * y);
 
         var totalCycles = _solver.MakeMax(totalMemoryAccessCycles, totalCalcCyles);
 
@@ -136,18 +105,10 @@ public class TilingSolver
         _solver.Add(totalBufferSize <= L2_SIZE);
 
         // 4.2. Orders
-        _solver.Add(_orders[0, 0] + _orders[1, 0] + _orders[2, 0] == 1);
-        _solver.Add(_orders[0, 1] + _orders[1, 1] + _orders[2, 1] == 1);
-        _solver.Add(_orders[0, 2] + _orders[1, 2] + _orders[2, 2] == 1);
-
-        _solver.Add(_orders[0, 0] + _orders[0, 1] + _orders[0, 2] == 1);
-        _solver.Add(_orders[1, 0] + _orders[1, 1] + _orders[1, 2] == 1);
-        _solver.Add(_orders[2, 0] + _orders[2, 1] + _orders[2, 2] == 1);
+        AddOrdersConstraints();
 
         // 4.3. Places
-        _solver.Add(_places[0, 0] + _places[0, 1] + _places[0, 2] + _places[0, 3] == 1);
-        _solver.Add(_places[1, 0] + _places[1, 1] + _places[1, 2] + _places[1, 3] == 1);
-        _solver.Add(_places[2, 0] + _places[2, 1] + _places[2, 2] == 1);
+        AddPlacesConstraints();
 
         // 4.4. Reduction aware
         _solver.Add(_places[2, 1] * _orders[2, 0] == 0);
@@ -184,6 +145,11 @@ public class TilingSolver
         Debug.WriteLine($"(tm, tn, tk): ({_solutionCollector.Value(solution, _tiles[0])}, {_solutionCollector.Value(solution, _tiles[1])}, {_solutionCollector.Value(solution, _tiles[2])})");
         Debug.WriteLine($"for ({getLoopName(0)}, {getLoopName(1)}, {getLoopName(2)})");
         Debug.WriteLine($"buffer place(a, b, c): ({GetBufferPlace(solution, 0)}, {GetBufferPlace(solution, 1)}, {GetBufferPlace(solution, 2)})");
+    }
+
+    private static IntExpr GetTileCalcCycles(IntVar[] tiles)
+    {
+        return tiles[0].CeilDiv(MMA_PRIM_M) * tiles[1].CeilDiv(MMA_PRIM_N) * tiles[2].CeilDiv(MMA_PRIM_K) * MMA_PRIM_CYCLES;
     }
 
     private IntVar[] CreateTileVars(int[] upperBounds)
@@ -345,6 +311,17 @@ public class TilingSolver
         throw new InvalidOperationException();
     }
 
+    private IntExpr[] CreateTileCountsExprs()
+    {
+        var exprs = new IntExpr[LoopsCount];
+        for (int i = 0; i < exprs.Length; i++)
+        {
+            exprs[i] = Dims[i].CeilDiv(_tiles[i]);
+        }
+
+        return exprs;
+    }
+
     private IntExpr[] CreateBufferSizeExprs()
     {
         var exprs = new IntExpr[BuffersCount];
@@ -370,7 +347,7 @@ public class TilingSolver
                 {
                     if (loopMask.IsRelated(loop))
                     {
-                        var tileDimExpr = combination.Loops.IsRelated(loop) ? _tiles[loop] : _solver.MakeIntConst(Dims[loop]);
+                        var tileDimExpr = combination.Loops.IsRelated(loop) ? _tiles[loop] : Dims[loop];
                         tileSizeExpr = tileSizeExpr == null ? tileDimExpr : tileSizeExpr * tileDimExpr;
                     }
                 }
@@ -386,31 +363,95 @@ public class TilingSolver
         return bufferSizeExpr * sizeof(float);
     }
 
-#if false
-    private void GetOrdersSequence(ref IntExpr destExpr, LoopMask loopMask, int[] orders, int start, int level)
+    private IntExpr[] CreateBufferAccessTimesExprs()
     {
-        ref var order = ref orders[level];
-        for (order = start; order < LoopsCount; order++)
+        var exprs = new IntExpr[BuffersCount];
+        for (int i = 0; i < exprs.Length; i++)
         {
-            // Last level
-            if (level == orders.Length - 1)
+            exprs[i] = CreateBufferAccessTimesExpr(i);
+        }
+
+        return exprs;
+    }
+
+    private IntExpr CreateBufferAccessTimesExpr(int bufferIndex)
+    {
+        IntExpr? timesExpr = null;
+        for (int place = 0; place < LoopsCount + 1; place++)
+        {
+            IntExpr? placedTimesExpr = null;
+            foreach (var combination in _orderCombinations[place])
             {
-                destExpr += GetBufferSize(orders, loopMask);
+                IntExpr timeExpr = _solver.MakeIntConst(1);
+                for (int loop = 0; loop < LoopsCount; loop++)
+                {
+                    if (combination.Loops.IsRelated(loop))
+                    {
+                        timeExpr *= _tileCounts[loop];
+                    }
+                }
+
+                var gatedTimesExpr = combination.Expr * timeExpr;
+                placedTimesExpr = placedTimesExpr == null ? gatedTimesExpr : placedTimesExpr + gatedTimesExpr;
             }
+
+            var gatedPlacedTimesExpr = _places[bufferIndex, place] * placedTimesExpr;
+            timesExpr = timesExpr == null ? gatedPlacedTimesExpr : timesExpr + gatedPlacedTimesExpr;
+        }
+
+        return timesExpr!;
+    }
+
+    private void AddOrdersConstraints()
+    {
+        // 1. Every dim has one loop
+        for (int i = 0; i < LoopsCount; i++)
+        {
+            IntExpr expr = _orders[i, 0];
+            for (int j = 1; j < LoopsCount; j++)
+            {
+                expr += _orders[i, j];
+            }
+
+            _solver.Add(expr == 1);
+        }
+
+        // 2. Every loop has one dim
+        for (int i = 0; i < LoopsCount; i++)
+        {
+            IntExpr expr = _orders[0, i];
+            for (int j = 1; j < LoopsCount; j++)
+            {
+                expr += _orders[j, i];
+            }
+
+            _solver.Add(expr == 1);
         }
     }
 
-    private IntExpr GetBufferSize(int[] orders, LoopMask loopMask)
+    private void AddPlacesConstraints()
     {
+        // 1. Every buffer has one place
+        for (int i = 0; i < BuffersCount; i++)
+        {
+            IntExpr expr = _places[i, 0];
+            for (int j = 1; j < LoopsCount + 1; j++)
+            {
+                expr += _places[i, j];
+            }
 
+            _solver.Add(expr == 1);
+        }
     }
-#endif
 }
 
 public static class CPExtensions
 {
     public static IntExpr CeilDiv(this IntExpr numer, long denom) =>
         (numer + (denom - 1)) / denom;
+
+    public static IntExpr CeilDiv(this IntExpr numer, IntExpr denom) =>
+        denom.solver().MakeDiv(numer + (denom - 1), denom);
 
     public static IntExpr CeilDiv(this long numer, IntExpr denom) =>
         denom.solver().MakeDiv(numer + (denom - 1), denom);
